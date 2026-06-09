@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>ONLINE SHOP | SEAM 会員制ヘアケアセレクトショップ</title>
+  <meta name="description" content="SEAM会員限定オンラインショップ。店頭では出会えない限定ブランドと、サロンで相談したケアを、ご自宅でずっと続けられる場所。">
+
+  <!-- PWA / App-fit -->
+  <meta name="theme-color" content="#FAF7F2" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1A1815" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SEAM Online">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="images/favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Noto+Serif+JP:wght@200;300;400;500;700&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" crossorigin="anonymous">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    a, button { -webkit-tap-highlight-color: rgba(184,148,90,0.12); }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; background:#FAF7F2; }
+
+    :root {
+      --white: #ffffff;
+      --off-white: #FAF7F2;
+      --cream: #F6F1EA;
+      --sand: #EEE7DD;
+      --taupe: #B57C5A;
+      --charcoal: #2F2A26;
+      --black: #1A1815;
+      --gold: #B8945A;
+      --gold-dark: #8E6F40;
+      --warm-fill: #E9D8C8;
+      --highlight-fill: #F2E6D9;
+      --main-brown: #B57C5A;
+      --rose: #D7A39A;
+      --font-en: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+      --font-serif: 'Cormorant Garamond', Palatino, Georgia, serif;
+      --font-jp: 'Noto Serif JP', serif;
+      --app-max-width: 480px;
+      --app-frame-color: #EFE6D8;
+    }
+    body {
+      font-family: var(--font-jp);
+      background: var(--off-white);
+      color: var(--charcoal);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      overscroll-behavior-y: none;
+      padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    }
+    @media (min-width: 640px) { body { padding-bottom: 0; } }
+    img { max-width: 100%; height: auto; display: block; }
+    a { text-decoration: none; color: inherit; }
+    button { cursor: pointer; border: none; background: none; font-family: inherit; }
+
+    /* App-Fit */
+    @media (min-width: 720px) {
+      html { background: var(--app-frame-color) !important; }
+      body {
+        max-width: var(--app-max-width) !important;
+        margin-left: auto !important; margin-right: auto !important;
+        background: var(--off-white) !important;
+        box-shadow: 0 0 80px rgba(26,24,21,0.06), 0 0 1px rgba(184,148,90,0.2);
+        min-height: 100vh; position: relative;
+      }
+      .site-header, [class*="fixed"] {
+        max-width: var(--app-max-width) !important;
+        left: 50% !important; right: auto !important;
+        transform: translateX(-50%) !important; width: 100% !important;
+      }
+    }
+
+    /* ── Header ── */
+    .site-header {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(250,247,242,0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--sand);
+      padding: env(safe-area-inset-top, 0) 0 0;
+    }
+    .site-header-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px;
+    }
+    .site-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--font-en); font-size: 10px; letter-spacing: 0.18em;
+      color: var(--charcoal); text-transform: uppercase; padding: 8px 12px;
+    }
+    .site-logo { display: flex; flex-direction: column; line-height: 1; align-items: center; }
+    .site-logo-main { font-family: 'GFS Didot', var(--font-serif); font-size: 22px; letter-spacing: 0.22em; color: var(--black); }
+    .site-logo-sub { font-family: var(--font-en); font-size: 8px; letter-spacing: 0.25em; color: var(--gold); opacity: 0.8; margin-top: 3px; text-transform: uppercase; }
+
+    /* ── HERO: 黒地+ゴールド (プレミア感) ── */
+    .premium-hero {
+      position: relative;
+      background: linear-gradient(180deg, #1A1815 0%, #2F2A26 60%, #3D3833 100%);
+      color: var(--white);
+      padding: 64px 24px 56px;
+      overflow: hidden;
+    }
+    .premium-hero::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 70% 30%, rgba(184,148,90,0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .premium-hero::after {
+      content: ''; position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 1px; height: 40px;
+      background: var(--gold); opacity: 0.5; z-index: 2;
+    }
+    .premium-hero-content { position: relative; z-index: 1; }
+    .premium-hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 14px;
+      background: rgba(184,148,90,0.12);
+      border: 1px solid rgba(184,148,90,0.4);
+      border-radius: 999px;
+      font-family: var(--font-en); font-size: 9.5px; letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 20px;
+    }
+    .premium-hero-badge::before { content: '✦'; font-size: 11px; }
+    .premium-hero-title {
+      font-family: var(--font-jp);
+      font-size: clamp(30px, 9vw, 48px);
+      font-weight: 700; letter-spacing: -0.012em;
+      line-height: 1.18; color: var(--white);
+      margin-bottom: 16px;
+    }
+    .premium-hero-title .gold { color: var(--gold); font-style: italic; font-family: var(--font-serif); font-weight: 500; }
+    .premium-hero-underline {
+      display: block; width: 64px; height: 1px;
+      background: var(--gold); opacity: 0.7;
+      margin-bottom: 22px;
+    }
+    .premium-hero-desc {
+      font-family: var(--font-jp); font-size: 13.5px; font-weight: 300;
+      color: rgba(255,255,255,0.78);
+      line-height: 2; letter-spacing: 0.04em;
+      max-width: 400px;
+    }
+    .premium-hero-stats {
+      margin-top: 28px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      max-width: 380px;
+    }
+    .premium-hero-stat {
+      padding: 14px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(184,148,90,0.18);
+      border-radius: 6px;
+      text-align: center;
+    }
+    .premium-hero-stat-num {
+      font-family: var(--font-serif); font-size: 26px; font-weight: 500;
+      color: var(--gold); line-height: 1;
+    }
+    .premium-hero-stat-label {
+      font-family: var(--font-jp); font-size: 11px; font-weight: 300;
+      color: rgba(255,255,255,0.65); letter-spacing: 0.04em;
+      margin-top: 6px;
+    }
+
+    /* ── Section base ── */
+    .section { padding: 64px 24px; position: relative; }
+    .section-tick {
+      position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 1px; height: 36px;
+      background: var(--gold); opacity: 0.45; z-index: 2;
+    }
+    .section-eyebrow-row {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      margin-bottom: 14px;
+    }
+    .section-eyebrow-row::before, .section-eyebrow-row::after {
+      content: ''; flex: 1; max-width: 40px; height: 1px;
+      background: var(--gold); opacity: 0.4;
+    }
+    .section-eyebrow {
+      font-family: var(--font-en); font-size: 10.5px;
+      letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold);
+    }
+    .section-title {
+      font-family: var(--font-jp); font-size: clamp(24px, 6.5vw, 36px);
+      font-weight: 700; letter-spacing: -0.012em;
+      line-height: 1.25; text-align: center;
+      color: var(--charcoal); margin-bottom: 14px;
+    }
+    .section-underline {
+      display: block; width: 48px; height: 1px;
+      background: var(--gold); opacity: 0.55;
+      margin: 0 auto 24px;
+    }
+    .section-desc {
+      font-family: var(--font-jp); font-size: 13px; font-weight: 400;
+      color: var(--charcoal); opacity: 0.8;
+      line-height: 1.95; text-align: center;
+      max-width: 440px; margin: 0 auto 32px;
+    }
+
+    /* ── Benefits 4 ── */
+    .benefits-section { background: var(--off-white); }
+    .benefits-grid {
+      display: grid; grid-template-columns: 1fr; gap: 14px;
+      margin-top: 28px;
+    }
+    .benefit-card {
+      background: var(--white);
+      border: 1px solid var(--sand);
+      border-radius: 6px;
+      padding: 26px 22px;
+      position: relative;
+    }
+    .benefit-num {
+      position: absolute; top: 18px; right: 22px;
+      font-family: var(--font-serif); font-size: 32px;
+      color: var(--gold); opacity: 0.4; line-height: 1;
+      font-weight: 500;
+    }
+    .benefit-icon {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--highlight-fill);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--gold); font-size: 18px;
+      margin-bottom: 14px;
+    }
+    .benefit-title {
+      font-family: var(--font-jp); font-size: 16px; font-weight: 600;
+      color: var(--black); letter-spacing: 0.02em; margin-bottom: 8px;
+    }
+    .benefit-desc {
+      font-family: var(--font-jp); font-size: 12.5px; font-weight: 400;
+      color: var(--charcoal); opacity: 0.78;
+      line-height: 1.95;
+    }
+
+    /* ── Online-only brands ── */
+    .online-brands-section {
+      background: linear-gradient(180deg, var(--cream) 0%, var(--off-white) 100%);
+    }
+    .online-brands-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+      margin: 24px auto 20px;
+      max-width: 380px;
+    }
+    .online-brand-tile {
+      aspect-ratio: 1 / 1;
+      background: var(--white);
+      border: 1px solid var(--sand);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .online-brand-tile::before {
+      content: '会員限定';
+      position: absolute; top: 6px; right: 6px;
+      font-family: var(--font-en); font-size: 7px; letter-spacing: 0.15em;
+      text-transform: uppercase;
+      background: var(--gold); color: var(--white);
+      padding: 2px 6px; border-radius: 2px;
+    }
+    .online-brand-tile.silhouette {
+      background: linear-gradient(135deg, #F2EDE3 0%, #E9D8C8 100%);
+      color: var(--charcoal); opacity: 0.5;
+      font-family: var(--font-en); font-size: 10px; letter-spacing: 0.15em;
+      text-align: center;
+    }
+    .online-brand-tile img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .online-brands-note {
+      font-family: var(--font-jp); font-size: 11.5px; font-weight: 400;
+      color: var(--charcoal); opacity: 0.65; text-align: center;
+      margin-bottom: 22px;
+    }
+    .online-brands-note strong { color: var(--gold); }
+
+    /* ── Member Flow ── */
+    .flow-section { background: var(--white); }
+    .flow-list {
+      list-style: none; padding: 0;
+      margin-top: 28px;
+      position: relative;
+    }
+    .flow-list::before {
+      content: ''; position: absolute;
+      left: 22px; top: 12px; bottom: 12px;
+      width: 1px;
+      background: linear-gradient(180deg, var(--gold) 0%, var(--gold) 70%, transparent 100%);
+      opacity: 0.35;
+    }
+    .flow-step {
+      display: flex; gap: 18px;
+      margin-bottom: 26px; position: relative;
+    }
+    .flow-step:last-child { margin-bottom: 0; }
+    .flow-num {
+      flex-shrink: 0;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--main-brown); color: var(--white);
+      font-family: var(--font-en); font-size: 12px; font-weight: 600;
+      letter-spacing: 1px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(181,124,90,0.22);
+      position: relative; z-index: 1;
+    }
+    .flow-body { flex: 1; padding-top: 4px; }
+    .flow-title {
+      font-family: var(--font-jp); font-size: 15.5px; font-weight: 600;
+      color: var(--black); letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+    .flow-desc {
+      font-family: var(--font-jp); font-size: 12.5px; font-weight: 400;
+      color: var(--charcoal); opacity: 0.78;
+      line-height: 1.95;
+    }
+
+    /* ── Voice (会員の声) ── */
+    .voice-section {
+      background: var(--cream);
+    }
+    .voice-card {
+      background: var(--white);
+      border: 1px solid var(--sand);
+      border-radius: 8px;
+      padding: 24px 22px;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .voice-quote {
+      font-family: var(--font-serif); font-size: 48px;
+      color: var(--gold); opacity: 0.25;
+      position: absolute; top: 8px; left: 14px;
+      line-height: 1; font-style: italic;
+    }
+    .voice-text {
+      font-family: var(--font-jp); font-size: 13px; font-weight: 400;
+      color: var(--charcoal); opacity: 0.88;
+      line-height: 1.95; margin-bottom: 14px;
+      padding-left: 8px;
+    }
+    .voice-meta {
+      display: flex; align-items: center; gap: 10px;
+      padding-top: 14px;
+      border-top: 1px solid var(--sand);
+      padding-left: 8px;
+    }
+    .voice-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--highlight-fill);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--main-brown); font-size: 12px;
+    }
+    .voice-name {
+      font-family: var(--font-jp); font-size: 11.5px; font-weight: 500;
+      color: var(--charcoal); flex: 1;
+    }
+    .voice-name span {
+      font-family: var(--font-jp); font-weight: 300; opacity: 0.6;
+      font-size: 10.5px; margin-left: 6px;
+    }
+
+    /* ── Final premium CTA ── */
+    .final-cta-section {
+      background: linear-gradient(180deg, #1A1815 0%, #2F2A26 100%);
+      color: var(--white);
+      padding: 72px 24px 80px;
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .final-cta-section::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 50% 0%, rgba(184,148,90,0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .final-cta-section::after {
+      content: ''; position: absolute; top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 1px; height: 40px;
+      background: var(--gold); opacity: 0.6; z-index: 2;
+    }
+    .final-cta-content { position: relative; z-index: 1; }
+    .final-cta-eyebrow {
+      font-family: var(--font-en); font-size: 10.5px; letter-spacing: 0.32em;
+      text-transform: uppercase; color: var(--gold);
+      margin-bottom: 14px;
+    }
+    .final-cta-title {
+      font-family: var(--font-jp); font-size: clamp(26px, 7.5vw, 38px);
+      font-weight: 700; letter-spacing: -0.012em;
+      line-height: 1.3; color: var(--white);
+      margin-bottom: 18px;
+    }
+    .final-cta-title .gold { color: var(--gold); font-family: var(--font-serif); font-style: italic; font-weight: 500; }
+    .final-cta-closing {
+      font-family: var(--font-jp); font-size: 14px; font-weight: 400;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.95; margin-bottom: 32px;
+    }
+    .premium-cta-ring {
+      position: relative; display: inline-block; padding: 8px;
+    }
+    .premium-cta-ring::before {
+      content: ''; position: absolute; inset: 0;
+      border-radius: 999px;
+      border: 1px solid rgba(184,148,90,0.55);
+      pointer-events: none;
+    }
+    .premium-cta-btn {
+      display: inline-flex; align-items: center; gap: 14px;
+      background: var(--gold); color: var(--black);
+      padding: 18px 32px; border-radius: 999px;
+      font-family: var(--font-jp); font-size: 14px; font-weight: 600;
+      letter-spacing: 0.04em;
+      box-shadow: 0 6px 24px rgba(184,148,90,0.35);
+      transition: all .2s;
+    }
+    .premium-cta-btn:hover { background: #C9A56B; }
+    .premium-cta-btn .arrow-circle {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--black); color: var(--gold);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 13px;
+    }
+    .premium-cta-trust {
+      margin-top: 20px;
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--font-jp); font-size: 11.5px;
+      color: rgba(255,255,255,0.55); letter-spacing: 0.04em;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      background: #3D3833;
+      color: rgba(255,255,255,0.55);
+      padding: 40px 24px 32px;
+      text-align: center;
+    }
+    .footer__logo {
+      font-family: var(--font-serif); font-size: 20px; letter-spacing: 6px;
+      font-weight: 300; color: rgba(255,255,255,0.82); margin-bottom: 4px;
+    }
+    .footer__sub {
+      font-family: var(--font-en); font-size: 8.5px; letter-spacing: 3px;
+      text-transform: uppercase; color: rgba(255,255,255,0.4); margin-bottom: 22px;
+    }
+    .footer__nav { display: flex; flex-wrap: wrap; gap: 0 16px; justify-content: center; margin-bottom: 18px; }
+    .footer__nav a { font-family: var(--font-jp); font-size: 11px; color: rgba(255,255,255,0.7); padding: 6px 0; }
+    .footer__nav a:hover { color: var(--gold); }
+    .footer__copy { font-family: var(--font-en); font-size: 9px; color: rgba(255,255,255,0.3); letter-spacing: 0.04em; }
+  </style>
+  <style>
+    /* prefers-reduced-motion: 動きに敏感なユーザーへの配慮 */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      video[autoplay] { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════ HEADER ════════════════ -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="index.html" class="site-back">
+      <i class="fas fa-arrow-left"></i> SEAM
+    </a>
+    <div class="site-logo">
+      <span class="site-logo-main">SEAM</span>
+      <span class="site-logo-sub">Members Only</span>
+    </div>
+    <span style="width: 60px"></span>
+  </div>
+</header>
+
+<!-- ════════════════ PREMIUM HERO ════════════════ -->
+<section class="premium-hero">
+  <div class="premium-hero-content">
+    <span class="premium-hero-badge">Online — Members Only</span>
+    <h1 class="premium-hero-title">
+      サロンで選んだ、<br>
+      <span class="gold">その先へ。</span>
+    </h1>
+    <span class="premium-hero-underline" aria-hidden></span>
+    <p class="premium-hero-desc">
+      店頭では出会えないブランド。<br>
+      サロンで紡いだカルテ。<br>
+      ご自宅でも、ずっと続けられる、<br>
+      会員制のヘアケアセレクトショップ。
+    </p>
+    <div class="premium-hero-stats">
+      <div class="premium-hero-stat">
+        <div class="premium-hero-stat-num">5+</div>
+        <div class="premium-hero-stat-label">オンライン限定ブランド</div>
+      </div>
+      <div class="premium-hero-stat">
+        <div class="premium-hero-stat-num">¥0</div>
+        <div class="premium-hero-stat-label">招待制</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ BENEFITS 4 ════════════════ -->
+<section class="section benefits-section">
+  <span class="section-tick" aria-hidden></span>
+  <div class="section-eyebrow-row">
+    <span class="section-eyebrow">Member Benefits</span>
+  </div>
+  <h2 class="section-title">会員だけの、<br>4つのこと。</h2>
+  <span class="section-underline" aria-hidden></span>
+  <p class="section-desc">ただの通販ではない。サロンと自宅が、カルテでつながる。</p>
+
+  <div class="benefits-grid">
+    <div class="benefit-card">
+      <span class="benefit-num">01</span>
+      <div class="benefit-icon"><i class="fas fa-clipboard-list"></i></div>
+      <h3 class="benefit-title">カルテが、ずっと残る</h3>
+      <p class="benefit-desc">サロンで作った髪のカルテが、オンライン会員ページにも反映。次回の相談も、過去の履歴から。</p>
+    </div>
+    <div class="benefit-card">
+      <span class="benefit-num">02</span>
+      <div class="benefit-icon"><i class="fas fa-comments"></i></div>
+      <h3 class="benefit-title">カウンセリングを、もう一度</h3>
+      <p class="benefit-desc">「あの商品、もう少し詳しく」「次は何を試そう」。オンラインでも、担当の方に再相談できます。</p>
+    </div>
+    <div class="benefit-card">
+      <span class="benefit-num">03</span>
+      <div class="benefit-icon"><i class="fas fa-truck-fast"></i></div>
+      <h3 class="benefit-title">履歴から、迷わず再注文</h3>
+      <p class="benefit-desc">いつものケアを切らさない。注文履歴から1タップで、自宅に届きます。</p>
+    </div>
+    <div class="benefit-card">
+      <span class="benefit-num">04</span>
+      <div class="benefit-icon"><i class="fas fa-gem"></i></div>
+      <h3 class="benefit-title">オンライン限定の出会い</h3>
+      <p class="benefit-desc">店頭にはない、会員のためのブランド。SEAMが直接買い付けた、特別な5+ブランド。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ ONLINE-ONLY BRANDS TEASER ════════════════ -->
+<section class="section online-brands-section">
+  <span class="section-tick" aria-hidden></span>
+  <div class="section-eyebrow-row">
+    <span class="section-eyebrow">Online Exclusive</span>
+  </div>
+  <h2 class="section-title">店頭では、<br>出会えないブランド。</h2>
+  <span class="section-underline" aria-hidden></span>
+  <p class="section-desc">SEAMのバイヤーが、世界中から買い付けた、海外プレミアムブランドや国内限定流通。会員登録後にすべて公開されます。</p>
+
+  <div class="online-brands-grid">
+    <div class="online-brand-tile silhouette">Premium<br>Brand 01</div>
+    <div class="online-brand-tile silhouette">Premium<br>Brand 02</div>
+    <div class="online-brand-tile silhouette">Premium<br>Brand 03</div>
+    <div class="online-brand-tile silhouette">Premium<br>Brand 04</div>
+    <div class="online-brand-tile silhouette">Premium<br>Brand 05</div>
+    <div class="online-brand-tile silhouette">+ More</div>
+  </div>
+
+  <p class="online-brands-note">
+    <strong>※ ブランド名は会員登録後に公開</strong><br>
+    現在 5+ ブランドを取り扱い・順次追加中
+  </p>
+</section>
+
+<!-- ════════════════ MEMBER FLOW 5 STEPS ════════════════ -->
+<section class="section flow-section">
+  <span class="section-tick" aria-hidden></span>
+  <div class="section-eyebrow-row">
+    <span class="section-eyebrow">How It Works</span>
+  </div>
+  <h2 class="section-title">店舗からオンラインへ、<br>5つのステップ。</h2>
+  <span class="section-underline" aria-hidden></span>
+  <p class="section-desc">サロンで相談したことが、自宅に届く。SEAMだからできる体験フロー。</p>
+
+  <ol class="flow-list">
+    <li class="flow-step">
+      <span class="flow-num">01</span>
+      <div class="flow-body">
+        <h3 class="flow-title">店舗で診断・相談</h3>
+        <p class="flow-desc">全国7店舗で、ヘアケアのプロに相談。あなたに合う一本を見つけます。</p>
+      </div>
+    </li>
+    <li class="flow-step">
+      <span class="flow-num">02</span>
+      <div class="flow-body">
+        <h3 class="flow-title">カルテを作る</h3>
+        <p class="flow-desc">髪質・履歴・選んだケアを、あなた専用のカルテとして記録。</p>
+      </div>
+    </li>
+    <li class="flow-step">
+      <span class="flow-num">03</span>
+      <div class="flow-body">
+        <h3 class="flow-title">招待制メンバーズ</h3>
+        <p class="flow-desc">カルテを引き継ぐ形でオンライン会員登録。所要1分、退会は自由。</p>
+      </div>
+    </li>
+    <li class="flow-step">
+      <span class="flow-num">04</span>
+      <div class="flow-body">
+        <h3 class="flow-title">自宅でも続ける</h3>
+        <p class="flow-desc">店舗で選んだ一本を再注文。オンライン限定ブランドにも出会えます。</p>
+      </div>
+    </li>
+    <li class="flow-step">
+      <span class="flow-num">05</span>
+      <div class="flow-body">
+        <h3 class="flow-title">いつでも、また相談</h3>
+        <p class="flow-desc">髪が変わったら、またサロンへ。サロンとオンライン、行き来できる関係。</p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<!-- ════════════════ VOICES ════════════════ -->
+<section class="section voice-section">
+  <span class="section-tick" aria-hidden></span>
+  <div class="section-eyebrow-row">
+    <span class="section-eyebrow">Member Voices</span>
+  </div>
+  <h2 class="section-title">続けている、<br>会員の声。</h2>
+  <span class="section-underline" aria-hidden></span>
+
+  <div class="voice-card">
+    <span class="voice-quote">"</span>
+    <p class="voice-text">サロンで相談したシャンプーがそのまま家でも使えるのが嬉しい。注文履歴から1タップで届くので、切らさなくなりました。</p>
+    <div class="voice-meta">
+      <div class="voice-avatar"><i class="fas fa-user"></i></div>
+      <p class="voice-name">M.K さん <span>30代 / 銀座店</span></p>
+    </div>
+  </div>
+
+  <div class="voice-card">
+    <span class="voice-quote">"</span>
+    <p class="voice-text">担当の方に、髪の変化をオンラインで相談できるのが安心。次のおすすめも提案してもらえます。</p>
+    <div class="voice-meta">
+      <div class="voice-avatar"><i class="fas fa-user"></i></div>
+      <p class="voice-name">Y.S さん <span>40代 / 大阪店</span></p>
+    </div>
+  </div>
+
+  <div class="voice-card">
+    <span class="voice-quote">"</span>
+    <p class="voice-text">店舗で見たことのないブランドが会員ページにあって、しかもヘアケアのプロの解説付き。出会いの幅が広がりました。</p>
+    <div class="voice-meta">
+      <div class="voice-avatar"><i class="fas fa-user"></i></div>
+      <p class="voice-name">R.T さん <span>30代 / 名古屋店</span></p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FINAL PREMIUM CTA ════════════════ -->
+<section class="final-cta-section">
+  <div class="final-cta-content">
+    <p class="final-cta-eyebrow">Join SEAM</p>
+    <h2 class="final-cta-title">
+      髪との関係を、<br>
+      <span class="gold">特別に。</span>
+    </h2>
+    <p class="final-cta-closing">
+      招待制。<br>
+      まずは、近くの店舗で相談から。
+    </p>
+
+    <div class="premium-cta-ring">
+      <a href="haircareshop.html#stores" class="premium-cta-btn">
+        <span>近くの店舗を探す</span>
+        <span class="arrow-circle">→</span>
+      </a>
+    </div>
+
+    <div class="premium-cta-trust">
+      <i class="fas fa-lock"></i>
+      <span>招待制 / 全国対応 / 退会自由</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════ FOOTER ════════════════ -->
+<footer class="footer">
+  <p class="footer__logo">SEAM</p>
+  <p class="footer__sub">Members Only · Online Shop</p>
+  <nav class="footer__nav">
+    <a href="index.html">トップ</a>
+    <a href="finder.html">髪質診断</a>
+    <a href="haircareshop.html">ヘアケアショップ</a>
+    <a href="brand.html">取扱ブランド</a>
+    <a href="hairsalon.html">ヘアサロン</a>
+    <a href="headspa.html">ヘッドスパ</a>
+  </nav>
+  <p class="footer__copy">© 2026 SEAM JAPAN. All Rights Reserved.</p>
+</footer>
+
+  <script src="js/online-shop-gate.js" defer></script>
+</body>
+</html>

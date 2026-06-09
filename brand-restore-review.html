@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>削除ブランド 復活レビュー | SEAM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Noto+Serif+JP:wght@200;300;400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --white:#fff; --off-white:#faf9f7; --cream:#f6f1eb; --sand:#e8e0d5;
+    --taupe:#b8aea0; --brown:#7a6e62; --charcoal:#282624; --black:#0f0e0d; --gold:#c9a96e;
+    --jp:'Noto Serif JP', serif; --en:'Montserrat', sans-serif; --serif:'Cormorant Garamond', serif;
+  }
+  body { font-family: var(--jp); background: var(--off-white); color: var(--charcoal); line-height: 1.7; padding-bottom: 200px; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 56px 24px; }
+  header.top { text-align: center; margin-bottom: 36px; }
+  .eyebrow { font-family: var(--en); font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
+  h1 { font-family: var(--serif); font-size: clamp(24px,3vw,36px); font-weight: 300; letter-spacing: 0.04em; margin-bottom: 14px; }
+  .intro { font-family: var(--jp); font-size: 13px; font-weight: 300; color: var(--brown); line-height: 2; letter-spacing: 0.05em; max-width: 680px; margin: 0 auto; }
+  .meta { font-family: var(--en); font-size: 11px; letter-spacing: 3px; color: var(--taupe); margin-top: 18px; }
+  .meta strong { font-family: var(--serif); font-size: 18px; color: var(--charcoal); margin: 0 4px; font-weight: 400; }
+
+  .toolbar { background: var(--white); border: 1px solid var(--sand); border-radius: 2px; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 24px; position: sticky; top: 0; z-index: 10; box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+  .toolbar button { font-family: var(--en); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 16px; background: transparent; border: 1px solid var(--sand); border-radius: 2px; color: var(--charcoal); cursor: pointer; transition: all 0.2s; }
+  .toolbar button:hover { background: var(--cream); }
+  .toolbar button.primary { background: var(--charcoal); color: var(--white); border-color: var(--charcoal); }
+  .toolbar button.primary:hover { background: var(--gold); color: var(--white); border-color: var(--gold); }
+  .toolbar .count-pill { margin-left: auto; font-family: var(--en); font-size: 11px; letter-spacing: 2px; color: var(--taupe); }
+  .toolbar .count-pill strong { font-family: var(--serif); font-size: 18px; color: var(--gold); margin: 0 4px; font-weight: 500; }
+
+  .bucket { margin-bottom: 36px; background: var(--white); border: 1px solid var(--sand); border-radius: 2px; overflow: hidden; }
+  .bucket-head { background: var(--charcoal); color: var(--white); padding: 18px 22px; display: flex; align-items: center; gap: 14px; }
+  .bucket-num { font-family: var(--serif); font-size: 20px; color: var(--gold); font-weight: 300; line-height: 1; }
+  .bucket-title { font-family: var(--jp); font-size: 14px; font-weight: 300; letter-spacing: 0.04em; }
+  .bucket-count { margin-left: auto; font-family: var(--en); font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.5); }
+  .bucket-actions { padding: 10px 22px; background: var(--cream); border-bottom: 1px solid var(--sand); display: flex; gap: 12px; }
+  .bucket-actions button { font-family: var(--en); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; padding: 6px 12px; background: transparent; border: 1px solid var(--sand); color: var(--brown); border-radius: 2px; cursor: pointer; transition: all 0.2s; }
+  .bucket-actions button:hover { background: var(--white); border-color: var(--charcoal); color: var(--charcoal); }
+
+  .rows { display: grid; grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 720px) { .rows { grid-template-columns: 1fr; } }
+  .row { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-bottom: 1px solid var(--sand); border-right: 1px solid var(--sand); cursor: pointer; transition: background 0.15s; user-select: none; }
+  @media (max-width: 720px) { .row { border-right: none; } }
+  .row:nth-child(2n) { border-right: none; }
+  .row:hover { background: var(--cream); }
+  .row.is-checked { background: #fcf8f0; }
+  .row input[type="checkbox"] { appearance: none; width: 20px; height: 20px; border: 1.5px solid var(--sand); border-radius: 2px; cursor: pointer; flex-shrink: 0; position: relative; background: var(--white); transition: all 0.18s; }
+  .row input[type="checkbox"]:checked { background: var(--gold); border-color: var(--gold); }
+  .row input[type="checkbox"]:checked::after { content: '✓'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--white); font-size: 13px; font-weight: 700; }
+  .row .b-name { font-family: var(--jp); font-size: 13px; color: var(--charcoal); letter-spacing: 0.04em; line-height: 1.4; }
+  .row .b-maker { font-family: var(--jp); font-size: 10px; color: var(--taupe); letter-spacing: 0.04em; display: block; margin-top: 2px; }
+
+  .result-panel { position: fixed; bottom: 0; left: 0; right: 0; background: var(--white); border-top: 2px solid var(--gold); padding: 24px 24px; box-shadow: 0 -8px 32px rgba(0,0,0,0.12); display: none; flex-direction: column; gap: 12px; max-height: 60vh; z-index: 100; }
+  .result-panel.is-open { display: flex; }
+  .result-panel .result-head { display: flex; justify-content: space-between; align-items: center; }
+  .result-panel h3 { font-family: var(--serif); font-size: 16px; font-weight: 400; color: var(--charcoal); letter-spacing: 0.04em; }
+  .result-panel textarea { width: 100%; height: 200px; font-family: 'Menlo', 'Consolas', monospace; font-size: 12px; padding: 14px; border: 1px solid var(--sand); border-radius: 2px; resize: vertical; background: var(--off-white); color: var(--charcoal); line-height: 1.6; }
+  .result-panel .actions { display: flex; gap: 12px; }
+  .result-panel .actions button { font-family: var(--en); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 11px 18px; border-radius: 2px; cursor: pointer; transition: all 0.2s; }
+  .result-panel .copy-btn { background: var(--charcoal); color: var(--white); border: 1px solid var(--charcoal); }
+  .result-panel .copy-btn:hover { background: var(--gold); border-color: var(--gold); }
+  .result-panel .close-btn { background: transparent; color: var(--brown); border: 1px solid var(--sand); }
+  .result-panel .close-btn:hover { background: var(--cream); }
+  .copied-msg { font-family: var(--jp); font-size: 12px; color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <p class="eyebrow">Restore Review</p>
+    <h1>削除ブランド 復活レビュー</h1>
+    <p class="intro">業務用・ニッチ・データ不整合と判断して非表示にした126件の一覧です。<br>SEAMのオンラインショップで実際に取り扱っているブランドがあればチェックを入れてください。<br>選択完了後「結果を出力する」を押すと、復活リストがテキストで書き出されます。</p>
+    <p class="meta">DROPPED <strong>126</strong> BRANDS / 取扱121件</p>
+  </header>
+
+  <div class="toolbar">
+    <button onclick="toggleAll(true)">すべてチェック</button>
+    <button onclick="toggleAll(false)">すべて解除</button>
+    <button class="primary" onclick="exportResult()">📋 結果を出力する</button>
+    <span class="count-pill">復活予定 <strong id="checkedCount">0</strong>件</span>
+  </div>
+
+  <main id="buckets"></main>
+</div>
+
+<div class="result-panel" id="resultPanel">
+  <div class="result-head">
+    <h3>復活させるブランド一覧（コピーしてClaudeに貼ってください）</h3>
+    <span class="copied-msg" id="copiedMsg" style="display:none">コピーしました</span>
+  </div>
+  <textarea id="resultText" readonly></textarea>
+  <div class="actions">
+    <button class="copy-btn" onclick="copyResult()"><i class="fas fa-copy"></i> &nbsp;クリップボードにコピー</button>
+    <button class="close-btn" onclick="closeResult()">閉じる</button>
+  </div>
+</div>
+
+<script>
+const DATA = [{"label": "A. データ不整合・社内資材", "rows": [{"maker": "(メーカー不明)", "brand": "CURE:RE"}, {"maker": "FIOLE", "brand": "その他"}, {"maker": "ハホニコ", "brand": "備品・器具類"}, {"maker": "ハホニコ", "brand": "環境事業部プロダクツ"}, {"maker": "ハホニコ", "brand": "薬用MAIBU"}, {"maker": "ルベル", "brand": "4.7"}, {"maker": "ログバンク", "brand": "水素ラボ"}]}, {"label": "B. 業務用カラー・パーマ・処理剤", "rows": [{"maker": "DALIA", "brand": "ESTXBLISHED"}, {"maker": "FIOLE", "brand": "Purifica"}, {"maker": "FIOLE", "brand": "クリエイティブデザイン"}, {"maker": "FIOLE", "brand": "ジアース"}, {"maker": "FIOLE", "brand": "ネオプロセス"}, {"maker": "L'OREAL PROFESSIONNEL", "brand": "アブソルート R モレキュラー"}, {"maker": "L'OREAL PROFESSIONNEL", "brand": "アブソルートR."}, {"maker": "L'OREAL PROFESSIONNEL", "brand": "シルバー"}, {"maker": "L'OREAL PROFESSIONNEL", "brand": "スカルプ スーペリア"}, {"maker": "L'OREAL PROFESSIONNEL", "brand": "セリオキシル アドバンスト"}, {"maker": "L'OREAL PROFESSIONNEL", "brand": "リスアンリミテッド"}, {"maker": "アリミノ", "brand": "アクアモイスチュア"}, {"maker": "アリミノ", "brand": "アジアンカラーフェス"}, {"maker": "アリミノ", "brand": "カラーストーリーアドミオ"}, {"maker": "アリミノ", "brand": "カラーストーリープライム"}, {"maker": "アリミノ", "brand": "シェルパ"}, {"maker": "アリミノ", "brand": "プリヴィ"}, {"maker": "ウエラプロフェッショナル", "brand": "INVIGO"}, {"maker": "ウエラプロフェッショナル", "brand": "Kolor Motion +"}, {"maker": "ウエラプロフェッショナル", "brand": "ULTIME"}, {"maker": "シュワルツコフ", "brand": "AMIZONE"}, {"maker": "シュワルツコフ", "brand": "FIBREPLEX"}, {"maker": "シュワルツコフ", "brand": "GOODBYE/HELLO"}, {"maker": "シュワルツコフ", "brand": "HUILE AROME"}, {"maker": "シュワルツコフ", "brand": "SALON ONLY"}, {"maker": "シュワルツコフ", "brand": "SILHOUETTE"}, {"maker": "ニューウェイジャパン", "brand": "TORICURE"}, {"maker": "ニューウェイジャパン", "brand": "パイウェイ"}, {"maker": "ミルボン", "brand": "OW BYE TORI"}, {"maker": "ミルボン", "brand": "アディクシー"}, {"maker": "ミルボン", "brand": "シーディル"}, {"maker": "ミルボン", "brand": "ドレシア"}, {"maker": "ミルボン", "brand": "フィエーリ"}]}, {"label": "C. 業務用ベース剤・サロン施術専用", "rows": [{"maker": "FIOLE", "brand": "ADMORE"}, {"maker": "アリミノ", "brand": "BSスタイリング"}, {"maker": "アリミノ", "brand": "Dance design tuner"}, {"maker": "アリミノ", "brand": "MarkU"}, {"maker": "コーセープロフェッショナル", "brand": "アクネオ"}, {"maker": "コーセープロフェッショナル", "brand": "コーセーコスメニエンス"}, {"maker": "コーセープロフェッショナル", "brand": "スカルプスパ"}, {"maker": "コーセープロフェッショナル", "brand": "ハーバルアロマ"}, {"maker": "コーセープロフェッショナル", "brand": "パーソナル"}, {"maker": "コーセープロフェッショナル", "brand": "ブランノーブル"}, {"maker": "シンビシン", "brand": "アンジュボーテ"}, {"maker": "シンビシン", "brand": "クレンズラボ"}, {"maker": "ハホニコ", "brand": "プロシリーズ"}, {"maker": "ハホニコ", "brand": "レブリシリーズ"}, {"maker": "ミルボン", "brand": "Mizulisse"}, {"maker": "ミルボン", "brand": "PREJUME"}, {"maker": "ルベル", "brand": "CO"}, {"maker": "ルベル", "brand": "エドルラスター"}, {"maker": "ルベル", "brand": "カラーシャンプー"}, {"maker": "ルベル", "brand": "シャインミスト"}, {"maker": "ルベル", "brand": "セットキュア"}, {"maker": "ルベル", "brand": "ナチュラルヘアソープ"}, {"maker": "ルベル", "brand": "ハード＆ルーズ"}, {"maker": "ルベル", "brand": "フィニッシング"}, {"maker": "ルベル", "brand": "プロエディット"}]}, {"label": "D. ホーユー業務用ライン", "rows": [{"maker": "ホーユー", "brand": "ETORAS"}, {"maker": "ホーユー", "brand": "GRAND CARE"}, {"maker": "ホーユー", "brand": "LESSE GX"}, {"maker": "ホーユー", "brand": "MEDILOOKα"}, {"maker": "ホーユー", "brand": "PROSTEP HAIR CARE"}, {"maker": "ホーユー", "brand": "アシュレー"}, {"maker": "ホーユー", "brand": "ミニーレ"}]}, {"label": "E. ニッチサブ製品（ボディ・美顔器・目元など）", "rows": [{"maker": "ALPSion", "brand": "JOJOBA"}, {"maker": "BJC", "brand": "135°"}, {"maker": "BJC", "brand": "BIDEALL"}, {"maker": "BJC", "brand": "IZM"}, {"maker": "BJC", "brand": "Lash addict"}, {"maker": "BJC", "brand": "SPICARE"}, {"maker": "CARENESS", "brand": "JEWEL"}, {"maker": "Lohb", "brand": "soel"}, {"maker": "deartech", "brand": "UKUWA"}, {"maker": "deartech", "brand": "Varijoie"}, {"maker": "deartech", "brand": "fin"}, {"maker": "イフイング", "brand": "ASIA"}, {"maker": "イフイング", "brand": "EURASIA"}, {"maker": "ウィルエー", "brand": "BiiToⅡ"}, {"maker": "ウィルエー", "brand": "KAHI"}, {"maker": "ウィルエー", "brand": "LUREAQU"}, {"maker": "ウィルエー", "brand": "ZOGANKIN"}, {"maker": "ウィルエー", "brand": "eviden"}, {"maker": "コスメジャパン", "brand": "AT CRAFT CARE"}, {"maker": "コスメジャパン", "brand": "SYNN"}, {"maker": "コスメジャパン", "brand": "duplica"}, {"maker": "シンビシン", "brand": "DENKI BARI BRUSH"}, {"maker": "シンビシン", "brand": "EXOSTRONG"}, {"maker": "シンビシン", "brand": "FROM the Skin"}, {"maker": "シンビシン", "brand": "PHENIX EYE"}, {"maker": "シンビシン", "brand": "SLIMUSCLE"}, {"maker": "シンビシン", "brand": "VENEX"}, {"maker": "シンビシン", "brand": "omeme"}, {"maker": "シンビシン", "brand": "ソーラーD"}, {"maker": "パリジェンヌ", "brand": "IAGAN"}, {"maker": "ピアセラボ", "brand": "EAN/s"}, {"maker": "マーキュリーコスメティック", "brand": "BENDERU"}, {"maker": "マーキュリーコスメティック", "brand": "PG"}, {"maker": "マーキュリーコスメティック", "brand": "Rezo"}, {"maker": "ログバンク", "brand": "JusTouch"}, {"maker": "ログバンク", "brand": "emiate."}, {"maker": "ワイマック ジュエル・コスメティックス", "brand": "CURIOT"}, {"maker": "ワイマック ジュエル・コスメティックス", "brand": "CUTECH"}, {"maker": "ワイマック ジュエル・コスメティックス", "brand": "GRAYSIA"}, {"maker": "ワイマック ジュエル・コスメティックス", "brand": "OTOMO"}, {"maker": "ワイマック ジュエル・コスメティックス", "brand": "iro-mochi"}, {"maker": "ワイマック ジュエル・コスメティックス", "brand": "ケアリスト"}, {"maker": "小泉成器株式会社", "brand": "RESET COMB"}, {"maker": "自由が丘クリニックドクターズコスメティクス", "brand": "ARES"}]}, {"label": "F. コーセー旧ライン（ONE BY KOSE以外）", "rows": [{"maker": "コーセープロフェッショナル", "brand": "アスタリュクス"}, {"maker": "コーセープロフェッショナル", "brand": "エクスバリア"}, {"maker": "コーセープロフェッショナル", "brand": "クリアターン"}, {"maker": "コーセープロフェッショナル", "brand": "ジェニオ"}]}, {"label": "G. メーカー名と同一・空ブランド名", "rows": [{"maker": "AMO's COSME", "brand": "AMO's COSME"}, {"maker": "FIOLE", "brand": "MODALIE"}, {"maker": "FIOLE", "brand": "QUALUCIA"}, {"maker": "シンビシン", "brand": "QEURA"}, {"maker": "ストリ", "brand": "STRI"}, {"maker": "ミルボン", "brand": "QC"}]}];
+
+function render() {
+  const root = document.getElementById('buckets');
+  root.innerHTML = DATA.map((b, bi) => `
+    <section class="bucket" data-bidx="${bi}">
+      <div class="bucket-head">
+        <span class="bucket-num">${String(bi+1).padStart(2,'0')}</span>
+        <span class="bucket-title">${b.label}</span>
+        <span class="bucket-count">${b.rows.length} brands</span>
+      </div>
+      <div class="bucket-actions">
+        <button onclick="toggleBucket(${bi}, true)">このカテゴリ全部チェック</button>
+        <button onclick="toggleBucket(${bi}, false)">解除</button>
+      </div>
+      <div class="rows">
+        ${b.rows.map((r, ri) => `
+          <label class="row" data-bidx="${bi}" data-ridx="${ri}">
+            <input type="checkbox" data-maker="${escapeAttr(r.maker)}" data-brand="${escapeAttr(r.brand)}" onchange="onChange(this)">
+            <div>
+              <span class="b-name">${escapeHtml(r.brand)}</span>
+              <span class="b-maker">${escapeHtml(r.maker)}</span>
+            </div>
+          </label>
+        `).join('')}
+      </div>
+    </section>
+  `).join('');
+  updateCount();
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function escapeAttr(s) { return escapeHtml(s); }
+
+function onChange(el) {
+  const row = el.closest('.row');
+  row.classList.toggle('is-checked', el.checked);
+  updateCount();
+}
+
+function toggleAll(state) {
+  document.querySelectorAll('input[type="checkbox"]').forEach(c => {
+    c.checked = state;
+    c.closest('.row').classList.toggle('is-checked', state);
+  });
+  updateCount();
+}
+
+function toggleBucket(bi, state) {
+  document.querySelectorAll(`.bucket[data-bidx="${bi}"] input[type="checkbox"]`).forEach(c => {
+    c.checked = state;
+    c.closest('.row').classList.toggle('is-checked', state);
+  });
+  updateCount();
+}
+
+function updateCount() {
+  const n = document.querySelectorAll('input[type="checkbox"]:checked').length;
+  document.getElementById('checkedCount').textContent = n;
+}
+
+function exportResult() {
+  const checked = [...document.querySelectorAll('input[type="checkbox"]:checked')]
+    .map(c => ({ maker: c.dataset.maker, brand: c.dataset.brand }));
+  if (!checked.length) {
+    alert('チェックされたブランドがありません');
+    return;
+  }
+  const lines = ['# 復活させるブランド (' + checked.length + '件)\n'];
+  // メーカーでグループ化
+  const byMaker = {};
+  checked.forEach(x => { (byMaker[x.maker] = byMaker[x.maker] || []).push(x.brand); });
+  Object.keys(byMaker).sort().forEach(m => {
+    lines.push('## ' + m);
+    byMaker[m].forEach(b => lines.push('  - ' + b));
+    lines.push('');
+  });
+  document.getElementById('resultText').value = lines.join('\n');
+  document.getElementById('resultPanel').classList.add('is-open');
+  document.getElementById('resultText').scrollTop = 0;
+}
+
+function copyResult() {
+  const ta = document.getElementById('resultText');
+  ta.select();
+  document.execCommand('copy');
+  const msg = document.getElementById('copiedMsg');
+  msg.style.display = 'inline';
+  setTimeout(() => msg.style.display = 'none', 2000);
+}
+
+function closeResult() {
+  document.getElementById('resultPanel').classList.remove('is-open');
+}
+
+render();
+</script>
+</body>
+</html>

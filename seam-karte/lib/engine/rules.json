@@ -1,0 +1,579 @@
+{
+  "$schema": "https://seam.site/schemas/karte-rules-v1.json",
+  "version": "3.8.0",
+  "generated_at": "2026-05-15",
+  "description": "SEAM Hair Karte v3.8 — 21 Inference Rules Definition",
+
+  "meta": {
+    "priority_levels": {
+      "CRITICAL": 100,
+      "HIGH":      70,
+      "MEDIUM":    40,
+      "LOW":       10
+    },
+    "confidence_thresholds": {
+      "high":   0.75,
+      "medium": 0.50,
+      "low":    0.25
+    },
+    "max_fired_rules_in_karte": 3,
+    "tie_breaker_order": ["priority", "confidence", "rule_id"]
+  },
+
+  "input_schema": {
+    "q1":  { "type": "enum",     "values": ["dryness","frizz","damage","volume","color","scalp"] },
+    "q2":  { "type": "enum",     "values": ["short_str","short_wav","short_cur","mid_str","mid_wav","mid_cur","long_str","long_wav","long_cur"] },
+    "q3":  { "type": "multi",    "values": ["color","bleach","straight","perm","gray","none"] },
+    "q4":  { "type": "multi",    "values": ["s1","s2","s3","s4","s5","s6","s7","s0"] },
+    "q5":  { "type": "enum",     "values": ["normal","dry","oily","aging"] },
+    "q6":  { "type": "enum",     "values": ["gloss","light","settle","natural"] },
+    "q7":  { "type": "enum",     "values": ["dryer","iron","airdry"] },
+    "q8":  { "type": "enum",     "values": ["never","past","recent","ongoing"], "optional": true },
+    "q9":  { "type": "multi",    "values": ["uv","pool","dry","hard","none"],    "optional": true },
+    "q10": { "type": "enum",     "values": ["pro","drug","organic","unknown"],   "optional": true },
+    "q11": { "type": "multi",    "values": ["postpartum","hormone","stress","diet"], "optional": true },
+    "q12": { "type": "enum",     "values": ["high","mid","low"], "optional": true },
+    "context": {
+      "season":        { "type": "enum", "values": ["spring","summer","autumn","winter"], "source": "system" },
+      "submitted_at":  { "type": "datetime", "source": "system" }
+    }
+  },
+
+  "rules": [
+    {
+      "id": "R05",
+      "name": "ビルドアップ蓄積",
+      "name_en": "Buildup Accumulation",
+      "priority": "CRITICAL",
+      "category": "care",
+      "weight": 1.4,
+      "trigger": {
+        "all_of": [
+          { "any_of": [
+            { "field": "q4",  "op": "contains", "value": "s1" },
+            { "field": "q4",  "op": "contains", "value": "s4" }
+          ]}
+        ],
+        "boost": [
+          { "field": "q10", "op": "eq", "value": "unknown", "score": 0.15 },
+          { "field": "q10", "op": "eq", "value": "drug",    "score": 0.10 },
+          { "field": "q6",  "op": "eq", "value": "light",   "score": 0.10 }
+        ]
+      },
+      "primary_types": ["Urban Mineral", "Twilight Smoke"],
+      "actions": {
+        "do_not":  ["毎日のヘビーオイル仕上げ", "シリコン高配合トリートメント連用"],
+        "do_add":  ["週1ディープクレンズ", "プレシャンプー導入"]
+      }
+    },
+
+    {
+      "id": "R06",
+      "name": "熱ダメージ蓄積",
+      "name_en": "Heat Damage Accumulation",
+      "priority": "HIGH",
+      "category": "care",
+      "weight": 1.2,
+      "trigger": {
+        "all_of": [
+          { "field": "q7",  "op": "eq",       "value": "iron" }
+        ],
+        "any_of": [
+          { "field": "q4",  "op": "contains", "value": "s2" },
+          { "field": "q1",  "op": "eq",       "value": "damage" },
+          { "field": "q3",  "op": "contains", "value": "bleach" }
+        ],
+        "boost": [
+          { "field": "q3",  "op": "contains", "value": "bleach", "score": 0.20 },
+          { "field": "q4",  "op": "contains", "value": "s2",     "score": 0.15 }
+        ]
+      },
+      "primary_types": ["Phoenix Reborn", "Sun Bleached", "Bronze Ember"],
+      "actions": {
+        "do_not":  ["180℃以上のアイロン", "濡れ髪へのアイロン"],
+        "do_add":  ["熱保護ミスト", "低温(140-160℃)アイロン"]
+      }
+    },
+
+    {
+      "id": "R09",
+      "name": "カラー黄ばみ・緑化",
+      "name_en": "Color Yellowing / Greenish Cast",
+      "priority": "HIGH",
+      "category": "care",
+      "weight": 1.1,
+      "trigger": {
+        "all_of": [
+          { "field": "q4",  "op": "contains", "value": "s5" }
+        ],
+        "any_of": [
+          { "field": "q3",  "op": "contains", "value": "bleach" },
+          { "field": "q8",  "op": "in",       "value": ["recent","ongoing"] }
+        ],
+        "boost": [
+          { "field": "q9",  "op": "contains", "value": "pool",   "score": 0.15 },
+          { "field": "q9",  "op": "contains", "value": "uv",     "score": 0.10 }
+        ]
+      },
+      "primary_types": ["Aurora Gloss", "Phoenix Reborn"],
+      "actions": {
+        "do_not":  ["高温シャワー", "塩素水後の放置"],
+        "do_add":  ["紫シャンプー週2-3回", "退色抑制トリートメント"]
+      }
+    },
+
+    {
+      "id": "R17",
+      "name": "根元ベタ・毛先カラカラ",
+      "name_en": "Oily Roots / Dry Ends",
+      "priority": "HIGH",
+      "category": "care",
+      "weight": 1.2,
+      "trigger": {
+        "all_of": [
+          { "field": "q4",  "op": "contains", "value": "s3" }
+        ],
+        "boost": [
+          { "field": "q5",  "op": "eq", "value": "oily", "score": 0.20 },
+          { "field": "q1",  "op": "eq", "value": "scalp", "score": 0.10 }
+        ]
+      },
+      "primary_types": ["Urban Mineral", "Sahara Scalp", "Velvet Porous"],
+      "actions": {
+        "do_not":  ["頭皮へのトリートメント塗布", "毛先への頭皮シャンプー使用"],
+        "do_add":  ["部位別2層ケア(頭皮系シャン+毛先補修)", "頭皮スパ"]
+      }
+    },
+
+    {
+      "id": "R19",
+      "name": "スタイリング剤蓄積",
+      "name_en": "Styling Product Buildup",
+      "priority": "HIGH",
+      "category": "care",
+      "weight": 1.1,
+      "trigger": {
+        "all_of": [
+          { "field": "q4",  "op": "contains", "value": "s4" }
+        ],
+        "any_of": [
+          { "field": "q4",  "op": "contains", "value": "s1" }
+        ],
+        "boost": [
+          { "field": "q6",  "op": "eq", "value": "light", "score": 0.10 }
+        ]
+      },
+      "primary_types": ["Twilight Smoke", "Steel Resolve"],
+      "actions": {
+        "do_not":  ["毎日のワックス・オイル重ね使い"],
+        "do_add":  ["週1ディープクレンズ", "軽量仕上げへの切替"]
+      }
+    },
+
+    {
+      "id": "R21",
+      "name": "軽さ重さの迷子",
+      "name_en": "Lost in Lightness vs Weight",
+      "priority": "MEDIUM",
+      "category": "prescription",
+      "weight": 0.9,
+      "trigger": {
+        "all_of": [
+          { "field": "q4",  "op": "contains", "value": "s6" }
+        ],
+        "any_of": [
+          { "field": "q10", "op": "eq", "value": "unknown" },
+          { "field": "q10", "op": "eq", "value": "drug" }
+        ]
+      },
+      "primary_types": ["Coastal Drift", "Wild Coil Resilient", "Midnight Silk"],
+      "actions": {
+        "do_not":  ["目的の異なる商品の重ね使い"],
+        "do_add":  ["仕上がり志望に沿った処方順序の再構築"]
+      }
+    },
+
+    {
+      "id": "R10",
+      "name": "頭皮エイジングフェーズ",
+      "name_en": "Scalp Aging Phase",
+      "priority": "MEDIUM",
+      "category": "scalp",
+      "weight": 1.0,
+      "trigger": {
+        "all_of": [
+          { "field": "q4",  "op": "contains", "value": "s7" }
+        ],
+        "any_of": [
+          { "field": "q5",  "op": "eq", "value": "aging" },
+          { "field": "q1",  "op": "eq", "value": "volume" }
+        ],
+        "boost": [
+          { "field": "q11", "op": "contains", "value": "hormone", "score": 0.15 }
+        ]
+      },
+      "primary_types": ["Wabi Sabi", "Garden Rain"],
+      "actions": {
+        "do_not":  ["過剰なシリコン系トリートメント"],
+        "do_add":  ["スカルプエッセンス導入", "頭皮起点のケア習慣化"]
+      }
+    },
+
+    {
+      "id": "R01",
+      "name": "毛先ブリーチ残存",
+      "name_en": "Residual Bleach Damage on Ends",
+      "priority": "HIGH",
+      "category": "care",
+      "weight": 1.1,
+      "trigger": {
+        "all_of": [
+          { "any_of": [
+            { "field": "q3", "op": "contains", "value": "bleach" },
+            { "field": "q8", "op": "in",       "value": ["past","recent","ongoing"] }
+          ]}
+        ],
+        "any_of": [
+          { "field": "q4",  "op": "contains", "value": "s2" },
+          { "field": "q1",  "op": "eq",       "value": "damage" }
+        ]
+      },
+      "primary_types": ["Phoenix Reborn", "Sun Bleached"],
+      "actions": {
+        "do_not":  ["セルフブリーチの追加", "高温アイロン"],
+        "do_add":  ["低分子CMC補給", "毛先のみの集中マスク"]
+      }
+    },
+
+    {
+      "id": "R02",
+      "name": "根元うねり再発",
+      "name_en": "Root Frizz Resurgence",
+      "priority": "MEDIUM",
+      "category": "treatment",
+      "weight": 0.9,
+      "trigger": {
+        "all_of": [
+          { "field": "q3", "op": "contains", "value": "straight" }
+        ],
+        "any_of": [
+          { "field": "q1", "op": "eq", "value": "frizz" }
+        ]
+      },
+      "primary_types": ["Coastal Drift", "Wild Coil Resilient"],
+      "actions": {
+        "do_not":  ["根元への高温アイロン", "セルフ縮毛"],
+        "do_add":  ["サロンでの根元処理相談"]
+      }
+    },
+
+    {
+      "id": "R03",
+      "name": "パーマだれ",
+      "name_en": "Perm Sag",
+      "priority": "MEDIUM",
+      "category": "treatment",
+      "weight": 0.8,
+      "trigger": {
+        "all_of": [
+          { "field": "q3", "op": "contains", "value": "perm" }
+        ],
+        "any_of": [
+          { "field": "q1", "op": "eq", "value": "frizz" },
+          { "field": "q1", "op": "eq", "value": "volume" }
+        ]
+      },
+      "primary_types": ["Wild Coil Resilient", "Velvet Porous"],
+      "actions": {
+        "do_not":  ["タオルでの強拭き"],
+        "do_add":  ["カール戻し前提のローション仕上げ"]
+      }
+    },
+
+    {
+      "id": "R04",
+      "name": "髪質改善切れ",
+      "name_en": "Hair Treatment-Induced Breakage",
+      "priority": "HIGH",
+      "category": "treatment",
+      "weight": 1.2,
+      "trigger": {
+        "all_of": [
+          { "field": "q3", "op": "contains", "value": "straight" },
+          { "field": "q3", "op": "contains", "value": "bleach" }
+        ],
+        "any_of": [
+          { "field": "q1", "op": "eq",       "value": "damage" },
+          { "field": "q4", "op": "contains", "value": "s2" }
+        ]
+      },
+      "primary_types": ["Phoenix Reborn", "Velvet Porous"],
+      "actions": {
+        "do_not":  ["ブリーチ後すぐの髪質改善"],
+        "do_add":  ["施術間隔の見直し", "結合系補修トリートメント"]
+      }
+    },
+
+    {
+      "id": "R07",
+      "name": "紫外線・塩素ダメージ",
+      "name_en": "UV / Chlorine Damage",
+      "priority": "MEDIUM",
+      "category": "environment",
+      "weight": 0.9,
+      "trigger": {
+        "any_of": [
+          { "field": "q9", "op": "contains", "value": "uv" },
+          { "field": "q9", "op": "contains", "value": "pool" }
+        ],
+        "boost": [
+          { "field": "q1", "op": "eq", "value": "color", "score": 0.15 }
+        ]
+      },
+      "primary_types": ["Sun Bleached", "Coastal Drift"],
+      "actions": {
+        "do_not":  ["プール後の放置", "屋外での無防備な日光浴"],
+        "do_add":  ["UV保護スプレー", "塩素中和シャンプー"]
+      }
+    },
+
+    {
+      "id": "R08",
+      "name": "カラー退色加速",
+      "name_en": "Accelerated Color Fading",
+      "priority": "MEDIUM",
+      "category": "care",
+      "weight": 1.0,
+      "trigger": {
+        "all_of": [
+          { "field": "q3", "op": "contains", "value": "color" }
+        ],
+        "any_of": [
+          { "field": "q1", "op": "eq",       "value": "color" },
+          { "field": "q4", "op": "contains", "value": "s5" }
+        ]
+      },
+      "primary_types": ["Aurora Gloss", "Bronze Ember"],
+      "actions": {
+        "do_not":  ["高温シャワー", "硫酸系強洗浄シャンプー"],
+        "do_add":  ["カラーケアシャンプー", "色素補給トリートメント"]
+      }
+    },
+
+    {
+      "id": "R11",
+      "name": "脂性頭皮",
+      "name_en": "Oily Scalp",
+      "priority": "MEDIUM",
+      "category": "scalp",
+      "weight": 0.9,
+      "trigger": {
+        "all_of": [
+          { "field": "q5", "op": "eq", "value": "oily" }
+        ],
+        "any_of": [
+          { "field": "q1", "op": "eq", "value": "scalp" }
+        ]
+      },
+      "primary_types": ["Urban Mineral", "Sahara Scalp"],
+      "actions": {
+        "do_not":  ["夜間の洗髪スキップ", "高保湿シャンプー連用"],
+        "do_add":  ["頭皮クレンジング", "炭酸シャン週1"]
+      }
+    },
+
+    {
+      "id": "R12",
+      "name": "産後抜け毛フェーズ",
+      "name_en": "Postpartum Hair Loss Phase",
+      "priority": "HIGH",
+      "category": "life",
+      "weight": 1.2,
+      "trigger": {
+        "all_of": [
+          { "field": "q11", "op": "contains", "value": "postpartum" }
+        ],
+        "boost": [
+          { "field": "q4",  "op": "contains", "value": "s7", "score": 0.20 }
+        ]
+      },
+      "primary_types": ["Garden Rain", "Wabi Sabi"],
+      "actions": {
+        "do_not":  ["刺激の強い育毛剤の自己判断使用"],
+        "do_add":  ["低刺激スカルプケア", "段階的なボリュームカット相談"]
+      }
+    },
+
+    {
+      "id": "R13",
+      "name": "季節性乾燥",
+      "name_en": "Seasonal Dryness",
+      "priority": "LOW",
+      "category": "environment",
+      "weight": 0.7,
+      "trigger": {
+        "all_of": [
+          { "field": "context.season", "op": "in", "value": ["autumn","winter"] }
+        ],
+        "any_of": [
+          { "field": "q9", "op": "contains", "value": "dry" },
+          { "field": "q1", "op": "eq",       "value": "dryness" }
+        ]
+      },
+      "primary_types": ["Moonlit Veil", "Sahara Scalp"],
+      "actions": {
+        "do_not":  ["過剰な熱処理"],
+        "do_add":  ["週1の保湿マスク", "ヘアミスト常備"]
+      }
+    },
+
+    {
+      "id": "R14",
+      "name": "過剰洗髪",
+      "name_en": "Over-Washing",
+      "priority": "MEDIUM",
+      "category": "habit",
+      "weight": 0.8,
+      "trigger": {
+        "all_of": [
+          { "field": "q5", "op": "eq", "value": "dry" }
+        ],
+        "any_of": [
+          { "field": "q1", "op": "eq", "value": "dryness" }
+        ]
+      },
+      "primary_types": ["Moonlit Veil", "Velvet Porous"],
+      "actions": {
+        "do_not":  ["1日2回のシャンプー", "強洗浄シャン連用"],
+        "do_add":  ["低洗浄シャン", "湯シャン併用検討"]
+      }
+    },
+
+    {
+      "id": "R15",
+      "name": "ホルモン関連うねり",
+      "name_en": "Hormonal Frizz",
+      "priority": "MEDIUM",
+      "category": "life",
+      "weight": 0.9,
+      "trigger": {
+        "all_of": [
+          { "field": "q11", "op": "contains", "value": "hormone" }
+        ],
+        "any_of": [
+          { "field": "q1", "op": "eq", "value": "frizz" }
+        ]
+      },
+      "primary_types": ["Wild Coil Resilient", "Wabi Sabi"],
+      "actions": {
+        "do_not":  ["強い縮毛矯正の繰り返し"],
+        "do_add":  ["保湿主体のうねり対策ライン"]
+      }
+    },
+
+    {
+      "id": "R16",
+      "name": "インナー栄養不足",
+      "name_en": "Inner Nutrition Deficit",
+      "priority": "MEDIUM",
+      "category": "life",
+      "weight": 0.8,
+      "trigger": {
+        "all_of": [
+          { "field": "q11", "op": "contains", "value": "diet" }
+        ],
+        "any_of": [
+          { "field": "q1", "op": "eq",       "value": "damage" },
+          { "field": "q4", "op": "contains", "value": "s7" }
+        ]
+      },
+      "primary_types": ["Wabi Sabi", "Garden Rain"],
+      "actions": {
+        "do_not":  ["極端な食事制限"],
+        "do_add":  ["タンパク質・亜鉛の食事優先", "頭皮栄養ローション"]
+      }
+    },
+
+    {
+      "id": "R18",
+      "name": "ボリューム喪失×蓄積",
+      "name_en": "Volume Loss × Buildup",
+      "priority": "HIGH",
+      "category": "care",
+      "weight": 1.1,
+      "trigger": {
+        "all_of": [
+          { "field": "q1", "op": "eq",       "value": "volume" }
+        ],
+        "any_of": [
+          { "field": "q4", "op": "contains", "value": "s4" },
+          { "field": "q4", "op": "contains", "value": "s1" }
+        ]
+      },
+      "primary_types": ["Twilight Smoke", "Steel Resolve"],
+      "actions": {
+        "do_not":  ["重いオイル仕上げ", "シリコン多用"],
+        "do_add":  ["クレンズ後のボリュームミスト", "根元立ち上げドライ"]
+      }
+    },
+
+    {
+      "id": "R20",
+      "name": "熱+ドライヤー貧弱",
+      "name_en": "Heat × Weak Dryer",
+      "priority": "MEDIUM",
+      "category": "tool",
+      "weight": 0.8,
+      "trigger": {
+        "all_of": [
+          { "field": "q7", "op": "eq", "value": "iron" }
+        ],
+        "any_of": [
+          { "field": "q4", "op": "contains", "value": "s2" }
+        ]
+      },
+      "primary_types": ["Moonlit Veil", "Sahara Scalp"],
+      "actions": {
+        "do_not":  ["半乾きアイロン", "弱風ドライヤー継続"],
+        "do_add":  ["高風量ドライヤー検討", "熱保護導入"]
+      }
+    }
+  ],
+
+  "exclusions": [
+    {
+      "if_fired": "R05",
+      "suppress": ["R19", "R14"],
+      "reason": "ビルドアップ蓄積が最重要として上位に固定されるため、関連の蓄積/洗髪系ルールは説明統合"
+    },
+    {
+      "if_fired": "R09",
+      "suppress": ["R08"],
+      "reason": "黄ばみは退色加速の進行形なので統合表示"
+    },
+    {
+      "if_fired": "R04",
+      "suppress": ["R01"],
+      "reason": "髪質改善切れが発火している場合、毛先ブリーチ残存は包含"
+    },
+    {
+      "if_fired": "R12",
+      "suppress": ["R10"],
+      "reason": "産後フェーズが優先、エイジングは産後収束後に再評価"
+    }
+  ],
+
+  "type_resolution": {
+    "description": "発火ルールから16 Hair DNAタイプを決定する手順",
+    "strategy": "weighted_vote",
+    "steps": [
+      "1. fired_rules を priority×confidence で降順ソート",
+      "2. 上位N(=3)ルールの primary_types を取得",
+      "3. 各タイプに weight × confidence を加算（同タイプは合算）",
+      "4. 最高スコアのタイプを Primary DNA とする",
+      "5. 2位のタイプを Sub DNA とする（スコア差が0.2以内のとき）",
+      "6. 該当なし／全 q4=s0 のときは Crystal Bloom（予防）または Midnight Silk（健康）を返す"
+    ],
+    "fallback_type": "Crystal Bloom"
+  }
+}

@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEAM — Match Engine Test</title>
+<style>
+  :root {
+    --bg: #faf8f4;
+    --paper: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a4a;
+    --ink-mute: #8a8580;
+    --line: #e6e1d8;
+    --line-soft: #f0ece4;
+    --accent: #2b2218;
+    --gold: #a08660;
+    --gold-soft: #d6c8a8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Helvetica Neue", sans-serif;
+    font-feature-settings: "palt";
+    line-height: 1.75;
+    letter-spacing: 0.02em;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1180px; margin: 0 auto; padding: 56px 24px 80px; }
+
+  header.page { margin-bottom: 40px; }
+  header.page .eyebrow { font-size: 11px; letter-spacing: 0.32em; color: var(--gold); text-transform: uppercase; }
+  header.page h1 { font-size: 30px; font-weight: 400; margin: 10px 0 6px; letter-spacing: 0.06em; }
+  header.page p { font-size: 13px; color: var(--ink-soft); margin: 0; }
+
+  .grid { display: grid; grid-template-columns: 320px 1fr; gap: 36px; }
+  @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--line);
+  }
+  .panel.controls { padding: 24px; }
+  .panel.results  { padding: 0; background: transparent; border: 0; }
+
+  .panel h2 {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+    font-weight: 500;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field select { width: 100%; padding: 8px 10px; border: 1px solid var(--line); background: #fff; font-family: inherit; font-size: 13px; color: var(--ink); }
+
+  .checkbox-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+  .checkbox-grid label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink); letter-spacing: 0; text-transform: none; margin: 0; }
+
+  button.primary {
+    width: 100%; padding: 14px; background: var(--accent); color: #fff; border: 0;
+    font-family: inherit; font-size: 12px; letter-spacing: 0.24em; cursor: pointer; margin-top: 8px;
+  }
+  button.primary:hover { background: #000; }
+
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .presets button { padding: 6px 10px; border: 1px solid var(--line); background: #fff; font-size: 11px; cursor: pointer; letter-spacing: 0.05em; }
+  .presets button:hover { border-color: var(--accent); }
+
+  /* ブランド絞り込みチップ */
+  .brand-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+  .brand-picker label {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 11px;
+    border: 1px solid var(--line);
+    background: #fff;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    user-select: none;
+    color: var(--ink-soft);
+  }
+  .brand-picker label:hover { border-color: var(--accent); }
+  .brand-picker label input { display: none; }
+  .brand-picker label:has(input:checked) {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .brand-picker .clear-brands {
+    font-size: 10px; color: var(--ink-mute); margin-left: 6px;
+    background: none; border: 0; cursor: pointer; letter-spacing: 0.1em;
+  }
+
+  /* ── 結果リスト ──────────────────────────── */
+
+  .results-header {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+  }
+  .results-header h2 {
+    margin: 0 0 4px;
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--ink-soft);
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  .results-header p { margin: 0; font-size: 14px; color: var(--ink); }
+
+  .result-empty {
+    background: var(--paper); border: 1px solid var(--line);
+    color: var(--ink-soft); font-size: 13px; text-align: center; padding: 80px 20px;
+  }
+
+  .product-list { display: grid; gap: 24px; }
+
+  /* ── プロダクトカード ────────────────────── */
+
+  .product-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 28px 28px 24px;
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 28px;
+    align-items: start;
+    position: relative;
+  }
+  @media (max-width: 720px) {
+    .product-card { grid-template-columns: 1fr; padding: 24px; }
+  }
+
+  .card-image {
+    width: 100%; aspect-ratio: 3 / 4;
+    background: var(--line-soft);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; position: relative;
+  }
+  .card-image img { width: 100%; height: 100%; object-fit: contain; padding: 8px; }
+  .card-image .placeholder {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink-mute); font-size: 11px; letter-spacing: 0.2em;
+    background: var(--line-soft); z-index: 0;
+  }
+  .card-image img { position: relative; z-index: 1; }
+  .card-image img[data-no-image="1"] { display: none; }
+
+  .card-body { min-width: 0; }
+
+  /* (1) タグ */
+  .tag-row {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    margin-bottom: 14px;
+  }
+  .tag-chip {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    padding: 3px 9px;
+    border: 1px solid var(--gold-soft);
+    color: var(--gold);
+    background: rgba(214, 200, 168, 0.08);
+  }
+  .tag-chip.cat { border-color: var(--accent); color: var(--accent); background: transparent; }
+  .step-badge {
+    font-size: 10px; letter-spacing: 0.2em;
+    color: var(--gold); padding: 3px 9px;
+    border: 1px solid var(--gold); background: transparent;
+  }
+
+  /* (2) ブランド */
+  .brand-row {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  /* (3) 商品名 */
+  .name {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    margin: 0 0 6px;
+    line-height: 1.4;
+  }
+  .pitch {
+    font-size: 13px;
+    color: var(--gold);
+    margin: 0 0 18px;
+    letter-spacing: 0.06em;
+    font-style: italic;
+  }
+
+  /* (4) ナラティブブロック */
+  .solve-block {
+    background: var(--line-soft);
+    padding: 16px 18px;
+    margin: 0 0 20px;
+    border-left: 2px solid var(--gold);
+  }
+  .solve-block .lead {
+    font-size: 13px;
+    color: var(--ink);
+    margin: 0 0 10px;
+    line-height: 1.7;
+  }
+  .solve-block dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 6px 14px;
+    font-size: 12px;
+  }
+  .solve-block dt {
+    color: var(--ink-mute);
+    letter-spacing: 0.08em;
+  }
+  .solve-block dd {
+    margin: 0;
+    color: var(--ink-soft);
+    line-height: 1.65;
+  }
+
+  /* (5) 効果効能・推し成分 */
+  .effects-block { margin: 0 0 20px; }
+  .effects-block h4,
+  .size-block h4 {
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--ink-mute);
+    margin: 0 0 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  .effects-block ul {
+    margin: 0 0 16px;
+    padding: 0;
+    list-style: none;
+  }
+  .effects-block li {
+    font-size: 13px;
+    color: var(--ink-soft);
+    padding: 6px 0 6px 18px;
+    position: relative;
+    line-height: 1.65;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .effects-block li:last-child { border-bottom: 0; }
+  .effects-block li::before {
+    content: "";
+    position: absolute; left: 0; top: 16px;
+    width: 6px; height: 1px; background: var(--gold);
+  }
+
+  .ingredients-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ingredient-chip {
+    font-size: 11px;
+    padding: 4px 10px;
+    background: #f7f3ea;
+    border: 1px solid var(--line);
+    color: var(--accent);
+    letter-spacing: 0.04em;
+  }
+
+  /* (6) サイズ・価格 */
+  .size-block { margin: 0 0 22px; }
+  .size-list { margin: 0; padding: 0; list-style: none; }
+  .size-list li {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 13px;
+  }
+  .size-list li:first-child { border-top: 1px solid var(--line-soft); }
+  .size-list .size-label { color: var(--ink-soft); letter-spacing: 0.06em; }
+  .size-list .size-price {
+    font-family: "Georgia", "Times New Roman", serif;
+    color: var(--ink);
+    font-size: 15px;
+    letter-spacing: 0.04em;
+  }
+
+  /* (7) ボタン */
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 480px) { .action-row { grid-template-columns: 1fr; } }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 16px;
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-decoration: none;
+    text-align: center;
+    border: 1px solid;
+    cursor: pointer;
+    font-family: inherit;
+    background: transparent;
+  }
+  .btn-secondary { color: var(--accent); border-color: var(--accent); }
+  .btn-secondary:hover { background: var(--accent); color: #fff; }
+  .btn-primary { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .btn-primary:hover { background: #000; border-color: #000; }
+
+  .score-pill {
+    position: absolute; top: 18px; right: 18px;
+    font-size: 10px; letter-spacing: 0.2em;
+    padding: 3px 10px; border: 1px solid var(--line);
+    color: var(--ink-mute);
+    background: #fff;
+  }
+
+  details.debug {
+    margin-top: 28px;
+    background: var(--line-soft);
+    border: 1px solid var(--line);
+    padding: 12px 16px;
+  }
+  details.debug summary { font-size: 11px; letter-spacing: 0.2em; color: var(--ink-soft); cursor: pointer; }
+  details.debug pre { font-size: 11px; line-height: 1.5; overflow: auto; max-height: 400px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header class="page">
+      <div class="eyebrow">SEAM Internal</div>
+      <h1>Match Engine Test</h1>
+      <p>診断回答 → 商品提案の動作確認用テストハーネス（カード v3.0：効果効能・推し成分・サイズ別価格・CTA表示）</p>
+    </header>
+
+    <div class="grid">
+      <!-- 左：診断回答入力 -->
+      <aside class="panel controls">
+        <h2>診断回答</h2>
+
+        <div class="presets">
+          <button data-preset="bleach">ハイブリーチ毛</button>
+          <button data-preset="dry">乾燥・パサつき</button>
+          <button data-preset="thin">細毛・薄毛</button>
+          <button data-preset="curl">くせ毛</button>
+        </div>
+
+        <div class="field">
+          <label>ブランドで絞り込む（任意・複数可）</label>
+          <div class="brand-picker" id="brands"></div>
+          <button type="button" class="clear-brands" id="clearBrands">すべて解除</button>
+        </div>
+
+        <div class="field">
+          <label>主な悩み（複数選択）</label>
+          <div class="checkbox-grid" id="concerns"></div>
+        </div>
+
+        <div class="field">
+          <label>第1悩み</label>
+          <select id="primaryConcern"></select>
+        </div>
+
+        <div class="field">
+          <label>髪の太さ</label>
+          <select id="thickness">
+            <option value="thin">細い</option>
+            <option value="normal" selected>普通</option>
+            <option value="thick">太い</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>毛量</label>
+          <select id="density">
+            <option value="low">少ない</option>
+            <option value="normal" selected>普通</option>
+            <option value="high">多い</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>くせ・うねり</label>
+          <select id="wave">
+            <option value="none" selected>直毛</option>
+            <option value="weak">弱いうねり</option>
+            <option value="medium">中くらいのくせ</option>
+            <option value="strong">強いくせ</option>
+            <option value="straightened">縮毛矯正済み</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>長さ</label>
+          <select id="length">
+            <option value="short">ショート</option>
+            <option value="bob">ボブ</option>
+            <option value="medium" selected>ミディアム</option>
+            <option value="long">ロング</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>ブリーチ履歴</label>
+          <select id="bleach">
+            <option value="no" selected>なし</option>
+            <option value="light">1回まで</option>
+            <option value="medium">2〜3回</option>
+            <option value="heavy">ハイブリーチ</option>
+            <option value="multi-bleach">多重ブリーチ</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>縮毛矯正</label>
+          <select id="straighten">
+            <option value="no" selected>なし</option>
+            <option value="new">施術直後</option>
+            <option value="mid">中期</option>
+            <option value="old">持ち戻り</option>
+            <option value="acid">酸性ストレート</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>パーマ</label>
+          <select id="perm">
+            <option value="no" selected>なし</option>
+            <option value="normal">通常パーマ</option>
+            <option value="digital">デジタルパーマ</option>
+            <option value="loose-prevent">ダレ防止</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>アイロン温度</label>
+          <select id="heatTemp">
+            <option value="">使わない</option>
+            <option value="t140">〜140℃</option>
+            <option value="t160">〜160℃</option>
+            <option value="t180" selected>〜180℃</option>
+            <option value="t200">〜200℃</option>
+            <option value="t200p">200℃以上</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>頭皮タイプ</label>
+          <select id="scalp">
+            <option value="">指定なし</option>
+            <option value="normal">普通肌</option>
+            <option value="dry-scalp">乾燥肌</option>
+            <option value="oily-scalp">脂性肌</option>
+            <option value="sensitive">敏感肌</option>
+            <option value="aging-scalp">エイジング</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>仕上がり希望（複数選択）</label>
+          <div class="checkbox-grid" id="goalTexture"></div>
+        </div>
+
+        <button class="primary" id="runBtn">マッチング実行</button>
+      </aside>
+
+      <!-- 右：結果 -->
+      <main class="panel results">
+        <div class="results-header">
+          <h2>あなたの 7ステップ ヘアケアルーティン</h2>
+          <p>診断結果から、SEAM の取扱いブランドの中で最も相性が高い商品を、カテゴリごとに1点ずつ提案します。</p>
+        </div>
+        <div id="result">
+          <div class="result-empty">左で診断回答を選んで「マッチング実行」を押してください。</div>
+        </div>
+
+        <details class="debug">
+          <summary>DEBUG — スコア内訳</summary>
+          <pre id="debug"></pre>
+        </details>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/match.js"></script>
+  <script>
+  (async function () {
+    const tags = await fetch('data/tags.json').then(r => r.json());
+    const data = await fetch('data/products.json').then(r => r.json());
+    const products = data.products;
+
+    // ─── タグキー → 日本語 変換辞書を構築 ──────────────────
+    const TAG_JA = {};
+    function indexValues(obj) {
+      if (!obj || typeof obj !== 'object') return;
+      if (Array.isArray(obj.values)) {
+        obj.values.forEach(v => { if (v.key && v.ja) TAG_JA[v.key] = v.ja; });
+      }
+      Object.keys(obj).forEach(k => {
+        if (!k.startsWith('_') && k !== 'values' && typeof obj[k] === 'object') indexValues(obj[k]);
+      });
+    }
+    indexValues(tags);
+
+    const ja = (key) => TAG_JA[key] || key;
+    const yen = (n) => '¥' + Number(n).toLocaleString('ja-JP');
+
+    // ─── 入力UI構築 ─────────────────────────────────────
+    function buildCheckboxes(targetId, values) {
+      const root = document.getElementById(targetId);
+      root.innerHTML = values.map(v =>
+        `<label><input type="checkbox" value="${v.key}"> ${v.ja}</label>`
+      ).join('');
+    }
+    function buildOptions(selectId, values, includeBlank) {
+      const root = document.getElementById(selectId);
+      const blank = includeBlank ? '<option value="">（未指定）</option>' : '';
+      root.innerHTML = blank + values.map(v =>
+        `<option value="${v.key}">${v.ja}</option>`
+      ).join('');
+    }
+    buildCheckboxes('concerns', tags.concernTags.values);
+    buildOptions('primaryConcern', tags.concernTags.values, true);
+    buildCheckboxes('goalTexture', tags.finishTags.finish.values);
+
+    // ブランド絞り込み — tags.json の brand 辞書から構築
+    const brandRoot = document.getElementById('brands');
+    brandRoot.innerHTML = (tags.brand?.values || []).map(b =>
+      `<label><input type="checkbox" name="brand" value="${b.key}">${b.ja}</label>`
+    ).join('');
+    document.getElementById('clearBrands').addEventListener('click', () => {
+      brandRoot.querySelectorAll('input').forEach(i => { i.checked = false; });
+    });
+
+    function readAnswers() {
+      const checked = id => Array.from(document.querySelectorAll(`#${id} input:checked`)).map(i => i.value);
+      const val = id => document.getElementById(id).value;
+      const concerns = checked('concerns');
+      const primary = val('primaryConcern') || concerns[0] || '';
+      const brands = Array.from(document.querySelectorAll('#brands input:checked')).map(i => i.value);
+      return {
+        concerns, primaryConcern: primary,
+        thickness: val('thickness'), density: val('density'), wave: val('wave'),
+        length: val('length'),
+        bleach: val('bleach'), straighten: val('straighten'), perm: val('perm'),
+        heatTemp: val('heatTemp'), scalp: val('scalp'),
+        goalTexture: checked('goalTexture'),
+        brands
+      };
+    }
+
+    function applyPreset(name) {
+      const setCheck = (id, vals) => { document.querySelectorAll(`#${id} input`).forEach(i => { i.checked = vals.includes(i.value); }); };
+      const setVal = (id, v) => { document.getElementById(id).value = v; };
+      if (name === 'bleach') {
+        setCheck('concerns', ['damage', 'split', 'color-fade', 'heat-damage']);
+        setVal('primaryConcern', 'damage');
+        setVal('thickness', 'normal'); setVal('density', 'normal'); setVal('wave', 'weak');
+        setVal('length', 'long'); setVal('bleach', 'heavy'); setVal('heatTemp', 't180');
+        setVal('scalp', '');
+        setCheck('goalTexture', ['glossy', 'smooth']);
+      } else if (name === 'dry') {
+        setCheck('concerns', ['dry', 'frizz', 'no-smooth', 'no-shine']);
+        setVal('primaryConcern', 'dry');
+        setVal('thickness', 'thick'); setVal('density', 'high'); setVal('wave', 'weak');
+        setVal('length', 'medium'); setVal('bleach', 'light'); setVal('heatTemp', 't180');
+        setVal('scalp', '');
+        setCheck('goalTexture', ['moist', 'smooth']);
+      } else if (name === 'thin') {
+        setCheck('concerns', ['no-firmness', 'volume-down', 'top-flat', 'thinning']);
+        setVal('primaryConcern', 'no-firmness');
+        setVal('thickness', 'thin'); setVal('density', 'low'); setVal('wave', 'none');
+        setVal('length', 'bob'); setVal('bleach', 'no'); setVal('heatTemp', 't160');
+        setVal('scalp', 'aging-scalp');
+        setCheck('goalTexture', ['airy', 'soft']);
+      } else if (name === 'curl') {
+        setCheck('concerns', ['wave', 'spread', 'frizz', 'no-smooth']);
+        setVal('primaryConcern', 'wave');
+        setVal('thickness', 'normal'); setVal('density', 'high'); setVal('wave', 'strong');
+        setVal('length', 'medium'); setVal('bleach', 'no'); setVal('heatTemp', 't180');
+        setVal('scalp', '');
+        setCheck('goalTexture', ['moist', 'smooth']);
+      }
+    }
+
+    document.querySelectorAll('.presets button').forEach(btn => {
+      btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+    });
+
+    function categoryJa(key) {
+      const v = tags.category.values.find(v => v.key === key);
+      return v ? v.ja : key;
+    }
+
+    // ─── タグチップ：商品から表示用タグを抽出 ──────────────
+    function buildTagChips(p) {
+      const chips = [];
+      (p.concernTags || []).slice(0, 3).forEach(k => chips.push({ kind:'concern', label: ja(k) }));
+      const finish = (p.finishTags && p.finishTags.finish) || [];
+      finish.slice(0, 2).forEach(k => chips.push({ kind:'finish', label: ja(k) }));
+      (p.specialTech || []).slice(0, 1).forEach(k => chips.push({ kind:'tech', label: ja(k) }));
+      return chips;
+    }
+
+    // ─── プロダクトカード レンダリング ─────────────────────
+    function renderCard(s, stepIdx) {
+      const p = s.product;
+      const chips = buildTagChips(p);
+      const sizes = p.sizes || (p.size && p.price ? [{ label: p.size, price: p.price }] : []);
+      const effects = p.effects || (p.reason ? [p.reason] : []);
+      const ingredients = p.keyIngredients || [];
+
+      return `
+        <article class="product-card" data-product-id="${p.id}">
+          <div class="card-image">
+            <div class="placeholder">写真準備中</div>
+            <img src="${p.image || ''}" alt="${p.name}" onerror="this.setAttribute('data-no-image','1')">
+          </div>
+
+          <div class="card-body">
+            <!-- (1) タグ -->
+            <div class="tag-row">
+              <span class="step-badge">STEP ${stepIdx + 1}</span>
+              <span class="tag-chip cat">${categoryJa(s.category)}</span>
+              ${chips.map(c => `<span class="tag-chip">${c.label}</span>`).join('')}
+            </div>
+
+            <!-- (2) ブランド -->
+            <div class="brand-row">${p.brand}</div>
+
+            <!-- (3) 商品名 -->
+            <h3 class="name">${p.name}</h3>
+            ${p.pitchCopy ? `<p class="pitch">${p.pitchCopy}</p>` : ''}
+
+            <!-- どういう髪に・どういう人に・どういう悩みを解決 -->
+            ${(p.solvesConcern || p.targetHair || p.targetPerson) ? `
+              <div class="solve-block">
+                ${p.solvesConcern ? `<p class="lead">${p.solvesConcern}</p>` : ''}
+                <dl>
+                  ${p.targetHair   ? `<dt>こんな髪に</dt><dd>${p.targetHair}</dd>`     : ''}
+                  ${p.targetPerson ? `<dt>こんな方に</dt><dd>${p.targetPerson}</dd>` : ''}
+                </dl>
+              </div>
+            ` : ''}
+
+            <!-- (5) 効果効能 + 推し成分 -->
+            <div class="effects-block">
+              ${effects.length ? `
+                <h4>効果・特徴</h4>
+                <ul>${effects.map(e => `<li>${e}</li>`).join('')}</ul>
+              ` : ''}
+              ${ingredients.length ? `
+                <h4>推し成分</h4>
+                <div class="ingredients-row">
+                  ${ingredients.map(i => `<span class="ingredient-chip">${i}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- (6) サイズ別価格 -->
+            ${sizes.length ? `
+              <div class="size-block">
+                <h4>サイズ・価格</h4>
+                <ul class="size-list">
+                  ${sizes.map(sz => `
+                    <li>
+                      <span class="size-label">${sz.label}</span>
+                      <span class="size-price">${yen(sz.price)}</span>
+                    </li>
+                  `).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            <!-- (7) ボタン -->
+            <div class="action-row">
+              <button class="btn btn-secondary" data-action="consult" data-product-id="${p.id}">店舗で相談する</button>
+              <button class="btn btn-primary"   data-action="shop"    data-product-id="${p.id}">メンバー限定オンラインショップ</button>
+            </div>
+          </div>
+
+          <span class="score-pill">SCORE ${s.score}</span>
+        </article>
+      `;
+    }
+
+    function render(result) {
+      const root = document.getElementById('result');
+      if (!result.top.length) {
+        root.innerHTML = '<div class="result-empty">該当商品が見つかりませんでした。回答を変えてみてください。</div>';
+        return;
+      }
+      root.innerHTML = `<div class="product-list">${result.top.map((s, i) => renderCard(s, i)).join('')}</div>`;
+
+      document.getElementById('debug').textContent = JSON.stringify(
+        result.debug.scored.sort((a, b) => b.score - a.score).slice(0, 20),
+        null, 2
+      );
+    }
+
+    document.getElementById('runBtn').addEventListener('click', () => {
+      const answers = readAnswers();
+      const result = SEAMMatch.recommend(answers, products, { topN: 3, minScore: 1 });
+      render(result);
+    });
+
+    // 初期表示
+    applyPreset('dry');
+    document.getElementById('runBtn').click();
+  })();
+  </script>
+</body>
+</html>

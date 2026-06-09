@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>髪のお悩み診断 | SEAM ヘアケアセレクトショップ</title>
+  <meta name="description" content="Aujua、BYKARTE、KÉRASTASE、TOKIOなど、SEAMが厳選したサロン専売ブランドから、髪質やお悩みに合わせてご提案します。">
+  <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Noto+Serif+JP:wght@200;300;400;500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/finder.css">
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" aria-live="polite" aria-label="診断中">
+  <p class="loading__text">あなたのお悩みを分析しています...</p>
+  <div class="loading__bar"></div>
+</div>
+
+<!-- NAV -->
+<nav class="site-nav" aria-label="サイトナビゲーション">
+  <div class="site-nav__inner">
+    <a href="index.html" class="site-nav__logo">SEAM</a>
+    <a href="brand.html" class="site-nav__link">Brands</a>
+  </div>
+</nav>
+
+<!-- ======================================================
+     SECTION 1: FIRST VIEW
+     P0修正: opacity:0 + animation を廃止し、初期描画から完全表示
+====================================================== -->
+<section id="fv" aria-label="ファーストビュー">
+  <div class="container">
+    <div class="fv__inner">
+      <p class="eyebrow fv__eyebrow">SEAM Hair Care Finder</p>
+      <h1 class="heading-serif fv__heading">
+        あなたの髪に、<br>正解のヘアケアを。
+      </h1>
+      <p class="lead fv__lead">
+        Aujua、BYKARTE、KÉRASTASE、TOKIO、SUBLIMIC。<br>
+        SEAMが厳選したサロン専売ブランドから、<br>
+        髪質やお悩みに合わせてご提案します。
+      </p>
+      <div class="fv__brands">
+        <span class="fv__brand-tag">Aujua</span>
+        <span class="fv__brand-tag">BYKARTE</span>
+        <span class="fv__brand-tag">KÉRASTASE</span>
+        <span class="fv__brand-tag">TOKIO INKARAMI</span>
+        <span class="fv__brand-tag">SUBLIMIC</span>
+        <span class="fv__brand-tag">Elujuda</span>
+        <span class="fv__brand-tag">NiNE</span>
+        <span class="fv__brand-tag">HAHONICO</span>
+      </div>
+      <div class="fv__cta">
+        <a href="#quick-search" class="btn btn-primary">
+          <i class="fa-regular fa-magnifying-glass"></i>
+          髪のお悩みから探す
+        </a>
+        <a href="#store-cta" class="btn btn-secondary">
+          <i class="fa-regular fa-map-pin"></i>
+          店舗で相談する
+        </a>
+      </div>
+      <div class="fv__divider">
+        <div class="divider">Beauty &amp; Hair Care</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================
+     SECTION 2: QUICK SEARCH
+     P1修正: 入口2つの粒度差・所要時間を明示
+====================================================== -->
+<section id="quick-search" aria-label="髪のお悩みから探す">
+  <div class="container">
+    <div class="qs__header">
+      <p class="eyebrow eyebrow--gold">Find Your Hair Care</p>
+      <h2 class="heading-serif qs__heading">
+        髪のお悩みから、<br>あなたに合う一本を。
+      </h2>
+      <p class="lead">
+        SEAMでは、サロン専売ブランドを髪質・ダメージ・仕上がりに合わせてご提案しています。
+      </p>
+    </div>
+
+    <!-- P1修正: 入口バッジで精度・時間を明示 -->
+    <div class="qs__entry-badges">
+      <div class="entry-badge entry-badge--active">
+        <span class="entry-badge__icon">⚡</span>
+        <span class="entry-badge__time">30秒</span>
+        <span class="entry-badge__label">簡易診断</span>
+        <span class="entry-badge__desc">お悩みを1つ選ぶだけ</span>
+      </div>
+      <div class="entry-badge" id="badge-detail">
+        <span class="entry-badge__icon">🔍</span>
+        <span class="entry-badge__time">2分</span>
+        <span class="entry-badge__label">詳細診断</span>
+        <span class="entry-badge__desc">4ステップで高精度な提案</span>
+      </div>
+    </div>
+
+    <div class="qs__grid" role="group" aria-label="お悩み選択（簡易診断）">
+      <button class="concern-card" data-concern="乾燥・パサつき" aria-pressed="false">
+        <i class="fa-light fa-droplet concern-card__icon"></i>
+        <span class="concern-card__label">乾燥・パサつき</span>
+      </button>
+      <button class="concern-card" data-concern="広がり・うねり" aria-pressed="false">
+        <i class="fa-light fa-wave-sine concern-card__icon"></i>
+        <span class="concern-card__label">広がり・うねり</span>
+      </button>
+      <button class="concern-card" data-concern="ブリーチ・ハイダメージ" aria-pressed="false">
+        <i class="fa-light fa-bolt concern-card__icon"></i>
+        <span class="concern-card__label">ブリーチ・ハイダメージ</span>
+      </button>
+      <button class="concern-card" data-concern="熱ダメージ・アイロン" aria-pressed="false">
+        <i class="fa-light fa-fire concern-card__icon"></i>
+        <span class="concern-card__label">熱ダメージ・アイロン</span>
+      </button>
+      <button class="concern-card" data-concern="カラーの色持ち" aria-pressed="false">
+        <i class="fa-light fa-palette concern-card__icon"></i>
+        <span class="concern-card__label">カラーの色持ち</span>
+      </button>
+      <button class="concern-card" data-concern="頭皮ケア" aria-pressed="false">
+        <i class="fa-light fa-leaf concern-card__icon"></i>
+        <span class="concern-card__label">頭皮ケア</span>
+      </button>
+      <button class="concern-card" data-concern="細毛・絡まり" aria-pressed="false">
+        <i class="fa-light fa-feather concern-card__icon"></i>
+        <span class="concern-card__label">細毛・絡まり</span>
+      </button>
+      <button class="concern-card" data-concern="ツヤ・高級感" aria-pressed="false">
+        <i class="fa-light fa-sparkles concern-card__icon"></i>
+        <span class="concern-card__label">ツヤ・高級感</span>
+      </button>
+    </div>
+
+    <!-- P1修正: 「さらに詳しく」を目立つボタンへ昇格 -->
+    <div class="qs__or"><span>または</span></div>
+    <button class="qs__detail-btn" id="open-diagnosis" aria-expanded="false" aria-controls="step-diagnosis">
+      <span class="qs__detail-btn__inner">
+        <span class="qs__detail-btn__text">
+          <i class="fa-light fa-sliders"></i>
+          4ステップ詳細診断を始める
+        </span>
+        <span class="qs__detail-btn__meta">より精度の高い提案 · 約2分</span>
+      </span>
+      <i class="fa-light fa-chevron-down qs__detail-btn__arrow"></i>
+    </button>
+  </div>
+</section>
+
+<!-- ======================================================
+     SECTION 3: STEP DIAGNOSIS
+====================================================== -->
+<section id="step-diagnosis" aria-label="詳細ヘアケア診断">
+  <div class="container">
+
+    <!-- P1修正: 進捗ラベルを「お悩み / 改善したい点 / 仕上がり / プロフィール」へ変更 -->
+    <nav class="step-progress" aria-label="診断ステップ">
+      <div class="step-progress__item is-active" data-step="1">
+        <div class="step-progress__dot" aria-hidden="true"></div>
+        <span class="step-progress__label">お悩み</span>
+      </div>
+      <div class="step-progress__item" data-step="2">
+        <div class="step-progress__dot" aria-hidden="true"></div>
+        <span class="step-progress__label">改善点</span>
+      </div>
+      <div class="step-progress__item" data-step="3">
+        <div class="step-progress__dot" aria-hidden="true"></div>
+        <span class="step-progress__label">仕上がり</span>
+      </div>
+      <div class="step-progress__item" data-step="4">
+        <div class="step-progress__dot" aria-hidden="true"></div>
+        <span class="step-progress__label">プロフィール</span>
+      </div>
+    </nav>
+
+    <!-- ======= Step 1: お悩み（カテゴリタブ分類） ======= -->
+    <div class="step-panel is-active" data-panel="1">
+      <div class="step-panel__meta">
+        <p class="step-panel__num">Step 1 / 4</p>
+        <h3 class="heading-serif step-panel__heading">いちばん気になることを<br>教えてください。</h3>
+        <p class="step-panel__sub">"今の髪で、一番変えたいこと" を選ぶイメージで大丈夫です。</p>
+      </div>
+
+      <!-- sticky selection summary -->
+      <div class="selection-summary selection-summary--sticky" id="summary-1" aria-live="polite" aria-label="選択中のお悩み"></div>
+
+      <!-- P0修正: 5カテゴリのタブUI -->
+      <div class="concern-tabs" role="tablist" aria-label="お悩みカテゴリ">
+        <button class="concern-tab is-active" role="tab" aria-selected="true"  data-tab="texture"  aria-controls="tab-texture">髪の質感</button>
+        <button class="concern-tab"           role="tab" aria-selected="false" data-tab="volume"   aria-controls="tab-volume">ボリューム</button>
+        <button class="concern-tab"           role="tab" aria-selected="false" data-tab="damage"   aria-controls="tab-damage">ダメージ</button>
+        <button class="concern-tab"           role="tab" aria-selected="false" data-tab="scalp"    aria-controls="tab-scalp">頭皮</button>
+        <button class="concern-tab"           role="tab" aria-selected="false" data-tab="aging"    aria-controls="tab-aging">エイジング</button>
+      </div>
+
+      <!-- タブパネル: 髪の質感 -->
+      <div class="concern-tab-panel is-active" id="tab-texture" role="tabpanel" aria-labelledby="">
+        <div class="concern-grid" role="group" aria-label="髪の質感のお悩みを選択">
+          <button class="concern-tile" data-step="1" data-val="パサつき"    aria-pressed="false"><span class="concern-tile__label">パサつき</span></button>
+          <button class="concern-tile" data-step="1" data-val="乾燥"        aria-pressed="false"><span class="concern-tile__label">乾燥</span></button>
+          <button class="concern-tile" data-step="1" data-val="ツヤがない"  aria-pressed="false"><span class="concern-tile__label">ツヤがない</span></button>
+          <button class="concern-tile" data-step="1" data-val="まとまらない" aria-pressed="false"><span class="concern-tile__label">まとまらない</span></button>
+          <button class="concern-tile" data-step="1" data-val="指通りが悪い" aria-pressed="false"><span class="concern-tile__label">指通りが悪い</span></button>
+        </div>
+      </div>
+
+      <!-- タブパネル: ボリューム -->
+      <div class="concern-tab-panel" id="tab-volume" role="tabpanel" aria-labelledby="">
+        <div class="concern-grid" role="group" aria-label="ボリューム・髪型のお悩みを選択">
+          <button class="concern-tile" data-step="1" data-val="広がり"          aria-pressed="false"><span class="concern-tile__label">広がり</span></button>
+          <button class="concern-tile" data-step="1" data-val="うねり"          aria-pressed="false"><span class="concern-tile__label">うねり</span></button>
+          <button class="concern-tile" data-step="1" data-val="くせ毛"          aria-pressed="false"><span class="concern-tile__label">くせ毛</span></button>
+          <button class="concern-tile" data-step="1" data-val="ボリュームが出ない"   aria-pressed="false"><span class="concern-tile__label">ボリュームが出ない</span></button>
+          <button class="concern-tile" data-step="1" data-val="ボリュームが出すぎる" aria-pressed="false"><span class="concern-tile__label">ボリュームが出すぎる</span></button>
+        </div>
+      </div>
+
+      <!-- タブパネル: ダメージ -->
+      <div class="concern-tab-panel" id="tab-damage" role="tabpanel" aria-labelledby="">
+        <div class="concern-grid" role="group" aria-label="ダメージのお悩みを選択">
+          <button class="concern-tile" data-step="1" data-val="ダメージ"       aria-pressed="false"><span class="concern-tile__label">ダメージ</span></button>
+          <button class="concern-tile" data-step="1" data-val="切れ毛"         aria-pressed="false"><span class="concern-tile__label">切れ毛</span></button>
+          <button class="concern-tile" data-step="1" data-val="枝毛"           aria-pressed="false"><span class="concern-tile__label">枝毛</span></button>
+          <button class="concern-tile" data-step="1" data-val="カラーの持ちが悪い" aria-pressed="false"><span class="concern-tile__label">カラーの持ちが悪い</span></button>
+          <button class="concern-tile" data-step="1" data-val="ブリーチ毛のケア"   aria-pressed="false"><span class="concern-tile__label">ブリーチ毛のケア</span></button>
+        </div>
+      </div>
+
+      <!-- タブパネル: 頭皮 -->
+      <div class="concern-tab-panel" id="tab-scalp" role="tabpanel" aria-labelledby="">
+        <div class="concern-grid" role="group" aria-label="頭皮のお悩みを選択">
+          <button class="concern-tile" data-step="1" data-val="頭皮の乾燥"    aria-pressed="false"><span class="concern-tile__label">頭皮の乾燥</span></button>
+          <button class="concern-tile" data-step="1" data-val="頭皮のベタつき" aria-pressed="false"><span class="concern-tile__label">頭皮のベタつき</span></button>
+          <button class="concern-tile" data-step="1" data-val="フケ"          aria-pressed="false"><span class="concern-tile__label">フケ</span></button>
+          <button class="concern-tile" data-step="1" data-val="かゆみ"        aria-pressed="false"><span class="concern-tile__label">かゆみ</span></button>
+          <button class="concern-tile" data-step="1" data-val="におい"        aria-pressed="false"><span class="concern-tile__label">におい</span></button>
+        </div>
+      </div>
+
+      <!-- タブパネル: エイジング -->
+      <div class="concern-tab-panel" id="tab-aging" role="tabpanel" aria-labelledby="">
+        <div class="concern-grid" role="group" aria-label="エイジングのお悩みを選択">
+          <button class="concern-tile" data-step="1" data-val="抜け毛が気になる" aria-pressed="false"><span class="concern-tile__label">抜け毛が気になる</span></button>
+          <button class="concern-tile" data-step="1" data-val="薄毛が気になる"  aria-pressed="false"><span class="concern-tile__label">薄毛が気になる</span></button>
+          <button class="concern-tile" data-step="1" data-val="ハリコシ不足"    aria-pressed="false"><span class="concern-tile__label">ハリコシ不足</span></button>
+          <button class="concern-tile" data-step="1" data-val="エイジングケア"   aria-pressed="false"><span class="concern-tile__label">エイジングケア</span></button>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <!-- P2修正: disabled理由をaria-describedbyで紐付け -->
+        <button class="btn btn-primary" id="step1-next" disabled
+          aria-describedby="step1-help">次へ →</button>
+        <p class="step-help-text" id="step1-help" aria-live="polite">
+          <i class="fa-light fa-circle-info"></i>
+          いずれかのタブからお悩みを1つ選んでください
+        </p>
+      </div>
+    </div>
+
+    <!-- ======= Step 2: 改善したい点（Step1選択済みを除外） ======= -->
+    <div class="step-panel" data-panel="2">
+      <div class="step-panel__meta">
+        <p class="step-panel__num">Step 2 / 4</p>
+        <h3 class="heading-serif step-panel__heading">合わせて改善したいことは<br>ありますか？</h3>
+        <p class="step-panel__sub">選ぶと、より精度の高いご提案ができます。スキップして次へ進むこともできます。</p>
+      </div>
+
+      <div class="selection-summary selection-summary--sticky" id="summary-2" aria-live="polite" aria-label="これまでの選択"></div>
+
+      <!-- タブUI（Step1と同構造・Step1選択済みは除外される） -->
+      <div class="concern-tabs concern-tabs--step2" role="tablist" aria-label="改善したい点のカテゴリ">
+        <button class="concern-tab is-active" role="tab" aria-selected="true"  data-tab="texture2"  aria-controls="tab2-texture">髪の質感</button>
+        <button class="concern-tab"           role="tab" aria-selected="false" data-tab="volume2"   aria-controls="tab2-volume">ボリューム</button>
+        <button class="concern-tab"           role="tab" aria-selected="false" data-tab="damage2"   aria-controls="tab2-damage">ダメージ</button>
+        <button class="concern-tab"           role="tab" aria-selected="false" data-tab="scalp2"    aria-controls="tab2-scalp">頭皮</button>
+        <button class="concern-tab"           role="tab" aria-selected="false" data-tab="aging2"    aria-controls="tab2-aging">エイジング</button>
+      </div>
+
+      <div class="concern-tab-panel is-active" id="tab2-texture" role="tabpanel">
+        <div class="concern-grid" role="group" aria-label="髪の質感（改善点）">
+          <button class="concern-tile" data-step="2" data-val="パサつき"    aria-pressed="false"><span class="concern-tile__label">パサつき</span></button>
+          <button class="concern-tile" data-step="2" data-val="乾燥"        aria-pressed="false"><span class="concern-tile__label">乾燥</span></button>
+          <button class="concern-tile" data-step="2" data-val="ツヤがない"  aria-pressed="false"><span class="concern-tile__label">ツヤがない</span></button>
+          <button class="concern-tile" data-step="2" data-val="まとまらない" aria-pressed="false"><span class="concern-tile__label">まとまらない</span></button>
+          <button class="concern-tile" data-step="2" data-val="指通りが悪い" aria-pressed="false"><span class="concern-tile__label">指通りが悪い</span></button>
+        </div>
+      </div>
+      <div class="concern-tab-panel" id="tab2-volume" role="tabpanel">
+        <div class="concern-grid" role="group" aria-label="ボリューム（改善点）">
+          <button class="concern-tile" data-step="2" data-val="広がり"          aria-pressed="false"><span class="concern-tile__label">広がり</span></button>
+          <button class="concern-tile" data-step="2" data-val="うねり"          aria-pressed="false"><span class="concern-tile__label">うねり</span></button>
+          <button class="concern-tile" data-step="2" data-val="くせ毛"          aria-pressed="false"><span class="concern-tile__label">くせ毛</span></button>
+          <button class="concern-tile" data-step="2" data-val="ボリュームが出ない"   aria-pressed="false"><span class="concern-tile__label">ボリュームが出ない</span></button>
+          <button class="concern-tile" data-step="2" data-val="ボリュームが出すぎる" aria-pressed="false"><span class="concern-tile__label">ボリュームが出すぎる</span></button>
+        </div>
+      </div>
+      <div class="concern-tab-panel" id="tab2-damage" role="tabpanel">
+        <div class="concern-grid" role="group" aria-label="ダメージ（改善点）">
+          <button class="concern-tile" data-step="2" data-val="ダメージ"       aria-pressed="false"><span class="concern-tile__label">ダメージ</span></button>
+          <button class="concern-tile" data-step="2" data-val="切れ毛"         aria-pressed="false"><span class="concern-tile__label">切れ毛</span></button>
+          <button class="concern-tile" data-step="2" data-val="枝毛"           aria-pressed="false"><span class="concern-tile__label">枝毛</span></button>
+          <button class="concern-tile" data-step="2" data-val="カラーの持ちが悪い" aria-pressed="false"><span class="concern-tile__label">カラーの持ちが悪い</span></button>
+          <button class="concern-tile" data-step="2" data-val="ブリーチ毛のケア"   aria-pressed="false"><span class="concern-tile__label">ブリーチ毛のケア</span></button>
+        </div>
+      </div>
+      <div class="concern-tab-panel" id="tab2-scalp" role="tabpanel">
+        <div class="concern-grid" role="group" aria-label="頭皮（改善点）">
+          <button class="concern-tile" data-step="2" data-val="頭皮の乾燥"    aria-pressed="false"><span class="concern-tile__label">頭皮の乾燥</span></button>
+          <button class="concern-tile" data-step="2" data-val="頭皮のベタつき" aria-pressed="false"><span class="concern-tile__label">頭皮のベタつき</span></button>
+          <button class="concern-tile" data-step="2" data-val="フケ"          aria-pressed="false"><span class="concern-tile__label">フケ</span></button>
+          <button class="concern-tile" data-step="2" data-val="かゆみ"        aria-pressed="false"><span class="concern-tile__label">かゆみ</span></button>
+          <button class="concern-tile" data-step="2" data-val="におい"        aria-pressed="false"><span class="concern-tile__label">におい</span></button>
+        </div>
+      </div>
+      <div class="concern-tab-panel" id="tab2-aging" role="tabpanel">
+        <div class="concern-grid" role="group" aria-label="エイジング（改善点）">
+          <button class="concern-tile" data-step="2" data-val="抜け毛が気になる" aria-pressed="false"><span class="concern-tile__label">抜け毛が気になる</span></button>
+          <button class="concern-tile" data-step="2" data-val="薄毛が気になる"  aria-pressed="false"><span class="concern-tile__label">薄毛が気になる</span></button>
+          <button class="concern-tile" data-step="2" data-val="ハリコシ不足"    aria-pressed="false"><span class="concern-tile__label">ハリコシ不足</span></button>
+          <button class="concern-tile" data-step="2" data-val="エイジングケア"   aria-pressed="false"><span class="concern-tile__label">エイジングケア</span></button>
+        </div>
+      </div>
+
+      <div class="step-footer">
+        <button class="btn btn-primary" id="step2-next">次へ →</button>
+        <button class="step-skip" id="step2-skip" type="button">スキップして次へ →</button>
+        <button class="step-back" data-goto="1" type="button">← 前の質問に戻る</button>
+      </div>
+    </div>
+
+    <!-- ======= Step 3: 仕上がり（専用選択肢） ======= -->
+    <div class="step-panel" data-panel="3">
+      <div class="step-panel__meta">
+        <p class="step-panel__num">Step 3 / 4</p>
+        <h3 class="heading-serif step-panel__heading">理想の仕上がりを<br>教えてください。</h3>
+        <p class="step-panel__sub">ケア後にどんな髪になりたいか、イメージに近い仕上がりを選んでください。</p>
+      </div>
+
+      <div class="selection-summary selection-summary--sticky" id="summary-3" aria-live="polite" aria-label="これまでの選択"></div>
+
+      <!-- P1修正: Step3は「仕上がり専用」選択肢に変更 -->
+      <div class="concern-grid concern-grid--finish" role="group" aria-label="理想の仕上がりを選択" id="finish-grid">
+        <button class="concern-tile" data-step="3" data-val="ツヤ感がほしい"        aria-pressed="false"><span class="concern-tile__label">ツヤ感がほしい</span></button>
+        <button class="concern-tile" data-step="3" data-val="まとまりがほしい"       aria-pressed="false"><span class="concern-tile__label">まとまりがほしい</span></button>
+        <button class="concern-tile" data-step="3" data-val="軽くサラサラに"         aria-pressed="false"><span class="concern-tile__label">軽くサラサラに</span></button>
+        <button class="concern-tile" data-step="3" data-val="しっとりなめらかに"     aria-pressed="false"><span class="concern-tile__label">しっとりなめらかに</span></button>
+        <button class="concern-tile" data-step="3" data-val="ふんわりボリューム感"   aria-pressed="false"><span class="concern-tile__label">ふんわりボリューム感</span></button>
+        <button class="concern-tile" data-step="3" data-val="香りにこだわりたい"     aria-pressed="false"><span class="concern-tile__label">香りにこだわりたい</span></button>
+        <button class="concern-tile" data-step="3" data-val="効果が長持ちしてほしい" aria-pressed="false"><span class="concern-tile__label">効果が長持ちしてほしい</span></button>
+        <button class="concern-tile" data-step="3" data-val="ハリコシを出したい"     aria-pressed="false"><span class="concern-tile__label">ハリコシを出したい</span></button>
+      </div>
+
+      <div class="step-footer">
+        <button class="btn btn-primary" id="step3-next">次へ →</button>
+        <button class="step-skip" id="step3-skip" type="button">スキップして次へ →</button>
+        <button class="step-back" data-goto="2" type="button">← 前の質問に戻る</button>
+      </div>
+    </div>
+
+    <!-- ======= Step 4: プロフィール（認知負荷軽減） ======= -->
+    <div class="step-panel" data-panel="4">
+      <div class="step-panel__meta">
+        <p class="step-panel__num">Step 4 / 4</p>
+        <h3 class="heading-serif step-panel__heading">最後に、参考までに<br>教えてください。</h3>
+        <p class="step-panel__sub">任意項目です。より精度の高いご提案のためにお聞きしています。</p>
+      </div>
+
+      <!-- P2修正: 年齢帯を6区分に集約 -->
+      <p class="section-label mb-sm">年齢帯</p>
+      <div class="chip-group" id="age-chips" role="group" aria-label="年齢帯を選択">
+        <button class="chip" data-type="age" data-val="10代">10代</button>
+        <button class="chip" data-type="age" data-val="20代">20代</button>
+        <button class="chip" data-type="age" data-val="30代">30代</button>
+        <button class="chip" data-type="age" data-val="40代">40代</button>
+        <button class="chip" data-type="age" data-val="50代">50代</button>
+        <button class="chip" data-type="age" data-val="60代以上">60代以上</button>
+      </div>
+
+      <p class="section-label mb-sm">性別</p>
+      <div class="chip-group" id="gender-chips" role="group" aria-label="性別を選択">
+        <button class="chip" data-type="gender" data-val="女性">女性</button>
+        <button class="chip" data-type="gender" data-val="男性">男性</button>
+        <button class="chip" data-type="gender" data-val="その他">その他</button>
+        <button class="chip" data-type="gender" data-val="回答しない">回答しない</button>
+      </div>
+
+      <!-- P2修正: 今の状況をアコーディオンで折りたたみ -->
+      <div class="accordion accordion--situation">
+        <button class="accordion__trigger" id="acc-situation-trigger"
+          aria-expanded="false" aria-controls="acc-situation-body">
+          <span class="accordion__trigger-label">
+            <i class="fa-light fa-list-check"></i>
+            今の状況を選ぶ（複数可）
+          </span>
+          <i class="fa-light fa-chevron-down accordion__arrow"></i>
+        </button>
+        <div class="accordion__body" id="acc-situation-body" role="region" aria-labelledby="acc-situation-trigger">
+          <div class="accordion__body-inner">
+            <div class="situation-list" role="group" aria-label="今の状況を選択">
+              <button class="situation-item" data-val="カラーをしている" aria-pressed="false">
+                <span class="situation-item__label">カラーをしている</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+              <button class="situation-item" data-val="ブリーチをしている" aria-pressed="false">
+                <span class="situation-item__label">ブリーチをしている</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+              <button class="situation-item" data-val="縮毛矯正をしている" aria-pressed="false">
+                <span class="situation-item__label">縮毛矯正をしている</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+              <button class="situation-item" data-val="パーマをしている" aria-pressed="false">
+                <span class="situation-item__label">パーマをしている</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+              <button class="situation-item" data-val="頭皮が敏感" aria-pressed="false">
+                <span class="situation-item__label">頭皮が敏感</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+              <button class="situation-item" data-val="産後" aria-pressed="false">
+                <span class="situation-item__label">産後</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+              <button class="situation-item" data-val="季節の変わり目で不安定" aria-pressed="false">
+                <span class="situation-item__label">季節の変わり目で不安定</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+              <button class="situation-item" data-val="紫外線ダメージが気になる" aria-pressed="false">
+                <span class="situation-item__label">紫外線ダメージが気になる</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+              <button class="situation-item" data-val="特になし" aria-pressed="false">
+                <span class="situation-item__label">特になし</span>
+                <span class="situation-item__check" aria-hidden="true"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 髪質・仕上がりでの絞り込み（従来通りアコーディオン） -->
+      <div class="accordion">
+        <button class="accordion__trigger" id="acc-trigger" aria-expanded="false" aria-controls="acc-body">
+          <span class="accordion__trigger-label">
+            <i class="fa-light fa-sliders"></i>
+            髪質・仕上がりで絞り込む
+          </span>
+          <i class="fa-light fa-chevron-down accordion__arrow"></i>
+        </button>
+        <div class="accordion__body" id="acc-body" role="region" aria-labelledby="acc-trigger">
+          <div class="accordion__body-inner">
+            <p class="section-label mb-sm">髪質</p>
+            <div class="chip-group" id="hairtype-chips" role="group" aria-label="髪質を選択">
+              <button class="chip" data-type="hairtype" data-val="細毛">細毛</button>
+              <button class="chip" data-type="hairtype" data-val="普通毛">普通毛</button>
+              <button class="chip" data-type="hairtype" data-val="硬毛">硬毛</button>
+              <button class="chip" data-type="hairtype" data-val="くせ毛">くせ毛</button>
+              <button class="chip" data-type="hairtype" data-val="ブリーチ毛">ブリーチ毛</button>
+              <button class="chip" data-type="hairtype" data-val="カラー毛">カラー毛</button>
+              <button class="chip" data-type="hairtype" data-val="エイジング毛">エイジング毛</button>
+              <button class="chip" data-type="hairtype" data-val="縮毛矯正毛">縮毛矯正毛</button>
+            </div>
+            <p class="section-label mb-sm mt-md">仕上がり</p>
+            <div class="chip-group" id="finish-chips" role="group" aria-label="仕上がりを選択">
+              <button class="chip" data-type="finish" data-val="しっとり">しっとり</button>
+              <button class="chip" data-type="finish" data-val="さらさら">さらさら</button>
+              <button class="chip" data-type="finish" data-val="まとまる">まとまる</button>
+              <button class="chip" data-type="finish" data-val="ふんわり">ふんわり</button>
+              <button class="chip" data-type="finish" data-val="ツヤ">ツヤ</button>
+              <button class="chip" data-type="finish" data-val="なめらか">なめらか</button>
+              <button class="chip" data-type="finish" data-val="ハリコシ">ハリコシ</button>
+              <button class="chip" data-type="finish" data-val="香り重視">香り重視</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-footer mt-lg">
+        <button class="btn btn-primary" id="step4-submit">診断結果を見る →</button>
+        <button class="step-back" data-goto="3" type="button">← 前の質問に戻る</button>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</section>
+
+<!-- ======================================================
+     SECTION 4: RESULT
+====================================================== -->
+<section id="result" aria-label="診断結果" aria-live="polite">
+  <div class="container">
+    <!-- Summary bar -->
+    <div class="result-summary-bar" id="result-summary-bar">
+      <span class="result-summary-bar__label">選択した悩み</span>
+    </div>
+
+    <!-- Assessment -->
+    <div class="result-assessment fade-in">
+      <p class="eyebrow">Your Hair Type</p>
+      <h2 class="heading-serif result-assessment__heading" id="result-heading">—</h2>
+      <p class="result-assessment__body" id="result-body">—</p>
+    </div>
+
+    <!-- 4 categories -->
+    <div class="result-section-header fade-in">
+      <p class="eyebrow">Recommended Care</p>
+      <h3>あなたへのヘアケア提案</h3>
+    </div>
+    <div class="category-cards fade-in" id="category-cards"></div>
+
+    <!-- Mask section（独立） -->
+    <div id="mask-section" style="display:none;"></div>
+
+    <!-- Brand cards -->
+    <div class="result-section-header fade-in">
+      <p class="eyebrow">Brand Selection</p>
+      <h3>おすすめのブランド・ライン</h3>
+    </div>
+    <div class="brand-cards fade-in" id="brand-cards"></div>
+
+    <!-- Note -->
+    <div class="result-note fade-in">
+      <i class="fa-light fa-circle-info"></i>
+      髪質・ダメージの状態によって最適なラインは変わります。店頭ではスタッフが実際に髪の状態を確認しながらご提案します。
+    </div>
+
+    <!-- CTA -->
+    <div class="result-cta fade-in">
+      <a href="#store-cta" class="btn btn-primary">
+        <i class="fa-light fa-map-pin"></i>
+        近くの店舗で相談する
+      </a>
+      <a href="https://seam.stores.jp/" target="_blank" rel="noopener" class="btn btn-secondary">
+        <i class="fa-light fa-bag-shopping"></i>
+        会員限定ショップを見る
+      </a>
+    </div>
+    <p class="result-restart" id="result-restart">← 診断をやり直す</p>
+  </div>
+</section>
+
+<!-- ======================================================
+     SECTION 5: POPULAR
+====================================================== -->
+<section id="popular" aria-label="人気の悩みから探す">
+  <div class="container">
+    <p class="eyebrow">Popular Concerns</p>
+    <h2 class="heading-serif popular__heading">よく選ばれる<br>髪のお悩み</h2>
+
+    <nav class="popular-list" aria-label="人気の悩みリスト">
+      <button class="popular-item" data-quick="乾燥・パサつき">
+        <span class="popular-item__label">乾燥・パサつき</span>
+        <i class="fa-light fa-arrow-right popular-item__arrow"></i>
+      </button>
+      <button class="popular-item" data-quick="広がり・うねり">
+        <span class="popular-item__label">広がり・うねり</span>
+        <i class="fa-light fa-arrow-right popular-item__arrow"></i>
+      </button>
+      <button class="popular-item" data-quick="ブリーチ・ハイダメージ">
+        <span class="popular-item__label">ブリーチ・ハイダメージ</span>
+        <i class="fa-light fa-arrow-right popular-item__arrow"></i>
+      </button>
+      <button class="popular-item" data-quick="熱ダメージ・アイロン">
+        <span class="popular-item__label">熱ダメージ・アイロン</span>
+        <i class="fa-light fa-arrow-right popular-item__arrow"></i>
+      </button>
+    </nav>
+
+    <div class="mt-lg mb-sm">
+      <p class="eyebrow">SEAM Selection</p>
+      <h3 class="heading-serif" style="font-size:20px;margin:var(--space-xs) 0 var(--space-md);">SEAMがおすすめする<br>ヘアケアライン</h3>
+    </div>
+    <div class="rec-scroll">
+      <div class="rec-scroll__inner">
+        <div class="rec-card"><p class="rec-card__brand">Aujua</p><p class="rec-card__line">クエンチ</p><p class="rec-card__tag">乾燥・保水</p></div>
+        <div class="rec-card"><p class="rec-card__brand">Aujua</p><p class="rec-card__line">インメトリィ</p><p class="rec-card__tag">細毛・ボリューム</p></div>
+        <div class="rec-card"><p class="rec-card__brand">Aujua</p><p class="rec-card__line">リペアリティ</p><p class="rec-card__tag">ダメージ補修</p></div>
+        <div class="rec-card"><p class="rec-card__brand">Aujua</p><p class="rec-card__line">アクアヴィア</p><p class="rec-card__tag">うるおい・柔軟</p></div>
+        <div class="rec-card"><p class="rec-card__brand">BYKARTE</p><p class="rec-card__line">BYKARTE</p><p class="rec-card__tag">自然な素髪感</p></div>
+        <div class="rec-card"><p class="rec-card__brand">SUBLIMIC</p><p class="rec-card__line">SUBLIMIC</p><p class="rec-card__tag">サロンクオリティ</p></div>
+        <div class="rec-card"><p class="rec-card__brand">TOKIO</p><p class="rec-card__line">INKARAMI</p><p class="rec-card__tag">高補修・強度回復</p></div>
+        <div class="rec-card"><p class="rec-card__brand">TOKIO</p><p class="rec-card__line">IE LIMITED</p><p class="rec-card__tag">ブリーチ特化</p></div>
+        <div class="rec-card"><p class="rec-card__brand">HAHONICO</p><p class="rec-card__line">つるりんちょ</p><p class="rec-card__tag">指通り・なめらか</p></div>
+        <div class="rec-card"><p class="rec-card__brand">TOKIO</p><p class="rec-card__line">リケラエマルジョン</p><p class="rec-card__tag">内部補修</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================
+     SECTION 6: STORE CTA
+====================================================== -->
+<section id="store-cta" aria-label="店舗相談・会員導線">
+  <div class="container">
+    <p class="eyebrow">In-Store Consultation</p>
+    <h2 class="heading-serif store-cta__heading">
+      髪質を見ながら、<br>あなたに合うラインを<br>ご提案します。
+    </h2>
+    <p class="store-cta__lead">
+      SEAMの店頭では、サロン専売ヘアケアを専門スタッフに相談しながらお選びいただけます。
+    </p>
+    <p class="store-cta__note">※ 店頭でご案内したお客様専用 / SEAM会員限定</p>
+
+    <div class="store-cta__buttons">
+      <a href="salon.html" class="btn btn-primary">
+        <i class="fa-light fa-map-pin"></i>
+        近くの店舗で相談する
+      </a>
+      <a href="https://seam.stores.jp/" target="_blank" rel="noopener" class="btn btn-secondary">
+        <i class="fa-light fa-lock"></i>
+        SEAM会員限定ショップを見る
+      </a>
+    </div>
+
+    <div class="divider mb-lg">Stores</div>
+
+    <div class="stores-list">
+      <div class="store-card">
+        <p class="store-card__name">銀座</p>
+        <p class="store-card__area">Ginza, Tokyo</p>
+        <p class="store-card__desc">東京・銀座の中心に位置するフラッグシップ店。サロン専売ブランドを幅広く取り揃えています。</p>
+        <div class="store-card__links">
+          <a href="salon.html" class="store-card__link"><i class="fa-light fa-map-pin"></i>詳細・アクセス</a>
+          <a href="https://www.instagram.com/seam_ginza/" class="store-card__link" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i>Instagram</a>
+        </div>
+      </div>
+      <div class="store-card">
+        <p class="store-card__name">名古屋</p>
+        <p class="store-card__area">Nagoya, Aichi</p>
+        <p class="store-card__desc">東海エリアのお客様をお迎えする名古屋店。専門スタッフがご相談をお受けします。</p>
+        <div class="store-card__links">
+          <a href="salon.html" class="store-card__link"><i class="fa-light fa-map-pin"></i>詳細・アクセス</a>
+          <a href="https://www.instagram.com/seam_nagoya/" class="store-card__link" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i>Instagram</a>
+        </div>
+      </div>
+      <div class="store-card">
+        <p class="store-card__name">大阪</p>
+        <p class="store-card__area">Osaka</p>
+        <p class="store-card__desc">関西エリアの旗艦店。豊富な品揃えとプロスタッフによる丁寧なカウンセリング。</p>
+        <div class="store-card__links">
+          <a href="salon.html" class="store-card__link"><i class="fa-light fa-map-pin"></i>詳細・アクセス</a>
+          <a href="https://www.instagram.com/seam_osaka/" class="store-card__link" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i>Instagram</a>
+        </div>
+      </div>
+      <div class="store-card">
+        <p class="store-card__name">福岡</p>
+        <p class="store-card__area">Fukuoka</p>
+        <p class="store-card__desc">九州エリアのお客様のニーズにお応えする福岡店。お気軽にお立ち寄りください。</p>
+        <div class="store-card__links">
+          <a href="salon.html" class="store-card__link"><i class="fa-light fa-map-pin"></i>詳細・アクセス</a>
+          <a href="https://www.instagram.com/seam_fukuoka/" class="store-card__link" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i>Instagram</a>
+        </div>
+      </div>
+      <div class="store-card">
+        <p class="store-card__name">札幌</p>
+        <p class="store-card__area">Sapporo, Hokkaido</p>
+        <p class="store-card__desc">北海道の厳しい気候に合わせたケアも熟知した、札幌の専門スタッフがご案内します。</p>
+        <div class="store-card__links">
+          <a href="salon.html" class="store-card__link"><i class="fa-light fa-map-pin"></i>詳細・アクセス</a>
+          <a href="https://www.instagram.com/seam_sapporo/" class="store-card__link" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i>Instagram</a>
+        </div>
+      </div>
+      <div class="store-card">
+        <p class="store-card__name">表参道</p>
+        <p class="store-card__area">Omotesando, Tokyo</p>
+        <p class="store-card__desc">トレンドの発信地・表参道に位置する感度の高い店舗。最新ラインも随時入荷しています。</p>
+        <div class="store-card__links">
+          <a href="salon.html" class="store-card__link"><i class="fa-light fa-map-pin"></i>詳細・アクセス</a>
+          <a href="https://www.instagram.com/seam_omotesando/" class="store-card__link" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i>Instagram</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="container">
+    <p class="site-footer__logo">SEAM</p>
+    <p class="site-footer__copy">&copy; 2025 SEAM. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="js/finder-data.js"></script>
+<script src="js/finder.js"></script>
+
+</body>
+</html>

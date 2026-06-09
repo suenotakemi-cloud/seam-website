@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>画像候補プレビュー — SEAM</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Hiragino Sans", "Yu Gothic", sans-serif;
+    margin: 0; padding: 32px 24px;
+    background: #faf8f4; color: #2b2a28;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; }
+  h1 {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-weight: 400; font-size: 28px; letter-spacing: 0.04em;
+    margin: 0 0 8px;
+  }
+  .lead { color: #6a6862; font-size: 14px; line-height: 1.9; margin-bottom: 28px; }
+  .summary {
+    border: 1px solid #d6cfbf; background: #fff;
+    padding: 18px 22px; margin-bottom: 32px;
+    border-radius: 2px;
+  }
+  .summary p { margin: 0 0 6px; font-size: 13px; }
+  .summary b { color: #a3812a; }
+  .legend {
+    display: inline-flex; gap: 18px; font-size: 11px;
+    margin-top: 10px; color: #6a6862;
+  }
+  .legend span::before {
+    content: ''; display: inline-block; width: 8px; height: 8px;
+    margin-right: 6px; vertical-align: middle; border-radius: 50%;
+  }
+  .legend .ok::before { background: #2f8a4f; }
+  .legend .review::before { background: #c9a23a; }
+  .legend .err::before { background: #c44a3d; }
+  .brand-section { margin-bottom: 36px; }
+  .brand-section h2 {
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+    font-weight: 400; font-size: 18px;
+    border-bottom: 1px solid #d6cfbf; padding: 0 0 6px; margin: 0 0 16px;
+    color: #2b2a28;
+  }
+  .brand-section .brand-meta {
+    font-size: 11px; color: #8a8780; margin-left: 8px;
+    letter-spacing: 0.06em;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: #fff; border: 1px solid #e6e1d4;
+    border-radius: 2px; padding: 14px; position: relative;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .card .img-box {
+    width: 100%; height: 180px;
+    background: #f5f2ec; border: 1px solid #ece8db;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .card .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .card .img-box.missing {
+    color: #b8b5ad; font-size: 11px; letter-spacing: 0.08em;
+  }
+  .card .filename {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 10px; color: #8a8780;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .card .product-name {
+    font-size: 13px; line-height: 1.5; color: #2b2a28; font-weight: 500;
+  }
+  .card .pid { font-family: ui-monospace, Menlo, monospace; font-size: 10px; color: #b8b5ad; }
+  .card .source {
+    font-size: 10px; color: #8a8780;
+    border-top: 1px dashed #ece8db; padding-top: 6px;
+  }
+  .badge {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 9px; padding: 3px 8px; border-radius: 10px;
+    background: #f5f2ec; color: #8a8780;
+    letter-spacing: 0.05em;
+  }
+  .badge.ok { background: #e3f0e7; color: #2f8a4f; }
+  .badge.review { background: #faf2dc; color: #a87f1f; }
+  .badge.err { background: #f6dfdb; color: #c44a3d; }
+  .no-image-list {
+    margin-top: 10px; font-size: 12px; color: #6a6862;
+    background: #fff5e8; border: 1px solid #f0d9a8;
+    padding: 14px 18px; border-radius: 2px;
+  }
+  .no-image-list ul { margin: 6px 0 0 16px; padding: 0; }
+  .no-image-list li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>画像候補プレビュー</h1>
+  <p class="lead">
+    まだマスターデータには反映していません。確認のうえ、採用する画像が決まったら教えてください。<br>
+    ※ 同じ製品で複数の候補(<code>_alt</code> 付き)がある場合は、お好みの方を採用します。
+  </p>
+
+  <div class="summary" id="summary"></div>
+  <div id="content"></div>
+</div>
+
+<script>
+// product_id → 候補画像ファイル名のリスト
+// (images-pending/ 配下のファイル名で記述)
+const CANDIDATES = {
+  // REKERA
+  'likera-emulsion-tr':   { name:'REKERA エマルジョン (インバス)', brand:'REKERA', files:['REKERA_エマルジョン_候補.png','REKERA_エマルジョン_候補_alt.jpg'], source:'shellbear.com / shop.bayshoreny.equalityjp.com' },
+  'likera-emulsion-out':  { name:'REKERA エマルジョン (アウトバス)', brand:'REKERA', files:['REKERA_エマルジョン_候補.png','REKERA_エマルジョン_候補_alt.jpg'], source:'shellbear.com / shop.bayshoreny.equalityjp.com' },
+  'likera-mist':          { name:'REKERA ミスト', brand:'REKERA', files:['REKERA_ミスト_候補.png','REKERA_ミスト_候補_alt.png'], source:'shellbear.com / shop.bayshoreny.equalityjp.com' },
+  'likera-oil':           { name:'REKERA オイル', brand:'REKERA', files:['REKERA_オイル_候補.png','REKERA_オイル_候補_alt.jpg'], source:'shellbear.com / shop.bayshoreny.equalityjp.com' },
+  // SUBLIMIC
+  'sublimic-aquaintensive-sh':  { name:'アクアインテンシブ シャンプー', brand:'SUBLIMIC', files:['SUBLIMIC_AquaIntensive_SH_候補.jpg'], source:'shop.bayshoreny.equalityjp.com' },
+  'sublimic-aquaintensive-tr':  { name:'アクアインテンシブ トリートメント', brand:'SUBLIMIC', files:['SUBLIMIC_AquaIntensive_TR_候補.jpg'], source:'shop.bayshoreny.equalityjp.com' },
+  'sublimic-adenovital-sh':     { name:'アデノバイタル シャンプー', brand:'SUBLIMIC', files:['SUBLIMIC_Adenovital_SH_候補.jpg'], source:'shop.bayshoreny.equalityjp.com' },
+  'sublimic-adenovital-mask':   { name:'アデノバイタル ヘアマスク', brand:'SUBLIMIC', files:['SUBLIMIC_Adenovital_TR_候補.jpg'], source:'shop.bayshoreny.equalityjp.com (代替: ヘアトリートメント画像)' },
+  'sublimic-airyflow-sh':       { name:'エアリーフロー シャンプー', brand:'SUBLIMIC', files:['SUBLIMIC_AiryFlow_SH_候補.jpg'], source:'shop.bayshoreny.equalityjp.com' },
+  'sublimic-airyflow-tr':       { name:'エアリーフロー トリートメント', brand:'SUBLIMIC', files:['SUBLIMIC_AiryFlow_TR_候補.jpg'], source:'shop.bayshoreny.equalityjp.com' },
+  'sublimic-luminoforce-sh':    { name:'ルミノフォース シャンプー', brand:'SUBLIMIC', files:['SUBLIMIC_Luminoforce_SH_候補.jpg'], source:'shop.bayshoreny.equalityjp.com' },
+  'sublimic-luminoforce-tr':    { name:'ルミノフォース トリートメント', brand:'SUBLIMIC', files:['SUBLIMIC_Luminoforce_TR_候補.jpg'], source:'shop.bayshoreny.equalityjp.com' },
+  'sublimic-wondershield-out':  { name:'ワンダーシールド', brand:'SUBLIMIC', files:['SUBLIMIC_WonderShield_候補.jpg'], source:'shop.bayshoreny.equalityjp.com' },
+};
+
+// 取得できなかった製品(参考表示)
+const NOT_FOUND = [
+  { brand:'SUBLIMIC', items:['アクアインテンシブ マスク', 'アデノバイタル スカルプエッセンス', 'エアリーフロー マスク', 'ルミノフォース マスク'] },
+  { brand:'レブリ', items:['シャンプーα', 'トリートメントα', 'インナー ヘアトリートメント', 'アウター ヘアトリートメント', 'ヘアーローションα', 'ベルベット ブースターA', 'シルキー ブースターB'] },
+  { brand:'Davines', items:['SU ヘア&ボディウォッシュ', 'エッセンシャル ヌヌ シャンプー', 'ナチュラルテック エナジャイジング スーパーアクティブ', 'ハートオブグラス シルケニング SH', 'ハートオブグラス シーリング ドロップス', 'モアインサイド ディファイニング フルイド'] },
+  { brand:'Oggi otto', items:['OGGI MUTA グランドミスト', 'OGGI MUTA グランドエマルジョン', 'OGGI MUTA グランドオイル', 'スキャルプエッセンス', 'セラムCMCシャンプー', 'セラムCMCマスク'] },
+  { brand:'LOA', items:['LOA THE OIL'] },
+  { brand:'Global Milbon', items:['モイスチュア ヘアマスク'] },
+  { brand:'キラメラメ', items:['キラメラメ トリートメント'] },
+];
+
+// Render
+const content = document.getElementById('content');
+const byBrand = {};
+Object.entries(CANDIDATES).forEach(([pid, info]) => {
+  if (!byBrand[info.brand]) byBrand[info.brand] = [];
+  byBrand[info.brand].push({ pid, ...info });
+});
+
+Object.entries(byBrand).forEach(([brand, items]) => {
+  const sec = document.createElement('div');
+  sec.className = 'brand-section';
+  sec.innerHTML = `<h2>${brand} <span class="brand-meta">${items.length} 製品 / ${items.reduce((a,it)=>a+it.files.length,0)} 候補画像</span></h2><div class="grid"></div>`;
+  const grid = sec.querySelector('.grid');
+  items.forEach(it => {
+    it.files.forEach((fname, idx) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const isAlt = fname.includes('_alt');
+      const badgeLabel = it.files.length > 1 ? (isAlt ? '代替案' : '主案') : '候補';
+      card.innerHTML = `
+        <span class="badge ${isAlt?'review':'ok'}">${badgeLabel}</span>
+        <div class="img-box"><img src="data/products/images-pending/${fname}" alt="${it.name}" onerror="this.parentElement.classList.add('missing');this.replaceWith(Object.assign(document.createElement('div'),{textContent:'IMAGE NOT LOADED'}))"></div>
+        <div class="product-name">${it.name}</div>
+        <div class="pid">${it.pid}</div>
+        <div class="filename">${fname}</div>
+        <div class="source">出典: ${it.source}</div>
+      `;
+      grid.appendChild(card);
+    });
+  });
+  content.appendChild(sec);
+});
+
+// Not found section
+if (NOT_FOUND.length) {
+  const sec = document.createElement('div');
+  sec.className = 'brand-section';
+  sec.innerHTML = `<h2 style="color:#c44a3d">⚠ まだ取得できていない製品</h2>`;
+  const list = document.createElement('div');
+  list.className = 'no-image-list';
+  list.innerHTML = `
+    <b>これらの製品は、公式サイト/認証ストアからは公開URLで取得できませんでした。</b>
+    <ul>${NOT_FOUND.map(g => `<li><b>${g.brand}</b> (${g.items.length}): ${g.items.join(' / ')}</li>`).join('')}</ul>
+    <p style="margin:10px 0 0">📩 これらは <b>brand_items のように直接ZIPでいただくか、メーカーから個別画像をご共有いただく</b>のが確実です。</p>
+  `;
+  sec.appendChild(list);
+  content.appendChild(sec);
+}
+
+// Summary
+const totalCand = Object.values(CANDIDATES).length;
+const totalImg = Object.values(CANDIDATES).reduce((a,c)=>a+c.files.length,0);
+const totalMissing = NOT_FOUND.reduce((a,g)=>a+g.items.length,0);
+document.getElementById('summary').innerHTML = `
+  <p><b>候補画像: ${totalImg}枚 / ${totalCand}製品分</b>(同じ製品に2案ある場合あり)</p>
+  <p>取得できなかった製品: <b>${totalMissing}件</b></p>
+  <p style="margin-top:10px;color:#6a6862;font-size:12px">
+    現在 <b>マスターデータには反映していません</b>。プレビューでご確認のうえ、採用する画像をご指定ください。
+  </p>
+  <div class="legend">
+    <span class="ok">主案 (採用候補)</span>
+    <span class="review">代替案 (別ソース)</span>
+    <span class="err">取得不可</span>
+  </div>
+`;
+</script>
+</body>
+</html>

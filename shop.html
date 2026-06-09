@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <title>SHOP | SEAM — 髪に会いに、店へ。</title>
+  <meta name="description" content="SEAMは、世界140+のサロン専売ブランドを揃えるヘアケアセレクトショップ。ヘアケアのプロが、店頭でご相談を承ります。">
+
+  <!-- ─── PWA / Mobile App / WebView optimization ─── -->
+  <meta name="theme-color" content="#FAF8F4" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1A1815" media="(prefers-color-scheme: dark)">
+  <meta name="color-scheme" content="light">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="SEAM">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="application-name" content="SEAM">
+  <link rel="apple-touch-icon" href="images/favicon.svg">
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    /* SEAM Design Tokens v2 — Quiet Luxury × Modern Apothecary */
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ivory:'#F5F1EA', cream:'#EAE0D2', beige:'#D9CFC3',
+            ink:'#171614', charcoal:'#3A3833',
+            gold:'#B8945A', goldLight:'#D9BE93', line:'#D9CFC3',
+            baseBG:'#F5F1EA', softSection:'#F0EBE2', deepSection:'#D9CFC3',
+            warmFill:'#E9D8C8', highlightFill:'#EAE0D2',
+            mainBrown:'#A87456', cinnamon:'#A87456',
+            rose:'#D7A39A', sage:'#6C7168', olive:'#6C7168', taupe:'#B59F8E',
+          },
+          fontFamily: {
+            serif:['"Noto Serif JP"','"Instrument Serif"','Cormorant Garamond','serif'],
+            sans:['"Noto Sans JP"','Inter','system-ui','sans-serif'],
+            display:['"Instrument Serif"','"Noto Serif JP"','Cormorant Garamond','serif'],
+            mono:['Inter','Montserrat','system-ui','sans-serif'],
+          },
+          letterSpacing:{ widest2:'0.14em', widest3:'0.22em' },
+          boxShadow:{
+            soft:'0 2px 8px rgba(26,24,21,0.04), 0 1px 3px rgba(26,24,21,0.04)',
+            softer:'0 12px 32px rgba(26,24,21,0.07)',
+            card:'0 4px 16px rgba(26,24,21,0.06)',
+          },
+        }
+      }
+    };
+  </script>
+
+  <style>
+    html { scroll-behavior:smooth; background:#F5F1EA; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+    body { background:#F5F1EA; color:#3A3833; font-family:'Noto Sans JP','Inter',sans-serif; -webkit-font-smoothing:antialiased; overscroll-behavior-y:none; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); font-size:15px; line-height:1.85; }
+    @media (min-width: 640px) { body { padding-bottom: 0; } }
+    header.fixed.top-0 { padding-top: env(safe-area-inset-top, 0); }
+    .bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0); }
+    .bottom-nav a { min-height:56px; }
+    header button, #mobileNav button, .menu-item { min-height:44px; min-width:44px; }
+    a, button { -webkit-tap-highlight-color: rgba(184,148,90,0.12); }
+
+    /* Responsive Container — モバイルfull、PCは広めの上品な幅 */
+    :root { --app-max-width-tablet:980px; --app-max-width-pc:1280px; }
+    @media (min-width: 720px) and (max-width: 1279px) {
+      body { max-width: var(--app-max-width-tablet); margin-left:auto; margin-right:auto; }
+    }
+    @media (min-width: 1280px) {
+      body { max-width: var(--app-max-width-pc); margin-left:auto; margin-right:auto; }
+    }
+
+    .hero-safe-top { padding-top: calc(56px + env(safe-area-inset-top, 0px)); }
+    @media (min-width: 640px) { .hero-safe-top { padding-top: calc(80px + env(safe-area-inset-top, 0px)); } }
+
+    .hairline { display:inline-flex; align-items:center; gap:12px; white-space:nowrap; }
+    .hairline::before, .hairline::after { content:''; display:inline-block; width:24px; height:1px; background:#3D3833; opacity:0.35; }
+
+    .no-scrollbar::-webkit-scrollbar { display:none; }
+    .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
+
+    /* PLACEHOLDER style — 控えめだが「ここに何が入る」が明快 */
+    .placeholder-media {
+      background:
+        linear-gradient(135deg, rgba(184,148,90,0.05) 0%, rgba(217,190,147,0.10) 50%, rgba(184,148,90,0.05) 100%),
+        repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(184,148,90,0.04) 12px, rgba(184,148,90,0.04) 13px);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      color: #B8945A;
+    }
+    .placeholder-media .ph-label {
+      font-family:'Inter',sans-serif; font-size:9.5px; letter-spacing:0.22em; text-transform:uppercase;
+      color:#B8945A; opacity:0.7; margin-top:6px;
+    }
+    .placeholder-media .ph-desc {
+      font-family:'Noto Serif JP',serif; font-size:11.5px; color:#3D3833; opacity:0.55; margin-top:4px; padding:0 16px; text-align:center; line-height:1.7;
+    }
+
+    @keyframes heroFade { from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:translateY(0);} }
+    .hero-animate { animation: heroFade .8s ease-out backwards; }
+    .hero-animate-d1 { animation-delay: .1s; }
+    .hero-animate-d2 { animation-delay: .25s; }
+    .hero-animate-d3 { animation-delay: .4s; }
+    .hero-animate-d4 { animation-delay: .55s; }
+
+    .svc-card { transition: transform .35s ease, box-shadow .35s ease; }
+    .svc-card:hover { transform:translateY(-3px); box-shadow:0 16px 36px rgba(26,24,21,0.10); }
+
+    /* CTA brown */
+    a.bg-ink.text-ivory, .bg-ink.text-ivory:not(nav) { background-color:#A87456 !important; color:#fff !important; }
+    a.bg-ink.text-ivory:hover, .bg-ink.text-ivory:not(nav):hover { background-color:#8E5C40 !important; }
+    a.bg-ink .bg-ivory.text-ink, .bg-ink .bg-ivory.text-ink { background-color:#fff !important; color:#A87456 !important; }
+  </style>
+  <style>
+    /* prefers-reduced-motion: 動きに敏感なユーザーへの配慮 */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+      video[autoplay] { display: none !important; }
+    }
+  </style>
+</head>
+
+<body class="font-sans text-charcoal antialiased pb-20 sm:pb-0">
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- HEADER -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <header class="fixed top-0 left-0 right-0 z-50 bg-ivory/85 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
+      <a href="index.html" class="flex flex-col leading-none">
+        <span class="font-serif text-[22px] sm:text-[24px] text-ink tracking-[0.22em]">SEAM</span>
+        <span class="font-mono text-[10.5px] sm:text-[10.5px] tracking-widest2 text-charcoal/55 mt-0.5">GLOBAL HAIR CARE SELECT SHOP</span>
+      </a>
+      <div class="flex items-center gap-3 sm:gap-5">
+        <button type="button" class="inline-flex items-center gap-1.5 text-[11.5px] text-charcoal/70 hover:text-ink transition-colors">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+          <span class="font-mono tracking-wider">EN</span>
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l3 3 3-3"/></svg>
+        </button>
+        <button id="menuToggle" aria-expanded="false" aria-controls="mobileNav" type="button" aria-label="メニュー" class="w-10 h-10 flex flex-col items-center justify-center gap-1.5">
+          <span class="block w-5 h-px bg-ink"></span>
+          <span class="block w-5 h-px bg-ink"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile slide-out menu -->
+  <nav id="mobileNav" class="fixed inset-0 z-[60] bg-ivory translate-x-full transition-transform duration-300 overflow-y-auto" style="padding-top: env(safe-area-inset-top, 0); padding-bottom: env(safe-area-inset-bottom, 0);">
+    <div class="px-5 sm:px-8 py-5 flex items-center justify-between border-b border-line">
+      <span class="font-serif text-[20px] tracking-[0.22em] text-ink">SEAM</span>
+      <button id="menuClose" aria-label="メニューを閉じる" type="button" aria-label="閉じる" class="w-10 h-10 flex items-center justify-center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <ul class="px-5 sm:px-8 py-6 space-y-5 text-[16px] font-serif">
+      <li><a href="index.html" class="block py-2 text-ink hover:text-gold">トップ</a></li>
+      <li><a href="finder.html" class="block py-2 text-ink hover:text-gold">髪質診断</a></li>
+      <li><a href="shop.html" class="block py-2 text-gold">ヘアケアショップ</a></li>
+      <li><a href="brand.html" class="block py-2 text-ink hover:text-gold">取扱ブランド</a></li>
+      <li><a href="hairsalon.html" class="block py-2 text-ink hover:text-gold">ヘアサロン</a></li>
+      <li><a href="headspa.html" class="block py-2 text-ink hover:text-gold">ヘッドスパ</a></li>
+    </ul>
+    <div class="px-5 sm:px-8 py-6 border-t border-line space-y-3">
+      <a href="finder.html" class="block w-full text-center bg-ink text-ivory py-3.5 rounded-full font-serif text-[15px]">髪質診断を始める</a>
+      <a href="hairsalon.html" class="block w-full text-center border border-ink text-ink py-3.5 rounded-full font-serif text-[15px]">サロンを予約する</a>
+    </div>
+  </nav>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- HERO -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="relative hero-safe-top bg-ivory">
+
+    <!-- MOBILE -->
+    <div class="sm:hidden">
+      <!-- HERO: 既存の店内パン動画を流用 (将来 shop_hero_panning.mp4 に差替え予定) -->
+      <div class="relative w-full aspect-[4/5] overflow-hidden bg-cream">
+        <video
+          class="absolute inset-0 w-full h-full object-cover"
+          style="object-position: center;"
+          autoplay loop muted playsinline preload="metadata"
+          poster="images/stores/store_ginza.jpg"
+          aria-label="SEAM 店内 — ヘアケアセレクトショップ">
+          <source src="images/lp/store_ginza_motion.mp4" type="video/mp4">
+        </video>
+        <div class="absolute inset-x-0 bottom-0 h-28 pointer-events-none" style="background: linear-gradient(180deg, rgba(245,241,234,0) 0%, rgba(245,241,234,0.7) 55%, rgba(245,241,234,1) 100%);"></div>
+        <div class="absolute inset-x-0 top-0 h-14 pointer-events-none" style="background: linear-gradient(180deg, rgba(245,241,234,0.7) 0%, rgba(245,241,234,0) 100%);"></div>
+      </div>
+      <div class="relative -mt-20 px-6 pb-8 z-10">
+        <div class="hero-animate hero-animate-d1 flex items-center gap-3">
+          <span class="block w-8 h-px bg-gold/60"></span>
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">HAIR CARE SHOP</p>
+        </div>
+        <h1 class="hero-animate hero-animate-d2 mt-5 font-serif text-[42px] leading-[1.08] text-ink" style="letter-spacing:-0.014em;font-weight:500;">
+          ヘアケアを、<br>選びにいく。
+        </h1>
+        <p class="hero-animate hero-animate-d3 mt-5 text-[15px] leading-[1.95] text-charcoal/75">
+          世界140+のサロン専売ブランドを、店頭で。
+        </p>
+        <a href="#stores" class="hero-animate hero-animate-d4 mt-6 group flex items-center bg-ink text-ivory rounded-full py-3.5 pl-5 pr-2 shadow-card hover:bg-charcoal transition-colors">
+          <span class="font-serif text-[15px] flex-1">最寄りの店舗を見る</span>
+          <span class="w-9 h-9 bg-ivory text-ink rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- DESKTOP -->
+    <div class="hidden sm:block">
+      <div class="relative w-full h-[600px] lg:h-[680px] overflow-hidden bg-cream">
+        <video
+          class="absolute inset-0 w-full h-full object-cover"
+          autoplay loop muted playsinline preload="metadata"
+          poster="images/stores/store_ginza.jpg">
+          <source src="images/lp/store_ginza_motion.mp4" type="video/mp4">
+        </video>
+        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(245,241,234,0.96) 0%, rgba(245,241,234,0.80) 35%, rgba(245,241,234,0.15) 60%, rgba(245,241,234,0) 75%);"></div>
+        <div class="relative max-w-6xl mx-auto px-10 lg:px-16 pt-16 lg:pt-24">
+          <p class="font-mono tracking-widest2 text-[11px] text-gold uppercase">HAIR CARE SHOP</p>
+          <h1 class="mt-6 font-serif text-[46px] md:text-[54px] lg:text-[64px] leading-[1.05] text-ink max-w-xl" style="letter-spacing:-0.014em;font-weight:500;">
+            ヘアケアを、<br>選びにいく。
+          </h1>
+          <p class="mt-6 text-[15px] leading-[1.95] text-charcoal/75 max-w-md">
+            世界140+のサロン専売ブランドを、店頭で。
+          </p>
+          <a href="#stores" class="mt-8 inline-flex items-center gap-2.5 bg-ink text-ivory rounded-full pl-6 pr-3 py-2.5 shadow-card hover:bg-charcoal transition-colors">
+            <span class="font-serif text-[15px]">最寄りの店舗を見る</span>
+            <span class="w-10 h-10 bg-ivory text-ink rounded-full flex items-center justify-center">→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- CONCEPT — Curated by SEAM -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="py-16 sm:py-24 bg-cream">
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center">
+      <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-5">Concept</p>
+      <h2 class="font-serif text-[28px] sm:text-[40px] leading-[1.25] text-ink font-medium" style="letter-spacing:-0.014em;">
+        買う場所ではなく、<br>選ぶ場所へ。
+      </h2>
+      <p class="mt-7 text-[15px] sm:text-[16px] leading-[2.1] text-charcoal/75 max-w-xl mx-auto">
+        SEAMは、棚に商品が並んでいるだけのショップではありません。<br>
+        ヘアケアのプロが店頭でご相談を承り、<br class="hidden sm:block">
+        あなたの髪に合うものを、いっしょに見つけます。
+      </p>
+    </div>
+
+    <!-- 3 column "Why SEAM" -->
+    <div class="max-w-5xl mx-auto px-5 sm:px-8 mt-14 sm:mt-20 grid grid-cols-3 gap-3 sm:gap-6">
+      <div class="text-center">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-full bg-white border border-line flex items-center justify-center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A87456" stroke-width="1.4"><circle cx="12" cy="8" r="3.5"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
+        </div>
+        <p class="font-serif text-[13px] sm:text-[15px] text-ink font-medium leading-[1.7]">アドバイザー<br>常駐</p>
+        <p class="mt-2 text-[11px] sm:text-[12px] text-charcoal/60 leading-[1.7]">ヘアケアに詳しい<br>スタッフがそばに</p>
+      </div>
+      <div class="text-center">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-full bg-white border border-line flex items-center justify-center">
+          <span class="font-serif text-[18px] sm:text-[22px] text-gold font-medium" style="letter-spacing:-0.04em;">140<span class="text-[12px] sm:text-[14px]">+</span></span>
+        </div>
+        <p class="font-serif text-[12px] sm:text-[14px] text-ink font-medium leading-[1.7]">世界のサロン<br>専売ブランド</p>
+        <p class="mt-2 text-[10px] sm:text-[11px] text-charcoal/60 leading-[1.7]">ここでしか<br>会えない一本も</p>
+      </div>
+      <div class="text-center">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 rounded-full bg-white border border-line flex items-center justify-center">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A87456" stroke-width="1.4" stroke-linecap="round"><path d="M3 12h6l2-4 4 8 2-4h4"/></svg>
+        </div>
+        <p class="font-serif text-[12px] sm:text-[14px] text-ink font-medium leading-[1.7]">髪質診断と<br>連携</p>
+        <p class="mt-2 text-[10px] sm:text-[11px] text-charcoal/60 leading-[1.7]">スマホで診断<br>店頭で確認</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- IN-STORE STORY — Editorial -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="py-16 sm:py-24 bg-ivory">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8">
+      <div class="text-center mb-10 sm:mb-14">
+        <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">In-store Story</p>
+        <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店内で過ごす、20分。</h2>
+      </div>
+
+      <!-- 4枚のエディトリアルグリッド -->
+      <div class="grid grid-cols-2 gap-3 sm:gap-5">
+        <!-- 01 ─ カウンセリング -->
+        <div class="space-y-3">
+          <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream">
+            <img src="images/lp/hair_salon_interior_hero.png" alt="店内でのカウンセリング" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          </div>
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 01</p>
+          <p class="font-serif text-[14px] sm:text-[16px] text-ink leading-snug">髪に、<br>触れて、診る。</p>
+        </div>
+        <!-- 02 ─ ボトルを取る -->
+        <div class="space-y-3 sm:mt-12">
+          <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream">
+            <img src="images/lp/clean_products_mosaic.png" alt="ボトルを手に取る" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          </div>
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 02</p>
+          <p class="font-serif text-[14px] sm:text-[16px] text-ink leading-snug">あなたの一本を、<br>選び取る。</p>
+        </div>
+        <!-- 03 ─ テスター -->
+        <div class="space-y-3">
+          <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream">
+            <img src="images/lp/clean_product_group.png" alt="テスター体験" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          </div>
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 03</p>
+          <p class="font-serif text-[14px] sm:text-[16px] text-ink leading-snug">香りも、質感も、<br>体験してから。</p>
+        </div>
+        <!-- 04 ─ パッキング -->
+        <div class="space-y-3 sm:mt-12">
+          <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream">
+            <img src="images/lp/product_hero_group_crop.png" alt="お渡し" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+          </div>
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 04</p>
+          <p class="font-serif text-[14px] sm:text-[16px] text-ink leading-snug">お気に入りを、<br>連れて帰る。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- VISIT FLOW — 来店から商品選びまで5ステップ -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="py-16 sm:py-24 bg-softSection">
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-10 sm:mb-14">
+      <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">How to Visit</p>
+      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">ご来店から、お気に入りに出会うまで。</h2>
+      <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">予約不要。お気軽に、お立ち寄りください。</p>
+    </div>
+
+    <div class="max-w-md mx-auto px-5 sm:px-8 space-y-3">
+      <!-- 01 -->
+      <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
+        <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">01</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">ご来店</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">予約は不要です。お気軽にお立ち寄りください。</p>
+        </div>
+      </div>
+      <!-- 02 -->
+      <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
+        <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">02</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">髪のお悩みをお伺い</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">気になっていること、なりたい仕上がりを、お話しください。</p>
+        </div>
+      </div>
+      <!-- 03 -->
+      <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
+        <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">03</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">髪質診断（任意）</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">スマホで事前診断 → 店頭で結果を共有することも可能です。</p>
+        </div>
+      </div>
+      <!-- 04 -->
+      <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
+        <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">04</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">商品のご提案</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">140+ブランドから、あなたに合う一本を。テスターでお試しいただけます。</p>
+        </div>
+      </div>
+      <!-- 05 -->
+      <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
+        <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">05</div>
+        <div class="flex-1 min-w-0">
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">メンバー登録のご案内</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">ご希望の方には、その場でオンライン会員登録のご案内をいたします。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- WHAT'S INSIDE — 取り扱いカテゴリ -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="py-16 sm:py-24 bg-ivory">
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-10 sm:mb-14">
+      <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">What's Inside</p>
+      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店内に並ぶ、ヘアケアの世界。</h2>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-5 sm:px-8 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+      <!-- Shampoo -->
+      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-square overflow-hidden bg-cream">
+          <img src="images/lp/generated/category_shampoo_treatment_v2.png" alt="シャンプー" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-4 sm:p-5">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 01</p>
+          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">シャンプー</p>
+        </div>
+      </a>
+      <!-- Treatment -->
+      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-square overflow-hidden bg-cream">
+          <img src="images/lp/generated/category_shampoo_treatment.png" alt="トリートメント" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-4 sm:p-5">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 02</p>
+          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">トリートメント</p>
+        </div>
+      </a>
+      <!-- Outbath -->
+      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-square overflow-hidden bg-cream">
+          <img src="images/lp/clean_product_group.png" alt="アウトバス" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-4 sm:p-5">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 03</p>
+          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">アウトバス</p>
+        </div>
+      </a>
+      <!-- Scalp -->
+      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-square overflow-hidden bg-cream">
+          <img src="images/lp/generated/category_scalp_care_v2.png" alt="スカルプケア" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-4 sm:p-5">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 04</p>
+          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">スカルプケア</p>
+        </div>
+      </a>
+      <!-- Styling -->
+      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-square overflow-hidden bg-cream">
+          <img src="images/lp/generated/category_styling_v2.png" alt="スタイリング" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-4 sm:p-5">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 05</p>
+          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">スタイリング</p>
+        </div>
+      </a>
+      <!-- Device -->
+      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-square overflow-hidden bg-cream">
+          <img src="images/logo_refa_device.jpg" alt="デバイス" class="absolute inset-0 w-full h-full object-contain p-6" loading="lazy"/>
+        </div>
+        <div class="p-4 sm:p-5">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 06</p>
+          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">デバイス</p>
+        </div>
+      </a>
+    </div>
+
+    <div class="text-center mt-10 sm:mt-14">
+      <a href="brand.html" class="inline-flex items-center gap-3 text-ink hover:text-gold transition-colors group">
+        <span class="font-serif text-[14px] sm:text-[15px] border-b border-ink/40 group-hover:border-gold pb-1">全140+ブランドを見る</span>
+        <span class="text-[13px] group-hover:translate-x-0.5 transition-transform">→</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- STORES — 店舗一覧 -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section id="stores" class="py-16 sm:py-24 bg-softSection scroll-mt-20">
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-10 sm:mb-14">
+      <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">Stores</p>
+      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店舗一覧</h2>
+      <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">
+        日本全国のSEAMから、お近くの一店をお選びください。
+      </p>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-5 sm:px-8 grid sm:grid-cols-2 gap-4 sm:gap-5">
+
+      <!-- GINZA -->
+      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          <!-- IMAGE: store_ginza_facade.jpg — SEAM銀座店外観またはエントランス、夕方ゴールデンアワー -->
+          <img src="images/stores/store_ginza.jpg" alt="SEAM銀座店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Tokyo</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 銀座</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">東京都中央区銀座 X-X-X<br>銀座駅 徒歩3分</p>
+          <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
+            <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- SAPPORO -->
+      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          <!-- IMAGE: store_sapporo_facade.jpg -->
+          <img src="images/stores/store_sapporo.jpg" alt="SEAM札幌店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Hokkaido</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 札幌</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">北海道札幌市中央区<br>大通駅 徒歩4分</p>
+          <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
+            <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- NAGOYA -->
+      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          <!-- IMAGE: store_nagoya_facade.jpg -->
+          <img src="images/stores/store_nagoya.jpg" alt="SEAM名古屋店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Aichi</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 名古屋</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">愛知県名古屋市中区<br>栄駅 徒歩3分</p>
+          <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
+            <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- OSAKA -->
+      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          <!-- IMAGE: store_osaka_facade.jpg -->
+          <img src="images/stores/store_osaka.jpg" alt="SEAM大阪店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Osaka</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 大阪</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">大阪府大阪市北区<br>梅田駅 徒歩5分</p>
+          <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
+            <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- FUKUOKA -->
+      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card sm:col-span-2">
+        <div class="grid sm:grid-cols-2">
+          <div class="relative aspect-[16/10] sm:aspect-auto sm:min-h-[220px] overflow-hidden bg-cream">
+            <img src="images/stores/store_fukuoka.jpg" alt="SEAM福岡店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+          </div>
+          <div class="p-5 sm:p-7 flex flex-col justify-center">
+            <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Kyushu</p>
+            <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 福岡</h3>
+            <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">福岡県福岡市中央区<br>天神駅 徒歩6分</p>
+            <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
+              <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
+            </div>
+          </div>
+        </div>
+      </a>
+
+    </div>
+
+    <!-- Coming soon -->
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 mt-10 sm:mt-14 text-center">
+      <p class="font-serif text-[12.5px] sm:text-[13.5px] text-charcoal/55">— Coming soon · 新店オープン予定 —</p>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- FINAL CTA -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="py-16 sm:py-24 bg-deepSection">
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center">
+      <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-4">Visit Us</p>
+      <h2 class="font-serif text-[28px] sm:text-[40px] leading-[1.2] text-ink font-medium" style="letter-spacing:-0.014em;">
+        その髪に、<br>会いに行きたい一本がある。
+      </h2>
+      <p class="mt-6 text-[13px] sm:text-[15px] leading-[2.1] text-charcoal/75">
+        まずは店頭で、お話しから。
+      </p>
+
+      <!-- Primary CTA -->
+      <div class="relative mt-9 sm:mt-12 max-w-md mx-auto">
+        <span aria-hidden class="absolute -inset-1.5 sm:-inset-2 rounded-full border border-mainBrown/35"></span>
+        <a href="#stores" class="relative block rounded-full py-5 sm:py-6 px-5 flex items-center justify-center gap-3 transition-all shadow-card" style="background:#A87456;color:#fff;">
+          <span class="font-serif text-[16px] sm:text-[19px]" style="letter-spacing:0.02em;">店舗を選ぶ</span>
+          <span class="w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center" style="background:#fff;color:#A87456;">→</span>
+        </a>
+      </div>
+
+      <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+        <a href="finder.html" class="inline-flex items-center gap-3 text-ink hover:text-gold transition-colors group">
+          <span class="font-serif text-[13.5px] sm:text-[14.5px] border-b border-ink/40 group-hover:border-gold pb-1">先に髪質診断する</span>
+          <span class="text-[13px] group-hover:translate-x-0.5 transition-transform">→</span>
+        </a>
+        <a href="hairsalon.html" class="inline-flex items-center gap-3 text-charcoal/65 hover:text-gold transition-colors group">
+          <span class="font-serif text-[13.5px] sm:text-[14.5px] border-b border-charcoal/25 group-hover:border-gold pb-1">サロン予約はこちら</span>
+          <span class="text-[13px] group-hover:translate-x-0.5 transition-transform">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- FOOTER -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <footer class="bg-cream/40 border-t border-line py-16 sm:py-24 pb-28 sm:pb-12">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 grid sm:grid-cols-4 gap-8">
+      <div class="sm:col-span-1">
+        <div class="font-serif text-[20px] tracking-[0.22em] text-ink">SEAM</div>
+        <p class="font-mono tracking-widest2 text-[10.5px] text-charcoal/55 mt-1">GLOBAL HAIR CARE SELECT SHOP</p>
+        <p class="mt-5 text-[12px] leading-[1.85] text-charcoal/75">世界中から本当に良いものだけを、<br>一人ひとりの髪に。</p>
+      </div>
+      <div>
+        <p class="font-mono tracking-widest2 text-[10px] text-charcoal/55 uppercase">— Service</p>
+        <ul class="mt-3 space-y-2 text-[12.5px]">
+          <li><a href="index.html" class="text-charcoal hover:text-ink">トップ</a></li>
+          <li><a href="finder.html" class="text-charcoal hover:text-ink">髪質診断</a></li>
+          <li><a href="shop.html" class="text-charcoal hover:text-ink">ヘアケアショップ</a></li>
+          <li><a href="brand.html" class="text-charcoal hover:text-ink">取扱ブランド</a></li>
+          <li><a href="hairsalon.html" class="text-charcoal hover:text-ink">ヘアサロン</a></li>
+          <li><a href="headspa.html" class="text-charcoal hover:text-ink">ヘッドスパ</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="font-mono tracking-widest2 text-[10px] text-charcoal/55 uppercase">— Member</p>
+        <ul class="mt-3 space-y-2 text-[12.5px]">
+          <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">ログイン</a></li>
+          <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">会員登録</a></li>
+        </ul>
+      </div>
+      <div>
+        <p class="font-mono tracking-widest2 text-[10px] text-charcoal/55 uppercase">— Support</p>
+        <ul class="mt-3 space-y-2 text-[12.5px]">
+          <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">お問い合わせ</a></li>
+          <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">プライバシー</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 mt-10 pt-6 border-t border-line text-[10.5px] text-charcoal/55 text-center">© 2026 SEAM JAPAN. All Rights Reserved.</div>
+  </footer>
+
+  <!-- BOTTOM STICKY NAV -->
+  <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-40 sm:hidden border-t border-line/80 backdrop-blur-md" style="background:rgba(250,247,242,0.94);">
+    <div class="grid grid-cols-3 text-center">
+      <a href="finder.html" class="py-3 flex flex-col items-center gap-1 hover:bg-cream/60 transition-colors">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A87456" stroke-width="1.4"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <span class="text-[11px] font-serif text-ink">髪質診断</span>
+      </a>
+      <a href="hairsalon.html" class="py-3 flex flex-col items-center gap-1 border-l border-line/70 hover:bg-cream/60 transition-colors">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A87456" stroke-width="1.4"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg>
+        <span class="text-[11px] font-serif text-ink">サロン予約</span>
+      </a>
+      <a href="shop.html" class="py-3 flex flex-col items-center gap-1 border-l border-line/70 hover:bg-cream/60 transition-colors">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#A87456" stroke-width="1.4"><path d="M3 21V9l9-6 9 6v12H3Z"/><path d="M9 21v-7h6v7"/></svg>
+        <span class="text-[11px] font-serif text-ink">店舗</span>
+      </a>
+    </div>
+  </nav>
+
+  <script>
+    const menuToggle = document.getElementById('menuToggle');
+    const menuClose  = document.getElementById('menuClose');
+    const mobileNav  = document.getElementById('mobileNav');
+    if (menuToggle && mobileNav) {
+      menuToggle.addEventListener('click', () => mobileNav.classList.remove('translate-x-full'));
+      menuClose?.addEventListener('click', () => mobileNav.classList.add('translate-x-full'));
+      mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileNav.classList.add('translate-x-full')));
+    }
+  </script>
+  <script src="js/online-shop-gate.js" defer></script>
+
+  <script>
+    // ハンバーガー aria-expanded 同期
+    (function(){
+      var t = document.getElementById('menuToggle');
+      var c = document.getElementById('menuClose');
+      var n = document.getElementById('mobileNav');
+      if (!t || !n) return;
+      function update(open) {
+        t.setAttribute('aria-expanded', open ? 'true' : 'false');
+        n.setAttribute('aria-hidden', open ? 'false' : 'true');
+      }
+      t.addEventListener('click', function(){
+        var open = n.classList.contains('open') || n.style.transform === 'translateX(0px)';
+        update(!open);
+      });
+      if (c) c.addEventListener('click', function(){ update(false); });
+      // 初期化
+      update(false);
+    })();
+  </script>
+</body>
+</html>
