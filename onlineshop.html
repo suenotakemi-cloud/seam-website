@@ -6,6 +6,20 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>ONLINE SHOP | SEAM 会員制ヘアケアセレクトショップ</title>
   <meta name="description" content="SEAM会員限定オンラインショップ。店頭では出会えない限定ブランドと、サロンで相談したケアを、ご自宅でずっと続けられる場所。">
+  <link rel="canonical" href="https://seam.site/onlineshop.html">
+  <meta property="og:site_name" content="SEAM">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://seam.site/onlineshop.html">
+  <meta property="og:title" content="SEAM ONLINE SHOP｜会員制・正規品だけのヘアケアショップ">
+  <meta property="og:description" content="Amazon・楽天では出会えない、メーカー公認の正規品だけ。来店メンバー限定・会員価格。日本最大級の会員制ヘアケアオンラインショップ。">
+  <meta property="og:image" content="https://seam.site/images/og/seam-og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SEAM ONLINE SHOP｜正規品だけ、会員価格で。">
+  <meta name="twitter:description" content="メーカー公認の正規品だけ。来店メンバー限定のオンラインショップ。">
+  <meta name="twitter:image" content="https://seam.site/images/og/seam-og.jpg">
 
   <!-- PWA / App-fit -->
   <meta name="theme-color" content="#FAF7F2" media="(prefers-color-scheme: light)">
@@ -16,7 +30,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="SEAM Online">
   <meta name="mobile-web-app-capable" content="yes">
-  <link rel="apple-touch-icon" href="images/favicon.svg">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
   <link rel="manifest" href="manifest.json">
 
@@ -177,7 +191,7 @@
     }
 
     /* ── Section base ── */
-    .section { padding: 64px 24px; position: relative; }
+    .section { padding: 80px 24px; position: relative; }
     .section-tick {
       position: absolute; top: 0; left: 50%;
       transform: translateX(-50%);
@@ -477,8 +491,46 @@
       video[autoplay] { display: none !important; }
     }
   </style>
+  <link rel="stylesheet" href="css/lang.css">
+  <link rel="stylesheet" href="css/reveal.css?v=5">
+<style id="seam-menu-css">
+.site-menu-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(23,22,20,.28);border-radius:999px;padding:8px 13px;background:none;cursor:pointer;min-height:40px;-webkit-tap-highlight-color:transparent;}
+.site-menu-btn:hover{background:rgba(23,22,20,.05);}
+.smb-label{font-family:'Courier New',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#171614;line-height:1;}
+.smb-lines{display:flex;flex-direction:column;gap:4px;}
+.smb-lines span{display:block;width:18px;height:1px;background:#171614;}
+#mobileNav{position:fixed;inset:0;z-index:300;background:#F5F1EA;display:none;flex-direction:column;overflow-y:auto;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);}
+#mobileNav.is-open{display:flex;}
+.smn-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(23,22,20,.1);}
+.smn-logo{font-family:'Noto Serif JP',serif;font-weight:600;font-size:20px;letter-spacing:.3em;padding-left:.3em;color:#171614;}
+.smn-close{background:none;border:none;font-size:20px;color:#171614;cursor:pointer;line-height:1;width:44px;height:44px;display:flex;align-items:center;justify-content:center;}
+.smn-list{list-style:none;margin:0;padding:12px 0;flex:1;}
+.smn-list a{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:17px 26px;text-decoration:none;color:#171614;border-bottom:1px solid rgba(23,22,20,.06);min-height:44px;}
+.smn-list a .ja{font-family:'Noto Serif JP',serif;font-size:18px;}
+.smn-list a .en{font-family:'Courier New',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#A87456;}
+.smn-list a:hover{background:rgba(23,22,20,.03);}
+.smn-cta{padding:20px 24px calc(28px + env(safe-area-inset-bottom,0));display:flex;flex-direction:column;gap:12px;}
+.smn-cta a{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border-radius:999px;text-decoration:none;font-family:'Noto Serif JP',serif;font-size:15px;}
+.smn-cta-primary{background:#171614;color:#F5F1EA;}
+.smn-cta-secondary{border:1px solid rgba(23,22,20,.3);color:#171614;}
+</style>
 </head>
 <body>
+<!-- 言語モーダル (全ページ共通) -->
+<div class="lang-overlay" id="langOverlay" role="dialog" aria-modal="true" aria-label="言語選択">
+  <div class="lang-modal">
+    <div class="lang-modal-handle"></div>
+    <p class="lang-modal-title">Select Language</p>
+    <div class="lang-grid">
+      <button class="lang-option" data-l="ja"><span class="lo-label">JA</span><span class="lo-native">日本語</span></button>
+      <button class="lang-option" data-l="en"><span class="lo-label">EN</span><span class="lo-native">English</span></button>
+      <button class="lang-option" data-l="zh"><span class="lo-label">CN</span><span class="lo-native">简体中文</span></button>
+      <button class="lang-option" data-l="tw"><span class="lo-label">TW</span><span class="lo-native">繁體中文</span></button>
+      <button class="lang-option full-width" data-l="ko"><span class="lo-label">KR</span><span class="lo-native">한국어</span></button>
+    </div>
+  </div>
+</div>
+
 
 <!-- ════════════════ HEADER ════════════════ -->
 <header class="site-header">
@@ -490,24 +542,40 @@
       <span class="site-logo-main">SEAM</span>
       <span class="site-logo-sub">Members Only</span>
     </div>
-    <span style="width: 60px"></span>
+    <button type="button" id="menuToggle" aria-label="メニューを開く" aria-expanded="false" class="site-menu-btn"><span class="smb-label">Menu</span><span class="smb-lines"><span></span><span></span></span></button>
   </div>
+  <button type="button" id="langToggleBtn" aria-label="言語を切り替える" style="display:inline-flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;font-family:monospace;font-size:11px;letter-spacing:1px;color:inherit;opacity:.75;"><i class="fas fa-globe" style="font-size:11px;"></i><span id="langCurrentLabel">JP</span></button>
 </header>
+<nav id="mobileNav" aria-label="メインメニュー">
+  <div class="smn-head"><span class="smn-logo">SEAM</span><button type="button" id="menuClose" aria-label="メニューを閉じる" class="smn-close">&#10005;</button></div>
+  <ul class="smn-list">
+    <li><a href="finder.html"><span class="ja">髪質診断</span><span class="en">Hair ID</span></a></li>
+    <li><a href="shop.html"><span class="ja">ヘアケアショップ</span><span class="en">Hair Care Shop</span></a></li>
+    <li><a href="brand.html"><span class="ja">取扱ブランド</span><span class="en">Brands</span></a></li>
+    <li><a href="hairsalon.html"><span class="ja">ヘアサロン</span><span class="en">Hair Salon</span></a></li>
+    <li><a href="headspa.html"><span class="ja">ヘッドスパ</span><span class="en">Head Spa</span></a></li>
+    <li><a href="onlineshop.html"><span class="ja">オンラインショップ</span><span class="en">Online Shop</span></a></li>
+  </ul>
+  <div class="smn-cta">
+    <a href="finder.html" class="smn-cta-primary">髪質診断を始める &#8594;</a>
+    <a href="hairsalon.html" class="smn-cta-secondary">サロンを予約する &#8594;</a>
+  </div>
+</nav>
 
 <!-- ════════════════ PREMIUM HERO ════════════════ -->
 <section class="premium-hero">
   <div class="premium-hero-content">
     <span class="premium-hero-badge">Online — Members Only</span>
     <h1 class="premium-hero-title">
-      サロンで選んだ、<br>
-      <span class="gold">その先へ。</span>
+      サロンで出会い、<br>
+      <span class="gold">暮らしで、紡ぐ。</span>
     </h1>
     <span class="premium-hero-underline" aria-hidden></span>
     <p class="premium-hero-desc">
-      店頭では出会えないブランド。<br>
-      サロンで紡いだカルテ。<br>
-      ご自宅でも、ずっと続けられる、<br>
-      会員制のヘアケアセレクトショップ。
+      店頭でしか出会えない一本も、<br>
+      サロンで紡いだ、あなたのカルテも。<br>
+      ここでは、その先が、ずっと続いていく。<br>
+      来店メンバーのための、オンライン。
     </p>
     <div class="premium-hero-stats">
       <div class="premium-hero-stat">
@@ -528,7 +596,7 @@
   <div class="section-eyebrow-row">
     <span class="section-eyebrow">Member Benefits</span>
   </div>
-  <h2 class="section-title">会員だけの、<br>4つのこと。</h2>
+  <h2 data-reveal class="section-title">会員だけの、<br>4つのこと。</h2>
   <span class="section-underline" aria-hidden></span>
   <p class="section-desc">ただの通販ではない。サロンと自宅が、カルテでつながる。</p>
 
@@ -566,7 +634,7 @@
   <div class="section-eyebrow-row">
     <span class="section-eyebrow">Online Exclusive</span>
   </div>
-  <h2 class="section-title">店頭では、<br>出会えないブランド。</h2>
+  <h2 data-reveal class="section-title">店頭では、<br>出会えないブランド。</h2>
   <span class="section-underline" aria-hidden></span>
   <p class="section-desc">SEAMのバイヤーが、世界中から買い付けた、海外プレミアムブランドや国内限定流通。会員登録後にすべて公開されます。</p>
 
@@ -591,7 +659,7 @@
   <div class="section-eyebrow-row">
     <span class="section-eyebrow">How It Works</span>
   </div>
-  <h2 class="section-title">店舗からオンラインへ、<br>5つのステップ。</h2>
+  <h2 data-reveal class="section-title">店舗からオンラインへ、<br>5つのステップ。</h2>
   <span class="section-underline" aria-hidden></span>
   <p class="section-desc">サロンで相談したことが、自宅に届く。SEAMだからできる体験フロー。</p>
 
@@ -634,13 +702,53 @@
   </ol>
 </section>
 
+<!-- ════════════════ WHY MEMBERS ONLY — 正規品の約束 ════════════════ -->
+<section class="section" style="background:var(--cream);">
+  <span class="section-tick" aria-hidden></span>
+  <div class="section-eyebrow-row">
+    <span class="section-eyebrow">Why Members Only</span>
+  </div>
+  <h2 data-reveal class="section-title">なぜ、会員制なのか。</h2>
+  <span class="section-underline" aria-hidden></span>
+  <p class="section-desc">それは、本物だけをお届けするための、約束です。</p>
+
+  <div style="max-width:560px; margin:28px auto 0; display:flex; flex-direction:column; gap:18px;">
+    <div style="background:var(--white); border:1px solid var(--sand); border-radius:6px; padding:22px 22px;">
+      <h3 style="font-size:15px; font-weight:600; color:var(--black); margin-bottom:8px;">① メーカー公認の、正規ルートだから</h3>
+      <p style="font-size:13px; line-height:2; color:var(--charcoal);">
+        サロン専売品の約99%は、メーカーが「正規の対面販売」を条件に卸しています。Amazonや楽天で見かけるサロン専売品の多くは、メーカーが認めていない非正規流通。中身が違う・期限切れの偽物リスクがあります。SEAMは、その約束を守る正規店です。
+      </p>
+    </div>
+    <div style="background:var(--white); border:1px solid var(--sand); border-radius:6px; padding:22px 22px;">
+      <h3 style="font-size:15px; font-weight:600; color:var(--black); margin-bottom:8px;">② あなたの髪に、合うものを</h3>
+      <p style="font-size:13px; line-height:2; color:var(--charcoal);">
+        高機能なサロン専売品ほど、髪質に合わせた説明が必要です。だから一度だけ、店頭でカウンセリングを。あなた専用のカルテができれば、あとはオンラインで、ずっと。
+      </p>
+    </div>
+  </div>
+
+  <!-- 偽物リスク警告 -->
+  <div style="max-width:560px; margin:18px auto 0; padding:18px 22px; background:var(--highlight-fill); border:1px solid rgba(184,148,90,0.30); border-radius:6px;">
+    <p style="font-size:10.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold-dark); margin-bottom:9px;">⚠ ご注意ください</p>
+    <p style="font-size:13px; line-height:2; color:var(--black);">
+      各メーカーの公式サイトでも、<span style="font-weight:600;">「正規ルート以外で購入した商品は、偽物・中身の相違・期限切れの可能性がある」</span>と注意喚起されています。大切な髪のために、正規品を、正しいルートで。
+    </p>
+  </div>
+
+  <!-- 日本最大級ポジショニング -->
+  <p style="max-width:560px; margin:22px auto 0; text-align:center; font-size:13.5px; line-height:1.95; color:var(--charcoal);">
+    SEAMは、<span style="font-weight:600; color:var(--black);">日本最大級の会員制ヘアケアオンラインショップ</span>。<br>
+    会員限定価格で、世界の正規品を、ご自宅にお届けします。
+  </p>
+</section>
+
 <!-- ════════════════ VOICES ════════════════ -->
 <section class="section voice-section">
   <span class="section-tick" aria-hidden></span>
   <div class="section-eyebrow-row">
     <span class="section-eyebrow">Member Voices</span>
   </div>
-  <h2 class="section-title">続けている、<br>会員の声。</h2>
+  <h2 data-reveal class="section-title">続けている、<br>会員の声。</h2>
   <span class="section-underline" aria-hidden></span>
 
   <div class="voice-card">
@@ -675,7 +783,7 @@
 <section class="final-cta-section">
   <div class="final-cta-content">
     <p class="final-cta-eyebrow">Join SEAM</p>
-    <h2 class="final-cta-title">
+    <h2 data-reveal class="final-cta-title">
       髪との関係を、<br>
       <span class="gold">特別に。</span>
     </h2>
@@ -713,6 +821,21 @@
   <p class="footer__copy">© 2026 SEAM JAPAN. All Rights Reserved.</p>
 </footer>
 
-  <script src="js/online-shop-gate.js" defer></script>
+  <script src="js/online-shop-gate.js?v=2" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+  <script src="js/lang.js"></script>
+  <script src="js/reveal.js"></script>
+<script>
+(function(){var t=document.getElementById('menuToggle'),n=document.getElementById('mobileNav'),c=document.getElementById('menuClose');
+if(t&&n){t.addEventListener('click',function(){n.classList.add('is-open');t.setAttribute('aria-expanded','true');});
+if(c)c.addEventListener('click',function(){n.classList.remove('is-open');t.setAttribute('aria-expanded','false');});
+n.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){n.classList.remove('is-open');});});}})();
+</script>
 </body>
 </html>

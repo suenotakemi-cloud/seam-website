@@ -1,0 +1,62 @@
+/* ══════════════════════════════════════
+   SEAM — Scroll Reveal (ラグジュアリー水準の"呼吸")
+   data-reveal を付けた要素が、スクロールで視界に入ると
+   下からふわりと浮かび上がる。微ブラー解除で上質に。
+══════════════════════════════════════ */
+
+/* ── 見出しの行分けを自動バランス ──
+   日本語見出しで「最後の1〜2文字だけが次行に落ちる」孤立行を防ぐ。
+   h4（狭いカード内ラベル）は語中で割れる恐れがあるので対象外にし、
+   個別に1行で収める。<br> がある見出しは各セグメント内でバランスされる。
+   text-wrap:balance 非対応の旧ブラウザは従来通り折り返す（劣化のみ）。 */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+/* 本文の折り返しを美しく（対応ブラウザのみ／非対応は従来通り）
+   - text-wrap: pretty … 最終行が1〜2文字だけ残る「孤立行」を防ぐ
+   - word-break: auto-phrase … 日本語を文節解析し、語の途中（例:サ/ロン, 流/通）で
+     割れないよう自然な区切りで折り返す（Chrome119+） */
+p {
+  text-wrap: pretty;
+  word-break: auto-phrase;
+}
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(22px);
+  filter: blur(6px);
+  transition:
+    opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform, filter;
+}
+[data-reveal].is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* 連続要素を少しずつ遅らせる(エディトリアルな"波") */
+[data-reveal-delay="1"] { transition-delay: 0.08s; }
+[data-reveal-delay="2"] { transition-delay: 0.16s; }
+[data-reveal-delay="3"] { transition-delay: 0.24s; }
+[data-reveal-delay="4"] { transition-delay: 0.32s; }
+[data-reveal-delay="5"] { transition-delay: 0.40s; }
+
+/* 控えめ版(大きく動かしたくない見出し等) */
+[data-reveal="soft"] {
+  transform: translateY(12px);
+  filter: blur(3px);
+}
+
+/* 動きに敏感なユーザーへの配慮 */
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+}

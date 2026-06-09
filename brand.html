@@ -7,9 +7,27 @@
   <title>BRANDS | SEAM ヘアケアセレクトショップ</title>
   <meta name="description" content="SEAMが厳選したサロン専売ブランド一覧。ヘアケア・スタイリング・スキンケア・デバイス・インナーケアまで全カテゴリ掲載。">
   <link rel="canonical" href="https://seam.site/brand.html">
+  <meta property="og:site_name" content="SEAM">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://seam.site/brand.html">
+  <meta property="og:title" content="SEAM BRANDS｜世界中の名品サロン専売ブランドを、カテゴリ別に。">
+  <meta property="og:description" content="SEAMが厳選した世界140+のサロン専売ブランド。あなたの髪に出会うお気に入りを見つけて。">
+  <meta property="og:image" content="https://seam.site/images/og/seam-og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SEAM BRANDS｜世界中の名品ブランドを、カテゴリ別に。">
+  <meta name="twitter:description" content="世界140+のサロン専売ブランドから、あなたに合う一本を。">
+  <meta name="twitter:image" content="https://seam.site/images/og/seam-og.jpg">
+  <link rel="canonical" href="https://seam.site/brand.html">
   <link rel="icon" type="image/svg+xml" href="images/favicon.svg">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
   <meta name="application-name" content="SEAM">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SEAM">
   <meta name="theme-color" content="#0f0e0d">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -74,11 +92,15 @@
     .logo-sub { font-family: var(--font-en); font-size: 7px; letter-spacing: 4px; color: var(--taupe); font-weight: 300; display: flex; align-items: center; gap: 6px; margin-top: 4px; text-transform: uppercase; white-space: nowrap; }
     .logo-sub::before, .logo-sub::after { content: ''; display: block; height: 1px; width: 14px; background: var(--taupe); opacity: 0.5; flex-shrink: 0; }
     .header-right { display: flex; align-items: center; gap: 16px; }
-    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 8px; -webkit-tap-highlight-color: transparent; }
-    .hamburger span { width: 22px; height: 1.5px; background: var(--charcoal); display: block; transition: all 0.32s cubic-bezier(0.4,0,0.2,1); transform-origin: center; }
-    .hamburger.active span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-    .hamburger.active span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-    .hamburger.active span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+    .hamburger { display: none; flex-direction: row; align-items: center; gap: 8px; cursor: pointer; padding: 7px 13px; border: 1px solid rgba(60,54,46,0.28); border-radius: 999px; -webkit-tap-highlight-color: transparent; transition: background 0.2s; }
+    .hamburger:hover { background: rgba(60,54,46,0.05); }
+    .ham-label { font-family: var(--font-en); font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--charcoal); line-height: 1; }
+    .hamburger.active .ham-label { display: none; }
+    .ham-lines { display: flex; flex-direction: column; gap: 5px; }
+    .ham-lines span { width: 18px; height: 1.5px; background: var(--charcoal); display: block; transition: all 0.32s cubic-bezier(0.4,0,0.2,1); transform-origin: center; }
+    .hamburger.active .ham-lines span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .hamburger.active .ham-lines span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    .hamburger.active .ham-lines span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
     .header-nav { height: 40px; display: flex; align-items: stretch; border-top: 1px solid var(--sand); overflow-x: auto; scrollbar-width: none; background: var(--white); }
     .header-nav::-webkit-scrollbar { display: none; }
     .header-nav a { flex: 1; display: flex; align-items: center; justify-content: center; font-family: var(--font-en); font-size: 8.5px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; color: var(--taupe); white-space: nowrap; padding: 0 14px; transition: color 0.2s; position: relative; }
@@ -2457,6 +2479,7 @@
       display: none !important;
     }
   </style>
+  <link rel="stylesheet" href="css/reveal.css?v=5">
 </head>
 <body>
 
@@ -2483,7 +2506,7 @@
         <i class="fas fa-globe"></i>
         <span id="langCurrentLabel">JP</span>
       </button>
-      <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+      <div class="hamburger" id="hamburger" role="button" aria-label="メニューを開く"><span class="ham-label">Menu</span><span class="ham-lines"><span></span><span></span><span></span></span></div>
     </div>
   </div>
   <nav class="header-nav">
@@ -2681,7 +2704,7 @@
   <div class="dir-inner">
     <div class="dir-head">
       <p class="dir-eyebrow">Brand Directory</p>
-      <h2 class="dir-title">取扱ブランド一覧</h2>
+      <h2 data-reveal class="dir-title">取扱ブランド一覧</h2>
       <p class="dir-sub">メジャーブランドからマイナーブランドまで、<br>SEAMが取り扱うすべてのブランドを百貨店のように一覧でご覧いただけます。<br>気になるブランドはタップで公式サイトへ。</p>
       <p class="dir-count-line">TOTAL <strong id="dirCount">—</strong> BRANDS</p>
     </div>
@@ -2749,7 +2772,7 @@
 <section class="concept-section" id="brandConcept">
   <div class="concept-inner">
     <p class="section-eyebrow">Brand Concept</p>
-    <h2 class="section-title-lg">SEAMのブランド哲学</h2>
+    <h2 data-reveal class="section-title-lg">SEAMのブランド哲学</h2>
     <p class="section-sub-text">なぜSEAMはこのブランドを選ぶのか。<br>セレクトの基準と、プロが信頼する理由をお伝えします。</p>
     <div class="concept-grid">
       <div class="concept-card">
@@ -2805,7 +2828,7 @@
 <section class="brand-store-picker">
   <div class="bsp-inner">
     <p class="bsp-eyebrow" data-i18n="store.eyebrow">Find Your Store</p>
-    <h2 class="bsp-title" data-i18n="store.title">気になるブランドを、<br>実際に手に取って。</h2>
+    <h2 data-reveal class="bsp-title" data-i18n="store.title">気になるブランドを、<br>実際に手に取って。</h2>
     <p class="bsp-desc" data-i18n="store.desc">スタッフに相談しながら、<br class="bsp-br">あなたに合うアイテムを見つけてください。</p>
     <div class="bsp-divider"></div>
     <div class="bsp-grid">
@@ -3120,7 +3143,7 @@ function renderAllCategories(searchQuery) {
     header.innerHTML = `
       <p class="cat-section-eyebrow">${cat.labelEn}</p>
       <div class="cat-section-titlebar">
-        <h2 class="cat-section-title">${cat.label}</h2>
+        <h2 data-reveal class="cat-section-title">${cat.label}</h2>
         <span class="cat-section-count"><strong>${brands.length}</strong><span>brands</span></span>
       </div>
       <p class="cat-section-desc">${cat.concept || ''}</p>
@@ -3867,7 +3890,7 @@ window.SEAM_PAGE_I18N = {
   <div class="finder-modal-inner">
     <div class="finder-mh">
       <p class="finder-mh-eyebrow" id="finderModalEyebrow">By Concern</p>
-      <h2 class="finder-mh-title" id="finderModalTitle"><strong>—</strong>のあなたに</h2>
+      <h2 data-reveal class="finder-mh-title" id="finderModalTitle"><strong>—</strong>のあなたに</h2>
       <p class="finder-mh-desc" id="finderModalDesc">SEAMセレクト 3本</p>
       <button type="button" class="finder-mh-close" id="finderModalClose" aria-label="閉じる">
         <i class="fas fa-times"></i>
@@ -3878,7 +3901,7 @@ window.SEAM_PAGE_I18N = {
     </div>
     <div class="finder-mf">
       <p class="finder-mf-text">もっと詳しく髪質を分析したい方は</p>
-      <a href="index.html#diagnosis" class="finder-mf-btn">
+      <a href="finder.html" class="finder-mf-btn">
         Hair Care Finder で診断する <i class="fas fa-arrow-right"></i>
       </a>
     </div>
@@ -4461,6 +4484,14 @@ window.SEAM_PAGE_I18N = {
 </script>
 
 <script src="js/lang.js"></script>
-  <script src="js/online-shop-gate.js" defer></script>
+  <script src="js/online-shop-gate.js?v=2" defer></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+  <script src="js/reveal.js"></script>
 </body>
 </html>

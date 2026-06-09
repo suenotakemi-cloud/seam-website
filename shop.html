@@ -6,6 +6,20 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>SHOP | SEAM — 髪に会いに、店へ。</title>
   <meta name="description" content="SEAMは、世界140+のサロン専売ブランドを揃えるヘアケアセレクトショップ。ヘアケアのプロが、店頭でご相談を承ります。">
+  <link rel="canonical" href="https://seam.site/shop.html">
+  <meta property="og:site_name" content="SEAM">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://seam.site/shop.html">
+  <meta property="og:title" content="SEAM SHOP｜世界最大級のサロン専売ヘアケアセレクトショップ">
+  <meta property="og:description" content="北海道〜福岡。世界140+のサロン専売ブランドを、実際に手に取って選べる。メーカー公認の正規品だけ。">
+  <meta property="og:image" content="https://seam.site/images/og/seam-og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SEAM SHOP｜髪に会いに、店へ。">
+  <meta name="twitter:description" content="世界140+のサロン専売ブランドを、手に取って。北海道〜福岡 主要都市に展開。">
+  <meta name="twitter:image" content="https://seam.site/images/og/seam-og.jpg">
 
   <!-- ─── PWA / Mobile App / WebView optimization ─── -->
   <meta name="theme-color" content="#FAF8F4" media="(prefers-color-scheme: light)">
@@ -17,7 +31,7 @@
   <meta name="apple-mobile-web-app-title" content="SEAM">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="SEAM">
-  <link rel="apple-touch-icon" href="images/favicon.svg">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
 
@@ -33,7 +47,7 @@
         extend: {
           colors: {
             ivory:'#F5F1EA', cream:'#EAE0D2', beige:'#D9CFC3',
-            ink:'#171614', charcoal:'#3A3833',
+            ink:'#171614', charcoal:'#2E2C28',
             gold:'#B8945A', goldLight:'#D9BE93', line:'#D9CFC3',
             baseBG:'#F5F1EA', softSection:'#F0EBE2', deepSection:'#D9CFC3',
             warmFill:'#E9D8C8', highlightFill:'#EAE0D2',
@@ -59,7 +73,7 @@
 
   <style>
     html { scroll-behavior:smooth; background:#F5F1EA; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-    body { background:#F5F1EA; color:#3A3833; font-family:'Noto Sans JP','Inter',sans-serif; -webkit-font-smoothing:antialiased; overscroll-behavior-y:none; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); font-size:15px; line-height:1.85; }
+    body { background:#F5F1EA; color:#2E2C28; font-family:'Noto Sans JP','Inter',sans-serif; -webkit-font-smoothing:antialiased; overscroll-behavior-y:none; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); font-size:15px; line-height:1.85; }
     @media (min-width: 640px) { body { padding-bottom: 0; } }
     header.fixed.top-0 { padding-top: env(safe-area-inset-top, 0); }
     .bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0); }
@@ -128,9 +142,27 @@
       video[autoplay] { display: none !important; }
     }
   </style>
+  <link rel="stylesheet" href="css/lang.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/reveal.css?v=5">
 </head>
 
 <body class="font-sans text-charcoal antialiased pb-20 sm:pb-0">
+<!-- 言語モーダル (全ページ共通) -->
+<div class="lang-overlay" id="langOverlay" role="dialog" aria-modal="true" aria-label="言語選択">
+  <div class="lang-modal">
+    <div class="lang-modal-handle"></div>
+    <p class="lang-modal-title">Select Language</p>
+    <div class="lang-grid">
+      <button class="lang-option" data-l="ja"><span class="lo-label">JA</span><span class="lo-native">日本語</span></button>
+      <button class="lang-option" data-l="en"><span class="lo-label">EN</span><span class="lo-native">English</span></button>
+      <button class="lang-option" data-l="zh"><span class="lo-label">CN</span><span class="lo-native">简体中文</span></button>
+      <button class="lang-option" data-l="tw"><span class="lo-label">TW</span><span class="lo-native">繁體中文</span></button>
+      <button class="lang-option full-width" data-l="ko"><span class="lo-label">KR</span><span class="lo-native">한국어</span></button>
+    </div>
+  </div>
+</div>
+
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- HEADER -->
@@ -139,17 +171,16 @@
     <div class="max-w-6xl mx-auto px-5 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
       <a href="index.html" class="flex flex-col leading-none">
         <span class="font-serif text-[22px] sm:text-[24px] text-ink tracking-[0.22em]">SEAM</span>
-        <span class="font-mono text-[10.5px] sm:text-[10.5px] tracking-widest2 text-charcoal/55 mt-0.5">GLOBAL HAIR CARE SELECT SHOP</span>
+        <span class="hidden sm:block font-mono text-[10.5px] sm:text-[10.5px] tracking-widest2 text-charcoal/55 mt-0.5">GLOBAL HAIR CARE SELECT SHOP</span>
       </a>
       <div class="flex items-center gap-3 sm:gap-5">
-        <button type="button" class="inline-flex items-center gap-1.5 text-[11.5px] text-charcoal/70 hover:text-ink transition-colors">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
-          <span class="font-mono tracking-wider">EN</span>
-          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l3 3 3-3"/></svg>
-        </button>
-        <button id="menuToggle" aria-expanded="false" aria-controls="mobileNav" type="button" aria-label="メニュー" class="w-10 h-10 flex flex-col items-center justify-center gap-1.5">
-          <span class="block w-5 h-px bg-ink"></span>
-          <span class="block w-5 h-px bg-ink"></span>
+        <button type="button" id="langToggleBtn" aria-label="言語を切り替える" class="inline-flex items-center gap-1.5 text-[11.5px] text-charcoal/70 hover:text-ink transition-colors"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span id="langCurrentLabel" class="font-mono tracking-wider">JP</span><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l3 3 3-3"/></svg></button>
+        <button id="menuToggle" aria-expanded="false" aria-controls="mobileNav" type="button" aria-label="メニューを開く" class="inline-flex items-center gap-2 border border-ink/30 rounded-full pl-3.5 pr-3 hover:bg-ink/[0.05] transition-colors">
+          <span class="font-mono text-[10px] tracking-widest2 text-ink uppercase">Menu</span>
+          <span class="flex flex-col gap-[3.5px]">
+            <span class="block w-[18px] h-px bg-ink"></span>
+            <span class="block w-[18px] h-px bg-ink"></span>
+          </span>
         </button>
       </div>
     </div>
@@ -197,18 +228,18 @@
         <div class="absolute inset-x-0 bottom-0 h-28 pointer-events-none" style="background: linear-gradient(180deg, rgba(245,241,234,0) 0%, rgba(245,241,234,0.7) 55%, rgba(245,241,234,1) 100%);"></div>
         <div class="absolute inset-x-0 top-0 h-14 pointer-events-none" style="background: linear-gradient(180deg, rgba(245,241,234,0.7) 0%, rgba(245,241,234,0) 100%);"></div>
       </div>
-      <div class="relative -mt-20 px-6 pb-8 z-10">
+      <div class="relative -mt-20 px-6 pb-10 z-10">
         <div class="hero-animate hero-animate-d1 flex items-center gap-3">
           <span class="block w-8 h-px bg-gold/60"></span>
           <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">HAIR CARE SHOP</p>
         </div>
-        <h1 class="hero-animate hero-animate-d2 mt-5 font-serif text-[42px] leading-[1.08] text-ink" style="letter-spacing:-0.014em;font-weight:500;">
-          ヘアケアを、<br>選びにいく。
+        <h1 class="hero-animate hero-animate-d2 mt-6 font-serif text-[38px] leading-[1.12] text-ink" style="letter-spacing:0.015em;font-weight:480;">
+          まだ知らない一本に、出会いに。
         </h1>
-        <p class="hero-animate hero-animate-d3 mt-5 text-[15px] leading-[1.95] text-charcoal/75">
+        <p class="hero-animate hero-animate-d3 mt-6 text-[15px] leading-[2] text-charcoal/80">
           世界140+のサロン専売ブランドを、店頭で。
         </p>
-        <a href="#stores" class="hero-animate hero-animate-d4 mt-6 group flex items-center bg-ink text-ivory rounded-full py-3.5 pl-5 pr-2 shadow-card hover:bg-charcoal transition-colors">
+        <a href="#stores" class="hero-animate hero-animate-d4 mt-8 group flex items-center bg-ink text-ivory rounded-full py-3.5 pl-5 pr-2 shadow-card hover:bg-charcoal transition-colors">
           <span class="font-serif text-[15px] flex-1">最寄りの店舗を見る</span>
           <span class="w-9 h-9 bg-ivory text-ink rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
         </a>
@@ -227,8 +258,8 @@
         <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(245,241,234,0.96) 0%, rgba(245,241,234,0.80) 35%, rgba(245,241,234,0.15) 60%, rgba(245,241,234,0) 75%);"></div>
         <div class="relative max-w-6xl mx-auto px-10 lg:px-16 pt-16 lg:pt-24">
           <p class="font-mono tracking-widest2 text-[11px] text-gold uppercase">HAIR CARE SHOP</p>
-          <h1 class="mt-6 font-serif text-[46px] md:text-[54px] lg:text-[64px] leading-[1.05] text-ink max-w-xl" style="letter-spacing:-0.014em;font-weight:500;">
-            ヘアケアを、<br>選びにいく。
+          <h1 class="mt-6 font-serif text-[44px] md:text-[52px] lg:text-[60px] leading-[1.08] text-ink max-w-xl" style="letter-spacing:0.035em;font-weight:480;">
+            まだ知らない一本に、<br>出会いに。
           </h1>
           <p class="mt-6 text-[15px] leading-[1.95] text-charcoal/75 max-w-md">
             世界140+のサロン専売ブランドを、店頭で。
@@ -245,10 +276,10 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- CONCEPT — Curated by SEAM -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="py-16 sm:py-24 bg-cream">
+  <section class="py-20 sm:py-24 bg-cream">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-5">Concept</p>
-      <h2 class="font-serif text-[28px] sm:text-[40px] leading-[1.25] text-ink font-medium" style="letter-spacing:-0.014em;">
+      <h2 data-reveal class="font-serif text-[28px] sm:text-[40px] leading-[1.25] text-ink font-medium" style="letter-spacing:-0.014em;">
         買う場所ではなく、<br>選ぶ場所へ。
       </h2>
       <p class="mt-7 text-[15px] sm:text-[16px] leading-[2.1] text-charcoal/75 max-w-xl mx-auto">
@@ -285,13 +316,39 @@
   </section>
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- WHY SEAM — サロンは、変えなくていい。 -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="py-20 sm:py-28" style="background:#1A1714;">
+    <div class="max-w-2xl mx-auto px-6 sm:px-8 text-center">
+      <p data-reveal class="font-mono tracking-widest3 text-[10px] uppercase mb-6" style="color:#C9A76A;">Why SEAM</p>
+      <h2 data-reveal data-reveal-delay="1" class="font-serif text-[28px] sm:text-[42px] leading-[1.4] font-medium" style="color:#F5F1EA;letter-spacing:0.01em;">
+        サロンは、<br>変えなくていい。
+      </h2>
+      <div class="mt-10 sm:mt-12 space-y-7">
+        <p data-reveal data-reveal-delay="2" class="text-[14px] sm:text-[15.5px] leading-[2.2]" style="color:rgba(245,241,234,0.74);">
+          サロン専売品は、これまで通うお店でしか手に入りませんでした。<br class="hidden sm:block">
+          気になっていても、見て、比べて、選ぶ機会は、ほとんどなかったはずです。
+        </p>
+        <p data-reveal data-reveal-delay="3" class="text-[14px] sm:text-[15.5px] leading-[2.2]" style="color:rgba(245,241,234,0.74);">
+          SEAMでは、世界中のサロン専売を、自分の目で見て、知って、選べる。<br class="hidden sm:block">
+          一度出会った“合う一本”は、通うサロンが変わっても、ずっと続けられます。
+        </p>
+        <p data-reveal data-reveal-delay="4" class="font-serif text-[16px] sm:text-[19px] leading-[1.95] pt-2" style="color:#F5F1EA;letter-spacing:0.02em;">
+          いまのお店は、そのままに。<br class="sm:hidden">
+          ヘアケアだけ、もっと自由に。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- IN-STORE STORY — Editorial -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="py-16 sm:py-24 bg-ivory">
+  <section class="py-20 sm:py-24 bg-ivory">
     <div class="max-w-6xl mx-auto px-5 sm:px-8">
       <div class="text-center mb-10 sm:mb-14">
         <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">In-store Story</p>
-        <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店内で過ごす、20分。</h2>
+        <h2 data-reveal class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店内で過ごす、ひととき。</h2>
       </div>
 
       <!-- 4枚のエディトリアルグリッド -->
@@ -299,7 +356,7 @@
         <!-- 01 ─ カウンセリング -->
         <div class="space-y-3">
           <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream">
-            <img src="images/lp/hair_salon_interior_hero.png" alt="店内でのカウンセリング" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            <img src="images/lp/store/instore_01_counsel.jpg" alt="スタッフが髪質に合う一本を一緒に選ぶカウンセリング" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           </div>
           <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 01</p>
           <p class="font-serif text-[14px] sm:text-[16px] text-ink leading-snug">髪に、<br>触れて、診る。</p>
@@ -307,7 +364,7 @@
         <!-- 02 ─ ボトルを取る -->
         <div class="space-y-3 sm:mt-12">
           <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream">
-            <img src="images/lp/clean_products_mosaic.png" alt="ボトルを手に取る" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            <img src="images/lp/store/instore_02_select.jpg" alt="棚から気になるヘアケアを手に取って選ぶお客様" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           </div>
           <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 02</p>
           <p class="font-serif text-[14px] sm:text-[16px] text-ink leading-snug">あなたの一本を、<br>選び取る。</p>
@@ -315,7 +372,7 @@
         <!-- 03 ─ テスター -->
         <div class="space-y-3">
           <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream">
-            <img src="images/lp/clean_product_group.png" alt="テスター体験" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            <img src="images/lp/store/instore_03_tester.jpg" alt="テスターで香りと質感を確かめるお客様" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           </div>
           <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 03</p>
           <p class="font-serif text-[14px] sm:text-[16px] text-ink leading-snug">香りも、質感も、<br>体験してから。</p>
@@ -323,7 +380,7 @@
         <!-- 04 ─ パッキング -->
         <div class="space-y-3 sm:mt-12">
           <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream">
-            <img src="images/lp/product_hero_group_crop.png" alt="お渡し" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
+            <img src="images/lp/store/instore_04_basket.jpg" alt="選んだお気に入りをバスケットに入れて持ち帰るお客様" class="absolute inset-0 w-full h-full object-cover" loading="lazy" />
           </div>
           <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 04</p>
           <p class="font-serif text-[14px] sm:text-[16px] text-ink leading-snug">お気に入りを、<br>連れて帰る。</p>
@@ -335,11 +392,11 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- VISIT FLOW — 来店から商品選びまで5ステップ -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="py-16 sm:py-24 bg-softSection">
+  <section class="py-20 sm:py-24 bg-softSection">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-10 sm:mb-14">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">How to Visit</p>
-      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">ご来店から、お気に入りに出会うまで。</h2>
-      <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">予約不要。お気軽に、お立ち寄りください。</p>
+      <h2 data-reveal class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">ご来店から、お気に入りに出会うまで。</h2>
+      <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">見るだけ、試すだけ、相談だけ。<br class="sm:hidden">過ごし方は、ご自由に。</p>
     </div>
 
     <div class="max-w-md mx-auto px-5 sm:px-8 space-y-3">
@@ -347,32 +404,32 @@
       <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
         <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">01</div>
         <div class="flex-1 min-w-0">
-          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">ご来店</p>
-          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">予約は不要です。お気軽にお立ち寄りください。</p>
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">気になる商品を、手に取って</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">店頭に並ぶヘアケアを、自由に手に取って。パンフレットで詳しくご確認いただけます。</p>
         </div>
       </div>
       <!-- 02 -->
       <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
         <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">02</div>
         <div class="flex-1 min-w-0">
-          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">髪のお悩みをお伺い</p>
-          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">気になっていること、なりたい仕上がりを、お話しください。</p>
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">診断で出た商品を、見に来る</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">Finderの髪質診断で出たアイテムを、見に来るだけでも大歓迎です。</p>
         </div>
       </div>
       <!-- 03 -->
       <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
         <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">03</div>
         <div class="flex-1 min-w-0">
-          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">髪質診断（任意）</p>
-          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">スマホで事前診断 → 店頭で結果を共有することも可能です。</p>
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">気になったら、プロに相談</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">迷ったとき、気になったとき。ヘアケアのプロに、お気軽にご相談いただけます。</p>
         </div>
       </div>
       <!-- 04 -->
       <div class="bg-white rounded-[12px] border border-line p-5 sm:p-6 flex items-start gap-4 shadow-soft">
         <div class="w-10 h-10 rounded-full bg-highlightFill flex items-center justify-center shrink-0 font-serif text-[13px] text-ink">04</div>
         <div class="flex-1 min-w-0">
-          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">商品のご提案</p>
-          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">140+ブランドから、あなたに合う一本を。テスターでお試しいただけます。</p>
+          <p class="font-serif text-[14px] sm:text-[15px] text-ink font-medium">テスターで、香りと質感を</p>
+          <p class="mt-1 text-[11.5px] sm:text-[12.5px] text-charcoal/65 leading-[1.85]">気になる一本は、テスターで香りやテクスチャーをお確かめいただけます。</p>
         </div>
       </div>
       <!-- 05 -->
@@ -389,73 +446,62 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- WHAT'S INSIDE — 取り扱いカテゴリ -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="py-16 sm:py-24 bg-ivory">
+  <section class="py-20 sm:py-24 bg-ivory">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-10 sm:mb-14">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">What's Inside</p>
-      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店内に並ぶ、ヘアケアの世界。</h2>
+      <h2 data-reveal class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店内に並ぶ、ヘアケアの世界。</h2>
+      <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">世界の名門から、専門ブランドまで。<br class="sm:hidden">取り扱いブランドの一部をご紹介します。</p>
     </div>
 
-    <div class="max-w-5xl mx-auto px-5 sm:px-8 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-      <!-- Shampoo -->
-      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-square overflow-hidden bg-cream">
-          <img src="images/lp/generated/category_shampoo_treatment_v2.png" alt="シャンプー" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-4 sm:p-5">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 01</p>
-          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">シャンプー</p>
-        </div>
-      </a>
-      <!-- Treatment -->
-      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-square overflow-hidden bg-cream">
-          <img src="images/lp/generated/category_shampoo_treatment.png" alt="トリートメント" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-4 sm:p-5">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 02</p>
-          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">トリートメント</p>
-        </div>
-      </a>
-      <!-- Outbath -->
-      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-square overflow-hidden bg-cream">
-          <img src="images/lp/clean_product_group.png" alt="アウトバス" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-4 sm:p-5">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 03</p>
-          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">アウトバス</p>
-        </div>
-      </a>
-      <!-- Scalp -->
-      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-square overflow-hidden bg-cream">
-          <img src="images/lp/generated/category_scalp_care_v2.png" alt="スカルプケア" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-4 sm:p-5">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 04</p>
-          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">スカルプケア</p>
-        </div>
-      </a>
-      <!-- Styling -->
-      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-square overflow-hidden bg-cream">
-          <img src="images/lp/generated/category_styling_v2.png" alt="スタイリング" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-4 sm:p-5">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 05</p>
-          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">スタイリング</p>
-        </div>
-      </a>
-      <!-- Device -->
-      <a href="brand.html" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-square overflow-hidden bg-cream">
-          <img src="images/logo_refa_device.jpg" alt="デバイス" class="absolute inset-0 w-full h-full object-contain p-6" loading="lazy"/>
-        </div>
-        <div class="p-4 sm:p-5">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">— 06</p>
-          <p class="mt-1 font-serif text-[13px] sm:text-[15px] text-ink">デバイス</p>
-        </div>
-      </a>
+    <div class="max-w-5xl mx-auto px-5 sm:px-8 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_aujua.jpg?v=3" alt="Aujua" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_kerastase.jpg?v=3" alt="Kérastase" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_bykarte.jpg?v=3" alt="BYKARTE" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_sublimic.jpg?v=3" alt="SUBLIMIC" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_tokio_inkarami.jpg?v=3" alt="TOKIO INKARAMI" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_system_professional.jpg?v=3" alt="System Professional" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_global_milbon.jpg?v=3" alt="Global Milbon" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_seesaw.jpg?v=3" alt="SEE/SAW" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_moroccanoil.jpg?v=3" alt="Moroccanoil" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_rekera.jpg?v=3" alt="REKERA" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_oggi_otto.jpg?v=3" alt="Oggi otto" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_davines.jpg?v=3" alt="Davines" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_shu_uemura.jpg?v=3" alt="shu uemura" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_elujuda.jpg?v=3" alt="Elujuda" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_hita.jpg?v=3" alt="HITA" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
+      <div class="bg-white rounded-[12px] border border-line overflow-hidden aspect-[3/2]" style="box-shadow:0 1px 3px rgba(0,0,0,0.03);">
+        <img src="images/lp/store_logos/logo_refa.jpg?v=3" alt="ReFa" class="w-full h-full object-contain" loading="lazy"/>
+      </div>
     </div>
 
     <div class="text-center mt-10 sm:mt-14">
@@ -469,97 +515,126 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- STORES — 店舗一覧 -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section id="stores" class="py-16 sm:py-24 bg-softSection scroll-mt-20">
+  <section id="stores" class="py-20 sm:py-24 bg-softSection scroll-mt-20">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-10 sm:mb-14">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">Stores</p>
-      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店舗一覧</h2>
+      <h2 data-reveal class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">店舗一覧</h2>
       <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">
         日本全国のSEAMから、お近くの一店をお選びください。
+      </p>
+      <p class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-line text-[11.5px] sm:text-[12.5px] text-charcoal/75 leading-[1.7]">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="text-gold shrink-0"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg>
+        ご予約・お問い合わせは、各店舗の公式Instagram（DM）で承っています。
       </p>
     </div>
 
     <div class="max-w-5xl mx-auto px-5 sm:px-8 grid sm:grid-cols-2 gap-4 sm:gap-5">
-
-      <!-- GINZA -->
-      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
-          <!-- IMAGE: store_ginza_facade.jpg — SEAM銀座店外観またはエントランス、夕方ゴールデンアワー -->
-          <img src="images/stores/store_ginza.jpg" alt="SEAM銀座店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-5 sm:p-6">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Tokyo</p>
-          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 銀座</h3>
-          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">東京都中央区銀座 X-X-X<br>銀座駅 徒歩3分</p>
-          <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
-            <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- SAPPORO -->
-      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
-          <!-- IMAGE: store_sapporo_facade.jpg -->
-          <img src="images/stores/store_sapporo.jpg" alt="SEAM札幌店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-5 sm:p-6">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Hokkaido</p>
-          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 札幌</h3>
-          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">北海道札幌市中央区<br>大通駅 徒歩4分</p>
-          <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
-            <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- NAGOYA -->
-      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
-          <!-- IMAGE: store_nagoya_facade.jpg -->
-          <img src="images/stores/store_nagoya.jpg" alt="SEAM名古屋店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-5 sm:p-6">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Aichi</p>
-          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 名古屋</h3>
-          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">愛知県名古屋市中区<br>栄駅 徒歩3分</p>
-          <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
-            <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- OSAKA -->
-      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
-        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
-          <!-- IMAGE: store_osaka_facade.jpg -->
-          <img src="images/stores/store_osaka.jpg" alt="SEAM大阪店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
-        </div>
-        <div class="p-5 sm:p-6">
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Osaka</p>
-          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 大阪</h3>
-          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">大阪府大阪市北区<br>梅田駅 徒歩5分</p>
-          <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
-            <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
-          </div>
-        </div>
-      </a>
-
-      <!-- FUKUOKA -->
-      <a href="haircareshop.html#stores" class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card sm:col-span-2">
+      <!-- SEAM GINZA (Flagship) -->
+      <div class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card sm:col-span-2">
         <div class="grid sm:grid-cols-2">
-          <div class="relative aspect-[16/10] sm:aspect-auto sm:min-h-[220px] overflow-hidden bg-cream">
-            <img src="images/stores/store_fukuoka.jpg" alt="SEAM福岡店" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+          <div class="relative aspect-[16/10] sm:aspect-auto sm:min-h-[240px] overflow-hidden bg-cream">
+            <span class="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full text-[9px] font-mono tracking-widest2 uppercase" style="background:#B8945A;color:#fff;">Flagship</span>
+            <img src="images/stores/store_ginza.jpg" alt="SEAM GINZA" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
           </div>
           <div class="p-5 sm:p-7 flex flex-col justify-center">
-            <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Kyushu</p>
-            <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM 福岡</h3>
-            <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">福岡県福岡市中央区<br>天神駅 徒歩6分</p>
-            <div class="mt-4 flex items-center gap-3 text-[11px] text-charcoal/55">
-              <span>11:00–20:00</span><span class="w-px h-3 bg-line"></span><span>不定休</span>
-            </div>
+            <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Tokyo · Ginza</p>
+            <h3 class="mt-1 font-serif text-[20px] sm:text-[24px] text-ink">SEAM GINZA</h3>
+            <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">東京都中央区銀座1-8-19 ONE GINZA 3F<br><span class="text-charcoal/55">銀座一丁目駅 7番出口 徒歩1分</span></p>
+            <p class="mt-2 text-[11px] text-charcoal/55">11:00–20:00 / 全日営業</p>
+            <div class="mt-4 flex items-center gap-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=SEAM%20%E9%8A%80%E5%BA%A7%201-8-19%20ONE%20GINZA%203F" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="font-serif">マップ</span></a><a href="https://www.instagram.com/seam.ginza/" target="_blank" rel="noopener" aria-label="店舗のInstagram" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg><span class="font-serif">Instagram</span></a></div>
           </div>
         </div>
-      </a>
+      </div>
+
+      <!-- gallica / SEAM -->
+      <div class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          
+          <img src="images/stores/store_omotesando.jpg" alt="gallica / SEAM" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Tokyo · Omotesando</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">gallica / SEAM</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">東京都港区南青山3-15-15 Louis IIビル<br><span class="text-charcoal/55">表参道駅 A4出口 徒歩3分</span></p>
+          <p class="mt-2 text-[11px] text-charcoal/55">10:00–20:00 / 不定休</p>
+          <div class="mt-4 flex items-center gap-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=%E3%82%AC%E3%83%AA%E3%82%AB%20%E3%82%B7%E3%83%BC%E3%83%A0%20%E5%8D%97%E9%9D%92%E5%B1%B13-15-15%20Louis%20II%E3%83%93%E3%83%AB" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="font-serif">マップ</span></a><a href="https://www.instagram.com/gallica_seam/" target="_blank" rel="noopener" aria-label="店舗のInstagram" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg><span class="font-serif">Instagram</span></a></div>
+        </div>
+      </div>
+
+      <!-- SEAM OSAKA HORIE -->
+      <div class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          <span class="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full text-[9px] font-mono tracking-widest2 uppercase" style="background:#D7A39A;color:#fff;">New</span>
+          <img src="images/stores/store_osaka.jpg" alt="SEAM OSAKA HORIE" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Osaka · Horie</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM OSAKA HORIE</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">大阪府大阪市西区南堀江1-11-21 STORK南堀江 1F<br><span class="text-charcoal/55">四ツ橋駅 6番出口 徒歩2分</span></p>
+          <p class="mt-2 text-[11px] text-charcoal/55">11:00–19:00 / 全日営業</p>
+          <div class="mt-4 flex items-center gap-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=SEAM%20%E5%8D%97%E5%A0%80%E6%B1%9F%201-11-21%20STORK%E5%8D%97%E5%A0%80%E6%B1%9F" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="font-serif">マップ</span></a><a href="https://www.instagram.com/seam.osaka/" target="_blank" rel="noopener" aria-label="店舗のInstagram" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg><span class="font-serif">Instagram</span></a></div>
+        </div>
+      </div>
+
+      <!-- SEAM NAGOYA -->
+      <div class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          
+          <img src="images/stores/store_nagoya.jpg" alt="SEAM NAGOYA" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Nagoya · Sakae</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM NAGOYA</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">愛知県名古屋市中区栄5-16-19 ネイリックス 1F・2F<br><span class="text-charcoal/55">矢場町駅 すぐ</span></p>
+          <p class="mt-2 text-[11px] text-charcoal/55">11:00–19:00 / 全日営業</p>
+          <div class="mt-4 flex items-center gap-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=SEAM%20%E5%90%8D%E5%8F%A4%E5%B1%8B%E6%A0%84%205-16-19%20%E3%83%8D%E3%82%A4%E3%83%AA%E3%83%83%E3%82%AF%E3%82%B9" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="font-serif">マップ</span></a><a href="https://www.instagram.com/seam.nagoya/" target="_blank" rel="noopener" aria-label="店舗のInstagram" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg><span class="font-serif">Instagram</span></a></div>
+        </div>
+      </div>
+
+      <!-- SEAM FUKUOKA -->
+      <div class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          
+          <img src="images/stores/store_fukuoka.jpg" alt="SEAM FUKUOKA" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Fukuoka · Tenjin Daimyo</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM FUKUOKA</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">福岡県福岡市中央区大名2丁目1-53 BPRスクエア天神大名 1F<br><span class="text-charcoal/55">西鉄天神駅 徒歩5分</span></p>
+          <p class="mt-2 text-[11px] text-charcoal/55">10:00–19:00（日曜 〜18:00）</p>
+          <div class="mt-4 flex items-center gap-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=SEAM%20%E5%A4%A9%E7%A5%9E%E5%A4%A7%E5%90%8D%E5%BA%97%20%E5%A4%A7%E5%90%8D2-1-53%20BPR%E3%82%B9%E3%82%AF%E3%82%A8%E3%82%A2%E5%A4%A9%E7%A5%9E%E5%A4%A7%E5%90%8D" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="font-serif">マップ</span></a><a href="https://www.instagram.com/seam.fukuoka/" target="_blank" rel="noopener" aria-label="店舗のInstagram" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg><span class="font-serif">Instagram</span></a></div>
+        </div>
+      </div>
+
+      <!-- SEAM SAPPORO -->
+      <div class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          
+          <img src="images/stores/store_sapporo.jpg" alt="SEAM SAPPORO" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Sapporo · Odori</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">SEAM SAPPORO</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">北海道札幌市中央区南2条西3-15-2<br><span class="text-charcoal/55">地下鉄大通駅 徒歩1分</span></p>
+          <p class="mt-2 text-[11px] text-charcoal/55">平日 10:00–20:00 / 土 〜19:00 / 日 〜17:30</p>
+          <div class="mt-4 flex items-center gap-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=SEAM%20%E6%9C%AD%E5%B9%8C%20%E5%8D%97%EF%BC%92%E6%9D%A1%E8%A5%BF%EF%BC%93%E4%B8%81%E7%9B%AE15-2" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="font-serif">マップ</span></a><a href="https://www.instagram.com/seam.sapporo/" target="_blank" rel="noopener" aria-label="店舗のInstagram" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg><span class="font-serif">Instagram</span></a></div>
+        </div>
+      </div>
+
+      <!-- gigi SEAM -->
+      <div class="group block bg-white rounded-[12px] overflow-hidden border border-line shadow-soft svc-card">
+        <div class="relative aspect-[16/10] overflow-hidden bg-cream">
+          
+          <img src="images/stores/store_gigi.jpg" alt="gigi SEAM" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+        </div>
+        <div class="p-5 sm:p-6">
+          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">Utsunomiya · Tsuruta</p>
+          <h3 class="mt-1 font-serif text-[18px] sm:text-[22px] text-ink">gigi SEAM</h3>
+          <p class="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">栃木県宇都宮市鶴田町419-7 インターパーク内<br><span class="text-charcoal/55">JR鶴田駅 徒歩6分</span></p>
+          <p class="mt-2 text-[11px] text-charcoal/55">9:00–19:00（火曜定休）</p>
+          <div class="mt-4 flex items-center gap-4 flex-wrap"><a href="https://www.google.com/maps/search/?api=1&query=Gigi%20%E5%AE%87%E9%83%BD%E5%AE%AE%20%E9%B6%B4%E7%94%B0%E7%94%BA419-7" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2"/></svg><span class="font-serif">マップ</span></a><a href="https://www.instagram.com/gigi_seam_utsunomiya/" target="_blank" rel="noopener" aria-label="店舗のInstagram" class="inline-flex items-center gap-1.5 text-[12px] text-gold px-4 py-2.5 rounded-full border border-line hover:border-gold hover:text-ink transition-colors"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none"/></svg><span class="font-serif">Instagram</span></a></div>
+        </div>
+      </div>
 
     </div>
 
@@ -572,11 +647,11 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- FINAL CTA -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="py-16 sm:py-24 bg-deepSection">
+  <section class="py-20 sm:py-24 bg-deepSection">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-4">Visit Us</p>
-      <h2 class="font-serif text-[28px] sm:text-[40px] leading-[1.2] text-ink font-medium" style="letter-spacing:-0.014em;">
-        その髪に、<br>会いに行きたい一本がある。
+      <h2 data-reveal class="font-serif text-[28px] sm:text-[40px] leading-[1.2] text-ink font-medium" style="letter-spacing:-0.014em;">
+        その髪に、会いに行きたい一本がある。
       </h2>
       <p class="mt-6 text-[13px] sm:text-[15px] leading-[2.1] text-charcoal/75">
         まずは店頭で、お話しから。
@@ -607,7 +682,7 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- FOOTER -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <footer class="bg-cream/40 border-t border-line py-16 sm:py-24 pb-28 sm:pb-12">
+  <footer class="bg-cream/40 border-t border-line py-20 sm:py-24 pb-28 sm:pb-12">
     <div class="max-w-6xl mx-auto px-5 sm:px-8 grid sm:grid-cols-4 gap-8">
       <div class="sm:col-span-1">
         <div class="font-serif text-[20px] tracking-[0.22em] text-ink">SEAM</div>
@@ -628,14 +703,14 @@
       <div>
         <p class="font-mono tracking-widest2 text-[10px] text-charcoal/55 uppercase">— Member</p>
         <ul class="mt-3 space-y-2 text-[12.5px]">
-          <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">ログイン</a></li>
+          <li><a href="https://salon.town/home" target="_blank" rel="noopener" class="text-charcoal hover:text-ink">ログイン</a></li>
           <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">会員登録</a></li>
         </ul>
       </div>
       <div>
         <p class="font-mono tracking-widest2 text-[10px] text-charcoal/55 uppercase">— Support</p>
         <ul class="mt-3 space-y-2 text-[12.5px]">
-          <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">お問い合わせ</a></li>
+          <li><a href="#stores" class="text-charcoal hover:text-ink">お問い合わせ（各店Instagram）</a></li>
           <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">プライバシー</a></li>
         </ul>
       </div>
@@ -671,7 +746,7 @@
       mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileNav.classList.add('translate-x-full')));
     }
   </script>
-  <script src="js/online-shop-gate.js" defer></script>
+  <script src="js/online-shop-gate.js?v=2" defer></script>
 
   <script>
     // ハンバーガー aria-expanded 同期
@@ -693,5 +768,14 @@
       update(false);
     })();
   </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+  <script src="js/lang.js"></script>
+  <script src="js/reveal.js"></script>
 </body>
 </html>

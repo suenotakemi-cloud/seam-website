@@ -6,6 +6,20 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <title>HEAD SPA | SEAM — ほどける時間。</title>
   <meta name="description" content="SEAMのヘッドスパは、完全個室で頭皮も、こころも、ゆっくりほどく時間。Aman Resort級の上質体験を、銀座・札幌・名古屋・大阪・福岡で。">
+  <link rel="canonical" href="https://seam.site/headspa.html">
+  <meta property="og:site_name" content="SEAM">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://seam.site/headspa.html">
+  <meta property="og:title" content="SEAM HEAD SPA｜ほどける、90分の完全個室ヘッドスパ。">
+  <meta property="og:description" content="完全個室で、頭皮も、こころも。世界のヘアケアを知るSEAMのヘッドスパ。ゴールドアワード・カミカリスマ受賞サロン。">
+  <meta property="og:image" content="https://seam.site/images/og/seam-og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SEAM HEAD SPA｜ほどける時間。">
+  <meta name="twitter:description" content="完全個室・90分のヘッドスパ。受賞サロンで、頭皮もこころも。">
+  <meta name="twitter:image" content="https://seam.site/images/og/seam-og.jpg">
 
   <meta name="theme-color" content="#FAF8F4" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1A1815" media="(prefers-color-scheme: dark)">
@@ -16,7 +30,7 @@
   <meta name="apple-mobile-web-app-title" content="SEAM">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="SEAM">
-  <link rel="apple-touch-icon" href="images/favicon.svg">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
 
@@ -32,7 +46,7 @@
         extend: {
           colors: {
             ivory:'#F5F1EA', cream:'#EAE0D2', beige:'#D9CFC3',
-            ink:'#171614', charcoal:'#3A3833',
+            ink:'#171614', charcoal:'#2E2C28',
             gold:'#B8945A', goldLight:'#D9BE93', line:'#D9CFC3',
             baseBG:'#F5F1EA', softSection:'#F0EBE2', deepSection:'#D9CFC3',
             warmFill:'#E9D8C8', highlightFill:'#EAE0D2',
@@ -58,7 +72,7 @@
 
   <style>
     html { scroll-behavior:smooth; background:#F5F1EA; -webkit-text-size-adjust:100%; text-size-adjust:100%; }
-    body { background:#F5F1EA; color:#3A3833; font-family:'Noto Sans JP','Inter',sans-serif; -webkit-font-smoothing:antialiased; overscroll-behavior-y:none; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); font-size:15px; line-height:1.85; }
+    body { background:#F5F1EA; color:#2E2C28; font-family:'Noto Sans JP','Inter',sans-serif; -webkit-font-smoothing:antialiased; overscroll-behavior-y:none; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); font-size:15px; line-height:1.85; }
     @media (min-width: 640px) { body { padding-bottom: 0; } }
     header.fixed.top-0 { padding-top: env(safe-area-inset-top, 0); }
     .bottom-nav { padding-bottom: env(safe-area-inset-bottom, 0); }
@@ -113,26 +127,43 @@
       video[autoplay] { display: none !important; }
     }
   </style>
+  <link rel="stylesheet" href="css/lang.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="css/reveal.css?v=5">
 </head>
 
 <body class="font-sans text-charcoal antialiased pb-20 sm:pb-0">
+<!-- 言語モーダル (全ページ共通) -->
+<div class="lang-overlay" id="langOverlay" role="dialog" aria-modal="true" aria-label="言語選択">
+  <div class="lang-modal">
+    <div class="lang-modal-handle"></div>
+    <p class="lang-modal-title">Select Language</p>
+    <div class="lang-grid">
+      <button class="lang-option" data-l="ja"><span class="lo-label">JA</span><span class="lo-native">日本語</span></button>
+      <button class="lang-option" data-l="en"><span class="lo-label">EN</span><span class="lo-native">English</span></button>
+      <button class="lang-option" data-l="zh"><span class="lo-label">CN</span><span class="lo-native">简体中文</span></button>
+      <button class="lang-option" data-l="tw"><span class="lo-label">TW</span><span class="lo-native">繁體中文</span></button>
+      <button class="lang-option full-width" data-l="ko"><span class="lo-label">KR</span><span class="lo-native">한국어</span></button>
+    </div>
+  </div>
+</div>
+
 
   <!-- HEADER -->
   <header class="fixed top-0 left-0 right-0 z-50 bg-ivory/85 backdrop-blur-md">
     <div class="max-w-6xl mx-auto px-5 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
       <a href="index.html" class="flex flex-col leading-none">
         <span class="font-serif text-[22px] sm:text-[24px] text-ink tracking-[0.22em]">SEAM</span>
-        <span class="font-mono text-[10.5px] sm:text-[10.5px] tracking-widest2 text-charcoal/55 mt-0.5">GLOBAL HAIR CARE SELECT SHOP</span>
+        <span class="hidden sm:block font-mono text-[10.5px] sm:text-[10.5px] tracking-widest2 text-charcoal/55 mt-0.5">GLOBAL HAIR CARE SELECT SHOP</span>
       </a>
       <div class="flex items-center gap-3 sm:gap-5">
-        <button type="button" class="inline-flex items-center gap-1.5 text-[11.5px] text-charcoal/70 hover:text-ink transition-colors">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
-          <span class="font-mono tracking-wider">EN</span>
-          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l3 3 3-3"/></svg>
-        </button>
-        <button id="menuToggle" aria-expanded="false" aria-controls="mobileNav" type="button" aria-label="メニュー" class="w-10 h-10 flex flex-col items-center justify-center gap-1.5">
-          <span class="block w-5 h-px bg-ink"></span>
-          <span class="block w-5 h-px bg-ink"></span>
+        <button type="button" id="langToggleBtn" aria-label="言語を切り替える" class="inline-flex items-center gap-1.5 text-[11.5px] text-charcoal/70 hover:text-ink transition-colors"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span id="langCurrentLabel" class="font-mono tracking-wider">JP</span><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l3 3 3-3"/></svg></button>
+        <button id="menuToggle" aria-expanded="false" aria-controls="mobileNav" type="button" aria-label="メニューを開く" class="inline-flex items-center gap-2 border border-ink/30 rounded-full pl-3.5 pr-3 hover:bg-ink/[0.05] transition-colors">
+          <span class="font-mono text-[10px] tracking-widest2 text-ink uppercase">Menu</span>
+          <span class="flex flex-col gap-[3.5px]">
+            <span class="block w-[18px] h-px bg-ink"></span>
+            <span class="block w-[18px] h-px bg-ink"></span>
+          </span>
         </button>
       </div>
     </div>
@@ -169,18 +200,18 @@
         <div class="absolute inset-x-0 bottom-0 h-28 pointer-events-none" style="background: linear-gradient(180deg, rgba(245,241,234,0) 0%, rgba(245,241,234,0.7) 55%, rgba(245,241,234,1) 100%);"></div>
         <div class="absolute inset-x-0 top-0 h-14 pointer-events-none" style="background: linear-gradient(180deg, rgba(245,241,234,0.6) 0%, rgba(245,241,234,0) 100%);"></div>
       </div>
-      <div class="relative -mt-20 px-6 pb-8 z-10">
+      <div class="relative -mt-20 px-6 pb-10 z-10">
         <div class="hero-animate hero-animate-d1 flex items-center gap-3">
           <span class="block w-8 h-px bg-gold/60"></span>
           <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">HEAD SPA</p>
         </div>
-        <h1 class="hero-animate hero-animate-d2 mt-5 font-serif text-[42px] leading-[1.08] text-ink" style="letter-spacing:-0.014em;font-weight:500;">
-          ほどける、<br>時間を。
+        <h1 class="hero-animate hero-animate-d2 mt-6 font-serif text-[38px] leading-[1.12] text-ink" style="letter-spacing:0.015em;font-weight:480;">
+          ほどく手に、<br>出会う。
         </h1>
-        <p class="hero-animate hero-animate-d3 mt-5 text-[15px] leading-[1.95] text-charcoal/75">
-          完全個室で、頭皮も、こころも、<br>ゆっくりとほどく時間を。
+        <p class="hero-animate hero-animate-d3 mt-6 text-[15px] leading-[2] text-charcoal/80">
+          完全個室で、頭皮も、こころも。<br>確かな手に、ゆだねる時間を。
         </p>
-        <a href="#booking" class="hero-animate hero-animate-d4 mt-6 group flex items-center bg-ink text-ivory rounded-full py-3.5 pl-5 pr-2 shadow-card hover:bg-charcoal transition-colors">
+        <a href="#booking" class="hero-animate hero-animate-d4 mt-8 group flex items-center bg-ink text-ivory rounded-full py-3.5 pl-5 pr-2 shadow-card hover:bg-charcoal transition-colors">
           <span class="font-serif text-[15px] flex-1">ヘッドスパを予約する</span>
           <span class="w-9 h-9 bg-ivory text-ink rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
         </a>
@@ -195,11 +226,11 @@
         <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(245,241,234,0.96) 0%, rgba(245,241,234,0.80) 35%, rgba(245,241,234,0.15) 60%, rgba(245,241,234,0) 75%);"></div>
         <div class="relative max-w-6xl mx-auto px-10 lg:px-16 pt-16 lg:pt-24">
           <p class="font-mono tracking-widest2 text-[11px] text-gold uppercase">HEAD SPA</p>
-          <h1 class="mt-6 font-serif text-[46px] md:text-[54px] lg:text-[64px] leading-[1.05] text-ink max-w-xl" style="letter-spacing:-0.014em;font-weight:500;">
-            ほどける、<br>時間を。
+          <h1 class="mt-6 font-serif text-[46px] md:text-[54px] lg:text-[64px] leading-[1.05] text-ink max-w-xl" style="letter-spacing:0.035em;font-weight:480;">
+            ほどく手に、<br>出会う。
           </h1>
           <p class="mt-6 text-[15px] leading-[1.95] text-charcoal/75 max-w-md">
-            完全個室で、頭皮も、こころも、ゆっくりとほどく時間を。
+            完全個室で、頭皮も、こころも。確かな手に、ゆだねる時間を。
           </p>
           <a href="#booking" class="mt-8 inline-flex items-center gap-2.5 bg-ink text-ivory rounded-full pl-6 pr-3 py-2.5 shadow-card hover:bg-charcoal transition-colors">
             <span class="font-serif text-[15px]">ヘッドスパを予約する</span>
@@ -211,10 +242,10 @@
   </section>
 
   <!-- CONCEPT -->
-  <section class="py-16 sm:py-24 bg-cream">
+  <section class="py-20 sm:py-24 bg-cream">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-5">Concept</p>
-      <h2 class="font-serif text-[28px] sm:text-[40px] leading-[1.25] text-ink font-medium" style="letter-spacing:-0.014em;">
+      <h2 data-reveal class="font-serif text-[28px] sm:text-[40px] leading-[1.25] text-ink font-medium" style="letter-spacing:-0.014em;">
         頭皮を、<br>ゆっくり、ほどく。
       </h2>
       <p class="mt-7 text-[13.5px] sm:text-[15px] leading-[2.1] text-charcoal/75 max-w-xl mx-auto">
@@ -226,10 +257,10 @@
   </section>
 
   <!-- SPA JOURNEY — 6 scenes (実写動画) -->
-  <section class="py-16 sm:py-24 bg-ivory">
+  <section class="py-20 sm:py-24 bg-ivory">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-10 sm:mb-14">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">Spa Journey</p>
-      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">90分の旅路</h2>
+      <h2 data-reveal class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">90分の旅路</h2>
       <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">ご来店から仕上げまで、6つのシーンで構成されています。</p>
     </div>
 
@@ -271,9 +302,9 @@
         </div>
         <div class="order-2 sm:px-4">
           <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase">— Scene 03</p>
-          <h3 class="mt-2 font-serif text-[22px] sm:text-[28px] text-ink leading-snug">頭浴で、深く、沈む。</h3>
+          <h3 class="mt-2 font-serif text-[22px] sm:text-[28px] text-ink leading-snug">温かい湯で、流す。</h3>
           <p class="mt-4 text-[12.5px] sm:text-[14px] leading-[2.1] text-charcoal/70 max-w-md">
-            髪を温かい湯に、ふわりと浸して。<br>体ごと、ほどける、特別な時間。
+            頭皮に残る汚れを、たっぷりの湯で。<br>地肌から、すっと軽くなっていく。
           </p>
         </div>
       </div>
@@ -281,7 +312,7 @@
       <!-- 04 -->
       <div class="grid sm:grid-cols-2 gap-6 sm:gap-10 items-center">
         <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream order-1 sm:order-2">
-          <video class="absolute inset-0 w-full h-full object-cover" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/04_neck.jpg" aria-label="04 首ストレッチ"><source src="images/spa-real/04_neck.mp4" type="video/mp4"></video>
+          <video class="absolute inset-0 w-full h-full object-cover" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/05_decollete.jpg" aria-label="04 首ストレッチ"><source src="images/spa-real/05_decollete.mp4" type="video/mp4"></video>
         </div>
         <div class="order-2 sm:order-1 sm:px-4">
           <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase">— Scene 04</p>
@@ -295,7 +326,7 @@
       <!-- 05 -->
       <div class="grid sm:grid-cols-2 gap-6 sm:gap-10 items-center">
         <div class="relative aspect-[3/4] overflow-hidden rounded-[12px] bg-cream order-1">
-          <video class="absolute inset-0 w-full h-full object-cover" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/05_decollete.jpg" aria-label="05 デコルテケア"><source src="images/spa-real/05_decollete.mp4" type="video/mp4"></video>
+          <video class="absolute inset-0 w-full h-full object-cover" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g6_neck.jpg" aria-label="05 デコルテケア"><source src="images/spa-real/gallery/g6_neck.mp4" type="video/mp4"></video>
         </div>
         <div class="order-2 sm:px-4">
           <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase">— Scene 05</p>
@@ -322,11 +353,150 @@
     </div>
   </section>
 
+  <!-- HANDS / 手技ギャラリー -->
+  <section class="py-20 sm:py-24 bg-cream">
+    <div class="max-w-5xl mx-auto px-5 sm:px-8">
+      <div class="text-center mb-10 sm:mb-14">
+        <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">— The Hands</p>
+        <h2 data-reveal class="font-serif text-[26px] sm:text-[36px] text-ink leading-tight">手が、ほどいていく。</h2>
+        <p class="mt-4 text-[12.5px] sm:text-[14px] leading-[2.1] text-charcoal/65 max-w-lg mx-auto">
+          頭には、こころの疲れがあつまります。<br class="hidden sm:block">
+          一つひとつの手技が、どこに効くのか。<br class="hidden sm:block">
+          目を閉じて、その指先を、想像してみてください。
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+
+        <!-- G1 側頭部 -->
+        <figure class="group">
+          <div class="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-cream">
+            <video class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g1_temple.jpg" aria-label="側頭部のリフト"><source src="images/spa-real/gallery/g1_temple.mp4" type="video/mp4"></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent pointer-events-none"></div>
+            <figcaption class="absolute left-4 right-4 bottom-4 text-left">
+              <p class="font-mono tracking-widest2 text-[9px] text-white/70 uppercase">01 · Temple</p>
+              <h3 class="font-serif text-[16px] sm:text-[18px] text-white leading-snug mt-0.5">側頭部のリフト</h3>
+            </figcaption>
+          </div>
+          <p class="mt-3 px-1 text-[11.5px] sm:text-[13px] leading-[1.95] text-charcoal/70">
+            こめかみをゆっくり引き上げ、目の奥の張りをほどく。視界が、ふっと明るくなる。
+          </p>
+        </figure>
+
+        <!-- G2 生え際 -->
+        <figure class="group">
+          <div class="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-cream">
+            <video class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g2_hairline.jpg" aria-label="生え際のプレス"><source src="images/spa-real/gallery/g2_hairline.mp4" type="video/mp4"></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent pointer-events-none"></div>
+            <figcaption class="absolute left-4 right-4 bottom-4 text-left">
+              <p class="font-mono tracking-widest2 text-[9px] text-white/70 uppercase">02 · Hairline</p>
+              <h3 class="font-serif text-[16px] sm:text-[18px] text-white leading-snug mt-0.5">生え際のプレス</h3>
+            </figcaption>
+          </div>
+          <p class="mt-3 px-1 text-[11.5px] sm:text-[13px] leading-[1.95] text-charcoal/70">
+            額の生え際を指の腹で押し沈める。考えごとのざわめきが、静かに鎮まっていく。
+          </p>
+        </figure>
+
+        <!-- G3 肩甲骨 -->
+        <figure class="group">
+          <div class="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-cream">
+            <video class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g3_shoulder.jpg" aria-label="肩甲骨をほぐす"><source src="images/spa-real/gallery/g3_shoulder.mp4" type="video/mp4"></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent pointer-events-none"></div>
+            <figcaption class="absolute left-4 right-4 bottom-4 text-left">
+              <p class="font-mono tracking-widest2 text-[9px] text-white/70 uppercase">03 · Shoulder</p>
+              <h3 class="font-serif text-[16px] sm:text-[18px] text-white leading-snug mt-0.5">肩甲骨をほぐす</h3>
+            </figcaption>
+          </div>
+          <p class="mt-3 px-1 text-[11.5px] sm:text-[13px] leading-[1.95] text-charcoal/70">
+            凝り固まった背中の付け根を、手のひらでゆるめる。呼吸が、自然と深くなる。
+          </p>
+        </figure>
+
+        <!-- G4 フェイスライン -->
+        <figure class="group">
+          <div class="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-cream">
+            <video class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g4_ear.jpg" aria-label="フェイスラインをほぐす"><source src="images/spa-real/gallery/g4_ear.mp4" type="video/mp4"></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent pointer-events-none"></div>
+            <figcaption class="absolute left-4 right-4 bottom-4 text-left">
+              <p class="font-mono tracking-widest2 text-[9px] text-white/70 uppercase">04 · Face Line</p>
+              <h3 class="font-serif text-[16px] sm:text-[18px] text-white leading-snug mt-0.5">フェイスラインを巡らす</h3>
+            </figcaption>
+          </div>
+          <p class="mt-3 px-1 text-[11.5px] sm:text-[13px] leading-[1.95] text-charcoal/70">
+            頬から顎の輪郭を、やさしく流す。むくみが抜けて、顔がすっと軽くなる。
+          </p>
+        </figure>
+
+        <!-- G5 こめかみ -->
+        <figure class="group">
+          <div class="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-cream">
+            <video class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g5_crown.jpg" aria-label="こめかみの円圧"><source src="images/spa-real/gallery/g5_crown.mp4" type="video/mp4"></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent pointer-events-none"></div>
+            <figcaption class="absolute left-4 right-4 bottom-4 text-left">
+              <p class="font-mono tracking-widest2 text-[9px] text-white/70 uppercase">05 · Circle</p>
+              <h3 class="font-serif text-[16px] sm:text-[18px] text-white leading-snug mt-0.5">こめかみの円圧</h3>
+            </figcaption>
+          </div>
+          <p class="mt-3 px-1 text-[11.5px] sm:text-[13px] leading-[1.95] text-charcoal/70">
+            こめかみを円を描くように包む。まどろみへ落ちていく、とろけるような心地。
+          </p>
+        </figure>
+
+        <!-- G6 首肩 -->
+        <figure class="group">
+          <div class="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-cream">
+            <video class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g6_neck.jpg" aria-label="首の付け根を伸ばす"><source src="images/spa-real/gallery/g6_neck.mp4" type="video/mp4"></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent pointer-events-none"></div>
+            <figcaption class="absolute left-4 right-4 bottom-4 text-left">
+              <p class="font-mono tracking-widest2 text-[9px] text-white/70 uppercase">06 · Neck</p>
+              <h3 class="font-serif text-[16px] sm:text-[18px] text-white leading-snug mt-0.5">首の付け根を伸ばす</h3>
+            </figcaption>
+          </div>
+          <p class="mt-3 px-1 text-[11.5px] sm:text-[13px] leading-[1.95] text-charcoal/70">
+            頭と肩をつなぐ道を、ゆっくり伸ばす。頭が、羽のように軽くなっていく。
+          </p>
+        </figure>
+
+        <!-- G7 泡シャンプー -->
+        <figure class="group">
+          <div class="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-cream">
+            <video class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g7_foam.jpg" aria-label="泡で包む"><source src="images/spa-real/gallery/g7_foam.mp4" type="video/mp4"></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent pointer-events-none"></div>
+            <figcaption class="absolute left-4 right-4 bottom-4 text-left">
+              <p class="font-mono tracking-widest2 text-[9px] text-white/70 uppercase">07 · Foam</p>
+              <h3 class="font-serif text-[16px] sm:text-[18px] text-white leading-snug mt-0.5">泡で、包みこむ</h3>
+            </figcaption>
+          </div>
+          <p class="mt-3 px-1 text-[11.5px] sm:text-[13px] leading-[1.95] text-charcoal/70">
+            たっぷりの濃密な泡で、髪を芯から潤す。摩擦のない、雲の中のような洗い心地。
+          </p>
+        </figure>
+
+        <!-- G8 頭皮の泡洗い -->
+        <figure class="group">
+          <div class="relative aspect-[4/5] overflow-hidden rounded-[12px] bg-cream">
+            <video class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]" autoplay loop muted playsinline preload="metadata" poster="images/spa-real/gallery/g8_scalp.jpg" aria-label="頭皮を泡で洗う"><source src="images/spa-real/gallery/g8_scalp.mp4" type="video/mp4"></video>
+            <div class="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-transparent pointer-events-none"></div>
+            <figcaption class="absolute left-4 right-4 bottom-4 text-left">
+              <p class="font-mono tracking-widest2 text-[9px] text-white/70 uppercase">08 · Scalp Wash</p>
+              <h3 class="font-serif text-[16px] sm:text-[18px] text-white leading-snug mt-0.5">地肌を、丁寧に洗う</h3>
+            </figcaption>
+          </div>
+          <p class="mt-3 px-1 text-[11.5px] sm:text-[13px] leading-[1.95] text-charcoal/70">
+            指の腹で地肌をめぐらせ、毛穴の奥まですっきり。一日分の重さが、流れ落ちていく。
+          </p>
+        </figure>
+
+      </div>
+    </div>
+  </section>
+
   <!-- MENUS -->
-  <section class="py-16 sm:py-24 bg-softSection">
+  <section class="py-20 sm:py-24 bg-softSection">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-8 sm:mb-12">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">Menus</p>
-      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">3つのコース</h2>
+      <h2 data-reveal class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">3つのコース</h2>
       <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">その日の気分・頭皮の状態に合わせて、お選びいただけます。</p>
     </div>
 
@@ -553,11 +723,11 @@
   </script>
 
   <!-- PRIVATE ROOM -->
-  <section class="py-16 sm:py-24 bg-ivory">
+  <section class="py-20 sm:py-24 bg-ivory">
     <div class="max-w-6xl mx-auto px-5 sm:px-8 grid sm:grid-cols-2 gap-8 sm:gap-12 items-center">
       <div class="order-2 sm:order-1">
         <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-4">Private Room</p>
-        <h2 class="font-serif text-[28px] sm:text-[40px] leading-[1.18] text-ink font-medium" style="letter-spacing:-0.014em;">
+        <h2 data-reveal class="font-serif text-[28px] sm:text-[40px] leading-[1.18] text-ink font-medium" style="letter-spacing:-0.014em;">
           完全個室で、<br>あなただけの90分。
         </h2>
         <p class="mt-6 text-[13px] sm:text-[14px] leading-[2.1] text-charcoal/75 max-w-md">
@@ -583,17 +753,17 @@
   </section>
 
   <!-- AFTER CARE -->
-  <section class="py-16 sm:py-24 bg-softSection">
+  <section class="py-20 sm:py-24 bg-softSection">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center mb-10 sm:mb-14">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">After Care</p>
-      <h2 class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">スパの余韻を、ご自宅にも。</h2>
+      <h2 data-reveal class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium">スパの余韻を、ご自宅にも。</h2>
       <p class="mt-5 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[2]">施術後の頭皮と髪に合うアフターケアを、ご案内します。</p>
     </div>
     <div class="max-w-5xl mx-auto px-5 sm:px-8 grid grid-cols-3 gap-3 sm:gap-5">
       <a href="brand.html" class="block bg-white rounded-[12px] border border-line overflow-hidden shadow-soft svc-card">
         <div class="relative aspect-square overflow-hidden bg-cream">
           <!-- IMAGE: aftercare_scalp.jpg — 頭皮美容液ボトル静物 -->
-          <img src="images/lp/generated/category_scalp_care_v2.png" alt="頭皮美容液" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+          <img src="images/lp/generated/category_scalp_care_v2.jpg" alt="頭皮美容液" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
         </div>
         <div class="p-4 text-center"><p class="font-serif text-[12.5px] sm:text-[14px] text-ink">頭皮美容液</p></div>
       </a>
@@ -607,7 +777,7 @@
       <a href="brand.html" class="block bg-white rounded-[12px] border border-line overflow-hidden shadow-soft svc-card">
         <div class="relative aspect-square overflow-hidden bg-cream">
           <!-- IMAGE: aftercare_aroma.jpg — アロマミスト or オイル -->
-          <img src="images/lp/clean_product_group.png" alt="アロマケア" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
+          <img src="images/lp/clean_product_group.jpg" alt="アロマケア" class="absolute inset-0 w-full h-full object-cover" loading="lazy"/>
         </div>
         <div class="p-4 text-center"><p class="font-serif text-[12.5px] sm:text-[14px] text-ink">アロマケア</p></div>
       </a>
@@ -615,10 +785,10 @@
   </section>
 
   <!-- FINAL CTA · BOOKING -->
-  <section id="booking" class="py-16 sm:py-24 bg-deepSection scroll-mt-20">
+  <section id="booking" class="py-20 sm:py-24 bg-deepSection scroll-mt-20">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 text-center">
       <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-4">Booking</p>
-      <h2 class="font-serif text-[28px] sm:text-[40px] leading-[1.2] text-ink font-medium" style="letter-spacing:-0.014em;">
+      <h2 data-reveal class="font-serif text-[28px] sm:text-[40px] leading-[1.2] text-ink font-medium" style="letter-spacing:-0.014em;">
         ほどける時間を、<br>予約する。
       </h2>
       <p class="mt-6 text-[13px] sm:text-[15px] leading-[2.1] text-charcoal/75">ご希望の店舗・日時で、ご予約ください。</p>
@@ -643,7 +813,7 @@
   </section>
 
   <!-- FOOTER -->
-  <footer class="bg-cream/40 border-t border-line py-16 sm:py-24 pb-28 sm:pb-12">
+  <footer class="bg-cream/40 border-t border-line py-20 sm:py-24 pb-28 sm:pb-12">
     <div class="max-w-6xl mx-auto px-5 sm:px-8 grid sm:grid-cols-4 gap-8">
       <div class="sm:col-span-1">
         <div class="font-serif text-[20px] tracking-[0.22em] text-ink">SEAM</div>
@@ -664,14 +834,14 @@
       <div>
         <p class="font-mono tracking-widest2 text-[10px] text-charcoal/55 uppercase">— Member</p>
         <ul class="mt-3 space-y-2 text-[12.5px]">
-          <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">ログイン</a></li>
+          <li><a href="https://salon.town/home" target="_blank" rel="noopener" class="text-charcoal hover:text-ink">ログイン</a></li>
           <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">会員登録</a></li>
         </ul>
       </div>
       <div>
         <p class="font-mono tracking-widest2 text-[10px] text-charcoal/55 uppercase">— Support</p>
         <ul class="mt-3 space-y-2 text-[12.5px]">
-          <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">お問い合わせ</a></li>
+          <li><a href="shop.html#stores" class="text-charcoal hover:text-ink">お問い合わせ（各店Instagram）</a></li>
           <li><a href="javascript:void(0)" aria-disabled="true" class="text-charcoal hover:text-ink">プライバシー</a></li>
         </ul>
       </div>
@@ -707,7 +877,7 @@
       mobileNav.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileNav.classList.add('translate-x-full')));
     }
   </script>
-  <script src="js/online-shop-gate.js" defer></script>
+  <script src="js/online-shop-gate.js?v=2" defer></script>
 
   <script>
     // ハンバーガー aria-expanded 同期
@@ -729,5 +899,43 @@
       update(false);
     })();
   </script>
+  <script>
+    /* スパ動画: 画面内のものだけ再生し、画面外は停止。
+       スマホで複数動画の同時デコードによる重さ・発熱・カクつきを防ぐ。 */
+    (function () {
+      var vids = Array.prototype.slice.call(document.querySelectorAll('video[autoplay]'));
+      if (!vids.length) return;
+      // 自動再生の暴発を抑えるため、まず一旦止めてObserverに委ねる
+      vids.forEach(function (v) {
+        v.autoplay = false;
+        v.setAttribute('muted', '');
+        v.muted = true;
+        v.setAttribute('playsinline', '');
+        try { v.pause(); } catch (e) {}
+      });
+      if (!('IntersectionObserver' in window)) {
+        // 非対応ブラウザは従来通り全再生
+        vids.forEach(function (v) { v.play().catch(function () {}); });
+        return;
+      }
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          var v = e.target;
+          if (e.isIntersecting) { v.play().catch(function () {}); }
+          else { try { v.pause(); } catch (err) {} }
+        });
+      }, { threshold: 0.25 });
+      vids.forEach(function (v) { io.observe(v); });
+    })();
+  </script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () {});
+      });
+    }
+  </script>
+  <script src="js/lang.js"></script>
+  <script src="js/reveal.js"></script>
 </body>
 </html>
