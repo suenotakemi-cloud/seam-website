@@ -2905,6 +2905,7 @@ const STATUS = {
   SAPPORO:      { label: '札幌店のみ',         cls: 'badge-sapporo' },
   GINZA:        { label: '銀座店のみ',         cls: 'badge-sapporo' },
   OMOTESANDO_GINZA: { label: '表参道・銀座店のみ', cls: 'badge-sapporo' },
+  PARTIAL_BOTH: { label: '一部店舗 & オンライン', cls: 'badge-both' },
 };
 
 // ============================================================
@@ -2923,8 +2924,8 @@ const BRAND_CATS = {
       { name: 'SUBLIMIC',                 nameJp: 'サブリミック',            site: 'https://www.shiseido-professional.com',      status: STATUS.BOTH,          logo: 'images/logo_sublimic.jpg',          desc: '資生堂プロフェッショナルが誇る、髪の美しさを根本から引き出すケアライン。' },
       { name: 'TOKIO INKARAMI',           nameJp: 'トキオ インカラミ',       site: 'https://www.ifing.com',                      status: STATUS.BOTH,          logo: 'images/logo_tokio_inkarami.jpg',    desc: '毛髪内部に働きかけ、強さとしなやかさを同時に実現するプロ仕様ライン。' },
       { name: 'TOKIO LIMITED',            nameJp: 'トキオ リミテッド',       site: 'https://www.ifing.com',                      status: STATUS.BOTH,          logo: 'images/logo_tokio_limited.jpg',     desc: 'TOKIOの技術を昇華させた、特別感のある限定ヘアケアライン。' },
-      { name: 'KÉRASTASE',                nameJp: 'ケラスターゼ',            site: 'https://www.kerastase.jp',                   status: STATUS.PARTIAL_STORE, logo: 'images/logo_kerastase.jpg',         desc: 'パリ発のラグジュアリーヘアケアブランド。髪質や悩みに合わせた上質なケアを提案。' },
-      { name: 'SYSTEM PROFESSIONAL',      nameJp: 'システムプロフェッショナル', site: 'https://www.wella.com',                    status: STATUS.PARTIAL_STORE, logo: 'images/logo_system_professional.jpg', desc: '髪のコンディションを科学し、一人ひとりに最適なケアを届けるウエラのライン。' },
+      { name: 'KÉRASTASE',                nameJp: 'ケラスターゼ',            site: 'https://www.kerastase.jp',                   status: STATUS.PARTIAL_BOTH, logo: 'images/logo_kerastase.jpg',         desc: 'パリ発のラグジュアリーヘアケアブランド。髪質や悩みに合わせた上質なケアを提案。' },
+      { name: 'SYSTEM PROFESSIONAL',      nameJp: 'システムプロフェッショナル', site: 'https://www.wella.com',                    status: STATUS.PARTIAL_BOTH, logo: 'images/logo_system_professional.jpg', desc: '髪のコンディションを科学し、一人ひとりに最適なケアを届けるウエラのライン。' },
       { name: 'BYKARTE',                  nameJp: 'バイカルテ',              site: 'https://www.hoyu-professional.com',          status: STATUS.ONLINE,        logo: 'images/logo_bykarte.jpg',           desc: '内側から満たし、素髪のような美しさへ。ホーユープロフェッショナルの新感覚ラインです。' },
       { name: 'PLARMIA',                  nameJp: 'プラーミア',              site: 'https://www.milbon.co.jp',                   status: STATUS.BOTH,          logo: 'images/logo_plarmia.jpg',           desc: '大人の髪と頭皮の変化に向き合う、ミルボンのエイジングケアライン。' },
       { name: 'jemile fran',              nameJp: 'ジェミールフラン',        site: 'https://www.milbon.co.jp',                   status: STATUS.BOTH,          logo: 'images/logo_jemile_fran.jpg',       desc: '毎日のケアを楽しく、かわいく。ミルボンのポップなヘアケアシリーズ。' },
@@ -3631,7 +3632,7 @@ renderBrandRoster();
   function matchStock(b, stock) {
     if (stock === 'all') return true;
     const s = b.status || 'ONLINE';
-    if (stock === 'both')   return s === 'BOTH';
+    if (stock === 'both')   return s === 'BOTH' || s === 'PARTIAL_BOTH';
     if (stock === 'store')  return s === 'PARTIAL_STORE' || s === 'SAPPORO' || s === 'STORE_ONLY' || s === 'GINZA' || s === 'OMOTESANDO_GINZA';
     if (stock === 'online') return s === 'ONLINE';
     return true;
@@ -3644,6 +3645,7 @@ renderBrandRoster();
     if (s === 'STORE_ONLY')    return { label: '店舗のみ',         cls: 'badge-partial' };
     if (s === 'GINZA')         return { label: '銀座店のみ',       cls: 'badge-sapporo' };
     if (s === 'OMOTESANDO_GINZA') return { label: '表参道・銀座店のみ', cls: 'badge-sapporo' };
+    if (s === 'PARTIAL_BOTH')  return { label: '一部店舗 & オンライン', cls: 'badge-both' };
     return { label: 'オンライン', cls: 'badge-online' };
   }
 
@@ -3653,7 +3655,7 @@ renderBrandRoster();
     const cnt = { all: allBrands.length, both: 0, store: 0, online: 0 };
     allBrands.forEach(b => {
       const s = b.status || 'ONLINE';
-      if (s === 'BOTH') cnt.both++;
+      if (s === 'BOTH' || s === 'PARTIAL_BOTH') cnt.both++;
       else if (s === 'PARTIAL_STORE' || s === 'SAPPORO' || s === 'STORE_ONLY' || s === 'GINZA' || s === 'OMOTESANDO_GINZA') cnt.store++;
       else cnt.online++;
     });
@@ -3763,10 +3765,11 @@ renderBrandRoster();
           ${g.items.map(b => {
             const s = b.status || 'ONLINE';
             let dotCls = 'dot-online';
-            if (s === 'BOTH')          dotCls = 'dot-both';
+            if (s === 'BOTH' || s === 'PARTIAL_BOTH') dotCls = 'dot-both';
             else if (s === 'PARTIAL_STORE' || s === 'STORE_ONLY') dotCls = 'dot-partial';
             else if (s === 'SAPPORO' || s === 'GINZA' || s === 'OMOTESANDO_GINZA')  dotCls = 'dot-sapporo';
             const statusLabel = (s === 'BOTH' ? '店舗・オンライン'
+                              : s === 'PARTIAL_BOTH' ? '一部店舗 & オンライン'
                               : s === 'PARTIAL_STORE' ? '一部店舗取扱'
                               : s === 'SAPPORO' ? '札幌店のみ'
                               : s === 'GINZA' ? '銀座店のみ'
