@@ -986,6 +986,8 @@ const Q = [
       { v: 'loveGadgets',  label: '美容家電が好きで、最新のものを使ってみたい', score: {} },
       { v: 'dryerUpgrade', label: 'ドライヤーを買い替えたい・検討している',     score: {} },
       { v: 'ironUpgrade',  label: 'アイロン・コテを買い替えたい・検討している', score: {} },
+      { v: 'showerHead',   label: 'シャワーヘッドに興味がある・買い替えたい',   score: {} },
+      { v: 'faceDevice',   label: '美顔器に興味がある・使ってみたい',           score: {} },
       { v: 'none',         label: '特にない',                                   score: {}, exclusive: true },
     ],
   },
@@ -3105,6 +3107,7 @@ function pickHomeTools(tools, answers, scores) {
   const hasScalpOdor = (s.scalpOiliness || 0) >= 3 || concerns.includes('scalpOily');
   const hasScalpDry = (s.scalpDryness || 0) >= 3 || concerns.includes('scalpDry');
   const hasThinning = concerns.includes('thinning') || concerns.includes('topFlat') || concerns.includes('volumeDown') || (s.aging || 0) >= 3;
+  const deviceWish = Array.isArray(a.deviceInterest) ? a.deviceInterest : [];
 
   const scored = tools.map(t => {
     let score = 0;
@@ -3133,6 +3136,11 @@ function pickHomeTools(tools, answers, scores) {
     if (hasThinning && (t.category === 'tool-headspa' || t.subtype === 'scalp-care' || t.subtype === 'scalp-massage')) score += 12;
     // 頭皮乾燥/オイリー → headspa
     if ((hasScalpOdor || hasScalpDry) && t.category === 'tool-headspa') score += 8;
+    // カウンセリングで聞いた「美容家電の希望」を最優先で反映
+    if (deviceWish.includes('dryerUpgrade') && t.category === 'tool-dryer') score += 20;
+    if (deviceWish.includes('ironUpgrade') && /^tool-iron/.test(t.category || '')) score += 20;
+    if (deviceWish.includes('showerHead') && t.category === 'tool-shower') score += 24;
+    if (deviceWish.includes('loveGadgets')) score += 3;
     return { t, score };
   }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
 
