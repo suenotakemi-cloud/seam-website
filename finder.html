@@ -976,6 +976,19 @@ const Q = [
       { v: 'well',         label: '特に気にならない',     score: {}, exclusive: true },
     ],
   },
+  {
+    id: 'deviceInterest',
+    type: 'check-multi',
+    eyebrow: 'Beauty Device',
+    title: '美容家電について教えてください',
+    note: '当てはまるものをすべてお選びください。気になる方には、髪質に合う美容家電もご提案します。',
+    options: [
+      { v: 'loveGadgets',  label: '美容家電が好きで、最新のものを使ってみたい', score: {} },
+      { v: 'dryerUpgrade', label: 'ドライヤーを買い替えたい・検討している',     score: {} },
+      { v: 'ironUpgrade',  label: 'アイロン・コテを買い替えたい・検討している', score: {} },
+      { v: 'none',         label: '特にない',                                   score: {}, exclusive: true },
+    ],
+  },
 ];
 
 /* ---------- Mode B (詳しいカルテ) 追加質問 ---------- */
@@ -1211,6 +1224,7 @@ const MODE_B_ORDER = [
   { step:3, id:'concernsItem' },
   { step:3, id:'goalTexture' },
   { step:3, id:'goal' },
+  { step:3, id:'deviceInterest' },
   { step:3, id:'headSpaInterest' },
   { step:3, id:'wellness', when:(a) => a.headSpaInterest === 'yes' },
 ];
@@ -3694,16 +3708,50 @@ function FinishingSpraySection({ answers, scores }) {
   );
 }
 
-function DeepProductSection({ deepResult, seamData }) {
+function DeepAltsToggle({ alts }) {
+  const [open, setOpen] = useState(false);
+  if (!alts || alts.length === 0) return null;
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-3 w-full inline-flex items-center justify-center gap-2 border border-line bg-white/70 rounded-[2px] px-4 py-3 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/70 hover:border-gold hover:text-ink active:scale-[0.99] transition-all min-h-[44px] no-print"
+      >
+        <span>ほかの候補を見る（{alts.length}点）</span>
+        <span aria-hidden className="text-gold text-[13px] leading-none">＋</span>
+      </button>
+    );
+  }
+  return (
+    <div className="mt-3.5">
+      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-2">ほかの候補 — SEAM メンバー特別価格</p>
+      <div className="grid grid-cols-2 gap-2.5">
+        {alts.map((a) => <DeepAltCard key={a.p.id} item={a} />)}
+      </div>
+    </div>
+  );
+}
+
+function DeepProductSection({ deepResult, seamData, answers, scores }) {
   if (!deepResult || !seamData) return null;
   const { blocks, hardRules } = deepResult;
   const totalCount = Object.values(blocks).reduce((acc, arr) => acc + arr.length, 0);
   if (totalCount === 0) return null;
 
-  // ルーティン順: SH → TR → アウトバス → マスク → スカルプ → 仕上げ → サロン
-  const orderedBlocks = ['shampoo','treatment','outbath','mask','scalp','finish','salon']
+  // 悩み連動ゲート: マスクはダメージがある方だけ / スカルプは頭皮・ボリュームの悩みがある方だけ
+  const _cs = (answers && Array.isArray(answers.concerns)) ? answers.concerns : [];
+  const _sc = scores || {};
+  const needMask  = (_sc.damage || 0) >= 2 || (_sc.bleachHistory || 0) > 0 || ['damage','split','rough','tangle'].some(v => _cs.includes(v));
+  const needScalp = (_sc.scalpDryness || 0) > 0 || (_sc.scalpOiliness || 0) > 0 || (_sc.volumeLoss || 0) > 0 || (_sc.aging || 0) > 0 || ['scalpDry','scalpOily','thinning','topFlat','volumeDown'].some(v => _cs.includes(v));
+
+  // ルーティン順: SH → TR → アウトバス → マスク → スカルプ → サロン
+  // ※「仕上げ・スプレー」は悩み連動の FinishingSpraySection に一本化(重複解消)
+  const orderedBlocks = ['shampoo','treatment','outbath','mask','scalp','salon']
     .map(id => ({ ...(DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}), items: blocks[id] || [] }))
-    .filter(b => b.items.length > 0);
+    .filter(b => b.items.length > 0)
+    .filter(b => (b.id !== 'mask' || needMask) && (b.id !== 'scalp' || needScalp));
+  const shownCount = orderedBlocks.reduce((acc, b) => acc + b.items.length, 0);
 
   return (
     <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay:'300ms' }}>
@@ -3716,7 +3764,7 @@ function DeepProductSection({ deepResult, seamData }) {
           </h2>
         </div>
         <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55 pt-1">
-          {totalCount} item{totalCount > 1 ? 's' : ''}
+          {shownCount} item{shownCount > 1 ? 's' : ''}
         </span>
       </div>
 
@@ -3752,16 +3800,7 @@ function DeepProductSection({ deepResult, seamData }) {
               return (
                 <div className="mt-4">
                   <DeepBestCard item={best} />
-                  {alts.length > 0 && (
-                    <div className="mt-3.5">
-                      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-2">ほかの候補</p>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {alts.map((a) => (
-                          <DeepAltCard key={a.p.id} item={a} />
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <DeepAltsToggle alts={alts} />
                 </div>
               );
             })()}
@@ -7878,6 +7917,10 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
 
   // ヘッドスパ
   const spaItems = [];
+  if (Array.isArray(a.deviceInterest)) {
+    const di = a.deviceInterest.filter(v => v !== 'none');
+    if (di.length) spaItems.push(['美容家電の希望', di.map(v => lookupLabelShort('deviceInterest', v)).join('・')]);
+  }
   if (a.headSpaInterest) spaItems.push(['ヘッドスパ', lookupLabelShort('headSpaInterest', a.headSpaInterest)]);
   if (Array.isArray(a.wellness) && a.wellness.length) {
     const filtered = a.wellness.filter(v => v !== 'well');
@@ -9151,7 +9194,7 @@ function Result({ answers, onRestart, onCollection }) {
 
         {/* Deep Match — Mode A / Mode B 両方で表示(かんたん診断でも商品を出す) */}
         {deepResult && (
-          <DeepProductSection deepResult={deepResult} seamData={seamData} />
+          <DeepProductSection deepResult={deepResult} seamData={seamData} answers={answers} scores={scores} />
         )}
 
         {/* Finishing Sprays — 悩み／スタイリング回答に紐づくガス式仕上げスプレーだけ表示 */}
@@ -9160,8 +9203,8 @@ function Result({ answers, onRestart, onCollection }) {
         {/* ProductShowcase (旧 "3つの選択") は DeepProductSection (あなただけのケア処方) と
             カテゴリ重複 + 役割重複のため削除済み (Phase 1 監査での重複削減) */}
 
-        {/* Home Tools — 美容家電(ドライヤー/アイロン/ヘッドスパ) */}
-        {toolsData && toolsData.tools && (
+        {/* Home Tools — 美容家電(カウンセリングで興味ありの方にだけ表示) */}
+        {toolsData && toolsData.tools && Array.isArray(answers.deviceInterest) && answers.deviceInterest.some(v => v !== 'none') && (
           <HomeToolsSection
             tools={toolsData.tools}
             answers={answers}
