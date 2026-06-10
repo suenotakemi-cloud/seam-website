@@ -3577,6 +3577,83 @@ function DeepAltCard({ item }){
   );
 }
 
+// ━━━━━ Finishing Sprays — 全員におすすめのガス式仕上げ／守りスプレー ━━━━━
+const FINISHING_SPRAYS = [
+  {
+    id: 'fs-eimi-thermal', need: '熱・アイロンから守る', needEn: 'Heat Protect',
+    brand: 'ウエラ EIMI', name: 'サーマルイメージ',
+    image: 'images/brands/wella/eimi_thermal_image.jpg',
+    desc: 'ドライヤーやアイロンの熱、日差しから髪を包み込むように守るスプレー。スタイリング前のひと吹きで、なめらかでツヤやかな指通りへ。アイロンを通すたび気になっていたぱさつきも、すっと素直にまとまります。',
+  },
+  {
+    id: 'fs-wondershield', need: '紫外線・湿気・季節を、1本で', needEn: 'All Shield',
+    brand: 'サブリミック', name: 'ワンダーシールド',
+    image: 'images/brands/sublimic/Wonder_Shield.png',
+    desc: '髪の表面に、見えないヴェールをつくる多機能スプレー。紫外線・湿気・花粉やほこりといった毎日の小さなストレスから、髪を一日中守ります。季節の変わり目、なんとなく決まらない日の、頼れるお守りに。',
+  },
+  {
+    id: 'fs-peace-freeze', need: '湿気に負けず、しっかり固定', needEn: 'Hard Keep',
+    brand: 'アリミノ ピース', name: 'フリーズキープ スプレー',
+    image: 'images/brands/arimino/peace_freezekeep_spray.jpg',
+    desc: '湿気で広がる、崩れる——そんな日も、決めたかたちを長時間キープするスーパーハードタイプ。しっかり固めてもブラシでとかせばすっと戻るから、夜まで思いどおり。大事な一日の、心強い味方です。',
+  },
+  {
+    id: 'fs-stage-luster', need: '乾いた髪に、上質なツヤ', needEn: 'Luster',
+    brand: '資生堂プロ ステージワークス', name: 'ラスタースプレー',
+    image: 'images/brands/shiseido/stageworks_luster_spray.webp',
+    desc: '仕上げのひと吹きで、乾いて見えがちな髪に、しっとりと上質なツヤをまとわせるスプレー。固めず軽やかなまま、指を通せばさらり。スタイルの最後に、ほんの少しの輝きを添えたい人へ。',
+  },
+  {
+    id: 'fs-laque-couture', need: '固めすぎず、やわらかキープ', needEn: 'Soft Hold',
+    brand: 'ケラスターゼ', name: 'ラック クチュール',
+    image: 'images/brands/kerastase/laque_couture.png',
+    desc: 'ふわっとした束感や毛流れを、固めすぎずやさしくキープするヘアスプレー。つけていることを忘れるほど自然な仕上がりで、手ぐしも自由自在。一日の終わりまで、つくりたての軽やかさが続きます。',
+  },
+  {
+    id: 'fs-nigelle-veil', need: '最後の質感を、ふんわり整える', needEn: 'Finish Veil',
+    brand: 'ミルボン ニゼル ドレシア', name: 'ブライトアップ ヴェール',
+    image: 'images/brands/milbon/milbon_nigelle_brightup_veil.jpg',
+    desc: 'スタイリングの仕上げに、髪一本一本へうるおいのヴェールをまとわせるスプレー。ぱさつきを抑え、やわらかなツヤと指通りへ。鏡を見るたび髪が一段ときれいに見える、質感の底上げを、最後のひと吹きで。',
+  },
+];
+
+function FinishingSprayCard({ s }) {
+  return (
+    <article className="flex flex-col bg-white/85 border border-line rounded-[10px] overflow-hidden">
+      <div className="relative w-full bg-white" style={{ aspectRatio: '1 / 1' }}>
+        <span className="absolute top-2 left-2 z-10 font-mono tracking-widest2 text-[8.5px] uppercase text-gold bg-white/85 border border-gold/30 px-1.5 py-0.5 rounded-[1px]">{s.needEn}</span>
+        <img src={s.image} alt={s.name} loading="lazy" className="absolute inset-0 w-full h-full object-contain p-4" onError={(e) => { e.target.style.opacity = 0; }} />
+      </div>
+      <div className="flex flex-col flex-1 p-3.5 sm:p-4">
+        <p className="font-serif text-[13px] sm:text-[14px] text-mainBrown leading-snug">{s.need}</p>
+        <p className="mt-2 text-[10.5px] tracking-wide text-charcoal/55">{s.brand}</p>
+        <h3 className="mt-0.5 font-serif text-[14px] sm:text-[15px] text-ink leading-snug">{s.name}</h3>
+        <p className="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/80 leading-[1.85] flex-1">{s.desc}</p>
+        <p className="mt-3 pt-3 border-t border-line font-mono tracking-widest2 text-[9.5px] uppercase text-gold">SEAM メンバー特別価格</p>
+      </div>
+    </article>
+  );
+}
+
+function FinishingSpraySection() {
+  return (
+    <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay: '160ms' }}>
+      <p className="font-mono tracking-widest2 text-[11px] uppercase text-gold">— Finishing Mist</p>
+      <h2 className="mt-3 font-serif text-2xl sm:text-3xl text-ink">最後のひと吹きは、全員に。</h2>
+      <p className="mt-2 text-[13px] sm:text-[13.5px] text-charcoal/75 leading-[1.9]">
+        髪質を問わず、季節やその日のコンディションに合わせて選べる<span className="text-ink font-medium">仕上げ・守りのスプレー</span>。
+        熱・紫外線・湿気から守るものから、ツヤや質感を整えるものまで。気になる一本を、店頭でお試しいただけます。
+      </p>
+      <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-4">
+        {FINISHING_SPRAYS.map((s) => <FinishingSprayCard key={s.id} s={s} />)}
+      </div>
+      <p className="mt-4 text-[11px] text-charcoal/55 leading-relaxed">
+        ※ いずれもガス式（エアゾール）の仕上げスプレーです。価格は店頭・オンラインの SEAM メンバー特別価格でご案内します。お取り扱いは店舗により異なります。
+      </p>
+    </section>
+  );
+}
+
 function DeepProductSection({ deepResult, seamData }) {
   if (!deepResult || !seamData) return null;
   const { blocks, hardRules } = deepResult;
@@ -9036,6 +9113,9 @@ function Result({ answers, onRestart, onCollection }) {
         {deepResult && (
           <DeepProductSection deepResult={deepResult} seamData={seamData} />
         )}
+
+        {/* Finishing Sprays — 全員におすすめのガス式仕上げ／守りスプレー(常時表示) */}
+        <FinishingSpraySection />
 
         {/* ProductShowcase (旧 "3つの選択") は DeepProductSection (あなただけのケア処方) と
             カテゴリ重複 + 役割重複のため削除済み (Phase 1 監査での重複削減) */}
