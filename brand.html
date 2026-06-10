@@ -2735,7 +2735,7 @@
     <div class="dir-legend" aria-label="ステータス凡例">
       <span class="legend-item"><span class="legend-dot dot-both"></span>店舗・オンライン両方</span>
       <span class="legend-item"><span class="legend-dot dot-partial"></span>一部店舗</span>
-      <span class="legend-item"><span class="legend-dot dot-sapporo"></span>札幌店のみ</span>
+      <span class="legend-item"><span class="legend-dot dot-sapporo"></span>特定店舗のみ</span>
       <span class="legend-item"><span class="legend-dot dot-online"></span>オンラインのみ</span>
     </div>
 
@@ -2819,7 +2819,7 @@
     <p>「オンラインのみ」のブランドは、SEAM会員専用オンラインショップのみでのお取り扱いとなります。店舗でのご購入はできません。</p>
     <p>「一部オンラインのみ」のブランドは、一部の商品がオンラインショップのみのお取り扱いとなります。</p>
     <p>「一部店舗取り扱い」のブランドは、特定の店舗のみでのお取り扱いとなります。詳細は店舗ページをご確認ください。</p>
-    <p>「札幌店のみ」と記載のブランドは、SEAM札幌店限定のお取り扱いとなります。</p>
+    <p>「札幌店のみ」「銀座店のみ」「表参道・銀座店のみ」と記載のブランドは、該当店舗限定のお取り扱いとなります。</p>
     <p>表示価格はすべて税込表示です。価格・在庫状況は予告なく変更となる場合がございます。</p>
   </div>
 </section>
@@ -2903,6 +2903,8 @@ const STATUS = {
   PARTIAL_WEB:  { label: '一部オンライン',     cls: 'badge-partial' },
   PARTIAL_STORE:{ label: '一部店舗のみ',       cls: 'badge-partial' },
   SAPPORO:      { label: '札幌店のみ',         cls: 'badge-sapporo' },
+  GINZA:        { label: '銀座店のみ',         cls: 'badge-sapporo' },
+  OMOTESANDO_GINZA: { label: '表参道・銀座店のみ', cls: 'badge-sapporo' },
 };
 
 // ============================================================
@@ -3630,7 +3632,7 @@ renderBrandRoster();
     if (stock === 'all') return true;
     const s = b.status || 'ONLINE';
     if (stock === 'both')   return s === 'BOTH';
-    if (stock === 'store')  return s === 'PARTIAL_STORE' || s === 'SAPPORO' || s === 'STORE_ONLY';
+    if (stock === 'store')  return s === 'PARTIAL_STORE' || s === 'SAPPORO' || s === 'STORE_ONLY' || s === 'GINZA' || s === 'OMOTESANDO_GINZA';
     if (stock === 'online') return s === 'ONLINE';
     return true;
   }
@@ -3640,6 +3642,8 @@ renderBrandRoster();
     if (s === 'PARTIAL_STORE') return { label: '一部店舗',         cls: 'badge-partial' };
     if (s === 'SAPPORO')       return { label: '札幌店のみ',       cls: 'badge-sapporo' };
     if (s === 'STORE_ONLY')    return { label: '店舗のみ',         cls: 'badge-partial' };
+    if (s === 'GINZA')         return { label: '銀座店のみ',       cls: 'badge-sapporo' };
+    if (s === 'OMOTESANDO_GINZA') return { label: '表参道・銀座店のみ', cls: 'badge-sapporo' };
     return { label: 'オンライン', cls: 'badge-online' };
   }
 
@@ -3650,7 +3654,7 @@ renderBrandRoster();
     allBrands.forEach(b => {
       const s = b.status || 'ONLINE';
       if (s === 'BOTH') cnt.both++;
-      else if (s === 'PARTIAL_STORE' || s === 'SAPPORO' || s === 'STORE_ONLY') cnt.store++;
+      else if (s === 'PARTIAL_STORE' || s === 'SAPPORO' || s === 'STORE_ONLY' || s === 'GINZA' || s === 'OMOTESANDO_GINZA') cnt.store++;
       else cnt.online++;
     });
     const setIf = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -3761,10 +3765,12 @@ renderBrandRoster();
             let dotCls = 'dot-online';
             if (s === 'BOTH')          dotCls = 'dot-both';
             else if (s === 'PARTIAL_STORE' || s === 'STORE_ONLY') dotCls = 'dot-partial';
-            else if (s === 'SAPPORO')  dotCls = 'dot-sapporo';
+            else if (s === 'SAPPORO' || s === 'GINZA' || s === 'OMOTESANDO_GINZA')  dotCls = 'dot-sapporo';
             const statusLabel = (s === 'BOTH' ? '店舗・オンライン'
                               : s === 'PARTIAL_STORE' ? '一部店舗取扱'
                               : s === 'SAPPORO' ? '札幌店のみ'
+                              : s === 'GINZA' ? '銀座店のみ'
+                              : s === 'OMOTESANDO_GINZA' ? '表参道・銀座店のみ'
                               : s === 'STORE_ONLY' ? '店舗のみ'
                               : 'オンライン');
             const tag = b.site ? 'a' : 'div';
