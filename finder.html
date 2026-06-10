@@ -1141,17 +1141,17 @@ const Q_DEEP_NEW = [
   /* ---------- 美容師さんに必ず申告したい項目 ---------- */
   {
     id: 'scalpAllergy',
-    type: 'card-single',
+    type: 'check-multi',
     eyebrow: 'Allergy & sensitivity',
     title: 'アレルギーや、薬剤がしみた経験はありますか？',
-    note: '美容師さんが薬剤を選ぶ際の重要情報です。少しでも気になることがあればお選びください。',
+    note: '美容師さんが薬剤を選ぶ際の重要情報です。当てはまるものをすべてお選びください。',
     options: [
-      { v:'none',     label:'特になし',                       sub:'これまでトラブル経験はない',                       score:{} },
+      { v:'none',     label:'特になし',                       sub:'これまでトラブル経験はない',                       score:{}, exclusive:true },
       { v:'tingles',  label:'カラー剤がしみることがある',     sub:'頭皮にピリッとくる感じ',                           score:{} },
       { v:'diamine',  label:'ジアミンアレルギー',             sub:'過去にパッチテストでNG・かぶれ経験あり',          score:{} },
       { v:'patch',    label:'必ずパッチテストをしている',     sub:'毎回サロンで事前テスト',                           score:{} },
       { v:'other',    label:'香料・その他のアレルギーがある', sub:'香料・植物・特定の成分など',                       score:{} },
-      { v:'unknown',  label:'わからない',                     sub:'美容師さんに相談したい',                           score:{} },
+      { v:'unknown',  label:'わからない',                     sub:'美容師さんに相談したい',                           score:{}, exclusive:true },
     ],
   },
   {
@@ -3513,7 +3513,7 @@ function deepPriceTrio(items){
     const pa=deepMinPrice(a.p), pb=deepMinPrice(b.p);
     const ra=pa!=null?pa:deepPriceRank(a.p)*1000+500;
     const rb=pb!=null?pb:deepPriceRank(b.p)*1000+500;
-    return ra-rb;
+    return rb-ra; // 高い→安い の順
   });
   return {best, alts: rest.slice(0,2)};
 }
@@ -3600,6 +3600,12 @@ function DeepProductSection({ deepResult, seamData }) {
     .map(id => ({ ...(DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}), items: blocks[id] || [] }))
     .filter(b => b.items.length > 0);
 
+  // おすすめ一式(各カテゴリのベスト1本)の価格目安
+  const _bestPrices = ['shampoo','treatment','outbath','mask','scalp','finish']
+    .map(id => (blocks[id] || [])[0]).filter(Boolean).map(it => deepMinPrice(it.p));
+  const budgetSum = _bestPrices.filter(v => v != null).reduce((a, b) => a + b, 0);
+  const budgetMissing = _bestPrices.filter(v => v == null).length;
+
   return (
     <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay:'300ms' }}>
       <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
@@ -3614,6 +3620,15 @@ function DeepProductSection({ deepResult, seamData }) {
           {totalCount} item{totalCount > 1 ? 's' : ''}
         </span>
       </div>
+
+      {/* おすすめ一式の価格目安 */}
+      {budgetSum > 0 && (
+        <div className="mt-4 flex items-center gap-2.5 flex-wrap px-4 py-2.5 rounded-[2px] bg-cream/60 border border-gold/25">
+          <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">おすすめ一式の目安</span>
+          <span className="font-serif text-[17px] text-ink leading-none">約 <span className="nums">¥{budgetSum.toLocaleString()}</span><span className="text-[12px] text-charcoal/55"> 〜</span></span>
+          {budgetMissing > 0 && <span className="text-[10.5px] text-charcoal/55">＋ メンバー価格 {budgetMissing}品</span>}
+        </div>
+      )}
 
       {/* さりげない安心感バッジ — 全製品がSEAMで揃う */}
       <div className="mt-3 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/55">
@@ -3662,6 +3677,22 @@ function DeepProductSection({ deepResult, seamData }) {
             })()}
           </div>
         ))}
+      </div>
+
+      {/* 結果をシェア・保存（美容師さんに見せる／LINEで共有） */}
+      <div className="mt-9 pt-6 border-t border-line flex flex-col sm:flex-row sm:items-center gap-3 no-print">
+        <button
+          onClick={() => {
+            const shareData = { title:'SEAM Hair Finder｜私のヘアケア処方', text:'髪質診断で、私に合うヘアケアが見つかりました。', url: location.href };
+            if (navigator.share) { navigator.share(shareData).catch(()=>{}); }
+            else if (typeof saveOrShareKarte === 'function') { saveOrShareKarte(); }
+          }}
+          className="group inline-flex items-center justify-center gap-2.5 bg-ink text-ivory px-6 py-3.5 rounded-[2px] hover:bg-charcoal active:scale-[0.99] transition-all"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+          <span className="font-serif text-[14px]">この結果をシェア・保存する</span>
+        </button>
+        <p className="text-[11.5px] text-charcoal/60 leading-relaxed">LINEで送る・写真で保存。店頭スタッフにそのまま見せられます。</p>
       </div>
     </section>
   );
@@ -7682,7 +7713,12 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
   const scalpItems = [];
   if (a.scalpType) scalpItems.push(['頭皮の状態', lookupLabel('scalpType', a.scalpType)]);
   if (a.scalpSensitivity) scalpItems.push(['頭皮の敏感さ', lookupLabel('scalpSensitivity', a.scalpSensitivity)]);
-  if (a.scalpAllergy) scalpItems.push(['アレルギー・薬剤反応', lookupLabel('scalpAllergy', a.scalpAllergy)]);
+  {
+    const allergyVal = Array.isArray(a.scalpAllergy)
+      ? a.scalpAllergy.map(v => lookupLabel('scalpAllergy', v)).filter(Boolean).join('、')
+      : (a.scalpAllergy ? lookupLabel('scalpAllergy', a.scalpAllergy) : null);
+    if (allergyVal) scalpItems.push(['アレルギー・薬剤反応', allergyVal]);
+  }
 
   // カラー履歴
   const colorItems = [];
