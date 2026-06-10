@@ -3140,6 +3140,7 @@ function pickHomeTools(tools, answers, scores) {
     if (deviceWish.includes('dryerUpgrade') && t.category === 'tool-dryer') score += 20;
     if (deviceWish.includes('ironUpgrade') && /^tool-iron/.test(t.category || '')) score += 20;
     if (deviceWish.includes('showerHead') && t.category === 'tool-shower') score += 24;
+    if (deviceWish.includes('faceDevice') && t.category === 'tool-face') score += 24;
     if (deviceWish.includes('loveGadgets')) score += 3;
     return { t, score };
   }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
@@ -3147,12 +3148,17 @@ function pickHomeTools(tools, answers, scores) {
   // カテゴリ別 (ドライヤー1 + アイロン1 + α) で多様性確保 - 最大4個
   const picks = [];
   const usedCategories = new Set();
-  const maxByCat = { 'tool-dryer': 1, 'tool-iron-straight': 1, 'tool-iron-curl': 1, 'tool-iron-2way': 1, 'tool-iron-brush': 1, 'tool-shower': 1, 'tool-headspa': 1, 'tool-brush': 1 };
+  // 美顔器を明示的に希望した方には、美顔器を2点まで見せる
+  const maxByCat = { 'tool-dryer': 1, 'tool-iron-straight': 1, 'tool-iron-curl': 1, 'tool-iron-2way': 1, 'tool-iron-brush': 1, 'tool-shower': 1, 'tool-headspa': 1, 'tool-brush': 1,
+                     'tool-face': deviceWish.includes('faceDevice') ? 2 : 1 };
+  const catCount = {};
   for (const { t, score } of scored) {
     if (picks.length >= 4) break;
     const cat = t.category;
-    if (usedCategories.has(cat) && (maxByCat[cat] || 1) <= 1) continue;
+    const used = catCount[cat] || 0;
+    if (used >= (maxByCat[cat] || 1)) continue;
     picks.push({ ...t, _score: score });
+    catCount[cat] = used + 1;
     usedCategories.add(cat);
   }
   return picks;
