@@ -2061,17 +2061,17 @@ const BLOCK_DEFS = {
 const DEEP_CATEGORY_DEFS = {
   shampoo: {
     id:'shampoo', title:'シャンプー', eyebrow:'01 Shampoo',
-    desc:'カウンセリング結果からあなたの髪と頭皮に合う、毎日の洗髪のベース4本。', max:4,
+    desc:'あなたの髪と頭皮に、まず最適な1本。価格でも選べます。', max:3,
     cats:['shampoo','scalp-cleanser'],
   },
   treatment: {
     id:'treatment', title:'トリートメント', eyebrow:'02 Treatment',
-    desc:'シャンプーの後のデイリーケア。指通り・まとまりを整える厳選4本。', max:4,
+    desc:'洗髪後のデイリーケア。指通り・まとまりを整える最適な1本。', max:3,
     cats:['treatment'],
   },
   outbath: {
     id:'outbath', title:'アウトバス', eyebrow:'03 Out-bath',
-    desc:'タオルドライ後の必須ケア。ベース剤・ミルク・オイルから4本。', max:4,
+    desc:'タオルドライ後の必須ケア。あなたに最適なアウトバスを。', max:3,
     cats:[
       'outbath-water','outbath-oil','outbath-milk',
       'out-bath-milk','out-bath-oil',
@@ -2081,17 +2081,17 @@ const DEEP_CATEGORY_DEFS = {
   },
   mask: {
     id:'mask', title:'マスク', eyebrow:'04 Mask',
-    desc:'週1〜3回の集中ケア。髪のマスク+頭皮マスクから4本。', max:4,
+    desc:'週1〜3回の集中ケア。今のあなたに最適なマスクを。', max:3,
     cats:['hair-mask','mask'],
   },
   scalp: {
     id:'scalp', title:'スカルプ・美容液', eyebrow:'05 Scalp',
-    desc:'頭皮ケア・育毛・スカルプ美容液。土台から整える4本。', max:4,
+    desc:'頭皮ケア・スカルプ美容液。土台から整える最適な1本。', max:3,
     cats:['scalp-essence'],
   },
   finish: {
     id:'finish', title:'仕上げ・スプレー', eyebrow:'06 Finish',
-    desc:'艶出し・カール&スタイルキープのフィニッシュアイテム4本。', max:4,
+    desc:'艶出し・スタイルキープ。仕上げの最適な1本。', max:3,
     cats:['styling-spray','styling'],
   },
   salon: {
@@ -3478,6 +3478,117 @@ function MustPlusOneSection({ matches }) {
 }
 
 /* ---------- DeepProductSection — Mode B のタグマッチング商品提案 ---------- */
+/* ── 松竹梅(価格)＆「なぜ合うか＝成分」ヘルパー ── */
+function deepMinPrice(p){
+  const ps=(p.sizes||[]).map(s=>s&&s.price).filter(v=>typeof v==='number'&&v>0);
+  return ps.length?Math.min.apply(null,ps):null;
+}
+const DEEP_TIER_RANK={ entry:0, value:0, standard:1, basic:1, premium:2, luxury:3 };
+function deepPriceRank(p){
+  if(p.priceTier && DEEP_TIER_RANK[p.priceTier]!=null) return DEEP_TIER_RANK[p.priceTier];
+  const v=deepMinPrice(p);
+  if(v==null) return 1;
+  if(v<2500) return 0; if(v<5000) return 1; if(v<9000) return 2; return 3;
+}
+const DEEP_ING_RE=/(系|酸|PPT|CMC|ケラチン|アミノ酸|アミノ|タンパク|ペプチド|コラーゲン|ヒアルロン|セラミド|オイル|エキス|プロテイン|異性化糖|加水分解|シルク|ヘマチン|幹細胞|パンテノール|ベタイン|植物|花|蜜)/;
+function deepCareReason(p){
+  if(Array.isArray(p.keyIngredients)&&p.keyIngredients.length){
+    return p.keyIngredients.slice(0,3).join('・');
+  }
+  const fp=(p.featurePoints||[]).find(t=>typeof t==='string'&&DEEP_ING_RE.test(t)&&t.length<=36);
+  return fp||null;
+}
+// 価格差で松(上質)/梅(手頃)/ほかに のラベル
+function deepAltRole(altP, bestP){
+  const a=deepMinPrice(altP), b=deepMinPrice(bestP);
+  if(a!=null&&b!=null){ if(a>b) return '上質に'; if(a<b) return '手頃に'; return 'ほかに'; }
+  const ra=deepPriceRank(altP), rb=deepPriceRank(bestP);
+  if(ra>rb) return '上質に'; if(ra<rb) return '手頃に'; return 'ほかに';
+}
+// block.items を best(竹) + alts(価格昇順 最大2) に
+function deepPriceTrio(items){
+  if(!items||!items.length) return {best:null, alts:[]};
+  const best=items[0];
+  const rest=items.slice(1).slice().sort(function(a,b){
+    const pa=deepMinPrice(a.p), pb=deepMinPrice(b.p);
+    const ra=pa!=null?pa:deepPriceRank(a.p)*1000+500;
+    const rb=pb!=null?pb:deepPriceRank(b.p)*1000+500;
+    return ra-rb;
+  });
+  return {best, alts: rest.slice(0,2)};
+}
+
+/* ── ベスト1本カード(竹) ── */
+function DeepBestCard({ item }){
+  const p = item.p;
+  const reason = deepCareReason(p);
+  const src = (p.image || p.imageUrl);
+  const showImg = src && !isRefillImage(src);
+  const chips = getProductChips(p, 4);
+  const priceVal = deepMinPrice(p);
+  return (
+    <article className="bg-white border border-gold/45 p-5 pt-6 rounded-[2px] flex flex-col relative shadow-soft">
+      <div className="absolute -top-2.5 left-4 inline-flex items-center gap-1.5 bg-gold text-white font-mono tracking-widest2 text-[9.5px] uppercase px-2.5 py-1 rounded-[1px]">
+        <span aria-hidden>★</span><span>あなたにベスト</span>
+      </div>
+      <div className="flex gap-4">
+        {showImg && (
+          <div className="shrink-0 w-24 sm:w-28 flex items-start justify-center">
+            <img src={src} alt={p.name} loading="lazy" className="h-28 sm:h-32 w-auto max-w-full object-contain" onError={(e)=>{e.target.style.display='none';}} />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55">{p.brand}{p.line&&p.line!==p.brand&&<span> · {p.line}</span>}</p>
+          <h4 className="mt-1 font-serif text-[17px] sm:text-[18px] text-ink leading-snug">{p.name}</h4>
+          <p className="mt-2 text-[12.5px] leading-[1.8] text-charcoal/80">{p.featureSummary || p.cardCopy}</p>
+        </div>
+      </div>
+      {reason && (
+        <div className="mt-3 flex items-start gap-2 bg-cream/55 border border-gold/20 rounded-[2px] px-3 py-2">
+          <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold mt-0.5 shrink-0">なぜ合うか</span>
+          <span className="text-[12px] leading-[1.7] text-charcoal/85">{reason}</span>
+        </div>
+      )}
+      {chips.length>0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1">
+          {chips.map((c,i)=><span key={i} className="text-[10.5px] px-2 py-0.5 bg-cream/60 text-charcoal/75 border border-gold/25 rounded-[1px] whitespace-nowrap" style={{letterSpacing:'0.02em'}}>{c}</span>)}
+        </div>
+      )}
+      <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`} className="mt-4 group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/40 via-white to-cream/40 rounded-[2px] px-3.5 py-2.5 hover:border-gold active:scale-[0.99] transition-all no-print min-h-[44px]">
+        <span className="flex items-baseline gap-1.5">
+          {priceVal != null ? (
+            <>
+              <span className="font-serif text-[17px] text-gold leading-none">¥</span>
+              <span className="font-serif text-[16px] text-ink leading-none nums">{priceVal.toLocaleString()}</span>
+            </>
+          ) : (
+            <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold">メンバー価格</span>
+          )}
+          {p.primarySize && <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45">{p.primarySize}</span>}
+        </span>
+        <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap">公式サイトで見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
+      </a>
+    </article>
+  );
+}
+
+/* ── 価格で選ぶ コンパクトカード(松/梅) ── */
+function DeepAltCard({ item, role }){
+  const p = item.p;
+  const priceVal = deepMinPrice(p);
+  return (
+    <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`} className="group flex flex-col bg-white border border-line rounded-[2px] px-3 py-3 hover:border-gold active:scale-[0.99] transition-all no-print">
+      <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold">{role}</span>
+      <span className="mt-1 font-mono tracking-widest2 text-[9px] uppercase text-charcoal/50 truncate">{p.brand}</span>
+      <span className="mt-0.5 font-serif text-[13px] text-ink leading-snug">{p.name}</span>
+      <span className="mt-2 flex items-center justify-between gap-2">
+        <span className="font-serif text-[13.5px] text-ink nums">{priceVal != null ? ('¥'+priceVal.toLocaleString()) : 'メンバー価格'}</span>
+        <span className="text-gold group-hover:translate-x-0.5 transition-transform text-[13px]" aria-hidden>↗</span>
+      </span>
+    </a>
+  );
+}
+
 function DeepProductSection({ deepResult, seamData }) {
   if (!deepResult || !seamData) return null;
   const { blocks, hardRules } = deepResult;
@@ -3530,82 +3641,25 @@ function DeepProductSection({ deepResult, seamData }) {
             </header>
             <p className="mt-2 text-[12px] text-charcoal/60 leading-relaxed">{block.desc}</p>
 
-            <div className="mt-4 grid sm:grid-cols-2 gap-3">
-              {block.items.map(({ p, s }) => (
-                <article key={p.id} className="bg-white border border-line p-5 rounded-[2px] flex flex-col h-full relative">
-                  <header className="pb-3 border-b border-line">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-ivory bg-ink px-2 py-1 rounded-[1px] whitespace-nowrap font-medium">
-                        <span className="w-1 h-1 rounded-full bg-gold" />
-                        {(p.category || '').replace(/-/g,' ')}
-                      </span>
-                      {p.routineStep && (
-                        <span className="font-mono tracking-widest2 text-[10.5px] uppercase text-gold bg-gold/8 border border-gold/40 px-2 py-1 rounded-[1px] nums whitespace-nowrap font-medium">Step {String(p.routineStep).padStart(2,'0')}</span>
-                      )}
-                    </div>
-                  </header>
-                  {/* ── 商品画像 (詰め替えは弾く) ── */}
-                  {(() => {
-                    const src = (p.image || p.imageUrl);
-                    if (!src || isRefillImage(src)) return null;
-                    return (
-                      <div className="mt-3 flex justify-center bg-white">
-                        <img
-                          src={src}
-                          alt={p.name}
-                          loading="lazy"
-                          className="h-32 sm:h-36 w-auto max-w-full object-contain"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                      </div>
-                    );
-                  })()}
-                  <div className="mt-3">
-                    <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55">
-                      {p.brand}{p.line && p.line !== p.brand && <span> · {p.line}</span>}
-                    </p>
-                    <h4 className="mt-1 font-serif text-[16.5px] text-ink leading-snug">{p.name}</h4>
-                  </div>
-                  <p className="mt-3 text-[12.5px] leading-[1.85] text-charcoal/80 flex-1">{p.featureSummary || p.cardCopy}</p>
-                  {(() => {
-                    const chips = getProductChips(p, 4);
-                    return chips.length > 0 && (
-                      <div className="mt-2.5 flex flex-wrap gap-1">
-                        {chips.map((c, i) => (
-                          <span key={i} className="text-[10.5px] px-2 py-0.5 bg-cream/60 text-charcoal/75 border border-gold/25 rounded-[1px] whitespace-nowrap" style={{ letterSpacing: '0.02em' }}>{c}</span>
+            {(() => {
+              const { best, alts } = deepPriceTrio(block.items);
+              if (!best) return null;
+              return (
+                <div className="mt-4">
+                  <DeepBestCard item={best} />
+                  {alts.length > 0 && (
+                    <div className="mt-3.5">
+                      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-2">価格で選ぶなら</p>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {alts.map((a) => (
+                          <DeepAltCard key={a.p.id} item={a} role={deepAltRole(a.p, best.p)} />
                         ))}
                       </div>
-                    );
-                  })()}
-                  {p.recommendedFor && (
-                    <p className="mt-2 text-[11.5px] text-charcoal/65 leading-relaxed">
-                      <span className="font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/45 mr-1.5">For</span>{p.recommendedFor}
-                    </p>
+                    </div>
                   )}
-                  {p.sizeLabels && p.sizeLabels.length > 0 && (
-                    <a
-                      href={p.productPageUrl || SHOP_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`}
-                      className="mt-4 group block border border-gold/40 bg-white rounded-[2px] overflow-hidden hover:border-gold active:scale-[0.99] transition-all no-print"
-                    >
-                      <div className="px-3.5 pt-2.5 pb-2 flex items-center justify-between gap-3 flex-wrap bg-gradient-to-r from-cream/35 via-white to-cream/35">
-                        <div className="flex items-center gap-2">
-                          <span className="font-serif text-[17px] text-gold leading-none">¥</span>
-                          <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold whitespace-nowrap">Member Price</span>
-                        </div>
-                        <span className="font-mono tracking-widest2 text-[10.5px] uppercase text-ink whitespace-nowrap">{p.sizeLabels.join(' / ')}</span>
-                      </div>
-                      <div className="border-t border-gold/15 px-3.5 py-2.5 flex items-center justify-between gap-2 min-h-[44px]">
-                        <span className="font-mono tracking-widest2 text-[10.5px] uppercase text-ink group-hover:text-gold transition-colors">公式サイトで見る</span>
-                        <span className="text-gold group-hover:translate-x-1 transition-transform text-[14px] leading-none" aria-hidden>↗</span>
-                      </div>
-                    </a>
-                  )}
-                </article>
-              ))}
-            </div>
+                </div>
+              );
+            })()}
           </div>
         ))}
       </div>
