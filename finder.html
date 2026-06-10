@@ -3635,17 +3635,57 @@ function FinishingSprayCard({ s }) {
   );
 }
 
-function FinishingSpraySection() {
+// 悩み・スタイリング回答 → 表示するスプレーを絞り込むためのシグナル
+function finishingSpraySignals(answers, scores) {
+  const concerns = (answers && Array.isArray(answers.concerns)) ? answers.concerns : [];
+  const tools = (answers && answers.styling && Array.isArray(answers.styling.tools)) ? answers.styling.tools : [];
+  const sc = scores || {};
+  const hasC = (...vs) => vs.some((v) => concerns.includes(v));
+  const hasT = (...vs) => vs.some((v) => tools.includes(v));
+  return {
+    heat:  hasT('ironDaily', 'ironWeekly', 'curlerDaily', 'curlerWeekly', 'bangsDaily') || (sc.heatDamage || 0) > 0 || hasC('damage', 'split'),
+    humid: hasC('frizz', 'wave') || (sc.frizz || 0) > 0 || (sc.curl || 0) > 0,   // 湿気で広がる
+    curl:  hasT('curlerDaily', 'curlerWeekly', 'ironDaily', 'ironWeekly'),       // コテがあとがつかない
+    bangs: hasT('bangsDaily'),                                                    // 前髪を固める
+    flat:  hasC('topFlat', 'volumeDown', 'thinning') || (sc.volumeLoss || 0) > 0, // ぺたっとなる
+    shine: hasC('noShine', 'colorFade', 'grayFade') || (sc.colorFade || 0) > 0,   // ツヤ不足
+    dry:   hasC('dry', 'rough', 'noShine') || (sc.dryness || 0) >= 2,             // 乾燥・パサつき
+  };
+}
+
+// 各スプレーを「どの悩み／スタイリングのとき出すか」に紐づけ
+const FINISHING_SPRAY_MATCH = {
+  'fs-eimi-thermal':  (g) => g.heat,                       // コテ・アイロンを使う / 熱ダメージ
+  'fs-wondershield':  (g) => g.humid || g.shine,           // 湿気で広がる / 色・ツヤを守る
+  'fs-peace-freeze':  (g) => g.humid || g.bangs || g.curl, // 湿気で広がる / 前髪を固める / カールキープ
+  'fs-stage-luster':  (g) => g.shine,                      // ツヤ不足
+  'fs-laque-couture': (g) => g.flat || g.curl,             // ぺたっとなる / カールを保つ
+  'fs-nigelle-veil':  (g) => g.dry,                        // 乾燥・パサつき
+};
+
+function FinishingSpraySection({ answers, scores }) {
+  const g = finishingSpraySignals(answers, scores);
+  let list = FINISHING_SPRAYS.filter((s) => {
+    const fn = FINISHING_SPRAY_MATCH[s.id];
+    return fn && fn(g);
+  });
+  // 該当する悩みがないときは、誰にでも役立つ「守り」と「ツヤ」だけを控えめに
+  if (list.length === 0) {
+    list = FINISHING_SPRAYS.filter((s) => s.id === 'fs-wondershield' || s.id === 'fs-stage-luster');
+  }
+  list = list.slice(0, 4); // 出しすぎ防止
+  if (list.length === 0) return null;
+  const single = list.length === 1;
   return (
     <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay: '160ms' }}>
       <p className="font-mono tracking-widest2 text-[11px] uppercase text-gold">— Finishing Mist</p>
-      <h2 className="mt-3 font-serif text-2xl sm:text-3xl text-ink">最後のひと吹きは、全員に。</h2>
+      <h2 className="mt-3 font-serif text-2xl sm:text-3xl text-ink">あなたの悩みに、最後のひと吹き。</h2>
       <p className="mt-2 text-[13px] sm:text-[13.5px] text-charcoal/75 leading-[1.9]">
-        髪質を問わず、季節やその日のコンディションに合わせて選べる<span className="text-ink font-medium">仕上げ・守りのスプレー</span>。
-        熱・紫外線・湿気から守るものから、ツヤや質感を整えるものまで。気になる一本を、店頭でお試しいただけます。
+        診断の回答から、いまのあなたに役立つ<span className="text-ink font-medium">仕上げ・守りのスプレー</span>だけをお見せしています。
+        熱・湿気・乾燥から守るものや、ツヤ・キープを足すもの。気になる一本を、店頭でお試しいただけます。
       </p>
-      <div className="mt-7 grid grid-cols-2 gap-3 sm:gap-4">
-        {FINISHING_SPRAYS.map((s) => <FinishingSprayCard key={s.id} s={s} />)}
+      <div className={`mt-7 grid ${single ? 'grid-cols-1 max-w-sm' : 'grid-cols-2'} gap-3 sm:gap-4`}>
+        {list.map((s) => <FinishingSprayCard key={s.id} s={s} />)}
       </div>
       <p className="mt-4 text-[11px] text-charcoal/55 leading-relaxed">
         ※ いずれもガス式（エアゾール）の仕上げスプレーです。価格は店頭・オンラインの SEAM メンバー特別価格でご案内します。お取り扱いは店舗により異なります。
@@ -9114,8 +9154,8 @@ function Result({ answers, onRestart, onCollection }) {
           <DeepProductSection deepResult={deepResult} seamData={seamData} />
         )}
 
-        {/* Finishing Sprays — 全員におすすめのガス式仕上げ／守りスプレー(常時表示) */}
-        <FinishingSpraySection />
+        {/* Finishing Sprays — 悩み／スタイリング回答に紐づくガス式仕上げスプレーだけ表示 */}
+        <FinishingSpraySection answers={answers} scores={scores} />
 
         {/* ProductShowcase (旧 "3つの選択") は DeepProductSection (あなただけのケア処方) と
             カテゴリ重複 + 役割重複のため削除済み (Phase 1 監査での重複削減) */}
