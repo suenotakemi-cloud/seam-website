@@ -2061,7 +2061,7 @@ const BLOCK_DEFS = {
 const DEEP_CATEGORY_DEFS = {
   shampoo: {
     id:'shampoo', title:'シャンプー', eyebrow:'01 Shampoo',
-    desc:'あなたの髪と頭皮に、まず最適な1本。価格でも選べます。', max:3,
+    desc:'あなたの髪と頭皮に、まず最適な1本を。', max:3,
     cats:['shampoo','scalp-cleanser'],
   },
   treatment: {
@@ -3540,49 +3540,37 @@ function DeepBestCard({ item }){
         <div className="flex-1 min-w-0">
           <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55">{p.brand}{p.line&&p.line!==p.brand&&<span> · {p.line}</span>}</p>
           <h4 className="mt-1 font-serif text-[17px] sm:text-[18px] text-ink leading-snug">{p.name}</h4>
-          <p className="mt-2 text-[12.5px] leading-[1.8] text-charcoal/80">{p.featureSummary || p.cardCopy}</p>
+          <p className="mt-2 text-[12.5px] leading-[1.85] text-charcoal/85">{p.pitchCopy || p.featureSummary || p.cardCopy}</p>
+          {p.recommendedFor && (
+            <p className="mt-2 text-[11.5px] leading-[1.7] text-charcoal/60"><span className="text-gold mr-1">◎</span>{p.recommendedFor}</p>
+          )}
         </div>
       </div>
-      {reason && (
-        <div className="mt-3 flex items-start gap-2 bg-cream/55 border border-gold/20 rounded-[2px] px-3 py-2">
-          <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold mt-0.5 shrink-0">なぜ合うか</span>
-          <span className="text-[12px] leading-[1.7] text-charcoal/85">{reason}</span>
-        </div>
-      )}
       {chips.length>0 && (
         <div className="mt-2.5 flex flex-wrap gap-1">
           {chips.map((c,i)=><span key={i} className="text-[10.5px] px-2 py-0.5 bg-cream/60 text-charcoal/75 border border-gold/25 rounded-[1px] whitespace-nowrap" style={{letterSpacing:'0.02em'}}>{c}</span>)}
         </div>
       )}
       <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`} className="mt-4 group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/40 via-white to-cream/40 rounded-[2px] px-3.5 py-2.5 hover:border-gold active:scale-[0.99] transition-all no-print min-h-[44px]">
-        <span className="flex items-baseline gap-1.5">
-          {priceVal != null ? (
-            <>
-              <span className="font-serif text-[17px] text-gold leading-none">¥</span>
-              <span className="font-serif text-[16px] text-ink leading-none nums">{priceVal.toLocaleString()}</span>
-            </>
-          ) : (
-            <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold">メンバー価格</span>
-          )}
+        <span className="flex items-baseline gap-2">
+          <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold whitespace-nowrap">SEAM メンバー特別価格</span>
           {p.primarySize && <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45">{p.primarySize}</span>}
         </span>
-        <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap">公式サイトで見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
+        <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap">詳しく見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
       </a>
     </article>
   );
 }
 
 /* ── 価格で選ぶ コンパクトカード(松/梅) ── */
-function DeepAltCard({ item, role }){
+function DeepAltCard({ item }){
   const p = item.p;
-  const priceVal = deepMinPrice(p);
   return (
-    <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`} className="group flex flex-col bg-white border border-line rounded-[2px] px-3 py-3 hover:border-gold active:scale-[0.99] transition-all no-print">
-      <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold">{role}</span>
-      <span className="mt-1 font-mono tracking-widest2 text-[9px] uppercase text-charcoal/50 truncate">{p.brand}</span>
+    <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を詳しく見る (新規タブで開く)`} className="group flex flex-col bg-white border border-line rounded-[2px] px-3 py-3 hover:border-gold active:scale-[0.99] transition-all no-print">
+      <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/50 truncate">{p.brand}</span>
       <span className="mt-0.5 font-serif text-[13px] text-ink leading-snug">{p.name}</span>
       <span className="mt-2 flex items-center justify-between gap-2">
-        <span className="font-serif text-[13.5px] text-ink nums">{priceVal != null ? ('¥'+priceVal.toLocaleString()) : 'メンバー価格'}</span>
+        <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">メンバー特別価格</span>
         <span className="text-gold group-hover:translate-x-0.5 transition-transform text-[13px]" aria-hidden>↗</span>
       </span>
     </a>
@@ -3600,12 +3588,6 @@ function DeepProductSection({ deepResult, seamData }) {
     .map(id => ({ ...(DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}), items: blocks[id] || [] }))
     .filter(b => b.items.length > 0);
 
-  // おすすめ一式(各カテゴリのベスト1本)の価格目安
-  const _bestPrices = ['shampoo','treatment','outbath','mask','scalp','finish']
-    .map(id => (blocks[id] || [])[0]).filter(Boolean).map(it => deepMinPrice(it.p));
-  const budgetSum = _bestPrices.filter(v => v != null).reduce((a, b) => a + b, 0);
-  const budgetMissing = _bestPrices.filter(v => v == null).length;
-
   return (
     <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay:'300ms' }}>
       <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
@@ -3620,15 +3602,6 @@ function DeepProductSection({ deepResult, seamData }) {
           {totalCount} item{totalCount > 1 ? 's' : ''}
         </span>
       </div>
-
-      {/* おすすめ一式の価格目安 */}
-      {budgetSum > 0 && (
-        <div className="mt-4 flex items-center gap-2.5 flex-wrap px-4 py-2.5 rounded-[2px] bg-cream/60 border border-gold/25">
-          <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">おすすめ一式の目安</span>
-          <span className="font-serif text-[17px] text-ink leading-none">約 <span className="nums">¥{budgetSum.toLocaleString()}</span><span className="text-[12px] text-charcoal/55"> 〜</span></span>
-          {budgetMissing > 0 && <span className="text-[10.5px] text-charcoal/55">＋ メンバー価格 {budgetMissing}品</span>}
-        </div>
-      )}
 
       {/* さりげない安心感バッジ — 全製品がSEAMで揃う */}
       <div className="mt-3 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/55">
@@ -3664,10 +3637,10 @@ function DeepProductSection({ deepResult, seamData }) {
                   <DeepBestCard item={best} />
                   {alts.length > 0 && (
                     <div className="mt-3.5">
-                      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-2">価格で選ぶなら</p>
+                      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-2">ほかの候補</p>
                       <div className="grid grid-cols-2 gap-2.5">
                         {alts.map((a) => (
-                          <DeepAltCard key={a.p.id} item={a} role={deepAltRole(a.p, best.p)} />
+                          <DeepAltCard key={a.p.id} item={a} />
                         ))}
                       </div>
                     </div>
