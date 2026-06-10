@@ -7422,6 +7422,7 @@ function VisitSeamSection({ saveOrShareKarte }) {
       title: '実際に、手に取れる。',
       body: 'カルテに合うシャンプー、トリートメント、オイル ─ サンプルで肌に乗せて、香りを確かめて、本当に合うアイテムを選びます。',
       illust: 'サロン店内 / 商品棚と光のイメージ',
+      img: 'images/stores/store_seam_multi.jpg',
     },
     {
       num: '02',
@@ -7429,6 +7430,7 @@ function VisitSeamSection({ saveOrShareKarte }) {
       title: 'カウンセリングで、深める。',
       body: 'カルテをそのまま店頭でお見せいただけば、診断結果を踏まえながら、あなたの髪に合うアイテムをご相談いただけます。',
       illust: 'カウンセリング中のシーン / 髪を見る手元',
+      img: 'images/stores/salon_private_room.jpg',
     },
     {
       num: '03',
@@ -7436,6 +7438,7 @@ function VisitSeamSection({ saveOrShareKarte }) {
       title: 'ずっと、続けられる。',
       body: '店頭でメンバー登録後は、オンラインで24時間ご注文・定期配送。来店ごとにカルテが育ち、季節に合わせて処方を微調整します。',
       illust: 'スマホでオンライン購入 / カルテ更新のシーン',
+      img: 'images/lp/clean_home_model.jpg',
     },
   ];
 
@@ -7484,7 +7487,7 @@ function VisitSeamSection({ saveOrShareKarte }) {
             const reverse = i % 2 === 1;
             const Placeholder = (
               <div
-                className="relative w-full"
+                className="relative w-full overflow-hidden rounded-[2px]"
                 style={{
                   aspectRatio: '4/3',
                   background: 'linear-gradient(160deg, #FFFFFF 0%, #F4ECDA 100%)',
@@ -7492,18 +7495,26 @@ function VisitSeamSection({ saveOrShareKarte }) {
                   borderBottom: '1px solid rgba(184,148,90,0.25)',
                 }}
               >
-                <span aria-hidden className="absolute top-2 left-2 w-2.5 h-2.5 border-t border-l border-gold/40" />
-                <span aria-hidden className="absolute top-2 right-2 w-2.5 h-2.5 border-t border-r border-gold/40" />
-                <span aria-hidden className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l border-gold/40" />
-                <span aria-hidden className="absolute bottom-2 right-2 w-2.5 h-2.5 border-b border-r border-gold/40" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-                  <span
-                    className="font-serif text-gold opacity-30"
-                    style={{ fontSize: 'clamp(72px, 12vw, 128px)', lineHeight: 1, fontStyle: 'italic', letterSpacing: '-0.04em' }}
-                  >{b.num}</span>
-                  <p className="mt-3 font-mono tracking-widest3 text-[10.5px] uppercase text-gold whitespace-nowrap" style={{ letterSpacing: '0.25em' }}>— Illustration —</p>
-                  <p className="mt-2 font-serif italic text-[11.5px] sm:text-[12.5px] text-charcoal/55 leading-[1.7] max-w-[80%]" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{b.illust}</p>
-                </div>
+                {b.img && (
+                  <img
+                    src={b.img}
+                    alt={b.title}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                )}
+                {/* ゴールドのコーナーフレーム */}
+                <span aria-hidden className="absolute top-2 left-2 w-2.5 h-2.5 border-t border-l border-gold/60 z-10" />
+                <span aria-hidden className="absolute top-2 right-2 w-2.5 h-2.5 border-t border-r border-gold/60 z-10" />
+                <span aria-hidden className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l border-gold/60 z-10" />
+                <span aria-hidden className="absolute bottom-2 right-2 w-2.5 h-2.5 border-b border-r border-gold/60 z-10" />
+                {/* 番号 */}
+                <span
+                  aria-hidden
+                  className="absolute bottom-2.5 right-3.5 font-serif italic text-white z-10"
+                  style={{ fontSize: 'clamp(40px, 7vw, 72px)', lineHeight: 1, letterSpacing: '-0.04em', textShadow: '0 1px 10px rgba(40,30,15,0.45)' }}
+                >{b.num}</span>
               </div>
             );
             const TextCol = (
