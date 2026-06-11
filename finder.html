@@ -594,8 +594,7 @@
       font-size: 8px;
       letter-spacing: 0.12em;
       font-weight: 600;
-      color: #ffffff;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+      color: #8A7556;
     }
 
     /* CTA hover bounce — subtle Aesop-y, not cartoon */
@@ -3983,20 +3982,11 @@ function TopBar({ step, total }) {
   );
 }
 
-/* ---------- 18-character preview list (横スクロール用) ---------- */
+/* ---------- 27髪格タイプ preview list (横スクロール用) ---------- */
 const CHARACTER_TICKER_LIST = [
-  // Fine
-  { code:'FLS', name:'エアリス'   }, { code:'FLW', name:'そよリボン'   }, { code:'FLC', name:'ひかりカール'   },
-  { code:'FNS', name:'シルフィ'   }, { code:'FNW', name:'なみほたる'   }, { code:'FNC', name:'ふわりん'   },
-  { code:'FHS', name:'スノーヴェール'   }, { code:'FHW', name:'エアウェーブ'   }, { code:'FHC', name:'シャボンカール'   },
-  // Normal
-  { code:'NLS', name:'ミストライン'   }, { code:'NLW', name:'そよなみ'   }, { code:'NLC', name:'やわふわカール'   },
-  { code:'NNS', name:'ピュアライン'   }, { code:'NNW', name:'ゆるウェーブ' }, { code:'NNC', name:'てまりカール' },
-  { code:'NHS', name:'サンシャイン'   }, { code:'NHW', name:'ブリーズウェーブ'   }, { code:'NHC', name:'もこもこカール'   },
-  // Thick
-  { code:'TLS', name:'シャープライン'   }, { code:'TLW', name:'ロックウェーブ'   }, { code:'TLC', name:'スパイラル'   },
-  { code:'TNS', name:'グラディエ' }, { code:'TNW', name:'リッチウェーブ'   }, { code:'TNC', name:'ボリュームカール'   },
-  { code:'THS', name:'クラウンライン'   }, { code:'THW', name:'ゴージャスウェーブ'   }, { code:'THC', name:'メロウカール'   },
+  { code:'FLS', name:'エアリーライトストレート' }, { code:'FLW', name:'エアリーライトウェーブ' }, { code:'FLC', name:'エアリーライトカール' }, { code:'FNS', name:'エアリーミドルストレート' }, { code:'FNW', name:'エアリーミドルウェーブ' }, { code:'FNC', name:'エアリーミドルカール' }, { code:'FHS', name:'エアリーフルストレート' }, { code:'FHW', name:'エアリーフルウェーブ' }, { code:'FHC', name:'エアリーフルカール' },
+  { code:'NLS', name:'ナチュラルライトストレート' }, { code:'NLW', name:'ナチュラルライトウェーブ' }, { code:'NLC', name:'ナチュラルライトカール' }, { code:'NNS', name:'ナチュラルミドルストレート' }, { code:'NNW', name:'ナチュラルミドルウェーブ' }, { code:'NNC', name:'ナチュラルミドルカール' }, { code:'NHS', name:'ナチュラルフルストレート' }, { code:'NHW', name:'ナチュラルフルウェーブ' }, { code:'NHC', name:'ナチュラルフルカール' },
+  { code:'TLS', name:'リッチライトストレート' }, { code:'TLW', name:'リッチライトウェーブ' }, { code:'TLC', name:'リッチライトカール' }, { code:'TNS', name:'リッチミドルストレート' }, { code:'TNW', name:'リッチミドルウェーブ' }, { code:'TNC', name:'リッチミドルカール' }, { code:'THS', name:'リッチフルストレート' }, { code:'THW', name:'リッチフルウェーブ' }, { code:'THC', name:'リッチフルカール' },
 ];
 
 /* ---------- Today date in Japanese ---------- */
@@ -4046,7 +4036,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
           </div>
         </div>
 
-        {/* ✦ 27 Character Preview Ticker — "あなたはどのタイプ?" */}
+        {/* ✦ 27 髪格 Preview Ticker — "あなたはどのタイプ?" */}
         <div className="mt-9 sm:mt-12 anim-fade-up" style={{ animationDelay:'180ms' }}>
           <div className="flex items-baseline justify-between mb-3">
             <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">
@@ -4056,7 +4046,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
               あなたはどのタイプ?
             </span>
           </div>
-          <div className="karte-ticker overflow-hidden -mx-5 sm:-mx-8 px-5 sm:px-8" aria-label="27タイプ・キャラクター一覧プレビュー">
+          <div className="karte-ticker overflow-hidden -mx-5 sm:-mx-8 px-5 sm:px-8" aria-label="27タイプ・髪格一覧プレビュー">
             <div className="karte-ticker-track">
               {/* duplicate list for seamless loop */}
               {[...CHARACTER_TICKER_LIST, ...CHARACTER_TICKER_LIST].map((c, i) => (
@@ -4067,7 +4057,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
                   className="karte-char-chip"
                   aria-label={`${c.name} (${c.code})`}
                 >
-                  <img src={`images/karte/spirits/${c.code}.png`} alt="" loading="lazy" />
+                  <img src={`images/karte/gems/${c.code}.jpg`} alt="" loading="lazy" />
                   <span className="karte-char-label">{c.code}</span>
                 </button>
               ))}
@@ -4149,7 +4139,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
             </span>
           </div>
 
-          {/* サブ導線: キャラクター既知 */}
+          {/* サブ導線: 髪格既知 */}
           {onCollection && (
             <div className="mt-4">
               <button
@@ -4158,7 +4148,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
                 className="group inline-flex items-center gap-2 text-[12.5px] sm:text-[13px] text-charcoal/75 hover:text-ink transition-colors"
               >
                 <span className="inline-block w-4 h-px bg-gold/60 group-hover:w-6 transition-all" />
-                <span>キャラクターはもう知っている方は、ここから履歴だけ更新</span>
+                <span>自分の髪格をもう知っている方は、ここから履歴だけ更新</span>
                 <span className="text-gold">→</span>
               </button>
             </div>
@@ -9573,7 +9563,7 @@ function RevealLoader() {
         </div>
         <p className="mt-7 font-mono tracking-widest2 text-[10px] uppercase text-gold">— Reading your hair type</p>
         <h2 className="mt-3 font-serif text-[20px] sm:text-[22px] text-ink leading-[1.85]">
-          あなたの髪から、<br className="sm:hidden" />キャラクターが生まれます
+          あなたの髪格を、<br className="sm:hidden" />読み解いています
         </h2>
         <div className="mt-6 space-y-2 text-[12.5px] leading-[1.95] text-charcoal/70">
           {lines.map((l,i) => (
