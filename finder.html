@@ -6777,6 +6777,36 @@ function buildCurrentCondition(radar) {
   return CURRENT_CONDITION_BY_AXIS[lowest.label] || '本来の質を取り戻していく時期。';
 }
 
+/* ---------- GemMark — 髪格の宝石(画像があれば表示、無ければコードのモノグラム) ---------- */
+function GemMark({ code, name }) {
+  const [gemOk, setGemOk] = useState(true);
+  const gemSrc = `images/karte/gems/${code}.jpg`;
+  if (gemOk) {
+    return (
+      <div className="mt-6 inline-block relative rounded-full overflow-hidden border border-gold/40"
+           style={{ width: 168, height: 168, boxShadow: '0 10px 34px -18px rgba(154,116,56,0.45)' }}>
+        <img
+          src={gemSrc}
+          alt={`${name}の宝石`}
+          width={168}
+          height={168}
+          loading="lazy"
+          className="w-full h-full object-cover karte-mark-anim"
+          onError={() => setGemOk(false)}
+        />
+        <span aria-hidden className="absolute inset-0 rounded-full border border-white/30 pointer-events-none" />
+      </div>
+    );
+  }
+  return (
+    <div className="mt-6 inline-flex items-center justify-center relative rounded-full border border-gold/50"
+         style={{ width: 128, height: 128, background: 'radial-gradient(60% 60% at 50% 40%, rgba(184,148,90,0.10), transparent 70%)' }}>
+      <span aria-hidden className="absolute inset-2 rounded-full border border-gold/25" />
+      <span className="font-serif text-[34px] tracking-[0.18em] text-ink nums" style={{ textIndent: '0.18em' }}>{code}</span>
+    </div>
+  );
+}
+
 /* ---------- ResultHero — Pokémon カード風 図鑑プロフィールカード ---------- */
 function ResultHero({ karte, onSaveImage, onShare, onSavePdf }) {
   if (!karte) return null;
@@ -6838,14 +6868,8 @@ function ResultHero({ karte, onSaveImage, onShare, onSavePdf }) {
                   </div>
                   <span className="block mt-3 mx-auto w-10 h-px bg-gold/40" />
 
-                  {/* 髪格モノグラム — タイポグラフィ中心のシンボル */}
-                  {true && (
-                    <div className="mt-6 inline-flex items-center justify-center relative rounded-full border border-gold/50"
-                         style={{ width: 128, height: 128, background: 'radial-gradient(60% 60% at 50% 40%, rgba(184,148,90,0.10), transparent 70%)' }}>
-                      <span aria-hidden className="absolute inset-2 rounded-full border border-gold/25" />
-                      <span className="font-serif text-[34px] tracking-[0.18em] text-ink nums" style={{ textIndent: '0.18em' }}>{origin.code}</span>
-                    </div>
-                  )}
+                  {/* 髪格の宝石 — 画像があれば表示、なければモノグラムに自動フォールバック */}
+                  <GemMark code={origin.code} name={origin.name} />
 
                   {/* Name */}
                   <h1 className="mt-5 font-serif text-[24px] sm:text-[30px] leading-[1.2] text-ink" style={{ wordBreak:'keep-all', overflowWrap:'break-word' }}>
