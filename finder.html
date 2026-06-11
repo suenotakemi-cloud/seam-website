@@ -7306,6 +7306,29 @@ function KarteMiniPentagon({ values, size = 110 }) {
 }
 
 /* ---------- KarteCollectionCard — 図鑑の1枚 ---------- */
+/* ---------- GemThumb — 宝石サムネイル(失敗時はSVGマークへ) ---------- */
+function GemThumb({ code, size = 64, accent = false }) {
+  const [ok, setOk] = useState(true);
+  if (!ok) return <KarteAnimalMark size={size} accent={accent} code={code} />;
+  return (
+    <span
+      className={`inline-block relative rounded-full overflow-hidden ${accent ? 'border border-gold/50' : 'border border-gold/25'}`}
+      style={{ width: size, height: size, boxShadow: accent ? '0 10px 30px -16px rgba(154,116,56,0.5)' : 'none' }}
+    >
+      <img
+        src={`images/karte/gems/${code}.jpg`}
+        alt=""
+        width={size}
+        height={size}
+        loading="lazy"
+        className="w-full h-full object-cover"
+        onError={() => setOk(false)}
+      />
+      <span aria-hidden className="absolute inset-0 rounded-full border border-white/30 pointer-events-none" />
+    </span>
+  );
+}
+
 function KarteCollectionCard({ animal, isMine, onOpen, onPick }) {
   return (
     <div
@@ -7333,7 +7356,7 @@ function KarteCollectionCard({ animal, isMine, onOpen, onPick }) {
 
         <div className="mt-4 flex items-center gap-4">
           <div className="shrink-0">
-            <KarteAnimalMark size={64} code={animal.code} />
+            <GemThumb size={64} code={animal.code} />
           </div>
           <div className="shrink-0">
             <KarteMiniPentagon values={animal.radar} size={104} />
@@ -7389,7 +7412,7 @@ function KarteCollectionDetail({ animal, isMine, onClose }) {
         </button>
 
         <header className="flex items-start gap-5 pb-5 border-b border-line">
-          <KarteAnimalMark size={84} code={animal.code} />
+          <GemThumb size={84} code={animal.code} />
           <div className="min-w-0">
             <p className="font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/55">
               {animal.nameEn} · {animal.code}
@@ -7520,7 +7543,7 @@ function Collection({ onBackHome, myKarte, onPickAsMine }) {
               </div>
               <div className="hidden sm:block shrink-0">
                 <div className="w-[140px] h-[140px] karte-mark-accent">
-                  <KarteAnimalMark size={140} accent code={myAnimal.code} />
+                  <GemThumb size={140} accent code={myAnimal.code} />
                 </div>
               </div>
             </div>
