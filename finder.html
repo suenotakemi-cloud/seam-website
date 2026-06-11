@@ -6811,33 +6811,101 @@ function buildCurrentCondition(radar) {
   return CURRENT_CONDITION_BY_AXIS[lowest.label] || '本来の質を取り戻していく時期。';
 }
 
+/* ---------- GEM_LORE — 27石の名前と「なぜこの石なのか」 ---------- */
+const GEM_LORE = {
+  FLS: { stone: 'ダイヤモンド（エメラルドカット）', en: 'WHITE DIAMOND',
+    text: '細くまっすぐな髪は、よけいな飾りのないエメラルドカットのダイヤモンドと同じ。すっと通る透明感そのものが品になります。' },
+  FNS: { stone: 'スカイブルートパーズ', en: 'SKY BLUE TOPAZ',
+    text: '細さとまとまりのバランスが心地よいストレート。澄んだ空色のトパーズのように、清潔感で人の記憶に残るタイプです。' },
+  FHS: { stone: 'アクアマリン', en: 'AQUAMARINE',
+    text: '繊細なのに豊かさもある髪。深い水色のアクアマリンのように、静かでいて存在感のある透明感を持っています。' },
+  NLS: { stone: 'シャンパンダイヤモンド', en: 'CHAMPAGNE DIAMOND',
+    text: '軽やかで自然体のストレート。シャンパンダイヤモンドの淡い金色のように、肩の力が抜けた上品さが魅力です。' },
+  NNS: { stone: 'インペリアルトパーズ', en: 'IMPERIAL TOPAZ',
+    text: '太さも量もちょうどいい、整ったストレート。「皇帝の石」と呼ばれるインペリアルトパーズの安定した輝きに重なります。' },
+  NHS: { stone: 'イエローダイヤモンド', en: 'YELLOW DIAMOND',
+    text: '自然なしなやかさと、豊かなボリューム。鮮やかなイエローダイヤモンドのように、明るさで場をあたためる髪です。' },
+  TLS: { stone: 'パライバトルマリン', en: 'PARAIBA TOURMALINE',
+    text: 'しっかりした髪質に、軽やかな毛量。世界中で愛される希少なパライバトルマリンのように、凛とした個性がひときわ映えます。' },
+  TNS: { stone: 'ロイヤルブルーサファイア', en: 'ROYAL BLUE SAPPHIRE',
+    text: '芯の強いストレートは、ロイヤルブルーサファイアの深い青のよう。信頼感と品格を併せ持つ髪です。' },
+  THS: { stone: 'エメラルド', en: 'EMERALD',
+    text: '太さ・量・直線、すべてが堂々の風格。宝石の王道エメラルドがいちばん似合う、王者のストレートです。' },
+  FLW: { stone: 'オパール', en: 'OPAL',
+    text: '細くやわらかな髪に、ふんわりとした動き。光の加減で表情を変えるオパールのように、日ごとの変化も魅力のうちです。' },
+  FNW: { stone: 'シトリン', en: 'CITRINE',
+    text: '繊細な髪に、やさしいウェーブ。陽だまり色のシトリンのように、まわりをほっとさせるあたたかさがあります。' },
+  FHW: { stone: 'ピンクサファイア', en: 'PINK SAPPHIRE',
+    text: '繊細なのに豊かでドラマチック。鮮やかなピンクサファイアのように、華やかさが一瞬で伝わる髪です。' },
+  NLW: { stone: 'マンダリンガーネット', en: 'MANDARIN GARNET',
+    text: '軽やかな毛量に、自然なリズム。ビタミンカラーのマンダリンガーネットのように、フットワークの軽さが似合います。' },
+  NNW: { stone: 'アメジスト', en: 'AMETHYST',
+    text: 'バランスのとれた、やわらかなウェーブ。アメジストの落ち着いた紫のように、静かな知性を感じさせる髪です。' },
+  NHW: { stone: 'タンザナイト', en: 'TANZANITE',
+    text: '豊かな量と、やわらかな動きの共演。夕暮れ色のタンザナイトのように、深みのあるやさしさをまとっています。' },
+  TLW: { stone: 'グリーントルマリン', en: 'GREEN TOURMALINE',
+    text: 'しっかりした髪に、軽やかなウェーブ。深い森色のグリーントルマリンのように、芯のある穏やかさが持ち味です。' },
+  TNW: { stone: 'レッドスピネル', en: 'RED SPINEL',
+    text: '力のある髪が描く、なめらかなカーブ。ルビーと並び称されるレッドスピネルのように、まっすぐな情熱を秘めています。' },
+  THW: { stone: 'ルビー', en: 'RUBY',
+    text: '豊かさと強さを兼ね備えたウェーブは、まさに宝石の女王ルビー。一度会ったら忘れられない髪です。' },
+  FLC: { stone: 'ダイヤモンド（ラウンドブリリアント）', en: 'DIAMOND',
+    text: '細い髪が描く、こまやかなカール。もっとも光を集めるラウンドブリリアントのように、繊細さがそのまま輝きになります。' },
+  FNC: { stone: 'モルガナイト', en: 'MORGANITE',
+    text: 'やわらかな髪と、愛らしいカールのバランス。淡い桜色のモルガナイトのように、そばにいる人をやさしくする髪です。' },
+  FHC: { stone: 'クンツァイト', en: 'KUNZITE',
+    text: '繊細で豊かなカールは、それだけで主役。ライラック色のクンツァイトのように、甘さと気品をいちどに叶えます。' },
+  NLC: { stone: 'ペリドット', en: 'PERIDOT',
+    text: '軽やかな毛量に、いきいきとしたカール。「太陽の石」ペリドットのように、屈託のない明るさが似合います。' },
+  NNC: { stone: 'グリーンベリル', en: 'GREEN BERYL',
+    text: '整ったカールのバランスのよさは、ミントグリーンのベリルのよう。爽やかさと落ち着きを両立する髪です。' },
+  NHC: { stone: 'ツァボライト', en: 'TSAVORITE',
+    text: '豊かにはずむカールは、鮮やかな緑のツァボライト。生命力という言葉がいちばん似合うタイプです。' },
+  TLC: { stone: 'ファイアオパール', en: 'FIRE OPAL',
+    text: 'しっかりした髪が描く、くっきりとしたカール。燃えるようなファイアオパールのように、エネルギーが内側から灯っています。' },
+  TNC: { stone: 'コーンフラワーサファイア', en: 'CORNFLOWER SAPPHIRE',
+    text: '力強くしなやかなカールは、矢車菊色のサファイアのよう。鮮やかさと誠実さを併せ持つ髪です。' },
+  THC: { stone: 'ロイヤルパープルサファイア', en: 'ROYAL PURPLE SAPPHIRE',
+    text: '太さ・量・カール、すべてが豊潤。王族の色をまとうロイヤルパープルサファイアこそ、この髪格の証です。' },
+};
+
 /* ---------- GemMark — 髪格の宝石(画像があれば表示、無ければコードのモノグラム) ---------- */
 function GemMark({ code, name }) {
   const [gemOk, setGemOk] = useState(true);
   const gemSrc = `images/karte/gems/${code}.jpg`;
+  const lore = GEM_LORE[code];
   if (gemOk) {
     return (
-      <div className="gem-stage mt-6">
-        <span aria-hidden className="gem-halo" />
-        <div className="gem-float">
-          <div className="gem-orb border border-gold/40"
-               style={{ width: 176, height: 176, boxShadow: '0 14px 38px -18px rgba(154,116,56,0.5)' }}>
-            <img
-              src={gemSrc}
-              alt={`${name}の宝石`}
-              width={176}
-              height={176}
-              loading="lazy"
-              className="w-full h-full object-cover karte-mark-anim"
-              onError={() => setGemOk(false)}
-            />
-            <span aria-hidden className="absolute inset-0 rounded-full border border-white/30 pointer-events-none" />
+      <>
+        <div className="gem-stage mt-6">
+          <span aria-hidden className="gem-halo" />
+          <div className="gem-float">
+            <div className="gem-orb border border-gold/40"
+                 style={{ width: 176, height: 176, boxShadow: '0 14px 38px -18px rgba(154,116,56,0.5)' }}>
+              <img
+                src={gemSrc}
+                alt={`${name}の宝石`}
+                width={176}
+                height={176}
+                loading="lazy"
+                className="w-full h-full object-cover karte-mark-anim"
+                onError={() => setGemOk(false)}
+              />
+              <span aria-hidden className="absolute inset-0 rounded-full border border-white/30 pointer-events-none" />
+            </div>
+            <span aria-hidden className="gem-spark" style={{ left: '8%', top: '16%' }} />
+            <span aria-hidden className="gem-spark" style={{ right: '4%', top: '38%', animationDelay: '1300ms' }} />
+            <span aria-hidden className="gem-spark" style={{ left: '22%', bottom: '6%', animationDelay: '2400ms' }} />
           </div>
-          <span aria-hidden className="gem-spark" style={{ left: '8%', top: '16%' }} />
-          <span aria-hidden className="gem-spark" style={{ right: '4%', top: '38%', animationDelay: '1300ms' }} />
-          <span aria-hidden className="gem-spark" style={{ left: '22%', bottom: '6%', animationDelay: '2400ms' }} />
         </div>
-      </div>
+        {lore && (
+          <div className="mt-5 max-w-md mx-auto px-3 text-center">
+            <p className="text-[10.5px] tracking-[0.32em] text-gold/90 nums" style={{ textIndent: '0.32em' }}>{lore.en}</p>
+            <p className="mt-1 font-serif text-[15px] tracking-[0.1em] text-ink">あなたの石は「{lore.stone}」</p>
+            <p className="mt-2.5 text-[13px] leading-[2.05] text-ink/75 text-left sm:text-center">{lore.text}</p>
+          </div>
+        )}
+      </>
     );
   }
   return (
