@@ -395,6 +395,40 @@
       100% { transform: scale(2.0); opacity: 0; }
     }
     .karte-mark-anim { animation: karte-mark-in 1100ms cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+    /* ---- 髪格の宝石: 浮遊 + ハロー + 光のスイープ + きらめき ---- */
+    .gem-stage { position: relative; display: inline-block; }
+    .gem-halo {
+      position: absolute; inset: -26px; border-radius: 9999px; pointer-events: none;
+      background: radial-gradient(50% 50% at 50% 50%, rgba(214,178,110,0.30), rgba(214,178,110,0) 70%);
+      animation: gem-halo-pulse 5200ms ease-in-out infinite;
+    }
+    .gem-float { position: relative; animation: gem-float 5600ms ease-in-out infinite; will-change: transform; }
+    .gem-orb { position: relative; border-radius: 9999px; overflow: hidden; }
+    .gem-orb::after {
+      content: ''; position: absolute; inset: 0; border-radius: 9999px; pointer-events: none;
+      background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,0.38) 50%, transparent 62%);
+      transform: translateX(-130%);
+      animation: gem-sheen 4800ms ease-in-out infinite;
+    }
+    .gem-spark { position: absolute; width: 11px; height: 11px; pointer-events: none; opacity: 0;
+      animation: gem-spark 3600ms ease-in-out infinite; }
+    .gem-spark::before, .gem-spark::after {
+      content: ''; position: absolute; left: 50%; top: 50%; background: #FFFDF4; border-radius: 1px;
+      box-shadow: 0 0 6px rgba(255,250,230,0.9);
+    }
+    .gem-spark::before { width: 11px; height: 2px; transform: translate(-50%,-50%); }
+    .gem-spark::after  { width: 2px; height: 11px; transform: translate(-50%,-50%); }
+    @keyframes gem-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    @keyframes gem-halo-pulse { 0%, 100% { opacity: 0.55; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1.05); } }
+    @keyframes gem-sheen { 0% { transform: translateX(-130%); } 34% { transform: translateX(130%); } 100% { transform: translateX(130%); } }
+    @keyframes gem-spark {
+      0%, 54%, 100% { opacity: 0; transform: scale(0.4); }
+      62% { opacity: 1; transform: scale(1); }
+      72% { opacity: 0; transform: scale(0.5); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .gem-float, .gem-halo, .gem-orb::after, .gem-spark { animation: none !important; }
+    }
     @keyframes karte-target-fade {
       0%   { opacity: 0; }
       100% { opacity: 1; }
@@ -6783,18 +6817,26 @@ function GemMark({ code, name }) {
   const gemSrc = `images/karte/gems/${code}.jpg`;
   if (gemOk) {
     return (
-      <div className="mt-6 inline-block relative rounded-full overflow-hidden border border-gold/40"
-           style={{ width: 168, height: 168, boxShadow: '0 10px 34px -18px rgba(154,116,56,0.45)' }}>
-        <img
-          src={gemSrc}
-          alt={`${name}の宝石`}
-          width={168}
-          height={168}
-          loading="lazy"
-          className="w-full h-full object-cover karte-mark-anim"
-          onError={() => setGemOk(false)}
-        />
-        <span aria-hidden className="absolute inset-0 rounded-full border border-white/30 pointer-events-none" />
+      <div className="gem-stage mt-6">
+        <span aria-hidden className="gem-halo" />
+        <div className="gem-float">
+          <div className="gem-orb border border-gold/40"
+               style={{ width: 176, height: 176, boxShadow: '0 14px 38px -18px rgba(154,116,56,0.5)' }}>
+            <img
+              src={gemSrc}
+              alt={`${name}の宝石`}
+              width={176}
+              height={176}
+              loading="lazy"
+              className="w-full h-full object-cover karte-mark-anim"
+              onError={() => setGemOk(false)}
+            />
+            <span aria-hidden className="absolute inset-0 rounded-full border border-white/30 pointer-events-none" />
+          </div>
+          <span aria-hidden className="gem-spark" style={{ left: '8%', top: '16%' }} />
+          <span aria-hidden className="gem-spark" style={{ right: '4%', top: '38%', animationDelay: '1300ms' }} />
+          <span aria-hidden className="gem-spark" style={{ left: '22%', bottom: '6%', animationDelay: '2400ms' }} />
+        </div>
       </div>
     );
   }
