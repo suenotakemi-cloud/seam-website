@@ -46,6 +46,10 @@
 
     :root {
       --white: #ffffff;
+      /* 角丸スケール */
+      --r-card: 6px;     /* カード・パネル */
+      --r-tag: 2px;      /* 小バッジ・タグ */
+      --r-pill: 999px;   /* ピル・ボタン */
       --off-white: #FAF7F2;
       --cream: #F6F1EA;
       --sand: #EEE7DD;
@@ -143,7 +147,7 @@
       padding: 7px 14px;
       background: rgba(184,148,90,0.12);
       border: 1px solid rgba(184,148,90,0.4);
-      border-radius: 999px;
+      border-radius: var(--r-pill);
       font-family: var(--font-en); font-size: 9.5px; letter-spacing: 0.22em;
       text-transform: uppercase; color: var(--gold);
       margin-bottom: 20px;
@@ -177,7 +181,7 @@
       padding: 14px 12px;
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(184,148,90,0.18);
-      border-radius: 6px;
+      border-radius: var(--r-card);
       text-align: center;
     }
     .premium-hero-stat-num {
@@ -237,7 +241,7 @@
     .benefit-card {
       background: var(--white);
       border: 1px solid var(--sand);
-      border-radius: 6px;
+      border-radius: var(--r-card);
       padding: 26px 22px;
       position: relative;
     }
@@ -277,7 +281,7 @@
       aspect-ratio: 1 / 1;
       background: var(--white);
       border: 1px solid var(--sand);
-      border-radius: 6px;
+      border-radius: var(--r-card);
       display: flex; align-items: center; justify-content: center;
       padding: 16px;
       position: relative;
@@ -289,7 +293,7 @@
       font-family: var(--font-en); font-size: 7px; letter-spacing: 0.15em;
       text-transform: uppercase;
       background: var(--gold); color: var(--white);
-      padding: 2px 6px; border-radius: 2px;
+      padding: 2px 6px; border-radius: var(--r-tag);
     }
     .online-brand-tile.silhouette {
       background: linear-gradient(135deg, #F2EDE3 0%, #E9D8C8 100%);
@@ -353,7 +357,7 @@
     .voice-card {
       background: var(--white);
       border: 1px solid var(--sand);
-      border-radius: 8px;
+      border-radius: var(--r-card);
       padding: 24px 22px;
       margin-bottom: 14px;
       position: relative;
@@ -432,14 +436,14 @@
     }
     .premium-cta-ring::before {
       content: ''; position: absolute; inset: 0;
-      border-radius: 999px;
+      border-radius: var(--r-pill);
       border: 1px solid rgba(184,148,90,0.55);
       pointer-events: none;
     }
     .premium-cta-btn {
       display: inline-flex; align-items: center; gap: 14px;
       background: var(--gold); color: var(--black);
-      padding: 18px 32px; border-radius: 999px;
+      padding: 18px 32px; border-radius: var(--r-pill);
       font-family: var(--font-jp); font-size: 14px; font-weight: 600;
       letter-spacing: 0.04em;
       box-shadow: 0 6px 24px rgba(184,148,90,0.35);
@@ -494,7 +498,7 @@
   <link rel="stylesheet" href="css/lang.css">
   <link rel="stylesheet" href="css/reveal.css?v=5">
 <style id="seam-menu-css">
-.site-menu-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(23,22,20,.28);border-radius:999px;padding:8px 13px;background:none;cursor:pointer;min-height:40px;-webkit-tap-highlight-color:transparent;}
+.site-menu-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(23,22,20,.28);border-radius: var(--r-pill);padding:8px 13px;background:none;cursor:pointer;min-height:40px;-webkit-tap-highlight-color:transparent;}
 .site-menu-btn:hover{background:rgba(23,22,20,.05);}
 .smb-label{font-family:'Courier New',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#171614;line-height:1;}
 .smb-lines{display:flex;flex-direction:column;gap:4px;}
@@ -510,7 +514,7 @@
 .smn-list a .en{font-family:'Courier New',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:#A87456;}
 .smn-list a:hover{background:rgba(23,22,20,.03);}
 .smn-cta{padding:20px 24px calc(28px + env(safe-area-inset-bottom,0));display:flex;flex-direction:column;gap:12px;}
-.smn-cta a{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border-radius:999px;text-decoration:none;font-family:'Noto Serif JP',serif;font-size:15px;}
+.smn-cta a{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border-radius: var(--r-pill);text-decoration:none;font-family:'Noto Serif JP',serif;font-size:15px;}
 .smn-cta-primary{background:#171614;color:#F5F1EA;}
 .smn-cta-secondary{border:1px solid rgba(23,22,20,.3);color:#171614;}
 </style>
@@ -721,13 +725,13 @@
   <p class="section-desc">それは、本物だけをお届けするための、約束です。</p>
 
   <div style="max-width:560px; margin:28px auto 0; display:flex; flex-direction:column; gap:18px;">
-    <div style="background:var(--white); border:1px solid var(--sand); border-radius:6px; padding:22px 22px;">
+    <div style="background:var(--white); border:1px solid var(--sand); border-radius: var(--r-card); padding:22px 22px;">
       <h3 style="font-size:15px; font-weight:600; color:var(--black); margin-bottom:8px;">① メーカー公認の、正規ルートだから</h3>
       <p style="font-size:13px; line-height:2; color:var(--charcoal);">
         サロン専売品の約99%は、メーカーが「正規の対面販売」を条件に卸しています。Amazonや楽天で見かけるサロン専売品の多くは、メーカーが認めていない非正規流通。中身が違う・期限切れの偽物リスクがあります。SEAMは、その約束を守る正規店です。
       </p>
     </div>
-    <div style="background:var(--white); border:1px solid var(--sand); border-radius:6px; padding:22px 22px;">
+    <div style="background:var(--white); border:1px solid var(--sand); border-radius: var(--r-card); padding:22px 22px;">
       <h3 style="font-size:15px; font-weight:600; color:var(--black); margin-bottom:8px;">② あなたの髪に、合うものを</h3>
       <p style="font-size:13px; line-height:2; color:var(--charcoal);">
         高機能なサロン専売品ほど、髪質に合わせた説明が必要です。だから一度だけ、店頭でカウンセリングを。あなた専用のカルテができれば、あとはオンラインで、ずっと。
@@ -736,7 +740,7 @@
   </div>
 
   <!-- 偽物リスク警告 -->
-  <div style="max-width:560px; margin:18px auto 0; padding:18px 22px; background:var(--highlight-fill); border:1px solid rgba(184,148,90,0.30); border-radius:6px;">
+  <div style="max-width:560px; margin:18px auto 0; padding:18px 22px; background:var(--highlight-fill); border:1px solid rgba(184,148,90,0.30); border-radius: var(--r-card);">
     <p style="font-size:10.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--gold-dark); margin-bottom:9px;">⚠ ご注意ください</p>
     <p style="font-size:13px; line-height:2; color:var(--black);">
       各メーカーの公式サイトでも、<span style="font-weight:600;">「正規ルート以外で購入した商品は、偽物・中身の相違・期限切れの可能性がある」</span>と注意喚起されています。大切な髪のために、正規品を、正しいルートで。
