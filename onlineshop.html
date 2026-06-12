@@ -127,13 +127,33 @@
       position: relative;
       background: linear-gradient(180deg, #1A1815 0%, #2F2A26 60%, #3D3833 100%);
       color: var(--white);
-      padding: 64px 24px 56px;
+      padding: 72px 24px 200px;
       overflow: hidden;
+    }
+    /* 生成ビジュアル背景 (夜のドレッサー) */
+    .premium-hero-bg { position: absolute; inset: 0; z-index: 0; }
+    .premium-hero-bg img,
+    .premium-hero-bg video {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center bottom;
+    }
+    /* 文字の可読性: 上は濃く、下は写真を見せる */
+    .premium-hero-bg::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg,
+        rgba(26,24,21,0.92) 0%,
+        rgba(26,24,21,0.78) 38%,
+        rgba(26,24,21,0.35) 68%,
+        rgba(26,24,21,0.15) 100%);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .premium-hero-bg video { display: none; }
     }
     .premium-hero::before {
       content: ''; position: absolute; inset: 0;
       background: radial-gradient(circle at 70% 30%, rgba(184,148,90,0.18) 0%, transparent 60%);
-      pointer-events: none;
+      pointer-events: none; z-index: 1;
     }
     .premium-hero::after {
       content: ''; position: absolute; top: 0; left: 50%;
@@ -179,8 +199,10 @@
     }
     .premium-hero-stat {
       padding: 14px 12px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(184,148,90,0.18);
+      background: rgba(26,24,21,0.55);
+      -webkit-backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(184,148,90,0.28);
       border-radius: var(--r-card);
       text-align: center;
     }
@@ -190,7 +212,7 @@
     }
     .premium-hero-stat-label {
       font-family: var(--font-jp); font-size: 11px; font-weight: 300;
-      color: rgba(255,255,255,0.65); letter-spacing: 0.04em;
+      color: rgba(255,255,255,0.8); letter-spacing: 0.04em;
       margin-top: 6px;
     }
 
@@ -580,6 +602,10 @@
 
 <!-- ════════════════ PREMIUM HERO ════════════════ -->
 <section class="premium-hero">
+  <div class="premium-hero-bg" aria-hidden="true">
+    <img src="images/onlineshop/hero_dresser.jpg" alt="" width="896" height="1200" fetchpriority="high">
+    <video autoplay loop muted playsinline preload="metadata" poster="images/onlineshop/hero_dresser.jpg"><source src="images/onlineshop/hero_dresser.mp4" type="video/mp4"></video>
+  </div>
   <div class="premium-hero-content">
     <span class="premium-hero-badge">Online — Members Only</span>
     <h1 class="premium-hero-title">
@@ -595,8 +621,8 @@
     </p>
     <div class="premium-hero-stats">
       <div class="premium-hero-stat">
-        <div class="premium-hero-stat-num">5+</div>
-        <div class="premium-hero-stat-label">オンライン限定ブランド</div>
+        <div class="premium-hero-stat-num">80+</div>
+        <div class="premium-hero-stat-label">オンライン取扱ブランド</div>
       </div>
       <div class="premium-hero-stat">
         <div class="premium-hero-stat-num">¥0</div>
