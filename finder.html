@@ -8445,7 +8445,8 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
 
 /* ──────────────────────────────────────────
    NarrativeJourney — 4章ナラティブ (Ch01-04, 05-06は別セクションへ統合)
-   Chapter 01 髪の生まれ / 02 今の状態 / 03 いちばんの悩み /
+   Chapter 01 今の状態 / 02 いちばんの悩み / 03 アドバイス
+   (旧Chapter01「髪の生まれ」はカルテPERSONALITYと重複のため削除) /
    04 アドバイス→ヘアケア (05 美容師カード / 06 SEAM体験は別コンポーネント)
    ────────────────────────────────────────── */
 function NarrativeJourney({ karte, answers }) {
@@ -8453,8 +8454,7 @@ function NarrativeJourney({ karte, answers }) {
   if (!origin) return null;
   const radar = karte.radar || [3,3,3,3,3];
 
-  // フォールバック: birthStory等が無いキャラはpersonalityで代用
-  const birthStory = origin.birthStory || origin.personality || '';
+  // birthStory は ResultHero の PERSONALITY と重複するため非表示(オーナー判断)
   const currentMood = origin.currentMood || '';
   const primaryConcern = origin.primaryConcern || (origin.weaknesses && origin.weaknesses[0]?.title) || '';
   const tenderAdvice = origin.tenderAdvice || (origin.lifestyle && origin.lifestyle.join('。')) || '';
@@ -8556,17 +8556,9 @@ function NarrativeJourney({ karte, answers }) {
   return (
     <div className="anim-fade-up">
 
-      {/* ━━━━━ Chapter 01 · 髪の生まれ ━━━━━ */}
-      <section id="chapter-birth" className="scroll-mt-[96px]">
-        <ChapterTitle num="01" en="Birth" top="あなたの髪は" accent="こう生まれた" stack />
-        <article className="max-w-2xl mx-auto bg-white/80 border border-gold/25 rounded-[18px] p-7 sm:p-9">
-          <Paragraphs text={birthStory} />
-        </article>
-      </section>
-
-      {/* ━━━━━ Chapter 02 · 今のあなたの髪 ━━━━━ */}
+      {/* ━━━━━ Chapter 01 · 今のあなたの髪 ━━━━━ */}
       <section id="chapter-current" className="scroll-mt-[96px]">
-        <ChapterTitle num="02" en="Current" top="いまの" accent="あなたの髪" />
+        <ChapterTitle num="01" en="Current" top="いまの" accent="あなたの髪" />
 
         {/* 履歴チップ */}
         {historyChips.length > 0 && (
@@ -8588,9 +8580,9 @@ function NarrativeJourney({ karte, answers }) {
         </article>
       </section>
 
-      {/* ━━━━━ Chapter 03 · いちばんの、お悩み ━━━━━ */}
+      {/* ━━━━━ Chapter 02 · いちばんのお悩み ━━━━━ */}
       <section id="chapter-concern" className="scroll-mt-[96px]">
-        <ChapterTitle num="03" en="One Concern" top="あなたが" accent="いちばん気にしてること" stack />
+        <ChapterTitle num="02" en="One Concern" top="あなたが" accent="いちばん気にしてること" stack />
         <IllustSlot
           label="湿気の朝、鏡の前のワンシーン"
           ratio="3/2"
@@ -8614,9 +8606,9 @@ function NarrativeJourney({ karte, answers }) {
         </article>
       </section>
 
-      {/* ━━━━━ Chapter 04 · あなたへのアドバイス ━━━━━ */}
+      {/* ━━━━━ Chapter 03 · あなたへのアドバイス ━━━━━ */}
       <section id="chapter-advice" className="scroll-mt-[96px]">
-        <ChapterTitle num="04" en="Tender Advice" top="あなたへの" accent="やさしい処方" stack />
+        <ChapterTitle num="03" en="Tender Advice" top="あなたへの" accent="やさしい処方" stack />
         <article
           className="relative max-w-2xl mx-auto rounded-[2px] p-8 sm:p-12"
           style={{
@@ -9519,7 +9511,7 @@ function Result({ answers, onRestart, onCollection }) {
           </section>
         )}
 
-        {/* 旧 Chapter 03 banner は NarrativeJourney の Chapter 04 Tender Advice に統合済み */}
+        {/* 旧 Chapter banner は NarrativeJourney の Chapter 03 Tender Advice に統合済み */}
 
 {/* "あなたに必要なケア" Care Points セクションは情報重複により削除済み */}
 
