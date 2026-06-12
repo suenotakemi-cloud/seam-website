@@ -5072,7 +5072,7 @@ function Quiz({ answers, setAnswers, onComplete, onBackHome }) {
             </div>
             <div className="flex-1 min-w-0 pt-1">
               <p className="font-mono tracking-widest2 text-[10.5px] uppercase text-gold mb-2">— {q.eyebrow}</p>
-              <h2 className="font-serif text-[22px] sm:text-[28px] leading-[1.4] text-ink">
+              <h2 className="font-serif text-[22px] sm:text-[28px] leading-[1.4] text-ink" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
                 {q.title}
               </h2>
             </div>
@@ -5201,7 +5201,7 @@ function QuizDeep({ answers, setAnswers, onComplete, onBackHome }) {
             </div>
             <div className="flex-1 min-w-0 pt-1">
               <p className="font-mono tracking-widest2 text-[10.5px] uppercase text-gold mb-2">— {q.eyebrow}</p>
-              <h2 className="font-serif text-[22px] sm:text-[28px] leading-[1.4] text-ink">
+              <h2 className="font-serif text-[22px] sm:text-[28px] leading-[1.4] text-ink" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
                 {q.title}
               </h2>
             </div>
@@ -8423,12 +8423,14 @@ function NarrativeJourney({ karte, answers }) {
     ));
   };
 
-  // 章タイトルブロック
-  const ChapterTitle = ({ num, en, jp, accent }) => (
+  // 章タイトルブロック — top行(墨色)とaccent行(金色)を語の途中で折り返さないよう分離
+  const ChapterTitle = ({ num, en, top, accent, stack }) => (
     <div className="mt-14 sm:mt-20 mb-7 sm:mb-9 text-center">
       <p className="font-mono tracking-widest3 text-[10px] sm:text-[10.5px] uppercase text-gold mb-3">— Chapter {num} · {en}</p>
-      <h2 className="font-serif text-[26px] sm:text-[34px] leading-[1.35] text-ink" style={{ letterSpacing: '-0.01em' }}>
-        {accent ? jp.split(accent).reduce((acc, part, i) => i === 0 ? [part] : [...acc, <span key={i} className="text-gold">{accent}</span>, part], []) : jp}
+      <h2 className="font-serif text-[26px] sm:text-[34px] leading-[1.35] text-ink" style={{ letterSpacing: '-0.01em', wordBreak: 'keep-all', overflowWrap: 'break-word' }}>
+        <span style={{ display: 'inline-block' }}>{top}</span>
+        {stack ? <br /> : null}
+        <span className="text-gold" style={{ display: 'inline-block' }}>{accent}</span>
       </h2>
       <span aria-hidden className="block w-12 h-px bg-gold/55 mx-auto mt-5" />
     </div>
@@ -8497,12 +8499,7 @@ function NarrativeJourney({ karte, answers }) {
 
       {/* ━━━━━ Chapter 01 · 髪の生まれ ━━━━━ */}
       <section id="chapter-birth" className="scroll-mt-[96px]">
-        <ChapterTitle num="01" en="Birth" jp="あなたの髪は、こう生まれた" accent="こう生まれた" />
-        <IllustSlot
-          label="髪が生まれる朝の光景"
-          ratio="3/4"
-          videoSrc="images/finder/chapter01-origin.mp4"
-        />
+        <ChapterTitle num="01" en="Birth" top="あなたの髪は" accent="こう生まれた" stack />
         <article className="max-w-2xl mx-auto bg-white/80 border border-gold/25 rounded-[18px] p-7 sm:p-9">
           <Paragraphs text={birthStory} />
         </article>
@@ -8510,7 +8507,7 @@ function NarrativeJourney({ karte, answers }) {
 
       {/* ━━━━━ Chapter 02 · 今のあなたの髪 ━━━━━ */}
       <section id="chapter-current" className="scroll-mt-[96px]">
-        <ChapterTitle num="02" en="Current" jp="いまの、あなたの髪" accent="あなたの髪" />
+        <ChapterTitle num="02" en="Current" top="いまの" accent="あなたの髪" />
 
         {/* 履歴チップ */}
         {historyChips.length > 0 && (
@@ -8534,7 +8531,7 @@ function NarrativeJourney({ karte, answers }) {
 
       {/* ━━━━━ Chapter 03 · いちばんの、お悩み ━━━━━ */}
       <section id="chapter-concern" className="scroll-mt-[96px]">
-        <ChapterTitle num="03" en="One Concern" jp="あなたが、いちばん気にしてること" accent="いちばん気にしてること" />
+        <ChapterTitle num="03" en="One Concern" top="あなたが" accent="いちばん気にしてること" stack />
         <IllustSlot
           label="湿気の朝、鏡の前のワンシーン"
           ratio="3/2"
@@ -8560,7 +8557,7 @@ function NarrativeJourney({ karte, answers }) {
 
       {/* ━━━━━ Chapter 04 · あなたへのアドバイス ━━━━━ */}
       <section id="chapter-advice" className="scroll-mt-[96px]">
-        <ChapterTitle num="04" en="Tender Advice" jp="あなたへの、やさしい処方" accent="やさしい処方" />
+        <ChapterTitle num="04" en="Tender Advice" top="あなたへの" accent="やさしい処方" stack />
         <article
           className="relative max-w-2xl mx-auto rounded-[2px] p-8 sm:p-12"
           style={{
