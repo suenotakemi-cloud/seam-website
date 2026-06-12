@@ -50,6 +50,20 @@
           el.innerHTML = dict[key];
         }
       });
+      /* 属性翻訳: data-i18n-attr="placeholder:key" / "aria-label:key" など(;区切り) */
+      document.querySelectorAll('[data-i18n-attr]').forEach(el => {
+        el.getAttribute('data-i18n-attr').split(';').forEach(pair => {
+          const i = pair.indexOf(':');
+          if (i < 0) return;
+          const attr = pair.slice(0, i).trim();
+          const key = pair.slice(i + 1).trim();
+          if (attr && dict[key] !== undefined) {
+            el.setAttribute(attr, dict[key]);
+          }
+        });
+      });
+      /* <title> 翻訳 */
+      if (dict['meta.title'] !== undefined) document.title = dict['meta.title'];
     }
 
     /* 4. ヘッダーラベル更新 */
