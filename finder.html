@@ -3824,14 +3824,24 @@ function DeepAltsToggle({ alts, best }) {
   if (!alts || alts.length === 0) return null;
   const crossBrand = best && best.p && alts.some(a => a.p && a.p.brand !== best.p.brand);
   if (!open) {
+    const altHint = [...new Set(alts.map(a => {
+      const role = best && best.p ? deepAltRole(a.p, best.p) : null;
+      return role && role !== 'ほかに' ? `${role} ${a.p.brand}` : a.p.brand;
+    }))].join(' ・ ');
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-3 w-full inline-flex items-center justify-center gap-2 border border-line bg-white/70 rounded-[2px] px-4 py-3 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/70 hover:border-gold hover:text-ink active:scale-[0.99] transition-all min-h-[44px] no-print"
+        className="mt-3 w-full group flex items-center justify-between gap-3 border border-gold/50 bg-gradient-to-r from-cream/50 via-white to-cream/50 rounded-[2px] px-4 sm:px-5 py-3.5 hover:border-gold hover:shadow-soft active:scale-[0.99] transition-all min-h-[52px] no-print"
       >
-        <span>{crossBrand ? `別ブランドの候補と比較する（${alts.length}点）` : `ほかの候補を見る（${alts.length}点）`}</span>
-        <span aria-hidden className="text-gold text-[13px] leading-none">＋</span>
+        <span className="flex items-center gap-3 min-w-0">
+          <span aria-hidden className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-gold text-white text-[15px] leading-none group-hover:scale-110 transition-transform">＋</span>
+          <span className="text-left min-w-0">
+            <span className="block font-serif text-[13.5px] sm:text-[14.5px] text-ink leading-snug">{crossBrand ? '別ブランドの候補と比較する' : 'ほかの候補を見る'}</span>
+            {altHint && <span className="block mt-0.5 text-[10.5px] sm:text-[11px] text-charcoal/60 truncate">{altHint}</span>}
+          </span>
+        </span>
+        <span className="shrink-0 font-mono tracking-widest2 text-[9.5px] uppercase text-gold whitespace-nowrap nums">{alts.length} items</span>
       </button>
     );
   }
