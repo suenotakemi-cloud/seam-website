@@ -3575,6 +3575,7 @@ function deepAltRole(altP, bestP){
   if(ra>rb) return '上質に'; if(ra<rb) return '手頃に'; return 'ほかに';
 }
 // block.items を best(竹) + alts(価格昇順 最大2) に
+// 候補はベストと異なるブランドを優先し、ブランド横断比較として成立させる
 function deepPriceTrio(items){
   if(!items||!items.length) return {best:null, alts:[]};
   const best=items[0];
@@ -3584,7 +3585,17 @@ function deepPriceTrio(items){
     const rb=pb!=null?pb:deepPriceRank(b.p)*1000+500;
     return rb-ra; // 高い→安い の順
   });
-  return {best, alts: rest.slice(0,2)};
+  const picked=[];
+  const usedBrands=[best.p && best.p.brand];
+  for(const it of rest){
+    if(picked.length>=2) break;
+    if(it.p && usedBrands.indexOf(it.p.brand)===-1){ picked.push(it); usedBrands.push(it.p.brand); }
+  }
+  for(const it of rest){
+    if(picked.length>=2) break;
+    if(picked.indexOf(it)===-1) picked.push(it);
+  }
+  return {best, alts: picked};
 }
 
 /* ── ベスト1本カード(竹) ── */
@@ -3632,11 +3643,17 @@ function DeepBestCard({ item }){
 }
 
 /* ── 価格で選ぶ コンパクトカード(松/梅) ── */
-function DeepAltCard({ item }){
+function DeepAltCard({ item, best }){
   const p = item.p;
+  const role = best && best.p ? deepAltRole(p, best.p) : null;
   return (
     <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を詳しく見る (新規タブで開く)`} className="group flex flex-col bg-white border border-line rounded-[2px] px-3 py-3 hover:border-gold active:scale-[0.99] transition-all no-print">
-      <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/50 truncate">{p.brand}</span>
+      <span className="flex items-center justify-between gap-2">
+        <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/50 truncate">{p.brand}</span>
+        {role && role !== 'ほかに' && (
+          <span className="shrink-0 text-[9.5px] px-1.5 py-0.5 bg-cream/70 text-gold border border-gold/30 rounded-[1px] whitespace-nowrap">{role}</span>
+        )}
+      </span>
       <span className="mt-0.5 font-serif text-[13px] text-ink leading-snug">{p.name}</span>
       <span className="mt-2 flex items-center justify-between gap-2">
         <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">メンバー特別価格</span>
@@ -3763,9 +3780,10 @@ function FinishingSpraySection({ answers, scores }) {
   );
 }
 
-function DeepAltsToggle({ alts }) {
+function DeepAltsToggle({ alts, best }) {
   const [open, setOpen] = useState(false);
   if (!alts || alts.length === 0) return null;
+  const crossBrand = best && best.p && alts.some(a => a.p && a.p.brand !== best.p.brand);
   if (!open) {
     return (
       <button
@@ -3773,16 +3791,16 @@ function DeepAltsToggle({ alts }) {
         onClick={() => setOpen(true)}
         className="mt-3 w-full inline-flex items-center justify-center gap-2 border border-line bg-white/70 rounded-[2px] px-4 py-3 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/70 hover:border-gold hover:text-ink active:scale-[0.99] transition-all min-h-[44px] no-print"
       >
-        <span>ほかの候補を見る（{alts.length}点）</span>
+        <span>{crossBrand ? `別ブランドの候補と比較する（${alts.length}点）` : `ほかの候補を見る（${alts.length}点）`}</span>
         <span aria-hidden className="text-gold text-[13px] leading-none">＋</span>
       </button>
     );
   }
   return (
     <div className="mt-3.5">
-      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-2">ほかの候補 — SEAM メンバー特別価格</p>
+      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-2">{crossBrand ? 'ブランド横断の候補 — SEAM メンバー特別価格' : 'ほかの候補 — SEAM メンバー特別価格'}</p>
       <div className="grid grid-cols-2 gap-2.5">
-        {alts.map((a) => <DeepAltCard key={a.p.id} item={a} />)}
+        {alts.map((a) => <DeepAltCard key={a.p.id} item={a} best={best} />)}
       </div>
     </div>
   );
@@ -3829,6 +3847,12 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
         <span>All available at SEAM</span>
       </div>
 
+      {/* ブランド横断選定の明示 */}
+      <p className="mt-3 text-[12px] sm:text-[12.5px] text-charcoal/70 leading-[1.9] max-w-xl">
+        140+ブランドから銘柄を問わず横断して選定しています<br />
+        同じケア方針のまま上質な候補や手頃な候補とも比較できます
+      </p>
+
       {hardRules.length > 0 && (
         <div className="mt-5 border-l-2 border-gold pl-4 sm:pl-5 py-1">
           <p className="font-mono tracking-widest2 text-[10.5px] uppercase text-gold">— なぜこの処方か</p>
@@ -3855,7 +3879,7 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
               return (
                 <div className="mt-4">
                   <DeepBestCard item={best} />
-                  <DeepAltsToggle alts={alts} />
+                  <DeepAltsToggle alts={alts} best={best} />
                 </div>
               );
             })()}
@@ -4216,6 +4240,34 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
                 ))}
               </ol>
             </div>
+          </div>
+        </section>
+
+        {/* ✦ Diagnosis Logic — 診断ロジックの根拠 */}
+        <section className="mt-16 sm:mt-24 anim-fade-up" style={{ animationDelay: '300ms' }}>
+          <div className="hairline-center">
+            <span className="font-mono tracking-widest2 text-[10px] uppercase">Diagnosis Logic</span>
+          </div>
+          <div className="mt-8 sm:mt-10 text-center">
+            <h2 className="font-serif text-2xl sm:text-3xl text-ink leading-snug">この診断のしくみ</h2>
+            <p className="mt-4 text-[13px] sm:text-[13.5px] leading-[2] text-charcoal/85 max-w-xl mx-auto">
+              美容師の知見をもとに設計したロジックが<br />
+              回答からあなたの髪の状態と履歴を読み解きます
+            </p>
+          </div>
+          <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-px bg-line/70 border border-line rounded-[2px] overflow-hidden">
+            {[
+              ['3×3×3', '27の髪格', '太さ×くせ×ダメージの3軸で分類'],
+              ['4,000万+', '髪条件の組み合わせ', '主要11問の単一回答のみで算出'],
+              ['1,000', '検証パターン', '髪条件を変えて提案の整合性を確認'],
+              ['140+', 'ブランド横断', '銘柄を問わず合うものだけを選定'],
+            ].map(([num, label, note]) => (
+              <div key={label} className="bg-white/90 px-4 py-5 sm:px-5 sm:py-6 text-center">
+                <p className="font-serif text-[21px] sm:text-[24px] text-ink nums leading-none whitespace-nowrap">{num}</p>
+                <p className="mt-2.5 text-[11px] sm:text-[11.5px] text-gold tracking-wide whitespace-nowrap">{label}</p>
+                <p className="mt-1.5 text-[10.5px] sm:text-[11px] leading-[1.75] text-charcoal/60">{note}</p>
+              </div>
+            ))}
           </div>
         </section>
       </main>
@@ -7792,6 +7844,31 @@ function VisitSeamSection({ saveOrShareKarte }) {
               プロが、あなたの髪を直接見ます。<br />
               診断結果を、本当の処方に変える場所。
             </p>
+          </div>
+        </VisitReveal>
+
+        {/* 二層の診断 — オンラインで読み解き 店頭で確かめる */}
+        <VisitReveal delay={60}>
+          <div className="mt-16 sm:mt-20">
+            <p className="text-center font-mono tracking-widest3 text-[10px] uppercase text-gold mb-6" style={{ letterSpacing: '0.32em' }}>— Online × In Store</p>
+            <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl mx-auto">
+              <div className="bg-white/80 border border-gold/25 rounded-[2px] px-5 py-6 text-center">
+                <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/50">Layer 1 · Online</p>
+                <h4 className="mt-2.5 font-serif text-[17px] sm:text-[18px] text-ink leading-snug">質問から読み解く</h4>
+                <p className="mt-3 text-[12.5px] leading-[1.95] text-charcoal/75">
+                  美容師の知見をもとにしたロジックが<br />
+                  回答から髪の履歴まで読み解きます
+                </p>
+              </div>
+              <div className="bg-white/80 border border-gold/25 rounded-[2px] px-5 py-6 text-center">
+                <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/50">Layer 2 · In Store</p>
+                <h4 className="mt-2.5 font-serif text-[17px] sm:text-[18px] text-ink leading-snug">プロが直接確かめる</h4>
+                <p className="mt-3 text-[12.5px] leading-[1.95] text-charcoal/75">
+                  店頭では髪と頭皮の状態を間近で確認し<br />
+                  カルテをあなた専用に仕上げます
+                </p>
+              </div>
+            </div>
           </div>
         </VisitReveal>
 
