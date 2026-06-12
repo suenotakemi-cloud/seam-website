@@ -2439,19 +2439,21 @@ const MUST_PLUS_ONE_RULES = [
   },
   {
     key: 'heat',
-    badge: 'HEAT SHIELD',
-    badgeJp: 'アイロン・コテを使う方に',
-    headline: 'アイロン・コテを使う方は、熱から守るアイテムを。',
-    sub: 'サブリミック ワンダーシールドを、ドライヤー・アイロン前にプラスONE。',
-    desc: '180℃以上の熱ダメージから髪を保護し、ツヤ・まとまり・指通りを叶えるアウトバストリートメント。毎日アイロンする方には「これがあるとないで全く違う」と言えるアイテムです。',
-    must: '熱ツールを使う方の熱保護ベース剤として、特におすすめ。',
+    badge: 'HEAT BASE',
+    badgeJp: 'アイロンを使う方のベース剤',
+    headline: 'アイロンを使う方は 熱から守るベース剤を',
+    sub: 'ワンダーシールドかアルタイム R ミラクルヘアトリートメントを オイルやミルクの前にプラスONE',
+    desc: '毎日のアイロンやコテの熱から髪を包んで守るベース剤 オイルやミルクの前に仕込むことでその後のケアのなじみまで変わります 180℃以上で使う方ほど違いを実感しやすいアイテムです',
+    must: 'アイロンを使う方のベース剤として特におすすめ',
     match: ({ a, t }) =>
-      t.heat.includes('heat_high') ||
-      t.heat.includes('heat_unprotected') ||
-      t.heat.includes('heat_daily') ||
-      t.heat.includes('heat_weekly') ||
-      t.heat.includes('heat_extreme'),
-    productIds: ['sublimic-wondershield-out'],
+      (t.heat.includes('heat_high') ||
+       t.heat.includes('heat_unprotected') ||
+       t.heat.includes('heat_daily') ||
+       t.heat.includes('heat_weekly') ||
+       t.heat.includes('heat_extreme')) &&
+      !(t.state.includes('bleach_history') || t.state.includes('bleach_residual') ||
+        t.state.includes('bleach_high') || t.state.includes('bleach_partial')),
+    productIds: ['sublimic-wondershield-out', 'wella-ultimerepair-treatment'],
   },
 ];
 
@@ -2687,6 +2689,33 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
       blocks.scalp.unshift(item);                 // 先頭に固定
       if (blocks.scalp.length > scalpMax) blocks.scalp.length = scalpMax; // 末尾を切り詰め
     }
+  }
+
+  // ── ベスト枠のブランド分散 ──
+  // 同一ブランドが複数カテゴリの先頭(あなたにベスト)を独占しないよう
+  // 2カテゴリ目以降はスコアが近い別ブランド候補とローテーションする
+  const bestBrandUsed = {};
+  for (const id of ['shampoo','treatment','outbath','mask','scalp','salon']) {
+    const arr = blocks[id];
+    if (!arr || !arr.length) continue;
+    const topBrand = arr[0].p.brand;
+    if ((bestBrandUsed[topBrand] || 0) >= 1 && arr.length > 1) {
+      // 候補: 別ブランドのうちベスト未使用→使用回数最少の順で、スコア60%以上なら入替
+      let altIdx = -1, altScoreKey = Infinity;
+      for (let i = 1; i < arr.length; i++) {
+        const b = arr[i].p.brand;
+        if (b === topBrand) continue;
+        if (arr[i].s < arr[0].s * 0.6) continue;
+        const used = bestBrandUsed[b] || 0;
+        if (used < altScoreKey) { altScoreKey = used; altIdx = i; }
+        if (used === 0) break;
+      }
+      if (altIdx > 0) {
+        const [alt] = arr.splice(altIdx, 1);
+        arr.unshift(alt);
+      }
+    }
+    bestBrandUsed[arr[0].p.brand] = (bestBrandUsed[arr[0].p.brand] || 0) + 1;
   }
 
   return { blocks, userTags, hardRules };
@@ -3529,8 +3558,9 @@ function MustPlusOneSection({ matches }) {
                           rel="noopener noreferrer"
                           className="mt-2 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-ink hover:text-gold no-print transition-colors"
                         >
-                          <span className="text-gold">¥</span>
-                          <span>SEAM Member Price</span>
+                          {(() => { const v = deepMinPrice(p); return v != null
+                            ? <span className="font-serif text-[13px] text-ink nums normal-case tracking-normal">¥{v.toLocaleString()} <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">メンバー特別価格</span></span>
+                            : <><span className="text-gold">¥</span><span>SEAM Member Price</span></>; })()}
                           <span className="text-gold">↗</span>
                         </a>
                       )}
@@ -3632,8 +3662,9 @@ function DeepBestCard({ item }){
         </div>
       )}
       <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`} className="mt-4 group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/40 via-white to-cream/40 rounded-[2px] px-3.5 py-2.5 hover:border-gold active:scale-[0.99] transition-all no-print min-h-[44px]">
-        <span className="flex items-baseline gap-2">
+        <span className="flex items-baseline gap-2 flex-wrap">
           <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold whitespace-nowrap">SEAM メンバー特別価格</span>
+          {priceVal != null && <span className="font-serif text-[15px] text-ink nums whitespace-nowrap">¥{priceVal.toLocaleString()}</span>}
           {p.primarySize && <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45">{p.primarySize}</span>}
         </span>
         <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap">詳しく見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
@@ -3646,6 +3677,7 @@ function DeepBestCard({ item }){
 function DeepAltCard({ item, best }){
   const p = item.p;
   const role = best && best.p ? deepAltRole(p, best.p) : null;
+  const altPrice = deepMinPrice(p);
   return (
     <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を詳しく見る (新規タブで開く)`} className="group flex flex-col bg-white border border-line rounded-[2px] px-3 py-3 hover:border-gold active:scale-[0.99] transition-all no-print">
       <span className="flex items-center justify-between gap-2">
@@ -3656,7 +3688,10 @@ function DeepAltCard({ item, best }){
       </span>
       <span className="mt-0.5 font-serif text-[13px] text-ink leading-snug">{p.name}</span>
       <span className="mt-2 flex items-center justify-between gap-2">
-        <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">メンバー特別価格</span>
+        <span className="flex items-baseline gap-1.5 min-w-0">
+          <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">メンバー特別価格</span>
+          {altPrice != null && <span className="font-serif text-[12.5px] text-ink nums whitespace-nowrap">¥{altPrice.toLocaleString()}</span>}
+        </span>
         <span className="text-gold group-hover:translate-x-0.5 transition-transform text-[13px]" aria-hidden>↗</span>
       </span>
     </a>
@@ -3673,7 +3708,7 @@ const FINISHING_SPRAYS = [
   },
   {
     id: 'fs-wondershield', need: '紫外線・湿気・季節を、1本で', needEn: 'All Shield',
-    brand: 'サブリミック', name: 'ワンダーシールド',
+    brand: 'サブリミック', name: 'ワンダーシールド', price: 4510,
     image: 'images/brands/sublimic/Wonder_Shield.png',
     desc: '髪の表面に、見えないヴェールをつくる多機能スプレー。紫外線・湿気・花粉やほこりといった毎日の小さなストレスから、髪を一日中守ります。季節の変わり目、なんとなく決まらない日の、頼れるお守りに。',
   },
@@ -3691,7 +3726,7 @@ const FINISHING_SPRAYS = [
   },
   {
     id: 'fs-laque-couture', need: '固めすぎず、やわらかキープ', needEn: 'Soft Hold',
-    brand: 'ケラスターゼ', name: 'ラック クチュール',
+    brand: 'ケラスターゼ', name: 'ラック クチュール', price: 4180,
     image: 'images/brands/kerastase/laque_couture.png',
     desc: 'ふわっとした束感や毛流れを、固めすぎずやさしくキープするヘアスプレー。つけていることを忘れるほど自然な仕上がりで、手ぐしも自由自在。一日の終わりまで、つくりたての軽やかさが続きます。',
   },
@@ -3715,7 +3750,10 @@ function FinishingSprayCard({ s }) {
         <p className="mt-2 text-[10.5px] tracking-wide text-charcoal/55">{s.brand}</p>
         <h3 className="mt-0.5 font-serif text-[14px] sm:text-[15px] text-ink leading-snug">{s.name}</h3>
         <p className="mt-2 text-[11.5px] sm:text-[12.5px] text-charcoal/80 leading-[1.85] flex-1">{s.desc}</p>
-        <p className="mt-3 pt-3 border-t border-line font-mono tracking-widest2 text-[9.5px] uppercase text-gold">SEAM メンバー特別価格</p>
+        <p className="mt-3 pt-3 border-t border-line flex items-baseline gap-1.5">
+          <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">SEAM メンバー特別価格</span>
+          {s.price != null && <span className="font-serif text-[13px] text-ink nums">¥{s.price.toLocaleString()}</span>}
+        </p>
       </div>
     </article>
   );
@@ -3728,14 +3766,15 @@ function finishingSpraySignals(answers, scores) {
   const sc = scores || {};
   const hasC = (...vs) => vs.some((v) => concerns.includes(v));
   const hasT = (...vs) => vs.some((v) => tools.includes(v));
+  const gt = answers && answers.goalTexture;
   return {
     heat:  hasT('ironDaily', 'ironWeekly', 'curlerDaily', 'curlerWeekly', 'bangsDaily') || (sc.heatDamage || 0) > 0 || hasC('damage', 'split'),
     humid: hasC('frizz', 'wave') || (sc.frizz || 0) > 0 || (sc.curl || 0) > 0,   // 湿気で広がる
     curl:  hasT('curlerDaily', 'curlerWeekly', 'ironDaily', 'ironWeekly'),       // コテがあとがつかない
     bangs: hasT('bangsDaily'),                                                    // 前髪を固める
-    flat:  hasC('topFlat', 'volumeDown', 'thinning') || (sc.volumeLoss || 0) > 0, // ぺたっとなる
-    shine: hasC('noShine', 'colorFade', 'grayFade') || (sc.colorFade || 0) > 0,   // ツヤ不足
-    dry:   hasC('dry', 'rough', 'noShine') || (sc.dryness || 0) >= 2,             // 乾燥・パサつき
+    flat:  hasC('topFlat', 'volumeDown', 'thinning') || (sc.volumeLoss || 0) > 0 || gt === 'airy', // ぺたっとなる / ふんわり仕上げたい
+    shine: hasC('noShine', 'colorFade', 'grayFade') || (sc.colorFade || 0) > 0 || gt === 'glossy', // ツヤ不足 / ツヤ髪が理想
+    dry:   hasC('dry', 'rough', 'noShine') || (sc.dryness || 0) >= 2 || gt === 'moist',            // 乾燥 / しっとり仕上げたい
   };
 }
 
@@ -6918,7 +6957,11 @@ const GEM_LORE = {
 /* ---------- GemMark — 髪格の宝石(画像があれば表示、無ければコードのモノグラム) ---------- */
 function GemMark({ code, name }) {
   const [gemOk, setGemOk] = useState(true);
+  const [videoOk, setVideoOk] = useState(true);
   const gemSrc = `images/karte/gems/${code}.jpg`;
+  const videoSrc = `images/karte/gems3d/${code}.mp4`;
+  const reduceMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const showVideo = videoOk && !reduceMotion;
   const lore = GEM_LORE[code];
   if (gemOk) {
     return (
@@ -6928,15 +6971,31 @@ function GemMark({ code, name }) {
           <div className="gem-float">
             <div className="gem-orb border border-gold/40"
                  style={{ width: 176, height: 176, boxShadow: '0 14px 38px -18px rgba(154,116,56,0.5)' }}>
-              <img
-                src={gemSrc}
-                alt={`${name}の宝石`}
-                width={176}
-                height={176}
-                loading="lazy"
-                className="w-full h-full object-cover karte-mark-anim"
-                onError={() => setGemOk(false)}
-              />
+              {showVideo ? (
+                <video
+                  src={videoSrc}
+                  poster={gemSrc}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  width={176}
+                  height={176}
+                  className="w-full h-full object-cover"
+                  aria-label={`${name}の宝石`}
+                  onError={() => setVideoOk(false)}
+                />
+              ) : (
+                <img
+                  src={gemSrc}
+                  alt={`${name}の宝石`}
+                  width={176}
+                  height={176}
+                  loading="lazy"
+                  className="w-full h-full object-cover karte-mark-anim"
+                  onError={() => setGemOk(false)}
+                />
+              )}
               <span aria-hidden className="absolute inset-0 rounded-full border border-white/30 pointer-events-none" />
             </div>
             <span aria-hidden className="gem-spark" style={{ left: '8%', top: '16%' }} />
