@@ -2429,7 +2429,14 @@
       margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(184,148,90,0.15);
       display: flex; justify-content: space-between; align-items: center;
     }
-    .pm-card-price-arrow { color: var(--gold); }
+    .pm-card-price-main { display: flex; flex-direction: column; gap: 1px; text-transform: none; }
+    .pm-card-price-tag {
+      font-size: 8px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold);
+    }
+    .pm-card-price-val {
+      font-size: 16px; letter-spacing: 0.01em; line-height: 1.1; color: var(--ink, #2F2A26);
+    }
+    .pm-card-price-arrow { color: var(--gold); align-self: center; }
 
     /* 「もっと見る」ボタン */
     .pm-load-more {
@@ -4782,6 +4789,16 @@ window.SEAM_PAGE_I18N = {
     });
     const productUrl = p.productPageUrl || p.sourceUrl || '#';
 
+    // 価格: sizes[].price の最小値を SEAM メンバー価格として表示 (finder と同ロジック)
+    const priceVal = (() => {
+      const ps = (p.sizes || []).map(s => s && s.price).filter(v => typeof v === 'number' && v > 0);
+      return ps.length ? Math.min.apply(null, ps) : null;
+    })();
+    const yen = n => '¥' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const priceHTML = priceVal != null
+      ? `<span class="pm-card-price-main"><span class="pm-card-price-tag">SEAM Member</span><span class="pm-card-price-val">${yen(priceVal)}</span></span>`
+      : `<span class="pm-card-price-main"><span class="pm-card-price-tag">SEAM Member Price</span></span>`;
+
     return `
       <a class="pm-card" href="${escAttr(productUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escAttr(p.brand + ' ' + p.name)}">
         <div class="pm-card-img">
@@ -4797,7 +4814,7 @@ window.SEAM_PAGE_I18N = {
           ${tags.map(t => `<span class="pm-card-tag">${escHtml(t)}</span>`).join('')}
         </div>
         <div class="pm-card-price">
-          <span>¥ Member Price</span>
+          ${priceHTML}
           <span class="pm-card-price-arrow">↗</span>
         </div>
       </a>`;
