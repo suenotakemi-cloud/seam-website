@@ -3577,8 +3577,8 @@ function MustPlusOneSection({ matches }) {
                           className="mt-2 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-ink hover:text-gold no-print transition-colors"
                         >
                           {(() => { const v = deepMinPrice(p); return v != null
-                            ? <span className="font-serif text-[13px] text-ink nums normal-case tracking-normal">¥{v.toLocaleString()} <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">メンバー特別価格</span></span>
-                            : <><span className="text-gold">¥</span><span>SEAM Member Price</span></>; })()}
+                            ? <span className="font-serif text-[13px] text-ink nums normal-case tracking-normal">¥{v.toLocaleString()} <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">税込</span> <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold">メンバーはさらにお得</span></span>
+                            : <><span className="text-gold">¥</span><span>店頭メンバー価格</span></>; })()}
                           <span className="text-gold">↗</span>
                         </a>
                       )}
@@ -3647,17 +3647,21 @@ function deepPriceTrio(items){
 }
 
 /* ── ベスト1本カード(竹) ── */
-function DeepBestCard({ item }){
+function DeepBestCard({ item, best = null, variant = 'best' }){
   const p = item.p;
   const reason = deepCareReason(p);
   const src = (p.image || p.imageUrl);
   const showImg = src && !isRefillImage(src);
   const chips = getProductChips(p, 4);
   const priceVal = deepMinPrice(p);
+  const role = (variant === 'alt' && best && best.p) ? deepAltRole(p, best.p) : null;
+  const badgeText = variant === 'best' ? 'あなたにベスト'
+    : (role === '手頃に' ? '手頃な候補' : role === '上質に' ? '上質な候補' : '別ブランドの候補');
+  const badgeCls = variant === 'best' ? 'bg-gold text-white' : 'bg-cream text-gold border border-gold/45';
   return (
     <article className="bg-white border border-gold/45 p-5 pt-6 rounded-[2px] flex flex-col relative shadow-soft">
-      <div className="absolute -top-2.5 left-4 inline-flex items-center gap-1.5 bg-gold text-white font-mono tracking-widest2 text-[9.5px] uppercase px-2.5 py-1 rounded-[1px]">
-        <span aria-hidden>★</span><span>あなたにベスト</span>
+      <div className={`absolute -top-2.5 left-4 inline-flex items-center gap-1.5 ${badgeCls} font-mono tracking-widest2 text-[9.5px] uppercase px-2.5 py-1 rounded-[1px]`}>
+        {variant === 'best' && <span aria-hidden>★</span>}<span>{badgeText}</span>
       </div>
       <div className="flex gap-4">
         {showImg && (
@@ -3680,12 +3684,17 @@ function DeepBestCard({ item }){
         </div>
       )}
       <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`} className="mt-4 group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/40 via-white to-cream/40 rounded-[2px] px-3.5 py-2.5 hover:border-gold active:scale-[0.99] transition-all no-print min-h-[44px]">
-        <span className="flex items-baseline gap-2 flex-wrap">
-          <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold whitespace-nowrap">SEAM メンバー特別価格</span>
-          {priceVal != null && <span className="font-serif text-[15px] text-ink nums whitespace-nowrap">¥{priceVal.toLocaleString()}</span>}
-          {p.primarySize && <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45">{p.primarySize}</span>}
+        <span className="flex flex-col gap-0.5 min-w-0">
+          <span className="flex items-baseline gap-1.5 flex-wrap">
+            {priceVal != null && <>
+              <span className="font-serif text-[15px] text-ink nums whitespace-nowrap">¥{priceVal.toLocaleString()}</span>
+              <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45 whitespace-nowrap">税込</span>
+            </>}
+            {p.primarySize && <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45 whitespace-nowrap">{p.primarySize}</span>}
+          </span>
+          <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">店頭メンバーはさらにお得に</span>
         </span>
-        <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap">詳しく見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
+        <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap shrink-0">詳しく見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
       </a>
     </article>
   );
@@ -3743,10 +3752,10 @@ function DeepAltsToggle({ alts, best }) {
     );
   }
   return (
-    <div className="mt-3.5">
-      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-2">{crossBrand ? 'ブランド横断の候補 — SEAM メンバー特別価格' : 'ほかの候補 — SEAM メンバー特別価格'}</p>
-      <div className="grid grid-cols-2 gap-2.5">
-        {alts.map((a) => <DeepAltCard key={a.p.id} item={a} best={best} />)}
+    <div className="mt-4">
+      <p className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 mb-3">{crossBrand ? '— ブランド横断の候補' : '— ほかの候補'}</p>
+      <div className="space-y-4">
+        {alts.map((a) => <DeepBestCard key={a.p.id} item={a} best={best} variant="alt" />)}
       </div>
     </div>
   );
