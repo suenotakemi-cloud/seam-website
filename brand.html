@@ -3281,6 +3281,9 @@ function renderBrands(_catKey, searchQuery) {
 function escHtml(str) {
   return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+// 次世代フォーマット: jpg/png → webp パス（onerror で原本へ二段フォールバック）
+function toWebp(s){ return (typeof s==='string') ? s.replace(/\.(jpe?g|png)(\?.*)?$/i, '.webp$2') : s; }
+const WEBP_ONERR = "if(this.dataset.fb){this.src=this.dataset.fb;this.removeAttribute('data-fb');}else{this.style.display='none';}";
 
 // 全カテゴリ横断の検索ヒット数（renderAllCategoriesから受け取れる）
 function updateSearchCount(precomputedTotal) {
@@ -4463,7 +4466,7 @@ window.SEAM_PAGE_I18N = {
       return `
         <div class="finder-product">
           <div class="finder-prod-img">
-            ${img ? `<img src="${escHtml(img)}" alt="${escHtml(p.name)}" loading="lazy" onerror="this.style.display='none'">` : ''}
+            ${img ? `<img src="${escHtml(toWebp(img))}" data-fb="${escHtml(img)}" alt="${escHtml(p.name)}" loading="lazy" onerror="${WEBP_ONERR}">` : ''}
           </div>
           <div class="finder-prod-info">
             <span class="finder-prod-step">${escHtml(stepLabel(p.category))}</span>
@@ -4783,7 +4786,7 @@ window.SEAM_PAGE_I18N = {
       <a class="pm-card" href="${escAttr(productUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escAttr(p.brand + ' ' + p.name)}">
         <div class="pm-card-img">
           ${showImg
-            ? `<img src="${escAttr(img)}" alt="${escAttr(p.name)}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=\\'pm-card-img-placeholder\\'>${escAttr(p.brand)}</span>'">`
+            ? `<img src="${escAttr(toWebp(img))}" data-fb="${escAttr(img)}" alt="${escAttr(p.name)}" loading="lazy" onerror="if(this.dataset.fb){this.src=this.dataset.fb;this.removeAttribute('data-fb');}else{this.parentElement.innerHTML='<span class=\\'pm-card-img-placeholder\\'>${escAttr(p.brand)}</span>';}">`
             : `<span class="pm-card-img-placeholder">${escAttr(p.brand)}</span>`
           }
         </div>

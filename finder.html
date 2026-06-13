@@ -3318,6 +3318,16 @@ function filterNonRefillSizes(sizeLabels) {
   });
 }
 
+/* 次世代フォーマット: WebP優先 → 失敗時は原本(jpg/png) → 最終的に非表示 */
+function toWebp(s) {
+  return (typeof s === 'string') ? s.replace(/\.(jpe?g|png)(\?.*)?$/i, '.webp$2') : s;
+}
+function imgWebpError(e) {
+  const fb = e.target.getAttribute('data-fallback');
+  if (fb) { e.target.removeAttribute('data-fallback'); e.target.src = fb; }
+  else { e.target.style.display = 'none'; }
+}
+
 function ProductImage({ p, className }) {
   // seam-master.json は `image`、レガシーは `imageUrl` — どちらも許容
   let imgSrc = p.image || p.imageUrl;
@@ -3332,11 +3342,12 @@ function ProductImage({ p, className }) {
   return (
     <div className={`bg-white ${className || ''}`} style={{ overflow: 'hidden' }}>
       <img
-        src={imgSrc}
+        src={toWebp(imgSrc)}
+        data-fallback={imgSrc}
         alt={p.name}
         loading="lazy"
         className="w-full h-full object-contain"
-        onError={(e) => { e.target.style.display = 'none'; }}
+        onError={imgWebpError}
       />
     </div>
   );
@@ -3531,11 +3542,12 @@ function MustPlusOneSection({ matches }) {
                       return (
                         <div className="shrink-0 bg-white border border-line rounded-[1px] w-20 h-24 sm:w-24 sm:h-28 flex items-center justify-center overflow-hidden">
                           <img
-                            src={src}
+                            src={toWebp(src)}
+                            data-fallback={src}
                             alt={p.name}
                             loading="lazy"
                             className="max-w-full max-h-full object-contain"
-                            onError={(e) => { e.target.style.display = 'none'; }}
+                            onError={imgWebpError}
                           />
                         </div>
                       );
@@ -3646,7 +3658,7 @@ function DeepBestCard({ item }){
       <div className="flex gap-4">
         {showImg && (
           <div className="shrink-0 w-24 sm:w-28 flex items-start justify-center">
-            <img src={src} alt={p.name} loading="lazy" className="h-28 sm:h-32 w-auto max-w-full object-contain" onError={(e)=>{e.target.style.display='none';}} />
+            <img src={toWebp(src)} data-fallback={src} alt={p.name} loading="lazy" className="h-28 sm:h-32 w-auto max-w-full object-contain" onError={imgWebpError} />
           </div>
         )}
         <div className="flex-1 min-w-0">
