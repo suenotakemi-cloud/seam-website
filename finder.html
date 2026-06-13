@@ -2062,9 +2062,10 @@ function scoreProductDeep(product, userTags, hardRules) {
   if (userTags.state.includes('female_precedia_must')     && product.id === 'aujua-precedia-perfector') boost += 300;
   if (userTags.state.includes('gray_thick_grancare_must') && product.id === 'hoyu-grancare-essence')    boost += 300;
 
-  // 頭皮ベタつき / 根元ぺたん → 炭酸シャンプーを指名で後押し(皮脂と汚れを落として土台をリセット)
+  // 頭皮ベタつき / 根元ぺたん → エイジングスパの炭酸クリアフォームを指名で後押し
+  // (毛穴の皮脂・汚れを炭酸で落として土台をリセット。カラー色もち設計の別炭酸とは用途を分ける)
   if ((userTags.scalp.includes('scalp_oily') || userTags.scalp.includes('top_volume_low'))
-      && product.id === 'globalmilbon-extended-carbonated') boost += 220;
+      && product.id === 'aujua-agingspa-sh') boost += 240;
 
   // 男性・30歳以上の予防ケア: 「守る」アイテム(頭皮・育毛・抜け毛予防・ダメージ保護)を強く後押しする。
   if (userTags.state.includes('male_scalp_prevention')) {
@@ -3577,8 +3578,8 @@ function MustPlusOneSection({ matches }) {
                           className="mt-2 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-ink hover:text-gold no-print transition-colors"
                         >
                           {(() => { const v = deepMinPrice(p); return v != null
-                            ? <span className="font-serif text-[13px] text-ink nums normal-case tracking-normal">¥{v.toLocaleString()} <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">税込</span> <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold">メンバーはさらにお得</span></span>
-                            : <><span className="text-gold">¥</span><span>店頭メンバー価格</span></>; })()}
+                            ? <span className="font-serif text-[13px] text-ink nums normal-case tracking-normal">¥{v.toLocaleString()} <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">税込</span> <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold">SEAMメンバーはさらにお得</span></span>
+                            : <><span className="text-gold">¥</span><span>SEAMメンバー価格</span></>; })()}
                           <span className="text-gold">↗</span>
                         </a>
                       )}
@@ -3692,7 +3693,7 @@ function DeepBestCard({ item, best = null, variant = 'best' }){
             </>}
             {p.primarySize && <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45 whitespace-nowrap">{p.primarySize}</span>}
           </span>
-          <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">店頭メンバーはさらにお得に</span>
+          <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">SEAMメンバーはさらにお得</span>
         </span>
         <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap shrink-0">詳しく見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
       </a>
