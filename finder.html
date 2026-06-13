@@ -2062,6 +2062,10 @@ function scoreProductDeep(product, userTags, hardRules) {
   if (userTags.state.includes('female_precedia_must')     && product.id === 'aujua-precedia-perfector') boost += 300;
   if (userTags.state.includes('gray_thick_grancare_must') && product.id === 'hoyu-grancare-essence')    boost += 300;
 
+  // 頭皮ベタつき / 根元ぺたん → 炭酸シャンプーを指名で後押し(皮脂と汚れを落として土台をリセット)
+  if ((userTags.scalp.includes('scalp_oily') || userTags.scalp.includes('top_volume_low'))
+      && product.id === 'globalmilbon-extended-carbonated') boost += 220;
+
   // 男性・30歳以上の予防ケア: 「守る」アイテム(頭皮・育毛・抜け毛予防・ダメージ保護)を強く後押しする。
   if (userTags.state.includes('male_scalp_prevention')) {
     if (product.category === 'scalp-essence')                                         boost += 32;
@@ -2143,15 +2147,15 @@ const DEEP_CATEGORY_DEFS = {
     desc:'週1〜3回の集中ケア。今のあなたに最適なマスクを。', max:3,
     cats:['hair-mask','mask'],
   },
-  finish: {
-    id:'finish', title:'スタイリング', eyebrow:'05 Styling',
-    desc:'仕上げのフィニッシュ剤 ツヤ・キープ・質感づくりの最適な1本を', max:3,
-    cats:['styling-spray','styling'],
-  },
   scalp: {
-    id:'scalp', title:'スカルプ・美容液', eyebrow:'06 Scalp',
+    id:'scalp', title:'スカルプ・美容液', eyebrow:'05 Scalp',
     desc:'頭皮ケア・スカルプ美容液。土台から整える最適な1本。', max:3,
     cats:['scalp-essence'],
+  },
+  finish: {
+    id:'finish', title:'スタイリング', eyebrow:'06 Styling',
+    desc:'仕上げのフィニッシュ剤 ツヤ・キープ・質感づくりの最適な1本を', max:3,
+    cats:['styling-spray','styling'],
   },
   salon: {
     id:'salon', title:'サロンメニュー', eyebrow:'07 Salon',
@@ -3761,7 +3765,7 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
   const needScalp = (_sc.scalpDryness || 0) > 0 || (_sc.scalpOiliness || 0) > 0 || (_sc.volumeLoss || 0) > 0 || (_sc.aging || 0) > 0 || ['scalpDry','scalpOily','thinning','topFlat','volumeDown'].some(v => _cs.includes(v));
 
   // ルーティン順: SH → TR → アウトバス → マスク → スタイリング → スカルプ → サロン
-  const orderedBlocks = ['shampoo','treatment','outbath','mask','finish','scalp','salon']
+  const orderedBlocks = ['shampoo','treatment','outbath','mask','scalp','finish','salon']
     .map(id => ({ ...(DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}), items: blocks[id] || [] }))
     .filter(b => b.items.length > 0)
     .filter(b => (b.id !== 'mask' || needMask) && (b.id !== 'scalp' || needScalp));
@@ -6902,8 +6906,19 @@ function GemMark({ code, name }) {
         {lore && (
           <div className="mt-5 max-w-md mx-auto px-3 text-center">
             <p className="text-[10.5px] tracking-[0.32em] text-gold/90 nums" style={{ textIndent: '0.32em' }}>{lore.en}</p>
-            <p className="mt-2 font-serif text-[20px] sm:text-[23px] tracking-[0.04em] leading-[1.5] text-ink" style={{ textWrap: 'balance' }}>あなたの石は「{lore.stone}」</p>
-            <p className="mt-2.5 text-[13px] leading-[2.05] text-ink/75 text-left sm:text-center" style={{ textWrap: 'pretty' }}>{lore.text}</p>
+            {(() => {
+              const m = (lore.stone || '').match(/^(.+?)（(.+?)）$/);
+              const main = m ? m[1] : lore.stone;
+              const cut = m ? m[2] : null;
+              return (
+                <>
+                  <p className="mt-3 text-[11px] tracking-[0.22em] text-charcoal/55">あなたの石は</p>
+                  <p className="mt-1 font-serif text-[24px] sm:text-[27px] tracking-[0.04em] leading-[1.3] text-ink" style={{ textWrap: 'balance' }}>{main}</p>
+                  {cut && <p className="mt-1.5 font-serif text-[13.5px] sm:text-[15px] tracking-[0.1em] text-ink/65">〈 {cut} 〉</p>}
+                </>
+              );
+            })()}
+            <p className="mt-3 text-[13px] leading-[2.05] text-ink/75 text-left sm:text-center" style={{ textWrap: 'pretty' }}>{lore.text}</p>
           </div>
         )}
       </>
