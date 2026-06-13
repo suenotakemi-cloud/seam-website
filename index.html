@@ -236,6 +236,15 @@
     .svc-card { transition: transform .35s ease, box-shadow .35s ease; }
     .svc-card:hover { transform:translateY(-3px); box-shadow:0 16px 36px rgba(26,24,21,0.10); }
 
+    /* ヒーロー見出し: キネティック・タイポグラフィ（ぼかし→鮮明・せり上がり） */
+    .hero-kinetic { animation: heroKinetic 1.15s cubic-bezier(0.2,0.85,0.25,1) 0.12s both; }
+    @keyframes heroKinetic {
+      0%   { opacity:0; transform:translateY(18px) scale(0.982); filter:blur(9px); }
+      60%  { opacity:1; }
+      100% { opacity:1; transform:translateY(0) scale(1); filter:blur(0); }
+    }
+    @media (prefers-reduced-motion: reduce) { .hero-kinetic { animation:none; } }
+
     /* No.1 wreath badge */
     .no1-badge {
       width: 104px; height:104px;
@@ -444,7 +453,7 @@
             THE WORLD'S FINEST, CURATED IN JAPAN
           </p>
         </div>
-        <h1 class="hero-animate hero-animate-d2 mt-6 font-serif text-[38px] leading-[1.12] text-ink" style="letter-spacing:0.015em; font-weight:480;" data-i18n="hero.title">
+        <h1 class="hero-kinetic mt-6 font-serif text-[38px] leading-[1.12] text-ink" style="letter-spacing:0.015em; font-weight:480;" data-i18n="hero.title">
           髪に合うものを<br />正しく選ぶ
         </h1>
         <p class="hero-animate hero-animate-d3 mt-6 text-[15px] leading-[2] text-charcoal/80" data-i18n="hero.sub">
@@ -488,7 +497,7 @@
         <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(245,241,234,0.96) 0%, rgba(245,241,234,0.80) 35%, rgba(245,241,234,0.15) 60%, rgba(245,241,234,0) 75%);"></div>
         <div class="relative max-w-6xl mx-auto px-10 lg:px-16 pt-16 lg:pt-24">
           <p class="font-mono tracking-widest2 text-[11px] text-gold uppercase">THE WORLD'S FINEST, CURATED IN JAPAN</p>
-          <h1 class="mt-6 font-serif text-[46px] md:text-[54px] lg:text-[64px] leading-[1.05] text-ink max-w-xl" style="letter-spacing:0.035em; font-weight:480;" data-i18n="hero.title">
+          <h1 class="hero-kinetic mt-6 font-serif text-[46px] md:text-[54px] lg:text-[64px] leading-[1.05] text-ink max-w-xl" style="letter-spacing:0.035em; font-weight:480;" data-i18n="hero.title">
             髪に合うものを<br />正しく選ぶ
           </h1>
           <p class="mt-6 text-[15px] leading-[1.95] text-charcoal/75 max-w-md" data-i18n="hero.subPc">
@@ -532,28 +541,31 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <section class="bg-softSection border-y border-line">
     <div class="max-w-[1100px] mx-auto px-5 sm:px-8 py-8 sm:py-10">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-8 gap-x-4">
-        <div class="text-center flex flex-col items-center">
-          <div class="flex items-center justify-center min-h-[40px] sm:min-h-[52px]">
-            <p class="font-serif text-[19px] sm:text-[24px] text-ink leading-tight" data-i18n="trust.stat1">世界最大級</p>
+      <p class="text-center font-mono tracking-widest3 text-[10px] text-gold uppercase mb-7 sm:mb-9">Why SEAM</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-y-9 gap-x-3">
+        <div class="text-center flex flex-col items-center px-1.5 sm:border-r sm:border-line/60">
+          <div class="flex items-center justify-center min-h-[34px] sm:min-h-[44px]">
+            <p class="font-serif text-[21px] sm:text-[27px] text-ink leading-none tracking-tight" data-i18n="trust.stat1">世界最大級</p>
           </div>
-          <p class="mt-2 text-[10.5px] sm:text-[11.5px] tracking-wider text-charcoal/65" data-i18n="trust.stat1Label">サロン専売セレクトショップ</p>
+          <p class="mt-2.5 text-[11px] sm:text-[12px] tracking-wide text-charcoal/70 leading-[1.5]" data-i18n="trust.stat1Label">サロン専売を、ひとつの場所で</p>
         </div>
-        <div class="text-center flex flex-col items-center">
-          <div class="flex items-center justify-center min-h-[40px] sm:min-h-[52px]">
-            <p class="font-serif text-[19px] sm:text-[24px] text-ink leading-tight">140<span class="text-gold">+</span></p>
+        <div class="text-center flex flex-col items-center px-1.5 sm:border-r sm:border-line/60">
+          <div class="flex items-center justify-center min-h-[34px] sm:min-h-[44px]">
+            <p class="font-serif text-[25px] sm:text-[32px] text-ink leading-none nums">140<span class="text-gold">+</span></p>
           </div>
-          <p class="mt-2 text-[10.5px] sm:text-[11.5px] tracking-wider text-charcoal/65" data-i18n="trust.stat2Label">世界中の名品ブランド</p>
+          <p class="mt-2.5 text-[11px] sm:text-[12px] tracking-wide text-charcoal/70 leading-[1.5]" data-i18n="trust.stat2Label">選び抜いた名品ブランド</p>
         </div>
-        <div class="text-center flex flex-col items-center">
-          <div class="flex items-center justify-center min-h-[40px] sm:min-h-[52px]">
-            <p class="font-serif text-[19px] sm:text-[24px] text-ink leading-tight" data-i18n="trust.stat3">北海道〜福岡</p>
+        <div class="text-center flex flex-col items-center px-1.5 sm:border-r sm:border-line/60">
+          <div class="flex items-center justify-center min-h-[34px] sm:min-h-[44px]">
+            <p class="font-serif text-[21px] sm:text-[27px] text-ink leading-none tracking-tight" data-i18n="trust.stat3">北海道〜福岡</p>
           </div>
-          <p class="mt-2 text-[10.5px] sm:text-[11.5px] tracking-wider text-charcoal/65" data-i18n="trust.stat3Label">主要都市に展開中</p>
+          <p class="mt-2.5 text-[11px] sm:text-[12px] tracking-wide text-charcoal/70 leading-[1.5]" data-i18n="trust.stat3Label">全国の主要都市に展開</p>
         </div>
-        <div class="text-center flex flex-col items-center">
-          <div class="flex items-center justify-center min-h-[40px] sm:min-h-[52px]">
-            <p class="font-serif text-[12.5px] sm:text-[15px] text-ink leading-[1.55]" data-i18n="trust.stat4">ゴールドアワード受賞<br>カミカリスマ受賞</p>
+        <div class="text-center flex flex-col items-center justify-center px-1.5">
+          <div class="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-full border border-gold/35 bg-white/55">
+            <span class="text-gold text-[13px] leading-none" aria-hidden>✦</span>
+            <p class="font-serif text-[11.5px] sm:text-[13px] text-ink leading-[1.45]" data-i18n="trust.stat4">ゴールドアワード・<br class="sm:hidden">カミカリスマ受賞</p>
+            <span class="text-gold text-[13px] leading-none" aria-hidden>✦</span>
           </div>
         </div>
       </div>
@@ -1284,11 +1296,11 @@
         'hero.hairIdQ': 'あなたの髪格は<span class="text-gold">27タイプ</span>のどれ？',
         'hero.hairIdSub': '髪から生まれる27のキャラクター診断',
         'trust.stat1': '世界最大級',
-        'trust.stat1Label': 'サロン専売セレクトショップ',
-        'trust.stat2Label': '世界中の名品ブランド',
+        'trust.stat1Label': 'サロン専売を、ひとつの場所で',
+        'trust.stat2Label': '選び抜いた名品ブランド',
         'trust.stat3': '北海道〜福岡',
-        'trust.stat3Label': '主要都市に展開中',
-        'trust.stat4': 'ゴールドアワード受賞<br>カミカリスマ受賞',
+        'trust.stat3Label': '全国の主要都市に展開',
+        'trust.stat4': 'ゴールドアワード・<br class="sm:hidden">カミカリスマ受賞',
         'trust.note': '<span class="text-ink font-medium">メーカー公認の正規品だけ</span><br>Amazon・楽天で出回るサロン専売品の多くはメーカーが認めていない非正規流通です<br>SEAMは正規ルートだけを扱うため安心して続けられます',
         'belief.title': '髪は選ぶもので変わる',
         'belief.p1': 'シャンプーをひとつ替えるだけで朝の扱いやすさは変わります<br>SEAMは髪を知るプロの目で<br class="hidden sm:block">世界中のサロン専売品を選び抜くセレクトショップです',
