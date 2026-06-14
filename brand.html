@@ -1845,43 +1845,41 @@
       .dir-group-letter.is-jp { font-size: 18px; }
       .dir-group-meta { font-size: 8px; letter-spacing: 1.5px; }
 
-      /* ブランド行: 2行構成・タッチターゲット拡大 */
+      /* ブランド行: 名前を最優先で広く取り、タグは下段へ折り返す */
       .dir-rows { gap: 0; }
       .dir-row {
-        grid-template-columns: 1fr auto;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
         grid-template-rows: auto auto;
-        gap: 4px 8px;
+        column-gap: 8px;
+        row-gap: 6px;
         padding: 14px 12px;
-        align-items: start;
+        align-items: center;
       }
-      .dir-row .dr-en {
-        font-size: 14px; font-weight: 500;
+      .dir-row .dr-status-dot {
         grid-column: 1; grid-row: 1;
+        align-self: center;
       }
-      .dir-row .dr-jp {
-        font-size: 11px; color: var(--brown);
-        grid-column: 1 / -1; grid-row: 2;
-        margin-top: 1px;
-      }
-      .dir-row .dr-jp small {
-        display: inline; font-size: 10px; color: var(--taupe);
-        margin-top: 0; margin-left: 6px;
-      }
-      .dir-row .dr-jp small::before { content: '· '; color: var(--sand); }
-      .dir-row .dr-cats {
-        grid-column: 1 / -1; grid-row: 3;
-        justify-content: flex-start;
-        margin-top: 6px;
-        gap: 5px;
-      }
-      .dir-row .dr-cat { font-size: 10px; padding: 4px 10px; line-height: 1.4; }
-      .dir-row .dr-site {
+      .dir-row .dr-name {
         grid-column: 2; grid-row: 1;
+        min-width: 0;
+      }
+      .dir-row .dr-en { font-size: 14px; font-weight: 500; }
+      .dir-row .dr-jp { font-size: 11px; color: var(--brown); margin-top: 1px; }
+      .dir-row .dr-action {
+        grid-column: 3; grid-row: 1;
+        align-self: center;
         font-size: 14px; padding: 8px;
         color: var(--charcoal);
         min-width: 38px; min-height: 38px;
-        justify-content: center;
+        display: inline-flex; align-items: center; justify-content: center;
       }
+      .dir-row .dr-cat-tags {
+        grid-column: 1 / -1; grid-row: 2;
+        justify-content: flex-start;
+        gap: 5px;
+      }
+      .dir-row .dr-cat-tag { font-size: 10px; padding: 4px 10px; line-height: 1.4; }
 
       /* CTA: 縦長解消 */
       .dir-cta { padding: 36px 20px; margin-top: 36px; }
