@@ -3616,6 +3616,21 @@ function deepCareReason(p){
   const fp=(p.featurePoints||[]).find(t=>typeof t==='string'&&DEEP_ING_RE.test(t)&&t.length<=36);
   return fp||null;
 }
+// 「なぜ合うか」= 成分の決め手 ＋ カテゴリの役割 (全カードで必ず一行出す)
+const DEEP_ROLE_BY_CAT={
+  shampoo:'毎日の土台を整える洗浄設計',
+  treatment:'芯から補修し指通りを守る',
+  outbath:'熱と乾燥から一日を守る',
+  mask:'集中補修でコンディションを底上げ',
+  scalp:'頭皮環境を健やかに整える',
+  finish:'スタイルを長く美しく保つ',
+  salon:'サロンならではの集中ケア'
+};
+function deepWhyFits(p, cat){
+  const ing=deepCareReason(p);
+  const role=DEEP_ROLE_BY_CAT[cat] || '髪に必要なケアを届ける';
+  return ing ? (ing + '｜' + role) : role;
+}
 // 価格差で松(上質)/梅(手頃)/ほかに のラベル
 function deepAltRole(altP, bestP){
   const a=deepMinPrice(altP), b=deepMinPrice(bestP);
@@ -3648,9 +3663,9 @@ function deepPriceTrio(items){
 }
 
 /* ── ベスト1本カード(竹) ── */
-function DeepBestCard({ item, best = null, variant = 'best' }){
+function DeepBestCard({ item, best = null, variant = 'best', category = null }){
   const p = item.p;
-  const reason = deepCareReason(p);
+  const reason = deepWhyFits(p, category);
   const src = (p.image || p.imageUrl);
   const showImg = src && !isRefillImage(src);
   const chips = getProductChips(p, 4);
@@ -3676,6 +3691,11 @@ function DeepBestCard({ item, best = null, variant = 'best' }){
           <p className="mt-2 text-[12.5px] leading-[1.85] text-charcoal/85">{p.pitchCopy || p.featureSummary || p.cardCopy}</p>
           {p.recommendedFor && (
             <p className="mt-2 text-[11.5px] leading-[1.7] text-charcoal/60"><span className="text-gold mr-1">◎</span>{p.recommendedFor}</p>
+          )}
+          {reason && (
+            <p className="mt-2 text-[11.5px] leading-[1.7] text-charcoal/75">
+              <span className="font-mono tracking-widest2 text-[8.5px] uppercase text-gold mr-1.5 align-[1px]">なぜ合う</span>{reason}
+            </p>
           )}
         </div>
       </div>
@@ -3726,7 +3746,7 @@ function DeepAltCard({ item, best }){
   );
 }
 
-function DeepAltsToggle({ alts, best }) {
+function DeepAltsToggle({ alts, best, category = null }) {
   const [open, setOpen] = useState(false);
   if (!alts || alts.length === 0) return null;
   const crossBrand = best && best.p && alts.some(a => a.p && a.p.brand !== best.p.brand);
@@ -3833,8 +3853,8 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
               if (!best) return null;
               return (
                 <div className="mt-4">
-                  <DeepBestCard item={best} />
-                  <DeepAltsToggle alts={alts} best={best} />
+                  <DeepBestCard item={best} category={block.id} />
+                  <DeepAltsToggle alts={alts} best={best} category={block.id} />
                 </div>
               );
             })()}
