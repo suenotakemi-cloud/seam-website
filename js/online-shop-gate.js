@@ -120,13 +120,13 @@
       ensureMounted();
       bindModalControls();
       bindLinkHooks();
-      autoOpenOnDirectAccess();
+      // W11改: 直アクセス時の強制ゲートは廃止。本文(会員制の世界観・正規品の約束)を
+      //         先に見せ、ゲートは「オンラインショップへ」クリック時のみ提示する。
     });
   } else {
     ensureMounted();
     bindModalControls();
     bindLinkHooks();
-    autoOpenOnDirectAccess();
   }
 
   // 外部からも呼べるように公開
