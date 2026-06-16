@@ -422,116 +422,230 @@
   </nav>
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <!-- HERO — Premium first screen (stacked on mobile, side-by-side on desktop) -->
+  <!-- HERO — App-style first screen (carousel + overlaid copy + 2 CTAs) -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="relative hero-safe-top bg-ivory">
-
-    <!-- MOBILE: Stacked Hero. Desktop: side-by-side -->
-    <div class="sm:hidden">
-      <!-- Video hero — hair motion -->
-      <div class="relative w-full aspect-[4/5] overflow-hidden bg-cream">
-        <video
-          class="absolute inset-0 w-full h-full object-cover"
-          style="object-position: 60% 25%;"
-          autoplay loop muted playsinline preload="metadata"
-          poster="images/lp/clean_home_model.jpg"
-          aria-label="SEAM — 髪に合うものを正しく選ぶ">
-          <source src="images/lp/generated/hero_model_hair_motion_v4.mp4" type="video/mp4">
-        </video>
-        <!-- Soft bottom fade so video blends into content section -->
-        <div class="absolute inset-x-0 bottom-0 h-28 pointer-events-none" style="background: linear-gradient(180deg, rgba(245,241,234,0) 0%, rgba(245,241,234,0.7) 55%, rgba(245,241,234,1) 100%);"></div>
-        <!-- Top fade beneath header -->
-        <div class="absolute inset-x-0 top-0 h-14 pointer-events-none" style="background: linear-gradient(180deg, rgba(245,241,234,0.7) 0%, rgba(245,241,234,0) 100%);"></div>
+  <style>
+    /* Hero carousel (fade) */
+    #seamHero .hc-slide{opacity:0;transition:opacity 1.1s ease;}
+    #seamHero .hc-slide.is-active{opacity:1;}
+    #seamHero .hc-dot{width:7px;height:7px;border-radius:9999px;background:rgba(26,24,21,0.22);transition:width .3s ease,background-color .3s ease;}
+    #seamHero .hc-dot.is-on{width:22px;background:#B8945A;}
+    @media (prefers-reduced-motion: reduce){#seamHero .hc-slide{transition:none;}}
+    /* Service cards */
+    .svc-card2{transition:box-shadow .35s ease, transform .35s ease;}
+    .svc-card2:hover{transform:translateY(-3px);box-shadow:0 16px 38px rgba(26,24,21,0.10);}
+    .svc-card2 .svc-arrow{transition:transform .3s ease;}
+    .svc-card2:hover .svc-arrow{transform:translateX(3px);}
+  </style>
+  <section id="seamHero" class="relative hero-safe-top bg-white">
+    <div class="relative w-full overflow-hidden bg-cream aspect-[3/4] sm:aspect-auto sm:h-[560px] lg:h-[640px]">
+      <!-- Slides -->
+      <div class="hc-slide is-active absolute inset-0">
+        <picture>
+          <source srcset="images/lp/clean_hair_salon.avif" type="image/avif">
+          <source srcset="images/lp/clean_hair_salon.webp" type="image/webp">
+          <img src="images/lp/clean_hair_salon.jpg" alt="SEAMの完全個室サロン" class="w-full h-full object-cover" style="object-position:center;" loading="eager" decoding="async">
+        </picture>
+      </div>
+      <div class="hc-slide absolute inset-0">
+        <picture>
+          <source srcset="images/lp/store/instore_01_counsel.avif" type="image/avif">
+          <source srcset="images/lp/store/instore_01_counsel.webp" type="image/webp">
+          <img src="images/lp/store/instore_01_counsel.jpg" alt="店頭でのカウンセリング" class="w-full h-full object-cover" style="object-position:center;" loading="lazy" decoding="async">
+        </picture>
+      </div>
+      <div class="hc-slide absolute inset-0">
+        <picture>
+          <source srcset="images/lp/clean_home_model.avif" type="image/avif">
+          <source srcset="images/lp/clean_home_model.webp" type="image/webp">
+          <img src="images/lp/clean_home_model.jpg" alt="美しく整った髪" class="w-full h-full object-cover" style="object-position:60% 25%;" loading="lazy" decoding="async">
+        </picture>
       </div>
 
-      <!-- Content section (ivory background, sits on top of photo) -->
-      <div class="relative -mt-20 px-6 pb-10 z-10">
-        <!-- Eyebrow with decorative line -->
-        <div class="hero-animate hero-animate-d1 flex items-center gap-3">
-          <span class="block w-8 h-px bg-gold/60"></span>
-          <p class="font-mono tracking-widest2 text-[10.5px] text-gold uppercase">
-            THE WORLD'S FINEST, CURATED IN JAPAN
-          </p>
-        </div>
-        <h1 class="hero-kinetic mt-6 font-serif text-[38px] leading-[1.12] text-ink" style="letter-spacing:0.015em; font-weight:500;" data-i18n="hero.title">
-          髪に合うものを<br />正しく選ぶ
-        </h1>
-        <p class="hero-animate hero-animate-d3 mt-6 text-[15px] leading-[2] text-charcoal/80" data-i18n="hero.sub">
-          世界中のサロン専売品をプロと選ぶ<br>相談できるヘアケアセレクトショップです
-        </p>
-        <!-- HAIR ID — 27髪格診断のフック -->
-        <div class="hero-animate hero-animate-d4 mt-7">
-          <div class="flex items-center gap-2.5">
-            <span class="font-mono tracking-widest2 text-[11px] text-gold uppercase">HAIR ID</span>
-            <span class="block flex-1 h-px bg-gold/25"></span>
-            <span class="font-mono tracking-wider text-[9px] text-charcoal/55 uppercase">27 Hair Types</span>
+      <!-- Left-weighted scrim for text legibility -->
+      <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(102deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.82) 30%, rgba(255,255,255,0.34) 56%, rgba(255,255,255,0) 80%);"></div>
+
+      <!-- Overlaid content -->
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full max-w-6xl mx-auto px-7 sm:px-10 lg:px-16">
+          <div class="max-w-[78%] sm:max-w-md">
+            <div class="hero-animate hero-animate-d1 flex items-center gap-3 mb-5">
+              <span class="block w-8 h-px bg-gold/60"></span>
+              <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase" data-i18n="hero.eyebrow">The world's finest, curated in Japan</p>
+            </div>
+            <h1 class="hero-kinetic font-serif text-[42px] sm:text-[56px] lg:text-[66px] leading-[1.12] text-ink" style="letter-spacing:0.02em;font-weight:500;" data-i18n="hero.title">髪に、正解を</h1>
+            <p class="hero-animate hero-animate-d3 mt-5 text-[14px] sm:text-[15px] leading-[1.95] text-charcoal/85 max-w-[19rem] sm:max-w-sm" data-i18n="hero.sub">ヘアケアのプロが選ぶアイテムと 完全個室のサロン体験を<br>髪格診断から あなたに合うケアが見つかります</p>
+            <div class="hero-animate hero-animate-d4 mt-7 flex flex-col gap-3 max-w-[20rem]">
+              <a href="finder.html" class="group flex items-center justify-center gap-3 bg-mainBrown text-white rounded-full py-4 px-6 shadow-card hover:bg-cinnamon transition-colors">
+                <span class="font-serif text-[15px]" data-i18n="cta.finder">髪格診断をはじめる</span>
+                <svg class="svc-arrow w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </a>
+              <a href="onlineshop.html" class="group flex items-center justify-center gap-3 bg-white/92 backdrop-blur-sm text-ink rounded-full py-4 px-6 border border-ink/15 shadow-soft hover:bg-white transition-colors">
+                <span class="font-serif text-[15px]" data-i18n="cta.online">オンラインショップを見る</span>
+                <svg class="svc-arrow w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </a>
+            </div>
           </div>
-          <p class="mt-2.5 font-serif text-[17px] leading-[1.45] text-ink" data-i18n="hero.hairIdQ">
-            あなたの髪格は<span class="text-gold">27タイプ</span>のどれ？
-          </p>
-          <p class="mt-1.5 text-[12px] leading-[1.7] text-charcoal/60" data-i18n="hero.hairIdSub">
-            髪から生まれる27の髪格
-          </p>
         </div>
-        <a href="finder.html" class="hero-animate hero-animate-d4 mt-5 group flex items-center bg-ink text-ivory rounded-full py-3.5 pl-5 pr-2 shadow-card hover:bg-charcoal transition-colors">
-          <img src="images/lp/icons/sparkle.svg" alt="" class="w-[18px] h-[18px] mr-2.5 shrink-0" style="filter:invert(1);" / loading="lazy">
-          <span class="font-serif text-[15px] flex-1" data-i18n="cta.finder">髪格診断を始める</span>
-          <span class="w-9 h-9 bg-ivory text-ink rounded-full flex items-center justify-center shrink-0 group-hover:translate-x-0.5 transition-transform">
-            <img src="images/lp/icons/arrow_right.svg" alt="" class="w-[13px] h-[13px]" / loading="lazy">
+      </div>
+    </div>
+
+    <!-- Carousel dots -->
+    <div class="flex justify-center items-center gap-2 mt-5 sm:mt-6">
+      <button type="button" class="hc-dot is-on" aria-label="スライド1"></button>
+      <button type="button" class="hc-dot" aria-label="スライド2"></button>
+      <button type="button" class="hc-dot" aria-label="スライド3"></button>
+    </div>
+  </section>
+
+  <script>
+    /* Hero carousel — auto fade + dot control, pauses when tab hidden */
+    (function () {
+      var hero = document.getElementById('seamHero');
+      if (!hero) return;
+      var slides = hero.querySelectorAll('.hc-slide');
+      var dots = hero.querySelectorAll('.hc-dot');
+      var i = 0, n = slides.length, timer = 0;
+      function go(k) {
+        i = (k + n) % n;
+        for (var j = 0; j < n; j++) {
+          slides[j].classList.toggle('is-active', j === i);
+          if (dots[j]) dots[j].classList.toggle('is-on', j === i);
+        }
+      }
+      function start() { stop(); timer = setInterval(function () { go(i + 1); }, 5200); }
+      function stop() { if (timer) { clearInterval(timer); timer = 0; } }
+      for (var j = 0; j < dots.length; j++) {
+        (function (idx) { dots[idx].addEventListener('click', function () { go(idx); start(); }); })(j);
+      }
+      document.addEventListener('visibilitychange', function () { document.hidden ? stop() : start(); });
+      go(0); start();
+    })();
+  </script>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- SEAM SERVICES — 01〜05 サービスメニュー -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="bg-white pt-16 sm:pt-24 pb-2 sm:pb-6">
+    <div class="max-w-6xl mx-auto px-5 sm:px-8">
+      <div data-reveal class="flex items-center gap-4 mb-8 sm:mb-12">
+        <h2 class="font-serif text-[22px] sm:text-[30px] text-ink" style="letter-spacing:0.04em;" data-i18n="services.title">SEAMのサービス</h2>
+        <span class="block flex-1 h-px bg-gold/30"></span>
+      </div>
+
+      <!-- 01 — feature card (full width) -->
+      <a href="finder.html" data-reveal class="svc-card2 group block relative overflow-hidden rounded-[20px] bg-cream border border-line/60 shadow-card mb-3 sm:mb-4">
+        <div class="grid grid-cols-[1fr_40%] sm:grid-cols-[1fr_46%] items-stretch min-h-[190px] sm:min-h-[260px]">
+          <div class="relative z-10 p-6 sm:p-10 flex flex-col">
+            <p class="font-mono text-[12px] text-gold tracking-widest2">01</p>
+            <h3 class="mt-2.5 font-serif text-[26px] sm:text-[36px] text-ink leading-[1.25]" data-i18n="services.01title">髪格診断</h3>
+            <p class="mt-2.5 text-[13px] sm:text-[15px] leading-[1.8] text-charcoal/70" data-i18n="services.01desc">あなたの髪に合う<br>ケアを見つける</p>
+            <span class="svc-arrow mt-auto pt-7 inline-flex w-11 h-11 bg-white rounded-full items-center justify-center shadow-soft text-ink">
+              <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </span>
+          </div>
+          <div class="relative overflow-hidden">
+            <picture>
+              <source srcset="images/karte/gems/FLC.webp" type="image/webp">
+              <img src="images/karte/gems/FLC.jpg" alt="髪格を映すクリスタル" class="absolute inset-0 w-full h-full object-cover" style="object-position:center;" loading="lazy" decoding="async">
+            </picture>
+          </div>
+        </div>
+      </a>
+
+      <!-- 02〜05 — 2×2 grid -->
+      <div class="grid grid-cols-2 gap-3 sm:gap-4">
+        <!-- 02 ヘアケアショップ -->
+        <a href="shop.html" data-reveal class="svc-card2 group block relative overflow-hidden rounded-[18px] bg-cream border border-line/60 shadow-card">
+          <div class="relative aspect-[5/4] overflow-hidden">
+            <picture>
+              <source srcset="images/lp/store/instore_02_select.avif" type="image/avif">
+              <source srcset="images/lp/store/instore_02_select.webp" type="image/webp">
+              <img src="images/lp/store/instore_02_select.jpg" alt="店頭でヘアケアを選ぶ" class="w-full h-full object-cover" loading="lazy" decoding="async">
+            </picture>
+          </div>
+          <div class="p-4 sm:p-6 pr-12 sm:pr-14">
+            <p class="font-mono text-[11px] text-gold tracking-widest2">02</p>
+            <h3 class="mt-1.5 font-serif text-[17px] sm:text-[22px] text-ink leading-[1.35]" data-i18n="services.02title">ヘアケアショップ</h3>
+            <p class="mt-1.5 text-[12px] sm:text-[13.5px] leading-[1.7] text-charcoal/65" data-i18n="services.02desc">ヘアケアのプロが選ぶ<br>髪質別アイテム</p>
+          </div>
+          <span class="svc-arrow absolute right-4 bottom-4 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-soft text-ink">
+            <svg class="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </a>
+        <!-- 03 オンラインショップ -->
+        <a href="onlineshop.html" data-reveal class="svc-card2 group block relative overflow-hidden rounded-[18px] bg-cream border border-line/60 shadow-card">
+          <div class="relative aspect-[5/4] overflow-hidden">
+            <picture>
+              <source srcset="images/lp/clean_products_mosaic.avif" type="image/avif">
+              <source srcset="images/lp/clean_products_mosaic.webp" type="image/webp">
+              <img src="images/lp/clean_products_mosaic.jpg" alt="SEAMが扱うヘアケア" class="w-full h-full object-cover" loading="lazy" decoding="async">
+            </picture>
+          </div>
+          <div class="p-4 sm:p-6 pr-12 sm:pr-14">
+            <p class="font-mono text-[11px] text-gold tracking-widest2">03</p>
+            <h3 class="mt-1.5 font-serif text-[17px] sm:text-[22px] text-ink leading-[1.35]" data-i18n="services.03title">オンラインショップ</h3>
+            <p class="mt-1.5 text-[12px] sm:text-[13.5px] leading-[1.7] text-charcoal/65" data-i18n="services.03desc">全国どこからでも<br>SEAMのヘアケアを</p>
+          </div>
+          <span class="svc-arrow absolute right-4 bottom-4 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-soft text-ink">
+            <svg class="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </a>
+        <!-- 04 ヘアサロン -->
+        <a href="hairsalon.html" data-reveal class="svc-card2 group block relative overflow-hidden rounded-[18px] bg-cream border border-line/60 shadow-card">
+          <div class="relative aspect-[5/4] overflow-hidden">
+            <picture>
+              <source srcset="images/lp/generated/salon_haircut_hero.avif" type="image/avif">
+              <source srcset="images/lp/generated/salon_haircut_hero.webp" type="image/webp">
+              <img src="images/lp/generated/salon_haircut_hero.jpg" alt="完全個室のヘアサロン" class="w-full h-full object-cover" loading="lazy" decoding="async">
+            </picture>
+          </div>
+          <div class="p-4 sm:p-6 pr-12 sm:pr-14">
+            <p class="font-mono text-[11px] text-gold tracking-widest2">04</p>
+            <h3 class="mt-1.5 font-serif text-[17px] sm:text-[22px] text-ink leading-[1.35]" data-i18n="services.04title">ヘアサロン</h3>
+            <p class="mt-1.5 text-[12px] sm:text-[13.5px] leading-[1.7] text-charcoal/65" data-i18n="services.04desc">完全個室で受ける<br>髪のプレミアムケア</p>
+          </div>
+          <span class="svc-arrow absolute right-4 bottom-4 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-soft text-ink">
+            <svg class="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </a>
+        <!-- 05 ヘッドスパ -->
+        <a href="headspa.html" data-reveal class="svc-card2 group block relative overflow-hidden rounded-[18px] bg-cream border border-line/60 shadow-card">
+          <div class="relative aspect-[5/4] overflow-hidden">
+            <picture>
+              <source srcset="images/spa-real/02_massage.avif" type="image/avif">
+              <source srcset="images/spa-real/02_massage.webp" type="image/webp">
+              <img src="images/spa-real/02_massage.jpg" alt="頭皮を整えるヘッドスパ" class="w-full h-full object-cover" loading="lazy" decoding="async">
+            </picture>
+          </div>
+          <div class="p-4 sm:p-6 pr-12 sm:pr-14">
+            <p class="font-mono text-[11px] text-gold tracking-widest2">05</p>
+            <h3 class="mt-1.5 font-serif text-[17px] sm:text-[22px] text-ink leading-[1.35]" data-i18n="services.05title">ヘッドスパ</h3>
+            <p class="mt-1.5 text-[12px] sm:text-[13.5px] leading-[1.7] text-charcoal/65" data-i18n="services.05desc">頭皮から整える<br>極上のリラックス体験</p>
+          </div>
+          <span class="svc-arrow absolute right-4 bottom-4 w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-soft text-ink">
+            <svg class="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </span>
         </a>
       </div>
     </div>
+  </section>
 
-    <!-- DESKTOP: Side-by-side hero — video -->
-    <div class="hidden sm:block">
-      <div class="relative w-full h-[600px] lg:h-[680px] overflow-hidden bg-cream">
-        <video
-          class="absolute inset-0 w-full h-full object-cover"
-          style="object-position: 75% 30%;"
-          autoplay loop muted playsinline preload="metadata"
-          poster="images/lp/clean_home_model.jpg"
-          aria-label="SEAM — 髪に合うものを正しく選ぶ">
-          <source src="images/lp/generated/hero_model_hair_motion_v4.mp4" type="video/mp4">
-        </video>
-        <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(90deg, rgba(245,241,234,0.96) 0%, rgba(245,241,234,0.80) 35%, rgba(245,241,234,0.15) 60%, rgba(245,241,234,0) 75%);"></div>
-        <div class="relative max-w-6xl mx-auto px-10 lg:px-16 pt-16 lg:pt-24">
-          <p class="font-mono tracking-widest2 text-[11px] text-gold uppercase">THE WORLD'S FINEST, CURATED IN JAPAN</p>
-          <h1 class="hero-kinetic mt-6 font-serif text-[46px] md:text-[54px] lg:text-[64px] leading-[1.05] text-ink max-w-xl" style="letter-spacing:0.035em; font-weight:500;" data-i18n="hero.title">
-            髪に合うものを<br />正しく選ぶ
-          </h1>
-          <p class="mt-6 text-[15px] leading-[1.95] text-charcoal/75 max-w-md" data-i18n="hero.subPc">
-            世界中のサロン専売品をプロと選ぶ<br>相談できるヘアケアセレクトショップです
-          </p>
-          <!-- HAIR ID — 27髪格診断のフック -->
-          <div class="mt-7 max-w-sm">
-            <div class="flex items-center gap-2.5">
-              <span class="font-mono tracking-widest2 text-[11px] text-gold uppercase">HAIR ID</span>
-              <span class="block flex-1 h-px bg-gold/25"></span>
-              <span class="font-mono tracking-wider text-[9.5px] text-charcoal/55 uppercase">27 Hair Types</span>
-            </div>
-            <p class="mt-2.5 font-serif text-[18px] leading-[1.45] text-ink" data-i18n="hero.hairIdQ">
-              あなたの髪格は<span class="text-gold">27タイプ</span>のどれ？
-            </p>
-            <p class="mt-1.5 text-[12.5px] leading-[1.7] text-charcoal/60" data-i18n="hero.hairIdSub">
-              髪から生まれる27の髪格
-            </p>
-          </div>
-          <a href="finder.html" class="mt-6 inline-flex items-center gap-2.5 bg-ink text-ivory rounded-full pl-6 pr-3 py-2.5 shadow-card hover:bg-charcoal transition-colors">
-            <img src="images/lp/icons/sparkle.svg" alt="" class="w-4 h-4" style="filter:invert(1);" / loading="lazy">
-            <span class="font-serif text-[15px]" data-i18n="cta.finder">髪格診断を始める</span>
-            <span class="w-10 h-10 bg-ivory text-ink rounded-full flex items-center justify-center">
-              <img src="images/lp/icons/arrow_right.svg" alt="" class="w-[14px] h-[14px]" / loading="lazy">
-            </span>
-          </a>
-        </div>
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- SEAM とは — 概要イントロ -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="bg-white pt-16 sm:pt-24 pb-14 sm:pb-20">
+    <div class="max-w-3xl mx-auto px-6 sm:px-8">
+      <div data-reveal class="flex items-center gap-4 mb-8 sm:mb-10">
+        <h2 class="font-serif text-[22px] sm:text-[30px] text-ink" style="letter-spacing:0.04em;" data-i18n="about.title">SEAMとは</h2>
+        <span class="block flex-1 h-px bg-gold/30"></span>
       </div>
-    </div>
-
-    <!-- HERO BOTTOM: minimal scroll indicator -->
-    <div class="mt-10 sm:mt-14 mb-14 sm:mb-20 flex justify-center">
-      <a href="#hair-diagnosis" aria-label="次のセクションへ" data-i18n-attr="aria-label:a11y.next" class="group inline-flex flex-col items-center gap-1.5">
-        <span class="block w-px h-10 sm:h-14 bg-ink/30 group-hover:bg-ink/60 transition-colors"></span>
+      <p data-reveal class="font-serif text-[19px] sm:text-[25px] leading-[1.7] text-ink" style="letter-spacing:0.02em;" data-i18n="about.lead">ヘアケアのプロが選ぶ<br>髪質別のヘアケアショップ</p>
+      <p data-reveal data-reveal-delay="1" class="mt-6 text-[14px] sm:text-[15px] leading-[2.05] text-charcoal/80" data-i18n="about.body">SEAMはヘアケア商品をただ販売する場所ではありません<br>髪質や悩み なりたい質感に合わせて<br>プロの目線で最適なアイテムとサロン体験を提案する<br>新しいかたちのヘアケアセレクトショップです</p>
+      <a href="#seam-belief" data-reveal data-reveal-delay="2" class="group mt-8 inline-flex items-center gap-3 text-ink">
+        <span class="block w-8 h-px bg-gold/50 transition-all group-hover:w-12"></span>
+        <span class="font-serif text-[15px]" data-i18n="about.cta">詳しく見る</span>
+        <svg class="w-[15px] h-[15px] text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
       </a>
     </div>
   </section>
@@ -592,7 +706,7 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- BRAND STATEMENT — 深色の"間"(明暗のドラマ) -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="relative overflow-hidden" style="background:#1A1714;">
+  <section id="seam-belief" class="relative overflow-hidden scroll-mt-16" style="background:#1A1714;">
     <!-- 微かな温度のグラデーション(単調を避ける) -->
     <div class="absolute inset-0 pointer-events-none" style="background:radial-gradient(120% 80% at 50% 0%, rgba(168,116,86,0.16) 0%, rgba(168,116,86,0) 55%);"></div>
     <div class="relative max-w-3xl mx-auto px-6 sm:px-8 py-24 sm:py-36 text-center">
@@ -1335,6 +1449,26 @@
         'tab.finder': '髪格診断',
         'tab.salon': 'サロンを予約する',
         'tab.online': 'オンラインショップ'
+        ,'hero.eyebrow': 'The finest hair care, curated in Japan'
+        ,'hero.title': '髪に、正解を'
+        ,'hero.sub': 'ヘアケアのプロが選ぶアイテムと 完全個室のサロン体験を<br>髪格診断から あなたに合うケアが見つかります'
+        ,'cta.finder': '髪格診断をはじめる'
+        ,'cta.online': 'オンラインショップを見る'
+        ,'services.title': 'SEAMのサービス'
+        ,'services.01title': '髪格診断'
+        ,'services.01desc': 'あなたの髪に合う<br>ケアを見つける'
+        ,'services.02title': 'ヘアケアショップ'
+        ,'services.02desc': 'ヘアケアのプロが選ぶ<br>髪質別アイテム'
+        ,'services.03title': 'オンラインショップ'
+        ,'services.03desc': '全国どこからでも<br>SEAMのヘアケアを'
+        ,'services.04title': 'ヘアサロン'
+        ,'services.04desc': '完全個室で受ける<br>髪のプレミアムケア'
+        ,'services.05title': 'ヘッドスパ'
+        ,'services.05desc': '頭皮から整える<br>極上のリラックス体験'
+        ,'about.title': 'SEAMとは'
+        ,'about.lead': 'ヘアケアのプロが選ぶ<br>髪質別のヘアケアショップ'
+        ,'about.body': 'SEAMはヘアケア商品をただ販売する場所ではありません<br>髪質や悩み なりたい質感に合わせて<br>プロの目線で最適なアイテムとサロン体験を提案する<br>新しいかたちのヘアケアセレクトショップです'
+        ,'about.cta': '詳しく見る'
       },
       en: {
         'meta.title': 'SEAM — Global Hair Care Select Shop | Beautiful hair changes everything.',
@@ -1441,6 +1575,26 @@
         'tab.finder': 'Hair Diagnosis',
         'tab.salon': 'Book Salon',
         'tab.online': 'Online Shop'
+        ,'hero.eyebrow': 'The finest hair care, curated in Japan'
+        ,'hero.title': 'The right answer<br>for your hair'
+        ,'hero.sub': 'Curated by hair care professionals, with private salon experiences.<br>Find the care that fits you through our hair diagnosis.'
+        ,'cta.finder': 'Start hair diagnosis'
+        ,'cta.online': 'Visit online shop'
+        ,'services.title': 'Our services'
+        ,'services.01title': 'Hair Diagnosis'
+        ,'services.01desc': 'Find the care<br>that fits your hair'
+        ,'services.02title': 'Hair Care Shop'
+        ,'services.02desc': 'Pro-curated items<br>by hair type'
+        ,'services.03title': 'Online Shop'
+        ,'services.03desc': 'SEAM hair care,<br>delivered nationwide'
+        ,'services.04title': 'Hair Salon'
+        ,'services.04desc': 'Premium hair care<br>in private rooms'
+        ,'services.05title': 'Head Spa'
+        ,'services.05desc': 'Deep relaxation<br>from the scalp up'
+        ,'about.title': 'About SEAM'
+        ,'about.lead': 'A hair care shop curated by professionals,<br>organized by hair type'
+        ,'about.body': 'SEAM is more than a place that simply sells hair care.<br>Matching your hair type, concerns and desired texture,<br>we suggest the right items and salon experiences from a professional view —<br>a new kind of hair care select shop.'
+        ,'about.cta': 'Learn more'
       },
       zh: {
         'meta.title': 'SEAM — Global Hair Care Select Shop | 美丽秀发，改变人生。',
@@ -1547,6 +1701,26 @@
         'tab.finder': '发质诊断',
         'tab.salon': '预约沙龙',
         'tab.online': '在线商店'
+        ,'hero.eyebrow': 'The finest hair care, curated in Japan'
+        ,'hero.title': '给头发<br>正确的答案'
+        ,'hero.sub': '由护发专业人士甄选 在完全包房享受沙龙体验<br>透过发质诊断 找到适合你的护理'
+        ,'cta.finder': '开始发质诊断'
+        ,'cta.online': '查看在线商店'
+        ,'services.title': 'SEAM的服务'
+        ,'services.01title': '发质诊断'
+        ,'services.01desc': '找到适合<br>你头发的护理'
+        ,'services.02title': '护发商店'
+        ,'services.02desc': '专业甄选<br>分发质单品'
+        ,'services.03title': '在线商店'
+        ,'services.03desc': '全国各地<br>都能购得SEAM护发'
+        ,'services.04title': '美发沙龙'
+        ,'services.04desc': '在完全包房<br>享受顶级护发'
+        ,'services.05title': '头皮养护'
+        ,'services.05desc': '从头皮调理<br>极致放松体验'
+        ,'about.title': '关于SEAM'
+        ,'about.lead': '由专业人士甄选<br>按发质分类的护发商店'
+        ,'about.body': 'SEAM不只是贩售护发产品的地方<br>配合你的发质 烦恼与想要的质感<br>以专业视角提案最适合的单品与沙龙体验<br>是全新形态的护发精选店'
+        ,'about.cta': '了解更多'
       },
       tw: {
         'meta.title': 'SEAM — Global Hair Care Select Shop | 美麗秀髮，改變人生。',
@@ -1653,6 +1827,26 @@
         'tab.finder': '髮質診斷',
         'tab.salon': '預約沙龍',
         'tab.online': '線上商店'
+        ,'hero.eyebrow': 'The finest hair care, curated in Japan'
+        ,'hero.title': '給頭髮<br>正確的答案'
+        ,'hero.sub': '由護髮專業人士嚴選 於完全包廂享受沙龍體驗<br>透過髮質診斷 找到適合你的護理'
+        ,'cta.finder': '開始髮質診斷'
+        ,'cta.online': '查看線上商店'
+        ,'services.title': 'SEAM的服務'
+        ,'services.01title': '髮質診斷'
+        ,'services.01desc': '找到適合<br>你頭髮的護理'
+        ,'services.02title': '護髮商店'
+        ,'services.02desc': '專業嚴選<br>分髮質單品'
+        ,'services.03title': '線上商店'
+        ,'services.03desc': '全國各地<br>都能購得SEAM護髮'
+        ,'services.04title': '美髮沙龍'
+        ,'services.04desc': '在完全包廂<br>享受頂級護髮'
+        ,'services.05title': '頭皮養護'
+        ,'services.05desc': '從頭皮調理<br>極致放鬆體驗'
+        ,'about.title': '關於SEAM'
+        ,'about.lead': '由專業人士嚴選<br>依髮質分類的護髮商店'
+        ,'about.body': 'SEAM不只是販售護髮產品的地方<br>配合你的髮質 煩惱與想要的質感<br>以專業視角提案最適合的單品與沙龍體驗<br>是全新型態的護髮精選店'
+        ,'about.cta': '了解更多'
       },
       ko: {
         'meta.title': 'SEAM — Global Hair Care Select Shop | 아름다운 머릿결이 인생을 바꿉니다.',
@@ -1759,6 +1953,26 @@
         'tab.finder': '모발 진단',
         'tab.salon': '살롱 예약',
         'tab.online': '온라인 스토어'
+        ,'hero.eyebrow': 'The finest hair care, curated in Japan'
+        ,'hero.title': '머릿결에<br>정답을'
+        ,'hero.sub': '헤어케어 전문가가 고른 아이템과 완전 개인실 살롱 경험을<br>모발 진단으로 당신에게 맞는 케어를 찾아드립니다'
+        ,'cta.finder': '모발 진단 시작하기'
+        ,'cta.online': '온라인 숍 보기'
+        ,'services.title': 'SEAM의 서비스'
+        ,'services.01title': '모발 진단'
+        ,'services.01desc': '당신의 머릿결에 맞는<br>케어를 찾기'
+        ,'services.02title': '헤어케어 숍'
+        ,'services.02desc': '전문가가 고른<br>모발별 아이템'
+        ,'services.03title': '온라인 숍'
+        ,'services.03desc': '전국 어디서나<br>SEAM 헤어케어를'
+        ,'services.04title': '헤어 살롱'
+        ,'services.04desc': '완전 개인실에서 받는<br>프리미엄 케어'
+        ,'services.05title': '헤드 스파'
+        ,'services.05desc': '두피부터 가다듬는<br>최상의 릴랙스 경험'
+        ,'about.title': 'SEAM 소개'
+        ,'about.lead': '전문가가 고르는<br>모발별 헤어케어 숍'
+        ,'about.body': 'SEAM은 헤어케어 제품을 그저 판매하는 곳이 아닙니다<br>모발과 고민 원하는 질감에 맞춰<br>전문가의 시선으로 최적의 아이템과 살롱 경험을 제안하는<br>새로운 형태의 헤어케어 셀렉트 숍입니다'
+        ,'about.cta': '자세히 보기'
       }
     };
     /* lang.js は DOMContentLoaded 前にこの辞書が定義済みであれば適用する。
