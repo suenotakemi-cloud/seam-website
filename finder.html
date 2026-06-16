@@ -3921,6 +3921,7 @@ function TopBar({ step, total }) {
   const choose = (code) => {
     setLang(code);
     try { localStorage.setItem('seamLang', code); } catch(e) {}
+    try { window.dispatchEvent(new Event('seamlangchange')); } catch(e) {}
     setOpen(false);
   };
   return (
@@ -9829,6 +9830,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 setTimeout(() => { try { window.__seamReady && window.__seamReady(); } catch(e) {} }, 50);
   </script>
   <script src="js/online-shop-gate.js?v=3" defer></script>
+  <script src="js/finder-i18n.js?v=8"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
