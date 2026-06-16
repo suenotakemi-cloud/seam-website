@@ -782,7 +782,7 @@ const Q = [
   },
   {
     id: 'thickness',
-    type: 'slider',
+    type: 'card-single',
     eyebrow: 'Texture',
     title: '髪の細さは？',
     note: '髪の毛を1本触ったときの感触で選んでください。',
@@ -794,7 +794,7 @@ const Q = [
   },
   {
     id: 'density',
-    type: 'slider',
+    type: 'card-single',
     eyebrow: 'Density',
     title: '髪の量・密度は？',
     note: '頭皮の見え方や、髪を乾かす時間で選んでください。',
@@ -4328,7 +4328,36 @@ function ChipMulti({ q, value = [], onChange }) {
 }
 
 /* ---- Card single — editorial list ---- */
+/* ---- 診断設問の線画イラスト（細さ/量/うねり）---- */
+const Q_ILLUS = (() => {
+  const A = 'fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"';
+  const S = (inner) => `<svg viewBox="0 0 44 44" width="100%" height="100%" ${A}>${inner}</svg>`;
+  const strand = (x) => `<path d="M${x} 9 C ${x - 2} 19 ${x - 2} 27 ${x} 35" stroke-width="1.5"/>`;
+  return {
+    thickness: {
+      thin:   S('<path d="M10 34 C 19 24 27 19 35 10" stroke-width="1.1"/>'),
+      normal: S('<path d="M10 34 C 19 24 27 19 35 10" stroke-width="2.6"/>'),
+      thick:  S('<path d="M10 34 C 19 24 27 19 35 10" stroke-width="4.4"/>'),
+    },
+    density: {
+      low:    S([17, 27].map(strand).join('')),
+      normal: S([11, 19, 27, 35].map(strand).join('')),
+      high:   S([8, 14, 20, 26, 32, 38].map(strand).join('')),
+    },
+    wave: {
+      none:         S('<path d="M9 22 H 35" stroke-width="2"/>'),
+      humid:        S('<path d="M9 22 q 6.5 -7 13 0 t 13 0" stroke-width="2"/>'),
+      surface:      S('<path d="M8 21 q 3.6 -3.6 7.2 0 t 7.2 0 t 7.2 0 t 7.2 0" stroke-width="2"/>'),
+      root:         S('<path d="M9 22 q 5 -8 10 0" stroke-width="2"/><path d="M19 22 H 35" stroke-width="2"/>'),
+      midEnd:       S('<path d="M9 22 H 21" stroke-width="2"/><path d="M21 22 q 5 -8 10 0 t 8 0" stroke-width="2"/>'),
+      whole:        S('<path d="M7 22 q 6 -9 12 0 t 12 0 t 12 0" stroke-width="2"/>'),
+      straightened: S('<path d="M9 18 H 35" stroke-width="2"/><path d="M9 26 H 31" stroke-width="2"/>'),
+    },
+  };
+})();
+
 function CardSingle({ q, value, onChange }) {
+  const illus = Q_ILLUS[q.id];
   return (
     <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
       {q.options.map((o, i) => {
@@ -4357,6 +4386,11 @@ function CardSingle({ q, value, onChange }) {
                   active ? 'text-ivory/70' : 'text-charcoal/55'].join(' ')}>{o.sub}</span>
               )}
             </span>
+            {illus && illus[o.v] && (
+              <span aria-hidden
+                className={['shrink-0 w-9 h-9 sm:w-10 sm:h-10', active ? 'text-goldLight' : 'text-charcoal/40'].join(' ')}
+                dangerouslySetInnerHTML={{ __html: illus[o.v] }} />
+            )}
             <span
               className={[
                 'w-4 h-4 border inline-flex items-center justify-center shrink-0',
