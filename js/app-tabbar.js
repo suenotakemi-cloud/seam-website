@@ -13,11 +13,11 @@
   if (/\/finder\.html(?:$|[?#])/.test(location.pathname + location.search)) return;
 
   var LABELS = {
-    ja: { home: 'ホーム', finder: '診断', shop: 'ショップ', stores: '店舗', book: '予約' },
+    ja: { home: 'ホーム', finder: '診断', shop: 'ショップ', stores: '店舗一覧', book: 'サロン予約' },
     en: { home: 'Home', finder: 'Diagnosis', shop: 'Shop', stores: 'Stores', book: 'Booking' },
-    zh: { home: '首页', finder: '诊断', shop: '商店', stores: '门店', book: '预约' },
-    tw: { home: '首頁', finder: '診斷', shop: '商店', stores: '門市', book: '預約' },
-    ko: { home: '홈', finder: '진단', shop: '샵', stores: '매장', book: '예약' }
+    zh: { home: '首页', finder: '诊断', shop: '商店', stores: '门店', book: '沙龙预约' },
+    tw: { home: '首頁', finder: '診斷', shop: '商店', stores: '門市', book: '沙龍預約' },
+    ko: { home: '홈', finder: '진단', shop: '샵', stores: '매장', book: '살롱예약' }
   };
   function lang() {
     try { return localStorage.getItem('seamLang') || 'ja'; } catch (e) { return 'ja'; }
@@ -26,7 +26,7 @@
   // アイコン（線画 / currentColor）
   var IC = {
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20a1 1 0 0 0 1 1H10v-5.5h4V21h3.5a1 1 0 0 0 1-1V9.5"/>',
-    finder: '<path d="M12 3.5l1.8 4.4 4.7.3-3.6 3 1.2 4.6L12 13.4 7.9 15.8l1.2-4.6-3.6-3 4.7-.3z"/>',
+    finder: '<rect x="5.5" y="4.5" width="13" height="16" rx="2"/><path d="M9.2 4.5V3.7a2.8 2.8 0 0 1 5.6 0v.8"/><path d="M9 10.5h6M9 14h6M9 17.5h3.5"/>',
     shop: '<path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
     stores: '<path d="M12 21s-6-5.2-6-10a6 6 0 1 1 12 0c0 4.8-6 10-6 10z"/><circle cx="12" cy="11" r="2.2"/>',
     book: '<rect x="4" y="5.5" width="16" height="15" rx="2.5"/><path d="M4 9.5h16M8.5 3.5v4M15.5 3.5v4"/><path d="M9 14.5l2 2 4-4"/>'
@@ -37,8 +37,8 @@
     { key: 'home',   href: 'index.html',     match: /(^\/$|\/index\.html|\/$)/ },
     { key: 'finder', href: 'finder.html',    match: /\/finder\.html/ },
     { key: 'shop',   href: 'brand.html',     match: /\/brand\.html/ },
-    { key: 'stores', href: 'shop.html#stores', match: /\/shop\.html/ },
-    { key: 'book',   href: 'hairsalon.html', match: /\/(hairsalon|headspa)\.html/ }
+    { key: 'book',   href: 'hairsalon.html', match: /\/(hairsalon|headspa)\.html/ },
+    { key: 'stores', href: 'shop.html#stores', match: /\/shop\.html/ }
   ];
 
   var path = location.pathname;
