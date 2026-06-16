@@ -67,7 +67,7 @@
     s.id = 'seam-tabbar-style';
     s.textContent = [
       '#seam-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;',
-      'background:rgba(250,248,244,0.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);',
+      'background:rgba(255,255,255,0.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);',
       'border-top:1px solid #E2DDD3;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 20px rgba(26,24,21,0.05);}',
       '#seam-tabbar .seam-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;',
       'padding:9px 2px 8px;text-decoration:none;color:#8C7A63;transition:color .2s;-webkit-tap-highlight-color:transparent;}',

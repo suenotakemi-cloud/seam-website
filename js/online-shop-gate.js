@@ -30,7 +30,7 @@
   ].join(';');
 
   modal.innerHTML = '\
-<div id="seam-gate-card" style="background:#FAF8F4; border:1px solid #E2DDD3; border-radius:3px; max-width:380px; width:100%; padding:38px 28px 26px; text-align:center; box-shadow:0 24px 60px rgba(26,24,21,0.22); position:relative; transform:translateY(8px); transition:transform 260ms ease;">\
+<div id="seam-gate-card" style="background:#FFFFFF; border:1px solid #E2DDD3; border-radius:3px; max-width:380px; width:100%; padding:38px 28px 26px; text-align:center; box-shadow:0 24px 60px rgba(26,24,21,0.22); position:relative; transform:translateY(8px); transition:transform 260ms ease;">\
   <span aria-hidden="true" style="position:absolute; top:12px; left:12px; width:12px; height:12px; border-top:1px solid #B8945A; border-left:1px solid #B8945A;"></span>\
   <span aria-hidden="true" style="position:absolute; top:12px; right:12px; width:12px; height:12px; border-top:1px solid #B8945A; border-right:1px solid #B8945A;"></span>\
   <span aria-hidden="true" style="position:absolute; bottom:12px; left:12px; width:12px; height:12px; border-bottom:1px solid #B8945A; border-left:1px solid #B8945A;"></span>\
@@ -38,7 +38,7 @@
   <p style="font-family:Inter,\'Noto Sans JP\',sans-serif; letter-spacing:0.32em; text-transform:uppercase; font-size:10px; color:#B8945A; margin:0 0 14px; font-weight:500;">— Members Only</p>\
   <h3 id="seam-gate-title" style="font-family:\'Cormorant Garamond\',\'Noto Serif JP\',serif; font-weight:500; font-size:22px; line-height:1.45; color:#3D3833; margin:0 0 14px; letter-spacing:-0.005em;">招待コードが必要です</h3>\
   <p style="font-family:\'Noto Serif JP\',serif; font-size:13px; line-height:2; color:#8C7A63; margin:0 0 24px;">SEAM オンラインショップは会員制です<br>招待コードは<strong style="color:#3D3833; font-weight:500;">店頭でのみ</strong>ご案内しています</p>\
-  <a id="seam-gate-find-store" href="shop.html#stores" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#3D3833; color:#FAF8F4; padding:14px 16px; font-family:Inter,\'Noto Sans JP\',sans-serif; letter-spacing:0.26em; text-transform:uppercase; font-size:10.5px; text-decoration:none; border-radius:2px; margin-bottom:12px; transition:background 180ms;">店舗を探す <span aria-hidden="true" style="color:#D9BE93;">→</span></a>\
+  <a id="seam-gate-find-store" href="shop.html#stores" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#3D3833; color:#FFFFFF; padding:14px 16px; font-family:Inter,\'Noto Sans JP\',sans-serif; letter-spacing:0.26em; text-transform:uppercase; font-size:10.5px; text-decoration:none; border-radius:2px; margin-bottom:12px; transition:background 180ms;">店舗を探す <span aria-hidden="true" style="color:#D9BE93;">→</span></a>\
   <a id="seam-gate-member" href="https://salon.town/home" target="_blank" rel="noopener" style="display:block; color:#8C7A63; font-family:\'Noto Serif JP\',serif; font-size:12px; line-height:1.6; letter-spacing:0.04em; text-decoration:none; padding:4px 12px 2px;">すでに会員の方は <span style="color:#3D3833; border-bottom:1px solid #C9A76A; padding-bottom:1px;">こちらから入店</span> <span aria-hidden="true" style="color:#B8945A;">→</span></a>\
   <button id="seam-gate-close" type="button" style="background:none; border:none; color:#8C7A63; font-family:Inter,\'Noto Sans JP\',sans-serif; letter-spacing:0.22em; text-transform:uppercase; font-size:10.5px; padding:10px 12px; cursor:pointer; margin-top:2px;">閉じる</button>\
 </div>';
