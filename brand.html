@@ -182,7 +182,7 @@
     }
 
     /* ── PAGE HERO ── */
-    .brand-hero { margin-top: 104px; /* = ticker(~28px) + header-top(64px) + header-nav(40px) */ background: var(--cream); position: relative; overflow: hidden; min-height: 320px; display: flex; align-items: flex-end; padding-top: 24px; }
+    .brand-hero { margin-top: 0; /* sticky app-header (js/app-header.js) already occupies the top */ background: var(--cream); position: relative; overflow: hidden; min-height: 320px; display: flex; align-items: flex-end; padding-top: 24px; }
     .brand-hero-bg { position: absolute; inset: 0; background: url('images/stores/store_seam_multi.jpg') center/cover no-repeat; opacity: 0.28; transform: scale(1.04); }
     .brand-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(250,247,242,0.55) 0%, rgba(250,247,242,0.88) 100%); z-index: 0; }
     /* ★ 章マーカー（縦ゴールド線）— index signature */
@@ -216,7 +216,7 @@
        ────────────────────────────────────────── */
     .brand-appbar {
       position: sticky;
-      top: 0;
+      top: 56px;              /* sits below the shared sticky app-header (js/app-header.js) */
       z-index: 90;
       background: rgba(250,247,242,0.86);
       backdrop-filter: saturate(180%) blur(18px);
@@ -224,6 +224,7 @@
       border-bottom: 1px solid transparent;
       transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
     }
+    @media (min-width: 640px) { .brand-appbar { top: 64px; } }
     .brand-appbar[data-state="stuck"] {
       background: rgba(252,250,247,0.93);
       border-bottom-color: var(--sand);
@@ -2071,7 +2072,7 @@
 
       /* ── ヒーロー ── */
       /* スマホ: ticker(~21px) + header-top(56px) = 77px。header-navは非表示 */
-      .brand-hero { margin-top: 77px; height: 180px; }
+      .brand-hero { margin-top: 0; height: 180px; }
       .brand-hero-content { padding: 0 20px 24px; }
       .brand-hero-eyebrow { font-size: 8px; letter-spacing: 4px; margin-bottom: 8px; }
       .brand-hero-eyebrow::before { width: 18px; }
@@ -2506,41 +2507,7 @@
 <body>
 
 <!-- HEADER -->
-<header class="header" id="header">
-  <div class="ticker" aria-hidden="true">
-    <div class="ticker-track">
-      <span data-i18n="ticker.1">HAIR CARE SELECT SHOP — ヘアケアのプロが選んだサロン専売品を全国7店舗＋オンラインでお届け</span>
-      <span data-i18n="ticker.2">NEW — <b>施術のオンライン予約</b>がSEAMサイトからできるようになりました</span>
-      <span data-i18n="ticker.3">TOKIO INKARAMI — トリートメント商品在庫復活</span>
-      <span data-i18n="ticker.4">DAVINES — ECOボトル新登場</span>
-      <span data-i18n="ticker.5">ONLINE SHOP — サロン専売品10,000点以上掲載</span>
-      <span data-i18n="ticker.1">HAIR CARE SELECT SHOP — ヘアケアのプロが選んだサロン専売品を全国7店舗＋オンラインでお届け</span>
-      <span data-i18n="ticker.2">NEW — <b>施術のオンライン予約</b>がSEAMサイトからできるようになりました</span>
-      <span data-i18n="ticker.3">TOKIO INKARAMI — トリートメント商品在庫復活</span>
-      <span data-i18n="ticker.4">DAVINES — ECOボトル新登場</span>
-      <span data-i18n="ticker.5">ONLINE SHOP — サロン専売品10,000点以上掲載</span>
-    </div>
-  </div>
-  <div class="header-top">
-    <a href="index.html" class="logo" aria-label="SEAM トップへ">SEAM<span class="logo-sub">Beauty &amp; Hair Care</span></a>
-    <div class="header-right">
-      <button class="lang-globe-btn" id="langToggleBtn" aria-label="言語切替">
-        <i class="fas fa-globe"></i>
-        <span id="langCurrentLabel">JP</span>
-      </button>
-      <div class="hamburger" id="hamburger" role="button" aria-label="メニューを開く"><span class="ham-label">Menu</span><span class="ham-lines"><span></span><span></span><span></span></span></div>
-    </div>
-  </div>
-  <nav class="header-nav">
-    <a href="brand.html" class="active-nav">BRANDS</a>
-    <a href="finder.html" class="nav-highlight" style="background:var(--charcoal);color:var(--white);letter-spacing:2px;font-size:8px;flex:0 0 auto;padding:0 16px;">✦ HAIR FINDER</a>
-    <a href="shop.html">SHOP</a>
-    <a href="hairsalon.html">SALON</a>
-    <a href="headspa.html">HEAD SPA</a>
-    <a href="https://www.instagram.com/seam_japan/" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-    <a href="onlineshop.html" class="nav-highlight nav-member-gold">MEMBER SHOP ↗</a>
-  </nav>
-</header>
+<!-- Header + slide menu are injected by js/app-header.js (shared across all pages) -->
 
 <!-- 言語モーダル -->
 <div class="lang-overlay" id="langOverlay" role="dialog" aria-modal="true" aria-label="言語選択">
@@ -2572,18 +2539,7 @@
   </div>
 </div>
 
-<div class="mobile-menu" id="mobileMenu" role="dialog" aria-modal="true" aria-label="ナビゲーションメニュー">
-  <span class="mobile-close" id="mobileClose" aria-label="メニューを閉じる"><i class="fas fa-times"></i></span>
-  <div class="mobile-menu-logo">SEAM</div>
-  <a href="index.html" onclick="closeMobile()">HOME</a>
-  <a href="finder.html" onclick="closeMobile()">FINDER</a>
-  <a href="brand.html" onclick="closeMobile()">BRANDS</a>
-  <a href="shop.html" onclick="closeMobile()">SHOP</a>
-  <a href="hairsalon.html" onclick="closeMobile()">HAIR SALON</a>
-  <a href="headspa.html" onclick="closeMobile()">HEAD SPA</a>
-  <a href="https://www.instagram.com/seam_japan/" target="_blank" rel="noopener" onclick="closeMobile()">INSTAGRAM</a>
-  <div class="mobile-menu-footer">© 2026 SEAM JAPAN</div>
-</div>
+<!-- slide menu injected by js/app-header.js -->
 
 <!-- PAGE HERO -->
 <section class="brand-hero">
@@ -3397,37 +3353,9 @@ document.querySelectorAll('.cat-tab').forEach(btn => {
 });
 
 // ============================================================
-// ヘッダースクロール
+// ヘッダー & モバイルメニュー → js/app-header.js (全ページ共通) が担当
 // ============================================================
-window.addEventListener('scroll', () => {
-  document.getElementById('header').classList.toggle('scrolled', window.scrollY > 20);
-}, { passive: true });
-
-// ============================================================
-// モバイルメニュー
-// ============================================================
-const hamburger = document.getElementById('hamburger');
-const mobileMenu = document.getElementById('mobileMenu');
-const mobileClose = document.getElementById('mobileClose');
-
-function openMobile() {
-  mobileMenu.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  // ハンバーガー → × アニメーション
-  hamburger.classList.add('active');
-}
-function closeMobile() {
-  mobileMenu.classList.remove('open');
-  document.body.style.overflow = '';
-  hamburger.classList.remove('active');
-}
-hamburger.addEventListener('click', openMobile);
-mobileClose.addEventListener('click', closeMobile);
-// メニュー背景タップで閉じる（リンク以外）
-mobileMenu.addEventListener('click', e => {
-  if (e.target === mobileMenu) closeMobile();
-});
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobile(); });
+function closeMobile() {}
 
 // ============================================================
 // スマホ: 検索入力時にスクロール調整（iOS対応）
@@ -4866,6 +4794,7 @@ window.SEAM_PAGE_I18N = {
 })();
 </script>
 
+<script src="js/app-header.js?v=1" defer></script>
 <script src="js/lang.js?v=2"></script>
   <script src="js/online-shop-gate.js?v=4" defer></script>
   <script>

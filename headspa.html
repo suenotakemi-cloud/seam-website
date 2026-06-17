@@ -89,8 +89,8 @@
       body { max-width: var(--app-max-width-pc); margin-left:auto; margin-right:auto; }
     }
 
-    .hero-safe-top { padding-top: calc(56px + env(safe-area-inset-top, 0px)); }
-    @media (min-width: 640px) { .hero-safe-top { padding-top: calc(80px + env(safe-area-inset-top, 0px)); } }
+    /* sticky app-header (js/app-header.js) now occupies the top space, so no extra offset */
+    .hero-safe-top { padding-top: 0; }
 
     .no-scrollbar::-webkit-scrollbar { display:none; }
     .no-scrollbar { -ms-overflow-style:none; scrollbar-width:none; }
@@ -159,44 +159,7 @@
 
 
   <!-- HEADER -->
-  <header class="fixed top-0 left-0 right-0 z-50 bg-ivory/85 backdrop-blur-md">
-    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-3 sm:py-4 flex items-center justify-between">
-      <a href="index.html" class="flex flex-col leading-none">
-        <span class="font-serif text-[22px] sm:text-[24px] text-ink tracking-[0.22em]">SEAM</span>
-        <span class="hidden sm:block font-mono text-[10.5px] sm:text-[10.5px] tracking-widest2 text-charcoal/55 mt-0.5">GLOBAL HAIR CARE SELECT SHOP</span>
-      </a>
-      <div class="flex items-center gap-3 sm:gap-5">
-        <button type="button" id="langToggleBtn" aria-label="言語を切り替える" data-i18n-attr="aria-label:a11y.langToggle" class="inline-flex items-center gap-1.5 text-[11.5px] text-charcoal/70 hover:text-ink transition-colors"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span id="langCurrentLabel" class="font-mono tracking-wider">JP</span><svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5l3 3 3-3"/></svg></button>
-        <button id="menuToggle" aria-expanded="false" aria-controls="mobileNav" type="button" aria-label="メニューを開く" data-i18n-attr="aria-label:a11y.menuOpen" class="inline-flex items-center gap-2 border border-ink/30 rounded-full pl-3.5 pr-3 hover:bg-ink/[0.05] transition-colors">
-          <span class="font-mono text-[10px] tracking-widest2 text-ink uppercase">Menu</span>
-          <span class="flex flex-col gap-[3.5px]">
-            <span class="block w-[18px] h-px bg-ink"></span>
-            <span class="block w-[18px] h-px bg-ink"></span>
-          </span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <nav id="mobileNav" class="fixed inset-0 z-[60] bg-ivory translate-x-full transition-transform duration-300 overflow-y-auto" style="padding-top: env(safe-area-inset-top, 0); padding-bottom: env(safe-area-inset-bottom, 0);">
-    <div class="px-5 sm:px-8 py-5 flex items-center justify-between border-b border-line">
-      <span class="font-serif text-[20px] tracking-[0.22em] text-ink">SEAM</span>
-      <button id="menuClose" aria-label="メニューを閉じる" type="button" data-i18n-attr="aria-label:a11y.menuClose" class="w-10 h-10 flex items-center justify-center">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-    <ul class="px-5 sm:px-8 py-6 space-y-5 text-[16px] font-serif">
-      <li><a href="index.html" class="block py-2 text-ink hover:text-gold" data-i18n="nav.home">トップ</a></li>
-      <li><a href="finder.html" class="block py-2 text-ink hover:text-gold" data-i18n="nav.finder">髪格診断</a></li>
-      <li><a href="shop.html" class="block py-2 text-ink hover:text-gold" data-i18n="nav.shop">ヘアケアショップ</a></li>
-      <li><a href="brand.html" class="block py-2 text-ink hover:text-gold" data-i18n="nav.brand">取扱ブランド</a></li>
-      <li><a href="hairsalon.html" class="block py-2 text-ink hover:text-gold" data-i18n="nav.salon">ヘアサロン</a></li>
-      <li><a href="headspa.html" class="block py-2 text-gold" data-i18n="nav.headspa">ヘッドスパ</a></li>
-    </ul>
-    <div class="px-5 sm:px-8 py-6 border-t border-line space-y-3">
-      <a href="#booking" class="block w-full text-center bg-ink text-ivory py-3.5 rounded-full font-serif text-[15px]" data-i18n="cta.book">ヘッドスパを予約する</a>
-    </div>
-  </nav>
+  <!-- Header + slide menu are injected by js/app-header.js (shared across all pages) -->
 
   <!-- HERO -->
   <section class="relative hero-safe-top bg-ivory">
@@ -1438,6 +1401,7 @@
       }
     };
   </script>
+  <script src="js/app-header.js?v=1" defer></script>
   <script src="js/lang.js?v=2"></script>
   <script src="js/reveal.js"></script>
   <script src="js/enhance.js?v=1" defer></script>
