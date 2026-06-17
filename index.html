@@ -536,6 +536,72 @@
   </section>
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- MONTHLY RANKING — 毎月更新（データは下の window.SEAM_RANKING を編集） -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="pt-9 sm:pt-14">
+    <div class="max-w-6xl mx-auto px-6 sm:px-8">
+      <div class="flex items-end justify-between mb-5 sm:mb-7">
+        <div>
+          <p class="font-mono text-[10px] sm:text-[11px] tracking-widest2 text-gold uppercase mb-1.5">Monthly Ranking</p>
+          <h2 class="font-serif text-[22px] sm:text-[28px] text-ink" style="letter-spacing:.04em;" data-i18n="ranking.title">今月の人気ランキング</h2>
+        </div>
+        <span id="rankingMonth" class="font-mono text-[11px] sm:text-[12px] text-charcoal/55 tracking-wider pb-1"></span>
+      </div>
+      <ol id="rankingList" class="space-y-2.5 sm:space-y-3"></ol>
+      <div class="mt-6">
+        <a href="brand.html" class="lift group inline-flex items-center gap-2 text-[13px] sm:text-[14px] text-ink border border-line rounded-full py-2.5 px-5 hover:border-mainBrown/50 transition-colors"><span data-i18n="ranking.cta">取扱ブランドを見る</span><svg class="ashift w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+  /* ============================================================
+     ★ 毎月のランキング — ここだけ編集すれば更新されます
+       month : 表示する月（例 '2026.06'）
+       items : 上位アイテム（rank の昇順に並べる）
+       img / href は任意（省略可）。img を省くと淡いプレースホルダー表示。
+     ============================================================ */
+  window.SEAM_RANKING = {
+    month: '2026.06',
+    items: [
+      { rank: 1, brand: 'Aujua',             name: 'イミュライズ シャンプー',          img: 'images/lp/generated/brand_aujua_quench.jpg',   href: 'brand.html' },
+      { rank: 2, brand: 'TOKIO INKARAMI',    name: 'IE プレミアム トリートメント',     img: 'images/lp/generated/brand_tokio.jpg',          href: 'brand.html' },
+      { rank: 3, brand: 'Kérastase',         name: 'クロノロジスト バン',              img: 'images/lp/generated/brand_kerastase_chrono.jpg', href: 'brand.html' },
+      { rank: 4, brand: 'SHISEIDO SUBLIMIC', name: 'アデノバイタル スカルプ エッセンス', img: 'images/lp/generated/brand_sublimic.jpg',       href: 'brand.html' },
+      { rank: 5, brand: 'Davines',           name: 'OI オイル',                        img: 'images/lp/generated/brand_davines_oi.jpg',     href: 'brand.html' }
+    ]
+  };
+  </script>
+  <script>
+  (function () {
+    var data = window.SEAM_RANKING || { items: [] };
+    var monthEl = document.getElementById('rankingMonth');
+    if (monthEl && data.month) monthEl.textContent = data.month;
+    var list = document.getElementById('rankingList');
+    if (!list) return;
+    var medal = ['#C9A24B', '#AFAFAF', '#B07A45']; /* 1=gold 2=silver 3=bronze */
+    list.innerHTML = (data.items || []).map(function (it) {
+      var color = medal[it.rank - 1] || '#B8945A';
+      var thumb = it.img
+        ? '<img src="' + it.img + '" alt="" class="w-14 h-14 sm:w-16 sm:h-16 rounded-[10px] object-cover flex-none" loading="lazy" decoding="async">'
+        : '<span class="w-14 h-14 sm:w-16 sm:h-16 rounded-[10px] bg-cream flex-none"></span>';
+      var inner =
+        '<span class="font-serif leading-none flex-none w-7 sm:w-8 text-center text-[24px] sm:text-[30px]" style="color:' + color + ';">' + it.rank + '</span>'
+        + thumb
+        + '<span class="min-w-0 flex-1">'
+        +   '<span class="block font-mono text-[10px] tracking-wider text-charcoal/55 uppercase truncate">' + (it.brand || '') + '</span>'
+        +   '<span class="block font-serif text-[14.5px] sm:text-[16px] text-ink leading-snug mt-0.5">' + (it.name || '') + '</span>'
+        + '</span>'
+        + '<svg class="ashift w-[15px] h-[15px] text-charcoal/30 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      var cls = 'lift group flex items-center gap-3.5 sm:gap-4 bg-white border border-line/70 rounded-[16px] p-3 sm:p-3.5 shadow-card';
+      return it.href
+        ? '<li><a href="' + it.href + '" class="' + cls + '">' + inner + '</a></li>'
+        : '<li class="' + cls + '">' + inner + '</li>';
+    }).join('');
+  })();
+  </script>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- HAIR QUALITY DIAGNOSIS — feature banner + 3 steps -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <section class="pt-9 sm:pt-14">
@@ -887,6 +953,8 @@
         ,'cta.finder': '髪格診断をはじめる'
         ,'cta.online': 'オンラインショップを見る'
         ,'services.title': 'あなたの髪に、できること'
+        ,'ranking.title': '今月の人気ランキング'
+        ,'ranking.cta': '取扱ブランドを見る'
         ,'services.01title': '髪格診断'
         ,'services.01desc': '私の髪を「知る」'
         ,'services.02title': 'ヘアケアショップ'
@@ -1035,6 +1103,8 @@
         ,'cta.finder': 'Start hair diagnosis'
         ,'cta.online': 'Visit online shop'
         ,'services.title': 'For your hair'
+        ,'ranking.title': 'Popular this month'
+        ,'ranking.cta': 'Browse all brands'
         ,'services.01title': 'Hair Diagnosis'
         ,'services.01desc': 'Know your hair'
         ,'services.02title': 'Hair Care Shop'
@@ -1183,6 +1253,8 @@
         ,'cta.finder': '开始发质诊断'
         ,'cta.online': '查看在线商店'
         ,'services.title': '为你的秀发'
+        ,'ranking.title': '本月人气排行'
+        ,'ranking.cta': '查看全部品牌'
         ,'services.01title': '发质诊断'
         ,'services.01desc': '了解你的发质'
         ,'services.02title': '护发商店'
@@ -1331,6 +1403,8 @@
         ,'cta.finder': '開始髮質診斷'
         ,'cta.online': '查看線上商店'
         ,'services.title': '為你的秀髮'
+        ,'ranking.title': '本月人氣排行'
+        ,'ranking.cta': '查看全部品牌'
         ,'services.01title': '髮質診斷'
         ,'services.01desc': '了解你的髮質'
         ,'services.02title': '護髮商店'
@@ -1479,6 +1553,8 @@
         ,'cta.finder': '모발 진단 시작하기'
         ,'cta.online': '온라인 숍 보기'
         ,'services.title': '당신의 머릿결을 위해'
+        ,'ranking.title': '이달의 인기 랭킹'
+        ,'ranking.cta': '전체 브랜드 보기'
         ,'services.01title': '모발 진단'
         ,'services.01desc': '내 머릿결을 알다'
         ,'services.02title': '헤어케어 숍'
