@@ -118,7 +118,7 @@
     }
 
     /* Safe-area aware top header — accommodates iPhone notch / dynamic island */
-    header.fixed.top-0 {
+    #appHeader {
       padding-top: env(safe-area-inset-top, 0);
     }
 
@@ -406,7 +406,7 @@
     .ashift{transition:transform .3s ease;}
     @media (hover:hover){.group:hover .ashift{transform:translateX(3px);}}
   </style>
-  <header id="appHeader" class="fixed top-0 inset-x-0 z-50">
+  <header id="appHeader" class="is-solid sticky top-0 inset-x-0 z-50">
     <div class="relative max-w-6xl mx-auto px-4 sm:px-7 h-14 sm:h-16 flex items-center justify-between">
       <button id="menuToggle" type="button" aria-label="メニューを開く" data-i18n-attr="aria-label:a11y.menuOpen" aria-expanded="false" class="ah relative z-10 w-10 h-10 -ml-2 inline-flex items-center justify-center">
         <span class="flex flex-col gap-[5px]">
@@ -416,10 +416,12 @@
         </span>
       </button>
       <a href="/" class="ah-logo absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-[25px] sm:text-[27px] tracking-[0.26em] pl-[0.26em]" aria-label="SEAM ホーム">SEAM</a>
-      <div class="ah relative z-10 flex items-center gap-0.5">
-        <a href="onlineshop.html" aria-label="メンバー" data-i18n-attr="aria-label:a11y.account" class="w-10 h-10 inline-flex items-center justify-center">
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1.3-3.7 4-5.3 7-5.3s5.7 1.6 7 5.3"/></svg>
-        </a>
+      <div class="ah relative z-10 flex items-center gap-2 sm:gap-3">
+        <button type="button" id="langToggleBtn" aria-label="言語を切り替える" data-i18n-attr="aria-label:a11y.langToggle" class="inline-flex items-center gap-1.5 px-1 text-[11.5px] hover:opacity-70 transition-opacity">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+          <span id="langCurrentLabel" class="font-mono tracking-wider">JP</span>
+          <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5l3 3 3-3"/></svg>
+        </button>
         <a href="onlineshop.html" aria-label="カート" data-i18n-attr="aria-label:a11y.bag" class="w-10 h-10 -mr-2 inline-flex items-center justify-center">
           <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>
         </a>
@@ -447,13 +449,6 @@
       <a href="finder.html" class="block w-full text-center bg-mainBrown text-white py-3.5 rounded-full font-serif text-[15px]" data-i18n="cta.finder">髪格診断をはじめる</a>
       <a href="hairsalon.html" class="block w-full text-center border border-ink/25 text-ink py-3.5 rounded-full font-serif text-[15px]" data-i18n="cta.salon">サロンを予約する</a>
     </div>
-    <div class="px-6 sm:px-8 py-5 border-t border-line">
-      <button type="button" id="langToggleBtn" aria-label="言語を切り替える" data-i18n-attr="aria-label:a11y.langToggle" class="inline-flex items-center gap-2 text-[13px] text-charcoal/75 hover:text-ink transition-colors">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
-        <span class="font-mono tracking-wider" id="langCurrentLabel">JP</span>
-        <span data-i18n="nav.lang">言語</span>
-      </button>
-    </div>
   </nav>
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
@@ -466,27 +461,14 @@
           <img src="images/lp/generated/hero_ginza.jpg?v=1" alt="SEAM銀座店のカウンセリング" class="w-full h-full object-cover" style="object-position:center 38%;" loading="eager" decoding="async">
         </picture>
       </div>
-      <div class="hc-slide absolute inset-0">
-        <picture>
-          <img src="images/lp/generated/hero_headspa.jpg?v=1" alt="SEAM銀座店のヘッドスパ" class="w-full h-full object-cover" style="object-position:center 40%;" loading="lazy" decoding="async">
-        </picture>
-      </div>
-      <div class="hc-slide absolute inset-0">
-        <picture>
-          <source srcset="images/lp/clean_home_model.avif" type="image/avif">
-          <source srcset="images/lp/clean_home_model.webp" type="image/webp">
-          <img src="images/lp/clean_home_model.jpg" alt="美しく整った髪" class="w-full h-full object-cover" style="object-position:60% 25%;" loading="lazy" decoding="async">
-        </picture>
-      </div>
 
-      <!-- scrims: top for header legibility, bottom for copy -->
-      <div class="absolute inset-x-0 top-0 h-36 pointer-events-none" style="background:linear-gradient(180deg,rgba(20,18,16,.5) 0%,rgba(20,18,16,0) 100%);"></div>
-      <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(180deg,rgba(20,18,16,.10) 0%,rgba(20,18,16,0) 32%,rgba(20,18,16,.28) 62%,rgba(20,18,16,.72) 100%);"></div>
+      <!-- scrim for copy legibility -->
+      <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(180deg,rgba(20,18,16,.06) 0%,rgba(20,18,16,0) 30%,rgba(20,18,16,.30) 60%,rgba(20,18,16,.74) 100%);"></div>
 
       <!-- copy bottom-left -->
       <div class="absolute inset-x-0 bottom-0">
         <div class="max-w-6xl mx-auto px-6 sm:px-10 pb-8 sm:pb-12">
-          <h1 class="font-serif text-white text-[33px] sm:text-[48px] lg:text-[56px] leading-[1.14]" style="letter-spacing:.02em;font-weight:500;text-shadow:0 2px 24px rgba(0,0,0,.25);" data-i18n="hero.title">髪に、正解を</h1>
+          <h1 class="font-serif text-white text-[33px] sm:text-[48px] lg:text-[56px] leading-[1.14]" style="letter-spacing:.02em;font-weight:500;text-shadow:0 2px 24px rgba(0,0,0,.25);" data-i18n="hero.title">髪と、美しさを紡ぐ</h1>
           <p class="mt-3 text-[12.5px] sm:text-[14px] leading-[1.75] text-white/90 max-w-[19rem] sm:max-w-md" style="text-shadow:0 1px 14px rgba(0,0,0,.3);" data-i18n="hero.sub">ヘアケアのプロが選ぶアイテムと 完全個室のサロン体験を<br>髪格診断から あなたに合うケアが見つかります</p>
           <div class="mt-6 max-w-[20rem]">
             <a href="finder.html" class="group flex items-center justify-center gap-2.5 bg-white text-ink rounded-full py-3.5 px-6 shadow-card hover:bg-white/90 transition-colors">
@@ -496,12 +478,6 @@
           </div>
         </div>
       </div>
-    </div>
-    <!-- dots -->
-    <div class="flex justify-center items-center gap-2 mt-4">
-      <button type="button" class="hc-dot is-on" aria-label="スライド1"></button>
-      <button type="button" class="hc-dot" aria-label="スライド2"></button>
-      <button type="button" class="hc-dot" aria-label="スライド3"></button>
     </div>
   </section>
 
@@ -693,28 +669,6 @@
     </div>
   </section>
 
-  <script>
-    /* App header solid-on-scroll + hero carousel */
-    (function () {
-      var h = document.getElementById('appHeader'), hero = document.getElementById('appHero');
-      function onScroll() {
-        var th = hero ? hero.offsetHeight - 64 : 160;
-        if (window.scrollY > th) h.classList.add('is-solid'); else h.classList.remove('is-solid');
-      }
-      window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll);
-      onScroll();
-      if (!hero) return;
-      var slides = hero.querySelectorAll('.hc-slide'), dots = document.querySelectorAll('#appHero .hc-dot');
-      var i = 0, n = slides.length, t = 0;
-      function go(k) { i = (k + n) % n; for (var j = 0; j < n; j++) { slides[j].classList.toggle('is-active', j === i); if (dots[j]) dots[j].classList.toggle('is-on', j === i); } }
-      function start() { stop(); t = setInterval(function () { go(i + 1); }, 5200); }
-      function stop() { if (t) { clearInterval(t); t = 0; } }
-      for (var j = 0; j < dots.length; j++) { (function (x) { dots[x].addEventListener('click', function () { go(x); start(); }); })(j); }
-      document.addEventListener('visibilitychange', function () { document.hidden ? stop() : start(); });
-      go(0); start();
-    })();
-  </script>
 
 
 
@@ -853,7 +807,7 @@
         'nav.online': 'オンラインショップ',
         'cta.finder': '髪格診断を始める',
         'cta.salon': 'サロンを予約する',
-        'hero.title': '髪に合うものを<br />正しく選ぶ',
+        'hero.title': '髪と、美しさを紡ぐ',
         'hero.sub': '世界中のサロン専売品をプロと選ぶ<br>相談できるヘアケアセレクトショップです',
         'hero.subPc': '世界中のサロン専売品をプロと選ぶ<br>相談できるヘアケアセレクトショップです',
         'hero.hairIdQ': 'あなたの髪格は<span class="text-gold">27タイプ</span>のどれ？',
@@ -944,7 +898,7 @@
         'tab.salon': 'サロンを予約する',
         'tab.online': 'オンラインショップ'
         ,'hero.eyebrow': 'The finest hair care, curated in Japan'
-        ,'hero.title': '髪に、正解を'
+        ,'hero.title': '髪と、美しさを紡ぐ'
         ,'hero.sub': 'ヘアケアのプロが選ぶアイテムと 完全個室のサロン体験を<br>髪格診断から あなたに合うケアが見つかります'
         ,'cta.finder': '髪格診断をはじめる'
         ,'cta.online': 'オンラインショップを見る'
@@ -1001,7 +955,7 @@
         'nav.online': 'Online Shop',
         'cta.finder': 'Start Your Hair Diagnosis',
         'cta.salon': 'Book a Salon Visit',
-        'hero.title': 'The right care,<br />chosen for your hair.',
+        'hero.title': 'Beauty, woven for your hair',
         'hero.sub': 'Salon-exclusive products from around the world, selected with professionals who know hair.<br>A hair care select shop built on consultation.',
         'hero.subPc': 'Salon-exclusive products from around the world, selected with professionals who know hair. A hair care select shop built on consultation.',
         'hero.hairIdQ': 'Which of the <span class="text-gold">27 types</span> is your hair?',
@@ -1092,7 +1046,7 @@
         'tab.salon': 'Book Salon',
         'tab.online': 'Online Shop'
         ,'hero.eyebrow': 'The finest hair care, curated in Japan'
-        ,'hero.title': 'The right answer<br>for your hair'
+        ,'hero.title': 'Beauty, woven for your hair'
         ,'hero.sub': 'Curated by hair care professionals, with private salon experiences.<br>Find the care that fits you through our hair diagnosis.'
         ,'cta.finder': 'Start hair diagnosis'
         ,'cta.online': 'Visit online shop'
@@ -1149,7 +1103,7 @@
         'nav.online': '在线商店',
         'cta.finder': '开始发质诊断',
         'cta.salon': '预约沙龙',
-        'hero.title': '为你的发质，<br />做正确的选择。',
+        'hero.title': '为秀发，编织美丽',
         'hero.sub': '与懂发质的专业人士一起，挑选来自世界各地的沙龙专供产品。<br>这里是可以放心咨询的护发精选店。',
         'hero.subPc': '与懂发质的专业人士一起，挑选来自世界各地的沙龙专供产品。这里是可以放心咨询的护发精选店。',
         'hero.hairIdQ': '你的发质属于<span class="text-gold">27种类型</span>中的哪一种？',
@@ -1240,7 +1194,7 @@
         'tab.salon': '预约沙龙',
         'tab.online': '在线商店'
         ,'hero.eyebrow': 'The finest hair care, curated in Japan'
-        ,'hero.title': '给头发<br>正确的答案'
+        ,'hero.title': '为秀发，编织美丽'
         ,'hero.sub': '由护发专业人士甄选 在完全包房享受沙龙体验<br>透过发质诊断 找到适合你的护理'
         ,'cta.finder': '开始发质诊断'
         ,'cta.online': '查看在线商店'
@@ -1297,7 +1251,7 @@
         'nav.online': '線上商店',
         'cta.finder': '開始髮質診斷',
         'cta.salon': '預約沙龍',
-        'hero.title': '為你的髮質，<br />做對的選擇。',
+        'hero.title': '為秀髮，編織美麗',
         'hero.sub': '與懂髮質的專業人士一起，挑選來自世界各地的沙龍專售產品。<br>這裡是可以安心諮詢的護髮選物店。',
         'hero.subPc': '與懂髮質的專業人士一起，挑選來自世界各地的沙龍專售產品。這裡是可以安心諮詢的護髮選物店。',
         'hero.hairIdQ': '你的髮質屬於<span class="text-gold">27種類型</span>中的哪一種？',
@@ -1388,7 +1342,7 @@
         'tab.salon': '預約沙龍',
         'tab.online': '線上商店'
         ,'hero.eyebrow': 'The finest hair care, curated in Japan'
-        ,'hero.title': '給頭髮<br>正確的答案'
+        ,'hero.title': '為秀髮，編織美麗'
         ,'hero.sub': '由護髮專業人士嚴選 於完全包廂享受沙龍體驗<br>透過髮質診斷 找到適合你的護理'
         ,'cta.finder': '開始髮質診斷'
         ,'cta.online': '查看線上商店'
@@ -1445,7 +1399,7 @@
         'nav.online': '온라인 스토어',
         'cta.finder': '모발 진단 시작하기',
         'cta.salon': '살롱 예약하기',
-        'hero.title': '머릿결에 맞는 것을,<br />올바르게 고르다.',
+        'hero.title': '머릿결에 아름다움을 잇다',
         'hero.sub': '전 세계의 살롱 전용 제품을, 모발을 아는 전문가와 함께 고릅니다.<br>상담할 수 있는 헤어케어 셀렉트숍입니다.',
         'hero.subPc': '전 세계의 살롱 전용 제품을, 모발을 아는 전문가와 함께 고릅니다. 상담할 수 있는 헤어케어 셀렉트숍입니다.',
         'hero.hairIdQ': '당신의 모발은 <span class="text-gold">27가지 타입</span> 중 어느 타입일까요?',
@@ -1536,7 +1490,7 @@
         'tab.salon': '살롱 예약',
         'tab.online': '온라인 스토어'
         ,'hero.eyebrow': 'The finest hair care, curated in Japan'
-        ,'hero.title': '머릿결에<br>정답을'
+        ,'hero.title': '머릿결에 아름다움을 잇다'
         ,'hero.sub': '헤어케어 전문가가 고른 아이템과 완전 개인실 살롱 경험을<br>모발 진단으로 당신에게 맞는 케어를 찾아드립니다'
         ,'cta.finder': '모발 진단 시작하기'
         ,'cta.online': '온라인 숍 보기'
