@@ -80,6 +80,12 @@ async function main() {
     };
   });
 
+  // 安全弁: 取得件数が少なすぎる場合は本番(index.html)を上書きしない＝ホームのランキング空白化を防止
+  if (!Array.isArray(items) || items.length < 3) {
+    console.error(`❌ 取得件数が ${items.length} 件のみのため中止します（本番は変更しません）`);
+    process.exit(1);
+  }
+
   const now = new Date();
   const month = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}`;
   const output = { month, items };
