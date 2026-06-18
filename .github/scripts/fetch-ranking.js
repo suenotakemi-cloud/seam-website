@@ -67,14 +67,23 @@ async function main() {
   }
 
   const BASE_DOMAIN = 'salon.town';
+  // デバッグ: 1件目のキー一覧を出力
+  if (rank.json.data.length > 0) {
+    console.log('=== 1位データのキー ===');
+    console.log(JSON.stringify(rank.json.data[0], null, 2));
+  }
+
   const items = rank.json.data.slice(0, 5).map((d, i) => {
     const img = d.img_prifix
       ? `https://asset.${BASE_DOMAIN}/item/thumb/${d.item_id}_${d.img_prifix}${d.format}`
       : `https://asset.${BASE_DOMAIN}/item/thumb/${d.jan}.jpg`;
+    // フィールド名の候補を幅広く試す
+    const brand = d.maker_name || d.brand_name || d.brand || d.makerName || '';
+    const name  = d.item_name  || d.name       || d.itemName || d.product_name || d.title || '';
     return {
       rank: i + 1,
-      brand: d.maker_name || '',
-      name: d.item_name || '',
+      brand,
+      name,
       img,
       href: 'brand.html',
     };
