@@ -566,32 +566,36 @@
 
     /* Character chip — Apple Photos memory tile vibe */
     .karte-char-chip {
-      width: 64px; height: 84px;
+      width: 96px;
       flex-shrink: 0;
-      position: relative;
-      overflow: hidden;
-      border-radius: 14px;
+      display: flex; flex-direction: column; align-items: center;
+      background: none; border: 0; padding: 0;
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(.2,.7,.2,1);
+    }
+    .karte-char-chip:hover { transform: translateY(-3px); }
+    .karte-char-chip img {
+      width: 96px; height: 96px;
+      object-fit: cover; object-position: center 25%;
+      border-radius: 16px;
       background: linear-gradient(180deg, #F6F3EE 0%, #F4F0EA 100%);
       box-shadow: 0 1px 3px rgba(26,24,21,0.05), inset 0 0 0 1px rgba(184,148,90,0.10);
-      cursor: pointer;
-      transition: transform 0.3s cubic-bezier(.2,.7,.2,1), box-shadow 0.3s;
+      transition: box-shadow 0.3s;
     }
-    .karte-char-chip:hover {
-      transform: translateY(-3px) scale(1.04);
+    .karte-char-chip:hover img {
       box-shadow: 0 6px 18px rgba(26,24,21,0.10), inset 0 0 0 1px rgba(168,116,86,0.30);
     }
-    .karte-char-chip img {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center 25%;
+    .karte-char-chip .karte-char-name {
+      margin-top: 7px; text-align: center;
+      font-family: 'Noto Serif JP', serif;
+      font-size: 10.5px; line-height: 1.32;
+      color: #3D3833; width: 96px;
     }
     .karte-char-chip .karte-char-label {
-      position: absolute; bottom: 4px; left: 0; right: 0;
-      text-align: center;
+      margin-top: 2px; text-align: center;
       font-family: 'Inter', sans-serif;
-      font-size: 8px;
-      letter-spacing: 0.12em;
-      font-weight: 600;
-      color: #8A7556;
+      font-size: 8px; letter-spacing: 0.14em;
+      font-weight: 600; color: #B8945A;
     }
 
     /* CTA hover bounce — subtle Aesop-y, not cartoon */
@@ -3914,6 +3918,7 @@ function TopBar({ step, total }) {
     try { return localStorage.getItem('seamLang') || 'ja'; } catch(e) { return 'ja'; }
   });
   const [open, setOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const curLabel = (LANGS.find(l => l.code === lang) || LANGS[0]).label;
   const choose = (code) => {
     setLang(code);
@@ -3922,15 +3927,17 @@ function TopBar({ step, total }) {
     setOpen(false);
   };
   return (
-    <header className="absolute top-0 inset-x-0 z-20" style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid #E7E1D6' }}>
+    <header className="absolute top-0 inset-x-0 z-20" style={{ background: 'rgba(255,255,255,0.94)', borderBottom: '1px solid #E7E1D6' }}>
       <div className="relative mx-auto max-w-3xl px-5 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
-        {/* ← ホームへ戻る */}
-        <a href="index.html" aria-label="SEAM トップへ戻る"
-           className="relative z-10 inline-flex items-center text-ink/85 hover:text-ink transition-colors group">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </a>
+        {/* ハンバーガー（全ページ共通メニュー） */}
+        <button type="button" onClick={() => setMenuOpen(true)} aria-label="メニューを開く"
+           className="relative z-10 -ml-1 w-9 h-9 inline-flex items-center justify-center text-ink">
+          <span className="flex flex-col gap-[5px]">
+            <span className="block w-[22px] h-[1.6px] bg-current rounded-full"></span>
+            <span className="block w-[22px] h-[1.6px] bg-current rounded-full"></span>
+            <span className="block w-[15px] h-[1.6px] bg-current rounded-full"></span>
+          </span>
+        </button>
         {/* 中央 SEAM ワードマーク（index と統一） */}
         <a href="index.html" aria-label="SEAM ホーム"
            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-ink text-[22px] sm:text-[24px]"
@@ -3968,6 +3975,29 @@ function TopBar({ step, total }) {
             </div>
             <p className="mt-4 text-[11px] text-charcoal/45 text-center leading-relaxed">表示言語は順次対応予定です。</p>
           </div>
+        </div>
+      )}
+      {menuOpen && (
+        <div className="fixed inset-0 z-[95] bg-white overflow-y-auto anim-fade-in"
+             style={{ paddingTop: 'env(safe-area-inset-top,0)', paddingBottom: 'env(safe-area-inset-bottom,0)' }}>
+          <div className="flex items-center justify-between px-6 h-14 sm:h-16 border-b border-line">
+            <span className="font-serif text-[22px] text-ink" style={{ letterSpacing: '0.24em', textIndent: '0.24em' }}>SEAM</span>
+            <button type="button" onClick={() => setMenuOpen(false)} aria-label="閉じる"
+                    className="w-10 h-10 -mr-2 flex items-center justify-center text-ink">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </div>
+          <nav className="px-7 py-7">
+            <ul className="font-serif text-[18px] divide-y divide-line/60">
+              <li><a href="finder.html" className="flex items-center justify-between py-3.5 text-ink"><span>髪格診断</span><span className="font-mono text-[10px] tracking-widest text-gold uppercase">Karte</span></a></li>
+              <li><a href="shop.html" className="flex items-center justify-between py-3.5 text-ink"><span>ヘアケアショップ</span><span className="font-mono text-[10px] tracking-widest text-charcoal/35 uppercase">Shop</span></a></li>
+              <li><a href="brand.html" className="flex items-center justify-between py-3.5 text-ink"><span>取扱ブランド</span><span className="font-mono text-[10px] tracking-widest text-charcoal/35 uppercase">Brands</span></a></li>
+              <li><a href="hairsalon.html" className="flex items-center justify-between py-3.5 text-ink"><span>ヘアサロン</span><span className="font-mono text-[10px] tracking-widest text-charcoal/35 uppercase">Salon</span></a></li>
+              <li><a href="headspa.html" className="flex items-center justify-between py-3.5 text-ink"><span>ヘッドスパ</span><span className="font-mono text-[10px] tracking-widest text-charcoal/35 uppercase">Spa</span></a></li>
+              <li><a href="onlineshop.html" className="flex items-center justify-between py-3.5 text-ink"><span>オンラインショップ</span><span className="font-mono text-[10px] tracking-widest text-charcoal/35 uppercase">Online</span></a></li>
+            </ul>
+            <a href="index.html" className="mt-8 block w-full text-center bg-mainBrown text-white py-3.5 rounded-full font-serif text-[15px] shadow-card">SEAM トップへ</a>
+          </nav>
         </div>
       )}
     </header>
@@ -4056,6 +4086,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
                   aria-label={`${c.name} (${c.code})`}
                 >
                   <img src={`images/karte/gems/${c.code}.jpg`} alt="" loading="lazy" />
+                  <span className="karte-char-name">{c.name}</span>
                   <span className="karte-char-label">{c.code}</span>
                 </button>
               ))}
