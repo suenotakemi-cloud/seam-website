@@ -19,10 +19,10 @@ jobs:
 
       - name: salon.town からランキング取得
         id: fetch
-        run: node .github/scripts/fetch-ranking.js
         env:
           SALON_TOWN_MAIL: ${{ secrets.SALON_TOWN_MAIL }}
           SALON_TOWN_PASS: ${{ secrets.SALON_TOWN_PASS }}
+        run: node .github/scripts/fetch-ranking.js
 
       - name: index.html のランキングデータを更新
         run: node .github/scripts/update-index.js
