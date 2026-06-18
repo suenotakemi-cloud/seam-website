@@ -547,7 +547,8 @@
         </div>
         <span id="rankingMonth" class="font-mono text-[11px] sm:text-[12px] text-charcoal/55 tracking-wider pb-1"></span>
       </div>
-      <ol id="rankingList" class="space-y-2.5 sm:space-y-3"></ol>
+      <style>#rankingList{scrollbar-width:none;-ms-overflow-style:none;scroll-padding-left:1.5rem;}#rankingList::-webkit-scrollbar{display:none;}</style>
+      <ol id="rankingList" class="flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory -mx-6 px-6 sm:-mx-8 sm:px-8 pb-1"></ol>
       <div class="mt-6">
         <a href="brand.html" class="lift group inline-flex items-center gap-2 text-[13px] sm:text-[14px] text-ink border border-line rounded-full py-2.5 px-5 hover:border-mainBrown/50 transition-colors"><span data-i18n="ranking.cta">取扱ブランドを見る</span><svg class="ashift w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
@@ -583,19 +584,20 @@
     list.innerHTML = (data.items || []).map(function (it) {
       var color = medal[it.rank - 1] || '#B8945A';
       var thumb = it.img
-        ? '<img src="' + it.img + '" alt="" class="w-14 h-14 sm:w-16 sm:h-16 rounded-[10px] object-cover flex-none" loading="lazy" decoding="async">'
-        : '<span class="w-14 h-14 sm:w-16 sm:h-16 rounded-[10px] bg-cream flex-none"></span>';
+        ? '<img src="' + it.img + '" alt="" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async">'
+        : '<span class="absolute inset-0 bg-cream"></span>';
       var inner =
-        '<span class="font-serif leading-none flex-none w-7 sm:w-8 text-center text-[24px] sm:text-[30px]" style="color:' + color + ';">' + it.rank + '</span>'
-        + thumb
-        + '<span class="min-w-0 flex-1">'
-        +   '<span class="block font-mono text-[10px] tracking-wider text-charcoal/55 uppercase truncate">' + (it.brand || '') + '</span>'
-        +   '<span class="block font-serif text-[14.5px] sm:text-[16px] text-ink leading-snug mt-0.5">' + (it.name || '') + '</span>'
-        + '</span>'
-        + '<svg class="ashift w-[15px] h-[15px] text-charcoal/30 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-      var cls = 'lift group flex items-center gap-3.5 sm:gap-4 bg-white border border-line/70 rounded-[16px] p-3 sm:p-3.5 shadow-card';
+        '<div class="relative aspect-square rounded-[16px] overflow-hidden bg-cream border border-line/70 shadow-card">'
+        +   thumb
+        +   '<span class="absolute top-2 left-2 w-8 h-8 rounded-full bg-white/92 backdrop-blur-sm flex items-center justify-center font-serif text-[17px] leading-none shadow-card" style="color:' + color + ';">' + it.rank + '</span>'
+        + '</div>'
+        + '<div class="mt-2.5 px-0.5">'
+        +   '<span class="block font-mono text-[9.5px] tracking-wider text-charcoal/55 uppercase truncate">' + (it.brand || '') + '</span>'
+        +   '<span class="block font-serif text-[13px] sm:text-[14.5px] text-ink leading-snug mt-0.5">' + (it.name || '') + '</span>'
+        + '</div>';
+      var cls = 'lift group snap-start flex-none w-[150px] sm:w-[180px]';
       return it.href
-        ? '<li><a href="' + it.href + '" class="' + cls + '">' + inner + '</a></li>'
+        ? '<li class="' + cls + '"><a href="' + it.href + '" class="block">' + inner + '</a></li>'
         : '<li class="' + cls + '">' + inner + '</li>';
     }).join('');
   })();
