@@ -4108,34 +4108,14 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
           {/* 主CTA: 一本化 + 遊び心(sparkle + bounce) */}
           <button
             onClick={onStartDeep || onStart}
-            className="karte-cta-playful group inline-flex items-center justify-center gap-3 bg-ink text-ivory px-7 sm:px-10 py-4 sm:py-5 hover:bg-charcoal transition-all w-full sm:w-auto rounded-[2px] relative"
+            className="karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 sm:px-10 py-4 sm:py-[18px] hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
           >
-            <span className="font-mono tracking-widest2 text-[10.5px] uppercase text-goldLight">Karte</span>
             <span className="font-serif text-[15px] sm:text-base">{lastKarte ? '新しく診断をはじめる' : '髪を診断する'}</span>
-            <span className="karte-sparkle text-goldLight" style={{fontSize:'12px'}}>✦</span>
-            <span className="inline-block w-4 h-px bg-ivory/80 group-hover:w-6 transition-all"></span>
+            <span className="karte-sparkle text-white/90" style={{fontSize:'12px'}}>✦</span>
+            <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
 
-          {/* ✦ Share teaser — 友達にシェアできる訴求 */}
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/55 mr-1">Share with</span>
-            <span className="karte-share-chip" aria-label="友達にシェア">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
-              友達
-            </span>
-            <span className="karte-share-chip" aria-label="LINE">
-              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.86 2 10.6c0 4.25 3.62 7.81 8.5 8.48.33.07.78.22.9.5.1.26.06.66.03.92l-.15.86c-.04.26-.2.99.88.54 1.1-.44 5.86-3.46 8-5.92h-.01C21.6 14.34 22 12.52 22 10.6 22 5.86 17.52 2 12 2z"/></svg>
-              LINE
-            </span>
-            <span className="karte-share-chip" aria-label="Instagram">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor"/></svg>
-              IG Story
-            </span>
-            <span className="karte-share-chip" aria-label="サロン">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 21V9l9-6 9 6v12H3Z"/></svg>
-              サロン
-            </span>
-          </div>
+          {/* シェアは診断結果ページに集約（診断前は共有する結果がまだ無いため出さない） */}
 
           {/* サブ導線: 髪格既知 */}
           {onCollection && (
