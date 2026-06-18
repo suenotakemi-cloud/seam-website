@@ -3922,17 +3922,20 @@ function TopBar({ step, total }) {
     setOpen(false);
   };
   return (
-    <header className="absolute top-0 inset-x-0 z-20">
-      <div className="mx-auto max-w-3xl px-5 sm:px-8 py-4 flex items-center justify-between">
-        {/* ホームへ戻る — 矢印付きで明示 */}
+    <header className="absolute top-0 inset-x-0 z-20" style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid #E7E1D6' }}>
+      <div className="relative mx-auto max-w-3xl px-5 sm:px-8 h-14 sm:h-16 flex items-center justify-between">
+        {/* ← ホームへ戻る */}
         <a href="index.html" aria-label="SEAM トップへ戻る"
-           className="inline-flex items-center gap-2 text-ink/90 hover:text-ink transition-colors group">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform">
+           className="relative z-10 inline-flex items-center text-ink/85 hover:text-ink transition-colors group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-0.5 transition-transform">
             <path d="M15 18l-6-6 6-6"/>
           </svg>
-          <span className="font-display tracking-widest2 text-[14px] sm:text-[15px]">SEAM</span>
         </a>
-        <div className="flex items-center gap-3 sm:gap-4">
+        {/* 中央 SEAM ワードマーク（index と統一） */}
+        <a href="index.html" aria-label="SEAM ホーム"
+           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-ink text-[22px] sm:text-[24px]"
+           style={{ letterSpacing: '0.26em', paddingLeft: '0.26em' }}>SEAM</a>
+        <div className="relative z-10 flex items-center gap-3 sm:gap-4">
           {step != null && (
             <span className="hidden sm:inline text-[11px] tracking-widest2 text-charcoal/60 nums uppercase">
               <span className="text-ink">{String(step).padStart(2,'0')}</span> <span className="text-charcoal/40">— {String(total).padStart(2,'0')}</span>
@@ -4198,15 +4201,15 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
               回答からあなたの髪の状態と履歴を読み解きます
             </p>
           </div>
-          <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-px bg-line/70 border border-line rounded-[2px] overflow-hidden">
+          <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4">
             {[
               ['3×3×3', '27の髪格', '太さ×くせ×ダメージの3軸で分類'],
               ['4,000万+', '髪条件の組み合わせ', '主要11問の単一回答のみで算出'],
               ['1,000', '検証パターン', '髪条件を変えて提案の整合性を確認'],
               ['140+', 'ブランド横断', '銘柄を問わず合うものだけを選定'],
             ].map(([num, label, note]) => (
-              <div key={label} className="bg-white/90 px-4 py-5 sm:px-5 sm:py-6 text-center">
-                <p className="font-serif text-[21px] sm:text-[24px] text-ink nums leading-none whitespace-nowrap">{num}</p>
+              <div key={label} className="bg-white border border-line/70 rounded-[16px] shadow-card px-4 py-5 sm:px-5 sm:py-6 text-center">
+                <p className="font-serif text-[22px] sm:text-[26px] text-ink nums leading-none whitespace-nowrap">{num}</p>
                 <p className="mt-2.5 text-[11px] sm:text-[11.5px] text-gold tracking-wide whitespace-nowrap">{label}</p>
                 <p className="mt-1.5 text-[10.5px] sm:text-[11px] leading-[1.75] text-charcoal/60">{note}</p>
               </div>
