@@ -4576,7 +4576,7 @@ function Home({
   }, [...CHARACTER_TICKER_LIST, ...CHARACTER_TICKER_LIST].map((c, i) => /*#__PURE__*/React.createElement("button", {
     key: `${c.code}-${i}`,
     type: "button",
-    onClick: onLibrary,
+    onClick: onStart,
     className: "karte-char-chip",
     "aria-label": `${c.name} (${c.code})`
   }, /*#__PURE__*/React.createElement("img", {
@@ -4657,17 +4657,7 @@ function Home({
     className: "mt-5 sm:mt-6 flex flex-wrap gap-x-6 gap-y-1.5 font-mono text-[10.5px] tracking-widest2 uppercase text-charcoal/55"
   }, /*#__PURE__*/React.createElement("li", null, "\u6240\u8981\u6642\u9593 ", /*#__PURE__*/React.createElement("span", {
     className: "nums text-ink ml-1"
-  }, "\u7D045\u301C8\u5206")), /*#__PURE__*/React.createElement("li", null, "\u4F1A\u54E1\u767B\u9332\u306A\u3057"), /*#__PURE__*/React.createElement("li", null, "\u30B5\u30ED\u30F3\u3067\u3082\u4F7F\u3048\u308B\u30AB\u30EB\u30C6\u3092\u4F5C\u6210")), onLibrary && /*#__PURE__*/React.createElement("div", {
-    className: "mt-6 flex items-center gap-3"
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "button",
-    onClick: onLibrary,
-    className: "font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/70 hover:text-ink transition-colors inline-flex items-center gap-2 group"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "inline-block w-5 h-px bg-gold/60 group-hover:w-8 transition-all"
-  }), "\u30D8\u30A2\u30BF\u30A4\u30D7\u56F3\u9451\u3092\u307F\u308B(27\u30BF\u30A4\u30D7\u4E00\u89A7)", /*#__PURE__*/React.createElement("span", {
-    className: "text-gold"
-  }, "\u2192"))), /*#__PURE__*/React.createElement("p", {
+  }, "\u7D045\u301C8\u5206")), /*#__PURE__*/React.createElement("li", null, "\u4F1A\u54E1\u767B\u9332\u306A\u3057"), /*#__PURE__*/React.createElement("li", null, "\u30B5\u30ED\u30F3\u3067\u3082\u4F7F\u3048\u308B\u30AB\u30EB\u30C6\u3092\u4F5C\u6210")), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-[12.5px] tracking-wider text-charcoal/55 max-w-md leading-relaxed"
   }, "\u8A3A\u65AD\u7D50\u679C\u306F\u753B\u50CF\u30FBPDF\u4FDD\u5B58\u30FBLINE\u3067\u5171\u6709\u3067\u304D\u3001\u30B5\u30ED\u30F3\u3067\u306E\u3054\u76F8\u8AC7\u6642\u306B", /*#__PURE__*/React.createElement("span", {
     className: "text-ink"
@@ -9308,7 +9298,7 @@ function Collection({
   onPickAsMine
 }) {
   const [filter, setFilter] = useState('all');
-  const [sortMode, setSortMode] = useState('rare-asc'); // rare-asc / rare-desc / direction
+  const [sortMode, setSortMode] = useState('direction'); // direction / rare-desc（レアな順は廃止）
   const [open, setOpen] = useState(null);
   const myId = myKarte?.originId;
 
@@ -9407,12 +9397,10 @@ function Collection({
     onChange: e => setSortMode(e.target.value),
     className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/70 bg-white/70 border border-line rounded-[1px] px-2 py-1.5"
   }, /*#__PURE__*/React.createElement("option", {
-    value: "rare-asc"
-  }, "\u30EC\u30A2\u306A\u9806"), /*#__PURE__*/React.createElement("option", {
-    value: "rare-desc"
-  }, "\u4EBA\u6C17\u306A\u9806"), /*#__PURE__*/React.createElement("option", {
     value: "direction"
-  }, "\u65B9\u5411\u5225")))), /*#__PURE__*/React.createElement("p", {
+  }, "\u65B9\u5411\u5225"), /*#__PURE__*/React.createElement("option", {
+    value: "rare-desc"
+  }, "\u4EBA\u6C17\u306A\u9806")))), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-[12.5px] text-charcoal/65 leading-relaxed"
   }, KARTE_DIRECTION_DESC[filter], /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-widest2 text-[10px] text-charcoal/45 ml-2"
