@@ -3297,21 +3297,11 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
       <TopBar />
       <main className="relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-24 pb-20 sm:pt-32 sm:pb-28">
 
-        {/* ✦ Today bar — app風挨拶ストリップ */}
-        <div className="anim-fade-up mb-5 sm:mb-7 flex flex-wrap items-center gap-2.5">
-          <span className="karte-today-bar">
-            <span className="karte-sparkle text-gold" style={{fontSize:'12px'}}>✦</span>
-            <span className="nums">{today}</span>
-            <span className="opacity-50">·</span>
-            <span>髪と対話する日</span>
-          </span>
-        </div>
-
         <div className="anim-fade-up">
           <div className="flex items-center gap-3 mb-6 sm:mb-8">
             <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold">Karte</span>
             <span className="h-px w-10 bg-gold/50" />
-            <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/60">No. 015 · Hair Diagnosis</span>
+            <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/60">Hair Diagnosis</span>
           </div>
           <h1 className="text-ink">
             <span className="block font-serif text-[24px] sm:text-[34px] leading-none tracking-[0.18em]">SEAM</span>
@@ -3323,13 +3313,12 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
               <span className="font-mono tracking-[0.4em] text-[9.5px] sm:text-[10.5px] uppercase text-charcoal/55">Kamikaku Diagnosis · 27 Types</span>
             </span>
           </h1>
-          <p className="mt-5 sm:mt-7 font-serif text-[17px] sm:text-[20px] text-charcoal leading-relaxed">
+          <p className="mt-5 sm:mt-7 font-serif text-[19px] sm:text-[22px] text-ink leading-relaxed">
             あなたの本当の髪に、出会う。
           </p>
-          <div className="mt-7 sm:mt-9 max-w-xl text-[13px] sm:text-[14px] leading-[2] text-charcoal/85">
-            <p>ブリーチ、カラー、縮毛矯正、パーマ、毎日のアイロン。</p>
-            <p className="mt-1">あなたの髪に残る“履歴”まで見て、今必要なヘアケアルーティンを提案します。</p>
-          </div>
+          <p className="mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal">
+            あなたの髪に残る“履歴”まで見て、今必要なヘアケアルーティンを提案します。
+          </p>
         </div>
 
         {/* ✦ 27 髪格 Preview Ticker — "あなたはどのタイプ?" */}
@@ -3338,7 +3327,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
             <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">
               ✦ 27 Hair Types
             </p>
-            <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55">
+            <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/70">
               あなたはどのタイプ?
             </span>
           </div>
@@ -3416,13 +3405,22 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
 
           {/* シェアは診断結果ページに集約（診断前は共有する結果がまだ無いため出さない） */}
 
-          {/* サブ導線: 髪格既知 */}
+          {/* 安心ライン: 読みやすい濃さで1行に集約（旧mono極小グレー＋長い注釈を統合） */}
+          <div className="mt-5 sm:mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] sm:text-[13px] text-charcoal/80 tracking-wide">
+            <span>所要時間 <span className="nums text-ink">約5〜8分</span></span>
+            <span className="text-gold/45" aria-hidden>·</span>
+            <span>会員登録なし</span>
+            <span className="text-gold/45" aria-hidden>·</span>
+            <span>サロンでも使えるカルテを作成</span>
+          </div>
+
+          {/* サブ導線: 髪格既知（控えめ・但し読める濃さ） */}
           {onCollection && (
             <div className="mt-4">
               <button
                 type="button"
                 onClick={onCollection}
-                className="group inline-flex items-center gap-2 text-[12.5px] sm:text-[13px] text-charcoal/75 hover:text-ink transition-colors"
+                className="group inline-flex items-center gap-2 text-[12.5px] sm:text-[13px] text-charcoal/80 hover:text-ink transition-colors"
               >
                 <span className="inline-block w-4 h-px bg-gold/60 group-hover:w-6 transition-all" />
                 <span>自分の髪格をもう知っている方は、ここから履歴だけ更新</span>
@@ -3430,18 +3428,6 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
               </button>
             </div>
           )}
-
-          <ul className="mt-5 sm:mt-6 flex flex-wrap gap-x-6 gap-y-1.5 font-mono text-[10.5px] tracking-widest2 uppercase text-charcoal/55">
-            <li>所要時間 <span className="nums text-ink ml-1">約5〜8分</span></li>
-            <li>会員登録なし</li>
-            <li>サロンでも使えるカルテを作成</li>
-          </ul>
-
-          {/* ヘアタイプ図鑑の導線は削除（診断結果での"発見"を主役にするため） */}
-
-          <p className="mt-4 text-[12.5px] tracking-wider text-charcoal/55 max-w-md leading-relaxed">
-            診断結果は画像・PDF保存・LINEで共有でき、サロンでのご相談時に<span className="text-ink">参考メモ</span>としてご活用いただけます。
-          </p>
         </div>
 
         <section className="mt-16 sm:mt-24 anim-fade-up" style={{ animationDelay: '240ms' }}>
