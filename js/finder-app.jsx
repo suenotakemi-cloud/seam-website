@@ -3274,9 +3274,9 @@ function TopBar({ step, total }) {
 
 /* ---------- 27髪格タイプ preview list (横スクロール用) ---------- */
 const CHARACTER_TICKER_LIST = [
-  { code:'FLS', name:'エアリーライトストレート' }, { code:'FLW', name:'エアリーライトウェーブ' }, { code:'FLC', name:'エアリーライトカール' }, { code:'FNS', name:'エアリーミドルストレート' }, { code:'FNW', name:'エアリーミドルウェーブ' }, { code:'FNC', name:'エアリーミドルカール' }, { code:'FHS', name:'エアリーフルストレート' }, { code:'FHW', name:'エアリーフルウェーブ' }, { code:'FHC', name:'エアリーフルカール' },
-  { code:'NLS', name:'ナチュラルライトストレート' }, { code:'NLW', name:'ナチュラルライトウェーブ' }, { code:'NLC', name:'ナチュラルライトカール' }, { code:'NNS', name:'ナチュラルミドルストレート' }, { code:'NNW', name:'ナチュラルミドルウェーブ' }, { code:'NNC', name:'ナチュラルミドルカール' }, { code:'NHS', name:'ナチュラルフルストレート' }, { code:'NHW', name:'ナチュラルフルウェーブ' }, { code:'NHC', name:'ナチュラルフルカール' },
-  { code:'TLS', name:'リッチライトストレート' }, { code:'TLW', name:'リッチライトウェーブ' }, { code:'TLC', name:'リッチライトカール' }, { code:'TNS', name:'リッチミドルストレート' }, { code:'TNW', name:'リッチミドルウェーブ' }, { code:'TNC', name:'リッチミドルカール' }, { code:'THS', name:'リッチフルストレート' }, { code:'THW', name:'リッチフルウェーブ' }, { code:'THC', name:'リッチフルカール' },
+  { code:'FLS', name:'エアリーシルク' }, { code:'FLW', name:'エアリーフロー' }, { code:'FLC', name:'エアリーループ' }, { code:'FNS', name:'ヴェールシルク' }, { code:'FNW', name:'ヴェールフロー' }, { code:'FNC', name:'ヴェールループ' }, { code:'FHS', name:'フェザーシルク' }, { code:'FHW', name:'フェザーフロー' }, { code:'FHC', name:'フェザーループ' },
+  { code:'NLS', name:'カームシルク' }, { code:'NLW', name:'カームフロー' }, { code:'NLC', name:'カームループ' }, { code:'NNS', name:'バランスシルク' }, { code:'NNW', name:'バランスフロー' }, { code:'NNC', name:'バランスループ' }, { code:'NHS', name:'リッチシルク' }, { code:'NHW', name:'リッチフロー' }, { code:'NHC', name:'リッチループ' },
+  { code:'TLS', name:'コアシルク' }, { code:'TLW', name:'コアフロー' }, { code:'TLC', name:'コアループ' }, { code:'TNS', name:'モードシルク' }, { code:'TNW', name:'モードフロー' }, { code:'TNC', name:'モードループ' }, { code:'THS', name:'ラグジュシルク' }, { code:'THW', name:'ラグジュフロー' }, { code:'THC', name:'ラグジュループ' },
 ];
 
 /* ---------- Today date in Japanese ---------- */
@@ -4631,7 +4631,7 @@ const KARTE_ORIGIN_ANIMALS = {
   /* ─── Fine (細) × 9体 ─────────────────────────────── */
 
   'FLS': {
-    code:'FLS', name:'エアリーライトストレート', nameEn:'Fine Light Straight', rarity:5.2,
+    code:'FLS', name:'エアリーシルク', nameEn:'Airy Silk', rarity:5.2,
     axes:{ thickness:'F', density:'L', wave:'S' },
     radar:[5,3,4,1,3],
     selfHint:'細くて繊細で、光をよく通す髪。足すより、邪魔しないケアが似合います。',
@@ -4671,7 +4671,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'FLW': {
-    code:'FLW', name:'エアリーライトウェーブ', nameEn:'Fine Light Wave', rarity:6.8,
+    code:'FLW', name:'エアリーフロー', nameEn:'Airy Flow', rarity:6.8,
     axes:{ thickness:'F', density:'L', wave:'W' },
     radar:[5,3,3,2,3],
     selfHint:'細くて軽く、ほんのり波の表情がある髪。動きを楽しめるタイプです。',
@@ -4711,7 +4711,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'FLC': {
-    code:'FLC', name:'エアリーライトカール', nameEn:'Fine Light Curl', rarity:3.5,
+    code:'FLC', name:'エアリーループ', nameEn:'Airy Loop', rarity:3.5,
     axes:{ thickness:'F', density:'L', wave:'C' },
     radar:[4,3,2,2,3],
     selfHint:'細くて軽いのに、しっかりした動きを持つ、珍しい髪。',
@@ -4751,7 +4751,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'FNS': {
-    code:'FNS', name:'エアリーミドルストレート', nameEn:'Fine Medium Straight', rarity:6.3,
+    code:'FNS', name:'ヴェールシルク', nameEn:'Veil Silk', rarity:6.3,
     axes:{ thickness:'F', density:'N', wave:'S' },
     radar:[4,4,5,2,4],
     selfHint:'細くてまっすぐ、静かなツヤを持つ上品な髪。',
@@ -4791,7 +4791,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'FNW': {
-    code:'FNW', name:'エアリーミドルウェーブ', nameEn:'Fine Medium Wave', rarity:7.5,
+    code:'FNW', name:'ヴェールフロー', nameEn:'Veil Flow', rarity:7.5,
     axes:{ thickness:'F', density:'N', wave:'W' },
     radar:[4,3,3,2,3],
     selfHint:'細くてやわらかく、自然な揺らぎのある髪。多くの人がもつ親しみやすいタイプです。',
@@ -4831,7 +4831,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'FNC': {
-    code:'FNC', name:'エアリーミドルカール', nameEn:'Fine Medium Curl', rarity:5.1,
+    code:'FNC', name:'ヴェールループ', nameEn:'Veil Loop', rarity:5.1,
     axes:{ thickness:'F', density:'N', wave:'C' },
     radar:[4,3,2,2,3],
     selfHint:'細くて柔らかいのに、しっかりとしたうねりがある髪。',
@@ -4870,7 +4870,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'FHS': {
-    code:'FHS', name:'エアリーフルストレート', nameEn:'Fine Full Straight', rarity:5.0,
+    code:'FHS', name:'フェザーシルク', nameEn:'Feather Silk', rarity:5.0,
     axes:{ thickness:'F', density:'H', wave:'S' },
     radar:[4,4,5,3,4],
     selfHint:'一本は細くても、量に恵まれてふんわりまとまる髪。',
@@ -4909,7 +4909,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'FHW': {
-    code:'FHW', name:'エアリーフルウェーブ', nameEn:'Fine Full Wave', rarity:4.8,
+    code:'FHW', name:'フェザーフロー', nameEn:'Feather Flow', rarity:4.8,
     axes:{ thickness:'F', density:'H', wave:'W' },
     radar:[4,3,3,4,3],
     selfHint:'細くて量があり、そこにやわらかなうねりが乗った髪。',
@@ -4948,7 +4948,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'FHC': {
-    code:'FHC', name:'エアリーフルカール', nameEn:'Fine Full Curl', rarity:2.7,
+    code:'FHC', name:'フェザーループ', nameEn:'Feather Loop', rarity:2.7,
     axes:{ thickness:'F', density:'H', wave:'C' },
     radar:[3,3,2,3,2],
     selfHint:'細さ・量の多さ・強いうねりを併せ持つ、めずらしい髪。',
@@ -4989,7 +4989,7 @@ const KARTE_ORIGIN_ANIMALS = {
   /* ─── Normal (普通) × 9体 ─────────────────────────── */
 
   'NLS': {
-    code:'NLS', name:'ナチュラルライトストレート', nameEn:'Normal Light Straight', rarity:6.5,
+    code:'NLS', name:'カームシルク', nameEn:'Calm Silk', rarity:6.5,
     axes:{ thickness:'N', density:'L', wave:'S' },
     radar:[3,4,5,2,4],
     selfHint:'ほどよい太さでまっすぐ、整いやすく品のある髪。',
@@ -5028,7 +5028,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'NLW': {
-    code:'NLW', name:'ナチュラルライトウェーブ', nameEn:'Normal Light Wave', rarity:5.8,
+    code:'NLW', name:'カームフロー', nameEn:'Calm Flow', rarity:5.8,
     axes:{ thickness:'N', density:'L', wave:'W' },
     radar:[3,4,3,2,4],
     selfHint:'ほどよい太さと量に、ほんのり波の動きがある、軽やかでまとまりやすい髪。',
@@ -5068,7 +5068,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'NLC': {
-    code:'NLC', name:'ナチュラルライトカール', nameEn:'Normal Light Curl', rarity:3.2,
+    code:'NLC', name:'カームループ', nameEn:'Calm Loop', rarity:3.2,
     axes:{ thickness:'N', density:'L', wave:'C' },
     radar:[3,3,2,2,3],
     selfHint:'量は控えめながら、しっかりとした動きを持つ、繊細で個性のある髪。',
@@ -5108,7 +5108,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'NNS': {
-    code:'NNS', name:'ナチュラルミドルストレート', nameEn:'Normal Medium Straight', rarity:9.2,
+    code:'NNS', name:'バランスシルク', nameEn:'Balance Silk', rarity:9.2,
     axes:{ thickness:'N', density:'N', wave:'S' },
     radar:[3,4,5,3,4],
     selfHint:'太さも量もちょうどよく、まっすぐで光をきれいに通す、王道の髪。',
@@ -5148,7 +5148,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'NNW': {
-    code:'NNW', name:'ナチュラルミドルウェーブ', nameEn:'Normal Medium Wave', rarity:7.8,
+    code:'NNW', name:'バランスフロー', nameEn:'Balance Flow', rarity:7.8,
     axes:{ thickness:'N', density:'N', wave:'W' },
     radar:[3,4,3,3,4],
     selfHint:'ほどよい太さと量に、自然なゆるい波が宿った、やわらかな印象の髪。',
@@ -5188,7 +5188,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'NNC': {
-    code:'NNC', name:'ナチュラルミドルカール', nameEn:'Normal Medium Curl', rarity:4.6,
+    code:'NNC', name:'バランスループ', nameEn:'Balance Loop', rarity:4.6,
     axes:{ thickness:'N', density:'N', wave:'C' },
     radar:[3,3,2,3,3],
     selfHint:'ほどよい太さと量に、はっきりとした波がある、動きの出やすい髪。',
@@ -5228,7 +5228,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'NHS': {
-    code:'NHS', name:'ナチュラルフルストレート', nameEn:'Normal Full Straight', rarity:8.4,
+    code:'NHS', name:'リッチシルク', nameEn:'Rich Silk', rarity:8.4,
     axes:{ thickness:'N', density:'H', wave:'S' },
     radar:[2,5,5,4,4],
     selfHint:'太さも量もしっかりあって、艶のあるまっすぐな黒髪。',
@@ -5267,7 +5267,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'NHW': {
-    code:'NHW', name:'ナチュラルフルウェーブ', nameEn:'Normal Full Wave', rarity:6.2,
+    code:'NHW', name:'リッチフロー', nameEn:'Rich Flow', rarity:6.2,
     axes:{ thickness:'N', density:'H', wave:'W' },
     radar:[2,4,3,4,3],
     selfHint:'量も動きもしっかりある、自然な波のついた豊かな髪。',
@@ -5306,7 +5306,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'NHC': {
-    code:'NHC', name:'ナチュラルフルカール', nameEn:'Normal Full Curl', rarity:4.0,
+    code:'NHC', name:'リッチループ', nameEn:'Rich Loop', rarity:4.0,
     axes:{ thickness:'N', density:'H', wave:'C' },
     radar:[2,3,2,4,3],
     selfHint:'量が多く、強いうねりのある、存在感のしっかりした髪。',
@@ -5347,7 +5347,7 @@ const KARTE_ORIGIN_ANIMALS = {
   /* ─── Thick (太) × 9体 ─────────────────────────── */
 
   'TLS': {
-    code:'TLS', name:'リッチライトストレート', nameEn:'Thick Light Straight', rarity:2.0,
+    code:'TLS', name:'コアシルク', nameEn:'Core Silk', rarity:2.0,
     axes:{ thickness:'T', density:'L', wave:'S' },
     radar:[2,4,4,2,3],
     selfHint:'太いのに量は控えめ、しっかりとした強さのある直毛。',
@@ -5386,7 +5386,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'TLW': {
-    code:'TLW', name:'リッチライトウェーブ', nameEn:'Thick Light Wave', rarity:1.8,
+    code:'TLW', name:'コアフロー', nameEn:'Core Flow', rarity:1.8,
     axes:{ thickness:'T', density:'L', wave:'W' },
     radar:[2,3,3,2,3],
     selfHint:'一本一本は太く強いのに、自然な波のある、めずらしい少量タイプ。',
@@ -5425,7 +5425,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'TLC': {
-    code:'TLC', name:'リッチライトカール', nameEn:'Thick Light Curl', rarity:0.8,
+    code:'TLC', name:'コアループ', nameEn:'Core Loop', rarity:0.8,
     axes:{ thickness:'T', density:'L', wave:'C' },
     radar:[1,3,2,2,3],
     selfHint:'一本一本が太くしっかり。量は少なめで、強くうねる稀少な髪です。',
@@ -5465,7 +5465,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'TNS': {
-    code:'TNS', name:'リッチミドルストレート', nameEn:'Thick Medium Straight', rarity:4.5,
+    code:'TNS', name:'モードシルク', nameEn:'Mode Silk', rarity:4.5,
     axes:{ thickness:'T', density:'N', wave:'S' },
     radar:[1,4,5,4,4],
     selfHint:'太さと量があり、深いツヤをまとうまっすぐな髪です。',
@@ -5505,7 +5505,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'TNW': {
-    code:'TNW', name:'リッチミドルウェーブ', nameEn:'Thick Medium Wave', rarity:3.8,
+    code:'TNW', name:'モードフロー', nameEn:'Mode Flow', rarity:3.8,
     axes:{ thickness:'T', density:'N', wave:'W' },
     radar:[1,4,3,4,4],
     selfHint:'太くしっかりした髪に、自然な動きが加わったタイプです。',
@@ -5545,7 +5545,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'TNC': {
-    code:'TNC', name:'リッチミドルカール', nameEn:'Thick Medium Curl', rarity:2.5,
+    code:'TNC', name:'モードループ', nameEn:'Mode Loop', rarity:2.5,
     axes:{ thickness:'T', density:'N', wave:'C' },
     radar:[1,3,2,4,3],
     selfHint:'太くしっかりした髪に、強いうねりが重なる珍しいタイプです。',
@@ -5585,7 +5585,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'THS': {
-    code:'THS', name:'リッチフルストレート', nameEn:'Thick Full Straight', rarity:5.5,
+    code:'THS', name:'ラグジュシルク', nameEn:'Luxe Silk', rarity:5.5,
     axes:{ thickness:'T', density:'H', wave:'S' },
     radar:[1,5,5,5,4],
     selfHint:'太く・量も多く・まっすぐ。ゆたかな存在感のある髪です。',
@@ -5625,7 +5625,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'THW': {
-    code:'THW', name:'リッチフルウェーブ', nameEn:'Thick Full Wave', rarity:4.5,
+    code:'THW', name:'ラグジュフロー', nameEn:'Luxe Flow', rarity:4.5,
     axes:{ thickness:'T', density:'H', wave:'W' },
     radar:[1,4,3,5,4],
     selfHint:'太さ・量・自然な動きが揃った、ボリューム感のある髪。',
@@ -5665,7 +5665,7 @@ const KARTE_ORIGIN_ANIMALS = {
   },
 
   'THC': {
-    code:'THC', name:'リッチフルカール', nameEn:'Thick Full Curl', rarity:3.0,
+    code:'THC', name:'ラグジュループ', nameEn:'Luxe Loop', rarity:3.0,
     axes:{ thickness:'T', density:'H', wave:'C' },
     radar:[1,3,2,5,3],
     selfHint:'太さ・量・強いうねりが揃った、力強く動く髪。',

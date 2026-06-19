@@ -4402,85 +4402,85 @@ function TopBar({
 /* ---------- 27髪格タイプ preview list (横スクロール用) ---------- */
 const CHARACTER_TICKER_LIST = [{
   code: 'FLS',
-  name: 'エアリーライトストレート'
+  name: 'エアリーシルク'
 }, {
   code: 'FLW',
-  name: 'エアリーライトウェーブ'
+  name: 'エアリーフロー'
 }, {
   code: 'FLC',
-  name: 'エアリーライトカール'
+  name: 'エアリーループ'
 }, {
   code: 'FNS',
-  name: 'エアリーミドルストレート'
+  name: 'ヴェールシルク'
 }, {
   code: 'FNW',
-  name: 'エアリーミドルウェーブ'
+  name: 'ヴェールフロー'
 }, {
   code: 'FNC',
-  name: 'エアリーミドルカール'
+  name: 'ヴェールループ'
 }, {
   code: 'FHS',
-  name: 'エアリーフルストレート'
+  name: 'フェザーシルク'
 }, {
   code: 'FHW',
-  name: 'エアリーフルウェーブ'
+  name: 'フェザーフロー'
 }, {
   code: 'FHC',
-  name: 'エアリーフルカール'
+  name: 'フェザーループ'
 }, {
   code: 'NLS',
-  name: 'ナチュラルライトストレート'
+  name: 'カームシルク'
 }, {
   code: 'NLW',
-  name: 'ナチュラルライトウェーブ'
+  name: 'カームフロー'
 }, {
   code: 'NLC',
-  name: 'ナチュラルライトカール'
+  name: 'カームループ'
 }, {
   code: 'NNS',
-  name: 'ナチュラルミドルストレート'
+  name: 'バランスシルク'
 }, {
   code: 'NNW',
-  name: 'ナチュラルミドルウェーブ'
+  name: 'バランスフロー'
 }, {
   code: 'NNC',
-  name: 'ナチュラルミドルカール'
+  name: 'バランスループ'
 }, {
   code: 'NHS',
-  name: 'ナチュラルフルストレート'
+  name: 'リッチシルク'
 }, {
   code: 'NHW',
-  name: 'ナチュラルフルウェーブ'
+  name: 'リッチフロー'
 }, {
   code: 'NHC',
-  name: 'ナチュラルフルカール'
+  name: 'リッチループ'
 }, {
   code: 'TLS',
-  name: 'リッチライトストレート'
+  name: 'コアシルク'
 }, {
   code: 'TLW',
-  name: 'リッチライトウェーブ'
+  name: 'コアフロー'
 }, {
   code: 'TLC',
-  name: 'リッチライトカール'
+  name: 'コアループ'
 }, {
   code: 'TNS',
-  name: 'リッチミドルストレート'
+  name: 'モードシルク'
 }, {
   code: 'TNW',
-  name: 'リッチミドルウェーブ'
+  name: 'モードフロー'
 }, {
   code: 'TNC',
-  name: 'リッチミドルカール'
+  name: 'モードループ'
 }, {
   code: 'THS',
-  name: 'リッチフルストレート'
+  name: 'ラグジュシルク'
 }, {
   code: 'THW',
-  name: 'リッチフルウェーブ'
+  name: 'ラグジュフロー'
 }, {
   code: 'THC',
-  name: 'リッチフルカール'
+  name: 'ラグジュループ'
 }];
 
 /* ---------- Today date in Japanese ---------- */
@@ -5852,8 +5852,8 @@ const KARTE_ORIGIN_ANIMALS = {
 
   'FLS': {
     code: 'FLS',
-    name: 'エアリーライトストレート',
-    nameEn: 'Fine Light Straight',
+    name: 'エアリーシルク',
+    nameEn: 'Airy Silk',
     rarity: 5.2,
     axes: {
       thickness: 'F',
@@ -5913,8 +5913,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'FLW': {
     code: 'FLW',
-    name: 'エアリーライトウェーブ',
-    nameEn: 'Fine Light Wave',
+    name: 'エアリーフロー',
+    nameEn: 'Airy Flow',
     rarity: 6.8,
     axes: {
       thickness: 'F',
@@ -5974,8 +5974,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'FLC': {
     code: 'FLC',
-    name: 'エアリーライトカール',
-    nameEn: 'Fine Light Curl',
+    name: 'エアリーループ',
+    nameEn: 'Airy Loop',
     rarity: 3.5,
     axes: {
       thickness: 'F',
@@ -6035,8 +6035,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'FNS': {
     code: 'FNS',
-    name: 'エアリーミドルストレート',
-    nameEn: 'Fine Medium Straight',
+    name: 'ヴェールシルク',
+    nameEn: 'Veil Silk',
     rarity: 6.3,
     axes: {
       thickness: 'F',
@@ -6096,8 +6096,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'FNW': {
     code: 'FNW',
-    name: 'エアリーミドルウェーブ',
-    nameEn: 'Fine Medium Wave',
+    name: 'ヴェールフロー',
+    nameEn: 'Veil Flow',
     rarity: 7.5,
     axes: {
       thickness: 'F',
@@ -6157,8 +6157,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'FNC': {
     code: 'FNC',
-    name: 'エアリーミドルカール',
-    nameEn: 'Fine Medium Curl',
+    name: 'ヴェールループ',
+    nameEn: 'Veil Loop',
     rarity: 5.1,
     axes: {
       thickness: 'F',
@@ -6217,8 +6217,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'FHS': {
     code: 'FHS',
-    name: 'エアリーフルストレート',
-    nameEn: 'Fine Full Straight',
+    name: 'フェザーシルク',
+    nameEn: 'Feather Silk',
     rarity: 5.0,
     axes: {
       thickness: 'F',
@@ -6277,8 +6277,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'FHW': {
     code: 'FHW',
-    name: 'エアリーフルウェーブ',
-    nameEn: 'Fine Full Wave',
+    name: 'フェザーフロー',
+    nameEn: 'Feather Flow',
     rarity: 4.8,
     axes: {
       thickness: 'F',
@@ -6337,8 +6337,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'FHC': {
     code: 'FHC',
-    name: 'エアリーフルカール',
-    nameEn: 'Fine Full Curl',
+    name: 'フェザーループ',
+    nameEn: 'Feather Loop',
     rarity: 2.7,
     axes: {
       thickness: 'F',
@@ -6399,8 +6399,8 @@ const KARTE_ORIGIN_ANIMALS = {
 
   'NLS': {
     code: 'NLS',
-    name: 'ナチュラルライトストレート',
-    nameEn: 'Normal Light Straight',
+    name: 'カームシルク',
+    nameEn: 'Calm Silk',
     rarity: 6.5,
     axes: {
       thickness: 'N',
@@ -6459,8 +6459,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'NLW': {
     code: 'NLW',
-    name: 'ナチュラルライトウェーブ',
-    nameEn: 'Normal Light Wave',
+    name: 'カームフロー',
+    nameEn: 'Calm Flow',
     rarity: 5.8,
     axes: {
       thickness: 'N',
@@ -6520,8 +6520,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'NLC': {
     code: 'NLC',
-    name: 'ナチュラルライトカール',
-    nameEn: 'Normal Light Curl',
+    name: 'カームループ',
+    nameEn: 'Calm Loop',
     rarity: 3.2,
     axes: {
       thickness: 'N',
@@ -6581,8 +6581,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'NNS': {
     code: 'NNS',
-    name: 'ナチュラルミドルストレート',
-    nameEn: 'Normal Medium Straight',
+    name: 'バランスシルク',
+    nameEn: 'Balance Silk',
     rarity: 9.2,
     axes: {
       thickness: 'N',
@@ -6642,8 +6642,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'NNW': {
     code: 'NNW',
-    name: 'ナチュラルミドルウェーブ',
-    nameEn: 'Normal Medium Wave',
+    name: 'バランスフロー',
+    nameEn: 'Balance Flow',
     rarity: 7.8,
     axes: {
       thickness: 'N',
@@ -6703,8 +6703,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'NNC': {
     code: 'NNC',
-    name: 'ナチュラルミドルカール',
-    nameEn: 'Normal Medium Curl',
+    name: 'バランスループ',
+    nameEn: 'Balance Loop',
     rarity: 4.6,
     axes: {
       thickness: 'N',
@@ -6764,8 +6764,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'NHS': {
     code: 'NHS',
-    name: 'ナチュラルフルストレート',
-    nameEn: 'Normal Full Straight',
+    name: 'リッチシルク',
+    nameEn: 'Rich Silk',
     rarity: 8.4,
     axes: {
       thickness: 'N',
@@ -6824,8 +6824,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'NHW': {
     code: 'NHW',
-    name: 'ナチュラルフルウェーブ',
-    nameEn: 'Normal Full Wave',
+    name: 'リッチフロー',
+    nameEn: 'Rich Flow',
     rarity: 6.2,
     axes: {
       thickness: 'N',
@@ -6884,8 +6884,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'NHC': {
     code: 'NHC',
-    name: 'ナチュラルフルカール',
-    nameEn: 'Normal Full Curl',
+    name: 'リッチループ',
+    nameEn: 'Rich Loop',
     rarity: 4.0,
     axes: {
       thickness: 'N',
@@ -6946,8 +6946,8 @@ const KARTE_ORIGIN_ANIMALS = {
 
   'TLS': {
     code: 'TLS',
-    name: 'リッチライトストレート',
-    nameEn: 'Thick Light Straight',
+    name: 'コアシルク',
+    nameEn: 'Core Silk',
     rarity: 2.0,
     axes: {
       thickness: 'T',
@@ -7006,8 +7006,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'TLW': {
     code: 'TLW',
-    name: 'リッチライトウェーブ',
-    nameEn: 'Thick Light Wave',
+    name: 'コアフロー',
+    nameEn: 'Core Flow',
     rarity: 1.8,
     axes: {
       thickness: 'T',
@@ -7066,8 +7066,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'TLC': {
     code: 'TLC',
-    name: 'リッチライトカール',
-    nameEn: 'Thick Light Curl',
+    name: 'コアループ',
+    nameEn: 'Core Loop',
     rarity: 0.8,
     axes: {
       thickness: 'T',
@@ -7127,8 +7127,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'TNS': {
     code: 'TNS',
-    name: 'リッチミドルストレート',
-    nameEn: 'Thick Medium Straight',
+    name: 'モードシルク',
+    nameEn: 'Mode Silk',
     rarity: 4.5,
     axes: {
       thickness: 'T',
@@ -7188,8 +7188,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'TNW': {
     code: 'TNW',
-    name: 'リッチミドルウェーブ',
-    nameEn: 'Thick Medium Wave',
+    name: 'モードフロー',
+    nameEn: 'Mode Flow',
     rarity: 3.8,
     axes: {
       thickness: 'T',
@@ -7249,8 +7249,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'TNC': {
     code: 'TNC',
-    name: 'リッチミドルカール',
-    nameEn: 'Thick Medium Curl',
+    name: 'モードループ',
+    nameEn: 'Mode Loop',
     rarity: 2.5,
     axes: {
       thickness: 'T',
@@ -7310,8 +7310,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'THS': {
     code: 'THS',
-    name: 'リッチフルストレート',
-    nameEn: 'Thick Full Straight',
+    name: 'ラグジュシルク',
+    nameEn: 'Luxe Silk',
     rarity: 5.5,
     axes: {
       thickness: 'T',
@@ -7371,8 +7371,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'THW': {
     code: 'THW',
-    name: 'リッチフルウェーブ',
-    nameEn: 'Thick Full Wave',
+    name: 'ラグジュフロー',
+    nameEn: 'Luxe Flow',
     rarity: 4.5,
     axes: {
       thickness: 'T',
@@ -7432,8 +7432,8 @@ const KARTE_ORIGIN_ANIMALS = {
   },
   'THC': {
     code: 'THC',
-    name: 'リッチフルカール',
-    nameEn: 'Thick Full Curl',
+    name: 'ラグジュループ',
+    nameEn: 'Luxe Loop',
     rarity: 3.0,
     axes: {
       thickness: 'T',
