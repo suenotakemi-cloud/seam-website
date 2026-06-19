@@ -3349,7 +3349,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
                 <button
                   key={`${c.code}-${i}`}
                   type="button"
-                  onClick={onLibrary}
+                  onClick={onStart}
                   className="karte-char-chip"
                   aria-label={`${c.name} (${c.code})`}
                 >
@@ -3437,19 +3437,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
             <li>サロンでも使えるカルテを作成</li>
           </ul>
 
-          {onLibrary && (
-            <div className="mt-6 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onLibrary}
-                className="font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/70 hover:text-ink transition-colors inline-flex items-center gap-2 group"
-              >
-                <span className="inline-block w-5 h-px bg-gold/60 group-hover:w-8 transition-all" />
-                ヘアタイプ図鑑をみる(27タイプ一覧)
-                <span className="text-gold">→</span>
-              </button>
-            </div>
-          )}
+          {/* ヘアタイプ図鑑の導線は削除（診断結果での"発見"を主役にするため） */}
 
           <p className="mt-4 text-[12.5px] tracking-wider text-charcoal/55 max-w-md leading-relaxed">
             診断結果は画像・PDF保存・LINEで共有でき、サロンでのご相談時に<span className="text-ink">参考メモ</span>としてご活用いただけます。
@@ -6841,7 +6829,7 @@ function KarteCollectionDetail({ animal, isMine, onClose }) {
 /* ---------- Collection — 図鑑ビュー ---------- */
 function Collection({ onBackHome, myKarte, onPickAsMine }) {
   const [filter, setFilter] = useState('all');
-  const [sortMode, setSortMode] = useState('rare-asc'); // rare-asc / rare-desc / direction
+  const [sortMode, setSortMode] = useState('direction'); // direction / rare-desc（レアな順は廃止）
   const [open, setOpen] = useState(null);
   const myId = myKarte?.originId;
 
@@ -6946,9 +6934,8 @@ function Collection({ onBackHome, myKarte, onPickAsMine }) {
                 onChange={(e) => setSortMode(e.target.value)}
                 className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/70 bg-white/70 border border-line rounded-[1px] px-2 py-1.5"
               >
-                <option value="rare-asc">レアな順</option>
-                <option value="rare-desc">人気な順</option>
                 <option value="direction">方向別</option>
+                <option value="rare-desc">人気な順</option>
               </select>
             </div>
           </div>
