@@ -44,6 +44,25 @@ module.exports = {
         roseBeige:     '#E0C4B5',
         roseAccent:    '#C9A089',
       },
+      // 全5ページ共通のカスタムフォントスタック（font-serif/sans/display/mono を上書き）
+      fontFamily: {
+        serif:   ['"Noto Serif JP"', '"Instrument Serif"', 'Cormorant Garamond', 'serif'],
+        sans:    ['"Noto Sans JP"', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['"Instrument Serif"', '"Noto Serif JP"', 'Cormorant Garamond', 'serif'],
+        mono:    ['Inter', 'Montserrat', 'system-ui', 'sans-serif'],
+      },
+      // tracking-widest2 / tracking-widest3
+      letterSpacing: {
+        widest2: '0.14em',
+        widest3: '0.22em',
+      },
+      // shadow-soft / softer / card / inner-soft（finder専用の inner-soft も含む）
+      boxShadow: {
+        soft:         '0 2px 8px rgba(26,24,21,0.04), 0 1px 3px rgba(26,24,21,0.04)',
+        softer:       '0 12px 32px rgba(26,24,21,0.07)',
+        card:         '0 4px 16px rgba(26,24,21,0.06)',
+        'inner-soft': 'inset 0 0 0 1px rgba(184,148,90,0.18)',
+      },
     },
   },
   plugins: [],
