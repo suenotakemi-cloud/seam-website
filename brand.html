@@ -1755,6 +1755,51 @@
     .dir-legend .legend-item { display: inline-flex; align-items: center; gap: 6px; }
     .dir-legend .legend-dot { width: 6px; height: 6px; border-radius: 50%; }
 
+    /* 取扱状況のご案内（プレミアム凡例 — モックの分かりやすさ × 現行の実データ） */
+    .avail-guide {
+      margin: 0 auto 24px;
+      max-width: 720px;
+      background: var(--warm-fill);
+      border: 1px solid rgba(184,148,90,0.20);
+      border-radius: var(--r-card);
+      padding: 22px 26px 20px;
+    }
+    .avail-guide-head { text-align: center; margin-bottom: 17px; }
+    .avail-guide-eyebrow {
+      font-family: var(--font-en);
+      font-size: 9px; letter-spacing: 4px; text-transform: uppercase;
+      color: var(--gold); margin-bottom: 7px;
+    }
+    .avail-guide-title {
+      font-family: var(--font-jp);
+      font-size: 13px; font-weight: 600; letter-spacing: 0.06em;
+      color: var(--charcoal);
+    }
+    .avail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px 22px; }
+    @media (max-width: 540px) { .avail-grid { grid-template-columns: 1fr; gap: 12px; } }
+    .avail-item { display: flex; align-items: flex-start; gap: 10px; }
+    .avail-dot {
+      width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.72);
+    }
+    .avail-dot.d-both    { background: var(--gold); }
+    .avail-dot.d-online  { background: #b8a896; }
+    .avail-dot.d-partial { background: var(--brown); }
+    .avail-dot.d-store   { background: #7e8c7a; }
+    .avail-text { line-height: 1.5; }
+    .avail-label {
+      display: block;
+      font-family: var(--font-jp);
+      font-size: 12.5px; font-weight: 600; letter-spacing: 0.02em;
+      color: var(--charcoal);
+    }
+    .avail-desc {
+      display: block;
+      font-family: var(--font-jp);
+      font-size: 11px; font-weight: 300; letter-spacing: 0.02em;
+      color: var(--brown); margin-top: 2px;
+    }
+
     .dir-empty { padding: 60px 20px; text-align: center; font-family: var(--font-jp); font-size: 12px; color: var(--taupe); }
 
     /* ディレクトリ末尾CTA */
@@ -2710,12 +2755,42 @@
 
     <nav class="dir-index" id="dirIndex" aria-label="インデックス"></nav>
 
-    <!-- 凡例 -->
-    <div class="dir-legend" aria-label="ステータス凡例">
-      <span class="legend-item"><span class="legend-dot dot-both"></span><span data-i18n="dir.filter.both">店舗・オンライン両方</span></span>
-      <span class="legend-item"><span class="legend-dot dot-partial"></span><span data-i18n="dir.legend.partial">一部店舗</span></span>
-      <span class="legend-item"><span class="legend-dot dot-sapporo"></span><span data-i18n="dir.legend.specific">特定店舗のみ</span></span>
-      <span class="legend-item"><span class="legend-dot dot-online"></span><span data-i18n="dir.filter.online">オンラインのみ</span></span>
+    <!-- 取扱状況のご案内（プレミアム凡例） -->
+    <div class="avail-guide" aria-label="取扱状況のご案内">
+      <div class="avail-guide-head">
+        <p class="avail-guide-eyebrow">Availability</p>
+        <p class="avail-guide-title" data-i18n="avail.title">取扱状況のご案内</p>
+      </div>
+      <div class="avail-grid">
+        <div class="avail-item">
+          <span class="avail-dot d-both"></span>
+          <span class="avail-text">
+            <span class="avail-label" data-i18n="dir.filter.both">店舗・オンライン両方</span>
+            <span class="avail-desc" data-i18n="avail.both.d">全国のSEAM店舗と会員オンラインショップで</span>
+          </span>
+        </div>
+        <div class="avail-item">
+          <span class="avail-dot d-online"></span>
+          <span class="avail-text">
+            <span class="avail-label" data-i18n="dir.filter.online">オンラインのみ</span>
+            <span class="avail-desc" data-i18n="avail.online.d">SEAM会員専用オンラインショップ限定</span>
+          </span>
+        </div>
+        <div class="avail-item">
+          <span class="avail-dot d-partial"></span>
+          <span class="avail-text">
+            <span class="avail-label" data-i18n="dir.legend.partial">一部店舗</span>
+            <span class="avail-desc" data-i18n="avail.partial.d">一部の店舗 または 一部商品がオンライン</span>
+          </span>
+        </div>
+        <div class="avail-item">
+          <span class="avail-dot d-store"></span>
+          <span class="avail-text">
+            <span class="avail-label" data-i18n="dir.legend.specific">特定店舗のみ</span>
+            <span class="avail-desc" data-i18n="avail.specific.d">札幌・銀座など該当店舗限定</span>
+          </span>
+        </div>
+      </div>
     </div>
 
     <div id="dirList"></div>
@@ -3840,6 +3915,11 @@ window.SEAM_PAGE_I18N = {
     'note.5': '「一部店舗取り扱い」のブランドは特定の店舗のみでのお取り扱いとなります<br>詳細は店舗ページをご確認ください',
     'note.6': '「札幌店のみ」「銀座店のみ」「表参道・銀座店のみ」と記載のブランドは該当店舗限定のお取り扱いとなります',
     'note.7': '表示価格はすべて税込表示です<br>価格・在庫状況は予告なく変更となる場合がございます',
+    'avail.title': '取扱状況のご案内',
+    'avail.both.d': '全国のSEAM店舗と会員オンラインショップで',
+    'avail.online.d': 'SEAM会員専用オンラインショップ限定',
+    'avail.partial.d': '一部の店舗 または 一部商品がオンライン',
+    'avail.specific.d': '札幌・銀座など該当店舗限定',
     'store.memberShop': '会員ショップ',
     'finder.desc': 'SEAMセレクト 3本',
     'finder.close': '閉じる',
@@ -3924,6 +4004,11 @@ window.SEAM_PAGE_I18N = {
     'note.5': 'Brands marked "Select Stores" are available only at specific stores. Please see the store pages for details.',
     'note.6': 'Brands marked "Sapporo Only", "Ginza Only", or "Omotesando & Ginza Only" are available exclusively at those stores.',
     'note.7': 'All prices include tax. Prices and availability are subject to change without notice.',
+    'avail.title': 'Availability Guide',
+    'avail.both.d': 'At SEAM stores nationwide and the member online shop',
+    'avail.online.d': 'Member online shop only',
+    'avail.partial.d': 'Select stores, or select items online',
+    'avail.specific.d': 'Specific stores only (Sapporo, Ginza, etc.)',
     'store.memberShop': 'Member Shop',
     'finder.desc': '3 SEAM Selections',
     'finder.close': 'Close',
@@ -4008,6 +4093,11 @@ window.SEAM_PAGE_I18N = {
     'note.5': '标注“部分门店有售”的品牌，仅在特定门店有售。详情请查看门店页面。',
     'note.6': '标注“仅限札幌店”“仅限银座店”“仅限表参道・银座店”的品牌，仅在相应门店有售。',
     'note.7': '所示价格均为含税价。价格与库存情况可能不经预告而变更。',
+    'avail.title': '取货方式说明',
+    'avail.both.d': '全国SEAM门店及会员在线商店均可购买',
+    'avail.online.d': '仅限SEAM会员专属在线商店',
+    'avail.partial.d': '部分门店，或部分商品仅限线上',
+    'avail.specific.d': '仅限特定门店（札幌、银座等）',
     'store.memberShop': '会员商店',
     'finder.desc': 'SEAM精选 3件',
     'finder.close': '关闭',
@@ -4092,6 +4182,11 @@ window.SEAM_PAGE_I18N = {
     'note.5': '標註「部分門市販售」的品牌，僅於特定門市販售。詳情請參閱門市頁面。',
     'note.6': '標註「僅限札幌店」「僅限銀座店」「僅限表參道・銀座店」的品牌，僅於該門市販售。',
     'note.7': '所示價格均為含稅價。價格與庫存情況可能不經預告而變更。',
+    'avail.title': '取貨方式說明',
+    'avail.both.d': '全國SEAM門市及會員線上商店皆可購買',
+    'avail.online.d': '僅限SEAM會員專屬線上商店',
+    'avail.partial.d': '部分門市，或部分商品僅限線上',
+    'avail.specific.d': '僅限特定門市（札幌、銀座等）',
     'store.memberShop': '會員商店',
     'finder.desc': 'SEAM嚴選 3件',
     'finder.close': '關閉',
@@ -4176,6 +4271,11 @@ window.SEAM_PAGE_I18N = {
     'note.5': '"일부 매장 취급" 브랜드는 특정 매장에서만 취급합니다. 자세한 내용은 매장 페이지에서 확인해 주세요.',
     'note.6': '"삿포로점 한정", "긴자점 한정", "오모테산도·긴자점 한정"으로 표기된 브랜드는 해당 매장에서만 취급합니다.',
     'note.7': '표시 가격은 모두 세금 포함입니다. 가격과 재고 상황은 예고 없이 변경될 수 있습니다.',
+    'avail.title': '취급 안내',
+    'avail.both.d': '전국 SEAM 매장과 회원 전용 온라인숍에서',
+    'avail.online.d': 'SEAM 회원 전용 온라인숍 한정',
+    'avail.partial.d': '일부 매장 또는 일부 상품만 온라인',
+    'avail.specific.d': '삿포로·긴자 등 해당 매장 한정',
     'store.memberShop': '회원숍',
     'finder.desc': 'SEAM 셀렉트 3종',
     'finder.close': '닫기',
