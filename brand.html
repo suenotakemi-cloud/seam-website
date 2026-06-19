@@ -184,10 +184,16 @@
     /* ── PAGE HERO ── */
     .brand-hero { margin-top: 0; /* sticky app-header (js/app-header.js) already occupies the top */ background: var(--cream); position: relative; overflow: hidden; min-height: 320px; display: flex; align-items: flex-end; padding-top: 24px; }
     .brand-hero-bg { position: absolute; inset: 0; background: url('images/stores/store_seam_multi.jpg') center/cover no-repeat; opacity: 0.28; transform: scale(1.04); }
+    /* ヒーロー動画背景（あなたの髪に合う / お気に入りを） */
+    .brand-hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 64% 26%; z-index: 0; }
+    .brand-hero-scrim { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background:
+        linear-gradient(100deg, rgba(245,240,234,0.95) 0%, rgba(245,240,234,0.80) 30%, rgba(245,240,234,0.36) 58%, rgba(245,240,234,0.10) 100%),
+        linear-gradient(to top, rgba(245,240,234,0.58), rgba(245,240,234,0) 44%); }
     .brand-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(250,247,242,0.55) 0%, rgba(250,247,242,0.88) 100%); z-index: 0; }
     /* ★ 章マーカー（縦ゴールド線）— index signature */
     .brand-hero-tick { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 1px; height: 40px; background: var(--gold); opacity: 0.5; z-index: 1; }
-    .brand-hero-content { position: relative; z-index: 1; padding: 28px 28px 36px; color: var(--charcoal); }
+    .brand-hero-content { position: relative; z-index: 2; padding: 28px 28px 36px; color: var(--charcoal); }
     .brand-hero-eyebrow { font-family: var(--font-en); font-size: 9px; letter-spacing: 5px; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
     .brand-hero-eyebrow::before { content: ''; display: block; width: 28px; height: 1px; background: var(--gold); opacity: 0.7; }
     .brand-hero-title { font-family: var(--font-jp); font-size: clamp(32px, 8.5vw, 52px); font-weight: 700; letter-spacing: -0.012em; line-height: 1.12; margin-bottom: 14px; color: var(--ink, var(--charcoal)); }
@@ -1832,8 +1838,8 @@
       transition: transform .25s ease, box-shadow .25s ease;
     }
     .featured-card > a:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(26,24,21,0.10); }
-    .featured-img { position: relative; aspect-ratio: 4 / 3; background: linear-gradient(160deg, #f5efe6, #ece2d4); display: flex; align-items: center; justify-content: center; padding: 16px; }
-    .featured-img img { max-width: 84%; max-height: 84%; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(26,24,21,0.12)); }
+    .featured-img { position: relative; aspect-ratio: 4 / 3; background: #fff; display: flex; align-items: center; justify-content: center; padding: 20px; border-bottom: 1px solid rgba(184,148,90,0.12); }
+    .featured-img img { max-width: 72%; max-height: 56%; object-fit: contain; }
     .featured-meta { padding: 14px 16px 18px; }
     .featured-meta .bc-status-badge { position: static; display: inline-flex; margin-bottom: 10px; }
     .featured-jp { display: block; font-family: var(--font-jp); font-size: 11px; color: var(--taupe); letter-spacing: 0.04em; margin-bottom: 1px; }
@@ -2057,6 +2063,13 @@
       margin-bottom: 4px;
     }
     .note-inner p::before { content: '※ '; color: var(--gold); font-size: 10px; }
+    /* 大切なお知らせ カード化 */
+    .note-card { max-width: 760px; margin: 0 auto; background: #fff; border: 1px solid rgba(184,148,90,0.18); border-radius: var(--r-card); padding: 30px 34px 24px; }
+    .note-card-head { text-align: center; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid rgba(184,148,90,0.14); }
+    .note-card-eyebrow { font-family: var(--font-en); font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+    .note-card-title { font-family: var(--font-jp); font-size: 14px; font-weight: 600; letter-spacing: 0.08em; color: var(--charcoal); }
+    .note-card p:last-child { margin-bottom: 0; }
+    @media (max-width: 768px) { .note-card { padding: 24px 20px 18px; } }
 
     /* ── ブランドページ ストアピッカー ── */
     .brand-store-picker {
@@ -2632,7 +2645,10 @@
 
 <!-- PAGE HERO -->
 <section class="brand-hero">
-  <div class="brand-hero-bg"></div>
+  <video class="brand-hero-video" autoplay muted loop playsinline preload="auto" aria-hidden="true">
+    <source src="images/lp/generated/brand_hero.mp4" type="video/mp4">
+  </video>
+  <div class="brand-hero-scrim"></div>
   <div class="brand-hero-content">
     <p class="brand-hero-eyebrow" data-i18n="hero.eyebrow">Curated Brands — 140+ Worldwide</p>
     <h1 class="brand-hero-title" data-i18n="hero.title">あなたの髪に合う<br>お気に入りを</h1>
@@ -2664,7 +2680,7 @@
     <ol class="featured-track">
       <li class="featured-card">
         <a href="https://www.milbon.co.jp" target="_blank" rel="noopener">
-          <div class="featured-img"><img src="images/brands/aujua/Aujua_イミュライズ_シャンプー_250mL.webp" alt="Aujua オージュア" loading="lazy" width="212" height="159"></div>
+          <div class="featured-img"><img src="images/logo_aujua_t.png" alt="Aujua オージュア" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
             <span class="featured-jp">オージュア</span>
@@ -2674,24 +2690,57 @@
         </a>
       </li>
       <li class="featured-card">
-        <a href="https://www.milbon.co.jp" target="_blank" rel="noopener">
-          <div class="featured-img"><img src="images/brands/global_milbon/Global_Milbon_Repair_Restorative_Treatment.webp" alt="GLOBAL MILBON グローバルミルボン" loading="lazy" width="212" height="159"></div>
+        <a href="https://www.hoyu-professional.com" target="_blank" rel="noopener">
+          <div class="featured-img"><img src="images/logo_bykarte_t.png" alt="BYKARTE バイカルテ" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
-            <span class="featured-jp">グローバルミルボン</span>
-            <span class="featured-name">GLOBAL MILBON</span>
-            <span class="featured-tag" data-i18n="featured.gm">世界の髪質データから生まれた実力</span>
+            <span class="featured-jp">バイカルテ</span>
+            <span class="featured-name">BYKARTE</span>
+            <span class="featured-tag" data-i18n="featured.bykarte">内側から満たす 素髪のような美しさ</span>
+          </div>
+        </a>
+      </li>
+      <li class="featured-card">
+        <a href="https://www.shiseido-professional.com" target="_blank" rel="noopener">
+          <div class="featured-img"><img src="images/logo_sublimic_t.png" alt="SUBLIMIC サブリミック" loading="lazy" width="212" height="159"></div>
+          <div class="featured-meta">
+            <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
+            <span class="featured-jp">サブリミック</span>
+            <span class="featured-name">SUBLIMIC</span>
+            <span class="featured-tag" data-i18n="featured.sublimic">資生堂プロが導く 根本からのケア</span>
+          </div>
+        </a>
+      </li>
+      <li class="featured-card">
+        <a href="https://www.wella.com" target="_blank" rel="noopener">
+          <div class="featured-img"><img src="images/logo_system_professional_t.png" alt="SYSTEM PROFESSIONAL システムプロフェッショナル" loading="lazy" width="212" height="159"></div>
+          <div class="featured-meta">
+            <span class="bc-status-badge badge-both" data-i18n="featured.partialboth">一部店舗 & オンライン</span>
+            <span class="featured-jp">システムプロフェッショナル</span>
+            <span class="featured-name">SYSTEM PROFESSIONAL</span>
+            <span class="featured-tag" data-i18n="featured.sp">髪を科学し 一人ひとりへ処方</span>
           </div>
         </a>
       </li>
       <li class="featured-card">
         <a href="https://www.ifing.com" target="_blank" rel="noopener">
-          <div class="featured-img"><img src="images/brands/tokio_inkarami/IE_インカラミ_プラチナム_リミテッド_トリートメント_400g.webp" alt="TOKIO INKARAMI トキオ インカラミ" loading="lazy" width="212" height="159"></div>
+          <div class="featured-img"><img src="images/logo_tokio_inkarami.webp" alt="TOKIO INKARAMI トキオ インカラミ" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
             <span class="featured-jp">トキオ インカラミ</span>
             <span class="featured-name">TOKIO INKARAMI</span>
             <span class="featured-tag" data-i18n="featured.tokio">内側から強さとしなやかさを</span>
+          </div>
+        </a>
+      </li>
+      <li class="featured-card">
+        <a href="https://www.milbon.co.jp" target="_blank" rel="noopener">
+          <div class="featured-img"><img src="images/logo_global_milbon_t.png" alt="GLOBAL MILBON グローバルミルボン" loading="lazy" width="212" height="159"></div>
+          <div class="featured-meta">
+            <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
+            <span class="featured-jp">グローバルミルボン</span>
+            <span class="featured-name">GLOBAL MILBON</span>
+            <span class="featured-tag" data-i18n="featured.gm">世界の髪質データから生まれた実力</span>
           </div>
         </a>
       </li>
@@ -2967,13 +3016,19 @@
 <!-- 注意書き・免責 -->
 <section class="note-section">
   <div class="note-inner">
-    <p data-i18n="note.1">掲載ブランドの取り扱いは店舗・オンラインショップ・在庫状況によって異なります<br>最新の取り扱い状況は各店舗またはSEAMオンラインショップにてご確認ください</p>
-    <p data-i18n="note.2">「店舗・オンライン取り扱い」のブランドは全国のSEAM店舗およびSEAM会員専用オンラインショップにてお求めいただけます</p>
-    <p data-i18n="note.3">「オンラインのみ」のブランドはSEAM会員専用オンラインショップのみでのお取り扱いとなります<br>店舗でのご購入はできません</p>
-    <p data-i18n="note.4">「一部オンラインのみ」のブランドは一部の商品がオンラインショップのみのお取り扱いとなります</p>
-    <p data-i18n="note.5">「一部店舗取り扱い」のブランドは特定の店舗のみでのお取り扱いとなります<br>詳細は店舗ページをご確認ください</p>
-    <p data-i18n="note.6">「札幌店のみ」「銀座店のみ」「表参道・銀座店のみ」と記載のブランドは該当店舗限定のお取り扱いとなります</p>
-    <p data-i18n="note.7">表示価格はすべて税込表示です<br>価格・在庫状況は予告なく変更となる場合がございます</p>
+    <div class="note-card">
+      <div class="note-card-head">
+        <p class="note-card-eyebrow">Important</p>
+        <p class="note-card-title" data-i18n="note.heading">大切なお知らせ</p>
+      </div>
+      <p data-i18n="note.1">掲載ブランドの取り扱いは店舗・オンラインショップ・在庫状況によって異なります<br>最新の取り扱い状況は各店舗またはSEAMオンラインショップにてご確認ください</p>
+      <p data-i18n="note.2">「店舗・オンライン取り扱い」のブランドは全国のSEAM店舗およびSEAM会員専用オンラインショップにてお求めいただけます</p>
+      <p data-i18n="note.3">「オンラインのみ」のブランドはSEAM会員専用オンラインショップのみでのお取り扱いとなります<br>店舗でのご購入はできません</p>
+      <p data-i18n="note.4">「一部オンラインのみ」のブランドは一部の商品がオンラインショップのみのお取り扱いとなります</p>
+      <p data-i18n="note.5">「一部店舗取り扱い」のブランドは特定の店舗のみでのお取り扱いとなります<br>詳細は店舗ページをご確認ください</p>
+      <p data-i18n="note.6">「札幌店のみ」「銀座店のみ」「表参道・銀座店のみ」と記載のブランドは該当店舗限定のお取り扱いとなります</p>
+      <p data-i18n="note.7">表示価格はすべて税込表示です<br>価格・在庫状況は予告なく変更となる場合がございます</p>
+    </div>
   </div>
 </section>
 
@@ -4013,6 +4068,7 @@ window.SEAM_PAGE_I18N = {
     'note.4': '「一部オンラインのみ」のブランドは一部の商品がオンラインショップのみのお取り扱いとなります',
     'note.5': '「一部店舗取り扱い」のブランドは特定の店舗のみでのお取り扱いとなります<br>詳細は店舗ページをご確認ください',
     'note.6': '「札幌店のみ」「銀座店のみ」「表参道・銀座店のみ」と記載のブランドは該当店舗限定のお取り扱いとなります',
+    'note.heading': '大切なお知らせ',
     'note.7': '表示価格はすべて税込表示です<br>価格・在庫状況は予告なく変更となる場合がございます',
     'avail.title': '取扱状況のご案内',
     'avail.both.d': '全国のSEAM店舗と会員オンラインショップで',
@@ -4026,6 +4082,10 @@ window.SEAM_PAGE_I18N = {
     'featured.aujua': '髪を熟知した日本発のフラッグシップ',
     'featured.gm': '世界の髪質データから生まれた実力',
     'featured.tokio': '内側から強さとしなやかさを',
+    'featured.bykarte': '内側から満たす 素髪のような美しさ',
+    'featured.sublimic': '資生堂プロが導く 根本からのケア',
+    'featured.sp': '髪を科学し 一人ひとりへ処方',
+    'featured.partialboth': '一部店舗 & オンライン',
     'featured.all': 'すべての<br>ブランドを見る',
     'store.memberShop': '会員ショップ',
     'finder.desc': 'SEAMセレクト 3本',
@@ -4110,6 +4170,7 @@ window.SEAM_PAGE_I18N = {
     'note.4': 'For brands marked "Partially Online Only", some products are available only at the online shop.',
     'note.5': 'Brands marked "Select Stores" are available only at specific stores. Please see the store pages for details.',
     'note.6': 'Brands marked "Sapporo Only", "Ginza Only", or "Omotesando & Ginza Only" are available exclusively at those stores.',
+    'note.heading': 'Important Notes',
     'note.7': 'All prices include tax. Prices and availability are subject to change without notice.',
     'avail.title': 'Availability Guide',
     'avail.both.d': 'At SEAM stores nationwide and the member online shop',
@@ -4123,6 +4184,10 @@ window.SEAM_PAGE_I18N = {
     'featured.aujua': 'Japan-born flagship, made for your hair',
     'featured.gm': 'Born from global hair-quality data',
     'featured.tokio': 'Strength and softness, from within',
+    'featured.bykarte': 'Filled from within, bare-hair beauty',
+    'featured.sublimic': 'Root-deep care by Shiseido Professional',
+    'featured.sp': 'Hair decoded into a personal prescription',
+    'featured.partialboth': 'Select stores & online',
     'featured.all': 'See all<br>brands',
     'store.memberShop': 'Member Shop',
     'finder.desc': '3 SEAM Selections',
@@ -4207,6 +4272,7 @@ window.SEAM_PAGE_I18N = {
     'note.4': '标注“部分仅限在线”的品牌，其部分商品仅在在线商店有售。',
     'note.5': '标注“部分门店有售”的品牌，仅在特定门店有售。详情请查看门店页面。',
     'note.6': '标注“仅限札幌店”“仅限银座店”“仅限表参道・银座店”的品牌，仅在相应门店有售。',
+    'note.heading': '重要提示',
     'note.7': '所示价格均为含税价。价格与库存情况可能不经预告而变更。',
     'avail.title': '取货方式说明',
     'avail.both.d': '全国SEAM门店及会员在线商店均可购买',
@@ -4220,6 +4286,10 @@ window.SEAM_PAGE_I18N = {
     'featured.aujua': '深谙发质的日本旗舰系列',
     'featured.gm': '源自全球发质数据的实力',
     'featured.tokio': '由内而生的强韧与柔顺',
+    'featured.bykarte': '由内而充盈 素肌般之美',
+    'featured.sublimic': '资生堂专业引领的根本护理',
+    'featured.sp': '解析发质 为每个人定制',
+    'featured.partialboth': '部分门店 & 在线',
     'featured.all': '查看<br>全部品牌',
     'store.memberShop': '会员商店',
     'finder.desc': 'SEAM精选 3件',
@@ -4304,6 +4374,7 @@ window.SEAM_PAGE_I18N = {
     'note.4': '標註「部分僅限線上」的品牌，其部分商品僅於線上商店販售。',
     'note.5': '標註「部分門市販售」的品牌，僅於特定門市販售。詳情請參閱門市頁面。',
     'note.6': '標註「僅限札幌店」「僅限銀座店」「僅限表參道・銀座店」的品牌，僅於該門市販售。',
+    'note.heading': '重要提示',
     'note.7': '所示價格均為含稅價。價格與庫存情況可能不經預告而變更。',
     'avail.title': '取貨方式說明',
     'avail.both.d': '全國SEAM門市及會員線上商店皆可購買',
@@ -4317,6 +4388,10 @@ window.SEAM_PAGE_I18N = {
     'featured.aujua': '深諳髮質的日本旗艦系列',
     'featured.gm': '源自全球髮質數據的實力',
     'featured.tokio': '由內而生的強韌與柔順',
+    'featured.bykarte': '由內而充盈 素肌般之美',
+    'featured.sublimic': '資生堂專業引領的根本護理',
+    'featured.sp': '解析髮質 為每個人定制',
+    'featured.partialboth': '部分門市 & 線上',
     'featured.all': '查看<br>全部品牌',
     'store.memberShop': '會員商店',
     'finder.desc': 'SEAM嚴選 3件',
@@ -4401,6 +4476,7 @@ window.SEAM_PAGE_I18N = {
     'note.4': '"일부 온라인 한정" 브랜드는 일부 제품이 온라인숍에서만 취급됩니다.',
     'note.5': '"일부 매장 취급" 브랜드는 특정 매장에서만 취급합니다. 자세한 내용은 매장 페이지에서 확인해 주세요.',
     'note.6': '"삿포로점 한정", "긴자점 한정", "오모테산도·긴자점 한정"으로 표기된 브랜드는 해당 매장에서만 취급합니다.',
+    'note.heading': '중요 안내',
     'note.7': '표시 가격은 모두 세금 포함입니다. 가격과 재고 상황은 예고 없이 변경될 수 있습니다.',
     'avail.title': '취급 안내',
     'avail.both.d': '전국 SEAM 매장과 회원 전용 온라인숍에서',
@@ -4414,6 +4490,10 @@ window.SEAM_PAGE_I18N = {
     'featured.aujua': '모발을 숙지한 일본 발 플래그십',
     'featured.gm': '세계의 모질 데이터에서 태어난 실력',
     'featured.tokio': '안에서부터 강함과 부드러움을',
+    'featured.bykarte': '안에서부터 채우는 본연의 아름다움',
+    'featured.sublimic': '시세이도 프로가 이끄는 근본 케어',
+    'featured.sp': '모발을 과학하여 한 사람 한 사람에게',
+    'featured.partialboth': '일부 매장 & 온라인',
     'featured.all': '모든<br>브랜드 보기',
     'store.memberShop': '회원숍',
     'finder.desc': 'SEAM 셀렉트 3종',
