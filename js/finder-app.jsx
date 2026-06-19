@@ -3353,7 +3353,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
                   className="karte-char-chip"
                   aria-label={`${c.name} (${c.code})`}
                 >
-                  <img src={`images/karte/gems/${c.code}.jpg`} alt="" loading="lazy" />
+                  <img src={`images/karte/gems/${c.code}.jpg?v=2`} alt="" loading="lazy" />
                   <span className="karte-char-name">{c.name}</span>
                   <span className="karte-char-label">{c.code}</span>
                 </button>
@@ -6202,8 +6202,8 @@ const GEM_LORE = {
 function GemMark({ code, name }) {
   const [gemOk, setGemOk] = useState(true);
   const [videoOk, setVideoOk] = useState(true);
-  const gemSrc = `images/karte/gems/${code}.jpg`;
-  const videoSrc = `images/karte/gems3d/${code}.mp4`;
+  const gemSrc = `images/karte/gems/${code}.jpg?v=2`;
+  const videoSrc = `images/karte/gems3d/${code}.mp4?v=2`;
   const reduceMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const showVideo = videoOk && !reduceMotion;
   const lore = GEM_LORE[code];
@@ -6686,7 +6686,7 @@ function GemThumb({ code, size = 64, accent = false }) {
       style={{ width: size, height: size, boxShadow: accent ? '0 10px 30px -16px rgba(154,116,56,0.5)' : 'none' }}
     >
       <img
-        src={`images/karte/gems/${code}.jpg`}
+        src={`images/karte/gems/${code}.jpg?v=2`}
         alt=""
         width={size}
         height={size}

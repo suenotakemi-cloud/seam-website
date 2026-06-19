@@ -4580,7 +4580,7 @@ function Home({
     className: "karte-char-chip",
     "aria-label": `${c.name} (${c.code})`
   }, /*#__PURE__*/React.createElement("img", {
-    src: `images/karte/gems/${c.code}.jpg`,
+    src: `images/karte/gems/${c.code}.jpg?v=2`,
     alt: "",
     loading: "lazy"
   }), /*#__PURE__*/React.createElement("span", {
@@ -8512,8 +8512,8 @@ function GemMark({
 }) {
   const [gemOk, setGemOk] = useState(true);
   const [videoOk, setVideoOk] = useState(true);
-  const gemSrc = `images/karte/gems/${code}.jpg`;
-  const videoSrc = `images/karte/gems3d/${code}.mp4`;
+  const gemSrc = `images/karte/gems/${code}.jpg?v=2`;
+  const videoSrc = `images/karte/gems3d/${code}.mp4?v=2`;
   const reduceMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const showVideo = videoOk && !reduceMotion;
   const lore = GEM_LORE[code];
@@ -9152,7 +9152,7 @@ function GemThumb({
       boxShadow: accent ? '0 10px 30px -16px rgba(154,116,56,0.5)' : 'none'
     }
   }, /*#__PURE__*/React.createElement("img", {
-    src: `images/karte/gems/${code}.jpg`,
+    src: `images/karte/gems/${code}.jpg?v=2`,
     alt: "",
     width: size,
     height: size,
