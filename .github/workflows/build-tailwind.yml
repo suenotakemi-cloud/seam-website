@@ -1,0 +1,54 @@
+name: Build Tailwind (prebuild CSS)
+
+# Tailwind を CI で素のCSSへ事前コンパイルする。
+# 本番は vendor/tailwindcss.js(407KB/ブラウザ内JIT) を読まずに css/tailwind.css を読むだけになる。
+on:
+  push:
+    paths:
+      - 'tailwind.config.js'
+      - 'tailwind.input.css'
+      - '.github/workflows/build-tailwind.yml'
+      - 'index.html'
+      - 'shop.html'
+      - 'hairsalon.html'
+      - 'headspa.html'
+      - 'finder.html'
+      - 'js/finder-app.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-tailwind
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Tailwind CLI インストール
+        run: npm init -y && npm i --no-save tailwindcss@^3
+
+      - name: CSS を事前コンパイル（使用クラスのみ・minify）
+        run: |
+          mkdir -p css
+          npx tailwindcss -c tailwind.config.js -i tailwind.input.css -o css/tailwind.css --minify
+          echo "built css/tailwind.css ($(wc -c < css/tailwind.css) bytes)"
+
+      - name: 生成物をコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add css/tailwind.css
+          git diff --staged --quiet && { echo "no change"; exit 0; }
+          git commit -m "build: prebuild tailwind.css [skip ci]"
+          git pull --rebase origin main
+          git push

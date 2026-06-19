@@ -1,0 +1,61 @@
+name: Compress videos (ffmpeg)
+
+# 動画を ffmpeg で再エンコードして軽量化する（背景/装飾用の無音動画が対象）。
+# - 映像: H.264 / CRF 26 / faststart（moov先頭でストリーム再生）
+# - 音声: 完全削除（-an）= サイト動画はミュート自動再生のため不要
+# - 冪等: 12%以上小さくなる時だけ置換。再実行で既圧縮ファイルはスキップ（再劣化しない）
+# トリガー: このワークフロー自身 or *.mp4 の push（初回はWFファイル追加で全動画を一括最適化）
+on:
+  push:
+    paths:
+      - '.github/workflows/compress-videos.yml'
+      - '**.mp4'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: compress-videos
+  cancel-in-progress: false
+
+jobs:
+  compress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ffmpeg インストール
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: 動画を圧縮（>0.5MB のみ・12%以上削減時に置換）
+        run: |
+          shopt -s globstar nullglob
+          total_before=0; total_after=0; changed=0
+          for f in images/**/*.mp4; do
+            sz=$(stat -c%s "$f")
+            total_before=$((total_before+sz))
+            if [ "$sz" -lt 500000 ]; then echo "skip(small) $f"; total_after=$((total_after+sz)); continue; fi
+            tmp="${f%.mp4}.__opt.mp4"
+            ffmpeg -y -nostdin -loglevel error -i "$f" \
+              -an -c:v libx264 -crf 26 -preset medium -pix_fmt yuv420p \
+              -vf "scale='min(1920,iw)':'-2'" -movflags +faststart "$tmp" || { echo "ffmpeg failed $f"; rm -f "$tmp"; total_after=$((total_after+sz)); continue; }
+            nsz=$(stat -c%s "$tmp")
+            if [ "$nsz" -gt 0 ] && [ "$nsz" -lt $((sz*88/100)) ]; then
+              mv "$tmp" "$f"; changed=$((changed+1)); total_after=$((total_after+nsz))
+              echo "compressed $f  $sz -> $nsz"
+            else
+              rm -f "$tmp"; total_after=$((total_after+sz)); echo "kept(no-gain) $f"
+            fi
+          done
+          echo "=== changed=$changed  total ${total_before} -> ${total_after} bytes ==="
+
+      - name: 生成物をコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A images
+          git diff --staged --quiet && { echo "no change"; exit 0; }
+          git commit -m "perf: compress videos (ffmpeg crf26, drop audio, faststart) [skip ci]"
+          git pull --rebase origin main
+          git push
