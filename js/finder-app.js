@@ -4511,19 +4511,6 @@ function Home({
   }, /*#__PURE__*/React.createElement(TopBar, null), /*#__PURE__*/React.createElement("main", {
     className: "relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-24 pb-20 sm:pt-32 sm:pb-28"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "anim-fade-up mb-5 sm:mb-7 flex flex-wrap items-center gap-2.5"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "karte-today-bar"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "karte-sparkle text-gold",
-    style: {
-      fontSize: '12px'
-    }
-  }, "\u2726"), /*#__PURE__*/React.createElement("span", {
-    className: "nums"
-  }, today), /*#__PURE__*/React.createElement("span", {
-    className: "opacity-50"
-  }, "\xB7"), /*#__PURE__*/React.createElement("span", null, "\u9AEA\u3068\u5BFE\u8A71\u3059\u308B\u65E5"))), /*#__PURE__*/React.createElement("div", {
     className: "anim-fade-up"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3 mb-6 sm:mb-8"
@@ -4533,7 +4520,7 @@ function Home({
     className: "h-px w-10 bg-gold/50"
   }), /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/60"
-  }, "No. 015 \xB7 Hair Diagnosis")), /*#__PURE__*/React.createElement("h1", {
+  }, "Hair Diagnosis")), /*#__PURE__*/React.createElement("h1", {
     className: "text-ink"
   }, /*#__PURE__*/React.createElement("span", {
     className: "block font-serif text-[24px] sm:text-[34px] leading-none tracking-[0.18em]"
@@ -4552,12 +4539,10 @@ function Home({
   }), /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-[0.4em] text-[9.5px] sm:text-[10.5px] uppercase text-charcoal/55"
   }, "Kamikaku Diagnosis \xB7 27 Types"))), /*#__PURE__*/React.createElement("p", {
-    className: "mt-5 sm:mt-7 font-serif text-[17px] sm:text-[20px] text-charcoal leading-relaxed"
-  }, "\u3042\u306A\u305F\u306E\u672C\u5F53\u306E\u9AEA\u306B\u3001\u51FA\u4F1A\u3046\u3002"), /*#__PURE__*/React.createElement("div", {
-    className: "mt-7 sm:mt-9 max-w-xl text-[13px] sm:text-[14px] leading-[2] text-charcoal/85"
-  }, /*#__PURE__*/React.createElement("p", null, "\u30D6\u30EA\u30FC\u30C1\u3001\u30AB\u30E9\u30FC\u3001\u7E2E\u6BDB\u77EF\u6B63\u3001\u30D1\u30FC\u30DE\u3001\u6BCE\u65E5\u306E\u30A2\u30A4\u30ED\u30F3\u3002"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1"
-  }, "\u3042\u306A\u305F\u306E\u9AEA\u306B\u6B8B\u308B\u201C\u5C65\u6B74\u201D\u307E\u3067\u898B\u3066\u3001\u4ECA\u5FC5\u8981\u306A\u30D8\u30A2\u30B1\u30A2\u30EB\u30FC\u30C6\u30A3\u30F3\u3092\u63D0\u6848\u3057\u307E\u3059\u3002"))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 sm:mt-7 font-serif text-[19px] sm:text-[22px] text-ink leading-relaxed"
+  }, "\u3042\u306A\u305F\u306E\u672C\u5F53\u306E\u9AEA\u306B\u3001\u51FA\u4F1A\u3046\u3002"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal"
+  }, "\u3042\u306A\u305F\u306E\u9AEA\u306B\u6B8B\u308B\u201C\u5C65\u6B74\u201D\u307E\u3067\u898B\u3066\u3001\u4ECA\u5FC5\u8981\u306A\u30D8\u30A2\u30B1\u30A2\u30EB\u30FC\u30C6\u30A3\u30F3\u3092\u63D0\u6848\u3057\u307E\u3059\u3002")), /*#__PURE__*/React.createElement("div", {
     className: "mt-9 sm:mt-12 anim-fade-up",
     style: {
       animationDelay: '180ms'
@@ -4567,7 +4552,7 @@ function Home({
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-mono tracking-widest2 text-[10px] uppercase text-gold"
   }, "\u2726 27 Hair Types"), /*#__PURE__*/React.createElement("span", {
-    className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55"
+    className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/70"
   }, "\u3042\u306A\u305F\u306F\u3069\u306E\u30BF\u30A4\u30D7?")), /*#__PURE__*/React.createElement("div", {
     className: "karte-ticker overflow-hidden -mx-5 sm:-mx-8 px-5 sm:px-8",
     "aria-label": "27\u30BF\u30A4\u30D7\u30FB\u9AEA\u683C\u4E00\u89A7\u30D7\u30EC\u30D3\u30E5\u30FC"
@@ -4643,25 +4628,27 @@ function Home({
     strokeLinejoin: "round"
   }, /*#__PURE__*/React.createElement("path", {
     d: "M5 12h14M13 6l6 6-6 6"
-  }))), onCollection && /*#__PURE__*/React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 sm:mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] sm:text-[13px] text-charcoal/80 tracking-wide"
+  }, /*#__PURE__*/React.createElement("span", null, "\u6240\u8981\u6642\u9593 ", /*#__PURE__*/React.createElement("span", {
+    className: "nums text-ink"
+  }, "\u7D045\u301C8\u5206")), /*#__PURE__*/React.createElement("span", {
+    className: "text-gold/45",
+    "aria-hidden": true
+  }, "\xB7"), /*#__PURE__*/React.createElement("span", null, "\u4F1A\u54E1\u767B\u9332\u306A\u3057"), /*#__PURE__*/React.createElement("span", {
+    className: "text-gold/45",
+    "aria-hidden": true
+  }, "\xB7"), /*#__PURE__*/React.createElement("span", null, "\u30B5\u30ED\u30F3\u3067\u3082\u4F7F\u3048\u308B\u30AB\u30EB\u30C6\u3092\u4F5C\u6210")), onCollection && /*#__PURE__*/React.createElement("div", {
     className: "mt-4"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: onCollection,
-    className: "group inline-flex items-center gap-2 text-[12.5px] sm:text-[13px] text-charcoal/75 hover:text-ink transition-colors"
+    className: "group inline-flex items-center gap-2 text-[12.5px] sm:text-[13px] text-charcoal/80 hover:text-ink transition-colors"
   }, /*#__PURE__*/React.createElement("span", {
     className: "inline-block w-4 h-px bg-gold/60 group-hover:w-6 transition-all"
   }), /*#__PURE__*/React.createElement("span", null, "\u81EA\u5206\u306E\u9AEA\u683C\u3092\u3082\u3046\u77E5\u3063\u3066\u3044\u308B\u65B9\u306F\u3001\u3053\u3053\u304B\u3089\u5C65\u6B74\u3060\u3051\u66F4\u65B0"), /*#__PURE__*/React.createElement("span", {
     className: "text-gold"
-  }, "\u2192"))), /*#__PURE__*/React.createElement("ul", {
-    className: "mt-5 sm:mt-6 flex flex-wrap gap-x-6 gap-y-1.5 font-mono text-[10.5px] tracking-widest2 uppercase text-charcoal/55"
-  }, /*#__PURE__*/React.createElement("li", null, "\u6240\u8981\u6642\u9593 ", /*#__PURE__*/React.createElement("span", {
-    className: "nums text-ink ml-1"
-  }, "\u7D045\u301C8\u5206")), /*#__PURE__*/React.createElement("li", null, "\u4F1A\u54E1\u767B\u9332\u306A\u3057"), /*#__PURE__*/React.createElement("li", null, "\u30B5\u30ED\u30F3\u3067\u3082\u4F7F\u3048\u308B\u30AB\u30EB\u30C6\u3092\u4F5C\u6210")), /*#__PURE__*/React.createElement("p", {
-    className: "mt-4 text-[12.5px] tracking-wider text-charcoal/55 max-w-md leading-relaxed"
-  }, "\u8A3A\u65AD\u7D50\u679C\u306F\u753B\u50CF\u30FBPDF\u4FDD\u5B58\u30FBLINE\u3067\u5171\u6709\u3067\u304D\u3001\u30B5\u30ED\u30F3\u3067\u306E\u3054\u76F8\u8AC7\u6642\u306B", /*#__PURE__*/React.createElement("span", {
-    className: "text-ink"
-  }, "\u53C2\u8003\u30E1\u30E2"), "\u3068\u3057\u3066\u3054\u6D3B\u7528\u3044\u305F\u3060\u3051\u307E\u3059\u3002")), /*#__PURE__*/React.createElement("section", {
+  }, "\u2192")))), /*#__PURE__*/React.createElement("section", {
     className: "mt-16 sm:mt-24 anim-fade-up",
     style: {
       animationDelay: '240ms'
