@@ -1800,6 +1800,50 @@
       color: var(--brown); margin-top: 2px;
     }
 
+    /* ヒーロー CTA 行（モックの導線 × 現行の情緒コピー） */
+    .brand-hero-cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+    .bh-cta {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border-radius: 999px; padding: 12px 22px;
+      font-family: var(--font-serif); font-size: 14px; letter-spacing: 0.02em;
+      text-decoration: none; transition: transform .2s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+    }
+    .bh-cta-primary { background: #A87456; color: #fff; box-shadow: 0 4px 16px rgba(26,24,21,.14); }
+    .bh-cta-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(26,24,21,.2); }
+    .bh-cta-ghost { background: rgba(255,255,255,0.72); color: var(--charcoal); border: 1px solid rgba(58,50,42,0.25); backdrop-filter: blur(4px); }
+    .bh-cta-ghost:hover { background: #fff; border-color: var(--gold); }
+
+    /* 注目のブランド（モックの featured × 現行の実商品画像） */
+    .featured-section { padding: 42px 0 6px; background: var(--cream); }
+    .featured-inner { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+    .featured-head { text-align: center; margin-bottom: 22px; }
+    .featured-eyebrow { font-family: var(--font-en); font-size: 10px; letter-spacing: 5px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; }
+    .featured-title { font-family: var(--font-serif); font-size: clamp(22px, 4.5vw, 32px); font-weight: 500; letter-spacing: 0.04em; color: var(--charcoal); margin-bottom: 8px; }
+    .featured-sub { font-family: var(--font-jp); font-size: 12px; font-weight: 300; color: var(--brown); letter-spacing: 0.04em; }
+    .featured-track {
+      display: flex; gap: 14px; list-style: none; margin: 0 -24px; padding: 4px 24px 14px;
+      overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    .featured-track::-webkit-scrollbar { display: none; }
+    .featured-card { flex: 0 0 auto; width: 212px; scroll-snap-align: start; }
+    .featured-card > a {
+      display: block; text-decoration: none; color: inherit; background: #fff;
+      border: 1px solid rgba(184,148,90,0.18); border-radius: 18px; overflow: hidden;
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .featured-card > a:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(26,24,21,0.10); }
+    .featured-img { position: relative; aspect-ratio: 4 / 3; background: linear-gradient(160deg, #f5efe6, #ece2d4); display: flex; align-items: center; justify-content: center; padding: 16px; }
+    .featured-img img { max-width: 84%; max-height: 84%; object-fit: contain; filter: drop-shadow(0 8px 16px rgba(26,24,21,0.12)); }
+    .featured-meta { padding: 14px 16px 18px; }
+    .featured-meta .bc-status-badge { position: static; display: inline-flex; margin-bottom: 10px; }
+    .featured-jp { display: block; font-family: var(--font-jp); font-size: 11px; color: var(--taupe); letter-spacing: 0.04em; margin-bottom: 1px; }
+    .featured-name { display: block; font-family: var(--font-serif); font-size: 17px; font-weight: 500; color: var(--charcoal); letter-spacing: 0.02em; line-height: 1.25; }
+    .featured-tag { display: block; font-family: var(--font-jp); font-size: 11px; font-weight: 300; color: var(--brown); letter-spacing: 0.02em; margin-top: 7px; line-height: 1.55; }
+    .featured-all { width: 152px; }
+    .featured-all > a { height: 100%; background: var(--warm-fill); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 20px; border-style: dashed; }
+    .featured-all .fa-icon { width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid rgba(184,148,90,0.3); display: flex; align-items: center; justify-content: center; color: var(--gold); }
+    .featured-all > a > span:last-child { font-family: var(--font-jp); font-size: 12px; font-weight: 500; color: var(--charcoal); letter-spacing: 0.03em; line-height: 1.55; }
+
     .dir-empty { padding: 60px 20px; text-align: center; font-family: var(--font-jp); font-size: 12px; color: var(--taupe); }
 
     /* ディレクトリ末尾CTA */
@@ -2593,7 +2637,10 @@
     <p class="brand-hero-eyebrow" data-i18n="hero.eyebrow">Curated Brands — 140+ Worldwide</p>
     <h1 class="brand-hero-title" data-i18n="hero.title">あなたの髪に合う<br>お気に入りを</h1>
     <p class="brand-hero-desc" data-i18n="hero.desc">世界140を超えるブランドから<br>あなたの髪と本当に響き合うお気に入りを</p>
-    <a href="finder.html" class="brand-hero-cta" style="margin-top:26px;display:inline-flex;align-items:center;gap:8px;background:#A87456;color:#fff;border-radius:999px;padding:13px 28px;font-family:'Noto Serif JP',serif;font-size:15px;letter-spacing:.02em;text-decoration:none;box-shadow:0 4px 16px rgba(26,24,21,.14);" data-i18n="pm.banner.btn">Hair Finder で診断する →</a>
+    <div class="brand-hero-cta-row">
+      <a href="onlineshop.html" class="bh-cta bh-cta-primary" data-i18n="hero.ctaOnline">オンライン取扱を見る</a>
+      <a href="#brandDirectory" class="bh-cta bh-cta-ghost" data-i18n="hero.ctaStore">店舗の取扱を見る</a>
+    </div>
   </div>
 </section>
 
@@ -2605,6 +2652,58 @@
     <span>BRANDS</span>
   </div>
 </nav>
+
+<!-- ━━━ 注目のブランド (Featured) — モックの目玉 × 現行の実商品画像 ━━━ -->
+<section class="featured-section">
+  <div class="featured-inner">
+    <div class="featured-head">
+      <p class="featured-eyebrow">Featured</p>
+      <h2 data-reveal class="featured-title" data-i18n="featured.title">注目のブランド</h2>
+      <p class="featured-sub" data-i18n="featured.sub">SEAMが今おすすめする実力派ブランド</p>
+    </div>
+    <ol class="featured-track">
+      <li class="featured-card">
+        <a href="https://www.milbon.co.jp" target="_blank" rel="noopener">
+          <div class="featured-img"><img src="images/brands/aujua/Aujua_イミュライズ_シャンプー_250mL.webp" alt="Aujua オージュア" loading="lazy" width="212" height="159"></div>
+          <div class="featured-meta">
+            <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
+            <span class="featured-jp">オージュア</span>
+            <span class="featured-name">Aujua</span>
+            <span class="featured-tag" data-i18n="featured.aujua">髪を熟知した日本発のフラッグシップ</span>
+          </div>
+        </a>
+      </li>
+      <li class="featured-card">
+        <a href="https://www.milbon.co.jp" target="_blank" rel="noopener">
+          <div class="featured-img"><img src="images/brands/global_milbon/Global_Milbon_Repair_Restorative_Treatment.webp" alt="GLOBAL MILBON グローバルミルボン" loading="lazy" width="212" height="159"></div>
+          <div class="featured-meta">
+            <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
+            <span class="featured-jp">グローバルミルボン</span>
+            <span class="featured-name">GLOBAL MILBON</span>
+            <span class="featured-tag" data-i18n="featured.gm">世界の髪質データから生まれた実力</span>
+          </div>
+        </a>
+      </li>
+      <li class="featured-card">
+        <a href="https://www.ifing.com" target="_blank" rel="noopener">
+          <div class="featured-img"><img src="images/brands/tokio_inkarami/IE_インカラミ_プラチナム_リミテッド_トリートメント_400g.webp" alt="TOKIO INKARAMI トキオ インカラミ" loading="lazy" width="212" height="159"></div>
+          <div class="featured-meta">
+            <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
+            <span class="featured-jp">トキオ インカラミ</span>
+            <span class="featured-name">TOKIO INKARAMI</span>
+            <span class="featured-tag" data-i18n="featured.tokio">内側から強さとしなやかさを</span>
+          </div>
+        </a>
+      </li>
+      <li class="featured-card featured-all">
+        <a href="#brandDirectory">
+          <span class="fa-icon"><i class="fas fa-arrow-right"></i></span>
+          <span data-i18n="featured.all">すべての<br>ブランドを見る</span>
+        </a>
+      </li>
+    </ol>
+  </div>
+</section>
 
 <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <!-- ★ Mode Toggle — ブランドから探す / 商品から探す               -->
@@ -3920,6 +4019,14 @@ window.SEAM_PAGE_I18N = {
     'avail.online.d': 'SEAM会員専用オンラインショップ限定',
     'avail.partial.d': '一部の店舗 または 一部商品がオンライン',
     'avail.specific.d': '札幌・銀座など該当店舗限定',
+    'hero.ctaOnline': 'オンライン取扱を見る',
+    'hero.ctaStore': '店舗の取扱を見る',
+    'featured.title': '注目のブランド',
+    'featured.sub': 'SEAMが今おすすめする実力派ブランド',
+    'featured.aujua': '髪を熟知した日本発のフラッグシップ',
+    'featured.gm': '世界の髪質データから生まれた実力',
+    'featured.tokio': '内側から強さとしなやかさを',
+    'featured.all': 'すべての<br>ブランドを見る',
     'store.memberShop': '会員ショップ',
     'finder.desc': 'SEAMセレクト 3本',
     'finder.close': '閉じる',
@@ -4009,6 +4116,14 @@ window.SEAM_PAGE_I18N = {
     'avail.online.d': 'Member online shop only',
     'avail.partial.d': 'Select stores, or select items online',
     'avail.specific.d': 'Specific stores only (Sapporo, Ginza, etc.)',
+    'hero.ctaOnline': 'Shop the online range',
+    'hero.ctaStore': 'See in-store range',
+    'featured.title': 'Featured Brands',
+    'featured.sub': 'Brands SEAM recommends right now',
+    'featured.aujua': 'Japan-born flagship, made for your hair',
+    'featured.gm': 'Born from global hair-quality data',
+    'featured.tokio': 'Strength and softness, from within',
+    'featured.all': 'See all<br>brands',
     'store.memberShop': 'Member Shop',
     'finder.desc': '3 SEAM Selections',
     'finder.close': 'Close',
@@ -4098,6 +4213,14 @@ window.SEAM_PAGE_I18N = {
     'avail.online.d': '仅限SEAM会员专属在线商店',
     'avail.partial.d': '部分门店，或部分商品仅限线上',
     'avail.specific.d': '仅限特定门店（札幌、银座等）',
+    'hero.ctaOnline': '查看线上品项',
+    'hero.ctaStore': '查看门店品项',
+    'featured.title': '注目品牌',
+    'featured.sub': 'SEAM此刻推荐的实力品牌',
+    'featured.aujua': '深谙发质的日本旗舰系列',
+    'featured.gm': '源自全球发质数据的实力',
+    'featured.tokio': '由内而生的强韧与柔顺',
+    'featured.all': '查看<br>全部品牌',
     'store.memberShop': '会员商店',
     'finder.desc': 'SEAM精选 3件',
     'finder.close': '关闭',
@@ -4187,6 +4310,14 @@ window.SEAM_PAGE_I18N = {
     'avail.online.d': '僅限SEAM會員專屬線上商店',
     'avail.partial.d': '部分門市，或部分商品僅限線上',
     'avail.specific.d': '僅限特定門市（札幌、銀座等）',
+    'hero.ctaOnline': '查看線上品項',
+    'hero.ctaStore': '查看門市品項',
+    'featured.title': '注目品牌',
+    'featured.sub': 'SEAM此刻推薦的實力品牌',
+    'featured.aujua': '深諳髮質的日本旗艦系列',
+    'featured.gm': '源自全球髮質數據的實力',
+    'featured.tokio': '由內而生的強韌與柔順',
+    'featured.all': '查看<br>全部品牌',
     'store.memberShop': '會員商店',
     'finder.desc': 'SEAM嚴選 3件',
     'finder.close': '關閉',
@@ -4276,6 +4407,14 @@ window.SEAM_PAGE_I18N = {
     'avail.online.d': 'SEAM 회원 전용 온라인숍 한정',
     'avail.partial.d': '일부 매장 또는 일부 상품만 온라인',
     'avail.specific.d': '삿포로·긴자 등 해당 매장 한정',
+    'hero.ctaOnline': '온라인 취급 보기',
+    'hero.ctaStore': '매장 취급 보기',
+    'featured.title': '주목 브랜드',
+    'featured.sub': 'SEAM이 지금 추천하는 실력파 브랜드',
+    'featured.aujua': '모발을 숙지한 일본 발 플래그십',
+    'featured.gm': '세계의 모질 데이터에서 태어난 실력',
+    'featured.tokio': '안에서부터 강함과 부드러움을',
+    'featured.all': '모든<br>브랜드 보기',
     'store.memberShop': '회원숍',
     'finder.desc': 'SEAM 셀렉트 3종',
     'finder.close': '닫기',
