@@ -1,0 +1,14 @@
+# Cloudflare Pages — caching policy
+# 既定: HTML/JS/CSS/JSON/SW は常に再検証（即時デプロイ・陳腐化なし）
+/*
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# 重い静的アセットは長期キャッシュ（?v= と sw VERSION でバスティング）
+# vendor(babel 2.7MB 等) と画像/動画はリピート訪問で再DLしない
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
