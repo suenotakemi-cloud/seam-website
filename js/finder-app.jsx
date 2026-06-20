@@ -262,6 +262,41 @@ const Q = [
     ],
   },
   {
+    id: 'stylingFinish',
+    type: 'check-multi',
+    eyebrow: 'Styling',
+    title: 'スタイリングで、なりたい仕上がりは？',
+    note: '当てはまるものをすべて選んでください。仕上げの一本をご提案します。',
+    options: [
+      { v: 'shine',  label: 'ツヤ・濡れ感を出したい',           score: {} },
+      { v: 'tame',   label: '広がり・うねりをまとめたい',       score: {} },
+      { v: 'curl',   label: 'パーマ・くせの動きを活かしたい',   score: {} },
+      { v: 'hold',   label: '巻き・カールを長くキープしたい',   score: {} },
+      { v: 'volume', label: '根元をふんわりさせたい',           score: {} },
+      { v: 'matte',  label: 'マットで自然な束感がほしい',       score: {} },
+      { v: 'light',  label: '軽く・ベタつかせたくない',         score: {} },
+      { v: 'none',   label: 'スタイリング剤は使わない',         score: {}, exclusive: true },
+    ],
+  },
+  {
+    id: 'menStyling',
+    type: 'check-multi',
+    eyebrow: 'Styling',
+    title: '普段使うスタイリング剤は？',
+    note: 'よく使う・気になるものをすべて選んでください。仕上げの一本をご提案します。',
+    when: (a) => a.gender === 'male',
+    options: [
+      { v: 'wax',    label: 'ワックス',                   score: {} },
+      { v: 'gel',    label: 'ジェル',                     score: {} },
+      { v: 'grease', label: 'グリース・ポマード',          score: {} },
+      { v: 'cream',  label: 'クリーム・ムーブ系',          score: {} },
+      { v: 'oil',    label: 'オイル',                     score: {} },
+      { v: 'balm',   label: 'バーム',                     score: {} },
+      { v: 'spray',  label: 'スプレーで仕上げる',          score: {} },
+      { v: 'none',   label: '特に決めていない',            score: {}, exclusive: true },
+    ],
+  },
+  {
     id: 'headSpaInterest',
     type: 'card-single',
     eyebrow: 'Head Spa',
@@ -538,6 +573,8 @@ const MODE_B_ORDER = [
   { step:3, id:'concernsItem' },
   { step:3, id:'goalTexture' },
   { step:3, id:'goal' },
+  { step:3, id:'stylingFinish' },
+  { step:3, id:'menStyling', when:(a) => a.gender === 'male' },
   { step:3, id:'deviceInterest' },
   { step:3, id:'headSpaInterest' },
   { step:3, id:'wellness', when:(a) => a.headSpaInterest === 'yes' },
@@ -1786,22 +1823,86 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     }
   }
 
-  // 仕上げカテゴリ向け追加スコア (Color, Perm, Curl などの条件で 仕上げ商品を強化)
+  // 仕上げカテゴリ向け追加スコア — スタイリング剤を「長さ×性別×くせ×根元×仕上がり意図」で出し分け
+  // stylingType: oil/oil-light/balm/wax/cream/gel/grease/paste/mousse/seasalt/shine-spray/hold-spray/volume-mist
+  const SHORT_MED_LEN = new Set(['short', 'bob', 'shoulderUp']);
+  const CURLY_WAVES   = new Set(['humid', 'surface', 'root', 'midEnd', 'whole']); // straightened(縮毛矯正)は除外＝「活かす」対象外
   const finishBoost = (p) => {
     const cat = deepCategoryForProduct(p);
     if (cat !== 'finish') return 0;
     let b = 8; // 仕上げ商品はベースで +8 (ルーティンの最後に1本は必要)
-    // パーマ・カール持ちには クリエイティブスタイル 6番 を強く推奨
+    const st       = p.stylingType || '';
+    const len      = a.length || '';
+    const isLong   = LONG_LENGTHS.has(len);            // 肩下・胸上・ロング
+    const isShortM = SHORT_MED_LEN.has(len);           // ショート〜ミディアム
+    const gender   = a.gender || '';
+    const sf       = Array.isArray(a.stylingFinish) ? a.stylingFinish : [];
+    const ms       = Array.isArray(a.menStyling)    ? a.menStyling    : [];
+    const curly    = CURLY_WAVES.has(a.wave);
+    const hasPerm  = !!(a.perm && a.perm !== 'none');
+    const rootFlat = a.rootVolume === 'flat' || a.rootVolume === 'tendFlat';
+
+    // ── 既存の個別ブースト(維持) ──
     if ((t.perm.includes('perm_history') || t.perm.includes('perm_loose') || t.perm.includes('perm_digital')) &&
         p.id === 'milbon-creativestyle-mediumhold-6') b += 20;
-    // 巻き髪・スタイル維持には ジェミールフラン
     if ((a.styling?.tools || []).some(x => /curler/i.test(x)) && p.id === 'milbon-jemilefran-spray-sd') b += 18;
-    // 毛先パサつき・ツヤ求める方には ニゼル ブライトアップ
     if ((t.goal.includes('goal_moist_gloss') || (a.concerns || []).includes('dryness') || (a.concerns || []).includes('damage')) &&
         p.id === 'milbon-nigelle-brightup-veil') b += 15;
-    // カラーしている方には カラーモーション ルミナススプレー
     if ((t.color.includes('color_history') || t.color.includes('color_freq_high') || t.color.includes('gray_color')) &&
         p.id === 'colormotion-luminous-spray') b += 18;
+
+    // ── 仕上がり意図(stylingFinish) — 全員共通 ──
+    if (sf.includes('shine')  && (st === 'oil' || st === 'shine-spray' || st === 'gel'))   b += 16;
+    if (sf.includes('tame')   && (st === 'balm' || st === 'oil' || st === 'cream'))         b += 16;
+    if (sf.includes('curl')   && (st === 'mousse' || st === 'seasalt'))                     b += 24;
+    if (sf.includes('hold')   &&  st === 'hold-spray')                                      b += 24;
+    if (sf.includes('volume') &&  st === 'volume-mist')                                     b += 24;
+    if (sf.includes('matte')  && (st === 'wax' || st === 'paste' || st === 'seasalt'))      b += 16;
+    if (sf.includes('light')  && (st === 'oil-light' || st === 'seasalt'))                  b += 16;
+
+    // ── ① 肩下以上 → 艶出しスプレー / 巻き・カールキープ ──
+    if (isLong && st === 'shine-spray') b += 16;
+    if (isLong && st === 'hold-spray')  b += 12;
+
+    // ── ② 女性 × ショート〜ミディアム × ベタつきたくない → 軽いスタイリングオイル ──
+    if (gender === 'female' && isShortM) {
+      if (st === 'oil-light') b += 20;
+      else if (st === 'oil')  b += 12;
+    }
+
+    // ── ③ くせ毛 × ショート〜ミディアム × まとめたい → バーム / ワックス ──
+    //    (「活かす(curl)」を選んだ人には適用しない＝意図を尊重)
+    if (curly && isShortM && !sf.includes('curl')) {
+      if (st === 'balm')      b += 20;
+      else if (st === 'wax')  b += 14;
+    }
+
+    // ── ④ 男性 → 申告した「普段使うスタイリング剤」のタイプを優先 ──
+    if (gender === 'male') {
+      const MENS_MAP = {
+        wax:   ['wax', 'paste'],
+        gel:   ['gel'],
+        grease:['grease'],
+        cream: ['cream'],
+        oil:   ['oil', 'oil-light'],
+        balm:  ['balm'],
+        spray: ['hold-spray', 'shine-spray'],
+      };
+      for (const m of ms) {
+        if ((MENS_MAP[m] || []).includes(st)) b += 22;
+      }
+      // 未申告・決めたい → 万能なメンズ向け(クリームワックス/ワックス)を後押し
+      if ((ms.length === 0 || ms.includes('none')) && (st === 'wax' || st === 'cream')) b += 10;
+    }
+
+    // ── ⑤ くせ・パーマを活かしたい → ムース / シーソルト(シーミスト) ──
+    //    縮毛矯正(straightened)はcurly=falseなので発火しない＝配慮を維持
+    if ((curly || hasPerm) && (sf.includes('curl') || a.goalTexture === 'airy') &&
+        (st === 'mousse' || st === 'seasalt')) b += 18;
+
+    // ── ⑥ 根元がぺたっとする → 根元ボリュームミスト(薄毛はスカルプ処方で別途優先) ──
+    if (rootFlat && st === 'volume-mist') b += 18;
+
     return b;
   };
 
@@ -7438,6 +7539,14 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
   const wishItems = [];
   if (a.goalTexture) wishItems.push(['理想の質感', lookupLabelShort('goalTexture', a.goalTexture)]);
   if (a.goal) wishItems.push(['髪の目標', lookupLabelShort('goal', a.goal)]);
+  if (Array.isArray(a.stylingFinish) && a.stylingFinish.length) {
+    const sf = a.stylingFinish.filter(v => v !== 'none');
+    if (sf.length) wishItems.push(['スタイリングの希望', sf.map(v => lookupLabelShort('stylingFinish', v)).join('・')]);
+  }
+  if (Array.isArray(a.menStyling) && a.menStyling.length) {
+    const msv = a.menStyling.filter(v => v !== 'none');
+    if (msv.length) wishItems.push(['使用中スタイリング剤', msv.map(v => lookupLabelShort('menStyling', v)).join('・')]);
+  }
 
   // ヘッドスパ
   const spaItems = [];
