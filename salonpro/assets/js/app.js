@@ -322,7 +322,7 @@
       const _tempuOn = !(window.SP.TENANT && window.SP.TENANT.features && window.SP.TENANT.features.tempu === false);
       if (_camp && _tempuOn) html += `<a href="campaigns.html?id=${_camp.id}" style="display:flex;align-items:center;gap:11px;border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-lg);padding:13px 15px;margin-bottom:14px;text-decoration:none;color:var(--ink)">
         <span style="flex:none;min-width:42px;height:38px;border-radius:var(--r-md);background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;padding:0 6px">${_camp.badge || '10＋1'}</span>
-        <span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:900">${_camp.tempu ? 'メーカー添付' : 'キャンペーン'}：${_camp.title}</span><span style="display:block;font-size:11.5px;color:var(--ink-2);margin-top:2px;line-height:1.5">${_camp.x}本＋無料${_camp.y}本を選んで発注（価格は${_camp.x}本分）。無料分は${_camp.maker || 'メーカー'}へ請求。</span></span>
+        <span style="flex:1;min-width:0"><span style="display:block;font-size:13.5px;font-weight:900">${_camp.tempu ? 'メーカー添付' : 'キャンペーン'}：${_camp.title}</span><span style="display:block;font-size:11.5px;color:var(--ink-2);margin-top:2px;line-height:1.5">${_camp.x}本＋無料${_camp.y}本を選んで発注（価格は${_camp.x}本分）。無料分（無償現品）はご負担ありません。</span></span>
         <span style="flex:none;color:var(--gold-strong);font-weight:800;font-size:12.5px;white-space:nowrap">組む ›</span></a>`;
       html += '<div class="cd-grid">' + fams.map(f =>
         `<div class="cd-cell cd-cell--color"><button class="cd-fav" data-favcolor="${line}｜${f.family}" aria-pressed="${Store.isFavColor(line, f.family)}" aria-label="カラーをお気に入り">${heart}</button>` +

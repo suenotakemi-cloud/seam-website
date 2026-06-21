@@ -122,7 +122,7 @@
     }).join('');
     return `<div class="bd"><div class="bd__head"><span class="bd__badge">${b.badge || '10＋1'}</span><span class="bd__t">メーカー添付（${b.line}）</span><button class="bd__edit" data-rmbundle="${b.id}">組み直す</button></div>
       <div class="bd__body">${paidRows}${freeRows}</div>
-      <div class="bd__note">本数の変更はできません（条件商品）。変更は「組み直す」で選び直してください。無料分は ${b.maker || 'メーカー'} へ請求。</div></div>`;
+      <div class="bd__note">本数の変更はできません（条件商品）。変更は「組み直す」で選び直してください。無料分（無償現品）はご負担ありません。</div></div>`;
   }
 
   function dealerSection(dl, entries, gifts, bundles) {
