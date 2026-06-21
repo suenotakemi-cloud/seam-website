@@ -594,8 +594,17 @@
         /炭酸|スパークリング|フィズ|fizz/i.test(_n) ? 'carbonated' :
         /ドライシャンプー|水のいらない/.test(_n) ? 'dry' :
         /スキャルプ|スカルプ|頭皮|クリアスパ/.test(_n) ? 'scalp' :
-        /カラーケア|カラーセーブ|ムラサキ|パープル|purple/i.test(_n) ? 'colorcare' :
-        /1000mL|1500|1800|詰替|業務用|サロンサイズ/i.test(_n) ? 'bulk' : 'normal';
+        /カラーケア|カラーセーブ|ムラサキ|パープル|purple/i.test(_n) ? 'colorcare' : 'normal';
+    }
+    // 容量（サイズ）バケットを商品名から推定（タイプ×サイズの掛け合わせ用・全カテゴリ）
+    if (!p.sizeBucket) {
+      let vol = 0, mm; const re = /(\d+(?:\.\d+)?)\s*(mL|ml|ＭＬ|kg|g|ｇ|L|l)/g;
+      while ((mm = re.exec(_n))) {
+        let num = parseFloat(mm[1]); const u = mm[2].toLowerCase();
+        if (u === 'kg' || u === 'l') num *= 1000;
+        if (num > vol) vol = num;
+      }
+      if (vol > 0) p.sizeBucket = vol < 300 ? 's1' : vol < 600 ? 's2' : vol < 1000 ? 's3' : 's4';
     }
     if (p.cat === 'treatment' && !p.treatmentType) {
       p.treatmentType = /マスク|mask/i.test(_n) ? 'mask' : 'treatment';
@@ -741,14 +750,20 @@
     { id: 'straight2', label: '2剤（ストレート用）' },
     { id: 'treat',     label: '処理剤' },
   ];
-  // シャンプーのタイプ（通常／炭酸／頭皮／カラーケア／ドライ／業務用サイズ）
+  // シャンプーのタイプ（通常／炭酸／頭皮／カラーケア／ドライ）※業務用サイズは「容量」フィルタに分離
   const SHAMPOO_TYPES = [
     { id: 'normal',    label: 'シャンプー' },
     { id: 'carbonated', label: '炭酸シャンプー' },
     { id: 'scalp',     label: 'スキャルプ／頭皮ケア' },
     { id: 'colorcare', label: 'カラーケア' },
     { id: 'dry',       label: 'ドライシャンプー' },
-    { id: 'bulk',      label: '業務用サイズ' },
+  ];
+  // 容量（サイズ）の独立フィルタ。タイプ×サイズの掛け合わせ検索用。商品名から自動判定。
+  const SIZE_BUCKETS = [
+    { id: 's1', label: '〜300',        max: 300 },
+    { id: 's2', label: '300〜600',     min: 300, max: 600 },
+    { id: 's3', label: '600〜1000',    min: 600, max: 1000 },
+    { id: 's4', label: '業務用(1000〜)', min: 1000 },
   ];
   // トリートメントのタイプ（インバス）
   const TREATMENT_TYPES = [
@@ -779,6 +794,7 @@
   window.SP.COLOR_LINES = COLOR_LINES;
   window.SP.COLOR_TYPES = COLOR_TYPES;
   window.SP.SHAMPOO_TYPES = SHAMPOO_TYPES;
+  window.SP.SIZE_BUCKETS = SIZE_BUCKETS;
   window.SP.TREATMENT_TYPES = TREATMENT_TYPES;
   window.SP.OUTBATH_TYPES = OUTBATH_TYPES;
   window.SP.STYLING_TYPES = STYLING_TYPES;

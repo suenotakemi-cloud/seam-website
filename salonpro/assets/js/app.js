@@ -21,6 +21,7 @@
     colorLine: null,   // カラー剤ドリル：選択中のライン（ブランド）
     colorFamily: null, // カラー剤ドリル：選択中の色（family）
     typeSel: {},       // タイプ・チップの選択（カテゴリ別：shampoo/treatment/outbath/styling/perm/straight）
+    sizeSel: {},       // 容量（サイズ）チップの選択（カテゴリ別。タイプ×サイズの掛け合わせ）
     filters: { stock: new Set(), price: null, sameDay: false, concern: new Set() },
   };
 
@@ -207,10 +208,11 @@
       const res = CONCERNS.filter(c => state.filters.concern.has(c.id)).map(c => c.re);
       list = list.filter(p => res.some(re => re.test(p.name)));
     }
-    // タイプ・チップ絞り込み（シャンプー/トリートメント/アウトバス/スタイリング/パーマ/ストレート。検索中は無効）
-    if (!inSearch()) {
-      const _tc = TYPE_CATS[state.cat], _sel = _tc && state.typeSel[state.cat];
-      if (_sel) list = list.filter(p => p[_tc.key] === _sel);
+    // タイプ・チップ＋容量チップ絞り込み（掛け合わせ。検索中は無効）
+    if (!inSearch() && TYPE_CATS[state.cat]) {
+      const _tc = TYPE_CATS[state.cat];
+      const _ts = state.typeSel[state.cat]; if (_ts) list = list.filter(p => p[_tc.key] === _ts);
+      const _ss = state.sizeSel[state.cat]; if (_ss) list = list.filter(p => p.sizeBucket === _ss);
     }
 
     const by = {
@@ -225,7 +227,7 @@
 
   const hasActiveFilter = () =>
     state.brand || state.filters.stock.size || state.filters.price || state.filters.sameDay || state.filters.concern.size
-    || !!(TYPE_CATS[state.cat] && state.typeSel[state.cat]);
+    || !!(TYPE_CATS[state.cat] && (state.typeSel[state.cat] || state.sizeSel[state.cat]));
 
   /* ---------------- render ---------------- */
   function render() {
@@ -313,11 +315,21 @@
     perm:      { list: () => SP.PERM_TYPES || [],      key: 'permType' },
     straight:  { list: () => SP.STRAIGHT_TYPES || [],  key: 'straightType' },
   };
+  const SIZE_BUCKETS = SP.SIZE_BUCKETS || [];
   const typeCfg = () => {
     const c = TYPE_CATS[state.cat]; if (!c) return null;
     return { list: c.list(), key: c.key, sel: state.typeSel[state.cat] || null };
   };
-  const typeCount = (key, id) => DATA.products.filter(p => p.cat === state.cat && p[key] === id && Store.canShow(p) && Store.dealerVisible(p)).length;
+  const inCatProducts = () => DATA.products.filter(p => p.cat === state.cat && Store.canShow(p) && Store.dealerVisible(p));
+  // タイプ件数は現在の容量選択を、容量件数は現在のタイプ選択を反映（相互連動＝掛け合わせ件数）
+  const typeCountCtx = (key, id) => { const ss = state.sizeSel[state.cat]; return inCatProducts().filter(p => p[key] === id && (!ss || p.sizeBucket === ss)).length; };
+  const sizeCountCtx = (bid) => { const c = TYPE_CATS[state.cat], ts = state.typeSel[state.cat]; return inCatProducts().filter(p => p.sizeBucket === bid && (!ts || p[c.key] === ts)).length; };
+  function chipRow(label, items, attr, sel) {
+    const chips = ['<button class="tchip' + (!sel ? ' is-on' : '') + '" data-' + attr + '="__all">すべて</button>']
+      .concat(items.filter(x => x.n > 0).map(x =>
+        '<button class="tchip' + (sel === x.id ? ' is-on' : '') + '" data-' + attr + '="' + x.id + '">' + x.label + '<span class="tchip__n">' + x.n + '</span></button>'));
+    return '<div class="tc-row"><span class="tc-row__l">' + label + '</span><div class="tc-row__chips">' + chips.join('') + '</div></div>';
+  }
   function renderTypeChips() {
     let host = qs('#typeChips');
     const cfg = (!inSearch()) ? typeCfg() : null;
@@ -325,23 +337,24 @@
     if (!host) {
       if (!qs('#typeChipsStyle')) {
         const s = document.createElement('style'); s.id = 'typeChipsStyle';
-        s.textContent = '.type-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px}.type-chips::-webkit-scrollbar{height:0}.type-chips .tchip{flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface-2);font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap}.type-chips .tchip.is-on{background:var(--gold);border-color:var(--gold);color:#fff}.type-chips .tchip__n{font-size:11px;font-weight:800;opacity:.6}.type-chips .tchip.is-on .tchip__n{opacity:.9}';
+        s.textContent = '.type-chips{display:flex;flex-direction:column;gap:7px;padding:2px 0 12px}.tc-row{display:flex;align-items:center;gap:8px}.tc-row__l{flex:none;font-size:11px;font-weight:800;color:var(--ink-3);width:36px}.tc-row__chips{display:flex;gap:8px;overflow-x:auto;min-width:0}.tc-row__chips::-webkit-scrollbar{height:0}.type-chips .tchip{flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface-2);font-size:12.5px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap}.type-chips .tchip.is-on{background:var(--gold);border-color:var(--gold);color:#fff}.type-chips .tchip__n{font-size:11px;font-weight:800;opacity:.6}.type-chips .tchip.is-on .tchip__n{opacity:.9}';
         document.head.appendChild(s);
       }
       host = document.createElement('div'); host.id = 'typeChips'; host.className = 'type-chips';
       const grid = qs('#grid'); grid.parentNode.insertBefore(host, grid);
       host.addEventListener('click', e => {
-        const b = e.target.closest('[data-typechip]'); if (!b) return;
-        const v = b.dataset.typechip;
-        state.typeSel[state.cat] = (v === '__all') ? null : v;
-        render();
+        const tb = e.target.closest('[data-typechip]');
+        const sb = e.target.closest('[data-sizechip]');
+        if (tb) { const v = tb.dataset.typechip; state.typeSel[state.cat] = (v === '__all') ? null : v; render(); }
+        else if (sb) { const v = sb.dataset.sizechip; state.sizeSel[state.cat] = (v === '__all') ? null : v; render(); }
       });
     }
     host.hidden = false;
-    const chips = ['<button class="tchip' + (!cfg.sel ? ' is-on' : '') + '" data-typechip="__all">すべて</button>']
-      .concat(cfg.list.map(t => ({ t, n: typeCount(cfg.key, t.id) })).filter(x => x.n > 0).map(x =>
-        '<button class="tchip' + (cfg.sel === x.t.id ? ' is-on' : '') + '" data-typechip="' + x.t.id + '">' + x.t.label + '<span class="tchip__n">' + x.n + '</span></button>'));
-    host.innerHTML = chips.join('');
+    let html = chipRow('タイプ', cfg.list.map(t => ({ id: t.id, label: t.label, n: typeCountCtx(cfg.key, t.id) })), 'typechip', cfg.sel);
+    // 容量（サイズ）行：このカテゴリに容量が付く商品があるときだけ表示
+    const sizeItems = SIZE_BUCKETS.map(b => ({ id: b.id, label: b.label, n: sizeCountCtx(b.id) }));
+    if (sizeItems.some(x => x.n > 0)) html += chipRow('容量', sizeItems, 'sizechip', state.sizeSel[state.cat] || null);
+    host.innerHTML = html;
   }
 
   // カラー剤＝タイプ先選択ドリル（タイプ › ライン › 色 › 明るさ）。プロが薬剤タイプで素早く選べる。
