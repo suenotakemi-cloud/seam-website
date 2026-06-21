@@ -7694,15 +7694,7 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
           </>
         )}
 
-        {/* 05 髪のキャラクター(性格) */}
-        {o.personality && (
-          <>
-            {sectionTitle('05 · 髪のキャラクター')}
-            <p className="font-serif text-[13.5px] sm:text-[14.5px] leading-[2] text-charcoal/85" style={{ letterSpacing: '0.02em' }}>
-              {o.personality}
-            </p>
-          </>
-        )}
+        {/* 05 髪のキャラクター(性格)は ResultHero と重複するため割愛 — カルテは事実情報に集中 */}
 
         {/* 06 カラー履歴 */}
         {colorItems.length > 0 && (
@@ -8166,17 +8158,16 @@ Schwarzkopf ファイバープレックス ボンド トリートメント、TOK
 
 /* ---------- 画像保存・シェア ---------- */
 async function saveKarteCardAsImage(filename, mode) {
-  if (typeof html2canvas !== 'function') {
-    alert('保存の準備が整っていません。すこし時間を置いてもう一度お試しください。');
-    return;
-  }
-
-  // mode: 'square' (1080x1080) / 'story' (1080x1920) / undefined (旧 Act 04 のみ)
+  // mode: 'square' (1080x1080) / 'story' (1080x1920) は生キャンバス描画(html2canvas不要)
   if (mode === 'square' || mode === 'story') {
     return saveCustomCanvas(filename, mode);
   }
 
-  // 旧: Act 04 シェアカードのみ
+  // 旧: Act 04 シェアカードのみ html2canvas を使用(現在は未使用パス)
+  if (typeof html2canvas !== 'function') {
+    alert('保存の準備が整っていません。すこし時間を置いてもう一度お試しください。');
+    return;
+  }
   const node = document.getElementById('karte-share-card');
   if (!node) return;
   try {
@@ -8444,7 +8435,28 @@ function buildOgImageDataURL(originId, direction) {
   ctx.font = `400 14px ${fontMono}`;
   ctx.fillText('seam.site · #SEAM髪診断', textCX, H - 50);
 
-  return canvas.toDataURL('image/png');
+  // 生成した画像を共有/保存(shareCounselingSheetImageと同じ方式: 共有シート優先→DLフォールバック)
+  const dataURL = canvas.toDataURL('image/png');
+  const fname = filename || 'SEAM-karte.png';
+  try {
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+    if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], fname, { type: 'image/png' })] })) {
+      try {
+        await navigator.share({ files: [new File([blob], fname, { type: 'image/png' })], title: 'SEAM 髪格診断' });
+        return dataURL;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return dataURL; // ユーザーが共有シートを閉じた
+      }
+    }
+    const link = document.createElement('a');
+    link.download = fname;
+    link.href = dataURL;
+    link.click();
+  } catch (e) {
+    console.warn('Karte image save failed', e);
+    alert('画像の保存に失敗しました もう一度お試しください');
+  }
+  return dataURL;
 }
 
 function drawCanvasPentagonDark(ctx, cx, cy, radius, values) {
