@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>サポート・お問い合わせ｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    /* ===== サポート / AIチャット（モック09準拠・自己完結スタイル） ===== */
+    .sup { padding-bottom: var(--s-8); }
+    .sup-head { padding-top: var(--s-4); }
+    .sup-head h1 { font-size: var(--fs-24); font-weight: 800; }
+    .sup-head p { color: var(--ink-2); font-size: var(--fs-14); margin-top: 4px; }
+
+    .sup-tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-2); margin: var(--s-4) 0; }
+    @media (min-width: 640px) { .sup-tiles { grid-template-columns: repeat(4, 1fr); } }
+    .sup-tile { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: var(--s-4) var(--s-2); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); transition: border-color .18s, box-shadow .18s; }
+    .sup-tile:hover { border-color: var(--ink-3); box-shadow: var(--shadow-sm); }
+    .sup-tile.is-on { border-color: var(--gold); background: var(--gold-soft); }
+    .sup-tile__ic { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-pill); background: var(--gold-soft); color: var(--gold-strong); }
+    .sup-tile.is-on .sup-tile__ic { background: #fff; }
+    .sup-tile__ic svg { width: 22px; height: 22px; }
+    .sup-tile__t { font-size: var(--fs-14); font-weight: 800; }
+    .sup-tile__s { font-size: 11px; color: var(--ink-3); line-height: 1.3; }
+    .sup-tile__tag { font-size: 10px; font-weight: 800; color: var(--gold-strong); background: #fff; border: 1px solid var(--gold-line); border-radius: var(--r-pill); padding: 1px 7px; margin-top: 2px; }
+
+    .chat { border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: var(--surface); }
+    .chat__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--line); }
+    .chat__head .t { font-size: var(--fs-15); font-weight: 800; }
+    .chat__head .on { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--ink-2); font-weight: 600; margin-right: auto; margin-left: var(--s-2); }
+    .chat__head .on::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--stock-in); }
+    .chat__end { font-size: var(--fs-12); color: var(--ink-2); border: 1px solid var(--line-3); border-radius: var(--r-pill); padding: 5px 12px; }
+
+    .chat__log { padding: var(--s-4); display: flex; flex-direction: column; gap: var(--s-4); max-height: 58vh; overflow-y: auto; }
+    .msg { display: flex; gap: var(--s-2); max-width: 88%; }
+    .msg__av { width: 34px; height: 34px; flex: none; border-radius: 50%; background: var(--dark); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; line-height: 1.05; text-align: center; }
+    .msg__bubble { background: var(--surface-2); border-radius: 4px 14px 14px 14px; padding: var(--s-3); font-size: var(--fs-14); color: var(--ink); line-height: 1.55; }
+    .msg__time { font-size: 10px; color: var(--ink-3); margin-top: 4px; }
+    .msg--me { margin-left: auto; flex-direction: row-reverse; }
+    .msg--me .msg__bubble { background: var(--dark); color: #fff; border-radius: 14px 4px 14px 14px; }
+
+    .chat-prod { margin-top: var(--s-2); display: flex; gap: var(--s-2); align-items: center; background: #fff; border: 1px solid var(--line); border-radius: var(--r-sm); padding: var(--s-2); }
+    .chat-prod__media { width: 46px; height: 46px; flex: none; background: var(--surface-2); border-radius: var(--r-xs); overflow: hidden; }
+    .chat-prod__name { font-size: var(--fs-12); font-weight: 700; line-height: 1.3; }
+    .chat-prod__price { font-size: var(--fs-12); margin-top: 2px; }
+    .chat-prod__price b { color: var(--gold-strong); font-family: var(--font-num); font-size: var(--fs-14); }
+    .chat-prod__stock { font-size: 10px; color: var(--stock-in); font-weight: 700; margin-top: 1px; }
+    .chat-prod__link { display: inline-block; margin-top: 6px; font-size: var(--fs-12); font-weight: 700; color: var(--gold-strong); }
+
+    .chat__quick { display: flex; gap: var(--s-2); flex-wrap: wrap; padding: var(--s-3) var(--s-4); border-top: 1px solid var(--line-2); }
+    .chat__quick button { flex: none; height: 34px; padding: 0 14px; border: 1px solid var(--line-3); border-radius: var(--r-pill); font-size: var(--fs-13); font-weight: 700; color: var(--ink-2); background: var(--surface); }
+    .chat__quick button:hover { border-color: var(--gold); color: var(--gold-strong); background: var(--gold-soft); }
+
+    .chat__order { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-3) var(--s-4); border-top: 1px solid var(--line-2); font-size: var(--fs-12); color: var(--ink-2); }
+    .chat__order svg { width: 18px; height: 18px; color: var(--ink-3); flex: none; }
+    .chat__order b { font-family: var(--font-num); color: var(--ink); }
+    .chat__order .tag--shipped { margin-left: 6px; background: #f1faf4; color: var(--stock-in); font-size: 10px; font-weight: 800; padding: 1px 7px; border-radius: var(--r-pill); }
+
+    .chat__input { display: flex; gap: var(--s-2); padding: var(--s-3) var(--s-4); border-top: 1px solid var(--line); }
+    .chat__input input { flex: 1 1 auto; min-width: 0; height: 46px; padding: 0 var(--s-4); border: 1px solid var(--line-3); border-radius: var(--r-pill); font-size: var(--fs-14); outline: none; }
+    .chat__input input:focus { border-color: var(--gold); }
+    .chat__input button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 46px; padding: 0 var(--s-5); background: var(--gold); color: #fff; font-weight: 800; border-radius: var(--r-pill); }
+    .chat__input button:hover { background: var(--gold-strong); }
+    .chat__input button svg { width: 16px; height: 16px; }
+
+    .sup-form-link { margin-top: var(--s-4); text-align: center; font-size: var(--fs-13); color: var(--ink-2); }
+    .sup-form-link a { color: var(--gold-strong); font-weight: 700; text-decoration: underline; }
+
+    /* ===== 電話サポート＝折り返し予約制（イタズラ電話防止） ===== */
+    .callback { border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface); padding: var(--s-5); }
+    .cb__head { font-size: var(--fs-16); font-weight: 800; }
+    .cb__note { font-size: var(--fs-13); color: var(--ink-2); line-height: 1.6; margin-top: 8px; background: var(--gold-soft); border-radius: var(--r-sm); padding: var(--s-3); }
+    .cb__field { margin-top: var(--s-4); }
+    .cb__field > label { display: block; font-size: var(--fs-13); font-weight: 800; margin-bottom: 8px; }
+    .cb__chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .cb__chips--grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+    @media (min-width: 460px) { .cb__chips--grid { grid-template-columns: repeat(4, 1fr); } }
+    .cb__chips--grid button { padding: 0 6px; font-size: var(--fs-13); }
+    .cb__lunch { font-size: 11px; color: var(--ink-3); margin: 8px 0 4px; }
+    .cb__chips button { height: 44px; padding: 0 16px; border: 1px solid var(--line-3); border-radius: var(--r-sm); font-size: var(--fs-14); font-weight: 700; color: var(--ink-2); background: var(--surface); }
+    .cb__chips button[aria-pressed="true"] { border-color: var(--gold); background: var(--gold-soft); color: var(--gold-strong); }
+    .cb__chips button:disabled { opacity: .4; text-decoration: line-through; cursor: not-allowed; }
+    .cb__phone { display: flex; align-items: center; gap: 10px; font-family: var(--font-num); font-size: var(--fs-18); font-weight: 800; }
+    .cb__phone span { font-family: var(--font-jp); font-size: var(--fs-12); font-weight: 600; color: var(--ink-3); }
+    .cb__hint { display: block; font-size: 11px; color: var(--ink-3); margin-top: 4px; }
+    .cb__select { width: 100%; height: 48px; padding: 0 var(--s-3); border: 1px solid var(--line-3); border-radius: var(--r-sm); font-size: var(--fs-14); background: var(--surface); }
+    .cb__submit { width: 100%; height: 52px; margin-top: var(--s-5); background: var(--gold); color: #fff; font-weight: 800; font-size: var(--fs-16); border-radius: var(--r-sm); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .cb__submit:hover { background: var(--gold-strong); }
+    .cb__submit svg { width: 18px; height: 18px; }
+    .cb__safe { display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; color: var(--ink-2); line-height: 1.5; margin-top: var(--s-3); background: var(--surface-2); border-radius: var(--r-sm); padding: var(--s-3); }
+    .cb__safe svg { width: 16px; height: 16px; color: var(--stock-in); flex: none; margin-top: 1px; }
+    .cb-done { text-align: center; padding: var(--s-6) var(--s-4); }
+    .cb-done__check { width: 64px; height: 64px; margin: 0 auto var(--s-4); border-radius: 50%; background: var(--gold-soft); color: var(--gold-strong); display: flex; align-items: center; justify-content: center; }
+    .cb-done__check svg { width: 34px; height: 34px; }
+    .cb-done__t { font-size: var(--fs-18); font-weight: 800; }
+    .cb-done__d { font-size: var(--fs-14); color: var(--ink-2); margin-top: var(--s-3); line-height: 1.8; }
+    .cb-done__no { font-family: var(--font-num); font-weight: 800; color: var(--ink); }
+    .cb-done__btn { margin-top: var(--s-5); height: 46px; padding: 0 var(--s-5); border: 1px solid var(--line-3); border-radius: var(--r-sm); font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="#" data-soon="お知らせ" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="icon-btn__badge" id="notifBadge">2</span></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container sup">
+    <a class="back-link" href="mypage.html" style="margin-top:var(--s-4);display:inline-flex">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>マイページ
+    </a>
+
+    <div class="sup-head">
+      <h1>サポート</h1>
+      <p>注文・商品・配送・経営まで、いつでもご相談ください。会員情報は自動で連携されます。</p>
+    </div>
+
+    <div class="sup-tiles">
+      <button class="sup-tile is-on" type="button" data-panel="chat">
+        <span class="sup-tile__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-8 8H4l1.5-3.5A8 8 0 1 1 21 12Z"/><path d="m9 11 1.5 1.5L14 9"/></svg></span>
+        <span class="sup-tile__t">AIチャット</span>
+        <span class="sup-tile__s">24時間いつでも即時対応</span>
+        <span class="sup-tile__tag">おすすめ</span>
+      </button>
+      <button class="sup-tile" type="button" data-panel="callback">
+        <span class="sup-tile__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+        <span class="sup-tile__t">担当者に相談</span>
+        <span class="sup-tile__s">折り返し予約・専任<br>平日 10:00-18:00</span>
+      </button>
+      <a class="sup-tile" href="#" data-soon="よくある質問">
+        <span class="sup-tile__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3"/><path d="M12 17v.01"/></svg></span>
+        <span class="sup-tile__t">よくある質問</span>
+        <span class="sup-tile__s">FAQ・使い方ガイド</span>
+      </a>
+      <button class="sup-tile" type="button" data-panel="callback">
+        <span class="sup-tile__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 6a2 2 0 0 1 2-2Z"/></svg></span>
+        <span class="sup-tile__t">電話サポート</span>
+        <span class="sup-tile__s">折り返し予約制<br>平日 10:00-18:00</span>
+      </button>
+    </div>
+
+    <section class="chat" id="panelChat">
+      <div class="chat__head">
+        <span class="t">AIチャットサポート</span>
+        <span class="on">オンライン・24時間対応</span>
+        <button class="chat__end" type="button" data-soon="チャットを終了">チャットを終了</button>
+      </div>
+
+      <div class="chat__log" id="chatLog">
+        <div class="msg">
+          <span class="msg__av">SALON<br>PRO</span>
+          <div>
+            <div class="msg__bubble">こんにちは！SalonProサポートです。ご注文・商品・配送・在庫など、ご不明点にお答えします。</div>
+            <div class="msg__time">たった今</div>
+          </div>
+        </div>
+        <div class="msg msg--me">
+          <div><div class="msg__bubble">oggi otto インプレッシブPPT セラム SS の在庫状況を教えてください。</div></div>
+        </div>
+        <div class="msg">
+          <span class="msg__av">SALON<br>PRO</span>
+          <div>
+            <div class="msg__bubble">
+              お問い合わせありがとうございます！<br>
+              「oggi otto インプレッシブPPT セラム SS 700mL」は現在 <b>在庫あり</b> で当日発送が可能です。13:00 までのご注文で当日出荷いたします。
+              <div class="chat-prod">
+                <div class="chat-prod__media"><svg class="card__ph" viewBox="0 0 100 100"><rect x="40" y="14" width="20" height="9" rx="2" fill="#3a3030"/><rect x="33" y="23" width="34" height="63" rx="7" fill="#3a3030"/><rect x="38" y="40" width="24" height="30" rx="3" fill="rgba(255,255,255,.5)"/></svg></div>
+                <div style="flex:1 1 auto;min-width:0">
+                  <div class="chat-prod__name">oggi otto インプレッシブPPT セラム SS 700mL</div>
+                  <div class="chat-prod__price">会員価格 <b>¥8,800</b> <span style="color:var(--ink-3)">税抜</span></div>
+                  <div class="chat-prod__stock">● 在庫あり・即日発送</div>
+                </div>
+              </div>
+              <a class="chat-prod__link" href="product.html?id=rec-1">商品ページを見る →</a>
+            </div>
+            <div class="msg__time">たった今</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat__quick" id="chatQuick">
+        <button type="button">在庫について</button>
+        <button type="button">配送について</button>
+        <button type="button">商品の使い方</button>
+        <button type="button">注文変更</button>
+        <button type="button">その他の質問</button>
+      </div>
+
+      <div class="chat__order">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h11v9H3zM14 9h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg>
+        このご注文に関するお問い合わせ：注文番号 <b>SP-250510-0001</b><span class="tag--shipped">発送済み</span>
+      </div>
+
+      <form class="chat__input" id="chatForm">
+        <input type="text" id="chatText" placeholder="メッセージを入力してください" autocomplete="off" aria-label="メッセージ">
+        <button type="submit">送信<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></button>
+      </form>
+    </section>
+
+    <section class="callback" id="panelCallback" hidden>
+      <div class="cb__head">電話サポート（折り返し予約）</div>
+      <p class="cb__note">いたずら電話・営業電話を防ぐため<b>折り返し予約制</b>です。ご希望の日時をご予約いただくと、登録済みのお電話番号へ担当者から折り返しお電話します（こちらの番号は表示されません）。</p>
+
+      <div class="cb__field">
+        <label>希望日</label>
+        <div class="cb__chips" data-group="date">
+          <button type="button" aria-pressed="true">本日 6/18(水)</button>
+          <button type="button">明日 6/19(木)</button>
+          <button type="button">6/20(金)</button>
+          <button type="button">6/23(月)</button>
+        </div>
+      </div>
+
+      <div class="cb__field">
+        <label>希望時間帯（30分単位）</label>
+        <div class="cb__chips cb__chips--grid" data-group="time">
+          <button type="button">10:00–10:30</button>
+          <button type="button" disabled>10:30–11:00</button>
+          <button type="button">11:00–11:30</button>
+          <button type="button">11:30–12:00</button>
+          <button type="button">13:00–13:30</button>
+          <button type="button" aria-pressed="true">13:30–14:00</button>
+          <button type="button">14:00–14:30</button>
+          <button type="button" disabled>14:30–15:00</button>
+          <button type="button">15:00–15:30</button>
+          <button type="button">15:30–16:00</button>
+          <button type="button">16:00–16:30</button>
+          <button type="button">16:30–17:00</button>
+          <button type="button">17:00–17:30</button>
+          <button type="button">17:30–18:00</button>
+        </div>
+        <div class="cb__lunch">※ 12:00–13:00 はお昼休みのため受付しておりません</div>
+      </div>
+
+      <div class="cb__field">
+        <label>折り返し先（登録番号）</label>
+        <div class="cb__phone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;color:var(--gold-strong)"><path d="M5 4h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 6a2 2 0 0 1 2-2Z"/></svg>03-1234-5678 <span>SALON LUXE 表参道店</span></div>
+        <span class="cb__hint">番号の変更は「会員情報」から行えます</span>
+      </div>
+
+      <div class="cb__field">
+        <label>ご用件（任意）</label>
+        <select class="cb__select" id="cbTopic">
+          <option>注文・配送について</option>
+          <option>商品・在庫について</option>
+          <option>掛け払い・お支払いについて</option>
+          <option>会員審査・登録について</option>
+          <option>経営・店販のご相談</option>
+          <option>その他</option>
+        </select>
+      </div>
+
+      <button class="cb__submit" id="cbSubmit" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-3 2a14 14 0 0 0 6 6l2-3 5 2v4a2 2 0 0 1-2 2A17 17 0 0 1 3 6a2 2 0 0 1 2-2Z"/></svg>
+        この時間帯で折り返しを予約する
+      </button>
+      <div class="cb__safe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        当サービスは<b>折り返し発信専用</b>です。サポートの電話番号は公開せず、ご予約いただいた会員様の登録番号にのみ担当者が発信します。
+      </div>
+    </section>
+
+    <p class="sup-form-link" id="formLink">チャットで解決しない場合は <a href="#" id="toForm">フォームでお問い合わせ</a> も可能です。</p>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span><span class="icon-btn__badge" id="tabCartBadge" hidden>0</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab is-active" href="mypage.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      const log = document.getElementById('chatLog');
+      const form = document.getElementById('chatForm');
+      const text = document.getElementById('chatText');
+
+      function bubble(side, html) {
+        const me = side === 'me';
+        const wrap = document.createElement('div');
+        wrap.className = 'msg' + (me ? ' msg--me' : '');
+        wrap.innerHTML = (me ? '' : '<span class="msg__av">SALON<br>PRO</span>') +
+          '<div><div class="msg__bubble">' + html + '</div><div class="msg__time">たった今</div></div>';
+        log.appendChild(wrap);
+        log.scrollTop = log.scrollHeight;
+      }
+
+      const REPLIES = [
+        { k: ['在庫', '欠品', '入荷'], a: '在庫は商品ページの「在庫あり／残りわずか」で常時ご確認いただけます。残りわずかの商品は早めのご注文がおすすめです。特定商品の在庫をお調べしましょうか？' },
+        { k: ['配送', '送料', '届く', '出荷', '納期'], a: '平日17時・土日祝15時までのご注文で最短当日出荷、最短翌日着です。税込¥11,000以上で送料無料となります。' },
+        { k: ['使い方', '使用', '塗布', '量'], a: '商品ページの「使い方」と「関連動画」でプロ向けの使用手順をご案内しています。施術メニュー別の提案もこちらでお答えできます。' },
+        { k: ['注文変更', 'キャンセル', '変更', '取消'], a: '出荷前のご注文は変更・キャンセルが可能です。注文番号をお知らせいただければ担当者がすぐに対応します。' },
+        { k: ['割引', 'まとめ', '掛け', '請求', '支払'], a: 'まとめ買いは6個以上で5%OFF、12個以上で10%OFFです。お支払いは請求書払い（掛け・月末締め翌月末）にも対応しています。' },
+      ];
+      function botReply(q) {
+        const hit = REPLIES.find(r => r.k.some(k => q.includes(k)));
+        const a = hit ? hit.a : 'ご質問ありがとうございます。担当のサポートが確認し最適なご案内をいたします。注文番号や商品名を添えていただくとよりスムーズです。';
+        setTimeout(() => bubble('bot', a), 450);
+      }
+
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const v = text.value.trim();
+        if (!v) return;
+        bubble('me', v.replace(/</g, '&lt;'));
+        text.value = '';
+        botReply(v);
+      });
+      document.getElementById('chatQuick').addEventListener('click', e => {
+        const b = e.target.closest('button'); if (!b) return;
+        const q = b.textContent; bubble('me', q); botReply(q);
+      });
+      document.getElementById('toForm').addEventListener('click', e => {
+        e.preventDefault();
+        if (window.SP_toast) SP_toast('フォームは次のステップでご用意します');
+      });
+
+      // パネル切替（AIチャット / 折り返し予約）
+      const panelChat = document.getElementById('panelChat');
+      const panelCb = document.getElementById('panelCallback');
+      const formLink = document.getElementById('formLink');
+      const tiles = [...document.querySelectorAll('.sup-tile[data-panel]')];
+      tiles.forEach(t => t.addEventListener('click', () => {
+        const p = t.dataset.panel;
+        tiles.forEach(x => x.classList.toggle('is-on', x === t));
+        panelChat.hidden = (p !== 'chat');
+        panelCb.hidden = (p !== 'callback');
+        formLink.hidden = (p !== 'chat');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }));
+
+      // 予約チップ（日付・時間帯）＝グループ内で単一選択
+      document.querySelectorAll('.cb__chips').forEach(group => {
+        group.addEventListener('click', e => {
+          const b = e.target.closest('button:not([disabled])');
+          if (!b) return;
+          [...group.children].forEach(x => x.setAttribute('aria-pressed', x === b));
+        });
+      });
+
+      // 折り返し予約 → 完了画面
+      document.getElementById('cbSubmit').addEventListener('click', () => {
+        const date = document.querySelector('.cb__chips[data-group="date"] [aria-pressed="true"]').textContent.trim();
+        const time = document.querySelector('.cb__chips[data-group="time"] [aria-pressed="true"]').textContent.trim();
+        const topic = document.getElementById('cbTopic').value;
+        const no = 'CB-' + Math.floor(100000 + (Date.now() % 900000));
+        panelCb.innerHTML =
+          '<div class="cb-done">' +
+            '<div class="cb-done__check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L15.5 9.5"/></svg></div>' +
+            '<div class="cb-done__t">折り返しを予約しました</div>' +
+            '<div class="cb-done__d"><span class="cb-done__no">' + date + ' ' + time + '</span> に<br>SALON LUXE 表参道店（<span class="cb-done__no">03-1234-5678</span>）へ<br>担当者からお電話します。<br>ご用件：' + topic + '<br>予約番号：<span class="cb-done__no">' + no + '</span></div>' +
+            '<button class="cb-done__btn" type="button" id="cbBack">サポートトップへ戻る</button>' +
+          '</div>';
+        document.getElementById('cbBack').addEventListener('click', () => location.reload());
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    })();
+  </script>
+</body>
+</html>

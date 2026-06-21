@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>美容機器・什器（購入・リース）｜SalonPro</title>
+  <meta name="description" content="シャンプー台・セットチェアなどサロン機器を購入またはリースで導入。リースは年利3〜5%、オンライン申込で担当ディーラーに通知されます。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 980px; }
+    .eq-hd { margin-top: var(--s-4); }
+    .eq-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; }
+    .eq-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.65; }
+    .eq-info { display: flex; gap: 9px; align-items: flex-start; background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r-md); padding: 12px 14px; margin-top: var(--s-4); font-size: 12px; color: var(--ink-2); line-height: 1.65; }
+    .eq-info svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--gold-strong); }
+    .eq-info b { color: var(--ink); }
+    .eq-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: var(--s-4); }
+    @media (min-width: 620px) { .eq-grid { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 920px) { .eq-grid { grid-template-columns: 1fr 1fr 1fr; } }
+    .eq-card { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; background: #fff; }
+    .eq-card__top { height: 116px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; font-weight: 900; letter-spacing: .04em; }
+    .eq-card__b { padding: 12px 13px 14px; display: flex; flex-direction: column; flex: 1; }
+    .eq-card__brand { font-size: 11px; color: var(--ink-3); font-weight: 700; }
+    .eq-card__t { font-size: 14px; font-weight: 800; line-height: 1.35; margin-top: 2px; }
+    .eq-card__price { margin-top: 8px; font-size: 12px; color: var(--ink-2); }
+    .eq-card__price b { font-size: 17px; font-weight: 900; color: var(--ink); }
+    .eq-card__lease { margin-top: 4px; font-size: 11.5px; color: var(--gold-strong); font-weight: 800; }
+    .eq-actions { display: flex; flex-direction: column; gap: 7px; margin-top: 11px; }
+    .eq-btn { height: 40px; border-radius: var(--r-md); font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); }
+    .eq-btn svg { width: 15px; height: 15px; }
+    .eq-btn--lease { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .eq-btn--lease:hover { background: var(--gold-strong); }
+    .eq-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin: 18px 0 4px; }
+
+    /* 中古（再販） */
+    .eq-sec__note { font-size: 11px; color: var(--ink-3); font-weight: 600; margin-left: 8px; }
+    .eq-card__top { position: relative; }
+    .eq-used-badge { position: absolute; top: 8px; left: 8px; background: rgba(20,20,28,.78); color: #fff; font-size: 10.5px; font-weight: 800; border-radius: var(--r-pill); padding: 3px 9px; }
+    .eq-cond { display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 800; border-radius: var(--r-pill); padding: 2px 8px; }
+    .eq-cond--A { background: #e7f4ec; color: #2f7d4f; } .eq-cond--B { background: #eaf1fb; color: #34507a; } .eq-cond--C { background: #f3f0ee; color: #7b7b80; }
+    .eq-card__list { font-size: 11.5px; color: var(--ink-3); text-decoration: line-through; margin-left: 6px; }
+    .eq-card__src { font-size: 11px; color: var(--ink-3); margin-top: 3px; }
+
+    /* 申込履歴 */
+    .eq-sec__t { font-size: 16px; font-weight: 900; margin: var(--s-5) 0 12px; }
+    .eq-app { display: flex; align-items: center; gap: 11px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 13px; }
+    .eq-app + .eq-app { margin-top: 9px; }
+    .eq-app__b { flex: 1; min-width: 0; }
+    .eq-app__t { font-size: 13.5px; font-weight: 800; }
+    .eq-app__m { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .eq-app__st { flex: none; font-size: 11px; font-weight: 800; border-radius: var(--r-pill); padding: 4px 11px; }
+    .st--pending { background: #fff5e0; color: #8a6a1f; }
+    .st--contacted { background: #eaf1fb; color: #34507a; }
+    .st--approved { background: #e7f4ec; color: #2f7d4f; }
+    .st--rejected { background: #f3f0ee; color: #7b7b80; }
+
+    /* リース申込モーダル */
+    .lz-ov { position: fixed; inset: 0; background: rgba(20,20,28,.5); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    .lz-ov.is-open { display: flex; }
+    @media (min-width: 640px) { .lz-ov { align-items: center; } }
+    .lz { width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto; background: #fff; border-radius: 18px 18px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); }
+    @media (min-width: 640px) { .lz { border-radius: 18px; } }
+    .lz__hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .lz__t { font-size: 17px; font-weight: 900; }
+    .lz__s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+    .lz__x { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--surface-2); color: var(--ink-2); font-size: 17px; cursor: pointer; }
+    .lz__lbl { font-size: 12px; font-weight: 800; color: var(--ink-2); margin: 15px 0 7px; }
+    .lz-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .lz-chip { border: 1px solid var(--line-strong); background: #fff; border-radius: var(--r-pill); padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .lz-chip.is-on { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .lz-calc { margin-top: 16px; border: 1px solid var(--gold-line); background: var(--gold-soft); border-radius: var(--r-md); padding: 14px; }
+    .lz-calc__big { font-size: 12px; color: var(--ink-2); }
+    .lz-calc__big b { font-size: 26px; font-weight: 900; color: var(--ink); }
+    .lz-calc__row { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-2); margin-top: 7px; }
+    .lz-field { margin-top: 13px; }
+    .lz-field label { font-size: 12px; font-weight: 800; color: var(--ink-2); display: block; margin-bottom: 5px; }
+    .lz-field input, .lz-field textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 10px 12px; font-size: 14px; font-family: inherit; }
+    .lz-field textarea { resize: vertical; min-height: 56px; }
+    .lz__submit { width: 100%; height: 50px; border-radius: var(--r-md); background: var(--gold); border: 0; color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 16px; }
+    .lz__submit:hover { background: var(--gold-strong); }
+    .lz__legal { font-size: 10.5px; color: var(--ink-3); line-height: 1.6; margin-top: 10px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <nav class="header-actions">
+        <a class="icon-btn" href="news.html" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="eq-hd">
+      <div class="eq-hd__t">美容機器・什器</div>
+      <div class="eq-hd__s">シャンプー台・セットチェアなどサロン機器を<b>購入</b>・<b>リース</b>・<b>中古（再販）</b>で導入。リースは初期費用をおさえて分割で、中古は閉店・改装で引き上げた機器をお得に。</div>
+    </div>
+
+    <div class="eq-info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11H3z"/><path d="M9 22V12h6v10"/></svg>
+      <span><b>リースは年利3〜5%</b>の目安でお見積り。オンラインでお申し込みいただくと、<b>担当ディーラー（菊地）に通知</b>が届き、担当者より審査・ご契約のご連絡をします。実際の料率・与信は審査により決定します。</span>
+    </div>
+
+    <div class="eq-sec__t" id="newHd">新品</div>
+    <div class="eq-grid" id="eqGrid"></div>
+
+    <div id="usedWrap" hidden>
+      <div class="eq-sec__t">中古（再販）<span class="eq-sec__note">閉店・改装で引き上げた機器をお得に・各1点限り</span></div>
+      <div class="eq-grid" id="usedGrid"></div>
+    </div>
+
+    <div id="appsWrap" hidden>
+      <div class="eq-sec__t">お申し込み状況</div>
+      <div id="appList"></div>
+    </div>
+
+    <p class="eq-note">※ 機器の価格・仕様はプロトタイプの仮置きです。リースのお支払い額は元金＋年利を期間で按分した概算で、実際の料率・残価設定・与信枠は審査により決定します。</p>
+  </main>
+
+  <!-- リース／購入 申込モーダル -->
+  <div class="lz-ov" id="lzOv" role="dialog" aria-modal="true" aria-label="リース・購入のお申し込み">
+    <div class="lz">
+      <div class="lz__hd">
+        <div>
+          <div class="lz__t" id="lzTitle">リースのお申し込み</div>
+          <div class="lz__s" id="lzSub"></div>
+        </div>
+        <button class="lz__x" data-lz-close aria-label="閉じる">✕</button>
+      </div>
+
+      <div id="lzLeaseFields">
+        <div class="lz__lbl">リース期間</div>
+        <div class="lz-chips" id="lzTerms"></div>
+        <div class="lz__lbl">想定年利（目安）</div>
+        <div class="lz-chips" id="lzRates"></div>
+        <div class="lz-calc">
+          <div class="lz-calc__big">月々のお支払い目安　<b id="lzMonthly">¥0</b> <span style="font-size:11px;color:var(--ink-3)">／月（税抜）</span></div>
+          <div class="lz-calc__row"><span id="lzTermLabel">60回</span><span>支払総額 <b id="lzTotal">¥0</b></span></div>
+          <div class="lz-calc__row"><span>うち金利（概算）</span><span id="lzInterest">¥0</span></div>
+        </div>
+      </div>
+
+      <div class="lz-field">
+        <label for="lzSalon">サロン名</label>
+        <input type="text" id="lzSalon" placeholder="例：SALON LUXE 表参道店">
+      </div>
+      <div class="lz-field">
+        <label for="lzContact">ご担当者・ご連絡先</label>
+        <input type="text" id="lzContact" placeholder="例：山田 / 090-0000-0000">
+      </div>
+      <div class="lz-field">
+        <label for="lzNote">ご要望・メモ（任意）</label>
+        <textarea id="lzNote" placeholder="設置場所・希望納期・下取りなど"></textarea>
+      </div>
+
+      <button class="lz__submit" id="lzSubmit">この内容で申し込む</button>
+      <p class="lz__legal">送信すると担当ディーラー（菊地）に通知され、担当者より審査・お見積り・ご契約のご連絡をします。この時点で契約は成立しません。実際の料率・与信は審査により決定します。</p>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      var Store = SP.Store;
+      var yen = SP.fmtYen || function (n) { return '¥' + (n || 0).toLocaleString(); };
+      var toast = function (m) { if (window.SP_toast) SP_toast(m); };
+      var CURRENT_SALON = 'SALON LUXE 表参道店';
+      var TERMS = [24, 36, 48, 60, 72];
+      var RATES = [3.0, 3.5, 4.0, 4.5, 5.0];
+      var equip = (SP.DATA.products || []).filter(function (p) { return p.cat === 'equipment'; });
+      var used = SP.USED_EQUIPMENT || [];
+      var featUsed = !(SP.TENANT && SP.TENANT.features && SP.TENANT.features.usedEquipment === false);
+      function findItem(id) { return equip.find(function (p) { return p.id === id; }) || used.find(function (p) { return p.id === id; }); }
+
+      // 元金＋年利を期間で按分（元利均等の概算）
+      function monthly(price, term, ratePct) {
+        var r = ratePct / 100 / 12;
+        if (r <= 0) return Math.round(price / term);
+        return Math.round(price * r / (1 - Math.pow(1 + r, -term)));
+      }
+      function minLease(price) { return monthly(price, 60, 4.0); }
+
+      function card(p) {
+        var t = (p.ph && p.ph.tint) || '#5b6473';
+        var label = (p.ph && p.ph.label) || '';
+        return '<div class="eq-card">' +
+          '<div class="eq-card__top" style="background:' + t + '">' + label + '</div>' +
+          '<div class="eq-card__b">' +
+            '<span class="eq-card__brand">' + (p.brand || '') + '</span>' +
+            '<span class="eq-card__t">' + p.name + '</span>' +
+            '<span class="eq-card__price">本体 <b>' + yen(p.price) + '</b><span style="font-size:11px;color:var(--ink-3)">（税抜）</span></span>' +
+            '<span class="eq-card__lease">リース 月々 ' + yen(minLease(p.price)) + '〜（60回・年利4%目安）</span>' +
+            '<div class="eq-actions">' +
+              '<button class="eq-btn eq-btn--lease" data-lease="' + p.id + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11H3z"/><path d="M9 22V12h6v10"/></svg>リースを申し込む</button>' +
+              '<button class="eq-btn" data-buy="' + p.id + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V6a3 3 0 0 1 6 0v5"/><path d="M5 11h14l-1 9H6z"/></svg>購入を相談（見積）</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function renderGrid() { document.getElementById('eqGrid').innerHTML = equip.map(card).join(''); }
+
+      function usedCard(p) {
+        var t = (p.ph && p.ph.tint) || '#5b6473';
+        var label = (p.ph && p.ph.label) || '';
+        var off = p.list ? Math.round((1 - p.price / p.list) * 100) : 0;
+        return '<div class="eq-card">' +
+          '<div class="eq-card__top" style="background:' + t + '"><span class="eq-used-badge">中古・1点限り</span>' + label + '</div>' +
+          '<div class="eq-card__b">' +
+            '<span class="eq-card__brand">' + (p.brand || '') + '　<span class="eq-cond eq-cond--' + p.cond + '">状態' + p.cond + '</span>　' + p.year + '年式</span>' +
+            '<span class="eq-card__t">' + p.name + '</span>' +
+            '<span class="eq-card__price"><b>' + yen(p.price) + '</b>' + (p.list ? '<span class="eq-card__list">' + yen(p.list) + '</span>' + (off > 0 ? ' <span style="color:#c0453f;font-weight:800;font-size:11.5px">' + off + '%OFF</span>' : '') : '') + '</span>' +
+            '<span class="eq-card__src">' + (p.source || '') + '</span>' +
+            '<div class="eq-actions">' +
+              '<button class="eq-btn eq-btn--lease" data-used="' + p.id + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>この中古を申し込む</button>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+      function renderUsed() {
+        var wrap = document.getElementById('usedWrap');
+        var newHd = document.getElementById('newHd');
+        if (!featUsed || !used.length) { wrap.hidden = true; if (newHd) newHd.hidden = true; return; }
+        wrap.hidden = false;
+        if (newHd) newHd.hidden = false; // 中古がある時だけ「新品／中古」の見出しを出す
+        document.getElementById('usedGrid').innerHTML = used.map(usedCard).join('');
+      }
+
+      var ST = { pending: ['お申し込み受付（担当者の連絡待ち）', 'st--pending'], contacted: ['担当者より連絡済み', 'st--contacted'], approved: ['審査承認・契約手続きへ', 'st--approved'], rejected: ['見送り', 'st--rejected'] };
+      function renderApps() {
+        var apps = Store.getLeaseApps();
+        var wrap = document.getElementById('appsWrap');
+        if (!apps.length) { wrap.hidden = true; return; }
+        wrap.hidden = false;
+        document.getElementById('appList').innerHTML = apps.map(function (a) {
+          var st = ST[a.status] || ST.pending;
+          var line = a.plan === 'lease'
+            ? ('リース ' + a.term + '回・年利' + a.rate + '%・月々 ' + yen(a.monthly))
+            : a.plan === 'used' ? ('中古 ' + yen(a.price)) : '購入（お見積り依頼）';
+          return '<div class="eq-app">' +
+            '<div class="eq-app__b"><div class="eq-app__t">' + a.name + '</div>' +
+            '<div class="eq-app__m">' + line + '　／　' + (a.salon || '') + '</div></div>' +
+            '<span class="eq-app__st ' + st[1] + '">' + st[0] + '</span></div>';
+        }).join('');
+      }
+
+      /* ---- モーダル ---- */
+      var ov = document.getElementById('lzOv');
+      var cur = { p: null, plan: 'lease', term: 60, rate: 4.0 };
+
+      function calc() {
+        if (cur.plan !== 'lease' || !cur.p) return;
+        var m = monthly(cur.p.price, cur.term, cur.rate);
+        var total = m * cur.term;
+        document.getElementById('lzMonthly').textContent = yen(m);
+        document.getElementById('lzTotal').textContent = yen(total);
+        document.getElementById('lzInterest').textContent = yen(Math.max(0, total - cur.p.price));
+        document.getElementById('lzTermLabel').textContent = cur.term + '回（' + cur.term + 'ヶ月）';
+      }
+      function chips(host, vals, sel, fmt, on) {
+        host.innerHTML = vals.map(function (v) {
+          return '<button class="lz-chip' + (v === sel ? ' is-on' : '') + '" data-v="' + v + '">' + fmt(v) + '</button>';
+        }).join('');
+        host.onclick = function (e) {
+          var b = e.target.closest('.lz-chip'); if (!b) return;
+          [].forEach.call(host.children, function (c) { c.classList.remove('is-on'); });
+          b.classList.add('is-on'); on(parseFloat(b.getAttribute('data-v'))); calc();
+        };
+      }
+      function openLease(p, plan) {
+        cur = { p: p, plan: plan, term: 60, rate: 4.0 };
+        var titles = { lease: 'リースのお申し込み', buy: '購入のご相談（お見積り）', used: '中古機器のお申し込み（在庫確認）' };
+        var subs = { lease: '本体 ', buy: '本体 ', used: '中古価格 ' };
+        var submits = { lease: 'この内容でリースを申し込む', buy: 'この内容で見積を依頼する', used: 'この中古機器を申し込む' };
+        document.getElementById('lzTitle').textContent = titles[plan] || titles.lease;
+        document.getElementById('lzSub').textContent = p.name + '　' + (subs[plan] || '') + yen(p.price);
+        document.getElementById('lzLeaseFields').style.display = plan === 'lease' ? '' : 'none';
+        document.getElementById('lzSubmit').textContent = submits[plan] || submits.lease;
+        document.getElementById('lzSalon').value = CURRENT_SALON;
+        document.getElementById('lzContact').value = '';
+        document.getElementById('lzNote').value = '';
+        if (plan === 'lease') {
+          chips(document.getElementById('lzTerms'), TERMS, 60, function (v) { return v + '回'; }, function (v) { cur.term = v; });
+          chips(document.getElementById('lzRates'), RATES, 4.0, function (v) { return v.toFixed(1) + '%'; }, function (v) { cur.rate = v; });
+          calc();
+        }
+        ov.classList.add('is-open');
+      }
+      function closeLease() { ov.classList.remove('is-open'); }
+
+      document.getElementById('eqGrid').addEventListener('click', function (e) {
+        var l = e.target.closest('[data-lease]'); var b = e.target.closest('[data-buy]');
+        if (l) { openLease(findItem(l.getAttribute('data-lease')), 'lease'); }
+        else if (b) { openLease(findItem(b.getAttribute('data-buy')), 'buy'); }
+      });
+      document.getElementById('usedGrid').addEventListener('click', function (e) {
+        var u = e.target.closest('[data-used]'); if (u) openLease(findItem(u.getAttribute('data-used')), 'used');
+      });
+      ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-lz-close]')) closeLease(); });
+
+      document.getElementById('lzSubmit').addEventListener('click', function () {
+        if (!cur.p) return;
+        var rec = {
+          equipId: cur.p.id, name: cur.p.name, brand: cur.p.brand, price: cur.p.price,
+          plan: cur.plan,
+          salon: (document.getElementById('lzSalon').value || CURRENT_SALON).trim(),
+          contact: document.getElementById('lzContact').value.trim(),
+          note: document.getElementById('lzNote').value.trim(),
+        };
+        if (cur.plan === 'lease') {
+          rec.term = cur.term; rec.rate = cur.rate;
+          rec.monthly = monthly(cur.p.price, cur.term, cur.rate);
+          rec.total = rec.monthly * cur.term;
+        }
+        Store.addLeaseApp(rec);
+        closeLease();
+        var msgs = { lease: 'リースのお申し込みをディーラーに送信しました', buy: '購入のお見積り依頼を送信しました', used: '中古機器のお申し込みをディーラーに送信しました' };
+        toast(msgs[cur.plan] || msgs.lease);
+        renderApps();
+      });
+
+      function syncCart() {
+        var n = Store.cartSummary().count + (Store.giftCount ? Store.giftCount() : 0);
+        var el = document.getElementById('cartBadge'); if (el) { el.textContent = n; el.hidden = n <= 0; }
+      }
+
+      renderGrid();
+      renderUsed();
+      renderApps();
+      syncCart();
+      // 商品詳細などからの ?lease=<id> で該当機器のリース申込を自動オープン
+      var qid = new URLSearchParams(location.search).get('lease');
+      if (qid) { var p = equip.find(function (x) { return x.id === qid; }); if (p) openLease(p, 'lease'); }
+    })();
+  </script>
+</body>
+</html>

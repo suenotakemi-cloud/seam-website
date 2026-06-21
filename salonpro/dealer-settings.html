@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>サイト設定（運営ディーラー）｜SalonPro</title>
+  <meta name="description" content="マルチテナント設定：取扱い・対応業種・決済・表示機能・ブランドを、ディーラーごとに表示/非表示でカスタマイズ。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 760px; }
+    .ds-hd { margin-top: var(--s-4); } .ds-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; } .ds-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; line-height: 1.6; }
+    .ds-sec { margin-top: var(--s-5); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; }
+    .ds-sec__t { font-size: 14px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+    .ds-sec__t svg { width: 17px; height: 17px; color: var(--gold-strong); }
+    .ds-sec__s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+    /* presets */
+    .ds-presets { display: grid; gap: 8px; margin-top: 12px; }
+    @media (min-width:560px){ .ds-presets { grid-template-columns: repeat(3,1fr); } }
+    .ds-preset { text-align: left; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 11px 12px; background: #fff; cursor: pointer; }
+    .ds-preset b { font-size: 12.5px; font-weight: 800; display: block; } .ds-preset span { font-size: 10.5px; color: var(--ink-3); }
+    .ds-preset:hover { border-color: var(--gold); background: var(--gold-soft); }
+    /* toggle row */
+    .ds-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line-2); }
+    .ds-row:first-of-type { border-top: 0; }
+    .ds-row__l { font-size: 13.5px; font-weight: 700; } .ds-row__s { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+    .sw { position: relative; width: 44px; height: 26px; flex: none; }
+    .sw input { position: absolute; opacity: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+    .sw__t { position: absolute; inset: 0; background: var(--line-3); border-radius: 999px; transition: .15s; }
+    .sw__t::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: .15s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+    .sw input:checked + .sw__t { background: var(--gold-strong); }
+    .sw input:checked + .sw__t::after { transform: translateX(18px); }
+    /* brand */
+    .ds-field { margin-top: 12px; } .ds-field label { font-size: 12px; font-weight: 800; color: var(--ink-2); display: block; margin-bottom: 5px; }
+    .ds-field input[type=text] { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 10px 12px; font-size: 14px; font-family: inherit; }
+    .ds-swatches { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
+    .ds-sw { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; padding: 0; }
+    .ds-sw.is-on { border-color: var(--ink); box-shadow: 0 0 0 2px #fff inset; }
+    .ds-radios { display: grid; gap: 7px; margin-top: 6px; }
+    .ds-radio { display: flex; gap: 9px; align-items: flex-start; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 10px 12px; cursor: pointer; }
+    .ds-radio input { margin-top: 2px; accent-color: var(--gold-strong); }
+    .ds-radio b { font-size: 13px; font-weight: 800; } .ds-radio span { font-size: 11px; color: var(--ink-3); }
+    .ds-actions { position: sticky; bottom: 0; display: flex; gap: 10px; padding: 12px 0 4px; background: linear-gradient(#fff0, #fff 30%); margin-top: var(--s-4); }
+    .ds-actions a, .ds-actions button { flex: 1; text-align: center; border-radius: var(--r-md); padding: 13px; font-size: 14px; font-weight: 800; cursor: pointer; }
+    .ds-prev { background: var(--ink); color: #fff; border: 1px solid var(--ink); }
+    .ds-reset { background: #fff; color: var(--ink-2); border: 1px solid var(--line-strong); }
+    .ds-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin-top: 14px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="mypage.html" aria-label="戻る"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <nav class="header-actions"><a class="icon-btn" href="mypage.html" aria-label="マイページ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></a></nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="ds-hd">
+      <div class="ds-hd__t">サイト設定（運営ディーラー向け）</div>
+      <div class="ds-hd__s">取扱い・対応業種・決済・表示機能・ブランドを、表示/非表示で自由にカスタマイズ。1つのサイトを各ディーラー仕様にできます（マルチテナント）。変更は自動保存され、プレビューで即反映します。</div>
+    </div>
+
+    <section class="ds-sec">
+      <div class="ds-sec__t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5L12 16.5 7.1 18.2 8 12.7 4 8.8 9.5 8z"/></svg>プリセット（型）から始める</div>
+      <div class="ds-sec__s">よくある運営スタイルを選ぶと、まとめて設定されます。あとから微調整できます。</div>
+      <div class="ds-presets" id="dsPresets"></div>
+    </section>
+
+    <section class="ds-sec">
+      <div class="ds-sec__t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18"/></svg>ブランド</div>
+      <div class="ds-field"><label for="dsName">サイト名（ロゴ表記）</label><input type="text" id="dsName" placeholder="SalonPro"></div>
+      <div class="ds-field"><label>テーマカラー</label><div class="ds-swatches" id="dsSwatches"></div></div>
+    </section>
+
+    <section class="ds-sec">
+      <div class="ds-sec__t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11H3z"/></svg>価格の表示</div>
+      <div class="ds-radios" id="dsPriceMode"></div>
+    </section>
+
+    <section class="ds-sec"><div class="ds-sec__t" id="g_biz"></div><div id="grp_biz"></div></section>
+    <section class="ds-sec"><div class="ds-sec__t" id="g_pay"></div><div id="grp_pay"></div></section>
+    <section class="ds-sec"><div class="ds-sec__t" id="g_home"></div><div id="grp_home"></div></section>
+    <section class="ds-sec"><div class="ds-sec__t" id="g_market"></div><div class="ds-sec__s">他ディーラー（例：コスモ＝全国）と相乗りし、カートを分けて各社決済。OFFで自社単独サイトに。</div><div id="grp_market"></div></section>
+    <section class="ds-sec"><div class="ds-sec__t" id="g_feat"></div><div id="grp_feat"></div></section>
+    <section class="ds-sec"><div class="ds-sec__t" id="g_partner"></div><div class="ds-sec__s">紹介フォームから依頼が届き、成約で紹介料（マージン）が入ります。提供しないカテゴリはOFFに。上の「開業・運営パートナー紹介」がOFFのときはハブごと非表示。</div><div id="grp_partner"></div></section>
+
+    <div class="ds-actions">
+      <button class="ds-reset" id="dsReset">既定に戻す</button>
+      <a class="ds-prev" id="dsPreview" href="home.html">保存してプレビュー →</a>
+    </div>
+    <p class="ds-note">※ プロトタイプのデモです。設定はこの端末に保存され、ホーム・探す・カート等に即反映します。本番では運営／出店ディーラーの権限とデータの壁（中立性）、出店者ごとのテナントDBに接続します。</p>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      // 作業用コピー（既定にマージ済みの現在値）
+      var T = JSON.parse(JSON.stringify(SP.TENANT));
+      function ensure() { T.biz = T.biz || {}; T.payments = T.payments || {}; T.features = T.features || {}; T.partners = T.partners || {}; }
+      ensure();
+
+      var partnerItems = (SP.PARTNERS || []).map(function (p) { return [p.id, p.name]; });
+
+      var GROUPS = {
+        biz:    { el: 'grp_biz',    head: 'g_biz',    obj: 'biz',      icon: '<path d="M4 7h16M4 12h16M4 17h10"/>', title: '対応業種（サロン）', items: [['hair','美容室（ヘア）'],['eye','アイ（まつげ）'],['nail','ネイル'],['esthe','エステ']] },
+        pay:    { el: 'grp_pay',    head: 'g_pay',    obj: 'payments', icon: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/>', title: '決済方法', items: [['invoice','請求書払い（掛け）'],['card','クレジットカード'],['bank','銀行振込'],['cod','代金引換']] },
+        home:   { el: 'grp_home',   head: 'g_home',   obj: 'features', icon: '<path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/>', title: 'ホーム表示', items: [['seminars','セミナー・イベント'],['campaigns','キャンペーン（10＋1）'],['news','お知らせバー'],['categoryGrid','カテゴリから探す']] },
+        market: { el: 'grp_market', head: 'g_market', obj: 'features', icon: '<circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 6h6a3 3 0 0 1 3 3v6"/>', title: '連携ディーラー', items: [['marketplace','他ディーラーと相乗り（コスモ等）']] },
+        feat:   { el: 'grp_feat',   head: 'g_feat',   obj: 'features', icon: '<path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4L12 17l-6.3 4.4L8 14 2 9.4h7.6z"/>', title: '機能', items: [['tempu','メーカー添付（条件タブ）'],['subscribe','定期便・自動補充'],['barcode','バーコード発注'],['pos','店販POS・在庫'],['staff','多店舗・スタッフ権限'],['push','プッシュ通知'],['favorites','お気に入り'],['learn','学ぶ（教育）'],['support','経営支援'],['books','業界誌・書籍（定期購読）'],['equipment','美容機器・リース'],['usedEquipment','中古機器の再販'],['partners','開業・運営パートナー紹介']] },
+        partner:{ el: 'grp_partner', head: 'g_partner', obj: 'partners', icon: '<path d="M16 11a4 4 0 1 0-4-4"/><path d="M3 21a6 6 0 0 1 12 0"/><circle cx="9" cy="7" r="4"/>', title: '紹介パートナー（個別）', items: partnerItems },
+      };
+
+      function svgIcon(inner) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>'; }
+
+      function rowHtml(obj, key, label) {
+        var on = T[obj][key] !== false;
+        return '<div class="ds-row"><div><div class="ds-row__l">' + label + '</div></div>' +
+          '<label class="sw"><input type="checkbox" data-obj="' + obj + '" data-key="' + key + '"' + (on ? ' checked' : '') + '><span class="sw__t"></span></label></div>';
+      }
+      Object.keys(GROUPS).forEach(function (gk) {
+        var g = GROUPS[gk];
+        document.getElementById(g.head).innerHTML = svgIcon(g.icon) + g.title;
+        document.getElementById(g.el).innerHTML = g.items.map(function (it) { return rowHtml(g.obj, it[0], it[1]); }).join('');
+      });
+
+      // プリセット
+      var presets = SP.TENANT_PRESETS || {};
+      document.getElementById('dsPresets').innerHTML = Object.keys(presets).map(function (k) {
+        var p = presets[k]; var nm = p.label.split('（')[0]; var sub = (p.label.match(/（(.*)）/) || [])[1] || '';
+        return '<button class="ds-preset" data-preset="' + k + '"><b>' + nm + '</b><span>' + sub + '</span></button>';
+      }).join('');
+
+      // ブランド
+      var nameInput = document.getElementById('dsName');
+      nameInput.value = (T.siteName && T.siteName !== 'SalonPro') ? T.siteName : '';
+      var SWATCHES = ['#b9923f','#2b6cb0','#2f7d5b','#b3402f','#6e4b8a','#c2417a','#2c2c2a'];
+      function renderSwatches() {
+        document.getElementById('dsSwatches').innerHTML = SWATCHES.map(function (c) {
+          return '<button class="ds-sw' + (c.toLowerCase() === (T.accent || '').toLowerCase() ? ' is-on' : '') + '" data-accent="' + c + '" style="background:' + c + '" aria-label="テーマ色"></button>';
+        }).join('');
+      }
+      renderSwatches();
+
+      // 価格表示
+      var PM = [['open','価格をオープン表示','会員価格を誰でも閲覧可（菊地/BG型）'],['login','ログイン後に表示','会員登録・ログイン後に価格表示（ガモウ型）'],['hidden','非表示','価格は見せない']];
+      document.getElementById('dsPriceMode').innerHTML = PM.map(function (m) {
+        return '<label class="ds-radio"><input type="radio" name="pm" value="' + m[0] + '"' + ((T.priceMode || 'open') === m[0] ? ' checked' : '') + '><span><b>' + m[1] + '</b><br><span>' + m[2] + '</span></span></label>';
+      }).join('');
+
+      // テーマ色を編集中ページにも即反映
+      function applyAccentLive() {
+        var id = 'tenantTheme', css = ':root{--gold:' + T.accent + ';--gold-strong:' + T.accent + ';--gold-soft:' + T.accent + '1a;--gold-line:' + T.accent + '55;}';
+        var s = document.getElementById(id); if (s) s.textContent = css; else { s = document.createElement('style'); s.id = id; s.textContent = css; document.head.appendChild(s); }
+      }
+
+      function persist() { SP.saveTenant(JSON.parse(JSON.stringify(T))); }
+      function toast(m) { if (window.SP_toast) SP_toast(m); }
+
+      // 変更ハンドラ（自動保存）
+      document.addEventListener('change', function (e) {
+        var t = e.target;
+        if (t.matches('input[type=checkbox][data-obj]')) {
+          ensure(); T[t.dataset.obj][t.dataset.key] = t.checked; persist(); toast('保存しました');
+        } else if (t.name === 'pm') {
+          T.priceMode = t.value; persist(); toast('保存しました');
+        }
+      });
+      nameInput.addEventListener('input', function () { T.siteName = nameInput.value.trim() || 'SalonPro'; persist(); });
+      document.getElementById('dsSwatches').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-accent]'); if (!b) return;
+        T.accent = b.dataset.accent; renderSwatches(); applyAccentLive(); persist(); toast('テーマ色を変更しました');
+      });
+      document.getElementById('dsPresets').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-preset]'); if (!b) return;
+        SP.applyPreset(b.dataset.preset);
+        T = JSON.parse(JSON.stringify(SP.TENANT)); ensure();
+        // 再描画
+        Object.keys(GROUPS).forEach(function (gk) { var g = GROUPS[gk]; document.getElementById(g.el).innerHTML = g.items.map(function (it) { return rowHtml(g.obj, it[0], it[1]); }).join(''); });
+        document.querySelectorAll('input[name=pm]').forEach(function (r) { r.checked = (r.value === (T.priceMode || 'open')); });
+        renderSwatches(); applyAccentLive();
+        toast('プリセットを適用しました');
+      });
+      document.getElementById('dsReset').addEventListener('click', function () {
+        T = JSON.parse(JSON.stringify(SP.DEFAULT_TENANT)); ensure(); persist();
+        location.reload();
+      });
+    })();
+  </script>
+</body>
+</html>

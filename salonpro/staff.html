@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>店舗・スタッフ管理｜SalonPro</title>
+  <meta name="description" content="複数店舗とスタッフの権限を管理。発注・承認・閲覧の権限をスタッフごとに設定できます。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 720px; }
+    .st-hd { margin-top: var(--s-4); } .st-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; } .st-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+    .st-sec { margin-top: var(--s-5); } .st-sec__t { font-size: 15px; font-weight: 900; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .st-sec__t .lnk { font-size: 12px; font-weight: 800; color: var(--gold-strong); background: none; border: 0; cursor: pointer; padding: 4px 2px; }
+    .st-store { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 16px; margin-top: 10px; }
+    .st-store__top { display: flex; align-items: center; gap: 10px; }
+    .st-store__ic { flex: none; width: 38px; height: 38px; border-radius: var(--r-md); background: var(--gold-soft); display: flex; align-items: center; justify-content: center; }
+    .st-store__ic svg { width: 19px; height: 19px; color: var(--gold-strong); }
+    .st-store__b { flex: 1; min-width: 0; } .st-store__n { font-size: 14px; font-weight: 800; } .st-store__a { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .st-store__tag { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: var(--r-pill); background: var(--ink); color: #fff; }
+    .st-store__tag--sub { background: var(--paper-2); color: var(--ink-2); }
+    .st-store__meta { font-size: 11.5px; color: var(--ink-2); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line-2); display: flex; gap: 16px; }
+    .st-store__meta b { color: var(--ink); font-family: var(--font-num); }
+    .st-card { border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px 15px; margin-top: 9px; }
+    .st-card__top { display: flex; align-items: center; gap: 12px; }
+    .st-ava { flex: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 15px; color: #fff; }
+    .st-card__b { flex: 1; min-width: 0; } .st-card__n { font-size: 14px; font-weight: 800; } .st-card__e { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+    .st-role { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: var(--r-pill); }
+    .st-role--owner { background: #f3e7c8; color: #8a6d1f; } .st-role--mgr { background: var(--gold-soft); color: var(--gold-strong); } .st-role--staff { background: var(--paper-2); color: var(--ink-2); }
+    .st-perms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; padding-top: 11px; border-top: 1px solid var(--line-2); }
+    .st-perm { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: var(--r-pill); border: 1px solid var(--line); color: var(--ink-3); display: inline-flex; align-items: center; gap: 4px; }
+    .st-perm.on { background: #e9f6ef; border-color: #bfe6d2; color: #1d7a55; }
+    .st-perm svg { width: 11px; height: 11px; }
+    .st-add { width: 100%; margin-top: 12px; border: 1.5px dashed var(--line-strong); background: #fff; border-radius: var(--r-md); padding: 13px; font-size: 13px; font-weight: 800; color: var(--ink-2); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; }
+    .st-add svg { width: 16px; height: 16px; }
+    .st-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin-top: 16px; }
+    /* role legend */
+    .st-legend { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+    .st-leg { display: flex; gap: 10px; align-items: flex-start; font-size: 12px; color: var(--ink-2); line-height: 1.55; }
+    .st-leg b { color: var(--ink); }
+    /* modal */
+    .st-modal { position: fixed; inset: 0; z-index: 220; display: none; }
+    .st-modal.open { display: block; }
+    .st-modal__bg { position: absolute; inset: 0; background: rgba(20,18,14,.45); }
+    .st-modal__panel { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom,0px)); max-width: 720px; margin: 0 auto; }
+    .st-modal__t { font-size: 16px; font-weight: 900; } .st-modal__s { font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+    .st-field { margin-top: 13px; } .st-field label { font-size: 12px; font-weight: 800; color: var(--ink-2); display: block; margin-bottom: 5px; }
+    .st-field input, .st-field select { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 11px 12px; font-size: 14px; font-family: inherit; background: #fff; }
+    .st-chk { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 7px; }
+    .st-chk label { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; border: 1px solid var(--line-strong); border-radius: var(--r-pill); padding: 8px 13px; cursor: pointer; color: var(--ink-2); }
+    .st-chk input { accent-color: var(--gold-strong); width: 15px; height: 15px; }
+    .st-modal__actions { display: flex; gap: 10px; margin-top: 18px; }
+    .st-modal__actions button { flex: 1; border-radius: var(--r-md); padding: 13px; font-size: 14px; font-weight: 800; cursor: pointer; border: 1px solid var(--line-strong); }
+    .st-modal__actions .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="news.html" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="st-hd"><div class="st-hd__t">店舗・スタッフ管理</div><div class="st-hd__s">複数店舗とスタッフの権限をまとめて管理できます。</div></div>
+
+    <section class="st-sec">
+      <div class="st-sec__t"><span>店舗</span><button class="lnk" id="addStore">＋ 店舗を追加</button></div>
+      <div id="storeList"></div>
+    </section>
+
+    <section class="st-sec">
+      <div class="st-sec__t"><span>スタッフ</span></div>
+      <div id="staffList"></div>
+      <button class="st-add" id="invite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>スタッフを招待</button>
+    </section>
+
+    <section class="st-sec">
+      <div class="st-sec__t"><span>権限について</span></div>
+      <div class="st-legend">
+        <div class="st-leg"><span class="st-role st-role--owner">オーナー</span><span><b>すべての操作。</b>店舗・スタッフ・契約・支払いの管理、全店の発注承認まで。</span></div>
+        <div class="st-leg"><span class="st-role st-role--mgr">店長</span><span><b>自店の発注と承認。</b>スタッフの発注を承認し、自店の注文・在庫を管理。</span></div>
+        <div class="st-leg"><span class="st-role st-role--staff">スタッフ</span><span><b>発注の申請と閲覧。</b>カート作成・発注申請まで（承認は店長以上）。</span></div>
+      </div>
+      <p class="st-note">※ プロトタイプのデモです。設定はこの端末に保存されます。本番では店舗ごとの請求・与信、発注承認ワークフロー（申請→承認→発注）と連携します。</p>
+    </section>
+  </main>
+
+  <!-- 招待モーダル -->
+  <div class="st-modal" id="modal" aria-hidden="true">
+    <div class="st-modal__bg" data-close></div>
+    <div class="st-modal__panel" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <div class="st-modal__t" id="mTitle">スタッフを招待</div>
+      <div class="st-modal__s">メールアドレス宛に招待リンクを送ります。</div>
+      <div class="st-field"><label for="mName">お名前</label><input id="mName" type="text" placeholder="例：佐藤 美咲"></div>
+      <div class="st-field"><label for="mEmail">メールアドレス</label><input id="mEmail" type="email" placeholder="例：staff@salon.jp"></div>
+      <div class="st-field"><label for="mStore">所属店舗</label><select id="mStore"></select></div>
+      <div class="st-field"><label for="mRole">役割</label><select id="mRole"><option value="staff">スタッフ</option><option value="mgr">店長</option><option value="owner">オーナー</option></select></div>
+      <div class="st-field"><label>権限</label>
+        <div class="st-chk">
+          <label><input type="checkbox" id="pView" checked>閲覧</label>
+          <label><input type="checkbox" id="pOrder" checked>発注</label>
+          <label><input type="checkbox" id="pApprove">承認</label>
+        </div>
+      </div>
+      <div class="st-modal__actions"><button data-close>キャンセル</button><button class="primary" id="mSend">招待を送る</button></div>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab is-active" href="mypage.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      var LS_STORE = 'sp.stores.v1', LS_STAFF = 'sp.staff.v1';
+      function read(k, def) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch (e) { return def; } }
+      function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+      var stores = read(LS_STORE, null);
+      if (!stores) { stores = [
+        { id: 's1', name: 'SALON LUXE 表参道店', addr: '東京都渋谷区神宮前4-x-x', main: true, members: 5, orders: 18 },
+        { id: 's2', name: 'SALON LUXE 自由が丘店', addr: '東京都目黒区自由が丘2-x-x', main: false, members: 3, orders: 9 }
+      ]; write(LS_STORE, stores); }
+
+      var staff = read(LS_STAFF, null);
+      if (!staff) { staff = [
+        { id: 'u1', name: '菊地 健一', email: 'owner@salon-luxe.jp', store: 's1', role: 'owner', perms: { view: true, order: true, approve: true } },
+        { id: 'u2', name: '田中 玲奈', email: 'reina@salon-luxe.jp', store: 's1', role: 'mgr', perms: { view: true, order: true, approve: true } },
+        { id: 'u3', name: '佐藤 美咲', email: 'misaki@salon-luxe.jp', store: 's1', role: 'staff', perms: { view: true, order: true, approve: false } },
+        { id: 'u4', name: '山本 大輔', email: 'daisuke@salon-luxe.jp', store: 's2', role: 'mgr', perms: { view: true, order: true, approve: true } }
+      ]; write(LS_STAFF, staff); }
+
+      var AVA = ['#c6a35a', '#7d8a9c', '#a9836b', '#6f9a86', '#9a6f8c', '#8c8a6f'];
+      var ROLE = { owner: { cls: 'owner', label: 'オーナー' }, mgr: { cls: 'mgr', label: '店長' }, staff: { cls: 'staff', label: 'スタッフ' } };
+      var check = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>';
+
+      function storeName(id) { var s = stores.filter(function (x) { return x.id === id; })[0]; return s ? s.name : '—'; }
+
+      function renderStores() {
+        document.getElementById('storeList').innerHTML = stores.map(function (s) {
+          return '<div class="st-store"><div class="st-store__top">' +
+            '<span class="st-store__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9h16v11H4z"/><path d="M9 20v-6h6v6"/></svg></span>' +
+            '<div class="st-store__b"><div class="st-store__n">' + s.name + '</div><div class="st-store__a">' + s.addr + '</div></div>' +
+            '<span class="st-store__tag ' + (s.main ? '' : 'st-store__tag--sub') + '">' + (s.main ? '本店' : '支店') + '</span></div>' +
+            '<div class="st-store__meta"><span>スタッフ <b>' + s.members + '</b>名</span><span>今月の発注 <b>' + s.orders + '</b>件</span></div></div>';
+        }).join('');
+      }
+
+      function renderStaff() {
+        document.getElementById('staffList').innerHTML = staff.map(function (u, i) {
+          var r = ROLE[u.role] || ROLE.staff;
+          var initial = (u.name || '?').trim().charAt(0);
+          var perms = [
+            { on: u.perms.view, label: '閲覧' },
+            { on: u.perms.order, label: '発注' },
+            { on: u.perms.approve, label: '承認' }
+          ].map(function (p) { return '<span class="st-perm ' + (p.on ? 'on' : '') + '">' + (p.on ? check : '') + p.label + '</span>'; }).join('');
+          return '<div class="st-card"><div class="st-card__top">' +
+            '<span class="st-ava" style="background:' + AVA[i % AVA.length] + '">' + initial + '</span>' +
+            '<div class="st-card__b"><div class="st-card__n">' + u.name + '</div><div class="st-card__e">' + u.email + '　·　' + storeName(u.store) + '</div></div>' +
+            '<span class="st-role st-role--' + r.cls + '">' + r.label + '</span></div>' +
+            '<div class="st-perms">' + perms + '</div></div>';
+        }).join('');
+      }
+
+      // modal
+      var modal = document.getElementById('modal');
+      function fillStores() { document.getElementById('mStore').innerHTML = stores.map(function (s) { return '<option value="' + s.id + '">' + s.name + '</option>'; }).join(''); }
+      function openModal() { fillStores(); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); }
+      function closeModal() { modal.classList.remove('open'); modal.setAttribute('aria-hidden', 'true'); }
+      modal.addEventListener('click', function (e) { if (e.target.hasAttribute('data-close')) closeModal(); });
+      document.getElementById('invite').addEventListener('click', openModal);
+
+      // role → default perms
+      document.getElementById('mRole').addEventListener('change', function () {
+        var v = this.value;
+        document.getElementById('pView').checked = true;
+        document.getElementById('pOrder').checked = v !== 'view';
+        document.getElementById('pApprove').checked = (v === 'owner' || v === 'mgr');
+      });
+
+      document.getElementById('mSend').addEventListener('click', function () {
+        var name = document.getElementById('mName').value.trim();
+        var email = document.getElementById('mEmail').value.trim();
+        if (!name || !email) { SP.toast && SP.toast('お名前とメールを入力してください'); return; }
+        staff.push({
+          id: 'u' + (staff.length + 1) + '_' + staff.length, name: name, email: email,
+          store: document.getElementById('mStore').value, role: document.getElementById('mRole').value,
+          perms: { view: document.getElementById('pView').checked, order: document.getElementById('pOrder').checked, approve: document.getElementById('pApprove').checked }
+        });
+        write(LS_STAFF, staff);
+        renderStaff();
+        document.getElementById('mName').value = ''; document.getElementById('mEmail').value = '';
+        closeModal();
+        SP.toast && SP.toast(name + ' さんに招待を送信しました（デモ）');
+      });
+
+      document.getElementById('addStore').addEventListener('click', function () {
+        var n = stores.length + 1;
+        stores.push({ id: 's' + n + '_' + n, name: 'SALON LUXE 新店舗' + n, addr: '住所未設定', main: false, members: 0, orders: 0 });
+        write(LS_STORE, stores);
+        renderStores();
+        SP.toast && SP.toast('店舗を追加しました（あとで編集できます）');
+      });
+
+      renderStores();
+      renderStaff();
+      (function () { var c = SP.Store.cartSummary().count + (SP.Store.giftCount ? SP.Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = c; el.hidden = c <= 0; } })();
+    })();
+  </script>
+</body>
+</html>

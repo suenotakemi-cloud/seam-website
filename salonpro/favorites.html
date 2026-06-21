@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>お気に入り｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    .fav-sec { margin-top: var(--s-5); }
+    .fav-sec__t { font-size: 15px; font-weight: 900; margin-bottom: 10px; display: flex; align-items: baseline; gap: 8px; }
+    .fav-sec__t small { font-size: 11.5px; font-weight: 700; color: var(--ink-3); }
+    .fav-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .fav-chip { display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line-3); border-radius: var(--r-pill); padding: 8px 8px 8px 14px; font-size: 13px; font-weight: 800; color: var(--ink); text-decoration: none; }
+    .fav-chip__x { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); color: var(--ink-3); display: flex; align-items: center; justify-content: center; font-size: 13px; border: 0; cursor: pointer; }
+    .fav-colors { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (min-width: 560px) { .fav-colors { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 880px) { .fav-colors { grid-template-columns: repeat(4, 1fr); } }
+    .fav-color { position: relative; display: block; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px; text-decoration: none; color: var(--ink); }
+    .fav-color:hover { box-shadow: var(--shadow-md); }
+    .fav-color__sw { display: block; height: 44px; border-radius: var(--r-sm); border: 1px solid rgba(0,0,0,.08); margin-bottom: 8px; }
+    .fav-color__l { display: block; font-size: 10.5px; color: var(--ink-3); font-weight: 700; }
+    .fav-color__n { display: block; font-size: 14px; font-weight: 900; }
+    .fav-color__x { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,.92); border: 1px solid var(--line); color: var(--ink-3); font-size: 13px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="#" data-soon="お知らせ" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="icon-btn__badge" id="notifBadge">2</span></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="page-hd">
+      <h1 class="page-hd__title">お気に入り</h1>
+      <p class="page-hd__sub" id="favSub"></p>
+    </div>
+
+    <section class="fav-sec" id="favBrandsSec" hidden>
+      <h2 class="fav-sec__t">お気に入りブランド <small>タップでそのラインへ</small></h2>
+      <div class="fav-chips" id="favBrands"></div>
+    </section>
+
+    <section class="fav-sec" id="favColorsSec" hidden>
+      <h2 class="fav-sec__t">お気に入りカラー <small>明るさ一覧へ</small></h2>
+      <div class="fav-colors" id="favColors"></div>
+    </section>
+
+    <section class="fav-sec" id="favProdSec" hidden>
+      <h2 class="fav-sec__t">お気に入り商品</h2>
+      <div class="product-grid" id="favGrid"></div>
+    </section>
+
+    <div id="favEmpty" hidden>
+      <div class="empty-lite">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg>
+        <div class="empty-lite__t">お気に入りはまだありません</div>
+        <p>気になる商品の♡をタップすると、ここに保存されます。</p>
+        <a class="btn btn--primary" href="index.html" style="margin-top:16px;display:inline-flex">商品を探す</a>
+      </div>
+    </div>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span><span class="icon-btn__badge" id="tabCartBadge" hidden>0</span></a>
+      <a class="tab is-active" href="favorites.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script src="assets/js/favorites.js?v=24"></script>
+</body>
+</html>

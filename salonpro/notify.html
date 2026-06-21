@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>通知・リマインド設定｜SalonPro</title>
+  <meta name="description" content="再注文・定期便・キャンペーン・セミナーのリマインド通知設定。プッシュ通知で発注タイミングを逃さない。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 720px; }
+    .nt-hd { margin-top: var(--s-4); } .nt-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; } .nt-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+    .nt-push { display: flex; align-items: center; gap: 13px; border: 1px solid var(--gold-line); background: var(--gold-soft); border-radius: var(--r-lg); padding: 15px; margin-top: var(--s-4); }
+    .nt-push__ic { width: 42px; height: 42px; border-radius: 50%; background: var(--gold); color: #fff; display: flex; align-items: center; justify-content: center; flex: none; } .nt-push__ic svg { width: 22px; height: 22px; }
+    .nt-push__b { flex: 1; min-width: 0; } .nt-push__t { font-size: 14px; font-weight: 900; } .nt-push__s { font-size: 11.5px; color: var(--ink-2); margin-top: 2px; }
+    .nt-push__btn { flex: none; height: 40px; padding: 0 16px; border-radius: var(--r-md); background: var(--gold); color: #fff; font-weight: 800; font-size: 13px; border: 0; cursor: pointer; }
+    .nt-push__btn:disabled { opacity: .5; }
+    .nt-sec__t { font-size: 14px; font-weight: 900; margin: var(--s-5) 0 8px; }
+    .nt-list { border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+    .nt-row { display: flex; align-items: center; gap: 12px; padding: 14px 15px; }
+    .nt-row + .nt-row { border-top: 1px solid var(--line-2); }
+    .nt-row__b { flex: 1; min-width: 0; } .nt-row__t { font-size: 13.5px; font-weight: 800; } .nt-row__s { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .sw { position: relative; width: 46px; height: 26px; flex: none; }
+    .sw input { opacity: 0; width: 0; height: 0; }
+    .sw__t { position: absolute; inset: 0; background: var(--line-3); border-radius: 999px; transition: .2s; cursor: pointer; }
+    .sw__t::before { content: ''; position: absolute; left: 3px; top: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: .2s; }
+    .sw input:checked + .sw__t { background: var(--gold); } .sw input:checked + .sw__t::before { transform: translateX(20px); }
+    .nt-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin-top: 14px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="news.html" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="nt-hd"><div class="nt-hd__t">通知・リマインド</div><div class="nt-hd__s">発注タイミングやキャンペーンを逃さないよう、必要な通知だけ受け取れます。</div></div>
+
+    <div class="nt-push">
+      <span class="nt-push__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+      <div class="nt-push__b"><div class="nt-push__t" id="pushTitle">プッシュ通知をオンにする</div><div class="nt-push__s" id="pushSub">スマホ・PCに直接お知らせ。再注文のリマインドに最適です。</div></div>
+      <button class="nt-push__btn" id="pushBtn">許可する</button>
+    </div>
+
+    <h2 class="nt-sec__t">受け取る通知</h2>
+    <div class="nt-list" id="ntList"></div>
+    <p class="nt-note">※ プロトタイプのデモです。ブラウザのプッシュ通知（テスト送信）に対応。本番ではメール・アプリ通知や、使用ペースに基づく自動リマインド配信と連携します。</p>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab is-active" href="mypage.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      var svg = SP.svg;
+      var toast = function (m) { var t = document.getElementById('toast'); t.innerHTML = svg('checkc') + m; t.classList.add('is-visible'); setTimeout(function () { t.classList.remove('is-visible'); }, 2200); };
+      (function () { var c = SP.Store.cartSummary().count + (SP.Store.giftCount ? SP.Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = c; el.hidden = c <= 0; } })();
+      var ITEMS = [
+        { k: 'reorder', t: '再注文リマインド', s: '使用ペースから「そろそろ補充」をお知らせ', d: true },
+        { k: 'sub', t: '定期便の事前通知', s: '次回お届け前にスキップ・数量変更のご案内', d: true },
+        { k: 'campaign', t: 'キャンペーン・10＋1', s: 'メーカー恒例のお得情報', d: true },
+        { k: 'seminar', t: 'セミナー前日リマインド', s: '申込済みセミナーの開催前日に', d: true },
+        { k: 'shipping', t: '出荷・配送', s: '出荷完了・お届け予定の通知', d: true },
+        { k: 'news', t: '新商品・お知らせ', s: '新商品入荷や運営からのお知らせ', d: false }
+      ];
+      var load = function () { try { return JSON.parse(localStorage.getItem('sp.notifyPrefs') || 'null'); } catch (e) { return null; } };
+      var prefs = load() || ITEMS.reduce(function (o, i) { o[i.k] = i.d; return o; }, {});
+      function save() { try { localStorage.setItem('sp.notifyPrefs', JSON.stringify(prefs)); } catch (e) {} }
+
+      document.getElementById('ntList').innerHTML = ITEMS.map(function (i) {
+        return '<div class="nt-row"><span class="nt-row__b"><span class="nt-row__t">' + i.t + '</span><span class="nt-row__s">' + i.s + '</span></span>' +
+          '<label class="sw"><input type="checkbox" data-k="' + i.k + '"' + (prefs[i.k] ? ' checked' : '') + '><span class="sw__t"></span></label></div>';
+      }).join('');
+      document.getElementById('ntList').addEventListener('change', function (e) {
+        var k = e.target.dataset.k; if (!k) return; prefs[k] = e.target.checked; save(); toast('設定を保存しました');
+      });
+
+      // プッシュ通知（ブラウザ）デモ
+      var btn = document.getElementById('pushBtn');
+      function syncPush() {
+        if (!('Notification' in window)) { btn.textContent = '非対応'; btn.disabled = true; return; }
+        if (Notification.permission === 'granted') { btn.textContent = 'テスト送信'; document.getElementById('pushTitle').textContent = 'プッシュ通知：オン'; document.getElementById('pushSub').textContent = 'この端末で受け取れます。テスト送信で確認できます。'; }
+        else if (Notification.permission === 'denied') { btn.textContent = 'ブロック中'; btn.disabled = true; document.getElementById('pushSub').textContent = 'ブラウザ設定で通知がブロックされています。'; }
+        else { btn.textContent = '許可する'; }
+      }
+      btn.addEventListener('click', function () {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'granted') {
+          new Notification('SalonPro', { body: '【リマインド】ニトリル手袋がそろそろ無くなる頃です。ワンタップで再注文できます。', icon: 'assets/img/icon.svg' });
+          toast('テスト通知を送信しました');
+        } else {
+          Notification.requestPermission().then(function (p) { syncPush(); if (p === 'granted') { new Notification('SalonPro', { body: 'プッシュ通知をオンにしました。再注文リマインドをお届けします。' }); toast('プッシュ通知をオンにしました'); } });
+        }
+      });
+      syncPush();
+    })();
+  </script>
+</body>
+</html>

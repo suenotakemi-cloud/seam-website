@@ -1,0 +1,79 @@
+/* =========================================================
+   SalonPro / Admin — 運営管理コンソール
+   会員審査・商品/注文管理・在庫・KPI（視認性最優先）
+   ========================================================= */
+.adm { background: var(--surface-2); min-height: 100vh; }
+
+.adm-top { position: sticky; top: 0; z-index: var(--z-header); background: var(--dark); color: #fff; }
+.adm-top__inner { display: flex; align-items: center; gap: var(--s-3); height: 56px; padding: 0 var(--s-4); max-width: 1280px; margin-inline: auto; }
+.adm-top__logo { font-size: var(--fs-18); font-weight: 800; }
+.adm-top__logo b { color: var(--gold); }
+.adm-top__tag { font-size: var(--fs-12); color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: var(--s-3); }
+.adm-top__user { margin-left: auto; font-size: var(--fs-13); display: flex; align-items: center; gap: 8px; }
+.adm-top__avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--gold); color: #1b1b1d; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+
+.adm-layout { display: flex; gap: var(--s-5); max-width: 1280px; margin-inline: auto; padding: var(--s-5) var(--s-4); align-items: flex-start; }
+.adm-side { flex: 0 0 200px; position: sticky; top: 72px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+.adm-side a { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font-size: var(--fs-14); font-weight: 600; color: var(--ink-2); border-left: 3px solid transparent; }
+.adm-side a svg { width: 18px; height: 18px; }
+.adm-side a:hover { background: var(--surface-2); }
+.adm-side a.is-active { color: var(--ink); border-left-color: var(--gold); background: var(--gold-soft); }
+.adm-side a .cnt { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--r-pill); background: var(--stock-low); color: #fff; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.adm-main { flex: 1 1 auto; min-width: 0; }
+.adm-h1 { font-size: var(--fs-20); font-weight: 800; margin-bottom: var(--s-4); }
+
+.adm-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--s-3); margin-bottom: var(--s-5); }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s-4); }
+.kpi__l { font-size: var(--fs-12); color: var(--ink-2); }
+.kpi__v { font-family: var(--font-num); font-size: var(--fs-24); font-weight: 800; margin-top: 4px; }
+.kpi__d { font-size: var(--fs-11); margin-top: 2px; }
+.kpi__d.up { color: var(--stock-in); }
+.kpi__d.warn { color: var(--stock-order); }
+
+.adm-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: var(--s-4); overflow: hidden; }
+.adm-card__head { display: flex; align-items: center; justify-content: space-between; padding: var(--s-4); border-bottom: 1px solid var(--line); }
+.adm-card__title { font-size: var(--fs-15); font-weight: 800; }
+.adm-card__more { font-size: var(--fs-13); color: var(--gold-strong); font-weight: 600; }
+.adm-card__body { padding: var(--s-2) var(--s-4) var(--s-4); }
+
+/* 審査キュー */
+.review-item { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-3) 0; border-bottom: 1px solid var(--line-2); }
+.review-item:last-child { border-bottom: 0; }
+.review-item__av { width: 40px; height: 40px; border-radius: 50%; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--ink-2); flex: none; }
+.review-item__main { flex: 1 1 auto; min-width: 0; }
+.review-item__name { font-weight: 700; font-size: var(--fs-14); }
+.review-item__meta { font-size: var(--fs-12); color: var(--ink-3); }
+.doc-chip { display: inline-flex; align-items: center; gap: 4px; min-height: 22px; padding: 2px 8px; border-radius: var(--r-pill); background: var(--surface-2); border: 1px solid var(--line); font-size: 11px; font-weight: 700; color: var(--ink-2); margin-top: 3px; }
+.doc-chip svg { width: 13px; height: 13px; flex: none; }
+.review-item__act { display: flex; gap: 6px; flex: none; }
+.review-item__act .btn { height: 38px; padding: 0 14px; }
+
+/* テーブル */
+.adm-table { width: 100%; border-collapse: collapse; font-size: var(--fs-13); }
+.adm-table th { text-align: left; color: var(--ink-2); font-weight: 700; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.adm-table td { padding: 10px; border-bottom: 1px solid var(--line-2); }
+.adm-table tr:last-child td { border-bottom: 0; }
+.adm-table .num { font-family: var(--font-num); font-weight: 700; }
+.tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: var(--r-pill); font-size: 11px; font-weight: 700; }
+.tag--shipped { background: #f1faf4; color: var(--stock-in); }
+.tag--prep { background: #fdf4e7; color: var(--stock-order); }
+.tag--new { background: #e7edf8; color: #2f5fa8; }
+.tag--mute { background: #f3f0ee; color: #7b7b80; }
+
+.two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--s-4); align-items: start; }
+
+@media (max-width: 860px) {
+  .adm-layout { flex-direction: column; }
+  .adm-side { position: static; flex: none; width: 100%; display: flex; overflow-x: auto; }
+  .adm-side a { border-left: 0; border-bottom: 3px solid transparent; white-space: nowrap; }
+  .adm-side a.is-active { border-left: 0; border-bottom-color: var(--gold); }
+  .adm-side a .cnt { margin-left: 6px; }
+  .adm-kpis { grid-template-columns: repeat(2, 1fr); }
+  .two-col { grid-template-columns: 1fr; }
+  .adm-table { display: block; overflow-x: auto; white-space: nowrap; }
+}
+@media (max-width: 560px) {
+  .review-item { flex-wrap: wrap; }
+  .review-item__act { width: 100%; justify-content: flex-end; margin-top: 6px; }
+  .review-item__act .btn { flex: 1 1 0; }
+}

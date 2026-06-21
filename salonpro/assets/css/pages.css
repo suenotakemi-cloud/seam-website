@@ -1,0 +1,158 @@
+/* =========================================================
+   SalonPro / pages — コンテンツ系ページ共通スタイル
+   再購入 / マイページ / 学ぶ / お気に入り / 注文履歴 /
+   経営支援 / 問い合わせ / 会員登録 / ログイン で共用
+   ========================================================= */
+
+.page { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px) + var(--s-6)); }
+
+/* ---- ページ見出し ---- */
+.page-hd { padding: var(--s-5) 0 var(--s-3); }
+.page-hd__title { font-size: var(--fs-24); font-weight: 800; letter-spacing: -.01em; }
+.page-hd__sub { font-size: var(--fs-14); color: var(--ink-2); margin-top: 4px; line-height: 1.5; }
+@media (max-width: 559px) { .page-hd__title { font-size: var(--fs-20); } }
+
+.back-link { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-13); font-weight: 600; color: var(--ink-2); margin-bottom: var(--s-2); }
+.back-link svg { width: 16px; height: 16px; }
+.back-link:hover { color: var(--ink); }
+
+/* ---- セクション（home.css と同型を簡易再掲）---- */
+.sec { margin-top: var(--s-6); }
+.sec__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-3); }
+.sec__title { font-size: var(--fs-16); font-weight: 800; }
+.sec__more { font-size: var(--fs-13); font-weight: 600; color: var(--ink-2); display: inline-flex; align-items: center; gap: 3px; }
+.sec__more svg { width: 14px; height: 14px; }
+
+/* ---- 汎用ライトカード ---- */
+.lcard { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); padding: var(--s-4); }
+.lcard + .lcard { margin-top: var(--s-3); }
+
+/* ---- セグメント（タブ）---- */
+.seg { display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: var(--r-pill); }
+.seg button {
+  flex: 1 1 0; height: 38px; border-radius: var(--r-pill);
+  font-size: var(--fs-13); font-weight: 700; color: var(--ink-2);
+  white-space: nowrap;
+}
+.seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-xs); }
+
+/* ---- リスト行（設定/メニュー/履歴）---- */
+.list-card { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); overflow: hidden; }
+.list-row {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-4);
+  border-bottom: 1px solid var(--line-2);
+  font-size: var(--fs-14);
+}
+.list-row:last-child { border-bottom: 0; }
+.list-row:hover { background: var(--surface-2); }
+.list-row__icon { width: 22px; height: 22px; color: var(--ink-2); flex: none; }
+.list-row__main { min-width: 0; }
+.list-row__t { display: block; font-weight: 600; }
+.list-row__s { display: block; font-size: var(--fs-12); color: var(--ink-3); margin-top: 1px; }
+.list-row__val { margin-left: auto; font-size: var(--fs-13); color: var(--ink-2); font-weight: 600; }
+.list-row__arr { width: 16px; height: 16px; color: var(--ink-3); flex: none; }
+.list-row__main + .list-row__arr, .list-row__val + .list-row__arr { margin-left: 6px; }
+.list-row .list-row__val + .list-row__arr { margin-left: 6px; }
+
+/* ---- フォーム ---- */
+.field { margin-bottom: var(--s-4); }
+.field__label { display: block; font-size: var(--fs-13); font-weight: 700; margin-bottom: var(--s-2); }
+.field__label .req { color: var(--stock-low); font-size: var(--fs-11); margin-left: 6px; }
+.field__label .opt { color: var(--ink-3); font-size: var(--fs-11); font-weight: 600; margin-left: 6px; }
+.input, .select, .textarea {
+  width: 100%; min-height: 48px; padding: 0 var(--s-3);
+  border: 1px solid var(--line-3); border-radius: var(--r-sm);
+  font-size: var(--fs-15); background: var(--surface); color: var(--ink);
+}
+.textarea { min-height: 100px; padding: var(--s-3); resize: vertical; line-height: 1.6; }
+.input:focus, .select:focus, .textarea:focus { outline: 2px solid var(--gold); outline-offset: 1px; border-color: var(--gold); }
+.field__help { font-size: var(--fs-12); color: var(--ink-3); margin-top: 5px; line-height: 1.5; }
+.field--row { display: flex; gap: var(--s-3); }
+.field--row > * { flex: 1 1 0; }
+
+.checkbox-line { display: flex; align-items: flex-start; gap: var(--s-3); font-size: var(--fs-14); line-height: 1.5; cursor: pointer; }
+.checkbox-line input { width: 20px; height: 20px; accent-color: var(--gold); flex: none; margin-top: 1px; }
+.checkbox-line a { color: var(--gold-strong); text-decoration: underline; }
+
+/* アップロード枠 */
+.upload {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-2);
+  padding: var(--s-6) var(--s-4);
+  border: 1.5px dashed var(--line-3); border-radius: var(--r-md);
+  background: var(--surface-2); color: var(--ink-2);
+  text-align: center; cursor: pointer;
+}
+.upload:hover { border-color: var(--gold); color: var(--gold-strong); }
+.upload svg { width: 30px; height: 30px; }
+.upload__t { font-size: var(--fs-14); font-weight: 700; }
+.upload__s { font-size: var(--fs-12); color: var(--ink-3); }
+.upload.is-done { border-style: solid; border-color: var(--stock-in); color: var(--stock-in); background: #f1faf4; }
+
+/* ---- ステップナビ（会員登録/審査）---- */
+.steps { display: flex; align-items: center; gap: 4px; margin-bottom: var(--s-5); }
+.step { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1 1 0; }
+.step__dot {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: var(--fs-12); font-weight: 800; font-family: var(--font-num);
+  background: var(--surface-2); color: var(--ink-3); border: 1px solid var(--line-3);
+}
+.step__label { font-size: 11px; color: var(--ink-3); font-weight: 600; text-align: center; }
+.step.is-active .step__dot { background: var(--gold); color: #fff; border-color: var(--gold); }
+.step.is-active .step__label { color: var(--ink); }
+.step.is-done .step__dot { background: var(--stock-in); color: #fff; border-color: var(--stock-in); }
+.step__bar { flex: 0 0 auto; width: 14px; height: 2px; background: var(--line-3); align-self: flex-start; margin-top: 14px; }
+
+/* ---- 審査ステータス帯 ---- */
+.status-banner { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-4); border-radius: var(--r-md); }
+.status-banner svg { width: 24px; height: 24px; flex: none; }
+.status-banner__t { font-weight: 800; font-size: var(--fs-16); }
+.status-banner__s { font-size: var(--fs-13); margin-top: 2px; line-height: 1.5; }
+.status-banner--review { background: #fdf4e7; color: #8a5a16; border: 1px solid #f0d9b3; }
+.status-banner--ok { background: #f1faf4; color: #16653a; border: 1px solid #bfe6cc; }
+.status-banner--reject { background: #fdeceb; color: #9a2820; border: 1px solid #f2c9c5; }
+
+/* ---- ボタン群（components の .btn を補完）---- */
+.btn-row { display: grid; gap: var(--s-3); margin-top: var(--s-5); }
+.sticky-foot {
+  position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-bar); background: var(--surface); border-top: 1px solid var(--line);
+  box-shadow: var(--shadow-up); padding-block: var(--s-3);
+}
+.sticky-foot .container { display: flex; gap: var(--s-3); }
+.has-sticky-foot { padding-bottom: calc(var(--tabbar-h) + 84px + env(safe-area-inset-bottom, 0px)); }
+
+/* ---- 経営支援：粗利シミュレーター ---- */
+.calc-result { display: flex; align-items: baseline; justify-content: space-between; padding: var(--s-4); background: var(--dark); color: #fff; border-radius: var(--r-md); margin-top: var(--s-4); }
+.calc-result__l { font-size: var(--fs-13); color: rgba(255,255,255,.75); }
+.calc-result__v { font-family: var(--font-num); font-size: var(--fs-28); font-weight: 800; color: #ecd9a8; }
+
+/* ---- 注文履歴 ---- */
+.order-card__top { display: flex; align-items: center; justify-content: space-between; padding-bottom: var(--s-3); border-bottom: 1px solid var(--line-2); margin-bottom: var(--s-3); }
+.order-card__no { font-size: var(--fs-12); color: var(--ink-3); }
+.order-card__date { font-family: var(--font-num); font-weight: 700; }
+.order-status { height: 22px; padding: 0 10px; border-radius: var(--r-pill); font-size: var(--fs-11); font-weight: 700; display: inline-flex; align-items: center; }
+.order-status--shipped { background: #f1faf4; color: var(--stock-in); }
+.order-status--prep { background: #fdf4e7; color: var(--stock-order); }
+.order-thumbs { display: flex; gap: 6px; align-items: center; }
+.order-thumb { width: 40px; height: 40px; border-radius: var(--r-xs); background: var(--surface-2); overflow: hidden; flex: none; }
+.order-thumb svg.ph-img { width: 100%; height: 100%; }
+.order-card__foot { display: flex; align-items: center; gap: var(--s-3); margin-top: var(--s-3); }
+.order-card__total { font-family: var(--font-num); font-weight: 800; font-size: var(--fs-16); }
+
+/* ---- 学ぶ：講座カード（縦並びリスト）---- */
+.course-card { display: flex; gap: var(--s-3); padding: var(--s-3); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.course-card__thumb { position: relative; width: 132px; flex: none; aspect-ratio: 16/10; border-radius: var(--r-sm); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+.course-card__thumb .video-card__play { width: 34px; height: 34px; }
+.course-card__thumb .video-card__dur { font-size: 10px; }
+.course-card__body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.course-card__body .video-card__tag { position: static; }
+.course-card__title { font-size: var(--fs-14); font-weight: 700; line-height: var(--lh-tight); }
+.course-card__meta { font-size: var(--fs-12); color: var(--ink-3); }
+@media (max-width: 420px) { .course-card__thumb { width: 110px; } }
+
+/* ---- empty lite ---- */
+.empty-lite { text-align: center; padding: var(--s-8) var(--s-4); color: var(--ink-2); }
+.empty-lite svg { width: 52px; height: 52px; color: var(--line-3); margin: 0 auto var(--s-3); }
+.empty-lite__t { font-size: var(--fs-15); font-weight: 700; color: var(--ink); margin-bottom: 4px; }

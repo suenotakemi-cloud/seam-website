@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>契約ブランド｜SalonPro</title>
+  <meta name="description" content="契約ブランドの一覧と新規契約。メーカー説明を確認し、初期契約費用のお支払いで契約すると、契約商品をご購入いただけます。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/home.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 1000px; }
+
+    /* イントロ */
+    .c-intro { background: var(--dark); color: #fff; }
+    .c-intro__in { max-width: 1000px; margin-inline: auto; padding: 22px 20px 24px; }
+    .c-intro__t { font-size: clamp(20px, 5vw, 26px); font-weight: 900; }
+    .c-intro__t .gold { color: var(--gold); }
+    .c-intro__s { font-size: 13px; line-height: 1.75; color: #c9ced8; margin-top: 8px; }
+    .c-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+    .c-step { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: var(--r-md); padding: 11px 10px; }
+    .c-step__n { width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: #1b1b1d; font-weight: 900; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+    .c-step__t { font-size: 11.5px; font-weight: 700; margin-top: 7px; line-height: 1.4; }
+
+    /* セクション */
+    .c-sec { max-width: 1000px; margin-inline: auto; padding: 24px 20px 6px; }
+    .c-sec__h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+    .c-sec__t { font-size: 18px; font-weight: 900; }
+    .c-sec__c { font-size: 12px; font-weight: 700; color: var(--ink-3); }
+
+    .cgrid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    @media (min-width: 720px) { .cgrid { grid-template-columns: repeat(2, 1fr); } }
+
+    .cbrand { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; background: #fff; display: flex; flex-direction: column; }
+    .cbrand--on { border-color: var(--gold-line); background: var(--gold-soft); }
+    .cbrand__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .cbrand__name { font-size: 16.5px; font-weight: 900; }
+    .cbrand__on { font-size: 10.5px; font-weight: 800; color: #1b1b1d; background: var(--gold); border-radius: var(--r-pill); padding: 3px 10px; }
+    .cbrand__fee { font-size: 11.5px; font-weight: 800; color: var(--ink-2); white-space: nowrap; }
+    .cbrand__maker { font-size: 11.5px; color: var(--ink-3); font-weight: 700; margin-top: 2px; }
+    .cbrand__tag { font-size: 12.5px; color: var(--ink-2); line-height: 1.6; margin: 9px 0 14px; }
+    .cbrand__btn { margin-top: auto; height: 46px; border-radius: var(--r-sm); font-weight: 800; font-size: 13.5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; background: var(--gold); color: #fff; border: 0; text-decoration: none; }
+    .cbrand__btn:hover { background: var(--gold-strong); }
+    .cbrand__btn svg { width: 15px; height: 15px; }
+    .cbrand__btn--g { background: #fff; color: var(--ink); border: 1px solid var(--line-3); }
+    .cempty { border: 1px dashed var(--line-3); border-radius: var(--r-lg); padding: 18px; font-size: 12.5px; color: var(--ink-3); line-height: 1.7; text-align: center; }
+    /* モード/状態チップ */
+    .cbrand__m { flex: none; font-size: 10px; font-weight: 800; border-radius: var(--r-pill); padding: 3px 9px; white-space: nowrap; }
+    .cbrand__m--online { background: var(--gold-soft); color: var(--gold-strong); }
+    .cbrand__m--apply { background: #fdeaec; color: #9a2f3a; }
+    .cbrand__m--applied { background: #eef2f7; color: #5b6473; }
+    .cbrand__m--direct { background: #eaf1fb; color: #34507a; }
+    .cbrand--direct { border-color: #bcd0ea; background: #f4f8fd; }
+    .cbrand--direct .cbrand__btn { background: #34507a; }
+    .cbrand--direct .cbrand__btn:hover { background: #28406a; }
+    .cbrand__fee2 { font-size: 12px; color: var(--ink-2); font-weight: 700; margin: 0 0 12px; }
+    .cbrand__fee2 b { color: var(--ink); }
+    .cbrand__status { font-size: 11.5px; color: var(--ink-2); font-weight: 700; line-height: 1.5; margin: 0 0 12px; display: flex; align-items: center; gap: 6px; }
+    .cbrand__status svg { width: 15px; height: 15px; flex: none; color: var(--ink-3); }
+    .lp-applied { display: flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 13px 14px; font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin-bottom: 10px; }
+    .lp-applied svg { width: 18px; height: 18px; color: var(--gold-strong); flex: none; }
+
+    /* 契約申し込みフォーム（メーカー発注・ブランド別） */
+    .af-intro { font-size: 12.5px; line-height: 1.7; color: var(--ink-2); padding: 16px 20px 0; }
+    .af-intro b { color: var(--gold-strong); }
+    .af-form { padding: 14px 20px 20px; display: grid; gap: 14px; }
+    .af-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .af-l { display: block; font-size: 12px; font-weight: 800; margin-bottom: 5px; }
+    .af-l .req { color: #c0392b; margin-left: 3px; }
+    .af-form input[type=text], .af-form input[type=tel], .af-form input[type=email], .af-form input[type=number], .af-form textarea { width: 100%; border: 1px solid var(--line-3); border-radius: var(--r-sm); padding: 11px 12px; font-size: 14px; background: #fff; font-family: inherit; }
+    .af-form textarea { min-height: 70px; resize: vertical; }
+    .af-photos { display: grid; gap: 8px; }
+    .af-photo { display: flex; align-items: center; gap: 11px; border: 1px dashed var(--line-3); border-radius: var(--r-md); padding: 12px 14px; cursor: pointer; }
+    .af-photo input { display: none; }
+    .af-photo__ic { width: 38px; height: 38px; border-radius: var(--r-sm); background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--ink-3); flex: none; }
+    .af-photo__ic svg { width: 20px; height: 20px; }
+    .af-photo__t { font-size: 12.5px; font-weight: 700; } .af-photo__t small { display: block; font-weight: 600; color: var(--ink-3); font-size: 11px; margin-top: 1px; }
+    .af-photo.is-set { border-style: solid; border-color: var(--gold); background: var(--gold-soft); }
+    .af-photo.is-set .af-photo__ic { background: var(--gold); color: #fff; }
+    .af-reqs { display: grid; gap: 9px; border-top: 1px solid var(--line-2); padding-top: 13px; }
+    .af-req { display: flex; gap: 9px; align-items: flex-start; font-size: 12.5px; line-height: 1.5; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+    .af-req input { accent-color: var(--gold); width: 18px; height: 18px; flex: none; margin-top: 1px; }
+    .af-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; }
+
+    /* パンくず（タップ履歴） */
+    .lp-crumb { flex: none; display: flex; align-items: center; flex-wrap: nowrap; gap: 2px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--surface-2); overflow-x: auto; white-space: nowrap; }
+    .lp-crumb::-webkit-scrollbar { height: 0; }
+    .lp-crumb__l { flex: none; font-size: 12px; font-weight: 700; color: var(--gold-strong); background: none; border: 0; padding: 2px 2px; cursor: pointer; }
+    .lp-crumb__cur { flex: none; font-size: 12px; font-weight: 800; color: var(--ink); padding: 2px 2px; }
+    .lp-crumb__sep { flex: none; color: var(--ink-3); font-size: 11px; margin: 0 2px; }
+
+    /* キット選択（メーカー宣伝ページ） */
+    .lp-khero { color: #fff; padding: 22px 20px 20px; }
+    .lp-khero__maker { font-size: 11px; font-weight: 700; letter-spacing: .06em; opacity: .85; }
+    .lp-khero__t { font-size: 22px; font-weight: 900; margin-top: 3px; }
+    .lp-khero__s { font-size: 12.5px; line-height: 1.7; margin-top: 7px; opacity: .96; }
+    .lp-kintro { font-size: 12.5px; line-height: 1.7; color: var(--ink-2); padding: 16px 20px 4px; }
+    .lp-kintro b { color: var(--gold-strong); }
+    .lp-kcards { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 12px 20px 20px; }
+    .lp-kcard { position: relative; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; background: #fff; }
+    .lp-kcard--reco { border: 2px solid var(--gold); box-shadow: 0 8px 22px rgba(185,150,63,.18); }
+    .lp-kcard__ribbon { position: absolute; top: -11px; left: 16px; background: var(--gold); color: #fff; font-size: 10.5px; font-weight: 800; border-radius: var(--r-pill); padding: 3px 11px; }
+    .lp-kcard__name { font-size: 15px; font-weight: 900; }
+    .lp-kcard__tagline { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .lp-kcard__price { font-family: var(--font-num); font-size: 24px; font-weight: 900; margin-top: 8px; }
+    .lp-kcard__price small { font-family: var(--font-jp); font-size: 11px; font-weight: 600; color: var(--ink-3); margin-left: 3px; }
+    .lp-kcard__value { display: inline-block; font-size: 11px; font-weight: 800; color: var(--gold-strong); background: var(--gold-soft); border-radius: var(--r-sm); padding: 4px 9px; margin-top: 8px; }
+    .lp-kcard__list { list-style: none; margin: 12px 0 14px; padding: 0; display: grid; gap: 7px; }
+    .lp-kcard__list li { position: relative; padding-left: 22px; font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+    .lp-kcard__list li svg { position: absolute; left: 0; top: 1px; width: 15px; height: 15px; color: var(--gold-strong); }
+    .lp-kcard__btn { width: 100%; height: 46px; border-radius: var(--r-sm); font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #fff; color: var(--ink); border: 1px solid var(--line-3); cursor: pointer; }
+    .lp-kcard--reco .lp-kcard__btn { background: var(--gold); color: #fff; border-color: var(--gold); }
+    .lp-kcard--reco .lp-kcard__btn:hover { background: var(--gold-strong); }
+
+    /* LPモーダル */
+    .lp { position: fixed; inset: 0; z-index: 210; display: none; }
+    .lp.is-open { display: block; }
+    .lp__ov { position: absolute; inset: 0; background: rgba(20,20,28,.55); }
+    .lp__panel { position: absolute; left: 0; right: 0; bottom: 0; top: 0; background: #fff; display: flex; flex-direction: column; }
+    @media (min-width: 640px) { .lp__panel { top: 4vh; bottom: 4vh; left: 50%; transform: translateX(-50%); width: min(560px, 94vw); border-radius: var(--r-xl); overflow: hidden; box-shadow: var(--shadow-lg); } }
+    .lp__close { position: absolute; top: 12px; right: 12px; z-index: 3; width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,.92); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; }
+    .lp__close svg { width: 18px; height: 18px; }
+    .lp__body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .lp__foot { flex: none; border-top: 1px solid var(--line); padding: 13px 18px calc(13px + env(safe-area-inset-bottom, 0px)); background: #fff; }
+
+    .lp-hero { color: #fff; padding: 30px 20px 22px; }
+    .lp-hero__maker { font-size: 11px; font-weight: 700; letter-spacing: .06em; opacity: .85; }
+    .lp-hero__brand { font-size: 28px; font-weight: 900; margin-top: 4px; }
+    .lp-hero__tag { font-size: 13px; line-height: 1.7; margin-top: 8px; opacity: .96; }
+    .lp-sec { padding: 18px 20px; border-top: 1px solid var(--line-2); }
+    .lp-sec:first-of-type { border-top: 0; }
+    .lp-lead { font-size: 13px; line-height: 1.85; color: var(--ink-2); }
+    .lp-h { font-size: 14.5px; font-weight: 900; margin-bottom: 12px; }
+    .lp-pt { display: flex; gap: 10px; padding: 8px 0; }
+    .lp-pt__ic { flex: none; color: var(--gold-strong); } .lp-pt__ic svg { width: 20px; height: 20px; }
+    .lp-pt b { display: block; font-size: 13px; font-weight: 800; }
+    .lp-pt span { display: block; font-size: 12px; color: var(--ink-2); line-height: 1.6; margin-top: 2px; }
+    .lp-prods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .lp-prod { border: 1px solid var(--line); border-radius: var(--r-md); padding: 8px; }
+    .lp-prod__m { aspect-ratio: 1; background: var(--surface-2); border-radius: var(--r-sm); overflow: hidden; }
+    .lp-prod__m svg { width: 100%; height: 100%; }
+    .lp-prod__n { font-size: 10.5px; line-height: 1.4; margin-top: 6px; font-weight: 600; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .lp-prod__p { font-size: 11.5px; font-weight: 800; margin-top: 3px; } .lp-prod__p small { font-weight: 600; color: var(--ink-3); }
+    .lp-specs { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+    .lp-spec { display: flex; font-size: 12.5px; } .lp-spec + .lp-spec { border-top: 1px solid var(--line-2); }
+    .lp-spec__k { flex: none; width: 42%; background: var(--surface-2); padding: 10px 12px; font-weight: 700; color: var(--ink-2); }
+    .lp-spec__v { padding: 10px 12px; font-weight: 600; }
+
+    /* 決済ステップ */
+    .lp-pay { padding: 20px; }
+    .lp-pay__fee { background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r-md); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+    .lp-pay__fee .l { font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+    .lp-pay__fee .v { font-family: var(--font-num); font-size: 22px; font-weight: 900; color: var(--gold-strong); }
+    .lp-pay__h { font-size: 13px; font-weight: 800; margin: 18px 0 8px; }
+    .pay-opt { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .pay-opt + .pay-opt { margin-top: 8px; }
+    .pay-opt input { accent-color: var(--gold); width: 17px; height: 17px; }
+    .pay-opt small { display: block; font-weight: 600; color: var(--ink-3); font-size: 11px; margin-top: 1px; }
+    .lp-note { font-size: 11px; color: var(--ink-3); line-height: 1.65; margin-top: 14px; }
+
+    .lp-done { padding: 40px 24px; text-align: center; }
+    .lp-done__ic { width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 50%; background: var(--gold-soft); color: var(--gold-strong); display: flex; align-items: center; justify-content: center; }
+    .lp-done__ic svg { width: 34px; height: 34px; }
+    .lp-done__t { font-size: 19px; font-weight: 900; }
+    .lp-done__s { font-size: 13px; color: var(--ink-2); line-height: 1.75; margin-top: 8px; }
+
+    /* 理解チェック＆ボタン */
+    .lp-understand { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; line-height: 1.55; color: var(--ink-2); font-weight: 600; margin-bottom: 11px; cursor: pointer; }
+    .lp-understand input { accent-color: var(--gold); width: 18px; height: 18px; flex: none; margin-top: 1px; }
+    .lp-btn { width: 100%; height: 52px; border-radius: var(--r-md); font-weight: 800; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 7px; background: var(--gold); color: #fff; border: 0; text-decoration: none; }
+    .lp-btn:hover:not(:disabled) { background: var(--gold-strong); }
+    .lp-btn:disabled { opacity: .45; }
+    .lp-btn svg { width: 18px; height: 18px; }
+    .lp-back { display: block; width: 100%; text-align: center; margin-top: 10px; font-size: 12.5px; font-weight: 700; color: var(--ink-3); background: none; border: 0; }
+  </style>
+</head>
+<body class="page">
+
+  <!-- ヘッダー -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="#" data-soon="お知らせ" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ship-strip" data-ship-strip></div>
+
+  <!-- イントロ -->
+  <section class="c-intro">
+    <div class="c-intro__in">
+      <a class="back-link" href="mypage.html" style="color:#c9ced8;display:inline-flex;margin-bottom:10px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="m15 6-6 6 6 6"/></svg>マイページへ戻る
+      </a>
+      <div class="c-intro__t">菊地は<span class="gold">契約ブランドの多さ</span>が強み。</div>
+      <div class="c-intro__s">プレステージ系の多くは、メーカー契約が前提の「契約商品」です。菊地なら <b style="color:#fff" id="cbCount">—</b>ブランド を取扱い可能。発注方法は「菊池発注」と「メーカー発注サイト」の2通りです。</div>
+      <div class="c-steps">
+        <div class="c-step"><div class="c-step__n">菊</div><div class="c-step__t">菊池発注<br><span style="font-weight:600;color:#aeb5c2">契約後は菊地でいつもどおり</span></div></div>
+        <div class="c-step"><div class="c-step__n">M</div><div class="c-step__t">メーカー発注<br><span style="font-weight:600;color:#aeb5c2">メーカーの発注サイトで</span></div></div>
+        <div class="c-step"><div class="c-step__n">◎</div><div class="c-step__t">菊地サポート<br><span style="font-weight:600;color:#aeb5c2">契約・研修・運用まで</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 菊池発注の契約ブランド -->
+  <section class="c-sec">
+    <div class="c-sec__h"><span class="c-sec__t">菊池発注の契約ブランド</span><span class="c-sec__c" id="kikuchiCount"></span></div>
+    <div class="cgrid" id="kikuchiList"></div>
+  </section>
+
+  <!-- メーカー発注サイトの契約ブランド -->
+  <section class="c-sec">
+    <div class="c-sec__h"><span class="c-sec__t">メーカー発注サイトの契約ブランド</span><span class="c-sec__c" id="makerCount"></span></div>
+    <div class="cgrid" id="makerList"></div>
+  </section>
+
+  <div style="height:24px"></div>
+
+  <!-- LP / 契約モーダル -->
+  <div class="lp" id="lp" role="dialog" aria-modal="true" aria-label="ブランド契約">
+    <div class="lp__ov" data-close></div>
+    <div class="lp__panel">
+      <button class="lp__close" data-close aria-label="閉じる"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <nav class="lp-crumb" id="lpCrumb" hidden></nav>
+      <div class="lp__body" id="lpBody"></div>
+      <div class="lp__foot" id="lpFoot"></div>
+    </div>
+  </div>
+
+  <!-- 下部タブ -->
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab is-active" href="mypage.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      var Store = SP.Store, svg = SP.svg, yen = SP.fmtYen, ph = SP.placeholder;
+      var BRANDS = SP.CONTRACT_BRANDS || [];
+      var modal = document.getElementById('lp');
+      var body = document.getElementById('lpBody');
+      var foot = document.getElementById('lpFoot');
+      var chev = svg('chevright');
+      var enc = encodeURIComponent;
+      var prods = function (id) { return SP.DATA.products.filter(function (p) { return p.contract === id; }); };
+      var toast = function (m) {
+        var t = document.getElementById('toast');
+        t.innerHTML = svg('checkc') + m; t.classList.add('is-visible');
+        setTimeout(function () { t.classList.remove('is-visible'); }, 2200);
+      };
+      // 状態：contracted=菊池発注契約済 / makerReady=メーカー発注契約済 / applied=申込済（審査中） /
+      //       makerApply=メーカー発注の申込が必要 / apply=要申込 / online=オンライン契約可
+      function stateOf(b) {
+        if (Store.hasContract(b.id)) return b.mode === 'direct' ? 'makerReady' : 'contracted';
+        if (Store.hasApplied(b.id)) return 'applied';
+        if (b.mode === 'direct') return 'makerApply';
+        if (b.mode === 'apply') return 'apply';
+        return 'online';
+      }
+
+      /* ---- 一覧描画 ---- */
+      function wrap(cls, b, chip, mid, cta) {
+        return '<div class="cbrand ' + cls + '">' +
+          '<div class="cbrand__top"><span class="cbrand__name">' + b.brand + '</span>' + chip + '</div>' +
+          '<div class="cbrand__maker">' + b.maker + '</div>' +
+          '<div class="cbrand__tag">' + b.tagline + '</div>' + mid + cta + '</div>';
+      }
+      function card(b) {
+        var st = stateOf(b);
+        var minKit = (b.kits && b.kits.length) ? Math.min.apply(null, b.kits.map(function (k) { return k.price; })) : b.fee;
+        var fee = minKit > 0 ? '<div class="cbrand__fee2">契約キット <b>' + yen(minKit) + '〜</b><span style="font-weight:600;color:var(--ink-3)"> 複数プランあり</span></div>' : '';
+        if (st === 'contracted') {
+          return wrap('cbrand--on', b, '<span class="cbrand__m cbrand__m--online">契約中</span>', '',
+            '<a class="cbrand__btn cbrand__btn--g" href="index.html?q=' + enc(b.brand) + '">商品を見る（' + prods(b.id).length + '点）' + chev + '</a>');
+        }
+        if (st === 'makerReady') {
+          return wrap('cbrand--direct', b, '<span class="cbrand__m cbrand__m--direct">メーカー発注</span>',
+            '<div class="cbrand__status">' + svg('checkc') + '契約済み・ご注文はメーカー発注サイトから</div>',
+            '<a class="cbrand__btn" href="' + (b.orderUrl || '#') + '" target="_blank" rel="noopener">' + svg('truck') + 'メーカー発注サイトへ' + chev + '</a>');
+        }
+        if (st === 'applied') {
+          return wrap('', b, '<span class="cbrand__m cbrand__m--applied">申込済み</span>',
+            '<div class="cbrand__status">' + svg('clock') + '菊地が審査・契約手続き中です</div>',
+            '<button class="cbrand__btn cbrand__btn--g" data-open="' + b.id + '">申し込み内容を見る' + chev + '</button>');
+        }
+        if (st === 'makerApply') {
+          return wrap('cbrand--direct', b, '<span class="cbrand__m cbrand__m--direct">メーカー発注</span>',
+            '<div class="cbrand__status">' + svg('shield') + 'サロン審査のうえ、菊地が契約手続きします</div>',
+            '<button class="cbrand__btn" data-open="' + b.id + '">' + svg('shield') + '契約を申し込む' + chev + '</button>');
+        }
+        if (st === 'online') {
+          return wrap('', b, '<span class="cbrand__m cbrand__m--online">オンライン契約</span>', fee,
+            '<button class="cbrand__btn" data-open="' + b.id + '">' + svg('shield') + '内容を見て契約する' + chev + '</button>');
+        }
+        // apply（要申込）
+        return wrap('', b, '<span class="cbrand__m cbrand__m--apply">要申込</span>', fee,
+          '<button class="cbrand__btn" data-open="' + b.id + '">' + svg('shield') + '契約を申し込む' + chev + '</button>');
+      }
+      function render() {
+        var maker = BRANDS.filter(function (b) { return b.mode === 'direct'; });
+        var kikuchi = BRANDS.filter(function (b) { return b.mode !== 'direct'; });
+        var cnt = document.getElementById('cbCount'); if (cnt) cnt.textContent = BRANDS.length;
+        document.getElementById('kikuchiCount').textContent = kikuchi.length + 'ブランド';
+        document.getElementById('makerCount').textContent = maker.length + 'ブランド';
+        document.getElementById('kikuchiList').innerHTML = kikuchi.length
+          ? kikuchi.map(card).join('')
+          : '<div class="cempty">菊池発注の契約ブランドはありません。</div>';
+        document.getElementById('makerList').innerHTML = maker.length
+          ? maker.map(card).join('')
+          : '<div class="cempty">メーカー発注サイトの契約ブランドはありません。</div>';
+      }
+
+      /* ---- LP（メーカー説明） ---- */
+      function lpHtml(b) {
+        var ps = prods(b.id);
+        var prodLabel = b.mode === 'direct' ? '取扱い商品（メーカー発注サイトで注文）' : '契約商品（契約後に購入できます）';
+        var prodSec = ps.length
+          ? '<div class="lp-sec"><h3 class="lp-h">' + prodLabel + '</h3><div class="lp-prods">' +
+              ps.map(function (p) { return '<div class="lp-prod"><div class="lp-prod__m">' + ph(p.ph, p.brand) + '</div><div class="lp-prod__n">' + p.name + '</div><div class="lp-prod__p">' + yen(p.price) + ' <small>税抜</small></div></div>'; }).join('') +
+            '</div></div>'
+          : '<div class="lp-sec"><h3 class="lp-h">取扱い商品</h3><p class="lp-lead">取扱い商品の詳細は、担当者よりご案内します。</p></div>';
+        return '' +
+          '<div class="lp-hero" style="background:' + b.accent + '">' +
+            '<div class="lp-hero__maker">' + b.maker + ' ／ 契約ブランド</div>' +
+            '<div class="lp-hero__brand">' + b.brand + '</div>' +
+            '<div class="lp-hero__tag">' + b.tagline + '</div>' +
+          '</div>' +
+          '<div class="lp-sec"><p class="lp-lead">' + b.lead + '</p></div>' +
+          '<div class="lp-sec"><h3 class="lp-h">選ばれる理由</h3>' +
+            b.points.map(function (pt) { return '<div class="lp-pt"><span class="lp-pt__ic">' + svg('checkc') + '</span><div><b>' + pt.t + '</b><span>' + pt.s + '</span></div></div>'; }).join('') +
+          '</div>' + prodSec +
+          '<div class="lp-sec"><h3 class="lp-h">契約内容</h3><div class="lp-specs">' +
+            b.specs.map(function (s) { return '<div class="lp-spec"><div class="lp-spec__k">' + s[0] + '</div><div class="lp-spec__v">' + s[1] + '</div></div>'; }).join('') +
+          '</div></div>';
+      }
+      // パンくず（タップ履歴）：契約ブランド › ブランド › キットを選ぶ › お支払い
+      function setCrumb(b, step, kitName) {
+        var c = document.getElementById('lpCrumb'); if (!c) return;
+        var items = [{ t: '契約ブランド', go: 'list' }];
+        items.push({ t: b.brand, go: step === 'lp' ? null : 'lp' });
+        if (step === 'kits') items.push({ t: 'キットを選ぶ', go: null });
+        if (step === 'pay') { items.push({ t: 'キットを選ぶ', go: 'kits' }); items.push({ t: kitName || 'お支払い', go: null }); }
+        if (step === 'form') items.push({ t: '契約を申し込む', go: null });
+        if (step === 'done') items.push({ t: '完了', go: null });
+        c.hidden = false;
+        c.innerHTML = items.map(function (it, i) {
+          var sep = i > 0 ? '<span class="lp-crumb__sep">›</span>' : '';
+          return sep + (it.go ? '<button class="lp-crumb__l" data-go="' + it.go + '">' + it.t + '</button>' : '<span class="lp-crumb__cur">' + it.t + '</span>');
+        }).join('');
+      }
+
+      function showLP(b) {
+        modal.dataset.brand = b.id;
+        body.innerHTML = lpHtml(b);
+        setCrumb(b, 'lp');
+        var st = stateOf(b);
+        if (st === 'applied') {
+          foot.innerHTML =
+            '<div class="lp-applied">' + svg('clock') + 'お申し込み済みです。菊地が審査・契約手続き中です。</div>' +
+            '<button class="lp-back" id="lpCloseA">閉じる</button>';
+          document.getElementById('lpCloseA').addEventListener('click', close);
+        } else if (st === 'makerReady') {
+          foot.innerHTML =
+            '<a class="lp-btn" href="' + (b.orderUrl || '#') + '" target="_blank" rel="noopener">' + svg('truck') + 'メーカー発注サイトを開く' + chev + '</a>' +
+            '<p class="lp-note" style="margin-top:10px">契約済み。ご注文はメーカー発注サイトから（プロトタイプのためサンプルのリンク）。</p>';
+        } else if (st === 'makerApply' || st === 'apply') {
+          foot.innerHTML = '<button class="lp-btn" id="lpGo">' + svg('shield') + '契約を申し込む' + chev + '</button>';
+          document.getElementById('lpGo').addEventListener('click', function () { showApplyForm(b); });
+        } else { // online＝菊池発注
+          foot.innerHTML = '<button class="lp-btn" id="lpGo">キットを選んで契約に進む' + chev + '</button>';
+          document.getElementById('lpGo').addEventListener('click', function () { showKits(b); });
+        }
+        body.scrollTop = 0;
+      }
+
+      /* ---- キット選択（メーカー宣伝ページ・お得なキットを訴求） ---- */
+      function showKits(b) {
+        var kits = b.kits || [];
+        setCrumb(b, 'kits');
+        body.innerHTML =
+          '<div class="lp-khero" style="background:' + b.accent + '"><div class="lp-khero__maker">' + b.maker + ' 公式</div>' +
+            '<div class="lp-khero__t">' + b.brand + ' 契約キット</div>' +
+            '<div class="lp-khero__s">' + b.tagline + '</div></div>' +
+          '<div class="lp-kintro">お得なキットほど、サンプル・什器・販促・研修まで充実。多くのサロンが<b>スタンダード</b>を選んでいます。</div>' +
+          '<div class="lp-kcards">' +
+            kits.map(function (k) {
+              return '<div class="lp-kcard' + (k.badge ? ' lp-kcard--reco' : '') + '">' +
+                (k.badge ? '<span class="lp-kcard__ribbon">' + k.badge + '</span>' : '') +
+                '<div class="lp-kcard__name">' + k.name + '</div>' +
+                '<div class="lp-kcard__tagline">' + k.tagline + '</div>' +
+                '<div class="lp-kcard__price">' + yen(k.price) + '<small>税込</small></div>' +
+                (k.value ? '<div class="lp-kcard__value">' + k.value + '</div>' : '') +
+                '<ul class="lp-kcard__list">' + k.contents.map(function (cn) { return '<li>' + svg('checkc') + cn + '</li>'; }).join('') + '</ul>' +
+                '<button class="lp-kcard__btn" data-kit="' + k.id + '">このキットで契約</button>' +
+              '</div>';
+            }).join('') +
+          '</div>';
+        foot.innerHTML = '<button class="lp-back" id="lpBackLp">← ブランド説明に戻る</button>';
+        document.getElementById('lpBackLp').addEventListener('click', function () { showLP(b); });
+        [].forEach.call(body.querySelectorAll('[data-kit]'), function (btn) {
+          btn.addEventListener('click', function () {
+            var k = kits.filter(function (x) { return x.id === btn.dataset.kit; })[0];
+            showPay(b, k);
+          });
+        });
+        body.scrollTop = 0;
+      }
+
+      /* ---- 初期費用の決済（プロトタイプ＝模擬） ---- */
+      function showPay(b, kit) {
+        var price = kit ? kit.price : (b.fee || 0);
+        setCrumb(b, 'pay', kit ? kit.name : null);
+        body.innerHTML =
+          '<div class="lp-pay">' +
+            '<h3 class="lp-h" style="margin-top:0">契約キットのお支払い</h3>' +
+            '<div class="lp-pay__fee"><span class="l">' + b.brand + (kit ? ' ／ ' + kit.name : '') + '</span><span class="v">' + yen(price) + '<span style="font-size:12px"> 税込</span></span></div>' +
+            '<div class="lp-pay__h">お支払い方法</div>' +
+            '<label class="pay-opt"><input type="radio" name="pay" value="invoice" checked><span>請求書（掛け払い）<small>担当：菊地 太郎／月末締め翌月末払い</small></span></label>' +
+            '<label class="pay-opt"><input type="radio" name="pay" value="card"><span>登録済みクレジットカード<small>VISA ****4242</small></span></label>' +
+            '<label class="lp-understand" style="margin-top:16px"><input type="checkbox" id="lpAgree"><span><b>' + b.brand + '</b>（' + b.maker + '）の契約内容と ' + (kit ? kit.name + ' ' : '') + yen(price) + '（税込）を理解しました。</span></label>' +
+            '<p class="lp-note">※ これはプロトタイプの模擬決済です。実際の課金は行われません。掛け払いは担当者の承認後に契約確定となります。</p>' +
+          '</div>';
+        foot.innerHTML =
+          '<button class="lp-btn" id="lpPay" disabled>' + svg('shield') + yen(price) + ' を支払って契約する</button>' +
+          '<button class="lp-back" id="lpBackKits">← キット選択に戻る</button>';
+        document.getElementById('lpAgree').addEventListener('change', function (e) { document.getElementById('lpPay').disabled = !e.target.checked; });
+        document.getElementById('lpPay').addEventListener('click', function () { Store.addContract(b.id); showDone(b); });
+        document.getElementById('lpBackKits').addEventListener('click', function () { showKits(b); });
+        body.scrollTop = 0;
+      }
+      function showDone(b) {
+        setCrumb(b, 'done');
+        body.innerHTML =
+          '<div class="lp-done"><div class="lp-done__ic">' + svg('checkc') + '</div>' +
+            '<div class="lp-done__t">契約が完了しました</div>' +
+            '<div class="lp-done__s"><b>' + b.brand + '</b> を契約一覧に追加しました。<br>これ以降は菊地（SalonPro）から、' + prods(b.id).length + '点の商品をご発注いただけます。</div></div>';
+        foot.innerHTML =
+          '<a class="lp-btn" href="index.html?q=' + enc(b.brand) + '">' + b.brand + 'の商品を見る' + chev + '</a>' +
+          '<button class="lp-back" id="lpClose2">契約一覧に戻る</button>';
+        document.getElementById('lpClose2').addEventListener('click', function () { close(); render(); toast(b.brand + 'を契約しました'); });
+        body.scrollTop = 0;
+      }
+
+      /* ---- 契約申し込みフォーム（メーカー発注・ブランド別にカスタム） ---- */
+      function afField(key, label, req, type) {
+        var t = type || 'text';
+        var input = t === 'textarea'
+          ? '<textarea id="af-' + key + '"' + (req ? ' data-afreq' : '') + '></textarea>'
+          : '<input type="' + t + '" id="af-' + key + '"' + (req ? ' data-afreq' : '') + '>';
+        return '<div><span class="af-l">' + label + (req ? '<span class="req">*</span>' : '') + '</span>' + input + '</div>';
+      }
+      function showApplyForm(b) {
+        var af = b.applyForm || {};
+        setCrumb(b, 'form');
+        var camIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3.5l1.8-2h7.4l1.8 2H21v11H3z"/><circle cx="12" cy="13.5" r="3.4"/></svg>';
+        var photos = [{ key: 'exterior', label: 'サロン外観の写真', required: true }, { key: 'interior', label: '内観・セット面の写真', required: true }].concat(af.extraPhotos || []);
+        var photoHtml = photos.map(function (p) {
+          return '<label class="af-photo"' + (p.required ? ' data-afreqphoto' : '') + '><input type="file" accept="image/*">' +
+            '<span class="af-photo__ic">' + camIcon + '</span>' +
+            '<span class="af-photo__t">' + p.label + (p.required ? '<span class="req" style="color:#c0392b"> *</span>' : '') + '<small>タップして写真を選択／撮影</small></span></label>';
+        }).join('');
+        var extra = (af.extraFields || []).map(function (f) { return afField(f.key, f.label, f.required, f.type); }).join('');
+        var reqHtml = (af.requirements || []).map(function (r) { return '<label class="af-req"><input type="checkbox" data-afcheck>' + r + '</label>'; }).join('');
+        body.innerHTML =
+          '<div class="lp-hero" style="background:' + b.accent + ';padding-bottom:18px"><div class="lp-hero__maker">' + b.maker + '</div><div class="lp-hero__brand" style="font-size:22px">' + b.brand + ' 契約申し込み</div></div>' +
+          '<div class="af-intro">' + (af.note || 'サロン情報の審査後に契約となります。') + ' <b>菊地の担当者がメーカーと契約を締結します。</b></div>' +
+          '<div class="af-form">' +
+            afField('salon', 'サロン名', true) +
+            '<div class="af-row2">' + afField('person', 'ご担当者名', true) + afField('tel', '電話番号', true, 'tel') + '</div>' +
+            afField('email', 'メールアドレス', true, 'email') +
+            afField('addr', 'ご住所', true) +
+            '<div class="af-row2">' + afField('seats', 'セット面数', true, 'number') + afField('staff', 'スタッフ数', true, 'number') + '</div>' +
+            extra +
+            '<div><span class="af-l">サロン写真<span class="req">*</span></span><div class="af-photos">' + photoHtml + '</div></div>' +
+            (reqHtml ? '<div class="af-reqs">' + reqHtml + '</div>' : '') +
+            '<p class="af-note">※ プロトタイプのため送信・写真アップロードは行われません。本番では審査キュー（admin）とメーカー申請に連携します。</p>' +
+          '</div>';
+        foot.innerHTML =
+          '<button class="lp-btn" id="afSubmit" disabled>' + svg('shield') + 'この内容で申し込む' + chev + '</button>' +
+          '<button class="lp-back" id="afBack">← ブランド説明に戻る</button>';
+        var form = body.querySelector('.af-form');
+        function check() {
+          var ok = true;
+          [].forEach.call(form.querySelectorAll('[data-afreq]'), function (el) { if (!el.value.trim()) ok = false; });
+          [].forEach.call(form.querySelectorAll('.af-photo[data-afreqphoto]'), function (el) { if (!el.classList.contains('is-set')) ok = false; });
+          [].forEach.call(form.querySelectorAll('[data-afcheck]'), function (el) { if (!el.checked) ok = false; });
+          document.getElementById('afSubmit').disabled = !ok;
+        }
+        form.addEventListener('input', check);
+        form.addEventListener('change', function (e) {
+          if (e.target.type === 'file') {
+            var lab = e.target.closest('.af-photo'); var has = e.target.files && e.target.files.length;
+            lab.classList.toggle('is-set', !!has);
+            var sm = lab.querySelector('small'); if (sm) sm.textContent = has ? e.target.files[0].name : 'タップして写真を選択／撮影';
+          }
+          check();
+        });
+        document.getElementById('afSubmit').addEventListener('click', function () {
+          var labels = { salon: 'サロン名', person: 'ご担当者名', tel: '電話番号', email: 'メールアドレス', addr: 'ご住所', seats: 'セット面数', staff: 'スタッフ数' };
+          var fields = {};
+          Object.keys(labels).forEach(function (k) { var el = document.getElementById('af-' + k); if (el) fields[labels[k]] = el.value.trim(); });
+          (af.extraFields || []).forEach(function (f) { var el = document.getElementById('af-' + f.key); if (el) fields[f.label] = el.value.trim(); });
+          var photos = [].map.call(form.querySelectorAll('.af-photo.is-set'), function (p) { return (p.querySelector('.af-photo__t').firstChild.textContent || '写真').trim(); });
+          Store.addContractApp({ brandId: b.id, brand: b.brand, maker: b.maker, fields: fields, photos: photos, requirements: (af.requirements || []).slice(), at: Date.now() });
+          showApplyDone(b);
+        });
+        document.getElementById('afBack').addEventListener('click', function () { showLP(b); });
+        body.scrollTop = 0;
+      }
+
+      /* ---- 申し込み確定（連絡待ち） ---- */
+      function doApply(b) { Store.applyContract(b.id); showApplyDone(b); }
+      function showApplyDone(b) {
+        setCrumb(b, 'done');
+        body.innerHTML =
+          '<div class="lp-done"><div class="lp-done__ic">' + svg('checkc') + '</div>' +
+            '<div class="lp-done__t">お申し込みを受け付けました</div>' +
+            '<div class="lp-done__s"><b>' + b.brand + '</b> のお申し込みを受け付けました。<br>菊地の担当者より、契約手続きについてご連絡いたします。今しばらくお待ちください。</div></div>';
+        foot.innerHTML = '<button class="lp-btn" id="lpDoneApply">わかりました</button>';
+        document.getElementById('lpDoneApply').addEventListener('click', function () { close(); render(); toast(b.brand + 'の申し込みを受け付けました'); });
+        body.scrollTop = 0;
+      }
+
+      /* ---- 開閉 ---- */
+      function open(b) {
+        if (!b || Store.hasContract(b.id)) { render(); return; }
+        showLP(b);
+        modal.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+      }
+      function close() {
+        modal.classList.remove('is-open');
+        document.body.style.overflow = '';
+      }
+
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-open]');
+        if (btn) open(SP.contractBrand(btn.dataset.open));
+      });
+      modal.addEventListener('click', function (e) { if (e.target.closest('[data-close]')) close(); });
+      // パンくずのタップで前の階層へ戻る（メーカー＝ブランド一覧へ戻ってまた選べる）
+      document.getElementById('lpCrumb').addEventListener('click', function (e) {
+        var btn = e.target.closest('[data-go]'); if (!btn) return;
+        var go = btn.dataset.go;
+        if (go === 'list') { close(); return; }
+        var b = SP.contractBrand(modal.dataset.brand); if (!b) return;
+        if (go === 'lp') showLP(b);
+        else if (go === 'kits') showKits(b);
+      });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+
+      document.getElementById('searchForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var q = document.getElementById('headerSearch').value.trim();
+        location.href = 'index.html' + (q ? '?q=' + enc(q) : '');
+      });
+      (function () {
+        var c = Store.cartSummary().count, el = document.getElementById('cartBadge');
+        if (el) { el.textContent = c; el.hidden = c <= 0; }
+      })();
+
+      render();
+      var bq = new URLSearchParams(location.search).get('b');
+      if (bq) open(SP.contractBrand(bq));
+    })();
+  </script>
+</body>
+</html>
