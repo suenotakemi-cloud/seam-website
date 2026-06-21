@@ -8347,11 +8347,27 @@ async function saveCustomCanvas(filename, mode) {
     ctx.fillText(`${new Date().toISOString().slice(0,10)} · seam.site`, cx, y);
   }
 
-  // ダウンロード
-  const link = document.createElement('a');
-  link.download = filename || `seam-${mode}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  // 共有/保存: モバイルは共有シート(写真に保存/LINE等)優先 → 不可orキャンセル時はダウンロード
+  const fname = filename || `seam-${mode}.png`;
+  const dataURL = canvas.toDataURL('image/png');
+  const download = () => { const a = document.createElement('a'); a.download = fname; a.href = dataURL; a.click(); };
+  try {
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+    if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], fname, { type: 'image/png' })] })) {
+      try {
+        await navigator.share({ files: [new File([blob], fname, { type: 'image/png' })], title: 'SEAM 髪格診断' });
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        download();
+        return;
+      }
+    }
+    download();
+  } catch (e) {
+    console.warn('Karte image save failed', e);
+    download();
+  }
 }
 
 function buildOgImageDataURL(originId, direction) {
@@ -8435,28 +8451,7 @@ function buildOgImageDataURL(originId, direction) {
   ctx.font = `400 14px ${fontMono}`;
   ctx.fillText('seam.site · #SEAM髪診断', textCX, H - 50);
 
-  // 生成した画像を共有/保存(shareCounselingSheetImageと同じ方式: 共有シート優先→DLフォールバック)
-  const dataURL = canvas.toDataURL('image/png');
-  const fname = filename || 'SEAM-karte.png';
-  try {
-    const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
-    if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], fname, { type: 'image/png' })] })) {
-      try {
-        await navigator.share({ files: [new File([blob], fname, { type: 'image/png' })], title: 'SEAM 髪格診断' });
-        return dataURL;
-      } catch (e) {
-        if (e && e.name === 'AbortError') return dataURL; // ユーザーが共有シートを閉じた
-      }
-    }
-    const link = document.createElement('a');
-    link.download = fname;
-    link.href = dataURL;
-    link.click();
-  } catch (e) {
-    console.warn('Karte image save failed', e);
-    alert('画像の保存に失敗しました もう一度お試しください');
-  }
-  return dataURL;
+  return canvas.toDataURL('image/png');
 }
 
 function drawCanvasPentagonDark(ctx, cx, cy, radius, values) {
