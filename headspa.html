@@ -110,6 +110,8 @@
     }
     .hscroll{scrollbar-width:none;-ms-overflow-style:none;}
     .hscroll::-webkit-scrollbar{display:none;}
+    .course-active{ box-shadow:0 0 0 2px #B8945A, 0 18px 48px -28px rgba(26,24,21,0.28) !important; }
+    .chip-active{ border-color:#B8945A !important; color:#B8945A !important; background:#FBF7EF !important; }
   </style>
 </head>
 
@@ -201,13 +203,14 @@
       <!-- MOOD QUICK-SELECT -->
       <p data-reveal class="mt-12 font-serif text-[18px] sm:text-[22px] text-ink leading-snug font-medium" data-i18n="mood.title">今日はどんな気分で</p>
       <div class="mt-6 flex flex-wrap justify-center gap-2.5 sm:gap-3 max-w-xl mx-auto">
-        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-i18n="mood.c1">ぐっすり眠りたい</a>
-        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-i18n="mood.c2">肩と首がはっている</a>
-        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-i18n="mood.c3">目を休めたい</a>
-        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-i18n="mood.c4">気分を切り替えたい</a>
-        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-i18n="mood.c5">頭皮をすっきりさせたい</a>
+        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-course="signature" data-i18n="mood.c1">ぐっすり眠りたい</a>
+        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-course="deep" data-i18n="mood.c2">肩と首がはっている</a>
+        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-course="signature" data-i18n="mood.c3">目を休めたい</a>
+        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-course="essential" data-i18n="mood.c4">気分を切り替えたい</a>
+        <a href="#menus" class="inline-flex items-center px-4 py-2.5 rounded-full bg-white border border-line text-[12.5px] sm:text-[13px] text-ink hover:border-gold hover:text-gold transition-colors" data-course="deep" data-i18n="mood.c5">頭皮をすっきりさせたい</a>
       </div>
       <p class="mt-6 text-[11px] text-charcoal/55" data-i18n="mood.hint">気分に合うコースが見つかります</p>
+      <p id="moodReco" class="mt-3 text-[12.5px] text-mainBrown font-serif" style="visibility:hidden;"><span data-i18n="mood.reco">おすすめのコース</span> <span id="moodRecoName" style="font-weight:600;"></span></p>
     </div>
   </section>
 
@@ -729,6 +732,7 @@
         'mood.c4': '気分を切り替えたい',
         'mood.c5': '頭皮をすっきりさせたい',
         'mood.hint': '気分に合うコースが見つかります',
+        'mood.reco': 'おすすめのコース',
         'journey.title': '90分の旅路',
         'journey.desc': 'ご来店から仕上げまで6つのシーンで構成されています',
         'journey.s1.title': '頭皮を洗う',
@@ -835,6 +839,7 @@
         'mood.c4': 'Reset my mind',
         'mood.c5': 'Refresh my scalp',
         'mood.hint': 'Find the course that fits your mood',
+        'mood.reco': 'Recommended',
         'journey.title': 'A 90-Minute Journey',
         'journey.desc': 'From arrival to finish, the experience unfolds in six scenes.',
         'journey.s1.title': 'Cleansing the scalp.',
@@ -941,6 +946,7 @@
         'mood.c4': '转换心情',
         'mood.c5': '头皮清爽',
         'mood.hint': '为你推荐合适的疗程',
+        'mood.reco': '推荐疗程',
         'journey.title': '90分钟的旅程',
         'journey.desc': '从到店到完成，由6个场景组成。',
         'journey.s1.title': '洁净头皮。',
@@ -1047,6 +1053,7 @@
         'mood.c4': '轉換心情',
         'mood.c5': '頭皮清爽',
         'mood.hint': '為你推薦合適的療程',
+        'mood.reco': '推薦療程',
         'journey.title': '90分鐘的旅程',
         'journey.desc': '從到店到完成，由6個場景組成。',
         'journey.s1.title': '潔淨頭皮。',
@@ -1153,6 +1160,7 @@
         'mood.c4': '기분 전환하고 싶어요',
         'mood.c5': '두피를 산뜻하게',
         'mood.hint': '기분에 맞는 코스를 제안합니다',
+        'mood.reco': '추천 코스',
         'journey.title': '90분의 여정',
         'journey.desc': '입장부터 마무리까지, 여섯 개의 장면으로 구성됩니다.',
         'journey.s1.title': '두피를 씻어내다.',
@@ -1239,5 +1247,31 @@
   <script src="js/reveal.js"></script>
   <script src="js/enhance.js?v=1" defer></script>
   <script src="js/app-tabbar.js?v=4" defer></script>
+<script>
+  (function(){
+    function init(){
+      var chips=document.querySelectorAll('a[data-course][data-i18n^="mood.c"]');
+      if(!chips.length) return;
+      var keys=['essential','signature','deep'], cards={};
+      keys.forEach(function(k){ var n=document.querySelector('[data-i18n="menus.'+k+'.name"]'); cards[k]=n?n.closest('.svc-card'):null; });
+      var reco=document.getElementById('moodReco'), recoName=document.getElementById('moodRecoName');
+      chips.forEach(function(chip){
+        chip.addEventListener('click', function(){
+          var course=chip.getAttribute('data-course');
+          chips.forEach(function(c){ c.classList.remove('chip-active'); });
+          chip.classList.add('chip-active');
+          keys.forEach(function(k){ if(cards[k]) cards[k].classList.toggle('course-active', k===course); });
+          var card=cards[course];
+          if(card){
+            if(recoName){ var n=card.querySelector('[data-i18n$=".name"]'); recoName.textContent=n?n.textContent.trim():''; }
+            if(reco) reco.style.visibility='visible';
+            try{ card.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'}); }catch(e){}
+          }
+        });
+      });
+    }
+    if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded', init);
+  })();
+  </script>
 </body>
 </html>
