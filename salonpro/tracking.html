@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>配送状況｜SalonPro</title>
+  <meta name="description" content="ご注文の配送状況をリアルタイムで追跡。出荷・配送中・お届けまでの進捗を確認できます。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 720px; }
+    .tk-hd { margin-top: var(--s-4); } .tk-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; } .tk-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+    .tk-card { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; margin-top: var(--s-4); }
+    .tk-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .tk-no { font-size: 12px; color: var(--ink-3); font-weight: 700; } .tk-no b { color: var(--ink); font-family: var(--font-num); }
+    .tk-status { font-size: 14px; font-weight: 900; color: var(--gold-strong); }
+    .tk-meta { font-size: 12px; color: var(--ink-2); margin-top: 6px; line-height: 1.7; } .tk-meta b { color: var(--ink); }
+    .tk-steps { margin-top: 18px; }
+    .tk-step { display: flex; gap: 13px; position: relative; padding-bottom: 20px; }
+    .tk-step:last-child { padding-bottom: 0; }
+    .tk-step::before { content: ''; position: absolute; left: 11px; top: 24px; bottom: 0; width: 2px; background: var(--line); }
+    .tk-step:last-child::before { display: none; }
+    .tk-step__dot { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); background: #fff; display: flex; align-items: center; justify-content: center; z-index: 1; }
+    .tk-step__dot svg { width: 13px; height: 13px; color: #fff; }
+    .tk-step.done .tk-step__dot { background: var(--gold); border-color: var(--gold); }
+    .tk-step.now .tk-step__dot { border-color: var(--gold); box-shadow: 0 0 0 4px var(--gold-soft); }
+    .tk-step.now .tk-step__dot::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--gold); }
+    .tk-step__b { flex: 1; min-width: 0; padding-top: 1px; }
+    .tk-step__t { font-size: 13.5px; font-weight: 800; } .tk-step.todo .tk-step__t { color: var(--ink-3); }
+    .tk-step__d { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .tk-track { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; border-top: 1px solid var(--line-2); padding-top: 14px; }
+    .tk-track__l { font-size: 11.5px; color: var(--ink-3); } .tk-track__v { font-size: 13px; font-weight: 800; font-family: var(--font-num); }
+    .tk-other { margin-top: var(--s-5); } .tk-other__t { font-size: 14px; font-weight: 900; margin-bottom: 10px; }
+    .tk-row { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; text-decoration: none; color: var(--ink); }
+    .tk-row + .tk-row { margin-top: 8px; }
+    .tk-row__b { flex: 1; min-width: 0; } .tk-row__n { font-size: 12.5px; font-weight: 800; font-family: var(--font-num); } .tk-row__s { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .tk-row__tag { font-size: 10.5px; font-weight: 800; border-radius: var(--r-pill); padding: 3px 9px; }
+    .tk-row__tag--ship { background: var(--gold-soft); color: var(--gold-strong); } .tk-row__tag--done { background: #e1f3ea; color: #1d7a55; }
+    .tk-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin-top: 14px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="news.html" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="tk-hd"><div class="tk-hd__t">配送状況</div><div class="tk-hd__s">ご注文の出荷・配送をリアルタイムで追跡できます。</div></div>
+    <div id="tkMain"></div>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab is-active" href="mypage.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      var svg = SP.svg;
+      var STEPS = [
+        { k: '注文受付', d: '6/19 18:40' },
+        { k: '出荷準備中', d: '6/20 09:10' },
+        { k: '出荷完了（札幌）', d: '6/20 11:30' },
+        { k: '配送中', d: '本日中にお届け予定' },
+        { k: 'お届け完了', d: '' }
+      ];
+      var cur = 3; // 0-based：配送中
+      var main = document.getElementById('tkMain');
+      var stepsHtml = STEPS.map(function (s, i) {
+        var cls = i < cur ? 'done' : (i === cur ? 'now' : 'todo');
+        var dot = i < cur ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5L20 7"/></svg>' : '';
+        return '<div class="tk-step ' + cls + '"><span class="tk-step__dot">' + dot + '</span><div class="tk-step__b"><div class="tk-step__t">' + s.k + '</div><div class="tk-step__d">' + (s.d || '—') + '</div></div></div>';
+      }).join('');
+      main.innerHTML =
+        '<div class="tk-card"><div class="tk-top"><div><div class="tk-no">注文番号 <b>SP-20260619-2381</b></div><div class="tk-status">配送中・本日お届け予定</div></div></div>' +
+        '<div class="tk-meta">お届け先：<b>SALON LUXE 表参道店</b>　商品：シャンプー他 <b>8点</b>　お支払い：請求書（掛け払い）</div>' +
+        '<div class="tk-steps">' + stepsHtml + '</div>' +
+        '<div class="tk-track"><span class="tk-track__l">配送業者</span><span class="tk-track__v">ヤマト運輸</span></div>' +
+        '<div class="tk-track" style="border-top:0;padding-top:0"><span class="tk-track__l">追跡番号</span><span class="tk-track__v">4012-8839-2207</span></div></div>' +
+        '<div class="tk-other"><div class="tk-other__t">最近のご注文</div>' +
+        '<a class="tk-row" href="tracking.html?no=2380"><span class="tk-row__b"><span class="tk-row__n">SP-20260618-2380</span><span class="tk-row__s">6/18・hairケア他 5点</span></span><span class="tk-row__tag tk-row__tag--done">お届け済</span></a>' +
+        '<a class="tk-row" href="tracking.html?no=2379"><span class="tk-row__b"><span class="tk-row__n">SP-20260617-2379</span><span class="tk-row__s">6/17・カラー剤 12点</span></span><span class="tk-row__tag tk-row__tag--done">お届け済</span></a></div>' +
+        '<p class="tk-note">※ プロトタイプのデモです。本番では配送会社の追跡APIと連携し、出荷時にプッシュ通知でお知らせします。</p>';
+      (function () { var c = SP.Store.cartSummary().count + (SP.Store.giftCount ? SP.Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = c; el.hidden = c <= 0; } })();
+    })();
+  </script>
+</body>
+</html>

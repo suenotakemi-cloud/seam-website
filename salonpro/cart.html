@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>カート｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/cart.css?v=24">
+  <style>
+    .dealer-note{display:flex;gap:8px;align-items:flex-start;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-md);padding:11px 13px;font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:var(--s-3)}
+    .dealer-note svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--gold-strong)}
+    .dcart{border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-bottom:var(--s-4)}
+    .dcart__head{display:flex;align-items:center;gap:11px;padding:13px 15px;border-bottom:1px solid var(--line-2)}
+    .dcart__badge{flex:none;min-width:34px;height:34px;border-radius:var(--r-md);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;padding:0 9px}
+    .dcart__name{font-size:14px;font-weight:900}
+    .dcart__area{font-size:11px;color:var(--ink-3);margin-top:2px}
+    .dcart__body{padding:8px 15px 15px}
+    .dcart__ship{font-size:12px;color:var(--ink-2);margin:8px 0;padding:8px 11px;background:var(--surface-2);border-radius:var(--r-md)}
+    .dcart__ship b{color:var(--gold-strong)}
+    .dcart__ship svg{width:14px;height:14px;vertical-align:-2px;color:var(--gold-strong)}
+    .dcart__paytitle{font-size:12px;font-weight:800;color:var(--ink-2);margin:14px 0 7px}
+    .dcart__pay{display:grid;gap:7px}
+    .dpay{display:flex;gap:9px;align-items:flex-start;border:1px solid var(--line-strong);border-radius:var(--r-md);padding:10px 12px;cursor:pointer}
+    .dpay input{margin-top:2px;accent-color:var(--gold-strong)}
+    .dpay__t{font-size:13.5px;font-weight:800}
+    .dpay__s{font-size:11px;color:var(--ink-3);margin-top:1px}
+    .dcart__kake{display:flex;gap:9px;align-items:flex-start;background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:var(--r-md);padding:10px 12px;font-size:11.5px;line-height:1.6;color:var(--ink-2);margin-top:10px}
+    .dcart__kake svg{width:15px;height:15px;flex:none;margin-top:1px;color:var(--gold-strong)}
+    .dsum{border-top:1px solid var(--line-2);margin-top:13px;padding-top:11px}
+    .dsum__row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:3px 0}
+    .dsum__row .v{font-family:var(--font-num);color:var(--ink)}
+    .dsum__total{display:flex;justify-content:space-between;align-items:baseline;margin-top:7px;font-weight:900}
+    .dsum__total .v{font-family:var(--font-num);font-size:18px}
+    .dcart__cta{width:100%;margin-top:13px;background:var(--ink);color:#fff;border:0;border-radius:var(--r-md);padding:13px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+    .dcart__cta svg{width:16px;height:16px}
+    .dcart--done .dcart__body{text-align:center;padding:22px 15px}
+    .dcart__doneic{width:46px;height:46px;border-radius:50%;background:#e1f3ea;color:#1d7a55;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+    .dcart__doneic svg{width:24px;height:24px}
+    .dalt{font-size:11px;color:var(--ink-3);margin-top:3px}.dalt b{color:var(--gold-strong)}
+    /* 添付バンドル（ロックグループ） */
+    .bd{border:1.5px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-md);padding:11px 13px;margin:0 0 12px}
+    .bd__head{display:flex;align-items:center;gap:9px}
+    .bd__badge{flex:none;font-size:11px;font-weight:900;background:var(--gold);color:#fff;border-radius:var(--r-pill);padding:3px 10px}
+    .bd__t{flex:1;min-width:0;font-size:13px;font-weight:900}
+    .bd__edit{flex:none;font-size:11.5px;font-weight:800;color:var(--gold-strong);background:none;border:0;cursor:pointer;padding:4px 2px}
+    .bd__body{margin:9px 0 0;border-top:1px solid var(--gold-line);padding-top:8px}
+    .bd-line{display:flex;align-items:center;gap:8px;font-size:12px;padding:3px 0}
+    .bd-line__n{flex:1;min-width:0;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .bd-line__q{flex:none;color:var(--ink-3);font-family:var(--font-num)}
+    .bd-line__p{flex:none;font-family:var(--font-num);font-weight:700;color:var(--ink)}
+    .bd-line--free .bd-line__p{color:var(--gold-strong);font-weight:800}
+    .bd__note{font-size:10.5px;color:var(--ink-2);line-height:1.55;margin-top:8px}
+  </style>
+</head>
+<body class="cart-page">
+
+  <!-- ============ Header ============ -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム">
+        <span class="brand__logo">Salon<b>Pro</b></span>
+      </a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions" aria-label="サイト機能">
+        <a class="icon-btn" href="#" data-soon="お知らせ" aria-label="お知らせ">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="icon-btn__badge" id="notifBadge">2</span>
+        </a>
+        <a class="icon-btn" href="cart.html" aria-label="カート" aria-current="page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg>
+          <span class="icon-btn__badge" id="cartBadge" hidden>0</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ship-strip" data-ship-strip></div>
+
+  <main class="container">
+
+    <!-- ============ カート（明細＋チェックアウト） ============ -->
+    <div id="cartView">
+      <div class="cart-head">
+        <h1 class="cart-head__title">カート</h1>
+        <span class="cart-head__count" id="cartCount"></span>
+      </div>
+
+      <div class="cart-alert" id="cartAlert" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <span id="cartAlertText"></span>
+      </div>
+
+      <div class="cart-list" id="cartList"></div>
+
+      <!-- お届け先 -->
+      <section class="co-section">
+        <h2 class="co-section__title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.2-7-11a7 7 0 0 1 14 0c0 5.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+          お届け先
+        </h2>
+        <div class="addr-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1-5H5z"/><path d="M5 9v11h14V9"/></svg>
+          <div>
+            <div class="addr-card__name">SALON LUXE 表参道店</div>
+            <div class="addr-card__line">〒150-0001 東京都渋谷区神宮前0-0-0 表参道ビル3F<br>TEL 03-0000-0000</div>
+          </div>
+          <a class="addr-card__edit" href="#" data-soon="名義の変更には新しい証明書の追加が必要です">変更</a>
+        </div>
+        <div id="recipientLock" style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-size:11.5px;color:var(--ink-3);line-height:1.5">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex:none;margin-top:1px;color:var(--gold-strong)"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <span>お届け先の名義は<b>ご登録の証明書に基づき固定</b>されています。変更には新しい証明書の追加が必要です。</span>
+        </div>
+      </section>
+
+      <!-- お支払い方法（マルチディーラーでは各ディーラー枠で選ぶため非表示） -->
+      <section class="co-section" id="payShared" hidden>
+        <h2 class="co-section__title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/></svg>
+          お支払い方法
+        </h2>
+        <label class="opt-card opt-card--reco">
+          <input type="radio" name="pay" value="invoice" checked>
+          <span class="opt-card__body">
+            <span class="opt-card__t">請求書払い（掛け）<span class="reco-tag">おすすめ</span></span>
+            <span class="opt-card__s">月末締め・翌月末払い／手数料0円・与信枠 残り <b>¥1,840,000</b></span>
+          </span>
+        </label>
+        <label class="opt-card">
+          <input type="radio" name="pay" value="card">
+          <span class="opt-card__body"><span class="opt-card__t">クレジットカード</span><span class="opt-card__s">VISA / Master / JCB / AMEX</span></span>
+        </label>
+        <label class="opt-card">
+          <input type="radio" name="pay" value="bank">
+          <span class="opt-card__body"><span class="opt-card__t">銀行振込（前払い）</span><span class="opt-card__s">入金確認後の出荷</span></span>
+        </label>
+        <label class="opt-card">
+          <input type="radio" name="pay" value="cod">
+          <span class="opt-card__body"><span class="opt-card__t">代金引換</span><span class="opt-card__s">配送時にお支払い（代引手数料別）</span></span>
+        </label>
+
+        <div id="kakeNote" style="display:flex;gap:10px;align-items:flex-start;margin-top:var(--s-3);background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:var(--r-md);padding:12px 14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:none;margin-top:1px;color:var(--gold-strong)"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+          <div style="font-size:var(--fs-13);line-height:1.6;color:var(--ink-2)">
+            <b style="color:var(--ink)">掛け払いは担当者の承認後に発送します。</b><br>
+            ご登録サロンには担当者がつき、与信を確認のうえ発送します。承認後すぐに出荷し、発送通知をお送りします。
+            <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-weight:700;color:var(--ink)">
+              <span style="width:26px;height:26px;border-radius:50%;background:var(--dark);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none">菊</span>
+              担当：菊地 太郎（与信枠 残り ¥1,840,000）
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- クーポン・ポイント（本番ではディーラーごとに適用。デモでは非表示） -->
+      <section class="co-section" id="couponShared" hidden>
+        <h2 class="co-section__title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 6v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-6z"/><path d="M14 4v16" stroke-dasharray="2 2"/></svg>
+          クーポン・ポイント
+        </h2>
+        <div class="coupon-row">
+          <input type="text" id="couponInput" placeholder="クーポンコードを入力" autocomplete="off">
+          <button id="couponApply" type="button">適用</button>
+        </div>
+        <label class="point-toggle">
+          <input type="checkbox" id="usePoint">
+          <span class="point-toggle__t">保有ポイント <b>12,450</b>pt を使う</span>
+        </label>
+      </section>
+
+      <!-- 送料無料までの進捗 -->
+      <div class="ship-free" id="shipProgress"></div>
+
+      <!-- 注文サマリー -->
+      <section class="summary" id="summary">
+        <div class="summary__row"><span>小計（税抜）</span><span class="v" id="sumSubtotal">¥0</span></div>
+        <div class="summary__row summary__row--discount" id="sumQtyRow" hidden><span>まとめ買い割引</span><span class="v" id="sumQty">-¥0</span></div>
+        <div class="summary__row"><span>送料</span><span class="v" id="sumShipping">¥0</span></div>
+        <div class="summary__row"><span>消費税（10%）</span><span class="v" id="sumTax">¥0</span></div>
+        <div class="summary__row summary__row--discount" id="sumPointRow" hidden><span>ポイント利用</span><span class="v" id="sumPoint">-¥0</span></div>
+        <div class="summary__total"><span class="l">合計</span><span><span class="v" id="sumTotal">¥0</span><span class="tax">（税込）</span></span></div>
+      </section>
+
+      <textarea class="cart-note" id="cartNote" placeholder="注文に関する備考（配送希望日・分納希望など）"></textarea>
+    </div>
+
+    <!-- ============ 空カート ============ -->
+    <div id="emptyView" hidden>
+      <div class="cart-empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg>
+        <div class="cart-empty__t">カートは空です</div>
+        <div class="cart-empty__s">前回注文からの再購入や、商品一覧から発注できます。</div>
+        <div style="display:grid; gap:12px; max-width:320px; margin-inline:auto;">
+          <a class="btn btn--primary btn--block" href="home.html">再購入する</a>
+          <a class="btn btn--ghost btn--block" href="index.html">商品を探す</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 注文完了 ============ -->
+    <div id="completeView" hidden>
+      <div class="complete">
+        <div class="complete__check">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m7.5 12 3 3 6-6.5"/></svg>
+        </div>
+        <h1 class="complete__title" id="orderTitle">ご注文ありがとうございます</h1>
+        <p class="complete__sub" id="orderSub">注文を受け付けました。確認メールをお送りします。</p>
+        <div id="orderApproval" hidden style="display:flex;gap:10px;align-items:flex-start;text-align:left;background:#fdf4e7;border:1px solid #f0dcbf;border-radius:var(--r-md);padding:14px 16px;margin:0 0 var(--s-4)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c08a2e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;flex:none;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <div style="font-size:var(--fs-13);line-height:1.65;color:#7a5a1e"><b>担当者の与信承認待ちです。</b><br>掛け払いのご注文は、担当者が確認・承認のうえ発送します（未集金防止のため）。承認され次第、発送通知をお送りします（通常 営業時間内2時間以内）。</div>
+        </div>
+        <div class="complete__info">
+          <div class="row"><span class="l">注文番号</span><span class="v" id="orderNo">—</span></div>
+          <div class="row" id="orderStatusRow" hidden><span class="l">ステータス</span><span class="v" id="orderStatus">—</span></div>
+          <div class="row" id="orderRepRow" hidden><span class="l">担当者</span><span class="v" id="orderRep">—</span></div>
+          <div class="row"><span class="l" id="orderEtaLabel">お届け予定</span><span class="v" id="orderEta">—</span></div>
+          <div class="row"><span class="l">お支払い</span><span class="v" id="orderPay">—</span></div>
+          <div class="row"><span class="l">合計（税込）</span><span class="v" id="orderTotalDone">—</span></div>
+        </div>
+        <div class="complete__next">
+          <a class="btn btn--primary" href="#" data-soon="定番セットに保存">この内容を定番セットに保存する</a>
+          <a class="btn btn--ghost" href="index.html">買い物を続ける</a>
+          <a class="btn btn--ghost" href="home.html">ホームに戻る</a>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ============ 下部固定：合計＋注文確定 ============ -->
+  <div class="order-bar" id="orderBar">
+    <div class="container order-bar__inner">
+      <div class="order-bar__sum">
+        <span class="l">合計（税込）</span><br>
+        <span class="v" id="barTotal">¥0</span>
+      </div>
+      <button class="order-bar__cta" id="placeOrder">
+        注文を確定する
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ Bottom tab bar ============ -->
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="#" data-soon="再購入"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span><span class="icon-btn__badge" id="tabCartBadge" hidden>0</span></a>
+      <a class="tab" href="#" data-soon="学ぶ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 5v14"/></svg><span class="tab__label">学ぶ</span></a>
+      <a class="tab" href="#" data-soon="マイページ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/cart.js?v=24"></script>
+  <script>
+    (function () {
+      // 宛先ロック表示（証明書の名義を反映）
+      try {
+        var rec = localStorage.getItem('sp.recipient');
+        if (rec) { var n = document.querySelector('.addr-card__name'); if (n) n.textContent = rec; }
+      } catch (e) {}
+      // 数量・異常購買の検知：お客様には一切表示せず、内部フラグとして記録（管理/スタッフ側で確認）
+      function checkFraud() {
+        if (!window.SP || !SP.Store) return;
+        var sum = SP.Store.cartSummary(), maxQ = 0;
+        (SP.DATA.products || []).forEach(function (p) { var q = SP.Store.getQty(p.id); if (q > maxQ) maxQ = q; });
+        var reasons = [];
+        if (maxQ >= 12) reasons.push('同一商品' + maxQ + '点');
+        if (sum.count >= 20) reasons.push('合計' + sum.count + '点');
+        if (sum.total >= 100000) reasons.push('高額(税抜¥' + sum.total + ')');
+        try { localStorage.setItem('sp.orderFlags', JSON.stringify({ flagged: reasons.length > 0, reasons: reasons, count: sum.count, total: sum.total })); } catch (e) {}
+      }
+      checkFraud();
+      if (SP.Store && SP.Store.subscribe) SP.Store.subscribe(checkFraud);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+/* =========================================================
+   SalonPro / Listing page — 商品一覧ページ固有
+   ========================================================= */
+
+/* カテゴリのクイック導線（タイトル下の横スクロール）*/
+.cat-quick {
+  display: flex;
+  gap: var(--s-2);
+  overflow-x: auto;
+  padding-bottom: var(--s-3);
+}
+.cat-quick a {
+  flex: none;
+  height: 36px;
+  padding: 0 var(--s-4);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  font-size: var(--fs-13);
+  font-weight: 600;
+  color: var(--ink-2);
+  transition: background .18s, color .18s;
+}
+.cat-quick a:hover { background: var(--surface-3); color: var(--ink); }
+.cat-quick a.is-active { background: var(--ink); color: #fff; }
+
+/* 結果メタ（並び替え状態などの軽い表示）*/
+.result-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--s-3);
+  font-size: var(--fs-12);
+  color: var(--ink-2);
+}
+.result-meta b { font-family: var(--font-num); color: var(--ink); }
+
+/* 下部固定バーの内側はコンテナ幅に揃える */
+.cart-bar .container,
+.tabbar .container { padding-inline: var(--s-4); }
+
+/* スマホ：上部チラシ的要素を薄く（業務効率・低余白） */
+@media (max-width: 559px) {
+  .result-meta { display: none; }            /* 並び順は「並び替え」ピルに表示するため省く */
+  .cat-quick { padding-bottom: 6px; gap: 6px; }
+  .cat-quick a { height: 30px; padding: 0 12px; font-size: 12px; }
+}

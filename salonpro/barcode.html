@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>バーコード発注｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    .scan-box { position: relative; aspect-ratio: 4/3; background: #111; border-radius: var(--r-md); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .scan-box video { width: 100%; height: 100%; object-fit: cover; }
+    .scan-box__frame { position: absolute; inset: 18% 12%; border: 2px solid rgba(255,255,255,.85); border-radius: 10px; box-shadow: 0 0 0 9999px rgba(0,0,0,.25); }
+    .scan-box__hint { position: absolute; bottom: 10px; left: 0; right: 0; text-align: center; color: #fff; font-size: var(--fs-12); }
+    .demo-codes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--s-3); }
+    .demo-code { height: 34px; padding: 0 12px; border: 1px solid var(--line-3); border-radius: var(--r-pill); font-size: var(--fs-12); font-weight: 600; font-family: var(--font-num); }
+    .demo-code:hover { border-color: var(--ink-3); background: var(--surface-2); }
+    .scan-result { display: flex; gap: var(--s-3); align-items: center; padding: var(--s-3); border: 1px solid var(--gold); background: var(--gold-soft); border-radius: var(--r-md); margin-top: var(--s-4); }
+    .scan-result__media { width: 64px; height: 64px; flex: none; background: #fff; border-radius: var(--r-sm); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .scan-result__media .card__ph { padding: 8%; }
+    .scan-result__main { flex: 1 1 auto; min-width: 0; }
+    .scan-note { font-size: var(--fs-13); color: var(--ink-2); margin-top: var(--s-3); }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="ship-strip" data-ship-strip></div>
+
+  <main class="container" style="max-width:640px">
+    <a class="back-link" href="reorder.html" style="margin-top:var(--s-4);display:inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>再購入へ戻る</a>
+    <div class="page-hd"><h1 class="page-hd__title">バーコード発注</h1><p class="page-hd__sub">棚の商品を次々スキャンすると、そのままカートに溜まります。営業後にまとめて発注。型番・JAN手入力やデモコードでも試せます。</p></div>
+
+    <div class="scan-box" id="scanBox" hidden>
+      <video id="scanVideo" playsinline muted></video>
+      <div class="scan-box__frame"></div>
+      <div class="scan-box__hint">バーコードを枠内に合わせてください</div>
+    </div>
+
+    <button class="btn btn--primary btn--block" id="startCam" style="margin-top:var(--s-4);gap:8px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M3 5v14M7 5v14M11 5v14M15 5v14M19 5v14"/></svg>
+      カメラで読み取る
+    </button>
+
+    <div class="coupon-row" style="margin-top:var(--s-4)">
+      <input class="input" id="manualCode" type="text" placeholder="型番・JANコードを入力（例：sh-001）" autocomplete="off" style="height:48px">
+      <button class="btn btn--ghost" id="manualGo" style="height:48px;flex:none">照合</button>
+    </div>
+
+    <div class="scan-note">デモ用コード（タップで読み取りを再現）：</div>
+    <div class="demo-codes" id="demoCodes"></div>
+
+    <div id="scanResult"></div>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab is-active" href="index.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span><span class="icon-btn__badge" id="tabCartBadge" hidden>0</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script src="assets/js/barcode.js?v=24"></script>
+</body>
+</html>

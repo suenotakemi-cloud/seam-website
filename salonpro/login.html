@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ログイン｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    .login-wrap { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--s-6) var(--s-4); }
+    .login-card { width: 100%; max-width: 400px; }
+    .login-logo { text-align: center; font-size: 30px; font-weight: 800; letter-spacing: -.02em; margin-bottom: 6px; }
+    .login-logo b { color: var(--gold); }
+    .login-tag { text-align: center; font-size: var(--fs-13); color: var(--ink-2); margin-bottom: var(--s-6); }
+    .login-pro { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: var(--s-5); font-size: var(--fs-12); color: var(--ink-2); }
+    .login-pro svg { width: 15px; height: 15px; color: var(--gold); }
+    .login-foot { text-align: center; margin-top: var(--s-6); font-size: var(--fs-13); color: var(--ink-2); }
+    .login-foot a { color: var(--gold-strong); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">Salon<b>Pro</b></div>
+      <div class="login-tag">美容師・美容室・美容学校のためのプロ用美容商材EC</div>
+
+      <div id="loginMain">
+        <form id="loginForm">
+          <div class="field"><label class="field__label">メールアドレス</label><input class="input" type="email" value="taro@salon-luxe.jp" required></div>
+          <div class="field"><label class="field__label">パスワード</label><input class="input" type="password" value="********" required></div>
+          <label class="checkbox-line" style="margin-bottom:var(--s-4)"><input type="checkbox" checked> <span>ログイン状態を保持する</span></label>
+          <button type="submit" class="btn btn--primary btn--block" style="height:54px;font-size:var(--fs-16)">ログイン</button>
+        </form>
+
+        <div style="text-align:center;margin-top:var(--s-3)"><a href="#" data-soon="パスワード再設定" style="font-size:var(--fs-13);color:var(--ink-2)">パスワードをお忘れの方</a></div>
+
+        <div class="login-pro">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+          美容師免許・美容学生証の確認制（プロ専用）
+        </div>
+
+        <div class="login-foot">アカウントをお持ちでない方は<br><a href="register.html">プロ会員に登録（無料）</a></div>
+      </div>
+
+      <!-- 審査ゲート（審査中はアプリに入れない） -->
+      <div id="loginGate" hidden>
+        <div class="status-banner status-banner--review">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          <div>
+            <div class="status-banner__t">審査中です（承認待ち）</div>
+            <div class="status-banner__s">ご登録ありがとうございます。資格書類を確認しています。承認されると価格の表示とご注文が可能になります（最短当日〜2営業日）。結果はメールでお知らせします。</div>
+          </div>
+        </div>
+        <button class="btn btn--primary btn--block" id="gateApprove" style="margin-top:var(--s-4);height:50px">（デモ）承認された状態でログイン</button>
+        <button type="button" class="btn btn--ghost btn--block" id="gateBack" style="margin-top:var(--s-2)">戻る</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    var main = document.querySelector('#loginMain'), gate = document.querySelector('#loginGate');
+    document.querySelector('#loginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var status = null; try { status = localStorage.getItem('sp.member'); } catch (err) {}
+      if (status === 'pending') { main.hidden = true; gate.hidden = false; }   // 審査中はゲート
+      else { location.href = 'home.html'; }
+    });
+    var ga = document.querySelector('#gateApprove');
+    if (ga) ga.addEventListener('click', function () { try { localStorage.setItem('sp.member', 'approved'); } catch (err) {} location.href = 'home.html'; });
+    var gb = document.querySelector('#gateBack');
+    if (gb) gb.addEventListener('click', function () { gate.hidden = true; main.hidden = false; });
+  </script>
+</body>
+</html>

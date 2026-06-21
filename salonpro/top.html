@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>SalonPro｜プロ専用 美容商材の仕入れEC（株式会社菊地）</title>
+  <meta name="description" content="美容師・美容室・美容学生のためのプロ専用 仕入れEC。会員価格・最短当日出荷・掛け払い・らくらく再注文。株式会社菊地（KIKUCHI PRODUCE）運営。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <style>
+    body { background: var(--surface-2); padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .wrap { max-width: 1100px; margin-inline: auto; }
+    .gold { color: var(--gold-strong); }
+    .icon-btn__label { display: block; font-size: 11px; font-weight: 700; color: var(--ink-2); margin-top: 2px; text-align: center; }
+
+    /* 細い登録帯 */
+    .reg-strip { background: linear-gradient(90deg, #20212a, var(--dark)); color: #fff; }
+    .reg-strip__in { max-width: 1100px; margin-inline: auto; display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
+    .reg-strip__t { font-size: 12.5px; line-height: 1.45; flex: 1 1 auto; }
+    .reg-strip__t b { color: var(--gold); }
+    .reg-strip__t small { display: block; color: #aeb5c2; font-size: 10.5px; }
+    .reg-strip__btn { flex: none; background: var(--gold); color: #1b1b1d; font-weight: 800; font-size: 12.5px; border-radius: var(--r-pill); padding: 9px 16px; white-space: nowrap; }
+    .reg-strip__btn:hover { background: #cdab57; }
+    /* お知らせバー（菊地の告知・スリムで邪魔しない） */
+    .news-bar { display: flex; align-items: center; gap: 8px; background: #fff; border-bottom: 1px solid var(--line); padding: 8px 12px; }
+    .news-bar__l { flex: none; display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; color: var(--gold-strong); }
+    .news-bar__row { flex: 1; min-width: 0; display: flex; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; }
+    .news-bar__row::-webkit-scrollbar { height: 0; }
+    .news-chip { flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; gap: 6px; max-width: 80vw; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 5px 12px; font-size: 12px; font-weight: 700; color: var(--ink); text-decoration: none; white-space: nowrap; overflow: hidden; }
+    .news-chip__t { overflow: hidden; text-overflow: ellipsis; }
+    .news-chip__tag { flex: none; font-size: 9.5px; font-weight: 800; border-radius: var(--r-pill); padding: 2px 7px; }
+    .news-chip__tag--live { background: #fde7e9; color: #d8392b; } .news-chip__tag--venue { background: #eaf1fb; color: #34507a; } .news-chip__tag--maker { background: var(--gold-soft); color: var(--gold-strong); } .news-chip__tag--keiei { background: #eef2f7; color: #5b6473; }
+    .news-bar__x { flex: none; background: none; border: 0; color: var(--ink-3); font-size: 13px; line-height: 1; padding: 4px 2px; cursor: pointer; }
+
+    /* 業種ワンタッチ切替 */
+    .biz-sw { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: #fff; border-bottom: 1px solid var(--line); overflow-x: auto; }
+    .biz-sw::-webkit-scrollbar { height: 0; }
+    .biz-sw__l { font-size: 11px; color: var(--ink-3); font-weight: 700; flex: none; }
+    .biz-sw button { flex: none; height: 34px; padding: 0 15px; border-radius: var(--r-pill); font-size: 13px; font-weight: 700; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); }
+    .biz-sw button.is-on { background: var(--gold); color: #fff; border-color: var(--gold); }
+
+    /* セクション */
+    .sec { background: #fff; margin-top: 10px; }
+    .sec__in { max-width: 1100px; margin-inline: auto; padding: 18px 16px; }
+    .sec__head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .sec__ttl { font-size: var(--fs-17); font-weight: 900; }
+    .sec__ttl small { font-size: 11.5px; color: var(--ink-2); font-weight: 600; margin-left: 7px; }
+    .sec__more { font-size: 12.5px; font-weight: 700; color: var(--gold-strong); white-space: nowrap; }
+
+    /* 特集バナー（横スクロール） */
+    .bnr-row { display: flex; gap: 10px; overflow-x: auto; padding: 12px 16px 4px; scroll-snap-type: x mandatory; }
+    .bnr-row::-webkit-scrollbar { height: 0; }
+    .bnr { flex: 0 0 84%; max-width: 520px; scroll-snap-align: start; border-radius: var(--r-md); overflow: hidden; position: relative; aspect-ratio: 16/9; background: var(--surface-2); border: 1px solid var(--line); }
+    @media (min-width: 720px) { .bnr { flex-basis: 46%; } }
+    .bnr img { width: 100%; height: 100%; object-fit: cover; }
+    .bnr__tag { position: absolute; top: 10px; left: 10px; font-size: 10.5px; font-weight: 800; color: #fff; background: var(--gold); border-radius: var(--r-pill); padding: 3px 10px; }
+
+    /* トップヒーロー（新商品・PR・キャンペーン カルーセル） */
+    .thero { position: relative; max-width: 1100px; margin: 12px auto 4px; }
+    .thero__vp { overflow: hidden; border-radius: var(--r-lg); }
+    .thero__track { display: flex; transition: transform .4s ease; }
+    .thero__slide { flex: 0 0 100%; position: relative; aspect-ratio: 16/8; max-height: 300px; display: block; text-decoration: none; color: #fff; background: var(--surface-2); }
+    .thero__slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .thero__slide.is-grad::after { content: none; }
+    .thero__ov { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 18px 20px; background: linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,.55)); }
+    .thero__slide.is-grad .thero__ov { background: none; justify-content: center; }
+    .thero__tag { align-self: flex-start; font-size: 11px; font-weight: 900; background: #fff; color: #1b1b1d; border-radius: var(--r-pill); padding: 3px 11px; }
+    .thero__t { font-size: clamp(18px, 4.8vw, 26px); font-weight: 900; line-height: 1.25; text-shadow: 0 1px 8px rgba(0,0,0,.3); }
+    .thero__s { font-size: 12.5px; line-height: 1.5; opacity: .96; text-shadow: 0 1px 6px rgba(0,0,0,.3); }
+    .thero__cta { align-self: flex-start; margin-top: 4px; font-size: 12.5px; font-weight: 800; background: var(--gold); color: #fff; border-radius: var(--r-pill); padding: 7px 15px; }
+    .thero__dots { display: flex; justify-content: center; gap: 6px; margin-top: 9px; }
+    .thero__dots button { width: 7px; height: 7px; border-radius: 50%; border: 0; background: var(--line-3); padding: 0; cursor: pointer; }
+    .thero__dots button.is-on { background: var(--gold); width: 18px; border-radius: 999px; }
+    .thero__nav { position: absolute; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.85); border: 0; display: none; align-items: center; justify-content: center; cursor: pointer; }
+    @media (min-width: 720px) { .thero__nav { display: flex; } .thero__nav--prev { left: 10px; } .thero__nav--next { right: 10px; } }
+    .thero__nav svg { width: 18px; height: 18px; color: var(--ink); }
+
+    /* カテゴリ */
+    .catgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    @media (min-width: 600px) { .catgrid { grid-template-columns: repeat(6, 1fr); } }
+    .cat { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 13px 6px; border: 1px solid var(--line); border-radius: var(--r-md); background: #fff; text-align: center; }
+    .cat:hover { border-color: var(--gold); background: var(--gold-soft); }
+    .cat__ic { width: 30px; height: 30px; color: var(--gold-strong); }
+    .cat__ic svg { width: 100%; height: 100%; }
+    .cat__t { font-size: 11.5px; font-weight: 700; color: var(--ink); line-height: 1.3; }
+
+    /* 商品横スクロール */
+    .prow { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x mandatory; }
+    .prow::-webkit-scrollbar { height: 0; }
+    .pc { flex: 0 0 144px; scroll-snap-align: start; background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; position: relative; }
+    .pc__rank { position: absolute; top: 6px; left: 6px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 13px; color: #fff; box-shadow: var(--shadow-sm); }
+    .pc__rank--1 { background: #c9a227; } .pc__rank--2 { background: #9aa0a6; } .pc__rank--3 { background: #b5824e; }
+    .pc__media { aspect-ratio: 1/1; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
+    .pc__media .card__ph { padding: 12%; }
+    .pc__b { padding: 8px 10px 10px; }
+    .pc__brand { font-size: 10.5px; color: var(--ink-3); }
+    .pc__name { font-size: 12px; font-weight: 700; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 32px; margin-top: 2px; }
+    .pc__price { margin-top: 6px; font-size: 11px; color: var(--ink-3); }
+    .pc__price .lab { font-size: 9.5px; background: var(--gold-soft); color: var(--gold-strong); border-radius: 3px; padding: 1px 5px; font-weight: 800; }
+    .pc__price b { font-family: var(--font-num); font-size: var(--fs-15); color: var(--gold-strong); }
+
+    /* ブランドチップ */
+    .bchips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .bchip { font-size: 12.5px; font-weight: 700; color: var(--ink-2); background: #fff; border: 1px solid var(--line-3); border-radius: var(--r-pill); padding: 8px 14px; }
+    .bchip:hover { border-color: var(--gold); color: var(--gold-strong); background: var(--gold-soft); }
+
+    /* 探すタイル */
+    .finds { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    @media (min-width: 880px) { .finds { grid-template-columns: repeat(4, 1fr); } }
+    .find { display: block; background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+    .find__media { aspect-ratio: 16/10; overflow: hidden; background: var(--surface-2); }
+    .find__media img { width: 100%; height: 100%; object-fit: cover; }
+    .find__b { padding: 10px 12px; }
+    .find__t { font-weight: 800; font-size: 13.5px; }
+    .find__s { font-size: 11px; color: var(--ink-3); margin-top: 3px; }
+
+    /* 運営会社・フッター */
+    .about { background: var(--dark); color: #fff; margin-top: 10px; }
+    .about__in { max-width: 1100px; margin-inline: auto; padding: 26px 16px; display: grid; gap: 16px; align-items: center; }
+    @media (min-width: 760px) { .about__in { grid-template-columns: 1fr 1.3fr; } }
+    .about__img { border-radius: 14px; overflow: hidden; aspect-ratio: 3/2; }
+    .about__img img { width: 100%; height: 100%; object-fit: cover; }
+    .about__logo { display: inline-block; background: #fff; border-radius: 9px; padding: 7px 11px; }
+    .about__logo img { height: 22px; display: block; }
+    .about__t { font-size: var(--fs-16); font-weight: 900; margin-top: 10px; line-height: 1.5; }
+    .about__t .gold { color: var(--gold); }
+    .about__sub { color: #c9ced8; font-size: 12.5px; line-height: 1.8; margin-top: 8px; }
+    .foot { background: #15151699; color: #aeb5c2; }
+    .foot__in { max-width: 1100px; margin-inline: auto; padding: 18px 16px; font-size: 11.5px; line-height: 1.8; }
+    .foot__in a { color: #c9ced8; margin-right: 12px; }
+
+    /* セミナー・イベント特集（セミナー目当ての新規登録を獲得） */
+    .sem-feat { display: grid; grid-template-columns: 1fr; background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; text-decoration: none; color: var(--ink); }
+    @media (min-width: 680px) { .sem-feat { grid-template-columns: 1.05fr 1fr; } }
+    .sem-feat__media { position: relative; aspect-ratio: 16/9; background: #000; }
+    .sem-feat__media img { width: 100%; height: 100%; object-fit: cover; opacity: .92; }
+    .sem-feat__live { position: absolute; top: 12px; left: 12px; display: flex; align-items: center; gap: 5px; background: #d8392b; color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 4px 11px; }
+    .sem-feat__live i { width: 7px; height: 7px; border-radius: 50%; background: #fff; display: inline-block; animation: semblink 1.4s infinite; }
+    @keyframes semblink { 50% { opacity: .3; } }
+    .sem-feat__date { position: absolute; bottom: 12px; left: 12px; background: rgba(27,27,29,.85); color: #fff; font-size: 12.5px; font-weight: 800; border-radius: var(--r-sm); padding: 6px 12px; }
+    .sem-feat__b { padding: 18px; display: flex; flex-direction: column; }
+    .sem-feat__tag { align-self: flex-start; font-size: 11px; font-weight: 800; color: var(--gold-strong); background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: 999px; padding: 3px 11px; }
+    .sem-feat__title { font-size: clamp(17px, 4.4vw, 21px); font-weight: 900; line-height: 1.35; margin-top: 10px; }
+    .sem-feat__lead { font-size: 12.5px; color: var(--ink-2); line-height: 1.7; margin-top: 8px; }
+    .sem-feat__meta { font-size: 12px; color: var(--ink-2); font-weight: 700; margin-top: 10px; }
+    .sem-feat__meta b { color: #d8392b; }
+    .sem-feat__note { font-size: 11px; color: var(--ink-3); margin-top: 4px; }
+    .sem-feat__cta { margin-top: 13px; align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; background: var(--gold); color: #fff; font-weight: 800; font-size: 14px; border-radius: var(--r-md); padding: 12px 20px; }
+    .sem-list { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 12px; }
+    @media (min-width: 680px) { .sem-list { grid-template-columns: 1fr 1fr; } }
+    .sem-row { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); padding: 11px 13px; text-decoration: none; color: var(--ink); }
+    .sem-row__d { flex: none; width: 46px; text-align: center; line-height: 1.05; }
+    .sem-row__d b { font-size: 16px; font-weight: 900; } .sem-row__d small { display: block; font-size: 10px; color: var(--ink-3); }
+    .sem-row__b { flex: 1; min-width: 0; }
+    .sem-row__t { font-size: 13px; font-weight: 800; line-height: 1.35; }
+    .sem-row__m { font-size: 11px; color: var(--ink-3); margin-top: 3px; }
+    .sem-row__tag { flex: none; font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 9px; }
+    .sem-row__tag--live { background: #fde7e9; color: #d8392b; } .sem-row__tag--venue { background: #eaf1fb; color: #34507a; } .sem-row__tag--keiei { background: #eef2f7; color: #5b6473; } .sem-row__tag--maker { background: var(--gold-soft); color: var(--gold-strong); }
+  </style>
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="top.html" aria-label="SalonPro"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="login.html" aria-label="ログイン"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="icon-btn__label">ログイン</span></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__label">カート</span><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 細い登録帯（離脱を防ぎつつ登録へ） -->
+  <div class="reg-strip">
+    <div class="reg-strip__in">
+      <div class="reg-strip__t"><b>プロ専用の仕入れサイト</b>｜無料会員登録で会員価格・最短当日出荷・掛け払い<small>美容師免許・学生証の確認制／登録は最短1分</small></div>
+      <a class="reg-strip__btn" href="register.html">無料で会員登録 ›</a>
+    </div>
+  </div>
+
+  <!-- お知らせバー（菊地の告知・スリムで邪魔しない） -->
+  <div class="news-bar" id="newsBar">
+    <span class="news-bar__l">📣 お知らせ</span>
+    <div class="news-bar__row" id="newsRow"></div>
+    <button class="news-bar__x" id="newsX" aria-label="お知らせを閉じる">✕</button>
+  </div>
+
+  <!-- 業種ワンタッチ切替 -->
+  <div class="biz-sw" id="bizSw">
+    <span class="biz-sw__l">業種</span>
+    <button type="button" data-biz="hair">ヘア（美容室）</button>
+    <button type="button" data-biz="eye">アイ（まつげ）</button>
+    <button type="button" data-biz="nail">ネイル</button>
+    <button type="button" data-biz="esthe">エステ</button>
+  </div>
+
+  <!-- トップヒーロー（新商品・PR・キャンペーンを大きく訴求／自動切替） -->
+  <section class="thero" id="thero" aria-label="新商品・キャンペーン"></section>
+
+  <!-- カテゴリから探す -->
+  <section class="sec">
+    <div class="sec__in">
+      <div class="sec__head"><div class="sec__ttl">カテゴリから探す</div><a class="sec__more" href="index.html">すべて ›</a></div>
+      <div class="catgrid" id="catGrid">
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v5a3 3 0 0 1-6 0z"/><path d="M10 11v8a2 2 0 0 0 4 0v-8"/></svg></span><span class="cat__t">カラー剤</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4c4 0 4 4 8 4M6 12c4 0 4 4 8 4M6 20c4 0 4-4 8-4"/></svg></span><span class="cat__t">パーマ剤</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M9 8h6"/></svg></span><span class="cat__t">ヘアケア</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 21V8l5-5 5 5v13"/><path d="M7 13h10"/></svg></span><span class="cat__t">スタイリング</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></span><span class="cat__t">コスメ</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M7 18v2M17 18v2"/></svg></span><span class="cat__t">美容家電</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v7M6 10a3 3 0 0 0 6 0V3M18 3v18M9 21V13"/></svg></span><span class="cat__t">理美容小物</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V9l8-6 8 6v12"/><rect x="9" y="13" width="6" height="8"/></svg></span><span class="cat__t">設備機器</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="cat__t">店舗用品</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c4 3 6 6 6 10a6 6 0 0 1-12 0c0-4 2-7 6-10z"/></svg></span><span class="cat__t">エステ</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14a5 5 0 0 1 10 0v6H7z"/><path d="M9 14V8a3 3 0 0 1 6 0v6"/></svg></span><span class="cat__t">ネイル</span></a>
+        <a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></span><span class="cat__t">すべて</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 新着商品 -->
+  <section class="sec">
+    <div class="sec__in">
+      <div class="sec__head"><div class="sec__ttl">新着商品<small>プロ価格で発注できます</small></div><a class="sec__more" href="index.html">一覧 ›</a></div>
+      <div class="prow" id="newRow"></div>
+    </div>
+  </section>
+
+  <!-- 人気ランキング -->
+  <section class="sec">
+    <div class="sec__in">
+      <div class="sec__head"><div class="sec__ttl">人気ランキング<small>よく注文されている商品</small></div><a class="sec__more" href="index.html">もっと見る ›</a></div>
+      <div class="prow" id="rankRow"></div>
+    </div>
+  </section>
+
+  <!-- セミナー・イベント特集（ページ下部・セミナー目当ての登録を獲得。お知らせは上部のバーで簡潔に） -->
+  <section class="sec">
+    <div class="sec__in">
+      <div class="sec__head"><div class="sec__ttl">セミナー・イベント<small>ライブ配信・会場開催</small></div><a class="sec__more" href="register.html">無料登録 ›</a></div>
+      <div id="semFeat"></div>
+      <div class="sem-list" id="semList"></div>
+    </div>
+  </section>
+
+  <!-- ブランドから探す -->
+  <section class="sec">
+    <div class="sec__in">
+      <div class="sec__head"><div class="sec__ttl">ブランドから探す<small>約100メーカー取扱</small></div></div>
+      <div class="bchips">
+        <a class="bchip" href="index.html?q=ミルボン">ミルボン</a>
+        <a class="bchip" href="index.html?q=ルベル">ルベル</a>
+        <a class="bchip" href="index.html?q=アリミノ">アリミノ</a>
+        <a class="bchip" href="index.html?q=ナプラ">ナプラ</a>
+        <a class="bchip" href="index.html?q=ホーユー">ホーユー</a>
+        <a class="bchip" href="index.html?q=シュワルツコフ">シュワルツコフ</a>
+        <a class="bchip" href="index.html?q=資生堂">資生堂プロフェッショナル</a>
+        <a class="bchip" href="index.html?q=ロレアル">ロレアル</a>
+        <a class="bchip" href="index.html?q=アディクシー">アディクシー</a>
+        <a class="bchip" href="index.html">すべてのブランド ›</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 探すタイル -->
+  <section class="sec">
+    <div class="sec__in">
+      <div class="sec__head"><div class="sec__ttl">目的から探す</div></div>
+      <div class="finds">
+        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/kikuchi_24_24pc_2.jpg" alt="悩みから探す" loading="lazy"></div><div class="find__b"><div class="find__t">悩みから探す</div><div class="find__s">髪の悩み・課題から検索</div></div></a>
+        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/cat_tenpan.jpg" alt="施術目的から探す" loading="lazy"></div><div class="find__b"><div class="find__t">施術目的から探す</div><div class="find__s">カラー・パーマ・ケア等</div></div></a>
+        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/cat_salon.jpg" alt="サロンタイプから探す" loading="lazy"></div><div class="find__b"><div class="find__t">サロンタイプから探す</div><div class="find__s">規模・業態で提案</div></div></a>
+        <a class="find" href="learn.html"><div class="find__media"><img src="assets/img/kikuchi/people.png" alt="学ぶ・セミナー" loading="lazy"></div><div class="find__b"><div class="find__t">学ぶ・セミナー</div><div class="find__s">技術・経営をオンラインで</div></div></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 出荷スケジュール -->
+  <section class="sec">
+    <div class="sec__in">
+      <div class="sec__head"><div class="sec__ttl">出荷スケジュール<small>北海道・当日出荷の締切と休業日</small></div></div>
+      <div data-ship-cal></div>
+    </div>
+  </section>
+
+  <!-- 運営会社 -->
+  <section class="about">
+    <div class="about__in">
+      <div class="about__img"><img src="assets/img/kikuchi/hero_gen.png" alt="サロンの現場を支える" loading="lazy"></div>
+      <div>
+        <span class="about__logo"><img src="assets/img/kikuchi/logo.svg" alt="KIKUCHI PRODUCE"></span>
+        <div class="about__t">運営は北海道シェア<span class="gold">No.1</span>の総合美容ディーラー <b>株式会社菊地</b></div>
+        <div class="about__sub">創業50年以上・6営業所・約100メーカー取扱。仕入れに加え、技術講習・経営セミナー・店舗デザイン・出店支援まで、サロンの成長を総合的に支えます。<br>サロン繁栄のお役立ち ― We Support Creation of Beauty</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="foot__in">
+      <div><a href="#">会社概要</a><a href="#">特定商取引法</a><a href="#">プライバシー</a><a href="#">利用規約</a><a href="login.html">ログイン</a></div>
+      <div style="margin-top:8px">株式会社菊地（KIKUCHI PRODUCE）／〒062-0003 北海道札幌市豊平区美園3条8丁目4-17／TEL 011-811-0981<br>© 2026 株式会社菊地</div>
+    </div>
+  </footer>
+
+  <!-- 下部タブ（未ログイン） -->
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab is-active" href="top.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="learn.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 5v14"/></svg><span class="tab__label">学ぶ</span></a>
+      <a class="tab" href="register.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2.5 21a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M22 11h-6"/></svg><span class="tab__label">会員登録</span></a>
+      <a class="tab" href="login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script>
+    (function () {
+      var SP = window.SP, ph = SP.placeholder, yen = SP.fmtYen, DATA = SP.DATA;
+      var VIEW = { hair: ['hair'], eye: ['eye', 'hair'], nail: ['nail'], esthe: ['esthe'] };
+      function getBiz() { var b = localStorage.getItem('sp.biz'); return ['hair', 'eye', 'nail', 'esthe'].indexOf(b) >= 0 ? b : 'hair'; }
+      var biz = getBiz();
+      function view() { return VIEW[biz] || ['hair']; }
+      function inBiz(p) { return (p.biz || ['hair']).some(function (b) { return b === 'common' || view().indexOf(b) >= 0; }); }
+      // カテゴリは非表示にせず並べ替えのみ：自業種=0／関連=1／共通=2／その他=3
+      function catRank(c) { return c.biz === biz ? 0 : view().indexOf(c.biz) >= 0 ? 1 : c.biz === 'all' ? 2 : 3; }
+      // 契約商品（オージュア等）は未ログインの公開トップには出さない（契約導線から到達）
+      var items = (DATA.products || []).filter(function (p) { return p.cat !== '_rec' && !p.contract; });
+
+      function catIcon(id) {
+        var P = {
+          color: '<path d="M9 3h6v5a3 3 0 0 1-6 0z"/><path d="M10 11v8a2 2 0 0 0 4 0v-8"/>',
+          color2: '<path d="M9 3h6v4l3.2 9.6A2 2 0 0 1 16.3 19H7.7a2 2 0 0 1-1.9-2.4L9 7z"/><path d="M9 3h6"/><path d="M8.5 13h7"/>',
+          perm: '<path d="M6 4c4 0 4 4 8 4M6 12c4 0 4 4 8 4M6 20c4 0 4-4 8-4"/>',
+          styling: '<path d="M7 21V8l5-5 5 5v13"/><path d="M7 13h10"/>',
+          'nail-gel': '<path d="M7 14a5 5 0 0 1 10 0v6H7z"/><path d="M9 14V8a3 3 0 0 1 6 0v6"/>',
+          'nail-care': '<path d="M4 14h16M12 4v10"/><circle cx="12" cy="18" r="2"/>',
+          'es-face': '<path d="M12 3c4 3 6 6 6 10a6 6 0 0 1-12 0c0-4 2-7 6-10z"/>',
+          'es-body': '<path d="M12 3c4 3 6 6 6 10a6 6 0 0 1-12 0c0-4 2-7 6-10z"/>',
+          'eye-ext': '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+          'eye-lift': '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+          'eye-tool': '<path d="M14 4l6 6-9 9H5v-6z"/>',
+          supply: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'
+        };
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + (P[id] || '<rect x="6" y="3" width="12" height="18" rx="3"/><path d="M9 8h6"/>') + '</svg>';
+      }
+      function orderedCats() {
+        return DATA.categories.slice().sort(function (a, b) { return catRank(a) - catRank(b); });
+      }
+      function pcard(p, rank) {
+        return '<a class="pc" href="product.html?id=' + p.id + '">' +
+          (rank ? '<span class="pc__rank pc__rank--' + rank + '">' + rank + '</span>' : '') +
+          '<div class="pc__media">' + ph(p.ph, p.brand) + '</div>' +
+          '<div class="pc__b"><div class="pc__brand">' + p.brand + '</div>' +
+          '<div class="pc__name">' + p.name + '</div>' +
+          '<div class="pc__price"><span class="lab">会員価格</span> <b>' + yen(p.price) + '</b> 税抜</div></div></a>';
+      }
+      function render() {
+        [].forEach.call(document.querySelectorAll('#bizSw [data-biz]'), function (b) { b.classList.toggle('is-on', b.dataset.biz === biz); });
+        var cg = document.getElementById('catGrid');
+        if (cg) cg.innerHTML = orderedCats().map(function (c) {
+          return '<a class="cat" href="index.html"><span class="cat__ic">' + catIcon(c.id) + '</span><span class="cat__t">' + c.label.replace(/（.*）/, '') + '</span></a>';
+        }).join('') + '<a class="cat" href="index.html"><span class="cat__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></span><span class="cat__t">すべて</span></a>';
+        var vis = items.filter(inBiz);
+        var nr = document.getElementById('newRow');
+        if (nr) nr.innerHTML = vis.slice().sort(function (a, b) { return b.added - a.added; }).slice(0, 10).map(function (p) { return pcard(p); }).join('');
+        var rr = document.getElementById('rankRow');
+        if (rr) rr.innerHTML = vis.slice().sort(function (a, b) { return b.pop - a.pop; }).slice(0, 8).map(function (p, i) { return pcard(p, i < 3 ? i + 1 : null); }).join('');
+      }
+      document.getElementById('bizSw').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-biz]'); if (!b || b.dataset.biz === biz) return;
+        biz = b.dataset.biz; try { localStorage.setItem('sp.biz', biz); } catch (err) {}
+        render();
+      });
+      render();
+      // 初期表示時、有効な業種ボタンが横スクロールで隠れていれば見える位置へ
+      (function () { var on = document.querySelector('#bizSw .is-on'), bar = document.getElementById('bizSw'); if (on && bar) bar.scrollLeft = Math.max(0, on.offsetLeft - 56); })();
+      document.getElementById('searchForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        var q = document.getElementById('headerSearch').value.trim();
+        location.href = 'index.html' + (q ? '?q=' + encodeURIComponent(q) : '');
+      });
+
+      // お知らせバー（菊地の告知・スリム表示。未ログインは登録へ誘導）
+      (function () {
+        var N = SP.NEWS || [], row = document.getElementById('newsRow'), bar = document.getElementById('newsBar');
+        if (!row || !bar) return;
+        if (!N.length) { bar.hidden = true; return; }
+        row.innerHTML = N.map(function (n) {
+          return '<a class="news-chip" href="news.html"><span class="news-chip__tag news-chip__tag--' + (n.tcls || 'keiei') + '">' + n.tag + '</span><span class="news-chip__t">' + n.t + '</span></a>';
+        }).join('');
+        var x = document.getElementById('newsX');
+        if (x) x.addEventListener('click', function () { bar.style.display = 'none'; });
+      })();
+
+      // セミナー・イベント特集（未ログイン＝無料会員登録へ誘導）
+      (function () {
+        var S = SP.SEMINARS || [];
+        if (!S.length) return;
+        var feat = S.filter(function (s) { return s.featured; })[0] || S[0];
+        var md = function (d) { var p = d.split('-'); return (+p[1]) + '/' + (+p[2]); };
+        var liveBadge = function (s) {
+          return s.kind === 'venue'
+            ? '<span class="sem-feat__live" style="background:#34507a"><i style="animation:none"></i>会場開催</span>'
+            : '<span class="sem-feat__live"><i></i>LIVE配信</span>';
+        };
+        var fe = document.getElementById('semFeat');
+        if (fe && feat) {
+          fe.innerHTML = '<a class="sem-feat" href="seminar.html?id=' + feat.id + '">' +
+            '<div class="sem-feat__media"><img src="assets/img/kikuchi/' + feat.img + '" alt="">' + liveBadge(feat) +
+              '<span class="sem-feat__date">' + md(feat.date) + '（' + feat.dow + '） ' + feat.time + '</span></div>' +
+            '<div class="sem-feat__b"><span class="sem-feat__tag">' + feat.tag + '</span>' +
+              '<div class="sem-feat__title">' + feat.title + '</div>' +
+              '<div class="sem-feat__lead">' + feat.lead + '</div>' +
+              '<div class="sem-feat__meta">講師 ' + feat.host + ' ・ ' + feat.fee + ' ・ <b>' + feat.seats + '</b></div>' +
+              '<div class="sem-feat__note">無料会員登録（最短1分）で、どなたでもご参加いただけます。</div>' +
+              '<span class="sem-feat__cta">無料登録して参加する ›</span></div></a>';
+        }
+        var le = document.getElementById('semList');
+        if (le) le.innerHTML = S.filter(function (s) { return s !== feat && s.date; }).map(function (s) {
+          var label = s.kind === 'venue' ? '会場' : s.kind === 'live' ? 'LIVE' : '録画';
+          return '<a class="sem-row" href="seminar.html?id=' + s.id + '"><span class="sem-row__d"><b>' + md(s.date) + '</b><small>' + s.dow + '</small></span>' +
+            '<div class="sem-row__b"><div class="sem-row__t">' + s.title + '</div><div class="sem-row__m">' + s.time + ' ・ ' + s.fee + ' ・ ' + s.seats + '</div></div>' +
+            '<span class="sem-row__tag sem-row__tag--' + s.tcls + '">' + label + '</span></a>';
+        }).join('');
+      })();
+
+      // トップヒーロー（新商品・PR・キャンペーンを大きく訴求・自動切替）
+      (function () {
+        var host = document.getElementById('thero'); if (!host) return;
+        var heroes = [{ img: 'new_terra.jpg', tag: '新商品', title: 'terra by ESSENSITY 新色', sub: '95% Natural。サロン発のトレンドカラーが入荷', href: 'register.html' }];
+        (SP.CAMPAIGNS || []).forEach(function (c) {
+          heroes.push({ grad: c.accent, tag: c.badge, title: c.title, sub: c.lead, href: c.kind === 'buyXgetY' ? ('campaigns.html?id=' + c.id) : (c.href || 'campaigns.html') });
+        });
+        heroes.push({ img: 'new_loa.jpg', tag: 'PR', title: 'LOA THE OIL PERFUME', sub: '香りで差がつく、新生活の提案', href: 'register.html' });
+        heroes.push({ img: 'side_bunner_THEBEAUTY_2026_pc.jpg', tag: 'EVENT', title: 'THE BEAUTY 2026', sub: '注目の新商品・メーカーが集結', href: 'register.html' });
+        var chev = function (d) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="' + (d === 'l' ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6') + '"/></svg>'; };
+        host.innerHTML =
+          '<div class="thero__vp"><div class="thero__track" id="theroTrack">' +
+          heroes.map(function (h) {
+            var media = h.img ? '<img src="assets/img/kikuchi/' + h.img + '" alt="">' : '';
+            var cls = h.img ? '' : ' is-grad';
+            var style = h.img ? '' : ' style="background:linear-gradient(135deg,' + h.grad + ',' + h.grad + 'cc)"';
+            return '<a class="thero__slide' + cls + '" href="' + h.href + '"' + style + '>' + media +
+              '<div class="thero__ov"><span class="thero__tag">' + h.tag + '</span><div class="thero__t">' + h.title + '</div><div class="thero__s">' + h.sub + '</div><span class="thero__cta">見る ›</span></div></a>';
+          }).join('') + '</div></div>' +
+          '<button class="thero__nav thero__nav--prev" id="theroPrev" aria-label="前へ">' + chev('l') + '</button>' +
+          '<button class="thero__nav thero__nav--next" id="theroNext" aria-label="次へ">' + chev('r') + '</button>' +
+          '<div class="thero__dots" id="theroDots">' + heroes.map(function (_, i) { return '<button data-i="' + i + '"' + (i === 0 ? ' class="is-on"' : '') + ' aria-label="' + (i + 1) + '枚目"></button>'; }).join('') + '</div>';
+        var track = document.getElementById('theroTrack'), dots = document.getElementById('theroDots'), idx = 0, timer;
+        function go(i) {
+          idx = (i + heroes.length) % heroes.length;
+          track.style.transform = 'translateX(-' + (idx * 100) + '%)';
+          [].forEach.call(dots.children, function (d, k) { d.classList.toggle('is-on', k === idx); });
+        }
+        function auto() { clearInterval(timer); timer = setInterval(function () { go(idx + 1); }, 4800); }
+        document.getElementById('theroPrev').addEventListener('click', function () { go(idx - 1); auto(); });
+        document.getElementById('theroNext').addEventListener('click', function () { go(idx + 1); auto(); });
+        dots.addEventListener('click', function (e) { var b = e.target.closest('[data-i]'); if (b) { go(+b.dataset.i); auto(); } });
+        auto();
+      })();
+    })();
+  </script>
+</body>
+</html>

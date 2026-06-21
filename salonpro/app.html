@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>アプリ｜SalonPro</title>
+  <meta name="description" content="SalonProアプリ。ホーム画面に追加してワンタップ発注、入荷・出荷のプッシュ通知、オフライン閲覧に対応。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 720px; }
+    .ap-hero { margin-top: var(--s-4); border-radius: var(--r-xl); padding: 30px 22px; text-align: center; background: linear-gradient(160deg, #1c1a16 0%, #2c2820 55%, #423a28 100%); color: #fff; position: relative; overflow: hidden; }
+    .ap-hero::after { content: ''; position: absolute; top: -40%; right: -20%; width: 60%; height: 120%; background: radial-gradient(circle, rgba(198,163,90,.32), transparent 70%); }
+    .ap-hero__ic { width: 70px; height: 70px; border-radius: 18px; background: linear-gradient(150deg, #d8b86a, #b9923f); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; box-shadow: 0 10px 26px rgba(0,0,0,.34); position: relative; z-index: 1; }
+    .ap-hero__ic b { font-size: 26px; font-weight: 900; color: #1c1a16; letter-spacing: -.5px; }
+    .ap-hero__t { font-size: clamp(21px,5.4vw,27px); font-weight: 900; position: relative; z-index: 1; }
+    .ap-hero__s { font-size: 13px; color: rgba(255,255,255,.82); margin-top: 8px; line-height: 1.7; position: relative; z-index: 1; }
+    .ap-cta { margin-top: 20px; position: relative; z-index: 1; }
+    .ap-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; max-width: 340px; padding: 15px; border-radius: var(--r-pill); font-size: 15px; font-weight: 900; cursor: pointer; border: 0; background: #fff; color: #1c1a16; }
+    .ap-btn svg { width: 18px; height: 18px; }
+    .ap-cta__hint { font-size: 11.5px; color: rgba(255,255,255,.7); margin-top: 10px; line-height: 1.6; }
+    .ap-feat { margin-top: var(--s-5); display: grid; gap: 12px; }
+    .ap-f { display: flex; gap: 14px; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; }
+    .ap-f__ic { flex: none; width: 44px; height: 44px; border-radius: var(--r-md); background: var(--gold-soft); display: flex; align-items: center; justify-content: center; }
+    .ap-f__ic svg { width: 22px; height: 22px; color: var(--gold-strong); }
+    .ap-f__b { flex: 1; min-width: 0; } .ap-f__t { font-size: 14.5px; font-weight: 800; } .ap-f__d { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; line-height: 1.65; }
+    .ap-stores { margin-top: var(--s-5); } .ap-stores__t { font-size: 14px; font-weight: 900; text-align: center; }
+    .ap-stores__row { display: flex; gap: 12px; margin-top: 12px; }
+    .ap-store { flex: 1; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 15px 12px; display: flex; align-items: center; gap: 10px; opacity: .72; }
+    .ap-store svg { width: 24px; height: 24px; flex: none; color: var(--ink); }
+    .ap-store__b { min-width: 0; } .ap-store__s { font-size: 10px; color: var(--ink-3); } .ap-store__n { font-size: 13px; font-weight: 800; }
+    .ap-store__soon { font-size: 9.5px; font-weight: 800; color: var(--gold-strong); background: var(--gold-soft); border-radius: var(--r-pill); padding: 2px 7px; display: inline-block; margin-top: 3px; }
+    .ap-steps { margin-top: var(--s-5); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; }
+    .ap-steps__t { font-size: 14px; font-weight: 900; margin-bottom: 12px; }
+    .ap-step { display: flex; gap: 12px; align-items: flex-start; font-size: 12.5px; color: var(--ink-2); line-height: 1.6; }
+    .ap-step + .ap-step { margin-top: 12px; }
+    .ap-step__n { flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .ap-step b { color: var(--ink); }
+    .ap-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin-top: 16px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="news.html" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="ap-hero">
+      <div class="ap-hero__ic"><b>SP</b></div>
+      <div class="ap-hero__t">SalonProアプリ</div>
+      <div class="ap-hero__s">ホーム画面に追加すれば、ワンタップで起動。<br>発注・入荷・出荷のお知らせをすばやく受け取れます。</div>
+      <div class="ap-cta">
+        <button class="ap-btn" id="installBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          <span id="installLabel">ホーム画面に追加</span>
+        </button>
+        <div class="ap-cta__hint" id="installHint">タップするだけ。アプリストアの審査やダウンロード待ちはありません。</div>
+      </div>
+    </section>
+
+    <section class="ap-feat">
+      <div class="ap-f"><span class="ap-f__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+        <div class="ap-f__b"><div class="ap-f__t">プッシュ通知</div><div class="ap-f__d">入荷・出荷・キャンペーン・補充タイミングをすぐお知らせ。買い逃し・切らしを防ぎます。</div></div></div>
+      <div class="ap-f"><span class="ap-f__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg></span>
+        <div class="ap-f__b"><div class="ap-f__t">ワンタップ再注文</div><div class="ap-f__d">いつもの商品を履歴からすぐ発注。施術の合間でも片手でかんたんに。</div></div></div>
+      <div class="ap-f"><span class="ap-f__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3v4M8 3v4M2 11h20"/></svg></span>
+        <div class="ap-f__b"><div class="ap-f__t">出荷カレンダー</div><div class="ap-f__d">当日出荷の締め時間（平日10:00）や休業日をホームから即チェック。</div></div></div>
+      <div class="ap-f"><span class="ap-f__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5 10 17l9-10"/></svg></span>
+        <div class="ap-f__b"><div class="ap-f__t">オフラインでも閲覧</div><div class="ap-f__d">一度見たカタログは電波が弱い場所でも表示。サロンの奥や移動中でも確認できます。</div></div></div>
+    </section>
+
+    <section class="ap-stores">
+      <div class="ap-stores__t">ネイティブアプリも準備中</div>
+      <div class="ap-stores__row">
+        <div class="ap-store"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 1.6c.1 1-.3 2-.9 2.7-.6.8-1.7 1.4-2.7 1.3-.1-1 .3-2 .9-2.7.7-.8 1.8-1.3 2.7-1.3Zm3 16.6c-.5 1.2-.8 1.7-1.5 2.8-1 1.5-2.3 3.3-4 3.3-1.5 0-1.9-1-3.9-1-2 0-2.5 1-3.9 1-1.7 0-2.9-1.6-3.9-3.1-2.8-4.1-3.1-9-1.4-11.5 1.2-1.8 3.1-2.9 4.9-2.9 1.8 0 3 1 4.5 1 1.4 0 2.3-1 4.4-1 1.6 0 3.3.9 4.5 2.4-3.9 2.2-3.3 7.8.2 9Z"/></svg>
+          <div class="ap-store__b"><div class="ap-store__s">Download on the</div><div class="ap-store__n">App Store</div><span class="ap-store__soon">近日公開</span></div></div>
+        <div class="ap-store"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.6 2.3c-.3.3-.5.8-.5 1.4v16.6c0 .6.2 1.1.5 1.4l.1.1L13 12.1v-.2L3.7 2.2l-.1.1Zm12.5 13.1-2.8-2.8v-.3l2.8-2.8.1.1 3.3 1.9c1 .5 1 1.4 0 2l-3.3 1.9-.1.1Zm-1-1.1L4.8 21.6c.3.3.9.4 1.5 0l9.8-5.6-1-1Zm0-4.6 1-1L6.3 2.4c-.6-.4-1.2-.3-1.5 0l10.3 9.3Z"/></svg>
+          <div class="ap-store__b"><div class="ap-store__s">GET IT ON</div><div class="ap-store__n">Google Play</div><span class="ap-store__soon">近日公開</span></div></div>
+      </div>
+    </section>
+
+    <section class="ap-steps" id="manualSteps" hidden>
+      <div class="ap-steps__t">手動で追加する場合（iPhone / Safari）</div>
+      <div class="ap-step"><span class="ap-step__n">1</span><span>画面下の<b>共有ボタン</b>（□と↑のアイコン）をタップ</span></div>
+      <div class="ap-step"><span class="ap-step__n">2</span><span>メニューから<b>「ホーム画面に追加」</b>を選択</span></div>
+      <div class="ap-step"><span class="ap-step__n">3</span><span>右上の<b>「追加」</b>をタップで完了。ホーム画面にSalonProが並びます</span></div>
+    </section>
+
+    <p class="ap-note">※ SalonProはWebアプリ（PWA）として今すぐホーム画面に追加できます。App Store / Google Play 版は準備中です。プッシュ通知は<a href="notify.html">通知設定</a>からいつでもオン・オフできます。</p>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab is-active" href="mypage.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      var btn = document.getElementById('installBtn');
+      var label = document.getElementById('installLabel');
+      var hint = document.getElementById('installHint');
+      var manual = document.getElementById('manualSteps');
+
+      // standalone（既にインストール済み）判定
+      var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+      var isiOS = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+
+      function setInstalled() {
+        label.textContent = 'インストール済み';
+        btn.style.opacity = '.7'; btn.disabled = true;
+        hint.textContent = 'すでにホーム画面に追加されています。ありがとうございます。';
+      }
+      if (standalone) setInstalled();
+
+      function refresh() {
+        if (standalone) return;
+        if (SP.canInstall && SP.canInstall()) {
+          hint.textContent = 'タップするだけ。アプリストアの審査やダウンロード待ちはありません。';
+          manual.hidden = true;
+        } else if (isiOS) {
+          // iOS Safari は beforeinstallprompt 非対応 → 手動手順を表示
+          hint.textContent = 'iPhoneでは下の手順でホーム画面に追加できます。';
+          manual.hidden = false;
+        }
+      }
+      document.addEventListener('sp-installable', refresh);
+      refresh();
+
+      btn.addEventListener('click', async function () {
+        if (standalone) return;
+        if (SP.promptInstall && SP.canInstall && SP.canInstall()) {
+          var r = await SP.promptInstall();
+          if (r === 'accepted' || r === 'done') { SP.toast && SP.toast('ホーム画面に追加しました'); setInstalled(); }
+          else if (r === 'dismissed') { SP.toast && SP.toast('追加をキャンセルしました'); }
+          else { manual.hidden = false; }
+        } else if (isiOS) {
+          manual.hidden = false; manual.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          manual.hidden = false;
+          SP.toast && SP.toast('ブラウザのメニューから「ホーム画面に追加」を選んでください');
+        }
+      });
+
+      (function () { var c = SP.Store.cartSummary().count + (SP.Store.giftCount ? SP.Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = c; el.hidden = c <= 0; } })();
+    })();
+  </script>
+</body>
+</html>

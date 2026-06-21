@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>会員登録｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    .rv-row { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; }
+    .rv-dot { width: 28px; height: 28px; flex: none; border-radius: 50%; background: var(--surface-2); color: var(--ink-3); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+    .rv-dot--done { background: var(--gold-soft); color: var(--gold-strong); }
+    .rv-dot--now { background: #fff; border: 3px solid var(--gold); animation: rvpulse 1.5s var(--ease) infinite; }
+    @keyframes rvpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(169,130,58,.35); } 50% { box-shadow: 0 0 0 6px rgba(169,130,58,0); } }
+    .rv-row b { font-size: var(--fs-14); }
+    .rv-time { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+    .status-banner--ok { background: #eef6f0; border: 1px solid #cfe6d8; }
+    .status-banner--ok > svg { color: var(--stock-in); }
+    .acct-box { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+    .acct-box .acct-code { font-family: var(--font-num); font-weight: 800; font-size: var(--fs-20); letter-spacing: .04em; }
+    .rank-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--gold-soft); color: var(--gold-strong); border: 1px solid var(--gold-line); border-radius: var(--r-pill); padding: 4px 12px; font-weight: 800; font-size: var(--fs-13); }
+
+    /* 資格書類の自動読み取り（カメラOCR） */
+    .vf-types { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: var(--s-3); }
+    @media (max-width: 520px) { .vf-types { grid-template-columns: 1fr; } }
+    .vf-types button { padding: 11px 8px; border: 1px solid var(--line-3); border-radius: var(--r-sm); font-size: var(--fs-13); font-weight: 700; color: var(--ink-2); background: var(--surface); line-height: 1.3; }
+    .vf-types button[aria-pressed="true"] { border-color: var(--gold); background: var(--gold-soft); color: var(--gold-strong); }
+    .vf-cam { position: relative; aspect-ratio: 16/10; background: #11141a; border-radius: var(--r-md); overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .vf-cam video { width: 100%; height: 100%; object-fit: cover; }
+    .vf-frame { position: absolute; inset: 14% 9%; border: 2px dashed rgba(255,255,255,.55); border-radius: 10px; pointer-events: none; }
+    .vf-ph { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,.72); font-size: var(--fs-13); text-align: center; padding: var(--s-4); line-height: 1.6; }
+    .vf-ph svg { width: 30px; height: 30px; display: block; margin: 0 auto 8px; opacity: .8; }
+    .vf-scan { position: absolute; left: 9%; right: 9%; height: 2px; background: var(--gold); box-shadow: 0 0 12px 1px var(--gold); animation: vfscan 1.3s ease-in-out infinite; }
+    @keyframes vfscan { 0% { top: 16%; } 50% { top: 82%; } 100% { top: 16%; } }
+    .vf-actions { display: flex; gap: 8px; margin-top: var(--s-3); flex-wrap: wrap; }
+    .vf-actions button, .vf-file { flex: 1 1 auto; min-width: 130px; height: 46px; border: 1px solid var(--line-3); border-radius: var(--r-sm); font-weight: 700; font-size: var(--fs-14); display: inline-flex; align-items: center; justify-content: center; gap: 7px; background: var(--surface); cursor: pointer; }
+    .vf-actions button svg, .vf-file svg { width: 17px; height: 17px; }
+    .vf-actions .primary { background: var(--gold); color: #fff; border-color: var(--gold); }
+    .vf-actions .primary:hover { background: var(--gold-strong); }
+    .vf-busy { display: flex; align-items: center; gap: 10px; justify-content: center; padding: var(--s-5); color: var(--ink-2); font-weight: 700; }
+    .vf-spin { width: 22px; height: 22px; border: 3px solid var(--line-3); border-top-color: var(--gold); border-radius: 50%; animation: vfspin .8s linear infinite; }
+    @keyframes vfspin { to { transform: rotate(360deg); } }
+    .vf-result { margin-top: var(--s-3); border: 1px solid #cfe6d8; background: #f1faf4; border-radius: var(--r-md); padding: var(--s-4); }
+    .vf-result__judge { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--stock-in); margin-bottom: var(--s-2); }
+    .vf-result__judge svg { width: 20px; height: 20px; flex: none; }
+    .vf-result__row { font-size: var(--fs-14); padding: 3px 0; color: var(--ink-2); }
+    .vf-result__row b { font-weight: 800; color: var(--ink); }
+    .vf-lock { display: flex; align-items: center; gap: 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 13px 14px; font-weight: 800; font-size: var(--fs-16); }
+    .vf-lock svg { width: 18px; height: 18px; color: var(--gold-strong); flex: none; }
+    .vf-lock.is-empty { color: var(--ink-3); font-weight: 600; font-size: var(--fs-14); }
+    .vf-demo-note { font-size: 11.5px; color: var(--ink-3); margin-top: 8px; line-height: 1.5; }
+    .vf-demo-btn { background: var(--surface-2) !important; color: var(--ink-2) !important; border-style: dashed !important; }
+    .vf-secure { display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px; color: var(--ink-2); margin-top: 10px; background: var(--gold-soft); border-radius: var(--r-sm); padding: 10px 12px; line-height: 1.5; }
+    .vf-secure svg { width: 15px; height: 15px; color: var(--gold-strong); flex: none; margin-top: 1px; }
+    .vf-dup { display: none; margin-top: var(--s-3); border: 1px solid #efd6d4; background: var(--red-soft); border-radius: var(--r-md); padding: var(--s-3) var(--s-4); color: var(--red-deep); font-size: var(--fs-13); font-weight: 700; line-height: 1.5; }
+    .vf-dup.is-on { display: block; }
+    /* 顔照合 */
+    .vf-selfie { position: relative; width: 168px; height: 168px; margin: 0 auto; border-radius: 50%; overflow: hidden; background: #11141a; display: flex; align-items: center; justify-content: center; }
+    .vf-selfie video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+    .vf-selfie__ring { position: absolute; inset: 4px; border-radius: 50%; border: 3px dashed rgba(255,255,255,.5); pointer-events: none; }
+    .vf-selfie__ring.scan { border-style: solid; border-color: var(--gold); border-right-color: transparent; animation: vfspin 1.1s linear infinite; }
+    .vf-selfie__ph { color: rgba(255,255,255,.7); font-size: 11px; text-align: center; padding: 0 14px; line-height: 1.5; }
+    .vf-face__status { text-align: center; font-size: var(--fs-13); color: var(--ink-2); margin-top: var(--s-3); }
+    .vf-face__ok { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--stock-in); font-weight: 800; }
+    .vf-face__ok svg { width: 18px; height: 18px; }
+    /* 招待コード（菊池担当者発行・証明書/顔認証なしで登録） */
+    .invite-card { border: 1px solid var(--gold-line); background: var(--gold-soft); border-radius: var(--r-md); padding: var(--s-4); }
+    .invite-card__head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: var(--fs-14); color: var(--gold-strong); margin-bottom: 10px; }
+    .invite-card__head svg { width: 18px; height: 18px; flex: none; }
+    .invite-row { display: flex; gap: 8px; }
+    .invite-row .input { flex: 1 1 auto; min-width: 0; }
+    .invite-row .btn { flex: none; height: 48px; padding: 0 18px; }
+    .invite-msg { font-size: var(--fs-13); font-weight: 700; margin-top: 8px; display: none; }
+    .invite-msg.ok { display: block; color: var(--stock-in); }
+    .invite-msg.err { display: block; color: var(--bad); }
+    .invite-applied { display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--stock-in); }
+    .invite-applied svg { width: 18px; height: 18px; flex: none; }
+    .invite-clear { background: none; border: 0; color: var(--ink-3); font-size: var(--fs-12); text-decoration: underline; margin-left: auto; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container site-header__inner" style="justify-content:space-between">
+      <a class="brand" href="login.html" aria-label="SalonPro"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <a href="login.html" style="font-size:var(--fs-13);font-weight:700;color:var(--ink-2)">ログイン</a>
+    </div>
+  </header>
+
+  <main class="container" style="max-width:640px;padding-bottom:var(--s-9)">
+    <div class="page-hd"><h1 class="page-hd__title">会員登録</h1><p class="page-hd__sub">SalonPro は美容師・美容室・美容学生のためのプロ専用サイトです。安心してご利用いただくため、登録時に資格の確認を行います。</p></div>
+
+    <!-- ステップ -->
+    <div class="steps" id="regSteps">
+      <div class="step is-active"><span class="step__dot">1</span><span class="step__label">基本情報</span></div>
+      <span class="step__bar"></span>
+      <div class="step"><span class="step__dot">2</span><span class="step__label">書類提出</span></div>
+      <span class="step__bar"></span>
+      <div class="step"><span class="step__dot">3</span><span class="step__label">審査</span></div>
+      <span class="step__bar"></span>
+      <div class="step"><span class="step__dot">4</span><span class="step__label">完了</span></div>
+    </div>
+
+    <div id="regForm">
+      <form id="regFormEl">
+        <!-- 0'. ご業種（ヘア／ネイル／エステ） -->
+        <div class="field">
+          <label class="field__label">ご業種<span class="req">必須</span></label>
+          <div class="field__help" style="margin:0 0 8px">業種に合わせて最適な商材だけを表示します。<b>美容室専売品はネイル・エステには表示されません</b>。</div>
+          <div class="vf-types" id="bizTypes">
+            <button type="button" data-biz="hair" aria-pressed="true">ヘア（美容室）</button>
+            <button type="button" data-biz="eye">アイ（まつげ）</button>
+            <button type="button" data-biz="nail">ネイル</button>
+            <button type="button" data-biz="esthe">エステ</button>
+          </div>
+          <div class="field__help" style="margin-top:6px">アイ（まつげ）は<b>美容師免許が必要</b>な業種のため、ヘアと同じ業務用商材もご注文いただけます。ネイル・エステは<b>開業届・インボイス登録</b>等で事業確認します。</div>
+        </div>
+
+        <!-- 0. 招待コード（菊池担当者発行・お得意様向け） -->
+        <div class="field" id="inviteField">
+          <div class="invite-card">
+            <div class="invite-card__head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>菊池の担当者から招待コードをお持ちの方</div>
+            <div id="inviteEntry">
+              <div class="invite-row">
+                <input class="input" id="inviteInput" placeholder="招待コード（例：KP-2025-0001）" autocomplete="off">
+                <button type="button" class="btn btn--primary" id="inviteApply">適用</button>
+              </div>
+              <div class="invite-msg" id="inviteMsg"></div>
+              <div class="field__help" style="margin-top:6px">お得意様向け：担当者発行のコードがあれば、<b>証明書・顔認証なし</b>でご登録いただけます。</div>
+            </div>
+            <div id="inviteDone" hidden>
+              <div class="invite-applied"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L15.5 9.5"/></svg><span id="inviteDoneText">招待コードを確認しました</span><button type="button" class="invite-clear" id="inviteCancel">取り消す</button></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1. 資格書類の自動読み取り（カメラOCR） -->
+        <div class="field" id="docField">
+          <label class="field__label">資格書類の確認（カメラで自動読み取り）<span class="req">必須</span></label>
+          <div class="field__help" style="margin:0 0 8px">下記いずれかを撮影すると、記載の<b>氏名／美容所名を自動で読み取り</b>、お届け先の名義に設定します。</div>
+          <div class="vf-types" id="vfTypes">
+            <button type="button" data-type="license" aria-pressed="true">美容師／理容師<br>免許証</button>
+            <button type="button" data-type="student">美容学生証</button>
+            <button type="button" data-type="salon">美容所開設届<br>（保健所）</button>
+          </div>
+          <div class="vf-cam" id="vfCam">
+            <video id="vfVideo" playsinline muted hidden></video>
+            <div class="vf-frame" id="vfFrame" hidden></div>
+            <div class="vf-scan" id="vfScan" hidden></div>
+            <div class="vf-ph" id="vfPh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.2"/><path d="M8 6l1.5-2h5L16 6"/></svg>カメラを起動して<br>書類を枠内に納めてください</div>
+          </div>
+          <div class="vf-actions">
+            <button type="button" id="vfStart" class="primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.2"/><path d="M8 6l1.5-2h5L16 6"/></svg>アプリ内カメラを起動</button>
+            <button type="button" id="vfShot" class="primary" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>撮影して自動読み取り</button>
+            <button type="button" id="vfDemo" class="vf-demo-btn">（カメラ非対応環境）デモ読み取り</button>
+          </div>
+          <div class="vf-secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>本人確認のため<b>アプリ内カメラ撮影のみ</b>受け付けます（保存済み画像のアップロードは不可）。撮影日時は確認のため記録されます。</span></div>
+          <div class="vf-busy" id="vfBusy" hidden><span class="vf-spin"></span>書類を解析しています…（OCR／AI判定）</div>
+          <div class="vf-result" id="vfResult" hidden>
+            <div class="vf-result__judge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L15.5 9.5"/></svg>有効な資格書類として自動認識しました</div>
+            <div class="vf-result__row">種別：<b id="vfOutType">—</b></div>
+            <div class="vf-result__row" id="vfRowName">氏名（自動抽出）：<b id="vfOutName">—</b></div>
+            <div class="vf-result__row">番号：<b id="vfOutNo">—</b></div>
+          </div>
+          <div class="vf-dup" id="vfDup"></div>
+          <div class="vf-demo-note">※ 本デモの読み取りはサンプル動作です。本番では免許証／学生証／美容所開設届を <b>OCR＋AIで自動判定</b> し、記載の氏名・美容所名を抽出します。撮影画像と抽出結果は<b>監査ログとして保存</b>されます。</div>
+        </div>
+
+        <!-- 1.5 顔認証（本人確認・なりすまし/貸し借り防止） -->
+        <div class="field" id="vfFaceField" hidden>
+          <label class="field__label">ご本人の確認（顔認証）<span class="req">必須</span></label>
+          <div class="field__help" style="margin:0 0 10px">書類の本人かどうかを確認します。自撮りを撮影すると、<b>証明書の顔写真と自動で照合</b>します（なりすまし・免許の貸し借りを防止）。</div>
+          <div class="vf-selfie" id="vfSelfie">
+            <video id="vfFaceVideo" playsinline muted hidden></video>
+            <div class="vf-selfie__ring" id="vfFaceRing"></div>
+            <div class="vf-selfie__ph" id="vfFacePh">枠に顔を合わせて<br>撮影してください</div>
+          </div>
+          <div class="vf-actions" style="margin-top:var(--s-3)">
+            <button type="button" id="vfFaceStart" class="primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>顔認証を開始</button>
+            <button type="button" id="vfFaceDemo" class="vf-demo-btn">（カメラ非対応環境）デモ照合</button>
+          </div>
+          <div class="vf-face__status" id="vfFaceStatus"></div>
+        </div>
+
+        <!-- 2. お届け先の名義（証明書からロック） -->
+        <div class="field" id="lockField">
+          <label class="field__label">お届け先の名義（証明書から自動設定・ロック）</label>
+          <div class="vf-lock is-empty" id="vfLock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="vfRecipient">書類を読み取ると自動で設定されます</span></div>
+          <div class="field__help">お届け先の名義は証明書に基づき自動設定され、自由に変更できません。<b>変更には新しい証明書の追加が必要</b>です（ご本人確認・履歴保持のため）。</div>
+        </div>
+
+        <!-- 2'. 招待コード登録時のお届け先名義（手動・担当者承認） -->
+        <div class="field" id="inviteNameField" hidden>
+          <label class="field__label">お届け先の名義（サロン名／お名前）<span class="req">必須</span></label>
+          <input class="input" id="inviteName" type="text" placeholder="例：SALON LUXE 表参道店">
+          <div class="field__help">招待コードによる登録は担当者承認のため、証明書は不要です。発注の宛先名義になります。</div>
+        </div>
+
+        <!-- 3. 連絡先・配送先 -->
+        <div class="field">
+          <label class="field__label">ご所属<span class="req">必須</span></label>
+          <select class="select" id="regAffil" required>
+            <option value="">選択してください</option>
+            <option>サロン勤務（スタッフ）</option>
+            <option>サロンオーナー・店長</option>
+            <option>フリーランス美容師</option>
+            <option>美容学生</option>
+          </select>
+        </div>
+        <div class="field"><label class="field__label">メールアドレス<span class="req">必須</span></label><input class="input" type="email" required placeholder="example@salon.jp"></div>
+        <div class="field"><label class="field__label">電話番号<span class="req">必須</span></label><input class="input" type="tel" required placeholder="09000000000"></div>
+        <div class="field"><label class="field__label">お届け先ご住所<span class="req">必須</span></label><input class="input" type="text" placeholder="都道府県市区町村 番地・建物名" required></div>
+
+        <label class="checkbox-line" style="margin:var(--s-4) 0 var(--s-2)"><input type="checkbox" required> <span><b>転売・横流しをしない誓約</b>：購入品を最終消費者以外へ転売・譲渡しません。違反時はアカウント停止・取引停止となることに同意します。</span></label>
+        <label class="checkbox-line" style="margin:0 0 var(--s-4)"><input type="checkbox" required> <span><a href="#" data-soon="利用規約">利用規約</a>・<a href="#" data-soon="会員規約">会員規約</a>・<a href="#" data-soon="プライバシーポリシー">個人情報の取り扱い</a>に同意します</span></label>
+
+        <button type="submit" class="btn btn--primary btn--block" id="regSubmit" style="height:54px;font-size:var(--fs-16)" disabled>資格書類を読み取ると仮登録できます</button>
+        <p class="field__help" style="text-align:center;margin-top:var(--s-3)">仮登録後、運営の最終審査を経て承認されると価格表示・購入が可能になります（最短当日〜2営業日）。</p>
+      </form>
+    </div>
+
+    <!-- 審査中 -->
+    <div id="regDone" hidden>
+      <div class="status-banner status-banner--review">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        <div>
+          <div class="status-banner__t">仮登録が完了しました（審査中）</div>
+          <div class="status-banner__s">資格書類を確認しています。最短当日〜2営業日で結果をメールでお知らせします。承認後、価格の表示とご注文が可能になります。</div>
+        </div>
+      </div>
+
+      <div class="lcard" style="margin-top:var(--s-4)">
+        <div style="font-weight:800;margin-bottom:var(--s-2)">審査ステータス</div>
+        <div class="rv-row"><span class="rv-dot rv-dot--done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="m5 12 5 5L20 7"/></svg></span><div><b>お申し込み受付</b><div class="rv-time">2025/06/18 14:30 完了</div></div></div>
+        <div class="rv-row"><span class="rv-dot rv-dot--now"></span><div><b>資格書類の確認</b><div class="rv-time">確認中（最短当日〜2営業日）</div></div></div>
+        <div class="rv-row"><span class="rv-dot">3</span><div><b>承認・ご利用開始</b><div class="rv-time">承認後、メールとアプリでお知らせします</div></div></div>
+      </div>
+
+      <div class="lcard" style="margin-top:var(--s-4)">
+        <div style="font-weight:800;margin-bottom:8px">承認後に使える機能</div>
+        <div class="field__help" style="margin-top:0">・会員価格の表示とご注文　・前回注文からの再購入　・定番セット　・教育コンテンツ　・経営支援ツール</div>
+      </div>
+
+      <button class="btn btn--primary btn--block" id="demoApprove" style="margin-top:var(--s-4);height:50px">（デモ）審査結果を確認する</button>
+      <a class="btn btn--ghost btn--block" href="login.html" style="margin-top:var(--s-2)">ログイン画面へ</a>
+      <p class="field__help" style="text-align:center;margin-top:var(--s-3)">※「審査結果を確認する」は動作確認用のデモボタンです。実際は運営の承認後に自動でステータスが変わります。</p>
+    </div>
+
+    <!-- 承認完了 -->
+    <div id="regApproved" hidden>
+      <div class="status-banner status-banner--ok">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L15.5 9.5"/></svg>
+        <div>
+          <div class="status-banner__t">承認されました。ようこそ SalonPro へ</div>
+          <div class="status-banner__s">資格確認が完了しました。会員価格の表示とご注文がご利用いただけます。下記のアカウントコードでログインしてください。</div>
+        </div>
+      </div>
+      <div class="lcard" style="margin-top:var(--s-4)">
+        <div class="acct-box">
+          <div>
+            <div class="field__help" style="margin-top:0">アカウントコード</div>
+            <div class="acct-code" id="acctCode">SP-481023</div>
+          </div>
+          <span class="rank-chip"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z"/></svg>シルバー会員（初期ランク）</span>
+        </div>
+        <div class="field__help" style="margin-top:var(--s-3)">ご利用に応じてランクが上がり、会員価格・ポイント還元・限定セミナーが拡充します。</div>
+      </div>
+      <a class="btn btn--primary btn--block" href="login.html" style="margin-top:var(--s-4);height:54px;font-size:var(--fs-16)">ログインして始める</a>
+      <a class="btn btn--ghost btn--block" href="index.html" style="margin-top:var(--s-2)">まず商品を見てみる</a>
+    </div>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+  (function () {
+    // 書類種別ごとの抽出結果（本番はここをOCR/AI判定APIの戻り値に差し替え）
+    var TYPES = {
+      license: { label: '美容師／理容師免許証', name: '山田 太郎', no: '美容師免許 第123456号', kind: 'name' },
+      student: { label: '美容学生証', name: '佐藤 花子', no: '学生証番号 S-2025-0481', kind: 'name' },
+      salon:   { label: '美容所開設届（保健所）', name: 'SALON LUXE 表参道店', no: '美容所登録 第7890号', kind: 'salon' },
+      kaigyo:  { label: '開業届の控え', name: 'NAIL atelier Lumière', no: '開業届 受付 2025-0142', kind: 'salon' },
+      invoice: { label: 'インボイス登録番号', name: 'Beauté Esthe 表参道', no: 'T1234567890123', kind: 'salon' },
+      meishi:  { label: '名刺／サロン在籍', name: 'NAIL atelier Lumière', no: '名刺確認', kind: 'salon' }
+    };
+    // 業種ごとの確認書類（ヘア/アイ＝美容師免許系、ネイル/エステ＝開業届・インボイス等＝公的に事業確認）
+    var DOCSETS = {
+      hair:  ['license', 'student', 'salon'],
+      eye:   ['license', 'salon'],
+      nail:  ['kaigyo', 'invoice', 'meishi'],
+      esthe: ['kaigyo', 'invoice', 'meishi']
+    };
+    var curType = 'license', verified = null, faceOk = false, capturedInApp = false, faceScore = 0, stream = null, faceStream = null;
+    function renderDocTypes(biz) {
+      var keys = DOCSETS[biz] || DOCSETS.hair;
+      curType = keys[0];
+      $('#vfTypes').innerHTML = keys.map(function (k, i) {
+        return '<button type="button" data-type="' + k + '" aria-pressed="' + (i === 0) + '">' + TYPES[k].label + '</button>';
+      }).join('');
+    }
+    var inviteMode = false, inviteCode = '';
+    var $ = function (s) { return document.querySelector(s); };
+    var toast = function (m) { if (window.SP_toast) SP_toast(m); };
+
+    function inviteNameVal() { var el = $('#inviteName'); return el ? el.value.trim() : ''; }
+    function gateSubmit() {
+      var ok = inviteMode ? !!inviteNameVal() : (verified && faceOk);
+      var sb = $('#regSubmit');
+      sb.disabled = !ok;
+      sb.textContent = inviteMode
+        ? (ok ? 'この内容で登録する' : 'お届け先の名義を入力してください')
+        : (verified && faceOk ? 'この内容で仮登録する' : (verified ? '顔認証で本人確認を完了してください' : '資格書類を読み取ると仮登録できます'));
+    }
+
+    // 招待コード（菊池担当者発行）：証明書・顔認証なしで登録できる
+    function isValidInvite(code) {
+      var c = (code || '').trim().toUpperCase();
+      if (!c) return false;
+      // デモ：KP-で始まる or 既定コード。本番はサーバーで発行済みコードを照合
+      return /^KP-[A-Z0-9-]{3,}$/.test(c) || ['KIKUCHI2025', 'SALONLUXE'].indexOf(c) >= 0;
+    }
+    $('#inviteApply').addEventListener('click', function () {
+      var code = $('#inviteInput').value.trim(), msg = $('#inviteMsg');
+      if (!isValidInvite(code)) { msg.className = 'invite-msg err'; msg.textContent = '招待コードが正しくありません。担当者にご確認ください。'; return; }
+      inviteMode = true; inviteCode = code.toUpperCase();
+      $('#inviteEntry').hidden = true; $('#inviteDone').hidden = false;
+      $('#inviteDoneText').textContent = '招待コードを確認しました（' + inviteCode + '・担当者承認）';
+      $('#docField').hidden = true; $('#vfFaceField').hidden = true; $('#lockField').hidden = true;
+      $('#inviteNameField').hidden = false;
+      gateSubmit();
+      toast('招待コードを適用しました。証明書・顔認証は不要です');
+    });
+    $('#inviteCancel').addEventListener('click', function () {
+      inviteMode = false; inviteCode = '';
+      $('#inviteEntry').hidden = false; $('#inviteDone').hidden = true;
+      $('#inviteInput').value = ''; $('#inviteMsg').className = 'invite-msg'; $('#inviteMsg').textContent = '';
+      $('#docField').hidden = false; $('#lockField').hidden = false; $('#inviteNameField').hidden = true;
+      gateSubmit();
+    });
+    var _inEl = $('#inviteName'); if (_inEl) _inEl.addEventListener('input', gateSubmit);
+
+    // ご業種の選択（ヘア／アイ／ネイル／エステ）
+    var selBiz = 'hair';
+    $('#bizTypes').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-biz]'); if (!b) return;
+      selBiz = b.dataset.biz;
+      [].forEach.call(this.children, function (x) { x.setAttribute('aria-pressed', x === b); });
+      renderDocTypes(selBiz);
+      // 業種変更で資格確認をリセット
+      verified = null; faceOk = false;
+      var r = $('#vfResult'); if (r) r.hidden = true;
+      var ff = $('#vfFaceField'); if (ff) ff.hidden = true;
+      var dup = $('#vfDup'); if (dup) dup.classList.remove('is-on');
+      var lk = $('#vfLock'); if (lk) lk.classList.add('is-empty');
+      var rc = $('#vfRecipient'); if (rc) rc.textContent = '書類を読み取ると自動で設定されます';
+      gateSubmit();
+    });
+    renderDocTypes(selBiz);   // 初期表示（ヘア）
+
+    // 種別選択
+    $('#vfTypes').addEventListener('click', function (e) {
+      var b = e.target.closest('button[data-type]'); if (!b) return;
+      curType = b.dataset.type;
+      [].forEach.call(this.children, function (x) { x.setAttribute('aria-pressed', x === b); });
+    });
+
+    // 書類カメラ起動（アプリ内カメラのみ・ギャラリー不可）
+    $('#vfStart').addEventListener('click', function () {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('カメラを起動できません。「デモ読み取り」で動作をご確認ください'); return; }
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then(function (s) {
+        stream = s; var v = $('#vfVideo'); v.srcObject = s; v.hidden = false; v.play();
+        $('#vfPh').hidden = true; $('#vfFrame').hidden = false;
+        $('#vfStart').hidden = true; $('#vfShot').hidden = false;
+      }).catch(function () { toast('カメラを起動できませんでした。「デモ読み取り」で動作をご確認ください'); });
+    });
+    $('#vfShot').addEventListener('click', function () { capturedInApp = true; runOCR(); });
+    $('#vfDemo').addEventListener('click', function () { capturedInApp = true; runOCR(); });
+
+    function stopCam() { if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); stream = null; } var v = $('#vfVideo'); if (v) { v.srcObject = null; v.hidden = true; } }
+
+    // OCR/AI判定（デモ：約1.7秒の解析後に抽出結果を返す。本番はAPI呼び出しに置換）
+    function runOCR() {
+      $('#vfDup').classList.remove('is-on');
+      $('#vfScan').hidden = false; $('#vfBusy').hidden = false; $('#vfResult').hidden = true;
+      setTimeout(function () {
+        $('#vfScan').hidden = true; $('#vfBusy').hidden = true;
+        stopCam(); $('#vfFrame').hidden = true; $('#vfShot').hidden = true; $('#vfStart').hidden = false; $('#vfPh').hidden = false;
+        var t = TYPES[curType];
+        // 重複登録チェック（同一証明書番号 or 同一名義）
+        var certs = []; try { certs = JSON.parse(localStorage.getItem('sp.certs') || '[]'); } catch (e) {}
+        // 重複は「証明書番号」で判定（同姓同名は誤ブロックしない）
+        var dup = certs.filter(function (c) { return c.no && c.no === t.no; })[0];
+        if (dup) {
+          verified = null; faceOk = false; $('#vfFaceField').hidden = true;
+          var d = $('#vfDup');
+          d.innerHTML = '⚠ この証明書番号（' + t.no + '）は既に登録されています。同一書類での重複登録はできません。お心当たりがない場合はサポートへご連絡ください。';
+          d.classList.add('is-on'); gateSubmit();
+          window.scrollTo({ top: d.getBoundingClientRect().top + window.scrollY - 110, behavior: 'smooth' });
+          return;
+        }
+        verified = { type: curType, label: t.label, name: t.name, no: t.no, kind: t.kind };
+        $('#vfOutType').textContent = t.label;
+        $('#vfRowName').innerHTML = (t.kind === 'salon' ? '美容所名（自動抽出）：' : '氏名（自動抽出）：') + '<b>' + t.name + '</b>';
+        $('#vfOutNo').textContent = t.no;
+        $('#vfResult').hidden = false;
+        $('#vfLock').classList.remove('is-empty'); $('#vfRecipient').textContent = t.name;
+        // 顔認証ステップを開放
+        faceOk = false; $('#vfFaceField').hidden = false; $('#vfFaceStatus').textContent = '';
+        gateSubmit();
+        toast('資格書類を読み取りました（宛先：' + t.name + '）');
+        window.scrollTo({ top: $('#vfFaceField').getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' });
+      }, 1700);
+    }
+
+    // 顔認証（自撮り → 証明書の顔写真と照合）
+    $('#vfFaceStart').addEventListener('click', function () {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('カメラを起動できません。「デモ照合」で動作をご確認ください'); return; }
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(function (s) {
+        faceStream = s; var v = $('#vfFaceVideo'); v.srcObject = s; v.hidden = false; v.play();
+        $('#vfFacePh').hidden = true; runFace();
+      }).catch(function () { toast('カメラを起動できませんでした。「デモ照合」で動作をご確認ください'); });
+    });
+    $('#vfFaceDemo').addEventListener('click', runFace);
+
+    function stopFace() { if (faceStream) { faceStream.getTracks().forEach(function (t) { t.stop(); }); faceStream = null; } var v = $('#vfFaceVideo'); if (v) { v.srcObject = null; v.hidden = true; } }
+
+    function runFace() {
+      $('#vfFaceRing').classList.add('scan');
+      $('#vfFaceStatus').textContent = '本人を確認中…（証明書の顔写真と照合）';
+      setTimeout(function () {
+        $('#vfFaceRing').classList.remove('scan'); stopFace(); $('#vfFacePh').hidden = false;
+        faceOk = true; faceScore = 98;
+        $('#vfFaceStatus').innerHTML = '<span class="vf-face__ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L15.5 9.5"/></svg>本人確認OK（照合スコア ' + faceScore + '%）</span>';
+        gateSubmit(); toast('本人確認が完了しました');
+        var sb = $('#regSubmit'); window.scrollTo({ top: sb.getBoundingClientRect().top + window.scrollY - 220, behavior: 'smooth' });
+      }, 1800);
+    }
+
+    // 仮登録（証明書・顔照合・撮影方法を監査ログに保存）
+    $('#regFormEl').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var rec, entry;
+      if (inviteMode) {
+        var nm = inviteNameVal();
+        if (!nm) { toast('お届け先の名義を入力してください'); return; }
+        rec = nm;
+        entry = { type: 'invite', label: '招待コード（担当者承認）', name: nm, no: inviteCode, capturedInApp: false, faceScore: null, at: new Date().toISOString() };
+      } else {
+        if (!verified) { toast('先に資格書類を読み取ってください'); return; }
+        if (!faceOk) { toast('顔認証による本人確認を完了してください'); return; }
+        rec = verified.name;
+        entry = { type: verified.type, label: verified.label, name: verified.name, no: verified.no, capturedInApp: capturedInApp, faceScore: faceScore, at: new Date().toISOString() };
+      }
+      try {
+        localStorage.setItem('sp.member', 'pending');
+        localStorage.setItem('sp.biz', selBiz);
+        localStorage.setItem('sp.recipient', rec);
+        var certs = JSON.parse(localStorage.getItem('sp.certs') || '[]');
+        certs.push(entry);
+        localStorage.setItem('sp.certs', JSON.stringify(certs));
+      } catch (err) {}
+      $('#regForm').hidden = true; $('#regDone').hidden = false;
+      var steps = document.querySelectorAll('#regSteps .step');
+      steps[0].classList.replace('is-active', 'is-done'); steps[1].classList.add('is-done'); steps[2].classList.add('is-active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // （デモ）審査結果を確認 → 承認完了へ
+    var demoBtn = $('#demoApprove');
+    if (demoBtn) demoBtn.addEventListener('click', function () {
+      $('#regDone').hidden = true; $('#regApproved').hidden = false;
+      var steps = document.querySelectorAll('#regSteps .step');
+      steps[2].classList.replace('is-active', 'is-done'); steps[3].classList.add('is-active');
+      try { localStorage.setItem('sp.member', 'approved'); } catch (err) {}
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>定期便・自動補充｜SalonPro</title>
+  <meta name="description" content="よく使う商材を定期便で自動補充。使用ペースから「そろそろ補充」を予測してリマインド。発注の手間ゼロでリピート。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 880px; }
+    .sb-hd { margin-top: var(--s-4); } .sb-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; } .sb-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+    .sb-sec__t { font-size: 15px; font-weight: 900; margin: var(--s-5) 0 10px; display: flex; align-items: center; gap: 7px; } .sb-sec__t svg { width: 18px; height: 18px; color: var(--gold-strong); }
+    .sb-card { display: flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 13px; background: #fff; }
+    .sb-card + .sb-card { margin-top: 10px; }
+    .sb-card__m { flex: none; width: 50px; height: 60px; border-radius: var(--r-sm); background: var(--surface-2); overflow: hidden; } .sb-card__m svg { width: 100%; height: 100%; }
+    .sb-card__b { flex: 1; min-width: 0; }
+    .sb-card__brand { font-size: 11px; color: var(--ink-3); font-weight: 700; }
+    .sb-card__n { font-size: 13.5px; font-weight: 800; line-height: 1.35; }
+    .sb-card__meta { font-size: 11.5px; color: var(--ink-2); margin-top: 4px; } .sb-card__meta b { color: var(--gold-strong); }
+    .sb-card__act { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .sb-btn { height: 32px; padding: 0 12px; border-radius: var(--r-sm); font-size: 12px; font-weight: 800; border: 1px solid var(--line-3); background: #fff; color: var(--ink); cursor: pointer; }
+    .sb-btn--p { background: var(--gold); color: #fff; border-color: var(--gold); }
+    .sb-rec { border-color: var(--gold-line); background: var(--gold-soft); }
+    .sb-empty { border: 1px dashed var(--line-3); border-radius: var(--r-lg); padding: 18px; text-align: center; color: var(--ink-3); font-size: 12.5px; line-height: 1.7; }
+    .sb-add { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+    @media (min-width: 720px) { .sb-add { grid-template-columns: repeat(3,1fr); } }
+    .sb-acard { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px; background: #fff; }
+    .sb-acard__n { font-size: 12.5px; font-weight: 800; line-height: 1.35; min-height: 34px; }
+    .sb-acard__p { font-size: 12px; color: var(--ink-3); margin-top: 3px; }
+    .sb-acard select { width: 100%; margin-top: 8px; height: 34px; border: 1px solid var(--line-3); border-radius: var(--r-sm); font-size: 12.5px; padding: 0 8px; background: #fff; }
+    .sb-acard__btn { width: 100%; margin-top: 8px; height: 36px; border-radius: var(--r-sm); background: var(--gold); color: #fff; font-weight: 800; font-size: 12.5px; border: 0; cursor: pointer; }
+    .sb-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin-top: 14px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="news.html" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="sb-hd"><div class="sb-hd__t">定期便・自動補充</div><div class="sb-hd__s">よく使う商材を自動でお届け。使用ペースから「そろそろ補充」も予測してお知らせ。</div></div>
+    <section><h2 class="sb-sec__t" id="recTtl"></h2><div id="subRec"></div></section>
+    <section><h2 class="sb-sec__t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg>登録中の定期便</h2><div id="subList"></div></section>
+    <section><h2 class="sb-sec__t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>定番を定期便に追加</h2><div class="sb-add" id="subAdd"></div></section>
+    <p class="sb-note">※ プロトタイプのデモです。本番では決済・在庫・配送と連携し、次回お届け前に通知・スキップ・数量変更ができます。</p>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab is-active" href="reorder.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      var svg = SP.svg, yen = SP.fmtYen, ph = SP.placeholder, P = SP.DATA.products;
+      var toast = function (m) { var t = document.getElementById('toast'); t.innerHTML = svg('checkc') + m; t.classList.add('is-visible'); setTimeout(function () { t.classList.remove('is-visible'); }, 2200); };
+      var prod = function (id) { return P.filter(function (p) { return p.id === id; })[0]; };
+      var CAD = { monthly: { label: '毎月', m: 1 }, bimonthly: { label: '隔月', m: 2 }, quarterly: { label: '3ヶ月ごと', m: 3 } };
+      var addM = function (n) { var d = new Date(); d.setMonth(d.getMonth() + n); return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate(); };
+      var load = function () { try { return JSON.parse(localStorage.getItem('sp.subs') || 'null'); } catch (e) { return null; } };
+      var save = function (s) { try { localStorage.setItem('sp.subs', JSON.stringify(s)); } catch (e) {} };
+      (function () { var c = SP.Store.cartSummary().count + (SP.Store.giftCount ? SP.Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = c; el.hidden = c <= 0; } })();
+
+      var subs = load();
+      if (!subs) { // デモ初期：消耗品を2件
+        subs = [{ pid: 'sp-002', qty: 2, cad: 'monthly', next: addM(1) }, { pid: 'sp-003', qty: 1, cad: 'bimonthly', next: addM(2) }];
+        save(subs);
+      }
+      // 予測補充：定番候補に「前回◯日前」を割り当て（デモ）
+      var RECS = [{ pid: 'sp-001', days: 38, use: '約40日サイクル' }, { pid: 'sp-004', days: 27, use: '約30日サイクル' }, { pid: 'sh-005', days: 33, use: '約35日サイクル' }];
+
+      function render() {
+        // 予測補充
+        document.getElementById('recTtl').innerHTML = svg('spark') + 'そろそろ補充の時期です';
+        document.getElementById('subRec').innerHTML = RECS.map(function (r) {
+          var p = prod(r.pid); if (!p) return '';
+          return '<div class="sb-card sb-rec"><div class="sb-card__m">' + ph(p.ph, p.brand) + '</div>' +
+            '<div class="sb-card__b"><div class="sb-card__brand">' + p.brand + '</div><div class="sb-card__n">' + p.name + '</div>' +
+            '<div class="sb-card__meta">前回から <b>' + r.days + '日</b>（' + r.use + '）・' + yen(p.price) + '</div>' +
+            '<div class="sb-card__act"><button class="sb-btn sb-btn--p" data-buy="' + p.id + '">今すぐ再注文</button><button class="sb-btn" data-sub="' + p.id + '">定期便にする</button></div></div></div>';
+        }).join('');
+        // 定期便一覧
+        var sl = document.getElementById('subList');
+        sl.innerHTML = subs.length ? subs.map(function (s, i) {
+          var p = prod(s.pid); if (!p) return '';
+          return '<div class="sb-card"><div class="sb-card__m">' + ph(p.ph, p.brand) + '</div>' +
+            '<div class="sb-card__b"><div class="sb-card__brand">' + p.brand + '</div><div class="sb-card__n">' + p.name + '</div>' +
+            '<div class="sb-card__meta">' + CAD[s.cad].label + '・数量 ' + s.qty + '・次回お届け <b>' + s.next + '</b></div>' +
+            '<div class="sb-card__act"><button class="sb-btn" data-skip="' + i + '">次回スキップ</button><button class="sb-btn" data-cad="' + i + '">周期変更</button><button class="sb-btn" data-del="' + i + '">解約</button></div></div></div>';
+        }).join('') : '<div class="sb-empty">定期便はまだありません。下の「定番を定期便に追加」から登録できます。</div>';
+        // 追加候補（人気の消耗品・定番）
+        var cands = P.filter(function (p) { return ['supply', 'shampoo', 'treatment', 'outbath'].indexOf(p.cat) >= 0 && !p.contract; }).sort(function (a, b) { return b.pop - a.pop; }).slice(0, 6);
+        document.getElementById('subAdd').innerHTML = cands.map(function (p) {
+          return '<div class="sb-acard"><div class="sb-acard__n">' + p.name + '</div><div class="sb-acard__p">' + p.brand + '・' + yen(p.price) + '</div>' +
+            '<select data-cadsel="' + p.id + '"><option value="monthly">毎月</option><option value="bimonthly">隔月</option><option value="quarterly">3ヶ月ごと</option></select>' +
+            '<button class="sb-acard__btn" data-add="' + p.id + '">定期便に追加</button></div>';
+        }).join('');
+      }
+
+      document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-buy],[data-sub],[data-skip],[data-cad],[data-del],[data-add]'); if (!b) return;
+        if (b.dataset.buy) { SP.Store.addToCart(b.dataset.buy, 1); toast('カートに追加しました'); }
+        else if (b.dataset.sub) { subs.push({ pid: b.dataset.sub, qty: 1, cad: 'monthly', next: addM(1) }); save(subs); render(); toast('定期便に登録しました（毎月）'); }
+        else if (b.dataset.add) { var sel = document.querySelector('[data-cadsel="' + b.dataset.add + '"]'); var cad = sel ? sel.value : 'monthly'; subs.push({ pid: b.dataset.add, qty: 1, cad: cad, next: addM(CAD[cad].m) }); save(subs); render(); toast('定期便に追加しました（' + CAD[cad].label + '）'); }
+        else if (b.dataset.skip != null) { var s = subs[+b.dataset.skip]; s.next = addM(CAD[s.cad].m); save(subs); render(); toast('次回をスキップしました'); }
+        else if (b.dataset.del != null) { subs.splice(+b.dataset.del, 1); save(subs); render(); toast('定期便を解約しました'); }
+        else if (b.dataset.cad != null) { var s2 = subs[+b.dataset.cad]; var order = ['monthly', 'bimonthly', 'quarterly']; s2.cad = order[(order.indexOf(s2.cad) + 1) % 3]; s2.next = addM(CAD[s2.cad].m); save(subs); render(); toast('周期を' + CAD[s2.cad].label + 'に変更'); }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

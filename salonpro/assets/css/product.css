@@ -1,0 +1,149 @@
+/* =========================================================
+   SalonPro / Product detail（商品詳細）
+   購買・学習・導入判断が1ページで完結する設計（仕様 5.8/6.7）
+   ========================================================= */
+.pd { padding-bottom: calc(var(--tabbar-h) + 76px + env(safe-area-inset-bottom, 0px)); }
+.pd .container { max-width: 860px; }
+
+.pd-gallery {
+  aspect-ratio: 4 / 3;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  display: flex; align-items: center; justify-content: center;
+  margin-top: var(--s-4);
+  overflow: hidden;
+}
+.pd-gallery .card__ph { padding: 8%; max-width: 420px; }
+
+.pd-head { margin-top: var(--s-4); }
+.pd-brand { font-size: var(--fs-13); color: var(--ink-3); font-weight: 700; }
+.pd-name { font-size: var(--fs-22); font-weight: 800; line-height: 1.4; margin-top: 2px; }
+.pd-tags { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-top: var(--s-3); }
+.pd-tag { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border-radius: var(--r-xs); font-size: var(--fs-12); font-weight: 700; }
+.pd-tag svg { width: 15px; height: 15px; }
+.pd-tag--stock-in { background: #f1faf4; color: var(--stock-in); }
+.pd-tag--stock-low { background: #fdeceb; color: var(--stock-low); }
+.pd-tag--stock-order { background: #fdf4e7; color: var(--stock-order); }
+.pd-tag--ship { background: var(--surface-2); color: var(--ink-2); }
+.pd-tag--pro { background: var(--gold-soft); color: var(--gold-strong); }
+
+.pd-price { margin-top: var(--s-4); padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); }
+.pd-price__main { display: flex; align-items: baseline; gap: 6px; }
+.pd-price__yen { font-family: var(--font-num); font-size: var(--fs-28); font-weight: 800; letter-spacing: -.01em; }
+.pd-price__tax { font-size: var(--fs-12); color: var(--ink-3); font-weight: 600; }
+.pd-price__incl { font-size: var(--fs-13); color: var(--ink-2); margin-top: 2px; }
+.pd-price__incl b { font-family: var(--font-num); }
+.pd-price__member { display: inline-flex; align-items: center; gap: 6px; margin-top: var(--s-2); font-size: var(--fs-12); color: var(--gold-strong); font-weight: 700; }
+.pd-price__member svg { width: 15px; height: 15px; }
+.pd-tiers { margin-top: var(--s-3); padding: var(--s-2) var(--s-3); background: var(--gold-soft); border-radius: var(--r-sm); font-size: var(--fs-12); color: var(--ink); }
+.pd-tiers b { color: var(--gold-strong); }
+
+.pd-buy { display: flex; gap: var(--s-3); margin-top: var(--s-4); }
+.pd-buy .stepper { flex: none; }
+.pd-buy .stepper button { width: 44px; height: 52px; }
+.pd-buy .stepper input { width: 44px; height: 52px; font-size: var(--fs-16); }
+.pd-buy .btn-cart { flex: 1 1 auto; height: 52px; font-size: var(--fs-16); border-radius: var(--r-sm); }
+.pd-buy .btn-cart svg { width: 19px; height: 19px; }
+
+.pd-sub-actions { display: flex; gap: var(--s-3); margin-top: var(--s-3); }
+.pd-sub-actions button {
+  flex: 1 1 0; height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 1px solid var(--line-3); border-radius: var(--r-sm);
+  font-size: var(--fs-13); font-weight: 700; color: var(--ink); background: var(--surface);
+}
+.pd-sub-actions button:hover { background: var(--surface-2); }
+.pd-sub-actions button svg { width: 17px; height: 17px; }
+.pd-sub-actions button[aria-pressed="true"] { color: var(--stock-low); border-color: var(--stock-low); }
+.pd-sub-actions button[aria-pressed="true"] svg { fill: currentColor; }
+
+/* セクション */
+.pd-sec { margin-top: var(--s-6); }
+.pd-sec__title { font-size: var(--fs-16); font-weight: 800; margin-bottom: var(--s-3); padding-left: 10px; border-left: 3px solid var(--gold); }
+.pd-text { font-size: var(--fs-14); line-height: 1.8; color: var(--ink); }
+
+/* 仕様テーブル */
+.spec { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+.spec__row { display: flex; border-bottom: 1px solid var(--line-2); font-size: var(--fs-14); }
+.spec__row:last-child { border-bottom: 0; }
+.spec__k { flex: 0 0 110px; padding: var(--s-3); background: var(--surface-2); color: var(--ink-2); font-weight: 600; }
+.spec__v { padding: var(--s-3); }
+
+/* 向いている / 向いていない */
+.fit { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3); }
+.fit__card { padding: var(--s-4); border-radius: var(--r-md); border: 1px solid var(--line); }
+.fit__card--yes { background: #f1faf4; border-color: #bfe6cc; }
+.fit__card--no { background: var(--surface-2); }
+.fit__h { display: flex; align-items: center; gap: 6px; font-size: var(--fs-13); font-weight: 800; margin-bottom: var(--s-2); }
+.fit__h svg { width: 17px; height: 17px; }
+.fit__card--yes .fit__h { color: var(--stock-in); }
+.fit__card--no .fit__h { color: var(--ink-2); }
+.fit__list { font-size: var(--fs-13); line-height: 1.7; color: var(--ink); }
+@media (max-width: 480px) { .fit { grid-template-columns: 1fr; } }
+
+/* 使い方ステップ */
+.usage { counter-reset: u; }
+.usage__step { display: flex; gap: var(--s-3); padding: var(--s-2) 0; }
+.usage__step::before { counter-increment: u; content: counter(u); flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--dark); color: #fff; font-size: var(--fs-13); font-weight: 800; display: flex; align-items: center; justify-content: center; }
+.usage__step p { font-size: var(--fs-14); line-height: 1.6; }
+
+/* 導入事例 / 店販提案 */
+.note-card { padding: var(--s-4); border-radius: var(--r-md); background: var(--surface-2); font-size: var(--fs-14); line-height: 1.7; }
+.note-card__q { font-size: var(--fs-13); font-weight: 800; color: var(--gold-strong); margin-bottom: 4px; }
+
+/* レビュー */
+.rv-summary { display: flex; gap: var(--s-5); align-items: center; padding: var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); }
+.rv-score { text-align: center; flex: none; }
+.rv-score__n { font-family: var(--font-num); font-size: var(--fs-28); font-weight: 800; }
+.rv-stars { color: var(--gold); letter-spacing: 1px; }
+.rv-score__c { font-size: var(--fs-12); color: var(--ink-3); }
+.rv-axes { flex: 1 1 auto; display: flex; flex-direction: column; gap: 6px; }
+.rv-axis { display: flex; align-items: center; gap: var(--s-2); font-size: var(--fs-12); }
+.rv-axis__l { flex: 0 0 84px; color: var(--ink-2); }
+.rv-axis__bar { flex: 1 1 auto; height: 6px; border-radius: var(--r-pill); background: var(--line); overflow: hidden; }
+.rv-axis__bar > span { display: block; height: 100%; background: var(--gold); }
+.rv-item { padding: var(--s-3) 0; border-top: 1px solid var(--line-2); }
+.rv-item__meta { font-size: var(--fs-12); color: var(--ink-3); margin-bottom: 3px; }
+.rv-item__body { font-size: var(--fs-14); line-height: 1.6; }
+
+/* 下部購入バー */
+.pd-bar { position: fixed; left: 0; right: 0; bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); z-index: var(--z-bar); background: var(--surface); border-top: 1px solid var(--line); box-shadow: var(--shadow-up); }
+.pd-bar__inner { display: flex; align-items: center; gap: var(--s-3); min-height: 70px; padding-block: var(--s-2); }
+.pd-bar__price { font-family: var(--font-num); font-size: var(--fs-20); font-weight: 800; }
+.pd-bar__price .tax { font-family: var(--font-jp); font-size: var(--fs-11); color: var(--ink-3); font-weight: 600; }
+.pd-bar__cta { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 50px; padding: 0 var(--s-6); background: var(--gold); color: #fff; border-radius: var(--r-sm); font-weight: 800; font-size: var(--fs-15); }
+.pd-bar__cta:hover { background: var(--gold-strong); }
+.pd-bar__cta svg { width: 18px; height: 18px; }
+
+/* --- 契約商品のロック表示（未契約） --- */
+.pd-lock { margin-top: var(--s-4); border: 1px solid var(--gold-line); background: var(--gold-soft); border-radius: var(--r-lg); padding: var(--s-5); }
+.pd-lock__h { display: flex; align-items: center; gap: 8px; font-size: var(--fs-15); font-weight: 800; color: var(--ink); }
+.pd-lock__h svg { width: 20px; height: 20px; color: var(--gold-strong); flex: none; }
+.pd-lock__h b { color: var(--gold-strong); }
+.pd-lock__t { font-size: 12.5px; line-height: 1.7; color: var(--ink-2); margin-top: var(--s-2); }
+.pd-lock__cta { margin-top: var(--s-4); display: flex; align-items: center; justify-content: center; gap: 6px; height: 52px; background: var(--gold); color: #fff; border-radius: var(--r-sm); font-weight: 800; font-size: var(--fs-15); text-decoration: none; }
+.pd-lock__cta:hover { background: var(--gold-strong); }
+.pd-lock__cta svg { width: 18px; height: 18px; }
+.pd-lock__sub { display: block; text-align: center; margin-top: var(--s-3); font-size: 12.5px; font-weight: 700; color: var(--gold-strong); text-decoration: none; }
+.pd-applied { margin-top: var(--s-4); display: flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 13px 14px; font-size: 12.5px; font-weight: 700; color: var(--ink-2); }
+.pd-applied svg { width: 18px; height: 18px; color: var(--gold-strong); flex: none; }
+/* メーカー直送（青系） */
+.pd-lock--direct { border-color: #bcd0ea; background: #eef4fb; }
+.pd-lock--direct .pd-lock__h svg, .pd-lock--direct .pd-lock__h b { color: #34507a; }
+.pd-lock--direct .pd-lock__cta { background: #34507a; }
+.pd-lock--direct .pd-lock__cta:hover { background: #28406a; }
+.pd-lock--direct .pd-lock__sub { color: #34507a; }
+
+/* --- パンくず（タップ履歴） --- */
+.pd-crumb { display: flex; align-items: center; gap: 3px; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; margin-top: var(--s-4); padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+.pd-crumb::-webkit-scrollbar { height: 0; }
+.pd-crumb a { flex: none; font-size: 12px; font-weight: 700; color: var(--gold-strong); text-decoration: none; }
+.pd-crumb a:hover { text-decoration: underline; }
+.pd-crumb__sep { flex: none; color: var(--ink-3); font-size: 11px; margin: 0 3px; }
+.pd-crumb__cur { flex: none; font-size: 12px; font-weight: 700; color: var(--ink-3); max-width: 46vw; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- ブランドをお気に入り（詳細ページ） --- */
+.pd-brandfav { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; padding: 3px 9px; border: 1px solid var(--line-3); border-radius: var(--r-pill); background: #fff; color: var(--ink-3); font-size: 11px; font-weight: 700; cursor: pointer; vertical-align: middle; }
+.pd-brandfav svg { width: 13px; height: 13px; }
+.pd-brandfav[aria-pressed="true"] { color: #d8392b; border-color: #f3c2c2; background: #fdecec; }
+.pd-brandfav[aria-pressed="true"] svg { fill: #d8392b; }

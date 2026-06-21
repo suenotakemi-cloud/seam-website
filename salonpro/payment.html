@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>お支払い方法｜SalonPro</title>
+  <meta name="description" content="掛け払い・クレジットカード・銀行振込の管理。カード情報は当社で保持せず決済代行でトークン化（PCI DSS準拠）。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=24">
+  <link rel="stylesheet" href="assets/css/base.css?v=24">
+  <link rel="stylesheet" href="assets/css/components.css?v=24">
+  <link rel="stylesheet" href="assets/css/pages.css?v=24">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 720px; }
+    .pm-hd { margin-top: var(--s-4); } .pm-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; } .pm-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+    .pm-trust { display: flex; align-items: center; gap: 12px; border: 1px solid #bcd0ea; background: #eef4fb; border-radius: var(--r-lg); padding: 13px 15px; margin-top: var(--s-4); }
+    .pm-trust__ic { width: 38px; height: 38px; border-radius: 50%; background: #34507a; color: #fff; display: flex; align-items: center; justify-content: center; flex: none; } .pm-trust__ic svg { width: 20px; height: 20px; }
+    .pm-trust__t { font-size: 12.5px; line-height: 1.6; color: var(--ink-2); } .pm-trust__t b { color: #34507a; }
+    .pm-sec__t { font-size: 14px; font-weight: 900; margin: var(--s-5) 0 8px; }
+    .pm-card { display: flex; align-items: center; gap: 13px; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; }
+    .pm-card + .pm-card { margin-top: 10px; }
+    .pm-card.is-default { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+    .pm-card__ic { width: 44px; height: 30px; border-radius: var(--r-sm); background: var(--surface-2); display: flex; align-items: center; justify-content: center; flex: none; color: var(--ink-2); } .pm-card__ic svg { width: 22px; height: 22px; }
+    .pm-card__b { flex: 1; min-width: 0; } .pm-card__t { font-size: 13.5px; font-weight: 800; } .pm-card__s { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .pm-card__badge { font-size: 10px; font-weight: 800; color: #1b1b1d; background: var(--gold); border-radius: var(--r-pill); padding: 2px 8px; }
+    .pm-card__act { display: flex; gap: 6px; }
+    .pm-btn { height: 30px; padding: 0 11px; border-radius: var(--r-sm); font-size: 11.5px; font-weight: 800; border: 1px solid var(--line-3); background: #fff; color: var(--ink); cursor: pointer; }
+    .pm-add { width: 100%; margin-top: 12px; height: 48px; border-radius: var(--r-md); border: 1px dashed var(--line-3); background: #fff; color: var(--ink-2); font-weight: 800; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+    .pm-add svg { width: 17px; height: 17px; }
+    .pm-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .pm-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-pill); padding: 6px 11px; } .pm-badge svg { width: 14px; height: 14px; color: #34507a; }
+    .pm-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin-top: 14px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <form class="header-search" id="searchForm" role="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="search" id="headerSearch" placeholder="商品名・ブランド・型番で検索" autocomplete="off" aria-label="商品を検索">
+      </form>
+      <nav class="header-actions">
+        <a class="icon-btn" href="news.html" aria-label="お知らせ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></a>
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="pm-hd"><div class="pm-hd__t">お支払い方法</div><div class="pm-hd__s">掛け払い・クレジットカード・銀行振込を管理できます。</div></div>
+
+    <div class="pm-trust">
+      <span class="pm-trust__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <div class="pm-trust__t"><b>カード情報は当社で保持しません。</b>決済代行会社でトークン化して扱い、通信はSSL暗号化・3Dセキュア対応です。</div>
+    </div>
+
+    <h2 class="pm-sec__t">登録済みのお支払い方法</h2>
+    <div id="pmList"></div>
+    <button class="pm-add" id="pmAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>クレジットカードを追加（セキュア入力）</button>
+
+    <div class="pm-badges">
+      <span class="pm-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>SSL暗号化</span>
+      <span class="pm-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/></svg>PCI DSS準拠</span>
+      <span class="pm-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L15.5 9.5"/></svg>3Dセキュア</span>
+      <span class="pm-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg>トークン化</span>
+    </div>
+    <p class="pm-note">※ プロトタイプのデモです。カード番号は入力・保存されません（サンプルカードを追加します）。本番は決済代行のセキュア画面で登録します。</p>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab is-active" href="mypage.html" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=24"></script>
+  <script src="assets/js/data.js?v=24"></script>
+  <script src="assets/js/store.js?v=24"></script>
+  <script src="assets/js/components.js?v=24"></script>
+  <script src="assets/js/nav.js?v=24"></script>
+  <script>
+    (function () {
+      var svg = SP.svg;
+      var toast = function (m) { var t = document.getElementById('toast'); t.innerHTML = svg('checkc') + m; t.classList.add('is-visible'); setTimeout(function () { t.classList.remove('is-visible'); }, 2200); };
+      (function () { var c = SP.Store.cartSummary().count + (SP.Store.giftCount ? SP.Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = c; el.hidden = c <= 0; } })();
+      var load = function () { try { return JSON.parse(localStorage.getItem('sp.payments') || 'null'); } catch (e) { return null; } };
+      var save = function (m) { try { localStorage.setItem('sp.payments', JSON.stringify(m)); } catch (e) {} };
+      var methods = load() || [
+        { id: 'kake', kind: 'invoice', t: '請求書（掛け払い）', s: '担当：菊地 太郎／与信枠 ¥1,840,000・月末締め翌月末払い', def: true, fixed: true },
+        { id: 'card1', kind: 'card', t: 'VISA •••• 4242', s: '有効期限 09/28', def: false },
+        { id: 'bank', kind: 'bank', t: '銀行振込（前払い）', s: '北洋銀行 ○○支店', def: false, fixed: true }
+      ];
+      var icon = { invoice: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/>', card: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/>', bank: '<path d="M3 10 12 4l9 6"/><path d="M5 10v8M19 10v8M9 10v8M15 10v8M3 20h18"/>' };
+      function render() {
+        document.getElementById('pmList').innerHTML = methods.map(function (m) {
+          return '<div class="pm-card' + (m.def ? ' is-default' : '') + '"><span class="pm-card__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + (icon[m.kind] || icon.card) + '</svg></span>' +
+            '<span class="pm-card__b"><span class="pm-card__t">' + m.t + (m.def ? ' <span class="pm-card__badge">既定</span>' : '') + '</span><span class="pm-card__s">' + m.s + '</span></span>' +
+            '<span class="pm-card__act">' + (m.def ? '' : '<button class="pm-btn" data-def="' + m.id + '">既定に</button>') + (m.fixed ? '' : '<button class="pm-btn" data-del="' + m.id + '">削除</button>') + '</span></div>';
+        }).join('');
+      }
+      document.getElementById('pmList').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-def],[data-del]'); if (!b) return;
+        if (b.dataset.def) { methods.forEach(function (m) { m.def = m.id === b.dataset.def; }); save(methods); render(); toast('既定のお支払い方法を変更しました'); }
+        else if (b.dataset.del) { methods = methods.filter(function (m) { return m.id !== b.dataset.del; }); save(methods); render(); toast('削除しました'); }
+      });
+      document.getElementById('pmAdd').addEventListener('click', function () {
+        var last4 = String(Math.floor(1000 + Math.random() * 9000));
+        methods.push({ id: 'card' + Date.now(), kind: 'card', t: 'Mastercard •••• ' + last4, s: '有効期限 12/29（デモ・トークン化）', def: false });
+        save(methods); render(); toast('カードを追加しました（デモ）');
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
