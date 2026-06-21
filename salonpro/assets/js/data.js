@@ -46,8 +46,7 @@
     // ヘア（美容室）
     { id: 'shampoo',   label: 'シャンプー',          count: 452, biz: 'hair' },
     { id: 'treatment', label: 'トリートメント',      count: 318, biz: 'hair' },
-    { id: 'color',     label: 'カラー1剤（染毛剤）',  count: 420, biz: 'hair' },
-    { id: 'color2',    label: 'カラー2剤（オキシ）',  count: 96,  biz: 'hair' },
+    { id: 'color',     label: 'カラー剤',            count: 516, biz: 'hair' },
     { id: 'perm',      label: 'パーマ剤',            count: 120, biz: 'hair' },
     { id: 'straight',  label: 'ストレート剤',        count: 96,  biz: 'hair' },
     { id: 'outbath',   label: 'アウトバス',          count: 264, biz: 'hair' },
@@ -104,18 +103,74 @@
     /* ===== カラー1剤は「ライン×色×明るさ」を後段の COLOR_LINES から生成（co-* を自動追加） ===== */
 
     /* ===== カラー2剤（オキシ／過酸化水素水・ディベロッパー）。1剤と対で使う酸化剤 ===== */
-    { id:'cox-001', cat:'color2', brand:'ミルボン',   name:'オキシダン 6%（2剤）1000mL',              price:880,  stock:'in',  badge:'popular', pop:96, added:70, same:true,  ph:{shape:'pouch', tint:'#cfd3da'} },
-    { id:'cox-002', cat:'color2', brand:'ミルボン',   name:'オキシダン 3%（2剤）1000mL',              price:880,  stock:'in',  badge:null,      pop:88, added:64, same:true,  ph:{shape:'pouch', tint:'#dde0e6'} },
-    { id:'cox-003', cat:'color2', brand:'ホーユー',   name:'プロマスター オキシ 6%（2剤）1000mL',     price:770,  stock:'in',  badge:null,      pop:90, added:66, same:true,  ph:{shape:'pouch', tint:'#c4d4e0'} },
-    { id:'cox-004', cat:'color2', brand:'ホーユー',   name:'プロマスター オキシ 3%（2剤）1000mL',     price:770,  stock:'in',  badge:null,      pop:82, added:60, same:true,  ph:{shape:'pouch', tint:'#d2dde6'} },
-    { id:'cox-005', cat:'color2', brand:'ナプラ',     name:'N. オキシ 6%（2剤）1000mL',               price:660,  stock:'in',  badge:null,      pop:85, added:62, same:true,  ph:{shape:'pouch', tint:'#cccfd4'} },
-    { id:'cox-006', cat:'color2', brand:'ナプラ',     name:'N. オキシ 3%（2剤）1000mL',               price:660,  stock:'in',  badge:null,      pop:78, added:56, same:true,  ph:{shape:'pouch', tint:'#d8dbe0'} },
-    { id:'cox-007', cat:'color2', brand:'アリミノ',   name:'アジトール ハイブリッド オキシ 6% 1000mL', price:935,  stock:'in',  badge:null,      pop:74, added:52, same:true,  ph:{shape:'pouch', tint:'#c9c4b8'} },
-    { id:'cox-008', cat:'color2', brand:'ロレアル',   name:'オキシダン クレーム 6%（20vol）1000mL',   price:1100, stock:'in',  badge:null,      pop:72, added:50, same:true,  ph:{shape:'pump', tint:'#e3dccb'} },
-    { id:'cox-009', cat:'color2', brand:'ホーユー',   name:'プロマスター オキシ 4.5%（2剤）1000mL',   price:770,  stock:'low', badge:'low',     pop:64, added:46, same:true,  ph:{shape:'pouch', tint:'#cdd8e0'} },
-    { id:'cox-010', cat:'color2', brand:'ミルボン',   name:'オキシダン 1.5%（低濃度・2剤）1000mL',     price:880,  stock:'in',  badge:null,      pop:60, added:42, same:true,  ph:{shape:'pouch', tint:'#e2e5ea'} },
-    { id:'cox-011', cat:'color2', brand:'タマリス',   name:'ソルティール オキシ 6% 1000mL',           price:715,  stock:'in',  badge:null,      pop:58, added:40, same:true,  ph:{shape:'pouch', tint:'#cabfd0'} },
-    { id:'cox-012', cat:'color2', brand:'デミ',       name:'ディベロッパー 6%（2剤）1800mL',          price:1320, stock:'in',  badge:null,      pop:62, added:44, same:true,  ph:{shape:'pump', tint:'#c2c4c9'} },
+    { id:'cox-001', cat:'color', colorType:'oxy', brand:'ミルボン',   name:'オキシダン 6%（2剤）1000mL',              price:880,  stock:'in',  badge:'popular', pop:96, added:70, same:true,  ph:{shape:'pouch', tint:'#cfd3da'} },
+    { id:'cox-002', cat:'color', colorType:'oxy', brand:'ミルボン',   name:'オキシダン 3%（2剤）1000mL',              price:880,  stock:'in',  badge:null,      pop:88, added:64, same:true,  ph:{shape:'pouch', tint:'#dde0e6'} },
+    { id:'cox-003', cat:'color', colorType:'oxy', brand:'ホーユー',   name:'プロマスター オキシ 6%（2剤）1000mL',     price:770,  stock:'in',  badge:null,      pop:90, added:66, same:true,  ph:{shape:'pouch', tint:'#c4d4e0'} },
+    { id:'cox-004', cat:'color', colorType:'oxy', brand:'ホーユー',   name:'プロマスター オキシ 3%（2剤）1000mL',     price:770,  stock:'in',  badge:null,      pop:82, added:60, same:true,  ph:{shape:'pouch', tint:'#d2dde6'} },
+    { id:'cox-005', cat:'color', colorType:'oxy', brand:'ナプラ',     name:'N. オキシ 6%（2剤）1000mL',               price:660,  stock:'in',  badge:null,      pop:85, added:62, same:true,  ph:{shape:'pouch', tint:'#cccfd4'} },
+    { id:'cox-006', cat:'color', colorType:'oxy', brand:'ナプラ',     name:'N. オキシ 3%（2剤）1000mL',               price:660,  stock:'in',  badge:null,      pop:78, added:56, same:true,  ph:{shape:'pouch', tint:'#d8dbe0'} },
+    { id:'cox-007', cat:'color', colorType:'oxy', brand:'アリミノ',   name:'アジトール ハイブリッド オキシ 6% 1000mL', price:935,  stock:'in',  badge:null,      pop:74, added:52, same:true,  ph:{shape:'pouch', tint:'#c9c4b8'} },
+    { id:'cox-008', cat:'color', colorType:'oxy', brand:'ロレアル',   name:'オキシダン クレーム 6%（20vol）1000mL',   price:1100, stock:'in',  badge:null,      pop:72, added:50, same:true,  ph:{shape:'pump', tint:'#e3dccb'} },
+    { id:'cox-009', cat:'color', colorType:'oxy', brand:'ホーユー',   name:'プロマスター オキシ 4.5%（2剤）1000mL',   price:770,  stock:'low', badge:'low',     pop:64, added:46, same:true,  ph:{shape:'pouch', tint:'#cdd8e0'} },
+    { id:'cox-010', cat:'color', colorType:'oxy', brand:'ミルボン',   name:'オキシダン 1.5%（低濃度・2剤）1000mL',     price:880,  stock:'in',  badge:null,      pop:60, added:42, same:true,  ph:{shape:'pouch', tint:'#e2e5ea'} },
+    { id:'cox-011', cat:'color', colorType:'oxy', brand:'タマリス',   name:'ソルティール オキシ 6% 1000mL',           price:715,  stock:'in',  badge:null,      pop:58, added:40, same:true,  ph:{shape:'pouch', tint:'#cabfd0'} },
+    { id:'cox-012', cat:'color', colorType:'oxy', brand:'デミ',       name:'ディベロッパー 6%（2剤）1800mL',          price:1320, stock:'in',  badge:null,      pop:62, added:44, same:true,  ph:{shape:'pump', tint:'#c2c4c9'} },
+
+    /* ===== カラー剤：ブリーチ／ライトナー（脱色・脱染） ===== */
+    { id:'cbl-1', cat:'color', colorType:'bleach', brand:'ナプラ',     name:'アクセスフリー パウダーブリーチ 400g',     price:2860, stock:'in',  badge:'popular', pop:90, added:66, same:true, ph:{shape:'box',  tint:'#e7e3d6', label:'BLEACH'} },
+    { id:'cbl-2', cat:'color', colorType:'bleach', brand:'ホーユー',   name:'ブリーチ パウダー 500g',                  price:2420, stock:'in',  badge:null,      pop:80, added:58, same:true, ph:{shape:'box',  tint:'#dcd8cb', label:'BLEACH'} },
+    { id:'cbl-3', cat:'color', colorType:'bleach', brand:'ウエラ',     name:'ブロンドール ライトナー 400g',            price:3300, stock:'in',  badge:null,      pop:72, added:52, same:true, ph:{shape:'box',  tint:'#efe7cf', label:'LIGHTNER'} },
+    { id:'cbl-4', cat:'color', colorType:'bleach', brand:'ロレアル',   name:'ブロンステュディオ MTメッシュ 500g',       price:3520, stock:'low', badge:'low',     pop:64, added:46, same:true, ph:{shape:'box',  tint:'#e3dccb', label:'MECHE'} },
+
+    /* ===== カラー剤：ヘアマニキュア（酸性カラー・1剤） ===== */
+    { id:'cmn-1', cat:'color', colorType:'manicure', brand:'ナプラ',     name:'アクセスフリー マニキュア ナチュラルブラウン 300g', price:2310, stock:'in', badge:null, pop:78, added:55, same:true, ph:{shape:'tube', tint:'#6b4f3a', label:'MANI'} },
+    { id:'cmn-2', cat:'color', colorType:'manicure', brand:'山発',       name:'パイモア カラーラッカー レッド 150g',              price:1760, stock:'in', badge:null, pop:66, added:48, same:true, ph:{shape:'tube', tint:'#a83246', label:'MANI'} },
+    { id:'cmn-3', cat:'color', colorType:'manicure', brand:'ハホニコ',   name:'十六油 マニキュア アッシュ 300g',                  price:2200, stock:'in', badge:null, pop:60, added:44, same:true, ph:{shape:'tube', tint:'#6b7280', label:'MANI'} },
+    { id:'cmn-4', cat:'color', colorType:'manicure', brand:'資生堂',     name:'プリミエンス マニキュア クリア 300g',              price:2530, stock:'in', badge:null, pop:54, added:40, same:true, ph:{shape:'tube', tint:'#d8d2c4', label:'CLEAR'} },
+
+    /* ===== カラー剤：ヘナ（植物染料・1剤） ===== */
+    { id:'chn-1', cat:'color', colorType:'henna', brand:'ナイアード',   name:'ヘナ＋木藍 ブラウン系 100g',           price:1540, stock:'in', badge:null, pop:70, added:50, same:true, ph:{shape:'box', tint:'#7a5230', label:'HENNA'} },
+    { id:'chn-2', cat:'color', colorType:'henna', brand:'グリーンノート', name:'ヘナ オレンジ（天然100%）100g',       price:1320, stock:'in', badge:null, pop:60, added:44, same:true, ph:{shape:'box', tint:'#b5642a', label:'HENNA'} },
+    { id:'chn-3', cat:'color', colorType:'henna', brand:'テンスター',   name:'ファッションヘナ ダークブラウン 100g',  price:990,  stock:'in', badge:null, pop:52, added:38, same:true, ph:{shape:'box', tint:'#5b3d28', label:'HENNA'} },
+
+    /* ===== カラー剤：カラートリートメント（1剤・低ダメージ） ===== */
+    { id:'cct-1', cat:'color', colorType:'colortreatment', brand:'ナプラ',   name:'ナシードカラートリートメント ブラウン 300g', price:2200, stock:'in', badge:'popular', pop:84, added:64, same:true, ph:{shape:'tube', tint:'#6b4f3a', label:'CT'} },
+    { id:'cct-2', cat:'color', colorType:'colortreatment', brand:'ホーユー', name:'ビゲン カラートリートメント ダークブラウン 180g', price:1100, stock:'in', badge:null, pop:70, added:50, same:true, ph:{shape:'tube', tint:'#4a3526', label:'CT'} },
+    { id:'cct-3', cat:'color', colorType:'colortreatment', brand:'サニープレイス', name:'ナチュラルVe カラートリートメント アッシュ 300g', price:2640, stock:'in', badge:null, pop:62, added:46, same:true, ph:{shape:'tube', tint:'#6b7280', label:'CT'} },
+
+    /* ===== カラー剤：塩基性カラー／カラーバター（1剤・ビビッド） ===== */
+    { id:'cbs-1', cat:'color', colorType:'basic', brand:'エンシェールズ', name:'カラーバター ショッキングパープル 200g', price:2090, stock:'in', badge:'popular', pop:86, added:70, same:true, ph:{shape:'jar', tint:'#6e2f8a', label:'BUTTER'} },
+    { id:'cbs-2', cat:'color', colorType:'basic', brand:'エンシェールズ', name:'カラーバター ヘンプグリーン 200g',       price:2090, stock:'in', badge:null,      pop:74, added:56, same:true, ph:{shape:'jar', tint:'#3f7a4a', label:'BUTTER'} },
+    { id:'cbs-3', cat:'color', colorType:'basic', brand:'ロイド',         name:'カラーキューティ 塩基性カラー ブルー 200g', price:1980, stock:'in', badge:null,    pop:64, added:48, same:true, ph:{shape:'jar', tint:'#2f5f9e', label:'BASIC'} },
+    { id:'cbs-4', cat:'color', colorType:'basic', brand:'タマリス',       name:'ロックヴィラ カラーバター ピンク 200g',  price:2200, stock:'low', badge:'low',     pop:56, added:42, same:true, ph:{shape:'jar', tint:'#cf5a86', label:'BUTTER'} },
+
+    /* ===== パーマ剤（permType＝還元剤系統×技法。チオ/シス/酸性/クリープ/デジタル/エア/コスメ＋2剤＋処理剤） ===== */
+    { id:'pm-1',  cat:'perm', permType:'cold-thio', brand:'ミルボン',   name:'ニュートリプレックス クリエイト 1剤 400mL', price:1650, stock:'in', badge:'popular', pop:90, added:66, same:true, ph:{shape:'pouch', tint:'#3a6ea5', label:'COLD'} },
+    { id:'pm-2',  cat:'perm', permType:'cold-thio', brand:'ナプラ',     name:'リッジフォルム ウェーブ チオ 1剤 400mL',    price:1320, stock:'in', badge:null,      pop:78, added:56, same:true, ph:{shape:'pouch', tint:'#3a6ea5', label:'COLD'} },
+    { id:'pm-3',  cat:'perm', permType:'cold-cys',  brand:'ミルボン',   name:'ディーセス システアミン ウェーブ 1剤 400mL', price:1870, stock:'in', badge:null,     pop:74, added:52, same:true, ph:{shape:'pouch', tint:'#4a8f8a', label:'CYS'} },
+    { id:'pm-4',  cat:'perm', permType:'cold-cys',  brand:'ハホニコ',   name:'キラメラメ システアミン 1剤 400mL',         price:1980, stock:'in', badge:null,     pop:62, added:46, same:true, ph:{shape:'pouch', tint:'#4a8f8a', label:'CYS'} },
+    { id:'pm-5',  cat:'perm', permType:'acid',      brand:'ナンバースリー', name:'プルミエ 酸性 ウェーブ 1剤 400mL',       price:1760, stock:'in', badge:null,     pop:70, added:50, same:true, ph:{shape:'pouch', tint:'#b5764a', label:'ACID'} },
+    { id:'pm-6',  cat:'perm', permType:'acid',      brand:'アリミノ',   name:'コスメカール 酸性 ウェーブ 1剤 400mL',      price:1540, stock:'in', badge:null,     pop:58, added:42, same:true, ph:{shape:'pouch', tint:'#b5764a', label:'ACID'} },
+    { id:'pm-7',  cat:'perm', permType:'creep',     brand:'ミルボン',   name:'クリープパーマ クリエイト 1剤 400mL',       price:1980, stock:'in', badge:'new',     pop:72, added:90, same:true, ph:{shape:'pouch', tint:'#7a6ea5', label:'CREEP'} },
+    { id:'pm-8',  cat:'perm', permType:'digital',   brand:'パイモア',   name:'デジタルパーマ用 ロッド加温 1剤 400mL',     price:2200, stock:'in', badge:null,      pop:66, added:48, same:true, ph:{shape:'pouch', tint:'#a5563a', label:'DIGITAL'} },
+    { id:'pm-9',  cat:'perm', permType:'digital',   brand:'ミルボン',   name:'ディーセス デジタル 1剤（加温式）400mL',    price:2420, stock:'order', badge:null,   pop:60, added:44, same:false, ph:{shape:'pouch', tint:'#a5563a', label:'DIGITAL'} },
+    { id:'pm-10', cat:'perm', permType:'air',       brand:'資生堂',     name:'エアウェーブ 専用 1剤 400mL',               price:2310, stock:'in', badge:null,      pop:56, added:40, same:true, ph:{shape:'pouch', tint:'#5a9ab5', label:'AIR'} },
+    { id:'pm-11', cat:'perm', permType:'cosme',     brand:'ナプラ',     name:'コスメパーマ ソフト 1剤（化粧品）400mL',    price:1210, stock:'in', badge:null,      pop:64, added:46, same:true, ph:{shape:'pouch', tint:'#8a9a6b', label:'COSME'} },
+    { id:'pm-12', cat:'perm', permType:'perm2',     brand:'ミルボン',   name:'ウェーブ 2剤（ブロム酸）400mL',             price:990,  stock:'in', badge:null,      pop:68, added:50, same:true, ph:{shape:'pouch', tint:'#cfd3da', label:'2剤'} },
+    { id:'pm-13', cat:'perm', permType:'perm2',     brand:'ナプラ',     name:'リッジフォルム 2剤 400mL',                  price:880,  stock:'in', badge:null,      pop:60, added:44, same:true, ph:{shape:'pouch', tint:'#dde0e6', label:'2剤'} },
+    { id:'pm-14', cat:'perm', permType:'treat',     brand:'ハホニコ',   name:'パーマ用 前処理剤（CMC）500mL',             price:1650, stock:'in', badge:null,      pop:54, added:38, same:true, ph:{shape:'pump',  tint:'#c8b89a', label:'処理'} },
+
+    /* ===== ストレート剤（straightType＝アルカリ縮毛/酸性/クリープ/コスメ/2剤/処理剤） ===== */
+    { id:'st-1',  cat:'straight', straightType:'alkaline', brand:'ミルボン',   name:'リシオ 縮毛矯正 1剤 N（軟化）400g',        price:2090, stock:'in', badge:'popular', pop:90, added:66, same:true, ph:{shape:'tube', tint:'#3a6ea5', label:'縮毛'} },
+    { id:'st-2',  cat:'straight', straightType:'alkaline', brand:'ナプラ',     name:'エヌドット 縮毛矯正 1剤 ストロング 400g',  price:1760, stock:'in', badge:null,      pop:78, added:56, same:true, ph:{shape:'tube', tint:'#3a6ea5', label:'縮毛'} },
+    { id:'st-3',  cat:'straight', straightType:'acid',     brand:'ナンバースリー', name:'酸性ストレート 1剤（ダメージ毛用）400g', price:2420, stock:'in', badge:'new',  pop:80, added:92, same:true, ph:{shape:'tube', tint:'#b5764a', label:'酸性'} },
+    { id:'st-4',  cat:'straight', straightType:'acid',     brand:'ホーユー',   name:'プロマスター 酸性ストレート 1剤 400g',     price:2200, stock:'in', badge:null,      pop:66, added:50, same:true, ph:{shape:'tube', tint:'#b5764a', label:'酸性'} },
+    { id:'st-5',  cat:'straight', straightType:'creep',    brand:'ミルボン',   name:'クリープ系 ストレート 1剤（質感重視）400g', price:2530, stock:'order', badge:null,  pop:60, added:46, same:false, ph:{shape:'tube', tint:'#7a6ea5', label:'CREEP'} },
+    { id:'st-6',  cat:'straight', straightType:'cosme',    brand:'ナプラ',     name:'コスメストレート ソフト 1剤（化粧品）400g', price:1430, stock:'in', badge:null,     pop:58, added:42, same:true, ph:{shape:'tube', tint:'#8a9a6b', label:'COSME'} },
+    { id:'st-7',  cat:'straight', straightType:'straight2', brand:'ミルボン',  name:'リシオ ストレート 2剤（臭素酸）400g',      price:1100, stock:'in', badge:null,     pop:64, added:48, same:true, ph:{shape:'tube', tint:'#cfd3da', label:'2剤'} },
+    { id:'st-8',  cat:'straight', straightType:'straight2', brand:'ナプラ',    name:'エヌドット ストレート 2剤 400g',           price:990,  stock:'in', badge:null,     pop:56, added:40, same:true, ph:{shape:'tube', tint:'#dde0e6', label:'2剤'} },
+    { id:'st-9',  cat:'straight', straightType:'treat',    brand:'ハホニコ',   name:'縮毛矯正 前処理 ケラチン 500mL',           price:1980, stock:'in', badge:null,     pop:52, added:38, same:true, ph:{shape:'pump', tint:'#c8b89a', label:'処理'} },
+    { id:'st-10', cat:'straight', straightType:'treat',    brand:'ハホニコ',   name:'酸熱トリートメント（後処理）500mL',         price:3300, stock:'in', badge:null,     pop:62, added:60, same:true, ph:{shape:'pump', tint:'#b8a07a', label:'酸熱'} },
 
     /* ===== トリートメント ===== */
     { id:'tr-001', cat:'treatment', brand:'オージュア', name:'クエンチ モイスチャー トリートメント 250g',  price:2420, stock:'in',  badge:'popular', pop:94, added:72, same:true,  ph:{shape:'tube', tint:'#2b6cb0'} },
@@ -200,7 +255,8 @@
 
   /* ===== カラー剤を「ライン×色×明るさ」で生成（ミルボン › アディクシー › サファイア › 各明るさ）===== */
   const COLOR_LINES = [
-    { line: 'アディクシー', maker: 'ミルボン', families: [
+    // アルカリ（おしゃれ染め／ファッションカラー）
+    { line: 'アディクシー', maker: 'ミルボン', type: 'alkaline', families: [
       { family: 'サファイア', tint: '#1f4e8c', levels: [3, 5, 7, 9, 11] },
       { family: 'アメジスト', tint: '#7a4f9e', levels: [5, 7, 9, 11] },
       { family: 'エメラルド', tint: '#1f7a5a', levels: [5, 7, 9, 11] },
@@ -208,14 +264,25 @@
       { family: 'パープルガーネット', tint: '#6e2f57', levels: [5, 7, 9] },
       { family: 'グレーパール', tint: '#8f9398', levels: [7, 9, 11] },
     ] },
-    { line: 'オルディーブ', maker: 'ミルボン', families: [
+    { line: 'オルディーブ', maker: 'ミルボン', type: 'alkaline', families: [
       { family: 'ベージュ', tint: '#b9a78a', levels: [6, 8, 10] },
       { family: 'アッシュ', tint: '#6b7280', levels: [6, 8, 10] },
       { family: 'ピンク', tint: '#cf7a93', levels: [8, 10, 12] },
     ] },
-    { line: 'プロマスターEX', maker: 'ホーユー', families: [
+    { line: 'プロマスターEX', maker: 'ホーユー', type: 'alkaline', families: [
       { family: 'クールブルー', tint: '#356d8c', levels: [5, 7, 9] },
       { family: 'ウォームブラウン', tint: '#8a5a2f', levels: [5, 7, 9] },
+    ] },
+    // 白髪染め（グレイカラー）
+    { line: 'オルディーブ ボーテ', maker: 'ミルボン', type: 'gray', families: [
+      { family: 'ナチュラルブラウン', tint: '#6b4f3a', levels: [5, 7, 9] },
+      { family: 'ピンクブラウン', tint: '#8a5560', levels: [5, 7, 9] },
+      { family: 'アッシュベージュ', tint: '#8b7d6b', levels: [6, 8, 10] },
+    ] },
+    { line: 'プロマスターEX グレイ', maker: 'ホーユー', type: 'gray', families: [
+      { family: 'ナチュラル', tint: '#5b4a3a', levels: [4, 6, 8] },
+      { family: 'ベージュ', tint: '#9a8a6f', levels: [6, 8, 10] },
+      { family: 'オリーブ', tint: '#6f7350', levels: [5, 7, 9] },
     ] },
   ];
   (function () {
@@ -225,7 +292,7 @@
         F.levels.forEach(function (lv) {
           n++;
           products.push({
-            id: 'co-' + n, cat: 'color', brand: L.line, maker: L.maker, line: L.line, family: F.family, level: lv,
+            id: 'co-' + n, cat: 'color', colorType: L.type || 'alkaline', brand: L.line, maker: L.maker, line: L.line, family: F.family, level: lv,
             name: L.line + ' ' + F.family + ' ' + lv, price: 1210, stock: 'in', badge: null,
             pop: 90 - n, added: 60 - n, same: true, senbai: true,
             ph: { shape: 'box', tint: F.tint, label: F.family + ' ' + lv },
@@ -482,7 +549,7 @@
     { id:'cos-2', cat:'shampoo',   brand:'シュワルツコフ', name:'BC クア カラーセーブ シャンプー 1000mL', price:4400, stock:'in', badge:null,      pop:78, added:58, same:true, ph:{shape:'pump',   tint:'#1f2d4d'}, dealer:'cosmo' },
     { id:'cos-3', cat:'treatment', brand:'ウエラ',         name:'インヴィゴ カラーブリリアンス マスク 500mL', price:3960, stock:'in', badge:null,  pop:74, added:54, same:true, ph:{shape:'tube',   tint:'#6b4f8a'}, dealer:'cosmo' },
     { id:'cos-4', cat:'styling',   brand:'ナンバースリー', name:'フォーム デザインスプレー 180g',       price:1650, stock:'in', badge:null,      pop:66, added:50, same:true, ph:{shape:'bottle', tint:'#3a7d6b'}, dealer:'cosmo' },
-    { id:'cos-5', cat:'color2',    brand:'ウエラ',         name:'ウエロキシド 6%（2剤）1000mL',         price:990,  stock:'in', badge:null,      pop:70, added:48, same:true, ph:{shape:'pouch',  tint:'#cdd2da'}, dealer:'cosmo' },
+    { id:'cos-5', cat:'color', colorType:'oxy',    brand:'ウエラ',         name:'ウエロキシド 6%（2剤）1000mL',         price:990,  stock:'in', badge:null,      pop:70, added:48, same:true, ph:{shape:'pouch',  tint:'#cdd2da'}, dealer:'cosmo' },
     { id:'cos-6', cat:'supply',    brand:'コスモ',         name:'業務用 カラーボウル（5個セット）',      price:1320, stock:'in', badge:null,      pop:60, added:44, same:true, ph:{shape:'box',    tint:'#9aa0a8'}, biz:['common'], dealer:'cosmo' },
   ];
   KIKUCHI_OVERLAP.forEach(p => products.push(p));
@@ -587,9 +654,45 @@
       title: 'サマー カラーフェア', lead: '今期おすすめのカラー剤を特集。トレンドカラーをまとめてチェック。' },
   ];
 
+  // カラー剤の製品タイプ（タイプ先選択。drill=ブランド→色→明るさのドリル対象）。icon は home の catIcon と同形のpath。
+  const COLOR_TYPES = [
+    { id: 'alkaline',       label: 'アルカリ（おしゃれ染め）', sub: '1剤＋2剤', drill: true,  icon: '<path d="M9 3h6v5a3 3 0 0 1-6 0z"/><path d="M10 11v8a2 2 0 0 0 4 0v-8"/>' },
+    { id: 'gray',           label: '白髪染め（グレイ）',       sub: '1剤＋2剤', drill: true,  icon: '<path d="M4 14a8 8 0 0 1 16 0"/><path d="M8 14v5M12 12v7M16 14v5"/>' },
+    { id: 'bleach',         label: 'ブリーチ／ライトナー',     sub: '脱色・脱染', drill: false, icon: '<path d="M12 3s5 5 5 9a5 5 0 0 1-10 0c0-4 5-9 5-9z"/>' },
+    { id: 'oxy',            label: 'オキシ（2剤）',           sub: '6%/3%/1.5%', drill: false, icon: '<path d="M9 3h6v4l3.2 9.6A2 2 0 0 1 16.3 19H7.7a2 2 0 0 1-1.9-2.4L9 7z"/><path d="M8.5 13h7"/>' },
+    { id: 'manicure',       label: 'ヘアマニキュア',          sub: '酸性・1剤', drill: false, icon: '<path d="M7 14a5 5 0 0 1 10 0v6H7z"/><path d="M9 14V8a3 3 0 0 1 6 0v6"/>' },
+    { id: 'henna',          label: 'ヘナ',                    sub: '植物・1剤', drill: false, icon: '<path d="M12 3c5 2 7 6 7 10a7 7 0 0 1-14 0c0-4 2-8 7-10z"/><path d="M12 7v9"/>' },
+    { id: 'colortreatment', label: 'カラートリートメント',     sub: '1剤・低ダメージ', drill: false, icon: '<path d="M8 3h8l-1 5H9z"/><path d="M9 8v13h6V8"/>' },
+    { id: 'basic',          label: '塩基性／カラーバター',     sub: '1剤・ビビッド', drill: false, icon: '<rect x="6" y="8" width="12" height="12" rx="2"/><path d="M9 8V5h6v3"/>' },
+  ];
+  // パーマ剤のタイプ（還元剤系統×技法）
+  const PERM_TYPES = [
+    { id: 'cold-thio', label: 'コールド（チオ）' },
+    { id: 'cold-cys',  label: 'コールド（システアミン）' },
+    { id: 'acid',      label: '酸性パーマ' },
+    { id: 'creep',     label: 'クリープ' },
+    { id: 'digital',   label: 'デジタルパーマ' },
+    { id: 'air',       label: 'エアウェーブ' },
+    { id: 'cosme',     label: 'コスメパーマ' },
+    { id: 'perm2',     label: '2剤（パーマ用）' },
+    { id: 'treat',     label: '処理剤' },
+  ];
+  // ストレート剤のタイプ
+  const STRAIGHT_TYPES = [
+    { id: 'alkaline',  label: 'アルカリ縮毛矯正' },
+    { id: 'acid',      label: '酸性ストレート' },
+    { id: 'creep',     label: 'クリープ系' },
+    { id: 'cosme',     label: 'コスメ系' },
+    { id: 'straight2', label: '2剤（ストレート用）' },
+    { id: 'treat',     label: '処理剤' },
+  ];
+
   window.SP.SEMINARS = SEMINARS;
   window.SP.NEWS = NEWS;
   window.SP.COLOR_LINES = COLOR_LINES;
+  window.SP.COLOR_TYPES = COLOR_TYPES;
+  window.SP.PERM_TYPES = PERM_TYPES;
+  window.SP.STRAIGHT_TYPES = STRAIGHT_TYPES;
   window.SP.CAMPAIGNS = CAMPAIGNS;
   window.SP.campaign = id => CAMPAIGNS.find(c => c.id === id) || null;
 

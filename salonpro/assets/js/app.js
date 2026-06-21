@@ -17,8 +17,11 @@
     density: [4, 6, 9].includes(savedDensity) ? savedDensity : 6, // ④⑥⑨ 表示密度
     search: '',
     brand: null,
+    colorType: null,   // カラー剤ドリル：選択中のタイプ（alkaline/gray/oxy/...）
     colorLine: null,   // カラー剤ドリル：選択中のライン（ブランド）
     colorFamily: null, // カラー剤ドリル：選択中の色（family）
+    permType: null,    // パーマ剤：選択中のタイプ（チップ・フィルタ）
+    straightType: null,// ストレート剤：選択中のタイプ（チップ・フィルタ）
     filters: { stock: new Set(), price: null, sameDay: false, concern: new Set() },
   };
 
@@ -170,11 +173,15 @@
   // 契約商品：online/applyは契約済みのときだけ表示。メーカー直送(direct)は常に表示（注文は外部）。
   const base = () => (inSearch() ? DATA.products : DATA.products.filter(p => p.cat === state.cat)).filter(p => Store.canShow(p) && Store.dealerVisible(p));
 
-  // カラー剤ドリル（ライン › 色 › 明るさ）
-  const colorAll = () => DATA.products.filter(p => p.cat === 'color');
+  // カラー剤ドリル（タイプ › ライン › 色 › 明るさ）
+  const COLOR_TYPES = SP.COLOR_TYPES || [];
+  const colorAll = () => DATA.products.filter(p => p.cat === 'color' && Store.canShow(p) && Store.dealerVisible(p));
+  const colorOfType = t => colorAll().filter(p => (p.colorType || 'alkaline') === t);
+  const colorTypeDef = id => COLOR_TYPES.find(t => t.id === id);
+  // タイプ内のライン一覧（アルカリ/白髪などライン構造を持つタイプ用）
   const colorLines = () => {
     const seen = {}, out = [];
-    colorAll().forEach(p => { if (!seen[p.line]) { seen[p.line] = { line: p.line, maker: p.maker, count: 0 }; out.push(seen[p.line]); } seen[p.line].count++; });
+    colorOfType(state.colorType).filter(p => p.line).forEach(p => { if (!seen[p.line]) { seen[p.line] = { line: p.line, maker: p.maker, count: 0 }; out.push(seen[p.line]); } seen[p.line].count++; });
     return out;
   };
   const colorFamilies = (line) => {
@@ -201,6 +208,9 @@
       const res = CONCERNS.filter(c => state.filters.concern.has(c.id)).map(c => c.re);
       list = list.filter(p => res.some(re => re.test(p.name)));
     }
+    // パーマ／ストレートのタイプ・チップ絞り込み（検索中は無効）
+    if (!inSearch() && state.cat === 'perm' && state.permType) list = list.filter(p => p.permType === state.permType);
+    if (!inSearch() && state.cat === 'straight' && state.straightType) list = list.filter(p => p.straightType === state.straightType);
 
     const by = {
       pop:        (a, b) => b.pop - a.pop,
@@ -213,20 +223,25 @@
   }
 
   const hasActiveFilter = () =>
-    state.brand || state.filters.stock.size || state.filters.price || state.filters.sameDay || state.filters.concern.size;
+    state.brand || state.filters.stock.size || state.filters.price || state.filters.sameDay || state.filters.concern.size
+    || (state.cat === 'perm' && state.permType) || (state.cat === 'straight' && state.straightType);
 
   /* ---------------- render ---------------- */
   function render() {
-    // カテゴリがカラー以外に変わったらドリル状態をリセット
-    if (state.cat !== 'color') { state.colorLine = null; state.colorFamily = null; }
+    // カテゴリが変わったらタイプ選択状態をリセット（各カテゴリ専用）
+    if (state.cat !== 'color') { state.colorType = null; state.colorLine = null; state.colorFamily = null; }
+    if (state.cat !== 'perm') state.permType = null;
+    if (state.cat !== 'straight') state.straightType = null;
     const grid = qs('#grid');
-    // カラー剤＝ドリルダウン（ライン › 色 › 明るさ）。検索中は通常グリッド。
+    // カラー剤＝タイプ先選択ドリル（タイプ › ライン › 色 › 明るさ）。検索中は通常グリッド。
     if (inColorDrill()) {
+      renderTypeChips();
       renderColorDrill(grid);
       qs('#resultSort').textContent = SORTS.find(s => s.id === state.sort).label;
       renderActiveChips(); syncPills(); syncDensityToggle(); renderCatQuick(); renderBizBar(); renderContractNotice();
       return;
     }
+    renderTypeChips();
     const list = filtered();
     grid.className = 'product-grid';
     grid.dataset.density = state.density;
@@ -290,25 +305,93 @@
       <span class="cnote__go">契約・申込${svg('chevright')}</span></a>`;
   }
 
-  // カラー剤ドリルダウン（ライン › 色 › 明るさ一覧）。色は明るさ違いが多いので段階表示で選びやすく。
+  // パーマ／ストレートのタイプ・チップ（商品一覧の上に出す即フィルタ）
+  const typeCfg = () => {
+    if (state.cat === 'perm') return { list: SP.PERM_TYPES || [], sel: state.permType, key: 'permType' };
+    if (state.cat === 'straight') return { list: SP.STRAIGHT_TYPES || [], sel: state.straightType, key: 'straightType' };
+    return null;
+  };
+  const typeCount = (key, id) => DATA.products.filter(p => p.cat === state.cat && p[key] === id && Store.canShow(p) && Store.dealerVisible(p)).length;
+  function renderTypeChips() {
+    let host = qs('#typeChips');
+    const cfg = (!inSearch()) ? typeCfg() : null;
+    if (!cfg) { if (host) host.hidden = true; return; }
+    if (!host) {
+      if (!qs('#typeChipsStyle')) {
+        const s = document.createElement('style'); s.id = 'typeChipsStyle';
+        s.textContent = '.type-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px}.type-chips::-webkit-scrollbar{height:0}.type-chips .tchip{flex:none;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface-2);font-size:13px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap}.type-chips .tchip.is-on{background:var(--gold);border-color:var(--gold);color:#fff}.type-chips .tchip__n{font-size:11px;font-weight:800;opacity:.6}.type-chips .tchip.is-on .tchip__n{opacity:.9}';
+        document.head.appendChild(s);
+      }
+      host = document.createElement('div'); host.id = 'typeChips'; host.className = 'type-chips';
+      const grid = qs('#grid'); grid.parentNode.insertBefore(host, grid);
+      host.addEventListener('click', e => {
+        const b = e.target.closest('[data-typechip]'); if (!b) return;
+        const c = typeCfg(); if (!c) return;
+        const v = b.dataset.typechip;
+        state[c.key] = (v === '__all') ? null : v;
+        render();
+      });
+    }
+    host.hidden = false;
+    const chips = ['<button class="tchip' + (!cfg.sel ? ' is-on' : '') + '" data-typechip="__all">すべて</button>']
+      .concat(cfg.list.map(t => ({ t, n: typeCount(cfg.key, t.id) })).filter(x => x.n > 0).map(x =>
+        '<button class="tchip' + (cfg.sel === x.t.id ? ' is-on' : '') + '" data-typechip="' + x.t.id + '">' + x.t.label + '<span class="tchip__n">' + x.n + '</span></button>'));
+    host.innerHTML = chips.join('');
+  }
+
+  // カラー剤＝タイプ先選択ドリル（タイプ › ライン › 色 › 明るさ）。プロが薬剤タイプで素早く選べる。
   function renderColorDrill(grid) {
     if (!qs('#colorDrillStyle')) {
       const st = document.createElement('style'); st.id = 'colorDrillStyle';
-      st.textContent = '.color-drill{display:block}.cd-crumb{display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin-bottom:14px}.cd-crumb__l{font-size:12.5px;font-weight:700;color:var(--gold-strong);background:none;border:0;padding:2px;cursor:pointer}.cd-crumb__cur{font-size:12.5px;font-weight:800;color:var(--ink);padding:2px}.cd-crumb__sep{color:var(--ink-3);font-size:11px;margin:0 2px}.cd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}@media(min-width:560px){.cd-grid{grid-template-columns:repeat(3,1fr)}}@media(min-width:880px){.cd-grid{grid-template-columns:repeat(4,1fr)}}.cd-cell{position:relative}.cd-go{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;cursor:pointer;width:100%}.cd-go:hover{box-shadow:var(--shadow-md);border-color:var(--line-3)}.cd-cell--color .cd-go{align-items:stretch}.cd-card__maker{font-size:10.5px;color:var(--ink-3);font-weight:700}.cd-card__name{font-size:15px;font-weight:900;color:var(--ink)}.cd-card__meta{font-size:11.5px;color:var(--gold-strong);font-weight:700;margin-top:3px}.cd-swatch{height:48px;border-radius:var(--r-sm);margin-bottom:7px;border:1px solid rgba(0,0,0,.08)}.cd-fav{position:absolute;top:8px;right:8px;z-index:2;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0;cursor:pointer}.cd-fav svg{width:16px;height:16px}.cd-fav[aria-pressed=true]{color:#d8392b}.cd-fav[aria-pressed=true] svg{fill:#d8392b}';
+      st.textContent = '.color-drill{display:block}.cd-crumb{display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin-bottom:14px}.cd-crumb__l{font-size:12.5px;font-weight:700;color:var(--gold-strong);background:none;border:0;padding:2px;cursor:pointer}.cd-crumb__cur{font-size:12.5px;font-weight:800;color:var(--ink);padding:2px}.cd-crumb__sep{color:var(--ink-3);font-size:11px;margin:0 2px}.cd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}@media(min-width:560px){.cd-grid{grid-template-columns:repeat(3,1fr)}}@media(min-width:880px){.cd-grid{grid-template-columns:repeat(4,1fr)}}.cd-cell{position:relative}.cd-go{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;cursor:pointer;width:100%}.cd-go:hover{box-shadow:var(--shadow-md);border-color:var(--line-3)}.cd-cell--color .cd-go{align-items:stretch}.cd-card__maker{font-size:10.5px;color:var(--ink-3);font-weight:700}.cd-card__name{font-size:15px;font-weight:900;color:var(--ink)}.cd-card__meta{font-size:11.5px;color:var(--gold-strong);font-weight:700;margin-top:3px}.cd-swatch{height:48px;border-radius:var(--r-sm);margin-bottom:7px;border:1px solid rgba(0,0,0,.08)}.cd-fav{position:absolute;top:8px;right:8px;z-index:2;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0;cursor:pointer}.cd-fav svg{width:16px;height:16px}.cd-fav[aria-pressed=true]{color:#d8392b}.cd-fav[aria-pressed=true] svg{fill:#d8392b}'
+        + '.cdt-grid{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:560px){.cdt-grid{grid-template-columns:1fr 1fr}}@media(min-width:880px){.cdt-grid{grid-template-columns:1fr 1fr 1fr}}.cdt{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;cursor:pointer;width:100%;text-align:left}.cdt:hover{box-shadow:var(--shadow-md);border-color:var(--gold)}.cdt__ic{flex:none;width:42px;height:42px;border-radius:var(--r-md);background:var(--gold-soft);color:var(--gold-strong);display:flex;align-items:center;justify-content:center}.cdt__ic svg{width:22px;height:22px}.cdt__b{flex:1;min-width:0}.cdt__t{display:block;font-size:14.5px;font-weight:900;color:var(--ink)}.cdt__s{display:block;font-size:11.5px;color:var(--ink-3);font-weight:700;margin-top:2px}.cdt__go{flex:none;color:var(--gold-strong)}.cdt__go svg{width:18px;height:18px}';
       document.head.appendChild(st);
     }
     grid.className = 'color-drill';
     grid.removeAttribute('data-density');
-    const line = state.colorLine, family = state.colorFamily;
-    let crumb = '<button class="cd-crumb__l" data-cd="root">カラー1剤</button>';
-    if (line) crumb += '<span class="cd-crumb__sep">›</span>' + (family ? `<button class="cd-crumb__l" data-cd="line">${line}</button>` : `<span class="cd-crumb__cur">${line}</span>`);
-    if (family) crumb += `<span class="cd-crumb__sep">›</span><span class="cd-crumb__cur">${family}</span>`;
-    let html = `<nav class="cd-crumb">${crumb}</nav>`;
     const heart = svg('heart');
-    const cc = qs('#crumbCat'); if (cc) cc.textContent = 'カラー1剤';
+    const cc = qs('#crumbCat'); if (cc) cc.textContent = 'カラー剤';
+
+    // Step 0：タイプ未選択 → 製品タイプの選択タイル（件数つき）
+    if (!state.colorType) {
+      qs('#pageTitle').textContent = 'カラー剤';
+      qs('#pageCount').innerHTML = `<b>${COLOR_TYPES.length}</b>タイプ`;
+      let html = '<nav class="cd-crumb"><span class="cd-crumb__cur">カラー剤</span></nav>';
+      html += '<div class="cdt-grid">' + COLOR_TYPES.map(t => {
+        const n = colorOfType(t.id).length;
+        return `<button class="cdt" data-cd="picktype" data-v="${t.id}">` +
+          `<span class="cdt__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${t.icon}</svg></span>` +
+          `<span class="cdt__b"><span class="cdt__t">${t.label}</span><span class="cdt__s">${t.sub} ・ ${n}点</span></span>` +
+          `<span class="cdt__go">${svg('chevright')}</span></button>`;
+      }).join('') + '</div>';
+      grid.innerHTML = html;
+      qs('#empty').hidden = true;
+      return;
+    }
+
+    const def = colorTypeDef(state.colorType) || { label: 'カラー', drill: false };
+    const line = state.colorLine, family = state.colorFamily;
+    let crumb = '<button class="cd-crumb__l" data-cd="root">カラー剤</button>';
+    crumb += '<span class="cd-crumb__sep">›</span>' + ((def.drill && line) ? `<button class="cd-crumb__l" data-cd="type">${def.label}</button>` : `<span class="cd-crumb__cur">${def.label}</span>`);
+    if (def.drill && line) crumb += '<span class="cd-crumb__sep">›</span>' + (family ? `<button class="cd-crumb__l" data-cd="line">${line}</button>` : `<span class="cd-crumb__cur">${line}</span>`);
+    if (def.drill && family) crumb += `<span class="cd-crumb__sep">›</span><span class="cd-crumb__cur">${family}</span>`;
+    let html = `<nav class="cd-crumb">${crumb}</nav>`;
+
+    // フラットなタイプ（オキシ/ブリーチ/マニキュア/ヘナ/カラトリ/塩基性）→ 商品グリッド
+    if (!def.drill) {
+      const items = colorOfType(state.colorType).slice().sort((a, b) => b.pop - a.pop);
+      qs('#pageTitle').textContent = def.label;
+      qs('#pageCount').innerHTML = `<b>${items.length}</b>件`;
+      html += items.length
+        ? `<div class="product-grid" data-density="${state.density}">` + items.map((p, i) => productCard(p, i)).join('') + '</div>'
+        : '<div style="padding:30px 8px;color:var(--ink-3);font-size:13px">このタイプは準備中です。</div>';
+      grid.innerHTML = html; qs('#empty').hidden = true; syncFavButtons(); return;
+    }
+
+    // ドリルタイプ（アルカリ／白髪染め）：ライン › 色 › 明るさ
     if (!line) {
       const lines = colorLines();
-      qs('#pageTitle').textContent = 'カラー1剤';
+      qs('#pageTitle').textContent = def.label;
       qs('#pageCount').innerHTML = `<b>${lines.length}</b>ライン`;
       html += '<div class="cd-grid">' + lines.map(l =>
         `<div class="cd-cell"><button class="cd-fav" data-favline="${l.line}" aria-pressed="${Store.isFavBrand(l.line)}" aria-label="ブランドをお気に入り">${heart}</button>` +
@@ -317,7 +400,6 @@
       const fams = colorFamilies(line);
       qs('#pageTitle').textContent = line;
       qs('#pageCount').innerHTML = `<b>${fams.length}</b>色`;
-      // メーカー添付（10＋1 等）：このラインに対象キャンペーンがあれば「組む」エントリを表示
       const _camp = (SP.CAMPAIGNS || []).find(c => c.kind === 'buyXgetY' && c.line === line);
       const _tempuOn = !(window.SP.TENANT && window.SP.TENANT.features && window.SP.TENANT.features.tempu === false);
       if (_camp && _tempuOn) html += `<a href="campaigns.html?id=${_camp.id}" style="display:flex;align-items:center;gap:11px;border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-lg);padding:13px 15px;margin-bottom:14px;text-decoration:none;color:var(--ink)">
@@ -643,7 +725,9 @@
       const cd = e.target.closest('[data-cd]');
       if (cd) {
         const a = cd.dataset.cd;
-        if (a === 'root') { state.colorLine = null; state.colorFamily = null; }
+        if (a === 'root') { state.colorType = null; state.colorLine = null; state.colorFamily = null; }
+        else if (a === 'picktype') { state.colorType = cd.dataset.v; state.colorLine = null; state.colorFamily = null; }
+        else if (a === 'type') { state.colorLine = null; state.colorFamily = null; }
         else if (a === 'line') { state.colorFamily = null; }
         else if (a === 'pickline') { state.colorLine = cd.dataset.v; state.colorFamily = null; }
         else if (a === 'pickfam') { state.colorFamily = cd.dataset.v; }
@@ -744,10 +828,15 @@
     const sp0 = new URLSearchParams(location.search);
     const catParam = sp0.get('cat');
     if (catParam && DATA.categories.find(c => c.id === catParam)) state.cat = catParam;
-    // お気に入りブランド/カラーから直接ドリルを開く（?cat=color&line=...&family=...）
+    // お気に入りブランド/カラーから直接ドリルを開く（?cat=color&type=...&line=...&family=...）
     if (state.cat === 'color') {
-      const lp = sp0.get('line'), fp = sp0.get('family');
-      if (lp) state.colorLine = lp;
+      const tp = sp0.get('type'), lp = sp0.get('line'), fp = sp0.get('family');
+      if (tp && (SP.COLOR_TYPES || []).some(t => t.id === tp)) state.colorType = tp;
+      if (lp) {
+        state.colorLine = lp;
+        // ラインからタイプを補完（お気に入りカラー等、type未指定でドリルを開けるように）
+        if (!state.colorType) { const _p = DATA.products.find(p => p.cat === 'color' && p.line === lp); if (_p) state.colorType = _p.colorType || 'alkaline'; }
+      }
       if (lp && fp) state.colorFamily = fp;
     }
     // ホーム等からの並び替え指定（?sort=new 等）
