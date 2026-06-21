@@ -3207,6 +3207,24 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
         </div>
       )}
 
+      {/* ケアセット概要 — ゲームのローテーション/ロードアウト風スロット表示 */}
+      {orderedBlocks.length > 1 && (
+        <div className="mt-6 rounded-[2px] border border-gold/30 bg-white/60 px-4 py-3.5">
+          <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold mb-2.5">— Your Care Set</p>
+          <div className="flex flex-wrap items-center gap-x-1.5 gap-y-2">
+            {orderedBlocks.map((b, i) => (
+              <span key={b.id} className="inline-flex items-center">
+                {i > 0 && <span className="text-gold/50 text-[11px] mx-1.5">→</span>}
+                <span className="inline-flex items-center gap-1.5 bg-cream border border-line rounded-full pl-1.5 pr-3 py-1">
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gold text-white font-mono text-[9px] nums" style={{ lineHeight: 1 }}>{i + 1}</span>
+                  <span className="font-serif text-[12px] text-ink whitespace-nowrap">{b.title}</span>
+                </span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-7 space-y-8 sm:space-y-10">
         {orderedBlocks.map((block, bi) => (
           <div key={block.id}>
@@ -7094,13 +7112,31 @@ function isCurrentlyStraightened(answers) {
   return activeStraightening || wave === 'straightened';
 }
 
+// tenderAdvice(やさしい処方)の「くせ・うねりをそのまま活かそう」という締めを、
+// 縮毛矯正ユーザー向けに置き換える。矯正は否定せず "あくまで一つの選択" として残し、
+// 「もし活かせたら、その揺らぎは魅力にもなる → 美容師に相談」と前向きに添える。
+function softenTenderForStraightening(text) {
+  if (!text) return text;
+  // くせ・うねり・カール・量を「活かす / まっすぐにしない」前提の締め(=矯正派には逆効果)を検出
+  const embraceRe = /(まっすぐ|気負わず|生かし|活かし|味方に|カール|うねり|揺らぎ|波打|くせ毛|くせを|動きとなじむ|動きのある|動きになじむ|ボリュームのあるスタイル|量を)/;
+  // ケア手順(「おすすめ」で始まる段落)は必ず残し、"活かす締め" の段落だけ取り除く
+  const kept = text.split('\n\n').filter((p) => {
+    const t = p.trim();
+    if (t.indexOf('おすすめ') === 0) return true;
+    return !embraceRe.test(t);
+  });
+  const note =
+    'いま縮毛矯正でまっすぐを選んでいるなら、その心地よさをそのまま大切にしてください。無理にうねりを出す必要はありません。\n\n' +
+    'もし「この揺らぎを少し楽しんでみたい」と思える日がきたら、そのアンニュイな動きやカールは、あなたらしい魅力にもなります。そんなときは担当の美容師さんに相談しながら、少しずつ試していけます。';
+  kept.push(note);
+  return kept.join('\n\n');
+}
+
 function adaptOriginForStraightening(origin, answers) {
   if (!origin || !origin.code) return origin;
   if (!isCurrentlyStraightened(answers)) return origin;
-  const waveCodes = ['MWA', 'AWP', 'SCA'];
-  if (!waveCodes.includes(origin.code)) return origin;
 
-  // 各波系キャラに対する「ストレート派」用のオーバーライド
+  // 各波系キャラに対する「ストレート派」用のオーバーライド (該当コードのみ)
   const overrides = {
     MWA: {
       personality: '本来は独特な揺らぎを宿す髪。今は薬剤の力でまっすぐに整えていますが、その内側には誰にもまねできない繊細さと表情が眠っています。仕上げ方を自由に選べる、稀有なタイプ。',
@@ -7121,8 +7157,12 @@ function adaptOriginForStraightening(origin, answers) {
       suitableStyles: ['ストレートロング', '上品なシャープボブ', '艶感のあるミディアム', 'なめらかなまとめ髪'],
     },
   };
-  const ov = overrides[origin.code];
-  return ov ? { ...origin, ...ov } : origin;
+  let adapted = overrides[origin.code] ? { ...origin, ...overrides[origin.code] } : origin;
+  // くせ・うねりを「活かす」前提の締めを、矯正派向けの寄り添いコピーへ置き換え (全コード共通)
+  if (adapted.tenderAdvice) {
+    adapted = { ...adapted, tenderAdvice: softenTenderForStraightening(adapted.tenderAdvice) };
+  }
+  return adapted;
 }
 
 /* ──────────────────────────────────────────
