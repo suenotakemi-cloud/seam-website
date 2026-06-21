@@ -10238,12 +10238,7 @@ function CounselingSheet({
     className: "text-gold"
   }, "\xB7 ", o.code)), typeShort && /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[13px] sm:text-[13.5px] text-charcoal/75"
-  }, "\u2014 ", typeShort.jp)), basicItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('02 · 基本情報'), dl(basicItems)), traitItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('03 · 髪質の特徴'), dl(traitItems)), scalpItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('04 · 頭皮の状態'), dl(scalpItems)), o.personality && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('05 · 髪のキャラクター'), /*#__PURE__*/React.createElement("p", {
-    className: "font-serif text-[13.5px] sm:text-[14.5px] leading-[2] text-charcoal/85",
-    style: {
-      letterSpacing: '0.02em'
-    }
-  }, o.personality)), colorItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('06 · カラー履歴'), dl(colorItems)), permItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('07 · 縮毛矯正・パーマ履歴'), dl(permItems)), heatItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('08 · 熱ツールの使い方'), dl(heatItems)), troubleList.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('09 · 過去のヘアトラブル'), chips(troubleList)), lifeItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('10 · ホームケア・ライフスタイル'), dl(lifeItems)), concernList.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('11 · 気になっていること'), chips(concernList)), sectionTitle('12 · これからの希望'), wishItems.length > 0 && dl(wishItems), /*#__PURE__*/React.createElement("p", {
+  }, "\u2014 ", typeShort.jp)), basicItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('02 · 基本情報'), dl(basicItems)), traitItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('03 · 髪質の特徴'), dl(traitItems)), scalpItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('04 · 頭皮の状態'), dl(scalpItems)), colorItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('06 · カラー履歴'), dl(colorItems)), permItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('07 · 縮毛矯正・パーマ履歴'), dl(permItems)), heatItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('08 · 熱ツールの使い方'), dl(heatItems)), troubleList.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('09 · 過去のヘアトラブル'), chips(troubleList)), lifeItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('10 · ホームケア・ライフスタイル'), dl(lifeItems)), concernList.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('11 · 気になっていること'), chips(concernList)), sectionTitle('12 · これからの希望'), wishItems.length > 0 && dl(wishItems), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 font-serif text-[13.5px] sm:text-[14.5px] text-ink leading-[1.95]",
     style: {
       fontWeight: 500
@@ -10685,17 +10680,16 @@ Schwarzkopf ファイバープレックス ボンド トリートメント、TOK
 
 /* ---------- 画像保存・シェア ---------- */
 async function saveKarteCardAsImage(filename, mode) {
-  if (typeof html2canvas !== 'function') {
-    alert('保存の準備が整っていません。すこし時間を置いてもう一度お試しください。');
-    return;
-  }
-
-  // mode: 'square' (1080x1080) / 'story' (1080x1920) / undefined (旧 Act 04 のみ)
+  // mode: 'square' (1080x1080) / 'story' (1080x1920) は生キャンバス描画(html2canvas不要)
   if (mode === 'square' || mode === 'story') {
     return saveCustomCanvas(filename, mode);
   }
 
-  // 旧: Act 04 シェアカードのみ
+  // 旧: Act 04 シェアカードのみ html2canvas を使用(現在は未使用パス)
+  if (typeof html2canvas !== 'function') {
+    alert('保存の準備が整っていません。すこし時間を置いてもう一度お試しください。');
+    return;
+  }
   const node = document.getElementById('karte-share-card');
   if (!node) return;
   try {
@@ -10877,11 +10871,41 @@ async function saveCustomCanvas(filename, mode) {
     ctx.fillText(`${new Date().toISOString().slice(0, 10)} · seam.site`, cx, y);
   }
 
-  // ダウンロード
-  const link = document.createElement('a');
-  link.download = filename || `seam-${mode}.png`;
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  // 共有/保存: モバイルは共有シート(写真に保存/LINE等)優先 → 不可orキャンセル時はダウンロード
+  const fname = filename || `seam-${mode}.png`;
+  const dataURL = canvas.toDataURL('image/png');
+  const download = () => {
+    const a = document.createElement('a');
+    a.download = fname;
+    a.href = dataURL;
+    a.click();
+  };
+  try {
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    if (blob && navigator.canShare && navigator.canShare({
+      files: [new File([blob], fname, {
+        type: 'image/png'
+      })]
+    })) {
+      try {
+        await navigator.share({
+          files: [new File([blob], fname, {
+            type: 'image/png'
+          })],
+          title: 'SEAM 髪格診断'
+        });
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        download();
+        return;
+      }
+    }
+    download();
+  } catch (e) {
+    console.warn('Karte image save failed', e);
+    download();
+  }
 }
 function buildOgImageDataURL(originId, direction) {
   const origin = KARTE_ORIGIN_ANIMALS[originId];
