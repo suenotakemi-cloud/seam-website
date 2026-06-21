@@ -8604,6 +8604,122 @@ async function shareCounselingSheetImage() {
 }
 
 /* ---------- Result ---------- */
+/* ---------- StatusDeck — スマホゲームのステータス画面風 髪パラメータ(縦+横スワイプ) ---------- */
+function StatusDeck({ karte }) {
+  if (!karte || !Array.isArray(karte.radar) || karte.radar.length !== 5) return null;
+  const AXES = [
+    { label: '透明感', en: 'CLARITY' },
+    { label: '艶',     en: 'GLOSS' },
+    { label: 'まとまり', en: 'SMOOTH' },
+    { label: '華やぎ',   en: 'VIVID' },
+    { label: '頭皮',     en: 'SCALP' },
+  ];
+  const cur = karte.radar.map((v) => Math.max(0, Math.min(5, Math.round(v))));
+  const dir = karte.direction || 'B';
+  const tgt = (typeof deriveTargetRadar === 'function')
+    ? deriveTargetRadar(cur, dir).map((v) => Math.max(0, Math.min(5, Math.round(v))))
+    : cur;
+  const totalCur = cur.reduce((a, b) => a + b, 0);
+  const totalTgt = tgt.reduce((a, b) => a + b, 0);
+
+  const scroller = useRef(null);
+  const [page, setPage] = useState(0);
+  const [armed, setArmed] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setArmed(true), 140); return () => clearTimeout(t); }, []);
+
+  const onScroll = () => {
+    const el = scroller.current;
+    if (!el || !el.clientWidth) return;
+    const p = Math.round(el.scrollLeft / el.clientWidth);
+    setPage((prev) => (prev === p ? prev : p));
+  };
+  const goTo = (i) => {
+    const el = scroller.current;
+    if (!el) return;
+    el.scrollTo({ left: i * el.clientWidth, behavior: 'smooth' });
+  };
+
+  const bar = (value, base) => {
+    const pct = (value / 5) * 100;
+    const basePct = base != null ? (base / 5) * 100 : null;
+    return (
+      <div className="relative rounded-full bg-cream border border-line overflow-hidden" style={{ height: '10px' }}>
+        {basePct != null && (
+          <div className="absolute inset-y-0 left-0" style={{ width: basePct + '%', background: 'rgba(184,148,90,0.22)' }} />
+        )}
+        <div
+          className="absolute inset-y-0 left-0 rounded-full"
+          style={{
+            width: armed ? pct + '%' : '0%',
+            background: 'linear-gradient(90deg,#CDA96A,#B8945A)',
+            transition: 'width 900ms cubic-bezier(0.22,1,0.36,1)',
+          }}
+        />
+      </div>
+    );
+  };
+
+  const renderPage = (values, ghost, total, deltaTotal, tag, caption) => (
+    <div className="shrink-0 snap-start w-full">
+      <div className="bg-white/70 border border-gold/30 rounded-[3px] p-5 sm:p-6">
+        <div className="flex items-center justify-between pb-3 mb-3 border-b border-gold/20">
+          <span className="font-mono tracking-widest2 text-[10.5px] uppercase text-gold">{tag}</span>
+          <span className="font-mono tracking-widest2 text-[11px] uppercase text-charcoal/70 nums">
+            TOTAL <span className="text-ink" style={{ fontWeight: 600 }}>{total}</span> / 25
+            {deltaTotal > 0 && <span className="text-gold"> +{deltaTotal}</span>}
+          </span>
+        </div>
+        <div className="space-y-3">
+          {AXES.map((a, i) => {
+            const v = values[i];
+            const g = ghost ? ghost[i] : null;
+            const delta = ghost ? (v - ghost[i]) : 0;
+            return (
+              <div key={a.en}>
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <span className="font-serif text-[13.5px] text-ink">{a.label}</span>
+                  <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/50 nums">
+                    {a.en} · Lv.<span className="text-ink">{v}</span>
+                    {delta > 0 && <span className="text-gold"> +{delta}</span>}
+                  </span>
+                </div>
+                {bar(v, g)}
+              </div>
+            );
+          })}
+        </div>
+        {caption && <p className="mt-4 text-[11.5px] leading-[1.8] text-charcoal/65">{caption}</p>}
+      </div>
+    </div>
+  );
+
+  return (
+    <section id="status-deck" className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay: '120ms' }}>
+      <p className="font-mono tracking-widest2 text-[11px] uppercase text-gold">— Status</p>
+      <h2 className="mt-3 font-serif text-[26px] sm:text-[34px] text-ink">髪のパラメータ</h2>
+      <p className="mt-2 text-[13px] sm:text-[13.5px] text-charcoal/70 leading-[1.9]">
+        いまの髪を5つの指標で表示しています 横にスワイプするとケアの伸びしろも見られます
+      </p>
+      <div
+        ref={scroller}
+        onScroll={onScroll}
+        className="no-scrollbar mt-6 flex overflow-x-auto snap-x snap-mandatory"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {renderPage(cur, null, totalCur, 0, '現在のコンディション', null)}
+        {renderPage(tgt, cur, totalTgt, totalTgt - totalCur, 'ケアで目指せる状態', 'うすい帯がいまの状態 濃い帯がSEAMのケアで目指せる状態です')}
+      </div>
+      <div className="mt-4 flex items-center justify-center gap-3">
+        {[0, 1].map((i) => (
+          <button key={i} type="button" aria-label={i === 0 ? '現在のパラメータ' : 'ケアで目指せるパラメータ'} onClick={() => goTo(i)} className="p-1">
+            <span className="block rounded-full transition-all" style={{ width: page === i ? '18px' : '6px', height: '6px', background: page === i ? '#B8945A' : 'rgba(46,44,40,0.25)' }} />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Result({ answers, onRestart, onCollection }) {
   const { scores, flags } = useMemo(() => computeScores(answers), [answers]);
   const typeId = useMemo(() => determineType(scores, answers), [scores, answers]);
@@ -8767,6 +8883,9 @@ function Result({ answers, onRestart, onCollection }) {
           onSaveImage={(mode) => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode)}
           onShare={() => shareKarteLink(karte?.origin)}
         />
+
+        {/* ━━━━━ STATUS — ゲームのステータス画面風 髪パラメータ(横スワイプ) ━━━━━ */}
+        {karte?.origin && <StatusDeck karte={karte} />}
 
         {/* ━━━━━ NEW: 6-Chapter Narrative (しいたけ占い風寄り添い) ━━━━━ */}
         {karte?.origin && (
