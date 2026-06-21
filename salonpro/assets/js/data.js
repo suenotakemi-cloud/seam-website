@@ -184,6 +184,30 @@
     { id:'ss-001', cat:'styling', brand:'SEE/SAW', name:'フォギーフィックス ドライテクスチャー 180g', price:2200, stock:'in', badge:null, pop:80, added:72, same:true, ph:{shape:'box',    tint:'#5b6473', label:'SEE/SAW'} },
     { id:'ss-002', cat:'outbath', brand:'SEE/SAW', name:'スリーク オイル 100mL',                     price:2860, stock:'in', badge:null, pop:74, added:64, same:true, ph:{shape:'bottle', tint:'#6e2f57'} },
 
+    /* ===== シャンプー追加（炭酸／ドライ） ===== */
+    { id:'sh-101', cat:'shampoo', brand:'ナプラ',   name:'インプライム スパークリングスパ 炭酸シャンプー 320g', price:2640, stock:'in', badge:'popular', pop:88, added:84, same:true, ph:{shape:'pump',  tint:'#5aa6c4'} },
+    { id:'sh-102', cat:'shampoo', brand:'ミルボン', name:'プラーミア 炭酸クレンジングフォーム 200g',           price:2860, stock:'in', badge:'new',     pop:80, added:90, same:true, ph:{shape:'pump',  tint:'#6fb0cf'} },
+    { id:'sh-103', cat:'shampoo', brand:'資生堂',   name:'サブリミック ドライシャンプー（水のいらない）150g',    price:1760, stock:'in', badge:null,      pop:64, added:60, same:true, ph:{shape:'bottle',tint:'#bcd3e6'} },
+
+    /* ===== スタイリング剤（stylingType＝ワックス/クリーム/ジェル/スプレー/ポマード/バーム/フォーム/オイル） ===== */
+    { id:'sy-1',  cat:'styling', brand:'ナカノ',   name:'スタイリング ワックス 5 ハード 90g',        price:990,  stock:'in', badge:'popular', pop:90, added:70, same:true, ph:{shape:'jar',    tint:'#c98a2a', label:'WAX'} },
+    { id:'sy-2',  cat:'styling', brand:'アリミノ', name:'スパイス シャワー ワックス フリーズキープ 100g', price:1100, stock:'in', badge:null,  pop:82, added:62, same:true, ph:{shape:'jar',    tint:'#3a7d6b', label:'WAX'} },
+    { id:'sy-3',  cat:'styling', brand:'ルベル',   name:'トリエ ジューシーワックス 5 50g',           price:1320, stock:'in', badge:null,      pop:74, added:56, same:true, ph:{shape:'jar',    tint:'#caa64a', label:'WAX'} },
+    { id:'sy-4',  cat:'styling', brand:'アリミノ', name:'スパイス スーパーハード ジェル 200mL',      price:1210, stock:'in', badge:null,      pop:70, added:52, same:true, ph:{shape:'tube',   tint:'#2f6f8c', label:'GEL'} },
+    { id:'sy-5',  cat:'styling', brand:'ナンバースリー', name:'デューサー ハードジェル 5 200g',     price:1430, stock:'in', badge:null,      pop:62, added:48, same:true, ph:{shape:'tube',   tint:'#356d8c', label:'GEL'} },
+    { id:'sy-6',  cat:'styling', brand:'ルベル',   name:'トリエ スプレー 10（ハード）170g',          price:1540, stock:'in', badge:null,      pop:78, added:58, same:true, ph:{shape:'bottle', tint:'#6b7280', label:'SPRAY'} },
+    { id:'sy-7',  cat:'styling', brand:'資生堂',   name:'ステージワークス ハードスプレー 250g',      price:1320, stock:'in', badge:null,      pop:66, added:50, same:true, ph:{shape:'bottle', tint:'#5b6473', label:'SPRAY'} },
+    { id:'sy-8',  cat:'styling', brand:'阪本高生堂', name:'クールグリース G ポマード 210g',          price:1100, stock:'in', badge:'popular', pop:84, added:66, same:true, ph:{shape:'jar',    tint:'#2f5fa8', label:'POMADE'} },
+    { id:'sy-9',  cat:'styling', brand:'阪本高生堂', name:'クックグリース XXX ポマード 210g',        price:1320, stock:'low', badge:'low',     pop:72, added:54, same:true, ph:{shape:'jar',    tint:'#1f4e8c', label:'POMADE'} },
+    { id:'sy-10', cat:'styling', brand:'product', name:'ヘアワックス（ナチュラルバーム）42g',        price:2200, stock:'in', badge:null,      pop:76, added:64, same:true, ph:{shape:'jar',    tint:'#8a7a3a', label:'BALM'} },
+    { id:'sy-11', cat:'styling', brand:'ミルボン', name:'ニゼル ジェリー ムース M 145g',            price:1980, stock:'in', badge:null,      pop:60, added:46, same:true, ph:{shape:'pump',   tint:'#7a6ea5', label:'FOAM'} },
+    { id:'sy-12', cat:'styling', brand:'ナプラ',   name:'N. スタイリングクリーム 50g',              price:1980, stock:'in', badge:'popular', pop:86, added:72, same:true, ph:{shape:'tube',   tint:'#cfc6b0', label:'CREAM'} },
+
+    /* ===== アウトバス追加（スプレー／クリーム＝オイル/エマルジョンは既存） ===== */
+    { id:'ob-1', cat:'outbath', brand:'ミルボン', name:'エルジューダ サントリートメント セラム（ミスト）120mL', price:2640, stock:'in', badge:'popular', pop:88, added:76, same:true, ph:{shape:'bottle', tint:'#e3c1cf', label:'MIST'} },
+    { id:'ob-2', cat:'outbath', brand:'ルベル',   name:'イオ エッセンス ミスト リーブイン 150mL',  price:1980, stock:'in', badge:null,      pop:70, added:58, same:true, ph:{shape:'bottle', tint:'#9ec4cf', label:'MIST'} },
+    { id:'ob-3', cat:'outbath', brand:'ミルボン', name:'ジェミールフラン メルティバター クリーム 100g', price:2420, stock:'in', badge:null,    pop:72, added:60, same:true, ph:{shape:'jar',    tint:'#d8b48a', label:'CREAM'} },
+
     /* ===== 契約商品・メーカー発注サイトで発注（追加分。オージュア=sh-007/tr-001・ケラスターゼ=sh-008/tr-004 は上に既出） ===== */
     { id:'su-101', cat:'shampoo',   brand:'サブリミック',       name:'アクアインテンシブ シャンプー D 250mL',   price:2200, stock:'in', badge:null, pop:77, added:66, same:true, ph:{shape:'pump',   tint:'#9a2f3a'} },
     { id:'su-102', cat:'treatment', brand:'サブリミック',       name:'アクアインテンシブ トリートメント M 250g', price:2640, stock:'in', badge:null, pop:73, added:60, same:true, ph:{shape:'tube',   tint:'#7a2530'} },
@@ -563,6 +587,37 @@
     if (CB_BY_BRAND[p.brand] && p.cat !== '_rec') p.contract = CB_BY_BRAND[p.brand];
     // 設備・什器（大型機器）はリース申込の対象（年利3〜5%・申込でディーラーに通知）
     if (p.cat === 'equipment') p.lease = true;
+    // タイプ・チップ用の自動分類（明示指定が無い既存商品を商品名から推定）
+    const _n = p.name || '';
+    if (p.cat === 'shampoo' && !p.shampooType) {
+      p.shampooType =
+        /炭酸|スパークリング|フィズ|fizz/i.test(_n) ? 'carbonated' :
+        /ドライシャンプー|水のいらない/.test(_n) ? 'dry' :
+        /スキャルプ|スカルプ|頭皮|クリアスパ/.test(_n) ? 'scalp' :
+        /カラーケア|カラーセーブ|ムラサキ|パープル|purple/i.test(_n) ? 'colorcare' :
+        /1000mL|1500|1800|詰替|業務用|サロンサイズ/i.test(_n) ? 'bulk' : 'normal';
+    }
+    if (p.cat === 'treatment' && !p.treatmentType) {
+      p.treatmentType = /マスク|mask/i.test(_n) ? 'mask' : 'treatment';
+    }
+    if (p.cat === 'outbath' && !p.outbathType) {
+      p.outbathType =
+        /ミスト|スプレー|spray/i.test(_n) ? 'spray' :
+        /ミルク|エマルジョン|emulsion/i.test(_n) ? 'emulsion' :
+        /クリーム|バーム|balm/i.test(_n) ? 'cream' :
+        /オイル|oil/i.test(_n) ? 'oil' : 'oil';
+    }
+    if (p.cat === 'styling' && !p.stylingType) {
+      p.stylingType =
+        /ワックス|wax/i.test(_n) ? 'wax' :
+        /ジェル|ジェリー|gel/i.test(_n) ? 'gel' :
+        /スプレー|spray/i.test(_n) ? 'spray' :
+        /ポマード|グリース|pomade/i.test(_n) ? 'pomade' :
+        /バーム|balm/i.test(_n) ? 'balm' :
+        /ムース|フォーム|foam|mousse/i.test(_n) ? 'foam' :
+        /オイル|oil/i.test(_n) ? 'oil' :
+        /クリーム|cream/i.test(_n) ? 'cream' : 'wax';
+    }
   });
 
   /* =========================================================
@@ -686,11 +741,47 @@
     { id: 'straight2', label: '2剤（ストレート用）' },
     { id: 'treat',     label: '処理剤' },
   ];
+  // シャンプーのタイプ（通常／炭酸／頭皮／カラーケア／ドライ／業務用サイズ）
+  const SHAMPOO_TYPES = [
+    { id: 'normal',    label: 'シャンプー' },
+    { id: 'carbonated', label: '炭酸シャンプー' },
+    { id: 'scalp',     label: 'スキャルプ／頭皮ケア' },
+    { id: 'colorcare', label: 'カラーケア' },
+    { id: 'dry',       label: 'ドライシャンプー' },
+    { id: 'bulk',      label: '業務用サイズ' },
+  ];
+  // トリートメントのタイプ（インバス）
+  const TREATMENT_TYPES = [
+    { id: 'treatment', label: 'トリートメント' },
+    { id: 'mask',      label: 'マスク' },
+  ];
+  // アウトバス（洗い流さない）のタイプ
+  const OUTBATH_TYPES = [
+    { id: 'oil',      label: 'オイル' },
+    { id: 'emulsion', label: 'エマルジョン／ミルク' },
+    { id: 'spray',    label: 'スプレー／ミスト' },
+    { id: 'cream',    label: 'クリーム／バーム' },
+  ];
+  // スタイリング剤のタイプ
+  const STYLING_TYPES = [
+    { id: 'wax',    label: 'ワックス' },
+    { id: 'cream',  label: 'クリーム' },
+    { id: 'gel',    label: 'ジェル' },
+    { id: 'spray',  label: 'スプレー' },
+    { id: 'pomade', label: 'ポマード／グリース' },
+    { id: 'balm',   label: 'バーム' },
+    { id: 'foam',   label: 'フォーム／ムース' },
+    { id: 'oil',    label: 'オイル' },
+  ];
 
   window.SP.SEMINARS = SEMINARS;
   window.SP.NEWS = NEWS;
   window.SP.COLOR_LINES = COLOR_LINES;
   window.SP.COLOR_TYPES = COLOR_TYPES;
+  window.SP.SHAMPOO_TYPES = SHAMPOO_TYPES;
+  window.SP.TREATMENT_TYPES = TREATMENT_TYPES;
+  window.SP.OUTBATH_TYPES = OUTBATH_TYPES;
+  window.SP.STYLING_TYPES = STYLING_TYPES;
   window.SP.PERM_TYPES = PERM_TYPES;
   window.SP.STRAIGHT_TYPES = STRAIGHT_TYPES;
   window.SP.CAMPAIGNS = CAMPAIGNS;

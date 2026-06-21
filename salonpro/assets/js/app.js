@@ -20,8 +20,7 @@
     colorType: null,   // カラー剤ドリル：選択中のタイプ（alkaline/gray/oxy/...）
     colorLine: null,   // カラー剤ドリル：選択中のライン（ブランド）
     colorFamily: null, // カラー剤ドリル：選択中の色（family）
-    permType: null,    // パーマ剤：選択中のタイプ（チップ・フィルタ）
-    straightType: null,// ストレート剤：選択中のタイプ（チップ・フィルタ）
+    typeSel: {},       // タイプ・チップの選択（カテゴリ別：shampoo/treatment/outbath/styling/perm/straight）
     filters: { stock: new Set(), price: null, sameDay: false, concern: new Set() },
   };
 
@@ -208,9 +207,11 @@
       const res = CONCERNS.filter(c => state.filters.concern.has(c.id)).map(c => c.re);
       list = list.filter(p => res.some(re => re.test(p.name)));
     }
-    // パーマ／ストレートのタイプ・チップ絞り込み（検索中は無効）
-    if (!inSearch() && state.cat === 'perm' && state.permType) list = list.filter(p => p.permType === state.permType);
-    if (!inSearch() && state.cat === 'straight' && state.straightType) list = list.filter(p => p.straightType === state.straightType);
+    // タイプ・チップ絞り込み（シャンプー/トリートメント/アウトバス/スタイリング/パーマ/ストレート。検索中は無効）
+    if (!inSearch()) {
+      const _tc = TYPE_CATS[state.cat], _sel = _tc && state.typeSel[state.cat];
+      if (_sel) list = list.filter(p => p[_tc.key] === _sel);
+    }
 
     const by = {
       pop:        (a, b) => b.pop - a.pop,
@@ -224,14 +225,12 @@
 
   const hasActiveFilter = () =>
     state.brand || state.filters.stock.size || state.filters.price || state.filters.sameDay || state.filters.concern.size
-    || (state.cat === 'perm' && state.permType) || (state.cat === 'straight' && state.straightType);
+    || !!(TYPE_CATS[state.cat] && state.typeSel[state.cat]);
 
   /* ---------------- render ---------------- */
   function render() {
-    // カテゴリが変わったらタイプ選択状態をリセット（各カテゴリ専用）
+    // カラーのドリル状態はカラー以外で初期化（タイプ・チップ state.typeSel はカテゴリ別に保持）
     if (state.cat !== 'color') { state.colorType = null; state.colorLine = null; state.colorFamily = null; }
-    if (state.cat !== 'perm') state.permType = null;
-    if (state.cat !== 'straight') state.straightType = null;
     const grid = qs('#grid');
     // カラー剤＝タイプ先選択ドリル（タイプ › ライン › 色 › 明るさ）。検索中は通常グリッド。
     if (inColorDrill()) {
@@ -305,11 +304,18 @@
       <span class="cnote__go">契約・申込${svg('chevright')}</span></a>`;
   }
 
-  // パーマ／ストレートのタイプ・チップ（商品一覧の上に出す即フィルタ）
+  // タイプ・チップ（商品一覧の上に出す即フィルタ）。カラーはタイル式ドリルなので対象外。
+  const TYPE_CATS = {
+    shampoo:   { list: () => SP.SHAMPOO_TYPES || [],   key: 'shampooType' },
+    treatment: { list: () => SP.TREATMENT_TYPES || [], key: 'treatmentType' },
+    outbath:   { list: () => SP.OUTBATH_TYPES || [],   key: 'outbathType' },
+    styling:   { list: () => SP.STYLING_TYPES || [],   key: 'stylingType' },
+    perm:      { list: () => SP.PERM_TYPES || [],      key: 'permType' },
+    straight:  { list: () => SP.STRAIGHT_TYPES || [],  key: 'straightType' },
+  };
   const typeCfg = () => {
-    if (state.cat === 'perm') return { list: SP.PERM_TYPES || [], sel: state.permType, key: 'permType' };
-    if (state.cat === 'straight') return { list: SP.STRAIGHT_TYPES || [], sel: state.straightType, key: 'straightType' };
-    return null;
+    const c = TYPE_CATS[state.cat]; if (!c) return null;
+    return { list: c.list(), key: c.key, sel: state.typeSel[state.cat] || null };
   };
   const typeCount = (key, id) => DATA.products.filter(p => p.cat === state.cat && p[key] === id && Store.canShow(p) && Store.dealerVisible(p)).length;
   function renderTypeChips() {
@@ -326,9 +332,8 @@
       const grid = qs('#grid'); grid.parentNode.insertBefore(host, grid);
       host.addEventListener('click', e => {
         const b = e.target.closest('[data-typechip]'); if (!b) return;
-        const c = typeCfg(); if (!c) return;
         const v = b.dataset.typechip;
-        state[c.key] = (v === '__all') ? null : v;
+        state.typeSel[state.cat] = (v === '__all') ? null : v;
         render();
       });
     }
