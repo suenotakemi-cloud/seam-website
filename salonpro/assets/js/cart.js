@@ -160,13 +160,31 @@
             <div class="dsum__row"><span>消費税（10%）</span><span class="v">${fmtYen(c.tax)}</span></div>
             <div class="dsum__total"><span>合計（税込）</span><span class="v">${fmtYen(c.total)}</span></div>
           </div>
-          <button class="dcart__cta" data-place="${dl.id}">${dl.name} で注文を確定 ${arrowSvg}</button>
+          <button class="dcart__cta" data-place="${dl.id}">${Store.needsApproval ? (Store.needsApproval() ? 'オーナーに発注を申請' : dl.name + ' で注文を確定') : dl.name + ' で注文を確定'} ${arrowSvg}</button>
         </div>
       </section>`;
   }
 
   function doneSection(o) {
     const dl = dealer(o.dealer);
+    if (o.approval) {
+      // スタッフの発注申請（承認待ち）
+      return `
+      <section class="dcart dcart--done" data-dealer="${o.dealer}">
+        <div class="dcart__head"><span class="dcart__badge" style="background:${dl.accent}">${dl.name}</span>
+          <div><div class="dcart__name">${dl.full || dl.name}</div><div class="dcart__area">発注を申請しました</div></div></div>
+        <div class="dcart__body">
+          <div class="dcart__doneic" style="background:#fff5e0;color:#8a6a1f">${checkSvg}</div>
+          <div style="font-size:15px;font-weight:900">オーナーに発注を申請しました</div>
+          <p style="font-size:12px;color:var(--ink-2);margin-top:6px;line-height:1.6">オーナー／店長が承認すると発注が確定します。状況は「店舗・スタッフ管理」で確認できます。</p>
+          <div class="complete__info" style="text-align:left;margin-top:12px">
+            <div class="row"><span class="l">申請番号</span><span class="v">${o.orderNo}</span></div>
+            <div class="row"><span class="l">合計（税込）</span><span class="v">${fmtYen(o.total)}</span></div>
+          </div>
+          <a class="btn btn--ghost btn--block" href="staff.html" style="margin-top:12px">承認状況を見る</a>
+        </div>
+      </section>`;
+    }
     const kakeNote = o.kake
       ? `<p style="font-size:11.5px;color:#7a5a1e;background:#fdf4e7;border:1px solid #f0dcbf;border-radius:var(--r-md);padding:10px 12px;margin:12px 0 0;line-height:1.6;text-align:left">担当者の与信承認後に発送します（未集金防止）。承認次第、発送通知をお送りします。</p>`
       : '';
@@ -222,7 +240,20 @@
     let hasOrder = false; activeIds.forEach(d => groups[d].forEach(it => { if (it.p.stock === 'order' || it.p.stock === 'wait') hasOrder = true; }));
     const alertEl = qs('#cartAlert'); if (alertEl) { alertEl.hidden = !hasOrder; if (hasOrder) qs('#cartAlertText').textContent = '取寄せ商品が含まれます。出荷まで数日かかる場合があります。'; }
 
-    let html = `<div class="dealer-note">${shieldSvg}<span>このカートは<b>ディーラーごと</b>に分かれています。お支払い・送料・配送はそれぞれ別です（${activeIds.length + placed.length}ディーラー）。</span></div>`;
+    // 発注者バー（誰として発注するか）＋テンプレ保存
+    const actor = Store.getActor ? Store.getActor() : { role: 'owner', name: '' };
+    const RLBL = { owner: 'オーナー', mgr: '店長', staff: 'スタッフ' };
+    const needsAppr = Store.needsApproval && Store.needsApproval();
+    let html = '';
+    if (activeIds.length) {
+      html += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--line);border-radius:var(--r-md);padding:10px 13px;margin-bottom:12px">
+        <span style="font-size:12.5px">発注者：<b>${actor.name}</b><span style="font-size:11px;color:var(--ink-3);font-weight:700;margin-left:4px">${RLBL[actor.role] || ''}</span></span>
+        <a href="staff.html" style="font-size:12px;color:var(--gold-strong);font-weight:800;text-decoration:none">変更</a>
+        <button data-save-tpl style="margin-left:auto;height:34px;padding:0 13px;border-radius:var(--r-pill);border:1px solid var(--line-strong);background:#fff;font-size:12px;font-weight:800;cursor:pointer">＋ テンプレ保存</button>
+      </div>`;
+      if (needsAppr) html += `<div style="display:flex;gap:8px;align-items:flex-start;background:#fff5e0;border:1px solid #f0dcbf;border-radius:var(--r-md);padding:10px 13px;margin-bottom:12px;font-size:12px;color:#7a5a1e;line-height:1.6">${shieldSvg}<span><b>スタッフの店舗発注は承認制です。</b>「オーナーに発注を申請」すると、オーナー/店長の承認後に発注が確定します。</span></div>`;
+    }
+    html += `<div class="dealer-note">${shieldSvg}<span>このカートは<b>ディーラーごと</b>に分かれています。お支払い・送料・配送はそれぞれ別です（${activeIds.length + placed.length}ディーラー）。</span></div>`;
     placed.forEach(o => { html += doneSection(o); });
 
     const order = [SP.primaryDealer].concat(activeIds.filter(d => d !== SP.primaryDealer));
@@ -246,15 +277,32 @@
     const c = calcDealer(g.map(it => [it.p, it.qty]), dl);
     const _av = payList(dl);
     const payKey = (_av.indexOf(dealerPay[dealerId]) >= 0 ? dealerPay[dealerId] : _av[0]) || 'invoice';
+    const cnt = g.reduce((s, it) => s + it.qty, 0);
+    const approval = Store.needsApproval && Store.needsApproval();
+    const gObj = Store.getGifts();
+    const clearDealer = () => {
+      Object.keys(gObj).forEach(pid => { const p = product(pid); if (p && Store.dealerOf(p) === dealerId) Store.removeGift(pid); });
+      if (Store.clearDealerBundles) Store.clearDealerBundles(dealerId);
+      Store.clearDealerCart(dealerId); // emit → render
+    };
+    if (approval) {
+      // スタッフの店舗発注：確定せず「発注申請」を作成 → オーナー/店長が承認
+      const rec = Store.addOrderApproval({
+        staff: Store.getActor().name, dealer: dealerId, dealerName: dl.name,
+        items: g.map(it => ({ id: it.p.id, qty: it.qty })), total: c.total, count: cnt,
+        note: dl.name + ' 店舗発注',
+      });
+      placed.push({ dealer: dealerId, orderNo: rec.id, payKey, total: c.total, kake: false, approval: true });
+      clearDealer();
+      toast('オーナーに発注を申請しました');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     const now = new Date();
     const prefix = dealerId === 'cosmo' ? 'CO' : 'SP';
     const orderNo = `${prefix}-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(Math.floor(Math.random() * 9000) + 1000)}`;
     placed.push({ dealer: dealerId, orderNo, payKey, total: c.total, kake: payKey === 'invoice' });
-    // そのディーラーのギフト（添付無料品）とバンドル記録を整理（claims=メーカー請求台帳は残す）
-    const gObj = Store.getGifts();
-    Object.keys(gObj).forEach(pid => { const p = product(pid); if (p && Store.dealerOf(p) === dealerId) Store.removeGift(pid); });
-    if (Store.clearDealerBundles) Store.clearDealerBundles(dealerId);
-    Store.clearDealerCart(dealerId); // emit → render（確定カード＋残りのディーラーを再描画）
+    clearDealer();
     toast(`${dl.name} のご注文を受け付けました`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -265,6 +313,13 @@
     list.addEventListener('click', e => {
       const place = e.target.closest('[data-place]');
       if (place) { placeOrder(place.dataset.place); return; }
+      if (e.target.closest('[data-save-tpl]')) {
+        const def = 'テンプレ ' + (new Date().getMonth() + 1) + '/' + new Date().getDate();
+        let nm = def; try { const r = window.prompt('発注テンプレートの名前', def); if (r === null) return; nm = r.trim() || def; } catch (e2) {}
+        const rec = Store.saveCartAsTemplate(nm);
+        toast(rec ? ('「' + nm + '」を保存しました（再購入から呼び出せます）') : 'カートが空です');
+        return;
+      }
       const rmb = e.target.closest('[data-rmbundle]');
       if (rmb) { Store.removeBundle(rmb.dataset.rmbundle); toast('添付を取り消しました（選び直せます）'); return; }
       const act0 = e.target.closest('[data-act]')?.dataset.act;

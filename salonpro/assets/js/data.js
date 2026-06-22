@@ -21,7 +21,7 @@
       marketplace: true, tempu: true, subscribe: true, barcode: true, pos: true,
       staff: true, push: true, favorites: true, learn: true, support: true,
       books: true, equipment: true, usedEquipment: true, partners: true,
-      quickorder: true, invoices: true,
+      quickorder: true, invoices: true, staffmate: true, staffApproval: true,
     },
     // 紹介パートナー（工務店/タオル/税理士/社労士/カード決済/保険）の表示可否（ディーラー個別）
     partners: { koumuten: true, towel: true, tax: true, sharoshi: true, payment: true, insurance: true },
@@ -871,4 +871,23 @@
   window.SP.USED_EQUIPMENT = USED_EQUIPMENT;
   window.SP.PARTNERS = PARTNERS;
   window.SP.partner = id => PARTNERS.find(p => p.id === id) || null;
+
+  /* =========================================================
+     スタッフメイト＝メーカーのスタッフ個人向け特別価格プログラム。
+     スタッフ個人の発注でのみ購入可（店舗＝サロンの発注では不可）。
+     通常商品とは別管理（カタログ/カートには出さない）＝staffmate.html専用。
+     ※ 商品・価格はプロトタイプの仮置き（要差し替え）。
+     ========================================================= */
+  const STAFFMATE = {
+    period: '〜2026/7/15',
+    items: [
+      { id: 'sm-1', brand: 'ミルボン',   name: 'エルジューダ エマルジョン+ 120g', list: 2640, price: 1320, ph: { shape: 'tube',   tint: '#e3c1cf' } },
+      { id: 'sm-2', brand: 'ナプラ',     name: 'N. ポリッシュオイル 150mL',        list: 2860, price: 1430, ph: { shape: 'bottle', tint: '#caa64a' } },
+      { id: 'sm-3', brand: 'ルベル',     name: 'イオ クレンジング 600mL',          list: 3080, price: 1540, ph: { shape: 'pump',   tint: '#c0392b' } },
+      { id: 'sm-4', brand: 'ミルボン',   name: 'オージュア クエンチ トリートメント 250g', list: 2420, price: 1210, ph: { shape: 'tube', tint: '#2b6cb0' } },
+      { id: 'sm-5', brand: 'ナカノ',     name: 'スタイリング ワックス 5 90g',      list: 990,  price: 490,  ph: { shape: 'jar',    tint: '#c98a2a' } },
+      { id: 'sm-6', brand: '阪本高生堂', name: 'クールグリース G 210g',            list: 1100, price: 550,  ph: { shape: 'jar',    tint: '#2f5fa8' } },
+    ],
+  };
+  window.SP.STAFFMATE = STAFFMATE;
 })();

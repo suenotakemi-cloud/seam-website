@@ -21,6 +21,11 @@
   const LS_BOOK_SUBS = 'sp.bookSubs.v1';         // [bookId] 業界誌の定期購読（サブスク）中
   const LS_LEASE_APPS = 'sp.leaseApps.v1';       // [機器リース/購入/中古の申込レコード] admin通知連携
   const LS_PARTNER_LEADS = 'sp.partnerLeads.v1'; // [紹介パートナー（工務店/税理士等）の紹介依頼] admin通知連携
+  const LS_STAFF = 'sp.staff.v1';                // [スタッフ {id,name,role,store}]
+  const LS_ACTOR = 'sp.actor.v1';                // 現在の発注者 {role,name,staffId}
+  const LS_TEMPLATES = 'sp.orderTemplates.v1';   // [発注テンプレ {id,name,by,items:[{id,qty}],at}]
+  const LS_ORDER_APPR = 'sp.orderApprovals.v1';  // [スタッフの発注申請 {id,staff,items,total,count,status,at}]
+  const LS_STAFFMATE_ORDERS = 'sp.staffmateOrders.v1'; // [スタッフ個人発注（スタッフメイト）]
 
   function load(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
@@ -48,6 +53,18 @@
   let bookSubs = load(LS_BOOK_SUBS, []);         // 業界誌の定期購読中 [bookId]
   let leaseApps = load(LS_LEASE_APPS, []);       // 機器リース/購入/中古の申込レコード
   let partnerLeads = load(LS_PARTNER_LEADS, []); // 紹介パートナーの紹介依頼レコード
+  // staff.html と同形のシード（同じ sp.staff.v1 を共有）
+  const SEED_STAFF = [
+    { id: 'u1', name: '菊地 健一', email: 'owner@salon-luxe.jp', store: 's1', role: 'owner', perms: { view: true, order: true, approve: true } },
+    { id: 'u2', name: '田中 玲奈', email: 'reina@salon-luxe.jp', store: 's1', role: 'mgr', perms: { view: true, order: true, approve: true } },
+    { id: 'u3', name: '佐藤 美咲', email: 'misaki@salon-luxe.jp', store: 's1', role: 'staff', perms: { view: true, order: true, approve: false } },
+    { id: 'u4', name: '山本 大輔', email: 'daisuke@salon-luxe.jp', store: 's2', role: 'mgr', perms: { view: true, order: true, approve: true } },
+  ];
+  let staff = load(LS_STAFF, SEED_STAFF);
+  let actor = load(LS_ACTOR, { role: 'owner', name: '菊地 健一', staffId: 'u1' });
+  let orderTemplates = load(LS_TEMPLATES, []);   // 発注テンプレ
+  let orderApprovals = load(LS_ORDER_APPR, []);  // スタッフ発注申請
+  let staffmateOrders = load(LS_STAFFMATE_ORDERS, []); // スタッフ個人発注
   const CURRENT_SALON = 'SALON LUXE 表参道店';   // 現在ログイン中サロン（本番は会員情報から解決）
 
   // JAN（同一商品）インデックス：重複名寄せ用。商品は実行中不変なので遅延構築。
@@ -317,6 +334,67 @@
       save(LS_PARTNER_LEADS, partnerLeads); emit();
       return a;
     },
+
+    /* ---- スタッフ／発注者（actor）：オーナー＝直接発注、スタッフ＝発注は申請→承認 ---- */
+    getStaff() { return staff.slice(); },
+    addStaff(rec) { rec.id = rec.id || ('st-' + Date.now()); staff.push(rec); save(LS_STAFF, staff); emit(); return rec; },
+    removeStaff(id) { staff = staff.filter(s => s.id !== id); save(LS_STAFF, staff); emit(); },
+    getActor() { return actor; },
+    setActor(a) { actor = a || actor; save(LS_ACTOR, actor); emit(); return actor; },
+    isOwner() { return actor.role === 'owner'; },
+    canApprove() { return actor.role === 'owner' || actor.role === 'mgr'; },
+    needsApproval() { // スタッフの店舗発注は承認が必要（ディーラーがstaffApproval=falseなら無効）
+      const f = (window.SP.TENANT && window.SP.TENANT.features) || {};
+      return actor.role === 'staff' && f.staffApproval !== false;
+    },
+
+    /* ---- 発注テンプレート（カートを名前付き保存→ワンタップ投入） ---- */
+    getTemplates() { return orderTemplates.slice(); },
+    addTemplate(name, items) {
+      const rec = { id: 'tpl-' + Date.now(), name: name || 'テンプレート', by: actor.name, items: items || [], at: Date.now() };
+      orderTemplates.unshift(rec); save(LS_TEMPLATES, orderTemplates); emit(); return rec;
+    },
+    saveCartAsTemplate(name) {
+      const items = Object.keys(cart).filter(id => cart[id] > 0).map(id => ({ id: id, qty: cart[id] }));
+      if (!items.length) return null;
+      return this.addTemplate(name, items);
+    },
+    removeTemplate(id) { orderTemplates = orderTemplates.filter(t => t.id !== id); save(LS_TEMPLATES, orderTemplates); emit(); },
+    applyTemplate(id) {
+      const t = orderTemplates.find(x => x.id === id); if (!t) return 0;
+      let n = 0; t.items.forEach(it => { if (productById(it.id)) { this.addToCart(it.id, it.qty); n++; } });
+      return n;
+    },
+
+    /* ---- スタッフの発注申請 → オーナー/店長が承認 ---- */
+    addOrderApproval(rec) {
+      rec = rec || {};
+      rec.id = rec.id || ('oa-' + (orderApprovals.length + 1) + '-' + Math.floor(Math.random() * 1e6));
+      rec.status = 'pending'; rec.at = rec.at || Date.now();
+      rec.staff = rec.staff || actor.name;
+      orderApprovals.unshift(rec);
+      save(LS_ORDER_APPR, orderApprovals); emit();
+      return rec;
+    },
+    getOrderApprovals() { return orderApprovals.slice(); },
+    pendingOrderApprovals() { return orderApprovals.filter(a => a.status === 'pending'); },
+    setOrderApprovalStatus(id, status) {
+      const a = orderApprovals.find(x => x.id === id); if (!a) return;
+      a.status = status; a.decidedAt = Date.now();
+      save(LS_ORDER_APPR, orderApprovals); emit();
+      return a;
+    },
+
+    /* ---- スタッフメイト（スタッフ個人発注・特別価格。個人発注でのみ可） ---- */
+    addStaffmateOrder(rec) {
+      rec = rec || {};
+      rec.id = rec.id || ('sm-' + Date.now());
+      rec.staff = rec.staff || actor.name; rec.at = rec.at || Date.now();
+      staffmateOrders.unshift(rec);
+      save(LS_STAFFMATE_ORDERS, staffmateOrders); emit();
+      return rec;
+    },
+    getStaffmateOrders() { return staffmateOrders.slice(); },
 
     /* ---- メーカー添付の請求台帳（無償現品＝メーカーへ請求） ---- */
     addClaim(rec) {

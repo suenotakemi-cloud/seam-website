@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
   <title>再購入｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=29">
-  <link rel="stylesheet" href="assets/css/base.css?v=29">
-  <link rel="stylesheet" href="assets/css/components.css?v=29">
-  <link rel="stylesheet" href="assets/css/home.css?v=29">
-  <link rel="stylesheet" href="assets/css/pages.css?v=29">
-  <link rel="stylesheet" href="assets/css/reorder.css?v=29">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=30">
+  <link rel="stylesheet" href="assets/css/base.css?v=30">
+  <link rel="stylesheet" href="assets/css/components.css?v=30">
+  <link rel="stylesheet" href="assets/css/home.css?v=30">
+  <link rel="stylesheet" href="assets/css/pages.css?v=30">
+  <link rel="stylesheet" href="assets/css/reorder.css?v=30">
 </head>
 <body class="page">
 
@@ -67,6 +67,12 @@
       <div id="setList"></div>
     </section>
 
+    <!-- 発注テンプレート（保存したカート） -->
+    <section class="sec" id="tplSec" hidden>
+      <div class="sec__head"><h2 class="sec__title">発注テンプレート</h2><span style="font-size:11.5px;color:var(--ink-3)">カートを保存→ワンタップ投入</span></div>
+      <div id="tplList"></div>
+    </section>
+
     <!-- そろそろ補充（消耗予測） -->
     <section class="sec">
       <div class="sec__head"><h2 class="sec__title">そろそろ補充（消耗予測）</h2></div>
@@ -92,11 +98,43 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/catalog.js?v=29"></script>
-  <script src="assets/js/data.js?v=29"></script>
-  <script src="assets/js/store.js?v=29"></script>
-  <script src="assets/js/components.js?v=29"></script>
-  <script src="assets/js/nav.js?v=29"></script>
-  <script src="assets/js/reorder.js?v=29"></script>
+  <script src="assets/js/catalog.js?v=30"></script>
+  <script src="assets/js/data.js?v=30"></script>
+  <script src="assets/js/store.js?v=30"></script>
+  <script src="assets/js/components.js?v=30"></script>
+  <script src="assets/js/nav.js?v=30"></script>
+  <script src="assets/js/reorder.js?v=30"></script>
+  <script>
+    (function () {
+      var Store = SP.Store, yen = SP.fmtYen || function (n) { return '¥' + (n || 0).toLocaleString(); };
+      var toast = function (m) { if (window.SP_toast) SP_toast(m); };
+      var prod = function (id) { return (SP.DATA.products || []).find(function (p) { return p.id === id; }); };
+      function render() {
+        var tpls = Store.getTemplates ? Store.getTemplates() : [];
+        var sec = document.getElementById('tplSec'), host = document.getElementById('tplList');
+        if (!tpls.length) { sec.hidden = true; return; }
+        sec.hidden = false;
+        host.innerHTML = tpls.map(function (t) {
+          var items = (t.items || []).map(function (it) { return prod(it.id) ? { p: prod(it.id), qty: it.qty } : null; }).filter(Boolean);
+          var pts = items.reduce(function (s, x) { return s + x.qty; }, 0);
+          var total = items.reduce(function (s, x) { return s + x.p.price * x.qty; }, 0);
+          var names = items.slice(0, 3).map(function (x) { return x.p.name; }).join(' / ') + (items.length > 3 ? ' ほか' : '');
+          return '<div style="border:1px solid var(--line);border-radius:var(--r-lg);padding:13px 15px;margin-bottom:10px">' +
+            '<div style="display:flex;align-items:center;gap:8px"><b style="font-size:14px">' + t.name + '</b>' +
+            '<span style="font-size:11px;color:var(--ink-3)">' + items.length + '品目・' + pts + '点・' + yen(total) + '</span>' +
+            '<button data-tpl-del="' + t.id + '" style="margin-left:auto;background:none;border:0;color:var(--ink-3);font-size:11.5px;cursor:pointer;text-decoration:underline">削除</button></div>' +
+            '<div style="font-size:11.5px;color:var(--ink-3);margin:4px 0 10px;line-height:1.5">' + (names || '—') + '</div>' +
+            '<button class="btn btn--primary btn--block" data-tpl-add="' + t.id + '" style="height:44px">このテンプレをカートに入れる</button></div>';
+        }).join('');
+      }
+      document.getElementById('tplList').addEventListener('click', function (e) {
+        var add = e.target.closest('[data-tpl-add]'), del = e.target.closest('[data-tpl-del]');
+        if (add) { var n = Store.applyTemplate(add.dataset.tplAdd); toast(n + '商品をカートに入れました'); }
+        else if (del) { Store.removeTemplate(del.dataset.tplDel); toast('テンプレートを削除しました'); render(); }
+      });
+      Store.subscribe && Store.subscribe(render);
+      render();
+    })();
+  </script>
 </body>
 </html>
