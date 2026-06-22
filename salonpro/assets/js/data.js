@@ -25,6 +25,8 @@
     },
     // 紹介パートナー（工務店/タオル/税理士/社労士/カード決済/保険）の表示可否（ディーラー個別）
     partners: { koumuten: true, towel: true, tax: true, sharoshi: true, payment: true, insurance: true },
+    // 個人支払い（スタッフメイトのスタッフ個人決済）の方式ごとの表示可否
+    personalPay: { card: true, code: true, conbini: true },
     priceMode: 'open', // open | login | hidden
   };
   const TENANT_PRESETS = {
