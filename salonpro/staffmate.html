@@ -50,6 +50,30 @@
     .sm-hist { margin-top: var(--s-5); } .sm-hist__t { font-size: 15px; font-weight: 900; margin-bottom: 10px; }
     .sm-hrow { border: 1px solid var(--line); border-radius: var(--r-md); padding: 11px 13px; font-size: 12.5px; } .sm-hrow + .sm-hrow { margin-top: 8px; }
     .sm-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin: 16px 0 4px; }
+
+    /* 個人決済モーダル */
+    .smp-ov { position: fixed; inset: 0; background: rgba(20,20,28,.5); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    .smp-ov.is-open { display: flex; }
+    @media (min-width: 640px) { .smp-ov { align-items: center; } }
+    .smp { width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto; background: #fff; border-radius: 18px 18px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); }
+    @media (min-width: 640px) { .smp { border-radius: 18px; } }
+    .smp__hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .smp__t { font-size: 17px; font-weight: 900; } .smp__s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+    .smp__x { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--surface-2); color: var(--ink-2); font-size: 17px; cursor: pointer; }
+    .smp__note { display: flex; gap: 9px; align-items: flex-start; background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r-md); padding: 11px 13px; margin-top: 14px; font-size: 12px; color: var(--ink-2); line-height: 1.6; }
+    .smp__note svg { width: 16px; height: 16px; flex: none; margin-top: 1px; color: var(--gold-strong); } .smp__note b { color: var(--ink); }
+    .smp__lbl { font-size: 12px; font-weight: 800; color: var(--ink-2); margin: 15px 0 8px; }
+    .smp-methods { display: grid; gap: 8px; }
+    .smp-m { display: flex; align-items: center; gap: 11px; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 12px 13px; cursor: pointer; }
+    .smp-m.is-on { border-color: var(--gold); background: var(--gold-soft); }
+    .smp-m__ic { flex: none; width: 34px; height: 34px; border-radius: var(--r-sm); background: var(--surface-2); display: flex; align-items: center; justify-content: center; color: var(--ink-2); }
+    .smp-m__ic svg { width: 18px; height: 18px; }
+    .smp-m__b { flex: 1; min-width: 0; } .smp-m__t { font-size: 13.5px; font-weight: 800; } .smp-m__s { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+    .smp-m__rd { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line-3); }
+    .smp-m.is-on .smp-m__rd { border-color: var(--gold); background: radial-gradient(circle, var(--gold) 0 45%, #fff 50%); }
+    .smp__pay { width: 100%; height: 50px; border-radius: var(--r-md); background: var(--gold); border: 0; color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 16px; }
+    .smp__pay:hover { background: var(--gold-strong); }
+    .smp__legal { font-size: 10.5px; color: var(--ink-3); line-height: 1.6; margin-top: 10px; }
   </style>
 </head>
 <body class="page">
@@ -87,7 +111,22 @@
   <div class="sm-bar" id="smBar" hidden>
     <div class="sm-bar__in">
       <span class="sm-bar__info" id="smBarInfo">個人発注：0点</span>
-      <button class="sm-bar__btn" id="smPlace" disabled>個人発注を確定</button>
+      <button class="sm-bar__btn" id="smPlace" disabled>お支払いへ進む（個人）</button>
+    </div>
+  </div>
+
+  <!-- 個人・都度決済モーダル（カード保存なし・会社負担なし） -->
+  <div class="smp-ov" id="smPayOv" role="dialog" aria-modal="true" aria-label="個人のお支払い">
+    <div class="smp">
+      <div class="smp__hd">
+        <div><div class="smp__t">個人のお支払い</div><div class="smp__s" id="smPaySub"></div></div>
+        <button class="smp__x" data-smpay-close aria-label="閉じる">✕</button>
+      </div>
+      <div class="smp__note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a5 5 0 0 0-5 5v3H6a1 1 0 0 0-1 1v9h14v-9a1 1 0 0 0-1-1h-1V7a5 5 0 0 0-5-5z"/></svg><span><b>お支払いはスタッフ個人</b>です。カード情報は<b>保存しません</b>（毎回その場で決済）。<b>会社（サロン）には請求されません。</b></span></div>
+      <div class="smp__lbl">お支払い方法</div>
+      <div class="smp-methods" id="smPayMethods"></div>
+      <button class="smp__pay" id="smPayDo">この方法で支払う</button>
+      <p class="smp__legal">※ プロトタイプのデモです。実際の課金は行いません（実カード番号は入力しません）。本番では保存しない一回限りのホスト型決済／コード決済に接続します。</p>
     </div>
   </div>
 
@@ -124,7 +163,9 @@
         if (!list.length) { wrap.hidden = true; return; }
         wrap.hidden = false;
         document.getElementById('smHist').innerHTML = list.map(function (o) {
-          return '<div class="sm-hrow"><b>' + o.staff + '</b> ・ ' + (o.count || 0) + '点 ・ <b style="color:#b3402f">' + yen(o.total) + '</b>　<span style="color:var(--ink-3)">個人発注（お支払い：個人）</span></div>';
+          var pay = o.payLabel ? o.payLabel : '個人払い';
+          var no = o.payNo ? '<span style="color:var(--ink-3)">／払込番号 ' + o.payNo + '</span>' : '';
+          return '<div class="sm-hrow"><b>' + o.staff + '</b> ・ ' + (o.count || 0) + '点 ・ <b style="color:#b3402f">' + yen(o.total) + '</b>　<span style="color:var(--ink-3)">個人発注・' + pay + '</span> ' + no + '</div>';
         }).join('');
       }
 
@@ -180,11 +221,49 @@
         var span = document.querySelector('[data-q="' + id + '"]'); if (span) span.textContent = qty[id] || 0;
         calc();
       });
-      document.getElementById('smPlace').addEventListener('click', function () {
+      // ---- 個人・都度決済（カード保存なし・会社負担なし） ----
+      var PAY_METHODS = [
+        { id: 'card', label: '本人カード（都度・保存なし）', sub: '一回限りの決済ページで本人が入力。カードは保存しません', icon: '<rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/>' },
+        { id: 'code', label: 'コード決済（PayPay / LINE Pay 等）', sub: '本人のスマホ決済から直接お支払い', icon: '<rect x="4" y="4" width="7" height="7"/><rect x="13" y="4" width="7" height="7"/><rect x="4" y="13" width="7" height="7"/><path d="M13 13h3v3M20 13v7M16 20h4"/>' },
+        { id: 'conbini', label: 'コンビニ払い（個人宛）', sub: '払込番号を発行→本人がコンビニで支払い', icon: '<rect x="3" y="6" width="18" height="13" rx="1"/><path d="M3 10h18M7 6V4M17 6V4"/>' },
+      ];
+      var payMethod = 'card';
+      function renderMethods() {
+        document.getElementById('smPayMethods').innerHTML = PAY_METHODS.map(function (m) {
+          return '<div class="smp-m' + (payMethod === m.id ? ' is-on' : '') + '" data-method="' + m.id + '">' +
+            '<span class="smp-m__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + m.icon + '</svg></span>' +
+            '<span class="smp-m__b"><span class="smp-m__t">' + m.label + '</span><span class="smp-m__s">' + m.sub + '</span></span>' +
+            '<span class="smp-m__rd"></span></div>';
+        }).join('');
+      }
+      var ov = document.getElementById('smPayOv');
+      function openPay() {
         var c = calc(); if (!c.pts) return;
-        Store.addStaffmateOrder({ staff: Store.getActor().name, items: c.items.map(function (p) { return { id: p.id, qty: qty[p.id] }; }), count: c.pts, total: c.total });
+        payMethod = 'card';
+        document.getElementById('smPaySub').textContent = c.pts + '点 ・ お支払い ' + yen(c.total) + '（個人）';
+        renderMethods();
+        ov.classList.add('is-open');
+      }
+      function closePay() { ov.classList.remove('is-open'); }
+      document.getElementById('smPayMethods').addEventListener('click', function (e) {
+        var m = e.target.closest('[data-method]'); if (!m) return;
+        payMethod = m.dataset.method; renderMethods();
+      });
+      ov.addEventListener('click', function (e) { if (e.target === ov || e.target.closest('[data-smpay-close]')) closePay(); });
+
+      document.getElementById('smPlace').addEventListener('click', openPay);
+      document.getElementById('smPayDo').addEventListener('click', function () {
+        var c = calc(); if (!c.pts) return;
+        var pm = PAY_METHODS.find(function (x) { return x.id === payMethod; }) || PAY_METHODS[0];
+        var payNo = (payMethod === 'conbini') ? ('30' + String(Math.floor(Math.random() * 1e9)).padStart(9, '0')) : '';
+        Store.addStaffmateOrder({
+          staff: Store.getActor().name,
+          items: c.items.map(function (p) { return { id: p.id, qty: qty[p.id] }; }),
+          count: c.pts, total: c.total, pay: payMethod, payLabel: pm.label, payNo: payNo,
+        });
         qty = {};
-        toast('スタッフ個人発注を確定しました（お支払いは個人）');
+        closePay();
+        toast(payMethod === 'conbini' ? 'コンビニ払込番号を発行しました（個人払い）' : (payMethod === 'code' ? 'コード決済で支払いました（個人・保存なし）' : '本人カードで決済しました（保存なし・会社負担なし）'));
         render();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
