@@ -153,8 +153,8 @@
           return;
         }
         var items = eligible(c.line);
-        var paid = {}; // {pid: qty}
-        var free = []; // [pid]
+        var sel = {}; // {pid: qty} 選択（無料込みの合計本数）
+        var setSize = c.x + c.y; // 1セット＝x+y本（例：10+1→11、5+1→6、3+1→4、2+1→3）
         root.innerHTML =
           '<nav class="cp-crumb"><a href="home.html">ホーム</a><span class="cp-crumb__sep">›</span><a href="campaigns.html">キャンペーン</a><span class="cp-crumb__sep">›</span><span class="cp-crumb__cur">' + c.line + '</span></nav>' +
           '<div class="cp-hero" style="background:linear-gradient(135deg,' + c.accent + ',' + c.accent + 'cc)">' +
@@ -163,95 +163,81 @@
             '<div class="cp-hero__s">' + c.lead + '</div>' +
             '<div class="cp-hero__period">対象期間：' + (c.period || '') + '</div>' +
           '</div>' +
-          '<div class="cp-how">' + svg('spark') + '<span>' + (c.tempu ? 'メーカー添付：' : '') + '対象から <b>' + c.x + '本</b> ごとに、お好きな <b>' + c.y + '本</b> が無料' + (c.tempu ? '添付' : '') + '。価格は<b>' + c.x + '本分</b>のみ。</span></div>' +
+          '<div class="cp-how">' + svg('spark') + '<span>' + (c.tempu ? 'メーカー添付：' : '') + '対象を<b>合計' + setSize + '本</b>選ぶと <b>' + c.y + '本</b>が無料' + (c.tempu ? '（無償添付）' : '') + '。<b>お支払いは' + c.x + '本分</b>。色は自由に組み合わせOK。</span></div>' +
           '<div class="cp-count" id="cpCount"></div>' +
-          '<h2 class="cp-sec__t">対象商品から選ぶ（' + c.line + '）</h2>' +
+          '<h2 class="cp-sec__t">対象商品から選ぶ（' + c.line + '）<span style="font-size:11.5px;color:var(--ink-3);font-weight:600;margin-left:8px">' + setSize + '本ごとに' + c.y + '本無料</span></h2>' +
           '<div class="cp-grid" id="cpGrid">' + items.map(function (p) {
             return '<div class="cp-card" data-pid="' + p.id + '"><span class="cp-sw" style="background:' + ((p.ph && p.ph.tint) || '#999') + '"></span>' +
               '<div class="cp-card__n">' + (p.family ? (p.family + ' ' + p.level) : p.name) + '</div>' +
               '<div class="cp-card__p">' + yen(p.price) + '</div>' +
               '<div class="cp-step"><button data-cp="dec">−</button><span class="cp-q">0</span><button data-cp="inc">＋</button></div></div>';
           }).join('') + '</div>' +
-          '<div id="cpFree"></div>' +
           '<div class="cp-bar"><div class="cp-bar__in"><span class="cp-bar__info" id="cpBarInfo"></span><button class="cp-bar__btn" id="cpAdd" disabled>' + svg('cart') + 'カートに入れる</button></div></div>';
 
         var grid = document.getElementById('cpGrid');
-        function totalPaid() { var n = 0; for (var k in paid) n += paid[k]; return n; }
-        function freeN() { return Math.floor(totalPaid() / c.x) * c.y; }
-        function prod(pid) { return items.filter(function (p) { return p.id === pid; })[0]; }
+        function totalSel() { var n = 0; for (var k in sel) n += sel[k]; return n; }
+        function freeN() { return Math.floor(totalSel() / setSize) * c.y; } // 合計÷(x+y)セットごとに y本無料
 
         function update() {
-          var tp = totalPaid(), n = freeN();
-          // 無料枠を超えた選択はトリム
-          while (free.length > n) free.pop();
-          document.getElementById('cpCount').innerHTML = '<span>選択 <b>' + tp + '</b> 本</span><span>無料 <b>' + n + '</b> 本' + (n ? '（選択 ' + free.length + '/' + n + '）' : '') + '</span>';
-          // free picker
-          var fe = document.getElementById('cpFree');
-          if (n > 0) {
-            fe.innerHTML = '<div class="cp-free"><div class="cp-free__h">無料の <b>' + n + '本</b> を選ぶ</div>' +
-              '<div class="cp-free__s">対象の中からお好きな色をお選びください（現在 ' + free.length + '/' + n + '）</div>' +
-              '<div class="cp-fchips">' + items.map(function (p) {
-                var on = free.indexOf(p.id) >= 0;
-                return '<button class="cp-fc' + (on ? ' is-on' : '') + '" data-free="' + p.id + '"><span class="cp-fc__sw" style="background:' + ((p.ph && p.ph.tint) || '#999') + '"></span>' + (p.family ? (p.family + ' ' + p.level) : p.name) + '</button>';
-              }).join('') + '</div></div>';
-          } else { fe.innerHTML = ''; }
-          // bar
-          var ready = tp >= c.x && free.length === n && n > 0;
+          var T = totalSel(), n = freeN(), pay = T - n;
+          document.getElementById('cpCount').innerHTML = '<span>選択 <b>' + T + '</b> 本</span><span>無料 <b>' + n + '</b> 本 ・ お支払い <b>' + pay + '</b> 本分</span>';
+          var ready = T >= setSize;
           var info = document.getElementById('cpBarInfo');
-          if (tp < c.x) info.innerHTML = 'あと <b>' + (c.x - tp) + '本</b> で無料1本';
-          else if (free.length < n) info.innerHTML = '無料の色をあと <b>' + (n - free.length) + '本</b> 選んでください';
-          else info.innerHTML = tp + '本＋<b>無料' + n + '本</b>';
-          document.getElementById('cpAdd').disabled = !ready;
-          document.getElementById('cpAdd').innerHTML = svg('cart') + (ready ? ('カートに入れる（' + tp + '＋無料' + n + '）') : 'カートに入れる');
+          if (T < setSize) info.innerHTML = 'あと <b>' + (setSize - T) + '本</b> 選ぶと ' + c.y + '本無料（合計' + setSize + '本で' + c.x + '本分の価格）';
+          else info.innerHTML = '選択' + T + '本 ＝ お支払い<b>' + pay + '本分</b> ＋ <b>無料' + n + '本</b>';
+          var add = document.getElementById('cpAdd');
+          add.disabled = !ready;
+          add.innerHTML = svg('cart') + (ready ? ('カートに入れる（無料' + n + '本込み）') : ('あと' + (setSize - T) + '本で追加できます'));
         }
 
         grid.addEventListener('click', function (e) {
           var btn = e.target.closest('[data-cp]'); if (!btn) return;
           var card = e.target.closest('[data-pid]'); var pid = card.dataset.pid;
-          var q = paid[pid] || 0;
+          var q = sel[pid] || 0;
           q = btn.dataset.cp === 'inc' ? Math.min(99, q + 1) : Math.max(0, q - 1);
-          if (q === 0) delete paid[pid]; else paid[pid] = q;
+          if (q === 0) delete sel[pid]; else sel[pid] = q;
           card.querySelector('.cp-q').textContent = q;
           card.classList.toggle('is-sel', q > 0);
           update();
         });
-        document.getElementById('cpFree').addEventListener('click', function (e) {
-          var btn = e.target.closest('[data-free]'); if (!btn) return;
-          var pid = btn.dataset.free; var i = free.indexOf(pid);
-          if (i >= 0) free.splice(i, 1);
-          else { if (free.length >= freeN()) { toast('無料枠は ' + freeN() + '本までです'); return; } free.push(pid); }
-          update();
-        });
+
         document.getElementById('cpAdd').addEventListener('click', function () {
-          var tp = totalPaid(), n = freeN();
-          if (!(tp >= c.x && free.length === n && n > 0)) return;
-          for (var pid in paid) SP.Store.addToCart(pid, paid[pid]);
+          var T = totalSel(), n = freeN(), pay = T - n;
+          if (T < setSize) return;
+          // 無料n本を選択から割り当て（同価格なので選択順に）。paidMap=お支払い分／freeList=無料分（1本=1要素）
+          var remain = n, paidMap = {}, freeList = [];
+          Object.keys(sel).forEach(function (pid) {
+            var q = sel[pid];
+            var f = Math.min(q, remain); remain -= f;
+            for (var i = 0; i < f; i++) freeList.push(pid);
+            if (q - f > 0) paidMap[pid] = q - f;
+          });
+          for (var ppid in paidMap) SP.Store.addToCart(ppid, paidMap[ppid]);
           var claimIds = [];
-          free.forEach(function (fid) {
+          freeList.forEach(function (fid) {
             SP.Store.addGift(fid, 1);
-            // メーカー添付＝無償現品。個別JAN明細でメーカー請求台帳に記録（11本を1SKUにしない）
+            // メーカー添付＝無償現品。個別JAN明細でメーカー請求台帳に記録（1本ずつ）
             if ((c.tempu || c.claimMaker) && SP.Store.addClaim) {
               var fp = (SP.DATA.products || []).find(function (p) { return p.id === fid; }) || {};
               var cr = SP.Store.addClaim({ campaign: c.id, maker: c.maker, line: c.line, dealer: c.dealer || 'kikuchi', pid: fid, jan: (fp.jan || fid), name: (fp.family ? (c.line + ' ' + fp.family + ' ' + fp.level) : (fp.name || fid)), qty: 1, at: new Date().toISOString() });
               if (cr && cr.id) claimIds.push(cr.id);
             }
           });
-          // カート内のロックグループ（添付バンドル）として記録
-          if (SP.Store.addBundleRec) SP.Store.addBundleRec({ dealer: c.dealer || 'kikuchi', campaign: c.id, maker: c.maker, line: c.line, badge: c.badge || (c.x + '＋' + c.y), x: c.x, y: c.y, paid: Object.assign({}, paid), free: free.slice(), claimIds: claimIds });
-          renderDone(c, tp, n);
+          if (SP.Store.addBundleRec) SP.Store.addBundleRec({ dealer: c.dealer || 'kikuchi', campaign: c.id, maker: c.maker, line: c.line, badge: c.badge || (c.x + '＋' + c.y), x: c.x, y: c.y, paid: paidMap, free: freeList, claimIds: claimIds });
+          renderDone(c, pay, n);
         });
 
         update();
       }
 
-      function renderDone(c, tp, n) {
+      function renderDone(c, pay, n) {
         var bar = document.querySelector('.cp-bar'); if (bar) bar.remove();
         root.innerHTML =
           '<div class="cp-done"><div class="cp-done__ic">' + svg('checkc') + '</div>' +
           '<div class="cp-done__t">カートに追加しました</div>' +
-          '<div class="cp-done__s"><b>' + c.title + '</b><br>' + tp + '本 ＋ <b>無料 ' + n + '本</b>（¥0）をカートに入れました。</div>' +
+          '<div class="cp-done__s"><b>' + c.title + '</b><br>合計 ' + (pay + n) + '本（お支払い <b>' + pay + '本分</b> ＋ <b>無料 ' + n + '本</b>＝¥0）をカートに入れました。</div>' +
           '<div class="cp-done__btns"><a class="p" href="cart.html">カートを見る</a><a class="g" href="campaigns.html">他のキャンペーン</a></div></div>';
-        toast(tp + '本＋無料' + n + '本を追加しました');
+        toast('お支払い' + pay + '本分＋無料' + n + '本を追加しました');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     })();
