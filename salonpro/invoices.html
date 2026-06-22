@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>請求書・購入明細｜SalonPro</title>
+  <meta name="description" content="月ごとのまとめ請求書・購入明細をダウンロード（CSV）／印刷（PDF保存）。適格請求書（インボイス）対応。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=29">
+  <link rel="stylesheet" href="assets/css/base.css?v=29">
+  <link rel="stylesheet" href="assets/css/components.css?v=29">
+  <link rel="stylesheet" href="assets/css/pages.css?v=29">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 860px; }
+    .iv-hd { margin-top: var(--s-4); }
+    .iv-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; }
+    .iv-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.65; }
+    .iv-info { display: flex; gap: 9px; align-items: flex-start; background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r-md); padding: 12px 14px; margin-top: var(--s-4); font-size: 12px; color: var(--ink-2); line-height: 1.65; }
+    .iv-info svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--gold-strong); }
+    .iv-info b { color: var(--ink); }
+    .iv-list { margin-top: var(--s-4); }
+    .iv-row { display: flex; align-items: center; gap: 13px; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px 15px; }
+    .iv-row + .iv-row { margin-top: 10px; }
+    .iv-row__m { flex: none; width: 70px; }
+    .iv-row__mo { font-size: 17px; font-weight: 900; } .iv-row__yr { font-size: 11px; color: var(--ink-3); font-weight: 700; }
+    .iv-row__b { flex: 1; min-width: 0; }
+    .iv-row__sum { font-size: 15px; font-weight: 900; } .iv-row__sum small { font-size: 11px; color: var(--ink-3); font-weight: 700; margin-left: 4px; }
+    .iv-row__meta { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .iv-row__act { flex: none; display: flex; gap: 7px; }
+    .iv-abtn { height: 36px; padding: 0 12px; border-radius: var(--r-md); font-size: 12px; font-weight: 800; cursor: pointer; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+    .iv-abtn svg { width: 14px; height: 14px; }
+    .iv-abtn--gold { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .iv-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin: 16px 0 4px; }
+    @media (max-width: 520px) { .iv-row { flex-wrap: wrap; } .iv-row__act { width: 100%; } .iv-abtn { flex: 1; justify-content: center; } }
+
+    /* 請求書（印刷／PDF） */
+    .inv-ov { position: fixed; inset: 0; background: rgba(20,20,28,.5); z-index: 200; display: none; overflow: auto; padding: 20px 12px; }
+    .inv-ov.is-open { display: block; }
+    .inv-doc { max-width: 720px; margin: 0 auto; background: #fff; border-radius: var(--r-lg); padding: 28px; box-shadow: var(--shadow-md); }
+    .inv-top { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .inv-ttl { font-size: 22px; font-weight: 900; letter-spacing: .12em; }
+    .inv-meta { font-size: 11.5px; color: var(--ink-2); text-align: right; line-height: 1.7; }
+    .inv-to { margin-top: 20px; font-size: 14px; } .inv-to b { font-size: 16px; font-weight: 900; border-bottom: 1px solid var(--ink); padding-bottom: 2px; }
+    .inv-from { margin-top: 14px; font-size: 11.5px; color: var(--ink-2); line-height: 1.7; }
+    .inv-from b { color: var(--ink); font-size: 12.5px; }
+    .inv-total-band { margin-top: 16px; background: var(--surface-2); border-radius: var(--r-md); padding: 12px 16px; font-size: 13px; }
+    .inv-total-band b { font-size: 22px; font-weight: 900; }
+    table.inv-tbl { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 12.5px; }
+    .inv-tbl th { text-align: left; border-bottom: 2px solid var(--ink); padding: 7px 6px; font-size: 11px; color: var(--ink-2); }
+    .inv-tbl td { border-bottom: 1px solid var(--line); padding: 7px 6px; }
+    .inv-tbl td.num, .inv-tbl th.num { text-align: right; font-family: var(--font-num, inherit); }
+    .inv-sumtbl { width: 260px; margin-left: auto; margin-top: 12px; font-size: 12.5px; }
+    .inv-sumtbl td { padding: 4px 6px; } .inv-sumtbl td.num { text-align: right; font-family: var(--font-num, inherit); }
+    .inv-sumtbl tr.grand td { border-top: 2px solid var(--ink); font-weight: 900; font-size: 14px; }
+    .inv-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .inv-actions button { flex: 1; height: 46px; border-radius: var(--r-md); font-size: 14px; font-weight: 800; cursor: pointer; }
+    .inv-print { background: var(--ink); color: #fff; border: 0; } .inv-close { background: #fff; color: var(--ink-2); border: 1px solid var(--line-strong); }
+    .inv-legal { font-size: 10.5px; color: var(--ink-3); margin-top: 12px; line-height: 1.6; }
+
+    @media print {
+      body { padding: 0 !important; } body > *:not(.inv-ov) { display: none !important; }
+      .inv-ov { position: static; background: #fff; padding: 0; display: block; }
+      .inv-doc { box-shadow: none; max-width: none; padding: 0; }
+      .inv-actions { display: none !important; }
+    }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="mypage.html" aria-label="マイページ"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <nav class="header-actions">
+        <a class="icon-btn" href="orders.html" aria-label="注文履歴"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6"/></svg></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="iv-hd">
+      <div class="iv-hd__t">請求書・購入明細</div>
+      <div class="iv-hd__s">月ごとの<b>まとめ請求書</b>と<b>購入明細</b>をダウンロード（CSV）・印刷（PDF保存）できます。確定申告・記帳にそのままお使いいただけます。</div>
+    </div>
+
+    <div class="iv-info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>
+      <span>請求書は<b>適格請求書（インボイス）</b>に対応。「請求書を表示」→ ブラウザの印刷から<b>PDFとして保存</b>できます。明細は<b>CSV</b>で会計ソフトに取り込めます。</span>
+    </div>
+
+    <div class="iv-list" id="ivList"></div>
+
+    <p class="iv-note">※ 本プロトタイプの金額・登録番号はサンプルです。本番では実際のご注文データと貴社の適格請求書発行事業者登録番号に接続します。</p>
+  </main>
+
+  <!-- 請求書ドキュメント（印刷／PDF） -->
+  <div class="inv-ov" id="invOv" role="dialog" aria-modal="true" aria-label="請求書">
+    <div class="inv-doc" id="invDoc"></div>
+  </div>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=29"></script>
+  <script src="assets/js/data.js?v=29"></script>
+  <script src="assets/js/store.js?v=29"></script>
+  <script src="assets/js/components.js?v=29"></script>
+  <script src="assets/js/nav.js?v=29"></script>
+  <script>
+    (function () {
+      var yen = SP.fmtYen || function (n) { return '¥' + (n || 0).toLocaleString(); };
+      var toast = function (m) { if (window.SP_toast) SP_toast(m); };
+      var prod = function (id) { return (SP.DATA.products || []).find(function (p) { return p.id === id; }); };
+      var SALON = 'SALON LUXE 表参道店';
+      // 発行元（運営ディーラー）。本番はテナント情報から。登録番号はサンプル。
+      var ISSUER = {
+        name: '株式会社菊地（KIKUCHI PRODUCE）',
+        addr: '〒062-0003 北海道札幌市豊平区美園3条8丁目4-17',
+        tel: 'TEL 011-811-0981 ／ FAX 011-811-0285',
+        reg: 'T9012345678901', // ※適格請求書発行事業者登録番号（サンプル）
+      };
+      // 月次データ（サンプル）。各月＝注文明細（商品ID×数量）。本番は実注文から集計。
+      var MONTHS = [
+        { ym: '2026-06', no: 'INV-202606-LUXE', items: [['sh-001', 6], ['cox-001', 12], ['co-1', 10], ['tr-001', 4], ['sy-1', 6], ['ob-1', 3]] },
+        { ym: '2026-05', no: 'INV-202605-LUXE', items: [['sh-010', 4], ['cox-003', 8], ['co-7', 12], ['tr-003', 3], ['sy-8', 5]] },
+        { ym: '2026-04', no: 'INV-202604-LUXE', items: [['sh-003', 5], ['cox-005', 10], ['co-14', 8], ['ob-3', 4], ['sy-12', 3]] },
+        { ym: '2026-03', no: 'INV-202603-LUXE', items: [['sh-005', 6], ['cox-002', 6], ['co-3', 10], ['tr-002', 4]] },
+      ];
+      function lines(m) {
+        return m.items.map(function (it) { var p = prod(it[0]); if (!p) return null; return { name: p.name, brand: p.brand, qty: it[1], price: p.price, amount: p.price * it[1] }; }).filter(Boolean);
+      }
+      function calc(ls) { var sub = ls.reduce(function (s, l) { return s + l.amount; }, 0); var tax = Math.round(sub * 0.1); return { sub: sub, tax: tax, total: sub + tax }; }
+      var WaY = function (ym) { var p = ym.split('-'); return { y: p[0], m: parseInt(p[1], 10) }; };
+
+      function renderList() {
+        document.getElementById('ivList').innerHTML = MONTHS.map(function (m) {
+          var ls = lines(m), c = calc(ls), w = WaY(m.ym);
+          return '<div class="iv-row">' +
+            '<div class="iv-row__m"><div class="iv-row__mo">' + w.m + '月</div><div class="iv-row__yr">' + w.y + '年</div></div>' +
+            '<div class="iv-row__b"><div class="iv-row__sum">' + yen(c.total) + '<small>税込</small></div>' +
+            '<div class="iv-row__meta">' + ls.length + '品目 ・ ' + ls.reduce(function (s, l) { return s + l.qty; }, 0) + '点 ・ ' + m.no + '</div></div>' +
+            '<div class="iv-row__act">' +
+              '<button class="iv-abtn" data-csv="' + m.ym + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>明細CSV</button>' +
+              '<button class="iv-abtn iv-abtn--gold" data-inv="' + m.ym + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg>請求書を表示</button>' +
+            '</div></div>';
+        }).join('');
+      }
+
+      function downloadCsv(m) {
+        var ls = lines(m), c = calc(ls);
+        var rows = [['請求書番号', m.no], ['請求月', m.ym], ['宛先', SALON], ['発行', ISSUER.name], ['登録番号', ISSUER.reg], [], ['商品名', 'ブランド', '数量', '単価(税抜)', '金額(税抜)']];
+        ls.forEach(function (l) { rows.push([l.name, l.brand, l.qty, l.price, l.amount]); });
+        rows.push([], ['小計(税抜)', '', '', '', c.sub], ['消費税(10%)', '', '', '', c.tax], ['合計(税込)', '', '', '', c.total]);
+        var csv = '﻿' + rows.map(function (r) { return r.map(function (x) { return '"' + String(x == null ? '' : x).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '購入明細_' + m.ym + '.csv'; a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+        toast(m.ym + ' の明細CSVをダウンロードしました');
+      }
+
+      function showInvoice(m) {
+        var ls = lines(m), c = calc(ls), w = WaY(m.ym);
+        var rowsHtml = ls.map(function (l) {
+          return '<tr><td>' + l.name + '<br><span style="color:var(--ink-3);font-size:11px">' + l.brand + '</span></td>' +
+            '<td class="num">' + l.qty + '</td><td class="num">' + yen(l.price) + '</td><td class="num">' + yen(l.amount) + '</td></tr>';
+        }).join('');
+        document.getElementById('invDoc').innerHTML =
+          '<div class="inv-top"><div><div class="inv-ttl">請求書</div><div style="font-size:11.5px;color:var(--ink-3);margin-top:4px">' + w.y + '年' + w.m + '月分</div></div>' +
+          '<div class="inv-meta">請求書番号：' + m.no + '<br>発行日：' + w.y + '/' + w.m + '/末日<br>登録番号：' + ISSUER.reg + '</div></div>' +
+          '<div class="inv-to"><b>' + SALON + '</b> 御中</div>' +
+          '<div class="inv-total-band">ご請求金額（税込）　<b>' + yen(c.total) + '</b></div>' +
+          '<div class="inv-from"><b>' + ISSUER.name + '</b><br>' + ISSUER.addr + '<br>' + ISSUER.tel + '<br>適格請求書発行事業者登録番号：' + ISSUER.reg + '</div>' +
+          '<table class="inv-tbl"><thead><tr><th>品目</th><th class="num">数量</th><th class="num">単価(税抜)</th><th class="num">金額(税抜)</th></tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+          '<table class="inv-sumtbl"><tr><td>10%対象（税抜）</td><td class="num">' + yen(c.sub) + '</td></tr>' +
+          '<tr><td>消費税（10%）</td><td class="num">' + yen(c.tax) + '</td></tr>' +
+          '<tr class="grand"><td>合計（税込）</td><td class="num">' + yen(c.total) + '</td></tr></table>' +
+          '<p class="inv-legal">※ 本書は適格請求書（インボイス）の様式サンプルです。金額・登録番号はプロトタイプのサンプルです。</p>' +
+          '<div class="inv-actions"><button class="inv-print" id="invPrint">印刷 / PDFで保存</button><button class="inv-close" data-inv-close>閉じる</button></div>';
+        document.getElementById('invOv').classList.add('is-open');
+        document.getElementById('invPrint').addEventListener('click', function () { window.print(); });
+      }
+
+      document.getElementById('ivList').addEventListener('click', function (e) {
+        var csv = e.target.closest('[data-csv]'), inv = e.target.closest('[data-inv]');
+        if (csv) { var m1 = MONTHS.find(function (x) { return x.ym === csv.dataset.csv; }); if (m1) downloadCsv(m1); }
+        else if (inv) { var m2 = MONTHS.find(function (x) { return x.ym === inv.dataset.inv; }); if (m2) showInvoice(m2); }
+      });
+      document.getElementById('invOv').addEventListener('click', function (e) {
+        if (e.target === this || e.target.closest('[data-inv-close]')) this.classList.remove('is-open');
+      });
+
+      renderList();
+    })();
+  </script>
+</body>
+</html>

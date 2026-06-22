@@ -197,6 +197,11 @@
     '設備・什器': 'equipment.html',
     'リース': 'equipment.html',
     '中古機器': 'equipment.html',
+    'クイックオーダー': 'quickorder.html',
+    '一括発注': 'quickorder.html',
+    '請求書': 'invoices.html',
+    '請求書・購入明細': 'invoices.html',
+    '購入明細': 'invoices.html',
     'パートナー紹介': 'partners.html',
     '開業・運営パートナー': 'partners.html',
     '工務店': 'partners.html',
@@ -372,6 +377,7 @@
       subscribe: ['subscribe.html'], staff: ['staff.html'], pos: ['pos.html', 'inventory.html'],
       barcode: ['barcode.html'], tempu: ['tempu.html'], push: ['app.html', 'notify.html'],
       books: ['books.html'], equipment: ['equipment.html'], partners: ['partners.html'],
+      quickorder: ['quickorder.html'], invoices: ['invoices.html'],
     };
     Object.keys(FEAT_HREF).forEach(feat => {
       if (F[feat] === false) FEAT_HREF[feat].forEach(href => {

@@ -17,9 +17,11 @@
     density: [4, 6, 9].includes(savedDensity) ? savedDensity : 6, // ④⑥⑨ 表示密度
     search: '',
     brand: null,
-    colorType: null,   // カラー剤ドリル：選択中のタイプ（alkaline/gray/oxy/...）
+    colorType: null,   // カラー剤ドリル：選択中のタイプ（alkaline/gray/oxy/... / __cross＝色味×明るさ横断）
     colorLine: null,   // カラー剤ドリル：選択中のライン（ブランド）
     colorFamily: null, // カラー剤ドリル：選択中の色（family）
+    colorTone: null,   // 色味×明るさ横断：選択中の色味グループ
+    colorLevel: null,  // 色味×明るさ横断：選択中の明るさ（level）
     typeSel: {},       // タイプ・チップの選択（カテゴリ別：shampoo/treatment/outbath/styling/perm/straight）
     sizeSel: {},       // 容量（サイズ）チップの選択（カテゴリ別。タイプ×サイズの掛け合わせ）
     filters: { stock: new Set(), price: null, sameDay: false, concern: new Set() },
@@ -362,7 +364,8 @@
     if (!qs('#colorDrillStyle')) {
       const st = document.createElement('style'); st.id = 'colorDrillStyle';
       st.textContent = '.color-drill{display:block}.cd-crumb{display:flex;align-items:center;gap:2px;flex-wrap:wrap;margin-bottom:14px}.cd-crumb__l{font-size:12.5px;font-weight:700;color:var(--gold-strong);background:none;border:0;padding:2px;cursor:pointer}.cd-crumb__cur{font-size:12.5px;font-weight:800;color:var(--ink);padding:2px}.cd-crumb__sep{color:var(--ink-3);font-size:11px;margin:0 2px}.cd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}@media(min-width:560px){.cd-grid{grid-template-columns:repeat(3,1fr)}}@media(min-width:880px){.cd-grid{grid-template-columns:repeat(4,1fr)}}.cd-cell{position:relative}.cd-go{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;cursor:pointer;width:100%}.cd-go:hover{box-shadow:var(--shadow-md);border-color:var(--line-3)}.cd-cell--color .cd-go{align-items:stretch}.cd-card__maker{font-size:10.5px;color:var(--ink-3);font-weight:700}.cd-card__name{font-size:15px;font-weight:900;color:var(--ink)}.cd-card__meta{font-size:11.5px;color:var(--gold-strong);font-weight:700;margin-top:3px}.cd-swatch{height:48px;border-radius:var(--r-sm);margin-bottom:7px;border:1px solid rgba(0,0,0,.08)}.cd-fav{position:absolute;top:8px;right:8px;z-index:2;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0;cursor:pointer}.cd-fav svg{width:16px;height:16px}.cd-fav[aria-pressed=true]{color:#d8392b}.cd-fav[aria-pressed=true] svg{fill:#d8392b}'
-        + '.cdt-grid{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:560px){.cdt-grid{grid-template-columns:1fr 1fr}}@media(min-width:880px){.cdt-grid{grid-template-columns:1fr 1fr 1fr}}.cdt{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;cursor:pointer;width:100%;text-align:left}.cdt:hover{box-shadow:var(--shadow-md);border-color:var(--gold)}.cdt__ic{flex:none;width:42px;height:42px;border-radius:var(--r-md);background:var(--gold-soft);color:var(--gold-strong);display:flex;align-items:center;justify-content:center}.cdt__ic svg{width:22px;height:22px}.cdt__b{flex:1;min-width:0}.cdt__t{display:block;font-size:14.5px;font-weight:900;color:var(--ink)}.cdt__s{display:block;font-size:11.5px;color:var(--ink-3);font-weight:700;margin-top:2px}.cdt__go{flex:none;color:var(--gold-strong)}.cdt__go svg{width:18px;height:18px}';
+        + '.cdt-grid{display:grid;grid-template-columns:1fr;gap:10px}@media(min-width:560px){.cdt-grid{grid-template-columns:1fr 1fr}}@media(min-width:880px){.cdt-grid{grid-template-columns:1fr 1fr 1fr}}.cdt{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);padding:14px;cursor:pointer;width:100%;text-align:left}.cdt:hover{box-shadow:var(--shadow-md);border-color:var(--gold)}.cdt--cross{margin-bottom:10px;border-color:var(--gold-line);background:var(--gold-soft)}.cdt__ic{flex:none;width:42px;height:42px;border-radius:var(--r-md);background:var(--gold-soft);color:var(--gold-strong);display:flex;align-items:center;justify-content:center}.cdt__ic svg{width:22px;height:22px}.cdt__b{flex:1;min-width:0}.cdt__t{display:block;font-size:14.5px;font-weight:900;color:var(--ink)}.cdt__s{display:block;font-size:11.5px;color:var(--ink-3);font-weight:700;margin-top:2px}.cdt__go{flex:none;color:var(--gold-strong)}.cdt__go svg{width:18px;height:18px}'
+        + '.cx-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}.cx-row{display:flex;align-items:center;gap:8px}.cx-l{flex:none;width:36px;font-size:11px;font-weight:800;color:var(--ink-3)}.cx-chips{display:flex;gap:7px;overflow-x:auto;min-width:0}.cx-chips::-webkit-scrollbar{height:0}.cx-chip{flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface-2);font-size:12.5px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap}.cx-chip.is-on{background:var(--gold);border-color:var(--gold);color:#fff}.cx-sw{width:14px;height:14px;border-radius:50%;border:1px solid rgba(0,0,0,.12)}.cx-n{font-size:11px;font-weight:800;opacity:.6}.cx-chip.is-on .cx-n{opacity:.9}';
       document.head.appendChild(st);
     }
     grid.className = 'color-drill';
@@ -375,6 +378,11 @@
       qs('#pageTitle').textContent = 'カラー剤';
       qs('#pageCount').innerHTML = `<b>${COLOR_TYPES.length}</b>タイプ`;
       let html = '<nav class="cd-crumb"><span class="cd-crumb__cur">カラー剤</span></nav>';
+      // 先頭に「色味×明るさで探す（全ブランド横断）」＝各社が未対応の差別化機能
+      html += '<button class="cdt cdt--cross" data-cd="picktype" data-v="__cross">' +
+        '<span class="cdt__ic" style="background:linear-gradient(135deg,#1f4e8c,#7a4f9e,#1f7a5a);color:#fff"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg></span>' +
+        '<span class="cdt__b"><span class="cdt__t">色味×明るさで探す</span><span class="cdt__s">全ブランド横断（アッシュ×10レベル 等）</span></span>' +
+        `<span class="cdt__go">${svg('chevright')}</span></button>`;
       html += '<div class="cdt-grid">' + COLOR_TYPES.map(t => {
         const n = colorOfType(t.id).length;
         return `<button class="cdt" data-cd="picktype" data-v="${t.id}">` +
@@ -385,6 +393,39 @@
       grid.innerHTML = html;
       qs('#empty').hidden = true;
       return;
+    }
+
+    // 色味×明るさ 横断（全ブランド）：トーン・チップ × 明るさ・チップ → 横断グリッド
+    if (state.colorType === '__cross') {
+      const TONES = SP.COLOR_TONES || [], LEVELS = SP.COLOR_LEVELS || [];
+      const TONE_TINT = { 'アッシュ': '#6b7280', 'ブルー': '#1f4e8c', 'バイオレット': '#7a4f9e', 'グレー': '#8f9398', 'マット': '#1f7a5a', 'ベージュ': '#b9a78a', 'ブラウン': '#8a5a2f', 'ピンク': '#cf7a93' };
+      const lineColors = colorAll().filter(p => p.tone && p.level); // ライン構造を持つ色（アルカリ＋白髪）
+      const tn = state.colorTone, lv = state.colorLevel;
+      let list = lineColors;
+      if (tn) list = list.filter(p => p.tone === tn);
+      if (lv) list = list.filter(p => p.level === lv);
+      list = list.slice().sort((a, b) => a.level - b.level || a.line.localeCompare(b.line, 'ja'));
+      qs('#pageTitle').textContent = '色味×明るさで探す';
+      qs('#pageCount').innerHTML = `<b>${list.length}</b>件`;
+      let h = '<nav class="cd-crumb"><button class="cd-crumb__l" data-cd="root">カラー剤</button><span class="cd-crumb__sep">›</span><span class="cd-crumb__cur">色味×明るさ（横断）</span></nav>';
+      // 色味チップ（スウォッチ付き）
+      h += '<div class="cx-wrap"><div class="cx-row"><span class="cx-l">色味</span><div class="cx-chips">';
+      h += '<button class="cx-chip' + (!tn ? ' is-on' : '') + '" data-tone="__all">すべて</button>';
+      h += TONES.map(t => {
+        const n = lineColors.filter(p => p.tone === t && (!lv || p.level === lv)).length;
+        return n ? '<button class="cx-chip' + (tn === t ? ' is-on' : '') + '" data-tone="' + t + '"><span class="cx-sw" style="background:' + (TONE_TINT[t] || '#999') + '"></span>' + t + '<span class="cx-n">' + n + '</span></button>' : '';
+      }).join('');
+      h += '</div></div><div class="cx-row"><span class="cx-l">明るさ</span><div class="cx-chips">';
+      h += '<button class="cx-chip' + (!lv ? ' is-on' : '') + '" data-level="__all">すべて</button>';
+      h += LEVELS.map(L => {
+        const n = lineColors.filter(p => p.level === L && (!tn || p.tone === tn)).length;
+        return n ? '<button class="cx-chip' + (lv === L ? ' is-on' : '') + '" data-level="' + L + '">' + L + '<span class="cx-n">' + n + '</span></button>' : '';
+      }).join('');
+      h += '</div></div></div>';
+      h += list.length
+        ? `<div class="product-grid" data-density="${state.density}">` + list.map((p, i) => productCard(p, i)).join('') + '</div>'
+        : '<div style="padding:28px 8px;color:var(--ink-3);font-size:13px">条件に合うカラーがありません。色味または明るさを変えてください。</div>';
+      grid.innerHTML = h; qs('#empty').hidden = true; syncFavButtons(); return;
     }
 
     const def = colorTypeDef(state.colorType) || { label: 'カラー', drill: false };
@@ -739,12 +780,17 @@
       if (favL) { const on = Store.toggleFavBrand(favL.dataset.favline); favL.setAttribute('aria-pressed', on); toast(on ? 'お気に入りブランドに追加' : 'お気に入りブランドから削除'); return; }
       const favC = e.target.closest('[data-favcolor]');
       if (favC) { const a = favC.dataset.favcolor.split('｜'); const on = Store.toggleFavColor(a[0], a[1]); favC.setAttribute('aria-pressed', on); toast(on ? 'お気に入りカラーに追加' : 'お気に入りカラーから削除'); return; }
-      // カラー剤ドリルのナビ（ライン/色を選ぶ・戻る）
+      // 色味×明るさ 横断：トーン／明るさチップ
+      const toneB = e.target.closest('[data-tone]');
+      if (toneB) { const v = toneB.dataset.tone; state.colorTone = (v === '__all') ? null : v; render(); return; }
+      const lvB = e.target.closest('[data-level]');
+      if (lvB) { const v = lvB.dataset.level; state.colorLevel = (v === '__all') ? null : parseInt(v, 10); render(); return; }
+      // カラー剤ドリルのナビ（タイプ/ライン/色を選ぶ・戻る）
       const cd = e.target.closest('[data-cd]');
       if (cd) {
         const a = cd.dataset.cd;
-        if (a === 'root') { state.colorType = null; state.colorLine = null; state.colorFamily = null; }
-        else if (a === 'picktype') { state.colorType = cd.dataset.v; state.colorLine = null; state.colorFamily = null; }
+        if (a === 'root') { state.colorType = null; state.colorLine = null; state.colorFamily = null; state.colorTone = null; state.colorLevel = null; }
+        else if (a === 'picktype') { state.colorType = cd.dataset.v; state.colorLine = null; state.colorFamily = null; state.colorTone = null; state.colorLevel = null; }
         else if (a === 'type') { state.colorLine = null; state.colorFamily = null; }
         else if (a === 'line') { state.colorFamily = null; }
         else if (a === 'pickline') { state.colorLine = cd.dataset.v; state.colorFamily = null; }

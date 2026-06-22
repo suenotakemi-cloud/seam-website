@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>クイックオーダー（一括発注）｜SalonPro</title>
+  <meta name="description" content="品番・JAN・商品名をまとめて貼り付け／CSVアップロードで一括カート投入。定番のまとめ発注が数十秒で完了。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=29">
+  <link rel="stylesheet" href="assets/css/base.css?v=29">
+  <link rel="stylesheet" href="assets/css/components.css?v=29">
+  <link rel="stylesheet" href="assets/css/pages.css?v=29">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 860px; }
+    .qo-hd { margin-top: var(--s-4); }
+    .qo-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; }
+    .qo-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.65; }
+    .qo-info { display: flex; gap: 9px; align-items: flex-start; background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r-md); padding: 12px 14px; margin-top: var(--s-4); font-size: 12px; color: var(--ink-2); line-height: 1.65; }
+    .qo-info svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--gold-strong); }
+    .qo-info b { color: var(--ink); }
+    .qo-ta { width: 100%; min-height: 150px; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 12px 14px; font-size: 14px; font-family: var(--font-num, inherit); line-height: 1.7; margin-top: var(--s-4); resize: vertical; }
+    .qo-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; align-items: center; }
+    .qo-btn { height: 46px; padding: 0 20px; border-radius: var(--r-md); font-size: 14px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--line-strong); background: #fff; color: var(--ink); }
+    .qo-btn svg { width: 16px; height: 16px; }
+    .qo-btn--primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .qo-btn--gold { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .qo-btn--gold:hover { background: var(--gold-strong); }
+    .qo-file { display: none; }
+    .qo-sample { font-size: 11.5px; color: var(--ink-3); margin-left: auto; background: none; border: 0; text-decoration: underline; cursor: pointer; }
+
+    .qo-result { margin-top: var(--s-5); }
+    .qo-sum { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12.5px; font-weight: 700; margin-bottom: 10px; }
+    .qo-sum b { font-weight: 900; }
+    .qo-sum .ok { color: #2f7d4f; } .qo-sum .amb { color: #8a6a1f; } .qo-sum .ng { color: #c0453f; }
+    .qo-row { display: flex; align-items: center; gap: 11px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 12px; }
+    .qo-row + .qo-row { margin-top: 7px; }
+    .qo-row__st { flex: none; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .qo-row__st svg { width: 14px; height: 14px; }
+    .qo-row--ok .qo-row__st { background: #e7f4ec; color: #2f7d4f; }
+    .qo-row--amb .qo-row__st { background: #fff5e0; color: #8a6a1f; }
+    .qo-row--ng .qo-row__st { background: #f6e9e7; color: #c0453f; }
+    .qo-row__b { flex: 1; min-width: 0; }
+    .qo-row__t { font-size: 13.5px; font-weight: 800; line-height: 1.35; }
+    .qo-row__m { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .qo-row__qty { flex: none; display: inline-flex; align-items: center; border: 1px solid var(--line-3); border-radius: var(--r-sm); overflow: hidden; }
+    .qo-row__qty button { width: 30px; height: 32px; border: 0; background: #fff; font-size: 17px; font-weight: 700; color: var(--ink); cursor: pointer; }
+    .qo-row__qty span { width: 34px; text-align: center; font-weight: 800; font-size: 14px; }
+    .qo-row__price { flex: none; font-size: 13px; font-weight: 900; min-width: 72px; text-align: right; }
+    .qo-bar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 12px; padding: 12px 0; margin-top: 14px; background: linear-gradient(#fff0, #fff 26%); }
+    .qo-bar__info { flex: 1; font-size: 13px; font-weight: 800; } .qo-bar__info b { color: var(--gold-strong); }
+    .qo-note { font-size: 11px; color: var(--ink-3); line-height: 1.6; margin: 16px 0 4px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <nav class="header-actions">
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="qo-hd">
+      <div class="qo-hd__t">クイックオーダー（一括発注）</div>
+      <div class="qo-hd__s">品番・JAN・商品名を改行で何個でも貼り付け、または CSV をアップロードして<b>まとめてカート</b>に入れられます。定番のまとめ発注が数十秒で完了します。</div>
+    </div>
+
+    <div class="qo-info">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h7"/></svg>
+      <span>1行に<b>1商品</b>。「品番（またはJAN・商品名） 数量」の順。区切りは スペース／カンマ／タブ／× のいずれでもOK。数量を省くと1点。<br>例：<b>sh-001 6</b> ／ <b>4900000000201, 3</b> ／ <b>アディクシー サファイア 7 ×2</b></span>
+    </div>
+
+    <textarea class="qo-ta" id="qoInput" placeholder="sh-001 6&#10;cox-001 12&#10;アディクシー サファイア 7 ×2&#10;N. ポリッシュオイル, 3"></textarea>
+
+    <div class="qo-actions">
+      <button class="qo-btn qo-btn--primary" id="qoParse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>照合する</button>
+      <button class="qo-btn" id="qoCsvBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>CSVを読み込む</button>
+      <input type="file" id="qoCsv" class="qo-file" accept=".csv,.txt,text/csv">
+      <button class="qo-sample" id="qoSample">サンプルを入れる</button>
+    </div>
+
+    <div class="qo-result" id="qoResult" hidden>
+      <div class="qo-sum" id="qoSum"></div>
+      <div id="qoRows"></div>
+      <div class="qo-bar">
+        <span class="qo-bar__info" id="qoBarInfo"></span>
+        <button class="qo-btn qo-btn--gold" id="qoAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg>有効な商品をカートに追加</button>
+      </div>
+    </div>
+
+    <p class="qo-note">※ 照合は品番（ID）・JAN・型番の完全一致を優先し、見つからない場合は商品名で検索します。商品名が複数該当する場合は「候補が複数」と表示し、品番での指定をおすすめします。</p>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=29"></script>
+  <script src="assets/js/data.js?v=29"></script>
+  <script src="assets/js/store.js?v=29"></script>
+  <script src="assets/js/components.js?v=29"></script>
+  <script src="assets/js/nav.js?v=29"></script>
+  <script>
+    (function () {
+      var Store = SP.Store;
+      var yen = SP.fmtYen || function (n) { return '¥' + (n || 0).toLocaleString(); };
+      var toast = function (m) { if (window.SP_toast) SP_toast(m); };
+      var products = (SP.DATA.products || []).filter(function (p) { return p.cat !== '_rec'; });
+
+      function norm(s) {
+        return String(s == null ? '' : s).toLowerCase()
+          .replace(/[ぁ-ゖ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) + 0x60); })
+          .replace(/[！-～]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xfee0); })
+          .replace(/　/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      // 1行を「識別子」と「数量」に分解
+      function splitLine(line) {
+        var raw = line.trim(); if (!raw) return null;
+        // カンマ/タブ区切りなら最後の列を数量候補に
+        var parts = raw.split(/[\t,]+/).map(function (s) { return s.trim(); }).filter(Boolean);
+        if (parts.length >= 2 && /^\d+$/.test(parts[parts.length - 1])) {
+          return { idp: parts.slice(0, -1).join(' '), qty: parseInt(parts[parts.length - 1], 10) };
+        }
+        // 末尾の「×N」「xN」「 N」を数量とみなす
+        var m = raw.match(/^(.*?)[\s,]*[x×*]\s*(\d+)\s*$/i) || raw.match(/^(.+?)\s+(\d+)\s*$/);
+        if (m) return { idp: m[1].trim(), qty: parseInt(m[2], 10) };
+        return { idp: raw, qty: 1 };
+      }
+      function resolve(idp) {
+        var key = norm(idp);
+        // 1) ID 完全一致
+        var p = products.find(function (x) { return norm(x.id) === key; });
+        if (p) return { p: p };
+        // 2) JAN 完全一致
+        p = products.find(function (x) { return x.jan && norm(x.jan) === key; });
+        if (p) return { p: p };
+        // 3) 型番(code) 完全一致
+        p = products.find(function (x) { return x.code && norm(x.code) === key; });
+        if (p) return { p: p };
+        // 4) 商品名（＋ブランド）部分一致
+        var hits = products.filter(function (x) { return norm((x.name || '') + ' ' + (x.brand || '')).indexOf(key) >= 0; });
+        if (hits.length === 1) return { p: hits[0] };
+        if (hits.length > 1) return { ambiguous: hits.length };
+        return {};
+      }
+
+      var rows = []; // { idp, qty, p, status }
+      function parse(text) {
+        rows = (text || '').split(/\r?\n/).map(function (l) { return splitLine(l); }).filter(Boolean).map(function (it) {
+          var r = resolve(it.idp);
+          return { idp: it.idp, qty: Math.max(1, it.qty || 1), p: r.p || null, status: r.p ? 'ok' : (r.ambiguous ? 'amb' : 'ng'), amb: r.ambiguous || 0 };
+        });
+        render();
+      }
+      var ICON = { ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>', amb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v5M12 16v.01"/><circle cx="12" cy="12" r="9"/></svg>', ng: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>' };
+      function render() {
+        var res = document.getElementById('qoResult');
+        if (!rows.length) { res.hidden = true; return; }
+        res.hidden = false;
+        var ok = rows.filter(function (r) { return r.status === 'ok'; });
+        var amb = rows.filter(function (r) { return r.status === 'amb'; });
+        var ng = rows.filter(function (r) { return r.status === 'ng'; });
+        var total = ok.reduce(function (s, r) { return s + (r.p.price * r.qty); }, 0);
+        var pts = ok.reduce(function (s, r) { return s + r.qty; }, 0);
+        document.getElementById('qoSum').innerHTML =
+          '<span class="ok">照合OK <b>' + ok.length + '</b></span>' +
+          (amb.length ? '<span class="amb">候補が複数 <b>' + amb.length + '</b></span>' : '') +
+          (ng.length ? '<span class="ng">未検出 <b>' + ng.length + '</b></span>' : '');
+        document.getElementById('qoRows').innerHTML = rows.map(function (r, i) {
+          var st = r.status;
+          var main = r.p
+            ? '<div class="qo-row__t">' + r.p.name + '</div><div class="qo-row__m">' + (r.p.brand || '') + (r.p.jan ? ' ・ ' + r.p.jan : '') + '</div>'
+            : '<div class="qo-row__t">' + r.idp + '</div><div class="qo-row__m">' + (st === 'amb' ? '候補が複数（' + r.amb + '件）→品番で指定してください' : '見つかりませんでした') + '</div>';
+          var qtyUi = r.p ? '<div class="qo-row__qty"><button data-qm="' + i + '">−</button><span>' + r.qty + '</span><button data-qp="' + i + '">＋</button></div><div class="qo-row__price">' + yen(r.p.price * r.qty) + '</div>' : '';
+          return '<div class="qo-row qo-row--' + st + '"><span class="qo-row__st">' + ICON[st] + '</span><div class="qo-row__b">' + main + '</div>' + qtyUi + '</div>';
+        }).join('');
+        document.getElementById('qoBarInfo').innerHTML = '追加 <b>' + ok.length + '商品 / ' + pts + '点</b>　小計（税抜） <b>' + yen(total) + '</b>';
+        document.getElementById('qoAdd').disabled = ok.length === 0;
+      }
+
+      document.getElementById('qoParse').addEventListener('click', function () { parse(document.getElementById('qoInput').value); });
+      document.getElementById('qoRows') && document.getElementById('qoResult').addEventListener('click', function (e) {
+        var qm = e.target.closest('[data-qm]'), qp = e.target.closest('[data-qp]');
+        if (qm) { var i = +qm.dataset.qm; rows[i].qty = Math.max(1, rows[i].qty - 1); render(); }
+        else if (qp) { var j = +qp.dataset.qp; rows[j].qty = rows[j].qty + 1; render(); }
+      });
+      document.getElementById('qoAdd').addEventListener('click', function () {
+        var ok = rows.filter(function (r) { return r.status === 'ok'; });
+        if (!ok.length) return;
+        ok.forEach(function (r) { Store.addToCart(r.p.id, r.qty); });
+        toast(ok.length + '商品をカートに追加しました');
+        syncCart();
+      });
+      document.getElementById('qoCsvBtn').addEventListener('click', function () { document.getElementById('qoCsv').click(); });
+      document.getElementById('qoCsv').addEventListener('change', function (e) {
+        var f = e.target.files && e.target.files[0]; if (!f) return;
+        var rd = new FileReader();
+        rd.onload = function () { document.getElementById('qoInput').value = String(rd.result || ''); parse(document.getElementById('qoInput').value); };
+        rd.readAsText(f);
+      });
+      document.getElementById('qoSample').addEventListener('click', function () {
+        document.getElementById('qoInput').value = 'sh-001 6\ncox-001 12\nアディクシー サファイア 7 ×2\nN. ポリッシュオイル, 3\nzzz-999 1';
+        parse(document.getElementById('qoInput').value);
+      });
+
+      function syncCart() {
+        var n = Store.cartSummary().count + (Store.giftCount ? Store.giftCount() : 0);
+        var el = document.getElementById('cartBadge'); if (el) { el.textContent = n; el.hidden = n <= 0; }
+      }
+      Store.subscribe(syncCart);
+      syncCart();
+    })();
+  </script>
+</body>
+</html>

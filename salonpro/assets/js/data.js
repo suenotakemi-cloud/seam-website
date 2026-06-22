@@ -21,6 +21,7 @@
       marketplace: true, tempu: true, subscribe: true, barcode: true, pos: true,
       staff: true, push: true, favorites: true, learn: true, support: true,
       books: true, equipment: true, usedEquipment: true, partners: true,
+      quickorder: true, invoices: true,
     },
     // 紹介パートナー（工務店/タオル/税理士/社労士/カード決済/保険）の表示可否（ディーラー個別）
     partners: { koumuten: true, towel: true, tax: true, sharoshi: true, payment: true, insurance: true },
@@ -309,6 +310,17 @@
       { family: 'オリーブ', tint: '#6f7350', levels: [5, 7, 9] },
     ] },
   ];
+  // 色味グループ（ブランド跨ぎの「色味×明るさ」横断検索用）。各社の色名を共通トーンに正規化。
+  const TONE_MAP = {
+    'サファイア': 'ブルー', 'クールブルー': 'ブルー',
+    'アッシュ': 'アッシュ', 'アッシュベージュ': 'ベージュ',
+    'アメジスト': 'バイオレット', 'パープルガーネット': 'バイオレット',
+    'シルバー': 'グレー', 'グレーパール': 'グレー',
+    'エメラルド': 'マット', 'オリーブ': 'マット',
+    'ベージュ': 'ベージュ',
+    'ピンク': 'ピンク', 'ピンクブラウン': 'ピンク',
+    'ウォームブラウン': 'ブラウン', 'ナチュラルブラウン': 'ブラウン', 'ナチュラル': 'ブラウン',
+  };
   (function () {
     var n = 0;
     COLOR_LINES.forEach(function (L) {
@@ -316,7 +328,8 @@
         F.levels.forEach(function (lv) {
           n++;
           products.push({
-            id: 'co-' + n, cat: 'color', colorType: L.type || 'alkaline', brand: L.line, maker: L.maker, line: L.line, family: F.family, level: lv,
+            id: 'co-' + n, cat: 'color', colorType: L.type || 'alkaline', tone: TONE_MAP[F.family] || 'その他',
+            brand: L.line, maker: L.maker, line: L.line, family: F.family, level: lv,
             name: L.line + ' ' + F.family + ' ' + lv, price: 1210, stock: 'in', badge: null,
             pop: 90 - n, added: 60 - n, same: true, senbai: true,
             ph: { shape: 'box', tint: F.tint, label: F.family + ' ' + lv },
@@ -325,6 +338,9 @@
       });
     });
   })();
+  // 色味×明るさ 横断検索の選択肢（チップ表示順）
+  const COLOR_TONES = ['アッシュ', 'ブルー', 'バイオレット', 'グレー', 'マット', 'ベージュ', 'ブラウン', 'ピンク'];
+  const COLOR_LEVELS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
   // 業種の既定はヘア（美容室）。美容室専売品（プレステージ系）に senbai フラグ。
   const SENBAI = ['sh-001', 'sh-007', 'sh-008', 'tr-001', 'tr-004'];
@@ -793,6 +809,8 @@
   window.SP.NEWS = NEWS;
   window.SP.COLOR_LINES = COLOR_LINES;
   window.SP.COLOR_TYPES = COLOR_TYPES;
+  window.SP.COLOR_TONES = COLOR_TONES;
+  window.SP.COLOR_LEVELS = COLOR_LEVELS;
   window.SP.SHAMPOO_TYPES = SHAMPOO_TYPES;
   window.SP.SIZE_BUCKETS = SIZE_BUCKETS;
   window.SP.TREATMENT_TYPES = TREATMENT_TYPES;
