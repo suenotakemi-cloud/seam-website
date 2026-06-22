@@ -23,6 +23,7 @@
   const LS_LEASE_APPS = 'sp.leaseApps.v1';       // [機器リース/購入/中古の申込レコード] admin通知連携
   const LS_PARTNER_LEADS = 'sp.partnerLeads.v1'; // [紹介パートナー（工務店/税理士等）の紹介依頼] admin通知連携
   const LS_BUYBACKS = 'sp.buybacks.v1';          // [大型機器の買取査定依頼（写真添付）] admin通知連携
+  const LS_USED_INV = 'sp.usedInventory.v1';     // [ディーラーが出品した中古在庫] 買取成立→中古再販に自動掲載
   const LS_STAFF = 'sp.staff.v1';                // [スタッフ {id,name,role,store}]
   const LS_ACTOR = 'sp.actor.v1';                // 現在の発注者 {role,name,staffId}
   const LS_TEMPLATES = 'sp.orderTemplates.v1';   // [発注テンプレ {id,name,by,items:[{id,qty}],at}]
@@ -62,6 +63,7 @@
   let leaseApps = load(LS_LEASE_APPS, []);       // 機器リース/購入/中古の申込レコード
   let partnerLeads = load(LS_PARTNER_LEADS, []); // 紹介パートナーの紹介依頼レコード
   let buybacks = load(LS_BUYBACKS, []);          // 大型機器の買取査定依頼レコード
+  let usedInventory = load(LS_USED_INV, []);     // ディーラーが出品した中古在庫レコード
   // staff.html と同形のシード（同じ sp.staff.v1 を共有）
   const SEED_STAFF = [
     { id: 'u1', name: '菊地 健一', email: 'owner@salon-luxe.jp', store: 's1', role: 'owner', perms: { view: true, order: true, approve: true } },
@@ -362,6 +364,21 @@
       if (quote != null && quote !== '') a.quote = quote;   // 査定額の提示（円）
       save(LS_BUYBACKS, buybacks); emit();
       return a;
+    },
+
+    /* ---- 中古在庫（ディーラーが買取成立機器を出品→equipment.html の中古再販に自動掲載） ---- */
+    addUsedItem(rec) {
+      rec = rec || {};
+      rec.id = rec.id || ('ui-' + (usedInventory.length + 1) + '-' + Math.floor(Math.random() * 1e6));
+      rec.listedAt = rec.listedAt || Date.now();
+      usedInventory.unshift(rec);
+      save(LS_USED_INV, usedInventory); emit();
+      return rec;
+    },
+    getUsedInventory() { return usedInventory.slice(); },
+    removeUsedItem(id) {
+      usedInventory = usedInventory.filter(x => x.id !== id);
+      save(LS_USED_INV, usedInventory); emit();
     },
 
     /* ---- スタッフ／発注者（actor）：オーナー＝直接発注、スタッフ＝発注は申請→承認 ---- */

@@ -421,8 +421,17 @@
     SP.Store.addLeaseApp({ equipId: 'u-001', name: 'シャンプー台 ユニット（中古）', brand: 'タカラベルモント', price: 198000, plan: 'used', salon: 'Atelier NOa 自由が丘', contact: '田中 / 090-2222-3333', note: '中古で1台導入したい' });
   }
 
-  // 大型機器 買取査定キュー（equipment.html の買取依頼 → Store.addBuyback → ここで担当者が査定・買取／成立は中古再販へ）
-  const BUYBACK_ST = { pending: ['受付', 'tag--prep'], contacted: ['連絡済み', 'tag--new'], quoted: ['査定提示', 'tag--shipped'], agreed: ['買取成立', 'tag--shipped'], rejected: ['見送り', 'tag--mute'] };
+  // 大型機器 買取査定キュー（equipment.html の買取依頼 → Store.addBuyback → ここで担当者が査定・買取→中古として出品）
+  const BUYBACK_ST = { pending: ['受付', 'tag--prep'], contacted: ['連絡済み', 'tag--new'], quoted: ['査定提示', 'tag--shipped'], agreed: ['買取成立', 'tag--shipped'], listed: ['中古に出品済み', 'tag--shipped'], rejected: ['見送り', 'tag--mute'] };
+  // 機器種類 → 中古カードの色/ラベル（中古再販グリッドの体裁を既存在庫に合わせる）
+  const BB_PH = {
+    'セット椅子': { tint: '#3a3030', label: 'CHAIR' }, 'シャンプー台': { tint: '#5b6473', label: 'SHAMPOO' },
+    'スチーマー': { tint: '#7d8fa6', label: 'STEAMER' }, 'ミラー・セット面什器': { tint: '#cdd2d8', label: 'MIRROR' },
+    'パーマ機（デジパ/コスメ）': { tint: '#6a5a74', label: 'PERM' }, '薬剤保管庫・ロッカー': { tint: '#8a8f96', label: 'LOCKER' },
+    '受付カウンター': { tint: '#b9a78a', label: 'COUNTER' }, 'その他大型機器': { tint: '#5b6473', label: 'EQUIP' },
+  };
+  const COND_GRADE = { '良好': 'A', '普通': 'B', '要修理': 'C' };
+  const YEAR_BACK = { '〜3年': 2, '3〜5年': 4, '5〜10年': 7, '10年〜': 12 };
   function renderBuybacks() {
     const el = qs('#buybackList'); if (!el) return;
     const apps = SP.Store.getBuybacks ? SP.Store.getBuybacks() : [];
@@ -432,7 +441,17 @@
       const st = BUYBACK_ST[a.status] || BUYBACK_ST.pending;
       const spec = `${a.type} ×${a.qty || 1}・状態${a.cond}・${a.years || '—'}・写真${a.photoCount || (a.photos ? a.photos.length : 0)}枚`;
       const quoteLine = (a.quote != null && a.quote !== '') ? ` ・ 査定額 ¥${(+a.quote).toLocaleString()}` : '';
-      const done = a.status === 'agreed' || a.status === 'rejected';
+      let actions;
+      if (a.status === 'listed' || a.status === 'rejected') {
+        actions = '';
+      } else if (a.status === 'agreed') {
+        actions = '<button class="btn btn--primary" data-act="list" data-id="' + a.id + '">中古として出品</button>';
+      } else {
+        actions = '<button class="btn btn--ghost" data-act="reject" data-id="' + a.id + '">見送り</button>'
+          + '<button class="btn btn--ghost" data-act="contact" data-id="' + a.id + '">連絡済み</button>'
+          + '<button class="btn btn--ghost" data-act="quote" data-id="' + a.id + '">査定額を提示</button>'
+          + '<button class="btn btn--primary" data-act="agree" data-id="' + a.id + '">買取成立にする</button>';
+      }
       return `
       <div class="review-item" data-id="${a.id}">
         <span class="review-item__av">買</span>
@@ -441,12 +460,7 @@
           <span class="review-item__meta">${a.salon || '—'}${a.contact ? '・' + a.contact : ''}${a.when ? '・引取希望:' + a.when : ''}</span>
           <span class="doc-chip">${svg('checkc')}${spec}${quoteLine}</span>
         </span>
-        <span class="review-item__act">
-          ${done ? '' : '<button class="btn btn--ghost" data-act="reject" data-id="' + a.id + '">見送り</button>'}
-          ${done ? '' : '<button class="btn btn--ghost" data-act="contact" data-id="' + a.id + '">連絡済み</button>'}
-          ${done ? '' : '<button class="btn btn--ghost" data-act="quote" data-id="' + a.id + '">査定額を提示</button>'}
-          <button class="btn btn--primary" data-act="agree" data-id="${a.id}"${a.status === 'agreed' ? ' disabled' : ''}>${a.status === 'agreed' ? '買取成立' : '買取成立にする'}</button>
-        </span>
+        <span class="review-item__act">${actions}</span>
       </div>`;
     }).join('');
   }
@@ -463,11 +477,86 @@
       toast(`査定額 ¥${n.toLocaleString()} を提示しました`);
       renderBuybacks(); return;
     }
+    if (act === 'list') { openListModal(id); return; }
     const map = { reject: 'rejected', contact: 'contacted', agree: 'agreed' };
     SP.Store.setBuybackStatus(id, map[act] || 'pending');
-    toast(act === 'agree' ? '買取成立にしました（中古として再販へ）' : act === 'contact' ? '「連絡済み」にしました' : '見送りにしました');
+    toast(act === 'agree' ? '買取成立にしました。続けて中古として出品できます' : act === 'contact' ? '「連絡済み」にしました' : '見送りにしました');
     renderBuybacks();
   });
+
+  // 買取成立 → 「中古として出品」モーダル（中古在庫に登録＝equipment.html の中古再販に自動掲載）
+  let listCurrent = null;
+  function openListModal(buybackId) {
+    const a = SP.Store.getBuybacks().find(x => x.id === buybackId); if (!a) return;
+    listCurrent = a;
+    const Y = new Date().getFullYear();
+    const ph = BB_PH[a.type] || BB_PH['その他大型機器'];
+    qs('#ulSub').textContent = `${a.salon || ''} からの買取機器を中古在庫に出品します`;
+    qs('#ulName').value = (a.maker ? a.maker + ' ' : '') + a.type + (a.qty > 1 ? `（${a.qty}点）` : '');
+    qs('#ulBrand').value = a.maker ? String(a.maker).split('/')[0].trim() : '共通';
+    qs('#ulGrade').value = COND_GRADE[a.cond] || 'B';
+    qs('#ulYear').value = Y - (YEAR_BACK[a.years] || 6);
+    qs('#ulList').value = '';
+    qs('#ulPrice').value = a.quote ? Math.round(a.quote * 1.6 / 1000) * 1000 : '';  // 仕入の目安1.6倍を初期提案（編集可）
+    qs('#ulSource').value = '買取（閉店・改装より）';
+    qs('#ulQuoteRef').textContent = a.quote ? `仕入（査定額）¥${(+a.quote).toLocaleString()}` : '仕入（査定額）未設定';
+    qs('#usedListOv').style.display = 'flex';
+  }
+  function closeListModal() { qs('#usedListOv').style.display = 'none'; listCurrent = null; }
+  const _ulx = qs('#usedListOv');
+  if (_ulx) _ulx.addEventListener('click', e => { if (e.target === _ulx || e.target.hasAttribute('data-ul-close')) closeListModal(); });
+  const _ulSubmit = qs('#ulSubmit');
+  if (_ulSubmit) _ulSubmit.addEventListener('click', () => {
+    if (!listCurrent) return;
+    const price = Math.max(0, Math.round(+String(qs('#ulPrice').value).replace(/[^\d.]/g, '') || 0));
+    if (!price) { toast('販売価格を入力してください'); return; }
+    const list = Math.max(0, Math.round(+String(qs('#ulList').value).replace(/[^\d.]/g, '') || 0));
+    const ph = BB_PH[listCurrent.type] || BB_PH['その他大型機器'];
+    SP.Store.addUsedItem({
+      name: qs('#ulName').value.trim() || listCurrent.type,
+      brand: qs('#ulBrand').value.trim() || '共通',
+      cond: qs('#ulGrade').value || 'B',
+      year: +qs('#ulYear').value || new Date().getFullYear(),
+      list: list || 0, price: price,
+      source: qs('#ulSource').value.trim() || '買取より',
+      ph: { tint: ph.tint, label: ph.label },
+      fromBuyback: listCurrent.id,
+    });
+    SP.Store.setBuybackStatus(listCurrent.id, 'listed');
+    toast('中古在庫に出品しました（中古再販ページに掲載）');
+    closeListModal();
+    renderBuybacks(); renderUsedInventory();
+  });
+
+  // 出品中の中古在庫（ディーラーが出品＝買取成立分。equipment.html の中古再販に掲載中）
+  function renderUsedInventory() {
+    const el = qs('#usedInvList'); if (!el) return;
+    const items = SP.Store.getUsedInventory ? SP.Store.getUsedInventory() : [];
+    if (!items.length) { el.innerHTML = '<div style="padding:14px;text-align:center;color:var(--ink-3);font-size:12.5px">出品中の中古在庫はありません。買取査定キューで「買取成立」→「中古として出品」で掲載されます。</div>'; return; }
+    el.innerHTML = items.map(p => {
+      const off = p.list ? Math.round((1 - p.price / p.list) * 100) : 0;
+      return `
+      <div class="review-item" data-id="${p.id}">
+        <span class="review-item__av">中</span>
+        <span class="review-item__main">
+          <span class="review-item__name">${p.name} <span class="tag tag--shipped">掲載中</span></span>
+          <span class="review-item__meta">${p.brand || ''}・状態${p.cond}・${p.year}年式・${p.source || ''}</span>
+          <span class="doc-chip">${svg('checkc')}販売 ¥${(p.price || 0).toLocaleString()}${p.list ? ` ／ 参考上代 ¥${p.list.toLocaleString()}${off > 0 ? `（${off}%OFF）` : ''}` : ''}</span>
+        </span>
+        <span class="review-item__act">
+          <button class="btn btn--ghost" data-act="remove" data-id="${p.id}">取り下げ</button>
+        </span>
+      </div>`;
+    }).join('');
+  }
+  const _uil = qs('#usedInvList');
+  if (_uil) _uil.addEventListener('click', e => {
+    const b = e.target.closest('[data-act="remove"]'); if (!b) return;
+    SP.Store.removeUsedItem(b.dataset.id);
+    toast('中古在庫から取り下げました（中古再販ページから非掲載）');
+    renderUsedInventory();
+  });
+
   // デモ用：買取依頼が無ければサンプルを投入（実際は equipment.html の買取フォームから届く）
   if (SP.Store.getBuybacks && SP.Store.getBuybacks().length === 0) {
     SP.Store.addBuyback({ type: 'セット椅子', cond: '普通', maker: 'タカラベルモント / レガロ', qty: 2, years: '5〜10年', photos: ['全体写真', '座面の傷', '型番ラベル'], photoCount: 3, salon: 'hair atelier MELT 中目黒', contact: '高橋 / 03-1234-5678', when: '改装に合わせて来月', note: '2脚まとめて引き取り希望' });
@@ -523,6 +612,7 @@
   renderSeminars();
   renderLeases();
   renderBuybacks();
+  renderUsedInventory();
   renderPartners();
   renderLow();
   renderClaims();

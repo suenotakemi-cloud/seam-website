@@ -5,10 +5,10 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>管理コンソール｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=33">
-  <link rel="stylesheet" href="assets/css/base.css?v=33">
-  <link rel="stylesheet" href="assets/css/components.css?v=33">
-  <link rel="stylesheet" href="assets/css/admin.css?v=33">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=34">
+  <link rel="stylesheet" href="assets/css/base.css?v=34">
+  <link rel="stylesheet" href="assets/css/components.css?v=34">
+  <link rel="stylesheet" href="assets/css/admin.css?v=34">
 </head>
 <body class="adm">
 
@@ -64,6 +64,11 @@
       <div class="adm-card">
         <div class="adm-card__head"><span class="adm-card__title">機器買取 査定キュー</span><span class="adm-card__more">セット椅子・シャンプー台等の買取依頼（写真付）。査定額を提示→成立で中古再販へ</span></div>
         <div class="adm-card__body" id="buybackList"></div>
+      </div>
+
+      <div class="adm-card">
+        <div class="adm-card__head"><span class="adm-card__title">出品中の中古在庫</span><span class="adm-card__more">買取成立→出品した機器。中古再販ページに掲載中（取り下げで非掲載）</span></div>
+        <div class="adm-card__body" id="usedInvList"></div>
       </div>
 
       <div class="adm-card">
@@ -157,13 +162,49 @@
     </div>
   </div>
 
+  <!-- 買取成立 → 中古として出品 モーダル -->
+  <div id="usedListOv" style="position:fixed;inset:0;z-index:300;display:none;align-items:center;justify-content:center">
+    <div data-ul-close style="position:absolute;inset:0;background:rgba(20,18,14,.5)"></div>
+    <div role="dialog" aria-modal="true" style="position:relative;width:min(520px,92vw);max-height:88vh;overflow:auto;background:#fff;border-radius:14px;padding:22px">
+      <div style="font-size:17px;font-weight:900">中古として出品</div>
+      <div style="font-size:12.5px;color:#6b6b6b;margin-top:4px" id="ulSub"></div>
+      <div id="ulQuoteRef" style="display:inline-block;margin-top:10px;font-size:11.5px;font-weight:800;color:#1f4e8c;background:#1f4e8c14;border-radius:999px;padding:4px 11px"></div>
+
+      <label style="display:block;margin-top:14px;font-size:11.5px;font-weight:800;color:var(--ink-2)">商品名
+        <input type="text" id="ulName" style="width:100%;margin-top:5px;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font-size:14px"></label>
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:10px;margin-top:11px">
+        <label style="font-size:11.5px;font-weight:800;color:var(--ink-2)">ブランド・メーカー
+          <input type="text" id="ulBrand" style="width:100%;margin-top:5px;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font-size:14px"></label>
+        <label style="font-size:11.5px;font-weight:800;color:var(--ink-2)">状態グレード
+          <select id="ulGrade" style="width:100%;margin-top:5px;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font-size:14px;background:#fff">
+            <option value="A">A（良好）</option><option value="B">B（普通）</option><option value="C">C（要修理）</option></select></label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:11px">
+        <label style="font-size:11.5px;font-weight:800;color:var(--ink-2)">年式（西暦）
+          <input type="number" id="ulYear" inputmode="numeric" style="width:100%;margin-top:5px;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--font-num)"></label>
+        <label style="font-size:11.5px;font-weight:800;color:var(--ink-2)">参考上代（任意）
+          <input type="number" id="ulList" inputmode="numeric" placeholder="新品価格" style="width:100%;margin-top:5px;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--font-num)"></label>
+      </div>
+      <label style="display:block;margin-top:11px;font-size:11.5px;font-weight:800;color:var(--ink)">販売価格（税抜・必須）
+        <input type="number" id="ulPrice" inputmode="numeric" placeholder="中古の販売価格" style="width:100%;margin-top:5px;border:1.5px solid var(--gold);border-radius:8px;padding:11px 12px;font-size:15px;font-weight:800;font-family:var(--font-num)"></label>
+      <label style="display:block;margin-top:11px;font-size:11.5px;font-weight:800;color:var(--ink-2)">出品元（表示用）
+        <input type="text" id="ulSource" style="width:100%;margin-top:5px;border:1px solid var(--line-strong);border-radius:8px;padding:10px 12px;font-size:14px"></label>
+
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button data-ul-close style="flex:1;border:1px solid #ddd;background:#fff;border-radius:8px;padding:13px;font-size:14px;font-weight:800;cursor:pointer">キャンセル</button>
+        <button id="ulSubmit" style="flex:1.4;border:0;background:var(--gold);color:#fff;border-radius:8px;padding:13px;font-size:14px;font-weight:800;cursor:pointer">中古再販に出品する</button>
+      </div>
+      <p style="font-size:10.5px;color:var(--ink-3);line-height:1.6;margin-top:10px">出品すると equipment.html の「中古（再販）」に即時掲載され、サロンが申し込めるようになります。価格・状態はあとから取り下げて再出品できます。</p>
+    </div>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/catalog.js?v=33"></script>
-  <script src="assets/js/data.js?v=33"></script>
-  <script src="assets/js/store.js?v=33"></script>
-  <script src="assets/js/salon.js?v=33"></script>
-  <script src="assets/js/components.js?v=33"></script>
-  <script src="assets/js/nav.js?v=33"></script>
-  <script src="assets/js/admin.js?v=33"></script>
+  <script src="assets/js/catalog.js?v=34"></script>
+  <script src="assets/js/data.js?v=34"></script>
+  <script src="assets/js/store.js?v=34"></script>
+  <script src="assets/js/salon.js?v=34"></script>
+  <script src="assets/js/components.js?v=34"></script>
+  <script src="assets/js/nav.js?v=34"></script>
+  <script src="assets/js/admin.js?v=34"></script>
 </body>
 </html>

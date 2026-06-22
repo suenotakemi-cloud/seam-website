@@ -7,10 +7,10 @@
   <meta name="theme-color" content="#ffffff">
   <title>美容機器・什器（購入・リース）｜SalonPro</title>
   <meta name="description" content="シャンプー台・セットチェアなどサロン機器を購入またはリースで導入。リースは年利3〜5%、オンライン申込で担当ディーラーに通知されます。">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=33">
-  <link rel="stylesheet" href="assets/css/base.css?v=33">
-  <link rel="stylesheet" href="assets/css/components.css?v=33">
-  <link rel="stylesheet" href="assets/css/pages.css?v=33">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=34">
+  <link rel="stylesheet" href="assets/css/base.css?v=34">
+  <link rel="stylesheet" href="assets/css/components.css?v=34">
+  <link rel="stylesheet" href="assets/css/pages.css?v=34">
   <style>
     body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
     .container { max-width: 980px; }
@@ -295,11 +295,11 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/catalog.js?v=33"></script>
-  <script src="assets/js/data.js?v=33"></script>
-  <script src="assets/js/store.js?v=33"></script>
-  <script src="assets/js/components.js?v=33"></script>
-  <script src="assets/js/nav.js?v=33"></script>
+  <script src="assets/js/catalog.js?v=34"></script>
+  <script src="assets/js/data.js?v=34"></script>
+  <script src="assets/js/store.js?v=34"></script>
+  <script src="assets/js/components.js?v=34"></script>
+  <script src="assets/js/nav.js?v=34"></script>
   <script>
     (function () {
       var Store = SP.Store;
@@ -309,7 +309,8 @@
       var TERMS = [24, 36, 48, 60, 72];
       var RATES = [3.0, 3.5, 4.0, 4.5, 5.0];
       var equip = (SP.DATA.products || []).filter(function (p) { return p.cat === 'equipment'; });
-      var used = SP.USED_EQUIPMENT || [];
+      // 中古在庫＝ディーラーが買取成立機器を出品したもの（新しい順）＋デモの固定在庫
+      var used = (Store.getUsedInventory ? Store.getUsedInventory() : []).concat(SP.USED_EQUIPMENT || []);
       var featUsed = !(SP.TENANT && SP.TENANT.features && SP.TENANT.features.usedEquipment === false);
       function findItem(id) { return equip.find(function (p) { return p.id === id; }) || used.find(function (p) { return p.id === id; }); }
 
