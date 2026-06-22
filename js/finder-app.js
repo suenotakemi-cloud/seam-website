@@ -11922,6 +11922,24 @@ function App() {
       document.removeEventListener('keydown', esc);
     };
   }, []);
+
+  // トップの「悩みから」カードから ?concern=code1,code2 で入った場合、
+  // Q1(concerns)を事前選択した状態で診断へジャンプする
+  useEffect(() => {
+    if (sharedInit) return;
+    try {
+      const raw = new URLSearchParams(window.location.search).get('concern');
+      if (!raw) return;
+      const valid = (Q[0] && Q[0].options || []).map(o => o.v);
+      const picked = raw.split(',').map(s => s.trim()).filter(c => valid.indexOf(c) > -1).slice(0, 3);
+      if (picked.length) {
+        setAnswers({
+          concerns: picked
+        });
+        setView('quiz');
+      }
+    } catch (e) {}
+  }, []);
   const start = () => {
     setAnswers({});
     setView('quiz');
