@@ -421,6 +421,59 @@
     SP.Store.addLeaseApp({ equipId: 'u-001', name: 'シャンプー台 ユニット（中古）', brand: 'タカラベルモント', price: 198000, plan: 'used', salon: 'Atelier NOa 自由が丘', contact: '田中 / 090-2222-3333', note: '中古で1台導入したい' });
   }
 
+  // 大型機器 買取査定キュー（equipment.html の買取依頼 → Store.addBuyback → ここで担当者が査定・買取／成立は中古再販へ）
+  const BUYBACK_ST = { pending: ['受付', 'tag--prep'], contacted: ['連絡済み', 'tag--new'], quoted: ['査定提示', 'tag--shipped'], agreed: ['買取成立', 'tag--shipped'], rejected: ['見送り', 'tag--mute'] };
+  function renderBuybacks() {
+    const el = qs('#buybackList'); if (!el) return;
+    const apps = SP.Store.getBuybacks ? SP.Store.getBuybacks() : [];
+    const nav = qs('#navBuyback'); if (nav) nav.textContent = apps.filter(a => a.status === 'pending').length;
+    if (!apps.length) { el.innerHTML = '<div style="padding:18px;text-align:center;color:var(--ink-3)">機器買取のご依頼はまだありません</div>'; return; }
+    el.innerHTML = apps.map(a => {
+      const st = BUYBACK_ST[a.status] || BUYBACK_ST.pending;
+      const spec = `${a.type} ×${a.qty || 1}・状態${a.cond}・${a.years || '—'}・写真${a.photoCount || (a.photos ? a.photos.length : 0)}枚`;
+      const quoteLine = (a.quote != null && a.quote !== '') ? ` ・ 査定額 ¥${(+a.quote).toLocaleString()}` : '';
+      const done = a.status === 'agreed' || a.status === 'rejected';
+      return `
+      <div class="review-item" data-id="${a.id}">
+        <span class="review-item__av">買</span>
+        <span class="review-item__main">
+          <span class="review-item__name">${a.maker ? a.maker + ' ' : ''}${a.type} <span class="tag ${st[1]}">${st[0]}</span></span>
+          <span class="review-item__meta">${a.salon || '—'}${a.contact ? '・' + a.contact : ''}${a.when ? '・引取希望:' + a.when : ''}</span>
+          <span class="doc-chip">${svg('checkc')}${spec}${quoteLine}</span>
+        </span>
+        <span class="review-item__act">
+          ${done ? '' : '<button class="btn btn--ghost" data-act="reject" data-id="' + a.id + '">見送り</button>'}
+          ${done ? '' : '<button class="btn btn--ghost" data-act="contact" data-id="' + a.id + '">連絡済み</button>'}
+          ${done ? '' : '<button class="btn btn--ghost" data-act="quote" data-id="' + a.id + '">査定額を提示</button>'}
+          <button class="btn btn--primary" data-act="agree" data-id="${a.id}"${a.status === 'agreed' ? ' disabled' : ''}>${a.status === 'agreed' ? '買取成立' : '買取成立にする'}</button>
+        </span>
+      </div>`;
+    }).join('');
+  }
+  const _bbl = qs('#buybackList');
+  if (_bbl) _bbl.addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const id = b.dataset.id, act = b.dataset.act;
+    if (act === 'quote') {
+      const cur = (SP.Store.getBuybacks().find(x => x.id === id) || {}).quote || '';
+      const v = prompt('査定額（税抜・円）を入力してください', cur);
+      if (v == null) return;
+      const n = Math.max(0, Math.round(+String(v).replace(/[^\d.]/g, '') || 0));
+      SP.Store.setBuybackStatus(id, 'quoted', n);
+      toast(`査定額 ¥${n.toLocaleString()} を提示しました`);
+      renderBuybacks(); return;
+    }
+    const map = { reject: 'rejected', contact: 'contacted', agree: 'agreed' };
+    SP.Store.setBuybackStatus(id, map[act] || 'pending');
+    toast(act === 'agree' ? '買取成立にしました（中古として再販へ）' : act === 'contact' ? '「連絡済み」にしました' : '見送りにしました');
+    renderBuybacks();
+  });
+  // デモ用：買取依頼が無ければサンプルを投入（実際は equipment.html の買取フォームから届く）
+  if (SP.Store.getBuybacks && SP.Store.getBuybacks().length === 0) {
+    SP.Store.addBuyback({ type: 'セット椅子', cond: '普通', maker: 'タカラベルモント / レガロ', qty: 2, years: '5〜10年', photos: ['全体写真', '座面の傷', '型番ラベル'], photoCount: 3, salon: 'hair atelier MELT 中目黒', contact: '高橋 / 03-1234-5678', when: '改装に合わせて来月', note: '2脚まとめて引き取り希望' });
+    SP.Store.addBuyback({ type: 'シャンプー台', cond: '良好', maker: '', qty: 1, years: '3〜5年', photos: ['全体写真', 'ボウル内'], photoCount: 2, salon: 'Atelier NOa 自由が丘', contact: '田中 / 090-2222-3333', when: '', note: 'バックシャンプー1台' });
+  }
+
   // パートナー紹介 申込キュー（partners.html の紹介依頼 → Store.addPartnerLead → ここで担当者が連絡・成約）
   const PT_ST = { pending: ['受付', 'tag--prep'], contacted: ['連絡済み', 'tag--new'], done: ['成約', 'tag--shipped'], rejected: ['見送り', 'tag--mute'] };
   function renderPartners() {
@@ -469,6 +522,7 @@
   renderContractApps();
   renderSeminars();
   renderLeases();
+  renderBuybacks();
   renderPartners();
   renderLow();
   renderClaims();

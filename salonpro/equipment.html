@@ -7,10 +7,10 @@
   <meta name="theme-color" content="#ffffff">
   <title>美容機器・什器（購入・リース）｜SalonPro</title>
   <meta name="description" content="シャンプー台・セットチェアなどサロン機器を購入またはリースで導入。リースは年利3〜5%、オンライン申込で担当ディーラーに通知されます。">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=32">
-  <link rel="stylesheet" href="assets/css/base.css?v=32">
-  <link rel="stylesheet" href="assets/css/components.css?v=32">
-  <link rel="stylesheet" href="assets/css/pages.css?v=32">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=33">
+  <link rel="stylesheet" href="assets/css/base.css?v=33">
+  <link rel="stylesheet" href="assets/css/components.css?v=33">
+  <link rel="stylesheet" href="assets/css/pages.css?v=33">
   <style>
     body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
     .container { max-width: 980px; }
@@ -84,7 +84,37 @@
     .lz-field textarea { resize: vertical; min-height: 56px; }
     .lz__submit { width: 100%; height: 50px; border-radius: var(--r-md); background: var(--gold); border: 0; color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 16px; }
     .lz__submit:hover { background: var(--gold-strong); }
+    .lz__submit:disabled { background: #d8d4cd; cursor: not-allowed; }
+    .lz-field select { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 10px 12px; font-size: 14px; font-family: inherit; background: #fff; }
     .lz__legal { font-size: 10.5px; color: var(--ink-3); line-height: 1.6; margin-top: 10px; }
+
+    /* 買取査定 CTA */
+    .bb-cta { width: 100%; display: flex; align-items: center; gap: 13px; text-align: left; cursor: pointer; margin: 4px 0 2px; border: 1px solid #1f4e8c2e; background: linear-gradient(180deg,#f4f8ff,#eef4fe); border-radius: var(--r-lg); padding: 14px 15px; }
+    .bb-cta:hover { border-color: #1f4e8c66; }
+    .bb-cta__ic { flex: none; width: 42px; height: 42px; border-radius: 12px; background: #1f4e8c; color: #fff; display: flex; align-items: center; justify-content: center; }
+    .bb-cta__ic svg { width: 23px; height: 23px; }
+    .bb-cta__b { flex: 1; min-width: 0; }
+    .bb-cta__t { display: block; font-size: 14.5px; font-weight: 900; color: #1c3a66; }
+    .bb-cta__s { display: block; font-size: 11.5px; color: var(--ink-2); margin-top: 2px; line-height: 1.5; }
+    .bb-cta__go { flex: none; font-size: 12.5px; font-weight: 800; color: #1f4e8c; white-space: nowrap; }
+    @media (max-width: 420px) { .bb-cta__go { display: none; } }
+
+    /* 買取モーダルの追加要素 */
+    .bb-only { display: flex; gap: 8px; align-items: flex-start; background: #fff5e0; border: 1px solid #f0e0b8; border-radius: var(--r-md); padding: 11px 12px; margin-top: 14px; font-size: 11.5px; color: #6e591f; line-height: 1.6; }
+    .bb-only svg { width: 16px; height: 16px; flex: none; margin-top: 1px; }
+    .bb-row2 { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+    .bb-drop { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; border: 1.5px dashed var(--line-strong); border-radius: var(--r-md); padding: 18px 14px; cursor: pointer; color: var(--ink-2); }
+    .bb-drop:hover { border-color: #1f4e8c; background: #f6f9ff; }
+    .bb-drop svg { width: 26px; height: 26px; color: #1f4e8c; }
+    .bb-drop__t { font-size: 13px; font-weight: 800; }
+    .bb-drop__s { font-size: 10.5px; color: var(--ink-3); line-height: 1.5; }
+    .bb-thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+    .bb-thumb { position: relative; width: 70px; height: 70px; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--line); background: var(--surface-2); }
+    .bb-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .bb-thumb__x { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; border: 0; background: rgba(20,20,28,.72); color: #fff; font-size: 12px; line-height: 1; cursor: pointer; }
+    .bb-app__q { color: #2f7d4f; font-weight: 800; }
+    .st--quoted { background: #e7f4ec; color: #2f7d4f; }
+    .st--agreed { background: #1f4e8c; color: #fff; }
   </style>
 </head>
 <body class="page">
@@ -108,6 +138,21 @@
     <div class="eq-info">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11H3z"/><path d="M9 22V12h6v10"/></svg>
       <span><b>リースは年利3〜5%</b>の目安でお見積り。オンラインでお申し込みいただくと、<b>担当ディーラー（菊地）に通知</b>が届き、担当者より審査・ご契約のご連絡をします。実際の料率・与信は審査により決定します。</span>
+    </div>
+
+    <!-- 大型機器の買取査定（写真を送るだけ） -->
+    <button class="bb-cta" id="bbOpen" hidden type="button">
+      <span class="bb-cta__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11H3z"/><path d="M9 22V12h6v10"/><circle cx="18" cy="6" r="3.4" fill="#fff" stroke="none"/><path d="M16.7 6h2.6M18 4.7v2.6" stroke="#1f4e8c"/></svg></span>
+      <span class="bb-cta__b">
+        <span class="bb-cta__t">使わない大型機器を買取査定</span>
+        <span class="bb-cta__s">セット椅子・シャンプー台・スチーマーなど。<b>写真を送るだけ</b>で査定額をご連絡</span>
+      </span>
+      <span class="bb-cta__go">査定を依頼 ›</span>
+    </button>
+
+    <div id="bbAppsWrap" hidden>
+      <div class="eq-sec__t">買取査定の状況</div>
+      <div id="bbAppList"></div>
     </div>
 
     <div class="eq-sec__t" id="newHd">新品</div>
@@ -167,6 +212,77 @@
     </div>
   </div>
 
+  <!-- 大型機器 買取査定 申込モーダル -->
+  <div class="lz-ov" id="bbOv" role="dialog" aria-modal="true" aria-label="大型機器の買取査定のお申し込み">
+    <div class="lz">
+      <div class="lz__hd">
+        <div>
+          <div class="lz__t">大型機器の買取査定</div>
+          <div class="lz__s">写真を送るだけ。担当ディーラー（菊地）が査定額をご連絡します</div>
+        </div>
+        <button class="lz__x" data-bb-close aria-label="閉じる">✕</button>
+      </div>
+
+      <div class="bb-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg><span>買取の対象は<b>大型機器のみ</b>です（セット椅子・シャンプー台・スチーマー等）。ハサミ・ドライヤー・クリッパー等の小物、薬剤・消耗品は対象外です。</span></div>
+
+      <div class="lz__lbl">機器の種類（大型のみ）</div>
+      <div class="lz-chips" id="bbTypes"></div>
+
+      <div class="lz-field">
+        <label for="bbMaker">メーカー・型番（任意・分かる範囲で）</label>
+        <input type="text" id="bbMaker" placeholder="例：タカラベルモント / A1601">
+      </div>
+      <div class="bb-row2">
+        <div class="lz-field">
+          <label for="bbQty">台数</label>
+          <input type="number" id="bbQty" min="1" max="99" value="1" inputmode="numeric">
+        </div>
+        <div class="lz-field">
+          <label for="bbYear">使用年数の目安</label>
+          <select id="bbYear">
+            <option value="〜3年">〜3年</option>
+            <option value="3〜5年" selected>3〜5年</option>
+            <option value="5〜10年">5〜10年</option>
+            <option value="10年〜">10年〜</option>
+            <option value="不明">不明</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="lz__lbl">状態</div>
+      <div class="lz-chips" id="bbConds"></div>
+
+      <div class="lz__lbl">写真（必須・1枚〜／複数可）</div>
+      <label class="bb-drop" for="bbPhotos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 16V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v11"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="9" cy="8" r="1.4"/></svg>
+        <span class="bb-drop__t">タップして写真を撮影／選択</span>
+        <span class="bb-drop__s">全体が分かる写真と、傷・型番ラベルのアップがあると査定がスムーズです</span>
+      </label>
+      <input type="file" id="bbPhotos" accept="image/*" capture="environment" multiple hidden>
+      <div class="bb-thumbs" id="bbThumbs"></div>
+
+      <div class="lz-field">
+        <label for="bbSalon">サロン名</label>
+        <input type="text" id="bbSalon" placeholder="例：SALON LUXE 表参道店">
+      </div>
+      <div class="lz-field">
+        <label for="bbContact">ご担当者・ご連絡先</label>
+        <input type="text" id="bbContact" placeholder="例：山田 / 090-0000-0000">
+      </div>
+      <div class="lz-field">
+        <label for="bbWhen">引き取り希望時期（任意）</label>
+        <input type="text" id="bbWhen" placeholder="例：来月の閉店時・改装に合わせて 等">
+      </div>
+      <div class="lz-field">
+        <label for="bbNote">メモ（任意）</label>
+        <textarea id="bbNote" placeholder="設置場所・搬出経路（階段/EV）・故障箇所など"></textarea>
+      </div>
+
+      <button class="lz__submit" id="bbSubmit" disabled>写真を添えて査定を依頼する</button>
+      <p class="lz__legal">送信すると担当ディーラー（菊地）に通知され、担当者より査定額・引き取り日程のご連絡をします。買取が成立した機器は、中古（再販）として別のサロンへお届けします。査定額・可否は現物確認により決定します。</p>
+    </div>
+  </div>
+
   <nav class="tabbar" aria-label="メインナビ">
     <div class="tabbar__inner">
       <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
@@ -179,11 +295,11 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/catalog.js?v=32"></script>
-  <script src="assets/js/data.js?v=32"></script>
-  <script src="assets/js/store.js?v=32"></script>
-  <script src="assets/js/components.js?v=32"></script>
-  <script src="assets/js/nav.js?v=32"></script>
+  <script src="assets/js/catalog.js?v=33"></script>
+  <script src="assets/js/data.js?v=33"></script>
+  <script src="assets/js/store.js?v=33"></script>
+  <script src="assets/js/components.js?v=33"></script>
+  <script src="assets/js/nav.js?v=33"></script>
   <script>
     (function () {
       var Store = SP.Store;
@@ -344,6 +460,100 @@
         renderApps();
       });
 
+      /* ---- 大型機器 買取査定 ---- */
+      var BB_TYPES = ['セット椅子', 'シャンプー台', 'スチーマー', 'ミラー・セット面什器', 'パーマ機（デジパ/コスメ）', '薬剤保管庫・ロッカー', '受付カウンター', 'その他大型機器'];
+      var BB_CONDS = ['良好', '普通', '要修理'];
+      var BB_ST = { pending: ['受付（査定待ち）', 'st--pending'], contacted: ['担当者より連絡済み', 'st--contacted'], quoted: ['査定額のご提示あり', 'st--quoted'], agreed: ['買取成立', 'st--agreed'], rejected: ['買取見送り', 'st--rejected'] };
+      var featBuyback = !(SP.TENANT && SP.TENANT.features && SP.TENANT.features.buyback === false);
+      var bbOv = document.getElementById('bbOv');
+      var bb = { type: '', cond: '良好', files: [] };
+
+      function bbChips(host, vals, sel, set) {
+        host.innerHTML = vals.map(function (v) { return '<button class="lz-chip' + (v === sel ? ' is-on' : '') + '" data-v="' + v + '">' + v + '</button>'; }).join('');
+        host.onclick = function (e) {
+          var b = e.target.closest('.lz-chip'); if (!b) return;
+          [].forEach.call(host.children, function (c) { c.classList.remove('is-on'); });
+          b.classList.add('is-on'); set(b.getAttribute('data-v')); bbGate();
+        };
+      }
+      function bbGate() { document.getElementById('bbSubmit').disabled = !(bb.type && bb.cond && bb.files.length); }
+      function bbRenderThumbs() {
+        document.getElementById('bbThumbs').innerHTML = bb.files.map(function (f, i) {
+          return '<div class="bb-thumb"><img src="' + f.url + '" alt=""><button class="bb-thumb__x" data-rm="' + i + '" aria-label="削除">✕</button></div>';
+        }).join('');
+      }
+      function openBuyback() {
+        bb = { type: '', cond: '良好', files: [] };
+        bbChips(document.getElementById('bbTypes'), BB_TYPES, '', function (v) { bb.type = v; });
+        bbChips(document.getElementById('bbConds'), BB_CONDS, '良好', function (v) { bb.cond = v; });
+        document.getElementById('bbThumbs').innerHTML = '';
+        document.getElementById('bbMaker').value = '';
+        document.getElementById('bbQty').value = '1';
+        document.getElementById('bbYear').value = '3〜5年';
+        document.getElementById('bbSalon').value = CURRENT_SALON;
+        document.getElementById('bbContact').value = '';
+        document.getElementById('bbWhen').value = '';
+        document.getElementById('bbNote').value = '';
+        bbGate();
+        bbOv.classList.add('is-open');
+      }
+      function closeBuyback() { bbOv.classList.remove('is-open'); }
+
+      var bbOpenBtn = document.getElementById('bbOpen');
+      if (featBuyback && bbOpenBtn) { bbOpenBtn.hidden = false; bbOpenBtn.addEventListener('click', openBuyback); }
+      bbOv.addEventListener('click', function (e) { if (e.target === bbOv || e.target.closest('[data-bb-close]')) closeBuyback(); });
+
+      document.getElementById('bbPhotos').addEventListener('change', function (e) {
+        var fl = e.target.files || [];
+        for (var i = 0; i < fl.length; i++) {
+          if (bb.files.length >= 8) break;
+          bb.files.push({ name: fl[i].name, url: URL.createObjectURL(fl[i]) });
+        }
+        e.target.value = '';
+        bbRenderThumbs(); bbGate();
+      });
+      document.getElementById('bbThumbs').addEventListener('click', function (e) {
+        var x = e.target.closest('[data-rm]'); if (!x) return;
+        var i = +x.getAttribute('data-rm');
+        if (bb.files[i]) { try { URL.revokeObjectURL(bb.files[i].url); } catch (err) {} bb.files.splice(i, 1); }
+        bbRenderThumbs(); bbGate();
+      });
+      document.getElementById('bbSubmit').addEventListener('click', function () {
+        if (!(bb.type && bb.cond && bb.files.length)) return;
+        Store.addBuyback({
+          type: bb.type, cond: bb.cond,
+          maker: document.getElementById('bbMaker').value.trim(),
+          qty: Math.max(1, +document.getElementById('bbQty').value || 1),
+          years: document.getElementById('bbYear').value,
+          photos: bb.files.map(function (f) { return f.name || '写真'; }),
+          photoCount: bb.files.length,
+          salon: (document.getElementById('bbSalon').value || CURRENT_SALON).trim(),
+          contact: document.getElementById('bbContact').value.trim(),
+          when: document.getElementById('bbWhen').value.trim(),
+          note: document.getElementById('bbNote').value.trim(),
+        });
+        closeBuyback();
+        toast('買取査定のご依頼を送信しました。担当者よりご連絡します');
+        renderBuybacks();
+      });
+
+      function renderBuybacks() {
+        var wrap = document.getElementById('bbAppsWrap');
+        if (!featBuyback) { wrap.hidden = true; return; }
+        var apps = Store.getBuybacks ? Store.getBuybacks() : [];
+        if (!apps.length) { wrap.hidden = true; return; }
+        wrap.hidden = false;
+        document.getElementById('bbAppList').innerHTML = apps.map(function (a) {
+          var st = BB_ST[a.status] || BB_ST.pending;
+          var meta = a.type + ' ×' + (a.qty || 1) + '　／　状態' + a.cond + '　／　写真' + (a.photoCount || (a.photos ? a.photos.length : 0)) + '枚';
+          var q = (a.quote != null && a.quote !== '') ? '<div class="eq-app__m bb-app__q">査定額のご提示　' + yen(a.quote) + '</div>' : '';
+          return '<div class="eq-app">' +
+            '<div class="eq-app__b"><div class="eq-app__t">' + (a.maker ? a.maker + '　' : '') + a.type + '</div>' +
+            '<div class="eq-app__m">' + meta + '　／　' + (a.salon || '') + '</div>' + q + '</div>' +
+            '<span class="eq-app__st ' + st[1] + '">' + st[0] + '</span></div>';
+        }).join('');
+      }
+
       function syncCart() {
         var n = Store.cartSummary().count + (Store.giftCount ? Store.giftCount() : 0);
         var el = document.getElementById('cartBadge'); if (el) { el.textContent = n; el.hidden = n <= 0; }
@@ -352,6 +562,7 @@
       renderGrid();
       renderUsed();
       renderApps();
+      renderBuybacks();
       syncCart();
       // 商品詳細などからの ?lease=<id> で該当機器のリース申込を自動オープン
       var qid = new URLSearchParams(location.search).get('lease');

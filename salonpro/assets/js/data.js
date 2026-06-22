@@ -22,6 +22,7 @@
       staff: true, push: true, favorites: true, learn: true, support: true,
       books: true, equipment: true, usedEquipment: true, partners: true,
       quickorder: true, invoices: true, staffmate: true, staffApproval: true,
+      buyback: true,
     },
     // 紹介パートナー（工務店/タオル/税理士/社労士/カード決済/保険）の表示可否（ディーラー個別）
     partners: { koumuten: true, towel: true, tax: true, sharoshi: true, payment: true, insurance: true },

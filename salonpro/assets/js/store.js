@@ -22,6 +22,7 @@
   const LS_BOOK_SUBS = 'sp.bookSubs.v1';         // [bookId] 業界誌の定期購読（サブスク）中
   const LS_LEASE_APPS = 'sp.leaseApps.v1';       // [機器リース/購入/中古の申込レコード] admin通知連携
   const LS_PARTNER_LEADS = 'sp.partnerLeads.v1'; // [紹介パートナー（工務店/税理士等）の紹介依頼] admin通知連携
+  const LS_BUYBACKS = 'sp.buybacks.v1';          // [大型機器の買取査定依頼（写真添付）] admin通知連携
   const LS_STAFF = 'sp.staff.v1';                // [スタッフ {id,name,role,store}]
   const LS_ACTOR = 'sp.actor.v1';                // 現在の発注者 {role,name,staffId}
   const LS_TEMPLATES = 'sp.orderTemplates.v1';   // [発注テンプレ {id,name,by,items:[{id,qty}],at}]
@@ -60,6 +61,7 @@
   let bookSubs = load(LS_BOOK_SUBS, []);         // 業界誌の定期購読中 [bookId]
   let leaseApps = load(LS_LEASE_APPS, []);       // 機器リース/購入/中古の申込レコード
   let partnerLeads = load(LS_PARTNER_LEADS, []); // 紹介パートナーの紹介依頼レコード
+  let buybacks = load(LS_BUYBACKS, []);          // 大型機器の買取査定依頼レコード
   // staff.html と同形のシード（同じ sp.staff.v1 を共有）
   const SEED_STAFF = [
     { id: 'u1', name: '菊地 健一', email: 'owner@salon-luxe.jp', store: 's1', role: 'owner', perms: { view: true, order: true, approve: true } },
@@ -339,6 +341,26 @@
       const a = partnerLeads.find(x => x.id === id); if (!a) return;
       a.status = status; a.decidedAt = Date.now();
       save(LS_PARTNER_LEADS, partnerLeads); emit();
+      return a;
+    },
+
+    /* ---- 大型機器の買取査定依頼（セット椅子/シャンプー台/スチーマー等・写真添付→ディーラー査定→買取→中古再販へ） ---- */
+    addBuyback(rec) {
+      rec = rec || {};
+      rec.id = rec.id || ('bb-' + (buybacks.length + 1) + '-' + Math.floor(Math.random() * 1e6));
+      rec.status = 'pending';
+      rec.at = rec.at || Date.now();
+      buybacks.unshift(rec);
+      save(LS_BUYBACKS, buybacks); emit();
+      return rec;
+    },
+    getBuybacks() { return buybacks.slice(); },
+    pendingBuybacks() { return buybacks.filter(a => a.status === 'pending'); },
+    setBuybackStatus(id, status, quote) {
+      const a = buybacks.find(x => x.id === id); if (!a) return;
+      a.status = status; a.decidedAt = Date.now();
+      if (quote != null && quote !== '') a.quote = quote;   // 査定額の提示（円）
+      save(LS_BUYBACKS, buybacks); emit();
       return a;
     },
 
