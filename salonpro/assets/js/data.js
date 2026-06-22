@@ -25,7 +25,7 @@
       buyback: true,
     },
     // 紹介パートナー（工務店/タオル/税理士/社労士/カード決済/保険）の表示可否（ディーラー個別）
-    partners: { koumuten: true, towel: true, tax: true, sharoshi: true, payment: true, insurance: true },
+    partners: { koumuten: true, towel: true, tax: true, sharoshi: true, payment: true, insurance: true, insurancePersonal: true, utility: true, internet: true },
     // 個人支払い（スタッフメイトのスタッフ個人決済）の方式ごとの表示可否
     personalPay: { card: true, code: true, conbini: true },
     priceMode: 'open', // open | login | hidden
@@ -865,10 +865,22 @@
       tagline: '店販・施術のカード/QR決済導入', desc: '低率・即日入金のキャッシュレス決済をご紹介。カード端末・QR・電子マネー・オンライン決済に対応。',
       feeNote: '成約で紹介料（目安）',
       fields: [ { k: 'sales', label: '月商の目安', type: 'text', ph: '例：300万円' }, { k: 'need', label: 'ご希望', type: 'select', opts: ['カード端末', 'QR・電子マネー', 'オンライン決済', 'まとめて相談'] } ] },
-    { id: 'insurance', name: '保険（店舗・賠償）', icon: '<path d="M12 3l8 3v6c0 4.4-3.2 7.9-8 9-4.8-1.1-8-4.6-8-9V6z"/><path d="m9 12 2 2 4-4"/>',
-      tagline: '店舗総合・賠償責任・休業補償', desc: '美容室向けの保険をご紹介。店舗総合保険・施術の賠償責任保険・休業補償までまとめてご相談。',
+    { id: 'insurance', name: '法人保険（サロン）', icon: '<path d="M12 3l8 3v6c0 4.4-3.2 7.9-8 9-4.8-1.1-8-4.6-8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+      tagline: '店舗総合・賠償責任・休業補償', desc: '保険資格を持つ専任スタッフが、サロン（法人・個人事業）向けの店舗総合保険・施術の賠償責任保険・休業補償までまとめてご相談に対応します。',
       feeNote: '成約で紹介料（目安）',
-      fields: [ { k: 'type', label: '保険の種類', type: 'select', opts: ['店舗総合保険', '賠償責任保険（施術）', '休業補償', 'まとめて相談'] } ] },
+      fields: [ { k: 'type', label: '保険の種類', type: 'select', opts: ['店舗総合保険', '賠償責任保険（施術）', '休業補償', 'サイバー・情報漏えい', 'まとめて相談'] }, { k: 'staff', label: '従業員数', type: 'text', ph: '例：6名' } ] },
+    { id: 'insurancePersonal', name: '美容師個人の保険', icon: '<circle cx="12" cy="7" r="3.4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/><path d="M19 8l1.5 1.5L23 7"/>',
+      tagline: '生命・医療・所得補償・個人賠償', desc: '美容師さん個人向けの保険もご案内。ケガ・病気で働けないときの所得補償（就業不能）、生命・医療保険、個人の賠償責任まで、資格を持つ担当者がライフプランに合わせてご相談します。',
+      feeNote: '成約で紹介料（目安）',
+      fields: [ { k: 'who', label: '対象', type: 'select', opts: ['スタッフ個人', 'オーナー個人', '面貸し・業務委託の方'] }, { k: 'type', label: 'ご関心', type: 'select', opts: ['所得補償（就業不能）', '生命・医療保険', '個人賠償・PL', '積立・年金', 'まとめて相談'] } ] },
+    { id: 'utility', name: '電気・ガス（光熱費の見直し）', icon: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+      tagline: '新電力・新ガスの切替で固定費を削減', desc: '開業・移転時の電気/ガスの新規開通から、既存店舗の料金見直し（新電力・新ガス）まで。サロンの光熱費の削減をご提案します。',
+      feeNote: '成約で紹介料（目安）',
+      fields: [ { k: 'target', label: '対象', type: 'select', opts: ['電気', 'ガス', '電気・ガス両方'] }, { k: 'state', label: 'ご状況', type: 'select', opts: ['新規開業（新規開通）', '既存店舗の見直し', '移転'] }, { k: 'cost', label: '現在の月額・規模（任意）', type: 'text', ph: '例：月3万円／20坪' } ] },
+    { id: 'internet', name: 'インターネット・通信', icon: '<path d="M5 12.5a10 10 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1"/>',
+      tagline: '回線開通・店舗Wi-Fi・固定電話', desc: '開業時のインターネット回線の開通、店舗Wi-Fi、固定電話・予約電話、決済端末の通信まわりまでご紹介します。',
+      feeNote: '成約で紹介料（目安）',
+      fields: [ { k: 'state', label: 'ご状況', type: 'select', opts: ['新規開業（開通）', '乗り換え・見直し'] }, { k: 'need', label: 'ご希望', type: 'select', opts: ['光回線', '店舗Wi-Fi', '固定電話・予約番号', 'まとめて相談'] }, { k: 'when', label: '希望時期', type: 'text', ph: '例：開店の1ヶ月前' } ] },
   ];
 
   window.SP.USED_EQUIPMENT = USED_EQUIPMENT;
