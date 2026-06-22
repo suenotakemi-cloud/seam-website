@@ -260,6 +260,61 @@
     }).join('');
   }
 
+  // ── サロン別 メーカー割引（ディーラーが店舗ごとにブランド/メーカーの割引率を登録）──
+  const KNOWN_SALONS = (function () {
+    const cur = SP.Store.currentSalon ? SP.Store.currentSalon() : 'SALON LUXE 表参道店';
+    const set = [cur, 'hair atelier MELT 中目黒', 'BARBER K 渋谷', 'Atelier NOa 自由が丘'];
+    const all = SP.Store.getSalonDiscountsAll ? SP.Store.getSalonDiscountsAll() : {};
+    Object.keys(all).forEach(n => { if (set.indexOf(n) < 0) set.push(n); });
+    return set;
+  })();
+  const BRAND_OPTS = (function () {
+    const cnt = {};
+    ((SP.DATA && SP.DATA.products) || []).forEach(p => { if (p.brand) cnt[p.brand] = (cnt[p.brand] || 0) + 1; });
+    return Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a]);
+  })();
+  function fillDiscForm() {
+    const cur = SP.Store.currentSalon ? SP.Store.currentSalon() : '';
+    const ss = qs('#discSalon'); if (ss) ss.innerHTML = KNOWN_SALONS.map(n => `<option value="${n}">${n}${n === cur ? '（ログイン中）' : ''}</option>`).join('');
+    const bs = qs('#discBrand'); if (bs) bs.innerHTML = BRAND_OPTS.map(b => `<option value="${b}">${b}</option>`).join('');
+  }
+  function renderSalonDiscounts() {
+    const host = qs('#salonDiscList'); if (!host) return;
+    const all = SP.Store.getSalonDiscountsAll ? SP.Store.getSalonDiscountsAll() : {};
+    const cur = SP.Store.currentSalon ? SP.Store.currentSalon() : '';
+    const names = Object.keys(all).filter(n => {
+      const d = all[n] || {}; return Object.keys(d.brands || {}).length || Object.keys(d.makers || {}).length;
+    });
+    if (!names.length) { host.innerHTML = '<div style="padding:12px;color:var(--ink-3);font-size:13px">まだ割引は登録されていません。上のフォームから店舗ごとに登録できます。</div>'; return; }
+    host.innerHTML = names.map(nm => {
+      const d = all[nm] || {}, mk = d.makers || {}, br = d.brands || {};
+      const chips = Object.keys(br).map(k => ({ kind: 'brand', name: k, rate: br[k] }))
+        .concat(Object.keys(mk).map(k => ({ kind: 'maker', name: k, rate: mk[k] })))
+        .map(c => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;background:#1f4e8c12;color:#1f4e8c;border-radius:999px;padding:4px 7px 4px 11px;margin:3px 4px 0 0">${c.name} ${Math.round(c.rate * 100)}%OFF<button data-rmdisc data-salon="${nm}" data-kind="${c.kind}" data-name="${c.name}" aria-label="削除" style="border:none;background:#1f4e8c;color:#fff;width:16px;height:16px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer">×</button></span>`).join('');
+      return `<div class="review-item"><span class="review-item__main"><span class="review-item__name" style="font-size:13px">${nm}${nm === cur ? ' <span class="tag tag--new">ログイン中</span>' : ''}</span><span>${chips}</span></span></div>`;
+    }).join('');
+  }
+  const _discAdd = qs('#discAdd');
+  if (_discAdd) _discAdd.addEventListener('click', () => {
+    const salon = qs('#discSalon').value, brand = qs('#discBrand').value, rate = parseFloat(qs('#discRate').value) || 0;
+    if (!salon || !brand || !rate) return;
+    const cur = SP.Store.getSalonDiscounts(salon); // {makers, brands}
+    cur.brands[brand] = rate;
+    SP.Store.setSalonDiscountsFor(salon, cur);
+    renderSalonDiscounts();
+    toast(`${salon}：${brand} を ${Math.round(rate * 100)}%OFF で登録しました`);
+  });
+  const _discList = qs('#salonDiscList');
+  if (_discList) _discList.addEventListener('click', e => {
+    const b = e.target.closest('[data-rmdisc]'); if (!b) return;
+    const salon = b.dataset.salon, kind = b.dataset.kind, name = b.dataset.name;
+    const cur = SP.Store.getSalonDiscounts(salon);
+    if (kind === 'brand') delete cur.brands[name]; else delete cur.makers[name];
+    SP.Store.setSalonDiscountsFor(salon, cur);
+    renderSalonDiscounts();
+    toast(`${salon}：${name} の割引を削除しました`);
+  });
+
   qs('#creditList').addEventListener('click', e => {
     const b = e.target.closest('[data-act]'); if (!b) return;
     const id = b.dataset.id;
@@ -419,4 +474,6 @@
   renderClaims();
   renderBundleConds();
   renderSalonConds();
+  fillDiscForm();
+  renderSalonDiscounts();
 })();

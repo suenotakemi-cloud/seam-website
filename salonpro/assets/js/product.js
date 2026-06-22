@@ -42,10 +42,12 @@
 
   function render() {
     const s = STOCK[p.stock] || STOCK.in;
-    const tax = Math.round(p.price * 1.1);
+    const eff = (SP.priceOf ? SP.priceOf(p) : p.price);              // サロン別割引を反映した実効価格（税抜）
+    const sOff = Math.round((SP.discountRate ? SP.discountRate(p) : 0) * 100);
+    const tax = Math.round(eff * 1.1);
     const list = p.list || Math.round(p.price * 1.28 / 10) * 10;     // メーカー希望小売価格（税抜・無ければ導出）
     const off = Math.max(0, Math.round((1 - p.price / list) * 100));
-    const pts = Math.round(p.price / 100);                            // 獲得ポイント（1%）
+    const pts = Math.round(eff / 100);                               // 獲得ポイント（1%）
     const related = SP.DATA.products.filter(x => x.cat === p.cat && x.id !== p.id && x.cat !== '_rec').slice(0, 8);
     const fav = Store.isFav(p.id);
 
@@ -67,9 +69,13 @@
       </div>
 
       <div class="pd-price">
-        <div style="font-size:12px;font-weight:700;color:var(--ink-3)">会員価格</div>
-        <div class="pd-price__main"><span class="pd-price__yen">${fmtYen(p.price)}</span><span class="pd-price__tax">税抜</span>${off > 0 ? `<span style="margin-left:10px;background:var(--badge-low-bg);color:var(--badge-low-tx);font-weight:800;font-size:12px;padding:3px 9px;border-radius:6px">${off}%OFF</span>` : ''}</div>
-        <div style="font-size:12.5px;color:var(--ink-3);margin-top:3px">メーカー希望小売価格 <s>${fmtYen(list)}</s> ・ 税込 <b style="color:var(--ink-2)">${fmtYen(tax)}</b></div>
+        <div style="font-size:12px;font-weight:700;color:var(--ink-3)">${sOff > 0 ? '貴店価格' : '会員価格'}</div>
+        <div class="pd-price__main"><span class="pd-price__yen">${fmtYen(eff)}</span><span class="pd-price__tax">税抜</span>${sOff > 0
+          ? `<span style="margin-left:10px;background:#1f4e8c1a;color:#1f4e8c;font-weight:800;font-size:12px;padding:3px 9px;border-radius:6px">貴店割引 ${sOff}%</span>`
+          : (off > 0 ? `<span style="margin-left:10px;background:var(--badge-low-bg);color:var(--badge-low-tx);font-weight:800;font-size:12px;padding:3px 9px;border-radius:6px">${off}%OFF</span>` : '')}</div>
+        <div style="font-size:12.5px;color:var(--ink-3);margin-top:3px">${sOff > 0
+          ? `通常会員価格 <s>${fmtYen(p.price)}</s>`
+          : `メーカー希望小売価格 <s>${fmtYen(list)}</s>`} ・ 税込 <b style="color:var(--ink-2)">${fmtYen(tax)}</b></div>
         <div class="pd-price__member">${svg('checkc')} ${SP.MEMBER_RANK}会員価格が適用中 ・ 獲得 <b>${pts}pt</b></div>
         <div class="pd-tiers"><b>まとめ買い割引</b>　6個以上 <b>5%OFF</b> ／ 12個以上 <b>10%OFF</b></div>
       </div>
@@ -169,7 +175,7 @@
       </section>
     `;
 
-    qs('#pdBarPrice').textContent = fmtYen(p.price);
+    qs('#pdBarPrice').textContent = fmtYen(eff);
     qs('#pdBar').hidden = false;
     if (direct) {
       qs('#pdBarAdd').innerHTML = 'メーカー発注サイトへ' + svg('chevright');

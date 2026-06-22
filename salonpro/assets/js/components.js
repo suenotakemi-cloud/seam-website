@@ -134,12 +134,18 @@
     const list = p.list || Math.round(p.price * 1.28 / 10) * 10;
     const off  = Math.max(0, Math.round((1 - p.price / list) * 100));
     const lastOrder = p.lastOrder || (p.same ? '2025/05/10' : null);
+    // サロン別割引（ディーラーが店舗ごとに登録）：実効価格 eff と割引率
+    const sRate = (window.SP.discountRate ? SP.discountRate(p) : 0);
+    const eff = (window.SP.priceOf ? SP.priceOf(p) : p.price);
+    const sOff = Math.round(sRate * 100);
 
     // 価格表示モード（テナント設定）：open=会員価格を表示／それ以外はログイン後に表示
     const priceOpen = !(window.SP.TENANT && window.SP.TENANT.priceMode && window.SP.TENANT.priceMode !== 'open');
     const priceBlock = priceOpen
-      ? `<div class="card__price"><span class="card__price-lab">会員価格</span><span class="card__price-val">${fmtYen(p.price)}<span class="tax">税抜</span></span></div>
-          <div class="card__list">メーカー希望小売 <s>${fmtYen(list)}</s>${off > 0 ? `<span class="off">${off}%OFF</span>` : ''}</div>
+      ? `<div class="card__price"><span class="card__price-lab">${sOff > 0 ? '貴店価格' : '会員価格'}</span><span class="card__price-val">${fmtYen(eff)}<span class="tax">税抜</span></span></div>
+          ${sOff > 0
+            ? `<div class="card__list">通常 <s>${fmtYen(p.price)}</s><span class="off" style="background:#1f4e8c1a;color:#1f4e8c">貴店割引 ${sOff}%</span></div>`
+            : `<div class="card__list">メーカー希望小売 <s>${fmtYen(list)}</s>${off > 0 ? `<span class="off">${off}%OFF</span>` : ''}</div>`}
           ${altNote}`
       : `<div class="card__price"><span class="card__price-lab" style="color:var(--ink-3);font-weight:700">価格はログイン後に表示</span></div>`;
 

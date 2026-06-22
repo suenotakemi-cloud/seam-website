@@ -41,9 +41,11 @@
   function lineItem(p, qty) {
     const s = STOCK[p.stock] || STOCK.in;
     const stockTag = p.stock === 'in' ? '' : `<span class="stock ${s.cls}" style="margin-top:2px">${svg(s.icon)}${s.text}</span>`;
-    const unit = SP.unitPrice(p.price, qty), off = SP.tierOff(qty);
-    const unitHtml = off > 0
-      ? `単価 <span class="yen">${fmtYen(unit)}</span> <s style="color:var(--ink-3)">${fmtYen(p.price)}</s> <span class="qty-off">${Math.round(off * 100)}%OFF</span>`
+    const base = (SP.priceOf ? SP.priceOf(p) : p.price);
+    const unit = SP.unitPrice(base, qty);
+    const totalOff = Math.max(0, Math.round((1 - unit / p.price) * 100));
+    const unitHtml = unit < p.price
+      ? `単価 <span class="yen">${fmtYen(unit)}</span> <s style="color:var(--ink-3)">${fmtYen(p.price)}</s> <span class="qty-off">${totalOff}%OFF</span>`
       : `単価 <span class="yen">${fmtYen(unit)}</span>（税抜）`;
     return `
       <div class="cart-item" data-id="${p.id}">
@@ -83,8 +85,9 @@
 
   /* ---- 金額計算（ディーラー単位） ---- */
   function calcDealer(entries, dl) {
-    const raw = entries.reduce((a, [p, q]) => a + p.price * q, 0);
-    const subtotal = entries.reduce((a, [p, q]) => a + SP.unitPrice(p.price, q) * q, 0);
+    const bp = p => (SP.priceOf ? SP.priceOf(p) : p.price);
+    const raw = entries.reduce((a, [p, q]) => a + bp(p) * q, 0);
+    const subtotal = entries.reduce((a, [p, q]) => a + SP.unitPrice(bp(p), q) * q, 0);
     const qtyDiscount = raw - subtotal;
     const ship = dl.ship || {};
     const shipping = subtotal === 0 ? 0 : (subtotal >= (ship.freeOver || 3000) ? 0 : (ship.fee || 550));
@@ -114,7 +117,7 @@
   function bundleBlock(b) {
     const paidRows = Object.keys(b.paid || {}).map(pid => {
       const p = product(pid); if (!p) return '';
-      return `<div class="bd-line"><span class="bd-line__n">${p.brand} ${p.name}</span><span class="bd-line__q">×${b.paid[pid]}</span><span class="bd-line__p">${fmtYen(p.price * b.paid[pid])}</span></div>`;
+      return `<div class="bd-line"><span class="bd-line__n">${p.brand} ${p.name}</span><span class="bd-line__q">×${b.paid[pid]}</span><span class="bd-line__p">${fmtYen((SP.priceOf ? SP.priceOf(p) : p.price) * b.paid[pid])}</span></div>`;
     }).join('');
     const freeRows = (b.free || []).map(pid => {
       const p = product(pid); if (!p) return '';

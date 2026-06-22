@@ -18,6 +18,7 @@
   const LS_BUNDLES = 'sp.bundles.v1';         // カート内の添付バンドル（10＋1 等・ロックグループ）
   const LS_SALON_BUNDLES = 'sp.salonBundles.v1'; // サロン別の添付条件（現在ログイン中サロン用 campaignId→{x,y,enabled}）
   const LS_SALON_CONDS = 'sp.salonConds.v1';     // 承認時に登録する各サロンの添付条件台帳（salon→{campaignId→{x,y,enabled}}）
+  const LS_SALON_DISCOUNTS = 'sp.salonDiscounts.v1'; // サロン別の割引率（salon→{makers:{maker:rate}, brands:{brand:rate}}）
   const LS_BOOK_SUBS = 'sp.bookSubs.v1';         // [bookId] 業界誌の定期購読（サブスク）中
   const LS_LEASE_APPS = 'sp.leaseApps.v1';       // [機器リース/購入/中古の申込レコード] admin通知連携
   const LS_PARTNER_LEADS = 'sp.partnerLeads.v1'; // [紹介パートナー（工務店/税理士等）の紹介依頼] admin通知連携
@@ -50,6 +51,12 @@
   let bundles = load(LS_BUNDLES, []); // 添付バンドル（カート内ロックグループ）
   let salonBundles = load(LS_SALON_BUNDLES, {}); // サロン別 添付条件（現在サロン）
   let salonConds = load(LS_SALON_CONDS, {});     // 承認時に登録する各サロンの添付条件台帳
+  let salonDiscounts = load(LS_SALON_DISCOUNTS, {}); // サロン別の割引率台帳
+  // デモ初回のみ：ログイン中サロンにサンプル割引を1件シード（菊地が登録した想定。発注画面の「貴店価格」を体感できるように）
+  if (localStorage.getItem(LS_SALON_DISCOUNTS) === null) {
+    salonDiscounts = { 'SALON LUXE 表参道店': { makers: {}, brands: { 'ミルボン': 0.10 } } };
+    try { localStorage.setItem(LS_SALON_DISCOUNTS, JSON.stringify(salonDiscounts)); } catch (e) {}
+  }
   let bookSubs = load(LS_BOOK_SUBS, []);         // 業界誌の定期購読中 [bookId]
   let leaseApps = load(LS_LEASE_APPS, []);       // 機器リース/購入/中古の申込レコード
   let partnerLeads = load(LS_PARTNER_LEADS, []); // 紹介パートナーの紹介依頼レコード
@@ -460,6 +467,28 @@
       return salonConds[salonName];
     },
 
+    /* ---- サロン別 割引率（ディーラーが店舗ごとにメーカー/ブランドの割引を登録→その店舗だけ価格が変わる） ---- */
+    currentSalon() { return CURRENT_SALON; },
+    getSalonDiscountsAll() { return JSON.parse(JSON.stringify(salonDiscounts)); },
+    getSalonDiscounts(salonName) { const d = salonDiscounts[salonName || CURRENT_SALON] || {}; return { makers: Object.assign({}, d.makers || {}), brands: Object.assign({}, d.brands || {}) }; },
+    setSalonDiscountsFor(salonName, rules) {
+      salonDiscounts[salonName] = { makers: (rules && rules.makers) || {}, brands: (rules && rules.brands) || {} };
+      try { localStorage.setItem(LS_SALON_DISCOUNTS, JSON.stringify(salonDiscounts)); } catch (e) {}
+      emit();
+      return salonDiscounts[salonName];
+    },
+    // 現在ログイン中サロンの、商品ごとの割引率（0〜1）。ブランド＞メーカーの優先で大きい方を採用。
+    discountRate(p) {
+      if (!p) return 0;
+      const d = salonDiscounts[CURRENT_SALON] || {};
+      const br = (d.brands && p.brand && d.brands[p.brand]) || 0;
+      const mk = (d.makers && p.maker && d.makers[p.maker]) || 0;
+      const r = Math.max(br, mk);
+      return (r > 0 && r < 1) ? r : 0;
+    },
+    // その店舗の実効単価（税抜・割引適用後）。価格表示・カート計算はこれを使う。
+    priceOf(p) { return p ? Math.round(p.price * (1 - this.discountRate(p))) : 0; },
+
     /* ---- キャンペーン無料品（¥0・カートに別枠で表示） ---- */
     addGift(id, qty = 1) { gift[id] = (gift[id] || 0) + Math.max(1, qty); emit(); },
     getGifts() { return Object.assign({}, gift); },
@@ -470,4 +499,7 @@
 
   window.SP = window.SP || {};
   window.SP.Store = Store;
+  // サロン別の実効単価・割引率（価格表示/計算の共通フック）
+  window.SP.priceOf = function (p) { return Store.priceOf(p); };
+  window.SP.discountRate = function (p) { return Store.discountRate(p); };
 })();

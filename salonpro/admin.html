@@ -5,10 +5,10 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>管理コンソール｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=31">
-  <link rel="stylesheet" href="assets/css/base.css?v=31">
-  <link rel="stylesheet" href="assets/css/components.css?v=31">
-  <link rel="stylesheet" href="assets/css/admin.css?v=31">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=32">
+  <link rel="stylesheet" href="assets/css/base.css?v=32">
+  <link rel="stylesheet" href="assets/css/components.css?v=32">
+  <link rel="stylesheet" href="assets/css/admin.css?v=32">
 </head>
 <body class="adm">
 
@@ -81,6 +81,30 @@
       </div>
 
       <div class="adm-card">
+        <div class="adm-card__head"><span class="adm-card__title">サロン別 メーカー割引</span><span class="adm-card__more">店舗ごとにメーカー（ブランド）別の割引率を登録＝発注画面の価格に個別反映</span></div>
+        <div class="adm-card__body">
+          <div id="discForm" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <label style="grid-column:1/-1;font-size:11.5px;font-weight:800;color:var(--ink-2)">店舗
+              <select id="discSalon" style="width:100%;margin-top:4px;border:1px solid var(--line-strong);border-radius:8px;padding:9px;font-size:13px;background:#fff"></select>
+            </label>
+            <label style="font-size:11.5px;font-weight:800;color:var(--ink-2)">メーカー／ブランド
+              <select id="discBrand" style="width:100%;margin-top:4px;border:1px solid var(--line-strong);border-radius:8px;padding:9px;font-size:13px;background:#fff"></select>
+            </label>
+            <label style="font-size:11.5px;font-weight:800;color:var(--ink-2)">割引率
+              <select id="discRate" style="width:100%;margin-top:4px;border:1px solid var(--line-strong);border-radius:8px;padding:9px;font-size:13px;background:#fff;font-family:var(--font-num)">
+                <option value="0.03">3%</option><option value="0.05" selected>5%</option><option value="0.08">8%</option>
+                <option value="0.10">10%</option><option value="0.12">12%</option><option value="0.15">15%</option>
+                <option value="0.18">18%</option><option value="0.20">20%</option><option value="0.25">25%</option><option value="0.30">30%</option>
+              </select>
+            </label>
+            <button class="btn btn--primary" id="discAdd" style="grid-column:1/-1;margin-top:2px">この店舗に割引を登録</button>
+          </div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.6">※ 同一商品にメーカー割引とブランド割引が重なる場合は<b>高い方</b>を適用。まとめ買い割引（数量）とは別に、ベース価格へ反映されます。</div>
+          <div id="salonDiscList" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <div class="adm-card">
         <div class="adm-card__head"><span class="adm-card__title">メーカー添付 請求台帳</span><span class="adm-card__more">無償添付（10＋1等）をメーカー別に集計＝請求漏れ防止</span></div>
         <div class="adm-card__body" id="claimList"></div>
       </div>
@@ -128,12 +152,12 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/catalog.js?v=31"></script>
-  <script src="assets/js/data.js?v=31"></script>
-  <script src="assets/js/store.js?v=31"></script>
-  <script src="assets/js/salon.js?v=31"></script>
-  <script src="assets/js/components.js?v=31"></script>
-  <script src="assets/js/nav.js?v=31"></script>
-  <script src="assets/js/admin.js?v=31"></script>
+  <script src="assets/js/catalog.js?v=32"></script>
+  <script src="assets/js/data.js?v=32"></script>
+  <script src="assets/js/store.js?v=32"></script>
+  <script src="assets/js/salon.js?v=32"></script>
+  <script src="assets/js/components.js?v=32"></script>
+  <script src="assets/js/nav.js?v=32"></script>
+  <script src="assets/js/admin.js?v=32"></script>
 </body>
 </html>
