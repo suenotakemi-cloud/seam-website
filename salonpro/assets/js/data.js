@@ -25,7 +25,7 @@
       buyback: true,
     },
     // 紹介パートナー（工務店/タオル/税理士/社労士/カード決済/保険）の表示可否（ディーラー個別）
-    partners: { koumuten: true, towel: true, tax: true, sharoshi: true, payment: true, insurance: true, insurancePersonal: true, utility: true, internet: true },
+    partners: { koumuten: true, towel: true, tax: true, sharoshi: true, payment: true, insurance: true, insurancePersonal: true, utility: true, internet: true, recruit: true, lease: true, security: true },
     // 個人支払い（スタッフメイトのスタッフ個人決済）の方式ごとの表示可否
     personalPay: { card: true, code: true, conbini: true },
     priceMode: 'open', // open | login | hidden
@@ -94,7 +94,7 @@
     { id:'sh-013', cat:'shampoo', brand:'ホーユー',   name:'プロマスター カラーケア シャンプー さらり 1000mL',     price:3300, stock:'in',  badge:null,      pop:74, added:50, same:true,  ph:{shape:'pump', tint:'#356d8c'} },
     { id:'sh-014', cat:'shampoo', brand:'フィヨーレ', name:'Fプロテクト シャンプー リッチ 250mL',                price:1540, stock:'in',  badge:null,      pop:60, added:44, same:true,  ph:{shape:'bottle', tint:'#7a3b52'} },
     { id:'sh-015', cat:'shampoo', brand:'アリミノ',   name:'コアミー スムースシャンプー 600mL',                  price:2200, stock:'in',  badge:null,      pop:64, added:62, same:true,  ph:{shape:'pump', tint:'#caa64a'} },
-    { id:'sh-016', cat:'shampoo', brand:'シュワルツコフ', name:'BCクア カラーセーブ シャンプー 1000mL',           price:4400, stock:'order', badge:null,    pop:58, added:40, same:false, ph:{shape:'pump', tint:'#1f2d4d'} },
+    { id:'sh-016', cat:'shampoo', brand:'シュワルツコフ', name:'BCクア カラーセーブ シャンプー 1000mL',           price:4400, stock:'wait' , badge:null,    pop:58, added:40, same:false, ph:{shape:'pump', tint:'#1f2d4d'} },
     { id:'sh-017', cat:'shampoo', brand:'ロレアル',   name:'セリエ エキスパート アブソルートリペア 1500mL',       price:5830, stock:'in',  badge:null,      pop:66, added:46, same:true,  ph:{shape:'pump', tint:'#8a6d2f'} },
     { id:'sh-018', cat:'shampoo', brand:'タマリス',   name:'ソルティール シャンプー リペアモイスト 1000mL',       price:3080, stock:'low', badge:'low',     pop:55, added:38, same:true,  ph:{shape:'pouch', tint:'#9a8cae'} },
     { id:'sh-019', cat:'shampoo', brand:'ナカノ',     name:'R-23 シャンプー EX タイプ2 1000mL',                 price:2640, stock:'in',  badge:null,      pop:62, added:36, same:true,  ph:{shape:'pump', tint:'#b0573a'} },
@@ -157,7 +157,7 @@
     { id:'pm-6',  cat:'perm', permType:'acid',      brand:'アリミノ',   name:'コスメカール 酸性 ウェーブ 1剤 400mL',      price:1540, stock:'in', badge:null,     pop:58, added:42, same:true, ph:{shape:'pouch', tint:'#b5764a', label:'ACID'} },
     { id:'pm-7',  cat:'perm', permType:'creep',     brand:'ミルボン',   name:'クリープパーマ クリエイト 1剤 400mL',       price:1980, stock:'in', badge:'new',     pop:72, added:90, same:true, ph:{shape:'pouch', tint:'#7a6ea5', label:'CREEP'} },
     { id:'pm-8',  cat:'perm', permType:'digital',   brand:'パイモア',   name:'デジタルパーマ用 ロッド加温 1剤 400mL',     price:2200, stock:'in', badge:null,      pop:66, added:48, same:true, ph:{shape:'pouch', tint:'#a5563a', label:'DIGITAL'} },
-    { id:'pm-9',  cat:'perm', permType:'digital',   brand:'ミルボン',   name:'ディーセス デジタル 1剤（加温式）400mL',    price:2420, stock:'order', badge:null,   pop:60, added:44, same:false, ph:{shape:'pouch', tint:'#a5563a', label:'DIGITAL'} },
+    { id:'pm-9',  cat:'perm', permType:'digital',   brand:'ミルボン',   name:'ディーセス デジタル 1剤（加温式）400mL',    price:2420, stock:'wait' , badge:null,   pop:60, added:44, same:false, ph:{shape:'pouch', tint:'#a5563a', label:'DIGITAL'} },
     { id:'pm-10', cat:'perm', permType:'air',       brand:'資生堂',     name:'エアウェーブ 専用 1剤 400mL',               price:2310, stock:'in', badge:null,      pop:56, added:40, same:true, ph:{shape:'pouch', tint:'#5a9ab5', label:'AIR'} },
     { id:'pm-11', cat:'perm', permType:'cosme',     brand:'ナプラ',     name:'コスメパーマ ソフト 1剤（化粧品）400mL',    price:1210, stock:'in', badge:null,      pop:64, added:46, same:true, ph:{shape:'pouch', tint:'#8a9a6b', label:'COSME'} },
     { id:'pm-12', cat:'perm', permType:'perm2',     brand:'ミルボン',   name:'ウェーブ 2剤（ブロム酸）400mL',             price:990,  stock:'in', badge:null,      pop:68, added:50, same:true, ph:{shape:'pouch', tint:'#cfd3da', label:'2剤'} },
@@ -182,7 +182,7 @@
     { id:'tr-003', cat:'treatment', brand:'ナプラ',     name:'N. シアトリートメント スムース 750g（詰替）',  price:3520, stock:'in',  badge:null,      pop:84, added:64, same:true,  ph:{shape:'pouch', tint:'#c2c4c9'} },
     { id:'tr-004', cat:'treatment', brand:'ケラスターゼ', name:'マスク アンタンス 500mL',                    price:7480, stock:'in',  badge:'new',     pop:70, added:95, same:true,  ph:{shape:'jar', tint:'#3a3030'} },
     { id:'tr-005', cat:'treatment', brand:'デミ',       name:'ミレアム ヘアトリートメント 1800g',           price:3960, stock:'low', badge:'low',     pop:66, added:50, same:true,  ph:{shape:'jar', tint:'#7aa0c0'} },
-    { id:'tr-006', cat:'treatment', brand:'ハホニコ',   name:'ザ・ラメラメ No.1 トリートメント 1000g',       price:4070, stock:'order', badge:null,    pop:60, added:40, same:false, ph:{shape:'tube', tint:'#c08a2a'} },
+    { id:'tr-006', cat:'treatment', brand:'ハホニコ',   name:'ザ・ラメラメ No.1 トリートメント 1000g',       price:4070, stock:'wait' , badge:null,    pop:60, added:40, same:false, ph:{shape:'tube', tint:'#c08a2a'} },
 
     /* ===== SEE/SAW（タカラベルモントのデザインブランド／通常商品・契約不要） ===== */
     { id:'ss-001', cat:'styling', brand:'SEE/SAW', name:'フォギーフィックス ドライテクスチャー 180g', price:2200, stock:'in', badge:null, pop:80, added:72, same:true, ph:{shape:'box',    tint:'#5b6473', label:'SEE/SAW'} },
@@ -881,6 +881,18 @@
       tagline: '回線開通・店舗Wi-Fi・固定電話', desc: '開業時のインターネット回線の開通、店舗Wi-Fi、固定電話・予約電話、決済端末の通信まわりまでご紹介します。',
       feeNote: '成約で紹介料（目安）',
       fields: [ { k: 'state', label: 'ご状況', type: 'select', opts: ['新規開業（開通）', '乗り換え・見直し'] }, { k: 'need', label: 'ご希望', type: 'select', opts: ['光回線', '店舗Wi-Fi', '固定電話・予約番号', 'まとめて相談'] }, { k: 'when', label: '希望時期', type: 'text', ph: '例：開店の1ヶ月前' } ] },
+    { id: 'recruit', name: '求人・採用支援', icon: '<circle cx="9" cy="8" r="3.2"/><path d="M3 21a6 6 0 0 1 12 0"/><path d="M18 8v6M15 11h6"/>',
+      tagline: 'スタイリスト・アシスタントの採用', desc: '美容業界に強い求人媒体・人材紹介をご紹介。新卒・中途・面貸し（業務委託）人材まで、採用と定着をサポートします。',
+      feeNote: '採用決定で紹介料（目安）',
+      fields: [ { k: 'role', label: '募集職種', type: 'select', opts: ['スタイリスト', 'アシスタント', '受付・事務', '業務委託・面貸し'] }, { k: 'count', label: '募集人数', type: 'text', ph: '例：2名' }, { k: 'when', label: '希望時期', type: 'text', ph: '例：来春・急ぎ 等' } ] },
+    { id: 'lease', name: 'リース・割賦／開業資金', icon: '<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/>',
+      tagline: '設備リース・割賦・開業/運転資金の相談', desc: '機器・什器・POS・看板などのリース／割賦（分割）から、開業・運転資金の融資相談まで、ファイナンスのパートナーをご紹介します。',
+      feeNote: '成約で紹介料（目安）',
+      fields: [ { k: 'kind', label: 'ご相談', type: 'select', opts: ['設備・什器のリース', '割賦（分割払い）', '開業資金の融資', '運転資金', 'まとめて相談'] }, { k: 'amount', label: '金額の目安（任意）', type: 'text', ph: '例：300万円' } ] },
+    { id: 'security', name: '防犯・セキュリティ', icon: '<path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/>',
+      tagline: '防犯カメラ・機械警備・レジ防犯', desc: '防犯カメラの設置、機械警備（夜間・休業時）、レジ・釣銭の防犯まで。スタッフとお客様が安心できる環境づくりをご紹介します。',
+      feeNote: '成約で紹介料（目安）',
+      fields: [ { k: 'need', label: 'ご希望', type: 'select', opts: ['防犯カメラ設置', '機械警備（警備会社）', 'レジ・現金防犯', 'まとめて相談'] }, { k: 'size', label: '店舗規模', type: 'text', ph: '例：20坪・出入口2' } ] },
   ];
 
   window.SP.USED_EQUIPMENT = USED_EQUIPMENT;

@@ -32,6 +32,7 @@
     check:   '<path d="m5 12 5 5L20 7"/>',
     spark:   '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
     tag:     '<path d="M3 12l9-9 9 9-9 9z"/>',
+    bell:    '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
   };
 
   function svg(name, cls) {
@@ -165,12 +166,15 @@
             ${lastOrder ? `<span class="card__last">前回 ${lastOrder}</span>` : ''}
           </div>
           <div class="card__foot">
-            <div class="stepper" data-id="${p.id}">
+            ${p.stock === 'wait'
+              ? (function () { const on = SP.Store.hasRestockAlert && SP.Store.hasRestockAlert(p.id);
+                  return `<button class="btn-restock${on ? ' is-on' : ''}" data-act="restock" aria-pressed="${on ? 'true' : 'false'}">${svg(on ? 'checkc' : 'bell')}<span class="btn-restock__t">${on ? '登録済み' : '入荷お知らせ'}</span></button>`; })()
+              : `<div class="stepper" data-id="${p.id}">
               <button data-act="dec" aria-label="数量を減らす">${svg('minus')}</button>
               <input type="number" inputmode="numeric" value="1" min="1" max="99" aria-label="数量">
               <button data-act="inc" aria-label="数量を増やす">${svg('plus')}</button>
             </div>
-            <button class="btn-cart" data-act="add">${svg('cart')}<span class="btn-cart__t">カート</span></button>
+            <button class="btn-cart" data-act="add">${svg('cart')}<span class="btn-cart__t">カート</span></button>`}
           </div>
         </div>
       </article>`;

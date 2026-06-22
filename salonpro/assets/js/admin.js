@@ -173,6 +173,42 @@
     }
   });
 
+  // 入荷お知らせ（再入荷リクエスト）＝欠品商品の需要シグナル。入荷したら通知を送信（＝登録を解除）
+  function renderRestock() {
+    const host = qs('#restockList'); if (!host) return;
+    const ids = (SP.Store.getRestockAlerts && SP.Store.getRestockAlerts()) || [];
+    const nav = qs('#navRestock'); if (nav) nav.textContent = ids.length;
+    if (!ids.length) {
+      host.innerHTML = '<div style="padding:14px;color:var(--ink-3);font-size:12.5px;line-height:1.7">入荷お知らせの登録はまだありません。<br>欠品（入荷待ち）商品の商品ページ・一覧で「入荷お知らせ」に登録されると、ここに需要シグナルとして集まります。</div>';
+      return;
+    }
+    const prods = (SP.DATA && SP.DATA.products) || [];
+    host.innerHTML = `<div style="font-size:12px;color:var(--ink-2);padding:2px 0 10px">入荷待ち商品への入荷お知らせ <b>${ids.length}</b>件（需要シグナル）</div>` +
+      ids.map(id => {
+        const p = prods.find(x => x.id === id) || { name: id, brand: '', stock: 'wait' };
+        const stLabel = p.stock === 'wait' ? '入荷待ち' : (p.stock === 'order' ? '取寄せ' : '入荷済み');
+        return `<div class="review-item" data-id="${id}">
+          <span class="review-item__av">告</span>
+          <span class="review-item__main">
+            <span class="review-item__name" style="font-size:13px">${p.brand ? p.brand + ' ' : ''}${p.name} <span class="tag ${p.stock === 'wait' ? 'tag--mute' : 'tag--shipped'}">${stLabel}</span></span>
+            <span class="review-item__meta">入荷お知らせ 登録あり ・ 入荷時に登録サロンへ通知</span>
+          </span>
+          <span class="review-item__act">
+            <button class="btn btn--primary" data-act="notify" data-id="${id}">入荷済み・お知らせ送信</button>
+          </span>
+        </div>`;
+      }).join('');
+  }
+  const _rl = qs('#restockList');
+  if (_rl) _rl.addEventListener('click', e => {
+    const b = e.target.closest('[data-act="notify"]'); if (!b) return;
+    const id = b.dataset.id;
+    const p = ((SP.DATA && SP.DATA.products) || []).find(x => x.id === id);
+    SP.Store.removeRestockAlert(id);   // 通知送信＝登録を解消（本番はWeb Push/メール送信に接続）
+    toast(`${p ? p.name : id} の入荷お知らせを送信しました`);
+    renderRestock();
+  });
+
   // サロン別 添付条件（5＋1 / 10＋1 等）の編集（菊地が承認サロンごとに設定）
   function renderBundleConds() {
     const host = qs('#bundleCondList'); if (!host) return;
@@ -616,6 +652,7 @@
   renderPartners();
   renderLow();
   renderClaims();
+  renderRestock();
   renderBundleConds();
   renderSalonConds();
   fillDiscForm();

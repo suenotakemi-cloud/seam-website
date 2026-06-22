@@ -823,6 +823,13 @@
         let v = parseInt(input.value, 10) || 1;
         v = act === 'inc' ? Math.min(99, v + 1) : Math.max(1, v - 1);
         input.value = v;
+      } else if (act === 'restock') {
+        const on = Store.toggleRestockAlert(id);
+        const rb = e.target.closest('[data-act="restock"]');
+        rb.classList.toggle('is-on', on);
+        rb.setAttribute('aria-pressed', on ? 'true' : 'false');
+        rb.innerHTML = (SP.svg ? SP.svg(on ? 'checkc' : 'bell') : '') + `<span class="btn-restock__t">${on ? '登録済み' : '入荷お知らせ'}</span>`;
+        toast(on ? '入荷したらお知らせします' : '入荷お知らせを解除しました');
       } else if (!e.target.closest('.card__foot')) {
         // 画像・商品名などをタップで詳細へ
         location.href = 'product.html?id=' + id;

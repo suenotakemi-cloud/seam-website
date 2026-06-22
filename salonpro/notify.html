@@ -7,10 +7,10 @@
   <meta name="theme-color" content="#ffffff">
   <title>通知・リマインド設定｜SalonPro</title>
   <meta name="description" content="再注文・定期便・キャンペーン・セミナーのリマインド通知設定。プッシュ通知で発注タイミングを逃さない。">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=35">
-  <link rel="stylesheet" href="assets/css/base.css?v=35">
-  <link rel="stylesheet" href="assets/css/components.css?v=35">
-  <link rel="stylesheet" href="assets/css/pages.css?v=35">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=36">
+  <link rel="stylesheet" href="assets/css/base.css?v=36">
+  <link rel="stylesheet" href="assets/css/components.css?v=36">
+  <link rel="stylesheet" href="assets/css/pages.css?v=36">
   <style>
     body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
     .container { max-width: 720px; }
@@ -60,6 +60,10 @@
 
     <h2 class="nt-sec__t">受け取る通知</h2>
     <div class="nt-list" id="ntList"></div>
+
+    <h2 class="nt-sec__t" id="restockHd" hidden>入荷お知らせ 登録中</h2>
+    <div id="restockMine"></div>
+
     <p class="nt-note">※ プロトタイプのデモです。ブラウザのプッシュ通知（テスト送信）に対応。本番ではメール・アプリ通知や、使用ペースに基づく自動リマインド配信と連携します。</p>
   </main>
 
@@ -75,11 +79,11 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/catalog.js?v=35"></script>
-  <script src="assets/js/data.js?v=35"></script>
-  <script src="assets/js/store.js?v=35"></script>
-  <script src="assets/js/components.js?v=35"></script>
-  <script src="assets/js/nav.js?v=35"></script>
+  <script src="assets/js/catalog.js?v=36"></script>
+  <script src="assets/js/data.js?v=36"></script>
+  <script src="assets/js/store.js?v=36"></script>
+  <script src="assets/js/components.js?v=36"></script>
+  <script src="assets/js/nav.js?v=36"></script>
   <script>
     (function () {
       var svg = SP.svg;
@@ -104,6 +108,28 @@
       document.getElementById('ntList').addEventListener('change', function (e) {
         var k = e.target.dataset.k; if (!k) return; prefs[k] = e.target.checked; save(); toast('設定を保存しました');
       });
+
+      // 入荷お知らせ 登録中（欠品商品）。解除でこの端末の登録を消す
+      function renderMyRestock() {
+        var ids = (SP.Store.getRestockAlerts && SP.Store.getRestockAlerts()) || [];
+        var prods = (SP.DATA && SP.DATA.products) || [];
+        var host = document.getElementById('restockMine');
+        var hd = document.getElementById('restockHd');
+        if (!ids.length) { hd.hidden = true; host.innerHTML = ''; return; }
+        hd.hidden = false;
+        host.innerHTML = ids.map(function (id) {
+          var p = prods.find(function (x) { return x.id === id; }) || { name: id, brand: '' };
+          return '<div class="nt-row"><span class="nt-row__b"><span class="nt-row__t">' + (p.brand ? p.brand + ' ' : '') + p.name + '</span><span class="nt-row__s">入荷したらお知らせします（入荷待ち）</span></span>' +
+            '<button data-rm="' + id + '" style="flex:none;border:1px solid var(--line-strong);background:#fff;color:var(--ink-2);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer">解除</button></div>';
+        }).join('');
+      }
+      document.getElementById('restockMine').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-rm]'); if (!b) return;
+        SP.Store.removeRestockAlert(b.dataset.rm);
+        toast('入荷お知らせを解除しました');
+        renderMyRestock();
+      });
+      renderMyRestock();
 
       // プッシュ通知（ブラウザ）デモ
       var btn = document.getElementById('pushBtn');

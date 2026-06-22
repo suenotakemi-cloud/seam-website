@@ -44,6 +44,21 @@
       if (dest) { location.href = dest; return; }
       toast(b.dataset.soon + 'は次のステップで実装します');
     }));
+
+    // 入荷お知らせ（欠品商品）：全ページ共通のトグル。カード/詳細の data-act="restock" を拾う
+    document.addEventListener('click', e => {
+      const rb = e.target.closest('[data-act="restock"]');
+      if (!rb || !Store || !Store.toggleRestockAlert) return;
+      e.preventDefault();
+      const host = rb.closest('[data-id]');
+      const id = (host && host.dataset.id) || rb.dataset.id;
+      if (!id) return;
+      const on = Store.toggleRestockAlert(id);
+      rb.classList.toggle('is-on', on);
+      rb.setAttribute('aria-pressed', on ? 'true' : 'false');
+      rb.innerHTML = (SP.svg ? SP.svg(on ? 'checkc' : 'bell') : '') + '<span class="btn-restock__t">' + (on ? '登録済み' : '入荷お知らせ') + '</span>';
+      toast(on ? '入荷したらお知らせします' : '入荷お知らせを解除しました');
+    });
   }
   document.addEventListener('DOMContentLoaded', init);
 })();

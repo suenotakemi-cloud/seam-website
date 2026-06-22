@@ -19,6 +19,7 @@
   const direct = mode === 'direct';
   const applied = p.contract ? Store.hasApplied(p.contract) : false;
   const locked = !!(p.contract && !direct && !Store.hasContract(p.contract)); // online/apply 未契約
+  const isWait = p.stock === 'wait' && !locked && !direct;                     // 欠品（入荷待ち）＝購入の代わりに入荷お知らせ
 
   function relatedCard(x) {
     return `<a class="rec-card" href="product.html?id=${x.id}" style="text-decoration:none">
@@ -96,6 +97,11 @@
           ? `<div class="pd-applied">${svg('clock')}お申し込み済みです。担当者からのご連絡をお待ちください。</div>`
           : `<a class="pd-lock__cta" href="contracts.html?b=${p.contract}">${svg('shield')}${mode === 'apply' ? '契約を申し込む' : '内容を見て契約に進む'}${svg('chevright')}</a>`}
         <a class="pd-lock__sub" href="contracts.html">契約ブランド一覧を見る</a>
+      </div>` : isWait ? `
+      <div class="pd-restock" data-id="${p.id}">
+        <div class="pd-restock__h">${svg('clock')}ただいま<b>入荷待ち</b>です</div>
+        <p class="pd-restock__t">入荷お知らせにご登録いただくと、再入荷したタイミングでお知らせします。担当ディーラー（菊地）にも入荷リクエストとして届きます。</p>
+        <button class="pd-restock__cta${Store.hasRestockAlert(p.id) ? ' is-on' : ''}" id="pdRestock" data-act="restock" data-id="${p.id}" aria-pressed="${Store.hasRestockAlert(p.id) ? 'true' : 'false'}">${svg(Store.hasRestockAlert(p.id) ? 'checkc' : 'bell')}<span class="btn-restock__t">${Store.hasRestockAlert(p.id) ? '入荷お知らせ登録済み' : '入荷お知らせを受け取る'}</span></button>
       </div>` : `
       <div class="pd-buy">
         <div class="stepper" id="pdStepper">
@@ -104,11 +110,11 @@
           <button data-act="inc" aria-label="数量を増やす">${svg('plus')}</button>
         </div>
         <button class="btn-cart" id="pdAdd">${svg('cart')}カートに入れる</button>
-      </div>
+      </div>`}
       <div class="pd-sub-actions">
         <button id="pdFav" aria-pressed="${fav}">${svg('heart')}お気に入り</button>
         <button data-soon="定番セット登録">${svg('reorder')}定番に登録</button>
-      </div>`}
+      </div>
 
       <section class="pd-sec">
         <h2 class="pd-sec__title">商品説明</h2>
@@ -176,7 +182,7 @@
     `;
 
     qs('#pdBarPrice').textContent = fmtYen(eff);
-    qs('#pdBar').hidden = false;
+    qs('#pdBar').hidden = isWait;   // 入荷待ちは下部の購入バーを出さない（本文の入荷お知らせCTAに一本化）
     if (direct) {
       qs('#pdBarAdd').innerHTML = 'メーカー発注サイトへ' + svg('chevright');
     } else if (locked) {
