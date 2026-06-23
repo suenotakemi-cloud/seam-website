@@ -31,30 +31,22 @@
     <section class="account">
       <span class="account__avatar">SALON<br>LUXE</span>
       <div>
-        <div class="account__salon">山田 太郎 様 <span class="member-badge">プラチナ会員</span></div>
+        <div class="account__salon">山田 太郎 様 <span class="member-badge" id="memberBadge">ゴールド会員</span></div>
         <div class="account__greet">SALON LUXE 表参道店</div>
         <div class="account__status"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L15.5 9.5"/></svg> 美容師免許 確認済み・有効期限 2025/12/31</div>
       </div>
     </section>
 
+    <!-- 取引ランク（年間仕入れ実績）＝正式ランク。会員ランクと重複していた表示を1枚に統合 -->
     <section class="sec" style="margin-top:var(--s-4)">
-      <div style="background:var(--dark);color:#fff;border-radius:var(--r-lg);padding:var(--s-5)">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:var(--s-3);flex-wrap:wrap">
-          <div>
-            <div style="font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.08em">現在の会員ランク</div>
-            <div style="font-size:var(--fs-20);font-weight:800;color:var(--gold);margin-top:2px">プラチナ会員</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;color:rgba(255,255,255,.6)">保有ポイント</div>
-            <div style="font-family:var(--font-num);font-size:var(--fs-24);font-weight:800">12,450<span style="font-size:13px;font-weight:700"> pt</span></div>
-            <div style="font-size:10.5px;color:rgba(255,255,255,.5)">うち期間限定 1,200pt</div>
-          </div>
-        </div>
-        <div style="margin-top:var(--s-4)">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:6px"><span>次のランクまで</span><span>あと <b style="color:#fff">3,550pt</b></span></div>
-          <div style="height:8px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden"><i style="display:block;height:100%;width:62%;background:var(--gold);border-radius:999px"></i></div>
-          <div style="font-size:10.5px;color:rgba(255,255,255,.5);margin-top:6px">会員ステータス有効期限 2025/12/31</div>
-        </div>
+      <div class="sec__head"><h2 class="sec__title">取引ランク（年間仕入れ実績）</h2></div>
+      <div id="tradeRankCard"></div>
+    </section>
+
+    <section class="sec">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--line);border-radius:var(--r-lg);padding:13px 16px">
+        <span style="font-size:12.5px;font-weight:700;color:var(--ink-2)">保有ポイント</span>
+        <span style="text-align:right;line-height:1.3"><b style="font-family:var(--font-num);font-size:var(--fs-20);font-weight:800">12,450</b><span style="font-size:12px;font-weight:700"> pt</span><span style="display:block;font-size:10.5px;color:var(--ink-3)">うち期間限定 1,200pt</span></span>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-2);margin-top:var(--s-3)">
         <div style="border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-3) var(--s-2);text-align:center"><div style="font-family:var(--font-num);font-size:var(--fs-20);font-weight:800">28</div><div style="font-size:10.5px;color:var(--ink-2);margin-top:2px">注文件数</div></div>
@@ -62,11 +54,6 @@
         <div style="border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-3) var(--s-2);text-align:center"><div style="font-family:var(--font-num);font-size:var(--fs-20);font-weight:800">12</div><div style="font-size:10.5px;color:var(--ink-2);margin-top:2px">受講講座</div></div>
         <div style="border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-3) var(--s-2);text-align:center"><div style="font-family:var(--font-num);font-size:var(--fs-20);font-weight:800">2</div><div style="font-size:10.5px;color:var(--ink-2);margin-top:2px">出荷待ち</div></div>
       </div>
-    </section>
-
-    <section class="sec">
-      <div class="sec__head"><h2 class="sec__title">取引ランク（年間仕入れ実績）</h2></div>
-      <div id="tradeRankCard"></div>
     </section>
 
     <section class="sec">
@@ -170,6 +157,7 @@
         var host = document.getElementById('tradeRankCard');
         if (tr && host) {
           var t = tr.tier, yen = function (n) { return '¥' + (n || 0).toLocaleString('ja-JP'); };
+          var mb = document.getElementById('memberBadge'); if (mb) { mb.textContent = t.label + '会員'; mb.style.background = t.color; mb.style.color = '#fff'; mb.style.borderColor = t.color; }
           var perks = t.perks.map(function (p) { return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;background:rgba(255,255,255,.1);border-radius:999px;padding:4px 11px;margin:5px 5px 0 0;color:#fff">' + (window.SP.svg ? SP.svg('check') : '✓') + p + '</span>'; }).join('');
           var nextLine = tr.next
             ? '<div style="display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.7);margin-bottom:6px"><span>次の' + tr.next.label + 'ランクまで</span><span>あと <b style="color:#fff">' + yen(tr.toNext) + '</b></span></div><div style="height:8px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden"><i style="display:block;height:100%;width:' + tr.progress + '%;background:' + t.color + ';border-radius:999px"></i></div>'
