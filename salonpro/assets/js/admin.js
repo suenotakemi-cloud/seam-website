@@ -641,6 +641,190 @@
     SP.Store.addPartnerLead({ partnerId: 'tax', partnerName: '税理士', feeNote: '成約初年度顧問料の一部（目安）', salon: 'BARBER K 渋谷', contact: '佐藤', summary: '法人・法人化の相談', note: '' });
   }
 
+  /* ===== 充実化：注文管理・商品管理・分析・KPI・ナビ ===== */
+  const yen = n => '¥' + Math.round(n || 0).toLocaleString('ja-JP');
+  const CAT_LABEL = {};
+  ((SP.DATA && SP.DATA.categories) || []).forEach(c => { CAT_LABEL[c.id] = c.label; });
+  const catName = id => CAT_LABEL[id] || id;
+
+  // デモ注文（注文管理＋KPIの元データ）
+  const ORDER_ST = { new: ['新規', 'tag--new'], prep: ['準備中', 'tag--prep'], shipped: ['出荷済', 'tag--shipped'], credit: ['与信待ち', 'tag--mute'] };
+  let ORDERS = [
+    { no: 'SP-2381', salon: 'SALON LUXE 表参道店', date: '本日', items: 12, amount: 18920, pay: '請求書', status: 'prep' },
+    { no: 'SP-2380', salon: 'hair atelier MELT 中目黒', date: '本日', items: 5, amount: 7150, pay: 'カード', status: 'new' },
+    { no: 'SP-2379', salon: 'BARBER K 渋谷', date: '本日', items: 3, amount: 3520, pay: '請求書', status: 'shipped' },
+    { no: 'SP-2378', salon: 'Atelier NOa 自由が丘', date: '本日', items: 18, amount: 24310, pay: '請求書', status: 'credit' },
+    { no: 'SP-2377', salon: 'SALON LUXE 表参道店', date: '昨日', items: 8, amount: 12480, pay: 'カード', status: 'shipped' },
+    { no: 'SP-2376', salon: 'hair atelier MELT 中目黒', date: '昨日', items: 2, amount: 528000, pay: 'リース', status: 'prep' },
+    { no: 'SP-2375', salon: 'Lumiere 銀座', date: '昨日', items: 22, amount: 41200, pay: '請求書', status: 'shipped' },
+    { no: 'SP-2374', salon: 'BARBER K 渋谷', date: '6/20', items: 6, amount: 9680, pay: 'コンビニ', status: 'shipped' },
+    { no: 'SP-2373', salon: 'Atelier NOa 自由が丘', date: '6/20', items: 14, amount: 19250, pay: '請求書', status: 'shipped' },
+    { no: 'SP-2372', salon: 'hair room SOL 吉祥寺', date: '6/20', items: 9, amount: 13740, pay: 'カード', status: 'shipped' },
+    { no: 'SP-2371', salon: 'Lumiere 銀座', date: '6/19', items: 31, amount: 132000, pay: 'リース', status: 'shipped' },
+    { no: 'SP-2370', salon: 'SALON LUXE 表参道店', date: '6/19', items: 7, amount: 10980, pay: '請求書', status: 'shipped' },
+    { no: 'SP-2369', salon: 'hair room SOL 吉祥寺', date: '6/18', items: 11, amount: 16320, pay: 'カード', status: 'shipped' },
+    { no: 'SP-2368', salon: 'BARBER K 渋谷', date: '6/18', items: 4, amount: 5280, pay: '請求書', status: 'shipped' },
+  ];
+
+  // KPI（実データ連動：店舗状態＋注文データから算出）
+  function computeKpis() {
+    const set = (id, v) => { const el = qs('#' + id); if (el) el.textContent = v; };
+    set('kpiGmv', yen(ORDERS.reduce((a, o) => a + o.amount, 0)));
+    set('kpiOrders', ORDERS.filter(o => o.date === '本日').length);
+    set('kpiSalons', new Set(ORDERS.map(o => o.salon)).size + 54);
+    set('kpiRestock', (SP.Store.restockCount && SP.Store.restockCount()) || 0);
+    set('kpiBuyback', (SP.Store.pendingBuybacks && SP.Store.pendingBuybacks().length) || 0);
+    set('kpiPartner', (SP.Store.pendingPartnerLeads && SP.Store.pendingPartnerLeads().length) || 0);
+  }
+
+  // 分析（SVGチャート）：月次GMV推移（デモ）＋カテゴリ別取扱い点数（実データ）＋人気ブランドTOP（実データ）
+  function vbars(data, unit) {
+    const max = Math.max.apply(null, data.map(d => d.v)) || 1;
+    const bw = 320 / data.length, pad = bw * 0.26;
+    const bars = data.map((d, i) => {
+      const h = Math.round((d.v / max) * 96);
+      const x = i * bw + pad, y = 120 - h, w = bw - pad * 2;
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="var(--gold)"/>` +
+        `<text x="${x + w / 2}" y="${y - 4}" text-anchor="middle" font-size="9" fill="var(--ink-2)" font-family="var(--font-num)">${d.t || ''}</text>` +
+        `<text x="${x + w / 2}" y="133" text-anchor="middle" font-size="9" fill="var(--ink-3)">${d.label}</text>`;
+    }).join('');
+    return `<svg viewBox="0 0 320 140" style="width:100%;height:auto">${bars}</svg>`;
+  }
+  function hbars(data) {
+    const max = Math.max.apply(null, data.map(d => d.v)) || 1;
+    return '<div style="display:grid;gap:7px">' + data.map(d => {
+      const pct = Math.round((d.v / max) * 100);
+      return `<div style="display:grid;grid-template-columns:96px 1fr 42px;align-items:center;gap:8px;font-size:12px">
+        <span style="color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.label}</span>
+        <span style="background:var(--surface-2);border-radius:999px;height:9px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:var(--gold);border-radius:999px"></i></span>
+        <span style="text-align:right;font-family:var(--font-num);font-weight:700;color:var(--ink)">${d.v}</span>
+      </div>`;
+    }).join('') + '</div>';
+  }
+  function renderAnalytics() {
+    const host = qs('#analyticsBody'); if (!host) return;
+    const prods = (SP.DATA && SP.DATA.products) || [];
+    const gmv = [
+      { label: '1月', v: 382 }, { label: '2月', v: 410 }, { label: '3月', v: 458 },
+      { label: '4月', v: 437 }, { label: '5月', v: 489 }, { label: '6月', v: 482, t: '今月' }
+    ];
+    const catCnt = {}; prods.forEach(p => { if (p.cat && p.cat !== '_rec') catCnt[p.cat] = (catCnt[p.cat] || 0) + 1; });
+    const cats = Object.keys(catCnt).map(k => ({ label: catName(k), v: catCnt[k] })).sort((a, b) => b.v - a.v).slice(0, 8);
+    const brCnt = {}; prods.forEach(p => { if (p.brand) brCnt[p.brand] = (brCnt[p.brand] || 0) + 1; });
+    const brands = Object.keys(brCnt).map(k => ({ label: k, v: brCnt[k] })).sort((a, b) => b.v - a.v).slice(0, 6);
+    const ranks = [{ label: 'ブロンズ', v: 28 }, { label: 'シルバー', v: 34 }, { label: 'ゴールド', v: 21 }, { label: 'プラチナ', v: 12 }];
+    host.innerHTML = `
+      <div style="display:grid;gap:18px;grid-template-columns:1fr;">
+        <div>
+          <div style="font-size:12.5px;font-weight:800;margin-bottom:8px">月次 流通額（GMV）推移 <span style="color:var(--ink-3);font-weight:600;font-size:11px">単位：万円・デモ</span></div>
+          ${vbars(gmv)}
+        </div>
+        <div style="display:grid;gap:18px;grid-template-columns:1fr 1fr">
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">カテゴリ別 取扱い点数</div>${hbars(cats)}</div>
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">取扱いブランド TOP6（点数）</div>${hbars(brands)}</div>
+        </div>
+        <div style="max-width:520px"><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">会員ランク分布 <span style="color:var(--ink-3);font-weight:600;font-size:11px">デモ</span></div>${hbars(ranks)}</div>
+      </div>`;
+  }
+
+  // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
+  function setupProductAdmin() {
+    const body = qs('#productAdminBody'); if (!body) return;
+    const prods = (SP.DATA && SP.DATA.products || []).filter(p => p.cat !== '_rec');
+    const sel = qs('#prodCat');
+    if (sel) {
+      const cats = Array.from(new Set(prods.map(p => p.cat)));
+      sel.innerHTML = '<option value="">カテゴリすべて</option>' + cats.map(c => `<option value="${c}">${catName(c)}</option>`).join('');
+    }
+    const STK = { in: ['在庫あり', 'tag--shipped'], low: ['残りわずか', 'tag--prep'], order: ['取寄せ', 'tag--new'], wait: ['入荷待ち', 'tag--mute'] };
+    function filtered() {
+      const q = (qs('#prodSearch').value || '').trim().toLowerCase();
+      const c = qs('#prodCat').value, s = qs('#prodStock').value;
+      return prods.filter(p =>
+        (!q || (p.name + ' ' + p.brand).toLowerCase().indexOf(q) >= 0) &&
+        (!c || p.cat === c) && (!s || (p.stock || 'in') === s));
+    }
+    function render() {
+      const list = filtered();
+      qs('#prodCount').textContent = `${list.length}件 / 全${prods.length}件`;
+      const rows = list.slice(0, 40).map(p => {
+        const st = STK[p.stock || 'in'] || STK.in;
+        const rate = (SP.discountRate ? SP.discountRate(p) : 0);
+        const eff = (SP.priceOf ? SP.priceOf(p) : p.price);
+        return `<tr>
+          <td><a href="product.html?id=${p.id}" style="color:var(--ink);font-weight:700;text-decoration:none">${p.name}</a><div style="font-size:11px;color:var(--ink-3)">${p.brand}</div></td>
+          <td>${catName(p.cat)}</td>
+          <td class="num">${yen(eff)}${rate > 0 ? `<div style="font-size:10.5px;color:#1f4e8c;font-weight:800">貴店 ${Math.round(rate * 100)}%OFF</div>` : ''}</td>
+          <td><span class="tag ${st[1]}">${st[0]}</span></td>
+        </tr>`;
+      }).join('');
+      body.innerHTML = `<table class="adm-table"><thead><tr><th>商品</th><th>カテゴリ</th><th>会員価格</th><th>在庫</th></tr></thead><tbody>${rows}</tbody></table>` +
+        (list.length > 40 ? `<div style="text-align:center;color:var(--ink-3);font-size:12px;padding:10px">ほか ${list.length - 40} 件（検索で絞り込み）</div>` : '');
+    }
+    ['#prodSearch', '#prodCat', '#prodStock'].forEach(s => { const el = qs(s); if (el) el.addEventListener('input', render); });
+    const csv = qs('#prodCsv');
+    if (csv) csv.addEventListener('click', () => {
+      const rows = [['ID', '商品名', 'ブランド', 'カテゴリ', '会員価格', '在庫']].concat(filtered().map(p => [p.id, p.name, p.brand, catName(p.cat), p.price, (STK[p.stock || 'in'] || STK.in)[0]]));
+      const out = rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\n');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + out], { type: 'text/csv;charset=utf-8;' }));
+      a.download = '商品一覧.csv'; document.body.appendChild(a); a.click(); a.remove();
+      toast('商品一覧をCSV出力しました');
+    });
+    render();
+  }
+
+  // 注文管理（ステータス絞り込み・出荷）
+  let orderFilter = '';
+  function renderOrders() {
+    const body = qs('#orderAdminBody'); if (!body) return;
+    const fil = qs('#orderFilters');
+    if (fil && !fil.dataset.ready) {
+      const chips = [['', 'すべて'], ['new', '新規'], ['prep', '準備中'], ['credit', '与信待ち'], ['shipped', '出荷済']];
+      fil.innerHTML = chips.map(([k, l]) => `<button class="btn btn--ghost ofb" data-of="${k}" style="${k === orderFilter ? 'border-color:var(--gold);color:var(--gold-strong);font-weight:800' : ''}">${l}</button>`).join('');
+      fil.dataset.ready = '1';
+      fil.addEventListener('click', e => { const b = e.target.closest('[data-of]'); if (!b) return; orderFilter = b.dataset.of; [].forEach.call(fil.children, c => c.style.cssText = ''); b.style.cssText = 'border-color:var(--gold);color:var(--gold-strong);font-weight:800'; renderOrders(); });
+    }
+    const list = ORDERS.filter(o => !orderFilter || o.status === orderFilter);
+    const pend = ORDERS.filter(o => o.status === 'new' || o.status === 'prep' || o.status === 'credit').length;
+    qs('#orderSummary').textContent = `全${ORDERS.length}件・未出荷${pend}件・流通額 ${yen(ORDERS.reduce((a, o) => a + o.amount, 0))}`;
+    body.innerHTML = `<table class="adm-table"><thead><tr><th>注文番号</th><th>サロン</th><th>日付</th><th>点数</th><th>金額</th><th>支払</th><th>状態</th><th></th></tr></thead><tbody>` +
+      list.map(o => {
+        const st = ORDER_ST[o.status] || ORDER_ST.new;
+        const canShip = o.status !== 'shipped';
+        return `<tr data-no="${o.no}">
+          <td class="num">${o.no}</td><td>${o.salon}</td><td>${o.date}</td>
+          <td class="num">${o.items}</td><td class="num">${yen(o.amount)}</td><td>${o.pay}</td>
+          <td><span class="tag ${st[1]}">${st[0]}</span></td>
+          <td>${canShip ? `<button class="btn btn--ghost" data-ship="${o.no}" style="padding:4px 10px">出荷</button>` : ''}</td>
+        </tr>`;
+      }).join('') + '</tbody></table>';
+  }
+  const _ob = qs('#orderAdminBody');
+  if (_ob) _ob.addEventListener('click', e => {
+    const b = e.target.closest('[data-ship]'); if (!b) return;
+    const o = ORDERS.find(x => x.no === b.dataset.ship); if (!o) return;
+    o.status = 'shipped'; toast(`${o.no} を出荷済みにしました`); renderOrders(); computeKpis();
+  });
+
+  // サイドバー：セクションへスクロール＋スクロールスパイで現在地ハイライト
+  function setupAdminNav() {
+    const links = [].slice.call(document.querySelectorAll('.adm-side a[data-jump]'));
+    const targets = links.map(a => ({ a, el: qs(a.getAttribute('data-jump')) })).filter(x => x.el);
+    links.forEach(a => a.addEventListener('click', e => {
+      e.preventDefault();
+      const t = qs(a.getAttribute('data-jump')); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+    let raf = 0;
+    window.addEventListener('scroll', () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0; const y = window.scrollY + 130; let cur = targets[0];
+        targets.forEach(t => { if (t.el.getBoundingClientRect().top + window.scrollY <= y) cur = t; });
+        if (cur) { links.forEach(x => x.classList.remove('is-active')); cur.a.classList.add('is-active'); }
+      });
+    }, { passive: true });
+  }
+
   Salon.subscribe(renderLow);
   renderReview();
   renderCredit();
@@ -657,4 +841,9 @@
   renderSalonConds();
   fillDiscForm();
   renderSalonDiscounts();
+  renderAnalytics();
+  setupProductAdmin();
+  renderOrders();
+  computeKpis();
+  setupAdminNav();
 })();
