@@ -8020,14 +8020,31 @@ function selectPoeticStates(answers, scores, maxCount = 2) {
 }
 function selectAdviceKey(scores) {
   const s = scores || {};
-  if (s.heatDamage >= 4) return 'heat';
-  if (s.damage >= 5) return 'damage';
+  // 熱/総ダメージは“強い時だけ”最優先。弱〜中は個別の悩みを先に拾い、heat/damage偏重を抑える
+  if (s.heatDamage >= 6) return 'heat';
+  if (s.damage >= 7) return 'damage';
   if (s.scalpDryness >= 2 || s.scalpOiliness >= 2) return 'scalp';
   if (s.frizz >= 3) return 'frizz';
   if (s.colorFade >= 3) return 'color';
   if (s.dryness >= 3) return 'dry';
   if (s.volumeLoss >= 2) return 'volume';
+  // 個別の悩みに当たらなかった中程度の熱/ダメージはここで拾う（取りこぼし防止）
+  if (s.heatDamage >= 4) return 'heat';
+  if (s.damage >= 5) return 'damage';
   return 'calm';
+}
+
+// 履歴ダメージTier: 1=軽 / 2=中 / 3=重（27型=生まれ持った素材とは別レイヤー＝今の状態）
+// color/bleach/perm/straighten/高温アイロン由来の蓄積を集約した damage/heatDamage/bleachHistory から算出
+function computeDamageTier(scores) {
+  const s = scores || {};
+  const dmg = s.damage || 0,
+    heat = s.heatDamage || 0,
+    bleach = s.bleachHistory || 0;
+  const load = dmg + heat + bleach;
+  if (heat >= 5 || dmg >= 7 || bleach >= 5 || load >= 11) return 3;
+  if (heat >= 2 || dmg >= 3 || bleach >= 2 || load >= 4) return 2;
+  return 1;
 }
 function deriveTargetRadar(currentRadar, direction) {
   const t = [...currentRadar];
@@ -8089,7 +8106,8 @@ function resolveKarteAnimal(answers, scores) {
     stateText,
     states,
     adviceKey,
-    adviceText
+    adviceText,
+    damageTier: computeDamageTier(scores)
   };
 }
 
@@ -8776,7 +8794,8 @@ function ResultHero({
     origin,
     radar,
     mainGoal,
-    gender
+    gender,
+    damageTier
   } = karte;
   const heroImgPath = getCharImgPath(origin?.code, gender); // null なら画像非表示
   // セクション間をジャンプするヘルパー
@@ -8914,7 +8933,66 @@ function ResultHero({
             fontWeight: 600
           }
         }, a.value)));
-      })()), traits.length > 0 && /*#__PURE__*/React.createElement("div", {
+      })()), (() => {
+        const tier = damageTier || 1;
+        const meta = {
+          1: {
+            label: '軽め',
+            en: 'Light',
+            note: '履歴ダメージは少なめ ケアは予防中心で'
+          },
+          2: {
+            label: '中',
+            en: 'Moderate',
+            note: 'カラーや熱の蓄積あり 補修と保護を両立'
+          },
+          3: {
+            label: '重め',
+            en: 'Heavy',
+            note: '履歴が重め 毛先の集中補修を優先'
+          }
+        }[tier] || {
+          label: '—',
+          en: '—',
+          note: ''
+        };
+        return /*#__PURE__*/React.createElement("div", {
+          className: "mt-3 pb-3 border-b border-gold/20"
+        }, /*#__PURE__*/React.createElement("div", {
+          className: "flex items-center justify-between mb-1.5"
+        }, /*#__PURE__*/React.createElement("p", {
+          className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold"
+        }, "\u2014 \u5C65\u6B74\u30E9\u30F3\u30AF"), /*#__PURE__*/React.createElement("span", {
+          className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55 nums"
+        }, meta.en, " \xB7 ", tier, "/3")), /*#__PURE__*/React.createElement("div", {
+          className: "flex items-center",
+          style: {
+            gap: '8px'
+          }
+        }, /*#__PURE__*/React.createElement("span", {
+          "aria-hidden": true,
+          style: {
+            display: 'inline-flex',
+            gap: '4px'
+          }
+        }, [1, 2, 3].map(i => /*#__PURE__*/React.createElement("span", {
+          key: i,
+          style: {
+            width: '7px',
+            height: '7px',
+            borderRadius: '9999px',
+            background: i <= tier ? '#B8945A' : 'rgba(184,148,90,0.2)'
+          }
+        }))), /*#__PURE__*/React.createElement("span", {
+          className: "font-serif text-ink",
+          style: {
+            fontWeight: 600,
+            fontSize: '14px'
+          }
+        }, meta.label)), /*#__PURE__*/React.createElement("p", {
+          className: "mt-1.5 font-serif text-[12.5px] leading-[1.85] text-charcoal/85"
+        }, meta.note));
+      })(), traits.length > 0 && /*#__PURE__*/React.createElement("div", {
         className: "mt-3 pb-3 border-b border-gold/20"
       }, /*#__PURE__*/React.createElement("p", {
         className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold mb-2"
