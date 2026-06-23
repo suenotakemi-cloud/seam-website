@@ -19,13 +19,10 @@
     }
   } catch (e) {}
 
-  /* 2. ヘッダーを View Transition で永続化（遷移中も動かない） */
-  try {
-    if ('startViewTransition' in document) {
-      var header = document.querySelector('header');
-      if (header) header.style.viewTransitionName = 'seam-header';
-    }
-  } catch (e) {}
+  /* 2. （旧）ヘッダーへの永続 view-transition-name は廃止。
+        position:sticky 要素に名前を常時付けると、スクロール中にヘッダーが
+        別レイヤーとして残り「二重に見える」ゴーストが出るため。
+        ページ遷移は root のクロスフェードのみで十分に映画的。 */
 
   /* 3. ヒーロー映像にパララックス（object-cover で overflow:hidden の中だけ） */
   try {

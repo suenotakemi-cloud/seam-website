@@ -29,14 +29,9 @@
   from { opacity: 0; transform: translateY(12px) scale(0.994); filter: blur(3px); }
 }
 
-/* 永続クローム（ヘッダー / ボトムナビ）は遷移中ふわっと馴染ませる */
-::view-transition-group(seam-header),
-::view-transition-group(seam-bottomnav) { animation-duration: 0.4s; }
-::view-transition-old(seam-header),  ::view-transition-new(seam-header),
-::view-transition-old(seam-bottomnav),::view-transition-new(seam-bottomnav) {
-  animation: seamCloomFade 0.4s cubic-bezier(0.22,1,0.36,1) both;
-}
-@keyframes seamCloomFade { from { opacity: 0; } to { opacity: 1; } }
+/* （旧 seam-header / seam-bottomnav の永続グループは廃止：
+   position:sticky/fixed 要素に view-transition-name を常時付けると
+   スクロール中に二重表示のゴーストが出るため。root のみで遷移する） */
 
 /* ───────── 2. フィルムグレイン（極微の質感） ───────── */
 .seam-grain {
