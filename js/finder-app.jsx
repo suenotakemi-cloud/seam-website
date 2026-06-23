@@ -875,6 +875,19 @@ const SEAM_STORES = [
 
 const SHOP_URL = 'onlineshop.html'; // 公式URLが無い商品は会員制オンラインショップ案内へ
 
+// finder ファネルCTA計測 — 診断完了後のCTAクリックを seamTrack('finder_cta') で送る。
+// finder_complete 時に window.__seamLastType を保存し、クリックに診断タイプを自動相関させる
+// （どのキャラ→予約/購入クリックに進んだか分かる）。計測でUIは絶対に壊さない（try/catch）。
+function trackCta(target, label) {
+  try {
+    window.seamTrack && window.seamTrack('finder_cta', {
+      target: target,
+      label: label || '',
+      type: (typeof window !== 'undefined' && window.__seamLastType) || '',
+    });
+  } catch (e) { /* no-op */ }
+}
+
 /* ---------- タイプ別ルーティン ---------- */
 /* ---------- 髪質チャート ---------- */
 function clamp(v, max) { return Math.max(0, Math.min(max, Math.round(v))); }
@@ -2511,6 +2524,7 @@ function HeadSpaSection({ answers }) {
               <button
                 type="button"
                 data-open-resv
+                data-resv-from="spa"
                 aria-label="ヘッドスパを予約する"
                 className="inline-flex items-center justify-center gap-2 px-5 min-h-[44px] bg-ink text-ivory text-[12px] tracking-widest2 uppercase rounded-[2px] hover:bg-charcoal active:scale-[0.97] transition-all"
               >
@@ -3074,7 +3088,7 @@ function DeepBestCard({ item, best = null, variant = 'best', category = null }){
           {chips.map((c,i)=><span key={i} className="text-[10.5px] px-2 py-0.5 bg-cream/60 text-charcoal/75 border border-gold/25 rounded-[1px] whitespace-nowrap" style={{letterSpacing:'0.02em'}}>{c}</span>)}
         </div>
       )}
-      <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`} className="mt-4 group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/40 via-white to-cream/40 rounded-[2px] px-3.5 py-2.5 hover:border-gold active:scale-[0.99] transition-all no-print min-h-[44px]">
+      <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackCta('product', p.brand || '')} aria-label={`${p.name}を公式サイトで見る (新規タブで開く)`} className="mt-4 group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/40 via-white to-cream/40 rounded-[2px] px-3.5 py-2.5 hover:border-gold active:scale-[0.99] transition-all no-print min-h-[44px]">
         <span className="flex flex-col gap-0.5 min-w-0">
           <span className="flex items-baseline gap-1.5 flex-wrap">
             {priceVal != null && <>
@@ -3097,7 +3111,7 @@ function DeepAltCard({ item, best }){
   const role = best && best.p ? deepAltRole(p, best.p) : null;
   const altPrice = deepMinPrice(p);
   return (
-    <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" aria-label={`${p.name}を詳しく見る (新規タブで開く)`} className="group flex flex-col bg-white border border-line rounded-[2px] px-3 py-3 hover:border-gold active:scale-[0.99] transition-all no-print">
+    <a href={p.productPageUrl || SHOP_URL} target="_blank" rel="noopener noreferrer" onClick={() => trackCta('product_alt', p.brand || '')} aria-label={`${p.name}を詳しく見る (新規タブで開く)`} className="group flex flex-col bg-white border border-line rounded-[2px] px-3 py-3 hover:border-gold active:scale-[0.99] transition-all no-print">
       <span className="flex items-center justify-between gap-2">
         <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/50 truncate">{p.brand}</span>
         {role && role !== 'ほかに' && (
@@ -6184,6 +6198,7 @@ function ReservationModal({ open, onClose }) {
                   href={selectedStore.hpb}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackCta('reserve_hpb', (selectedStore.id || '') + ':salon')}
                   className="border border-line bg-white p-6 text-center hover:bg-ink hover:text-ivory transition-colors group"
                 >
                   <p className="font-serif text-[15px] text-ink group-hover:text-ivory">ヘアサロン</p>
@@ -6193,6 +6208,7 @@ function ReservationModal({ open, onClose }) {
                   href={selectedStore.hpb}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackCta('reserve_hpb', (selectedStore.id || '') + ':spa')}
                   className="border border-line bg-white p-6 text-center hover:bg-ink hover:text-ivory transition-colors group"
                 >
                   <p className="font-serif text-[15px] text-ink group-hover:text-ivory">ヘッドスパ</p>
@@ -6406,7 +6422,7 @@ function ResultHero({ karte, onSaveImage, onShare, onSavePdf }) {
   const heroImgPath = getCharImgPath(origin?.code, gender);  // null なら画像非表示
   // 計測: 結果表示時に1回だけ（type/履歴Tier/advice の実分布を集計。個人情報なし・投げっぱなし）
   useEffect(() => {
-    try { window.seamTrack && window.seamTrack('finder_complete', { type: origin && origin.code, tier: damageTier, advice: karte.adviceKey, gender: gender }); } catch (e) {}
+    try { window.__seamLastType = (origin && origin.code) || ''; window.seamTrack && window.seamTrack('finder_complete', { type: origin && origin.code, tier: damageTier, advice: karte.adviceKey, gender: gender }); } catch (e) {}
   }, []);
   // セクション間をジャンプするヘルパー
   const jump = (id) => {
@@ -9050,6 +9066,9 @@ function Result({ answers, onRestart, onCollection }) {
             <div className="relative inline-block">
               <span aria-hidden className="absolute -inset-1.5 sm:-inset-2 rounded-full border border-mainBrown/35 pointer-events-none" />
               <button
+                type="button"
+                data-open-resv
+                data-resv-from="hero"
                 className="relative inline-flex items-center justify-center gap-3 px-7 py-4 sm:py-5 text-white font-serif text-[14px] sm:text-[15px] rounded-full transition-colors shadow-card"
                 style={{background:'#B57C5A', letterSpacing:'0.02em'}}
                 onMouseEnter={(e)=>{e.currentTarget.style.background='#9F6A4B'}}
@@ -9073,6 +9092,7 @@ function Result({ answers, onRestart, onCollection }) {
               href={SHOP_URL}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackCta('shop', 'result')}
               className="inline-flex items-center gap-2 px-5 py-3 border border-ink/25 text-ink text-[12.5px] font-serif rounded-full hover:border-ink hover:bg-white/60 transition-colors"
             >
               <span>メンバーはオンラインへ</span><span className="text-gold">↗</span>
@@ -9124,6 +9144,7 @@ function Result({ answers, onRestart, onCollection }) {
           <button
             type="button"
             data-open-resv
+            data-resv-from="sticky"
             aria-label="サロンを予約する"
             className="flex flex-col items-center justify-center gap-1 bg-cream text-ink active:bg-cream/80 border-l border-line transition-colors"
             style={{minHeight:'56px'}}
@@ -9260,7 +9281,7 @@ function App() {
   useEffect(() => {
     const handler = (e) => {
       const trigger = e.target.closest('[data-open-resv]');
-      if (trigger) { e.preventDefault(); setReservationOpen(true); }
+      if (trigger) { e.preventDefault(); trackCta('reserve_open', trigger.getAttribute('data-resv-from') || ''); setReservationOpen(true); }
     };
     document.addEventListener('click', handler);
     const esc = (e) => { if (e.key === 'Escape') setReservationOpen(false); };

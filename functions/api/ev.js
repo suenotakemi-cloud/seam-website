@@ -14,13 +14,15 @@ export async function onRequestPost(context) {
       String(ev.advice || '').slice(0, 16),  // adviceKey
       String(ev.mode || '').slice(0, 4),     // a / b
       String(ev.gender || '').slice(0, 8),
+      String(ev.target || '').slice(0, 20),  // finder_cta: reserve_open / reserve_hpb / shop / product
+      String(ev.label || '').slice(0, 24),   // finder_cta の文脈: 店舗id / ブランド / 流入元
     ];
     const doubles = [Number(ev.tier) || 0];  // damageTier 1-3
     if (env && env.SEAM_AE && typeof env.SEAM_AE.writeDataPoint === 'function') {
       env.SEAM_AE.writeDataPoint({ indexes: [name], blobs, doubles });
     } else {
       // binding 未設定でも CF Pages のリアルタイムログで確認可能
-      console.log('[seam-ev]', JSON.stringify({ name, p: ev.p, type: ev.type, advice: ev.advice, tier: ev.tier, mode: ev.mode }));
+      console.log('[seam-ev]', JSON.stringify({ name, p: ev.p, type: ev.type, advice: ev.advice, tier: ev.tier, mode: ev.mode, target: ev.target, label: ev.label }));
     }
   } catch (e) { /* no-op */ }
   return new Response(null, { status: 204 });
