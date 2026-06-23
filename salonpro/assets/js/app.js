@@ -595,6 +595,7 @@
 
   function openDropdown(trigger, items, selectedId, onSelect) {
     const dd = qs('#dropdown');
+    dd.classList.remove('dropdown--brand');
     dd.innerHTML = items.map(it =>
       `<button role="option" data-val="${it.id}" aria-selected="${it.id === selectedId}">${it.label}${svg('check', 'check')}</button>`
     ).join('');
@@ -614,9 +615,70 @@
       onSelect(b.dataset.val);
     };
   }
-  // ドロップダウンはスクロールで閉じる
-  window.addEventListener('scroll', () => {
-    if (qs('#dropdown').classList.contains('is-open')) closeAll();
+  // ブランド専用ピッカー：検索ボックス＋お気に入り＋人気ブランド＋50音（件数つき）。346件を上から見ずに探せる
+  function openBrandPicker(trigger) {
+    const dd = qs('#dropdown');
+    const counts = {};
+    base().forEach(p => { if (p.brand) counts[p.brand] = (counts[p.brand] || 0) + 1; });
+    const all = Object.keys(counts);
+    const byKana = (a, b) => a.localeCompare(b, 'ja');
+    const byCount = (a, b) => counts[b] - counts[a] || byKana(a, b);
+    const allSorted = all.slice().sort(byKana);
+    const favs = ((Store.getFavBrands && Store.getFavBrands()) || []).filter(b => counts[b]).sort(byKana);
+    const popular = all.slice().sort(byCount).slice(0, 10);
+    const sel = state.brand;
+
+    const row = b => {
+      const on = b === sel;
+      return `<button role="option" class="bp-row${on ? ' is-sel' : ''}" data-val="${escHtml(b)}" aria-selected="${on}"><span class="bp-row__n">${escHtml(b)}</span><span class="bp-row__c">${counts[b]}</span>${svg('check', 'check')}</button>`;
+    };
+    const listHtml = q => {
+      const nq = normSearch(q);
+      if (nq) {
+        const hits = all.filter(b => normSearch(b).indexOf(nq) >= 0).sort(byCount);
+        return hits.length
+          ? `<div class="bp-sec">該当 ${hits.length}件</div>${hits.map(row).join('')}`
+          : '<div class="bp-empty">該当するブランドがありません<br><span>別の表記でお試しください</span></div>';
+      }
+      let h = `<button role="option" class="bp-row bp-row--all${!sel ? ' is-sel' : ''}" data-val="__all" aria-selected="${!sel}"><span class="bp-row__n">すべてのブランド</span>${svg('check', 'check')}</button>`;
+      if (favs.length) h += `<div class="bp-sec">お気に入り</div>${favs.map(row).join('')}`;
+      h += `<div class="bp-sec">人気ブランド</div>${popular.map(row).join('')}`;
+      h += `<div class="bp-sec">すべて（50音順）・${allSorted.length}ブランド</div>${allSorted.map(row).join('')}`;
+      return h;
+    };
+
+    dd.classList.add('dropdown--brand');
+    dd.style.minWidth = '';
+    dd.innerHTML = `<div class="bp__top"><div class="bp__search">${svg('search', 'bp__si')}<input id="bpSearch" type="search" placeholder="ブランド名で検索（例：ルベル）" autocomplete="off" enterkeyhint="search"></div></div><div class="bp__list" id="bpList">${listHtml('')}</div>`;
+
+    const r = trigger.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const w = Math.min(320, vw - 24);
+    let left = Math.min(r.left, vw - 12 - w);
+    left = Math.max(12, left);
+    dd.style.top = (r.bottom + 8) + 'px';
+    dd.style.left = left + 'px';
+    openPanel(dd, { clear: true, lock: false });
+
+    const input = qs('#bpSearch'), listEl = qs('#bpList');
+    input.addEventListener('input', () => { listEl.innerHTML = listHtml(input.value); listEl.scrollTop = 0; });
+    dd.onclick = e => {
+      const b = e.target.closest('button[data-val]');
+      if (!b) return;
+      closeAll();
+      const val = b.dataset.val;
+      state.brand = val === '__all' ? null : val;
+      render();
+    };
+    setTimeout(() => { try { input.focus(); } catch (e) {} }, 60);
+  }
+
+  // ドロップダウンはスクロールで閉じる（ブランドピッカーの内側スクロールでは閉じない）
+  window.addEventListener('scroll', (e) => {
+    if (!qs('#dropdown').classList.contains('is-open')) return;
+    const t = e.target;
+    if (t && t.closest && t.closest('#dropdown')) return;
+    closeAll();
   }, true);
 
   /* ---------------- filter drawer ---------------- */
@@ -686,13 +748,8 @@
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
-    // ピル：ブランド
-    qs('#pillBrand').addEventListener('click', e => {
-      const brands = [...new Set(base().map(p => p.brand))];
-      const items = [{ id: '__all', label: 'すべてのブランド' }, ...brands.map(b => ({ id: b, label: b }))];
-      openDropdown(e.currentTarget, items, state.brand || '__all',
-        val => { state.brand = val === '__all' ? null : val; render(); });
-    });
+    // ピル：ブランド（専用ピッカー：検索＋お気に入り＋人気＋50音・件数つき）
+    qs('#pillBrand').addEventListener('click', e => openBrandPicker(e.currentTarget));
     // ピル：並び替え
     qs('#pillSort').addEventListener('click', e => {
       openDropdown(e.currentTarget, SORTS, state.sort, val => { state.sort = val; render(); });
