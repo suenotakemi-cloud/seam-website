@@ -1876,6 +1876,19 @@ const SEAM_STORES = [{
 }];
 const SHOP_URL = 'onlineshop.html'; // 公式URLが無い商品は会員制オンラインショップ案内へ
 
+// finder ファネルCTA計測 — 診断完了後のCTAクリックを seamTrack('finder_cta') で送る。
+// finder_complete 時に window.__seamLastType を保存し、クリックに診断タイプを自動相関させる
+// （どのキャラ→予約/購入クリックに進んだか分かる）。計測でUIは絶対に壊さない（try/catch）。
+function trackCta(target, label) {
+  try {
+    window.seamTrack && window.seamTrack('finder_cta', {
+      target: target,
+      label: label || '',
+      type: typeof window !== 'undefined' && window.__seamLastType || ''
+    });
+  } catch (e) {/* no-op */}
+}
+
 /* ---------- タイプ別ルーティン ---------- */
 /* ---------- 髪質チャート ---------- */
 function clamp(v, max) {
@@ -3517,6 +3530,7 @@ function HeadSpaSection({
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     "data-open-resv": true,
+    "data-resv-from": "spa",
     "aria-label": "\u30D8\u30C3\u30C9\u30B9\u30D1\u3092\u4E88\u7D04\u3059\u308B",
     className: "inline-flex items-center justify-center gap-2 px-5 min-h-[44px] bg-ink text-ivory text-[12px] tracking-widest2 uppercase rounded-[2px] hover:bg-charcoal active:scale-[0.97] transition-all"
   }, "\u4E88\u7D04\u3059\u308B"), /*#__PURE__*/React.createElement("a", {
@@ -4117,6 +4131,7 @@ function DeepBestCard({
     href: p.productPageUrl || SHOP_URL,
     target: "_blank",
     rel: "noopener noreferrer",
+    onClick: () => trackCta('product', p.brand || ''),
     "aria-label": `${p.name}を公式サイトで見る (新規タブで開く)`,
     className: "mt-4 group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/40 via-white to-cream/40 rounded-[2px] px-3.5 py-2.5 hover:border-gold active:scale-[0.99] transition-all no-print min-h-[44px]"
   }, /*#__PURE__*/React.createElement("span", {
@@ -4151,6 +4166,7 @@ function DeepAltCard({
     href: p.productPageUrl || SHOP_URL,
     target: "_blank",
     rel: "noopener noreferrer",
+    onClick: () => trackCta('product_alt', p.brand || ''),
     "aria-label": `${p.name}を詳しく見る (新規タブで開く)`,
     className: "group flex flex-col bg-white border border-line rounded-[2px] px-3 py-3 hover:border-gold active:scale-[0.99] transition-all no-print"
   }, /*#__PURE__*/React.createElement("span", {
@@ -8287,6 +8303,7 @@ function ReservationModal({
     href: selectedStore.hpb,
     target: "_blank",
     rel: "noopener noreferrer",
+    onClick: () => trackCta('reserve_hpb', (selectedStore.id || '') + ':salon'),
     className: "border border-line bg-white p-6 text-center hover:bg-ink hover:text-ivory transition-colors group"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-serif text-[15px] text-ink group-hover:text-ivory"
@@ -8296,6 +8313,7 @@ function ReservationModal({
     href: selectedStore.hpb,
     target: "_blank",
     rel: "noopener noreferrer",
+    onClick: () => trackCta('reserve_hpb', (selectedStore.id || '') + ':spa'),
     className: "border border-line bg-white p-6 text-center hover:bg-ink hover:text-ivory transition-colors group"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-serif text-[15px] text-ink group-hover:text-ivory"
@@ -8826,6 +8844,7 @@ function ResultHero({
   // 計測: 結果表示時に1回だけ（type/履歴Tier/advice の実分布を集計。個人情報なし・投げっぱなし）
   useEffect(() => {
     try {
+      window.__seamLastType = origin && origin.code || '';
       window.seamTrack && window.seamTrack('finder_complete', {
         type: origin && origin.code,
         tier: damageTier,
@@ -11689,6 +11708,9 @@ function Result({
     "aria-hidden": true,
     className: "absolute -inset-1.5 sm:-inset-2 rounded-full border border-mainBrown/35 pointer-events-none"
   }), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "data-open-resv": true,
+    "data-resv-from": "hero",
     className: "relative inline-flex items-center justify-center gap-3 px-7 py-4 sm:py-5 text-white font-serif text-[14px] sm:text-[15px] rounded-full transition-colors shadow-card",
     style: {
       background: '#B57C5A',
@@ -11729,6 +11751,7 @@ function Result({
     href: SHOP_URL,
     target: "_blank",
     rel: "noopener noreferrer",
+    onClick: () => trackCta('shop', 'result'),
     className: "inline-flex items-center gap-2 px-5 py-3 border border-ink/25 text-ink text-[12.5px] font-serif rounded-full hover:border-ink hover:bg-white/60 transition-colors"
   }, /*#__PURE__*/React.createElement("span", null, "\u30E1\u30F3\u30D0\u30FC\u306F\u30AA\u30F3\u30E9\u30A4\u30F3\u3078"), /*#__PURE__*/React.createElement("span", {
     className: "text-gold"
@@ -11787,6 +11810,7 @@ function Result({
   }, "\u9AEA\u306E\u30AB\u30EB\u30C6\u3092\u4FDD\u5B58")), /*#__PURE__*/React.createElement("button", {
     type: "button",
     "data-open-resv": true,
+    "data-resv-from": "sticky",
     "aria-label": "\u30B5\u30ED\u30F3\u3092\u4E88\u7D04\u3059\u308B",
     className: "flex flex-col items-center justify-center gap-1 bg-cream text-ink active:bg-cream/80 border-l border-line transition-colors",
     style: {
@@ -12018,6 +12042,7 @@ function App() {
       const trigger = e.target.closest('[data-open-resv]');
       if (trigger) {
         e.preventDefault();
+        trackCta('reserve_open', trigger.getAttribute('data-resv-from') || '');
         setReservationOpen(true);
       }
     };
