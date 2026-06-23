@@ -26,6 +26,7 @@
   const LS_USED_INV = 'sp.usedInventory.v1';     // [ディーラーが出品した中古在庫] 買取成立→中古再販に自動掲載
   const LS_RESTOCK = 'sp.restockAlerts.v1';      // [入荷お知らせ登録（欠品商品）] {productId: 登録時刻}
   const LS_KARTE = 'sp.karte.v1';                // [顧客カルテ] カラーレシピ（調合）を顧客別に保存・再現
+  const LS_PROXY = 'sp.proxyOrders.v1';          // [代理発注] 担当者がサロンの代わりに入力（FAX/電話注文の代行）
   const LS_STAFF = 'sp.staff.v1';                // [スタッフ {id,name,role,store}]
   const LS_ACTOR = 'sp.actor.v1';                // 現在の発注者 {role,name,staffId}
   const LS_TEMPLATES = 'sp.orderTemplates.v1';   // [発注テンプレ {id,name,by,items:[{id,qty}],at}]
@@ -68,6 +69,7 @@
   let usedInventory = load(LS_USED_INV, []);     // ディーラーが出品した中古在庫レコード
   let restockAlerts = load(LS_RESTOCK, {});      // 入荷お知らせ登録 {productId: 登録時刻}
   let karte = load(LS_KARTE, null);              // 顧客カルテ（カラーレシピ）。null=未初期化→デモ投入
+  let proxyOrders = load(LS_PROXY, null);        // 代理発注（担当者代行）。null=未初期化→デモ投入
   // staff.html と同形のシード（同じ sp.staff.v1 を共有）
   const SEED_STAFF = [
     { id: 'u1', name: '菊地 健一', email: 'owner@salon-luxe.jp', store: 's1', role: 'owner', perms: { view: true, order: true, approve: true } },
@@ -440,6 +442,30 @@
       const c = karte.find(x => x.id === custId); if (!c) return;
       c.visits = (c.visits || []).filter(v => v.id !== visitId); c.updatedAt = Date.now();
       save(LS_KARTE, karte); emit();
+    },
+
+    /* ---- 代理発注（担当者がサロンに代わって入力＝FAX/電話注文のEC化） ---- */
+    _seedProxy() {
+      proxyOrders = [
+        { id: 'px-1', salon: 'hair atelier MELT 中目黒', rep: '菊地 太郎', via: '電話', amount: 18920,
+          items: [{ id: 'sh-001', name: 'イオ クレンジング リラックスメント 600mL', brand: 'ルベル', qty: 4 }, { id: 'cox-001', name: 'オキシダン 6%（2剤）1000mL', brand: 'ミルボン', qty: 6 }],
+          memo: '6/22 13:40 電話注文', status: 'pending', at: Date.now() }
+      ];
+      try { localStorage.setItem(LS_PROXY, JSON.stringify(proxyOrders)); } catch (e) {}
+    },
+    addProxyOrder(rec) {
+      if (proxyOrders == null) this._seedProxy();
+      rec = rec || {};
+      rec.id = rec.id || ('px-' + Date.now() + '-' + Math.floor(Math.random() * 1e5));
+      rec.status = 'pending'; rec.at = rec.at || Date.now(); rec.items = rec.items || [];
+      proxyOrders.unshift(rec); save(LS_PROXY, proxyOrders); emit(); return rec;
+    },
+    getProxyOrders() { if (proxyOrders == null) this._seedProxy(); return JSON.parse(JSON.stringify(proxyOrders)); },
+    pendingProxyOrders() { if (proxyOrders == null) this._seedProxy(); return proxyOrders.filter(o => o.status === 'pending'); },
+    setProxyOrderStatus(id, status) {
+      if (proxyOrders == null) this._seedProxy();
+      const o = proxyOrders.find(x => x.id === id); if (!o) return;
+      o.status = status; o.decidedAt = Date.now(); save(LS_PROXY, proxyOrders); emit(); return o;
     },
 
     /* ---- スタッフ／発注者（actor）：オーナー＝直接発注、スタッフ＝発注は申請→承認 ---- */

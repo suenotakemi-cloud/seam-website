@@ -8,10 +8,10 @@
   <title>シャンプー｜SalonPro｜美容師・美容室・美容学校のためのプロ用美容商材EC</title>
   <meta name="description" content="美容師・美容室・美容学校のためのプロ専用 美容商材ECサイト。会員登録制・最短当日出荷。シャンプー、カラー剤、トリートメントなどサロン専売品を最短で発注。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=43">
-  <link rel="stylesheet" href="assets/css/base.css?v=43">
-  <link rel="stylesheet" href="assets/css/components.css?v=43">
-  <link rel="stylesheet" href="assets/css/listing.css?v=43">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=45">
+  <link rel="stylesheet" href="assets/css/base.css?v=45">
+  <link rel="stylesheet" href="assets/css/components.css?v=45">
+  <link rel="stylesheet" href="assets/css/listing.css?v=45">
 </head>
 <body>
 
@@ -118,6 +118,11 @@
     <!-- Product grid -->
     <div class="product-grid" id="grid" data-density="6"></div>
 
+    <!-- もっと見る（一覧は初回60件→追加描画でDOM肥大を防ぐ） -->
+    <div class="load-more" id="loadMore" hidden>
+      <button class="load-more__btn" id="loadMoreBtn" type="button">もっと見る</button>
+    </div>
+
     <!-- Empty state -->
     <div class="empty" id="empty" hidden>
       <svg class="empty__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -206,6 +211,9 @@
         <a href="#" data-soon="経営支援"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V4M4 20h16"/><rect x="8" y="11" width="3" height="6"/><rect x="14" y="7" width="3" height="10"/></svg>経営支援<svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
         <a href="#" data-soon="マイページ"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>マイページ<svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
         <a href="#" data-soon="お問い合わせ"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1-5H5z"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/></svg>店舗・お問い合わせ<svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
+        <a href="tokushoho.html"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l1 4H8z"/><path d="M6 7h12l-1 14H7z"/><path d="M10 12h4"/></svg>特定商取引法に基づく表記<svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
+        <a href="privacy.html"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>プライバシーポリシー<svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
+        <a href="terms.html"><svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-7-3-7 3z"/></svg>利用規約<svg class="arr" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></a>
       </nav>
       <div class="menu-cta">
         <a class="btn btn--primary btn--block" href="#" data-soon="会員登録">プロ会員に登録（無料）</a>
@@ -218,10 +226,10 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <!-- Scripts -->
-  <script src="assets/js/catalog.js?v=43"></script>
-  <script src="assets/js/data.js?v=43"></script>
-  <script src="assets/js/store.js?v=43"></script>
-  <script src="assets/js/components.js?v=43"></script>
-  <script src="assets/js/app.js?v=43"></script>
+  <script src="assets/js/catalog.js?v=45"></script>
+  <script src="assets/js/data.js?v=45"></script>
+  <script src="assets/js/store.js?v=45"></script>
+  <script src="assets/js/components.js?v=45"></script>
+  <script src="assets/js/app.js?v=45"></script>
 </body>
 </html>

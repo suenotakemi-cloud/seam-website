@@ -825,6 +825,85 @@
     }, { passive: true });
   }
 
+  /* ===== 代理発注（FAX/電話注文の代行入力） ===== */
+  const PX_ST = { pending: ['未確定', 'tag--prep'], confirmed: ['確定・出荷へ', 'tag--shipped'], canceled: ['取消', 'tag--mute'] };
+  let pxMatched = [];
+  function fillPxSalon() {
+    const sel = qs('#pxSalon'); if (!sel) return;
+    sel.innerHTML = KNOWN_SALONS.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  }
+  function pxMatchLine(line) {
+    const raw = line.trim(); if (!raw) return null;
+    const parts = raw.split(/[\s,，、\t×]+/).filter(Boolean);   // ×（全角）と空白等で区切る。品番中の x は割らない（cox-001 等）
+    let qty = 1;
+    if (parts.length > 1 && /^\d+$/.test(parts[parts.length - 1])) qty = Math.max(1, parseInt(parts.pop(), 10) || 1);
+    const key = parts.join(' ').trim(); if (!key) return null;
+    const P = (SP.DATA.products || []);
+    const p = P.find(x => x.id === key) || P.find(x => x.jan === key) || P.find(x => (x.name || '').indexOf(key) >= 0);
+    return { key, qty, p: p || null };
+  }
+  const pxPrice = p => (SP.priceOf ? SP.priceOf(p) : p.price);
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function renderPxPreview() {
+    const rows = (qs('#pxInput').value || '').split(/\n/).map(pxMatchLine).filter(Boolean);
+    pxMatched = rows.filter(r => r.p);
+    const ng = rows.filter(r => !r.p);
+    const total = pxMatched.reduce((a, r) => a + pxPrice(r.p) * r.qty, 0);
+    const host = qs('#pxPreview');
+    if (!rows.length) { host.innerHTML = ''; qs('#pxCreate').disabled = true; return; }
+    host.innerHTML =
+      pxMatched.map(r => `<div class="review-item"><span class="review-item__main"><span class="review-item__name" style="font-size:13px">${esc(r.p.brand)} ${esc(r.p.name)} ×${r.qty}</span><span class="review-item__meta">${esc(r.p.id)}</span></span><span class="num" style="font-weight:700">${yen(pxPrice(r.p) * r.qty)}</span></div>`).join('') +
+      (ng.length ? `<div style="font-size:12px;color:#c0453f;margin-top:6px">照合できなかった行：${esc(ng.map(r => r.key).join(' / '))}（品番での指定がおすすめ）</div>` : '') +
+      `<div style="display:flex;justify-content:space-between;font-weight:800;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)"><span>${pxMatched.length}品目 合計（税抜）</span><span class="num">${yen(total)}</span></div>`;
+    qs('#pxCreate').disabled = !pxMatched.length;
+  }
+  function renderPxList() {
+    const el = qs('#pxList'); if (!el) return;
+    const list = SP.Store.getProxyOrders ? SP.Store.getProxyOrders() : [];
+    const nav = qs('#navProxy'); if (nav) nav.textContent = list.filter(o => o.status === 'pending').length;
+    if (!list.length) { el.innerHTML = '<div style="padding:12px;color:var(--ink-3);font-size:12.5px">代理発注の履歴はありません</div>'; return; }
+    el.innerHTML = list.map(o => {
+      const st = PX_ST[o.status] || PX_ST.pending;
+      const items = (o.items || []).map(i => `${esc(i.name)}×${i.qty}`).join('、');
+      const done = o.status !== 'pending';
+      return `<div class="review-item" data-id="${o.id}">
+        <span class="review-item__av">代</span>
+        <span class="review-item__main">
+          <span class="review-item__name">${esc(o.salon)} <span class="tag ${st[1]}">${st[0]}</span></span>
+          <span class="review-item__meta">担当 ${esc(o.rep || '—')}・${esc(o.via || '')}${o.memo ? '・' + esc(o.memo) : ''}</span>
+          <span class="doc-chip">${svg('checkc')}${items} 　/　 ${yen(o.amount || 0)}</span>
+        </span>
+        <span class="review-item__act">
+          ${done ? '' : '<button class="btn btn--ghost" data-act="cancel" data-id="' + o.id + '">取消</button>'}
+          ${done ? '' : '<button class="btn btn--primary" data-act="confirm" data-id="' + o.id + '">確定（出荷へ）</button>'}
+        </span>
+      </div>`;
+    }).join('');
+  }
+  const _pxParse = qs('#pxParse'); if (_pxParse) _pxParse.addEventListener('click', renderPxPreview);
+  const _pxInput = qs('#pxInput'); if (_pxInput) _pxInput.addEventListener('input', () => { const c = qs('#pxCreate'); if (c) c.disabled = true; });
+  const _pxCreate = qs('#pxCreate');
+  if (_pxCreate) _pxCreate.addEventListener('click', () => {
+    if (!pxMatched.length) return;
+    const total = pxMatched.reduce((a, r) => a + pxPrice(r.p) * r.qty, 0);
+    SP.Store.addProxyOrder({
+      salon: qs('#pxSalon').value, rep: qs('#pxRep').value.trim() || '担当者', via: qs('#pxVia').value,
+      memo: qs('#pxMemo').value.trim(), amount: total,
+      items: pxMatched.map(r => ({ id: r.p.id, name: r.p.name, brand: r.p.brand, qty: r.qty }))
+    });
+    toast(`${qs('#pxSalon').value} の代理発注を作成しました`);
+    qs('#pxInput').value = ''; qs('#pxMemo').value = ''; qs('#pxPreview').innerHTML = ''; pxMatched = []; qs('#pxCreate').disabled = true;
+    renderPxList();
+  });
+  const _pxList = qs('#pxList');
+  if (_pxList) _pxList.addEventListener('click', e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const map = { confirm: 'confirmed', cancel: 'canceled' };
+    SP.Store.setProxyOrderStatus(b.dataset.id, map[b.dataset.act] || 'pending');
+    toast(b.dataset.act === 'confirm' ? '代理発注を確定しました（出荷へ）' : '代理発注を取消しました');
+    renderPxList();
+  });
+
   Salon.subscribe(renderLow);
   renderReview();
   renderCredit();
@@ -844,6 +923,8 @@
   renderAnalytics();
   setupProductAdmin();
   renderOrders();
+  fillPxSalon();
+  renderPxList();
   computeKpis();
   setupAdminNav();
 })();

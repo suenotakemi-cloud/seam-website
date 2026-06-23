@@ -268,6 +268,21 @@
     || !!(TYPE_CATS[state.cat] && (state.typeSel[state.cat] || state.sizeSel[state.cat]));
 
   /* ---------------- render ---------------- */
+  const PAGE_SIZE = 60;          // 一覧の初回描画件数（DOM肥大・INP対策。以降は「もっと見る」で追加）
+  let renderPage = 1, lastSig = '';
+  function renderSig() {
+    return JSON.stringify([state.cat, state.brand, state.brandAll, state.search, state.sort,
+      [...state.filters.stock], state.filters.price, state.filters.sameDay, [...state.filters.concern],
+      state.typeSel[state.cat] || '', state.sizeSel[state.cat] || '']);
+  }
+  function updateLoadMore(shown, total) {
+    const wrap = qs('#loadMore'); if (!wrap) return;
+    if (total > shown) {
+      wrap.hidden = false;
+      const btn = qs('#loadMoreBtn');
+      if (btn) btn.textContent = `もっと見る（残り ${(total - shown).toLocaleString()} 件）`;
+    } else { wrap.hidden = true; }
+  }
   function render() {
     // カラーのドリル状態はカラー以外で初期化（タイプ・チップ state.typeSel はカテゴリ別に保持）
     if (state.cat !== 'color') { state.colorType = null; state.colorLine = null; state.colorFamily = null; }
@@ -285,12 +300,19 @@
     grid.className = 'product-grid';
     grid.dataset.density = state.density;
 
+    // 絞り込み条件が変わったら1ページ目に戻す（「もっと見る」では維持）
+    const sig = renderSig();
+    if (sig !== lastSig) { renderPage = 1; lastSig = sig; }
+
     if (!list.length) {
       grid.innerHTML = '';
       qs('#empty').hidden = false;
+      updateLoadMore(0, 0);
     } else {
       qs('#empty').hidden = true;
-      grid.innerHTML = list.map((p, i) => productCard(p, i)).join('');
+      const shown = Math.min(list.length, renderPage * PAGE_SIZE);
+      grid.innerHTML = list.slice(0, shown).map((p, i) => productCard(p, i)).join('');
+      updateLoadMore(shown, list.length);
     }
 
     // title + count
@@ -780,6 +802,9 @@
   function bind() {
     // ピル：絞り込み
     qs('#pillFilter').addEventListener('click', () => { renderFilterDrawer(); openPanel(qs('#filterDrawer')); });
+    // もっと見る（次の60件を追加描画）
+    const lmBtn = qs('#loadMoreBtn');
+    if (lmBtn) lmBtn.addEventListener('click', () => { renderPage++; render(); });
     // ピル：カテゴリ
     qs('#pillCategory').addEventListener('click', e => {
       openDropdown(e.currentTarget,
