@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>見積書｜SalonPro</title>
+  <meta name="description" content="カートの内容から見積書を作成・印刷（PDF保存）できます。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=46">
+  <link rel="stylesheet" href="assets/css/base.css?v=46">
+  <link rel="stylesheet" href="assets/css/components.css?v=46">
+  <link rel="stylesheet" href="assets/css/pages.css?v=46">
+  <style>
+    body { background: var(--surface-2); padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 760px; }
+    .qt-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: var(--s-4) 0; }
+    .qt-bar input { flex: 1; min-width: 160px; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 10px 12px; font-size: 14px; }
+    .qt-btn { height: 46px; padding: 0 18px; border-radius: var(--r-md); border: 0; font-size: 14px; font-weight: 800; cursor: pointer; }
+    .qt-btn--gold { background: var(--gold); color: #fff; } .qt-btn--gold:hover { background: var(--gold-strong); }
+    .qt-btn--ghost { background: #fff; color: var(--ink); border: 1px solid var(--line-strong); }
+    .qt-doc { background: #fff; border-radius: var(--r-lg); padding: 30px; box-shadow: var(--shadow-md); }
+    @media (max-width: 560px) { .qt-doc { padding: 20px; } }
+    .qt-doc__hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+    .qt-title { font-size: 24px; font-weight: 900; letter-spacing: .2em; }
+    .qt-meta { font-size: 12px; color: var(--ink-2); text-align: right; line-height: 1.8; }
+    .qt-to { margin-top: 20px; font-size: 15px; font-weight: 800; border-bottom: 2px solid var(--ink); padding-bottom: 6px; display: inline-block; min-width: 240px; }
+    .qt-lead { font-size: 12.5px; color: var(--ink-2); margin-top: 14px; line-height: 1.7; }
+    .qt-total-box { display: inline-block; margin-top: 8px; border: 2px solid var(--ink); border-radius: 6px; padding: 8px 16px; font-size: 13px; }
+    .qt-total-box b { font-size: 22px; font-family: var(--font-num); margin-left: 10px; }
+    .qt-from { margin-top: 18px; font-size: 12px; color: var(--ink-2); line-height: 1.8; text-align: right; }
+    .qt-from b { color: var(--ink); font-size: 13px; }
+    .qt-tbl { width: 100%; border-collapse: collapse; margin-top: 18px; }
+    .qt-tbl th, .qt-tbl td { padding: 9px 10px; font-size: 12px; border-bottom: 1px solid var(--line-2); }
+    .qt-tbl th { background: var(--surface-2); text-align: left; font-weight: 800; }
+    .qt-tbl td.num, .qt-tbl th.num { text-align: right; font-family: var(--font-num); white-space: nowrap; }
+    .qt-sum { margin-top: 12px; margin-left: auto; width: 280px; max-width: 100%; }
+    .qt-sum__row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; color: var(--ink-2); }
+    .qt-sum__row.total { border-top: 2px solid var(--ink); margin-top: 5px; padding-top: 9px; font-size: 15px; font-weight: 900; color: var(--ink); }
+    .qt-sum__row .num { font-family: var(--font-num); }
+    .qt-note { font-size: 11px; color: var(--ink-3); line-height: 1.7; margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .qt-empty { text-align: center; color: var(--ink-3); padding: 40px 20px; font-size: 14px; line-height: 1.8; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .site-header, .tabbar, .qt-bar, .toast { display: none !important; }
+      .qt-doc { box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
+      .container { max-width: none; padding: 0; }
+    }
+  </style>
+</head>
+<body class="page">
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="cart.html" aria-label="カートに戻る"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <nav class="header-actions">
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="qt-bar">
+      <input type="text" id="qtTo" placeholder="宛先（サロン名）" aria-label="見積書の宛先（サロン名）">
+      <button class="qt-btn qt-btn--ghost" id="qtPrint">印刷 / PDF保存</button>
+      <button class="qt-btn qt-btn--gold" id="qtToCart">この内容でカートへ</button>
+    </div>
+    <div class="qt-doc" id="qtDoc"></div>
+  </main>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="cart.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="tab__label">カート</span></a>
+      <a class="tab" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=46"></script>
+  <script src="assets/js/data.js?v=46"></script>
+  <script src="assets/js/store.js?v=46"></script>
+  <script src="assets/js/components.js?v=46"></script>
+  <script src="assets/js/nav.js?v=46"></script>
+  <script>
+    (function () {
+      var Store = SP.Store, yen = SP.fmtYen || function (n) { return '¥' + (n || 0).toLocaleString('ja-JP'); };
+      var toast = function (m) { if (window.SP_toast) SP_toast(m); };
+      var CURRENT_SALON = (Store.currentSalon ? Store.currentSalon() : 'SALON LUXE 表参道店');
+      var unit = function (p, q) { var base = (SP.priceOf ? SP.priceOf(p) : p.price); return (SP.unitPrice ? SP.unitPrice(base, q) : base); };
+      function pad(n) { return (n < 10 ? '0' : '') + n; }
+      function dstr(d) { return d.getFullYear() + '/' + pad(d.getMonth() + 1) + '/' + pad(d.getDate()); }
+      function syncCart() { var n = Store.cartSummary().count + (Store.giftCount ? Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = n; el.hidden = n <= 0; } }
+
+      var ISSUER = { name: '株式会社菊地（KIKUCHI PRODUCE）', addr: '〒062-0003 北海道札幌市豊平区美園3条8丁目4-17', tel: 'TEL 011-811-0981 / FAX 011-811-0285', reg: 'T9012345678901' };
+      var QNO = 'Q-' + dstr(new Date()).replace(/\//g, '') + '-' + (Store.cartSummary().lines || 0);
+
+      function render() {
+        var entries = Store.getCartEntries ? Store.getCartEntries() : [];
+        var to = (document.getElementById('qtTo').value || CURRENT_SALON).trim();
+        var host = document.getElementById('qtDoc');
+        if (!entries.length) { host.innerHTML = '<div class="qt-empty">カートが空です。<br>商品をカートに入れてから見積書を作成してください。<br><br><a class="qt-btn qt-btn--gold" href="index.html" style="display:inline-block;text-decoration:none;line-height:46px">商品を探す</a></div>'; return; }
+        var today = new Date(); var exp = new Date(today.getTime() + 14 * 86400000);
+        var sub = 0; var rows = entries.map(function (e) {
+          var u = unit(e.p, e.qty), line = u * e.qty; sub += line;
+          return '<tr><td>' + e.p.brand + ' ' + e.p.name + '</td><td class="num">' + e.qty + '</td><td class="num">' + yen(u) + '</td><td class="num">' + yen(line) + '</td></tr>';
+        }).join('');
+        var ship = sub >= 10000 ? 0 : 660;       // 見積上は税抜小計で簡易判定（本番は税込/ランクで）
+        var tax = Math.round((sub + ship) * 0.1);
+        var total = sub + ship + tax;
+        host.innerHTML =
+          '<div class="qt-doc__hd"><div class="qt-title">御 見 積 書</div>' +
+            '<div class="qt-meta">見積番号：' + QNO + '<br>発行日：' + dstr(today) + '<br>有効期限：' + dstr(exp) + '（発行日より14日）</div></div>' +
+          '<div class="qt-to">' + to + '　御中</div>' +
+          '<div class="qt-lead">下記のとおりお見積り申し上げます。</div>' +
+          '<div class="qt-total-box">お見積り金額（税込）<b>' + yen(total) + '</b></div>' +
+          '<div class="qt-from"><b>' + ISSUER.name + '</b><br>' + ISSUER.addr + '<br>' + ISSUER.tel + '<br>適格請求書発行事業者登録番号：' + ISSUER.reg + '</div>' +
+          '<table class="qt-tbl"><thead><tr><th>品名</th><th class="num">数量</th><th class="num">単価(税抜)</th><th class="num">金額(税抜)</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+          '<div class="qt-sum">' +
+            '<div class="qt-sum__row"><span>小計（税抜）</span><span class="num">' + yen(sub) + '</span></div>' +
+            '<div class="qt-sum__row"><span>送料</span><span class="num">' + (ship ? yen(ship) : '無料') + '</span></div>' +
+            '<div class="qt-sum__row"><span>消費税（10%）</span><span class="num">' + yen(tax) + '</span></div>' +
+            '<div class="qt-sum__row total"><span>合計（税込）</span><span class="num">' + yen(total) + '</span></div>' +
+          '</div>' +
+          '<div class="qt-note">※ 本見積書は SalonPro（株式会社菊地）のプロトタイプ機能で作成したサンプルです。価格は会員価格・数量割引を反映しています。送料・税は注文時の最終金額と異なる場合があります。登録番号はサンプルです。掛け払いは担当者の与信承認後の出荷となります。</div>';
+      }
+
+      document.getElementById('qtTo').value = CURRENT_SALON;
+      document.getElementById('qtTo').addEventListener('input', render);
+      document.getElementById('qtPrint').addEventListener('click', function () { window.print(); });
+      document.getElementById('qtToCart').addEventListener('click', function () { location.href = 'cart.html'; });
+      render(); syncCart();
+      Store.subscribe(function () { render(); syncCart(); });
+    })();
+  </script>
+</body>
+</html>

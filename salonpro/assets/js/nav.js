@@ -45,6 +45,13 @@
       toast(b.dataset.soon + 'は次のステップで実装します');
     }));
 
+    // a11y：Escでオーバーレイ系モーダルを閉じる（機器/カルテ/パートナー等の .*-ov.is-open）
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const opens = document.querySelectorAll('.lz-ov.is-open, .kt-ov.is-open, .pf-ov.is-open, .pf-ov.is-open');
+      if (opens.length) { opens.forEach(el => el.classList.remove('is-open')); }
+    });
+
     // 入荷お知らせ（欠品商品）：全ページ共通のトグル。カード/詳細の data-act="restock" を拾う
     document.addEventListener('click', e => {
       const rb = e.target.closest('[data-act="restock"]');

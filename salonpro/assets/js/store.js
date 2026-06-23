@@ -148,6 +148,28 @@
       }
       return { count, lines, total };
     },
+    // カート明細（見積書・印刷用）
+    getCartEntries() {
+      const out = [];
+      for (const id in cart) { const p = productById(id); if (p) out.push({ p, qty: cart[id] }); }
+      return out;
+    },
+    // 取引ランク（年間仕入れ実績で優遇が変わる＝継続発注の動機）。本番は注文集計から算出。
+    tradeRank() {
+      const annual = 4230000; // デモ：直近12ヶ月の仕入れ実績（税抜）
+      const TIERS = [
+        { id: 'bronze',   label: 'ブロンズ', min: 0,       free: 11000, pt: 1.0, color: '#a9743a', perks: ['通常会員価格', 'ポイント還元 1%'] },
+        { id: 'silver',   label: 'シルバー', min: 1000000, free: 8000,  pt: 1.5, color: '#8a9099', perks: ['送料無料 税込8,000〜', 'ポイント還元 1.5%', '新商品の先行案内'] },
+        { id: 'gold',     label: 'ゴールド', min: 3000000, free: 5000,  pt: 2.0, color: '#c9a24a', perks: ['送料無料 税込5,000〜', 'ポイント還元 2%', 'セミナー優先予約', '専任担当'] },
+        { id: 'platinum', label: 'プラチナ', min: 6000000, free: 0,     pt: 3.0, color: '#5b6473', perks: ['送料 完全無料', 'ポイント還元 3%', 'VIP特典・限定品の優先案内', '専任担当・優先出荷'] }
+      ];
+      let cur = TIERS[0];
+      TIERS.forEach(t => { if (annual >= t.min) cur = t; });
+      const ci = TIERS.indexOf(cur), next = TIERS[ci + 1] || null;
+      const prevMin = cur.min, span = next ? next.min - prevMin : 1;
+      const progress = next ? Math.min(100, Math.round(((annual - prevMin) / span) * 100)) : 100;
+      return { annual, tier: cur, next, toNext: next ? next.min - annual : 0, progress, tiers: TIERS };
+    },
 
     /* ---- Favorites ---- */
     isFav(id) { return favs.includes(id); },
