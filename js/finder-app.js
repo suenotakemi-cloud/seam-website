@@ -8823,6 +8823,17 @@ function ResultHero({
     damageTier
   } = karte;
   const heroImgPath = getCharImgPath(origin?.code, gender); // null なら画像非表示
+  // 計測: 結果表示時に1回だけ（type/履歴Tier/advice の実分布を集計。個人情報なし・投げっぱなし）
+  useEffect(() => {
+    try {
+      window.seamTrack && window.seamTrack('finder_complete', {
+        type: origin && origin.code,
+        tier: damageTier,
+        advice: karte.adviceKey,
+        gender: gender
+      });
+    } catch (e) {}
+  }, []);
   // セクション間をジャンプするヘルパー
   const jump = id => {
     const el = document.getElementById(id);
@@ -12039,10 +12050,20 @@ function App() {
     } catch (e) {}
   }, []);
   const start = () => {
+    try {
+      window.seamTrack && window.seamTrack('finder_start', {
+        mode: 'a'
+      });
+    } catch (e) {}
     setAnswers({});
     setView('quiz');
   };
   const startDeep = () => {
+    try {
+      window.seamTrack && window.seamTrack('finder_start', {
+        mode: 'b'
+      });
+    } catch (e) {}
     setAnswers({});
     setView('quizDeep');
   };
