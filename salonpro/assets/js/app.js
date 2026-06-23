@@ -48,13 +48,26 @@
   const firstCat = () => (orderedCats()[0] || { id: state.cat }).id;
 
   // 悩み別ファセット（商品名キーワードで近似フィルタ）
+  // 悩み・仕上がり（主にヘアケア。商品名マッチ＝該当0のカテゴリ/業種では自動的に出ない）
   const CONCERNS = [
-    { id: 'damage',  label: 'ダメージ補修', re: /ダメージ|リペア|補修|モイスト|クエンチ|トリートメント|オイル|エマルジョン/ },
-    { id: 'curl',    label: 'くせ毛・うねり', re: /スムージング|ストレート|くせ|フローディア|スリーク/ },
-    { id: 'color',   label: 'カラーケア', re: /カラー|アディクシー|プロマスター|シルバー|アメジスト/ },
+    { id: 'damage',  label: 'ダメージ補修',     re: /ダメージ|リペア|補修|モイスト|クエンチ|トリートメント|オイル|エマルジョン/ },
+    { id: 'curl',    label: 'くせ毛・うねり',   re: /スムージング|ストレート|くせ|フローディア|スリーク/ },
+    { id: 'color',   label: 'カラーケア',       re: /カラー|アディクシー|プロマスター|シルバー|アメジスト/ },
     { id: 'volume',  label: 'ボリューム・地肌', re: /ボリューム|スカルプ|スキャルプ|クレンジング|ジオ/ },
-    { id: 'gloss',   label: 'ツヤ・仕上げ', re: /ポリッシュ|エルジューダ|セラム|ニュアンス|スタイリング/ },
+    { id: 'gloss',   label: 'ツヤ・仕上げ',     re: /ポリッシュ|エルジューダ|セラム|ニュアンス|スタイリング/ },
+  ].map(c => ({ id: c.id, label: c.label, match: p => c.re.test(p.name) }));
+
+  // 特長・条件（全カテゴリ・全業種で意味を持つ。該当0は自動非表示）
+  const FEATURES = [
+    { id: 'f-new',    label: '新商品',         match: p => p.badge === 'new' },
+    { id: 'f-pop',    label: '人気商品',       match: p => p.badge === 'popular' || (p.pop || 0) >= 92 },
+    { id: 'f-bulk',   label: '業務用・大容量', match: p => p.sizeBucket === 's4' || /業務用|大容量/.test(p.name) },
+    { id: 'f-refill', label: '詰替・レフィル', match: p => /詰替|詰め替え|つめかえ|レフィル|ﾚﾌｨﾙ/i.test(p.name) },
   ];
+  // チップ統合参照（features＝特長 / その他＝悩み）。state.filters.concern に id を入れて運用。
+  const CHIP_BY_ID = {};
+  CONCERNS.forEach(c => { CHIP_BY_ID[c.id] = c; });
+  FEATURES.forEach(f => { f.feature = true; CHIP_BY_ID[f.id] = f; });
 
   const SORTS = [
     { id: 'pop',        label: '人気順' },
@@ -227,8 +240,11 @@
     }
     if (state.filters.sameDay) list = list.filter(p => p.same);
     if (state.filters.concern.size) {
-      const res = CONCERNS.filter(c => state.filters.concern.has(c.id)).map(c => c.re);
-      list = list.filter(p => res.some(re => re.test(p.name)));
+      const sel = [...state.filters.concern].map(id => CHIP_BY_ID[id]).filter(Boolean);
+      const cons = sel.filter(c => !c.feature);   // 悩み＝OR（広げる）
+      const feats = sel.filter(c => c.feature);   // 特長＝AND（絞る）
+      if (cons.length) list = list.filter(p => cons.some(c => c.match(p)));
+      if (feats.length) list = list.filter(p => feats.every(c => c.match(p)));
     }
     // タイプ・チップ＋容量チップ絞り込み（掛け合わせ。検索中・ブランド横断中は無効）
     if (!crossCat() && TYPE_CATS[state.cat]) {
@@ -547,7 +563,7 @@
     state.filters.stock.forEach(s => chips.push(chip('stock:' + s, (STOCK_OPTS.find(o => o.id === s) || {}).label)));
     if (state.filters.price) chips.push(chip('price', (PRICE_RANGES.find(p => p.id === state.filters.price) || {}).label));
     if (state.filters.sameDay) chips.push(chip('same', '当日出荷可'));
-    state.filters.concern.forEach(id => chips.push(chip('concern:' + id, (CONCERNS.find(c => c.id === id) || {}).label)));
+    state.filters.concern.forEach(id => chips.push(chip('concern:' + id, (CHIP_BY_ID[id] || {}).label)));
     host.innerHTML = chips.length
       ? chips.join('') + `<button class="chip--clear" data-clear="all">すべて解除</button>`
       : '';
@@ -709,7 +725,8 @@
 
   /* ---------------- filter drawer ---------------- */
   function countBy(predicate) {
-    return base().filter(predicate).length;
+    const b = state.brand;
+    return base().filter(p => !b || p.brand === b || p.maker === b || p.line === b).filter(predicate).length;
   }
   function renderFilterDrawer() {
     const stockHtml = STOCK_OPTS.map(o => `
@@ -724,13 +741,22 @@
         <span>${r.label}</span>
         <span class="opt__meta">${countBy(r.test)}</span>
       </label>`).join('');
-    const concernHtml = CONCERNS.map(c =>
-      `<button type="button" class="fchip" data-filter="concern" data-val="${c.id}" aria-pressed="${state.filters.concern.has(c.id)}">${c.label}</button>`).join('');
+    // チップは「該当0は非表示」＝そのカテゴリ/業種/ブランドで意味のあるものだけ出す
+    const fchip = c => {
+      const n = countBy(c.match);
+      if (!n) return '';
+      return `<button type="button" class="fchip" data-filter="concern" data-val="${c.id}" aria-pressed="${state.filters.concern.has(c.id)}">${c.label}<span class="fchip__n">${n}</span></button>`;
+    };
+    const featHtml = FEATURES.map(fchip).join('');
+    // 悩み・仕上がりは「ヘア系カテゴリ＋業種ヘア/アイ」のときだけ（ネイル/エステ/機器/消耗品や検索横断では出さない＝誤マッチ防止）
+    const HAIR_CONCERN_CATS = ['shampoo', 'treatment', 'outbath', 'scalp', 'care', 'styling'];
+    const showConcerns = !crossCat() && (state.biz === 'hair' || state.biz === 'eye') && HAIR_CONCERN_CATS.includes(state.cat);
+    const concernHtml = showConcerns ? CONCERNS.map(fchip).join('') : '';
+    const featGroup = featHtml ? `<div class="filter-group"><div class="filter-group__title">特長・条件で絞る</div><div class="fchips">${featHtml}</div></div>` : '';
+    const concernGroup = concernHtml ? `<div class="filter-group"><div class="filter-group__title">悩み・仕上がりで探す</div><div class="fchips">${concernHtml}</div></div>` : '';
     qs('#filterBody').innerHTML = `
-      <div class="filter-group">
-        <div class="filter-group__title">悩み・仕上がりで探す</div>
-        <div class="fchips">${concernHtml}</div>
-      </div>
+      ${featGroup}
+      ${concernGroup}
       <div class="filter-group">
         <div class="filter-group__title">在庫・納期</div>
         ${stockHtml}
