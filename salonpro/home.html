@@ -7,9 +7,9 @@
   <meta name="theme-color" content="#1b1b1d">
   <title>ホーム｜SalonPro｜プロ用美容商材EC</title>
   <meta name="description" content="SalonPro ログイン後ホーム。仕入れ・らくらく再注文・学び・サロン経営支援をまとめた業務の起点。株式会社菊地（KIKUCHI PRODUCE）運営。">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=46">
-  <link rel="stylesheet" href="assets/css/base.css?v=46">
-  <link rel="stylesheet" href="assets/css/components.css?v=46">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=47">
+  <link rel="stylesheet" href="assets/css/base.css?v=47">
+  <link rel="stylesheet" href="assets/css/components.css?v=47">
   <style>
     body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
     .container { max-width: 1100px; }
@@ -112,7 +112,7 @@
     /* かんたん再注文 */
     .reord { display: grid; grid-template-columns: 1fr; gap: 12px; }
     @media (min-width: 720px) { .reord { grid-template-columns: repeat(3, 1fr); } }
-    .rc { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; display: flex; flex-direction: column; }
+    .rc { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; display: flex; flex-direction: column; min-width: 0; }
     .rc__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .rc__t { font-weight: 800; font-size: 14.5px; }
     .rc__tag { font-size: 10.5px; font-weight: 800; color: var(--gold-strong); background: var(--gold-soft); border-radius: var(--r-pill); padding: 2px 9px; }
@@ -124,6 +124,40 @@
     .rc__btn { margin-top: auto; height: 44px; border-radius: var(--r-sm); font-weight: 800; font-size: 13.5px; display: flex; align-items: center; justify-content: center; gap: 6px; }
     .rc__btn--p { background: var(--gold); color: #fff; } .rc__btn--p:hover { background: var(--gold-strong); }
     .rc__btn--g { background: #fff; color: var(--ink); border: 1px solid var(--line-3); }
+
+    /* ホーム検索（FV） */
+    .home-search { max-width: 1100px; margin: 12px auto 0; padding: 0 20px; display: flex; gap: 8px; }
+    .home-search__field { position: relative; flex: 1; display: flex; }
+    .home-search__field svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 19px; height: 19px; color: var(--ink-3); pointer-events: none; }
+    .home-search__field input { flex: 1; width: 100%; height: 46px; border: 1px solid var(--line-3); border-radius: var(--r-pill); background: var(--surface-2); padding: 0 16px 0 40px; font-size: 14px; font-family: inherit; color: var(--ink); }
+    .home-search__field input:focus { outline: none; border-color: var(--gold); background: #fff; box-shadow: 0 0 0 3px var(--gold-soft); }
+    .home-search__go { flex: none; height: 46px; padding: 0 18px; border-radius: var(--r-pill); background: var(--gold); color: #fff; font-weight: 800; font-size: 13.5px; font-family: inherit; cursor: pointer; }
+    .home-search__go:hover { background: var(--gold-strong); }
+
+    /* 前回注文：その場で選んで数量調整→カート投入 */
+    .rc--repeat .rc__s { margin-bottom: 2px; }
+    .rli-list { margin: 8px 0 2px; display: flex; flex-direction: column; }
+    .rli { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+    .rli:last-child { border-bottom: 0; }
+    .rli__chk { width: 19px; height: 19px; flex: none; accent-color: var(--gold); cursor: pointer; }
+    .rli__thumb { width: 34px; height: 42px; flex: none; border-radius: 5px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
+    .rli__thumb svg { width: 80%; height: 80%; }
+    .rli__main { flex: 1; min-width: 0; }
+    .rli__brand { display: block; font-size: 10px; font-weight: 700; color: var(--ink-3); }
+    .rli__name { display: block; font-size: 12px; font-weight: 700; color: var(--ink); line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rli__price { display: block; font-size: 11px; font-weight: 800; color: var(--gold-strong); margin-top: 1px; }
+    .rli.is-off { opacity: .42; }
+    .rli__step { flex: none; display: flex; align-items: center; border: 1px solid var(--line-3); border-radius: var(--r-pill); overflow: hidden; background: #fff; }
+    .rli__step button { width: 28px; height: 30px; font-size: 16px; font-weight: 700; color: var(--ink); background: #fff; cursor: pointer; line-height: 1; display: flex; align-items: center; justify-content: center; }
+    .rli__step button:disabled { color: var(--line-3); cursor: default; }
+    .rli__step b { min-width: 22px; text-align: center; font-size: 12.5px; font-weight: 800; }
+    .rc-foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+    .rc-foot__sum { font-size: 11.5px; color: var(--ink-2); font-weight: 700; flex: 1; }
+    .rc-foot__yen { color: var(--gold-strong); }
+    .rc-foot__add { margin-top: 0 !important; flex: none; padding: 0 18px; }
+    .rc-foot__add:disabled { background: var(--line-3); cursor: default; }
+    .rc-edit { display: inline-block; margin-top: 9px; font-size: 11.5px; font-weight: 700; color: var(--gold-strong); text-decoration: none; }
+    .rc-edit:hover { text-decoration: underline; }
 
     /* 選ばれる理由 */
     .reasons { background: var(--surface-2); }
@@ -210,6 +244,15 @@
     </div>
   </header>
 
+  <!-- ホーム検索（FVから即「探す」へ。?q= を index.html が受け取る） -->
+  <form class="home-search" id="homeSearchForm" role="search" action="index.html" method="get" autocomplete="off">
+    <span class="home-search__field">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" name="q" id="homeSearch" placeholder="商品・ブランド・型番で探す" aria-label="商品・ブランド・型番で探す">
+    </span>
+    <button type="submit" class="home-search__go">探す</button>
+  </form>
+
   <!-- 信頼バー -->
   <div class="lp-trust">
     <div class="lp-trust__in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg><span id="trustText"><b>美容師免許・美容学生証</b>の確認済みアカウントでご利用中です</span></div>
@@ -258,16 +301,15 @@
       <a class="sec-more" href="orders.html">注文履歴を見る ›</a>
     </div>
     <div class="reord">
-      <div class="rc">
+      <div class="rc rc--repeat">
         <div class="rc__top"><span class="rc__t">前回注文から再購入</span><span class="rc__tag">前回：2週間前</span></div>
-        <div class="rc__s">同じ内容をまとめてカートへ</div>
-        <div class="rc__thumbs">
-          <span class="b"><svg class="card__ph" viewBox="0 0 100 100"><rect x="38" y="14" width="24" height="9" rx="2" fill="#b14b3a"/><rect x="31" y="23" width="38" height="63" rx="7" fill="#c0573f"/></svg></span>
-          <span class="b"><svg class="card__ph" viewBox="0 0 100 100"><rect x="40" y="14" width="20" height="9" rx="2" fill="#3a3030"/><rect x="33" y="23" width="34" height="63" rx="7" fill="#4a3f3a"/></svg></span>
-          <span class="b"><svg class="card__ph" viewBox="0 0 100 100"><rect x="40" y="14" width="20" height="9" rx="2" fill="#d8cdbb"/><rect x="34" y="23" width="32" height="63" rx="7" fill="#e6ddcd"/></svg></span>
-          <span class="rc__cnt">全8点</span>
+        <div class="rc__s">いる物だけ選んで数量を直し、そのままカートへ。</div>
+        <div class="rli-list" id="homeReordList" aria-live="polite"></div>
+        <div class="rc-foot">
+          <span class="rc-foot__sum">選択 <b id="homeReordCnt">0</b>点<span class="rc-foot__yen" id="homeReordYen"></span></span>
+          <button type="button" class="rc__btn rc__btn--p rc-foot__add" id="homeReordAdd" disabled>カートに入れる</button>
         </div>
-        <a class="rc__btn rc__btn--p" href="reorder.html">まとめて再注文する</a>
+        <a class="rc-edit" href="reorder.html">定番セット・よく買う商品も見る ›</a>
       </div>
       <div class="rc">
         <div class="rc__top"><span class="rc__t">定番補充アイテム</span></div>
@@ -365,11 +407,11 @@
   </nav>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/catalog.js?v=46"></script>
-  <script src="assets/js/data.js?v=46"></script>
-  <script src="assets/js/store.js?v=46"></script>
-  <script src="assets/js/components.js?v=46"></script>
-  <script src="assets/js/nav.js?v=46"></script>
+  <script src="assets/js/catalog.js?v=47"></script>
+  <script src="assets/js/data.js?v=47"></script>
+  <script src="assets/js/store.js?v=47"></script>
+  <script src="assets/js/components.js?v=47"></script>
+  <script src="assets/js/nav.js?v=47"></script>
   <script>
     (function () {
       function getBiz() { var b = localStorage.getItem('sp.biz'); return ['hair', 'eye', 'nail', 'esthe'].indexOf(b) >= 0 ? b : 'hair'; }
@@ -599,6 +641,64 @@
         }).join('');
         var x = document.getElementById('newsX');
         if (x) x.addEventListener('click', function () { bar.style.display = 'none'; });
+      })();
+
+      // 前回注文から再購入：その場で選択・数量調整→まとめてカート投入（北極星=最小タップ発注）
+      (function () {
+        var list = document.getElementById('homeReordList'); if (!list) return;
+        var Store = SP.Store, fmtYen = SP.fmtYen, ph = SP.placeholder;
+        var prod = function (id) { return (SP.DATA.products || []).find(function (p) { return p.id === id; }); };
+        var unit = function (p) { return SP.priceOf ? SP.priceOf(p) : p.price; };
+        // reorder.js の PREV と一致させる（前回注文＝計7点）。実在IDのみ（co-001は欠番→co-3）
+        var PREV = [{ id: 'sh-001', qty: 2 }, { id: 'sh-005', qty: 1 }, { id: 'co-3', qty: 3 }, { id: 'tr-001', qty: 1 }];
+        var rows = PREV.map(function (it) { var p = prod(it.id); return p ? { id: it.id, p: p, qty: it.qty, on: true } : null; }).filter(Boolean);
+        if (!rows.length) { list.closest('.rc').style.display = 'none'; return; }
+
+        function render() {
+          list.innerHTML = rows.map(function (r, i) {
+            return '<label class="rli' + (r.on ? '' : ' is-off') + '">' +
+              '<input type="checkbox" class="rli__chk" data-i="' + i + '"' + (r.on ? ' checked' : '') + ' aria-label="' + r.p.name + ' を選択">' +
+              '<span class="rli__thumb">' + ph(r.p.ph, r.p.brand) + '</span>' +
+              '<span class="rli__main"><span class="rli__brand">' + r.p.brand + '</span>' +
+              '<span class="rli__name">' + r.p.name + '</span>' +
+              '<span class="rli__price">' + fmtYen(unit(r.p)) + '<span style="color:var(--ink-3);font-weight:600"> 税抜/個</span></span></span>' +
+              '<span class="rli__step">' +
+                '<button type="button" data-step="-1" data-i="' + i + '" aria-label="数量を減らす"' + (r.qty <= 1 ? ' disabled' : '') + '>−</button>' +
+                '<b>' + r.qty + '</b>' +
+                '<button type="button" data-step="1" data-i="' + i + '" aria-label="数量を増やす">＋</button>' +
+              '</span></label>';
+          }).join('');
+          updateFoot();
+        }
+        function updateFoot() {
+          var sel = rows.filter(function (r) { return r.on; });
+          var pts = sel.reduce(function (a, r) { return a + r.qty; }, 0);
+          var yen = sel.reduce(function (a, r) { return a + unit(r.p) * r.qty; }, 0);
+          document.getElementById('homeReordCnt').textContent = pts;
+          document.getElementById('homeReordYen').textContent = pts ? ('／' + fmtYen(yen) + ' 税抜') : '';
+          document.getElementById('homeReordAdd').disabled = pts === 0;
+        }
+        list.addEventListener('change', function (e) {
+          var c = e.target.closest('.rli__chk'); if (!c) return;
+          rows[+c.dataset.i].on = c.checked;
+          c.closest('.rli').classList.toggle('is-off', !c.checked);
+          updateFoot();
+        });
+        list.addEventListener('click', function (e) {
+          var b = e.target.closest('[data-step]'); if (!b) return;
+          e.preventDefault(); e.stopPropagation();
+          var r = rows[+b.dataset.i];
+          r.qty = Math.max(1, r.qty + (+b.dataset.step));
+          render();
+        });
+        document.getElementById('homeReordAdd').addEventListener('click', function () {
+          var sel = rows.filter(function (r) { return r.on; });
+          if (!sel.length) return;
+          sel.forEach(function (r) { Store.addToCart(r.id, r.qty); });
+          var pts = sel.reduce(function (a, r) { return a + r.qty; }, 0);
+          if (window.SP_toast) SP_toast(sel.length + '商品（' + pts + '点）をカートに入れました');
+        });
+        render();
       })();
     })();
   </script>

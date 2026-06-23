@@ -8,7 +8,7 @@
   const product = id => SP.DATA.products.find(x => x.id === id);
   const toast = m => (window.SP_toast ? SP_toast(m) : null);
 
-  const PREV = [{ id: 'sh-001', qty: 2 }, { id: 'sh-005', qty: 1 }, { id: 'co-001', qty: 3 }, { id: 'tr-001', qty: 1 }];
+  const PREV = [{ id: 'sh-001', qty: 2 }, { id: 'sh-005', qty: 1 }, { id: 'co-3', qty: 3 }, { id: 'tr-001', qty: 1 }];
   const SETS = [
     { name: 'カラー定番セット', items: [['co-001', 2], ['co-002', 2], ['co-003', 1]] },
     { name: 'サロン消耗セット', items: [['sh-005', 1], ['tr-003', 1], ['sh-010', 1]] },
