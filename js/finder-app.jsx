@@ -5976,19 +5976,34 @@ function selectPoeticStates(answers, scores, maxCount = 2) {
   return [fallback];
 }
 
-function selectAdviceKey(scores) {
+// 悩み(concerns)→adviceKey。熱/総ダメージは履歴ランクが担当し、adviceは“ユーザーが選んだ悩み”に一致させる
+const CONCERN_TO_ADVICE = {
+  dry:'dry', rough:'dry', noShine:'dry',
+  frizz:'frizz', wave:'frizz',
+  damage:'damage', split:'damage', tangle:'damage',
+  colorFade:'color', grayFade:'color',
+  volumeDown:'volume', topFlat:'volume', thinning:'volume',
+  scalpDry:'scalp', scalpOily:'scalp',
+};
+const ADVICE_PRIO = ['scalp','color','frizz','volume','damage','dry'];
+function selectAdviceKey(scores, answers) {
   const s = scores || {};
-  // 熱/総ダメージは“強い時だけ”最優先。弱〜中は個別の悩みを先に拾い、heat/damage偏重を抑える
-  if (s.heatDamage >= 6)     return 'heat';
-  if (s.damage >= 7)         return 'damage';
+  const a = answers || {};
+  // 主訴(ユーザーが選んだ悩み)を最優先 → 結果アドバイスが悩みに一致する。
+  // heat/damage への偏りを解消（その重さは「履歴ランク」が別レイヤーで提示済み）。
+  const cons = (Array.isArray(a.concerns) ? a.concerns : []).map(c => CONCERN_TO_ADVICE[c]).filter(Boolean);
+  if (cons.length) {
+    for (const k of ADVICE_PRIO) if (cons.includes(k)) return k;
+    return cons[0];
+  }
+  // 主訴が無い時だけ従来のスコアカスケードで取りこぼしを拾う
+  if (s.heatDamage >= 4)     return 'heat';
+  if (s.damage >= 5)         return 'damage';
   if (s.scalpDryness >= 2 || s.scalpOiliness >= 2) return 'scalp';
   if (s.frizz >= 3)          return 'frizz';
   if (s.colorFade >= 3)      return 'color';
   if (s.dryness >= 3)        return 'dry';
   if (s.volumeLoss >= 2)     return 'volume';
-  // 個別の悩みに当たらなかった中程度の熱/ダメージはここで拾う（取りこぼし防止）
-  if (s.heatDamage >= 4)     return 'heat';
-  if (s.damage >= 5)         return 'damage';
   return 'calm';
 }
 
@@ -6034,7 +6049,7 @@ function resolveKarteAnimal(answers, scores) {
   const states = selectPoeticStates(answers, scores, 2);
   const stateText = states.map(s => s.text).join('、');
 
-  const adviceKey = selectAdviceKey(scores);
+  const adviceKey = selectAdviceKey(scores, answers);
   const adviceText = KARTE_ADVICE[adviceKey];
 
   const targetRadar = deriveTargetRadar(radar, direction);
