@@ -1,0 +1,54 @@
+name: Build i18n (prerender localized pages)
+
+# コンテンツ6ページ or 翻訳辞書(lang.js)が変わったら、各言語の翻訳を焼き込んだ
+# 静的ページを /en/ /zh/ /tw/ /ko/ に生成して commit する（検索に多言語を露出させる）。
+# 生成物は新規ディレクトリのため、既存 ja ページ(本番)には影響しない。
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'shop.html'
+      - 'hairsalon.html'
+      - 'headspa.html'
+      - 'brand.html'
+      - 'onlineshop.html'
+      - 'js/lang.js'
+      - '.github/scripts/build-i18n.js'
+      - '.github/workflows/build-i18n.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 同時実行を直列化（push が重なってもブランチ競合しにくく）
+concurrency:
+  group: build-i18n
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js セットアップ
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: jsdom インストール
+        run: npm init -y && npm i --no-save jsdom@^24
+
+      - name: 多言語ページを生成
+        run: node .github/scripts/build-i18n.js
+
+      - name: 生成物をコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          rm -rf node_modules package.json package-lock.json
+          git add en zh tw ko sitemap.xml
+          git diff --staged --quiet && { echo "no change"; exit 0; }
+          git commit -m "build: prerender 多言語ページ en/zh/tw/ko [skip ci]"
+          git pull --rebase origin main
+          git push
