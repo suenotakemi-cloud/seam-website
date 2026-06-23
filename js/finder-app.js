@@ -4798,12 +4798,7 @@ function Home({
     d: "M5 12h14M13 6l6 6-6 6"
   }))), /*#__PURE__*/React.createElement("div", {
     className: "mt-5 sm:mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] sm:text-[13px] text-charcoal/80 tracking-wide"
-  }, /*#__PURE__*/React.createElement("span", null, "\u6240\u8981\u6642\u9593 ", /*#__PURE__*/React.createElement("span", {
-    className: "nums text-ink"
-  }, "\u7D045\u301C8\u5206")), /*#__PURE__*/React.createElement("span", {
-    className: "text-gold/45",
-    "aria-hidden": true
-  }, "\xB7"), /*#__PURE__*/React.createElement("span", null, "\u4F1A\u54E1\u767B\u9332\u306A\u3057"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "\u4F1A\u54E1\u767B\u9332\u306A\u3057"), /*#__PURE__*/React.createElement("span", {
     className: "text-gold/45",
     "aria-hidden": true
   }, "\xB7"), /*#__PURE__*/React.createElement("span", null, "\u30B5\u30ED\u30F3\u3067\u3082\u4F7F\u3048\u308B\u30AB\u30EB\u30C6\u3092\u4F5C\u6210")), onCollection && /*#__PURE__*/React.createElement("div", {
@@ -4863,7 +4858,7 @@ function Home({
     className: "mt-4 text-[13px] sm:text-[13.5px] leading-[2] text-charcoal/85 max-w-xl mx-auto"
   }, "\u7F8E\u5BB9\u5E2B\u306E\u77E5\u898B\u3092\u3082\u3068\u306B\u8A2D\u8A08\u3057\u305F\u30ED\u30B8\u30C3\u30AF\u304C", /*#__PURE__*/React.createElement("br", null), "\u56DE\u7B54\u304B\u3089\u3042\u306A\u305F\u306E\u9AEA\u306E\u72B6\u614B\u3068\u5C65\u6B74\u3092\u8AAD\u307F\u89E3\u304D\u307E\u3059")), /*#__PURE__*/React.createElement("div", {
     className: "mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4"
-  }, [['3×3×3', '27の髪格', '太さ×くせ×ダメージの3軸で分類'], ['4,000万+', '髪条件の組み合わせ', '主要11問の単一回答のみで算出'], ['1,000', '検証パターン', '髪条件を変えて提案の整合性を確認'], ['140+', 'ブランド横断', '銘柄を問わず合うものだけを選定']].map(([num, label, note]) => /*#__PURE__*/React.createElement("div", {
+  }, [['3×3×3', '27の髪格', '太さ×髪量×くせの3軸で分類'], ['4,000万+', '髪条件の組み合わせ', '主要11問の単一回答のみで算出'], ['1,000', '検証パターン', '髪条件を変えて提案の整合性を確認'], ['140+', 'ブランド横断', '銘柄を問わず合うものだけを選定']].map(([num, label, note]) => /*#__PURE__*/React.createElement("div", {
     key: label,
     className: "bg-white border border-line/70 rounded-[16px] shadow-card px-4 py-5 sm:px-5 sm:py-6 text-center"
   }, /*#__PURE__*/React.createElement("p", {
