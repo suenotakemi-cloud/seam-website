@@ -125,7 +125,11 @@ function build() {
       const applied = applyLang(doc, I18N[lang], lang, htmlLang);
       rewriteUrlsToRoot(doc);
       setHead(doc, lang, htmlLang, pg.url);
-      const out = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+      let out = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+      // DOM属性以外(JS文字列・inline style url等)の相対アセットパスも / 起点へ。
+      // 例: index.html が gem画像を src="images/karte/gems/"+id+".jpg" とJSで組む箇所。
+      // 絶対URL("/images/ や "https://.../images/")はクォート直後が images でないため不一致＝安全。
+      out = out.replace(/(["'`])(images|js|css|fonts|vendor|videos)\//g, '$1/$2/');
       fs.writeFileSync(path.join(outDir, pg.file), out, 'utf-8');
       const title = (doc.querySelector('title') || {}).textContent || '';
       summary.push(`OK   ${lang}/${pg.file}  i18n=${applied}  bytes=${out.length}  title="${title.slice(0, 40)}"`);

@@ -140,6 +140,23 @@ PAGES = {
 
 START = "<!-- seam:jsonld:start -->"
 END = "<!-- seam:jsonld:end -->"
+HREF_START = "<!-- seam:hreflang:start -->"
+HREF_END = "<!-- seam:hreflang:end -->"
+HREF_LANGS = [("ja", ""), ("en", "/en"), ("zh-Hans", "/zh"), ("zh-Hant", "/tw"), ("ko", "/ko")]
+NO_HREFLANG = {"finder.html"}  # 多言語の静的生成対象外(Reactアプリ)のため alternate を張らない
+
+
+def hreflang_block(page_url):
+    # 5言語の相互 alternate + x-default(ja)。jaソースに入れると build-i18n のコピーで en/zh/tw/ko にも同じクラスタが乗る
+    path = page_url[len(BASE):] or "/"
+    seg = "/" if path == "/" else path
+    links = []
+    for code, pre in HREF_LANGS:
+        href = (BASE + pre + seg) if pre else (BASE + path)
+        links.append('<link rel="alternate" hreflang="%s" href="%s">' % (code, href))
+    links.append('<link rel="alternate" hreflang="x-default" href="%s">' % (BASE + path))
+    return HREF_START + "\n" + "\n".join(links) + "\n" + HREF_END + "\n"
+
 
 for fn, cfg in PAGES.items():
     p = os.path.join(ROOT, fn)
@@ -149,9 +166,12 @@ for fn, cfg in PAGES.items():
         html = f.read()
     # 既存ブロックを除去（再実行で重複しない）
     html = re.sub(re.escape(START) + r".*?" + re.escape(END) + r"\n?", "", html, flags=re.S)
+    html = re.sub(re.escape(HREF_START) + r".*?" + re.escape(HREF_END) + r"\n?", "", html, flags=re.S)
     graph = page_graph(cfg)
     payload = json.dumps(graph, ensure_ascii=False, separators=(",", ":"))
     block = START + '\n<script type="application/ld+json">' + payload + "</script>\n" + END + "\n"
+    if fn not in NO_HREFLANG:
+        block = block + hreflang_block(cfg["url"])
     if "</head>" not in html:
         print("SKIP (no </head>):", fn); continue
     html = html.replace("</head>", block + "</head>", 1)
