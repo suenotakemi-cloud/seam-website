@@ -17,6 +17,7 @@
     density: [4, 6, 9].includes(savedDensity) ? savedDensity : 6, // ④⑥⑨ 表示密度
     search: '',
     brand: null,
+    brandAll: false,   // ブランドを選んで全カテゴリ横断表示中（→カテゴリを押すと そのブランド×カテゴリに絞る）
     colorType: null,   // カラー剤ドリル：選択中のタイプ（alkaline/gray/oxy/... / __cross＝色味×明るさ横断）
     colorLine: null,   // カラー剤ドリル：選択中のライン（ブランド）
     colorFamily: null, // カラー剤ドリル：選択中の色（family）
@@ -151,7 +152,7 @@
     if (!sug.length) { host.hidden = true; host.innerHTML = ''; return; }
     const { active } = splitQuery(raw);
     host.innerHTML = sug.map(s =>
-      '<button type="button" class="sug" data-term="' + escHtml(s.term) + '">' +
+      '<button type="button" class="sug" data-term="' + escHtml(s.term) + '" data-kind="' + escHtml(s.kind) + '">' +
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg>' +
         '<span class="sug__t">' + hiTerm(s.term, active) + '</span>' +
         '<span class="sug__k">' + s.kind + '</span>' +
@@ -159,9 +160,25 @@
       '</button>').join('');
     host.hidden = false;
   }
-  // 候補タップ＝入力中の最後のトークンを候補語で置換（＋スペース）→ 続けて次を絞れる
-  function applySug(term) {
+  // 候補タップ：ブランド→ブランド絞り込み（全カテゴリ横断）／カテゴリ→そのカテゴリへ／その他（メーカー・ライン・色）→テキスト絞り込み継続
+  function clearSearchInput() {
+    const input = qs('#searchInput'); input.value = ''; state.search = '';
+    const c = qs('#searchClear'); if (c) c.hidden = true;
+    const sug = qs('#searchSug'); if (sug) { sug.hidden = true; sug.innerHTML = ''; }
+  }
+  function applySug(term, kind) {
     const input = qs('#searchInput');
+    if (kind === 'ブランド') {
+      state.brand = term; state.brandAll = true;
+      clearSearchInput(); render(); input.blur();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (kind === 'カテゴリ') {
+      const c = DATA.categories.find(x => x.label === term);
+      if (c) { state.cat = c.id; state.brandAll = false; clearSearchInput(); render(); input.blur(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    }
+    // メーカー／ライン／色 → 最後のトークンを候補語で置換して続けて絞れる（テキスト検索）
     let raw = input.value;
     if (raw === '' || /\s$/.test(raw)) raw = raw + term + ' ';
     else raw = raw.replace(/(^|\s)([^\s]*)$/, (m, pre) => pre + term + ' ');
@@ -173,7 +190,9 @@
     input.focus();
   }
   // 契約商品：online/applyは契約済みのときだけ表示。メーカー直送(direct)は常に表示（注文は外部）。
-  const base = () => (inSearch() ? DATA.products : DATA.products.filter(p => p.cat === state.cat)).filter(p => Store.canShow(p) && Store.dealerVisible(p));
+  // 検索中、またはブランドを選んで横断表示中（brandAll）は全カテゴリ対象。通常は現在カテゴリのみ。
+  const crossCat = () => inSearch() || (state.brand && state.brandAll);
+  const base = () => (crossCat() ? DATA.products : DATA.products.filter(p => p.cat === state.cat)).filter(p => Store.canShow(p) && Store.dealerVisible(p));
 
   // カラー剤ドリル（タイプ › ライン › 色 › 明るさ）
   const COLOR_TYPES = SP.COLOR_TYPES || [];
@@ -192,14 +211,15 @@
     return out;
   };
   const colorShades = (line, family) => colorAll().filter(p => p.line === line && p.family === family).sort((a, b) => a.level - b.level);
-  const inColorDrill = () => state.cat === 'color' && !inSearch();
+  const inColorDrill = () => state.cat === 'color' && !inSearch() && !state.brand;
 
   function filtered() {
     let list = base();
     if (inSearch()) {
       list = list.filter(p => matchSearch(p, state.search));
     }
-    if (state.brand) list = list.filter(p => p.brand === state.brand);
+    // ブランド絞り込みは brand／メーカー／ライン を横断一致（例：「ミルボン」＝メーカー＝アディクシー等 傘下も含む）
+    if (state.brand) { const b = state.brand; list = list.filter(p => p.brand === b || p.maker === b || p.line === b); }
     if (state.filters.stock.size) list = list.filter(p => state.filters.stock.has(p.stock));
     if (state.filters.price) {
       const r = PRICE_RANGES.find(x => x.id === state.filters.price);
@@ -210,8 +230,8 @@
       const res = CONCERNS.filter(c => state.filters.concern.has(c.id)).map(c => c.re);
       list = list.filter(p => res.some(re => re.test(p.name)));
     }
-    // タイプ・チップ＋容量チップ絞り込み（掛け合わせ。検索中は無効）
-    if (!inSearch() && TYPE_CATS[state.cat]) {
+    // タイプ・チップ＋容量チップ絞り込み（掛け合わせ。検索中・ブランド横断中は無効）
+    if (!crossCat() && TYPE_CATS[state.cat]) {
       const _tc = TYPE_CATS[state.cat];
       const _ts = state.typeSel[state.cat]; if (_ts) list = list.filter(p => p[_tc.key] === _ts);
       const _ss = state.sizeSel[state.cat]; if (_ss) list = list.filter(p => p.sizeBucket === _ss);
@@ -263,6 +283,10 @@
       qs('#pageTitle').textContent = `「${state.search.trim()}」の検索結果`;
       qs('#pageCount').innerHTML = `<b>${list.length}</b>件`;
       if (crumbEl) crumbEl.textContent = '検索結果';
+    } else if (state.brand && state.brandAll) {
+      qs('#pageTitle').textContent = state.brand;
+      qs('#pageCount').innerHTML = `全<b>${list.length}</b>件 ・ <span style="font-size:12px;color:var(--ink-3);font-weight:600">カテゴリを選ぶと絞り込めます</span>`;
+      if (crumbEl) crumbEl.textContent = state.brand;
     } else {
       qs('#pageTitle').textContent = cat().label;
       const showCount = hasActiveFilter() ? list.length : cat().count;
@@ -270,7 +294,7 @@
       if (crumbEl) crumbEl.textContent = cat().label;
     }
     qs('#resultSort').textContent = SORTS.find(s => s.id === state.sort).label;
-    qs('#emptyTitle').textContent = inSearch() ? '該当する商品が見つかりません' : 'このカテゴリは準備中です';
+    qs('#emptyTitle').textContent = (inSearch() || hasActiveFilter()) ? '該当する商品が見つかりません' : 'このカテゴリは準備中です';
 
     syncFavButtons();
     renderActiveChips();
@@ -322,7 +346,8 @@
     const c = TYPE_CATS[state.cat]; if (!c) return null;
     return { list: c.list(), key: c.key, sel: state.typeSel[state.cat] || null };
   };
-  const inCatProducts = () => DATA.products.filter(p => p.cat === state.cat && Store.canShow(p) && Store.dealerVisible(p));
+  // タイプ/容量チップの母集合。ブランド絞り込み中はそのブランド（brand/メーカー/ライン）に限定＝件数も連動
+  const inCatProducts = () => DATA.products.filter(p => p.cat === state.cat && Store.canShow(p) && Store.dealerVisible(p) && (!state.brand || p.brand === state.brand || p.maker === state.brand || p.line === state.brand));
   // タイプ件数は現在の容量選択を、容量件数は現在のタイプ選択を反映（相互連動＝掛け合わせ件数）
   const typeCountCtx = (key, id) => { const ss = state.sizeSel[state.cat]; return inCatProducts().filter(p => p[key] === id && (!ss || p.sizeBucket === ss)).length; };
   const sizeCountCtx = (bid) => { const c = TYPE_CATS[state.cat], ts = state.typeSel[state.cat]; return inCatProducts().filter(p => p.sizeBucket === bid && (!ts || p[c.key] === ts)).length; };
@@ -334,7 +359,7 @@
   }
   function renderTypeChips() {
     let host = qs('#typeChips');
-    const cfg = (!inSearch()) ? typeCfg() : null;
+    const cfg = (!crossCat()) ? typeCfg() : null;
     if (!cfg) { if (host) host.hidden = true; return; }
     if (!host) {
       if (!qs('#typeChipsStyle')) {
@@ -511,7 +536,7 @@
   function renderCatQuick() {
     const host = qs('#catQuick');
     host.innerHTML = orderedCats().map(c =>
-      `<a href="#" data-cat="${c.id}" class="${!inSearch() && c.id === state.cat ? 'is-active' : ''}">${c.label}</a>`
+      `<a href="#" data-cat="${c.id}" class="${!inSearch() && !(state.brand && state.brandAll) && c.id === state.cat ? 'is-active' : ''}">${c.label}</a>`
     ).join('');
   }
 
@@ -668,6 +693,7 @@
       closeAll();
       const val = b.dataset.val;
       state.brand = val === '__all' ? null : val;
+      state.brandAll = false;   // ピルからの選択は現在カテゴリ内で絞る（横断はしない）
       render();
     };
     setTimeout(() => { try { input.focus(); } catch (e) {} }, 60);
@@ -732,7 +758,7 @@
     qs('#pillCategory').addEventListener('click', e => {
       openDropdown(e.currentTarget,
         orderedCats().map(c => ({ id: c.id, label: c.label })),
-        state.cat, val => { state.cat = val; state.brand = null; state.search = ''; qs('#searchInput').value = ''; render(); });
+        state.cat, val => { state.cat = val; state.brandAll = false; state.search = ''; qs('#searchInput').value = ''; render(); });
     });
 
     // 業種スイッチャー（ヘア/アイ/ネイル/エステ）：関連カテゴリを前に並べ替え（非表示にはしない）
@@ -743,7 +769,7 @@
       state.biz = b.dataset.biz;
       try { localStorage.setItem('sp.biz', state.biz); } catch (err) {}
       state.cat = firstCat();          // 業種の先頭カテゴリへ
-      state.brand = null; state.search = ''; const si = qs('#searchInput'); if (si) si.value = '';
+      state.brand = null; state.brandAll = false; state.search = ''; const si = qs('#searchInput'); if (si) si.value = '';
       state.filters = { stock: new Set(), price: null, sameDay: false, concern: new Set() };
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -811,8 +837,8 @@
       const b = e.target.closest('[data-clear]');
       if (!b) return;
       const key = b.dataset.clear;
-      if (key === 'all') state.filters = { stock: new Set(), price: null, sameDay: false, concern: new Set() }, state.brand = null;
-      else if (key === 'brand') state.brand = null;
+      if (key === 'all') state.filters = { stock: new Set(), price: null, sameDay: false, concern: new Set() }, state.brand = null, state.brandAll = false;
+      else if (key === 'brand') state.brand = null, state.brandAll = false;
       else if (key === 'price') state.filters.price = null;
       else if (key === 'same') state.filters.sameDay = false;
       else if (key.startsWith('stock:')) state.filters.stock.delete(key.split(':')[1]);
@@ -825,7 +851,7 @@
       const a = e.target.closest('[data-cat]');
       if (!a) return;
       e.preventDefault();
-      state.cat = a.dataset.cat; state.brand = null; state.search = ''; qs('#searchInput').value = '';
+      state.cat = a.dataset.cat; state.brandAll = false; state.search = ''; qs('#searchInput').value = '';
       render();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
@@ -922,7 +948,7 @@
       searchSug.addEventListener('mousedown', e => e.preventDefault()); // タップで入力のフォーカスを外さない
       searchSug.addEventListener('click', e => {
         const b = e.target.closest('.sug'); if (!b) return;
-        applySug(b.dataset.term);
+        applySug(b.dataset.term, b.dataset.kind);
       });
     }
     document.addEventListener('click', e => {
