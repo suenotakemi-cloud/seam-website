@@ -36,6 +36,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add js/finder-app.js
           git diff --staged --quiet && { echo "no change"; exit 0; }
-          git commit -m "build: precompile finder-app.js [skip ci]"
+          # [skip ci]は付けない: CF Pagesが[skip ci]入りコミットの配信をスキップし
+          # finder-app.jsが本番に出ない原因になる(従来は finder.html ?v= bump=人間pushでしか出なかった)。
+          # js出力はこのworkflowのトリガー外＋GITHUB_TOKEN pushは新workflow非起動でループしない
+          # (update-ranking同様[skip ci]無しbotコミットはCFが自動配信する)。
+          git commit -m "build: precompile finder-app.js"
           git pull --rebase origin main
           git push

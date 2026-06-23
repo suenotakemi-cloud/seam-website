@@ -49,6 +49,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add css/tailwind.css
           git diff --staged --quiet && { echo "no change"; exit 0; }
-          git commit -m "build: prebuild tailwind.css [skip ci]"
+          # [skip ci]は付けない: CF Pagesが[skip ci]入りコミットの配信をスキップするため
+          # (付けると生成css が本番に出ない)。css出力はトリガー外＋GITHUB_TOKEN pushは
+          # 新workflow非起動でループしない(update-ranking同様[skip ci]無しbotコミットは自動配信)。
+          git commit -m "build: prebuild tailwind.css"
           git pull --rebase origin main
           git push
