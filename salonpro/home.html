@@ -485,15 +485,9 @@
           '<span class="promo__t">' + esc(news ? news.t : '新商品・新色が入荷') + '</span>' +
           '<span class="promo__s">' + esc(news ? '注目の新商品をチェック' : '話題の新商品・新色をまとめてチェック') + '</span></span></a>');
 
-        // ② セミナー（featured を優先）
-        var S = SP.SEMINARS || [];
-        var feat = S.filter(function (s) { return s.featured; })[0] || S[0];
-        if (feat && F.seminars !== false) out.push('<a class="promo" href="seminar.html?id=' + feat.id + '"><img class="promo__img" src="assets/img/kikuchi/' + feat.img + '" alt="">' + go +
-          '<span class="promo__b"><span class="promo__tag" style="color:' + (feat.kind === 'venue' ? '#34507a' : '#d8392b') + '">' + (feat.kind === 'venue' ? 'イベント' : 'セミナー') + '</span>' +
-          '<span class="promo__t">' + esc(feat.title) + '</span>' +
-          '<span class="promo__s">' + md(feat.date) + '（' + feat.dow + '） ' + feat.time + ' ・ ' + esc(feat.fee) + '</span></span></a>');
+        // ※ セミナーは下の専用「セミナー・イベント」セクションに集約（新着バナーでの重複表示を撤去）
 
-        // ③ キャンペーン（先頭）
+        // ② キャンペーン（先頭）
         var C = SP.CAMPAIGNS || [];
         var camp = C[0];
         if (camp && F.campaigns !== false) out.push('<a class="promo promo--grad" href="campaigns.html' + (camp.id ? ('?id=' + camp.id) : '') + '" style="background:linear-gradient(135deg,#1f4e8c,#6e2f57)">' + go +
