@@ -10,15 +10,15 @@
 
   const PREV = [{ id: 'sh-001', qty: 2 }, { id: 'sh-005', qty: 1 }, { id: 'co-3', qty: 3 }, { id: 'tr-001', qty: 1 }];
   const SETS = [
-    { name: 'カラー定番セット', items: [['co-001', 2], ['co-002', 2], ['co-003', 1]] },
+    { name: 'カラー定番セット', items: [['co-3', 2], ['co-7', 2], ['co-22', 1]] },
     { name: 'サロン消耗セット', items: [['sh-005', 1], ['tr-003', 1], ['sh-010', 1]] },
   ];
   const FREQ = [
     { id: 'rec-2', n: 3 }, { id: 'sh-005', n: 3 }, { id: 'sh-002', n: 2 },
-    { id: 'tr-001', n: 2 }, { id: 'sh-010', n: 2 }, { id: 'co-005', n: 1 }, { id: 'sh-024', n: 1 },
+    { id: 'tr-001', n: 2 }, { id: 'sh-010', n: 2 }, { id: 'co-26', n: 1 }, { id: 'sh-024', n: 1 },
   ];
   // 消耗予測（前回購入からの経過日数で補充提案）
-  const REPLENISH = [{ id: 'sh-005', days: 18 }, { id: 'co-009', days: 25 }, { id: 'tr-002', days: 30 }];
+  const REPLENISH = [{ id: 'sh-005', days: 18 }, { id: 'co-23', days: 25 }, { id: 'tr-002', days: 30 }];
 
   function thumb(p) { return `<span class="ro-thumb">${placeholder(p.ph, p.brand)}</span>`; }
 
