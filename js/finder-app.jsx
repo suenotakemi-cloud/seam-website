@@ -3526,8 +3526,6 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
 
           {/* 安心ライン: 読みやすい濃さで1行に集約（旧mono極小グレー＋長い注釈を統合） */}
           <div className="mt-5 sm:mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] sm:text-[13px] text-charcoal/80 tracking-wide">
-            <span>所要時間 <span className="nums text-ink">約5〜8分</span></span>
-            <span className="text-gold/45" aria-hidden>·</span>
             <span>会員登録なし</span>
             <span className="text-gold/45" aria-hidden>·</span>
             <span>サロンでも使えるカルテを作成</span>
@@ -3595,7 +3593,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
           </div>
           <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4">
             {[
-              ['3×3×3', '27の髪格', '太さ×くせ×ダメージの3軸で分類'],
+              ['3×3×3', '27の髪格', '太さ×髪量×くせの3軸で分類'],
               ['4,000万+', '髪条件の組み合わせ', '主要11問の単一回答のみで算出'],
               ['1,000', '検証パターン', '髪条件を変えて提案の整合性を確認'],
               ['140+', 'ブランド横断', '銘柄を問わず合うものだけを選定'],
