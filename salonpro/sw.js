@@ -1,5 +1,5 @@
 /* SalonPro Service Worker — コア資産をキャッシュしオフライン/高速化（軽くて落ちないPWA） */
-const CACHE = 'salonpro-v17';
+const CACHE = 'salonpro-v18';
 const CORE = [
   'home.html', 'index.html', 'cart.html', 'product.html', 'reorder.html',
   'mypage.html', 'learn.html', 'favorites.html', 'orders.html', 'support.html',
