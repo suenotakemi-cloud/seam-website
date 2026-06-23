@@ -49,6 +49,9 @@ jobs:
           rm -rf node_modules package.json package-lock.json
           git add en zh tw ko sitemap.xml
           git diff --staged --quiet && { echo "no change"; exit 0; }
-          git commit -m "build: prerender 多言語ページ en/zh/tw/ko [skip ci]"
+          # 注: [skip ci] は付けない。CF Pages は [skip ci] 入りコミットの配信をスキップするため
+          # （付けると生成物が本番に出ない）。en/zh/tw/ko/sitemap はこのworkflowのトリガーパス外
+          # ＋GITHUB_TOKENのpushは新規workflowを起動しないため、ループにはならない。
+          git commit -m "build: prerender 多言語ページ en/zh/tw/ko"
           git pull --rebase origin main
           git push
