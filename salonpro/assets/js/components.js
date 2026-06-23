@@ -209,6 +209,8 @@
     '中古機器': 'equipment.html',
     'クイックオーダー': 'quickorder.html',
     '一括発注': 'quickorder.html',
+    'カラーカルテ': 'karte.html',
+    '顧客カルテ': 'karte.html',
     '請求書': 'invoices.html',
     '請求書・購入明細': 'invoices.html',
     '購入明細': 'invoices.html',
@@ -390,6 +392,7 @@
       barcode: ['barcode.html'], tempu: ['tempu.html'], push: ['app.html', 'notify.html'],
       books: ['books.html'], equipment: ['equipment.html'], partners: ['partners.html'],
       quickorder: ['quickorder.html'], invoices: ['invoices.html'], staffmate: ['staffmate.html'],
+      karte: ['karte.html'],
     };
     Object.keys(FEAT_HREF).forEach(feat => {
       if (F[feat] === false) FEAT_HREF[feat].forEach(href => {

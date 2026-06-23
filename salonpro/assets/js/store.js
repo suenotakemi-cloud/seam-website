@@ -25,6 +25,7 @@
   const LS_BUYBACKS = 'sp.buybacks.v1';          // [大型機器の買取査定依頼（写真添付）] admin通知連携
   const LS_USED_INV = 'sp.usedInventory.v1';     // [ディーラーが出品した中古在庫] 買取成立→中古再販に自動掲載
   const LS_RESTOCK = 'sp.restockAlerts.v1';      // [入荷お知らせ登録（欠品商品）] {productId: 登録時刻}
+  const LS_KARTE = 'sp.karte.v1';                // [顧客カルテ] カラーレシピ（調合）を顧客別に保存・再現
   const LS_STAFF = 'sp.staff.v1';                // [スタッフ {id,name,role,store}]
   const LS_ACTOR = 'sp.actor.v1';                // 現在の発注者 {role,name,staffId}
   const LS_TEMPLATES = 'sp.orderTemplates.v1';   // [発注テンプレ {id,name,by,items:[{id,qty}],at}]
@@ -66,6 +67,7 @@
   let buybacks = load(LS_BUYBACKS, []);          // 大型機器の買取査定依頼レコード
   let usedInventory = load(LS_USED_INV, []);     // ディーラーが出品した中古在庫レコード
   let restockAlerts = load(LS_RESTOCK, {});      // 入荷お知らせ登録 {productId: 登録時刻}
+  let karte = load(LS_KARTE, null);              // 顧客カルテ（カラーレシピ）。null=未初期化→デモ投入
   // staff.html と同形のシード（同じ sp.staff.v1 を共有）
   const SEED_STAFF = [
     { id: 'u1', name: '菊地 健一', email: 'owner@salon-luxe.jp', store: 's1', role: 'owner', perms: { view: true, order: true, approve: true } },
@@ -390,6 +392,55 @@
     toggleRestockAlert(id) { if (this.hasRestockAlert(id)) { this.removeRestockAlert(id); return false; } this.addRestockAlert(id); return true; },
     getRestockAlerts() { return Object.keys(restockAlerts); },
     restockCount() { return Object.keys(restockAlerts).length; },
+
+    /* ---- 顧客カルテ（カラーレシピ＝調合を顧客別に保存し、次回に再現・調整・材料を再発注） ---- */
+    _seedKarte() {
+      karte = [
+        { id: 'k1', name: '田中 様（A.T）', hair: '硬毛・既染部あり・白髪20%', memo: '赤みが出やすい。アッシュ強め希望。', createdAt: Date.now(), updatedAt: Date.now(), visits: [
+          { id: 'v1', date: '2026/05/18', menu: 'フルカラー（リタッチ＋毛先）', ingredients: [
+            { productId: 'co-3', name: 'アディクシー サファイア 7', brand: 'アディクシー', grams: 40 },
+            { productId: 'co-23', name: 'アディクシー グレーパール 9', brand: 'アディクシー', grams: 20 }
+          ], oxy: '6%（2剤）', ratio: '1剤:2剤 = 1:1', time: '20分', base: '根元は新生部・毛先は既染部', note: 'いつもより青み強め', finish: 'ほぼ希望どおり。次回は放置+5分でも可' }
+        ] },
+        { id: 'k2', name: '佐藤 様（M.S）', hair: '軟毛・ブリーチ毛・ダメージ強', memo: 'ハイトーン継続。黄ばみ消し。', createdAt: Date.now(), updatedAt: Date.now(), visits: [
+          { id: 'v2', date: '2026/05/30', menu: 'オンカラー（ブリーチ後）', ingredients: [
+            { productId: 'co-22', name: 'アディクシー グレーパール 7', brand: 'アディクシー', grams: 30 }
+          ], oxy: '3%（2剤）', ratio: '1:2', time: '15分', base: 'ブリーチ1回・全体', note: '黄ばみ強め部分は重ね塗り', finish: '透明感◎。退色早いので3週で来店案内' }
+        ] }
+      ];
+      try { localStorage.setItem(LS_KARTE, JSON.stringify(karte)); } catch (e) {}
+    },
+    getKarte() { if (karte == null) this._seedKarte(); return JSON.parse(JSON.stringify(karte)); },
+    getKarteCustomer(id) { if (karte == null) this._seedKarte(); const c = karte.find(x => x.id === id); return c ? JSON.parse(JSON.stringify(c)) : null; },
+    addKarteCustomer(rec) {
+      if (karte == null) this._seedKarte();
+      rec = rec || {};
+      rec.id = rec.id || ('k-' + Date.now() + '-' + Math.floor(Math.random() * 1e5));
+      rec.visits = rec.visits || []; rec.createdAt = Date.now(); rec.updatedAt = Date.now();
+      karte.unshift(rec); save(LS_KARTE, karte); emit(); return rec;
+    },
+    updateKarteCustomer(id, patch) {
+      if (karte == null) this._seedKarte();
+      const c = karte.find(x => x.id === id); if (!c) return;
+      Object.assign(c, patch || {}); c.updatedAt = Date.now();
+      save(LS_KARTE, karte); emit(); return c;
+    },
+    removeKarteCustomer(id) { if (karte == null) this._seedKarte(); karte = karte.filter(x => x.id !== id); save(LS_KARTE, karte); emit(); },
+    addKarteVisit(custId, visit) {
+      if (karte == null) this._seedKarte();
+      const c = karte.find(x => x.id === custId); if (!c) return;
+      visit = visit || {};
+      visit.id = visit.id || ('v-' + Date.now() + '-' + Math.floor(Math.random() * 1e5));
+      visit.ingredients = visit.ingredients || [];
+      c.visits = c.visits || []; c.visits.unshift(visit); c.updatedAt = Date.now();
+      save(LS_KARTE, karte); emit(); return visit;
+    },
+    removeKarteVisit(custId, visitId) {
+      if (karte == null) this._seedKarte();
+      const c = karte.find(x => x.id === custId); if (!c) return;
+      c.visits = (c.visits || []).filter(v => v.id !== visitId); c.updatedAt = Date.now();
+      save(LS_KARTE, karte); emit();
+    },
 
     /* ---- スタッフ／発注者（actor）：オーナー＝直接発注、スタッフ＝発注は申請→承認 ---- */
     getStaff() { return staff.slice(); },

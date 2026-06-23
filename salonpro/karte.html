@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <title>カラーカルテ（顧客レシピ）｜SalonPro</title>
+  <meta name="description" content="顧客ごとのカラー調合レシピを保存して次回に再現・調整。使った薬剤はそのままカートで再発注できます。">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=39">
+  <link rel="stylesheet" href="assets/css/base.css?v=39">
+  <link rel="stylesheet" href="assets/css/components.css?v=39">
+  <link rel="stylesheet" href="assets/css/pages.css?v=39">
+  <style>
+    body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
+    .container { max-width: 820px; }
+    .kt-hd { margin-top: var(--s-4); } .kt-hd__t { font-size: clamp(20px,5vw,26px); font-weight: 900; } .kt-hd__s { font-size: 12.5px; color: var(--ink-3); margin-top: 5px; line-height: 1.65; }
+    .kt-info { display: flex; gap: 9px; align-items: flex-start; background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r-md); padding: 12px 14px; margin-top: var(--s-4); font-size: 12px; color: var(--ink-2); line-height: 1.65; }
+    .kt-info svg { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--gold-strong); }
+    /* list */
+    .kt-bar { display: flex; gap: 8px; align-items: center; margin-top: var(--s-4); }
+    .kt-search { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 10px 12px; }
+    .kt-search svg { width: 17px; height: 17px; color: var(--ink-3); flex: none; } .kt-search input { flex: 1; border: 0; outline: none; font-size: 14px; font-family: inherit; min-width: 0; background: transparent; }
+    .kt-add { flex: none; height: 44px; padding: 0 15px; border-radius: var(--r-md); background: var(--gold); border: 0; color: #fff; font-size: 13.5px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; } .kt-add svg { width: 16px; height: 16px; }
+    .kt-cards { display: grid; gap: 11px; margin-top: var(--s-4); }
+    .kt-card { text-align: left; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; cursor: pointer; background: #fff; }
+    .kt-card:hover { border-color: var(--gold); background: var(--gold-soft); }
+    .kt-card__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .kt-card__n { font-size: 15px; font-weight: 900; } .kt-card__d { font-size: 11.5px; color: var(--ink-3); white-space: nowrap; }
+    .kt-card__hair { font-size: 11.5px; color: var(--ink-2); margin-top: 3px; }
+    .kt-card__last { font-size: 12px; color: var(--ink-2); margin-top: 8px; background: var(--surface-2); border-radius: var(--r-sm); padding: 8px 10px; line-height: 1.5; }
+    .kt-card__last b { color: var(--gold-strong); }
+    .kt-empty { border: 1px dashed var(--line-strong); border-radius: var(--r-lg); padding: 34px 20px; text-align: center; color: var(--ink-3); font-size: 13px; line-height: 1.8; margin-top: var(--s-4); }
+    /* detail */
+    .kt-back { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 700; color: var(--ink-2); margin-top: var(--s-4); cursor: pointer; } .kt-back svg { width: 16px; height: 16px; }
+    .kt-cust { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 15px; margin-top: 12px; }
+    .kt-cust__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .kt-cust__n { font-size: 19px; font-weight: 900; } .kt-cust__hair { font-size: 12.5px; color: var(--ink-2); margin-top: 4px; } .kt-cust__memo { font-size: 12px; color: var(--ink-3); margin-top: 4px; line-height: 1.6; }
+    .kt-cust__edit { flex: none; font-size: 12px; font-weight: 700; color: var(--gold-strong); background: none; border: 0; cursor: pointer; }
+    .kt-acts { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .kt-btn { height: 44px; padding: 0 15px; border-radius: var(--r-md); border: 1px solid var(--line-strong); background: #fff; color: var(--ink); font-size: 13.5px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; } .kt-btn svg { width: 16px; height: 16px; }
+    .kt-btn--gold { background: var(--gold); border-color: var(--gold); color: #fff; } .kt-btn--gold:hover { background: var(--gold-strong); }
+    .kt-sec__t { font-size: 15px; font-weight: 900; margin: var(--s-5) 0 10px; }
+    .kt-visit { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; margin-bottom: 11px; }
+    .kt-visit__top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .kt-visit__date { font-size: 13px; font-weight: 900; } .kt-visit__menu { font-size: 12px; color: var(--gold-strong); font-weight: 800; margin-top: 1px; }
+    .kt-visit__del { flex: none; font-size: 11.5px; color: var(--ink-3); background: none; border: 0; cursor: pointer; }
+    .kt-recipe { margin-top: 10px; border: 1px solid var(--gold-line); background: var(--gold-soft); border-radius: var(--r-md); overflow: hidden; }
+    .kt-ing { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 12px; font-size: 13px; }
+    .kt-ing + .kt-ing { border-top: 1px solid var(--gold-line); }
+    .kt-ing__n { font-weight: 700; } .kt-ing__b { font-size: 11px; color: var(--ink-3); }
+    .kt-ing__g { font-family: var(--font-num); font-weight: 800; color: var(--ink); white-space: nowrap; }
+    .kt-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; margin-top: 10px; font-size: 12px; }
+    .kt-meta div { color: var(--ink-2); } .kt-meta b { color: var(--ink); }
+    .kt-note { font-size: 12px; color: var(--ink-2); margin-top: 8px; line-height: 1.6; background: var(--surface-2); border-radius: var(--r-sm); padding: 8px 10px; }
+    .kt-note span { color: var(--ink-3); font-weight: 700; }
+    .kt-visit__cart { margin-top: 11px; width: 100%; height: 42px; border-radius: var(--r-md); border: 1px solid var(--gold); background: #fff; color: var(--gold-strong); font-size: 13px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; } .kt-visit__cart svg { width: 15px; height: 15px; } .kt-visit__cart:hover { background: var(--gold-soft); }
+    /* modal */
+    .kt-ov { position: fixed; inset: 0; background: rgba(20,20,28,.5); z-index: 200; display: none; align-items: flex-end; justify-content: center; }
+    .kt-ov.is-open { display: flex; }
+    @media (min-width: 640px) { .kt-ov { align-items: center; } }
+    .kt-modal { width: 100%; max-width: 540px; max-height: 92vh; overflow-y: auto; background: #fff; border-radius: 18px 18px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); }
+    @media (min-width: 640px) { .kt-modal { border-radius: 18px; } }
+    .kt-modal__hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .kt-modal__t { font-size: 17px; font-weight: 900; } .kt-modal__s { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+    .kt-modal__x { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 0; background: var(--surface-2); color: var(--ink-2); font-size: 17px; cursor: pointer; }
+    .kt-field { margin-top: 13px; } .kt-field label { font-size: 12px; font-weight: 800; color: var(--ink-2); display: block; margin-bottom: 5px; }
+    .kt-field input, .kt-field select, .kt-field textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 10px 12px; font-size: 14px; font-family: inherit; background: #fff; }
+    .kt-field textarea { resize: vertical; min-height: 48px; }
+    .kt-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .kt-lbl { font-size: 12px; font-weight: 800; color: var(--ink-2); margin: 15px 0 7px; }
+    .kt-ingpick { position: relative; }
+    .kt-ingpick input { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-md); padding: 10px 12px; font-size: 14px; font-family: inherit; }
+    .kt-matches { border: 1px solid var(--line); border-radius: var(--r-md); margin-top: 6px; max-height: 190px; overflow-y: auto; }
+    .kt-matches button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 11px; font-size: 13px; text-align: left; }
+    .kt-matches button:hover { background: var(--surface-2); } .kt-matches button + button { border-top: 1px solid var(--line-2); }
+    .kt-matches .b { font-size: 10.5px; color: var(--ink-3); }
+    .kt-rows { display: grid; gap: 8px; margin-top: 10px; }
+    .kt-row { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 9px 11px; }
+    .kt-row__b { flex: 1; min-width: 0; } .kt-row__n { font-size: 13px; font-weight: 700; } .kt-row__br { font-size: 10.5px; color: var(--ink-3); }
+    .kt-row__g { width: 64px; }
+    .kt-row__g input { width: 100%; border: 1px solid var(--line-strong); border-radius: var(--r-sm); padding: 7px 8px; font-size: 13px; font-family: var(--font-num); text-align: right; }
+    .kt-row__rm { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 0; background: var(--surface-2); color: var(--ink-2); cursor: pointer; }
+    .kt-submit { width: 100%; height: 50px; border-radius: var(--r-md); background: var(--gold); border: 0; color: #fff; font-size: 15px; font-weight: 800; cursor: pointer; margin-top: 18px; }
+    .kt-submit:hover { background: var(--gold-strong); }
+    .kt-note2 { font-size: 10.5px; color: var(--ink-3); line-height: 1.6; margin-top: 16px; }
+  </style>
+</head>
+<body class="page">
+
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a class="brand" href="home.html" aria-label="SalonPro ホーム"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <nav class="header-actions">
+        <a class="icon-btn" href="cart.html" aria-label="カート"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg><span class="icon-btn__badge" id="cartBadge" hidden>0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 一覧ビュー -->
+    <section id="viewList">
+      <div class="kt-hd">
+        <div class="kt-hd__t">カラーカルテ</div>
+        <div class="kt-hd__s">顧客ごとのカラー<b>調合レシピ</b>を記録。次回は<b>前回を複製して微調整</b>、使った薬剤は<b>そのままカートで再発注</b>できます。</div>
+      </div>
+      <div class="kt-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        <span>カルテは<b>この端末</b>に保存されます（プロトタイプ）。本番ではサロンのスタッフ間で共有、施術メニュー・写真の添付に対応します。</span>
+      </div>
+      <div class="kt-bar">
+        <div class="kt-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><input id="ktSearch" type="search" placeholder="顧客名・イニシャルで検索" autocomplete="off"></div>
+        <button class="kt-add" id="ktAdd"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>顧客を追加</button>
+      </div>
+      <div class="kt-cards" id="ktCards"></div>
+    </section>
+
+    <!-- 詳細ビュー -->
+    <section id="viewDetail" hidden>
+      <button class="kt-back" id="ktBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>顧客一覧へ</button>
+      <div class="kt-cust" id="ktCust"></div>
+      <div class="kt-acts">
+        <button class="kt-btn kt-btn--gold" id="ktNewVisit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>来店を記録</button>
+        <button class="kt-btn" id="ktDup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>前回を複製して記録</button>
+      </div>
+      <div class="kt-sec__t">来店・レシピ履歴</div>
+      <div id="ktVisits"></div>
+    </section>
+  </main>
+
+  <!-- 顧客 追加/編集 モーダル -->
+  <div class="kt-ov" id="kcOv" role="dialog" aria-modal="true">
+    <div class="kt-modal">
+      <div class="kt-modal__hd"><div><div class="kt-modal__t" id="kcTitle">顧客を追加</div><div class="kt-modal__s">お名前はイニシャルでも構いません</div></div><button class="kt-modal__x" data-kc-close>✕</button></div>
+      <div class="kt-field"><label for="kcName">お名前・イニシャル</label><input type="text" id="kcName" placeholder="例：田中 様（A.T）"></div>
+      <div class="kt-field"><label for="kcHair">髪質・状態</label><input type="text" id="kcHair" placeholder="例：硬毛・既染部あり・白髪20%"></div>
+      <div class="kt-field"><label for="kcMemo">メモ（好み・注意点）</label><textarea id="kcMemo" placeholder="例：赤みが出やすい。アッシュ強め希望。"></textarea></div>
+      <button class="kt-submit" id="kcSave">保存する</button>
+    </div>
+  </div>
+
+  <!-- 来店・レシピ 記録モーダル -->
+  <div class="kt-ov" id="kvOv" role="dialog" aria-modal="true">
+    <div class="kt-modal">
+      <div class="kt-modal__hd"><div><div class="kt-modal__t">来店・カラーレシピを記録</div><div class="kt-modal__s" id="kvSub"></div></div><button class="kt-modal__x" data-kv-close>✕</button></div>
+      <div class="kt-2col">
+        <div class="kt-field"><label for="kvDate">来店日</label><input type="text" id="kvDate" placeholder="2026/06/22"></div>
+        <div class="kt-field"><label for="kvMenu">メニュー</label><input type="text" id="kvMenu" placeholder="例：フルカラー / リタッチ"></div>
+      </div>
+
+      <div class="kt-lbl">調合（薬剤＋分量）</div>
+      <div class="kt-ingpick">
+        <input id="kvSearch" type="search" placeholder="薬剤を検索して追加（例：アディクシー サファイア 8 / オキシ）" autocomplete="off">
+        <div class="kt-matches" id="kvMatches" hidden></div>
+      </div>
+      <div class="kt-rows" id="kvRows"></div>
+
+      <div class="kt-2col" style="margin-top:13px">
+        <div class="kt-field" style="margin-top:0"><label for="kvOxy">オキシ（2剤）</label><input type="text" id="kvOxy" placeholder="例：6%"></div>
+        <div class="kt-field" style="margin-top:0"><label for="kvRatio">混合比</label><input type="text" id="kvRatio" placeholder="例：1剤:2剤 = 1:1"></div>
+      </div>
+      <div class="kt-2col">
+        <div class="kt-field"><label for="kvTime">放置時間</label><input type="text" id="kvTime" placeholder="例：20分"></div>
+        <div class="kt-field"><label for="kvBase">塗布部位・履歴</label><input type="text" id="kvBase" placeholder="例：新生部/既染部"></div>
+      </div>
+      <div class="kt-field"><label for="kvNote">調合メモ</label><textarea id="kvNote" placeholder="重ね塗り・狙い など"></textarea></div>
+      <div class="kt-field"><label for="kvFinish">仕上がり・次回への申し送り</label><textarea id="kvFinish" placeholder="例：透明感◎。次回は放置+5分でも可"></textarea></div>
+      <button class="kt-submit" id="kvSave">このレシピを保存</button>
+      <p class="kt-note2">※ 保存した薬剤は履歴から「材料をカートに追加」でそのまま再発注できます（数量はカートで調整）。</p>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="メインナビ">
+    <div class="tabbar__inner">
+      <a class="tab" href="home.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7"/><path d="M6 10v10h12V10"/></svg><span class="tab__label">ホーム</span></a>
+      <a class="tab" href="index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/></svg><span class="tab__label">探す</span></a>
+      <a class="tab" href="reorder.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a8 8 0 0 1 13.7-3.5L20 7"/><path d="M20 4v3h-3"/><path d="M20 16a8 8 0 0 1-13.7 3.5L4 17"/><path d="M4 20v-3h3"/></svg><span class="tab__label">再購入</span></a>
+      <a class="tab" href="favorites.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 1 1 7.1-7.1l.4.4.4-.4a5 5 0 1 1 7.1 7.1Z"/></svg><span class="tab__label">お気に入り</span></a>
+      <a class="tab" href="mypage.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span class="tab__label">マイページ</span></a>
+    </div>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="assets/js/catalog.js?v=39"></script>
+  <script src="assets/js/data.js?v=39"></script>
+  <script src="assets/js/store.js?v=39"></script>
+  <script src="assets/js/components.js?v=39"></script>
+  <script src="assets/js/nav.js?v=39"></script>
+  <script>
+    (function () {
+      var Store = SP.Store, svg = SP.svg;
+      var toast = function (m) { if (window.SP_toast) SP_toast(m); };
+      var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+      var qs = function (s) { return document.querySelector(s); };
+      var COLOR = (SP.DATA.products || []).filter(function (p) { return p.cat === 'color'; });
+      var norm = function (s) { return String(s == null ? '' : s).toLowerCase().replace(/[ぁ-ゖ]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) + 0x60); }).replace(/[！-～]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xfee0); }); };
+
+      var curId = null, search = '', kvIng = [];
+
+      function syncCart() { var n = Store.cartSummary().count + (Store.giftCount ? Store.giftCount() : 0), el = qs('#cartBadge'); if (el) { el.textContent = n; el.hidden = n <= 0; } }
+
+      /* ---------- 一覧 ---------- */
+      function visitSummary(c) {
+        var v = (c.visits || [])[0]; if (!v) return null;
+        var ing = (v.ingredients || []).map(function (i) { return i.name + ' ' + (i.grams || '') + 'g'; }).join(' ＋ ');
+        return { date: v.date, menu: v.menu, ing: ing };
+      }
+      function renderList() {
+        var all = Store.getKarte();
+        var nq = norm(search);
+        var list = nq ? all.filter(function (c) { return norm(c.name + ' ' + (c.hair || '')).indexOf(nq) >= 0; }) : all;
+        var host = qs('#ktCards');
+        if (!list.length) {
+          host.innerHTML = '<div class="kt-empty">' + (nq ? '該当する顧客がいません' : 'まだカルテがありません。<br>「顧客を追加」から登録して、来店ごとにカラーレシピを記録しましょう。') + '</div>';
+          return;
+        }
+        host.innerHTML = list.map(function (c) {
+          var s = visitSummary(c);
+          return '<button class="kt-card" data-id="' + c.id + '">' +
+            '<div class="kt-card__top"><span class="kt-card__n">' + esc(c.name) + '</span><span class="kt-card__d">' + (s ? esc(s.date) : '記録なし') + '</span></div>' +
+            (c.hair ? '<div class="kt-card__hair">' + esc(c.hair) + '</div>' : '') +
+            (s ? '<div class="kt-card__last"><b>前回</b> ' + esc(s.menu || '') + (s.ing ? '：' + esc(s.ing) : '') + '</div>' : '') +
+            '</button>';
+        }).join('');
+      }
+
+      /* ---------- 詳細 ---------- */
+      function show(view) { qs('#viewList').hidden = view !== 'list'; qs('#viewDetail').hidden = view !== 'detail'; window.scrollTo(0, 0); }
+      function openDetail(id) { curId = id; renderDetail(); show('detail'); }
+      function renderDetail() {
+        var c = Store.getKarteCustomer(curId); if (!c) { show('list'); return; }
+        qs('#ktCust').innerHTML =
+          '<div class="kt-cust__top"><div><div class="kt-cust__n">' + esc(c.name) + '</div>' +
+          (c.hair ? '<div class="kt-cust__hair">' + esc(c.hair) + '</div>' : '') +
+          (c.memo ? '<div class="kt-cust__memo">' + esc(c.memo) + '</div>' : '') +
+          '</div><button class="kt-cust__edit" id="ktEdit">編集</button></div>';
+        qs('#ktDup').style.display = (c.visits && c.visits.length) ? '' : 'none';
+        var host = qs('#ktVisits');
+        if (!c.visits || !c.visits.length) { host.innerHTML = '<div class="kt-empty">まだ来店記録がありません。<br>「来店を記録」からカラーレシピを残しましょう。</div>'; return; }
+        host.innerHTML = c.visits.map(function (v) {
+          var ings = (v.ingredients || []).map(function (i) {
+            return '<div class="kt-ing"><span><span class="kt-ing__n">' + esc(i.name) + '</span>' + (i.brand ? ' <span class="kt-ing__b">' + esc(i.brand) + '</span>' : '') + '</span><span class="kt-ing__g">' + (i.grams || 0) + 'g</span></div>';
+          }).join('') || '<div class="kt-ing"><span class="kt-ing__b">薬剤の記録なし</span></div>';
+          var meta = [];
+          if (v.oxy) meta.push('<div>オキシ <b>' + esc(v.oxy) + '</b></div>');
+          if (v.ratio) meta.push('<div>混合比 <b>' + esc(v.ratio) + '</b></div>');
+          if (v.time) meta.push('<div>放置 <b>' + esc(v.time) + '</b></div>');
+          if (v.base) meta.push('<div>部位 <b>' + esc(v.base) + '</b></div>');
+          return '<div class="kt-visit" data-vid="' + v.id + '">' +
+            '<div class="kt-visit__top"><div><div class="kt-visit__date">' + esc(v.date || '') + '</div><div class="kt-visit__menu">' + esc(v.menu || '') + '</div></div><button class="kt-visit__del" data-del="' + v.id + '">削除</button></div>' +
+            '<div class="kt-recipe">' + ings + '</div>' +
+            (meta.length ? '<div class="kt-meta">' + meta.join('') + '</div>' : '') +
+            (v.note ? '<div class="kt-note"><span>調合メモ：</span>' + esc(v.note) + '</div>' : '') +
+            (v.finish ? '<div class="kt-note"><span>仕上がり/申し送り：</span>' + esc(v.finish) + '</div>' : '') +
+            ((v.ingredients && v.ingredients.length) ? '<button class="kt-visit__cart" data-cart="' + v.id + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3h2.2l2.2 12.4a1.6 1.6 0 0 0 1.6 1.3h8.7a1.6 1.6 0 0 0 1.6-1.3L21.5 7H6"/></svg>この材料をカートに追加</button>' : '') +
+            '</div>';
+        }).join('');
+      }
+
+      /* ---------- 顧客モーダル ---------- */
+      var editingCust = null;
+      function openCust(id) {
+        editingCust = id || null;
+        var c = id ? Store.getKarteCustomer(id) : null;
+        qs('#kcTitle').textContent = id ? '顧客を編集' : '顧客を追加';
+        qs('#kcName').value = c ? c.name : '';
+        qs('#kcHair').value = c ? (c.hair || '') : '';
+        qs('#kcMemo').value = c ? (c.memo || '') : '';
+        qs('#kcOv').classList.add('is-open');
+      }
+      function closeCust() { qs('#kcOv').classList.remove('is-open'); }
+      qs('#ktAdd').addEventListener('click', function () { openCust(null); });
+      qs('#kcOv').addEventListener('click', function (e) { if (e.target === qs('#kcOv') || e.target.hasAttribute('data-kc-close')) closeCust(); });
+      qs('#kcSave').addEventListener('click', function () {
+        var name = qs('#kcName').value.trim(); if (!name) { toast('お名前を入力してください'); return; }
+        var patch = { name: name, hair: qs('#kcHair').value.trim(), memo: qs('#kcMemo').value.trim() };
+        if (editingCust) { Store.updateKarteCustomer(editingCust, patch); toast('顧客情報を更新しました'); }
+        else { var r = Store.addKarteCustomer(patch); curId = r.id; toast('顧客を追加しました'); }
+        closeCust(); renderList();
+        if (editingCust || qs('#viewDetail').hidden === false) { renderDetail(); }
+        else { openDetail(curId); }
+      });
+
+      /* ---------- 来店・レシピ モーダル ---------- */
+      function renderRows() {
+        qs('#kvRows').innerHTML = kvIng.map(function (i, idx) {
+          return '<div class="kt-row"><div class="kt-row__b"><div class="kt-row__n">' + esc(i.name) + '</div>' + (i.brand ? '<div class="kt-row__br">' + esc(i.brand) + '</div>' : '') + '</div>' +
+            '<div class="kt-row__g"><input type="number" min="0" max="999" value="' + (i.grams || 0) + '" data-g="' + idx + '" inputmode="numeric"> </div>' +
+            '<span style="font-size:11px;color:var(--ink-3)">g</span>' +
+            '<button class="kt-row__rm" data-rm="' + idx + '" aria-label="削除">✕</button></div>';
+        }).join('');
+      }
+      function openVisit(base) {
+        var c = Store.getKarteCustomer(curId); if (!c) return;
+        qs('#kvSub').textContent = c.name + (base ? '・前回を複製' : '');
+        qs('#kvDate').value = base ? '' : '';
+        qs('#kvMenu').value = base ? (base.menu || '') : '';
+        qs('#kvOxy').value = base ? (base.oxy || '') : '';
+        qs('#kvRatio').value = base ? (base.ratio || '') : '';
+        qs('#kvTime').value = base ? (base.time || '') : '';
+        qs('#kvBase').value = base ? (base.base || '') : '';
+        qs('#kvNote').value = base ? (base.note || '') : '';
+        qs('#kvFinish').value = '';
+        kvIng = base ? (base.ingredients || []).map(function (i) { return { productId: i.productId, name: i.name, brand: i.brand, grams: i.grams }; }) : [];
+        renderRows();
+        qs('#kvSearch').value = ''; qs('#kvMatches').hidden = true;
+        qs('#kvOv').classList.add('is-open');
+      }
+      function closeVisit() { qs('#kvOv').classList.remove('is-open'); }
+      qs('#ktNewVisit').addEventListener('click', function () { openVisit(null); });
+      qs('#ktDup').addEventListener('click', function () { var c = Store.getKarteCustomer(curId); openVisit(c && c.visits && c.visits[0]); });
+      qs('#kvOv').addEventListener('click', function (e) { if (e.target === qs('#kvOv') || e.target.hasAttribute('data-kv-close')) closeVisit(); });
+
+      qs('#kvSearch').addEventListener('input', function () {
+        var nq = norm(this.value.trim()); var box = qs('#kvMatches');
+        if (!nq) { box.hidden = true; return; }
+        var hits = COLOR.filter(function (p) { return norm(p.brand + ' ' + p.name).indexOf(nq) >= 0; }).slice(0, 10);
+        if (!hits.length) { box.innerHTML = '<button disabled style="color:var(--ink-3)">該当なし</button>'; box.hidden = false; return; }
+        box.innerHTML = hits.map(function (p) { return '<button data-add="' + p.id + '"><span>' + esc(p.name) + '</span><span class="b">' + esc(p.brand) + '</span></button>'; }).join('');
+        box.hidden = false;
+      });
+      qs('#kvMatches').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-add]'); if (!b) return;
+        var p = COLOR.find(function (x) { return x.id === b.dataset.add; }); if (!p) return;
+        kvIng.push({ productId: p.id, name: p.name, brand: p.brand, grams: 30 });
+        renderRows();
+        qs('#kvSearch').value = ''; qs('#kvMatches').hidden = true; qs('#kvSearch').focus();
+      });
+      qs('#kvRows').addEventListener('input', function (e) {
+        var g = e.target.closest('[data-g]'); if (!g) return;
+        var idx = +g.dataset.g; if (kvIng[idx]) kvIng[idx].grams = Math.max(0, parseInt(g.value, 10) || 0);
+      });
+      qs('#kvRows').addEventListener('click', function (e) {
+        var rm = e.target.closest('[data-rm]'); if (!rm) return;
+        kvIng.splice(+rm.dataset.rm, 1); renderRows();
+      });
+      qs('#kvSave').addEventListener('click', function () {
+        if (!kvIng.length && !qs('#kvMenu').value.trim()) { toast('メニューか薬剤を入力してください'); return; }
+        Store.addKarteVisit(curId, {
+          date: qs('#kvDate').value.trim() || '日付未設定', menu: qs('#kvMenu').value.trim(),
+          ingredients: kvIng.slice(),
+          oxy: qs('#kvOxy').value.trim(), ratio: qs('#kvRatio').value.trim(), time: qs('#kvTime').value.trim(),
+          base: qs('#kvBase').value.trim(), note: qs('#kvNote').value.trim(), finish: qs('#kvFinish').value.trim()
+        });
+        toast('カラーレシピを保存しました'); closeVisit(); renderDetail(); renderList();
+      });
+
+      /* ---------- イベント委譲 ---------- */
+      qs('#ktCards').addEventListener('click', function (e) { var c = e.target.closest('[data-id]'); if (c) openDetail(c.dataset.id); });
+      qs('#ktSearch').addEventListener('input', function () { search = this.value; renderList(); });
+      qs('#ktBack').addEventListener('click', function () { show('list'); renderList(); });
+      qs('#viewDetail').addEventListener('click', function (e) {
+        if (e.target.closest('#ktEdit')) { openCust(curId); return; }
+        var del = e.target.closest('[data-del]');
+        if (del) { if (confirm('この来店記録を削除しますか？')) { Store.removeKarteVisit(curId, del.dataset.del); renderDetail(); renderList(); } return; }
+        var cart = e.target.closest('[data-cart]');
+        if (cart) {
+          var c = Store.getKarteCustomer(curId); var v = (c.visits || []).find(function (x) { return x.id === cart.dataset.cart; });
+          if (!v) return; var n = 0;
+          (v.ingredients || []).forEach(function (i) {
+            var p = i.productId && (SP.DATA.products || []).find(function (x) { return x.id === i.productId; });
+            if (!p) { var nq = norm(i.name); p = (SP.DATA.products || []).find(function (x) { return norm(x.brand + ' ' + x.name).indexOf(nq) >= 0; }); }
+            if (p) { Store.addToCart(p.id, 1); n++; }
+          });
+          toast(n ? (n + '点の薬剤をカートに追加しました（数量はカートで調整）') : 'カタログに見つかりませんでした');
+        }
+      });
+
+      renderList();
+      syncCart();
+      Store.subscribe(syncCart);
+      // ?id= で直接詳細を開く
+      var qid = new URLSearchParams(location.search).get('id');
+      if (qid && Store.getKarteCustomer(qid)) openDetail(qid);
+    })();
+  </script>
+</body>
+</html>
