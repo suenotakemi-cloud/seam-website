@@ -2702,7 +2702,7 @@
     </div>
     <ol class="featured-track">
       <li class="featured-card">
-        <a href="https://www.milbon.co.jp" target="_blank" rel="noopener">
+        <a href="#productModeWrap" data-pm-brand="Aujua">
           <div class="featured-img"><img src="images/logo_aujua_t.png" alt="Aujua オージュア" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
@@ -2713,7 +2713,7 @@
         </a>
       </li>
       <li class="featured-card">
-        <a href="https://www.hoyu-professional.com" target="_blank" rel="noopener">
+        <a href="#productModeWrap" data-pm-brand="BYKARTE">
           <div class="featured-img"><img src="images/logo_bykarte_t.png" alt="BYKARTE バイカルテ" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
@@ -2724,7 +2724,7 @@
         </a>
       </li>
       <li class="featured-card">
-        <a href="https://www.shiseido-professional.com" target="_blank" rel="noopener">
+        <a href="#productModeWrap" data-pm-brand="SUBLIMIC">
           <div class="featured-img"><img src="images/logo_sublimic_t.png" alt="SUBLIMIC サブリミック" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
@@ -2735,7 +2735,7 @@
         </a>
       </li>
       <li class="featured-card">
-        <a href="https://www.wella.com" target="_blank" rel="noopener">
+        <a href="#productModeWrap" data-pm-brand="System Professional">
           <div class="featured-img"><img src="images/logo_system_professional_t.png" alt="SYSTEM PROFESSIONAL システムプロフェッショナル" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="featured.partialboth">一部店舗 & オンライン</span>
@@ -2746,7 +2746,7 @@
         </a>
       </li>
       <li class="featured-card">
-        <a href="https://www.ifing.com" target="_blank" rel="noopener">
+        <a href="#productModeWrap" data-pm-brand="TOKIO INKARAMI">
           <div class="featured-img"><img src="images/logo_tokio_inkarami_t.png" alt="TOKIO INKARAMI トキオ インカラミ" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
@@ -2757,7 +2757,7 @@
         </a>
       </li>
       <li class="featured-card">
-        <a href="https://www.milbon.co.jp" target="_blank" rel="noopener">
+        <a href="#productModeWrap" data-pm-brand="Global Milbon">
           <div class="featured-img"><img src="images/logo_global_milbon_t.png" alt="GLOBAL MILBON グローバルミルボン" loading="lazy" width="212" height="159"></div>
           <div class="featured-meta">
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">店舗・オンライン両方</span>
@@ -5128,11 +5128,60 @@ window.SEAM_PAGE_I18N = {
     });
   }
 
+  /* ─── Featured ブランド → そのブランドの商品一覧へ ─── */
+  async function showBrandProducts(brandName) {
+    // 商品モードへ切替（モードトグルと同じ状態に）
+    const buttons = document.querySelectorAll('.mode-toggle-btn');
+    buttons.forEach(b => {
+      const on = b.dataset.mode === 'product';
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-selected', on);
+    });
+    document.body.classList.add('product-mode-on');
+    const productWrap = document.getElementById('productModeWrap');
+    if (productWrap) productWrap.classList.add('is-active');
+    renderStaticFilters();
+    if (allProducts.length === 0) await loadData();
+    // 指定ブランドのみで絞り込み
+    filters.category = null;
+    filters.functions.clear();
+    filters.brands.clear();
+    if (brandName) filters.brands.add(brandName);
+    visibleCount = PAGE_SIZE;
+    updateChipStates();
+    applyAndRender();
+    // 商品グリッドへスクロール（scroll-behavior:smooth + 描画直後の競合を避け、遅延+instant+scrollTop直接代入で確実に着地）
+    if (productWrap) {
+      setTimeout(() => {
+        const y = productWrap.getBoundingClientRect().top + window.pageYOffset - 56;
+        const html = document.documentElement;
+        const prev = html.style.scrollBehavior;
+        html.style.scrollBehavior = 'auto';
+        html.scrollTop = y;
+        window.scrollTo(0, y);
+        setTimeout(() => { html.style.scrollBehavior = prev; }, 60);
+      }, 90);
+    }
+  }
+  window.seamShowBrandProducts = showBrandProducts;
+
+  function bindFeaturedBrands() {
+    document.querySelectorAll('[data-pm-brand]').forEach(el => {
+      if (el.dataset.pmBound) return;
+      el.dataset.pmBound = '1';
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        showBrandProducts(el.dataset.pmBrand);
+      });
+    });
+  }
+
   /* ─── 初期化 ─── */
+  function initAll() { bindModeToggle(); bindFeaturedBrands(); }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bindModeToggle);
+    document.addEventListener('DOMContentLoaded', initAll);
   } else {
-    bindModeToggle();
+    initAll();
   }
 })();
 </script>
