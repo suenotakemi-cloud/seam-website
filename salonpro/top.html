@@ -16,14 +16,6 @@
     .gold { color: var(--gold-strong); }
     .icon-btn__label { display: block; font-size: 11px; font-weight: 700; color: var(--ink-2); margin-top: 2px; text-align: center; }
 
-    /* 細い登録帯 */
-    .reg-strip { background: linear-gradient(90deg, #20212a, var(--dark)); color: #fff; }
-    .reg-strip__in { max-width: 1100px; margin-inline: auto; display: flex; align-items: center; gap: 12px; padding: 10px 16px; }
-    .reg-strip__t { font-size: 12.5px; line-height: 1.45; flex: 1 1 auto; }
-    .reg-strip__t b { color: var(--gold); }
-    .reg-strip__t small { display: block; color: #aeb5c2; font-size: 10.5px; }
-    .reg-strip__btn { flex: none; background: var(--gold); color: #1b1b1d; font-weight: 800; font-size: 12.5px; border-radius: var(--r-pill); padding: 9px 16px; white-space: nowrap; }
-    .reg-strip__btn:hover { background: #cdab57; }
     /* お知らせバー（菊地の告知・スリムで邪魔しない） */
     .news-bar { display: flex; align-items: center; gap: 8px; background: #fff; border-bottom: 1px solid var(--line); padding: 8px 12px; }
     .news-bar__l { flex: none; display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; color: var(--gold-strong); }
@@ -159,6 +151,45 @@
     .sem-row__m { font-size: 11px; color: var(--ink-3); margin-top: 3px; }
     .sem-row__tag { flex: none; font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 9px; }
     .sem-row__tag--live { background: #fde7e9; color: #d8392b; } .sem-row__tag--venue { background: #eaf1fb; color: #34507a; } .sem-row__tag--keiei { background: #eef2f7; color: #5b6473; } .sem-row__tag--maker { background: var(--gold-soft); color: var(--gold-strong); }
+
+    /* FV 登録メリット（差別化3点＋CTA） */
+    .reg-hero { background: linear-gradient(120deg, #20212a, var(--dark)); color: #fff; }
+    .reg-hero__in { max-width: 1100px; margin-inline: auto; padding: 15px 16px 17px; }
+    .reg-hero__badge { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .04em; color: var(--gold); border: 1px solid rgba(201,162,74,.5); border-radius: var(--r-pill); padding: 3px 10px; }
+    .reg-hero__h { font-size: clamp(17px, 4.6vw, 23px); font-weight: 900; line-height: 1.3; margin-top: 9px; }
+    .reg-hero__h .gold { color: var(--gold); }
+    .reg-hero__sub { font-size: 11.5px; color: #aeb5c2; margin-top: 5px; }
+    .reg-hero__feats { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 13px 0; }
+    @media (min-width: 620px) { .reg-hero__feats { grid-template-columns: repeat(3, 1fr); } }
+    .rhf { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); border-radius: var(--r-md); padding: 10px 12px; }
+    .rhf__ic { flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--gold-soft); color: var(--dark); display: flex; align-items: center; justify-content: center; }
+    .rhf__ic svg { width: 17px; height: 17px; }
+    .rhf b { display: block; font-size: 12.5px; font-weight: 800; }
+    .rhf small { display: block; font-size: 10.5px; color: #aeb5c2; margin-top: 1px; }
+    .reg-hero__cta { display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--gold); color: #1b1b1d; font-weight: 900; font-size: 14.5px; border-radius: var(--r-md); padding: 13px 18px; text-decoration: none; }
+    .reg-hero__cta:hover { background: #cdab57; }
+    @media (min-width: 620px) { .reg-hero__cta { max-width: 360px; margin-inline: auto; } }
+
+    /* 信頼バー（実績の可視化＝集客の武器） */
+    .trust-bar { background: #fff; border-bottom: 1px solid var(--line); }
+    .trust-bar__in { max-width: 1100px; margin-inline: auto; display: flex; overflow-x: auto; scroll-snap-type: x proximity; }
+    .trust-bar__in::-webkit-scrollbar { height: 0; }
+    .tb { flex: 1 0 auto; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px; padding: 10px 16px; border-right: 1px solid var(--line); white-space: nowrap; }
+    .tb:last-child { border-right: 0; }
+    .tb svg { width: 16px; height: 16px; color: var(--gold-strong); }
+    .tb b { font-size: 12.5px; font-weight: 900; color: var(--ink); }
+    .tb small { font-size: 10px; color: var(--ink-3); }
+
+    /* 中間CTA（登録への背中押し） */
+    .mid-cta { background: linear-gradient(120deg, var(--dark), #2a2230); color: #fff; margin-top: 10px; }
+    .mid-cta__in { max-width: 1100px; margin-inline: auto; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+    @media (min-width: 680px) { .mid-cta__in { flex-direction: row; align-items: center; justify-content: space-between; } }
+    .mid-cta__t { font-size: var(--fs-16); font-weight: 900; line-height: 1.4; }
+    .mid-cta__t small { display: block; font-size: 12px; font-weight: 600; color: #c9ced8; margin-top: 4px; }
+    .mid-cta__btn { flex: none; background: var(--gold); color: #1b1b1d; font-weight: 900; font-size: 14px; border-radius: var(--r-md); padding: 13px 22px; text-decoration: none; white-space: nowrap; }
+    .mid-cta__btn:hover { background: #cdab57; }
+    .mid-cta--soft { background: var(--gold-soft); color: var(--ink); border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line); }
+    .mid-cta--soft .mid-cta__t small { color: var(--ink-2); }
   </style>
 </head>
 <body>
@@ -178,11 +209,18 @@
     </div>
   </header>
 
-  <!-- 細い登録帯（離脱を防ぎつつ登録へ） -->
-  <div class="reg-strip">
-    <div class="reg-strip__in">
-      <div class="reg-strip__t"><b>プロ専用の仕入れサイト</b>｜無料会員登録で会員価格・最短当日出荷・掛け払い<small>美容師免許・学生証の確認制／登録は最短1分</small></div>
-      <a class="reg-strip__btn" href="register.html">無料で会員登録 ›</a>
+  <!-- FV 登録メリット（離脱前に「なぜ登録すべきか」を差別化3点＋CTAで強く訴求） -->
+  <div class="reg-hero">
+    <div class="reg-hero__in">
+      <span class="reg-hero__badge">プロ専用・無料会員制</span>
+      <div class="reg-hero__h">いつもの仕入れを、<span class="gold">もっと安く・速く・楽に。</span></div>
+      <div class="reg-hero__sub">美容師免許・学生証の確認制／登録は最短1分・費用0円。一般には販売しないプロ専用サイトです。</div>
+      <div class="reg-hero__feats">
+        <div class="rhf"><span class="rhf__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.5a1.8 1.8 0 0 1 0 3.5H10a1.8 1.8 0 0 0 0 3.5h3.5"/></svg></span><div><b>会員価格をオープン</b><small>登録前から見える明朗価格</small></div></div>
+        <div class="rhf"><span class="rhf__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h11v9H3zM14 9h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17.5" cy="18" r="1.6"/></svg></span><div><b>最短当日出荷</b><small>13時までのご注文</small></div></div>
+        <div class="rhf"><span class="rhf__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/></svg></span><div><b>掛け払い 初回から</b><small>月末締め・翌月払い</small></div></div>
+      </div>
+      <a class="reg-hero__cta" href="register.html">無料で会員登録（最短1分）›</a>
     </div>
   </div>
 
@@ -204,6 +242,16 @@
 
   <!-- トップヒーロー（新商品・PR・キャンペーンを大きく訴求／自動切替） -->
   <section class="thero" id="thero" aria-label="新商品・キャンペーン"></section>
+
+  <!-- 信頼バー（実績を上部で可視化＝集客の武器。運営会社まで行かなくても伝わる） -->
+  <div class="trust-bar">
+    <div class="trust-bar__in">
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8-4.3-4.1 5.9-.9z"/></svg><b>北海道シェア No.1</b><small>※自社調べ・総合美容ディーラー</small></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m3 7 9 5 9-5"/></svg><b>約100社／30,000点</b><small>取扱メーカー・商品数</small></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.4-3 7.7-7 9-4-1.3-7-4.6-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg><b>メーカー正規代理店</b><small>正規品・並行輸入なし</small></div>
+      <div class="tb"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><b>美容師免許で厳格審査</b><small>プロ専用の安心</small></div>
+    </div>
+  </div>
 
   <!-- カテゴリから探す -->
   <section class="sec">
@@ -239,6 +287,14 @@
     <div class="sec__in">
       <div class="sec__head"><div class="sec__ttl">人気ランキング<small>よく注文されている商品</small></div><a class="sec__more" href="index.html">もっと見る ›</a></div>
       <div class="prow" id="rankRow"></div>
+    </div>
+  </section>
+
+  <!-- 中間CTA①（商品・価格を見た直後に登録へ背中押し） -->
+  <section class="mid-cta">
+    <div class="mid-cta__in">
+      <div class="mid-cta__t">気になる商品はありましたか？<small>無料登録で、すべて会員価格・最短当日出荷・掛け払いでご注文いただけます。</small></div>
+      <a class="mid-cta__btn" href="register.html">無料で会員登録（最短1分）›</a>
     </div>
   </section>
 
@@ -280,6 +336,14 @@
         <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/cat_salon.jpg" alt="サロンタイプから探す" loading="lazy"></div><div class="find__b"><div class="find__t">サロンタイプから探す</div><div class="find__s">規模・業態で提案</div></div></a>
         <a class="find" href="learn.html"><div class="find__media"><img src="assets/img/kikuchi/people.png" alt="学ぶ・セミナー" loading="lazy"></div><div class="find__b"><div class="find__t">学ぶ・セミナー</div><div class="find__s">技術・経営をオンラインで</div></div></a>
       </div>
+    </div>
+  </section>
+
+  <!-- 中間CTA②（回遊の終盤・出荷情報の手前でもう一押し） -->
+  <section class="mid-cta mid-cta--soft">
+    <div class="mid-cta__in">
+      <div class="mid-cta__t">登録は最短1分・費用0円。<small>美容師免許・学生証の確認だけで、今日から会員価格・掛け払いで発注できます。</small></div>
+      <a class="mid-cta__btn" href="register.html">無料で会員登録する ›</a>
     </div>
   </section>
 
