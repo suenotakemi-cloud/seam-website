@@ -53,5 +53,10 @@ jobs:
           # (付けると生成css が本番に出ない)。css出力はトリガー外＋GITHUB_TOKEN pushは
           # 新workflow非起動でループしない(update-ranking同様[skip ci]無しbotコミットは自動配信)。
           git commit -m "build: prebuild tailwind.css"
-          git pull --rebase origin main
-          git push
+          # build-i18n等が同じ*.html pushで同時起動しpushを奪い合うため、pull --rebase→pushをリトライ
+          pushed=0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && { pushed=1; break; }
+            echo "push attempt $i rejected, retrying..."; sleep $((i * 3))
+          done
+          [ "$pushed" = "1" ] || { echo "push failed after retries"; exit 1; }

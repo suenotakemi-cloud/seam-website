@@ -53,5 +53,10 @@ jobs:
           # （付けると生成物が本番に出ない）。en/zh/tw/ko/sitemap はこのworkflowのトリガーパス外
           # ＋GITHUB_TOKENのpushは新規workflowを起動しないため、ループにはならない。
           git commit -m "build: prerender 多言語ページ en/zh/tw/ko"
-          git pull --rebase origin main
-          git push
+          # build-tailwind等が同じ*.html pushで同時起動しpushを奪い合うため、pull --rebase→pushをリトライ
+          pushed=0
+          for i in 1 2 3 4 5; do
+            git pull --rebase origin main && git push && { pushed=1; break; }
+            echo "push attempt $i rejected, retrying..."; sleep $((i * 3))
+          done
+          [ "$pushed" = "1" ] || { echo "push failed after retries"; exit 1; }
