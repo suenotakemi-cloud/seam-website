@@ -113,6 +113,33 @@ def page_graph(cfg):
             for i, (n, u) in enumerate(cfg["crumbs"])
         ],
     })
+    if cfg.get("webApp"):
+        wa = cfg["webApp"]
+        g.append({
+            "@type": "WebApplication",
+            "@id": cfg["url"] + "#app",
+            "name": wa["name"],
+            "url": cfg["url"],
+            "applicationCategory": "LifestyleApplication",
+            "operatingSystem": "Web",
+            "browserRequirements": "Requires JavaScript",
+            "inLanguage": "ja",
+            "isAccessibleForFree": True,
+            "offers": {"@type": "Offer", "price": "0", "priceCurrency": "JPY"},
+            "description": wa["desc"],
+            "provider": {"@id": ORG_ID},
+            "publisher": {"@id": ORG_ID},
+        })
+    if cfg.get("faq"):
+        g.append({
+            "@type": "FAQPage",
+            "@id": cfg["url"] + "#faq",
+            "mainEntity": [
+                {"@type": "Question", "name": q,
+                 "acceptedAnswer": {"@type": "Answer", "text": a}}
+                for (q, a) in cfg["faq"]
+            ],
+        })
     if cfg.get("stores"):
         for s in STORES:
             g.append(hairsalon_node(s))
@@ -133,7 +160,17 @@ PAGES = {
     "brand.html": {"url": BASE + "/brand", "name": "取扱ブランド | SEAM", "pageType": "CollectionPage",
                    "crumbs": [HOME, ("取扱ブランド", BASE + "/brand")]},
     "finder.html": {"url": BASE + "/finder", "name": "髪格診断 | SEAM",
-                    "crumbs": [HOME, ("髪格診断", BASE + "/finder")]},
+                    "crumbs": [HOME, ("髪格診断", BASE + "/finder")],
+                    "webApp": {
+                        "name": "SEAM 髪格診断",
+                        "desc": "髪の太さ・量・動き(くせ)から導く27タイプの無料の髪質診断 あなたの髪格と 今に合うシャンプー・トリートメント・アウトバスをプロの知識で提案します 会員登録不要",
+                    },
+                    "faq": [
+                        ("SEAMの髪格診断は無料ですか", "はい 会員登録なしで無料でご利用いただけます いくつかの質問に答えるだけで あなたの髪格27タイプと 今に合うケアの方向が見えてきます"),
+                        ("髪格診断では何が分かりますか", "髪の太さ・量・動き(くせ)から導く27タイプの髪格と あなたの髪に合うシャンプー・トリートメント・アウトバスの方向性が分かります 結果はカルテとして保存でき サロンでもそのまま使えます"),
+                        ("診断結果はサロンで使えますか", "はい 診断のカルテを店頭でお見せいただくと 結果を踏まえてプロが直接あなたの髪を見ながら 合うアイテムをご相談いただけます"),
+                        ("スマートフォンでもできますか", "はい スマートフォン・タブレット・PCのブラウザでご利用いただけます アプリのインストールは不要です"),
+                    ]},
     "onlineshop.html": {"url": BASE + "/onlineshop", "name": "オンラインショップ | SEAM",
                         "crumbs": [HOME, ("オンラインショップ", BASE + "/onlineshop")]},
 }
