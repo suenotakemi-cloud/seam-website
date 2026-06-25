@@ -165,13 +165,13 @@
     { id:'pm-14', cat:'perm', permType:'treat',     brand:'ハホニコ',   name:'パーマ用 前処理剤（CMC）500mL',             price:1650, stock:'in', badge:null,      pop:54, added:38, same:true, ph:{shape:'pump',  tint:'#c8b89a', label:'処理'} },
 
     /* ===== ストレート剤（straightType＝アルカリ縮毛/酸性/クリープ/コスメ/2剤/処理剤） ===== */
-    { id:'st-1',  cat:'straight', straightType:'alkaline', brand:'ミルボン',   name:'リシオ 縮毛矯正 1剤 N（軟化）400g',        price:2090, stock:'in', badge:'popular', pop:90, added:66, same:true, ph:{shape:'tube', tint:'#3a6ea5', label:'縮毛'} },
+    { id:'st-1',  cat:'straight', straightType:'alkaline', brand:'ミルボン', maker:'ミルボン', line:'リシオ',  name:'リシオ 縮毛矯正 1剤 N（軟化）400g',        price:2090, stock:'in', badge:'popular', pop:90, added:66, same:true, ph:{shape:'tube', tint:'#3a6ea5', label:'縮毛'} },
     { id:'st-2',  cat:'straight', straightType:'alkaline', brand:'ナプラ',     name:'エヌドット 縮毛矯正 1剤 ストロング 400g',  price:1760, stock:'in', badge:null,      pop:78, added:56, same:true, ph:{shape:'tube', tint:'#3a6ea5', label:'縮毛'} },
     { id:'st-3',  cat:'straight', straightType:'acid',     brand:'ナンバースリー', name:'酸性ストレート 1剤（ダメージ毛用）400g', price:2420, stock:'in', badge:'new',  pop:80, added:92, same:true, ph:{shape:'tube', tint:'#b5764a', label:'酸性'} },
     { id:'st-4',  cat:'straight', straightType:'acid',     brand:'ホーユー',   name:'プロマスター 酸性ストレート 1剤 400g',     price:2200, stock:'in', badge:null,      pop:66, added:50, same:true, ph:{shape:'tube', tint:'#b5764a', label:'酸性'} },
     { id:'st-5',  cat:'straight', straightType:'creep',    brand:'ミルボン',   name:'クリープ系 ストレート 1剤（質感重視）400g', price:2530, stock:'order', badge:null,  pop:60, added:46, same:false, ph:{shape:'tube', tint:'#7a6ea5', label:'CREEP'} },
     { id:'st-6',  cat:'straight', straightType:'cosme',    brand:'ナプラ',     name:'コスメストレート ソフト 1剤（化粧品）400g', price:1430, stock:'in', badge:null,     pop:58, added:42, same:true, ph:{shape:'tube', tint:'#8a9a6b', label:'COSME'} },
-    { id:'st-7',  cat:'straight', straightType:'straight2', brand:'ミルボン',  name:'リシオ ストレート 2剤（臭素酸）400g',      price:1100, stock:'in', badge:null,     pop:64, added:48, same:true, ph:{shape:'tube', tint:'#cfd3da', label:'2剤'} },
+    { id:'st-7',  cat:'straight', straightType:'straight2', brand:'ミルボン', maker:'ミルボン', line:'リシオ', name:'リシオ ストレート 2剤（臭素酸）400g',      price:1100, stock:'in', badge:null,     pop:64, added:48, same:true, ph:{shape:'tube', tint:'#cfd3da', label:'2剤'} },
     { id:'st-8',  cat:'straight', straightType:'straight2', brand:'ナプラ',    name:'エヌドット ストレート 2剤 400g',           price:990,  stock:'in', badge:null,     pop:56, added:40, same:true, ph:{shape:'tube', tint:'#dde0e6', label:'2剤'} },
     { id:'st-9',  cat:'straight', straightType:'treat',    brand:'ハホニコ',   name:'縮毛矯正 前処理 ケラチン 500mL',           price:1980, stock:'in', badge:null,     pop:52, added:38, same:true, ph:{shape:'pump', tint:'#c8b89a', label:'処理'} },
     { id:'st-10', cat:'straight', straightType:'treat',    brand:'ハホニコ',   name:'酸熱トリートメント（後処理）500mL',         price:3300, stock:'in', badge:null,     pop:62, added:60, same:true, ph:{shape:'pump', tint:'#b8a07a', label:'酸熱'} },
@@ -295,6 +295,14 @@
     { line: 'オルディーブ', maker: 'ミルボン', type: 'alkaline', families: [
       { family: 'ベージュ', tint: '#b9a78a', levels: [6, 8, 10] },
       { family: 'アッシュ', tint: '#6b7280', levels: [6, 8, 10] },
+      { family: 'ピンク', tint: '#cf7a93', levels: [8, 10, 12] },
+    ] },
+    // アリミノのファッションカラー。美容師は「アリミノのアドミオ」と呼ぶ（カラーストーリー＝シリーズ名は知らない人も多い）→ line＝アドミオ で メーカー直下に。
+    { line: 'アドミオ', maker: 'アリミノ', type: 'alkaline', families: [
+      { family: 'アッシュ', tint: '#6b7280', levels: [5, 7, 9, 11] },
+      { family: 'マットアッシュ', tint: '#6f7350', levels: [7, 9, 11] },
+      { family: 'ベージュ', tint: '#b9a78a', levels: [7, 9, 11] },
+      { family: 'グレージュ', tint: '#9a8a78', levels: [7, 9, 11] },
       { family: 'ピンク', tint: '#cf7a93', levels: [8, 10, 12] },
     ] },
     { line: 'プロマスターEX', maker: 'ホーユー', type: 'alkaline', families: [

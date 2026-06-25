@@ -25,6 +25,7 @@
     colorLevel: null,  // 色味×明るさ横断：選択中の明るさ（level）
     typeSel: {},       // タイプ・チップの選択（カテゴリ別：shampoo/treatment/outbath/styling/perm/straight）
     sizeSel: {},       // 容量（サイズ）チップの選択（カテゴリ別。タイプ×サイズの掛け合わせ）
+    series: null,      // シリーズ（メーカー選択中の製品ライン：アドミオ/リシオ/モイスト等）でさらに絞る
     filters: { stock: new Set(), price: null, sameDay: false, concern: new Set() },
   };
 
@@ -226,6 +227,14 @@
   const colorShades = (line, family) => colorAll().filter(p => p.line === line && p.family === family).sort((a, b) => a.level - b.level);
   const inColorDrill = () => state.cat === 'color' && !inSearch() && !state.brand;
 
+  // シリーズ（メーカーの中の製品ライン）を導出。美容師の頭の中の「メーカー→シリーズ→商品」に合わせる。
+  // 例：アリミノ→アドミオ（カラー）／ミルボン→リシオ（ストレート）／アリミノ→モイスト（シャンプー）。
+  const seriesOf = (p) => {
+    const mk = p.maker || p.brand;
+    if (p.line && p.line !== mk) return p.line;
+    if (p.brand && p.brand !== mk) return p.brand;
+    return null;
+  };
   function filtered() {
     let list = base();
     if (inSearch()) {
@@ -233,6 +242,8 @@
     }
     // ブランド絞り込みは brand／メーカー／ライン を横断一致（例：「ミルボン」＝メーカー＝アディクシー等 傘下も含む）
     if (state.brand) { const b = state.brand; list = list.filter(p => p.brand === b || p.maker === b || p.line === b); }
+    // シリーズ絞り込み（メーカーの中の製品ライン）。該当が無い選択は自己解除（カテゴリ/ブランド切替時の取り残し防止）。
+    if (state.series) { const w = list.filter(p => seriesOf(p) === state.series); if (w.length) list = w; else state.series = null; }
     if (state.filters.stock.size) list = list.filter(p => state.filters.stock.has(p.stock));
     if (state.filters.price) {
       const r = PRICE_RANGES.find(x => x.id === state.filters.price);
@@ -264,14 +275,14 @@
   }
 
   const hasActiveFilter = () =>
-    state.brand || state.filters.stock.size || state.filters.price || state.filters.sameDay || state.filters.concern.size
+    state.brand || state.series || state.filters.stock.size || state.filters.price || state.filters.sameDay || state.filters.concern.size
     || !!(TYPE_CATS[state.cat] && (state.typeSel[state.cat] || state.sizeSel[state.cat]));
 
   /* ---------------- render ---------------- */
   const PAGE_SIZE = 60;          // 一覧の初回描画件数（DOM肥大・INP対策。以降は「もっと見る」で追加）
   let renderPage = 1, lastSig = '';
   function renderSig() {
-    return JSON.stringify([state.cat, state.brand, state.brandAll, state.search, state.sort,
+    return JSON.stringify([state.cat, state.brand, state.brandAll, state.series, state.search, state.sort,
       [...state.filters.stock], state.filters.price, state.filters.sameDay, [...state.filters.concern],
       state.typeSel[state.cat] || '', state.sizeSel[state.cat] || '']);
   }
@@ -385,7 +396,19 @@
     return { list: c.list(), key: c.key, sel: state.typeSel[state.cat] || null };
   };
   // タイプ/容量チップの母集合。ブランド絞り込み中はそのブランド（brand/メーカー/ライン）に限定＝件数も連動
-  const inCatProducts = () => DATA.products.filter(p => p.cat === state.cat && Store.canShow(p) && Store.dealerVisible(p) && (!state.brand || p.brand === state.brand || p.maker === state.brand || p.line === state.brand));
+  const inCatProducts = () => DATA.products.filter(p => p.cat === state.cat && Store.canShow(p) && Store.dealerVisible(p) && (!state.brand || p.brand === state.brand || p.maker === state.brand || p.line === state.brand) && (!state.series || seriesOf(p) === state.series));
+  // 現在のカテゴリ×選択メーカー内の「シリーズ」一覧（件数つき）。シリーズ選択は反映しない＝常に全シリーズを出して切替可能に。
+  const seriesItems = () => {
+    if (!state.brand) return [];
+    const b = state.brand;
+    const m = new Map();
+    DATA.products.forEach(p => {
+      if (p.cat !== state.cat || !Store.canShow(p) || !Store.dealerVisible(p)) return;
+      if (!(p.brand === b || p.maker === b || p.line === b)) return;
+      const s = seriesOf(p); if (s && s !== b) m.set(s, (m.get(s) || 0) + 1);
+    });
+    return [...m.entries()].map(([id, n]) => ({ id, label: id, n })).sort((a, b) => b.n - a.n);
+  };
   // タイプ件数は現在の容量選択を、容量件数は現在のタイプ選択を反映（相互連動＝掛け合わせ件数）
   const typeCountCtx = (key, id) => { const ss = state.sizeSel[state.cat]; return inCatProducts().filter(p => p[key] === id && (!ss || p.sizeBucket === ss)).length; };
   const sizeCountCtx = (bid) => { const c = TYPE_CATS[state.cat], ts = state.typeSel[state.cat]; return inCatProducts().filter(p => p.sizeBucket === bid && (!ts || p[c.key] === ts)).length; };
@@ -398,27 +421,35 @@
   function renderTypeChips() {
     let host = qs('#typeChips');
     const cfg = (!crossCat()) ? typeCfg() : null;
-    if (!cfg) { if (host) host.hidden = true; return; }
+    const sItems = (!crossCat()) ? seriesItems() : [];
+    if (!cfg && !sItems.length) { if (host) host.hidden = true; return; }
     if (!host) {
       if (!qs('#typeChipsStyle')) {
         const s = document.createElement('style'); s.id = 'typeChipsStyle';
-        s.textContent = '.type-chips{display:flex;flex-direction:column;gap:7px;padding:2px 0 12px}.tc-row{display:flex;align-items:center;gap:8px}.tc-row__l{flex:none;font-size:11px;font-weight:800;color:var(--ink-3);width:36px}.tc-row__chips{display:flex;gap:8px;overflow-x:auto;min-width:0}.tc-row__chips::-webkit-scrollbar{height:0}.type-chips .tchip{flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface-2);font-size:12.5px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap}.type-chips .tchip.is-on{background:var(--gold);border-color:var(--gold);color:#fff}.type-chips .tchip__n{font-size:11px;font-weight:800;opacity:.6}.type-chips .tchip.is-on .tchip__n{opacity:.9}';
+        s.textContent = '.type-chips{display:flex;flex-direction:column;gap:7px;padding:2px 0 12px}.tc-row{display:flex;align-items:center;gap:8px}.tc-row__l{flex:none;font-size:11px;font-weight:800;color:var(--ink-3);width:46px;white-space:nowrap}.tc-row__chips{display:flex;gap:8px;overflow-x:auto;min-width:0}.tc-row__chips::-webkit-scrollbar{height:0}.type-chips .tchip{flex:none;display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 13px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface-2);font-size:12.5px;font-weight:700;color:var(--ink-2);cursor:pointer;white-space:nowrap}.type-chips .tchip.is-on{background:var(--gold);border-color:var(--gold);color:#fff}.type-chips .tchip__n{font-size:11px;font-weight:800;opacity:.6}.type-chips .tchip.is-on .tchip__n{opacity:.9}';
         document.head.appendChild(s);
       }
       host = document.createElement('div'); host.id = 'typeChips'; host.className = 'type-chips';
       const grid = qs('#grid'); grid.parentNode.insertBefore(host, grid);
       host.addEventListener('click', e => {
+        const seb = e.target.closest('[data-serieschip]');
         const tb = e.target.closest('[data-typechip]');
         const sb = e.target.closest('[data-sizechip]');
-        if (tb) { const v = tb.dataset.typechip; state.typeSel[state.cat] = (v === '__all') ? null : v; render(); }
+        if (seb) { const v = seb.dataset.serieschip; state.series = (v === '__all') ? null : v; render(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+        else if (tb) { const v = tb.dataset.typechip; state.typeSel[state.cat] = (v === '__all') ? null : v; render(); }
         else if (sb) { const v = sb.dataset.sizechip; state.sizeSel[state.cat] = (v === '__all') ? null : v; render(); }
       });
     }
     host.hidden = false;
-    let html = chipRow('タイプ', cfg.list.map(t => ({ id: t.id, label: t.label, n: typeCountCtx(cfg.key, t.id) })), 'typechip', cfg.sel);
-    // 容量（サイズ）行：このカテゴリに容量が付く商品があるときだけ表示
-    const sizeItems = SIZE_BUCKETS.map(b => ({ id: b.id, label: b.label, n: sizeCountCtx(b.id) }));
-    if (sizeItems.some(x => x.n > 0)) html += chipRow('容量', sizeItems, 'sizechip', state.sizeSel[state.cat] || null);
+    let html = '';
+    // シリーズ行（メーカー選択中＝「アリミノ→アドミオ」等のサブブランドで絞れる）。最優先で先頭に。
+    if (sItems.length) html += chipRow('シリーズ', sItems, 'serieschip', state.series);
+    if (cfg) {
+      html += chipRow('タイプ', cfg.list.map(t => ({ id: t.id, label: t.label, n: typeCountCtx(cfg.key, t.id) })), 'typechip', cfg.sel);
+      // 容量（サイズ）行：このカテゴリに容量が付く商品があるときだけ表示
+      const sizeItems = SIZE_BUCKETS.map(b => ({ id: b.id, label: b.label, n: sizeCountCtx(b.id) }));
+      if (sizeItems.some(x => x.n > 0)) html += chipRow('容量', sizeItems, 'sizechip', state.sizeSel[state.cat] || null);
+    }
     host.innerHTML = html;
   }
 
@@ -582,6 +613,7 @@
     const host = qs('#activeFilters');
     const chips = [];
     if (state.brand) chips.push(chip('brand', 'ブランド：' + state.brand));
+    if (state.series) chips.push(chip('series', 'シリーズ：' + state.series));
     state.filters.stock.forEach(s => chips.push(chip('stock:' + s, (STOCK_OPTS.find(o => o.id === s) || {}).label)));
     if (state.filters.price) chips.push(chip('price', (PRICE_RANGES.find(p => p.id === state.filters.price) || {}).label));
     if (state.filters.sameDay) chips.push(chip('same', '当日出荷可'));
@@ -888,8 +920,9 @@
       const b = e.target.closest('[data-clear]');
       if (!b) return;
       const key = b.dataset.clear;
-      if (key === 'all') state.filters = { stock: new Set(), price: null, sameDay: false, concern: new Set() }, state.brand = null, state.brandAll = false;
-      else if (key === 'brand') state.brand = null, state.brandAll = false;
+      if (key === 'all') state.filters = { stock: new Set(), price: null, sameDay: false, concern: new Set() }, state.brand = null, state.brandAll = false, state.series = null;
+      else if (key === 'brand') state.brand = null, state.brandAll = false, state.series = null;
+      else if (key === 'series') state.series = null;
       else if (key === 'price') state.filters.price = null;
       else if (key === 'same') state.filters.sameDay = false;
       else if (key.startsWith('stock:')) state.filters.stock.delete(key.split(':')[1]);
