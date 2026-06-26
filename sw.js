@@ -2,7 +2,7 @@
    - HTML: network-first (常に最新、オフライン時はキャッシュ)
    - 静的アセット (vendor/css/js/json/font/画像): cache-first (2回目以降は即ロード)
    バージョンを上げるとキャッシュが刷新される */
-const VERSION = 'seam-v117';
+const VERSION = 'seam-v118';
 const CORE_CACHE = VERSION + '-core';
 const ASSET_CACHE = VERSION + '-assets';
 
@@ -22,7 +22,6 @@ const CORE = [
   './vendor/babel.min.js',
   './vendor/tailwindcss.js',
   './vendor/html2canvas.min.js',
-  './data/products/seam-master.json',
 ];
 
 self.addEventListener('install', (e) => {
