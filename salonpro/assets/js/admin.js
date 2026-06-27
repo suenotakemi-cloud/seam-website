@@ -807,22 +807,48 @@
   });
 
   // サイドバー：セクションへスクロール＋スクロールスパイで現在地ハイライト
+  // サイドバーで「1画面1セクション」に切替（タブ方式）。各カードを見出しでビューに自動振り分け。
   function setupAdminNav() {
     const links = [].slice.call(document.querySelectorAll('.adm-side a[data-jump]'));
-    const targets = links.map(a => ({ a, el: qs(a.getAttribute('data-jump')) })).filter(x => x.el);
-    links.forEach(a => a.addEventListener('click', e => {
+    const cards = [].slice.call(document.querySelectorAll('.adm-main .adm-card'));
+    const kpis = qs('.adm-kpis');
+    const h1 = qs('#admTop');
+    const MAP = [
+      ['分析', 'analytics'], ['請求台帳', 'analytics'],
+      ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
+      ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
+      ['会員審査', 'review'], ['承認済みサロン', 'review'], ['サロン別 添付', 'review'], ['サロン別 メーカー', 'review'],
+      ['掛け払い 与信', 'credit'], ['契約申込', 'contract'], ['セミナー', 'seminar'],
+      ['リース', 'lease'], ['機器買取', 'buyback'], ['中古在庫', 'buyback'], ['パートナー', 'partner'],
+    ];
+    const NAVVIEW = {
+      '#admTop': 'dashboard', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
+      '#view-proxy': 'proxy', '#view-stock': 'stock', '#restockList': 'restock', '#reviewList': 'review',
+      '#creditList': 'credit', '#contractAppList': 'contract', '#seminarList': 'seminar', '#leaseList': 'lease',
+      '#buybackList': 'buyback', '#partnerList': 'partner',
+    };
+    cards.forEach(c => {
+      const t = (c.querySelector('.adm-card__title') || {}).textContent || '';
+      let v = 'dashboard';
+      for (let i = 0; i < MAP.length; i++) { if (t.indexOf(MAP[i][0]) >= 0) { v = MAP[i][1]; break; } }
+      c.dataset.view = v;
+    });
+    const labelOf = a => { const tn = [].slice.call(a.childNodes).find(n => n.nodeType === 3 && n.textContent.trim()); return tn ? tn.textContent.trim() : 'ダッシュボード'; };
+    function show(view, label) {
+      if (kpis) kpis.style.display = (view === 'dashboard') ? '' : 'none';
+      cards.forEach(c => { c.style.display = (c.dataset.view === view) ? '' : 'none'; });
+      links.forEach(a => a.classList.toggle('is-active', NAVVIEW[a.getAttribute('data-jump')] === view));
+      if (h1 && label) h1.textContent = label;
+      window.scrollTo(0, 0);
+    }
+    // サイドバー＋ビュー内の「○○を開く」リンク（data-jump）どちらでも切替
+    [].slice.call(document.querySelectorAll('[data-jump]')).forEach(a => a.addEventListener('click', e => {
       e.preventDefault();
-      const t = qs(a.getAttribute('data-jump')); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const view = NAVVIEW[a.getAttribute('data-jump')] || 'dashboard';
+      const navLink = links.find(l => NAVVIEW[l.getAttribute('data-jump')] === view);
+      show(view, navLink ? labelOf(navLink) : 'ダッシュボード');
     }));
-    let raf = 0;
-    window.addEventListener('scroll', () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => {
-        raf = 0; const y = window.scrollY + 130; let cur = targets[0];
-        targets.forEach(t => { if (t.el.getBoundingClientRect().top + window.scrollY <= y) cur = t; });
-        if (cur) { links.forEach(x => x.classList.remove('is-active')); cur.a.classList.add('is-active'); }
-      });
-    }, { passive: true });
+    show('dashboard', 'ダッシュボード');
   }
 
   /* ===== 代理発注（FAX/電話注文の代行入力） ===== */
