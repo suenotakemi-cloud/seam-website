@@ -62,6 +62,9 @@
 
 .two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--s-4); align-items: start; }
 
+/* データ活用・分析の2カラム（チャート/表）はモバイルで縦積み */
+@media (max-width: 700px) { .ins-2col { grid-template-columns: 1fr !important; } }
+
 @media (max-width: 860px) {
   .adm-layout { flex-direction: column; align-items: stretch; }
   .adm-main { width: 100%; }
@@ -71,6 +74,7 @@
   .adm-side a.is-active { border-left: 0; border-bottom-color: var(--gold); }
   .adm-side a .cnt { margin-left: 6px; }
   .adm-kpis { grid-template-columns: repeat(2, 1fr); }
+  .adm-card__head { flex-wrap: wrap; gap: 4px 12px; }
   .two-col { grid-template-columns: 1fr; }
   .adm-table { display: block; overflow-x: auto; white-space: nowrap; }
 }

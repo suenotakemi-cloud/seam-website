@@ -694,37 +694,191 @@
     const max = Math.max.apply(null, data.map(d => d.v)) || 1;
     return '<div style="display:grid;gap:7px">' + data.map(d => {
       const pct = Math.round((d.v / max) * 100);
-      return `<div style="display:grid;grid-template-columns:96px 1fr 42px;align-items:center;gap:8px;font-size:12px">
+      const disp = d.disp != null ? d.disp : (typeof d.v === 'number' ? d.v.toLocaleString('ja-JP') : d.v);
+      return `<div style="display:grid;grid-template-columns:112px 1fr 64px;align-items:center;gap:8px;font-size:12px">
         <span style="color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.label}</span>
-        <span style="background:var(--surface-2);border-radius:999px;height:9px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:var(--gold);border-radius:999px"></i></span>
-        <span style="text-align:right;font-family:var(--font-num);font-weight:700;color:var(--ink)">${d.v}</span>
+        <span style="background:var(--surface-2);border-radius:999px;height:9px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:${d.color || 'var(--gold)'};border-radius:999px"></i></span>
+        <span style="text-align:right;font-family:var(--font-num);font-weight:700;color:var(--ink)">${disp}</span>
       </div>`;
     }).join('') + '</div>';
   }
+
+  /* =========================================================
+     販売データ・インテリジェンス（菊地の財産＝取引データの分析と活用）
+     ※デモ：取引履歴を擬似生成（シード固定で再現性あり）。本番は
+       受発注DB（注文明細・サロンマスタ・担当者）からの集計に差し替え。
+     ========================================================= */
+  const MONTHS = ['1月', '2月', '3月', '4月', '5月', '6月'];
+  const BIZ_LABEL = { hair: 'ヘア', eye: 'アイ', nail: 'ネイル', esthe: 'エステ' };
+  const REPS = ['佐藤 達也', '鈴木 香織', '高橋 誠', '田中 裕子', '渡辺 拓海', '伊藤 麻衣'];
+  const SALON_NAMES = ['SALON LUXE 表参道店', 'hair atelier MELT 中目黒', 'BARBER K 渋谷', 'Atelier NOa 自由が丘', 'Lumiere 銀座', 'hair room SOL 吉祥寺', 'CIEL 代官山', "mod's hair 新宿", 'GARDEN 青山', 'Belle 恵比寿', 'tricca 下北沢', 'ALBUM 池袋', 'nail salon Lumie 表参道', 'EYELASH BiBi 横浜', 'Total Beauty AILE 大宮', 'esthe room Sara 二子玉川', 'hair design Liv 川崎', 'BARBER STAND 五反田', 'agnes 麻布十番', 'LiNK 立川', 'of HAIR 吉祥寺', 'SHIMA 原宿', 'nail&eye Cocon 柏', 'RELAX 武蔵小杉', 'Salon de Reve 鎌倉', 'grace 横浜元町', 'Hair&Spa Anela 本厚木', 'eyelash room Lien 大宮', 'BiOTOPE 中野', 'NORA 表参道', 'LANVERY 銀座', 'Octa 池袋', 'mint nail 町田', 'Beaute 自由が丘', 'Cha Cha 渋谷', 'RITZ 横浜', 'un ami 新百合ヶ丘', 'PRIVATE SALON Rire 浦和', 'hair make EARTH 柏', 'Lano 国分寺'];
+
+  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+  const SALES = (function buildSales() {
+    const prods = (SP.DATA && SP.DATA.products) || [];
+    const catCnt = {}; prods.forEach(p => { if (p.cat && p.cat !== '_rec') catCnt[p.cat] = (catCnt[p.cat] || 0) + 1; });
+    let cats = Object.keys(catCnt).sort((a, b) => catCnt[b] - catCnt[a]).slice(0, 8).map(id => ({ id, label: catName(id) }));
+    if (!cats.length) cats = [{ id: 'all', label: '商品' }];
+    const rnd = mulberry32(20260628);
+    const pick = arr => arr[Math.floor(rnd() * arr.length)];
+    const RANKS = [['プラチナ', 0.10, 36, 62], ['ゴールド', 0.24, 18, 34], ['シルバー', 0.40, 8, 17], ['ブロンズ', 0.26, 3, 9]];
+    function pickRank() { let r = rnd(); for (let i = 0; i < RANKS.length; i++) { if (r < RANKS[i][1]) return RANKS[i]; r -= RANKS[i][1]; } return RANKS[RANKS.length - 1]; }
+    const BIZW = [['hair', 0.6], ['eye', 0.15], ['nail', 0.15], ['esthe', 0.1]];
+    function pickBiz() { let r = rnd(); for (let i = 0; i < BIZW.length; i++) { if (r < BIZW[i][1]) return BIZW[i][0]; r -= BIZW[i][1]; } return 'hair'; }
+    function bizFor(name) { const n = name.toLowerCase(); if (n.indexOf('nail') >= 0) return 'nail'; if (n.indexOf('eye') >= 0 || n.indexOf('lash') >= 0) return 'eye'; if (n.indexOf('esthe') >= 0 || n.indexOf('spa') >= 0 || n.indexOf('beaut') >= 0) return 'esthe'; return null; }
+    const salons = SALON_NAMES.map(name => {
+      const rank = pickRank(), biz = bizFor(name) || pickBiz(), rep = pick(REPS);
+      const base = Math.round((rank[2] + rnd() * (rank[3] - rank[2])) * 10000);
+      const trend = (rnd() - 0.55) * 0.10;
+      const gmv = [];
+      for (let m = 0; m < 6; m++) { const noise = 0.85 + rnd() * 0.3; gmv.push(Math.max(0, Math.round(base * Math.pow(1 + trend, m) * noise))); }
+      const total = gmv.reduce((a, b) => a + b, 0);
+      const avg3 = Math.round((gmv[3] + gmv[4] + gmv[5]) / 3);
+      const cycle = 14 + Math.floor(rnd() * 32);
+      const lapseBias = trend < -0.02 ? 1.8 : (trend < 0.03 ? 1.1 : 0.7);
+      const last = Math.max(1, Math.round(cycle * (0.3 + rnd() * 1.4 * lapseBias)));
+      const w = cats.map(() => (rnd() < 0.25 ? 0 : 0.2 + rnd())); let wsum = w.reduce((a, b) => a + b, 0); if (wsum === 0) { w[0] = 1; wsum = 1; }
+      const catAmt = {}; cats.forEach((c, ci) => { catAmt[c.id] = Math.round(total * w[ci] / wsum); });
+      const mom = gmv[4] ? (gmv[5] - gmv[4]) / gmv[4] : 0;
+      return { name, biz, rep, rank: rank[0], gmv, total, avg3, cycle, last, catAmt, mom, atRisk: last > cycle * 1.5, orders: Math.max(1, Math.round(total / Math.max(8000, base / 2))) };
+    });
+    return { salons, cats };
+  })();
+
+  function segOf(s) { if (s.last > s.cycle * 1.5) return 'churn'; if (s.avg3 >= 250000 && s.mom >= -0.02) return 'vip'; if (s.mom >= 0.03) return 'grow'; return 'stable'; }
+  const SEG = { vip: ['優良', '#1f7a4d'], grow: ['育成・伸長', '#b8860b'], stable: ['安定', '#5b6470'], churn: ['離反リスク', '#c0392b'] };
+  function downloadCsv(filename, rows) {
+    const out = rows.map(r => r.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',')).join('\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + out], { type: 'text/csv;charset=utf-8;' }));
+    a.download = filename; document.body.appendChild(a); a.click(); a.remove(); toast(filename + ' を出力しました');
+  }
+  const manYen = n => (n / 10000).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
+  const pctStr = x => (x >= 0 ? '+' : '') + Math.round(x * 100) + '%';
+
+  // 分析（売上ベース）：月次GMV推移＋前月比／カテゴリ別 売上／業種別／担当者別／ランク別
   function renderAnalytics() {
     const host = qs('#analyticsBody'); if (!host) return;
-    const prods = (SP.DATA && SP.DATA.products) || [];
-    const gmv = [
-      { label: '1月', v: 382 }, { label: '2月', v: 410 }, { label: '3月', v: 458 },
-      { label: '4月', v: 437 }, { label: '5月', v: 489 }, { label: '6月', v: 482, t: '今月' }
-    ];
-    const catCnt = {}; prods.forEach(p => { if (p.cat && p.cat !== '_rec') catCnt[p.cat] = (catCnt[p.cat] || 0) + 1; });
-    const cats = Object.keys(catCnt).map(k => ({ label: catName(k), v: catCnt[k] })).sort((a, b) => b.v - a.v).slice(0, 8);
-    const brCnt = {}; prods.forEach(p => { if (p.brand) brCnt[p.brand] = (brCnt[p.brand] || 0) + 1; });
-    const brands = Object.keys(brCnt).map(k => ({ label: k, v: brCnt[k] })).sort((a, b) => b.v - a.v).slice(0, 6);
-    const ranks = [{ label: 'ブロンズ', v: 28 }, { label: 'シルバー', v: 34 }, { label: 'ゴールド', v: 21 }, { label: 'プラチナ', v: 12 }];
+    const S = SALES.salons;
+    const months = MONTHS.map((label, mi) => ({ label, v: Math.round(S.reduce((a, s) => a + s.gmv[mi], 0) / 10000) }));
+    const mLast = months[5].v, mPrev = months[4].v; months[5].t = '今月 ' + pctStr((mLast - mPrev) / (mPrev || 1));
+    const catTot = {}; SALES.cats.forEach(c => catTot[c.id] = 0); S.forEach(s => SALES.cats.forEach(c => catTot[c.id] += s.catAmt[c.id] || 0));
+    const catBars = SALES.cats.map(c => ({ label: c.label, v: Math.round(catTot[c.id] / 10000) })).sort((a, b) => b.v - a.v);
+    const bizTot = {}; S.forEach(s => bizTot[s.biz] = (bizTot[s.biz] || 0) + s.total);
+    const bizBars = Object.keys(bizTot).map(k => ({ label: BIZ_LABEL[k] || k, v: Math.round(bizTot[k] / 10000) })).sort((a, b) => b.v - a.v);
+    const repTot = {}, repCnt = {}; S.forEach(s => { repTot[s.rep] = (repTot[s.rep] || 0) + s.total; repCnt[s.rep] = (repCnt[s.rep] || 0) + 1; });
+    const repBars = Object.keys(repTot).map(k => ({ label: k + '（' + repCnt[k] + '店）', v: Math.round(repTot[k] / 10000) })).sort((a, b) => b.v - a.v);
+    const rkTot = {}; S.forEach(s => rkTot[s.rank] = (rkTot[s.rank] || 0) + s.total);
+    const rkBars = ['プラチナ', 'ゴールド', 'シルバー', 'ブロンズ'].filter(k => rkTot[k]).map(k => ({ label: k, v: Math.round(rkTot[k] / 10000) }));
+    const total6 = S.reduce((a, s) => a + s.total, 0);
     host.innerHTML = `
-      <div style="display:grid;gap:18px;grid-template-columns:1fr;">
+      <div style="display:grid;gap:20px;grid-template-columns:1fr;">
         <div>
-          <div style="font-size:12.5px;font-weight:800;margin-bottom:8px">月次 流通額（GMV）推移 <span style="color:var(--ink-3);font-weight:600;font-size:11px">単位：万円・デモ</span></div>
-          ${vbars(gmv)}
+          <div style="font-size:12.5px;font-weight:800;margin-bottom:8px">月次 流通額（GMV）推移 <span style="color:var(--ink-3);font-weight:600;font-size:11px">単位：万円・取引${S.length}サロン・デモ</span></div>
+          ${vbars(months)}
+          <div style="font-size:11.5px;color:var(--ink-3);margin-top:4px">6ヶ月累計 ${yen(total6)}／月平均 ${yen(Math.round(total6 / 6))}</div>
         </div>
-        <div style="display:grid;gap:18px;grid-template-columns:1fr 1fr">
-          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">カテゴリ別 取扱い点数</div>${hbars(cats)}</div>
-          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">取扱いブランド TOP6（点数）</div>${hbars(brands)}</div>
+        <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">カテゴリ別 売上 <span style="color:var(--ink-3);font-weight:600;font-size:11px">万円</span></div>${hbars(catBars)}</div>
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">業種別 売上 <span style="color:var(--ink-3);font-weight:600;font-size:11px">万円</span></div>${hbars(bizBars)}</div>
         </div>
-        <div style="max-width:520px"><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">会員ランク分布 <span style="color:var(--ink-3);font-weight:600;font-size:11px">デモ</span></div>${hbars(ranks)}</div>
+        <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">担当者別 流通額 <span style="color:var(--ink-3);font-weight:600;font-size:11px">万円</span></div>${hbars(repBars)}</div>
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">会員ランク別 売上 <span style="color:var(--ink-3);font-weight:600;font-size:11px">万円</span></div>${hbars(rkBars)}</div>
+        </div>
       </div>`;
+  }
+
+  // データ活用：離反リスク架電リスト・サロンセグメント(RFM)・再注文サイン・クロスセル・CSV出力
+  function renderInsights() {
+    const S = SALES.salons;
+    const navB = qs('#navInsight');
+    const risk = S.filter(s => s.atRisk).sort((a, b) => b.avg3 - a.avg3);
+    if (navB) navB.textContent = risk.length;
+    const riskMonthly = risk.reduce((a, s) => a + s.avg3, 0);
+    const total6 = S.reduce((a, s) => a + s.total, 0);
+    const momAvg = S.reduce((a, s) => a + s.mom, 0) / (S.length || 1);
+    const segCnt = { vip: 0, grow: 0, stable: 0, churn: 0 }, segAmt = { vip: 0, grow: 0, stable: 0, churn: 0 };
+    S.forEach(s => { const g = segOf(s); segCnt[g]++; segAmt[g] += s.total; });
+
+    const sum = qs('#insightSummary');
+    if (sum) {
+      const tile = (l, v, d, cls) => `<div class="kpi"><div class="kpi__l">${l}</div><div class="kpi__v">${v}</div><div class="kpi__d ${cls || ''}">${d}</div></div>`;
+      const segBars = Object.keys(SEG).map(k => ({ label: SEG[k][0] + '（' + segCnt[k] + '店）', v: Math.round(segAmt[k] / 10000), color: SEG[k][1], disp: manYen(segAmt[k]) }));
+      sum.innerHTML =
+        `<div class="adm-kpis" style="margin-bottom:14px">
+          ${tile('取引サロン', S.length + '店', '担当 ' + REPS.length + '名', '')}
+          ${tile('6ヶ月 流通額', yen(total6), '月平均 ' + yen(Math.round(total6 / 6)), 'up')}
+          ${tile('離反リスク', risk.length + '店', '要架電', 'warn')}
+          ${tile('失う恐れの月商', yen(riskMonthly), 'リスク額', 'warn')}
+        </div>
+        <div style="font-size:12.5px;font-weight:800;margin:6px 0 10px">サロン セグメント <span style="color:var(--ink-3);font-weight:600;font-size:11px">売上構成・万円</span></div>
+        ${hbars(segBars)}
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">セグメントは 最終発注からの経過・直近月商・伸び率（MoM平均 ${pctStr(momAvg)}）から自動分類。離反リスク＝通常サイクルの1.5倍を超えて発注の無いサロン＝担当者が今すぐ動くべき先。</div>`;
+    }
+
+    const ch = qs('#insightChurn');
+    if (ch) {
+      const rows = risk.slice(0, 12).map(s => {
+        const over = s.last > s.cycle * 2;
+        return `<tr>
+          <td><b>${esc(s.name)}</b><div style="font-size:11px;color:var(--ink-3)">${BIZ_LABEL[s.biz]}・${s.rank}</div></td>
+          <td>${esc(s.rep)}</td>
+          <td class="num" style="color:${over ? '#c0392b' : 'var(--ink)'};font-weight:800">${s.last}日前${over ? ' ⚠' : ''}</td>
+          <td class="num" style="color:var(--ink-3)">通常${s.cycle}日</td>
+          <td class="num">${yen(s.avg3)}<div style="font-size:10.5px;color:var(--ink-3)">/月</div></td>
+          <td><button class="btn btn--ghost" data-call="${esc(s.name)}" style="height:34px;padding:0 12px">架電予定</button></td>
+        </tr>`;
+      }).join('');
+      ch.innerHTML = risk.length
+        ? `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>担当</th><th>最終発注</th><th>サイクル</th><th>直近月商</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+           ${risk.length > 12 ? `<div style="text-align:center;color:var(--ink-3);font-size:12px;padding:8px">ほか ${risk.length - 12} 店（CSVに全件出力）</div>` : ''}`
+        : '<div style="padding:18px;text-align:center;color:var(--ink-3)">離反リスクのサロンはありません 🎉</div>';
+    }
+
+    const nx = qs('#insightNext');
+    if (nx) {
+      const due = S.filter(s => !s.atRisk && s.last >= s.cycle * 0.85).sort((a, b) => b.avg3 - a.avg3).slice(0, 8);
+      const topCatOf = s => { let best = '—', bv = -1; SALES.cats.forEach(c => { if ((s.catAmt[c.id] || 0) > bv) { bv = s.catAmt[c.id] || 0; best = c.label; } }); return best; };
+      const dueRows = due.map(s => `<tr><td><b>${esc(s.name)}</b><div style="font-size:11px;color:var(--ink-3)">${esc(s.rep)}</div></td><td class="num">${s.last}/${s.cycle}日</td><td>${esc(topCatOf(s))}</td></tr>`).join('');
+      const big = SALES.cats.slice(0).sort((a, b) => S.reduce((x, s) => x + (s.catAmt[b.id] || 0), 0) - S.reduce((x, s) => x + (s.catAmt[a.id] || 0), 0));
+      const cross = [];
+      S.forEach(s => { for (let i = 0; i < Math.min(3, big.length); i++) { if (!(s.catAmt[big[i].id] > 0) && s.avg3 > 60000) { cross.push({ s, c: big[i].label }); break; } } });
+      cross.sort((a, b) => b.s.avg3 - a.s.avg3);
+      const crossRows = cross.slice(0, 8).map(x => `<tr><td><b>${esc(x.s.name)}</b><div style="font-size:11px;color:var(--ink-3)">${esc(x.s.rep)}</div></td><td>${esc(x.c)}</td></tr>`).join('');
+      nx.innerHTML = `
+        <div class="ins-2col" style="display:grid;gap:18px;grid-template-columns:1fr 1fr">
+          <div>
+            <div style="font-size:12.5px;font-weight:800;margin-bottom:8px">再注文サイン <span style="color:var(--ink-3);font-weight:600;font-size:11px">そろそろ発注（経過/サイクル）</span></div>
+            ${due.length ? `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>経過</th><th>主力カテゴリ</th></tr></thead><tbody>${dueRows}</tbody></table></div>` : '<div style="color:var(--ink-3);font-size:12px;padding:8px">該当なし</div>'}
+          </div>
+          <div>
+            <div style="font-size:12.5px;font-weight:800;margin-bottom:8px">クロスセル余地 <span style="color:var(--ink-3);font-weight:600;font-size:11px">主力なのに未購入</span></div>
+            ${cross.length ? `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>提案カテゴリ</th></tr></thead><tbody>${crossRows}</tbody></table></div>` : '<div style="color:var(--ink-3);font-size:12px;padding:8px">該当なし</div>'}
+          </div>
+        </div>`;
+    }
+
+    const sl = qs('#insightSalons');
+    if (sl) {
+      const all = S.slice(0).sort((a, b) => b.total - a.total);
+      const rows = all.slice(0, 20).map(s => {
+        const g = segOf(s);
+        return `<tr>
+          <td><b>${esc(s.name)}</b></td><td>${BIZ_LABEL[s.biz]}</td><td>${esc(s.rep)}</td><td>${s.rank}</td>
+          <td><span class="tag" style="background:${SEG[g][1]}1a;color:${SEG[g][1]}">${SEG[g][0]}</span></td>
+          <td class="num">${yen(s.total)}</td>
+          <td class="num" style="color:${s.mom >= 0 ? '#1f7a4d' : '#c0392b'};font-weight:800">${pctStr(s.mom)}</td>
+          <td class="num">${s.last}日前</td>
+        </tr>`;
+      }).join('');
+      sl.innerHTML = `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>業種</th><th>担当</th><th>ランク</th><th>セグメント</th><th>6ヶ月売上</th><th>MoM</th><th>最終発注</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div style="text-align:center;color:var(--ink-3);font-size:12px;padding:8px">上位20店を表示・全${all.length}店はCSVに出力</div>`;
+    }
+
+    document.querySelectorAll('[data-call]').forEach(b => { b.addEventListener('click', () => { b.textContent = '架電予定 ✓'; b.style.cssText = 'height:34px;padding:0 12px;border-color:#1f7a4d;color:#1f7a4d;font-weight:800'; toast(b.dataset.call + ' を架電予定に追加しました'); }); });
+    const cC = qs('#csvChurn'); if (cC) cC.addEventListener('click', () => downloadCsv('離反リスク_架電リスト.csv', [['サロン', '担当', '業種', 'ランク', '最終発注(日前)', '通常サイクル(日)', '直近3ヶ月平均月商', '6ヶ月売上', 'MoM']].concat(risk.map(s => [s.name, s.rep, BIZ_LABEL[s.biz], s.rank, s.last, s.cycle, s.avg3, s.total, Math.round(s.mom * 100) + '%']))));
+    const cS = qs('#csvSalons'); if (cS) cS.addEventListener('click', () => downloadCsv('サロン別_売上分析.csv', [['サロン', '業種', '担当', 'ランク', 'セグメント', '6ヶ月売上', '直近3ヶ月平均月商', 'MoM', '最終発注(日前)', '通常サイクル(日)', '発注回数']].concat(S.slice(0).sort((a, b) => b.total - a.total).map(s => [s.name, BIZ_LABEL[s.biz], s.rep, s.rank, SEG[segOf(s)][0], s.total, s.avg3, Math.round(s.mom * 100) + '%', s.last, s.cycle, s.orders]))));
   }
 
   // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
@@ -814,6 +968,7 @@
     const kpis = qs('.adm-kpis');
     const h1 = qs('#admTop');
     const MAP = [
+      ['データ活用', 'insights'], ['離反リスク', 'insights'], ['次の一手', 'insights'], ['サロン一覧', 'insights'],
       ['分析', 'analytics'], ['請求台帳', 'analytics'],
       ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
       ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
@@ -822,7 +977,7 @@
       ['リース', 'lease'], ['機器買取', 'buyback'], ['中古在庫', 'buyback'], ['パートナー', 'partner'],
     ];
     const NAVVIEW = {
-      '#admTop': 'dashboard', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
+      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
       '#view-proxy': 'proxy', '#view-stock': 'stock', '#restockList': 'restock', '#reviewList': 'review',
       '#creditList': 'credit', '#contractAppList': 'contract', '#seminarList': 'seminar', '#leaseList': 'lease',
       '#buybackList': 'buyback', '#partnerList': 'partner',
@@ -947,6 +1102,7 @@
   fillDiscForm();
   renderSalonDiscounts();
   renderAnalytics();
+  renderInsights();
   setupProductAdmin();
   renderOrders();
   fillPxSalon();
