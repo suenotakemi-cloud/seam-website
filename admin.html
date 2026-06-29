@@ -168,7 +168,10 @@
   }
 
   function render(data){
-    el('genAt').textContent = (data._demo?'［デモ表示］ ':'') + '更新 '+new Date(data.generatedAt).toLocaleString('ja-JP') + ' / 直近'+data.windowDays+'日';
+    var head = data._demo ? '［デモ表示］ ' : '';
+    if (data.generatedAt) head += '更新 ' + new Date(data.generatedAt).toLocaleString('ja-JP');
+    if (data.windowDays)  head += (data.generatedAt ? ' / ' : '') + '直近' + data.windowDays + '日';
+    el('genAt').textContent = head;
     var s=data.summary||{starts:0,completes:0,ctas:0};
     var cr = pct(s.completes, s.starts);
     var cvr = pct(s.ctas, s.completes);
