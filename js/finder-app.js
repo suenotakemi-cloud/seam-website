@@ -2534,14 +2534,22 @@ const DEEP_CATEGORY_DEFS = {
     id: 'shampoo',
     title: 'シャンプー',
     eyebrow: '01 Shampoo',
-    desc: 'あなたの髪と頭皮に、まず最適な1本を。',
+    desc: '毎日の洗髪に あなたの髪と頭皮へ最適な1本を',
     max: 3,
-    cats: ['shampoo', 'scalp-cleanser']
+    cats: ['shampoo']
+  },
+  specialCleanse: {
+    id: 'specialCleanse',
+    title: '週数回のスペシャル洗浄',
+    eyebrow: '02 Special',
+    desc: '毛穴の皮脂や蓄積を炭酸でリセット 週2〜3回の特別な洗浄を',
+    max: 2,
+    cats: ['scalp-cleanser']
   },
   treatment: {
     id: 'treatment',
     title: 'トリートメント',
-    eyebrow: '02 Treatment',
+    eyebrow: '03 Treatment',
     desc: '洗髪後のデイリーケア。指通り・まとまりを整える最適な1本。',
     max: 3,
     cats: ['treatment']
@@ -2549,7 +2557,7 @@ const DEEP_CATEGORY_DEFS = {
   outbath: {
     id: 'outbath',
     title: 'アウトバス',
-    eyebrow: '03 Out-bath',
+    eyebrow: '04 Out-bath',
     desc: 'タオルドライ後の必須ケア。あなたに最適なアウトバスを。',
     max: 3,
     cats: ['outbath-water', 'outbath-oil', 'outbath-milk', 'out-bath-milk', 'out-bath-oil', 'outbath-butter', 'outbath-mousse', 'outbath-cream', 'outbath-mist', 'booster', 'leave-in-mist', 'leave-in-milk', 'leave-in-oil']
@@ -2557,7 +2565,7 @@ const DEEP_CATEGORY_DEFS = {
   mask: {
     id: 'mask',
     title: 'マスク',
-    eyebrow: '04 Mask',
+    eyebrow: '05 Mask',
     desc: '週1〜3回の集中ケア。今のあなたに最適なマスクを。',
     max: 3,
     cats: ['hair-mask', 'mask']
@@ -2565,7 +2573,7 @@ const DEEP_CATEGORY_DEFS = {
   scalp: {
     id: 'scalp',
     title: 'スカルプ・美容液',
-    eyebrow: '05 Scalp',
+    eyebrow: '06 Scalp',
     desc: '頭皮ケア・スカルプ美容液。土台から整える最適な1本。',
     max: 3,
     cats: ['scalp-essence']
@@ -2573,7 +2581,7 @@ const DEEP_CATEGORY_DEFS = {
   finish: {
     id: 'finish',
     title: 'スタイリング',
-    eyebrow: '06 Styling',
+    eyebrow: '07 Styling',
     desc: '仕上げのフィニッシュ剤 ツヤ・キープ・質感づくりの最適な1本を',
     max: 3,
     cats: ['styling-spray', 'styling']
@@ -2581,7 +2589,7 @@ const DEEP_CATEGORY_DEFS = {
   salon: {
     id: 'salon',
     title: 'サロンメニュー',
-    eyebrow: '07 Salon',
+    eyebrow: '08 Salon',
     desc: '店頭でできる、より深いサロンケア。',
     max: 2,
     cats: ['salon-menu']
@@ -3114,7 +3122,7 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   // 同一ブランドが複数カテゴリの先頭(あなたにベスト)を独占しないよう
   // 2カテゴリ目以降はスコアが近い別ブランド候補とローテーションする
   const bestBrandUsed = {};
-  for (const id of ['shampoo', 'treatment', 'outbath', 'mask', 'finish', 'scalp', 'salon']) {
+  for (const id of ['shampoo', 'specialCleanse', 'treatment', 'outbath', 'mask', 'finish', 'scalp', 'salon']) {
     const arr = blocks[id];
     if (!arr || !arr.length) continue;
     const topBrand = arr[0].p.brand;
@@ -4281,11 +4289,14 @@ function DeepProductSection({
   const needMask = (_sc.damage || 0) >= 2 || (_sc.bleachHistory || 0) > 0 || ['damage', 'split', 'rough', 'tangle'].some(v => _cs.includes(v));
   const needScalp = (_sc.scalpDryness || 0) > 0 || (_sc.scalpOiliness || 0) > 0 || (_sc.volumeLoss || 0) > 0 || (_sc.aging || 0) > 0 || ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(v => _cs.includes(v));
 
-  // ルーティン順: SH → TR → アウトバス → マスク → スタイリング → スカルプ → サロン
-  const orderedBlocks = ['shampoo', 'treatment', 'outbath', 'mask', 'scalp', 'finish', 'salon'].map(id => ({
+  // 炭酸/スクラブの「週数回スペシャル洗浄」は、ベタつき・根元ぺたんの方にだけ出す(乾燥頭皮には押し付けない)
+  const needCleanse = (_sc.scalpOiliness || 0) > 0 || (_sc.volumeLoss || 0) > 0 || ['scalpOily', 'topFlat', 'volumeDown'].some(v => _cs.includes(v));
+
+  // ルーティン順: SH → 週数回スペシャル洗浄 → TR → アウトバス → マスク → スカルプ → スタイリング → サロン
+  const orderedBlocks = ['shampoo', 'specialCleanse', 'treatment', 'outbath', 'mask', 'scalp', 'finish', 'salon'].map(id => ({
     ...(DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}),
     items: blocks[id] || []
-  })).filter(b => b.items.length > 0).filter(b => (b.id !== 'mask' || needMask) && (b.id !== 'scalp' || needScalp));
+  })).filter(b => b.items.length > 0).filter(b => (b.id !== 'mask' || needMask) && (b.id !== 'scalp' || needScalp) && (b.id !== 'specialCleanse' || needCleanse));
   const shownCount = orderedBlocks.reduce((acc, b) => acc + b.items.length, 0);
   return /*#__PURE__*/React.createElement("section", {
     className: "mt-12 sm:mt-16 anim-fade-up",
