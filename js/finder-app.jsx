@@ -94,21 +94,32 @@ const Q = [
     id: 'color',
     type: 'card-history',
     eyebrow: 'Color History',
-    title: '今の髪の色・明るさは、どれに近い？',
-    note: '“今の見た目”で、いちばん近いものを選んでください。毛先に色が残っていれば、過去のカラーでもOKです。回数や時期は分からなくて大丈夫。1つ選択。',
+    title: '今の髪の色は？（明るめ／暗め）',
+    note: 'いちばん近いものを1つ。ブリーチ（脱色）については、次の質問で別に伺います。',
     yesPrompt: 'カラーをしたことがありますか？（毛先に色が残っている・過去にした場合も含む）',
     options: [
       { v: 'none',          label: '明るくしていない（黒〜暗い地毛）',             score: {} },
       { v: 'light_recent',  label: '明るい茶色（色がはっきり残っている）',         score: { colorFade: 2, damage: 1 } },
-      { v: 'light_past',    label: '明るい茶色（褪せてきた・根元が伸びた）',       score: { colorFade: 1, damage: 1 } },
-      { v: 'bleach_recent', label: 'かなり明るい・ブリーチ系（今も明るい）',       score: { bleachHistory: 4, damage: 3, colorFade: 2 } },
-      { v: 'bleach_past',   label: 'ブリーチしたが、今は落ち着いた／伸びた',       score: { bleachHistory: 3, damage: 2 } },
-      { v: 'multi_bleach',  label: '白っぽい・ハイトーン（しっかり抜けている）',   score: { bleachHistory: 5, damage: 5, colorFade: 2 } },
-      { v: 'highlight',     label: '部分的に明るい（ハイライト・インナー）',       score: { bleachHistory: 1, damage: 1 } },
-      { v: 'dark_recent',   label: '暗めに染めている',                            score: { colorFade: 1 } },
+      { v: 'light_past',    label: '明るめのカラー（褪せてきた・根元が伸びた）',   score: { colorFade: 1, damage: 1 } },
+      { v: 'dark_recent',   label: '暗め・落ち着いた色に染めている',               score: { colorFade: 1 } },
       { v: 'dark_strong',   label: '黒染め・しっかり暗くしている',                 score: { damage: 2, blackdye: 3 } },
       { v: 'gray',          label: '白髪染めをしている',                          score: { aging: 2, colorFade: 1 } },
       { v: 'home',          label: '自分で染めている（ホームカラー）',             score: { damage: 2, colorFade: 1 } },
+    ],
+  },
+  {
+    id: 'bleach',
+    type: 'card-history',
+    eyebrow: 'Bleach History',
+    title: 'ブリーチ（明るく脱色）をしたことは？',
+    note: 'いちばん大切な情報です。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば選んでください。1つ選択。',
+    yesPrompt: 'ブリーチ（脱色）をしたことはありますか？（過去・毛先に残っている場合も含む）',
+    options: [
+      { v: 'none',      label: 'していない',                                           score: {} },
+      { v: 'within3m',  label: '今も明るい部分が残っている（ブリーチ毛）',               score: { bleachHistory: 4, damage: 3, colorFade: 2 } },
+      { v: 'within1y',  label: '今は暗く染めた／伸びたが、ブリーチした髪が残っている',   score: { bleachHistory: 3, damage: 2 } },
+      { v: 'multi',     label: '白っぽいハイトーンまで、しっかり抜いた',                 score: { bleachHistory: 5, damage: 5, colorFade: 2 } },
+      { v: 'highlight', label: 'ハイライト・インナーなど部分的に',                       score: { bleachHistory: 1, damage: 1 } },
     ],
   },
   {
@@ -554,11 +565,12 @@ const MODE_B_ORDER = [
 
   // STEP 2 — 髪の履歴
   { step:2, id:'color' },
+  { step:2, id:'bleach' },
   { step:2, id:'colorFreq',       when:(a) => a.color && a.color !== 'none' },
   // カラーをしている人にだけ「白髪染め」を聞く(していない場合はスキップ)
   { step:2, id:'grayHair',        when:(a) => a.color && a.color !== 'none' },
   { step:2, id:'grayFreq',        when:(a) => a.grayHair === 'yes' },
-  { step:2, id:'bleachLocation',  when:(a) => /^(multi_bleach|bleach_recent|bleach_past|highlight)$/.test(a.color || '') },
+  { step:2, id:'bleachLocation',  when:(a) => /^(multi|within3m|within1y|highlight)$/.test(a.bleach || '') },
   { step:2, id:'straighten' },
   { step:2, id:'perm' },
   { step:2, id:'permType',        when:(a) => a.perm && a.perm !== 'none' },
@@ -4348,10 +4360,10 @@ function CarouselSingle({ q, value, onChange }) {
 /* ---------- 章立て ---------- */
 const QUIZ_CHAPTERS = [
   { id:'now',     index:1, title:'髪の悩みと特徴',     subTitle:'まず、いまの悩みと髪のタイプを伺います。',         startIdx:0,  endIdx:4  },
-  { id:'history', index:2, title:'髪の履歴',           subTitle:'これまでの施術と、アイロンの使い方を伺います。',   startIdx:5,  endIdx:9  },
-  { id:'daily',   index:3, title:'いまの生活',         subTitle:'普段の習慣と、まわりの環境を伺います。',           startIdx:10, endIdx:13 },
-  { id:'goal',    index:4, title:'目指したい仕上がり', subTitle:'これから目指したい髪を伺います。',                 startIdx:14, endIdx:15 },
-  { id:'salon',   index:5, title:'サロンでの相談',     subTitle:'ヘッドスパなど、サロンでのご提案について伺います。', startIdx:16, endIdx:17 },
+  { id:'history', index:2, title:'髪の履歴',           subTitle:'これまでの施術と、アイロンの使い方を伺います。',   startIdx:5,  endIdx:10 },
+  { id:'daily',   index:3, title:'いまの生活',         subTitle:'普段の習慣と、まわりの環境を伺います。',           startIdx:11, endIdx:14 },
+  { id:'goal',    index:4, title:'目指したい仕上がり', subTitle:'これから目指したい髪を伺います。',                 startIdx:15, endIdx:16 },
+  { id:'salon',   index:5, title:'サロンでの相談',     subTitle:'ヘッドスパなど、サロンでのご提案について伺います。', startIdx:17, endIdx:18 },
 ];
 function getChapterFor(idx) {
   return QUIZ_CHAPTERS.find(c => idx >= c.startIdx && idx <= c.endIdx) || QUIZ_CHAPTERS[0];
@@ -7594,6 +7606,7 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
   // カラー履歴
   const colorItems = [];
   if (a.color) colorItems.push(['カラー履歴', lookupLabelShort('color', a.color)]);
+  if (a.bleach && a.bleach !== 'none') colorItems.push(['ブリーチ履歴', lookupLabelShort('bleach', a.bleach)]);
   if (a.colorFreq) colorItems.push(['カラーの頻度', lookupLabel('colorFreq', a.colorFreq)]);
   if (a.grayHair) colorItems.push(['白髪染め', lookupLabel('grayHair', a.grayHair)]);
   if (a.grayFreq) colorItems.push(['白髪染めの頻度', lookupLabelShort('grayFreq', a.grayFreq)]);
@@ -8091,7 +8104,7 @@ function ConditionalAdvice({ answers = {} }) {
   const cards = [];
 
   // ── 1) ブリーチ歴あり × 伸ばしたい / セミロング以上 → 毛先専用ケア
-  const hasBleach = ['bleach_recent','bleach_past','multi_bleach','highlight'].includes(a.color);
+  const hasBleach = ['within3m','within1y','multi','highlight'].includes(a.bleach);
   const wantsLength = ['semi_long','long','medium'].includes(a.length) || (a.idealLength && ['semi_long','long'].includes(a.idealLength));
   if (hasBleach && wantsLength) {
     cards.push({

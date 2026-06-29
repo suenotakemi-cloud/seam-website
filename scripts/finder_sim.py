@@ -192,7 +192,8 @@ def gen_answers():
         a['colorFreq']=random.choice(opts_of('colorFreq'))
         a['grayHair']=random.choice(opts_of('grayHair'))
         if a['grayHair']=='yes': a['grayFreq']=random.choice(opts_of('grayFreq'))
-    if re.match(r'^(multi_bleach|bleach_recent|bleach_past|highlight)$', a['color'] or ''):
+    a['bleach']=random.choice(opts_of('bleach'))
+    if re.match(r'^(multi|within3m|within1y|highlight)$', a['bleach'] or ''):
         a['bleachLocation']=random.choice(opts_of('bleachLocation'))
     a['straighten']=random.choice(opts_of('straighten'))
     a['perm']=random.choice(opts_of('perm'))
@@ -238,7 +239,7 @@ for _ in range(N):
         if crash<=3: print("ERR:", e)
 
 print(f"\n=== SEAM Finder simulator — N={N} (seed=42) ===")
-print(f"score抽出: {len(OPT)}設問 / 例: color.bleach_recent={OPT['color']['bleach_recent']}  concerns.split={OPT['concerns']['split']}")
+print(f"score抽出: {len(OPT)}設問 / 例: bleach.multi={OPT['bleach']['multi']}  concerns.split={OPT['concerns']['split']}")
 print(f"\n[ハード障害] crash={crash}  到達タイプ={len(origin)}/27")
 def dist(title, c, total=N):
     print(f"\n{title}")
