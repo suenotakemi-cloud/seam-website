@@ -73,6 +73,13 @@ const Q = [{
       damage: 3
     }
   }, {
+    v: 'gummy',
+    label: '濡れると伸びる・ゴム状',
+    score: {
+      damage: 3,
+      bleachHistory: 1
+    }
+  }, {
     v: 'colorFade',
     label: 'カラーの色落ち',
     score: {
@@ -153,11 +160,12 @@ const Q = [{
   id: 'thickness',
   type: 'card-single',
   eyebrow: 'Texture',
-  title: '髪の細さは？',
-  note: '髪の毛を1本触ったときの感触で選んでください。',
+  title: '髪の1本は、太い？細い？',
+  note: '髪を1本つまんだ感触で選んでください。迷ったら手ざわりの印象で大丈夫です。',
   options: [{
     v: 'thin',
     label: '細い',
+    sub: '猫っ毛・絡まりやすい・ぺたんとしやすい',
     score: {
       aging: 1,
       volumeLoss: 1
@@ -165,10 +173,12 @@ const Q = [{
   }, {
     v: 'normal',
     label: '普通',
+    sub: 'どちらとも言えない',
     score: {}
   }, {
     v: 'thick',
     label: '太い',
+    sub: '1本が硬い・しっかり・広がりやすい',
     score: {
       frizz: 1
     }
@@ -252,30 +262,30 @@ const Q = [{
   id: 'color',
   type: 'card-history',
   eyebrow: 'Color History',
-  title: 'これまでのカラーは、どの方向ですか？',
-  note: '「明るく / 暗く / ブリーチ」で必要なケアが大きく変わります。毛先に色が残っていれば過去のものでも選んでください。1つ選択。',
+  title: '今の髪の色・明るさは、どれに近い？',
+  note: '“今の見た目”で、いちばん近いものを選んでください。毛先に色が残っていれば、過去のカラーでもOKです。回数や時期は分からなくて大丈夫。1つ選択。',
   yesPrompt: 'カラーをしたことがありますか？（毛先に色が残っている・過去にした場合も含む）',
   options: [{
     v: 'none',
-    label: 'していない',
+    label: '明るくしていない（黒〜暗い地毛）',
     score: {}
   }, {
     v: 'light_recent',
-    label: '明るくした(3ヶ月以内)',
+    label: '明るい茶色（色がはっきり残っている）',
     score: {
       colorFade: 2,
       damage: 1
     }
   }, {
     v: 'light_past',
-    label: '明るくした(半年〜1年前)',
+    label: '明るい茶色（褪せてきた・根元が伸びた）',
     score: {
       colorFade: 1,
       damage: 1
     }
   }, {
     v: 'bleach_recent',
-    label: 'かなり明るく・ブリーチをした(3ヶ月以内)',
+    label: 'かなり明るい・ブリーチ系（今も明るい）',
     score: {
       bleachHistory: 4,
       damage: 3,
@@ -283,14 +293,14 @@ const Q = [{
     }
   }, {
     v: 'bleach_past',
-    label: 'かなり明るく・ブリーチをした(半年〜1年前)',
+    label: 'ブリーチしたが、今は落ち着いた／伸びた',
     score: {
       bleachHistory: 3,
       damage: 2
     }
   }, {
     v: 'multi_bleach',
-    label: '何度も明るく・連続ブリーチ毛',
+    label: '白っぽい・ハイトーン（しっかり抜けている）',
     score: {
       bleachHistory: 5,
       damage: 5,
@@ -298,34 +308,34 @@ const Q = [{
     }
   }, {
     v: 'highlight',
-    label: 'インナー / ハイライトのみ',
+    label: '部分的に明るい（ハイライト・インナー）',
     score: {
       bleachHistory: 1,
       damage: 1
     }
   }, {
     v: 'dark_recent',
-    label: '暗めにした(3ヶ月以内)',
+    label: '暗めに染めている',
     score: {
       colorFade: 1
     }
   }, {
     v: 'dark_strong',
-    label: 'かなり暗くした・黒染めをした',
+    label: '黒染め・しっかり暗くしている',
     score: {
       damage: 2,
       blackdye: 3
     }
   }, {
     v: 'gray',
-    label: '白髪染めを定期的にしている',
+    label: '白髪染めをしている',
     score: {
       aging: 2,
       colorFade: 1
     }
   }, {
     v: 'home',
-    label: 'ホームカラーをしている',
+    label: '自分で染めている（ホームカラー）',
     score: {
       damage: 2,
       colorFade: 1
@@ -1908,6 +1918,7 @@ const CONCERN_TO_TAG = {
   noShine: 'no-shine',
   split: 'split',
   damage: 'damage',
+  gummy: 'damage',
   colorFade: 'color-fade',
   grayFade: 'gray-fade',
   volumeDown: 'volume-down',
@@ -8045,6 +8056,7 @@ const CONCERN_TO_ADVICE = {
   damage: 'damage',
   split: 'damage',
   tangle: 'damage',
+  gummy: 'damage',
   colorFade: 'color',
   grayFade: 'color',
   volumeDown: 'volume',
