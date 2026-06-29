@@ -15,7 +15,21 @@ export async function onRequestPost(context) {
     const target = String(ev.target || '').slice(0, 20); // finder_cta: reserve_hpb / shop / product
     const label  = String(ev.label || '').slice(0, 24);  // finder_cta の文脈
     const tier   = Number(ev.tier) || 0;                 // damageTier 1-3
-    const meta   = (ev.meta && typeof ev.meta === 'object') ? JSON.stringify(ev.meta).slice(0, 512) : null;
+
+    // 流入属性（どこから来たか）— 個人は特定しない（チャネル名/自社UTM/端末種別/入口/国レベル）
+    const ref     = String(ev.ref || '').slice(0, 24);          // 正規化チャネル: google/instagram/x/line/direct…
+    const utmSrc  = String(ev.utm_source || '').slice(0, 32);
+    const utmCmp  = String(ev.utm_campaign || '').slice(0, 48);
+    const device  = String(ev.device || '').slice(0, 8);        // mobile / desktop
+    const landing = String(ev.landing || '').slice(0, 64);      // 初回入口パス
+    const country = String((request.cf && request.cf.country) || '').slice(0, 4); // CFが国コードを無料付与(非個人情報)
+
+    // 予備JSON（utm_medium / lang / 任意の拡張）
+    const metaObj = {};
+    if (ev.utm_medium) metaObj.utm_medium = String(ev.utm_medium).slice(0, 24);
+    if (ev.lang)       metaObj.lang = String(ev.lang).slice(0, 8);
+    if (ev.meta && typeof ev.meta === 'object') Object.assign(metaObj, ev.meta);
+    const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj).slice(0, 512) : null;
 
     let stored = false;
 
@@ -24,8 +38,8 @@ export async function onRequestPost(context) {
       stored = true;
       context.waitUntil(
         env.DB.prepare(
-          'INSERT INTO events (ts,name,path,type,advice,tier,mode,gender,target,label,meta) VALUES (?,?,?,?,?,?,?,?,?,?,?)'
-        ).bind(Date.now(), name, path, type, advice, tier || null, mode, gender, target, label, meta)
+          'INSERT INTO events (ts,name,path,type,advice,tier,mode,gender,target,label,ref,utm_source,utm_campaign,device,country,landing,meta) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        ).bind(Date.now(), name, path, type, advice, tier || null, mode, gender, target, label, ref, utmSrc, utmCmp, device, country, landing, meta)
          .run().catch(() => {})
       );
     }
@@ -33,12 +47,12 @@ export async function onRequestPost(context) {
     // ② Analytics Engine（設定があれば併用）
     if (env && env.SEAM_AE && typeof env.SEAM_AE.writeDataPoint === 'function') {
       stored = true;
-      env.SEAM_AE.writeDataPoint({ indexes: [name], blobs: [name, path, type, advice, mode, gender, target, label], doubles: [tier] });
+      env.SEAM_AE.writeDataPoint({ indexes: [name], blobs: [name, path, type, advice, mode, gender, target, label, ref, utmSrc, utmCmp, device, country, landing], doubles: [tier] });
     }
 
     // ③ どちらも未設定でも CF Pages のリアルタイムログで確認可能
     if (!stored) {
-      console.log('[seam-ev]', JSON.stringify({ name, path, type, advice, tier, mode, gender, target, label }));
+      console.log('[seam-ev]', JSON.stringify({ name, path, type, advice, tier, mode, gender, target, label, ref, utmSrc, utmCmp, device, country, landing }));
     }
   } catch (e) { /* no-op */ }
   return new Response(null, { status: 204 });

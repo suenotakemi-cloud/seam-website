@@ -56,6 +56,13 @@
   .spark{width:100%;height:120px;display:block}
   .muted{color:var(--char);font-size:11px}
   .pill{display:inline-block;font-size:10px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--char)}
+  .tbl-wrap{max-height:400px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+  .tbl th{position:sticky;top:0;background:var(--cream);text-align:left;font-weight:600;color:var(--char);padding:9px 12px;border-bottom:1px solid var(--line);white-space:nowrap;font-size:11px;letter-spacing:.03em}
+  .tbl td{padding:8px 12px;border-bottom:1px solid #F1EBE2;white-space:nowrap;color:var(--ink)}
+  .tbl tbody tr:last-child td{border-bottom:none}
+  .tbl .n{text-align:right;font-variant-numeric:tabular-nums}
+  .tbl td.n b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -112,6 +119,10 @@
   var GENDER = {female:'女性', male:'男性', other:'その他', na:'未回答'};
   var TARGET = {reserve_hpb:'サロン予約(HPB)', reserve_open:'予約を開く', shop:'オンラインショップ', product:'商品リンク(公式)', product_alt:'商品→ショップ案内', online:'オンライン'};
   var MODE = {a:'かんたん(A)', b:'くわしい(B)'};
+  var REF = {direct:'直接 / ブックマーク', google:'Google', instagram:'Instagram', x:'X (Twitter)', line:'LINE', facebook:'Facebook', yahoo:'Yahoo', bing:'Bing', tiktok:'TikTok', youtube:'YouTube', internal:'サイト内リンク', other:'その他'};
+  var DEVICE = {mobile:'スマホ', desktop:'PC'};
+  var COUNTRY = {JP:'日本', US:'アメリカ', CN:'中国', TW:'台湾', KR:'韓国', HK:'香港', TH:'タイ', SG:'シンガポール', GB:'イギリス', AU:'オーストラリア'};
+  var EVNAME = {finder_complete:'診断完了', finder_cta:'予約・誘導', finder_start:'診断開始'};
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function el(id){return document.getElementById(id);}
@@ -123,6 +134,7 @@
     function dailyGen(){var a=[],base=new Date('2026-04-01').getTime();for(var i=0;i<60;i++){a.push({d:new Date(base+i*864e5).toISOString().slice(0,10),c:Math.round(8+7*Math.sin(i/5)+Math.random()*6)});}return a;}
     var d=dailyGen();
     var completes=byType.reduce(function(s,x){return s+x.c;},0);
+    function recentGen(){var a=[],now=Date.now(),refs=['instagram','google','direct','x','line'],types=['NNW','TLS','VCC','MSP','FHC'],adv=['frizz','damage','dry','scalp','volume'],tgts=['reserve_hpb','shop','product','product_alt'];for(var i=0;i<24;i++){var isCta=Math.random()<.4;a.push({ts:now-i*37*60000-Math.round(Math.random()*9e5),name:isCta?'finder_cta':'finder_complete',type:types[i%types.length],advice:adv[i%adv.length],tier:1+(i%3),ref:refs[i%refs.length],utm_campaign:i%4===0?'summer_2026':'',target:isCta?tgts[i%tgts.length]:'',device:Math.random()<.85?'mobile':'desktop',gender:Math.random()<.8?'female':'male'});}return a;}
     return {configured:true, generatedAt:Date.now(), windowDays:90, _demo:true,
       summary:{starts:Math.round(completes*1.42), completes:completes, ctas:Math.round(completes*0.34)},
       byType:byType, byAdvice:[{a:'damage',c:Math.round(completes*.28)},{a:'frizz',c:Math.round(completes*.22)},{a:'dry',c:Math.round(completes*.18)},{a:'scalp',c:Math.round(completes*.14)},{a:'volume',c:Math.round(completes*.1)},{a:'color',c:Math.round(completes*.08)}],
@@ -130,7 +142,14 @@
       byGender:[{g:'female',c:Math.round(completes*.83)},{g:'male',c:Math.round(completes*.15)},{g:'other',c:Math.round(completes*.02)}],
       byMode:[{m:'a',c:Math.round(completes*.86)},{m:'b',c:Math.round(completes*.56)}],
       ctaTarget:[{target:'reserve_hpb',c:Math.round(completes*.19)},{target:'shop',c:Math.round(completes*.09)},{target:'product',c:Math.round(completes*.06)}],
-      daily:d };
+      daily:d,
+      bySource:[{ref:'instagram',c:Math.round(completes*.46)},{ref:'google',c:Math.round(completes*.27)},{ref:'direct',c:Math.round(completes*.14)},{ref:'x',c:Math.round(completes*.07)},{ref:'line',c:Math.round(completes*.06)}],
+      byCampaign:[{u:'summer_2026',c:Math.round(completes*.21)},{u:'ig_story_uneri',c:Math.round(completes*.14)},{u:'kerastase_launch',c:Math.round(completes*.08)}],
+      byDevice:[{d:'mobile',c:Math.round(completes*.88)},{d:'desktop',c:Math.round(completes*.12)}],
+      byCountry:[{country:'JP',c:Math.round(completes*.94)},{country:'TW',c:Math.round(completes*.03)},{country:'US',c:Math.round(completes*.02)}],
+      byLanding:[{landing:'/finder',c:Math.round(completes*.52)},{landing:'/',c:Math.round(completes*.30)},{landing:'/guide-uneri',c:Math.round(completes*.10)}],
+      sourceFunnel:[{ref:'instagram',starts:Math.round(completes*.62),completes:Math.round(completes*.46),ctas:Math.round(completes*.18)},{ref:'google',starts:Math.round(completes*.40),completes:Math.round(completes*.27),ctas:Math.round(completes*.08)},{ref:'direct',starts:Math.round(completes*.19),completes:Math.round(completes*.14),ctas:Math.round(completes*.05)},{ref:'x',starts:Math.round(completes*.12),completes:Math.round(completes*.07),ctas:Math.round(completes*.02)}],
+      recent:recentGen() };
   }
 
   // ---- 描画 ----
@@ -167,6 +186,27 @@
       '</svg><div class="muted" style="display:flex;justify-content:space-between;margin-top:2px"><span>'+esc(daily[0].d)+'</span><span>最多 '+max+'件/日</span><span>'+esc(daily[n-1].d)+'</span></div>';
   }
 
+  function funnelTable(arr){
+    if(!arr||!arr.length) return '<div class="empty">データなし</div>';
+    var rows=arr.map(function(x){
+      var rate=x.completes>0?Math.round(x.ctas/x.completes*1000)/10:0;
+      return '<tr><td>'+esc(REF[x.ref]||x.ref)+'</td><td class="n">'+(x.starts||0)+'</td><td class="n">'+(x.completes||0)+'</td><td class="n">'+(x.ctas||0)+'</td><td class="n"><b>'+rate+'%</b></td></tr>';
+    }).join('');
+    return '<table class="tbl"><thead><tr><th>流入元</th><th class="n">開始</th><th class="n">完了</th><th class="n">予約CTA</th><th class="n">予約率</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+  function recentTable(rows){
+    if(!rows||!rows.length) return '<div class="empty">データなし</div>';
+    var body=rows.map(function(x){
+      var t=new Date(x.ts).toLocaleString('ja-JP',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+      var concern=x.advice?(ADVICE[x.advice]||x.advice):'';
+      var src=x.ref?(REF[x.ref]||x.ref):'';
+      var cta=x.target?(TARGET[x.target]||x.target):'';
+      var cmp=x.utm_campaign?' <span class="muted">'+esc(x.utm_campaign)+'</span>':'';
+      return '<tr><td class="muted">'+esc(t)+'</td><td>'+esc(EVNAME[x.name]||x.name)+'</td><td>'+esc(x.type||'')+'</td><td>'+esc(concern)+'</td><td>'+esc(src)+cmp+'</td><td>'+esc(cta)+'</td></tr>';
+    }).join('');
+    return '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>時刻</th><th>種別</th><th>タイプ</th><th>悩み</th><th>流入元</th><th>CTA</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+  }
+
   function render(data){
     var head = data._demo ? '［デモ表示］ ' : '';
     if (data.generatedAt) head += '更新 ' + new Date(data.generatedAt).toLocaleString('ja-JP');
@@ -182,13 +222,20 @@
       kpi('予約・CTA遷移率', cvr, '%');
 
     el('panels').innerHTML =
+      panel('Source','流入元（チャネル）', barRows(data.bySource||[], function(x){return REF[x.ref]||x.ref;})) +
+      panel('Campaign','キャンペーン（UTM）', barRows(data.byCampaign||[], function(x){return x.u;})) +
+      panel('Device','デバイス', barRows(data.byDevice||[], function(x){return DEVICE[x.d]||x.d;})) +
+      panel('Country','国・地域', barRows(data.byCountry||[], function(x){return COUNTRY[x.country]||x.country;})) +
+      panel('Entry','入口ページ', barRows(data.byLanding||[], function(x){return x.landing;})) +
       panel('Type','27髪格タイプ 分布', barRows(data.byType||[], function(x){return x.t;})) +
       panel('Concern','悩み（主訴）分布', barRows(data.byAdvice||[], function(x){return ADVICE[x.a]||x.a;})) +
       panel('Damage','ダメージ履歴 Tier', barRows(data.byTier||[], function(x){return TIER[x.tier]||('Tier'+x.tier);})) +
       panel('Gender','性別 分布', barRows(data.byGender||[], function(x){return GENDER[x.g]||x.g;})) +
       panel('Mode','診断モード（開始）', barRows(data.byMode||[], function(x){return MODE[x.m]||x.m;})) +
       panel('Funnel','予約・誘導クリック', barRows(data.ctaTarget||[], function(x){return TARGET[x.target]||x.target;})) +
-      '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Trend</span>日次トレンド（診断完了）</h2>'+sparkline(data.daily||[])+'</div>';
+      '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Channel</span>チャネル別ファネル（流入→診断→予約）</h2>'+funnelTable(data.sourceFunnel||[])+'</div>' +
+      '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Trend</span>日次トレンド（診断完了）</h2>'+sparkline(data.daily||[])+'</div>' +
+      '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Log</span>最近のアクティビティ（履歴）</h2>'+recentTable(data.recent||[])+'</div>';
 
     window.__seamData = data;
   }
@@ -201,6 +248,12 @@
     (data.byGender||[]).forEach(function(x){rows.push(['gender',x.g,x.c]);});
     (data.byMode||[]).forEach(function(x){rows.push(['mode',x.m,x.c]);});
     (data.ctaTarget||[]).forEach(function(x){rows.push(['cta',x.target,x.c]);});
+    (data.bySource||[]).forEach(function(x){rows.push(['source',x.ref,x.c]);});
+    (data.byCampaign||[]).forEach(function(x){rows.push(['campaign',x.u,x.c]);});
+    (data.byDevice||[]).forEach(function(x){rows.push(['device',x.d,x.c]);});
+    (data.byCountry||[]).forEach(function(x){rows.push(['country',x.country,x.c]);});
+    (data.byLanding||[]).forEach(function(x){rows.push(['landing',x.landing,x.c]);});
+    (data.sourceFunnel||[]).forEach(function(x){rows.push(['funnel:'+x.ref,'starts',x.starts]);rows.push(['funnel:'+x.ref,'completes',x.completes]);rows.push(['funnel:'+x.ref,'ctas',x.ctas]);});
     (data.daily||[]).forEach(function(x){rows.push(['daily',x.d,x.c]);});
     return '﻿'+rows.map(function(r){return r.join(',');}).join('\n');
   }
