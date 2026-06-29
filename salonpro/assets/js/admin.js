@@ -1486,14 +1486,14 @@
         return `<tr><td><b>${esc(t.maker)}</b></td><td class="num">${yen(t.threshold)}</td><td>${esc(t.reward)}</td><td class="num">${dn}</td><td class="num" style="color:var(--gold-strong);font-weight:800">${nr}</td></tr>`;
       }).join('');
       sum.innerHTML = `<div class="adm-kpis" style="margin-bottom:14px">
-          ${tile('補填対象メーカー', D.tiers.length + '社', '達成→翌月 無償現品', '')}
+          ${tile('補填対象メーカー', D.tiers.length + '社', '達成→1本無料クーポン', '')}
           ${tile('今月 達成見込み', doneSalons + '店', '翌月補填が確定', 'up')}
           ${tile('達成あと一歩', nearRows.length + '件', '営業の狙い目', 'warn')}
           ${tile('翌月 補填コスト', yen(rebateCost), 'メーカー負担（値引き0）', '')}
         </div>
         <div style="font-size:12.5px;font-weight:800;margin:4px 0 8px">補填条件（メーカー別）</div>
         <div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>メーカー</th><th>月間 基準額</th><th>翌月 補填</th><th>達成</th><th>あと一歩</th></tr></thead><tbody>${condRows}</tbody></table></div>
-        <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px"><b>値引きではなく補填</b>＝メーカーは価格を崩さず（無償現品で奨励）、サロンは実質コスト減・発注集中。サロンには「あと◯円で補填」を見せて発注意識を高めます。既存の「メーカー添付（無償現品）」と同じ請求枠組みで精算。</div>`;
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px"><b>値引きではなく補填</b>＝達成すると<b>翌月の発注で使える1本無料クーポン</b>を発行。メーカーは価格を崩さず（現品で奨励）、サロンは実質コスト減・発注集中＋翌月の発注理由になる。クーポンの1本無料は既存の「メーカー添付（無償現品）」と同じ枠組みで精算。</div>`;
     }
     const near = qs('#rebateNear');
     if (near) {
@@ -1502,7 +1502,7 @@
         <td>${esc(r.maker)}</td>
         <td class="num">${yen(r.spent)}<div style="font-size:10.5px;color:var(--ink-3)">/ ${yen(r.threshold)}</div></td>
         <td class="num" style="color:#c0392b;font-weight:800">あと ${yen(r.rest)}</td>
-        <td style="font-size:11.5px">「あと${yen(r.rest)}で翌月${esc(r.reward)}が付きます」と一押し</td>
+        <td style="font-size:11.5px">「あと${yen(r.rest)}で${esc(r.reward)}が届きます」と一押し</td>
       </tr>`).join('');
       near.innerHTML = nearRows.length
         ? `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>メーカー</th><th>今月仕入れ</th><th>達成まで</th><th>営業トーク</th></tr></thead><tbody>${rows}</tbody></table></div>

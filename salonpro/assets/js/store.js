@@ -28,6 +28,7 @@
   const LS_KARTE = 'sp.karte.v1';                // [顧客カルテ] カラーレシピ（調合）を顧客別に保存・再現
   const LS_PROXY = 'sp.proxyOrders.v1';          // [代理発注] 担当者がサロンの代わりに入力（FAX/電話注文の代行）
   const LS_STAFF = 'sp.staff.v1';                // [スタッフ {id,name,role,store}]
+  const LS_COUPONS = 'sp.coupons.v1';            // [クーポン] メーカー補填の達成特典＝翌月限定 1本無料クーポン
   const LS_ACTOR = 'sp.actor.v1';                // 現在の発注者 {role,name,staffId}
   const LS_TEMPLATES = 'sp.orderTemplates.v1';   // [発注テンプレ {id,name,by,items:[{id,qty}],at}]
   const LS_ORDER_APPR = 'sp.orderApprovals.v1';  // [スタッフの発注申請 {id,staff,items,total,count,status,at}]
@@ -70,6 +71,7 @@
   let restockAlerts = load(LS_RESTOCK, {});      // 入荷お知らせ登録 {productId: 登録時刻}
   let karte = load(LS_KARTE, null);              // 顧客カルテ（カラーレシピ）。null=未初期化→デモ投入
   let proxyOrders = load(LS_PROXY, null);        // 代理発注（担当者代行）。null=未初期化→デモ投入
+  let coupons = load(LS_COUPONS, null);          // クーポン（メーカー補填の特典）。null=未初期化→デモ投入
   // staff.html と同形のシード（同じ sp.staff.v1 を共有）
   const SEED_STAFF = [
     { id: 'u1', name: '菊地 健一', email: 'owner@salon-luxe.jp', store: 's1', role: 'owner', perms: { view: true, order: true, approve: true } },
@@ -619,6 +621,22 @@
 
     /* ---- サロン別 割引率（ディーラーが店舗ごとにメーカー/ブランドの割引を登録→その店舗だけ価格が変わる） ---- */
     currentSalon() { return CURRENT_SALON; },
+
+    /* ---- クーポン（メーカー補填の特典＝翌月限定 1本無料）。達成で発行し、翌月の発注で1本無料に使える ---- */
+    _seedCoupons() {
+      coupons = load(LS_COUPONS, null);
+      if (!coupons) {
+        coupons = [
+          { id: 'cp-rebel', maker: 'ルベル', kind: 'free1', label: 'ルベル 商品1本 無料', note: '先月「ルベル」月間基準 達成の特典', expires: '今月末の発注まで有効', used: false },
+          { id: 'cp-milbon', maker: 'ミルボン', kind: 'free1', label: 'ミルボン 商品1本 無料', note: '先月「ミルボン」月間基準 達成の特典', expires: '今月末の発注まで有効', used: false },
+        ];
+        try { localStorage.setItem(LS_COUPONS, JSON.stringify(coupons)); } catch (e) {}
+      }
+    },
+    getCoupons() { if (coupons == null) this._seedCoupons(); return JSON.parse(JSON.stringify(coupons)); },
+    freeCoupons() { return this.getCoupons().filter(c => !c.used && c.kind === 'free1'); },
+    addCoupon(c) { if (coupons == null) this._seedCoupons(); coupons.unshift(c); try { localStorage.setItem(LS_COUPONS, JSON.stringify(coupons)); } catch (e) {} emit(); },
+    useCoupon(id) { if (coupons == null) this._seedCoupons(); const c = coupons.find(x => x.id === id); if (c) { c.used = true; try { localStorage.setItem(LS_COUPONS, JSON.stringify(coupons)); } catch (e) {} emit(); } },
     getSalonDiscountsAll() { return JSON.parse(JSON.stringify(salonDiscounts)); },
     getSalonDiscounts(salonName) { const d = salonDiscounts[salonName || CURRENT_SALON] || {}; return { makers: Object.assign({}, d.makers || {}), brands: Object.assign({}, d.brands || {}) }; },
     setSalonDiscountsFor(salonName, rules) {

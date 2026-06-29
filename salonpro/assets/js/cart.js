@@ -84,15 +84,32 @@
   }
 
   /* ---- 金額計算（ディーラー単位） ---- */
+  function makerOf(p) { return p.maker || p.brand; }
   function calcDealer(entries, dl) {
     const bp = p => (SP.priceOf ? SP.priceOf(p) : p.price);
     const raw = entries.reduce((a, [p, q]) => a + bp(p) * q, 0);
     const subtotal = entries.reduce((a, [p, q]) => a + SP.unitPrice(bp(p), q) * q, 0);
     const qtyDiscount = raw - subtotal;
+    // メーカー補填クーポン（翌月限定 1本無料）：保有クーポンの対象メーカーが入っていれば、各メーカー最安1本を無料に（1メーカー1枚）。
+    let couponOff = 0; const couponMakers = []; const couponIds = [];
+    const fcs = (Store.freeCoupons ? Store.freeCoupons() : []);
+    const usedMk = {};
+    if (fcs.length && entries.length) {
+      fcs.forEach(c => {
+        if (usedMk[c.maker]) return;
+        const match = entries.filter(([p]) => makerOf(p) === c.maker);
+        if (!match.length) return;
+        const off = Math.min.apply(null, match.map(([p]) => bp(p))); // 最安1本（会員単価）
+        if (off > 0) { couponOff += off; couponMakers.push(c.maker); couponIds.push(c.id); usedMk[c.maker] = 1; }
+      });
+    }
+    couponOff = Math.min(couponOff, subtotal);
+    const couponLabel = couponMakers.length ? couponMakers.join('・') + ' 各1本 無料' : '';
     const ship = dl.ship || {};
     const shipping = subtotal === 0 ? 0 : (subtotal >= (ship.freeOver || 3000) ? 0 : (ship.fee || 550));
-    const tax = Math.round(subtotal * TAX_RATE);
-    return { subtotal, qtyDiscount, shipping, tax, total: subtotal + shipping + tax };
+    const taxable = Math.max(0, subtotal - couponOff);
+    const tax = Math.round(taxable * TAX_RATE);
+    return { subtotal, qtyDiscount, couponOff, couponLabel, couponIds, shipping, tax, total: taxable + shipping + tax };
   }
 
   function payList(dl) {
@@ -144,6 +161,7 @@
       ? `<div class="dcart__kake">${shieldSvg}<div><b style="color:var(--ink)">掛け払いは ${dl.name} の担当者が与信を確認後に発送します。</b>（担当：${dl.rep || '—'}）</div></div>`
       : '';
     const qtyRow = c.qtyDiscount > 0 ? `<div class="dsum__row"><span>まとめ買い割引</span><span class="v">-${fmtYen(c.qtyDiscount)}</span></div>` : '';
+    const cpRow = c.couponOff > 0 ? `<div class="dsum__row" style="color:var(--gold-strong);font-weight:700"><span>🎟 クーポン（${c.couponLabel}）</span><span class="v">-${fmtYen(c.couponOff)}</span></div>` : '';
     return `
       <section class="dcart" data-dealer="${dl.id}">
         <div class="dcart__head">
@@ -159,6 +177,7 @@
           <div class="dsum">
             <div class="dsum__row"><span>小計（税抜）</span><span class="v">${fmtYen(c.subtotal)}</span></div>
             ${qtyRow}
+            ${cpRow}
             <div class="dsum__row"><span>送料</span><span class="v">${c.shipping === 0 ? '無料' : fmtYen(c.shipping)}</span></div>
             <div class="dsum__row"><span>消費税（10%）</span><span class="v">${fmtYen(c.tax)}</span></div>
             <div class="dsum__total"><span>合計（税込）</span><span class="v">${fmtYen(c.total)}</span></div>
@@ -257,6 +276,16 @@
       if (needsAppr) html += `<div style="display:flex;gap:8px;align-items:flex-start;background:#fff5e0;border:1px solid #f0dcbf;border-radius:var(--r-md);padding:10px 13px;margin-bottom:12px;font-size:12px;color:#7a5a1e;line-height:1.6">${shieldSvg}<span><b>スタッフの店舗発注は承認制です。</b>「オーナーに発注を申請」すると、オーナー/店長の承認後に発注が確定します。</span></div>`;
     }
     html += `<div class="dealer-note">${shieldSvg}<span>このカートは<b>ディーラーごと</b>に分かれています。お支払い・送料・配送はそれぞれ別です（${activeIds.length + placed.length}ディーラー）。</span></div>`;
+    // 保有クーポン（メーカー補填＝翌月限定 1本無料）の案内
+    const heldCoupons = (Store.freeCoupons ? Store.freeCoupons() : []);
+    if (activeIds.length && heldCoupons.length) {
+      const allProds = activeIds.reduce((a, d) => a.concat((groups[d] || []).map(it => it.p)), []);
+      const chips = heldCoupons.map(c => {
+        const applied = allProds.some(p => makerOf(p) === c.maker);
+        return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border:1px solid ${applied ? '#cfe6d8' : 'var(--gold-line)'};background:${applied ? '#f1faf4' : 'var(--gold-soft)'};color:${applied ? 'var(--stock-in)' : 'var(--ink)'};border-radius:999px;padding:5px 11px">🎟 ${c.maker} 1本無料 ${applied ? '（適用中）' : '（対象商品で適用）'}</span>`;
+      }).join('');
+      html += `<div style="border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px"><div style="font-size:12px;font-weight:800;margin-bottom:7px">保有クーポン（メーカー補填）</div><div style="display:flex;flex-wrap:wrap;gap:7px">${chips}</div><div style="font-size:10.5px;color:var(--ink-3);margin-top:7px">対象メーカーの商品をカートに入れると、最安1本が自動で無料になります（翌月発注限定・デモ）。</div></div>`;
+    }
     placed.forEach(o => { html += doneSection(o); });
 
     const order = [SP.primaryDealer].concat(activeIds.filter(d => d !== SP.primaryDealer));

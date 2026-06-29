@@ -829,14 +829,15 @@
      ※デモ：基準額・補填内容はメーカー協賛条件にもとづき菊地が設定。既存の「メーカー添付（無償現品）」と同じ枠組み。 */
   window.SP.REBATE = {
     enabled: true,
+    // 達成特典＝翌月の発注で使える「1本無料クーポン」（値引きでなく現品。価格を崩さない）。rewardAmtは目安額。
     tiers: [
-      { maker: 'ミルボン', threshold: 200000, reward: '¥10,000相当の無償現品', rewardAmt: 10000 },
-      { maker: 'ルベル', threshold: 150000, reward: '¥8,000相当の無償現品', rewardAmt: 8000 },
-      { maker: 'ロレアル', threshold: 150000, reward: '¥8,000相当の無償現品', rewardAmt: 8000 },
-      { maker: 'アリミノ', threshold: 120000, reward: '¥6,000相当の無償現品', rewardAmt: 6000 },
-      { maker: 'ウエラ', threshold: 120000, reward: '¥6,000相当の無償現品', rewardAmt: 6000 },
-      { maker: 'シュワルツコフ', threshold: 120000, reward: '¥6,000相当の無償現品', rewardAmt: 6000 },
-      { maker: 'ホーユー', threshold: 100000, reward: '¥5,000相当の無償現品', rewardAmt: 5000 },
+      { maker: 'ミルボン', threshold: 200000, reward: '翌月限定 1本無料クーポン', rewardAmt: 10000 },
+      { maker: 'ルベル', threshold: 150000, reward: '翌月限定 1本無料クーポン', rewardAmt: 8000 },
+      { maker: 'ロレアル', threshold: 150000, reward: '翌月限定 1本無料クーポン', rewardAmt: 8000 },
+      { maker: 'アリミノ', threshold: 120000, reward: '翌月限定 1本無料クーポン', rewardAmt: 6000 },
+      { maker: 'ウエラ', threshold: 120000, reward: '翌月限定 1本無料クーポン', rewardAmt: 6000 },
+      { maker: 'シュワルツコフ', threshold: 120000, reward: '翌月限定 1本無料クーポン', rewardAmt: 6000 },
+      { maker: 'ホーユー', threshold: 100000, reward: '翌月限定 1本無料クーポン', rewardAmt: 5000 },
     ],
     // ログイン中サロンの今月仕入れ（メーカー別・デモ）。本番は当月の確定注文から集計。
     demoMonth: { 'ミルボン': 168000, 'ルベル': 152000, 'アリミノ': 64000, 'ウエラ': 38000 },
