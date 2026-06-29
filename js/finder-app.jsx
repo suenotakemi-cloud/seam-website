@@ -7669,6 +7669,87 @@ function SeasonalCareSection({ seamData }) {
   );
 }
 
+/* ──────────────────────────────────────────
+   buildStylistMemo — 既存回答の掛け合わせから「美容師さんへの施術メモ」を自動生成
+   薬剤事故(切れ毛・ビビり)に直結する組み合わせを優先。質問は一切増やさない。
+   ────────────────────────────────────────── */
+function buildStylistMemo(answers) {
+  const a = answers || {};
+  const memos = [];
+  const bleach = deriveBleach(a);             // null / within3m / within1y / multi / highlight
+  const hasBleach = !!bleach;
+  const hardBleach = bleach === 'multi';      // 白っぽいハイトーンまで
+  const hasStraighten = a.straighten && a.straighten !== 'none';
+  const freqStraighten = ['quarterly', 'frequent'].includes(a.straighten);
+  const hasPerm = a.perm && a.perm !== 'none' && a.perm !== 'past';
+  const hotIron = a.styling && a.styling.temp === 't200';
+  const concerns = Array.isArray(a.concerns) ? a.concerns : [];
+  const gummy = concerns.includes('gummy');
+  const blackDye = a.color === 'dark_strong';
+  const allergy = Array.isArray(a.scalpAllergy) ? a.scalpAllergy : (a.scalpAllergy ? [a.scalpAllergy] : []);
+  const diamine = allergy.includes('diamine');
+  const tingles = allergy.includes('tingles');
+  const trouble = Array.isArray(a.hairTrouble) ? a.hairTrouble : [];
+  const bibiri = trouble.includes('bibiri') || trouble.includes('breakage');
+
+  if (hasBleach && hasStraighten) memos.push({ lv: 'high', t: 'ブリーチ × 縮毛矯正の併用毛　薬剤強度・前処理を特に慎重に（切れ毛・ビビり毛のリスク高）' });
+  if (hardBleach)                 memos.push({ lv: 'high', t: '白っぽいハイトーンまで脱色した履歴　強度設定とテスト施術の検討を' });
+  if (gummy)                      memos.push({ lv: 'high', t: '濡れるとゴム状に伸びる＝ハイダメージのサイン　施術前に状態確認を' });
+  if (diamine)                    memos.push({ lv: 'high', t: 'ジアミンアレルギーの申告あり　カラー薬剤の選定に注意' });
+  else if (tingles)               memos.push({ lv: 'mid',  t: 'カラー剤がしみることがある　頭皮保護・パッチテストを推奨' });
+  if (hasBleach && hotIron)       memos.push({ lv: 'mid',  t: 'ブリーチ × 200℃以上のアイロン　熱ダメージの内部蓄積に注意' });
+  if (bibiri)                     memos.push({ lv: 'mid',  t: '過去にビビり毛・切れ毛の経験あり　同部位への負荷に配慮' });
+  if (blackDye)                   memos.push({ lv: 'mid',  t: '黒染め・しっかり暗い履歴　明るくしづらい・色抜けムラに注意' });
+  if (freqStraighten || (hasStraighten && hasPerm)) memos.push({ lv: 'mid', t: '矯正/パーマの頻度高め　薬剤の蓄積ダメージに配慮' });
+
+  return memos;
+}
+
+/* ──────────────────────────────────────────
+   IngredientGuideSection — ブリーチ毛の人に「探す成分」を教育(共通4成分)
+   カタログ記載の成分から抽出。該当商品はアフィニティで自然に上位に出る＝教育と推薦が一致。
+   ────────────────────────────────────────── */
+function IngredientGuideSection({ answers }) {
+  const a = answers || {};
+  const hasBleach = !!deriveBleach(a);
+  if (!hasBleach) return null;
+  const isGray = a.grayHair === 'yes' || a.color === 'gray';
+  const COMMON = [
+    { t: 'ケラチン（タンパク質）', b: 'ブリーチでいちばん失われるのがタンパク質　形を変えて補うのが各社共通', ex: 'MSVK多サイズケラチン / Aujua CMADK / ケラテックス' },
+    { t: '紫色素（アンチイエロー）', b: 'ブリーチ後の黄ばみを抑えて透明感をキープ', ex: 'ブロンドプラス / ブロンドアブソリュ / アメジスト' },
+    { t: 'ボンド・結合ケア', b: 'ブリーチで切れた内部結合を補い切れ毛を抑える発想', ex: 'ファイバープレックス / 月見草エキス / プルミエール' },
+    { t: 'キレート（金属・カルシウムオフ）', b: 'ブリーチ後に残る金属・カルシウムを除去し手触りと発色を底上げ', ex: 'アルタイムR / ハートオブグラス / プルミエール AHA' },
+  ];
+  return (
+    <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay: '170ms' }}>
+      <p className="font-mono tracking-widest2 text-[11px] uppercase text-gold">— Ingredient</p>
+      <h2 className="mt-3 font-serif text-[26px] sm:text-[34px] text-ink leading-snug">ブリーチ毛を選ぶときのヒント</h2>
+      <p className="mt-2 text-[13px] sm:text-[13.5px] text-charcoal/70 leading-[1.9]">
+        ゆらいだ髪は「探す成分」で選ぶと心強い　この4つが各ブランド共通で入っています
+      </p>
+      <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {COMMON.map((c, i) => (
+          <div key={i} className="bg-white/70 border border-line rounded-[2px] p-4 sm:p-5">
+            <div className="flex items-start gap-2">
+              <span className="font-mono text-[10px] text-gold mt-1 nums">0{i + 1}</span>
+              <div>
+                <p className="font-serif text-[14.5px] text-ink leading-snug">{c.t}</p>
+                <p className="mt-1 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">{c.b}</p>
+                <p className="mt-1.5 text-[11px] text-charcoal/50 leading-snug">{c.ex}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="mt-4 text-[12.5px] sm:text-[13px] text-ink leading-[1.9] border-l-2 border-gold pl-4">
+        → あなたには <span className="text-gold">ブロンドプラス・ファイバープレックス・リペアリティ</span> などが候補に出ています
+        {isGray && <span>　白髪×ブリーチの方は <span className="text-gold">アルティール・クロノロジスト</span> なども</span>}
+      </p>
+      <p className="mt-3 text-[11px] text-charcoal/55 leading-relaxed">※ 海外ブランドはブリーチ＋オンカラーを前提に設計されていることが多く、ブリーチ毛と相性が良い傾向です</p>
+    </section>
+  );
+}
+
 function CounselingSheet({ karte, answers, onSaveImage }) {
   const o = karte?.origin;
   if (!o) return null;
@@ -7881,6 +7962,26 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
             <p className="mt-2 text-[13px] sm:text-[13.5px] text-charcoal/75">— {typeShort.jp}</p>
           )}
         </div>
+
+        {/* ▼ 施術メモ(美容師さんへ) — 既存回答の掛け合わせから自動生成(該当時のみ) */}
+        {(() => {
+          const memos = buildStylistMemo(a);
+          if (!memos.length) return null;
+          return (
+            <div className="mt-7 border border-gold/45 rounded-[2px] p-5" style={{ background: 'linear-gradient(155deg,#FBF7EF,#F5EDDD)' }}>
+              <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">— Memo for stylist</p>
+              <p className="mt-1.5 font-serif text-[15px] text-ink">施術メモ（美容師さんへ）</p>
+              <ul className="mt-3 space-y-2">
+                {memos.map((m, i) => (
+                  <li key={i} className="flex items-start gap-2 text-[12.5px] sm:text-[13px] leading-[1.85] text-ink">
+                    <span className={`mt-1.5 inline-block w-1.5 h-1.5 rounded-full shrink-0 ${m.lv === 'high' ? 'bg-[#b4453a]' : 'bg-gold'}`} />
+                    <span>{m.t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })()}
 
         {/* 02 基本情報 */}
         {basicItems.length > 0 && (
@@ -9116,6 +9217,9 @@ function Result({ answers, onRestart, onCollection }) {
         {deepResult && (
           <DeepProductSection deepResult={deepResult} seamData={seamData} answers={answers} scores={scores} />
         )}
+
+        {/* ━━━━━ ブリーチ毛の成分ガイド(ブリーチありの人のみ表示) ━━━━━ */}
+        <IngredientGuideSection answers={answers} />
 
         {/* ━━━━━ 今の季節のケア(日付で自動判定・発見型) ━━━━━ */}
         <SeasonalCareSection seamData={seamData} />
