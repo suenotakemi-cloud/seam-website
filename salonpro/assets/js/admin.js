@@ -1305,6 +1305,100 @@
     }
   }
 
+  /* ===== カテゴリ内訳（カラー剤のメーカーシェア／色味6分類×ブランド／パーマ・ストレートのタイプ別／人気銘柄ランキング）===== */
+  function buildCatData() {
+    const P = (SP.DATA && SP.DATA.products || []).filter(p => p.cat !== '_rec');
+    const rnd = mulberry32(20260702);
+    const makerOf = p => { const m = p.maker || p.brand; return L2M[m] || m; };
+    const DEM = {}; P.forEach(p => { DEM[p.id] = Math.max(1, Math.round((p.pop || 40) * 1.4 + rnd() * 60)); });
+    const dem = p => DEM[p.id] || 1;
+    // 色味を赤・青・黄・紫・オレンジ・緑にざっくり束ねる（アッシュ→青、マット→緑 等）
+    function color6(s) {
+      s = s || '';
+      if (/レッド|ガーネット|ローズ|チェリー|ピンク|コーラル|ボルドー|赤/.test(s)) return '赤';
+      if (/バイオレット|パープル|アメジスト|ラベンダー|オーキッド|トワイライト|紫/.test(s)) return '紫';
+      if (/マット|オリーブ|エメラルド|グリーン|カーキ|緑/.test(s)) return '緑';
+      if (/イエロー|ゴールド|サンド|ベージュ|ヌード|キャメル|黄/.test(s)) return '黄';
+      if (/オレンジ|コッパー|ブラウン|モカ|ウォーム|ナチュラル|橙/.test(s)) return 'オレンジ';
+      if (/アッシュ|ブルー|サファイア|オーシャン|ネイビー|グレー|シルバー|フォギー|グレージュ|グレイッシュ|青/.test(s)) return '青';
+      return 'その他';
+    }
+    const colorP = P.filter(p => p.cat === 'color');
+    const cmk = {}; colorP.forEach(p => { const m = makerOf(p); cmk[m] = (cmk[m] || 0) + dem(p); });
+    const tone = {}, toneMk = {};
+    colorP.filter(p => p.family && p.level).forEach(p => {
+      const b = color6((p.family || '') + ' ' + (p.tone || '') + ' ' + (p.name || ''));
+      if (b === 'その他') return;
+      tone[b] = (tone[b] || 0) + dem(p);
+      const mk = makerOf(p) + '／' + (p.line || p.brand);
+      toneMk[b] = toneMk[b] || {}; toneMk[b][mk] = (toneMk[b][mk] || 0) + dem(p);
+    });
+    const PT = { 'cold-thio': 'チオ系', 'cold-cys': 'システアミン', 'acid': '酸性', 'creep': 'クリープ', 'digital': 'デジタル', 'air': 'エアウェーブ', 'cosme': 'コスメ', 'perm2': '2剤', 'treat': '処理剤' };
+    const ST = { 'alkaline': 'アルカリ縮毛矯正', 'straight2': '2剤', 'acid': '酸性ストレート', 'creep': 'クリープ', 'cosme': 'コスメ', 'treat': '処理剤' };
+    function byType(cat, map, key) {
+      const sh = {}, mk = {};
+      P.filter(p => p.cat === cat).forEach(p => { const t = map[p[key]] || 'その他'; sh[t] = (sh[t] || 0) + dem(p); mk[t] = mk[t] || {}; const m = makerOf(p); mk[t][m] = (mk[t][m] || 0) + dem(p); });
+      return { sh, mk };
+    }
+    const perm = byType('perm', PT, 'permType'), straight = byType('straight', ST, 'straightType');
+    // 人気銘柄ランキング（line単位・薬剤カテゴリ横断）
+    const RANKCATS = { color: 'カラー', perm: 'パーマ', straight: 'ストレート', treatment: 'トリートメント' };
+    const agg = {};
+    P.filter(p => RANKCATS[p.cat]).forEach(p => { const ln = p.line || p.brand; const e = agg[ln] || (agg[ln] = { line: ln, maker: makerOf(p), cat: p.cat, dem: 0 }); e.dem += dem(p); });
+    const ranking = Object.keys(agg).map(k => agg[k]).sort((a, b) => b.dem - a.dem).slice(0, 15);
+    return { cmk: cmk, tone: tone, toneMk: toneMk, perm: perm, straight: straight, ranking: ranking };
+  }
+  function renderCatAnalytics() {
+    const D = buildCatData();
+    const COL6 = [['赤', '#c0392b'], ['青', '#2f6f9e'], ['黄', '#d4a017'], ['紫', '#8e44ad'], ['オレンジ', '#d97b29'], ['緑', '#2f7a4d']];
+    // 1. カラー剤 メーカーシェア
+    const cm = qs('#catColor');
+    if (cm) {
+      const tot = Object.keys(D.cmk).reduce((a, k) => a + D.cmk[k], 0) || 1;
+      const bars = Object.keys(D.cmk).map(k => ({ label: k, v: D.cmk[k], disp: Math.round(D.cmk[k] / tot * 100) + '%' })).sort((a, b) => b.v - a.v).slice(0, 10);
+      cm.innerHTML = `<div style="font-size:12.5px;font-weight:800;margin-bottom:10px">カラー剤 メーカー別シェア <span style="color:var(--ink-3);font-weight:600;font-size:11px">注文需要ベース</span></div>${hbars(bars)}
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px">カラー剤の中でどのメーカーがどれだけ出ているか（ミルボン◯%・ルベル◯%…）。仕入れ構成・取引条件交渉・新ライン導入判断の基礎データ。</div>`;
+    }
+    // 2. 色味6分類 × ブランド
+    const tn = qs('#catTone');
+    if (tn) {
+      const totT = COL6.reduce((a, c) => a + (D.tone[c[0]] || 0), 0) || 1;
+      const stack = '<span style="display:flex;height:18px;border-radius:5px;overflow:hidden;border:1px solid var(--line)">' + COL6.map(c => { const p = Math.round((D.tone[c[0]] || 0) / totT * 100); return p > 0 ? `<i style="width:${p}%;background:${c[1]}" title="${c[0]} ${p}%"></i>` : ''; }).join('') + '</span>';
+      const legend = '<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--ink-2);margin:8px 0 12px">' + COL6.map(c => `<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:11px;height:11px;border-radius:2px;background:${c[1]};display:inline-block"></i>${c[0]} ${Math.round((D.tone[c[0]] || 0) / totT * 100)}%</span>`).join('') + '</div>';
+      const rows = COL6.map(c => {
+        const mk = D.toneMk[c[0]] || {}; const top = Object.keys(mk).map(k => ({ k: k, v: mk[k] })).sort((a, b) => b.v - a.v).slice(0, 3);
+        return `<tr><td><span style="display:inline-flex;align-items:center;gap:7px"><i style="width:12px;height:12px;border-radius:3px;background:${c[1]};display:inline-block"></i><b>${c[0]}</b></span></td><td class="num">${Math.round((D.tone[c[0]] || 0) / totT * 100)}%</td><td style="font-size:12px">${top.map(t => esc(t.k)).join('、') || '—'}</td></tr>`;
+      }).join('');
+      tn.innerHTML = `<div style="font-size:12.5px;font-weight:800;margin-bottom:8px">菊地全体の人気カラー（色味6分類）</div>${legend}${stack}
+        <table class="adm-table" style="margin-top:14px"><thead><tr><th>色味</th><th>シェア</th><th>人気メーカー／ブランド TOP3</th></tr></thead><tbody>${rows}</tbody></table>
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">アッシュ＝青、マット＝緑 等にざっくり束ねた色味別の出方と、各色で強いメーカー／ブランド。需要の地図として。</div>`;
+    }
+    // 3. パーマ・ストレート タイプ別
+    const ch = qs('#catChem');
+    if (ch) {
+      function typeTable(o, title) {
+        const tot = Object.keys(o.sh).reduce((a, k) => a + o.sh[k], 0) || 1;
+        const rows = Object.keys(o.sh).map(k => ({ k: k, v: o.sh[k] })).sort((a, b) => b.v - a.v).map(t => {
+          const mk = o.mk[t.k] || {}; const top = Object.keys(mk).sort((a, b) => mk[b] - mk[a])[0] || '—';
+          return `<tr><td><b>${esc(t.k)}</b></td><td class="num">${Math.round(t.v / tot * 100)}%</td><td>${esc(top)}</td></tr>`;
+        }).join('');
+        return `<div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">${title}</div><div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>薬剤タイプ</th><th>シェア</th><th>人気メーカー</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+      }
+      ch.innerHTML = `<div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">${typeTable(D.perm, 'パーマ剤 タイプ別')}${typeTable(D.straight, 'ストレート剤 タイプ別')}</div>
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px">チオ／システアミン／酸性／クリープ／デジタル等、どの薬剤が出ているか。サロンの技術トレンドと、提案・セミナーの方向づけに。</div>`;
+    }
+    // 4. 人気銘柄ランキング
+    const rk = qs('#catRank');
+    if (rk) {
+      const CATB = { color: ['カラー', '#c0392b'], perm: ['パーマ', '#8e44ad'], straight: ['ストレート', '#2f7a4d'], treatment: ['トリートメント', '#2f6f9e'] };
+      const rows = D.ranking.map((r, i) => { const cb = CATB[r.cat] || ['', '#5b6470']; return `<tr><td class="num" style="font-weight:800">${i + 1}</td><td><b>${esc(r.line)}</b></td><td>${esc(r.maker)}</td><td><span class="tag" style="background:${cb[1]}1a;color:${cb[1]}">${cb[0]}</span></td><td class="num">${r.dem.toLocaleString('ja-JP')}</td></tr>`; }).join('');
+      rk.innerHTML = `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>#</th><th>銘柄（ライン）</th><th>メーカー</th><th>薬剤</th><th>需要指数</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">美容師がよく注文する銘柄ランキング（カラー・パーマ・ストレート・Tr 横断）。品揃え・欠品優先度・販促の軸に。</div>`;
+      const csv = qs('#csvCatRank');
+      if (csv) csv.onclick = () => downloadCsv('人気銘柄ランキング.csv', [['順位', '銘柄', 'メーカー', '薬剤', '需要指数']].concat(D.ranking.map((r, i) => [i + 1, r.line, r.maker, (CATB[r.cat] || [''])[0], r.dem])));
+    }
+  }
+
   // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
   function setupProductAdmin() {
     const body = qs('#productAdminBody'); if (!body) return;
@@ -1396,6 +1490,7 @@
       ['サイト分析', 'site'], ['会員申請の流入元', 'site'], ['行動ファネル', 'site'], ['検索ワード', 'site'], ['実計測ログ', 'site'],
       ['メーカー分析', 'makers'], ['メーカー詳細', 'makers'], ['横断インサイト', 'makers'],
       ['薬剤ミックス', 'rx'], ['サロン別 薬剤', 'rx'], ['美容師別 薬剤', 'rx'], ['セミナー×メーカー', 'rx'],
+      ['カテゴリ内訳', 'cat'], ['色味', 'cat'], ['薬剤タイプ', 'cat'], ['人気銘柄', 'cat'],
       ['分析', 'analytics'], ['請求台帳', 'analytics'],
       ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
       ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
@@ -1404,7 +1499,7 @@
       ['リース', 'lease'], ['機器買取', 'buyback'], ['中古在庫', 'buyback'], ['パートナー', 'partner'],
     ];
     const NAVVIEW = {
-      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-rx': 'rx', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
+      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-rx': 'rx', '#view-cat': 'cat', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
       '#view-proxy': 'proxy', '#view-stock': 'stock', '#restockList': 'restock', '#reviewList': 'review',
       '#creditList': 'credit', '#contractAppList': 'contract', '#seminarList': 'seminar', '#leaseList': 'lease',
       '#buybackList': 'buyback', '#partnerList': 'partner',
@@ -1533,6 +1628,7 @@
   renderSiteAnalytics();
   renderMakerAnalytics();
   renderRxAnalytics();
+  renderCatAnalytics();
   setupProductAdmin();
   renderOrders();
   fillPxSalon();
