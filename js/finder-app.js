@@ -10366,6 +10366,132 @@ function SeasonalCareSection({
     className: "mt-5 text-[11px] text-charcoal/55 leading-relaxed"
   }, "\u203B \u5B63\u7BC0\u306E\u30A2\u30C9\u30D0\u30A4\u30B9\u3067\u3059 \u9AEA\u306E\u72B6\u614B\u306B\u5408\u308F\u305B\u3066\u30B5\u30ED\u30F3\u3067\u3082\u3054\u76F8\u8AC7\u304F\u3060\u3055\u3044")));
 }
+
+/* ──────────────────────────────────────────
+   buildStylistMemo / IngredientGuideSection — rev2 (CI再ビルド用)
+   buildStylistMemo — 既存回答の掛け合わせから「美容師さんへの施術メモ」を自動生成
+   薬剤事故(切れ毛・ビビり)に直結する組み合わせを優先。質問は一切増やさない。
+   ────────────────────────────────────────── */
+function buildStylistMemo(answers) {
+  const a = answers || {};
+  const memos = [];
+  const bleach = deriveBleach(a); // null / within3m / within1y / multi / highlight
+  const hasBleach = !!bleach;
+  const hardBleach = bleach === 'multi'; // 白っぽいハイトーンまで
+  const hasStraighten = a.straighten && a.straighten !== 'none';
+  const freqStraighten = ['quarterly', 'frequent'].includes(a.straighten);
+  const hasPerm = a.perm && a.perm !== 'none' && a.perm !== 'past';
+  const hotIron = a.styling && a.styling.temp === 't200';
+  const concerns = Array.isArray(a.concerns) ? a.concerns : [];
+  const gummy = concerns.includes('gummy');
+  const blackDye = a.color === 'dark_strong';
+  const allergy = Array.isArray(a.scalpAllergy) ? a.scalpAllergy : a.scalpAllergy ? [a.scalpAllergy] : [];
+  const diamine = allergy.includes('diamine');
+  const tingles = allergy.includes('tingles');
+  const trouble = Array.isArray(a.hairTrouble) ? a.hairTrouble : [];
+  const bibiri = trouble.includes('bibiri') || trouble.includes('breakage');
+  if (hasBleach && hasStraighten) memos.push({
+    lv: 'high',
+    t: 'ブリーチ × 縮毛矯正の併用毛　薬剤強度・前処理を特に慎重に（切れ毛・ビビり毛のリスク高）'
+  });
+  if (hardBleach) memos.push({
+    lv: 'high',
+    t: '白っぽいハイトーンまで脱色した履歴　強度設定とテスト施術の検討を'
+  });
+  if (gummy) memos.push({
+    lv: 'high',
+    t: '濡れるとゴム状に伸びる＝ハイダメージのサイン　施術前に状態確認を'
+  });
+  if (diamine) memos.push({
+    lv: 'high',
+    t: 'ジアミンアレルギーの申告あり　カラー薬剤の選定に注意'
+  });else if (tingles) memos.push({
+    lv: 'mid',
+    t: 'カラー剤がしみることがある　頭皮保護・パッチテストを推奨'
+  });
+  if (hasBleach && hotIron) memos.push({
+    lv: 'mid',
+    t: 'ブリーチ × 200℃以上のアイロン　熱ダメージの内部蓄積に注意'
+  });
+  if (bibiri) memos.push({
+    lv: 'mid',
+    t: '過去にビビり毛・切れ毛の経験あり　同部位への負荷に配慮'
+  });
+  if (blackDye) memos.push({
+    lv: 'mid',
+    t: '黒染め・しっかり暗い履歴　明るくしづらい・色抜けムラに注意'
+  });
+  if (freqStraighten || hasStraighten && hasPerm) memos.push({
+    lv: 'mid',
+    t: '矯正/パーマの頻度高め　薬剤の蓄積ダメージに配慮'
+  });
+  return memos;
+}
+
+/* ──────────────────────────────────────────
+   IngredientGuideSection — ブリーチ毛の人に「探す成分」を教育(共通4成分)
+   カタログ記載の成分から抽出。該当商品はアフィニティで自然に上位に出る＝教育と推薦が一致。
+   ────────────────────────────────────────── */
+function IngredientGuideSection({
+  answers
+}) {
+  const a = answers || {};
+  const hasBleach = !!deriveBleach(a);
+  if (!hasBleach) return null;
+  const isGray = a.grayHair === 'yes' || a.color === 'gray';
+  const COMMON = [{
+    t: 'ケラチン（タンパク質）',
+    b: 'ブリーチでいちばん失われるのがタンパク質　形を変えて補うのが各社共通',
+    ex: 'MSVK多サイズケラチン / Aujua CMADK / ケラテックス'
+  }, {
+    t: '紫色素（アンチイエロー）',
+    b: 'ブリーチ後の黄ばみを抑えて透明感をキープ',
+    ex: 'ブロンドプラス / ブロンドアブソリュ / アメジスト'
+  }, {
+    t: 'ボンド・結合ケア',
+    b: 'ブリーチで切れた内部結合を補い切れ毛を抑える発想',
+    ex: 'ファイバープレックス / 月見草エキス / プルミエール'
+  }, {
+    t: 'キレート（金属・カルシウムオフ）',
+    b: 'ブリーチ後に残る金属・カルシウムを除去し手触りと発色を底上げ',
+    ex: 'アルタイムR / ハートオブグラス / プルミエール AHA'
+  }];
+  return /*#__PURE__*/React.createElement("section", {
+    className: "mt-12 sm:mt-16 anim-fade-up",
+    style: {
+      animationDelay: '170ms'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[11px] uppercase text-gold"
+  }, "\u2014 Ingredient"), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-3 font-serif text-[26px] sm:text-[34px] text-ink leading-snug"
+  }, "\u30D6\u30EA\u30FC\u30C1\u6BDB\u3092\u9078\u3076\u3068\u304D\u306E\u30D2\u30F3\u30C8"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[13px] sm:text-[13.5px] text-charcoal/70 leading-[1.9]"
+  }, "\u3086\u3089\u3044\u3060\u9AEA\u306F\u300C\u63A2\u3059\u6210\u5206\u300D\u3067\u9078\u3076\u3068\u5FC3\u5F37\u3044\u3000\u3053\u306E4\u3064\u304C\u5404\u30D6\u30E9\u30F3\u30C9\u5171\u901A\u3067\u5165\u3063\u3066\u3044\u307E\u3059"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3"
+  }, COMMON.map((c, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "bg-white/70 border border-line rounded-[2px] p-4 sm:p-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-[10px] text-gold mt-1 nums"
+  }, "0", i + 1), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "font-serif text-[14.5px] text-ink leading-snug"
+  }, c.t), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
+  }, c.b), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1.5 text-[11px] text-charcoal/50 leading-snug"
+  }, c.ex)))))), /*#__PURE__*/React.createElement("p", {
+    className: "mt-4 text-[12.5px] sm:text-[13px] text-ink leading-[1.9] border-l-2 border-gold pl-4"
+  }, "\u2192 \u3042\u306A\u305F\u306B\u306F ", /*#__PURE__*/React.createElement("span", {
+    className: "text-gold"
+  }, "\u30D6\u30ED\u30F3\u30C9\u30D7\u30E9\u30B9\u30FB\u30D5\u30A1\u30A4\u30D0\u30FC\u30D7\u30EC\u30C3\u30AF\u30B9\u30FB\u30EA\u30DA\u30A2\u30EA\u30C6\u30A3"), " \u306A\u3069\u304C\u5019\u88DC\u306B\u51FA\u3066\u3044\u307E\u3059", isGray && /*#__PURE__*/React.createElement("span", null, "\u3000\u767D\u9AEA\xD7\u30D6\u30EA\u30FC\u30C1\u306E\u65B9\u306F ", /*#__PURE__*/React.createElement("span", {
+    className: "text-gold"
+  }, "\u30A2\u30EB\u30C6\u30A3\u30FC\u30EB\u30FB\u30AF\u30ED\u30CE\u30ED\u30B8\u30B9\u30C8"), " \u306A\u3069\u3082")), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-[11px] text-charcoal/55 leading-relaxed"
+  }, "\u203B \u6D77\u5916\u30D6\u30E9\u30F3\u30C9\u306F\u30D6\u30EA\u30FC\u30C1\uFF0B\u30AA\u30F3\u30AB\u30E9\u30FC\u3092\u524D\u63D0\u306B\u8A2D\u8A08\u3055\u308C\u3066\u3044\u308B\u3053\u3068\u304C\u591A\u304F\u3001\u30D6\u30EA\u30FC\u30C1\u6BDB\u3068\u76F8\u6027\u304C\u826F\u3044\u50BE\u5411\u3067\u3059"));
+}
 function CounselingSheet({
   karte,
   answers,
@@ -10595,7 +10721,27 @@ function CounselingSheet({
     className: "text-gold"
   }, "\xB7 ", o.code)), typeShort && /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[13px] sm:text-[13.5px] text-charcoal/75"
-  }, "\u2014 ", typeShort.jp)), basicItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('02 · 基本情報'), dl(basicItems)), traitItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('03 · 髪質の特徴'), dl(traitItems)), scalpItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('04 · 頭皮の状態'), dl(scalpItems)), colorItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('06 · カラー履歴'), dl(colorItems)), permItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('07 · 縮毛矯正・パーマ履歴'), dl(permItems)), heatItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('08 · 熱ツールの使い方'), dl(heatItems)), troubleList.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('09 · 過去のヘアトラブル'), chips(troubleList)), lifeItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('10 · ホームケア・ライフスタイル'), dl(lifeItems)), concernList.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('11 · 気になっていること'), chips(concernList)), sectionTitle('12 · これからの希望'), wishItems.length > 0 && dl(wishItems), /*#__PURE__*/React.createElement("p", {
+  }, "\u2014 ", typeShort.jp)), (() => {
+    const memos = buildStylistMemo(a);
+    if (!memos.length) return null;
+    return /*#__PURE__*/React.createElement("div", {
+      className: "mt-7 border border-gold/45 rounded-[2px] p-5",
+      style: {
+        background: 'linear-gradient(155deg,#FBF7EF,#F5EDDD)'
+      }
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "font-mono tracking-widest2 text-[10px] uppercase text-gold"
+    }, "\u2014 Memo for stylist"), /*#__PURE__*/React.createElement("p", {
+      className: "mt-1.5 font-serif text-[15px] text-ink"
+    }, "\u65BD\u8853\u30E1\u30E2\uFF08\u7F8E\u5BB9\u5E2B\u3055\u3093\u3078\uFF09"), /*#__PURE__*/React.createElement("ul", {
+      className: "mt-3 space-y-2"
+    }, memos.map((m, i) => /*#__PURE__*/React.createElement("li", {
+      key: i,
+      className: "flex items-start gap-2 text-[12.5px] sm:text-[13px] leading-[1.85] text-ink"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: `mt-1.5 inline-block w-1.5 h-1.5 rounded-full shrink-0 ${m.lv === 'high' ? 'bg-[#b4453a]' : 'bg-gold'}`
+    }), /*#__PURE__*/React.createElement("span", null, m.t)))));
+  })(), basicItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('02 · 基本情報'), dl(basicItems)), traitItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('03 · 髪質の特徴'), dl(traitItems)), scalpItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('04 · 頭皮の状態'), dl(scalpItems)), colorItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('06 · カラー履歴'), dl(colorItems)), permItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('07 · 縮毛矯正・パーマ履歴'), dl(permItems)), heatItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('08 · 熱ツールの使い方'), dl(heatItems)), troubleList.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('09 · 過去のヘアトラブル'), chips(troubleList)), lifeItems.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('10 · ホームケア・ライフスタイル'), dl(lifeItems)), concernList.length > 0 && /*#__PURE__*/React.createElement(React.Fragment, null, sectionTitle('11 · 気になっていること'), chips(concernList)), sectionTitle('12 · これからの希望'), wishItems.length > 0 && dl(wishItems), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 font-serif text-[13.5px] sm:text-[14.5px] text-ink leading-[1.95]",
     style: {
       fontWeight: 500
@@ -11832,6 +11978,8 @@ function Result({
     seamData: seamData,
     answers: answers,
     scores: scores
+  }), /*#__PURE__*/React.createElement(IngredientGuideSection, {
+    answers: answers
   }), /*#__PURE__*/React.createElement(SeasonalCareSection, {
     seamData: seamData
   }), toolsData && toolsData.tools && Array.isArray(answers.deviceInterest) && answers.deviceInterest.some(v => v !== 'none') && /*#__PURE__*/React.createElement(HomeToolsSection, {
