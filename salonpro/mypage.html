@@ -5,11 +5,11 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>マイページ｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=59">
-  <link rel="stylesheet" href="assets/css/base.css?v=59">
-  <link rel="stylesheet" href="assets/css/components.css?v=59">
-  <link rel="stylesheet" href="assets/css/home.css?v=59">
-  <link rel="stylesheet" href="assets/css/pages.css?v=59">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=60">
+  <link rel="stylesheet" href="assets/css/base.css?v=60">
+  <link rel="stylesheet" href="assets/css/components.css?v=60">
+  <link rel="stylesheet" href="assets/css/home.css?v=60">
+  <link rel="stylesheet" href="assets/css/pages.css?v=60">
 </head>
 <body class="page">
 
@@ -41,6 +41,11 @@
     <section class="sec" style="margin-top:var(--s-4)">
       <div class="sec__head"><h2 class="sec__title">取引ランク（年間仕入れ実績）</h2></div>
       <div id="tradeRankCard"></div>
+    </section>
+
+    <section class="sec">
+      <div class="sec__head"><h2 class="sec__title">今月の仕入れ × メーカー補填</h2></div>
+      <div id="rebateCard"></div>
     </section>
 
     <section class="sec">
@@ -132,11 +137,11 @@
   </nav>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/catalog.js?v=59"></script>
-  <script src="assets/js/data.js?v=59"></script>
-  <script src="assets/js/store.js?v=59"></script>
-  <script src="assets/js/components.js?v=59"></script>
-  <script src="assets/js/nav.js?v=59"></script>
+  <script src="assets/js/catalog.js?v=60"></script>
+  <script src="assets/js/data.js?v=60"></script>
+  <script src="assets/js/store.js?v=60"></script>
+  <script src="assets/js/components.js?v=60"></script>
+  <script src="assets/js/nav.js?v=60"></script>
   <script>
     (function () {
       var n = (SP.Store.getContracts() || []).length;
@@ -172,6 +177,32 @@
             + '<div style="margin-top:var(--s-2);font-size:11px;color:rgba(255,255,255,.55)">ランク特典</div>'
             + '<div>' + perks + '</div>'
             + '<div style="font-size:10.5px;color:rgba(255,255,255,.45);margin-top:10px">※ ランク・実績はデモ表示です。本番では直近12ヶ月のご注文額から自動判定します。</div></div>';
+        }
+      } catch (e) {}
+      // 今月のメーカー別仕入れ × 補填（値引きでなく達成→翌月の無償現品）
+      try {
+        var R = window.SP.REBATE, rc = document.getElementById('rebateCard');
+        if (R && R.enabled && rc) {
+          var yen2 = function (n) { return '¥' + (n || 0).toLocaleString('ja-JP'); };
+          var month = R.demoMonth || {};
+          var list = R.tiers.filter(function (t) { return month[t.maker] != null; }).map(function (t) {
+            var spent = month[t.maker] || 0, th = t.threshold, done = spent >= th, pct = Math.min(100, Math.round(spent / th * 100)), rest = Math.max(0, th - spent);
+            return { t: t, spent: spent, th: th, done: done, pct: pct, rest: rest };
+          }).sort(function (a, b) { return (b.done - a.done) || (a.rest - b.rest); });
+          var rows = list.map(function (x) {
+            var bar = '<div style="height:9px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:7px"><i style="display:block;height:100%;width:' + x.pct + '%;background:' + (x.done ? 'var(--stock-in)' : 'var(--gold)') + ';border-radius:999px"></i></div>';
+            var status = x.done
+              ? '<span style="color:var(--stock-in);font-weight:800">達成 🎉 翌月 ' + x.t.reward + '</span>'
+              : 'あと <b>' + yen2(x.rest) + '</b> で翌月 ' + x.t.reward;
+            return '<div style="border:1px solid var(--line);border-radius:var(--r-md);padding:13px 15px;margin-bottom:10px">'
+              + '<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font-weight:800;font-size:14px">' + x.t.maker + '</span>'
+              + '<span style="font-family:var(--font-num);font-size:13px;color:var(--ink-2)">' + yen2(x.spent) + ' <span style="color:var(--ink-3)">/ ' + yen2(x.th) + '</span></span></div>'
+              + bar + '<div style="font-size:12px;color:var(--ink-2);margin-top:7px">' + status + '</div></div>';
+          }).join('');
+          rc.innerHTML = '<div style="border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-md);padding:12px 15px;margin-bottom:12px;font-size:12px;color:var(--ink);line-height:1.6"><b>値引きではなく「補填」</b>：メーカー別に今月の仕入れが基準に届くと、翌月に<b>無償現品</b>が付きます。価格はそのまま、実質コストを抑えられます。</div>'
+            + rows
+            + '<a href="index.html" style="display:block;text-align:center;border:1px solid var(--line-3);border-radius:var(--r-md);padding:12px;font-weight:800;font-size:14px;color:var(--ink);text-decoration:none">補填まで あと少しのメーカーを補充する ›</a>'
+            + '<div style="font-size:10.5px;color:var(--ink-3);margin-top:8px">※ 基準額・補填内容はデモ表示です。本番ではメーカー協賛条件にもとづき設定し、当月の確定注文から自動集計します。</div>';
         }
       } catch (e) {}
     })();

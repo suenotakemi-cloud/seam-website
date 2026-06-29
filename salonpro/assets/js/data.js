@@ -825,6 +825,23 @@
   window.SP = window.SP || {};
   window.SP.DATA = { categories, products };
 
+  /* メーカー補填プログラム（値引きではなく「達成→翌月の無償現品」。価格を崩さず発注を増やす）
+     ※デモ：基準額・補填内容はメーカー協賛条件にもとづき菊地が設定。既存の「メーカー添付（無償現品）」と同じ枠組み。 */
+  window.SP.REBATE = {
+    enabled: true,
+    tiers: [
+      { maker: 'ミルボン', threshold: 200000, reward: '¥10,000相当の無償現品', rewardAmt: 10000 },
+      { maker: 'ルベル', threshold: 150000, reward: '¥8,000相当の無償現品', rewardAmt: 8000 },
+      { maker: 'ロレアル', threshold: 150000, reward: '¥8,000相当の無償現品', rewardAmt: 8000 },
+      { maker: 'アリミノ', threshold: 120000, reward: '¥6,000相当の無償現品', rewardAmt: 6000 },
+      { maker: 'ウエラ', threshold: 120000, reward: '¥6,000相当の無償現品', rewardAmt: 6000 },
+      { maker: 'シュワルツコフ', threshold: 120000, reward: '¥6,000相当の無償現品', rewardAmt: 6000 },
+      { maker: 'ホーユー', threshold: 100000, reward: '¥5,000相当の無償現品', rewardAmt: 5000 },
+    ],
+    // ログイン中サロンの今月仕入れ（メーカー別・デモ）。本番は当月の確定注文から集計。
+    demoMonth: { 'ミルボン': 168000, 'ルベル': 152000, 'アリミノ': 64000, 'ウエラ': 38000 },
+  };
+
   /* マルチディーラー（中立マーケットプレイス）：出店ディーラー定義。
      各社が自社の決済手段・送料ルール・締め時間・与信を持つ（営業所単位の想定）。 */
   const DEALERS = {

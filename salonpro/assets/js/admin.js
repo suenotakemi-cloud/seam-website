@@ -1455,6 +1455,64 @@
     drawSalonCat(SD);
   }
 
+  /* ===== メーカー補填プログラム（値引きでなく達成→翌月の無償現品。価格を崩さず発注増）===== */
+  function buildRebateData() {
+    const R = (window.SP && SP.REBATE) || { tiers: [] };
+    const rnd = mulberry32(20260704);
+    const salons = (SALES.salons || []).filter(s => s.biz === 'hair' || s.biz === 'eye');
+    const rows = [];
+    salons.forEach(s => {
+      R.tiers.forEach(t => {
+        const spent = Math.round((s.avg3 * (0.04 + rnd() * 0.5)) / 1000) * 1000;
+        if (spent < t.threshold * 0.45) return;
+        const done = spent >= t.threshold, near = !done && spent >= t.threshold * 0.72;
+        rows.push({ salon: s.name, rep: s.rep, maker: t.maker, spent: spent, threshold: t.threshold, reward: t.reward, rewardAmt: t.rewardAmt, done: done, near: near, rest: Math.max(0, t.threshold - spent) });
+      });
+    });
+    return { tiers: R.tiers, rows: rows };
+  }
+  function renderRebate() {
+    const R = (window.SP && SP.REBATE);
+    if (!R || !R.enabled) return;
+    const D = buildRebateData();
+    const doneRows = D.rows.filter(r => r.done), nearRows = D.rows.filter(r => r.near).sort((a, b) => a.rest - b.rest);
+    const doneSalons = new Set(doneRows.map(r => r.salon)).size;
+    const rebateCost = doneRows.reduce((a, r) => a + (r.rewardAmt || 0), 0);
+    const sum = qs('#rebateSummary');
+    if (sum) {
+      const tile = (l, v, d, cls) => `<div class="kpi"><div class="kpi__l">${l}</div><div class="kpi__v">${v}</div><div class="kpi__d ${cls || ''}">${d}</div></div>`;
+      const condRows = D.tiers.map(t => {
+        const dn = D.rows.filter(r => r.maker === t.maker && r.done).length, nr = D.rows.filter(r => r.maker === t.maker && r.near).length;
+        return `<tr><td><b>${esc(t.maker)}</b></td><td class="num">${yen(t.threshold)}</td><td>${esc(t.reward)}</td><td class="num">${dn}</td><td class="num" style="color:var(--gold-strong);font-weight:800">${nr}</td></tr>`;
+      }).join('');
+      sum.innerHTML = `<div class="adm-kpis" style="margin-bottom:14px">
+          ${tile('補填対象メーカー', D.tiers.length + '社', '達成→翌月 無償現品', '')}
+          ${tile('今月 達成見込み', doneSalons + '店', '翌月補填が確定', 'up')}
+          ${tile('達成あと一歩', nearRows.length + '件', '営業の狙い目', 'warn')}
+          ${tile('翌月 補填コスト', yen(rebateCost), 'メーカー負担（値引き0）', '')}
+        </div>
+        <div style="font-size:12.5px;font-weight:800;margin:4px 0 8px">補填条件（メーカー別）</div>
+        <div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>メーカー</th><th>月間 基準額</th><th>翌月 補填</th><th>達成</th><th>あと一歩</th></tr></thead><tbody>${condRows}</tbody></table></div>
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px"><b>値引きではなく補填</b>＝メーカーは価格を崩さず（無償現品で奨励）、サロンは実質コスト減・発注集中。サロンには「あと◯円で補填」を見せて発注意識を高めます。既存の「メーカー添付（無償現品）」と同じ請求枠組みで精算。</div>`;
+    }
+    const near = qs('#rebateNear');
+    if (near) {
+      const rows = nearRows.slice(0, 16).map(r => `<tr>
+        <td><b>${esc(r.salon)}</b><div style="font-size:11px;color:var(--ink-3)">${esc(r.rep)}</div></td>
+        <td>${esc(r.maker)}</td>
+        <td class="num">${yen(r.spent)}<div style="font-size:10.5px;color:var(--ink-3)">/ ${yen(r.threshold)}</div></td>
+        <td class="num" style="color:#c0392b;font-weight:800">あと ${yen(r.rest)}</td>
+        <td style="font-size:11.5px">「あと${yen(r.rest)}で翌月${esc(r.reward)}が付きます」と一押し</td>
+      </tr>`).join('');
+      near.innerHTML = nearRows.length
+        ? `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>メーカー</th><th>今月仕入れ</th><th>達成まで</th><th>営業トーク</th></tr></thead><tbody>${rows}</tbody></table></div>
+           ${nearRows.length > 16 ? `<div style="text-align:center;color:var(--ink-3);font-size:12px;padding:8px">ほか ${nearRows.length - 16} 件（CSVに全件）</div>` : ''}`
+        : '<div style="padding:14px;text-align:center;color:var(--ink-3)">達成あと一歩のサロンはありません</div>';
+      const csv = qs('#csvRebate');
+      if (csv) csv.onclick = () => downloadCsv('補填_達成間近サロン.csv', [['サロン', '担当', 'メーカー', '今月仕入れ', '基準額', '達成まで', '翌月補填']].concat(nearRows.map(r => [r.salon, r.rep, r.maker, r.spent, r.threshold, r.rest, r.reward])));
+    }
+  }
+
   // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
   function setupProductAdmin() {
     const body = qs('#productAdminBody'); if (!body) return;
@@ -1547,6 +1605,7 @@
       ['メーカー分析', 'makers'], ['メーカー詳細', 'makers'], ['横断インサイト', 'makers'],
       ['薬剤ミックス', 'rx'], ['サロン別 薬剤', 'rx'], ['美容師別 薬剤', 'rx'], ['セミナー×メーカー', 'rx'],
       ['カテゴリ内訳', 'cat'], ['サロン別ドリル', 'cat'], ['色味', 'cat'], ['薬剤タイプ', 'cat'], ['人気銘柄', 'cat'],
+      ['補填プログラム', 'rebate'], ['達成あと一歩', 'rebate'],
       ['分析', 'analytics'], ['請求台帳', 'analytics'],
       ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
       ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
@@ -1555,7 +1614,7 @@
       ['リース', 'lease'], ['機器買取', 'buyback'], ['中古在庫', 'buyback'], ['パートナー', 'partner'],
     ];
     const NAVVIEW = {
-      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-rx': 'rx', '#view-cat': 'cat', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
+      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-rx': 'rx', '#view-cat': 'cat', '#view-rebate': 'rebate', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
       '#view-proxy': 'proxy', '#view-stock': 'stock', '#restockList': 'restock', '#reviewList': 'review',
       '#creditList': 'credit', '#contractAppList': 'contract', '#seminarList': 'seminar', '#leaseList': 'lease',
       '#buybackList': 'buyback', '#partnerList': 'partner',
@@ -1685,6 +1744,7 @@
   renderMakerAnalytics();
   renderRxAnalytics();
   renderCatAnalytics();
+  renderRebate();
   setupProductAdmin();
   renderOrders();
   fillPxSalon();
