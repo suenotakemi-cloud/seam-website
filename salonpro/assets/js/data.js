@@ -320,6 +320,61 @@
       { family: 'ベージュ', tint: '#9a8a6f', levels: [6, 8, 10] },
       { family: 'オリーブ', tint: '#6f7350', levels: [5, 7, 9] },
     ] },
+    /* ===== デモ拡充：主要メーカーの旗艦カラーライン（美容師の認知が高い実在ライン名） ===== */
+    // ルベル マテリア（サロン定番ファッションカラー）
+    { line: 'マテリア', maker: 'ルベル', type: 'alkaline', families: [
+      { family: 'アッシュ', tint: '#6b7280', levels: [6, 8, 10, 12] },
+      { family: 'ベージュ', tint: '#b9a78a', levels: [6, 8, 10, 12] },
+      { family: 'オーキッド', tint: '#7a4f9e', levels: [6, 8, 10] },
+      { family: 'キャメル', tint: '#a5713f', levels: [6, 8, 10] },
+      { family: 'グレイッシュ', tint: '#8f9398', levels: [8, 10, 12] },
+      { family: 'ピンク', tint: '#cf7a93', levels: [8, 10] },
+    ] },
+    // ウエラ イルミナカラー（透明感カラーの代名詞）
+    { line: 'イルミナカラー', maker: 'ウエラ', type: 'alkaline', families: [
+      { family: 'オーシャン', tint: '#1f6f8c', levels: [6, 8, 10] },
+      { family: 'ヌード', tint: '#c2ad90', levels: [6, 8, 10, 12] },
+      { family: 'フォギーアッシュ', tint: '#7c8089', levels: [6, 8, 10] },
+      { family: 'サンド', tint: '#b89a6a', levels: [8, 10, 12] },
+      { family: 'コーラル', tint: '#e0897a', levels: [8, 10] },
+      { family: 'トワイライト', tint: '#5a4f8a', levels: [6, 8] },
+    ] },
+    // ロレアル イノア（アンモニアフリー オイルカラー）
+    { line: 'イノア', maker: 'ロレアル', type: 'alkaline', families: [
+      { family: 'アッシュ', tint: '#6b7280', levels: [5, 7, 9] },
+      { family: 'ベージュ', tint: '#b9a78a', levels: [6, 8, 10] },
+      { family: 'モカ', tint: '#7a5a44', levels: [5, 7, 9] },
+    ] },
+    // シュワルツコフ イゴラ ロイヤル（サロンカラーの世界定番）
+    { line: 'イゴラ ロイヤル', maker: 'シュワルツコフ', type: 'alkaline', families: [
+      { family: 'アッシュ', tint: '#6b7280', levels: [5, 7, 9] },
+      { family: 'ベージュ', tint: '#b9a78a', levels: [6, 8, 10] },
+      { family: 'ロイヤルブラウン', tint: '#6e4a32', levels: [4, 6, 8] },
+    ] },
+    // ホーユー アプリエ（ブリーチオンカラー＝ハイトーン）
+    { line: 'アプリエ', maker: 'ホーユー', type: 'alkaline', families: [
+      { family: 'グレージュ', tint: '#9a9088', levels: [10, 12, 14] },
+      { family: 'ラベンダー', tint: '#8a7aa5', levels: [12, 14] },
+      { family: 'ベージュ', tint: '#c2ad90', levels: [12, 14] },
+    ] },
+    // ロレアル マジレル（白髪染め・サロン定番グレイ）
+    { line: 'マジレル', maker: 'ロレアル', type: 'gray', families: [
+      { family: 'ナチュラル', tint: '#5b4a3a', levels: [4, 6, 8] },
+      { family: 'ベージュ', tint: '#9a8a6f', levels: [6, 8, 10] },
+      { family: 'モカ', tint: '#6f5240', levels: [5, 7, 9] },
+    ] },
+    // ルベル マテリアG（グレイカラー）
+    { line: 'マテリアG', maker: 'ルベル', type: 'gray', families: [
+      { family: 'ナチュラルブラウン', tint: '#6b4f3a', levels: [5, 7, 9] },
+      { family: 'クールブラウン', tint: '#5b5048', levels: [5, 7, 9] },
+      { family: 'ピンクブラウン', tint: '#8a5560', levels: [6, 8, 10] },
+    ] },
+    // ウエラ コレストンパーフェクト（白髪染め・標準カラー）
+    { line: 'コレストンパーフェクト', maker: 'ウエラ', type: 'gray', families: [
+      { family: 'ナチュラル', tint: '#5b4a3a', levels: [4, 6, 8] },
+      { family: 'アッシュ', tint: '#6b7280', levels: [6, 8, 10] },
+      { family: 'マット', tint: '#6f7350', levels: [6, 8] },
+    ] },
   ];
   // 色味グループ（ブランド跨ぎの「色味×明るさ」横断検索用）。各社の色名を共通トーンに正規化。
   const TONE_MAP = {
@@ -331,6 +386,11 @@
     'ベージュ': 'ベージュ',
     'ピンク': 'ピンク', 'ピンクブラウン': 'ピンク',
     'ウォームブラウン': 'ブラウン', 'ナチュラルブラウン': 'ブラウン', 'ナチュラル': 'ブラウン',
+    'オーキッド': 'バイオレット', 'トワイライト': 'バイオレット', 'ラベンダー': 'バイオレット',
+    'オーシャン': 'ブルー', 'フォギーアッシュ': 'アッシュ',
+    'ヌード': 'ベージュ', 'サンド': 'ベージュ', 'グレージュ': 'グレー', 'グレイッシュ': 'グレー',
+    'コーラル': 'ピンク',
+    'キャメル': 'ブラウン', 'モカ': 'ブラウン', 'ロイヤルブラウン': 'ブラウン', 'クールブラウン': 'ブラウン',
   };
   (function () {
     var n = 0;
@@ -342,7 +402,7 @@
             id: 'co-' + n, cat: 'color', colorType: L.type || 'alkaline', tone: TONE_MAP[F.family] || 'その他',
             brand: L.line, maker: L.maker, line: L.line, family: F.family, level: lv,
             name: L.line + ' ' + F.family + ' ' + lv, price: 1210, stock: 'in', badge: null,
-            pop: 90 - n, added: 60 - n, same: true, senbai: true,
+            pop: 84 - (n % 56), added: 56 - (n % 42), same: true, senbai: true,
             ph: { shape: 'box', tint: F.tint, label: F.family + ' ' + lv },
           });
         });
@@ -576,6 +636,65 @@
     },
   };
   CONTRACT_BRANDS.forEach(b => { if (APPLY_FORMS[b.id]) b.applyForm = APPLY_FORMS[b.id]; });
+
+  /* =========================================================
+     デモ拡充：主要7メーカーの業務用ライン（実在ライン名・画像はプレースホルダー）
+     ミルボン／アリミノ／ルベル／ウエラ／ロレアル／シュワルツコフ／ホーユー。
+     美容師が「自分の使う商材がある」と分かる粒度で、メーカー→シリーズ階層に並ぶ
+     （brand＝ライン名／maker＝メーカー／line＝ライン。カラー生成と同じ流儀）。
+     ========================================================= */
+  const MAKER_LINES = [
+    /* --- スタイリング --- */
+    { id: 'm7-001', cat: 'styling', maker: 'アリミノ', line: 'ピース', brand: 'ピース', name: 'ピース フリーズキープワックス 80g', price: 1430, badge: 'popular', pop: 97, added: 74, ph: { shape: 'jar', tint: '#c0392b', label: 'WAX' } },
+    { id: 'm7-002', cat: 'styling', maker: 'アリミノ', line: 'ピース', brand: 'ピース', name: 'ピース グロスワックス 80g', price: 1430, pop: 91, added: 62, ph: { shape: 'jar', tint: '#b8860b', label: 'WAX' } },
+    { id: 'm7-003', cat: 'styling', maker: 'アリミノ', line: 'ピース', brand: 'ピース', name: 'ピース ニュアンスワックス 80g', price: 1430, pop: 87, added: 58, ph: { shape: 'jar', tint: '#6b7280', label: 'WAX' } },
+    { id: 'm7-004', cat: 'styling', maker: 'アリミノ', line: 'ピース', brand: 'ピース', name: 'ピース ハードワックス 80g', price: 1430, pop: 83, added: 56, ph: { shape: 'jar', tint: '#2b2b2e', label: 'WAX' } },
+    { id: 'm7-005', cat: 'styling', maker: 'アリミノ', line: 'ピース', brand: 'ピース', name: 'ピース ライトワックス 80g', price: 1430, pop: 79, added: 54, ph: { shape: 'jar', tint: '#c2ad90', label: 'WAX' } },
+    { id: 'm7-006', cat: 'styling', maker: 'アリミノ', line: 'ピース', brand: 'ピース', name: 'ピース フリーズキープスプレー 200g', price: 1650, badge: 'new', pop: 77, added: 90, ph: { shape: 'bottle', tint: '#3a3f4a', label: 'SPRAY' } },
+    { id: 'm7-007', cat: 'styling', maker: 'ミルボン', line: 'ニゼル', brand: 'ニゼル', name: 'ニゼル ドレシアコレクション ジェリーM 145g', price: 1980, badge: 'popular', pop: 89, added: 60, ph: { shape: 'tube', tint: '#7a6ea5', label: 'JELLY' } },
+    { id: 'm7-008', cat: 'styling', maker: 'ミルボン', line: 'ニゼル', brand: 'ニゼル', name: 'ニゼル トレックオイル 90mL', price: 2200, pop: 83, added: 58, ph: { shape: 'bottle', tint: '#b5764a', label: 'OIL' } },
+    { id: 'm7-009', cat: 'styling', maker: 'ミルボン', line: 'ニゼル', brand: 'ニゼル', name: 'ニゼル ジェリーS 145g', price: 1980, pop: 78, added: 52, ph: { shape: 'tube', tint: '#4a8f8a', label: 'JELLY' } },
+    { id: 'm7-010', cat: 'styling', maker: 'ウエラ', line: 'EIMI', brand: 'EIMI', name: 'EIMI ナチュラルボリューム ムース 300mL', price: 1980, pop: 75, added: 50, ph: { shape: 'bottle', tint: '#c2ad90', label: 'MOUSSE' } },
+    { id: 'm7-011', cat: 'styling', maker: 'ウエラ', line: 'EIMI', brand: 'EIMI', name: 'EIMI オーシャンスプレー 150mL', price: 1870, pop: 71, added: 48, ph: { shape: 'bottle', tint: '#1f6f8c', label: 'SPRAY' } },
+    { id: 'm7-012', cat: 'styling', maker: 'ウエラ', line: 'EIMI', brand: 'EIMI', name: 'EIMI ドライミー ドライシャンプー 180mL', price: 1760, pop: 67, added: 46, ph: { shape: 'bottle', tint: '#e6e7ea', label: 'DRY' } },
+    { id: 'm7-013', cat: 'styling', maker: 'ロレアル', line: 'テクニアート', brand: 'テクニアート', name: 'テクニアート ピュア エアフィックス 400mL', price: 2310, pop: 70, added: 48, ph: { shape: 'bottle', tint: '#8a6d2f', label: 'SPRAY' } },
+    { id: 'm7-014', cat: 'styling', maker: 'ロレアル', line: 'テクニアート', brand: 'テクニアート', name: 'テクニアート リス ウィーク 150mL', price: 2090, pop: 65, added: 44, ph: { shape: 'tube', tint: '#b9a78a', label: 'CREAM' } },
+    { id: 'm7-015', cat: 'styling', maker: 'シュワルツコフ', line: 'OSiS+', brand: 'OSiS+', name: 'OSiS+ ダストイット 10g', price: 1980, badge: 'popular', pop: 84, added: 56, ph: { shape: 'bottle', tint: '#d8d2c4', label: 'POWDER' } },
+    { id: 'm7-016', cat: 'styling', maker: 'シュワルツコフ', line: 'OSiS+', brand: 'OSiS+', name: 'OSiS+ セッション トラスト ヘアスプレー 300mL', price: 2200, pop: 74, added: 50, ph: { shape: 'bottle', tint: '#1f2d4d', label: 'SPRAY' } },
+    { id: 'm7-017', cat: 'styling', maker: 'シュワルツコフ', line: 'OSiS+', brand: 'OSiS+', name: 'OSiS+ フレックスワックス 85mL', price: 1870, pop: 70, added: 46, ph: { shape: 'jar', tint: '#6b7280', label: 'WAX' } },
+
+    /* --- システムトリートメント（業務用・サロン内施術／店販） --- */
+    { id: 'm7-018', cat: 'treatment', maker: 'ミルボン', line: 'リンケージミュー', brand: 'リンケージミュー', name: 'リンケージミュー 1 200g', price: 3300, badge: 'popular', pop: 90, added: 60, senbai: true, ph: { shape: 'tube', tint: '#c0392b', label: 'STEP1' } },
+    { id: 'm7-019', cat: 'treatment', maker: 'ミルボン', line: 'リンケージミュー', brand: 'リンケージミュー', name: 'リンケージミュー 2 200g', price: 3300, pop: 86, added: 58, senbai: true, ph: { shape: 'tube', tint: '#b8860b', label: 'STEP2' } },
+    { id: 'm7-020', cat: 'treatment', maker: 'ミルボン', line: 'リンケージミュー', brand: 'リンケージミュー', name: 'リンケージミュー 3 200g', price: 3300, pop: 84, added: 56, senbai: true, ph: { shape: 'tube', tint: '#2f6f5e', label: 'STEP3' } },
+    { id: 'm7-021', cat: 'treatment', maker: 'ウエラ', line: 'SP', brand: 'SP', name: 'SP リペア マスク 400mL', price: 4180, pop: 80, added: 54, senbai: true, ph: { shape: 'jar', tint: '#8a2f3a', label: 'MASK' } },
+    { id: 'm7-022', cat: 'treatment', maker: 'ウエラ', line: 'SP', brand: 'SP', name: 'SP ハイドレート マスク 400mL', price: 4180, pop: 76, added: 52, senbai: true, ph: { shape: 'jar', tint: '#1f6f8c', label: 'MASK' } },
+    { id: 'm7-023', cat: 'treatment', maker: 'シュワルツコフ', line: 'BCボナキュア', brand: 'BCボナキュア', name: 'BC ボナキュア リペアレスキュー トリートメント 200mL', price: 2860, pop: 78, added: 50, senbai: true, ph: { shape: 'tube', tint: '#2b2b2e', label: 'BC' } },
+    { id: 'm7-024', cat: 'treatment', maker: 'シュワルツコフ', line: 'BCボナキュア', brand: 'BCボナキュア', name: 'BC ボナキュア カラーフリーズ トリートメント 200mL', price: 2860, pop: 74, added: 48, senbai: true, ph: { shape: 'tube', tint: '#6e2f57', label: 'BC' } },
+    { id: 'm7-025', cat: 'treatment', maker: 'ルベル', line: 'プロエディット', brand: 'プロエディット', name: 'プロエディット ケアワークス リペアメント 200g', price: 3520, pop: 76, added: 50, senbai: true, ph: { shape: 'tube', tint: '#2f6f5e', label: 'REPAIR' } },
+    { id: 'm7-026', cat: 'treatment', maker: 'ロレアル', line: 'セリエ エキスパート', brand: 'セリエ エキスパート', name: 'セリエ エキスパート アブソルート リペア マスク 250mL', price: 3960, pop: 78, added: 52, senbai: true, ph: { shape: 'jar', tint: '#8a6d2f', label: 'MASK' } },
+    { id: 'm7-027', cat: 'treatment', maker: 'ホーユー', line: 'プロマスター', brand: 'プロマスター', name: 'プロマスター カラーケア トリートメント さらり 1000g', price: 3850, pop: 72, added: 48, ph: { shape: 'pouch', tint: '#356d8c', label: 'CARE' } },
+
+    /* --- 結合剤・処理剤（ブリーチ/カラー/パーマの毛髪保護＝ボンド系） --- */
+    { id: 'm7-028', cat: 'care', maker: 'ロレアル', line: 'スマートボンド', brand: 'スマートボンド', name: 'スマートボンド ステップ1 ストレングスナー 500mL', price: 4400, badge: 'popular', pop: 82, added: 56, senbai: true, ph: { shape: 'pump', tint: '#8a6d2f', label: 'STEP1' } },
+    { id: 'm7-029', cat: 'care', maker: 'ロレアル', line: 'スマートボンド', brand: 'スマートボンド', name: 'スマートボンド ステップ2 ボンドシーラー 400mL', price: 3850, pop: 76, added: 50, senbai: true, ph: { shape: 'pump', tint: '#b9a78a', label: 'STEP2' } },
+    { id: 'm7-030', cat: 'care', maker: 'シュワルツコフ', line: 'ファイバープレックス', brand: 'ファイバープレックス', name: 'ファイバープレックス No.1 ボンド ブースター 100mL', price: 4180, pop: 78, added: 52, senbai: true, ph: { shape: 'bottle', tint: '#6e2f57', label: 'No.1' } },
+    { id: 'm7-031', cat: 'care', maker: 'シュワルツコフ', line: 'ファイバープレックス', brand: 'ファイバープレックス', name: 'ファイバープレックス No.2 ボンド シーラー 1000mL', price: 6600, pop: 72, added: 48, senbai: true, ph: { shape: 'pump', tint: '#2b2b2e', label: 'No.2' } },
+    { id: 'm7-032', cat: 'care', maker: 'ウエラ', line: 'ウエラプレックス', brand: 'ウエラプレックス', name: 'WELLAPLEX No.1 ボンド メーカー 500mL', price: 5500, pop: 80, added: 54, senbai: true, ph: { shape: 'pump', tint: '#1f2d4d', label: 'No.1' } },
+    { id: 'm7-033', cat: 'care', maker: 'ウエラ', line: 'ウエラプレックス', brand: 'ウエラプレックス', name: 'WELLAPLEX No.2 ボンド スタビライザー 500mL', price: 4400, pop: 74, added: 50, senbai: true, ph: { shape: 'pump', tint: '#356d8c', label: 'No.2' } },
+
+    /* --- 店販（メーカー→シリーズ階層を厚くする定番） --- */
+    { id: 'm7-034', cat: 'shampoo', maker: 'ミルボン', line: 'ジェミールフラン', brand: 'ジェミールフラン', name: 'ジェミールフラン シャンプー ダイヤモンドフォーユー 500mL', price: 2750, badge: 'popular', pop: 86, added: 58, ph: { shape: 'pump', tint: '#d8b3c4' } },
+    { id: 'm7-035', cat: 'treatment', maker: 'ミルボン', line: 'ジェミールフラン', brand: 'ジェミールフラン', name: 'ジェミールフラン ヒートグロス トリートメント S 200g', price: 2860, pop: 80, added: 54, ph: { shape: 'tube', tint: '#c9849e' } },
+  ];
+  MAKER_LINES.forEach(function (p) {
+    if (p.stock === undefined) p.stock = 'in';
+    if (p.badge === undefined) p.badge = null;
+    if (p.same === undefined) p.same = true;
+    if (p.pop === undefined) p.pop = 60;
+    if (p.added === undefined) p.added = 50;
+    products.push(p);
+  });
 
   // 菊池 実商品カタログ（catalog.js）を取込（data.js より前に読込まれていれば）。画像は後でメーカー支給に差替。
   if (window.SP_RAW_CATALOG) {
