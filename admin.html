@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SEAM 診断ダッシュボード</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+JP:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --ink:#2B2926; --char:#5A534B; --gold:#9A6B3A; --line:#E7E0D6; --cream:#FBF7F1; --brown:#A87456; --bg:#F5F1EA; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased;}
+  .wm{font-family:'Cormorant Garamond',serif;letter-spacing:.22em;}
+  .serif{font-family:'Noto Serif JP',serif;}
+  a{color:inherit}
+  header{position:sticky;top:0;z-index:20;background:rgba(245,241,234,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);}
+  .hwrap{max-width:1080px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .hwrap h1{margin:0;font-size:17px;font-weight:600;letter-spacing:.02em;}
+  .hwrap .sub{font-size:11px;color:var(--char);font-family:'Noto Sans JP'}
+  .btn{font-size:12px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer;transition:.15s}
+  .btn:hover{border-color:var(--gold);color:var(--gold)}
+  .btn.solid{background:var(--brown);color:#fff;border-color:var(--brown)}
+  main{max-width:1080px;margin:0 auto;padding:22px 20px 60px;}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  @media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+  .kpi .label{font-size:11px;color:var(--char);letter-spacing:.04em}
+  .kpi .num{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:38px;line-height:1.05;margin-top:4px;color:var(--ink)}
+  .kpi .unit{font-size:12px;color:var(--char);margin-left:4px;font-family:'Noto Sans JP'}
+  .panels{grid-template-columns:1fr;margin-top:16px}
+  @media(min-width:760px){.panels{grid-template-columns:1fr 1fr}}
+  .panel h2{margin:0 0 14px;font-size:14px;font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+  .panel h2 .eyebrow{font-family:'Cormorant Garamond',serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+  .bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}
+  .bar-row .nm{width:104px;flex-shrink:0;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar-track{flex:1;height:18px;background:#F1EBE2;border-radius:6px;overflow:hidden}
+  .bar-fill{height:100%;background:linear-gradient(90deg,#C79A6E,#A87456);border-radius:6px;min-width:2px;transition:width .5s ease}
+  .bar-row .ct{width:64px;text-align:right;flex-shrink:0;color:var(--char);font-variant-numeric:tabular-nums}
+  .bar-row .ct b{color:var(--ink)}
+  .empty{color:var(--char);font-size:12px;padding:10px 0}
+  /* login & states */
+  .overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;z-index:50}
+  .login{background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px 28px;max-width:380px;width:100%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.06)}
+  .login .wm{font-size:26px;color:var(--ink)}
+  .login p{font-size:12.5px;color:var(--char);margin:.6em 0 1.4em;line-height:1.7}
+  .login input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px;margin-bottom:12px;font-family:inherit}
+  .login input:focus{outline:none;border-color:var(--gold)}
+  .login .err{color:#b4453a;font-size:12px;min-height:1em;margin-top:8px}
+  .setup{font-size:12.5px;line-height:1.9;color:var(--char)}
+  .setup code{background:var(--cream);border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px;color:var(--gold)}
+  .setup ol{padding-left:1.2em} .setup li{margin:.5em 0}
+  .spark{width:100%;height:120px;display:block}
+  .muted{color:var(--char);font-size:11px}
+  .pill{display:inline-block;font-size:10px;border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--char)}
+</style>
+</head>
+<body>
+<div id="app" hidden>
+  <header>
+    <div class="hwrap">
+      <div>
+        <h1 class="serif">SEAM 診断ダッシュボード</h1>
+        <span class="sub" id="genAt">—</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="rangeSel" class="btn" style="padding:7px 10px">
+          <option value="30">直近30日</option>
+          <option value="90" selected>直近90日</option>
+          <option value="365">直近1年</option>
+        </select>
+        <button class="btn" id="csvBtn">CSV書出</button>
+        <button class="btn" id="reloadBtn">更新</button>
+        <button class="btn" id="logoutBtn">ログアウト</button>
+      </div>
+    </div>
+  </header>
+  <main>
+    <div id="notice"></div>
+    <section class="grid kpis" id="kpis"></section>
+    <section class="grid panels" id="panels"></section>
+    <p class="muted" style="margin-top:22px">個人情報は一切含みません（氏名・連絡先なし）。診断の傾向集計のみ。SEAM内部用・<span class="pill">noindex</span></p>
+  </main>
+</div>
+
+<!-- login overlay -->
+<div class="overlay" id="loginOverlay">
+  <div class="login">
+    <div class="wm">SEAM</div>
+    <p class="serif" style="font-size:14px;color:var(--ink);margin-bottom:.3em">診断ダッシュボード</p>
+    <p>関係者用パスキーを入力してください</p>
+    <input type="password" id="keyInput" placeholder="パスキー" autocomplete="current-password" />
+    <button class="btn solid" style="width:100%;padding:12px" id="loginBtn">表示する</button>
+    <div class="err" id="loginErr"></div>
+    <p class="muted" style="margin-top:16px">デモ表示は <a href="?demo=1" style="color:var(--gold)">?demo=1</a></p>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var KEY_LS = 'seam_admin_key';
+  var qs = new URLSearchParams(location.search);
+  var DEMO = qs.get('demo') === '1';
+
+  // ---- ラベル辞書 ----
+  var ADVICE = {scalp:'頭皮ケア', frizz:'うねり・広がり', volume:'ボリューム', damage:'ダメージ補修', dry:'乾燥・うるおい', color:'カラーケア', heat:'熱ダメージ', calm:'コンディション良好'};
+  var TIER = {1:'軽い (Tier1)', 2:'中ダメージ (Tier2)', 3:'しっかり (Tier3)'};
+  var GENDER = {female:'女性', male:'男性', other:'その他', na:'未回答'};
+  var TARGET = {reserve_hpb:'サロン予約(HPB)', reserve_open:'予約を開く', shop:'オンラインショップ', product:'商品リンク(公式)', product_alt:'商品→ショップ案内', online:'オンライン'};
+  var MODE = {a:'かんたん(A)', b:'くわしい(B)'};
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function el(id){return document.getElementById(id);}
+
+  // ---- デモ用サンプルデータ ----
+  function demoData(){
+    var types=['NNW','NNS','NLW','NHW','TLS','TNW','FHC','TLW','NHS','VCC','MSP','ABM','VSC','ASF','AWS','NLS','THS','FLW'];
+    var byType=types.map(function(t,i){return {t:t,c:Math.round(120*Math.exp(-i*0.18)+6)};});
+    function dailyGen(){var a=[],base=new Date('2026-04-01').getTime();for(var i=0;i<60;i++){a.push({d:new Date(base+i*864e5).toISOString().slice(0,10),c:Math.round(8+7*Math.sin(i/5)+Math.random()*6)});}return a;}
+    var d=dailyGen();
+    var completes=byType.reduce(function(s,x){return s+x.c;},0);
+    return {configured:true, generatedAt:Date.now(), windowDays:90, _demo:true,
+      summary:{starts:Math.round(completes*1.42), completes:completes, ctas:Math.round(completes*0.34)},
+      byType:byType, byAdvice:[{a:'damage',c:Math.round(completes*.28)},{a:'frizz',c:Math.round(completes*.22)},{a:'dry',c:Math.round(completes*.18)},{a:'scalp',c:Math.round(completes*.14)},{a:'volume',c:Math.round(completes*.1)},{a:'color',c:Math.round(completes*.08)}],
+      byTier:[{tier:1,c:Math.round(completes*.22)},{tier:2,c:Math.round(completes*.41)},{tier:3,c:Math.round(completes*.37)}],
+      byGender:[{g:'female',c:Math.round(completes*.83)},{g:'male',c:Math.round(completes*.15)},{g:'other',c:Math.round(completes*.02)}],
+      byMode:[{m:'a',c:Math.round(completes*.86)},{m:'b',c:Math.round(completes*.56)}],
+      ctaTarget:[{target:'reserve_hpb',c:Math.round(completes*.19)},{target:'shop',c:Math.round(completes*.09)},{target:'product',c:Math.round(completes*.06)}],
+      daily:d };
+  }
+
+  // ---- 描画 ----
+  function pct(n,total){return total>0?Math.round(n/total*1000)/10:0;}
+  function barRows(items, nameFn){
+    var max=items.reduce(function(m,x){return Math.max(m,x.c);},0)||1;
+    var tot=items.reduce(function(s,x){return s+x.c;},0)||0;
+    if(!items.length) return '<div class="empty">データなし</div>';
+    return items.map(function(x){
+      var w=Math.max(2, x.c/max*100);
+      return '<div class="bar-row"><span class="nm" title="'+esc(nameFn(x))+'">'+esc(nameFn(x))+'</span>'+
+        '<span class="bar-track"><span class="bar-fill" style="width:'+w+'%"></span></span>'+
+        '<span class="ct"><b>'+x.c+'</b> <span class="muted">'+pct(x.c,tot)+'%</span></span></div>';
+    }).join('');
+  }
+  function panel(eyebrow,title,inner){
+    return '<div class="card panel"><h2><span class="eyebrow">'+eyebrow+'</span>'+esc(title)+'</h2>'+inner+'</div>';
+  }
+  function kpi(label,num,unit){
+    return '<div class="card kpi"><div class="label">'+esc(label)+'</div><div class="num">'+num+(unit?'<span class="unit">'+unit+'</span>':'')+'</div></div>';
+  }
+  function sparkline(daily){
+    if(!daily||!daily.length) return '<div class="empty">データなし</div>';
+    var W=560,H=110,pad=6;
+    var max=daily.reduce(function(m,x){return Math.max(m,x.c);},0)||1;
+    var n=daily.length;
+    var pts=daily.map(function(x,i){var px=pad+i/(Math.max(1,n-1))*(W-2*pad);var py=H-pad-(x.c/max)*(H-2*pad-10);return [px,py];});
+    var line=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
+    var area=line+' L '+pts[n-1][0].toFixed(1)+' '+(H-pad)+' L '+pts[0][0].toFixed(1)+' '+(H-pad)+' Z';
+    return '<svg class="spark" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+      '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C79A6E" stop-opacity=".28"/><stop offset="1" stop-color="#C79A6E" stop-opacity="0"/></linearGradient></defs>'+
+      '<path d="'+area+'" fill="url(#g)"/>'+
+      '<path d="'+line+'" fill="none" stroke="#A87456" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
+      '</svg><div class="muted" style="display:flex;justify-content:space-between;margin-top:2px"><span>'+esc(daily[0].d)+'</span><span>最多 '+max+'件/日</span><span>'+esc(daily[n-1].d)+'</span></div>';
+  }
+
+  function render(data){
+    el('genAt').textContent = (data._demo?'［デモ表示］ ':'') + '更新 '+new Date(data.generatedAt).toLocaleString('ja-JP') + ' / 直近'+data.windowDays+'日';
+    var s=data.summary||{starts:0,completes:0,ctas:0};
+    var cr = pct(s.completes, s.starts);
+    var cvr = pct(s.ctas, s.completes);
+    el('kpis').innerHTML =
+      kpi('診断 完了数', s.completes, '件') +
+      kpi('診断 開始数', s.starts, '件') +
+      kpi('完了率', cr, '%') +
+      kpi('予約・CTA遷移率', cvr, '%');
+
+    el('panels').innerHTML =
+      panel('Type','27髪格タイプ 分布', barRows(data.byType||[], function(x){return x.t;})) +
+      panel('Concern','悩み（主訴）分布', barRows(data.byAdvice||[], function(x){return ADVICE[x.a]||x.a;})) +
+      panel('Damage','ダメージ履歴 Tier', barRows(data.byTier||[], function(x){return TIER[x.tier]||('Tier'+x.tier);})) +
+      panel('Gender','性別 分布', barRows(data.byGender||[], function(x){return GENDER[x.g]||x.g;})) +
+      panel('Mode','診断モード（開始）', barRows(data.byMode||[], function(x){return MODE[x.m]||x.m;})) +
+      panel('Funnel','予約・誘導クリック', barRows(data.ctaTarget||[], function(x){return TARGET[x.target]||x.target;})) +
+      '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Trend</span>日次トレンド（診断完了）</h2>'+sparkline(data.daily||[])+'</div>';
+
+    window.__seamData = data;
+  }
+
+  function toCSV(data){
+    var rows=[['section','key','count']];
+    (data.byType||[]).forEach(function(x){rows.push(['type',x.t,x.c]);});
+    (data.byAdvice||[]).forEach(function(x){rows.push(['concern',x.a,x.c]);});
+    (data.byTier||[]).forEach(function(x){rows.push(['tier',x.tier,x.c]);});
+    (data.byGender||[]).forEach(function(x){rows.push(['gender',x.g,x.c]);});
+    (data.byMode||[]).forEach(function(x){rows.push(['mode',x.m,x.c]);});
+    (data.ctaTarget||[]).forEach(function(x){rows.push(['cta',x.target,x.c]);});
+    (data.daily||[]).forEach(function(x){rows.push(['daily',x.d,x.c]);});
+    return '﻿'+rows.map(function(r){return r.join(',');}).join('\n');
+  }
+
+  function showApp(){ el('loginOverlay').style.display='none'; el('app').hidden=false; }
+  function showLogin(msg){ el('app').hidden=true; el('loginOverlay').style.display='flex'; if(msg)el('loginErr').textContent=msg; }
+
+  function load(){
+    if(DEMO){ showApp(); render(demoData()); return; }
+    var key = sessionStorage.getItem(KEY_LS);
+    if(!key){ showLogin(''); return; }
+    var days = (el('rangeSel')&&el('rangeSel').value) || '90';
+    el('notice').innerHTML='';
+    fetch('/api/admin/stats?days='+days, { headers:{ 'x-seam-key': key } })
+      .then(function(r){ if(r.status===401){ sessionStorage.removeItem(KEY_LS); throw {auth:true}; } return r.json(); })
+      .then(function(d){
+        if(d.configured===false){
+          showApp();
+          el('genAt').textContent='保存先(D1)が未接続です';
+          el('kpis').innerHTML=''; el('panels').innerHTML='';
+          el('notice').innerHTML='<div class="card setup"><h2 class="serif" style="font-size:15px;margin:0 0 8px">あと少しで集計が始まります（Cloudflare 設定）</h2><ol>'+
+            '<li>Cloudflare → Workers&amp;Pages → <b>D1</b> →「Create」で <code>seam-db</code> を作成</li>'+
+            '<li>作成したD1のコンソールに <code>db/schema.sql</code> の内容を貼って実行</li>'+
+            '<li>Pages → seam-website → Settings → Functions → <b>D1 database bindings</b> に 変数名 <code>DB</code> = <code>seam-db</code> を追加</li>'+
+            '<li>同 Settings → Environment variables に <code>ADMIN_KEY</code>（このパスキー）を追加</li>'+
+            '<li>再デプロイ → ここに診断データが溜まり始めます</li></ol>'+
+            '<p class="muted">※ 設定はオーナー様のCFダッシュボード操作です（このページは設定が済めば自動で表示されます）</p></div>';
+          return;
+        }
+        if(d.error){ el('notice').innerHTML='<div class="card"><span style="color:#b4453a">エラー: '+esc(d.error)+'</span></div>'; }
+        showApp(); render(d);
+      })
+      .catch(function(e){ if(e&&e.auth){ showLogin('パスキーが違います'); } else { showLogin('読み込みに失敗しました'); } });
+  }
+
+  // events
+  el('loginBtn').addEventListener('click', function(){
+    var v=el('keyInput').value.trim(); if(!v){el('loginErr').textContent='入力してください';return;}
+    sessionStorage.setItem(KEY_LS, v); el('loginErr').textContent=''; load();
+  });
+  el('keyInput').addEventListener('keydown', function(e){ if(e.key==='Enter') el('loginBtn').click(); });
+  el('logoutBtn').addEventListener('click', function(){ sessionStorage.removeItem(KEY_LS); location.href='admin.html'; });
+  el('reloadBtn').addEventListener('click', load);
+  el('rangeSel').addEventListener('change', load);
+  el('csvBtn').addEventListener('click', function(){
+    var d=window.__seamData; if(!d) return;
+    var blob=new Blob([toCSV(d)],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='seam_diag_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
