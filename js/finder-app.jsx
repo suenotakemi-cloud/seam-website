@@ -7670,6 +7670,7 @@ function SeasonalCareSection({ seamData }) {
 }
 
 /* ──────────────────────────────────────────
+   buildStylistMemo / IngredientGuideSection — rev2 (CI再ビルド用)
    buildStylistMemo — 既存回答の掛け合わせから「美容師さんへの施術メモ」を自動生成
    薬剤事故(切れ毛・ビビり)に直結する組み合わせを優先。質問は一切増やさない。
    ────────────────────────────────────────── */
