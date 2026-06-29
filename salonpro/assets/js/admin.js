@@ -1156,6 +1156,155 @@
     }
   }
 
+  /* ===== 薬剤ミックス分析（サロン/美容師ごとのカラー・パーマ・矯正・Tr・ブリーチ比率）
+     比率→営業の打ち手・今の兆候・セミナー×メーカー誘致に落とす。 ===== */
+  const RX = ['カラー', 'パーマ', '縮毛矯正', 'トリートメント', 'ブリーチ'];
+  const RX_COLORS = ['#c0392b', '#8e44ad', '#2f7a4d', '#2f6f8c', '#caa64a'];
+  const RX_SEM = [
+    { sem: '最新カラーデザイン＆薬剤運用', maker: 'ミルボン（アディクシー）' },
+    { sem: 'デザインパーマ実技', maker: 'アリミノ（コスメカール）' },
+    { sem: '弱酸性ストレート／縮毛矯正', maker: 'ミルボン（リシオ）' },
+    { sem: 'サロンTrのメニュー化・物販', maker: 'ミルボン（リンケージミュー）／TOKIO' },
+    { sem: 'ケアブリーチ＆ハイトーン', maker: 'シュワルツコフ（ファイバープレックス）' },
+  ];
+  const RX_SIGNAL = ['新色・ハイトーン需要→カラーライン提案', 'パーマ回帰の兆候→デジパー機器・薬剤提案', '梅雨/夏の矯正需要→ストレート剤・セミナー', 'Tr・店販強化志向→上位Trライン提案', 'ハイトーン化→ケアブリーチ/ボンド剤提案'];
+  function fixTo100(mix) { const d = 100 - mix.reduce((a, b) => a + b, 0); const i = mix.indexOf(Math.max.apply(null, mix)); mix[i] += d; return mix; }
+  function buildRxData() {
+    const rnd = mulberry32(20260701);
+    const ARCH = [
+      { name: 'カラー特化', w: [62, 8, 6, 14, 10] },
+      { name: '縮毛矯正・パーマ強', w: [34, 20, 30, 10, 6] },
+      { name: 'バランス型', w: [44, 16, 14, 16, 10] },
+      { name: 'トリートメント強', w: [40, 10, 10, 32, 8] },
+      { name: 'ハイトーン・ブリーチ強', w: [40, 6, 6, 12, 36] },
+    ];
+    const FIRST = ['佐藤', '鈴木', '高橋', '田中', '伊藤', '渡辺', '中村', '小林', '加藤', '山本', '吉田', '松本'];
+    const ROLE = ['ディレクター', 'トップスタイリスト', 'スタイリスト', 'スタイリスト', 'ジュニア'];
+    const src = (SALES.salons || []).filter(s => s.biz === 'hair' || s.biz === 'eye');
+    const salons = src.map((s, si) => {
+      const arch = ARCH[Math.floor(rnd() * ARCH.length)];
+      let w = arch.w.map(x => Math.max(2, x + (rnd() - 0.5) * 14));
+      const sum = w.reduce((a, b) => a + b, 0);
+      const mix = fixTo100(w.map(x => Math.round(x / sum * 100)));
+      const rxTotal = Math.round(s.total * (0.45 + rnd() * 0.25));
+      const amounts = mix.map(p => Math.round(rxTotal * p / 100));
+      const trend = RX.map(() => Math.round((rnd() - 0.5) * 16));
+      const nSt = 2 + Math.floor(rnd() * 4);
+      const stylists = [];
+      for (let k = 0; k < nSt; k++) {
+        let sw = mix.map(x => Math.max(1, x + (rnd() - 0.5) * 34));
+        const ss = sw.reduce((a, b) => a + b, 0);
+        const sm = fixTo100(sw.map(x => Math.round(x / ss * 100)));
+        stylists.push({ name: FIRST[(si * 3 + k) % FIRST.length] + ' ' + ROLE[Math.min(ROLE.length - 1, k)], mix: sm, share: Math.round((0.5 + rnd()) * 100) / 100 });
+      }
+      return { name: s.name, rep: s.rep, rank: s.rank, arch: arch.name, mix: mix, amounts: amounts, rxTotal: rxTotal, trend: trend, stylists: stylists };
+    });
+    return { RX: RX, salons: salons };
+  }
+  function rxAction(m) {
+    if (m[1] < 6 && m[2] < 8) return ['パーマ・矯正が手薄', 'パーマ/縮毛矯正メニューの導入提案（客単価UP）'];
+    if (m[0] >= 55 && m[3] < 14) return ['カラー偏重', 'システムTr・店販クロスセルで単価UP'];
+    if (m[4] >= 22) return ['ハイトーン強', 'ケアブリーチ／ボンド剤（プレックス系）の提案'];
+    if (m[2] >= 24) return ['縮毛矯正が主力', '矯正剤の銘柄切替・技術セミナー誘致'];
+    if (m[3] >= 28) return ['トリートメント強', '上位Trライン・物販強化の提案'];
+    return ['バランス型', '新カラーライン（アディクシー/イルミナ）の試験導入'];
+  }
+  function stackBar(mix) {
+    return '<span style="display:flex;height:16px;border-radius:4px;overflow:hidden;min-width:130px;border:1px solid var(--line)">' +
+      mix.map((p, i) => p > 0 ? `<i style="width:${p}%;background:${RX_COLORS[i]}" title="${RX[i]} ${p}%"></i>` : '').join('') + '</span>';
+  }
+  function rxLegend() {
+    return '<div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--ink-2);margin:2px 0 12px">' +
+      RX.map((r, i) => `<span style="display:inline-flex;align-items:center;gap:5px"><i style="width:11px;height:11px;border-radius:2px;background:${RX_COLORS[i]};display:inline-block"></i>${r}</span>`).join('') + '</div>';
+  }
+  let _rxSalonSel = null;
+  function drawRxStylists(D) {
+    const host = qs('#rxStylists'); if (!host) return;
+    const s = D.salons.find(x => x.name === _rxSalonSel) || D.salons[0]; if (!s) return;
+    const rows = s.stylists.map(st => `<tr>
+      <td><b>${esc(st.name)}</b></td>
+      <td style="min-width:140px">${stackBar(st.mix)}</td>
+      ${st.mix.map(p => `<td class="num">${p}%</td>`).join('')}
+    </tr>`).join('');
+    host.innerHTML = `<div style="font-size:12px;color:var(--ink-2);margin-bottom:8px">${esc(s.name)} ／ 担当 ${esc(s.rep)} ／ タイプ <b>${esc(s.arch)}</b>（美容師 ${s.stylists.length}名）</div>
+      <div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>美容師</th><th>薬剤比率</th>${RX.map(r => `<th>${r}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">美容師ごとの得意領域が分かる＝指名・教育・サンプル配布の設計に。例：矯正比率が高い美容師に矯正剤の新銘柄を試してもらう。</div>`;
+  }
+  function renderRxAnalytics() {
+    const D = buildRxData();
+    if (!D.salons.length) return;
+    // --- サマリー（全体構成） ---
+    const tot = RX.map((_, i) => D.salons.reduce((a, s) => a + s.amounts[i], 0));
+    const totSum = tot.reduce((a, b) => a + b, 0) || 1;
+    const stylistN = D.salons.reduce((a, s) => a + s.stylists.length, 0);
+    const avgColor = Math.round(D.salons.reduce((a, s) => a + s.mix[0], 0) / D.salons.length);
+    const maxI = tot.indexOf(Math.max.apply(null, tot));
+    const sum = qs('#rxSummary');
+    if (sum) {
+      const tile = (l, v, d, cls) => `<div class="kpi"><div class="kpi__l">${l}</div><div class="kpi__v">${v}</div><div class="kpi__d ${cls || ''}">${d}</div></div>`;
+      sum.innerHTML = `<div class="adm-kpis" style="margin-bottom:14px">
+          ${tile('対象サロン', D.salons.length + '店', 'ヘア／アイ', '')}
+          ${tile('美容師', stylistN + '名', '個人別の比率も', '')}
+          ${tile('最多の薬剤', RX[maxI], Math.round(tot[maxI] / totSum * 100) + '%', '')}
+          ${tile('平均カラー比率', avgColor + '%', '薬剤に占める', '')}
+        </div>
+        <div style="font-size:12.5px;font-weight:800;margin:4px 0 8px">全体の薬剤構成 <span style="color:var(--ink-3);font-weight:600;font-size:11px">流通額ベース</span></div>
+        ${rxLegend()}
+        ${stackBar(fixTo100(tot.map(v => Math.round(v / totSum * 100))))}
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px">サロン／美容師ごとの薬剤ミックスを把握し、①不足カテゴリへの営業 ②伸びている薬剤の兆候つかみ ③主力薬剤に合うメーカーのセミナー誘致 に使えます。</div>`;
+    }
+    // --- サロン別 薬剤比率＋営業の打ち手 ---
+    const sl = qs('#rxSalons');
+    if (sl) {
+      const list = D.salons.slice().sort((a, b) => b.rxTotal - a.rxTotal);
+      const rows = list.slice(0, 16).map(s => {
+        const act = rxAction(s.mix);
+        return `<tr>
+          <td><b>${esc(s.name)}</b><div style="font-size:11px;color:var(--ink-3)">${esc(s.rep)}・${esc(s.arch)}</div></td>
+          <td style="min-width:140px">${stackBar(s.mix)}</td>
+          ${s.mix.map(p => `<td class="num">${p}%</td>`).join('')}
+          <td style="font-size:11.5px"><b style="color:var(--gold-strong)">${esc(act[0])}</b><br>${esc(act[1])}</td>
+        </tr>`;
+      }).join('');
+      sl.innerHTML = `${rxLegend()}<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>薬剤比率</th>${RX.map(r => `<th>${r}</th>`).join('')}<th>営業の打ち手</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      const csv = qs('#csvRx');
+      if (csv) csv.onclick = () => downloadCsv('サロン別_薬剤ミックス.csv', [['サロン', '担当', 'タイプ'].concat(RX.map(r => r + '%')).concat(['薬剤流通額', '所見', '打ち手'])]
+        .concat(D.salons.map(s => [s.name, s.rep, s.arch].concat(s.mix).concat([s.rxTotal, rxAction(s.mix)[0], rxAction(s.mix)[1]]))));
+    }
+    // --- 美容師別ドリル ---
+    const sel = qs('#rxSalonSelect');
+    if (sel && !sel.dataset.ready) {
+      sel.innerHTML = D.salons.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+      sel.dataset.ready = '1';
+      sel.addEventListener('change', () => { _rxSalonSel = sel.value; drawRxStylists(D); });
+    }
+    _rxSalonSel = _rxSalonSel || (D.salons[0] && D.salons[0].name);
+    if (sel && _rxSalonSel) sel.value = _rxSalonSel;
+    drawRxStylists(D);
+    // --- セミナー×メーカー マッチング＋兆候 ---
+    const sm = qs('#rxSeminar');
+    if (sm) {
+      // 主力薬剤に合うセミナーを誘致（強みを深める）
+      const match = D.salons.slice().sort((a, b) => b.rxTotal - a.rxTotal).slice(0, 10).map(s => {
+        const i = s.mix.indexOf(Math.max.apply(null, s.mix));
+        return { name: s.name, rep: s.rep, cat: RX[i], sem: RX_SEM[i] };
+      });
+      // 兆候：薬剤比率が伸びているサロン（trend上位）
+      const movers = [];
+      D.salons.forEach(s => { const i = s.trend.indexOf(Math.max.apply(null, s.trend)); if (s.trend[i] >= 6) movers.push({ name: s.name, rep: s.rep, cat: RX[i], pt: s.trend[i], sig: RX_SIGNAL[i] }); });
+      movers.sort((a, b) => b.pt - a.pt);
+      sm.innerHTML = `
+        <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:8px">セミナー×メーカー 誘致マッチング <span style="color:var(--ink-3);font-weight:600;font-size:11px">主力薬剤で深掘り</span></div>
+            <div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>主力</th><th>おすすめセミナー（協賛メーカー）</th></tr></thead><tbody>${match.map(m => `<tr><td><b>${esc(m.name)}</b><div style="font-size:11px;color:var(--ink-3)">${esc(m.rep)}</div></td><td>${esc(m.cat)}</td><td style="font-size:12px">${esc(m.sem.sem)}<br><b style="color:var(--gold-strong)">${esc(m.sem.maker)}</b></td></tr>`).join('')}</tbody></table></div>
+          </div>
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:8px">今の兆候（伸びている薬剤） <span style="color:#c0392b;font-weight:700;font-size:11px">先月比</span></div>
+            ${movers.length ? `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>サロン</th><th>薬剤</th><th>変化</th><th>提案</th></tr></thead><tbody>${movers.slice(0, 10).map(m => `<tr><td><b>${esc(m.name)}</b></td><td>${esc(m.cat)}</td><td class="num" style="color:#2f7a4d;font-weight:800">+${m.pt}pt</td><td style="font-size:11.5px">${esc(m.sig)}</td></tr>`).join('')}</tbody></table></div>` : '<div style="color:var(--ink-3);font-size:12px;padding:8px">目立った兆候はありません</div>'}
+          </div>
+        </div>`;
+    }
+  }
+
   // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
   function setupProductAdmin() {
     const body = qs('#productAdminBody'); if (!body) return;
@@ -1246,6 +1395,7 @@
       ['データ活用', 'insights'], ['離反リスク', 'insights'], ['次の一手', 'insights'], ['サロン一覧', 'insights'],
       ['サイト分析', 'site'], ['会員申請の流入元', 'site'], ['行動ファネル', 'site'], ['検索ワード', 'site'], ['実計測ログ', 'site'],
       ['メーカー分析', 'makers'], ['メーカー詳細', 'makers'], ['横断インサイト', 'makers'],
+      ['薬剤ミックス', 'rx'], ['サロン別 薬剤', 'rx'], ['美容師別 薬剤', 'rx'], ['セミナー×メーカー', 'rx'],
       ['分析', 'analytics'], ['請求台帳', 'analytics'],
       ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
       ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
@@ -1254,7 +1404,7 @@
       ['リース', 'lease'], ['機器買取', 'buyback'], ['中古在庫', 'buyback'], ['パートナー', 'partner'],
     ];
     const NAVVIEW = {
-      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
+      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-rx': 'rx', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
       '#view-proxy': 'proxy', '#view-stock': 'stock', '#restockList': 'restock', '#reviewList': 'review',
       '#creditList': 'credit', '#contractAppList': 'contract', '#seminarList': 'seminar', '#leaseList': 'lease',
       '#buybackList': 'buyback', '#partnerList': 'partner',
@@ -1382,6 +1532,7 @@
   renderInsights();
   renderSiteAnalytics();
   renderMakerAnalytics();
+  renderRxAnalytics();
   setupProductAdmin();
   renderOrders();
   fillPxSalon();

@@ -62,7 +62,9 @@
 
 .two-col { display: grid; grid-template-columns: 1.4fr 1fr; gap: var(--s-4); align-items: start; }
 
-/* データ活用・分析の2カラム（チャート/表）はモバイルで縦積み */
+/* データ活用・分析の2カラム（チャート/表）はモバイルで縦積み。
+   子に min-width:0 を与え、内側の overflow-x:auto テーブルがトラックを押し広げず正しく横スクロールするように。 */
+.ins-2col > * { min-width: 0; }
 @media (max-width: 700px) { .ins-2col { grid-template-columns: 1fr !important; } }
 
 @media (max-width: 860px) {
