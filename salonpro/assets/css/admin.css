@@ -85,3 +85,11 @@
   .review-item__act { width: 100%; justify-content: flex-end; margin-top: 6px; }
   .review-item__act .btn { flex: 1 1 0; }
 }
+/* 印刷／PDF：ナビ・ヘッダー・操作ボタンを除き、表示中のビュー（メーカーレポート等）だけを出す */
+@media print {
+  body.adm { background: #fff; }
+  .adm-top, .adm-side, .adm-h1, .adm-card__head .btn, .adm-card__head select { display: none !important; }
+  .adm-layout { display: block; padding: 0; max-width: none; }
+  .adm-main { width: 100%; }
+  .adm-card { border: none; box-shadow: none; break-inside: avoid; margin: 0; }
+}

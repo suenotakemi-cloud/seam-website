@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>営業の今日の一手｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=62">
+  <link rel="stylesheet" href="assets/css/base.css?v=62">
+  <link rel="stylesheet" href="assets/css/components.css?v=62">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .rp-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .rp-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 760px; margin-inline: auto; }
+    .rp-top__logo { font-size: 17px; font-weight: 800; } .rp-top__logo b { color: var(--gold); }
+    .rp-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .rp-wrap { max-width: 760px; margin-inline: auto; padding: 16px; }
+    .rp-pick { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; margin-bottom: 14px; }
+    .rp-pick label { font-size: 12.5px; font-weight: 700; color: var(--ink-2); flex: none; }
+    .rp-pick select { flex: 1; border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 11px; font-size: 14px; font-weight: 700; background: #fff; }
+    .rp-hero { background: var(--dark); color: #fff; border-radius: var(--r-lg); padding: 18px 20px; margin-bottom: 16px; }
+    .rp-hero__l { font-size: 11px; color: rgba(255,255,255,.6); letter-spacing: .06em; }
+    .rp-hero__n { font-size: 30px; font-weight: 900; font-family: var(--font-num); margin-top: 2px; } .rp-hero__n small { font-size: 15px; font-weight: 800; }
+    .rp-hero__s { font-size: 12px; color: rgba(255,255,255,.7); margin-top: 4px; }
+    .rp-hero__chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .rp-hero__chip { font-size: 12px; font-weight: 800; background: rgba(255,255,255,.1); border-radius: 999px; padding: 5px 12px; }
+    .rp-sec { margin-bottom: 18px; }
+    .rp-sec__h { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 900; margin: 0 2px 9px; }
+    .rp-sec__h .n { margin-left: auto; font-family: var(--font-num); font-size: 13px; color: var(--ink-3); }
+    .rp-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 15px; margin-bottom: 9px; }
+    .rp-card__top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+    .rp-card__name { font-weight: 800; font-size: 14.5px; }
+    .rp-card__meta { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+    .rp-card__why { font-size: 12.5px; color: var(--ink-2); margin-top: 7px; line-height: 1.6; }
+    .rp-card__why b { color: var(--ink); }
+    .rp-card__act { display: flex; gap: 8px; margin-top: 10px; }
+    .rp-btn { flex: 1; height: 40px; border-radius: 10px; border: 1px solid var(--line-3); background: #fff; font-size: 13px; font-weight: 800; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .rp-btn--p { background: var(--gold); color: #fff; border-color: var(--gold); }
+    .rp-btn.done { background: #eef6f0; border-color: #cfe6d8; color: var(--stock-in); }
+    .rp-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+    .rp-tag--risk { background: #fbecea; color: #c0392b; } .rp-tag--coupon { background: var(--gold-soft); color: var(--gold-strong); } .rp-tag--due { background: #e9f1fb; color: #2f5fa8; }
+    .rp-empty { background: var(--surface); border: 1px dashed var(--line-3); border-radius: var(--r-md); padding: 16px; text-align: center; color: var(--ink-3); font-size: 12.5px; }
+    .rp-note { font-size: 10.5px; color: var(--ink-3); text-align: center; margin-top: 18px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="rp-top"><div class="rp-top__in"><span class="rp-top__logo">Salon<b>Pro</b></span><span class="rp-top__tag">営業 ダッシュボード</span></div></div>
+  <div class="rp-wrap">
+    <div class="rp-pick"><label>担当者</label><select id="repSel"></select></div>
+    <div id="repHero"></div>
+    <div id="repBody"></div>
+    <div class="rp-note">※ サロン・数値はデモ表示です。本番では受発注データ・補填プログラムから自動生成し、担当者ごとに「今日の一手」を配信します。</div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=62"></script>
+  <script src="assets/js/data.js?v=62"></script>
+  <script src="assets/js/store.js?v=62"></script>
+  <script src="assets/js/components.js?v=62"></script>
+  <script>
+    (function () {
+      var yen = function (n) { return '¥' + (n || 0).toLocaleString('ja-JP'); };
+      function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+      var REPS = ['佐藤 達也', '鈴木 香織', '高橋 誠', '田中 裕子', '渡辺 拓海', '伊藤 麻衣'];
+      var NAMES = ['SALON LUXE 表参道店', 'hair atelier MELT 中目黒', 'BARBER K 渋谷', 'Atelier NOa 自由が丘', 'Lumiere 銀座', 'hair room SOL 吉祥寺', 'CIEL 代官山', "mod's hair 新宿", 'GARDEN 青山', 'Belle 恵比寿', 'tricca 下北沢', 'ALBUM 池袋', 'EYELASH BiBi 横浜', 'hair design Liv 川崎', 'agnes 麻布十番', 'LiNK 立川', 'of HAIR 吉祥寺', 'SHIMA 原宿', 'RELAX 武蔵小杉', 'grace 横浜元町', 'BiOTOPE 中野', 'NORA 表参道', 'LANVERY 銀座', 'Octa 池袋', 'Beaute 自由が丘', 'Cha Cha 渋谷', 'RITZ 横浜', 'un ami 新百合ヶ丘', 'hair make EARTH 柏', 'Lano 国分寺', 'PRIVATE SALON Rire 浦和', 'Salon de Reve 鎌倉'];
+      var TIERS = (window.SP && SP.REBATE && SP.REBATE.tiers) || [{ maker: 'ミルボン', threshold: 200000, reward: '翌月限定 1本無料クーポン' }];
+      var CATS = ['カラー', 'トリートメント', 'パーマ', '縮毛矯正', '店販ケア'];
+      var rnd = mulberry32(20260706);
+      var SALONS = NAMES.map(function (name) {
+        var rep = REPS[Math.floor(rnd() * REPS.length)];
+        var avg3 = Math.round((7 + rnd() * 42) * 10000);
+        var cycle = 14 + Math.floor(rnd() * 30);
+        var trendDown = rnd() < 0.4;
+        var last = Math.round(cycle * (0.4 + rnd() * (trendDown ? 1.9 : 1.1)));
+        var atRisk = last > cycle * 1.5;
+        var due = !atRisk && last >= cycle * 0.85;
+        var tier = TIERS[Math.floor(rnd() * TIERS.length)];
+        var spent = Math.round(tier.threshold * (0.5 + rnd() * 0.62) / 1000) * 1000;
+        var nearRebate = spent < tier.threshold && spent >= tier.threshold * 0.72;
+        return { name: name, rep: rep, avg3: avg3, cycle: cycle, last: last, atRisk: atRisk, due: due, tier: tier, spent: spent, rest: Math.max(0, tier.threshold - spent), nearRebate: nearRebate, cat: CATS[Math.floor(rnd() * CATS.length)] };
+      });
+      function toast(m) { var t = document.getElementById('toast'); if (!t) return; t.innerHTML = (window.SP && SP.svg ? SP.svg('checkc') : '✓') + m; t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 1800); }
+
+      var sel = document.getElementById('repSel');
+      sel.innerHTML = REPS.map(function (r) { return '<option value="' + r + '">' + r + '</option>'; }).join('');
+      var cur = REPS[0];
+      sel.addEventListener('change', function () { cur = sel.value; render(); });
+
+      function card(inner, actHtml) { return '<div class="rp-card">' + inner + (actHtml ? '<div class="rp-card__act">' + actHtml + '</div>' : '') + '</div>'; }
+      function render() {
+        var mine = SALONS.filter(function (s) { return s.rep === cur; });
+        var churn = mine.filter(function (s) { return s.atRisk; }).sort(function (a, b) { return b.avg3 - a.avg3; });
+        var coupon = mine.filter(function (s) { return s.nearRebate; }).sort(function (a, b) { return a.rest - b.rest; });
+        var due = mine.filter(function (s) { return s.due; }).sort(function (a, b) { return b.avg3 - a.avg3; });
+        var total = churn.length + coupon.length + due.length;
+        document.getElementById('repHero').innerHTML =
+          '<div class="rp-hero"><div class="rp-hero__l">' + cur + ' さんの 今日の一手</div>'
+          + '<div class="rp-hero__n">' + total + '<small> 件</small></div>'
+          + '<div class="rp-hero__s">担当 ' + mine.length + ' 店から、今日動くべき先を抽出しました。</div>'
+          + '<div class="rp-hero__chips"><span class="rp-hero__chip">📞 離反 ' + churn.length + '</span><span class="rp-hero__chip">🎟 補填あと一歩 ' + coupon.length + '</span><span class="rp-hero__chip">🔁 再注文 ' + due.length + '</span></div></div>';
+
+        var html = '';
+        // 離反リスク架電
+        html += '<div class="rp-sec"><div class="rp-sec__h">📞 離反リスク・架電 <span class="n">' + churn.length + '件</span></div>';
+        html += churn.length ? churn.slice(0, 10).map(function (s) {
+          var over = s.last > s.cycle * 2;
+          return card(
+            '<div class="rp-card__top"><span class="rp-card__name">' + s.name + '</span><span class="rp-tag rp-tag--risk">' + s.last + '日 発注なし' + (over ? ' ⚠' : '') + '</span></div>'
+            + '<div class="rp-card__meta">通常サイクル ' + s.cycle + '日 ・ 直近月商 ' + yen(s.avg3) + '</div>'
+            + '<div class="rp-card__why">しばらく発注が止まっています。<b>離反の前に一本</b>連絡を。前回の購入品の在庫確認＋新商品の案内が効きます。</div>',
+            '<button class="rp-btn rp-btn--p" data-call="' + s.name + '">架電予定に追加</button><button class="rp-btn" data-memo="' + s.name + '">メモ</button>'
+          );
+        }).join('') : '<div class="rp-empty">離反リスクのサロンはありません 🎉</div>';
+        html += '</div>';
+        // 補填あと一歩
+        html += '<div class="rp-sec"><div class="rp-sec__h">🎟 補填あと一歩・あと一押し <span class="n">' + coupon.length + '件</span></div>';
+        html += coupon.length ? coupon.slice(0, 10).map(function (s) {
+          return card(
+            '<div class="rp-card__top"><span class="rp-card__name">' + s.name + '</span><span class="rp-tag rp-tag--coupon">あと ' + yen(s.rest) + '</span></div>'
+            + '<div class="rp-card__meta">' + s.tier.maker + ' 今月 ' + yen(s.spent) + ' / 基準 ' + yen(s.tier.threshold) + '</div>'
+            + '<div class="rp-card__why">「<b>あと' + yen(s.rest) + 'で' + s.tier.reward + 'が届きます</b>」と一押し。値引きでなく補填なので利益を守って発注が伸びます。</div>',
+            '<button class="rp-btn rp-btn--p" data-push="' + s.name + '">一押しメッセージ</button>'
+          );
+        }).join('') : '<div class="rp-empty">あと一歩のサロンはありません</div>';
+        html += '</div>';
+        // 再注文サイン
+        html += '<div class="rp-sec"><div class="rp-sec__h">🔁 再注文サイン（そろそろ発注） <span class="n">' + due.length + '件</span></div>';
+        html += due.length ? due.slice(0, 10).map(function (s) {
+          return card(
+            '<div class="rp-card__top"><span class="rp-card__name">' + s.name + '</span><span class="rp-tag rp-tag--due">経過 ' + s.last + '/' + s.cycle + '日</span></div>'
+            + '<div class="rp-card__meta">主力 ' + s.cat + ' ・ 直近月商 ' + yen(s.avg3) + '</div>'
+            + '<div class="rp-card__why">そろそろ' + s.cat + 'の補充タイミング。<b>「前回と同じ」発注リンク</b>を送ると決まりやすいです。</div>',
+            '<button class="rp-btn rp-btn--p" data-reorder="' + s.name + '">再注文リンクを送る</button>'
+          );
+        }).join('') : '<div class="rp-empty">該当はありません</div>';
+        html += '</div>';
+        document.getElementById('repBody').innerHTML = html;
+      }
+      document.getElementById('repBody').addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        if (b.dataset.call) { b.textContent = '架電予定 ✓'; b.classList.add('done'); toast(b.dataset.call + ' を架電予定に追加'); }
+        else if (b.dataset.push) { b.textContent = '送信済み ✓'; b.classList.add('done'); toast('一押しメッセージを送信（デモ）'); }
+        else if (b.dataset.reorder) { b.textContent = '送信済み ✓'; b.classList.add('done'); toast('再注文リンクを送信（デモ）'); }
+        else if (b.dataset.memo) { toast('メモを記録しました（デモ）'); }
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>

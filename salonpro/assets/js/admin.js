@@ -1513,6 +1513,65 @@
     }
   }
 
+  /* ===== メーカー向け 1社レポート（菊地がメーカーに見せる/渡せる販売サマリー。印刷PDF・CSV）===== */
+  let _mreportSel = null;
+  function buildMReport(maker) {
+    const makers = buildMakerData();
+    const total = makers.reduce((a, m) => a + m.gmv, 0) || 1;
+    const idx = makers.findIndex(x => x.maker === maker);
+    const m = makers[idx >= 0 ? idx : 0];
+    const rnd = mulberry32(20260705 + (m.maker ? m.maker.length : 1) * 7);
+    const newS = Math.max(1, Math.round(m.salons * (0.08 + rnd() * 0.12)));
+    const lostS = Math.max(0, Math.round(m.salons * (0.03 + rnd() * 0.07)));
+    return { m: m, rank: (idx < 0 ? makers.length : idx + 1), share: Math.round(m.gmv / total * 100), newS: newS, lostS: lostS, count: makers.length };
+  }
+  function reportBody(R) {
+    const m = R.m;
+    const kpi = (l, v, d) => `<div class="kpi"><div class="kpi__l">${l}</div><div class="kpi__v">${v}</div><div class="kpi__d">${d}</div></div>`;
+    const lineBars = Object.keys(m.lines).map(l => ({ label: l, v: m.lines[l] })).sort((a, b) => b.v - a.v).slice(0, 8);
+    const catBars = Object.keys(m.cats).map(c => ({ label: catName(c), v: m.cats[c] })).sort((a, b) => b.v - a.v).slice(0, 6);
+    const shadeRows = Object.keys(m.shades).map(k => ({ k: k, v: m.shades[k] })).sort((a, b) => b.v - a.v).slice(0, 8);
+    const cvrVC = m.views ? Math.round(m.carts / m.views * 100) : 0, cvrCB = m.carts ? Math.round(m.buys / m.carts * 100) : 0;
+    return `
+      <div style="background:var(--dark);color:#fff;border-radius:var(--r-md);padding:18px 22px">
+        <div style="font-size:11px;color:var(--gold);letter-spacing:.08em;font-weight:800">SALONPRO 販売サマリー ・ 菊地（KIKUCHI PRODUCE）提供</div>
+        <div style="font-size:var(--fs-22);font-weight:900;margin-top:5px">${esc(m.maker)} 様 向け 販売レポート</div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,.6);margin-top:4px">対象期間：直近6ヶ月（デモ）・自社では取れない"流通の実需"データ（サロン横断）</div>
+      </div>
+      <div class="adm-kpis" style="margin:16px 0 16px">
+        ${kpi('6ヶ月 流通額', yen(m.gmv), 'MoM ' + (m.mom >= 0 ? '+' : '') + Math.round(m.mom * 100) + '%')}
+        ${kpi('全体シェア', R.share + '%', 'メーカー' + R.count + '社中 ' + R.rank + '位')}
+        ${kpi('導入サロン', m.salons + '店', '新規 +' + R.newS + ' / 離反 -' + R.lostS)}
+        ${kpi('閲覧→カート→購入', cvrVC + '% · ' + cvrCB + '%', '検索 ' + m.search + '回')}
+      </div>
+      <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+        <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">ライン別 取扱（SKU）</div>${hbars(lineBars)}</div>
+        <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">カテゴリ構成（SKU）</div>${hbars(catBars)}</div>
+      </div>
+      ${shadeRows.length ? `<div style="margin-top:16px"><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">人気カラー番手 TOP <span style="color:var(--ink-3);font-weight:600;font-size:11px">需要指数・生産/在庫計画の参考に</span></div><table class="adm-table"><thead><tr><th>ライン・色・明るさ</th><th>需要指数</th></tr></thead><tbody>${shadeRows.map(s => `<tr><td>${esc(s.k)}</td><td class="num">${s.v}</td></tr>`).join('')}</tbody></table></div>` : ''}
+      <div style="font-size:11px;color:var(--ink-3);margin-top:14px;border-top:1px solid var(--line);padding-top:10px">本レポートはSalonPro（運営：株式会社菊地）の流通データに基づく要約です。数値はデモ表示。御社の販促・生産計画・共同企画のご提案にご活用ください。</div>`;
+  }
+  function drawMReport() { const host = qs('#mreportBody'); if (host) host.innerHTML = reportBody(buildMReport(_mreportSel)); }
+  function renderMakerReport() {
+    const makers = buildMakerData(); if (!makers.length) return;
+    const sel = qs('#mreportSelect');
+    if (sel && !sel.dataset.ready) {
+      sel.innerHTML = makers.map(m => `<option value="${esc(m.maker)}">${esc(m.maker)}</option>`).join('');
+      sel.dataset.ready = '1';
+      sel.addEventListener('change', () => { _mreportSel = sel.value; drawMReport(); });
+    }
+    _mreportSel = _mreportSel || (makers[0] && makers[0].maker);
+    if (sel && _mreportSel) sel.value = _mreportSel;
+    drawMReport();
+    const pr = qs('#mreportPrint'); if (pr) pr.onclick = () => window.print();
+    const cv = qs('#mreportCsv'); if (cv) cv.onclick = () => {
+      const R = buildMReport(_mreportSel), m = R.m;
+      downloadCsv('メーカーレポート_' + m.maker + '.csv', [['メーカー', m.maker], ['6ヶ月流通額', m.gmv], ['全体シェア', R.share + '%'], ['順位', R.rank + '/' + R.count + '社'], ['導入サロン', m.salons], ['新規', R.newS], ['離反', R.lostS], ['検索数', m.search], ['閲覧', m.views], ['カート', m.carts], ['購入', m.buys], ['MoM', Math.round(m.mom * 100) + '%'], [], ['ライン', 'SKU']]
+        .concat(Object.keys(m.lines).sort((a, b) => m.lines[b] - m.lines[a]).map(l => [l, m.lines[l]]))
+        .concat([[], ['カラー番手', '需要指数']]).concat(Object.keys(m.shades).sort((a, b) => m.shades[b] - m.shades[a]).slice(0, 30).map(k => [k, m.shades[k]])));
+    };
+  }
+
   // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
   function setupProductAdmin() {
     const body = qs('#productAdminBody'); if (!body) return;
@@ -1606,6 +1665,7 @@
       ['薬剤ミックス', 'rx'], ['サロン別 薬剤', 'rx'], ['美容師別 薬剤', 'rx'], ['セミナー×メーカー', 'rx'],
       ['カテゴリ内訳', 'cat'], ['サロン別ドリル', 'cat'], ['色味', 'cat'], ['薬剤タイプ', 'cat'], ['人気銘柄', 'cat'],
       ['補填プログラム', 'rebate'], ['達成あと一歩', 'rebate'],
+      ['メーカーレポート', 'mreport'], ['メーカー向け', 'mreport'],
       ['分析', 'analytics'], ['請求台帳', 'analytics'],
       ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
       ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
@@ -1614,7 +1674,7 @@
       ['リース', 'lease'], ['機器買取', 'buyback'], ['中古在庫', 'buyback'], ['パートナー', 'partner'],
     ];
     const NAVVIEW = {
-      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-rx': 'rx', '#view-cat': 'cat', '#view-rebate': 'rebate', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
+      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-rx': 'rx', '#view-cat': 'cat', '#view-rebate': 'rebate', '#view-mreport': 'mreport', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
       '#view-proxy': 'proxy', '#view-stock': 'stock', '#restockList': 'restock', '#reviewList': 'review',
       '#creditList': 'credit', '#contractAppList': 'contract', '#seminarList': 'seminar', '#leaseList': 'lease',
       '#buybackList': 'buyback', '#partnerList': 'partner',
@@ -1745,6 +1805,7 @@
   renderRxAnalytics();
   renderCatAnalytics();
   renderRebate();
+  renderMakerReport();
   setupProductAdmin();
   renderOrders();
   fillPxSalon();
