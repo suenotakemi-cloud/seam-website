@@ -10187,6 +10187,185 @@ const CS_TOOL_LABEL = {
   bangs: '前髪アイロン',
   dryer: 'ドライヤー'
 };
+
+/* ──────────────────────────────────────────
+   SeasonalCareSection — 今の季節のケア(日付で自動判定・発見型アドバイス)
+   実在商品をIDで参照。季節で髪コンディションは変わる＝今の時期に効くケアを提案。
+   ────────────────────────────────────────── */
+const SEASON_CARE = {
+  spring: {
+    key: 'spring',
+    label: '春',
+    en: 'Spring',
+    lead: '花粉・PM2.5の季節 ダメージした髪は微粒子が吸着しやすいので「付けない」バリアケアが心強い',
+    tips: [{
+      t: '微粒子・花粉をブロック',
+      b: '洗う前にプレジェルで花粉を絡め取り 日中はリーブインで付着を防ぐ',
+      ids: ['aujua-exshield-clear', 'aujua-exshield-reflect']
+    }, {
+      t: '髪表面をシールド',
+      b: '外的ストレスから守るリーブインで一日中バリア',
+      ids: ['sublimic-wondershield-out']
+    }]
+  },
+  summer: {
+    key: 'summer',
+    label: '夏',
+    en: 'Summer',
+    lead: '高湿度と紫外線の季節 炭酸で蓄積をリセットし 軽いコーティングで湿気とUVをブロックしてサラサラを保つ',
+    tips: [{
+      t: '炭酸でビルドアップをリセット',
+      b: '汗・皮脂・スタイリング剤の蓄積を 週2〜3回の炭酸で洗い流す',
+      ids: ['aujua-agingspa-sh']
+    }, {
+      t: '軽いオイルを全体にしっかり',
+      b: '重いオイルを少し ではなく 軽いオイルやコーティング剤を全体に 湿気をブロックしてサラサラ持続',
+      ids: ['oggiotto-outbath-oil']
+    }, {
+      t: '仕上げにUVスプレーでコーティング',
+      b: 'その上からUVスプレーを重ねると サラサラがさらに長持ち',
+      ids: ['aujua-daylight-shower', 'syspro-solar-sunoil', 'loa-uvspray']
+    }, {
+      t: '夕方の頭皮のニオイ・帽子の人に',
+      b: '乾いた頭皮にひと吹き 水のいらないドライシャンプーで日中リフレッシュ',
+      ids: ['pjoli-offmode-dryshampoo']
+    }]
+  },
+  autumn: {
+    key: 'autumn',
+    label: '秋',
+    en: 'Autumn',
+    lead: '秋も花粉が舞う季節 バリアは春と同じ 夏の紫外線で傷んだ髪は艶を足すスプレーでリカバリー',
+    tips: [{
+      t: '花粉バリアは春と同じ',
+      b: '微粒子をブロックするリーブインとシールドを続ける',
+      ids: ['aujua-exshield-reflect', 'sublimic-wondershield-out']
+    }, {
+      t: '夏ダメージに艶を出すスプレー',
+      b: '紫外線で乾いた髪にツヤを足すリーブインスプレー ブロー前のヒートケアにも',
+      ids: ['colormotion-luminous-spray', 'sublimic-luminoforce-tr']
+    }]
+  },
+  winter: {
+    key: 'winter',
+    label: '冬',
+    en: 'Winter',
+    lead: '乾燥と静電気の季節 水分と油分を補い 髪表面をなめらかに整えて静電気を抑える',
+    tips: [{
+      t: '静電気を抑える',
+      b: '乾燥でパチパチしやすい髪に 表面を整えて帯電を抑えるリーブイン',
+      ids: ['aujua-exshield-reflect', 'sublimic-wondershield-out']
+    }, {
+      t: '乾燥から守る保湿オイル',
+      b: '毛先までうるおいで包み 乾燥でパサつく髪をしなやかに',
+      ids: ['oggiotto-outbath-oil', 'moroccanoil-treatment-100']
+    }]
+  }
+};
+function currentSeasonKey() {
+  try {
+    const m = new Date().getMonth(); // 0=Jan
+    if (m >= 2 && m <= 4) return 'spring';
+    if (m >= 5 && m <= 7) return 'summer';
+    if (m >= 8 && m <= 10) return 'autumn';
+    return 'winter';
+  } catch (e) {
+    return 'summer';
+  }
+}
+function SeasonalCareSection({
+  seamData
+}) {
+  const byId = useMemo(() => {
+    const m = {};
+    (seamData && seamData.products || []).forEach(p => {
+      m[p.id] = p;
+    });
+    return m;
+  }, [seamData]);
+  const cur = currentSeasonKey();
+  const [sel, setSel] = useState(cur);
+  const order = ['spring', 'summer', 'autumn', 'winter'];
+  const season = SEASON_CARE[sel] || SEASON_CARE[cur];
+  return /*#__PURE__*/React.createElement("section", {
+    className: "mt-12 sm:mt-16 anim-fade-up",
+    style: {
+      animationDelay: '180ms'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[11px] uppercase text-gold"
+  }, "\u2014 Seasonal Care"), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-3 font-serif text-[26px] sm:text-[34px] text-ink leading-snug"
+  }, "\u4ECA\u306E\u5B63\u7BC0\u306E\u30B1\u30A2"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[13px] sm:text-[13.5px] text-charcoal/70 leading-[1.9]"
+  }, "\u5B63\u7BC0\u3067\u9AEA\u306E\u30B3\u30F3\u30C7\u30A3\u30B7\u30E7\u30F3\u306F\u5909\u308F\u308A\u307E\u3059 \u3044\u307E\u306F ", /*#__PURE__*/React.createElement("span", {
+    className: "text-gold font-medium"
+  }, SEASON_CARE[cur].label, "\uFF08", SEASON_CARE[cur].en, "\uFF09"), " \u306E\u6642\u671F\u3067\u3059"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 flex gap-2 flex-wrap"
+  }, order.map(k => {
+    const s = SEASON_CARE[k];
+    const on = k === sel;
+    const now = k === cur;
+    return /*#__PURE__*/React.createElement("button", {
+      key: k,
+      type: "button",
+      onClick: () => setSel(k),
+      className: `inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-[12.5px] transition-colors ${on ? 'bg-ink text-ivory border-ink' : 'bg-white text-ink border-line hover:border-gold'}`
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-serif"
+    }, s.label), /*#__PURE__*/React.createElement("span", {
+      className: `font-mono text-[9px] tracking-widest2 uppercase ${on ? 'text-ivory/65' : 'text-charcoal/45'}`
+    }, s.en), now && /*#__PURE__*/React.createElement("span", {
+      className: `font-mono text-[8.5px] tracking-widest2 uppercase ${on ? 'text-ivory/80' : 'text-gold'}`
+    }, "now"));
+  })), /*#__PURE__*/React.createElement("div", {
+    key: sel,
+    className: "anim-quiz mt-6 bg-white/70 border border-line rounded-[2px] p-5 sm:p-7"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[13px] sm:text-[14px] text-ink leading-[1.95]"
+  }, season.lead), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 space-y-5"
+  }, season.tips.map((tip, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "border-l-2 border-gold/40 pl-4"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-serif text-[14.5px] sm:text-[15px] text-ink"
+  }, tip.t), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-[12.5px] sm:text-[13px] text-charcoal/75 leading-[1.9]"
+  }, tip.b), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2.5 flex flex-col gap-1.5"
+  }, tip.ids.map(id => {
+    const p = byId[id];
+    if (!p) return null;
+    const img = p.imageUrl || p.image || '';
+    return /*#__PURE__*/React.createElement("a", {
+      key: id,
+      href: "onlineshop.html",
+      onClick: () => {
+        try {
+          window.seamTrack && window.seamTrack('finder_cta', {
+            target: 'shop',
+            label: 'seasonal_' + season.key
+          });
+        } catch (e) {}
+      },
+      className: "inline-flex items-center gap-2.5 group w-fit"
+    }, img ? /*#__PURE__*/React.createElement("img", {
+      src: img,
+      alt: "",
+      className: "w-8 h-8 object-contain rounded-sm bg-cream/60 border border-line/60 shrink-0",
+      loading: "lazy"
+    }) : /*#__PURE__*/React.createElement("span", {
+      className: "w-8 h-8 rounded-sm bg-cream/60 border border-line/60 flex items-center justify-center font-mono text-[8px] text-gold shrink-0"
+    }, "SEAM"), /*#__PURE__*/React.createElement("span", {
+      className: "text-[12.5px] text-ink group-hover:text-gold transition-colors leading-tight"
+    }, p.name, /*#__PURE__*/React.createElement("span", {
+      className: "text-charcoal/50 text-[11px]"
+    }, " \xB7 ", p.brand)));
+  }))))), /*#__PURE__*/React.createElement("p", {
+    className: "mt-5 text-[11px] text-charcoal/55 leading-relaxed"
+  }, "\u203B \u5B63\u7BC0\u306E\u30A2\u30C9\u30D0\u30A4\u30B9\u3067\u3059 \u9AEA\u306E\u72B6\u614B\u306B\u5408\u308F\u305B\u3066\u30B5\u30ED\u30F3\u3067\u3082\u3054\u76F8\u8AC7\u304F\u3060\u3055\u3044")));
+}
 function CounselingSheet({
   karte,
   answers,
@@ -11653,6 +11832,8 @@ function Result({
     seamData: seamData,
     answers: answers,
     scores: scores
+  }), /*#__PURE__*/React.createElement(SeasonalCareSection, {
+    seamData: seamData
   }), toolsData && toolsData.tools && Array.isArray(answers.deviceInterest) && answers.deviceInterest.some(v => v !== 'none') && /*#__PURE__*/React.createElement(HomeToolsSection, {
     tools: toolsData.tools,
     answers: answers,
