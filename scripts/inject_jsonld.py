@@ -44,7 +44,7 @@ STORES = [
      "map": "https://www.google.com/maps/search/?api=1&query=SEAM%20%E9%8A%80%E5%BA%A7%201-8-19%20ONE%20GINZA%203F"},
     {"id": "omotesando", "name": "gallica / SEAM", "region": "東京都", "locality": "港区",
      "street": "南青山3-15-15 Louis IIビル", "hours": ["Mo-Su 10:00-20:00"],
-     "ig": "https://www.instagram.com/gallica_seam/", "hpb": "https://beauty.hotpepper.jp/slnH000802192/",
+     "ig": "https://www.instagram.com/gallica_seam/", "hpb": "",
      "map": "https://www.google.com/maps/search/?api=1&query=%E3%82%AC%E3%83%AA%E3%82%AB%20%E3%82%B7%E3%83%BC%E3%83%A0%20%E5%8D%97%E9%9D%92%E5%B1%B13-15-15%20Louis%20II%E3%83%93%E3%83%AB"},
     {"id": "osaka", "name": "SEAM OSAKA HORIE", "region": "大阪府", "locality": "大阪市西区",
      "street": "南堀江1-11-21 STORK南堀江 1F", "hours": ["Mo-Su 11:00-19:00"],
@@ -64,7 +64,7 @@ STORES = [
      "map": "https://www.google.com/maps/search/?api=1&query=SEAM%20%E6%9C%AD%E5%B9%8C%20%E5%8D%97%EF%BC%92%E6%9D%A1%E8%A5%BF%EF%BC%93%E4%B8%81%E7%9B%AE15-2"},
     {"id": "gigi", "name": "gigi SEAM", "region": "栃木県", "locality": "宇都宮市",
      "street": "鶴田町419-7 インターパーク内", "hours": ["Mo 09:00-19:00", "We-Su 09:00-19:00"],
-     "ig": "https://www.instagram.com/gigi_seam_utsunomiya/", "hpb": "https://beauty.hotpepper.jp/",
+     "ig": "https://www.instagram.com/gigi_seam_utsunomiya/", "hpb": "",
      "map": "https://www.google.com/maps/search/?api=1&query=Gigi%20%E5%AE%87%E9%83%BD%E5%AE%AE%20%E9%B6%B4%E7%94%B0%E7%94%BA419-7"},
 ]
 
@@ -86,7 +86,7 @@ def hairsalon_node(s):
         },
         "openingHours": s["hours"],
         "hasMap": s["map"],
-        "sameAs": [s["ig"], s["hpb"]],
+        "sameAs": [s["ig"]] + ([s["hpb"]] if s["hpb"] else []),
     }
 
 
