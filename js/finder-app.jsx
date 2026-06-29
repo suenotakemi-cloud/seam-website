@@ -2298,8 +2298,19 @@ function scoreSeamProduct(p, answers, scores, flags) {
   const hasColor = answers.color && answers.color !== 'none';
   if (hasColor && fn.includes('for-color-damage')) s += 18;
   // (4) ブリーチダメージ用 — bleach系のcolor or deriveBleach
-  const hasBleach = /^(bleach_recent|bleach_past|multi_bleach|highlight)$/.test(answers.color || '') || !!deriveBleach(answers);
+  const hasBleach = !!deriveBleach(answers);
   if (hasBleach && fn.includes('for-bleach-damage')) s += 25;
+  // ── ブリーチ毛のライン優先(オーナー指定) ──
+  // 海外ブランドはブリーチオンカラー(脱色+オンカラー)を前提に設計＝ブリーチ毛に強い。
+  // ブリーチ毛       → ブロンドプラス / ファイバープレックス / リペアリティ
+  // 白髪×ブリーチ → アルティール(エイジングブリーチ) / アルタイムR / クロノロジスト / リュクス(LO)
+  if (hasBleach) {
+    const pid = p.id || '';
+    if (/^(globalmilbon-blondeplus|schwarzkopf-fibreplex|aujua-repairity)/.test(pid)) s += 55;
+    if (isGrayHair && /^(aujua-ultia|wella-ultimerepair|kerastase-chronologiste|syspro-luxeoil|syspro-blond)/.test(pid)) s += 65;
+    // 海外ブランド(ブリーチオンカラー前提の設計)をブリーチ毛に底上げ
+    if (['Kérastase','Schwarzkopf','System Professional','Davines','Moroccanoil','Color Motion+'].includes(p.brand)) s += 12;
+  }
   // (5) パーマダメージ用 — perm !== none/past
   const hasPerm = answers.perm && answers.perm !== 'none' && answers.perm !== 'past';
   if (hasPerm && fn.includes('for-perm-damage')) s += 18;
