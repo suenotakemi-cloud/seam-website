@@ -232,4 +232,6 @@
 
   render();
   bind();
+  // 計測：商品詳細の閲覧（メーカー/ブランド/ライン別の検討シグナル）
+  try { if (window.SP && SP.Track && p) SP.Track.log('product_view', { id: p.id, maker: p.maker || p.brand, brand: p.brand, line: p.line || '', cat: p.cat, price: p.price }); } catch (e) {}
 })();

@@ -969,8 +969,8 @@
         else if (a === 'picktype') { state.colorType = cd.dataset.v; state.colorLine = null; state.colorFamily = null; state.colorTone = null; state.colorLevel = null; }
         else if (a === 'type') { state.colorLine = null; state.colorFamily = null; }
         else if (a === 'line') { state.colorFamily = null; }
-        else if (a === 'pickline') { state.colorLine = cd.dataset.v; state.colorFamily = null; }
-        else if (a === 'pickfam') { state.colorFamily = cd.dataset.v; }
+        else if (a === 'pickline') { state.colorLine = cd.dataset.v; state.colorFamily = null; try { if (window.SP && SP.Track) SP.Track.log('brand_view', { brand: cd.dataset.v, where: 'color' }); } catch (e) {} }
+        else if (a === 'pickfam') { state.colorFamily = cd.dataset.v; try { if (window.SP && SP.Track) SP.Track.log('color_pick', { line: state.colorLine, family: cd.dataset.v }); } catch (e) {} }
         render();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         return;

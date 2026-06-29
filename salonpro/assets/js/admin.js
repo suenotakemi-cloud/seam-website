@@ -1011,14 +1011,18 @@
     if (lv) {
       const recent = ev.slice(-16).reverse();
       const fmtT = ms => { try { const d = new Date(ms); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); } catch (e) { return ''; } };
-      const TY = { view: ['閲覧', 'tag--new'], search: ['検索', 'tag--prep'], register: ['会員申請', 'tag--shipped'] };
+      const TY = { view: ['閲覧', 'tag--new'], search: ['検索', 'tag--prep'], register: ['会員申請', 'tag--shipped'], product_view: ['商品閲覧', 'tag--new'], add_cart: ['カート投入', 'tag--prep'], color_pick: ['カラー選択', 'tag--mute'], brand_view: ['ライン閲覧', 'tag--mute'] };
       const attrLine = liveAttr
         ? `<div style="font-size:12px;color:var(--ink-2);margin-bottom:10px">この端末の流入元：<b>${esc(liveAttr.source)}</b>（${esc(liveAttr.medium || '')}${liveAttr.campaign ? ' / ' + esc(liveAttr.campaign) : ''}）・入口 <b>${esc(liveAttr.landing || '')}</b>・${esc(liveAttr.device || '')}</div>`
         : '<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px">計測データはまだありません。</div>';
       lv.innerHTML = attrLine + (recent.length
         ? `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>時刻</th><th>種別</th><th>内容</th><th>ページ</th></tr></thead><tbody>${recent.map(e => {
           const ty = TY[e.t] || [e.t, 'tag--mute'];
-          const detail = e.t === 'search' ? `「${esc(e.q || '')}」→ ${e.n != null ? e.n + '件' : ''}` : (e.t === 'register' ? '流入元 ' + esc(e.source || '') : (e.ref ? '← ' + esc(e.ref) : ''));
+          const detail = e.t === 'search' ? `「${esc(e.q || '')}」→ ${e.n != null ? e.n + '件' : ''}`
+            : e.t === 'register' ? '流入元 ' + esc(e.source || '')
+            : (e.t === 'product_view' || e.t === 'add_cart') ? esc((e.maker || '') + (e.line ? ' / ' + e.line : ''))
+            : e.t === 'color_pick' ? esc((e.line || '') + ' ' + (e.family || ''))
+            : (e.ref ? '← ' + esc(e.ref) : '');
           return `<tr><td class="num" style="color:var(--ink-3)">${fmtT(e.at)}</td><td><span class="tag ${ty[1]}">${ty[0]}</span></td><td>${detail}</td><td style="font-size:11px;color:var(--ink-3)">${esc(e.page || '')}</td></tr>`;
         }).join('')}</tbody></table></div>`
         : '<div style="padding:14px;text-align:center;color:var(--ink-3)">この端末ではまだ操作ログがありません。サイトで検索・会員申請するとここに表示されます。</div>');
@@ -1027,6 +1031,129 @@
     // --- ボタン配線（CSV） ---
     const cSrc = qs('#csvSources'); if (cSrc) cSrc.onclick = () => downloadCsv('会員申請_流入元.csv', [['流入元', '申請数', '構成比']].concat(S.sources.map(s => { const tot = S.sources.reduce((a, x) => a + x.n, 0); return [s.source, s.n, Math.round(s.n / tot * 100) + '%']; })));
     const cSe = qs('#csvSearch'); if (cSe) cSe.onclick = () => downloadCsv('検索ワード.csv', [['検索ワード', '回数', '種別']].concat(S.searches.map(s => [s.q, s.n, 'ヒット'])).concat(S.zero.map(z => [z.q, z.n, '0件ヒット'])));
+  }
+
+  /* ===== メーカー/ブランド分析（メーカーが欲しい：競合横断シェア・検索需要・転換・番手別需要）
+     菊地の財産＝メーカーへ提供／販売できるデータ。カタログ実体＋seededパフォーマンス＋実計測マージ。 ===== */
+  const L2M = {
+    'ニゼル': 'ミルボン', 'エルジューダ': 'ミルボン', 'オージュア': 'ミルボン', 'グローバルミルボン': 'ミルボン', 'プラーミア': 'ミルボン', 'ディーセス': 'ミルボン', 'ジェミールフラン': 'ミルボン', 'リンケージミュー': 'ミルボン', 'アディクシー': 'ミルボン', 'オルディーブ': 'ミルボン', 'オルディーブ ボーテ': 'ミルボン',
+    'トリエ': 'ルベル', 'ジオ': 'ルベル', 'イオ': 'ルベル', 'マテリア': 'ルベル', 'マテリアG': 'ルベル', 'プロエディット': 'ルベル',
+    'イルミナカラー': 'ウエラ', 'コレストンパーフェクト': 'ウエラ', 'EIMI': 'ウエラ', 'ウエラプレックス': 'ウエラ', 'SP': 'ウエラ',
+    'イノア': 'ロレアル', 'マジレル': 'ロレアル', 'セリエ エキスパート': 'ロレアル', 'テクニアート': 'ロレアル', 'スマートボンド': 'ロレアル',
+    'イゴラ ロイヤル': 'シュワルツコフ', 'OSiS+': 'シュワルツコフ', 'BCボナキュア': 'シュワルツコフ', 'ファイバープレックス': 'シュワルツコフ',
+    'アドミオ': 'アリミノ', 'ピース': 'アリミノ',
+    'プロマスターEX': 'ホーユー', 'プロマスターEX グレイ': 'ホーユー', 'アプリエ': 'ホーユー', 'プロマスター': 'ホーユー',
+    // 表記ゆれ・同一企業の統合
+    'ウエラプロフェッショナル': 'ウエラ', 'ウェラ': 'ウエラ', 'グローバルミルボン': 'ミルボン', '資生堂': '資生堂プロフェッショナル',
+  };
+  function buildMakerData() {
+    const P = (SP.DATA && SP.DATA.products) || [];
+    const makerOf = p => { const m = p.maker || p.brand; return L2M[m] || m; };
+    const rnd = mulberry32(20260630);
+    const M = {};
+    P.forEach(p => {
+      if (p.cat === '_rec') return;
+      const m = makerOf(p); if (!m) return;
+      const e = M[m] || (M[m] = { maker: m, sku: 0, lines: {}, cats: {}, shades: {} });
+      e.sku++;
+      const ln = p.line || p.brand; e.lines[ln] = (e.lines[ln] || 0) + 1;
+      e.cats[p.cat] = (e.cats[p.cat] || 0) + 1;
+      if (p.cat === 'color' && p.family && p.level) { const k = (p.line || p.brand) + ' ' + p.family + ' ' + p.level; e.shades[k] = Math.round(18 + rnd() * 170); }
+    });
+    const makers = Object.keys(M).map(m => {
+      const e = M[m], sku = e.sku;
+      const gmv = Math.round(sku * (7000 + rnd() * 9000));
+      const search = Math.round(sku * 0.9 + rnd() * 130);
+      const views = Math.round(gmv / (900 + rnd() * 700));
+      const carts = Math.round(views * (0.16 + rnd() * 0.12));
+      const buys = Math.round(carts * (0.42 + rnd() * 0.22));
+      const salons = Math.min(40, 5 + Math.round(rnd() * 32));
+      const mom = Math.round((rnd() - 0.45) * 24) / 100;
+      return { maker: m, sku: sku, lines: e.lines, cats: e.cats, shades: e.shades, gmv: gmv, search: search, views: views, carts: carts, buys: buys, salons: salons, mom: mom };
+    }).sort((a, b) => b.gmv - a.gmv);
+    // 実計測（この端末）をマージ：閲覧/カート/検索/番手選択
+    const ev = (window.SP && SP.Track) ? SP.Track.events() : [];
+    const findM = name => name ? (makers.find(x => x.maker === name) || makers.find(x => name.indexOf(x.maker) >= 0)) : null;
+    ev.forEach(e => {
+      if (e.t === 'product_view') { const m = findM(e.maker); if (m) { m.views += 1; m.live = true; } }
+      else if (e.t === 'add_cart') { const m = findM(e.maker); if (m) { m.carts += 1; m.buys += 0; m.live = true; } }
+      else if (e.t === 'search' && e.q) { makers.forEach(m => { if (e.q.indexOf(m.maker) >= 0) { m.search += 1; m.live = true; } }); }
+      else if (e.t === 'color_pick' && e.line) { const m = findM(L2M[e.line] || e.line); if (m) { const k = e.line + ' ' + (e.family || ''); m.shades[k] = (m.shades[k] || 0) + 40; m.live = true; } }
+    });
+    return makers;
+  }
+  let _makerSel = null;
+  function drawMakerDetail(makers) {
+    const host = qs('#makerDetail'); if (!host) return;
+    const m = makers.find(x => x.maker === _makerSel) || makers[0]; if (!m) return;
+    const lineBars = Object.keys(m.lines).map(l => ({ label: l, v: m.lines[l] })).sort((a, b) => b.v - a.v).slice(0, 10);
+    const catBars = Object.keys(m.cats).map(c => ({ label: catName(c), v: m.cats[c] })).sort((a, b) => b.v - a.v).slice(0, 8);
+    const shadeRows = Object.keys(m.shades).map(k => ({ k: k, v: m.shades[k] })).sort((a, b) => b.v - a.v).slice(0, 8);
+    const cvrVC = m.views ? Math.round(m.carts / m.views * 100) : 0, cvrCB = m.carts ? Math.round(m.buys / m.carts * 100) : 0;
+    host.innerHTML = `
+      <div class="adm-kpis" style="margin-bottom:14px">
+        <div class="kpi"><div class="kpi__l">6ヶ月流通額</div><div class="kpi__v">${yen(m.gmv)}</div><div class="kpi__d ${m.mom >= 0 ? 'up' : 'warn'}">MoM ${(m.mom >= 0 ? '+' : '') + Math.round(m.mom * 100)}%</div></div>
+        <div class="kpi"><div class="kpi__l">取扱SKU</div><div class="kpi__v">${m.sku}</div><div class="kpi__d">${Object.keys(m.lines).length}ライン</div></div>
+        <div class="kpi"><div class="kpi__l">導入サロン</div><div class="kpi__v">${m.salons}店</div><div class="kpi__d">検索 ${m.search}回</div></div>
+        <div class="kpi"><div class="kpi__l">閲覧→カート→購入</div><div class="kpi__v">${cvrVC}% · ${cvrCB}%</div><div class="kpi__d">閲覧${m.views}/カート${m.carts}/購入${m.buys}</div></div>
+      </div>
+      <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+        <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">ライン別 取扱（SKU）</div>${hbars(lineBars)}</div>
+        <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">カテゴリ構成（SKU）</div>${hbars(catBars)}</div>
+      </div>
+      ${shadeRows.length ? `<div style="margin-top:16px"><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">人気カラー番手 TOP <span style="color:var(--ink-3);font-weight:600;font-size:11px">需要指数・生産/在庫計画の指標</span></div><table class="adm-table"><thead><tr><th>ライン・色・明るさ</th><th>需要指数</th></tr></thead><tbody>${shadeRows.map(s => `<tr><td>${esc(s.k)}</td><td class="num">${s.v}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+    const csv = qs('#csvMaker');
+    if (csv) csv.onclick = () => {
+      const rows = [['メーカーレポート', m.maker], ['取扱SKU', m.sku], ['6ヶ月流通額', m.gmv], ['導入サロン', m.salons], ['検索数', m.search], ['閲覧', m.views], ['カート', m.carts], ['購入', m.buys], ['MoM', Math.round(m.mom * 100) + '%'], [], ['ライン', 'SKU']]
+        .concat(Object.keys(m.lines).sort((a, b) => m.lines[b] - m.lines[a]).map(l => [l, m.lines[l]]))
+        .concat([[], ['カラー番手', '需要指数']]).concat(Object.keys(m.shades).sort((a, b) => m.shades[b] - m.shades[a]).slice(0, 40).map(k => [k, m.shades[k]]));
+      downloadCsv('メーカーレポート_' + m.maker + '.csv', rows);
+    };
+  }
+  function renderMakerAnalytics() {
+    const makers = buildMakerData();
+    if (!makers.length) return;
+    const totGmv = makers.reduce((a, m) => a + m.gmv, 0) || 1;
+    const sumEl = qs('#makerSummary');
+    if (sumEl) {
+      const rows = makers.slice(0, 14).map(m => {
+        const cvr = m.views ? Math.round(m.buys / m.views * 1000) / 10 : 0;
+        return `<tr>
+          <td><b>${esc(m.maker)}</b>${m.live ? ' <span style="color:#1f7a4d">●</span>' : ''}</td>
+          <td class="num">${m.sku.toLocaleString('ja-JP')}</td>
+          <td class="num">${yen(m.gmv)}</td>
+          <td class="num"><b>${Math.round(m.gmv / totGmv * 100)}%</b></td>
+          <td class="num">${m.search.toLocaleString('ja-JP')}</td>
+          <td class="num">${m.salons}</td>
+          <td class="num">${cvr}%</td>
+          <td class="num" style="color:${m.mom >= 0 ? '#1f7a4d' : '#c0392b'};font-weight:800">${(m.mom >= 0 ? '+' : '') + Math.round(m.mom * 100)}%</td>
+        </tr>`;
+      }).join('');
+      sumEl.innerHTML = `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>メーカー</th><th>取扱SKU</th><th>6ヶ月流通額</th><th>シェア</th><th>検索</th><th>導入サロン</th><th>閲覧→購入</th><th>MoM</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">各メーカーが自社では取れない<b>競合横断のシェア・検索需要・転換率・導入サロン数</b>を1画面で。メーカーへ提供／販売できるデータの母体です。●＝この端末の実計測。</div>`;
+    }
+    const sel = qs('#makerSelect');
+    if (sel && !sel.dataset.ready) {
+      sel.innerHTML = makers.map(m => `<option value="${esc(m.maker)}">${esc(m.maker)}（SKU ${m.sku}）</option>`).join('');
+      sel.dataset.ready = '1';
+      sel.addEventListener('change', () => { _makerSel = sel.value; drawMakerDetail(makers); });
+    }
+    _makerSel = _makerSel || (makers[0] && makers[0].maker);
+    if (sel && _makerSel) sel.value = _makerSel;
+    drawMakerDetail(makers);
+    const cross = qs('#makerCross');
+    if (cross) {
+      const bySearch = makers.slice().sort((a, b) => b.search - a.search).slice(0, 10).map(m => ({ label: m.maker + (m.live ? ' ●' : ''), v: m.search }));
+      const allShades = {};
+      makers.forEach(m => Object.keys(m.shades).forEach(k => { allShades[k] = Math.max(allShades[k] || 0, m.shades[k]); }));
+      const shadeBars = Object.keys(allShades).map(k => ({ k: k, v: allShades[k] })).sort((a, b) => b.v - a.v).slice(0, 12);
+      cross.innerHTML = `
+        <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">検索需要シェア（メーカー別・回）</div>${hbars(bySearch)}</div>
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">人気カラー番手 横断 TOP <span style="color:var(--ink-3);font-weight:600;font-size:11px">生産・在庫計画</span></div>
+            <table class="adm-table"><thead><tr><th>ライン・色・明るさ</th><th>需要指数</th></tr></thead><tbody>${shadeBars.map(s => `<tr><td>${esc(s.k)}</td><td class="num">${s.v}</td></tr>`).join('')}</tbody></table></div>
+        </div>`;
+    }
   }
 
   // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
@@ -1118,6 +1245,7 @@
     const MAP = [
       ['データ活用', 'insights'], ['離反リスク', 'insights'], ['次の一手', 'insights'], ['サロン一覧', 'insights'],
       ['サイト分析', 'site'], ['会員申請の流入元', 'site'], ['行動ファネル', 'site'], ['検索ワード', 'site'], ['実計測ログ', 'site'],
+      ['メーカー分析', 'makers'], ['メーカー詳細', 'makers'], ['横断インサイト', 'makers'],
       ['分析', 'analytics'], ['請求台帳', 'analytics'],
       ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
       ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
@@ -1126,7 +1254,7 @@
       ['リース', 'lease'], ['機器買取', 'buyback'], ['中古在庫', 'buyback'], ['パートナー', 'partner'],
     ];
     const NAVVIEW = {
-      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
+      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-makers': 'makers', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
       '#view-proxy': 'proxy', '#view-stock': 'stock', '#restockList': 'restock', '#reviewList': 'review',
       '#creditList': 'credit', '#contractAppList': 'contract', '#seminarList': 'seminar', '#leaseList': 'lease',
       '#buybackList': 'buyback', '#partnerList': 'partner',
@@ -1253,6 +1381,7 @@
   renderAnalytics();
   renderInsights();
   renderSiteAnalytics();
+  renderMakerAnalytics();
   setupProductAdmin();
   renderOrders();
   fillPxSalon();

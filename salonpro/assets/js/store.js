@@ -128,6 +128,8 @@
     addToCart(id, qty = 1) {
       cart[id] = (cart[id] || 0) + Math.max(1, qty);
       emit();
+      // 計測：カート投入（メーカー/ブランド別の購買意図）
+      try { if (window.SP && SP.Track) { const p = productById(id); if (p) SP.Track.log('add_cart', { id: id, maker: p.maker || p.brand, brand: p.brand, line: p.line || '', cat: p.cat, qty: Math.max(1, qty) }); } } catch (e) {}
     },
     setQty(id, qty) {
       if (qty <= 0) delete cart[id];
