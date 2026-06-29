@@ -405,3 +405,63 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply); else apply();
 })();
+
+/* =========================================================
+   SP.Track — サイト行動・流入の軽量計測（localStorage）
+   検索ワード・動線（ページビュー）・会員申請の流入元（ファーストタッチ）を記録。
+   ※デモ／プロトタイプ。本番はサーバー or 解析基盤（GA4/自社DB）へ送信に差し替え。
+   ========================================================= */
+(function () {
+  window.SP = window.SP || {};
+  var EV = 'sp.events.v1', AT = 'sp.attr.v1', SID = 'sp.sid.v1';
+  function read(k, f) { try { var v = localStorage.getItem(k); return v == null ? f : JSON.parse(v); } catch (e) { return f; } }
+  function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function nowMs() { return new Date().getTime(); }
+  function page() { return (location.pathname.split('/').pop() || 'home.html').split('?')[0] || 'home.html'; }
+  function device() { try { return window.matchMedia('(max-width: 760px)').matches ? 'mobile' : 'desktop'; } catch (e) { return 'desktop'; } }
+  function query() { var q = {}; try { location.search.slice(1).split('&').forEach(function (kv) { var a = kv.split('='); if (a[0]) q[decodeURIComponent(a[0])] = decodeURIComponent((a[1] || '').replace(/\+/g, ' ')); }); } catch (e) {} return q; }
+  // 流入元の判定：UTM > 紹介コード > リファラ（外部）> 直接
+  function classify() {
+    var q = query();
+    if (q.utm_source) return { source: q.utm_source, medium: q.utm_medium || 'campaign', campaign: q.utm_campaign || '' };
+    if (q.invite) return { source: '紹介コード', medium: 'invite', campaign: q.invite };
+    var r = document.referrer || '';
+    try {
+      var h = r ? new URL(r).hostname : '';
+      if (h && h.indexOf(location.hostname) < 0) {
+        if (/instagram/.test(h)) return { source: 'Instagram', medium: 'social', campaign: '' };
+        if (/google\./.test(h)) return { source: 'Google', medium: 'organic', campaign: '' };
+        if (/twitter|x\.com|t\.co/.test(h)) return { source: 'X / Twitter', medium: 'social', campaign: '' };
+        if (/youtube|youtu\.be/.test(h)) return { source: 'YouTube', medium: 'social', campaign: '' };
+        if (/line\./.test(h)) return { source: 'LINE', medium: 'social', campaign: '' };
+        if (/facebook/.test(h)) return { source: 'Facebook', medium: 'social', campaign: '' };
+        return { source: h, medium: 'referral', campaign: '' };
+      }
+    } catch (e) {}
+    return { source: '直接', medium: 'direct', campaign: '' };
+  }
+  // セッション（30分でリセット）
+  var t = nowMs(), sess = read(SID, null);
+  if (!sess || (t - sess.at) > 30 * 60000) sess = { id: 'S' + t.toString(36), at: t }; else sess.at = t;
+  write(SID, sess);
+  // ファーストタッチのアトリビューションを一度だけ保存（＝どこから来たか）
+  if (!read(AT, null)) { var s = classify(); write(AT, { source: s.source, medium: s.medium, campaign: s.campaign, landing: page(), device: device(), at: t }); }
+  function log(type, data) {
+    var ev = read(EV, []), rec = { t: type, page: page(), sid: sess.id, dev: device(), at: nowMs() };
+    if (data) for (var k in data) rec[k] = data[k];
+    ev.push(rec); if (ev.length > 300) ev = ev.slice(ev.length - 300); write(EV, ev);
+  }
+  // 自動ページビュー（動線）。運営/スタッフ系ページは顧客行動に含めない。
+  var SKIP = /admin|pos|inventory|dealer-settings|staffmate|karte/;
+  if (!SKIP.test(page())) {
+    var ref = ''; try { var rr = document.referrer; if (rr && new URL(rr).hostname === location.hostname) ref = new URL(rr).pathname.split('/').pop(); } catch (e) {}
+    log('view', { ref: ref });
+  }
+  window.SP.Track = {
+    attr: function () { return read(AT, null); },
+    session: function () { return read(SID, null); },
+    log: log,
+    events: function () { return read(EV, []); },
+    clear: function () { write(EV, []); },
+  };
+})();

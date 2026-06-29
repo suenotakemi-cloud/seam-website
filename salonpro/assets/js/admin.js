@@ -881,6 +881,154 @@
     const cS = qs('#csvSalons'); if (cS) cS.addEventListener('click', () => downloadCsv('サロン別_売上分析.csv', [['サロン', '業種', '担当', 'ランク', 'セグメント', '6ヶ月売上', '直近3ヶ月平均月商', 'MoM', '最終発注(日前)', '通常サイクル(日)', '発注回数']].concat(S.slice(0).sort((a, b) => b.total - a.total).map(s => [s.name, BIZ_LABEL[s.biz], s.rep, s.rank, SEG[segOf(s)][0], s.total, s.avg3, Math.round(s.mom * 100) + '%', s.last, s.cycle, s.orders]))));
   }
 
+  /* ===== サイト分析（流入・検索・動線）：菊地の財産＝行動データ。
+     デモ集計＋この端末の実計測(SP.Track)をマージ。本番は解析基盤/サーバー集計に差替。 ===== */
+  function siteSeed() {
+    return {
+      visits: 5240,
+      sources: [
+        { source: 'Instagram', n: 182, color: '#c13584' },
+        { source: 'Google 検索', n: 104, color: '#4285f4' },
+        { source: '紹介コード（担当者）', n: 86, color: '#b8860b' },
+        { source: '直接 / ブックマーク', n: 58, color: '#5b6470' },
+        { source: 'セミナー / 展示会', n: 26, color: '#2f7a4d' },
+        { source: 'LINE', n: 18, color: '#06c755' },
+        { source: 'X / Twitter', n: 12, color: '#1d9bf0' },
+      ],
+      searches: [
+        { q: 'イルミナ', n: 142 }, { q: 'オキシ 6%', n: 128 }, { q: '縮毛矯正剤', n: 96 },
+        { q: 'エルジューダ', n: 88 }, { q: 'アディクシー', n: 78 }, { q: 'カラーバター', n: 74 },
+        { q: 'マテリア', n: 63 }, { q: 'ブリーチ', n: 60 }, { q: 'パーマ液', n: 52 },
+        { q: 'N. シャンプー', n: 48 }, { q: 'ピース ワックス', n: 44 }, { q: 'イゴラ', n: 38 },
+        { q: '過水', n: 33 }, { q: 'トリートメント 業務用', n: 29 },
+      ],
+      zero: [
+        { q: 'デミ ウェーボ ドゥ', n: 14 }, { q: 'ロレアル イノア スプリーム', n: 11 },
+        { q: 'ジェミール ヒートグロス 詰替', n: 9 }, { q: 'ナンバースリー ミュリアム', n: 8 },
+        { q: '資生堂 クリスタリア', n: 7 }, { q: 'ベルジュバンス', n: 6 },
+      ],
+      funnel: [
+        { step: '訪問', n: 5240 }, { step: '検索・カテゴリ閲覧', n: 3120 }, { step: '商品詳細', n: 1860 },
+        { step: 'カート投入', n: 720 }, { step: '会員申請', n: 486 }, { step: '審査承認', n: 402 },
+      ],
+      entries: [
+        { page: 'top.html（公開トップ）', n: 1840 }, { page: 'home.html', n: 1520 },
+        { page: 'product.html（商品詳細）', n: 980 }, { page: 'campaigns.html', n: 410 },
+        { page: 'index.html（探す）', n: 290 }, { page: 'seminar.html', n: 200 },
+      ],
+      device: { mobile: 78, desktop: 22 },
+    };
+  }
+  function funnelHtml(steps) {
+    const top = steps[0].n || 1;
+    return '<div style="display:grid;gap:8px">' + steps.map(function (s, i) {
+      const pct = Math.max(4, Math.round(s.n / top * 100));
+      const conv = i > 0 ? Math.round(s.n / (steps[i - 1].n || 1) * 100) : 100;
+      return `<div style="display:grid;grid-template-columns:128px 1fr 104px;align-items:center;gap:10px;font-size:12px">
+        <span style="color:var(--ink-2);font-weight:700">${esc(s.step)}</span>
+        <span style="background:var(--surface-2);border-radius:6px;height:24px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:var(--gold);border-radius:6px"></i></span>
+        <span style="text-align:right;font-family:var(--font-num);font-weight:800">${s.n.toLocaleString('ja-JP')}${i > 0 ? ` <span style="color:var(--ink-3);font-weight:600;font-size:11px">${conv}%</span>` : ''}</span>
+      </div>`;
+    }).join('') + '</div>';
+  }
+  function renderSiteAnalytics() {
+    const S = siteSeed();
+    // この端末の実計測（SP.Track）をマージ＝ヒアリング中の実検索・実申請がそのまま乗る
+    const ev = (window.SP && SP.Track) ? SP.Track.events() : [];
+    const liveAttr = (window.SP && SP.Track) ? SP.Track.attr() : null;
+    let liveSearch = 0, liveReg = 0;
+    ev.forEach(function (e) {
+      if (e.t === 'search' && e.q) {
+        liveSearch++;
+        const bucket = (e.n === 0) ? S.zero : S.searches;
+        const hit = bucket.find(function (x) { return x.q === e.q; });
+        if (hit) { hit.n += 1; hit.live = true; } else bucket.push({ q: e.q, n: (e.n === 0 ? 1 : 1), live: true });
+      } else if (e.t === 'register') {
+        liveReg++;
+        const src = e.source || '直接';
+        const hit = S.sources.find(function (x) { return x.source === src || x.source.indexOf(src) === 0; });
+        if (hit) { hit.n += 1; hit.live = true; } else S.sources.push({ source: src, n: 1, color: '#c0392b', live: true });
+      }
+    });
+    S.sources.sort(function (a, b) { return b.n - a.n; });
+    S.searches.sort(function (a, b) { return b.n - a.n; });
+    const totalReg = S.funnel[4].n, totalApprove = S.funnel[5].n;
+    const cvr = Math.round(totalReg / (S.visits || 1) * 1000) / 10;
+    const topSrc = S.sources[0];
+
+    // --- サマリー ---
+    const sum = qs('#siteSummary');
+    if (sum) {
+      const tile = (l, v, d, cls) => `<div class="kpi"><div class="kpi__l">${l}</div><div class="kpi__v">${v}</div><div class="kpi__d ${cls || ''}">${d}</div></div>`;
+      const dev = S.device;
+      sum.innerHTML =
+        `<div class="adm-kpis" style="margin-bottom:14px">
+          ${tile('訪問（30日）', S.visits.toLocaleString('ja-JP'), 'デモ集計', '')}
+          ${tile('会員申請', totalReg.toLocaleString('ja-JP') + '件', '承認 ' + totalApprove + '件', 'up')}
+          ${tile('訪問→申請 CVR', cvr + '%', '業界比 良好', 'up')}
+          ${tile('最多の流入元', topSrc.source, Math.round(topSrc.n / S.sources.reduce((a, s) => a + s.n, 0) * 100) + '%', '')}
+        </div>
+        <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">入口ページ <span style="color:var(--ink-3);font-weight:600;font-size:11px">最初に見たページ</span></div>
+            ${hbars(S.entries.map(e => ({ label: e.page, v: e.n })))}</div>
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">デバイス</div>
+            ${hbars([{ label: 'モバイル', v: dev.mobile, disp: dev.mobile + '%' }, { label: 'PC', v: dev.desktop, disp: dev.desktop + '%' }])}
+            <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px">${(window.SP && SP.Track) ? 'この端末の実計測：検索 ' + liveSearch + ' 件 / 申請 ' + liveReg + ' 件を下のログに記録中。' : ''}</div>
+          </div>
+        </div>`;
+    }
+
+    // --- 会員申請の流入元（最重要の問い：どこから申請したか） ---
+    const src = qs('#siteSources');
+    if (src) {
+      const tot = S.sources.reduce((a, s) => a + s.n, 0);
+      const bars = S.sources.map(s => ({ label: s.source + (s.live ? ' ●' : ''), v: s.n, color: s.color || '#5b6470', disp: s.n + '（' + Math.round(s.n / tot * 100) + '%）' }));
+      src.innerHTML = hbars(bars) +
+        `<div style="font-size:11.5px;color:var(--ink-3);margin-top:10px">会員申請が「どこから来たか」をファーストタッチで集計（UTM＞紹介コード＞リファラ＞直接）。<b>●＝この端末の実計測</b>。流入元別に獲得施策の費用対効果が分かります。</div>`;
+    }
+
+    // --- 行動ファネル ---
+    const fn = qs('#siteFunnel');
+    if (fn) fn.innerHTML = funnelHtml(S.funnel) +
+      `<div style="font-size:11.5px;color:var(--ink-3);margin-top:10px">右の％は前段からの遷移率。離脱が大きい段（例：商品詳細→カート）が改善の打ち所です。</div>`;
+
+    // --- 検索ワード／0件ヒット ---
+    const sc = qs('#siteSearch');
+    if (sc) {
+      sc.innerHTML = `
+        <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">検索ワード TOP <span style="color:var(--ink-3);font-weight:600;font-size:11px">需要シグナル</span></div>
+            ${hbars(S.searches.slice(0, 12).map(s => ({ label: s.q + (s.live ? ' ●' : ''), v: s.n })))}</div>
+          <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">0件ヒット検索 <span style="color:#c0392b;font-weight:700;font-size:11px">取りこぼし＝仕入れ機会</span></div>
+            <table class="adm-table"><thead><tr><th>検索ワード</th><th>回数</th></tr></thead><tbody>${S.zero.sort((a, b) => b.n - a.n).slice(0, 10).map(z => `<tr><td>${esc(z.q)}${z.live ? ' <span style="color:#c0392b">●</span>' : ''}</td><td class="num">${z.n}</td></tr>`).join('')}</tbody></table>
+            <div style="font-size:11.5px;color:var(--ink-3);margin-top:8px">0件＝サロンが欲しいのに無い商品。取扱い追加・代替提案の判断材料に。</div>
+          </div>
+        </div>`;
+    }
+
+    // --- 実計測ログ（この端末・ライブ） ---
+    const lv = qs('#siteLive');
+    if (lv) {
+      const recent = ev.slice(-16).reverse();
+      const fmtT = ms => { try { const d = new Date(ms); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); } catch (e) { return ''; } };
+      const TY = { view: ['閲覧', 'tag--new'], search: ['検索', 'tag--prep'], register: ['会員申請', 'tag--shipped'] };
+      const attrLine = liveAttr
+        ? `<div style="font-size:12px;color:var(--ink-2);margin-bottom:10px">この端末の流入元：<b>${esc(liveAttr.source)}</b>（${esc(liveAttr.medium || '')}${liveAttr.campaign ? ' / ' + esc(liveAttr.campaign) : ''}）・入口 <b>${esc(liveAttr.landing || '')}</b>・${esc(liveAttr.device || '')}</div>`
+        : '<div style="font-size:12px;color:var(--ink-3);margin-bottom:10px">計測データはまだありません。</div>';
+      lv.innerHTML = attrLine + (recent.length
+        ? `<div style="overflow-x:auto"><table class="adm-table"><thead><tr><th>時刻</th><th>種別</th><th>内容</th><th>ページ</th></tr></thead><tbody>${recent.map(e => {
+          const ty = TY[e.t] || [e.t, 'tag--mute'];
+          const detail = e.t === 'search' ? `「${esc(e.q || '')}」→ ${e.n != null ? e.n + '件' : ''}` : (e.t === 'register' ? '流入元 ' + esc(e.source || '') : (e.ref ? '← ' + esc(e.ref) : ''));
+          return `<tr><td class="num" style="color:var(--ink-3)">${fmtT(e.at)}</td><td><span class="tag ${ty[1]}">${ty[0]}</span></td><td>${detail}</td><td style="font-size:11px;color:var(--ink-3)">${esc(e.page || '')}</td></tr>`;
+        }).join('')}</tbody></table></div>`
+        : '<div style="padding:14px;text-align:center;color:var(--ink-3)">この端末ではまだ操作ログがありません。サイトで検索・会員申請するとここに表示されます。</div>');
+    }
+
+    // --- ボタン配線（CSV） ---
+    const cSrc = qs('#csvSources'); if (cSrc) cSrc.onclick = () => downloadCsv('会員申請_流入元.csv', [['流入元', '申請数', '構成比']].concat(S.sources.map(s => { const tot = S.sources.reduce((a, x) => a + x.n, 0); return [s.source, s.n, Math.round(s.n / tot * 100) + '%']; })));
+    const cSe = qs('#csvSearch'); if (cSe) cSe.onclick = () => downloadCsv('検索ワード.csv', [['検索ワード', '回数', '種別']].concat(S.searches.map(s => [s.q, s.n, 'ヒット'])).concat(S.zero.map(z => [z.q, z.n, '0件ヒット'])));
+  }
+
   // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
   function setupProductAdmin() {
     const body = qs('#productAdminBody'); if (!body) return;
@@ -969,6 +1117,7 @@
     const h1 = qs('#admTop');
     const MAP = [
       ['データ活用', 'insights'], ['離反リスク', 'insights'], ['次の一手', 'insights'], ['サロン一覧', 'insights'],
+      ['サイト分析', 'site'], ['会員申請の流入元', 'site'], ['行動ファネル', 'site'], ['検索ワード', 'site'], ['実計測ログ', 'site'],
       ['分析', 'analytics'], ['請求台帳', 'analytics'],
       ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
       ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
@@ -977,7 +1126,7 @@
       ['リース', 'lease'], ['機器買取', 'buyback'], ['中古在庫', 'buyback'], ['パートナー', 'partner'],
     ];
     const NAVVIEW = {
-      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
+      '#admTop': 'dashboard', '#view-insights': 'insights', '#view-site': 'site', '#view-analytics': 'analytics', '#view-products': 'products', '#view-orders': 'orders',
       '#view-proxy': 'proxy', '#view-stock': 'stock', '#restockList': 'restock', '#reviewList': 'review',
       '#creditList': 'credit', '#contractAppList': 'contract', '#seminarList': 'seminar', '#leaseList': 'lease',
       '#buybackList': 'buyback', '#partnerList': 'partner',
@@ -1103,6 +1252,7 @@
   renderSalonDiscounts();
   renderAnalytics();
   renderInsights();
+  renderSiteAnalytics();
   setupProductAdmin();
   renderOrders();
   fillPxSalon();

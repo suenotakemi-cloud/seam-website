@@ -294,6 +294,14 @@
       if (btn) btn.textContent = `もっと見る（残り ${(total - shown).toLocaleString()} 件）`;
     } else { wrap.hidden = true; }
   }
+  // 検索ワードの計測（入力途中を弾くため約1.1秒デバウンス＋連続同一を除外）
+  let _trkTimer = null, _trkLast = '';
+  function trackSearch(q, n) {
+    if (!q || !(window.SP && SP.Track)) return;
+    clearTimeout(_trkTimer);
+    _trkTimer = setTimeout(function () { if (q && q !== _trkLast) { _trkLast = q; SP.Track.log('search', { q: q, n: n }); } }, 1100);
+  }
+
   function render() {
     // カラーのドリル状態はカラー以外で初期化（タイプ・チップ state.typeSel はカテゴリ別に保持）
     if (state.cat !== 'color') { state.colorType = null; state.colorLine = null; state.colorFamily = null; }
@@ -332,6 +340,7 @@
       qs('#pageTitle').textContent = `「${state.search.trim()}」の検索結果`;
       qs('#pageCount').innerHTML = `<b>${list.length}</b>件`;
       if (crumbEl) crumbEl.textContent = '検索結果';
+      trackSearch(state.search.trim(), list.length);
     } else if (state.brand && state.brandAll) {
       qs('#pageTitle').textContent = state.brand;
       qs('#pageCount').innerHTML = `全<b>${list.length}</b>件 ・ <span style="font-size:12px;color:var(--ink-3);font-weight:600">カテゴリを選ぶと絞り込めます</span>`;
