@@ -1348,6 +1348,51 @@
     const ranking = Object.keys(agg).map(k => agg[k]).sort((a, b) => b.dem - a.dem).slice(0, 15);
     return { cmk: cmk, tone: tone, toneMk: toneMk, perm: perm, straight: straight, ranking: ranking };
   }
+  // サロン別の「カラー剤メーカー比率・好む色味・よく頼む銘柄」（全体集計をサロンの嗜好で偏らせて生成）
+  let _catSalonSel = null;
+  function buildSalonCatData() {
+    const rnd = mulberry32(20260703);
+    const G = buildCatData();
+    const makers = Object.keys(G.cmk).sort((a, b) => G.cmk[b] - G.cmk[a]).slice(0, 8);
+    const COL6 = ['赤', '青', '黄', '紫', 'オレンジ', '緑'];
+    const makerOf = p => { const m = p.maker || p.brand; return L2M[m] || m; };
+    const lineMap = {};
+    (SP.DATA && SP.DATA.products || []).filter(p => p.cat === 'color' || p.cat === 'perm' || p.cat === 'straight' || p.cat === 'treatment').forEach(p => {
+      const ln = p.line || p.brand; const e = lineMap[ln] || (lineMap[ln] = { line: ln, maker: makerOf(p), cat: p.cat, base: 0 }); e.base += (p.pop || 40);
+    });
+    const lines = Object.keys(lineMap).map(k => lineMap[k]);
+    const src = (SALES.salons || []).filter(s => s.biz === 'hair' || s.biz === 'eye');
+    const salons = src.map(s => {
+      const favM = makers[Math.floor(rnd() * Math.min(4, makers.length))];
+      const mw = makers.map(m => (G.cmk[m] || 1) * (0.4 + rnd()) * (m === favM ? (2.5 + rnd() * 2) : 1));
+      const mt = mw.reduce((a, b) => a + b, 0) || 1;
+      const makerShare = makers.map((m, i) => ({ label: m, v: Math.round(mw[i] / mt * 100) })).sort((a, b) => b.v - a.v);
+      const favT = COL6[Math.floor(rnd() * COL6.length)];
+      const tw = COL6.map(t => (G.tone[t] || 1) * (0.4 + rnd()) * (t === favT ? (2.5 + rnd() * 2) : 1));
+      const tt = tw.reduce((a, b) => a + b, 0) || 1;
+      const tone6 = COL6.map((t, i) => ({ tone: t, pct: Math.round(tw[i] / tt * 100) }));
+      const topLines = lines.map(l => ({ l: l, sc: l.base * (0.4 + rnd()) * (l.maker === favM ? 3 : 1) })).sort((a, b) => b.sc - a.sc).slice(0, 6).map(x => x.l);
+      return { name: s.name, rep: s.rep, favM: favM, makerShare: makerShare, tone6: tone6, topLines: topLines };
+    });
+    return { makers: makers, COL6: COL6, salons: salons };
+  }
+  function drawSalonCat(D) {
+    const host = qs('#catSalon'); if (!host) return;
+    const s = D.salons.find(x => x.name === _catSalonSel) || D.salons[0]; if (!s) return;
+    const C = { '赤': '#c0392b', '青': '#2f6f9e', '黄': '#d4a017', '紫': '#8e44ad', 'オレンジ': '#d97b29', '緑': '#2f7a4d' };
+    const stack = '<span style="display:flex;height:16px;border-radius:4px;overflow:hidden;border:1px solid var(--line)">' + s.tone6.map(t => t.pct > 0 ? `<i style="width:${t.pct}%;background:${C[t.tone]}" title="${t.tone} ${t.pct}%"></i>` : '').join('') + '</span>';
+    const legend = '<div style="display:flex;flex-wrap:wrap;gap:9px;font-size:11px;color:var(--ink-2);margin:6px 0 4px">' + s.tone6.filter(t => t.pct > 0).sort((a, b) => b.pct - a.pct).map(t => `<span style="display:inline-flex;align-items:center;gap:4px"><i style="width:10px;height:10px;border-radius:2px;background:${C[t.tone]};display:inline-block"></i>${t.tone} ${t.pct}%</span>`).join('') + '</div>';
+    const CATB = { color: 'カラー', perm: 'パーマ', straight: 'ストレート', treatment: 'Tr' };
+    host.innerHTML = `<div style="font-size:12px;color:var(--ink-2);margin-bottom:12px">${esc(s.name)} ／ 担当 ${esc(s.rep)} ／ 主に使うメーカー <b>${esc(s.favM)}</b></div>
+      <div class="ins-2col" style="display:grid;gap:20px;grid-template-columns:1fr 1fr">
+        <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">このサロンの カラー剤 メーカー比率</div>${hbars(s.makerShare.slice(0, 6).map(m => ({ label: m.label, v: m.v, disp: m.v + '%' })))}</div>
+        <div><div style="font-size:12.5px;font-weight:800;margin-bottom:4px">このサロンの 好む色味</div>${legend}${stack}
+          <div style="font-size:12.5px;font-weight:800;margin:14px 0 8px">よく頼む銘柄</div>
+          <div style="display:flex;flex-direction:column;gap:5px">${s.topLines.map((l, i) => `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px"><b style="color:var(--ink-3);font-family:var(--font-num)">${i + 1}</b> <b>${esc(l.line)}</b> <span style="color:var(--ink-3);font-size:11px">${esc(l.maker)}・${CATB[l.cat] || ''}</span></div>`).join('')}</div>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:var(--ink-3);margin-top:10px">サロンごとの「使うメーカー比率・好む色味・よく頼む銘柄」。担当の提案準備に直結（例：このサロンはミルボン中心でアッシュ多め→新色サンプル持参）。</div>`;
+  }
   function renderCatAnalytics() {
     const D = buildCatData();
     const COL6 = [['赤', '#c0392b'], ['青', '#2f6f9e'], ['黄', '#d4a017'], ['紫', '#8e44ad'], ['オレンジ', '#d97b29'], ['緑', '#2f7a4d']];
@@ -1397,6 +1442,17 @@
       const csv = qs('#csvCatRank');
       if (csv) csv.onclick = () => downloadCsv('人気銘柄ランキング.csv', [['順位', '銘柄', 'メーカー', '薬剤', '需要指数']].concat(D.ranking.map((r, i) => [i + 1, r.line, r.maker, (CATB[r.cat] || [''])[0], r.dem])));
     }
+    // 5. サロン別ドリル（カラー剤の中身をサロンごとに）
+    const SD = buildSalonCatData();
+    const ssel = qs('#catSalonSelect');
+    if (ssel && !ssel.dataset.ready) {
+      ssel.innerHTML = SD.salons.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+      ssel.dataset.ready = '1';
+      ssel.addEventListener('change', () => { _catSalonSel = ssel.value; drawSalonCat(SD); });
+    }
+    _catSalonSel = _catSalonSel || (SD.salons[0] && SD.salons[0].name);
+    if (ssel && _catSalonSel) ssel.value = _catSalonSel;
+    drawSalonCat(SD);
   }
 
   // 商品管理（検索・カテゴリ／在庫フィルタ・CSV）
@@ -1490,7 +1546,7 @@
       ['サイト分析', 'site'], ['会員申請の流入元', 'site'], ['行動ファネル', 'site'], ['検索ワード', 'site'], ['実計測ログ', 'site'],
       ['メーカー分析', 'makers'], ['メーカー詳細', 'makers'], ['横断インサイト', 'makers'],
       ['薬剤ミックス', 'rx'], ['サロン別 薬剤', 'rx'], ['美容師別 薬剤', 'rx'], ['セミナー×メーカー', 'rx'],
-      ['カテゴリ内訳', 'cat'], ['色味', 'cat'], ['薬剤タイプ', 'cat'], ['人気銘柄', 'cat'],
+      ['カテゴリ内訳', 'cat'], ['サロン別ドリル', 'cat'], ['色味', 'cat'], ['薬剤タイプ', 'cat'], ['人気銘柄', 'cat'],
       ['分析', 'analytics'], ['請求台帳', 'analytics'],
       ['商品管理', 'products'], ['注文管理', 'orders'], ['最近の注文', 'dashboard'],
       ['代理発注', 'proxy'], ['在庫アラート', 'stock'], ['入荷お知らせ', 'restock'],
