@@ -3212,6 +3212,23 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
       let inj = null;
       if (_deepScalpNeed) inj = scored.find(it => isEss(it) && AGING_ESSENCE.indexOf(it.p.id) > -1);
       if (!inj) inj = scored.find(isEss);
+      // scored は s>0 でフィルタ済み。off-concern減点でエッセンスが全て0点に落ちた場合に備え、生のproductsから確実に補完する。
+      if (!inj) {
+        let pp = null;
+        for (const aid of AGING_ESSENCE) {
+          pp = (products || []).find(p => p.id === aid);
+          if (pp) break;
+        }
+        if (!pp) pp = (products || []).find(p => p.category === 'scalp-essence');
+        if (pp) inj = {
+          p: pp,
+          s: 1,
+          deepCat: 'scalp',
+          isAffinity: false,
+          isSupplementary: false,
+          affinityReason: ''
+        };
+      }
       if (inj) blocks.scalp.push(inj);
     } else if (_deepScalpNeed && !headAging) {
       // 深い頭皮悩みなのに先頭がエイジング系でない → エイジング系を先頭へ繰り上げ。
