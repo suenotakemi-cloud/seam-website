@@ -4562,7 +4562,7 @@ function TopBar({
     className: `text-[13px] ${lang === l.code ? 'text-ivory/70' : 'text-charcoal/60'}`
   }, l.native)))), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-[11px] text-charcoal/45 text-center leading-relaxed"
-  }, "\u8868\u793A\u8A00\u8A9E\u306F\u9806\u6B21\u5BFE\u5FDC\u4E88\u5B9A\u3067\u3059\u3002"))), menuOpen && /*#__PURE__*/React.createElement("div", {
+  }, "\u8868\u793A\u8A00\u8A9E\u306F\u9806\u6B21\u5BFE\u5FDC\u4E88\u5B9A\u3067\u3059"))), menuOpen && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[95] bg-white overflow-y-auto anim-fade-in",
     style: {
       paddingTop: 'env(safe-area-inset-top,0)',
@@ -4772,9 +4772,9 @@ function Home({
     className: "font-mono tracking-[0.4em] text-[9.5px] sm:text-[10.5px] uppercase text-charcoal/55"
   }, "Kamikaku Diagnosis \xB7 27 Types"))), /*#__PURE__*/React.createElement("p", {
     className: "mt-5 sm:mt-7 font-serif text-[19px] sm:text-[22px] text-ink leading-relaxed"
-  }, "\u3042\u306A\u305F\u306E\u672C\u5F53\u306E\u9AEA\u306B\u3001\u51FA\u4F1A\u3046\u3002"), /*#__PURE__*/React.createElement("p", {
+  }, "\u3042\u306A\u305F\u306E\u672C\u5F53\u306E\u9AEA\u306B\u3001\u51FA\u4F1A\u3046"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal"
-  }, "\u3042\u306A\u305F\u306E\u9AEA\u306B\u6B8B\u308B\u201C\u5C65\u6B74\u201D\u307E\u3067\u898B\u3066\u3001\u4ECA\u5FC5\u8981\u306A\u30D8\u30A2\u30B1\u30A2\u30EB\u30FC\u30C6\u30A3\u30F3\u3092\u63D0\u6848\u3057\u307E\u3059\u3002")), /*#__PURE__*/React.createElement("div", {
+  }, "\u3042\u306A\u305F\u306E\u9AEA\u306B\u6B8B\u308B\u201C\u5C65\u6B74\u201D\u307E\u3067\u898B\u3066\u3001\u4ECA\u5FC5\u8981\u306A\u30D8\u30A2\u30B1\u30A2\u30EB\u30FC\u30C6\u30A3\u30F3\u3092\u63D0\u6848\u3057\u307E\u3059")), /*#__PURE__*/React.createElement("div", {
     className: "mt-9 sm:mt-12 anim-fade-up",
     style: {
       animationDelay: '180ms'
