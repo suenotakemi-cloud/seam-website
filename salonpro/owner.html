@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>オーナー経営ダッシュボード｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=64">
+  <link rel="stylesheet" href="assets/css/base.css?v=64">
+  <link rel="stylesheet" href="assets/css/components.css?v=64">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .ow-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .ow-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 880px; margin-inline: auto; }
+    .ow-top__logo { font-size: 17px; font-weight: 800; } .ow-top__logo b { color: var(--gold); }
+    .ow-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .ow-wrap { max-width: 880px; margin-inline: auto; padding: 16px; }
+    .ow-intro { font-size: 12.5px; color: var(--ink-3); line-height: 1.7; margin-bottom: 14px; }
+    .ow-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; margin-bottom: 14px; }
+    .ow-card__t { font-size: 14px; font-weight: 900; margin-bottom: 12px; }
+    .ow-card__t small { font-weight: 600; color: var(--ink-3); font-size: 11px; margin-left: 6px; }
+    .ow-inputs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    @media (max-width: 620px) { .ow-inputs { grid-template-columns: 1fr 1fr; } }
+    .ow-in { } .ow-in label { display: block; font-size: 11.5px; color: var(--ink-2); font-weight: 700; margin-bottom: 5px; }
+    .ow-in__f { display: flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 10px; padding: 0 10px; background: #fff; }
+    .ow-in__f input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 10px 4px; font-size: 15px; font-weight: 800; font-family: var(--font-num); background: transparent; text-align: right; }
+    .ow-in__u { font-size: 11.5px; color: var(--ink-3); flex: none; }
+    .pl-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; font-size: 13.5px; border-bottom: 1px solid var(--line-2); }
+    .pl-row:last-child { border-bottom: 0; }
+    .pl-row .v { font-family: var(--font-num); font-weight: 800; }
+    .pl-row.minus .v { color: var(--ink-2); }
+    .pl-prof { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 14px; border-radius: var(--r-md); background: var(--dark); color: #fff; }
+    .pl-prof__l { font-size: 12px; color: rgba(255,255,255,.7); } .pl-prof__l b { display: block; color: #fff; font-size: 15px; }
+    .pl-prof__v { text-align: right; } .pl-prof__v b { font-family: var(--font-num); font-size: 26px; font-weight: 900; } .pl-prof__v small { display: block; font-size: 12px; color: var(--gold); font-weight: 800; }
+    .ow-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (min-width: 620px) { .ow-kpis { grid-template-columns: repeat(4, 1fr); } }
+    .ow-kpi { border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px; } .ow-kpi__l { font-size: 11px; color: var(--ink-2); } .ow-kpi__v { font-family: var(--font-num); font-size: var(--fs-20); font-weight: 900; margin-top: 3px; } .ow-kpi__d { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+    .ow-imp { display: flex; gap: 8px; flex-wrap: wrap; }
+    .ow-imp__b { flex: 1 1 180px; height: 48px; border-radius: 12px; border: 1px solid var(--line-3); background: #fff; font-size: 13px; font-weight: 800; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .ow-imp__b svg { width: 18px; height: 18px; }
+    .ow-imp__b.busy { opacity: .6; pointer-events: none; }
+    .ow-exp { margin-top: 12px; }
+    .ow-exp__row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--line-2); font-size: 12.5px; }
+    .ow-exp__cat { flex: none; font-size: 10.5px; font-weight: 800; border-radius: 999px; padding: 3px 9px; background: var(--surface-2); color: var(--ink-2); }
+    .ow-exp__n { flex: 1; min-width: 0; } .ow-exp__n b { font-weight: 700; } .ow-exp__n span { display: block; font-size: 10.5px; color: var(--ink-3); }
+    .ow-exp__v { font-family: var(--font-num); font-weight: 800; flex: none; }
+    .ow-src { font-size: 10px; color: var(--ink-3); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; flex: none; }
+    .ow-link { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ow-link__c { font-size: 11.5px; font-weight: 800; border-radius: 999px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; }
+    .ow-link__c.on { background: #eef6f0; color: var(--stock-in); border: 1px solid #cfe6d8; }
+    .ow-link__c.soon { background: var(--surface-2); color: var(--ink-3); border: 1px dashed var(--line-3); }
+    .ow-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 16px; }
+    .ow-clear { background: none; border: 0; color: var(--gold-strong); font-weight: 700; font-size: 12px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="ow-top"><div class="ow-top__in"><span class="ow-top__logo">Salon<b>Pro</b></span><span class="ow-top__tag">オーナー経営ダッシュボード</span></div></div>
+  <div class="ow-wrap">
+    <div class="ow-intro">予約・POS・B2B仕入れ・シフト・経費を<b>1つの損益</b>に。"丼勘定"を、リアルタイムの経営数字に変えます。<b>美容師ひとりずつのP&amp;L</b>まで見通せる、POSを超えた経営の土台です。</div>
+
+    <div class="ow-card">
+      <div class="ow-card__t">経営インプット <small>店舗の基本情報を入力（自動保存）</small></div>
+      <div class="ow-inputs">
+        <div class="ow-in"><label>席数</label><div class="ow-in__f"><input id="iSeats" type="number" inputmode="numeric" value="8"><span class="ow-in__u">席</span></div></div>
+        <div class="ow-in"><label>スタッフ数</label><div class="ow-in__f"><input id="iStaff" type="number" inputmode="numeric" value="6"><span class="ow-in__u">名</span></div></div>
+        <div class="ow-in"><label>月間 広告費</label><div class="ow-in__f"><input id="iAd" type="number" inputmode="numeric" value="80000"><span class="ow-in__u">円</span></div></div>
+        <div class="ow-in"><label>月の営業日数</label><div class="ow-in__f"><input id="iDays" type="number" inputmode="numeric" value="25"><span class="ow-in__u">日</span></div></div>
+        <div class="ow-in"><label>1日の営業時間</label><div class="ow-in__f"><input id="iHours" type="number" inputmode="numeric" value="10"><span class="ow-in__u">時間</span></div></div>
+        <div class="ow-in"><label>新規来店（今月）</label><div class="ow-in__f"><input id="iNew" type="number" inputmode="numeric" value="42"><span class="ow-in__u">人</span></div></div>
+      </div>
+    </div>
+
+    <div class="ow-card">
+      <div class="ow-card__t">今月の損益（P&amp;L） <small>連携データ＋入力から自動算出</small></div>
+      <div id="plBody"></div>
+    </div>
+
+    <div class="ow-card">
+      <div class="ow-card__t">経営KPI</div>
+      <div class="ow-kpis" id="kpiBody"></div>
+    </div>
+
+    <div class="ow-card">
+      <div class="ow-card__t">経費の取り込み <small>レシート・カード明細から記録</small></div>
+      <div class="ow-imp">
+        <button class="ow-imp__b" id="impReceipt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16v18l-3-2-2 2-3-2-3 2-2-2-3 2z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>レシートを読み取る</button>
+        <button class="ow-imp__b" id="impCard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/></svg>カード明細を読み込む</button>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px"><div style="font-size:12px;font-weight:800;color:var(--ink-2)">記録済みの経費 <span id="expSum"></span></div><button class="ow-clear" id="expClear">クリア</button></div>
+      <div class="ow-exp" id="expList"></div>
+    </div>
+
+    <div class="ow-card">
+      <div class="ow-card__t">データ連携の状態</div>
+      <div class="ow-link">
+        <span class="ow-link__c on">✓ 予約（連携デモ）</span>
+        <span class="ow-link__c on">✓ POS・店販</span>
+        <span class="ow-link__c on">✓ B2B仕入れ</span>
+        <span class="ow-link__c on">✓ シフト・人件費</span>
+        <span class="ow-link__c soon">会計ソフト（準備中）</span>
+        <span class="ow-link__c soon">給与計算（準備中）</span>
+      </div>
+      <div style="font-size:11px;color:var(--ink-3);margin-top:10px;line-height:1.6">各モジュールが同じサロン／美容師IDで繋がると、上の損益が"自動で"埋まります。一人一EC（サロンタウン）→予約→施術→店販→仕入れ→シフト→経費、が1本の数字になります。</div>
+    </div>
+
+    <p class="ow-note">※ デモ／プロトタイプです。売上・材料費・人件費は連携のデモ値、経費の「レシート／カード明細 読み込み」は<b>読み取り演出のモック</b>（実際のカード番号・明細は扱いません）。本番では予約・POS・シフト・会計ソフト（freee/マネーフォワード等）とAPI連携し、読み取りはOCR／明細APIに差し替えます。</p>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=64"></script>
+  <script src="assets/js/data.js?v=64"></script>
+  <script src="assets/js/store.js?v=64"></script>
+  <script src="assets/js/components.js?v=64"></script>
+  <script>
+    (function () {
+      var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
+      function toast(m) { var t = document.getElementById('toast'); if (!t) return; t.innerHTML = (SP.svg ? SP.svg('checkc') : '✓') + m; t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 1900); }
+      var IN = 'sp.owner.v1', EX = 'sp.owner.exp.v1';
+      function read(k, f) { try { var v = localStorage.getItem(k); return v == null ? f : JSON.parse(v); } catch (e) { return f; } }
+      function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+      var IDS = ['iSeats', 'iStaff', 'iAd', 'iDays', 'iHours', 'iNew'];
+      // 入力の復元
+      var saved = read(IN, null);
+      if (saved) IDS.forEach(function (id) { if (saved[id] != null) document.getElementById(id).value = saved[id]; });
+      function val(id) { return Math.max(0, parseInt(document.getElementById(id).value, 10) || 0); }
+      // 連携データ（デモ・固定〜入力連動）
+      function calc() {
+        var seats = val('iSeats'), staff = val('iStaff'), ad = val('iAd'), days = val('iDays') || 1, hours = val('iHours') || 1, news = val('iNew') || 1;
+        var sales = 2480000;            // 技術＋店販（予約・POS連携デモ）
+        var cogs = 520000;              // 材料費（B2B仕入れ・約21%）
+        var labor = staff * 180000;     // 人件費（シフト連携・1人平均デモ。スタッフ/アシスト混在）
+        var exps = read(EX, []).reduce(function (a, e) { return a + e.amt; }, 0) + 380000; // 諸経費（家賃・水道光熱・通信等のデモ）＋取込分
+        var profit = sales - cogs - labor - exps - ad;
+        var grossRate = (sales - cogs) / sales;
+        var fixed = labor + exps + ad;
+        var bep = grossRate > 0 ? fixed / grossRate : 0;
+        return {
+          seats: seats, staff: staff, ad: ad, days: days, hours: hours, news: news,
+          sales: sales, cogs: cogs, labor: labor, exps: exps, profit: profit, margin: profit / sales,
+          perSeat: seats ? sales / seats : 0,
+          perHour: sales / (staff * hours * days),
+          roas: ad ? sales / ad : 0, cpa: news ? ad / news : 0, bep: bep
+        };
+      }
+      function renderPL() {
+        var c = calc();
+        document.getElementById('plBody').innerHTML =
+          '<div class="pl-row"><span>売上（技術＋店販）</span><span class="v">' + yen(c.sales) + '</span></div>'
+          + '<div class="pl-row minus"><span>− 材料費（B2B仕入れ）</span><span class="v">' + yen(c.cogs) + '</span></div>'
+          + '<div class="pl-row minus"><span>− 人件費（シフト）</span><span class="v">' + yen(c.labor) + '</span></div>'
+          + '<div class="pl-row minus"><span>− 諸経費（レシート/カード含む）</span><span class="v">' + yen(c.exps) + '</span></div>'
+          + '<div class="pl-row minus"><span>− 広告費</span><span class="v">' + yen(c.ad) + '</span></div>'
+          + '<div class="pl-prof"><div class="pl-prof__l">営業利益<b>今月の見込み</b></div><div class="pl-prof__v"><b>' + yen(c.profit) + '</b><small>利益率 ' + Math.round(c.margin * 100) + '%</small></div></div>';
+        var k = function (l, v, d) { return '<div class="ow-kpi"><div class="ow-kpi__l">' + l + '</div><div class="ow-kpi__v">' + v + '</div><div class="ow-kpi__d">' + d + '</div></div>'; };
+        document.getElementById('kpiBody').innerHTML =
+          k('席あたり月商', yen(c.perSeat), c.seats + '席で割り戻し')
+          + k('人時生産性', yen(c.perHour), '売上 / 総稼働時間')
+          + k('新規獲得CPA', yen(c.cpa), '広告費 / 新規 ' + c.news + '人')
+          + k('損益分岐 売上', yen(c.bep), '粗利率 ' + Math.round((c.sales - c.cogs) / c.sales * 100) + '%');
+      }
+      function renderExp() {
+        var list = read(EX, []);
+        document.getElementById('expSum').textContent = list.length ? '(' + list.length + '件・' + yen(list.reduce(function (a, e) { return a + e.amt; }, 0)) + ')' : '';
+        document.getElementById('expList').innerHTML = list.length ? list.map(function (e) {
+          return '<div class="ow-exp__row"><span class="ow-exp__cat">' + e.cat + '</span><span class="ow-exp__n"><b>' + e.name + '</b><span>' + e.date + '</span></span><span class="ow-src">' + e.src + '</span><span class="ow-exp__v">' + yen(e.amt) + '</span></div>';
+        }).join('') : '<div style="font-size:12px;color:var(--ink-3);padding:12px 0">まだ記録がありません。レシートやカード明細を読み込むと、自動で分類して計上します。</div>';
+      }
+      function addExp(arr) { var list = read(EX, []); arr.forEach(function (e) { list.unshift(e); }); save(EX, list); renderExp(); renderPL(); }
+      // 入力変更で再計算＋保存
+      IDS.forEach(function (id) { document.getElementById(id).addEventListener('input', function () { var o = {}; IDS.forEach(function (x) { o[x] = document.getElementById(x).value; }); save(IN, o); renderPL(); }); });
+      // モックOCR：レシート1枚
+      var RC = [
+        { cat: '消耗品', name: 'ドラッグストア（タオル・コットン）', amt: 4280 },
+        { cat: '備品', name: 'ホームセンター（什器・清掃）', amt: 6740 },
+        { cat: '通信', name: '携帯ショップ（店舗回線）', amt: 8800 },
+        { cat: '雑費', name: 'コンビニ（来店用ドリンク）', amt: 2360 }
+      ];
+      var rcI = 0;
+      document.getElementById('impReceipt').addEventListener('click', function () {
+        var b = this; b.classList.add('busy'); b.textContent = '読み取り中…';
+        setTimeout(function () {
+          var r = RC[rcI % RC.length]; rcI++;
+          addExp([{ cat: r.cat, name: r.name, amt: r.amt, src: 'レシート', date: '今日' }]);
+          b.classList.remove('busy'); b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3h16v18l-3-2-2 2-3-2-3 2-2-2-3 2z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>レシートを読み取る';
+          toast(r.name.split('（')[0] + ' を経費に記録しました');
+        }, 1200);
+      });
+      // モック：会社カード明細（複数行を自動分類）
+      document.getElementById('impCard').addEventListener('click', function () {
+        var b = this; b.classList.add('busy'); b.textContent = '明細を取得中…';
+        setTimeout(function () {
+          addExp([
+            { cat: '広告', name: 'Meta広告（Instagram）', amt: 45000, src: 'カード', date: '6/24' },
+            { cat: '水道光熱', name: '電力会社', amt: 31200, src: 'カード', date: '6/22' },
+            { cat: '備品', name: 'Amazon（バックバー備品）', amt: 7800, src: 'カード', date: '6/20' },
+            { cat: 'サブスク', name: '予約システム月額', amt: 16500, src: 'カード', date: '6/18' }
+          ]);
+          b.classList.remove('busy'); b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 9.5h19"/></svg>カード明細を読み込む';
+          toast('会社カードの明細 4件を自動分類しました');
+        }, 1400);
+      });
+      document.getElementById('expClear').addEventListener('click', function () { save(EX, []); renderExp(); renderPL(); toast('記録をクリアしました'); });
+      renderPL(); renderExp();
+    })();
+  </script>
+</body>
+</html>
