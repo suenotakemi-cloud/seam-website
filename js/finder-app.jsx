@@ -1827,9 +1827,9 @@ function pickMustPlusOne(products, answers, scores) {
    ロジックの適合率は高いので削除はせず、僅差のとき多様な候補が上がるよう
    表示スコアだけ少し引く（アフィニティ+45/レスキュー+35には負けない小幅）。 */
 const OVEREXPOSED_PENALTY = {
-  'wella-ultimerepair-sh':    8,   // アルタイム R シャンプー(常勝シャンプー)
-  'pjoli-offmode-dryshampoo': 14,  // PJOLI ドライシャンプー(Top3に827回)
-  'aujua-agingspa-sh':        12,  // Aujua エイジングスパ クリアフォーム(319回)
+  'wella-ultimerepair-sh':    22,  // アルタイム R シャンプー(常勝・v21で362回まで増えたので-8→-22)
+  'pjoli-offmode-dryshampoo': 12,  // PJOLI ドライシャンプー(off-concern減点と併用)
+  'aujua-agingspa-sh':        12,  // Aujua エイジングスパ クリアフォーム(off-concern減点と併用)
 };
 
 /* ---------- pickDeepProducts — カテゴリ別ケア処方 (ルーティン順) ---------- */
@@ -1855,6 +1855,12 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   const a = answers || {};
   const t = userTags;
   const sscores = scores || {};
+  // ── 1000件v21検証反映: 主訴とズレた頭皮/洗浄系を減点・ボリューム主訴に軽量/根元ケアを加点 ──
+  const _concernsArr = Array.isArray(a.concerns) ? a.concerns : [];
+  const _hasScalpNeed = (sscores.scalpDryness || 0) >= 2 || (sscores.scalpOiliness || 0) >= 2 || (sscores.volumeLoss || 0) >= 2
+    || ['scalpDry','scalpOily','thinning','topFlat','volumeDown'].some(function(c){ return _concernsArr.includes(c); });
+  const _wantsVolume = (sscores.volumeLoss || 0) >= 2 || ['topFlat','volumeDown','thinning'].some(function(c){ return _concernsArr.includes(c); });
+  const _SCALP_CATS = new Set(['scalp-cleanser','scalp-essence','dry-shampoo']);
   const mustIds = new Set();
   for (const rule of MUST_PLUS_ONE_RULES) {
     let fired = false;
@@ -2031,11 +2037,19 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     const concernAffinity = Math.min(concernCap, concernHits * concernUnit);
     // 補助ブランド全体に微小な減点(メインブランドを優先するため)
     const supplementPenalty = supp ? 6 : 0;
-    // 露出過多の定番への軽い表示ペナルティ(僅差なら別候補へ譲る)
+    // 露出過多の定番への表示ペナルティ(僅差なら別候補へ譲る)
     const overexp = OVEREXPOSED_PENALTY[p.id] || 0;
+    // off-main-concern: 主訴が頭皮/ボリュームでない人に、頭皮・洗浄・ドライシャンプーを前に出しすぎない
+    const offConcern = (_SCALP_CATS.has(p.category) && !_hasScalpNeed) ? 35 : 0;
+    // ボリューム主訴には軽量/根元ケアを後押し(真のボリューム成分を強め・軽量系は弱め)
+    let volBoost = 0;
+    if (_wantsVolume && Array.isArray(p.functionTags)) {
+      if (p.functionTags.some(function(f){ return /volume-up|lift-root|root-care|volume-mist|scalp-volume/.test(f); })) volBoost = 22;
+      else if (p.functionTags.some(function(f){ return /lightweight|airy/.test(f); })) volBoost = 10;
+    }
     return {
       p,
-      s: Math.max(0, base + deep + finish + bleach + dmgrep + affinity + concernAffinity - penalty - supplementPenalty - overexp),
+      s: Math.max(0, base + deep + finish + bleach + dmgrep + affinity + concernAffinity + volBoost - penalty - supplementPenalty - overexp - offConcern),
       deepCat: deepCategoryForProduct(p),
       isAffinity: affinity > 0 || concernAffinity > 0 || bleach > 0,
       isSupplementary: supp,
@@ -3340,16 +3354,34 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
   const verdictLine = buildVerdictLine(answers, scores);
 
   // 「まず、この3本」— カテゴリ横断でベストを集め、シャンプー(土台)を先頭にしつつ上位3本
+  // 「まず3本」は役割ベースで選定: 土台(洗う) → 補修 → 仕上げ。
+  // 「洗う系ばかり」「仕上げ剤が出ない」を防ぎ、買った後の変化をイメージしやすくする。
   const firstThree = (() => {
-    const bests = orderedBlocks.map(b => {
+    const byCat = {};
+    orderedBlocks.forEach(function(b){
       const best = deepPriceTrio(b.items).best;
-      return best ? { item: best, category: b.id, blockTitle: b.title } : null;
-    }).filter(Boolean);
-    const out = [];
-    const shIdx = bests.findIndex(x => x.category === 'shampoo');
-    if (shIdx >= 0) out.push(bests.splice(shIdx, 1)[0]);
-    bests.sort((x, y) => (y.item.s || 0) - (x.item.s || 0));
-    for (const b of bests) { if (out.length >= 3) break; out.push(b); }
+      if (best) byCat[b.id] = { item: best, category: b.id, blockTitle: b.title };
+    });
+    const pickFrom = function(cats, used){
+      let best = null;
+      for (const c of cats) {
+        const cand = byCat[c];
+        if (!cand || used.has(c)) continue;
+        if (!best || (cand.item.s || 0) > (best.item.s || 0)) best = cand;
+      }
+      return best;
+    };
+    const out = [], used = new Set();
+    const add = function(cand){ if (cand && !used.has(cand.category)) { out.push(cand); used.add(cand.category); } };
+    add(pickFrom(['shampoo','specialCleanse'], used));        // 土台(洗う)
+    add(pickFrom(['treatment','mask','outbath'], used));      // 補修
+    add(pickFrom(['outbath','finish','scalp'], used));        // 仕上げ/日中
+    if (out.length < 3) {
+      Object.keys(byCat).map(function(k){ return byCat[k]; }).sort(function(x,y){ return (y.item.s||0)-(x.item.s||0); }).forEach(function(c){
+        if (out.length >= 3 || used.has(c.category)) return;
+        out.push(c); used.add(c.category);
+      });
+    }
     return out.slice(0, 3);
   })();
   const firstRoles = ['まず変えるなら', '効き目を支える', '仕上げに'];
