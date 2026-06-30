@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>菊地ペイ（決済システム）｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=68">
+  <link rel="stylesheet" href="assets/css/base.css?v=68">
+  <link rel="stylesheet" href="assets/css/components.css?v=68">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .pa-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 720px; margin-inline: auto; }
+    .pa-top__logo { font-size: 17px; font-weight: 800; } .pa-top__logo b { color: var(--gold); }
+    .pa-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .pa-wrap { max-width: 720px; margin-inline: auto; padding: 16px; }
+    .pa-intro { font-size: 12.5px; color: var(--ink-3); line-height: 1.7; margin-bottom: 14px; }
+    .pa-tabs { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px; margin-bottom: 16px; }
+    .pa-tab { flex: 1; height: 40px; border: 0; border-radius: 999px; background: transparent; font-size: 12.5px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .pa-tab.is-on { background: var(--dark); color: #fff; }
+    .pa-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; margin-bottom: 14px; }
+    .pa-card__t { font-size: 14px; font-weight: 900; margin-bottom: 12px; }
+    .pa-card__t small { font-weight: 600; color: var(--ink-3); font-size: 11px; margin-left: 6px; }
+    .pa-in { display: flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 12px; padding: 4px 14px; }
+    .pa-in span.u { color: var(--ink-3); font-weight: 700; flex: none; }
+    .pa-in input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 12px 6px; font-size: 22px; font-weight: 900; font-family: var(--font-num); text-align: right; background: transparent; }
+    .pa-slider { width: 100%; margin: 6px 0 2px; accent-color: var(--gold); }
+    .pa-plan { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .pl-box { border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; }
+    .pl-box.k { border-color: var(--gold); background: var(--gold-soft); }
+    .pl-box__l { font-size: 11.5px; font-weight: 800; color: var(--ink-2); } .pl-box.k .pl-box__l { color: var(--gold-strong); }
+    .pl-box__r { font-family: var(--font-num); font-size: 30px; font-weight: 900; margin-top: 2px; line-height: 1; } .pl-box.k .pl-box__r { color: var(--gold-strong); }
+    .pl-box__s { font-size: 11px; color: var(--ink-3); margin-top: 5px; } .pl-box__f { font-family: var(--font-num); font-weight: 800; font-size: 14px; margin-top: 7px; }
+    .pa-save { margin-top: 14px; background: var(--dark); color: #fff; border-radius: var(--r-md); padding: 16px; text-align: center; }
+    .pa-save__l { font-size: 12px; color: rgba(255,255,255,.7); } .pa-save__v { font-family: var(--font-num); font-size: 26px; font-weight: 900; color: var(--gold); margin-top: 2px; } .pa-save__s { font-size: 11.5px; color: rgba(255,255,255,.7); margin-top: 4px; }
+    .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
+    .pa-meth { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pa-meth button { flex: 1 1 90px; height: 46px; border: 1px solid var(--line-3); border-radius: 12px; background: #fff; font-size: 13px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .pa-meth button.is-on { border-color: var(--gold); background: var(--gold-soft); color: var(--gold-strong); }
+    .pa-cc { border: 1px solid var(--line); border-radius: var(--r-md); background: linear-gradient(135deg,#2b2f3a,#1b1b1d); color: #fff; padding: 16px 18px; margin-bottom: 12px; }
+    .pa-cc__n { font-family: var(--font-num); font-size: 18px; letter-spacing: 2px; margin: 16px 0 10px; }
+    .pa-cc__b { display: flex; justify-content: space-between; font-size: 11px; color: rgba(255,255,255,.7); }
+    .pa-cc__demo { font-size: 10px; background: rgba(255,255,255,.16); border-radius: 6px; padding: 2px 7px; display: inline-block; }
+    .pa-btn { width: 100%; height: 52px; border: 0; border-radius: var(--r-md); background: var(--gold); color: #fff; font-size: 15px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .pa-btn:disabled { opacity: .5; }
+    .pa-done { text-align: center; padding: 18px 6px; }
+    .pa-done__ic { width: 64px; height: 64px; border-radius: 50%; background: #eef6f0; color: var(--stock-in); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+    .pa-done__ic svg { width: 34px; height: 34px; }
+    .pa-done__t { font-size: 18px; font-weight: 900; } .pa-done__a { font-family: var(--font-num); font-size: 30px; font-weight: 900; margin: 6px 0; }
+    .pa-done__row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 5px 0; color: var(--ink-2); border-top: 1px solid var(--line-2); } .pa-done__row b { font-family: var(--font-num); color: var(--ink); }
+    .pa-term { background: #11141a; border-radius: var(--r-lg); padding: 20px; color: #fff; text-align: center; }
+    .pa-term__a { font-family: var(--font-num); font-size: 40px; font-weight: 900; }
+    .pa-term__s { font-size: 12px; color: rgba(255,255,255,.6); }
+    .pa-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; }
+    .pa-pad button { height: 46px; border: 1px solid var(--line-3); border-radius: 10px; background: #fff; font-weight: 800; font-size: 14px; cursor: pointer; }
+    .pa-tap { position: relative; height: 130px; border: 2px dashed var(--line-3); border-radius: var(--r-lg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--ink-3); margin: 12px 0; }
+    .pa-tap.scan { border-color: var(--gold); color: var(--gold-strong); }
+    .pa-tap__ic { font-size: 34px; } .pa-tap.scan .pa-tap__ic { animation: papulse 1s infinite; }
+    @keyframes papulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon<b>Pro</b></span><span class="pa-top__tag">菊地ペイ ・ 決済システム</span></div></div>
+  <div class="pa-wrap">
+    <div class="pa-intro">決済も菊地で。<b>クレジットカード端末の代理店として、代理店還元をサロンに返す</b>ことで、実質手数料を下げます。オンライン（EC）も店舗（端末）も、入金は最短翌営業日。</div>
+
+    <div class="pa-tabs">
+      <button class="pa-tab is-on" data-tab="sim">実質手数料</button>
+      <button class="pa-tab" data-tab="online">オンライン決済</button>
+      <button class="pa-tab" data-tab="pos">店舗決済</button>
+    </div>
+
+    <!-- 実質手数料シミュレーター -->
+    <div id="tab-sim">
+      <div class="pa-card">
+        <div class="pa-card__t">実質手数料シミュレーター <small>菊地還元でどれだけ安くなるか</small></div>
+        <label style="font-size:11.5px;font-weight:700;color:var(--ink-2)">月のカード決済額</label>
+        <div class="pa-in" style="margin:5px 0 14px"><span class="u">¥</span><input id="simVol" type="number" inputmode="numeric" value="800000"></div>
+        <label style="font-size:11.5px;font-weight:700;color:var(--ink-2)">菊地の還元率 <b id="simRebLbl" style="color:var(--gold-strong)">1.0%</b></label>
+        <input id="simReb" class="pa-slider" type="range" min="0.5" max="1.5" step="0.1" value="1.0">
+        <div class="pa-plan">
+          <div class="pl-box"><div class="pl-box__l">一般的なサロン決済</div><div class="pl-box__r" id="pNorm">3.25<span style="font-size:16px">%</span></div><div class="pl-box__s">月の手数料</div><div class="pl-box__f" id="fNorm"></div></div>
+          <div class="pl-box k"><div class="pl-box__l">菊地ペイ（実質）</div><div class="pl-box__r" id="pKiku"></div><div class="pl-box__s">卸料率2.80% − 還元</div><div class="pl-box__f" id="fKiku"></div></div>
+        </div>
+        <div class="pa-save"><div class="pa-save__l">この決済額なら 年間で</div><div class="pa-save__v" id="saveYear"></div><div class="pa-save__s" id="saveMonth"></div></div>
+        <div class="pa-note">※ 料率はデモ値です。実際は決済代行（GMO/SBペイメント/Square 等）の代理店料率と、菊地が束ねる決済ボリュームに基づく卸料率で確定します。「実質◯%」は還元を実際に反映した値を表示します（景品表示法に配慮）。</div>
+      </div>
+    </div>
+
+    <!-- オンライン決済（EC）デモ -->
+    <div id="tab-online" class="hidden">
+      <div class="pa-card" id="onForm">
+        <div class="pa-card__t">オンライン決済（EC） <small>デモ・実際の決済は行いません</small></div>
+        <label style="font-size:11.5px;font-weight:700;color:var(--ink-2)">お支払い金額</label>
+        <div class="pa-in" style="margin:5px 0 14px"><span class="u">¥</span><input id="onAmt" type="number" inputmode="numeric" value="7018"></div>
+        <div class="pa-meth" id="onMeth"><button class="is-on" data-m="card">カード</button><button data-m="qr">QR（PayPay等）</button><button data-m="cvs">コンビニ</button></div>
+        <div id="onCard">
+          <div class="pa-cc"><span class="pa-cc__demo">デモカード（入力不要）</span><div class="pa-cc__n">4242 •••• •••• 4242</div><div class="pa-cc__b"><span>SALON LUXE</span><span>有効 ••/••</span></div></div>
+        </div>
+        <button class="pa-btn" id="onPay">この内容で決済する（デモ）</button>
+        <div class="pa-note">実カード番号は入力させません（PCI・安全配慮）。本番は決済代行のホスト型画面／トークン決済に差し替えます。</div>
+      </div>
+      <div class="pa-card hidden" id="onDone"></div>
+    </div>
+
+    <!-- 店舗決済（POS端末）デモ -->
+    <div id="tab-pos" class="hidden">
+      <div class="pa-card">
+        <div class="pa-card__t">店舗決済（カード端末） <small>デモ</small></div>
+        <div class="pa-term"><div class="pa-term__s">お会計</div><div class="pa-term__a" id="posAmt">¥0</div></div>
+        <div class="pa-pad" id="posPad"></div>
+        <div class="pa-tap" id="posTap"><div class="pa-tap__ic">📳</div><div id="posTapTxt" style="font-size:12px;font-weight:800">金額を入れて「決済」</div></div>
+        <button class="pa-btn" id="posGo" disabled>タッチ決済する（デモ）</button>
+        <div class="pa-card hidden" id="posDone" style="margin-top:14px;padding:0;border:0"></div>
+      </div>
+    </div>
+
+    <p class="pa-note" style="margin-top:6px">※ プロトタイプです。決済はすべてモック（実カード番号・実取引なし）。本番は決済代行と契約し、菊地は端末・オンライン決済の代理店として還元を原資に実質手数料を引き下げます。</p>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/catalog.js?v=68"></script>
+  <script src="assets/js/data.js?v=68"></script>
+  <script src="assets/js/store.js?v=68"></script>
+  <script src="assets/js/components.js?v=68"></script>
+  <script>
+    (function () {
+      var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
+      function toast(m) { var t = document.getElementById('toast'); if (!t) return; t.innerHTML = (SP.svg ? SP.svg('checkc') : '✓') + m; t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 1800); }
+      var NORM = 3.25, BASE = 2.80;
+      function rndAuth() { return 'A' + (1000000 + Math.floor((performance.now() * 997) % 8999999)); }
+
+      // タブ
+      [].forEach.call(document.querySelectorAll('.pa-tab'), function (b) {
+        b.addEventListener('click', function () {
+          [].forEach.call(document.querySelectorAll('.pa-tab'), function (x) { x.classList.toggle('is-on', x === b); });
+          ['sim', 'online', 'pos'].forEach(function (id) { document.getElementById('tab-' + id).classList.toggle('hidden', id !== b.dataset.tab); });
+        });
+      });
+
+      // シミュレーター
+      function sim() {
+        var vol = Math.max(0, parseInt(document.getElementById('simVol').value, 10) || 0);
+        var reb = parseFloat(document.getElementById('simReb').value);
+        var kiku = Math.max(0, BASE - reb);
+        document.getElementById('simRebLbl').textContent = reb.toFixed(1) + '%';
+        document.getElementById('pKiku').innerHTML = kiku.toFixed(2) + '<span style="font-size:16px">%</span>';
+        var fN = vol * NORM / 100, fK = vol * kiku / 100;
+        document.getElementById('fNorm').textContent = yen(fN) + ' / 月';
+        document.getElementById('fKiku').textContent = yen(fK) + ' / 月';
+        var saveM = fN - fK;
+        document.getElementById('saveYear').textContent = '−' + yen(saveM * 12);
+        document.getElementById('saveMonth').textContent = '月 −' + yen(saveM) + '（' + NORM + '% → 実質 ' + kiku.toFixed(2) + '%）';
+      }
+      document.getElementById('simVol').addEventListener('input', sim);
+      document.getElementById('simReb').addEventListener('input', sim);
+      sim();
+
+      // オンライン決済
+      var onMethod = 'card';
+      document.getElementById('onMeth').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-m]'); if (!b) return; onMethod = b.dataset.m;
+        [].forEach.call(this.children, function (x) { x.classList.toggle('is-on', x === b); });
+        document.getElementById('onCard').classList.toggle('hidden', onMethod !== 'card');
+      });
+      document.getElementById('onPay').addEventListener('click', function () {
+        var amt = Math.max(0, parseInt(document.getElementById('onAmt').value, 10) || 0);
+        var b = this; b.disabled = true; b.textContent = '決済処理中…';
+        setTimeout(function () {
+          var fee = Math.round(amt * 1.80 / 100), labelM = { card: 'クレジットカード', qr: 'QR決済（PayPay等）', cvs: 'コンビニ払い' }[onMethod];
+          document.getElementById('onForm').classList.add('hidden');
+          var d = document.getElementById('onDone'); d.classList.remove('hidden');
+          d.innerHTML = '<div class="pa-done"><div class="pa-done__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m7.5 12 3 3 6-6.5"/></svg></div>'
+            + '<div class="pa-done__t">決済が完了しました</div><div class="pa-done__a">' + yen(amt) + '</div></div>'
+            + '<div class="pa-done__row"><span>支払い方法</span><b>' + labelM + '</b></div>'
+            + '<div class="pa-done__row"><span>承認番号</span><b>' + rndAuth() + '</b></div>'
+            + '<div class="pa-done__row"><span>決済手数料（実質1.80%）</span><b>' + yen(fee) + '</b></div>'
+            + '<div class="pa-done__row"><span>サロン入金予定</span><b>翌営業日</b></div>'
+            + '<button class="pa-btn" id="onAgain" style="margin-top:14px;background:#fff;color:var(--ink);border:1px solid var(--line-3)">もう一度デモする</button>';
+          document.getElementById('onAgain').addEventListener('click', function () { d.classList.add('hidden'); var f = document.getElementById('onForm'); f.classList.remove('hidden'); var bb = document.getElementById('onPay'); bb.disabled = false; bb.textContent = 'この内容で決済する（デモ）'; });
+          toast('決済完了（デモ）');
+        }, 1300);
+      });
+
+      // 店舗決済（POS端末）
+      var posAmt = 0;
+      function posRender() { document.getElementById('posAmt').textContent = yen(posAmt); document.getElementById('posGo').disabled = posAmt <= 0; }
+      var PAD = [['+¥500', 500], ['+¥1,000', 1000], ['+¥3,000', 3000], ['+¥5,000', 5000], ['+¥10,000', 10000], ['クリア', 0]];
+      document.getElementById('posPad').innerHTML = PAD.map(function (p, i) { return '<button data-add="' + p[1] + '">' + p[0] + '</button>'; }).join('');
+      document.getElementById('posPad').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-add]'); if (!b) return; var v = +b.dataset.add;
+        posAmt = v === 0 ? 0 : posAmt + v; posRender();
+      });
+      document.getElementById('posGo').addEventListener('click', function () {
+        if (posAmt <= 0) return; var b = this; b.disabled = true;
+        var tap = document.getElementById('posTap'); tap.classList.add('scan'); document.getElementById('posTapTxt').textContent = 'カードをかざしてください…';
+        setTimeout(function () {
+          document.getElementById('posTapTxt').textContent = '読み取り完了 ✓';
+          setTimeout(function () {
+            tap.classList.remove('scan');
+            var fee = Math.round(posAmt * 1.80 / 100), net = posAmt - fee;
+            var d = document.getElementById('posDone'); d.classList.remove('hidden');
+            d.innerHTML = '<div class="pa-done"><div class="pa-done__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m7.5 12 3 3 6-6.5"/></svg></div><div class="pa-done__t">承認されました</div><div class="pa-done__a">' + yen(posAmt) + '</div></div>'
+              + '<div class="pa-done__row"><span>承認番号</span><b>' + rndAuth() + '</b></div>'
+              + '<div class="pa-done__row"><span>決済手数料（実質1.80%）</span><b>' + yen(fee) + '</b></div>'
+              + '<div class="pa-done__row"><span>サロン入金（翌営業日）</span><b>' + yen(net) + '</b></div>';
+            document.getElementById('posTapTxt').textContent = '金額を入れて「決済」';
+            toast('決済承認（デモ）');
+            posAmt = 0; posRender();
+            setTimeout(function () { d.classList.add('hidden'); }, 6000);
+          }, 700);
+        }, 1500);
+      });
+      posRender();
+    })();
+  </script>
+</body>
+</html>
