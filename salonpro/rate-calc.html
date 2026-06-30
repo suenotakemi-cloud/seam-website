@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>採算シミュレーター（社内・交渉用）｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=69">
+  <link rel="stylesheet" href="assets/css/base.css?v=69">
+  <link rel="stylesheet" href="assets/css/components.css?v=69">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .pa-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 760px; margin-inline: auto; }
+    .pa-top__logo { font-size: 17px; font-weight: 800; } .pa-top__logo b { color: var(--gold); }
+    .pa-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .pa-wrap { max-width: 760px; margin-inline: auto; padding: 16px; }
+    .pa-intro { font-size: 12.5px; color: var(--ink-3); line-height: 1.7; margin-bottom: 14px; }
+    .pa-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; margin-bottom: 14px; }
+    .pa-card__t { font-size: 14px; font-weight: 900; margin-bottom: 14px; }
+    .pa-card__t small { font-weight: 600; color: var(--ink-3); font-size: 11px; margin-left: 6px; }
+    .pa-slider { width: 100%; margin: 4px 0 0; accent-color: var(--gold); }
+    .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
+    .pa-btn { width: 100%; height: 50px; border: 0; border-radius: var(--r-md); background: #fff; color: var(--ink); border: 1px solid var(--line-3); font-size: 14px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+
+    .ctl { margin-bottom: 14px; }
+    .ctl__top { display: flex; justify-content: space-between; align-items: baseline; }
+    .ctl__l { font-size: 12px; font-weight: 800; color: var(--ink-2); }
+    .ctl__v { font-family: var(--font-num); font-size: 16px; font-weight: 900; }
+    .ctl__v.gold { color: var(--gold-strong); }
+
+    /* 結果ヒーロー */
+    .rc-hero { background: var(--dark); color: #fff; border-radius: var(--r-lg); padding: 20px 18px; margin-bottom: 14px; }
+    .rc-hero__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+    .rc-hero__l { font-size: 11.5px; color: rgba(255,255,255,.65); }
+    .rc-hero__rate { font-family: var(--font-num); font-size: 38px; font-weight: 900; line-height: 1; margin-top: 3px; }
+    .rc-hero__rate.t-best { color: #5ad07f; } .rc-hero__rate.t-mid { color: var(--gold); } .rc-hero__rate.t-std { color: #c9c9d2; }
+    .rc-hero__net { font-family: var(--font-num); font-size: 38px; font-weight: 900; line-height: 1; margin-top: 3px; }
+    .rc-hero__net.pos { color: #5ad07f; } .rc-hero__net.neg { color: #ff6b6b; }
+    .rc-hero__s { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 4px; }
+
+    .rc-tbl { width: 100%; border-collapse: collapse; }
+    .rc-tbl td { padding: 10px 2px; border-top: 1px solid var(--line-2); font-size: 13px; }
+    .rc-tbl tr:first-child td { border-top: 0; }
+    .rc-tbl td.r { text-align: right; font-family: var(--font-num); font-weight: 800; white-space: nowrap; }
+    .rc-tbl td.lbl { color: var(--ink-2); } .rc-tbl td.lbl b { color: var(--ink); font-weight: 800; }
+    .rc-tbl .pos { color: #1f9d57; } .rc-tbl .neg { color: var(--stock-low); }
+    .rc-tbl tr.sum td { border-top: 2px solid var(--line-3); font-weight: 900; font-size: 15px; padding-top: 12px; }
+
+    .rc-key { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .rc-keybox { background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r-md); padding: 13px; }
+    .rc-keybox__l { font-size: 11px; color: var(--gold-strong); font-weight: 800; }
+    .rc-keybox__v { font-family: var(--font-num); font-size: 22px; font-weight: 900; color: var(--ink); margin-top: 3px; }
+    .rc-keybox__s { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; line-height: 1.5; }
+
+    .rc-cmp { width: 100%; border-collapse: collapse; }
+    .rc-cmp th { font-size: 10.5px; color: var(--ink-3); font-weight: 800; padding: 6px 4px; text-align: right; border-bottom: 1px solid var(--line); }
+    .rc-cmp th:first-child { text-align: left; }
+    .rc-cmp td { font-size: 12.5px; padding: 9px 4px; text-align: right; font-family: var(--font-num); font-weight: 800; border-bottom: 1px solid var(--line-2); }
+    .rc-cmp td:first-child { text-align: left; font-family: var(--font-jp); color: var(--ink-2); }
+    .rc-cmp td .rate { display: inline-block; border-radius: 6px; padding: 1px 7px; font-size: 11.5px; }
+    .rate.t-best { background: #e3f4ea; color: #1f8f53; } .rate.t-mid { background: var(--gold-soft); color: var(--gold-strong); } .rate.t-std { background: var(--surface-3); color: var(--ink-2); }
+    .rc-cmp td.net { color: #1f9d57; }
+
+    .rc-scale { background: var(--dark); color: #fff; border-radius: var(--r-md); padding: 16px; text-align: center; margin-top: 6px; }
+    .rc-scale__row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .rc-scale__l { font-size: 11px; color: rgba(255,255,255,.6); } .rc-scale__v { font-family: var(--font-num); font-size: 24px; font-weight: 900; color: var(--gold); margin-top: 2px; }
+  </style>
+</head>
+<body>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon<b>Pro</b></span><span class="pa-top__tag">採算シミュレーター ・ 菊地社内/交渉用</span></div></div>
+  <div class="pa-wrap">
+    <div class="pa-intro"><b>カード決済 × 仕入の連動</b>で、サロンの実質料率と<b>菊地のネット採算</b>が同時に出ます。原価・仕入率・人数を動かして、料率設計とStripe交渉条件を検証できます。</div>
+
+    <!-- 入力 -->
+    <div class="pa-card">
+      <div class="pa-card__t">前提を動かす</div>
+      <div class="ctl"><div class="ctl__top"><span class="ctl__l">月のカード決済額</span><span class="ctl__v" id="vCard">¥2,000,000</span></div><input id="card" class="pa-slider" type="range" min="200000" max="6000000" step="50000" value="2000000"></div>
+      <div class="ctl"><div class="ctl__top"><span class="ctl__l">仕入率（仕入 ÷ カード決済）</span><span class="ctl__v gold" id="vRatio">10.0%</span></div><input id="ratio" class="pa-slider" type="range" min="0" max="15" step="0.5" value="10"></div>
+      <div class="ctl"><div class="ctl__top"><span class="ctl__l">スタッフ人数（→ SaaS自動）</span><span class="ctl__v" id="vStaff">3人 ・ ¥20,000</span></div><input id="staff" class="pa-slider" type="range" min="1" max="10" step="1" value="3"></div>
+      <div class="ctl"><div class="ctl__top"><span class="ctl__l">決済原価（ブレンド）</span><span class="ctl__v" id="vCost">2.6%</span></div><input id="cost" class="pa-slider" type="range" min="2.2" max="3.2" step="0.05" value="2.6"></div>
+      <div class="ctl" style="margin-bottom:0"><div class="ctl__top"><span class="ctl__l">菊地の卸粗利率</span><span class="ctl__v" id="vWsm">18%</span></div><input id="wsm" class="pa-slider" type="range" min="10" max="25" step="1" value="18"></div>
+    </div>
+
+    <!-- 結果 -->
+    <div class="rc-hero">
+      <div class="rc-hero__grid">
+        <div><div class="rc-hero__l">サロンの実質料率</div><div class="rc-hero__rate t-best" id="outRate">1.90%</div><div class="rc-hero__s" id="outRateS">仕入率8%以上で最安</div></div>
+        <div><div class="rc-hero__l">菊地ネット貢献 / 月・1サロン</div><div class="rc-hero__net pos" id="outNet">+¥42,000</div><div class="rc-hero__s" id="outNetS">決済補填後の貢献</div></div>
+      </div>
+    </div>
+
+    <!-- 内訳 -->
+    <div class="pa-card">
+      <div class="pa-card__t">菊地の内訳 <small>1サロン / 月</small></div>
+      <table class="rc-tbl">
+        <tr><td class="lbl">決済損益 <b id="bd-rate"></b>（原価との差）</td><td class="r" id="bd-pay"></td></tr>
+        <tr><td class="lbl">システム利用料（SaaS）</td><td class="r pos" id="bd-saas"></td></tr>
+        <tr><td class="lbl">卸 粗利（仕入 <span id="bd-wsv"></span> × 粗利）</td><td class="r pos" id="bd-ws"></td></tr>
+        <tr class="sum"><td class="lbl">ネット貢献</td><td class="r" id="bd-net"></td></tr>
+      </table>
+      <div class="pa-note" id="bd-note"></div>
+    </div>
+
+    <!-- 効くポイント -->
+    <div class="pa-card">
+      <div class="pa-card__t">設計の効きどころ</div>
+      <div class="rc-key">
+        <div class="rc-keybox"><div class="rc-keybox__l">損益分岐の仕入率</div><div class="rc-keybox__v" id="kBe">3.9%</div><div class="rc-keybox__s">この仕入率で補填が卸粗利でトントン。ゲートは余裕を見て<b>8%</b>に設定。</div></div>
+        <div class="rc-keybox"><div class="rc-keybox__l">SaaSで賄える上限（＝一定数）</div><div class="rc-keybox__v" id="kFree">¥1,430,000</div><div class="rc-keybox__s">この決済額まではSaaSだけで補填可。超えたら<b>仕入連動</b>が効く。</div></div>
+      </div>
+    </div>
+
+    <!-- 3ティア比較 -->
+    <div class="pa-card">
+      <div class="pa-card__t">規模別の採算 <small>仕入率10%・現在の原価/粗利で試算</small></div>
+      <table class="rc-cmp">
+        <thead><tr><th>セグメント</th><th>カード決済</th><th>料率</th><th>菊地ネット</th></tr></thead>
+        <tbody id="cmpBody"></tbody>
+      </table>
+      <div class="pa-note">個人＝SaaSで黒字（補填小）／大型＝卸で黒字（補填大）。どの規模でも黒字になる二枚エンジン。</div>
+    </div>
+
+    <!-- スケール -->
+    <div class="pa-card">
+      <div class="pa-card__t">全国スケール換算 <small id="scaleHd"></small></div>
+      <div class="ctl" style="margin-bottom:12px"><div class="ctl__top"><span class="ctl__l">導入サロン数</span><span class="ctl__v" id="vN">1,000店</span></div><input id="n" class="pa-slider" type="range" min="100" max="2000" step="100" value="1000"></div>
+      <div class="rc-scale"><div class="rc-scale__row">
+        <div><div class="rc-scale__l">年間 カード流通額（Stripe交渉材料）</div><div class="rc-scale__v" id="scGmv"></div></div>
+        <div><div class="rc-scale__l">年間 菊地ネット貢献</div><div class="rc-scale__v" id="scNet"></div></div>
+      </div></div>
+      <div class="pa-note">※ 現在のスライダー前提を1サロンの平均として単純掛けした概算。実際は規模分布で変わる。</div>
+    </div>
+
+    <a class="pa-btn" href="rate.html">← サロン向け 料率ステータス（ゲージ）を見る</a>
+    <div class="pa-note">※ すべて想定・デモ値。最終は決済代行（Stripe/GMO/stera/SBPS等）の確定料率・菊地の実原価・実仕入で確定。仕入連動の優遇は「強制」でなく<b>達成で安くなるロイヤルティ割引</b>として設計し、独禁法（抱き合わせ／優越的地位）・景表法は別途専門家レビュー前提。</div>
+  </div>
+
+  <script src="assets/js/rate-model.js?v=69"></script>
+  <script>
+    (function () {
+      var R = SP.RATE, $ = function (id) { return document.getElementById(id); };
+      var yen = function (n) { var s = n < 0 ? '−' : ''; return s + '¥' + Math.abs(Math.round(n || 0)).toLocaleString('ja-JP'); };
+      var oku = function (n) { return (n / 1e8).toFixed(n >= 1e9 ? 0 : 1) + '億円'; };
+      var TCLS = { best: 't-best', mid: 't-mid', std: 't-std' };
+      var TLBL = { best: '仕入率8%以上で最安', mid: '仕入率5〜8%', std: '仕入率5%未満（標準）' };
+
+      function calc() {
+        var card = +$('card').value, ratio = +$('ratio').value, staff = +$('staff').value, cost = +$('cost').value, wsm = +$('wsm').value;
+        var ws = card * ratio / 100, saas = R.saasFor(staff), key = R.tierKey(ratio), rate = R.rateFor(ratio);
+
+        // 入力ラベル
+        $('vCard').textContent = yen(card); $('vRatio').textContent = ratio.toFixed(1) + '%';
+        $('vStaff').textContent = staff + '人 ・ ' + yen(saas); $('vCost').textContent = cost.toFixed(2) + '%'; $('vWsm').textContent = wsm + '%';
+
+        // 採算
+        var pay = (rate - cost) / 100 * card, wsMargin = ws * wsm / 100, net = pay + saas + wsMargin;
+
+        // ヒーロー
+        $('outRate').textContent = rate.toFixed(2) + '%'; $('outRate').className = 'rc-hero__rate ' + TCLS[key]; $('outRateS').textContent = TLBL[key];
+        $('outNet').textContent = (net >= 0 ? '+' : '') + yen(net); $('outNet').className = 'rc-hero__net ' + (net >= 0 ? 'pos' : 'neg');
+        $('outNetS').textContent = net >= 0 ? '決済補填後の貢献' : '⚠ 赤字（仕入が不足）';
+
+        // 内訳
+        $('bd-rate').textContent = '（' + rate.toFixed(2) + '% − ' + cost.toFixed(2) + '%）';
+        $('bd-pay').textContent = yen(pay); $('bd-pay').className = 'r ' + (pay >= 0 ? 'pos' : 'neg');
+        $('bd-saas').textContent = '+' + yen(saas);
+        $('bd-wsv').textContent = yen(ws); $('bd-ws').textContent = '+' + yen(wsMargin);
+        $('bd-net').textContent = (net >= 0 ? '+' : '') + yen(net); $('bd-net').className = 'r ' + (net >= 0 ? 'pos' : 'neg');
+        $('bd-note').textContent = pay < 0
+          ? '決済では月 ' + yen(-pay) + ' を補填。これを ' + (saas + wsMargin >= -pay ? 'SaaS＋卸粗利で回収できています。' : 'まだ回収しきれていません（仕入率を上げる必要）。')
+          : 'この原価・料率では決済自体も黒字（' + yen(pay) + '）。';
+
+        // 効きどころ
+        $('kBe').textContent = R.breakEvenRatio(rate < cost ? rate : R.OFFER.best, cost, wsm).toFixed(1) + '%';
+        var free = R.freeThreshold(saas, cost, R.OFFER.best);
+        $('kFree').textContent = isFinite(free) ? yen(free) : '上限なし';
+
+        // 3ティア比較（仕入率10%固定・現原価/粗利）
+        var presets = [['個人（1人）', 600000, 1], ['中規模（3人）', 2000000, 3], ['大型（6人）', 5000000, 6]];
+        $('cmpBody').innerHTML = presets.map(function (p) {
+          var c = p[1], w = c * 0.10, o = R.net({ card: c, wholesale: w, staff: p[2], cost: cost, wsm: wsm });
+          return '<tr><td>' + p[0] + '</td><td>' + yen(c) + '</td><td><span class="rate ' + TCLS[R.tierKey(o.ratio)] + '">' + o.rate.toFixed(2) + '%</span></td><td class="net">' + (o.net >= 0 ? '+' : '') + yen(o.net) + '</td></tr>';
+        }).join('');
+
+        // スケール
+        var n = +$('n').value;
+        $('vN').textContent = n.toLocaleString('ja-JP') + '店';
+        $('scaleHd').textContent = '1サロン平均 ' + yen(card) + ' / 月 想定';
+        $('scGmv').textContent = oku(card * 12 * n);
+        $('scNet').textContent = (net >= 0 ? '+' : '') + oku(net * 12 * n);
+      }
+      ['card', 'ratio', 'staff', 'cost', 'wsm', 'n'].forEach(function (id) { $(id).addEventListener('input', calc); });
+      calc();
+    })();
+  </script>
+</body>
+</html>

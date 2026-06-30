@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>実質料率ステータス｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=69">
+  <link rel="stylesheet" href="assets/css/base.css?v=69">
+  <link rel="stylesheet" href="assets/css/components.css?v=69">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .pa-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 720px; margin-inline: auto; }
+    .pa-top__logo { font-size: 17px; font-weight: 800; } .pa-top__logo b { color: var(--gold); }
+    .pa-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .pa-wrap { max-width: 720px; margin-inline: auto; padding: 16px; }
+    .pa-intro { font-size: 12.5px; color: var(--ink-3); line-height: 1.7; margin-bottom: 14px; }
+    .pa-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; margin-bottom: 14px; }
+    .pa-card__t { font-size: 14px; font-weight: 900; margin-bottom: 12px; }
+    .pa-card__t small { font-weight: 600; color: var(--ink-3); font-size: 11px; margin-left: 6px; }
+    .pa-slider { width: 100%; margin: 6px 0 2px; accent-color: var(--gold); }
+    .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
+    .pa-btn { width: 100%; height: 50px; border: 0; border-radius: var(--r-md); background: #fff; color: var(--ink); border: 1px solid var(--line-3); font-size: 14px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+
+    /* ヒーロー：今月の実質料率 */
+    .rt-hero { background: var(--dark); color: #fff; border-radius: var(--r-lg); padding: 22px 18px; text-align: center; margin-bottom: 14px; }
+    .rt-hero__l { font-size: 12px; color: rgba(255,255,255,.65); }
+    .rt-badge { display: inline-flex; align-items: baseline; gap: 4px; font-family: var(--font-num); font-weight: 900; line-height: 1; margin: 8px 0 4px; }
+    .rt-badge__n { font-size: 64px; } .rt-badge__p { font-size: 26px; }
+    .rt-badge.t-best { color: #5ad07f; } .rt-badge.t-mid { color: var(--gold); } .rt-badge.t-std { color: #c9c9d2; }
+    .rt-hero__tag { display: inline-block; font-size: 11.5px; font-weight: 800; border-radius: 999px; padding: 3px 12px; }
+    .t-best .rt-hero__tag, .rt-hero__tag.t-best { background: rgba(90,208,127,.16); color: #5ad07f; }
+    .rt-hero__msg { font-size: 13px; font-weight: 800; margin-top: 12px; }
+    .rt-hero__msg b { color: var(--gold); font-family: var(--font-num); }
+
+    /* ゲージ */
+    .rt-gauge { margin: 10px 0 2px; }
+    .rt-gauge__track { position: relative; height: 26px; border-radius: 999px; overflow: hidden; display: flex; }
+    .rt-zone { height: 100%; } .rt-zone.z-std { background: #ececf0; } .rt-zone.z-mid { background: var(--gold-soft); } .rt-zone.z-best { background: #e3f4ea; }
+    .rt-marker { position: absolute; top: -4px; bottom: -4px; width: 4px; border-radius: 4px; background: var(--ink); transition: left .25s var(--ease); transform: translateX(-2px); }
+    .rt-marker::after { content: ''; position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: var(--ink); border: 2px solid #fff; }
+    .rt-gauge__lbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-3); margin-top: 8px; font-family: var(--font-num); font-weight: 700; }
+    .rt-gauge__lbl span { position: relative; }
+
+    /* 入力の現在値 */
+    .rt-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
+    .rt-val { border: 1px solid var(--line); border-radius: var(--r-md); padding: 11px 13px; }
+    .rt-val__l { font-size: 11px; color: var(--ink-2); font-weight: 700; }
+    .rt-val__n { font-family: var(--font-num); font-size: 21px; font-weight: 900; margin-top: 2px; }
+    .rt-val__s { font-size: 10.5px; color: var(--ink-3); margin-top: 1px; }
+
+    /* ティア梯子 */
+    .rt-tier { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 8px; }
+    .rt-tier.is-on { border-width: 2px; }
+    .rt-tier.is-on.t-best { border-color: #1f9d57; background: #f3faf5; }
+    .rt-tier.is-on.t-mid { border-color: var(--gold); background: var(--gold-soft); }
+    .rt-tier.is-on.t-std { border-color: var(--ink-3); background: var(--surface-2); }
+    .rt-tier__dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+    .t-best .rt-tier__dot, .rt-tier__dot.d-best { background: #1f9d57; } .t-mid .rt-tier__dot, .rt-tier__dot.d-mid { background: var(--gold); } .t-std .rt-tier__dot, .rt-tier__dot.d-std { background: var(--ink-3); }
+    .rt-tier__rate { font-family: var(--font-num); font-weight: 900; font-size: 18px; flex: none; width: 56px; }
+    .rt-tier__cond { font-size: 12px; color: var(--ink-2); font-weight: 700; flex: 1; }
+    .rt-tier__chk { font-size: 12px; font-weight: 900; color: #1f9d57; flex: none; }
+
+    /* 着地・節約 */
+    .rt-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .rt-stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px; }
+    .rt-stat__l { font-size: 11px; color: var(--ink-2); font-weight: 700; }
+    .rt-stat__v { font-family: var(--font-num); font-size: 22px; font-weight: 900; margin-top: 3px; white-space: nowrap; }
+    .rt-stat__v.up { color: #1f9d57; } .rt-stat__s { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); }
+  </style>
+</head>
+<body>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon<b>Pro</b></span><span class="pa-top__tag">実質料率ステータス</span></div></div>
+  <div class="pa-wrap">
+    <div class="pa-intro">カード決済額と<b>菊地での仕入</b>を連動。仕入を菊地でまとめるほど、<b>実質料率が下がります</b>。今月の達成状況をリアルタイムで確認できます。</div>
+
+    <!-- ヒーロー -->
+    <div class="rt-hero">
+      <div class="rt-hero__l">今月の実質料率</div>
+      <div class="rt-badge t-mid" id="badge"><span class="rt-badge__n" id="badgeN">2.40</span><span class="rt-badge__p">%</span></div>
+      <div><span class="rt-hero__tag" id="heroTag">あと一歩で最安</span></div>
+      <div class="rt-hero__msg" id="heroMsg"></div>
+    </div>
+
+    <!-- ゲージ＋入力 -->
+    <div class="pa-card">
+      <div class="pa-card__t">仕入率ゲージ <small>仕入 ÷ カード決済</small></div>
+      <div class="rt-gauge">
+        <div class="rt-gauge__track">
+          <div class="rt-zone z-std" style="width:41.67%"></div>
+          <div class="rt-zone z-mid" style="width:25%"></div>
+          <div class="rt-zone z-best" style="width:33.33%"></div>
+          <div class="rt-marker" id="marker" style="left:58%"></div>
+        </div>
+        <div class="rt-gauge__lbl"><span>0%</span><span style="margin-left:-10px">5%→2.4%</span><span>8%→1.9%</span><span>12%+</span></div>
+      </div>
+
+      <div class="rt-vals" style="margin-top:16px">
+        <div class="rt-val"><div class="rt-val__l">今月のカード決済</div><div class="rt-val__n" id="cardN">¥1,800,000</div><div class="rt-val__s">店舗＋オンライン</div></div>
+        <div class="rt-val"><div class="rt-val__l">菊地での仕入</div><div class="rt-val__n" id="wsN">¥126,000</div><div class="rt-val__s">仕入率 <b id="ratioN">7.0%</b></div></div>
+      </div>
+
+      <label style="font-size:11px;font-weight:700;color:var(--ink-2)">カード決済額（デモ操作）</label>
+      <input id="card" class="pa-slider" type="range" min="200000" max="6000000" step="50000" value="1800000">
+      <label style="font-size:11px;font-weight:700;color:var(--ink-2)">菊地での仕入額（デモ操作）</label>
+      <input id="ws" class="pa-slider" type="range" min="0" max="700000" step="2000" value="126000">
+    </div>
+
+    <!-- ティア梯子 -->
+    <div class="pa-card">
+      <div class="pa-card__t">料率テーブル <small>仕入率で自動判定</small></div>
+      <div class="rt-tier t-best" data-tier="best"><span class="rt-tier__dot d-best"></span><span class="rt-tier__rate">1.9%</span><span class="rt-tier__cond">仕入率 8%以上</span><span class="rt-tier__chk" id="chk-best"></span></div>
+      <div class="rt-tier t-mid" data-tier="mid"><span class="rt-tier__dot d-mid"></span><span class="rt-tier__rate">2.4%</span><span class="rt-tier__cond">仕入率 5〜8%</span><span class="rt-tier__chk" id="chk-mid"></span></div>
+      <div class="rt-tier t-std" data-tier="std"><span class="rt-tier__dot d-std"></span><span class="rt-tier__rate">3.2%</span><span class="rt-tier__cond">仕入率 5%未満（標準）</span><span class="rt-tier__chk" id="chk-std"></span></div>
+    </div>
+
+    <!-- 着地・節約 -->
+    <div class="pa-card">
+      <div class="pa-card__t">この決済額での効果</div>
+      <div class="rt-2col">
+        <div class="rt-stat"><div class="rt-stat__l">標準3.2%と比べて</div><div class="rt-stat__v up" id="saveNow">−¥0</div><div class="rt-stat__s">今の料率での節約 / 月</div></div>
+        <div class="rt-stat"><div class="rt-stat__l">1.9%まで下げると</div><div class="rt-stat__v" id="upside">さらに −¥0</div><div class="rt-stat__s" id="upsideS">あと¥0の仕入で到達 / 月</div></div>
+      </div>
+    </div>
+
+    <a class="pa-btn" href="rate-calc.html">📊 菊地用 採算シミュレーターを開く</a>
+    <div class="pa-note">※「実質◯%」は、システム利用・仕入条件の達成時に適用される料率です（景品表示法に配慮）。料率・しきい値はデモ値で、本番は決済代行の確定料率・菊地の実原価で確定します。仕入率はゲーム性のためのデモ操作で、本番は実データと連動します。</div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/rate-model.js?v=69"></script>
+  <script src="assets/js/components.js?v=69"></script>
+  <script>
+    (function () {
+      var R = SP.RATE, $ = function (id) { return document.getElementById(id); };
+      var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
+      var TIER = { best: { lbl: '最安料率を達成中 🎉', tag: '最安 1.9% 達成', cls: 't-best' }, mid: { lbl: 'あと一歩で最安', tag: 'あと一歩で最安', cls: 't-mid' }, std: { lbl: '標準料率です', tag: '標準料率', cls: 't-std' } };
+
+      function render() {
+        var card = +$('card').value, ws = +$('ws').value;
+        var ratio = R.ratioPct(card, ws), rate = R.rateFor(ratio), key = R.tierKey(ratio), t = TIER[key];
+
+        $('cardN').textContent = yen(card); $('wsN').textContent = yen(ws); $('ratioN').textContent = ratio.toFixed(1) + '%';
+
+        // バッジ
+        $('badgeN').textContent = rate.toFixed(2);
+        $('badge').className = 'rt-badge ' + t.cls;
+        var tag = $('heroTag'); tag.textContent = t.tag; tag.className = 'rt-hero__tag ' + t.cls;
+
+        // ゲージマーカー（0〜12%を全幅にマップ）
+        $('marker').style.left = Math.min(ratio, 12) / 12 * 100 + '%';
+
+        // メッセージ：1.9%まであと幾ら
+        var need19 = R.needFor(card, R.GATE.best), gap19 = Math.max(0, need19 - ws);
+        var need24 = R.needFor(card, R.GATE.mid), gap24 = Math.max(0, need24 - ws);
+        if (key === 'best') $('heroMsg').innerHTML = '最安料率 <b>1.9%</b> を維持中';
+        else if (key === 'mid') $('heroMsg').innerHTML = '<b>1.9%</b> まで あと <b>' + yen(gap19) + '</b> の仕入';
+        else $('heroMsg').innerHTML = '<b>2.4%</b> まで あと <b>' + yen(gap24) + '</b>／<b>1.9%</b>まで <b>' + yen(gap19) + '</b>';
+
+        // ティアのチェック
+        ['best', 'mid', 'std'].forEach(function (k) {
+          var row = document.querySelector('.rt-tier[data-tier="' + k + '"]');
+          row.classList.toggle('is-on', k === key);
+          $('chk-' + k).textContent = k === key ? '● 適用中' : '';
+        });
+
+        // 効果
+        var feeNow = card * rate / 100, feeStd = card * R.OFFER.std / 100, feeBest = card * R.OFFER.best / 100;
+        $('saveNow').textContent = '−' + yen(feeStd - feeNow);
+        if (key === 'best') { $('upside').textContent = '達成済 ✓'; $('upside').className = 'rt-stat__v up'; $('upsideS').textContent = '最安料率を適用中'; }
+        else { $('upside').textContent = '−' + yen(feeNow - feeBest); $('upside').className = 'rt-stat__v up'; $('upsideS').textContent = 'あと' + yen(gap19) + 'の仕入で到達 / 月'; }
+      }
+      $('card').addEventListener('input', render);
+      $('ws').addEventListener('input', render);
+      render();
+    })();
+  </script>
+</body>
+</html>
