@@ -12037,7 +12037,7 @@ function Result({
   }, /*#__PURE__*/React.createElement("div", {
     className: "no-print"
   }, /*#__PURE__*/React.createElement(TopBar, null)), /*#__PURE__*/React.createElement("main", {
-    className: "relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-28 pb-[calc(90px+env(safe-area-inset-bottom,0px))] sm:pb-28"
+    className: "relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-28 pb-10 sm:pb-28"
   }, /*#__PURE__*/React.createElement("div", {
     className: "anim-fade-up"
   }, /*#__PURE__*/React.createElement("div", {
@@ -12341,26 +12341,30 @@ function Result({
   }, "SEAM\u306B\u3042\u308A\u307E\u3059\u3002")), /*#__PURE__*/React.createElement("span", {
     className: "text-charcoal/55 text-[12.5px] block mt-2"
   }, "\u3042\u306A\u305F\u306E\u8A3A\u65AD\u7D50\u679C\u306E\u3059\u3079\u3066\u306E\u5546\u54C1\u306F\u3001SEAM \u8A8D\u5B9A\u30B5\u30ED\u30F3\u3068\u4F1A\u54E1\u5236\u30AA\u30F3\u30E9\u30A4\u30F3\u30B9\u30C8\u30A2\u3067\u53D6\u308A\u6271\u3063\u3066\u3044\u307E\u3059\u3002")))), /*#__PURE__*/React.createElement("footer", {
-    className: "py-8 text-center text-[11px] tracking-widest2 uppercase text-charcoal/40"
-  }, "SEAM \xB7 Salon Selection Store"), /*#__PURE__*/React.createElement("div", {
-    className: "sm:hidden no-print fixed bottom-0 inset-x-0 z-30 border-t border-line bg-ivory/95 backdrop-blur-md",
+    className: "pt-8 text-center text-[11px] tracking-widest2 uppercase text-charcoal/40",
     style: {
-      paddingBottom: 'env(safe-area-inset-bottom, 0)'
+      paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))'
     }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-[1.5fr_1fr_1fr] h-[68px]"
+  }, "SEAM \xB7 Salon Selection Store"), /*#__PURE__*/React.createElement("nav", {
+    className: "sm:hidden no-print fixed bottom-0 inset-x-0 z-30 grid grid-cols-3",
+    style: {
+      background: 'rgba(255,255,255,0.97)',
+      WebkitBackdropFilter: 'blur(14px)',
+      backdropFilter: 'blur(14px)',
+      borderTop: '1.5px solid #D8CFBF',
+      boxShadow: '0 -6px 24px rgba(26,24,21,0.10)',
+      paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+    }
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-square.png`, 'square'),
     "aria-label": "\u9AEA\u306E\u30AB\u30EB\u30C6\u3092\u753B\u50CF\u3067\u4FDD\u5B58",
-    className: "flex flex-col items-center justify-center gap-1 text-white relative active:opacity-90 transition-opacity",
+    className: "flex flex-col items-center justify-center gap-1 py-2",
     style: {
-      background: '#B57C5A',
-      minHeight: '56px'
+      minHeight: '54px',
+      color: '#B8945A'
     }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "absolute -top-2 left-1/2 -translate-x-1/2 font-mono tracking-widest2 text-[10.5px] uppercase text-ink nums bg-goldLight px-2 py-0.5 rounded-[1px] whitespace-nowrap"
-  }, "Save Karte"), /*#__PURE__*/React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 16 16",
     className: "w-5 h-5",
     fill: "none",
@@ -12372,15 +12376,22 @@ function Result({
     strokeLinecap: "round",
     strokeLinejoin: "round"
   })), /*#__PURE__*/React.createElement("span", {
-    className: "font-serif text-[12.5px] text-white leading-none"
-  }, "\u9AEA\u306E\u30AB\u30EB\u30C6\u3092\u4FDD\u5B58")), /*#__PURE__*/React.createElement("button", {
+    style: {
+      fontFamily: '"Noto Sans JP",sans-serif',
+      letterSpacing: '.04em',
+      fontSize: '10px',
+      lineHeight: 1
+    }
+  }, "\u30AB\u30EB\u30C6\u3092\u4FDD\u5B58")), /*#__PURE__*/React.createElement("button", {
     type: "button",
     "data-open-resv": true,
     "data-resv-from": "sticky",
     "aria-label": "\u30B5\u30ED\u30F3\u3092\u4E88\u7D04\u3059\u308B",
-    className: "flex flex-col items-center justify-center gap-1 bg-cream text-ink active:bg-cream/80 border-l border-line transition-colors",
+    className: "flex flex-col items-center justify-center gap-1 py-2",
     style: {
-      minHeight: '56px'
+      minHeight: '54px',
+      color: '#8C7A63',
+      borderLeft: '1px solid #E7E1D6'
     }
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 16 16",
@@ -12401,14 +12412,21 @@ function Result({
     strokeWidth: "1.3",
     strokeLinecap: "round"
   })), /*#__PURE__*/React.createElement("span", {
-    className: "font-serif text-[11.5px] leading-none"
+    style: {
+      fontFamily: '"Noto Sans JP",sans-serif',
+      letterSpacing: '.04em',
+      fontSize: '10px',
+      lineHeight: 1
+    }
   }, "\u30B5\u30ED\u30F3\u4E88\u7D04")), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => shareKarteLink(karte?.origin),
     "aria-label": "\u8A3A\u65AD\u7D50\u679C\u3092\u30B7\u30A7\u30A2\u3059\u308B",
-    className: "flex flex-col items-center justify-center gap-1 bg-cream text-ink active:bg-cream/80 border-l border-line transition-colors",
+    className: "flex flex-col items-center justify-center gap-1 py-2",
     style: {
-      minHeight: '56px'
+      minHeight: '54px',
+      color: '#8C7A63',
+      borderLeft: '1px solid #E7E1D6'
     }
   }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 16 16",
@@ -12438,8 +12456,13 @@ function Result({
     stroke: "currentColor",
     strokeWidth: "1.3"
   })), /*#__PURE__*/React.createElement("span", {
-    className: "font-serif text-[11.5px] leading-none"
-  }, "\u30B7\u30A7\u30A2")))));
+    style: {
+      fontFamily: '"Noto Sans JP",sans-serif',
+      letterSpacing: '.04em',
+      fontSize: '10px',
+      lineHeight: 1
+    }
+  }, "\u30B7\u30A7\u30A2"))));
 }
 
 /* ---------- App ---------- */
