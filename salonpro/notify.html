@@ -7,10 +7,10 @@
   <meta name="theme-color" content="#ffffff">
   <title>通知・リマインド設定｜SalonPro</title>
   <meta name="description" content="再注文・定期便・キャンペーン・セミナーのリマインド通知設定。プッシュ通知で発注タイミングを逃さない。">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=62">
-  <link rel="stylesheet" href="assets/css/base.css?v=62">
-  <link rel="stylesheet" href="assets/css/components.css?v=62">
-  <link rel="stylesheet" href="assets/css/pages.css?v=62">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=63">
+  <link rel="stylesheet" href="assets/css/base.css?v=63">
+  <link rel="stylesheet" href="assets/css/components.css?v=63">
+  <link rel="stylesheet" href="assets/css/pages.css?v=63">
   <style>
     body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
     .container { max-width: 720px; }
@@ -50,8 +50,11 @@
   </header>
 
   <main class="container">
-    <div class="nt-hd"><div class="nt-hd__t">通知・リマインド</div><div class="nt-hd__s">発注タイミングやキャンペーンを逃さないよう、必要な通知だけ受け取れます。</div></div>
+    <div class="nt-hd"><div class="nt-hd__t">通知</div><div class="nt-hd__s">補填・クーポン・入荷・定期便など、見逃したくないお知らせをまとめています。</div></div>
 
+    <div id="ntFeed" style="margin-bottom:var(--s-5)"></div>
+
+    <h2 class="nt-sec__t">通知の受け取り設定</h2>
     <div class="nt-push">
       <span class="nt-push__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
       <div class="nt-push__b"><div class="nt-push__t" id="pushTitle">プッシュ通知をオンにする</div><div class="nt-push__s" id="pushSub">スマホ・PCに直接お知らせ。再注文のリマインドに最適です。</div></div>
@@ -79,16 +82,46 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/catalog.js?v=62"></script>
-  <script src="assets/js/data.js?v=62"></script>
-  <script src="assets/js/store.js?v=62"></script>
-  <script src="assets/js/components.js?v=62"></script>
-  <script src="assets/js/nav.js?v=62"></script>
+  <script src="assets/js/catalog.js?v=63"></script>
+  <script src="assets/js/data.js?v=63"></script>
+  <script src="assets/js/store.js?v=63"></script>
+  <script src="assets/js/components.js?v=63"></script>
+  <script src="assets/js/nav.js?v=63"></script>
   <script>
     (function () {
       var svg = SP.svg;
       var toast = function (m) { var t = document.getElementById('toast'); t.innerHTML = svg('checkc') + m; t.classList.add('is-visible'); setTimeout(function () { t.classList.remove('is-visible'); }, 2200); };
       (function () { var c = SP.Store.cartSummary().count + (SP.Store.giftCount ? SP.Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = c; el.hidden = c <= 0; } })();
+      // 通知フィード（補填あと一歩・クーポン期限・入荷・定期便・セミナー）。デモ＋実データ。
+      (function () {
+        var feed = document.getElementById('ntFeed'); if (!feed) return;
+        var yen = function (n) { return '¥' + (n || 0).toLocaleString('ja-JP'); };
+        var items = [];
+        try {
+          var R = SP.REBATE;
+          if (R && R.enabled) {
+            var best = null;
+            R.tiers.forEach(function (t) { var s = (R.demoMonth || {})[t.maker]; if (s == null) return; var rest = t.threshold - s; if (rest > 0 && (!best || rest < best.rest)) best = { maker: t.maker, rest: rest, reward: t.reward }; });
+            if (best) items.push({ ic: '🎯', tone: 'gold', t: best.maker + ' 補填まで あと ' + yen(best.rest), s: '今月あと' + yen(best.rest) + 'の仕入れで、翌月「' + best.reward + '」が届きます。', tm: '今日', href: 'index.html?q=' + encodeURIComponent(best.maker) });
+          }
+        } catch (e) {}
+        try {
+          var cps = (SP.Store.getCoupons ? SP.Store.getCoupons() : []).filter(function (c) { return !c.used; });
+          cps.slice(0, 2).forEach(function (c) { items.push({ ic: '🎟', tone: 'gold', t: c.label + ' が使えます', s: (c.note || '') + '（' + (c.expires || '') + '）', tm: '3日前', href: 'index.html?q=' + encodeURIComponent(c.maker) }); });
+        } catch (e) {}
+        items.push({ ic: '📦', tone: 'blue', t: 'アディクシー サファイア9 が再入荷しました', s: '入荷お知らせに登録していた商品が在庫に戻りました。', tm: '昨日', href: 'product.html?id=co-3' });
+        items.push({ ic: '🔁', tone: 'gray', t: '定期便の次回お届けは 6/30（火）', s: 'スキップ・数量変更は前日までに。', tm: '2日前', href: 'subscribe.html' });
+        items.push({ ic: '🎓', tone: 'gray', t: '「最新カラーデザイン」セミナー 受付中', s: '7/15 開催・協賛 ミルボン。残席わずか。', tm: '3日前', href: 'seminar.html' });
+        var color = { gold: 'var(--gold-soft)', blue: '#e9f1fb', gray: 'var(--surface-2)' };
+        feed.innerHTML = items.map(function (n) {
+          return '<a href="' + n.href + '" style="display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--r-md);padding:13px 14px;margin-bottom:9px;text-decoration:none;color:inherit">'
+            + '<span style="flex:none;width:38px;height:38px;border-radius:10px;background:' + (color[n.tone] || color.gray) + ';display:flex;align-items:center;justify-content:center;font-size:19px">' + n.ic + '</span>'
+            + '<span style="flex:1;min-width:0"><span style="display:block;font-weight:800;font-size:13.5px">' + n.t + '</span>'
+            + '<span style="display:block;font-size:12px;color:var(--ink-2);margin-top:2px;line-height:1.5">' + n.s + '</span>'
+            + '<span style="display:block;font-size:10.5px;color:var(--ink-3);margin-top:3px">' + n.tm + '</span></span>'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;color:var(--ink-3);flex:none;margin-top:10px"><path d="m9 6 6 6-6 6"/></svg></a>';
+        }).join('');
+      })();
       var ITEMS = [
         { k: 'reorder', t: '再注文リマインド', s: '使用ペースから「そろそろ補充」をお知らせ', d: true },
         { k: 'sub', t: '定期便の事前通知', s: '次回お届け前にスキップ・数量変更のご案内', d: true },
