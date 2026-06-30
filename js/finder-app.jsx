@@ -9256,7 +9256,7 @@ function Result({ answers, onRestart, onCollection }) {
   return (
     <div className="min-h-[100svh] bg-finder">
       <div className="no-print"><TopBar /></div>
-      <main className="relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-28 pb-[calc(90px+env(safe-area-inset-bottom,0px))] sm:pb-28">
+      <main className="relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-28 pb-10 sm:pb-28">
         <div className="anim-fade-up">
           {/* Karte-style meta header */}
           <div className="flex items-center justify-between border-y border-line py-2.5 mb-3 print-page-header">
@@ -9524,60 +9524,59 @@ function Result({ answers, onRestart, onCollection }) {
           </p>
         </section>
       </main>
-      <footer className="py-8 text-center text-[11px] tracking-widest2 uppercase text-charcoal/40">
+      <footer className="pt-8 text-center text-[11px] tracking-widest2 uppercase text-charcoal/40" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
         SEAM · Salon Selection Store
       </footer>
 
-      {/* Mobile sticky bottom CTA — 結果ページ専用 (Apple HIG準拠 min-h 56px) */}
-      <div className="sm:hidden no-print fixed bottom-0 inset-x-0 z-30 border-t border-line bg-ivory/95 backdrop-blur-md" style={{paddingBottom:'env(safe-area-inset-bottom, 0)'}}>
-        <div className="grid grid-cols-[1.5fr_1fr_1fr] h-[68px]">
-          {/* 主役: 髪のカルテを保存 */}
-          <button
-            type="button"
-            onClick={() => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-square.png`, 'square')}
-            aria-label="髪のカルテを画像で保存"
-            className="flex flex-col items-center justify-center gap-1 text-white relative active:opacity-90 transition-opacity"
-            style={{background:'#B57C5A', minHeight:'56px'}}
-          >
-            <span className="absolute -top-2 left-1/2 -translate-x-1/2 font-mono tracking-widest2 text-[10.5px] uppercase text-ink nums bg-goldLight px-2 py-0.5 rounded-[1px] whitespace-nowrap">Save Karte</span>
-            <svg viewBox="0 0 16 16" className="w-5 h-5" fill="none" aria-hidden>
-              <path d="M3 5 H13 V13 H3 Z M5 2 H11 V5 M6.5 8 H9.5 M6.5 10.5 H9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <span className="font-serif text-[12.5px] text-white leading-none">髪のカルテを保存</span>
-          </button>
-          {/* 予約 */}
-          <button
-            type="button"
-            data-open-resv
-            data-resv-from="sticky"
-            aria-label="サロンを予約する"
-            className="flex flex-col items-center justify-center gap-1 bg-cream text-ink active:bg-cream/80 border-l border-line transition-colors"
-            style={{minHeight:'56px'}}
-          >
-            <svg viewBox="0 0 16 16" className="w-5 h-5" fill="none" aria-hidden>
-              <rect x="2.5" y="3" width="11" height="11" rx="0.5" stroke="currentColor" strokeWidth="1.3"/>
-              <path d="M5 1.5 L 5 4 M11 1.5 L 11 4 M2.5 7 L 13.5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
-            </svg>
-            <span className="font-serif text-[11.5px] leading-none">サロン予約</span>
-          </button>
-          {/* シェア */}
-          <button
-            type="button"
-            onClick={() => shareKarteLink(karte?.origin)}
-            aria-label="診断結果をシェアする"
-            className="flex flex-col items-center justify-center gap-1 bg-cream text-ink active:bg-cream/80 border-l border-line transition-colors"
-            style={{minHeight:'56px'}}
-          >
-            <svg viewBox="0 0 16 16" className="w-5 h-5" fill="none" aria-hidden>
-              <circle cx="4" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
-              <circle cx="12" cy="3.5" r="2" stroke="currentColor" strokeWidth="1.3" />
-              <circle cx="12" cy="12.5" r="2" stroke="currentColor" strokeWidth="1.3" />
-              <path d="M5.7 7 L 10.3 4.4 M 5.7 9 L 10.3 11.6" stroke="currentColor" strokeWidth="1.3" />
-            </svg>
-            <span className="font-serif text-[11.5px] leading-none">シェア</span>
-          </button>
-        </div>
-      </div>
+      {/* Mobile 固定タブ — 他ページ(index)のアプリタブと同じ見た目に統一。保存=ゴールド主役 / 予約・シェアは控えめ。
+          (突き出しバッジを撤去し セーフエリア対応 → LINE等の内蔵ブラウザで下部が収まらない問題を解消) */}
+      <nav className="sm:hidden no-print fixed bottom-0 inset-x-0 z-30 grid grid-cols-3"
+        style={{ background:'rgba(255,255,255,0.97)', WebkitBackdropFilter:'blur(14px)', backdropFilter:'blur(14px)', borderTop:'1.5px solid #D8CFBF', boxShadow:'0 -6px 24px rgba(26,24,21,0.10)', paddingBottom:'env(safe-area-inset-bottom, 0px)' }}>
+        {/* 保存(主役・ゴールド) */}
+        <button
+          type="button"
+          onClick={() => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-square.png`, 'square')}
+          aria-label="髪のカルテを画像で保存"
+          className="flex flex-col items-center justify-center gap-1 py-2"
+          style={{ minHeight:'54px', color:'#B8945A' }}
+        >
+          <svg viewBox="0 0 16 16" className="w-5 h-5" fill="none" aria-hidden>
+            <path d="M3 5 H13 V13 H3 Z M5 2 H11 V5 M6.5 8 H9.5 M6.5 10.5 H9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span style={{ fontFamily:'"Noto Sans JP",sans-serif', letterSpacing:'.04em', fontSize:'10px', lineHeight:1 }}>カルテを保存</span>
+        </button>
+        {/* 予約 */}
+        <button
+          type="button"
+          data-open-resv
+          data-resv-from="sticky"
+          aria-label="サロンを予約する"
+          className="flex flex-col items-center justify-center gap-1 py-2"
+          style={{ minHeight:'54px', color:'#8C7A63', borderLeft:'1px solid #E7E1D6' }}
+        >
+          <svg viewBox="0 0 16 16" className="w-5 h-5" fill="none" aria-hidden>
+            <rect x="2.5" y="3" width="11" height="11" rx="0.5" stroke="currentColor" strokeWidth="1.3"/>
+            <path d="M5 1.5 L 5 4 M11 1.5 L 11 4 M2.5 7 L 13.5 7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+          </svg>
+          <span style={{ fontFamily:'"Noto Sans JP",sans-serif', letterSpacing:'.04em', fontSize:'10px', lineHeight:1 }}>サロン予約</span>
+        </button>
+        {/* シェア */}
+        <button
+          type="button"
+          onClick={() => shareKarteLink(karte?.origin)}
+          aria-label="診断結果をシェアする"
+          className="flex flex-col items-center justify-center gap-1 py-2"
+          style={{ minHeight:'54px', color:'#8C7A63', borderLeft:'1px solid #E7E1D6' }}
+        >
+          <svg viewBox="0 0 16 16" className="w-5 h-5" fill="none" aria-hidden>
+            <circle cx="4" cy="8" r="2" stroke="currentColor" strokeWidth="1.3" />
+            <circle cx="12" cy="3.5" r="2" stroke="currentColor" strokeWidth="1.3" />
+            <circle cx="12" cy="12.5" r="2" stroke="currentColor" strokeWidth="1.3" />
+            <path d="M5.7 7 L 10.3 4.4 M 5.7 9 L 10.3 11.6" stroke="currentColor" strokeWidth="1.3" />
+          </svg>
+          <span style={{ fontFamily:'"Noto Sans JP",sans-serif', letterSpacing:'.04em', fontSize:'10px', lineHeight:1 }}>シェア</span>
+        </button>
+      </nav>
     </div>
   );
 }
