@@ -16,6 +16,7 @@
 
   // Standard SEAM navigation (same on every page → feels like one app)
   var NAV = [
+    { href: 'index.html',     key: 'nav.home',    label: 'ホーム' },
     { href: 'finder.html',     key: 'nav.finder',  label: '髪格診断' },
     { href: 'shop.html',       key: 'nav.shop',    label: 'ヘアケアショップ' },
     { href: 'brand.html',      key: 'nav.brand',   label: '取扱ブランド' },
