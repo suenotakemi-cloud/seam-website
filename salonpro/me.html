@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#06c755">
   <title>マイ売上＆シフト｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=66">
-  <link rel="stylesheet" href="assets/css/base.css?v=66">
-  <link rel="stylesheet" href="assets/css/components.css?v=66">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=67">
+  <link rel="stylesheet" href="assets/css/base.css?v=67">
+  <link rel="stylesheet" href="assets/css/components.css?v=67">
   <style>
     body { background: var(--surface-2); padding-bottom: 36px; }
     .me-top { background: #06c755; color: #fff; }
@@ -57,25 +57,17 @@
     <div class="me-note">※ デモ表示です。本番ではLINEログインで本人のデータだけを表示し、売上（予約・POS）とシフトが自動で反映されます。</div>
   </div>
 
-  <script src="assets/js/catalog.js?v=66"></script>
-  <script src="assets/js/data.js?v=66"></script>
-  <script src="assets/js/store.js?v=66"></script>
-  <script src="assets/js/components.js?v=66"></script>
+  <script src="assets/js/catalog.js?v=67"></script>
+  <script src="assets/js/data.js?v=67"></script>
+  <script src="assets/js/store.js?v=67"></script>
+  <script src="assets/js/shift.js?v=67"></script>
+  <script src="assets/js/components.js?v=67"></script>
   <script>
     (function () {
       var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
       function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-      var STAFF = [
-        { n: '田中 美咲', role: 'ディレクター', sales: 591000, target: 600000, shimei: 67, kyaku: 9800, tenpan: 27 },
-        { n: '佐藤 健', role: 'トップスタイリスト', sales: 524000, target: 520000, shimei: 51, kyaku: 9900, tenpan: 26 },
-        { n: '高橋 駿', role: 'スタイリスト', sales: 417000, target: 400000, shimei: 47, kyaku: 13000, tenpan: 24 },
-        { n: '鈴木 彩', role: 'スタイリスト', sales: 389000, target: 360000, shimei: 77, kyaku: 16900, tenpan: 20 },
-        { n: '渡辺 結衣', role: 'スタイリスト', sales: 341000, target: 350000, shimei: 81, kyaku: 12800, tenpan: 23 },
-        { n: '伊藤 蓮', role: 'ジュニア', sales: 191000, target: 200000, shimei: 41, kyaku: 9700, tenpan: 18 }
-      ];
-      var DAYS = [['月', '6/30'], ['火', '7/1'], ['水', '7/2'], ['木', '7/3'], ['金', '7/4'], ['土', '7/5'], ['日', '7/6']];
+      var STAFF = SP.SHIFT.roster, DAYS = SP.SHIFT.days, GRID = SP.SHIFT.grid();
       var SH = { a: ['早番', '9:00–18:00', 'me-pill--a', '🌅'], m: ['中番', '10:00–19:00', 'me-pill--m', '☀️'], p: ['遅番', '11:00–20:00', 'me-pill--p', '🌆'] };
-      var GRID = STAFF.map(function (s, i) { var rnd = mulberry32(700 + i * 17); return DAYS.map(function () { return rnd() < 0.26 ? 'off' : ['a', 'm', 'p'][Math.floor(rnd() * 3)]; }); });
       var sorted = STAFF.map(function (s, i) { return { i: i, sales: s.sales }; }).sort(function (a, b) { return b.sales - a.sales; });
       function rankOf(i) { return sorted.findIndex(function (x) { return x.i === i; }) + 1; }
 
@@ -87,6 +79,7 @@
       function render() {
         var i = +sel.value, s = STAFF[i], pct = Math.round(s.sales / s.target * 100), rest = Math.max(0, s.target - s.sales), done = pct >= 100;
         var rank = rankOf(i), today = GRID[i][0], todayInfo = today === 'off' ? null : SH[today];
+        var bk = SP.SHIFT.breakdownFor(i), set = SP.SHIFT.settings(), workdays = SP.SHIFT.workdays(i);
         var weekHtml = DAYS.map(function (d, di) {
           var code = GRID[i][di], off = code === 'off';
           return '<div class="me-wk' + (off ? ' me-wk--off' : '') + '"><span class="me-wk__d' + (di >= 5 ? ' wend' : '') + '">' + d[0] + '<small>' + d[1] + '</small></span>'
@@ -100,7 +93,14 @@
           + '<div class="me-rank"><div class="me-rank__n">' + rank + '<small>位</small></div><div class="me-rank__b"><div class="me-rank__t">店内ランキング ' + rank + '位 / ' + STAFF.length + '名</div><div class="me-rank__s">' + (rank === 1 ? '店内トップ！この調子で✨' : (s.shimei >= 70 ? '指名率' + s.shimei + '%＝ファンが育っています👏' : '指名・店販を伸ばすと順位が上がります')) + '</div></div></div>'
           + '<div class="me-stats"><div class="me-stat"><div class="me-stat__v">' + s.shimei + '%</div><div class="me-stat__l">指名率</div></div><div class="me-stat"><div class="me-stat__v">' + yen(s.kyaku) + '</div><div class="me-stat__l">客単価</div></div><div class="me-stat"><div class="me-stat__v">' + s.tenpan + '%</div><div class="me-stat__l">店販比率</div></div></div>'
           + '<div class="me-card"><div class="me-card__t">今日のシフト（6/30 月）</div><div class="me-today"><span class="me-today__ic" style="background:' + (todayInfo ? 'var(--gold-soft)' : 'var(--surface-2)') + '">' + (todayInfo ? todayInfo[3] : '😴') + '</span><div class="me-today__b">' + (todayInfo ? '<div class="me-today__t">' + todayInfo[0] + '</div><div class="me-today__s">' + todayInfo[1] + '</div>' : '<div class="me-today__t">お休み</div><div class="me-today__s">ゆっくり休んでください</div>') + '</div></div></div>'
-          + '<div class="me-card"><div class="me-card__t">今週のシフト</div><div class="me-week">' + weekHtml + '</div></div>';
+          + '<div class="me-card"><div class="me-card__t">今週のシフト <span style="font-weight:600;color:var(--ink-3);font-size:11px">出勤 ' + workdays + '日</span></div><div class="me-week">' + weekHtml + '</div></div>'
+          + '<div class="me-card"><div class="me-card__t">今月の見込み給与 <span style="font-weight:600;color:var(--ink-3);font-size:11px">シフトから自動計算</span></div>'
+          + '<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--ink-2)"><span>基本給</span><b style="font-family:var(--font-num);color:var(--ink)">' + yen(bk.base) + '</b></div>'
+          + (set.minashi ? '<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--ink-2)"><span>みなし残業手当</span><b style="font-family:var(--font-num);color:var(--ink)">' + yen(bk.minashi) + '</b></div>' : '')
+          + (set.zangyo ? '<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--ink-2)"><span>残業手当 <span style="color:var(--ink-3)">(' + bk.otHours + 'h)</span></span><b style="font-family:var(--font-num);color:var(--ink)">' + yen(bk.zangyo) + '</b></div>' : '')
+          + (set.yukyu ? '<div style="display:flex;justify-content:space-between;font-size:13px;padding:5px 0;color:var(--ink-2)"><span>有給 残り</span><b style="font-family:var(--font-num);color:var(--ink)">' + bk.yukyu + '日</b></div>' : '')
+          + '<div style="display:flex;justify-content:space-between;font-size:14px;padding:9px 0 2px;margin-top:4px;border-top:1px solid var(--line-2);font-weight:900"><span>支給見込み 計</span><b style="font-family:var(--font-num)">' + yen(bk.total) + '</b></div>'
+          + '<div style="font-size:10.5px;color:var(--ink-3);margin-top:8px">店長が設定した労務ルール（有給・みなし残業・残業）に応じて自動表示。デモです。</div></div>';
       }
       render();
     })();

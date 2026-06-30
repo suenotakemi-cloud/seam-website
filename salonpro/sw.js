@@ -1,5 +1,5 @@
 /* SalonPro Service Worker — コア資産をキャッシュしオフライン/高速化（軽くて落ちないPWA） */
-const CACHE = 'salonpro-v43';
+const CACHE = 'salonpro-v44';
 const CORE = [
   'home.html', 'index.html', 'cart.html', 'product.html', 'reorder.html',
   'mypage.html', 'learn.html', 'favorites.html', 'orders.html', 'support.html',
@@ -16,7 +16,7 @@ const CORE = [
   'assets/js/nav.js', 'assets/js/app.js', 'assets/js/home.js', 'assets/js/cart.js',
   'assets/js/product.js', 'assets/js/reorder.js', 'assets/js/favorites.js',
   'assets/js/support.js', 'assets/js/barcode.js', 'assets/js/inventory.js',
-  'assets/js/pos.js', 'assets/js/admin.js',
+  'assets/js/pos.js', 'assets/js/admin.js', 'assets/js/shift.js',
   'manifest.webmanifest', 'assets/img/icon.svg'
 ];
 

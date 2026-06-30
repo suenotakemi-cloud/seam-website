@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1b1b1d">
   <title>店舗マネジメント（シフト＆売上）｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=66">
-  <link rel="stylesheet" href="assets/css/base.css?v=66">
-  <link rel="stylesheet" href="assets/css/components.css?v=66">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=67">
+  <link rel="stylesheet" href="assets/css/base.css?v=67">
+  <link rel="stylesheet" href="assets/css/components.css?v=67">
   <style>
     body { background: var(--surface-2); }
     .mg-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
@@ -27,9 +27,13 @@
     .mg-card__t small { font-weight: 600; color: var(--ink-3); font-size: 12px; margin-left: 8px; }
     .mg-leg { display: flex; gap: 12px; flex-wrap: wrap; font-size: 11px; color: var(--ink-2); }
     .mg-leg span { display: inline-flex; align-items: center; gap: 5px; } .mg-leg i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+    .lb-set { display: flex; gap: 9px; flex-wrap: wrap; }
+    .lb-tg { display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line-3); background: #fff; font-size: 13px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .lb-tg .dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-3); flex: none; }
+    .lb-tg.is-on { border-color: var(--gold); background: var(--gold-soft); color: var(--gold-strong); }
+    .lb-tg.is-on .dot { border-color: var(--gold); background: var(--gold); box-shadow: inset 0 0 0 2px #fff; }
     .mg-grid-wrap { overflow-x: auto; }
     .mg-grid { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 720px; }
-    .mg-grid th, .mg-grid td { padding: 0; }
     .mg-grid thead th { font-size: 12px; font-weight: 800; color: var(--ink-2); padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--line); }
     .mg-grid thead th.wend { color: #c0392b; }
     .mg-grid th.name, .mg-grid td.name { text-align: left; padding: 10px 12px; width: 168px; position: sticky; left: 0; background: var(--surface); z-index: 1; border-right: 1px solid var(--line); }
@@ -46,7 +50,10 @@
     .sl-name { font-weight: 800; font-size: 14.5px; } .sl-name small { font-weight: 600; color: var(--ink-3); font-size: 11px; }
     .sl-amt { font-family: var(--font-num); font-weight: 900; font-size: 16px; }
     .sl-bar { height: 9px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin: 9px 0 5px; } .sl-bar i { display: block; height: 100%; border-radius: 999px; }
-    .sl-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); } .sl-meta b { color: var(--ink); font-family: var(--font-num); }
+    .sl-lab { margin-top: 10px; border-top: 1px solid var(--line-2); padding-top: 9px; }
+    .sl-lab__r { display: flex; justify-content: space-between; font-size: 12px; padding: 2px 0; color: var(--ink-2); } .sl-lab__r b { font-family: var(--font-num); color: var(--ink); font-weight: 700; }
+    .sl-lab__r.tot { font-weight: 800; color: var(--ink); border-top: 1px solid var(--line-2); margin-top: 4px; padding-top: 6px; }
+    .sl-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink-2); margin-top: 9px; } .sl-meta b { color: var(--ink); font-family: var(--font-num); }
     .mg-note { font-size: 11px; color: var(--ink-3); line-height: 1.7; margin-top: 4px; }
     .mg-open { margin-left: auto; font-size: 12.5px; font-weight: 800; color: var(--gold-strong); text-decoration: none; border: 1px solid var(--gold-line); border-radius: 999px; padding: 7px 14px; background: var(--gold-soft); }
   </style>
@@ -57,87 +64,100 @@
     <div class="mg-kpis" id="mgKpis"></div>
 
     <div class="mg-card">
-      <div class="mg-card__h">
-        <div class="mg-card__t">週間シフト <small id="weekLabel"></small></div>
-        <div class="mg-leg"><span><i class="shift--a" style="background:#e9f1fb"></i>早番</span><span><i style="background:var(--gold-soft)"></i>中番</span><span><i style="background:#efe7f7"></i>遅番</span><span><i style="background:var(--surface-2)"></i>休み</span></div>
-      </div>
-      <div class="mg-grid-wrap"><table class="mg-grid"><thead id="gridHead"></thead><tbody id="gridBody"></tbody></table></div>
-      <div class="mg-note" style="margin-top:10px">クリックで早番→中番→遅番→休みと切り替えできます（デモ）。本番ではスタッフの希望提出・確定・LINE通知まで自動化します。</div>
+      <div class="mg-card__h"><div class="mg-card__t">労務設定 <small>サロンごとに異なる項目を表示／人件費に反映</small></div></div>
+      <div class="lb-set" id="lbSet"></div>
+      <div class="mg-note" style="margin-top:10px">有給・みなし残業・残業はサロンによって運用が違うので、必要なものだけON。<b>みなし残業・残業はONにすると人件費（経営P&amp;L）にも自動で乗ります。</b></div>
     </div>
 
     <div class="mg-card">
-      <div class="mg-card__h"><div class="mg-card__t">スタッフ別 今月売上 <small>目標と達成率</small></div><a class="mg-open" href="owner.html">経営P&amp;Lを開く ›</a></div>
+      <div class="mg-card__h">
+        <div class="mg-card__t">週間シフト <small id="weekLabel"></small></div>
+        <div class="mg-leg"><span><i style="background:#e9f1fb"></i>早番</span><span><i style="background:var(--gold-soft)"></i>中番</span><span><i style="background:#efe7f7"></i>遅番</span><span><i style="background:var(--surface-2)"></i>休み</span></div>
+      </div>
+      <div class="mg-grid-wrap"><table class="mg-grid"><thead id="gridHead"></thead><tbody id="gridBody"></tbody></table></div>
+      <div class="mg-note" style="margin-top:10px">クリックで早番→中番→遅番→休みと切替（保存されます）。出勤日数が増えると<b>残業・人件費も自動で再計算</b>され、個人画面と経営P&amp;Lに反映されます。</div>
+    </div>
+
+    <div class="mg-card">
+      <div class="mg-card__h"><div class="mg-card__t">スタッフ別 売上・人件費 <small>目標達成と給与内訳</small></div><a class="mg-open" href="owner.html">経営P&amp;Lを開く ›</a></div>
       <div class="mg-sales" id="salesBody"></div>
     </div>
 
-    <p class="mg-note">※ デモ表示です。本番では予約・POS・シフトの実データと連携し、スタッフ個人は「LINEミニアプリ（<a href="me.html" style="color:var(--gold-strong);font-weight:700">me.html</a>）」で自分の売上・シフトを確認します。</p>
+    <p class="mg-note">※ デモ表示です。シフト・労務設定は<b>この端末に保存</b>され、個人用（<a href="me.html" style="color:var(--gold-strong);font-weight:700">me.html</a>）と経営ダッシュボード（<a href="owner.html" style="color:var(--gold-strong);font-weight:700">owner.html</a>）に連携します。本番は予約・POS・勤怠・給与計算と接続します。</p>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/catalog.js?v=66"></script>
-  <script src="assets/js/data.js?v=66"></script>
-  <script src="assets/js/store.js?v=66"></script>
-  <script src="assets/js/components.js?v=66"></script>
+  <script src="assets/js/catalog.js?v=67"></script>
+  <script src="assets/js/data.js?v=67"></script>
+  <script src="assets/js/store.js?v=67"></script>
+  <script src="assets/js/shift.js?v=67"></script>
+  <script src="assets/js/components.js?v=67"></script>
   <script>
     (function () {
       var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
       function toast(m) { var t = document.getElementById('toast'); if (!t) return; t.innerHTML = (SP.svg ? SP.svg('checkc') : '✓') + m; t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 1600); }
-      function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-      var STAFF = [
-        { n: '田中 美咲', role: 'ディレクター', sales: 591000, target: 600000, shimei: 67, kyaku: 9800, tenpan: 27 },
-        { n: '佐藤 健', role: 'トップスタイリスト', sales: 524000, target: 520000, shimei: 51, kyaku: 9900, tenpan: 26 },
-        { n: '高橋 駿', role: 'スタイリスト', sales: 417000, target: 400000, shimei: 47, kyaku: 13000, tenpan: 24 },
-        { n: '鈴木 彩', role: 'スタイリスト', sales: 389000, target: 360000, shimei: 77, kyaku: 16900, tenpan: 20 },
-        { n: '渡辺 結衣', role: 'スタイリスト', sales: 341000, target: 350000, shimei: 81, kyaku: 12800, tenpan: 23 },
-        { n: '伊藤 蓮', role: 'ジュニア', sales: 191000, target: 200000, shimei: 41, kyaku: 9700, tenpan: 18 }
-      ];
-      var DAYS = [['月', '6/30'], ['火', '7/1'], ['水', '7/2'], ['木', '7/3'], ['金', '7/4'], ['土', '7/5'], ['日', '7/6']];
-      var SH = { a: ['早番', '9:00–18:00', 'shift--a'], m: ['中番', '10:00–19:00', 'shift--m'], p: ['遅番', '11:00–20:00', 'shift--p'] };
+      var SH = SP.SHIFT, STAFF = SH.roster, DAYS = SH.days;
+      var SHI = { a: ['早番', '9:00–18:00', 'shift--a'], m: ['中番', '10:00–19:00', 'shift--m'], p: ['遅番', '11:00–20:00', 'shift--p'] };
       var ORDER = ['a', 'm', 'p', 'off'];
-      // シフト生成（曜日×スタッフ・seeded）
-      var grid = STAFF.map(function (s, i) {
-        var rnd = mulberry32(700 + i * 17);
-        return DAYS.map(function () { var off = rnd() < 0.26; return off ? 'off' : ['a', 'm', 'p'][Math.floor(rnd() * 3)]; });
-      });
+      var SET_LABELS = [['yukyu', '有給を表示'], ['minashi', 'みなし残業'], ['zangyo', '残業']];
+
       function renderKpis() {
-        var working = grid.filter(function (row) { return row[0] !== 'off'; }).length; // 月曜の出勤者
+        var working = SH.grid().filter(function (row) { return row[0] !== 'off'; }).length;
         var sales = STAFF.reduce(function (a, s) { return a + s.sales; }, 0);
         var target = STAFF.reduce(function (a, s) { return a + s.target; }, 0);
         document.getElementById('mgKpis').innerHTML =
           '<div class="mg-kpi"><div class="mg-kpi__l">本日の出勤</div><div class="mg-kpi__v">' + working + '<span style="font-size:14px"> / ' + STAFF.length + '名</span></div><div class="mg-kpi__d">月曜のシフト</div></div>'
           + '<div class="mg-kpi"><div class="mg-kpi__l">今月 店舗売上</div><div class="mg-kpi__v">' + yen(sales) + '</div><div class="mg-kpi__d up">前月比 +8%</div></div>'
           + '<div class="mg-kpi"><div class="mg-kpi__l">目標達成率</div><div class="mg-kpi__v">' + Math.round(sales / target * 100) + '%</div><div class="mg-kpi__d">目標 ' + yen(target) + '</div></div>'
-          + '<div class="mg-kpi"><div class="mg-kpi__l">平均 客単価</div><div class="mg-kpi__v">' + yen(STAFF.reduce(function (a, s) { return a + s.kyaku; }, 0) / STAFF.length) + '</div><div class="mg-kpi__d">指名・店販は下表</div></div>';
+          + '<div class="mg-kpi"><div class="mg-kpi__l">人件費（合計）</div><div class="mg-kpi__v">' + yen(SH.laborTotal()) + '</div><div class="mg-kpi__d">設定に応じて自動計算</div></div>';
+      }
+      function renderSet() {
+        var s = SH.settings();
+        document.getElementById('lbSet').innerHTML = SET_LABELS.map(function (kv) {
+          return '<button class="lb-tg ' + (s[kv[0]] ? 'is-on' : '') + '" data-set="' + kv[0] + '"><span class="dot"></span>' + kv[1] + '</button>';
+        }).join('');
       }
       function renderGrid() {
+        var grid = SH.grid();
         document.getElementById('weekLabel').textContent = '6/30（月）〜 7/6（日）';
         document.getElementById('gridHead').innerHTML = '<tr><th class="name">スタッフ</th>' + DAYS.map(function (d, i) { return '<th class="' + (i >= 5 ? 'wend' : '') + '">' + d[0] + '<br><span style="font-weight:600;color:var(--ink-3)">' + d[1] + '</span></th>'; }).join('') + '</tr>';
         document.getElementById('gridBody').innerHTML = STAFF.map(function (s, ri) {
           return '<tr><td class="name"><b>' + s.n + '</b><span>' + s.role + '</span></td>' + grid[ri].map(function (code, ci) {
-            var inner;
-            if (code === 'off') inner = '<div class="shift shift--off">休</div>';
-            else { var sh = SH[code]; inner = '<div class="shift ' + sh[2] + '">' + sh[0] + '<small>' + sh[1] + '</small></div>'; }
+            var inner = code === 'off' ? '<div class="shift shift--off">休</div>' : '<div class="shift ' + SHI[code][2] + '">' + SHI[code][0] + '<small>' + SHI[code][1] + '</small></div>';
             return '<td class="mg-cell" data-r="' + ri + '" data-c="' + ci + '" style="cursor:pointer">' + inner + '</td>';
           }).join('') + '</tr>';
         }).join('');
       }
-      document.getElementById('gridBody').addEventListener('click', function (e) {
-        var td = e.target.closest('.mg-cell'); if (!td) return;
-        var r = +td.dataset.r, c = +td.dataset.c;
-        var cur = grid[r][c], idx = ORDER.indexOf(cur);
-        grid[r][c] = ORDER[(idx + 1) % ORDER.length];
-        renderGrid(); renderKpis();
-      });
       function renderSales() {
-        document.getElementById('salesBody').innerHTML = STAFF.slice().sort(function (a, b) { return b.sales - a.sales; }).map(function (s) {
-          var pct = Math.round(s.sales / s.target * 100), done = pct >= 100;
+        var set = SH.settings();
+        document.getElementById('salesBody').innerHTML = STAFF.map(function (s, i) { return { s: s, i: i }; }).sort(function (a, b) { return b.s.sales - a.s.sales; }).map(function (x) {
+          var s = x.s, b = SH.breakdownFor(x.i), pct = Math.round(s.sales / s.target * 100), done = pct >= 100;
+          var lab = '<div class="sl-lab"><div class="sl-lab__r"><span>基本給</span><b>' + yen(b.base) + '</b></div>'
+            + (set.minashi ? '<div class="sl-lab__r"><span>みなし残業手当</span><b>' + yen(b.minashi) + '</b></div>' : '')
+            + (set.zangyo ? '<div class="sl-lab__r"><span>残業手当 <span style="color:var(--ink-3)">(' + b.otHours + 'h)</span></span><b>' + yen(b.zangyo) + '</b></div>' : '')
+            + '<div class="sl-lab__r tot"><span>人件費 計</span><b>' + yen(b.total) + '</b></div></div>';
+          var meta = '<div class="sl-meta"><span>指名 <b>' + s.shimei + '%</b></span><span>客単価 <b>' + yen(s.kyaku) + '</b></span><span>店販 <b>' + s.tenpan + '%</b></span>'
+            + (set.yukyu ? '<span>有給消化 <b>' + b.yukyu + '日</b></span>' : '') + '</div>';
           return '<div class="sl-card"><div class="sl-top"><span class="sl-name">' + s.n + ' <small>' + s.role + '</small></span><span class="sl-amt">' + yen(s.sales) + '</span></div>'
             + '<div class="sl-bar"><i style="width:' + Math.min(100, pct) + '%;background:' + (done ? 'var(--stock-in)' : 'var(--gold)') + '"></i></div>'
-            + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3);margin-bottom:8px"><span>目標 ' + yen(s.target) + '</span><span style="font-weight:800;color:' + (done ? 'var(--stock-in)' : 'var(--ink-2)') + '">達成 ' + pct + '%' + (done ? ' 🎉' : '') + '</span></div>'
-            + '<div class="sl-meta"><span>指名 <b>' + s.shimei + '%</b></span><span>客単価 <b>' + yen(s.kyaku) + '</b></span><span>店販 <b>' + s.tenpan + '%</b></span></div></div>';
+            + '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink-3)"><span>目標 ' + yen(s.target) + '</span><span style="font-weight:800;color:' + (done ? 'var(--stock-in)' : 'var(--ink-2)') + '">達成 ' + pct + '%' + (done ? ' 🎉' : '') + '</span></div>'
+            + lab + meta + '</div>';
         }).join('');
       }
-      renderKpis(); renderGrid(); renderSales();
+      function renderAll() { renderKpis(); renderSet(); renderGrid(); renderSales(); }
+      document.getElementById('gridBody').addEventListener('click', function (e) {
+        var td = e.target.closest('.mg-cell'); if (!td) return;
+        var r = +td.dataset.r, c = +td.dataset.c, cur = SH.grid()[r][c];
+        SH.setCell(r, c, ORDER[(ORDER.indexOf(cur) + 1) % ORDER.length]);
+        renderGrid(); renderKpis(); renderSales();
+      });
+      document.getElementById('lbSet').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-set]'); if (!b) return;
+        var k = b.dataset.set; SH.setSetting(k, !SH.settings()[k]);
+        renderSet(); renderKpis(); renderSales();
+        toast('労務設定を保存しました');
+      });
+      renderAll();
     })();
   </script>
 </body>
