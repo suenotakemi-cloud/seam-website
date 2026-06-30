@@ -1822,6 +1822,16 @@ function pickMustPlusOne(products, answers, scores) {
   return matched;
 }
 
+/* ---------- OVEREXPOSED_PENALTY — 露出過多の定番に軽い表示ペナルティ ----------
+   1000件検証で「どの診断でも前列に出すぎる」と判明した定番商品。
+   ロジックの適合率は高いので削除はせず、僅差のとき多様な候補が上がるよう
+   表示スコアだけ少し引く（アフィニティ+45/レスキュー+35には負けない小幅）。 */
+const OVEREXPOSED_PENALTY = {
+  'wella-ultimerepair-sh':    8,   // アルタイム R シャンプー(常勝シャンプー)
+  'pjoli-offmode-dryshampoo': 14,  // PJOLI ドライシャンプー(Top3に827回)
+  'aujua-agingspa-sh':        12,  // Aujua エイジングスパ クリアフォーム(319回)
+};
+
 /* ---------- pickDeepProducts — カテゴリ別ケア処方 (ルーティン順) ---------- */
 function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   const userTags  = buildUserTags(answers, scores);
@@ -2021,9 +2031,11 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     const concernAffinity = Math.min(concernCap, concernHits * concernUnit);
     // 補助ブランド全体に微小な減点(メインブランドを優先するため)
     const supplementPenalty = supp ? 6 : 0;
+    // 露出過多の定番への軽い表示ペナルティ(僅差なら別候補へ譲る)
+    const overexp = OVEREXPOSED_PENALTY[p.id] || 0;
     return {
       p,
-      s: Math.max(0, base + deep + finish + bleach + dmgrep + affinity + concernAffinity - penalty - supplementPenalty),
+      s: Math.max(0, base + deep + finish + bleach + dmgrep + affinity + concernAffinity - penalty - supplementPenalty - overexp),
       deepCat: deepCategoryForProduct(p),
       isAffinity: affinity > 0 || concernAffinity > 0 || bleach > 0,
       isSupplementary: supp,
@@ -3195,51 +3207,52 @@ function DeepAltsToggle({ alts, best, category = null }) {
   );
 }
 
-function DeepProductSection({ deepResult, seamData, answers, scores }) {
-  if (!deepResult || !seamData) return null;
-  const { blocks, hardRules } = deepResult;
-  const totalCount = Object.values(blocks).reduce((acc, arr) => acc + arr.length, 0);
-  if (totalCount === 0) return null;
+/* ---------- 優先課題 & 判定理由 (主訴を先に見せる) ---------- */
+const _CONCERN_LABEL = {
+  dry:'乾燥', frizz:'広がり', wave:'うねり・くせ', rough:'パサつき', tangle:'絡まり',
+  noShine:'ツヤ不足', split:'枝毛・切れ毛', damage:'ダメージ', gummy:'ゴム状の傷み',
+  colorFade:'カラーの色落ち', grayFade:'白髪染めの色落ち',
+  scalpDry:'頭皮の乾燥', scalpOily:'頭皮のベタつき', thinning:'抜け毛・細毛',
+};
+function _heatOn(a, s) {
+  return (Array.isArray(a.tools) && (a.tools.includes('ironDaily') || a.tools.includes('curlerDaily')))
+    || a.temp === 't180' || a.temp === 't200'
+    || (a.straighten && a.straighten !== 'none')
+    || (s.heatDamage || 0) >= 2;
+}
+// 今回の優先課題(主訴)を最大3つ。強い履歴(ブリーチ→熱)を先に、次にユーザーが選んだ悩み。
+function buildPriorityConcerns(answers, scores) {
+  const a = answers || {}, s = scores || {};
+  const cs = Array.isArray(a.concerns) ? a.concerns : [];
+  const out = [], seen = new Set();
+  const push = (label) => { if (label && !seen.has(label)) { seen.add(label); out.push(label); } };
+  if ((s.bleachHistory || 0) >= 3) push('ブリーチ毛の傷み');
+  if (_heatOn(a, s)) push('高温スタイリングの熱');
+  for (const c of cs) push(_CONCERN_LABEL[c]);
+  if ((s.colorFade || 0) >= 3) push('カラーの退色');
+  if ((s.dryness || 0) >= 3) push('乾燥');
+  return out.slice(0, 3);
+}
+// 「なぜこの方向か」を1行で。髪格は固定でも履歴で処方を出し分けていることを言い切る。
+function buildVerdictLine(answers, scores) {
+  const a = answers || {}, s = scores || {};
+  const cs = Array.isArray(a.concerns) ? a.concerns : [];
+  const heat = _heatOn(a, s), bleach = (s.bleachHistory || 0) >= 3;
+  if (bleach || (s.damage || 0) >= 6 || heat) {
+    const ks = [bleach ? 'ブリーチ歴' : null, heat ? '高温スタイリング' : null].filter(Boolean).join('と') || '強いダメージ';
+    return `髪質タイプは変わりませんが ${ks}が重なるため 軽さより補修を優先しました`;
+  }
+  if (cs.includes('frizz') || cs.includes('wave') || (s.frizz || 0) >= 3) return 'うねり・広がりをまとめることを優先した処方です';
+  if (cs.includes('scalpDry') || cs.includes('scalpOily') || (s.scalpDryness || 0) >= 2 || (s.scalpOiliness || 0) >= 2) return '頭皮環境を整えることから始める処方です';
+  if ((s.dryness || 0) >= 3 || cs.includes('dry') || cs.includes('noShine')) return '乾燥とツヤ不足のうるおいケアを優先した処方です';
+  return '今の髪の状態に合わせて 土台から順に整える処方です';
+}
 
-  // 悩み連動ゲート: マスクはダメージがある方だけ / スカルプは頭皮・ボリュームの悩みがある方だけ
-  const _cs = (answers && Array.isArray(answers.concerns)) ? answers.concerns : [];
-  const _sc = scores || {};
-  const needMask  = (_sc.damage || 0) >= 2 || (_sc.bleachHistory || 0) > 0 || ['damage','split','rough','tangle'].some(v => _cs.includes(v));
-  const needScalp = (_sc.scalpDryness || 0) > 0 || (_sc.scalpOiliness || 0) > 0 || (_sc.volumeLoss || 0) > 0 || (_sc.aging || 0) > 0 || ['scalpDry','scalpOily','thinning','topFlat','volumeDown'].some(v => _cs.includes(v));
-
-  // 炭酸/スクラブの「週数回スペシャル洗浄」は、ベタつき・根元ぺたんの方にだけ出す(乾燥頭皮には押し付けない)
-  const needCleanse = (_sc.scalpOiliness || 0) > 0 || (_sc.volumeLoss || 0) > 0 || ['scalpOily','topFlat','volumeDown'].some(v => _cs.includes(v));
-
-  // ルーティン順: SH → 週数回スペシャル洗浄 → TR → アウトバス → マスク → スカルプ → スタイリング → サロン
-  const orderedBlocks = ['shampoo','specialCleanse','treatment','outbath','mask','scalp','finish','salon']
-    .map(id => ({ ...(DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}), items: blocks[id] || [] }))
-    .filter(b => b.items.length > 0)
-    .filter(b => (b.id !== 'mask' || needMask) && (b.id !== 'scalp' || needScalp) && (b.id !== 'specialCleanse' || needCleanse));
-  const shownCount = orderedBlocks.reduce((acc, b) => acc + b.items.length, 0);
-
+/* ---------- DeepFullBreakdown — ケア処方の全カテゴリ(折りたたみ内に表示) ---------- */
+function DeepFullBreakdown({ orderedBlocks, hardRules }) {
   return (
-    <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay:'300ms' }}>
-      <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
-        <div>
-          <p className="font-mono tracking-widest2 text-[11px] uppercase text-gold">— Deep Match</p>
-          <p className="mt-3 text-[12.5px] sm:text-[13px] text-charcoal/65 leading-snug">診断から導き出した</p>
-          <h2 className="mt-1.5 font-serif text-[26px] sm:text-[34px] text-ink leading-snug">
-            あなただけのケア処方
-          </h2>
-        </div>
-        <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55 pt-1">
-          {shownCount} item{shownCount > 1 ? 's' : ''}
-        </span>
-      </div>
-
-      {/* さりげない安心感バッジ — 全製品がSEAMで揃う */}
-      <div className="mt-3 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/55">
-        <span className="w-1 h-1 rounded-full bg-gold" />
-        <span>All available at SEAM</span>
-      </div>
-
-      {/* ブランド横断選定の明示 */}
-      <p className="mt-3 text-[12px] sm:text-[12.5px] text-charcoal/70 leading-[1.9] max-w-xl">
+    <div>
+      <p className="mt-5 text-[12px] sm:text-[12.5px] text-charcoal/70 leading-[1.9] max-w-xl">
         140+ブランドから銘柄を問わず横断して選定しています<br />
         同じケア方針のまま上質な候補や手頃な候補とも比較できます
       </p>
@@ -3253,7 +3266,6 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
         </div>
       )}
 
-      {/* ケアセット概要 — ゲームのローテーション/ロードアウト風スロット表示 */}
       {orderedBlocks.length > 1 && (
         <div className="mt-6 rounded-[2px] border border-gold/30 bg-white/60 px-4 py-3.5">
           <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold mb-2.5">— Your Care Set</p>
@@ -3294,6 +3306,123 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
             })()}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function DeepProductSection({ deepResult, seamData, answers, scores }) {
+  const [showAll, setShowAll] = useState(false);
+  if (!deepResult || !seamData) return null;
+  const { blocks, hardRules } = deepResult;
+  const totalCount = Object.values(blocks).reduce((acc, arr) => acc + arr.length, 0);
+  if (totalCount === 0) return null;
+
+  // 悩み連動ゲート: マスクはダメージがある方だけ / スカルプ・炭酸は"実際の頭皮・ボリュームの悩み"がある方だけ。
+  // (白髪染め由来の aging だけでスカルプを前に出さない＝主訴とのズレを抑える。1000件検証フィードバック対応)
+  const _cs = (answers && Array.isArray(answers.concerns)) ? answers.concerns : [];
+  const _sc = scores || {};
+  const _ut = (deepResult.userTags && Array.isArray(deepResult.userTags.state)) ? deepResult.userTags.state : [];
+  const _forcedScalp = _ut.includes('female_precedia_must') || _ut.includes('gray_thick_grancare_must');
+  const needMask  = (_sc.damage || 0) >= 2 || (_sc.bleachHistory || 0) > 0 || ['damage','split','rough','tangle'].some(v => _cs.includes(v));
+  const needScalp = (_sc.scalpDryness || 0) >= 2 || (_sc.scalpOiliness || 0) >= 2 || ['scalpDry','scalpOily','thinning','topFlat','volumeDown'].some(v => _cs.includes(v)) || _forcedScalp;
+  const needCleanse = (_sc.scalpOiliness || 0) >= 2 || ['scalpOily','topFlat','volumeDown'].some(v => _cs.includes(v));
+
+  // ルーティン順: SH → 週数回スペシャル洗浄 → TR → アウトバス → マスク → スカルプ → スタイリング → サロン
+  const orderedBlocks = ['shampoo','specialCleanse','treatment','outbath','mask','scalp','finish','salon']
+    .map(id => ({ ...(DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}), items: blocks[id] || [] }))
+    .filter(b => b.items.length > 0)
+    .filter(b => (b.id !== 'mask' || needMask) && (b.id !== 'scalp' || needScalp) && (b.id !== 'specialCleanse' || needCleanse));
+  const shownCount = orderedBlocks.reduce((acc, b) => acc + b.items.length, 0);
+
+  // 主訴(優先課題)と判定理由
+  const priorityConcerns = buildPriorityConcerns(answers, scores);
+  const verdictLine = buildVerdictLine(answers, scores);
+
+  // 「まず、この3本」— カテゴリ横断でベストを集め、シャンプー(土台)を先頭にしつつ上位3本
+  const firstThree = (() => {
+    const bests = orderedBlocks.map(b => {
+      const best = deepPriceTrio(b.items).best;
+      return best ? { item: best, category: b.id, blockTitle: b.title } : null;
+    }).filter(Boolean);
+    const out = [];
+    const shIdx = bests.findIndex(x => x.category === 'shampoo');
+    if (shIdx >= 0) out.push(bests.splice(shIdx, 1)[0]);
+    bests.sort((x, y) => (y.item.s || 0) - (x.item.s || 0));
+    for (const b of bests) { if (out.length >= 3) break; out.push(b); }
+    return out.slice(0, 3);
+  })();
+  const firstRoles = ['まず変えるなら', '効き目を支える', '仕上げに'];
+
+  return (
+    <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay:'300ms' }}>
+      <div className="mb-3">
+        <p className="font-mono tracking-widest2 text-[11px] uppercase text-gold">— Deep Match</p>
+        <p className="mt-3 text-[12.5px] sm:text-[13px] text-charcoal/65 leading-snug">診断から導き出した</p>
+        <h2 className="mt-1.5 font-serif text-[26px] sm:text-[34px] text-ink leading-snug">
+          あなただけのケア処方
+        </h2>
+      </div>
+
+      {/* ① 今回の優先課題 — 主訴を先に見せる */}
+      {priorityConcerns.length > 0 && (
+        <div className="mt-5 rounded-[2px] border border-gold/35 bg-white/70 px-4 sm:px-5 py-4">
+          <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">— Priority · 今回の優先課題</p>
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {priorityConcerns.map((c, i) => (
+              <span key={i} className="inline-flex items-center gap-1.5 bg-cream border border-gold/30 rounded-full pl-2 pr-3 py-1">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gold text-white font-mono text-[9px] nums" style={{ lineHeight: 1 }}>{i + 1}</span>
+                <span className="font-serif text-[13px] text-ink whitespace-nowrap">{c}</span>
+              </span>
+            ))}
+          </div>
+          <p className="mt-3 text-[12px] sm:text-[12.5px] text-charcoal/80 leading-[1.85]">{verdictLine}</p>
+        </div>
+      )}
+
+      {/* ② まず、この3本 — 最初に刺す要点 */}
+      {firstThree.length > 0 && (
+        <div className="mt-7">
+          <div className="flex items-end justify-between gap-3 mb-3">
+            <div>
+              <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">— Start here</p>
+              <h3 className="mt-1.5 font-serif text-[20px] sm:text-[23px] text-ink leading-snug">まず この3本から</h3>
+            </div>
+            <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 pt-1 whitespace-nowrap nums">3 / {shownCount}</span>
+          </div>
+          <div className="space-y-4">
+            {firstThree.map((f, i) => (
+              <div key={f.item.p.id}>
+                <p className="mb-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/55">
+                  {String(i + 1).padStart(2, '0')} · {firstRoles[i] || 'おすすめ'} — {f.blockTitle}
+                </p>
+                <DeepBestCard item={f.item} category={f.category} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ③ ケア処方をすべて見る(折りたたみ) */}
+      <div className="mt-8">
+        <button type="button" onClick={() => setShowAll(v => !v)} aria-expanded={showAll}
+          className="w-full group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/50 via-white to-cream/50 rounded-[2px] px-4 sm:px-5 py-3.5 hover:border-gold active:scale-[0.99] transition-all min-h-[52px] no-print">
+          <span className="flex items-center gap-3 min-w-0">
+            <span aria-hidden className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-gold text-white text-[15px] leading-none">{showAll ? '−' : '＋'}</span>
+            <span className="text-left min-w-0">
+              <span className="block font-serif text-[13.5px] sm:text-[14.5px] text-ink leading-snug">{showAll ? '閉じる' : 'ケア処方をすべて見る'}</span>
+              <span className="block mt-0.5 text-[10.5px] sm:text-[11px] text-charcoal/60">シャンプーから仕上げまで ルーティン順の全候補</span>
+            </span>
+          </span>
+          <span className="shrink-0 font-mono tracking-widest2 text-[9.5px] uppercase text-gold whitespace-nowrap nums">{shownCount} items</span>
+        </button>
+        {showAll && <DeepFullBreakdown orderedBlocks={orderedBlocks} hardRules={hardRules} />}
+      </div>
+
+      {/* さりげない安心感バッジ — 全製品がSEAMで揃う */}
+      <div className="mt-6 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/55">
+        <span className="w-1 h-1 rounded-full bg-gold" />
+        <span>All available at SEAM</span>
       </div>
     </section>
   );
