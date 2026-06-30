@@ -55,6 +55,9 @@
 
   function build() {
     var L = LABELS[lang()] || LABELS.ja;
+    // 旧・静的な下部ナビ(.bottom-nav)が残っているページでは撤去する
+    // （app-tabbar と二重に表示される＝スクロール時に下部タブが二重になる原因）
+    try { Array.prototype.forEach.call(document.querySelectorAll('nav.bottom-nav'), function (n) { n.parentNode && n.parentNode.removeChild(n); }); } catch (e) {}
     var nav = document.getElementById('seam-tabbar');
     if (!nav) {
       nav = document.createElement('nav');
@@ -122,8 +125,8 @@
     s.id = 'seam-tabbar-style';
     s.textContent = [
       '#seam-tabbar{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;',
-      'background:rgba(255,255,255,0.92);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);',
-      'border-top:1px solid #E2DDD3;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 20px rgba(26,24,21,0.05);}',
+      'background:rgba(255,255,255,0.97);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);',
+      'border-top:1.5px solid #D8CFBF;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -6px 24px rgba(26,24,21,0.10);}',
       '#seam-tabbar .seam-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;',
       'padding:9px 2px 8px;text-decoration:none;color:#8C7A63;transition:color .2s;-webkit-tap-highlight-color:transparent;cursor:pointer;}',
       '#seam-tabbar .seam-tab svg{width:22px;height:22px;opacity:.85;}',
