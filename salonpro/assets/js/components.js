@@ -452,7 +452,7 @@
     ev.push(rec); if (ev.length > 300) ev = ev.slice(ev.length - 300); write(EV, ev);
   }
   // 自動ページビュー（動線）。運営/スタッフ系ページは顧客行動に含めない。
-  var SKIP = /admin|pos|inventory|dealer-settings|staffmate|karte|rep\.html|owner\.html/;
+  var SKIP = /admin|pos|inventory|dealer-settings|staffmate|karte|rep\.html|owner\.html|manage\.html|me\.html/;
   if (!SKIP.test(page())) {
     var ref = ''; try { var rr = document.referrer; if (rr && new URL(rr).hostname === location.hostname) ref = new URL(rr).pathname.split('/').pop(); } catch (e) {}
     log('view', { ref: ref });

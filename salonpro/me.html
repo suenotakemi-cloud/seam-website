@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#06c755">
+  <title>マイ売上＆シフト｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=66">
+  <link rel="stylesheet" href="assets/css/base.css?v=66">
+  <link rel="stylesheet" href="assets/css/components.css?v=66">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 36px; }
+    .me-top { background: #06c755; color: #fff; }
+    .me-top__in { display: flex; align-items: center; gap: 9px; height: 50px; padding: 0 16px; max-width: 520px; margin-inline: auto; }
+    .me-top__logo { font-size: 15px; font-weight: 800; }
+    .me-top__tag { font-size: 11px; background: rgba(255,255,255,.22); border-radius: 999px; padding: 3px 9px; font-weight: 700; }
+    .me-top__tag--r { margin-left: auto; background: rgba(255,255,255,.16); }
+    .me-wrap { max-width: 520px; margin-inline: auto; padding: 14px; }
+    .me-pick { display: flex; align-items: center; gap: 9px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 13px; margin-bottom: 14px; }
+    .me-pick label { font-size: 12px; font-weight: 700; color: var(--ink-2); flex: none; }
+    .me-pick select { flex: 1; border: 1px solid var(--line-strong); border-radius: 8px; padding: 8px 10px; font-size: 14px; font-weight: 800; background: #fff; }
+    .me-hero { background: var(--dark); color: #fff; border-radius: var(--r-lg); padding: 20px; margin-bottom: 14px; }
+    .me-hero__l { font-size: 11.5px; color: rgba(255,255,255,.65); }
+    .me-hero__v { font-family: var(--font-num); font-size: 38px; font-weight: 900; line-height: 1.1; margin-top: 2px; }
+    .me-hero__sub { display: flex; justify-content: space-between; font-size: 11.5px; color: rgba(255,255,255,.7); margin: 14px 0 6px; }
+    .me-hero__bar { height: 12px; border-radius: 999px; background: rgba(255,255,255,.16); overflow: hidden; } .me-hero__bar i { display: block; height: 100%; border-radius: 999px; background: var(--gold); }
+    .me-hero__msg { font-size: 12.5px; font-weight: 800; margin-top: 11px; color: var(--gold); }
+    .me-rank { display: flex; align-items: center; gap: 13px; background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: var(--r-lg); padding: 14px 16px; margin-bottom: 14px; }
+    .me-rank__n { flex: none; width: 50px; height: 50px; border-radius: 14px; background: var(--gold); color: #fff; display: flex; align-items: baseline; justify-content: center; font-family: var(--font-num); font-weight: 900; font-size: 24px; padding-top: 9px; }
+    .me-rank__n small { font-size: 12px; font-weight: 800; }
+    .me-rank__b { flex: 1; } .me-rank__t { font-size: 14px; font-weight: 900; } .me-rank__s { font-size: 11.5px; color: var(--ink-2); margin-top: 2px; }
+    .me-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: 14px; }
+    .me-stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 8px; text-align: center; }
+    .me-stat__v { font-family: var(--font-num); font-size: var(--fs-20); font-weight: 800; } .me-stat__l { font-size: 10.5px; color: var(--ink-2); margin-top: 2px; }
+    .me-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; margin-bottom: 14px; }
+    .me-card__t { font-size: 13.5px; font-weight: 900; margin-bottom: 11px; }
+    .me-today { display: flex; align-items: center; gap: 13px; }
+    .me-today__ic { flex: none; width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .me-today__b { flex: 1; } .me-today__t { font-size: 15px; font-weight: 900; } .me-today__s { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+    .me-week { display: flex; flex-direction: column; gap: 2px; }
+    .me-wk { display: flex; align-items: center; gap: 12px; padding: 9px 4px; border-top: 1px solid var(--line-2); font-size: 13px; }
+    .me-wk:first-child { border-top: 0; }
+    .me-wk__d { flex: none; width: 64px; font-weight: 800; } .me-wk__d.wend { color: #c0392b; } .me-wk__d small { color: var(--ink-3); font-weight: 600; margin-left: 4px; }
+    .me-wk__s { flex: 1; font-weight: 700; } .me-wk__time { font-size: 11.5px; color: var(--ink-3); }
+    .me-wk--off .me-wk__s { color: var(--ink-3); font-weight: 600; }
+    .me-pill { display: inline-block; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 3px 10px; }
+    .me-pill--a { background: #e9f1fb; color: #2f5fa8; } .me-pill--m { background: var(--gold-soft); color: var(--gold-strong); } .me-pill--p { background: #efe7f7; color: #6e3f9e; }
+    .me-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; text-align: center; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="me-top"><div class="me-top__in"><span class="me-top__logo">SalonPro</span><span class="me-top__tag">マイ売上＆シフト</span><span class="me-top__tag me-top__tag--r">LINEミニアプリ</span></div></div>
+  <div class="me-wrap">
+    <div class="me-pick"><label>あなた</label><select id="meSel"></select></div>
+    <div id="meBody"></div>
+    <div class="me-note">※ デモ表示です。本番ではLINEログインで本人のデータだけを表示し、売上（予約・POS）とシフトが自動で反映されます。</div>
+  </div>
+
+  <script src="assets/js/catalog.js?v=66"></script>
+  <script src="assets/js/data.js?v=66"></script>
+  <script src="assets/js/store.js?v=66"></script>
+  <script src="assets/js/components.js?v=66"></script>
+  <script>
+    (function () {
+      var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
+      function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+      var STAFF = [
+        { n: '田中 美咲', role: 'ディレクター', sales: 591000, target: 600000, shimei: 67, kyaku: 9800, tenpan: 27 },
+        { n: '佐藤 健', role: 'トップスタイリスト', sales: 524000, target: 520000, shimei: 51, kyaku: 9900, tenpan: 26 },
+        { n: '高橋 駿', role: 'スタイリスト', sales: 417000, target: 400000, shimei: 47, kyaku: 13000, tenpan: 24 },
+        { n: '鈴木 彩', role: 'スタイリスト', sales: 389000, target: 360000, shimei: 77, kyaku: 16900, tenpan: 20 },
+        { n: '渡辺 結衣', role: 'スタイリスト', sales: 341000, target: 350000, shimei: 81, kyaku: 12800, tenpan: 23 },
+        { n: '伊藤 蓮', role: 'ジュニア', sales: 191000, target: 200000, shimei: 41, kyaku: 9700, tenpan: 18 }
+      ];
+      var DAYS = [['月', '6/30'], ['火', '7/1'], ['水', '7/2'], ['木', '7/3'], ['金', '7/4'], ['土', '7/5'], ['日', '7/6']];
+      var SH = { a: ['早番', '9:00–18:00', 'me-pill--a', '🌅'], m: ['中番', '10:00–19:00', 'me-pill--m', '☀️'], p: ['遅番', '11:00–20:00', 'me-pill--p', '🌆'] };
+      var GRID = STAFF.map(function (s, i) { var rnd = mulberry32(700 + i * 17); return DAYS.map(function () { return rnd() < 0.26 ? 'off' : ['a', 'm', 'p'][Math.floor(rnd() * 3)]; }); });
+      var sorted = STAFF.map(function (s, i) { return { i: i, sales: s.sales }; }).sort(function (a, b) { return b.sales - a.sales; });
+      function rankOf(i) { return sorted.findIndex(function (x) { return x.i === i; }) + 1; }
+
+      var sel = document.getElementById('meSel');
+      sel.innerHTML = STAFF.map(function (s, i) { return '<option value="' + i + '">' + s.n + '（' + s.role + '）</option>'; }).join('');
+      sel.value = '3'; // 鈴木 彩（伸びている若手）を初期表示
+      sel.addEventListener('change', render);
+
+      function render() {
+        var i = +sel.value, s = STAFF[i], pct = Math.round(s.sales / s.target * 100), rest = Math.max(0, s.target - s.sales), done = pct >= 100;
+        var rank = rankOf(i), today = GRID[i][0], todayInfo = today === 'off' ? null : SH[today];
+        var weekHtml = DAYS.map(function (d, di) {
+          var code = GRID[i][di], off = code === 'off';
+          return '<div class="me-wk' + (off ? ' me-wk--off' : '') + '"><span class="me-wk__d' + (di >= 5 ? ' wend' : '') + '">' + d[0] + '<small>' + d[1] + '</small></span>'
+            + (off ? '<span class="me-wk__s">休み</span>' : '<span class="me-wk__s"><span class="me-pill ' + SH[code][2] + '">' + SH[code][0] + '</span></span><span class="me-wk__time">' + SH[code][1] + '</span>') + '</div>';
+        }).join('');
+        document.getElementById('meBody').innerHTML =
+          '<div class="me-hero"><div class="me-hero__l">' + s.n + ' さんの 今月売上</div><div class="me-hero__v">' + yen(s.sales) + '</div>'
+          + '<div class="me-hero__sub"><span>目標 ' + yen(s.target) + '</span><span>達成 ' + pct + '%' + (done ? ' 🎉' : '') + '</span></div>'
+          + '<div class="me-hero__bar"><i style="width:' + Math.min(100, pct) + '%' + (done ? ';background:#06c755' : '') + '"></i></div>'
+          + '<div class="me-hero__msg">' + (done ? '目標達成おめでとうございます！🎉' : 'あと ' + yen(rest) + ' で今月の目標達成！') + '</div></div>'
+          + '<div class="me-rank"><div class="me-rank__n">' + rank + '<small>位</small></div><div class="me-rank__b"><div class="me-rank__t">店内ランキング ' + rank + '位 / ' + STAFF.length + '名</div><div class="me-rank__s">' + (rank === 1 ? '店内トップ！この調子で✨' : (s.shimei >= 70 ? '指名率' + s.shimei + '%＝ファンが育っています👏' : '指名・店販を伸ばすと順位が上がります')) + '</div></div></div>'
+          + '<div class="me-stats"><div class="me-stat"><div class="me-stat__v">' + s.shimei + '%</div><div class="me-stat__l">指名率</div></div><div class="me-stat"><div class="me-stat__v">' + yen(s.kyaku) + '</div><div class="me-stat__l">客単価</div></div><div class="me-stat"><div class="me-stat__v">' + s.tenpan + '%</div><div class="me-stat__l">店販比率</div></div></div>'
+          + '<div class="me-card"><div class="me-card__t">今日のシフト（6/30 月）</div><div class="me-today"><span class="me-today__ic" style="background:' + (todayInfo ? 'var(--gold-soft)' : 'var(--surface-2)') + '">' + (todayInfo ? todayInfo[3] : '😴') + '</span><div class="me-today__b">' + (todayInfo ? '<div class="me-today__t">' + todayInfo[0] + '</div><div class="me-today__s">' + todayInfo[1] + '</div>' : '<div class="me-today__t">お休み</div><div class="me-today__s">ゆっくり休んでください</div>') + '</div></div></div>'
+          + '<div class="me-card"><div class="me-card__t">今週のシフト</div><div class="me-week">' + weekHtml + '</div></div>';
+      }
+      render();
+    })();
+  </script>
+</body>
+</html>
