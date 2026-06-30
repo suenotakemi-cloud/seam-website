@@ -3406,7 +3406,7 @@ function TopBar({ step, total }) {
                 </button>
               ))}
             </div>
-            <p className="mt-4 text-[11px] text-charcoal/45 text-center leading-relaxed">表示言語は順次対応予定です。</p>
+            <p className="mt-4 text-[11px] text-charcoal/45 text-center leading-relaxed">表示言語は順次対応予定です</p>
           </div>
         </div>
       )}
@@ -3479,10 +3479,10 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
             </span>
           </h1>
           <p className="mt-5 sm:mt-7 font-serif text-[19px] sm:text-[22px] text-ink leading-relaxed">
-            あなたの本当の髪に、出会う。
+            あなたの本当の髪に、出会う
           </p>
           <p className="mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal">
-            あなたの髪に残る“履歴”まで見て、今必要なヘアケアルーティンを提案します。
+            あなたの髪に残る“履歴”まで見て、今必要なヘアケアルーティンを提案します
           </p>
         </div>
 
