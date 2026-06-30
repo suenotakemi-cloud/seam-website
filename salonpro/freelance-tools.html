@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>フリーランス・ツール（面貸し按分・確定申告）｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=71">
+  <link rel="stylesheet" href="assets/css/base.css?v=71">
+  <link rel="stylesheet" href="assets/css/components.css?v=71">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .pa-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 720px; margin-inline: auto; }
+    .pa-top__logo { font-size: 17px; font-weight: 800; } .pa-top__logo b { color: var(--gold); }
+    .pa-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .pa-wrap { max-width: 720px; margin-inline: auto; padding: 16px; }
+    .pa-intro { font-size: 12.5px; color: var(--ink-3); line-height: 1.7; margin-bottom: 14px; }
+    .pa-tabs { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px; margin-bottom: 16px; }
+    .pa-tab { flex: 1; height: 40px; border: 0; border-radius: 999px; background: transparent; font-size: 12.5px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .pa-tab.is-on { background: var(--dark); color: #fff; }
+    .pa-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; margin-bottom: 14px; }
+    .pa-card__t { font-size: 14px; font-weight: 900; margin-bottom: 12px; }
+    .pa-card__t small { font-weight: 600; color: var(--ink-3); font-size: 11px; margin-left: 6px; }
+    .pa-in { display: flex; align-items: center; border: 1px solid var(--line-3); border-radius: 12px; padding: 4px 14px; }
+    .pa-in span.u { color: var(--ink-3); font-weight: 700; flex: none; }
+    .pa-in input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 11px 6px; font-size: 20px; font-weight: 900; font-family: var(--font-num); text-align: right; background: transparent; }
+    .pa-slider { width: 100%; margin: 6px 0 2px; accent-color: var(--gold); }
+    .pa-meth { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pa-meth button { flex: 1 1 90px; height: 44px; border: 1px solid var(--line-3); border-radius: 11px; background: #fff; font-size: 12.5px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .pa-meth button.is-on { border-color: var(--gold); background: var(--gold-soft); color: var(--gold-strong); }
+    .pa-btn { width: 100%; height: 50px; border: 0; border-radius: var(--r-md); background: var(--gold); color: #fff; font-size: 14px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .pa-btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line-3); }
+    .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
+    .hidden { display: none !important; }
+
+    /* 按分の結果 */
+    .ft-split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .ft-box { border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px; }
+    .ft-box.you { border-color: var(--gold); background: var(--gold-soft); }
+    .ft-box__l { font-size: 11px; font-weight: 800; color: var(--ink-2); } .ft-box.you .ft-box__l { color: var(--gold-strong); }
+    .ft-box__v { font-family: var(--font-num); font-size: 24px; font-weight: 900; margin-top: 3px; } .ft-box.you .ft-box__v { color: var(--gold-strong); }
+    .ft-box__s { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; }
+    .ft-rows { margin-top: 4px; }
+    .ft-row { display: flex; justify-content: space-between; font-size: 12.5px; padding: 9px 0; border-top: 1px solid var(--line-2); color: var(--ink-2); }
+    .ft-row b { font-family: var(--font-num); color: var(--ink); font-weight: 800; }
+    .ft-row.sum { border-top: 2px solid var(--line-3); font-weight: 900; font-size: 14px; }
+    .ft-row.sum b { color: var(--gold-strong); }
+
+    /* 明細 */
+    .ft-list { margin-top: 8px; } .ft-li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--line-2); font-size: 12px; }
+    .ft-li:first-child { border-top: 0; } .ft-li__m { color: var(--ink-2); } .ft-li__a { font-family: var(--font-num); font-weight: 800; }
+
+    /* 確定申告 */
+    .ft-pl { width: 100%; border-collapse: collapse; }
+    .ft-pl td { padding: 10px 2px; border-top: 1px solid var(--line-2); font-size: 13px; }
+    .ft-pl tr:first-child td { border-top: 0; }
+    .ft-pl td.r { text-align: right; font-family: var(--font-num); font-weight: 800; white-space: nowrap; }
+    .ft-pl td.lbl { color: var(--ink-2); } .ft-pl td.sub { padding-left: 16px; color: var(--ink-3); font-size: 12px; }
+    .ft-pl tr.head td { font-weight: 900; color: var(--ink); }
+    .ft-pl tr.sum td { border-top: 2px solid var(--line-3); font-weight: 900; font-size: 15px; padding-top: 12px; }
+    .ft-pl tr.sum td.r { color: var(--gold-strong); }
+    .ft-hero { background: var(--dark); color: #fff; border-radius: var(--r-md); padding: 16px; text-align: center; margin-bottom: 14px; }
+    .ft-hero__l { font-size: 11.5px; color: rgba(255,255,255,.65); } .ft-hero__v { font-family: var(--font-num); font-size: 30px; font-weight: 900; color: var(--gold); margin-top: 3px; } .ft-hero__s { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 3px; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); }
+  </style>
+</head>
+<body>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon<b>Pro</b></span><span class="pa-top__tag">フリーランス・ツール</span></div></div>
+  <div class="pa-wrap">
+    <div class="pa-intro">面貸しの<b>売上按分</b>と<b>確定申告</b>を、売上データから自動で。個人事業主の「めんどう」をスマホで片付けます。</div>
+
+    <div class="pa-tabs">
+      <button class="pa-tab is-on" data-tab="split">面貸し按分</button>
+      <button class="pa-tab" data-tab="tax">確定申告</button>
+    </div>
+
+    <!-- 面貸し按分 -->
+    <div id="tab-split">
+      <div class="pa-card">
+        <div class="pa-card__t">面貸し売上の按分 <small>店との取り分を自動計算</small></div>
+        <label style="font-size:11.5px;font-weight:700;color:var(--ink-2)">今月の施術売上</label>
+        <div class="pa-in" style="margin:5px 0 14px"><span class="u">¥</span><input id="sales" type="number" inputmode="numeric" value="620000"></div>
+
+        <label style="font-size:11.5px;font-weight:700;color:var(--ink-2)">按分方式</label>
+        <div class="pa-meth" id="method" style="margin-top:6px"><button class="is-on" data-m="rate">歩合</button><button data-m="seat">席料固定</button><button data-m="hybrid">歩合＋席料</button></div>
+
+        <div id="rateWrap">
+          <label style="font-size:11.5px;font-weight:700;color:var(--ink-2)">店への歩合 <b id="rateLbl" style="color:var(--gold-strong)">50%</b></label>
+          <input id="rate" class="pa-slider" type="range" min="30" max="60" step="5" value="50">
+        </div>
+        <div id="seatWrap" class="hidden">
+          <label style="font-size:11.5px;font-weight:700;color:var(--ink-2)">席料（固定）</label>
+          <div class="pa-in" style="margin:5px 0 4px"><span class="u">¥</span><input id="seat" type="number" inputmode="numeric" value="100000"></div>
+        </div>
+
+        <div class="ft-split">
+          <div class="ft-box"><div class="ft-box__l">店への支払い</div><div class="ft-box__v" id="toStore">¥0</div><div class="ft-box__s" id="toStoreS"></div></div>
+          <div class="ft-box you"><div class="ft-box__l">あなたの手取り</div><div class="ft-box__v" id="toYou">¥0</div><div class="ft-box__s">決済手数料 控除後</div></div>
+        </div>
+
+        <div class="ft-rows">
+          <div class="ft-row"><span>施術売上</span><b id="rSales"></b></div>
+          <div class="ft-row"><span>店への支払い（面貸し）</span><b id="rStore"></b></div>
+          <div class="ft-row"><span>決済手数料（2.9%）</span><b id="rFee"></b></div>
+          <div class="ft-row sum"><span>あなたの手取り</span><b id="rYou"></b></div>
+        </div>
+      </div>
+
+      <div class="pa-card">
+        <div class="pa-card__t">今月の明細 <small>サンプル</small></div>
+        <div class="ft-list" id="liList"></div>
+      </div>
+    </div>
+
+    <!-- 確定申告 -->
+    <div id="tab-tax" class="hidden">
+      <div class="ft-hero"><div class="ft-hero__l">今年の所得金額（収入 − 経費）</div><div class="ft-hero__v" id="income">¥0</div><div class="ft-hero__s" id="incomeS">確定申告の事業所得（青色申告）</div></div>
+
+      <div class="pa-card">
+        <div class="pa-card__t">自動集計 <small>売上・決済・経費から</small></div>
+        <table class="ft-pl">
+          <tr class="head"><td class="lbl">事業収入（施術売上）</td><td class="r" id="tIncome"></td></tr>
+          <tr class="head"><td class="lbl">経費</td><td class="r" id="tExpense"></td></tr>
+          <tr><td class="sub">材料費（仕入）</td><td class="r" id="tMat"></td></tr>
+          <tr><td class="sub">面貸し（席料・歩合）</td><td class="r" id="tRent"></td></tr>
+          <tr><td class="sub">決済手数料</td><td class="r" id="tFee"></td></tr>
+          <tr><td class="sub">その他（消耗品ほか）</td><td class="r" id="tOther"></td></tr>
+          <tr class="sum"><td class="lbl">所得金額</td><td class="r" id="tIncomeNet"></td></tr>
+        </table>
+        <button class="pa-btn" id="csvBtn" style="margin-top:16px">確定申告データを書き出す（CSV）</button>
+        <a class="pa-btn ghost" href="freelance.html" style="margin-top:10px">プラン・料金を見る</a>
+        <div class="pa-note">※ 金額はデモの自動集計です。本番は決済・予約・仕入の確定データから集計します。<b>所得金額＝収入−経費</b>までを書き出します。税額・控除は会計ソフト／税理士で確定してください（本ツールは税務アドバイスではありません）。</div>
+      </div>
+    </div>
+
+    <div class="pa-note" style="margin-top:4px">※ プロトタイプ。決済はモック（実カード番号なし）。按分・集計はデモデータでの試算です。</div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/components.js?v=71"></script>
+  <script>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
+      var FEE = 2.9; // スターター決済率
+      var MAT = 56000, OTHER = 18000; // デモ：月の材料費・その他経費
+      // サンプル明細（今月）
+      var LINES = [
+        ['カット＋カラー', 13200], ['カット＋パーマ', 14300], ['カラー＋トリートメント', 11000],
+        ['カット', 6600], ['縮毛矯正', 22000], ['カラーリタッチ', 8800]
+      ];
+
+      // タブ
+      [].forEach.call(document.querySelectorAll('.pa-tab'), function (b) {
+        b.addEventListener('click', function () {
+          [].forEach.call(document.querySelectorAll('.pa-tab'), function (x) { x.classList.toggle('is-on', x === b); });
+          ['split', 'tax'].forEach(function (id) { $('tab-' + id).classList.toggle('hidden', id !== b.dataset.tab); });
+          if (b.dataset.tab === 'tax') renderTax();
+        });
+      });
+
+      // 按分方式
+      var method = 'rate';
+      $('method').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-m]'); if (!b) return; method = b.dataset.m;
+        [].forEach.call(this.children, function (x) { x.classList.toggle('is-on', x === b); });
+        $('rateWrap').classList.toggle('hidden', method === 'seat');
+        $('seatWrap').classList.toggle('hidden', method === 'rate');
+        renderSplit();
+      });
+
+      function storeShare(sales) {
+        var rate = +$('rate').value, seat = Math.max(0, parseInt($('seat').value, 10) || 0);
+        if (method === 'rate') return Math.round(sales * rate / 100);
+        if (method === 'seat') return seat;
+        return seat + Math.round(sales * rate / 100); // hybrid
+      }
+      function storeShareLabel() {
+        var rate = +$('rate').value, seat = Math.max(0, parseInt($('seat').value, 10) || 0);
+        if (method === 'rate') return '歩合 ' + rate + '%';
+        if (method === 'seat') return '席料 ' + yen(seat);
+        return '席料' + yen(seat) + '＋歩合' + rate + '%';
+      }
+
+      function renderSplit() {
+        var sales = Math.max(0, parseInt($('sales').value, 10) || 0);
+        $('rateLbl').textContent = $('rate').value + '%';
+        var store = storeShare(sales), fee = Math.round(sales * FEE / 100), you = sales - store - fee;
+        $('toStore').textContent = yen(store); $('toStoreS').textContent = storeShareLabel();
+        $('toYou').textContent = yen(you);
+        $('rSales').textContent = yen(sales); $('rStore').textContent = '−' + yen(store);
+        $('rFee').textContent = '−' + yen(fee); $('rYou').textContent = yen(you);
+        // 明細
+        $('liList').innerHTML = LINES.map(function (l) { return '<div class="ft-li"><span class="ft-li__m">' + l[0] + '</span><span class="ft-li__a">' + yen(l[1]) + '</span></div>'; }).join('')
+          + '<div class="ft-li" style="border-top:2px solid var(--line-3)"><span class="ft-li__m" style="font-weight:800;color:var(--ink)">明細計（サンプル）</span><span class="ft-li__a">' + yen(LINES.reduce(function (a, b) { return a + b[1]; }, 0)) + '</span></div>';
+      }
+      ['sales', 'rate', 'seat'].forEach(function (id) { $(id).addEventListener('input', renderSplit); });
+      renderSplit();
+
+      // 確定申告（今月×12で年換算）
+      function taxData() {
+        var sales = Math.max(0, parseInt($('sales').value, 10) || 0);
+        var store = storeShare(sales), fee = Math.round(sales * FEE / 100);
+        var Y = 12;
+        var income = sales * Y, mat = MAT * Y, rent = store * Y, feeY = fee * Y, other = OTHER * Y;
+        var expense = mat + rent + feeY + other, net = income - expense;
+        return { income: income, mat: mat, rent: rent, feeY: feeY, other: other, expense: expense, net: net };
+      }
+      function renderTax() {
+        var d = taxData();
+        $('income').textContent = yen(d.net);
+        $('tIncome').textContent = yen(d.income); $('tExpense').textContent = '−' + yen(d.expense);
+        $('tMat').textContent = '−' + yen(d.mat); $('tRent').textContent = '−' + yen(d.rent);
+        $('tFee').textContent = '−' + yen(d.feeY); $('tOther').textContent = '−' + yen(d.other);
+        $('tIncomeNet').textContent = yen(d.net);
+      }
+
+      // CSV書き出し（クライアント側・デモ）
+      $('csvBtn').addEventListener('click', function () {
+        var d = taxData();
+        var rows = [
+          ['項目', '金額(円)'],
+          ['事業収入（施術売上）', d.income],
+          ['材料費（仕入）', -d.mat],
+          ['面貸し（席料・歩合）', -d.rent],
+          ['決済手数料', -d.feeY],
+          ['その他経費', -d.other],
+          ['経費合計', -d.expense],
+          ['所得金額', d.net]
+        ];
+        var csv = '﻿' + rows.map(function (r) { return r.join(','); }).join('\r\n');
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        var url = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = url; a.download = 'salonpro_確定申告データ_デモ.csv'; document.body.appendChild(a); a.click();
+        document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        var t = $('toast'); t.innerHTML = (window.SP && SP.svg ? SP.svg('checkc') : '✓') + 'CSVを書き出しました（デモ）';
+        t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 2200);
+      });
+    })();
+  </script>
+</body>
+</html>

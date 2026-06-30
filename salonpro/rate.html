@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1b1b1d">
   <title>実質料率ステータス｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=70">
-  <link rel="stylesheet" href="assets/css/base.css?v=70">
-  <link rel="stylesheet" href="assets/css/components.css?v=70">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=71">
+  <link rel="stylesheet" href="assets/css/base.css?v=71">
+  <link rel="stylesheet" href="assets/css/components.css?v=71">
   <style>
     body { background: var(--surface-2); padding-bottom: 40px; }
     .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
@@ -127,17 +127,32 @@
     </div>
 
     <a class="pa-btn" href="rate-calc.html">📊 菊地用 採算シミュレーターを開く</a>
-    <div class="pa-note">※「実質◯%」は、システム利用・仕入条件の達成時に適用される料率です（景品表示法に配慮）。料率・しきい値はデモ値で、本番は決済代行の確定料率・菊地の実原価で確定します。仕入率はゲーム性のためのデモ操作で、本番は実データと連動します。</div>
+    <div class="pa-note">※「実質◯%」は、システム利用・仕入条件の達成時に適用される料率です（景品表示法に配慮）。料率・しきい値はデモ値で、本番は決済代行の確定料率・菊地の実原価で確定します。今月の仕入はマイページの実績（デモ）と連携、カード決済は決済システムの実績（デモ）です。本番は決済・仕入の確定データと連動します。</div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/rate-model.js?v=70"></script>
-  <script src="assets/js/components.js?v=70"></script>
+  <script src="assets/js/data.js?v=71"></script>
+  <script src="assets/js/rate-model.js?v=71"></script>
+  <script src="assets/js/components.js?v=71"></script>
   <script>
     (function () {
       var R = SP.RATE, $ = function (id) { return document.getElementById(id); };
       var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
       var TIER = { best: { lbl: '最安料率を達成中 🎉', tag: '最安 1.9% 達成', cls: 't-best' }, mid: { lbl: 'あと一歩で最安', tag: 'あと一歩で最安', cls: 't-mid' }, std: { lbl: '標準料率です', tag: '標準料率', cls: 't-std' } };
+
+      // 実績データ連携（デモ）：今月の仕入を SP.REBATE.demoMonth（マイページと同じ値）から取得
+      (function () {
+        var dm = (window.SP && SP.REBATE && SP.REBATE.demoMonth) || null;
+        if (!dm) return;
+        var ws = Object.keys(dm).reduce(function (a, k) { return a + dm[k]; }, 0);
+        if (ws <= 0) return;
+        $('card').value = 5600000; $('ws').value = ws; // カード決済は決済システムの実績（デモ値）
+        var chip = document.createElement('div');
+        chip.style.cssText = 'display:inline-block;font-size:10.5px;font-weight:800;color:var(--gold-strong);background:var(--gold-soft);border:1px solid var(--gold-line);border-radius:999px;padding:3px 11px;margin-bottom:10px';
+        chip.textContent = '📡 今月の実績データと連携中（デモ）';
+        var intro = document.querySelector('.pa-intro');
+        if (intro) intro.insertAdjacentElement('afterend', chip);
+      })();
 
       function render() {
         var card = +$('card').value, ws = +$('ws').value;
