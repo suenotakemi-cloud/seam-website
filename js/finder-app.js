@@ -2987,6 +2987,17 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
 
     // ── ⑥ 根元がぺたっとする → 根元ボリュームミスト(薄毛はスカルプ処方で別途優先) ──
     if (rootFlat && st === 'volume-mist') b += 18;
+
+    // ── ⑦ 長さ・パーマで仕上げ剤を出し分け(オーナー指定) ──
+    //   ・ヘアバームはショートの人にだけ ・パーマはムース/ウェーブ系 ・ロングは艶出し/ミディアムホールド(ハードは出さない)
+    const SHORT_ONLY = new Set(['short', 'bob']);
+    const isShort = SHORT_ONLY.has(len);
+    if (st === 'balm' && !isShort) b -= 40; // バームはショート以外では出さない
+    if (isShort && st === 'balm') b += 18; // ショート → バーム
+    if (isShort && st === 'oil') b += 14; // ショート → 重めオイル
+    if (hasPerm && st === 'mousse') b += 22; // パーマ → ムース(ウェーブ系)
+    if (hasPerm && st === 'hold-spray') b -= 16; // パーマに硬いキープは出さない
+
     return b;
   };
 
@@ -6423,7 +6434,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: '世界に正直に応える、生きている髪の証。'
     }],
     suitableStyles: ['カール強めのボブ', 'ふんわりミディアム', '個性派ショート', '波打つレイヤー'],
-    lifestyle: ['夜の保湿マスクを週2回', 'アンチフリッズ系を主軸に', '濡れた髪は摩擦避けて自然乾燥+ブロー'],
+    lifestyle: ['夜の保湿マスクを週2回', 'うねり・広がりを抑えるケアを主軸に', '濡れた髪は摩擦避けて自然乾燥+ブロー'],
     birthStory: `あなたの髪は、生まれつき細くて軽いのに、はっきりした動きを持つ髪質です。繊細な手触りと、個性的なうねりが同居しています。
 
 この組み合わせは珍しく、ほかの人とは違う印象を持てるタイプ。一見やわらかでも、芯にはしっかりとした自分らしさがあります。`,
@@ -6436,7 +6447,7 @@ const KARTE_ORIGIN_ANIMALS = {
 あなたが気にしているのは「思い通りに扱える感覚」。素材は良いのに、扱いきれないと感じてしまう。
 
 でもね、その動きは、整え方を知るだけでぐっと付き合いやすくなります。`,
-    tenderAdvice: `おすすめは、うねりをやさしくいなすケア。アンチフリッズ系のシャンプー+トリートメントを主軸に、夜にはマスクで内部をうるおします。
+    tenderAdvice: `おすすめは、うねりをやさしくいなすケア。うねり・広がりを抑えるケアのシャンプー+トリートメントを主軸に、夜にはマスクで内部をうるおします。
 
 仕上げはミルクでまとまりを作ってから、軽くオイルでツヤを。順番が大事です。
 
@@ -6606,7 +6617,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: 'その意志の強さこそ、髪の個性をつくる源。'
     }],
     suitableStyles: ['カール感のあるミディアム', 'ふんわりロブ', '波打つレイヤー', '個性派ショート'],
-    lifestyle: ['夜の保湿マスクは必須', 'アンチフリッズ系で揺らぎを整える', '夜のシャンプー後はすぐ乾かす'],
+    lifestyle: ['夜の保湿マスクは必須', 'うねり・広がりを抑えるケアで揺らぎを整える', '夜のシャンプー後はすぐ乾かす'],
     birthStory: `あなたの髪は、生まれつき細くて柔らかいのに、しっかりとしたうねりを持つ髪質です。一本一本は繊細なのに、強いウェーブを描きます。
 
 まっすぐな髪には出せない動きを、軽やかさのまま持っている。細さとうねり、その両方を併せ持つ、めずらしい髪です。`,
@@ -6618,7 +6629,7 @@ const KARTE_ORIGIN_ANIMALS = {
 あなたが気にしているのは「思い通りに扱える感覚」。素材はいいはずなのに、うまくまとまらない。
 
 でも、それは自分の髪を大切にしたい気持ちの表れです。扱い方が分かれば、ぐっと楽になります。`,
-    tenderAdvice: `おすすめは、うねりを整える3層ケア。ベースはアンチフリッズ系のシャンプー+トリートメント。マスクで週2回、内側からうるおいを届けます。
+    tenderAdvice: `おすすめは、うねりを整える3層ケア。ベースはうねり・広がりを抑えるケアのシャンプー+トリートメント。マスクで週2回、内側からうるおいを届けます。
 
 仕上げはミルクでまとめてから、軽くオイルでツヤを足す。
 
@@ -6726,7 +6737,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: 'それは、髪が"休みたい"と言っているサイン。'
     }],
     suitableStyles: ['ふんわりロング', 'ボリュームミディアム', '柔らかなレイヤー', '動きのあるロブ'],
-    lifestyle: ['アンチフリッズ系シャンプーが主軸', 'マスクで保湿+まとまり', '仕上げはミルク→オイルの順'],
+    lifestyle: ['うねり・広がりを抑えるシャンプーが主軸', 'マスクで保湿+まとまり', '仕上げはミルク→オイルの順'],
     birthStory: `あなたの髪は、生まれつき細くて量があり、そこに自然なうねりが加わった髪質です。
 
 やわらかく、ゆたかに広がる印象を持っています。動きがあるぶん、表情がゆたかに見える髪です。`,
@@ -6738,7 +6749,7 @@ const KARTE_ORIGIN_ANIMALS = {
 あなたが気にしているのは「広がりすぎ」。量とうねり、その両方があるからこそ生まれる悩みです。
 
 でも、それは髪のゆたかさの裏返しでもあります。整え方が分かれば、いちばん華やかになれます。`,
-    tenderAdvice: `おすすめは、まとまりを作る集中ケア。アンチフリッズ系のシャンプー+トリートメントを主軸に、夜は保湿マスクで内側をうるおいで満たす。
+    tenderAdvice: `おすすめは、まとまりを作る集中ケア。うねり・広がりを抑えるケアのシャンプー+トリートメントを主軸に、夜は保湿マスクで内側をうるおいで満たす。
 
 仕上げは、まずミルクで全体をしっかりまとめてから、軽くオイルでツヤを。
 
@@ -6786,7 +6797,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: '整った時の美しさは、誰にも真似できないもの。'
     }],
     suitableStyles: ['ナチュラルなミディアム', 'ボリュームロング', '個性派ロブ', '波打つレイヤー'],
-    lifestyle: ['週3回のマスク必須', 'アンチフリッズ系を主軸に', '夜のシャンプー後すぐブロー'],
+    lifestyle: ['週3回のマスク必須', 'うねり・広がりを抑えるケアを主軸に', '夜のシャンプー後すぐブロー'],
     birthStory: `あなたの髪は、生まれつき細さ・量の多さ・強いうねりを併せ持つ髪質です。三つの要素が重なる、めずらしい髪です。
 
 手のかかる髪と思われがちですが、向き合うほどに「これは自分だけの個性」と感じられる、奥深いタイプです。`,
@@ -6798,7 +6809,7 @@ const KARTE_ORIGIN_ANIMALS = {
 あなたが気にしているのは「いつもの自分」を保ちにくいこと。
 
 でも、それだけ表情ゆたかな髪だということでもあります。付き合い方が分かれば、いちばん印象に残る髪になります。`,
-    tenderAdvice: `おすすめは、三つの要素すべてに向き合う集中ケア。アンチフリッズシャンプー、リペアマスク週3回、オイル+ミルクのダブル仕上げ。
+    tenderAdvice: `おすすめは、三つの要素すべてに向き合う集中ケア。うねり・広がりを抑えるシャンプー、リペアマスク週3回、オイル+ミルクのダブル仕上げ。
 
 時間はかかります。でも一ヶ月続けると、手ざわりがはっきり変わってきます。
 
@@ -6969,7 +6980,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: 'うまく伝わると、髪が変わる嬉しさがある。'
     }],
     suitableStyles: ['ナチュラルなミディアム', 'ボリューム控えめロブ', '動きのあるレイヤー', '個性派ボブ'],
-    lifestyle: ['夜の保湿マスクが要', 'アンチフリッズ系を主軸', '朝のスタイリングに5分余裕を'],
+    lifestyle: ['夜の保湿マスクが要', 'うねり・広がりを抑えるケアを主軸', '朝のスタイリングに5分余裕を'],
     birthStory: `あなたの髪は、生まれつき太さはほどよく、量は少なめで、しっかりとした動きのある髪質です。
 
 大きく主張はしないけれど、近くで見ると確かな動きと表情があります。人とは少し違う、繊細で奥行きのあるタイプです。`,
@@ -6982,7 +6993,7 @@ const KARTE_ORIGIN_ANIMALS = {
 あなたが気にしているのは「思った通りにならない」感覚。素材は悪くないはずなのに、扱いにちょっとしたコツが要る。
 
 でも、そのうねりは、平坦になりがちな髪にはない、豊かな質感を生んでくれるものです。`,
-    tenderAdvice: `おすすめは、うねりとうまく付き合うケア。アンチフリッズ系シャンプーで土台をつくり、夜のマスクで内側を整えます。
+    tenderAdvice: `おすすめは、うねりとうまく付き合うケア。うねり・広がりを抑えるシャンプーで土台をつくり、夜のマスクで内側を整えます。
 
 朝はミストでまとまりを、ミルクで質感を、オイルで仕上げを。この3層が扱いやすさにつながります。
 
@@ -7152,7 +7163,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: 'それを楽しめるようになると、世界が変わる。'
     }],
     suitableStyles: ['ナチュラルなミディアム', '波打つロブ', '動きのあるレイヤー', 'カール感のあるボブ'],
-    lifestyle: ['アンチフリッズ系シャンプーを主軸', '夜のマスク+朝のミルク', '仕上げはオイルで艶'],
+    lifestyle: ['うねり・広がりを抑えるシャンプーを主軸', '夜のマスク+朝のミルク', '仕上げはオイルで艶'],
     birthStory: `あなたの髪は、生まれつき太さも量もほどよく、そこにはっきりとした波の動きがある髪質です。
 
 リズムを持って動く髪は、扱いにくさではなく、表情の豊かさです。整え方しだいで、いきいきとした印象にも、やわらかなまとまりにもなれるタイプです。`,
@@ -7165,7 +7176,7 @@ const KARTE_ORIGIN_ANIMALS = {
 あなたが気にしているのは「毎日変わる髪」。一定の状態を保ちたいのに、難しい。
 
 でも、その動きは、まっすぐな髪にはない、表情の豊かさをくれるものです。`,
-    tenderAdvice: `おすすめは、波を"形にする"ケア。アンチフリッズ系シャンプー、夜のマスク、朝のミルク+オイル仕上げ。
+    tenderAdvice: `おすすめは、波を"形にする"ケア。うねり・広がりを抑えるシャンプー、夜のマスク、朝のミルク+オイル仕上げ。
 
 3層の仕上げで、まとまりにくさが「形」に変わっていきます。
 
@@ -7273,7 +7284,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: '豊かさは、時に重さに変わる。'
     }],
     suitableStyles: ['ふんわりロング', 'ボリュームミディアム', '動きのあるロブ', '柔らかなレイヤー'],
-    lifestyle: ['アンチフリッズ系で湿気対策', 'マスクで毛先まで保湿', '仕上げにオイル+ミルク'],
+    lifestyle: ['うねり・広がりを抑えるケアで湿気対策', 'マスクで毛先まで保湿', '仕上げにオイル+ミルク'],
     birthStory: `あなたの髪は、生まれつき量が多く、自然な波のついた髪質です。動きと存在感の両方を持っています。
 
 量があるからスタイルの幅が広く、波があるから表情が豊か。手をかけるほど印象が変わる、楽しみのある髪です。`,
@@ -7285,7 +7296,7 @@ const KARTE_ORIGIN_ANIMALS = {
 あなたが気にしているのは「広がりやすさ」。量があるからこそ生まれる、この髪ならではの悩みです。
 
 でも、それは髪が豊かにある証拠。まとめ方が分かれば、いちばん華やかになれる髪です。`,
-    tenderAdvice: `おすすめは、まとまりを作る集中ケア。アンチフリッズ系シャンプー、夜のマスク、朝のミルクとオイル仕上げ。
+    tenderAdvice: `おすすめは、まとまりを作る集中ケア。うねり・広がりを抑えるシャンプー、夜のマスク、朝のミルクとオイル仕上げ。
 
 この3つの仕上げで、量とうねりがふんわりまとまる状態に変わります。
 
@@ -7333,7 +7344,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: 'それも、髪が持つ生命力の表現です。'
     }],
     suitableStyles: ['カール感のあるミディアム', 'ボリュームロブ', '個性派ロング', '波打つレイヤー'],
-    lifestyle: ['アンチフリッズ系シャンプーが要', '夜のマスクで内部補修', '朝のミルク+オイルで仕上げ'],
+    lifestyle: ['うねり・広がりを抑えるシャンプーが要', '夜のマスクで内部補修', '朝のミルク+オイルで仕上げ'],
     birthStory: `あなたの髪は、生まれつき量が多く、強いうねりのある髪質です。立体感と存在感をしっかり持っています。
 
 量も動きもある髪は、まとめ方ひとつで印象が大きく変わります。手をかける価値のある、個性のはっきりしたタイプです。`,
@@ -7345,7 +7356,7 @@ const KARTE_ORIGIN_ANIMALS = {
 あなたが気にしているのは「思った通りにならない」感覚。髪そのものは豊かなのに、扱いに少しコツが要る。
 
 でも、その量と動きは、生まれ持った個性です。整えば、華やかで主役級になれる髪です。`,
-    tenderAdvice: `おすすめは、うねりと量と乾燥の3つに対応する集中ケア。アンチフリッズ系シャンプー、夜のマスク、朝のミルクとオイル仕上げ。
+    tenderAdvice: `おすすめは、うねりと量と乾燥の3つに対応する集中ケア。うねり・広がりを抑えるシャンプー、夜のマスク、朝のミルクとオイル仕上げ。
 
 時間はかかります。でも1ヶ月続けると、うねりがきれいな形にまとまっていきます。
 
@@ -7515,7 +7526,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: '焦らず付き合えば、いちばん輝く瞬間が訪れる。'
     }],
     suitableStyles: ['動きのある個性派', 'ボリューム控えめロブ', '波打つショート', 'カール感のあるボブ'],
-    lifestyle: ['アンチフリッズ系を主軸に', '週3回のマスク必須', '保湿+柔軟+まとまりの3層'],
+    lifestyle: ['うねり・広がりを抑えるケアを主軸に', '週3回のマスク必須', '保湿+柔軟+まとまりの3層'],
     birthStory: `あなたの髪は、生まれつき太くしっかりとした髪質です。量は少なめで、強いうねりがあります。
 
 100人いてもなかなか出会えない、珍しい組み合わせ。太さ・量・うねり、そのどれもがあなただけの個性として表れる髪です。`,
@@ -7698,7 +7709,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: '一度掴むと、毎日が楽しくなります。'
     }],
     suitableStyles: ['個性派カールミディアム', 'ボリュームロブ', '波打つレイヤー', 'カールボブ'],
-    lifestyle: ['アンチフリッズ系を主軸に', '夜のマスクで内部補修', '朝の3層仕上げ'],
+    lifestyle: ['うねり・広がりを抑えるケアを主軸に', '夜のマスクで内部補修', '朝の3層仕上げ'],
     birthStory: `あなたの髪は、生まれつき太くしっかりとした髪質です。量はほどよくあり、強いうねりがあります。
 
 太さがもたらすしっかりとした強さと、うねりが生む動き。その両方が、はっきりとした存在感として表れる、印象的なタイプです。`,
@@ -7820,7 +7831,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: 'でも、その豊かさは何ものにも代えられない財産です。'
     }],
     suitableStyles: ['ふんわりロング', 'ふんわりミディアム', '動きのあるロブ', '柔らかなレイヤー'],
-    lifestyle: ['アンチフリッズ系で広がり対策', 'マスクで毛先まで保湿', '仕上げはオイル+ミルク'],
+    lifestyle: ['うねり・広がりを抑えるケアで広がり対策', 'マスクで毛先まで保湿', '仕上げはオイル+ミルク'],
     birthStory: `あなたの髪は、生まれつき太さも量もしっかりあって、自然な動きが出やすい髪質です。一本一本に存在感があり、毛量も豊か。
 
 動きと量の両方を持っているから、まとめても下ろしても表情が出ます。スタイリング次第でいろいろな印象を楽しめる、可能性の広い髪です。`,
@@ -7881,7 +7892,7 @@ const KARTE_ORIGIN_ANIMALS = {
       desc: '身につけると、髪が一気に味方になります。'
     }],
     suitableStyles: ['動きのある個性派', 'ボリュームカールミディアム', '波打つロング', 'ダイナミックレイヤー'],
-    lifestyle: ['アンチフリッズ系を絶対主軸', '週3回のマスク必須', '朝の3層仕上げが要'],
+    lifestyle: ['うねり・広がりを抑えるケアを絶対主軸', '週3回のマスク必須', '朝の3層仕上げが要'],
     birthStory: `あなたの髪は、生まれつき太さも量もしっかりあって、強めのうねりがある髪質です。三つの要素がどれもはっきりしている、動きの大きな髪。
 
 存在感のあるうねりは、整えるととても印象的なスタイルになります。素材の力が強いぶん、ケアのしがいがある髪です。`,
@@ -9248,66 +9259,7 @@ function ResultHero({
             fontWeight: 600
           }
         }, a.value)));
-      })()), (() => {
-        const tier = damageTier || 1;
-        const meta = {
-          1: {
-            label: '軽め',
-            en: 'Light',
-            note: '履歴ダメージは少なめ ケアは予防中心で'
-          },
-          2: {
-            label: '中',
-            en: 'Moderate',
-            note: 'カラーや熱の蓄積あり 補修と保護を両立'
-          },
-          3: {
-            label: '重め',
-            en: 'Heavy',
-            note: '履歴が重め 毛先の集中補修を優先'
-          }
-        }[tier] || {
-          label: '—',
-          en: '—',
-          note: ''
-        };
-        return /*#__PURE__*/React.createElement("div", {
-          className: "mt-3 pb-3 border-b border-gold/20"
-        }, /*#__PURE__*/React.createElement("div", {
-          className: "flex items-center justify-between mb-1.5"
-        }, /*#__PURE__*/React.createElement("p", {
-          className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold"
-        }, "\u2014 \u5C65\u6B74\u30E9\u30F3\u30AF"), /*#__PURE__*/React.createElement("span", {
-          className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55 nums"
-        }, meta.en, " \xB7 ", tier, "/3")), /*#__PURE__*/React.createElement("div", {
-          className: "flex items-center",
-          style: {
-            gap: '8px'
-          }
-        }, /*#__PURE__*/React.createElement("span", {
-          "aria-hidden": true,
-          style: {
-            display: 'inline-flex',
-            gap: '4px'
-          }
-        }, [1, 2, 3].map(i => /*#__PURE__*/React.createElement("span", {
-          key: i,
-          style: {
-            width: '7px',
-            height: '7px',
-            borderRadius: '9999px',
-            background: i <= tier ? '#B8945A' : 'rgba(184,148,90,0.2)'
-          }
-        }))), /*#__PURE__*/React.createElement("span", {
-          className: "font-serif text-ink",
-          style: {
-            fontWeight: 600,
-            fontSize: '14px'
-          }
-        }, meta.label)), /*#__PURE__*/React.createElement("p", {
-          className: "mt-1.5 font-serif text-[12.5px] leading-[1.85] text-charcoal/85"
-        }, meta.note));
-      })(), traits.length > 0 && /*#__PURE__*/React.createElement("div", {
+      })()), traits.length > 0 && /*#__PURE__*/React.createElement("div", {
         className: "mt-3 pb-3 border-b border-gold/20"
       }, /*#__PURE__*/React.createElement("p", {
         className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold mb-2"
@@ -9336,15 +9288,7 @@ function ResultHero({
           className: "font-serif text-[12.5px] sm:text-[13.5px] leading-[1.85] text-charcoal/85"
         }, cond));
       })());
-    })(), radar && radar.length === 5 && /*#__PURE__*/React.createElement("div", {
-      className: "mt-5 pt-4 border-t border-gold/25"
-    }, /*#__PURE__*/React.createElement("p", {
-      className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold mb-1"
-    }, "\u2014 STATS \xB7 PENTAGON"), /*#__PURE__*/React.createElement("div", {
-      className: "flex justify-center"
-    }, /*#__PURE__*/React.createElement(KartePentagon, {
-      values: radar
-    }))), origin.charmHint && /*#__PURE__*/React.createElement("div", {
+    })(), origin.charmHint && /*#__PURE__*/React.createElement("div", {
       className: "mt-5 pt-4 border-t border-gold/25"
     }, /*#__PURE__*/React.createElement("p", {
       className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold mb-2"
@@ -10132,7 +10076,7 @@ function VisitSeamSection({
   }];
   return /*#__PURE__*/React.createElement("section", {
     id: "visit-seam",
-    className: "-mx-5 sm:-mx-8 px-5 sm:px-8 py-24 sm:py-36 mt-12 sm:mt-16 scroll-mt-[96px] overflow-hidden relative",
+    className: "-mx-5 sm:-mx-8 px-5 sm:px-8 py-16 sm:py-24 mt-10 sm:mt-12 scroll-mt-[96px] overflow-hidden relative",
     style: {
       background: 'linear-gradient(180deg, #FBF8F2 0%, #F4ECDA 100%)'
     }
@@ -10164,20 +10108,20 @@ function VisitSeamSection({
     style: {
       display: 'inline-block'
     }
-  }, "\u30AB\u30EB\u30C6\u304C\u3067\u304D\u305F\u3089\u3001"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
+  }, "\u30AB\u30EB\u30C6\u3092\u6301\u3063\u3066"), /*#__PURE__*/React.createElement("br", null), /*#__PURE__*/React.createElement("span", {
     className: "text-gold",
     style: {
       display: 'inline-block'
     }
-  }, "\u3042\u3068\u306F\u3001\u5E97\u306B\u884C\u304F\u3060\u3051\u3002")), /*#__PURE__*/React.createElement("span", {
+  }, "\u304A\u8FD1\u304F\u306ESEAM\u3078")), /*#__PURE__*/React.createElement("span", {
     "aria-hidden": true,
     className: "block w-12 h-px bg-gold/55 mx-auto mt-7"
   }), /*#__PURE__*/React.createElement("p", {
     className: "mt-6 text-[14.5px] sm:text-[16px] leading-[2] text-charcoal/80 max-w-md mx-auto"
-  }, "\u30D7\u30ED\u304C\u3001\u3042\u306A\u305F\u306E\u9AEA\u3092\u76F4\u63A5\u898B\u307E\u3059\u3002", /*#__PURE__*/React.createElement("br", null), "\u8A3A\u65AD\u7D50\u679C\u3092\u3001\u672C\u5F53\u306E\u51E6\u65B9\u306B\u5909\u3048\u308B\u5834\u6240\u3002"))), /*#__PURE__*/React.createElement(VisitReveal, {
+  }, "\u30AB\u30EB\u30C6\u3092\u7247\u624B\u306B \u3069\u3046\u305E\u304A\u8FD1\u304F\u306ESEAM\u3078\u304A\u3053\u3057\u304F\u3060\u3055\u3044", /*#__PURE__*/React.createElement("br", null), "\u30D7\u30ED\u304C\u3042\u306A\u305F\u306E\u9AEA\u3092\u76F4\u63A5\u307F\u3066 \u672C\u5F53\u306E\u51E6\u65B9\u306B\u5909\u3048\u307E\u3059"))), /*#__PURE__*/React.createElement(VisitReveal, {
     delay: 60
   }, /*#__PURE__*/React.createElement("div", {
-    className: "mt-16 sm:mt-20"
+    className: "mt-10 sm:mt-12"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-center font-mono tracking-widest3 text-[10px] uppercase text-gold mb-6",
     style: {
@@ -10981,20 +10925,15 @@ function CounselingSheet({
     className: "text-gold"
   }, "\u7F8E\u5BB9\u5E2B\u3055\u3093\u306B\u3082\u5171\u6709\u3067\u304D\u307E\u3059"), "\u3002"), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[11.5px] sm:text-[12px] text-charcoal/60 leading-[1.9]"
-  }, "\u6765\u5E97\u6642\u306B\u3053\u306E\u753B\u9762\u3092\u898B\u305B\u308B\u3001\u753B\u50CF\u3067\u4FDD\u5B58\u3057\u3066 LINE \u3067\u9001\u308B\u3001\u3069\u3061\u3089\u3082\u53EF\u80FD\u3067\u3059\u3002")), /*#__PURE__*/React.createElement("div", {
-    className: "mt-5 no-print flex flex-wrap gap-3 justify-center"
+  }, "\u6765\u5E97\u6642\u306B\u3053\u306E\u753B\u9762\u3092\u898B\u305B\u308B\uFF0F\u753B\u50CF\u3067\u4FDD\u5B58\u3057\u3066\u9001\u308B \u3069\u3061\u3089\u3082\u53EF\u80FD\u3067\u3059")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 no-print flex justify-center"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => onSaveImage && onSaveImage('story'),
-    className: "inline-flex items-center gap-2 px-6 py-3.5 bg-ink text-ivory hover:bg-charcoal transition-colors font-serif text-[14px] sm:text-[15px] rounded-[2px]"
-  }, "\u30AB\u30A6\u30F3\u30BB\u30EA\u30F3\u30B0\u30B7\u30FC\u30C8\u3092\u4FDD\u5B58", /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center gap-2 px-7 py-3.5 bg-ink text-ivory hover:bg-charcoal transition-colors font-serif text-[14px] sm:text-[15px] rounded-[2px]"
+  }, "\u3053\u306E\u30AB\u30EB\u30C6\u3092\u4FDD\u5B58\u30FB\u9001\u308B", /*#__PURE__*/React.createElement("span", {
     className: "text-[12px]"
-  }, "\u2193")), /*#__PURE__*/React.createElement("a", {
-    href: `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`,
-    target: "_blank",
-    rel: "noopener noreferrer",
-    className: "inline-flex items-center gap-2 px-5 py-3.5 bg-white border border-gold/55 text-ink hover:bg-cream/40 transition-colors font-serif text-[13.5px] sm:text-[14px] rounded-[2px]"
-  }, "LINE\u3067\u9001\u308B")), /*#__PURE__*/React.createElement("p", {
+  }, "\u2197"))), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-center text-[11.5px] text-charcoal/55 leading-relaxed"
   }, "\u203B SEAM \u4EE5\u5916\u306E\u7F8E\u5BB9\u5BA4\u3067\u3082\u3001\u3054\u76F8\u8AC7\u6642\u306B\u304A\u4F7F\u3044\u3044\u305F\u3060\u3051\u307E\u3059\u3002"));
 }
@@ -11349,17 +11288,12 @@ Schwarzkopf ファイバープレックス ボンド トリートメント、TOK
   if (hasGrayDye) {
     cards.push({
       tag: 'GRAY DYE × SCALP',
-      title: '白髪染めの方こそ、頭皮ケアを最優先に。',
-      body: `白髪染めは黒〜暗い色を入れるために、ファッションカラーより酸化染料の量が多くなりがちです。
-そのぶん頭皮には負担がかかりやすく、乾燥やゆらぎを感じる方も少なくありません。
-"染めるたびに頭皮のコンディションが気になる"——そんな声をよくいただきます。
-
-そこで強くおすすめしたいのが、ホーユー グランケアYS 頭皮用美容液。
-ヤーバサンタ由来のステルビン配合で、白髪世代の頭皮環境を健やかに整えるサロン専売の美容液です。
-シャンプー後、タオルドライした頭皮全体に5〜6プッシュ。指の腹でくるくる馴染ませてから乾かすだけ。
-
-白髪染め後の3日間と、染めの間の週2〜3回、毎日のように使うことで、次のカラーまで頭皮を心地よく保ちやすくなります。
-"染めることをやめなくていい"——その代わりに、頭皮を守る一本を、生活に組み込んでください。`
+      title: '白髪世代こそ 頭皮のエイジングケアを',
+      body: `ホーユー グランケアYS は カラー後のケアというより 年齢を重ねた頭皮と髪のためのエイジングスカルプ美容液です。
+白髪が気になりはじめ 髪のハリ・コシやボリューム感 頭皮のゆらぎが出てくる——そんな世代の土台づくりに向いています。
+ヤーバサンタ由来のステルビン配合で 頭皮環境を健やかに整え 白髪世代の髪にハリ・コシ・ツヤを引き出すサロン専売の美容液です。
+シャンプー後 タオルドライした頭皮全体に5〜6プッシュ 指の腹でくるくる馴染ませてから乾かすだけ。
+白髪を染め続けながら 土台の頭皮をすこやかに保つ一本として 毎日のケアに組み込んでください。`
     });
   }
   if (cards.length === 0) return null;
@@ -11488,21 +11422,10 @@ async function saveCustomCanvas(filename, mode) {
   ctx.textAlign = 'center';
   ctx.fillText('SEAM', cx, y);
 
-  // — Your Hair Type
-  y += 50;
-  ctx.fillStyle = '#B8945A';
-  ctx.font = `500 18px ${fontMono}`;
-  ctx.fillText('— YOUR HAIR TYPE', cx, y);
-
-  // ペンタゴンの中心位置(やや小さめに)
-  y += isSquare ? 50 : 80;
-  const pentagonR = isSquare ? 110 : 130;
-  const pentagonCY = y + pentagonR;
-  drawCanvasPentagon(ctx, cx, pentagonCY, pentagonR, karte.radar || [3, 3, 3, 3, 3]);
-
+  // レーダーチャートは廃止(グラフは出さない)。キャラクターを上げて間延びを抑える。
   // ── キャラクターイラスト ──
-  y = pentagonCY + pentagonR + (isSquare ? 20 : 40);
-  const charSize = isSquare ? 300 : 480;
+  y += isSquare ? 64 : 96;
+  const charSize = isSquare ? 320 : 520;
   if (charImg) {
     // 元画像のアスペクト比を保持して中央配置
     const ar = charImg.width / charImg.height;
