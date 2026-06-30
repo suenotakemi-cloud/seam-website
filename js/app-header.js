@@ -22,7 +22,8 @@
     { href: 'brand.html',      key: 'nav.brand',   label: '取扱ブランド' },
     { href: 'hairsalon.html',  key: 'nav.salon',   label: 'ヘアサロン' },
     { href: 'headspa.html',    key: 'nav.headspa', label: 'ヘッドスパ' },
-    { href: 'onlineshop.html', key: 'nav.online',  label: 'オンラインショップ' }
+    { href: 'onlineshop.html', key: 'nav.online',  label: 'オンラインショップ' },
+    { href: 'recruit.html',    key: 'nav.recruit', label: '採用情報' }
   ];
 
   function injectStyle() {
