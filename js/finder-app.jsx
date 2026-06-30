@@ -2162,6 +2162,37 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     bestBrandUsed[arr[0].p.brand] = (bestBrandUsed[arr[0].p.brand] || 0) + 1;
   }
 
+  // ── 年齢・深い頭皮悩みによる頭皮エッセンスの確実提示 ──
+  // オーナー要件: 30歳以上は必ず頭皮エッセンスを提示 / 薄毛・細毛・ボリューム低下(深い頭皮悩み)は必ず発火。
+  // ハリ・コシ・根元ボリュームに寄り添う実エッセンスをスカルプ枠の先頭へ。(rotation後に実行して並びを確定)
+  const _ageV = answers && answers.age;
+  const _is30p = _ageV === '30s' || _ageV === '40s' || _ageV === '50plus';
+  const _cnScalp = (answers && Array.isArray(answers.concerns)) ? answers.concerns : [];
+  const _deepScalpNeed = _cnScalp.indexOf('thinning') > -1 || _cnScalp.indexOf('volumeDown') > -1 || _cnScalp.indexOf('topFlat') > -1 || (answers && answers.thickness === 'thin');
+  if ((_is30p || _deepScalpNeed) && blocks.scalp) {
+    // ハリ・コシ・根元ボリューム・白髪世代に寄り添う実在エッセンス(優先順)
+    const AGING_ESSENCE = ['sublimic-adenovital-essence','aujua-precedia-perfector','kerastase-genesis-essence','aujua-timesurge-essence','hoyu-grancare-essence','syspro-extra-alphaenergy','davines-naturaltech-energizing-lotion'];
+    const scalpMax = (DEEP_CATEGORY_DEFS.scalp && DEEP_CATEGORY_DEFS.scalp.max) || 4;
+    const isEss = (it) => it && it.p && it.p.category === 'scalp-essence';
+    const headAging = blocks.scalp[0] && AGING_ESSENCE.indexOf(blocks.scalp[0].p.id) > -1;
+    if (!blocks.scalp.length) {
+      // スカルプ枠が空 → scored(スコア降順)からエッセンスのベストを注入。深い悩みはエイジング系を優先。
+      let inj = null;
+      if (_deepScalpNeed) inj = scored.find(it => isEss(it) && AGING_ESSENCE.indexOf(it.p.id) > -1);
+      if (!inj) inj = scored.find(isEss);
+      if (inj) blocks.scalp.push(inj);
+    } else if (_deepScalpNeed && !headAging) {
+      // 深い頭皮悩みなのに先頭がエイジング系でない → エイジング系を先頭へ繰り上げ。
+      let aging = blocks.scalp.find(it => AGING_ESSENCE.indexOf(it.p.id) > -1) || scored.find(it => isEss(it) && AGING_ESSENCE.indexOf(it.p.id) > -1);
+      if (aging) {
+        const idx = blocks.scalp.findIndex(it => it.p.id === aging.p.id);
+        if (idx > -1) blocks.scalp.splice(idx, 1);
+        blocks.scalp.unshift(aging);
+        if (blocks.scalp.length > scalpMax) blocks.scalp.length = scalpMax;
+      }
+    }
+  }
+
   return { blocks, userTags, hardRules };
 }
 
@@ -3348,8 +3379,16 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
   const _sc = scores || {};
   const _ut = (deepResult.userTags && Array.isArray(deepResult.userTags.state)) ? deepResult.userTags.state : [];
   const _forcedScalp = _ut.includes('female_precedia_must') || _ut.includes('gray_thick_grancare_must');
-  const needMask  = (_sc.damage || 0) >= 2 || (_sc.bleachHistory || 0) > 0 || ['damage','split','rough','tangle'].some(v => _cs.includes(v));
-  const needScalp = (_sc.scalpDryness || 0) >= 2 || (_sc.scalpOiliness || 0) >= 2 || ['scalpDry','scalpOily','thinning','topFlat','volumeDown'].some(v => _cs.includes(v)) || _forcedScalp;
+  // ── 確実発火条件(オーナー要件) ──
+  // ・30歳以上 → 必ず頭皮エッセンス  ・深い頭皮悩み(薄毛/細毛/ボリューム低下) → 必ずエッセンス  ・高ダメージ → 必ずマスク
+  const _age = answers && answers.age;
+  const isAge30Plus = _age === '30s' || _age === '40s' || _age === '50plus';
+  const deepScalpRequired = _cs.includes('thinning') || _cs.includes('volumeDown') || _cs.includes('topFlat') || (answers && answers.thickness === 'thin');
+  const highDamageRequired = (typeof computeDamageTier === 'function' && computeDamageTier(_sc) >= 3) || (_sc.bleachHistory || 0) >= 4;
+  const scalpRequired = isAge30Plus || deepScalpRequired || _forcedScalp;
+  const maskRequired  = highDamageRequired;
+  const needMask  = maskRequired || (_sc.damage || 0) >= 2 || (_sc.bleachHistory || 0) > 0 || ['damage','split','rough','tangle'].some(v => _cs.includes(v));
+  const needScalp = scalpRequired || (_sc.scalpDryness || 0) >= 2 || (_sc.scalpOiliness || 0) >= 2 || ['scalpDry','scalpOily','thinning','topFlat','volumeDown'].some(v => _cs.includes(v));
   const needCleanse = (_sc.scalpOiliness || 0) >= 2 || ['scalpOily','topFlat','volumeDown'].some(v => _cs.includes(v));
 
   // ルーティン順: SH → 週数回スペシャル洗浄 → TR → アウトバス → マスク → スカルプ → スタイリング → サロン
@@ -3363,38 +3402,38 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
   const priorityConcerns = buildPriorityConcerns(answers, scores);
   const verdictLine = buildVerdictLine(answers, scores);
 
-  // 「まず、この3本」— カテゴリ横断でベストを集め、シャンプー(土台)を先頭にしつつ上位3本
-  // 「まず3本」は役割ベースで選定: 土台(洗う) → 補修 → 仕上げ。
-  // 「洗う系ばかり」「仕上げ剤が出ない」を防ぎ、買った後の変化をイメージしやすくする。
-  const firstThree = (() => {
-    const byCat = {};
-    orderedBlocks.forEach(function(b){
-      const best = deepPriceTrio(b.items).best;
-      if (best) byCat[b.id] = { item: best, category: b.id, blockTitle: b.title };
-    });
-    const pickFrom = function(cats, used){
-      let best = null;
-      for (const c of cats) {
-        const cand = byCat[c];
-        if (!cand || used.has(c)) continue;
-        if (!best || (cand.item.s || 0) > (best.item.s || 0)) best = cand;
-      }
-      return best;
-    };
+  // 「まず、この◯本」— 基礎3点(シャンプー/トリートメント/アウトバス)を必ず固定し、
+  // 30歳以上 or 深い頭皮悩み → 頭皮エッセンス、高ダメージ → 集中マスク を追加する 3〜5本の変動表示。
+  // 代替(specialCleanse↔shampoo 等)は禁止。finish・specialCleanse は初見に出さず「すべて見る」へ回す。
+  // (オーナー要件＋外部5000件検証: 基礎が安定して前に出ない/finish混入 を解消)
+  const _catTitle = (id) => (DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}).title || '';
+  const bestOf = (id) => {
+    const arr = blocks[id] || [];
+    if (!arr.length) return null;
+    const best = deepPriceTrio(arr).best || arr[0];
+    return best ? { item: best, category: id, blockTitle: _catTitle(id) } : null;
+  };
+  const primary = (() => {
     const out = [], used = new Set();
-    const add = function(cand){ if (cand && !used.has(cand.category)) { out.push(cand); used.add(cand.category); } };
-    add(pickFrom(['shampoo','specialCleanse'], used));        // 土台(洗う)
-    add(pickFrom(['treatment','mask','outbath'], used));      // 補修
-    add(pickFrom(['outbath','finish','scalp'], used));        // 仕上げ/日中
-    if (out.length < 3) {
-      Object.keys(byCat).map(function(k){ return byCat[k]; }).sort(function(x,y){ return (y.item.s||0)-(x.item.s||0); }).forEach(function(c){
-        if (out.length >= 3 || used.has(c.category)) return;
-        out.push(c); used.add(c.category);
-      });
-    }
-    return out.slice(0, 3);
+    const add = (c) => { if (c && c.item && c.item.p && !used.has(c.category)) { out.push(c); used.add(c.category); } };
+    add(bestOf('shampoo'));     // 土台(洗う) — 必須・代替なし
+    add(bestOf('treatment'));   // 補修(インバス) — 必須・代替なし
+    add(bestOf('outbath'));     // 仕上げ(アウトバス) — 必須・代替なし
+    if (scalpRequired) add(bestOf('scalp'));   // 30歳以上 or 深い頭皮悩み → エッセンス(4本目)
+    if (maskRequired)  add(bestOf('mask'));    // 高ダメージ → 集中マスク(4〜5本目)
+    // 基礎カテゴリが欠けた稀なケースのみ最低3本を確保(スコア上位の別カテゴリで補完)
+    if (out.length < 3) ['mask','scalp','finish','specialCleanse'].forEach(id => { if (out.length < 3) add(bestOf(id)); });
+    return out;
   })();
-  const firstRoles = ['まず変えるなら', '効き目を支える', '仕上げに'];
+  const ROLE_BY_CAT = {
+    shampoo: '土台 · 洗う',
+    treatment: '補修 · インバス',
+    outbath: '仕上げ · アウトバス',
+    scalp: '頭皮 · 根元のケア',
+    mask: '集中補修 · 週1〜2回',
+    specialCleanse: '頭皮 · ディープ洗浄',
+    finish: '仕上げ · スタイリング',
+  };
 
   return (
     <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay:'300ms' }}>
@@ -3422,21 +3461,21 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
         </div>
       )}
 
-      {/* ② まず、この3本 — 最初に刺す要点 */}
-      {firstThree.length > 0 && (
+      {/* ② まず、この◯本 — 基礎3点＋必要に応じ頭皮/マスクで3〜5本(変動) */}
+      {primary.length > 0 && (
         <div className="mt-7">
           <div className="flex items-end justify-between gap-3 mb-3">
             <div>
               <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">— Start here</p>
-              <h3 className="mt-1.5 font-serif text-[20px] sm:text-[23px] text-ink leading-snug">まず この3本から</h3>
+              <h3 className="mt-1.5 font-serif text-[20px] sm:text-[23px] text-ink leading-snug">まず この{primary.length}本から</h3>
             </div>
-            <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 pt-1 whitespace-nowrap nums">3 / {shownCount}</span>
+            <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 pt-1 whitespace-nowrap nums">{primary.length} / {shownCount}</span>
           </div>
           <div className="space-y-4">
-            {firstThree.map((f, i) => (
+            {primary.map((f, i) => (
               <div key={f.item.p.id}>
                 <p className="mb-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/55">
-                  {String(i + 1).padStart(2, '0')} · {firstRoles[i] || 'おすすめ'} — {f.blockTitle}
+                  {String(i + 1).padStart(2, '0')} · {ROLE_BY_CAT[f.category] || 'おすすめ'} — {f.blockTitle}
                 </p>
                 <DeepBestCard item={f.item} category={f.category} />
               </div>
