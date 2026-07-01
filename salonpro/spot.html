@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7f1e4">
   <title>salon town recruit｜北海道の即日採用（アシスタント・スタイリスト）</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=80">
-  <link rel="stylesheet" href="assets/css/base.css?v=80">
-  <link rel="stylesheet" href="assets/css/components.css?v=80">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=81">
+  <link rel="stylesheet" href="assets/css/base.css?v=81">
+  <link rel="stylesheet" href="assets/css/components.css?v=81">
   <style>
     body { background: #faf7f0; padding-bottom: 40px; }
     .sj-top { position: sticky; top: 0; z-index: 10; background: rgba(250,247,240,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--gold-line); }
@@ -128,6 +128,10 @@
       <div id="simList"></div>
     </div>
 
+    <!-- あなたの手配状況（本番相当：双方向ループ＋通知） -->
+    <div class="sj-sec">あなたの手配状況 <span id="statCount" style="font-size:11px;color:var(--ink-3);font-weight:700"></span></div>
+    <div class="sj-card"><div id="statList"></div><div class="pa-note" style="margin-top:8px">※ ワーカーが「受ける」と、ここが自動で「確定」に変わり通知されます（別タブでも即反映）。本番はサーバー経由の手配・プッシュ通知に置き換えます。</div></div>
+
     <!-- こんなお仕事を -->
     <div class="sj-sec">こんなお仕事をお願いできます</div>
     <div class="sj-card"><div class="sj-chips" id="tasks"></div></div>
@@ -179,8 +183,8 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/spot.js?v=80"></script>
-  <script src="assets/js/components.js?v=80"></script>
+  <script src="assets/js/spot.js?v=81"></script>
+  <script src="assets/js/components.js?v=81"></script>
   <script>
     (function () {
       var $ = function (id) { return document.getElementById(id); };
@@ -225,7 +229,7 @@
       $('simArea').addEventListener('change', function () { sel.area = this.value; renderSim(); });
       $('simSkills').addEventListener('click', function (e) { var b = e.target.closest('[data-t]'); if (!b) return; var k = b.dataset.t; sel.skills[k] = !sel.skills[k]; b.classList.toggle('on', sel.skills[k]); renderSim(); });
       function toast(m) { var t = $('toast'); t.innerHTML = (window.SP && SP.svg ? SP.svg('checkc') : '✓') + m; t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 2200); }
-      $('simList').addEventListener('click', function (e) { var b = e.target.closest('[data-go]'); if (!b) return; var w = WORKERS.filter(function (x) { return x.init === b.dataset.go && x.area === sel.area; })[0]; var sk = Object.keys(sel.skills).filter(function (k) { return sel.skills[k]; }); if (window.SP && SP.SPOT) SP.SPOT.dispatch({ salon: 'SALON LUXE 表参道', area: sel.area, tasks: sk.length ? sk : ['アシスタント業務'], wage: w ? w.wage : 1800, hours: 6, worker: b.dataset.go }); toast(b.dataset.go + ' さんに手配リクエストを送りました（ワーカーに即通知）'); });
+      $('simList').addEventListener('click', function (e) { var b = e.target.closest('[data-go]'); if (!b) return; var w = WORKERS.filter(function (x) { return x.init === b.dataset.go && x.area === sel.area; })[0]; var sk = Object.keys(sel.skills).filter(function (k) { return sel.skills[k]; }); if (window.SP && SP.SPOT) SP.SPOT.dispatch({ salon: 'SALON LUXE 表参道', area: sel.area, tasks: sk.length ? sk : ['アシスタント業務'], wage: w ? w.wage : 1800, hours: 6, worker: b.dataset.go }); toast(b.dataset.go + ' さんに手配リクエストを送りました（ワーカーに即通知）'); renderStat(); });
       $('heroSim').addEventListener('click', function () { document.querySelector('.sj-sec:nth-of-type(2)') && document.getElementById('simArea').scrollIntoView({ block: 'center' }); });
       ['heroLine', 'ctaLine'].forEach(function (id) { $(id).addEventListener('click', function (e) { e.preventDefault(); toast('LINEの問い合わせに進みます（デモ）'); }); });
 
@@ -250,6 +254,30 @@
       ];
       $('faq').innerHTML = FAQ.map(function (q) { return '<div class="sj-q"><div class="sj-q__q">' + q[0] + '</div><div class="sj-q__a">' + q[1] + '</div></div>'; }).join('');
 
+      // 手配状況（本番相当の双方向ループ＋通知）
+      var MY_SALON = 'SALON LUXE 表参道';
+      var seenConf = {}, statInit = true;
+      function statInfo(st) { return (st === 'done' || st === 'confirmed') ? { t: '確定', bg: '#e3f4ea', c: '#1f8f53' } : st === 'declined' ? { t: '辞退', bg: 'var(--surface-3)', c: 'var(--ink-2)' } : { t: '承認待ち', bg: 'var(--gold-soft)', c: 'var(--gold-strong)' }; }
+      function renderStat() {
+        if (!(window.SP && SP.SPOT)) return;
+        var mine = SP.SPOT.list().filter(function (d) { return d.salon === MY_SALON; });
+        $('statCount').textContent = mine.length ? '（' + mine.length + '件）' : '';
+        $('statList').innerHTML = mine.length ? mine.map(function (d) {
+          var si = statInfo(d.status);
+          return '<div class="sj-wk"><span class="sj-wk__av">' + (d.worker || '?') + '</span>'
+            + '<span class="sj-wk__m"><span class="sj-wk__n">' + (d.worker || 'ワーカー') + ' ・ ' + (d.area || '') + '</span>'
+            + '<span class="sj-wk__s">' + (((d.tasks || []).join('／')) || 'アシスタント業務') + ' ・ ' + yen(d.wage || 0) + '/時 ×' + (d.hours || 6) + 'h</span></span>'
+            + '<span style="flex:none;font-size:11px;font-weight:800;border-radius:999px;padding:4px 11px;background:' + si.bg + ';color:' + si.c + '">' + si.t + '</span></div>';
+        }).join('') : '<div style="text-align:center;color:var(--ink-3);font-size:12px;padding:16px 0">まだ手配していません。上のシミュレーションから手配してみてください。</div>';
+        mine.forEach(function (d) {
+          var conf = (d.status === 'done' || d.status === 'confirmed');
+          if (conf && !seenConf[d.id]) { seenConf[d.id] = true; if (!statInit) toast((d.worker || 'ワーカー') + ' さんが手配を承認しました（確定）'); }
+          if (!conf) seenConf[d.id] = false;
+        });
+        statInit = false;
+      }
+      if (window.SP && SP.SPOT) SP.SPOT.onChange(renderStat);
+      renderStat();
       renderSim();
     })();
   </script>
