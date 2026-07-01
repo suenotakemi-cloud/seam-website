@@ -262,23 +262,23 @@ const Q = [{
   id: 'color',
   type: 'card-history',
   eyebrow: 'Color History',
-  title: '今の髪の色は？（明るめ／暗め）',
-  note: 'いちばん近いものを1つ。ブリーチ（脱色）については、次の質問で別に伺います。',
-  yesPrompt: 'カラーをしたことがありますか？（毛先に色が残っている・過去にした場合も含む）',
+  title: '髪を染めていますか？（白髪染め・ホームカラーも含む）',
+  note: 'ブリーチは前の質問で伺いました。ここは今の見た目の色で、いちばん近いものを1つお選びください。',
+  yesPrompt: '今の状態にいちばん近いものは？（毛先に色が残っている・過去にした場合も含む）',
   options: [{
     v: 'none',
-    label: '明るくしていない（黒〜暗い地毛）',
+    label: '染めていない（地毛のまま）',
     score: {}
   }, {
     v: 'light_recent',
-    label: '明るい茶色（色がはっきり残っている）',
+    label: '明るめ｜今も色がはっきり出ている',
     score: {
       colorFade: 2,
       damage: 1
     }
   }, {
     v: 'light_past',
-    label: '明るめのカラー（褪せてきた・根元が伸びた）',
+    label: '明るめ｜色落ち・根元が伸びてきた',
     score: {
       colorFade: 1,
       damage: 1
@@ -291,7 +291,7 @@ const Q = [{
     }
   }, {
     v: 'dark_strong',
-    label: '黒染め・しっかり暗くしている',
+    label: '黒染めをしている',
     score: {
       damage: 2,
       blackdye: 3
@@ -305,7 +305,7 @@ const Q = [{
     }
   }, {
     v: 'home',
-    label: '自分で染めている（ホームカラー）',
+    label: '市販のカラーで自分で染めている',
     score: {
       damage: 2,
       colorFade: 1
@@ -1502,13 +1502,13 @@ const MODE_B_ORDER = [
   step: 1,
   id: 'scalpSensitivity'
 },
-// STEP 2 — 髪の履歴
+// STEP 2 — 髪の履歴（ブリーチを先に聞く → 色の質問で迷わせない）
 {
   step: 2,
-  id: 'color'
+  id: 'bleach'
 }, {
   step: 2,
-  id: 'bleach'
+  id: 'color'
 }, {
   step: 2,
   id: 'colorFreq',
