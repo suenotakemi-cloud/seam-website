@@ -3235,9 +3235,16 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   const _scalpDryU = _cnScalp.indexOf('scalpDry') > -1 || answers && (answers.scalpType === 'dry' || answers.scalpType === 'tendDry') || answers && (answers.scalpSensitivity === 'veryHigh' || answers.scalpSensitivity === 'high');
   const _scalpOilyU = _cnScalp.indexOf('scalpOily') > -1 || answers && answers.scalpType === 'oily';
   const _deepScalpNeed = _cnScalp.indexOf('thinning') > -1 || _cnScalp.indexOf('volumeDown') > -1 || _cnScalp.indexOf('topFlat') > -1 || _thinHair;
-  // 悩み別 代表銘柄(実在scalp-essence・先頭ほど優先)
+  // 悩み別 代表銘柄(実在scalp-essence・先頭ほど優先)。
+  // オーナー要件: 薄毛/細毛/ボリューム/白髪 は必ずエイジング代表銘柄。頭皮環境(乾燥/ベタつき)はその後。
   let _prefScalp;
-  if (_scalpDryU) _prefScalp = ['aujua-moistcalm-essence', 'sublimic-fuenteforte-moistshower', 'oggiotto-aroma-calm'];else if (_scalpOilyU) _prefScalp = ['sublimic-fuenteforte-clearshower', 'syspro-balance-lotion', 'oggiotto-drs-scalpgel'];else if (_cnScalp.indexOf('thinning') > -1) _prefScalp = ['sublimic-adenovital-essence', 'aujua-precedia-perfector', 'kerastase-genesis-essence'];else if (_cnScalp.indexOf('topFlat') > -1 || _cnScalp.indexOf('volumeDown') > -1) _prefScalp = ['aujua-precedia-perfector', 'aujua-timesurge-essence', 'sublimic-adenovital-essence'];else if (_grayU) _prefScalp = ['hoyu-grancare-essence', 'sublimic-adenovital-essence'];else if (_thinHair) _prefScalp = ['aujua-precedia-perfector', 'sublimic-adenovital-essence'];else _prefScalp = ['sublimic-adenovital-essence', 'aujua-precedia-perfector', 'hoyu-grancare-essence', 'aujua-timesurge-essence'];
+  if (_cnScalp.indexOf('thinning') > -1) _prefScalp = ['sublimic-adenovital-essence', 'aujua-precedia-perfector']; // 薄毛→アデノバイタル/プレセディア
+  else if (_cnScalp.indexOf('topFlat') > -1 || _cnScalp.indexOf('volumeDown') > -1) _prefScalp = ['aujua-precedia-perfector', 'aujua-timesurge-essence', 'sublimic-adenovital-essence']; // ボリューム→プレセディア/エイジングスパ
+  else if (_grayU) _prefScalp = ['hoyu-grancare-essence', 'sublimic-adenovital-essence']; // 白髪世代→グランケア
+  else if (_thinHair) _prefScalp = ['aujua-precedia-perfector', 'sublimic-adenovital-essence']; // 細毛→プレセディア
+  else if (_scalpDryU) _prefScalp = ['aujua-moistcalm-essence', 'sublimic-fuenteforte-moistshower', 'oggiotto-aroma-calm']; // 乾燥/敏感→モイストカーム
+  else if (_scalpOilyU) _prefScalp = ['sublimic-fuenteforte-clearshower', 'syspro-balance-lotion', 'oggiotto-drs-scalpgel']; // ベタつき→クリア/バランス
+  else _prefScalp = ['sublimic-adenovital-essence', 'aujua-precedia-perfector', 'hoyu-grancare-essence', 'aujua-timesurge-essence'];
   if ((_is30p || _deepScalpNeed || _scalpDryU || _scalpOilyU || _grayU) && blocks.scalp) {
     const scalpMax = DEEP_CATEGORY_DEFS.scalp && DEEP_CATEGORY_DEFS.scalp.max || 4;
     const isEss = it => it && it.p && it.p.category === 'scalp-essence';
