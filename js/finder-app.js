@@ -9674,7 +9674,7 @@ function ResultHero({
     type: "button",
     onClick: () => onSaveImage && onSaveImage('square'),
     className: "inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/70 border border-line text-charcoal/80 hover:border-ink hover:text-ink transition-colors font-mono tracking-widest2 text-[10px] uppercase rounded-[1px]"
-  }, "\u753B\u50CF\u3067\u4FDD\u5B58"), /*#__PURE__*/React.createElement("button", {
+  }, "\u30BF\u30A4\u30D7\u753B\u50CF"), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => onSaveImage && onSaveImage('story'),
     className: "inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/70 border border-line text-charcoal/80 hover:border-ink hover:text-ink transition-colors font-mono tracking-widest2 text-[10px] uppercase rounded-[1px]"
@@ -11292,9 +11292,9 @@ function CounselingSheet({
     className: "mt-5 no-print flex justify-center"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
-    onClick: () => onSaveImage && onSaveImage('story'),
+    onClick: shareCounselingSheetImage,
     className: "inline-flex items-center gap-2 px-7 py-3.5 bg-ink text-ivory hover:bg-charcoal transition-colors font-serif text-[14px] sm:text-[15px] rounded-[2px]"
-  }, "\u3053\u306E\u30AB\u30EB\u30C6\u3092\u4FDD\u5B58\u30FB\u9001\u308B", /*#__PURE__*/React.createElement("span", {
+  }, "\u3053\u306E\u30AB\u30EB\u30C6\u3092\u753B\u50CF\u3067\u4FDD\u5B58\u30FB\u9001\u308B", /*#__PURE__*/React.createElement("span", {
     className: "text-[12px]"
   }, "\u2197"))), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-center text-[11.5px] text-charcoal/55 leading-relaxed"
@@ -12667,7 +12667,7 @@ function Result({
     }
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
-    onClick: () => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-square.png`, 'square'),
+    onClick: shareCounselingSheetImage,
     "aria-label": "\u9AEA\u306E\u30AB\u30EB\u30C6\u3092\u753B\u50CF\u3067\u4FDD\u5B58",
     className: "flex flex-col items-center justify-center gap-1 py-2",
     style: {
