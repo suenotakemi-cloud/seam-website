@@ -4915,7 +4915,11 @@ function DeepProductSection({
       }
     }, cands.map((it, j) => /*#__PURE__*/React.createElement("div", {
       key: it.p.id,
-      className: "snap-start shrink-0 w-[86%] sm:w-[430px] max-w-full flex flex-col"
+      className: "snap-start shrink-0 flex flex-col",
+      style: {
+        width: cands.length > 1 ? '86%' : '100%',
+        maxWidth: '440px'
+      }
     }, /*#__PURE__*/React.createElement("p", {
       className: "mb-1.5 font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45"
     }, /*#__PURE__*/React.createElement("span", {
