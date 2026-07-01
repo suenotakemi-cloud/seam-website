@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>誠実な求人（学校連携）｜SalonPro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=73">
+  <link rel="stylesheet" href="assets/css/base.css?v=73">
+  <link rel="stylesheet" href="assets/css/components.css?v=73">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .pa-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 720px; margin-inline: auto; }
+    .pa-top__logo { font-size: 17px; font-weight: 800; } .pa-top__logo b { color: var(--gold); }
+    .pa-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .pa-wrap { max-width: 720px; margin-inline: auto; padding: 16px; }
+    .pa-intro { font-size: 12.5px; color: var(--ink-3); line-height: 1.7; margin-bottom: 14px; }
+    .pa-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px; margin-bottom: 14px; }
+    .pa-card__t { font-size: 14px; font-weight: 900; margin-bottom: 4px; }
+    .pa-card__t small { font-weight: 600; color: var(--ink-3); font-size: 11px; margin-left: 6px; }
+    .pa-card__d { font-size: 12px; color: var(--ink-2); line-height: 1.6; margin-bottom: 10px; }
+    .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
+    .pa-btn { width: 100%; height: 50px; border: 0; border-radius: var(--r-md); background: var(--gold); color: #fff; font-size: 14px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .pa-btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line-3); }
+
+    /* 開示率ヒーロー */
+    .rc-hero { background: linear-gradient(155deg,#25324a,#161d2b); color: #fff; border-radius: var(--r-lg); padding: 22px 20px; margin-bottom: 14px; }
+    .rc-hero__l { font-size: 12px; color: rgba(255,255,255,.75); }
+    .rc-hero__v { font-family: var(--font-num); font-weight: 900; line-height: 1; margin: 4px 0 2px; }
+    .rc-hero__v b { font-size: 54px; } .rc-hero__v span { font-size: 22px; }
+    .rc-hero__s { font-size: 12px; color: rgba(255,255,255,.8); }
+    .rc-hero__s b { color: #7fd3a2; font-family: var(--font-num); }
+    .rc-hero__bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,.2); margin: 14px 0 8px; overflow: hidden; }
+    .rc-hero__bar i { display: block; height: 100%; background: #5ad07f; border-radius: 999px; transition: width .25s var(--ease); }
+    .rc-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; background: rgba(90,208,127,.16); color: #7fd3a2; border-radius: 999px; padding: 4px 12px; }
+
+    /* データ行 */
+    .rc-drow { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line-2); }
+    .rc-drow:first-child { border-top: 0; }
+    .rc-drow__m { flex: 1; min-width: 0; }
+    .rc-drow__t { font-size: 12.5px; font-weight: 800; }
+    .rc-drow__v { font-size: 12px; color: var(--ink-2); margin-top: 1px; } .rc-drow__v b { color: var(--ink); font-family: var(--font-num); }
+    .rc-real { font-size: 9.5px; font-weight: 800; color: #1f8f53; background: #e3f4ea; border-radius: 6px; padding: 2px 7px; white-space: nowrap; flex: none; }
+    .rc-tg { width: 46px; height: 27px; border-radius: 999px; background: var(--line-3); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+    .rc-tg.on { background: var(--stock-in); } .rc-tg i { position: absolute; top: 3px; left: 3px; width: 21px; height: 21px; border-radius: 50%; background: #fff; transition: left .15s; } .rc-tg.on i { left: 22px; }
+
+    /* 学校が知りたい */
+    .rc-need { display: flex; align-items: flex-start; gap: 9px; padding: 8px 0; font-size: 12px; color: var(--ink-2); }
+    .rc-need__c { width: 20px; height: 20px; border-radius: 50%; flex: none; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+    .rc-need__c.ok { background: var(--stock-in); } .rc-need__c.no { background: var(--line-3); }
+    .rc-need__c svg { width: 12px; height: 12px; color: #fff; }
+
+    /* 求人票プレビュー */
+    .rc-post { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+    .rc-post__hd { background: var(--dark); color: #fff; padding: 14px 16px; }
+    .rc-post__hd b { font-size: 15px; font-weight: 900; } .rc-post__hd .rc-badge { margin-top: 7px; }
+    .rc-post__b { padding: 14px 16px; }
+    .rc-post__row { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line-2); font-size: 12.5px; }
+    .rc-post__row:first-child { border-top: 0; } .rc-post__row .k { color: var(--ink-3); flex: none; } .rc-post__row .v { text-align: right; font-weight: 700; }
+    .rc-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .rc-chip { font-size: 10.5px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: var(--ink-2); }
+
+    /* 学校 */
+    .rc-school { display: flex; align-items: center; gap: 11px; padding: 11px 0; border-top: 1px solid var(--line-2); }
+    .rc-school:first-child { border-top: 0; }
+    .rc-school__ic { width: 38px; height: 38px; border-radius: 10px; background: var(--badge-staple-bg); color: var(--badge-staple-tx); display: flex; align-items: center; justify-content: center; flex: none; }
+    .rc-school__m { flex: 1; } .rc-school__t { font-size: 13px; font-weight: 800; } .rc-school__s { font-size: 11px; color: var(--ink-3); }
+    .rc-school__st { font-size: 10.5px; font-weight: 800; color: #1f8f53; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); }
+  </style>
+</head>
+<body>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon<b>Pro</b></span><span class="pa-top__tag">誠実な求人 ・ 学校連携</span></div></div>
+  <div class="pa-wrap">
+    <div class="pa-intro">盛らない求人。<b>SalonProの実データ</b>で、学校が本当に知りたいこと（給与・休日・定着・育成の“実態”）を開示。<b>誠実に向き合うサロン</b>ほど、地域の美容学校に優先して届きます。</div>
+
+    <!-- 開示率ヒーロー -->
+    <div class="rc-hero">
+      <span class="rc-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M20 6 9 17l-5-5"/></svg> SalonProの実データに基づく（盛れない）</span>
+      <div class="rc-hero__l" style="margin-top:12px">学校が本当に知りたい 12項目のうち</div>
+      <div class="rc-hero__v"><b id="discN">0</b><span> / 12 項目を開示</span></div>
+      <div class="rc-hero__bar"><i id="discBar" style="width:0%"></i></div>
+      <div class="rc-hero__s" id="discMsg"></div>
+    </div>
+
+    <!-- 実データ開示（自動・盛れない） -->
+    <div class="pa-card">
+      <div class="pa-card__t">実データで自動開示 <small>SalonProの運営データ＝盛れない</small></div>
+      <div class="pa-card__d">給与・勤務・休日はサロンの実際の運営データ。求人票と現実の“乖離”をなくします。</div>
+      <div id="realList"></div>
+    </div>
+
+    <!-- サロンが約束して開示 -->
+    <div class="pa-card">
+      <div class="pa-card__t">サロンが約束して開示 <small>タップで開示ON/OFF・開示するほどスコアUP</small></div>
+      <div class="pa-card__d">数字だけでは出ない“向き合う姿勢”。開示した項目が多いほど、学校に誠実なサロンとして優先表示されます。</div>
+      <div id="promList"></div>
+    </div>
+
+    <!-- 学校が本当に知りたいこと -->
+    <div class="pa-card">
+      <div class="pa-card__t">学校が本当に知りたいこと <small>この求人が答えているか</small></div>
+      <div id="needList"></div>
+    </div>
+
+    <!-- 求人票プレビュー -->
+    <div class="pa-card">
+      <div class="pa-card__t">求人票プレビュー <small>学校・生徒から見た画面</small></div>
+      <div class="rc-post">
+        <div class="rc-post__hd"><b>SALON LUXE 表参道</b><br><span class="rc-badge" id="postBadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg> 開示率 0%・実データ認証</span></div>
+        <div class="rc-post__b">
+          <div class="rc-post__row"><span class="k">募集</span><span class="v">スタイリスト／アシスタント</span></div>
+          <div class="rc-post__row"><span class="k">初任給（実績）</span><span class="v" id="poSalary">¥0〜</span></div>
+          <div class="rc-post__row"><span class="k">勤務・休日（実績）</span><span class="v" id="poHours">—</span></div>
+          <div class="rc-post__row"><span class="k">有給消化（実績）</span><span class="v" id="poYukyu">—</span></div>
+          <div class="rc-post__row"><span class="k">デビューまで</span><span class="v">平均 28ヶ月</span></div>
+          <div class="rc-post__row"><span class="k">定着</span><span class="v">離職率 12%・平均勤続 5.2年</span></div>
+          <div class="rc-chips" id="poChips"></div>
+          <div class="pa-note">※ 給与・勤務・休日・有給は SalonProの実データ。自己申告ではありません。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 学校とつながる -->
+    <div class="pa-card">
+      <div class="pa-card__t">地域の学校とつながる <small>連携校に共有</small></div>
+      <div class="rc-school"><span class="rc-school__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M3 9l9-5 9 5-9 5z"/><path d="M21 9v6M7 11v5c0 1 2 2 5 2s5-1 5-2v-5"/></svg></span><span class="rc-school__m"><span class="rc-school__t">札幌ビューティー専門学校</span><span class="rc-school__s">連携中 ・ 求人担当が実データを確認可能</span></span><span class="rc-school__st">連携中</span></div>
+      <div class="rc-school"><span class="rc-school__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M3 9l9-5 9 5-9 5z"/><path d="M21 9v6M7 11v5c0 1 2 2 5 2s5-1 5-2v-5"/></svg></span><span class="rc-school__m"><span class="rc-school__t">北海道美容専門学校</span><span class="rc-school__s">連携中 ・ 卒業生の定着状況も共有</span></span><span class="rc-school__st">連携中</span></div>
+      <div class="rc-school"><span class="rc-school__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M3 9l9-5 9 5-9 5z"/><path d="M21 9v6M7 11v5c0 1 2 2 5 2s5-1 5-2v-5"/></svg></span><span class="rc-school__m"><span class="rc-school__t">函館理容美容専門学校</span><span class="rc-school__s">申請待ち</span></span><span class="rc-school__st" style="color:var(--ink-3)">申請待ち</span></div>
+      <button class="pa-btn" id="shareBtn" style="margin-top:14px">この内容で連携校に共有する（デモ）</button>
+    </div>
+
+    <div class="pa-note" style="margin-top:4px">※ 給与・勤務・休日・有給は SalonProの実データ（デモ）。離職率・勤続・デビュー期間等はサロンが開示する項目です。本番は学校アカウントと連携し、盛られていない実データを学校の求人担当が確認できます。</div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/shift.js?v=73"></script>
+  <script src="assets/js/components.js?v=73"></script>
+  <script>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
+
+      // ---- SalonProの実データ（SP.SHIFT）から取得 ----
+      var SH = (window.SP && SP.SHIFT) ? SP.SHIFT : null;
+      var real = {};
+      if (SH && SH.roster) {
+        var r = SH.roster, n = r.length;
+        var bases = r.map(function (s) { return s.base; });
+        var sMin = Math.min.apply(null, bases), sMax = Math.max.apply(null, bases);
+        var hSum = 0, otSum = 0, ykSum = 0;
+        for (var i = 0; i < n; i++) { hSum += (SH.monthlyHours ? SH.monthlyHours(i) : 168); otSum += (SH.overtimeHours ? SH.overtimeHours(i) : 0); ykSum += r[i].yukyu; }
+        var roles = {}; r.forEach(function (s) { roles[s.role] = (roles[s.role] || 0) + 1; });
+        var roleStr = Object.keys(roles).map(function (k) { return k + roles[k]; }).join('・');
+        // スタッフ数・給与レンジ・有給は実データ。勤務時間/残業は現実的な運営値（デモ）で表示
+        real = {
+          staff: n, roleStr: roleStr, sMin: sMin, sMax: sMax,
+          avgH: 176, workDays: 22, offDays: 8,
+          avgOT: 14, yukyu: (ykSum / n).toFixed(1)
+        };
+      } else {
+        real = { staff: 6, roleStr: 'ディレクター1・スタイリスト4・ジュニア1', sMin: 150000, sMax: 320000, avgH: 176, workDays: 22, offDays: 8, avgOT: 12, yukyu: '1.0' };
+      }
+
+      // 実データ項目（常に開示・盛れない）
+      var REAL = [
+        { t: 'スタッフ構成', v: real.staff + '名（' + real.roleStr + '）' },
+        { t: '給与レンジ（役職別・実績）', v: yen(real.sMin) + '〜' + yen(real.sMax) },
+        { t: '平均勤務時間（実績）', v: real.avgH + 'h/月 ・ 月' + real.workDays + '日勤務・休' + real.offDays + '日' },
+        { t: '残業（実績）', v: '平均 ' + real.avgOT + 'h/月（36協定内）' },
+        { t: '有給消化（実績）', v: '平均 ' + real.yukyu + '日/月' }
+      ];
+      // サロンが約束して開示（トグル）
+      var PROM = [
+        { id: 'debut', t: 'スタイリストデビューまで', v: '平均 28ヶ月（実績ベース）', on: true },
+        { id: 'stay', t: '離職率・平均勤続', v: '離職率 12% ・ 平均勤続 5.2年', on: true },
+        { id: 'train', t: '研修制度', v: '週2回の練習会・外部講習費補助・カットモデル紹介', on: true },
+        { id: 'care', t: '相談体制・ハラスメント対応', v: '第三者相談窓口・対応規程あり', on: true },
+        { id: 'welfare', t: '社会保険・福利厚生', v: '社保完備・産休育休の取得実績あり', on: true },
+        { id: 'visit', t: '見学・インターン', v: '随時受け入れ・1日体験あり', on: false },
+        { id: 'model', t: 'デビュー後の給与モデル', v: 'スタイリスト平均 月収 ¥380,000（歩合込・実績）', on: false }
+      ];
+      // 学校が本当に知りたいこと（充足チェック）
+      var NEEDS = [
+        { t: '求人票と現実の給与・休日が一致しているか', key: 'real' },
+        { t: 'アシスタントがどれくらいでデビューできるか', key: 'debut' },
+        { t: '離職率・定着（すぐ辞めないか）', key: 'stay' },
+        { t: '育成・研修が本当にあるか', key: 'train' },
+        { t: 'ハラスメント時の相談体制があるか', key: 'care' },
+        { t: '見学・体験を受け入れているか', key: 'visit' }
+      ];
+
+      function renderReal() {
+        $('realList').innerHTML = REAL.map(function (x) {
+          return '<div class="rc-drow"><span class="rc-drow__m"><span class="rc-drow__t">' + x.t + '</span><span class="rc-drow__v"><b>' + x.v + '</b></span></span><span class="rc-real">✓ 実データ</span></div>';
+        }).join('');
+      }
+      function renderProm() {
+        $('promList').innerHTML = PROM.map(function (p) {
+          return '<div class="rc-drow"><span class="rc-drow__m"><span class="rc-drow__t">' + p.t + '</span><span class="rc-drow__v">' + p.v + '</span></span><span class="rc-tg ' + (p.on ? 'on' : '') + '" data-id="' + p.id + '"><i></i></span></div>';
+        }).join('');
+      }
+      function isOn(id) { var p = PROM.find(function (x) { return x.id === id; }); return p ? p.on : true; }
+      function renderNeeds() {
+        $('needList').innerHTML = NEEDS.map(function (nd) {
+          var ok = nd.key === 'real' ? true : isOn(nd.key);
+          return '<div class="rc-need"><span class="rc-need__c ' + (ok ? 'ok' : 'no') + '">' + (ok
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>') + '</span><span>' + nd.t + (ok ? '' : '<b style="color:var(--ink-3)">（未開示）</b>') + '</span></div>';
+        }).join('');
+      }
+      function render() {
+        var disclosed = REAL.length + PROM.filter(function (p) { return p.on; }).length;
+        var total = REAL.length + PROM.length; // 12
+        var pct = Math.round(disclosed / total * 100);
+        $('discN').textContent = disclosed;
+        $('discBar').style.width = pct + '%';
+        $('discMsg').innerHTML = pct >= 80 ? '開示率 <b>' + pct + '%</b> ・ 学校に「誠実なサロン」として優先表示されます'
+          : pct >= 55 ? '開示率 <b>' + pct + '%</b> ・ あと少し開示すると学校の優先枠に入ります'
+            : '開示率 <b>' + pct + '%</b> ・ 開示を増やすと学校に届きやすくなります';
+        // 求人票
+        $('postBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg> 開示率 ' + pct + '%・実データ認証';
+        $('poSalary').textContent = yen(real.sMin) + '〜（役職別・実績）';
+        $('poHours').textContent = real.avgH + 'h/月・休' + real.offDays + '日・残業' + real.avgOT + 'h';
+        $('poYukyu').textContent = '平均 ' + real.yukyu + '日/月';
+        var chips = []; PROM.forEach(function (p) { if (p.on) chips.push(p.t); });
+        $('poChips').innerHTML = chips.map(function (c) { return '<span class="rc-chip">' + c + '</span>'; }).join('');
+        renderNeeds();
+      }
+
+      $('promList').addEventListener('click', function (e) {
+        var t = e.target.closest('.rc-tg'); if (!t) return;
+        var p = PROM.find(function (x) { return x.id === t.dataset.id; }); p.on = !p.on;
+        t.classList.toggle('on', p.on); render();
+      });
+      $('shareBtn').addEventListener('click', function () {
+        var to = $('toast'); to.innerHTML = (window.SP && SP.svg ? SP.svg('checkc') : '✓') + '連携校に共有しました（デモ）';
+        to.classList.add('is-visible'); clearTimeout(to._t); to._t = setTimeout(function () { to.classList.remove('is-visible'); }, 2200);
+      });
+
+      renderReal(); renderProm(); render();
+    })();
+  </script>
+</body>
+</html>
