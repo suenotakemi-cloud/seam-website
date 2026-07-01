@@ -1,5 +1,5 @@
 /* SalonPro Service Worker — コア資産をキャッシュしオフライン/高速化（軽くて落ちないPWA） */
-const CACHE = 'salonpro-v52';
+const CACHE = 'salonpro-v53';
 const CORE = [
   'home.html', 'index.html', 'cart.html', 'product.html', 'reorder.html',
   'mypage.html', 'learn.html', 'favorites.html', 'orders.html', 'support.html',
@@ -7,7 +7,7 @@ const CORE = [
   'pos.html', 'inventory.html', 'admin.html', 'top.html',
   'news.html', 'seminar.html', 'campaigns.html', 'contracts.html',
   'subscribe.html', 'notify.html', 'payment.html', 'tracking.html', 'app.html', 'staff.html',
-  'dealer-settings.html', 'tempu.html', 'books.html', 'equipment.html', 'partners.html', 'quickorder.html', 'invoices.html', 'staffmate.html', 'karte.html', 'tokushoho.html', 'privacy.html', 'terms.html', 'shipping.html', 'quote.html', 'guide.html', 'faq.html', 'company.html', 'rep.html', 'pop.html', 'owner.html', 'manage.html', 'me.html', 'pay.html', 'rate.html', 'rate-calc.html', 'freelance.html', 'freelance-tools.html', 'tenpan.html', 'recruit.html', 'jobs.html', 'hokkaido-jobs.html', 'assets/js/rate-model.js',
+  'dealer-settings.html', 'tempu.html', 'books.html', 'equipment.html', 'partners.html', 'quickorder.html', 'invoices.html', 'staffmate.html', 'karte.html', 'tokushoho.html', 'privacy.html', 'terms.html', 'shipping.html', 'quote.html', 'guide.html', 'faq.html', 'company.html', 'rep.html', 'pop.html', 'owner.html', 'manage.html', 'me.html', 'pay.html', 'rate.html', 'rate-calc.html', 'freelance.html', 'freelance-tools.html', 'tenpan.html', 'recruit.html', 'jobs.html', 'hokkaido-jobs.html', 'spojob.html', 'assets/js/rate-model.js',
   'assets/css/tokens.css', 'assets/css/base.css', 'assets/css/components.css',
   'assets/css/home.css', 'assets/css/pages.css', 'assets/css/product.css',
   'assets/css/cart.css', 'assets/css/reorder.css', 'assets/css/listing.css',
