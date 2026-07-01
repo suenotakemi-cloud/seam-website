@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1f7a4d">
   <title>salon town recruit｜即日採用ワーカー（美容師）</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=79">
-  <link rel="stylesheet" href="assets/css/base.css?v=79">
-  <link rel="stylesheet" href="assets/css/components.css?v=79">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=80">
+  <link rel="stylesheet" href="assets/css/base.css?v=80">
+  <link rel="stylesheet" href="assets/css/components.css?v=80">
   <style>
     body { background: var(--surface-2); padding-bottom: 40px; }
     .sw-top { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid var(--line); }
@@ -111,14 +111,15 @@
     <div class="pa-card">
       <a class="sw-link" href="freelance-tools.html"><span class="sw-link__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><span class="sw-link__m"><span class="sw-link__t">確定申告に自動連携</span><span class="sw-link__s">即日採用の稼働収入が、確定申告ツールに自動集計</span></span><svg class="sw-link__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></a>
       <a class="sw-link" href="freelance.html"><span class="sw-link__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="7" r="4"/><path d="M4.5 21a6.5 6.5 0 0 1 13 0"/><path d="M19 3v4M21 5h-4"/></svg></span><span class="sw-link__m"><span class="sw-link__t">SalonProフリーランス登録がそのままワーカーに</span><span class="sw-link__s">予約・モバイル決済・店販ECと一体で管理</span></span><svg class="sw-link__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></a>
-      <a class="sw-link" href="spojob.html"><span class="sw-link__ic" style="background:#eef6f0;color:#1f7a4d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="sw-link__m"><span class="sw-link__t">サロンの方：即日採用で手配する</span><span class="sw-link__s">salon town recruit 即日採用（サロン側）</span></span><svg class="sw-link__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></a>
+      <a class="sw-link" href="spot.html"><span class="sw-link__ic" style="background:#eef6f0;color:#1f7a4d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="sw-link__m"><span class="sw-link__t">サロンの方：即日採用で手配する</span><span class="sw-link__s">salon town recruit 即日採用（サロン側）</span></span><svg class="sw-link__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></a>
     </div>
 
     <div class="pa-note">※ 改善デモです。収入・手配リクエスト・時給はデモ値。菊地が独自運営。稼働エリア・料率・登録要件は菊地の条件で確定します。免許確認は登録時に実施。</div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/components.js?v=79"></script>
+  <script src="assets/js/spot.js?v=80"></script>
+  <script src="assets/js/components.js?v=80"></script>
   <script>
     (function () {
       var $ = function (id) { return document.getElementById(id); };
@@ -136,25 +137,42 @@
         { id: 'r3', salon: 'LULU', area: '札幌・北24条', date: '7/11(土)', time: '9:00–15:00', hours: 6, tasks: ['トリートメント', 'シャンプー・ブロー'], wage: 1800, st: 'open' }
       ];
 
+      // サロン側(spot.html)からの手配を SP.SPOT 経由で受信（リアルタイム）
+      function liveReqs() {
+        if (!(window.SP && SP.SPOT)) return [];
+        return SP.SPOT.list().map(function (d) {
+          return { id: d.id, salon: d.salon || 'サロン', area: (d.area || '') + '（即日）', date: '即日', time: '応相談', hours: d.hours || 6, tasks: d.tasks || [], wage: d.wage || 1800, st: d.status === 'pending' ? 'open' : d.status, live: true };
+        });
+      }
+      function allReqs() { return liveReqs().concat(REQS); }
+      function setReqStatus(id, st) {
+        var r = REQS.find(function (x) { return x.id === id; });
+        if (r) { r.st = st; return; }
+        if (window.SP && SP.SPOT) SP.SPOT.setStatus(id, st === 'open' ? 'pending' : st);
+      }
+
       $('area').innerHTML = AREAS.map(function (a) { return '<option' + (a === '札幌' ? ' selected' : '') + '>' + a + '</option>'; }).join('');
       $('skills').innerHTML = TASKS.map(function (t) { return '<button class="sw-chip' + (skillsOn[t] ? ' on' : '') + '" data-t="' + t + '">' + t + '</button>'; }).join('');
       $('days').innerHTML = DAYS.map(function (d) { return '<div class="sw-day' + (daysOn[d[1]] ? ' on' : '') + '" data-d="' + d[1] + '"><div class="sw-day__d">' + d[0] + '</div><div class="sw-day__n">' + d[1] + '</div><div class="sw-day__st">' + (daysOn[d[1]] ? '働ける' : '−') + '</div></div>'; }).join('');
 
       function income() {
         var inc = BASE_INCOME, days = BASE_DAYS;
-        REQS.forEach(function (r) { if (r.st === 'done') { inc += r.hours * r.wage; days += 1; } });
+        allReqs().forEach(function (r) { if (r.st === 'done') { inc += r.hours * r.wage; days += 1; } });
         $('incomeV').textContent = yen(inc); $('daysV').textContent = days + '日';
       }
       function renderReqs() {
-        var openN = REQS.filter(function (r) { return r.st === 'open'; }).length;
-        $('reqCount').textContent = openN > 0 ? '（未回答 ' + openN + '件）' : '（すべて回答済み）';
-        $('reqs').innerHTML = REQS.map(function (r) {
+        var rows = allReqs();
+        var openN = rows.filter(function (r) { return r.st === 'open'; }).length;
+        var liveN = rows.filter(function (r) { return r.live && r.st === 'open'; }).length;
+        $('reqCount').textContent = (liveN > 0 ? '\uD83D\uDD14 新着' + liveN + '件 ・ ' : '') + (openN > 0 ? '未回答 ' + openN + '件' : 'すべて回答済み');
+        $('reqs').innerHTML = rows.map(function (r) {
           if (r.st === 'declined') return '';
-          if (r.st === 'done') return '<div class="sw-req done"><div class="sw-req__hd"><div><div class="sw-req__s">' + r.salon + '</div><div class="sw-req__meta">' + r.area + ' ・ ' + r.date + ' ' + r.time + '</div></div><div class="sw-req__w"><b>' + yen(r.hours * r.wage) + '</b><small>' + yen(r.wage) + '/時 ×' + r.hours + 'h</small></div></div><div class="sw-req__ok">✓ 受けました（確定・収入に反映）</div></div>';
-          return '<div class="sw-req"><div class="sw-req__hd"><div><div class="sw-req__s">' + r.salon + '</div><div class="sw-req__meta">' + r.area + ' ・ ' + r.date + ' ' + r.time + '</div></div><div class="sw-req__w"><b>' + yen(r.hours * r.wage) + '</b><small>' + yen(r.wage) + '/時 ×' + r.hours + 'h</small></div></div>'
-            + '<div class="sw-req__task">' + r.tasks.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>'
-            + '<div class="sw-req__act"><button class="yes" data-yes="' + r.id + '">受ける</button><button class="no" data-no="' + r.id + '">今回は断る</button></div></div>';
-        }).join('') || '<div class="pa-card" style="text-align:center;color:var(--ink-3);font-size:12px">新しい手配リクエストはありません</div>';
+          var nb = (r.live && r.st === 'open') ? ' <span style=\"font-size:9px;font-weight:800;color:#fff;background:#e5484d;border-radius:5px;padding:1px 6px\">NEW</span>' : '';
+          if (r.st === 'done') return '<div class=\"sw-req done\"><div class=\"sw-req__hd\"><div><div class=\"sw-req__s\">' + r.salon + '</div><div class=\"sw-req__meta\">' + r.area + ' ・ ' + r.date + ' ' + r.time + '</div></div><div class=\"sw-req__w\"><b>' + yen(r.hours * r.wage) + '</b><small>' + yen(r.wage) + '/時 ×' + r.hours + 'h</small></div></div><div class=\"sw-req__ok\">\u2713 受けました（確定・収入に反映）</div></div>';
+          return '<div class=\"sw-req\"><div class=\"sw-req__hd\"><div><div class=\"sw-req__s\">' + r.salon + nb + '</div><div class=\"sw-req__meta\">' + r.area + ' ・ ' + r.date + ' ' + r.time + '</div></div><div class=\"sw-req__w\"><b>' + yen(r.hours * r.wage) + '</b><small>' + yen(r.wage) + '/時 ×' + r.hours + 'h</small></div></div>'
+            + '<div class=\"sw-req__task\">' + r.tasks.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>'
+            + '<div class=\"sw-req__act\"><button class=\"yes\" data-yes=\"' + r.id + '\">受ける</button><button class=\"no\" data-no=\"' + r.id + '\">今回は断る</button></div></div>';
+        }).join('') || '<div class=\"pa-card\" style=\"text-align:center;color:var(--ink-3);font-size:12px\">新しい手配リクエストはありません</div>';
       }
       function toast(m) { var t = $('toast'); t.innerHTML = (window.SP && SP.svg ? SP.svg('checkc') : '✓') + m; t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 2200); }
 
@@ -164,10 +182,11 @@
       $('statusTg').addEventListener('click', function () { open = !open; this.classList.toggle('on', open); $('statusL').textContent = open ? '📢 募集中（手配を受け付け）' : '💤 休止中（新しい手配は届きません）'; });
       $('reqs').addEventListener('click', function (e) {
         var y = e.target.closest('[data-yes]'), n = e.target.closest('[data-no]');
-        if (y) { var r = REQS.find(function (x) { return x.id === y.dataset.yes; }); r.st = 'done'; renderReqs(); income(); toast(r.salon + ' の手配を受けました（収入に反映）'); }
-        else if (n) { var r2 = REQS.find(function (x) { return x.id === n.dataset.no; }); r2.st = 'declined'; renderReqs(); toast('手配を断りました'); }
+        if (y) { var r = allReqs().find(function (x) { return x.id === y.dataset.yes; }); setReqStatus(y.dataset.yes, 'done'); renderReqs(); income(); toast((r ? r.salon : '') + ' の手配を受けました（収入に反映）'); }
+        else if (n) { setReqStatus(n.dataset.no, 'declined'); renderReqs(); toast('手配を断りました'); }
       });
 
+      if (window.SP && SP.SPOT) SP.SPOT.onChange(function () { renderReqs(); income(); });
       renderReqs(); income();
     })();
   </script>

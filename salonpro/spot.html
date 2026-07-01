@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7f1e4">
   <title>salon town recruit｜北海道の即日採用（アシスタント・スタイリスト）</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=79">
-  <link rel="stylesheet" href="assets/css/base.css?v=79">
-  <link rel="stylesheet" href="assets/css/components.css?v=79">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=80">
+  <link rel="stylesheet" href="assets/css/base.css?v=80">
+  <link rel="stylesheet" href="assets/css/components.css?v=80">
   <style>
     body { background: #faf7f0; padding-bottom: 40px; }
     .sj-top { position: sticky; top: 0; z-index: 10; background: rgba(250,247,240,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--gold-line); }
@@ -173,13 +173,14 @@
       <a class="sj-btn line" href="#" id="ctaLine">LINEで問い合わせ（質問だけでもOK）</a>
       <a class="sj-btn ghost" href="hokkaido-jobs.html" style="margin-top:10px">正社員の採用は「北海道 美容師求人サイト」へ</a>
       <a class="sj-btn ghost" href="recruit.html" style="margin-top:10px">実データで“盛れない”求人を出す</a>
-      <a class="sj-btn ghost" href="spojob-worker.html" style="margin-top:10px">美容師の方：ワーカー登録して働く</a>
+      <a class="sj-btn ghost" href="spot-register.html" style="margin-top:10px">美容師の方：ワーカー登録して働く（1分）</a>
       <div class="pa-note">運営：株式会社菊地（KIKUCHI PRODUCE）。北海道の即戦力美容師を、菊地が独自に運営する即日採用サービスです（外部サービスとは連携していません）。<br>※ 本ページは改善デモです。写真スロットは貴社の実写真に差し替え可。ワーカー・時給・件数はデモ値。料率・エリア・稼働条件は菊地の運営で確定します。</div>
     </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/components.js?v=79"></script>
+  <script src="assets/js/spot.js?v=80"></script>
+  <script src="assets/js/components.js?v=80"></script>
   <script>
     (function () {
       var $ = function (id) { return document.getElementById(id); };
@@ -224,7 +225,7 @@
       $('simArea').addEventListener('change', function () { sel.area = this.value; renderSim(); });
       $('simSkills').addEventListener('click', function (e) { var b = e.target.closest('[data-t]'); if (!b) return; var k = b.dataset.t; sel.skills[k] = !sel.skills[k]; b.classList.toggle('on', sel.skills[k]); renderSim(); });
       function toast(m) { var t = $('toast'); t.innerHTML = (window.SP && SP.svg ? SP.svg('checkc') : '✓') + m; t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 2200); }
-      $('simList').addEventListener('click', function (e) { var b = e.target.closest('[data-go]'); if (!b) return; toast(b.dataset.go + ' さんに手配リクエストを送りました（デモ）'); });
+      $('simList').addEventListener('click', function (e) { var b = e.target.closest('[data-go]'); if (!b) return; var w = WORKERS.filter(function (x) { return x.init === b.dataset.go && x.area === sel.area; })[0]; var sk = Object.keys(sel.skills).filter(function (k) { return sel.skills[k]; }); if (window.SP && SP.SPOT) SP.SPOT.dispatch({ salon: 'SALON LUXE 表参道', area: sel.area, tasks: sk.length ? sk : ['アシスタント業務'], wage: w ? w.wage : 1800, hours: 6, worker: b.dataset.go }); toast(b.dataset.go + ' さんに手配リクエストを送りました（ワーカーに即通知）'); });
       $('heroSim').addEventListener('click', function () { document.querySelector('.sj-sec:nth-of-type(2)') && document.getElementById('simArea').scrollIntoView({ block: 'center' }); });
       ['heroLine', 'ctaLine'].forEach(function (id) { $(id).addEventListener('click', function (e) { e.preventDefault(); toast('LINEの問い合わせに進みます（デモ）'); }); });
 
