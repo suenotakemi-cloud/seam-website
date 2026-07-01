@@ -6594,9 +6594,12 @@ const RESERVATION_STORES = [
   { id:'gigi',       city:'Utsunomiya', name:'宇都宮 Gigi', hpb:'https://beauty.hotpepper.jp/' },
 ];
 
-function ReservationModal({ open, onClose }) {
+function ReservationModal({ open, onClose, from }) {
   const [step, setStep] = useState(1);
   const [selectedStore, setSelectedStore] = useState(null);
+  // ヘッドスパは施術店(銀座・大阪・名古屋)のみで承るため、スパ導線からの予約は3店舗に絞る
+  const spaOnly = from === 'spa';
+  const stores = spaOnly ? RESERVATION_STORES.filter(s => ['ginza', 'osaka', 'nagoya'].indexOf(s.id) > -1) : RESERVATION_STORES;
 
   useEffect(() => {
     if (!open) return;
@@ -6642,9 +6645,9 @@ function ReservationModal({ open, onClose }) {
 
           {step === 1 && (
             <div className="anim-fade-up">
-              <p className="text-[12.5px] text-charcoal/70 mb-4 leading-relaxed">ご来店の店舗エリアをお選びください</p>
+              <p className="text-[12.5px] text-charcoal/70 mb-4 leading-relaxed">{spaOnly ? 'ヘッドスパは銀座・大阪・名古屋の3店舗で承ります' : 'ご来店の店舗エリアをお選びください'}</p>
               <div className="grid grid-cols-3 gap-2.5">
-                {RESERVATION_STORES.map(s => (
+                {stores.map(s => (
                   <button
                     key={s.id}
                     type="button"
@@ -8313,9 +8316,9 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
   const dl = (items) => (
     <dl className="space-y-2.5">
       {items.map(([k, v], i) => (
-        <div key={i} className="grid grid-cols-[110px_1fr] sm:grid-cols-[130px_1fr] gap-3 items-baseline">
-          <dt className="font-serif text-[12px] sm:text-[12.5px] text-charcoal/60 leading-[1.65]" style={{ wordBreak: 'keep-all' }}>{k}</dt>
-          <dd className="font-serif text-[13.5px] sm:text-[14.5px] text-ink leading-[1.8]" style={{ fontWeight: 500, wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{v || '—'}</dd>
+        <div key={i} className="grid grid-cols-[92px_1fr] sm:grid-cols-[130px_1fr] gap-3 items-baseline">
+          <dt className="font-serif text-[12px] sm:text-[12.5px] text-charcoal/60 leading-[1.65] min-w-0" style={{ overflowWrap: 'anywhere' }}>{k}</dt>
+          <dd className="font-serif text-[13.5px] sm:text-[14.5px] text-ink leading-[1.8] min-w-0" style={{ fontWeight: 500, wordBreak: 'normal', overflowWrap: 'anywhere' }}>{v || '—'}</dd>
         </div>
       ))}
     </dl>
@@ -9906,12 +9909,13 @@ function App() {
   const [answers, setAnswers] = useState(sharedInit || {});
   const [lastKarte, setLastKarte] = useState(() => loadLastKarte());
   const [reservationOpen, setReservationOpen] = useState(false);
+  const [reservationFrom, setReservationFrom] = useState('');
 
   // 予約モーダルの開閉(イベント委譲で全てのトリガーに対応)
   useEffect(() => {
     const handler = (e) => {
       const trigger = e.target.closest('[data-open-resv]');
-      if (trigger) { e.preventDefault(); trackCta('reserve_open', trigger.getAttribute('data-resv-from') || ''); setReservationOpen(true); }
+      if (trigger) { e.preventDefault(); const rf = trigger.getAttribute('data-resv-from') || ''; trackCta('reserve_open', rf); setReservationFrom(rf); setReservationOpen(true); }
     };
     document.addEventListener('click', handler);
     const esc = (e) => { if (e.key === 'Escape') setReservationOpen(false); };
@@ -9980,7 +9984,7 @@ function App() {
     setPickerMode(false);
     setView('quizDeep');
   };
-  const reservationEl = <ReservationModal open={reservationOpen} onClose={() => setReservationOpen(false)} />;
+  const reservationEl = <ReservationModal open={reservationOpen} from={reservationFrom} onClose={() => setReservationOpen(false)} />;
 
   if (view === 'home')       return <>{reservationEl}<Home onStart={start} onStartDeep={startDeep} lastKarte={lastKarte} onResume={resume} onClearLast={clearAndRestart} onCollection={openCharacterPicker} onLibrary={openCollection} /></>;
   if (view === 'quiz')       return <>{reservationEl}<Quiz answers={answers} setAnswers={setAnswers} onComplete={complete} onBackHome={backHome} /></>;
