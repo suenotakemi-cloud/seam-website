@@ -3623,8 +3623,12 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
   const bestOf = (id) => {
     const arr = blocks[id] || [];
     if (!arr.length) return null;
-    const best = deepPriceTrio(arr).best || arr[0];
-    return best ? { item: best, category: id, blockTitle: _catTitle(id) } : null;
+    const trio = deepPriceTrio(arr);
+    const best = trio.best || arr[0];
+    if (!best) return null;
+    // best + 同カテゴリのブランド違い候補(最大2) → スライドで「次におすすめ / その次におすすめ」
+    const items = [best].concat((trio.alts || []).filter(a => a && a.p && a.p.id !== best.p.id).slice(0, 2));
+    return { item: best, items, category: id, blockTitle: _catTitle(id) };
   };
   const primary = (() => {
     const out = [], used = new Set();
@@ -3689,9 +3693,18 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
             </div>
             <span className="font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 pt-1 whitespace-nowrap nums">{primary.length} / {shownCount}</span>
           </div>
-          <div className="space-y-4">
+          {/* AI提案であることの注記 — 確定ではない/プロに相談 */}
+          <div className="mb-4 flex items-start gap-2.5 rounded-[2px] border border-charcoal/12 bg-cream/40 px-3.5 py-2.5">
+            <span aria-hidden className="shrink-0 mt-[1px] font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45 border border-charcoal/25 rounded-full px-1.5 py-0.5 leading-none">AI</span>
+            <p className="text-[11px] sm:text-[11.5px] text-charcoal/65 leading-[1.8]">
+              このおすすめは AIがあなたの回答から自動で選んだ提案です ここで確定するものではありません 気になる点は 担当の美容師さん または SEAMのヘアケアのプロにご相談ください
+            </p>
+          </div>
+          <div className="space-y-6">
             {primary.map((f, i) => {
               const _reason = buildPrimaryReason(f.category, answers, scores);
+              const cands = (f.items && f.items.length) ? f.items : [f.item];
+              const rankLabel = (j) => (j === 0 ? 'まず これ' : j === 1 ? '次におすすめ' : 'その次におすすめ');
               return (
               <div key={f.item.p.id}>
                 <p className="mb-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/55">
@@ -3702,7 +3715,26 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
                     <span className="font-mono tracking-widest2 text-[9.5px] uppercase mr-1.5" style={{ color: '#B8945A', opacity: 0.7 }}>なぜ</span>{_reason}
                   </p>
                 )}
-                <DeepBestCard item={f.item} category={f.category} />
+                {cands.length > 1 ? (
+                  <div>
+                    <div className="mb-2 flex items-center gap-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/50">
+                      <svg aria-hidden viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 text-gold" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                      <span>スワイプで 次の候補も見られます · {cands.length}件</span>
+                    </div>
+                    <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+                      {cands.map((it, j) => (
+                        <div key={it.p.id} className="snap-start shrink-0 w-[86%] sm:w-[430px] max-w-full flex flex-col">
+                          <p className="mb-1.5 font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">
+                            <span className="text-gold nums">{String(j + 1).padStart(2, '0')}</span> · {rankLabel(j)}
+                          </p>
+                          <DeepBestCard item={it} best={f.item} category={f.category} variant={j === 0 ? 'best' : 'alt'} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <DeepBestCard item={f.item} category={f.category} />
+                )}
               </div>
               );
             })}
