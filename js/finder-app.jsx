@@ -94,17 +94,17 @@ const Q = [
     id: 'color',
     type: 'card-history',
     eyebrow: 'Color History',
-    title: '今の髪の色は？（明るめ／暗め）',
-    note: 'いちばん近いものを1つ。ブリーチ（脱色）については、次の質問で別に伺います。',
-    yesPrompt: 'カラーをしたことがありますか？（毛先に色が残っている・過去にした場合も含む）',
+    title: '髪を染めていますか？（白髪染め・ホームカラーも含む）',
+    note: 'ブリーチは前の質問で伺いました。ここは今の見た目の色で、いちばん近いものを1つお選びください。',
+    yesPrompt: '今の状態にいちばん近いものは？（毛先に色が残っている・過去にした場合も含む）',
     options: [
-      { v: 'none',          label: '明るくしていない（黒〜暗い地毛）',             score: {} },
-      { v: 'light_recent',  label: '明るい茶色（色がはっきり残っている）',         score: { colorFade: 2, damage: 1 } },
-      { v: 'light_past',    label: '明るめのカラー（褪せてきた・根元が伸びた）',   score: { colorFade: 1, damage: 1 } },
+      { v: 'none',          label: '染めていない（地毛のまま）',                   score: {} },
+      { v: 'light_recent',  label: '明るめ｜今も色がはっきり出ている',             score: { colorFade: 2, damage: 1 } },
+      { v: 'light_past',    label: '明るめ｜色落ち・根元が伸びてきた',             score: { colorFade: 1, damage: 1 } },
       { v: 'dark_recent',   label: '暗め・落ち着いた色に染めている',               score: { colorFade: 1 } },
-      { v: 'dark_strong',   label: '黒染め・しっかり暗くしている',                 score: { damage: 2, blackdye: 3 } },
+      { v: 'dark_strong',   label: '黒染めをしている',                            score: { damage: 2, blackdye: 3 } },
       { v: 'gray',          label: '白髪染めをしている',                          score: { aging: 2, colorFade: 1 } },
-      { v: 'home',          label: '自分で染めている（ホームカラー）',             score: { damage: 2, colorFade: 1 } },
+      { v: 'home',          label: '市販のカラーで自分で染めている',             score: { damage: 2, colorFade: 1 } },
     ],
   },
   {
@@ -563,9 +563,9 @@ const MODE_B_ORDER = [
   { step:1, id:'scalpType' },
   { step:1, id:'scalpSensitivity' },
 
-  // STEP 2 — 髪の履歴
-  { step:2, id:'color' },
+  // STEP 2 — 髪の履歴（ブリーチを先に聞く → 色の質問で迷わせない）
   { step:2, id:'bleach' },
+  { step:2, id:'color' },
   { step:2, id:'colorFreq',       when:(a) => a.color && a.color !== 'none' },
   // カラーをしている人にだけ「白髪染め」を聞く(していない場合はスキップ)
   { step:2, id:'grayHair',        when:(a) => a.color && a.color !== 'none' },
