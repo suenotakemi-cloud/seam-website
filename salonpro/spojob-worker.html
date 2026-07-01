@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f7a4d">
+  <title>スポジョブ 北海道｜ワーカー（美容師）</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=77">
+  <link rel="stylesheet" href="assets/css/base.css?v=77">
+  <link rel="stylesheet" href="assets/css/components.css?v=77">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .sw-top { position: sticky; top: 0; z-index: 10; background: #fff; border-bottom: 1px solid var(--line); }
+    .sw-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 720px; margin-inline: auto; }
+    .sw-logo { font-size: 18px; font-weight: 900; color: var(--gold-strong); } .sw-logo b { color: var(--gold); }
+    .sw-top__tag { font-size: 11px; color: var(--ink-3); border-left: 1px solid var(--line); padding-left: 9px; }
+    .pa-wrap { max-width: 720px; margin-inline: auto; padding: 16px; }
+    .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
+    .sw-sec { font-size: 13px; font-weight: 900; margin: 20px 2px 10px; display: flex; align-items: center; gap: 8px; }
+    .sw-sec::before { content: ''; width: 4px; height: 17px; background: #1f9d57; border-radius: 3px; }
+    .pa-card { background: #fff; border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; }
+    .pa-btn { width: 100%; height: 48px; border: 0; border-radius: var(--r-md); background: #fff; color: var(--ink); border: 1px solid var(--line-3); font-size: 13.5px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+
+    /* ステータスヒーロー */
+    .sw-hero { background: linear-gradient(155deg,#1f9d57,#14713c); color: #fff; border-radius: var(--r-lg); padding: 20px; margin-bottom: 14px; }
+    .sw-hero__h { font-size: 20px; font-weight: 900; } .sw-hero__s { font-size: 12px; color: rgba(255,255,255,.82); margin-top: 4px; line-height: 1.6; }
+    .sw-hero__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .sw-hero__box { background: rgba(255,255,255,.14); border-radius: 12px; padding: 11px 13px; }
+    .sw-hero__l { font-size: 10.5px; color: rgba(255,255,255,.8); } .sw-hero__v { font-family: var(--font-num); font-size: 24px; font-weight: 900; margin-top: 2px; }
+    .sw-status { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; background: rgba(255,255,255,.12); border-radius: 12px; padding: 11px 14px; }
+    .sw-status__l { font-size: 12.5px; font-weight: 800; }
+    .sw-tg { width: 52px; height: 30px; border-radius: 999px; background: rgba(255,255,255,.3); position: relative; cursor: pointer; flex: none; transition: background .15s; }
+    .sw-tg.on { background: #fff; } .sw-tg i { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: left .15s; } .sw-tg.on i { left: 25px; background: #1f9d57; }
+
+    /* プロフィール */
+    .sw-row { margin-bottom: 12px; } .sw-row:last-child { margin-bottom: 0; }
+    .sw-row__l { font-size: 11.5px; font-weight: 800; color: var(--ink-2); margin-bottom: 6px; }
+    .sw-sel { width: 100%; height: 44px; border: 1px solid var(--line-3); border-radius: 11px; padding: 0 12px; font-size: 13px; font-weight: 700; background: #fff; -webkit-appearance: none; appearance: none; }
+    .sw-slider { width: 100%; accent-color: #1f9d57; }
+    .sw-chips { display: flex; gap: 7px; flex-wrap: wrap; }
+    .sw-chip { height: 34px; padding: 0 13px; border: 1px solid var(--line-3); border-radius: 999px; background: #fff; font-size: 11.5px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .sw-chip.on { border-color: #1f9d57; background: #eef6f0; color: #1f7a4d; }
+    .sw-lic { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 800; color: #1f8f53; background: #e3f4ea; border-radius: 999px; padding: 4px 11px; }
+
+    /* 働ける日 */
+    .sw-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .sw-day { border: 1px solid var(--line-3); border-radius: 10px; padding: 9px 2px; text-align: center; cursor: pointer; background: #fff; }
+    .sw-day.on { border-color: #1f9d57; background: #1f9d57; color: #fff; }
+    .sw-day__d { font-size: 11px; font-weight: 800; } .sw-day__n { font-size: 10px; color: var(--ink-3); margin-top: 2px; } .sw-day.on .sw-day__n { color: rgba(255,255,255,.85); }
+    .sw-day__st { font-size: 9px; font-weight: 800; margin-top: 3px; color: var(--ink-3); } .sw-day.on .sw-day__st { color: #fff; }
+
+    /* 手配リクエスト */
+    .sw-req { border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px; margin-bottom: 10px; }
+    .sw-req.done { border-color: #cfead9; background: #f3faf5; }
+    .sw-req__hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .sw-req__s { font-size: 13.5px; font-weight: 900; } .sw-req__meta { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+    .sw-req__w { text-align: right; flex: none; } .sw-req__w b { font-family: var(--font-num); font-size: 17px; font-weight: 900; color: #1f7a4d; } .sw-req__w small { display: block; font-size: 9.5px; color: var(--ink-3); }
+    .sw-req__task { display: flex; flex-wrap: wrap; gap: 5px; margin: 9px 0; } .sw-req__task span { font-size: 10px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; color: var(--ink-2); }
+    .sw-req__act { display: flex; gap: 8px; } .sw-req__act button { flex: 1; height: 40px; border-radius: 10px; font-size: 12.5px; font-weight: 800; border: 0; cursor: pointer; }
+    .sw-req__act .yes { background: #1f9d57; color: #fff; } .sw-req__act .no { background: #fff; color: var(--ink-2); border: 1px solid var(--line-3); }
+    .sw-req__ok { text-align: center; font-size: 12.5px; font-weight: 800; color: #1f7a4d; padding: 6px 0; }
+
+    .sw-link { display: flex; align-items: center; gap: 11px; padding: 12px 0; border-top: 1px solid var(--line-2); text-decoration: none; color: inherit; }
+    .sw-link:first-child { border-top: 0; }
+    .sw-link__ic { width: 36px; height: 36px; border-radius: 10px; background: var(--gold-soft); color: var(--gold-strong); display: flex; align-items: center; justify-content: center; flex: none; }
+    .sw-link__ic svg { width: 19px; height: 19px; }
+    .sw-link__t { font-size: 12.5px; font-weight: 800; } .sw-link__s { font-size: 10.5px; color: var(--ink-3); }
+    .sw-link__ar { margin-left: auto; color: var(--ink-3); }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); }
+  </style>
+</head>
+<body>
+  <div class="sw-top"><div class="sw-top__in"><span class="sw-logo">スポジョブ <b>北海道</b></span><span class="sw-top__tag">ワーカー ・ 美容師の働く側</span></div></div>
+  <div class="pa-wrap">
+
+    <!-- ステータスヒーロー -->
+    <div class="sw-hero">
+      <div class="sw-hero__h">働ける日を出すだけ。</div>
+      <div class="sw-hero__s">近くのサロンから“この日お願い”が届きます。受けたい仕事だけ、受けたい日だけ。</div>
+      <div class="sw-hero__grid">
+        <div class="sw-hero__box"><div class="sw-hero__l">今月の見込み収入</div><div class="sw-hero__v" id="incomeV">¥0</div></div>
+        <div class="sw-hero__box"><div class="sw-hero__l">今月の稼働</div><div class="sw-hero__v" id="daysV">0日</div></div>
+      </div>
+      <div class="sw-status"><span class="sw-status__l" id="statusL">📢 募集中（手配を受け付け）</span><span class="sw-tg on" id="statusTg"><i></i></span></div>
+    </div>
+
+    <!-- プロフィール -->
+    <div class="sw-sec">あなたのプロフィール</div>
+    <div class="pa-card">
+      <div class="sw-row"><span class="sw-lic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M20 6 9 17l-5-5"/></svg> 美容師免許 確認済み</span></div>
+      <div class="sw-row"><div class="sw-row__l">働けるエリア</div><select class="sw-sel" id="area"></select></div>
+      <div class="sw-row"><div class="sw-row__l">できる仕事（複数OK）</div><div class="sw-chips" id="skills"></div></div>
+      <div class="sw-row"><div class="sw-row__l">経験年数</div><select class="sw-sel" id="yrs"><option>1年</option><option>3年</option><option selected>6年</option><option>9年</option><option>12年以上</option></select></div>
+      <div class="sw-row"><div class="sw-row__l">希望時給 <b id="wageLbl" style="color:#1f7a4d">¥1,800</b> <span style="font-size:10.5px;color:var(--ink-3)">（この時給で手配が届きます・派遣より受注しやすい）</span></div><input id="wage" class="sw-slider" type="range" min="1300" max="2200" step="50" value="1800"></div>
+    </div>
+
+    <!-- 働ける日 -->
+    <div class="sw-sec">働ける日（この日は働ける！）</div>
+    <div class="pa-card">
+      <div style="font-size:11.5px;color:var(--ink-2);margin-bottom:10px">タップで「働ける日」をON。土日だけ・週1だけでOK。</div>
+      <div class="sw-days" id="days"></div>
+    </div>
+
+    <!-- 手配リクエスト -->
+    <div class="sw-sec">届いた手配リクエスト <span id="reqCount" style="font-size:11px;color:var(--ink-3);font-weight:700"></span></div>
+    <div id="reqs"></div>
+
+    <!-- 収入・連携 -->
+    <div class="sw-sec">収入とSalonPro連携</div>
+    <div class="pa-card">
+      <a class="sw-link" href="freelance-tools.html"><span class="sw-link__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v5h5"/><path d="M9 13h6M9 17h4"/></svg></span><span class="sw-link__m"><span class="sw-link__t">確定申告に自動連携</span><span class="sw-link__s">スポジョブの稼働収入が、確定申告ツールに自動集計</span></span><svg class="sw-link__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></a>
+      <a class="sw-link" href="freelance.html"><span class="sw-link__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="7" r="4"/><path d="M4.5 21a6.5 6.5 0 0 1 13 0"/><path d="M19 3v4M21 5h-4"/></svg></span><span class="sw-link__m"><span class="sw-link__t">SalonProフリーランス登録がそのままワーカーに</span><span class="sw-link__s">予約・モバイル決済・店販ECと一体で管理</span></span><svg class="sw-link__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></a>
+      <a class="sw-link" href="spojob.html"><span class="sw-link__ic" style="background:#eef6f0;color:#1f7a4d"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="sw-link__m"><span class="sw-link__t">サロンの方：即日採用で手配する</span><span class="sw-link__s">スポジョブ北海道（サロン側）</span></span><svg class="sw-link__ar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="m9 6 6 6-6 6"/></svg></a>
+    </div>
+
+    <div class="pa-note">※ 改善デモです。収入・手配リクエスト・時給はデモ値。実サービスの稼働エリア・料率・登録要件は運営（JOCY）／菊地の条件で確定します。免許確認は登録時に実施。</div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/components.js?v=77"></script>
+  <script>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
+      var AREAS = ['札幌', '旭川', '函館', '釧路', '帯広', '北見'];
+      var TASKS = ['トリートメント', 'ヘッドスパ', 'カラー塗布', 'シャンプー・ブロー', '店内清掃', '受付対応', 'ヘアセット', 'スタイリング'];
+      var DAYS = [['月', '7/6'], ['火', '7/7'], ['水', '7/8'], ['木', '7/9'], ['金', '7/10'], ['土', '7/11'], ['日', '7/12']];
+      var BASE_INCOME = 72000, BASE_DAYS = 5; // 今月すでに稼働（デモ）
+      var skillsOn = { 'カラー塗布': true, 'シャンプー・ブロー': true, 'トリートメント': true };
+      var daysOn = { '7/11': true, '7/12': true, '7/6': true }; // 土日＋月
+      var open = true;
+      var REQS = [
+        { id: 'r1', salon: 'hair studio LIEN', area: '札幌・大通', date: '7/6(土)', time: '10:00–18:00', hours: 7, tasks: ['カラー塗布', 'シャンプー・ブロー'], wage: 1800, st: 'open' },
+        { id: 'r2', salon: 'Atelier COMO', area: '札幌・円山', date: '7/9(火)', time: '13:00–19:00', hours: 6, tasks: ['ヘッドスパ', '受付対応'], wage: 1700, st: 'open' },
+        { id: 'r3', salon: 'LULU', area: '札幌・北24条', date: '7/11(土)', time: '9:00–15:00', hours: 6, tasks: ['トリートメント', 'シャンプー・ブロー'], wage: 1800, st: 'open' }
+      ];
+
+      $('area').innerHTML = AREAS.map(function (a) { return '<option' + (a === '札幌' ? ' selected' : '') + '>' + a + '</option>'; }).join('');
+      $('skills').innerHTML = TASKS.map(function (t) { return '<button class="sw-chip' + (skillsOn[t] ? ' on' : '') + '" data-t="' + t + '">' + t + '</button>'; }).join('');
+      $('days').innerHTML = DAYS.map(function (d) { return '<div class="sw-day' + (daysOn[d[1]] ? ' on' : '') + '" data-d="' + d[1] + '"><div class="sw-day__d">' + d[0] + '</div><div class="sw-day__n">' + d[1] + '</div><div class="sw-day__st">' + (daysOn[d[1]] ? '働ける' : '−') + '</div></div>'; }).join('');
+
+      function income() {
+        var inc = BASE_INCOME, days = BASE_DAYS;
+        REQS.forEach(function (r) { if (r.st === 'done') { inc += r.hours * r.wage; days += 1; } });
+        $('incomeV').textContent = yen(inc); $('daysV').textContent = days + '日';
+      }
+      function renderReqs() {
+        var openN = REQS.filter(function (r) { return r.st === 'open'; }).length;
+        $('reqCount').textContent = openN > 0 ? '（未回答 ' + openN + '件）' : '（すべて回答済み）';
+        $('reqs').innerHTML = REQS.map(function (r) {
+          if (r.st === 'declined') return '';
+          if (r.st === 'done') return '<div class="sw-req done"><div class="sw-req__hd"><div><div class="sw-req__s">' + r.salon + '</div><div class="sw-req__meta">' + r.area + ' ・ ' + r.date + ' ' + r.time + '</div></div><div class="sw-req__w"><b>' + yen(r.hours * r.wage) + '</b><small>' + yen(r.wage) + '/時 ×' + r.hours + 'h</small></div></div><div class="sw-req__ok">✓ 受けました（確定・収入に反映）</div></div>';
+          return '<div class="sw-req"><div class="sw-req__hd"><div><div class="sw-req__s">' + r.salon + '</div><div class="sw-req__meta">' + r.area + ' ・ ' + r.date + ' ' + r.time + '</div></div><div class="sw-req__w"><b>' + yen(r.hours * r.wage) + '</b><small>' + yen(r.wage) + '/時 ×' + r.hours + 'h</small></div></div>'
+            + '<div class="sw-req__task">' + r.tasks.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>'
+            + '<div class="sw-req__act"><button class="yes" data-yes="' + r.id + '">受ける</button><button class="no" data-no="' + r.id + '">今回は断る</button></div></div>';
+        }).join('') || '<div class="pa-card" style="text-align:center;color:var(--ink-3);font-size:12px">新しい手配リクエストはありません</div>';
+      }
+      function toast(m) { var t = $('toast'); t.innerHTML = (window.SP && SP.svg ? SP.svg('checkc') : '✓') + m; t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 2200); }
+
+      $('skills').addEventListener('click', function (e) { var b = e.target.closest('[data-t]'); if (!b) return; var k = b.dataset.t; skillsOn[k] = !skillsOn[k]; b.classList.toggle('on', skillsOn[k]); });
+      $('days').addEventListener('click', function (e) { var c = e.target.closest('[data-d]'); if (!c) return; var k = c.dataset.d; daysOn[k] = !daysOn[k]; c.classList.toggle('on', daysOn[k]); c.querySelector('.sw-day__st').textContent = daysOn[k] ? '働ける' : '−'; });
+      $('wage').addEventListener('input', function () { $('wageLbl').textContent = yen(+this.value); });
+      $('statusTg').addEventListener('click', function () { open = !open; this.classList.toggle('on', open); $('statusL').textContent = open ? '📢 募集中（手配を受け付け）' : '💤 休止中（新しい手配は届きません）'; });
+      $('reqs').addEventListener('click', function (e) {
+        var y = e.target.closest('[data-yes]'), n = e.target.closest('[data-no]');
+        if (y) { var r = REQS.find(function (x) { return x.id === y.dataset.yes; }); r.st = 'done'; renderReqs(); income(); toast(r.salon + ' の手配を受けました（収入に反映）'); }
+        else if (n) { var r2 = REQS.find(function (x) { return x.id === n.dataset.no; }); r2.st = 'declined'; renderReqs(); toast('手配を断りました'); }
+      });
+
+      renderReqs(); income();
+    })();
+  </script>
+</body>
+</html>
