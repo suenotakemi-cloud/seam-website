@@ -3723,7 +3723,7 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
                     </div>
                     <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
                       {cands.map((it, j) => (
-                        <div key={it.p.id} className="snap-start shrink-0 w-[86%] sm:w-[430px] max-w-full flex flex-col">
+                        <div key={it.p.id} className="snap-start shrink-0 flex flex-col" style={{ width: cands.length > 1 ? '86%' : '100%', maxWidth: '440px' }}>
                           <p className="mb-1.5 font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">
                             <span className="text-gold nums">{String(j + 1).padStart(2, '0')}</span> · {rankLabel(j)}
                           </p>
