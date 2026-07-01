@@ -4777,12 +4777,17 @@ function DeepProductSection({
   const bestOf = id => {
     const arr = blocks[id] || [];
     if (!arr.length) return null;
-    const best = deepPriceTrio(arr).best || arr[0];
-    return best ? {
+    const trio = deepPriceTrio(arr);
+    const best = trio.best || arr[0];
+    if (!best) return null;
+    // best + 同カテゴリのブランド違い候補(最大2) → スライドで「次におすすめ / その次におすすめ」
+    const items = [best].concat((trio.alts || []).filter(a => a && a.p && a.p.id !== best.p.id).slice(0, 2));
+    return {
       item: best,
+      items,
       category: id,
       blockTitle: _catTitle(id)
-    } : null;
+    };
   };
   const primary = (() => {
     const out = [],
@@ -4863,9 +4868,18 @@ function DeepProductSection({
   }, "\u307E\u305A \u3053\u306E", primary.length, "\u672C\u304B\u3089")), /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 pt-1 whitespace-nowrap nums"
   }, primary.length, " / ", shownCount)), /*#__PURE__*/React.createElement("div", {
-    className: "space-y-4"
+    className: "mb-4 flex items-start gap-2.5 rounded-[2px] border border-charcoal/12 bg-cream/40 px-3.5 py-2.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true,
+    className: "shrink-0 mt-[1px] font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45 border border-charcoal/25 rounded-full px-1.5 py-0.5 leading-none"
+  }, "AI"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] sm:text-[11.5px] text-charcoal/65 leading-[1.8]"
+  }, "\u3053\u306E\u304A\u3059\u3059\u3081\u306F AI\u304C\u3042\u306A\u305F\u306E\u56DE\u7B54\u304B\u3089\u81EA\u52D5\u3067\u9078\u3093\u3060\u63D0\u6848\u3067\u3059 \u3053\u3053\u3067\u78BA\u5B9A\u3059\u308B\u3082\u306E\u3067\u306F\u3042\u308A\u307E\u305B\u3093 \u6C17\u306B\u306A\u308B\u70B9\u306F \u62C5\u5F53\u306E\u7F8E\u5BB9\u5E2B\u3055\u3093 \u307E\u305F\u306F SEAM\u306E\u30D8\u30A2\u30B1\u30A2\u306E\u30D7\u30ED\u306B\u3054\u76F8\u8AC7\u304F\u3060\u3055\u3044")), /*#__PURE__*/React.createElement("div", {
+    className: "space-y-6"
   }, primary.map((f, i) => {
     const _reason = buildPrimaryReason(f.category, answers, scores);
+    const cands = f.items && f.items.length ? f.items : [f.item];
+    const rankLabel = j => j === 0 ? 'まず これ' : j === 1 ? '次におすすめ' : 'その次におすすめ';
     return /*#__PURE__*/React.createElement("div", {
       key: f.item.p.id
     }, /*#__PURE__*/React.createElement("p", {
@@ -4881,7 +4895,37 @@ function DeepProductSection({
         color: '#B8945A',
         opacity: 0.7
       }
-    }, "\u306A\u305C"), _reason), /*#__PURE__*/React.createElement(DeepBestCard, {
+    }, "\u306A\u305C"), _reason), cands.length > 1 ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "mb-2 flex items-center gap-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/50"
+    }, /*#__PURE__*/React.createElement("svg", {
+      "aria-hidden": true,
+      viewBox: "0 0 24 24",
+      className: "w-3.5 h-3.5 shrink-0 text-gold",
+      fill: "none",
+      stroke: "currentColor",
+      strokeWidth: "1.6"
+    }, /*#__PURE__*/React.createElement("path", {
+      d: "M8 7l-4 5 4 5M16 7l4 5-4 5",
+      strokeLinecap: "round",
+      strokeLinejoin: "round"
+    })), /*#__PURE__*/React.createElement("span", null, "\u30B9\u30EF\u30A4\u30D7\u3067 \u6B21\u306E\u5019\u88DC\u3082\u898B\u3089\u308C\u307E\u3059 \xB7 ", cands.length, "\u4EF6")), /*#__PURE__*/React.createElement("div", {
+      className: "flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1",
+      style: {
+        WebkitOverflowScrolling: 'touch'
+      }
+    }, cands.map((it, j) => /*#__PURE__*/React.createElement("div", {
+      key: it.p.id,
+      className: "snap-start shrink-0 w-[86%] sm:w-[430px] max-w-full flex flex-col"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "mb-1.5 font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-gold nums"
+    }, String(j + 1).padStart(2, '0')), " \xB7 ", rankLabel(j)), /*#__PURE__*/React.createElement(DeepBestCard, {
+      item: it,
+      best: f.item,
+      category: f.category,
+      variant: j === 0 ? 'best' : 'alt'
+    }))))) : /*#__PURE__*/React.createElement(DeepBestCard, {
       item: f.item,
       category: f.category
     }));
