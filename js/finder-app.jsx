@@ -2176,6 +2176,16 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     bestBrandUsed[arr[0].p.brand] = (bestBrandUsed[arr[0].p.brand] || 0) + 1;
   }
 
+  // ── Top1シャンプーの確実分散(スコアでは崩れないため 最終確定で差し替え) ──
+  // wella アルタイムRが先頭 かつ この人の pick でなければ、pick(無ければ他のuniversal repair→2位)を先頭へ。
+  if (blocks.shampoo && blocks.shampoo.length > 1 && blocks.shampoo[0].p.id === 'wella-ultimerepair-sh' && _rotPick !== 'wella-ultimerepair-sh') {
+    let _sw = blocks.shampoo.findIndex((it, ix) => ix > 0 && it.p.id === _rotPick);
+    if (_sw < 0) _sw = blocks.shampoo.findIndex((it, ix) => ix > 0 && SHAMPOO_ROTATE.indexOf(it.p.id) > -1);
+    if (_sw < 0) _sw = 1;
+    const [_alt] = blocks.shampoo.splice(_sw, 1);
+    blocks.shampoo.unshift(_alt);
+  }
+
   // ── 年齢・深い頭皮悩みによる頭皮エッセンスの確実提示 ──
   // オーナー要件(v27): 30歳以上/深い頭皮悩み/頭皮環境の乱れ に必ず頭皮エッセンスを提示し、
   // かつ「悩み別に代表銘柄へ寄せる」(グランケア/アデノバイタル/プレセディア/エイジングスパ/モイストカーム)。
@@ -2197,7 +2207,7 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   else if (_grayU)                                                                   _prefScalp = ['hoyu-grancare-essence','sublimic-adenovital-essence'];
   else if (_thinHair)                                                                _prefScalp = ['aujua-precedia-perfector','sublimic-adenovital-essence'];
   else                                                                               _prefScalp = ['sublimic-adenovital-essence','aujua-precedia-perfector','hoyu-grancare-essence','aujua-timesurge-essence'];
-  if ((_is30p || _deepScalpNeed || _scalpDryU || _scalpOilyU) && blocks.scalp) {
+  if ((_is30p || _deepScalpNeed || _scalpDryU || _scalpOilyU || _grayU) && blocks.scalp) {
     const scalpMax = (DEEP_CATEGORY_DEFS.scalp && DEEP_CATEGORY_DEFS.scalp.max) || 4;
     const isEss = (it) => it && it.p && it.p.category === 'scalp-essence';
     const headPref = blocks.scalp[0] && _prefScalp.indexOf(blocks.scalp[0].p.id) > -1;
