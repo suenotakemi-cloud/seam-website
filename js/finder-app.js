@@ -3059,6 +3059,25 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     if (DAMAGE_RESCUE_WAVE.has(p.id) && isWaveC) return 35;
     return 0;
   };
+
+  // ── Top1シャンプーの分散 ── (1万回で wella アルタイムR が35.8%集中)
+  // 高ダメージの universal repair は全員 +35 で wella が独占しがち → persona 固有ハッシュで
+  // 5種の universal repair から「その人の1本」を後押しし、wella は pick 以外では控えめにする。
+  const SHAMPOO_ROTATE = ['wella-ultimerepair-sh', 'globalmilbon-repair-sh', 'syspro-luxeoil-sh', 'syspro-repair-sh', 'kerastase-chronologiste-sh'];
+  let _rotH = 5381;
+  {
+    const _rs = String(originCode || '') + '|' + String(answers && answers.goalTexture || '') + '|' + String(answers && answers.age || '') + '|' + String(answers && answers.thickness || '');
+    for (let _i = 0; _i < _rs.length; _i++) {
+      _rotH = (_rotH * 33 ^ _rs.charCodeAt(_i)) >>> 0;
+    }
+  }
+  const _rotPick = SHAMPOO_ROTATE[_rotH % SHAMPOO_ROTATE.length];
+  const diversityBoost = p => {
+    if (!damageHigh) return 0;
+    if (p.id === _rotPick) return 24;
+    if (p.id === 'wella-ultimerepair-sh') return -12;
+    return 0;
+  };
   const scored = (products || []).map(p => {
     const base = scoreSeamProduct(p, answers, scores, flags);
     const deep = scoreProductDeep(p, userTags, hardRules);
@@ -3092,7 +3111,7 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     }
     return {
       p,
-      s: Math.max(0, base + deep + finish + bleach + dmgrep + affinity + concernAffinity + volBoost - penalty - supplementPenalty - overexp - offConcern),
+      s: Math.max(0, base + deep + finish + bleach + dmgrep + affinity + concernAffinity + volBoost + diversityBoost(p) - penalty - supplementPenalty - overexp - offConcern),
       deepCat: deepCategoryForProduct(p),
       isAffinity: affinity > 0 || concernAffinity > 0 || bleach > 0,
       isSupplementary: supp,
@@ -3195,48 +3214,73 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   }
 
   // ── 年齢・深い頭皮悩みによる頭皮エッセンスの確実提示 ──
-  // オーナー要件: 30歳以上は必ず頭皮エッセンスを提示 / 薄毛・細毛・ボリューム低下(深い頭皮悩み)は必ず発火。
-  // ハリ・コシ・根元ボリュームに寄り添う実エッセンスをスカルプ枠の先頭へ。(rotation後に実行して並びを確定)
+  // オーナー要件(v27): 30歳以上/深い頭皮悩み/頭皮環境の乱れ に必ず頭皮エッセンスを提示し、
+  // かつ「悩み別に代表銘柄へ寄せる」(グランケア/アデノバイタル/プレセディア/エイジングスパ/モイストカーム)。
+  // (rotation後に実行して並びを確定)
   const _ageV = answers && answers.age;
   const _is30p = _ageV === '30s' || _ageV === '40s' || _ageV === '50plus';
   const _cnScalp = answers && Array.isArray(answers.concerns) ? answers.concerns : [];
-  const _deepScalpNeed = _cnScalp.indexOf('thinning') > -1 || _cnScalp.indexOf('volumeDown') > -1 || _cnScalp.indexOf('topFlat') > -1 || answers && answers.thickness === 'thin';
-  if ((_is30p || _deepScalpNeed) && blocks.scalp) {
-    // ハリ・コシ・根元ボリューム・白髪世代に寄り添う実在エッセンス(優先順)
-    const AGING_ESSENCE = ['sublimic-adenovital-essence', 'aujua-precedia-perfector', 'kerastase-genesis-essence', 'aujua-timesurge-essence', 'hoyu-grancare-essence', 'syspro-extra-alphaenergy', 'davines-naturaltech-energizing-lotion'];
+  const _thinHair = answers && answers.thickness === 'thin';
+  const _grayU = answers && answers.grayHair === 'yes' || _cnScalp.indexOf('grayFade') > -1 || answers && answers.color === 'gray';
+  const _scalpDryU = _cnScalp.indexOf('scalpDry') > -1 || answers && (answers.scalpType === 'dry' || answers.scalpType === 'tendDry') || answers && (answers.scalpSensitivity === 'veryHigh' || answers.scalpSensitivity === 'high');
+  const _scalpOilyU = _cnScalp.indexOf('scalpOily') > -1 || answers && answers.scalpType === 'oily';
+  const _deepScalpNeed = _cnScalp.indexOf('thinning') > -1 || _cnScalp.indexOf('volumeDown') > -1 || _cnScalp.indexOf('topFlat') > -1 || _thinHair;
+  // 悩み別 代表銘柄(実在scalp-essence・先頭ほど優先)
+  let _prefScalp;
+  if (_scalpDryU) _prefScalp = ['aujua-moistcalm-essence', 'sublimic-fuenteforte-moistshower', 'oggiotto-aroma-calm'];else if (_scalpOilyU) _prefScalp = ['sublimic-fuenteforte-clearshower', 'syspro-balance-lotion', 'oggiotto-drs-scalpgel'];else if (_cnScalp.indexOf('thinning') > -1) _prefScalp = ['sublimic-adenovital-essence', 'aujua-precedia-perfector', 'kerastase-genesis-essence'];else if (_cnScalp.indexOf('topFlat') > -1 || _cnScalp.indexOf('volumeDown') > -1) _prefScalp = ['aujua-precedia-perfector', 'aujua-timesurge-essence', 'sublimic-adenovital-essence'];else if (_grayU) _prefScalp = ['hoyu-grancare-essence', 'sublimic-adenovital-essence'];else if (_thinHair) _prefScalp = ['aujua-precedia-perfector', 'sublimic-adenovital-essence'];else _prefScalp = ['sublimic-adenovital-essence', 'aujua-precedia-perfector', 'hoyu-grancare-essence', 'aujua-timesurge-essence'];
+  if ((_is30p || _deepScalpNeed || _scalpDryU || _scalpOilyU) && blocks.scalp) {
     const scalpMax = DEEP_CATEGORY_DEFS.scalp && DEEP_CATEGORY_DEFS.scalp.max || 4;
     const isEss = it => it && it.p && it.p.category === 'scalp-essence';
-    const headAging = blocks.scalp[0] && AGING_ESSENCE.indexOf(blocks.scalp[0].p.id) > -1;
-    if (!blocks.scalp.length) {
-      // スカルプ枠が空 → scored(スコア降順)からエッセンスのベストを注入。深い悩みはエイジング系を優先。
-      let inj = null;
-      if (_deepScalpNeed) inj = scored.find(it => isEss(it) && AGING_ESSENCE.indexOf(it.p.id) > -1);
-      if (!inj) inj = scored.find(isEss);
-      // scored は s>0 でフィルタ済み。off-concern減点でエッセンスが全て0点に落ちた場合に備え、生のproductsから確実に補完する。
-      if (!inj) {
-        let pp = null;
-        for (const aid of AGING_ESSENCE) {
-          pp = (products || []).find(p => p.id === aid);
-          if (pp) break;
+    const headPref = blocks.scalp[0] && _prefScalp.indexOf(blocks.scalp[0].p.id) > -1;
+    if (!blocks.scalp.length || !headPref) {
+      // 代表銘柄を優先順で確定: 既存block内 → scored内 → 生products
+      let chosen = null;
+      for (const pid of _prefScalp) {
+        const it = blocks.scalp.find(x => x.p.id === pid);
+        if (it) {
+          chosen = it;
+          break;
         }
-        if (!pp) pp = (products || []).find(p => p.category === 'scalp-essence');
-        if (pp) inj = {
-          p: pp,
-          s: 1,
-          deepCat: 'scalp',
-          isAffinity: false,
-          isSupplementary: false,
-          affinityReason: ''
-        };
       }
-      if (inj) blocks.scalp.push(inj);
-    } else if (_deepScalpNeed && !headAging) {
-      // 深い頭皮悩みなのに先頭がエイジング系でない → エイジング系を先頭へ繰り上げ。
-      let aging = blocks.scalp.find(it => AGING_ESSENCE.indexOf(it.p.id) > -1) || scored.find(it => isEss(it) && AGING_ESSENCE.indexOf(it.p.id) > -1);
-      if (aging) {
-        const idx = blocks.scalp.findIndex(it => it.p.id === aging.p.id);
+      if (!chosen) for (const pid of _prefScalp) {
+        const it = scored.find(x => isEss(x) && x.p.id === pid);
+        if (it) {
+          chosen = it;
+          break;
+        }
+      }
+      if (!chosen) for (const pid of _prefScalp) {
+        const pp = (products || []).find(p => p.id === pid);
+        if (pp) {
+          chosen = {
+            p: pp,
+            s: 1,
+            deepCat: 'scalp',
+            isAffinity: false,
+            isSupplementary: false,
+            affinityReason: ''
+          };
+          break;
+        }
+      }
+      if (!chosen && !blocks.scalp.length) {
+        const any = scored.find(isEss);
+        if (any) chosen = any;else {
+          const pp = (products || []).find(p => p.category === 'scalp-essence');
+          if (pp) chosen = {
+            p: pp,
+            s: 1,
+            deepCat: 'scalp',
+            isAffinity: false,
+            isSupplementary: false,
+            affinityReason: ''
+          };
+        }
+      }
+      if (chosen) {
+        const idx = blocks.scalp.findIndex(x => x.p.id === chosen.p.id);
         if (idx > -1) blocks.scalp.splice(idx, 1);
-        blocks.scalp.unshift(aging);
+        blocks.scalp.unshift(chosen);
         if (blocks.scalp.length > scalpMax) blocks.scalp.length = scalpMax;
       }
     }
@@ -4514,6 +4558,53 @@ function buildResultCopy(answers, scores) {
   };
 }
 
+/* ---------- 各primary商品の「なぜ あなたに出たか」(回答由来の選定理由・商品魅力より先に見せる) ---------- */
+function buildPrimaryReason(category, answers, scores) {
+  const a = answers || {},
+    s = scores || {};
+  const cs = Array.isArray(a.concerns) ? a.concerns : [];
+  const has = c => cs.indexOf(c) > -1;
+  const st = a.styling || {},
+    tools = Array.isArray(st.tools) ? st.tools : [];
+  const heat = (s.heatDamage || 0) >= 3 || st.temp === 't180' || st.temp === 't200' || tools.indexOf('ironDaily') > -1 || tools.indexOf('curlerDaily') > -1;
+  const bleachHi = (s.bleachHistory || 0) >= 3;
+  const dmgHi = (s.damage || 0) >= 7 || (s.bleachHistory || 0) >= 4 || (s.heatDamage || 0) >= 5;
+  const is30 = a.age === '30s' || a.age === '40s' || a.age === '50plus';
+  if (category === 'shampoo') {
+    if (bleachHi || dmgHi) return 'ダメージが深いので 洗うだけで終わらせず 補修から入る土台に';
+    if (has('scalpDry') || has('scalpOily')) return '頭皮環境を整えることから 一日を始めるために';
+    if (has('colorFade') || has('grayFade') || a.color === 'gray') return '色持ちと手触りを両立する洗浄として';
+    if (heat) return '毎日の熱を受ける前提で やさしく洗い上げる土台に';
+    return 'あなたの髪質に合う 毎日の洗浄の土台として';
+  }
+  if (category === 'treatment') {
+    if (dmgHi || bleachHi) return '空洞化した内部を 芯から立て直すために';
+    if (heat) return '熱で失われる水分と補修を 芯から補うために';
+    return '洗ったあとの指通りを 内側から守るために';
+  }
+  if (category === 'outbath') {
+    if (heat) return '毎日の熱から 乾かす前に先に守るために';
+    if (has('frizz') || has('wave')) return '湿気と乾燥で広がる前に 表面を整えるために';
+    return '熱と乾燥から 一日を通して守るために';
+  }
+  if (category === 'scalp') {
+    if (has('thinning')) return '抜け毛・細毛の 土台ケアとして追加';
+    if (has('topFlat') || has('volumeDown')) return '根元の立ち上がり不足に合わせて追加';
+    if (has('scalpDry')) return '頭皮の乾燥・ゆらぎに合わせて追加';
+    if (has('scalpOily')) return '頭皮のベタつきに合わせて追加';
+    if (a.grayHair === 'yes' || a.color === 'gray') return '白髪世代の頭皮ケアとして追加';
+    if (a.thickness === 'thin') return '細い髪の 根元の土台づくりとして追加';
+    if (is30) return '根元とハリの変化に合わせて追加';
+    return '頭皮環境を整えるために追加';
+  }
+  if (category === 'mask') {
+    if (bleachHi) return 'ブリーチ毛の空洞化に 週1〜2の集中補修を追加';
+    if (heat) return '熱の蓄積に 週1〜2の集中補修を追加';
+    return '高ダメージに合わせて 集中補修を追加';
+  }
+  return '';
+}
+
 /* ---------- DeepFullBreakdown — ケア処方の全カテゴリ(折りたたみ内に表示) ---------- */
 function DeepFullBreakdown({
   orderedBlocks,
@@ -4549,39 +4640,73 @@ function DeepFullBreakdown({
     }
   }, i + 1), /*#__PURE__*/React.createElement("span", {
     className: "font-serif text-[12px] text-ink whitespace-nowrap"
-  }, b.title)))))), /*#__PURE__*/React.createElement("div", {
-    className: "mt-7 space-y-8 sm:space-y-10"
-  }, orderedBlocks.map((block, bi) => /*#__PURE__*/React.createElement("div", {
-    key: block.id
-  }, /*#__PURE__*/React.createElement("header", {
-    className: "flex items-center gap-3 pb-2 border-b border-line"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "font-mono tracking-widest2 text-[10px] uppercase text-ink nums bg-cream px-2 py-0.5 whitespace-nowrap shrink-0"
-  }, String(bi + 1).padStart(2, '0'), " ", block.eyebrow.replace(/^\d+\s*/, '')), /*#__PURE__*/React.createElement("h3", {
-    className: "font-serif text-[20px] sm:text-[23px] text-ink leading-snug whitespace-nowrap shrink-0"
-  }, block.title), /*#__PURE__*/React.createElement("span", {
-    className: "h-px flex-1 bg-line min-w-[12px]"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/45 nums"
-  }, block.items.length, " item", block.items.length > 1 ? 's' : '')), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-[12px] text-charcoal/60 leading-relaxed"
-  }, block.desc), (() => {
-    const {
-      best,
-      alts
-    } = deepPriceTrio(block.items);
-    if (!best) return null;
+  }, b.title)))))), (() => {
+    // コア処方(S/T/O/頭皮/マスク)と 補助枠(特別洗浄/仕上げ/サロン)を分離して見せる。
+    const CORE = ['shampoo', 'treatment', 'outbath', 'scalp', 'mask'];
+    const coreBlocks = orderedBlocks.filter(b => CORE.indexOf(b.id) > -1);
+    const auxBlocks = orderedBlocks.filter(b => CORE.indexOf(b.id) < 0);
+    const AUX_ROLE = {
+      specialCleanse: '週数回の集中ディープ洗浄',
+      finish: '仕上がりをさらに高めたいとき',
+      salon: 'サロンでの集中ケア'
+    };
+    const renderBlk = (block, bi) => /*#__PURE__*/React.createElement("div", {
+      key: block.id
+    }, /*#__PURE__*/React.createElement("header", {
+      className: "flex items-center gap-3 pb-2 border-b border-line"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-mono tracking-widest2 text-[10px] uppercase text-ink nums bg-cream px-2 py-0.5 whitespace-nowrap shrink-0"
+    }, String(bi + 1).padStart(2, '0'), " ", block.eyebrow.replace(/^\d+\s*/, '')), /*#__PURE__*/React.createElement("h3", {
+      className: "font-serif text-[20px] sm:text-[23px] text-ink leading-snug whitespace-nowrap shrink-0"
+    }, block.title), /*#__PURE__*/React.createElement("span", {
+      className: "h-px flex-1 bg-line min-w-[12px]"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/45 nums"
+    }, block.items.length, " item", block.items.length > 1 ? 's' : '')), /*#__PURE__*/React.createElement("p", {
+      className: "mt-2 text-[12px] text-charcoal/60 leading-relaxed"
+    }, block.desc), (() => {
+      const {
+        best,
+        alts
+      } = deepPriceTrio(block.items);
+      if (!best) return null;
+      return /*#__PURE__*/React.createElement("div", {
+        className: "mt-4"
+      }, /*#__PURE__*/React.createElement(DeepBestCard, {
+        item: best,
+        category: block.id
+      }), /*#__PURE__*/React.createElement(DeepAltsToggle, {
+        alts: alts,
+        best: best,
+        category: block.id
+      }));
+    })());
     return /*#__PURE__*/React.createElement("div", {
-      className: "mt-4"
-    }, /*#__PURE__*/React.createElement(DeepBestCard, {
-      item: best,
-      category: block.id
-    }), /*#__PURE__*/React.createElement(DeepAltsToggle, {
-      alts: alts,
-      best: best,
-      category: block.id
-    }));
-  })()))));
+      className: "mt-7"
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "font-mono tracking-widest2 text-[10px] uppercase text-gold mb-4"
+    }, "\u2014 \u30B3\u30A2\u51E6\u65B9"), /*#__PURE__*/React.createElement("div", {
+      className: "space-y-8 sm:space-y-10"
+    }, coreBlocks.map((block, i) => renderBlk(block, i))), auxBlocks.length > 0 && /*#__PURE__*/React.createElement("div", {
+      className: "mt-10"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center gap-3"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "h-px flex-1 bg-line"
+    }), /*#__PURE__*/React.createElement("span", {
+      className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 whitespace-nowrap"
+    }, "\u4F59\u88D5\u304C\u3042\u308C\u3070 \xB7 \u4ED5\u4E0A\u3052 / \u88DC\u52A9\u30B1\u30A2"), /*#__PURE__*/React.createElement("span", {
+      className: "h-px flex-1 bg-line"
+    })), /*#__PURE__*/React.createElement("p", {
+      className: "mt-3 text-[12px] text-charcoal/60 leading-relaxed max-w-xl"
+    }, "\u3053\u3053\u304B\u3089\u306F\u5FC5\u9808\u3067\u306F\u3042\u308A\u307E\u305B\u3093 \u4ED5\u4E0A\u304C\u308A\u3092\u3055\u3089\u306B\u9AD8\u3081\u305F\u3044\uFF0F\u60A9\u307F\u3092\u3088\u308A\u6DF1\u304F\u30B1\u30A2\u3057\u305F\u3044\u3068\u304D\u306E\u8FFD\u52A0\u5019\u88DC\u3067\u3059"), /*#__PURE__*/React.createElement("div", {
+      className: "mt-6 space-y-8 sm:space-y-10"
+    }, auxBlocks.map((block, i) => /*#__PURE__*/React.createElement("div", {
+      key: block.id
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "mb-2 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45"
+    }, "\u88DC\u52A9\u67A0 \xB7 ", AUX_ROLE[block.id] || 'あると良い追加ケア'), renderBlk(block, coreBlocks.length + i))))));
+  })());
 }
 function DeepProductSection({
   deepResult,
@@ -4722,14 +4847,28 @@ function DeepProductSection({
     className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/50 pt-1 whitespace-nowrap nums"
   }, primary.length, " / ", shownCount)), /*#__PURE__*/React.createElement("div", {
     className: "space-y-4"
-  }, primary.map((f, i) => /*#__PURE__*/React.createElement("div", {
-    key: f.item.p.id
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "mb-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/55"
-  }, String(i + 1).padStart(2, '0'), " \xB7 ", ROLE_BY_CAT[f.category] || 'おすすめ', " \u2014 ", f.blockTitle), /*#__PURE__*/React.createElement(DeepBestCard, {
-    item: f.item,
-    category: f.category
-  }))))), /*#__PURE__*/React.createElement("div", {
+  }, primary.map((f, i) => {
+    const _reason = buildPrimaryReason(f.category, answers, scores);
+    return /*#__PURE__*/React.createElement("div", {
+      key: f.item.p.id
+    }, /*#__PURE__*/React.createElement("p", {
+      className: "mb-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/55"
+    }, String(i + 1).padStart(2, '0'), " \xB7 ", ROLE_BY_CAT[f.category] || 'おすすめ', " \u2014 ", f.blockTitle), _reason && /*#__PURE__*/React.createElement("p", {
+      className: "mb-2 text-[12px] sm:text-[12.5px] leading-[1.85]",
+      style: {
+        color: '#B8945A'
+      }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "font-mono tracking-widest2 text-[9.5px] uppercase mr-1.5",
+      style: {
+        color: '#B8945A',
+        opacity: 0.7
+      }
+    }, "\u306A\u305C"), _reason), /*#__PURE__*/React.createElement(DeepBestCard, {
+      item: f.item,
+      category: f.category
+    }));
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "mt-8"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
