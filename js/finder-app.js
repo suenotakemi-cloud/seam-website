@@ -8800,10 +8800,14 @@ const RESERVATION_STORES = [{
 }];
 function ReservationModal({
   open,
-  onClose
+  onClose,
+  from
 }) {
   const [step, setStep] = useState(1);
   const [selectedStore, setSelectedStore] = useState(null);
+  // ヘッドスパは施術店(銀座・大阪・名古屋)のみで承るため、スパ導線からの予約は3店舗に絞る
+  const spaOnly = from === 'spa';
+  const stores = spaOnly ? RESERVATION_STORES.filter(s => ['ginza', 'osaka', 'nagoya'].indexOf(s.id) > -1) : RESERVATION_STORES;
   useEffect(() => {
     if (!open) return;
     document.body.style.overflow = 'hidden';
@@ -8854,9 +8858,9 @@ function ReservationModal({
     className: "anim-fade-up"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-[12.5px] text-charcoal/70 mb-4 leading-relaxed"
-  }, "\u3054\u6765\u5E97\u306E\u5E97\u8217\u30A8\u30EA\u30A2\u3092\u304A\u9078\u3073\u304F\u3060\u3055\u3044"), /*#__PURE__*/React.createElement("div", {
+  }, spaOnly ? 'ヘッドスパは銀座・大阪・名古屋の3店舗で承ります' : 'ご来店の店舗エリアをお選びください'), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-3 gap-2.5"
-  }, RESERVATION_STORES.map(s => /*#__PURE__*/React.createElement("button", {
+  }, stores.map(s => /*#__PURE__*/React.createElement("button", {
     key: s.id,
     type: "button",
     onClick: () => {
@@ -11109,18 +11113,18 @@ function CounselingSheet({
     className: "space-y-2.5"
   }, items.map(([k, v], i) => /*#__PURE__*/React.createElement("div", {
     key: i,
-    className: "grid grid-cols-[110px_1fr] sm:grid-cols-[130px_1fr] gap-3 items-baseline"
+    className: "grid grid-cols-[92px_1fr] sm:grid-cols-[130px_1fr] gap-3 items-baseline"
   }, /*#__PURE__*/React.createElement("dt", {
-    className: "font-serif text-[12px] sm:text-[12.5px] text-charcoal/60 leading-[1.65]",
+    className: "font-serif text-[12px] sm:text-[12.5px] text-charcoal/60 leading-[1.65] min-w-0",
     style: {
-      wordBreak: 'keep-all'
+      overflowWrap: 'anywhere'
     }
   }, k), /*#__PURE__*/React.createElement("dd", {
-    className: "font-serif text-[13.5px] sm:text-[14.5px] text-ink leading-[1.8]",
+    className: "font-serif text-[13.5px] sm:text-[14.5px] text-ink leading-[1.8] min-w-0",
     style: {
       fontWeight: 500,
-      wordBreak: 'keep-all',
-      overflowWrap: 'break-word'
+      wordBreak: 'normal',
+      overflowWrap: 'anywhere'
     }
   }, v || '—'))));
   const chips = arr => /*#__PURE__*/React.createElement("p", {
@@ -12882,6 +12886,7 @@ function App() {
   const [answers, setAnswers] = useState(sharedInit || {});
   const [lastKarte, setLastKarte] = useState(() => loadLastKarte());
   const [reservationOpen, setReservationOpen] = useState(false);
+  const [reservationFrom, setReservationFrom] = useState('');
 
   // 予約モーダルの開閉(イベント委譲で全てのトリガーに対応)
   useEffect(() => {
@@ -12889,7 +12894,9 @@ function App() {
       const trigger = e.target.closest('[data-open-resv]');
       if (trigger) {
         e.preventDefault();
-        trackCta('reserve_open', trigger.getAttribute('data-resv-from') || '');
+        const rf = trigger.getAttribute('data-resv-from') || '';
+        trackCta('reserve_open', rf);
+        setReservationFrom(rf);
         setReservationOpen(true);
       }
     };
@@ -12986,6 +12993,7 @@ function App() {
   };
   const reservationEl = /*#__PURE__*/React.createElement(ReservationModal, {
     open: reservationOpen,
+    from: reservationFrom,
     onClose: () => setReservationOpen(false)
   });
   if (view === 'home') return /*#__PURE__*/React.createElement(React.Fragment, null, reservationEl, /*#__PURE__*/React.createElement(Home, {
