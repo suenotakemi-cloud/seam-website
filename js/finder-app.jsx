@@ -3310,6 +3310,104 @@ function buildVerdictLine(answers, scores) {
   return '今の髪の状態に合わせて 土台から順に整える処方です';
 }
 
+/* ---------- 結果文コンポーザー(3層: 状態→原因→処方方針＋髪格ニュアンス) ----------
+   1万回検証で verdictLine が8種類・上位2文に集中していた課題への対応。
+   同じ商品構成でも「回答パターンごとに なぜこの処方か」を言い分け、体感の精密さを上げる。
+   各スロットは候補を優先度で1つ採用(spec準拠)。句点は使わず 節を空白で区切る(SEAM文体)。 */
+function buildResultCopy(answers, scores) {
+  const a = answers || {}, s = scores || {};
+  const cs = Array.isArray(a.concerns) ? a.concerns : [];
+  const has = (c) => cs.indexOf(c) > -1;
+  const st = a.styling || {};
+  const tools = Array.isArray(st.tools) ? st.tools : [];
+  const life = Array.isArray(a.lifestyle) ? a.lifestyle : [];
+  const items = Array.isArray(a.items) ? a.items : [];
+  // 共通判定変数
+  const isHighHeat = (s.heatDamage || 0) >= 3 || st.temp === 't180' || st.temp === 't200' || tools.indexOf('ironDaily') > -1 || tools.indexOf('curlerDaily') > -1;
+  const isBleachHeavy = (s.bleachHistory || 0) >= 3;
+  const isBleachVeryHeavy = (s.bleachHistory || 0) >= 4;
+  const isHighDamage = (s.damage || 0) >= 7 || isBleachVeryHeavy || (s.heatDamage || 0) >= 5;
+  const isDeepScalp = has('thinning') || has('volumeDown') || has('topFlat') || a.thickness === 'thin';
+  const isAge30Plus = a.age === '30s' || a.age === '40s' || a.age === '50plus';
+  const waveConcern = has('frizz') || has('wave');
+  const isHumidityWave = waveConcern && (a.wave === 'humid' || a.wave === 'surface') && a.environment === 'humid';
+  const isHistoryWave = waveConcern && ['root', 'midEnd', 'whole', 'straightened'].indexOf(a.wave) > -1 && ((a.straighten && a.straighten !== 'none') || (a.perm && a.perm !== 'none'));
+  const isDryDamageWave = waveConcern && ((s.damage || 0) >= 4 || has('rough') || has('dry'));
+  const isGrayColor = has('grayFade') || a.grayHair === 'yes' || a.color === 'gray';
+  const isFashionColor = has('colorFade') || (s.colorFade || 0) >= 3;
+  const isHomeColor = a.color === 'home';
+  const wantsAiry = a.goalTexture === 'airy';
+  const wantsGlossy = a.goalTexture === 'glossy' || a.goalTexture === 'moist';
+  const wantsEasy = a.goal === 'easy';
+  const wantsKeepColor = a.goal === 'keepColor';
+  const noTime = life.indexOf('noTime') > -1;
+  const sleepWet = life.indexOf('sleepWet') > -1;
+  const humidLife = life.indexOf('humidity') > -1 || a.environment === 'humid';
+  const outsideLife = life.indexOf('outside') > -1 || a.environment === 'sun';
+
+  // ── stateLine(いま何が起きているか): 群1>5>4>2>3>6、無ければ穏やかな既定文 ──
+  const stateC = [];
+  const S = (p, t) => stateC.push({ p, t });
+  if (isBleachHeavy && isHighHeat && wantsAiry) S(100, 'ブリーチと高温の熱が重なっていますが 重く補修しすぎると扱いづらくなるため 軽さを残しながら補修を入れています');
+  else if (isBleachHeavy && isHighHeat && wantsGlossy) S(99, 'いまは見た目のまとまり以上に ブリーチと熱でゆるんだ内部を立て直すことが先です ツヤはそのあとで乗せる設計です');
+  else if (isBleachHeavy && isHighHeat && wantsKeepColor) S(98, '熱とブリーチの負担で色が抜けやすい状態なので 手触りだけでなく退色の止まりやすさも優先しています');
+  else if (isBleachHeavy && isHighHeat) S(97, 'ブリーチと高温の熱が重なっているため 軽さより先に 内部の補修を優先する状態です');
+  if (isBleachVeryHeavy) S(96, 'いまのダメージは表面の手触りより 内側が抜けて空洞化していることが問題です 集中補修を先に入れる段階です');
+  else if ((s.heatDamage || 0) >= 5) S(95, '傷みの中心は熱の蓄積です 毎回整えているつもりでも 内部では削られやすい状態です');
+  else if (has('split') || has('gummy')) S(94, 'ダメージが毛先のもろさとして出ているので まず崩れた部分を支える必要があります');
+  else if (isHighDamage) S(93, '特別な一撃より 日常の積み重ねで傷みが深くなっている状態です 基礎の強度から上げていきます');
+  if (has('thinning')) S(90, '今回の優先課題は 髪そのものの質感よりも 抜け毛・細毛の土台側のケアです');
+  else if (a.thickness === 'thin' && (has('volumeDown') || has('topFlat') || isDeepScalp)) S(89, '髪が細いことで 少しの乾燥や熱でも印象が弱く見えやすいので 補修より前に土台設計を入れています');
+  else if (has('volumeDown') || has('topFlat')) S(88, '悩みの中心はダメージというより 根元の立ち上がり不足です 量よりも ふんわり見えにくさを先に補正します');
+  if (isHumidityWave) S(80, '広がりの主因は髪質そのものより湿気反応です 朝きれいに整っても 空気中の水分で形が戻りやすい状態です');
+  else if (isHistoryWave) S(79, 'いま出ている広がりは もとのくせだけでなく 矯正やパーマの履歴で形が不安定になっていることが影響しています');
+  else if (isDryDamageWave) S(78, '広がりの原因はくせそのものより 乾燥とダメージで表面が乱れやすくなっていることです');
+  if (isAge30Plus && (a.rootVolume === 'flat' || a.rootVolume === 'tendFlat')) S(70, '今の変化は量不足というより 根元の立ち上がりが続きにくくなっている状態に近いです');
+  else if (isAge30Plus && a.thickness === 'thin') S(69, '細めの髪は 年齢とともにハリの低下が見た目に出やすいので 毛先より先に根元の土台を整えます');
+  else if (isAge30Plus && isGrayColor) S(68, '色を保つことだけでなく 染める回数に合わせて 頭皮のコンディションも一緒に整えていく段階です');
+  if (isGrayColor) S(62, '色持ちだけでなく 染め続ける前提で 頭皮と毛先の両方に無理をかけないことが大切な段階です');
+  else if (isHomeColor) S(61, 'いま優先したいのは色のきれいさより 履歴のムラで不安定になった髪を整え直すことです');
+  else if (isFashionColor) S(60, '今回のカラー悩みは 色そのものの抜けやすさと ツヤの落ち方を抑えることが中心です');
+  S(1, 'いまの髪は大きな傷みは少なく 質感を丁寧に整えていく段階です');
+
+  // ── causeLine(なぜそうなっているか): ズレ(群9)>生活(群8) ──
+  const causeC = [];
+  const C = (p, t) => causeC.push({ p, t });
+  if ((has('damage') || has('rough')) && wantsAiry) C(55, '補修は必要ですが 重くなると理想の軽さから離れるので 直しすぎない設計にしています');
+  else if (waveConcern && wantsEasy) C(54, '本当は簡単に整えたいのに 素材側がそれを邪魔しやすいので まず扱いやすさを取り戻します');
+  else if (has('scalpOily') && (items.indexOf('oil') > -1 || items.indexOf('milk') > -1)) C(53, '補いたい気持ちは強い一方で いまは足しすぎるほど 重さとして返りやすい状態です');
+  if (noTime) C(40, 'いま必要なのは手数の多いケアより 少ない工程でも崩れにくい土台づくりです');
+  else if (sleepWet) C(39, '乾かし残しが続くと 広がりやダメージが翌日に持ち越されやすい状態です');
+  else if (humidLife) C(38, '湿気の影響を受けやすい前提で 朝の仕上がりを保ちやすい組み方にしています');
+  else if (outsideLife) C(37, '外的ダメージが積み上がりやすい前提で 守るケアを少し強めに入れています');
+
+  // ── policyLine(だから何を優先): 主方針 + 仕上がり希望(群7) ──
+  let mainPolicy;
+  if (isBleachVeryHeavy || isHighDamage) mainPolicy = 'だから 表面の手触りより 内部補修を最優先に組みました';
+  else if (isDeepScalp || isAge30Plus) mainPolicy = 'だから 毛先より先に 頭皮と根元の土台から整えます';
+  else if (isHumidityWave || isHistoryWave || isDryDamageWave) mainPolicy = 'だから 広がりを抑えて 一日きれいが続く質感を優先します';
+  else if (isGrayColor || isFashionColor || isHomeColor) mainPolicy = 'だから 手触りと同時に 色の持ちも守る組み方にしています';
+  else mainPolicy = 'だから いまの状態に合わせて 土台から順に整えます';
+  let goalClause = '';
+  const g1consumed = isBleachHeavy && isHighHeat && (wantsAiry || wantsGlossy || wantsKeepColor);
+  if (!g1consumed) {
+    if (wantsAiry) goalClause = '軽さは残す形で';
+    else if (wantsGlossy) goalClause = '面の整いを先に';
+    else if (wantsEasy) goalClause = '朝の再現性を優先して';
+    else if (wantsKeepColor) goalClause = '退色を抑えながら';
+  }
+  const policyLine = goalClause ? (goalClause + ' ' + mainPolicy) : mainPolicy;
+
+  // ── nuanceLine(髪格の一言): 太さ軸(細/太/標準) ──
+  let nuanceLine = '';
+  if (a.thickness === 'thin') nuanceLine = '細めの髪質は 傷みそのものより 軽さが消えることが印象に出やすいタイプです';
+  else if (a.thickness === 'thick') nuanceLine = '太めの髪質は 補修しても収まりにくさが残りやすいので 質感の調整まで含めて整えます';
+  else if (a.thickness === 'normal') nuanceLine = 'バランス型の髪質は 大きく崩れにくい一方で 履歴の影響がそのまま仕上がりに出やすいタイプです';
+
+  const pick = (arr) => arr.length ? arr.slice().sort((x, y) => y.p - x.p)[0].t : '';
+  return { stateLine: pick(stateC), causeLine: pick(causeC), policyLine: policyLine, nuanceLine: nuanceLine };
+}
+
 /* ---------- DeepFullBreakdown — ケア処方の全カテゴリ(折りたたみ内に表示) ---------- */
 function DeepFullBreakdown({ orderedBlocks, hardRules }) {
   return (
@@ -3407,7 +3505,7 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
 
   // 主訴(優先課題)と判定理由
   const priorityConcerns = buildPriorityConcerns(answers, scores);
-  const verdictLine = buildVerdictLine(answers, scores);
+  const resultCopy = buildResultCopy(answers, scores);
 
   // 「まず、この◯本」— 基礎3点(シャンプー/トリートメント/アウトバス)を必ず固定し、
   // 30歳以上 or 深い頭皮悩み → 頭皮エッセンス、高ダメージ → 集中マスク を追加する 3〜5本の変動表示。
@@ -3464,7 +3562,12 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
               </span>
             ))}
           </div>
-          <p className="mt-3 text-[12px] sm:text-[12.5px] text-charcoal/80 leading-[1.85]">{verdictLine}</p>
+          <div className="mt-3">
+            {resultCopy.stateLine && <p className="text-[12.5px] sm:text-[13px] text-ink leading-[1.85]">{resultCopy.stateLine}</p>}
+            {resultCopy.causeLine && <p className="mt-1.5 text-[12px] sm:text-[12.5px] text-charcoal/80 leading-[1.85]">{resultCopy.causeLine}</p>}
+            {resultCopy.policyLine && <p className="mt-1.5 text-[12px] sm:text-[12.5px] text-charcoal/80 leading-[1.85]">{resultCopy.policyLine}</p>}
+            {resultCopy.nuanceLine && <p className="mt-1.5 text-[12px] text-charcoal/65 leading-[1.85]">{resultCopy.nuanceLine}</p>}
+          </div>
         </div>
       )}
 
