@@ -7114,7 +7114,7 @@ function ResultHero({ karte, onSaveImage, onShare, onSavePdf }) {
             onClick={() => onSaveImage && onSaveImage('square')}
             className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/70 border border-line text-charcoal/80 hover:border-ink hover:text-ink transition-colors font-mono tracking-widest2 text-[10px] uppercase rounded-[1px]"
           >
-            画像で保存
+            タイプ画像
           </button>
           <button
             type="button"
@@ -8545,10 +8545,10 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
       <div className="mt-5 no-print flex justify-center">
         <button
           type="button"
-          onClick={() => onSaveImage && onSaveImage('story')}
+          onClick={shareCounselingSheetImage}
           className="inline-flex items-center gap-2 px-7 py-3.5 bg-ink text-ivory hover:bg-charcoal transition-colors font-serif text-[14px] sm:text-[15px] rounded-[2px]"
         >
-          このカルテを保存・送る
+          このカルテを画像で保存・送る
           <span className="text-[12px]">↗</span>
         </button>
       </div>
@@ -9796,7 +9796,7 @@ function Result({ answers, onRestart, onCollection }) {
         {/* 保存(主役・ゴールド) */}
         <button
           type="button"
-          onClick={() => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-square.png`, 'square')}
+          onClick={shareCounselingSheetImage}
           aria-label="髪のカルテを画像で保存"
           className="flex flex-col items-center justify-center gap-1 py-2"
           style={{ minHeight:'54px', color:'#B8945A' }}
