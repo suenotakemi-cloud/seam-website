@@ -3994,12 +3994,19 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
         )}
 
         <div className="mt-10 sm:mt-12 anim-fade-up" style={{ animationDelay: '120ms' }}>
-          {/* 主CTA: 一本化 + 遊び心(sparkle + bounce) */}
+          {/* 3秒で価値が伝わる4点 — "読むページ"から"始めるページ"へ */}
+          <div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono tracking-widest2 text-[10px] sm:text-[10.5px] uppercase text-charcoal/60">
+            <span>3分</span><span className="text-gold/40" aria-hidden>/</span>
+            <span>27髪格</span><span className="text-gold/40" aria-hidden>/</span>
+            <span>3〜5本を提案</span><span className="text-gold/40" aria-hidden>/</span>
+            <span>店頭相談に連携</span>
+          </div>
+          {/* 主CTA: 押した先で何が返るかを明示(結果志向) + 遊び心(sparkle + bounce) */}
           <button
             onClick={onStartDeep || onStart}
             className="karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 sm:px-10 py-4 sm:py-[18px] hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
           >
-            <span className="font-serif text-[15px] sm:text-base">{lastKarte ? '新しく診断をはじめる' : '髪を診断する'}</span>
+            <span className="font-serif text-[15px] sm:text-base">{lastKarte ? '新しく診断をはじめる' : '髪格を診断して 今合う3〜5本を見る'}</span>
             <span className="karte-sparkle text-white/90" style={{fontSize:'12px'}}>✦</span>
             <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
