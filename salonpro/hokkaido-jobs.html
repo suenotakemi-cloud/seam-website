@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#12313a">
+  <title>北海道の美容師求人｜SALON WORK 北海道</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=75">
+  <link rel="stylesheet" href="assets/css/base.css?v=75">
+  <link rel="stylesheet" href="assets/css/components.css?v=75">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 40px; }
+    .hk-top { position: sticky; top: 0; z-index: 10; background: #12313a; color: #fff; }
+    .hk-top__in { display: flex; align-items: center; gap: 8px; height: 54px; padding: 0 16px; max-width: 760px; margin-inline: auto; }
+    .hk-top__logo { font-size: 16px; font-weight: 900; letter-spacing: .02em; } .hk-top__logo b { color: #7fd0c4; }
+    .hk-top__tag { font-size: 11px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 9px; }
+    .pa-wrap { max-width: 760px; margin-inline: auto; padding: 16px; }
+    .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
+    .pa-btn { width: 100%; height: 48px; border: 0; border-radius: var(--r-md); background: #fff; color: var(--ink); border: 1px solid var(--line-3); font-size: 13.5px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+
+    /* ヒーロー */
+    .hk-hero { background: linear-gradient(160deg,#164049,#0e2830); color: #fff; border-radius: var(--r-lg); padding: 24px 20px; margin-bottom: 14px; }
+    .hk-hero__h { font-size: 24px; font-weight: 900; line-height: 1.4; letter-spacing: -.01em; }
+    .hk-hero__h b { color: #7fd0c4; }
+    .hk-hero__s { font-size: 12.5px; color: rgba(255,255,255,.78); line-height: 1.6; margin-top: 8px; }
+    .hk-search { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .hk-search input, .hk-search select { height: 46px; border: 0; border-radius: 11px; padding: 0 14px; font-size: 13px; font-weight: 700; background: #fff; color: var(--ink); }
+    .hk-search input { flex: 1 1 100%; min-width: 0; }
+    .hk-search select { flex: 1; -webkit-appearance: none; appearance: none; }
+    .hk-search button { flex: none; height: 46px; padding: 0 20px; border: 0; border-radius: 11px; background: #7fd0c4; color: #0e2830; font-weight: 900; font-size: 14px; cursor: pointer; }
+    .hk-trust { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 14px; }
+    .hk-trust span { font-size: 10.5px; font-weight: 800; color: rgba(255,255,255,.9); background: rgba(255,255,255,.12); border-radius: 999px; padding: 4px 10px; }
+
+    .hk-sec__t { font-size: 13px; font-weight: 900; margin: 4px 2px 10px; }
+    .hk-sec__t small { font-weight: 600; color: var(--ink-3); font-size: 11px; margin-left: 6px; }
+
+    /* エリア */
+    .hk-areas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .hk-area { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 12px 8px; text-align: center; cursor: pointer; }
+    .hk-area.on { border-color: #164049; background: #eaf4f2; }
+    .hk-area__n { font-size: 13px; font-weight: 800; } .hk-area__c { font-size: 10.5px; color: var(--ink-3); margin-top: 2px; } .hk-area.on .hk-area__c { color: #1f7a6e; font-weight: 800; }
+
+    /* 雇用形態 */
+    .hk-emps { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+    .hk-emps button { height: 34px; padding: 0 13px; border: 1px solid var(--line-3); border-radius: 999px; background: #fff; font-size: 11.5px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .hk-emps button.on { border-color: #164049; background: #eaf4f2; color: #1f5a52; }
+
+    /* 差別化 */
+    .hk-why { display: grid; gap: 10px; margin-bottom: 16px; }
+    .hk-why__c { display: flex; gap: 11px; background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px; }
+    .hk-why__ic { width: 38px; height: 38px; border-radius: 10px; background: #eaf4f2; color: #1f7a6e; display: flex; align-items: center; justify-content: center; flex: none; }
+    .hk-why__ic svg { width: 20px; height: 20px; }
+    .hk-why__t { font-size: 13px; font-weight: 800; } .hk-why__s { font-size: 11.5px; color: var(--ink-2); line-height: 1.55; margin-top: 2px; }
+
+    /* 並び替え */
+    .hk-sort { display: flex; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 5px; margin-bottom: 10px; }
+    .hk-sort button { flex: 1; height: 36px; border: 0; border-radius: 999px; background: transparent; font-size: 11.5px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .hk-sort button.on { background: #164049; color: #fff; }
+    .hk-count { font-size: 11.5px; color: var(--ink-3); font-weight: 700; margin: 0 2px 10px; }
+
+    /* 求人カード */
+    .jb-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 15px 16px; margin-bottom: 12px; }
+    .jb-card__hd { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .jb-card__n { font-size: 15px; font-weight: 900; } .jb-card__a { font-size: 11.5px; color: var(--ink-3); margin-top: 1px; }
+    .jb-emps { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+    .jb-emp { font-size: 10px; font-weight: 800; background: #eaf4f2; color: #1f5a52; border-radius: 5px; padding: 2px 7px; }
+    .jb-score { text-align: center; flex: none; border-radius: 12px; padding: 7px 11px; min-width: 76px; }
+    .jb-score.hi { background: #e3f4ea; } .jb-score.mid { background: var(--gold-soft); } .jb-score.lo { background: var(--surface-3); }
+    .jb-score__v { font-family: var(--font-num); font-size: 20px; font-weight: 900; line-height: 1; }
+    .jb-score.hi .jb-score__v { color: #1f8f53; } .jb-score.mid .jb-score__v { color: var(--gold-strong); } .jb-score.lo .jb-score__v { color: var(--ink-2); }
+    .jb-score__l { font-size: 9px; font-weight: 800; color: var(--ink-2); margin-top: 2px; }
+    .jb-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin: 12px 0 6px; }
+    .jb-num { display: flex; justify-content: space-between; font-size: 12px; border-bottom: 1px solid var(--line-2); padding-bottom: 5px; }
+    .jb-num .k { color: var(--ink-3); } .jb-num .v { font-weight: 800; font-family: var(--font-num); }
+    .jb-real { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 800; color: #1f8f53; margin-top: 6px; }
+    .jb-real svg { width: 11px; height: 11px; }
+    .jb-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+    .jb-chip { font-size: 10px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; color: var(--ink-2); }
+    .jb-card__act { display: flex; gap: 8px; margin-top: 12px; }
+    .jb-card__act a { flex: 1; height: 40px; border-radius: 10px; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+    .jb-card__act .prim { background: #164049; color: #fff; } .jb-card__act .sec { background: #fff; color: var(--ink); border: 1px solid var(--line-3); }
+
+    .hk-foot { text-align: center; font-size: 11px; color: var(--ink-3); margin-top: 16px; line-height: 1.7; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); }
+  </style>
+</head>
+<body>
+  <div class="hk-top"><div class="hk-top__in"><span class="hk-top__logo">SALON WORK <b>北海道</b></span><span class="hk-top__tag">美容師求人 ・ 運営：菊地</span></div></div>
+  <div class="pa-wrap">
+
+    <!-- ヒーロー -->
+    <div class="hk-hero">
+      <div class="hk-hero__h">北海道の美容師のための、<br><b>誠実な</b>求人サイト。</div>
+      <div class="hk-hero__s">給与も休日も“盛らない”。各サロンの実データで選べる、北海道専用。新卒から経験者・面貸しまで。</div>
+      <div class="hk-search">
+        <input id="kw" type="search" placeholder="サロン名・職種・エリアで検索" autocomplete="off">
+        <select id="areaSel"><option value="">エリアを選ぶ</option></select>
+        <button id="goBtn">探す</button>
+      </div>
+      <div class="hk-trust"><span id="tCount">掲載 0件</span><span>すべて実データ認証</span><span>北海道6エリア</span><span>新卒〜経験者・面貸し</span></div>
+    </div>
+
+    <!-- エリアで探す -->
+    <div class="hk-sec__t">エリアで探す <small>北海道（菊地の営業圏）</small></div>
+    <div class="hk-areas" id="areas"></div>
+
+    <!-- 雇用形態 -->
+    <div class="hk-sec__t">雇用形態で絞る</div>
+    <div class="hk-emps" id="emps"></div>
+
+    <!-- なぜ北海道専用か -->
+    <div class="hk-sec__t">なぜ「SALON WORK 北海道」か</div>
+    <div class="hk-why">
+      <div class="hk-why__c"><span class="hk-why__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-7-11a7 7 0 0 1 14 0c0 6.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span><div><div class="hk-why__t">北海道専用・地域密着</div><div class="hk-why__s">全国サイトに埋もれない。菊地の6営業所ネットワークの実在サロンだけを掲載。地元で働きたい人に届く。</div></div></div>
+      <div class="hk-why__c"><span class="hk-why__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><div><div class="hk-why__t">実データ認証で“盛れない”</div><div class="hk-why__s">給与・休日・残業・定着はサロンの運営データ。求人票と現実の乖離をなくし、入ってすぐ辞めるミスマッチを防ぐ。</div></div></div>
+      <div class="hk-why__c"><span class="hk-why__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5z"/><path d="M21 9v6M7 11v5c0 1 2 2 5 2s5-1 5-2v-5"/></svg></span><div><div class="hk-why__t">学校連携＋常に最新</div><div class="hk-why__s">道内の美容学校と連携。掲載はSalonProのサロンから＝情報が実データで自動更新され、放置された古い求人が出ない。</div></div></div>
+    </div>
+
+    <!-- 求人一覧 -->
+    <div class="hk-sec__t" id="listTitle">求人一覧</div>
+    <div class="hk-sort" id="sort">
+      <button class="on" data-s="disc">誠実さ順（開示率）</button>
+      <button data-s="salary">給与順</button>
+      <button data-s="off">休日順</button>
+    </div>
+    <div class="hk-count" id="count"></div>
+    <div id="list"></div>
+
+    <a class="pa-btn" href="recruit.html" style="margin-top:6px">サロンの方：求人を掲載する（実データで“盛れない”求人）</a>
+    <div class="hk-foot">SALON WORK 北海道 ・ 運営：株式会社菊地（KIKUCHI PRODUCE）<br>※ サイト名は仮称・掲載内容はデモです。給与等はSalonProの運営データに基づく想定値。</div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/components.js?v=75"></script>
+  <script>
+    (function () {
+      var $ = function (id) { return document.getElementById(id); };
+      var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
+      var AREAS = ['札幌', '旭川', '函館', '釧路', '帯広', '北見'];
+      var EMPS = ['正社員', '業務委託', '面貸し', 'パート', '新卒歓迎'];
+      var SALONS = [
+        { name: 'hair studio LIEN', area: '札幌', spot: '大通', emp: ['正社員', '新卒歓迎'], role: 'スタイリスト／アシスタント', salary: 190000, off: 8, ot: 12, debut: 26, turn: 9, tenure: 6.1, disc: 92, chips: ['見学OK', '社保完備', '研修充実', '相談体制'] },
+        { name: 'Atelier COMO', area: '札幌', spot: '円山', emp: ['正社員'], role: 'スタイリスト／アシスタント', salary: 185000, off: 8, ot: 14, debut: 28, turn: 12, tenure: 5.2, disc: 83, chips: ['社保完備', '研修充実', '相談体制'] },
+        { name: 'NORTH hair', area: '釧路', spot: '', emp: ['正社員', '新卒歓迎'], role: 'スタイリスト／アシスタント', salary: 182000, off: 8, ot: 13, debut: 27, turn: 10, tenure: 5.6, disc: 78, chips: ['見学OK', '社保完備', '研修充実'] },
+        { name: 'GRACE hair', area: '札幌', spot: 'すすきの', emp: ['業務委託', '面貸し'], role: 'スタイリスト', salary: 180000, off: 7, ot: 18, debut: 30, turn: 15, tenure: 4.3, disc: 75, chips: ['見学OK', '高歩合'] },
+        { name: 'LULU', area: '札幌', spot: '北24条', emp: ['パート', '正社員'], role: 'アシスタント／受付', salary: 178000, off: 9, ot: 8, debut: 30, turn: 11, tenure: 5.5, disc: 71, chips: ['社保完備', '時短相談', '相談体制'] },
+        { name: 'SALON DE Belle', area: '旭川', spot: '', emp: ['正社員', '新卒歓迎'], role: 'スタイリスト', salary: 175000, off: 8, ot: 16, debut: 32, turn: 14, tenure: 4.8, disc: 67, chips: ['見学OK', '社保完備'] },
+        { name: 'mist', area: '北見', spot: '', emp: ['業務委託'], role: 'スタイリスト', salary: 179000, off: 8, ot: 14, debut: 29, turn: 13, tenure: 4.6, disc: 63, chips: ['高歩合', '面貸し相談'] },
+        { name: 'modo hair', area: '函館', spot: '', emp: ['正社員'], role: 'スタイリスト／スパニスト', salary: 178000, off: 8, ot: 15, debut: 30, turn: 13, tenure: 5.0, disc: 58, chips: ['社保完備', '相談体制'] },
+        { name: "K's hair", area: '帯広', spot: '', emp: ['パート'], role: 'アシスタント', salary: 172000, off: 7, ot: 20, debut: 34, turn: 18, tenure: 3.9, disc: 50, chips: ['研修充実'] }
+      ];
+      var state = { area: '', emp: {}, sort: 'disc', kw: '' };
+
+      // エリアselect
+      $('areaSel').innerHTML = '<option value="">エリアを選ぶ</option>' + AREAS.map(function (a) { return '<option value="' + a + '">' + a + '</option>'; }).join('');
+      // エリアカード
+      function areaCount(a) { return SALONS.filter(function (s) { return s.area === a; }).length; }
+      $('areas').innerHTML = AREAS.map(function (a) { return '<div class="hk-area" data-a="' + a + '"><div class="hk-area__n">' + a + '</div><div class="hk-area__c">' + areaCount(a) + '件</div></div>'; }).join('');
+      // 雇用形態
+      $('emps').innerHTML = EMPS.map(function (e) { return '<button data-e="' + e + '">' + e + '</button>'; }).join('');
+
+      function scoreCls(d) { return d >= 80 ? 'hi' : d >= 65 ? 'mid' : 'lo'; }
+      function match(s) {
+        if (state.area && s.area !== state.area) return false;
+        var emps = Object.keys(state.emp).filter(function (k) { return state.emp[k]; });
+        if (emps.length && !emps.some(function (e) { return s.emp.indexOf(e) >= 0; })) return false;
+        if (state.kw) { var t = (s.name + s.area + s.spot + s.role + s.emp.join('')).toLowerCase(); if (t.indexOf(state.kw.toLowerCase()) < 0) return false; }
+        return true;
+      }
+      function render() {
+        var rows = SALONS.filter(match);
+        rows.sort(function (a, b) { return state.sort === 'disc' ? b.disc - a.disc : state.sort === 'salary' ? b.salary - a.salary : b.off - a.off; });
+        $('tCount').textContent = '掲載 ' + SALONS.length + '件';
+        var sortl = { disc: '誠実さ（開示率）順', salary: '給与の高い順', off: '休日の多い順' }[state.sort];
+        $('count').textContent = rows.length + '件' + (state.area ? '（' + state.area + '）' : '') + ' ・ ' + sortl;
+        $('list').innerHTML = rows.map(function (s) {
+          var loc = s.area + (s.spot ? '・' + s.spot : '');
+          return '<div class="jb-card"><div class="jb-card__hd"><div><div class="jb-card__n">' + s.name + '</div><div class="jb-card__a">' + loc + '</div>'
+            + '<div class="jb-emps">' + s.emp.map(function (e) { return '<span class="jb-emp">' + e + '</span>'; }).join('') + '</div></div>'
+            + '<div class="jb-score ' + scoreCls(s.disc) + '"><div class="jb-score__v">' + s.disc + '%</div><div class="jb-score__l">開示率</div></div></div>'
+            + '<div class="jb-nums">'
+            + '<div class="jb-num"><span class="k">初任給</span><span class="v">' + yen(s.salary) + '</span></div>'
+            + '<div class="jb-num"><span class="k">休日/月</span><span class="v">' + s.off + '日</span></div>'
+            + '<div class="jb-num"><span class="k">残業</span><span class="v">' + s.ot + 'h</span></div>'
+            + '<div class="jb-num"><span class="k">デビュー</span><span class="v">' + s.debut + 'ヶ月</span></div>'
+            + '<div class="jb-num"><span class="k">離職率</span><span class="v">' + s.turn + '%</span></div>'
+            + '<div class="jb-num"><span class="k">平均勤続</span><span class="v">' + s.tenure + '年</span></div></div>'
+            + '<div class="jb-real"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 数字はSalonProの実データ認証（盛れない）</div>'
+            + '<div class="jb-chips">' + s.chips.map(function (c) { return '<span class="jb-chip">' + c + '</span>'; }).join('') + '</div>'
+            + '<div class="jb-card__act"><a class="prim" href="recruit.html">求人票を見る</a><a class="sec" data-visit="' + s.name + '">見学を申し込む</a></div></div>';
+        }).join('') || '<div style="text-align:center;color:var(--ink-3);font-size:12.5px;padding:30px 0">条件に合う求人がありません</div>';
+      }
+
+      function setArea(a) {
+        state.area = (state.area === a) ? '' : a;
+        [].forEach.call($('areas').children, function (c) { c.classList.toggle('on', c.dataset.a === state.area); });
+        $('areaSel').value = state.area; render();
+      }
+      $('areas').addEventListener('click', function (e) { var c = e.target.closest('[data-a]'); if (c) setArea(c.dataset.a); });
+      $('areaSel').addEventListener('change', function () { setArea(this.value && this.value !== state.area ? this.value : (this.value || state.area)); if (!this.value) { state.area = ''; [].forEach.call($('areas').children, function (c) { c.classList.remove('on'); }); render(); } });
+      $('emps').addEventListener('click', function (e) { var b = e.target.closest('[data-e]'); if (!b) return; var k = b.dataset.e; state.emp[k] = !state.emp[k]; b.classList.toggle('on', state.emp[k]); render(); });
+      $('sort').addEventListener('click', function (e) { var b = e.target.closest('[data-s]'); if (!b) return; state.sort = b.dataset.s; [].forEach.call(this.children, function (x) { x.classList.toggle('on', x === b); }); render(); });
+      function doSearch() { state.kw = $('kw').value.trim(); render(); document.getElementById('listTitle').scrollIntoView({ block: 'start' }); }
+      $('goBtn').addEventListener('click', doSearch);
+      $('kw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+      $('list').addEventListener('click', function (e) {
+        var b = e.target.closest('[data-visit]'); if (!b) return; e.preventDefault();
+        var t = $('toast'); t.innerHTML = (window.SP && SP.svg ? SP.svg('checkc') : '✓') + b.dataset.visit + ' に見学を申し込みました（デモ）';
+        t.classList.add('is-visible'); clearTimeout(t._t); t._t = setTimeout(function () { t.classList.remove('is-visible'); }, 2200);
+      });
+      render();
+    })();
+  </script>
+</body>
+</html>
