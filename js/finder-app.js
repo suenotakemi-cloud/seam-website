@@ -5362,12 +5362,23 @@ function Home({
     style: {
       animationDelay: '120ms'
     }
-  }, /*#__PURE__*/React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono tracking-widest2 text-[10px] sm:text-[10.5px] uppercase text-charcoal/60"
+  }, /*#__PURE__*/React.createElement("span", null, "3\u5206"), /*#__PURE__*/React.createElement("span", {
+    className: "text-gold/40",
+    "aria-hidden": true
+  }, "/"), /*#__PURE__*/React.createElement("span", null, "27\u9AEA\u683C"), /*#__PURE__*/React.createElement("span", {
+    className: "text-gold/40",
+    "aria-hidden": true
+  }, "/"), /*#__PURE__*/React.createElement("span", null, "3\u301C5\u672C\u3092\u63D0\u6848"), /*#__PURE__*/React.createElement("span", {
+    className: "text-gold/40",
+    "aria-hidden": true
+  }, "/"), /*#__PURE__*/React.createElement("span", null, "\u5E97\u982D\u76F8\u8AC7\u306B\u9023\u643A")), /*#__PURE__*/React.createElement("button", {
     onClick: onStartDeep || onStart,
     className: "karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 sm:px-10 py-4 sm:py-[18px] hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-serif text-[15px] sm:text-base"
-  }, lastKarte ? '新しく診断をはじめる' : '髪を診断する'), /*#__PURE__*/React.createElement("span", {
+  }, lastKarte ? '新しく診断をはじめる' : '髪格を診断して 今合う3〜5本を見る'), /*#__PURE__*/React.createElement("span", {
     className: "karte-sparkle text-white/90",
     style: {
       fontSize: '12px'
