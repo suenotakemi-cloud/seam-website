@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="robots" content="noindex, nofollow">
+  <title>SEAM — QR受付</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #0a0a0a;
+      --surface: #141414;
+      --border:  #2a2a2a;
+      --text:    #f5f5f5;
+      --muted:   #888;
+      --gold:    #c9a96e;
+      --gold-dim:#8a6d40;
+      --danger:  #c0392b;
+      --success: #27ae60;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── 共通レイアウト ─── */
+    .screen {
+      display: none;
+      min-height: 100dvh;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+    }
+    .screen.active { display: flex; }
+
+    .logo {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      margin-bottom: 0.4rem;
+      text-align: center;
+    }
+    .tagline {
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+
+    /* ─── ログイン画面 ─── */
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .form-group input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 1rem;
+      padding: 0.85rem 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+    .form-group input:focus {
+      border-color: var(--gold);
+    }
+    .form-group input::placeholder {
+      color: var(--muted);
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--gold);
+      color: #0a0a0a;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 1rem;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
+      margin-top: 0.5rem;
+    }
+    .btn-primary:hover:not(:disabled) { background: #d4b07a; }
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .login-error {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #e74c3c;
+      text-align: center;
+      min-height: 1.2em;
+    }
+
+    /* ─── スキャン画面 ─── */
+    .scan-header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      background: rgba(10,10,10,0.9);
+      backdrop-filter: blur(8px);
+      z-index: 10;
+      border-bottom: 1px solid var(--border);
+    }
+    .scan-header .logo-small {
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+    }
+
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-logout:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .scan-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      padding: 5rem 1.5rem 2rem;
+      width: 100%;
+    }
+
+    .camera-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 480px;
+      aspect-ratio: 1;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      background: #000;
+    }
+    .camera-wrap video,
+    .camera-wrap canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .camera-wrap canvas { display: none; } /* 処理用・非表示 */
+
+    /* スキャン枠のオーバーレイ */
+    .scan-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+    .scan-frame {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 55%; aspect-ratio: 1;
+      border: 2px solid var(--gold);
+      border-radius: 8px;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.4);
+    }
+
+    .scan-hint {
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-align: center;
+    }
+
+    /* ─── 結果オーバーレイ ─── */
+    .result-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,10,10,0.96);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 2rem;
+      text-align: center;
+    }
+    .result-overlay.visible { display: flex; }
+
+    .result-icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      line-height: 1;
+    }
+    .result-message {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.75rem;
+    }
+    .result-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .result-progress {
+      margin-top: 2rem;
+      width: 120px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .result-progress-bar {
+      height: 100%;
+      background: var(--gold);
+      width: 0%;
+      transition: width linear;
+    }
+
+    .result-overlay.success .result-message { color: var(--gold); }
+    .result-overlay.error   .result-message { color: #e74c3c; }
+
+    /* ─── カメラ権限エラー ─── */
+    .cam-error {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== 画面1: ログイン ===== -->
+  <div id="screen-login" class="screen active">
+    <div class="logo">SEAM</div>
+    <div class="tagline">QR Entrance</div>
+
+    <div class="login-card">
+      <div class="form-group">
+        <label for="input-mail">メールアドレス</label>
+        <input
+          id="input-mail"
+          type="email"
+          autocomplete="username"
+          placeholder="example@email.com"
+          inputmode="email"
+        >
+      </div>
+      <div class="form-group">
+        <label for="input-pass">パスワード</label>
+        <input
+          id="input-pass"
+          type="password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+        >
+      </div>
+      <button id="btn-login" class="btn-primary">ログイン</button>
+      <p id="login-error" class="login-error"></p>
+    </div>
+  </div>
+
+  <!-- ===== 画面2: QRスキャン ===== -->
+  <div id="screen-scan" class="screen">
+    <div class="scan-header">
+      <span class="logo-small">SEAM</span>
+      <button id="btn-logout" class="btn-logout">ログアウト</button>
+    </div>
+
+    <div class="scan-body">
+      <div id="camera-wrap" class="camera-wrap">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+        <div class="scan-overlay">
+          <div class="scan-frame"></div>
+        </div>
+      </div>
+      <div id="cam-error" class="cam-error" style="display:none;">
+        カメラへのアクセスが許可されていません。<br>
+        ブラウザの設定からカメラを許可してください。
+      </div>
+      <p class="scan-hint">QRコードをスキャンしてください</p>
+    </div>
+  </div>
+
+  <!-- ===== 結果オーバーレイ ===== -->
+  <div id="result-overlay" class="result-overlay">
+    <div class="result-icon" id="result-icon"></div>
+    <div class="result-message" id="result-message"></div>
+    <div class="result-sub" id="result-sub"></div>
+    <div class="result-progress">
+      <div class="result-progress-bar" id="result-bar"></div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── ストレージキー ──
+  const SK = {
+    TOKEN:   'seam_entrance_token',
+    UID:     'seam_entrance_uid',
+    NAME:    'seam_entrance_name',
+  };
+
+  // ── DOM ──
+  const $ = id => document.getElementById(id);
+  const screenLogin = $('screen-login');
+  const screenScan  = $('screen-scan');
+  const btnLogin    = $('btn-login');
+  const inputMail   = $('input-mail');
+  const inputPass   = $('input-pass');
+  const loginError  = $('login-error');
+  const btnLogout   = $('btn-logout');
+  const video       = $('video');
+  const canvas      = $('canvas');
+  const camErrDiv   = $('cam-error');
+  const cameraWrap  = $('camera-wrap');
+  const overlay     = $('result-overlay');
+  const resultIcon  = $('result-icon');
+  const resultMsg   = $('result-message');
+  const resultSub   = $('result-sub');
+  const resultBar   = $('result-bar');
+
+  // ── 初期化：セッション確認 ──
+  const savedToken = sessionStorage.getItem(SK.TOKEN);
+  const savedUid   = sessionStorage.getItem(SK.UID);
+  if (savedToken && savedUid) {
+    showScan();
+  }
+
+  // ── 画面切替ヘルパー ──
+  function showLogin() {
+    screenLogin.classList.add('active');
+    screenScan.classList.remove('active');
+    stopCamera();
+  }
+
+  function showScan() {
+    screenLogin.classList.remove('active');
+    screenScan.classList.add('active');
+    startCamera();
+  }
+
+  // ── ログイン処理 ──
+  btnLogin.addEventListener('click', doLogin);
+  [inputMail, inputPass].forEach(el => {
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  });
+
+  async function doLogin() {
+    const mail = inputMail.value.trim();
+    const pass = inputPass.value;
+    loginError.textContent = '';
+
+    if (!mail || !pass) {
+      loginError.textContent = 'メールアドレスとパスワードを入力してください';
+      return;
+    }
+
+    btnLogin.disabled = true;
+    btnLogin.textContent = 'ログイン中…';
+
+    try {
+      const res = await fetch('/entrance/session', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ mail, pass }),
+      });
+      const j = await res.json();
+
+      if (!j.ok) {
+        loginError.textContent = 'メールアドレスまたはパスワードが正しくありません';
+        return;
+      }
+
+      // セッションをsessionStorageに保存（パスワードは一切保存しない）
+      sessionStorage.setItem(SK.TOKEN, j.token);
+      sessionStorage.setItem(SK.UID,   j.uid);
+      sessionStorage.setItem(SK.NAME,  j.name);
+
+      // パスワードフィールドをクリア
+      inputPass.value = '';
+
+      showScan();
+
+    } catch (err) {
+      loginError.textContent = 'ネットワークエラーが発生しました。再試行してください。';
+    } finally {
+      btnLogin.disabled = false;
+      btnLogin.textContent = 'ログイン';
+    }
+  }
+
+  // ── ログアウト ──
+  btnLogout.addEventListener('click', () => {
+    sessionStorage.removeItem(SK.TOKEN);
+    sessionStorage.removeItem(SK.UID);
+    sessionStorage.removeItem(SK.NAME);
+    inputMail.value = '';
+    inputPass.value = '';
+    loginError.textContent = '';
+    showLogin();
+  });
+
+  // ── カメラ & QRスキャン ──
+  let stream = null;
+  let rafId  = null;
+  let scanning = true;
+
+  async function startCamera() {
+    scanning = true;
+    camErrDiv.style.display = 'none';
+    cameraWrap.style.display = '';
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showCamError();
+      return;
+    }
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      });
+      video.srcObject = stream;
+      video.play();
+      video.addEventListener('loadedmetadata', () => {
+        canvas.width  = video.videoWidth  || 640;
+        canvas.height = video.videoHeight || 480;
+        tick();
+      }, { once: true });
+    } catch (err) {
+      showCamError();
+    }
+  }
+
+  function stopCamera() {
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      stream = null;
+    }
+    video.srcObject = null;
+  }
+
+  function showCamError() {
+    cameraWrap.style.display = 'none';
+    camErrDiv.style.display = '';
+  }
+
+  function tick() {
+    if (!scanning) { rafId = requestAnimationFrame(tick); return; }
+
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const qr = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert',
+      });
+      if (qr && qr.data) {
+        onQRDetected(qr.data.trim());
+        return; // rafId は onQRDetected 内で再開
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+
+  // ── QR検出 ──
+  async function onQRDetected(code) {
+    if (!code) { rafId = requestAnimationFrame(tick); return; }
+
+    scanning = false; // 重複スキャン防止
+
+    const token = sessionStorage.getItem(SK.TOKEN);
+    const uid   = sessionStorage.getItem(SK.UID);
+
+    if (!token || !uid) {
+      // セッション切れ → ログイン画面へ
+      showLogin();
+      return;
+    }
+
+    try {
+      const url = `/entrance/lookup?code=${encodeURIComponent(code)}&token=${encodeURIComponent(token)}&uid=${encodeURIComponent(uid)}`;
+      const res = await fetch(url);
+      const j   = await res.json();
+
+      if (j.ok && j.name) {
+        showResult('success', `${j.name}様、ようこそ`, 'ご来店ありがとうございます');
+      } else if (!j.ok && j.reason === 'no_auth') {
+        // セッション無効 → ログアウト
+        sessionStorage.removeItem(SK.TOKEN);
+        sessionStorage.removeItem(SK.UID);
+        sessionStorage.removeItem(SK.NAME);
+        showLogin();
+        return;
+      } else {
+        showResult('error', '会員情報が見つかりません', 'スタッフにお声がけください');
+      }
+    } catch (err) {
+      showResult('error', '通信エラー', '再度お試しください');
+    }
+  }
+
+  // ── 結果表示 (3秒後に自動復帰) ──
+  function showResult(type, message, sub) {
+    overlay.className = 'result-overlay visible ' + type;
+    resultIcon.textContent = type === 'success' ? '✓' : '✕';
+    resultMsg.textContent  = message;
+    resultSub.textContent  = sub || '';
+
+    // プログレスバーアニメーション
+    resultBar.style.transition = 'none';
+    resultBar.style.width = '0%';
+    // 次フレームで開始
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        resultBar.style.transition = 'width 3s linear';
+        resultBar.style.width = '100%';
+      });
+    });
+
+    setTimeout(() => {
+      overlay.className = 'result-overlay';
+      scanning = true;
+      rafId = requestAnimationFrame(tick);
+    }, 3000);
+  }
+
+})();
+</script>
+</body>
+</html>
