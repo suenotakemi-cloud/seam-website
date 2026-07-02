@@ -12232,6 +12232,44 @@ function karteShareCard(ov, inner) {
 function karteShareCloseBtn() {
   return '<button data-karte-close style="margin-top:4px;padding:11px 26px;border:1px solid #D8CFBF;border-radius:999px;background:#fff;color:#5A534B;font-size:12.5px;font-family:inherit;letter-spacing:.04em;cursor:pointer;">閉じる</button>';
 }
+/* 撮影の高速化と固まり対策:
+   html2canvasは対象要素の属するドキュメント全体を複製してから描画するため、
+   巨大な結果ページ上では端末により数十秒〜フリーズする(=「作成中のまま変わらない」の正体)。
+   カルテだけを空のiframeへ移して撮影することで複製コストを最小化し、
+   さらにスマホのcanvas面積上限(iOS≈1,670万px)を超えないようscaleを自動調整する。 */
+async function captureKarteCanvas(node) {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;height:100px;border:0;opacity:0;pointer-events:none;';
+  document.body.appendChild(iframe);
+  try {
+    const idoc = iframe.contentDocument;
+    const heads = Array.from(document.querySelectorAll('link[rel="stylesheet"], style')).map(el => el.outerHTML).join('');
+    idoc.open();
+    idoc.write('<!DOCTYPE html><html><head><meta charset="utf-8">' + heads + '</head><body style="margin:0;background:#FFFFFF;"></body></html>');
+    idoc.close();
+    const clone = node.cloneNode(true);
+    clone.style.margin = '0';
+    idoc.body.appendChild(clone);
+    try {
+      await Promise.race([idoc.fonts ? idoc.fonts.ready : Promise.resolve(), new Promise(r => setTimeout(r, 1500))]);
+    } catch (e) {}
+    await new Promise(r => setTimeout(r, 80));
+    const w = Math.max(320, clone.scrollWidth || 720);
+    const h = Math.max(400, clone.scrollHeight || 1200);
+    iframe.style.height = Math.min(h + 40, 32000) + 'px';
+    const scale = Math.max(1, Math.min(2, Math.sqrt(14000000 / (w * h))));
+    return await html2canvas(clone, {
+      backgroundColor: '#FFFFFF',
+      scale,
+      useCORS: true,
+      logging: false,
+      windowWidth: w
+    });
+  } finally {
+    iframe.remove();
+  }
+}
 async function shareCounselingSheetImage() {
   const node = document.getElementById('counseling-sheet');
   const ov = karteShareOverlay();
@@ -12244,19 +12282,25 @@ async function shareCounselingSheetImage() {
     wireClose();
     return;
   }
-  karteShareCard(ov, '<p style="font-size:13.5px;letter-spacing:.06em;color:#2B2926;margin:8px 0 0;">カルテ画像を作成しています…</p>' + '<p style="margin:8px 0 6px;font-size:11px;color:#8A8177;">数秒かかることがあります</p>');
+  karteShareCard(ov, '<p style="font-size:13.5px;letter-spacing:.06em;color:#2B2926;margin:8px 0 0;">カルテ画像を作成しています…</p>' + '<p style="margin:8px 0 10px;font-size:11px;color:#8A8177;">数秒かかることがあります</p>' + karteShareCloseBtn());
+  wireClose();
   try {
     window.seamTrack && seamTrack('finder_cta', {
       target: 'karte_save'
     });
   } catch (e) {}
   try {
-    const canvas = await html2canvas(node, {
-      backgroundColor: '#FFFFFF',
-      scale: 2,
-      useCORS: true,
-      logging: false
-    });
+    // 隔離iframeで高速撮影 → 失敗時のみ従来方式(scale控えめ)へ。25秒で必ず打ち切る
+    const canvas = await Promise.race([captureKarteCanvas(node).catch(e => {
+      console.warn('karte iframe capture fallback', e);
+      return html2canvas(node, {
+        backgroundColor: '#FFFFFF',
+        scale: 1.5,
+        useCORS: true,
+        logging: false
+      });
+    }), new Promise((_, rej) => setTimeout(() => rej(new Error('capture-timeout')), 25000))]);
+    if (!ov.isConnected) return; // 作成中にユーザーが閉じた
     const date = new Date().toISOString().slice(0, 10);
     const filename = `SEAM_KARTE_${date}.png`;
     const dataURL = canvas.toDataURL('image/png');
@@ -12292,8 +12336,10 @@ async function shareCounselingSheetImage() {
     };
   } catch (e) {
     console.warn('Counseling sheet share failed', e);
-    karteShareCard(ov, '<p style="font-size:13.5px;line-height:2;color:#2B2926;margin:0 0 14px;">画像の作成に失敗しました<br>もう一度お試しください</p>' + karteShareCloseBtn());
+    karteShareCard(ov, '<p style="font-size:13.5px;line-height:2;color:#2B2926;margin:0 0 14px;">画像の作成に時間がかかっています<br>お手数ですが もう一度お試しください</p>' + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' + '<button data-karte-retry style="padding:11px 24px;background:#2B2926;color:#FBF7F1;border:none;border-radius:999px;font-size:12.5px;font-family:inherit;letter-spacing:.04em;cursor:pointer;">もう一度つくる</button>' + karteShareCloseBtn() + '</div>');
     wireClose();
+    const rb = ov.querySelector('[data-karte-retry]');
+    if (rb) rb.onclick = () => shareCounselingSheetImage();
   }
 }
 
