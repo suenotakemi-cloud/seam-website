@@ -335,25 +335,26 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
     window.addEventListener('seamlangchange', build);
     window.addEventListener('storage', function (e) { if (e.key === 'seamLang') build(); });
-    // 店舗アンカー着地の位置補正 — lazy画像/revealで高さが後から変わり初期ハッシュスクロールが
-    // ずれるため、3秒間だけ目標位置へ追従補正する（#store-* のみ・ユーザー操作で即中止）
-    if (/^#store-/.test(location.hash)) {
+    // ハッシュ着地の位置補正 — lazy画像/revealで高さが後から変わり、別ページからの
+    // アンカー遷移(#stores / #store-* / #menus 等すべて)が先頭に落ちるため、
+    // 3秒間だけ目標位置へ追従補正する（ユーザー操作で即中止・要素が無ければ何もしない）
+    if (location.hash && location.hash.length > 1 && /^[\w-]+$/.test(location.hash.slice(1))) {
       try { history.scrollRestoration = 'manual'; } catch (e) {}
       var cancelled = false;
       ['wheel', 'touchstart', 'keydown'].forEach(function (ev) {
         window.addEventListener(ev, function () { cancelled = true; }, { once: true, passive: true });
       });
-      var HEAD = 84; // 上部ヘッダーぶんのオフセット
       var tries = 0, stable = 0;
       var iv = setInterval(function () {
         tries++;
         if (cancelled || tries > 20) { clearInterval(iv); return; }
         var el = document.getElementById(location.hash.slice(1));
-        if (!el) return;
+        if (!el) { if (tries > 6) clearInterval(iv); return; }
+        var head = parseFloat(getComputedStyle(el).scrollMarginTop) || 84; // scroll-mt-* を尊重
         var top = el.getBoundingClientRect().top;
-        if (Math.abs(top - HEAD) > 24) {
+        if (Math.abs(top - head) > 24) {
           stable = 0;
-          window.scrollTo({ top: window.pageYOffset + top - HEAD, behavior: 'instant' });
+          window.scrollTo({ top: window.pageYOffset + top - head, behavior: 'instant' });
         } else if (++stable >= 3) { clearInterval(iv); }
       }, 150);
     }
