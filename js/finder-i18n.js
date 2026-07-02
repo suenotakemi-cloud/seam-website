@@ -4,6 +4,23 @@
    ========================================================================= */
 window.SEAM_FINDER_TR = {
 "en": {
+"（": " (",
+"）": ") ",
+"髪の1本は、太い？細い？": "Is each strand of your hair coarse or fine?",
+"髪を1本つまんだ感触で選んでください。迷ったら手ざわりの印象で大丈夫です。": "Pick by the feel of a single strand. If unsure, go with your impression of the texture.",
+"猫っ毛・絡まりやすい・ぺたんとしやすい": "Baby-fine, tangles easily, falls flat",
+"どちらとも言えない": "Hard to say",
+"1本が硬い・しっかり・広がりやすい": "Each strand is coarse, sturdy and tends to spread",
+"濡れると伸びる・ゴム状": "Stretches like rubber when wet",
+"ブリーチ（明るく脱色）をしたことは？": "Have you ever bleached (lightened) your hair?",
+"いちばん大切な情報です。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば選んでください。1つ選択。": "This is the most important information. Even if it is dyed dark now, only at the ends, or partial — select it if you have ever bleached. Choose one.",
+"今も明るい部分が残っている（ブリーチ毛）": "Bright sections still remain (bleached hair)",
+"今は暗く染めた／伸びたが、ブリーチした髪が残っている": "Now dyed dark / grown out, but bleached hair remains",
+"白っぽいハイトーンまで、しっかり抜いた": "Lifted fully to a pale, high-tone blonde",
+"ハイライト・インナーなど部分的に": "Partial, such as highlights or inner color",
+"暗め・落ち着いた色に染めている": "Dyed a dark, subdued color",
+"白髪染めをしている": "Coloring gray hair",
+"ブリーチ履歴": "Bleach History",
 "・": "·",
 "はい": "Yes",
 "ツヤ": "Shine",
@@ -5240,6 +5257,21 @@ window.SEAM_FINDER_TR = {
 "メタルピュリファイヤーテクノロジー": "Metal Purifier Technology"
 },
 "zh": {
+"髪の1本は、太い？細い？": "你的发丝偏粗还是偏细？",
+"髪を1本つまんだ感触で選んでください。迷ったら手ざわりの印象で大丈夫です。": "请以捏起一根头发的手感来选择。拿不准时凭手感印象即可。",
+"猫っ毛・絡まりやすい・ぺたんとしやすい": "发质细软、易缠结、容易贴头皮",
+"どちらとも言えない": "说不好",
+"1本が硬い・しっかり・広がりやすい": "单根偏硬、有韧性、容易蓬开",
+"濡れると伸びる・ゴム状": "湿发时会拉伸、呈橡皮状",
+"ブリーチ（明るく脱色）をしたことは？": "是否漂过头发（漂浅脱色）？",
+"いちばん大切な情報です。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば選んでください。1つ選択。": "这是最重要的信息。即使现在染深了、只在发尾、或只是局部，只要漂过就请选择。单选。",
+"今も明るい部分が残っている（ブリーチ毛）": "现在仍有明显的浅色部分（漂发）",
+"今は暗く染めた／伸びたが、ブリーチした髪が残っている": "现在染深了／已长长，但漂过的头发仍在",
+"白っぽいハイトーンまで、しっかり抜いた": "漂到接近白色的高明度",
+"ハイライト・インナーなど部分的に": "挑染、内层染等局部漂发",
+"暗め・落ち着いた色に染めている": "染成偏深、沉稳的颜色",
+"白髪染めをしている": "正在染白发",
+"ブリーチ履歴": "漂发史",
 "・": "·",
 "はい": "是",
 "ツヤ": "光泽",
@@ -10476,6 +10508,21 @@ window.SEAM_FINDER_TR = {
 "メタルピュリファイヤーテクノロジー": "金属净化技术"
 },
 "tw": {
+"髪の1本は、太い？細い？": "你的髮絲偏粗還是偏細？",
+"髪を1本つまんだ感触で選んでください。迷ったら手ざわりの印象で大丈夫です。": "請以捏起一根頭髮的手感來選擇。拿不準時憑手感印象即可。",
+"猫っ毛・絡まりやすい・ぺたんとしやすい": "髮質細軟、易糾結、容易扁塌",
+"どちらとも言えない": "說不上來",
+"1本が硬い・しっかり・広がりやすい": "單根偏硬、有韌性、容易蓬開",
+"濡れると伸びる・ゴム状": "濕髮時會拉長、呈橡皮狀",
+"ブリーチ（明るく脱色）をしたことは？": "是否漂過頭髮（漂淺脫色）？",
+"いちばん大切な情報です。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば選んでください。1つ選択。": "這是最重要的資訊。即使現在染深了、只在髮尾、或只是局部，只要漂過就請選擇。單選。",
+"今も明るい部分が残っている（ブリーチ毛）": "現在仍有明顯的淺色部分（漂髮）",
+"今は暗く染めた／伸びたが、ブリーチした髪が残っている": "現在染深了／已長長，但漂過的頭髮仍在",
+"白っぽいハイトーンまで、しっかり抜いた": "漂到接近白色的高明度",
+"ハイライト・インナーなど部分的に": "挑染、內層染等局部漂髮",
+"暗め・落ち着いた色に染めている": "染成偏深、沉穩的顏色",
+"白髪染めをしている": "正在染白髮",
+"ブリーチ履歴": "漂髮史",
 "・": "·",
 "はい": "是",
 "ツヤ": "光澤",
@@ -15712,6 +15759,23 @@ window.SEAM_FINDER_TR = {
 "メタルピュリファイヤーテクノロジー": "金屬淨化技術"
 },
 "ko": {
+"（": " (",
+"）": ") ",
+"髪の1本は、太い？細い？": "머리카락 한 올은 굵은 편? 가는 편?",
+"髪を1本つまんだ感触で選んでください。迷ったら手ざわりの印象で大丈夫です。": "머리카락 한 올을 집었을 때의 감촉으로 골라 주세요. 고민되면 손끝 인상으로 충분합니다.",
+"猫っ毛・絡まりやすい・ぺたんとしやすい": "가늘고 엉키기 쉬우며 눌리기 쉬움",
+"どちらとも言えない": "어느 쪽이라 말하기 어려움",
+"1本が硬い・しっかり・広がりやすい": "한 올이 단단하고 힘있어 잘 퍼지는 편",
+"濡れると伸びる・ゴム状": "젖으면 늘어나는 고무 느낌",
+"ブリーチ（明るく脱色）をしたことは？": "탈색(밝게 하는 블리치)을 한 적이 있나요?",
+"いちばん大切な情報です。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば選んでください。1つ選択。": "가장 중요한 정보입니다. 지금은 어둡게 염색했어도, 끝부분만이라도, 부분적이라도 탈색한 적이 있다면 선택해 주세요. 1개 선택.",
+"今も明るい部分が残っている（ブリーチ毛）": "지금도 밝은 부분이 남아 있음(탈색모)",
+"今は暗く染めた／伸びたが、ブリーチした髪が残っている": "지금은 어둡게 염색/자랐지만 탈색한 머리가 남아 있음",
+"白っぽいハイトーンまで、しっかり抜いた": "하얗게 보일 만큼 확실히 탈색했음",
+"ハイライト・インナーなど部分的に": "하이라이트・이너 등 부분 탈색",
+"暗め・落ち着いた色に染めている": "어둡고 차분한 색으로 염색 중",
+"白髪染めをしている": "새치 염색을 하고 있음",
+"ブリーチ履歴": "탈색 이력",
 "・": "·",
 "はい": "예",
 "ツヤ": "윤기",
@@ -20973,21 +21037,51 @@ window.SEAM_FINDER_TR = {
     return null;
   }
   // 区切り文字(｜・)で合成された文字列を片ごとに翻訳して再結合
-  function transComposed(trimmed, table) {
-    if (/[｜・]/.test(trimmed)) {
-      var parts = trimmed.split(/(\s*[｜・]\s*)/);
+  function transSegment(seg, table) {
+    var whole = table[seg];
+    if (whole != null && whole !== '') return whole;
+    if (/[｜・]/.test(seg)) {
+      var parts = seg.split(/(\s*[｜・]\s*)/);
       var changed = false;
       for (var i = 0; i < parts.length; i++) {
-        if (/^\s*[｜・]\s*$/.test(parts[i])) continue;
+        if (/^\s*[｜・]\s*$/.test(parts[i])) {
+          var sep = parts[i].trim();
+          var sv = sep ? table[sep] : null;
+          if (sv != null && sv !== '') { parts[i] = parts[i].replace(sep, sv); changed = true; }
+          continue;
+        }
+        var s2 = parts[i].trim();
+        if (!s2) continue;
+        var v = table[s2];
+        if (v == null) v = transRole(s2, table);
+        if (v != null && v !== '') { parts[i] = parts[i].replace(s2, v); changed = true; }
+      }
+      if (changed) return parts.join('');
+    }
+    return transRole(seg, table);
+  }
+  // カルテの合成ラベル「ラベル（補足）」対応(2026-07-03):
+  // まず（）で外側を割り、各片は丸ごと辞書を引いてから ｜・ の細分に落とす2段階。
+  function transComposed(trimmed, table) {
+    if (/[（）]/.test(trimmed)) {
+      var parts = trimmed.split(/(\s*[（）]\s*)/);
+      var changed = false;
+      for (var i = 0; i < parts.length; i++) {
+        if (/^\s*[（）]\s*$/.test(parts[i])) {
+          // 区切り自体も辞書にあれば置換(例: enでは（→" (" ）→") ")
+          var sep = parts[i].trim();
+          var sv = sep ? table[sep] : null;
+          if (sv != null && sv !== '') { parts[i] = parts[i].replace(sep, sv); changed = true; }
+          continue;
+        }
         var seg = parts[i].trim();
         if (!seg) continue;
-        var v = table[seg];
-        if (v == null) v = transRole(seg, table);
+        var v = transSegment(seg, table);
         if (v != null && v !== '') { parts[i] = parts[i].replace(seg, v); changed = true; }
       }
       if (changed) return parts.join('');
     }
-    return transRole(trimmed, table);
+    return transSegment(trimmed, table);
   }
 
   function walkApply(node, table) {
