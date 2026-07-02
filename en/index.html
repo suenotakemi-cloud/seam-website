@@ -365,6 +365,51 @@
     .ashift{transition:transform .3s ease;}
     @media (hover:hover){.group:hover .ashift{transform:translateX(3px);}}
   </style>
+<!-- ⚜ SUMMER SALE 告知バー (7/1〜7/31・8/1 0時JSTに自動非表示) -->
+<div id="saleBar" hidden="" data-track-view="sale_banner" data-track-click="sale_banner" role="button" tabindex="0" aria-label="サマーセール オンラインショップへ" class="cursor-pointer select-none" style="background:linear-gradient(90deg,#8F6A3F,#B8945A 45%,#8F6A3F);color:#FBF7F1;">
+  <div class="max-w-6xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-center gap-2 sm:gap-3 text-center whitespace-nowrap overflow-hidden">
+    <span class="font-mono text-[10px] sm:text-[10.5px] uppercase" style="letter-spacing:.18em;">Summer&nbsp;Sale</span>
+    <span aria-hidden="" class="h-3 w-px bg-white/40"></span>
+    <span class="font-serif text-[12.5px] sm:text-[13.5px]" style="font-weight:500;" data-i18n="sale.off">Up to 30% OFF</span>
+    <span class="hidden md:inline text-[11px]" style="color:rgba(255,255,255,.85);" data-i18n="sale.scope">Online shop &amp; all stores</span>
+    <span class="text-[11px]" style="color:rgba(255,255,255,.85);" data-i18n="sale.until">Until Jul 31</span>
+    <span aria-hidden="" class="text-[12px]">→</span>
+  </div>
+</div>
+<script>
+(function () {
+  var bar = document.getElementById('saleBar');
+  if (!bar) return;
+  var now = Date.now();
+  var start = new Date('2026-07-01T00:00:00+09:00').getTime();
+  var end   = new Date('2026-08-01T00:00:00+09:00').getTime(); // 期間外は表示しない=消し忘れゼロ
+  if (now < start || now >= end) return;
+  bar.hidden = false;
+  var go = function () {
+    var pill = document.getElementById('seam-header-shop'); // ヘッダーのONLINE SHOPピル=会員/未会員両対応シート
+    if (pill) { pill.click(); return; }
+    location.href = 'onlineshop.html';
+  };
+  bar.addEventListener('click', go);
+  bar.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  // ヘッダーピルにSALEバッジ(ピルは後から注入されるためリトライ)
+  var tries = 0;
+  var iv = setInterval(function () {
+    tries++;
+    var pill = document.getElementById('seam-header-shop');
+    if (pill) {
+      clearInterval(iv);
+      if (!pill.querySelector('.sale-dot')) {
+        var b = document.createElement('span');
+        b.className = 'sale-dot';
+        b.textContent = 'SALE';
+        b.style.cssText = 'margin-left:6px;background:#B4453A;color:#fff;font-size:8.5px;letter-spacing:.08em;padding:2px 5px;border-radius:999px;line-height:1;font-family:monospace;';
+        pill.appendChild(b);
+      }
+    } else if (tries > 40) clearInterval(iv);
+  }, 200);
+})();
+</script>
   <header id="appHeader" class="is-solid sticky top-0 inset-x-0 z-50">
     <div class="relative max-w-6xl mx-auto px-4 sm:px-7 h-14 sm:h-16 flex items-center justify-between">
       <button id="menuToggle" type="button" aria-label="Open menu" data-i18n-attr="aria-label:a11y.menuOpen" aria-expanded="false" class="ah relative z-10 w-10 h-10 -ml-2 inline-flex items-center justify-center">
@@ -898,6 +943,9 @@
         'nav.brand': '取扱ブランド',
         'nav.salon': 'ヘアサロン',
         'nav.headspa': 'ヘッドスパ',
+        'sale.off': '最大30%OFF',
+        'sale.scope': 'オンラインショップ・全店舗で開催中',
+        'sale.until': '7.31まで',
         'nav.online': 'オンラインショップ',
         'cta.finder': '髪格診断を始める',
         'cta.salon': 'サロンを予約する',
@@ -1060,6 +1108,9 @@
         'nav.brand': 'Brands',
         'nav.salon': 'Hair Salon',
         'nav.headspa': 'Head Spa',
+        'sale.off': 'Up to 30% OFF',
+        'sale.scope': 'Online shop & all stores',
+        'sale.until': 'Until Jul 31',
         'nav.online': 'Online Shop',
         'cta.finder': 'Start Your Hair Diagnosis',
         'cta.salon': 'Book a Salon Visit',
@@ -1222,6 +1273,9 @@
         'nav.brand': '品牌一览',
         'nav.salon': '美发沙龙',
         'nav.headspa': '头疗',
+        'sale.off': '最高30%OFF',
+        'sale.scope': '线上商店・全门店同步举行',
+        'sale.until': '至7/31',
         'nav.online': '在线商店',
         'cta.finder': '开始发质诊断',
         'cta.salon': '预约沙龙',
@@ -1384,6 +1438,9 @@
         'nav.brand': '品牌一覽',
         'nav.salon': '美髮沙龍',
         'nav.headspa': '頭皮SPA',
+        'sale.off': '最高30%OFF',
+        'sale.scope': '線上商店・全門店同步舉行',
+        'sale.until': '至7/31',
         'nav.online': '線上商店',
         'cta.finder': '開始髮質診斷',
         'cta.salon': '預約沙龍',
@@ -1546,6 +1603,9 @@
         'nav.brand': '취급 브랜드',
         'nav.salon': '헤어살롱',
         'nav.headspa': '헤드스파',
+        'sale.off': '최대 30% OFF',
+        'sale.scope': '온라인 스토어・전 매장 동시 진행',
+        'sale.until': '7/31까지',
         'nav.online': '온라인 스토어',
         'cta.finder': '모발 진단 시작하기',
         'cta.salon': '살롱 예약하기',
