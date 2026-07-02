@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="robots" content="noindex, nofollow">
   <title>SEAM — QR受付</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Noto+Serif+JP:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -143,7 +146,22 @@
       font-weight: 700;
       letter-spacing: 0.3em;
       color: var(--gold);
+      cursor: default;
+      user-select: none;
+      -webkit-user-select: none;
+      padding: 0.4rem 0.6rem 0.4rem 0;   /* 隠し管理パネルのタップ領域 */
     }
+    .scan-header .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+    }
+    .today-badge {
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .today-badge b { color: var(--gold); font-size: 0.95rem; }
 
     .btn-logout {
       background: transparent;
@@ -212,13 +230,20 @@
       color: var(--muted);
       letter-spacing: 0.05em;
       text-align: center;
+      line-height: 1.7;
+    }
+    .scan-hint .en {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #666;
     }
 
-    /* ─── 結果オーバーレイ ─── */
+    /* ─── 結果オーバーレイ（お客様向け＝ゴールドVIP演出） ─── */
     .result-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(10,10,10,0.96);
       display: none;
       flex-direction: column;
       align-items: center;
@@ -226,41 +251,121 @@
       z-index: 100;
       padding: 2rem;
       text-align: center;
+      overflow: hidden;
     }
     .result-overlay.visible { display: flex; }
 
-    .result-icon {
-      font-size: 4rem;
-      margin-bottom: 1.5rem;
-      line-height: 1;
+    .result-overlay.success {
+      background: radial-gradient(130% 100% at 50% -5%, #fffaf0 0%, #f3e3b5 38%, #dcc07d 72%, #c6a355 100%);
     }
-    .result-message {
-      font-size: 1.6rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.75rem;
+    /* シマー（光が走る）演出 */
+    .result-overlay.success::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.55) 48%, transparent 66%);
+      transform: translateX(-100%);
     }
-    .result-sub {
+    .result-overlay.success.visible::after {
+      animation: sweep 1.1s ease .15s 1;
+    }
+    @keyframes sweep { to { transform: translateX(100%); } }
+
+    .result-overlay.error {
+      background: radial-gradient(130% 100% at 50% -5%, #fbf6ef 0%, #f0e6d6 60%, #ddcbb0 100%);
+    }
+
+    .vip-mid {
+      font-family: 'Cormorant Garamond', serif;
       font-size: 0.85rem;
-      color: var(--muted);
+      letter-spacing: 0.35em;
+      color: #8a7638;
+      text-transform: uppercase;
+      margin-bottom: 1.1rem;
     }
+    .vip-seal {
+      width: 106px;
+      height: 106px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.2rem;
+      color: #fff;
+      margin-bottom: 1.5rem;
+      transform: scale(.4);
+      opacity: 0;
+    }
+    .result-overlay.visible .vip-seal {
+      animation: pop .6s cubic-bezier(.2,1.3,.4,1) forwards;
+    }
+    @keyframes pop { to { transform: scale(1); opacity: 1; } }
+    .result-overlay.success .vip-seal {
+      background: linear-gradient(145deg,#3f9a68,#2b6f49);
+      box-shadow: 0 16px 40px -10px rgba(43,111,73,.6), 0 0 0 8px rgba(255,255,255,.5);
+    }
+    .result-overlay.error .vip-seal {
+      background: linear-gradient(145deg,#b8977d,#8f7052);
+      box-shadow: 0 16px 40px -10px rgba(143,112,82,.5), 0 0 0 8px rgba(255,255,255,.5);
+    }
+
+    .vip-name {
+      font-family: 'Noto Serif JP', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+      font-weight: 600;
+      font-size: 2.7rem;
+      letter-spacing: 0.1em;
+      color: #2e2510;
+      line-height: 1.3;
+      margin-bottom: 0.6rem;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity .5s, transform .5s;
+      max-width: 13em;
+    }
+    .result-overlay.visible .vip-name { opacity: 1; transform: none; }
+    .vip-name:empty { display: none; }
+
+    .result-message {
+      font-family: 'Noto Serif JP', 'Hiragino Mincho ProN', serif;
+      font-size: 1.3rem;
+      font-weight: 500;
+      letter-spacing: 0.09em;
+      color: #3a2f16;
+      margin-bottom: 0.7rem;
+      line-height: 1.6;
+    }
+    .result-overlay.error .result-message { color: #5c4733; }
+    .result-sub {
+      font-size: 0.82rem;
+      letter-spacing: 0.16em;
+      color: #6a5828;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .result-overlay.error .result-sub { color: #7a5f4a; text-transform: none; letter-spacing: 0.08em; font-size: 0.9rem; }
+    .vip-code {
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.12em;
+      color: #8a7a44;
+      min-height: 1.2em;
+    }
+
     .result-progress {
-      margin-top: 2rem;
+      margin-top: 1.8rem;
       width: 120px;
       height: 3px;
-      background: var(--border);
+      background: rgba(58,47,22,.15);
       border-radius: 99px;
       overflow: hidden;
     }
     .result-progress-bar {
       height: 100%;
-      background: var(--gold);
+      background: #8a6d1f;
       width: 0%;
       transition: width linear;
     }
-
-    .result-overlay.success .result-message { color: var(--gold); }
-    .result-overlay.error   .result-message { color: #e74c3c; }
 
     /* ─── カメラ権限エラー ─── */
     .cam-error {
@@ -308,6 +413,102 @@
       transition: background 0.2s;
     }
     .btn-allow:hover { background: #d4b07a; }
+
+    /* ─── 隠し管理パネル（ロゴ5回タップ） ─── */
+    .admin-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .admin-overlay.visible { display: flex; }
+    .admin-card {
+      width: 100%;
+      max-width: 420px;
+      max-height: 86vh;
+      overflow: auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.8rem;
+    }
+    .admin-card h2 {
+      font-size: 1.1rem;
+      letter-spacing: 0.15em;
+      color: var(--gold);
+      margin-bottom: 0.3rem;
+    }
+    .admin-note {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+    }
+    .admin-stats {
+      display: flex;
+      gap: 0.7rem;
+      margin-bottom: 1.2rem;
+    }
+    .admin-stats div {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.8rem 0.5rem;
+      text-align: center;
+    }
+    .admin-stats b {
+      display: block;
+      font-size: 1.4rem;
+      color: var(--text);
+    }
+    .admin-stats span {
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    .admin-meta {
+      font-size: 0.78rem;
+      color: var(--muted);
+      line-height: 1.8;
+      margin-bottom: 1.2rem;
+    }
+    .admin-meta b { color: var(--text); font-weight: 500; }
+    .admin-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+    .admin-btns button {
+      flex: 1;
+      min-width: 130px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 0.8rem;
+      cursor: pointer;
+    }
+    .admin-btns button.danger { color: #e74c3c; border-color: #5a2a25; }
+    .btn-close-admin {
+      width: 100%;
+      margin-top: 1rem;
+      background: var(--gold);
+      color: #0a0a0a;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      font-size: 0.9rem;
+      padding: 0.9rem;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -347,8 +548,11 @@
   <!-- ===== 画面2: QRスキャン ===== -->
   <div id="screen-scan" class="screen">
     <div class="scan-header">
-      <span class="logo-small">SEAM</span>
-      <button id="btn-logout" class="btn-logout">ログアウト</button>
+      <span class="logo-small" id="logo-small">SEAM</span>
+      <div class="header-right">
+        <span class="today-badge">本日の入場 <b id="today-count">0</b></span>
+        <button id="btn-logout" class="btn-logout">ログアウト</button>
+      </div>
     </div>
 
     <div class="scan-body">
@@ -369,17 +573,42 @@
         カメラへのアクセスが拒否されています。<br><br>
         ブラウザのアドレスバー横のカメラアイコンをタップして「許可」に変更してください。
       </div>
-      <p class="scan-hint" id="scan-hint">QRコードをスキャンしてください</p>
+      <p class="scan-hint" id="scan-hint">会員カードのQRコードをかざしてください<span class="en">Please hold your member QR code up to the camera</span></p>
     </div>
   </div>
 
-  <!-- ===== 結果オーバーレイ ===== -->
+  <!-- ===== 結果オーバーレイ（ゴールドVIP演出） ===== -->
   <div id="result-overlay" class="result-overlay">
-    <div class="result-icon" id="result-icon"></div>
+    <div class="vip-mid" id="result-mid">WELCOME</div>
+    <div class="vip-seal" id="result-icon">✓</div>
+    <div class="vip-name" id="result-name"></div>
     <div class="result-message" id="result-message"></div>
     <div class="result-sub" id="result-sub"></div>
+    <div class="vip-code" id="result-code"></div>
     <div class="result-progress">
       <div class="result-progress-bar" id="result-bar"></div>
+    </div>
+  </div>
+
+  <!-- ===== 隠し管理パネル（SEAMロゴを5回タップ） ===== -->
+  <div id="admin-overlay" class="admin-overlay">
+    <div class="admin-card">
+      <h2>受付管理</h2>
+      <div class="admin-note">スタッフ専用 ・ ロゴを5回タップで開きます</div>
+      <div class="admin-stats">
+        <div><b id="admin-today">0</b><span>本日</span></div>
+        <div><b id="admin-total">0</b><span>累計</span></div>
+        <div><b id="admin-repeat">0</b><span>本日リピーター</span></div>
+      </div>
+      <div class="admin-meta">
+        受付アカウント: <b id="admin-account">-</b><br>
+        店舗ID: <b id="admin-shop">-</b>
+      </div>
+      <div class="admin-btns">
+        <button id="btn-export-csv">入場ログをCSV書き出し</button>
+        <button id="btn-clear-log" class="danger">ログ消去</button>
+      </div>
+      <button id="btn-close-admin" class="btn-close-admin">閉じて受付に戻る</button>
     </div>
   </div>
 
@@ -392,7 +621,10 @@
     TOKEN:   'seam_entrance_token',
     UID:     'seam_entrance_uid',
     NAME:    'seam_entrance_name',
+    SHOP:    'seam_entrance_shop',
   };
+  const LOG_KEY = 'seam_entrance_log';   // 入場ログ（この端末に保存・CSV書き出し可）
+  const COOLDOWN = 5500;                 // 同じカードの二度読み防止(ms)
 
   // ── DOM ──
   const $ = id => document.getElementById(id);
@@ -411,10 +643,109 @@
   const scanHint    = $('scan-hint');
   const cameraWrap  = $('camera-wrap');
   const overlay     = $('result-overlay');
+  const resultMid   = $('result-mid');
   const resultIcon  = $('result-icon');
+  const resultName  = $('result-name');
   const resultMsg   = $('result-message');
   const resultSub   = $('result-sub');
+  const resultCode  = $('result-code');
   const resultBar   = $('result-bar');
+
+  // ── 入場ログ（localStorage） ──
+  function getLog() {
+    try { return JSON.parse(localStorage.getItem(LOG_KEY) || '[]'); } catch (e) { return []; }
+  }
+  function addLog(entry) {
+    const l = getLog();
+    l.push(entry);
+    if (l.length > 5000) l.splice(0, l.length - 5000); // 端末保護のため上限
+    localStorage.setItem(LOG_KEY, JSON.stringify(l));
+    updateCounts();
+  }
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  // ログはローカル時刻で記録（UTCで保存すると日付判定=本日集計/リピーター判定がずれる）
+  function localISO() {
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate())
+         + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+  function updateCounts() {
+    const l = getLog(), tk = todayKey();
+    const todays = l.filter(e => e.ok && e.t && e.t.slice(0,10) === tk);
+    $('today-count').textContent = todays.length;
+    $('admin-today').textContent = todays.length;
+    $('admin-total').textContent = l.filter(e => e.ok).length;
+    $('admin-repeat').textContent = todays.filter(e => e.rp).length;
+  }
+  // リピーター判定＝過去の「別の日」に入場記録があるか（同日の二度読みはリピーター扱いにしない）
+  function isRepeat(code) {
+    const tk = todayKey();
+    return getLog().some(e => e.ok && e.code === code && e.t && e.t.slice(0,10) !== tk);
+  }
+  function mask(code) {
+    const s = String(code);
+    if (s.length <= 10) return s;
+    return s.slice(0, 6) + '••••' + s.slice(-4);
+  }
+
+  // ── D1集計への送信（管理ダッシュボード用・失敗しても受付は止めない） ──
+  function sendD1(code, name, ok, revisit) {
+    try {
+      fetch('/entrance/log', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          code: String(code).slice(0, 64),
+          name: String(name || '').slice(0, 40),
+          shop: sessionStorage.getItem(SK.SHOP) || '',
+          ok: !!ok,
+          revisit: !!revisit,
+        }),
+      }).catch(() => {});
+    } catch (e) {}
+  }
+
+  // ── チャイム（WebAudio） ──
+  let AC = null;
+  function ensureAudio() {
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (AC && AC.state === 'suspended') AC.resume();
+  }
+  function tone(freq, start, dur, gain) {
+    if (!AC) return;
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    o.connect(g); g.connect(AC.destination);
+    const t0 = AC.currentTime + start;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(gain, t0 + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function chime(ok) {
+    ensureAudio(); if (!AC) return;
+    if (ok) { tone(659.25, 0, 0.5, 0.18); tone(987.77, 0.12, 0.55, 0.16); tone(1318.51, 0.24, 0.6, 0.12); } // 上昇ベル
+    else    { tone(392, 0, 0.3, 0.1); tone(329.63, 0.18, 0.35, 0.09); } // 柔らかい下降音（威圧しない）
+  }
+  // 最初のタッチで音を解禁（iOS対策）
+  document.addEventListener('pointerdown', ensureAudio, { once: true });
+
+  // ── スリープ抑止（Wake Lock） ──
+  let wakeLock = null;
+  async function keepAwake() {
+    try {
+      if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
+    } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (!screenScan.classList.contains('active')) return;
+    keepAwake();                            // 復帰時にスリープ抑止を取り直す
+    if (!stream) requestCamera();           // カメラが落ちていたら自動復帰
+  });
 
   // ── 初期化：セッション確認 ──
   const savedToken = sessionStorage.getItem(SK.TOKEN);
@@ -422,6 +753,7 @@
   if (savedToken && savedUid) {
     showScan();
   }
+  updateCounts();
 
   // ── 画面切替ヘルパー ──
   function showLogin() {
@@ -434,6 +766,8 @@
     screenLogin.classList.remove('active');
     screenScan.classList.add('active');
     startCamera();
+    keepAwake();
+    updateCounts();
   }
 
   // ── ログイン処理 ──
@@ -443,6 +777,7 @@
   });
 
   async function doLogin() {
+    ensureAudio(); // ログインのタップで音も解禁
     const mail = inputMail.value.trim();
     const pass = inputPass.value;
     loginError.textContent = '';
@@ -472,6 +807,7 @@
       sessionStorage.setItem(SK.TOKEN, j.token);
       sessionStorage.setItem(SK.UID,   j.uid);
       sessionStorage.setItem(SK.NAME,  j.name);
+      sessionStorage.setItem(SK.SHOP,  j.shop_id || '');
 
       // パスワードフィールドをクリア
       inputPass.value = '';
@@ -491,6 +827,7 @@
     sessionStorage.removeItem(SK.TOKEN);
     sessionStorage.removeItem(SK.UID);
     sessionStorage.removeItem(SK.NAME);
+    sessionStorage.removeItem(SK.SHOP);
     inputMail.value = '';
     inputPass.value = '';
     loginError.textContent = '';
@@ -501,6 +838,8 @@
   let stream = null;
   let rafId  = null;
   let scanning = true;
+  let lastCode = '';
+  let lastAt = 0;
 
   async function startCamera() {
     scanning = true;
@@ -542,6 +881,7 @@
   }
 
   btnAllow.addEventListener('click', async () => {
+    ensureAudio();
     camPermDiv.style.display = 'none';
     cameraWrap.style.display = '';
     scanHint.style.display = '';
@@ -553,6 +893,13 @@
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },  // インカメ優先（お客様がカードをかざす運用）
       });
+      // カメラが不意に停止したら自動復帰（終日ノータッチ運用）
+      stream.getVideoTracks().forEach(t => {
+        t.onended = () => {
+          stream = null;
+          if (screenScan.classList.contains('active')) requestCamera();
+        };
+      });
       video.srcObject = stream;
       video.play();
       video.addEventListener('loadedmetadata', () => {
@@ -561,18 +908,14 @@
         tick();
       }, { once: true });
     } catch (err) {
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        showCamError();
-      } else {
-        showCamError();
-      }
+      showCamError();
     }
   }
 
   function stopCamera() {
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     if (stream) {
-      stream.getTracks().forEach(t => t.stop());
+      stream.getTracks().forEach(t => { t.onended = null; t.stop(); });
       stream = null;
     }
     video.srcObject = null;
@@ -609,6 +952,15 @@
   async function onQRDetected(code) {
     if (!code) { rafId = requestAnimationFrame(tick); return; }
 
+    // 二度読み防止：同じカードはクールダウン中は無視して読み取り続行
+    const now = Date.now();
+    if (code === lastCode && (now - lastAt) < COOLDOWN) {
+      rafId = requestAnimationFrame(tick);
+      return;
+    }
+    lastCode = code;
+    lastAt = now;
+
     scanning = false; // 重複スキャン防止
 
     const token = sessionStorage.getItem(SK.TOKEN);
@@ -626,7 +978,11 @@
       const j   = await res.json();
 
       if (j.ok && j.name) {
-        showResult('success', `${j.name}様、ようこそ`, 'ご来店ありがとうございます');
+        const rp = isRepeat(code);
+        addLog({ t: localISO(), code: code, name: j.name, ok: 1, rp: rp ? 1 : 0 });
+        sendD1(code, j.name, true, rp);
+        chime(true);
+        showWelcome(j.name, rp, code);
       } else if (!j.ok && j.reason === 'no_auth') {
         // セッション無効 → ログアウト
         sessionStorage.removeItem(SK.TOKEN);
@@ -635,27 +991,50 @@
         showLogin();
         return;
       } else {
-        showResult('error', '会員情報が見つかりません', 'スタッフにお声がけください');
+        addLog({ t: localISO(), code: code, name: '', ok: 0, rp: 0 });
+        sendD1(code, '', false, false);
+        chime(false);
+        showResult('error', '会員情報が確認できません', 'お手数ですがスタッフにお声がけください\nPlease ask our staff for assistance', '', 3200);
       }
     } catch (err) {
-      showResult('error', '通信エラー', '再度お試しください');
+      chime(false);
+      showResult('error', '通信エラーが発生しました', 'もう一度かざしてください\nPlease try again', '', 2600);
     }
   }
 
-  // ── 結果表示 (3秒後に自動復帰) ──
-  function showResult(type, message, sub) {
-    overlay.className = 'result-overlay visible ' + type;
-    resultIcon.textContent = type === 'success' ? '✓' : '✕';
+  // ── ようこそ表示（ゴールドVIP演出・リピーター対応・日英） ──
+  function showWelcome(name, repeat, code) {
+    resultMid.textContent  = repeat ? 'WELCOME BACK' : 'WELCOME';
+    resultIcon.textContent = '✓';
+    resultName.textContent = name + ' 様';
+    resultMsg.textContent  = repeat ? 'いつもご来店ありがとうございます' : 'ご来店ありがとうございます';
+    resultSub.textContent  = 'Enjoy your shopping';
+    resultCode.textContent = mask(code);
+    show('success', 4000);
+  }
+
+  // ── 結果表示（汎用） ──
+  function showResult(type, message, sub, code, duration) {
+    resultMid.textContent  = type === 'success' ? 'WELCOME' : 'INFORMATION';
+    resultIcon.textContent = type === 'success' ? '✓' : '!';
+    resultName.textContent = '';
     resultMsg.textContent  = message;
-    resultSub.textContent  = sub || '';
+    resultSub.innerText    = sub || '';
+    resultCode.textContent = code || '';
+    show(type, duration || 3000);
+  }
+
+  function show(type, duration) {
+    overlay.className = 'result-overlay ' + type;
+    void overlay.offsetWidth; // アニメーション再始動
+    overlay.classList.add('visible');
 
     // プログレスバーアニメーション
     resultBar.style.transition = 'none';
     resultBar.style.width = '0%';
-    // 次フレームで開始
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        resultBar.style.transition = 'width 3s linear';
+        resultBar.style.transition = 'width ' + duration + 'ms linear';
         resultBar.style.width = '100%';
       });
     });
@@ -664,7 +1043,44 @@
       overlay.className = 'result-overlay';
       scanning = true;
       rafId = requestAnimationFrame(tick);
-    }, 3000);
+    }, duration);
+  }
+
+  // ── 隠し管理パネル（ロゴを5回タップ） ──
+  let taps = 0, tapT = 0;
+  $('logo-small').addEventListener('click', () => {
+    const n = Date.now();
+    if (n - tapT > 900) taps = 0;
+    taps++; tapT = n;
+    if (taps >= 5) {
+      taps = 0;
+      updateCounts();
+      $('admin-account').textContent = sessionStorage.getItem(SK.NAME) || '-';
+      $('admin-shop').textContent    = sessionStorage.getItem(SK.SHOP) || '-';
+      $('admin-overlay').classList.add('visible');
+    }
+  });
+  $('btn-close-admin').addEventListener('click', () => $('admin-overlay').classList.remove('visible'));
+  $('btn-export-csv').addEventListener('click', () => {
+    const l = getLog();
+    const rows = [['datetime','member_code','name','ok','repeat']]
+      .concat(l.map(e => [e.t, e.code, e.name || '', e.ok ? 1 : 0, e.rp ? 1 : 0]));
+    const csv = '﻿' + rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'seam-entrance-' + todayKey() + '.csv';
+    a.click();
+  });
+  $('btn-clear-log').addEventListener('click', () => {
+    if (confirm('入場ログをすべて消去しますか（この端末の記録が消えます）')) {
+      localStorage.removeItem(LOG_KEY);
+      updateCounts();
+    }
+  });
+
+  // ── ローカル検証用フック（localhostのみ） ──
+  if (/^(localhost|127\.)/.test(location.hostname)) {
+    window.__seamTestScan = onQRDetected;
   }
 
 })();
