@@ -136,34 +136,37 @@ export async function onRequestGet(context) {
       const st = db.prepare(sql);
       return (binds.length ? st.bind(...binds) : st).all();
     };
+    // テスト行の自動除外 — utm_campaign='__test__' 印は全集計に含めない
+    // （テストは https://seam.site/finder?utm_campaign=__test__ で行う運用）
+    const NT = "(utm_campaign IS NULL OR utm_campaign<>'__test__')";
     const [totals, byType, byAdvice, byTier, byGender, byMode, ctaTarget, daily,
            bySource, byCampaign, byDevice, byCountry, byLanding, sourceFunnel, recent] = await Promise.all([
-      q("SELECT name, COUNT(*) c FROM events GROUP BY name"),
-      q("SELECT type t, COUNT(*) c FROM events WHERE name='finder_complete' AND type<>'' GROUP BY type ORDER BY c DESC"),
-      q("SELECT advice a, COUNT(*) c FROM events WHERE name='finder_complete' AND advice<>'' GROUP BY advice ORDER BY c DESC"),
-      q("SELECT tier, COUNT(*) c FROM events WHERE name='finder_complete' AND tier>0 GROUP BY tier ORDER BY tier"),
-      q("SELECT gender g, COUNT(*) c FROM events WHERE name='finder_complete' AND gender<>'' GROUP BY gender ORDER BY c DESC"),
-      q("SELECT mode m, COUNT(*) c FROM events WHERE name='finder_start' AND mode<>'' GROUP BY mode"),
-      q("SELECT target, COUNT(*) c FROM events WHERE name='finder_cta' AND target<>'' GROUP BY target ORDER BY c DESC"),
-      q("SELECT date(ts/1000,'unixepoch','localtime') d, COUNT(*) c FROM events WHERE name='finder_complete' AND ts>=? GROUP BY d ORDER BY d", since),
+      q("SELECT name, COUNT(*) c FROM events WHERE " + NT + " GROUP BY name"),
+      q("SELECT type t, COUNT(*) c FROM events WHERE name='finder_complete' AND type<>'' AND " + NT + " GROUP BY type ORDER BY c DESC"),
+      q("SELECT advice a, COUNT(*) c FROM events WHERE name='finder_complete' AND advice<>'' AND " + NT + " GROUP BY advice ORDER BY c DESC"),
+      q("SELECT tier, COUNT(*) c FROM events WHERE name='finder_complete' AND tier>0 AND " + NT + " GROUP BY tier ORDER BY tier"),
+      q("SELECT gender g, COUNT(*) c FROM events WHERE name='finder_complete' AND gender<>'' AND " + NT + " GROUP BY gender ORDER BY c DESC"),
+      q("SELECT mode m, COUNT(*) c FROM events WHERE name='finder_start' AND mode<>'' AND " + NT + " GROUP BY mode"),
+      q("SELECT target, COUNT(*) c FROM events WHERE name='finder_cta' AND target<>'' AND " + NT + " GROUP BY target ORDER BY c DESC"),
+      q("SELECT date(ts/1000,'unixepoch','localtime') d, COUNT(*) c FROM events WHERE name='finder_complete' AND ts>=? AND " + NT + " GROUP BY d ORDER BY d", since),
       // ── 流入（どこから来たか） ──
-      q("SELECT ref, COUNT(*) c FROM events WHERE name='finder_complete' AND ref<>'' GROUP BY ref ORDER BY c DESC"),
-      q("SELECT utm_campaign u, COUNT(*) c FROM events WHERE name='finder_complete' AND utm_campaign<>'' GROUP BY utm_campaign ORDER BY c DESC LIMIT 20"),
-      q("SELECT device d, COUNT(*) c FROM events WHERE name='finder_complete' AND device<>'' GROUP BY device ORDER BY c DESC"),
-      q("SELECT country, COUNT(*) c FROM events WHERE name='finder_complete' AND country<>'' GROUP BY country ORDER BY c DESC LIMIT 15"),
-      q("SELECT landing, COUNT(*) c FROM events WHERE name='finder_complete' AND landing<>'' GROUP BY landing ORDER BY c DESC LIMIT 15"),
+      q("SELECT ref, COUNT(*) c FROM events WHERE name='finder_complete' AND ref<>'' AND " + NT + " GROUP BY ref ORDER BY c DESC"),
+      q("SELECT utm_campaign u, COUNT(*) c FROM events WHERE name='finder_complete' AND utm_campaign<>'' AND " + NT + " GROUP BY utm_campaign ORDER BY c DESC LIMIT 20"),
+      q("SELECT device d, COUNT(*) c FROM events WHERE name='finder_complete' AND device<>'' AND " + NT + " GROUP BY device ORDER BY c DESC"),
+      q("SELECT country, COUNT(*) c FROM events WHERE name='finder_complete' AND country<>'' AND " + NT + " GROUP BY country ORDER BY c DESC LIMIT 15"),
+      q("SELECT landing, COUNT(*) c FROM events WHERE name='finder_complete' AND landing<>'' AND " + NT + " GROUP BY landing ORDER BY c DESC LIMIT 15"),
       // チャネル別ファネル（流入元→開始/完了/予約CTA）
-      q("SELECT ref, name, COUNT(*) c FROM events WHERE name IN ('finder_start','finder_complete','finder_cta') AND ref<>'' GROUP BY ref, name"),
+      q("SELECT ref, name, COUNT(*) c FROM events WHERE name IN ('finder_start','finder_complete','finder_cta') AND ref<>'' AND " + NT + " GROUP BY ref, name"),
       // 最近のアクティビティ（履歴ログ）
-      q("SELECT ts, name, type, advice, tier, ref, utm_campaign, target, device, gender FROM events WHERE name IN ('finder_complete','finder_cta') ORDER BY ts DESC LIMIT 60"),
+      q("SELECT ts, name, type, advice, tier, ref, utm_campaign, target, device, gender FROM events WHERE name IN ('finder_complete','finder_cta') AND " + NT + " ORDER BY ts DESC LIMIT 60"),
     ]);
     // ── 行動計測 v3: 検索ワード / ブランド関心 / ページ閲覧・滞在 / セクション露出→タップ ──
     const [brandSearch, brandClick, pageViews, pageEngage, secEngageRaw] = await Promise.all([
-      q("SELECT label, COUNT(*) c FROM events WHERE name='brand_search' AND label<>'' AND ts>=? GROUP BY label ORDER BY c DESC LIMIT 30", since),
-      q("SELECT label, COUNT(*) c FROM events WHERE name='brand_click' AND label<>'' AND ts>=? GROUP BY label ORDER BY c DESC LIMIT 30", since),
-      q("SELECT path, COUNT(*) c FROM events WHERE name='page_view' AND ts>=? GROUP BY path ORDER BY c DESC LIMIT 24", since),
-      q("SELECT path, COUNT(*) c, ROUND(AVG(CAST(json_extract(meta,'$.sec') AS REAL))) sec, ROUND(AVG(CAST(json_extract(meta,'$.sd') AS REAL))) sd FROM events WHERE name='page_engage' AND meta IS NOT NULL AND ts>=? GROUP BY path ORDER BY c DESC LIMIT 24", since),
-      q("SELECT label, name, COUNT(*) c FROM events WHERE name IN ('sec_view','sec_click') AND label<>'' AND ts>=? GROUP BY label, name", since),
+      q("SELECT label, COUNT(*) c FROM events WHERE name='brand_search' AND label<>'' AND ts>=? AND " + NT + " GROUP BY label ORDER BY c DESC LIMIT 30", since),
+      q("SELECT label, COUNT(*) c FROM events WHERE name='brand_click' AND label<>'' AND ts>=? AND " + NT + " GROUP BY label ORDER BY c DESC LIMIT 30", since),
+      q("SELECT path, COUNT(*) c FROM events WHERE name='page_view' AND ts>=? AND " + NT + " GROUP BY path ORDER BY c DESC LIMIT 24", since),
+      q("SELECT path, COUNT(*) c, ROUND(AVG(CAST(json_extract(meta,'$.sec') AS REAL))) sec, ROUND(AVG(CAST(json_extract(meta,'$.sd') AS REAL))) sd FROM events WHERE name='page_engage' AND meta IS NOT NULL AND ts>=? AND " + NT + " GROUP BY path ORDER BY c DESC LIMIT 24", since),
+      q("SELECT label, name, COUNT(*) c FROM events WHERE name IN ('sec_view','sec_click') AND label<>'' AND ts>=? AND " + NT + " GROUP BY label, name", since),
     ]);
     // 露出→タップをラベルごとに集約 [{label, views, clicks}]
     const seMap = {};
@@ -174,7 +177,7 @@ export async function onRequestGet(context) {
     const secEngage = Object.keys(seMap).map(k => seMap[k]).sort((a, b) => (b.views || b.clicks) - (a.views || a.clicks));
     // 診断プロファイル（meta JSON）— 期間内の完了イベントをJS側で集計（列追加なし・D1マイグレーション不要）
     const profileRows = await q(
-      "SELECT ts, meta FROM events WHERE name='finder_complete' AND meta IS NOT NULL AND ts>=? ORDER BY ts DESC LIMIT 100000", since
+      "SELECT ts, meta FROM events WHERE name='finder_complete' AND meta IS NOT NULL AND ts>=? AND " + NT + " ORDER BY ts DESC LIMIT 100000", since
     );
     const profile = aggregateProfiles(profileRows.results || []);
     const tmap = {};
