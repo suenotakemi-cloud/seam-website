@@ -140,7 +140,10 @@ function build() {
   // ジャーナル/ガイドはJA専用コンテンツ(多言語prerender対象外)＝ja URLのみ収録
   const jaUrls = ['/', '/finder', '/brand', '/shop', '/onlineshop', '/hairsalon', '/headspa',
     '/journal', '/guide-uneri', '/guide-damage', '/guide-kansou',
-    '/guide-shiraga', '/guide-scalp', '/guide-mens'];
+    '/guide-shiraga', '/guide-scalp', '/guide-mens',
+    '/guide-bleach', '/guide-straightening', '/guide-colorfade', '/guide-perm',
+    '/store-ginza', '/store-omotesando', '/store-osaka', '/store-nagoya',
+    '/store-fukuoka', '/store-sapporo', '/store-utsunomiya'];
   const urls = [...jaUrls];
   for (const lang of Object.keys(LANGS)) {
     for (const pg of PAGES) urls.push('/' + lang + (pg.url === '/' ? '/' : pg.url));
