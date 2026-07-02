@@ -274,6 +274,40 @@
       font-size: 0.9rem;
       color: var(--muted);
     }
+
+    /* ─── カメラ許可リクエスト ─── */
+    .cam-permission {
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border: 1px solid var(--gold-dim);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+    }
+    .cam-permission .perm-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    .cam-permission p {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+    .btn-allow {
+      background: var(--gold);
+      color: #0a0a0a;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      padding: 0.9rem 2rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-allow:hover { background: #d4b07a; }
   </style>
 </head>
 <body>
@@ -323,11 +357,17 @@
           <div class="scan-frame"></div>
         </div>
       </div>
-      <div id="cam-error" class="cam-error" style="display:none;">
-        カメラへのアクセスが許可されていません。<br>
-        ブラウザの設定からカメラを許可してください。
+      <!-- カメラ許可リクエスト -->
+      <div id="cam-permission" class="cam-permission" style="display:none;">
+        <div class="perm-icon">📷</div>
+        <p>QRコードを読み取るために<br>カメラへのアクセスを許可してください</p>
+        <button id="btn-allow-camera" class="btn-allow">カメラを許可する</button>
       </div>
-      <p class="scan-hint">QRコードをスキャンしてください</p>
+      <div id="cam-error" class="cam-error" style="display:none;">
+        カメラへのアクセスが拒否されています。<br><br>
+        ブラウザのアドレスバー横のカメラアイコンをタップして「許可」に変更してください。
+      </div>
+      <p class="scan-hint" id="scan-hint">QRコードをスキャンしてください</p>
     </div>
   </div>
 
@@ -364,6 +404,9 @@
   const video       = $('video');
   const canvas      = $('canvas');
   const camErrDiv   = $('cam-error');
+  const camPermDiv  = $('cam-permission');
+  const btnAllow    = $('btn-allow-camera');
+  const scanHint    = $('scan-hint');
   const cameraWrap  = $('camera-wrap');
   const overlay     = $('result-overlay');
   const resultIcon  = $('result-icon');
@@ -460,13 +503,50 @@
   async function startCamera() {
     scanning = true;
     camErrDiv.style.display = 'none';
+    camPermDiv.style.display = 'none';
     cameraWrap.style.display = '';
+    scanHint.style.display = '';
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       showCamError();
       return;
     }
 
+    // 許可状態を確認（可能な場合）
+    if (navigator.permissions) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'camera' });
+        if (perm.state === 'denied') {
+          showCamError();
+          return;
+        }
+        if (perm.state === 'prompt') {
+          // 許可リクエストUIを表示
+          showCamPermission();
+          return;
+        }
+      } catch (e) {
+        // permissionsAPI非対応ブラウザは直接requestへ
+      }
+    }
+
+    await requestCamera();
+  }
+
+  function showCamPermission() {
+    cameraWrap.style.display = 'none';
+    scanHint.style.display = 'none';
+    camPermDiv.style.display = '';
+  }
+
+  btnAllow.addEventListener('click', async () => {
+    camPermDiv.style.display = 'none';
+    cameraWrap.style.display = '';
+    scanHint.style.display = '';
+    await requestCamera();
+  });
+
+  async function requestCamera() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -479,7 +559,11 @@
         tick();
       }, { once: true });
     } catch (err) {
-      showCamError();
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        showCamError();
+      } else {
+        showCamError();
+      }
     }
   }
 
