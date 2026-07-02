@@ -21,6 +21,8 @@ function json(obj, status) {
 //   カール意欲    = sf に curl または hold
 const KUSE_SET = { humid: 1, surface: 1, root: 1, midEnd: 1, whole: 1 };
 const PERM_NOW = { yearly: 1, biannual: 1, quarterly: 1, frequent: 1, digital: 1, loose: 1 };
+//   矯正現役      = st ∈ {yearly,biannual,quarterly,frequent,kaizen}（past/noneは除外）
+const ST_NOW = { yearly: 1, biannual: 1, quarterly: 1, frequent: 1, kaizen: 1 };
 
 export function aggregateProfiles(rows) { // export=ブラウザからの単体検証用(CF Functionsでは無害)
   const inc = (o, k, by) => { if (k == null || k === '') return; o[k] = (o[k] || 0) + (by || 1); };
@@ -42,6 +44,7 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     stylingFinishTotal: {}, menStylingTotal: {}, tempTotal: {}, toolsTotal: {},
     scalpTotal: {}, spaByAge: {},
     concernTexture: {},                     // 「悩み→求める質感」ペア
+    chemCross: {},                          // 薬剤履歴の重なり(ブリーチ×矯正現役×パーマ現役の8区分)
     monthly: {},                            // YYYY-MM → {n,kuse,bleach,gray,permNow,curlWant}
   };
   for (const row of rows) {
@@ -82,6 +85,11 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     if (isCurlWant) inc(P.curlWantByAge, age);
     // 縮毛矯正
     inc(P.straightenTotal, m.st);
+    // 薬剤履歴の重なり（メーカー向け: ダブル/トリプルプロセス毛の実サイズ）
+    const isStNow = !!ST_NOW[m.st];
+    inc(P.chemCross, isBleach
+      ? (isStNow ? (isPermNow ? 'triple' : 'bleachStraight') : (isPermNow ? 'bleachPerm' : 'bleachOnly'))
+      : (isStNow ? (isPermNow ? 'straightPerm' : 'straightOnly') : (isPermNow ? 'permOnly' : 'none')));
     // 髪質マップ
     inc(P.thicknessTotal, m.th);
     if (m.th) inc2(P.thicknessWave, m.th, m.wv === 'straightened' ? 'straightened' : (isKuse ? 'kuse' : 'none'));
