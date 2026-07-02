@@ -157,6 +157,21 @@ export async function onRequestGet(context) {
       // 最近のアクティビティ（履歴ログ）
       q("SELECT ts, name, type, advice, tier, ref, utm_campaign, target, device, gender FROM events WHERE name IN ('finder_complete','finder_cta') ORDER BY ts DESC LIMIT 60"),
     ]);
+    // ── 行動計測 v3: 検索ワード / ブランド関心 / ページ閲覧・滞在 / セクション露出→タップ ──
+    const [brandSearch, brandClick, pageViews, pageEngage, secEngageRaw] = await Promise.all([
+      q("SELECT label, COUNT(*) c FROM events WHERE name='brand_search' AND label<>'' AND ts>=? GROUP BY label ORDER BY c DESC LIMIT 30", since),
+      q("SELECT label, COUNT(*) c FROM events WHERE name='brand_click' AND label<>'' AND ts>=? GROUP BY label ORDER BY c DESC LIMIT 30", since),
+      q("SELECT path, COUNT(*) c FROM events WHERE name='page_view' AND ts>=? GROUP BY path ORDER BY c DESC LIMIT 24", since),
+      q("SELECT path, COUNT(*) c, ROUND(AVG(CAST(json_extract(meta,'$.sec') AS REAL))) sec, ROUND(AVG(CAST(json_extract(meta,'$.sd') AS REAL))) sd FROM events WHERE name='page_engage' AND meta IS NOT NULL AND ts>=? GROUP BY path ORDER BY c DESC LIMIT 24", since),
+      q("SELECT label, name, COUNT(*) c FROM events WHERE name IN ('sec_view','sec_click') AND label<>'' AND ts>=? GROUP BY label, name", since),
+    ]);
+    // 露出→タップをラベルごとに集約 [{label, views, clicks}]
+    const seMap = {};
+    (secEngageRaw.results || []).forEach(r => {
+      const o = seMap[r.label] || (seMap[r.label] = { label: r.label, views: 0, clicks: 0 });
+      if (r.name === 'sec_view') o.views = r.c; else o.clicks = r.c;
+    });
+    const secEngage = Object.keys(seMap).map(k => seMap[k]).sort((a, b) => (b.views || b.clicks) - (a.views || a.clicks));
     // 診断プロファイル（meta JSON）— 期間内の完了イベントをJS側で集計（列追加なし・D1マイグレーション不要）
     const profileRows = await q(
       "SELECT ts, meta FROM events WHERE name='finder_complete' AND meta IS NOT NULL AND ts>=? ORDER BY ts DESC LIMIT 100000", since
@@ -199,6 +214,11 @@ export async function onRequestGet(context) {
       byLanding: byLanding.results || [],
       sourceFunnel: sourceFunnelArr,
       recent: recent.results || [],
+      brandSearch: brandSearch.results || [],
+      brandClick: brandClick.results || [],
+      pageViews: pageViews.results || [],
+      pageEngage: pageEngage.results || [],
+      secEngage,
       profile,
     });
   } catch (e) {

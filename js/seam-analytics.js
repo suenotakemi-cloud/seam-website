@@ -73,4 +73,71 @@
     } catch (e) { /* 計測でUIを壊さない */ }
   }
   window.seamTrack = track;
+
+  // ── v3: ページ行動計測（PIIなし・全ページ共通） ──────────────
+  // page_view   = ページ到達（1回）
+  // page_engage = 離脱/非表示時に1回だけ「実閲覧秒(sec)・最大スクロール深度%(sd)」をmetaで送る
+  // sec_view    = data-track-view="ラベル" の要素が40%見えたら1回（露出）
+  // sec_click   = data-track-click="ラベル" のタップ（露出→反応率が取れる）
+  track('page_view');
+
+  var _engSent = false, _activeSec = 0, _lastTick = Date.now(), _maxDepth = 0;
+  var _wasVisible = document.visibilityState !== 'hidden';
+  function _accumulate() {
+    var now = Date.now();
+    if (_wasVisible) _activeSec += (now - _lastTick) / 1000;
+    _lastTick = now;
+    _wasVisible = document.visibilityState !== 'hidden';
+  }
+  var _depthT = 0;
+  function _tickDepth() {
+    if (_depthT) return;
+    _depthT = setTimeout(function () {
+      _depthT = 0;
+      try {
+        var h = document.documentElement;
+        var d = Math.min(100, Math.round((window.pageYOffset + window.innerHeight) / Math.max(1, h.scrollHeight) * 100));
+        if (d > _maxDepth) _maxDepth = d;
+      } catch (e) {}
+    }, 400);
+  }
+  function _flushEngage() {
+    if (_engSent) return;
+    _engSent = true;
+    _accumulate();
+    track('page_engage', { meta: { sec: Math.min(1800, Math.round(_activeSec)), sd: _maxDepth } });
+  }
+  window.addEventListener('scroll', _tickDepth, { passive: true });
+  document.addEventListener('visibilitychange', function () {
+    _accumulate();
+    if (document.visibilityState === 'hidden') _flushEngage();
+  });
+  window.addEventListener('pagehide', _flushEngage);
+
+  function _wireSections() {
+    try {
+      _tickDepth();
+      var els = document.querySelectorAll('[data-track-view]');
+      if (els.length && 'IntersectionObserver' in window) {
+        var seen = {};
+        var io = new IntersectionObserver(function (ents) {
+          ents.forEach(function (en) {
+            if (!en.isIntersecting) return;
+            var l = en.target.getAttribute('data-track-view');
+            io.unobserve(en.target);
+            if (!l || seen[l]) return;
+            seen[l] = 1;
+            track('sec_view', { label: l });
+          });
+        }, { threshold: 0.4 });
+        els.forEach(function (el) { io.observe(el); });
+      }
+      document.addEventListener('click', function (e) {
+        var t = e.target && e.target.closest && e.target.closest('[data-track-click]');
+        if (t) track('sec_click', { label: t.getAttribute('data-track-click') });
+      }, true);
+    } catch (e) { /* 計測でUIを壊さない */ }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireSections);
+  else _wireSections();
 })();

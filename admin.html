@@ -177,6 +177,9 @@
   var WVGRP = {none:'くせなし',kuse:'くせあり',straightened:'矯正中'};
   var CHEMX = {triple:'三重（ブリーチ×矯正×パーマ）',bleachStraight:'ブリーチ × 縮毛矯正',bleachPerm:'ブリーチ × パーマ',straightPerm:'縮毛矯正 × パーマ',bleachOnly:'ブリーチのみ',straightOnly:'縮毛矯正のみ',permOnly:'パーマのみ',none:'薬剤履歴なし'};
   var CHEMX_ORDER = ['triple','bleachStraight','bleachPerm','straightPerm','bleachOnly','straightOnly','permOnly','none'];
+  var SECL = {spa_index_card:'トップ ヘッドスパ導線', spa_menus:'ヘッドスパ メニュー表示', spa_booking:'ヘッドスパ 予約セクション', spa_reserve_hpb:'ヘッドスパ 予約タップ', scalp_guide_cta:'頭皮ガイド→診断タップ'};
+  var PAGEL = {'/':'トップ','/index.html':'トップ','/finder':'髪格診断','/finder.html':'髪格診断','/brand':'ブランド','/brand.html':'ブランド','/shop':'店舗一覧','/shop.html':'店舗一覧','/headspa':'ヘッドスパ','/headspa.html':'ヘッドスパ','/hairsalon':'ヘアサロン','/hairsalon.html':'ヘアサロン','/onlineshop':'オンラインショップ','/onlineshop.html':'オンラインショップ','/journal':'読みもの','/guide-scalp':'頭皮ガイド','/guide-scalp.html':'頭皮ガイド'};
+  function pageLabel(p){ return PAGEL[p] || p; }
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function el(id){return document.getElementById(id);}
@@ -239,6 +242,11 @@
       byMode:[{m:'a',c:Math.round(completes*.86)},{m:'b',c:Math.round(completes*.56)}],
       ctaTarget:[{target:'reserve_hpb',c:Math.round(completes*.19)},{target:'shop',c:Math.round(completes*.09)},{target:'product',c:Math.round(completes*.06)}],
       daily:d,
+      brandSearch:[{label:'オージュア',c:41},{label:'ミルボン',c:33},{label:'頭皮',c:29},{label:'kerastase',c:22},{label:'しっとり シャンプー',c:18},{label:'スカルプ',c:14},{label:'デジタルパーマ',c:9},{label:'ドライヤー',c:8}],
+      brandClick:[{label:'Aujua',c:88},{label:'Kérastase',c:64},{label:'Global Milbon',c:52},{label:'SUBLIMIC',c:38},{label:'BYKARTE',c:31},{label:'TOKIO INKARAMI',c:26},{label:'Davines',c:22},{label:'ReFa',c:19}],
+      pageViews:[{path:'/',c:2140},{path:'/finder',c:1230},{path:'/brand',c:640},{path:'/shop',c:470},{path:'/headspa',c:305},{path:'/onlineshop',c:280},{path:'/hairsalon',c:190},{path:'/guide-scalp',c:88}],
+      pageEngage:[{path:'/',c:1650,sec:46,sd:58},{path:'/finder',c:980,sec:186,sd:74},{path:'/brand',c:520,sec:95,sd:62},{path:'/shop',c:390,sec:52,sd:66},{path:'/headspa',c:260,sec:71,sd:63},{path:'/onlineshop',c:230,sec:38,sd:55},{path:'/hairsalon',c:160,sec:49,sd:60},{path:'/guide-scalp',c:74,sec:112,sd:81}],
+      secEngage:[{label:'spa_index_card',views:1480,clicks:118},{label:'spa_menus',views:238,clicks:0},{label:'spa_booking',views:152,clicks:0},{label:'spa_reserve_hpb',views:0,clicks:41},{label:'scalp_guide_cta',views:0,clicks:23}],
       bySource:[{ref:'instagram',c:Math.round(completes*.46)},{ref:'google',c:Math.round(completes*.27)},{ref:'direct',c:Math.round(completes*.14)},{ref:'x',c:Math.round(completes*.07)},{ref:'line',c:Math.round(completes*.06)}],
       byCampaign:[{u:'summer_2026',c:Math.round(completes*.21)},{u:'ig_story_uneri',c:Math.round(completes*.14)},{u:'kerastase_launch',c:Math.round(completes*.08)}],
       byDevice:[{d:'mobile',c:Math.round(completes*.88)},{d:'desktop',c:Math.round(completes*.12)}],
@@ -414,6 +422,66 @@
       '<div class="card panel"'+full+'><h2><span class="eyebrow">Concern → Texture</span>悩み → 求める質感 TOP12（広告コピーの素）</h2>'+pairTable(P.concernTexture, P.n)+'</div>';
   }
 
+  // ── 行動計測 v3 描画（検索/ブランド関心/滞在/頭皮関心） ──────
+  // ページ別 閲覧・滞在・読了深度（page_view × page_engage をpathで結合）
+  function engageTable(views, engage){
+    views=views||[];
+    var eMap={}; (engage||[]).forEach(function(x){eMap[x.path]=x;});
+    if(!views.length) return '<div class="empty">計測v3の公開後から溜まります（閲覧・滞在秒・スクロール読了%）</div>';
+    var rows=views.map(function(v){
+      var e=eMap[v.path]||{};
+      return '<tr><td>'+esc(pageLabel(v.path))+' <span class="muted">'+esc(v.path)+'</span></td><td class="n"><b>'+v.c+'</b></td><td class="n">'+(e.sec!=null?e.sec+'秒':'—')+'</td><td class="n">'+(e.sd!=null?e.sd+'%':'—')+'</td></tr>';
+    }).join('');
+    return '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>ページ</th><th class="n">閲覧数</th><th class="n">平均滞在</th><th class="n">平均読了深度</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  // 導線の 露出→タップ 表
+  function secTable(arr, filter){
+    arr=(arr||[]).filter(function(x){return !filter||filter(x.label);});
+    if(!arr.length) return '<div class="empty">公開後から溜まります</div>';
+    var rows=arr.map(function(x){
+      var rate = x.views>0 ? pct(x.clicks,x.views)+'%' : (x.clicks>0?'—':'0%');
+      return '<tr><td>'+esc(SECL[x.label]||x.label)+'</td><td class="n">'+(x.views||0)+'</td><td class="n">'+(x.clicks||0)+'</td><td class="n"><b>'+rate+'</b></td></tr>';
+    }).join('');
+    return '<table class="tbl"><thead><tr><th>導線</th><th class="n">露出</th><th class="n">タップ</th><th class="n">反応率</th></tr></thead><tbody>'+rows+'</tbody></table>';
+  }
+  // 頭皮関心の主要数値（ダッシュボードとレポートで共用）
+  function scalpStats(data){
+    var P=data.profile||{}; var n=P.n||0;
+    function findPage(sub){
+      var v,e;
+      (data.pageViews||[]).forEach(function(x){ if(!v && x.path.indexOf(sub)>=0) v=x; });
+      (data.pageEngage||[]).forEach(function(x){ if(!e && x.path.indexOf(sub)>=0) e=x; });
+      return {views:v?v.c:0, sec:e&&e.sec!=null?e.sec:null, sd:e&&e.sd!=null?e.sd:null};
+    }
+    function sumV(o){var s=0;for(var k in (o||{}))s+=o[k];return s;}
+    var adviceScalp=0; (data.byAdvice||[]).forEach(function(x){ if(x.a==='scalp') adviceScalp=x.c; });
+    return {
+      n:n,
+      concern: n?pct(((P.concernTotal||{}).scalpDry||0)+((P.concernTotal||{}).scalpOily||0)+((P.concernTotal||{}).thinning||0), n):0,
+      spaWant: n?pct(sumV(P.spaByAge),n):0,
+      adviceScalp: adviceScalp,
+      spa: findPage('headspa'), guide: findPage('guide-scalp')
+    };
+  }
+  // 頭皮ケア関心 専用パネル（興味の量 × 勧めた時の反応）
+  function scalpPanel(data){
+    var s=scalpStats(data); var P=data.profile||{};
+    var stat=function(label,val,sub){ return '<div class="rblock" style="flex:1;min-width:150px;margin-top:0"><h4 style="margin-bottom:2px">'+esc(label)+'</h4><div style="font-family:\'Cormorant Garamond\',serif;font-size:30px;font-weight:600;color:var(--ink)">'+val+'</div><div class="muted">'+sub+'</div></div>'; };
+    var stats='<div style="display:flex;gap:10px;flex-wrap:wrap">'+
+      stat('頭皮悩みの選択率', s.concern+'%', '診断で頭皮乾燥/ベタつき/抜け毛を選択（n='+s.n+'）')+
+      stat('ヘッドスパ興味あり', s.spaWant+'%', '診断の興味あり回答率')+
+      stat('診断主訴＝頭皮', s.adviceScalp+'<span style="font-size:14px">件</span>', '結果の第一課題が頭皮ケア')+
+      stat('ヘッドスパページ', s.spa.views+'<span style="font-size:14px">回</span>', s.spa.sec!=null?('平均滞在'+s.spa.sec+'秒 / 読了'+(s.spa.sd||0)+'%'):'滞在は計測開始後に表示')+
+      stat('頭皮ガイド記事', s.guide.views+'<span style="font-size:14px">回</span>', s.guide.sec!=null?('平均滞在'+s.guide.sec+'秒'):'滞在は計測開始後に表示')+
+      '</div>';
+    return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Scalp Interest</span>頭皮ケア関心 <span class="pill">メーカー注目テーマ</span></h2>'+
+      stats+
+      subhead('頭皮導線の 露出 → タップ（勧めたら見てくれているか）')+
+      secTable(data.secEngage, function(l){return l.indexOf('spa_')===0||l.indexOf('scalp_')===0;})+
+      subhead('ヘッドスパ興味あり率 × 年代')+ rateByAge(P.spaByAge, P.byAge)+
+      noteLine('「興味の量」＝診断回答とページ閲覧 ／「勧めたら見てくれるか」＝露出→タップの反応率 — 頭皮商材の仕入れ・共同開発・メーカー商談用の実測')+'</div>';
+  }
+
   // ── メーカー向けレポート ──────────────────────────────
   // 自動ハイライト: データから「メーカーが最初に知りたい数字」を文章化
   function reportHighlights(P){
@@ -472,6 +540,7 @@
       rblock('悩み × 年代（各年代内の選択率 — 色が濃い=その年代の主訴）', heatTable(topConcerns, CONCERN, P.concernByAge, P.byAge)) +
       rblock('求める仕上がり（官能ニーズ）× 年代', objRows(P.textureTotal, TEXTURE, P.n) + heatTable(texKeys, TEXTURE, P.textureByAge, P.byAge)) +
       rblock('「悩み → 求める質感」TOP12 — 広告コピー・製品コンセプトの直材料', pairTable(P.concernTexture, P.n)) +
+      ((data.brandClick||[]).length ? rblock('ブランド関心（サイト内カードタップ実数）', barRows(data.brandClick, function(x){return x.label;}) + ((data.brandSearch||[]).length ? subhead('検索ワード上位') + barRows(data.brandSearch.slice(0,8), function(x){return x.label;}) : '')) : '') +
       rblock('月次トレンド（該当率の推移）', trendSvg(P.monthly));
     var rd =
       rblock('髪質マップ（太さ × くせ区分の構成）', heatTable(['thin','normal','thick'], THICK, P.thicknessWave,
@@ -485,6 +554,17 @@
       rblock('白髪: 染め中率×年代 / 頻度', rateByAge(P.grayCareByAge, P.byAge) + objRows(P.grayFreqTotal, GRAYFREQ)) +
       rblock('熱習慣（アイロン・コテ）と設定温度', objRows(P.toolsTotal, TOOLS, P.n) + objRows(P.tempTotal, TEMPL)) +
       rblock('頭皮タイプ ＋ ヘッドスパ興味×年代', objRows(P.scalpTotal, SCALPT, P.n) + rateByAge(P.spaByAge, P.byAge)) +
+      (function(){
+        var s=scalpStats(data);
+        var line=function(k,v){return '<div class="bar-row"><span class="nm" style="width:220px">'+esc(k)+'</span><span class="ct" style="width:auto;text-align:left"><b>'+v+'</b></span></div>';};
+        return rblock('頭皮ケアへの関心 — 行動 × 診断回答',
+          line('診断で頭皮悩みを選択（乾燥/ベタつき/抜け毛）', s.concern+'%')+
+          line('ヘッドスパに興味あり', s.spaWant+'%')+
+          line('診断結果の第一課題が頭皮ケア', s.adviceScalp+'件')+
+          (s.spa.views?line('ヘッドスパページ閲覧', s.spa.views+'回'+(s.spa.sec!=null?'（平均滞在'+s.spa.sec+'秒）':'')):'')+
+          (s.guide.views?line('頭皮ガイド記事閲覧', s.guide.views+'回'+(s.guide.sec!=null?'（平均滞在'+s.guide.sec+'秒）':'')):'')+
+          secTable(data.secEngage, function(l){return l.indexOf('spa_')===0||l.indexOf('scalp_')===0;}));
+      })() +
       rblock('スタイリングで なりたい仕上がり（複数選択）', objRows(P.stylingFinishTotal, SFIN, P.n));
     var foot='<div class="rfoot">調査概要 — 収集方法: SEAM「髪格診断」（店頭タブレット/スマートフォンのセルフ回答・全国7店舗来店者およびオンライン利用者）／集計対象: プロファイル付き診断完了のみ／個人を特定できる情報は収集していません／悩み・仕上がり希望など複数選択項目の率は「選択した人の割合」のため合計100%を超えます／各表の n= は分母 セル内下段は件数／小規模セル（n&lt;30）は参考値としてお読みください<br>© SEAM（株式会社hanico）— 本レポートの数値・構成の無断転載はご遠慮ください</div>';
     return head+small+hl+
@@ -544,6 +624,10 @@
       panel('Device','デバイス', barRows(data.byDevice||[], function(x){return DEVICE[x.d]||x.d;})) +
       panel('Country','国・地域', barRows(data.byCountry||[], function(x){return COUNTRY[x.country]||x.country;})) +
       panel('Entry','入口ページ', barRows(data.byLanding||[], function(x){return x.landing;})) +
+      panel('Search','検索ワード（ブランド・商品）', barRows(data.brandSearch||[], function(x){return x.label;}) + noteLine('brandページの検索入力（2文字以上・入力停止時に記録）— 指名需要・品揃えの穴の発見に')) +
+      panel('Brand','ブランド関心（カードタップ）', barRows(data.brandClick||[], function(x){return x.label;}) + noteLine('ブランドカードのタップ実数 — メーカー商談の「御社ブランドへの関心」の根拠に')) +
+      '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Pages</span>ページ別 閲覧・滞在・読了</h2>'+engageTable(data.pageViews, data.pageEngage)+'</div>' +
+      scalpPanel(data) +
       panel('Type','27髪格タイプ 分布', barRows(data.byType||[], function(x){return x.t;})) +
       panel('Concern','悩み（主訴）分布', barRows(data.byAdvice||[], function(x){return ADVICE[x.a]||x.a;})) +
       panel('Damage','ダメージ履歴 Tier', barRows(data.byTier||[], function(x){return TIER[x.tier]||('Tier'+x.tier);})) +
@@ -573,6 +657,11 @@
     (data.byLanding||[]).forEach(function(x){rows.push(['landing',x.landing,x.c]);});
     (data.sourceFunnel||[]).forEach(function(x){rows.push(['funnel:'+x.ref,'starts',x.starts]);rows.push(['funnel:'+x.ref,'completes',x.completes]);rows.push(['funnel:'+x.ref,'ctas',x.ctas]);});
     (data.daily||[]).forEach(function(x){rows.push(['daily',x.d,x.c]);});
+    (data.brandSearch||[]).forEach(function(x){rows.push(['brandSearch',x.label,x.c]);});
+    (data.brandClick||[]).forEach(function(x){rows.push(['brandClick',x.label,x.c]);});
+    (data.pageViews||[]).forEach(function(x){rows.push(['pageViews',x.path,x.c]);});
+    (data.pageEngage||[]).forEach(function(x){rows.push(['pageEngage:'+x.path,'n',x.c]);rows.push(['pageEngage:'+x.path,'avgSec',x.sec]);rows.push(['pageEngage:'+x.path,'avgDepth',x.sd]);});
+    (data.secEngage||[]).forEach(function(x){rows.push(['section:'+x.label,'views',x.views]);rows.push(['section:'+x.label,'clicks',x.clicks]);});
     // 診断プロファイル
     var P=data.profile;
     if(P&&P.n){

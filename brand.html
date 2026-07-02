@@ -5199,6 +5199,7 @@ window.SEAM_PAGE_I18N = {
   </script>
   <script src="js/reveal.js"></script>
   <script src="js/enhance.js?v=2" defer></script>
+  <script src="js/seam-analytics.js?v=3" defer></script>
   <script src="js/app-tabbar.js?v=8" defer></script>
   <script>
     /* 全ブランドA-Z一覧は既定で折りたたみ。リンクで展開（離脱要因の長大スクロール回避） */
@@ -5213,5 +5214,25 @@ window.SEAM_PAGE_I18N = {
       });
     })();
   </script>
+<script>
+/* 計測: 検索ワード(入力停止1.2秒/Enter/blurで送信・24字まで・個人情報なし) + ブランドカードタップ */
+(function(){
+  var send=function(n,p){try{window.seamTrack&&seamTrack(n,p)}catch(e){}};
+  function hookSearch(id){var el=document.getElementById(id);if(!el)return;var t,last='';
+    var fire=function(){var v=(el.value||'').trim().slice(0,24);if(v.length<2||v===last)return;last=v;send('brand_search',{label:v});};
+    el.addEventListener('input',function(){clearTimeout(t);t=setTimeout(fire,1200);});
+    el.addEventListener('blur',fire);
+    el.addEventListener('keydown',function(e){if(e.key==='Enter')fire();});}
+  hookSearch('brandSearch');
+  hookSearch('dirSearch');
+  document.addEventListener('click',function(e){
+    var c=e.target&&e.target.closest&&e.target.closest('.brand-card-boutique.is-linked,[data-pm-brand]');
+    if(!c)return;
+    var nEl=c.querySelector&&c.querySelector('.bc-name');
+    var n=(c.getAttribute('data-pm-brand')||(nEl&&nEl.textContent)||'').trim().slice(0,24);
+    if(n)send('brand_click',{label:n});
+  },true);
+})();
+</script>
 </body>
 </html>
