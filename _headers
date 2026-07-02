@@ -15,3 +15,10 @@
 
 /images/*
   Cache-Control: public, max-age=31536000, immutable
+
+# 入場受付キオスク（スタッフ用・noindex）だけカメラを許可
+# サイト全体は camera=() のまま。/entrance（ページ本体）と /entrance/*（API等）の両方に必要
+/entrance
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), browsing-topics=()
+/entrance/*
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), browsing-topics=()

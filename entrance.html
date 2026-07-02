@@ -319,13 +319,15 @@
 
     <div class="login-card">
       <div class="form-group">
-        <label for="input-mail">メールアドレス</label>
+        <label for="input-mail">スタッフID（またはメールアドレス）</label>
         <input
           id="input-mail"
-          type="email"
+          type="text"
           autocomplete="username"
-          placeholder="example@email.com"
-          inputmode="email"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          placeholder="seam_ginza_qr_01"
         >
       </div>
       <div class="form-group">
@@ -351,7 +353,7 @@
 
     <div class="scan-body">
       <div id="camera-wrap" class="camera-wrap">
-        <video id="video" autoplay playsinline muted></video>
+        <video id="video" autoplay playsinline muted style="transform:scaleX(-1)"></video><!-- インカメを鏡像表示（読み取りはcanvas経由のため影響なし） -->
         <canvas id="canvas"></canvas>
         <div class="scan-overlay">
           <div class="scan-frame"></div>
@@ -446,7 +448,7 @@
     loginError.textContent = '';
 
     if (!mail || !pass) {
-      loginError.textContent = 'メールアドレスとパスワードを入力してください';
+      loginError.textContent = 'スタッフID（またはメールアドレス）とパスワードを入力してください';
       return;
     }
 
@@ -462,7 +464,7 @@
       const j = await res.json();
 
       if (!j.ok) {
-        loginError.textContent = 'メールアドレスまたはパスワードが正しくありません';
+        loginError.textContent = 'IDまたはパスワードが正しくありません';
         return;
       }
 
@@ -549,7 +551,7 @@
   async function requestCamera() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },  // インカメ優先（お客様がカードをかざす運用）
       });
       video.srcObject = stream;
       video.play();

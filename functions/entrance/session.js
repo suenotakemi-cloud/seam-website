@@ -56,18 +56,23 @@ export async function onRequestPost(context) {
       return J({ ok: false, reason: 'bad_request' }, H, 400);
     }
 
-    const mail = (body.mail || '').trim();
+    // メールアドレスまたはログインID（@を含まなければ login_id として送る）
+    const idOrMail = (body.mail || body.login_id || '').trim();
     const pass = (body.pass || '').trim();
 
-    if (!mail || !pass) {
+    if (!idOrMail || !pass) {
       return J({ ok: false, reason: 'missing_fields' }, H, 400);
     }
+
+    const loginBody = idOrMail.includes('@')
+      ? { mail: idOrMail, pass }
+      : { login_id: idOrMail, pass };
 
     const base = 'https://seam.salon.town';
     const r = await fetch(base + '/login', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ mail, pass }),
+      body: JSON.stringify(loginBody),
     });
 
     const j = await r.json().catch(() => ({}));
