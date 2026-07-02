@@ -1947,7 +1947,20 @@ function buildProfileMeta(a) {
     sf: arr(a.stylingFinish, 4),
     ms: arr(a.menStyling, 4),
     tl: arr(a.styling && a.styling.tools, 3),
-    tp: a.styling && a.styling.temp
+    tp: a.styling && a.styling.temp,
+    // v2 ディーラー・仕入れ詳細(2026-07-02): 使用実態/不満/トラブル/家電希望など
+    ln: a.length,
+    ss: a.scalpSensitivity,
+    blc: a.bleachLocation,
+    ev: a.environment,
+    sa: arr(Array.isArray(a.scalpAllergy) ? a.scalpAllergy : a.scalpAllergy ? [a.scalpAllergy] : null, 3),
+    hp: arr(a.heatProtect, 3),
+    ht: arr(a.hairTrouble, 4),
+    it: arr(a.items, 5),
+    ci: arr(a.concernsItem, 4),
+    ls: arr(a.lifestyle, 4),
+    wl: arr(a.wellness, 4),
+    dv: arr(a.deviceInterest, 3)
   };
   Object.keys(m).forEach(k => {
     const v = m[k];
