@@ -12250,6 +12250,18 @@ async function captureKarteCanvas(node) {
     idoc.close();
     const clone = node.cloneNode(true);
     clone.style.margin = '0';
+    // html2canvasが特定のフォント経路で全角の（ ） ・ を描画できず
+    // 文字が抜けた画像になるため、撮影用クローン内だけ見た目がほぼ同じ
+    // 半角括弧・中点に置き換える(画面上の表示は変えない)
+    {
+      const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT);
+      let tn;
+      while (tn = walker.nextNode()) {
+        if (/[（）・]/.test(tn.nodeValue)) {
+          tn.nodeValue = tn.nodeValue.replace(/（/g, ' (').replace(/）/g, ') ').replace(/・/g, '·');
+        }
+      }
+    }
     idoc.body.appendChild(clone);
     try {
       await Promise.race([idoc.fonts ? idoc.fonts.ready : Promise.resolve(), new Promise(r => setTimeout(r, 1500))]);
