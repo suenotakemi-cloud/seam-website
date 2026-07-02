@@ -102,6 +102,7 @@
     }).join('');
     buildSheet();
     bindSubmenu();
+    injectHeaderShopBtnWithRetry();
   }
 
   var currentSheet = ''; // 'book' | 'shop' | ''
@@ -208,6 +209,36 @@
     return !!(sh && sh.classList.contains('open')) && (!type || currentSheet === type || (type === 'shop' && currentSheet === 'online'));
   }
 
+  // ヘッダーのオンラインショップ入口（全ページ共通・言語ボタンの左に注入）
+  // 月商主力のECへ「常に見えている最短入口」を置く。タップ→会員確認ビュー→入店。
+  // ヘッダーは index=静的 / 他ページ=js/app-header.js 注入 のどちらも #langToggleBtn を持つ。
+  function injectHeaderShopBtn() {
+    var W = SHOPW[lang()] || SHOPW.ja;
+    var existing = document.getElementById('seam-header-shop');
+    if (existing) {
+      existing.setAttribute('aria-label', W.online);
+      var lb = existing.querySelector('.shs-full'); if (lb) lb.textContent = W.online;
+      return true;
+    }
+    var anchor = document.getElementById('langToggleBtn');
+    if (!anchor || !anchor.parentNode) return false;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.id = 'seam-header-shop';
+    btn.setAttribute('aria-label', W.online);
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + IC.shop + '</svg>'
+      + '<span class="shs-short">SHOP</span>'
+      + '<span class="shs-full">' + W.online + '</span>';
+    btn.addEventListener('click', function () { track('header_online'); openSheet('online'); });
+    anchor.parentNode.insertBefore(btn, anchor);
+    return true;
+  }
+  function injectHeaderShopBtnWithRetry() {
+    if (injectHeaderShopBtn()) return;
+    var tries = 0;
+    var iv = setInterval(function () { if (injectHeaderShopBtn() || ++tries > 20) clearInterval(iv); }, 150);
+  }
+
   function bindSubmenu() {
     ['book', 'shop'].forEach(function (type) {
       var b = document.getElementById('seam-tab-' + type);
@@ -280,7 +311,20 @@
       '#seam-tab-sheet .seam-confirm-back{display:block;width:100%;margin-top:6px;background:none;border:0;cursor:pointer;color:#B0A08B;',
       'font-family:Inter,"Noto Sans JP",sans-serif;font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;padding:10px;}',
       'body{padding-bottom:calc(58px + env(safe-area-inset-bottom));}',
-      '@media (min-width:1024px){#seam-tabbar,#seam-tab-sheet,#seam-tab-backdrop{display:none !important;}body{padding-bottom:0;}}'
+      /* ── ヘッダーのオンラインショップ入口(全ページ・金ピル) ── */
+      '#seam-header-shop{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(184,148,90,.55);border-radius:9999px;',
+      'background:rgba(255,255,255,.6);color:#8A6A3C;padding:7px 11px;margin-right:2px;cursor:pointer;font-family:Inter,"Noto Sans JP",sans-serif;',
+      'font-size:10px;letter-spacing:.16em;text-transform:uppercase;line-height:1;transition:border-color .2s,color .2s;-webkit-tap-highlight-color:transparent;min-height:34px !important;min-width:0 !important;}',
+      '#seam-header-shop svg{width:13px;height:13px;color:#B8945A;}',
+      '#seam-header-shop:active{border-color:#B8945A;}',
+      '@media(hover:hover){#seam-header-shop:hover{border-color:#B8945A;color:#6E5430;}}',
+      /* モバイルはアイコンのみ(SEAMロゴとの衝突回避・金縁ピルで入口性は担保)/ 640px以上でフルラベル */
+      '#seam-header-shop .shs-short{display:none;}',
+      '#seam-header-shop .shs-full{display:none;}',
+      '@media (min-width:640px){#seam-header-shop .shs-full{display:inline;font-family:"Noto Serif JP",serif;font-size:11.5px;letter-spacing:.08em;text-transform:none;}}',
+      /* デスクトップ: タブバーは非表示だがシート(会員確認)はヘッダー入口用に中央表示で生かす */
+      '@media (min-width:1024px){#seam-tabbar{display:none !important;}body{padding-bottom:0;}',
+      '#seam-tab-sheet{top:0;bottom:0;align-items:center;}}'
     ].join('');
     document.head.appendChild(s);
   }
