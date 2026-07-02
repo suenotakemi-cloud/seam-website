@@ -9370,12 +9370,43 @@ function shareKarteLink(origin) {
 }
 
 /* カルテ(CounselingSheet)を画像化して美容師さんへ共有(共有不可の環境はPNG保存) */
+/* カルテ画像の保存・共有。
+   Instagram/LINE等のアプリ内ブラウザは navigator.share(files) も <a download> も
+   使えないことが多く「タップしても無反応」になるため、方式を全面変更:
+   ① タップ直後に必ずオーバーレイ(作成中…)を表示 = 無反応をなくす
+   ② 共有シートが使える環境ではそのまま共有
+   ③ 使えない環境では画像プレビューを表示し「長押しで保存」+ 保存ボタン(可能な環境のみ) */
+function karteShareOverlay() {
+  let ov = document.getElementById('karte-share-overlay');
+  if (ov) { ov.style.display = 'flex'; return ov; }
+  ov = document.createElement('div');
+  ov.id = 'karte-share-overlay';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(26,24,21,0.62);display:flex;align-items:center;justify-content:center;padding:18px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);overflow:auto;';
+  ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+  return ov;
+}
+function karteShareCard(ov, inner) {
+  ov.innerHTML =
+    '<div style="background:#FFFFFF;max-width:420px;width:100%;max-height:88vh;overflow:auto;border-radius:8px;padding:22px 20px 20px;text-align:center;font-family:\'Noto Serif JP\',serif;box-shadow:0 24px 70px rgba(0,0,0,0.3);">' +
+    inner + '</div>';
+}
+function karteShareCloseBtn() {
+  return '<button data-karte-close style="margin-top:4px;padding:11px 26px;border:1px solid #D8CFBF;border-radius:999px;background:#fff;color:#5A534B;font-size:12.5px;font-family:inherit;letter-spacing:.04em;cursor:pointer;">閉じる</button>';
+}
 async function shareCounselingSheetImage() {
   const node = document.getElementById('counseling-sheet');
+  const ov = karteShareOverlay();
+  const wireClose = () => { const b = ov.querySelector('[data-karte-close]'); if (b) b.onclick = () => ov.remove(); };
   if (!node || typeof html2canvas !== 'function') {
-    alert('共有の準備が整っていません すこし時間を置いてもう一度お試しください');
+    karteShareCard(ov, '<p style="font-size:13.5px;line-height:2;color:#2B2926;margin:0 0 14px;">共有の準備が整っていません<br>すこし時間を置いてもう一度お試しください</p>' + karteShareCloseBtn());
+    wireClose();
     return;
   }
+  karteShareCard(ov,
+    '<p style="font-size:13.5px;letter-spacing:.06em;color:#2B2926;margin:8px 0 0;">カルテ画像を作成しています…</p>' +
+    '<p style="margin:8px 0 6px;font-size:11px;color:#8A8177;">数秒かかることがあります</p>');
+  try { window.seamTrack && seamTrack('finder_cta', { target: 'karte_save' }); } catch (e) {}
   try {
     const canvas = await html2canvas(node, {
       backgroundColor: '#FFFFFF',
@@ -9385,9 +9416,11 @@ async function shareCounselingSheetImage() {
     });
     const date = new Date().toISOString().slice(0, 10);
     const filename = `SEAM_KARTE_${date}.png`;
+    const dataURL = canvas.toDataURL('image/png');
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
     if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/png' })] })) {
       try {
+        ov.remove();
         await navigator.share({
           files: [new File([blob], filename, { type: 'image/png' })],
           title: 'SEAM 髪格診断カルテ',
@@ -9395,15 +9428,29 @@ async function shareCounselingSheetImage() {
         return;
       } catch (e) {
         if (e && e.name === 'AbortError') return; // ユーザーが共有シートを閉じた
+        karteShareOverlay(); // 共有不可 → 下のプレビューへ
       }
     }
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    // 共有シートが使えない環境(アプリ内ブラウザ / PC) → プレビュー + 長押し保存の案内
+    karteShareCard(ov,
+      '<p style="font-size:13px;letter-spacing:.05em;color:#2B2926;margin:0;">カルテ画像ができました</p>' +
+      '<img src="' + dataURL + '" alt="SEAM 髪格診断カルテ" style="display:block;margin:12px auto 0;width:100%;height:auto;border:1px solid #E7E0D6;border-radius:4px;" />' +
+      '<p style="margin:12px 0 12px;font-size:11.5px;line-height:1.9;color:#5A534B;">画像を<b>長押し</b>（パソコンは右クリック）で<br>保存・共有できます</p>' +
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' +
+      '<button data-karte-dl style="padding:11px 24px;background:#2B2926;color:#FBF7F1;border:none;border-radius:999px;font-size:12.5px;font-family:inherit;letter-spacing:.04em;cursor:pointer;">端末に保存する</button>' +
+      karteShareCloseBtn() + '</div>');
+    wireClose();
+    const dl = ov.querySelector('[data-karte-dl]');
+    if (dl) dl.onclick = () => {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = dataURL;
+      link.click();
+    };
   } catch (e) {
     console.warn('Counseling sheet share failed', e);
-    alert('画像の共有に失敗しました もう一度お試しください');
+    karteShareCard(ov, '<p style="font-size:13.5px;line-height:2;color:#2B2926;margin:0 0 14px;">画像の作成に失敗しました<br>もう一度お試しください</p>' + karteShareCloseBtn());
+    wireClose();
   }
 }
 
