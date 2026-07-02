@@ -24,12 +24,12 @@ export async function onRequestPost(context) {
     const landing = String(ev.landing || '').slice(0, 64);      // 初回入口パス
     const country = String((request.cf && request.cf.country) || '').slice(0, 4); // CFが国コードを無料付与(非個人情報)
 
-    // 予備JSON（utm_medium / lang / 任意の拡張）
+    // 予備JSON（utm_medium / lang / 診断プロファイルmeta = finder-app.jsx buildProfileMeta 参照）
     const metaObj = {};
     if (ev.utm_medium) metaObj.utm_medium = String(ev.utm_medium).slice(0, 24);
     if (ev.lang)       metaObj.lang = String(ev.lang).slice(0, 8);
     if (ev.meta && typeof ev.meta === 'object') Object.assign(metaObj, ev.meta);
-    const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj).slice(0, 512) : null;
+    const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj).slice(0, 1024) : null;
 
     let stored = false;
 

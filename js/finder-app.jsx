@@ -901,6 +901,28 @@ function trackCta(target, label) {
   } catch (e) { /* no-op */ }
 }
 
+// 診断プロファイルmeta — finder_complete に添付する集計専用の匿名スナップショット。
+// 個人情報なし（選択肢コードのみ）。キーは D1 meta 節約のため短縮:
+//   age=年代 th=太さ dn=量 wv=くせ rv=根元 sc=頭皮 cl=カラー cf=カラー頻度
+//   bl=ブリーチ st=縮毛矯正 pm=パーマ pt=パーマ種類 plz=だれやすさ gy=白髪染め gf=白髪頻度
+//   gt=理想質感 gl=目標 hs=スパ興味 cs=悩み[] sf=仕上がり希望[] ms=男性スタイリング剤[]
+//   tl=熱ツール[] tp=温度
+// 復号は functions/api/admin/stats.js・表示ラベルは admin.html（finder実値と同期必須）
+function buildProfileMeta(a) {
+  a = a || {};
+  const arr = (v, n) => (Array.isArray(v) && v.length ? v.slice(0, n) : undefined);
+  const m = {
+    age: a.age, th: a.thickness, dn: a.density, wv: a.wave, rv: a.rootVolume, sc: a.scalpType,
+    cl: a.color, cf: a.colorFreq, bl: a.bleach, st: a.straighten,
+    pm: a.perm, pt: a.permType, plz: a.permLoose, gy: a.grayHair, gf: a.grayFreq,
+    gt: a.goalTexture, gl: a.goal, hs: a.headSpaInterest,
+    cs: arr(a.concerns, 3), sf: arr(a.stylingFinish, 4), ms: arr(a.menStyling, 4),
+    tl: arr(a.styling && a.styling.tools, 3), tp: a.styling && a.styling.temp,
+  };
+  Object.keys(m).forEach(k => { const v = m[k]; if (v == null || v === '') delete m[k]; });
+  return m;
+}
+
 /* ---------- タイプ別ルーティン ---------- */
 /* ---------- 髪質チャート ---------- */
 function clamp(v, max) { return Math.max(0, Math.min(max, Math.round(v))); }
@@ -6926,13 +6948,13 @@ function GemMark({ code, name }) {
 }
 
 /* ---------- ResultHero — Pokémon カード風 図鑑プロフィールカード ---------- */
-function ResultHero({ karte, onSaveImage, onShare, onSavePdf }) {
+function ResultHero({ karte, answers, onSaveImage, onShare, onSavePdf }) {
   if (!karte) return null;
   const { origin, radar, mainGoal, gender, damageTier } = karte;
   const heroImgPath = getCharImgPath(origin?.code, gender);  // null なら画像非表示
-  // 計測: 結果表示時に1回だけ（type/履歴Tier/advice の実分布を集計。個人情報なし・投げっぱなし）
+  // 計測: 結果表示時に1回だけ（type/履歴Tier/advice + プロファイルmeta の実分布を集計。個人情報なし・投げっぱなし）
   useEffect(() => {
-    try { window.__seamLastType = (origin && origin.code) || ''; window.seamTrack && window.seamTrack('finder_complete', { type: origin && origin.code, tier: damageTier, advice: karte.adviceKey, gender: gender }); } catch (e) {}
+    try { window.__seamLastType = (origin && origin.code) || ''; window.seamTrack && window.seamTrack('finder_complete', { type: origin && origin.code, tier: damageTier, advice: karte.adviceKey, gender: gender, meta: buildProfileMeta(answers) }); } catch (e) {}
   }, []);
   // セクション間をジャンプするヘルパー
   const jump = (id) => {
@@ -9546,6 +9568,7 @@ function Result({ answers, onRestart, onCollection }) {
 
         <ResultHero
           karte={karte}
+          answers={answers}
           onSaveImage={(mode) => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode)}
           onShare={() => shareKarteLink(karte?.origin)}
         />

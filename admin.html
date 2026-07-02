@@ -38,7 +38,7 @@
   .bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}
   .bar-row .nm{width:104px;flex-shrink:0;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bar-track{flex:1;height:18px;background:#F1EBE2;border-radius:6px;overflow:hidden}
-  .bar-fill{height:100%;background:linear-gradient(90deg,#C79A6E,#A87456);border-radius:6px;min-width:2px;transition:width .5s ease}
+  .bar-fill{display:block;height:100%;background:linear-gradient(90deg,#C79A6E,#A87456);border-radius:6px;min-width:2px;transition:width .5s ease}
   .bar-row .ct{width:64px;text-align:right;flex-shrink:0;color:var(--char);font-variant-numeric:tabular-nums}
   .bar-row .ct b{color:var(--ink)}
   .empty{color:var(--char);font-size:12px;padding:10px 0}
@@ -124,6 +124,27 @@
   var COUNTRY = {JP:'日本', US:'アメリカ', CN:'中国', TW:'台湾', KR:'韓国', HK:'香港', TH:'タイ', SG:'シンガポール', GB:'イギリス', AU:'オーストラリア'};
   var EVNAME = {finder_complete:'診断完了', finder_cta:'予約・誘導', finder_start:'診断開始'};
 
+  // ---- 診断プロファイル ラベル辞書（finder-app.jsx の選択肢実値と同期必須） ----
+  var AGE_ORDER = ['teen','20s','30s','40s','50plus','noanswer'];
+  var AGE = {teen:'10代','20s':'20代','30s':'30代','40s':'40代','50plus':'50代以上',noanswer:'未回答'};
+  var CONCERN = {dry:'乾燥',frizz:'広がり',wave:'うねり・くせ',rough:'パサつき',tangle:'絡まり',noShine:'ツヤ不足',split:'枝毛・切れ毛',damage:'ダメージ',gummy:'濡れるとゴム状',colorFade:'カラーの色落ち',grayFade:'白髪染めの色落ち',volumeDown:'ボリューム不足',topFlat:'トップぺたん',scalpDry:'頭皮の乾燥・かゆみ',scalpOily:'頭皮のベタつき',thinning:'抜け毛・細毛'};
+  var TEXTURE = {moist:'しっとりまとまり',glossy:'ツヤ',firm:'ハリコシ',smooth:'サラサラ',airy:'ふんわり動き',soft:'軽い柔らかさ'};
+  var GOAL = {growLong:'きれいに伸ばしたい',keepColor:'髪色を保ちたい',firm:'ハリコシ美髪',easy:'朝セットを楽に',ends:'毛先までまとまり',idle:'未定'};
+  var WAVE = {none:'ほとんどない',humid:'湿気で広がる',surface:'表面ほわほわ',root:'根元うねり',midEnd:'中間〜毛先うねり',whole:'全体つよいくせ',straightened:'縮毛矯正中'};
+  var BLEACH = {none:'なし',within3m:'明るい部分が残る',within1y:'暗染め・伸びたが履歴あり',multi:'ハイトーンまで抜いた',highlight:'ハイライト等 部分的'};
+  var PERM = {none:'していない',yearly:'年1回',biannual:'半年に1回',quarterly:'3ヶ月に1回',frequent:'2ヶ月に1回以上',digital:'デジパを定期的に',endsRemain:'毛先に残っている',loose:'だれやすい',past:'過去にしていた'};
+  var PERMTYPE = {normal:'通常パーマ',digital:'デジタルパーマ',both:'両方経験',unknown:'わからない'};
+  var STRAIGHTEN = {none:'していない',yearly:'年1回程度',biannual:'半年に1回',quarterly:'3ヶ月に1回',frequent:'2ヶ月に1回以上',kaizen:'髪質改善を定期的に',past:'過去にしていた'};
+  var PERMLOOSE = {veryEasy:'とてもだれやすい',easy:'ややだれやすい',normal:'ふつう',keep:'保ちやすい'};
+  var SFIN = {shine:'ツヤ・濡れ感',tame:'広がりをまとめたい',curl:'パーマ・くせを活かす',hold:'巻き・カールをキープ',volume:'根元ふんわり',matte:'マット束感',light:'軽くベタつかせない',none:'使わない'};
+  var MSTY = {wax:'ワックス',gel:'ジェル',grease:'グリース・ポマード',cream:'クリーム・ムーブ系',oil:'オイル',balm:'バーム',spray:'スプレー',none:'決めていない'};
+  var SCALPT = {dry:'乾燥しやすい',tendDry:'やや乾燥',normal:'ふつう',tendOily:'ややベタつき',oily:'ベタつきやすい'};
+  var GRAYFREQ = {half:'半月に1回',three:'3週間に1回',monthly:'1ヶ月に1回',six:'1.5ヶ月に1回',two:'2ヶ月に1回',over:'それ以上'};
+  var THICK = {thin:'細い',normal:'普通',thick:'太い'};
+  var TOOLS = {ironDaily:'アイロン毎日',ironWeekly:'アイロン週数回',curlerDaily:'コテ毎日',curlerWeekly:'コテ週数回',bangsDaily:'前髪だけ毎日',rare:'使わない'};
+  var TEMPL = {t140:'〜140°C',t160:'160°C',t180:'180°C',t200:'200°C以上',tUnknown:'不明'};
+  var WVGRP = {none:'くせなし',kuse:'くせあり',straightened:'矯正中'};
+
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
   function el(id){return document.getElementById(id);}
 
@@ -135,7 +156,48 @@
     var d=dailyGen();
     var completes=byType.reduce(function(s,x){return s+x.c;},0);
     function recentGen(){var a=[],now=Date.now(),refs=['instagram','google','direct','x','line'],types=['NNW','TLS','VCC','MSP','FHC'],adv=['frizz','damage','dry','scalp','volume'],tgts=['reserve_hpb','shop','product','product_alt'];for(var i=0;i<24;i++){var isCta=Math.random()<.4;a.push({ts:now-i*37*60000-Math.round(Math.random()*9e5),name:isCta?'finder_cta':'finder_complete',type:types[i%types.length],advice:adv[i%adv.length],tier:1+(i%3),ref:refs[i%refs.length],utm_campaign:i%4===0?'summer_2026':'',target:isCta?tgts[i%tgts.length]:'',device:Math.random()<.85?'mobile':'desktop',gender:Math.random()<.8?'female':'male'});}return a;}
-    return {configured:true, generatedAt:Date.now(), windowDays:90, _demo:true,
+    // プロファイル（デモ・実データではありません — 画面確認用の作り値）
+    function demoProfile(){
+      var byAge={teen:34,'20s':196,'30s':228,'40s':172,'50plus':118,noanswer:22};
+      var n=0; for(var k in byAge) n+=byAge[k];
+      function scaled(base){ var o={}; for(var a in byAge) o[a]=Math.round(byAge[a]*base[a]); return o; }
+      var monthly={}, ms=['2026-04','2026-05','2026-06','2026-07'];
+      ms.forEach(function(ym,i){ var mn=Math.round(n/4); monthly[ym]={n:mn, kuse:Math.round(mn*(0.44+i*0.01)), bleach:Math.round(mn*(0.30+i*0.005)), gray:Math.round(mn*0.21), permNow:Math.round(mn*(0.09+i*0.012)), curlWant:Math.round(mn*(0.17+i*0.02))}; });
+      return {
+        n:n, byAge:byAge,
+        concernTotal:{dry:Math.round(n*.38),damage:Math.round(n*.34),wave:Math.round(n*.31),frizz:Math.round(n*.27),rough:Math.round(n*.22),noShine:Math.round(n*.18),colorFade:Math.round(n*.16),volumeDown:Math.round(n*.13),grayFade:Math.round(n*.11),thinning:Math.round(n*.09),scalpDry:Math.round(n*.08),split:Math.round(n*.07)},
+        concernByAge:{dry:scaled({teen:.30,'20s':.36,'30s':.40,'40s':.40,'50plus':.38,noanswer:.3}),damage:scaled({teen:.28,'20s':.42,'30s':.38,'40s':.28,'50plus':.22,noanswer:.3}),wave:scaled({teen:.36,'20s':.33,'30s':.32,'40s':.28,'50plus':.24,noanswer:.3}),frizz:scaled({teen:.30,'20s':.28,'30s':.28,'40s':.26,'50plus':.22,noanswer:.2}),colorFade:scaled({teen:.14,'20s':.26,'30s':.18,'40s':.10,'50plus':.06,noanswer:.1}),grayFade:scaled({teen:0,'20s':.01,'30s':.06,'40s':.22,'50plus':.34,noanswer:.1}),volumeDown:scaled({teen:.04,'20s':.06,'30s':.11,'40s':.19,'50plus':.26,noanswer:.1}),thinning:scaled({teen:.02,'20s':.04,'30s':.08,'40s':.14,'50plus':.19,noanswer:.08}),rough:scaled({teen:.20,'20s':.24,'30s':.23,'40s':.21,'50plus':.19,noanswer:.2}),noShine:scaled({teen:.12,'20s':.16,'30s':.19,'40s':.21,'50plus':.20,noanswer:.15})},
+        textureTotal:{moist:Math.round(n*.27),smooth:Math.round(n*.22),glossy:Math.round(n*.19),airy:Math.round(n*.14),soft:Math.round(n*.10),firm:Math.round(n*.08)},
+        textureByAge:{moist:scaled({teen:.22,'20s':.26,'30s':.29,'40s':.28,'50plus':.25,noanswer:.25}),smooth:scaled({teen:.28,'20s':.26,'30s':.22,'40s':.18,'50plus':.14,noanswer:.2}),glossy:scaled({teen:.14,'20s':.18,'30s':.20,'40s':.22,'50plus':.21,noanswer:.18}),airy:scaled({teen:.16,'20s':.13,'30s':.12,'40s':.15,'50plus':.18,noanswer:.13}),soft:scaled({teen:.12,'20s':.11,'30s':.10,'40s':.09,'50plus':.08,noanswer:.1}),firm:scaled({teen:.02,'20s':.03,'30s':.06,'40s':.12,'50plus':.17,noanswer:.07})},
+        goalTotal:{ends:Math.round(n*.26),growLong:Math.round(n*.22),easy:Math.round(n*.19),keepColor:Math.round(n*.15),firm:Math.round(n*.10),idle:Math.round(n*.08)},
+        waveTotal:{none:Math.round(n*.30),humid:Math.round(n*.17),root:Math.round(n*.12),midEnd:Math.round(n*.11),surface:Math.round(n*.09),whole:Math.round(n*.07),straightened:Math.round(n*.14)},
+        kuseByAge:scaled({teen:.52,'20s':.50,'30s':.47,'40s':.42,'50plus':.38,noanswer:.4}),
+        straightenedByAge:scaled({teen:.16,'20s':.18,'30s':.15,'40s':.11,'50plus':.07,noanswer:.1}),
+        bleachTotal:{none:Math.round(n*.68),highlight:Math.round(n*.13),within1y:Math.round(n*.09),within3m:Math.round(n*.07),multi:Math.round(n*.03)},
+        bleachByAge:scaled({teen:.38,'20s':.46,'30s':.33,'40s':.22,'50plus':.12,noanswer:.2}),
+        grayCareByAge:scaled({teen:0,'20s':.02,'30s':.12,'40s':.44,'50plus':.68,noanswer:.15}),
+        grayConcernByAge:scaled({teen:0,'20s':.01,'30s':.06,'40s':.22,'50plus':.34,noanswer:.1}),
+        grayFreqTotal:{monthly:52,three:31,six:22,half:12,two:16,over:9},
+        permTotal:{none:Math.round(n*.62),past:Math.round(n*.13),yearly:Math.round(n*.06),endsRemain:Math.round(n*.05),digital:Math.round(n*.05),biannual:Math.round(n*.04),loose:Math.round(n*.03),quarterly:Math.round(n*.02)},
+        permTypeTotal:{normal:88,digital:64,both:31,unknown:27},
+        permLooseTotal:{easy:74,veryEasy:38,normal:71,keep:27},
+        permNowByAge:scaled({teen:.06,'20s':.11,'30s':.13,'40s':.12,'50plus':.14,noanswer:.08}),
+        permExpByAge:scaled({teen:.12,'20s':.26,'30s':.33,'40s':.36,'50plus':.42,noanswer:.2}),
+        curlWantByAge:scaled({teen:.24,'20s':.27,'30s':.22,'40s':.17,'50plus':.13,noanswer:.15}),
+        straightenTotal:{none:Math.round(n*.60),past:Math.round(n*.12),yearly:Math.round(n*.09),biannual:Math.round(n*.08),kaizen:Math.round(n*.06),quarterly:Math.round(n*.04),frequent:Math.round(n*.01)},
+        thicknessTotal:{thin:Math.round(n*.30),normal:Math.round(n*.46),thick:Math.round(n*.24)},
+        thicknessWave:{thin:{none:88,kuse:104,straightened:31},normal:{none:132,kuse:158,straightened:56},thick:{none:53,kuse:99,straightened:24}},
+        stylingFinishTotal:{tame:Math.round(n*.34),shine:Math.round(n*.30),light:Math.round(n*.22),hold:Math.round(n*.17),volume:Math.round(n*.14),curl:Math.round(n*.12),matte:Math.round(n*.07),none:Math.round(n*.16)},
+        menStylingTotal:{wax:44,balm:28,grease:19,gel:14,cream:13,oil:11,spray:9,none:12},
+        toolsTotal:{ironWeekly:Math.round(n*.24),curlerWeekly:Math.round(n*.19),ironDaily:Math.round(n*.17),curlerDaily:Math.round(n*.11),bangsDaily:Math.round(n*.12),rare:Math.round(n*.33)},
+        tempTotal:{t160:Math.round(n*.28),t180:Math.round(n*.21),t140:Math.round(n*.08),t200:Math.round(n*.05),tUnknown:Math.round(n*.10)},
+        scalpTotal:{normal:Math.round(n*.38),tendDry:Math.round(n*.22),tendOily:Math.round(n*.18),dry:Math.round(n*.12),oily:Math.round(n*.10)},
+        spaByAge:scaled({teen:.30,'20s':.42,'30s':.48,'40s':.46,'50plus':.40,noanswer:.3}),
+        concernTexture:{'dry|moist':94,'damage|smooth':71,'wave|moist':63,'frizz|moist':58,'damage|glossy':47,'rough|moist':44,'noShine|glossy':41,'wave|smooth':36,'colorFade|glossy':29,'volumeDown|airy':27,'grayFade|glossy':22,'thinning|airy':17},
+        monthly:monthly
+      };
+    }
+    return {configured:true, generatedAt:Date.now(), windowDays:90, _demo:true, profile:demoProfile(),
       summary:{starts:Math.round(completes*1.42), completes:completes, ctas:Math.round(completes*0.34)},
       byType:byType, byAdvice:[{a:'damage',c:Math.round(completes*.28)},{a:'frizz',c:Math.round(completes*.22)},{a:'dry',c:Math.round(completes*.18)},{a:'scalp',c:Math.round(completes*.14)},{a:'volume',c:Math.round(completes*.1)},{a:'color',c:Math.round(completes*.08)}],
       byTier:[{tier:1,c:Math.round(completes*.22)},{tier:2,c:Math.round(completes*.41)},{tier:3,c:Math.round(completes*.37)}],
@@ -184,6 +246,136 @@
       '<path d="'+area+'" fill="url(#g)"/>'+
       '<path d="'+line+'" fill="none" stroke="#A87456" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'+
       '</svg><div class="muted" style="display:flex;justify-content:space-between;margin-top:2px"><span>'+esc(daily[0].d)+'</span><span>最多 '+max+'件/日</span><span>'+esc(daily[n-1].d)+'</span></div>';
+  }
+
+  // ---- プロファイル描画ヘルパー ----
+  // {key:件数} → バー行。denomを渡すと右側は「件数 · denom比%」（複数選択は合計100%超）
+  function objRows(obj, labels, denom, order){
+    obj = obj || {};
+    var keys = order ? order.filter(function(k){return obj[k];}) : Object.keys(obj).sort(function(a,b){return obj[b]-obj[a];});
+    if(!keys.length) return '<div class="empty">データなし</div>';
+    var max = keys.reduce(function(m,k){return Math.max(m,obj[k]);},0)||1;
+    return keys.map(function(k){
+      var n=obj[k], w=Math.max(2,n/max*100);
+      var right='<b>'+n+'</b>'+(denom?' <span class="muted">'+pct(n,denom)+'%</span>':'');
+      return '<div class="bar-row"><span class="nm" title="'+esc(labels[k]||k)+'">'+esc(labels[k]||k)+'</span>'+
+        '<span class="bar-track"><span class="bar-fill" style="width:'+w+'%"></span></span>'+
+        '<span class="ct">'+right+'</span></div>';
+    }).join('');
+  }
+  // 年代別の該当率バー（分子obj / 分母=byAge）
+  function rateByAge(numByAge, byAge){
+    numByAge = numByAge||{}; byAge = byAge||{};
+    var rows = AGE_ORDER.filter(function(a){return byAge[a];});
+    if(!rows.length) return '<div class="empty">データなし</div>';
+    return rows.map(function(a){
+      var n=numByAge[a]||0, d=byAge[a]||0, r=pct(n,d);
+      return '<div class="bar-row"><span class="nm">'+esc(AGE[a])+'</span>'+
+        '<span class="bar-track"><span class="bar-fill" style="width:'+Math.max(2,r)+'%"></span></span>'+
+        '<span class="ct"><b>'+r+'%</b> <span class="muted">'+n+'/'+d+'</span></span></div>';
+    }).join('');
+  }
+  // 次元×列 ヒート表（既定は列=年代。セル=その列内での該当率%）
+  function heatTable(rowKeys, rowLabels, matrix, colDenom, colOrder, colLabels){
+    matrix = matrix||{}; colDenom = colDenom||{};
+    colOrder = colOrder||AGE_ORDER; colLabels = colLabels||AGE;
+    var cols = colOrder.filter(function(a){return colDenom[a];});
+    if(!cols.length || !rowKeys.length) return '<div class="empty">データなし</div>';
+    var maxR=0;
+    rowKeys.forEach(function(rk){ cols.forEach(function(a){ var d=colDenom[a]||0, n=(matrix[rk]||{})[a]||0; var r=d?n/d*100:0; if(r>maxR)maxR=r; }); });
+    maxR = maxR||1;
+    var head='<tr><th></th>'+cols.map(function(a){return '<th class="n">'+esc(colLabels[a]||a)+'<div class="muted" style="font-weight:400">n='+colDenom[a]+'</div></th>';}).join('')+'</tr>';
+    var body=rowKeys.map(function(rk){
+      var tds=cols.map(function(a){
+        var d=colDenom[a]||0, n=(matrix[rk]||{})[a]||0, r=d?Math.round(n/d*1000)/10:0;
+        var alpha=(r/maxR)*0.55;
+        return '<td class="n" style="background:rgba(199,154,110,'+alpha.toFixed(3)+')"><b>'+r+'%</b><div class="muted">'+n+'</div></td>';
+      }).join('');
+      return '<tr><td>'+esc(rowLabels[rk]||rk)+'</td>'+tds+'</tr>';
+    }).join('');
+    return '<div class="tbl-wrap" style="max-height:none"><table class="tbl"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+  }
+  // 月次トレンド（該当率%の複数ライン）
+  function trendSvg(monthly){
+    monthly = monthly||{};
+    var yms = Object.keys(monthly).sort();
+    if(yms.length < 2) return '<div class="empty">2ヶ月以上データがたまると 傾向線が表示されます（現在 '+yms.length+'ヶ月分）</div>';
+    var series=[
+      {k:'curlWant', label:'カール意欲', color:'#A87456'},
+      {k:'permNow',  label:'パーマ現役', color:'#C79A6E'},
+      {k:'bleach',   label:'ブリーチ経験', color:'#8C7A63'},
+      {k:'kuse',     label:'くせあり', color:'#5A534B'},
+      {k:'gray',     label:'白髪ケア中', color:'#B4453A'}
+    ];
+    var W=560,H=150,pad=8,padB=20;
+    function xy(i,r){ var x=pad+i/(Math.max(1,yms.length-1))*(W-2*pad); var y=H-padB-(r/100)*(H-pad-padB); return [x,y]; }
+    var paths=series.map(function(s){
+      var d=yms.map(function(ym,i){ var m=monthly[ym]; var r=m.n?m[s.k]/m.n*100:0; var p=xy(i,r); return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1); }).join(' ');
+      return '<path d="'+d+'" fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+    }).join('');
+    var grid=[0,25,50,75,100].map(function(v){ var y=H-padB-(v/100)*(H-pad-padB); return '<line x1="'+pad+'" y1="'+y+'" x2="'+(W-pad)+'" y2="'+y+'" stroke="#F1EBE2" stroke-width="1"/><text x="'+(W-pad)+'" y="'+(y-2)+'" font-size="8" fill="#5A534B" text-anchor="end">'+v+'%</text>'; }).join('');
+    var legend=series.map(function(s){return '<span style="display:inline-flex;align-items:center;gap:5px;margin-right:12px"><span style="width:14px;height:3px;background:'+s.color+';border-radius:2px;display:inline-block"></span>'+s.label+'</span>';}).join('');
+    return '<svg class="spark" style="height:150px" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+grid+paths+'</svg>'+
+      '<div class="muted" style="display:flex;justify-content:space-between;margin-top:4px"><span>'+esc(yms[0])+'</span><span>'+esc(yms[yms.length-1])+'</span></div>'+
+      '<div class="muted" style="margin-top:8px;line-height:2">'+legend+'</div>'+
+      '<div class="muted" style="margin-top:4px">各月の診断完了に占める該当率（%）— パーマ・カール系の伸びを継続観測できます</div>';
+  }
+  // 「悩み → 求める質感」ペア表（広告コピー・開発コンセプトの素材）
+  function pairTable(pairs, total){
+    pairs = pairs||{};
+    var keys=Object.keys(pairs).sort(function(a,b){return pairs[b]-pairs[a];}).slice(0,12);
+    if(!keys.length) return '<div class="empty">データなし</div>';
+    var rows=keys.map(function(k){
+      var p=k.split('|');
+      return '<tr><td>'+esc(CONCERN[p[0]]||p[0])+'</td><td>'+esc(TEXTURE[p[1]]||p[1])+'</td><td class="n"><b>'+pairs[k]+'</b></td><td class="n">'+pct(pairs[k],total)+'%</td></tr>';
+    }).join('');
+    return '<table class="tbl"><thead><tr><th>悩み</th><th>求める質感</th><th class="n">件数</th><th class="n">全体比</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<p class="muted" style="margin:8px 0 0">例:「乾燥 × しっとりまとまり」が多ければ その組み合わせが広告コピー・開発コンセプトの最有力です</p>';
+  }
+  function noteLine(t){ return '<p class="muted" style="margin:10px 0 0;line-height:1.8">'+t+'</p>'; }
+  function subhead(t){ return '<p style="font-size:11.5px;font-weight:600;color:var(--char);letter-spacing:.03em;margin:14px 0 4px">'+esc(t)+'</p>'; }
+
+  // プロファイル分析セクション（仕入れ・ヘアケア/スタイリング剤開発・広告のリソース）
+  function profilePanels(P){
+    if(!P) return '';
+    var full=' style="grid-column:1/-1"';
+    var head='<div class="card panel"'+full+'><h2><span class="eyebrow">Profile</span>診断プロファイル分析 <span class="pill">開発・仕入れ・広告用</span></h2>'+
+      '<p class="muted" style="line-height:1.9">期間内のプロファイル付き診断完了 <b style="color:var(--ink);font-size:14px">'+(P.n||0)+'</b> 件を集計 ／ 悩み・仕上がり希望などの複数選択は「選んだ人の率」なので合計は100%を超えます</p></div>';
+    if(!P.n){
+      return head+'<div class="card panel"'+full+'><div class="empty">プロファイル付きのデータはこれから溜まります（本更新以降の診断完了から自動で蓄積）</div></div>';
+    }
+    var topConcerns=Object.keys(P.concernTotal||{}).sort(function(a,b){return P.concernTotal[b]-P.concernTotal[a];}).slice(0,10);
+    var texKeys=['moist','glossy','firm','smooth','airy','soft'].filter(function(k){return (P.textureTotal||{})[k];});
+    return head+
+      panel('Age','年代 分布', objRows(P.byAge, AGE, P.n, AGE_ORDER)) +
+      panel('Concern','悩み 選択率（複数選択）', objRows(P.concernTotal, CONCERN, P.n) + noteLine('診断で選ばれた悩みの「選択した人の率」— 仕入れ・開発の優先順位の一次指標')) +
+      '<div class="card panel"'+full+'><h2><span class="eyebrow">Concern × Age</span>悩み × 年代（各年代内の選択率）</h2>'+heatTable(topConcerns, CONCERN, P.concernByAge, P.byAge)+noteLine('色が濃いほど その年代で選ばれている悩み — 年代別の棚づくり・広告ターゲティングに')+'</div>' +
+      panel('Texture','求める質感（理想の仕上がり）', objRows(P.textureTotal, TEXTURE, P.n) + noteLine('ヘアケア開発の「目指す官能」— 広告の約束ワードにもそのまま使えます')) +
+      '<div class="card panel"'+full+'><h2><span class="eyebrow">Texture × Age</span>求める質感 × 年代</h2>'+heatTable(texKeys, TEXTURE, P.textureByAge, P.byAge)+'</div>' +
+      panel('Goal','髪の目標', objRows(P.goalTotal, GOAL, P.n)) +
+      panel('Wave','くせ・うねりの実態', objRows(P.waveTotal, WAVE, P.n) +
+        subhead('くせあり率 × 年代（湿気広がり〜全体くせ）') + rateByAge(P.kuseByAge, P.byAge) +
+        subhead('縮毛矯正中の率 × 年代') + rateByAge(P.straightenedByAge, P.byAge)) +
+      panel('Bleach','ブリーチ', subhead('経験率 × 年代（部分ブリーチ含む）') + rateByAge(P.bleachByAge, P.byAge) +
+        subhead('経験の内訳') + objRows((function(){var o={};for(var k in (P.bleachTotal||{}))if(k!=='none')o[k]=P.bleachTotal[k];return o;})(), BLEACH, P.n)) +
+      panel('Gray','白髪', subhead('白髪染め中の率 × 年代（白髪染めカラー含む）') + rateByAge(P.grayCareByAge, P.byAge) +
+        subhead('悩み「白髪染めの色落ち」選択率 × 年代') + rateByAge(P.grayConcernByAge, P.byAge) +
+        subhead('白髪染めの頻度') + objRows(P.grayFreqTotal, GRAYFREQ)) +
+      panel('Perm','パーマ・カール', subhead('パーマ現役率 × 年代（定期的にかけている）') + rateByAge(P.permNowByAge, P.byAge) +
+        subhead('カール意欲率 × 年代（仕上がり希望に「活かす/キープ」）') + rateByAge(P.curlWantByAge, P.byAge) +
+        subhead('パーマ経験率 × 年代（過去・毛先残り含む）') + rateByAge(P.permExpByAge, P.byAge) +
+        subhead('種類・持ち') + objRows(P.permTypeTotal, PERMTYPE) + objRows(P.permLooseTotal, PERMLOOSE) +
+        noteLine('カール需要の先行指標=「カール意欲」 実績指標=「現役率」— スタイリング剤開発と仕入れの両にらみで')) +
+      '<div class="card panel"'+full+'><h2><span class="eyebrow">Trend</span>月次トレンド（該当率の推移）</h2>'+trendSvg(P.monthly)+'</div>' +
+      panel('Styling','スタイリングで なりたい仕上がり（複数選択）', objRows(P.stylingFinishTotal, SFIN, P.n) + noteLine('スタイリング剤開発の需要マップ — 「ツヤ・濡れ感」「キープ」等の伸びに注目')) +
+      panel('Men','男性のスタイリング剤（使用・気になる）', objRows(P.menStylingTotal, MSTY) + noteLine('男性回答者内の構成比（男性のみに表示される質問）')) +
+      panel('Heat','熱ツールの使い方', objRows(P.toolsTotal, TOOLS, P.n) + subhead('設定温度') + objRows(P.tempTotal, TEMPL)) +
+      panel('Hair Map','髪質マップ（太さ × くせ）', heatTable(['thin','normal','thick'], THICK, P.thicknessWave,
+        (function(){var o={};for(var k in (P.thicknessWave||{})){var row=P.thicknessWave[k];for(var g in row)o[g]=(o[g]||0)+row[g];}return o;})(),
+        ['none','kuse','straightened'], WVGRP) + noteLine('列=くせ区分 セル=その区分内での太さ構成比 — 仕入れ(重さ/軽さ)の設計図')) +
+      panel('Scalp','頭皮タイプ', objRows(P.scalpTotal, SCALPT, P.n) + subhead('ヘッドスパ興味あり率 × 年代') + rateByAge(P.spaByAge, P.byAge)) +
+      panel('Straighten','縮毛矯正の頻度', objRows(P.straightenTotal, STRAIGHTEN, P.n)) +
+      '<div class="card panel"'+full+'><h2><span class="eyebrow">Concern → Texture</span>悩み → 求める質感 TOP12（広告コピーの素）</h2>'+pairTable(P.concernTexture, P.n)+'</div>';
   }
 
   function funnelTable(arr){
@@ -235,6 +427,7 @@
       panel('Funnel','予約・誘導クリック', barRows(data.ctaTarget||[], function(x){return TARGET[x.target]||x.target;})) +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Channel</span>チャネル別ファネル（流入→診断→予約）</h2>'+funnelTable(data.sourceFunnel||[])+'</div>' +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Trend</span>日次トレンド（診断完了）</h2>'+sparkline(data.daily||[])+'</div>' +
+      profilePanels(data.profile) +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Log</span>最近のアクティビティ（履歴）</h2>'+recentTable(data.recent||[])+'</div>';
 
     window.__seamData = data;
@@ -255,6 +448,18 @@
     (data.byLanding||[]).forEach(function(x){rows.push(['landing',x.landing,x.c]);});
     (data.sourceFunnel||[]).forEach(function(x){rows.push(['funnel:'+x.ref,'starts',x.starts]);rows.push(['funnel:'+x.ref,'completes',x.completes]);rows.push(['funnel:'+x.ref,'ctas',x.ctas]);});
     (data.daily||[]).forEach(function(x){rows.push(['daily',x.d,x.c]);});
+    // 診断プロファイル
+    var P=data.profile;
+    if(P&&P.n){
+      rows.push(['profile','n',P.n]);
+      var flat={age:P.byAge,concern:P.concernTotal,texture:P.textureTotal,goal:P.goalTotal,wave:P.waveTotal,bleach:P.bleachTotal,grayFreq:P.grayFreqTotal,perm:P.permTotal,permType:P.permTypeTotal,permLoose:P.permLooseTotal,straighten:P.straightenTotal,thickness:P.thicknessTotal,stylingFinish:P.stylingFinishTotal,menStyling:P.menStylingTotal,tools:P.toolsTotal,temp:P.tempTotal,scalp:P.scalpTotal,concernTexture:P.concernTexture};
+      for(var sec in flat){var o=flat[sec]||{};for(var k in o)rows.push(['profile:'+sec,k,o[k]]);}
+      var byAgeMaps={kuse:P.kuseByAge,straightened:P.straightenedByAge,bleach:P.bleachByAge,grayCare:P.grayCareByAge,grayConcern:P.grayConcernByAge,permNow:P.permNowByAge,permExp:P.permExpByAge,curlWant:P.curlWantByAge,spa:P.spaByAge};
+      for(var mk in byAgeMaps){var mo=byAgeMaps[mk]||{};for(var a in mo)rows.push(['profileRate:'+mk,a,mo[a]]);}
+      var mats={concernByAge:P.concernByAge,textureByAge:P.textureByAge,thicknessWave:P.thicknessWave};
+      for(var mn in mats){var mat=mats[mn]||{};for(var rk in mat){for(var ck in mat[rk])rows.push([mn+':'+rk,ck,mat[rk][ck]]);}}
+      for(var ym in (P.monthly||{})){var mrow=P.monthly[ym];for(var f in mrow)rows.push(['profileMonthly:'+ym,f,mrow[f]]);}
+    }
     return '﻿'+rows.map(function(r){return r.join(',');}).join('\n');
   }
 
