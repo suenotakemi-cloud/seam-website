@@ -178,6 +178,20 @@
   var CHEMX = {triple:'三重（ブリーチ×矯正×パーマ）',bleachStraight:'ブリーチ × 縮毛矯正',bleachPerm:'ブリーチ × パーマ',straightPerm:'縮毛矯正 × パーマ',bleachOnly:'ブリーチのみ',straightOnly:'縮毛矯正のみ',permOnly:'パーマのみ',none:'薬剤履歴なし'};
   var CHEMX_ORDER = ['triple','bleachStraight','bleachPerm','straightPerm','bleachOnly','straightOnly','permOnly','none'];
   var SECL = {spa_index_card:'トップ ヘッドスパ導線', spa_menus:'ヘッドスパ メニュー表示', spa_booking:'ヘッドスパ 予約セクション', spa_reserve_hpb:'ヘッドスパ 予約タップ', scalp_guide_cta:'頭皮ガイド→診断タップ'};
+  // ── ディーラー・仕入れ詳細 辞書(finder質問の実値と同期必須) ──
+  var LEN_ORDER = ['short','bob','shoulderUp','shoulderDown','chestUp','long'];
+  var LEN = {short:'ショート',bob:'ボブ',shoulderUp:'肩上',shoulderDown:'肩下',chestUp:'胸上',long:'胸下ロング'};
+  var SSENS = {veryHigh:'とても敏感',high:'やや敏感',normal:'あまり気にならない',low:'ほぼ気にならない'};
+  var ALLERGY = {none:'特になし',tingles:'カラー剤がしみることがある',diamine:'ジアミンアレルギー',patch:'必ずパッチテストをしている',other:'香料・その他のアレルギー',unknown:'わからない'};
+  var BLC = {ends:'毛先中心',midEnds:'中間〜毛先',whole:'全体にある',partial:'部分的にある',unknown:'わからない'};
+  var HPROT = {mist:'ミストを使う',milk:'ミルクを使う',oil:'オイルを使う',none:'何もつけない'};
+  var TROUBLE = {bibiri:'ビビり毛・チリつき',breakage:'切れ毛・ちぎれ',overBleach:'ブリーチで黄・オレンジ残り',blackdyeStuck:'黒染め後 明るくしづらい',fadeFast:'カラーがすぐ抜ける',permFail:'パーマがすぐ取れた',scalpTrouble:'頭皮トラブル経験'};
+  var ITEMS = {shampoo:'シャンプー(こだわり)',treatment:'トリートメント',mask:'ヘアマスク',oil:'ヘアオイル',milk:'ヘアミルク',scalp:'スカルプケア',essence:'美容液・エッセンス',heatMist:'アイロン前ミスト',none:'特に使っていない'};
+  var CITEM = {heavy:'重くなるのが嫌',oily:'ベタつきが気になる',short:'効果が1日続かない',fragrance:'香りが強すぎる',noChange:'変化が分かりにくい',price:'価格が高くて続けにくい'};
+  var LIFE = {outside:'外出が多い',desk:'デスクワーク中心',noTime:'朝セットに時間がない',humidity:'湿気・乾燥が気になる',nightCare:'夜ケアの時間がある',sleepWet:'乾かさず寝てしまう',none:'該当なし'};
+  var ENVL = {humid:'湿気が多い環境',dry:'乾燥した環境',sun:'海風・紫外線が強い',indoor:'室内中心'};
+  var WELL = {eyeStrain:'目が疲れる',neckShoulder:'肩・首がこる',mindFull:'気持ちが休まらない',sleepLight:'寝つきが悪い',bodyHeavy:'体がだるい'};
+  var DEVW = {loveGadgets:'最新の美容家電を使いたい',dryerUpgrade:'ドライヤー買い替え検討',ironUpgrade:'アイロン・コテ買い替え検討',showerHead:'シャワーヘッドに興味',faceDevice:'美顔器に興味'};
   var PAGEL = {'/':'トップ','/index.html':'トップ','/finder':'髪格診断','/finder.html':'髪格診断','/brand':'ブランド','/brand.html':'ブランド','/shop':'店舗一覧','/shop.html':'店舗一覧','/headspa':'ヘッドスパ','/headspa.html':'ヘッドスパ','/hairsalon':'ヘアサロン','/hairsalon.html':'ヘアサロン','/onlineshop':'オンラインショップ','/onlineshop.html':'オンラインショップ','/journal':'読みもの','/guide-scalp':'頭皮ガイド','/guide-scalp.html':'頭皮ガイド'};
   function pageLabel(p){ return PAGEL[p] || p; }
 
@@ -231,6 +245,20 @@
         spaByAge:scaled({teen:.30,'20s':.42,'30s':.48,'40s':.46,'50plus':.40,noanswer:.3}),
         concernTexture:{'dry|moist':94,'damage|smooth':71,'wave|moist':63,'frizz|moist':58,'damage|glossy':47,'rough|moist':44,'noShine|glossy':41,'wave|smooth':36,'colorFade|glossy':29,'volumeDown|airy':27,'grayFade|glossy':22,'thinning|airy':17},
         chemCross:{none:340,bleachOnly:128,straightOnly:96,permOnly:44,bleachStraight:71,bleachPerm:38,straightPerm:27,triple:26},
+        lengthTotal:{short:62,bob:139,shoulderUp:108,shoulderDown:170,chestUp:154,long:137},
+        scalpSensTotal:{veryHigh:54,high:200,normal:385,low:131},
+        allergyTotal:{none:495,tingles:118,patch:62,unknown:54,diamine:23,other:18},
+        bleachLocTotal:{ends:77,midEnds:62,partial:46,whole:31,unknown:30},
+        heatProtectTotal:{oil:246,milk:169,mist:131,none:224},
+        troubleTotal:{fadeFast:216,breakage:154,overBleach:100,bibiri:69,permFail:62,blackdyeStuck:46,scalpTrouble:39},
+        bibiriByAge:scaled({teen:.06,'20s':.12,'30s':.10,'40s':.07,'50plus':.05,noanswer:.06}),
+        itemsTotal:{treatment:493,oil:439,shampoo:377,milk:200,mask:185,heatMist:92,essence:85,scalp:69,none:46},
+        concernsItemTotal:{noChange:223,price:208,heavy:154,oily:100,short:92,fragrance:54},
+        lifestyleTotal:{noTime:262,desk:231,humidity:216,outside:200,nightCare:154,sleepWet:100},
+        envTotal:{indoor:346,humid:231,dry:154,sun:39},
+        wellnessTotal:{neckShoulder:331,eyeStrain:277,sleepLight:123,mindFull:100,bodyHeavy:85},
+        deviceTotal:{dryerUpgrade:200,loveGadgets:154,ironUpgrade:131,showerHead:92,faceDevice:69},
+        deviceWantByAge:scaled({teen:.38,'20s':.45,'30s':.42,'40s':.36,'50plus':.28,noanswer:.3}),
         monthly:monthly
       };
     }
@@ -377,6 +405,26 @@
   function noteLine(t){ return '<p class="muted" style="margin:10px 0 0;line-height:1.8">'+t+'</p>'; }
   function subhead(t){ return '<p style="font-size:11.5px;font-weight:600;color:var(--char);letter-spacing:.03em;margin:14px 0 4px">'+esc(t)+'</p>'; }
 
+  // ディーラー・仕入れ詳細(使用実態/不満/トラブル/薬剤反応/家電需要)
+  function dealerPanels(P){
+    if(!P || !P.n) return '';
+    var full=' style="grid-column:1/-1"';
+    var has = P.lengthTotal && Object.keys(P.lengthTotal).length;
+    var pending = has ? '' : noteLine('※ この詳細ブロックは本更新(v33)以降の診断完了から蓄積されます — 既存データには含まれません');
+    return '<div class="card panel"'+full+'><h2><span class="eyebrow">Dealer</span>ディーラー・仕入れ詳細 <span class="pill">流通・棚づくり用</span></h2>'+
+      '<p class="muted" style="line-height:1.9">お客さまが「いま何を使い・何に不満で・何を欲しがっているか」— 卸・メーカー商談と仕入れ判断の実測（複数選択は選択率）</p>'+pending+'</div>'+
+      panel('Length','髪の長さ 分布', objRows(P.lengthTotal, LEN, P.n, LEN_ORDER) + noteLine('ロング比率=アウトバス・マスク需要 / ショート比率=スタイリング剤需要の一次指標')) +
+      panel('Home Care','使用中のホームケア（複数選択）', objRows(P.itemsTotal, ITEMS, P.n) + noteLine('カテゴリ浸透率 — 低いカテゴリが棚の伸びしろ')) +
+      panel('Complaint','今のアイテムへの不満（乗り換えシグナル）', objRows(P.concernsItemTotal, CITEM, P.n) + noteLine('スイッチング動機の実数 — 「重い・ベタつく」が多ければ軽質感提案が刺さる')) +
+      panel('Trouble','過去のヘアトラブル経験', objRows(P.troubleTotal, TROUBLE, P.n) + subhead('ビビり毛経験率 × 年代') + rateByAge(P.bibiriByAge, P.byAge) + noteLine('ハイダメージ経験層の実サイズ — 補修商材・施術メニュー設計の根拠')) +
+      panel('Sensitivity','頭皮の敏感さ・薬剤反応', objRows(P.scalpSensTotal, SSENS, P.n) + subhead('薬剤反応・アレルギー') + objRows(P.allergyTotal, ALLERGY, P.n) + noteLine('低刺激・ジアミンフリー需要の実サイズ')) +
+      panel('Bleach Map','ブリーチ残存箇所', objRows(P.bleachLocTotal, BLC, P.n) + noteLine('毛先中心か全体か — ケアブリーチ・補修剤の提案粒度に')) +
+      panel('Heat Care','熱保護アイテムの使用実態', objRows(P.heatProtectTotal, HPROT, P.n) + noteLine('「何もつけない」率 = 熱保護カテゴリの未開拓市場')) +
+      panel('Device','美容家電の希望', objRows(P.deviceTotal, DEVW, P.n) + subhead('家電希望あり率 × 年代') + rateByAge(P.deviceWantByAge, P.byAge) + noteLine('ReFa・KINUJO等 デバイス仕入れと売場設計の根拠')) +
+      panel('Lifestyle','ライフスタイル・環境', objRows(P.lifestyleTotal, LIFE, P.n) + subhead('過ごす環境') + objRows(P.envTotal, ENVL, P.n) + noteLine('「朝時間がない」率=時短商材 / 「乾かさず寝る」率=ナイトケア商材の根拠')) +
+      panel('Wellness','ウェルネス症状（スパ文脈）', objRows(P.wellnessTotal, WELL, P.n) + noteLine('肩こり・眼精疲労の率 — ヘッドスパ訴求と店販クロスセルの素'));
+  }
+
   // プロファイル分析セクション（仕入れ・ヘアケア/スタイリング剤開発・広告のリソース）
   function profilePanels(P){
     if(!P) return '';
@@ -419,6 +467,7 @@
       panel('Straighten','縮毛矯正の頻度', objRows(P.straightenTotal, STRAIGHTEN, P.n)) +
       panel('Chemical','薬剤履歴の重なり（ブリーチ×矯正×パーマ）', objRows(P.chemCross, CHEMX, P.n, CHEMX_ORDER) +
         noteLine('複合履歴毛（2つ以上の重なり）の実サイズ — ハイダメージ向け開発・ビビリ毛リスク層の把握・施術メニュー設計の基礎数字')) +
+      dealerPanels(P) +
       '<div class="card panel"'+full+'><h2><span class="eyebrow">Concern → Texture</span>悩み → 求める質感 TOP12（広告コピーの素）</h2>'+pairTable(P.concernTexture, P.n)+'</div>';
   }
 
@@ -567,9 +616,20 @@
       })() +
       rblock('スタイリングで なりたい仕上がり（複数選択）', objRows(P.stylingFinishTotal, SFIN, P.n));
     var foot='<div class="rfoot">調査概要 — 収集方法: SEAM「髪格診断」（店頭タブレット/スマートフォンのセルフ回答・全国7店舗来店者およびオンライン利用者）／集計対象: プロファイル付き診断完了のみ／個人を特定できる情報は収集していません／悩み・仕上がり希望など複数選択項目の率は「選択した人の割合」のため合計100%を超えます／各表の n= は分母 セル内下段は件数／小規模セル（n&lt;30）は参考値としてお読みください<br>© SEAM（株式会社hanico）— 本レポートの数値・構成の無断転載はご遠慮ください</div>';
+    var hasDealer = P.lengthTotal && Object.keys(P.lengthTotal).length;
+    var dealer = !hasDealer ? '' :
+      rblock('髪の長さ 分布', objRows(P.lengthTotal, LEN, P.n, LEN_ORDER)) +
+      rblock('使用中のホームケア（カテゴリ浸透率）', objRows(P.itemsTotal, ITEMS, P.n)) +
+      rblock('今のアイテムへの不満 — 乗り換えシグナル', objRows(P.concernsItemTotal, CITEM, P.n)) +
+      rblock('過去のヘアトラブル経験 ＋ ビビり毛率×年代', objRows(P.troubleTotal, TROUBLE, P.n) + rateByAge(P.bibiriByAge, P.byAge)) +
+      rblock('頭皮の敏感さ・薬剤反応（低刺激需要）', objRows(P.scalpSensTotal, SSENS, P.n) + objRows(P.allergyTotal, ALLERGY, P.n)) +
+      rblock('熱保護アイテムの使用実態', objRows(P.heatProtectTotal, HPROT, P.n)) +
+      rblock('美容家電の需要 ＋ 希望あり率×年代', objRows(P.deviceTotal, DEVW, P.n) + rateByAge(P.deviceWantByAge, P.byAge)) +
+      rblock('ライフスタイル・環境', objRows(P.lifestyleTotal, LIFE, P.n) + objRows(P.envTotal, ENVL, P.n));
     return head+small+hl+
       rsec('Marketing','マーケティング観点','誰が・何に悩み・何を求めているか — ターゲティング/コピー/棚づくりの基礎数字',mkt)+
       rsec('Beauty R&amp;D','美容・研究開発観点','髪の物理実態と薬剤履歴 — 処方設計/ダメージケア開発/施術メニューの基礎数字',rd)+
+      (dealer ? rsec('Distribution','流通・ディーラー観点','いま使っているもの・不満・トラブル経験・家電需要 — 卸商談/棚づくり/共同企画の基礎数字',dealer) : '')+
       foot;
   }
   function openReport(){
@@ -666,9 +726,9 @@
     var P=data.profile;
     if(P&&P.n){
       rows.push(['profile','n',P.n]);
-      var flat={age:P.byAge,concern:P.concernTotal,texture:P.textureTotal,goal:P.goalTotal,wave:P.waveTotal,bleach:P.bleachTotal,grayFreq:P.grayFreqTotal,perm:P.permTotal,permType:P.permTypeTotal,permLoose:P.permLooseTotal,straighten:P.straightenTotal,thickness:P.thicknessTotal,stylingFinish:P.stylingFinishTotal,menStyling:P.menStylingTotal,tools:P.toolsTotal,temp:P.tempTotal,scalp:P.scalpTotal,concernTexture:P.concernTexture,chemCross:P.chemCross};
+      var flat={age:P.byAge,concern:P.concernTotal,texture:P.textureTotal,goal:P.goalTotal,wave:P.waveTotal,bleach:P.bleachTotal,grayFreq:P.grayFreqTotal,perm:P.permTotal,permType:P.permTypeTotal,permLoose:P.permLooseTotal,straighten:P.straightenTotal,thickness:P.thicknessTotal,stylingFinish:P.stylingFinishTotal,menStyling:P.menStylingTotal,tools:P.toolsTotal,temp:P.tempTotal,scalp:P.scalpTotal,concernTexture:P.concernTexture,chemCross:P.chemCross,length:P.lengthTotal,scalpSens:P.scalpSensTotal,allergy:P.allergyTotal,bleachLoc:P.bleachLocTotal,heatProtect:P.heatProtectTotal,trouble:P.troubleTotal,homeItems:P.itemsTotal,itemComplaint:P.concernsItemTotal,lifestyle:P.lifestyleTotal,env:P.envTotal,wellness:P.wellnessTotal,deviceWish:P.deviceTotal};
       for(var sec in flat){var o=flat[sec]||{};for(var k in o)rows.push(['profile:'+sec,k,o[k]]);}
-      var byAgeMaps={kuse:P.kuseByAge,straightened:P.straightenedByAge,bleach:P.bleachByAge,grayCare:P.grayCareByAge,grayConcern:P.grayConcernByAge,permNow:P.permNowByAge,permExp:P.permExpByAge,curlWant:P.curlWantByAge,spa:P.spaByAge};
+      var byAgeMaps={kuse:P.kuseByAge,straightened:P.straightenedByAge,bleach:P.bleachByAge,grayCare:P.grayCareByAge,grayConcern:P.grayConcernByAge,permNow:P.permNowByAge,permExp:P.permExpByAge,curlWant:P.curlWantByAge,spa:P.spaByAge,bibiri:P.bibiriByAge,deviceWant:P.deviceWantByAge};
       for(var mk in byAgeMaps){var mo=byAgeMaps[mk]||{};for(var a in mo)rows.push(['profileRate:'+mk,a,mo[a]]);}
       var mats={concernByAge:P.concernByAge,textureByAge:P.textureByAge,thicknessWave:P.thicknessWave};
       for(var mn in mats){var mat=mats[mn]||{};for(var rk in mat){for(var ck in mat[rk])rows.push([mn+':'+rk,ck,mat[rk][ck]]);}}

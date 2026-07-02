@@ -29,7 +29,7 @@ export async function onRequestPost(context) {
     if (ev.utm_medium) metaObj.utm_medium = String(ev.utm_medium).slice(0, 24);
     if (ev.lang)       metaObj.lang = String(ev.lang).slice(0, 8);
     if (ev.meta && typeof ev.meta === 'object') Object.assign(metaObj, ev.meta);
-    const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj).slice(0, 1024) : null;
+    const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj).slice(0, 2048) : null; // v2詳細プロファイル対応で上限拡大(途中切断=壊れJSONを防ぐ余裕)
 
     let stored = false;
 

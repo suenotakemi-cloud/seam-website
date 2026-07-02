@@ -45,6 +45,17 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     scalpTotal: {}, spaByAge: {},
     concernTexture: {},                     // 「悩み→求める質感」ペア
     chemCross: {},                          // 薬剤履歴の重なり(ブリーチ×矯正現役×パーマ現役の8区分)
+    // ── ディーラー・仕入れ詳細(v2 追加キー: ln ss sa[] blc hp[] ht[] it[] ci[] ls[] ev wl[] dv[]) ──
+    lengthTotal: {},                        // 髪の長さ
+    scalpSensTotal: {}, allergyTotal: {},   // 頭皮の敏感さ / 薬剤反応・アレルギー
+    bleachLocTotal: {},                     // ブリーチ残存箇所
+    heatProtectTotal: {},                   // 熱保護アイテムの使用
+    troubleTotal: {}, bibiriByAge: {},      // 過去のヘアトラブル / ビビリ毛経験(年代別 分子)
+    itemsTotal: {},                         // 使用中ホームケアアイテム
+    concernsItemTotal: {},                  // 今のアイテムへの不満(スイッチングシグナル)
+    lifestyleTotal: {}, envTotal: {},       // ライフスタイル / 環境
+    wellnessTotal: {},                      // ウェルネス症状(スパ商材文脈)
+    deviceTotal: {}, deviceWantByAge: {},   // 美容家電の希望 / 希望あり率(年代別 分子)
     monthly: {},                            // YYYY-MM → {n,kuse,bleach,gray,permNow,curlWant}
   };
   for (const row of rows) {
@@ -100,6 +111,23 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     inc(P.tempTotal, m.tp);
     inc(P.scalpTotal, m.sc);
     if (m.hs === 'yes') inc(P.spaByAge, age);
+    // ── ディーラー・仕入れ詳細 ──
+    inc(P.lengthTotal, m.ln);
+    inc(P.scalpSensTotal, m.ss);
+    for (const v of (Array.isArray(m.sa) ? m.sa : [])) inc(P.allergyTotal, v);
+    inc(P.bleachLocTotal, m.blc);
+    for (const v of (Array.isArray(m.hp) ? m.hp : [])) inc(P.heatProtectTotal, v);
+    const ht = Array.isArray(m.ht) ? m.ht : [];
+    for (const v of ht) if (v !== 'none') inc(P.troubleTotal, v);
+    if (ht.indexOf('bibiri') > -1) inc(P.bibiriByAge, age);
+    for (const v of (Array.isArray(m.it) ? m.it : [])) inc(P.itemsTotal, v);
+    for (const v of (Array.isArray(m.ci) ? m.ci : [])) if (v !== 'none') inc(P.concernsItemTotal, v);
+    for (const v of (Array.isArray(m.ls) ? m.ls : [])) inc(P.lifestyleTotal, v);
+    inc(P.envTotal, m.ev);
+    for (const v of (Array.isArray(m.wl) ? m.wl : [])) if (v !== 'well') inc(P.wellnessTotal, v);
+    const dv = (Array.isArray(m.dv) ? m.dv : []).filter(v => v !== 'none');
+    for (const v of dv) inc(P.deviceTotal, v);
+    if (dv.length) inc(P.deviceWantByAge, age);
     // 悩み × 質感（広告コピー素材: 何に悩み 何を求めるか）
     if (m.gt) for (const c of cs) inc(P.concernTexture, c + '|' + m.gt);
     // 月次トレンド
