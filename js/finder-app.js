@@ -355,11 +355,12 @@ const Q = [{
   }]
 }, {
   id: 'straighten',
-  type: 'card-history',
+  type: 'straighten-flow',
   eyebrow: 'Straightening',
-  title: '縮毛矯正は、年にどれくらいかけますか？',
-  note: '頻度が高いほど薬剤が髪に蓄積し、ダメージが進行します。過去にかけて毛先に残っている場合も「はい」を選んでください。',
-  yesPrompt: '縮毛矯正・ストレート系をしたことがありますか？（過去・毛先に残っている場合も含む）',
+  title: '髪質改善・縮毛矯正・ストレートパーマは していますか？',
+  note: 'サロンによってメニューの呼び方がちがうため、髪質改善も含めてお聞きします。今後のカラーやブリーチの計画にもかかわる、大切な履歴です。',
+  // 最終コードは従来と同一(none/past/yearly/biannual/quarterly/frequent/kaizen)。
+  // optionsはスコア計算・カルテのラベル参照用に維持し、画面はStraightenFlowが多段で聞く
   options: [{
     v: 'none',
     label: 'していない',
@@ -393,7 +394,7 @@ const Q = [{
     }
   }, {
     v: 'kaizen',
-    label: '髪質改善・酸性ストレートを定期的に',
+    label: '髪質改善(トリートメント系)を定期的に',
     score: {
       damage: 1,
       heatDamage: 1
@@ -405,6 +406,63 @@ const Q = [{
       damage: 1,
       frizz: 1
     }
+  }],
+  gateOptions: [{
+    v: 'doing',
+    label: 'はい している',
+    sub: '定期的でなくてもかけていれば'
+  }, {
+    v: 'none',
+    label: 'いいえ していない',
+    sub: '一度もしたことがない'
+  }, {
+    v: 'past',
+    label: '以前はしていた',
+    sub: '今はしていない(毛先に残っていても)'
+  }],
+  menuPrompt: 'サロンでは、なんというメニューでしたか？',
+  menuOptions: [{
+    v: 'straight',
+    label: '縮毛矯正・ストレートパーマ',
+    sub: '酸性ストレートもこちら'
+  }, {
+    v: 'kaizen',
+    label: '髪質改善',
+    sub: 'トリートメント系のメニュー名'
+  }, {
+    v: 'unsure',
+    label: 'よくわからない',
+    sub: 'メニュー名を覚えていない'
+  }],
+  finishPrompt: '仕上がりは、どちらに近いですか？',
+  finishNote: 'サロンによっては縮毛矯正を「髪質改善」と呼ぶことがあるため、仕上がりでお聞きしています。',
+  finishOptions: [{
+    v: 'straight',
+    label: 'くせが完璧にとれて 毛先までピンとまっすぐ',
+    sub: 'アイロンをかけたような直線に仕上がる'
+  }, {
+    v: 'soft',
+    label: 'うねり・広がりがおさまって扱いやすくなる',
+    sub: '毛先は自然な丸み。ボリュームダウンとツヤが中心'
+  }],
+  hiddenNote: '仕上がりから、縮毛矯正タイプとしておすすめを整えます。カラーとの付き合い方も結果でお伝えします。',
+  freqPrompt: 'どのくらいの頻度でかけていますか？',
+  freqOptions: [{
+    v: 'yearly',
+    label: '年1回程度',
+    sub: '特別な時のみ'
+  }, {
+    v: 'biannual',
+    label: '半年に1回',
+    sub: '年2回ペース'
+  }, {
+    v: 'quarterly',
+    label: '3ヶ月に1回',
+    sub: '年3〜4回・定期的'
+  }, {
+    v: 'frequent',
+    label: '2ヶ月に1回以上',
+    sub: '年6回以上・頻繁'
   }]
 }, {
   id: 'perm',
@@ -1935,6 +1993,8 @@ function buildProfileMeta(a) {
     cf: a.colorFreq,
     bl: a.bleach,
     st: a.straighten,
+    // sth=1: 隠れ矯正(サロン呼称は髪質改善・仕上がりは矯正系)。stはその場合も頻度コード
+    sth: a.straightenHidden ? 1 : undefined,
     pm: a.perm,
     pt: a.permType,
     plz: a.permLoose,
@@ -5595,7 +5655,9 @@ function ProgressBar({
 function QuestionCard({
   question,
   value,
-  onChange
+  onChange,
+  onSet,
+  answers
 }) {
   const {
     type
@@ -5639,6 +5701,13 @@ function QuestionCard({
     q: question,
     value: value,
     onChange: onChange
+  });
+  if (type === 'straighten-flow') return /*#__PURE__*/React.createElement(StraightenFlow, {
+    q: question,
+    value: value,
+    onChange: onChange,
+    onSet: onSet,
+    answers: answers
   });
   return null;
 }
@@ -5872,6 +5941,189 @@ function CardHistory({
       strokeLinejoin: "round"
     }))));
   }))));
+}
+
+/* ---- Straighten flow (はい/いいえ → メニュー名 → 仕上がり判別 → 頻度) ----
+   髪質改善はサロンによって「トリートメント系」と「弱い縮毛矯正」の両方の呼び名に使われるため、
+   本人が矯正と気づいていないケースを仕上がり(毛先までまっすぐか)で判別する。
+   最終値は従来コード(none/past/yearly/biannual/quarterly/frequent/kaizen)のまま=下流ロジック不変。
+   隠れ矯正のときだけ answers.straightenHidden=true を併記(カルテ・アドバイス・meta sthで使用)。 */
+function StraightenFlow({
+  q,
+  value,
+  onChange,
+  onSet,
+  answers
+}) {
+  const FREQ_CODES = ['yearly', 'biannual', 'quarterly', 'frequent'];
+  const restore = () => {
+    if (value === 'none') return {
+      gate: 'none'
+    };
+    if (value === 'past') return {
+      gate: 'past'
+    };
+    if (value === 'kaizen') return {
+      gate: 'doing',
+      menu: answers && answers.straightenMenu || 'kaizen',
+      finish: 'soft'
+    };
+    if (FREQ_CODES.includes(value)) {
+      const menu = answers && answers.straightenMenu || 'straight';
+      return {
+        gate: 'doing',
+        menu,
+        finish: menu === 'straight' ? undefined : 'straight'
+      };
+    }
+    return {};
+  };
+  const [flow, setFlow] = useState(restore);
+  const gate = flow.gate,
+    menu = flow.menu,
+    finish = flow.finish;
+  const commit = (next, finalValue, hidden) => {
+    setFlow(next);
+    if (onSet) {
+      onSet('straightenMenu', next.gate === 'doing' ? next.menu : undefined);
+      onSet('straightenHidden', hidden === true ? true : undefined);
+    }
+    onChange(finalValue);
+  };
+  const pickGate = v => {
+    if (v === 'doing') commit({
+      gate: 'doing'
+    }, undefined, false);else commit({
+      gate: v
+    }, v, false);
+  };
+  const pickMenu = v => commit({
+    gate,
+    menu: v
+  }, undefined, false);
+  const pickFinish = v => {
+    if (v === 'soft') commit({
+      gate,
+      menu,
+      finish: v
+    }, 'kaizen', false);else commit({
+      gate,
+      menu,
+      finish: v
+    }, undefined, true); // 実質矯正 → 頻度へ
+  };
+  const pickFreq = v => commit({
+    gate,
+    menu,
+    finish
+  }, v, menu !== 'straight');
+  const showMenu = gate === 'doing';
+  const showFinish = gate === 'doing' && (menu === 'kaizen' || menu === 'unsure');
+  const showFreq = gate === 'doing' && (menu === 'straight' || finish === 'straight');
+  const freqValue = FREQ_CODES.includes(value) ? value : undefined;
+  const isHidden = showFreq && menu !== 'straight';
+  const tileCls = active => ['group text-left px-4 sm:px-5 py-3.5 border transition-all flex items-center gap-4 rounded-[2px]', active ? 'bg-ink text-ivory border-ink' : 'bg-white/70 text-charcoal border-line hover:border-ink'].join(' ');
+  const Tile = ({
+    active,
+    label,
+    sub,
+    onClick,
+    index
+  }) => /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: onClick,
+    className: tileCls(active)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: ['font-mono tracking-widest2 text-[10.5px] nums shrink-0', active ? 'text-goldLight' : 'text-charcoal/35'].join(' ')
+  }, String(index + 1).padStart(2, '0')), /*#__PURE__*/React.createElement("span", {
+    className: "flex-1 min-w-0"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: ['block font-serif text-[15px] sm:text-[16px] leading-snug', active ? 'text-ivory' : 'text-ink'].join(' ')
+  }, label), sub && /*#__PURE__*/React.createElement("span", {
+    className: ['block mt-0.5 text-[11px] leading-snug', active ? 'text-ivory/70' : 'text-charcoal/55'].join(' ')
+  }, sub)), /*#__PURE__*/React.createElement("span", {
+    className: ['w-4 h-4 border inline-flex items-center justify-center shrink-0 rounded-[1px]', active ? 'border-ivory bg-ivory' : 'border-line group-hover:border-ink'].join(' '),
+    "aria-hidden": true
+  }, active && /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 12 12",
+    className: "w-2.5 h-2.5"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M2 6.5 L 5 9 L 10 3",
+    stroke: "#1A1815",
+    strokeWidth: "1.5",
+    fill: "none",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }))));
+  const StepHead = ({
+    text,
+    note
+  }) => /*#__PURE__*/React.createElement("div", {
+    className: "mb-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-3 mb-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-mono tracking-widest2 text-[10px] uppercase text-gold"
+  }, "\u2014 Detail"), /*#__PURE__*/React.createElement("span", {
+    className: "h-px flex-1 bg-line"
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "text-[13px] text-ink font-serif"
+  }, text), note && /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-[11.5px] text-charcoal/60 leading-relaxed"
+  }, note));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mt-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 gap-1.5"
+  }, (q.gateOptions || []).map((o, i) => /*#__PURE__*/React.createElement(Tile, {
+    key: o.v,
+    index: i,
+    active: gate === o.v,
+    label: o.label,
+    sub: o.sub,
+    onClick: () => pickGate(o.v)
+  }))), showMenu && /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 anim-fade-up"
+  }, /*#__PURE__*/React.createElement(StepHead, {
+    text: q.menuPrompt
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 gap-1.5"
+  }, (q.menuOptions || []).map((o, i) => /*#__PURE__*/React.createElement(Tile, {
+    key: o.v,
+    index: i,
+    active: menu === o.v,
+    label: o.label,
+    sub: o.sub,
+    onClick: () => pickMenu(o.v)
+  })))), showFinish && /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 anim-fade-up"
+  }, /*#__PURE__*/React.createElement(StepHead, {
+    text: q.finishPrompt,
+    note: q.finishNote
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 gap-1.5"
+  }, (q.finishOptions || []).map((o, i) => /*#__PURE__*/React.createElement(Tile, {
+    key: o.v,
+    index: i,
+    active: finish === o.v,
+    label: o.label,
+    sub: o.sub,
+    onClick: () => pickFinish(o.v)
+  })))), showFreq && /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 anim-fade-up"
+  }, /*#__PURE__*/React.createElement(StepHead, {
+    text: q.freqPrompt,
+    note: isHidden ? q.hiddenNote : undefined
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-1 sm:grid-cols-2 gap-1.5"
+  }, (q.freqOptions || []).map((o, i) => /*#__PURE__*/React.createElement(Tile, {
+    key: o.v,
+    index: i,
+    active: freqValue === o.v,
+    label: o.label,
+    sub: o.sub,
+    onClick: () => pickFreq(o.v)
+  })))));
 }
 
 /* ---- Card multi (with exclusive option) — editorial tiles ---- */
@@ -6358,6 +6610,14 @@ function Quiz({
     ...prev,
     [q.id]: v
   }));
+  // straighten-flow等が併記する補助キー(undefinedで削除)
+  const setExtra = (k, v) => setAnswers(prev => {
+    const next = {
+      ...prev
+    };
+    if (v === undefined) delete next[k];else next[k] = v;
+    return next;
+  });
   const next = () => {
     if (!valid) return;
     if (safeIdx >= total - 1) onComplete();else setIdx(safeIdx + 1);
@@ -6431,7 +6691,9 @@ function Quiz({
   }, q.note), /*#__PURE__*/React.createElement(QuestionCard, {
     question: q,
     value: value,
-    onChange: setValue
+    onChange: setValue,
+    onSet: setExtra,
+    answers: answers
   }))), /*#__PURE__*/React.createElement("nav", {
     className: "fixed bottom-0 inset-x-0 bg-gradient-to-t from-ivory via-ivory/95 to-ivory/0 pt-6 pb-5 sm:pb-7 z-20"
   }, /*#__PURE__*/React.createElement("div", {
@@ -6482,6 +6744,14 @@ function QuizDeep({
     ...prev,
     [q.id]: v
   }));
+  // straighten-flow等が併記する補助キー(undefinedで削除)
+  const setExtra = (k, v) => setAnswers(prev => {
+    const next = {
+      ...prev
+    };
+    if (v === undefined) delete next[k];else next[k] = v;
+    return next;
+  });
   const next = () => {
     if (!valid) return;
     if (safeIdx >= total - 1) onComplete();else setIdx(safeIdx + 1);
@@ -6554,7 +6824,9 @@ function QuizDeep({
   }, q.note), /*#__PURE__*/React.createElement(QuestionCard, {
     question: q,
     value: value,
-    onChange: setValue
+    onChange: setValue,
+    onSet: setExtra,
+    answers: answers
   }))), /*#__PURE__*/React.createElement("nav", {
     className: "fixed bottom-0 inset-x-0 bg-gradient-to-t from-ivory via-ivory/95 to-ivory/0 pt-6 pb-5 sm:pb-7 z-20"
   }, /*#__PURE__*/React.createElement("div", {
@@ -10697,7 +10969,7 @@ const STRAIGHTEN_LABEL = {
   biannual: '半年に1回',
   quarterly: '3ヶ月に1回',
   frequent: '2ヶ月に1回以上(年6回以上・頻繁)',
-  kaizen: '髪質改善・酸性ストレートを定期的に',
+  kaizen: '髪質改善(トリートメント系)を定期的に',
   past: '過去にしていた'
 };
 const PERM_LABEL = {
@@ -11136,7 +11408,12 @@ function CounselingSheet({
 
   // パーマ・矯正履歴
   const permItems = [];
-  if (a.straighten) permItems.push(['縮毛矯正', lookupLabelShort('straighten', a.straighten)]);
+  if (a.straighten) {
+    let stLabel = lookupLabelShort('straighten', a.straighten);
+    // 隠れ矯正: サロンでは髪質改善と案内されているが仕上がりは矯正系 — 美容師への最重要申し送り
+    if (a.straightenHidden) stLabel += '（サロン呼称は髪質改善・仕上がりは矯正系）';
+    permItems.push(['縮毛矯正・髪質改善', stLabel]);
+  }
   if (a.perm) permItems.push(['パーマ', lookupLabelShort('perm', a.perm)]);
   if (a.permType) permItems.push(['パーマの種類', lookupLabel('permType', a.permType)]);
   if (a.permLoose) permItems.push(['パーマの保ち', lookupLabel('permLoose', a.permLoose)]);
@@ -11619,7 +11896,7 @@ function ConditionalAdvice({
 
   // ── 1) ブリーチ歴あり × 伸ばしたい / セミロング以上 → 毛先専用ケア
   const hasBleach = ['within3m', 'within1y', 'multi', 'highlight'].includes(a.bleach);
-  const wantsLength = ['semi_long', 'long', 'medium'].includes(a.length) || a.idealLength && ['semi_long', 'long'].includes(a.idealLength);
+  const wantsLength = ['shoulderDown', 'chestUp', 'long'].includes(a.length);
   if (hasBleach && wantsLength) {
     cards.push({
       tag: 'BLEACH × LENGTH',
@@ -11636,8 +11913,9 @@ function ConditionalAdvice({
   }
 
   // ── 2) 縮毛矯正している × まだ"くせ"がある or "うねり"の悩み → 肯定 + 二段ケア
-  const isStraightened = a.wave === 'straightened' || a.straighten === 'past' || a.straighten === 'recent';
-  const stillHasFrizz = (a.concern || []).some(c => ['frizz', 'dryness', 'damage'].includes(c));
+  // (kaizen=トリートメント系は「矯正された毛先」の前提が合わないため除外)
+  const isStraightened = a.wave === 'straightened' || a.straighten && !['none', 'kaizen'].includes(a.straighten);
+  const stillHasFrizz = (a.concerns || []).some(c => ['frizz', 'wave', 'dry', 'damage'].includes(c));
   if (isStraightened && stillHasFrizz) {
     cards.push({
       tag: 'STRAIGHTENED × WAVE',
@@ -11655,10 +11933,35 @@ function ConditionalAdvice({
     });
   }
 
+  // ── 2.5) 縮毛矯正(隠れ矯正含む・過去も) → カラー・ブリーチの見通しを先に伝える
+  // 矯正部分はカラーが明るくなりにくく強い薬剤に耐えにくい=明るくしたい予定があるなら先にサロンへ伝える
+  const stActiveOrPast = a.straighten && !['none', 'kaizen'].includes(a.straighten);
+  if (stActiveOrPast) {
+    const hiddenIntro = a.straightenHidden ? `いま受けている「髪質改善」は、仕上がりから見ると縮毛矯正タイプの可能性があります。
+サロンによって呼び方がちがうだけで、髪の内部で起きていることは矯正と同じ場合があります。
+まずそれを知っておくことが、これからの髪を守る第一歩です。
+
+` : '';
+    cards.push({
+      tag: 'STRAIGHTEN × COLOR PLAN',
+      title: '矯正毛とカラーの、これからの話。',
+      body: hiddenIntro + `縮毛矯正がかかっている部分は、薬剤と熱で内部構造が変わっているため、
+カラーが思ったより明るくなりにくいことがあります。
+ブリーチのような強い薬剤では負担が大きく、切れ毛やビビリ毛につながることも。
+
+「いつか明るくしたい」「ブリーチのデザインも楽しみたい」——その気持ちが少しでもあるなら、
+次にカラーや矯正を相談するとき、先にその目標を美容師へ伝えてください。
+矯正の範囲や薬剤の強さを、先の予定から逆算して設計できます。
+
+伸ばしたい髪も、楽しみたい色も、あとから諦めないために。
+履歴を知っている人と一緒に決めていくのが、いちばんの近道です。`
+    });
+  }
+
   // ── 3) カラー褪色が悩み × アイロン高温使用 → 140度推奨
-  const hasColorFade = (a.concern || []).includes('colorFade');
-  const usesIron = (a.heatTools?.tools || []).some(t => /iron|curling|wave_iron/i.test(t));
-  const hot = ['t180', 't200', 'high', 'very_high'].includes(a.heatTools?.temp) || ['t180', 't200'].includes(a.styling?.temp);
+  const hasColorFade = (a.concerns || []).includes('colorFade');
+  const usesIron = (a.styling?.tools || []).some(t => /iron|curl/i.test(t));
+  const hot = ['t180', 't200'].includes(a.styling?.temp);
   if (hasColorFade && usesIron) {
     cards.push({
       tag: 'COLOR × HEAT',
