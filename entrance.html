@@ -300,6 +300,33 @@
       color: #666;
     }
 
+    /* サロン利用のお客様向けボタン（スタッフ呼び出し） */
+    .btn-salon {
+      margin-top: 1.4rem;
+      width: 100%;
+      max-width: 480px;
+      background: linear-gradient(145deg, rgba(201,169,110,0.16), rgba(201,169,110,0.06));
+      border: 1.5px solid var(--gold-dim);
+      border-radius: 14px;
+      color: var(--gold);
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 1.1rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-salon .en {
+      display: block;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      color: #a08a5f;
+      text-transform: uppercase;
+      margin-top: 0.3rem;
+      font-weight: 500;
+    }
+    .btn-salon:active { background: rgba(201,169,110,0.28); }
+
     /* ─── 結果オーバーレイ（お客様向け＝ゴールドVIP演出） ─── */
     .result-overlay {
       position: fixed;
@@ -394,6 +421,7 @@
       color: #3a2f16;
       margin-bottom: 0.7rem;
       line-height: 1.6;
+      white-space: pre-line;
     }
     .result-overlay.error .result-message { color: #5c4733; }
     .result-sub {
@@ -656,6 +684,7 @@
         ブラウザのアドレスバー横のカメラアイコンをタップして「許可」に変更してください。
       </div>
       <p class="scan-hint" id="scan-hint">会員カードのQRコードをかざしてください<span class="en">Please hold your member QR code up to the camera</span></p>
+      <button id="btn-salon" class="btn-salon">サロンをご利用の方はこちら<span class="en">Here for the salon? Tap here</span></button>
     </div>
   </div>
 
@@ -760,6 +789,12 @@
   function timeLabel() {
     const d = new Date(), p = n => String(n).padStart(2, '0');
     return (d.getMonth()+1) + '月' + d.getDate() + '日 ' + d.getHours() + ':' + p(d.getMinutes());
+  }
+  // 英語表記（例: Jul 3, 8:12）— ゲスト（海外の方）向け画面用
+  function timeLabelEN() {
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return M[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getHours() + ':' + p(d.getMinutes());
   }
   function updateCounts() {
     const l = getLog(), tk = todayKey();
@@ -1168,21 +1203,55 @@
     guestBusy = false;
   });
 
+  // ゲスト＝海外のお客様が多い想定のため英語ファースト（日本語は添える）
   function showGuestWelcome() {
-    resultMid.textContent  = 'WELCOME';
+    resultMid.textContent  = 'SECURITY CHECK PASSED';
     resultIcon.textContent = '✓';
-    resultName.textContent = 'ゲスト様';
-    resultMsg.textContent  = 'ご来店ありがとうございます';
-    resultSub.textContent  = 'Welcome to SEAM';
+    resultName.textContent = 'Welcome, Guest';
+    resultMsg.textContent  = 'Thank you for visiting SEAM\nご来店ありがとうございます';
+    resultSub.textContent  = 'Enjoy your shopping';
     resultCode.textContent = '';
     resultTime.innerHTML   = '';
-    resultTime.appendChild(document.createTextNode(timeLabel() + ' ご入場を記録しました'));
+    resultTime.appendChild(document.createTextNode('Entry recorded — ' + timeLabelEN()));
     const en = document.createElement('span');
     en.className = 'en';
-    en.textContent = 'Entry recorded';
+    en.textContent = timeLabel() + ' ご入場を記録しました';
     resultTime.appendChild(en);
-    show('success', 4000);
+    show('success', 5000);
   }
+
+  // ── サロン利用のお客様（スタッフ呼び出し） ──
+  // 店内に響く呼び鈴チャイムでスタッフに知らせ、お客様には待機のご案内を表示
+  function doorbell() {
+    ensureAudio(); if (!AC) return;
+    [0, 1.6].forEach(base => {           // ピンポーン × 2回
+      tone(987.77, base, 0.7, 0.32);
+      tone(783.99, base + 0.35, 0.9, 0.30);
+    });
+  }
+  let salonBusy = false;
+  $('btn-salon').addEventListener('click', () => {
+    if (salonBusy || overlay.classList.contains('visible')) return;
+    salonBusy = true;
+    scanning = false;
+    addLog({ t: localISO(), code: 'SALON', name: 'サロン利用', ok: 1, rp: 0 });
+    sendD1('SALON', 'サロン利用', true, false);
+    doorbell();
+    resultMid.textContent  = 'SALON';
+    resultIcon.textContent = '🔔';
+    resultName.textContent = '';
+    resultMsg.textContent  = 'スタッフをお呼びしました\nおかけになってお待ちください';
+    resultSub.textContent  = 'Our staff will be with you shortly';
+    resultCode.textContent = '';
+    resultTime.innerHTML   = '';
+    resultTime.appendChild(document.createTextNode(timeLabel() + ' 受付を記録しました'));
+    const en = document.createElement('span');
+    en.className = 'en';
+    en.textContent = 'Checked in';
+    resultTime.appendChild(en);
+    show('success', 6000);
+    setTimeout(() => { salonBusy = false; }, 6000);
+  });
 
   // ── 隠し管理パネル（ロゴを5回タップ） ──
   let taps = 0, tapT = 0;
