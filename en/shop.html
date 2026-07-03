@@ -148,13 +148,35 @@
     .sale-dot { top: -2px; right: -2px; width: 9px; height: 9px; padding: 0; overflow: hidden; color: transparent; }
   }
 </style>
-<div id="saleBar" hidden="" data-track-view="sale_banner_shop" data-track-click="sale_banner_shop" role="button" tabindex="0" aria-label="サマーセールの詳細へ" class="cursor-pointer select-none" style="background:linear-gradient(90deg,#8F6A3F,#B8945A 45%,#8F6A3F);color:#FBF7F1;">
-  <div class="max-w-6xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-center gap-2 sm:gap-3 text-center whitespace-nowrap overflow-hidden">
-    <span class="font-mono text-[10px] sm:text-[10.5px] uppercase" style="letter-spacing:.18em;">Summer&nbsp;Sale</span>
-    <span aria-hidden="" class="h-3 w-px bg-white/40"></span>
-    <span class="font-serif text-[12.5px] sm:text-[13.5px]" style="font-weight:500;" data-i18n="sale.off">Up to 30% OFF</span>
-    <span class="text-[11px]" style="color:rgba(255,255,255,.85);" data-i18n="sale.until">Until Jul 31</span>
-    <span aria-hidden="" class="text-[12px]">↓</span>
+<style>
+  /* バナーのレイアウトはTailwind非依存(ここで完結)。金グラデをゆっくり流して視線を引く */
+  #saleBar{background:linear-gradient(100deg,#6E4E26,#B8945A 38%,#D9BC85 50%,#B8945A 62%,#6E4E26);background-size:220% 100%;animation:saleSheen 7s linear infinite;color:#FBF7F1;}
+  #saleBar .sb-in{max-width:1152px;margin:0 auto;padding:10px 16px 11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-align:center;}
+  #saleBar .sb-top{display:inline-flex;align-items:center;gap:8px;}
+  #saleBar .sb-tag{background:#B4453A;color:#fff;font-size:9.5px;letter-spacing:.14em;padding:3px 8px;border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.2);}
+  #saleBar .sb-kicker{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.95);line-height:1;}
+  #saleBar .sb-main{display:inline-flex;align-items:baseline;gap:9px;}
+  #saleBar .sb-off{font-family:"Noto Serif JP",serif;font-size:19px;font-weight:600;color:#FFF3DC;line-height:1.25;text-shadow:0 1px 2px rgba(60,40,10,.25);}
+  #saleBar .sb-until{font-size:11.5px;color:rgba(255,255,255,.92);}
+  #saleBar .sb-arrow{font-size:13.5px;display:inline-block;}
+  @media(min-width:640px){
+    #saleBar .sb-in{flex-direction:row;gap:16px;padding:12px 28px 13px;}
+    #saleBar .sb-off{font-size:21px;}
+  }
+  @keyframes saleSheen{0%{background-position:0% 0}100%{background-position:220% 0}}
+  @media(prefers-reduced-motion:reduce){#saleBar{animation:none !important;}}
+</style>
+<div id="saleBar" hidden="" data-track-view="sale_banner_shop" data-track-click="sale_banner_shop" role="button" tabindex="0" aria-label="サマーセールの詳細へ" class="cursor-pointer select-none">
+  <div class="sb-in">
+    <span class="sb-top">
+      <span class="sb-tag">SALE</span>
+      <span class="sb-kicker">Summer&nbsp;Sale</span>
+    </span>
+    <span class="sb-main">
+      <span class="sb-off" data-i18n="sale.off">Up to 30% OFF</span>
+      <span class="sb-until" data-i18n="sale.until">Until Jul 31</span>
+      <span aria-hidden="" class="sb-arrow">↓</span>
+    </span>
   </div>
 </div>
 <script>
