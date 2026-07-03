@@ -192,6 +192,12 @@
   var ENVL = {humid:'湿気が多い環境',dry:'乾燥した環境',sun:'海風・紫外線が強い',indoor:'室内中心'};
   var WELL = {eyeStrain:'目が疲れる',neckShoulder:'肩・首がこる',mindFull:'気持ちが休まらない',sleepLight:'寝つきが悪い',bodyHeavy:'体がだるい'};
   var DEVW = {loveGadgets:'最新の美容家電を使いたい',dryerUpgrade:'ドライヤー買い替え検討',ironUpgrade:'アイロン・コテ買い替え検討',showerHead:'シャワーヘッドに興味',faceDevice:'美顔器に興味'};
+  // 価格受容性(1回に払う金額帯・finder実値と同期)
+  var BANDL = {skip:'使わない',u1:'〜1,000円',b12:'1,000〜2,000円',b23:'2,000〜3,000円',b34:'3,000〜4,000円',b45:'4,000〜5,000円',b56:'5,000〜6,000円',b67:'6,000〜7,000円',b78:'7,000〜8,000円',o8:'8,000円以上'};
+  var BAND_ORDER = ['u1','b12','b23','b34','b45','b56','b67','b78','o8','skip'];
+  var UPWL = {yes:'合うなら投資したい',depends:'ものによる',price:'いまは価格を優先'};
+  var ICATL = {shampoo:'シャンプー',treatment:'トリートメント',outbath:'アウトバス',mask:'集中マスク',styling:'スタイリング剤',none:'特にない'};
+  var BPL = {seam:'SEAMで',salon:'通っているサロンで',drug:'ドラッグストア',amazon:'Amazon',rakuten:'楽天',other:'そのほかのECや店舗'};
   var PAGEL = {'/':'トップ','/index.html':'トップ','/finder':'髪格診断','/finder.html':'髪格診断','/brand':'ブランド','/brand.html':'ブランド','/shop':'店舗一覧','/shop.html':'店舗一覧','/headspa':'ヘッドスパ','/headspa.html':'ヘッドスパ','/hairsalon':'ヘアサロン','/hairsalon.html':'ヘアサロン','/onlineshop':'オンラインショップ','/onlineshop.html':'オンラインショップ','/journal':'読みもの','/guide-scalp':'頭皮ガイド','/guide-scalp.html':'頭皮ガイド'};
   function pageLabel(p){ return PAGEL[p] || p; }
 
@@ -259,6 +265,14 @@
         envTotal:{indoor:346,humid:231,dry:154,sun:39},
         wellnessTotal:{neckShoulder:331,eyeStrain:277,sleepLight:123,mindFull:100,bodyHeavy:85},
         deviceTotal:{dryerUpgrade:200,loveGadgets:154,ironUpgrade:131,showerHead:92,faceDevice:69},
+        budgetSh:{u1:Math.round(n*.08),b12:Math.round(n*.18),b23:Math.round(n*.26),b34:Math.round(n*.20),b45:Math.round(n*.12),b56:Math.round(n*.06),b67:Math.round(n*.03),b78:Math.round(n*.02),o8:Math.round(n*.02),skip:Math.round(n*.03)},
+        budgetTr:{u1:Math.round(n*.06),b12:Math.round(n*.16),b23:Math.round(n*.24),b34:Math.round(n*.20),b45:Math.round(n*.13),b56:Math.round(n*.07),b67:Math.round(n*.03),b78:Math.round(n*.02),o8:Math.round(n*.03),skip:Math.round(n*.06)},
+        budgetOb:{u1:Math.round(n*.10),b12:Math.round(n*.22),b23:Math.round(n*.24),b34:Math.round(n*.16),b45:Math.round(n*.09),b56:Math.round(n*.04),b67:Math.round(n*.02),b78:Math.round(n*.01),o8:Math.round(n*.02),skip:Math.round(n*.10)},
+        budgetMk:{u1:Math.round(n*.05),b12:Math.round(n*.12),b23:Math.round(n*.18),b34:Math.round(n*.16),b45:Math.round(n*.11),b56:Math.round(n*.06),b67:Math.round(n*.03),b78:Math.round(n*.02),o8:Math.round(n*.03),skip:Math.round(n*.24)},
+        upgradeTotal:{yes:Math.round(n*.38),depends:Math.round(n*.47),price:Math.round(n*.15)},
+        upgradeYesByAge:{'20s':Math.round(n*.07),'30s':Math.round(n*.12),'40s':Math.round(n*.11),'50s':Math.round(n*.06),'60plus':Math.round(n*.02)},
+        investCatTotal:{shampoo:Math.round(n*.30),treatment:Math.round(n*.22),outbath:Math.round(n*.18),mask:Math.round(n*.12),styling:Math.round(n*.08),none:Math.round(n*.10)},
+        buyPlaceTotal:{drug:Math.round(n*.52),amazon:Math.round(n*.38),salon:Math.round(n*.30),rakuten:Math.round(n*.28),seam:Math.round(n*.22),other:Math.round(n*.12)},
         deviceWantByAge:scaled({teen:.38,'20s':.45,'30s':.42,'40s':.36,'50plus':.28,noanswer:.3}),
         monthly:monthly
       };
@@ -476,6 +490,20 @@
       panel('Chemical','薬剤履歴の重なり（ブリーチ×矯正×パーマ）', objRows(P.chemCross, CHEMX, P.n, CHEMX_ORDER) +
         noteLine('複合履歴毛（2つ以上の重なり）の実サイズ — ハイダメージ向け開発・ビビリ毛リスク層の把握・施術メニュー設計の基礎数字')) +
       dealerPanels(P) +
+      panel('Budget','価格受容性 — 1回のお買い物で払う金額',
+        subhead('シャンプー') + objRows(P.budgetSh, BANDL, P.n, BAND_ORDER) +
+        subhead('トリートメント') + objRows(P.budgetTr, BANDL, P.n, BAND_ORDER) +
+        subhead('アウトバス') + objRows(P.budgetOb, BANDL, P.n, BAND_ORDER) +
+        subhead('集中マスク') + objRows(P.budgetMk, BANDL, P.n, BAND_ORDER) +
+        noteLine('「買った価格」ではなく本人申告の支払い意思 — 価格設定・プレミアムライン判断の1次データ')) +
+      panel('Willingness','値上がり許容と投資カテゴリ',
+        objRows(P.upgradeTotal, UPWL, P.n) +
+        subhead('「合うなら投資したい」率 × 年代') + rateByAge(P.upgradeYesByAge, P.byAge) +
+        subhead('いちばんお金をかけたいカテゴリ') + objRows(P.investCatTotal, ICATL, P.n) +
+        noteLine('プレミアム許容層のサイズと年代分布 — 高価格帯の企画・接客トークの根拠')) +
+      panel('Where to buy','ふだんの購入場所（複数選択）',
+        objRows(P.buyPlaceTotal, BPL, P.n) +
+        noteLine('流通チャネルの実態 — EC利用層の来店=送客インサイト・ディーラー向け提案資料の基礎')) +
       '<div class="card panel"'+full+'><h2><span class="eyebrow">Concern → Texture</span>悩み → 求める質感 TOP12（広告コピーの素）</h2>'+pairTable(P.concernTexture, P.n)+'</div>';
   }
 
@@ -607,6 +635,11 @@
       rblock('ブリーチ経験率 × 年代 ＋ 内訳', rateByAge(P.bleachByAge, P.byAge) +
         objRows((function(){var o={};for(var k in (P.bleachTotal||{}))if(k!=='none')o[k]=P.bleachTotal[k];return o;})(), BLEACH, P.n)) +
       rblock('縮毛矯正・髪質改善の分布', objRows(P.straightenTotal, STRAIGHTEN, P.n) + stHiddenLine(P)) +
+      rblock('価格受容性（1回に払う金額・本人申告）',
+        subhead('シャンプー') + objRows(P.budgetSh, BANDL, P.n, BAND_ORDER) +
+        subhead('トリートメント') + objRows(P.budgetTr, BANDL, P.n, BAND_ORDER) +
+        subhead('値上がり許容') + objRows(P.upgradeTotal, UPWL, P.n) +
+        subhead('購入場所（複数選択）') + objRows(P.buyPlaceTotal, BPL, P.n)) +
       rblock('パーマ: 現役率×年代 / カール意欲×年代 / 種類・持ち', rateByAge(P.permNowByAge, P.byAge) + rateByAge(P.curlWantByAge, P.byAge) + objRows(P.permTypeTotal, PERMTYPE) + objRows(P.permLooseTotal, PERMLOOSE)) +
       rblock('白髪: 染め中率×年代 / 頻度', rateByAge(P.grayCareByAge, P.byAge) + objRows(P.grayFreqTotal, GRAYFREQ)) +
       rblock('熱習慣（アイロン・コテ）と設定温度', objRows(P.toolsTotal, TOOLS, P.n) + objRows(P.tempTotal, TEMPL)) +

@@ -381,6 +381,75 @@ const Q = [
 /* ---------- Mode B (詳しいカルテ) 追加質問 ---------- */
 const Q_DEEP_NEW = [
   {
+    // 1回のお買い物で払う金額(カテゴリ別)。月額は詰め替え/容量で揺れるため「1本あたり」で聞く(オーナー指定)
+    id: 'budget',
+    type: 'budget-rows',
+    eyebrow: 'Budget',
+    title: 'ふだん1回のお買い物で かける金額は？',
+    note: '詰め替えや容量で月々の出費は変わるため「1本あたりに払う金額」でお聞きします。ざっくりで大丈夫です。',
+    options: [],
+    rows: [
+      { k: 'sh', label: 'シャンプー' },
+      { k: 'tr', label: 'トリートメント（お風呂で流す）' },
+      { k: 'ob', label: 'アウトバス（オイル・ミルク）' },
+      { k: 'mk', label: '集中マスク（週ケア）' },
+    ],
+    bands: [
+      { v: 'skip', label: '使わない' },
+      { v: 'u1',  label: '〜1,000円' },
+      { v: 'b12', label: '1,000〜2,000円' },
+      { v: 'b23', label: '2,000〜3,000円' },
+      { v: 'b34', label: '3,000〜4,000円' },
+      { v: 'b45', label: '4,000〜5,000円' },
+      { v: 'b56', label: '5,000〜6,000円' },
+      { v: 'b67', label: '6,000〜7,000円' },
+      { v: 'b78', label: '7,000〜8,000円' },
+      { v: 'o8',  label: '8,000円以上' },
+    ],
+  },
+  {
+    id: 'upgradeWill',
+    type: 'card-single',
+    eyebrow: 'Value',
+    title: '本当に合うものが見つかったら 値段が上がっても使いたいですか？',
+    note: '正直なお気持ちで大丈夫です。ご提案の組み立てに使わせていただきます。',
+    options: [
+      { v: 'yes',     label: 'はい 合うなら投資したい',   score: {} },
+      { v: 'depends', label: 'ものによる',               score: {} },
+      { v: 'price',   label: 'いまは価格を優先したい',    score: {} },
+    ],
+  },
+  {
+    id: 'investCat',
+    type: 'card-single',
+    eyebrow: 'Priority',
+    title: 'いちばんお金をかけたいのは どれですか？',
+    note: 'いま実際にかけているものでも「本当はここにかけたい」でも構いません。',
+    options: [
+      { v: 'shampoo',   label: 'シャンプー',                    score: {} },
+      { v: 'treatment', label: 'トリートメント',                score: {} },
+      { v: 'outbath',   label: 'アウトバス（オイル・ミルク）',   score: {} },
+      { v: 'mask',      label: '集中マスク',                    score: {} },
+      { v: 'styling',   label: 'スタイリング剤',                score: {} },
+      { v: 'none',      label: '特にない',                      score: {} },
+    ],
+  },
+  {
+    id: 'buyPlace',
+    type: 'check-multi',
+    eyebrow: 'Where to buy',
+    title: 'ヘアケアはふだん どこで買いますか？',
+    note: '当てはまるものをすべて選んでください。',
+    options: [
+      { v: 'seam',    label: 'SEAMで',              score: {} },
+      { v: 'salon',   label: '通っているサロンで',    score: {} },
+      { v: 'drug',    label: 'ドラッグストア',        score: {} },
+      { v: 'amazon',  label: 'Amazon',              score: {} },
+      { v: 'rakuten', label: '楽天',                 score: {} },
+      { v: 'other',   label: 'そのほかのECや店舗',    score: {} },
+    ],
+  },
+  {
     id: 'age',
     type: 'card-single',
     eyebrow: 'Age',
@@ -610,6 +679,11 @@ const MODE_B_ORDER = [
   // STEP 3 — いまと理想
   { step:3, id:'concerns' },
   { step:3, id:'concernsItem' },
+  // 価格受容性ブロック(メーカー/ディーラー向けデータ+予算に合わせた提案の土台)
+  { step:3, id:'budget' },
+  { step:3, id:'upgradeWill' },
+  { step:3, id:'investCat' },
+  { step:3, id:'buyPlace' },
   { step:3, id:'goalTexture' },
   { step:3, id:'goal' },
   { step:3, id:'stylingFinish' },
@@ -951,6 +1025,11 @@ function buildProfileMeta(a) {
     sa: arr(Array.isArray(a.scalpAllergy) ? a.scalpAllergy : (a.scalpAllergy ? [a.scalpAllergy] : null), 3),
     hp: arr(a.heatProtect, 3), ht: arr(a.hairTrouble, 4),
     it: arr(a.items, 5), ci: arr(a.concernsItem, 4),
+    // v3 価格受容性(2026-07-03): bs/bt/bo/bm=1回に払う金額帯(シャンプー/トリートメント/アウトバス/マスク)
+    // up=値上がり許容 ic=投資したいカテゴリ bp=購入場所[]
+    bs: a.budget && a.budget.sh, bt: a.budget && a.budget.tr,
+    bo: a.budget && a.budget.ob, bm: a.budget && a.budget.mk,
+    up: a.upgradeWill, ic: a.investCat, bp: arr(a.buyPlace, 4),
     ls: arr(a.lifestyle, 4), wl: arr(a.wellness, 4), dv: arr(a.deviceInterest, 3),
   };
   Object.keys(m).forEach(k => { const v = m[k]; if (v == null || v === '') delete m[k]; });
@@ -4215,6 +4294,7 @@ function QuestionCard({ question, value, onChange, onSet, answers }) {
   if (type === 'heat-tools')      return <HeatTools q={question} value={value || {}} onChange={onChange} />;
   if (type === 'card-history')    return <CardHistory q={question} value={value} onChange={onChange} />;
   if (type === 'straighten-flow') return <StraightenFlow q={question} value={value} onChange={onChange} onSet={onSet} answers={answers} />;
+  if (type === 'budget-rows')     return <BudgetRows q={question} value={value} onChange={onChange} onSet={onSet} answers={answers} />;
   return null;
 }
 
@@ -4620,6 +4700,50 @@ function StraightenFlow({ q, value, onChange, onSet, answers }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---- Budget rows (カテゴリ別×1回に払う金額・横スクロールで1,000円帯を選ぶ) ----
+   値はオブジェクト {sh,tr,ob,mk}。全行選ぶまで answers.budget は確定させず(NEXTゲート)、
+   途中経過は answers.budgetDraft に保持(戻ってきても選択が残る)。 */
+function BudgetRows({ q, value, onChange, onSet, answers }) {
+  const draft = value || (answers && answers.budgetDraft) || {};
+  const pick = (rowK, v) => {
+    const next = { ...draft, [rowK]: v };
+    const complete = q.rows.every(r => next[r.k]);
+    if (onSet) onSet('budgetDraft', complete ? undefined : next);
+    onChange(complete ? next : undefined);
+  };
+  return (
+    <div className="mt-5 space-y-5">
+      {q.rows.map(row => (
+        <div key={row.k}>
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="font-serif text-[13.5px] text-ink">{row.label}</p>
+            {!draft[row.k] && <span className="font-mono text-[9.5px] tracking-widest2 uppercase text-gold">未選択</span>}
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1.5 -mx-1 px-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            {q.bands.map(b => {
+              const active = draft[row.k] === b.v;
+              return (
+                <button
+                  key={b.v}
+                  type="button"
+                  onClick={() => pick(row.k, b.v)}
+                  className={[
+                    'shrink-0 px-3.5 py-2.5 border rounded-full font-serif text-[12.5px] whitespace-nowrap transition-all',
+                    active ? 'bg-ink text-ivory border-ink' : 'bg-white/70 text-charcoal border-line hover:border-ink',
+                  ].join(' ')}
+                >
+                  {b.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      <p className="text-[11px] leading-relaxed text-charcoal/55">横にスクロールして選べます。1回のお買い物で払う金額の目安で大丈夫です。</p>
     </div>
   );
 }
@@ -8527,6 +8651,21 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
     if (msv.length) wishItems.push(['使用中スタイリング剤', msv.map(v => lookupLabelShort('menStyling', v)).join('・')]);
   }
 
+  // ご予算・お買い物(店頭で聞きにくい情報を先に共有=接客の質を上げる)
+  const BUDGET_BAND_SHORT = { skip: '使わない', u1: '〜1千円', b12: '1〜2千円', b23: '2〜3千円', b34: '3〜4千円', b45: '4〜5千円', b56: '5〜6千円', b67: '6〜7千円', b78: '7〜8千円', o8: '8千円以上' };
+  const moneyItems = [];
+  if (a.budget) {
+    const seg = [['SH', a.budget.sh], ['TR', a.budget.tr], ['アウトバス', a.budget.ob], ['マスク', a.budget.mk]]
+      .filter(x => x[1] && x[1] !== 'skip')
+      .map(x => x[0] + ' ' + (BUDGET_BAND_SHORT[x[1]] || x[1]));
+    if (seg.length) moneyItems.push(['1回あたりの予算', seg.join(' ／ ')]);
+  }
+  if (a.upgradeWill) moneyItems.push(['価格への考え', lookupLabelShort('upgradeWill', a.upgradeWill)]);
+  if (a.investCat && a.investCat !== 'none') moneyItems.push(['投資したいカテゴリ', lookupLabelShort('investCat', a.investCat)]);
+  if (Array.isArray(a.buyPlace) && a.buyPlace.length) {
+    moneyItems.push(['ふだんの購入場所', a.buyPlace.map(v => lookupLabelShort('buyPlace', v)).join('・')]);
+  }
+
   // ヘッドスパ
   const spaItems = [];
   if (Array.isArray(a.deviceInterest)) {
@@ -8716,10 +8855,18 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
           </p>
         )}
 
-        {/* 13 ヘッドスパのご希望 */}
+        {/* 13 ご予算・お買い物(価格帯に合わせた提案の土台) */}
+        {moneyItems.length > 0 && (
+          <>
+            {sectionTitle('13 · ご予算・お買い物')}
+            {dl(moneyItems)}
+          </>
+        )}
+
+        {/* 14 ヘッドスパのご希望 */}
         {spaItems.length > 0 && (
           <>
-            {sectionTitle('13 · ヘッドスパのご希望')}
+            {sectionTitle('14 · ヘッドスパのご希望')}
             {dl(spaItems)}
           </>
         )}

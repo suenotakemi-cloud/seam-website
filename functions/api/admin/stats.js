@@ -57,6 +57,10 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     lifestyleTotal: {}, envTotal: {},       // ライフスタイル / 環境
     wellnessTotal: {},                      // ウェルネス症状(スパ商材文脈)
     deviceTotal: {}, deviceWantByAge: {},   // 美容家電の希望 / 希望あり率(年代別 分子)
+    // ── v3 価格受容性(bs/bt/bo/bm=1回に払う金額帯・up=値上がり許容・ic=投資カテゴリ・bp=購入場所[]) ──
+    budgetSh: {}, budgetTr: {}, budgetOb: {}, budgetMk: {},
+    upgradeTotal: {}, upgradeYesByAge: {},  // 「合うなら投資したい」率(年代別 分子)=プレミアム許容の金脈
+    investCatTotal: {}, buyPlaceTotal: {},
     monthly: {},                            // YYYY-MM → {n,kuse,bleach,gray,permNow,curlWant}
   };
   for (const row of rows) {
@@ -98,6 +102,12 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     // 縮毛矯正
     inc(P.straightenTotal, m.st);
     if (m.sth) P.stHiddenN++;
+    // 価格受容性
+    inc(P.budgetSh, m.bs); inc(P.budgetTr, m.bt); inc(P.budgetOb, m.bo); inc(P.budgetMk, m.bm);
+    inc(P.upgradeTotal, m.up);
+    if (m.up === 'yes') inc(P.upgradeYesByAge, age);
+    inc(P.investCatTotal, m.ic);
+    for (const v of (Array.isArray(m.bp) ? m.bp : [])) inc(P.buyPlaceTotal, v);
     // 薬剤履歴の重なり（メーカー向け: ダブル/トリプルプロセス毛の実サイズ）
     const isStNow = !!ST_NOW[m.st];
     inc(P.chemCross, isBleach
