@@ -4704,6 +4704,119 @@ function StraightenFlow({ q, value, onChange, onSet, answers }) {
   );
 }
 
+/* ──────────────────────────────────────────
+   ReturnDiffCard — 再診断の差分(前回カルテとの比較)
+   complete()時に退避した window.__seamPrevKarte とだけ比較する=復元表示では出ない。
+   文言は自己申告の変化の記述に留める(効能断定なし・薬機法配慮)。 ────────────────────────────────────────── */
+const TIER_BAND_LABEL = { 1: '軽やかケア帯', 2: '集中ケア帯', 3: 'しっかり補修帯' };
+function ReturnDiffCard({ prev, karte, answers }) {
+  const diff = useMemo(() => {
+    if (!prev || !prev.savedAt || !prev.answersSnapshot || !karte) return null;
+    let days = Math.round((Date.now() - new Date(prev.savedAt).getTime()) / 86400000);
+    if (!isFinite(days) || days < 0) days = 0;
+    // 前回tier: v2はdamageTier保存済み・v1はスナップショットから再計算
+    let prevTier = prev.damageTier;
+    if (!prevTier) {
+      try { prevTier = computeDamageTier(computeScores(prev.answersSnapshot).scores); } catch (e) { prevTier = null; }
+    }
+    const curTier = karte.damageTier;
+    const prevCode = prev.originCode || '';
+    const curCode = (karte.origin && karte.origin.code) || '';
+    const prevConcerns = Array.isArray(prev.answersSnapshot.concerns) ? prev.answersSnapshot.concerns : [];
+    const curConcerns = Array.isArray(answers && answers.concerns) ? answers.concerns : [];
+    const resolved = prevConcerns.filter(c => c !== 'none' && curConcerns.indexOf(c) === -1).slice(0, 3);
+    const added    = curConcerns.filter(c => c !== 'none' && prevConcerns.indexOf(c) === -1).slice(0, 3);
+    const tierChanged = prevTier && curTier && prevTier !== curTier;
+    const typeChanged = prevCode && curCode && prevCode !== curCode;
+    // 見せる価値のある差分が無ければ出さない(同日・同内容の連続再診断など)
+    if (days < 1 && !tierChanged && !typeChanged && !resolved.length && !added.length) return null;
+    return { days, prevTier, curTier, tierChanged, typeChanged, prevCode, curCode,
+             prevName: prev.originName || prevCode, curName: (karte.origin && karte.origin.name) || curCode,
+             resolved, added };
+  }, [prev, karte, answers]);
+
+  if (!diff) return null;
+  const cLabel = (v) => {
+    try {
+      const q = QUESTION_LOOKUP && QUESTION_LOOKUP.concerns;
+      const o = q && q.options && q.options.find(x => x.v === v);
+      return (o && o.label) || v;
+    } catch (e) { return v; }
+  };
+  return (
+    <section className="max-w-2xl mx-auto px-5 sm:px-0 mt-8">
+      <article
+        className="relative rounded-[2px] p-6 sm:p-8 bg-white/90"
+        style={{
+          borderLeft: '2px solid rgba(184,148,90,0.6)',
+          borderTop: '1px solid rgba(184,148,90,0.22)',
+          borderRight: '1px solid rgba(184,148,90,0.22)',
+          borderBottom: '1px solid rgba(184,148,90,0.22)',
+          boxShadow: '0 1px 2px rgba(26,24,21,0.03), 0 12px 36px -28px rgba(26,24,21,0.18)',
+        }}
+      >
+        <p className="font-mono tracking-widest3 text-[10px] uppercase text-gold mb-1.5">Welcome Back</p>
+        <p className="font-serif text-[17px] sm:text-[19px] text-ink" style={{ fontWeight: 500 }}>
+          <span>おかえりなさい — </span>
+          <span className="nums">{diff.days}</span>
+          <span>日ぶりの診断です</span>
+        </p>
+        <div className="mt-3.5 space-y-2 text-[13px] sm:text-[13.5px] leading-[1.9] text-charcoal/85">
+          {diff.tierChanged && diff.curTier < diff.prevTier && (
+            <p>
+              <span className="text-gold mr-1.5">✦</span>
+              <span>ケアの重さが </span>
+              <span className="font-serif text-ink" style={{ fontWeight: 500 }}>{TIER_BAND_LABEL[diff.prevTier]}</span>
+              <span> → </span>
+              <span className="font-serif text-ink" style={{ fontWeight: 500 }}>{TIER_BAND_LABEL[diff.curTier]}</span>
+              <span> へ 軽くなりました</span>
+            </p>
+          )}
+          {diff.tierChanged && diff.curTier > diff.prevTier && (
+            <p>
+              <span className="text-gold mr-1.5">✦</span>
+              <span>今回は </span>
+              <span className="font-serif text-ink" style={{ fontWeight: 500 }}>{TIER_BAND_LABEL[diff.curTier]}</span>
+              <span> — 最近の履歴に合わせて 少し手厚めに組みました</span>
+            </p>
+          )}
+          {diff.typeChanged ? (
+            <p>
+              <span className="text-gold mr-1.5">✦</span>
+              <span>髪格が </span>
+              <span className="font-serif text-ink" style={{ fontWeight: 500 }}>{diff.prevName}</span>
+              <span> → </span>
+              <span className="font-serif text-ink" style={{ fontWeight: 500 }}>{diff.curName}</span>
+              <span> に更新されました</span>
+            </p>
+          ) : (
+            <p>
+              <span className="text-gold mr-1.5">✦</span>
+              <span>髪格は変わらず — あなたの軸は安定しています</span>
+            </p>
+          )}
+          {diff.resolved.length > 0 && (
+            <p>
+              <span className="text-gold mr-1.5">✦</span>
+              <span>前回選ばれていた「</span>
+              <span className="font-serif text-ink" style={{ fontWeight: 500 }}>{diff.resolved.map(cLabel).join('・')}</span>
+              <span>」が今回は外れました — 手応えのサインです</span>
+            </p>
+          )}
+          {diff.added.length > 0 && (
+            <p>
+              <span className="text-gold mr-1.5">✦</span>
+              <span>新しく「</span>
+              <span className="font-serif text-ink" style={{ fontWeight: 500 }}>{diff.added.map(cLabel).join('・')}</span>
+              <span>」が加わりました — 今回の処方で優先しています</span>
+            </p>
+          )}
+        </div>
+      </article>
+    </section>
+  );
+}
+
 /* ---- Budget rows (カテゴリ別×1回に払う金額・横スクロールで1,000円帯を選ぶ) ----
    値はオブジェクト {sh,tr,ob,mk}。全行選ぶまで answers.budget は確定させず(NEXTゲート)、
    途中経過は answers.budgetDraft に保持(戻ってきても選択が残る)。 */
@@ -7251,7 +7364,17 @@ function ResultHero({ karte, answers, onSaveImage, onShare, onSavePdf }) {
   const heroImgPath = getCharImgPath(origin?.code, gender);  // null なら画像非表示
   // 計測: 結果表示時に1回だけ（type/履歴Tier/advice + プロファイルmeta の実分布を集計。個人情報なし・投げっぱなし）
   useEffect(() => {
-    try { window.__seamLastType = (origin && origin.code) || ''; window.seamTrack && window.seamTrack('finder_complete', { type: origin && origin.code, tier: damageTier, advice: karte.adviceKey, gender: gender, meta: buildProfileMeta(answers) }); } catch (e) {}
+    try {
+      window.__seamLastType = (origin && origin.code) || '';
+      const pm = buildProfileMeta(answers);
+      // 再診断シグナル: rd=1(前回カルテあり) rdd=前回から何日(0-365) — 経時データの土台
+      const pk = window.__seamPrevKarte;
+      if (pk && pk.savedAt) {
+        pm.rd = 1;
+        pm.rdd = Math.min(365, Math.max(0, Math.round((Date.now() - new Date(pk.savedAt).getTime()) / 86400000)));
+      }
+      window.seamTrack && window.seamTrack('finder_complete', { type: origin && origin.code, tier: damageTier, advice: karte.adviceKey, gender: gender, meta: pm });
+    } catch (e) {}
   }, []);
   // セクション間をジャンプするヘルパー
   const jump = (id) => {
@@ -9945,8 +10068,9 @@ function Result({ answers, onRestart, onCollection }) {
     if (!karte) return;
     try {
       const payload = {
-        version: 1,
+        version: 2,
         savedAt: new Date().toISOString(),
+        damageTier: karte.damageTier,
         originId:   karte.origin?.id || karte.originId,
         originName: karte.origin?.name,
         originCode: karte.origin?.code,
@@ -10035,6 +10159,9 @@ function Result({ answers, onRestart, onCollection }) {
           onSaveImage={(mode) => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode)}
           onShare={() => shareKarteLink(karte?.origin)}
         />
+
+        {/* ━━━━━ 再診断の差分(前回カルテとの比較・新規完了時のみ) ━━━━━ */}
+        <ReturnDiffCard prev={typeof window !== 'undefined' ? window.__seamPrevKarte : null} karte={karte} answers={answers} />
 
         {/* ━━━━━ NEW: 6-Chapter Narrative (しいたけ占い風寄り添い) ━━━━━ */}
         {karte?.origin && (
@@ -10465,6 +10592,11 @@ function App() {
     setView('result');
   };
   const complete = () => {
+    // 再診断の差分用: 上書きされる前の「前回カルテ」を退避(復元表示では走らない=新規完了のみ)
+    try {
+      const raw = localStorage.getItem('seam_karte_last');
+      window.__seamPrevKarte = raw ? JSON.parse(raw) : null;
+    } catch (e) { window.__seamPrevKarte = null; }
     setView('reveal');
     setTimeout(() => setView('result'), 2800);
   };

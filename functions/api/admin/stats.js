@@ -41,6 +41,7 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     permNowByAge: {},  permExpByAge: {},  curlWantByAge: {},   // パーマ・カール(年代別 分子)
     straightenTotal: {},
     stHiddenN: 0,                           // 隠れ矯正(sth=1: サロン呼称は髪質改善・仕上がりは矯正系)
+    rediagN: 0, rediagDaysSum: 0,           // 再診断(rd=1)とその間隔合計(平均=Sum/N)
     thicknessTotal: {}, thicknessWave: {},  // 髪質マップ th × {none|kuse|straightened}
     stylingFinishTotal: {}, menStylingTotal: {}, tempTotal: {}, toolsTotal: {},
     scalpTotal: {}, spaByAge: {},
@@ -65,7 +66,8 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
   };
   for (const row of rows) {
     let m;
-    try { m = JSON.parse(row.meta); } catch (e) { continue; }
+    if (row.__m) { m = row.__m; }
+    else { try { m = JSON.parse(row.meta); } catch (e) { continue; } }
     if (!m || !m.age) continue; // プロファイル付き完了のみ（旧イベントは対象外）
     P.n++;
     const age = m.age;
@@ -102,6 +104,7 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     // 縮毛矯正
     inc(P.straightenTotal, m.st);
     if (m.sth) P.stHiddenN++;
+    if (m.rd) { P.rediagN++; P.rediagDaysSum += Number(m.rdd) || 0; }
     // 価格受容性
     inc(P.budgetSh, m.bs); inc(P.budgetTr, m.bt); inc(P.budgetOb, m.bo); inc(P.budgetMk, m.bm);
     inc(P.upgradeTotal, m.up);
@@ -216,10 +219,30 @@ export async function onRequestGet(context) {
     });
     const secEngage = Object.keys(seMap).map(k => seMap[k]).sort((a, b) => (b.views || b.clicks) - (a.views || a.clicks));
     // 診断プロファイル（meta JSON）— 期間内の完了イベントをJS側で集計（列追加なし・D1マイグレーション不要）
+    // セグメント(プロファイル系にのみ適用): sage=年代コード / scs=悩みコード
+    const sage = (url.searchParams.get('sage') || '').slice(0, 16);
+    const scs  = (url.searchParams.get('scs')  || '').slice(0, 24);
+    const since2 = since - 1000 * 60 * 60 * 24 * days; // 前期(同じ長さの直前ウィンドウ)
     const profileRows = await q(
-      "SELECT ts, meta FROM events WHERE name='finder_complete' AND meta IS NOT NULL AND ts>=? AND " + NT + " ORDER BY ts DESC LIMIT 100000", since
+      "SELECT ts, meta FROM events WHERE name='finder_complete' AND meta IS NOT NULL AND ts>=? AND " + NT + " ORDER BY ts DESC LIMIT 100000", since2
     );
-    const profile = aggregateProfiles(profileRows.results || []);
+    const segTest = (m) => (!sage || m.age === sage) && (!scs || (Array.isArray(m.cs) && m.cs.indexOf(scs) > -1));
+    const curRows = [], prevRows = [];
+    for (const r of (profileRows.results || [])) {
+      let m; try { m = JSON.parse(r.meta); } catch (e) { continue; }
+      if (!segTest(m)) continue;
+      r.__m = m;
+      (r.ts >= since ? curRows : prevRows).push(r);
+    }
+    const profile = aggregateProfiles(curRows);
+    const profilePrev = aggregateProfiles(prevRows);
+    // KPIの今期/前期(開始・完了・CTA) — セグメントは掛けない(プロファイル無イベント含むため)
+    const kpiWinRaw = await q(
+      "SELECT name, CASE WHEN ts>=? THEN 'cur' ELSE 'prev' END w, COUNT(*) c FROM events WHERE name IN ('finder_start','finder_complete','finder_cta') AND ts>=? AND " + NT + " GROUP BY name, w",
+      since, since2
+    );
+    const kpiWin = { cur: {}, prev: {} };
+    (kpiWinRaw.results || []).forEach(r => { kpiWin[r.w][r.name] = r.c; });
     const tmap = {};
     (totals.results || []).forEach(r => { tmap[r.name] = r.c; });
 
@@ -263,6 +286,9 @@ export async function onRequestGet(context) {
       pageEngage: pageEngage.results || [],
       secEngage,
       profile,
+      profilePrev,
+      kpiWin,
+      seg: { age: sage || null, cs: scs || null },
     });
   } catch (e) {
     return json({ configured: true, error: String((e && e.message) || e) }, 500);

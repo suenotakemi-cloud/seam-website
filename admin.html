@@ -31,6 +31,16 @@
   .kpi .label{font-size:11px;color:var(--char);letter-spacing:.04em}
   .kpi .num{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:38px;line-height:1.05;margin-top:4px;color:var(--ink)}
   .kpi .unit{font-size:12px;color:var(--char);margin-left:4px;font-family:'Noto Sans JP'}
+  .dchip{display:inline-block;font-size:10.5px;letter-spacing:.04em;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;font-family:'Noto Sans JP'}
+  .dchip.up{background:rgba(184,148,90,.14);color:#8A6A3C}
+  .dchip.down{background:rgba(120,120,120,.10);color:#8a8378}
+  .dchip.flat{background:rgba(120,120,120,.08);color:#a39a8c}
+  .pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  @media(min-width:900px){.pgrid{grid-template-columns:repeat(6,1fr)}}
+  .pcell{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+  .plabel{font-size:10.5px;color:var(--char);letter-spacing:.03em}
+  .pnum{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:24px;color:var(--ink);margin-top:2px}
+  .pprev{font-size:10px;color:#a39a8c;margin-top:2px}
   .panels{grid-template-columns:1fr;margin-top:16px}
   @media(min-width:760px){.panels{grid-template-columns:1fr 1fr}}
   .panel h2{margin:0 0 14px;font-size:14px;font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
@@ -105,6 +115,17 @@
           <option value="30">直近30日</option>
           <option value="90" selected>直近90日</option>
           <option value="365">直近1年</option>
+        </select>
+        <select id="segAge" class="btn" style="padding:7px 10px" title="年代で絞り込み(プロファイル系)">
+          <option value="">年代: すべて</option>
+          <option value="teen">10代</option><option value="20s">20代</option><option value="30s">30代</option>
+          <option value="40s">40代</option><option value="50s">50代</option><option value="60plus">60代以上</option>
+        </select>
+        <select id="segCs" class="btn" style="padding:7px 10px" title="悩みで絞り込み(プロファイル系)">
+          <option value="">悩み: すべて</option>
+          <option value="dry">乾燥</option><option value="frizz">広がり・うねり</option><option value="wave">くせ</option>
+          <option value="damage">ダメージ</option><option value="colorFade">カラーの色落ち</option><option value="grayFade">白髪染めの色落ち</option>
+          <option value="volumeDown">ボリューム減</option><option value="scalpDry">頭皮の乾燥</option><option value="scalpOily">頭皮のベタつき</option>
         </select>
         <button class="btn solid" id="reportBtn">メーカー向けレポート</button>
         <button class="btn" id="csvBtn">CSV書出</button>
@@ -273,11 +294,16 @@
         upgradeYesByAge:{'20s':Math.round(n*.07),'30s':Math.round(n*.12),'40s':Math.round(n*.11),'50s':Math.round(n*.06),'60plus':Math.round(n*.02)},
         investCatTotal:{shampoo:Math.round(n*.30),treatment:Math.round(n*.22),outbath:Math.round(n*.18),mask:Math.round(n*.12),styling:Math.round(n*.08),none:Math.round(n*.10)},
         buyPlaceTotal:{drug:Math.round(n*.52),amazon:Math.round(n*.38),salon:Math.round(n*.30),rakuten:Math.round(n*.28),seam:Math.round(n*.22),other:Math.round(n*.12)},
+        rediagN:Math.round(n*.07), rediagDaysSum:Math.round(n*.07)*34,
         deviceWantByAge:scaled({teen:.38,'20s':.45,'30s':.42,'40s':.36,'50plus':.28,noanswer:.3}),
         monthly:monthly
       };
     }
-    return {configured:true, generatedAt:Date.now(), windowDays:90, _demo:true, profile:demoProfile(),
+    return {configured:true, generatedAt:Date.now(), windowDays:90, _demo:true, profile:(function(){var P=demoProfile();window.__demoP=P;return P;})(),
+      profilePrev:(function(){var P=window.__demoP||{};function sc(o,f){var r={};for(var k in (o||{}))r[k]=Math.round(o[k]*f);return r;}
+        return {n:Math.round((P.n||0)*0.86),kuseByAge:sc(P.kuseByAge,0.9),bleachByAge:sc(P.bleachByAge,0.8),upgradeTotal:sc(P.upgradeTotal,0.8),stHiddenN:Math.round((P.stHiddenN||0)*0.7),rediagN:Math.round((P.rediagN||0)*0.5),rediagDaysSum:Math.round((P.rediagDaysSum||0)*0.5)};})(),
+      kpiWin:{cur:{finder_start:620,finder_complete:562,finder_cta:162},prev:{finder_start:540,finder_complete:471,finder_cta:128}},
+      seg:{age:null,cs:null},
       summary:{starts:Math.round(completes*1.42), completes:completes, ctas:Math.round(completes*0.34)},
       byType:byType, byAdvice:[{a:'damage',c:Math.round(completes*.28)},{a:'frizz',c:Math.round(completes*.22)},{a:'dry',c:Math.round(completes*.18)},{a:'scalp',c:Math.round(completes*.14)},{a:'volume',c:Math.round(completes*.1)},{a:'color',c:Math.round(completes*.08)}],
       byTier:[{tier:1,c:Math.round(completes*.22)},{tier:2,c:Math.round(completes*.41)},{tier:3,c:Math.round(completes*.37)}],
@@ -315,8 +341,37 @@
   function panel(eyebrow,title,inner){
     return '<div class="card panel"><h2><span class="eyebrow">'+eyebrow+'</span>'+esc(title)+'</h2>'+inner+'</div>';
   }
-  function kpi(label,num,unit){
-    return '<div class="card kpi"><div class="label">'+esc(label)+'</div><div class="num">'+num+(unit?'<span class="unit">'+unit+'</span>':'')+'</div></div>';
+  function kpi(label,num,unit,delta){
+    return '<div class="card kpi"><div class="label">'+esc(label)+'</div><div class="num">'+num+(unit?'<span class="unit">'+unit+'</span>':'')+'</div>'+(delta||'')+'</div>';
+  }
+  // 前期比チップ: ▲=増 ▼=減。prev=0はNEW
+  function dchip(cur, prev){
+    cur = Number(cur)||0; prev = Number(prev)||0;
+    if(!prev){ return cur>0 ? '<span class="dchip up">NEW</span>' : '<span class="dchip flat">—</span>'; }
+    var d = Math.round((cur - prev) / prev * 100);
+    if(d > 0)  return '<span class="dchip up">▲'+d+'%</span>';
+    if(d < 0)  return '<span class="dchip down">▼'+Math.abs(d)+'%</span>';
+    return '<span class="dchip flat">±0%</span>';
+  }
+  function sumVals(o){ var t=0; for(var k in (o||{})) t+=o[k]; return t; }
+  // プロファイル前期比サマリー(セグメント適用後のP/Pp比較)
+  function prevCompareStrip(P, Pp){
+    if(!P || !P.n) return '';
+    Pp = Pp || {};
+    var items = [
+      ['プロファイル完了', P.n, Pp.n||0],
+      ['くせあり率%', pct(sumVals(P.kuseByAge), P.n), pct(sumVals(Pp.kuseByAge||{}), Pp.n||0)],
+      ['ブリーチ経験率%', pct(sumVals(P.bleachByAge), P.n), pct(sumVals(Pp.bleachByAge||{}), Pp.n||0)],
+      ['「投資したい」率%', pct((P.upgradeTotal||{}).yes||0, P.n), pct(((Pp.upgradeTotal||{}).yes)||0, Pp.n||0)],
+      ['隠れ矯正 人数', P.stHiddenN||0, Pp.stHiddenN||0],
+      ['再診断率%', pct(P.rediagN||0, P.n), pct(Pp.rediagN||0, Pp.n||0)],
+    ];
+    var cells = items.map(function(it){
+      return '<div class="pcell"><div class="plabel">'+esc(it[0])+'</div><div class="pnum">'+it[1]+' '+dchip(it[1], it[2])+'</div><div class="pprev">前期 '+it[2]+'</div></div>';
+    }).join('');
+    var rdAvg = (P.rediagN>0) ? Math.round((P.rediagDaysSum||0)/P.rediagN) : null;
+    var rdNote = rdAvg!==null ? noteLine('再診断の平均間隔: '+rdAvg+'日 — リピート診断 '+(P.rediagN||0)+'件(経時データの土台)') : '';
+    return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">vs Previous</span>前期比サマリー（同じ長さの直前期間・プロファイル系）</h2><div class="pgrid">'+cells+'</div>'+rdNote+'</div>';
   }
   function sparkline(daily){
     if(!daily||!daily.length) return '<div class="empty">データなし</div>';
@@ -710,14 +765,28 @@
     if (data.generatedAt) head += '更新 ' + new Date(data.generatedAt).toLocaleString('ja-JP');
     if (data.windowDays)  head += (data.generatedAt ? ' / ' : '') + '直近' + data.windowDays + '日';
     el('genAt').textContent = head;
-    var s=data.summary||{starts:0,completes:0,ctas:0};
+    if (data.seg && (data.seg.age || data.seg.cs)) {
+      var segAgeL = {teen:'10代','20s':'20代','30s':'30代','40s':'40代','50s':'50代','60plus':'60代以上'};
+      head += ' / セグメント: ' + [data.seg.age?(segAgeL[data.seg.age]||data.seg.age):null, data.seg.cs?(CONCERN[data.seg.cs]||data.seg.cs):null].filter(Boolean).join(' × ');
+      el('genAt').textContent = head;
+    }
+    // KPIは期間スコープ(kpiWin)を優先し前期比チップを添える(旧レスポンスは累計にフォールバック)
+    var w = data.kpiWin, s, sPrev = null;
+    if (w && w.cur) {
+      s = { starts: w.cur.finder_start||0, completes: w.cur.finder_complete||0, ctas: w.cur.finder_cta||0 };
+      sPrev = { starts: w.prev.finder_start||0, completes: w.prev.finder_complete||0, ctas: w.prev.finder_cta||0 };
+    } else {
+      s = data.summary||{starts:0,completes:0,ctas:0};
+    }
     var cr = pct(s.completes, s.starts);
     var cvr = pct(s.ctas, s.completes);
+    var crP = sPrev ? pct(sPrev.completes, sPrev.starts) : null;
+    var cvrP = sPrev ? pct(sPrev.ctas, sPrev.completes) : null;
     el('kpis').innerHTML =
-      kpi('診断 完了数', s.completes, '件') +
-      kpi('診断 開始数', s.starts, '件') +
-      kpi('完了率', cr, '%') +
-      kpi('予約・CTA遷移率', cvr, '%');
+      kpi('診断 完了数', s.completes, '件', sPrev?dchip(s.completes, sPrev.completes):'') +
+      kpi('診断 開始数', s.starts, '件', sPrev?dchip(s.starts, sPrev.starts):'') +
+      kpi('完了率', cr, '%', crP!==null?dchip(cr, crP):'') +
+      kpi('予約・CTA遷移率', cvr, '%', cvrP!==null?dchip(cvr, cvrP):'');
 
     el('panels').innerHTML =
       panel('Source','流入元（チャネル）', barRows(data.bySource||[], function(x){return REF[x.ref]||x.ref;})) +
@@ -737,6 +806,7 @@
       panel('Funnel','予約・誘導クリック', barRows(data.ctaTarget||[], function(x){return TARGET[x.target]||x.target;})) +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Channel</span>チャネル別ファネル（流入→診断→予約）</h2>'+funnelTable(data.sourceFunnel||[])+'</div>' +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Trend</span>日次トレンド（診断完了）</h2>'+sparkline(data.daily||[])+'</div>' +
+      prevCompareStrip(data.profile, data.profilePrev) +
       profilePanels(data.profile) +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Log</span>最近のアクティビティ（履歴）</h2>'+recentTable(data.recent||[])+'</div>';
 
@@ -787,7 +857,9 @@
     if(!key){ showLogin(''); return; }
     var days = (el('rangeSel')&&el('rangeSel').value) || '90';
     el('notice').innerHTML='';
-    fetch('/api/admin/stats?days='+days, { headers:{ 'x-seam-key': key } })
+    var sage = (el('segAge')&&el('segAge').value)||'';
+    var scs  = (el('segCs')&&el('segCs').value)||'';
+    fetch('/api/admin/stats?days='+days+(sage?'&sage='+encodeURIComponent(sage):'')+(scs?'&scs='+encodeURIComponent(scs):''), { headers:{ 'x-seam-key': key } })
       .then(function(r){ if(r.status===401){ sessionStorage.removeItem(KEY_LS); throw {auth:true}; } return r.json(); })
       .then(function(d){
         if(d.configured===false){
@@ -818,6 +890,8 @@
   el('logoutBtn').addEventListener('click', function(){ sessionStorage.removeItem(KEY_LS); location.href='admin.html'; });
   el('reloadBtn').addEventListener('click', load);
   el('rangeSel').addEventListener('change', load);
+  el('segAge').addEventListener('change', load);
+  el('segCs').addEventListener('change', load);
   el('reportBtn').addEventListener('click', openReport);
   el('mreportWrap').addEventListener('click', function(e){ if(e.target===el('mreportWrap')) closeReport(); });
   document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeReport(); });
