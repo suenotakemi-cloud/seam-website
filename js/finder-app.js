@@ -6369,9 +6369,9 @@ function ReturnDiffCard({
     style: {
       fontWeight: 500
     }
-  }, /*#__PURE__*/React.createElement("span", null, "\u304A\u304B\u3048\u308A\u306A\u3055\u3044 \u2014 "), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "\u304A\u304B\u3048\u308A\u306A\u3055\u3044 \u2014 "), diff.days >= 1 ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     className: "nums"
-  }, diff.days), /*#__PURE__*/React.createElement("span", null, "\u65E5\u3076\u308A\u306E\u8A3A\u65AD\u3067\u3059")), /*#__PURE__*/React.createElement("div", {
+  }, diff.days), /*#__PURE__*/React.createElement("span", null, "\u65E5\u3076\u308A\u306E\u8A3A\u65AD\u3067\u3059")) : /*#__PURE__*/React.createElement("span", null, "\u672C\u65E52\u56DE\u76EE\u306E\u8A3A\u65AD\u3067\u3059")), /*#__PURE__*/React.createElement("div", {
     className: "mt-3.5 space-y-2 text-[13px] sm:text-[13.5px] leading-[1.9] text-charcoal/85"
   }, diff.tierChanged && diff.curTier < diff.prevTier && /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
     className: "text-gold mr-1.5"
