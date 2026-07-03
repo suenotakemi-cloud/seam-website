@@ -3485,6 +3485,28 @@ function SaleFinderBanner() {
   );
 }
 
+/* ⚜ ダメージ・矯正履歴が深い診断者へのサロン相談提案 — SpaSuggestCardと排他表示 */
+function SalonSuggestCard() {
+  useEffect(() => { try { window.seamTrack && window.seamTrack('sec_view', { label: 'salon_finder' }); } catch (e) {} }, []);
+  return (
+    <div className="mt-7 rounded-[2px] border border-gold/40 bg-cream/60 overflow-hidden">
+      <div className="flex flex-col sm:flex-row">
+        <div className="relative sm:w-[36%] shrink-0 aspect-[16/9] sm:aspect-auto sm:min-h-[150px] bg-cream">
+          <img src="images/lp/salon/salon_hero.jpg?v=2" alt="SEAMサロン" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+        </div>
+        <div className="px-4 sm:px-5 py-4 sm:py-5 flex-1">
+          <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">— Hair Salon</p>
+          <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">このダメージは 家だけで戻さなくていい</h4>
+          <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">診断で強めのダメージや矯正の履歴が出ています ホームケアと並行して サロンの集中補修や髪質改善を組み合わせるのが最短です この結果はカウンセリングでそのまま伝わります</p>
+          <a href="hairsalon.html#booking" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'salon_finder' }); } catch (e) {} }} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
+            <span>サロンで相談する</span><span aria-hidden>→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ⚜ 頭皮ニーズが深い診断者へのヘッドスパ提案 — 診断→spa事業の橋(常設) */
 function SpaSuggestCard() {
   useEffect(() => { try { window.seamTrack && window.seamTrack('sec_view', { label: 'spa_finder' }); } catch (e) {} }, []);
@@ -3944,8 +3966,10 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
         </div>
       )}
 
-      {/* ⚜ 頭皮ニーズが深い人へ: 診断→ヘッドスパの橋 */}
-      {needScalp && <SpaSuggestCard />}
+      {/* ⚜ 診断→施術の橋: 頭皮の人にはスパ・ダメージ/矯正の人にはサロン(排他) */}
+      {needScalp
+        ? <SpaSuggestCard />
+        : ((highDamageRequired || (answers.straighten && answers.straighten !== 'none') || answers.straightenHidden) ? <SalonSuggestCard /> : null)}
 
       {/* ③ ケア処方をすべて見る(折りたたみ) */}
       <div className="mt-8">
