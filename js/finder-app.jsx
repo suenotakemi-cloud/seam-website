@@ -4758,8 +4758,14 @@ function ReturnDiffCard({ prev, karte, answers }) {
         <p className="font-mono tracking-widest3 text-[10px] uppercase text-gold mb-1.5">Welcome Back</p>
         <p className="font-serif text-[17px] sm:text-[19px] text-ink" style={{ fontWeight: 500 }}>
           <span>おかえりなさい — </span>
-          <span className="nums">{diff.days}</span>
-          <span>日ぶりの診断です</span>
+          {diff.days >= 1 ? (
+            <>
+              <span className="nums">{diff.days}</span>
+              <span>日ぶりの診断です</span>
+            </>
+          ) : (
+            <span>本日2回目の診断です</span>
+          )}
         </p>
         <div className="mt-3.5 space-y-2 text-[13px] sm:text-[13.5px] leading-[1.9] text-charcoal/85">
           {diff.tierChanged && diff.curTier < diff.prevTier && (
