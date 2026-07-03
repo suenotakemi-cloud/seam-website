@@ -9573,15 +9573,11 @@ function listAnimalsForCollection(filter = 'all') {
 }
 
 /* ---------- 予約モーダル(2ステップ) ---------- */
+// 表参道(GALLICA)と宇都宮(Gigi)はフランチャイズのためサロン予約導線には載せない(2026-07 オーナー指示)
 const RESERVATION_STORES = [{
   id: 'ginza',
   city: 'Tokyo',
   name: '銀座',
-  hpb: 'https://beauty.hotpepper.jp/slnH000802192/'
-}, {
-  id: 'omotesando',
-  city: 'Tokyo',
-  name: '表参道',
   hpb: 'https://beauty.hotpepper.jp/slnH000802192/'
 }, {
   id: 'osaka',
@@ -9603,11 +9599,6 @@ const RESERVATION_STORES = [{
   city: 'Sapporo',
   name: '札幌 大通',
   hpb: 'https://beauty.hotpepper.jp/slnH000417753/'
-}, {
-  id: 'gigi',
-  city: 'Utsunomiya',
-  name: '宇都宮 Gigi',
-  hpb: 'https://beauty.hotpepper.jp/'
 }];
 function ReservationModal({
   open,
