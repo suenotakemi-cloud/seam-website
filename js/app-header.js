@@ -49,6 +49,11 @@
       /* centered wordmark */
       '#seam-appheader .sah-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:25px;letter-spacing:.26em;padding-left:.26em;color:#171614;text-decoration:none;line-height:1;white-space:nowrap;}',
       '@media(min-width:640px){#seam-appheader .sah-logo{font-size:27px;}}',
+      /* right cluster: lang + injected shop pill (app-tabbar) — .sah-in は space-between
+         なので直下に3つ目の子が入るとそれが中央=ロゴ上に落ちる。注入物は必ずこの箱の中に収める */
+      '#seam-appheader .sah-right{position:relative;z-index:2;display:inline-flex;align-items:center;gap:8px;}',
+      '@media(max-width:400px){#seam-appheader .sah-logo{font-size:22px;letter-spacing:.22em;padding-left:.22em;}}',
+      '@media(max-width:350px){#seam-appheader .sah-logo{font-size:19px;letter-spacing:.16em;padding-left:.16em;}}',
       /* language toggle (right) */
       '#seam-appheader .sah-lang{position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:0 4px;background:none;border:0;cursor:pointer;color:#171614;font-size:11.5px;line-height:1;-webkit-tap-highlight-color:transparent;transition:opacity .2s;}',
       '#seam-appheader .sah-lang:hover{opacity:.7;}',
@@ -82,13 +87,18 @@
         +   '<span class="l"><i></i><i></i><i></i></span>'
         + '</button>'
         + '<a href="index.html" class="sah-logo font-serif" aria-label="SEAM">SEAM</a>'
+        + '<div class="sah-right">'
         + '<button type="button" id="langToggleBtn" class="sah-lang" aria-label="言語を切り替える" data-i18n-attr="aria-label:a11y.langToggle">'
         +   '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>'
         +   '<span id="langCurrentLabel" class="font-mono">JP</span>'
         +   '<svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5l3 3 3-3"/></svg>'
         + '</button>'
+        + '</div>'
         + '</div>';
-      document.body.insertBefore(header, document.body.firstChild);
+      // セール等の告知バー(#saleBar)がbody先頭にある場合はその直後へ(indexと同じ並び順: バー→ヘッダー)
+      var sb = document.getElementById('saleBar');
+      if (sb && sb.parentNode === document.body) document.body.insertBefore(header, sb.nextSibling);
+      else document.body.insertBefore(header, document.body.firstChild);
     }
 
     if (!document.getElementById('seam-mobilenav')) {
