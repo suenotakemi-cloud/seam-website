@@ -366,6 +366,14 @@
     @media (hover:hover){.group:hover .ashift{transform:translateX(3px);}}
   </style>
 <!-- ⚜ SUMMER SALE 告知バー (7/1〜7/31・8/1 0時JSTに自動非表示) -->
+<style>
+  /* SALEバッジ: 絶対配置でピルの幅を変えない(ロゴ被り防止)。スマホは小さな赤ドット */
+  #seam-header-shop { position: relative; }
+  .sale-dot { position: absolute; top: -6px; right: -8px; background: #B4453A; color: #fff; font-size: 8px; letter-spacing: .08em; padding: 2.5px 6px; border-radius: 999px; line-height: 1; font-family: monospace; box-shadow: 0 1px 4px rgba(0,0,0,.25); pointer-events: none; }
+  @media (max-width: 639px) {
+    .sale-dot { top: -2px; right: -2px; width: 9px; height: 9px; padding: 0; overflow: hidden; color: transparent; }
+  }
+</style>
 <div id="saleBar" hidden="" data-track-view="sale_banner" data-track-click="sale_banner" role="button" tabindex="0" aria-label="サマーセール オンラインショップへ" class="cursor-pointer select-none" style="background:linear-gradient(90deg,#8F6A3F,#B8945A 45%,#8F6A3F);color:#FBF7F1;">
   <div class="max-w-6xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-center gap-2 sm:gap-3 text-center whitespace-nowrap overflow-hidden">
     <span class="font-mono text-[10px] sm:text-[10.5px] uppercase" style="letter-spacing:.18em;">Summer&nbsp;Sale</span>
@@ -385,11 +393,7 @@
   var end   = new Date('2026-08-01T00:00:00+09:00').getTime(); // 期間外は表示しない=消し忘れゼロ
   if (now < start || now >= end) return;
   bar.hidden = false;
-  var go = function () {
-    var pill = document.getElementById('seam-header-shop'); // ヘッダーのONLINE SHOPピル=会員/未会員両対応シート
-    if (pill) { pill.click(); return; }
-    location.href = 'onlineshop.html';
-  };
+  var go = function () { location.href = 'shop.html#sale'; }; // セール記事(会員/未会員両導線あり)へ
   bar.addEventListener('click', go);
   bar.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
   // ヘッダーピルにSALEバッジ(ピルは後から注入されるためリトライ)
@@ -403,8 +407,8 @@
         var b = document.createElement('span');
         b.className = 'sale-dot';
         b.textContent = 'SALE';
-        b.style.cssText = 'margin-left:6px;background:#B4453A;color:#fff;font-size:8.5px;letter-spacing:.08em;padding:2px 5px;border-radius:999px;line-height:1;font-family:monospace;';
-        pill.appendChild(b);
+        pill.style.position = 'relative';
+        pill.appendChild(b); // 見た目は .sale-dot のCSSで(絶対配置=ピル幅不変・スマホはドット)
       }
     } else if (tries > 40) clearInterval(iv);
   }, 200);
