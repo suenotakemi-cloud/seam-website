@@ -163,6 +163,18 @@
     }
     .today-badge b { color: var(--gold); font-size: 0.95rem; }
 
+    /* スタッフ向け：token失効で名前が出せないとき「再ログイン」を促す（お客様には目立たせない） */
+    .relogin-badge {
+      background: rgba(192,57,43,0.14);
+      border: 1px solid #7a3a30;
+      border-radius: 6px;
+      color: #e08b7f;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      padding: 0.4rem 0.7rem;
+      cursor: pointer;
+    }
+
     .btn-logout {
       background: transparent;
       border: 1px solid var(--border);
@@ -654,6 +666,7 @@
     <div class="scan-header">
       <span class="logo-small" id="logo-small">SEAM</span>
       <div class="header-right">
+        <button id="relogin-badge" class="relogin-badge" style="display:none;">⚠ 再ログイン</button>
         <span class="today-badge">本日の入場 <b id="today-count">0</b></span>
         <button id="btn-guest" class="btn-guest">ゲスト受付</button>
         <button id="btn-logout" class="btn-logout">ログアウト</button>
@@ -932,6 +945,7 @@
       sessionStorage.setItem(SK.UID,   j.uid);
       sessionStorage.setItem(SK.NAME,  j.name);
       sessionStorage.setItem(SK.SHOP,  j.shop_id || '');
+      setReloginNeeded(false); // 新しいtokenを取得したので再ログイン表示を消す
 
       // パスワードフィールドをクリア
       inputPass.value = '';
@@ -955,6 +969,12 @@
     inputMail.value = '';
     inputPass.value = '';
     loginError.textContent = '';
+    showLogin();
+  });
+
+  // ── 再ログイン促し（token失効時にヘッダーに出る）をタップ → ログイン画面へ ──
+  $('relogin-badge').addEventListener('click', () => {
+    setReloginNeeded(false);
     showLogin();
   });
 
@@ -1091,39 +1111,80 @@
     const uid   = sessionStorage.getItem(SK.UID);
 
     if (!token || !uid) {
-      // セッション切れ → ログイン画面へ
+      // そもそも未ログイン（スタッフがまだ開始していない）→ ログイン画面へ
       showLogin();
       return;
     }
 
+    // 会員照会。通信/システム側の失敗は1回だけ自動リトライ（一瞬のネット断で会員を弾かないため）
+    let r = await lookupOnce(code, token, uid);
+    if (r.status === 'error') {
+      await new Promise(res => setTimeout(res, 700));
+      r = await lookupOnce(code, token, uid);
+    }
+
+    if (r.status === 'ok') {
+      setReloginNeeded(false);
+      const rp = isRepeat(code);
+      addLog({ t: localISO(), code: code, name: r.name, ok: 1, rp: rp ? 1 : 0 });
+      sendD1(code, r.name, true, rp);
+      chime(true);
+      showWelcome(r.name, rp, code);
+
+    } else if (r.status === 'not_found') {
+      // セッションは有効なのに該当なし＝本当に非会員。会員を誤って弾く心配はない
+      addLog({ t: localISO(), code: code, name: '', ok: 0, rp: 0 });
+      sendD1(code, '', false, false);
+      chime(false);
+      showResult('error', '会員情報が確認できません', 'お手数ですがスタッフにお声がけください\nPlease ask our staff for assistance', '', 3200);
+
+    } else {
+      // no_auth（token失効）または error（通信/システム側）
+      // ＝会員本人のせいではない。お客様は無難に歓迎＋記録し、絶対に「弾く」画面を出さない
+      if (r.status === 'no_auth') setReloginNeeded(true); // スタッフにだけ再ログインを促す
+      addLog({ t: localISO(), code: code, name: '', ok: 1, rp: 0, deg: 1 }); // 来店として記録（名前取得のみ失敗）
+      sendD1(code, '', true, false);
+      chime(true);
+      showGraceful();
+    }
+  }
+
+  // 会員照会を1回実行。reason を status に正規化して返す（error＝通信/システム側で会員のせいではない）
+  async function lookupOnce(code, token, uid) {
     try {
       const url = `/entrance/lookup?code=${encodeURIComponent(code)}&token=${encodeURIComponent(token)}&uid=${encodeURIComponent(uid)}`;
       const res = await fetch(url);
-      const j   = await res.json();
-
-      if (j.ok && j.name) {
-        const rp = isRepeat(code);
-        addLog({ t: localISO(), code: code, name: j.name, ok: 1, rp: rp ? 1 : 0 });
-        sendD1(code, j.name, true, rp);
-        chime(true);
-        showWelcome(j.name, rp, code);
-      } else if (!j.ok && j.reason === 'no_auth') {
-        // セッション無効 → ログアウト
-        sessionStorage.removeItem(SK.TOKEN);
-        sessionStorage.removeItem(SK.UID);
-        sessionStorage.removeItem(SK.NAME);
-        showLogin();
-        return;
-      } else {
-        addLog({ t: localISO(), code: code, name: '', ok: 0, rp: 0 });
-        sendD1(code, '', false, false);
-        chime(false);
-        showResult('error', '会員情報が確認できません', 'お手数ですがスタッフにお声がけください\nPlease ask our staff for assistance', '', 3200);
-      }
-    } catch (err) {
-      chime(false);
-      showResult('error', '通信エラーが発生しました', 'もう一度かざしてください\nPlease try again', '', 2600);
+      const j   = await res.json().catch(() => ({}));
+      if (j.ok && j.name)          return { status: 'ok', name: j.name };
+      if (j.reason === 'no_auth')  return { status: 'no_auth' };
+      if (j.reason === 'error')    return { status: 'error' };
+      return { status: 'not_found' };
+    } catch (e) {
+      return { status: 'error' }; // ネットワーク断など
     }
+  }
+
+  // token失効・通信不良で名前が取れないときの無難な歓迎（名前なし・記録は残す）
+  function showGraceful() {
+    resultMid.textContent  = 'WELCOME';
+    resultIcon.textContent = '✓';
+    resultName.textContent = '';
+    resultMsg.textContent  = 'ご来店ありがとうございます';
+    resultSub.textContent  = 'Enjoy your shopping';
+    resultCode.textContent = '';
+    resultTime.innerHTML   = '';
+    resultTime.appendChild(document.createTextNode(timeLabel() + ' ご入場を記録しました'));
+    const en = document.createElement('span');
+    en.className = 'en';
+    en.textContent = 'Entry recorded';
+    resultTime.appendChild(en);
+    show('success', 4000);
+  }
+
+  // スタッフ向け「再ログイン」表示の切替
+  function setReloginNeeded(on) {
+    const b = $('relogin-badge');
+    if (b) b.style.display = on ? '' : 'none';
   }
 
   // ── ようこそ表示（ゴールドVIP演出・リピーター対応・日英） ──
