@@ -271,28 +271,36 @@
   </section>
 
   <!-- ⚜ SUMMER SALE — 半期に一度のスペシャルセール (7/1〜7/31・期間外は自動非表示) -->
-  <section id="sale" hidden data-track-view="sale_shop" class="scroll-mt-24" style="background:linear-gradient(135deg,#2B2926 0%,#3A332C 55%,#5C4526 100%);">
+  <style>
+    /* 祝祭ビジュアル(生成画像)×左暗幕=文字の可読性を確保。画像が読めない環境は茶金グラデにフォールバック */
+    #sale{background:linear-gradient(100deg,rgba(22,16,9,.90) 0%,rgba(22,16,9,.74) 44%,rgba(26,19,10,.34) 76%,rgba(26,19,10,.16) 100%),url('images/lp/sale-summer-2026.webp') right center/cover no-repeat,linear-gradient(135deg,#2B2926 0%,#3A332C 55%,#5C4526 100%);}
+    @media(max-width:639px){
+      #sale{background:linear-gradient(rgba(22,16,9,.88) 0%,rgba(22,16,9,.72) 52%,rgba(24,17,9,.42) 100%),url('images/lp/sale-summer-2026.webp') 70% center/cover no-repeat,linear-gradient(135deg,#2B2926,#5C4526);}
+    }
+    #sale .sale-glow{text-shadow:0 2px 18px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.4);}
+  </style>
+  <section id="sale" hidden data-track-view="sale_shop" class="scroll-mt-24">
     <div class="max-w-6xl mx-auto px-6 sm:px-8 py-12 sm:py-16">
       <div class="flex items-center gap-3 flex-wrap">
         <span class="inline-block text-[10px] font-mono tracking-widest2 uppercase px-3 py-1.5 rounded-full" style="background:#B4453A;color:#fff;letter-spacing:.14em;" data-i18n="sale.badge">半期に一度</span>
         <p class="font-mono tracking-widest2 text-[10.5px] uppercase" style="color:#EBCF95;">Special Sale</p>
       </div>
-      <h2 class="mt-5 font-serif leading-[1.05]" style="font-weight:500;">
-        <span class="block text-[15px] sm:text-[19px] tracking-[0.16em] text-white/90">SUMMER SALE</span>
-        <span class="block mt-2 text-[46px] sm:text-[68px]" style="color:#EBCF95;" data-i18n="sale.h2b">最大30%OFF</span>
+      <h2 class="mt-5 font-serif leading-[1.05] sale-glow" style="font-weight:500;">
+        <span class="block tracking-[0.16em] text-white" style="font-size:clamp(16px,2vw,20px);">SUMMER SALE</span>
+        <span class="block mt-2" style="color:#F2DCA6;font-size:clamp(50px,7.5vw,74px);" data-i18n="sale.h2b">最大30%OFF</span>
       </h2>
-      <p class="mt-3 font-mono tracking-widest2 text-[11px] sm:text-[12.5px] uppercase text-white/80">7.1 &mdash; 7.31</p>
-      <p class="mt-5 text-[13.5px] sm:text-[15px] leading-[1.95] text-white/85 max-w-xl" data-i18n="sale.body">年に2回だけの ご褒美期間<br>オンラインショップも 全店舗も まとめてセール<br>気になっていたあの一本 いまが替えどきです</p>
-      <div class="mt-7 rounded-[6px] border px-5 sm:px-7 py-5 sm:py-6 max-w-2xl" style="border-color:rgba(235,207,149,.45);background:rgba(255,255,255,.05);">
-        <p class="font-mono tracking-widest2 text-[9.5px] uppercase" style="color:#EBCF95;">Campaign</p>
-        <p class="mt-2 font-serif text-[17px] sm:text-[21px] text-white" style="font-weight:500;" data-i18n="sale.cpTitle">いまだけ メンバー入会無料キャンペーン</p>
-        <p class="mt-2.5 text-[12.5px] sm:text-[13.5px] leading-[1.9] text-white/75" data-i18n="sale.cpBody">オンラインショップのご利用には会員登録が必要です<br>お近くの店舗で その場で無料発行 そのままセール価格でお買い物いただけます</p>
+      <p class="mt-3 font-mono tracking-widest2 uppercase sale-glow" style="color:#FFF;font-size:clamp(12px,1.1vw,13.5px);">7.1 &mdash; 7.31</p>
+      <p class="mt-5 leading-[1.95] max-w-xl sale-glow" style="color:#F7F1E6;font-size:clamp(14.5px,1.25vw,16px);" data-i18n="sale.body">年に2回だけの ご褒美期間<br>オンラインショップも 全店舗も まとめてセール<br>気になっていたあの一本 いまが替えどきです</p>
+      <div class="mt-7 rounded-[6px] border px-5 sm:px-7 py-5 sm:py-6 max-w-2xl" style="border-color:rgba(242,220,166,.6);background:rgba(18,13,7,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);">
+        <p class="font-mono tracking-widest2 uppercase" style="color:#F2DCA6;font-size:10px;">Campaign</p>
+        <p class="mt-2 font-serif text-white" style="font-weight:500;font-size:clamp(18px,1.8vw,22px);" data-i18n="sale.cpTitle">いまだけ メンバー入会無料キャンペーン</p>
+        <p class="mt-2.5 leading-[1.9]" style="color:#EFE7D8;font-size:clamp(13.5px,1.2vw,14.5px);" data-i18n="sale.cpBody">オンラインショップのご利用には会員登録が必要です<br>お近くの店舗で その場で無料発行 そのままセール価格でお買い物いただけます</p>
       </div>
       <div class="mt-7 flex flex-col sm:flex-row gap-3">
         <a href="onlineshop.html" data-track-click="sale_shop_online" class="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-serif text-[14px] transition-opacity hover:opacity-85" style="background:#EBCF95;color:#2B2926;font-weight:500;" data-i18n="sale.ctaOnline">会員の方 オンラインショップへ</a>
-        <a href="#stores" data-track-click="sale_shop_join" class="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-serif text-[14px] border text-white transition-colors hover:border-white" style="border-color:rgba(255,255,255,.4);" data-i18n="sale.ctaJoin">はじめての方 店舗で無料登録する</a>
+        <a href="#stores" data-track-click="sale_shop_join" class="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full font-serif text-[14px] border text-white transition-colors hover:border-white" style="border-color:rgba(255,255,255,.65);background:rgba(18,13,7,.35);" data-i18n="sale.ctaJoin">はじめての方 店舗で無料登録する</a>
       </div>
-      <p class="mt-5 text-[10.5px] text-white/50" data-i18n="sale.note">在庫状況は店舗により異なります</p>
+      <p class="mt-5 text-[11px] sale-glow" style="color:rgba(255,255,255,.8);" data-i18n="sale.note">在庫状況は店舗により異なります</p>
     </div>
   </section>
   <script>
