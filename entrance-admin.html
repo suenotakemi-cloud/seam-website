@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>SEAM 入場ダッシュボード</title>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0a0a0a; --surface:#141414; --surface2:#1b1b1b; --border:#2a2a2a;
+      --text:#f5f5f5; --muted:#8a8a8a; --gold:#c9a96e; --gold-dim:#8a6d40;
+      --green:#3f9a68; --red:#c0605a; --blue:#5f86b8; --amber:#c9a24e;
+    }
+    html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;min-height:100dvh}
+    .wrap{max-width:640px;margin:0 auto;padding:1.2rem 1rem 3rem}
+
+    header{display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0 1.2rem}
+    .brand{font-size:1.3rem;font-weight:700;letter-spacing:0.28em;color:var(--gold);padding-left:0.28em}
+    .brand small{display:block;font-size:0.6rem;letter-spacing:0.24em;color:var(--muted);text-transform:uppercase;padding-left:0.04em;margin-top:2px}
+    .live{display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;color:var(--muted)}
+    .live .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(63,154,104,.15)}
+    .live.stale .dot{background:var(--muted);box-shadow:none}
+
+    /* ログイン（鍵入力） */
+    .gate{max-width:400px;margin:12vh auto 0;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.8rem}
+    .gate h1{font-size:1rem;letter-spacing:0.1em;margin-bottom:0.3rem}
+    .gate p{font-size:0.8rem;color:var(--muted);line-height:1.7;margin-bottom:1.2rem}
+    .gate input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:1rem;padding:0.85rem 1rem;outline:none;-webkit-appearance:none}
+    .gate input:focus{border-color:var(--gold)}
+    .gate button{width:100%;margin-top:0.9rem;background:var(--gold);color:#0a0a0a;border:none;border-radius:8px;font-weight:700;letter-spacing:0.1em;font-size:0.95rem;padding:0.9rem;cursor:pointer}
+    .gate .err{color:#e07b73;font-size:0.82rem;margin-top:0.8rem;min-height:1.2em;line-height:1.6}
+
+    /* サマリー */
+    .hero{background:linear-gradient(160deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:16px;padding:1.4rem;text-align:center;margin-bottom:1rem}
+    .hero .lbl{font-size:0.68rem;letter-spacing:0.2em;color:var(--muted);text-transform:uppercase}
+    .hero .big{font-size:3.4rem;font-weight:700;color:var(--gold);line-height:1.1;margin:0.2rem 0}
+    .hero .date{font-size:0.8rem;color:var(--muted)}
+
+    .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:0.7rem;margin-bottom:1.2rem}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:0.9rem 1rem;display:flex;flex-direction:column;gap:0.15rem}
+    .card b{font-size:1.6rem;font-weight:700}
+    .card span{font-size:0.72rem;color:var(--muted);letter-spacing:0.05em}
+    .card.member b{color:var(--gold)} .card.guest b{color:var(--blue)}
+    .card.salon b{color:var(--green)} .card.repeat b{color:var(--amber)}
+    .card.reject b{color:var(--red)} .card.total b{color:var(--text)}
+
+    .section-title{font-size:0.75rem;letter-spacing:0.14em;color:var(--muted);text-transform:uppercase;margin:0.4rem 0.2rem 0.7rem}
+    .toggle{display:flex;gap:0.4rem;margin-bottom:0.8rem}
+    .toggle button{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:0.8rem;padding:0.6rem;cursor:pointer}
+    .toggle button.on{background:var(--gold);color:#0a0a0a;border-color:var(--gold);font-weight:600}
+
+    .list{display:flex;flex-direction:column;gap:0.45rem}
+    .entry{display:flex;align-items:center;gap:0.8rem;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.9rem}
+    .entry .time{font-variant-numeric:tabular-nums;font-size:0.95rem;color:var(--text);min-width:3.4em}
+    .entry .who{flex:1;font-size:0.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .entry .who .sub{font-size:0.7rem;color:var(--muted)}
+    .tag{font-size:0.66rem;letter-spacing:0.05em;padding:0.2rem 0.55rem;border-radius:99px;white-space:nowrap}
+    .tag.member{background:rgba(201,169,110,.16);color:var(--gold)}
+    .tag.guest{background:rgba(95,134,184,.16);color:var(--blue)}
+    .tag.salon{background:rgba(63,154,104,.16);color:var(--green)}
+    .tag.reject{background:rgba(192,96,90,.16);color:var(--red)}
+    .empty{text-align:center;color:var(--muted);font-size:0.85rem;padding:2rem 1rem}
+
+    .foot{margin-top:1.6rem;display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;color:var(--muted)}
+    .foot button{background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:0.72rem;padding:0.4rem 0.8rem;cursor:pointer}
+    .notice{background:rgba(201,162,78,.1);border:1px solid var(--gold-dim);border-radius:10px;padding:0.9rem;font-size:0.8rem;color:#e6cf9a;line-height:1.7;margin-bottom:1rem}
+    .hidden{display:none!important}
+  </style>
+</head>
+<body>
+  <!-- 鍵入力 -->
+  <div id="gate" class="gate">
+    <h1>入場ダッシュボード</h1>
+    <p>オーナー・スタッフ専用です<br>管理キーを入力してください</p>
+    <input id="keyInput" type="password" placeholder="管理キー" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <button id="keyBtn">表示する</button>
+    <div id="gateErr" class="err"></div>
+  </div>
+
+  <!-- 本体 -->
+  <div id="app" class="wrap hidden">
+    <header>
+      <div class="brand">SEAM<small>Entrance Log</small></div>
+      <div class="live" id="live"><span class="dot"></span><span id="liveText">更新中</span></div>
+    </header>
+
+    <div id="notice" class="notice hidden"></div>
+
+    <div class="hero">
+      <div class="lbl" id="heroLbl">本日の入場</div>
+      <div class="big" id="heroNum">–</div>
+      <div class="date" id="heroDate"></div>
+    </div>
+
+    <div class="cards">
+      <div class="card member"><b id="cMember">0</b><span>会員</span></div>
+      <div class="card guest"><b id="cGuest">0</b><span>ゲスト</span></div>
+      <div class="card salon"><b id="cSalon">0</b><span>サロン利用</span></div>
+      <div class="card repeat"><b id="cRepeat">0</b><span>リピーター</span></div>
+      <div class="card reject"><b id="cReject">0</b><span>未確認QR</span></div>
+      <div class="card total"><b id="cTotal">0</b><span>累計（全期間）</span></div>
+    </div>
+
+    <div class="section-title">入場履歴</div>
+    <div class="toggle" id="toggle">
+      <button data-range="today" class="on">本日</button>
+      <button data-range="all">直近すべて</button>
+    </div>
+    <div id="list" class="list"></div>
+
+    <div class="foot">
+      <span id="updatedAt">–</span>
+      <button id="logoutBtn">キー削除</button>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const KEY_LS = 'seam_entrance_admin_key';
+  const POLL_MS = 20000;   // 20秒ごとに更新
+  const JST_OFFSET = 9 * 60 * 60 * 1000;
+
+  let key = localStorage.getItem(KEY_LS) || '';
+  let range = 'today';
+  let rows = [];
+  let total = 0;
+  let timer = null;
+
+  // ── JSTユーティリティ（ログのtsはUTC ISO文字列） ──
+  function toJst(ts){ return new Date(new Date(ts).getTime() + JST_OFFSET); } // UTC→JSTのDate（getUTC*で読む）
+  function jstDateKey(ts){ const d = toJst(ts); const p=n=>String(n).padStart(2,'0');
+    return d.getUTCFullYear()+'-'+p(d.getUTCMonth()+1)+'-'+p(d.getUTCDate()); }
+  function jstHM(ts){ const d = toJst(ts); const p=n=>String(n).padStart(2,'0');
+    return d.getUTCHours()+':'+p(d.getUTCMinutes()); }
+  function jstMD(ts){ const d = toJst(ts); return (d.getUTCMonth()+1)+'月'+d.getUTCDate()+'日'; }
+  function todayKeyJst(){ const d = new Date(Date.now()+JST_OFFSET); const p=n=>String(n).padStart(2,'0');
+    return d.getUTCFullYear()+'-'+p(d.getUTCMonth()+1)+'-'+p(d.getUTCDate()); }
+
+  function typeOf(r){
+    if(!r.ok) return 'reject';
+    if(r.code === 'GUEST') return 'guest';
+    if(r.code === 'SALON') return 'salon';
+    return 'member';
+  }
+  const TYPE_LABEL = { member:'会員', guest:'ゲスト', salon:'サロン', reject:'未確認' };
+
+  // ── データ取得 ──
+  async function load(){
+    if(!key) return;
+    try{
+      const res = await fetch('/entrance/stats?key=' + encodeURIComponent(key) + '&limit=500', { headers:{accept:'application/json'} });
+      const j = await res.json();
+      if(res.status === 401 || j.reason === 'unauthorized'){ badKey('キーが正しくありません'); return; }
+      if(j.configured === false){ showNotice(j.message || '設定が未完了です'); rows=[]; total=0; render(); markLive(true); return; }
+      hideNotice();
+      rows = Array.isArray(j.rows) ? j.rows : [];
+      total = j.total || rows.length;
+      render();
+      markLive(true);
+    }catch(e){ markLive(false); }
+  }
+
+  function markLive(ok){
+    $('live').classList.toggle('stale', !ok);
+    $('liveText').textContent = ok ? '自動更新中' : '接続待ち';
+    const d = new Date(Date.now()+JST_OFFSET), p=n=>String(n).padStart(2,'0');
+    $('updatedAt').textContent = '最終更新 ' + d.getUTCHours()+':'+p(d.getUTCMinutes())+':'+p(d.getUTCSeconds());
+  }
+
+  // ── 描画 ──
+  function render(){
+    const tk = todayKeyJst();
+    const todays = rows.filter(r => jstDateKey(r.ts) === tk);
+
+    const count = (arr, t) => arr.filter(r => typeOf(r) === t).length;
+    const entered = todays.filter(r => r.ok);              // 入場（弾かれたものを除く）
+    $('heroNum').textContent = entered.length;
+    $('heroDate').textContent = jstMD(new Date().toISOString()) + ' 現在';
+    $('cMember').textContent = count(todays,'member');
+    $('cGuest').textContent  = count(todays,'guest');
+    $('cSalon').textContent  = count(todays,'salon');
+    $('cRepeat').textContent = todays.filter(r => r.ok && r.revisit).length;
+    $('cReject').textContent = count(todays,'reject');
+    $('cTotal').textContent  = total;
+
+    const view = (range === 'today') ? todays : rows;
+    const list = $('list');
+    list.innerHTML = '';
+    if(!view.length){ list.innerHTML = '<div class="empty">まだ入場記録がありません</div>'; return; }
+    view.forEach(r => {
+      const t = typeOf(r);
+      const el = document.createElement('div');
+      el.className = 'entry';
+      let name;
+      if (t === 'member')      name = r.name ? esc(r.name) + ' 様' : '会員';
+      else if (t === 'guest')  name = 'ゲスト';
+      else if (t === 'salon')  name = 'サロンご利用';
+      else                     name = '確認できず';
+      const dateLabel = (range==='today') ? '' : '<span class="sub">'+jstMD(r.ts)+'</span>';
+      el.innerHTML =
+        '<span class="time">'+jstHM(r.ts)+'</span>'+
+        '<span class="who">'+name+' '+dateLabel+'</span>'+
+        '<span class="tag '+t+'">'+TYPE_LABEL[t]+'</span>';
+      list.appendChild(el);
+    });
+  }
+  function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+  function showNotice(msg){ const n=$('notice'); n.textContent = msg; n.classList.remove('hidden'); }
+  function hideNotice(){ $('notice').classList.add('hidden'); }
+
+  // ── 認証ゲート ──
+  function openApp(){
+    $('gate').classList.add('hidden');
+    $('app').classList.remove('hidden');
+    load();
+    if(timer) clearInterval(timer);
+    timer = setInterval(load, POLL_MS);
+  }
+  function badKey(msg){
+    localStorage.removeItem(KEY_LS); key='';
+    if(timer) clearInterval(timer);
+    $('app').classList.add('hidden');
+    $('gate').classList.remove('hidden');
+    $('gateErr').textContent = msg || '';
+  }
+  $('keyBtn').addEventListener('click', async () => {
+    const v = $('keyInput').value.trim();
+    if(!v){ $('gateErr').textContent = '管理キーを入力してください'; return; }
+    key = v; localStorage.setItem(KEY_LS, v);
+    $('gateErr').textContent = '確認中…';
+    // 一度取得してキーの正否を確認
+    try{
+      const res = await fetch('/entrance/stats?key=' + encodeURIComponent(v) + '&limit=1');
+      const j = await res.json();
+      if(res.status === 401 || j.reason === 'unauthorized'){ badKey('キーが正しくありません'); return; }
+      $('gateErr').textContent = '';
+      openApp();
+    }catch(e){ $('gateErr').textContent = '接続できませんでした'; }
+  });
+  $('keyInput').addEventListener('keydown', e => { if(e.key === 'Enter') $('keyBtn').click(); });
+  $('logoutBtn').addEventListener('click', () => badKey(''));
+
+  $('toggle').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    range = b.dataset.range;
+    document.querySelectorAll('#toggle button').forEach(x => x.classList.toggle('on', x===b));
+    $('heroLbl').textContent = '本日の入場';
+    render();
+  });
+
+  // 起動：保存済みキーがあれば自動で開く
+  if(key){ openApp(); }
+})();
+</script>
+</body>
+</html>
