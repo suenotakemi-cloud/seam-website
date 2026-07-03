@@ -178,6 +178,66 @@
       border-color: var(--gold);
       color: var(--gold);
     }
+    .btn-guest {
+      background: transparent;
+      border: 1px solid var(--gold-dim);
+      border-radius: 6px;
+      color: var(--gold);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-guest:active { background: rgba(201,169,110,0.15); }
+
+    /* ─── ゲスト受付のスキャン演出（顔枠＋スキャンライン） ─── */
+    .guest-scan {
+      position: absolute;
+      inset: 0;
+      display: none;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .guest-scan.visible { display: block; }
+    .guest-face {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 58%; aspect-ratio: 1;
+      border: 2.5px solid var(--gold);
+      border-radius: 50%;
+      box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    .guest-face::after {
+      content: "";
+      position: absolute;
+      left: 6%; right: 6%;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #ffe9b8, transparent);
+      box-shadow: 0 0 14px 3px rgba(255,233,184,0.7);
+      animation: gscan 1.1s ease-in-out infinite;
+    }
+    @keyframes gscan { 0% { top: 12%; } 50% { top: 86%; } 100% { top: 12%; } }
+    .guest-label {
+      position: absolute;
+      left: 0; right: 0;
+      bottom: 6%;
+      text-align: center;
+      font-size: 0.85rem;
+      letter-spacing: 0.14em;
+      color: #f5e9cf;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+    }
+    .guest-label .en {
+      display: block;
+      font-size: 0.62rem;
+      letter-spacing: 0.24em;
+      color: #d9c9a5;
+      text-transform: uppercase;
+      margin-top: 0.2rem;
+    }
 
     .scan-body {
       display: flex;
@@ -567,6 +627,7 @@
       <span class="logo-small" id="logo-small">SEAM</span>
       <div class="header-right">
         <span class="today-badge">本日の入場 <b id="today-count">0</b></span>
+        <button id="btn-guest" class="btn-guest">ゲスト受付</button>
         <button id="btn-logout" class="btn-logout">ログアウト</button>
       </div>
     </div>
@@ -577,6 +638,11 @@
         <canvas id="canvas"></canvas>
         <div class="scan-overlay">
           <div class="scan-frame"></div>
+        </div>
+        <!-- ゲスト受付のスキャン演出（実際の照合はしない・映像も保存しない） -->
+        <div id="guest-scan" class="guest-scan">
+          <div class="guest-face"></div>
+          <div class="guest-label">セキュリティチェック中…<span class="en">Security check in progress</span></div>
         </div>
       </div>
       <!-- カメラ許可リクエスト -->
@@ -1076,6 +1142,46 @@
       scanning = true;
       rafId = requestAnimationFrame(tick);
     }, duration);
+  }
+
+  // ── ゲスト受付（非会員・スタッフがパスポート等を目視確認したあとに使用） ──
+  // スキャン風の演出のみで顔の照合・保存は一切しない。記録するのは「ゲスト・時刻」だけ。
+  let guestBusy = false;
+  $('btn-guest').addEventListener('click', async () => {
+    if (guestBusy || overlay.classList.contains('visible')) return;
+    guestBusy = true;
+    ensureAudio();
+    scanning = false; // 演出中はQR読み取りを一時停止
+    const gs = $('guest-scan');
+    const qrFrame = document.querySelector('.scan-overlay');
+    if (stream) {     // カメラが生きていれば顔枠スキャン演出（約2秒）
+      if (qrFrame) qrFrame.style.display = 'none';  // 演出中はQR枠を隠す
+      gs.classList.add('visible');
+      await new Promise(r => setTimeout(r, 2200));
+      gs.classList.remove('visible');
+      if (qrFrame) qrFrame.style.display = '';
+    }
+    addLog({ t: localISO(), code: 'GUEST', name: 'ゲスト', ok: 1, rp: 0 });
+    sendD1('GUEST', 'ゲスト', true, false);
+    chime(true);
+    showGuestWelcome();
+    guestBusy = false;
+  });
+
+  function showGuestWelcome() {
+    resultMid.textContent  = 'WELCOME';
+    resultIcon.textContent = '✓';
+    resultName.textContent = 'ゲスト様';
+    resultMsg.textContent  = 'ご来店ありがとうございます';
+    resultSub.textContent  = 'Welcome to SEAM';
+    resultCode.textContent = '';
+    resultTime.innerHTML   = '';
+    resultTime.appendChild(document.createTextNode(timeLabel() + ' ご入場を記録しました'));
+    const en = document.createElement('span');
+    en.className = 'en';
+    en.textContent = 'Entry recorded';
+    resultTime.appendChild(en);
+    show('success', 4000);
   }
 
   // ── 隠し管理パネル（ロゴを5回タップ） ──
