@@ -204,12 +204,13 @@ export async function onRequestGet(context) {
       q("SELECT ts, name, type, advice, tier, ref, utm_campaign, target, device, gender FROM events WHERE name IN ('finder_complete','finder_cta') AND " + NT + " ORDER BY ts DESC LIMIT 60"),
     ]);
     // ── 行動計測 v3: 検索ワード / ブランド関心 / ページ閲覧・滞在 / セクション露出→タップ ──
-    const [brandSearch, brandClick, pageViews, pageEngage, secEngageRaw] = await Promise.all([
+    const [brandSearch, brandClick, pageViews, pageEngage, secEngageRaw, funnelRaw] = await Promise.all([
       q("SELECT label, COUNT(*) c FROM events WHERE name='brand_search' AND label<>'' AND ts>=? AND " + NT + " GROUP BY label ORDER BY c DESC LIMIT 30", since),
       q("SELECT label, COUNT(*) c FROM events WHERE name='brand_click' AND label<>'' AND ts>=? AND " + NT + " GROUP BY label ORDER BY c DESC LIMIT 30", since),
       q("SELECT path, COUNT(*) c FROM events WHERE name='page_view' AND ts>=? AND " + NT + " GROUP BY path ORDER BY c DESC LIMIT 24", since),
       q("SELECT path, COUNT(*) c, ROUND(AVG(CAST(json_extract(meta,'$.sec') AS REAL))) sec, ROUND(AVG(CAST(json_extract(meta,'$.sd') AS REAL))) sd FROM events WHERE name='page_engage' AND meta IS NOT NULL AND ts>=? AND " + NT + " GROUP BY path ORDER BY c DESC LIMIT 24", since),
       q("SELECT label, name, COUNT(*) c FROM events WHERE name IN ('sec_view','sec_click') AND label<>'' AND ts>=? AND " + NT + " GROUP BY label, name", since),
+      q("SELECT name, path, label, COUNT(*) c FROM events WHERE ts>=? AND " + NT + " AND ((name='page_view' AND path IN ('/hairsalon','/hairsalon.html','/headspa','/headspa.html')) OR (name='sec_view' AND label IN ('salon_booking','spa_booking')) OR (name='sec_click' AND label IN ('salon_reserve_hpb','salon_reserve_stylist','spa_reserve_hpb','spa_reserve_spanist','book_sticky','book_sticky_spa'))) GROUP BY name, path, label", since),
     ]);
     // 露出→タップをラベルごとに集約 [{label, views, clicks}]
     const seMap = {};
@@ -218,6 +219,24 @@ export async function onRequestGet(context) {
       if (r.name === 'sec_view') o.views = r.c; else o.clicks = r.c;
     });
     const secEngage = Object.keys(seMap).map(k => seMap[k]).sort((a, b) => (b.views || b.clicks) - (a.views || a.clicks));
+    // 予約ファネル: ページ閲覧 → 予約エリア到達(sec_view) → 予約クリック(HPB遷移/指名/追従)
+    const bookingFunnel = { salon: { pv: 0, area: 0, hpb: 0, stylist: 0, sticky: 0 }, spa: { pv: 0, area: 0, hpb: 0, spanist: 0, sticky: 0 } };
+    (funnelRaw.results || []).forEach(r => {
+      if (r.name === 'page_view') {
+        if (String(r.path).indexOf('/hairsalon') === 0) bookingFunnel.salon.pv += r.c;
+        else if (String(r.path).indexOf('/headspa') === 0) bookingFunnel.spa.pv += r.c;
+      } else if (r.name === 'sec_view') {
+        if (r.label === 'salon_booking') bookingFunnel.salon.area += r.c;
+        if (r.label === 'spa_booking')   bookingFunnel.spa.area += r.c;
+      } else if (r.name === 'sec_click') {
+        if (r.label === 'salon_reserve_hpb')     bookingFunnel.salon.hpb += r.c;
+        if (r.label === 'salon_reserve_stylist') bookingFunnel.salon.stylist += r.c;
+        if (r.label === 'book_sticky')           bookingFunnel.salon.sticky += r.c;
+        if (r.label === 'spa_reserve_hpb')       bookingFunnel.spa.hpb += r.c;
+        if (r.label === 'spa_reserve_spanist')   bookingFunnel.spa.spanist += r.c;
+        if (r.label === 'book_sticky_spa')       bookingFunnel.spa.sticky += r.c;
+      }
+    });
     // 診断プロファイル（meta JSON）— 期間内の完了イベントをJS側で集計（列追加なし・D1マイグレーション不要）
     // セグメント(プロファイル系にのみ適用): sage=年代コード / scs=悩みコード
     const sage = (url.searchParams.get('sage') || '').slice(0, 16);
@@ -283,6 +302,7 @@ export async function onRequestGet(context) {
       brandSearch: brandSearch.results || [],
       brandClick: brandClick.results || [],
       pageViews: pageViews.results || [],
+      bookingFunnel,
       pageEngage: pageEngage.results || [],
       secEngage,
       profile,
