@@ -3445,6 +3445,46 @@ function _heatOn(a, s) {
     || (a.straighten && a.straighten !== 'none')
     || (s.heatDamage || 0) >= 2;
 }
+/* ⚜ 年2回セールの結果画面掲出 — shop/indexのsaleBarと同じ期間窓(期間外は自動で消える)
+   診断直後=購入意欲が最も高い瞬間に「この結果の商品もセール中+入会金1,100円→無料」を届ける */
+const SALE_WINDOW_START = new Date('2026-07-01T00:00:00+09:00').getTime();
+const SALE_WINDOW_END   = new Date('2026-08-01T00:00:00+09:00').getTime();
+function isSaleActive() { const t = Date.now(); return t >= SALE_WINDOW_START && t < SALE_WINDOW_END; }
+
+function SaleFinderBanner() {
+  const active = isSaleActive();
+  useEffect(() => {
+    if (active) { try { window.seamTrack && window.seamTrack('sec_view', { label: 'sale_finder' }); } catch (e) {} }
+  }, [active]);
+  if (!active) return null;
+  const click = (label) => { try { window.seamTrack && window.seamTrack('sec_click', { label: label }); } catch (e) {} };
+  return (
+    <div className="mt-5 rounded-[2px] overflow-hidden" style={{ background: 'linear-gradient(100deg,#6E4E26,#B8945A 45%,#6E4E26)' }}>
+      <div className="px-4 sm:px-6 py-4 sm:py-5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="font-mono text-[9px] tracking-widest2 uppercase rounded-full px-2 py-1" style={{ background: '#B4453A', color: '#fff', lineHeight: 1 }}>SALE</span>
+          <span className="font-mono tracking-widest2 text-[10px] uppercase" style={{ color: 'rgba(255,255,255,.95)' }}>Summer Sale</span>
+          <span className="font-mono tracking-widest2 text-[10px]" style={{ color: 'rgba(255,255,255,.85)' }}>7.31まで</span>
+        </div>
+        <p className="mt-2.5 font-serif text-[16px] sm:text-[18px] leading-snug" style={{ color: '#FFF3DC', fontWeight: 500 }}>
+          この結果のアイテムも 全店舗＆オンラインで最大30%OFF
+        </p>
+        <p className="mt-1.5 text-[12px] sm:text-[12.5px] leading-[1.85]" style={{ color: 'rgba(255,255,255,.92)' }}>
+          メンバー入会金1,100円も いまだけ無料 — 登録は店舗で その場で完了 そのままセール価格に
+        </p>
+        <div className="mt-3.5 flex flex-col sm:flex-row gap-2">
+          <a href="shop.html#stores" onClick={() => click('sale_finder_store')} className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-serif text-[13px]" style={{ background: '#F2DCA6', color: '#2B2926', fontWeight: 500 }}>
+            <span>近くの店舗を探す</span><span aria-hidden>→</span>
+          </a>
+          <a href="onlineshop.html" onClick={() => click('sale_finder_online')} className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-serif text-[13px] border" style={{ borderColor: 'rgba(255,255,255,.55)', color: '#fff' }}>
+            <span>会員の方はオンラインへ</span><span aria-hidden>↗</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // 今回の優先課題(主訴)を最大3つ。強い履歴(ブリーチ→熱)を先に、次にユーザーが選んだ悩み。
 function buildPriorityConcerns(answers, scores) {
   const a = answers || {}, s = scores || {};
@@ -3817,6 +3857,9 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
           </div>
         </div>
       )}
+
+      {/* ⚜ セール期間中のみ: 診断結果×セールの接続(7.31で自動消滅) */}
+      <SaleFinderBanner />
 
       {/* ② まず、この◯本 — 基礎3点＋必要に応じ頭皮/マスクで3〜5本(変動) */}
       {primary.length > 0 && (
