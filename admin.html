@@ -216,6 +216,9 @@
   // 価格受容性(1回に払う金額帯・finder実値と同期)
   var BANDL = {skip:'使わない',u1:'〜1,000円',b12:'1,000〜2,000円',b23:'2,000〜3,000円',b34:'3,000〜4,000円',b45:'4,000〜5,000円',b56:'5,000〜6,000円',b67:'6,000〜7,000円',b78:'7,000〜8,000円',o8:'8,000円以上'};
   var BAND_ORDER = ['u1','b12','b23','b34','b45','b56','b67','b78','o8','skip'];
+  var UPW_ORDER = ['yes','depends','price'];
+  var ICAT_ORDER = ['shampoo','treatment','outbath','mask','styling','none'];
+  var BPL_ORDER = ['seam','salon','drug','amazon','rakuten','other'];
   var UPWL = {yes:'合うなら投資したい',depends:'ものによる',price:'いまは価格を優先'};
   var ICATL = {shampoo:'シャンプー',treatment:'トリートメント',outbath:'アウトバス',mask:'集中マスク',styling:'スタイリング剤',none:'特にない'};
   var BPL = {seam:'SEAMで',salon:'通っているサロンで',drug:'ドラッグストア',amazon:'Amazon',rakuten:'楽天',other:'そのほかのECや店舗'};
@@ -390,13 +393,14 @@
 
   // ---- プロファイル描画ヘルパー ----
   // {key:件数} → バー行。denomを渡すと右側は「件数 · denom比%」（複数選択は合計100%超）
-  function objRows(obj, labels, denom, order){
+  function objRows(obj, labels, denom, order, showZero){
     obj = obj || {};
-    var keys = order ? order.filter(function(k){return obj[k];}) : Object.keys(obj).sort(function(a,b){return obj[b]-obj[a];});
+    // showZero: orderの全キーを0件でも表示(価格帯など「空であること」自体が情報の指標用)
+    var keys = order ? (showZero ? order.slice() : order.filter(function(k){return obj[k];})) : Object.keys(obj).sort(function(a,b){return obj[b]-obj[a];});
     if(!keys.length) return '<div class="empty">データなし</div>';
-    var max = keys.reduce(function(m,k){return Math.max(m,obj[k]);},0)||1;
+    var max = keys.reduce(function(m,k){return Math.max(m,obj[k]||0);},0)||1;
     return keys.map(function(k){
-      var n=obj[k], w=Math.max(2,n/max*100);
+      var n=obj[k]||0, w=n?Math.max(2,n/max*100):0;
       var right='<b>'+n+'</b>'+(denom?' <span class="muted">'+pct(n,denom)+'%</span>':'');
       return '<div class="bar-row"><span class="nm" title="'+esc(labels[k]||k)+'">'+esc(labels[k]||k)+'</span>'+
         '<span class="bar-track"><span class="bar-fill" style="width:'+w+'%"></span></span>'+
@@ -546,18 +550,18 @@
         noteLine('複合履歴毛（2つ以上の重なり）の実サイズ — ハイダメージ向け開発・ビビリ毛リスク層の把握・施術メニュー設計の基礎数字')) +
       dealerPanels(P) +
       panel('Budget','価格受容性 — 1回のお買い物で払う金額',
-        subhead('シャンプー') + objRows(P.budgetSh, BANDL, P.n, BAND_ORDER) +
-        subhead('トリートメント') + objRows(P.budgetTr, BANDL, P.n, BAND_ORDER) +
-        subhead('アウトバス') + objRows(P.budgetOb, BANDL, P.n, BAND_ORDER) +
-        subhead('集中マスク') + objRows(P.budgetMk, BANDL, P.n, BAND_ORDER) +
+        subhead('シャンプー') + objRows(P.budgetSh, BANDL, P.n, BAND_ORDER, true) +
+        subhead('トリートメント') + objRows(P.budgetTr, BANDL, P.n, BAND_ORDER, true) +
+        subhead('アウトバス') + objRows(P.budgetOb, BANDL, P.n, BAND_ORDER, true) +
+        subhead('集中マスク') + objRows(P.budgetMk, BANDL, P.n, BAND_ORDER, true) +
         noteLine('「買った価格」ではなく本人申告の支払い意思 — 価格設定・プレミアムライン判断の1次データ')) +
       panel('Willingness','値上がり許容と投資カテゴリ',
-        objRows(P.upgradeTotal, UPWL, P.n) +
+        objRows(P.upgradeTotal, UPWL, P.n, UPW_ORDER, true) +
         subhead('「合うなら投資したい」率 × 年代') + rateByAge(P.upgradeYesByAge, P.byAge) +
-        subhead('いちばんお金をかけたいカテゴリ') + objRows(P.investCatTotal, ICATL, P.n) +
+        subhead('いちばんお金をかけたいカテゴリ') + objRows(P.investCatTotal, ICATL, P.n, ICAT_ORDER, true) +
         noteLine('プレミアム許容層のサイズと年代分布 — 高価格帯の企画・接客トークの根拠')) +
       panel('Where to buy','ふだんの購入場所（複数選択）',
-        objRows(P.buyPlaceTotal, BPL, P.n) +
+        objRows(P.buyPlaceTotal, BPL, P.n, BPL_ORDER, true) +
         noteLine('流通チャネルの実態 — EC利用層の来店=送客インサイト・ディーラー向け提案資料の基礎')) +
       '<div class="card panel"'+full+'><h2><span class="eyebrow">Concern → Texture</span>悩み → 求める質感 TOP12（広告コピーの素）</h2>'+pairTable(P.concernTexture, P.n)+'</div>';
   }
@@ -691,10 +695,10 @@
         objRows((function(){var o={};for(var k in (P.bleachTotal||{}))if(k!=='none')o[k]=P.bleachTotal[k];return o;})(), BLEACH, P.n)) +
       rblock('縮毛矯正・髪質改善の分布', objRows(P.straightenTotal, STRAIGHTEN, P.n) + stHiddenLine(P)) +
       rblock('価格受容性（1回に払う金額・本人申告）',
-        subhead('シャンプー') + objRows(P.budgetSh, BANDL, P.n, BAND_ORDER) +
-        subhead('トリートメント') + objRows(P.budgetTr, BANDL, P.n, BAND_ORDER) +
-        subhead('値上がり許容') + objRows(P.upgradeTotal, UPWL, P.n) +
-        subhead('購入場所（複数選択）') + objRows(P.buyPlaceTotal, BPL, P.n)) +
+        subhead('シャンプー') + objRows(P.budgetSh, BANDL, P.n, BAND_ORDER, true) +
+        subhead('トリートメント') + objRows(P.budgetTr, BANDL, P.n, BAND_ORDER, true) +
+        subhead('値上がり許容') + objRows(P.upgradeTotal, UPWL, P.n, UPW_ORDER, true) +
+        subhead('購入場所（複数選択）') + objRows(P.buyPlaceTotal, BPL, P.n, BPL_ORDER, true)) +
       rblock('パーマ: 現役率×年代 / カール意欲×年代 / 種類・持ち', rateByAge(P.permNowByAge, P.byAge) + rateByAge(P.curlWantByAge, P.byAge) + objRows(P.permTypeTotal, PERMTYPE) + objRows(P.permLooseTotal, PERMLOOSE)) +
       rblock('白髪: 染め中率×年代 / 頻度', rateByAge(P.grayCareByAge, P.byAge) + objRows(P.grayFreqTotal, GRAYFREQ)) +
       rblock('熱習慣（アイロン・コテ）と設定温度', objRows(P.toolsTotal, TOOLS, P.n) + objRows(P.tempTotal, TEMPL)) +
