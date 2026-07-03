@@ -6289,6 +6289,140 @@ function StraightenFlow({
   })))));
 }
 
+/* ──────────────────────────────────────────
+   ReturnDiffCard — 再診断の差分(前回カルテとの比較)
+   complete()時に退避した window.__seamPrevKarte とだけ比較する=復元表示では出ない。
+   文言は自己申告の変化の記述に留める(効能断定なし・薬機法配慮)。 ────────────────────────────────────────── */
+const TIER_BAND_LABEL = {
+  1: '軽やかケア帯',
+  2: '集中ケア帯',
+  3: 'しっかり補修帯'
+};
+function ReturnDiffCard({
+  prev,
+  karte,
+  answers
+}) {
+  const diff = useMemo(() => {
+    if (!prev || !prev.savedAt || !prev.answersSnapshot || !karte) return null;
+    let days = Math.round((Date.now() - new Date(prev.savedAt).getTime()) / 86400000);
+    if (!isFinite(days) || days < 0) days = 0;
+    // 前回tier: v2はdamageTier保存済み・v1はスナップショットから再計算
+    let prevTier = prev.damageTier;
+    if (!prevTier) {
+      try {
+        prevTier = computeDamageTier(computeScores(prev.answersSnapshot).scores);
+      } catch (e) {
+        prevTier = null;
+      }
+    }
+    const curTier = karte.damageTier;
+    const prevCode = prev.originCode || '';
+    const curCode = karte.origin && karte.origin.code || '';
+    const prevConcerns = Array.isArray(prev.answersSnapshot.concerns) ? prev.answersSnapshot.concerns : [];
+    const curConcerns = Array.isArray(answers && answers.concerns) ? answers.concerns : [];
+    const resolved = prevConcerns.filter(c => c !== 'none' && curConcerns.indexOf(c) === -1).slice(0, 3);
+    const added = curConcerns.filter(c => c !== 'none' && prevConcerns.indexOf(c) === -1).slice(0, 3);
+    const tierChanged = prevTier && curTier && prevTier !== curTier;
+    const typeChanged = prevCode && curCode && prevCode !== curCode;
+    // 見せる価値のある差分が無ければ出さない(同日・同内容の連続再診断など)
+    if (days < 1 && !tierChanged && !typeChanged && !resolved.length && !added.length) return null;
+    return {
+      days,
+      prevTier,
+      curTier,
+      tierChanged,
+      typeChanged,
+      prevCode,
+      curCode,
+      prevName: prev.originName || prevCode,
+      curName: karte.origin && karte.origin.name || curCode,
+      resolved,
+      added
+    };
+  }, [prev, karte, answers]);
+  if (!diff) return null;
+  const cLabel = v => {
+    try {
+      const q = QUESTION_LOOKUP && QUESTION_LOOKUP.concerns;
+      const o = q && q.options && q.options.find(x => x.v === v);
+      return o && o.label || v;
+    } catch (e) {
+      return v;
+    }
+  };
+  return /*#__PURE__*/React.createElement("section", {
+    className: "max-w-2xl mx-auto px-5 sm:px-0 mt-8"
+  }, /*#__PURE__*/React.createElement("article", {
+    className: "relative rounded-[2px] p-6 sm:p-8 bg-white/90",
+    style: {
+      borderLeft: '2px solid rgba(184,148,90,0.6)',
+      borderTop: '1px solid rgba(184,148,90,0.22)',
+      borderRight: '1px solid rgba(184,148,90,0.22)',
+      borderBottom: '1px solid rgba(184,148,90,0.22)',
+      boxShadow: '0 1px 2px rgba(26,24,21,0.03), 0 12px 36px -28px rgba(26,24,21,0.18)'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest3 text-[10px] uppercase text-gold mb-1.5"
+  }, "Welcome Back"), /*#__PURE__*/React.createElement("p", {
+    className: "font-serif text-[17px] sm:text-[19px] text-ink",
+    style: {
+      fontWeight: 500
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u304A\u304B\u3048\u308A\u306A\u3055\u3044 \u2014 "), /*#__PURE__*/React.createElement("span", {
+    className: "nums"
+  }, diff.days), /*#__PURE__*/React.createElement("span", null, "\u65E5\u3076\u308A\u306E\u8A3A\u65AD\u3067\u3059")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3.5 space-y-2 text-[13px] sm:text-[13.5px] leading-[1.9] text-charcoal/85"
+  }, diff.tierChanged && diff.curTier < diff.prevTier && /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-gold mr-1.5"
+  }, "\u2726"), /*#__PURE__*/React.createElement("span", null, "\u30B1\u30A2\u306E\u91CD\u3055\u304C "), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-ink",
+    style: {
+      fontWeight: 500
+    }
+  }, TIER_BAND_LABEL[diff.prevTier]), /*#__PURE__*/React.createElement("span", null, " \u2192 "), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-ink",
+    style: {
+      fontWeight: 500
+    }
+  }, TIER_BAND_LABEL[diff.curTier]), /*#__PURE__*/React.createElement("span", null, " \u3078 \u8EFD\u304F\u306A\u308A\u307E\u3057\u305F")), diff.tierChanged && diff.curTier > diff.prevTier && /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-gold mr-1.5"
+  }, "\u2726"), /*#__PURE__*/React.createElement("span", null, "\u4ECA\u56DE\u306F "), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-ink",
+    style: {
+      fontWeight: 500
+    }
+  }, TIER_BAND_LABEL[diff.curTier]), /*#__PURE__*/React.createElement("span", null, " \u2014 \u6700\u8FD1\u306E\u5C65\u6B74\u306B\u5408\u308F\u305B\u3066 \u5C11\u3057\u624B\u539A\u3081\u306B\u7D44\u307F\u307E\u3057\u305F")), diff.typeChanged ? /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-gold mr-1.5"
+  }, "\u2726"), /*#__PURE__*/React.createElement("span", null, "\u9AEA\u683C\u304C "), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-ink",
+    style: {
+      fontWeight: 500
+    }
+  }, diff.prevName), /*#__PURE__*/React.createElement("span", null, " \u2192 "), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-ink",
+    style: {
+      fontWeight: 500
+    }
+  }, diff.curName), /*#__PURE__*/React.createElement("span", null, " \u306B\u66F4\u65B0\u3055\u308C\u307E\u3057\u305F")) : /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-gold mr-1.5"
+  }, "\u2726"), /*#__PURE__*/React.createElement("span", null, "\u9AEA\u683C\u306F\u5909\u308F\u3089\u305A \u2014 \u3042\u306A\u305F\u306E\u8EF8\u306F\u5B89\u5B9A\u3057\u3066\u3044\u307E\u3059")), diff.resolved.length > 0 && /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-gold mr-1.5"
+  }, "\u2726"), /*#__PURE__*/React.createElement("span", null, "\u524D\u56DE\u9078\u3070\u308C\u3066\u3044\u305F\u300C"), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-ink",
+    style: {
+      fontWeight: 500
+    }
+  }, diff.resolved.map(cLabel).join('・')), /*#__PURE__*/React.createElement("span", null, "\u300D\u304C\u4ECA\u56DE\u306F\u5916\u308C\u307E\u3057\u305F \u2014 \u624B\u5FDC\u3048\u306E\u30B5\u30A4\u30F3\u3067\u3059")), diff.added.length > 0 && /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("span", {
+    className: "text-gold mr-1.5"
+  }, "\u2726"), /*#__PURE__*/React.createElement("span", null, "\u65B0\u3057\u304F\u300C"), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-ink",
+    style: {
+      fontWeight: 500
+    }
+  }, diff.added.map(cLabel).join('・')), /*#__PURE__*/React.createElement("span", null, "\u300D\u304C\u52A0\u308F\u308A\u307E\u3057\u305F \u2014 \u4ECA\u56DE\u306E\u51E6\u65B9\u3067\u512A\u5148\u3057\u3066\u3044\u307E\u3059")))));
+}
+
 /* ---- Budget rows (カテゴリ別×1回に払う金額・横スクロールで1,000円帯を選ぶ) ----
    値はオブジェクト {sh,tr,ob,mk}。全行選ぶまで answers.budget は確定させず(NEXTゲート)、
    途中経過は answers.budgetDraft に保持(戻ってきても選択が残る)。 */
@@ -10019,12 +10153,19 @@ function ResultHero({
   useEffect(() => {
     try {
       window.__seamLastType = origin && origin.code || '';
+      const pm = buildProfileMeta(answers);
+      // 再診断シグナル: rd=1(前回カルテあり) rdd=前回から何日(0-365) — 経時データの土台
+      const pk = window.__seamPrevKarte;
+      if (pk && pk.savedAt) {
+        pm.rd = 1;
+        pm.rdd = Math.min(365, Math.max(0, Math.round((Date.now() - new Date(pk.savedAt).getTime()) / 86400000)));
+      }
       window.seamTrack && window.seamTrack('finder_complete', {
         type: origin && origin.code,
         tier: damageTier,
         advice: karte.adviceKey,
         gender: gender,
-        meta: buildProfileMeta(answers)
+        meta: pm
       });
     } catch (e) {}
   }, []);
@@ -12985,8 +13126,9 @@ function Result({
     if (!karte) return;
     try {
       const payload = {
-        version: 1,
+        version: 2,
         savedAt: new Date().toISOString(),
+        damageTier: karte.damageTier,
         originId: karte.origin?.id || karte.originId,
         originName: karte.origin?.name,
         originCode: karte.origin?.code,
@@ -13110,6 +13252,10 @@ function Result({
     answers: answers,
     onSaveImage: mode => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode),
     onShare: () => shareKarteLink(karte?.origin)
+  }), /*#__PURE__*/React.createElement(ReturnDiffCard, {
+    prev: typeof window !== 'undefined' ? window.__seamPrevKarte : null,
+    karte: karte,
+    answers: answers
   }), karte?.origin && /*#__PURE__*/React.createElement(NarrativeJourney, {
     karte: karte,
     answers: answers
@@ -13704,6 +13850,13 @@ function App() {
     setView('result');
   };
   const complete = () => {
+    // 再診断の差分用: 上書きされる前の「前回カルテ」を退避(復元表示では走らない=新規完了のみ)
+    try {
+      const raw = localStorage.getItem('seam_karte_last');
+      window.__seamPrevKarte = raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      window.__seamPrevKarte = null;
+    }
     setView('reveal');
     setTimeout(() => setView('result'), 2800);
   };
