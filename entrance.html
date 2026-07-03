@@ -351,6 +351,23 @@
       color: #8a7a44;
       min-height: 1.2em;
     }
+    /* 入場時刻（記録されていることをお客様に明示＝抑止効果） */
+    .vip-time {
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      color: #5c4e22;
+    }
+    .vip-time .en {
+      display: block;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #8a7a44;
+      margin-top: 0.15rem;
+    }
+    .vip-time:empty { display: none; }
 
     .result-progress {
       margin-top: 1.8rem;
@@ -584,6 +601,7 @@
     <div class="result-message" id="result-message"></div>
     <div class="result-sub" id="result-sub"></div>
     <div class="vip-code" id="result-code"></div>
+    <div class="vip-time" id="result-time"></div>
     <div class="result-progress">
       <div class="result-progress-bar" id="result-bar"></div>
     </div>
@@ -648,6 +666,7 @@
   const resultMsg   = $('result-message');
   const resultSub   = $('result-sub');
   const resultCode  = $('result-code');
+  const resultTime  = $('result-time');
   const resultBar   = $('result-bar');
 
   // ── 入場ログ（localStorage） ──
@@ -670,6 +689,11 @@
     const d = new Date(), p = n => String(n).padStart(2, '0');
     return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate())
          + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+  }
+  // お客様向けの入場時刻表示（例: 7月3日 8:12）
+  function timeLabel() {
+    const d = new Date(), p = n => String(n).padStart(2, '0');
+    return (d.getMonth()+1) + '月' + d.getDate() + '日 ' + d.getHours() + ':' + p(d.getMinutes());
   }
   function updateCounts() {
     const l = getLog(), tk = todayKey();
@@ -1009,6 +1033,13 @@
     resultMsg.textContent  = repeat ? 'いつもご来店ありがとうございます' : 'ご来店ありがとうございます';
     resultSub.textContent  = 'Enjoy your shopping';
     resultCode.textContent = mask(code);
+    // 入場時刻を明示（記録されていることをお客様に伝える）
+    resultTime.innerHTML = '';
+    resultTime.appendChild(document.createTextNode(timeLabel() + ' ご入場を記録しました'));
+    const en = document.createElement('span');
+    en.className = 'en';
+    en.textContent = 'Entry recorded';
+    resultTime.appendChild(en);
     show('success', 4000);
   }
 
@@ -1020,6 +1051,8 @@
     resultMsg.textContent  = message;
     resultSub.innerText    = sub || '';
     resultCode.textContent = code || '';
+    // 読めないQRでも「時刻を記録している」ことは明示（抑止効果）
+    resultTime.textContent = timeLabel() + ' 受付記録済み';
     show(type, duration || 3000);
   }
 
