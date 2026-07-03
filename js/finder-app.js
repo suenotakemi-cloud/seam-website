@@ -5422,16 +5422,9 @@ function DeepProductSection({
 //   - Android Chrome: 印刷プレビュー → "PDF として保存" → 共有
 //   - PC: 印刷ダイアログから "PDF として保存"
 function saveOrShareKarte() {
-  const date = new Date().toISOString().slice(0, 10);
-  const filename = `SEAM_HAIR_FINDER_KARTE_${date}`;
-  const originalTitle = document.title;
-  document.title = filename;
-  setTimeout(() => {
-    window.print();
-    setTimeout(() => {
-      document.title = originalTitle;
-    }, 800);
-  }, 10);
+  // window.print()はInstagram/LINE等のアプリ内ブラウザで無反応になるため
+  // 全ボタンをカルテ画像フロー(オーバーレイ+共有/長押し保存)に統一
+  shareCounselingSheetImage();
 }
 
 // Web Share API が使える端末ではURL共有のオプションも提供（補助的）
@@ -11367,7 +11360,7 @@ function VisitSeamSection({
   }, blocks.map((b, i) => {
     const reverse = i % 2 === 1;
     const Placeholder = /*#__PURE__*/React.createElement("figure", {
-      className: "bg-white rounded-[2px] p-2.5 sm:p-3",
+      className: "bg-white rounded-[2px] p-2.5 sm:p-3 min-w-0",
       style: {
         border: '1px solid rgba(184,148,90,0.28)',
         boxShadow: '0 22px 44px -26px rgba(61,46,25,0.30)'
@@ -11395,7 +11388,9 @@ function VisitSeamSection({
     }, b.num, " \xB7 ", b.eyebrow), /*#__PURE__*/React.createElement("span", {
       className: "font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap"
     }, b.caption)));
-    const TextCol = /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
+    const TextCol = /*#__PURE__*/React.createElement("div", {
+      className: "min-w-0"
+    }, /*#__PURE__*/React.createElement("h3", {
       className: "font-serif text-ink leading-[1.2]",
       style: {
         fontSize: 'clamp(22px, 4vw, 32px)',
@@ -11407,7 +11402,6 @@ function VisitSeamSection({
     }, b.title), /*#__PURE__*/React.createElement("p", {
       className: "mt-5 text-[14px] sm:text-[15px] leading-[2] text-charcoal/80",
       style: {
-        wordBreak: 'keep-all',
         overflowWrap: 'break-word'
       }
     }, b.body));
@@ -13089,7 +13083,7 @@ function karteShareCloseBtn() {
    巨大な結果ページ上では端末により数十秒〜フリーズする(=「作成中のまま変わらない」の正体)。
    カルテだけを空のiframeへ移して撮影することで複製コストを最小化し、
    さらにスマホのcanvas面積上限(iOS≈1,670万px)を超えないようscaleを自動調整する。 */
-async function captureKarteCanvas(node) {
+async function captureKarteCanvas(node, forceScale) {
   const iframe = document.createElement('iframe');
   iframe.setAttribute('aria-hidden', 'true');
   iframe.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;height:100px;border:0;opacity:0;pointer-events:none;';
@@ -13122,7 +13116,7 @@ async function captureKarteCanvas(node) {
     const w = Math.max(320, clone.scrollWidth || 720);
     const h = Math.max(400, clone.scrollHeight || 1200);
     iframe.style.height = Math.min(h + 40, 32000) + 'px';
-    const scale = Math.max(1, Math.min(2, Math.sqrt(14000000 / (w * h))));
+    const scale = forceScale || Math.max(1, Math.min(2, Math.sqrt(9000000 / (w * h))));
     return await html2canvas(clone, {
       backgroundColor: '#FFFFFF',
       scale,
@@ -13156,19 +13150,15 @@ async function shareCounselingSheetImage() {
   try {
     // 隔離iframeで高速撮影 → 失敗時のみ従来方式(scale控えめ)へ。25秒で必ず打ち切る
     const canvas = await Promise.race([captureKarteCanvas(node).catch(e => {
-      console.warn('karte iframe capture fallback', e);
-      return html2canvas(node, {
-        backgroundColor: '#FFFFFF',
-        scale: 1.5,
-        useCORS: true,
-        logging: false
-      });
+      // 全ドキュメントhtml2canvasはメインスレッドを塞ぎタイムアウトも効かなくなるため使わない
+      console.warn('karte iframe capture retry (low scale)', e);
+      return captureKarteCanvas(node, 1);
     }), new Promise((_, rej) => setTimeout(() => rej(new Error('capture-timeout')), 25000))]);
     if (!ov.isConnected) return; // 作成中にユーザーが閉じた
     const date = new Date().toISOString().slice(0, 10);
     const filename = `SEAM_KARTE_${date}.png`;
-    const dataURL = canvas.toDataURL('image/png');
     const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    const imgURL = blob ? URL.createObjectURL(blob) : canvas.toDataURL('image/png');
     if (blob && navigator.canShare && navigator.canShare({
       files: [new File([blob], filename, {
         type: 'image/png'
@@ -13189,13 +13179,13 @@ async function shareCounselingSheetImage() {
       }
     }
     // 共有シートが使えない環境(アプリ内ブラウザ / PC) → プレビュー + 長押し保存の案内
-    karteShareCard(ov, '<p style="font-size:13px;letter-spacing:.05em;color:#2B2926;margin:0;">カルテ画像ができました</p>' + '<img src="' + dataURL + '" alt="SEAM 髪格診断カルテ" style="display:block;margin:12px auto 0;width:100%;height:auto;border:1px solid #E7E0D6;border-radius:4px;" />' + '<p style="margin:12px 0 12px;font-size:11.5px;line-height:1.9;color:#5A534B;">画像を<b>長押し</b>（パソコンは右クリック）で<br>保存・共有できます</p>' + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' + '<button data-karte-dl style="padding:11px 24px;background:#2B2926;color:#FBF7F1;border:none;border-radius:999px;font-size:12.5px;font-family:inherit;letter-spacing:.04em;cursor:pointer;">端末に保存する</button>' + karteShareCloseBtn() + '</div>');
+    karteShareCard(ov, '<p style="font-size:13px;letter-spacing:.05em;color:#2B2926;margin:0;">カルテ画像ができました</p>' + '<img src="' + imgURL + '" alt="SEAM 髪格診断カルテ" style="display:block;margin:12px auto 0;width:100%;height:auto;border:1px solid #E7E0D6;border-radius:4px;" />' + '<p style="margin:12px 0 12px;font-size:11.5px;line-height:1.9;color:#5A534B;">画像を<b>長押し</b>（パソコンは右クリック）で<br>保存・共有できます</p>' + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' + '<button data-karte-dl style="padding:11px 24px;background:#2B2926;color:#FBF7F1;border:none;border-radius:999px;font-size:12.5px;font-family:inherit;letter-spacing:.04em;cursor:pointer;">端末に保存する</button>' + karteShareCloseBtn() + '</div>');
     wireClose();
     const dl = ov.querySelector('[data-karte-dl]');
     if (dl) dl.onclick = () => {
       const link = document.createElement('a');
       link.download = filename;
-      link.href = dataURL;
+      link.href = imgURL;
       link.click();
     };
   } catch (e) {
