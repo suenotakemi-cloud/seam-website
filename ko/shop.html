@@ -139,6 +139,57 @@
 </head>
 
 <body class="font-sans text-charcoal antialiased pb-20 sm:pb-0">
+<!-- ⚜ SUMMER SALE 告知バー (7/1〜7/31・8/1 0時JSTに自動非表示・タップで下のセール記事へ) -->
+<style>
+  /* SALEバッジ: 絶対配置でピルの幅を変えない(ロゴ被り防止)。スマホは小さな赤ドット */
+  #seam-header-shop { position: relative; }
+  .sale-dot { position: absolute; top: -6px; right: -8px; background: #B4453A; color: #fff; font-size: 8px; letter-spacing: .08em; padding: 2.5px 6px; border-radius: 999px; line-height: 1; font-family: monospace; box-shadow: 0 1px 4px rgba(0,0,0,.25); pointer-events: none; }
+  @media (max-width: 639px) {
+    .sale-dot { top: -2px; right: -2px; width: 9px; height: 9px; padding: 0; overflow: hidden; color: transparent; }
+  }
+</style>
+<div id="saleBar" hidden="" data-track-view="sale_banner_shop" data-track-click="sale_banner_shop" role="button" tabindex="0" aria-label="サマーセールの詳細へ" class="cursor-pointer select-none" style="background:linear-gradient(90deg,#8F6A3F,#B8945A 45%,#8F6A3F);color:#FBF7F1;">
+  <div class="max-w-6xl mx-auto px-4 sm:px-8 py-2 flex items-center justify-center gap-2 sm:gap-3 text-center whitespace-nowrap overflow-hidden">
+    <span class="font-mono text-[10px] sm:text-[10.5px] uppercase" style="letter-spacing:.18em;">Summer&nbsp;Sale</span>
+    <span aria-hidden="" class="h-3 w-px bg-white/40"></span>
+    <span class="font-serif text-[12.5px] sm:text-[13.5px]" style="font-weight:500;" data-i18n="sale.off">최대 30% OFF</span>
+    <span class="text-[11px]" style="color:rgba(255,255,255,.85);" data-i18n="sale.until">7/31까지</span>
+    <span aria-hidden="" class="text-[12px]">↓</span>
+  </div>
+</div>
+<script>
+(function () {
+  var bar = document.getElementById('saleBar');
+  if (!bar) return;
+  var now = Date.now();
+  var start = new Date('2026-07-01T00:00:00+09:00').getTime();
+  var end   = new Date('2026-08-01T00:00:00+09:00').getTime(); // 期間外は表示しない=消し忘れゼロ
+  if (now < start || now >= end) return;
+  bar.hidden = false;
+  var go = function () { // 同ページ下のセール記事へ(会員/未会員両導線あり)
+    var t = document.getElementById('sale');
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  bar.addEventListener('click', go);
+  bar.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
+  // ヘッダーピルにSALEバッジ(ピルは後から注入されるためリトライ)
+  var tries = 0;
+  var iv = setInterval(function () {
+    tries++;
+    var pill = document.getElementById('seam-header-shop');
+    if (pill) {
+      clearInterval(iv);
+      if (!pill.querySelector('.sale-dot')) {
+        var b = document.createElement('span');
+        b.className = 'sale-dot';
+        b.textContent = 'SALE';
+        pill.style.position = 'relative';
+        pill.appendChild(b);
+      }
+    } else if (tries > 40) clearInterval(iv);
+  }, 200);
+})();
+</script>
 <!-- 言語モーダル (全ページ共通) -->
 <div class="lang-overlay" id="langOverlay" role="dialog" aria-modal="true" aria-label="언어 선택" data-i18n-attr="aria-label:aria.langSelect">
   <div class="lang-modal">
@@ -613,7 +664,7 @@
       });
     }
   </script>
-  <script src="/js/app-header.js?v=3" defer=""></script>
+  <script src="/js/app-header.js?v=4" defer=""></script>
   <script src="/js/lang.js?v=2"></script>
   <script src="/js/reveal.js"></script>
   <script src="/js/enhance.js?v=2" defer=""></script>
@@ -638,6 +689,8 @@ window.SEAM_PAGE_I18N = {
     'nav.salon': 'ヘアサロン',
     'nav.headspa': 'ヘッドスパ',
     'sale.badge': '半期に一度',
+    'sale.off': '最大30%OFF',
+    'sale.until': '7.31まで',
     'sale.h2b': '最大30%OFF',
     'sale.body': '年に2回だけの ご褒美期間<br>オンラインショップも 全店舗も まとめてセール<br>気になっていたあの一本 いまが替えどきです',
     'sale.cpTitle': 'いまだけ メンバー入会無料キャンペーン',
@@ -754,6 +807,8 @@ window.SEAM_PAGE_I18N = {
     'nav.salon': 'Hair Salon',
     'nav.headspa': 'Head Spa',
     'sale.badge': 'Twice a year',
+    'sale.off': 'Up to 30% OFF',
+    'sale.until': 'Until Jul 31',
     'sale.h2b': 'Up to 30% OFF',
     'sale.body': 'Our reward season, just twice a year<br>Online shop and every store, on sale together<br>That one you have been eyeing — now is the moment',
     'sale.cpTitle': 'Limited time — join membership for free',
@@ -870,6 +925,8 @@ window.SEAM_PAGE_I18N = {
     'nav.salon': '美发沙龙',
     'nav.headspa': '头皮SPA',
     'sale.badge': '半年仅一次',
+    'sale.off': '最高30%OFF',
+    'sale.until': '至7/31',
     'sale.h2b': '最高30%OFF',
     'sale.body': '一年仅两次的犒赏时刻<br>线上商店与全门店同步开折<br>心仪已久的那一瓶 就趁现在',
     'sale.cpTitle': '限时 会员免费入会活动',
@@ -986,6 +1043,8 @@ window.SEAM_PAGE_I18N = {
     'nav.salon': '美髮沙龍',
     'nav.headspa': '頭皮SPA',
     'sale.badge': '半年僅一次',
+    'sale.off': '最高30%OFF',
+    'sale.until': '至7/31',
     'sale.h2b': '最高30%OFF',
     'sale.body': '一年僅兩次的犒賞時刻<br>線上商店與全門店同步開折<br>心儀已久的那一瓶 就趁現在',
     'sale.cpTitle': '限時 會員免費入會活動',
@@ -1102,6 +1161,8 @@ window.SEAM_PAGE_I18N = {
     'nav.salon': '헤어 살롱',
     'nav.headspa': '헤드 스파',
     'sale.badge': '반년에 한 번',
+    'sale.off': '최대 30% OFF',
+    'sale.until': '7/31까지',
     'sale.h2b': '최대 30% OFF',
     'sale.body': '일 년에 단 두 번뿐인 특별한 기간<br>온라인 스토어와 전 매장이 함께 세일<br>눈여겨보던 그 아이템 지금이 기회입니다',
     'sale.cpTitle': '지금만 멤버 무료 가입 캠페인',
