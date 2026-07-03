@@ -4816,6 +4816,49 @@ function SaleFinderBanner() {
   }, "\u2197")))));
 }
 
+/* ⚜ ダメージ・矯正履歴が深い診断者へのサロン相談提案 — SpaSuggestCardと排他表示 */
+function SalonSuggestCard() {
+  useEffect(() => {
+    try {
+      window.seamTrack && window.seamTrack('sec_view', {
+        label: 'salon_finder'
+      });
+    } catch (e) {}
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mt-7 rounded-[2px] border border-gold/40 bg-cream/60 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col sm:flex-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative sm:w-[36%] shrink-0 aspect-[16/9] sm:aspect-auto sm:min-h-[150px] bg-cream"
+  }, /*#__PURE__*/React.createElement("img", {
+    src: "images/lp/salon/salon_hero.jpg?v=2",
+    alt: "SEAM\u30B5\u30ED\u30F3",
+    loading: "lazy",
+    className: "absolute inset-0 w-full h-full object-cover"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "px-4 sm:px-5 py-4 sm:py-5 flex-1"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[9.5px] uppercase text-gold"
+  }, "\u2014 Hair Salon"), /*#__PURE__*/React.createElement("h4", {
+    className: "mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
+  }, "\u3053\u306E\u30C0\u30E1\u30FC\u30B8\u306F \u5BB6\u3060\u3051\u3067\u623B\u3055\u306A\u304F\u3066\u3044\u3044"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
+  }, "\u8A3A\u65AD\u3067\u5F37\u3081\u306E\u30C0\u30E1\u30FC\u30B8\u3084\u77EF\u6B63\u306E\u5C65\u6B74\u304C\u51FA\u3066\u3044\u307E\u3059 \u30DB\u30FC\u30E0\u30B1\u30A2\u3068\u4E26\u884C\u3057\u3066 \u30B5\u30ED\u30F3\u306E\u96C6\u4E2D\u88DC\u4FEE\u3084\u9AEA\u8CEA\u6539\u5584\u3092\u7D44\u307F\u5408\u308F\u305B\u308B\u306E\u304C\u6700\u77ED\u3067\u3059 \u3053\u306E\u7D50\u679C\u306F\u30AB\u30A6\u30F3\u30BB\u30EA\u30F3\u30B0\u3067\u305D\u306E\u307E\u307E\u4F1D\u308F\u308A\u307E\u3059"), /*#__PURE__*/React.createElement("a", {
+    href: "hairsalon.html#booking",
+    onClick: () => {
+      try {
+        window.seamTrack && window.seamTrack('sec_click', {
+          label: 'salon_finder'
+        });
+      } catch (e) {}
+    },
+    className: "mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors"
+  }, /*#__PURE__*/React.createElement("span", null, "\u30B5\u30ED\u30F3\u3067\u76F8\u8AC7\u3059\u308B"), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true
+  }, "\u2192")))));
+}
+
 /* ⚜ 頭皮ニーズが深い診断者へのヘッドスパ提案 — 診断→spa事業の橋(常設) */
 function SpaSuggestCard() {
   useEffect(() => {
@@ -5342,7 +5385,7 @@ function DeepProductSection({
       item: f.item,
       category: f.category
     }));
-  }))), needScalp && /*#__PURE__*/React.createElement(SpaSuggestCard, null), /*#__PURE__*/React.createElement("div", {
+  }))), needScalp ? /*#__PURE__*/React.createElement(SpaSuggestCard, null) : highDamageRequired || answers.straighten && answers.straighten !== 'none' || answers.straightenHidden ? /*#__PURE__*/React.createElement(SalonSuggestCard, null) : null, /*#__PURE__*/React.createElement("div", {
     className: "mt-8"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
