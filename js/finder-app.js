@@ -4816,6 +4816,54 @@ function SaleFinderBanner() {
   }, "\u2197")))));
 }
 
+/* ⚜ 頭皮ニーズが深い診断者へのヘッドスパ提案 — 診断→spa事業の橋(常設) */
+function SpaSuggestCard() {
+  useEffect(() => {
+    try {
+      window.seamTrack && window.seamTrack('sec_view', {
+        label: 'spa_finder'
+      });
+    } catch (e) {}
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mt-7 rounded-[2px] border border-gold/40 bg-cream/60 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col sm:flex-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "relative sm:w-[36%] shrink-0 aspect-[16/9] sm:aspect-auto sm:min-h-[150px] bg-cream"
+  }, /*#__PURE__*/React.createElement("video", {
+    className: "absolute inset-0 w-full h-full object-cover",
+    autoPlay: true,
+    loop: true,
+    muted: true,
+    playsInline: true,
+    preload: "none"
+  }, /*#__PURE__*/React.createElement("source", {
+    src: "images/spa-real/gallery/g3_headbath.mp4?v=3",
+    type: "video/mp4"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "px-4 sm:px-5 py-4 sm:py-5 flex-1"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[9.5px] uppercase text-gold"
+  }, "\u2014 Head Spa"), /*#__PURE__*/React.createElement("h4", {
+    className: "mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
+  }, "\u305D\u306E\u982D\u76AE \u624B\u3067\u307B\u3069\u304D\u306B\u6765\u307E\u305B\u3093\u304B"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
+  }, "\u8A3A\u65AD\u3067\u982D\u76AE\u306E\u30B5\u30A4\u30F3\u304C\u51FA\u3066\u3044\u307E\u3059 \u30DB\u30FC\u30E0\u30B1\u30A2\u306B\u52A0\u3048\u3066 \u5B8C\u5168\u500B\u5BA4\u306E\u30D8\u30C3\u30C9\u30B9\u30D1\u3067\u982D\u76AE\u304B\u3089\u3086\u3063\u304F\u308A\u6574\u3048\u308B\u306E\u304C\u8FD1\u9053\u3067\u3059 \u7720\u308B\u305F\u3081\u306E\u65BD\u8853 90\u5206 \xA517,300"), /*#__PURE__*/React.createElement("a", {
+    href: "headspa.html",
+    onClick: () => {
+      try {
+        window.seamTrack && window.seamTrack('sec_click', {
+          label: 'spa_finder'
+        });
+      } catch (e) {}
+    },
+    className: "mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors"
+  }, /*#__PURE__*/React.createElement("span", null, "\u30D8\u30C3\u30C9\u30B9\u30D1\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true
+  }, "\u2192")))));
+}
+
 // 今回の優先課題(主訴)を最大3つ。強い履歴(ブリーチ→熱)を先に、次にユーザーが選んだ悩み。
 function buildPriorityConcerns(answers, scores) {
   const a = answers || {},
@@ -5294,7 +5342,7 @@ function DeepProductSection({
       item: f.item,
       category: f.category
     }));
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), needScalp && /*#__PURE__*/React.createElement(SpaSuggestCard, null), /*#__PURE__*/React.createElement("div", {
     className: "mt-8"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
