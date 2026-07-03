@@ -3485,6 +3485,30 @@ function SaleFinderBanner() {
   );
 }
 
+/* ⚜ 頭皮ニーズが深い診断者へのヘッドスパ提案 — 診断→spa事業の橋(常設) */
+function SpaSuggestCard() {
+  useEffect(() => { try { window.seamTrack && window.seamTrack('sec_view', { label: 'spa_finder' }); } catch (e) {} }, []);
+  return (
+    <div className="mt-7 rounded-[2px] border border-gold/40 bg-cream/60 overflow-hidden">
+      <div className="flex flex-col sm:flex-row">
+        <div className="relative sm:w-[36%] shrink-0 aspect-[16/9] sm:aspect-auto sm:min-h-[150px] bg-cream">
+          <video className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted playsInline preload="none">
+            <source src="images/spa-real/gallery/g3_headbath.mp4?v=3" type="video/mp4" />
+          </video>
+        </div>
+        <div className="px-4 sm:px-5 py-4 sm:py-5 flex-1">
+          <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">— Head Spa</p>
+          <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">その頭皮 手でほどきに来ませんか</h4>
+          <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">診断で頭皮のサインが出ています ホームケアに加えて 完全個室のヘッドスパで頭皮からゆっくり整えるのが近道です 眠るための施術 90分 ¥17,300</p>
+          <a href="headspa.html" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'spa_finder' }); } catch (e) {} }} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
+            <span>ヘッドスパを見る</span><span aria-hidden>→</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // 今回の優先課題(主訴)を最大3つ。強い履歴(ブリーチ→熱)を先に、次にユーザーが選んだ悩み。
 function buildPriorityConcerns(answers, scores) {
   const a = answers || {}, s = scores || {};
@@ -3919,6 +3943,9 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
           </div>
         </div>
       )}
+
+      {/* ⚜ 頭皮ニーズが深い人へ: 診断→ヘッドスパの橋 */}
+      {needScalp && <SpaSuggestCard />}
 
       {/* ③ ケア処方をすべて見る(折りたたみ) */}
       <div className="mt-8">
