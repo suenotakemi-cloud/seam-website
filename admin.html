@@ -165,7 +165,7 @@
   var BLEACH = {none:'なし',within3m:'明るい部分が残る',within1y:'暗染め・伸びたが履歴あり',multi:'ハイトーンまで抜いた',highlight:'ハイライト等 部分的'};
   var PERM = {none:'していない',yearly:'年1回',biannual:'半年に1回',quarterly:'3ヶ月に1回',frequent:'2ヶ月に1回以上',digital:'デジパを定期的に',endsRemain:'毛先に残っている',loose:'だれやすい',past:'過去にしていた'};
   var PERMTYPE = {normal:'通常パーマ',digital:'デジタルパーマ',both:'両方経験',unknown:'わからない'};
-  var STRAIGHTEN = {none:'していない',yearly:'年1回程度',biannual:'半年に1回',quarterly:'3ヶ月に1回',frequent:'2ヶ月に1回以上',kaizen:'髪質改善を定期的に',past:'過去にしていた'};
+  var STRAIGHTEN = {none:'していない',yearly:'年1回程度',biannual:'半年に1回',quarterly:'3ヶ月に1回',frequent:'2ヶ月に1回以上',kaizen:'髪質改善(トリートメント系)',past:'過去にしていた'};
   var PERMLOOSE = {veryEasy:'とてもだれやすい',easy:'ややだれやすい',normal:'ふつう',keep:'保ちやすい'};
   var SFIN = {shine:'ツヤ・濡れ感',tame:'広がりをまとめたい',curl:'パーマ・くせを活かす',hold:'巻き・カールをキープ',volume:'根元ふんわり',matte:'マット束感',light:'軽くベタつかせない',none:'使わない'};
   var MSTY = {wax:'ワックス',gel:'ジェル',grease:'グリース・ポマード',cream:'クリーム・ムーブ系',oil:'オイル',balm:'バーム',spray:'スプレー',none:'決めていない'};
@@ -235,6 +235,7 @@
         permExpByAge:scaled({teen:.12,'20s':.26,'30s':.33,'40s':.36,'50plus':.42,noanswer:.2}),
         curlWantByAge:scaled({teen:.24,'20s':.27,'30s':.22,'40s':.17,'50plus':.13,noanswer:.15}),
         straightenTotal:{none:Math.round(n*.60),past:Math.round(n*.12),yearly:Math.round(n*.09),biannual:Math.round(n*.08),kaizen:Math.round(n*.06),quarterly:Math.round(n*.04),frequent:Math.round(n*.01)},
+        stHiddenN:Math.round(n*.04),
         thicknessTotal:{thin:Math.round(n*.30),normal:Math.round(n*.46),thick:Math.round(n*.24)},
         thicknessWave:{thin:{none:88,kuse:104,straightened:31},normal:{none:132,kuse:158,straightened:56},thick:{none:53,kuse:99,straightened:24}},
         stylingFinishTotal:{tame:Math.round(n*.34),shine:Math.round(n*.30),light:Math.round(n*.22),hold:Math.round(n*.17),volume:Math.round(n*.14),curl:Math.round(n*.12),matte:Math.round(n*.07),none:Math.round(n*.16)},
@@ -403,6 +404,13 @@
       '<p class="muted" style="margin:8px 0 0">例:「乾燥 × しっとりまとまり」が多ければ その組み合わせが広告コピー・開発コンセプトの最有力です</p>';
   }
   function noteLine(t){ return '<p class="muted" style="margin:10px 0 0;line-height:1.8">'+t+'</p>'; }
+  // 隠れ矯正: サロン呼称は髪質改善だが仕上がりは矯正系(meta sth=1)。矯正現役に対する比率も出す
+  function stHiddenLine(P){
+    var h=(P&&P.stHiddenN)||0; if(!h) return '';
+    var st=P.straightenTotal||{}; var now=(st.yearly||0)+(st.biannual||0)+(st.quarterly||0)+(st.frequent||0);
+    var pct=now?Math.round(h/now*100):0;
+    return noteLine('うち「髪質改善」と案内されて実質矯正(仕上がり判別): '+h+'人 — 矯正現役の'+pct+'%。本人が矯正と認識していない層=カラー提案時の要確認セグメント');
+  }
   function subhead(t){ return '<p style="font-size:11.5px;font-weight:600;color:var(--char);letter-spacing:.03em;margin:14px 0 4px">'+esc(t)+'</p>'; }
 
   // ディーラー・仕入れ詳細(使用実態/不満/トラブル/薬剤反応/家電需要)
@@ -464,7 +472,7 @@
         (function(){var o={};for(var k in (P.thicknessWave||{})){var row=P.thicknessWave[k];for(var g in row)o[g]=(o[g]||0)+row[g];}return o;})(),
         ['none','kuse','straightened'], WVGRP) + noteLine('列=くせ区分 セル=その区分内での太さ構成比 — 仕入れ(重さ/軽さ)の設計図')) +
       panel('Scalp','頭皮タイプ', objRows(P.scalpTotal, SCALPT, P.n) + subhead('ヘッドスパ興味あり率 × 年代') + rateByAge(P.spaByAge, P.byAge)) +
-      panel('Straighten','縮毛矯正の頻度', objRows(P.straightenTotal, STRAIGHTEN, P.n)) +
+      panel('Straighten','縮毛矯正・髪質改善', objRows(P.straightenTotal, STRAIGHTEN, P.n) + stHiddenLine(P)) +
       panel('Chemical','薬剤履歴の重なり（ブリーチ×矯正×パーマ）', objRows(P.chemCross, CHEMX, P.n, CHEMX_ORDER) +
         noteLine('複合履歴毛（2つ以上の重なり）の実サイズ — ハイダメージ向け開発・ビビリ毛リスク層の把握・施術メニュー設計の基礎数字')) +
       dealerPanels(P) +
@@ -598,7 +606,7 @@
       rblock('薬剤履歴の重なり — 複合ダメージ毛の実サイズ', objRows(P.chemCross, CHEMX, P.n, CHEMX_ORDER)) +
       rblock('ブリーチ経験率 × 年代 ＋ 内訳', rateByAge(P.bleachByAge, P.byAge) +
         objRows((function(){var o={};for(var k in (P.bleachTotal||{}))if(k!=='none')o[k]=P.bleachTotal[k];return o;})(), BLEACH, P.n)) +
-      rblock('縮毛矯正の頻度分布', objRows(P.straightenTotal, STRAIGHTEN, P.n)) +
+      rblock('縮毛矯正・髪質改善の分布', objRows(P.straightenTotal, STRAIGHTEN, P.n) + stHiddenLine(P)) +
       rblock('パーマ: 現役率×年代 / カール意欲×年代 / 種類・持ち', rateByAge(P.permNowByAge, P.byAge) + rateByAge(P.curlWantByAge, P.byAge) + objRows(P.permTypeTotal, PERMTYPE) + objRows(P.permLooseTotal, PERMLOOSE)) +
       rblock('白髪: 染め中率×年代 / 頻度', rateByAge(P.grayCareByAge, P.byAge) + objRows(P.grayFreqTotal, GRAYFREQ)) +
       rblock('熱習慣（アイロン・コテ）と設定温度', objRows(P.toolsTotal, TOOLS, P.n) + objRows(P.tempTotal, TEMPL)) +

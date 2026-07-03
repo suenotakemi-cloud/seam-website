@@ -40,6 +40,7 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     permTotal: {}, permTypeTotal: {}, permLooseTotal: {},
     permNowByAge: {},  permExpByAge: {},  curlWantByAge: {},   // パーマ・カール(年代別 分子)
     straightenTotal: {},
+    stHiddenN: 0,                           // 隠れ矯正(sth=1: サロン呼称は髪質改善・仕上がりは矯正系)
     thicknessTotal: {}, thicknessWave: {},  // 髪質マップ th × {none|kuse|straightened}
     stylingFinishTotal: {}, menStylingTotal: {}, tempTotal: {}, toolsTotal: {},
     scalpTotal: {}, spaByAge: {},
@@ -96,6 +97,7 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     if (isCurlWant) inc(P.curlWantByAge, age);
     // 縮毛矯正
     inc(P.straightenTotal, m.st);
+    if (m.sth) P.stHiddenN++;
     // 薬剤履歴の重なり（メーカー向け: ダブル/トリプルプロセス毛の実サイズ）
     const isStNow = !!ST_NOW[m.st];
     inc(P.chemCross, isBleach
