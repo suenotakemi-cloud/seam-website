@@ -11,9 +11,12 @@
   // ── Meta Pixel（広告最適化用）──────────────────────────────────
   // 自前の cookieless 計測はそのまま。Pixel は _fbp Cookie を使うため、
   // サイトの同意方針に従って運用する（将来 CAPI へ寄せる場合は /api/ev から中継可）。
+  function cookieChoice() { try { return localStorage.getItem('seam_cookie'); } catch (e) { return null; } }
+
   (function initPixel() {
     try {
       if (window.fbq) return;
+      if (cookieChoice() === 'decline') return; // 「拒否」選択時は発火させない（オプトアウト）
       !function (f, b, e, v, n, t, s) {
         if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
         if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = [];
@@ -36,13 +39,76 @@
   };
   function fbqFire(name, props) {
     try {
-      if (!window.fbq) return;
+      if (!window.fbq || cookieChoice() === 'decline') return;
       var key = name;
       if (name === 'sec_click' && props && props.label && FB_MAP[props.label]) key = props.label;
       var m = FB_MAP[key];
       if (m) fbq(m[0], m[1]);
     } catch (e) { /* 計測でUIを壊さない */ }
   }
+
+  // ── Cookie 同意バナー（多言語・オプトアウト方式）──────────────────
+  // 初回訪問で1回だけ表示。「拒否」でPixelを停止（seam_cookie=decline）。
+  // 日本の外部送信規律に沿った開示＋停止手段。詳細は /privacy.html。
+  (function consentBanner() {
+    function show() {
+      try {
+        if (cookieChoice()) return;                       // 選択済みなら出さない
+        if (document.getElementById('seam-cc')) return;
+        var lang = 'ja';
+        try {
+          lang = localStorage.getItem('seamLang');
+          if (!lang) {
+            var hl = (document.documentElement.lang || 'ja').toLowerCase();
+            lang = hl.indexOf('zh-hant') === 0 ? 'tw' : hl.indexOf('zh-hans') === 0 ? 'zh' : hl.slice(0, 2);
+          }
+        } catch (e) { lang = 'ja'; }
+        var T = {
+          ja: { m: '当サイトは、広告の効果測定のために Meta ピクセル等の Cookie を利用します。', a: '同意する', d: '拒否する', l: '詳細' },
+          en: { m: 'This site uses cookies such as the Meta Pixel to measure ad performance.', a: 'Accept', d: 'Decline', l: 'Details' },
+          zh: { m: '本网站使用 Meta 像素等 Cookie 用于广告成效衡量。', a: '同意', d: '拒绝', l: '详情' },
+          tw: { m: '本網站使用 Meta 像素等 Cookie 進行廣告成效評估。', a: '同意', d: '拒絕', l: '詳情' },
+          ko: { m: '본 사이트는 광고 성과 측정을 위해 Meta 픽셀 등의 쿠키를 사용합니다.', a: '동의', d: '거부', l: '자세히' }
+        };
+        var t = T[lang] || T.ja;
+        var bar = document.createElement('div');
+        bar.id = 'seam-cc';
+        bar.setAttribute('role', 'dialog');
+        bar.setAttribute('aria-label', 'Cookie');
+        bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483000;background:#282624;color:#faf9f7;padding:14px 16px calc(14px + env(safe-area-inset-bottom));font-family:inherit;font-size:13px;line-height:1.6;box-shadow:0 -4px 20px rgba(0,0,0,.25)';
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:center';
+        var msg = document.createElement('span');
+        msg.style.cssText = 'flex:1 1 260px;min-width:200px';
+        msg.textContent = t.m + ' ';
+        var link = document.createElement('a');
+        link.href = '/privacy.html'; link.textContent = t.l;
+        link.style.cssText = 'color:#e8d9bf;text-decoration:underline;white-space:nowrap';
+        msg.appendChild(link);
+        var btns = document.createElement('div');
+        btns.style.cssText = 'display:flex;gap:8px;flex:0 0 auto';
+        function mkBtn(label, primary) {
+          var b = document.createElement('button');
+          b.type = 'button'; b.textContent = label;
+          b.style.cssText = 'cursor:pointer;border:0;border-radius:999px;padding:9px 20px;font-size:13px;font-weight:600;font-family:inherit;' + (primary ? 'background:#b58a56;color:#fff' : 'background:transparent;color:#faf9f7;border:1px solid rgba(250,249,247,.5)');
+          return b;
+        }
+        var accept = mkBtn(t.a, true), decline = mkBtn(t.d, false);
+        function choose(v) {
+          try { localStorage.setItem('seam_cookie', v); } catch (e) {}
+          try { bar.parentNode.removeChild(bar); } catch (e) {}
+        }
+        accept.addEventListener('click', function () { choose('accept'); });
+        decline.addEventListener('click', function () { choose('decline'); });
+        btns.appendChild(decline); btns.appendChild(accept);
+        wrap.appendChild(msg); wrap.appendChild(btns);
+        bar.appendChild(wrap);
+        (document.body || document.documentElement).appendChild(bar);
+      } catch (e) { /* 計測でUIを壊さない */ }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', show);
+    else show();
+  })();
 
   // ── 流入属性（どこから来たか）を1回だけ算出して全イベントに自動付与 ──
   // referrer は「サイト名(チャネル)」に正規化＝個人は特定しない。UTM は自社で付けたタグ。
