@@ -8,6 +8,42 @@
 (function () {
   'use strict';
 
+  // ── Meta Pixel（広告最適化用）──────────────────────────────────
+  // 自前の cookieless 計測はそのまま。Pixel は _fbp Cookie を使うため、
+  // サイトの同意方針に従って運用する（将来 CAPI へ寄せる場合は /api/ev から中継可）。
+  (function initPixel() {
+    try {
+      if (window.fbq) return;
+      !function (f, b, e, v, n, t, s) {
+        if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+        if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = [];
+        t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
+      }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '852519546926672');
+      fbq('track', 'PageView');
+    } catch (e) { /* 計測でUIを壊さない */ }
+  })();
+
+  // 自前イベント名（または sec_click の label）→ Meta標準/カスタムイベント
+  var FB_MAP = {
+    finder_start:     ['trackCustom', 'FinderStart'],
+    finder_complete:  ['track', 'Lead'],              // 診断完了＝主要CV
+    finder_cta:       ['trackCustom', 'FinderCTA'],
+    sale_shop_join:   ['track', 'CompleteRegistration'],
+    sale_shop_online: ['trackCustom', 'ShopOnlineClick'],
+    sale_banner:      ['trackCustom', 'SaleBannerClick'],
+    sale_banner_shop: ['trackCustom', 'SaleBannerClick']
+  };
+  function fbqFire(name, props) {
+    try {
+      if (!window.fbq) return;
+      var key = name;
+      if (name === 'sec_click' && props && props.label && FB_MAP[props.label]) key = props.label;
+      var m = FB_MAP[key];
+      if (m) fbq(m[0], m[1]);
+    } catch (e) { /* 計測でUIを壊さない */ }
+  }
+
   // ── 流入属性（どこから来たか）を1回だけ算出して全イベントに自動付与 ──
   // referrer は「サイト名(チャネル)」に正規化＝個人は特定しない。UTM は自社で付けたタグ。
   // Cookie 不使用・PII なし（landing の保持のみ sessionStorage を使う＝端末内で完結）。
@@ -70,6 +106,7 @@
         fetch('/api/ev', { method: 'POST', body: body, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(function () {});
       }
       if (window.dataLayer && window.dataLayer.push) window.dataLayer.push(payload); // GTM等を後で足す場合の保険
+      fbqFire(payload.e, props); // Meta Pixel へミラー（PageViewはinitで発火済みなので除外）
     } catch (e) { /* 計測でUIを壊さない */ }
   }
   window.seamTrack = track;
