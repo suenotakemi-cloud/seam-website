@@ -13057,6 +13057,11 @@ function shareKarteLink(origin) {
    ① タップ直後に必ずオーバーレイ(作成中…)を表示 = 無反応をなくす
    ② 共有シートが使える環境ではそのまま共有
    ③ 使えない環境では画像プレビューを表示し「長押しで保存」+ 保存ボタン(可能な環境のみ) */
+function clearKarteHash() {
+  try {
+    if (location.hash.indexOf('#k=') === 0) history.replaceState(null, '', location.pathname + location.search);
+  } catch (e) {}
+}
 function karteShareOverlay() {
   let ov = document.getElementById('karte-share-overlay');
   if (ov) {
@@ -13067,7 +13072,10 @@ function karteShareOverlay() {
   ov.id = 'karte-share-overlay';
   ov.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(26,24,21,0.62);display:flex;align-items:center;justify-content:center;padding:18px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);overflow:auto;';
   ov.addEventListener('click', e => {
-    if (e.target === ov) ov.remove();
+    if (e.target === ov) {
+      ov.remove();
+      clearKarteHash();
+    }
   });
   document.body.appendChild(ov);
   return ov;
@@ -13133,7 +13141,10 @@ async function shareCounselingSheetImage() {
   const ov = karteShareOverlay();
   const wireClose = () => {
     const b = ov.querySelector('[data-karte-close]');
-    if (b) b.onclick = () => ov.remove();
+    if (b) b.onclick = () => {
+      ov.remove();
+      clearKarteHash();
+    };
   };
   if (!node || typeof html2canvas !== 'function') {
     karteShareCard(ov, '<p style="font-size:13.5px;line-height:2;color:#2B2926;margin:0 0 14px;">共有の準備が整っていません<br>すこし時間を置いてもう一度お試しください</p>' + karteShareCloseBtn());
@@ -13178,8 +13189,19 @@ async function shareCounselingSheetImage() {
         karteShareOverlay(); // 共有不可 → 下のプレビューへ
       }
     }
-    // 共有シートが使えない環境(アプリ内ブラウザ / PC) → プレビュー + 長押し保存の案内
-    karteShareCard(ov, '<p style="font-size:13px;letter-spacing:.05em;color:#2B2926;margin:0;">カルテ画像ができました</p>' + '<img src="' + imgURL + '" alt="SEAM 髪格診断カルテ" style="display:block;margin:12px auto 0;width:100%;height:auto;border:1px solid #E7E0D6;border-radius:4px;" />' + '<p style="margin:12px 0 12px;font-size:11.5px;line-height:1.9;color:#5A534B;">画像を<b>長押し</b>（パソコンは右クリック）で<br>保存・共有できます</p>' + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' + '<button data-karte-dl style="padding:11px 24px;background:#2B2926;color:#FBF7F1;border:none;border-radius:999px;font-size:12.5px;font-family:inherit;letter-spacing:.04em;cursor:pointer;">端末に保存する</button>' + karteShareCloseBtn() + '</div>');
+    // 共有シートが使えない環境 → プレビュー表示。
+    // アプリ内ブラウザ(Instagram/LINE等)は端末保存も長押しメニューも制限されるため
+    // カルテをURLハッシュに載せ「⋯→外部ブラウザで開く」でSafariに結果ごと引き継ぐ案内を出す
+    const inApp = /Instagram|FBAN|FBAV|Line\/|Twitter|TikTok|MicroMessenger/i.test(navigator.userAgent || '');
+    let inAppGuide = '';
+    if (inApp) {
+      try {
+        const raw = localStorage.getItem('seam_karte_last');
+        if (raw) history.replaceState(null, '', location.pathname + location.search + '#k=' + encodeURIComponent(btoa(unescape(encodeURIComponent(raw)))));
+      } catch (e) {}
+      inAppGuide = '<div style="margin:12px 0 12px;padding:12px 14px;background:#FBF7F1;border:1px solid #E7DFD0;border-radius:8px;text-align:left;">' + '<p style="margin:0;font-size:12px;line-height:1.95;color:#2B2926;"><b>アプリ内ブラウザでは端末への保存が制限されています</b><br>' + '画面右上の <b>&#8943;</b> メニューから「<b>外部ブラウザで開く</b>」を押してください<br>この結果ごとSafariが開き そのまま保存できます</p>' + '<p style="margin:7px 0 0;font-size:11px;color:#8A8177;">お急ぎの場合は スクリーンショットでも保存できます</p></div>';
+    }
+    karteShareCard(ov, '<p style="font-size:13px;letter-spacing:.05em;color:#2B2926;margin:0;">カルテ画像ができました</p>' + '<img src="' + imgURL + '" alt="SEAM 髪格診断カルテ" style="display:block;margin:12px auto 0;width:100%;height:auto;border:1px solid #E7E0D6;border-radius:4px;" />' + (inApp ? inAppGuide : '<p style="margin:12px 0 12px;font-size:11.5px;line-height:1.9;color:#5A534B;">画像を<b>長押し</b>（パソコンは右クリック）で<br>保存・共有できます</p>') + '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">' + (inApp ? '' : '<button data-karte-dl style="padding:11px 24px;background:#2B2926;color:#FBF7F1;border:none;border-radius:999px;font-size:12.5px;font-family:inherit;letter-spacing:.04em;cursor:pointer;">端末に保存する</button>') + karteShareCloseBtn() + '</div>');
     wireClose();
     const dl = ov.querySelector('[data-karte-dl]');
     if (dl) dl.onclick = () => {
@@ -13787,6 +13809,22 @@ function Result({
   }, "\u30B7\u30A7\u30A2"))));
 }
 
+/* Instagram等のアプリ内ブラウザ→Safariへ「結果ごと」引き継ぐ受け口。
+   保存モーダルがURLハッシュ(#k=)にカルテを書き込み 外部ブラウザで開いた瞬間ここが取り込む */
+(function importKarteFromHash() {
+  try {
+    if (location.hash && location.hash.indexOf('#k=') === 0) {
+      const json = decodeURIComponent(escape(atob(decodeURIComponent(location.hash.slice(3)))));
+      const data = JSON.parse(json);
+      if (data && data.answersSnapshot) {
+        localStorage.setItem('seam_karte_last', JSON.stringify(data));
+        sessionStorage.setItem('seam_open_karte', '1');
+      }
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+  } catch (e) {}
+})();
+
 /* ---------- App ---------- */
 function loadLastKarte() {
   try {
@@ -13942,8 +13980,19 @@ function App() {
     const sample = buildSampleAnswersForType(type, dir, g);
     return sample;
   }, []);
-  const [view, setView] = useState(sharedInit ? 'result' : 'home');
-  const [answers, setAnswers] = useState(sharedInit || {});
+
+  // Safari引き継ぎ(#k=取り込み)直後は 前回のカルテを自動で開く
+  const openKarteBoot = useMemo(() => {
+    try {
+      if (sessionStorage.getItem('seam_open_karte') === '1') {
+        sessionStorage.removeItem('seam_open_karte');
+        return loadLastKarte();
+      }
+    } catch (e) {}
+    return null;
+  }, []);
+  const [view, setView] = useState(sharedInit ? 'result' : openKarteBoot ? 'result' : 'home');
+  const [answers, setAnswers] = useState(sharedInit || openKarteBoot && openKarteBoot.answersSnapshot || {});
   const [lastKarte, setLastKarte] = useState(() => loadLastKarte());
   const [reservationOpen, setReservationOpen] = useState(false);
   const [reservationFrom, setReservationFrom] = useState('');
