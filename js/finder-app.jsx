@@ -9121,7 +9121,7 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
           <b>Instagramなどアプリ内でご覧の方へ</b><br />
           ボタンを押しても保存できない時は 画面右上の <b>⋯</b> から<br className="sm:hidden" />
           「<b>外部ブラウザで開く</b>」を押してください<br />
-          この結果ごとSafariに引き継がれ そのまま保存できます
+          この結果ごと 普段のブラウザ（SafariやChrome）に引き継がれ そのまま保存できます
         </p>
       )}
       <p className="mt-4 text-center text-[11.5px] text-charcoal/55 leading-relaxed">
@@ -10086,7 +10086,7 @@ async function shareCounselingSheetImage() {
       inAppGuide =
         '<div style="margin:12px 0 12px;padding:12px 14px;background:#FBF7F1;border:1px solid #E7DFD0;border-radius:8px;text-align:left;">' +
         '<p style="margin:0;font-size:12px;line-height:1.95;color:#2B2926;"><b>アプリ内ブラウザでは端末への保存が制限されています</b><br>' +
-        '画面右上の <b>&#8943;</b> メニューから「<b>外部ブラウザで開く</b>」を押してください<br>この結果ごとSafariが開き そのまま保存できます</p>' +
+        '画面右上の <b>&#8943;</b> メニューから「<b>外部ブラウザで開く</b>」を押してください<br>この結果ごと 普段のブラウザ（SafariやChrome）が開き そのまま保存できます</p>' +
         '<p style="margin:7px 0 0;font-size:11px;color:#8A8177;">お急ぎの場合は スクリーンショットでも保存できます</p></div>';
     }
     karteShareCard(ov,
