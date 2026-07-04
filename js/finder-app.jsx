@@ -9116,6 +9116,14 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
           <span className="text-[12px]">↗</span>
         </button>
       </div>
+      {isInAppBrowser() && (
+        <p className="mt-3 no-print text-center text-[11.5px] leading-[1.95] text-charcoal/70 bg-cream/60 border border-line rounded-[8px] px-4 py-2.5 max-w-md mx-auto">
+          <b>Instagramなどアプリ内でご覧の方へ</b><br />
+          ボタンを押しても保存できない時は 画面右上の <b>⋯</b> から<br className="sm:hidden" />
+          「<b>外部ブラウザで開く</b>」を押してください<br />
+          この結果ごとSafariに引き継がれ そのまま保存できます
+        </p>
+      )}
       <p className="mt-4 text-center text-[11.5px] text-charcoal/55 leading-relaxed">
         ※ SEAM 以外の美容室でも、ご相談時にお使いいただけます。
       </p>
@@ -9946,6 +9954,9 @@ function shareKarteLink(origin) {
    ① タップ直後に必ずオーバーレイ(作成中…)を表示 = 無反応をなくす
    ② 共有シートが使える環境ではそのまま共有
    ③ 使えない環境では画像プレビューを表示し「長押しで保存」+ 保存ボタン(可能な環境のみ) */
+function isInAppBrowser() {
+  return /Instagram|FBAN|FBAV|Line\/|Twitter|TikTok|MicroMessenger/i.test(navigator.userAgent || '');
+}
 function clearKarteHash() {
   try { if (location.hash.indexOf('#k=') === 0) history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
 }
@@ -10065,7 +10076,7 @@ async function shareCounselingSheetImage() {
     // 共有シートが使えない環境 → プレビュー表示。
     // アプリ内ブラウザ(Instagram/LINE等)は端末保存も長押しメニューも制限されるため
     // カルテをURLハッシュに載せ「⋯→外部ブラウザで開く」でSafariに結果ごと引き継ぐ案内を出す
-    const inApp = /Instagram|FBAN|FBAV|Line\/|Twitter|TikTok|MicroMessenger/i.test(navigator.userAgent || '');
+    const inApp = isInAppBrowser();
     let inAppGuide = '';
     if (inApp) {
       try {
