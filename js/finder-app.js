@@ -12173,7 +12173,11 @@ function CounselingSheet({
     className: "inline-flex items-center gap-2 px-7 py-3.5 bg-ink text-ivory hover:bg-charcoal transition-colors font-serif text-[14px] sm:text-[15px] rounded-[2px]"
   }, "\u3053\u306E\u30AB\u30EB\u30C6\u3092\u753B\u50CF\u3067\u4FDD\u5B58\u30FB\u9001\u308B", /*#__PURE__*/React.createElement("span", {
     className: "text-[12px]"
-  }, "\u2197"))), /*#__PURE__*/React.createElement("p", {
+  }, "\u2197"))), isInAppBrowser() && /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 no-print text-center text-[11.5px] leading-[1.95] text-charcoal/70 bg-cream/60 border border-line rounded-[8px] px-4 py-2.5 max-w-md mx-auto"
+  }, /*#__PURE__*/React.createElement("b", null, "Instagram\u306A\u3069\u30A2\u30D7\u30EA\u5185\u3067\u3054\u89A7\u306E\u65B9\u3078"), /*#__PURE__*/React.createElement("br", null), "\u30DC\u30BF\u30F3\u3092\u62BC\u3057\u3066\u3082\u4FDD\u5B58\u3067\u304D\u306A\u3044\u6642\u306F \u753B\u9762\u53F3\u4E0A\u306E ", /*#__PURE__*/React.createElement("b", null, "\u22EF"), " \u304B\u3089", /*#__PURE__*/React.createElement("br", {
+    className: "sm:hidden"
+  }), "\u300C", /*#__PURE__*/React.createElement("b", null, "\u5916\u90E8\u30D6\u30E9\u30A6\u30B6\u3067\u958B\u304F"), "\u300D\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044", /*#__PURE__*/React.createElement("br", null), "\u3053\u306E\u7D50\u679C\u3054\u3068Safari\u306B\u5F15\u304D\u7D99\u304C\u308C \u305D\u306E\u307E\u307E\u4FDD\u5B58\u3067\u304D\u307E\u3059"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-center text-[11.5px] text-charcoal/55 leading-relaxed"
   }, "\u203B SEAM \u4EE5\u5916\u306E\u7F8E\u5BB9\u5BA4\u3067\u3082\u3001\u3054\u76F8\u8AC7\u6642\u306B\u304A\u4F7F\u3044\u3044\u305F\u3060\u3051\u307E\u3059\u3002"));
 }
@@ -13057,6 +13061,9 @@ function shareKarteLink(origin) {
    ① タップ直後に必ずオーバーレイ(作成中…)を表示 = 無反応をなくす
    ② 共有シートが使える環境ではそのまま共有
    ③ 使えない環境では画像プレビューを表示し「長押しで保存」+ 保存ボタン(可能な環境のみ) */
+function isInAppBrowser() {
+  return /Instagram|FBAN|FBAV|Line\/|Twitter|TikTok|MicroMessenger/i.test(navigator.userAgent || '');
+}
 function clearKarteHash() {
   try {
     if (location.hash.indexOf('#k=') === 0) history.replaceState(null, '', location.pathname + location.search);
@@ -13192,7 +13199,7 @@ async function shareCounselingSheetImage() {
     // 共有シートが使えない環境 → プレビュー表示。
     // アプリ内ブラウザ(Instagram/LINE等)は端末保存も長押しメニューも制限されるため
     // カルテをURLハッシュに載せ「⋯→外部ブラウザで開く」でSafariに結果ごと引き継ぐ案内を出す
-    const inApp = /Instagram|FBAN|FBAV|Line\/|Twitter|TikTok|MicroMessenger/i.test(navigator.userAgent || '');
+    const inApp = isInAppBrowser();
     let inAppGuide = '';
     if (inApp) {
       try {
