@@ -2192,15 +2192,15 @@ function computeServiceReco(a, damageTier) {
   a = a || {};
   const cs = Array.isArray(a.concerns) ? a.concerns : [];
   const has = v => cs.indexOf(v) !== -1;
-  const age30plus = a.age === '30s' || a.age === '40s' || a.age === '50plus';
-  const spa = age30plus || a.thickness === 'thin' || ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(has) || a.scalpType && a.scalpType !== 'normal' && a.scalpType !== '';
+  // 髪格診断の主役は「あなたに合うケア/ヘアケア(=ショップ導線)」。サロン/スパは前に出しすぎず、
+  // 家では戻せない(強ダメージ/縮毛矯正)・頭皮の実ニーズがある人だけに出す。該当なしは none(ケア+ショップに集中)。
+  const spa = ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(has) || a.scalpType === 'dry' || a.scalpType === 'oily' || a.scalpType === 'sensitive';
   const highDamage = typeof damageTier === 'number' && damageTier >= 3;
   const straight = a.straighten && a.straighten !== 'none' || !!a.straightenHidden;
-  const color = has('colorFade') || has('grayFade');
-  const salon = highDamage || straight || color;
+  const salon = highDamage || straight;
   let reason = null;
-  if (highDamage) reason = 'damage';else if (straight) reason = 'straighten';else if (color) reason = 'color';
-  const code = salon && spa ? 'both' : salon ? 'salon' : spa ? 'spa' : 'soft';
+  if (highDamage) reason = 'damage';else if (straight) reason = 'straighten';
+  const code = salon && spa ? 'both' : salon ? 'salon' : spa ? 'spa' : 'none';
   return {
     salon: salon,
     spa: spa,
@@ -4948,54 +4948,6 @@ function SpaSuggestCard() {
   }, "\u2192")))));
 }
 
-/* ⚜ 強い在店ニーズが出ていない診断者への低圧な相談/ご褒美の橋(該当なしの受け皿) */
-function SoftSuggestCard() {
-  useEffect(() => {
-    try {
-      window.seamTrack && window.seamTrack('sec_view', {
-        label: 'service_soft'
-      });
-    } catch (e) {}
-  }, []);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "mt-7 rounded-[2px] border border-line bg-white/70 overflow-hidden"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 sm:px-6 py-5"
-  }, /*#__PURE__*/React.createElement("p", {
-    className: "font-mono tracking-widest2 text-[9.5px] uppercase text-gold"
-  }, "\u2014 Salon & Spa"), /*#__PURE__*/React.createElement("h4", {
-    className: "mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
-  }, "\u3082\u3063\u3068\u826F\u304F\u3057\u305F\u304F\u306A\u3063\u305F\u3089 SEAM\u304C\u305D\u3070\u306B\u3044\u307E\u3059"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
-  }, "\u4ECA\u306E\u9AEA\u306F \u304A\u304A\u3080\u306D\u826F\u3044\u72B6\u614B\u3067\u3059 \u6C17\u306B\u306A\u308B\u3053\u3068\u304C\u51FA\u3066\u304D\u305F\u3089 \u5B8C\u5168\u500B\u5BA4\u306E\u30B5\u30ED\u30F3\u3067\u76F8\u8AC7\u3067\u304D\u307E\u3059 \u305F\u307E\u306E\u3054\u8912\u7F8E\u306B \u7720\u308B\u305F\u3081\u306E\u30D8\u30C3\u30C9\u30B9\u30D1\u3082"), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3.5 flex flex-wrap gap-2.5"
-  }, /*#__PURE__*/React.createElement("a", {
-    href: "hairsalon.html",
-    onClick: () => {
-      try {
-        window.seamTrack && window.seamTrack('sec_click', {
-          label: 'salon_finder'
-        });
-      } catch (e) {}
-    },
-    className: "inline-flex items-center gap-1.5 rounded-full border border-ink/25 text-ink px-4 py-2 font-serif text-[12.5px] hover:border-gold hover:text-gold transition-colors"
-  }, /*#__PURE__*/React.createElement("span", null, "\u30B5\u30ED\u30F3\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("span", {
-    "aria-hidden": true
-  }, "\u2192")), /*#__PURE__*/React.createElement("a", {
-    href: "headspa.html",
-    onClick: () => {
-      try {
-        window.seamTrack && window.seamTrack('sec_click', {
-          label: 'spa_finder'
-        });
-      } catch (e) {}
-    },
-    className: "inline-flex items-center gap-1.5 rounded-full border border-ink/25 text-ink px-4 py-2 font-serif text-[12.5px] hover:border-gold hover:text-gold transition-colors"
-  }, /*#__PURE__*/React.createElement("span", null, "\u30D8\u30C3\u30C9\u30B9\u30D1\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("span", {
-    "aria-hidden": true
-  }, "\u2192")))));
-}
-
 // 今回の優先課題(主訴)を最大3つ。強い履歴(ブリーチ→熱)を先に、次にユーザーが選んだ悩み。
 function buildPriorityConcerns(answers, scores) {
   const a = answers || {},
@@ -5478,7 +5430,7 @@ function DeepProductSection({
     const _reco = computeServiceReco(answers, typeof computeDamageTier === 'function' ? computeDamageTier(_sc) : undefined);
     return /*#__PURE__*/React.createElement(React.Fragment, null, _reco.salon && /*#__PURE__*/React.createElement(SalonSuggestCard, {
       reason: _reco.reason
-    }), _reco.spa && /*#__PURE__*/React.createElement(SpaSuggestCard, null), !_reco.salon && !_reco.spa && /*#__PURE__*/React.createElement(SoftSuggestCard, null));
+    }), _reco.spa && /*#__PURE__*/React.createElement(SpaSuggestCard, null));
   })(), /*#__PURE__*/React.createElement("div", {
     className: "mt-8"
   }, /*#__PURE__*/React.createElement("button", {
