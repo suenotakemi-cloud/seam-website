@@ -180,7 +180,7 @@ END = "<!-- seam:jsonld:end -->"
 HREF_START = "<!-- seam:hreflang:start -->"
 HREF_END = "<!-- seam:hreflang:end -->"
 HREF_LANGS = [("ja", ""), ("en", "/en"), ("zh-Hans", "/zh"), ("zh-Hant", "/tw"), ("ko", "/ko")]
-NO_HREFLANG = {"finder.html"}  # 多言語の静的生成対象外(Reactアプリ)のため alternate を張らない
+NO_HREFLANG = {"finder.html", "brand.html"}  # 多言語の静的生成対象外(finder=Reactアプリ / brand=build-i18n未対象で /en/brand 等が404になる)のため alternate を張らない
 
 
 def hreflang_block(page_url):
