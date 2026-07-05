@@ -2185,6 +2185,30 @@ function buildProfileMeta(a) {
   return m;
 }
 
+// 診断→在店サービスの出し分け(表示カードと finder_complete の svc で共用)。
+// answers + damageTier のみで判定 → 「表示したカード」と「記録した svc」が必ず一致する。
+// サロン(ダメージ/カラー/矯正)とスパ(頭皮/年齢)は排他にしない(両立可)。該当なしは soft。
+function computeServiceReco(a, damageTier) {
+  a = a || {};
+  const cs = Array.isArray(a.concerns) ? a.concerns : [];
+  const has = v => cs.indexOf(v) !== -1;
+  const age30plus = a.age === '30s' || a.age === '40s' || a.age === '50plus';
+  const spa = age30plus || a.thickness === 'thin' || ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(has) || a.scalpType && a.scalpType !== 'normal' && a.scalpType !== '';
+  const highDamage = typeof damageTier === 'number' && damageTier >= 3;
+  const straight = a.straighten && a.straighten !== 'none' || !!a.straightenHidden;
+  const color = has('colorFade') || has('grayFade');
+  const salon = highDamage || straight || color;
+  let reason = null;
+  if (highDamage) reason = 'damage';else if (straight) reason = 'straighten';else if (color) reason = 'color';
+  const code = salon && spa ? 'both' : salon ? 'salon' : spa ? 'spa' : 'soft';
+  return {
+    salon: salon,
+    spa: spa,
+    reason: reason,
+    code: code
+  };
+}
+
 /* ---------- タイプ別ルーティン ---------- */
 /* ---------- 髪質チャート ---------- */
 function clamp(v, max) {
@@ -4817,7 +4841,24 @@ function SaleFinderBanner() {
 }
 
 /* ⚜ ダメージ・矯正履歴が深い診断者へのサロン相談提案 — SpaSuggestCardと排他表示 */
-function SalonSuggestCard() {
+function SalonSuggestCard({
+  reason
+}) {
+  const _M = {
+    damage: {
+      h: 'このダメージ 家だけで戻さなくていい',
+      b: '診断で強めのダメージが出ています ホームケアと並行して サロンの集中補修や髪質改善を組み合わせるのが最短です この結果はカウンセリングでそのまま伝わります'
+    },
+    straighten: {
+      h: 'くせ・うねりの毎日を もっとラクに',
+      b: '縮毛矯正や髪質改善はサロンの領域です 今の髪の状態をそのまま伝えれば ダメージを抑えた進め方を提案してもらえます 診断結果はカウンセリングでそのまま使えます'
+    },
+    color: {
+      h: 'その色 サロンで長く楽しめます',
+      b: 'カラーの退色が出ています 退色ケアや次のカラー設計はサロンが得意です 診断結果を持って相談すれば 色持ちの提案につながります'
+    }
+  };
+  const _c = _M[reason] || _M.damage;
   useEffect(() => {
     try {
       window.seamTrack && window.seamTrack('sec_view', {
@@ -4842,9 +4883,9 @@ function SalonSuggestCard() {
     className: "font-mono tracking-widest2 text-[9.5px] uppercase text-gold"
   }, "\u2014 Hair Salon"), /*#__PURE__*/React.createElement("h4", {
     className: "mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
-  }, "\u3053\u306E\u30C0\u30E1\u30FC\u30B8\u306F \u5BB6\u3060\u3051\u3067\u623B\u3055\u306A\u304F\u3066\u3044\u3044"), /*#__PURE__*/React.createElement("p", {
+  }, _c.h), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
-  }, "\u8A3A\u65AD\u3067\u5F37\u3081\u306E\u30C0\u30E1\u30FC\u30B8\u3084\u77EF\u6B63\u306E\u5C65\u6B74\u304C\u51FA\u3066\u3044\u307E\u3059 \u30DB\u30FC\u30E0\u30B1\u30A2\u3068\u4E26\u884C\u3057\u3066 \u30B5\u30ED\u30F3\u306E\u96C6\u4E2D\u88DC\u4FEE\u3084\u9AEA\u8CEA\u6539\u5584\u3092\u7D44\u307F\u5408\u308F\u305B\u308B\u306E\u304C\u6700\u77ED\u3067\u3059 \u3053\u306E\u7D50\u679C\u306F\u30AB\u30A6\u30F3\u30BB\u30EA\u30F3\u30B0\u3067\u305D\u306E\u307E\u307E\u4F1D\u308F\u308A\u307E\u3059"), /*#__PURE__*/React.createElement("a", {
+  }, _c.b), /*#__PURE__*/React.createElement("a", {
     href: "hairsalon.html#booking",
     onClick: () => {
       try {
@@ -4893,7 +4934,7 @@ function SpaSuggestCard() {
   }, "\u305D\u306E\u982D\u76AE \u624B\u3067\u307B\u3069\u304D\u306B\u6765\u307E\u305B\u3093\u304B"), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
   }, "\u8A3A\u65AD\u3067\u982D\u76AE\u306E\u30B5\u30A4\u30F3\u304C\u51FA\u3066\u3044\u307E\u3059 \u30DB\u30FC\u30E0\u30B1\u30A2\u306B\u52A0\u3048\u3066 \u5B8C\u5168\u500B\u5BA4\u306E\u30D8\u30C3\u30C9\u30B9\u30D1\u3067\u982D\u76AE\u304B\u3089\u3086\u3063\u304F\u308A\u6574\u3048\u308B\u306E\u304C\u8FD1\u9053\u3067\u3059 \u7720\u308B\u305F\u3081\u306E\u65BD\u8853 90\u5206 \xA517,300"), /*#__PURE__*/React.createElement("a", {
-    href: "headspa.html",
+    href: "headspa.html#booking",
     onClick: () => {
       try {
         window.seamTrack && window.seamTrack('sec_click', {
@@ -4902,6 +4943,54 @@ function SpaSuggestCard() {
       } catch (e) {}
     },
     className: "mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors"
+  }, /*#__PURE__*/React.createElement("span", null, "\u30D8\u30C3\u30C9\u30B9\u30D1\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true
+  }, "\u2192")))));
+}
+
+/* ⚜ 強い在店ニーズが出ていない診断者への低圧な相談/ご褒美の橋(該当なしの受け皿) */
+function SoftSuggestCard() {
+  useEffect(() => {
+    try {
+      window.seamTrack && window.seamTrack('sec_view', {
+        label: 'service_soft'
+      });
+    } catch (e) {}
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "mt-7 rounded-[2px] border border-line bg-white/70 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-4 sm:px-6 py-5"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[9.5px] uppercase text-gold"
+  }, "\u2014 Salon & Spa"), /*#__PURE__*/React.createElement("h4", {
+    className: "mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
+  }, "\u3082\u3063\u3068\u826F\u304F\u3057\u305F\u304F\u306A\u3063\u305F\u3089 SEAM\u304C\u305D\u3070\u306B\u3044\u307E\u3059"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
+  }, "\u4ECA\u306E\u9AEA\u306F \u304A\u304A\u3080\u306D\u826F\u3044\u72B6\u614B\u3067\u3059 \u6C17\u306B\u306A\u308B\u3053\u3068\u304C\u51FA\u3066\u304D\u305F\u3089 \u5B8C\u5168\u500B\u5BA4\u306E\u30B5\u30ED\u30F3\u3067\u76F8\u8AC7\u3067\u304D\u307E\u3059 \u305F\u307E\u306E\u3054\u8912\u7F8E\u306B \u7720\u308B\u305F\u3081\u306E\u30D8\u30C3\u30C9\u30B9\u30D1\u3082"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3.5 flex flex-wrap gap-2.5"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "hairsalon.html",
+    onClick: () => {
+      try {
+        window.seamTrack && window.seamTrack('sec_click', {
+          label: 'salon_finder'
+        });
+      } catch (e) {}
+    },
+    className: "inline-flex items-center gap-1.5 rounded-full border border-ink/25 text-ink px-4 py-2 font-serif text-[12.5px] hover:border-gold hover:text-gold transition-colors"
+  }, /*#__PURE__*/React.createElement("span", null, "\u30B5\u30ED\u30F3\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true
+  }, "\u2192")), /*#__PURE__*/React.createElement("a", {
+    href: "headspa.html",
+    onClick: () => {
+      try {
+        window.seamTrack && window.seamTrack('sec_click', {
+          label: 'spa_finder'
+        });
+      } catch (e) {}
+    },
+    className: "inline-flex items-center gap-1.5 rounded-full border border-ink/25 text-ink px-4 py-2 font-serif text-[12.5px] hover:border-gold hover:text-gold transition-colors"
   }, /*#__PURE__*/React.createElement("span", null, "\u30D8\u30C3\u30C9\u30B9\u30D1\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("span", {
     "aria-hidden": true
   }, "\u2192")))));
@@ -5385,7 +5474,12 @@ function DeepProductSection({
       item: f.item,
       category: f.category
     }));
-  }))), needScalp ? /*#__PURE__*/React.createElement(SpaSuggestCard, null) : highDamageRequired || answers.straighten && answers.straighten !== 'none' || answers.straightenHidden ? /*#__PURE__*/React.createElement(SalonSuggestCard, null) : null, /*#__PURE__*/React.createElement("div", {
+  }))), (() => {
+    const _reco = computeServiceReco(answers, typeof computeDamageTier === 'function' ? computeDamageTier(_sc) : undefined);
+    return /*#__PURE__*/React.createElement(React.Fragment, null, _reco.salon && /*#__PURE__*/React.createElement(SalonSuggestCard, {
+      reason: _reco.reason
+    }), _reco.spa && /*#__PURE__*/React.createElement(SpaSuggestCard, null), !_reco.salon && !_reco.spa && /*#__PURE__*/React.createElement(SoftSuggestCard, null));
+  })(), /*#__PURE__*/React.createElement("div", {
     className: "mt-8"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
@@ -10319,6 +10413,9 @@ function ResultHero({
     try {
       window.__seamLastType = origin && origin.code || '';
       const pm = buildProfileMeta(answers);
+      try {
+        pm.svc = computeServiceReco(answers, damageTier).code;
+      } catch (e) {}
       // 再診断シグナル: rd=1(前回カルテあり) rdd=前回から何日(0-365) — 経時データの土台
       const pk = window.__seamPrevKarte;
       if (pk && pk.savedAt) {
