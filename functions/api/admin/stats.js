@@ -231,7 +231,7 @@ export async function onRequestGet(context) {
       else if (r.name === 'finder_complete') finderFunnel.completed = r.c;
     });
     // 診断→在店サービスの出し分け内訳(両方=both / サロン / スパ / 該当なし=soft)
-    const serviceReco = { salon: 0, spa: 0, both: 0, soft: 0 };
+    const serviceReco = { salon: 0, spa: 0, both: 0, none: 0 };
     (svcRaw.results || []).forEach(r => { if (r.svc && serviceReco[r.svc] != null) serviceReco[r.svc] = r.c; });
     // 予約ファネル: ページ閲覧 → 予約エリア到達(sec_view) → 予約クリック(HPB遷移/指名/追従)
     const bookingFunnel = { salon: { pv: 0, area: 0, hpb: 0, stylist: 0, sticky: 0 }, spa: { pv: 0, area: 0, hpb: 0, spanist: 0, sticky: 0 } };

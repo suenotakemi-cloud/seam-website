@@ -1043,19 +1043,17 @@ function computeServiceReco(a, damageTier) {
   a = a || {};
   const cs = Array.isArray(a.concerns) ? a.concerns : [];
   const has = (v) => cs.indexOf(v) !== -1;
-  const age30plus = a.age === '30s' || a.age === '40s' || a.age === '50plus';
-  const spa = age30plus || a.thickness === 'thin'
-    || ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(has)
-    || (a.scalpType && a.scalpType !== 'normal' && a.scalpType !== '');
+  // 髪格診断の主役は「あなたに合うケア/ヘアケア(=ショップ導線)」。サロン/スパは前に出しすぎず、
+  // 家では戻せない(強ダメージ/縮毛矯正)・頭皮の実ニーズがある人だけに出す。該当なしは none(ケア+ショップに集中)。
+  const spa = ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(has)
+    || a.scalpType === 'dry' || a.scalpType === 'oily' || a.scalpType === 'sensitive';
   const highDamage = (typeof damageTier === 'number' && damageTier >= 3);
   const straight = (a.straighten && a.straighten !== 'none') || !!a.straightenHidden;
-  const color = has('colorFade') || has('grayFade');
-  const salon = highDamage || straight || color;
+  const salon = highDamage || straight;
   let reason = null;
   if (highDamage) reason = 'damage';
   else if (straight) reason = 'straighten';
-  else if (color) reason = 'color';
-  const code = (salon && spa) ? 'both' : (salon ? 'salon' : (spa ? 'spa' : 'soft'));
+  const code = (salon && spa) ? 'both' : (salon ? 'salon' : (spa ? 'spa' : 'none'));
   return { salon: salon, spa: spa, reason: reason, code: code };
 }
 
@@ -3560,24 +3558,6 @@ function SpaSuggestCard() {
   );
 }
 
-/* ⚜ 強い在店ニーズが出ていない診断者への低圧な相談/ご褒美の橋(該当なしの受け皿) */
-function SoftSuggestCard() {
-  useEffect(() => { try { window.seamTrack && window.seamTrack('sec_view', { label: 'service_soft' }); } catch (e) {} }, []);
-  return (
-    <div className="mt-7 rounded-[2px] border border-line bg-white/70 overflow-hidden">
-      <div className="px-4 sm:px-6 py-5">
-        <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">— Salon &amp; Spa</p>
-        <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">もっと良くしたくなったら SEAMがそばにいます</h4>
-        <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">今の髪は おおむね良い状態です 気になることが出てきたら 完全個室のサロンで相談できます たまのご褒美に 眠るためのヘッドスパも</p>
-        <div className="mt-3.5 flex flex-wrap gap-2.5">
-          <a href="hairsalon.html" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'salon_finder' }); } catch (e) {} }} className="inline-flex items-center gap-1.5 rounded-full border border-ink/25 text-ink px-4 py-2 font-serif text-[12.5px] hover:border-gold hover:text-gold transition-colors"><span>サロンを見る</span><span aria-hidden>&rarr;</span></a>
-          <a href="headspa.html" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'spa_finder' }); } catch (e) {} }} className="inline-flex items-center gap-1.5 rounded-full border border-ink/25 text-ink px-4 py-2 font-serif text-[12.5px] hover:border-gold hover:text-gold transition-colors"><span>ヘッドスパを見る</span><span aria-hidden>&rarr;</span></a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // 今回の優先課題(主訴)を最大3つ。強い履歴(ブリーチ→熱)を先に、次にユーザーが選んだ悩み。
 function buildPriorityConcerns(answers, scores) {
   const a = answers || {}, s = scores || {};
@@ -4020,7 +4000,6 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
           <>
             {_reco.salon && <SalonSuggestCard reason={_reco.reason} />}
             {_reco.spa && <SpaSuggestCard />}
-            {(!_reco.salon && !_reco.spa) && <SoftSuggestCard />}
           </>
         );
       })()}

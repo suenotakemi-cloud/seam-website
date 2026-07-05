@@ -317,7 +317,7 @@
       brandSearch:[{label:'オージュア',c:41},{label:'ミルボン',c:33},{label:'頭皮',c:29},{label:'kerastase',c:22},{label:'しっとり シャンプー',c:18},{label:'スカルプ',c:14},{label:'デジタルパーマ',c:9},{label:'ドライヤー',c:8}],
       brandClick:[{label:'Aujua',c:88},{label:'Kérastase',c:64},{label:'Global Milbon',c:52},{label:'SUBLIMIC',c:38},{label:'BYKARTE',c:31},{label:'TOKIO INKARAMI',c:26},{label:'Davines',c:22},{label:'ReFa',c:19}],
       finderFunnel:{opened:1230,started:620,completed:562},
-      serviceReco:{salon:120,spa:170,both:150,soft:122},
+      serviceReco:{salon:95,spa:120,both:70,none:277},
       bookingFunnel:{salon:{pv:190,area:84,hpb:31,stylist:12,sticky:9},spa:{pv:305,area:139,hpb:58,spanist:8,sticky:11}},
       pageViews:[{path:'/',c:2140},{path:'/finder',c:1230},{path:'/brand',c:640},{path:'/shop',c:470},{path:'/headspa',c:305},{path:'/onlineshop',c:280},{path:'/hairsalon',c:190},{path:'/guide-scalp',c:88}],
       pageEngage:[{path:'/',c:1650,sec:46,sd:58},{path:'/finder',c:980,sec:186,sd:74},{path:'/brand',c:520,sec:95,sd:62},{path:'/shop',c:390,sec:52,sd:66},{path:'/headspa',c:260,sec:71,sd:63},{path:'/onlineshop',c:230,sec:38,sd:55},{path:'/hairsalon',c:160,sec:49,sd:60},{path:'/guide-scalp',c:74,sec:112,sd:81}],
@@ -817,7 +817,7 @@
       })() +
       (function(){
         var r = data.serviceReco; if (!r) return '';
-        var total = (r.salon||0)+(r.spa||0)+(r.both||0)+(r.soft||0);
+        var total = (r.salon||0)+(r.spa||0)+(r.both||0)+(r.none||0);
         if (!total) return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Diagnosis → Service</span>診断→在店サービス誘導</h2><div class="empty">本更新(v47)以降の診断完了から蓄積されます（過去分には含まれません）</div></div>';
         function pc(n){ return Math.round(n/total*100)+'%'; }
         function row(label, n, color, note){
@@ -830,7 +830,7 @@
           + row('サロンのみ', r.salon||0, '#8A6B3F')
           + row('ヘッドスパのみ', r.spa||0, '#B8945A')
           + row('両方（サロン＋スパ）', r.both||0, '#6E5B7B')
-          + row('ソフト誘導（強い在店ニーズなし）', r.soft||0, '#C9BCA8', '以前は素通りだった層 — いまは低圧の相談/ご褒美カードを表示')
+          + row('サロン/スパ誘導なし（ケア＋ショップ中心）', r.none||0, '#C9BCA8', '診断→自分に合うケア/ヘアケア＆シェアに集中する層（サロン/スパは前に出さない）')
           + '</div>'
           + '<p style="font-size:11px;color:#4A443C;margin-top:10px;line-height:1.9">診断完了 <b>'+total.toLocaleString()+'</b> 件のうち <b style="color:#8A6B3F">サロン誘導 '+pc(salonT)+'</b>（'+salonT.toLocaleString()+'）・<b style="color:#B8945A">スパ誘導 '+pc(spaT)+'</b>（'+spaT.toLocaleString()+'）。実際のクリックは下の「セクション反応」の 診断→サロン提案／ヘッドスパ提案 をご覧ください</p></div>';
       })() +
