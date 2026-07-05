@@ -204,7 +204,7 @@ export async function onRequestGet(context) {
       q("SELECT ts, name, type, advice, tier, ref, utm_campaign, target, device, gender FROM events WHERE name IN ('finder_complete','finder_cta') AND " + NT + " ORDER BY ts DESC LIMIT 60"),
     ]);
     // ── 行動計測 v3: 検索ワード / ブランド関心 / ページ閲覧・滞在 / セクション露出→タップ ──
-    const [brandSearch, brandClick, pageViews, pageEngage, secEngageRaw, funnelRaw, finderFunnelRaw] = await Promise.all([
+    const [brandSearch, brandClick, pageViews, pageEngage, secEngageRaw, funnelRaw, finderFunnelRaw, svcRaw] = await Promise.all([
       q("SELECT label, COUNT(*) c FROM events WHERE name='brand_search' AND label<>'' AND ts>=? AND " + NT + " GROUP BY label ORDER BY c DESC LIMIT 30", since),
       q("SELECT label, COUNT(*) c FROM events WHERE name='brand_click' AND label<>'' AND ts>=? AND " + NT + " GROUP BY label ORDER BY c DESC LIMIT 30", since),
       q("SELECT path, COUNT(*) c FROM events WHERE name='page_view' AND ts>=? AND " + NT + " GROUP BY path ORDER BY c DESC LIMIT 24", since),
@@ -213,6 +213,8 @@ export async function onRequestGet(context) {
       q("SELECT name, path, label, COUNT(*) c FROM events WHERE ts>=? AND " + NT + " AND ((name='page_view' AND path IN ('/hairsalon','/hairsalon.html','/headspa','/headspa.html')) OR (name='sec_view' AND label IN ('salon_booking','spa_booking')) OR (name='sec_click' AND label IN ('salon_reserve_hpb','salon_reserve_stylist','spa_reserve_hpb','spa_reserve_spanist','book_sticky','book_sticky_spa'))) GROUP BY name, path, label", since),
       // ファインダー通過ファネル: ページを開いた(page_view /finder) → 診断を始めた(finder_start) → 完了(finder_complete)
       q("SELECT name, COUNT(*) c FROM events WHERE ts>=? AND " + NT + " AND ((name='page_view' AND path IN ('/finder','/finder.html')) OR name IN ('finder_start','finder_complete')) GROUP BY name", since),
+      // 診断→在店サービスの出し分け(finder_complete meta.svc = both/salon/spa/soft)
+      q("SELECT json_extract(meta,'$.svc') svc, COUNT(*) c FROM events WHERE name='finder_complete' AND json_extract(meta,'$.svc') IS NOT NULL AND ts>=? AND " + NT + " GROUP BY svc", since),
     ]);
     // 露出→タップをラベルごとに集約 [{label, views, clicks}]
     const seMap = {};
@@ -228,6 +230,9 @@ export async function onRequestGet(context) {
       else if (r.name === 'finder_start') finderFunnel.started = r.c;
       else if (r.name === 'finder_complete') finderFunnel.completed = r.c;
     });
+    // 診断→在店サービスの出し分け内訳(両方=both / サロン / スパ / 該当なし=soft)
+    const serviceReco = { salon: 0, spa: 0, both: 0, soft: 0 };
+    (svcRaw.results || []).forEach(r => { if (r.svc && serviceReco[r.svc] != null) serviceReco[r.svc] = r.c; });
     // 予約ファネル: ページ閲覧 → 予約エリア到達(sec_view) → 予約クリック(HPB遷移/指名/追従)
     const bookingFunnel = { salon: { pv: 0, area: 0, hpb: 0, stylist: 0, sticky: 0 }, spa: { pv: 0, area: 0, hpb: 0, spanist: 0, sticky: 0 } };
     (funnelRaw.results || []).forEach(r => {
@@ -312,6 +317,7 @@ export async function onRequestGet(context) {
       brandClick: brandClick.results || [],
       pageViews: pageViews.results || [],
       finderFunnel,
+      serviceReco,
       bookingFunnel,
       pageEngage: pageEngage.results || [],
       secEngage,

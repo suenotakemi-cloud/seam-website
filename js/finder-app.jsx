@@ -1036,6 +1036,29 @@ function buildProfileMeta(a) {
   return m;
 }
 
+// 診断→在店サービスの出し分け(表示カードと finder_complete の svc で共用)。
+// answers + damageTier のみで判定 → 「表示したカード」と「記録した svc」が必ず一致する。
+// サロン(ダメージ/カラー/矯正)とスパ(頭皮/年齢)は排他にしない(両立可)。該当なしは soft。
+function computeServiceReco(a, damageTier) {
+  a = a || {};
+  const cs = Array.isArray(a.concerns) ? a.concerns : [];
+  const has = (v) => cs.indexOf(v) !== -1;
+  const age30plus = a.age === '30s' || a.age === '40s' || a.age === '50plus';
+  const spa = age30plus || a.thickness === 'thin'
+    || ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(has)
+    || (a.scalpType && a.scalpType !== 'normal' && a.scalpType !== '');
+  const highDamage = (typeof damageTier === 'number' && damageTier >= 3);
+  const straight = (a.straighten && a.straighten !== 'none') || !!a.straightenHidden;
+  const color = has('colorFade') || has('grayFade');
+  const salon = highDamage || straight || color;
+  let reason = null;
+  if (highDamage) reason = 'damage';
+  else if (straight) reason = 'straighten';
+  else if (color) reason = 'color';
+  const code = (salon && spa) ? 'both' : (salon ? 'salon' : (spa ? 'spa' : 'soft'));
+  return { salon: salon, spa: spa, reason: reason, code: code };
+}
+
 /* ---------- タイプ別ルーティン ---------- */
 /* ---------- 髪質チャート ---------- */
 function clamp(v, max) { return Math.max(0, Math.min(max, Math.round(v))); }
@@ -3486,7 +3509,13 @@ function SaleFinderBanner() {
 }
 
 /* ⚜ ダメージ・矯正履歴が深い診断者へのサロン相談提案 — SpaSuggestCardと排他表示 */
-function SalonSuggestCard() {
+function SalonSuggestCard({ reason }) {
+  const _M = {
+    damage:     { h: 'このダメージ 家だけで戻さなくていい', b: '診断で強めのダメージが出ています ホームケアと並行して サロンの集中補修や髪質改善を組み合わせるのが最短です この結果はカウンセリングでそのまま伝わります' },
+    straighten: { h: 'くせ・うねりの毎日を もっとラクに', b: '縮毛矯正や髪質改善はサロンの領域です 今の髪の状態をそのまま伝えれば ダメージを抑えた進め方を提案してもらえます 診断結果はカウンセリングでそのまま使えます' },
+    color:      { h: 'その色 サロンで長く楽しめます', b: 'カラーの退色が出ています 退色ケアや次のカラー設計はサロンが得意です 診断結果を持って相談すれば 色持ちの提案につながります' },
+  };
+  const _c = _M[reason] || _M.damage;
   useEffect(() => { try { window.seamTrack && window.seamTrack('sec_view', { label: 'salon_finder' }); } catch (e) {} }, []);
   return (
     <div className="mt-7 rounded-[2px] border border-gold/40 bg-cream/60 overflow-hidden">
@@ -3496,8 +3525,8 @@ function SalonSuggestCard() {
         </div>
         <div className="px-4 sm:px-5 py-4 sm:py-5 flex-1">
           <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">— Hair Salon</p>
-          <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">このダメージは 家だけで戻さなくていい</h4>
-          <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">診断で強めのダメージや矯正の履歴が出ています ホームケアと並行して サロンの集中補修や髪質改善を組み合わせるのが最短です この結果はカウンセリングでそのまま伝わります</p>
+          <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">{_c.h}</h4>
+          <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">{_c.b}</p>
           <a href="hairsalon.html#booking" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'salon_finder' }); } catch (e) {} }} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
             <span>サロンで相談する</span><span aria-hidden>→</span>
           </a>
@@ -3522,9 +3551,27 @@ function SpaSuggestCard() {
           <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">— Head Spa</p>
           <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">その頭皮 手でほどきに来ませんか</h4>
           <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">診断で頭皮のサインが出ています ホームケアに加えて 完全個室のヘッドスパで頭皮からゆっくり整えるのが近道です 眠るための施術 90分 ¥17,300</p>
-          <a href="headspa.html" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'spa_finder' }); } catch (e) {} }} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
+          <a href="headspa.html#booking" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'spa_finder' }); } catch (e) {} }} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
             <span>ヘッドスパを見る</span><span aria-hidden>→</span>
           </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ⚜ 強い在店ニーズが出ていない診断者への低圧な相談/ご褒美の橋(該当なしの受け皿) */
+function SoftSuggestCard() {
+  useEffect(() => { try { window.seamTrack && window.seamTrack('sec_view', { label: 'service_soft' }); } catch (e) {} }, []);
+  return (
+    <div className="mt-7 rounded-[2px] border border-line bg-white/70 overflow-hidden">
+      <div className="px-4 sm:px-6 py-5">
+        <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">— Salon &amp; Spa</p>
+        <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">もっと良くしたくなったら SEAMがそばにいます</h4>
+        <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">今の髪は おおむね良い状態です 気になることが出てきたら 完全個室のサロンで相談できます たまのご褒美に 眠るためのヘッドスパも</p>
+        <div className="mt-3.5 flex flex-wrap gap-2.5">
+          <a href="hairsalon.html" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'salon_finder' }); } catch (e) {} }} className="inline-flex items-center gap-1.5 rounded-full border border-ink/25 text-ink px-4 py-2 font-serif text-[12.5px] hover:border-gold hover:text-gold transition-colors"><span>サロンを見る</span><span aria-hidden>&rarr;</span></a>
+          <a href="headspa.html" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'spa_finder' }); } catch (e) {} }} className="inline-flex items-center gap-1.5 rounded-full border border-ink/25 text-ink px-4 py-2 font-serif text-[12.5px] hover:border-gold hover:text-gold transition-colors"><span>ヘッドスパを見る</span><span aria-hidden>&rarr;</span></a>
         </div>
       </div>
     </div>
@@ -3966,10 +4013,17 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
         </div>
       )}
 
-      {/* ⚜ 診断→施術の橋: 頭皮の人にはスパ・ダメージ/矯正の人にはサロン(排他) */}
-      {needScalp
-        ? <SpaSuggestCard />
-        : ((highDamageRequired || (answers.straighten && answers.straighten !== 'none') || answers.straightenHidden) ? <SalonSuggestCard /> : null)}
+      {/* ⚜ 診断→在店サービスの橋: ダメージ/カラー/矯正→サロン, 頭皮/年齢→スパ(両立可)。該当なしはソフト誘導 */}
+      {(() => {
+        const _reco = computeServiceReco(answers, (typeof computeDamageTier === 'function' ? computeDamageTier(_sc) : undefined));
+        return (
+          <>
+            {_reco.salon && <SalonSuggestCard reason={_reco.reason} />}
+            {_reco.spa && <SpaSuggestCard />}
+            {(!_reco.salon && !_reco.spa) && <SoftSuggestCard />}
+          </>
+        );
+      })()}
 
       {/* ③ ケア処方をすべて見る(折りたたみ) */}
       <div className="mt-8">
@@ -7461,6 +7515,7 @@ function ResultHero({ karte, answers, onSaveImage, onShare, onSavePdf }) {
     try {
       window.__seamLastType = (origin && origin.code) || '';
       const pm = buildProfileMeta(answers);
+      try { pm.svc = computeServiceReco(answers, damageTier).code; } catch (e) {}
       // 再診断シグナル: rd=1(前回カルテあり) rdd=前回から何日(0-365) — 経時データの土台
       const pk = window.__seamPrevKarte;
       if (pk && pk.savedAt) {

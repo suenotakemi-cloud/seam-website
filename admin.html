@@ -198,7 +198,7 @@
   var WVGRP = {none:'くせなし',kuse:'くせあり',straightened:'矯正中'};
   var CHEMX = {triple:'三重（ブリーチ×矯正×パーマ）',bleachStraight:'ブリーチ × 縮毛矯正',bleachPerm:'ブリーチ × パーマ',straightPerm:'縮毛矯正 × パーマ',bleachOnly:'ブリーチのみ',straightOnly:'縮毛矯正のみ',permOnly:'パーマのみ',none:'薬剤履歴なし'};
   var CHEMX_ORDER = ['triple','bleachStraight','bleachPerm','straightPerm','bleachOnly','straightOnly','permOnly','none'];
-  var SECL = {spa_index_card:'トップ ヘッドスパ導線', spa_menus:'ヘッドスパ メニュー表示', spa_booking:'ヘッドスパ 予約セクション', spa_reserve_hpb:'ヘッドスパ 予約タップ', scalp_guide_cta:'頭皮ガイド→診断タップ', sale_banner:'セール告知バー(トップ)', sale_banner_shop:'セール告知バー(ショップ)', sale_finder:'セール(診断結果)露出', sale_finder_store:'診断セール→店舗', sale_finder_online:'診断セール→オンライン', book_sticky:'予約追従ボタン(サロン)', book_sticky_spa:'予約追従ボタン(スパ)', salon_prices:'料金目安(サロン)露出', spa_prices:'料金目安(スパ)露出', salon_reviews:'口コミリンク(サロン)', spa_reviews:'口コミリンク(スパ)', salon_menu:'店舗メニュー展開', salon_ig:'Instagram(サロン)', spa_ig:'Instagram(スパ)', salon_styles:'スタイル写真帯露出', spa_faq:'FAQ(スパ)露出', spa_finder:'診断→ヘッドスパ提案', spa_mens:'メンズ訴求(スパ)露出', salon_finder:'診断→サロン提案', salon_straight:'矯正の正直ブロック露出', salon_faq:'FAQ(サロン)露出', salon_booking:'予約エリア到達(サロン)', salon_reserve_hpb:'HPBへ予約遷移(サロン)', salon_reserve_stylist:'指名予約遷移(スタイリスト)', spa_reserve_hpb:'HPBへ予約遷移(スパ)', spa_reserve_spanist:'指名予約遷移(スパニスト)', spa_booking:'予約エリア到達(スパ)', sale_shop:'ショップのセール記事', sale_shop_online:'セール→オンラインへ', sale_shop_join:'セール→店舗登録へ'};
+  var SECL = {spa_index_card:'トップ ヘッドスパ導線', salon_index_card:'トップ ヘアサロン導線', service_soft:'診断→ソフト誘導(該当なし)', spa_menus:'ヘッドスパ メニュー表示', spa_booking:'ヘッドスパ 予約セクション', spa_reserve_hpb:'ヘッドスパ 予約タップ', scalp_guide_cta:'頭皮ガイド→診断タップ', sale_banner:'セール告知バー(トップ)', sale_banner_shop:'セール告知バー(ショップ)', sale_finder:'セール(診断結果)露出', sale_finder_store:'診断セール→店舗', sale_finder_online:'診断セール→オンライン', book_sticky:'予約追従ボタン(サロン)', book_sticky_spa:'予約追従ボタン(スパ)', salon_prices:'料金目安(サロン)露出', spa_prices:'料金目安(スパ)露出', salon_reviews:'口コミリンク(サロン)', spa_reviews:'口コミリンク(スパ)', salon_menu:'店舗メニュー展開', salon_ig:'Instagram(サロン)', spa_ig:'Instagram(スパ)', salon_styles:'スタイル写真帯露出', spa_faq:'FAQ(スパ)露出', spa_finder:'診断→ヘッドスパ提案', spa_mens:'メンズ訴求(スパ)露出', salon_finder:'診断→サロン提案', salon_straight:'矯正の正直ブロック露出', salon_faq:'FAQ(サロン)露出', salon_booking:'予約エリア到達(サロン)', salon_reserve_hpb:'HPBへ予約遷移(サロン)', salon_reserve_stylist:'指名予約遷移(スタイリスト)', spa_reserve_hpb:'HPBへ予約遷移(スパ)', spa_reserve_spanist:'指名予約遷移(スパニスト)', spa_booking:'予約エリア到達(スパ)', sale_shop:'ショップのセール記事', sale_shop_online:'セール→オンラインへ', sale_shop_join:'セール→店舗登録へ'};
   // ── ディーラー・仕入れ詳細 辞書(finder質問の実値と同期必須) ──
   var LEN_ORDER = ['short','bob','shoulderUp','shoulderDown','chestUp','long'];
   var LEN = {short:'ショート',bob:'ボブ',shoulderUp:'肩上',shoulderDown:'肩下',chestUp:'胸上',long:'胸下ロング'};
@@ -317,6 +317,7 @@
       brandSearch:[{label:'オージュア',c:41},{label:'ミルボン',c:33},{label:'頭皮',c:29},{label:'kerastase',c:22},{label:'しっとり シャンプー',c:18},{label:'スカルプ',c:14},{label:'デジタルパーマ',c:9},{label:'ドライヤー',c:8}],
       brandClick:[{label:'Aujua',c:88},{label:'Kérastase',c:64},{label:'Global Milbon',c:52},{label:'SUBLIMIC',c:38},{label:'BYKARTE',c:31},{label:'TOKIO INKARAMI',c:26},{label:'Davines',c:22},{label:'ReFa',c:19}],
       finderFunnel:{opened:1230,started:620,completed:562},
+      serviceReco:{salon:120,spa:170,both:150,soft:122},
       bookingFunnel:{salon:{pv:190,area:84,hpb:31,stylist:12,sticky:9},spa:{pv:305,area:139,hpb:58,spanist:8,sticky:11}},
       pageViews:[{path:'/',c:2140},{path:'/finder',c:1230},{path:'/brand',c:640},{path:'/shop',c:470},{path:'/headspa',c:305},{path:'/onlineshop',c:280},{path:'/hairsalon',c:190},{path:'/guide-scalp',c:88}],
       pageEngage:[{path:'/',c:1650,sec:46,sd:58},{path:'/finder',c:980,sec:186,sd:74},{path:'/brand',c:520,sec:95,sd:62},{path:'/shop',c:390,sec:52,sd:66},{path:'/headspa',c:260,sec:71,sd:63},{path:'/onlineshop',c:230,sec:38,sd:55},{path:'/hairsalon',c:160,sec:49,sd:60},{path:'/guide-scalp',c:74,sec:112,sd:81}],
@@ -813,6 +814,25 @@
           + bar('③ 最後まで完了した', completed, opened, '#8A6B3F', '結果まで到達した回数 — 始めた人の <b style="color:#8A6B3F">'+p(completed,started)+'</b>（完了率） ／ 開いた人の <b style="color:#8A6B3F">'+p(completed,opened)+'</b>')
           + '</div>'
           + '<p style="font-size:10.5px;color:#8C8479;margin-top:12px;line-height:1.9">上のKPI「診断 完了数／開始数」はこの②③と同じ数字です。<b>開いた ＞ 始めた ＞ 完了</b> と減るのが正常な形（開いたが始めなかった人・途中でやめた人がいるため）。<br>数値はすべて「人数」ではなく<b>回数</b>です — Cookieを使わない匿名計測のため、同じ人のリロードや2回目の診断も別々に数えます。ユニークな訪問者数（実人数）は原理的に計測していません。</p></div>';
+      })() +
+      (function(){
+        var r = data.serviceReco; if (!r) return '';
+        var total = (r.salon||0)+(r.spa||0)+(r.both||0)+(r.soft||0);
+        if (!total) return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Diagnosis → Service</span>診断→在店サービス誘導</h2><div class="empty">本更新(v47)以降の診断完了から蓄積されます（過去分には含まれません）</div></div>';
+        function pc(n){ return Math.round(n/total*100)+'%'; }
+        function row(label, n, color, note){
+          var w = Math.max(3, Math.round(n/total*100));
+          return '<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:12px;color:#4A443C"><span>'+label+'</span><span class="nums">'+n.toLocaleString()+' <span style="color:#8C8479">('+pc(n)+')</span></span></div><div style="height:9px;background:#F0EBE2;border-radius:99px;overflow:hidden;margin-top:3px"><div style="height:100%;width:'+w+'%;background:'+color+';border-radius:99px"></div></div>'+(note?'<p style="font-size:10px;color:#8C8479;margin:3px 0 0">'+note+'</p>':'')+'</div>';
+        }
+        var salonT = (r.salon||0)+(r.both||0), spaT = (r.spa||0)+(r.both||0);
+        return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Diagnosis → Service</span>診断→在店サービス誘導 — 結果からサロン/スパへ何を出したか</h2>'
+          + '<div style="margin-top:6px">'
+          + row('サロンのみ', r.salon||0, '#8A6B3F')
+          + row('ヘッドスパのみ', r.spa||0, '#B8945A')
+          + row('両方（サロン＋スパ）', r.both||0, '#6E5B7B')
+          + row('ソフト誘導（強い在店ニーズなし）', r.soft||0, '#C9BCA8', '以前は素通りだった層 — いまは低圧の相談/ご褒美カードを表示')
+          + '</div>'
+          + '<p style="font-size:11px;color:#4A443C;margin-top:10px;line-height:1.9">診断完了 <b>'+total.toLocaleString()+'</b> 件のうち <b style="color:#8A6B3F">サロン誘導 '+pc(salonT)+'</b>（'+salonT.toLocaleString()+'）・<b style="color:#B8945A">スパ誘導 '+pc(spaT)+'</b>（'+spaT.toLocaleString()+'）。実際のクリックは下の「セクション反応」の 診断→サロン提案／ヘッドスパ提案 をご覧ください</p></div>';
       })() +
       panel('Source','流入元（チャネル）', barRows(data.bySource||[], function(x){return REF[x.ref]||x.ref;})) +
       panel('Campaign','キャンペーン（UTM）', barRows(data.byCampaign||[], function(x){return x.u;})) +
