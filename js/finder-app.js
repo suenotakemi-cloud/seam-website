@@ -3835,6 +3835,8 @@ function scoreSeamProduct(p, answers, scores, flags) {
   if ((scores.heatDamage || 0) >= 3 && (p.concernTags || []).includes('heat-damage')) s += 10;
   // 価格懸念
   if ((answers.concernsItem || []).includes('price') && p.priceTier === 'luxury') s -= 10;
+  // 価格重視の人には手頃(entry)を後押し — luxury減点と対の設計(それ以外の人の結果は不変)
+  if ((answers.concernsItem || []).includes('price') && p.priceTier === 'entry') s += 8;
   return s;
 }
 function pickSeamProducts(products, answers, scores, flags, opts = {}) {
