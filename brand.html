@@ -4618,7 +4618,7 @@ window.SEAM_PAGE_I18N = {
   let loadPromise = null;
   function loadProducts() {
     if (loadPromise) return loadPromise;
-    loadPromise = fetch('data/products/seam-master.json', { cache: 'force-cache' })
+    loadPromise = fetch('data/products/seam-master.json', { cache: 'no-cache' })
       .then(r => r.json())
       .then(json => { PRODUCTS = json.products || []; return PRODUCTS; })
       .catch(err => { console.error('Finder load error:', err); return []; });
