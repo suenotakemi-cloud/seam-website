@@ -3482,18 +3482,17 @@ function renderAllCategories(searchQuery) {
     desc.className = 'bc-desc';
     desc.textContent = brand.desc;
 
-    // カード全体をクリック可能に（公式サイトボタンは撤廃）
-    if (brand.site) {
-      card.classList.add('is-linked');
-      card.setAttribute('tabindex', '0');
-      card.setAttribute('role', 'link');
-      card.setAttribute('aria-label', brand.name + ' 公式サイトを開く');
-      const open = () => window.open(brand.site, '_blank', 'noopener');
-      card.addEventListener('click', open);
-      card.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
-      });
-    }
+    // カード全体をクリック可能に（商品あり→ブランド商品モーダル / なし→公式サイト）
+    card.classList.add('is-linked');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', brand.name + ' の商品を見る');
+    card.dataset.brandName = brand.name;
+    card.dataset.brandSite = brand.site || '';
+    card.addEventListener('click', () => openBrandProducts(brand));
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBrandProducts(brand); }
+    });
 
     body.appendChild(nameEn);
     body.appendChild(nameJp);
@@ -3505,7 +3504,7 @@ function renderAllCategories(searchQuery) {
     const openHint = document.createElement('span');
     openHint.className = 'bc-open-hint';
     openHint.setAttribute('aria-hidden', 'true');
-    openHint.textContent = '↗';
+    openHint.textContent = '≡';
     logoArea.appendChild(openHint);
 
     card.appendChild(logoArea);
@@ -4577,6 +4576,25 @@ window.SEAM_PAGE_I18N = {
 <!-- ============================================================
      FINDER MODAL — SEAMセレクト3本表示
      ============================================================ -->
+<!-- ━━━ Brand Products Modal ━━━ -->
+<div class="finder-modal" id="brandModal" role="dialog" aria-modal="true" aria-labelledby="brandModalTitle" aria-hidden="true">
+  <div class="finder-modal-inner">
+    <div class="finder-mh">
+      <p class="finder-mh-eyebrow" id="brandModalEyebrow">Brand Products</p>
+      <h2 class="finder-mh-title" id="brandModalTitle"><strong>—</strong></h2>
+      <p class="finder-mh-desc" id="brandModalDesc"></p>
+      <button type="button" class="finder-mh-close" id="brandModalClose" aria-label="閉じる">✕</button>
+    </div>
+    <div class="finder-mb" id="brandModalBody"></div>
+    <div id="brandModalFooter" style="padding:16px 20px 24px;text-align:center;display:none;">
+      <a id="brandModalSiteLink" href="#" target="_blank" rel="noopener"
+        style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:1px solid var(--gold,#b8945a);border-radius:40px;color:var(--gold,#b8945a);font-size:13px;text-decoration:none;letter-spacing:.05em;">
+        公式サイトで詳しく見る <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+  </div>
+</div>
+
 <div class="finder-modal" id="finderModal" role="dialog" aria-modal="true" aria-labelledby="finderModalTitle" aria-hidden="true">
   <div class="finder-modal-inner">
     <div class="finder-mh">
@@ -5456,6 +5474,157 @@ window.SEAM_PAGE_I18N = {
       });
     })();
   </script>
+<script>
+// ============================================================
+// BRAND PRODUCTS MODAL — ブランドカードタップ → 商品一覧
+// ============================================================
+(function initBrandModal() {
+  const modal   = document.getElementById('brandModal');
+  const titleEl = document.getElementById('brandModalTitle');
+  const eyebrow = document.getElementById('brandModalEyebrow');
+  const descEl  = document.getElementById('brandModalDesc');
+  const bodyEl  = document.getElementById('brandModalBody');
+  const footer  = document.getElementById('brandModalFooter');
+  const siteLink= document.getElementById('brandModalSiteLink');
+  const closeBtn= document.getElementById('brandModalClose');
+  if (!modal) return;
+
+  const GRADE_LABEL = { 1:'デイリー', 2:'スタンダード', 3:'セレクト', 4:'プレミアム', 5:'ラグジュアリー' };
+
+  // 商品データキャッシュ
+  let _products = null;
+  async function getProducts() {
+    if (_products) return _products;
+    try {
+      const res = await fetch('data/products/seam-master.json?v=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) throw new Error('master fetch failed');
+      const data = await res.json();
+      _products = (data.products || []).filter(p => p && p.id && p.name);
+      // カタログ商品も合流
+      try {
+        const cr = await fetch('data/products/seam-catalog.json?v=' + Date.now(), { cache: 'no-store' });
+        if (cr.ok) {
+          const cat = await cr.json();
+          const seen = new Set(_products.map(p => p.salonTownItemId).filter(Boolean));
+          const extra = (cat.items || [])
+            .filter(it => it && it.id && !seen.has(it.id))
+            .map(it => ({
+              id: 'st-' + it.id, brand: it.b, name: it.n, category: it.c,
+              priceApprox: it.p, priceTier: it.t, salonTownItemId: it.id,
+              image: 'images/catalog/' + it.id + '.webp', _catalog: true,
+            }));
+          _products = _products.concat(extra);
+        }
+      } catch(e) {}
+    } catch(e) {
+      _products = [];
+    }
+    return _products;
+  }
+
+  function escHtml(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function priceStr(p) {
+    const v = p.priceApprox || p.price || (p.sizes && p.sizes[0] && p.sizes[0].price);
+    if (!v) return '';
+    return '¥' + Number(v).toLocaleString();
+  }
+
+  function gradeStr(p) {
+    if (p.priceTier) {
+      const map = { daily:'デイリー', standard:'スタンダード', select:'セレクト', premium:'プレミアム', luxury:'ラグジュアリー' };
+      return map[p.priceTier] || p.priceTier;
+    }
+    if (p.grade) return GRADE_LABEL[p.grade] || '';
+    return '';
+  }
+
+  function renderProducts(products, brand) {
+    if (!products.length) {
+      return `<div class="finder-empty" style="padding:32px 20px;text-align:center;color:#999;">
+        <p style="margin-bottom:12px;">この画面での商品情報はまだ準備中です</p>
+        ${brand.site ? `<a href="${escHtml(brand.site)}" target="_blank" rel="noopener"
+          style="display:inline-flex;align-items:center;gap:6px;padding:10px 20px;border:1px solid var(--gold,#b8945a);border-radius:40px;color:var(--gold,#b8945a);font-size:13px;text-decoration:none;">
+          公式サイトで見る <span>↗</span></a>` : ''}
+      </div>`;
+    }
+    return products.map(p => {
+      const img = p.image || p.imageUrl || '';
+      const price = priceStr(p);
+      const grade = gradeStr(p);
+      return `
+        <div class="finder-product">
+          <div class="finder-prod-img">
+            ${img ? `<img src="${escHtml(img)}" alt="${escHtml(p.name)}" loading="lazy"
+              onerror="this.style.display='none'">` : ''}
+          </div>
+          <div class="finder-prod-info">
+            ${grade ? `<span class="finder-prod-step">${escHtml(grade)}</span>` : ''}
+            <p class="finder-prod-brand">${escHtml(p.brand || brand.name || '')}</p>
+            <p class="finder-prod-name">${escHtml(p.name || '')}</p>
+            ${price ? `<p style="margin-top:4px;font-size:13px;color:var(--ink,#3c362e);font-weight:500;">${escHtml(price)}</p>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ブランド名の正規化マッチング
+  function matchBrand(p, brandName) {
+    const bn = (brandName || '').toLowerCase().trim();
+    const pb = (p.brand || '').toLowerCase().trim();
+    if (!bn || !pb) return false;
+    return pb === bn || pb.includes(bn) || bn.includes(pb);
+  }
+
+  async function openBrandProducts(brand) {
+    // モーダルを開く
+    modal.classList.add('is-open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+
+    // ヘッダー設定
+    eyebrow.textContent = 'Brand Products';
+    titleEl.innerHTML = `<strong>${escHtml(brand.name)}</strong>`;
+    descEl.textContent = brand.desc || '';
+    bodyEl.innerHTML = '<div class="finder-empty" style="padding:32px 20px;text-align:center;color:#999;">商品データを読み込み中…</div>';
+    footer.style.display = 'none';
+
+    // 公式サイトリンク設定
+    if (brand.site) {
+      siteLink.href = brand.site;
+      footer.style.display = 'block';
+    }
+
+    // 商品データ取得＆フィルタ
+    const allProducts = await getProducts();
+    const matched = allProducts.filter(p => matchBrand(p, brand.name));
+
+    eyebrow.textContent = matched.length
+      ? `${escHtml(brand.name)} の取扱商品 ${matched.length}点${brand.site ? ' | 公式サイトへ ↗' : ''}`
+      : 'Brand Products';
+
+    bodyEl.innerHTML = renderProducts(matched, brand);
+  }
+
+  // グローバルに公開（カード生成コードから呼ぶ）
+  window.openBrandProducts = openBrandProducts;
+
+  function closeBrandModal() {
+    modal.classList.remove('is-open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn.addEventListener('click', closeBrandModal);
+  modal.addEventListener('click', e => { if (e.target === modal) closeBrandModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && modal.classList.contains('is-open')) closeBrandModal();
+  });
+})();
+</script>
+
 <script>
 /* 計測: 検索ワード(入力停止1.2秒/Enter/blurで送信・24字まで・個人情報なし) + ブランドカードタップ */
 (function(){
