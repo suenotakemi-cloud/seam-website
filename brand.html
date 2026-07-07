@@ -2568,6 +2568,16 @@
       transition: color 0.15s ease, border-color 0.15s ease;
     }
     .pm-card-member:hover { color: var(--gold); border-color: var(--gold); }
+    .pm-sort {
+      margin-left: auto; font-family: var(--font-jp); font-size: 12px; letter-spacing: 0.04em;
+      color: var(--ink, #2F2A26); background: #fff; border: 1px solid rgba(184,148,90,0.4);
+      border-radius: 2px; padding: 7px 10px; min-height: 36px; cursor: pointer;
+    }
+    .pm-card-refill {
+      display: inline-block; font-family: var(--font-jp); font-size: 9.5px; letter-spacing: 0.08em;
+      color: #5E7355; background: rgba(94,115,85,0.08); border: 1px solid rgba(94,115,85,0.3);
+      border-radius: 999px; padding: 2px 8px; margin-left: 6px; vertical-align: 2px; white-space: nowrap;
+    }
 
     /* 「もっと見る」ボタン */
     .pm-load-more {
@@ -2822,10 +2832,15 @@
     </div>
   </div>
 
-  <!-- 結果カウント -->
+  <!-- 結果カウント + 並び替え -->
   <div class="pm-count-bar">
     <span><strong id="pmCount">0</strong> <span data-i18n="pm.countSuffix">件の商品</span></span>
     <span id="pmSubCount" style="font-size:11px; opacity:0.6;"></span>
+    <select id="pmSort" class="pm-sort" aria-label="並び替え">
+      <option value="reco">おすすめ順</option>
+      <option value="asc">価格が安い順</option>
+      <option value="desc">価格が高い順</option>
+    </select>
   </div>
 
   <!-- グリッド -->
@@ -4815,10 +4830,15 @@ window.SEAM_PAGE_I18N = {
     { id: 'outbath',    label: 'アウトバス',  cats: [
       'outbath-water','outbath-oil','outbath-milk',
       'out-bath-milk','out-bath-oil','outbath-butter','outbath-mousse','outbath-cream','outbath-mist',
-      'booster','leave-in-mist','leave-in-milk','leave-in-oil',
+      'booster','leave-in-mist','leave-in-milk','leave-in-oil','outbath',
     ]},
-    { id: 'scalp',      label: 'スカルプ',    cats: ['scalp-essence'] },
+    { id: 'scalp',      label: 'スカルプ',    cats: ['scalp-essence','scalp'] },
     { id: 'styling',    label: '仕上げ',      cats: ['styling-spray','styling'] },
+    { id: 'skincare',   label: 'スキンケア',  cats: ['skincare'] },
+    { id: 'cosmetics',  label: 'コスメ',      cats: ['cosmetics'] },
+    { id: 'body',       label: 'ボディ・バス', cats: ['body'] },
+    { id: 'tools',      label: '美容家電',    cats: ['tools'] },
+    { id: 'other',      label: 'その他',      cats: ['other'] },
   ];
   const FUNCTION_GROUPS = [
     { id: 'shine',         label: 'ツヤ',       fns: ['shine'],                                    cons: ['no-shine'] },
@@ -4868,6 +4888,24 @@ window.SEAM_PAGE_I18N = {
         // 商品画像がないものはカタログに出さない(ブランド絞り込みの母数からも除外)
         allProducts = (data.products || []).filter(p => p && p.id && p.name && (p.image || p.imageUrl));
         if (allProducts.length === 0) { lastError = 'Empty product list'; continue; }
+
+        // 全商品カタログ(salon.town全取扱・画像あり)を合流 — 失敗しても厳選だけで続行
+        try {
+          const cres = await fetch('data/products/seam-catalog.json?v=' + Date.now(), { cache: 'no-store' });
+          if (cres.ok) {
+            const cat = await cres.json();
+            const seen = new Set(allProducts.map(p => p.salonTownItemId).filter(Boolean));
+            const extra = (cat.items || [])
+              .filter(it => it && it.id && !seen.has(it.id))
+              .map(it => ({
+                id: 'st-' + it.id, brand: it.b, name: it.n, category: it.c,
+                priceApprox: it.p, priceTier: it.t, sizes: it.s || [],
+                refillAvailable: !!it.r, salonTownItemId: it.id,
+                image: 'images/catalog/' + it.id + '.webp', _catalog: true,
+              }));
+            allProducts = allProducts.concat(extra);
+          }
+        } catch (e) { console.warn('full catalog merge skipped', e); }
 
         // ブランド一覧 (出現数順)
         const brandCount = {};
@@ -4950,6 +4988,16 @@ window.SEAM_PAGE_I18N = {
       });
     }
 
+    // 並び替えセレクト
+    const sortSel = document.getElementById('pmSort');
+    if (sortSel && !sortSel.dataset.bound) {
+      sortSel.dataset.bound = '1';
+      sortSel.addEventListener('change', () => {
+        visibleCount = PAGE_SIZE;
+        applyAndRender();
+      });
+    }
+
     // Load more
     const loadBtn = document.getElementById('pmLoadMore');
     if (loadBtn && !loadBtn.dataset.bound) {
@@ -5027,6 +5075,18 @@ window.SEAM_PAGE_I18N = {
 
   function applyAndRender() {
     filtered = applyFilters();
+    // 並び替え(おすすめ=元順: 厳選→全商品ブランド順)
+    const sort = (document.getElementById('pmSort') || {}).value || 'reco';
+    if (sort === 'asc' || sort === 'desc') {
+      const v = p => (typeof p.priceApprox === 'number' && p.priceApprox > 0) ? p.priceApprox : null;
+      filtered = filtered.slice().sort((a, b) => {
+        const pa = v(a), pb = v(b);
+        if (pa == null && pb == null) return 0;
+        if (pa == null) return 1;
+        if (pb == null) return -1;
+        return sort === 'asc' ? pa - pb : pb - pa;
+      });
+    }
     document.getElementById('pmCount').textContent = filtered.length.toLocaleString();
     document.getElementById('pmSubCount').textContent = (filtered.length === allProducts.length) ? '全商品' : `(全 ${allProducts.length} 件中)`;
     renderGrid();
@@ -5097,7 +5157,10 @@ window.SEAM_PAGE_I18N = {
       const match = g.fns.some(t => fns.includes(t)) || g.cons.some(t => cons.includes(t));
       if (match) tags.push(g.label);
     });
-    const productUrl = p.productPageUrl || p.sourceUrl || '#';
+    // カタログ品はsalon.town商品ページがそのまま商品ページ
+    const productUrl = p._catalog && p.salonTownItemId
+      ? 'https://salon.town/item/' + encodeURIComponent(p.salonTownItemId)
+      : (p.productPageUrl || p.sourceUrl || '#');
 
     // 価格: 実定価(priceApprox=主要サイズ)優先、なければ最小サイズ価格
     const priceVal = (() => {
@@ -5112,7 +5175,8 @@ window.SEAM_PAGE_I18N = {
     const priceHTML = priceVal != null
       ? `<span class="pm-card-price-main"><span class="pm-card-price-tag${onSale ? ' is-sale' : ''}">${priceTag}</span><span class="pm-card-price-val">${teika}${yen(priceVal)}<span class="pm-card-price-tax">税込</span></span></span>`
       : `<span class="pm-card-price-main"><span class="pm-card-price-tag">SEAMメンバー価格</span></span>`;
-    const memberHTML = p.salonTownItemId
+    // カタログ品はカード自体がsalon.town行きなので会員チップは重複=非表示
+    const memberHTML = (p.salonTownItemId && !p._catalog)
       ? `<span class="pm-card-member" data-st="${escAttr(p.salonTownItemId)}" role="link" tabindex="0">会員はオンラインショップで購入 <span aria-hidden>↗</span></span>`
       : '';
 
@@ -5126,7 +5190,7 @@ window.SEAM_PAGE_I18N = {
         </div>
         <span class="pm-card-cat">${escHtml(catLabel)}</span>
         <p class="pm-card-brand">${escHtml(p.brand || '')}</p>
-        <h4 class="pm-card-name">${escHtml(p.name)}</h4>
+        <h4 class="pm-card-name">${escHtml(p.name)}${p.refillAvailable ? '<span class="pm-card-refill">詰替あり</span>' : ''}</h4>
         <div class="pm-card-tags">
           ${tags.map(t => `<span class="pm-card-tag">${escHtml(t)}</span>`).join('')}
         </div>
@@ -5222,7 +5286,23 @@ window.SEAM_PAGE_I18N = {
   }
 
   /* ─── 初期化 ─── */
-  function initAll() { bindModeToggle(); bindFeaturedBrands(); }
+  function initAll() {
+    bindModeToggle();
+    bindFeaturedBrands();
+    // ?mode=product&cat=shampoo&sort=asc で商品カタログを直接開く(診断・外部導線用)
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.get('mode') === 'product') {
+        const cat = q.get('cat');
+        if (cat && CATEGORY_GROUPS.some(g => g.id === cat)) filters.category = cat;
+        const so = q.get('sort');
+        const sel = document.getElementById('pmSort');
+        if (sel && (so === 'asc' || so === 'desc')) sel.value = so;
+        const btn = document.querySelector('.mode-toggle-btn[data-mode="product"]');
+        if (btn) btn.click();
+      }
+    } catch (e) {}
+  }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initAll);
   } else {
