@@ -2568,6 +2568,19 @@
       transition: color 0.15s ease, border-color 0.15s ease;
     }
     .pm-card-member:hover { color: var(--gold); border-color: var(--gold); }
+    .pm-card-grade {
+      display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px;
+      font-family: var(--font-jp); font-size: 9px; letter-spacing: 0.1em; vertical-align: 1px;
+    }
+    .pm-card-grade.g1 { background: #F4F1EB; color: #8A8071; }
+    .pm-card-grade.g2 { background: #F1EADD; color: #7E6E52; }
+    .pm-card-grade.g3 { background: #EFE3CC; color: #6E5A3E; }
+    .pm-card-grade.g4 { background: #E9D8B4; color: #5E4A2E; }
+    .pm-card-grade.g5 { background: #2F2A26; color: #D9BC85; }
+    .pm-card-unit {
+      margin-left: 5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 9px; letter-spacing: 0.04em; color: rgba(58,50,42,0.5); vertical-align: 1px;
+    }
     .pm-sort {
       margin-left: auto; font-family: var(--font-jp); font-size: 12px; letter-spacing: 0.04em;
       color: var(--ink, #2F2A26); background: #fff; border: 1px solid rgba(184,148,90,0.4);
@@ -2824,6 +2837,10 @@
     <div class="pm-filter-row" id="pmFilterRowPrice">
       <span class="pm-filter-label">Price</span>
       <!-- 動的に埋める(5段階) -->
+    </div>
+    <div class="pm-filter-row" id="pmFilterRowGrade">
+      <span class="pm-filter-label">Grade</span>
+      <!-- 動的に埋める(1ml単価の5階層) -->
     </div>
     <div class="pm-filter-row" id="pmFilterRowFunction">
       <span class="pm-filter-label" data-i18n="pm.filter.finish">なりたい仕上がり</span>
@@ -4862,7 +4879,12 @@ window.SEAM_PAGE_I18N = {
   let allProducts = [];
   let allBrands = []; // 出現するブランド一覧
   let filtered = [];
-  const filters = { category: null, price: null, brands: new Set(), functions: new Set() };
+  const filters = { category: null, price: null, grade: null, brands: new Set(), functions: new Set() };
+  // グレード(1ml単価のカテゴリ内5階層 — seam-layers.json)
+  const GRADE_NAMES = { 1: 'デイリー', 2: 'スタンダード', 3: 'セレクト', 4: 'プレミアム', 5: 'ラグジュアリー' };
+  let LAYER_MAP = {}, LAYER_LABELS = {};
+  // 特徴コード→仕上がりフィルタ対応(カタログ品もフィルタに参加させる)
+  const GROUP_FEAT = { smooth: ['hirogari'], 'frizz-control': ['hirogari'], moisture: ['kansou'], repair: ['damage'], 'color-keep': ['color'], 'scalp-care': ['scalp'], volume: ['harikoshi'] };
   // 価格5段階(診断の予算帯と同じ区切り)
   const PRICE_GROUPS = [
     { id: 'p1', label: '〜¥2,000',       min: 0,    max: 1999 },
@@ -4919,6 +4941,20 @@ window.SEAM_PAGE_I18N = {
             allProducts = allProducts.concat(extra);
           }
         } catch (e) { console.warn('full catalog merge skipped', e); }
+
+        // 商品階層(グレード/単価/特徴)を付与 — 失敗しても表示は続行
+        try {
+          const lres = await fetch('data/products/seam-layers.json?v=' + Date.now(), { cache: 'no-store' });
+          if (lres.ok) {
+            const lay = await lres.json();
+            LAYER_MAP = lay.items || {};
+            LAYER_LABELS = lay.labels || {};
+            allProducts.forEach(p => {
+              const L = LAYER_MAP[p.id];
+              if (L) { p._layer = L.l; p._unit = L.u; p._feats = L.f || []; }
+            });
+          }
+        } catch (e) { console.warn('layers skipped', e); }
 
         // ブランド一覧 (出現数順)
         const brandCount = {};
@@ -4987,6 +5023,26 @@ window.SEAM_PAGE_I18N = {
       });
     }
 
+    // Grade chips (1ml単価の5階層)
+    const gradeRow = document.getElementById('pmFilterRowGrade');
+    if (gradeRow && !gradeRow.querySelector('.pm-chip')) {
+      [1, 2, 3, 4, 5].forEach(l => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pm-chip';
+        btn.dataset.kind = 'grade';
+        btn.dataset.value = 'g' + l;
+        btn.textContent = GRADE_NAMES[l];
+        btn.addEventListener('click', () => {
+          filters.grade = (filters.grade === 'g' + l) ? null : 'g' + l;
+          visibleCount = PAGE_SIZE;
+          updateChipStates();
+          applyAndRender();
+        });
+        gradeRow.appendChild(btn);
+      });
+    }
+
     // Function chips (なりたい仕上がり)
     const fnRow = document.getElementById('pmFilterRowFunction');
     if (fnRow && !fnRow.querySelector('.pm-chip')) {
@@ -5015,6 +5071,7 @@ window.SEAM_PAGE_I18N = {
       resetBtn.addEventListener('click', () => {
         filters.category = null;
         filters.price = null;
+        filters.grade = null;
         filters.brands.clear();
         filters.functions.clear();
         visibleCount = PAGE_SIZE;
@@ -5078,6 +5135,7 @@ window.SEAM_PAGE_I18N = {
       if (kind === 'brand')     active = filters.brands.has(value);
       if (kind === 'function')  active = filters.functions.has(value);
       if (kind === 'price')     active = filters.price === value;
+      if (kind === 'grade')     active = filters.grade === value;
       chip.classList.toggle('is-active', active);
     });
   }
@@ -5090,6 +5148,10 @@ window.SEAM_PAGE_I18N = {
       // category
       if (catGroup) {
         if (!catGroup.cats.includes(p.category)) return false;
+      }
+      // grade (1ml単価の階層)
+      if (filters.grade) {
+        if (!p._layer || ('g' + p._layer) !== filters.grade) return false;
       }
       // price band (5段階)
       if (filters.price) {
@@ -5109,7 +5171,8 @@ window.SEAM_PAGE_I18N = {
         const cons = p.concernTags || [];
         const passed = fnGroups.some(g =>
           g.fns.some(t => fns.includes(t)) ||
-          g.cons.some(t => cons.includes(t))
+          g.cons.some(t => cons.includes(t)) ||
+          ((p._feats || []).length > 0 && (GROUP_FEAT[g.id] || []).some(f => p._feats.includes(f)))
         );
         if (!passed) return false;
       }
@@ -5201,6 +5264,13 @@ window.SEAM_PAGE_I18N = {
       const match = g.fns.some(t => fns.includes(t)) || g.cons.some(t => cons.includes(t));
       if (match) tags.push(g.label);
     });
+    // タグの無いカタログ品は階層の特徴(検索ワード由来)で埋める
+    if (!tags.length && (p._feats || []).length) {
+      p._feats.slice(0, 3).forEach(f => tags.push(LAYER_LABELS[f] || f));
+    }
+    const gradeHTML = p._layer
+      ? `<span class="pm-card-grade g${p._layer}">${GRADE_NAMES[p._layer]}</span><span class="pm-card-unit">¥${Math.round(p._unit)}/ml</span>`
+      : '';
     // カタログ品はsalon.town商品ページがそのまま商品ページ
     const productUrl = p._catalog && p.salonTownItemId
       ? 'https://salon.town/item/' + encodeURIComponent(p.salonTownItemId)
@@ -5232,7 +5302,7 @@ window.SEAM_PAGE_I18N = {
             : `<span class="pm-card-img-placeholder">${escAttr(p.brand)}</span>`
           }
         </div>
-        <span class="pm-card-cat">${escHtml(catLabel)}</span>
+        <span class="pm-card-cat">${escHtml(catLabel)}</span>${gradeHTML}
         <p class="pm-card-brand">${escHtml(p.brand || '')}</p>
         <h4 class="pm-card-name">${escHtml(p.name)}${p.refillAvailable ? '<span class="pm-card-refill">詰替あり</span>' : ''}</h4>
         <div class="pm-card-tags">
@@ -5341,6 +5411,8 @@ window.SEAM_PAGE_I18N = {
         if (cat && CATEGORY_GROUPS.some(g => g.id === cat)) filters.category = cat;
         const pr = q.get('price');
         if (pr && PRICE_GROUPS.some(g => g.id === pr)) filters.price = pr;
+        const gr = q.get('grade');
+        if (gr && /^[1-5]$/.test(gr)) filters.grade = 'g' + gr;
         const so = q.get('sort');
         const sel = document.getElementById('pmSort');
         if (sel && (so === 'asc' || so === 'desc')) sel.value = so;
