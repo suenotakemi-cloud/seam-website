@@ -5534,7 +5534,7 @@ window.SEAM_PAGE_I18N = {
 
   function gradeStr(p) {
     if (p.priceTier) {
-      const map = { daily:'デイリー', standard:'スタンダード', select:'セレクト', premium:'プレミアム', luxury:'ラグジュアリー' };
+      const map = { entry:'デイリー', daily:'デイリー', standard:'スタンダード', select:'セレクト', premium:'プレミアム', luxury:'ラグジュアリー' };
       return map[p.priceTier] || p.priceTier;
     }
     if (p.grade) return GRADE_LABEL[p.grade] || '';
@@ -5552,13 +5552,14 @@ window.SEAM_PAGE_I18N = {
     }
     return products.map(p => {
       const img = p.image || p.imageUrl || '';
+      const imgW = String(img).replace(/\.(jpe?g|png)(\?.*)?$/i, '.webp$2');
       const price = priceStr(p);
       const grade = gradeStr(p);
       return `
         <div class="finder-product">
           <div class="finder-prod-img">
-            ${img ? `<img src="${escHtml(img)}" alt="${escHtml(p.name)}" loading="lazy"
-              onerror="this.style.display='none'">` : ''}
+            ${img ? `<img src="${escHtml(imgW)}" alt="${escHtml(p.name)}" data-fb="${escHtml(img)}"
+              onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb;this.removeAttribute('data-fb');}else{this.style.display='none';}">` : ''}
           </div>
           <div class="finder-prod-info">
             ${grade ? `<span class="finder-prod-step">${escHtml(grade)}</span>` : ''}
@@ -5572,10 +5573,17 @@ window.SEAM_PAGE_I18N = {
 
   // ブランド名の正規化マッチング
   function matchBrand(p, brandName) {
-    const bn = (brandName || '').toLowerCase().trim();
-    const pb = (p.brand || '').toLowerCase().trim();
+    const fold = s => (s || '').toLowerCase().normalize('NFKC')
+      .replace(/[\u00e9\u00e8\u00ea\u00eb]/g, 'e').replace(/[\u00e0\u00e2\u00e4]/g, 'a')
+      .replace(/[\u00ee\u00ef]/g, 'i').replace(/[\u00f4\u00f6]/g, 'o').replace(/[\u00fb\u00fc\u00f9]/g, 'u')
+      .replace(/[\s\u3000._\-'&\/]/g, '');
+    const bn = fold(brandName);
+    const pb = fold(p.brand);
     if (!bn || !pb) return false;
-    return pb === bn || pb.includes(bn) || bn.includes(pb);
+    if (pb === bn) return true;
+    if (bn.length >= 3 && pb.includes(bn)) return true;
+    if (pb.length >= 3 && bn.includes(pb)) return true;
+    return false;
   }
 
   async function openBrandProducts(brand) {
