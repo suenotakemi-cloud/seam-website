@@ -2555,6 +2555,19 @@
       color: rgba(58,50,42,0.45); margin-left: 3px;
     }
     .pm-card-price-arrow { color: var(--gold); align-self: center; }
+    .pm-card-price-tag.is-sale { color: #B4453A; font-weight: 600; }
+    .pm-card-price-teika {
+      font-family: var(--font-jp); font-size: 8.5px; letter-spacing: 0.1em;
+      color: rgba(58,50,42,0.45); margin-right: 4px; vertical-align: 2px;
+    }
+    .pm-card-member {
+      display: inline-flex; align-items: center; gap: 4px; margin-top: 8px;
+      font-family: var(--font-jp); font-size: 10.5px; letter-spacing: 0.05em;
+      color: rgba(58,50,42,0.62); border: 1px solid rgba(184,148,90,0.38);
+      border-radius: 2px; padding: 6px 10px; min-height: 32px; cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+    .pm-card-member:hover { color: var(--gold); border-color: var(--gold); }
 
     /* 「もっと見る」ボタン */
     .pm-load-more {
@@ -4620,7 +4633,7 @@ window.SEAM_PAGE_I18N = {
     if (loadPromise) return loadPromise;
     loadPromise = fetch('data/products/seam-master.json', { cache: 'no-cache' })
       .then(r => r.json())
-      .then(json => { PRODUCTS = json.products || []; return PRODUCTS; })
+      .then(json => { PRODUCTS = (json.products || []).filter(p => p && (p.image || p.imageUrl)); return PRODUCTS; })
       .catch(err => { console.error('Finder load error:', err); return []; });
     return loadPromise;
   }
@@ -4789,6 +4802,11 @@ window.SEAM_PAGE_I18N = {
 <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
 <script>
 (function initProductCatalog() {
+  // サマーセール表記(index#saleBarと同じ期間・数字は出さない)
+  const SALE_ON = (() => {
+    const t = Date.now();
+    return t >= new Date('2026-07-01T00:00:00+09:00').getTime() && t < new Date('2026-08-01T00:00:00+09:00').getTime();
+  })();
   /* ─── 静的マッピング (seam-master.json のタグ → 日本語UI) ─── */
   const CATEGORY_GROUPS = [
     { id: 'shampoo',    label: 'シャンプー',  cats: ['shampoo','scalp-cleanser'] },
@@ -4847,7 +4865,8 @@ window.SEAM_PAGE_I18N = {
         const res = await fetch(url + '?v=' + Date.now(), { cache: 'no-store' });
         if (!res.ok) { lastError = `HTTP ${res.status} from ${url}`; continue; }
         const data = await res.json();
-        allProducts = (data.products || []).filter(p => p && p.id && p.name);
+        // 商品画像がないものはカタログに出さない(ブランド絞り込みの母数からも除外)
+        allProducts = (data.products || []).filter(p => p && p.id && p.name && (p.image || p.imageUrl));
         if (allProducts.length === 0) { lastError = 'Empty product list'; continue; }
 
         // ブランド一覧 (出現数順)
@@ -5019,6 +5038,27 @@ window.SEAM_PAGE_I18N = {
     const empty = document.getElementById('pmEmpty');
     const loadBtn = document.getElementById('pmLoadMore');
     if (!grid) return;
+    // 会員向けEC直リンク(カード全体は公式ページのままにするため委譲で分岐)
+    if (!grid.__memberBound) {
+      grid.__memberBound = true;
+      const openMember = el => {
+        try { window.seamTrack && window.seamTrack('brand_member_item', { label: '' }); } catch (_) {}
+        window.open('https://salon.town/item/' + encodeURIComponent(el.dataset.st), '_blank', 'noopener');
+      };
+      grid.addEventListener('click', e => {
+        const m = e.target.closest('.pm-card-member');
+        if (!m) return;
+        e.preventDefault(); e.stopPropagation();
+        openMember(m);
+      });
+      grid.addEventListener('keydown', e => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const m = e.target.closest('.pm-card-member');
+        if (!m) return;
+        e.preventDefault(); e.stopPropagation();
+        openMember(m);
+      });
+    }
 
     if (filtered.length === 0) {
       grid.innerHTML = '';
@@ -5059,15 +5099,22 @@ window.SEAM_PAGE_I18N = {
     });
     const productUrl = p.productPageUrl || p.sourceUrl || '#';
 
-    // 価格: sizes[].price の最小値を SEAM メンバー価格として表示 (finder と同ロジック)
+    // 価格: 実定価(priceApprox=主要サイズ)優先、なければ最小サイズ価格
     const priceVal = (() => {
+      if (typeof p.priceApprox === 'number' && p.priceApprox > 0) return p.priceApprox;
       const ps = (p.sizes || []).map(s => s && s.price).filter(v => typeof v === 'number' && v > 0);
       return ps.length ? Math.min.apply(null, ps) : null;
     })();
     const yen = n => '¥' + String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    const onSale = SALE_ON && p.salonTownItemId;
+    const priceTag = onSale ? '会員はサマーセール価格' : 'SEAMメンバーはさらにお得';
+    const teika = p.salonTownItemId ? '<span class="pm-card-price-teika">定価</span>' : '';
     const priceHTML = priceVal != null
-      ? `<span class="pm-card-price-main"><span class="pm-card-price-tag">SEAMメンバーはさらにお得</span><span class="pm-card-price-val">${yen(priceVal)}<span class="pm-card-price-tax">税込</span></span></span>`
+      ? `<span class="pm-card-price-main"><span class="pm-card-price-tag${onSale ? ' is-sale' : ''}">${priceTag}</span><span class="pm-card-price-val">${teika}${yen(priceVal)}<span class="pm-card-price-tax">税込</span></span></span>`
       : `<span class="pm-card-price-main"><span class="pm-card-price-tag">SEAMメンバー価格</span></span>`;
+    const memberHTML = p.salonTownItemId
+      ? `<span class="pm-card-member" data-st="${escAttr(p.salonTownItemId)}" role="link" tabindex="0">会員はオンラインショップで購入 <span aria-hidden>↗</span></span>`
+      : '';
 
     return `
       <a class="pm-card" href="${escAttr(productUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${escAttr(p.brand + ' ' + p.name)}">
@@ -5087,6 +5134,7 @@ window.SEAM_PAGE_I18N = {
           ${priceHTML}
           <span class="pm-card-price-arrow">↗</span>
         </div>
+        ${memberHTML}
       </a>`;
   }
 

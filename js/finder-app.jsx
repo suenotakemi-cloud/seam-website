@@ -3251,10 +3251,13 @@ function MustPlusOneSection({ matches }) {
                           className="mt-2 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-ink hover:text-gold no-print transition-colors"
                         >
                           {(() => { const v = deepMinPrice(p); return v != null
-                            ? <span className="font-serif text-[13px] text-ink nums normal-case tracking-normal">¥{v.toLocaleString()} <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">税込</span> <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold">SEAMメンバーはさらにお得</span></span>
+                            ? <span className="font-serif text-[13px] text-ink nums normal-case tracking-normal">{p.salonTownItemId && <span className="font-mono tracking-widest2 text-[8.5px] uppercase text-charcoal/45 mr-0.5">定価</span>}¥{v.toLocaleString()} <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">税込</span> <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold">{memberPriceTag(p)}</span></span>
                             : <><span className="text-gold">¥</span><span>SEAMメンバー価格</span></>; })()}
                           <span className="text-gold">↗</span>
                         </a>
+                      )}
+                      {stItemUrl(p) && (
+                        <a href={stItemUrl(p)} target="_blank" rel="noopener noreferrer" onClick={() => trackCta('member_item', p.brand || '')} className="mt-1.5 flex items-center gap-1 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/55 hover:text-gold no-print transition-colors">会員はオンラインショップで購入 <span className="text-gold" aria-hidden>↗</span></a>
                       )}
                     </div>
                   </div>
@@ -3311,6 +3314,13 @@ function deepAltRole(altP, bestP){
   const ra=deepPriceRank(altP), rb=deepPriceRank(bestP);
   if(ra>rb) return '上質に'; if(ra<rb) return '手頃に'; return 'ほかに';
 }
+/* ── サマーセール表記(割引後の数字は出さない)＋会員EC商品直リンク ── */
+const SALE_START_TS = Date.parse('2026-07-01T00:00:00+09:00');
+const SALE_END_TS = Date.parse('2026-08-01T00:00:00+09:00');
+function saleNow(){ const t = Date.now(); return t >= SALE_START_TS && t < SALE_END_TS; }
+function stItemUrl(p){ return (p && p.salonTownItemId) ? ('https://salon.town/item/' + encodeURIComponent(p.salonTownItemId)) : null; }
+function memberPriceTag(p){ return (saleNow() && p && p.salonTownItemId) ? '会員はサマーセール価格' : 'SEAMメンバーはさらにお得'; }
+
 // block.items を best(竹) + alts(価格昇順 最大2) に
 // 候補はベストと異なるブランドを優先し、ブランド横断比較として成立させる
 function deepPriceTrio(items){
@@ -3381,15 +3391,19 @@ function DeepBestCard({ item, best = null, variant = 'best', category = null }){
         <span className="flex flex-col gap-0.5 min-w-0">
           <span className="flex items-baseline gap-1.5 flex-wrap">
             {priceVal != null && <>
+              {p.salonTownItemId && <span className="font-mono tracking-widest2 text-[8.5px] uppercase text-charcoal/45 whitespace-nowrap">定価</span>}
               <span className="font-serif text-[15px] text-ink nums whitespace-nowrap">¥{priceVal.toLocaleString()}</span>
               <span className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45 whitespace-nowrap">税込</span>
             </>}
             {p.primarySize && <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45 whitespace-nowrap">{p.primarySize}</span>}
           </span>
-          <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">SEAMメンバーはさらにお得</span>
+          <span className={"font-mono tracking-widest2 text-[9px] uppercase whitespace-nowrap " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold")}>{memberPriceTag(p)}</span>
         </span>
         <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap shrink-0">詳しく見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
       </a>
+      {stItemUrl(p) && (
+        <a href={stItemUrl(p)} target="_blank" rel="noopener noreferrer" onClick={() => trackCta('member_item', p.brand || '')} aria-label={`${p.name}をオンラインショップで見る (会員向け・新規タブで開く)`} className="mt-2 flex items-center justify-center gap-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/60 hover:text-gold border border-line/70 hover:border-gold/60 rounded-[2px] px-3 py-2 no-print transition-colors min-h-[36px]">会員の方はオンラインショップでこの商品へ <span className="text-gold" aria-hidden>↗</span></a>
+      )}
     </article>
   );
 }
@@ -3410,8 +3424,8 @@ function DeepAltCard({ item, best }){
       <span className="mt-0.5 font-serif text-[13px] text-ink leading-snug">{p.name}</span>
       <span className="mt-2 flex items-center justify-between gap-2">
         <span className="flex items-baseline gap-1.5 min-w-0">
-          <span className="font-mono tracking-widest2 text-[9px] uppercase text-gold whitespace-nowrap">メンバー特別価格</span>
-          {altPrice != null && <span className="font-serif text-[12.5px] text-ink nums whitespace-nowrap">¥{altPrice.toLocaleString()}</span>}
+          <span className={"font-mono tracking-widest2 text-[9px] uppercase whitespace-nowrap " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold")}>{saleNow() && p.salonTownItemId ? '会員はサマーセール価格' : 'メンバー特別価格'}</span>
+          {altPrice != null && <span className="font-serif text-[12.5px] text-ink nums whitespace-nowrap">{p.salonTownItemId && <span className="font-mono tracking-widest2 text-[8px] uppercase text-charcoal/45 mr-0.5">定価</span>}¥{altPrice.toLocaleString()}</span>}
         </span>
         <span className="text-gold group-hover:translate-x-0.5 transition-transform text-[13px]" aria-hidden>↗</span>
       </span>
@@ -10253,7 +10267,11 @@ function Result({ answers, onRestart, onCollection }) {
   useEffect(() => {
     fetch('data/products/seam-master.json?v=' + Date.now(), { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
-      .then(d => setSeamData(d))
+      .then(d => {
+        // 商品画像がないものは提案に出さない(オーナー方針)
+        if (d && Array.isArray(d.products)) d.products = d.products.filter(p => p && (p.image || p.imageUrl));
+        setSeamData(d);
+      })
       .catch(() => setSeamData(null));
   }, []);
   // Home Tools(美容家電) data 取得
