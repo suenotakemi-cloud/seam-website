@@ -2227,10 +2227,24 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
       if (p.functionTags.some(function(f){ return /volume-up|lift-root|root-care|volume-mist|scalp-volume/.test(f); })) volBoost = 22;
       else if (p.functionTags.some(function(f){ return /lightweight|airy/.test(f); })) volBoost = 10;
     }
+    // ── 予算アップセル: 普段の1帯上=背伸び提案(+4)、投資意向ありなら2帯上(+2)＋かけたいカテゴリ(+3) ──
+    const dcat = deepCategoryForProduct(p);
+    let upsell = 0;
+    const _ub = deepUserBand(a, dcat);
+    if (_ub != null) {
+      const _pb = bandOfPrice(deepMinPrice(p));
+      if (_pb != null && _pb > _ub) {
+        const _will = a.upgradeWill || '';
+        if (_pb === _ub + 1 && _will !== 'price') upsell += 4;
+        if (_pb >= _ub + 2 && _will === 'yes') upsell += 2;
+        const _investHit = a.investCat === 'shampoo' ? (dcat === 'shampoo' || dcat === 'specialCleanse') : a.investCat === dcat;
+        if (_will === 'yes' && _investHit) upsell += 3;
+      }
+    }
     return {
       p,
-      s: Math.max(0, base + deep + finish + bleach + dmgrep + affinity + concernAffinity + volBoost + diversityBoost(p) - penalty - supplementPenalty - overexp - offConcern),
-      deepCat: deepCategoryForProduct(p),
+      s: Math.max(0, base + deep + finish + bleach + dmgrep + affinity + concernAffinity + volBoost + upsell + diversityBoost(p) - penalty - supplementPenalty - overexp - offConcern),
+      deepCat: dcat,
       isAffinity: affinity > 0 || concernAffinity > 0 || bleach > 0,
       isSupplementary: supp,
       affinityReason: [
@@ -2257,10 +2271,18 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   // 同一ブランドが全カテゴリで支配しないようグローバル上限を緩めに設定(各カテゴリ3本×6=18枠中、最大6本まで)
   const globalBrandCap = Math.max(maxPerBrand, 6);
   const brandCount = {};
+  // ── 予算フロア: 普段の価格帯より安い商品は出さない(オーナー方針 2026-07-07) ──
+  const floorByBucket = {};
+  for (const id of Object.keys(DEEP_CATEGORY_DEFS)) floorByBucket[id] = deepUserBand(a, id);
   for (const item of scored) {
     const bucket = item.deepCat;
     const def = DEEP_CATEGORY_DEFS[bucket];
     if (!def) continue;
+    // 予算フロア(帯未回答のバケットはnull=無効)
+    if (floorByBucket[bucket] != null) {
+      const _pb = bandOfPrice(deepMinPrice(item.p));
+      if (_pb != null && _pb < floorByBucket[bucket]) continue;
+    }
     // バケット容量
     if (blocks[bucket].length >= (def.max || 3)) continue;
     // ブランド集中防止 (グローバル: 全カテゴリ合計の上限)
@@ -2282,6 +2304,23 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     brandCountInBucket[bucket][item.p.brand] = (brandCountInBucket[bucket][item.p.brand] || 0) + 1;
     catSubUsed[bucket].add(item.p.category);
     if (item.isSupplementary) suppCountInBucket[bucket]++;
+  }
+
+  // ── 予算フロアの全滅回避: 高予算帯で候補が2本未満なら1帯ずつ緩めて補充(安全弁) ──
+  for (const id of Object.keys(DEEP_CATEGORY_DEFS)) {
+    let fl = floorByBucket[id];
+    if (fl == null) continue;
+    while (blocks[id].length < 2 && fl > 0) {
+      fl--;
+      for (const item of scored) {
+        if (item.deepCat !== id) continue;
+        if (blocks[id].length >= (DEEP_CATEGORY_DEFS[id].max || 3)) break;
+        if (blocks[id].some(x => x.p.id === item.p.id)) continue;
+        const _pb = bandOfPrice(deepMinPrice(item.p));
+        if (_pb != null && _pb < fl) continue;
+        blocks[id].push(item);
+      }
+    }
   }
 
   // ── セグメント別「必ず提案」エッセンスの確実注入 ──
@@ -2381,6 +2420,15 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
         blocks.scalp.unshift(chosen);
         if (blocks.scalp.length > scalpMax) blocks.scalp.length = scalpMax;
       }
+    }
+  }
+
+  // ── 予算との関係ラベル(いつもの価格帯/ワンランク上/ご褒美クラス)を各カードに添付 ──
+  for (const id of Object.keys(blocks)) {
+    const _ub = deepUserBand(a, id);
+    if (_ub == null) continue;
+    for (const it of blocks[id]) {
+      if (it && it.p && !it.bandRel) it.bandRel = bandRelForItem(it.p, _ub);
     }
   }
 
@@ -3314,6 +3362,28 @@ function deepAltRole(altP, bestP){
   const ra=deepPriceRank(altP), rb=deepPriceRank(bestP);
   if(ra>rb) return '上質に'; if(ra<rb) return '手頃に'; return 'ほかに';
 }
+/* ── 予算5段階(P1〜P5) — 「普段より安い提案はしない・上は背伸び提案」の土台 ── */
+// P1:〜1,999 / P2:2,000〜3,999 / P3:4,000〜5,999 / P4:6,000〜8,999 / P5:9,000〜
+function bandOfPrice(v){ if (v == null) return null; if (v < 2000) return 0; if (v < 4000) return 1; if (v < 6000) return 2; if (v < 9000) return 3; return 4; }
+const BUDGET_TO_BAND = { u1: 0, b12: 0, b23: 1, b34: 1, b45: 2, b56: 2, b67: 3, b78: 3, o8: 4 };
+const DEEP_BUCKET_BUDGET_KEY = { shampoo: 'sh', specialCleanse: 'sh', treatment: 'tr', outbath: 'ob', mask: 'mk' };
+function deepUserBand(answers, bucketId){
+  const k = DEEP_BUCKET_BUDGET_KEY[bucketId];
+  if (!k) return null;
+  const v = answers && answers.budget && answers.budget[k];
+  if (!v || v === 'skip') return null;
+  return (v in BUDGET_TO_BAND) ? BUDGET_TO_BAND[v] : null;
+}
+// 「これ使ってみたい」の一言(予算との関係で言い分け)
+function bandRelForItem(p, ub){
+  if (ub == null) return null;
+  const pb = bandOfPrice(deepMinPrice(p));
+  if (pb == null) return null;
+  if (pb <= ub) return { tag: 'いつもの価格帯', line: 'いまの予算のまま 仕上がりを上げる一本' };
+  if (pb === ub + 1) return { tag: 'ワンランク上', line: 'あと少しの投資で 毎日の手ざわりが変わる' };
+  return { tag: 'ご褒美クラス', line: 'サロン帰りの仕上がりを 自宅で毎日' };
+}
+
 /* ── サマーセール表記(割引後の数字は出さない)＋会員EC商品直リンク ── */
 const SALE_START_TS = Date.parse('2026-07-01T00:00:00+09:00');
 const SALE_END_TS = Date.parse('2026-08-01T00:00:00+09:00');
@@ -3378,6 +3448,11 @@ function DeepBestCard({ item, best = null, variant = 'best', category = null }){
           {reason && (
             <p className="mt-2 text-[11.5px] leading-[1.7] text-charcoal/75">
               <span className="font-mono tracking-widest2 text-[8.5px] uppercase text-gold mr-1.5 align-[1px]">なぜ合う</span>{reason}
+            </p>
+          )}
+          {item.bandRel && (
+            <p className="mt-2 text-[11.5px] leading-[1.7] text-charcoal/80">
+              <span className="inline-block text-[9.5px] px-1.5 py-0.5 mr-1.5 bg-cream/70 text-gold border border-gold/35 rounded-[1px] align-[1px] whitespace-nowrap">{item.bandRel.tag}</span>{item.bandRel.line}
             </p>
           )}
         </div>

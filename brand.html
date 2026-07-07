@@ -2821,6 +2821,10 @@
       <span class="pm-filter-label">Category</span>
       <!-- 動的に埋める -->
     </div>
+    <div class="pm-filter-row" id="pmFilterRowPrice">
+      <span class="pm-filter-label">Price</span>
+      <!-- 動的に埋める(5段階) -->
+    </div>
     <div class="pm-filter-row" id="pmFilterRowFunction">
       <span class="pm-filter-label" data-i18n="pm.filter.finish">なりたい仕上がり</span>
       <!-- 動的に埋める -->
@@ -4857,7 +4861,15 @@ window.SEAM_PAGE_I18N = {
   let allProducts = [];
   let allBrands = []; // 出現するブランド一覧
   let filtered = [];
-  const filters = { category: null, brands: new Set(), functions: new Set() };
+  const filters = { category: null, price: null, brands: new Set(), functions: new Set() };
+  // 価格5段階(診断の予算帯と同じ区切り)
+  const PRICE_GROUPS = [
+    { id: 'p1', label: '〜¥2,000',       min: 0,    max: 1999 },
+    { id: 'p2', label: '¥2,000〜4,000',  min: 2000, max: 3999 },
+    { id: 'p3', label: '¥4,000〜6,000',  min: 4000, max: 5999 },
+    { id: 'p4', label: '¥6,000〜9,000',  min: 6000, max: 8999 },
+    { id: 'p5', label: '¥9,000〜',       min: 9000, max: Infinity },
+  ];
   let visibleCount = 24;
   const PAGE_SIZE = 24;
 
@@ -4953,6 +4965,26 @@ window.SEAM_PAGE_I18N = {
       });
     }
 
+    // Price chips (5段階)
+    const priceRow = document.getElementById('pmFilterRowPrice');
+    if (priceRow && !priceRow.querySelector('.pm-chip')) {
+      PRICE_GROUPS.forEach(g => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pm-chip';
+        btn.dataset.kind = 'price';
+        btn.dataset.value = g.id;
+        btn.textContent = g.label;
+        btn.addEventListener('click', () => {
+          filters.price = (filters.price === g.id) ? null : g.id;
+          visibleCount = PAGE_SIZE;
+          updateChipStates();
+          applyAndRender();
+        });
+        priceRow.appendChild(btn);
+      });
+    }
+
     // Function chips (なりたい仕上がり)
     const fnRow = document.getElementById('pmFilterRowFunction');
     if (fnRow && !fnRow.querySelector('.pm-chip')) {
@@ -4980,6 +5012,7 @@ window.SEAM_PAGE_I18N = {
       resetBtn.dataset.bound = '1';
       resetBtn.addEventListener('click', () => {
         filters.category = null;
+        filters.price = null;
         filters.brands.clear();
         filters.functions.clear();
         visibleCount = PAGE_SIZE;
@@ -5042,6 +5075,7 @@ window.SEAM_PAGE_I18N = {
       if (kind === 'category')  active = filters.category === value;
       if (kind === 'brand')     active = filters.brands.has(value);
       if (kind === 'function')  active = filters.functions.has(value);
+      if (kind === 'price')     active = filters.price === value;
       chip.classList.toggle('is-active', active);
     });
   }
@@ -5054,6 +5088,14 @@ window.SEAM_PAGE_I18N = {
       // category
       if (catGroup) {
         if (!catGroup.cats.includes(p.category)) return false;
+      }
+      // price band (5段階)
+      if (filters.price) {
+        const pg = PRICE_GROUPS.find(g => g.id === filters.price);
+        const v = (typeof p.priceApprox === 'number' && p.priceApprox > 0)
+          ? p.priceApprox
+          : (() => { const ps = (p.sizes || []).map(s => s && s.price).filter(x => typeof x === 'number' && x > 0); return ps.length ? Math.min.apply(null, ps) : null; })();
+        if (v == null || !pg || v < pg.min || v > pg.max) return false;
       }
       // brand
       if (filters.brands.size > 0) {
@@ -5295,6 +5337,8 @@ window.SEAM_PAGE_I18N = {
       if (q.get('mode') === 'product') {
         const cat = q.get('cat');
         if (cat && CATEGORY_GROUPS.some(g => g.id === cat)) filters.category = cat;
+        const pr = q.get('price');
+        if (pr && PRICE_GROUPS.some(g => g.id === pr)) filters.price = pr;
         const so = q.get('sort');
         const sel = document.getElementById('pmSort');
         if (sel && (so === 'asc' || so === 'desc')) sel.value = so;
