@@ -62,6 +62,9 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     budgetSh: {}, budgetTr: {}, budgetOb: {}, budgetMk: {},
     upgradeTotal: {}, upgradeYesByAge: {},  // 「合うなら投資したい」率(年代別 分子)=プレミアム許容の金脈
     investCatTotal: {}, buyPlaceTotal: {},
+    // ── v4 美容家電(dpd/dpi/dpsw/dpf/dph=使用中家電の購入価格帯・dti=気になるクラス松竹梅) ──
+    devPriceDryer: {}, devPriceIron: {}, devPriceShower: {}, devPriceFace: {}, devPriceHead: {},
+    devTierTotal: {}, devTierUpByAge: {},   // セレクト以上に興味あり率(年代別 分子)
     monthly: {},                            // YYYY-MM → {n,kuse,bleach,gray,permNow,curlWant}
   };
   for (const row of rows) {
@@ -111,6 +114,11 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     if (m.up === 'yes') inc(P.upgradeYesByAge, age);
     inc(P.investCatTotal, m.ic);
     for (const v of (Array.isArray(m.bp) ? m.bp : [])) inc(P.buyPlaceTotal, v);
+    // 美容家電の実態(使用中の価格帯×興味クラス)
+    inc(P.devPriceDryer, m.dpd); inc(P.devPriceIron, m.dpi); inc(P.devPriceShower, m.dpsw);
+    inc(P.devPriceFace, m.dpf); inc(P.devPriceHead, m.dph);
+    inc(P.devTierTotal, m.dti);
+    if (m.dti === 'select' || m.dti === 'luxury') inc(P.devTierUpByAge, age);
     // 薬剤履歴の重なり（メーカー向け: ダブル/トリプルプロセス毛の実サイズ）
     const isStNow = !!ST_NOW[m.st];
     inc(P.chemCross, isBleach

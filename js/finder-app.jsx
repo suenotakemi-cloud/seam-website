@@ -450,6 +450,47 @@ const Q_DEEP_NEW = [
     ],
   },
   {
+    // 使用中の美容家電の購入価格帯(おぼえていれば)。松竹梅の品揃え判断の1次データ(オーナー指示2026-07-08)
+    id: 'deviceOwned',
+    type: 'budget-rows',
+    eyebrow: 'Beauty Device',
+    title: 'いま使っている美容家電は いくらぐらいのものですか？',
+    note: '買ったときの金額のだいたいで大丈夫です。おぼえていない場合は「おぼえていない」を、使っていないものは「使っていない」をお選びください。',
+    footnote: '横にスクロールして選べます。買ったときの金額の目安で大丈夫です。',
+    options: [],
+    rows: [
+      { k: 'dr', label: 'ドライヤー' },
+      { k: 'ir', label: 'ヘアアイロン（ストレート・コテ）' },
+      { k: 'sw', label: 'シャワーヘッド' },
+      { k: 'fd', label: '美顔器' },
+      { k: 'hm', label: 'ヘッドマッサージ機' },
+    ],
+    bands: [
+      { v: 'skip', label: '使っていない' },
+      { v: 'u5',   label: '〜5,000円' },
+      { v: 'b51',  label: '5,000円〜1万円' },
+      { v: 'b12',  label: '1〜2万円' },
+      { v: 'b23',  label: '2〜3万円' },
+      { v: 'b35',  label: '3〜5万円' },
+      { v: 'o5',   label: '5万円以上' },
+      { v: 'na',   label: 'おぼえていない' },
+    ],
+  },
+  {
+    // 松竹梅(デイリー/セレクト/ラグジュアリー)のどこに興味があるか=家電の価格クラス設計用
+    id: 'deviceTier',
+    type: 'card-single',
+    eyebrow: 'Beauty Device',
+    title: 'もし美容家電を新しく選ぶなら どのクラスが気になりますか？',
+    note: '今後の品揃えの参考にさせていただきます。いまのお気持ちで大丈夫です。',
+    options: [
+      { v: 'daily',  label: 'デイリークラス',      sub: '〜2万円 気軽に高性能',            score: {} },
+      { v: 'select', label: 'セレクトクラス',      sub: '2〜3.5万円 性能と価格のバランス',  score: {} },
+      { v: 'luxury', label: 'ラグジュアリークラス', sub: '3.5万円〜 いちばん良いものを長く', score: {} },
+      { v: 'none',   label: 'いまは考えていない',   score: {} },
+    ],
+  },
+  {
     id: 'age',
     type: 'card-single',
     eyebrow: 'Age',
@@ -688,7 +729,9 @@ const MODE_B_ORDER = [
   { step:3, id:'goal' },
   { step:3, id:'stylingFinish' },
   { step:3, id:'menStyling', when:(a) => a.gender === 'male' },
+  { step:3, id:'deviceOwned' },
   { step:3, id:'deviceInterest' },
+  { step:3, id:'deviceTier' },
   { step:3, id:'headSpaInterest' },
   { step:3, id:'wellness', when:(a) => a.headSpaInterest === 'yes' },
 ];
@@ -1031,6 +1074,10 @@ function buildProfileMeta(a) {
     bo: a.budget && a.budget.ob, bm: a.budget && a.budget.mk,
     up: a.upgradeWill, ic: a.investCat, bp: arr(a.buyPlace, 4),
     ls: arr(a.lifestyle, 4), wl: arr(a.wellness, 4), dv: arr(a.deviceInterest, 3),
+    // v4 美容家電の実態(2026-07-08): dpd/dpi/dpsw/dpf/dph=使用中家電の購入価格帯 dti=気になる価格クラス(松竹梅)
+    dpd: a.deviceOwned && a.deviceOwned.dr, dpi: a.deviceOwned && a.deviceOwned.ir,
+    dpsw: a.deviceOwned && a.deviceOwned.sw, dpf: a.deviceOwned && a.deviceOwned.fd,
+    dph: a.deviceOwned && a.deviceOwned.hm, dti: a.deviceTier,
   };
   Object.keys(m).forEach(k => { const v = m[k]; if (v == null || v === '') delete m[k]; });
   return m;
@@ -5040,11 +5087,12 @@ function ReturnDiffCard({ prev, karte, answers }) {
    値はオブジェクト {sh,tr,ob,mk}。全行選ぶまで answers.budget は確定させず(NEXTゲート)、
    途中経過は answers.budgetDraft に保持(戻ってきても選択が残る)。 */
 function BudgetRows({ q, value, onChange, onSet, answers }) {
-  const draft = value || (answers && answers.budgetDraft) || {};
+  const dk = q.id + 'Draft';
+  const draft = value || (answers && answers[dk]) || {};
   const pick = (rowK, v) => {
     const next = { ...draft, [rowK]: v };
     const complete = q.rows.every(r => next[r.k]);
-    if (onSet) onSet('budgetDraft', complete ? undefined : next);
+    if (onSet) onSet(dk, complete ? undefined : next);
     onChange(complete ? next : undefined);
   };
   return (
@@ -5075,7 +5123,7 @@ function BudgetRows({ q, value, onChange, onSet, answers }) {
           </div>
         </div>
       ))}
-      <p className="text-[11px] leading-relaxed text-charcoal/55">横にスクロールして選べます。1回のお買い物で払う金額の目安で大丈夫です。</p>
+      <p className="text-[11px] leading-relaxed text-charcoal/55">{q.footnote || '横にスクロールして選べます。1回のお買い物で払う金額の目安で大丈夫です。'}</p>
     </div>
   );
 }
@@ -9007,6 +9055,14 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
   if (Array.isArray(a.buyPlace) && a.buyPlace.length) {
     moneyItems.push(['ふだんの購入場所', a.buyPlace.map(v => lookupLabelShort('buyPlace', v)).join('・')]);
   }
+  const DEVICE_BAND_SHORT = { skip: '使っていない', u5: '〜5千円', b51: '5千〜1万円', b12: '1〜2万円', b23: '2〜3万円', b35: '3〜5万円', o5: '5万円以上', na: '金額不明' };
+  if (a.deviceOwned) {
+    const seg = [['ドライヤー', a.deviceOwned.dr], ['アイロン', a.deviceOwned.ir], ['シャワーヘッド', a.deviceOwned.sw], ['美顔器', a.deviceOwned.fd], ['ヘッドマッサージ機', a.deviceOwned.hm]]
+      .filter(x => x[1] && x[1] !== 'skip')
+      .map(x => x[0] + ' ' + (DEVICE_BAND_SHORT[x[1]] || x[1]));
+    if (seg.length) moneyItems.push(['美容家電(使用中)', seg.join(' ／ ')]);
+  }
+  if (a.deviceTier && a.deviceTier !== 'none') moneyItems.push(['気になる家電クラス', lookupLabelShort('deviceTier', a.deviceTier)]);
 
   // ヘッドスパ
   const spaItems = [];

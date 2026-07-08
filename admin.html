@@ -222,6 +222,11 @@
   var UPWL = {yes:'合うなら投資したい',depends:'ものによる',price:'いまは価格を優先'};
   var ICATL = {shampoo:'シャンプー',treatment:'トリートメント',outbath:'アウトバス',mask:'集中マスク',styling:'スタイリング剤',none:'特にない'};
   var BPL = {seam:'SEAMで',salon:'通っているサロンで',drug:'ドラッグストア',amazon:'Amazon',rakuten:'楽天',other:'そのほかのECや店舗'};
+  // v4 美容家電(使用中の価格帯 dpd/dpi/dpsw/dpf/dph・興味クラス dti — finder実値と同期)
+  var DBANDL = {skip:'使っていない',u5:'〜5,000円',b51:'5,000円〜1万円',b12:'1〜2万円',b23:'2〜3万円',b35:'3〜5万円',o5:'5万円以上',na:'金額おぼえていない'};
+  var DBAND_ORDER = ['u5','b51','b12','b23','b35','o5','na','skip'];
+  var DTIERL = {daily:'デイリー(〜2万円)',select:'セレクト(2〜3.5万円)',luxury:'ラグジュアリー(3.5万円〜)',none:'いまは考えていない'};
+  var DTIER_ORDER = ['daily','select','luxury','none'];
   var PAGEL = {'/':'トップ','/index.html':'トップ','/finder':'髪格診断','/finder.html':'髪格診断','/brand':'ブランド','/brand.html':'ブランド','/shop':'店舗一覧','/shop.html':'店舗一覧','/headspa':'ヘッドスパ','/headspa.html':'ヘッドスパ','/hairsalon':'ヘアサロン','/hairsalon.html':'ヘアサロン','/onlineshop':'オンラインショップ','/onlineshop.html':'オンラインショップ','/journal':'読みもの','/guide-scalp':'頭皮ガイド','/guide-scalp.html':'頭皮ガイド'};
   function pageLabel(p){ return PAGEL[p] || p; }
 
@@ -299,6 +304,13 @@
         buyPlaceTotal:{drug:Math.round(n*.52),amazon:Math.round(n*.38),salon:Math.round(n*.30),rakuten:Math.round(n*.28),seam:Math.round(n*.22),other:Math.round(n*.12)},
         rediagN:Math.round(n*.07), rediagDaysSum:Math.round(n*.07)*34,
         deviceWantByAge:scaled({teen:.38,'20s':.45,'30s':.42,'40s':.36,'50plus':.28,noanswer:.3}),
+        devPriceDryer:{u5:Math.round(n*.18),b51:Math.round(n*.22),b12:Math.round(n*.20),b23:Math.round(n*.12),b35:Math.round(n*.06),o5:Math.round(n*.02),na:Math.round(n*.12),skip:Math.round(n*.08)},
+        devPriceIron:{u5:Math.round(n*.14),b51:Math.round(n*.16),b12:Math.round(n*.14),b23:Math.round(n*.08),b35:Math.round(n*.03),o5:Math.round(n*.01),na:Math.round(n*.10),skip:Math.round(n*.34)},
+        devPriceShower:{u5:Math.round(n*.04),b51:Math.round(n*.06),b12:Math.round(n*.07),b23:Math.round(n*.04),b35:Math.round(n*.02),o5:Math.round(n*.01),na:Math.round(n*.06),skip:Math.round(n*.70)},
+        devPriceFace:{u5:Math.round(n*.03),b51:Math.round(n*.04),b12:Math.round(n*.05),b23:Math.round(n*.04),b35:Math.round(n*.03),o5:Math.round(n*.02),na:Math.round(n*.04),skip:Math.round(n*.75)},
+        devPriceHead:{u5:Math.round(n*.05),b51:Math.round(n*.05),b12:Math.round(n*.04),b23:Math.round(n*.02),b35:Math.round(n*.01),o5:Math.round(n*.01),na:Math.round(n*.03),skip:Math.round(n*.79)},
+        devTierTotal:{daily:Math.round(n*.34),select:Math.round(n*.30),luxury:Math.round(n*.12),none:Math.round(n*.24)},
+        devTierUpByAge:scaled({teen:.28,'20s':.45,'30s':.48,'40s':.44,'50plus':.34,noanswer:.35}),
         monthly:monthly
       };
     }
@@ -566,6 +578,15 @@
       panel('Where to buy','ふだんの購入場所（複数選択）',
         objRows(P.buyPlaceTotal, BPL, P.n, BPL_ORDER, true) +
         noteLine('流通チャネルの実態 — EC利用層の来店=送客インサイト・ディーラー向け提案資料の基礎')) +
+      panel('Beauty Device','美容家電 — 使用中の価格帯と気になるクラス',
+        subhead('ドライヤー') + objRows(P.devPriceDryer, DBANDL, P.n, DBAND_ORDER, true) +
+        subhead('ヘアアイロン（ストレート・コテ）') + objRows(P.devPriceIron, DBANDL, P.n, DBAND_ORDER, true) +
+        subhead('シャワーヘッド') + objRows(P.devPriceShower, DBANDL, P.n, DBAND_ORDER, true) +
+        subhead('美顔器') + objRows(P.devPriceFace, DBANDL, P.n, DBAND_ORDER, true) +
+        subhead('ヘッドマッサージ機') + objRows(P.devPriceHead, DBANDL, P.n, DBAND_ORDER, true) +
+        subhead('気になるクラス（松竹梅）') + objRows(P.devTierTotal, DTIERL, P.n, DTIER_ORDER, true) +
+        subhead('セレクト以上に興味 × 年代') + rateByAge(P.devTierUpByAge, P.byAge) +
+        noteLine('使用中家電の実売価格帯 × 松竹梅の興味 — 家電品揃え(デイリー/セレクト/ラグジュアリー)と価格設定の1次データ')) +
       '<div class="card panel"'+full+'><h2><span class="eyebrow">Concern → Texture</span>悩み → 求める質感 TOP12（広告コピーの素）</h2>'+pairTable(P.concernTexture, P.n)+'</div>';
   }
 
@@ -702,6 +723,11 @@
         subhead('トリートメント') + objRows(P.budgetTr, BANDL, P.n, BAND_ORDER, true) +
         subhead('値上がり許容') + objRows(P.upgradeTotal, UPWL, P.n, UPW_ORDER, true) +
         subhead('購入場所（複数選択）') + objRows(P.buyPlaceTotal, BPL, P.n, BPL_ORDER, true)) +
+      rblock('美容家電 — 使用中の価格帯と興味クラス（本人申告）',
+        subhead('ドライヤー') + objRows(P.devPriceDryer, DBANDL, P.n, DBAND_ORDER, true) +
+        subhead('ヘアアイロン（ストレート・コテ）') + objRows(P.devPriceIron, DBANDL, P.n, DBAND_ORDER, true) +
+        subhead('気になるクラス（松竹梅）') + objRows(P.devTierTotal, DTIERL, P.n, DTIER_ORDER, true) +
+        subhead('セレクト以上に興味 × 年代') + rateByAge(P.devTierUpByAge, P.byAge)) +
       rblock('パーマ: 現役率×年代 / カール意欲×年代 / 種類・持ち', rateByAge(P.permNowByAge, P.byAge) + rateByAge(P.curlWantByAge, P.byAge) + objRows(P.permTypeTotal, PERMTYPE) + objRows(P.permLooseTotal, PERMLOOSE)) +
       rblock('白髪: 染め中率×年代 / 頻度', rateByAge(P.grayCareByAge, P.byAge) + objRows(P.grayFreqTotal, GRAYFREQ)) +
       rblock('熱習慣（アイロン・コテ）と設定温度', objRows(P.toolsTotal, TOOLS, P.n) + objRows(P.tempTotal, TEMPL)) +
