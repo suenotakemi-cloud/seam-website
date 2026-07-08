@@ -4413,7 +4413,13 @@ function HomeToolsSection({
     className: "text-[10.5px] text-charcoal/55"
   }, "\u7A0E\u8FBC")), t.price && /*#__PURE__*/React.createElement("span", {
     className: "inline-block font-mono tracking-widest2 text-[10px] uppercase text-gold bg-cream/60 border border-gold/40 px-1.5 py-0.5 rounded-[1px]"
-  }, t.price <= 20570 ? 'デイリー' : t.price <= 33000 ? 'セレクト' : 'ラグジュアリー')), t._rel && /*#__PURE__*/React.createElement("p", {
+  }, t.price <= 20570 ? 'デイリー' : t.price <= 33000 ? 'セレクト' : 'ラグジュアリー'), t.voltage === 'world' && /*#__PURE__*/React.createElement("span", {
+    className: "inline-block text-[10.5px] text-ink bg-white border border-ink/30 px-1.5 py-0.5 rounded-[1px]"
+  }, "\u6D77\u5916\u5BFE\u5FDC 100-240V"), t.voltage === 'rechargeable' && /*#__PURE__*/React.createElement("span", {
+    className: "inline-block text-[10.5px] text-charcoal/70 bg-white border border-line px-1.5 py-0.5 rounded-[1px]"
+  }, "\u5145\u96FB\u5F0F\u30FB\u30B3\u30FC\u30C9\u30EC\u30B9")), t.voltage === 'jp' && /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-[10.5px] text-charcoal/55 leading-relaxed"
+  }, "\u203B\u65E5\u672C\u56FD\u5185\u5C02\u7528\uFF08AC100V\uFF09\u6D77\u5916\u306E\u96FB\u5727\u3067\u306F\u4F7F\u3048\u307E\u305B\u3093"), t._rel && /*#__PURE__*/React.createElement("p", {
     className: "mt-1.5 text-[11px] sm:text-[11.5px] text-charcoal/60 leading-relaxed"
   }, {
     same: 'いまお使いの価格帯と同じクラスです。',
