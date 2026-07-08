@@ -3098,7 +3098,16 @@ function HomeToolsSection({ tools, answers, scores }) {
                       {t.price <= 20570 ? 'デイリー' : t.price <= 33000 ? 'セレクト' : 'ラグジュアリー'}
                     </span>
                   )}
+                  {t.voltage === 'world' && (
+                    <span className="inline-block text-[10.5px] text-ink bg-white border border-ink/30 px-1.5 py-0.5 rounded-[1px]">海外対応 100-240V</span>
+                  )}
+                  {t.voltage === 'rechargeable' && (
+                    <span className="inline-block text-[10.5px] text-charcoal/70 bg-white border border-line px-1.5 py-0.5 rounded-[1px]">充電式・コードレス</span>
+                  )}
                 </div>
+                {t.voltage === 'jp' && (
+                  <p className="mt-1 text-[10.5px] text-charcoal/55 leading-relaxed">※日本国内専用（AC100V）海外の電圧では使えません</p>
+                )}
                 {t._rel && (
                   <p className="mt-1.5 text-[11px] sm:text-[11.5px] text-charcoal/60 leading-relaxed">
                     {{ same: 'いまお使いの価格帯と同じクラスです。', up: 'いまお使いのものから ひとつ上のクラスです。', wish: 'ご興味のクラスに合わせたご提案です。', stretch: 'いまの価格帯より上ですが 取り扱いの中でいちばん手に取りやすい一台です。' }[t._rel]}
