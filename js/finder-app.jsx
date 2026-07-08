@@ -3030,27 +3030,32 @@ function pickHomeTools(tools, answers, scores) {
   // 美顔器を明示的に希望した方には、美顔器を2点まで見せる
   const maxByCat = { 'tool-dryer': 1, 'tool-iron-straight': 1, 'tool-iron-curl': 1, 'tool-iron-2way': 1, 'tool-iron-brush': 1, 'tool-shower': 1, 'tool-headspa': 1, 'tool-brush': 1,
                      'tool-face': deviceWish.includes('faceDevice') ? 2 : 1 };
+  // 明示的に欲しいと答えた種類があるときは その種類だけに絞る(loveGadgetsは全種OK)
+  const wishGroups = [];
+  if (deviceWish.includes('dryerUpgrade')) wishGroups.push(['tool-dryer']);
+  if (deviceWish.includes('ironUpgrade')) wishGroups.push(['tool-iron-straight', 'tool-iron-curl', 'tool-iron-2way', 'tool-iron-brush']);
+  if (deviceWish.includes('showerHead')) wishGroups.push(['tool-shower']);
+  if (deviceWish.includes('faceDevice')) wishGroups.push(['tool-face']);
+  const allowedCats = (wishGroups.length > 0 && !deviceWish.includes('loveGadgets')) ? new Set(wishGroups.flat()) : null;
   const catCount = {};
   for (const { t, score, rel } of scored) {
     if (picks.length >= 4) break;
     const cat = t.category;
+    if (allowedCats && !allowedCats.has(cat)) continue;
     const used = catCount[cat] || 0;
     if (used >= (maxByCat[cat] || 1)) continue;
     picks.push({ ...t, _score: score, _rel: rel });
     catCount[cat] = used + 1;
     usedCategories.add(cat);
   }
-  // 明示的に欲しいと答えた家電が予算窓で全滅した場合は、その種類で最安の1台だけ正直な一言つきで出す
-  const wishGroups = [];
-  if (deviceWish.includes('dryerUpgrade')) wishGroups.push(['tool-dryer']);
-  if (deviceWish.includes('ironUpgrade')) wishGroups.push(['tool-iron-straight', 'tool-iron-curl', 'tool-iron-2way', 'tool-iron-brush']);
-  if (deviceWish.includes('showerHead')) wishGroups.push(['tool-shower']);
-  if (deviceWish.includes('faceDevice')) wishGroups.push(['tool-face']);
+  // 欲しいと答えた種類が予算窓で全滅した場合は、その種類で最安の1台だけ正直な一言つきで出す
+  // (満枠なら最後の1枠を譲る=希望カテゴリ優先)
   for (const grp of wishGroups) {
-    if (picks.length >= 4) break;
     if (picks.some(p => grp.includes(p.category))) continue;
     const cands = tools.filter(t => grp.includes(t.category) && t.price).sort((x, y) => x.price - y.price);
-    if (cands[0]) picks.push({ ...cands[0], _score: 1, _rel: 'stretch' });
+    if (!cands[0]) continue;
+    if (picks.length >= 4) picks.pop();
+    picks.push({ ...cands[0], _score: 1, _rel: 'stretch' });
   }
   return picks;
 }
