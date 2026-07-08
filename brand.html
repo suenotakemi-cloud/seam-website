@@ -5287,7 +5287,7 @@ window.SEAM_PAGE_I18N = {
       p._feats.slice(0, 3).forEach(f => tags.push(LAYER_LABELS[f] || f));
     }
     const gradeHTML = p._layer
-      ? `<span class="pm-card-grade g${p._layer}">${GRADE_NAMES[p._layer]}</span><span class="pm-card-unit">¥${Math.round(p._unit)}/ml</span>`
+      ? `<span class="pm-card-grade g${p._layer}">${GRADE_NAMES[p._layer]}</span>${typeof p._unit === 'number' ? `<span class="pm-card-unit">¥${Math.round(p._unit)}/ml</span>` : ''}`
       : '';
     // カタログ品はsalon.town商品ページがそのまま商品ページ
     const productUrl = p._catalog && p.salonTownItemId
@@ -5533,6 +5533,8 @@ window.SEAM_PAGE_I18N = {
   }
 
   function gradeStr(p) {
+    const c = (p.category || '').toLowerCase();
+    if (c === 'styling' || c.indexOf('styling') === 0) return '';
     if (p.priceTier) {
       const map = { entry:'デイリー', daily:'デイリー', standard:'スタンダード', select:'セレクト', premium:'プレミアム', luxury:'ラグジュアリー' };
       return map[p.priceTier] || p.priceTier;
