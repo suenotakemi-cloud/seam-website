@@ -4914,7 +4914,7 @@ window.SEAM_PAGE_I18N = {
   // サブ分類(スキンケア/家電/スタイリング — オーナー指示2026-07-08・名前キーワード判定/先勝ち)
   const SUB_GROUPS = {
     skincare: [
-      { id: 'lotion',    label: '化粧水',        re: /化粧水|トナー|スキンローション|フェイスローション/ },
+      { id: 'lotion',    label: '化粧水',        re: /化粧水|ローション|トナー|ウォーター|ミスト/ },
       { id: 'milk',      label: '乳液',          re: /乳液|エマルジョン/ },
       { id: 'serum',     label: '美容液',        re: /美容液|セラム|エッセンス|アンプル|導入|ブースター/ },
       { id: 'cleansing', label: 'クレンジング',   re: /クレンジング|メイク落とし/ },
@@ -5039,6 +5039,7 @@ window.SEAM_PAGE_I18N = {
         // ブランドチップ追加描画
         renderBrandChips();
         updateChipStates(); // URLパラメータで事前選択されたチップの活性表示
+        renderSubChips();
         applyAndRender();
         return; // 成功したら終わり
       } catch (e) {
