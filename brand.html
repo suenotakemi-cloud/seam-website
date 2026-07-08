@@ -4877,6 +4877,7 @@ window.SEAM_PAGE_I18N = {
     { id: 'skincare',   label: 'スキンケア',  cats: ['skincare'] },
     { id: 'cosmetics',  label: 'コスメ',      cats: ['cosmetics'] },
     { id: 'body',       label: 'ボディ・バス', cats: ['body'] },
+    { id: 'supplement', label: 'サプリメント',  cats: ['supplement'] },
     { id: 'tools',      label: '美容家電',    cats: ['tools'] },
     { id: 'other',      label: 'その他',      cats: ['other'] },
   ];
@@ -4932,7 +4933,6 @@ window.SEAM_PAGE_I18N = {
       { id: 'other',    label: 'その他',           re: null },
     ],
     styling: [
-      { id: 'perm',       label: 'パーマ・ウェーブ用', re: /ウェーブ|パーマ/ },
       { id: 'wax',        label: 'ワックス',         re: /ワックス|ペースト|クレイ/ },
       { id: 'balm',       label: 'バーム',           re: /バーム/ },
       { id: 'hardspray',  label: 'ハードスプレー',    re: /(ハード|キープ|フリーズ|ホールド).*(スプレー)|スプレー.*(ハード|キープ)|SHスーパーハードスプレー/ },
@@ -4941,6 +4941,13 @@ window.SEAM_PAGE_I18N = {
       { id: 'pomade',     label: 'ポマード・グリース', re: /ポマード|グリース/ },
       { id: 'mousse',     label: 'ムース・フォーム',  re: /ムース|フォーム|ホイップ/ },
       { id: 'other',      label: 'その他',           re: null },
+    ],
+    body: [
+      { id: 'bodysoap', label: 'ボディソープ',     re: /ソープ|ウォッシュ|シャワー|フォーム|石鹸|バー(?!ム)/ },
+      { id: 'bath',     label: '入浴剤・バスソルト', re: /入浴|バスソルト|ソルト|バスエッセンス|バスミルク/ },
+      { id: 'handnail', label: 'ハンド・ネイル',    re: /ハンド|ネイル/ },
+      { id: 'bodycare', label: 'クリーム・オイル',  re: /クリーム|オイル|ジェル|ゲル|ミルク|バーム|バター|スクラブ/ },
+      { id: 'other',    label: 'その他',           re: null },
     ],
   };
   // 厳選商品のstylingType→サブ対応(名前より信頼)
@@ -5011,6 +5018,13 @@ window.SEAM_PAGE_I18N = {
             allProducts = allProducts.concat(extra);
           }
         } catch (e) { console.warn('full catalog merge skipped', e); }
+
+        // サプリ・インナーケア(飲む系)を「その他」から独立カテゴリへ(オーナー指示2026-07-08)
+        const SUPP_BRAND = /^(esthe pro labo|イムダイン|benderu|izm|teaeat)$/i;
+        const SUPP_NAME = /サプリ|カプセル|\d+粒|\d+包|タブレット|ハーブザイム|酵素|シリカ/;
+        allProducts.forEach(p => {
+          if ((p.category || '') === 'other' && (SUPP_BRAND.test((p.brand || '').trim()) || SUPP_NAME.test(p.name || ''))) p.category = 'supplement';
+        });
 
         // 商品階層(グレード/単価/特徴)を付与 — 失敗しても表示は続行
         try {
@@ -5602,7 +5616,7 @@ window.SEAM_PAGE_I18N = {
       const res = await fetch('data/products/seam-master.json?v=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error('master fetch failed');
       const data = await res.json();
-      _products = (data.products || []).filter(p => p && p.id && p.name);
+      _products = (data.products || []).filter(p => p && p.id && p.name && (p.image || p.imageUrl)); // 画像がない商品は載せない(グリッドと同基準)
       // カタログ商品も合流
       try {
         const cr = await fetch('data/products/seam-catalog.json?v=' + Date.now(), { cache: 'no-store' });
