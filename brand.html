@@ -4897,7 +4897,7 @@ window.SEAM_PAGE_I18N = {
   let allProducts = [];
   let allBrands = []; // 出現するブランド一覧
   let filtered = [];
-  const filters = { category: null, price: null, grade: null, brands: new Set(), functions: new Set() };
+  const filters = { category: null, price: null, grade: null, sub: null, brands: new Set(), functions: new Set() };
   // グレード(1ml単価のカテゴリ内5階層 — seam-layers.json)
   const GRADE_NAMES = { 1: 'デイリー', 2: 'スタンダード', 3: 'セレクト', 4: 'プレミアム', 5: 'ラグジュアリー' };
   let LAYER_MAP = {}, LAYER_LABELS = {};
@@ -4911,6 +4911,58 @@ window.SEAM_PAGE_I18N = {
     { id: 'p4', label: '¥6,000〜9,000',  min: 6000, max: 8999 },
     { id: 'p5', label: '¥9,000〜',       min: 9000, max: Infinity },
   ];
+  // サブ分類(スキンケア/家電/スタイリング — オーナー指示2026-07-08・名前キーワード判定/先勝ち)
+  const SUB_GROUPS = {
+    skincare: [
+      { id: 'lotion',    label: '化粧水',        re: /化粧水|トナー|スキンローション|フェイスローション/ },
+      { id: 'milk',      label: '乳液',          re: /乳液|エマルジョン/ },
+      { id: 'serum',     label: '美容液',        re: /美容液|セラム|エッセンス|アンプル|導入|ブースター/ },
+      { id: 'cleansing', label: 'クレンジング',   re: /クレンジング|メイク落とし/ },
+      { id: 'facewash',  label: '洗顔',          re: /洗顔|フェイスウォッシュ|ウォッシュフォーム/ },
+      { id: 'other',     label: 'クリーム・その他', re: null },
+    ],
+    tools: [
+      { id: 'straight', label: 'ストレートアイロン', re: /ストレート/ },
+      { id: 'curl',     label: 'カールアイロン',    re: /カール/ },
+      { id: 'iron',     label: 'アイロン(2way等)',  re: /アイロン/ },
+      { id: 'dryer',    label: 'ドライヤー',        re: /ドライヤー/ },
+      { id: 'facedev',  label: '美顔器',           re: /美顔|IPL|LED|光美容|リフト|エピ|脱毛/ },
+      { id: 'headspa',  label: 'ヘッドマッサージ',  re: /ヘッドスパ|ヘッドマッサージ|スカルプ/ },
+      { id: 'shower',   label: 'シャワーヘッド',    re: /シャワーヘッド/ },
+      { id: 'other',    label: 'その他',           re: null },
+    ],
+    styling: [
+      { id: 'perm',       label: 'パーマ・ウェーブ用', re: /ウェーブ|パーマ/ },
+      { id: 'wax',        label: 'ワックス',         re: /ワックス|ペースト|クレイ/ },
+      { id: 'balm',       label: 'バーム',           re: /バーム/ },
+      { id: 'hardspray',  label: 'ハードスプレー',    re: /(ハード|キープ|フリーズ|ホールド).*(スプレー)|スプレー.*(ハード|キープ)|SHスーパーハードスプレー/ },
+      { id: 'glossspray', label: '艶出しスプレー',    re: /(ツヤ|艶|グロス|シャイン|ブリリアント|ポリッシ|ルミナス).*(スプレー|ミスト|ヴェール|オイル)?.*(スプレー|ミスト)|(スプレー|ミスト).*(ツヤ|グロス|シャイン)/ },
+      { id: 'gel',        label: 'ジェル',           re: /ジェル|ジュレ/ },
+      { id: 'pomade',     label: 'ポマード・グリース', re: /ポマード|グリース/ },
+      { id: 'mousse',     label: 'ムース・フォーム',  re: /ムース|フォーム|ホイップ/ },
+      { id: 'other',      label: 'その他',           re: null },
+    ],
+  };
+  // 厳選商品のstylingType→サブ対応(名前より信頼)
+  const STYLETYPE_SUB = { wax: 'wax', paste: 'wax', balm: 'balm', gel: 'gel', grease: 'pomade',
+    mousse: 'mousse', seasalt: 'other', 'shine-spray': 'glossspray', 'hold-spray': 'hardspray', 'volume-mist': 'other',
+    oil: 'other', 'oil-light': 'other', cream: 'other' };
+  function subOf(p, catId) {
+    if (p._sub !== undefined && p._subCat === catId) return p._sub;
+    const defs = SUB_GROUPS[catId] || [];
+    let hit = null;
+    if (catId === 'styling' && p.stylingType && STYLETYPE_SUB[p.stylingType]) {
+      hit = STYLETYPE_SUB[p.stylingType];
+    } else {
+      const t = (p.name || '') + ' ' + (p.line || '');
+      for (const d of defs) {
+        if (d.re && d.re.test(t)) { hit = d.id; break; }
+      }
+      if (!hit) hit = 'other';
+    }
+    p._sub = hit; p._subCat = catId;
+    return hit;
+  }
   let visibleCount = 24;
   const PAGE_SIZE = 24;
 
@@ -4999,6 +5051,43 @@ window.SEAM_PAGE_I18N = {
     if (grid) grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;padding:40px;color:#999;font-size:13px;">商品データの読み込みに失敗しました<br><span style="font-size:11px;opacity:0.7;">${lastError || 'unknown'}</span></p>`;
   }
 
+  /* ─── サブ分類チップ(カテゴリ選択時のみ表示) ─── */
+  function renderSubChips() {
+    const catRow = document.getElementById('pmFilterRowCategory');
+    if (!catRow) return;
+    let row = document.getElementById('pmFilterRowSub');
+    const defs = filters.category ? SUB_GROUPS[filters.category] : null;
+    if (!defs) { if (row) row.style.display = 'none'; return; }
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'pm-filter-row';
+      row.id = 'pmFilterRowSub';
+      const label = document.createElement('span');
+      label.className = 'pm-filter-label';
+      label.textContent = 'Type';
+      row.appendChild(label);
+      catRow.insertAdjacentElement('afterend', row);
+    }
+    row.style.display = '';
+    [...row.querySelectorAll('.pm-chip')].forEach(c => c.remove());
+    defs.forEach(d => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pm-chip';
+      btn.dataset.kind = 'sub';
+      btn.dataset.value = d.id;
+      btn.textContent = d.label;
+      if (filters.sub === d.id) btn.classList.add('is-active');
+      btn.addEventListener('click', () => {
+        filters.sub = (filters.sub === d.id) ? null : d.id;
+        visibleCount = PAGE_SIZE;
+        renderSubChips();
+        applyAndRender();
+      });
+      row.appendChild(btn);
+    });
+  }
+
   /* ─── 静的フィルター UI (Category + Function) — データ取得前に描画 ─── */
   function renderStaticFilters() {
     // Category chips
@@ -5013,7 +5102,9 @@ window.SEAM_PAGE_I18N = {
         btn.textContent = g.label;
         btn.addEventListener('click', () => {
           filters.category = (filters.category === g.id) ? null : g.id;
+          filters.sub = null;
           visibleCount = PAGE_SIZE;
+          renderSubChips();
           updateChipStates();
           applyAndRender();
         });
@@ -5090,6 +5181,8 @@ window.SEAM_PAGE_I18N = {
         filters.category = null;
         filters.price = null;
         filters.grade = null;
+        filters.sub = null;
+        renderSubChips();
         filters.brands.clear();
         filters.functions.clear();
         visibleCount = PAGE_SIZE;
@@ -5166,6 +5259,10 @@ window.SEAM_PAGE_I18N = {
       // category
       if (catGroup) {
         if (!catGroup.cats.includes(p.category)) return false;
+      }
+      // sub type (スキンケア/家電/スタイリングの型)
+      if (filters.sub && filters.category && SUB_GROUPS[filters.category]) {
+        if (subOf(p, filters.category) !== filters.sub) return false;
       }
       // grade (1ml単価の階層)
       if (filters.grade) {
@@ -5431,6 +5528,11 @@ window.SEAM_PAGE_I18N = {
         if (pr && PRICE_GROUPS.some(g => g.id === pr)) filters.price = pr;
         const gr = q.get('grade');
         if (gr && /^[1-5]$/.test(gr)) filters.grade = 'g' + gr;
+        const sb = q.get('sub');
+        if (sb && filters.category && (SUB_GROUPS[filters.category] || []).some(d => d.id === sb)) {
+          filters.sub = sb;
+          setTimeout(renderSubChips, 0);
+        }
         const so = q.get('sort');
         const sel = document.getElementById('pmSort');
         if (sel && (so === 'asc' || so === 'desc')) sel.value = so;
