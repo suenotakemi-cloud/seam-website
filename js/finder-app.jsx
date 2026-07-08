@@ -2954,9 +2954,39 @@ function pickHomeTools(tools, answers, scores) {
   const hasThinning = concerns.includes('thinning') || concerns.includes('topFlat') || concerns.includes('volumeDown') || (s.aging || 0) >= 3;
   const deviceWish = Array.isArray(a.deviceInterest) ? a.deviceInterest : [];
 
+  // ── 予算ガード(2026-07-08 オーナー指示: 予算とかけ離れた家電提案をしない) ──
+  // 使用中家電の価格帯(deviceOwned)と興味クラス(deviceTier=松竹梅)から許容価格窓を作る。
+  // 価格不明の家電は窓の判定ができないため推薦しない。
+  const BAND_MID = { u5: 4000, b51: 7500, b12: 15000, b23: 25000, b35: 40000, o5: 55000 };
+  const OWNED_KEY = { 'tool-dryer': 'dr', 'tool-iron-straight': 'ir', 'tool-iron-curl': 'ir', 'tool-iron-2way': 'ir', 'tool-iron-brush': 'ir', 'tool-shower': 'sw', 'tool-face': 'fd', 'tool-headspa': 'hm', 'tool-brush': 'ir' };
+  const ownedBands = a.deviceOwned || {};
+  const dTier = a.deviceTier || '';
+  const priceWindow = (cat) => {
+    const ob = ownedBands[OWNED_KEY[cat]];
+    const mid = (ob && BAND_MID[ob]) || null;
+    let min = 0, max = Infinity;
+    if (dTier === 'daily') { max = 24000; }
+    else if (dTier === 'select') { min = 14000; max = 38000; }
+    else if (dTier === 'luxury') { min = 28000; }
+    else if (mid) { min = mid * 0.65; max = mid * 2.3; }
+    else { max = 40000; }
+    if (mid && mid * 0.65 > min) min = mid * 0.65;
+    if (a.upgradeWill === 'yes' && isFinite(max)) max = Math.round(max * 1.35);
+    return { min, max, mid };
+  };
+
   const scored = tools.map(t => {
     let score = 0;
     const m = t.match || {};
+    // 予算窓の外/価格不明はおすすめしない
+    const w = priceWindow(t.category);
+    if (!t.price || t.price < w.min || t.price > w.max) return { t, score: 0, rel: null };
+    // いま使っている価格帯のど真ん中は加点(違和感のない提案)
+    if (w.mid && Math.abs(t.price - w.mid) <= w.mid * 0.35) score += 8;
+    // 価格関係の一言(カードの正直ライン)
+    let rel = null;
+    if (w.mid) rel = t.price <= w.mid * 1.2 ? 'same' : 'up';
+    else if (dTier && dTier !== 'none') rel = 'wish';
     // ベース重み
     score += m.weight || 0;
     // 全員向けフラグ
@@ -2987,7 +3017,11 @@ function pickHomeTools(tools, answers, scores) {
     if (deviceWish.includes('showerHead') && t.category === 'tool-shower') score += 24;
     if (deviceWish.includes('faceDevice') && t.category === 'tool-face') score += 24;
     if (deviceWish.includes('loveGadgets')) score += 3;
-    return { t, score };
+    // 松竹梅の興味クラスに合う価格帯を優遇
+    if (dTier === 'daily' && t.price <= 20570) score += 6;
+    if (dTier === 'select' && t.price > 20570 && t.price <= 33000) score += 6;
+    if (dTier === 'luxury' && t.price > 33000) score += 6;
+    return { t, score, rel };
   }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
 
   // カテゴリ別 (ドライヤー1 + アイロン1 + α) で多様性確保 - 最大4個
@@ -2997,14 +3031,26 @@ function pickHomeTools(tools, answers, scores) {
   const maxByCat = { 'tool-dryer': 1, 'tool-iron-straight': 1, 'tool-iron-curl': 1, 'tool-iron-2way': 1, 'tool-iron-brush': 1, 'tool-shower': 1, 'tool-headspa': 1, 'tool-brush': 1,
                      'tool-face': deviceWish.includes('faceDevice') ? 2 : 1 };
   const catCount = {};
-  for (const { t, score } of scored) {
+  for (const { t, score, rel } of scored) {
     if (picks.length >= 4) break;
     const cat = t.category;
     const used = catCount[cat] || 0;
     if (used >= (maxByCat[cat] || 1)) continue;
-    picks.push({ ...t, _score: score });
+    picks.push({ ...t, _score: score, _rel: rel });
     catCount[cat] = used + 1;
     usedCategories.add(cat);
+  }
+  // 明示的に欲しいと答えた家電が予算窓で全滅した場合は、その種類で最安の1台だけ正直な一言つきで出す
+  const wishGroups = [];
+  if (deviceWish.includes('dryerUpgrade')) wishGroups.push(['tool-dryer']);
+  if (deviceWish.includes('ironUpgrade')) wishGroups.push(['tool-iron-straight', 'tool-iron-curl', 'tool-iron-2way', 'tool-iron-brush']);
+  if (deviceWish.includes('showerHead')) wishGroups.push(['tool-shower']);
+  if (deviceWish.includes('faceDevice')) wishGroups.push(['tool-face']);
+  for (const grp of wishGroups) {
+    if (picks.length >= 4) break;
+    if (picks.some(p => grp.includes(p.category))) continue;
+    const cands = tools.filter(t => grp.includes(t.category) && t.price).sort((x, y) => x.price - y.price);
+    if (cands[0]) picks.push({ ...cands[0], _score: 1, _rel: 'stretch' });
   }
   return picks;
 }
@@ -3038,10 +3084,20 @@ function HomeToolsSection({ tools, answers, scores }) {
                   {t.brand}
                 </p>
                 <h4 className="mt-1 sm:mt-1.5 font-serif text-[14px] sm:text-[17px] text-ink leading-snug">{t.name}</h4>
-                {t.priceTier === 'luxury' && (
-                  <span className="mt-1.5 sm:mt-2 inline-block font-mono tracking-widest2 text-[10.5px] sm:text-[10.5px] uppercase text-gold bg-cream/60 border border-gold/40 px-1.5 sm:px-2 py-0.5 rounded-[1px]">
-                    Premium Tier
-                  </span>
+                <div className="mt-1.5 sm:mt-2 flex items-center gap-2 flex-wrap">
+                  {t.price && (
+                    <span className="font-serif text-[13px] sm:text-[14.5px] text-ink nums">定価 ¥{t.price.toLocaleString()} <span className="text-[10.5px] text-charcoal/55">税込</span></span>
+                  )}
+                  {t.price && (
+                    <span className="inline-block font-mono tracking-widest2 text-[10px] uppercase text-gold bg-cream/60 border border-gold/40 px-1.5 py-0.5 rounded-[1px]">
+                      {t.price <= 20570 ? 'デイリー' : t.price <= 33000 ? 'セレクト' : 'ラグジュアリー'}
+                    </span>
+                  )}
+                </div>
+                {t._rel && (
+                  <p className="mt-1.5 text-[11px] sm:text-[11.5px] text-charcoal/60 leading-relaxed">
+                    {{ same: 'いまお使いの価格帯と同じクラスです。', up: 'いまお使いのものから ひとつ上のクラスです。', wish: 'ご興味のクラスに合わせたご提案です。', stretch: 'いまの価格帯より上ですが 取り扱いの中でいちばん手に取りやすい一台です。' }[t._rel]}
+                  </p>
                 )}
               </div>
             </div>
@@ -10573,7 +10629,7 @@ function Result({ answers, onRestart, onCollection }) {
             カテゴリ重複 + 役割重複のため削除済み (Phase 1 監査での重複削減) */}
 
         {/* Home Tools — 美容家電(カウンセリングで興味ありの方にだけ表示) */}
-        {toolsData && toolsData.tools && Array.isArray(answers.deviceInterest) && answers.deviceInterest.some(v => v !== 'none') && (
+        {toolsData && toolsData.tools && ((Array.isArray(answers.deviceInterest) && answers.deviceInterest.some(v => v !== 'none')) || (answers.deviceTier && answers.deviceTier !== 'none')) && (
           <HomeToolsSection
             tools={toolsData.tools}
             answers={answers}
