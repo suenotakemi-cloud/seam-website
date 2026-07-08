@@ -5,10 +5,10 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1b1b1d">
-  <title>実質料率ステータス｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=81">
-  <link rel="stylesheet" href="assets/css/base.css?v=81">
-  <link rel="stylesheet" href="assets/css/components.css?v=81">
+  <title>実質料率ステータス（クラス制）｜Salon Town Pro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=83">
+  <link rel="stylesheet" href="assets/css/base.css?v=83">
+  <link rel="stylesheet" href="assets/css/components.css?v=83">
   <style>
     body { background: var(--surface-2); padding-bottom: 40px; }
     .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
@@ -24,16 +24,51 @@
     .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
     .pa-btn { width: 100%; height: 50px; border: 0; border-radius: var(--r-md); background: #fff; color: var(--ink); border: 1px solid var(--line-3); font-size: 14px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
 
-    /* ヒーロー：今月の実質料率 */
-    .rt-hero { background: var(--dark); color: #fff; border-radius: var(--r-lg); padding: 22px 18px; text-align: center; margin-bottom: 14px; }
+    /* ヒーロー：クラス＋今月の実質料率 */
+    .rt-hero { background: var(--dark); color: #fff; border-radius: var(--r-lg); padding: 20px 18px 18px; text-align: center; margin-bottom: 14px; }
     .rt-hero__l { font-size: 12px; color: rgba(255,255,255,.65); }
-    .rt-badge { display: inline-flex; align-items: baseline; gap: 4px; font-family: var(--font-num); font-weight: 900; line-height: 1; margin: 8px 0 4px; }
-    .rt-badge__n { font-size: 64px; } .rt-badge__p { font-size: 26px; }
-    .rt-badge.t-best { color: #5ad07f; } .rt-badge.t-mid { color: var(--gold); } .rt-badge.t-std { color: #c9c9d2; }
-    .rt-hero__tag { display: inline-block; font-size: 11.5px; font-weight: 800; border-radius: 999px; padding: 3px 12px; }
-    .t-best .rt-hero__tag, .rt-hero__tag.t-best { background: rgba(90,208,127,.16); color: #5ad07f; }
-    .rt-hero__msg { font-size: 13px; font-weight: 800; margin-top: 12px; }
+    .rt-class { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 900; border-radius: 999px; padding: 5px 14px; margin-bottom: 6px; }
+    .rt-class .cr { font-size: 14px; }
+    .rt-class.c-platinum { background: rgba(90,208,127,.16); color: #5ad07f; }
+    .rt-class.c-gold { background: rgba(212,175,90,.18); color: var(--gold); }
+    .rt-class.c-silver { background: rgba(174,182,196,.18); color: #c3cad6; }
+    .rt-class.c-regular { background: rgba(201,201,210,.14); color: #c9c9d2; }
+    .rt-badge { display: inline-flex; align-items: baseline; gap: 4px; font-family: var(--font-num); font-weight: 900; line-height: 1; margin: 6px 0 2px; }
+    .rt-badge__n { font-size: 62px; } .rt-badge__p { font-size: 26px; }
+    .rt-badge.c-platinum { color: #5ad07f; } .rt-badge.c-gold { color: var(--gold); } .rt-badge.c-silver { color: #c3cad6; } .rt-badge.c-regular { color: #c9c9d2; }
+    .rt-hero__msg { font-size: 12.5px; font-weight: 800; margin-top: 10px; line-height: 1.75; }
     .rt-hero__msg b { color: var(--gold); font-family: var(--font-num); }
+    .rt-hero__msg .ok { color: #5ad07f; }
+
+    /* クラス梯子（レギュラー→プラチナ） */
+    .rt-lad { display: flex; gap: 6px; margin-top: 14px; }
+    .rt-lad__s { flex: 1; }
+    .rt-lad__s i { display: block; height: 7px; border-radius: 999px; background: rgba(255,255,255,.14); }
+    .rt-lad__s span { display: block; font-size: 9.5px; font-weight: 800; color: rgba(255,255,255,.45); margin-top: 5px; }
+    .rt-lad__s b { display: block; font-family: var(--font-num); font-size: 10px; color: rgba(255,255,255,.35); font-weight: 700; }
+    .rt-lad__s.done i { background: rgba(255,255,255,.45); }
+    .rt-lad__s.on i { background: currentColor; }
+    .rt-lad__s.on { color: #fff; }
+    .rt-lad__s.on.c-platinum { color: #5ad07f; } .rt-lad__s.on.c-gold { color: var(--gold); } .rt-lad__s.on.c-silver { color: #c3cad6; } .rt-lad__s.on.c-regular { color: #e6e6ec; }
+    .rt-lad__s.on span, .rt-lad__s.on b { color: inherit; }
+
+    /* ステータス条件（SPU型） */
+    .sp-cond { display: flex; align-items: center; gap: 11px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 8px; background: var(--surface); }
+    .sp-cond.tap { cursor: pointer; }
+    .sp-cond.is-on { border-color: #1f9d57; background: #f3faf5; }
+    .sp-cond.is-half { border-color: var(--gold); background: var(--gold-soft); }
+    .sp-cond__ic { width: 34px; height: 34px; border-radius: 10px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 16px; flex: none; }
+    .sp-cond.is-on .sp-cond__ic { background: #e3f4ea; }
+    .sp-cond.is-half .sp-cond__ic { background: #fff; }
+    .sp-cond__m { flex: 1; min-width: 0; }
+    .sp-cond__t { display: block; font-size: 12.5px; font-weight: 800; }
+    .sp-cond__s { display: block; font-size: 10.5px; color: var(--ink-3); margin-top: 2px; line-height: 1.55; }
+    .sp-cond__s a { color: var(--gold-strong); font-weight: 800; text-decoration: none; white-space: nowrap; }
+    .sp-cond__off { flex: none; text-align: right; }
+    .sp-cond__off .n { font-family: var(--font-num); font-weight: 900; font-size: 15px; color: var(--ink-3); }
+    .sp-cond.is-on .sp-cond__off .n { color: #1f8f53; }
+    .sp-cond.is-half .sp-cond__off .n { color: var(--gold-strong); }
+    .sp-cond__off .s { display: block; font-size: 9px; color: var(--ink-3); font-weight: 800; margin-top: 1px; }
 
     /* ゲージ */
     .rt-gauge { margin: 10px 0 2px; }
@@ -42,7 +77,6 @@
     .rt-marker { position: absolute; top: -4px; bottom: -4px; width: 4px; border-radius: 4px; background: var(--ink); transition: left .25s var(--ease); transform: translateX(-2px); }
     .rt-marker::after { content: ''; position: absolute; top: -7px; left: 50%; transform: translateX(-50%); width: 12px; height: 12px; border-radius: 50%; background: var(--ink); border: 2px solid #fff; }
     .rt-gauge__lbl { display: flex; justify-content: space-between; font-size: 10px; color: var(--ink-3); margin-top: 8px; font-family: var(--font-num); font-weight: 700; }
-    .rt-gauge__lbl span { position: relative; }
 
     /* 入力の現在値 */
     .rt-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 6px; }
@@ -50,18 +84,6 @@
     .rt-val__l { font-size: 11px; color: var(--ink-2); font-weight: 700; }
     .rt-val__n { font-family: var(--font-num); font-size: 21px; font-weight: 900; margin-top: 2px; }
     .rt-val__s { font-size: 10.5px; color: var(--ink-3); margin-top: 1px; }
-
-    /* ティア梯子 */
-    .rt-tier { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 8px; }
-    .rt-tier.is-on { border-width: 2px; }
-    .rt-tier.is-on.t-best { border-color: #1f9d57; background: #f3faf5; }
-    .rt-tier.is-on.t-mid { border-color: var(--gold); background: var(--gold-soft); }
-    .rt-tier.is-on.t-std { border-color: var(--ink-3); background: var(--surface-2); }
-    .rt-tier__dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
-    .t-best .rt-tier__dot, .rt-tier__dot.d-best { background: #1f9d57; } .t-mid .rt-tier__dot, .rt-tier__dot.d-mid { background: var(--gold); } .t-std .rt-tier__dot, .rt-tier__dot.d-std { background: var(--ink-3); }
-    .rt-tier__rate { font-family: var(--font-num); font-weight: 900; font-size: 18px; flex: none; width: 56px; }
-    .rt-tier__cond { font-size: 12px; color: var(--ink-2); font-weight: 700; flex: 1; }
-    .rt-tier__chk { font-size: 12px; font-weight: 900; color: #1f9d57; flex: none; }
 
     /* 着地・節約 */
     .rt-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -73,21 +95,39 @@
   </style>
 </head>
 <body>
-  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon<b>Pro</b></span><span class="pa-top__tag">実質料率ステータス</span></div></div>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon Town <b>Pro</b></span><span class="pa-top__tag">実質料率ステータス ・ クラス制</span></div></div>
   <div class="pa-wrap">
-    <div class="pa-intro">カード決済額と<b>菊地での仕入</b>を連動。仕入を菊地でまとめるほど、<b>実質料率が下がります</b>。今月の達成状況をリアルタイムで確認できます。</div>
+    <div class="pa-intro">仕入・電気・スマホなどの<b>条件を達成するとクラスが上がり、カード決済の実質料率が下がります</b>（下限 <b>1.9%</b>）。今の自分のステータスと「あと何をすれば下がるか」がひと目で分かります。</div>
 
-    <!-- ヒーロー -->
+    <!-- ヒーロー：クラス＋料率 -->
     <div class="rt-hero">
+      <div><span class="rt-class c-gold" id="clsChip"><span class="cr">👑</span><span id="clsName">ゴールド</span>クラス</span></div>
       <div class="rt-hero__l">今月の実質料率</div>
-      <div class="rt-badge t-mid" id="badge"><span class="rt-badge__n" id="badgeN">2.40</span><span class="rt-badge__p">%</span></div>
-      <div><span class="rt-hero__tag" id="heroTag">あと一歩で最安</span></div>
+      <div class="rt-badge c-gold" id="badge"><span class="rt-badge__n" id="badgeN">2.40</span><span class="rt-badge__p">%</span></div>
       <div class="rt-hero__msg" id="heroMsg"></div>
+      <div class="rt-lad" id="lad">
+        <div class="rt-lad__s" data-k="regular"><i></i><span>レギュラー</span><b>3.1%〜</b></div>
+        <div class="rt-lad__s" data-k="silver"><i></i><span>シルバー</span><b>〜3.0%</b></div>
+        <div class="rt-lad__s" data-k="gold"><i></i><span>ゴールド</span><b>〜2.4%</b></div>
+        <div class="rt-lad__s" data-k="platinum"><i></i><span>プラチナ</span><b>1.9%</b></div>
+      </div>
+    </div>
+
+    <!-- ステータス条件（SPU型） -->
+    <div class="pa-card">
+      <div class="pa-card__t">ステータス条件 <small>達成するほど下がる ・ 下限1.9%</small></div>
+      <div class="sp-cond" id="condWs">
+        <span class="sp-cond__ic">📦</span>
+        <span class="sp-cond__m"><span class="sp-cond__t">仕入れを菊地でまとめる</span><span class="sp-cond__s" id="condWsS"></span></span>
+        <span class="sp-cond__off"><span class="n" id="condWsOff">−0.8%</span><span class="s" id="condWsSt">適用中</span></span>
+      </div>
+      <div id="condList"></div>
+      <div class="pa-note" style="margin-top:8px">切替条件のタップで達成⇄解除を試せます（デモ）。本番は各契約の実績と自動連動し、翌月の料率に反映されます。</div>
     </div>
 
     <!-- ゲージ＋入力 -->
     <div class="pa-card">
-      <div class="pa-card__t">仕入率ゲージ <small>仕入 ÷ カード決済</small></div>
+      <div class="pa-card__t">仕入率ゲージ <small>仕入 ÷ カード決済 ・ 一番大きく効く条件</small></div>
       <div class="rt-gauge">
         <div class="rt-gauge__track">
           <div class="rt-zone z-std" style="width:41.67%"></div>
@@ -95,7 +135,7 @@
           <div class="rt-zone z-best" style="width:33.33%"></div>
           <div class="rt-marker" id="marker" style="left:58%"></div>
         </div>
-        <div class="rt-gauge__lbl"><span>0%</span><span style="margin-left:-10px">5%→2.4%</span><span>8%→1.9%</span><span>12%+</span></div>
+        <div class="rt-gauge__lbl"><span>0%</span><span style="margin-left:-10px">5%→−0.8%</span><span>8%→−1.3%</span><span>12%+</span></div>
       </div>
 
       <div class="rt-vals" style="margin-top:16px">
@@ -109,36 +149,28 @@
       <input id="ws" class="pa-slider" type="range" min="0" max="700000" step="2000" value="126000">
     </div>
 
-    <!-- ティア梯子 -->
-    <div class="pa-card">
-      <div class="pa-card__t">料率テーブル <small>仕入率で自動判定</small></div>
-      <div class="rt-tier t-best" data-tier="best"><span class="rt-tier__dot d-best"></span><span class="rt-tier__rate">1.9%</span><span class="rt-tier__cond">仕入率 8%以上</span><span class="rt-tier__chk" id="chk-best"></span></div>
-      <div class="rt-tier t-mid" data-tier="mid"><span class="rt-tier__dot d-mid"></span><span class="rt-tier__rate">2.4%</span><span class="rt-tier__cond">仕入率 5〜8%</span><span class="rt-tier__chk" id="chk-mid"></span></div>
-      <div class="rt-tier t-std" data-tier="std"><span class="rt-tier__dot d-std"></span><span class="rt-tier__rate">3.2%</span><span class="rt-tier__cond">仕入率 5%未満（標準）</span><span class="rt-tier__chk" id="chk-std"></span></div>
-    </div>
-
     <!-- 着地・節約 -->
     <div class="pa-card">
       <div class="pa-card__t">この決済額での効果</div>
       <div class="rt-2col">
-        <div class="rt-stat"><div class="rt-stat__l">標準3.2%と比べて</div><div class="rt-stat__v up" id="saveNow">−¥0</div><div class="rt-stat__s">今の料率での節約 / 月</div></div>
-        <div class="rt-stat"><div class="rt-stat__l">1.9%まで下げると</div><div class="rt-stat__v" id="upside">さらに −¥0</div><div class="rt-stat__s" id="upsideS">あと¥0の仕入で到達 / 月</div></div>
+        <div class="rt-stat"><div class="rt-stat__l">標準3.2%と比べて</div><div class="rt-stat__v up" id="saveNow">−¥0</div><div class="rt-stat__s" id="saveNowS">今のクラスでの節約 / 月</div></div>
+        <div class="rt-stat"><div class="rt-stat__l">プラチナ（1.9%）なら</div><div class="rt-stat__v" id="upside">さらに −¥0</div><div class="rt-stat__s" id="upsideS"></div></div>
       </div>
     </div>
 
     <a class="pa-btn" href="rate-calc.html">📊 菊地用 採算シミュレーターを開く</a>
-    <div class="pa-note">※「実質◯%」は、システム利用・仕入条件の達成時に適用される料率です（景品表示法に配慮）。料率・しきい値はデモ値で、本番は決済代行の確定料率・菊地の実原価で確定します。今月の仕入はマイページの実績（デモ）と連携、カード決済は決済システムの実績（デモ）です。本番は決済・仕入の確定データと連動します。</div>
+    <div class="pa-note">※「実質◯%」は、システム利用・各条件の達成時に適用される料率です（景品表示法に配慮）。クラス・料率・引き下げ幅はデモ値で、本番は決済代行の確定料率・菊地の実原価・各契約の取次条件で確定します。切替条件（電気・通信等）の引き下げ幅は取次収益を原資とする範囲で設計し、いつでも任意（未達成でも標準料率で利用可）。今月の仕入はマイページの実績（デモ）と連携しています。</div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/data.js?v=81"></script>
-  <script src="assets/js/rate-model.js?v=81"></script>
-  <script src="assets/js/components.js?v=81"></script>
+  <script src="assets/js/data.js?v=83"></script>
+  <script src="assets/js/rate-model.js?v=83"></script>
+  <script src="assets/js/components.js?v=83"></script>
   <script>
     (function () {
       var R = SP.RATE, $ = function (id) { return document.getElementById(id); };
       var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
-      var TIER = { best: { lbl: '最安料率を達成中 🎉', tag: '最安 1.9% 達成', cls: 't-best' }, mid: { lbl: 'あと一歩で最安', tag: 'あと一歩で最安', cls: 't-mid' }, std: { lbl: '標準料率です', tag: '標準料率', cls: 't-std' } };
+      var status = R.loadStatus();
 
       // 実績データ連携（デモ）：今月の仕入を SP.REBATE.demoMonth（マイページと同じ値）から取得
       (function () {
@@ -154,43 +186,90 @@
         if (intro) intro.insertAdjacentElement('afterend', chip);
       })();
 
+      // 切替条件の行を生成（タップで達成⇄解除のデモ）
+      function renderConds() {
+        $('condList').innerHTML = R.INFRA.map(function (c) {
+          var on = !!status[c.id];
+          return '<div class="sp-cond tap ' + (on ? 'is-on' : '') + '" data-id="' + c.id + '">' +
+            '<span class="sp-cond__ic">' + c.icon + '</span>' +
+            '<span class="sp-cond__m"><span class="sp-cond__t">' + c.label + '</span>' +
+            '<span class="sp-cond__s">' + c.sub + ' ・ <a href="' + c.href + '">' + c.cta + ' →</a></span></span>' +
+            '<span class="sp-cond__off"><span class="n">−' + c.off.toFixed(1) + '%</span><span class="s">' + (on ? '適用中 ✓' : '未達成') + '</span></span></div>';
+        }).join('');
+        [].forEach.call(document.querySelectorAll('#condList .sp-cond'), function (row) {
+          row.addEventListener('click', function (e) {
+            if (e.target.closest('a')) return; // 申込リンクは遷移
+            var id = row.getAttribute('data-id');
+            status[id] = !status[id];
+            R.saveStatus(status);
+            renderConds(); render();
+            if (window.SP_toast) SP_toast(status[id] ? '達成にしました（デモ）' : '解除しました（デモ）');
+          });
+        });
+      }
+
       function render() {
         var card = +$('card').value, ws = +$('ws').value;
-        var ratio = R.ratioPct(card, ws), rate = R.rateFor(ratio), key = R.tierKey(ratio), t = TIER[key];
+        var ratio = R.ratioPct(card, ws), tKey = R.tierKey(ratio);
+        var rate = R.stackRate(ratio, status), cls = R.classOf(rate);
 
         $('cardN').textContent = yen(card); $('wsN').textContent = yen(ws); $('ratioN').textContent = ratio.toFixed(1) + '%';
 
-        // バッジ
+        // クラス＋バッジ
+        $('clsName').textContent = cls.label;
+        $('clsChip').className = 'rt-class c-' + cls.key;
         $('badgeN').textContent = rate.toFixed(2);
-        $('badge').className = 'rt-badge ' + t.cls;
-        var tag = $('heroTag'); tag.textContent = t.tag; tag.className = 'rt-hero__tag ' + t.cls;
+        $('badge').className = 'rt-badge c-' + cls.key;
+
+        // 梯子（現在クラスまで塗る）
+        var order = ['regular', 'silver', 'gold', 'platinum'], idx = order.indexOf(cls.key);
+        [].forEach.call(document.querySelectorAll('.rt-lad__s'), function (s, i) {
+          s.className = 'rt-lad__s' + (i < idx ? ' done' : '') + (i === idx ? ' on c-' + cls.key : '');
+        });
+
+        // 仕入条件の行
+        var need19 = R.needFor(card, R.GATE.best), gap19 = Math.max(0, need19 - ws);
+        var need24 = R.needFor(card, R.GATE.mid), gap24 = Math.max(0, need24 - ws);
+        var wsRow = $('condWs');
+        wsRow.className = 'sp-cond ' + (tKey === 'best' ? 'is-on' : tKey === 'mid' ? 'is-half' : '');
+        $('condWsOff').textContent = '−' + R.tierOff(ratio).toFixed(1) + '%';
+        $('condWsSt').textContent = tKey === 'std' ? '未達成' : tKey === 'mid' ? '一部達成' : '最大達成 ✓';
+        $('condWsS').innerHTML = tKey === 'best'
+          ? '仕入率 <b>' + ratio.toFixed(1) + '%</b>（8%以上）＝最大の −1.3% を適用中'
+          : tKey === 'mid'
+            ? '仕入率 <b>' + ratio.toFixed(1) + '%</b>（5%以上 −0.8%）・あと ' + yen(gap19) + ' で <b>−1.3%</b>'
+            : '仕入率 <b>' + ratio.toFixed(1) + '%</b> ・ あと ' + yen(gap24) + ' で −0.8%（8%なら −1.3%）';
+
+        // メッセージ：1.9%への最短ルート
+        if (rate <= R.FLOOR + 1e-9) {
+          $('heroMsg').innerHTML = '<span class="ok">最安クラス プラチナ 1.9% を達成中 🎉</span>';
+        } else {
+          var gapPt = Math.round((rate - R.FLOOR) * 100) / 100;
+          var routes = [];
+          if (gap19 > 0 && R.tierOff(ratio) < R.TIER_OFF.best) {
+            var wsRate = Math.max(R.FLOOR, Math.round((R.BASE - R.TIER_OFF.best - R.infraOff(status)) * 100) / 100);
+            routes.push('仕入あと <b>' + yen(gap19) + '</b>' + (wsRate <= R.FLOOR + 1e-9 ? '' : '（→' + wsRate.toFixed(1) + '%）'));
+          }
+          var rest = R.INFRA.filter(function (c) { return !status[c.id]; }).sort(function (a, b) { return b.off - a.off; });
+          var picks = [], rem = gapPt;
+          for (var i = 0; i < rest.length && rem > 1e-9; i++) { picks.push(rest[i]); rem = Math.round((rem - rest[i].off) * 100) / 100; }
+          if (rem <= 1e-9 && picks.length) routes.push(picks.map(function (c) { return c.short; }).join('＋') + ' の切替・利用');
+          $('heroMsg').innerHTML = '<b>1.9%</b> まで あと <b>' + gapPt.toFixed(1) + 'pt</b>' + (routes.length ? '<br>ルート： ' + routes.join(' ／ ') : '');
+        }
 
         // ゲージマーカー（0〜12%を全幅にマップ）
         $('marker').style.left = Math.min(ratio, 12) / 12 * 100 + '%';
 
-        // メッセージ：1.9%まであと幾ら
-        var need19 = R.needFor(card, R.GATE.best), gap19 = Math.max(0, need19 - ws);
-        var need24 = R.needFor(card, R.GATE.mid), gap24 = Math.max(0, need24 - ws);
-        if (key === 'best') $('heroMsg').innerHTML = '最安料率 <b>1.9%</b> を維持中';
-        else if (key === 'mid') $('heroMsg').innerHTML = '<b>1.9%</b> まで あと <b>' + yen(gap19) + '</b> の仕入';
-        else $('heroMsg').innerHTML = '<b>2.4%</b> まで あと <b>' + yen(gap24) + '</b>／<b>1.9%</b>まで <b>' + yen(gap19) + '</b>';
-
-        // ティアのチェック
-        ['best', 'mid', 'std'].forEach(function (k) {
-          var row = document.querySelector('.rt-tier[data-tier="' + k + '"]');
-          row.classList.toggle('is-on', k === key);
-          $('chk-' + k).textContent = k === key ? '● 適用中' : '';
-        });
-
         // 効果
-        var feeNow = card * rate / 100, feeStd = card * R.OFFER.std / 100, feeBest = card * R.OFFER.best / 100;
+        var feeNow = card * rate / 100, feeStd = card * R.OFFER.std / 100, feeBest = card * R.FLOOR / 100;
         $('saveNow').textContent = '−' + yen(feeStd - feeNow);
-        if (key === 'best') { $('upside').textContent = '達成済 ✓'; $('upside').className = 'rt-stat__v up'; $('upsideS').textContent = '最安料率を適用中'; }
-        else { $('upside').textContent = '−' + yen(feeNow - feeBest); $('upside').className = 'rt-stat__v up'; $('upsideS').textContent = 'あと' + yen(gap19) + 'の仕入で到達 / 月'; }
+        $('saveNowS').textContent = '年間 −' + yen((feeStd - feeNow) * 12) + ' の節約';
+        if (rate <= R.FLOOR + 1e-9) { $('upside').textContent = '達成済 ✓'; $('upside').className = 'rt-stat__v up'; $('upsideS').textContent = '最安クラスを適用中'; }
+        else { $('upside').textContent = 'さらに −' + yen(feeNow - feeBest); $('upside').className = 'rt-stat__v up'; $('upsideS').textContent = '月あたり ・ 年間 −' + yen((feeNow - feeBest) * 12); }
       }
       $('card').addEventListener('input', render);
       $('ws').addEventListener('input', render);
-      render();
+      renderConds(); render();
     })();
   </script>
 </body>

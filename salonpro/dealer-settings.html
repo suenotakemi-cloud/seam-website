@@ -5,12 +5,12 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#ffffff">
-  <title>サイト設定（運営ディーラー）｜SalonPro</title>
+  <title>サイト設定（運営ディーラー）｜Salon Town Pro</title>
   <meta name="description" content="マルチテナント設定：取扱い・対応業種・決済・表示機能・ブランドを、ディーラーごとに表示/非表示でカスタマイズ。">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=81">
-  <link rel="stylesheet" href="assets/css/base.css?v=81">
-  <link rel="stylesheet" href="assets/css/components.css?v=81">
-  <link rel="stylesheet" href="assets/css/pages.css?v=81">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=83">
+  <link rel="stylesheet" href="assets/css/base.css?v=83">
+  <link rel="stylesheet" href="assets/css/components.css?v=83">
+  <link rel="stylesheet" href="assets/css/pages.css?v=83">
   <style>
     body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
     .container { max-width: 760px; }
@@ -56,7 +56,7 @@
 
   <header class="site-header">
     <div class="container site-header__inner">
-      <a class="brand" href="mypage.html" aria-label="戻る"><span class="brand__logo">Salon<b>Pro</b></span></a>
+      <a class="brand" href="mypage.html" aria-label="戻る"><span class="brand__logo">Salon Town <b>Pro</b></span></a>
       <nav class="header-actions"><a class="icon-btn" href="mypage.html" aria-label="マイページ"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></a></nav>
     </div>
   </header>
@@ -75,7 +75,7 @@
 
     <section class="ds-sec">
       <div class="ds-sec__t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18"/></svg>ブランド</div>
-      <div class="ds-field"><label for="dsName">サイト名（ロゴ表記）</label><input type="text" id="dsName" placeholder="SalonPro"></div>
+      <div class="ds-field"><label for="dsName">サイト名（ロゴ表記）</label><input type="text" id="dsName" placeholder="Salon Town Pro"></div>
       <div class="ds-field"><label>テーマカラー</label><div class="ds-swatches" id="dsSwatches"></div></div>
     </section>
 
@@ -101,11 +101,11 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/catalog.js?v=81"></script>
-  <script src="assets/js/data.js?v=81"></script>
-  <script src="assets/js/store.js?v=81"></script>
-  <script src="assets/js/components.js?v=81"></script>
-  <script src="assets/js/nav.js?v=81"></script>
+  <script src="assets/js/catalog.js?v=83"></script>
+  <script src="assets/js/data.js?v=83"></script>
+  <script src="assets/js/store.js?v=83"></script>
+  <script src="assets/js/components.js?v=83"></script>
+  <script src="assets/js/nav.js?v=83"></script>
   <script>
     (function () {
       // 作業用コピー（既定にマージ済みの現在値）
@@ -147,7 +147,7 @@
 
       // ブランド
       var nameInput = document.getElementById('dsName');
-      nameInput.value = (T.siteName && T.siteName !== 'SalonPro') ? T.siteName : '';
+      nameInput.value = (T.siteName && T.siteName !== 'Salon Town Pro') ? T.siteName : '';
       var SWATCHES = ['#b9923f','#2b6cb0','#2f7d5b','#b3402f','#6e4b8a','#c2417a','#2c2c2a'];
       function renderSwatches() {
         document.getElementById('dsSwatches').innerHTML = SWATCHES.map(function (c) {
@@ -180,7 +180,7 @@
           T.priceMode = t.value; persist(); toast('保存しました');
         }
       });
-      nameInput.addEventListener('input', function () { T.siteName = nameInput.value.trim() || 'SalonPro'; persist(); });
+      nameInput.addEventListener('input', function () { T.siteName = nameInput.value.trim() || 'Salon Town Pro'; persist(); });
       document.getElementById('dsSwatches').addEventListener('click', function (e) {
         var b = e.target.closest('[data-accent]'); if (!b) return;
         T.accent = b.dataset.accent; renderSwatches(); applyAccentLive(); persist(); toast('テーマ色を変更しました');

@@ -5,10 +5,10 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1b1b1d">
-  <title>採算シミュレーター（社内・交渉用）｜SalonPro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=81">
-  <link rel="stylesheet" href="assets/css/base.css?v=81">
-  <link rel="stylesheet" href="assets/css/components.css?v=81">
+  <title>採算シミュレーター（社内・交渉用）｜Salon Town Pro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=83">
+  <link rel="stylesheet" href="assets/css/base.css?v=83">
+  <link rel="stylesheet" href="assets/css/components.css?v=83">
   <style>
     body { background: var(--surface-2); padding-bottom: 40px; }
     .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
@@ -29,6 +29,11 @@
     .ctl__l { font-size: 12px; font-weight: 800; color: var(--ink-2); }
     .ctl__v { font-family: var(--font-num); font-size: 16px; font-weight: 900; }
     .ctl__v.gold { color: var(--gold-strong); }
+
+    /* クラス条件（切替）のトグル */
+    .rk-chips { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 4px; }
+    .rk-chip { height: 36px; padding: 0 13px; border: 1px solid var(--line-3); border-radius: 999px; background: #fff; font-size: 12px; font-weight: 800; color: var(--ink-2); cursor: pointer; }
+    .rk-chip.on { border-color: #1f9d57; background: #e3f4ea; color: #1f7a4d; }
 
     /* 結果ヒーロー */
     .rc-hero { background: var(--dark); color: #fff; border-radius: var(--r-lg); padding: 20px 18px; margin-bottom: 14px; }
@@ -69,7 +74,7 @@
   </style>
 </head>
 <body>
-  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon<b>Pro</b></span><span class="pa-top__tag">採算シミュレーター ・ 菊地社内/交渉用</span></div></div>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon Town <b>Pro</b></span><span class="pa-top__tag">採算シミュレーター ・ 菊地社内/交渉用</span></div></div>
   <div class="pa-wrap">
     <div class="pa-intro"><b>カード決済 × 仕入の連動</b>で、サロンの実質料率と<b>菊地のネット採算</b>が同時に出ます。原価・仕入率・人数を動かして、料率設計とStripe交渉条件を検証できます。</div>
 
@@ -81,6 +86,14 @@
       <div class="ctl"><div class="ctl__top"><span class="ctl__l">スタッフ人数（→ SaaS自動）</span><span class="ctl__v" id="vStaff">3人 ・ ¥20,000</span></div><input id="staff" class="pa-slider" type="range" min="1" max="10" step="1" value="3"></div>
       <div class="ctl"><div class="ctl__top"><span class="ctl__l">決済原価（ブレンド）</span><span class="ctl__v" id="vCost">2.6%</span></div><input id="cost" class="pa-slider" type="range" min="2.2" max="3.2" step="0.05" value="2.6"></div>
       <div class="ctl" style="margin-bottom:0"><div class="ctl__top"><span class="ctl__l">菊地の卸粗利率</span><span class="ctl__v" id="vWsm">18%</span></div><input id="wsm" class="pa-slider" type="range" min="10" max="25" step="1" value="18"></div>
+    </div>
+
+    <!-- クラス条件（切替系）の採算 -->
+    <div class="pa-card">
+      <div class="pa-card__t">クラス条件の採算 <small>切替割引のコスト vs 取次収益（原資検算）</small></div>
+      <div class="rk-chips" id="rkChips"></div>
+      <table class="rc-tbl" id="rkTbl"></table>
+      <div class="pa-note" id="rkNote"></div>
     </div>
 
     <!-- 結果 -->
@@ -98,6 +111,7 @@
         <tr><td class="lbl">決済損益 <b id="bd-rate"></b>（原価との差）</td><td class="r" id="bd-pay"></td></tr>
         <tr><td class="lbl">システム利用料（SaaS）</td><td class="r pos" id="bd-saas"></td></tr>
         <tr><td class="lbl">卸 粗利（仕入 <span id="bd-wsv"></span> × 粗利）</td><td class="r pos" id="bd-ws"></td></tr>
+        <tr><td class="lbl">取次・付帯収益（電気/通信/定期便/店販EC）</td><td class="r pos" id="bd-infra"></td></tr>
         <tr class="sum"><td class="lbl">ネット貢献</td><td class="r" id="bd-net"></td></tr>
       </table>
       <div class="pa-note" id="bd-note"></div>
@@ -114,7 +128,7 @@
 
     <!-- 3ティア比較 -->
     <div class="pa-card">
-      <div class="pa-card__t">規模別の採算 <small>仕入率10%・現在の原価/粗利で試算</small></div>
+      <div class="pa-card__t">規模別の採算 <small>仕入率10%・現在の原価/粗利/切替条件で試算</small></div>
       <table class="rc-cmp">
         <thead><tr><th>セグメント</th><th>カード決済</th><th>料率</th><th>菊地ネット</th></tr></thead>
         <tbody id="cmpBody"></tbody>
@@ -137,28 +151,64 @@
     <div class="pa-note">※ すべて想定・デモ値。最終は決済代行（Stripe/GMO/stera/SBPS等）の確定料率・菊地の実原価・実仕入で確定。仕入連動の優遇は「強制」でなく<b>達成で安くなるロイヤルティ割引</b>として設計し、独禁法（抱き合わせ／優越的地位）・景表法は別途専門家レビュー前提。</div>
   </div>
 
-  <script src="assets/js/rate-model.js?v=81"></script>
+  <script src="assets/js/rate-model.js?v=83"></script>
   <script>
     (function () {
       var R = SP.RATE, $ = function (id) { return document.getElementById(id); };
       var yen = function (n) { var s = n < 0 ? '−' : ''; return s + '¥' + Math.abs(Math.round(n || 0)).toLocaleString('ja-JP'); };
       var oku = function (n) { return (n / 1e8).toFixed(n >= 1e9 ? 0 : 1) + '億円'; };
-      var TCLS = { best: 't-best', mid: 't-mid', std: 't-std' };
-      var TLBL = { best: '仕入率8%以上で最安', mid: '仕入率5〜8%', std: '仕入率5%未満（標準）' };
+      var TCLS = { platinum: 't-best', gold: 't-mid', silver: 't-std', regular: 't-std' };
+
+      // クラス条件（切替系）のトグル：試算用にこの画面ローカルで保持
+      var status = {};
+      function renderChips() {
+        $('rkChips').innerHTML = R.INFRA.map(function (c) {
+          return '<button class="rk-chip ' + (status[c.id] ? 'on' : '') + '" data-id="' + c.id + '">' + c.icon + ' ' + c.short + ' −' + c.off.toFixed(1) + '%</button>';
+        }).join('');
+        [].forEach.call(document.querySelectorAll('#rkChips .rk-chip'), function (b) {
+          b.addEventListener('click', function () { var id = b.getAttribute('data-id'); status[id] = !status[id]; renderChips(); calc(); });
+        });
+      }
 
       function calc() {
         var card = +$('card').value, ratio = +$('ratio').value, staff = +$('staff').value, cost = +$('cost').value, wsm = +$('wsm').value;
-        var ws = card * ratio / 100, saas = R.saasFor(staff), key = R.tierKey(ratio), rate = R.rateFor(ratio);
+        var ws = card * ratio / 100, saas = R.saasFor(staff);
+        var rate = R.stackRate(ratio, status), cls = R.classOf(rate);
 
         // 入力ラベル
         $('vCard').textContent = yen(card); $('vRatio').textContent = ratio.toFixed(1) + '%';
         $('vStaff').textContent = staff + '人 ・ ' + yen(saas); $('vCost').textContent = cost.toFixed(2) + '%'; $('vWsm').textContent = wsm + '%';
 
-        // 採算
-        var pay = (rate - cost) / 100 * card, wsMargin = ws * wsm / 100, net = pay + saas + wsMargin;
+        // 採算（切替割引は rate に織込み済み＝決済損益に含まれる。取次収益を別建てで加算）
+        var pay = (rate - cost) / 100 * card, wsMargin = ws * wsm / 100;
+        var act = R.INFRA.filter(function (c) { return status[c.id]; });
+        var infraIncome = act.reduce(function (a, c) { return a + c.income; }, 0);
+        var net = pay + saas + wsMargin + infraIncome;
+
+        // クラス条件テーブル（割引コスト vs 取次収益。下限1.9%で頭打ちの分は「未消化」として戻す）
+        var rateNoInfra = R.stackRate(ratio, {});                    // 切替なしの料率
+        var nomCost = act.reduce(function (a, c) { return a + card * c.off / 100; }, 0); // 名目の割引コスト
+        var actCost = card * (rateNoInfra - rate) / 100;             // 実際に効いた割引のコスト
+        var clipAdj = Math.max(0, nomCost - actCost);                // 下限クリップの未消化分
+        var diffSum = infraIncome - actCost;
+        $('rkTbl').innerHTML = (act.length ? act.map(function (c) {
+          var dcost = card * c.off / 100, diff = c.income - dcost;
+          return '<tr><td class="lbl">' + c.icon + ' ' + c.short + '（割引 −' + c.off.toFixed(1) + '% ＝ ' + yen(-dcost) + ' ／ 取次 +' + yen(c.income) + '）</td>' +
+            '<td class="r ' + (diff >= 0 ? 'pos' : 'neg') + '">' + (diff >= 0 ? '+' : '') + yen(diff) + '</td></tr>';
+        }).join('') + (clipAdj > 1 ? '<tr><td class="lbl">下限1.9%で頭打ち（割引の未消化分を戻し）</td><td class="r pos">+' + yen(clipAdj) + '</td></tr>' : '')
+          + '<tr class="sum"><td class="lbl">切替条件の差引合計（実効）</td><td class="r ' + (diffSum >= 0 ? 'pos' : 'neg') + '">' + (diffSum >= 0 ? '+' : '') + yen(diffSum) + '</td></tr>'
+          : '<tr><td class="lbl">切替条件なし（チップをタップして追加）</td><td class="r">—</td></tr>');
+        $('rkNote').textContent = !act.length
+          ? '取次収益はデモ想定値：電気¥1,200／通信¥2,400／定期便（粗利）¥2,700／店販EC ¥2,000（月・1サロン）。'
+          : actCost <= 1
+            ? '仕入だけで下限1.9%に到達済みのため、この前提では切替割引の持ち出しはゼロ。取次収益 +' + yen(infraIncome) + ' がまるごと上乗せになります。'
+            : diffSum >= 0
+              ? '切替割引は取次収益の範囲内（差引 +' + yen(diffSum) + '）。この決済額なら切替条件は単独で黒字。'
+              : '⚠ この決済額では切替割引が取次収益を上回る（差引 ' + yen(diffSum) + '）。超過分は仕入ゲートの卸粗利で回収する設計（切替だけでは1.9%に届かない構造）。必要なら割引の月額上限を設定。';
 
         // ヒーロー
-        $('outRate').textContent = rate.toFixed(2) + '%'; $('outRate').className = 'rc-hero__rate ' + TCLS[key]; $('outRateS').textContent = TLBL[key];
+        $('outRate').textContent = rate.toFixed(2) + '%'; $('outRate').className = 'rc-hero__rate ' + TCLS[cls.key];
+        $('outRateS').textContent = 'クラス：' + cls.label + ' ・ 仕入 −' + R.tierOff(ratio).toFixed(1) + '%' + (R.infraOff(status) ? ' ＋ 切替 −' + R.infraOff(status).toFixed(1) + '%' : '');
         $('outNet').textContent = (net >= 0 ? '+' : '') + yen(net); $('outNet').className = 'rc-hero__net ' + (net >= 0 ? 'pos' : 'neg');
         $('outNetS').textContent = net >= 0 ? '決済補填後の貢献' : '⚠ 赤字（仕入が不足）';
 
@@ -167,9 +217,10 @@
         $('bd-pay').textContent = yen(pay); $('bd-pay').className = 'r ' + (pay >= 0 ? 'pos' : 'neg');
         $('bd-saas').textContent = '+' + yen(saas);
         $('bd-wsv').textContent = yen(ws); $('bd-ws').textContent = '+' + yen(wsMargin);
+        $('bd-infra').textContent = '+' + yen(infraIncome);
         $('bd-net').textContent = (net >= 0 ? '+' : '') + yen(net); $('bd-net').className = 'r ' + (net >= 0 ? 'pos' : 'neg');
         $('bd-note').textContent = pay < 0
-          ? '決済では月 ' + yen(-pay) + ' を補填。これを ' + (saas + wsMargin >= -pay ? 'SaaS＋卸粗利で回収できています。' : 'まだ回収しきれていません（仕入率を上げる必要）。')
+          ? '決済では月 ' + yen(-pay) + ' を補填（切替割引の分も含む）。これを ' + (saas + wsMargin + infraIncome >= -pay ? 'SaaS＋卸粗利＋取次収益で回収できています。' : 'まだ回収しきれていません（仕入率を上げる必要）。')
           : 'この原価・料率では決済自体も黒字（' + yen(pay) + '）。';
 
         // 効きどころ
@@ -177,11 +228,12 @@
         var free = R.freeThreshold(saas, cost, R.OFFER.best);
         $('kFree').textContent = isFinite(free) ? yen(free) : '上限なし';
 
-        // 3ティア比較（仕入率10%固定・現原価/粗利）
+        // 3ティア比較（仕入率10%固定・現原価/粗利・切替条件は現在のチップ設定を適用）
         var presets = [['個人（1人）', 600000, 1], ['中規模（3人）', 2000000, 3], ['大型（6人）', 5000000, 6]];
         $('cmpBody').innerHTML = presets.map(function (p) {
-          var c = p[1], w = c * 0.10, o = R.net({ card: c, wholesale: w, staff: p[2], cost: cost, wsm: wsm });
-          return '<tr><td>' + p[0] + '</td><td>' + yen(c) + '</td><td><span class="rate ' + TCLS[R.tierKey(o.ratio)] + '">' + o.rate.toFixed(2) + '%</span></td><td class="net">' + (o.net >= 0 ? '+' : '') + yen(o.net) + '</td></tr>';
+          var c = p[1], w = c * 0.10, r10 = R.ratioPct(c, w);
+          var pr = R.stackRate(r10, status), pnet = (pr - cost) / 100 * c + R.saasFor(p[2]) + w * wsm / 100 + infraIncome;
+          return '<tr><td>' + p[0] + '</td><td>' + yen(c) + '</td><td><span class="rate ' + TCLS[R.classOf(pr).key] + '">' + pr.toFixed(2) + '%</span></td><td class="net">' + (pnet >= 0 ? '+' : '') + yen(pnet) + '</td></tr>';
         }).join('');
 
         // スケール
@@ -192,7 +244,7 @@
         $('scNet').textContent = (net >= 0 ? '+' : '') + oku(net * 12 * n);
       }
       ['card', 'ratio', 'staff', 'cost', 'wsm', 'n'].forEach(function (id) { $(id).addEventListener('input', calc); });
-      calc();
+      renderChips(); calc();
     })();
   </script>
 </body>

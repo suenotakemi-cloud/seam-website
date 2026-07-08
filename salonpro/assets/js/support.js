@@ -1,5 +1,5 @@
 /* =========================================================
-   SalonPro / Support — 粗利シミュレーター
+   Salon Town Pro / Support — 粗利シミュレーター
    ========================================================= */
 (function () {
   const qs = s => document.querySelector(s);

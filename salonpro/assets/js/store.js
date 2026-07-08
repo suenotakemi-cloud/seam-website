@@ -1,5 +1,5 @@
 /* =========================================================
-   SalonPro / Store — カート & お気に入りの状態管理
+   Salon Town Pro / Store — カート & お気に入りの状態管理
    localStorage に永続化。subscribe で UI を購読更新。
    ※ 価格・在庫は本番では注文確定時にAPI再検証する前提（仕様 4.6/4.7）
    ========================================================= */
@@ -216,7 +216,7 @@
       if (brandMode(p) === 'direct') return false;
       return contracts.indexOf(p.contract) >= 0;
     },
-    // SalonProのカートで購入できるか：直送は不可（メーカー発注サイトへ）
+    // Salon Town Proのカートで購入できるか：直送は不可（メーカー発注サイトへ）
     canBuy(p) {
       if (!p || !p.contract) return true;
       if (brandMode(p) === 'direct') return false;

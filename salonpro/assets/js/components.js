@@ -1,5 +1,5 @@
 /* =========================================================
-   SalonPro / Components — 描画ヘルパー（純粋関数）
+   Salon Town Pro / Components — 描画ヘルパー（純粋関数）
    icons / fmtYen / stock label / placeholder / product card
    ========================================================= */
 (function () {
@@ -381,7 +381,7 @@
       let s = document.getElementById(id);
       if (s) s.textContent = css; else { s = document.createElement('style'); s.id = id; s.textContent = css; document.head.appendChild(s); }
     }
-    if (t.siteName && t.siteName !== 'SalonPro') {
+    if (t.siteName && t.siteName !== 'Salon Town Pro') {
       [].forEach.call(document.querySelectorAll('.brand__logo'), el => { el.textContent = t.siteName; });
     }
     // 機能トグル：OFFの機能へのリンク/タブ/行を全ページで非表示（ディーラーがdealer-settingsで選択）

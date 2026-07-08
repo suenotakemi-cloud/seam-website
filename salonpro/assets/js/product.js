@@ -1,5 +1,5 @@
 /* =========================================================
-   SalonPro / Product detail — ?id から商品詳細を描画
+   Salon Town Pro / Product detail — ?id から商品詳細を描画
    購買・学習・導入判断を1ページで完結（仕様 6.7）
    ========================================================= */
 (function () {
@@ -84,7 +84,7 @@
       ${direct ? `
       <div class="pd-lock pd-lock--direct">
         <div class="pd-lock__h">${svg('truck')}<b>${cb ? cb.brand : p.brand}</b> はメーカー発注サイトでのみご注文いただけます</div>
-        <p class="pd-lock__t">この契約商品は、菊地（SalonPro）では発注できません。ご注文はメーカーの発注サイトからお願いします（在庫・納期もメーカーが管理）。契約手続き・導入相談は菊地の担当者がサポートします。</p>
+        <p class="pd-lock__t">この契約商品は、菊地（Salon Town Pro）では発注できません。ご注文はメーカーの発注サイトからお願いします（在庫・納期もメーカーが管理）。契約手続き・導入相談は菊地の担当者がサポートします。</p>
         <a class="pd-lock__cta" href="${cb && cb.orderUrl ? cb.orderUrl : '#'}" target="_blank" rel="noopener">${svg('truck')}メーカー発注サイトで注文する${svg('chevright')}</a>
         <a class="pd-lock__sub" href="contracts.html?b=${p.contract}">このブランドについて</a>
       </div>` : locked ? `
@@ -158,7 +158,7 @@
       <section class="pd-sec">
         <h2 class="pd-sec__title">関連動画</h2>
         <div class="h-scroll">
-          ${videoCard({ tag: '商品活用動画', tcls: 'use', dur: '08:20', title: `${p.brand} ${p.name} の使い方`, who: 'SalonPro 教育チーム', tint: '#b1a079' })}
+          ${videoCard({ tag: '商品活用動画', tcls: 'use', dur: '08:20', title: `${p.brand} ${p.name} の使い方`, who: 'Salon Town Pro 教育チーム', tint: '#b1a079' })}
           ${videoCard({ tag: '技術セミナー', tcls: 'tech', dur: '22:40', title: `${catLabel(p.cat)}で差がつく仕上げ`, who: 'ALBUM OCE', tint: '#a87d90' })}
         </div>
       </section>
@@ -188,7 +188,7 @@
     } else if (locked) {
       qs('#pdBarAdd').innerHTML = (mode === 'apply' ? (applied ? '申し込み済み' : '契約を申し込む') : '契約して購入する') + svg('chevright');
     }
-    document.title = `${p.name}｜SalonPro`;
+    document.title = `${p.name}｜Salon Town Pro`;
 
     // パンくず（タップ履歴）：探す › カテゴリ › ブランド › 商品。カテゴリ/ブランドで戻れる
     const sep = '<span class="pd-crumb__sep">›</span>';

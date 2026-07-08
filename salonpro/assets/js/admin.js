@@ -1,5 +1,5 @@
 /* =========================================================
-   SalonPro / Admin — 会員審査キュー・在庫アラート
+   Salon Town Pro / Admin — 会員審査キュー・在庫アラート
    ========================================================= */
 (function () {
   const { Salon, placeholder, svg, fmtYen } = SP;
@@ -1549,7 +1549,7 @@
         <div><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">カテゴリ構成（SKU）</div>${hbars(catBars)}</div>
       </div>
       ${shadeRows.length ? `<div style="margin-top:16px"><div style="font-size:12.5px;font-weight:800;margin-bottom:10px">人気カラー番手 TOP <span style="color:var(--ink-3);font-weight:600;font-size:11px">需要指数・生産/在庫計画の参考に</span></div><table class="adm-table"><thead><tr><th>ライン・色・明るさ</th><th>需要指数</th></tr></thead><tbody>${shadeRows.map(s => `<tr><td>${esc(s.k)}</td><td class="num">${s.v}</td></tr>`).join('')}</tbody></table></div>` : ''}
-      <div style="font-size:11px;color:var(--ink-3);margin-top:14px;border-top:1px solid var(--line);padding-top:10px">本レポートはSalonPro（運営：株式会社菊地）の流通データに基づく要約です。数値はデモ表示。御社の販促・生産計画・共同企画のご提案にご活用ください。</div>`;
+      <div style="font-size:11px;color:var(--ink-3);margin-top:14px;border-top:1px solid var(--line);padding-top:10px">本レポートはSalon Town Pro（運営：株式会社菊地）の流通データに基づく要約です。数値はデモ表示。御社の販促・生産計画・共同企画のご提案にご活用ください。</div>`;
   }
   function drawMReport() { const host = qs('#mreportBody'); if (host) host.innerHTML = reportBody(buildMReport(_mreportSel)); }
   function renderMakerReport() {

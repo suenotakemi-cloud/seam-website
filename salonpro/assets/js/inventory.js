@@ -1,5 +1,5 @@
 /* =========================================================
-   SalonPro / Inventory — 在庫管理・棚卸し
+   Salon Town Pro / Inventory — 在庫管理・棚卸し
    ========================================================= */
 (function () {
   const { Store, Salon, placeholder, svg, fmtYen } = SP;
