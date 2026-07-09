@@ -5702,7 +5702,7 @@ window.SEAM_PAGE_I18N = {
     const fold = s => (s || '').toLowerCase().normalize('NFKC')
       .replace(/[\u00e9\u00e8\u00ea\u00eb]/g, 'e').replace(/[\u00e0\u00e2\u00e4]/g, 'a')
       .replace(/[\u00ee\u00ef]/g, 'i').replace(/[\u00f4\u00f6]/g, 'o').replace(/[\u00fb\u00fc\u00f9]/g, 'u')
-      .replace(/[\s\u3000._\-'&\/]/g, '');
+      .replace(/[\s\u3000._\-'&\/\u00ae\u2122]/g, '');
     const bn = fold(brandName);
     const pb = fold(p.brand);
     if (!bn || !pb) return false;
@@ -5733,7 +5733,7 @@ window.SEAM_PAGE_I18N = {
 
     // 商品データ取得＆フィルタ
     const allProducts = await getProducts();
-    const matched = allProducts.filter(p => matchBrand(p, brand.name));
+    const matched = allProducts.filter(p => matchBrand(p, brand.name) || (brand.nameJp && matchBrand(p, brand.nameJp)));
 
     eyebrow.textContent = matched.length
       ? `${escHtml(brand.name)} の取扱商品 ${matched.length}点${brand.site ? ' | 公式サイトへ ↗' : ''}`
