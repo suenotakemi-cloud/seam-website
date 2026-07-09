@@ -121,6 +121,8 @@
     .sf-cross { margin-top:30px; text-align:center; font-size:12.5px; color:var(--charcoal); }
     .sf-cross a { color:var(--gold); text-decoration:underline; text-underline-offset:3px; }
     .hidden { display:none; }
+    /* 言語モーダルのフォールバック隠し(lang.css未読込・読込前でも素のまま見せない) */
+    .lang-overlay { position:fixed; inset:0; opacity:0; pointer-events:none; z-index:9000; }
     .fadein { animation:sfFade .5s ease both; }
     @keyframes sfFade { from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none;} }
   </style>
@@ -149,9 +151,9 @@
     <section id="sfIntro" class="sf-hero fadein">
       <p class="sf-eyebrow mono">— Skin History Finder</p>
       <h1 class="sf-title serif" data-i18n="hero.title">美肌ヒストリー</h1>
-      <p class="sf-lead" data-i18n="hero.lead">肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>9つの質問で、あなたの肌の現在地と「次の一本」を見つけます。</p>
+      <p class="sf-lead" data-i18n="hero.lead">肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>15の質問で、あなたの肌質・トラブル歴・これからまで、まるごと読み解きます。</p>
       <button class="sf-start" id="sfStart"><span data-i18n="hero.start">物語をひらく</span> <span aria-hidden>→</span></button>
-      <p class="sf-note" data-i18n="hero.note">約3分・登録不要・結果は店頭のカウンセリングでも使えます</p>
+      <p class="sf-note" data-i18n="hero.note">約4分・登録不要・カウンセリングシート付きで店頭でもそのまま使えます</p>
     </section>
 
     <!-- ═══ QUESTIONS ═══ -->
@@ -175,41 +177,41 @@
     ja: {
       "meta.title": "美肌ヒストリー — 肌の物語から、次の一本へ | SEAM",
       "hero.title": "美肌ヒストリー",
-      "hero.lead": "肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>9つの質問で、あなたの肌の現在地と「次の一本」を見つけます。",
+      "hero.lead": "肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>15の質問で、あなたの肌質・トラブル歴・これからまで、まるごと読み解きます。",
       "hero.start": "物語をひらく",
-      "hero.note": "約3分・登録不要・結果は店頭のカウンセリングでも使えます",
+      "hero.note": "約4分・登録不要・カウンセリングシート付きで店頭でもそのまま使えます",
       "foot.terms": "利用規約", "foot.privacy": "プライバシー", "foot.legal": "特定商取引法に基づく表記"
     },
     en: {
       "meta.title": "Skin History — From your skin's story to your next step | SEAM",
       "hero.title": "Skin History",
-      "hero.lead": "Your skin carries a story —<br>chapters of quiet effort, and chapters yet to be written.<br>Nine questions to find where you are now, and your next step.",
+      "hero.lead": "Your skin carries a story —<br>chapters of quiet effort, and chapters yet to be written.<br>Fifteen questions to read your skin type, its history and what comes next.",
       "hero.start": "Open your story",
-      "hero.note": "About 3 minutes · no sign-up · show your result at the counter for in-store guidance",
+      "hero.note": "About 4 minutes · no sign-up · comes with a counseling sheet you can show in store",
       "foot.terms": "Terms", "foot.privacy": "Privacy", "foot.legal": "Legal Notice"
     },
     zh: {
       "meta.title": "美肌历程 — 从肌肤的故事找到下一瓶 | SEAM",
       "hero.title": "美肌历程",
-      "hero.lead": "肌肤，一直带着自己的故事。<br>有努力过的章节，也有还未写下的章节。<br>9个问题，找到你肌肤的现在，和「下一瓶」。",
+      "hero.lead": "肌肤，一直带着自己的故事。<br>有努力过的章节，也有还未写下的章节。<br>15个问题，读懂你的肤质、过敏史，和未来的对策。",
       "hero.start": "翻开我的故事",
-      "hero.note": "约3分钟 · 无需注册 · 结果可在店内咨询时出示",
+      "hero.note": "约4分钟 · 无需注册 · 附咨询表，可在店内直接出示",
       "foot.terms": "使用条款", "foot.privacy": "隐私政策", "foot.legal": "特定商业交易法标记"
     },
     tw: {
       "meta.title": "美肌歷程 — 從肌膚的故事找到下一瓶 | SEAM",
       "hero.title": "美肌歷程",
-      "hero.lead": "肌膚，一直帶著自己的故事。<br>有努力過的章節，也有還未寫下的章節。<br>9個問題，找到你肌膚的現在，和「下一瓶」。",
+      "hero.lead": "肌膚，一直帶著自己的故事。<br>有努力過的章節，也有還未寫下的章節。<br>15個問題，讀懂你的膚質、過敏史，和未來的對策。",
       "hero.start": "翻開我的故事",
-      "hero.note": "約3分鐘 · 無需註冊 · 結果可在店內諮詢時出示",
+      "hero.note": "約4分鐘 · 無需註冊 · 附諮詢表，可在店內直接出示",
       "foot.terms": "使用條款", "foot.privacy": "隱私權政策", "foot.legal": "特定商業交易法標記"
     },
     ko: {
       "meta.title": "스킨 히스토리 — 피부의 이야기에서 다음 한 병으로 | SEAM",
       "hero.title": "스킨 히스토리",
-      "hero.lead": "피부에는 지금까지의 이야기가 있습니다.<br>애써온 챕터도, 아직 쓰이지 않은 챕터도.<br>9가지 질문으로 피부의 현재와 '다음 한 병'을 찾아드립니다.",
+      "hero.lead": "피부에는 지금까지의 이야기가 있습니다.<br>애써온 챕터도, 아직 쓰이지 않은 챕터도.<br>15가지 질문으로 피부 타입과 트러블 이력, 앞으로의 대책까지 읽어드립니다.",
       "hero.start": "이야기 펼치기",
-      "hero.note": "약 3분 · 가입 불필요 · 결과 화면은 매장 상담에서도 쓸 수 있어요",
+      "hero.note": "약 4분 · 가입 불필요 · 카운슬링 시트가 함께라 매장에서 바로 쓸 수 있어요",
       "foot.terms": "이용약관", "foot.privacy": "개인정보 처리방침", "foot.legal": "특정상거래법 표기"
     }
   };
