@@ -93,6 +93,27 @@
     .sf-card .price small { font-size:9.5px; color:var(--charcoal); opacity:.6; display:block; }
     .sf-card .copy { font-size:11px; line-height:1.8; color:var(--charcoal); margin-top:6px; }
     .sf-over { display:inline-block; font-size:9.5px; color:#8A6A30; border:1px solid rgba(184,148,90,.5); padding:1px 7px; border-radius:2px; margin-top:6px; align-self:flex-start; }
+    /* ── 肌質プロファイル/プロの見立て/カウンセリングシート ── */
+    .sf-profile { margin-top:22px; border:1px solid rgba(184,148,90,.45); border-radius:2px; padding:18px 18px 16px; background:#fff; }
+    .sf-prof-eyebrow { font-size:9.5px; color:var(--gold); letter-spacing:.22em; text-transform:uppercase; }
+    .sf-prof-name { font-size:19px; font-weight:600; margin-top:6px; line-height:1.5; }
+    .sf-prof-tags { font-size:12px; font-weight:500; color:#8A6A30; }
+    .sf-prof-body { font-size:12.5px; line-height:2.0; color:var(--charcoal); margin-top:8px; }
+    .sf-pro { margin-top:14px; background:var(--cream); border-radius:2px; padding:16px 16px 14px; }
+    .sf-pro h3 { font-size:14px; font-weight:600; }
+    .sf-pro p { font-size:12px; line-height:1.95; color:var(--charcoal); margin-top:5px; }
+    .sf-sheet { margin-top:34px; border:1px dashed rgba(184,148,90,.55); border-radius:2px; background:#FFFDF8; }
+    .sf-sheet summary { padding:14px 16px; font-size:12.5px; font-weight:600; cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; }
+    .sf-sheet summary::before { content:'▸'; color:var(--gold); transition:transform .15s; }
+    .sf-sheet[open] summary::before { transform:rotate(90deg); }
+    .sf-sheet-in { padding:0 16px 16px; }
+    .sh-top { font-size:9.5px; color:var(--gold); letter-spacing:.16em; }
+    .sh-prof { font-size:12px; margin-top:6px; line-height:1.8; }
+    .sh-table { width:100%; margin-top:10px; border-collapse:collapse; font-size:11.5px; line-height:1.7; }
+    .sh-table th { text-align:left; white-space:nowrap; color:var(--charcoal); opacity:.7; font-weight:500; padding:4px 10px 4px 0; vertical-align:top; border-bottom:1px solid rgba(184,148,90,.18); }
+    .sh-table td { padding:4px 0; border-bottom:1px solid rgba(184,148,90,.18); }
+    .sh-notes { font-size:11.5px; margin-top:10px; line-height:1.8; }
+    .sh-hint { font-size:10.5px; color:var(--charcoal); opacity:.65; margin-top:8px; line-height:1.8; }
     .sf-cta { margin-top:36px; padding:24px 20px; background:var(--ink); color:var(--ivory); border-radius:2px; text-align:center; }
     .sf-cta p { font-size:13px; opacity:.85; line-height:1.9; }
     .sf-cta a { display:inline-block; margin-top:14px; padding:13px 28px; border:1px solid rgba(253,251,247,.5); border-radius:2px; color:var(--ivory); font-size:13px; letter-spacing:.08em; }
@@ -201,7 +222,9 @@
     var STRUCT = [
       { ch:1, id:'age', multi:false, opts:[{v:'10s'},{v:'20s'},{v:'30s'},{v:'40s'},{v:'50s'}] },
       { ch:1, id:'base', multi:false, opts:[{v:'dry'},{v:'oily'},{v:'combo'},{v:'sensitive'},{v:'normal'}] },
+      { ch:1, id:'hydration', multi:false, opts:[{v:'low'},{v:'partial'},{v:'inner'},{v:'high'}] },
       { ch:1, id:'concerns', multi:true, opts:[{v:'dry'},{v:'pore'},{v:'hari'},{v:'tone'},{v:'sensitive'},{v:'acne'},{v:'none',x:true}] },
+      { ch:1, id:'trouble', multi:false, opts:[{v:'allergy'},{v:'ingredient'},{v:'seasonal'},{v:'none'}] },
       { ch:1, id:'lash', multi:false, opts:[{v:'grow'},{v:'curl'},{v:'ok'}] },
       { ch:2, id:'peak', multi:false, opts:[{v:'teen'},{v:'twenties'},{v:'recent'},{v:'future'}] },
       { ch:2, id:'exp', multi:false, opts:[{v:'simple'},{v:'explorer'},{v:'salon'},{v:'doctor'}] },
@@ -210,6 +233,7 @@
       { ch:3, id:'makeup', multi:false, opts:[{v:'tsuya'},{v:'natural'},{v:'mat'},{v:'none'}] },
       { ch:3, id:'time', multi:false, opts:[{v:'full'},{v:'night'},{v:'quick'},{v:'weekend'}] },
       { ch:3, id:'inner', multi:false, opts:[{v:'yes'},{v:'curious'},{v:'later'}] },
+      { ch:3, id:'future', multi:true, opts:[{v:'spots'},{v:'sag'},{v:'dryline'},{v:'porefix'},{v:'notyet',x:true}] },
       { ch:3, id:'budget', multi:false, opts:[{v:'b1'},{v:'b2'},{v:'b3'},{v:'b4'}] }
     ];
 
@@ -242,7 +266,13 @@
         makeup: { q:'ベースメイクの仕上がりは、<br>どれが好きですか？', note:'ファンデ選びも、スキンケアの続きです。', o:{
           tsuya:{l:'ツヤ・水光肌',s:'ぬれたような光をまとう'}, natural:{l:'素肌っぽくナチュラル',s:'「肌がいい人」に見られたい'}, mat:{l:'サラッとセミマット',s:'きちんと感と崩れにくさ'}, none:{l:'ベースメイクはあまりしない'} } },
         inner: { q:'内側からのケア<br>(サプリ・ドリンク)は？', note:'肌は、食べたもの・飲んだものからも作られます。', o:{
-          yes:{l:'もう取り入れている'}, curious:{l:'興味はある',s:'何から始めるか知りたい'}, later:{l:'まずは外側から'} } }
+          yes:{l:'もう取り入れている'}, curious:{l:'興味はある',s:'何から始めるか知りたい'}, later:{l:'まずは外側から'} } },
+        hydration: { q:'日中、肌の水分感は<br>どう変わりますか？', note:'皮脂の量と水分の量は、じつは別もの。ここで肌質の解像度が上がります。', o:{
+          low:{l:'夕方にはカサつく',s:'朝の保湿が持たない感じ'}, partial:{l:'部分的に乾く',s:'頬や口もとだけカサつく'}, inner:{l:'テカるのに、乾いている気がする',s:'それ、インナードライかも'}, high:{l:'一日うるおいが続く'} } },
+        trouble: { q:'これまで、化粧品で<br>肌がゆらいだ経験はありますか？', note:'正直に教えてください。あなたに合うブランド系統の分かれ道です。', o:{
+          allergy:{l:'かゆみ・赤み・かぶれが出たことがある',s:'いわゆるアレルギー反応かも'}, ingredient:{l:'「合わない成分」がある気がする',s:'特定の化粧品でピリつく'}, seasonal:{l:'季節の変わり目にゆらぐ',s:'春先や乾燥期に不安定'}, none:{l:'ほとんどない'} } },
+        future: { q:'10年後の肌のために、<br>いま気にかけたいことは？', note:'当てはまるものをすべて。予防は、いちばん賢い投資です。', o:{
+          spots:{l:'シミ・そばかすの予備軍',s:'紫外線ダメージの蓄積が気になる'}, sag:{l:'たるみ・ほうれい線',s:'フェイスラインの変化'}, dryline:{l:'乾燥による小じわ',s:'目もと・口もとの乾燥サイン'}, porefix:{l:'毛穴の開きの定着',s:'開きっぱなしになる前に'}, notyet:{l:'まだ考えていない'} } }
       },
       types: {
         glow:{ name:'「うるみ玉の章」', story:'あなたの物語は、光をためる季節に入っています。' },
@@ -275,6 +305,30 @@
       chipOver:'ご予算の上', swipe:'→ 横にすべらせて3点を比べられます',
       lashNote: { grow:'「育てたい」に合わせて、ハリ・コシの美容液を先頭にしています。', curl:'パーマ・エクステの土台ケアを先頭にしています。' },
       innerNote: { yes:'すでに取り入れている方へ、次の一手になるものを。', curious:'はじめの一本にちょうどいいものから並べています。', later:'急がなくて大丈夫。気が向いたときの参考に。' },
+      profEyebrow:'Skin Profile — 肌質判定',
+      prof: {
+        name: { dry:'乾燥肌', oily:'脂性肌', combo:'混合肌', sensitive:'ゆらぎ肌', normal:'普通肌' },
+        tagInner:'インナードライ傾向', tagSens:'敏感傾向', tagSeason:'季節ゆらぎ',
+        oil: { dry:'皮脂が少なく、水分も逃げやすいタイプ。洗いすぎを避けて、油分と水分の両方を与えるケアが軸になります。', oily:'皮脂はしっかり出るタイプ。ただし皮脂の多さと水分の多さは別もので、脂性肌の方ほど水分ケアを飛ばしがちです。', combo:'Tゾーンは皮脂が出て、頬は乾く二面性タイプ。部位で使い分けるより「水分は全顔に、油分は乾く場所に」が近道です。', sensitive:'外の刺激に反応しやすい、感受性の高いタイプ。攻めの成分より、バリアを守る設計から始めるのが安全です。', normal:'大きな偏りのないバランスタイプ。だからこそ「予防」への投資効率がいちばん高い肌です。' },
+        hyd: { low:'夕方に乾くのは、朝与えた水分を抱えきれていないサイン。「与える」より「抱えさせる」保湿(セラミド等)を意識すると変わります。', partial:'部分乾燥は混合傾向のサイン。乾く場所にだけ保湿をもう一手重ねる「部分足し」が効きます。', inner:'テカるのに乾く——それは皮脂ではなく水分不足のサインです。皮脂を取るより、水分を入れて皮脂の過剰分泌を鎮める順番が正解。この気づきだけでも今日の診断は収穫です。', high:'水分保持力はいまが貯金どき。この状態を守るUVと保湿の習慣が、10年後の差になります。' },
+        tr: { allergy:'かゆみ・赤みの経験があるので、新しい化粧品は「顔にいきなり」を避けて。強い症状が出たときは自己判断せず、皮膚科への相談をおすすめします。', ingredient:'合わない成分の心当たりがあるなら、成分表示がシンプルなもの・低刺激設計のものから選ぶ目を持ちましょう。', seasonal:'季節でゆらぐ肌は、ゆらいでから探すより「ゆらぐ前の備え」を1本持っておくと安定します。', none:'トラブル歴が少ないのは大きな財産。新しいケアにも挑戦しやすい肌です。' }
+      },
+      proH:'プロの見立て', proSub:'あなたの答えから、美容のプロとしてお伝えしたいこと。',
+      notes: {
+        doctor: { t:'あなたには「ドクターズコスメ」という選択肢を', b:'かゆみや赤みの経験がある方にまずおすすめしたいのが、クリニック発想で低刺激設計のドクターズコスメです。当店ならドクターソワ、JC PROGRAM、エクスバリア、アクネオがその系統(下のおすすめにも優先して並べています)。新しいアイテムは二の腕の内側で2〜3日試してから顔へ、が鉄則。症状が強いときは化粧品でがんばらず、皮膚科の受診を。' },
+        seasonal: { t:'ゆらぐ前に、バリアの「常備軍」を', b:'季節の変わり目にゆらぐ方は、調子を崩してから探すのではなく、低刺激のバリアケアを1本常備しておくのがプロの定石。ゆらぎ始めの2〜3日で切り替えられると、崩れ方が浅くて済みます。' },
+        innerdry: { t:'その皮脂、実は「乾きのSOS」かもしれません', b:'テカるからと皮脂を取るケアに寄せると、肌はさらに皮脂を出そうとします。順番はまず水分。化粧水をきちんと入れて、軽い乳液でフタ。1〜2週間で皮脂のバランスの変化を感じられるはずです。' },
+        acne: { t:'大人ニキビは「触らない・専用処方・眠る」', b:'大人のニキビは乾燥や生活リズムの影響が大きく、10代向けのさっぱり系では合わないことも。薬用のニキビ向け処方で「洗う・守る」を整えつつ、触らないこと、そして睡眠。繰り返す場合は早めに皮膚科という選択も。' },
+        f_spots: { t:'未来のシミ対策は、今日のUVがすべて', b:'シミの主因は、過去と今日の紫外線の蓄積。まだ見えていない今こそ、毎日のUVと、ビタミンC系や美白有効成分(医薬部外品)の先回りが効きます。「出てから」より「出る前」が、コストも仕上がりも圧倒的に有利です。' },
+        f_sag: { t:'ハリへの投資は、複利で効きます', b:'たるみ・ほうれい線の対策は、気になり始めた今が始めどき。ハリケアの美容液やクリームは、早く始めるほど複利のように差がつく領域です。マッサージは「強くこすらない」が絶対条件。' },
+        f_porefix: { t:'毛穴は「開き固定」の前が勝負', b:'毛穴の開きは、皮脂と乾燥とハリ低下の合わせ技で少しずつ定着していきます。定着前の今なら、洗顔の見直しと水分ケアで立て直せる段階。こすらない、取りすぎない、が合言葉です。' },
+        f_dryline: { t:'乾燥小じわは、いちばん先に手を打てる未来', b:'目もと・口もとの小さな乾燥サインは、保湿で応えられる段階のうちに。セラミドやヒアルロン酸系の保湿を夜に一手厚くするだけで、変化を感じやすい部位です。' },
+        general: { t:'いまの「順調」を守ることが、最高の先回り', b:'大きなトラブルがない肌は、実はいちばん投資効率が高い状態。毎日のUVと、洗いすぎない洗顔。この2つを守るだけで、10年後の選択肢が広がります。' }
+      },
+      sheetTitle:'カウンセリングシートを開く(店頭スタッフ用)',
+      sheetProfile:'肌質判定', sheetNotes:'見立てメモ',
+      sheetHint:'ご来店時にこの画面をスタッフにお見せください。判定と回答をもとに、テクスチャーを試しながらその場でご案内します。スクリーンショット保存が便利です。',
+      sheetLabels: { age:'年代', base:'肌質(皮脂)', hydration:'水分感', concerns:'気になること', trouble:'トラブル歴', lash:'まつげ', peak:'輝いていた時期', exp:'ケアの歩み', memory:'肌の思い出', goal:'なりたい肌', makeup:'ベースメイク', time:'ケア時間', inner:'インナーケア', future:'将来ケア', budget:'月予算' },
       badge:'Your Skin History',
       routineH:'この章の、あなたのフルラインナップ', routineSub:'全カテゴリ、あなたに合う順で3点ずつ。予算に合うものから並べています。',
       price:'定価', priceNote:'税込・会員はサマーセール価格',
@@ -315,7 +369,13 @@
         makeup: { q:'Your favorite<br>base-makeup finish?', note:'Choosing foundation is skincare’s final step.', o:{
           tsuya:{l:'Dewy, glass-skin glow',s:'A just-moistened radiance'}, natural:{l:'Natural, skin-like',s:'“Great skin,” not “great makeup”'}, mat:{l:'Smooth semi-matte',s:'Polished and long-lasting'}, none:{l:'I rarely wear base makeup'} } },
         inner: { q:'Inner care —<br>supplements or drinks?', note:'Skin is also built from what you eat and drink.', o:{
-          yes:{l:'Already part of my routine'}, curious:{l:'Curious to start',s:'Where should I begin?'}, later:{l:'Outside first, for now'} } }
+          yes:{l:'Already part of my routine'}, curious:{l:'Curious to start',s:'Where should I begin?'}, later:{l:'Outside first, for now'} } },
+        hydration: { q:'How does your skin’s moisture<br>change through the day?', note:'Oil and hydration are two different things — this sharpens your skin type.', o:{
+          low:{l:'Dry and tight by evening',s:'Morning moisture doesn’t last'}, partial:{l:'Dry only in places',s:'Cheeks or mouth area get parched'}, inner:{l:'Shiny, yet somehow dry inside',s:'Could be dehydrated-oily skin'}, high:{l:'Comfortably hydrated all day'} } },
+        trouble: { q:'Has a cosmetic ever<br>upset your skin?', note:'Be honest — this decides which family of brands suits you.', o:{
+          allergy:{l:'Itching, redness or a rash before',s:'Possibly an allergic reaction'}, ingredient:{l:'Some ingredients don’t agree with me',s:'Certain products sting'}, seasonal:{l:'It wobbles with the seasons',s:'Unstable in early spring or dry months'}, none:{l:'Almost never'} } },
+        future: { q:'For your skin ten years from now,<br>what do you want to mind today?', note:'Choose all that apply. Prevention is the smartest investment there is.', o:{
+          spots:{l:'Future spots and freckles',s:'Accumulated UV damage worries me'}, sag:{l:'Sagging, smile lines',s:'Changes along the jawline'}, dryline:{l:'Fine lines from dryness',s:'Early signs at the eyes and mouth'}, porefix:{l:'Pores settling open',s:'Before they stay that way'}, notyet:{l:'Not thinking about it yet'} } }
       },
       types: {
         glow:{ name:'The Dewlight Chapter', story:'Your story has entered the season of gathering light.' },
@@ -348,6 +408,30 @@
       chipOver:'Above budget', swipe:'→ Swipe to compare 3 picks',
       lashNote: { grow:'Ordered with strength-and-body serums first.', curl:'Base care for perms and extensions comes first.' },
       innerNote: { yes:'For someone already on it — a next step.', curious:'Ordered from the easiest first bottle.', later:'No rush — here whenever you feel ready.' },
+      profEyebrow:'Skin Profile — Your assessment',
+      prof: {
+        name: { dry:'Dry skin', oily:'Oily skin', combo:'Combination skin', sensitive:'Reactive skin', normal:'Balanced skin' },
+        tagInner:'dehydration-prone', tagSens:'sensitivity-prone', tagSeason:'seasonal swings',
+        oil: { dry:'Low in oil, quick to lose water. The axis of your care: avoid over-cleansing, and give both oil and water back. ', oily:'Your skin produces plenty of oil — but oil and hydration are separate, and oily types skip hydration most often. ', combo:'An oily T-zone with dry cheeks. Rather than splitting products by zone: hydration everywhere, oil only where it is dry. ', sensitive:'Highly receptive to outside stimuli. Start from barrier-protecting formulas rather than aggressive actives. ', normal:'A balanced type without big swings — which makes prevention your highest-return investment. ' },
+        hyd: { low:'Dryness by evening means the morning’s water isn’t being held. Think “help skin hold water” (ceramide-type moisturizers) rather than just adding more. ', partial:'Patchy dryness signals a combination lean. Layer one extra step of moisture only where it gets dry. ', inner:'Shiny yet dry — that shine is a thirst signal, not excess oil. Hydrate first and let the oil calm down; realizing this alone makes today worthwhile. ', high:'Your water-holding power is in savings mode. Guarding it with daily UV care and moisture is what shows in ten years. ' },
+        tr: { allergy:'With your history of itching or redness, never take a new product straight to your face. If symptoms are strong, please see a dermatologist rather than pushing through. ', ingredient:'If some ingredients seem to disagree with you, learn to favor short ingredient lists and low-irritation formulas. ', seasonal:'Skin that wobbles with the seasons stays steadier with one barrier-care product kept on standby before the wobble. ', none:'A quiet history is an asset — your skin can afford to try new things. ' }
+      },
+      proH:'Professional notes', proSub:'What we, as beauty professionals, want you to know from your answers.',
+      notes: {
+        doctor: { t:'Consider doctor’s cosmetics — designed for skin like yours', b:'For anyone with a history of itching or redness, our first recommendation is clinic-born, low-irritation doctor’s cosmetics — at SEAM that means Dr.SOIE, JC PROGRAM, EXBARRIER and ACNEO (prioritized in your picks below). Golden rule: test new items on your inner arm for 2–3 days before your face. And when symptoms are strong, see a dermatologist instead of pushing through with cosmetics.' },
+        seasonal: { t:'Keep a barrier “reserve” before the wobble', b:'If your skin swings with the seasons, don’t go shopping after it crashes — keep one low-irritation barrier-care product on standby. Switching within the first 2–3 days of a wobble keeps the dip shallow.' },
+        innerdry: { t:'That shine may be an SOS for water', b:'Fighting shine with oil-stripping care makes skin produce even more. The order is water first: hydrate properly, then seal lightly. Within a week or two you should feel the balance shift.' },
+        acne: { t:'Adult breakouts: hands off, dedicated formulas, sleep', b:'Adult acne is driven by dryness and life rhythm — teen-style astringents can backfire. Use medicated acne-care formulas for cleansing and moisturizing, keep your hands off, and sleep. If it keeps returning, seeing a dermatologist early is a smart move.' },
+        f_spots: { t:'Tomorrow’s spots are decided by today’s UV', b:'Spots come from accumulated UV — past and present. Now, while they are still invisible, daily UV protection plus vitamin-C-type care or approved brightening actives works best. Preventing beats erasing, in both cost and finish.' },
+        f_sag: { t:'Firmness pays compound interest', b:'Care for sagging and smile lines starts best the moment they start bothering you. Firmness serums and creams are a field where starting early compounds. One absolute rule for massage: never rub hard.' },
+        f_porefix: { t:'Win before pores settle open', b:'Pores “settle” gradually through oil, dryness and lost firmness combined. At your stage, revisiting your cleansing and hydration can still turn it around. No rubbing, no over-stripping.' },
+        f_dryline: { t:'Dryness lines are the easiest future to act on', b:'Fine dry lines at the eyes and mouth respond while they are still moisture-deep. One richer step of ceramide or hyaluronic care at night is often enough to feel the change.' },
+        general: { t:'Protecting today’s “fine” is the best head start', b:'Skin without major troubles is your highest-return state. Daily UV care and never over-cleansing — guard these two, and your options ten years from now stay wide open.' }
+      },
+      sheetTitle:'Open counseling sheet (for our staff)',
+      sheetProfile:'Skin profile', sheetNotes:'Notes',
+      sheetHint:'Show this screen to our staff in store — we will guide you through textures based on your profile and answers. A screenshot is the easiest way to keep it.',
+      sheetLabels: { age:'Age', base:'Skin type (oil)', hydration:'Hydration', concerns:'Concerns', trouble:'Trouble history', lash:'Lashes', peak:'Best era', exp:'Care journey', memory:'Skin memory', goal:'Goal', makeup:'Base makeup', time:'Time', inner:'Inner care', future:'Future care', budget:'Monthly budget' },
       badge:'Your Skin History',
       routineH:'Your full lineup for this chapter', routineSub:'Every category, three picks each, in your order — budget-friendly first.',
       price:'Price', priceNote:'tax incl. · members enjoy summer-sale pricing',
@@ -388,7 +472,13 @@
         makeup: { q:'底妆喜欢哪种妆效？', note:'选粉底，也是护肤的延续。', o:{
           tsuya:{l:'水光肌',s:'像浸润过一样的光泽'}, natural:{l:'伪素颜、自然',s:'想被夸「皮肤真好」'}, mat:{l:'清爽半哑光',s:'整洁感和持妆力'}, none:{l:'平时很少化底妆'} } },
         inner: { q:'内调(保健品、美容饮品)呢？', note:'肌肤也来自你吃下与喝下的东西。', o:{
-          yes:{l:'已经在坚持'}, curious:{l:'有兴趣',s:'想知道从什么开始'}, later:{l:'先做好外养'} } }
+          yes:{l:'已经在坚持'}, curious:{l:'有兴趣',s:'想知道从什么开始'}, later:{l:'先做好外养'} } },
+        hydration: { q:'白天，肌肤的水分感<br>会怎么变化？', note:'油和水其实是两回事。这一题会让肤质判定更精确。', o:{
+          low:{l:'到傍晚就发干',s:'早上的保湿撑不到晚上'}, partial:{l:'只有局部干',s:'脸颊或嘴周发干'}, inner:{l:'泛油光，却觉得里面很干',s:'可能是外油内干'}, high:{l:'一整天都水润'} } },
+        trouble: { q:'化妆品有没有让你的肌肤<br>闹过脾气？', note:'请如实回答。这决定适合你的品牌路线。', o:{
+          allergy:{l:'出现过痒、发红、起疹',s:'可能是过敏反应'}, ingredient:{l:'感觉有「不合的成分」',s:'某些产品会刺痛'}, seasonal:{l:'换季时容易不稳定',s:'初春或干燥期容易闹脾气'}, none:{l:'几乎没有'} } },
+        future: { q:'为了10年后的肌肤，<br>现在想开始在意的是？', note:'可多选。预防，是最聪明的投资。', o:{
+          spots:{l:'斑点、雀斑的预备军',s:'在意紫外线伤害的累积'}, sag:{l:'松弛、法令纹',s:'脸部线条的变化'}, dryline:{l:'干燥引起的细纹',s:'眼周、嘴周的干燥信号'}, porefix:{l:'毛孔定型变大',s:'趁还没定下来'}, notyet:{l:'还没想过'} } }
       },
       types: {
         glow:{ name:'「润光之章」', story:'你的故事，进入了积蓄光的季节。' },
@@ -421,6 +511,30 @@
       chipOver:'略超预算', swipe:'→ 左右滑动比较3款',
       lashNote: { grow:'按「想养睫毛」优先排列韧性型精华。', curl:'把烫接睫毛的根基护理排在前面。' },
       innerNote: { yes:'给已经在坚持的你，下一步的选择。', curious:'从最容易入门的开始排列。', later:'不急，想到时再回来看看。' },
+      profEyebrow:'Skin Profile — 肤质判定',
+      prof: {
+        name: { dry:'干性肌', oily:'油性肌', combo:'混合肌', sensitive:'敏感倾向肌', normal:'中性肌' },
+        tagInner:'外油内干倾向', tagSens:'敏感倾向', tagSeason:'换季不稳定',
+        oil: { dry:'皮脂少、水分也容易流失的类型。避免过度清洁，同时补油和补水是护理的主轴。', oily:'皮脂分泌旺盛的类型。但油多不等于水多，油性肌反而最容易跳过补水。', combo:'T区出油、脸颊干燥的双面类型。与其分区用不同产品，不如「全脸补水、干的地方补油」。', sensitive:'对外界刺激反应敏锐的类型。比起猛药成分，从守护屏障的配方开始更安全。', normal:'没有大偏向的均衡类型。正因如此，「预防」的投资回报率最高。' },
+        hyd: { low:'傍晚发干，说明早上补的水分没能留住。比起「补」，更要「锁」(神经酰胺类保湿)。', partial:'局部干燥是混合倾向的信号。只在干的地方多叠一层保湿的「局部加法」最有效。', inner:'泛油却干——那是缺水的信号，不是油多。先补水，让皮脂自己安静下来才是正确顺序。光是发现这一点，今天的诊断就值了。', high:'保水力正处于存钱期。用防晒和保湿守住这个状态，就是10年后的差距。' },
+        tr: { allergy:'有过痒、发红的经历，新品切忌直接上脸。症状严重时不要硬撑，建议咨询皮肤科。', ingredient:'如果怀疑有不合的成分，学会选成分表简洁、低刺激设计的产品。', seasonal:'换季不稳的肌肤，与其乱了再找，不如提前备好一支低刺激的屏障护理。', none:'几乎没有闹过脾气，是很大的财产。可以放心尝试新的护理。' }
+      },
+      proH:'专业建议', proSub:'基于你的回答，美容专业人士想告诉你的事。',
+      notes: {
+        doctor: { t:'为你推荐「医学美容品牌」这条路线', b:'有过痒、发红经历的人，我们首先推荐的是诊所研发、低刺激设计的医学美容品牌——在SEAM是Dr.SOIE、JC PROGRAM、EXBARRIER、ACNEO(下方推荐也已优先排列)。铁则：新品先在手臂内侧试2〜3天再上脸。症状严重时请不要靠化妆品硬撑，建议就诊皮肤科。' },
+        seasonal: { t:'在闹脾气之前，备好屏障「常备军」', b:'换季不稳的肌肤，不要等崩了才去找，提前备一支低刺激的屏障护理才是行家做法。在不稳的头2〜3天及时切换，波动会浅很多。' },
+        innerdry: { t:'那些油光，可能是「缺水的求救」', b:'因为出油就用控油去油的护理，肌肤反而会分泌更多。顺序是先补水：化妆水好好导入，再用轻乳液锁住。1〜2周就能感到油水平衡的变化。' },
+        acne: { t:'成人痘的三原则：不碰、专用配方、睡觉', b:'成人痘受干燥和生活节奏影响很大，青少年用的清爽型可能适得其反。用药用抗痘配方整顿「洗与护」，管住手，然后睡觉。反复出现时，尽早看皮肤科也是聪明的选择。' },
+        f_spots: { t:'未来的斑，由今天的防晒决定', b:'斑点的主因是过去和今天累积的紫外线。趁还看不见的现在，每天防晒＋维C类或美白有效成分(医药部外品)的提前护理最有效。「出现前防」比「出现后救」，成本和效果都压倒性有利。' },
+        f_sag: { t:'紧致的投资，会像复利一样生效', b:'松弛、法令纹的对策，开始在意的现在就是最佳起点。紧致类精华和面霜，越早开始差距越像复利一样拉开。按摩的绝对前提：不要用力搓。' },
+        f_porefix: { t:'毛孔要在「定型」之前赢下来', b:'毛孔是皮脂、干燥、紧致度下降的合力，慢慢「定型」的。趁还没定下来，重新审视洁面和补水就能挽回。口诀：不搓、不过度清除。' },
+        f_dryline: { t:'干纹，是最容易先下手的未来', b:'眼周、嘴周的小干纹，要趁还能用保湿回应的阶段处理。晚间把神经酰胺或玻尿酸类保湿加厚一步，是最容易感到变化的部位。' },
+        general: { t:'守住现在的「顺利」，就是最好的先手', b:'没有大问题的肌肤，其实是投资回报率最高的状态。每天防晒＋不过度清洁，守住这两条，10年后的选择会宽阔得多。' }
+      },
+      sheetTitle:'打开咨询表(供店员查看)',
+      sheetProfile:'肤质判定', sheetNotes:'建议摘要',
+      sheetHint:'到店时把这个页面出示给店员，我们会根据判定和回答，让你现场试用质地并进行讲解。建议截图保存。',
+      sheetLabels: { age:'年龄段', base:'肤质(皮脂)', hydration:'水分感', concerns:'在意的点', trouble:'过敏史', lash:'睫毛', peak:'最闪耀时期', exp:'护肤经历', memory:'肌肤回忆', goal:'理想肌肤', makeup:'底妆', time:'护理时间', inner:'内调', future:'未来护理', budget:'月预算' },
       badge:'Your Skin History',
       routineH:'这一章，属于你的全套阵容', routineSub:'全部类别，各3款，按适合你的顺序，预算内的排在前面。',
       price:'定价', priceNote:'含税 · 会员享夏季特惠价',
@@ -461,7 +575,13 @@
         makeup: { q:'底妝喜歡哪種妝效？', note:'選粉底，也是保養的延續。', o:{
           tsuya:{l:'水光肌',s:'像浸潤過一樣的光澤'}, natural:{l:'偽素顏、自然',s:'想被稱讚「皮膚真好」'}, mat:{l:'清爽半霧面',s:'整潔感和持妝力'}, none:{l:'平時很少化底妝'} } },
         inner: { q:'內在保養(保健食品、美容飲品)呢？', note:'肌膚也來自你吃下與喝下的東西。', o:{
-          yes:{l:'已經在堅持'}, curious:{l:'有興趣',s:'想知道從什麼開始'}, later:{l:'先做好外在保養'} } }
+          yes:{l:'已經在堅持'}, curious:{l:'有興趣',s:'想知道從什麼開始'}, later:{l:'先做好外在保養'} } },
+        hydration: { q:'白天，肌膚的水分感<br>會怎麼變化？', note:'油和水其實是兩回事。這一題會讓膚質判定更精確。', o:{
+          low:{l:'到傍晚就發乾',s:'早上的保濕撐不到晚上'}, partial:{l:'只有局部乾',s:'臉頰或嘴周發乾'}, inner:{l:'泛油光，卻覺得裡面很乾',s:'可能是外油內乾'}, high:{l:'一整天都水潤'} } },
+        trouble: { q:'化妝品有沒有讓你的肌膚<br>鬧過脾氣？', note:'請如實回答。這決定適合你的品牌路線。', o:{
+          allergy:{l:'出現過癢、發紅、起疹',s:'可能是過敏反應'}, ingredient:{l:'感覺有「不合的成分」',s:'某些產品會刺痛'}, seasonal:{l:'換季時容易不穩定',s:'初春或乾燥期容易鬧脾氣'}, none:{l:'幾乎沒有'} } },
+        future: { q:'為了10年後的肌膚，<br>現在想開始在意的是？', note:'可複選。預防，是最聰明的投資。', o:{
+          spots:{l:'斑點、雀斑的預備軍',s:'在意紫外線傷害的累積'}, sag:{l:'鬆弛、法令紋',s:'臉部線條的變化'}, dryline:{l:'乾燥引起的細紋',s:'眼周、嘴周的乾燥訊號'}, porefix:{l:'毛孔定型變大',s:'趁還沒定下來'}, notyet:{l:'還沒想過'} } }
       },
       types: {
         glow:{ name:'「潤光之章」', story:'你的故事，進入了積蓄光的季節。' },
@@ -494,6 +614,30 @@
       chipOver:'略超預算', swipe:'→ 左右滑動比較3款',
       lashNote: { grow:'按「想養睫毛」優先排列韌性型精華。', curl:'把燙接睫毛的根基保養排在前面。' },
       innerNote: { yes:'給已經在堅持的你，下一步的選擇。', curious:'從最容易入門的開始排列。', later:'不急，想到時再回來看看。' },
+      profEyebrow:'Skin Profile — 膚質判定',
+      prof: {
+        name: { dry:'乾性肌', oily:'油性肌', combo:'混合肌', sensitive:'敏感傾向肌', normal:'中性肌' },
+        tagInner:'外油內乾傾向', tagSens:'敏感傾向', tagSeason:'換季不穩定',
+        oil: { dry:'皮脂少、水分也容易流失的類型。避免過度清潔，同時補油和補水是保養的主軸。', oily:'皮脂分泌旺盛的類型。但油多不等於水多，油性肌反而最容易跳過補水。', combo:'T字部位出油、臉頰乾燥的雙面類型。與其分區用不同產品，不如「全臉補水、乾的地方補油」。', sensitive:'對外界刺激反應敏銳的類型。比起猛藥成分，從守護屏障的配方開始更安全。', normal:'沒有大偏向的均衡類型。正因如此，「預防」的投資報酬率最高。' },
+        hyd: { low:'傍晚發乾，代表早上補的水分沒能留住。比起「補」，更要「鎖」(神經醯胺類保濕)。', partial:'局部乾燥是混合傾向的訊號。只在乾的地方多疊一層保濕的「局部加法」最有效。', inner:'泛油卻乾——那是缺水的訊號，不是油多。先補水，讓皮脂自己安靜下來才是正確順序。光是發現這一點，今天的診斷就值了。', high:'保水力正處於存錢期。用防曬和保濕守住這個狀態，就是10年後的差距。' },
+        tr: { allergy:'有過癢、發紅的經歷，新品切忌直接上臉。症狀嚴重時不要硬撐，建議諮詢皮膚科。', ingredient:'如果懷疑有不合的成分，學會選成分表簡潔、低刺激設計的產品。', seasonal:'換季不穩的肌膚，與其亂了再找，不如提前備好一支低刺激的屏障保養。', none:'幾乎沒有鬧過脾氣，是很大的財產。可以放心嘗試新的保養。' }
+      },
+      proH:'專業建議', proSub:'基於你的回答，美容專業人士想告訴你的事。',
+      notes: {
+        doctor: { t:'為你推薦「醫學美容品牌」這條路線', b:'有過癢、發紅經歷的人，我們首先推薦的是診所研發、低刺激設計的醫學美容品牌——在SEAM是Dr.SOIE、JC PROGRAM、EXBARRIER、ACNEO(下方推薦也已優先排列)。鐵則：新品先在手臂內側試2〜3天再上臉。症狀嚴重時請不要靠化妝品硬撐，建議就診皮膚科。' },
+        seasonal: { t:'在鬧脾氣之前，備好屏障「常備軍」', b:'換季不穩的肌膚，不要等崩了才去找，提前備一支低刺激的屏障保養才是行家做法。在不穩的頭2〜3天及時切換，波動會淺很多。' },
+        innerdry: { t:'那些油光，可能是「缺水的求救」', b:'因為出油就用控油去油的保養，肌膚反而會分泌更多。順序是先補水：化妝水好好導入，再用輕乳液鎖住。1〜2週就能感到油水平衡的變化。' },
+        acne: { t:'成人痘的三原則：不碰、專用配方、睡覺', b:'成人痘受乾燥和生活節奏影響很大，青少年用的清爽型可能適得其反。用藥用抗痘配方整頓「洗與護」，管住手，然後睡覺。反覆出現時，盡早看皮膚科也是聰明的選擇。' },
+        f_spots: { t:'未來的斑，由今天的防曬決定', b:'斑點的主因是過去和今天累積的紫外線。趁還看不見的現在，每天防曬＋維C類或美白有效成分(醫藥部外品)的提前保養最有效。「出現前防」比「出現後救」，成本和效果都壓倒性有利。' },
+        f_sag: { t:'緊緻的投資，會像複利一樣生效', b:'鬆弛、法令紋的對策，開始在意的現在就是最佳起點。緊緻類精華和乳霜，越早開始差距越像複利一樣拉開。按摩的絕對前提：不要用力搓。' },
+        f_porefix: { t:'毛孔要在「定型」之前贏下來', b:'毛孔是皮脂、乾燥、緊緻度下降的合力，慢慢「定型」的。趁還沒定下來，重新審視洗臉和補水就能挽回。口訣：不搓、不過度清除。' },
+        f_dryline: { t:'乾紋，是最容易先下手的未來', b:'眼周、嘴周的小乾紋，要趁還能用保濕回應的階段處理。晚間把神經醯胺或玻尿酸類保濕加厚一步，是最容易感到變化的部位。' },
+        general: { t:'守住現在的「順利」，就是最好的先手', b:'沒有大問題的肌膚，其實是投資報酬率最高的狀態。每天防曬＋不過度清潔，守住這兩條，10年後的選擇會寬闊得多。' }
+      },
+      sheetTitle:'打開諮詢表(供店員查看)',
+      sheetProfile:'膚質判定', sheetNotes:'建議摘要',
+      sheetHint:'到店時把這個頁面出示給店員，我們會根據判定和回答，讓你現場試用質地並進行說明。建議截圖保存。',
+      sheetLabels: { age:'年齡層', base:'膚質(皮脂)', hydration:'水分感', concerns:'在意的點', trouble:'過敏史', lash:'睫毛', peak:'最閃耀時期', exp:'保養經歷', memory:'肌膚回憶', goal:'理想肌膚', makeup:'底妝', time:'保養時間', inner:'內在保養', future:'未來保養', budget:'月預算' },
       badge:'Your Skin History',
       routineH:'這一章，屬於你的全套陣容', routineSub:'全部類別，各3款，按適合你的順序，預算內的排在前面。',
       price:'定價', priceNote:'含稅 · 會員享夏季特惠價',
@@ -534,7 +678,13 @@
         makeup: { q:'베이스 메이크업은<br>어떤 마무리를 좋아하세요?', note:'파운데이션 고르기도 스킨케어의 연장이에요.', o:{
           tsuya:{l:'물광 피부',s:'촉촉하게 빛을 두른 듯한'}, natural:{l:'맨피부 같은 내추럴',s:'"피부 좋다"는 말이 듣고 싶어요'}, mat:{l:'보송한 세미매트',s:'단정함과 지속력'}, none:{l:'베이스는 잘 안 해요'} } },
         inner: { q:'이너 케어<br>(영양제·드링크)는요?', note:'피부는 먹고 마시는 것으로도 만들어져요.', o:{
-          yes:{l:'이미 챙기고 있어요'}, curious:{l:'관심 있어요',s:'무엇부터 시작할지 궁금해요'}, later:{l:'우선은 바르는 것부터'} } }
+          yes:{l:'이미 챙기고 있어요'}, curious:{l:'관심 있어요',s:'무엇부터 시작할지 궁금해요'}, later:{l:'우선은 바르는 것부터'} } },
+        hydration: { q:'하루 동안 피부의 수분감은<br>어떻게 변하나요?', note:'유분과 수분은 사실 별개예요. 이 질문으로 피부 타입의 해상도가 올라갑니다.', o:{
+          low:{l:'저녁이면 푸석해져요',s:'아침 보습이 오래가지 않아요'}, partial:{l:'부분적으로만 건조해요',s:'볼이나 입가만 당겨요'}, inner:{l:'번들거리는데, 속은 건조한 느낌',s:'수분 부족형 지성일지도'}, high:{l:'하루 종일 촉촉해요'} } },
+        trouble: { q:'화장품 때문에 피부가<br>뒤집어진 적이 있나요?', note:'솔직하게 알려주세요. 당신에게 맞는 브랜드 계열이 여기서 갈립니다.', o:{
+          allergy:{l:'가려움·붉어짐·발진이 있었어요',s:'알레르기 반응일 수도'}, ingredient:{l:'"안 맞는 성분"이 있는 것 같아요',s:'특정 제품에 따가움을 느껴요'}, seasonal:{l:'환절기에 흔들려요',s:'초봄이나 건조한 시기에 불안정'}, none:{l:'거의 없어요'} } },
+        future: { q:'10년 후의 피부를 위해,<br>지금 신경 쓰고 싶은 것은?', note:'해당하는 것을 모두. 예방은 가장 현명한 투자예요.', o:{
+          spots:{l:'기미·주근깨 예비군',s:'자외선 데미지 축적이 걱정돼요'}, sag:{l:'처짐·팔자주름',s:'페이스라인의 변화'}, dryline:{l:'건조로 인한 잔주름',s:'눈가·입가의 건조 신호'}, porefix:{l:'모공이 늘어난 채 굳는 것',s:'고정되기 전에'}, notyet:{l:'아직 생각해본 적 없어요'} } }
       },
       types: {
         glow:{ name:'\'촉촉 빛의 장\'', story:'당신의 이야기는 빛을 모으는 계절에 들어섰습니다.' },
@@ -567,6 +717,30 @@
       chipOver:'예산보다 위', swipe:'→ 옆으로 밀어 3개를 비교할 수 있어요',
       lashNote: { grow:'힘·탄력 세럼을 앞에 두었어요.', curl:'펌·연장 토대 케어를 앞에 두었어요.' },
       innerNote: { yes:'이미 챙기는 분께, 다음 한 수를.', curious:'가장 시작하기 쉬운 것부터 두었어요.', later:'서두르지 않아도 돼요. 생각날 때 참고하세요.' },
+      profEyebrow:'Skin Profile — 피부 타입 판정',
+      prof: {
+        name: { dry:'건성 피부', oily:'지성 피부', combo:'복합성 피부', sensitive:'민감 성향 피부', normal:'중성 피부' },
+        tagInner:'수분 부족형 경향', tagSens:'민감 경향', tagSeason:'환절기 흔들림',
+        oil: { dry:'유분이 적고 수분도 쉽게 달아나는 타입. 과한 세안을 피하고, 유분과 수분을 함께 채우는 케어가 축이 됩니다.', oily:'유분은 충분히 나오는 타입. 다만 유분과 수분은 별개라서, 지성일수록 수분 케어를 건너뛰기 쉬워요.', combo:'T존은 번들거리고 볼은 건조한 두 얼굴 타입. 부위별로 제품을 나누기보다 "수분은 얼굴 전체에, 유분은 건조한 곳에"가 지름길.', sensitive:'외부 자극에 반응하기 쉬운 감수성 높은 타입. 공격적인 성분보다 장벽을 지키는 설계부터 시작하는 게 안전해요.', normal:'큰 치우침이 없는 밸런스 타입. 그래서 "예방"에 대한 투자 효율이 가장 높은 피부예요.' },
+        hyd: { low:'저녁에 건조해지는 건 아침에 준 수분을 붙잡지 못한다는 신호. "주기"보다 "붙잡게 하기"(세라마이드류 보습)를 의식하면 달라져요.', partial:'부분 건조는 복합성 경향의 신호. 건조한 곳에만 보습을 한 겹 더 얹는 "부분 더하기"가 잘 들어요.', inner:'번들거리는데 속은 건조——그건 유분이 아니라 수분 부족의 신호예요. 유분을 걷어내기보다 수분을 채워 피지를 진정시키는 순서가 정답. 이걸 알게 된 것만으로도 오늘의 진단은 수확이에요.', high:'수분 보유력이 저금되는 시기예요. 이 상태를 지키는 자외선 차단과 보습 습관이 10년 후의 차이가 됩니다.' },
+        tr: { allergy:'가려움·붉어짐 경험이 있으니 새 화장품을 "얼굴에 바로"는 피하세요. 증상이 심할 때는 자가 판단하지 말고 피부과 상담을 권해요.', ingredient:'안 맞는 성분이 짐작된다면, 성분표가 심플한 것·저자극 설계부터 고르는 눈을 기르세요.', seasonal:'환절기에 흔들리는 피부는 흔들린 뒤 찾기보다 "흔들리기 전의 대비" 한 병을 상비하면 안정돼요.', none:'트러블 이력이 적다는 건 큰 자산. 새로운 케어에도 도전하기 좋은 피부예요.' }
+      },
+      proH:'프로의 소견', proSub:'당신의 답변을 바탕으로, 뷰티 프로로서 전하고 싶은 것.',
+      notes: {
+        doctor: { t:'당신에게는 "더마 코스메틱"이라는 선택지를', b:'가려움이나 붉어짐 경험이 있는 분께 먼저 권하고 싶은 건 클리닉 발상의 저자극 설계, 더마 코스메틱이에요. SEAM에서는 Dr.SOIE, JC PROGRAM, EXBARRIER, ACNEO가 그 계열(아래 추천에도 우선 배치했어요). 철칙: 새 아이템은 팔 안쪽에서 2〜3일 테스트한 뒤 얼굴로. 증상이 심할 땐 화장품으로 버티지 말고 피부과 진료를 권합니다.' },
+        seasonal: { t:'흔들리기 전에, 장벽의 "상비군"을', b:'환절기에 흔들리는 분은 무너진 뒤 찾지 말고, 저자극 장벽 케어를 한 병 상비해 두는 게 프로의 정석. 흔들림이 시작된 2〜3일 안에 갈아탈 수 있으면 무너짐이 얕게 끝나요.' },
+        innerdry: { t:'그 번들거림, 사실 "수분 SOS"일지도', b:'번들거린다고 유분을 걷어내는 케어로 기울면 피부는 피지를 더 내보내려 해요. 순서는 수분 먼저. 토너를 제대로 채우고 가벼운 로션으로 마무리. 1〜2주면 유수분 밸런스의 변화를 느낄 수 있을 거예요.' },
+        acne: { t:'성인 트러블은 "만지지 않기·전용 처방·잠"', b:'성인 트러블은 건조와 생활 리듬의 영향이 커서, 10대용 산뜻한 제품이 오히려 안 맞을 수 있어요. 약용 트러블 케어 처방으로 "씻기·지키기"를 정돈하고, 손대지 않기, 그리고 수면. 반복된다면 일찍 피부과를 찾는 것도 현명한 선택.' },
+        f_spots: { t:'미래의 기미는 오늘의 자외선 차단이 결정해요', b:'기미의 주범은 과거와 오늘의 자외선 축적. 아직 보이지 않는 지금이야말로 매일의 자외선 차단과 비타민C류·미백 유효성분(의약부외품)의 선제 케어가 잘 듣는 때. "생기고 나서"보다 "생기기 전"이 비용도 결과도 압도적으로 유리해요.' },
+        f_sag: { t:'탄력 투자는 복리로 돌아와요', b:'처짐·팔자주름 대책은 신경 쓰이기 시작한 지금이 시작할 때. 탄력 세럼과 크림은 일찍 시작할수록 복리처럼 차이가 벌어지는 영역이에요. 마사지의 절대 전제: 세게 문지르지 않기.' },
+        f_porefix: { t:'모공은 "고정되기 전"이 승부처', b:'모공 늘어짐은 피지·건조·탄력 저하가 합쳐져 조금씩 "고정"돼요. 고정 전인 지금이라면 세안 재점검과 수분 케어로 되돌릴 수 있는 단계. 문지르지 않기, 과하게 걷어내지 않기.' },
+        f_dryline: { t:'건조 잔주름은 가장 먼저 손쓸 수 있는 미래', b:'눈가·입가의 작은 건조 신호는 보습으로 답할 수 있는 단계에. 밤에 세라마이드나 히알루론산 계열 보습을 한 겹 두껍게 하는 것만으로 변화를 느끼기 쉬운 부위예요.' },
+        general: { t:'지금의 "순조로움"을 지키는 게 최고의 선수', b:'큰 트러블이 없는 피부는 사실 투자 효율이 가장 높은 상태. 매일의 자외선 차단과 과하지 않은 세안. 이 두 가지만 지켜도 10년 후의 선택지가 넓어져요.' }
+      },
+      sheetTitle:'카운슬링 시트 열기(매장 스태프용)',
+      sheetProfile:'피부 타입 판정', sheetNotes:'소견 메모',
+      sheetHint:'매장에서 이 화면을 스태프에게 보여주세요. 판정과 답변을 바탕으로 텍스처를 시험해 보며 그 자리에서 안내해 드려요. 스크린샷 저장이 편리합니다.',
+      sheetLabels: { age:'연령대', base:'피부 타입(유분)', hydration:'수분감', concerns:'고민', trouble:'트러블 이력', lash:'속눈썹', peak:'빛났던 시기', exp:'케어 여정', memory:'피부의 추억', goal:'원하는 피부', makeup:'베이스 메이크업', time:'케어 시간', inner:'이너 케어', future:'미래 케어', budget:'월 예산' },
       badge:'Your Skin History',
       routineH:'이 챕터의, 당신의 풀 라인업', routineSub:'모든 카테고리를 당신에게 맞는 순서로 3개씩. 예산에 맞는 것부터예요.',
       price:'정가', priceNote:'세금 포함 · 회원은 서머 세일 가격',
@@ -797,6 +971,12 @@
       if (base === 'dry' && concerns.indexOf('dry') < 0) concerns.push('dry');
       if (base === 'sensitive' && concerns.indexOf('sensitive') < 0) concerns.push('sensitive');
       if (base === 'oily' && concerns.indexOf('pore') < 0) concerns.push('pore');
+      // トラブル歴(かゆみ・赤み/合わない成分)→敏感扱い+ドクターズ系を優先
+      var troubled = (ans.trouble === 'allergy' || ans.trouble === 'ingredient');
+      if (troubled && concerns.indexOf('sensitive') < 0) concerns.push('sensitive');
+      // インナードライ(水分不足)→乾燥ケアも軸に
+      if ((ans.hydration === 'inner' || ans.hydration === 'low') && concerns.indexOf('dry') < 0) concerns.push('dry');
+      var DOCTOR = /ドクターソワ|JC |エクスバリア|アクネオ|インプレア/;
       var w = BUDGET[ans.budget] || BUDGET.b2;
       var dir = (ans.budget === 'b3' || ans.budget === 'b4') ? -1 : 1; // 高予算は同点なら上質側
 
@@ -814,6 +994,7 @@
         if (concerns.indexOf('acne') > -1 && (m.c || []).indexOf('acne') > -1) s += 5; // ニキビは専用処方を最優先
         if (m.step === 'foundation' && m.f && m.f === ans.makeup) s += 7;             // 仕上がりの好み
         if (m.step === 'lash' && m.f && m.f === ans.lash) s += 7;                      // まつげの答え
+        if (troubled && DOCTOR.test(catalogMap[m.id].n)) s += 5;                       // トラブル歴→クリニック発想・低刺激設計を前に
         return s;
       }
       var out = {};
@@ -854,6 +1035,41 @@
       html += '<h1 class="sf-type serif">' + ty.name + '</h1>';
       html += '</div>';
       html += '<div class="sf-story serif fadein">' + story + '</div>';
+
+      /* ── 肌質プロファイル(3階層判定: 皮脂×水分×トラブル歴) ── */
+      var troubled = (ans.trouble === 'allergy' || ans.trouble === 'ingredient');
+      var innerdry = (ans.hydration === 'inner' || (ans.base !== 'dry' && ans.hydration === 'low'));
+      var profName = L.prof.name[ans.base] || '';
+      var profTags = [];
+      if (innerdry) profTags.push(L.prof.tagInner);
+      if (troubled) profTags.push(L.prof.tagSens);
+      else if (ans.trouble === 'seasonal') profTags.push(L.prof.tagSeason);
+      var profBody = (L.prof.oil[ans.base] || '') + (L.prof.hyd[ans.hydration] || '') + (L.prof.tr[ans.trouble] || '');
+      html += '<section class="sf-profile fadein">';
+      html += '<p class="sf-prof-eyebrow mono">' + L.profEyebrow + '</p>';
+      html += '<p class="sf-prof-name serif">' + profName + (profTags.length ? ' <span class="sf-prof-tags">× ' + profTags.join(' × ') + '</span>' : '') + '</p>';
+      html += '<p class="sf-prof-body">' + profBody + '</p>';
+      html += '</section>';
+
+      /* ── プロの見立て(条件別・最大4つ) ── */
+      var noteKeys = [];
+      if (troubled) noteKeys.push('doctor');
+      if (ans.trouble === 'seasonal') noteKeys.push('seasonal');
+      if (innerdry) noteKeys.push('innerdry');
+      var cns = Array.isArray(ans.concerns) ? ans.concerns : [];
+      if (cns.indexOf('acne') > -1) noteKeys.push('acne');
+      var fut = Array.isArray(ans.future) ? ans.future : [];
+      ['spots','sag','porefix','dryline'].forEach(function(k){ if (fut.indexOf(k) > -1) noteKeys.push('f_' + k); });
+      if (!noteKeys.length) noteKeys.push('general');
+      noteKeys = noteKeys.slice(0, 4);
+      html += '<div class="sf-sec fadein"><h2 class="serif">' + L.proH + '</h2><p class="sub">' + L.proSub + '</p>';
+      noteKeys.forEach(function(k){
+        var nt = L.notes[k];
+        if (!nt) return;
+        html += '<section class="sf-pro"><h3 class="serif">' + nt.t + '</h3><p>' + nt.b + '</p></section>';
+      });
+      html += '</div>';
+
       html += '<div class="sf-sec fadein"><h2 class="serif">' + L.routineH + '</h2><p class="sub">' + L.routineSub + '</p>';
       var startCats = startCatsByTime();
       html += '<p class="sf-startline">' + L.startLine.replace('%s', startCats.map(function(k){ return '<b>' + L.cats[k] + '</b>'; }).join('・')) + '</p>';
@@ -881,6 +1097,24 @@
         html += '</div></section>';
       });
       html += '</div>';
+      /* ── カウンセリングシート(店頭スタッフ用・回答の全記録) ── */
+      var d = new Date();
+      var dateStr = d.getFullYear() + '.' + ('0' + (d.getMonth() + 1)).slice(-2) + '.' + ('0' + d.getDate()).slice(-2);
+      html += '<details class="sf-sheet fadein"><summary>' + L.sheetTitle + '</summary><div class="sf-sheet-in">';
+      html += '<p class="sh-top mono">SEAM SKIN COUNSELING SHEET · ' + dateStr + '</p>';
+      html += '<p class="sh-prof"><b>' + L.sheetProfile + ':</b> ' + profName + (profTags.length ? ' × ' + profTags.join(' × ') : '') + ' ／ ' + ty.name + '</p>';
+      html += '<table class="sh-table">';
+      STRUCT.forEach(function(st){
+        var lq = L.q[st.id] || LOCALE.ja.q[st.id];
+        var v = ans[st.id];
+        var vals = (Array.isArray(v) ? v : [v]).map(function(x){ return (lq.o[x] || {}).l || x || '—'; }).join('、');
+        html += '<tr><th>' + (L.sheetLabels[st.id] || st.id) + '</th><td>' + vals + '</td></tr>';
+      });
+      html += '</table>';
+      html += '<p class="sh-notes"><b>' + L.sheetNotes + ':</b> ' + noteKeys.map(function(k){ return L.notes[k] ? L.notes[k].t : ''; }).filter(Boolean).join(' ／ ') + '</p>';
+      html += '<p class="sh-hint">' + L.sheetHint + '</p>';
+      html += '</div></details>';
+
       html += '<div class="sf-cta fadein"><p class="serif" style="font-size:15px;">' + L.ctaH + '</p>';
       html += '<p>' + L.ctaP + '</p>';
       html += '<a href="shop.html">' + L.ctaBtn + '</a></div>';
