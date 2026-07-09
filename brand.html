@@ -5070,6 +5070,7 @@ window.SEAM_PAGE_I18N = {
   function renderSubChips() {
     const catRow = document.getElementById('pmFilterRowCategory');
     if (!catRow) return;
+    renderSkinFinderBanner(catRow);
     let row = document.getElementById('pmFilterRowSub');
     const defs = filters.category ? SUB_GROUPS[filters.category] : null;
     if (!defs) { if (row) row.style.display = 'none'; return; }
@@ -5101,6 +5102,22 @@ window.SEAM_PAGE_I18N = {
       });
       row.appendChild(btn);
     });
+  }
+
+  /* スキンケア選択時だけ「美肌ヒストリー」診断への入口を出す */
+  function renderSkinFinderBanner(catRow) {
+    let bn = document.getElementById('skinFinderBanner');
+    if (filters.category !== 'skincare') { if (bn) bn.style.display = 'none'; return; }
+    if (!bn) {
+      bn = document.createElement('a');
+      bn.id = 'skinFinderBanner';
+      bn.href = 'skinfinder.html';
+      bn.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 2px;padding:13px 16px;border:1px solid rgba(184,148,90,.4);border-radius:2px;background:linear-gradient(135deg,#FBF7EE,#F6F1E7);text-decoration:none;color:#2E2C28;';
+      bn.innerHTML = '<span style="min-width:0;"><span style="display:block;font-size:9.5px;letter-spacing:.2em;color:#B8945A;font-family:Inter,monospace;">SKIN HISTORY FINDER</span><span style="display:block;font-size:13px;margin-top:3px;font-weight:500;">迷ったら、肌の物語から選ぶ — 美肌ヒストリー診断</span><span style="display:block;font-size:11px;margin-top:2px;color:rgba(60,54,46,.7);">9つの質問で、なりたい肌への「次の一本」がわかります</span></span><span aria-hidden style="flex-shrink:0;color:#B8945A;font-size:16px;">→</span>';
+      const parent = document.getElementById('pmFilterRowSub');
+      (parent || catRow).insertAdjacentElement('afterend', bn);
+    }
+    bn.style.display = 'flex';
   }
 
   /* ─── 静的フィルター UI (Category + Function) — データ取得前に描画 ─── */

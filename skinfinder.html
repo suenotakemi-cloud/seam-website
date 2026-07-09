@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>美肌ヒストリー — 肌の物語から、次の一本へ | SEAM</title>
+  <meta name="description" content="SEAMの肌歴診断「美肌ヒストリー」｜これまでの肌の物語と、なりたい肌から、あなたの次の一本を見つける3分の診断">
+  <link rel="canonical" href="https://seam.site/skinfinder">
+  <meta property="og:site_name" content="SEAM">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://seam.site/skinfinder">
+  <meta property="og:title" content="美肌ヒストリー — 肌の物語から、次の一本へ | SEAM">
+  <meta property="og:description" content="これまでの肌の物語と、なりたい肌から、あなたの次の一本を見つける3分の診断">
+  <meta property="og:image" content="https://seam.site/images/og/seam-og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#FFFFFF">
+  <meta name="color-scheme" content="light">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Serif+JP:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tailwind.css">
+  <link rel="stylesheet" href="css/lang.css">
+  <style>
+    :root { --ink:#2E2C28; --charcoal:#4A463F; --gold:#B8945A; --cream:#F6F1E7; --ivory:#FDFBF7; --line:#E8E2D6; }
+    html { background:#FFFFFF; -webkit-text-size-adjust:100%; }
+    body { background:#FFFFFF; color:var(--ink); font-family:'Noto Sans JP','Inter',sans-serif; -webkit-font-smoothing:antialiased; font-size:15px; line-height:1.85; padding-bottom: calc(64px + env(safe-area-inset-bottom,0px)); }
+    @media (min-width:640px){ body { padding-bottom:0; } }
+    .serif { font-family:'Noto Serif JP','Cormorant Garamond',serif; }
+    .mono { font-family:'Inter',monospace; letter-spacing:.18em; }
+    .sf-wrap { max-width:680px; margin:0 auto; padding:0 20px; }
+    /* ── intro ── */
+    .sf-hero { padding:56px 0 36px; text-align:center; }
+    .sf-eyebrow { font-size:10.5px; color:var(--gold); text-transform:uppercase; }
+    .sf-title { font-size:30px; line-height:1.45; margin-top:14px; font-weight:500; }
+    @media (min-width:640px){ .sf-title{ font-size:38px; } }
+    .sf-lead { margin-top:16px; font-size:13.5px; color:var(--charcoal); opacity:.85; }
+    .sf-start { display:inline-flex; align-items:center; gap:10px; margin-top:28px; padding:16px 34px; background:var(--ink); color:var(--ivory); border-radius:2px; font-size:14px; letter-spacing:.08em; }
+    .sf-note { margin-top:14px; font-size:11px; color:var(--charcoal); opacity:.6; }
+    /* ── question ── */
+    .sf-chapter { font-size:10px; color:var(--gold); text-transform:uppercase; letter-spacing:.22em; }
+    .sf-chapname { font-size:13px; color:var(--charcoal); margin-top:4px; }
+    .sf-progress { height:2px; background:var(--line); border-radius:2px; margin:18px 0 26px; overflow:hidden; }
+    .sf-progress i { display:block; height:100%; background:var(--gold); transition:width .4s ease; }
+    .sf-q { font-size:20px; line-height:1.6; font-weight:500; }
+    @media (min-width:640px){ .sf-q{ font-size:24px; } }
+    .sf-qnote { margin-top:8px; font-size:12.5px; color:var(--charcoal); opacity:.75; }
+    .sf-opts { margin-top:22px; display:grid; gap:10px; }
+    .sf-opt { text-align:left; padding:16px 18px; border:1px solid var(--line); border-radius:2px; background:#fff; transition:all .15s; font-size:14.5px; line-height:1.6; }
+    .sf-opt small { display:block; font-size:11.5px; color:var(--charcoal); opacity:.7; margin-top:2px; }
+    .sf-opt.on { border-color:var(--gold); background:var(--cream); }
+    .sf-opt:active { transform:scale(.985); }
+    .sf-next { margin-top:26px; width:100%; padding:16px; background:var(--ink); color:var(--ivory); border-radius:2px; font-size:14px; letter-spacing:.08em; opacity:.35; pointer-events:none; transition:opacity .2s; }
+    .sf-next.ok { opacity:1; pointer-events:auto; }
+    .sf-back { display:block; margin:14px auto 0; font-size:11px; color:var(--charcoal); opacity:.6; letter-spacing:.15em; background:none; }
+    /* ── result ── */
+    .sf-badge { display:inline-block; font-size:10px; color:var(--gold); border:1px solid rgba(184,148,90,.45); padding:4px 12px; border-radius:2px; letter-spacing:.2em; text-transform:uppercase; }
+    .sf-type { font-size:30px; margin-top:16px; font-weight:500; line-height:1.4; }
+    @media (min-width:640px){ .sf-type{ font-size:36px; } }
+    .sf-story { margin-top:20px; padding:22px 20px; background:var(--cream); border-radius:2px; font-size:14px; line-height:2.1; color:var(--charcoal); }
+    .sf-story b { color:var(--ink); font-weight:600; }
+    .sf-sec { margin-top:40px; }
+    .sf-sec h2 { font-size:19px; font-weight:500; }
+    .sf-sec .sub { font-size:12px; color:var(--charcoal); opacity:.75; margin-top:4px; }
+    .sf-step { margin-top:18px; border:1px solid rgba(184,148,90,.35); border-radius:2px; background:#fff; padding:16px; display:flex; gap:14px; }
+    .sf-step img { width:76px; height:96px; object-fit:contain; flex-shrink:0; background:#fff; }
+    .sf-step .role { font-size:9.5px; color:var(--gold); letter-spacing:.2em; text-transform:uppercase; }
+    .sf-step .bname { font-size:10px; color:var(--charcoal); opacity:.65; margin-top:5px; letter-spacing:.06em; }
+    .sf-step .pname { font-size:14.5px; font-weight:500; line-height:1.5; margin-top:2px; }
+    .sf-step .price { font-size:13px; margin-top:5px; }
+    .sf-step .price small { font-size:10px; color:var(--charcoal); opacity:.6; }
+    .sf-step .copy { font-size:12px; line-height:1.85; color:var(--charcoal); margin-top:7px; }
+    .sf-step .rel { font-size:11px; color:var(--charcoal); opacity:.75; margin-top:6px; border-left:2px solid rgba(184,148,90,.4); padding-left:8px; }
+    .sf-cta { margin-top:36px; padding:24px 20px; background:var(--ink); color:var(--ivory); border-radius:2px; text-align:center; }
+    .sf-cta p { font-size:13px; opacity:.85; line-height:1.9; }
+    .sf-cta a { display:inline-block; margin-top:14px; padding:13px 28px; border:1px solid rgba(253,251,247,.5); border-radius:2px; color:var(--ivory); font-size:13px; letter-spacing:.08em; }
+    .sf-again { display:block; margin:26px auto 0; font-size:11.5px; color:var(--charcoal); opacity:.65; letter-spacing:.12em; background:none; text-align:center; }
+    .sf-cross { margin-top:30px; text-align:center; font-size:12.5px; color:var(--charcoal); }
+    .sf-cross a { color:var(--gold); text-decoration:underline; text-underline-offset:3px; }
+    .hidden { display:none; }
+    .fadein { animation:sfFade .5s ease both; }
+    @keyframes sfFade { from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none;} }
+  </style>
+</head>
+<body>
+  <!-- HEADER + slide menu injected by js/app-header.js -->
+
+  <main class="sf-wrap" id="sfMain">
+
+    <!-- ═══ INTRO ═══ -->
+    <section id="sfIntro" class="sf-hero fadein">
+      <p class="sf-eyebrow mono">— Skin History Finder</p>
+      <h1 class="sf-title serif">美肌ヒストリー</h1>
+      <p class="sf-lead">肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>9つの質問で、あなたの肌の現在地と「次の一本」を見つけます。</p>
+      <button class="sf-start" id="sfStart">物語をひらく <span aria-hidden>→</span></button>
+      <p class="sf-note">約3分・登録不要・結果は店頭のカウンセリングでも使えます</p>
+    </section>
+
+    <!-- ═══ QUESTIONS ═══ -->
+    <section id="sfQuiz" class="hidden" style="padding:40px 0 60px;">
+      <p class="sf-chapter mono" id="sfChap"></p>
+      <p class="sf-chapname serif" id="sfChapName"></p>
+      <div class="sf-progress"><i id="sfBar" style="width:0%"></i></div>
+      <h2 class="sf-q serif" id="sfQ"></h2>
+      <p class="sf-qnote" id="sfQnote"></p>
+      <div class="sf-opts" id="sfOpts"></div>
+      <button class="sf-next" id="sfNext">次へ</button>
+      <button class="sf-back" id="sfBack">← ひとつ戻る</button>
+    </section>
+
+    <!-- ═══ RESULT ═══ -->
+    <section id="sfResult" class="hidden" style="padding:44px 0 70px;"></section>
+  </main>
+
+  <script>
+  (function(){
+    'use strict';
+    /* ─────────── 質問定義(3章9問) ─────────── */
+    var QS = [
+      { ch:1, chn:'第一章 いまの肌', id:'age', q:'年代を教えてください', note:'肌のリズムに合わせたご提案のために。', multi:false, opts:[
+        {v:'10s',l:'10代'},{v:'20s',l:'20代'},{v:'30s',l:'30代'},{v:'40s',l:'40代'},{v:'50s',l:'50代以上'}]},
+      { ch:1, chn:'第一章 いまの肌', id:'base', q:'朝、顔を洗ったあと。<br>素肌の第一声はどれに近いですか？', note:'いちばん多い日の感覚で大丈夫です。', multi:false, opts:[
+        {v:'dry',l:'「つっぱる…」',s:'頬や目もとがきゅっと乾く'},
+        {v:'oily',l:'「もうテカりの気配」',s:'Tゾーンから光ってくる'},
+        {v:'combo',l:'「部分によってバラバラ」',s:'頬は乾くのにTゾーンは光る'},
+        {v:'sensitive',l:'「今日はゆらぎそう」',s:'季節や体調で調子が変わりやすい'},
+        {v:'normal',l:'「今日はちょうどいい」',s:'大きな不満はない日が多い'}]},
+      { ch:1, chn:'第一章 いまの肌', id:'concerns', q:'いま、気になっていることは？', note:'当てはまるものをすべて。悩みではなく「伸びしろ」として伺います。', multi:true, opts:[
+        {v:'dry',l:'乾燥・かさつき'},
+        {v:'pore',l:'毛穴・ごわつき'},
+        {v:'hari',l:'ハリ・ふっくら感'},
+        {v:'tone',l:'くすみ・透明感'},
+        {v:'sensitive',l:'ゆらぎ・敏感'},
+        {v:'acne',l:'大人ニキビ'},
+        {v:'none',l:'とくにない',x:true}]},
+      { ch:2, chn:'第二章 美肌ヒストリー', id:'peak', q:'これまでで、肌がいちばん<br>輝いていた章はいつですか？', note:'思い出してみてください。あの頃の肌は、いまも設計図として残っています。', multi:false, opts:[
+        {v:'teen',l:'学生の頃',s:'何もしなくても平気だった'},
+        {v:'twenties',l:'20代のあの頃',s:'メイクが楽しかった時期'},
+        {v:'recent',l:'わりと最近',s:'ケアが実った実感がある'},
+        {v:'future',l:'これから書く',s:'いちばんいい章はまだ先'}]},
+      { ch:2, chn:'第二章 美肌ヒストリー', id:'exp', q:'これまでの肌との付き合い方は<br>どのタイプでしたか？', note:'正解はありません。歩いてきた道を教えてください。', multi:false, opts:[
+        {v:'simple',l:'シンプル派',s:'最低限を丁寧に続けてきた'},
+        {v:'explorer',l:'コスメ探検家',s:'新作も話題の成分も試してきた'},
+        {v:'salon',l:'エステ・サロン経験あり',s:'プロの手を借りてきた'},
+        {v:'doctor',l:'ドクターズコスメ経験あり',s:'成分やエビデンスで選んできた'}]},
+      { ch:2, chn:'第二章 美肌ヒストリー', id:'memory', q:'肌が、あなたのために<br>がんばってくれた思い出は？', note:'ひとつ選ぶと、結果の物語に織り込まれます。', multi:false, opts:[
+        {v:'travel',l:'旅先でも荒れなかった日がある'},
+        {v:'praised',l:'「肌きれい」と言われたことがある'},
+        {v:'nofoundation',l:'ノーファンデで出かけた日がある'},
+        {v:'searching',l:'いま思い出しています',s:'これから作る思い出でもいい'}]},
+      { ch:3, chn:'第三章 これからの章', id:'goal', q:'次の章で、どんな肌に<br>会いたいですか？', note:'なりたい、がいちばんの道しるべです。', multi:false, opts:[
+        {v:'glow',l:'うるおいで光る肌',s:'内側から満ちるようなツヤ'},
+        {v:'kime',l:'キメの整った絹肌',s:'なめらかな面で光を返す'},
+        {v:'hari',l:'ふっくらハリのある肌',s:'弾むような弾力を'},
+        {v:'tone',l:'透きとおる肌',s:'くもりのない透明感を'},
+        {v:'calm',l:'ゆらがない健やかな肌',s:'毎日おだやかでいてほしい'}]},
+      { ch:3, chn:'第三章 これからの章', id:'time', q:'ケアにかけられる時間は？', note:'続けられるルーティンだけが、物語を進めます。', multi:false, opts:[
+        {v:'full',l:'朝晩じっくり',s:'ステップを重ねるのが好き'},
+        {v:'night',l:'夜だけ丁寧に',s:'朝は最小限で'},
+        {v:'quick',l:'とにかく時短',s:'少ない手数で決めたい'},
+        {v:'weekend',l:'週末に集中ケア',s:'平日は軽く、週末にご褒美'}]},
+      { ch:3, chn:'第三章 これからの章', id:'budget', q:'毎月、スキンケアにかけたい<br>金額はどれくらいですか？', note:'正直な金額で大丈夫です。その範囲でいちばんいい答えを組みます。', multi:false, opts:[
+        {v:'b1',l:'〜3,000円',s:'まずは気軽に'},
+        {v:'b2',l:'3,000〜8,000円',s:'定番をきちんと'},
+        {v:'b3',l:'8,000〜15,000円',s:'いいものを選びたい'},
+        {v:'b4',l:'15,000円〜',s:'投資は惜しまない'}]}
+    ];
+
+    /* ─────────── レコメンド表(手作業キュレーション・idはsalon.town実在) ───────────
+       step: cleanse/wash/lotion/serum/moist/uv/special
+       c: 対応する伸びしろ dry/pore/hari/tone/sensitive/acne (空=汎用) */
+    var M = [
+      {id:'20230901142428301GiehadX',step:'cleanse',c:['dry']},
+      {id:'20250610091310720bdWUcFe',step:'cleanse',c:['pore','tone']},
+      {id:'20230901142428301jaDcWGR',step:'cleanse',c:['sensitive']},
+      {id:'20250711124549799CJPDKee',step:'cleanse',c:['dry','kime']},
+      {id:'20230901142428231UcQafET',step:'cleanse',c:['dry','sensitive']},
+      {id:'20251002160508807GEdDOfW',step:'cleanse',c:['sensitive']},
+      {id:'20241017103919112BgThjTi',step:'cleanse',c:['dry']},
+      {id:'20251002110547257aGhgKFc',step:'cleanse',c:[],quick:1},
+      {id:'20250404115611133OKhTUfQ',step:'cleanse',c:['sensitive','dry']},
+      {id:'20260129170410200jHccKga',step:'cleanse',c:['hari']},
+      {id:'20260403225031111CRWgFGN',step:'cleanse',c:['pore','acne']},
+      {id:'20230901142428278KWiEgWF',step:'cleanse',c:[]},
+      {id:'20230901142428301ijacaig',step:'cleanse',c:['pore','tone']},
+      {id:'20250424202604338VcggaiC',step:'wash',c:['pore']},
+      {id:'20250531222414794FfahWgb',step:'wash',c:['pore']},
+      {id:'20230901142428322iHEdeaK',step:'wash',c:['sensitive','dry']},
+      {id:'20230901142428301ADhjLfM',step:'wash',c:['sensitive']},
+      {id:'20241017104116664RePUhcZ',step:'wash',c:['hari']},
+      {id:'20230901142428321OceihBL',step:'wash',c:['dry']},
+      {id:'20240802164502884jeQhHgZ',step:'wash',c:['pore','tone']},
+      {id:'20251218205327563agQfQcg',step:'wash',c:['sensitive']},
+      {id:'20260129170834934aYhPLcL',step:'wash',c:['hari']},
+      {id:'20230901142428322VfdbjdY',step:'wash',c:['acne']},
+      {id:'20250404114952569DigVBOK',step:'lotion',c:['hari']},
+      {id:'20250902163243519GifUdJb',step:'lotion',c:['dry']},
+      {id:'20230901142428232AeTheKJ',step:'lotion',c:['kime','dry']},
+      {id:'20230901142428347JgHJejO',step:'lotion',c:['tone']},
+      {id:'20230901142428347bYCiVPT',step:'lotion',c:['dry']},
+      {id:'20230901142428322gBRQjLG',step:'lotion',c:['sensitive']},
+      {id:'20230901142428322fccejWJ',step:'lotion',c:['sensitive','dry']},
+      {id:'20230901142428322jfCDjIE',step:'lotion',c:['dry']},
+      {id:'20241017102914534jEJPLfR',step:'lotion',c:['dry','glow']},
+      {id:'20251002163715557defhYhe',step:'lotion',c:['dry']},
+      {id:'20241120091618659gicGdfh',step:'lotion',c:['pore','tone']},
+      {id:'20260129171315957JTQXBXU',step:'lotion',c:['hari']},
+      {id:'20230901142428321iEPQgeN',step:'lotion',c:['hari']},
+      {id:'20251218205733077PDiYOMi',step:'lotion',c:['sensitive']},
+      {id:'20250228115757724MhVaLLT',step:'lotion',c:['hari']},
+      {id:'20230901142428322iRSNjXh',step:'lotion',c:['acne']},
+      {id:'20250424194418578Nahjjdb',step:'serum',c:['tone','pore','hari']},
+      {id:'20250404115713923FIheKdU',step:'serum',c:['tone']},
+      {id:'20250424194203698VUBiQih',step:'serum',c:['tone']},
+      {id:'20250424194100499UPbWObg',step:'serum',c:['hari']},
+      {id:'20250404114831496WePXhGa',step:'serum',c:['hari']},
+      {id:'20260225205851651gJacHUh',step:'serum',c:['tone']},
+      {id:'20240821104240317eJAKZWY',step:'serum',c:['pore','tone','acne']},
+      {id:'20251016154424597Pddhhed',step:'serum',c:['hari']},
+      {id:'20240821103344113ZcfcHjg',step:'serum',c:['hari']},
+      {id:'20230901142428231KhgiLIS',step:'serum',c:['kime']},
+      {id:'20230901142428231djdMfbF',step:'serum',c:['tone']},
+      {id:'20230901142428347eDZhHfF',step:'serum',c:['tone']},
+      {id:'20251002111947038TcecbSf',step:'serum',c:['glow','dry']},
+      {id:'20240821102204905bVdSXYD',step:'serum',c:['dry']},
+      {id:'20251002163428376ffHCTWd',step:'serum',c:[]},
+      {id:'20241210172409382JMWijjg',step:'serum',c:['hari']},
+      {id:'20250404115522030fgdSjhR',step:'moist',c:[]},
+      {id:'20250404115107176BeISbBN',step:'moist',c:['hari']},
+      {id:'20250404115216212ideYiVe',step:'moist',c:['hari']},
+      {id:'20250902164500864jOCKTRa',step:'moist',c:['dry']},
+      {id:'20230901142428231HiIEabb',step:'moist',c:['kime']},
+      {id:'20230901142428231dcIeQbI',step:'moist',c:['hari','dry']},
+      {id:'20230901142428231IjiiQCc',step:'moist',c:['glow']},
+      {id:'20241017103337637LKacaOQ',step:'moist',c:['dry','hari']},
+      {id:'20241017103043989hcGWTgh',step:'moist',c:['dry']},
+      {id:'20250522121259484YThaSId',step:'moist',c:['hari','tone']},
+      {id:'20241120093349908Gghgegh',step:'moist',c:[],quick:1},
+      {id:'20230901142428302aRjGHbf',step:'moist',c:['dry']},
+      {id:'20230901142428302bXAbPDB',step:'moist',c:['dry','glow']},
+      {id:'20251218205844795efKaHgS',step:'moist',c:['sensitive']},
+      {id:'20250228115959459EbTjfhM',step:'moist',c:['hari']},
+      {id:'20230901142428322NTfeMaK',step:'moist',c:['acne']},
+      {id:'20230901142428347XfRQMed',step:'moist',c:['dry','sensitive']},
+      {id:'20230901142428232ccRhcQR',step:'uv',c:[]},
+      {id:'20260227230850963SeeLehF',step:'uv',c:[]},
+      {id:'20250217162844542hSajaTI',step:'uv',c:['tone']},
+      {id:'20250703140343458hPeSXJj',step:'uv',c:[],quick:1},
+      {id:'20260129172125056PjMbjWF',step:'uv',c:['sensitive']},
+      {id:'20250701151812559ebNYbgb',step:'uv',c:['tone']},
+      {id:'20260422160142113PbeZGEV',step:'uv',c:[],quick:1},
+      {id:'20241017103650403ciKijaL',step:'uv',c:['tone']},
+      {id:'20251218205958571SdbRWFb',step:'uv',c:['sensitive']},
+      {id:'20260129172956411JaUZLFP',step:'special',c:['hari']},
+      {id:'20230901142428347bQgjGVO',step:'special',c:['hari']},
+      {id:'20250701161337581ibQQgii',step:'special',c:['tone']},
+      {id:'20250228122137070iDOfidb',step:'special',c:['pore']},
+      {id:'20250424194605348eedgPBb',step:'special',c:['pore','tone']},
+      {id:'20230901142428231FeXfaga',step:'special',c:['pore']},
+      {id:'20250929214221576jIjJKhH',step:'special',c:['pore','tone']},
+      {id:'20230901142428189cagiEjP',step:'special',c:['dry']}
+    ];
+
+    /* ─────────── 章(タイプ)定義 ─────────── */
+    var TYPES = {
+      glow: { name:'うるみ玉の章', story:'あなたの物語は、光をためる季節に入っています。' },
+      kime: { name:'きぬ肌の章', story:'あなたの物語は、面をなめらかに磨く季節に入っています。' },
+      hari: { name:'ハリ弾む章', story:'あなたの物語は、ふっくらと弾みを取り戻す季節に入っています。' },
+      tone: { name:'透きとおる章', story:'あなたの物語は、くもりを晴らしていく季節に入っています。' },
+      calm: { name:'凪の章', story:'あなたの物語は、ゆらぎを鎮めて土台を育てる季節に入っています。' }
+    };
+    var PEAK_LINE = {
+      teen:'学生の頃の肌が輝いていたなら、あなたの肌には<b>いい設計図</b>がもともとあります。',
+      twenties:'20代のあの頃の輝きを知っているなら、肌は<b>戻り方を覚えて</b>います。',
+      recent:'最近いちばん良かったと感じているなら、いまのケアは<b>正しい道の途中</b>です。',
+      future:'いちばんいい章はこれから、という答えがいちばん強い。<b>伸びしろしかない</b>ということです。'
+    };
+    var EXP_LINE = {
+      simple:'シンプルに続けてきた丁寧さは、これから足す一本を<b>まっすぐ効かせる土台</b>になります。',
+      explorer:'たくさん試してきた経験は、<b>自分に合うものを見抜く目</b>としてもう備わっています。',
+      salon:'プロの手を知っている肌は、<b>いいものへの反応が早い</b>。自宅ケアにもそれは活きます。',
+      doctor:'成分で選んできたあなたには、<b>根拠のある一本</b>がいちばん似合います。'
+    };
+    var MEM_LINE = {
+      travel:'旅先でも荒れなかったあの日の肌は、あなたの肌の底力の証明です。',
+      praised:'「肌きれい」と言われた日があるなら、その日はまた作れます。',
+      nofoundation:'ノーファンデで出かけたあの日を、次の章の目的地にしましょう。',
+      searching:'思い出はこれから作ればいい。今日の診断が、その最初のページです。'
+    };
+    var BUDGET = {
+      b1:{min:0,max:4400},
+      b2:{min:2400,max:9800},
+      b3:{min:6000,max:17000},
+      b4:{min:9000,max:99999}
+    };
+    var STEP_LABEL = { cleanse:'落とす', wash:'洗う', lotion:'うるおす', serum:'効かせる', moist:'とじこめる', uv:'守る', special:'週のご褒美' };
+
+    /* ─────────── 状態 ─────────── */
+    var idx = 0, ans = {}, catalogMap = null, copyMap = {};
+
+    var $ = function(id){ return document.getElementById(id); };
+
+    function show(sec){ ['sfIntro','sfQuiz','sfResult'].forEach(function(s){ $(s).classList.toggle('hidden', s!==sec); }); window.scrollTo({top:0}); }
+
+    function renderQ(){
+      var q = QS[idx];
+      $('sfChap').textContent = '— Chapter ' + q.ch + ' · ' + (idx+1) + ' / ' + QS.length;
+      $('sfChapName').textContent = q.chn;
+      $('sfBar').style.width = Math.round(((idx)/QS.length)*100) + '%';
+      $('sfQ').innerHTML = q.q;
+      $('sfQnote').textContent = q.note || '';
+      var box = $('sfOpts'); box.innerHTML = '';
+      var cur = ans[q.id];
+      q.opts.forEach(function(o){
+        var b = document.createElement('button');
+        b.className = 'sf-opt';
+        b.innerHTML = o.l + (o.s ? '<small>' + o.s + '</small>' : '');
+        var on = q.multi ? (Array.isArray(cur) && cur.indexOf(o.v) > -1) : cur === o.v;
+        if (on) b.classList.add('on');
+        b.onclick = function(){
+          if (q.multi) {
+            var arr = Array.isArray(ans[q.id]) ? ans[q.id].slice() : [];
+            if (o.x) { arr = arr.indexOf(o.v) > -1 ? [] : [o.v]; }
+            else {
+              arr = arr.filter(function(v){ return !q.opts.some(function(p){ return p.x && p.v === v; }); });
+              var i = arr.indexOf(o.v);
+              if (i > -1) arr.splice(i,1); else arr.push(o.v);
+            }
+            ans[q.id] = arr;
+            renderQ();
+          } else {
+            ans[q.id] = o.v;
+            renderQ();
+            setTimeout(next, 220);
+          }
+        };
+        box.appendChild(b);
+      });
+      var ok = q.multi ? (Array.isArray(cur) && cur.length > 0) : !!cur;
+      $('sfNext').classList.toggle('ok', ok);
+      $('sfNext').style.display = q.multi ? '' : 'none';
+      $('sfBack').style.visibility = idx === 0 ? 'hidden' : 'visible';
+      $('sfQuiz').classList.remove('fadein'); void $('sfQuiz').offsetWidth; $('sfQuiz').classList.add('fadein');
+    }
+    function next(){
+      var q = QS[idx];
+      var cur = ans[q.id];
+      var ok = q.multi ? (Array.isArray(cur) && cur.length > 0) : !!cur;
+      if (!ok) return;
+      if (idx < QS.length - 1) { idx++; renderQ(); }
+      else finish();
+    }
+
+    /* ─────────── データ取得 ─────────── */
+    function loadData(){
+      var p1 = fetch('data/products/seam-catalog.json?v=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.json(); }).then(function(j){
+        catalogMap = {};
+        (j.items || []).forEach(function(it){ if (it && it.id) catalogMap[it.id] = it; });
+      });
+      var p2 = fetch('data/products/seam-copy.json?v=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.json(); }).then(function(j){ copyMap = j.items || {}; }).catch(function(){});
+      return Promise.all([p1, p2]);
+    }
+
+    /* ─────────── 選定ロジック ─────────── */
+    function pickRoutine(){
+      var goal = ans.goal || 'glow';
+      var concerns = Array.isArray(ans.concerns) ? ans.concerns.filter(function(c){ return c !== 'none'; }) : [];
+      var base = ans.base;
+      if (base === 'dry' && concerns.indexOf('dry') < 0) concerns.push('dry');
+      if (base === 'sensitive' && concerns.indexOf('sensitive') < 0) concerns.push('sensitive');
+      if (base === 'oily' && concerns.indexOf('pore') < 0) concerns.push('pore');
+      var wants = concerns.slice();
+      if (wants.indexOf(goal) < 0) wants.push(goal); // なりたいも軸に
+      var w = BUDGET[ans.budget] || BUDGET.b2;
+
+      // 時間タイプでステップ構成を決める(自分で選んだ感=回答が構成を変える)
+      var steps;
+      if (ans.time === 'quick') steps = ['cleanse','moist','uv'];
+      else if (ans.time === 'weekend') steps = ['wash','lotion','special'];
+      else if (ans.time === 'night') steps = ['cleanse','lotion','serum'];
+      else steps = ['lotion','serum','moist','uv'];
+
+      // なりたい→商品タグの対応(calm=敏感ケア等・タグ語彙に翻訳)
+      var GOAL_KEYS = { glow:['glow','dry'], kime:['kime','pore'], hari:['hari'], tone:['tone'], calm:['sensitive'] };
+      var gk = GOAL_KEYS[goal] || [goal];
+      function score(m){
+        var s = 0;
+        (m.c || []).forEach(function(c){
+          if (gk.indexOf(c) > -1) s += 6;
+          if (concerns.indexOf(c) > -1) s += 4;
+        });
+        if ((m.c || []).length === 0) s += 1; // 汎用
+        if (ans.time === 'quick' && m.quick) s += 3;
+        if (concerns.indexOf('acne') > -1 && (m.c || []).indexOf('acne') > -1) s += 5; // ニキビは専用処方を最優先
+        return s;
+      }
+      var dir = (ans.budget === 'b3' || ans.budget === 'b4') ? -1 : 1; // 高予算は同点なら上質側
+      var picks = [];
+      steps.forEach(function(st){
+        var cands = M.filter(function(m){ return m.step === st && catalogMap[m.id] && catalogMap[m.id].p; });
+        if (!cands.length) return;
+        var inWin = cands.filter(function(m){ var p = catalogMap[m.id].p; return p >= w.min && p <= w.max; });
+        var chosen, stretch = false, under = false;
+        if (inWin.length) {
+          chosen = inWin.sort(function(a,b){ return score(b) - score(a) || (catalogMap[a.id].p - catalogMap[b.id].p) * dir; })[0];
+        } else if (cands.every(function(m){ return catalogMap[m.id].p < w.min; })) {
+          // 全候補が予算の下=予算超えではないので普通に一番合うものを(同点なら上質側)
+          chosen = cands.sort(function(a,b){ return score(b) - score(a) || catalogMap[b.id].p - catalogMap[a.id].p; })[0];
+          under = true;
+        } else {
+          // この役割の最安でも予算の上=正直に伝えて最安を
+          chosen = cands.sort(function(a,b){ return catalogMap[a.id].p - catalogMap[b.id].p; })[0];
+          stretch = true;
+        }
+        picks.push({ m:chosen, st:st, stretch:stretch, under:under });
+      });
+      return picks;
+    }
+
+    /* ─────────── 結果描画 ─────────── */
+    function finish(){
+      $('sfBar').style.width = '100%';
+      show('sfResult');
+      var box = $('sfResult');
+      box.innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;font-size:13px;">あなたの章を綴じています…</p>';
+      loadData().then(function(){
+        var goal = ans.goal || 'glow';
+        var T = TYPES[goal];
+        var picks = pickRoutine();
+        var story = PEAK_LINE[ans.peak] + '<br>' + EXP_LINE[ans.exp] + '<br>' + MEM_LINE[ans.memory] + '<br>' + T.story + 'ここからは、<b>選んだ答えのぶんだけ</b>、まっすぐ進みます。';
+        var html = '';
+        html += '<div class="fadein" style="text-align:center;">';
+        html += '<span class="sf-badge mono">Your Skin History</span>';
+        html += '<h1 class="sf-type serif">「' + T.name + '」</h1>';
+        html += '</div>';
+        html += '<div class="sf-story serif fadein">' + story + '</div>';
+        html += '<div class="sf-sec fadein"><h2 class="serif">この章の、あなたのルーティン</h2><p class="sub">選んだ時間と予算の中で、いま組めるいちばんいい並びです。</p>';
+        picks.forEach(function(pk){
+          var it = catalogMap[pk.m.id];
+          var cp = copyMap[pk.m.id] || '';
+          html += '<article class="sf-step">';
+          html += '<img src="images/catalog/' + it.id + '.webp" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">';
+          html += '<div style="min-width:0;">';
+          html += '<p class="role mono">' + STEP_LABEL[pk.st] + '</p>';
+          html += '<p class="bname">' + esc(it.b) + '</p>';
+          html += '<p class="pname serif">' + esc(it.n) + '</p>';
+          html += '<p class="price">定価 ¥' + it.p.toLocaleString() + ' <small>税込・会員はサマーセール価格</small></p>';
+          if (cp) html += '<p class="copy">' + esc(cp) + '</p>';
+          if (pk.stretch) html += '<p class="rel">ご予算の枠より上ですが、この役割でいちばん手に取りやすい一本です。</p>';
+          else if (pk.under) html += '<p class="rel">ご予算に余裕を残せる役割です。ここで浮いた分を「効かせる」に回すのが上手な配分。</p>';
+          html += '</div></article>';
+        });
+        html += '</div>';
+        html += '<div class="sf-cta fadein"><p class="serif" style="font-size:15px;">テクスチャーと香りは、店頭でたしかめられます。</p>';
+        html += '<p>この画面をスタッフに見せていただければ<br>あなたの章に合わせて、その場でご案内します。</p>';
+        html += '<a href="shop.html">お店の場所を見る →</a></div>';
+        html += '<p class="sf-cross fadein">髪の物語も知りたくなったら → <a href="finder.html">髪格診断へ</a></p>';
+        html += '<button class="sf-again" id="sfAgain">← もう一度、章をひらき直す</button>';
+        box.innerHTML = html;
+        $('sfAgain').onclick = function(){ idx = 0; ans = {}; show('sfIntro'); };
+        try {
+          navigator.sendBeacon && navigator.sendBeacon('/api/ev', JSON.stringify({ name:'skinfinder_complete', path:'/skinfinder', type:goal, device:(innerWidth<640?'mobile':'desktop') }));
+        } catch(e){}
+      }).catch(function(){
+        box.innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;">読み込みに失敗しました。通信環境をご確認のうえ、もう一度お試しください。</p>';
+      });
+    }
+
+    function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+    $('sfStart').onclick = function(){
+      show('sfQuiz'); renderQ();
+      try { navigator.sendBeacon && navigator.sendBeacon('/api/ev', JSON.stringify({ name:'skinfinder_start', path:'/skinfinder' })); } catch(e){}
+    };
+    $('sfNext').onclick = next;
+    $('sfBack').onclick = function(){ if (idx > 0) { idx--; renderQ(); } };
+  })();
+  </script>
+
+  <footer style="border-top:1px solid var(--line); margin-top:60px; padding:28px 20px calc(28px + env(safe-area-inset-bottom,0px)); text-align:center;">
+    <p style="font-size:11px; color:var(--charcoal); opacity:.65;">© SEAM — hair care select shop
+      <span style="margin:0 6px;">·</span><a href="terms.html" style="text-decoration:underline;text-underline-offset:2px;">利用規約</a>
+      <span style="margin:0 6px;">·</span><a href="privacy.html" style="text-decoration:underline;text-underline-offset:2px;">プライバシー</a>
+      <span style="margin:0 6px;">·</span><a href="tokushoho.html" style="text-decoration:underline;text-underline-offset:2px;">特定商取引法に基づく表記</a></p>
+  </footer>
+
+  <script src="js/app-header.js?v=4" defer></script>
+  <script src="js/seam-analytics.js?v=3" defer></script>
+</body>
+</html>
