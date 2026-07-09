@@ -87,6 +87,21 @@
   </style>
 </head>
 <body>
+
+<div class="lang-overlay" id="langOverlay" role="dialog" aria-modal="true" aria-label="言語選択">
+  <div class="lang-modal">
+    <div class="lang-modal-handle"></div>
+    <p class="lang-modal-title">Select Language</p>
+    <div class="lang-grid">
+      <button class="lang-option" data-l="ja"><span class="lo-label">JA</span><span class="lo-native">日本語</span></button>
+      <button class="lang-option" data-l="en"><span class="lo-label">EN</span><span class="lo-native">English</span></button>
+      <button class="lang-option" data-l="zh"><span class="lo-label">CN</span><span class="lo-native">简体中文</span></button>
+      <button class="lang-option" data-l="tw"><span class="lo-label">TW</span><span class="lo-native">繁體中文</span></button>
+      <button class="lang-option full-width" data-l="ko"><span class="lo-label">KR</span><span class="lo-native">한국어</span></button>
+    </div>
+  </div>
+</div>
+
   <!-- HEADER + slide menu injected by js/app-header.js -->
 
   <main class="sf-wrap" id="sfMain">
@@ -94,10 +109,10 @@
     <!-- ═══ INTRO ═══ -->
     <section id="sfIntro" class="sf-hero fadein">
       <p class="sf-eyebrow mono">— Skin History Finder</p>
-      <h1 class="sf-title serif">美肌ヒストリー</h1>
-      <p class="sf-lead">肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>9つの質問で、あなたの肌の現在地と「次の一本」を見つけます。</p>
-      <button class="sf-start" id="sfStart">物語をひらく <span aria-hidden>→</span></button>
-      <p class="sf-note">約3分・登録不要・結果は店頭のカウンセリングでも使えます</p>
+      <h1 class="sf-title serif" data-i18n="hero.title">美肌ヒストリー</h1>
+      <p class="sf-lead" data-i18n="hero.lead">肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>9つの質問で、あなたの肌の現在地と「次の一本」を見つけます。</p>
+      <button class="sf-start" id="sfStart"><span data-i18n="hero.start">物語をひらく</span> <span aria-hidden>→</span></button>
+      <p class="sf-note" data-i18n="hero.note">約3分・登録不要・結果は店頭のカウンセリングでも使えます</p>
     </section>
 
     <!-- ═══ QUESTIONS ═══ -->
@@ -108,8 +123,8 @@
       <h2 class="sf-q serif" id="sfQ"></h2>
       <p class="sf-qnote" id="sfQnote"></p>
       <div class="sf-opts" id="sfOpts"></div>
-      <button class="sf-next" id="sfNext">次へ</button>
-      <button class="sf-back" id="sfBack">← ひとつ戻る</button>
+      <button class="sf-next" id="sfNext"></button>
+      <button class="sf-back" id="sfBack"></button>
     </section>
 
     <!-- ═══ RESULT ═══ -->
@@ -117,58 +132,391 @@
   </main>
 
   <script>
+  window.SEAM_PAGE_I18N = {
+    ja: {
+      "meta.title": "美肌ヒストリー — 肌の物語から、次の一本へ | SEAM",
+      "hero.title": "美肌ヒストリー",
+      "hero.lead": "肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>9つの質問で、あなたの肌の現在地と「次の一本」を見つけます。",
+      "hero.start": "物語をひらく",
+      "hero.note": "約3分・登録不要・結果は店頭のカウンセリングでも使えます",
+      "foot.terms": "利用規約", "foot.privacy": "プライバシー", "foot.legal": "特定商取引法に基づく表記"
+    },
+    en: {
+      "meta.title": "Skin History — From your skin's story to your next step | SEAM",
+      "hero.title": "Skin History",
+      "hero.lead": "Your skin carries a story —<br>chapters of quiet effort, and chapters yet to be written.<br>Nine questions to find where you are now, and your next step.",
+      "hero.start": "Open your story",
+      "hero.note": "About 3 minutes · no sign-up · show your result at the counter for in-store guidance",
+      "foot.terms": "Terms", "foot.privacy": "Privacy", "foot.legal": "Legal Notice"
+    },
+    zh: {
+      "meta.title": "美肌历程 — 从肌肤的故事找到下一瓶 | SEAM",
+      "hero.title": "美肌历程",
+      "hero.lead": "肌肤，一直带着自己的故事。<br>有努力过的章节，也有还未写下的章节。<br>9个问题，找到你肌肤的现在，和「下一瓶」。",
+      "hero.start": "翻开我的故事",
+      "hero.note": "约3分钟 · 无需注册 · 结果可在店内咨询时出示",
+      "foot.terms": "使用条款", "foot.privacy": "隐私政策", "foot.legal": "特定商业交易法标记"
+    },
+    tw: {
+      "meta.title": "美肌歷程 — 從肌膚的故事找到下一瓶 | SEAM",
+      "hero.title": "美肌歷程",
+      "hero.lead": "肌膚，一直帶著自己的故事。<br>有努力過的章節，也有還未寫下的章節。<br>9個問題，找到你肌膚的現在，和「下一瓶」。",
+      "hero.start": "翻開我的故事",
+      "hero.note": "約3分鐘 · 無需註冊 · 結果可在店內諮詢時出示",
+      "foot.terms": "使用條款", "foot.privacy": "隱私權政策", "foot.legal": "特定商業交易法標記"
+    },
+    ko: {
+      "meta.title": "스킨 히스토리 — 피부의 이야기에서 다음 한 병으로 | SEAM",
+      "hero.title": "스킨 히스토리",
+      "hero.lead": "피부에는 지금까지의 이야기가 있습니다.<br>애써온 챕터도, 아직 쓰이지 않은 챕터도.<br>9가지 질문으로 피부의 현재와 '다음 한 병'을 찾아드립니다.",
+      "hero.start": "이야기 펼치기",
+      "hero.note": "약 3분 · 가입 불필요 · 결과 화면은 매장 상담에서도 쓸 수 있어요",
+      "foot.terms": "이용약관", "foot.privacy": "개인정보 처리방침", "foot.legal": "특정상거래법 표기"
+    }
+  };
+  </script>
+
+  <script>
   (function(){
     'use strict';
-    /* ─────────── 質問定義(3章9問) ─────────── */
-    var QS = [
-      { ch:1, chn:'第一章 いまの肌', id:'age', q:'年代を教えてください', note:'肌のリズムに合わせたご提案のために。', multi:false, opts:[
-        {v:'10s',l:'10代'},{v:'20s',l:'20代'},{v:'30s',l:'30代'},{v:'40s',l:'40代'},{v:'50s',l:'50代以上'}]},
-      { ch:1, chn:'第一章 いまの肌', id:'base', q:'朝、顔を洗ったあと。<br>素肌の第一声はどれに近いですか？', note:'いちばん多い日の感覚で大丈夫です。', multi:false, opts:[
-        {v:'dry',l:'「つっぱる…」',s:'頬や目もとがきゅっと乾く'},
-        {v:'oily',l:'「もうテカりの気配」',s:'Tゾーンから光ってくる'},
-        {v:'combo',l:'「部分によってバラバラ」',s:'頬は乾くのにTゾーンは光る'},
-        {v:'sensitive',l:'「今日はゆらぎそう」',s:'季節や体調で調子が変わりやすい'},
-        {v:'normal',l:'「今日はちょうどいい」',s:'大きな不満はない日が多い'}]},
-      { ch:1, chn:'第一章 いまの肌', id:'concerns', q:'いま、気になっていることは？', note:'当てはまるものをすべて。悩みではなく「伸びしろ」として伺います。', multi:true, opts:[
-        {v:'dry',l:'乾燥・かさつき'},
-        {v:'pore',l:'毛穴・ごわつき'},
-        {v:'hari',l:'ハリ・ふっくら感'},
-        {v:'tone',l:'くすみ・透明感'},
-        {v:'sensitive',l:'ゆらぎ・敏感'},
-        {v:'acne',l:'大人ニキビ'},
-        {v:'none',l:'とくにない',x:true}]},
-      { ch:2, chn:'第二章 美肌ヒストリー', id:'peak', q:'これまでで、肌がいちばん<br>輝いていた章はいつですか？', note:'思い出してみてください。あの頃の肌は、いまも設計図として残っています。', multi:false, opts:[
-        {v:'teen',l:'学生の頃',s:'何もしなくても平気だった'},
-        {v:'twenties',l:'20代のあの頃',s:'メイクが楽しかった時期'},
-        {v:'recent',l:'わりと最近',s:'ケアが実った実感がある'},
-        {v:'future',l:'これから書く',s:'いちばんいい章はまだ先'}]},
-      { ch:2, chn:'第二章 美肌ヒストリー', id:'exp', q:'これまでの肌との付き合い方は<br>どのタイプでしたか？', note:'正解はありません。歩いてきた道を教えてください。', multi:false, opts:[
-        {v:'simple',l:'シンプル派',s:'最低限を丁寧に続けてきた'},
-        {v:'explorer',l:'コスメ探検家',s:'新作も話題の成分も試してきた'},
-        {v:'salon',l:'エステ・サロン経験あり',s:'プロの手を借りてきた'},
-        {v:'doctor',l:'ドクターズコスメ経験あり',s:'成分やエビデンスで選んできた'}]},
-      { ch:2, chn:'第二章 美肌ヒストリー', id:'memory', q:'肌が、あなたのために<br>がんばってくれた思い出は？', note:'ひとつ選ぶと、結果の物語に織り込まれます。', multi:false, opts:[
-        {v:'travel',l:'旅先でも荒れなかった日がある'},
-        {v:'praised',l:'「肌きれい」と言われたことがある'},
-        {v:'nofoundation',l:'ノーファンデで出かけた日がある'},
-        {v:'searching',l:'いま思い出しています',s:'これから作る思い出でもいい'}]},
-      { ch:3, chn:'第三章 これからの章', id:'goal', q:'次の章で、どんな肌に<br>会いたいですか？', note:'なりたい、がいちばんの道しるべです。', multi:false, opts:[
-        {v:'glow',l:'うるおいで光る肌',s:'内側から満ちるようなツヤ'},
-        {v:'kime',l:'キメの整った絹肌',s:'なめらかな面で光を返す'},
-        {v:'hari',l:'ふっくらハリのある肌',s:'弾むような弾力を'},
-        {v:'tone',l:'透きとおる肌',s:'くもりのない透明感を'},
-        {v:'calm',l:'ゆらがない健やかな肌',s:'毎日おだやかでいてほしい'}]},
-      { ch:3, chn:'第三章 これからの章', id:'time', q:'ケアにかけられる時間は？', note:'続けられるルーティンだけが、物語を進めます。', multi:false, opts:[
-        {v:'full',l:'朝晩じっくり',s:'ステップを重ねるのが好き'},
-        {v:'night',l:'夜だけ丁寧に',s:'朝は最小限で'},
-        {v:'quick',l:'とにかく時短',s:'少ない手数で決めたい'},
-        {v:'weekend',l:'週末に集中ケア',s:'平日は軽く、週末にご褒美'}]},
-      { ch:3, chn:'第三章 これからの章', id:'budget', q:'毎月、スキンケアにかけたい<br>金額はどれくらいですか？', note:'正直な金額で大丈夫です。その範囲でいちばんいい答えを組みます。', multi:false, opts:[
-        {v:'b1',l:'〜3,000円',s:'まずは気軽に'},
-        {v:'b2',l:'3,000〜8,000円',s:'定番をきちんと'},
-        {v:'b3',l:'8,000〜15,000円',s:'いいものを選びたい'},
-        {v:'b4',l:'15,000円〜',s:'投資は惜しまない'}]}
+    /* ─────────── 質問の構造(全言語共通・値は不変) ─────────── */
+    var STRUCT = [
+      { ch:1, id:'age', multi:false, opts:[{v:'10s'},{v:'20s'},{v:'30s'},{v:'40s'},{v:'50s'}] },
+      { ch:1, id:'base', multi:false, opts:[{v:'dry'},{v:'oily'},{v:'combo'},{v:'sensitive'},{v:'normal'}] },
+      { ch:1, id:'concerns', multi:true, opts:[{v:'dry'},{v:'pore'},{v:'hari'},{v:'tone'},{v:'sensitive'},{v:'acne'},{v:'none',x:true}] },
+      { ch:2, id:'peak', multi:false, opts:[{v:'teen'},{v:'twenties'},{v:'recent'},{v:'future'}] },
+      { ch:2, id:'exp', multi:false, opts:[{v:'simple'},{v:'explorer'},{v:'salon'},{v:'doctor'}] },
+      { ch:2, id:'memory', multi:false, opts:[{v:'travel'},{v:'praised'},{v:'nofoundation'},{v:'searching'}] },
+      { ch:3, id:'goal', multi:false, opts:[{v:'glow'},{v:'kime'},{v:'hari'},{v:'tone'},{v:'calm'}] },
+      { ch:3, id:'time', multi:false, opts:[{v:'full'},{v:'night'},{v:'quick'},{v:'weekend'}] },
+      { ch:3, id:'budget', multi:false, opts:[{v:'b1'},{v:'b2'},{v:'b3'},{v:'b4'}] }
     ];
+
+    /* ─────────── 5言語ロケール ─────────── */
+    var LOCALE = {
+    /* ═══ 日本語 ═══ */
+    ja: {
+      chap: { 1:'第一章 いまの肌', 2:'第二章 美肌ヒストリー', 3:'第三章 これからの章' },
+      next:'次へ', back:'← ひとつ戻る',
+      q: {
+        age: { q:'年代を教えてください', note:'肌のリズムに合わせたご提案のために。', o:{ '10s':{l:'10代'}, '20s':{l:'20代'}, '30s':{l:'30代'}, '40s':{l:'40代'}, '50s':{l:'50代以上'} } },
+        base: { q:'朝、顔を洗ったあと。<br>素肌の第一声はどれに近いですか？', note:'いちばん多い日の感覚で大丈夫です。', o:{
+          dry:{l:'「つっぱる…」',s:'頬や目もとがきゅっと乾く'}, oily:{l:'「もうテカりの気配」',s:'Tゾーンから光ってくる'}, combo:{l:'「部分によってバラバラ」',s:'頬は乾くのにTゾーンは光る'}, sensitive:{l:'「今日はゆらぎそう」',s:'季節や体調で調子が変わりやすい'}, normal:{l:'「今日はちょうどいい」',s:'大きな不満はない日が多い'} } },
+        concerns: { q:'いま、気になっていることは？', note:'当てはまるものをすべて。悩みではなく「伸びしろ」として伺います。', o:{
+          dry:{l:'乾燥・かさつき'}, pore:{l:'毛穴・ごわつき'}, hari:{l:'ハリ・ふっくら感'}, tone:{l:'くすみ・透明感'}, sensitive:{l:'ゆらぎ・敏感'}, acne:{l:'大人ニキビ'}, none:{l:'とくにない'} } },
+        peak: { q:'これまでで、肌がいちばん<br>輝いていた章はいつですか？', note:'思い出してみてください。あの頃の肌は、いまも設計図として残っています。', o:{
+          teen:{l:'学生の頃',s:'何もしなくても平気だった'}, twenties:{l:'20代のあの頃',s:'メイクが楽しかった時期'}, recent:{l:'わりと最近',s:'ケアが実った実感がある'}, future:{l:'これから書く',s:'いちばんいい章はまだ先'} } },
+        exp: { q:'これまでの肌との付き合い方は<br>どのタイプでしたか？', note:'正解はありません。歩いてきた道を教えてください。', o:{
+          simple:{l:'シンプル派',s:'最低限を丁寧に続けてきた'}, explorer:{l:'コスメ探検家',s:'新作も話題の成分も試してきた'}, salon:{l:'エステ・サロン経験あり',s:'プロの手を借りてきた'}, doctor:{l:'ドクターズコスメ経験あり',s:'成分やエビデンスで選んできた'} } },
+        memory: { q:'肌が、あなたのために<br>がんばってくれた思い出は？', note:'ひとつ選ぶと、結果の物語に織り込まれます。', o:{
+          travel:{l:'旅先でも荒れなかった日がある'}, praised:{l:'「肌きれい」と言われたことがある'}, nofoundation:{l:'ノーファンデで出かけた日がある'}, searching:{l:'いま思い出しています',s:'これから作る思い出でもいい'} } },
+        goal: { q:'次の章で、どんな肌に<br>会いたいですか？', note:'なりたい、がいちばんの道しるべです。', o:{
+          glow:{l:'うるおいで光る肌',s:'内側から満ちるようなツヤ'}, kime:{l:'キメの整った絹肌',s:'なめらかな面で光を返す'}, hari:{l:'ふっくらハリのある肌',s:'弾むような弾力を'}, tone:{l:'透きとおる肌',s:'くもりのない透明感を'}, calm:{l:'ゆらがない健やかな肌',s:'毎日おだやかでいてほしい'} } },
+        time: { q:'ケアにかけられる時間は？', note:'続けられるルーティンだけが、物語を進めます。', o:{
+          full:{l:'朝晩じっくり',s:'ステップを重ねるのが好き'}, night:{l:'夜だけ丁寧に',s:'朝は最小限で'}, quick:{l:'とにかく時短',s:'少ない手数で決めたい'}, weekend:{l:'週末に集中ケア',s:'平日は軽く、週末にご褒美'} } },
+        budget: { q:'毎月、スキンケアにかけたい<br>金額はどれくらいですか？', note:'正直な金額で大丈夫です。その範囲でいちばんいい答えを組みます。', o:{
+          b1:{l:'〜3,000円',s:'まずは気軽に'}, b2:{l:'3,000〜8,000円',s:'定番をきちんと'}, b3:{l:'8,000〜15,000円',s:'いいものを選びたい'}, b4:{l:'15,000円〜',s:'投資は惜しまない'} } }
+      },
+      types: {
+        glow:{ name:'「うるみ玉の章」', story:'あなたの物語は、光をためる季節に入っています。' },
+        kime:{ name:'「きぬ肌の章」', story:'あなたの物語は、面をなめらかに磨く季節に入っています。' },
+        hari:{ name:'「ハリ弾む章」', story:'あなたの物語は、ふっくらと弾みを取り戻す季節に入っています。' },
+        tone:{ name:'「透きとおる章」', story:'あなたの物語は、くもりを晴らしていく季節に入っています。' },
+        calm:{ name:'「凪の章」', story:'あなたの物語は、ゆらぎを鎮めて土台を育てる季節に入っています。' }
+      },
+      peak: {
+        teen:'学生の頃の肌が輝いていたなら、あなたの肌には<b>いい設計図</b>がもともとあります。',
+        twenties:'20代のあの頃の輝きを知っているなら、肌は<b>戻り方を覚えて</b>います。',
+        recent:'最近いちばん良かったと感じているなら、いまのケアは<b>正しい道の途中</b>です。',
+        future:'いちばんいい章はこれから、という答えがいちばん強い。<b>伸びしろしかない</b>ということです。'
+      },
+      exp: {
+        simple:'シンプルに続けてきた丁寧さは、これから足す一本を<b>まっすぐ効かせる土台</b>になります。',
+        explorer:'たくさん試してきた経験は、<b>自分に合うものを見抜く目</b>としてもう備わっています。',
+        salon:'プロの手を知っている肌は、<b>いいものへの反応が早い</b>。自宅ケアにもそれは活きます。',
+        doctor:'成分で選んできたあなたには、<b>根拠のある一本</b>がいちばん似合います。'
+      },
+      mem: {
+        travel:'旅先でも荒れなかったあの日の肌は、あなたの肌の底力の証明です。',
+        praised:'「肌きれい」と言われた日があるなら、その日はまた作れます。',
+        nofoundation:'ノーファンデで出かけたあの日を、次の章の目的地にしましょう。',
+        searching:'思い出はこれから作ればいい。今日の診断が、その最初のページです。'
+      },
+      closing:'ここからは、<b>選んだ答えのぶんだけ</b>、まっすぐ進みます。',
+      steps: { cleanse:'落とす', wash:'洗う', lotion:'うるおす', serum:'効かせる', moist:'とじこめる', uv:'守る', special:'週のご褒美' },
+      badge:'Your Skin History',
+      routineH:'この章の、あなたのルーティン', routineSub:'選んだ時間と予算の中で、いま組めるいちばんいい並びです。',
+      price:'定価', priceNote:'税込・会員はサマーセール価格',
+      stretch:'ご予算の枠より上ですが、この役割でいちばん手に取りやすい一本です。',
+      under:'ご予算に余裕を残せる役割です。ここで浮いた分を「効かせる」に回すのが上手な配分。',
+      ctaH:'テクスチャーと香りは、店頭でたしかめられます。',
+      ctaP:'この画面をスタッフに見せていただければ<br>あなたの章に合わせて、その場でご案内します。',
+      ctaBtn:'お店の場所を見る →',
+      cross:'髪の物語も知りたくなったら →', crossLink:'髪格診断へ',
+      again:'← もう一度、章をひらき直す',
+      loading:'あなたの章を綴じています…',
+      error:'読み込みに失敗しました。通信環境をご確認のうえ、もう一度お試しください。'
+    },
+    /* ═══ English ═══ */
+    en: {
+      chap: { 1:'Chapter One — Your Skin Today', 2:'Chapter Two — Your Skin History', 3:'Chapter Three — The Chapter Ahead' },
+      next:'Next', back:'← One step back',
+      q: {
+        age: { q:'May we ask your age range?', note:'So we can match the rhythm of your skin.', o:{ '10s':{l:'Teens'}, '20s':{l:'20s'}, '30s':{l:'30s'}, '40s':{l:'40s'}, '50s':{l:'50s and up'} } },
+        base: { q:'Right after washing your face —<br>what does your skin say first?', note:'Go with how it feels on most days.', o:{
+          dry:{l:'“It feels tight…”',s:'Cheeks and eye area feel dry and pulled'}, oily:{l:'“Already getting shiny”',s:'The T-zone starts to gleam first'}, combo:{l:'“Different by zone”',s:'Dry cheeks, shiny T-zone'}, sensitive:{l:'“Today might be an off day”',s:'Easily swayed by season or condition'}, normal:{l:'“Feels just right today”',s:'Few complaints, most days'} } },
+        concerns: { q:'What is on your mind right now?', note:'Choose all that apply — we treat these as room to grow, not flaws.', o:{
+          dry:{l:'Dryness / tightness'}, pore:{l:'Pores / rough texture'}, hari:{l:'Firmness / plumpness'}, tone:{l:'Dullness / clarity'}, sensitive:{l:'Sensitivity / ups and downs'}, acne:{l:'Adult breakouts'}, none:{l:'Nothing in particular'} } },
+        peak: { q:'When was your skin<br>at its most radiant?', note:'Think back — that version of your skin is still in you, like a blueprint.', o:{
+          teen:{l:'Student days',s:'It behaved without any effort'}, twenties:{l:'My twenties',s:'When makeup was pure fun'}, recent:{l:'Fairly recently',s:'My care has been paying off'}, future:{l:'Still ahead of me',s:'The best chapter is yet to come'} } },
+        exp: { q:'How have you and your skin<br>walked together so far?', note:'There is no right answer — just your path.', o:{
+          simple:{l:'The minimalist',s:'Kept it simple, and consistent'}, explorer:{l:'The cosmetics explorer',s:'Tried new launches and trending ingredients'}, salon:{l:'Salon & esthetic experience',s:'Borrowed a professional’s hands'}, doctor:{l:'Doctor’s cosmetics user',s:'Chose by ingredients and evidence'} } },
+        memory: { q:'A moment your skin<br>came through for you?', note:'Pick one — it will be woven into your story.', o:{
+          travel:{l:'It held up on a trip'}, praised:{l:'Someone said “beautiful skin”'}, nofoundation:{l:'I went out foundation-free'}, searching:{l:'Still thinking of one',s:'A memory we can make from here'} } },
+        goal: { q:'In your next chapter,<br>what skin do you want to meet?', note:'“Want” is the best compass there is.', o:{
+          glow:{l:'Skin lit with moisture',s:'A glow that rises from within'}, kime:{l:'Silk-smooth texture',s:'A refined surface that returns the light'}, hari:{l:'Plump, bouncy firmness',s:'Resilience you can feel'}, tone:{l:'Translucent clarity',s:'Brightness without the haze'}, calm:{l:'Calm, steady skin',s:'Even-keeled, day after day'} } },
+        time: { q:'How much time can you<br>give your routine?', note:'Only a routine you can keep moves the story forward.', o:{
+          full:{l:'Thorough, morning & night',s:'I enjoy layering steps'}, night:{l:'Careful at night only',s:'Mornings stay minimal'}, quick:{l:'As quick as possible',s:'Fewer steps, well chosen'}, weekend:{l:'Weekend deep-care',s:'Light weekdays, indulgent weekends'} } },
+        budget: { q:'Your monthly budget<br>for skincare?', note:'Be honest — we will build the best answer within it.', o:{
+          b1:{l:'Up to ¥3,000',s:'Start light'}, b2:{l:'¥3,000–8,000',s:'The essentials, done properly'}, b3:{l:'¥8,000–15,000',s:'I want to choose well'}, b4:{l:'¥15,000 and up',s:'No compromise'} } }
+      },
+      types: {
+        glow:{ name:'The Dewlight Chapter', story:'Your story has entered the season of gathering light.' },
+        kime:{ name:'The Silk-Skin Chapter', story:'Your story has entered the season of polishing the surface smooth.' },
+        hari:{ name:'The Bounce Chapter', story:'Your story has entered the season of restoring plumpness and spring.' },
+        tone:{ name:'The Clarity Chapter', story:'Your story has entered the season of clearing the haze.' },
+        calm:{ name:'The Calm Waters Chapter', story:'Your story has entered the season of stilling the waves and tending the ground.' }
+      },
+      peak: {
+        teen:'If your skin shone in your student days, it still holds <b>a good blueprint</b>.',
+        twenties:'If you knew that glow in your twenties, your skin <b>remembers the way back</b>.',
+        recent:'If it felt best only recently, your current care is <b>the right road, mid-journey</b>.',
+        future:'Believing the best chapter is still ahead is the strongest answer — it means <b>nothing but room to grow</b>.'
+      },
+      exp: {
+        simple:'The quiet consistency you have kept becomes <b>a foundation that lets one new step work, straight away</b>.',
+        explorer:'All that trying has already given you <b>an eye for what truly suits you</b>.',
+        salon:'Skin that knows a professional’s touch <b>responds quickly to good things</b> — at home, too.',
+        doctor:'For someone who chooses by evidence, <b>a well-grounded formula</b> will suit you best.'
+      },
+      mem: {
+        travel:'The skin that held up on that trip is proof of its quiet strength.',
+        praised:'If someone once said “beautiful skin,” that day can be made again.',
+        nofoundation:'Let that foundation-free day be the destination of your next chapter.',
+        searching:'Memories can be made from here — today’s reading is the first page.'
+      },
+      closing:'From here, you move forward <b>exactly as far as the answers you chose</b>.',
+      steps: { cleanse:'Melt away', wash:'Cleanse', lotion:'Quench', serum:'Treat', moist:'Seal in', uv:'Protect', special:'Weekly ritual' },
+      badge:'Your Skin History',
+      routineH:'Your routine for this chapter', routineSub:'The best lineup we can build within your time and budget.',
+      price:'Price', priceNote:'tax incl. · members enjoy summer-sale pricing',
+      stretch:'A step above your budget — but the most approachable choice for this role.',
+      under:'This role leaves room in your budget. Spending the difference on your treatment step is the smart split.',
+      ctaH:'Texture and scent are waiting at the counter.',
+      ctaP:'Show this screen to our staff —<br>we will guide you through your chapter, in person.',
+      ctaBtn:'Find our shops →',
+      cross:'Curious about your hair’s story too? →', crossLink:'Hair Finder',
+      again:'← Open the chapter once more',
+      loading:'Binding your chapter…',
+      error:'Failed to load. Please check your connection and try again.'
+    },
+    /* ═══ 简体中文 ═══ */
+    zh: {
+      chap: { 1:'第一章 现在的肌肤', 2:'第二章 美肌历程', 3:'第三章 未来的章节' },
+      next:'下一步', back:'← 返回上一题',
+      q: {
+        age: { q:'请告诉我们你的年龄段', note:'为了配合肌肤的节奏来推荐。', o:{ '10s':{l:'10多岁'}, '20s':{l:'20多岁'}, '30s':{l:'30多岁'}, '40s':{l:'40多岁'}, '50s':{l:'50岁以上'} } },
+        base: { q:'早晨洗完脸之后，<br>素颜的第一句话是？', note:'以最常见的日子的感觉为准。', o:{
+          dry:{l:'「好紧绷…」',s:'脸颊和眼周干得发紧'}, oily:{l:'「已经开始泛油光」',s:'T区先亮起来'}, combo:{l:'「每个部位都不一样」',s:'脸颊干，T区油'}, sensitive:{l:'「今天可能会闹脾气」',s:'随季节和状态起伏'}, normal:{l:'「今天刚刚好」',s:'多数日子没有大不满'} } },
+        concerns: { q:'现在在意的是？', note:'可多选。我们把它们当作「成长空间」，而不是缺点。', o:{
+          dry:{l:'干燥、起皮'}, pore:{l:'毛孔、粗糙'}, hari:{l:'紧致、饱满感'}, tone:{l:'暗沉、透明感'}, sensitive:{l:'敏感、不稳定'}, acne:{l:'成人痘'}, none:{l:'暂时没有'} } },
+        peak: { q:'至今为止，肌肤最闪耀的<br>章节是什么时候？', note:'回想一下。那时的肌肤，至今仍是你的设计图。', o:{
+          teen:{l:'学生时代',s:'什么都不做也很好'}, twenties:{l:'20多岁的那段日子',s:'化妆最开心的时期'}, recent:{l:'最近',s:'感到护肤有了回报'}, future:{l:'还在后面',s:'最好的章节尚未写下'} } },
+        exp: { q:'一直以来，你和肌肤<br>是怎样相处的？', note:'没有标准答案，只有你走过的路。', o:{
+          simple:{l:'简约派',s:'把最基本的坚持做好'}, explorer:{l:'美妆探险家',s:'新品和话题成分都试过'}, salon:{l:'有美容院、沙龙经验',s:'借过专业人士的手'}, doctor:{l:'用过医学护肤品',s:'看成分和实证来选择'} } },
+        memory: { q:'肌肤为你争气的<br>那个瞬间是？', note:'选一个，它会被写进你的结果故事里。', o:{
+          travel:{l:'旅行时也没有闹脾气'}, praised:{l:'被夸过「皮肤真好」'}, nofoundation:{l:'有过素颜出门的日子'}, searching:{l:'正在回想',s:'从现在开始创造也可以'} } },
+        goal: { q:'下一章，你想遇见<br>怎样的肌肤？', note:'「想要」就是最好的路标。', o:{
+          glow:{l:'水润发光的肌肤',s:'由内而外的润泽光感'}, kime:{l:'细腻如丝的肌肤',s:'以平滑的肌理反射光'}, hari:{l:'饱满有弹性的肌肤',s:'按下去会弹回来的感觉'}, tone:{l:'通透明亮的肌肤',s:'没有雾霾的透明感'}, calm:{l:'稳定健康的肌肤',s:'每天都平稳安定'} } },
+        time: { q:'能给护肤的时间是？', note:'只有坚持得下去的程序，才能推进故事。', o:{
+          full:{l:'早晚认真做',s:'喜欢一步步叠加'}, night:{l:'只在夜晚用心',s:'早晨从简'}, quick:{l:'越快越好',s:'步骤少而精'}, weekend:{l:'周末集中护理',s:'平日轻松，周末犒赏'} } },
+        budget: { q:'每月想投入护肤的<br>金额大约是？', note:'如实选择就好。我们会在范围内给出最好的答案。', o:{
+          b1:{l:'3,000日元以内',s:'先轻松开始'}, b2:{l:'3,000〜8,000日元',s:'把基础做扎实'}, b3:{l:'8,000〜15,000日元',s:'想选好东西'}, b4:{l:'15,000日元以上',s:'不吝投资'} } }
+      },
+      types: {
+        glow:{ name:'「润光之章」', story:'你的故事，进入了积蓄光的季节。' },
+        kime:{ name:'「丝肌之章」', story:'你的故事，进入了把肌理打磨平滑的季节。' },
+        hari:{ name:'「弹润之章」', story:'你的故事，进入了找回饱满与弹性的季节。' },
+        tone:{ name:'「透亮之章」', story:'你的故事，进入了拨开雾霾的季节。' },
+        calm:{ name:'「静谧之章」', story:'你的故事，进入了安抚波澜、培育土壤的季节。' }
+      },
+      peak: {
+        teen:'如果学生时代的肌肤曾经闪耀，你的肌肤本来就有<b>很好的设计图</b>。',
+        twenties:'如果你见过20多岁时的光彩，肌肤<b>记得回去的路</b>。',
+        recent:'如果最近状态最好，说明现在的护理<b>正走在对的路上</b>。',
+        future:'「最好的章节还在后面」是最有力量的答案——意味着<b>全是成长空间</b>。'
+      },
+      exp: {
+        simple:'一直以来的简单和坚持，会成为让新的一瓶<b>直接生效的地基</b>。',
+        explorer:'试过那么多，你已经拥有<b>看出什么适合自己的眼光</b>。',
+        salon:'见识过专业之手的肌肤，<b>对好东西的反应更快</b>，在家也一样。',
+        doctor:'习惯看实证选择的你，最适合<b>有依据的一瓶</b>。'
+      },
+      mem: {
+        travel:'旅行中也没有闹脾气的那天，是肌肤底力的证明。',
+        praised:'被夸过「皮肤真好」的那天，可以再次创造。',
+        nofoundation:'把素颜出门的那天，定为下一章的目的地吧。',
+        searching:'回忆可以从现在开始创造——今天的诊断就是第一页。'
+      },
+      closing:'接下来，<b>你选择的每个答案</b>，都会推着你笔直向前。',
+      steps: { cleanse:'卸妆', wash:'洁面', lotion:'补水', serum:'精华', moist:'锁水', uv:'防护', special:'每周犒赏' },
+      badge:'Your Skin History',
+      routineH:'这一章，属于你的护肤程序', routineSub:'在你选择的时间和预算里，现在能组出的最好组合。',
+      price:'定价', priceNote:'含税 · 会员享夏季特惠价',
+      stretch:'略高于你的预算，但在这个步骤里是最容易入手的一瓶。',
+      under:'这个步骤为预算留出了余地，省下的部分投给「精华」更聪明。',
+      ctaH:'质地与香气，来店里亲手确认。',
+      ctaP:'把这个页面出示给店员，<br>我们会按你的章节当场为你介绍。',
+      ctaBtn:'查看店铺位置 →',
+      cross:'也想知道头发的故事？ →', crossLink:'去发质诊断',
+      again:'← 再翻开一次章节',
+      loading:'正在装订你的章节…',
+      error:'加载失败。请确认网络后重试。'
+    },
+    /* ═══ 繁體中文 ═══ */
+    tw: {
+      chap: { 1:'第一章 現在的肌膚', 2:'第二章 美肌歷程', 3:'第三章 未來的章節' },
+      next:'下一步', back:'← 返回上一題',
+      q: {
+        age: { q:'請告訴我們你的年齡層', note:'為了配合肌膚的節奏來推薦。', o:{ '10s':{l:'10多歲'}, '20s':{l:'20多歲'}, '30s':{l:'30多歲'}, '40s':{l:'40多歲'}, '50s':{l:'50歲以上'} } },
+        base: { q:'早晨洗完臉之後，<br>素顏的第一句話是？', note:'以最常見的日子的感覺為準。', o:{
+          dry:{l:'「好緊繃…」',s:'臉頰和眼周乾得發緊'}, oily:{l:'「已經開始泛油光」',s:'T字部位先亮起來'}, combo:{l:'「每個部位都不一樣」',s:'臉頰乾，T字部位油'}, sensitive:{l:'「今天可能會鬧脾氣」',s:'隨季節和狀態起伏'}, normal:{l:'「今天剛剛好」',s:'多數日子沒有大不滿'} } },
+        concerns: { q:'現在在意的是？', note:'可複選。我們把它們當作「成長空間」，而不是缺點。', o:{
+          dry:{l:'乾燥、脫屑'}, pore:{l:'毛孔、粗糙'}, hari:{l:'緊緻、澎潤感'}, tone:{l:'暗沉、透明感'}, sensitive:{l:'敏感、不穩定'}, acne:{l:'成人痘'}, none:{l:'暫時沒有'} } },
+        peak: { q:'至今為止，肌膚最閃耀的<br>章節是什麼時候？', note:'回想一下。那時的肌膚，至今仍是你的設計圖。', o:{
+          teen:{l:'學生時代',s:'什麼都不做也很好'}, twenties:{l:'20多歲的那段日子',s:'化妝最開心的時期'}, recent:{l:'最近',s:'感到保養有了回報'}, future:{l:'還在後面',s:'最好的章節尚未寫下'} } },
+        exp: { q:'一直以來，你和肌膚<br>是怎樣相處的？', note:'沒有標準答案，只有你走過的路。', o:{
+          simple:{l:'簡約派',s:'把最基本的堅持做好'}, explorer:{l:'美妝探險家',s:'新品和話題成分都試過'}, salon:{l:'有美容沙龍經驗',s:'借過專業人士的手'}, doctor:{l:'用過醫美保養品',s:'看成分和實證來選擇'} } },
+        memory: { q:'肌膚為你爭氣的<br>那個瞬間是？', note:'選一個，它會被寫進你的結果故事裡。', o:{
+          travel:{l:'旅行時也沒有鬧脾氣'}, praised:{l:'被稱讚過「皮膚真好」'}, nofoundation:{l:'有過素顏出門的日子'}, searching:{l:'正在回想',s:'從現在開始創造也可以'} } },
+        goal: { q:'下一章，你想遇見<br>怎樣的肌膚？', note:'「想要」就是最好的路標。', o:{
+          glow:{l:'水潤發光的肌膚',s:'由內而外的潤澤光感'}, kime:{l:'細緻如絲的肌膚',s:'以平滑的肌理反射光'}, hari:{l:'澎潤有彈性的肌膚',s:'按下去會彈回來的感覺'}, tone:{l:'通透明亮的肌膚',s:'沒有霧霾的透明感'}, calm:{l:'穩定健康的肌膚',s:'每天都平穩安定'} } },
+        time: { q:'能給保養的時間是？', note:'只有堅持得下去的程序，才能推進故事。', o:{
+          full:{l:'早晚認真做',s:'喜歡一步步疊加'}, night:{l:'只在夜晚用心',s:'早晨從簡'}, quick:{l:'越快越好',s:'步驟少而精'}, weekend:{l:'週末集中保養',s:'平日輕鬆，週末犒賞'} } },
+        budget: { q:'每月想投入保養的<br>金額大約是？', note:'如實選擇就好。我們會在範圍內給出最好的答案。', o:{
+          b1:{l:'3,000日圓以內',s:'先輕鬆開始'}, b2:{l:'3,000〜8,000日圓',s:'把基礎做紮實'}, b3:{l:'8,000〜15,000日圓',s:'想選好東西'}, b4:{l:'15,000日圓以上',s:'不吝投資'} } }
+      },
+      types: {
+        glow:{ name:'「潤光之章」', story:'你的故事，進入了積蓄光的季節。' },
+        kime:{ name:'「絲肌之章」', story:'你的故事，進入了把肌理打磨平滑的季節。' },
+        hari:{ name:'「彈潤之章」', story:'你的故事，進入了找回澎潤與彈性的季節。' },
+        tone:{ name:'「透亮之章」', story:'你的故事，進入了撥開霧霾的季節。' },
+        calm:{ name:'「靜謐之章」', story:'你的故事，進入了安撫波瀾、培育土壤的季節。' }
+      },
+      peak: {
+        teen:'如果學生時代的肌膚曾經閃耀，你的肌膚本來就有<b>很好的設計圖</b>。',
+        twenties:'如果你見過20多歲時的光彩，肌膚<b>記得回去的路</b>。',
+        recent:'如果最近狀態最好，說明現在的保養<b>正走在對的路上</b>。',
+        future:'「最好的章節還在後面」是最有力量的答案——意味著<b>全是成長空間</b>。'
+      },
+      exp: {
+        simple:'一直以來的簡單和堅持，會成為讓新的一瓶<b>直接生效的地基</b>。',
+        explorer:'試過那麼多，你已經擁有<b>看出什麼適合自己的眼光</b>。',
+        salon:'見識過專業之手的肌膚，<b>對好東西的反應更快</b>，在家也一樣。',
+        doctor:'習慣看實證選擇的你，最適合<b>有依據的一瓶</b>。'
+      },
+      mem: {
+        travel:'旅行中也沒有鬧脾氣的那天，是肌膚底力的證明。',
+        praised:'被稱讚「皮膚真好」的那天，可以再次創造。',
+        nofoundation:'把素顏出門的那天，定為下一章的目的地吧。',
+        searching:'回憶可以從現在開始創造——今天的診斷就是第一頁。'
+      },
+      closing:'接下來，<b>你選擇的每個答案</b>，都會推著你筆直向前。',
+      steps: { cleanse:'卸妝', wash:'洗臉', lotion:'補水', serum:'精華', moist:'鎖水', uv:'防曬', special:'每週犒賞' },
+      badge:'Your Skin History',
+      routineH:'這一章，屬於你的保養程序', routineSub:'在你選擇的時間和預算裡，現在能組出的最好組合。',
+      price:'定價', priceNote:'含稅 · 會員享夏季特惠價',
+      stretch:'略高於你的預算，但在這個步驟裡是最容易入手的一瓶。',
+      under:'這個步驟為預算留出了餘地，省下的部分投給「精華」更聰明。',
+      ctaH:'質地與香氣，來店裡親手確認。',
+      ctaP:'把這個頁面出示給店員，<br>我們會按你的章節當場為你介紹。',
+      ctaBtn:'查看店鋪位置 →',
+      cross:'也想知道頭髮的故事？ →', crossLink:'去髮質診斷',
+      again:'← 再翻開一次章節',
+      loading:'正在裝訂你的章節…',
+      error:'載入失敗。請確認網路後重試。'
+    },
+    /* ═══ 한국어 ═══ */
+    ko: {
+      chap: { 1:'제1장 지금의 피부', 2:'제2장 스킨 히스토리', 3:'제3장 앞으로의 챕터' },
+      next:'다음', back:'← 한 단계 뒤로',
+      q: {
+        age: { q:'연령대를 알려주세요', note:'피부의 리듬에 맞는 제안을 위해서예요.', o:{ '10s':{l:'10대'}, '20s':{l:'20대'}, '30s':{l:'30대'}, '40s':{l:'40대'}, '50s':{l:'50대 이상'} } },
+        base: { q:'아침 세안 직후,<br>맨피부의 첫마디는 어느 쪽인가요?', note:'가장 잦은 날의 느낌이면 충분해요.', o:{
+          dry:{l:'"당긴다…"',s:'볼과 눈가가 바싹 조여요'}, oily:{l:'"벌써 번들거릴 조짐"',s:'T존부터 반짝이기 시작해요'}, combo:{l:'"부위마다 제각각"',s:'볼은 건조한데 T존은 번들거려요'}, sensitive:{l:'"오늘은 예민할 것 같아"',s:'계절과 컨디션에 따라 흔들려요'}, normal:{l:'"오늘은 딱 좋아"',s:'큰 불만 없는 날이 많아요'} } },
+        concerns: { q:'지금 신경 쓰이는 것은?', note:'해당하는 것을 모두. 고민이 아니라 \'성장 여백\'으로 여쭤봐요.', o:{
+          dry:{l:'건조함·당김'}, pore:{l:'모공·거칠음'}, hari:{l:'탄력·볼륨감'}, tone:{l:'칙칙함·투명감'}, sensitive:{l:'예민함·흔들림'}, acne:{l:'성인 트러블'}, none:{l:'특별히 없음'} } },
+        peak: { q:'지금까지 피부가 가장<br>빛났던 챕터는 언제인가요?', note:'떠올려 보세요. 그때의 피부는 지금도 설계도로 남아 있어요.', o:{
+          teen:{l:'학창 시절',s:'아무것도 안 해도 괜찮았어요'}, twenties:{l:'20대의 그 시절',s:'메이크업이 즐거웠던 때'}, recent:{l:'비교적 최근',s:'케어가 결실을 맺는 느낌'}, future:{l:'아직 오지 않았어요',s:'가장 좋은 챕터는 이제부터'} } },
+        exp: { q:'지금까지 피부와<br>어떻게 지내오셨나요?', note:'정답은 없어요. 걸어온 길을 들려주세요.', o:{
+          simple:{l:'심플파',s:'기본만 꾸준히 정성껏'}, explorer:{l:'코스메 탐험가',s:'신제품도 화제 성분도 써봤어요'}, salon:{l:'에스테·살롱 경험 있음',s:'전문가의 손을 빌려왔어요'}, doctor:{l:'더마 코스메틱 경험 있음',s:'성분과 근거로 골라왔어요'} } },
+        memory: { q:'피부가 나를 위해<br>애써준 기억은?', note:'하나 고르면 결과의 이야기에 엮여요.', o:{
+          travel:{l:'여행지에서도 뒤집어지지 않은 날이 있어요'}, praised:{l:'"피부 좋다"는 말을 들은 적 있어요'}, nofoundation:{l:'노파운데이션으로 외출한 날이 있어요'}, searching:{l:'지금 떠올리는 중',s:'이제부터 만들 추억이어도 좋아요'} } },
+        goal: { q:'다음 챕터에서<br>어떤 피부를 만나고 싶나요?', note:'\'되고 싶다\'가 가장 좋은 이정표예요.', o:{
+          glow:{l:'촉촉하게 빛나는 피부',s:'안에서 차오르는 듯한 윤기'}, kime:{l:'결이 고운 실크 피부',s:'매끈한 면으로 빛을 돌려줘요'}, hari:{l:'탱탱하게 탄력 있는 피부',s:'눌렀다 튀어오르는 탄성'}, tone:{l:'맑게 비치는 피부',s:'흐림 없는 투명감'}, calm:{l:'흔들리지 않는 건강한 피부',s:'매일 잔잔하게'} } },
+        time: { q:'케어에 쓸 수 있는 시간은?', note:'이어갈 수 있는 루틴만이 이야기를 진행시켜요.', o:{
+          full:{l:'아침저녁 정성껏',s:'단계 쌓기를 좋아해요'}, night:{l:'밤에만 꼼꼼히',s:'아침은 최소한으로'}, quick:{l:'최대한 간단히',s:'적은 단계로 확실하게'}, weekend:{l:'주말 집중 케어',s:'평일은 가볍게, 주말엔 보상'} } },
+        budget: { q:'매달 스킨케어에 쓰고 싶은<br>금액은 어느 정도인가요?', note:'솔직한 금액이면 돼요. 그 안에서 가장 좋은 답을 짜드릴게요.', o:{
+          b1:{l:'〜3,000엔',s:'우선 가볍게'}, b2:{l:'3,000〜8,000엔',s:'기본을 제대로'}, b3:{l:'8,000〜15,000엔',s:'좋은 것을 고르고 싶어요'}, b4:{l:'15,000엔〜',s:'투자를 아끼지 않아요'} } }
+      },
+      types: {
+        glow:{ name:'\'촉촉 빛의 장\'', story:'당신의 이야기는 빛을 모으는 계절에 들어섰습니다.' },
+        kime:{ name:'\'실크 결의 장\'', story:'당신의 이야기는 결을 매끈하게 다듬는 계절에 들어섰습니다.' },
+        hari:{ name:'\'탄력의 장\'', story:'당신의 이야기는 탱탱함과 탄성을 되찾는 계절에 들어섰습니다.' },
+        tone:{ name:'\'맑은 빛의 장\'', story:'당신의 이야기는 흐림을 걷어내는 계절에 들어섰습니다.' },
+        calm:{ name:'\'잔잔함의 장\'', story:'당신의 이야기는 흔들림을 가라앉히고 토대를 기르는 계절에 들어섰습니다.' }
+      },
+      peak: {
+        teen:'학창 시절 피부가 빛났다면, 당신의 피부에는 <b>좋은 설계도</b>가 처음부터 있어요.',
+        twenties:'20대의 그 빛을 알고 있다면, 피부는 <b>돌아가는 길을 기억</b>해요.',
+        recent:'최근이 가장 좋았다면, 지금의 케어는 <b>맞는 길 위</b>에 있어요.',
+        future:'가장 좋은 챕터는 이제부터라는 답이 가장 강해요. <b>성장 여백뿐</b>이라는 뜻이니까요.'
+      },
+      exp: {
+        simple:'심플하게 이어온 정성은 새로 더할 한 병을 <b>곧장 듣게 하는 토대</b>가 돼요.',
+        explorer:'많이 써본 경험은 <b>나에게 맞는 것을 알아보는 눈</b>으로 이미 갖춰져 있어요.',
+        salon:'전문가의 손길을 아는 피부는 <b>좋은 것에 반응이 빨라요</b>. 홈케어에서도 그래요.',
+        doctor:'근거로 골라온 당신에게는 <b>이유 있는 한 병</b>이 가장 어울려요.'
+      },
+      mem: {
+        travel:'여행지에서도 버텨준 그날의 피부는, 피부 저력의 증명이에요.',
+        praised:'"피부 좋다"는 말을 들은 날이 있다면, 그날은 다시 만들 수 있어요.',
+        nofoundation:'노파운데이션으로 나선 그날을, 다음 챕터의 목적지로 삼아요.',
+        searching:'추억은 이제부터 만들면 돼요. 오늘의 진단이 그 첫 페이지예요.'
+      },
+      closing:'여기서부터는 <b>고른 답만큼</b> 곧게 나아갑니다.',
+      steps: { cleanse:'지우기', wash:'씻기', lotion:'채우기', serum:'스며들게', moist:'가두기', uv:'지키기', special:'주간 보상' },
+      badge:'Your Skin History',
+      routineH:'이 챕터의, 당신의 루틴', routineSub:'고른 시간과 예산 안에서 지금 짤 수 있는 가장 좋은 구성이에요.',
+      price:'정가', priceNote:'세금 포함 · 회원은 서머 세일 가격',
+      stretch:'예산보다 조금 위지만, 이 역할에서 가장 다가가기 쉬운 한 병이에요.',
+      under:'예산에 여유가 남는 역할이에요. 아낀 만큼 \'스며들게\'에 쓰는 게 현명한 배분.',
+      ctaH:'텍스처와 향은 매장에서 확인할 수 있어요.',
+      ctaP:'이 화면을 스태프에게 보여주시면<br>당신의 챕터에 맞춰 그 자리에서 안내해 드려요.',
+      ctaBtn:'매장 위치 보기 →',
+      cross:'머리카락의 이야기도 궁금해졌다면 →', crossLink:'헤어 진단으로',
+      again:'← 챕터를 다시 펼치기',
+      loading:'당신의 챕터를 엮는 중…',
+      error:'불러오기에 실패했어요. 연결을 확인하고 다시 시도해 주세요.'
+    }
+    };
+
+    function curLang(){
+      try { if (window.SEAM_LANG) return window.SEAM_LANG.get(); } catch(e){}
+      try { var s = localStorage.getItem('seamLang'); if (s && LOCALE[s]) return s; } catch(e){}
+      return 'ja';
+    }
+    function T(){ return LOCALE[curLang()] || LOCALE.ja; }
 
     /* ─────────── レコメンド表(手作業キュレーション・idはsalon.town実在) ───────────
        step: cleanse/wash/lotion/serum/moist/uv/special
@@ -265,103 +613,82 @@
       {id:'20230901142428189cagiEjP',step:'special',c:['dry']}
     ];
 
-    /* ─────────── 章(タイプ)定義 ─────────── */
-    var TYPES = {
-      glow: { name:'うるみ玉の章', story:'あなたの物語は、光をためる季節に入っています。' },
-      kime: { name:'きぬ肌の章', story:'あなたの物語は、面をなめらかに磨く季節に入っています。' },
-      hari: { name:'ハリ弾む章', story:'あなたの物語は、ふっくらと弾みを取り戻す季節に入っています。' },
-      tone: { name:'透きとおる章', story:'あなたの物語は、くもりを晴らしていく季節に入っています。' },
-      calm: { name:'凪の章', story:'あなたの物語は、ゆらぎを鎮めて土台を育てる季節に入っています。' }
-    };
-    var PEAK_LINE = {
-      teen:'学生の頃の肌が輝いていたなら、あなたの肌には<b>いい設計図</b>がもともとあります。',
-      twenties:'20代のあの頃の輝きを知っているなら、肌は<b>戻り方を覚えて</b>います。',
-      recent:'最近いちばん良かったと感じているなら、いまのケアは<b>正しい道の途中</b>です。',
-      future:'いちばんいい章はこれから、という答えがいちばん強い。<b>伸びしろしかない</b>ということです。'
-    };
-    var EXP_LINE = {
-      simple:'シンプルに続けてきた丁寧さは、これから足す一本を<b>まっすぐ効かせる土台</b>になります。',
-      explorer:'たくさん試してきた経験は、<b>自分に合うものを見抜く目</b>としてもう備わっています。',
-      salon:'プロの手を知っている肌は、<b>いいものへの反応が早い</b>。自宅ケアにもそれは活きます。',
-      doctor:'成分で選んできたあなたには、<b>根拠のある一本</b>がいちばん似合います。'
-    };
-    var MEM_LINE = {
-      travel:'旅先でも荒れなかったあの日の肌は、あなたの肌の底力の証明です。',
-      praised:'「肌きれい」と言われた日があるなら、その日はまた作れます。',
-      nofoundation:'ノーファンデで出かけたあの日を、次の章の目的地にしましょう。',
-      searching:'思い出はこれから作ればいい。今日の診断が、その最初のページです。'
-    };
     var BUDGET = {
       b1:{min:0,max:4400},
       b2:{min:2400,max:9800},
       b3:{min:6000,max:17000},
       b4:{min:9000,max:99999}
     };
-    var STEP_LABEL = { cleanse:'落とす', wash:'洗う', lotion:'うるおす', serum:'効かせる', moist:'とじこめる', uv:'守る', special:'週のご褒美' };
 
     /* ─────────── 状態 ─────────── */
-    var idx = 0, ans = {}, catalogMap = null, copyMap = {};
+    var idx = 0, ans = {}, catalogMap = null, copyMap = {}, lastResult = null;
 
     var $ = function(id){ return document.getElementById(id); };
 
     function show(sec){ ['sfIntro','sfQuiz','sfResult'].forEach(function(s){ $(s).classList.toggle('hidden', s!==sec); }); window.scrollTo({top:0}); }
+    function visible(sec){ return !$(sec).classList.contains('hidden'); }
 
     function renderQ(){
-      var q = QS[idx];
-      $('sfChap').textContent = '— Chapter ' + q.ch + ' · ' + (idx+1) + ' / ' + QS.length;
-      $('sfChapName').textContent = q.chn;
-      $('sfBar').style.width = Math.round(((idx)/QS.length)*100) + '%';
-      $('sfQ').innerHTML = q.q;
-      $('sfQnote').textContent = q.note || '';
+      var st = STRUCT[idx];
+      var L = T();
+      var lq = L.q[st.id] || LOCALE.ja.q[st.id];
+      $('sfChap').textContent = '— Chapter ' + st.ch + ' · ' + (idx+1) + ' / ' + STRUCT.length;
+      $('sfChapName').textContent = L.chap[st.ch];
+      $('sfBar').style.width = Math.round(((idx)/STRUCT.length)*100) + '%';
+      $('sfQ').innerHTML = lq.q;
+      $('sfQnote').textContent = lq.note || '';
       var box = $('sfOpts'); box.innerHTML = '';
-      var cur = ans[q.id];
-      q.opts.forEach(function(o){
+      var cur = ans[st.id];
+      st.opts.forEach(function(o){
+        var tx = lq.o[o.v] || {};
         var b = document.createElement('button');
         b.className = 'sf-opt';
-        b.innerHTML = o.l + (o.s ? '<small>' + o.s + '</small>' : '');
-        var on = q.multi ? (Array.isArray(cur) && cur.indexOf(o.v) > -1) : cur === o.v;
+        b.innerHTML = (tx.l || o.v) + (tx.s ? '<small>' + tx.s + '</small>' : '');
+        var on = st.multi ? (Array.isArray(cur) && cur.indexOf(o.v) > -1) : cur === o.v;
         if (on) b.classList.add('on');
         b.onclick = function(){
-          if (q.multi) {
-            var arr = Array.isArray(ans[q.id]) ? ans[q.id].slice() : [];
+          if (st.multi) {
+            var arr = Array.isArray(ans[st.id]) ? ans[st.id].slice() : [];
             if (o.x) { arr = arr.indexOf(o.v) > -1 ? [] : [o.v]; }
             else {
-              arr = arr.filter(function(v){ return !q.opts.some(function(p){ return p.x && p.v === v; }); });
+              arr = arr.filter(function(v){ return !st.opts.some(function(p){ return p.x && p.v === v; }); });
               var i = arr.indexOf(o.v);
               if (i > -1) arr.splice(i,1); else arr.push(o.v);
             }
-            ans[q.id] = arr;
+            ans[st.id] = arr;
             renderQ();
           } else {
-            ans[q.id] = o.v;
+            ans[st.id] = o.v;
             renderQ();
             setTimeout(next, 220);
           }
         };
         box.appendChild(b);
       });
-      var ok = q.multi ? (Array.isArray(cur) && cur.length > 0) : !!cur;
+      var ok = st.multi ? (Array.isArray(cur) && cur.length > 0) : !!cur;
+      $('sfNext').textContent = L.next;
+      $('sfBack').textContent = L.back;
       $('sfNext').classList.toggle('ok', ok);
-      $('sfNext').style.display = q.multi ? '' : 'none';
+      $('sfNext').style.display = st.multi ? '' : 'none';
       $('sfBack').style.visibility = idx === 0 ? 'hidden' : 'visible';
       $('sfQuiz').classList.remove('fadein'); void $('sfQuiz').offsetWidth; $('sfQuiz').classList.add('fadein');
     }
     function next(){
-      var q = QS[idx];
-      var cur = ans[q.id];
-      var ok = q.multi ? (Array.isArray(cur) && cur.length > 0) : !!cur;
+      var st = STRUCT[idx];
+      var cur = ans[st.id];
+      var ok = st.multi ? (Array.isArray(cur) && cur.length > 0) : !!cur;
       if (!ok) return;
-      if (idx < QS.length - 1) { idx++; renderQ(); }
+      if (idx < STRUCT.length - 1) { idx++; renderQ(); }
       else finish();
     }
 
     /* ─────────── データ取得 ─────────── */
     function loadData(){
-      var p1 = fetch('data/products/seam-catalog.json?v=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.json(); }).then(function(j){
+      var p1 = catalogMap ? Promise.resolve() : fetch('data/products/seam-catalog.json?v=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.json(); }).then(function(j){
         catalogMap = {};
         (j.items || []).forEach(function(it){ if (it && it.id) catalogMap[it.id] = it; });
       });
-      var p2 = fetch('data/products/seam-copy.json?v=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.json(); }).then(function(j){ copyMap = j.items || {}; }).catch(function(){});
+      var p2 = Object.keys(copyMap).length ? Promise.resolve() : fetch('data/products/seam-copy.json?v=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.json(); }).then(function(j){ copyMap = j.items || {}; }).catch(function(){});
       return Promise.all([p1, p2]);
     }
 
@@ -373,8 +700,6 @@
       if (base === 'dry' && concerns.indexOf('dry') < 0) concerns.push('dry');
       if (base === 'sensitive' && concerns.indexOf('sensitive') < 0) concerns.push('sensitive');
       if (base === 'oily' && concerns.indexOf('pore') < 0) concerns.push('pore');
-      var wants = concerns.slice();
-      if (wants.indexOf(goal) < 0) wants.push(goal); // なりたいも軸に
       var w = BUDGET[ans.budget] || BUDGET.b2;
 
       // 時間タイプでステップ構成を決める(自分で選んだ感=回答が構成を変える)
@@ -421,52 +746,60 @@
       return picks;
     }
 
-    /* ─────────── 結果描画 ─────────── */
+    /* ─────────── 結果描画(言語切替で再描画可能) ─────────── */
+    function renderResult(){
+      if (!lastResult) return;
+      var L = T();
+      var goal = lastResult.goal;
+      var picks = lastResult.picks;
+      var ty = L.types[goal] || LOCALE.ja.types[goal];
+      var story = L.peak[ans.peak] + '<br>' + L.exp[ans.exp] + '<br>' + L.mem[ans.memory] + '<br>' + ty.story + L.closing;
+      var box = $('sfResult');
+      var html = '';
+      html += '<div class="fadein" style="text-align:center;">';
+      html += '<span class="sf-badge mono">' + L.badge + '</span>';
+      html += '<h1 class="sf-type serif">' + ty.name + '</h1>';
+      html += '</div>';
+      html += '<div class="sf-story serif fadein">' + story + '</div>';
+      html += '<div class="sf-sec fadein"><h2 class="serif">' + L.routineH + '</h2><p class="sub">' + L.routineSub + '</p>';
+      picks.forEach(function(pk){
+        var it = catalogMap[pk.m.id];
+        var cp = copyMap[pk.m.id] || '';
+        html += '<article class="sf-step">';
+        html += '<img src="images/catalog/' + it.id + '.webp" alt="" loading="eager" onerror="this.style.visibility=\'hidden\'">';
+        html += '<div style="min-width:0;">';
+        html += '<p class="role mono">' + (L.steps[pk.st] || pk.st) + '</p>';
+        html += '<p class="bname">' + esc(it.b) + '</p>';
+        html += '<p class="pname serif">' + esc(it.n) + '</p>';
+        html += '<p class="price">' + L.price + ' ¥' + it.p.toLocaleString() + ' <small>' + L.priceNote + '</small></p>';
+        if (cp) html += '<p class="copy">' + esc(cp) + '</p>';
+        if (pk.stretch) html += '<p class="rel">' + L.stretch + '</p>';
+        else if (pk.under) html += '<p class="rel">' + L.under + '</p>';
+        html += '</div></article>';
+      });
+      html += '</div>';
+      html += '<div class="sf-cta fadein"><p class="serif" style="font-size:15px;">' + L.ctaH + '</p>';
+      html += '<p>' + L.ctaP + '</p>';
+      html += '<a href="shop.html">' + L.ctaBtn + '</a></div>';
+      html += '<p class="sf-cross fadein">' + L.cross + ' <a href="finder.html">' + L.crossLink + '</a></p>';
+      html += '<button class="sf-again" id="sfAgain">' + L.again + '</button>';
+      box.innerHTML = html;
+      $('sfAgain').onclick = function(){ idx = 0; ans = {}; lastResult = null; show('sfIntro'); };
+    }
+
     function finish(){
       $('sfBar').style.width = '100%';
       show('sfResult');
       var box = $('sfResult');
-      box.innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;font-size:13px;">あなたの章を綴じています…</p>';
+      box.innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;font-size:13px;">' + T().loading + '</p>';
       loadData().then(function(){
-        var goal = ans.goal || 'glow';
-        var T = TYPES[goal];
-        var picks = pickRoutine();
-        var story = PEAK_LINE[ans.peak] + '<br>' + EXP_LINE[ans.exp] + '<br>' + MEM_LINE[ans.memory] + '<br>' + T.story + 'ここからは、<b>選んだ答えのぶんだけ</b>、まっすぐ進みます。';
-        var html = '';
-        html += '<div class="fadein" style="text-align:center;">';
-        html += '<span class="sf-badge mono">Your Skin History</span>';
-        html += '<h1 class="sf-type serif">「' + T.name + '」</h1>';
-        html += '</div>';
-        html += '<div class="sf-story serif fadein">' + story + '</div>';
-        html += '<div class="sf-sec fadein"><h2 class="serif">この章の、あなたのルーティン</h2><p class="sub">選んだ時間と予算の中で、いま組めるいちばんいい並びです。</p>';
-        picks.forEach(function(pk){
-          var it = catalogMap[pk.m.id];
-          var cp = copyMap[pk.m.id] || '';
-          html += '<article class="sf-step">';
-          html += '<img src="images/catalog/' + it.id + '.webp" alt="" loading="eager" onerror="this.style.visibility=\'hidden\'">';
-          html += '<div style="min-width:0;">';
-          html += '<p class="role mono">' + STEP_LABEL[pk.st] + '</p>';
-          html += '<p class="bname">' + esc(it.b) + '</p>';
-          html += '<p class="pname serif">' + esc(it.n) + '</p>';
-          html += '<p class="price">定価 ¥' + it.p.toLocaleString() + ' <small>税込・会員はサマーセール価格</small></p>';
-          if (cp) html += '<p class="copy">' + esc(cp) + '</p>';
-          if (pk.stretch) html += '<p class="rel">ご予算の枠より上ですが、この役割でいちばん手に取りやすい一本です。</p>';
-          else if (pk.under) html += '<p class="rel">ご予算に余裕を残せる役割です。ここで浮いた分を「効かせる」に回すのが上手な配分。</p>';
-          html += '</div></article>';
-        });
-        html += '</div>';
-        html += '<div class="sf-cta fadein"><p class="serif" style="font-size:15px;">テクスチャーと香りは、店頭でたしかめられます。</p>';
-        html += '<p>この画面をスタッフに見せていただければ<br>あなたの章に合わせて、その場でご案内します。</p>';
-        html += '<a href="shop.html">お店の場所を見る →</a></div>';
-        html += '<p class="sf-cross fadein">髪の物語も知りたくなったら → <a href="finder.html">髪格診断へ</a></p>';
-        html += '<button class="sf-again" id="sfAgain">← もう一度、章をひらき直す</button>';
-        box.innerHTML = html;
-        $('sfAgain').onclick = function(){ idx = 0; ans = {}; show('sfIntro'); };
+        lastResult = { goal: ans.goal || 'glow', picks: pickRoutine() };
+        renderResult();
         try {
-          navigator.sendBeacon && navigator.sendBeacon('/api/ev', JSON.stringify({ name:'skinfinder_complete', path:'/skinfinder', type:goal, device:(innerWidth<640?'mobile':'desktop') }));
+          navigator.sendBeacon && navigator.sendBeacon('/api/ev', JSON.stringify({ name:'skinfinder_complete', path:'/skinfinder', type:lastResult.goal, device:(innerWidth<640?'mobile':'desktop') }));
         } catch(e){}
       }).catch(function(){
-        box.innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;">読み込みに失敗しました。通信環境をご確認のうえ、もう一度お試しください。</p>';
+        box.innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;">' + T().error + '</p>';
       });
     }
 
@@ -478,17 +811,24 @@
     };
     $('sfNext').onclick = next;
     $('sfBack').onclick = function(){ if (idx > 0) { idx--; renderQ(); } };
+
+    /* lang.js からの言語切替コールバック: 表示中の画面を描き直す */
+    window.onLangChange = function(){
+      if (visible('sfQuiz')) renderQ();
+      else if (visible('sfResult') && lastResult) renderResult();
+    };
   })();
   </script>
 
   <footer style="border-top:1px solid var(--line); margin-top:60px; padding:28px 20px calc(28px + env(safe-area-inset-bottom,0px)); text-align:center;">
     <p style="font-size:11px; color:var(--charcoal); opacity:.65;">© SEAM — hair care select shop
-      <span style="margin:0 6px;">·</span><a href="terms.html" style="text-decoration:underline;text-underline-offset:2px;">利用規約</a>
-      <span style="margin:0 6px;">·</span><a href="privacy.html" style="text-decoration:underline;text-underline-offset:2px;">プライバシー</a>
-      <span style="margin:0 6px;">·</span><a href="tokushoho.html" style="text-decoration:underline;text-underline-offset:2px;">特定商取引法に基づく表記</a></p>
+      <span style="margin:0 6px;">·</span><a href="terms.html" style="text-decoration:underline;text-underline-offset:2px;" data-i18n="foot.terms">利用規約</a>
+      <span style="margin:0 6px;">·</span><a href="privacy.html" style="text-decoration:underline;text-underline-offset:2px;" data-i18n="foot.privacy">プライバシー</a>
+      <span style="margin:0 6px;">·</span><a href="tokushoho.html" style="text-decoration:underline;text-underline-offset:2px;" data-i18n="foot.legal">特定商取引法に基づく表記</a></p>
   </footer>
 
   <script src="js/app-header.js?v=4" defer></script>
+  <script src="js/lang.js?v=2" defer></script>
   <script src="js/seam-analytics.js?v=3" defer></script>
 </body>
 </html>
