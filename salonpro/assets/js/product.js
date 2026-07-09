@@ -79,6 +79,7 @@
           : `メーカー希望小売価格 <s>${fmtYen(list)}</s>`} ・ 税込 <b style="color:var(--ink-2)">${fmtYen(tax)}</b></div>
         <div class="pd-price__member">${svg('checkc')} ${SP.MEMBER_RANK}会員価格が適用中 ・ 獲得 <b>${pts}pt</b></div>
         <div class="pd-tiers"><b>まとめ買い割引</b>　6個以上 <b>5%OFF</b> ／ 12個以上 <b>10%OFF</b></div>
+        <div style="font-size:10.5px;color:var(--ink-3);margin-top:8px;line-height:1.6">※ 価格は貴サロンの契約価格（基幹システム連携・サロン別）を表示します。在庫表示は前日時点の基幹在庫にもとづきます（デモは共通値）。</div>
       </div>
 
       ${direct ? `

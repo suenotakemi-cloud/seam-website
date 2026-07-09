@@ -15,7 +15,7 @@
   const PAY = {
     invoice: { t: '請求書払い（掛け）', s: '月末締め・翌月末払い／担当者の与信承認後に発送' },
     card:    { t: 'クレジットカード', s: 'VISA / Master / JCB / AMEX' },
-    bank:    { t: '銀行振込（前払い）', s: '入金確認後の出荷' },
+    bank:    { t: '銀行振込（前払い）', s: '入金確認後の出荷 ・ 振込手数料はお客様負担' },
     cod:     { t: '代金引換', s: '配送時にお支払い（代引手数料別）' },
   };
   const PAY_LABEL = { invoice: '請求書払い（掛け）', card: 'クレジットカード', bank: '銀行振込', cod: '代金引換' };
@@ -160,6 +160,9 @@
     const kake = sel === 'invoice'
       ? `<div class="dcart__kake">${shieldSvg}<div><b style="color:var(--ink)">掛け払いは ${dl.name} の担当者が与信を確認後に発送します。</b>（担当：${dl.rep || '—'}）</div></div>`
       : '';
+    const bank = sel === 'bank'
+      ? `<div class="dcart__kake">${shieldSvg}<div><b style="color:var(--ink)">銀行振込は入金確認後の出荷です（入金待ち）。</b><br>振込名義の後ろに<b>注文番号</b>をご入力ください（例：ｻﾛﾝﾗｸｽ SP-XXXX）。振込手数料はお客様のご負担となります。</div></div>`
+      : '';
     const qtyRow = c.qtyDiscount > 0 ? `<div class="dsum__row"><span>まとめ買い割引</span><span class="v">-${fmtYen(c.qtyDiscount)}</span></div>` : '';
     const cpRow = c.couponOff > 0 ? `<div class="dsum__row" style="color:var(--gold-strong);font-weight:700"><span>🎟 クーポン（${c.couponLabel}）</span><span class="v">-${fmtYen(c.couponOff)}</span></div>` : '';
     return `
@@ -173,7 +176,7 @@
           <div class="dcart__ship">${shipMsg}</div>
           <div class="dcart__paytitle">お支払い方法（${dl.name}）</div>
           <div class="dcart__pay">${payOptions(dl)}</div>
-          ${kake}
+          ${kake}${bank}
           <div class="dsum">
             <div class="dsum__row"><span>小計（税抜）</span><span class="v">${fmtYen(c.subtotal)}</span></div>
             ${qtyRow}
@@ -210,6 +213,13 @@
     const kakeNote = o.kake
       ? `<p style="font-size:11.5px;color:#7a5a1e;background:#fdf4e7;border:1px solid #f0dcbf;border-radius:var(--r-md);padding:10px 12px;margin:12px 0 0;line-height:1.6;text-align:left">担当者の与信承認後に発送します（未集金防止）。承認次第、発送通知をお送りします。</p>`
       : '';
+    const bankNote = o.payKey === 'bank'
+      ? `<div style="font-size:11.5px;color:#7a5a1e;background:#fdf4e7;border:1px solid #f0dcbf;border-radius:var(--r-md);padding:11px 13px;margin:12px 0 0;line-height:1.7;text-align:left">
+          <b style="color:var(--ink)">ステータス：入金待ち</b>（ご入金の確認後に出荷手配します）<br>
+          お振込先：北洋銀行 ○○支店 普通 1234567 ｶ)ｷｸﾁ<br>
+          振込名義：<b>サロン名＋注文番号</b>（例：ｻﾛﾝﾗｸｽ ${o.orderNo}）<br>
+          ※ 振込手数料はお客様のご負担となります。入金確認の通知をお送りします。</div>`
+      : '';
     return `
       <section class="dcart dcart--done" data-dealer="${o.dealer}">
         <div class="dcart__head"><span class="dcart__badge" style="background:${dl.accent}">${dl.name}</span>
@@ -222,7 +232,7 @@
             <div class="row"><span class="l">お支払い</span><span class="v">${PAY_LABEL[o.payKey]}</span></div>
             <div class="row"><span class="l">合計（税込）</span><span class="v">${fmtYen(o.total)}</span></div>
           </div>
-          ${kakeNote}
+          ${kakeNote}${bankNote}
         </div>
       </section>`;
   }

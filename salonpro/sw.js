@@ -1,5 +1,5 @@
 /* Salon Town Pro Service Worker — コア資産をキャッシュしオフライン/高速化（軽くて落ちないPWA） */
-const CACHE = 'salonpro-v61';
+const CACHE = 'salonpro-v62';
 const CORE = [
   'home.html', 'index.html', 'cart.html', 'product.html', 'reorder.html',
   'mypage.html', 'learn.html', 'favorites.html', 'orders.html', 'support.html',
