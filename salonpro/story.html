@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>まんがでわかる Salon Town Pro｜仕入れから、成果へ。</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=85">
+  <link rel="stylesheet" href="assets/css/base.css?v=85">
+  <link rel="stylesheet" href="assets/css/components.css?v=85">
+  <style>
+    body { background: #f4f2ee; padding-bottom: 44px; }
+    .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .pa-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 760px; margin-inline: auto; }
+    .pa-top__logo { font-size: 17px; font-weight: 800; } .pa-top__logo b { color: var(--gold); }
+    .pa-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .mg-wrap { max-width: 760px; margin-inline: auto; padding: 18px 16px; }
+
+    .mg-head { text-align: center; margin: 6px 0 18px; }
+    .mg-head__k { display: inline-block; font-size: 11px; font-weight: 900; letter-spacing: .12em; color: var(--gold-strong); background: var(--gold-soft); border: 1px solid var(--gold-line); border-radius: 999px; padding: 4px 14px; }
+    .mg-head__h { font-size: 26px; font-weight: 900; letter-spacing: .01em; margin-top: 10px; }
+    .mg-head__h b { color: var(--gold-strong); }
+    .mg-head__s { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.7; }
+
+    .mg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 640px) { .mg-grid { grid-template-columns: 1fr; } }
+
+    /* コマ */
+    .koma { position: relative; background: #fff; border: 3px solid #1b1b1d; box-shadow: 5px 5px 0 rgba(27,27,29,.12); }
+    .koma img { display: block; width: 100%; height: auto; }
+    .koma__no { position: absolute; top: -3px; left: -3px; z-index: 3; width: 30px; height: 30px; background: #1b1b1d; color: #fff; font-family: var(--font-num); font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+
+    /* 吹き出し */
+    .fk { position: absolute; z-index: 2; background: rgba(255,255,255,.97); border: 2.5px solid #1b1b1d; border-radius: 16px; padding: 10px 13px; font-size: 13px; font-weight: 800; line-height: 1.65; letter-spacing: .01em; max-width: 78%; }
+    .fk::after { content: ''; position: absolute; width: 14px; height: 14px; background: inherit; border-right: 2.5px solid #1b1b1d; border-bottom: 2.5px solid #1b1b1d; transform: rotate(45deg); bottom: -9px; left: 30px; }
+    .fk--tr { top: 10px; right: 10px; } .fk--tr::after { left: auto; right: 30px; }
+    .fk--tl { top: 10px; left: 44px; }
+    .fk b { color: var(--gold-strong); }
+
+    /* ナレーション帯 */
+    .nar { position: absolute; z-index: 2; left: -3px; bottom: 14px; background: #1b1b1d; color: #fff; font-size: 10.5px; font-weight: 800; padding: 6px 12px; letter-spacing: .04em; max-width: 86%; line-height: 1.6; }
+    .nar--top { bottom: auto; top: 40px; }
+    .nar b { color: var(--gold); }
+
+    /* 最終コマのロゴ帯 */
+    .mg-fin { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, rgba(20,19,18,.88) 40%); color: #fff; text-align: center; padding: 34px 12px 14px; }
+    .mg-fin__l { font-size: 18px; font-weight: 900; } .mg-fin__l b { color: var(--gold); }
+    .mg-fin__s { font-size: 11px; color: rgba(255,255,255,.8); margin-top: 3px; }
+
+    /* まとめ4つ */
+    .mg-sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 18px; }
+    @media (max-width: 640px) { .mg-sum { grid-template-columns: repeat(2, 1fr); } }
+    .mg-sum__c { background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 10px; text-align: center; }
+    .mg-sum__ic { font-size: 20px; } .mg-sum__t { font-size: 12px; font-weight: 900; margin-top: 5px; } .mg-sum__s { font-size: 10px; color: var(--ink-3); margin-top: 2px; line-height: 1.5; }
+
+    .mg-cta { display: grid; gap: 8px; margin-top: 16px; }
+    .mg-btn { height: 52px; border: 0; border-radius: var(--r-md); background: var(--gold); color: #fff; font-size: 14.5px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .mg-btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line-3); }
+    .mg-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon Town <b>Pro</b></span><span class="pa-top__tag">まんがでわかる</span></div></div>
+  <div class="mg-wrap">
+
+    <div class="mg-head">
+      <span class="mg-head__k">MANGA ・ 1分でわかる</span>
+      <div class="mg-head__h">まんがでわかる<br><b>Salon Town Pro</b></div>
+      <div class="mg-head__s">とあるサロンオーナー・ミカ店長の話。<br>「経営がラクになる」って、こういうこと。</div>
+    </div>
+
+    <div class="mg-grid">
+      <!-- 1 -->
+      <div class="koma">
+        <span class="koma__no">1</span>
+        <img src="assets/img/manga/p1.jpg" alt="夜のバックルームで書類の山に頭を抱えるオーナー" loading="eager">
+        <div class="fk fk--tr">発注FAX、求人サイトの請求、カード手数料……<br>施術より<b>経営のほうが疲れる</b>……</div>
+        <div class="nar">夜10時。閉店後のバックルームにて</div>
+      </div>
+      <!-- 2 -->
+      <div class="koma">
+        <span class="koma__no">2</span>
+        <img src="assets/img/manga/p2.jpg" alt="ディーラーの担当者がスマホを差し出す" loading="lazy">
+        <div class="fk fk--tr">オーナー、それ全部——<br><b>このアプリ1本</b>で終わりますよ</div>
+        <div class="nar">いつものディーラーの担当さんがひとこと</div>
+      </div>
+      <!-- 3 -->
+      <div class="koma">
+        <span class="koma__no">3</span>
+        <img src="assets/img/manga/p3.jpg" alt="スマホを見て驚くオーナー" loading="lazy">
+        <div class="fk fk--tl">いつもの仕入れが<b>3タップ</b>!?<br>前回の注文がそのままカゴに……！</div>
+        <div class="nar">バーコードを「ピッ」でも発注できる</div>
+      </div>
+      <!-- 4 -->
+      <div class="koma">
+        <span class="koma__no">4</span>
+        <img src="assets/img/manga/p4.jpg" alt="カード端末を掲げるオーナーと王冠" loading="lazy">
+        <div class="fk fk--tl">仕入れをまとめたら、カード手数料が<b>実質1.9%</b>……！？</div>
+        <div class="nar">クラス制：仕入・電気・スマホの条件達成で下がる（下限<b>1.9%</b>）</div>
+      </div>
+      <!-- 5 -->
+      <div class="koma">
+        <span class="koma__no">5</span>
+        <img src="assets/img/manga/p5.jpg" alt="店販ECでお客様が商品を受け取って喜ぶ" loading="lazy">
+        <div class="fk fk--tl">私のお店の<b>店販EC</b>でお客様がリピ買い！<br>システム料より入金が多い月も……！</div>
+        <div class="nar">スタッフごとの店販EC ＋「払う→もらう」差額ダッシュボード</div>
+      </div>
+      <!-- 6 -->
+      <div class="koma">
+        <span class="koma__no">6</span>
+        <img src="assets/img/manga/p6.jpg" alt="笑顔でお客様の髪をカットするオーナー" loading="lazy">
+        <div class="fk fk--tr">経営はアプリにまかせて、<br>私は<b>お客様に集中</b>！</div>
+        <div class="mg-fin"><div class="mg-fin__l">Salon Town <b>Pro</b></div><div class="mg-fin__s">仕入れから、成果へ。— 運営：菊地（KIKUCHI PRODUCE）</div></div>
+      </div>
+    </div>
+
+    <!-- まとめ -->
+    <div class="mg-sum">
+      <div class="mg-sum__c"><div class="mg-sum__ic">🛒</div><div class="mg-sum__t">3タップ再注文</div><div class="mg-sum__s">前回セット・バーコード発注</div></div>
+      <div class="mg-sum__c"><div class="mg-sum__ic">💳</div><div class="mg-sum__t">実質1.9%決済</div><div class="mg-sum__s">クラス制・掛け払いも初回から</div></div>
+      <div class="mg-sum__c"><div class="mg-sum__ic">🛍</div><div class="mg-sum__t">店販EC</div><div class="mg-sum__s">スタッフ個人EC・差額還元</div></div>
+      <div class="mg-sum__c"><div class="mg-sum__ic">🤝</div><div class="mg-sum__t">求人・ヘルプ</div><div class="mg-sum__s">誠実求人・即日サロンワーク</div></div>
+    </div>
+
+    <div class="mg-cta">
+      <a class="mg-btn" href="register.html">無料で会員登録する（プロ確認制）</a>
+      <a class="mg-btn ghost" href="top.html">サイトで詳しく見る</a>
+      <a class="mg-btn ghost" href="compare.html">🏢 ディーラーの方はこちら（連結のご案内）</a>
+    </div>
+    <div class="mg-note">※ まんがはイメージです。料率・機能の詳細は各ページ（デモ）でご確認ください。実質1.9%は条件達成時の料率です。</div>
+  </div>
+</body>
+</html>

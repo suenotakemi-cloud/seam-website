@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1b1b1d">
+  <title>ディーラーの皆さまへ｜比較と「連結」のご案内｜Salon Town Pro</title>
+  <link rel="stylesheet" href="assets/css/tokens.css?v=85">
+  <link rel="stylesheet" href="assets/css/base.css?v=85">
+  <link rel="stylesheet" href="assets/css/components.css?v=85">
+  <style>
+    body { background: var(--surface-2); padding-bottom: 44px; }
+    .pa-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
+    .pa-top__in { display: flex; align-items: center; gap: 10px; height: 54px; padding: 0 16px; max-width: 860px; margin-inline: auto; }
+    .pa-top__logo { font-size: 17px; font-weight: 800; } .pa-top__logo b { color: var(--gold); }
+    .pa-top__tag { font-size: 12px; color: rgba(255,255,255,.6); border-left: 1px solid rgba(255,255,255,.2); padding-left: 10px; }
+    .pa-wrap { max-width: 860px; margin-inline: auto; padding: 16px; }
+    .pa-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 20px 18px; margin-bottom: 14px; }
+    .pa-card__t { font-size: 16px; font-weight: 900; margin-bottom: 6px; }
+    .pa-card__s { font-size: 12.5px; color: var(--ink-2); line-height: 1.75; }
+    .pa-note { font-size: 10.5px; color: var(--ink-3); line-height: 1.7; margin-top: 12px; }
+    .pa-btn { width: 100%; height: 52px; border: 0; border-radius: var(--r-md); background: var(--gold); color: #fff; font-size: 14.5px; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+    .pa-btn.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line-3); }
+
+    /* ヒーロー */
+    .dh { background: linear-gradient(165deg, #23211c, #141312); color: #fff; border-radius: var(--r-lg); padding: 30px 22px; margin-bottom: 14px; }
+    .dh__k { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .08em; color: var(--gold); border: 1px solid rgba(212,175,90,.4); border-radius: 999px; padding: 4px 12px; }
+    .dh__h { font-size: 26px; font-weight: 900; line-height: 1.5; letter-spacing: -.01em; margin-top: 14px; }
+    .dh__h b { color: var(--gold); }
+    .dh__s { font-size: 13px; color: rgba(255,255,255,.72); line-height: 1.8; margin-top: 10px; }
+    .dh__chips { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 14px; }
+    .dh__chips span { font-size: 10.5px; font-weight: 800; color: rgba(255,255,255,.9); background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.14); border-radius: 999px; padding: 4px 11px; }
+
+    /* 連結図 */
+    .lk { display: grid; gap: 10px; }
+    .lk__c { display: flex; gap: 12px; border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px 14px; background: var(--surface); }
+    .lk__n { width: 30px; height: 30px; border-radius: 50%; background: var(--dark); color: var(--gold); font-family: var(--font-num); font-weight: 900; font-size: 14px; display: flex; align-items: center; justify-content: center; flex: none; }
+    .lk__t { font-size: 13.5px; font-weight: 900; } .lk__s { font-size: 12px; color: var(--ink-2); line-height: 1.7; margin-top: 3px; }
+    .lk__s b { color: var(--gold-strong); }
+
+    /* 比較表 */
+    .cmp-scroll { overflow-x: auto; margin: 0 -4px; }
+    .cmp { width: 100%; min-width: 640px; border-collapse: collapse; }
+    .cmp th { font-size: 10.5px; font-weight: 800; color: var(--ink-2); padding: 9px 8px; border-bottom: 2px solid var(--line-3); text-align: center; line-height: 1.4; vertical-align: bottom; }
+    .cmp th:first-child { text-align: left; width: 34%; }
+    .cmp th.me { color: #fff; background: var(--dark); border-radius: 10px 10px 0 0; font-size: 11.5px; }
+    .cmp th.me b { color: var(--gold); }
+    .cmp td { font-size: 12px; padding: 10px 8px; border-bottom: 1px solid var(--line-2); text-align: center; font-weight: 800; }
+    .cmp td:first-child { text-align: left; font-weight: 700; color: var(--ink-2); line-height: 1.5; }
+    .cmp td:first-child b { color: var(--ink); }
+    .cmp td.me { background: #faf6ec; }
+    .cmp .v-yes { color: #1f8f53; font-size: 15px; } .cmp .v-tri { color: var(--gold-strong); } .cmp .v-no { color: #c3c3cc; }
+    .cmp .only { display: inline-block; font-size: 9px; font-weight: 900; color: #fff; background: var(--gold); border-radius: 5px; padding: 1px 6px; margin-left: 4px; vertical-align: 2px; }
+
+    /* 数字カード */
+    .num3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 560px) { .num3 { grid-template-columns: 1fr; } }
+    .numc { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px; }
+    .numc__v { font-family: var(--font-num); font-size: 24px; font-weight: 900; color: var(--gold-strong); }
+    .numc__l { font-size: 11.5px; font-weight: 800; margin-top: 3px; }
+    .numc__s { font-size: 10.5px; color: var(--ink-3); margin-top: 3px; line-height: 1.6; }
+
+    /* 導入ステップ */
+    .stp { display: grid; gap: 8px; }
+    .stp__r { display: flex; gap: 12px; align-items: flex-start; border: 1px solid var(--line); border-radius: var(--r-md); padding: 13px 14px; background: var(--surface); }
+    .stp__n { width: 28px; height: 28px; border-radius: 8px; background: var(--gold-soft); color: var(--gold-strong); font-family: var(--font-num); font-weight: 900; display: flex; align-items: center; justify-content: center; flex: none; }
+    .stp__t { font-size: 13px; font-weight: 900; } .stp__s { font-size: 11.5px; color: var(--ink-2); line-height: 1.65; margin-top: 2px; }
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); }
+  </style>
+</head>
+<body>
+  <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon Town <b>Pro</b></span><span class="pa-top__tag">ディーラーの皆さまへ</span></div></div>
+  <div class="pa-wrap">
+
+    <!-- ヒーロー -->
+    <div class="dh">
+      <span class="dh__k">FOR DEALERS ・ パートナー募集</span>
+      <div class="dh__h">ディーラーとディーラーが、<br><b>連結できる唯一のプラットフォーム。</b></div>
+      <div class="dh__s">Salon Town Pro は、貴社ブランドの「サロン経営OS」としてそのまま導入できます。仕入EC・決済・店販EC・求人・経営支援を1本で。そして全国のディーラー同士がつながり、<b>顧客を渡さずに品揃えと商圏を広げられます</b>。<span style="color:rgba(255,255,255,.45)">※連結（1カート複数ディーラー発注）機能の同種提供は当社調べで他に確認されていません（2026年7月時点）</span></div>
+      <div class="dh__chips"><span>貴社ブランドで運用</span><span>基幹システム（SMILE等）連携設計</span><span>実質1.9%決済</span><span>店販EC</span><span>地域求人</span></div>
+    </div>
+
+    <!-- 連結とは -->
+    <div class="pa-card">
+      <div class="pa-card__t">「連結」とは — 競合ではなく、割り勘のインフラ</div>
+      <div class="pa-card__s" style="margin-bottom:12px">サロンのカートは最初から<b>マルチディーラー設計</b>。サロンは1つのアプリで取引のある全ディーラーに発注でき、支払い・配送はディーラーごとに動きます（このデモのカートで実際に動いています）。</div>
+      <div class="lk">
+        <div class="lk__c"><span class="lk__n">1</span><span><span class="lk__t">サロンは「1つのカート」で全ディーラーに発注</span><span class="lk__s">サロンにとって発注アプリが1本になる＝使われ続ける。<b>貴社の顧客は貴社の枠で買う</b>ので、顧客を奪い合いません。</span></span></div>
+        <div class="lk__c"><span class="lk__n">2</span><span><span class="lk__t">取扱いのない商材は、連結先ディーラーが供給</span><span class="lk__s">貴社が扱わないメーカーの注文が来ても、<b>連結ディーラー経由で提供＝顧客を他社サイトに渡さない</b>。逆に貴社の得意メーカーは他地域へ売れます。</span></span></div>
+        <div class="lk__c"><span class="lk__n">3</span><span><span class="lk__t">決済・店販EC・求人は「共通インフラ」</span><span class="lk__s">実質1.9%決済もスタッフ店販ECも地域求人も、1社で作るには重すぎる投資。<b>プラットフォームで割り勘</b>にして、各社は営業とサロン支援に集中できます。</span></span></div>
+        <div class="lk__c"><span class="lk__n">4</span><span><span class="lk__t">サロンが移転・出店しても、データごと紹介できる</span><span class="lk__s">商圏の外に出たサロンは連結先ディーラーへ<b>発注履歴・カルテごと引き継ぎ</b>。囲い込みではなく、送り合うネットワークに。</span></span></div>
+      </div>
+    </div>
+
+    <!-- 比較表 -->
+    <div class="pa-card">
+      <div class="pa-card__t">類似サービスとの比較</div>
+      <div class="pa-card__s" style="margin-bottom:10px">◎=標準搭載　○=あり　△=一部・条件付き　×=なし（類型比較・当社調べ 2026年7月）</div>
+      <div class="cmp-scroll">
+        <table class="cmp">
+          <thead>
+            <tr>
+              <th></th>
+              <th class="me">Salon Town <b>Pro</b></th>
+              <th>大手<br>通販サイト型</th>
+              <th>ディーラー<br>直販EC型</th>
+              <th>汎用EC<br>パッケージ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><b>ワンタップ再注文</b>・バーコード発注</td><td class="me v-yes">◎</td><td class="v-tri">○</td><td class="v-tri">△</td><td class="v-tri">△</td></tr>
+            <tr><td><b>カード決済 実質1.9%〜</b>（仕入連動クラス制）</td><td class="me v-yes">◎</td><td class="v-no">×</td><td class="v-no">×</td><td class="v-no">×</td></tr>
+            <tr><td>掛け払い＋<b>与信承認フロー</b>（未集金防止）</td><td class="me v-yes">◎</td><td class="v-tri">△</td><td class="v-tri">○</td><td class="v-no">×</td></tr>
+            <tr><td><b>店販EC</b>（スタッフ個人EC・差額還元）</td><td class="me v-yes">◎</td><td class="v-no">×</td><td class="v-no">×</td><td class="v-tri">△</td></tr>
+            <tr><td><b>求人</b>（地域求人・学校連携・即日ヘルプ）</td><td class="me v-yes">◎</td><td class="v-no">×</td><td class="v-no">×</td><td class="v-no">×</td></tr>
+            <tr><td><b>経営ダッシュボード</b>（シフト×売上×仕入）</td><td class="me v-yes">◎</td><td class="v-no">×</td><td class="v-tri">△</td><td class="v-no">×</td></tr>
+            <tr><td><b>基幹システム連携</b>（SMILE等・サロン別販売価）</td><td class="me v-yes">◎</td><td class="v-no">—</td><td class="v-tri">○</td><td class="v-tri">△</td></tr>
+            <tr><td><b>貴社ブランドで運用</b>（マルチテナント設定）</td><td class="me v-yes">◎</td><td class="v-no">×</td><td class="v-no">×</td><td class="v-tri">○<span style="display:block;font-size:9px;font-weight:700;color:var(--ink-3)">高コスト</span></td></tr>
+            <tr><td><b>ディーラー間の連結</b>（1カートで複数ディーラー発注）</td><td class="me v-yes">◎<span class="only">唯一</span></td><td class="v-no">×</td><td class="v-no">×</td><td class="v-no">×</td></tr>
+            <tr><td><b>導入コスト・期間</b></td><td class="me" style="font-size:11px">設定のみ<br>最短即日</td><td class="v-no">—</td><td class="v-no">—</td><td style="font-size:11px;color:var(--ink-3)">開発数百万円〜<br>数か月</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pa-note">※ 特定の事業者名との比較ではなく、市場に存在するサービス類型との機能比較です（当社調べ・2026年7月時点・デモ）。「唯一」は同種の複数ディーラー同時発注機能について当社調べで他に確認されていないことを指します。導入判断の際は最新の各社仕様をご確認ください。</div>
+    </div>
+
+    <!-- ディーラーの数字 -->
+    <div class="pa-card">
+      <div class="pa-card__t">ディーラーにとっての数字（月商1,000万・材料費8%のサロン例）</div>
+      <div class="num3">
+        <div class="numc"><div class="numc__v">3.5倍</div><div class="numc__l">1店あたりの月次利益</div><div class="numc__s">シェア2割→7割のメイン化で 2.4万→8.5万円/月（卸粗利15%・SaaS込み試算）</div></div>
+        <div class="numc"><div class="numc__v">1.9%</div><div class="numc__l">サロンに出せる決済料率</div><div class="numc__s">仕入連動ゲートで補填は常にシェア獲得後。値引きでなく「シェアを運ぶポンプ」</div></div>
+        <div class="numc"><div class="numc__v">+年73万</div><div class="numc__l">1店の利益増分（同例）</div><div class="numc__s">仕入増分の卸粗利＋システム利用料−決済補填。採算は同梱の計算機で検証可能</div></div>
+      </div>
+      <div class="pa-note">※ 想定値のシミュレーションです。<a href="rate-calc.html" style="color:var(--gold-strong);font-weight:800">採算シミュレーター</a>で貴社の原価・粗利で再計算できます。</div>
+    </div>
+
+    <!-- 導入ステップ -->
+    <div class="pa-card">
+      <div class="pa-card__t">導入は3ステップ（開発不要）</div>
+      <div class="stp">
+        <div class="stp__r"><span class="stp__n">1</span><span><span class="stp__t">貴社ブランドに設定</span><span class="stp__s">サイト名・ロゴ色・取扱業種・決済手段を管理画面で選ぶだけ（<a href="dealer-settings.html" style="color:var(--gold-strong);font-weight:800">設定画面デモ</a>）。全ページが即、貴社仕様に切り替わります。</span></span></div>
+        <div class="stp__r"><span class="stp__n">2</span><span><span class="stp__t">基幹システムとつなぐ</span><span class="stp__s">商品マスタ・サロン別販売価・届け先は貴社の基幹（SMILE等）が「正」。CSV連携から始められ、既存の運用・請求を変えません。</span></span></div>
+        <div class="stp__r"><span class="stp__n">3</span><span><span class="stp__t">サロンを招待して、連結網へ</span><span class="stp__s">貴社の取引サロンをそのまま招待。連結ネットワークに参加した瞬間から、決済・店販EC・求人のインフラが使えます。</span></span></div>
+      </div>
+    </div>
+
+    <a class="pa-btn" href="contact.html">パートナーディーラーとして相談する</a>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <a class="pa-btn ghost" href="story.html">📖 まんがでわかる（サロン向け）</a>
+      <a class="pa-btn ghost" href="home.html">アプリのデモを触る</a>
+    </div>
+    <div class="pa-note">※ 本ページはデモです。数値・機能・比較は想定値／当社調べを含み、契約条件は個別のご相談で確定します。</div>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="assets/js/components.js?v=85"></script>
+</body>
+</html>
