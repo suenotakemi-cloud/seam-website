@@ -5610,9 +5610,15 @@ window.SEAM_PAGE_I18N = {
 
   // 商品データキャッシュ
   let _products = null;
+  let _copyMap = {};  // カタログ品の説明文(seam-copy.json: salonTownItemId→一言)
   async function getProducts() {
     if (_products) return _products;
     try {
+      // 説明文サイドカー(失敗しても表示は続行)
+      try {
+        const cpr = await fetch('data/products/seam-copy.json?v=' + Date.now(), { cache: 'no-store' });
+        if (cpr.ok) { const cj = await cpr.json(); _copyMap = cj.items || {}; }
+      } catch(e) {}
       const res = await fetch('data/products/seam-master.json?v=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error('master fetch failed');
       const data = await res.json();
@@ -5685,6 +5691,7 @@ window.SEAM_PAGE_I18N = {
             <p class="finder-prod-brand">${escHtml(p.brand || brand.name || '')}</p>
             <p class="finder-prod-name">${escHtml(p.name || '')}</p>
             ${price ? `<p style="margin-top:4px;font-size:13px;color:var(--ink,#3c362e);font-weight:500;">${escHtml(price)}</p>` : ''}
+            ${(() => { const c = p.pitchCopy || (p.salonTownItemId && _copyMap[p.salonTownItemId]) || ''; return c ? `<p style="margin-top:6px;font-size:12px;line-height:1.85;color:rgba(60,54,46,.74);">${escHtml(c)}</p>` : ''; })()}
           </div>
         </div>`;
     }).join('');
