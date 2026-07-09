@@ -75,6 +75,24 @@
     .sf-step .price small { font-size:10px; color:var(--charcoal); opacity:.6; }
     .sf-step .copy { font-size:12px; line-height:1.85; color:var(--charcoal); margin-top:7px; }
     .sf-step .rel { font-size:11px; color:var(--charcoal); opacity:.75; margin-top:6px; border-left:2px solid rgba(184,148,90,.4); padding-left:8px; }
+    /* ── カテゴリ別3点スライダー ── */
+    .sf-startline { margin-top:14px; font-size:12.5px; line-height:1.9; color:var(--charcoal); background:#FFF9EC; border:1px solid rgba(184,148,90,.35); border-radius:2px; padding:10px 14px; }
+    .sf-cat { margin-top:30px; }
+    .sf-cat h3 { font-size:15.5px; font-weight:600; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .sf-badgeS { font-size:9px; color:#fff; background:var(--gold); padding:2px 8px; border-radius:2px; letter-spacing:.14em; flex-shrink:0; }
+    .sf-catnote { font-size:11px; color:var(--charcoal); opacity:.8; margin-top:2px; }
+    .sf-swipe { font-size:10px; color:var(--charcoal); opacity:.55; margin-top:2px; letter-spacing:.06em; }
+    .sf-slider { display:flex; gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding:10px 2px 6px; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
+    .sf-slider::-webkit-scrollbar { display:none; }
+    .sf-card { flex:0 0 236px; max-width:236px; scroll-snap-align:start; border:1px solid rgba(184,148,90,.35); border-radius:2px; background:#fff; padding:14px; display:flex; flex-direction:column; }
+    @media (max-width:480px){ .sf-card { flex-basis:72%; max-width:72%; } }
+    .sf-card img { width:100%; height:110px; object-fit:contain; }
+    .sf-card .bname { font-size:10px; color:var(--charcoal); opacity:.65; margin-top:8px; letter-spacing:.06em; }
+    .sf-card .pname { font-size:13px; font-weight:500; line-height:1.55; margin-top:2px; }
+    .sf-card .price { font-size:12.5px; margin-top:5px; }
+    .sf-card .price small { font-size:9.5px; color:var(--charcoal); opacity:.6; display:block; }
+    .sf-card .copy { font-size:11px; line-height:1.8; color:var(--charcoal); margin-top:6px; }
+    .sf-over { display:inline-block; font-size:9.5px; color:#8A6A30; border:1px solid rgba(184,148,90,.5); padding:1px 7px; border-radius:2px; margin-top:6px; align-self:flex-start; }
     .sf-cta { margin-top:36px; padding:24px 20px; background:var(--ink); color:var(--ivory); border-radius:2px; text-align:center; }
     .sf-cta p { font-size:13px; opacity:.85; line-height:1.9; }
     .sf-cta a { display:inline-block; margin-top:14px; padding:13px 28px; border:1px solid rgba(253,251,247,.5); border-radius:2px; color:var(--ivory); font-size:13px; letter-spacing:.08em; }
@@ -184,11 +202,14 @@
       { ch:1, id:'age', multi:false, opts:[{v:'10s'},{v:'20s'},{v:'30s'},{v:'40s'},{v:'50s'}] },
       { ch:1, id:'base', multi:false, opts:[{v:'dry'},{v:'oily'},{v:'combo'},{v:'sensitive'},{v:'normal'}] },
       { ch:1, id:'concerns', multi:true, opts:[{v:'dry'},{v:'pore'},{v:'hari'},{v:'tone'},{v:'sensitive'},{v:'acne'},{v:'none',x:true}] },
+      { ch:1, id:'lash', multi:false, opts:[{v:'grow'},{v:'curl'},{v:'ok'}] },
       { ch:2, id:'peak', multi:false, opts:[{v:'teen'},{v:'twenties'},{v:'recent'},{v:'future'}] },
       { ch:2, id:'exp', multi:false, opts:[{v:'simple'},{v:'explorer'},{v:'salon'},{v:'doctor'}] },
       { ch:2, id:'memory', multi:false, opts:[{v:'travel'},{v:'praised'},{v:'nofoundation'},{v:'searching'}] },
       { ch:3, id:'goal', multi:false, opts:[{v:'glow'},{v:'kime'},{v:'hari'},{v:'tone'},{v:'calm'}] },
+      { ch:3, id:'makeup', multi:false, opts:[{v:'tsuya'},{v:'natural'},{v:'mat'},{v:'none'}] },
       { ch:3, id:'time', multi:false, opts:[{v:'full'},{v:'night'},{v:'quick'},{v:'weekend'}] },
+      { ch:3, id:'inner', multi:false, opts:[{v:'yes'},{v:'curious'},{v:'later'}] },
       { ch:3, id:'budget', multi:false, opts:[{v:'b1'},{v:'b2'},{v:'b3'},{v:'b4'}] }
     ];
 
@@ -215,7 +236,13 @@
         time: { q:'ケアにかけられる時間は？', note:'続けられるルーティンだけが、物語を進めます。', o:{
           full:{l:'朝晩じっくり',s:'ステップを重ねるのが好き'}, night:{l:'夜だけ丁寧に',s:'朝は最小限で'}, quick:{l:'とにかく時短',s:'少ない手数で決めたい'}, weekend:{l:'週末に集中ケア',s:'平日は軽く、週末にご褒美'} } },
         budget: { q:'毎月、スキンケアにかけたい<br>金額はどれくらいですか？', note:'正直な金額で大丈夫です。その範囲でいちばんいい答えを組みます。', o:{
-          b1:{l:'〜3,000円',s:'まずは気軽に'}, b2:{l:'3,000〜8,000円',s:'定番をきちんと'}, b3:{l:'8,000〜15,000円',s:'いいものを選びたい'}, b4:{l:'15,000円〜',s:'投資は惜しまない'} } }
+          b1:{l:'〜3,000円',s:'まずは気軽に'}, b2:{l:'3,000〜8,000円',s:'定番をきちんと'}, b3:{l:'8,000〜15,000円',s:'いいものを選びたい'}, b4:{l:'15,000円〜',s:'投資は惜しまない'} } },
+        lash: { q:'まつげ・目もとのケアは？', note:'まつげも肌と同じ。育てられる時代です。', o:{
+          grow:{l:'ハリ・コシを育てたい',s:'ボリュームや長さ感がほしい'}, curl:{l:'パーマ・エクステの負担が気になる',s:'土台を整えたい'}, ok:{l:'いまは気にしていない'} } },
+        makeup: { q:'ベースメイクの仕上がりは、<br>どれが好きですか？', note:'ファンデ選びも、スキンケアの続きです。', o:{
+          tsuya:{l:'ツヤ・水光肌',s:'ぬれたような光をまとう'}, natural:{l:'素肌っぽくナチュラル',s:'「肌がいい人」に見られたい'}, mat:{l:'サラッとセミマット',s:'きちんと感と崩れにくさ'}, none:{l:'ベースメイクはあまりしない'} } },
+        inner: { q:'内側からのケア<br>(サプリ・ドリンク)は？', note:'肌は、食べたもの・飲んだものからも作られます。', o:{
+          yes:{l:'もう取り入れている'}, curious:{l:'興味はある',s:'何から始めるか知りたい'}, later:{l:'まずは外側から'} } }
       },
       types: {
         glow:{ name:'「うるみ玉の章」', story:'あなたの物語は、光をためる季節に入っています。' },
@@ -243,9 +270,13 @@
         searching:'思い出はこれから作ればいい。今日の診断が、その最初のページです。'
       },
       closing:'ここからは、<b>選んだ答えのぶんだけ</b>、まっすぐ進みます。',
-      steps: { cleanse:'落とす', wash:'洗う', lotion:'うるおす', serum:'効かせる', moist:'とじこめる', uv:'守る', special:'週のご褒美' },
+      cats: { cleanse:'クレンジング', wash:'洗顔', lotion:'化粧水', serum:'美容液', moist:'乳液・クリーム', special:'パック・集中ケア', lash:'まつげ美容液', uv:'UV・日やけ止め', foundation:'ファンデーション・ベースメイク', inner:'サプリメント・ドリンク' },
+      startLine:'時間の答えに合わせるなら、まずは %s の3つから。', badgeStart:'まずはここから',
+      chipOver:'ご予算の上', swipe:'→ 横にすべらせて3点を比べられます',
+      lashNote: { grow:'「育てたい」に合わせて、ハリ・コシの美容液を先頭にしています。', curl:'パーマ・エクステの土台ケアを先頭にしています。' },
+      innerNote: { yes:'すでに取り入れている方へ、次の一手になるものを。', curious:'はじめの一本にちょうどいいものから並べています。', later:'急がなくて大丈夫。気が向いたときの参考に。' },
       badge:'Your Skin History',
-      routineH:'この章の、あなたのルーティン', routineSub:'選んだ時間と予算の中で、いま組めるいちばんいい並びです。',
+      routineH:'この章の、あなたのフルラインナップ', routineSub:'全カテゴリ、あなたに合う順で3点ずつ。予算に合うものから並べています。',
       price:'定価', priceNote:'税込・会員はサマーセール価格',
       stretch:'ご予算の枠より上ですが、この役割でいちばん手に取りやすい一本です。',
       under:'ご予算に余裕を残せる役割です。ここで浮いた分を「効かせる」に回すのが上手な配分。',
@@ -278,7 +309,13 @@
         time: { q:'How much time can you<br>give your routine?', note:'Only a routine you can keep moves the story forward.', o:{
           full:{l:'Thorough, morning & night',s:'I enjoy layering steps'}, night:{l:'Careful at night only',s:'Mornings stay minimal'}, quick:{l:'As quick as possible',s:'Fewer steps, well chosen'}, weekend:{l:'Weekend deep-care',s:'Light weekdays, indulgent weekends'} } },
         budget: { q:'Your monthly budget<br>for skincare?', note:'Be honest — we will build the best answer within it.', o:{
-          b1:{l:'Up to ¥3,000',s:'Start light'}, b2:{l:'¥3,000–8,000',s:'The essentials, done properly'}, b3:{l:'¥8,000–15,000',s:'I want to choose well'}, b4:{l:'¥15,000 and up',s:'No compromise'} } }
+          b1:{l:'Up to ¥3,000',s:'Start light'}, b2:{l:'¥3,000–8,000',s:'The essentials, done properly'}, b3:{l:'¥8,000–15,000',s:'I want to choose well'}, b4:{l:'¥15,000 and up',s:'No compromise'} } },
+        lash: { q:'How about your lashes<br>and eye area?', note:'Lashes can be nurtured, just like skin.', o:{
+          grow:{l:'I want more strength and body',s:'Fuller, longer-looking lashes'}, curl:{l:'Perms or extensions take a toll',s:'I want to care for the base'}, ok:{l:'Not a concern right now'} } },
+        makeup: { q:'Your favorite<br>base-makeup finish?', note:'Choosing foundation is skincare’s final step.', o:{
+          tsuya:{l:'Dewy, glass-skin glow',s:'A just-moistened radiance'}, natural:{l:'Natural, skin-like',s:'“Great skin,” not “great makeup”'}, mat:{l:'Smooth semi-matte',s:'Polished and long-lasting'}, none:{l:'I rarely wear base makeup'} } },
+        inner: { q:'Inner care —<br>supplements or drinks?', note:'Skin is also built from what you eat and drink.', o:{
+          yes:{l:'Already part of my routine'}, curious:{l:'Curious to start',s:'Where should I begin?'}, later:{l:'Outside first, for now'} } }
       },
       types: {
         glow:{ name:'The Dewlight Chapter', story:'Your story has entered the season of gathering light.' },
@@ -306,9 +343,13 @@
         searching:'Memories can be made from here — today’s reading is the first page.'
       },
       closing:'From here, you move forward <b>exactly as far as the answers you chose</b>.',
-      steps: { cleanse:'Melt away', wash:'Cleanse', lotion:'Quench', serum:'Treat', moist:'Seal in', uv:'Protect', special:'Weekly ritual' },
+      cats: { cleanse:'Cleansing', wash:'Face wash', lotion:'Lotion', serum:'Serum', moist:'Emulsion & cream', special:'Masks & treatments', lash:'Lash serum', uv:'UV protection', foundation:'Foundation & base', inner:'Supplements & drinks' },
+      startLine:'Going by your time answer, we suggest starting with %s.', badgeStart:'START HERE',
+      chipOver:'Above budget', swipe:'→ Swipe to compare 3 picks',
+      lashNote: { grow:'Ordered with strength-and-body serums first.', curl:'Base care for perms and extensions comes first.' },
+      innerNote: { yes:'For someone already on it — a next step.', curious:'Ordered from the easiest first bottle.', later:'No rush — here whenever you feel ready.' },
       badge:'Your Skin History',
-      routineH:'Your routine for this chapter', routineSub:'The best lineup we can build within your time and budget.',
+      routineH:'Your full lineup for this chapter', routineSub:'Every category, three picks each, in your order — budget-friendly first.',
       price:'Price', priceNote:'tax incl. · members enjoy summer-sale pricing',
       stretch:'A step above your budget — but the most approachable choice for this role.',
       under:'This role leaves room in your budget. Spending the difference on your treatment step is the smart split.',
@@ -341,7 +382,13 @@
         time: { q:'能给护肤的时间是？', note:'只有坚持得下去的程序，才能推进故事。', o:{
           full:{l:'早晚认真做',s:'喜欢一步步叠加'}, night:{l:'只在夜晚用心',s:'早晨从简'}, quick:{l:'越快越好',s:'步骤少而精'}, weekend:{l:'周末集中护理',s:'平日轻松，周末犒赏'} } },
         budget: { q:'每月想投入护肤的<br>金额大约是？', note:'如实选择就好。我们会在范围内给出最好的答案。', o:{
-          b1:{l:'3,000日元以内',s:'先轻松开始'}, b2:{l:'3,000〜8,000日元',s:'把基础做扎实'}, b3:{l:'8,000〜15,000日元',s:'想选好东西'}, b4:{l:'15,000日元以上',s:'不吝投资'} } }
+          b1:{l:'3,000日元以内',s:'先轻松开始'}, b2:{l:'3,000〜8,000日元',s:'把基础做扎实'}, b3:{l:'8,000〜15,000日元',s:'想选好东西'}, b4:{l:'15,000日元以上',s:'不吝投资'} } },
+        lash: { q:'睫毛和眼周的护理呢？', note:'睫毛和肌肤一样，可以好好养。', o:{
+          grow:{l:'想要更有韧性和存在感',s:'想要浓密纤长的感觉'}, curl:{l:'烫睫毛、接睫毛的负担让人在意',s:'想护理睫毛根基'}, ok:{l:'暂时不在意'} } },
+        makeup: { q:'底妆喜欢哪种妆效？', note:'选粉底，也是护肤的延续。', o:{
+          tsuya:{l:'水光肌',s:'像浸润过一样的光泽'}, natural:{l:'伪素颜、自然',s:'想被夸「皮肤真好」'}, mat:{l:'清爽半哑光',s:'整洁感和持妆力'}, none:{l:'平时很少化底妆'} } },
+        inner: { q:'内调(保健品、美容饮品)呢？', note:'肌肤也来自你吃下与喝下的东西。', o:{
+          yes:{l:'已经在坚持'}, curious:{l:'有兴趣',s:'想知道从什么开始'}, later:{l:'先做好外养'} } }
       },
       types: {
         glow:{ name:'「润光之章」', story:'你的故事，进入了积蓄光的季节。' },
@@ -369,9 +416,13 @@
         searching:'回忆可以从现在开始创造——今天的诊断就是第一页。'
       },
       closing:'接下来，<b>你选择的每个答案</b>，都会推着你笔直向前。',
-      steps: { cleanse:'卸妆', wash:'洁面', lotion:'补水', serum:'精华', moist:'锁水', uv:'防护', special:'每周犒赏' },
+      cats: { cleanse:'卸妆', wash:'洁面', lotion:'化妆水', serum:'精华', moist:'乳液·面霜', special:'面膜·集中护理', lash:'睫毛精华', uv:'防晒', foundation:'粉底·底妆', inner:'保健品·美容饮品' },
+      startLine:'按你的时间安排，建议先从 %s 这3类开始。', badgeStart:'先从这里',
+      chipOver:'略超预算', swipe:'→ 左右滑动比较3款',
+      lashNote: { grow:'按「想养睫毛」优先排列韧性型精华。', curl:'把烫接睫毛的根基护理排在前面。' },
+      innerNote: { yes:'给已经在坚持的你，下一步的选择。', curious:'从最容易入门的开始排列。', later:'不急，想到时再回来看看。' },
       badge:'Your Skin History',
-      routineH:'这一章，属于你的护肤程序', routineSub:'在你选择的时间和预算里，现在能组出的最好组合。',
+      routineH:'这一章，属于你的全套阵容', routineSub:'全部类别，各3款，按适合你的顺序，预算内的排在前面。',
       price:'定价', priceNote:'含税 · 会员享夏季特惠价',
       stretch:'略高于你的预算，但在这个步骤里是最容易入手的一瓶。',
       under:'这个步骤为预算留出了余地，省下的部分投给「精华」更聪明。',
@@ -404,7 +455,13 @@
         time: { q:'能給保養的時間是？', note:'只有堅持得下去的程序，才能推進故事。', o:{
           full:{l:'早晚認真做',s:'喜歡一步步疊加'}, night:{l:'只在夜晚用心',s:'早晨從簡'}, quick:{l:'越快越好',s:'步驟少而精'}, weekend:{l:'週末集中保養',s:'平日輕鬆，週末犒賞'} } },
         budget: { q:'每月想投入保養的<br>金額大約是？', note:'如實選擇就好。我們會在範圍內給出最好的答案。', o:{
-          b1:{l:'3,000日圓以內',s:'先輕鬆開始'}, b2:{l:'3,000〜8,000日圓',s:'把基礎做紮實'}, b3:{l:'8,000〜15,000日圓',s:'想選好東西'}, b4:{l:'15,000日圓以上',s:'不吝投資'} } }
+          b1:{l:'3,000日圓以內',s:'先輕鬆開始'}, b2:{l:'3,000〜8,000日圓',s:'把基礎做紮實'}, b3:{l:'8,000〜15,000日圓',s:'想選好東西'}, b4:{l:'15,000日圓以上',s:'不吝投資'} } },
+        lash: { q:'睫毛和眼周的保養呢？', note:'睫毛和肌膚一樣，可以好好養。', o:{
+          grow:{l:'想要更有韌性和存在感',s:'想要濃密纖長的感覺'}, curl:{l:'燙睫毛、接睫毛的負擔讓人在意',s:'想保養睫毛根基'}, ok:{l:'暫時不在意'} } },
+        makeup: { q:'底妝喜歡哪種妝效？', note:'選粉底，也是保養的延續。', o:{
+          tsuya:{l:'水光肌',s:'像浸潤過一樣的光澤'}, natural:{l:'偽素顏、自然',s:'想被稱讚「皮膚真好」'}, mat:{l:'清爽半霧面',s:'整潔感和持妝力'}, none:{l:'平時很少化底妝'} } },
+        inner: { q:'內在保養(保健食品、美容飲品)呢？', note:'肌膚也來自你吃下與喝下的東西。', o:{
+          yes:{l:'已經在堅持'}, curious:{l:'有興趣',s:'想知道從什麼開始'}, later:{l:'先做好外在保養'} } }
       },
       types: {
         glow:{ name:'「潤光之章」', story:'你的故事，進入了積蓄光的季節。' },
@@ -432,9 +489,13 @@
         searching:'回憶可以從現在開始創造——今天的診斷就是第一頁。'
       },
       closing:'接下來，<b>你選擇的每個答案</b>，都會推著你筆直向前。',
-      steps: { cleanse:'卸妝', wash:'洗臉', lotion:'補水', serum:'精華', moist:'鎖水', uv:'防曬', special:'每週犒賞' },
+      cats: { cleanse:'卸妝', wash:'洗臉', lotion:'化妝水', serum:'精華', moist:'乳液·乳霜', special:'面膜·集中保養', lash:'睫毛精華', uv:'防曬', foundation:'粉底·底妝', inner:'保健食品·美容飲品' },
+      startLine:'按你的時間安排，建議先從 %s 這3類開始。', badgeStart:'先從這裡',
+      chipOver:'略超預算', swipe:'→ 左右滑動比較3款',
+      lashNote: { grow:'按「想養睫毛」優先排列韌性型精華。', curl:'把燙接睫毛的根基保養排在前面。' },
+      innerNote: { yes:'給已經在堅持的你，下一步的選擇。', curious:'從最容易入門的開始排列。', later:'不急，想到時再回來看看。' },
       badge:'Your Skin History',
-      routineH:'這一章，屬於你的保養程序', routineSub:'在你選擇的時間和預算裡，現在能組出的最好組合。',
+      routineH:'這一章，屬於你的全套陣容', routineSub:'全部類別，各3款，按適合你的順序，預算內的排在前面。',
       price:'定價', priceNote:'含稅 · 會員享夏季特惠價',
       stretch:'略高於你的預算，但在這個步驟裡是最容易入手的一瓶。',
       under:'這個步驟為預算留出了餘地，省下的部分投給「精華」更聰明。',
@@ -467,7 +528,13 @@
         time: { q:'케어에 쓸 수 있는 시간은?', note:'이어갈 수 있는 루틴만이 이야기를 진행시켜요.', o:{
           full:{l:'아침저녁 정성껏',s:'단계 쌓기를 좋아해요'}, night:{l:'밤에만 꼼꼼히',s:'아침은 최소한으로'}, quick:{l:'최대한 간단히',s:'적은 단계로 확실하게'}, weekend:{l:'주말 집중 케어',s:'평일은 가볍게, 주말엔 보상'} } },
         budget: { q:'매달 스킨케어에 쓰고 싶은<br>금액은 어느 정도인가요?', note:'솔직한 금액이면 돼요. 그 안에서 가장 좋은 답을 짜드릴게요.', o:{
-          b1:{l:'〜3,000엔',s:'우선 가볍게'}, b2:{l:'3,000〜8,000엔',s:'기본을 제대로'}, b3:{l:'8,000〜15,000엔',s:'좋은 것을 고르고 싶어요'}, b4:{l:'15,000엔〜',s:'투자를 아끼지 않아요'} } }
+          b1:{l:'〜3,000엔',s:'우선 가볍게'}, b2:{l:'3,000〜8,000엔',s:'기본을 제대로'}, b3:{l:'8,000〜15,000엔',s:'좋은 것을 고르고 싶어요'}, b4:{l:'15,000엔〜',s:'투자를 아끼지 않아요'} } },
+        lash: { q:'속눈썹과 눈가 케어는요?', note:'속눈썹도 피부처럼 가꿀 수 있어요.', o:{
+          grow:{l:'힘과 탄력을 키우고 싶어요',s:'풍성하고 길어 보이게'}, curl:{l:'펌·연장으로 인한 부담이 신경 쓰여요',s:'토대를 정돈하고 싶어요'}, ok:{l:'지금은 괜찮아요'} } },
+        makeup: { q:'베이스 메이크업은<br>어떤 마무리를 좋아하세요?', note:'파운데이션 고르기도 스킨케어의 연장이에요.', o:{
+          tsuya:{l:'물광 피부',s:'촉촉하게 빛을 두른 듯한'}, natural:{l:'맨피부 같은 내추럴',s:'"피부 좋다"는 말이 듣고 싶어요'}, mat:{l:'보송한 세미매트',s:'단정함과 지속력'}, none:{l:'베이스는 잘 안 해요'} } },
+        inner: { q:'이너 케어<br>(영양제·드링크)는요?', note:'피부는 먹고 마시는 것으로도 만들어져요.', o:{
+          yes:{l:'이미 챙기고 있어요'}, curious:{l:'관심 있어요',s:'무엇부터 시작할지 궁금해요'}, later:{l:'우선은 바르는 것부터'} } }
       },
       types: {
         glow:{ name:'\'촉촉 빛의 장\'', story:'당신의 이야기는 빛을 모으는 계절에 들어섰습니다.' },
@@ -495,9 +562,13 @@
         searching:'추억은 이제부터 만들면 돼요. 오늘의 진단이 그 첫 페이지예요.'
       },
       closing:'여기서부터는 <b>고른 답만큼</b> 곧게 나아갑니다.',
-      steps: { cleanse:'지우기', wash:'씻기', lotion:'채우기', serum:'스며들게', moist:'가두기', uv:'지키기', special:'주간 보상' },
+      cats: { cleanse:'클렌징', wash:'세안', lotion:'토너(화장수)', serum:'세럼', moist:'로션·크림', special:'팩·집중 케어', lash:'속눈썹 세럼', uv:'자외선 차단', foundation:'파운데이션·베이스', inner:'영양제·드링크' },
+      startLine:'시간 답변에 맞추면, 우선 %s 세 가지부터 시작하는 걸 추천해요.', badgeStart:'여기부터',
+      chipOver:'예산보다 위', swipe:'→ 옆으로 밀어 3개를 비교할 수 있어요',
+      lashNote: { grow:'힘·탄력 세럼을 앞에 두었어요.', curl:'펌·연장 토대 케어를 앞에 두었어요.' },
+      innerNote: { yes:'이미 챙기는 분께, 다음 한 수를.', curious:'가장 시작하기 쉬운 것부터 두었어요.', later:'서두르지 않아도 돼요. 생각날 때 참고하세요.' },
       badge:'Your Skin History',
-      routineH:'이 챕터의, 당신의 루틴', routineSub:'고른 시간과 예산 안에서 지금 짤 수 있는 가장 좋은 구성이에요.',
+      routineH:'이 챕터의, 당신의 풀 라인업', routineSub:'모든 카테고리를 당신에게 맞는 순서로 3개씩. 예산에 맞는 것부터예요.',
       price:'정가', priceNote:'세금 포함 · 회원은 서머 세일 가격',
       stretch:'예산보다 조금 위지만, 이 역할에서 가장 다가가기 쉬운 한 병이에요.',
       under:'예산에 여유가 남는 역할이에요. 아낀 만큼 \'스며들게\'에 쓰는 게 현명한 배분.',
@@ -610,7 +681,26 @@
       {id:'20250424194605348eedgPBb',step:'special',c:['pore','tone']},
       {id:'20230901142428231FeXfaga',step:'special',c:['pore']},
       {id:'20250929214221576jIjJKhH',step:'special',c:['pore','tone']},
-      {id:'20230901142428189cagiEjP',step:'special',c:['dry']}
+      {id:'20230901142428189cagiEjP',step:'special',c:['dry']},
+      {id:'20231226150002971UdadiDa',step:'lash',c:[],f:'grow'},
+      {id:'20250929225946970giehVFe',step:'lash',c:[],f:'grow'},
+      {id:'20250929223444814GTeTVgg',step:'lash',c:[],f:'grow'},
+      {id:'20260227211728221ZdfbKLD',step:'lash',c:[],f:'grow'},
+      {id:'20250929221659964bdJPcgh',step:'lash',c:[],f:'curl'},
+      {id:'20250929224822831GaVfjca',step:'lash',c:[],f:'curl'},
+      {id:'20250304162108328YaPjcbQ',step:'foundation',c:[],f:'tsuya'},
+      {id:'20250409161718688abTZebS',step:'foundation',c:[],f:'tsuya'},
+      {id:'20250424193722630aUhSaia',step:'foundation',c:['hari'],f:'mat'},
+      {id:'20230901142428230dbFacLb',step:'foundation',c:[],f:'natural'},
+      {id:'20260413101936906Lcchjga',step:'foundation',c:[],f:'natural'},
+      {id:'20240731130327759icXfQEM',step:'foundation',c:[],f:'natural'},
+      {id:'20250519100943626BWBFieg',step:'inner',c:[]},
+      {id:'20250501120512428jKdRENZ',step:'inner',c:[]},
+      {id:'20250531214050202COOjbJT',step:'inner',c:[]},
+      {id:'20230901142428296haDhbQd',step:'inner',c:[]},
+      {id:'20250925172235205gfKghhe',step:'inner',c:[]},
+      {id:'20230901142428325dLFKbVS',step:'inner',c:[]},
+      {id:'20250725094845524bKCTXaF',step:'inner',c:[]}
     ];
 
     var BUDGET = {
@@ -692,8 +782,15 @@
       return Promise.all([p1, p2]);
     }
 
-    /* ─────────── 選定ロジック ─────────── */
-    function pickRoutine(){
+    /* ─────────── 選定ロジック(全カテゴリ×3点) ─────────── */
+    var CATS = ['cleanse','wash','lotion','serum','moist','special','lash','uv','foundation','inner'];
+    function startCatsByTime(){
+      if (ans.time === 'quick') return ['cleanse','moist','uv'];
+      if (ans.time === 'weekend') return ['wash','lotion','special'];
+      if (ans.time === 'night') return ['cleanse','lotion','serum'];
+      return ['lotion','serum','moist'];
+    }
+    function pickAll(){
       var goal = ans.goal || 'glow';
       var concerns = Array.isArray(ans.concerns) ? ans.concerns.filter(function(c){ return c !== 'none'; }) : [];
       var base = ans.base;
@@ -701,13 +798,7 @@
       if (base === 'sensitive' && concerns.indexOf('sensitive') < 0) concerns.push('sensitive');
       if (base === 'oily' && concerns.indexOf('pore') < 0) concerns.push('pore');
       var w = BUDGET[ans.budget] || BUDGET.b2;
-
-      // 時間タイプでステップ構成を決める(自分で選んだ感=回答が構成を変える)
-      var steps;
-      if (ans.time === 'quick') steps = ['cleanse','moist','uv'];
-      else if (ans.time === 'weekend') steps = ['wash','lotion','special'];
-      else if (ans.time === 'night') steps = ['cleanse','lotion','serum'];
-      else steps = ['lotion','serum','moist','uv'];
+      var dir = (ans.budget === 'b3' || ans.budget === 'b4') ? -1 : 1; // 高予算は同点なら上質側
 
       // なりたい→商品タグの対応(calm=敏感ケア等・タグ語彙に翻訳)
       var GOAL_KEYS = { glow:['glow','dry'], kime:['kime','pore'], hari:['hari'], tone:['tone'], calm:['sensitive'] };
@@ -721,29 +812,31 @@
         if ((m.c || []).length === 0) s += 1; // 汎用
         if (ans.time === 'quick' && m.quick) s += 3;
         if (concerns.indexOf('acne') > -1 && (m.c || []).indexOf('acne') > -1) s += 5; // ニキビは専用処方を最優先
+        if (m.step === 'foundation' && m.f && m.f === ans.makeup) s += 7;             // 仕上がりの好み
+        if (m.step === 'lash' && m.f && m.f === ans.lash) s += 7;                      // まつげの答え
         return s;
       }
-      var dir = (ans.budget === 'b3' || ans.budget === 'b4') ? -1 : 1; // 高予算は同点なら上質側
-      var picks = [];
-      steps.forEach(function(st){
+      var out = {};
+      CATS.forEach(function(st){
         var cands = M.filter(function(m){ return m.step === st && catalogMap[m.id] && catalogMap[m.id].p; });
-        if (!cands.length) return;
-        var inWin = cands.filter(function(m){ var p = catalogMap[m.id].p; return p >= w.min && p <= w.max; });
-        var chosen, stretch = false, under = false;
-        if (inWin.length) {
-          chosen = inWin.sort(function(a,b){ return score(b) - score(a) || (catalogMap[a.id].p - catalogMap[b.id].p) * dir; })[0];
-        } else if (cands.every(function(m){ return catalogMap[m.id].p < w.min; })) {
-          // 全候補が予算の下=予算超えではないので普通に一番合うものを(同点なら上質側)
-          chosen = cands.sort(function(a,b){ return score(b) - score(a) || catalogMap[b.id].p - catalogMap[a.id].p; })[0];
-          under = true;
-        } else {
-          // この役割の最安でも予算の上=正直に伝えて最安を
-          chosen = cands.sort(function(a,b){ return catalogMap[a.id].p - catalogMap[b.id].p; })[0];
-          stretch = true;
-        }
-        picks.push({ m:chosen, st:st, stretch:stretch, under:under });
+        if (!cands.length) { out[st] = []; return; }
+        var price = function(m){ return catalogMap[m.id].p; };
+        var inWin = [], under = [], over = [];
+        cands.forEach(function(m){
+          var p = price(m);
+          if (p >= w.min && p <= w.max) inWin.push(m);
+          else if (p < w.min) under.push(m);
+          else over.push(m);
+        });
+        inWin.sort(function(a,b){ return score(b) - score(a) || (price(a) - price(b)) * dir; });
+        under.sort(function(a,b){ return score(b) - score(a) || price(b) - price(a); });
+        over.sort(function(a,b){ return price(a) - price(b); });
+        var ordered = inWin.map(function(m){ return { m:m, over:false }; })
+          .concat(under.map(function(m){ return { m:m, over:false }; }))
+          .concat(over.map(function(m){ return { m:m, over:true }; }));
+        out[st] = ordered.slice(0, 3);
       });
-      return picks;
+      return out;
     }
 
     /* ─────────── 結果描画(言語切替で再描画可能) ─────────── */
@@ -762,20 +855,30 @@
       html += '</div>';
       html += '<div class="sf-story serif fadein">' + story + '</div>';
       html += '<div class="sf-sec fadein"><h2 class="serif">' + L.routineH + '</h2><p class="sub">' + L.routineSub + '</p>';
-      picks.forEach(function(pk){
-        var it = catalogMap[pk.m.id];
-        var cp = copyMap[pk.m.id] || '';
-        html += '<article class="sf-step">';
-        html += '<img src="images/catalog/' + it.id + '.webp" alt="" loading="eager" onerror="this.style.visibility=\'hidden\'">';
-        html += '<div style="min-width:0;">';
-        html += '<p class="role mono">' + (L.steps[pk.st] || pk.st) + '</p>';
-        html += '<p class="bname">' + esc(it.b) + '</p>';
-        html += '<p class="pname serif">' + esc(it.n) + '</p>';
-        html += '<p class="price">' + L.price + ' ¥' + it.p.toLocaleString() + ' <small>' + L.priceNote + '</small></p>';
-        if (cp) html += '<p class="copy">' + esc(cp) + '</p>';
-        if (pk.stretch) html += '<p class="rel">' + L.stretch + '</p>';
-        else if (pk.under) html += '<p class="rel">' + L.under + '</p>';
-        html += '</div></article>';
+      var startCats = startCatsByTime();
+      html += '<p class="sf-startline">' + L.startLine.replace('%s', startCats.map(function(k){ return '<b>' + L.cats[k] + '</b>'; }).join('・')) + '</p>';
+      CATS.forEach(function(st){
+        var list = picks[st] || [];
+        if (!list.length) return;
+        html += '<section class="sf-cat">';
+        html += '<h3 class="serif">' + L.cats[st] + (startCats.indexOf(st) > -1 ? ' <span class="sf-badgeS mono">' + L.badgeStart + '</span>' : '') + '</h3>';
+        if (st === 'lash' && L.lashNote[ans.lash]) html += '<p class="sf-catnote">' + L.lashNote[ans.lash] + '</p>';
+        if (st === 'inner' && L.innerNote[ans.inner]) html += '<p class="sf-catnote">' + L.innerNote[ans.inner] + '</p>';
+        html += '<p class="sf-swipe">' + L.swipe + '</p>';
+        html += '<div class="sf-slider">';
+        list.forEach(function(pk){
+          var it = catalogMap[pk.m.id];
+          var cp = copyMap[pk.m.id] || '';
+          html += '<article class="sf-card">';
+          html += '<img src="images/catalog/' + it.id + '.webp" alt="" loading="eager" onerror="this.style.visibility=\'hidden\'">';
+          html += '<p class="bname">' + esc(it.b) + '</p>';
+          html += '<p class="pname serif">' + esc(it.n) + '</p>';
+          html += '<p class="price">' + L.price + ' ¥' + it.p.toLocaleString() + ' <small>' + L.priceNote + '</small></p>';
+          if (cp) html += '<p class="copy">' + esc(cp) + '</p>';
+          if (pk.over) html += '<span class="sf-over">' + L.chipOver + '</span>';
+          html += '</article>';
+        });
+        html += '</div></section>';
       });
       html += '</div>';
       html += '<div class="sf-cta fadein"><p class="serif" style="font-size:15px;">' + L.ctaH + '</p>';
@@ -793,7 +896,7 @@
       var box = $('sfResult');
       box.innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;font-size:13px;">' + T().loading + '</p>';
       loadData().then(function(){
-        lastResult = { goal: ans.goal || 'glow', picks: pickRoutine() };
+        lastResult = { goal: ans.goal || 'glow', picks: pickAll() };
         renderResult();
         try {
           navigator.sendBeacon && navigator.sendBeacon('/api/ev', JSON.stringify({ name:'skinfinder_complete', path:'/skinfinder', type:lastResult.goal, device:(innerWidth<640?'mobile':'desktop') }));
