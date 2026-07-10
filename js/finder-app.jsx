@@ -2871,6 +2871,17 @@ function HeadSpaSection({ answers }) {
           : 'いまのあなたの症状に合うヘッドスパをご提案します。'}
       </p>
 
+      {/* headspa.htmlと同じ実写動画で施術の空気感を伝える */}
+      <div className="mt-5 relative overflow-hidden rounded-[2px] border border-line aspect-[16/10]">
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay loop muted playsInline preload="metadata"
+          poster="images/spa-real/hero.jpg"
+        >
+          <source src="images/spa-real/hero.mp4" type="video/mp4" />
+        </video>
+      </div>
+
       {(wellnessSelected.length > 0 || hasThinning) && (
         <div className="mt-5 border-l-2 border-gold pl-4 sm:pl-5 py-1">
           <p className="font-mono tracking-widest2 text-[10.5px] uppercase text-gold">— あなたが気になっていること</p>
@@ -9386,6 +9397,11 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
           ボタンを押しても保存できない時は 画面右上の <b>⋯</b> から<br className="sm:hidden" />
           「<b>外部ブラウザで開く</b>」を押してください<br />
           この結果ごと 普段のブラウザ（SafariやChrome）に引き継がれ そのまま保存できます
+        </p>
+      )}
+      {!isInAppBrowser() && (
+        <p className="mt-3 no-print text-center text-[11px] text-charcoal/55 leading-[1.9] max-w-md mx-auto">
+          ※ うまく保存・共有できない場合は、Instagramなどアプリ内のブラウザで開いているかもしれません。SafariやChromeに切り替えて保存してください。
         </p>
       )}
       <p className="mt-4 text-center text-[11.5px] text-charcoal/55 leading-relaxed">
