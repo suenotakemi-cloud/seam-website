@@ -1323,12 +1323,23 @@
 
       html += '<div class="sf-cta fadein"><p class="serif" style="font-size:15px;">' + L.ctaH + '</p>';
       html += '<p>' + L.ctaP + '</p>';
-      html += '<a href="shop.html">' + L.ctaBtn + '</a></div>';
-      html += '<p class="sf-cross fadein">' + L.cross + ' <a href="finder.html">' + L.crossLink + '</a></p>';
+      html += '<a href="shop.html" data-sfcta="shop">' + L.ctaBtn + '</a></div>';
+      html += '<p class="sf-cross fadein">' + L.cross + ' <a href="finder.html" data-sfcta="hairfinder">' + L.crossLink + '</a></p>';
       html += '<button class="sf-again" id="sfAgain">' + L.again + '</button>';
       box.innerHTML = html;
       $('sfAgain').onclick = function(){ idx = 0; ans = {}; lastResult = null; show('sfIntro'); };
     }
+
+    /* 計測: seamTrack があれば正しい e/p 形式+流入属性で送る(無ければ生sendBeacon fallback) */
+    function sfTrack(name, props){
+      try {
+        if (window.seamTrack) { window.seamTrack(name, props || {}); return; }
+        var body = { e: name, p: '/skinfinder', device: (innerWidth < 640 ? 'mobile' : 'desktop') };
+        if (props) for (var k in props) if (props[k] != null) body[k] = props[k];
+        navigator.sendBeacon && navigator.sendBeacon('/api/ev', new Blob([JSON.stringify(body)], { type: 'application/json' }));
+      } catch (e) {}
+    }
+    function csv(a){ return Array.isArray(a) ? a.filter(function(x){ return x !== 'none'; }).join(',') : ''; }
 
     function finish(){
       $('sfBar').style.width = '100%';
@@ -1339,7 +1350,16 @@
         lastResult = { goal: ans.goal || 'glow', picks: pickAll() };
         renderResult();
         try {
-          navigator.sendBeacon && navigator.sendBeacon('/api/ev', JSON.stringify({ name:'skinfinder_complete', path:'/skinfinder', type:lastResult.goal, device:(innerWidth<640?'mobile':'desktop') }));
+          // 髪格診断と同型の豊富なプロファイルをmetaで送る(肌タイプ=type、詳細=meta短縮キー)
+          var rd = computeRadar(ans);
+          var meta = {
+            sty: computeSkinType(ans), pri: priorityAxis(rd),
+            bse: ans.base, hyd: ans.hydration, trb: ans.trouble, age: ans.age,
+            gl: ans.goal, bud: ans.budget, tm: ans.time, mk: ans.makeup, lsh: ans.lash, inn: ans.inner,
+            cns: csv(ans.concerns), fut: csv(ans.future),
+            rm: rd.moisture, rt: rd.texture, rf: rd.firmness, rc: rd.clarity, rb: rd.barrier
+          };
+          sfTrack('skinfinder_complete', { type: computeSkinType(ans), meta: meta });
         } catch(e){}
       }).catch(function(){
         box.innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;">' + T().error + '</p>';
@@ -1350,10 +1370,15 @@
 
     $('sfStart').onclick = function(){
       show('sfQuiz'); renderQ();
-      try { navigator.sendBeacon && navigator.sendBeacon('/api/ev', JSON.stringify({ name:'skinfinder_start', path:'/skinfinder' })); } catch(e){}
+      sfTrack('skinfinder_start');
     };
     $('sfNext').onclick = next;
     $('sfBack').onclick = function(){ if (idx > 0) { idx--; renderQ(); } };
+    // 結果内CTAクリックを計測(店頭導線 / 髪格診断への相互送客)
+    $('sfResult').addEventListener('click', function(e){
+      var a = e.target && e.target.closest && e.target.closest('a[data-sfcta]');
+      if (a) sfTrack('skinfinder_cta', { target: a.getAttribute('data-sfcta') });
+    });
 
     /* lang.js からの言語切替コールバック: 表示中の画面を描き直す */
     window.onLangChange = function(){

@@ -166,6 +166,42 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
   return P;
 }
 
+// 美肌ヒストリー(skinfinder)プロファイル集計 — meta短縮キーは skinfinder.html finish() と同期:
+// sty=肌タイプ / pri=優先軸 / bse=ベース肌質 / hyd=水分感 / trb=トラブル歴 / age / gl=目指す章 / bud=予算
+// cns=悩み(csv) / fut=将来ケア(csv) / rm,rt,rf,rc,rb=レーダー5軸(1-5)
+function aggregateSkin(rows) {
+  const inc = (o, k) => { if (k == null || k === '') return; o[k] = (o[k] || 0) + 1; };
+  const inc2 = (o, k1, k2) => { if (k1 == null || k2 == null || k1 === '') return; (o[k1] = o[k1] || {}); o[k1][k2] = (o[k1][k2] || 0) + 1; };
+  const P = {
+    n: 0, byAge: {}, typeTotal: {}, priTotal: {}, baseTotal: {}, hydTotal: {}, troubleTotal: {},
+    goalTotal: {}, budgetTotal: {}, concernTotal: {}, concernByAge: {}, futureTotal: {},
+    typeByAge: {}, radarSum: { rm: 0, rt: 0, rf: 0, rc: 0, rb: 0 }, radarN: 0,
+  };
+  for (const row of rows) {
+    let m; if (row.__m) m = row.__m; else { try { m = JSON.parse(row.meta); } catch (e) { continue; } }
+    if (!m || !m.sty) continue; // 肌タイプ付き完了のみ
+    P.n++;
+    const age = m.age || '';
+    inc(P.byAge, age);
+    inc(P.typeTotal, m.sty); if (age) inc2(P.typeByAge, m.sty, age);
+    inc(P.priTotal, m.pri);
+    inc(P.baseTotal, m.bse);
+    inc(P.hydTotal, m.hyd);
+    inc(P.troubleTotal, m.trb);
+    inc(P.goalTotal, m.gl);
+    inc(P.budgetTotal, m.bud);
+    (String(m.cns || '').split(',').filter(Boolean)).forEach(c => { inc(P.concernTotal, c); if (age) inc2(P.concernByAge, c, age); });
+    (String(m.fut || '').split(',').filter(Boolean)).forEach(f => inc(P.futureTotal, f));
+    if (m.rm != null) { P.radarN++; P.radarSum.rm += Number(m.rm) || 0; P.radarSum.rt += Number(m.rt) || 0; P.radarSum.rf += Number(m.rf) || 0; P.radarSum.rc += Number(m.rc) || 0; P.radarSum.rb += Number(m.rb) || 0; }
+  }
+  P.radarAvg = P.radarN ? {
+    rm: Math.round(P.radarSum.rm / P.radarN * 10) / 10, rt: Math.round(P.radarSum.rt / P.radarN * 10) / 10,
+    rf: Math.round(P.radarSum.rf / P.radarN * 10) / 10, rc: Math.round(P.radarSum.rc / P.radarN * 10) / 10,
+    rb: Math.round(P.radarSum.rb / P.radarN * 10) / 10,
+  } : null;
+  return P;
+}
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -277,6 +313,25 @@ export async function onRequestGet(context) {
     }
     const profile = aggregateProfiles(curRows);
     const profilePrev = aggregateProfiles(prevRows);
+
+    // ── 美肌ヒストリー(skinfinder)集計 — 髪格診断と同じ仕組み(name別・肌タイプ=type列・詳細=meta JSON) ──
+    const [skinCounts, skinTypeRows, skinCtaRows, skinMetaRows, skinDaily] = await Promise.all([
+      q("SELECT name, COUNT(*) c FROM events WHERE name IN ('skinfinder_start','skinfinder_complete') AND ts>=? AND " + NT + " GROUP BY name", since),
+      q("SELECT type t, COUNT(*) c FROM events WHERE name='skinfinder_complete' AND type<>'' AND ts>=? AND " + NT + " GROUP BY type ORDER BY c DESC", since),
+      q("SELECT target, COUNT(*) c FROM events WHERE name='skinfinder_cta' AND target<>'' AND ts>=? AND " + NT + " GROUP BY target ORDER BY c DESC", since),
+      q("SELECT ts, meta FROM events WHERE name='skinfinder_complete' AND meta IS NOT NULL AND ts>=? AND " + NT + " ORDER BY ts DESC LIMIT 100000", since),
+      q("SELECT date(ts/1000,'unixepoch','localtime') d, COUNT(*) c FROM events WHERE name='skinfinder_complete' AND ts>=? AND " + NT + " GROUP BY d ORDER BY d", since),
+    ]);
+    const skinCntMap = {}; (skinCounts.results || []).forEach(r => { skinCntMap[r.name] = r.c; });
+    const skin = {
+      starts: skinCntMap['skinfinder_start'] || 0,
+      completes: skinCntMap['skinfinder_complete'] || 0,
+      ctas: (skinCtaRows.results || []).reduce((a, r) => a + r.c, 0),
+      byType: skinTypeRows.results || [],
+      ctaTarget: skinCtaRows.results || [],
+      daily: skinDaily.results || [],
+      profile: aggregateSkin(skinMetaRows.results || []),
+    };
     // KPIの今期/前期(開始・完了・CTA) — セグメントは掛けない(プロファイル無イベント含むため)
     const kpiWinRaw = await q(
       "SELECT name, CASE WHEN ts>=? THEN 'cur' ELSE 'prev' END w, COUNT(*) c FROM events WHERE name IN ('finder_start','finder_complete','finder_cta') AND ts>=? AND " + NT + " GROUP BY name, w",
@@ -331,6 +386,7 @@ export async function onRequestGet(context) {
       secEngage,
       profile,
       profilePrev,
+      skin,
       kpiWin,
       seg: { age: sage || null, cs: scs || null },
     });
