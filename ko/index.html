@@ -828,9 +828,16 @@
         <span class="font-mono text-[11px] sm:text-[12px] text-charcoal/70 tracking-wider pb-1">2026 SUMMER</span>
       </div>
 
-      <div data-reveal="" class="overflow-hidden rounded-[20px] bg-white border border-line/60 shadow-card md:grid md:grid-cols-2">
+      <style>
+        /* SEAMはtailwind.css事前コンパイル配信のためmd:grid-cols-2等の新規クラスがパージされる。パージ非依存で2カラム化 */
+        @media(min-width:768px){
+          #summerPickCard{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;}
+          #summerPickCard>.sp-media{aspect-ratio:auto;height:100%;min-height:360px;}
+        }
+      </style>
+      <div id="summerPickCard" data-reveal="" class="overflow-hidden rounded-[20px] bg-white border border-line/60 shadow-card md:grid md:grid-cols-2">
         <!-- image -->
-        <div class="relative aspect-[3/2] md:aspect-auto md:min-h-[430px] overflow-hidden bg-cream">
+        <div class="sp-media relative aspect-[3/2] md:aspect-auto md:min-h-[430px] overflow-hidden bg-cream">
           <picture>
             <source srcset="/images/lp/summer_enisie_glow.webp" type="image/webp">
             <img src="/images/lp/summer_enisie_glow.jpg" alt="エニシー グローパック ジャンパーニュ／炭酸ジェルのイメージ" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async">
