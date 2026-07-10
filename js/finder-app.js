@@ -4368,11 +4368,21 @@ function pickHomeTools(tools, answers, scores) {
     const cands = tools.filter(t => grp.includes(t.category) && t.price).sort((x, y) => x.price - y.price);
     if (!cands[0]) continue;
     if (picks.length >= 4) picks.pop();
-    picks.push({
-      ...cands[0],
-      _score: 1,
-      _rel: 'stretch'
-    });
+    // アイロン類で「いま使っている帯」より上の在庫が無いときは、最安ではなく最上位機を正直な一言つきで
+    const grpMid = ownedBands[OWNED_KEY[grp[0]]] && BAND_MID[ownedBands[OWNED_KEY[grp[0]]]] || null;
+    if (OWNED_KEY[grp[0]] === 'ir' && grpMid && cands[cands.length - 1].price < grpMid) {
+      picks.push({
+        ...cands[cands.length - 1],
+        _score: 1,
+        _rel: 'ceiling'
+      });
+    } else {
+      picks.push({
+        ...cands[0],
+        _score: 1,
+        _rel: 'stretch'
+      });
+    }
   }
   return picks;
 }
@@ -4436,7 +4446,8 @@ function HomeToolsSection({
     same: 'いまお使いの価格帯と同じクラスです。',
     up: 'いまお使いのものから ひとつ上のクラスです。',
     wish: 'ご興味のクラスに合わせたご提案です。',
-    stretch: 'いまの価格帯より上ですが 取り扱いの中でいちばん手に取りやすい一台です。'
+    stretch: 'いまの価格帯より上ですが 取り扱いの中でいちばん手に取りやすい一台です。',
+    ceiling: 'いまお使いのものには一歩及びませんが SEAMの取り扱いでいちばん上のクラスです。'
   }[t._rel]))), /*#__PURE__*/React.createElement("p", {
     className: "mt-2.5 sm:mt-3 text-[12px] sm:text-[13.5px] leading-[1.75] sm:leading-[1.95] text-charcoal/85"
   }, t.featureSummary), /*#__PURE__*/React.createElement("p", {
