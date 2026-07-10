@@ -6,9 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1b1b1d">
   <title>店舗マネジメント（シフト＆売上）｜Salon Town Pro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=87">
-  <link rel="stylesheet" href="assets/css/base.css?v=87">
-  <link rel="stylesheet" href="assets/css/components.css?v=87">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=88">
+  <link rel="stylesheet" href="assets/css/base.css?v=88">
+  <link rel="stylesheet" href="assets/css/components.css?v=88">
   <style>
     body { background: var(--surface-2); }
     .mg-top { position: sticky; top: 0; z-index: 10; background: var(--dark); color: #fff; }
@@ -87,11 +87,11 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/catalog.js?v=87"></script>
-  <script src="assets/js/data.js?v=87"></script>
-  <script src="assets/js/store.js?v=87"></script>
-  <script src="assets/js/shift.js?v=87"></script>
-  <script src="assets/js/components.js?v=87"></script>
+  <script src="assets/js/catalog.js?v=88"></script>
+  <script src="assets/js/data.js?v=88"></script>
+  <script src="assets/js/store.js?v=88"></script>
+  <script src="assets/js/shift.js?v=88"></script>
+  <script src="assets/js/components.js?v=88"></script>
   <script>
     (function () {
       var yen = function (n) { return '¥' + Math.round(n || 0).toLocaleString('ja-JP'); };
@@ -99,7 +99,7 @@
       var SH = SP.SHIFT, STAFF = SH.roster, DAYS = SH.days;
       var SHI = { a: ['早番', '9:00–18:00', 'shift--a'], m: ['中番', '10:00–19:00', 'shift--m'], p: ['遅番', '11:00–20:00', 'shift--p'] };
       var ORDER = ['a', 'm', 'p', 'off'];
-      var SET_LABELS = [['yukyu', '有給を表示'], ['minashi', 'みなし残業'], ['zangyo', '残業']];
+      var SET_LABELS = [['buai', '歩合給（指名売上連動）'], ['yukyu', '有給を表示'], ['minashi', 'みなし残業'], ['zangyo', '残業']];
 
       function renderKpis() {
         var working = SH.grid().filter(function (row) { return row[0] !== 'off'; }).length;
@@ -131,8 +131,9 @@
       function renderSales() {
         var set = SH.settings();
         document.getElementById('salesBody').innerHTML = STAFF.map(function (s, i) { return { s: s, i: i }; }).sort(function (a, b) { return b.s.sales - a.s.sales; }).map(function (x) {
-          var s = x.s, b = SH.breakdownFor(x.i), pct = Math.round(s.sales / s.target * 100), done = pct >= 100;
+          var s = x.s, b = SH.breakdownFor(x.i), bu = SH.buaiFor(x.i), pct = Math.round(s.sales / s.target * 100), done = pct >= 100;
           var lab = '<div class="sl-lab"><div class="sl-lab__r"><span>基本給</span><b>' + yen(b.base) + '</b></div>'
+            + (set.buai && bu.rate ? '<div class="sl-lab__r"><span>歩合給 <span style="color:var(--ink-3)">(指名売上' + yen(bu.shimeiSales) + '×' + Math.round(bu.rate * 100) + '%・保障' + yen(bu.line) + 'まで)</span></span><b style="color:' + (b.buai > 0 ? 'var(--gold-strong)' : 'inherit') + '">' + (b.buai > 0 ? '+' + yen(b.buai) : '¥0') + '</b></div>' : '')
             + (set.minashi ? '<div class="sl-lab__r"><span>みなし残業手当</span><b>' + yen(b.minashi) + '</b></div>' : '')
             + (set.zangyo ? '<div class="sl-lab__r"><span>残業手当 <span style="color:var(--ink-3)">(' + b.otHours + 'h)</span></span><b>' + yen(b.zangyo) + '</b></div>' : '')
             + '<div class="sl-lab__r tot"><span>人件費 計</span><b>' + yen(b.total) + '</b></div></div>';
