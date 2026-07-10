@@ -4131,7 +4131,20 @@ function HeadSpaSection({
     className: "mt-3 font-serif text-[26px] sm:text-[34px] text-ink leading-snug"
   }, "\u304A\u3059\u3059\u3081\u306E\u30D8\u30C3\u30C9\u30B9\u30D1"), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[12.5px] sm:text-[13px] text-charcoal/70 leading-[1.95] max-w-2xl"
-  }, hasThinning ? '頭皮環境を整える頭皮環境ケアのスパからご提案します。' : 'いまのあなたの症状に合うヘッドスパをご提案します。'), (wellnessSelected.length > 0 || hasThinning) && /*#__PURE__*/React.createElement("div", {
+  }, hasThinning ? '頭皮環境を整える頭皮環境ケアのスパからご提案します。' : 'いまのあなたの症状に合うヘッドスパをご提案します。'), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 relative overflow-hidden rounded-[2px] border border-line aspect-[16/10]"
+  }, /*#__PURE__*/React.createElement("video", {
+    className: "absolute inset-0 w-full h-full object-cover",
+    autoPlay: true,
+    loop: true,
+    muted: true,
+    playsInline: true,
+    preload: "metadata",
+    poster: "images/spa-real/hero.jpg"
+  }, /*#__PURE__*/React.createElement("source", {
+    src: "images/spa-real/hero.mp4",
+    type: "video/mp4"
+  }))), (wellnessSelected.length > 0 || hasThinning) && /*#__PURE__*/React.createElement("div", {
     className: "mt-5 border-l-2 border-gold pl-4 sm:pl-5 py-1"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold"
@@ -12611,7 +12624,9 @@ function CounselingSheet({
     className: "mt-3 no-print text-center text-[11.5px] leading-[1.95] text-charcoal/70 bg-cream/60 border border-line rounded-[8px] px-4 py-2.5 max-w-md mx-auto"
   }, /*#__PURE__*/React.createElement("b", null, "Instagram\u306A\u3069\u30A2\u30D7\u30EA\u5185\u3067\u3054\u89A7\u306E\u65B9\u3078"), /*#__PURE__*/React.createElement("br", null), "\u30DC\u30BF\u30F3\u3092\u62BC\u3057\u3066\u3082\u4FDD\u5B58\u3067\u304D\u306A\u3044\u6642\u306F \u753B\u9762\u53F3\u4E0A\u306E ", /*#__PURE__*/React.createElement("b", null, "\u22EF"), " \u304B\u3089", /*#__PURE__*/React.createElement("br", {
     className: "sm:hidden"
-  }), "\u300C", /*#__PURE__*/React.createElement("b", null, "\u5916\u90E8\u30D6\u30E9\u30A6\u30B6\u3067\u958B\u304F"), "\u300D\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044", /*#__PURE__*/React.createElement("br", null), "\u3053\u306E\u7D50\u679C\u3054\u3068 \u666E\u6BB5\u306E\u30D6\u30E9\u30A6\u30B6\uFF08Safari\u3084Chrome\uFF09\u306B\u5F15\u304D\u7D99\u304C\u308C \u305D\u306E\u307E\u307E\u4FDD\u5B58\u3067\u304D\u307E\u3059"), /*#__PURE__*/React.createElement("p", {
+  }), "\u300C", /*#__PURE__*/React.createElement("b", null, "\u5916\u90E8\u30D6\u30E9\u30A6\u30B6\u3067\u958B\u304F"), "\u300D\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044", /*#__PURE__*/React.createElement("br", null), "\u3053\u306E\u7D50\u679C\u3054\u3068 \u666E\u6BB5\u306E\u30D6\u30E9\u30A6\u30B6\uFF08Safari\u3084Chrome\uFF09\u306B\u5F15\u304D\u7D99\u304C\u308C \u305D\u306E\u307E\u307E\u4FDD\u5B58\u3067\u304D\u307E\u3059"), !isInAppBrowser() && /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 no-print text-center text-[11px] text-charcoal/55 leading-[1.9] max-w-md mx-auto"
+  }, "\u203B \u3046\u307E\u304F\u4FDD\u5B58\u30FB\u5171\u6709\u3067\u304D\u306A\u3044\u5834\u5408\u306F\u3001Instagram\u306A\u3069\u30A2\u30D7\u30EA\u5185\u306E\u30D6\u30E9\u30A6\u30B6\u3067\u958B\u3044\u3066\u3044\u308B\u304B\u3082\u3057\u308C\u307E\u305B\u3093\u3002Safari\u3084Chrome\u306B\u5207\u308A\u66FF\u3048\u3066\u4FDD\u5B58\u3057\u3066\u304F\u3060\u3055\u3044\u3002"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-center text-[11.5px] text-charcoal/55 leading-relaxed"
   }, "\u203B SEAM \u4EE5\u5916\u306E\u7F8E\u5BB9\u5BA4\u3067\u3082\u3001\u3054\u76F8\u8AC7\u6642\u306B\u304A\u4F7F\u3044\u3044\u305F\u3060\u3051\u307E\u3059\u3002"));
 }
