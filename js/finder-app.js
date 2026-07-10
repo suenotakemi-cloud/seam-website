@@ -4230,6 +4230,8 @@ function pickHomeTools(tools, answers, scores) {
   const priceWindow = cat => {
     const ob = ownedBands[OWNED_KEY[cat]];
     const mid = ob && BAND_MID[ob] || null;
+    // アイロン類(2026-07-10 オーナー指示): いま使っているものより安い提案はしない=買い替えは一歩上へ
+    const isIronCat = OWNED_KEY[cat] === 'ir';
     let min = 0,
       max = Infinity;
     if (dTier === 'daily') {
@@ -4240,17 +4242,21 @@ function pickHomeTools(tools, answers, scores) {
     } else if (dTier === 'luxury') {
       min = 28000;
     } else if (mid) {
-      min = mid * 0.65;
+      min = mid * (isIronCat ? 0.95 : 0.65);
       max = mid * 2.3;
     } else {
       max = 40000;
     }
-    if (mid && mid * 0.65 > min) min = mid * 0.65;
+    if (mid) {
+      const floor = mid * (isIronCat ? 0.95 : 0.65);
+      if (floor > min) min = floor;
+    }
     if (a.upgradeWill === 'yes' && isFinite(max)) max = Math.round(max * 1.35);
     return {
       min,
       max,
-      mid
+      mid,
+      isIronCat
     };
   };
   const scored = tools.map(t => {
@@ -4263,11 +4269,16 @@ function pickHomeTools(tools, answers, scores) {
       score: 0,
       rel: null
     };
-    // いま使っている価格帯のど真ん中は加点(違和感のない提案)
-    if (w.mid && Math.abs(t.price - w.mid) <= w.mid * 0.35) score += 8;
+    // 価格帯の加点: アイロン類は「いまより少し上」がいちばん気持ちいい提案、その他は同帯ど真ん中
+    if (w.mid) {
+      if (w.isIronCat) {
+        if (t.price >= w.mid * 1.05 && t.price <= w.mid * 1.7) score += 10; // 一歩上のクラス
+        else if (t.price >= w.mid * 0.95 && t.price < w.mid * 1.05) score += 4; // いまと同等
+      } else if (Math.abs(t.price - w.mid) <= w.mid * 0.35) score += 8;
+    }
     // 価格関係の一言(カードの正直ライン)
     let rel = null;
-    if (w.mid) rel = t.price <= w.mid * 1.2 ? 'same' : 'up';else if (dTier && dTier !== 'none') rel = 'wish';
+    if (w.mid) rel = t.price <= w.mid * (w.isIronCat ? 1.05 : 1.2) ? 'same' : 'up';else if (dTier && dTier !== 'none') rel = 'wish';
     // ベース重み
     score += m.weight || 0;
     // 全員向けフラグ
