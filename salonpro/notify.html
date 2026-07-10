@@ -7,10 +7,10 @@
   <meta name="theme-color" content="#ffffff">
   <title>通知・リマインド設定｜Salon Town Pro</title>
   <meta name="description" content="再注文・定期便・キャンペーン・セミナーのリマインド通知設定。プッシュ通知で発注タイミングを逃さない。">
-  <link rel="stylesheet" href="assets/css/tokens.css?v=85">
-  <link rel="stylesheet" href="assets/css/base.css?v=85">
-  <link rel="stylesheet" href="assets/css/components.css?v=85">
-  <link rel="stylesheet" href="assets/css/pages.css?v=85">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=87">
+  <link rel="stylesheet" href="assets/css/base.css?v=87">
+  <link rel="stylesheet" href="assets/css/components.css?v=87">
+  <link rel="stylesheet" href="assets/css/pages.css?v=87">
   <style>
     body { background: #fff; padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); }
     .container { max-width: 720px; }
@@ -50,7 +50,7 @@
   </header>
 
   <main class="container">
-    <div class="nt-hd"><div class="nt-hd__t">通知</div><div class="nt-hd__s">補填・クーポン・入荷・定期便など、見逃したくないお知らせをまとめています。</div></div>
+    <div class="nt-hd"><div class="nt-hd__t">通知</div><div class="nt-hd__s">補填・入荷・定期便など、見逃したくないお知らせをまとめています。</div></div>
 
     <div id="ntFeed" style="margin-bottom:var(--s-5)"></div>
 
@@ -82,17 +82,17 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/catalog.js?v=85"></script>
-  <script src="assets/js/data.js?v=85"></script>
-  <script src="assets/js/store.js?v=85"></script>
-  <script src="assets/js/components.js?v=85"></script>
-  <script src="assets/js/nav.js?v=85"></script>
+  <script src="assets/js/catalog.js?v=87"></script>
+  <script src="assets/js/data.js?v=87"></script>
+  <script src="assets/js/store.js?v=87"></script>
+  <script src="assets/js/components.js?v=87"></script>
+  <script src="assets/js/nav.js?v=87"></script>
   <script>
     (function () {
       var svg = SP.svg;
       var toast = function (m) { var t = document.getElementById('toast'); t.innerHTML = svg('checkc') + m; t.classList.add('is-visible'); setTimeout(function () { t.classList.remove('is-visible'); }, 2200); };
       (function () { var c = SP.Store.cartSummary().count + (SP.Store.giftCount ? SP.Store.giftCount() : 0), el = document.getElementById('cartBadge'); if (el) { el.textContent = c; el.hidden = c <= 0; } })();
-      // 通知フィード（補填あと一歩・クーポン期限・入荷・定期便・セミナー）。デモ＋実データ。
+      // 通知フィード（補填あと一歩・補填チケット期限・入荷・定期便・セミナー）。デモ＋実データ。
       (function () {
         var feed = document.getElementById('ntFeed'); if (!feed) return;
         var yen = function (n) { return '¥' + (n || 0).toLocaleString('ja-JP'); };

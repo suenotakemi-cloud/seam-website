@@ -5,11 +5,11 @@
   <meta name="robots" content="noindex,nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>マイページ｜Salon Town Pro</title>
-  <link rel="stylesheet" href="assets/css/tokens.css?v=85">
-  <link rel="stylesheet" href="assets/css/base.css?v=85">
-  <link rel="stylesheet" href="assets/css/components.css?v=85">
-  <link rel="stylesheet" href="assets/css/home.css?v=85">
-  <link rel="stylesheet" href="assets/css/pages.css?v=85">
+  <link rel="stylesheet" href="assets/css/tokens.css?v=87">
+  <link rel="stylesheet" href="assets/css/base.css?v=87">
+  <link rel="stylesheet" href="assets/css/components.css?v=87">
+  <link rel="stylesheet" href="assets/css/home.css?v=87">
+  <link rel="stylesheet" href="assets/css/pages.css?v=87">
 </head>
 <body class="page">
 
@@ -49,7 +49,7 @@
     </section>
 
     <section class="sec">
-      <div class="sec__head"><h2 class="sec__title">保有クーポン</h2></div>
+      <div class="sec__head"><h2 class="sec__title">補填チケット</h2></div>
       <div id="couponCard"></div>
     </section>
 
@@ -161,11 +161,11 @@
   </nav>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="assets/js/catalog.js?v=85"></script>
-  <script src="assets/js/data.js?v=85"></script>
-  <script src="assets/js/store.js?v=85"></script>
-  <script src="assets/js/components.js?v=85"></script>
-  <script src="assets/js/nav.js?v=85"></script>
+  <script src="assets/js/catalog.js?v=87"></script>
+  <script src="assets/js/data.js?v=87"></script>
+  <script src="assets/js/store.js?v=87"></script>
+  <script src="assets/js/components.js?v=87"></script>
+  <script src="assets/js/nav.js?v=87"></script>
   <script>
     (function () {
       var n = (SP.Store.getContracts() || []).length;
@@ -223,19 +223,19 @@
               + '<span style="font-family:var(--font-num);font-size:13px;color:var(--ink-2)">' + yen2(x.spent) + ' <span style="color:var(--ink-3)">/ ' + yen2(x.th) + '</span></span></div>'
               + bar + '<div style="font-size:12px;color:var(--ink-2);margin-top:7px">' + status + '</div></div>';
           }).join('');
-          rc.innerHTML = '<div style="border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-md);padding:12px 15px;margin-bottom:12px;font-size:12px;color:var(--ink);line-height:1.6"><b>値引きではなく「補填」</b>：メーカー別に今月の仕入れが基準に届くと、<b>翌月の発注で使える1本無料クーポン</b>が届きます。価格はそのまま、実質コストを抑えられます。</div>'
+          rc.innerHTML = '<div style="border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-md);padding:12px 15px;margin-bottom:12px;font-size:12px;color:var(--ink);line-height:1.6"><b>値引きではなく「補填」</b>：メーカー別に今月の仕入れが基準に届くと、<b>翌月の発注で使える1本無料の補填チケット</b>が届きます。価格はそのまま、実質コストを抑えられます。</div>'
             + rows
             + '<a href="index.html" style="display:block;text-align:center;border:1px solid var(--line-3);border-radius:var(--r-md);padding:12px;font-weight:800;font-size:14px;color:var(--ink);text-decoration:none">補填まで あと少しのメーカーを補充する ›</a>'
             + '<div style="font-size:10.5px;color:var(--ink-3);margin-top:8px">※ 基準額・補填内容はデモ表示です。本番ではメーカー協賛条件にもとづき設定し、当月の確定注文から自動集計します。</div>';
         }
       } catch (e) {}
-      // 保有クーポン（メーカー補填の達成特典＝翌月限定 1本無料）
+      // 補填チケット（メーカー補填の達成特典＝翌月限定 1本無料）
       try {
         var cc = document.getElementById('couponCard');
         var cps = (SP.Store.getCoupons ? SP.Store.getCoupons() : []).filter(function (c) { return !c.used; });
         if (cc) {
           if (!cps.length) {
-            cc.innerHTML = '<div style="border:1px solid var(--line);border-radius:var(--r-md);padding:16px;text-align:center;color:var(--ink-3);font-size:13px">使えるクーポンはありません。メーカー別の月間基準を達成すると、翌月に1本無料クーポンが届きます。</div>';
+            cc.innerHTML = '<div style="border:1px solid var(--line);border-radius:var(--r-md);padding:16px;text-align:center;color:var(--ink-3);font-size:13px">使える補填チケットはありません。メーカー別の月間基準を達成すると、翌月に1本無料の補填チケットが届きます。</div>';
           } else {
             cc.innerHTML = cps.map(function (c) {
               return '<div style="display:flex;align-items:center;gap:13px;border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px">'

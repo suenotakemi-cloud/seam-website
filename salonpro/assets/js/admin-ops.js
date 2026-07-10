@@ -6,7 +6,7 @@
    - 配送先：SMILE 登録届け先から選択（自由入力なし）
    - 商品マスタ：SMILE構成は不変。EC表示名・画像・正規化はEC拡張テーブルで別持ち
    - サロンコード：商品毎の設定を継続
-   - 2重値引き防止：請求時値引ありサロンはECクーポンを構造的にロック
+   - 値引き：EC側の値引きクーポンは使用しない（菊地方針・2重値引きは構造的に発生しない）。ポイントは共通で付与・利用可
    すべてデモデータ。本番はSMILE連携API/CSVバッチに接続。
    ========================================================= */
 (function () {
@@ -37,26 +37,21 @@
     { code: '10603', name: 'Atelier NOa 自由が丘', cls: 'ゴールド', rate: 2.2, invDisc: false, accounts: [{ n: '野田 千尋', r: 'オーナー' }, { n: 'スタッフ共用', r: '閲覧' }] },
     { code: '10711', name: 'Lien hair design 札幌大通', cls: 'レギュラー', rate: 3.2, invDisc: false, accounts: [{ n: '林 拓也', r: 'オーナー' }] }
   ];
-  var couponOn = store.get('sp.admin.coupon.v1', { '10412': true, '10603': true, '10711': false });
   var openAcc = {};
   var ROLE_TAG = { 'オーナー': T.gold('オーナー・全権'), '発注担当': T.ok('発注担当'), '閲覧': T.grey('閲覧のみ') };
 
   function renderSalons() {
     var rows = SALONS.map(function (s) {
-      var coupon = s.invDisc
-        ? T.lock('自動停止（2重値引き防止）')
-        : '<button data-cp="' + s.code + '" style="border:1px solid ' + (couponOn[s.code] ? '#1f9d57' : 'var(--line-strong)') + ';background:' + (couponOn[s.code] ? '#e3f4ea' : '#fff') + ';color:' + (couponOn[s.code] ? '#1f7a4d' : 'var(--ink-2)') + ';border-radius:999px;padding:4px 11px;font-size:10.5px;font-weight:800;cursor:pointer">' + (couponOn[s.code] ? '適用可' : '停止中') + '</button>';
       var main = '<tr>' +
         '<td class="num">' + s.code + '</td>' +
         '<td><b>' + esc(s.name) + '</b></td>' +
         '<td>' + T.gold(s.cls) + ' <span class="num" style="font-weight:800">' + s.rate.toFixed(1) + '%</span></td>' +
         '<td>' + (s.invDisc ? T.warn('請求時値引あり') : T.grey('なし')) + '</td>' +
-        '<td>' + coupon + '</td>' +
         '<td><button data-acc="' + s.code + '" style="border:1px solid var(--line-strong);background:#fff;border-radius:999px;padding:4px 11px;font-size:10.5px;font-weight:800;cursor:pointer">' + s.accounts.length + '名 ' + (openAcc[s.code] ? '▲' : '▼') + '</button></td>' +
         '<td style="font-size:11px;color:var(--ink-3)">今朝 6:00</td>' +
         '</tr>';
       var detail = openAcc[s.code]
-        ? '<tr><td colspan="7" style="background:var(--surface-2)"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:4px 2px">' +
+        ? '<tr><td colspan="6" style="background:var(--surface-2)"><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:4px 2px">' +
           s.accounts.map(function (a) { return '<span style="display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700">' + esc(a.n) + ' ' + (ROLE_TAG[a.r] || '') + '</span>'; }).join('') +
           '<button data-addacc="' + s.code + '" style="border:1px dashed var(--line-strong);background:#fff;border-radius:999px;padding:5px 12px;font-size:11px;font-weight:800;color:var(--gold-strong);cursor:pointer">＋ アカウント追加（デモ）</button>' +
           '</div></td></tr>'
@@ -64,14 +59,11 @@
       return main + detail;
     }).join('');
     $('opsSalons').innerHTML =
-      '<table class="adm-table"><thead><tr><th>サロンコード<br><small style="font-weight:600;color:var(--ink-3)">SMILE</small></th><th>サロン</th><th>クラス・実質料率</th><th>請求時値引<br><small style="font-weight:600;color:var(--ink-3)">SMILE請求</small></th><th>ECクーポン</th><th>アカウント</th><th>SMILE同期</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<table class="adm-table"><thead><tr><th>サロンコード<br><small style="font-weight:600;color:var(--ink-3)">SMILE</small></th><th>サロン</th><th>クラス・実質料率</th><th>請求時値引<br><small style="font-weight:600;color:var(--ink-3)">SMILE請求</small></th><th>アカウント</th><th>SMILE同期</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div style="font-size:11px;color:var(--ink-3);margin-top:10px;line-height:1.7">' +
-      '・<b>2重値引き防止：</b>「請求時値引あり」のサロンはECクーポンを構造的にロック（担当者の解除操作でのみ例外可・監査記録）。クーポンを使う場合も受注CSVでは<b>独立列</b>で出力＝SMILE請求と衝突しません。<br>' +
+      '・<b>値引きはSMILE請求側のみ：</b>EC側の値引きクーポンは<b>使用しません</b>（菊地方針）＝請求時値引との2重値引きは構造的に発生しません。<b>ポイント</b>は全サロン共通で付与・利用でき、受注CSVでは<b>独立列</b>で出力＝SMILE請求と衝突しません。<br>' +
       '・<b>1サロン複数アカウント：可能。</b>権限は3種＝オーナー（全権）／発注担当（発注・履歴）／閲覧（価格非表示も選択可）。請求と与信は<b>サロン単位</b>（アカウントが増えても掛け枠は1つ）。<br>' +
-      '・サービス条件（クラス・値引・クーポン・添付条件・担当者）をこの1画面に集約＝サロン毎の条件管理の煩雑さに対応。</div>';
-    [].forEach.call(document.querySelectorAll('#opsSalons [data-cp]'), function (b) {
-      b.addEventListener('click', function () { var c = b.getAttribute('data-cp'); couponOn[c] = !couponOn[c]; store.set('sp.admin.coupon.v1', couponOn); renderSalons(); toast('ECクーポンを' + (couponOn[c] ? '適用可' : '停止') + 'にしました'); });
-    });
+      '・サービス条件（クラス・値引・添付条件・担当者）をこの1画面に集約＝サロン毎の条件管理の煩雑さに対応。</div>';
     [].forEach.call(document.querySelectorAll('#opsSalons [data-acc]'), function (b) {
       b.addEventListener('click', function () { var c = b.getAttribute('data-acc'); openAcc[c] = !openAcc[c]; renderSalons(); });
     });
@@ -215,11 +207,11 @@
   }
   var csvBtn = $('opsJuchuCsv');
   if (csvBtn) csvBtn.addEventListener('click', function () {
-    var head = ['受注日', '注文番号', 'サロンコード', '支払方法', '入金ステータス', '商品コード', '数量', '単価', 'ECクーポン値引(別枠)', '備考'];
+    var head = ['受注日', '注文番号', 'サロンコード', '支払方法', '入金ステータス', '商品コード', '数量', '単価', 'ポイント利用(別枠)', '備考'];
     var rows = [];
     ORDERS.forEach(function (o) {
       o.items.forEach(function (it, i) {
-        rows.push(['2026/07/09', o.no, o.code, PAYL[o.pay], ST[o.st].l, it[0], it[1], 'SMILE参照', i === 0 && couponOn[o.code] ? '500' : '0', i === 0 ? '' : '同注文明細']);
+        rows.push(['2026/07/09', o.no, o.code, PAYL[o.pay], ST[o.st].l, it[0], it[1], 'SMILE参照', '0', i === 0 ? '' : '同注文明細']);
       });
     });
     var csv = '﻿' + [head].concat(rows).map(function (r) { return r.join(','); }).join('\r\n');
@@ -227,7 +219,7 @@
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = 'salontownpro_juchu_smile.csv';
     document.body.appendChild(a); a.click(); a.remove();
-    toast('SMILE取込用CSVを出力しました（単価はSMILE参照・クーポンは別枠列）');
+    toast('SMILE取込用CSVを出力しました（単価はSMILE参照・ポイント利用は別枠列）');
   });
 
   /* ===================== 4. 契約商品の販売設定 ===================== */

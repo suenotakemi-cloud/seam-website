@@ -2,7 +2,7 @@
    Salon Town Pro / Cart — マルチディーラー（中立マーケットプレイス）カート
    カートをディーラー（菊地・コスモ…）別に分割し、各社で
    別々の送料・締め時間・お支払い方法・与信・注文確定を行う。
-   ※ ポイント/クーポンは本番でディーラーごとに適用（デモでは省略）。
+   ※ ポイントは本番でディーラーごとに適用（デモでは省略）。EC値引きクーポンは使用しない（菊地方針）。メーカー補填（無償現品）は値引きではなく補填として維持。
    ========================================================= */
 (function () {
   const { Store, placeholder, svg, fmtYen, STOCK } = SP;
@@ -164,7 +164,7 @@
       ? `<div class="dcart__kake">${shieldSvg}<div><b style="color:var(--ink)">銀行振込は入金確認後の出荷です（入金待ち）。</b><br>振込名義の後ろに<b>注文番号</b>をご入力ください（例：ｻﾛﾝﾗｸｽ SP-XXXX）。振込手数料はお客様のご負担となります。</div></div>`
       : '';
     const qtyRow = c.qtyDiscount > 0 ? `<div class="dsum__row"><span>まとめ買い割引</span><span class="v">-${fmtYen(c.qtyDiscount)}</span></div>` : '';
-    const cpRow = c.couponOff > 0 ? `<div class="dsum__row" style="color:var(--gold-strong);font-weight:700"><span>🎟 クーポン（${c.couponLabel}）</span><span class="v">-${fmtYen(c.couponOff)}</span></div>` : '';
+    const cpRow = c.couponOff > 0 ? `<div class="dsum__row" style="color:var(--gold-strong);font-weight:700"><span>🎁 メーカー補填（${c.couponLabel}）</span><span class="v">-${fmtYen(c.couponOff)}</span></div>` : '';
     return `
       <section class="dcart" data-dealer="${dl.id}">
         <div class="dcart__head">
@@ -286,7 +286,7 @@
       if (needsAppr) html += `<div style="display:flex;gap:8px;align-items:flex-start;background:#fff5e0;border:1px solid #f0dcbf;border-radius:var(--r-md);padding:10px 13px;margin-bottom:12px;font-size:12px;color:#7a5a1e;line-height:1.6">${shieldSvg}<span><b>スタッフの店舗発注は承認制です。</b>「オーナーに発注を申請」すると、オーナー/店長の承認後に発注が確定します。</span></div>`;
     }
     html += `<div class="dealer-note">${shieldSvg}<span>このカートは<b>ディーラーごと</b>に分かれています。お支払い・送料・配送はそれぞれ別です（${activeIds.length + placed.length}ディーラー）。</span></div>`;
-    // 保有クーポン（メーカー補填＝翌月限定 1本無料）の案内
+    // 補填チケット（メーカー補填＝翌月限定 1本無料）の案内
     const heldCoupons = (Store.freeCoupons ? Store.freeCoupons() : []);
     if (activeIds.length && heldCoupons.length) {
       const allProds = activeIds.reduce((a, d) => a.concat((groups[d] || []).map(it => it.p)), []);
@@ -294,7 +294,7 @@
         const applied = allProds.some(p => makerOf(p) === c.maker);
         return `<span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;border:1px solid ${applied ? '#cfe6d8' : 'var(--gold-line)'};background:${applied ? '#f1faf4' : 'var(--gold-soft)'};color:${applied ? 'var(--stock-in)' : 'var(--ink)'};border-radius:999px;padding:5px 11px">🎟 ${c.maker} 1本無料 ${applied ? '（適用中）' : '（対象商品で適用）'}</span>`;
       }).join('');
-      html += `<div style="border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px"><div style="font-size:12px;font-weight:800;margin-bottom:7px">保有クーポン（メーカー補填）</div><div style="display:flex;flex-wrap:wrap;gap:7px">${chips}</div><div style="font-size:10.5px;color:var(--ink-3);margin-top:7px">対象メーカーの商品をカートに入れると、最安1本が自動で無料になります（翌月発注限定・デモ）。</div></div>`;
+      html += `<div style="border:1px solid var(--gold-line);background:var(--gold-soft);border-radius:var(--r-md);padding:11px 13px;margin-bottom:12px"><div style="font-size:12px;font-weight:800;margin-bottom:7px">補填チケット（メーカー補填・値引きではありません）</div><div style="display:flex;flex-wrap:wrap;gap:7px">${chips}</div><div style="font-size:10.5px;color:var(--ink-3);margin-top:7px">対象メーカーの商品をカートに入れると、最安1本が自動で無料になります（翌月発注限定・デモ）。</div></div>`;
     }
     placed.forEach(o => { html += doneSection(o); });
 
