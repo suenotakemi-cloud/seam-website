@@ -13839,7 +13839,61 @@ function Result({
     className: "relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-28 pb-10 sm:pb-28"
   }, /*#__PURE__*/React.createElement("div", {
     className: "anim-fade-up"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, (() => {
+    let lg = 'ja';
+    try {
+      lg = localStorage.getItem('seamLang') || 'ja';
+    } catch (e) {}
+    const LB = {
+      ja: ['髪格診断', '美肌ヒストリー'],
+      en: ['Hair Finder', 'Skin History'],
+      zh: ['发质诊断', '美肌历程'],
+      tw: ['髮質診斷', '美肌歷程'],
+      ko: ['헤어 진단', '스킨 히스토리']
+    }[lg] || ['髪格診断', '美肌ヒストリー'];
+    const goSkin = () => {
+      try {
+        sessionStorage.setItem('seam_open_skin', '1');
+        window.seamTrack && window.seamTrack('finder_switch', {
+          to: 'skin'
+        });
+      } catch (e) {}
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      className: "no-print mb-4 flex justify-center"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "inline-flex items-center rounded-full border border-line",
+      style: {
+        gap: '3px',
+        padding: '4px',
+        background: 'rgba(255,255,255,.72)'
+      },
+      role: "tablist",
+      "aria-label": "\u8A3A\u65AD\u306E\u5207\u308A\u66FF\u3048"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "rounded-full font-serif text-white",
+      style: {
+        padding: '7px 16px',
+        fontSize: '12.5px',
+        lineHeight: 1,
+        whiteSpace: 'nowrap',
+        background: '#8A6B3F'
+      },
+      "aria-current": "page"
+    }, LB[0]), /*#__PURE__*/React.createElement("a", {
+      href: "skinfinder.html",
+      onClick: goSkin,
+      className: "rounded-full font-serif",
+      style: {
+        padding: '7px 16px',
+        fontSize: '12.5px',
+        lineHeight: 1,
+        whiteSpace: 'nowrap',
+        color: 'rgba(60,54,46,.62)',
+        textDecoration: 'none'
+      }
+    }, LB[1])));
+  })(), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between border-y border-line py-2.5 mb-3 print-page-header"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3"
