@@ -10537,6 +10537,23 @@ function Result({ answers, onRestart, onCollection }) {
       <div className="no-print"><TopBar /></div>
       <main className="relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-28 pb-10 sm:pb-28">
         <div className="anim-fade-up">
+          {/* ━━━━━ 診断のワンタップ切替(髪格 ⇄ 美肌ヒストリー) ━━━━━ */}
+          {(() => {
+            let lg = 'ja'; try { lg = localStorage.getItem('seamLang') || 'ja'; } catch (e) {}
+            const LB = ({
+              ja: ['髪格診断', '美肌ヒストリー'], en: ['Hair Finder', 'Skin History'],
+              zh: ['发质诊断', '美肌历程'], tw: ['髮質診斷', '美肌歷程'], ko: ['헤어 진단', '스킨 히스토리'],
+            })[lg] || ['髪格診断', '美肌ヒストリー'];
+            const goSkin = () => { try { sessionStorage.setItem('seam_open_skin', '1'); window.seamTrack && window.seamTrack('finder_switch', { to: 'skin' }); } catch (e) {} };
+            return (
+              <div className="no-print mb-4 flex justify-center">
+                <div className="inline-flex items-center rounded-full border border-line" style={{ gap: '3px', padding: '4px', background: 'rgba(255,255,255,.72)' }} role="tablist" aria-label="診断の切り替え">
+                  <span className="rounded-full font-serif text-white" style={{ padding: '7px 16px', fontSize: '12.5px', lineHeight: 1, whiteSpace: 'nowrap', background: '#8A6B3F' }} aria-current="page">{LB[0]}</span>
+                  <a href="skinfinder.html" onClick={goSkin} className="rounded-full font-serif" style={{ padding: '7px 16px', fontSize: '12.5px', lineHeight: 1, whiteSpace: 'nowrap', color: 'rgba(60,54,46,.62)', textDecoration: 'none' }}>{LB[1]}</a>
+                </div>
+              </div>
+            );
+          })()}
           {/* Karte-style meta header */}
           <div className="flex items-center justify-between border-y border-line py-2.5 mb-3 print-page-header">
             <div className="flex items-center gap-3">

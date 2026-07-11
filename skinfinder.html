@@ -130,6 +130,13 @@
     .sf-again { display:block; margin:26px auto 0; font-size:11.5px; color:var(--charcoal); opacity:.65; letter-spacing:.12em; background:none; text-align:center; }
     .sf-cross { margin-top:30px; text-align:center; font-size:12.5px; color:var(--charcoal); }
     .sf-cross a { color:var(--gold); text-decoration:underline; text-underline-offset:3px; }
+    /* 診断ワンタップ切替(髪格 ⇄ 美肌ヒストリー) */
+    .sf-switch { display:flex; justify-content:center; margin:2px auto 26px; }
+    .sf-switch-in { display:inline-flex; align-items:center; gap:3px; border:1px solid rgba(184,148,90,.45); border-radius:999px; padding:4px; background:#fff; }
+    .sf-switch-in a, .sf-switch-in span { padding:7px 16px; border-radius:999px; font-size:12.5px; line-height:1; white-space:nowrap; }
+    .sf-switch-in a { color:var(--charcoal); opacity:.7; text-decoration:none; }
+    .sf-switch-in a:hover { opacity:1; }
+    .sf-switch-in .on { background:#8A6B3F; color:#fff; }
     .hidden { display:none; }
     /* 言語モーダルのフォールバック隠し(lang.css未読込・読込前でも素のまま見せない) */
     .lang-overlay { position:fixed; inset:0; opacity:0; pointer-events:none; z-index:9000; }
@@ -368,7 +375,7 @@
       ctaH:'テクスチャーと香りは、店頭でたしかめられます。',
       ctaP:'この画面をスタッフに見せていただければ<br>あなたの章に合わせて、その場でご案内します。',
       ctaBtn:'お店の場所を見る →',
-      cross:'髪の物語も知りたくなったら →', crossLink:'髪格診断へ',
+      cross:'髪の物語も知りたくなったら →', crossLink:'髪格診断へ', naviHair:'髪格診断', naviSkin:'美肌ヒストリー',
       again:'← もう一度、章をひらき直す',
       loading:'あなたの章を綴じています…',
       error:'読み込みに失敗しました。通信環境をご確認のうえ、もう一度お試しください。'
@@ -490,7 +497,7 @@
       ctaH:'Texture and scent are waiting at the counter.',
       ctaP:'Show this screen to our staff —<br>we will guide you through your chapter, in person.',
       ctaBtn:'Find our shops →',
-      cross:'Curious about your hair’s story too? →', crossLink:'Hair Finder',
+      cross:'Curious about your hair’s story too? →', crossLink:'Hair Finder', naviHair:'Hair Finder', naviSkin:'Skin History',
       again:'← Open the chapter once more',
       loading:'Binding your chapter…',
       error:'Failed to load. Please check your connection and try again.'
@@ -612,7 +619,7 @@
       ctaH:'质地与香气，来店里亲手确认。',
       ctaP:'把这个页面出示给店员，<br>我们会按你的章节当场为你介绍。',
       ctaBtn:'查看店铺位置 →',
-      cross:'也想知道头发的故事？ →', crossLink:'去发质诊断',
+      cross:'也想知道头发的故事？ →', crossLink:'去发质诊断', naviHair:'发质诊断', naviSkin:'美肌历程',
       again:'← 再翻开一次章节',
       loading:'正在装订你的章节…',
       error:'加载失败。请确认网络后重试。'
@@ -734,7 +741,7 @@
       ctaH:'質地與香氣，來店裡親手確認。',
       ctaP:'把這個頁面出示給店員，<br>我們會按你的章節當場為你介紹。',
       ctaBtn:'查看店鋪位置 →',
-      cross:'也想知道頭髮的故事？ →', crossLink:'去髮質診斷',
+      cross:'也想知道頭髮的故事？ →', crossLink:'去髮質診斷', naviHair:'髮質診斷', naviSkin:'美肌歷程',
       again:'← 再翻開一次章節',
       loading:'正在裝訂你的章節…',
       error:'載入失敗。請確認網路後重試。'
@@ -856,7 +863,7 @@
       ctaH:'텍스처와 향은 매장에서 확인할 수 있어요.',
       ctaP:'이 화면을 스태프에게 보여주시면<br>당신의 챕터에 맞춰 그 자리에서 안내해 드려요.',
       ctaBtn:'매장 위치 보기 →',
-      cross:'머리카락의 이야기도 궁금해졌다면 →', crossLink:'헤어 진단으로',
+      cross:'머리카락의 이야기도 궁금해졌다면 →', crossLink:'헤어 진단으로', naviHair:'헤어 진단', naviSkin:'스킨 히스토리',
       again:'← 챕터를 다시 펼치기',
       loading:'당신의 챕터를 엮는 중…',
       error:'불러오기에 실패했어요. 연결을 확인하고 다시 시도해 주세요.'
@@ -1227,6 +1234,11 @@
       var story = L.peak[ans.peak] + '<br>' + L.exp[ans.exp] + '<br>' + L.mem[ans.memory] + '<br>' + L.closing;
       var box = $('sfResult');
       var html = '';
+      /* ── 診断の切り替え(髪格 ⇄ 美肌ヒストリー)・ワンタップ ── */
+      html += '<div class="sf-switch fadein"><div class="sf-switch-in">'
+        + '<a href="finder.html" data-sfcta="hairfinder" class="serif">' + L.naviHair + '</a>'
+        + '<span class="serif on">' + L.naviSkin + '</span>'
+        + '</div></div>';
       /* ── 肌タイプ ヒーロー(実像の判定+レーダー) ── */
       html += '<div class="fadein" style="text-align:center;">';
       html += '<span class="sf-badge mono">' + L.typeEyebrow + '</span>';
@@ -1349,6 +1361,7 @@
       loadData().then(function(){
         lastResult = { goal: ans.goal || 'glow', picks: pickAll() };
         renderResult();
+        try { localStorage.setItem('seam_skin_last', JSON.stringify({ ans: ans })); } catch (e) {}
         try {
           // 髪格診断と同型の豊富なプロファイルをmetaで送る(肌タイプ=type、詳細=meta短縮キー)
           var rd = computeRadar(ans);
@@ -1377,8 +1390,31 @@
     // 結果内CTAクリックを計測(店頭導線 / 髪格診断への相互送客)
     $('sfResult').addEventListener('click', function(e){
       var a = e.target && e.target.closest && e.target.closest('a[data-sfcta]');
-      if (a) sfTrack('skinfinder_cta', { target: a.getAttribute('data-sfcta') });
+      if (a) {
+        var tgt = a.getAttribute('data-sfcta');
+        // 髪格診断へワンタップ切替: 遷移先で前回カルテを自動表示させるフラグ
+        if (tgt === 'hairfinder') { try { sessionStorage.setItem('seam_open_karte', '1'); } catch (e2) {} }
+        sfTrack('skinfinder_cta', { target: tgt });
+      }
     });
+
+    /* 髪格診断からワンタップ切替で来たら 前回の肌診断結果を復元して表示 */
+    try {
+      if (sessionStorage.getItem('seam_open_skin') === '1') {
+        sessionStorage.removeItem('seam_open_skin');
+        var _skRaw = localStorage.getItem('seam_skin_last');
+        if (_skRaw) {
+          var _sk = JSON.parse(_skRaw);
+          if (_sk && _sk.ans && Object.keys(_sk.ans).length) {
+            ans = _sk.ans;
+            show('sfResult');
+            $('sfResult').innerHTML = '<p style="text-align:center;padding:60px 0;color:#999;font-size:13px;">' + T().loading + '</p>';
+            loadData().then(function(){ lastResult = { goal: ans.goal || 'glow', picks: pickAll() }; renderResult(); })
+              .catch(function(){ ans = {}; show('sfIntro'); });
+          }
+        }
+      }
+    } catch (e) {}
 
     /* lang.js からの言語切替コールバック: 表示中の画面を描き直す */
     window.onLangChange = function(){
