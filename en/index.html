@@ -386,12 +386,14 @@
   #saleBar .sb-off{font-family:"Noto Serif JP",serif;font-size:19px;font-weight:600;color:#FFF3DC;line-height:1.25;text-shadow:0 1px 2px rgba(60,40,10,.25);}
   #saleBar .sb-until{font-size:11.5px;color:rgba(255,255,255,.92);}
   #saleBar .sb-arrow{font-size:13.5px;transform:translateY(-1px);display:inline-block;}
-  #saleBar .sb-scope{display:none;font-size:11px;color:rgba(255,255,255,.88);}
+  #saleBar .sb-scope{display:inline-flex;align-items:center;font-size:10.5px;color:#FFF3DC;text-decoration:none;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:1px;line-height:1.25;}
+  #saleBar .sb-scope::after{content:'\203A';margin-left:5px;font-size:12px;line-height:1;}
+  @media(hover:hover){#saleBar .sb-scope:hover{color:#fff;border-bottom-color:#fff;}}
   @media(min-width:640px){
     #saleBar .sb-in{flex-direction:row;gap:16px;padding:12px 28px 13px;}
     #saleBar .sb-off{font-size:21px;}
   }
-  @media(min-width:900px){#saleBar .sb-scope{display:inline;}}
+  /* sb-scope は常時表示=オンラインショップ導線 */
   @keyframes saleSheen{0%{background-position:0% 0}100%{background-position:220% 0}}
   @media(prefers-reduced-motion:reduce){#saleBar{animation:none !important;}}
 </style>
@@ -406,7 +408,7 @@
       <span class="sb-until" data-i18n="sale.until">Until Jul 31</span>
       <span aria-hidden="" class="sb-arrow">→</span>
     </span>
-    <span class="sb-scope" data-i18n="sale.scope">Online shop &amp; all stores</span>
+    <a href="/onlineshop.html" class="sb-scope" data-track-click="sale_online" aria-label="オンラインショップのセールを見る" data-i18n="sale.scope">Also on at the online shop</a>
   </div>
 </div>
 <script>
@@ -418,7 +420,7 @@
   var end   = new Date('2026-08-01T00:00:00+09:00').getTime(); // 期間外は表示しない=消し忘れゼロ
   if (now < start || now >= end) return;
   bar.hidden = false;
-  var go = function () { location.href = 'shop.html#sale'; }; // セール記事(会員/未会員両導線あり)へ
+  var go = function () { location.href = 'shop.html#sale'; }; // セール記事(会員/未会員両導線あり)へ。オンラインショップ導線(.sb-scope)は online-shop-gate.js がcapture段でゲート表示
   bar.addEventListener('click', go);
   bar.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
   // ヘッダーピルにSALEバッジ(ピルは後から注入されるためリトライ)
@@ -484,38 +486,44 @@
   </nav>
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <!-- HERO — immersive carousel -->
+  <!-- HERO — 診断ファースト (モデル+髪格診断) -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section id="appHero" class="relative bg-ink">
-    <div class="relative w-full overflow-hidden bg-ink aspect-[3/2] max-h-[440px] sm:aspect-auto sm:h-[440px] lg:h-[480px]">
-      <div class="hc-slide is-active absolute inset-0">
-        <picture>
-          <source srcset="/images/lp/hero_hawaii.webp?v=2" type="image/webp">
-          <img src="/images/lp/hero_hawaii.jpg?v=2" alt="SEAM ヘアビューティーセレクトショップ キャンペーンビジュアル" class="w-full h-full object-cover" style="object-position:center 24%;" loading="eager" decoding="async" fetchpriority="high">
-        </picture>
-      </div>
-
-      <!-- scrim: keep faces bright, darken base for the wordmark -->
-      <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(180deg,rgba(20,18,16,.18) 0%,rgba(20,18,16,.04) 38%,rgba(20,18,16,.24) 66%,rgba(20,18,16,.62) 100%);"></div>
-
-      <!-- minimal SEAM wordmark, bottom-center -->
-      <div class="absolute inset-x-0 bottom-0">
-        <div class="px-6 pb-10 sm:pb-14 text-center">
-          <h1 class="font-serif text-white leading-none text-[46px] sm:text-[64px] lg:text-[76px]" style="letter-spacing:.3em;text-indent:.3em;font-weight:500;text-shadow:0 4px 26px rgba(0,0,0,.42),0 1px 4px rgba(0,0,0,.4);">SEAM</h1>
+  <section id="appHero" class="relative bg-white overflow-hidden">
+  <style>
+    #appHero .hero-wrap{position:relative;display:flex;align-items:center;min-height:206px;}
+    #appHero .hero-bg{object-position:66% 50%;}
+    #appHero .hero-text{max-width:214px;}
+    @media(min-width:640px){#appHero .hero-wrap{min-height:256px;} #appHero .hero-bg{object-position:54% 50%;} #appHero .hero-text{max-width:400px;}}
+  </style>
+    <div class="max-w-5xl mx-auto hero-wrap">
+      <!-- 背景: SEAM銀座店(左は白フェード済み・右にカラフルな陳列) -->
+      <picture>
+        <source srcset="/images/lp/hero_ginza_shelf.webp" type="image/webp">
+        <img src="/images/lp/hero_ginza_shelf.jpg" alt="SEAM銀座店 サロン専売ヘアケアが棚に並ぶ店内" class="hero-bg absolute inset-0 w-full h-full object-cover" loading="eager" decoding="async" fetchpriority="high">
+      </picture>
+      <!-- 左を白へ(文字の可読性を保証・写真側の白フェードと重ねて滑らかに) -->
+      <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(90deg,#fff 0%,#fff 46%,rgba(255,255,255,.9) 62%,rgba(255,255,255,.45) 80%,rgba(255,255,255,0) 96%);"></div>
+      <!-- 撮影クレジット -->
+      <span class="absolute right-3 bottom-2 sm:right-4 sm:bottom-2.5 z-20 font-mono text-[8px] sm:text-[9px] tracking-wider text-white/80" style="text-shadow:0 1px 4px rgba(0,0,0,.55);">photo : SEAM GINZA</span>
+      <!-- テキスト + CTA (白地の上) -->
+      <div class="relative z-10 px-6 sm:px-8 py-3 sm:py-5">
+        <div class="hero-text">
+          <p class="font-mono text-[8.5px] sm:text-[10.5px] tracking-widest2 text-gold uppercase leading-[1.4]" data-reveal="" data-i18n="hero.dEyebrow">HAIR TYPE DIAGNOSIS ・ 27 TYPES</p>
+          <h1 class="mt-1.5 font-serif text-ink leading-[1.2] text-[16px] sm:text-[23px]" data-reveal="" data-i18n="hero.love">Learn to love<br>your hair even more</h1>
+          <p class="mt-1 font-serif text-gold leading-[0.96] text-[30px] sm:text-[45px]" style="letter-spacing:.02em;" data-reveal="" data-i18n="hero.hairId">Hair Type Diagnosis</p>
+          <p class="mt-2 text-[11.5px] sm:text-[13.5px] text-ink leading-[1.55]" data-reveal="" data-i18n="hero.diagLead">From your hair type and current condition, we suggest the care that suits you</p>
+          <div class="mt-3 sm:mt-4" data-reveal="">
+            <a href="/finder.html" class="lift inline-flex items-center gap-1.5 bg-mainBrown text-white rounded-full py-2 px-5 sm:py-2.5 sm:px-7 shadow-card hover:bg-cinnamon transition-colors">
+              <span class="font-serif text-[12px] sm:text-[15px] whitespace-nowrap" data-i18n="hero.ctaStart">Start the diagnosis</span>
+              <svg class="w-[13px] h-[13px] sm:w-[15px] sm:h-[15px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+            </a>
+            <p class="mt-1.5 text-[10.5px] sm:text-[12px] text-charcoal" data-i18n="hero.freeNote">The diagnosis is free</p>
+          </div>
         </div>
       </div>
     </div>
   </section>
-
-  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <!-- HERO COPY — 写真直下に美しく配列 -->
-  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="bg-white pt-5 sm:pt-9 pb-5 sm:pb-8 text-center">
-    <div class="max-w-2xl mx-auto px-6">
-      <p class="font-mono text-[10px] sm:text-[11px] tracking-widest2 text-gold uppercase" data-reveal="" data-i18n="hero.eyebrow">A hair-beauty select shop · flagship in Ginza</p>
-      <h2 class="mt-3 sm:mt-4 font-serif text-[24px] sm:text-[34px] text-ink leading-[1.3]" data-reveal="" data-i18n="hero.tagline">Where you meet the world's finest hair care</h2>
-      <p class="mt-3 text-[13px] sm:text-[14.5px] text-charcoal leading-[1.8] max-w-md mx-auto" data-reveal="" data-i18n="hero.lead">From 140+ salon-exclusive brands and professional expertise, we find the one that truly fits your hair</p>
-    </div>
+  <section class="bg-white pb-6 sm:pb-9">
     <!-- 人気商品オートスライド(オーナー指定14点) — 140ブランド文の直下=「知ってるあの一本がある」を一目で。見出し/診断行は付けない(直下のCTAが診断導線) -->
     <div class="pop-embed" data-track-view="hero_products" aria-label="SEAM取扱いの人気商品">
     <style>
@@ -565,65 +573,36 @@
       </ul>
       </div>
     </div>
-    <div class="max-w-2xl mx-auto px-6">
-      <a href="/finder.html" class="lift mt-5 sm:mt-6 inline-flex items-center gap-2 bg-mainBrown text-white rounded-full py-3 px-7 shadow-card hover:bg-cinnamon transition-colors" data-reveal="">
-        <span class="font-serif text-[14px] sm:text-[15px]" data-i18n="hero.ctaStart">Take the hair diagnosis</span>
-        <svg class="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-      </a>
-    </div>
   </section>
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- TRUST BAR — 着地直後の信頼/期待 -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="bg-cream/70 border-b border-line/60">
-    <div class="max-w-3xl mx-auto px-5 sm:px-8 py-3.5 sm:py-4 text-center">
-      <p class="font-serif text-[11.5px] sm:text-[13px] text-gold tracking-wide flex items-center justify-center gap-1.5"><span class="text-[10px]" aria-hidden="true">✦</span><span data-i18n="trust.award">KAMI CHARISMA Gold Award salon</span></p>
-      <div class="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[10.5px] sm:text-[12px] text-charcoal/75">
-        <span class="font-serif" data-i18n="trust.brands">140+ salon-exclusive brands</span>
-        <span class="w-px h-3 bg-line/80 shrink-0"></span>
-        <span class="font-serif" data-i18n="trust.authorized">Authorized official retailer</span>
-        <span class="w-px h-3 bg-line/80 shrink-0"></span>
-        <span class="font-serif" data-i18n="trust.diagnosis">Hair diagnosis · 27 types</span>
+  <section class="bg-cream/70 border-y border-line/60">
+    <div class="max-w-4xl mx-auto px-5 sm:px-8 py-5 sm:py-7">
+      <p class="text-center font-mono text-[9px] sm:text-[10px] tracking-widest2 text-gold uppercase mb-4" data-reveal="">Why SEAM</p>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3" data-reveal="">
+        <div class="flex flex-col items-center text-center gap-2 rounded-xl bg-white border border-line/60 px-2 py-3.5 shadow-card">
+          <svg class="w-7 h-7 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4M11 3v2.5c0 .5-.2 1-.6 1.4L9 8.5V20a1 1 0 001 1h4a1 1 0 001-1V8.5l-1.4-1.6c-.4-.4-.6-.9-.6-1.4V3"></path></svg>
+          <span class="font-serif text-[10.5px] sm:text-[12px] text-ink leading-tight" data-i18n="trust.brands">Salon-exclusive<br>140+ brands</span>
+        </div>
+        <div class="flex flex-col items-center text-center gap-2 rounded-xl bg-white border border-line/60 px-2 py-3.5 shadow-card">
+          <svg class="w-7 h-7 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.2-3 6.7-7 8-4-1.3-7-3.8-7-8V6z"></path><path d="M9 11.8l2 2 3.6-3.6"></path></svg>
+          <span class="font-serif text-[10.5px] sm:text-[12px] text-ink leading-tight" data-i18n="trust.authorized">Maker-authorized<br>official retailer</span>
+        </div>
+        <div class="flex flex-col items-center text-center gap-2 rounded-xl bg-white border border-line/60 px-2 py-3.5 shadow-card">
+          <svg class="w-7 h-7 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v5.5L5.6 17A2 2 0 007.4 20h9.2a2 2 0 001.8-3L14 8.5V3"></path><path d="M8.5 14h7"></path></svg>
+          <span class="font-serif text-[10.5px] sm:text-[12px] text-ink leading-tight" data-i18n="trust.develop">Co-develops with<br>major brands</span>
+        </div>
+        <div class="flex flex-col items-center text-center gap-2 rounded-xl bg-white border border-line/60 px-2 py-3.5 shadow-card">
+          <svg class="w-7 h-7 text-gold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"></circle><path d="M3.5 19.5c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"></path><path d="M15.5 5.3a3.2 3.2 0 010 5.4"></path><path d="M17 14.5c2.1.5 3.5 2.4 3.5 5"></path></svg>
+          <span class="font-serif text-[10.5px] sm:text-[12px] text-ink leading-tight" data-i18n="trust.members">Members<br>50,000<span class="text-gold">+</span></span>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <!-- PROOF STATS — 実数の信頼指標（診断完了はライブ集計・データが無い時は非表示） -->
-  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="bg-white pt-7 sm:pt-9">
-    <div class="max-w-2xl mx-auto px-6">
-      <div class="flex flex-wrap items-start justify-center gap-x-9 sm:gap-x-14 gap-y-4 text-center" data-reveal="">
-        <div class="min-w-[80px]">
-          <p class="font-serif text-[23px] sm:text-[29px] text-ink leading-none">50,000<span class="text-gold text-[15px] align-top">+</span></p>
-          <p class="mt-1.5 text-[10.5px] sm:text-[12px] text-charcoal/70">会員数</p>
-        </div>
-        <div class="min-w-[80px]">
-          <p class="font-serif text-[23px] sm:text-[29px] text-ink leading-none">99<span class="text-gold text-[15px] align-top">%</span></p>
-          <p class="mt-1.5 text-[10.5px] sm:text-[12px] text-charcoal/70">ご来店の方が会員</p>
-        </div>
-        <div id="diagStat" class="min-w-[80px]" hidden="">
-          <p class="font-serif text-[23px] sm:text-[29px] text-ink leading-none"><span id="diagCount">–</span></p>
-          <p class="mt-1.5 text-[10.5px] sm:text-[12px] text-charcoal/70">診断完了<span id="diagRateWrap"> ・ 完了率<span id="diagRate"></span>%</span></p>
-        </div>
-      </div>
-    </div>
-  </section>
-  <script>
-  (function(){
-    try{
-      fetch('/api/diagstat',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
-        if(!d || !(Number(d.completed)>0)) return;                 // 実データが無ければ何も出さない（＝嘘を出さない）
-        var box=document.getElementById('diagStat'); if(!box) return;
-        var c=document.getElementById('diagCount'); if(c) c.textContent=Number(d.completed).toLocaleString('ja-JP');
-        if(d.rate!=null){ var rr=document.getElementById('diagRate'); if(rr) rr.textContent=d.rate; }
-        else { var w=document.getElementById('diagRateWrap'); if(w) w.remove(); }  // 完了率は十分な母数がある時だけ
-        box.hidden=false;
-      }).catch(function(){});
-    }catch(e){}
-  })();
-  </script>
+  <!-- PROOF STATS（旧 99%来店率＋診断完了ライブ）は信頼バッジに集約のため削除 -->
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- SIGNATURE — 髪格診断を看板体験に (ヒーロー直下に昇格) -->
@@ -638,7 +617,7 @@
     <!-- 27宝石 自動マーキー (非操作の見せ場・旧 女性スキャン+diag2 を統合) -->
     <style>
       .gem-marquee{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);}
-      .gem-track{display:flex;gap:14px;width:max-content;padding:2px 0;list-style:none;margin:0;animation:gemScroll 40s linear infinite;will-change:transform;}
+      .gem-track{display:flex;gap:14px;width:max-content;padding:2px 0;list-style:none;margin:0;animation:gemScroll 146s linear infinite;will-change:transform;}
       .gem-marquee:hover .gem-track{animation-play-state:paused;}
       @keyframes gemScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
       @media (prefers-reduced-motion: reduce){.gem-track{animation:none;}.gem-marquee{overflow-x:auto;}.gem-marquee::-webkit-scrollbar{display:none}}
@@ -703,7 +682,6 @@
         <img src="/images/lp/services/service_01_finder.jpg?v=3" alt="髪格診断 — 私の髪を「知る」" class="w-full aspect-[8/3] object-cover" loading="lazy" decoding="async">
         <span class="absolute inset-0 pointer-events-none" style="background:linear-gradient(90deg,rgba(0,0,0,.86) 0%,rgba(0,0,0,.66) 42%,rgba(0,0,0,.24) 72%,rgba(0,0,0,0) 100%);"></span>
         <div class="absolute inset-0 p-4 sm:p-6 flex flex-col justify-center max-w-[66%]" style="text-shadow:0 2px 14px rgba(0,0,0,.72),0 1px 3px rgba(0,0,0,.6)">
-          <span class="font-serif text-[13px] sm:text-[16px] tracking-[0.12em]" style="color:#EBCF95;">01</span>
           <h3 class="font-serif text-white text-[21px] sm:text-[28px] leading-tight mt-0.5" data-i18n="services.01title">Hair Diagnosis</h3>
           <p class="text-white/90 text-[12.5px] sm:text-[14px] leading-snug mt-1" data-i18n="services.01desc">Know your hair</p>
         </div>
@@ -714,7 +692,6 @@
           <img src="/images/lp/services/service_02_shop.jpg?v=6" alt="ヘアケアショップ" class="w-full aspect-[4/3] object-cover" loading="lazy" decoding="async">
           <span class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/34 to-transparent pointer-events-none"></span>
           <div class="absolute inset-x-0 bottom-0 p-3.5 sm:p-4" style="text-shadow:0 1px 9px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.55)">
-            <span class="font-serif text-[12px] sm:text-[14px] tracking-[0.12em]" style="color:#EBCF95;">02</span>
             <h3 class="font-serif text-white text-[14.5px] sm:text-[18px] leading-[1.14] mt-0.5" data-i18n="services.02title">Hair Care Shop</h3>
             <p class="text-white/85 text-[10.5px] sm:text-[12px] leading-[1.35] mt-1" data-i18n="services.02desc">Expert-picked,<br>120 world brands</p>
           </div>
@@ -723,19 +700,30 @@
           <img src="/images/lp/services/service_03_online.jpg?v=6" alt="オンラインショップ" class="w-full aspect-[4/3] object-cover" loading="lazy" decoding="async">
           <span class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/34 to-transparent pointer-events-none"></span>
           <div class="absolute inset-x-0 bottom-0 p-3.5 sm:p-4" style="text-shadow:0 1px 9px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.55)">
-            <span class="font-serif text-[12px] sm:text-[14px] tracking-[0.12em]" style="color:#EBCF95;">03</span>
             <h3 class="font-serif text-white text-[14.5px] sm:text-[18px] leading-[1.14] mt-0.5" data-i18n="services.03title">Online Shop</h3>
             <p class="text-white/85 text-[10.5px] sm:text-[12px] leading-[1.35] mt-1" data-i18n="services.03desc">SEAM hair care,<br>delivered nationwide</p>
           </div>
         </a>
       </div>
-      <!-- 04 ヘアサロン / 05 ヘッドスパ -->
-      <div class="grid grid-cols-2 gap-3 sm:gap-4">
+      <!-- SALON & SPA — 受賞歴を添えたサロン紹介（旧04/05を昇格・上に余白） -->
+      <div class="mt-9 sm:mt-12 text-center" data-reveal="">
+        <p class="font-mono text-[10px] sm:text-[11px] tracking-widest2 text-gold uppercase mb-3">Salon &amp; Spa</p>
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
+          <span class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5" style="border:1px solid rgba(184,148,90,.42);background:rgba(184,148,90,.06);">
+            <svg class="w-[15px] h-[15px] text-gold shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.2"></circle><path d="M8.6 13.4L7 21l5-2.6L17 21l-1.6-7.6"></path></svg>
+            <span class="font-serif text-[11.5px] sm:text-[13px] text-ink" data-i18n="salonlead.award1">Gold Award winner</span>
+          </span>
+          <span class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5" style="border:1px solid rgba(184,148,90,.42);background:rgba(184,148,90,.06);">
+            <svg class="w-[15px] h-[15px] text-gold shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.2"></circle><path d="M8.6 13.4L7 21l5-2.6L17 21l-1.6-7.6"></path></svg>
+            <span class="font-serif text-[11.5px] sm:text-[13px] text-ink" data-i18n="salonlead.award2">Kami Charisma winner</span>
+          </span>
+        </div>
+      </div>
+      <div class="mt-4 sm:mt-5 grid grid-cols-2 gap-3 sm:gap-4">
         <a href="/hairsalon.html" data-track-view="salon_index_card" data-track-click="salon_index_card" class="lift group relative block rounded-[16px] overflow-hidden shadow-card">
           <img src="/images/lp/services/service_04_salon.jpg?v=6" alt="ヘアサロン" class="w-full aspect-[4/3] object-cover" loading="lazy" decoding="async">
           <span class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/34 to-transparent pointer-events-none"></span>
           <div class="absolute inset-x-0 bottom-0 p-3.5 sm:p-4" style="text-shadow:0 1px 9px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.55)">
-            <span class="font-serif text-[12px] sm:text-[14px] tracking-[0.12em]" style="color:#EBCF95;">04</span>
             <h3 class="font-serif text-white text-[14.5px] sm:text-[18px] leading-[1.14] mt-0.5" data-i18n="services.04title">Hair Salon</h3>
             <p class="text-white/85 text-[10.5px] sm:text-[12px] leading-[1.35] mt-1" data-i18n="services.04desc">Premium hair care<br>in private rooms</p>
           </div>
@@ -744,7 +732,6 @@
           <img src="/images/lp/services/service_05_spa.jpg?v=6" alt="ヘッドスパ" class="w-full aspect-[4/3] object-cover" loading="lazy" decoding="async">
           <span class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/34 to-transparent pointer-events-none"></span>
           <div class="absolute inset-x-0 bottom-0 p-3.5 sm:p-4" style="text-shadow:0 1px 9px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.55)">
-            <span class="font-serif text-[12px] sm:text-[14px] tracking-[0.12em]" style="color:#EBCF95;">05</span>
             <h3 class="font-serif text-white text-[14.5px] sm:text-[18px] leading-[1.14] mt-0.5" data-i18n="services.05title">Head Spa</h3>
             <p class="text-white/85 text-[10.5px] sm:text-[12px] leading-[1.35] mt-1" data-i18n="services.05desc">Deep relaxation<br>from the scalp up</p>
           </div>
@@ -851,75 +838,7 @@
   })();
   </script>
 
-  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <!-- SUMMER PICK — 夏のおすすめ（エニシー グローパック ジャンパーニュ） -->
-  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-  <section class="pt-9 sm:pt-14" data-track-view="summer_pick">
-    <div class="max-w-6xl mx-auto px-6 sm:px-8">
-      <div class="flex items-end justify-between mb-5 sm:mb-7">
-        <div>
-          <p class="font-mono text-[10px] sm:text-[11px] tracking-widest2 text-gold uppercase mb-1.5">Summer Pick</p>
-          <h2 class="font-serif text-[22px] sm:text-[28px] text-ink" style="letter-spacing:.04em;" data-i18n="summer.title">Summer Pick</h2>
-        </div>
-        <span class="font-mono text-[11px] sm:text-[12px] text-charcoal/70 tracking-wider pb-1">2026 SUMMER</span>
-      </div>
 
-      <style>
-        /* SEAMはtailwind.css事前コンパイル配信のためmd:grid-cols-2等の新規クラスがパージされる。パージ非依存で2カラム化 */
-        @media(min-width:768px){
-          #summerPickCard{display:grid;grid-template-columns:1fr 1fr;align-items:stretch;}
-          #summerPickCard>.sp-media{aspect-ratio:auto;height:100%;min-height:360px;}
-        }
-      </style>
-      <div id="summerPickCard" data-reveal="" class="overflow-hidden rounded-[20px] bg-white border border-line/60 shadow-card md:grid md:grid-cols-2">
-        <!-- image -->
-        <div class="sp-media relative aspect-[3/2] md:aspect-auto md:min-h-[430px] overflow-hidden bg-cream">
-          <picture>
-            <source srcset="/images/lp/summer_enisie_glow.webp" type="image/webp">
-            <img src="/images/lp/summer_enisie_glow.jpg" alt="エニシー グローパック ジャンパーニュ／炭酸ジェルのイメージ" class="absolute inset-0 w-full h-full object-cover" loading="lazy" decoding="async">
-          </picture>
-          <span class="absolute top-4 left-4 inline-flex items-center gap-1.5 bg-white/90 backdrop-blur-sm rounded-full pl-2 pr-3 py-1.5 shadow-card">
-            <span class="w-1.5 h-1.5 rounded-full" style="background:#B8945A;"></span>
-            <span class="font-mono text-[10px] tracking-widest2 text-ink uppercase" data-i18n="summer.badge">CO₂ Gel Mask</span>
-          </span>
-        </div>
-
-        <!-- content -->
-        <div class="p-6 sm:p-9 flex flex-col justify-center">
-          <p class="font-mono text-[10.5px] tracking-widest2 text-gold uppercase">enisie ／ エニシー</p>
-          <h3 class="mt-2 font-serif text-[21px] sm:text-[25px] text-ink leading-[1.4]">グローパック ジャンパーニュ</h3>
-
-          <div class="flex flex-wrap items-center gap-2 mt-3">
-            <span class="inline-flex items-center rounded-full border border-line px-3 py-1 text-[11px] text-charcoal" data-i18n="summer.uses">7 uses</span>
-            <span class="inline-flex items-baseline rounded-full border border-line px-3 py-1 text-[11px] text-ink">¥13,860 <span class="ml-1 text-[9.5px] text-charcoal/60">税込</span></span>
-            <span class="inline-flex items-center rounded-full bg-cream border border-line/60 px-3 py-1 text-[11px] text-charcoal" data-i18n="summer.special">Once-a-week special care</span>
-          </div>
-
-          <p class="mt-5 font-serif text-[16px] sm:text-[17px] text-ink leading-[1.9]" data-i18n="summer.lead">“Since when was a carbonated mask this good?” — fine golden bubbles, the moment you mix it.</p>
-          <p class="mt-3 text-[13px] sm:text-[13.5px] text-charcoal leading-[1.95]" data-i18n="summer.body">A freshly mixed CO₂ gel mask you blend on the spot from gel and powder. The dewy gel hugs your skin for about 20 minutes, then lifts off in one clean motion, leaving it soft and supple. For summer skin worn down by air-conditioning and UV — a once-a-week reward.</p>
-
-          <div class="mt-4 rounded-[14px] bg-cream/70 border border-line/50 p-3.5">
-            <p class="font-mono text-[9.5px] tracking-widest2 text-gold uppercase mb-1.5" data-i18n="summer.ingLabel">Beauty ingredients in Jampagne</p>
-            <p class="text-[12px] text-charcoal leading-[1.9]">リンゴ果実培養細胞エキス・シン-TC・エーデルワイス成長点細胞培養物・メロン胎座エキス</p>
-          </div>
-
-          <p class="mt-3 text-[11.5px] text-charcoal/80 leading-[1.8]" data-i18n="summer.how">How to ｜ Mix ~30s → Apply ~20 min → Peel off</p>
-
-          <div class="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
-            <a href="/skinfinder.html" data-track-click="summer_finder" class="lift inline-flex items-center gap-2 bg-mainBrown text-white rounded-full py-3 px-6 text-[13.5px] font-serif">
-              <span data-i18n="summer.cta">Find your summer care with the skin diagnosis</span>
-              <svg class="ashift w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-            </a>
-            <a href="/shop.html#stores" data-track-click="summer_store" class="group inline-flex items-center gap-1.5 text-[12.5px] text-gold">
-              <span data-i18n="summer.store">See where to buy</span>
-              <svg class="ashift w-[13px] h-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
-            </a>
-          </div>
-          <p class="mt-3 text-[11px] text-charcoal/60 leading-[1.7]" data-i18n="summer.note">Available at SEAM stores &amp; online shop (members) ／ Cosmetic</p>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- BRANDS — logo row -->
@@ -947,18 +866,18 @@
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <section class="pt-9 sm:pt-14">
     <div class="max-w-6xl mx-auto px-5 sm:px-8">
-      <a href="/onlineshop.html" class="lift group block relative overflow-hidden rounded-[20px]" style="background:#1A1714;">
+      <a href="/onlineshop.html" class="lift group block relative overflow-hidden rounded-[20px]" style="background:#15120E;">
         <picture>
           <source srcset="/images/lp/generated/brand_kerastase_chrono.avif" type="image/avif">
-          <img src="/images/lp/generated/brand_kerastase_chrono.jpg" alt="" aria-hidden="true" class="absolute inset-0 w-full h-full object-cover" style="object-position:78% center;" loading="lazy" decoding="async">
+          <img src="/images/lp/generated/brand_kerastase_chrono.jpg" alt="" aria-hidden="true" class="absolute inset-0 w-full h-full object-cover" style="object-position:86% center;" loading="lazy" decoding="async">
         </picture>
-        <div class="absolute inset-0" style="background:linear-gradient(100deg,rgba(20,18,16,.94) 0%,rgba(20,18,16,.78) 42%,rgba(20,18,16,.32) 72%,rgba(20,18,16,.08) 100%);"></div>
-        <div class="relative z-10 p-6 sm:p-9 max-w-[72%] sm:max-w-[60%] min-h-[148px] flex flex-col justify-center">
+        <div class="absolute inset-0" style="background:linear-gradient(93deg,rgba(17,14,9,.97) 0%,rgba(17,14,9,.95) 50%,rgba(17,14,9,.72) 74%,rgba(17,14,9,.2) 100%);"></div>
+        <div class="relative z-10 p-6 sm:p-9 max-w-[82%] sm:max-w-[62%] min-h-[152px] flex flex-col justify-center">
           <span class="inline-flex self-start items-center font-mono text-[9.5px] tracking-widest2 uppercase text-goldLight border border-goldLight/45 rounded-full px-3 py-1" data-i18n="members.badge">Members Only</span>
-          <h2 class="mt-3 font-serif text-[21px] sm:text-[27px] text-white leading-[1.4]" data-i18n="members.title">A private hair-care vault<br>for those who visited</h2>
-          <p class="mt-2 text-[12px] sm:text-[13.5px] leading-[1.7] text-white/70" data-i18n="members.sub">Salon-exclusive brands at member prices — the only door is registering in store</p>
+          <h2 class="mt-3.5 font-serif text-[19px] sm:text-[27px] text-white leading-[1.4]" style="letter-spacing:.02em;" data-i18n="members.title">Members-only<br>online shop</h2>
+          <p class="mt-2 text-[12px] sm:text-[13.5px] leading-[1.7] text-white/85" data-i18n="members.sub">Salon-exclusive brands at member prices<br>Register in store to join</p>
         </div>
-        <span class="absolute right-5 bottom-5 sm:right-7 sm:bottom-7 z-10 w-11 h-11 rounded-full bg-gold text-white flex items-center justify-center shadow-card"><svg class="ashift w-[16px] h-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+        <span class="absolute right-5 bottom-5 sm:right-8 sm:bottom-8 z-10 w-11 h-11 rounded-full bg-gold text-white flex items-center justify-center shadow-card"><svg class="ashift w-[16px] h-[16px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
       </a>
     </div>
   </section>
@@ -1132,7 +1051,7 @@
         'nav.salon': 'ヘアサロン',
         'nav.headspa': 'ヘッドスパ',
         'sale.off': '最大30%OFF',
-        'sale.scope': 'オンラインショップ・全店舗で開催中',
+        'sale.scope': 'オンラインショップも同時開催',
         'sale.until': '7.31まで',
         'nav.online': 'オンラインショップ',
         'cta.finder': '髪格診断を始める',
@@ -1234,6 +1153,12 @@
         ,'services.title': 'あなたの髪に、できること'
         ,'hero.tagline': '世界中のヘアケアと出会える場所'
         ,'hero.eyebrow': '銀座に旗艦店を構える、ヘアビューティーセレクトショップ'
+        ,'hero.dEyebrow': 'HAIR TYPE DIAGNOSIS ・ 27 TYPES'
+        ,'hero.love': 'あなたの髪を、<br>もっと好きになる'
+        ,'hero.hairId': '髪格診断'
+        ,'hero.diagLead': '髪質と今の髪状態から、あなたに合うヘアケアをご提案します'
+        ,'hero.freeNote': '診断は無料でできます'
+        ,'hero.gemBadge': '27パターンの<br>髪格タイプで診断'
         ,'hero.lead': '140を超えるサロン専売ブランドと、髪のプロの知識から、あなたの髪に本当に合う一本を提案します'
         ,'trust.award': 'ゴールドアワード・カミカリスマ受賞サロン'
         ,'sig.proof': '会員登録なし・サロンでも使えるカルテ'
@@ -1244,23 +1169,14 @@
         ,'sig.frag3': '表面の傷みより 内側が空洞化しはじめているタイプ'
         ,'sig.swipe': '← スワイプして27タイプを見る →'
         ,'hero.cta': '私の髪格を診断する'
-        ,'hero.ctaStart': '髪格診断をする'
-        ,'trust.brands': 'サロン専売 140+ブランド'
-        ,'trust.authorized': 'メーカー公認 正規取扱店'
+        ,'hero.ctaStart': '今すぐ診断をはじめる'
+        ,'trust.brands': 'サロン専売<br>140+ブランド'
+        ,'trust.authorized': 'メーカー公認<br>正規取扱店'
+        ,'trust.develop': '有名ブランド<br>開発協力サロン'
+        ,'trust.members': '会員数<br>50,000<span class="text-gold">+</span>'
         ,'trust.diagnosis': '髪格診断 27タイプ'
         ,'ranking.title': '今月の人気ランキング'
         ,'ranking.cta': '取扱ブランドを見る'
-        ,'summer.title': '夏のおすすめ'
-        ,'summer.badge': '炭酸ガスパック'
-        ,'summer.uses': '7回分'
-        ,'summer.special': '週1のスペシャルケア'
-        ,'summer.lead': '「炭酸パックって、こんなに気持ちよかった？」——混ぜた瞬間から、こまかな金色の泡。'
-        ,'summer.body': 'ジェルと粉を、その場で混ぜてつくる“できたて”の炭酸ガスパック。みずみずしいジェルが約20分ぴたっと密着して、するりとオフ。あとは、しっとり、もっちり。冷房とUVでゆらぎがちな夏こそ、週に一度のごほうびに。'
-        ,'summer.ingLabel': 'ジャンパーニュの美容成分'
-        ,'summer.how': '使い方｜混ぜて約30秒 → 顔にのせて約20分 → するりとオフ'
-        ,'summer.cta': '肌診断で夏のケアを見つける'
-        ,'summer.store': '取扱店舗を見る'
-        ,'summer.note': 'SEAM各店・オンラインショップ（会員）でお取り扱い ／ 化粧品'
         ,'services.01title': '髪格診断'
         ,'services.01desc': '私の髪を「知る」'
         ,'services.02title': 'ヘアケアショップ'
@@ -1270,6 +1186,8 @@
         ,'services.04title': 'ヘアサロン'
         ,'services.04desc': '完全個室で受ける<br>プレミアムケア'
         ,'services.05title': 'ヘッドスパ'
+        ,'salonlead.award1': 'ゴールドアワード受賞'
+        ,'salonlead.award2': 'カミカリスマ受賞'
         ,'services.05desc': '頭皮から整える<br>極上のリラックス体験'
         ,'about.title': 'SEAMとは'
         ,'about.lead': 'ヘアケアのプロが選ぶ<br>髪質別のヘアケアショップ'
@@ -1284,8 +1202,8 @@
         ,'diag2.step3': '結果をチェック'
         ,'brands.title': '取扱ブランド'
         ,'brands.viewAll': '詳しく見る'
-        ,'members.title': '来店した人だけの<br>ヘアケア特別室'
-        ,'members.sub': 'サロン専売品を 会員価格で ／ 入口は 店舗での登録だけ'
+        ,'members.title': 'メンバー限定<br>オンラインショップ'
+        ,'members.sub': 'サロン専売品を会員価格で<br>ご登録は店頭のみ'
         ,'salon.listTitle': 'サロン一覧'
         ,'salon.viewAll': 'すべての店舗を見る'
         ,'store.ginzaAddr': '東京都中央区銀座1-8-19'
@@ -1310,7 +1228,7 @@
         'nav.salon': 'Hair Salon',
         'nav.headspa': 'Head Spa',
         'sale.off': 'Up to 30% OFF',
-        'sale.scope': 'Online shop & all stores',
+        'sale.scope': 'Also on at the online shop',
         'sale.until': 'Until Jul 31',
         'nav.online': 'Online Shop',
         'cta.finder': 'Start Your Hair Diagnosis',
@@ -1412,6 +1330,12 @@
         ,'services.title': 'For your hair'
         ,'hero.tagline': 'Where you meet the world&#39;s finest hair care'
         ,'hero.eyebrow': 'A hair-beauty select shop · flagship in Ginza'
+        ,'hero.dEyebrow': 'HAIR TYPE DIAGNOSIS ・ 27 TYPES'
+        ,'hero.love': 'Learn to love<br>your hair even more'
+        ,'hero.hairId': 'Hair Type Diagnosis'
+        ,'hero.diagLead': 'From your hair type and current condition, we suggest the care that suits you'
+        ,'hero.freeNote': 'The diagnosis is free'
+        ,'hero.gemBadge': '27 hair-type<br>patterns'
         ,'hero.lead': 'From 140+ salon-exclusive brands and professional expertise, we find the one that truly fits your hair'
         ,'trust.award': 'KAMI CHARISMA Gold Award salon'
         ,'sig.proof': 'No sign-up · a karte you can use at the salon'
@@ -1422,23 +1346,14 @@
         ,'sig.frag3': 'The type whose inside is starting to hollow out, more than surface damage shows'
         ,'sig.swipe': '← Swipe through all 27 types →'
         ,'hero.cta': 'Diagnose my hair type'
-        ,'hero.ctaStart': 'Take the hair diagnosis'
-        ,'trust.brands': '140+ salon-exclusive brands'
-        ,'trust.authorized': 'Authorized official retailer'
+        ,'hero.ctaStart': 'Start the diagnosis'
+        ,'trust.brands': 'Salon-exclusive<br>140+ brands'
+        ,'trust.authorized': 'Maker-authorized<br>official retailer'
+        ,'trust.develop': 'Co-develops with<br>major brands'
+        ,'trust.members': 'Members<br>50,000<span class="text-gold">+</span>'
         ,'trust.diagnosis': 'Hair diagnosis · 27 types'
         ,'ranking.title': 'Popular this month'
         ,'ranking.cta': 'Browse all brands'
-        ,'summer.title': 'Summer Pick'
-        ,'summer.badge': 'CO₂ Gel Mask'
-        ,'summer.uses': '7 uses'
-        ,'summer.special': 'Once-a-week special care'
-        ,'summer.lead': '“Since when was a carbonated mask this good?” — fine golden bubbles, the moment you mix it.'
-        ,'summer.body': 'A freshly mixed CO₂ gel mask you blend on the spot from gel and powder. The dewy gel hugs your skin for about 20 minutes, then lifts off in one clean motion, leaving it soft and supple. For summer skin worn down by air-conditioning and UV — a once-a-week reward.'
-        ,'summer.ingLabel': 'Beauty ingredients in Jampagne'
-        ,'summer.how': 'How to ｜ Mix ~30s → Apply ~20 min → Peel off'
-        ,'summer.cta': 'Find your summer care with the skin diagnosis'
-        ,'summer.store': 'See where to buy'
-        ,'summer.note': 'Available at SEAM stores & online shop (members) ／ Cosmetic'
         ,'services.01title': 'Hair Diagnosis'
         ,'services.01desc': 'Know your hair'
         ,'services.02title': 'Hair Care Shop'
@@ -1448,6 +1363,8 @@
         ,'services.04title': 'Hair Salon'
         ,'services.04desc': 'Premium hair care<br>in private rooms'
         ,'services.05title': 'Head Spa'
+        ,'salonlead.award1': 'Gold Award winner'
+        ,'salonlead.award2': 'Kami Charisma winner'
         ,'services.05desc': 'Deep relaxation<br>from the scalp up'
         ,'about.title': 'About SEAM'
         ,'about.lead': 'A hair care shop curated by professionals,<br>organized by hair type'
@@ -1462,8 +1379,8 @@
         ,'diag2.step3': 'Check results'
         ,'brands.title': 'Our Brands'
         ,'brands.viewAll': 'View all'
-        ,'members.title': 'A private hair-care vault<br>for those who visited'
-        ,'members.sub': 'Salon-exclusive brands at member prices — the only door is registering in store'
+        ,'members.title': 'Members-only<br>online shop'
+        ,'members.sub': 'Salon-exclusive brands at member prices<br>Register in store to join'
         ,'salon.listTitle': 'Our Salons'
         ,'salon.viewAll': 'View all stores'
         ,'store.ginzaAddr': 'Ginza 1-8-19, Chuo, Tokyo'
@@ -1488,7 +1405,7 @@
         'nav.salon': '美发沙龙',
         'nav.headspa': '头疗',
         'sale.off': '最高30%OFF',
-        'sale.scope': '线上商店・全门店同步举行',
+        'sale.scope': '线上商店同步进行中',
         'sale.until': '至7/31',
         'nav.online': '在线商店',
         'cta.finder': '开始发质诊断',
@@ -1590,6 +1507,12 @@
         ,'services.title': '为你的秀发'
         ,'hero.tagline': '邂逅世界各地护发的地方'
         ,'hero.eyebrow': '银座旗舰店 · 美发美妆甄选店'
+        ,'hero.dEyebrow': '发格诊断 · 27种类型'
+        ,'hero.love': '让你更喜欢<br>自己的头发'
+        ,'hero.hairId': '发格诊断'
+        ,'hero.diagLead': '根据发质与当前发丝状态 为你推荐合适的护理'
+        ,'hero.freeNote': '诊断完全免费'
+        ,'hero.gemBadge': '27种发格类型<br>诊断'
         ,'hero.lead': '从140多个沙龙专售品牌与美发专家的知识中，为你找到真正适合的那一支'
         ,'trust.award': 'KAMI CHARISMA 金奖获奖沙龙'
         ,'sig.proof': '无需注册 · 沙龙也能用的发质档案'
@@ -1600,23 +1523,14 @@
         ,'sig.frag3': '比起表面的损伤 内部已开始空洞化的类型'
         ,'sig.swipe': '← 滑动查看全部27种类型 →'
         ,'hero.cta': '诊断我的发质类型'
-        ,'hero.ctaStart': '进行发质诊断'
-        ,'trust.brands': '140+ 沙龙专售品牌'
-        ,'trust.authorized': '厂商公认 正规授权店'
+        ,'hero.ctaStart': '立即开始诊断'
+        ,'trust.brands': '沙龙专供<br>140+品牌'
+        ,'trust.authorized': '厂商公认<br>正规经销店'
+        ,'trust.develop': '知名品牌<br>研发协力沙龙'
+        ,'trust.members': '会员数<br>50,000<span class="text-gold">+</span>'
         ,'trust.diagnosis': '发质诊断 27型'
         ,'ranking.title': '本月人气排行'
         ,'ranking.cta': '查看全部品牌'
-        ,'summer.title': '夏日精选'
-        ,'summer.badge': '碳酸凝胶面膜'
-        ,'summer.uses': '7次用量'
-        ,'summer.special': '每周一次的特别护理'
-        ,'summer.lead': '“原来碳酸面膜可以这么舒服？”——调和的瞬间，细腻的金色气泡随之升起。'
-        ,'summer.body': '将凝胶与粉末现场调和而成的“新鲜”碳酸凝胶面膜。水润的凝胶贴合肌肤约20分钟，一揭而下，留下柔润饱满的触感。在空调与紫外线让肌肤易感疲惫的夏天，作为每周一次的犒赏。'
-        ,'summer.ingLabel': 'Jampagne 的美容成分'
-        ,'summer.how': '用法｜调和约30秒 → 敷约20分钟 → 轻松揭下'
-        ,'summer.cta': '用肌肤诊断找到你的夏日护理'
-        ,'summer.store': '查看销售门店'
-        ,'summer.note': '于SEAM各店・网店（会员）有售 ／ 化妆品'
         ,'services.01title': '发质诊断'
         ,'services.01desc': '了解你的发质'
         ,'services.02title': '护发商店'
@@ -1626,6 +1540,8 @@
         ,'services.04title': '美发沙龙'
         ,'services.04desc': '在完全包房<br>享受顶级护发'
         ,'services.05title': '头皮养护'
+        ,'salonlead.award1': '金奖得主'
+        ,'salonlead.award2': 'Kami Charisma 得主'
         ,'services.05desc': '从头皮调理<br>极致放松体验'
         ,'about.title': '关于SEAM'
         ,'about.lead': '由专业人士甄选<br>按发质分类的护发商店'
@@ -1640,8 +1556,8 @@
         ,'diag2.step3': '查看结果'
         ,'brands.title': '甄选品牌'
         ,'brands.viewAll': '了解更多'
-        ,'members.title': '到店者专属的<br>护发密室'
-        ,'members.sub': '沙龙专供品 以会员价 ／ 入口只有 到店登记'
+        ,'members.title': '会员专属<br>线上商店'
+        ,'members.sub': '沙龙专供品以会员价<br>仅限到店登记'
         ,'salon.listTitle': '沙龙一览'
         ,'salon.viewAll': '查看所有门店'
         ,'store.ginzaAddr': '东京都中央区银座1-8-19'
@@ -1666,7 +1582,7 @@
         'nav.salon': '美髮沙龍',
         'nav.headspa': '頭皮SPA',
         'sale.off': '最高30%OFF',
-        'sale.scope': '線上商店・全門店同步舉行',
+        'sale.scope': '線上商店同步進行中',
         'sale.until': '至7/31',
         'nav.online': '線上商店',
         'cta.finder': '開始髮質診斷',
@@ -1768,6 +1684,12 @@
         ,'services.title': '為你的秀髮'
         ,'hero.tagline': '邂逅世界各地護髮的地方'
         ,'hero.eyebrow': '銀座旗艦店 · 美髮美妝甄選店'
+        ,'hero.dEyebrow': '髮格診斷 · 27種類型'
+        ,'hero.love': '讓你更喜歡<br>自己的頭髮'
+        ,'hero.hairId': '髮格診斷'
+        ,'hero.diagLead': '依髮質與目前髮絲狀態 為你推薦合適的護理'
+        ,'hero.freeNote': '診斷完全免費'
+        ,'hero.gemBadge': '27種髮格類型<br>診斷'
         ,'hero.lead': '從140多個沙龍專售品牌與美髮專家的知識中，為你找到真正適合的那一支'
         ,'trust.award': 'KAMI CHARISMA 金獎獲獎沙龍'
         ,'sig.proof': '無需註冊 · 沙龍也能用的髮質檔案'
@@ -1778,23 +1700,14 @@
         ,'sig.frag3': '比起表面的損傷 內部已開始空洞化的類型'
         ,'sig.swipe': '← 滑動查看全部27種類型 →'
         ,'hero.cta': '診斷我的髮質類型'
-        ,'hero.ctaStart': '進行髮質診斷'
-        ,'trust.brands': '140+ 沙龍專售品牌'
-        ,'trust.authorized': '原廠公認 正規授權店'
+        ,'hero.ctaStart': '立即開始診斷'
+        ,'trust.brands': '沙龍專供<br>140+品牌'
+        ,'trust.authorized': '廠商公認<br>正規經銷店'
+        ,'trust.develop': '知名品牌<br>研發協力沙龍'
+        ,'trust.members': '會員數<br>50,000<span class="text-gold">+</span>'
         ,'trust.diagnosis': '髮質診斷 27型'
         ,'ranking.title': '本月人氣排行'
         ,'ranking.cta': '查看全部品牌'
-        ,'summer.title': '夏日精選'
-        ,'summer.badge': '碳酸凝膠面膜'
-        ,'summer.uses': '7次用量'
-        ,'summer.special': '每週一次的特別護理'
-        ,'summer.lead': '「原來碳酸面膜可以這麼舒服？」——調和的瞬間，細緻的金色氣泡隨之升起。'
-        ,'summer.body': '將凝膠與粉末現場調和而成的「現做」碳酸凝膠面膜。水潤的凝膠貼合肌膚約20分鐘，一撕而下，留下柔潤飽滿的觸感。在冷氣與紫外線讓肌膚容易疲憊的夏天，作為每週一次的犒賞。'
-        ,'summer.ingLabel': 'Jampagne 的美容成分'
-        ,'summer.how': '用法｜調和約30秒 → 敷約20分鐘 → 輕鬆撕下'
-        ,'summer.cta': '用肌膚診斷找到你的夏日保養'
-        ,'summer.store': '查看銷售門市'
-        ,'summer.note': '於SEAM各店・網路商店（會員）販售 ／ 化妝品'
         ,'services.01title': '髮質診斷'
         ,'services.01desc': '了解你的髮質'
         ,'services.02title': '護髮商店'
@@ -1804,6 +1717,8 @@
         ,'services.04title': '美髮沙龍'
         ,'services.04desc': '在完全包廂<br>享受頂級護髮'
         ,'services.05title': '頭皮養護'
+        ,'salonlead.award1': '金獎得主'
+        ,'salonlead.award2': 'Kami Charisma 得主'
         ,'services.05desc': '從頭皮調理<br>極致放鬆體驗'
         ,'about.title': '關於SEAM'
         ,'about.lead': '由專業人士嚴選<br>依髮質分類的護髮商店'
@@ -1818,8 +1733,8 @@
         ,'diag2.step3': '查看結果'
         ,'brands.title': '甄選品牌'
         ,'brands.viewAll': '了解更多'
-        ,'members.title': '到店者專屬的<br>護髮密室'
-        ,'members.sub': '沙龍專供品 以會員價 ／ 入口只有 到店登記'
+        ,'members.title': '會員專屬<br>線上商店'
+        ,'members.sub': '沙龍專供品以會員價<br>僅限到店登記'
         ,'salon.listTitle': '沙龍一覽'
         ,'salon.viewAll': '查看所有門市'
         ,'store.ginzaAddr': '東京都中央區銀座1-8-19'
@@ -1844,7 +1759,7 @@
         'nav.salon': '헤어살롱',
         'nav.headspa': '헤드스파',
         'sale.off': '최대 30% OFF',
-        'sale.scope': '온라인 스토어・전 매장 동시 진행',
+        'sale.scope': '온라인숍도 동시 진행',
         'sale.until': '7/31까지',
         'nav.online': '온라인 스토어',
         'cta.finder': '모발 진단 시작하기',
@@ -1946,6 +1861,12 @@
         ,'services.title': '당신의 머릿결을 위해'
         ,'hero.tagline': '전 세계의 헤어케어를 만나는 곳'
         ,'hero.eyebrow': '긴자 플래그십 · 헤어뷰티 셀렉트숍'
+        ,'hero.dEyebrow': '헤어 타입 진단 · 27타입'
+        ,'hero.love': '내 머리카락을<br>더 좋아하게'
+        ,'hero.hairId': '헤어 타입 진단'
+        ,'hero.diagLead': '모발 특성과 현재 상태로부터 당신에게 맞는 케어를 제안합니다'
+        ,'hero.freeNote': '진단은 무료입니다'
+        ,'hero.gemBadge': '27가지<br>헤어 타입 진단'
         ,'hero.lead': '140개가 넘는 살롱 전용 브랜드와 헤어 전문가의 지식으로, 당신의 머릿결에 진짜 맞는 한 병을 제안합니다'
         ,'trust.award': 'KAMI CHARISMA 골드 어워드 수상 살롱'
         ,'sig.proof': '회원가입 불필요 · 살롱에서도 쓰는 카르테'
@@ -1956,23 +1877,14 @@
         ,'sig.frag3': '표면의 손상보다 안쪽이 비어 가기 시작한 타입'
         ,'sig.swipe': '← 스와이프해 27가지 타입 보기 →'
         ,'hero.cta': '내 모발 타입 진단하기'
-        ,'hero.ctaStart': '모발 진단 받기'
-        ,'trust.brands': '살롱 전용 140+ 브랜드'
-        ,'trust.authorized': '제조사 공인 정규 취급점'
+        ,'hero.ctaStart': '지금 바로 진단 시작'
+        ,'trust.brands': '살롱 전용<br>140+ 브랜드'
+        ,'trust.authorized': '제조사 공인<br>정규 취급점'
+        ,'trust.develop': '유명 브랜드<br>개발 협력 살롱'
+        ,'trust.members': '회원 수<br>50,000<span class="text-gold">+</span>'
         ,'trust.diagnosis': '모발 진단 27타입'
         ,'ranking.title': '이달의 인기 랭킹'
         ,'ranking.cta': '전체 브랜드 보기'
-        ,'summer.title': '여름 추천'
-        ,'summer.badge': '탄산 젤 팩'
-        ,'summer.uses': '7회분'
-        ,'summer.special': '주 1회 스페셜 케어'
-        ,'summer.lead': '“탄산 팩이 이렇게 기분 좋았나?” — 섞는 순간부터 피어오르는 고운 금빛 거품.'
-        ,'summer.body': '젤과 파우더를 그 자리에서 섞어 만드는 ‘갓 만든’ 탄산 젤 팩. 촉촉한 젤이 약 20분 밀착한 뒤 스르륵 벗겨지고, 부드럽고 탱탱한 감촉이 남습니다. 냉방과 자외선으로 지치기 쉬운 여름, 주 1회의 보상으로.'
-        ,'summer.ingLabel': '잠파뉴의 미용 성분'
-        ,'summer.how': '사용법｜섞어서 약 30초 → 올리고 약 20분 → 스르륵 오프'
-        ,'summer.cta': '피부 진단으로 여름 케어 찾기'
-        ,'summer.store': '취급 매장 보기'
-        ,'summer.note': '전국 SEAM 매장・온라인숍(회원) 취급 ／ 화장품'
         ,'services.01title': '모발 진단'
         ,'services.01desc': '내 머릿결을 알다'
         ,'services.02title': '헤어케어 숍'
@@ -1982,6 +1894,8 @@
         ,'services.04title': '헤어 살롱'
         ,'services.04desc': '완전 개인실에서 받는<br>프리미엄 케어'
         ,'services.05title': '헤드 스파'
+        ,'salonlead.award1': '골드 어워드 수상'
+        ,'salonlead.award2': '카미 카리스마 수상'
         ,'services.05desc': '두피부터 가다듬는<br>최상의 릴랙스 경험'
         ,'about.title': 'SEAM 소개'
         ,'about.lead': '전문가가 고르는<br>모발별 헤어케어 숍'
@@ -1996,8 +1910,8 @@
         ,'diag2.step3': '결과 확인'
         ,'brands.title': '취급 브랜드'
         ,'brands.viewAll': '자세히 보기'
-        ,'members.title': '방문한 분만의<br>헤어케어 특별실'
-        ,'members.sub': '살롱 전용 제품을 회원가로 ／ 입구는 매장 등록뿐'
+        ,'members.title': '멤버 전용<br>온라인숍'
+        ,'members.sub': '살롱 전용 제품을 회원가로<br>등록은 매장에서만'
         ,'salon.listTitle': '살롱 목록'
         ,'salon.viewAll': '모든 매장 보기'
         ,'store.ginzaAddr': '도쿄도 주오구 긴자 1-8-19'
