@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#FBF8F2">
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<title>SEAM｜Googleビジネスプロフィール 運用指示書</title>
+<style>
+  :root{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+    --shadow:0 1px 2px rgba(60,46,20,.05),0 8px 30px rgba(60,46,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+      --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+      --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+  }
+  :root[data-theme="dark"]{
+    --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+    --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+    --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+    font-size:15px; line-height:1.85; letter-spacing:.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 22px 90px;}
+  .serif{font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  /* ── masthead ── */
+  .mast{border-bottom:1.5px solid var(--ink); padding-bottom:22px; margin-bottom:8px;}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; letter-spacing:.42em; font-size:15px; color:var(--ink); font-weight:600;}
+  .kicker{font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-top:20px;}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:29px; line-height:1.35; margin:.24em 0 0; text-wrap:balance; letter-spacing:.02em;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:12px; line-height:1.9;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:16px; font-size:11.5px; color:var(--faint); font-family:ui-monospace,monospace; letter-spacing:.04em;}
+
+  /* ── intro card ── */
+  .lead{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-top:26px; box-shadow:var(--shadow); font-size:14px; line-height:2;}
+  .lead b{color:var(--gold);}
+  .lead .why{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted);}
+
+  /* ── section ── */
+  section{margin-top:46px;}
+  .eyebrow{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:10px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+  h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:21px; margin:12px 0 4px; letter-spacing:.02em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:13px; margin:0 0 18px;}
+
+  /* ── field list ── */
+  .field{display:flex; gap:15px; padding:17px 0; border-top:1px solid var(--line2);}
+  .field:first-of-type{border-top:0;}
+  .fnum{flex:none; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--gold); color:var(--gold); font-family:ui-monospace,monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .fbody{min-width:0; flex:1;}
+  .fname{font-weight:700; font-size:14.5px; color:var(--ink);}
+  .fname .req{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; color:#fff; background:var(--gold); border-radius:3px; padding:2px 6px; margin-left:8px; vertical-align:2px; font-weight:600;}
+  .fdesc{font-size:13px; color:var(--muted); line-height:1.95; margin-top:5px;}
+  .fdesc strong{color:var(--ink); font-weight:600;}
+
+  /* ── paste block ── */
+  .paste{position:relative; background:var(--paste); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px; padding:14px 15px 15px; margin-top:11px;}
+  .paste .lbl{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:8px;}
+  .paste p{margin:0; font-size:13px; line-height:1.95; color:var(--ink); white-space:pre-wrap;}
+  .paste .var{color:var(--bad); font-weight:600;}
+  .copybtn{position:absolute; top:11px; right:11px; font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.08em; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer; transition:all .15s;}
+  .copybtn:hover{color:var(--ink); border-color:var(--gold);}
+  .copybtn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .qa{margin-top:9px;}
+  .qa .q{font-weight:700; font-size:13px; color:var(--ink);}
+  .qa .q::before{content:"Q. "; color:var(--gold); font-family:ui-monospace,monospace;}
+  .qa .a{font-size:12.5px; color:var(--muted); line-height:1.9; margin:2px 0 12px; padding-left:1.4em;}
+  .qa .a::before{content:"A. "; color:var(--faint); font-family:ui-monospace,monospace; margin-left:-1.4em;}
+
+  /* ── checklist ── */
+  ul.check{list-style:none; margin:6px 0 0; padding:0;}
+  ul.check li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line2); font-size:13.5px; line-height:1.75;}
+  ul.check li:first-child{border-top:0;}
+  ul.check li::before{content:""; position:absolute; left:0; top:12px; width:15px; height:15px; border:1.5px solid var(--gold-soft); border-radius:3px; background:var(--panel);}
+  ul.check li b{color:var(--ink);}
+  ul.check li .hint{display:block; color:var(--faint); font-size:11.5px; margin-top:2px;}
+
+  /* ── data table ── */
+  .tablewrap{overflow-x:auto; margin-top:6px; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);}
+  table{border-collapse:collapse; width:100%; min-width:680px; font-size:12px; background:var(--panel);}
+  th,td{text-align:left; padding:11px 13px; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.7;}
+  thead th{background:var(--panel2); font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:600; white-space:nowrap; position:sticky; top:0;}
+  tbody tr:last-child td{border-bottom:0;}
+  td .name{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;}
+  td.u{font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); word-break:break-all;}
+  td .none{color:var(--faint); font-style:italic;}
+
+  /* ── do / dont ── */
+  .rules{display:grid; gap:10px; margin-top:8px;}
+  .rule{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.85;}
+  .rule .ic{flex:none; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; color:#fff; background:var(--bad);}
+  .rule b{color:var(--ink);}
+  .rule .sub{color:var(--muted); font-size:12px;}
+
+  .callout{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:13px 16px; font-size:12.5px; color:var(--muted); line-height:1.9; margin-top:14px;}
+  .callout b{color:var(--gold);}
+
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:11px; color:var(--faint); line-height:1.9; font-family:ui-monospace,monospace; letter-spacing:.03em;}
+
+  @media (max-width:560px){
+    .wrap{padding:30px 16px 70px;} h1{font-size:24px;} .field{gap:12px;}
+  }
+  @media print{
+    body{background:#fff; color:#000; font-size:11.5px;}
+    .copybtn{display:none;} .wrap{max-width:none; padding:0;}
+    .lead,.paste,.tablewrap,.rule,.callout{box-shadow:none;}
+    section{break-inside:avoid;} .field,.rule,.paste{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <div class="brand">S E A M</div>
+    <div class="kicker">Local SEO ／ Google Business Profile</div>
+    <h1 class="serif">Googleビジネスプロフィール<br>運用指示書</h1>
+    <p class="sub">「サロン専売品が、幅広く正規で買えるセレクトショップ」として、地図・ローカル検索・AIの概要で見つけてもらうための設定と運用。全国7店舗共通。</p>
+    <div class="meta"><span>対象：全7店舗</span><span>方針：ブランド中立</span><span>宛先：GBP管理部署</span><span>作成：2026.07</span></div>
+  </header>
+
+  <div class="lead">
+    Googleビジネスプロフィール（GBP）は、<b>地図枠・「〇〇 サロン専売品」などのローカル検索・AIによる概要</b>にいちばん効く、無料の施策です。SEAMの強みは「1ブランドの安さ」ではなく<b>“正規で幅広く揃う品揃え”</b>。特定ブランド名を主役にせず、<strong>サロン専売品を140以上／正規取扱／予約なしで購入だけの来店OK</strong>という事実で、検索意図に当てにいきます。
+    <div class="why">最重要は<b>NAPの統一</b>（店名・住所・電話を、サイト・ホットペッパー・GBPで1文字も違わずそろえる）。反映には数週間かかります＝“効いてくる土台”です。</div>
+  </div>
+
+  <!-- 1. 最初にやること -->
+  <section>
+    <div class="eyebrow">Step 1 ／ 初期セットアップ（各店 1回）</div>
+    <h2 class="serif">まず、この順番で整える</h2>
+    <ul class="check">
+      <li><b>オーナー確認を済ませる</b><span class="hint">未確認の店舗は「オーナー確認」を申請（ハガキ・電話・動画など）。確認済みでないと編集が反映されません。</span></li>
+      <li><b>重複プロフィールを統合する</b><span class="hint">同じ店舗のリスティングが複数ある場合はGoogleに統合を申請。分散すると評価が割れます。</span></li>
+      <li><b>下記②〜⑭の入力項目を、下の「各店データ」を見ながら全店ぶん埋める</b></li>
+      <li><b>NAPをサイト／ホットペッパー／GBPで完全一致させる</b><span class="hint">丁目・ハイフン・ビル名・フロアまで表記をそろえる。</span></li>
+      <li><b>写真を最低10枚、Q&Aを4件（下記⑬）先回りで投稿する</b></li>
+    </ul>
+  </section>
+
+  <!-- 2. 入力項目 -->
+  <section>
+    <div class="eyebrow">Step 2 ／ 入力項目とコピー</div>
+    <h2 class="serif">各項目に、何を入れるか</h2>
+    <p class="lede">「そのまま貼り付け」ブロックは <span class="mono">コピー</span> ボタンで写せます。<span class="var">赤字</span>は店舗ごとに差し替えてください。</p>
+
+    <div class="field"><div class="fnum">1</div><div class="fbody">
+      <div class="fname">ビジネス名<span class="req">重要</span></div>
+      <div class="fdesc">実際の店舗名<strong>だけ</strong>を入れる（例：<strong>SEAM GINZA</strong>）。<strong>「SEAM GINZA サロン専売」等のキーワード追加は禁止</strong>（Google規約違反＝掲載停止のリスク）。</div>
+    </div></div>
+
+    <div class="field"><div class="fnum">2</div><div class="fbody">
+      <div class="fname">カテゴリ<span class="req">重要</span></div>
+      <div class="fdesc"><strong>メインカテゴリが検索順位に最も効きます。</strong> 施術が主の店は <strong>「美容室」</strong>をメイン、物販が主の店は <strong>「化粧品店」または「ヘアケア用品店」</strong>をメインに。もう片方＋<strong>「ヘッドスパ」</strong>などをサブに追加（サブは複数可）。</div>
+    </div></div>
+
+    <div class="field"><div class="fnum">3</div><div class="fbody">
+      <div class="fname">住所・エリア</div>
+      <div class="fdesc">下の「各店データ」どおり正確に。サイト・ホットペッパーと<strong>完全一致</strong>させる。</div>
+    </div></div>
+
+    <div class="field"><div class="fnum">4</div><div class="fbody">
+      <div class="fname">営業時間</div>
+      <div class="fdesc">下の「各店データ」どおり。<strong>祝日・年末年始は「特別営業時間」</strong>で個別設定（休業日を空欄にしない）。</div>
+    </div></div>
+
+    <div class="field"><div class="fnum">5</div><div class="fbody">
+      <div class="fname">電話番号</div>
+      <div class="fdesc">各店の実番号を入れ、サイトと統一。番号が無い店は店舗の代表番号を。<strong>携帯番号や他店と共通の番号は避ける</strong>。</div>
+    </div></div>
+
+    <div class="field"><div class="fnum">6</div><div class="fbody">
+      <div class="fname">ウェブサイト</div>
+      <div class="fdesc"><strong>各店の店舗ページURL</strong>（下表）を入れる。今回SEO強化した店舗ページに繋ぐと相乗効果があります。トップではなく<strong>その店のページ</strong>を指定。</div>
+    </div></div>
+
+    <div class="field"><div class="fnum">7</div><div class="fbody">
+      <div class="fname">属性（ビジネスの特徴）</div>
+      <div class="fdesc">Googleが提示する候補から<strong>該当するものを全てON</strong>。特に効くのは <strong>「予約なしで利用可」「その場で購入可」「クレジットカード／電子マネー可」</strong>。ほかバリアフリー・Wi-Fi・駐車場（該当店のみ）。</div>
+    </div></div>
+
+    <div class="field"><div class="fnum">8</div><div class="fbody">
+      <div class="fname">ビジネスの説明（750字まで）</div>
+      <div class="fdesc">下のコピーを貼り、<span class="var">〈エリア〉〈店名〉〈最寄り駅・徒歩〉</span>を差し替える。冒頭に大事なことを。</div>
+      <div class="paste">
+        <span class="lbl">そのまま貼り付け（店舗ごとに赤字を差し替え）</span>
+        <button class="copybtn" data-copy="desc">コピー</button>
+        <p id="desc"><span class="var">〈エリア〉</span>のヘアケアセレクトショップ「SEAM <span class="var">〈店名〉</span>」です。世界のサロン専売ブランドを140以上、正規取扱店として取り揃えています。シャンプー・トリートメント・アウトバス・スタイリング・スキンケア・美容機器まで、髪と頭皮に本当に合う一本を、ヘアケアに詳しいスタッフと一緒にお選びいただけます。ご予約や施術がなくても、お買い物だけのご来店を歓迎しています。気になるブランドの在庫は、お電話やInstagramでもお気軽にご確認いただけます。カット・カラー・パーマ・縮毛矯正などのサロンメニュー、完全個室のヘッドスパもご用意しています。<span class="var">〈最寄り駅・徒歩〉</span>。どうぞお気軽にお立ち寄りください。</p>
+      </div>
+    </div></div>
+
+    <div class="field"><div class="fnum">9</div><div class="fbody">
+      <div class="fname">商品（Products）</div>
+      <div class="fdesc"><strong>カテゴリ単位</strong>で登録するのがおすすめ（1ブランドに偏らせない）。各カテゴリに商品棚の写真＋一言を。</div>
+      <div class="paste">
+        <span class="lbl">登録するカテゴリ</span>
+        <button class="copybtn" data-copy="prod">コピー</button>
+        <p id="prod">シャンプー ／ トリートメント ／ アウトバス（洗い流さない） ／ スタイリング ／ スキンケア ／ 美容機器（ドライヤー・アイロン等）</p>
+      </div>
+    </div></div>
+
+    <div class="field"><div class="fnum">10</div><div class="fbody">
+      <div class="fname">サービス（Services）</div>
+      <div class="fdesc">物販店でも「相談」をサービス化しておくと拾われやすい。</div>
+      <div class="paste">
+        <span class="lbl">登録するサービス</span>
+        <button class="copybtn" data-copy="svc">コピー</button>
+        <p id="svc">商品の購入・ご相談（予約不要） ／ カット ／ カラー ／ パーマ ／ 縮毛矯正 ／ トリートメント ／ ヘッドスパ（完全個室）</p>
+      </div>
+    </div></div>
+
+    <div class="field"><div class="fnum">11</div><div class="fbody">
+      <div class="fname">写真</div>
+      <div class="fdesc"><strong>自店で撮った実物のみ</strong>（メーカー公式画像の転載はNG）。最低10枚、以後毎月追加。優先順＝<strong>①外観（看板が写る）②内観 ③商品棚（品揃えの豊富さ＝セレクトショップの強み）④ロゴ ⑤スタッフ ⑥メニュー</strong>。</div>
+    </div></div>
+
+    <div class="field"><div class="fnum">12</div><div class="fbody">
+      <div class="fname">投稿（週1目安）</div>
+      <div class="fdesc">3種を回すだけでOK。写真を1枚添える。</div>
+      <div class="paste">
+        <span class="lbl">投稿テンプレ ①新入荷</span>
+        <button class="copybtn" data-copy="p1">コピー</button>
+        <p id="p1">【新入荷】<span class="var">〇〇（カテゴリ）</span>が入荷しました。サロン専売のアイテムを正規取扱でご用意しています。店頭で手に取ってお選びいただけます。ご購入だけのご来店も歓迎です。</p>
+      </div>
+      <div class="paste">
+        <span class="lbl">投稿テンプレ ②季節のおすすめ</span>
+        <button class="copybtn" data-copy="p2">コピー</button>
+        <p id="p2">【<span class="var">〇月</span>のおすすめ】<span class="var">乾燥／うねり／カラー後</span>が気になる季節に。スタッフが厳選したケアをご紹介します。あなたの髪に合う一本、一緒に探しましょう。お気軽にご相談ください。</p>
+      </div>
+      <div class="paste">
+        <span class="lbl">投稿テンプレ ③購入だけの来店歓迎</span>
+        <button class="copybtn" data-copy="p3">コピー</button>
+        <p id="p3">ご予約なし・お買い物だけのご来店、大歓迎です。140を超えるサロン専売ブランドから、あなたに合う一本をスタッフと一緒にお選びいただけます。手ぶらでどうぞ。</p>
+      </div>
+    </div></div>
+
+    <div class="field"><div class="fnum">13</div><div class="fbody">
+      <div class="fname">Q&A（先回り投稿）</div>
+      <div class="fdesc">オーナー側から<strong>質問と回答を自分で投稿</strong>しておく（サイトのFAQと同じ内容＝一貫性が出る）。</div>
+      <div class="paste">
+        <span class="lbl">そのまま投稿（4件）</span>
+        <button class="copybtn" data-copy="qa">コピー</button>
+        <div id="qa">
+          <div class="qa"><p class="q">予約なしで、購入だけでも来店できますか？</p><p class="a">はい。予約・施術なしで、お買い物だけのご来店も歓迎しています。スタッフに相談しながら選ぶこともできます。</p></div>
+          <div class="qa"><p class="q">サロン専売品は、誰でも購入できますか？</p><p class="a">店頭ではどなたでもご購入いただけます。会員登録が必要なのは、オンラインショップのご利用時のみです。</p></div>
+          <div class="qa"><p class="q">どのくらいのブランドを扱っていますか？</p><p class="a">140を超えるサロン専売ブランドを正規取扱しています。シャンプー・トリートメントからスタイリング・スキンケア・美容機器まで幅広く揃います。</p></div>
+          <div class="qa"><p class="q">気になる商品の在庫は確認できますか？</p><p class="a">はい。お電話またはInstagramのDMでお気軽にご確認いただけます。お取り置きのご相談も承ります。</p></div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="field"><div class="fnum">14</div><div class="fbody">
+      <div class="fname">クチコミ（全件返信）</div>
+      <div class="fdesc"><strong>すべてのクチコミに返信</strong>（早いほど良い）。返信もローカル評価に効きます。</div>
+      <div class="paste">
+        <span class="lbl">返信テンプレ ①高評価</span>
+        <button class="copybtn" data-copy="r1">コピー</button>
+        <p id="r1">この度はご来店と、嬉しいお言葉をありがとうございます。<span class="var">〇〇</span>がお役に立てて幸いです。またお気軽にお立ち寄りください。スタッフ一同お待ちしております。</p>
+      </div>
+      <div class="paste">
+        <span class="lbl">返信テンプレ ②改善のご指摘</span>
+        <button class="copybtn" data-copy="r2">コピー</button>
+        <p id="r2">貴重なご意見をありがとうございます。<span class="var">〇〇</span>の点、真摯に受け止め、改善に努めてまいります。次回はぜひスタッフにお声がけください。お待ちしております。</p>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 3. 各店データ -->
+  <section>
+    <div class="eyebrow">Step 2 資料 ／ 各店データ（そのまま入力）</div>
+    <h2 class="serif">7店舗のNAP・リンク</h2>
+    <p class="lede">住所・営業時間はここから転記。ウェブサイト欄には各店の店舗ページURLを。<span class="none">未掲載</span>は該当が無い（要確認）。</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>店舗</th><th>住所</th><th>アクセス</th><th>営業時間</th><th>Instagram</th><th>ホットペッパー</th><th>ウェブサイト（GBPのサイト欄）</th></tr></thead>
+        <tbody>
+          <tr><td><span class="name">SEAM GINZA</span><br><span class="mono" style="font-size:10px;color:var(--faint)">銀座本店</span></td><td>東京都中央区銀座1-8-19 ONE GINZA 3F</td><td>銀座一丁目駅 7番出口 徒歩1分</td><td>月〜日 11:00–20:00</td><td class="u">@seam.ginza</td><td class="u">slnH000802192</td><td class="u">seam.site/store-ginza</td></tr>
+          <tr><td><span class="name">SEAM SAPPORO</span><br><span class="mono" style="font-size:10px;color:var(--faint)">札幌 大通</span></td><td>北海道札幌市中央区南2条西3-15-2</td><td>地下鉄大通駅 徒歩1分</td><td>平日 10:00–20:00／土 〜19:00／日 〜17:30</td><td class="u">@seam.sapporo</td><td class="u">slnH000417753</td><td class="u">seam.site/store-sapporo</td></tr>
+          <tr><td><span class="name">gallica / SEAM</span><br><span class="mono" style="font-size:10px;color:var(--faint)">表参道</span></td><td>東京都港区南青山3-15-15 Louis IIビル</td><td>表参道駅 A4出口 徒歩3分</td><td>月〜日 10:00–20:00</td><td class="u">@gallica_seam</td><td class="none">未掲載（要確認）</td><td class="u">seam.site/store-omotesando</td></tr>
+          <tr><td><span class="name">SEAM NAGOYA</span><br><span class="mono" style="font-size:10px;color:var(--faint)">名古屋 栄</span></td><td>愛知県名古屋市中区栄5-16-19 ネイリックス 1F・2F</td><td>矢場町駅 すぐ</td><td>月〜日 11:00–19:00</td><td class="u">@seam.nagoya</td><td class="u">slnH000800028</td><td class="u">seam.site/store-nagoya</td></tr>
+          <tr><td><span class="name">SEAM OSAKA</span><br><span class="mono" style="font-size:10px;color:var(--faint)">大阪 堀江</span></td><td>大阪府大阪市西区南堀江1-11-21 STORK南堀江 1F</td><td>四ツ橋駅 6番出口 徒歩2分</td><td>月〜日 11:00–19:00</td><td class="u">@seam.osaka</td><td class="u">slnH000791476</td><td class="u">seam.site/store-osaka</td></tr>
+          <tr><td><span class="name">SEAM FUKUOKA</span><br><span class="mono" style="font-size:10px;color:var(--faint)">福岡 天神大名</span></td><td>福岡県福岡市中央区大名2-1-53 BPRスクエア天神大名 1F</td><td>西鉄天神駅 徒歩5分</td><td>月〜土 10:00–19:00／日 〜18:00</td><td class="u">@seam.fukuoka</td><td class="u">slnH000734442</td><td class="u">seam.site/store-fukuoka</td></tr>
+          <tr><td><span class="name">gigi SEAM</span><br><span class="mono" style="font-size:10px;color:var(--faint)">宇都宮</span></td><td>栃木県宇都宮市鶴田町419-7 インターパーク内</td><td>JR鶴田駅 徒歩6分</td><td>9:00–19:00（火曜定休）</td><td class="u">@gigi_seam_utsunomiya</td><td class="none">未掲載（要確認）</td><td class="u">seam.site/store-utsunomiya</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><b>ホットペッパーの番号</b>は <span class="mono">beauty.hotpepper.jp/【この番号】/</span> の店舗ページを指します。表参道・宇都宮（gallica／gigi）は提携・別ブランド名のため、既存の店舗プロフィールが別にある可能性あり＝<b>重複確認</b>をお願いします。</div>
+  </section>
+
+  <!-- 4. 運用 -->
+  <section>
+    <div class="eyebrow">Step 3 ／ 続ける運用</div>
+    <h2 class="serif">毎週・毎月やること</h2>
+    <div style="display:grid; gap:22px;">
+      <div>
+        <div class="mono" style="font-size:11px;letter-spacing:.14em;color:var(--gold);text-transform:uppercase;margin-bottom:2px;">毎週</div>
+        <ul class="check">
+          <li><b>投稿を1本</b>（新入荷／季節のおすすめ／購入だけ来店歓迎 を回す）＋写真1枚</li>
+          <li><b>新しいクチコミに返信</b>（できれば当日〜数日以内）</li>
+        </ul>
+      </div>
+      <div>
+        <div class="mono" style="font-size:11px;letter-spacing:.14em;color:var(--gold);text-transform:uppercase;margin-bottom:2px;">毎月</div>
+        <ul class="check">
+          <li><b>写真を数枚追加</b>（商品棚・新入荷・店内の様子）</li>
+          <li><b>営業時間の確認</b>（祝日・特別営業を先に設定）</li>
+          <li><b>インサイトを確認</b><span class="hint">「検索数」「ルート・電話・サイトのクリック」の推移を見る。増えていれば効いています。</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 禁止 -->
+  <section>
+    <div class="eyebrow">注意 ／ やってはいけないこと</div>
+    <h2 class="serif">これは避ける</h2>
+    <div class="rules">
+      <div class="rule"><span class="ic">!</span><div><b>店名にキーワードを足さない</b><span class="sub">「SEAM GINZA サロン専売」等はGoogle規約違反。掲載停止のリスク。店名は実名のみ。</span></div></div>
+      <div class="rule"><span class="ic">!</span><div><b>NAPの表記ゆれを作らない</b><span class="sub">住所・電話・店名を、サイト／ホットペッパー／GBPで完全一致に。丁目やビル名の揺れもNG。</span></div></div>
+      <div class="rule"><span class="ic">!</span><div><b>1ブランドを主役にしない</b><span class="sub">セレクトショップの軸＝“品揃え”。特定メーカー名を前面に出すのは避け、カテゴリ・正規取扱・購入だけOKで訴求。</span></div></div>
+      <div class="rule"><span class="ic">!</span><div><b>化粧品の効能を断定しない</b><span class="sub">「シミが消える」「若返る」「治る」等は薬機法でNG。使用感・品揃え・正規取扱で。</span></div></div>
+      <div class="rule"><span class="ic">!</span><div><b>写真は自店撮影の実物のみ</b><span class="sub">メーカー公式画像・他店の写真の転載はしない。虚偽・自作自演クチコミも厳禁。</span></div></div>
+    </div>
+  </section>
+
+  <footer>
+    SEAM ／ Googleビジネスプロフィール 運用指示書 ・ 2026.07 ・ ブランド中立ローカルSEO<br>
+    連動：各店の店舗ページ（seam.site/store-〇〇）は同じ方針でSEO強化済み。GBPのサイト欄はその店のページへ。
+  </footer>
+</div>
+
+<script>
+  (function(){
+    document.querySelectorAll('.copybtn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var el = document.getElementById(btn.getAttribute('data-copy'));
+        if(!el) return;
+        var text = el.innerText.replace(/　+/g,'　').trim();
+        var done = function(){ var o=btn.textContent; btn.textContent='コピー済 ✓'; setTimeout(function(){btn.textContent=o;},1400); };
+        if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, done); }
+        else { var t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand('copy');}catch(e){} t.remove(); done(); }
+      });
+    });
+  })();
+</script>
+</body>
+</html>
