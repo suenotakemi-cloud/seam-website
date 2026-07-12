@@ -591,6 +591,42 @@
   </section>
 
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- PROOF STATS — 実数の信頼指標（診断完了はライブ集計・データが無い時は非表示） -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <section class="bg-white pt-7 sm:pt-9">
+    <div class="max-w-2xl mx-auto px-6">
+      <div class="flex flex-wrap items-start justify-center gap-x-9 sm:gap-x-14 gap-y-4 text-center" data-reveal>
+        <div class="min-w-[80px]">
+          <p class="font-serif text-[23px] sm:text-[29px] text-ink leading-none">50,000<span class="text-gold text-[15px] align-top">+</span></p>
+          <p class="mt-1.5 text-[10.5px] sm:text-[12px] text-charcoal/70">会員数</p>
+        </div>
+        <div class="min-w-[80px]">
+          <p class="font-serif text-[23px] sm:text-[29px] text-ink leading-none">99<span class="text-gold text-[15px] align-top">%</span></p>
+          <p class="mt-1.5 text-[10.5px] sm:text-[12px] text-charcoal/70">ご来店の方が会員</p>
+        </div>
+        <div id="diagStat" class="min-w-[80px]" hidden>
+          <p class="font-serif text-[23px] sm:text-[29px] text-ink leading-none"><span id="diagCount">–</span></p>
+          <p class="mt-1.5 text-[10.5px] sm:text-[12px] text-charcoal/70">診断完了<span id="diagRateWrap"> ・ 完了率<span id="diagRate"></span>%</span></p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <script>
+  (function(){
+    try{
+      fetch('/api/diagstat',{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){
+        if(!d || !(Number(d.completed)>0)) return;                 // 実データが無ければ何も出さない（＝嘘を出さない）
+        var box=document.getElementById('diagStat'); if(!box) return;
+        var c=document.getElementById('diagCount'); if(c) c.textContent=Number(d.completed).toLocaleString('ja-JP');
+        if(d.rate!=null){ var rr=document.getElementById('diagRate'); if(rr) rr.textContent=d.rate; }
+        else { var w=document.getElementById('diagRateWrap'); if(w) w.remove(); }  // 完了率は十分な母数がある時だけ
+        box.hidden=false;
+      }).catch(function(){});
+    }catch(e){}
+  })();
+  </script>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <!-- SIGNATURE — 髪格診断を看板体験に (ヒーロー直下に昇格) -->
   <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
   <section class="bg-white pt-10 sm:pt-16 pb-3 sm:pb-5">
@@ -681,7 +717,7 @@
           <div class="absolute inset-x-0 bottom-0 p-3.5 sm:p-4" style="text-shadow:0 1px 9px rgba(0,0,0,.6),0 1px 2px rgba(0,0,0,.55)">
             <span class="font-serif text-[12px] sm:text-[14px] tracking-[0.12em]" style="color:#EBCF95;">02</span>
             <h3 class="font-serif text-white text-[14.5px] sm:text-[18px] leading-[1.14] mt-0.5" data-i18n="services.02title">ヘアケアショップ</h3>
-            <p class="text-white/85 text-[10.5px] sm:text-[12px] leading-[1.35] mt-1" data-i18n="services.02desc">ヘアケアのプロが選んだ<br>世界120ブランド</p>
+            <p class="text-white/85 text-[10.5px] sm:text-[12px] leading-[1.35] mt-1" data-i18n="services.02desc">ヘアケアのプロが選んだ<br>世界140ブランド</p>
           </div>
         </a>
         <a href="onlineshop.html" class="lift group relative block rounded-[16px] overflow-hidden shadow-card">
@@ -1233,7 +1269,7 @@
         ,'services.01title': '髪格診断'
         ,'services.01desc': '私の髪を「知る」'
         ,'services.02title': 'ヘアケアショップ'
-        ,'services.02desc': 'ヘアケアのプロが選んだ<br>世界120ブランド'
+        ,'services.02desc': 'ヘアケアのプロが選んだ<br>世界140ブランド'
         ,'services.03title': 'オンラインショップ'
         ,'services.03desc': '全国どこからでも<br>SEAMのヘアケアを'
         ,'services.04title': 'ヘアサロン'
