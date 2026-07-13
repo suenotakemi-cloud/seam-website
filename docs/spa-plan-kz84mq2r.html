@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>SEAMヘッドスパ 価格・クーポン再設計提案（社内用）</title>
+</head>
+<body>
+<style>
+  :root{
+    --paper:#FAF9F6; --ink:#23272A; --ink-soft:#5A615F; --line:#DDDAD2;
+    --accent:#1D5C54; --accent-soft:#E7F0EE; --accent-line:#BCD4CF;
+    --warn:#B4452F; --warn-soft:#F7E9E4; --gold:#8A6B3A; --gold-soft:#F3EDE2;
+    --th-bg:#F1EFE9;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#1B1E1F; --ink:#E8E6E0; --ink-soft:#A9ADA8; --line:#3A3F3E;
+      --accent:#6FB3A8; --accent-soft:#22322F; --accent-line:#38534E;
+      --warn:#E08A73; --warn-soft:#3A2723; --gold:#C9A96E; --gold-soft:#332C1F;
+      --th-bg:#252928;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1B1E1F; --ink:#E8E6E0; --ink-soft:#A9ADA8; --line:#3A3F3E;
+    --accent:#6FB3A8; --accent-soft:#22322F; --accent-line:#38534E;
+    --warn:#E08A73; --warn-soft:#3A2723; --gold:#C9A96E; --gold-soft:#332C1F;
+    --th-bg:#252928;
+  }
+  :root[data-theme="light"]{
+    --paper:#FAF9F6; --ink:#23272A; --ink-soft:#5A615F; --line:#DDDAD2;
+    --accent:#1D5C54; --accent-soft:#E7F0EE; --accent-line:#BCD4CF;
+    --warn:#B4452F; --warn-soft:#F7E9E4; --gold:#8A6B3A; --gold-soft:#F3EDE2;
+    --th-bg:#F1EFE9;
+  }
+  html{background:var(--paper);}
+  body{
+    font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic Medium",YuGothic,sans-serif;
+    color:var(--ink); background:var(--paper); line-height:1.85; font-size:15px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:880px; margin:0 auto; padding:56px 24px 96px;}
+  .serif{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
+  header.doc{border-bottom:2px solid var(--ink); padding-bottom:28px; margin-bottom:12px;}
+  .doc-label{font-size:11px; letter-spacing:.22em; color:var(--accent); font-weight:600; margin-bottom:14px;}
+  h1{font-size:30px; line-height:1.5; font-weight:600; letter-spacing:.02em; text-wrap:balance; margin:0 0 14px;}
+  .doc-meta{display:flex; flex-wrap:wrap; gap:6px 22px; font-size:12.5px; color:var(--ink-soft);}
+  .doc-meta b{color:var(--ink); font-weight:600;}
+  section{margin-top:64px;}
+  .eyebrow{display:flex; align-items:baseline; gap:12px; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:22px;}
+  .eyebrow .num{font-size:12px; letter-spacing:.14em; color:var(--accent); font-weight:700; font-variant-numeric:tabular-nums;}
+  h2{font-size:21px; font-weight:600; letter-spacing:.03em; margin:0; text-wrap:balance;}
+  h3{font-size:16px; font-weight:600; margin:34px 0 12px; letter-spacing:.02em;}
+  h3 .store-tag{display:inline-block; font-size:11px; letter-spacing:.1em; background:var(--accent); color:var(--paper); border-radius:3px; padding:2px 9px; margin-right:10px; vertical-align:2px;}
+  p{margin:0 0 14px; max-width:42em;}
+  p.lead{font-size:15.5px;}
+  .note{font-size:12.5px; color:var(--ink-soft);}
+  strong{font-weight:600;}
+  em{font-style:normal; background:linear-gradient(transparent 62%, var(--accent-soft) 62%); padding:0 1px;}
+  .tbl-scroll{overflow-x:auto; margin:18px 0 8px;}
+  table{border-collapse:collapse; width:100%; font-size:13.5px; line-height:1.6;}
+  th,td{border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top;}
+  th{background:var(--th-bg); font-weight:600; font-size:12.5px; letter-spacing:.04em; white-space:nowrap;}
+  td.r,th.r{text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  td.c,th.c{text-align:center; white-space:nowrap;}
+  tr.hl td{background:var(--accent-soft);}
+  tr.hl-warn td{background:var(--warn-soft);}
+  tr.tier-hair td{background:var(--gold-soft);}
+  .chip{display:inline-block; font-size:11px; font-weight:600; letter-spacing:.06em; border-radius:3px; padding:1px 8px; white-space:nowrap;}
+  .chip.mem{background:var(--accent); color:var(--paper);}
+  .chip.all{background:transparent; color:var(--ink-soft); border:1px solid var(--line);}
+  .chip.hair{background:var(--gold); color:var(--paper);}
+  .chip.wd{background:transparent; color:var(--warn); border:1px solid var(--warn); font-weight:600;}
+  .big-warn{color:var(--warn); font-weight:700;}
+  .big-good{color:var(--accent); font-weight:700;}
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin:22px 0;}
+  .stat{border:1px solid var(--line); border-top:3px solid var(--accent); border-radius:4px; padding:16px 18px 14px; background:var(--paper);}
+  .stat.bad{border-top-color:var(--warn);}
+  .stat .k{font-size:11.5px; letter-spacing:.1em; color:var(--ink-soft); font-weight:600;}
+  .stat .v{font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.3; margin-top:4px;}
+  .stat.bad .v{color:var(--warn);}
+  .stat.good .v{color:var(--accent);}
+  .stat .s{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .ladder{display:flex; flex-wrap:wrap; align-items:stretch; gap:0; margin:24px 0 10px;}
+  .ladder .step{flex:1 1 220px; border:1px solid var(--accent-line); background:var(--accent-soft); padding:16px 18px; position:relative;}
+  .ladder .step + .step{margin-left:14px;}
+  .ladder .step + .step::before{content:"→"; position:absolute; left:-14px; top:50%; transform:translate(-2px,-50%); color:var(--accent); font-weight:700;}
+  .ladder .step .t{font-size:12px; letter-spacing:.1em; font-weight:700; color:var(--accent);}
+  .ladder .step .d{font-size:13px; margin-top:6px; line-height:1.7;}
+  .callout{border-left:3px solid var(--accent); background:var(--accent-soft); padding:16px 20px; margin:20px 0; font-size:14px; max-width:46em;}
+  .callout.warn{border-left-color:var(--warn); background:var(--warn-soft);}
+  .callout .ttl{font-weight:700; font-size:13px; letter-spacing:.06em; margin-bottom:4px;}
+  ul.tight{margin:8px 0 16px; padding-left:1.3em;}
+  ul.tight li{margin-bottom:7px; max-width:44em;}
+  ol.tight{margin:8px 0 16px; padding-left:1.5em;}
+  ol.tight li{margin-bottom:7px; max-width:44em;}
+  .foot{margin-top:72px; border-top:1px solid var(--line); padding-top:18px; font-size:12px; color:var(--ink-soft); line-height:1.9;}
+  @media print{
+    body{font-size:12px;}
+    .wrap{padding:0;}
+    section{margin-top:36px;}
+  }
+</style>
+
+<div class="wrap">
+
+<header class="doc">
+  <div class="doc-label">SEAM SPA — PRICING &amp; COUPON PROPOSAL v10</div>
+  <h1 class="serif">ヘッドスパ 価格・クーポン再設計提案<br>「首肩ほどき」×「会員価格」二層制</h1>
+  <div class="doc-meta">
+    <span>対象：<b>銀座店・大阪堀江店・名古屋栄店</b>（ホットペッパービューティー リラク掲載）</span>
+    <span>調査日：<b>2026年7月13日</b></span>
+    <span>手法：<b>HPB予約カレンダー実測（競合20店＋SEAM3店×14日分）</b></span>
+  </div>
+</header>
+
+<!-- ============ 01 現状 ============ -->
+<section>
+  <div class="eyebrow"><span class="num">01</span><h2>現状データ — 「平日が入らない」を数値で確認</h2></div>
+  <p class="lead">HPBの予約画面から10分刻みの空き状況を14日分取得し、予約で埋まっている枠の割合（予約率）を実測しました。感覚ではなく、いま予約画面がどう見えているかの実数です。</p>
+
+  <div class="stat-row">
+    <div class="stat bad"><div class="k">銀座店 直近7日</div><div class="v">50.0%</div><div class="s">平日 34.4% ／ 休日 88.9%</div></div>
+    <div class="stat bad"><div class="k">大阪堀江店 直近7日</div><div class="v">32.4%</div><div class="s">平日 27.8% ／ 休日 43.8%</div></div>
+    <div class="stat bad"><div class="k">名古屋栄店 直近7日</div><div class="v">26.8%</div><div class="s">平日 27.5% ／ 休日 25.0%</div></div>
+  </div>
+
+  <p>同じ方法で測った各エリアの人気店はこの水準です。</p>
+
+  <div class="tbl-scroll"><table>
+    <tr><th>エリア</th><th>競合（実測上位）</th><th class="r">直近7日</th><th class="r">平日</th><th class="r">休日</th><th>価格帯（60分級）</th></tr>
+    <tr><td rowspan="3">銀座</td><td>yumemi銀座（漢方ヘッドスパ）</td><td class="r big-good">98%</td><td class="r">97%</td><td class="r">100%</td><td>70分 ¥13,000</td></tr>
+    <tr><td>仙豆のちから 銀座店</td><td class="r big-good">85.0%</td><td class="r">89.0%</td><td class="r">65.0%</td><td>60分 ¥7,300</td></tr>
+    <tr class="hl-warn"><td><b>SEAM 銀座店</b></td><td class="r big-warn">50.0%</td><td class="r big-warn">34.4%</td><td class="r">88.9%</td><td>60分 ¥13,800</td></tr>
+    <tr><td rowspan="3">大阪</td><td>ata.master（心斎橋）</td><td class="r big-good">61.1%</td><td class="r">51.8%</td><td class="r">84.3%</td><td>80分 ¥9,000</td></tr>
+    <tr><td>QUATRE 梅田</td><td class="r big-good">60.9%</td><td class="r">51.6%</td><td class="r">84.2%</td><td>90分 ¥12,800〜13,700</td></tr>
+    <tr class="hl-warn"><td><b>SEAM 大阪堀江店</b></td><td class="r big-warn">32.4%</td><td class="r big-warn">27.8%</td><td class="r big-warn">43.8%</td><td>60分 ¥12,800</td></tr>
+    <tr><td rowspan="3">名古屋</td><td>anth: 名古屋栄</td><td class="r big-good">70.7%</td><td class="r">69.5%</td><td class="r">73.2%</td><td>¥13,200〜</td></tr>
+    <tr><td>totonoi（口コミ3,012件）</td><td class="r big-good">62.9%</td><td class="r">58.4%</td><td class="r">74.0%</td><td>新規75分 ¥7,500〜8,900</td></tr>
+    <tr class="hl-warn"><td><b>SEAM 名古屋栄店</b></td><td class="r big-warn">26.8%</td><td class="r big-warn">27.5%</td><td class="r big-warn">25.0%</td><td>60分 ¥8,800</td></tr>
+  </table></div>
+
+  <div class="callout">
+    <div class="ttl">データが言っていること</div>
+    ① 銀座は休日88.9%＝ほぼ満枠。<em>問題は平日と新規の入口だけ</em>　② 大阪は60分¥12,800が市場上限を超えており（最も埋まっているata.masterは80分¥9,000）、<em>休日ですら市場平均の半分</em>　③ 市場全体で「安い店ほど埋まる」は成立していません（¥5,980のmeleepは平日7.3%、¥13,200のanth:は70.7%）。<em>入口の分かりやすさと通う理由</em>で解きます
+  </div>
+</section>
+
+<!-- ============ 02 価格帯分析 ============ -->
+<section>
+  <div class="eyebrow"><span class="num">02</span><h2>追加ディープサーチ — ドライ／ウェット別＋「実所要時間」で実測</h2></div>
+  <p class="lead">「安すぎても埋まらないのでは」の検証で名古屋・大阪を追加クロール。さらに<strong>ドライとウェットは内容・時間・原価が別物</strong>なのでセグメントを分け、ウェットは<strong>メニュー表記の分数と実際の所要時間（予約システムの「所要合計」）のズレ</strong>まで実測しました。SEAMの主力はウェットです。</p>
+
+  <h3>ドライヘッドスパ勢（11店）— 天井は¥7,200/時</h3>
+  <div class="tbl-scroll"><table>
+    <tr><th>タイプ</th><th>店</th><th class="r">60分換算</th><th class="r">7日予約率</th></tr>
+    <tr class="hl"><td rowspan="4">個店の勝ち組<br><span class="note">¥4,500〜7,200に集中</span></td><td>王様の昼寝 京橋店</td><td class="r">¥7,200</td><td class="r big-good">61.8%</td></tr>
+    <tr class="hl"><td>ata.master（心斎橋）</td><td class="r">¥6,940</td><td class="r big-good">61.1%</td></tr>
+    <tr class="hl"><td>genie 天六店</td><td class="r">¥6,500</td><td class="r big-good">61.7%</td></tr>
+    <tr class="hl"><td>Meripath</td><td class="r">¥4,500</td><td class="r big-good">55.4%</td></tr>
+    <tr><td rowspan="4">量販チェーン<br><span class="note">同価格帯でも空く</span></td><td>meleep mini 名古屋／心斎橋</td><td class="r">¥5,810</td><td class="r big-warn">7.1%／24.5%</td></tr>
+    <tr><td>ヘッドミント大須／本町</td><td class="r">¥5,130〜5,390</td><td class="r big-warn">23.5%／17.4%</td></tr>
+    <tr><td>仙豆のちから 心斎橋店</td><td class="r">¥5,320</td><td class="r big-warn">25.7%</td></tr>
+    <tr><td>キリンの昼寝（錦）</td><td class="r">¥7,650</td><td class="r">31.7%</td></tr>
+    <tr><td>高単価ドライ</td><td>HOMME 京橋店</td><td class="r">¥10,000</td><td class="r big-warn">22.1%</td></tr>
+  </table></div>
+  <p class="note">ドライの読み：勝ち組は<b>¥4,500〜7,200/時</b>に収まり、¥10,000のドライは売れない（HOMME 22.1%）。ドライは「安い・速い・気軽」の市場で、価格の天井が低い。</p>
+
+  <h3>ウェット・シャンプースパ勢 — 「表記60分」の実態は90〜120分</h3>
+  <p>ウェットは<strong>メニュー表記（＝施術コア時間）と、予約システム上の実所要（流し・ドライ・お仕度込み）が別</strong>です。各店の予約ステップに出る「所要合計」を実測しました。埋まっている店ほど、表記の1.3〜2倍の時間を1人にかけています。</p>
+
+  <div class="tbl-scroll"><table>
+    <tr><th>店</th><th class="c">表記 → 実所要</th><th class="r">メニュー価格</th><th class="r">席時単価※</th><th class="r">7日予約率</th></tr>
+    <tr class="hl"><td>meme+LIM（梅田）</td><td class="c">60分 → <b>105〜120分</b></td><td class="r">¥9,500〜10,000</td><td class="r">¥4,750〜5,710</td><td class="r big-good">93.6%</td></tr>
+    <tr class="hl"><td>ERDE 心斎橋</td><td class="c">60分 → 90分</td><td class="r">¥8,400</td><td class="r">¥5,600</td><td class="r big-good">65.2%</td></tr>
+    <tr class="hl"><td>totonoi（名古屋）</td><td class="c">75分 → 100分</td><td class="r">¥10,150</td><td class="r">¥6,090</td><td class="r big-good">54.3%</td></tr>
+    <tr><td>セラピエール 梅田店</td><td class="c">60分 → 90分</td><td class="r">¥6,980（平日）〜11,000</td><td class="r">¥4,653〜7,300</td><td class="r">50.5%</td></tr>
+    <tr><td>QUATRE 大阪梅田店</td><td class="c">90分 → <b>150分</b></td><td class="r">¥12,800〜13,700</td><td class="r">¥5,120〜5,480</td><td class="r">48.1%</td></tr>
+    <tr><td>le ciel（名古屋）</td><td class="c">70分 → 130分</td><td class="r">¥12,700</td><td class="r">¥5,862</td><td class="r">41.7%</td></tr>
+    <tr><td>tete de bebe</td><td class="c">60分 → 90分</td><td class="r">¥9,980</td><td class="r">¥6,653</td><td class="r">31.7%</td></tr>
+    <tr class="hl-warn"><td><b>Lily.（名古屋中川区）</b></td><td class="c"><b>60分 → 60分（滞在価値なし）</b></td><td class="r">¥6,600</td><td class="r">¥6,600</td><td class="r big-warn">25.5%</td></tr>
+    <tr><td colspan="5" style="border-top:2px solid var(--line);"></td></tr>
+    <tr><td><b>SEAM 銀座（現行）</b></td><td class="c">60分 → 75分</td><td class="r">¥13,800</td><td class="r big-warn">¥11,040</td><td class="r">50.0%</td></tr>
+    <tr><td><b>SEAM 大阪堀江（現行）</b></td><td class="c">60分 → 75分</td><td class="r">¥12,800（新規8,900）</td><td class="r big-warn">¥7,120〜10,240</td><td class="r">32.4%</td></tr>
+    <tr><td><b>SEAM 名古屋栄（現行）</b></td><td class="c">60分 → 90分</td><td class="r">¥8,800</td><td class="r">¥5,867</td><td class="r">26.8%</td></tr>
+  </table></div>
+  <p class="note">※席時単価＝メニュー価格÷実所要（席を1時間使わせて得る売上）。各店の予約ステップ「所要合計」の実測値。ドライ勢の実所要は表記×1.3前後（ata.master 80分→105分・王様の昼寝 60分→80分）で席時単価¥3,000〜5,100。</p>
+
+  <div class="callout">
+    <div class="ttl">この表が言っていること（勝ちパターンの正体）</div>
+    埋まるウェット店の席時単価は<b>¥4,700〜6,500</b>に収束。つまり勝ちパターンは「<em>メニューは60分¥9,000台で見せ、実際は2時間近くかけてもてなす</em>」——表記時間より長い滞在がお得感と口コミを生みます。逆に唯一空いているLily.は表記＝所要の60分きっかり。<b>SEAM銀座の席時単価¥11,040は市場の約2倍</b>（それでも休日は88.9%＝銀座ブランドの証明。平日が入らない構造要因はここ）。名古屋の¥5,867はすでに市場並み＝<b>価格ではなく入口と訴求の問題</b>
+  </div>
+
+  <div class="callout warn">
+    <div class="ttl">前版までの自己修正（¥6,980案 → セグメント別・時間実態ベースへ）</div>
+    v2の会員¥6,980はドライ量販チェーンの棚とウェット安売り失敗例（Lily.）の間に落ちる価格でした。正しくは<b>メニュー価格をウェット勝ち帯（60分表記で¥8,500〜12,000）に収め、さらにスタッフ給与（指名50%バックで総支給40万円）から席時単価の下限を逆算する</b>——最終価格は06章で確定します
+  </div>
+</section>
+
+<!-- ============ 03 診断 ============ -->
+<section>
+  <div class="eyebrow"><span class="num">03</span><h2>現行クーポンの診断 — 何が足りないか</h2></div>
+
+  <div class="tbl-scroll"><table>
+    <tr><th>店舗</th><th>現行の棚</th><th>診断</th></tr>
+    <tr>
+      <td><b>銀座</b><br><span class="note">クーポン5本</span></td>
+      <td>45分¥12,000／60分¥13,800／90分¥17,800／120分¥20,800／150分¥25,000（すべて「全員」）</td>
+      <td><span class="big-warn">初めての人が試す理由がない</span>。定価だけが並び、再来を促す仕掛けもゼロ。45分¥12,000は分単価が60分より高く、比較されると不利</td>
+    </tr>
+    <tr>
+      <td><b>大阪堀江</b><br><span class="note">クーポン22本</span></td>
+      <td>スパ新規¥8,900〜／定価60分¥12,800〜／次回予約確約¥10,900〜／エステ9本／ヘアケア2本</td>
+      <td><span class="big-good">「次回予約確約」の発想は既にあり、これが正解</span>。ただし定価¥12,800が大阪市場の上限超え、スパとエステが混在して22本、棚が読めない</td>
+    </tr>
+    <tr>
+      <td><b>名古屋栄</b><br><span class="note">クーポン5本</span></td>
+      <td>60分¥8,800／90分¥13,200／120分¥17,600／150分¥21,800／メンズ¥8,800（すべて「全員」）</td>
+      <td>定価は市場適正。しかし<span class="big-warn">入口も再来導線もなし</span>。「睡眠×肩こり」の睡眠先行ネーミングは最多の悩みである首肩が二番手に見える。営業11:00〜19:00で夜の山（17〜19時）をほぼ取り逃し</td>
+    </tr>
+  </table></div>
+</section>
+
+<!-- ============ 04 戦略 ============ -->
+<section>
+  <div class="eyebrow"><span class="num">04</span><h2>戦略 — 4つの柱</h2></div>
+
+  <h3>柱1｜価格は二層制「会員価格」——初回も次回予約も同じ価格</h3>
+  <p>新規だけを深く割り引く方式は採りません。<strong>クーポンを渡り歩く新規ハンターを集めても、先がないからです。</strong>代わりに、初回価格をそのまま「次回予約を続ける限りずっと使える会員価格」にします。初回から<em>通う前提の人だけが得をする</em>設計で、価格表も2段だけになり、お客様にもスタッフにも説明が一言で済みます。</p>
+
+  <div class="ladder">
+    <div class="step"><div class="t">会員価格（定価の約−20%）</div><div class="d"><b>初回の方＋前回来店時に次回予約をした方</b><br>初回は誰でもこの価格。2回目以降は「次回予約を入れて帰る」ことが条件。途切れたら定価に戻るだけ——ペナルティではなく、続ける理由<br><span style="font-size:11.5px;">※銀座のみ価格軸は平日／土日ダイナミック（yumemi方式・05章）。次回予約特典は「土日祝も平日価格」として同じ再来動機を作る</span></div></div>
+    <div class="step"><div class="t">定価</div><div class="d">次回予約なしの再来・休日フリー来店の基準価格。<b>休日は割引を出さない</b>（銀座休日88.9%＝定価で埋まる実証済み）</div></div>
+  </div>
+  <p class="note">HPB実装：クーポン区分は「全員」1本で、利用条件欄に「初回の方／前回ご来店時に次回のご予約をいただいた方」と記載。棚が痩せず、新規・再来の使い分け管理も不要です</p>
+
+  <h3>柱2｜ウェットとドライで棚を分ける——主力ウェットは「表記60分¥9,800・お預かり95分」へ</h3>
+  <p>SEAMの主力（大阪＝頭浸浴ウェット／名古屋＝シャンプースパ／銀座＝クリームスパ）は<strong>「会員60分¥9,800／定価¥11,800」</strong>に置きます（大阪・名古屋共通。銀座は会員¥11,800／定価¥13,800）。メニュー価格ではmeme+LIM 60分¥9,500〜10,000（93.6%）・tete de bebe 60分¥9,980と同じ棚、定価はセラピエール¥11,000・tete再来¥11,080と同線＝市場を外れません。この水準は<em>スタッフ給与（指名50%バック・総支給40万円）からの逆算でも必要な単価</em>です（06章）。ドライは天井が低い別市場なので、<strong>時短「首肩リセット」専用</strong>とし平日昼の穴埋めに限定します。</p>
+  <div class="callout">
+    <div class="ttl">席時単価は「勝ちレンジ上限×給与要件」で設計</div>
+    埋まるウェット店の席時単価は<b>¥4,700〜6,500</b>（02章実測）。SEAMのウェット60分は流し・整え・ドリンクを含め<b>約95分お預かり</b>で会員¥9,800 → 席時¥6,189＝勝ちレンジ上限側。これは偶然ではなく、<b>指名50%バックで総支給40万円を出すには席時¥6,500前後が必須</b>だからです（06章の方程式）。meme+LIMが席時¥5,000前後で成立するのは93.6%埋まっているから——60〜70%の埋まり率設計なら単価側で取る必要があります
+  </div>
+  <div class="callout">
+    <div class="ttl">損益分岐（会員価格ベースの保守計算）</div>
+    大阪：¥12,800→会員¥9,800（−23%）なら、予約率が<b>32.4% → 42%</b>を超えれば増収（ウェット勝ち帯上位は5〜9割＝到達圏）。名古屋：¥8,800→会員¥9,800は<b>実質値上げ</b>なので予約が1件でも増えれば即プラス——リスクはありません
+  </div>
+
+  <h3>柱3｜訴求の軸を「首肩」に統一 —「首肩ほどき」シリーズ</h3>
+  <p>お客様の悩み最多は首・肩。ところが現行の名前は「深眠」「睡眠」が先頭で、短時間メニューでは「寝られる」は強みになりません。全店のメニュー名を<strong>「首肩ほどき」</strong>で統一し、短時間メニューは<strong>「首肩リセット」</strong>（ドライスパ・平日限定）として平日昼の空き枠に当てます。</p>
+  <div class="callout">
+    <div class="ttl">SEAMだけの一文（全クーポン説明文の1行目に固定）</div>
+    「仕上げに髪を整えてお返しします——ドライヘッドスパの<em>髪が乱れたまま帰る</em>がありません」<br>
+    <span class="note">※しっかりフルセット仕上げは＋¥1,100のオプション表記。競合のドライ専門店は原則ノーセット退店のため、明確な差別化になります</span>
+  </div>
+
+  <h3>柱4｜ヘアケアは最上位 —「美髪ヘッドスパ」の主戦場はインバウンド</h3>
+  <p>日本一のヘアケア（バイカルテ／Aujua／TOKIO）はディスカウントの道具にせず、<strong>棚の最上位</strong>に置きます。ただし売る相手を明確にします——<strong>日本のお客様はトリートメント込みをあまり選びません</strong>（自宅で試したい製品を使って自分で洗いたいため）。一方、<strong>海外ゲストはヘアケア込みを求める方が多い</strong>。そこで：</p>
+  <ul class="tight">
+    <li><b>美髪ヘッドスパ＝インバウンド主戦</b>：英語名（例 <em>SEAM Signature — Head Spa &amp; Japanese Hair Treatment, approx. 100 min</em>）を用意し、HPBよりGoogleマップ・Instagram・ホテルコンシェルジュ経由で売る。銀座は立地的に最有力、大阪堀江も心斎橋圏の観光客が射程</li>
+    <li><b>日本のお客様には「自宅で試す」導線</b>：Tr込みバンドルを売り込むのではなく、施術で使った製品のミニサイズ・お試し販売とSEAMオンラインショップ（来店者限定）への接続で、「今日サロンで体感→自宅で試す→気に入ったら通う・買う」の流れを作る。行動に逆らわず、行動に乗せる</li>
+  </ul>
+</section>
+
+<!-- ============ 05 クーポン表 ============ -->
+<section>
+  <div class="eyebrow"><span class="num">05</span><h2>店舗別クーポン表（提案）</h2></div>
+
+  <h3>時間×価格 設計早見表 — 最も埋まっている店の構造をそのまま踏襲</h3>
+  <p>施術時間（メニュー表記）・お預かり時間（所要合計）・価格の3点セットを、セグメントごとの実測トップ店からそのまま持ってきます。<strong>ドライ＝ata.master・王様の昼寝・genie（61〜62%）準拠、ウェット＝meme+LIM（93.6%）・ERDE（65.2%）準拠</strong>です。</p>
+
+  <div class="tbl-scroll"><table>
+    <tr><th colspan="5">ドライ（お預かり＝表記＋20〜30分が勝ち組の標準）</th></tr>
+    <tr><th>コース（表記）</th><th class="c">お預かり</th><th>勝ち組の実例（実測）</th><th class="r">SEAM会員</th><th class="r">SEAM定価</th></tr>
+    <tr><td>首肩リセット 30分</td><td class="c">約55分</td><td>ata ¥3,480〜3,980（所要55〜60分）／王様 ¥3,300〜3,960</td><td class="r"><b>¥3,480</b></td><td class="r">¥3,980</td></tr>
+    <tr><td>首肩リセット 40分</td><td class="c">約65分</td><td>ata ¥4,480〜4,980（所要65〜70分）</td><td class="r"><b>¥4,480</b></td><td class="r">¥4,980</td></tr>
+    <tr><td>首肩リセット 60分</td><td class="c">約85分</td><td>王様 ¥6,600／ata ¥6,480〜6,980／genie ¥6,500</td><td class="r"><b>¥6,600</b></td><td class="r">¥6,980</td></tr>
+  </table></div>
+  <p class="note"><b>価格フロア：どのメニューも施術10分あたり¥1,100を下回らない</b>（施術者の技術価値の下限ルール）。ata.masterの60分¥6,480は¥1,080/10分でフロア割れのため採用せず、王様の昼寝の¥6,600（ちょうど¥1,100/10分）を採用。検算——ドライ30分¥3,480＝¥1,160／40分¥4,480＝¥1,120／60分¥6,600＝¥1,100、ウェット60分¥9,800＝¥1,633／90分¥13,800＝¥1,533／美髪100分¥15,800＝¥1,580、銀座60分¥11,800＝¥1,967——全メニュー遵守。</p>
+
+  <div class="tbl-scroll"><table>
+    <tr><th colspan="5">ウェット（お預かり＝表記＋45〜60分が勝ち組の標準）</th></tr>
+    <tr><th>コース（表記）</th><th class="c">お預かり</th><th>勝ち組の実例（実測）</th><th class="r">SEAM会員</th><th class="r">SEAM定価</th></tr>
+    <tr><td>首肩ほどきスパ 60分</td><td class="c">約95分</td><td>meme+LIM 60分 ¥9,500〜10,000（所要105〜120分）／ERDE 60分 ¥8,400（90分）</td><td class="r"><b>¥9,800</b></td><td class="r">¥11,800</td></tr>
+    <tr><td>首肩ほどき＋頭身浴 90分</td><td class="c">約130分</td><td>meme+LIM 首肩付き75分 ¥11,500〜12,200（所要120〜135分）</td><td class="r"><b>¥13,800</b></td><td class="r">¥15,800</td></tr>
+    <tr><td>美髪ヘッドスパ 約100分（スパ＋Tr）</td><td class="c">約145分</td><td>meme+LIM エスパ90分 ¥17,600（135〜165分）／ERDE 100分 ¥17,800（130分）</td><td class="r"><b>¥15,800</b></td><td class="r">¥17,800</td></tr>
+    <tr><td>リカバリー 120分</td><td class="c">約150分</td><td>ERDE 120分 ¥19,800（所要150分）</td><td class="r">—</td><td class="r">¥17,600</td></tr>
+  </table></div>
+  <p class="note">読み方：勝ち組はどこも「表記＝施術コア時間」で見せ、実際は+20〜60分かけてもてなす。SEAMも同じ型（表記+35〜45分）で、価格は勝ち組と同じ棚に置きつつ、<b>スタッフ給与（指名50%バック・総支給40万円）からの逆算で棚の中の位置を決めます</b>（06章）。ドライ3コースは王様の昼寝・ata.masterの価格帯をそのまま採用（席時単価¥4,300〜4,900＝ドライ勝ちレンジ・価格フロア¥1,100/10分遵守）。銀座はオーナー確定構成＝平日¥11,800／土日¥13,000ほか（05章・yumemiベース）。</p>
+
+  <p class="note">凡例：<span class="chip mem">会員価格</span> 初回の方＋前回来店時に次回予約をした方（HPB区分は「全員」・利用条件欄で指定）　<span class="chip all">定価</span>　<span class="chip hair">ヘアケア</span> 最上位帯　<span class="chip wd">平日限定</span>　金色の行＝ヘアケア上位メニュー</p>
+
+  <h3><span class="store-tag">銀座</span>確定構成 — yumemi（98%満枠）ベース・平日／土日ダイナミック</h3>
+  <p>オーナー確定方針：<strong>銀座は¥10,000を切らない</strong>（例外はサクッと需要のドライのみ）。価格軸は会員制ではなく<strong>yumemi方式の平日／土日ダイナミックプライシング</strong>。次回予約特典は「<em>次回予約のある方は土日祝も平日価格</em>」として組み込みます。</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>区分</th><th>クーポン名（HPB掲載名）</th><th class="r">価格</th><th class="r">根拠（yumemi実測）</th></tr>
+    <tr class="hl"><td><span class="chip wd">平日</span></td><td>【平日】首肩ほどきクリームスパ60分＋選べる頭身浴orかっさ（実質90分お預かり）</td><td class="r"><b>¥11,800</b></td><td class="r">yumemi 70分平日¥11,980の直下。席時¥7,867</td></tr>
+    <tr class="hl"><td><span class="chip all">土日祝</span></td><td>【土日祝】首肩ほどきクリームスパ60分＋選べる頭身浴orかっさ（実質90分お預かり）</td><td class="r"><b>¥13,000</b></td><td class="r">yumemi 70分¥13,000と同額（98%満枠の実証価格）</td></tr>
+    <tr class="hl"><td><span class="chip mem">次回予約特典</span></td><td>【次回予約のある方】土日祝も平日価格でご案内</td><td class="r"><b>¥11,800</b></td><td class="r">再来の理由＝土日−¥1,200。yumemiにない SEAM だけの武器</td></tr>
+    <tr><td><span class="chip all">全日</span></td><td>首肩リセット ドライスパ50分（ドライシャンプー込・60分以内に退店OK・髪整え付き）</td><td class="r"><b>¥6,600</b></td><td class="r">仕事・買い物の合間の「サクッと」需要。¥10,000フロアの唯一の例外／席時¥6,600・フロア¥1,320/10分</td></tr>
+    <tr><td><span class="chip wd">平日</span></td><td>【平日】首肩ほどき90分＋選べるオプション（お預かり約135分）</td><td class="r"><b>¥14,500</b></td><td class="r">yumemi 90分平日¥14,500と同額</td></tr>
+    <tr><td><span class="chip all">土日祝</span></td><td>【土日祝】首肩ほどき90分＋選べるオプション</td><td class="r"><b>¥14,980</b></td><td class="r">yumemi 90分¥14,980と同額</td></tr>
+    <tr><td><span class="chip wd">平日</span></td><td>【平日】首肩ほどき＋ハンド＆フット100分（お預かり約150分）</td><td class="r"><b>¥16,000</b></td><td class="r">yumemi 100分¥16,000と同額</td></tr>
+    <tr><td><span class="chip all">土日祝</span></td><td>【土日祝】首肩ほどき＋ハンド＆フット100分</td><td class="r"><b>¥16,500</b></td><td class="r">土日+¥500（yumemi比率準拠）</td></tr>
+    <tr class="tier-hair"><td><span class="chip hair">ヘアケア</span></td><td>美髪ヘッドスパ約100分 首肩ほどき60分＋選べるシステムTr（バイカルテ/Aujua/TOKIO）＋仕上げ</td><td class="r"><b>平日¥17,800／土日¥19,800</b></td><td class="r">最上位帯・<b>主戦場はインバウンド</b>（英語表記＋Google/ホテル導線）。日本のお客様には無理に売らない</td></tr>
+    <tr><td><span class="chip all">全日</span></td><td>リカバリー120分 ¥20,800／ラグジュアリー150分＋Tr ¥29,800</td><td class="r">—</td><td class="r">現行維持</td></tr>
+  </table></div>
+  <p class="note">廃止：ショート45分¥12,000（分単価が60分より高く比較で不利）・旧60分¥13,800定価（土日¥13,000に置換）。yumemiの「かっさ／眼浸浴／頭浸浴を選べる」方式を頭身浴orかっさとして踏襲。yumemiがやっている「スマート支払い（キャッシュレス）限定」条件も会計短縮に有効なので推奨。全メニュー共通オプション：フルセット仕上げ＋¥1,100／システムTr追加＋¥5,500。</p>
+
+  <h3><span class="store-tag">大阪堀江・名古屋栄</span>共通価格表（大阪は値下げ・名古屋は60分¥8,800→¥10,800へ引上げ改定）</h3>
+  <div class="tbl-scroll"><table>
+    <tr><th>区分</th><th>クーポン名（HPB掲載名）</th><th class="r">価格</th><th class="r">根拠</th></tr>
+    <tr class="hl"><td><span class="chip mem">会員価格</span></td><td>【初回＆次回予約でずっと】首肩ほどきスパ60分（お預かり約95分）個室＆髪を整えてお返し<br><span class="note">大阪＝頭浸浴ウェット／名古屋＝シャンプースパ</span></td><td class="r"><b>¥9,800</b></td><td class="r">meme+LIM 60分¥9,500〜10,000と同じ棚。席時¥6,189＝給与逆算の必要水準（06章）</td></tr>
+    <tr class="hl"><td><span class="chip mem">会員価格</span></td><td>【初回＆次回予約でずっと】首肩ほどき＋頭身浴90分（お預かり約130分）</td><td class="r"><b>¥13,800</b></td><td class="r">QUATRE 90分¥13,700と同線・meme+LIM首肩付きと同構造</td></tr>
+    <tr><td><span class="chip mem">会員</span>/<span class="chip all">定価</span> <span class="chip wd">平日11-16時</span></td><td>【平日昼】首肩リセット ドライスパ30分（お預かり約55分・整え付き）</td><td class="r"><b>¥3,480／3,980</b></td><td class="r">ata.master 30分¥3,480〜3,980（所要55〜60分）を丸パクリ</td></tr>
+    <tr><td><span class="chip mem">会員</span>/<span class="chip all">定価</span> <span class="chip wd">平日11-16時</span></td><td>【平日昼】首肩リセット ドライスパ40分（お預かり約65分・整え付き）</td><td class="r"><b>¥4,480／4,980</b></td><td class="r">ata.master 40分¥4,480〜4,980（所要65〜70分）を丸パクリ</td></tr>
+    <tr><td><span class="chip mem">会員</span>/<span class="chip all">定価</span> <span class="chip wd">平日11-16時</span></td><td>【平日昼】首肩リセット ドライスパ60分（お預かり約85分・整え付き）</td><td class="r"><b>¥6,600／6,980</b></td><td class="r">王様の昼寝60分¥6,600と同額（ata¥6,480はフロア割れで不採用）。ウェット60分会員¥9,800への上位導線</td></tr>
+    <tr><td><span class="chip all">定価</span></td><td>首肩ほどきスパ60分</td><td class="r">¥11,800</td><td class="r"><b>名古屋¥8,800→改定・大阪¥12,800→改定</b>。セラピエール¥11,000・tete¥11,080と同線＝休日アンカー</td></tr>
+    <tr><td><span class="chip all">定価</span></td><td>首肩ほどき＋頭身浴90分</td><td class="r">¥15,800</td><td class="r">名古屋¥13,200・<b>大阪¥16,800→改定</b>。ERDE 90分¥15,800と同額</td></tr>
+    <tr><td><span class="chip all">定価</span></td><td>リカバリー120分</td><td class="r">¥17,600</td><td class="r">名古屋現行維持／<b>大阪¥19,800→改定</b></td></tr>
+    <tr><td><span class="chip all">定価</span></td><td>メンズ頭皮ケア・眼精疲労ヘッドスパ60分（名古屋）</td><td class="r">¥11,800</td><td class="r">60分定価に統一・会員価格¥9,800の対象</td></tr>
+    <tr class="tier-hair"><td><span class="chip hair">ヘアケア</span></td><td>美髪ヘッドスパ約100分 首肩ほどき60分＋選べるシステムTr（バイカルテ/Aujua/TOKIO）＋仕上げ（お預かり約145分）</td><td class="r"><b>¥17,800</b></td><td class="r">単品合算¥21,700の−18%</td></tr>
+    <tr class="tier-hair"><td><span class="chip hair">ヘアケア</span> <span class="chip mem">会員価格</span></td><td>【初回＆次回予約でずっと】美髪ヘッドスパ約100分</td><td class="r"><b>¥15,800</b></td><td class="r"><b>主戦場はインバウンド</b>（英語表記＋Google導線）。日本のお客様にはミニサイズお試し＋オンラインショップ接続で売る</td></tr>
+    <tr class="tier-hair"><td><span class="chip hair">ヘアケア</span></td><td>プレミアム150分＋選べるトリートメント</td><td class="r">¥21,800</td><td class="r">名古屋現行維持（既にTr付き＝正しい設計）／大阪にも新設</td></tr>
+  </table></div>
+  <p class="note">大阪のエステ（クリスティーナ）は別ジャンルとして棚の最後尾にまとめ、新規5本→代表3本に圧縮を推奨。トリートメント単品¥9,900・お試しシャンプーブロー¥6,600は現行維持（店販導線）。</p>
+
+  <div class="callout warn">
+    <div class="ttl">名古屋栄・営業時間の検討事項</div>
+    現在11:00〜19:00。競合実測では平日の予約の山は<b>17〜19時</b>で、SEAMの18時台は既に×（枠僅少）。シフトが組めるなら<b>最終受付19時（〜20時営業）への拡張</b>で平日の山を丸ごと取れます。価格より先に効く可能性があります
+  </div>
+</section>
+
+<!-- ============ 06 給与逆算 ============ -->
+<section>
+  <div class="eyebrow"><span class="num">06</span><h2>給与逆算 — 指名50%バックで総支給40万円になる価格</h2></div>
+  <p class="lead">スタッフの給与から逆算します。前提：<strong>1日8時間×22日出勤＝月176時間、指名50%バック、埋まり率60〜70%</strong>。</p>
+
+  <div class="callout">
+    <div class="ttl">給与の方程式</div>
+    総支給 ＝ 176時間 × 埋まり率 × <b>席1時間あたり売上（席時単価）</b> × 50%<br>
+    → 総支給40万円に必要な席時単価：<b>埋まり率60%なら¥7,576／65%なら¥6,993／70%なら¥6,494</b>
+  </div>
+
+  <p>ここまでのv7価格（大阪・名古屋 会員¥8,980）は市場では正しい棚でしたが、席時単価が約¥5,500のため<span class="big-warn">70%埋めても総支給は約33万円</span>——40万円に届きません。市場の勝ち組（meme+LIM 席時¥4,750〜5,710）がこの単価で成立しているのは<b>93.6%埋まっているから</b>です。60〜70%の埋まり率で40万円を出すには、単価をもう一段上げる必要があります。</p>
+
+  <h3>最終価格（給与逆算版）— 大阪・名古屋：70%埋めで40万円</h3>
+  <div class="tbl-scroll"><table>
+    <tr><th>メニュー</th><th class="c">お預かり</th><th class="r">会員価格</th><th class="r">定価</th><th class="r">席時単価（会員/定価）</th></tr>
+    <tr class="hl"><td>首肩ほどきスパ 60分</td><td class="c">約95分</td><td class="r"><b>¥9,800</b></td><td class="r">¥11,800</td><td class="r">¥6,189／7,453</td></tr>
+    <tr class="hl"><td>首肩ほどき＋頭身浴 90分</td><td class="c">約130分</td><td class="r"><b>¥13,800</b></td><td class="r">¥15,800</td><td class="r">¥6,369／7,292</td></tr>
+    <tr class="tier-hair"><td>美髪ヘッドスパ 約100分（＋Tr）</td><td class="c">約145分</td><td class="r"><b>¥15,800</b></td><td class="r">¥17,800</td><td class="r">¥6,538／7,366</td></tr>
+    <tr><td>リカバリー 120分</td><td class="c">約150分</td><td class="r">—</td><td class="r">¥17,600</td><td class="r">¥7,040</td></tr>
+    <tr><td>首肩リセット ドライ 30／40／60分（平日昼）</td><td class="c">55／65／85分</td><td class="r">¥3,480／4,480／6,600</td><td class="r">¥3,980／4,980／6,980</td><td class="r">¥4,600〜4,900</td></tr>
+  </table></div>
+  <p class="note">検算（メニュー構成比：60分55%・90分20%・美髪15%・ドライ10%、会員7割）：平均席時単価≒¥6,430 → <b>70%埋めで総支給約39.6万円≒40万円</b>。美髪はインバウンド主戦のため構成比が5%に下がっても、美髪と60分の席時単価はほぼ同じ（¥6,538 vs ¥6,568）なので<b>給与検算は崩れません</b>。60分¥9,800はmeme+LIM（¥9,500〜10,000）と同じ棚のまま、定価¥11,800はセラピエール¥11,000・tete¥11,080と同線＝市場を外れません。所要は105分→95分に圧縮（それでも表記＋35分のもてなし）。<b>ドライは席時が低いため構成比10%以下で運用</b>——平日昼の空席を埋める補助輪であり、主戦力にしない。</p>
+
+  <h3>最終価格（オーナー確定構成）— 銀座：60%埋めで40万円</h3>
+  <div class="tbl-scroll"><table>
+    <tr><th>メニュー</th><th class="c">お預かり</th><th class="r">平日</th><th class="r">土日祝</th><th class="r">席時単価（平日/土日）</th></tr>
+    <tr class="hl"><td>首肩ほどきクリームスパ 60分（実質90分）</td><td class="c">約90分</td><td class="r"><b>¥11,800</b></td><td class="r"><b>¥13,000</b></td><td class="r">¥7,867／8,667</td></tr>
+    <tr class="hl"><td>首肩ほどき 90分＋選べるオプション</td><td class="c">約135分</td><td class="r"><b>¥14,500</b></td><td class="r"><b>¥14,980</b></td><td class="r">¥6,444／6,658</td></tr>
+    <tr><td>首肩ほどき＋ハンド＆フット 100分</td><td class="c">約150分</td><td class="r">¥16,000</td><td class="r">¥16,500</td><td class="r">¥6,400／6,600</td></tr>
+    <tr class="tier-hair"><td>美髪ヘッドスパ 約100分（＋Tr）</td><td class="c">約150分</td><td class="r"><b>¥17,800</b></td><td class="r">¥19,800</td><td class="r">¥7,120／7,920</td></tr>
+    <tr><td>リカバリー 120分</td><td class="c">約150分</td><td class="r" colspan="2">¥20,800</td><td class="r">¥8,320</td></tr>
+    <tr><td>首肩リセット ドライ 50分（ドライシャンプー込・60分で退店）</td><td class="c">約60分</td><td class="r" colspan="2">¥6,600</td><td class="r">¥6,600</td></tr>
+  </table></div>
+  <p class="note">検算（構成比：60分55%・90分20%・100分/美髪15%・ドライ10%、平日:土日＝6:4）：平均席時単価≒¥7,500 → <b>60%埋めで総支給39.6万円≒40万円、65%で42.9万、70%で46.2万</b>。美髪がインバウンド頼みで構成比が下がる場合、その分は60分（席時¥7,867〜8,667＝美髪より高い）に置き換わるため<b>検算はむしろ上振れ</b>します。¥10,000フロア遵守（例外はドライのみ）。60分土日¥13,000はyumemi（98%満枠）の実証価格そのもの。</p>
+
+  <div class="tbl-scroll"><table>
+    <tr><th>埋まり率</th><th class="r">必要席時単価</th><th class="r">銀座（設計¥7,500）</th><th class="r">大阪・名古屋（設計¥6,430）</th></tr>
+    <tr class="hl"><td>60%</td><td class="r">¥7,576</td><td class="r"><b>¥39.6万</b></td><td class="r">¥34.0万</td></tr>
+    <tr><td>65%</td><td class="r">¥6,993</td><td class="r">¥42.9万</td><td class="r">¥36.8万</td></tr>
+    <tr class="hl"><td>70%</td><td class="r">¥6,494</td><td class="r">¥46.2万</td><td class="r"><b>¥39.6万</b></td></tr>
+    <tr><td>80%（参考）</td><td class="r">¥5,682</td><td class="r">¥52.8万</td><td class="r">¥45.3万</td></tr>
+  </table></div>
+  <p class="note">価格フロア検算：60分¥9,800＝¥1,633/10分・90分¥13,800＝¥1,533・美髪¥15,800＝¥1,580・銀座60分¥11,800＝¥1,967・銀座ドライ50分¥6,600＝¥1,320——全メニュー¥1,100/10分を上回り遵守。給与目標を上げる場合はこの表の埋まり率か席時単価のどちらかを動かす——それ以外に方法はありません。</p>
+</section>
+
+<!-- ============ 07 シミュレーション ============ -->
+<section>
+  <div class="eyebrow"><span class="num">07</span><h2>効果試算 — 会員価格の数字</h2></div>
+  <p>1人の新規客の半年間の売上を比較します（60分の例）。</p>
+
+  <div class="tbl-scroll"><table>
+    <tr><th>パターン</th><th>動き</th><th class="r">銀座</th><th class="r">大阪・名古屋</th></tr>
+    <tr><td>いまの棚</td><td>定価を見て予約しない、または1回で終了</td><td class="r">¥0〜13,800</td><td class="r">¥0〜12,800</td></tr>
+    <tr><td>新規割だけの店<br><span class="note">（採らない方式）</span></td><td>割引で来店 → 次回の理由がなく1回で終了。クーポン渡り歩き客が中心になる</td><td class="r">初回分のみ</td><td class="r">初回分のみ</td></tr>
+    <tr class="hl"><td><b>会員価格</b></td><td>初回¥11,800/¥9,800 → 次回予約を続ける限り同価格で月1回×半年</td><td class="r"><b>¥70,800</b></td><td class="r"><b>¥58,800</b></td></tr>
+  </table></div>
+
+  <p>店舗単位では（前提：新規20人/月・次回予約率50%・会員は月1回来店、離脱月10%込みで6か月後の稼働会員約55人）：</p>
+  <div class="tbl-scroll"><table>
+    <tr><th>店舗</th><th class="r">新規売上/月</th><th class="r">6か月後の会員売上/月</th><th class="r">月商インパクト（6か月後）</th></tr>
+    <tr><td>銀座</td><td class="r">20人 × ¥11,800 ＝ ¥23.6万</td><td class="r">約55人 × ¥11,800 ＝ ¥64.9万</td><td class="r"><b>＋¥88万規模</b></td></tr>
+    <tr><td>大阪堀江</td><td class="r">20人 × ¥9,800 ＝ ¥19.6万</td><td class="r">約55人 × ¥9,800 ＝ ¥53.9万</td><td class="r"><b>＋¥73万規模</b></td></tr>
+    <tr><td>名古屋栄</td><td class="r">20人 × ¥9,800 ＝ ¥19.6万</td><td class="r">約55人 × ¥9,800 ＝ ¥53.9万</td><td class="r"><b>＋¥73万規模</b></td></tr>
+  </table></div>
+  <p class="note">※90分・美髪へのアップセルは含まない最少見積り。前提はすべて仮置きなので、実績が出た月から実数に差し替えてください。鍵は新規数ではなく<b>次回予約率50%</b>——ここだけがスタッフの手で動かせる数字です。</p>
+</section>
+
+<!-- ============ 07 運用 ============ -->
+<section>
+  <div class="eyebrow"><span class="num">07</span><h2>スタッフ運用 — やることは3つだけ</h2></div>
+  <ol class="tight">
+    <li><strong>お会計前の一言（次回予約率50%目標）</strong>——「次回のご予約をいただければ、<b>本日の価格のまま</b>ずっとご案内できます」。初回価格と会員価格が同じだから、この一言に嘘も複雑さもありません。言うタイミングはドリンク提供時か会計時に固定</li>
+    <li><strong>仕上げの整えを必ず言語化</strong>——退店前に「髪、整えてお返ししますね」と一言。SEAMの差別化はこの瞬間にしか伝わりません。フルセット希望なら＋¥1,100を案内</li>
+    <li><strong>口コミ依頼を会計動線に固定</strong>——予約率85%の仙豆銀座は「口コミ投稿で割引」を入口に使っています。当面は口頭依頼＋サンキューカードで件数を積み、必要なら口コミ特典クーポンを追加</li>
+  </ol>
+
+  <h3>効果測定（週次）</h3>
+  <ul class="tight">
+    <li><b>平日昼の×率</b>：銀座34%→55%、大阪28%→45%、名古屋27%→45%を3か月目標（予約カレンダーの実測は自動化済み・毎週同じ方法で追えます）</li>
+    <li><b>次回予約率</b>：レジで「次回予約あり/なし」を記録するだけ。50%を下回った週はトークのタイミングを見直す</li>
+    <li><b>大阪の損益分岐</b>：予約率42%超で値下げ前の売上を上回る（ウェット勝ち帯上位は5〜9割＝到達圏）。休日→平日の順で回復を確認。名古屋は実質値上げのため分岐なし</li>
+    <li><b>美髪ヘッドスパ＝インバウンド指標</b>：日本のお客様には売り込まない（自宅で試したい行動に逆らわない）。計測は「海外ゲストの美髪選択率」と「日本のお客様のホームケアお試し・オンラインショップ接続率」の2本に分ける</li>
+  </ul>
+
+  <div class="callout">
+    <div class="ttl">価格改定のルール（感覚で動かさない）</div>
+    直近7日の×率が<b>85%超を2週連続</b>→該当メニューを＋¥500。<b>50%未満を2週連続</b>→平日昼クーポンを1段深く。休日は割引を出さない——銀座の休日88.9%が「定価で埋まる」の実証です。<b>絶対下限：どんな割引・キャンペーンでも施術10分あたり¥1,100を割らない</b>（施術者の技術価値を守る不可侵ライン。これ以上下げたくなったら価格でなくメニュー内容・時間を変える）
+  </div>
+</section>
+
+<div class="foot">
+  <b>データについて</b>｜競合・SEAMともホットペッパービューティーの予約画面（10分刻み空き状況・14日分）を2026年7月12〜13日に取得。クーポンごとにカレンダー表示が変わるため、1店につき複数クーポン（最大9本）を統合し「いずれかで空きがあれば空き」と判定。×には満枠のほかシフト非公開・受付停止が含まれ得るため、数値は「予約画面上で埋まって見える率」です。価格帯分析（02章）は名古屋・大阪の26店：60分換算価格＝各店の全員向けクーポンの分単価中央値×60分。ドライ／ウェットの分類はサロン名とクーポン名のキーワード（ドライ／シャンプー・頭浸浴・泡・クリーム等）による。実所要時間は各店の予約ステップに表示される「所要合計」の実測値（混雑により前後する旨の注記あり）。席時単価＝メニュー価格÷実所要。郊外店（岡崎・一宮・箕面・緑区）は参考値として本文の帯判断から除外。競合価格は各サロンのクーポンページ掲載の実額。<br>
+  SEAM SPA 価格・クーポン再設計提案 v10（美髪＝インバウンド主戦・日本のお客様はホームケア接続版）｜2026.07.13
+</div>
+
+</div>
+
+</body>
+</html>
