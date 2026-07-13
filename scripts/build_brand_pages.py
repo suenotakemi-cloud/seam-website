@@ -470,16 +470,16 @@ def main():
         for st in stores:
             art=area_article_html(b,st,stores,lines,tops)
             open(f'{b["slug"]}-{st["slug"]}.html','w',encoding='utf-8').write(art)
-    # sitemap
-    sm=open('sitemap.xml',encoding='utf-8').read()
-    add=''.join(f'  <url><loc>https://seam.site/{b["slug"]}</loc></url>\n' for b in BRANDS
-                if f'/{b["slug"]}</loc>' not in sm)
-    add+=''.join(f'  <url><loc>https://seam.site/{b["slug"]}-{s}</loc></url>\n'
-                 for b in BRANDS for s in STORES
-                 if f'/{b["slug"]}-{s}</loc>' not in sm)
-    if add:
-        sm=sm.replace('</urlset>', add+'</urlset>')
-        open('sitemap.xml','w',encoding='utf-8').write(sm)
+    # sitemapはCI(build-i18n.js)が再生成する管理物=直接書かず jaUrls を同期する
+    ci='.github/scripts/build-i18n.js'
+    t=open(ci,encoding='utf-8').read()
+    slugs=[f'/{b["slug"]}' for b in BRANDS]+[f'/{b["slug"]}-{s}' for b in BRANDS for s in STORES]
+    miss=[s for s in slugs if f"'{s}'" not in t]
+    if miss:
+        i=t.index('];', t.index('const jaUrls'))
+        t=t[:i]+',\n    '+', '.join(f"'{s}'" for s in miss)+t[i:]
+        open(ci,'w',encoding='utf-8').write(t)
+        print('build-i18n.js jaUrls 同期:', len(miss))
     # 店舗ページに取扱ブランドリンク(idempotent)
     MARK='<!-- BRAND_LP_LINKS -->'
     pills=''.join(f'<a href="{b["slug"]}.html" style="display:inline-block;font-size:12px;line-height:1;padding:8px 12px;border-radius:999px;background:#F6F1EA;border:1px solid rgba(60,54,46,.1);color:#4A4238;white-space:nowrap;text-decoration:none;">{html.escape(b["ja"])}</a>' for b in BRANDS)
