@@ -1,0 +1,11 @@
+name = "seam-square-pay"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# 環境変数（公開してよい設定）。秘密鍵はここに書かず `wrangler secret put` で登録する。
+[vars]
+SQUARE_ENV = "sandbox"          # テスト中は sandbox / 本番は "production"
+ALLOW_ORIGIN = "*"              # 決済フォームのオリジンに絞るのが安全。例) "https://booking.seam.site"
+
+# 秘密鍵は下記コマンドで登録（wrangler.toml には絶対に書かない）:
+#   npx wrangler secret put SQUARE_ACCESS_TOKEN

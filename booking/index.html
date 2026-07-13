@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Salon Town Booking — 予約一元管理</title>
+<style>
+:root{
+  --navy:#0e2a47; --navy2:#153a63; --accent:#2f7dd1; --accent2:#5aa9e6;
+  --bg:#f4f7fa; --card:#ffffff; --line:#e3eaf2; --ink:#1c2b3a; --sub:#68798c;
+  --ok:#1f9d61; --warn:#d97706; --danger:#dc2626;
+  --ch-own:#2f7dd1; --ch-line:#06c755; --ch-google:#ea4335; --ch-instagram:#c13584;
+  --ch-hpb:#f25c05; --ch-rakuten:#bf0000; --ch-minimo:#00a5bf; --ch-square:#2d3b4e;
+  --radius:14px; --shadow:0 2px 10px rgba(14,42,71,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px}
+
+/* ---- header ---- */
+header{background:var(--navy);color:#fff;padding:0 20px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
+header .logo{font-weight:800;font-size:16px;letter-spacing:.04em}
+header .logo span{color:var(--accent2);font-weight:600;font-size:11px;margin-left:8px;border:1px solid rgba(255,255,255,.3);padding:1px 8px;border-radius:99px;vertical-align:2px}
+nav{display:flex;gap:4px;margin-left:auto}
+nav button{background:transparent;border:none;color:rgba(255,255,255,.72);padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600}
+nav button.active{background:rgba(255,255,255,.14);color:#fff}
+nav button:hover{color:#fff}
+
+main{max-width:1180px;margin:0 auto;padding:22px 20px 80px}
+.view{display:none}.view.show{display:block}
+h2{font-size:18px;font-weight:800;margin-bottom:4px}
+.lead{color:var(--sub);font-size:13px;margin-bottom:18px}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}
+.grid{display:grid;gap:14px}
+@media(min-width:820px){.grid.cols4{grid-template-columns:repeat(4,1fr)}.grid.cols2{grid-template-columns:1fr 1fr}.grid.cols3{grid-template-columns:repeat(3,1fr)}}
+
+/* ---- dashboard ---- */
+.kpi .num{font-size:30px;font-weight:800;line-height:1.2}
+.kpi .lbl{color:var(--sub);font-size:12px;font-weight:600}
+.kpi .sub{font-size:12px;color:var(--sub);margin-top:2px}
+.chanbar{display:flex;height:14px;border-radius:99px;overflow:hidden;margin:10px 0 8px;background:#edf2f7}
+.chanbar div{height:100%}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:12px;color:var(--sub)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px}
+.uplist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.upitem{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fbfdff}
+.upitem .t{font-weight:800;font-variant-numeric:tabular-nums;min-width:88px}
+.upitem .n{font-weight:700}
+.upitem .m{color:var(--sub);font-size:12px}
+
+.badge{display:inline-block;font-size:10.5px;font-weight:800;color:#fff;padding:2px 8px;border-radius:99px;letter-spacing:.02em;white-space:nowrap}
+
+/* ---- calendar ---- */
+.calbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.calbar .date{font-size:16px;font-weight:800}
+.calbar button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-weight:700;font-size:13px}
+.calbar button:hover{border-color:var(--accent)}
+.calwrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+table.cal{border-collapse:collapse;width:100%;min-width:640px}
+table.cal th{background:#f7fafc;border-bottom:1px solid var(--line);padding:10px 6px;font-size:13px;position:sticky;top:0}
+table.cal th .role{display:block;font-size:11px;color:var(--sub);font-weight:600}
+table.cal td{border-bottom:1px solid #eef3f8;border-left:1px solid #eef3f8;height:34px;padding:0;vertical-align:top;position:relative}
+table.cal td.time{width:64px;text-align:right;padding-right:10px;color:var(--sub);font-size:11.5px;background:#fbfdff;border-left:none;font-variant-numeric:tabular-nums}
+td.slot{cursor:pointer}
+td.slot:hover{background:#f0f7ff}
+.resv{position:absolute;left:3px;right:3px;top:1px;border-radius:8px;color:#fff;padding:4px 8px;font-size:11.5px;line-height:1.35;overflow:hidden;z-index:2;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.14)}
+.resv b{display:block;font-size:12px}
+.resv:hover{filter:brightness(1.07)}
+
+/* ---- booking (customer) ---- */
+.bookshell{max-width:520px;margin:0 auto}
+.phone{background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+.phone .phead{background:var(--navy);color:#fff;padding:16px 20px}
+.phone .phead .s{font-size:11px;opacity:.75;letter-spacing:.1em}
+.phone .phead .n{font-size:17px;font-weight:800}
+.pbody{padding:18px 20px 24px}
+.steps{display:flex;gap:6px;margin-bottom:16px}
+.steps div{flex:1;height:4px;border-radius:99px;background:#e6edf5}
+.steps div.on{background:var(--accent)}
+.opt{display:flex;justify-content:space-between;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:9px;cursor:pointer;transition:.12s}
+.opt:hover{border-color:var(--accent2)}
+.opt.sel{border-color:var(--accent);background:#f0f7ff}
+.opt .nm{font-weight:700}
+.opt .dt{font-size:12px;color:var(--sub)}
+.opt .pr{font-weight:800;color:var(--navy)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);border-radius:99px;padding:7px 13px;font-size:13px;font-weight:700;background:#fff}
+.chip.sel{border-color:var(--accent);background:var(--accent);color:#fff}
+.chip:disabled{opacity:.32;cursor:not-allowed;text-decoration:line-through}
+.daytabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px}
+.daytab{min-width:64px;text-align:center;border:1.5px solid var(--line);border-radius:12px;padding:7px 4px;background:#fff}
+.daytab .w{font-size:10.5px;color:var(--sub);display:block}
+.daytab .d{font-weight:800;font-size:15px}
+.daytab.sel{border-color:var(--accent);background:var(--accent);color:#fff}
+.daytab.sel .w{color:rgba(255,255,255,.8)}
+.pnav{display:flex;gap:10px;margin-top:18px}
+.btn{border:none;border-radius:12px;padding:12px 18px;font-weight:800;font-size:14px}
+.btn.pri{background:var(--accent);color:#fff;flex:1}
+.btn.pri:hover{background:#2568b3}
+.btn.pri:disabled{background:#b9cede;cursor:not-allowed}
+.btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--sub)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:4px}
+.field input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px}
+.done{text-align:center;padding:26px 6px}
+.done .ic{width:60px;height:60px;border-radius:50%;background:#e7f6ee;color:var(--ok);font-size:30px;line-height:60px;margin:0 auto 12px}
+.summary{background:#f7fafc;border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;margin-top:14px}
+.summary dt{color:var(--sub);font-size:11px;font-weight:700;margin-top:6px}
+.summary dd{font-weight:700}
+
+/* ---- channels ---- */
+.chcard{display:flex;flex-direction:column;gap:8px}
+.chcard .top{display:flex;align-items:center;gap:10px}
+.chdot{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:13px;flex-shrink:0}
+.chcard h3{font-size:14.5px}
+.pill{margin-left:auto;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px}
+.pill.ok{background:#e7f6ee;color:var(--ok)}
+.pill.dev{background:#eef4ff;color:var(--accent)}
+.pill.ext{background:#fdf1e3;color:var(--warn)}
+.pill.risk{background:#fdeaea;color:var(--danger)}
+.chcard p{font-size:12.5px;color:var(--sub)}
+.chcard .how{font-size:12px;background:#f7fafc;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.chcard .how b{color:var(--navy)}
+.mailbox textarea{width:100%;height:170px;border:1.5px solid var(--line);border-radius:12px;padding:12px;font-size:12.5px;font-family:ui-monospace,Menlo,monospace;resize:vertical}
+.note{font-size:12px;color:var(--sub);background:#fffbeb;border:1px solid #fde9b8;border-radius:10px;padding:10px 12px;margin-top:10px}
+
+.pill.clean{background:#e6f7f1;color:#0a8f5b}
+
+/* ---- HPB block panel ---- */
+.blockcard.ok{border-color:#cdeede;background:#f4fbf7}
+.blockcard.warn{border-color:#fbdca0;background:#fffaf0}
+.bc-head{display:flex;gap:12px;align-items:flex-start}
+.bc-ic{width:26px;height:26px;border-radius:50%;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.bc-ic.ok{background:var(--ok)}.bc-ic.warn{background:var(--warn)}
+.bc-head h3{font-size:14.5px}
+.bc-head p{font-size:12.5px;color:var(--sub);margin-top:2px}
+.bc-head p b{color:var(--warn)}
+.bc-list{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.bc-item{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px;flex-wrap:wrap}
+.bc-item .t{font-weight:800;font-variant-numeric:tabular-nums;font-size:12.5px;min-width:118px}
+.bc-item .n{font-weight:700}
+.bc-item .m{color:var(--sub);font-size:12px}
+.bc-btn{margin-left:auto;border:1.5px solid var(--warn);color:var(--warn);background:#fff;border-radius:8px;padding:6px 12px;font-weight:800;font-size:12px;white-space:nowrap}
+.bc-btn:hover{background:var(--warn);color:#fff}
+.resv-warn{position:absolute;top:2px;right:4px;font-size:11px;filter:drop-shadow(0 0 1px rgba(0,0,0,.4))}
+.resv-dep{position:absolute;bottom:2px;right:4px;font-size:10px;font-weight:800;background:rgba(255,255,255,.85);color:var(--ok);border-radius:4px;padding:0 3px;line-height:1.4}
+
+/* ---- payment step ---- */
+.pay-amt{display:flex;justify-content:space-between;align-items:center;background:#f0f7ff;border:1px solid #cfe4fb;border-radius:12px;padding:12px 16px;margin-bottom:14px}
+.pay-amt span{font-size:12.5px;color:var(--sub);font-weight:700}
+.pay-amt b{font-size:22px;color:var(--navy)}
+.pay-card{border:1.5px solid var(--line);border-radius:14px;padding:14px}
+.pay-brand{font-size:11px;color:var(--sub);font-weight:700;letter-spacing:.03em;margin-bottom:8px;display:flex;align-items:center;flex-wrap:wrap}
+.sq-badge{background:#006aff;color:#fff;font-weight:800;font-size:10px;padding:2px 7px;border-radius:5px;letter-spacing:.02em}
+.pay-card input[readonly]{background:#f7fafc;color:var(--ink);letter-spacing:.06em}
+.pay-secure{font-size:11.5px;color:var(--sub);background:#f4fbf7;border:1px solid #cdeede;border-radius:8px;padding:7px 10px;margin-top:4px}
+.btn.linktext{background:none;border:none;color:var(--sub);width:100%;margin-top:10px;font-size:13px;font-weight:700;text-decoration:underline}
+.btn.linktext:hover{color:var(--accent)}
+
+/* ---- LINE cta ---- */
+.line-cta{display:flex;gap:12px;align-items:center;background:#f0fbf3;border:1px solid #bde8c8;border-radius:14px;padding:14px;text-align:left;margin-top:16px}
+.line-cta .qr{width:56px;height:56px;border-radius:10px;flex-shrink:0;background:
+  linear-gradient(90deg,#0a3d1e 0 20%,#fff 0 30%,#0a3d1e 0 45%,#fff 0 55%,#0a3d1e 0 70%,#fff 0 80%,#0a3d1e 0 100%),
+  linear-gradient(0deg,#0a3d1e 0 20%,#fff 0 30%,#0a3d1e 0 45%,#fff 0 55%,#0a3d1e 0 70%,#fff 0 80%,#0a3d1e 0 100%);
+  background-blend-mode:multiply;border:3px solid #fff;box-shadow:0 0 0 1px #bde8c8}
+.line-cta-body b{display:block;font-size:13.5px;color:#06843c}
+.line-cta-body span{font-size:11.5px;color:var(--sub)}
+.btn.line{background:var(--ch-line);color:#fff;flex:1}
+.btn.line:hover{background:#05b34c}
+
+/* ---- modal / toast ---- */
+.modal-bg{position:fixed;inset:0;background:rgba(14,42,71,.45);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:420px;box-shadow:0 18px 50px rgba(0,0,0,.25)}
+.modal h3{font-size:16px;margin-bottom:12px}
+.modal .field select,.modal .field input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px}
+.modal .row{display:flex;gap:10px;margin-top:16px}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:12px;font-weight:700;font-size:13px;opacity:0;transition:.25s;z-index:200;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{background:var(--danger)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Salon Town Booking<span>PROTOTYPE</span></div>
+  <nav>
+    <button data-v="dash" class="active">ダッシュボード</button>
+    <button data-v="cal">予約台帳</button>
+    <button data-v="book">予約ページ</button>
+    <button data-v="chan">チャネル連携</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ DASHBOARD ============ -->
+<section class="view show" id="v-dash">
+  <h2>ダッシュボード</h2>
+  <p class="lead">全チャネルの予約を1つの台帳に集約。ダブルブッキングはマスタ在庫側で防止します</p>
+  <div class="grid cols4" style="margin-bottom:14px">
+    <div class="card kpi"><div class="lbl">今日の予約</div><div class="num" id="k-today">0</div><div class="sub" id="k-today-sub"></div></div>
+    <div class="card kpi"><div class="lbl">今週の予約</div><div class="num" id="k-week">0</div><div class="sub">7日間合計</div></div>
+    <div class="card kpi"><div class="lbl">今日の稼働率</div><div class="num" id="k-occ">0%</div><div class="sub">営業枠に対する予約枠</div></div>
+    <div class="card kpi"><div class="lbl">自社予約比率</div><div class="num" id="k-own">0%</div><div class="sub">手数料ゼロのチャネル</div></div>
+  </div>
+  <div class="card blockcard" id="blockcard" style="margin-bottom:14px"></div>
+  <div class="grid cols2">
+    <div class="card">
+      <h3 style="font-size:14.5px">チャネル別内訳（今週）</h3>
+      <div class="chanbar" id="chanbar"></div>
+      <div class="legend" id="chanlegend"></div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:14.5px">この後の予約</h3>
+      <div class="uplist" id="uplist"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CALENDAR ============ -->
+<section class="view" id="v-cal">
+  <h2>予約台帳</h2>
+  <p class="lead">スタッフ×時間のマスタ在庫。空き枠クリックで手動登録（電話予約など）。予約クリックで削除</p>
+  <div class="calbar">
+    <button id="cal-prev">◀</button>
+    <button id="cal-today">今日</button>
+    <button id="cal-next">▶</button>
+    <div class="date" id="cal-date"></div>
+    <div class="legend" id="cal-legend" style="margin-left:auto"></div>
+  </div>
+  <div class="calwrap"><table class="cal" id="caltable"></table></div>
+</section>
+
+<!-- ============ CUSTOMER BOOKING ============ -->
+<section class="view" id="v-book">
+  <h2>予約ページ（顧客向けデモ）</h2>
+  <p class="lead">自社サイト・LINE(LIFF)・Instagramリンク・Googleビジネスプロフィールの予約リンクから、この同じフローに着地させます</p>
+  <div class="bookshell">
+    <div class="phone">
+      <div class="phead"><div class="s">WEB RESERVATION</div><div class="n">SEAM GINZA — ご予約</div></div>
+      <div class="pbody" id="pbody"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHANNELS ============ -->
+<section class="view" id="v-chan">
+  <h2>チャネル連携</h2>
+  <p class="lead">調査結果にもとづく現実的な接続方式。公式APIがない媒体は「通知メール取込」を第一手段にします</p>
+  <div class="grid cols3" id="chgrid" style="margin-bottom:16px"></div>
+  <div class="card mailbox">
+    <h3 style="font-size:15px;margin-bottom:6px">📧 予約通知メール取込シミュレータ（HPB / 楽天 / minimo）</h3>
+    <p style="font-size:12.5px;color:var(--sub);margin-bottom:10px">サロンボード等の予約通知メールを専用アドレスで受信→パース→台帳に自動登録する方式（DOUKI等と同型）。下のサンプルを編集して「取込」を押すと動きがわかります</p>
+    <textarea id="mailraw"></textarea>
+    <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
+      <select id="mailchan" style="border:1.5px solid var(--line);border-radius:10px;padding:9px 12px">
+        <option value="hpb">ホットペッパービューティー</option>
+        <option value="rakuten">楽天ビューティー</option>
+        <option value="minimo">minimo</option>
+      </select>
+      <button class="btn pri" style="flex:0 0 auto" id="mailgo">メールを取込</button>
+    </div>
+    <div class="note">⚠️ この方式は「読み取り」専用。HPB側の空き枠を塞ぐ「書き込み」は公式APIがなくRPAは規約・CAPTCHAリスクがあるため、書き込み同期が必要なら かんざし等の既存連携SaaS（月額5,500円〜）を併用するのが現実解です</div>
+  </div>
+</section>
+
+</main>
+
+<div class="modal-bg" id="modalbg">
+  <div class="modal">
+    <h3>予約を登録</h3>
+    <div class="field"><label>お客様名</label><input id="m-name" placeholder="例）山田花子"></div>
+    <div class="field"><label>メニュー</label><select id="m-menu"></select></div>
+    <div class="field"><label>チャネル</label><select id="m-chan"></select></div>
+    <div style="font-size:12.5px;color:var(--sub)" id="m-info"></div>
+    <div class="row">
+      <button class="btn ghost" style="flex:1" id="m-cancel">キャンセル</button>
+      <button class="btn pri" id="m-save">登録する</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* =============== data =============== */
+const LS='stb_v1';
+const OPEN=10*60, CLOSE=19*60, STEP=30; // minutes
+// SEAM 銀座の実在籍（ホットペッパー表記のまま）: 及川 大輝(店長/ヘア)・ANZU(ヘア兼スパ)・CHIKA(スパ)
+const STAFF=[
+  {id:'s1',name:'及川 大輝',role:'店長 / スタイリスト'},
+  {id:'s2',name:'ANZU',role:'スタイリスト / スパニスト'},
+  {id:'s3',name:'CHIKA',role:'スパニスト'},
+];
+const MENUS=[
+  {id:'m1',name:'カット',min:60,price:4950,staff:['s1','s2']},
+  {id:'m2',name:'カット + カラー',min:150,price:12100,staff:['s1','s2']},
+  {id:'m3',name:'カット + パーマ',min:150,price:13200,staff:['s1','s2']},
+  {id:'m4',name:'縮毛矯正',min:180,price:18700,staff:['s1']},
+  {id:'m5',name:'ヘッドスパ 60分',min:60,price:6600,staff:['s2','s3']},
+  {id:'m6',name:'ヘッドスパ 90分',min:90,price:9350,staff:['s2','s3']},
+];
+const CHANNELS={
+  own:{name:'自社予約',short:'自社',color:'var(--ch-own)'},
+  line:{name:'LINE予約',short:'LINE',color:'var(--ch-line)'},
+  google:{name:'Google予約リンク',short:'Google',color:'var(--ch-google)'},
+  instagram:{name:'Instagram導線',short:'Insta',color:'var(--ch-instagram)'},
+  square:{name:'Square予約',short:'Sq',color:'var(--ch-square)'},
+  hpb:{name:'ホットペッパー',short:'HPB',color:'var(--ch-hpb)'},
+  rakuten:{name:'楽天ビューティー',short:'楽天',color:'var(--ch-rakuten)'},
+  minimo:{name:'minimo',short:'minimo',color:'var(--ch-minimo)'},
+};
+
+const pad=n=>String(n).padStart(2,'0');
+const dkey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const hm=min=>`${pad(Math.floor(min/60))}:${pad(min%60)}`;
+const WD=['日','月','火','水','木','金','土'];
+const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+
+let db=load();
+function load(){
+  try{const raw=localStorage.getItem(LS);if(raw){const j=JSON.parse(raw);if(j.seedDay===dkey(today()))return j}}catch(e){}
+  return seed();
+}
+function save(){localStorage.setItem(LS,JSON.stringify(db))}
+function seed(){
+  const t=today();
+  // blocked: HPB以外のチャネルで入った予約を、HPB(サロンボード)側で手動ブロック済みか。
+  // falseなら「HPB要ブロック」タスクに載る。HPB予約はHPB上に既にあるので常に済み扱い。
+  const mk=(dOff,staffId,startMin,menuId,name,chan,blocked)=>({
+    id:'r'+Math.random().toString(36).slice(2,9),
+    date:dkey(addDays(t,dOff)),staffId,start:startMin,
+    end:startMin+MENUS.find(m=>m.id===menuId).min,
+    menuId,name,channel:chan,deposit:0,
+    hpbBlocked:chan==='hpb'?true:(blocked!==false),
+    createdAt:new Date().toISOString()
+  });
+  const rs=[
+    mk(0,'s1',600,'m1','小林 芽衣','hpb'),   mk(0,'s1',690,'m2','渡辺 結衣','own'),
+    mk(0,'s2',630,'m1','中村 蒼','line'),     mk(0,'s2',840,'m3','伊藤 大和','hpb'),
+    mk(0,'s3',660,'m5','山本 凛','instagram'),mk(0,'s3',900,'m6','加藤 心春','own',false),
+    mk(1,'s1',600,'m4','斎藤 陽菜','rakuten'),mk(1,'s2',720,'m2','松本 咲良','minimo'),
+    mk(1,'s3',630,'m5','井上 楓','google',false), mk(2,'s1',840,'m1','木村 悠人','line'),
+    mk(2,'s2',600,'m2','林 美月','hpb'),      mk(2,'s3',960,'m6','清水 詩織','own',false),
+    mk(3,'s1',660,'m2','山口 莉子','own',false),  mk(3,'s3',720,'m5','森 陽翔','line',false),
+    mk(4,'s2',900,'m3','池田 芽依','hpb'),    mk(4,'s3',600,'m6','橋本 澪','instagram'),
+    mk(5,'s1',720,'m1','阿部 湊','minimo'),   mk(5,'s2',630,'m2','石川 紬','rakuten'),
+    mk(6,'s3',840,'m5','前田 葵','google'),   mk(6,'s1',960,'m1','藤田 樹','own'),
+    mk(2,'s1',600,'m1','大野 桜','square'),   mk(4,'s2',660,'m1','谷口 蒼','square',false),
+  ];
+  const d={seedDay:dkey(t),reservations:rs};
+  localStorage.setItem(LS,JSON.stringify(d));
+  return d;
+}
+
+/* =============== core: inventory guard =============== */
+function conflicts(date,staffId,start,end,ignoreId){
+  return db.reservations.filter(r=>r.date===date&&r.staffId===staffId&&r.id!==ignoreId&&start<r.end&&end>r.start);
+}
+function addReservation(o){
+  const c=conflicts(o.date,o.staffId,o.start,o.end);
+  if(c.length)return{ok:false,conflict:c[0]};
+  o.id='r'+Math.random().toString(36).slice(2,9);
+  o.createdAt=new Date().toISOString();
+  if(o.deposit===undefined)o.deposit=0;
+  // HPB以外の予約は、HPB側の枠を手動ブロックするまで「要ブロック」。HPB予約は済み扱い。
+  if(o.hpbBlocked===undefined)o.hpbBlocked=(o.channel==='hpb');
+  db.reservations.push(o);save();refreshAll();
+  return{ok:true,resv:o};
+}
+function removeReservation(id){db.reservations=db.reservations.filter(r=>r.id!==id);save();refreshAll()}
+function markBlocked(id){const r=db.reservations.find(x=>x.id===id);if(r){r.hpbBlocked=true;save();refreshAll()}}
+// HPB要ブロック: 今日以降・HPB以外・未ブロックの予約（=他チャネルで埋まったのにHPBが空きのまま=二重予約リスク）
+function pendingBlocks(){
+  const tk=dkey(today());
+  return db.reservations.filter(r=>r.date>=tk&&r.channel!=='hpb'&&!r.hpbBlocked)
+    .sort((a,b)=>a.date===b.date?a.start-b.start:a.date<b.date?-1:1);
+}
+
+/* =============== toast / nav =============== */
+const toast=(msg,err)=>{const t=document.getElementById('toast');t.textContent=msg;t.className=err?'show err':'show';clearTimeout(t._h);t._h=setTimeout(()=>t.className='',3200)};
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.getElementById('v-'+b.dataset.v).classList.add('show');
+});
+
+/* =============== dashboard =============== */
+function renderDash(){
+  const tk=dkey(today());
+  const todays=db.reservations.filter(r=>r.date===tk).sort((a,b)=>a.start-b.start);
+  const weekKeys=[...Array(7)].map((_,i)=>dkey(addDays(today(),i)));
+  const week=db.reservations.filter(r=>weekKeys.includes(r.date));
+  document.getElementById('k-today').textContent=todays.length;
+  document.getElementById('k-today-sub').textContent=todays.length?`次: ${hm(todays.find(r=>true).start)}〜`:'予約なし';
+  document.getElementById('k-week').textContent=week.length;
+  const capacity=STAFF.length*(CLOSE-OPEN);
+  const used=todays.reduce((s,r)=>s+(r.end-r.start),0);
+  document.getElementById('k-occ').textContent=Math.round(used/capacity*100)+'%';
+  const ownish=week.filter(r=>['own','line','google','instagram'].includes(r.channel)).length;
+  document.getElementById('k-own').textContent=(week.length?Math.round(ownish/week.length*100):0)+'%';
+
+  const counts={};Object.keys(CHANNELS).forEach(k=>counts[k]=0);
+  week.forEach(r=>counts[r.channel]=(counts[r.channel]||0)+1);
+  const bar=document.getElementById('chanbar');bar.innerHTML='';
+  const leg=document.getElementById('chanlegend');leg.innerHTML='';
+  Object.entries(CHANNELS).forEach(([k,c])=>{
+    if(counts[k]){const d=document.createElement('div');d.style.cssText=`width:${counts[k]/week.length*100}%;background:${c.color}`;bar.appendChild(d)}
+    leg.insertAdjacentHTML('beforeend',`<span><i style="background:${c.color}"></i>${c.name} ${counts[k]||0}</span>`);
+  });
+
+  const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();
+  const up=db.reservations.filter(r=>r.date>tk||(r.date===tk&&r.end>nowMin))
+    .sort((a,b)=>a.date===b.date?a.start-b.start:a.date<b.date?-1:1).slice(0,6);
+  const ul=document.getElementById('uplist');
+  ul.innerHTML=up.length?'':'<div style="color:var(--sub);font-size:13px">この後の予約はありません</div>';
+  up.forEach(r=>{
+    const st=STAFF.find(s=>s.id===r.staffId),m=MENUS.find(m=>m.id===r.menuId),c=CHANNELS[r.channel];
+    const dd=r.date===tk?'今日':r.date.slice(5).replace('-','/');
+    ul.insertAdjacentHTML('beforeend',
+      `<div class="upitem"><span class="t">${dd} ${hm(r.start)}</span><span class="n">${r.name}</span><span class="m">${m.name} / ${st.name}</span><span class="badge" style="background:${c.color};margin-left:auto">${c.short}</span></div>`);
+  });
+  renderBlockCard();
+}
+function renderBlockCard(){
+  const el=document.getElementById('blockcard');if(!el)return;
+  const pend=pendingBlocks();const tk=dkey(today());
+  if(!pend.length){
+    el.className='card blockcard ok';
+    el.innerHTML=`<div class="bc-head"><span class="bc-ic ok">✓</span><div><h3>HPBで要ブロックの予約はありません</h3><p>他チャネルの予約はすべてHPB側に反映済み。二重予約リスクなしです</p></div></div>`;
+    return;
+  }
+  el.className='card blockcard warn';
+  let rows='';
+  pend.forEach(r=>{
+    const st=STAFF.find(s=>s.id===r.staffId),m=MENUS.find(m=>m.id===r.menuId),c=CHANNELS[r.channel];
+    const dd=r.date===tk?'今日':r.date.slice(5).replace('-','/');
+    rows+=`<div class="bc-item"><span class="t">${dd} ${hm(r.start)}〜${hm(r.end)}</span><span class="badge" style="background:${c.color}">${c.short}</span><span class="n">${r.name}</span><span class="m">${m.name} / ${st.name}</span><button class="bc-btn" data-id="${r.id}">HPBブロック済みにする</button></div>`;
+  });
+  el.innerHTML=`<div class="bc-head"><span class="bc-ic warn">!</span><div><h3>HPBで枠ブロックが必要（${pend.length}件）</h3><p>他チャネルで予約が入った枠です。<b>サロンボードで手動ブロック</b>して二重予約を防いでください（自動書き込みは規約グレーのため行いません）</p></div></div><div class="bc-list">${rows}</div>`;
+  el.querySelectorAll('.bc-btn').forEach(b=>b.onclick=()=>{markBlocked(b.dataset.id);toast('HPBブロック済みにしました')});
+}
+
+/* =============== calendar =============== */
+let calDay=today();
+function renderCal(){
+  const k=dkey(calDay);
+  document.getElementById('cal-date').textContent=`${calDay.getFullYear()}/${calDay.getMonth()+1}/${calDay.getDate()}（${WD[calDay.getDay()]}）`;
+  const leg=document.getElementById('cal-legend');leg.innerHTML='';
+  Object.values(CHANNELS).forEach(c=>leg.insertAdjacentHTML('beforeend',`<span><i style="background:${c.color}"></i>${c.short}</span>`));
+  const tbl=document.getElementById('caltable');
+  let html='<tr><th></th>'+STAFF.map(s=>`<th>${s.name}<span class="role">${s.role}</span></th>`).join('')+'</tr>';
+  for(let t=OPEN;t<CLOSE;t+=STEP){
+    html+=`<tr><td class="time">${hm(t)}</td>`;
+    STAFF.forEach(s=>{html+=`<td class="slot" data-s="${s.id}" data-t="${t}"></td>`});
+    html+='</tr>';
+  }
+  tbl.innerHTML=html;
+  const rowH=35;
+  db.reservations.filter(r=>r.date===k).forEach(r=>{
+    const cell=tbl.querySelector(`td[data-s="${r.staffId}"][data-t="${r.start}"]`);
+    if(!cell)return;
+    const c=CHANNELS[r.channel],m=MENUS.find(m=>m.id===r.menuId);
+    const h=(r.end-r.start)/STEP*rowH-4;
+    const warn=(r.channel!=='hpb'&&!r.hpbBlocked)?'<span class="resv-warn" title="HPBで要ブロック">⚠</span>':'';
+    const dep=r.deposit>0?'<span class="resv-dep" title="前金あり">¥</span>':'';
+    cell.insertAdjacentHTML('beforeend',
+      `<div class="resv" data-id="${r.id}" style="background:${c.color};height:${h}px">${warn}${dep}<b>${r.name}</b>${m.name}・${c.short}</div>`);
+  });
+  tbl.querySelectorAll('.resv').forEach(el=>el.onclick=e=>{
+    e.stopPropagation();
+    const r=db.reservations.find(x=>x.id===el.dataset.id);
+    if(confirm(`${r.name} 様（${hm(r.start)}〜${hm(r.end)} / ${CHANNELS[r.channel].name}）の予約を削除しますか?`)){removeReservation(r.id);toast('予約を削除しました')}
+  });
+  tbl.querySelectorAll('td.slot').forEach(td=>td.onclick=()=>openModal(td.dataset.s,+td.dataset.t));
+}
+document.getElementById('cal-prev').onclick=()=>{calDay=addDays(calDay,-1);renderCal()};
+document.getElementById('cal-next').onclick=()=>{calDay=addDays(calDay,1);renderCal()};
+document.getElementById('cal-today').onclick=()=>{calDay=today();renderCal()};
+
+/* modal */
+let modalCtx=null;
+function openModal(staffId,start){
+  modalCtx={staffId,start};
+  const ms=document.getElementById('m-menu');
+  ms.innerHTML=MENUS.filter(m=>m.staff.includes(staffId)).map(m=>`<option value="${m.id}">${m.name}（${m.min}分 / ¥${m.price.toLocaleString()}）</option>`).join('');
+  const cs=document.getElementById('m-chan');
+  cs.innerHTML=Object.entries(CHANNELS).map(([k,c])=>`<option value="${k}">${c.name}</option>`).join('');
+  const st=STAFF.find(s=>s.id===staffId);
+  document.getElementById('m-info').textContent=`${dkey(calDay)} ${hm(start)}〜 / 担当: ${st.name}`;
+  document.getElementById('m-name').value='';
+  document.getElementById('modalbg').classList.add('show');
+}
+document.getElementById('m-cancel').onclick=()=>document.getElementById('modalbg').classList.remove('show');
+document.getElementById('modalbg').onclick=e=>{if(e.target.id==='modalbg')e.target.classList.remove('show')};
+document.getElementById('m-save').onclick=()=>{
+  const name=document.getElementById('m-name').value.trim()||'お客様';
+  const menu=MENUS.find(m=>m.id===document.getElementById('m-menu').value);
+  const r=addReservation({date:dkey(calDay),staffId:modalCtx.staffId,start:modalCtx.start,end:modalCtx.start+menu.min,menuId:menu.id,name,channel:document.getElementById('m-chan').value});
+  if(!r.ok){toast(`⚠️ ${hm(r.conflict.start)}〜の「${r.conflict.name}様」と重複するため登録できません`,true);return}
+  document.getElementById('modalbg').classList.remove('show');
+  toast('予約を登録しました');
+};
+
+/* =============== customer booking flow =============== */
+let bk={step:0,menu:null,staff:null,day:null,start:null,name:''};
+const depositOf=price=>Math.max(1000,Math.round(price*0.3/100)*100); // 前金=料金の約30%(最低¥1,000)
+function freeSlots(dayKey,staffIds,dur){
+  const out=[];
+  for(let t=OPEN;t+dur<=CLOSE;t+=STEP){
+    const okStaff=staffIds.find(sid=>conflicts(dayKey,sid,t,t+dur).length===0);
+    out.push({t,staffId:okStaff||null});
+  }
+  return out;
+}
+function renderBook(){
+  const p=document.getElementById('pbody');
+  const stepsHtml=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
+  if(bk.step===0){
+    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">メニューを選択</h3>`+
+      MENUS.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.name}</div><div class="dt">約${m.min}分</div></div><div class="pr">¥${m.price.toLocaleString()}</div></div>`).join('')+
+      `<div class="pnav"><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
+    p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.menu=o.dataset.m;renderBook()});
+  }
+  if(bk.step===1){
+    const menu=MENUS.find(m=>m.id===bk.menu);
+    const cands=STAFF.filter(s=>menu.staff.includes(s.id));
+    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">スタッフを選択</h3>
+      <div class="opt ${bk.staff==='any'?'sel':''}" data-s="any"><div><div class="nm">指名なし</div><div class="dt">空いているスタッフが担当します</div></div></div>`+
+      cands.map(s=>`<div class="opt ${bk.staff===s.id?'sel':''}" data-s="${s.id}"><div><div class="nm">${s.name}</div><div class="dt">${s.role}</div></div></div>`).join('')+
+      `<div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext" ${bk.staff?'':'disabled'}>次へ</button></div>`;
+    p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.staff=o.dataset.s;renderBook()});
+  }
+  if(bk.step===2){
+    const menu=MENUS.find(m=>m.id===bk.menu);
+    const staffIds=bk.staff==='any'?menu.staff:[bk.staff];
+    if(!bk.day)bk.day=dkey(today());
+    const days=[...Array(14)].map((_,i)=>addDays(today(),i));
+    const slots=freeSlots(bk.day,staffIds,menu.min);
+    const anyFree=slots.some(s=>s.staffId);
+    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">日時を選択</h3>
+      <div class="daytabs">${days.map(d=>{const k=dkey(d);return `<button class="daytab ${bk.day===k?'sel':''}" data-d="${k}"><span class="w">${WD[d.getDay()]}</span><span class="d">${d.getDate()}</span></button>`}).join('')}</div>
+      <div class="chips">${slots.map(s=>`<button class="chip ${bk.start===s.t&&s.staffId?'sel':''}" data-t="${s.t}" data-sid="${s.staffId||''}" ${s.staffId?'':'disabled'}>${hm(s.t)}</button>`).join('')}</div>
+      ${anyFree?'':'<p style="margin-top:10px;color:var(--sub);font-size:12.5px">この日は満枠です。別の日をお選びください</p>'}
+      <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext" ${bk.start!=null?'':'disabled'}>次へ</button></div>`;
+    p.querySelectorAll('.daytab').forEach(d=>d.onclick=()=>{bk.day=d.dataset.d;bk.start=null;renderBook()});
+    p.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{bk.start=+c.dataset.t;bk._sid=c.dataset.sid;renderBook()});
+  }
+  if(bk.step===3){
+    const menu=MENUS.find(m=>m.id===bk.menu);
+    const sid=bk.staff==='any'?bk._sid:bk.staff;
+    const st=STAFF.find(s=>s.id===sid);
+    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">お客様情報</h3>
+      <div class="field"><label>お名前</label><input id="bname" value="${bk.name}" placeholder="例）鈴木 一花"></div>
+      <dl class="summary">
+        <dt>メニュー</dt><dd>${menu.name} — ¥${menu.price.toLocaleString()}</dd>
+        <dt>日時</dt><dd>${bk.day.replace(/-/g,'/')} ${hm(bk.start)}〜${hm(bk.start+menu.min)}</dd>
+        <dt>担当</dt><dd>${st.name}${bk.staff==='any'?'（指名なし）':''}</dd>
+      </dl>
+      <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
+    document.getElementById('bnext2').onclick=()=>{
+      bk.name=document.getElementById('bname').value.trim()||'ゲスト';
+      // 先に枠が空いているか確認（決済後に取られる事故を防ぐ）
+      if(conflicts(bk.day,sid,bk.start,bk.start+menu.min).length){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
+      bk.step=4;renderBook();
+    };
+  }
+  if(bk.step===4){
+    const menu=MENUS.find(m=>m.id===bk.menu);
+    const sid=bk.staff==='any'?bk._sid:bk.staff;
+    const dep=depositOf(menu.price);
+    const commit=(depositAmt)=>{
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,channel:'own',deposit:depositAmt});
+      if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
+      bk._deposit=depositAmt;bk.step=5;renderBook();
+    };
+    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:4px">事前決済（デポジット）</h3>
+      <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです</p>
+      <div class="pay-amt"><span>お預かりする前金</span><b>¥${dep.toLocaleString()}</b></div>
+      <div class="pay-card">
+        <div class="pay-brand"><span class="sq-badge">Square</span>&nbsp;VISA&nbsp;•&nbsp;Mastercard&nbsp;•&nbsp;JCB&nbsp;•&nbsp;AMEX</div>
+        <div class="field"><label>カード番号</label><input value="4111 1111 1111 1111" readonly></div>
+        <div style="display:flex;gap:10px">
+          <div class="field" style="flex:1"><label>有効期限</label><input value="12 / 30" readonly></div>
+          <div class="field" style="flex:1"><label>セキュリティコード</label><input value="•••" readonly></div>
+        </div>
+        <div class="pay-secure">🔒 Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）</div>
+      </div>
+      <div class="pnav"><button class="btn pri" id="bpay">¥${dep.toLocaleString()} を支払って予約確定</button></div>
+      <button class="btn linktext" id="bskip">前金なしで予約（店頭でお支払い）</button>`;
+    document.getElementById('bpay').onclick=()=>commit(dep);
+    document.getElementById('bskip').onclick=()=>commit(0);
+  }
+  if(bk.step===5){
+    const paid=bk._deposit>0;
+    p.innerHTML=`<div class="done"><div class="ic">✓</div><h3>ご予約を承りました</h3>
+      ${paid?`<p style="color:var(--ok);font-size:13px;margin-top:6px;font-weight:700">前金 ¥${bk._deposit.toLocaleString()} を受け付けました</p>`:''}
+      <p style="color:var(--sub);font-size:13px;margin-top:6px">予約確認とリマインドをLINEでお送りします</p>
+      <div class="line-cta">
+        <div class="qr" aria-hidden="true"></div>
+        <div class="line-cta-body"><b>LINEで予約を受け取る</b><span>友だち追加で、前日リマインド・次回予約・お得情報が届きます</span></div>
+      </div>
+      <div class="pnav"><button class="btn line" id="baddline">＋ LINE友だち追加</button></div>
+      <button class="btn linktext" id="bagain">続けてもう1件予約する</button></div>`;
+    document.getElementById('baddline').onclick=()=>toast('（デモ）LINE友だち追加へ遷移します');
+    document.getElementById('bagain').onclick=()=>{bk={step:0,menu:null,staff:null,day:null,start:null,name:''};renderBook()};
+    return;
+  }
+  const nx=document.getElementById('bnext'),bkb=document.getElementById('bback');
+  if(nx)nx.onclick=()=>{if(!nx.disabled){bk.step++;renderBook()}};
+  if(bkb)bkb.onclick=()=>{bk.step--;renderBook()};
+}
+
+/* =============== channels view =============== */
+const CH_INFO=[
+  {k:'own',status:['ok','稼働中'],how:'<b>自社予約エンジン</b>＝在庫マスタの本体。ここが全チャネルの土台',desc:'手数料ゼロ。左の「予約ページ」タブが実装デモです'},
+  {k:'line',status:['clean','クリーン'],how:'<b>LIFF</b>で自社予約ページをLINE内に表示 + Messaging APIでリマインド通知',desc:'公式「LINEで予約」は飲食店のみ・指定パートナー限定のため、LIFF自前実装が正攻法'},
+  {k:'google',status:['clean','クリーン'],how:'ビジネスプロフィールの<b>予約リンク</b>に自社予約URLを設定（無料・即日）',desc:'「Googleで予約」(Reserve with Google)は承認制パートナー限定。予約リンク方式で同等の導線を確保'},
+  {k:'instagram',status:['clean','クリーン'],how:'プロフィールの<b>ウェブサイト/アクションリンク</b>＋ストーリーズリンクで自社予約へ',desc:'「予約する」ボタンはMeta提携パートナー経由のみ。リンク導線で実質カバー'},
+  {k:'square',status:['clean','公式API'],how:'<b>Square Bookings API</b>で双方向同期（日本対応・読取/書込/Webhook）。Squareで入った予約も台帳に集約',desc:'HPBと違い公式API。スクレイピング不要でクリーン連携。上の台帳にSquare予約デモを表示中'},
+  {k:'squarepay',name:'Square 決済',short:'¥',color:'#006aff',status:['clean','決済'],how:'<b>Square Web Payments SDK</b>で事前決済・前金。予約と同じSquareアカウントで完結',desc:'予約・決済・POS・売上を1つのSquareダッシュボードで一元管理。契約も1本。「予約ページ」タブで実装デモ'},
+  {k:'hpb',status:['risk','要ブロック運用'],how:'<b>予約通知メールを取込</b>（読み取り）。他チャネル予約は<b>ダッシュボードの要ブロック</b>で手動対応',desc:'公式API非公開。自動書き込みは規約グレーのため行わない。全自動が必要ならかんざし等を併用'},
+  {k:'rakuten',status:['ext','取込のみ'],how:'<b>通知メール取込</b>（HPBと同方式）。書き込みは手動 or 連携SaaS',desc:'公式APIなし。かんざし等が楽天ビューティー連携に対応'},
+  {k:'minimo',status:['ext','取込のみ'],how:'<b>通知メール取込</b>。アプリ内予約が主軸のため導線変更は不可',desc:'公式APIなし。かんざし等が連携対応'},
+];
+function renderChan(){
+  const g=document.getElementById('chgrid');g.innerHTML='';
+  CH_INFO.forEach(ci=>{
+    const c=CHANNELS[ci.k]||{name:ci.name,short:ci.short,color:ci.color};
+    g.insertAdjacentHTML('beforeend',`<div class="card chcard">
+      <div class="top"><div class="chdot" style="background:${c.color}">${c.short.slice(0,2)}</div><h3>${c.name}</h3><span class="pill ${ci.status[0]}">${ci.status[1]}</span></div>
+      <div class="how">${ci.how}</div><p>${ci.desc}</p></div>`);
+  });
+}
+
+/* mail import simulator */
+const SAMPLE_MAIL=`【サロンボード】ネット予約が入りました
+
+■予約情報
+予約番号：HB2607130042
+ご来店日時：${dkey(addDays(today(),1)).replace(/-/g,'/')} 14:00
+メニュー：カット + カラー
+スタイリスト：青山 さくら
+
+■お客様情報
+お名前：西村 陽葵 様
+電話番号：090-XXXX-XXXX`;
+document.getElementById('mailraw').value=SAMPLE_MAIL;
+document.getElementById('mailgo').onclick=()=>{
+  const raw=document.getElementById('mailraw').value;
+  const chan=document.getElementById('mailchan').value;
+  const dt=raw.match(/来店日時[：:]\s*(\d{4})[\/年](\d{1,2})[\/月](\d{1,2})日?\s+(\d{1,2}):(\d{2})/);
+  const nm=raw.match(/お名前[：:]\s*(.+?)(?:\s*様)?\s*$/m);
+  const mn=raw.match(/メニュー[：:]\s*(.+)$/m);
+  const stf=raw.match(/スタイリスト[：:]\s*(.+)$/m);
+  if(!dt||!nm){toast('⚠️ 日時またはお名前をパースできませんでした',true);return}
+  const menu=MENUS.filter(m=>mn&&mn[1].trim().includes(m.name)).sort((a,b)=>b.name.length-a.name.length)[0]||MENUS[0];
+  const staff=STAFF.find(s=>stf&&stf[1].trim().includes(s.name.replace(/\s/g,' ').split(' ')[0]))||STAFF.find(s=>menu.staff.includes(s.id));
+  const start=(+dt[4])*60+(+dt[5]);
+  const date=`${dt[1]}-${pad(+dt[2])}-${pad(+dt[3])}`;
+  const r=addReservation({date,staffId:staff.id,start,end:start+menu.min,menuId:menu.id,name:nm[1].trim(),channel:chan});
+  if(!r.ok){toast(`⚠️ ダブルブッキング検知: ${hm(r.conflict.start)}〜 ${r.conflict.name}様（${CHANNELS[r.conflict.channel].short}）と重複。要確認リストへ`,true);return}
+  toast(`✅ ${nm[1].trim()}様の予約を${CHANNELS[chan].short}から取込→台帳に登録しました（${date.replace(/-/g,'/')} ${hm(start)}）`);
+};
+
+/* =============== boot =============== */
+function refreshAll(){renderDash();renderCal();renderChan();if(bk.step===2)renderBook()}
+renderDash();renderCal();renderBook();renderChan();
+</script>
+</body>
+</html>

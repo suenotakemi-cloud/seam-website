@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>SEAM 銀座 — 事前決済（Square）</title>
+<style>
+:root{--navy:#0e2a47;--accent:#006aff;--bg:#f4f7fa;--line:#e3eaf2;--ink:#1c2b3a;--sub:#68798c;--ok:#1f9d61;--danger:#dc2626}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;padding:24px 16px}
+.wrap{max-width:440px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 12px rgba(14,42,71,.08);overflow:hidden}
+.head{background:var(--navy);color:#fff;padding:18px 20px}
+.head .s{font-size:11px;opacity:.75;letter-spacing:.12em}
+.head .n{font-size:17px;font-weight:800;margin-top:2px}
+.body{padding:20px}
+.amt{display:flex;justify-content:space-between;align-items:center;background:#f0f7ff;border:1px solid #cfe4fb;border-radius:12px;padding:12px 16px;margin-bottom:16px}
+.amt span{font-size:12.5px;color:var(--sub);font-weight:700}
+.amt b{font-size:22px;color:var(--navy)}
+label.fl{display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px}
+#card-container{border:1.5px solid var(--line);border-radius:10px;padding:4px 8px;min-height:52px}
+.brand{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--sub);font-weight:700;margin-bottom:8px}
+.sqb{background:#006aff;color:#fff;font-weight:800;font-size:10px;padding:2px 7px;border-radius:5px}
+.btn{border:none;border-radius:12px;padding:13px 18px;font-weight:800;font-size:14px;width:100%;margin-top:16px;background:var(--accent);color:#fff}
+.btn:disabled{background:#b9cede;cursor:not-allowed}
+.secure{font-size:11.5px;color:var(--sub);background:#f4fbf7;border:1px solid #cdeede;border-radius:8px;padding:8px 10px;margin-top:12px}
+.msg{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:13px;font-weight:600;display:none}
+.msg.ok{display:block;background:#e7f6ee;color:var(--ok);border:1px solid #bfe6cf}
+.msg.err{display:block;background:#fdeaea;color:var(--danger);border:1px solid #f3c2c2;white-space:pre-wrap;word-break:break-word}
+.msg.info{display:block;background:#eef4ff;color:var(--accent);border:1px solid #cfe0fb;word-break:break-all}
+.setup{background:#fffbeb;border:1px solid #fde9b8;border-radius:12px;padding:16px;font-size:13px}
+.setup h2{font-size:14.5px;margin-bottom:8px}
+.setup code{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.setup ol{margin:8px 0 0 18px}.setup li{margin-bottom:6px}
+.env{text-align:center;font-size:11px;color:var(--sub);margin-top:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head"><div class="s">WEB RESERVATION · DEPOSIT</div><div class="n">SEAM 銀座 — 事前決済</div></div>
+    <div class="body" id="body">
+      <div class="amt"><span>お預かりする前金</span><b id="amtLabel">¥0</b></div>
+      <div class="brand"><span class="sqb">Square</span> VISA · Mastercard · JCB · AMEX · Apple Pay</div>
+      <label class="fl">カード情報</label>
+      <div id="card-container"></div>
+      <button class="btn" id="payBtn" disabled>読み込み中…</button>
+      <div class="secure">🔒 Square Web Payments SDK で処理。日本の規制に基づき 3D セキュア認証を行います</div>
+      <div class="msg" id="msg"></div>
+      <div class="env" id="envLabel"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== 設定：ここを自分のSquareの値に差し替える ===== */
+const CONFIG = {
+  ENV: 'sandbox',                               // 'sandbox' でテスト → 本番は 'production'
+  APP_ID: 'sandbox-sq0idb-8yH0lalmu2viD8hrTqLZgA',// Square Developer の Application ID（公開OK）
+  LOCATION_ID: 'L4X65VRZXDMV7',                 // Location ID（公開OK）
+  PAY_ENDPOINT: '',                             // Cloudflare Worker の URL 例) https://seam-square.xxx.workers.dev/pay
+  AMOUNT: 1500,                                 // 前金（円・JPYは最小単位=円）
+  CURRENCY: 'JPY',
+  BUYER_EMAIL: 'test@example.com',              // 3DS用（本番は予約者のメール）
+};
+/* ================================================ */
+
+const $ = s => document.querySelector(s);
+const yen = n => '¥' + Number(n).toLocaleString();
+$('#amtLabel').textContent = yen(CONFIG.AMOUNT);
+$('#envLabel').textContent = CONFIG.ENV === 'sandbox' ? 'SANDBOX（テスト環境・実際の請求は発生しません）' : 'PRODUCTION（本番）';
+
+const showMsg = (cls, text) => { const m = $('#msg'); m.className = 'msg ' + cls; m.textContent = text; };
+
+// 未設定なら決済フォームを出さずに手順を表示
+if (CONFIG.APP_ID.includes('REPLACE') || CONFIG.LOCATION_ID.includes('REPLACE')) {
+  $('#body').innerHTML = `<div class="setup"><h2>⚙️ セットアップが必要です</h2>
+    <p>このファイル冒頭の <code>CONFIG</code> を自分のSquareの値に差し替えてください。</p>
+    <ol>
+      <li><a href="https://developer.squareup.com/" target="_blank" rel="noopener">Square Developer</a> でアプリを作成</li>
+      <li><b>Sandbox</b> の <code>Application ID</code> と <code>Location ID</code> をコピー（この2つは公開情報）</li>
+      <li>このファイルの <code>APP_ID</code> / <code>LOCATION_ID</code> に貼り付け</li>
+      <li>再読み込みするとカード入力欄が表示され、テストカードで決済を試せます</li>
+    </ol>
+    <p style="margin-top:10px">課金まで通すには、同フォルダの <code>worker.js</code> をデプロイして <code>PAY_ENDPOINT</code> を設定します（<code>README.md</code> 参照）。</p></div>`;
+} else {
+  const sdkUrl = CONFIG.ENV === 'sandbox'
+    ? 'https://sandbox.web.squarecdn.com/v1/square.js'
+    : 'https://web.squarecdn.com/v1/square.js';
+  const s = document.createElement('script');
+  s.src = sdkUrl;
+  s.onload = init;
+  s.onerror = () => showMsg('err', 'Square SDK を読み込めませんでした。ネットワークと ENV 設定を確認してください。');
+  document.head.appendChild(s);
+}
+
+async function init() {
+  if (!window.Square) { showMsg('err', 'Square SDK が利用できません。'); return; }
+  let payments, card;
+  try {
+    payments = window.Square.payments(CONFIG.APP_ID, CONFIG.LOCATION_ID);
+    card = await payments.card();
+    await card.attach('#card-container');
+  } catch (e) {
+    showMsg('err', '初期化に失敗しました。APP_ID / LOCATION_ID / ENV を確認してください。\n' + e.message);
+    return;
+  }
+  const btn = $('#payBtn');
+  btn.disabled = false;
+  btn.textContent = yen(CONFIG.AMOUNT) + ' を支払う';
+
+  btn.onclick = async () => {
+    btn.disabled = true; btn.textContent = '処理中…'; showMsg('info', '');
+    try {
+      // 1) カードをトークン化
+      const tok = await card.tokenize();
+      if (tok.status !== 'OK') throw new Error('カードのトークン化に失敗: ' + JSON.stringify(tok.errors || tok.status));
+
+      // 2) 3Dセキュア（日本のオンライン決済で必須）
+      const verify = await payments.verifyBuyer(tok.token, {
+        amount: String(CONFIG.AMOUNT),
+        currencyCode: CONFIG.CURRENCY,
+        intent: 'CHARGE',
+        billingContact: { email: CONFIG.BUYER_EMAIL },
+      });
+
+      // 3) バックエンド未設定なら、トークン取得までの成功を表示（IDが正しいことの確認になる）
+      if (!CONFIG.PAY_ENDPOINT) {
+        showMsg('info', '✅ トークン化と3DS認証まで成功しました（APP_ID/LOCATION_ID は正しく動作）。\nこの先の課金には worker.js のデプロイと PAY_ENDPOINT 設定が必要です。\nsourceId: ' + tok.token);
+        btn.disabled = false; btn.textContent = yen(CONFIG.AMOUNT) + ' を支払う';
+        return;
+      }
+
+      // 4) サーバーで決済を確定（秘密鍵はサーバー側のみ）
+      const res = await fetch(CONFIG.PAY_ENDPOINT, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sourceId: tok.token,
+          verificationToken: verify ? verify.token : undefined,
+          amount: CONFIG.AMOUNT,
+          currency: CONFIG.CURRENCY,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || ('決済エラー: ' + res.status));
+      showMsg('ok', '✅ 前金 ' + yen(CONFIG.AMOUNT) + ' を受け付けました（payment id: ' + (data.paymentId || '—') + '）');
+    } catch (e) {
+      showMsg('err', '決済に失敗しました。\n' + (e.message || e));
+      btn.disabled = false; btn.textContent = yen(CONFIG.AMOUNT) + ' を支払う';
+    }
+  };
+}
+</script>
+</body>
+</html>
