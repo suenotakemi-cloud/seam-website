@@ -50,6 +50,9 @@ BRANDS = [
        cross=[('aujua','オージュア')], q='ミルボン 取扱店'),
 ]
 
+AREA_JA={'ginza':'銀座','omotesando':'表参道','sapporo':'札幌','osaka':'大阪',
+         'nagoya':'名古屋','fukuoka':'福岡','utsunomiya':'宇都宮'}
+
 # ── 店舗NAP抽出(store-*.htmlのJSON-LDから) ──────────────────
 def load_stores():
     out=[]
@@ -61,7 +64,20 @@ def load_stores():
         node=[n for n in g['@graph'] if n.get('@type') in ('HairSalon','LocalBusiness','Store')][0]
         a=node.get('address',{})
         addr=f"{a.get('addressRegion','')}{a.get('addressLocality','')}{a.get('streetAddress','')}"
-        out.append(dict(slug=s, name=node.get('name',f'SEAM {s.upper()}'), addr=addr))
+        # 営業時間(あれば) と Instagram
+        hours=''
+        oh=node.get('openingHoursSpecification') or node.get('openingHours')
+        if isinstance(oh,list) and oh and isinstance(oh[0],dict):
+            o=oh[0]
+            if o.get('opens') and o.get('closes'):
+                hours=f"{o['opens']}–{o['closes']}"
+        elif isinstance(oh,str):
+            hours=oh
+        ig=''
+        for u in node.get('sameAs',[]) or []:
+            if 'instagram.com' in u: ig=u; break
+        out.append(dict(slug=s, name=node.get('name',f'SEAM {s.upper()}'), addr=addr,
+                        area=AREA_JA[s], hours=hours, ig=ig))
     return out
 
 # ── 商品データ ────────────────────────────────────────────
@@ -242,6 +258,7 @@ def page_html(b, stores, count, lines, tops):
     <h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">{E(ja)}を取り扱う SEAMの店舗</h2>
     <ul class="mt-4 divide-y divide-line">{stores_html}</ul>
     <p class="mt-3 text-[12.5px] text-charcoal/65">取扱・在庫状況は店舗により異なります　お買い物だけのご来店も歓迎です</p>
+    <p class="mt-4 text-[13px] text-charcoal/75" style="line-height:2.1;">エリア別のご案内　{' '.join(f'<a href="{slug}-{s["slug"]}.html" class="hover:text-ink border-b border-line pb-0.5">{E(s["area"])}で買うだけOK</a>' for s in stores)}</p>
 
     {cta}
 
@@ -276,6 +293,170 @@ def page_html(b, stores, count, lines, tops):
 </html>
 '''
 
+def area_article_html(b, st, stores, lines, tops):
+    """「{ブランド} {エリア}で買うだけOK」記事 — ShellBear型の購入意図ページ"""
+    ja,en,slug=b['ja'],b['en'],b['slug']
+    area=st['area']; page=f'{slug}-{st["slug"]}'
+    url=f'https://seam.site/{page}'
+    title=f'{ja} {area}で買うだけOK｜正規取扱 {st["name"]}(購入のみ来店歓迎)'
+    desc=f'{area}で{ja}({en})を"買うだけ"で来店OK 施術・予約なしで店頭購入できます {st["name"]}({st["addr"]}) メーカー公認の正規取扱店 在庫は店舗にご確認ください'
+    hours_line=f'　営業時間 {st["hours"]}' if st.get('hours') else ''
+
+    faqs=[(f'{area}で{ja}を買うだけの来店はできますか',
+           f'はい {st["name"]}では施術やご予約がなくても {ja}をお買い求めいただけます お買い物だけのご来店を歓迎しています'),
+          ('予約は必要ですか',
+           f'不要です 営業時間内にそのままお越しください{hours_line}'),
+          ('会員でなくても買えますか',
+           '店頭はどなたでもご購入いただけます 会員制はオンラインショップのみで ご登録は店頭でご案内しています'),
+          (f'{ja}の在庫はありますか',
+           f'在庫は時期により変わります 確実にお求めの場合は {st["name"]}のInstagramや店頭でご確認ください')]
+
+    ld={"@context":"https://schema.org","@graph":[
+        {"@type":"Organization","@id":"https://seam.site/#organization","name":"SEAM","url":"https://seam.site/","logo":"https://seam.site/images/apple-touch-icon.png","sameAs":["https://www.instagram.com/seam_japan"]},
+        {"@type":"WebPage","@id":url,"url":url,"name":title,"description":desc,"inLanguage":"ja",
+         "about":{"@type":"Brand","name":ja,"alternateName":en},
+         "mainEntity":{"@id":f'https://seam.site/store-{st["slug"]}#store'},
+         "publisher":{"@id":"https://seam.site/#organization"}},
+        {"@type":"BreadcrumbList","itemListElement":[
+            {"@type":"ListItem","position":1,"name":"ホーム","item":"https://seam.site/"},
+            {"@type":"ListItem","position":2,"name":f'{ja} 正規取扱店',"item":f'https://seam.site/{slug}'},
+            {"@type":"ListItem","position":3,"name":f'{area}で買うだけOK',"item":url}]},
+        {"@type":"FAQPage","mainEntity":[{"@type":"Question","name":q,"acceptedAnswer":{"@type":"Answer","text":a}} for q,a in faqs]},
+    ]}
+    json.loads(json.dumps(ld,ensure_ascii=False))
+
+    ig_row=f'<div class="catrow"><div class="k">Instagram</div><div class="v"><a href="{E(st["ig"])}" target="_blank" rel="noopener" class="text-gold hover:underline underline-offset-4">店舗アカウントを見る ↗</a>(在庫のお問い合わせもこちらへ)</div></div>' if st.get('ig') else ''
+    hours_row=f'<div class="catrow"><div class="k">営業時間</div><div class="v nums">{E(st["hours"])}</div></div>' if st.get('hours') else ''
+
+    lines_html=''
+    if lines:
+        chips=''.join(f'<span>{E(l)}</span>' for l in lines[:6])
+        lines_html=f'<h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">この店舗で出会える {E(ja)}</h2>\n    <div class="brandchips mt-5">{chips}</div>'
+    tops_html=''
+    if tops:
+        rows=''.join(f'<li class="py-2.5 flex items-baseline justify-between gap-3"><span class="text-[13px] text-ink">{E(p.get("name",""))}</span><span class="shrink-0 text-[12px] text-charcoal/65 nums">定価 ¥{p["priceApprox"]:,} 税込</span></li>' for p in tops[:2])
+        tops_html=f'<ul class="mt-4 divide-y divide-line">{rows}</ul><p class="mt-2 text-[12px] text-charcoal/60">価格は変わる場合があります</p>'
+
+    others=' '.join(f'<a href="{slug}-{o["slug"]}.html" class="hover:text-ink border-b border-line pb-0.5">{E(o["area"])}</a>' for o in stores if o['slug']!=st['slug'])
+
+    return f'''<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{E(title)}</title>
+  <meta name="description" content="{E(desc)}">
+  <link rel="canonical" href="{url}">
+  <meta property="og:site_name" content="SEAM">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="{url}">
+  <meta property="og:title" content="{E(ja)} {E(area)}で買うだけOK | SEAM">
+  <meta property="og:description" content="{E(desc)}">
+  <meta property="og:image" content="https://seam.site/images/og/seam-og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#FFFFFF">
+  <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Noto+Serif+JP:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tailwind.css">
+  <script type="application/ld+json">{json.dumps(ld,ensure_ascii=False,separators=(",",":"))}</script>
+  <style>
+    body{{font-family:'Noto Serif JP',serif;background:#FFFFFF;color:#2B2926;-webkit-font-smoothing:antialiased;}}
+    .wm{{font-family:'Cormorant Garamond',serif;letter-spacing:.24em;}}
+    .prose p{{line-height:2.05;}}
+    a{{color:inherit;}}
+    .brandchips{{display:flex;flex-wrap:wrap;gap:7px;}}
+    .brandchips span{{display:inline-block;font-size:12px;line-height:1;padding:8px 12px;border-radius:999px;background:#F6F1EA;border:1px solid rgba(60,54,46,.1);color:#4A4238;white-space:nowrap;}}
+    .catrow{{display:flex;gap:10px;align-items:flex-start;}}
+    .catrow .k{{flex:none;width:6.5em;font-size:12.5px;color:#A87456;padding-top:1px;}}
+    .catrow .v{{font-size:13.5px;color:rgba(43,41,38,.82);line-height:1.9;}}
+    .nums{{font-variant-numeric:tabular-nums;}}
+    .step{{display:flex;gap:12px;align-items:flex-start;}}
+    .step .n{{flex:none;width:26px;height:26px;border-radius:999px;background:#B57C5A;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;}}
+  </style>
+</head>
+<body>
+  <header class="sticky top-0 z-40 bg-white/92 backdrop-blur-md border-b border-line">
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
+      <a href="index.html" class="wm text-[19px] text-ink" aria-label="SEAM ホーム">SEAM</a>
+      <nav class="flex items-center gap-5 text-[12px] text-charcoal/80">
+        <a href="{slug}.html" class="hover:text-ink">{E(ja)}取扱店</a>
+        <a href="store-{st['slug']}.html" class="hover:text-ink">店舗情報</a>
+      </nav>
+    </div>
+  </header>
+
+  <article class="max-w-2xl mx-auto px-5 sm:px-8 pt-10 sm:pt-14 pb-4 prose">
+    <nav class="font-mono tracking-widest2 text-[10px] text-charcoal/50 uppercase mb-6">
+      <a href="index.html" class="hover:text-ink">Home</a> <span class="mx-1">/</span> <a href="{slug}.html" class="hover:text-ink">{E(en)}</a> <span class="mx-1">/</span> {E(st['slug'].upper())}
+    </nav>
+    <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase mb-3">Buy Only ・ Walk-in Welcome</p>
+    <h1 class="font-serif text-[26px] sm:text-[33px] leading-[1.45] text-ink font-medium">{E(ja)}<br>{E(area)}で"買うだけ"OK</h1>
+    <p class="mt-6 text-[14px] sm:text-[15px] text-charcoal/80">
+      施術もご予約もいりません<br>{E(st['name'])}は {E(ja)}をメーカー公認の正規ルートで取り扱うヘアケアショップ<br>お買い物だけのご来店を歓迎しています
+    </p>
+
+    <h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">店舗のご案内</h2>
+    <div class="mt-5 space-y-3">
+      <div class="catrow"><div class="k">店名</div><div class="v">{E(st['name'])}</div></div>
+      <div class="catrow"><div class="k">住所</div><div class="v">{E(st['addr'])}</div></div>
+      {hours_row}
+      {ig_row}
+      <div class="catrow"><div class="k">くわしく</div><div class="v"><a href="store-{st['slug']}.html" class="text-gold hover:underline underline-offset-4">店舗ページ(アクセス・写真) →</a></div></div>
+    </div>
+
+    <h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">"買うだけ来店"の流れ</h2>
+    <div class="mt-5 space-y-4">
+      <div class="step"><div class="n">1</div><div class="v text-[13.5px] text-charcoal/80" style="line-height:1.9;">そのまま入店<br><span class="text-[12px] text-charcoal/60">予約不要 営業時間内ならいつでも</span></div></div>
+      <div class="step"><div class="n">2</div><div class="v text-[13.5px] text-charcoal/80" style="line-height:1.9;">自由に選ぶ or スタッフに相談<br><span class="text-[12px] text-charcoal/60">髪の状態を伝えると{E(ja)}の中から合うものをご案内します</span></div></div>
+      <div class="step"><div class="n">3</div><div class="v text-[13.5px] text-charcoal/80" style="line-height:1.9;">お会計<br><span class="text-[12px] text-charcoal/60">メンバー登録(店頭ですぐ)で会員価格・オンライン買い足しも可能に</span></div></div>
+    </div>
+
+    {lines_html}
+    {tops_html}
+
+    <div class="mt-12 rounded-[4px] bg-cream/60 border border-line px-6 py-8 text-center">
+      <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase mb-3">Hair Finder</p>
+      <h3 class="font-serif text-[18px] sm:text-[21px] text-ink leading-snug">来店前に 合うかどうか知りたい方へ</h3>
+      <p class="mt-3 text-[12.5px] sm:text-[13.5px] text-charcoal/75 max-w-sm mx-auto">無料の髪格診断で 髪質・履歴から<br>あなたに合うアイテムを先にチェックできます</p>
+      <a href="finder.html" class="mt-5 inline-flex items-center justify-center gap-3 px-7 py-3 text-white font-serif text-[14px] rounded-full shadow-card" style="background:#B57C5A;letter-spacing:.02em;">
+        <span>無料で髪格診断する</span><span aria-hidden>→</span>
+      </a>
+    </div>
+
+    <h2 class="mt-12 font-serif text-[19px] sm:text-[22px] text-ink">よくある質問</h2>
+    <dl class="mt-5 divide-y divide-line">{''.join(f'<div class="py-4"><dt class="font-serif text-[14.5px] text-ink">{E(q)}</dt><dd class="mt-2 text-[13px] leading-[1.9] text-charcoal/75">{E(a)}</dd></div>' for q,a in faqs)}</dl>
+
+    <p class="mt-10 text-[13px] text-charcoal/75" style="line-height:2.1;">ほかのエリアで探す　{others}</p>
+
+    <div class="mt-10 flex items-center justify-between text-[12px] text-charcoal/60">
+      <a href="{slug}.html" class="hover:text-ink">← {E(ja)} 正規取扱店トップ</a>
+      <a href="store-{st['slug']}.html" class="hover:text-ink">{E(st['name'])} →</a>
+    </div>
+  </article>
+
+  <footer class="border-t border-line mt-12">
+    <div class="max-w-3xl mx-auto px-5 sm:px-8 py-10 flex flex-col sm:flex-row items-center justify-between gap-5">
+      <a href="index.html" class="wm text-[16px] text-ink">SEAM</a>
+      <nav class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] text-charcoal/70">
+        <a href="finder.html" class="hover:text-ink">髪格診断</a>
+        <a href="shop.html" class="hover:text-ink">店舗</a>
+        <a href="brand.html" class="hover:text-ink">取扱ブランド</a>
+      </nav>
+      <p class="font-mono text-[10px] tracking-widest2 uppercase text-charcoal/40">© SEAM</p>
+    </div>
+  <p class="legal-links" style="margin:8px auto 0;text-align:center;font-size:10.5px;line-height:1.8;color:rgba(58,50,42,.62);max-width:720px;padding:0 20px;"><a href="terms.html" style="text-decoration:underline;">利用規約</a>　<a href="privacy.html" style="text-decoration:underline;">プライバシーポリシー</a>　<a href="tokushoho.html" style="text-decoration:underline;">特定商取引法に基づく表記</a></p>
+</footer>
+
+  <script src="js/seam-analytics.js?v=5" defer></script>
+  <script>window.addEventListener('load',function(){{try{{window.seamTrack&&seamTrack('guide_view',{{p:location.pathname}})}}catch(e){{}}}});</script>
+</body>
+</html>
+'''
+
 def main():
     stores=load_stores()
     prods=load_products()
@@ -285,10 +466,17 @@ def main():
         out=page_html(b,stores,count,lines,tops)
         open(f'{b["slug"]}.html','w',encoding='utf-8').write(out)
         made.append((b['slug'],count,len(lines),len(tops)))
+        # エリア×ブランド記事(買うだけOK型) 7本/ブランド
+        for st in stores:
+            art=area_article_html(b,st,stores,lines,tops)
+            open(f'{b["slug"]}-{st["slug"]}.html','w',encoding='utf-8').write(art)
     # sitemap
     sm=open('sitemap.xml',encoding='utf-8').read()
     add=''.join(f'  <url><loc>https://seam.site/{b["slug"]}</loc></url>\n' for b in BRANDS
                 if f'/{b["slug"]}</loc>' not in sm)
+    add+=''.join(f'  <url><loc>https://seam.site/{b["slug"]}-{s}</loc></url>\n'
+                 for b in BRANDS for s in STORES
+                 if f'/{b["slug"]}-{s}</loc>' not in sm)
     if add:
         sm=sm.replace('</urlset>', add+'</urlset>')
         open('sitemap.xml','w',encoding='utf-8').write(sm)
