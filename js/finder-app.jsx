@@ -3713,26 +3713,18 @@ function SaleFinderBanner() {
   const click = (label) => { try { window.seamTrack && window.seamTrack('sec_click', { label: label }); } catch (e) {} };
   return (
     <div className="mt-5 rounded-[2px] overflow-hidden" style={{ background: 'linear-gradient(100deg,#6E4E26,#B8945A 45%,#6E4E26)' }}>
-      <div className="px-4 sm:px-6 py-4 sm:py-5">
-        <div className="flex items-center gap-2.5 flex-wrap">
+      <div className="px-4 sm:px-6 py-5 sm:py-6 text-center">
+        <div className="flex items-center justify-center gap-2.5 flex-wrap">
           <span className="font-mono text-[9px] tracking-widest2 uppercase rounded-full px-2 py-1" style={{ background: '#B4453A', color: '#fff', lineHeight: 1 }}>SALE</span>
           <span className="font-mono tracking-widest2 text-[10px] uppercase" style={{ color: 'rgba(255,255,255,.95)' }}>Summer Sale</span>
           <span className="font-mono tracking-widest2 text-[10px]" style={{ color: 'rgba(255,255,255,.85)' }}>7.31まで</span>
         </div>
-        <p className="mt-2.5 font-serif text-[16px] sm:text-[18px] leading-snug" style={{ color: '#FFF3DC', fontWeight: 500 }}>
-          この結果のアイテムも 全店舗＆オンラインで最大30%OFF
-        </p>
-        <p className="mt-1.5 text-[12px] sm:text-[12.5px] leading-[1.85]" style={{ color: 'rgba(255,255,255,.92)' }}>
-          メンバー入会金1,100円も いまだけ無料 — 登録は店舗で その場で完了 そのままセール価格に
-        </p>
-        <div className="mt-3.5 flex flex-col sm:flex-row gap-2">
-          <a href="shop.html#stores" onClick={() => click('sale_finder_store')} className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-serif text-[13px]" style={{ background: '#F2DCA6', color: '#2B2926', fontWeight: 500 }}>
-            <span>近くの店舗を探す</span><span aria-hidden>→</span>
-          </a>
-          <a href="onlineshop.html" onClick={() => click('sale_finder_online')} className="inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-serif text-[13px] border" style={{ borderColor: 'rgba(255,255,255,.55)', color: '#fff' }}>
-            <span>会員の方はオンラインへ</span><span aria-hidden>↗</span>
-          </a>
-        </div>
+        <p className="mt-2.5 font-serif leading-none text-[34px] sm:text-[42px]" style={{ color: '#FFF3DC', fontWeight: 500, letterSpacing: '.01em' }}>最大30%OFF</p>
+        <p className="mt-2 font-serif text-[14px] sm:text-[16px] leading-snug" style={{ color: '#FFF3DC' }}>この結果のアイテムも いまセール中</p>
+        <p className="mt-1 text-[11.5px] sm:text-[12.5px] leading-[1.8]" style={{ color: 'rgba(255,255,255,.9)' }}>入会金1,100円も いまだけ無料 ・ 店頭登録はその場で完了</p>
+        <a href="shop.html#stores" onClick={() => click('sale_finder_store')} className="mt-4 inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3 font-serif text-[14px] sm:text-[14.5px]" style={{ background: '#F2DCA6', color: '#2B2926', fontWeight: 500 }}>
+          <span>近くの店舗を探す</span><span aria-hidden>→</span>
+        </a>
       </div>
     </div>
   );
