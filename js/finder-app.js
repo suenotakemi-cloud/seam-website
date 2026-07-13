@@ -5165,9 +5165,9 @@ function SaleFinderBanner() {
       background: 'linear-gradient(100deg,#6E4E26,#B8945A 45%,#6E4E26)'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 sm:px-6 py-4 sm:py-5"
+    className: "px-4 sm:px-6 py-5 sm:py-6 text-center"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2.5 flex-wrap"
+    className: "flex items-center justify-center gap-2.5 flex-wrap"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-mono text-[9px] tracking-widest2 uppercase rounded-full px-2 py-1",
     style: {
@@ -5186,22 +5186,26 @@ function SaleFinderBanner() {
       color: 'rgba(255,255,255,.85)'
     }
   }, "7.31\u307E\u3067")), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2.5 font-serif text-[16px] sm:text-[18px] leading-snug",
+    className: "mt-2.5 font-serif leading-none text-[34px] sm:text-[42px]",
     style: {
       color: '#FFF3DC',
-      fontWeight: 500
+      fontWeight: 500,
+      letterSpacing: '.01em'
     }
-  }, "\u3053\u306E\u7D50\u679C\u306E\u30A2\u30A4\u30C6\u30E0\u3082 \u5168\u5E97\u8217\uFF06\u30AA\u30F3\u30E9\u30A4\u30F3\u3067\u6700\u592730%OFF"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1.5 text-[12px] sm:text-[12.5px] leading-[1.85]",
+  }, "\u6700\u592730%OFF"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 font-serif text-[14px] sm:text-[16px] leading-snug",
     style: {
-      color: 'rgba(255,255,255,.92)'
+      color: '#FFF3DC'
     }
-  }, "\u30E1\u30F3\u30D0\u30FC\u5165\u4F1A\u91D11,100\u5186\u3082 \u3044\u307E\u3060\u3051\u7121\u6599 \u2014 \u767B\u9332\u306F\u5E97\u8217\u3067 \u305D\u306E\u5834\u3067\u5B8C\u4E86 \u305D\u306E\u307E\u307E\u30BB\u30FC\u30EB\u4FA1\u683C\u306B"), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3.5 flex flex-col sm:flex-row gap-2"
-  }, /*#__PURE__*/React.createElement("a", {
+  }, "\u3053\u306E\u7D50\u679C\u306E\u30A2\u30A4\u30C6\u30E0\u3082 \u3044\u307E\u30BB\u30FC\u30EB\u4E2D"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 text-[11.5px] sm:text-[12.5px] leading-[1.8]",
+    style: {
+      color: 'rgba(255,255,255,.9)'
+    }
+  }, "\u5165\u4F1A\u91D11,100\u5186\u3082 \u3044\u307E\u3060\u3051\u7121\u6599 \u30FB \u5E97\u982D\u767B\u9332\u306F\u305D\u306E\u5834\u3067\u5B8C\u4E86"), /*#__PURE__*/React.createElement("a", {
     href: "shop.html#stores",
     onClick: () => click('sale_finder_store'),
-    className: "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-serif text-[13px]",
+    className: "mt-4 inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3 font-serif text-[14px] sm:text-[14.5px]",
     style: {
       background: '#F2DCA6',
       color: '#2B2926',
@@ -5209,17 +5213,7 @@ function SaleFinderBanner() {
     }
   }, /*#__PURE__*/React.createElement("span", null, "\u8FD1\u304F\u306E\u5E97\u8217\u3092\u63A2\u3059"), /*#__PURE__*/React.createElement("span", {
     "aria-hidden": true
-  }, "\u2192")), /*#__PURE__*/React.createElement("a", {
-    href: "onlineshop.html",
-    onClick: () => click('sale_finder_online'),
-    className: "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-serif text-[13px] border",
-    style: {
-      borderColor: 'rgba(255,255,255,.55)',
-      color: '#fff'
-    }
-  }, /*#__PURE__*/React.createElement("span", null, "\u4F1A\u54E1\u306E\u65B9\u306F\u30AA\u30F3\u30E9\u30A4\u30F3\u3078"), /*#__PURE__*/React.createElement("span", {
-    "aria-hidden": true
-  }, "\u2197")))));
+  }, "\u2192"))));
 }
 
 /* ⚜ ダメージ・矯正履歴が深い診断者へのサロン相談提案 — SpaSuggestCardと排他表示 */
