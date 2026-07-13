@@ -15,37 +15,37 @@ os.chdir(ROOT)
 STORES = ['ginza','omotesando','sapporo','osaka','nagoya','fukuoka','utsunomiya']
 
 BRANDS = [
-  dict(slug='aujua', ja='オージュア', en='Aujua', masters=['Aujua'], maker='ミルボン',
+  dict(slug='aujua', logo='images/logo_aujua.jpg', ja='オージュア', en='Aujua', masters=['Aujua'], maker='ミルボン',
        blurb='髪質と悩みに合わせてラインを選ぶ サロン専売ヘアケアの代表格<br>シャンプー・トリートメント・アウトバスを揃えて使う設計で 選び方がなにより大切なブランドです',
        cross=[('milbon','ミルボン')], q='オージュア 取扱店'),
-  dict(slug='kerastase', ja='ケラスターゼ', en='KÉRASTASE', masters=['Kérastase'], maker='ロレアル グループ',
+  dict(slug='kerastase', logo='images/logo_kerastase.jpg', ja='ケラスターゼ', en='KÉRASTASE', masters=['Kérastase'], maker='ロレアル グループ',
        blurb='パリ発のラグジュアリーヘアケア<br>ダメージケアからスカルプまで ラインの幅広さと世界観で愛され続けるブランドです',
        cross=[('shu-uemura','シュウ ウエムラ')], q='ケラスターゼ 取扱店'),
-  dict(slug='tokio', ja='トキオ インカラミ', en='TOKIO INKARAMI', masters=['TOKIO INKARAMI'], maker='ドクタージュニア',
+  dict(slug='tokio', logo='images/logo_tokio_inkarami.jpg', ja='トキオ インカラミ', en='TOKIO INKARAMI', masters=['TOKIO INKARAMI'], maker='ドクタージュニア',
        blurb='特許技術インカラミによる集中補修で知られるサロン専売ブランド<br>ハイダメージ・ブリーチ毛のホームケアの定番です',
        cross=[('bykarte','バイカルテ')], q='TOKIO トリートメント 取扱店'),
-  dict(slug='bykarte', ja='バイカルテ', en='BYKARTE', masters=['BYKARTE'], maker='ホーユー',
+  dict(slug='bykarte', logo='images/logo_bykarte.jpg', ja='バイカルテ', en='BYKARTE', masters=['BYKARTE'], maker='ホーユー',
        blurb='「カルテから生まれる」をコンセプトにしたサロン専売ヘアケア<br>SEAMの人気ランキングでも常連のブランドです',
        cross=[('tokio','トキオ インカラミ')], q='バイカルテ 取扱店'),
-  dict(slug='shu-uemura', ja='シュウ ウエムラ', en='shu uemura Art of Hair', masters=[], maker='ロレアル グループ',
+  dict(slug='shu-uemura', logo='images/logo_shu_uemura.jpg', ja='シュウ ウエムラ', en='shu uemura Art of Hair', masters=[], maker='ロレアル グループ',
        blurb='シュウ ウエムラのヘアケアライン アートオブヘアを店頭でお取り扱いしています<br>ラインナップ・在庫は店舗により異なります 詳しくは店頭でご案内します',
        cross=[('kerastase','ケラスターゼ')], q='シュウウエムラ ヘアケア 取扱店'),
-  dict(slug='lashaddict', ja='ラッシュアディクト', en='Lashaddict', masters=[], maker=None,
+  dict(slug='lashaddict', logo='images/logo_lashaddict.webp', ja='ラッシュアディクト', en='Lashaddict', masters=[], maker=None,
        blurb='サロン専売のまつげ美容液ブランドを正規ルートでお取り扱いしています<br>在庫・価格・使い方は店頭でご案内します',
        cross=[], q='ラッシュアディクト 正規取扱店', nofinder=True),
-  dict(slug='sublimic', ja='サブリミック', en='SUBLIMIC', masters=['SUBLIMIC'], maker='資生堂プロフェッショナル',
+  dict(slug='sublimic', logo='images/logo_sublimic.jpg', ja='サブリミック', en='SUBLIMIC', masters=['SUBLIMIC'], maker='資生堂プロフェッショナル',
        blurb='資生堂プロフェッショナルのサロン専売ヘアケア<br>髪と頭皮を診て組み合わせる 処方型のラインが特徴です',
        cross=[('shiseido-professional','資生堂プロフェッショナル')], q='サブリミック 取扱店'),
-  dict(slug='shiseido-professional', ja='資生堂プロフェッショナル', en='SHISEIDO PROFESSIONAL', masters=['SUBLIMIC'], maker='資生堂',
+  dict(slug='shiseido-professional', logo=None, ja='資生堂プロフェッショナル', en='SHISEIDO PROFESSIONAL', masters=['SUBLIMIC'], maker='資生堂',
        blurb='資生堂のサロン向けブランド サブリミックやフェンテフォルテなどを正規取扱<br>頭皮ケアからダメージケアまで 目的で選べます',
        cross=[('sublimic','サブリミック')], q='資生堂プロフェッショナル 取扱店'),
-  dict(slug='tsururincho', ja='つるりんちょ。', en='TSURURINCHO', masters=['つるりんちょ。'], maker=None,
+  dict(slug='tsururincho', logo='images/lp/store_logos/logo_kaminidoramawo.svg', ja='つるりんちょ。', en='TSURURINCHO', masters=['つるりんちょ。'], maker=None,
        blurb='名前で覚えるかたも多い サロン専売の洗い流さないトリートメント<br>大容量サイズまで店頭でお選びいただけます',
        cross=[], q='つるりんちょ 取扱店'),
-  dict(slug='system-professional', ja='システムプロフェッショナル', en='System Professional', masters=['System Professional'], maker='ウエラ',
+  dict(slug='system-professional', logo='images/logo_system_professional.jpg', ja='システムプロフェッショナル', en='System Professional', masters=['System Professional'], maker='ウエラ',
        blurb='髪と頭皮の状態から組み合わせる パーソナライズ型のサロン専売ケア<br>SEAMでも取扱点数の多い主力ブランドです',
        cross=[('kerastase','ケラスターゼ')], q='システムプロフェッショナル 取扱店'),
-  dict(slug='milbon', ja='ミルボン', en='MILBON', masters=['Global Milbon','Global Milbon Premium Position','Elujuda','Milbon'], maker='ミルボン',
+  dict(slug='milbon', logo='images/logo_milbon.webp', ja='ミルボン', en='MILBON', masters=['Global Milbon','Global Milbon Premium Position','Elujuda','Milbon'], maker='ミルボン',
        blurb='グローバルミルボン・エルジューダ・ジェミールフランなど サロン専売の総合メーカー<br>オージュアも同社のブランドです(専用ページあり)',
        cross=[('aujua','オージュア')], q='ミルボン 取扱店'),
 ]
@@ -328,14 +328,52 @@ def area_article_html(b, st, stores, lines, tops):
     ig_row=f'<div class="catrow"><div class="k">Instagram</div><div class="v"><a href="{E(st["ig"])}" target="_blank" rel="noopener" class="text-gold hover:underline underline-offset-4">店舗アカウントを見る ↗</a>(在庫のお問い合わせもこちらへ)</div></div>' if st.get('ig') else ''
     hours_row=f'<div class="catrow"><div class="k">営業時間</div><div class="v nums">{E(st["hours"])}</div></div>' if st.get('hours') else ''
 
+    # ブランドロゴ帯(ロゴ無しは銘板)
+    if b.get('logo'):
+        logo_html=(f'<div class="mt-7 rounded-[4px] border border-line bg-white px-6 py-5 flex items-center justify-center">'
+                   f'<img src="{E(b["logo"])}" alt="{E(ja)} ロゴ" loading="lazy" decoding="async" style="max-height:44px;max-width:70%;object-fit:contain;mix-blend-mode:multiply;"></div>')
+    else:
+        logo_html=(f'<div class="mt-7 rounded-[4px] border border-line bg-white px-6 py-6 text-center">'
+                   f'<span class="font-serif text-[17px] tracking-[0.18em] text-ink">{E(en)}</span></div>')
+
     lines_html=''
     if lines:
         chips=''.join(f'<span>{E(l)}</span>' for l in lines[:6])
         lines_html=f'<h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">この店舗で出会える {E(ja)}</h2>\n    <div class="brandchips mt-5">{chips}</div>'
+
+    # 商品詳細カード(公式画像+容量+定価+ひとことコピー)
     tops_html=''
     if tops:
-        rows=''.join(f'<li class="py-2.5 flex items-baseline justify-between gap-3"><span class="text-[13px] text-ink">{E(p.get("name",""))}</span><span class="shrink-0 text-[12px] text-charcoal/65 nums">定価 ¥{p["priceApprox"]:,} 税込</span></li>' for p in tops[:2])
-        tops_html=f'<ul class="mt-4 divide-y divide-line">{rows}</ul><p class="mt-2 text-[12px] text-charcoal/60">価格は変わる場合があります</p>'
+        cards=''
+        for p in tops[:3]:
+            nm=E(p.get('name',''))
+            size=E(p.get('primarySize','') or '')
+            pitch=E((p.get('pitchCopy') or p.get('cardCopy') or '').strip())
+            img=E(p.get('image',''))
+            meta=' ・ '.join(x for x in [size, f'定価 ¥{p["priceApprox"]:,} 税込'] if x)
+            cards+=(f'<div class="rounded-[4px] border border-line bg-white p-4">'
+                    f'<div class="flex items-start gap-4">'
+                    f'<img src="{img}" alt="{E(ja)} {nm}" width="72" height="72" loading="lazy" decoding="async" style="width:72px;height:72px;object-fit:contain;flex:none;">'
+                    f'<div class="min-w-0"><p class="text-[13.5px] text-ink leading-snug">{nm}</p>'
+                    f'<p class="mt-1 text-[11.5px] text-charcoal/60 nums">{meta}</p>'
+                    f'<p class="mt-2 text-[12px] leading-[1.8] text-charcoal/75">{pitch}</p></div></div></div>')
+        tops_html=(f'<h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">取扱アイテムと ひとこと詳細</h2>'
+                   f'<div class="mt-5 space-y-3">{cards}</div>'
+                   f'<p class="mt-3 text-[12px] text-charcoal/60">価格・仕様は変わる場合があります　このほかの{E(ja)}も店頭に揃っています</p>')
+
+    # ショップ/オンラインショップ誘導(会員制の原則: 店頭は誰でも・オンラインは会員のみ)
+    guide_html=(
+        '<h2 class="mt-12 font-serif text-[19px] sm:text-[22px] text-ink">買い方は 2とおり</h2>'
+        '<div class="mt-5 space-y-3">'
+        f'<a href="store-{st["slug"]}.html" class="block rounded-[4px] border border-line bg-cream/50 px-5 py-5 hover:border-gold transition-colors">'
+        f'<p class="font-mono tracking-widest2 text-[9.5px] text-gold uppercase">In Store</p>'
+        f'<p class="mt-1.5 font-serif text-[15.5px] text-ink">{E(st["name"])}の店頭で選ぶ →</p>'
+        f'<p class="mt-1 text-[12px] text-charcoal/70">どなたでも購入OK ・ 予約不要 ・ {E(ja)}を実際に手に取れます</p></a>'
+        '<a href="onlineshop.html" class="block rounded-[4px] px-5 py-5 transition-opacity hover:opacity-90" style="background:#15120E;">'
+        '<p class="font-mono tracking-widest2 text-[9.5px] uppercase" style="color:#D9BE93;">Members Only</p>'
+        '<p class="mt-1.5 font-serif text-[15.5px] text-white">会員制オンラインショップ →</p>'
+        '<p class="mt-1 text-[12px]" style="color:rgba(255,255,255,.75);">サロン専売品を会員価格で ・ ご登録は店頭のみ</p></a>'
+        '</div>')
 
     others=' '.join(f'<a href="{slug}-{o["slug"]}.html" class="hover:text-ink border-b border-line pb-0.5">{E(o["area"])}</a>' for o in stores if o['slug']!=st['slug'])
 
@@ -399,6 +437,8 @@ def area_article_html(b, st, stores, lines, tops):
       施術もご予約もいりません<br>{E(st['name'])}は {E(ja)}をメーカー公認の正規ルートで取り扱うヘアケアショップ<br>お買い物だけのご来店を歓迎しています
     </p>
 
+    {logo_html}
+
     <h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">店舗のご案内</h2>
     <div class="mt-5 space-y-3">
       <div class="catrow"><div class="k">店名</div><div class="v">{E(st['name'])}</div></div>
@@ -417,6 +457,8 @@ def area_article_html(b, st, stores, lines, tops):
 
     {lines_html}
     {tops_html}
+
+    {guide_html}
 
     <div class="mt-12 rounded-[4px] bg-cream/60 border border-line px-6 py-8 text-center">
       <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase mb-3">Hair Finder</p>
