@@ -64,6 +64,28 @@
     @media (min-width:640px){.rc-spec-key{flex-basis:140px;font-size:13px;}}
     .rc-spec-val{flex:1;color:#3A3631;font-size:13.5px;line-height:1.85;}
     @media (min-width:640px){.rc-spec-val{font-size:14.5px;}}
+
+    /* ── feminine editorial layer (2026-07) ── */
+    .rc-italic{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;letter-spacing:.02em;}
+    .rc-arch{border-radius:170px 170px 22px 22px;overflow:hidden;background:#F6EFE7;border:1px solid rgba(185,138,126,.3);box-shadow:0 10px 30px rgba(168,116,86,.1);}
+    .rc-arch img{width:100%;height:100%;object-fit:cover;mix-blend-mode:multiply;}
+    .rc-phil-grid{display:grid;grid-template-columns:1fr;gap:40px;align-items:center;}
+    .rc-life-grid{display:grid;grid-template-columns:1fr;gap:36px;align-items:center;}
+    .rc-spa-grid{display:grid;grid-template-columns:1fr;gap:24px;align-items:center;}
+    @media (min-width:900px){
+      .rc-phil-grid{grid-template-columns:1fr 250px;gap:56px;}
+      .rc-life-grid{grid-template-columns:300px 1fr;gap:56px;}
+      .rc-spa-grid{grid-template-columns:220px 1fr;gap:40px;}
+    }
+    .rc-life-row{display:flex;gap:14px;padding:16px 4px;border-bottom:1px solid rgba(185,138,126,.24);align-items:baseline;}
+    .rc-life-row:last-child{border-bottom:0;}
+    .rc-life-key{flex:0 0 118px;font-family:'Noto Serif JP',serif;font-size:13px;color:#A87456;letter-spacing:.05em;}
+    @media (min-width:900px){.rc-life-key{flex-basis:165px;font-size:14.5px;}}
+    .rc-life-val{flex:1;font-size:12.5px;line-height:1.9;color:#4A443D;}
+    @media (min-width:900px){.rc-life-val{font-size:13.5px;}}
+    .rc-card-soft{background:#fff;border:1px solid rgba(185,138,126,.24);border-radius:22px;box-shadow:0 8px 26px rgba(168,116,86,.08);}
+    .rc-fig-p{width:210px;}.rc-fig-l{width:230px;}.rc-fig-s{width:180px;}.rc-fig-e{width:168px;}
+    @media (min-width:900px){.rc-fig-p,.rc-fig-l,.rc-fig-s{width:100%;}}
   </style>
 </head>
 
@@ -86,21 +108,22 @@
   <!-- HEADER + slide menu are injected by js/app-header.js (shared across all pages) -->
 
   <!-- ━━━━━━━━ HERO ━━━━━━━━ -->
-  <section class="relative overflow-hidden" style="background:#F4EEE4;">
+  <section class="relative overflow-hidden" style="background:#F6ECE6;">
     <!-- 動画バンド -->
     <div class="relative w-full" style="aspect-ratio:4/3;max-height:50vh;">
       <video class="absolute inset-0 w-full h-full object-cover" style="object-position:center 30%;filter:saturate(1.02);" autoplay loop muted playsinline preload="none" poster="images/lp/salon/salon_hero.jpg?v=2" aria-label="SEAMサロンでの施術風景">
         <source src="images/lp/salon/salon_hero.mp4?v=2" type="video/mp4">
       </video>
-      <div class="absolute inset-0" style="background:linear-gradient(180deg, rgba(244,238,228,0) 0%, rgba(244,238,228,0) 52%, rgba(244,238,228,.6) 84%, #F4EEE4 100%);"></div>
+      <div class="absolute inset-0" style="background:linear-gradient(180deg, rgba(246,236,230,0) 0%, rgba(246,236,230,0) 52%, rgba(246,236,230,.6) 84%, #F6ECE6 100%);"></div>
     </div>
     <!-- 文字（明るく上品なクリーム地） -->
-    <div class="px-6 sm:px-10 pt-7 sm:pt-8 pb-14 sm:pb-16" style="background:#F4EEE4;">
+    <div class="px-6 sm:px-10 pt-7 sm:pt-8 pb-14 sm:pb-16" style="background:#F6ECE6;">
       <div class="max-w-6xl mx-auto">
         <div class="flex items-center gap-3 mb-5" data-reveal>
           <span class="block w-8 h-px" style="background:rgba(168,116,86,.55);"></span>
           <p class="font-mono tracking-widest3 text-[10.5px] uppercase" style="color:#A87456;">Recruit — 採用情報</p>
         </div>
+        <p class="rc-italic" style="font-size:clamp(19px,4.5vw,27px);color:#B98A7E;margin-bottom:6px;" data-reveal>for your beautiful life</p>
         <h1 class="font-serif text-ink leading-[1.16]" style="font-size:clamp(34px,8.5vw,60px);letter-spacing:.02em;font-weight:500;" data-reveal>
           美容を、<br>ずっと続けよう
         </h1>
@@ -124,8 +147,9 @@
   </section>
 
   <!-- ━━━━━━━━ PHILOSOPHY（想い・ダーク） ━━━━━━━━ -->
-  <section class="bg-ink text-ivory py-20 sm:py-28" data-track-view="recruit_entry">
-    <div class="max-w-3xl mx-auto px-6 sm:px-8">
+  <section class="bg-ink text-ivory py-20 sm:py-28">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8 rc-phil-grid">
+     <div>
       <p class="font-mono tracking-widest3 text-[10.5px] uppercase mb-6" style="color:#C9B68E;" data-reveal>Our Philosophy</p>
       <h2 class="font-serif leading-[1.4]" style="font-size:clamp(24px,5.5vw,36px);letter-spacing:.03em;font-weight:500;" data-reveal>
         美容の力で<br>人生に 幸せを
@@ -135,6 +159,10 @@
         <p>美容は短距離ではなく 長距離です 同じ志を持つ仲間と支え合いながら 長く誇りを持って立てる場所をつくる それが品質を高め 学びを深め 一人ひとりの人生を豊かにすると信じています</p>
         <p class="text-ivory" style="font-size:16px;">一生 美容師ができる そして 美容師でよかったと言える ——そんな会社でありたいと願っています</p>
       </div>
+     </div>
+     <figure class="rc-arch rc-fig-p mx-auto" style="aspect-ratio:4/5;" data-reveal>
+       <img src="images/lp/recruit/ill_hair.webp" alt="流れる髪の一筆書きイラスト" loading="lazy" decoding="async">
+     </figure>
     </div>
   </section>
 
@@ -144,6 +172,7 @@
       <div class="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
         <p class="font-mono tracking-widest3 text-[10.5px] text-gold uppercase mb-4" data-reveal>Why SEAM</p>
         <h2 class="font-serif text-ink leading-snug" style="font-size:clamp(22px,5vw,32px);letter-spacing:.04em;font-weight:500;" data-reveal>続けられる理由が ここにある</h2>
+        <p class="rc-italic" style="font-size:17px;color:#B98A7E;margin-top:10px;" data-reveal>work beautifully, live beautifully</p>
         <p class="mt-5 text-charcoal/75 leading-[1.95] text-[14px]" data-reveal>技術 収入 暮らし そのどれも我慢しないために SEAMが整えてきた6つの環境です</p>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
@@ -182,6 +211,29 @@
           <p class="font-mono tracking-widest2 text-[9px] text-gold uppercase">06 · Stage</p>
           <h3 class="font-serif text-[17px] text-ink mt-2 leading-snug">海外で見る 美容の景色</h3>
           <p class="mt-3 text-[12.5px] text-charcoal/72 leading-[1.85]">ニューヨーク・ハワイへの研修制度あり 実績に応じて 世界の現場に立つチャンスが広がります</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━━ LIFE 暮らしと両立 ━━━━━━━━ -->
+  <section class="py-20 sm:py-24" style="background:linear-gradient(180deg,#F9F1EC,#F3E4DC);">
+    <div class="max-w-5xl mx-auto px-6 sm:px-8">
+      <div class="rc-life-grid">
+        <figure class="rc-arch rc-fig-l mx-auto" style="aspect-ratio:4/5;" data-reveal>
+          <img src="images/lp/recruit/ill_family.webp" alt="親子の一筆書きイラスト" loading="lazy" decoding="async">
+        </figure>
+        <div>
+          <p class="font-mono tracking-widest3 text-[10.5px] uppercase mb-3" style="color:#B98A7E;" data-reveal>Life &amp; Career</p>
+          <h2 class="font-serif text-ink leading-snug" style="font-size:clamp(22px,5vw,32px);letter-spacing:.04em;font-weight:500;" data-reveal>美容師のわたしも<br>わたしの暮らしも</h2>
+          <p class="rc-italic" style="font-size:17px;color:#B98A7E;margin-top:8px;" data-reveal>your life comes first</p>
+          <p class="mt-5 text-charcoal/75 leading-[2] text-[13.5px]" data-reveal>結婚しても 子どもが生まれても 美容師をやめない ライフステージの変化を チームみんなで支える文化があります</p>
+          <div class="mt-6" data-reveal>
+            <div class="rc-life-row"><div class="rc-life-key">産休・育休</div><div class="rc-life-val">取得実績あり 安心して帰ってこられる場所です</div></div>
+            <div class="rc-life-row"><div class="rc-life-key">ママさん美容師</div><div class="rc-life-val">多数在籍 子育てと両立する働き方を先輩に聞けます</div></div>
+            <div class="rc-life-row"><div class="rc-life-key">土日休み</div><div class="rc-life-val">相談可能 お子さんのいる方の希望はやさしく優先します</div></div>
+            <div class="rc-life-row"><div class="rc-life-key">お休み</div><div class="rc-life-val">完全週休2日 有給休暇は10〜20日</div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -297,6 +349,17 @@
           <p class="font-serif text-ivory text-[14px] leading-[1.85]">まずは話を<br>聞いてみたい だけでも<br>大歓迎です</p>
         </div>
       </div>
+      <div class="mt-8 rc-card-soft p-6 sm:p-8 rc-spa-grid" data-reveal>
+        <figure class="rc-arch rc-fig-s mx-auto" style="aspect-ratio:1/1;border-radius:999px;">
+          <img src="images/lp/recruit/ill_spa.webp" alt="ヘッドスパの一筆書きイラスト" loading="lazy" decoding="async">
+        </figure>
+        <div>
+          <p class="font-mono tracking-widest2 text-[9.5px] uppercase" style="color:#B98A7E;">Spanist — 銀座・大阪・名古屋</p>
+          <h3 class="font-serif text-[19px] text-ink mt-2 leading-snug">スパニストという選択</h3>
+          <p class="rc-italic" style="font-size:15px;color:#B98A7E;margin-top:3px;">slow, warm, one to one</p>
+          <p class="mt-3 text-[12.5px] sm:text-[13px] text-charcoal/75 leading-[1.95]">完全個室で お客様と1対1で向き合うヘッドスパ専門職 カラー剤に触れない働き方で 美容師免許を活かす新しいキャリアがひらけます</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -328,6 +391,10 @@
       <h2 class="font-serif leading-[1.35]" style="font-size:clamp(23px,5.5vw,34px);letter-spacing:.03em;font-weight:500;" data-reveal>
         その一歩を<br>気軽に 聞かせてください
       </h2>
+      <p class="rc-italic" style="font-size:16.5px;color:#D9B8A8;margin-top:12px;" data-reveal>take your first step lightly</p>
+      <figure class="rc-arch rc-fig-e mx-auto mt-8" style="aspect-ratio:1/1;border-radius:999px;border-color:rgba(228,214,188,.35);" data-reveal>
+        <img src="images/lp/recruit/ill_stylist.webp" alt="スタイリストの一筆書きイラスト" loading="lazy" decoding="async">
+      </figure>
       <p class="mt-6 text-ivory/80 leading-[2] text-[14px]" data-reveal>
         応募も質問も 見学だけの連絡も歓迎です<br>
         履歴書はあとからで大丈夫 まずは一言だけどうぞ
