@@ -7,6 +7,25 @@ compatibility_date = "2025-01-01"
 SQUARE_ENV = "sandbox"          # テスト中は sandbox / 本番は "production"
 SQUARE_LOCATION_ID = "L4X65VRZXDMV7"  # 売上集計(/sales)の対象店舗ID（公開OK）。銀座のLocation ID
 ALLOW_ORIGIN = "*"              # 決済フォームのオリジンに絞るのが安全。例) "https://booking.seam.site"
+FORWARD_TO = "suenotakemi@gmail.com"  # HPBメールを解析後にここにも転送（承認メール・予約確認も受信可能）
 
 # 秘密鍵は下記コマンドで登録（wrangler.toml には絶対に書かない）:
 #   npx wrangler secret put SQUARE_ACCESS_TOKEN
+#   npx wrangler secret put LINE_CHANNEL_ACCESS_TOKEN
+
+# D1データベース（予約永続化・HPBメール取込・リマインドCron用）
+# 1) npx wrangler d1 create seam-booking  → 出力の database_id を下に貼る
+# 2) npx wrangler d1 execute seam-booking --remote --file=schema.sql
+[[d1_databases]]
+binding = "DB"
+database_name = "seam-booking"
+database_id = "70f51a30-132e-4113-9fbc-f48cc5a0aea0"
+
+# メール転送バインディング（hpb@seam.site → suenotakemi@gmail.com 転送用）
+[[send_email]]
+name = "SEND_EMAIL"
+destination_address = "suenotakemi@gmail.com"
+
+# 前日リマインドの自動送信（毎朝9時 JST = 0時 UTC）
+[triggers]
+crons = ["0 0 * * *"]

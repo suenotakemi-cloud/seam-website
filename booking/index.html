@@ -87,15 +87,29 @@ td.slot:hover{background:#f0f7ff}
 .opt .dt{font-size:12px;color:var(--sub)}
 .opt .pr{font-weight:800;color:var(--navy)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{border:1.5px solid var(--line);border-radius:99px;padding:7px 13px;font-size:13px;font-weight:700;background:#fff}
+.chip{border:1.5px solid var(--line);border-radius:99px;padding:8px 15px;font-size:13.5px;font-weight:700;background:#fff;transition:.1s}
+.chip:hover{border-color:var(--accent2)}
 .chip.sel{border-color:var(--accent);background:var(--accent);color:#fff}
 .chip:disabled{opacity:.32;cursor:not-allowed;text-decoration:line-through}
-.daytabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px}
-.daytab{min-width:64px;text-align:center;border:1.5px solid var(--line);border-radius:12px;padding:7px 4px;background:#fff}
+.soonest{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(135deg,#eaf3ff,#f4f9ff);border:1.5px solid var(--accent);border-radius:14px;padding:13px 16px;margin-bottom:16px;cursor:pointer;transition:.12s}
+.soonest:hover{box-shadow:0 4px 14px rgba(47,125,209,.22);transform:translateY(-1px)}
+.soonest .so-l{font-weight:800;color:var(--accent);font-size:14px}
+.soonest .so-r{font-weight:800;color:var(--navy);font-size:14.5px}
+.tgrp{margin-bottom:14px}
+.tgrp-h{font-size:11.5px;font-weight:800;color:var(--sub);margin-bottom:7px;letter-spacing:.04em}
+.mcat{margin-bottom:16px}
+.mcat-h{font-size:12px;font-weight:800;color:var(--navy);margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid var(--line)}
+.ctag{display:inline-block;font-size:10px;font-weight:800;color:#fff;background:var(--danger);border-radius:5px;padding:1px 6px;margin-right:6px;vertical-align:1px}
+.dayfull{margin-top:10px;color:var(--sub);font-size:12.5px;background:#f7fafc;border:1px solid var(--line);border-radius:10px;padding:12px}
+.daytabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px}
+.daytab{min-width:60px;text-align:center;border:1.5px solid var(--line);border-radius:12px;padding:7px 4px 5px;background:#fff;flex-shrink:0}
 .daytab .w{font-size:10.5px;color:var(--sub);display:block}
 .daytab .d{font-weight:800;font-size:15px}
+.daytab .av{display:block;font-size:11px;font-weight:800;margin-top:1px}
+.daytab .av-o{color:var(--ok)} .daytab .av-t{color:var(--warn)} .daytab .av-x{color:#c3ccd6}
 .daytab.sel{border-color:var(--accent);background:var(--accent);color:#fff}
-.daytab.sel .w{color:rgba(255,255,255,.8)}
+.daytab.sel .w,.daytab.sel .av{color:rgba(255,255,255,.85)}
+.daytab.nofree{opacity:.55}
 .pnav{display:flex;gap:10px;margin-top:18px}
 .btn{border:none;border-radius:12px;padding:12px 18px;font-weight:800;font-size:14px}
 .btn.pri{background:var(--accent);color:#fff;flex:1}
@@ -110,6 +124,14 @@ td.slot:hover{background:#f0f7ff}
 .summary{background:#f7fafc;border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:left;font-size:13px;margin-top:14px}
 .summary dt{color:var(--sub);font-size:11px;font-weight:700;margin-top:6px}
 .summary dd{font-weight:700}
+.summary.big{margin-top:0}
+.summary.big dt{font-size:11.5px}
+.summary.big dd{font-size:14px}
+.total-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:12px 14px;background:#f0f7ff;border:1px solid #cfe4fb;border-radius:12px}
+.total-row span{font-size:12.5px;color:var(--sub);font-weight:700}
+.total-row b{font-size:22px;color:var(--navy)}
+.policy{margin-top:14px;background:#fffdf6;border:1px solid #f0e4c0;border-radius:10px;padding:11px 13px;font-size:12px;color:var(--sub);line-height:1.7}
+.policy b{display:block;color:var(--warn);font-size:12px;margin-bottom:3px}
 
 /* ---- channels ---- */
 .chcard{display:flex;flex-direction:column;gap:8px}
@@ -199,6 +221,41 @@ td.slot:hover{background:#f0f7ff}
 .lg-steps b{color:var(--navy)}
 .lg-prev{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;margin-top:6px;display:inline-block}
 
+/* ---- today (staff hub) ---- */
+.tcard{display:flex;align-items:stretch;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:.12s}
+.tcard:hover{border-color:var(--accent2)}
+.tcard.next{border-color:var(--accent);border-width:2px;box-shadow:0 4px 16px rgba(47,125,209,.16)}
+.tcard.past{opacity:.6}
+.tcard.st-done{background:#f6fbf8}
+.tcard.st-noshow{background:#fdf5f5}
+.tc-time{display:flex;flex-direction:column;justify-content:center;min-width:52px;text-align:center;border-right:1px solid var(--line);padding-right:12px;font-variant-numeric:tabular-nums}
+.tc-time b{font-size:17px;font-weight:800;color:var(--navy)}
+.tc-time span{font-size:11px;color:var(--sub)}
+.tc-body{flex:1;min-width:0}
+.tc-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.tc-name{font-weight:800;font-size:15px}
+.tc-nextbadge{font-size:9.5px;font-weight:800;color:#fff;background:var(--accent);border-radius:5px;padding:2px 6px;letter-spacing:.05em}
+.tc-sub{font-size:12.5px;color:var(--sub);margin:3px 0 6px}
+.tc-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.tw-warn{font-size:10.5px;font-weight:800;color:var(--warn);background:#fff6e9;border:1px solid #fbdca0;border-radius:6px;padding:1px 6px}
+.tw-dep{font-size:10.5px;font-weight:800;color:var(--ok);background:#eaf7f0;border-radius:6px;padding:1px 6px}
+.tc-arrow{display:flex;align-items:center;color:#c3ccd6;font-size:22px;font-weight:700}
+
+/* ---- customer karte ---- */
+.custrow{display:flex;align-items:center;gap:12px;padding:11px 12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;cursor:pointer;background:#fff}
+.custrow:hover{border-color:var(--accent);background:#f7fbff}
+.cust-main{flex:1;min-width:0}
+.cust-name{font-weight:800;font-size:14px}
+.cust-sub{font-size:12px;color:var(--sub);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cust-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cust-chans{display:flex;gap:3px}
+.cust-spend{font-weight:800;font-variant-numeric:tabular-nums;color:var(--navy);min-width:64px;text-align:right}
+.chistwrap{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px;max-height:240px;overflow-y:auto}
+.chist{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid #eef3f8;font-size:12.5px}
+.chist:last-child{border-bottom:none}
+.chist-d{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chist-m{flex:1;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
 /* ---- status / repeat / detail ---- */
 .rep{display:inline-block;font-size:10px;font-weight:800;color:#8a5a00;background:#fff3d6;border:1px solid #f2d999;border-radius:99px;padding:1px 7px;margin-left:6px;white-space:nowrap}
 .rep.new{color:var(--sub);background:#eef2f7;border-color:var(--line)}
@@ -234,6 +291,18 @@ td.slot:hover{background:#f0f7ff}
 #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:11px 20px;border-radius:12px;font-weight:700;font-size:13px;opacity:0;transition:.25s;z-index:200;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:90vw}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.err{background:var(--danger)}
+
+/* ---- mobile (スタッフのスマホ運用) ---- */
+@media(max-width:640px){
+  header{height:auto;flex-wrap:wrap;padding:8px 12px;gap:6px}
+  header .logo{font-size:14px}
+  header .logo span{display:none}
+  nav{width:100%;margin-left:0;overflow-x:auto;flex-wrap:nowrap;gap:2px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav button{white-space:nowrap;padding:8px 12px;flex:0 0 auto;font-size:13px}
+  main{padding:16px 12px 84px}
+  h2{font-size:17px}
+}
 </style>
 </head>
 <body>
@@ -241,8 +310,10 @@ td.slot:hover{background:#f0f7ff}
 <header>
   <div class="logo">Salon Town Booking<span>PROTOTYPE</span></div>
   <nav>
-    <button data-v="dash" class="active">ダッシュボード</button>
+    <button data-v="today" class="active">今日</button>
+    <button data-v="dash">ダッシュボード</button>
     <button data-v="cal">予約台帳</button>
+    <button data-v="cust">顧客カルテ</button>
     <button data-v="book">予約ページ</button>
     <button data-v="chan">チャネル連携</button>
   </nav>
@@ -250,8 +321,18 @@ td.slot:hover{background:#f0f7ff}
 
 <main>
 
+<!-- ============ TODAY (staff hub) ============ -->
+<section class="view show" id="v-today">
+  <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+    <h2 id="today-title">今日</h2>
+    <span id="today-sum" style="font-size:13px;color:var(--sub);font-weight:600"></span>
+  </div>
+  <p class="lead">スタッフの1日をひと目で。次のお客様が一番上。タップでステータス変更・詳細</p>
+  <div id="todaylist"></div>
+</section>
+
 <!-- ============ DASHBOARD ============ -->
-<section class="view show" id="v-dash">
+<section class="view" id="v-dash">
   <h2>ダッシュボード</h2>
   <p class="lead">全チャネルの予約を1つの台帳に集約。ダブルブッキングはマスタ在庫側で防止します</p>
   <div class="grid cols4" style="margin-bottom:14px">
@@ -286,6 +367,22 @@ td.slot:hover{background:#f0f7ff}
     <div class="legend" id="cal-legend" style="margin-left:auto"></div>
   </div>
   <div class="calwrap"><table class="cal" id="caltable"></table></div>
+</section>
+
+<!-- ============ CUSTOMER KARTE ============ -->
+<section class="view" id="v-cust">
+  <h2>顧客カルテ</h2>
+  <p class="lead">来店履歴からの簡易カルテ。名前・電話で検索。リピーターと初回を見分けて、再来につなげます</p>
+  <div class="grid cols4" style="margin-bottom:14px">
+    <div class="card kpi"><div class="lbl">顧客数</div><div class="num" id="c-total">0</div></div>
+    <div class="card kpi"><div class="lbl">リピーター</div><div class="num" id="c-repeat">0</div><div class="sub">2回以上ご来店</div></div>
+    <div class="card kpi"><div class="lbl">リピート率</div><div class="num" id="c-rate">0%</div></div>
+    <div class="card kpi"><div class="lbl">累計売上</div><div class="num" id="c-sales">¥0</div><div class="sub">来店済み・予約分</div></div>
+  </div>
+  <div class="card">
+    <input id="cust-search" placeholder="🔍 名前・電話で検索" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px">
+    <div id="custlist"></div>
+  </div>
 </section>
 
 <!-- ============ CUSTOMER BOOKING ============ -->
@@ -361,14 +458,34 @@ const STAFF=[
   {id:'s2',name:'ANZU',role:'スタイリスト / スパニスト',catch:'頭皮と髪を整えるヘア＆スパ',yrs:9},
   {id:'s3',name:'CHIKA',role:'スパニスト',catch:'極上睡眠ヘッドスパ・完全個室',yrs:3},
 ];
+// SEAM 銀座のHPB実メニュー・価格（施術時間は目安）。カテゴリでグループ表示。クーポン=お得なセット。
 const MENUS=[
-  {id:'m1',name:'カット',min:60,price:6600,staff:['s1','s2']},
-  {id:'m2',name:'カット + カラー',min:150,price:12100,staff:['s1','s2']},
-  {id:'m3',name:'カット + パーマ',min:150,price:13200,staff:['s1','s2']},
-  {id:'m4',name:'縮毛矯正',min:180,price:18700,staff:['s1']},
-  {id:'m5',name:'ヘッドスパ 60分',min:60,price:6600,staff:['s2','s3']},
-  {id:'m6',name:'ヘッドスパ 90分',min:90,price:9350,staff:['s2','s3']},
+  {id:'cp1',cat:'クーポン',tag:'メンズ限定',name:'似合わせカット＋アミノクレンジングスパ',min:90,price:5500,staff:['s2']},
+  {id:'cp2',cat:'クーポン',tag:'全員',name:'カット＋ヘッドスパ',min:120,price:15700,staff:['s2']},
+  {id:'cp3',cat:'クーポン',tag:'全員',name:'カット＋トリートメント',min:90,price:9900,staff:['s1','s2']},
+  {id:'cp4',cat:'クーポン',tag:'全員',name:'カラー＋ヘッドスパ',min:150,price:18700,staff:['s2']},
+  {id:'cp5',cat:'クーポン',tag:'全員',name:'縮毛矯正＋トリートメント',min:180,price:30000,staff:['s1','s2']},
+  {id:'m1',cat:'カット',name:'SEAMカット',min:60,price:9900,staff:['s1','s2']},
+  {id:'m2',cat:'カット',name:'カット（会員）',min:60,price:8800,staff:['s1','s2']},
+  {id:'m3',cat:'カット',name:'カット＋ヘッドスパ',min:120,price:15700,staff:['s2']},
+  {id:'m4',cat:'カット',name:'前髪カット',min:20,price:2200,staff:['s1','s2']},
+  {id:'m5',cat:'カラー',name:'ケアリタッチカラー',min:90,price:9900,staff:['s1','s2']},
+  {id:'m6',cat:'カラー',name:'艶ケアカラー',min:120,price:13200,staff:['s1','s2']},
+  {id:'m7',cat:'カラー',name:'カラー＋トリートメント',min:150,price:17600,staff:['s1','s2']},
+  {id:'m8',cat:'カラー',name:'ケアブリーチWカラー（ハイライト全頭）',min:210,price:26400,staff:['s1','s2']},
+  {id:'m9',cat:'パーマ',name:'ケアパーマ',min:120,price:13200,staff:['s1','s2']},
+  {id:'m10',cat:'パーマ',name:'前髪パーマ',min:60,price:5500,staff:['s1','s2']},
+  {id:'m11',cat:'縮毛矯正',name:'縮毛矯正＋トリートメント',min:180,price:30000,staff:['s1','s2']},
+  {id:'m12',cat:'縮毛矯正',name:'カット＋美髪縮毛矯正',min:210,price:35200,staff:['s1']},
+  {id:'m13',cat:'縮毛矯正',name:'前髪縮毛矯正',min:90,price:11000,staff:['s1','s2']},
+  {id:'m14',cat:'トリートメント',name:'髪質改善トリートメント（酸熱系）',min:120,price:16500,staff:['s1','s2']},
+  {id:'m15',cat:'トリートメント',name:'高濃度トリートメント',min:60,price:10350,staff:['s1','s2']},
+  {id:'m16',cat:'トリートメント',name:'トリートメント（Quick Step）',min:30,price:6600,staff:['s1','s2']},
+  {id:'m17',cat:'ヘッドスパ',name:'完全個室ヘッドスパ 45min',min:45,price:12000,staff:['s2','s3']},
+  {id:'m18',cat:'ヘッドスパ',name:'完全個室ヘッドスパ 60min',min:60,price:13800,staff:['s2','s3']},
+  {id:'m19',cat:'ヘッドスパ',name:'ヘッドスパ 90分',min:90,price:17800,staff:['s2','s3']},
 ];
+const MENU_CATS=['クーポン','カット','カラー','パーマ','縮毛矯正','トリートメント','ヘッドスパ'];
 const CHANNELS={
   own:{name:'自社予約',short:'自社',color:'var(--ch-own)'},
   line:{name:'LINE予約',short:'LINE',color:'var(--ch-line)'},
@@ -418,8 +535,8 @@ const API = {
   async patch(id, patch) {
     if (!API_BASE) return null;
     try {
-      const r = await fetch(API_BASE + '/reservations/' + id, {
-        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(patch)
+      const r = await fetch(API_BASE + '/reservations', {
+        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, ...patch })
       });
       return r.ok ? await r.json() : null;
     } catch { return null; }
@@ -427,7 +544,7 @@ const API = {
   async remove(id) {
     if (!API_BASE) return null;
     try {
-      const r = await fetch(API_BASE + '/reservations/' + id, { method: 'DELETE' });
+      const r = await fetch(API_BASE + '/reservations?id=' + encodeURIComponent(id), { method: 'DELETE' });
       return r.ok;
     } catch { return null; }
   },
@@ -465,16 +582,16 @@ function seed(){
     createdAt:new Date().toISOString()
   });
   const rs=[
-    mk(0,'s1',600,'m1','小林 芽衣','hpb'),   mk(0,'s1',690,'m2','渡辺 結衣','own'),
-    mk(0,'s2',630,'m1','中村 蒼','line'),     mk(0,'s2',840,'m3','伊藤 大和','hpb'),
-    mk(0,'s3',660,'m5','山本 凛','instagram'),mk(0,'s3',900,'m6','加藤 心春','own',false),
-    mk(1,'s1',600,'m4','斎藤 陽菜','rakuten'),mk(1,'s2',720,'m2','松本 咲良','minimo'),
-    mk(1,'s3',630,'m5','井上 楓','google',false), mk(2,'s1',840,'m1','木村 悠人','line'),
-    mk(2,'s2',600,'m2','林 美月','hpb'),      mk(2,'s3',960,'m6','清水 詩織','own',false),
-    mk(3,'s1',660,'m2','山口 莉子','own',false),  mk(3,'s3',720,'m5','森 陽翔','line',false),
-    mk(4,'s2',900,'m3','池田 芽依','hpb'),    mk(4,'s3',600,'m6','橋本 澪','instagram'),
-    mk(5,'s1',720,'m1','阿部 湊','minimo'),   mk(5,'s2',630,'m2','石川 紬','rakuten'),
-    mk(6,'s3',840,'m5','前田 葵','google'),   mk(6,'s1',960,'m1','藤田 樹','own'),
+    mk(0,'s1',600,'m1','小林 芽衣','hpb'),   mk(0,'s1',690,'m6','渡辺 結衣','own'),
+    mk(0,'s2',630,'m1','中村 蒼','line'),     mk(0,'s2',840,'m9','伊藤 大和','hpb'),
+    mk(0,'s3',660,'m18','山本 凛','instagram'),mk(0,'s3',900,'m19','加藤 心春','own',false),
+    mk(1,'s1',600,'m11','斎藤 陽菜','rakuten'),mk(1,'s2',720,'m6','松本 咲良','minimo'),
+    mk(1,'s3',630,'m18','井上 楓','google',false), mk(2,'s1',840,'m1','木村 悠人','line'),
+    mk(2,'s2',600,'m6','林 美月','hpb'),      mk(2,'s3',960,'m19','清水 詩織','own',false),
+    mk(3,'s1',660,'m6','山口 莉子','own',false),  mk(3,'s3',720,'m18','森 陽翔','line',false),
+    mk(4,'s2',900,'m9','池田 芽依','hpb'),    mk(4,'s3',600,'m19','橋本 澪','instagram'),
+    mk(5,'s1',720,'m1','阿部 湊','minimo'),   mk(5,'s2',630,'m6','石川 紬','rakuten'),
+    mk(6,'s3',840,'m18','前田 葵','google'),   mk(6,'s1',960,'m1','藤田 樹','own'),
     mk(2,'s1',600,'m1','大野 桜','square'),   mk(4,'s2',660,'m1','谷口 蒼','square',false),
     mk(3,'s2',780,'m1','小林 芽衣','own'),    mk(5,'s2',900,'m1','渡辺 結衣','line'),
   ];
@@ -527,7 +644,7 @@ function removeReservation(id){
 }
 function markBlocked(id){
   const r=db.reservations.find(x=>x.id===id);
-  if(r){r.hpbBlocked=true;save();refreshAll();API.patch(id,{hpb_blocked:1}).catch(()=>{});}
+  if(r){r.hpbBlocked=true;save();refreshAll();API.patch(id,{hpbBlocked:1}).catch(()=>{});}
 }
 function setStatus(id,status){
   const r=db.reservations.find(x=>x.id===id);
@@ -818,13 +935,27 @@ function makesBadGap(dayKey,staffId,start,end){
 }
 function freeSlots(dayKey,staffIds,dur){
   const out=[];
+  const isToday=dayKey===dkey(today());
+  const now=new Date();const nowMin=now.getHours()*60+now.getMinutes()+30; // 直前30分は予約不可
   for(let t=OPEN;t+dur<=CLOSE;t+=STEP){
+    if(isToday&&t<nowMin){out.push({t,staffId:null});continue;} // 過去/直前の枠は出さない
     // 空いていて かつ 隙間を作らない スタッフを探す
     const okStaff=staffIds.find(sid=>conflicts(dayKey,sid,t,t+dur).length===0&&!makesBadGap(dayKey,sid,t,t+dur));
     out.push({t,staffId:okStaff||null});
   }
   return out;
 }
+// 直近14日で一番早い空き枠
+function earliestSlot(staffIds,dur){
+  for(let i=0;i<14;i++){
+    const k=dkey(addDays(today(),i));
+    const f=freeSlots(k,staffIds,dur).find(s=>s.staffId);
+    if(f)return{day:k,t:f.t,sid:f.staffId};
+  }
+  return null;
+}
+const dayFreeCount=(dayKey,staffIds,dur)=>freeSlots(dayKey,staffIds,dur).filter(s=>s.staffId).length;
+const dayLabel=k=>k===dkey(today())?'今日':(k===dkey(addDays(today(),1))?'明日':k.slice(5).replace('-','/'));
 function renderBook(){
   const p=document.getElementById('pbody');
   const stepsHtml=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
@@ -840,7 +971,10 @@ function renderBook(){
         <div id="rlres"></div>
       </div>
       <h3 style="margin:6px 0 12px">メニューを選択</h3>`+
-      MENUS.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.name}</div><div class="dt">約${m.min}分</div></div><div class="pr">¥${m.price.toLocaleString()}</div></div>`).join('')+
+      MENU_CATS.map(cat=>{
+        const items=MENUS.filter(m=>m.cat===cat);if(!items.length)return'';
+        return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">約${m.min}分</div></div><div class="pr">¥${m.price.toLocaleString()}</div></div>`).join('')+`</div>`;
+      }).join('')+
       `<div class="pnav"><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.menu=o.dataset.m;renderBook()});
     document.getElementById('rlgo').onclick=()=>{
@@ -876,28 +1010,44 @@ function renderBook(){
     const staffIds=bk.staff==='any'?menu.staff:[bk.staff];
     if(!bk.day)bk.day=dkey(today());
     const days=[...Array(14)].map((_,i)=>addDays(today(),i));
-    const slots=freeSlots(bk.day,staffIds,menu.min);
-    const anyFree=slots.some(s=>s.staffId);
-    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">日時を選択</h3>
-      <div class="daytabs">${days.map(d=>{const k=dkey(d);return `<button class="daytab ${bk.day===k?'sel':''}" data-d="${k}"><span class="w">${WD[d.getDay()]}</span><span class="d">${d.getDate()}</span></button>`}).join('')}</div>
-      <div class="chips">${slots.map(s=>`<button class="chip ${bk.start===s.t&&s.staffId?'sel':''}" data-t="${s.t}" data-sid="${s.staffId||''}" ${s.staffId?'':'disabled'}>${hm(s.t)}</button>`).join('')}</div>
-      ${anyFree?'':'<p style="margin-top:10px;color:var(--sub);font-size:12.5px">この日は満枠です。別の日をお選びください</p>'}
+    const soon=earliestSlot(staffIds,menu.min);
+    const soonHtml=soon?`<button class="soonest" id="bsoonest"><span class="so-l">⚡ 最短で予約</span><span class="so-r">${dayLabel(soon.day)} ${hm(soon.t)}〜　→</span></button>`:'';
+    const free=freeSlots(bk.day,staffIds,menu.min).filter(s=>s.staffId);
+    const groups=[['朝・午前',t=>t<720],['午後',t=>t>=720&&t<1020],['夕方・夜',t=>t>=1020]];
+    const chipsHtml=free.length?groups.map(([label,test])=>{
+      const g=free.filter(s=>test(s.t));if(!g.length)return'';
+      return `<div class="tgrp"><div class="tgrp-h">${label}</div><div class="chips">${g.map(s=>`<button class="chip ${bk.start===s.t?'sel':''}" data-t="${s.t}" data-sid="${s.staffId}">${hm(s.t)}</button>`).join('')}</div></div>`;
+    }).join(''):'<p class="dayfull">この日は空きがありません。上の「最短で予約」か、別の日をお選びください</p>';
+    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">日時を選択</h3>${soonHtml}
+      <div class="daytabs">${days.map(d=>{const k=dkey(d);const cnt=dayFreeCount(k,staffIds,menu.min);const mk=cnt===0?['×','x']:(cnt<=3?['△','t']:['○','o']);return `<button class="daytab ${bk.day===k?'sel':''} ${cnt===0?'nofree':''}" data-d="${k}"><span class="w">${WD[d.getDay()]}</span><span class="d">${d.getDate()}</span><span class="av av-${mk[1]}">${mk[0]}</span></button>`}).join('')}</div>
+      ${chipsHtml}
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext" ${bk.start!=null?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.daytab').forEach(d=>d.onclick=()=>{bk.day=d.dataset.d;bk.start=null;renderBook()});
     p.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{bk.start=+c.dataset.t;bk._sid=c.dataset.sid;renderBook()});
+    const bs=document.getElementById('bsoonest');
+    if(bs)bs.onclick=()=>{bk.day=soon.day;bk.start=soon.t;bk._sid=soon.sid;bk.step=3;renderBook()};
   }
   if(bk.step===3){
     const menu=MENUS.find(m=>m.id===bk.menu);
     const sid=bk.staff==='any'?bk._sid:bk.staff;
     const st=STAFF.find(s=>s.id===sid);
-    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">お客様情報</h3>
-      <div class="field"><label>お名前</label><input id="bname" value="${bk.name}" placeholder="例）鈴木 一花"></div>
-      <div class="field"><label>電話番号</label><input id="bphone" type="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
-      <dl class="summary">
-        <dt>メニュー</dt><dd>${menu.name} — ¥${menu.price.toLocaleString()}</dd>
-        <dt>日時</dt><dd>${bk.day.replace(/-/g,'/')} ${hm(bk.start)}〜${hm(bk.start+menu.min)}</dd>
+    const vc=bk.phone?visitCount(bk.name,bk.phone,null):0;
+    const repHtml=vc>0?`<dt>ご来店</dt><dd>${vc+1}回目のご来店</dd>`:'';
+    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">ご予約内容の確認</h3>
+      <dl class="summary big">
+        <dt>メニュー</dt><dd>${menu.tag?`<span class="ctag">${menu.tag}</span>`:''}${menu.name}</dd>
+        <dt>日時</dt><dd>${bk.day.replace(/-/g,'/')}（${WD[new Date(bk.day).getDay()]}）${hm(bk.start)}〜${hm(bk.start+menu.min)}</dd>
+        <dt>所要時間</dt><dd>約${menu.min}分</dd>
         <dt>担当</dt><dd>${st.name}${bk.staff==='any'?'（指名なし）':''}</dd>
+        ${repHtml}
       </dl>
+      <div class="total-row"><span>お支払い予定</span><b>¥${menu.price.toLocaleString()}</b></div>
+      <div class="field" style="margin-top:14px"><label>お名前</label><input id="bname" value="${bk.name}" placeholder="例）鈴木 一花"></div>
+      <div class="field"><label>電話番号</label><input id="bphone" type="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
+      <div class="policy">
+        <b>キャンセルについて</b>
+        前日までのご連絡は無料です。当日キャンセル・無断キャンセルは、次回以降のご予約をお断りする場合があります。ご予約時間に10分以上遅れる場合はご連絡ください。
+      </div>
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
     document.getElementById('bnext2').onclick=()=>{
       bk.name=document.getElementById('bname').value.trim()||'ゲスト';
@@ -1056,8 +1206,104 @@ function renderLinks(){
 }
 
 /* =============== boot =============== */
-function refreshAll(){renderDash();renderCal();renderChan();if(bk.step===2)renderBook()}
-renderDash();renderCal();renderBook();renderChan();renderLinks();
+/* =============== 顧客カルテ =============== */
+const custKey=r=>{const p=(r.phone||'').replace(/[^0-9]/g,'');return p||('n:'+r.name)};
+const topKey=obj=>{const e=Object.entries(obj).sort((a,b)=>b[1]-a[1])[0];return e?e[0]:''};
+function buildCustomers(){
+  const map={};
+  db.reservations.filter(r=>r.status!=='cancelled').forEach(r=>{
+    const k=custKey(r);
+    const c=map[k]||(map[k]={key:k,name:r.name,phone:r.phone||'',visits:0,first:r.date,last:r.date,menus:{},staff:{},channels:new Set(),spend:0,note:'',line:false});
+    c.visits++;
+    if(r.phone&&!c.phone)c.phone=r.phone;
+    if(r.date<c.first)c.first=r.date;
+    if(r.date>=c.last){c.last=r.date;if(r.name)c.name=r.name;}
+    const m=MENUS.find(x=>x.id===r.menuId);if(m){c.menus[m.name]=(c.menus[m.name]||0)+1;c.spend+=m.price;}
+    const s=STAFF.find(x=>x.id===r.staffId);if(s)c.staff[s.name]=(c.staff[s.name]||0)+1;
+    c.channels.add(r.channel);
+    if(r.note)c.note=r.note;
+    if(r.lineUserId)c.line=true;
+  });
+  return Object.values(map).sort((a,b)=>a.last<b.last?1:-1);
+}
+function renderCustomers(){
+  const all=buildCustomers();
+  document.getElementById('c-total').textContent=all.length;
+  const rep=all.filter(c=>c.visits>=2).length;
+  document.getElementById('c-repeat').textContent=rep;
+  document.getElementById('c-rate').textContent=(all.length?Math.round(rep/all.length*100):0)+'%';
+  document.getElementById('c-sales').textContent='¥'+all.reduce((s,c)=>s+c.spend,0).toLocaleString();
+  const q=(document.getElementById('cust-search').value||'').trim();
+  const nq=q.replace(/[^0-9]/g,'');
+  const list=q?all.filter(c=>c.name.includes(q)||(nq&&c.phone.replace(/[^0-9]/g,'').includes(nq))):all;
+  const el=document.getElementById('custlist');
+  if(!list.length){el.innerHTML='<div style="color:var(--sub);font-size:13px;padding:8px">該当する顧客がいません</div>';return}
+  el.innerHTML=list.map(c=>{
+    const tm=topKey(c.menus),ts=topKey(c.staff);
+    const badge=c.visits>=2?`<span class="rep">${c.visits}回</span>`:'<span class="rep new">新規</span>';
+    const chans=[...c.channels].map(k=>CHANNELS[k]?`<span class="badge" style="background:${CHANNELS[k].color}">${CHANNELS[k].short}</span>`:'').join('');
+    const li=c.line?'<span class="rep" style="background:#e7f6ee;border-color:#bde8c8;color:#06843c">LINE</span>':'';
+    return `<div class="custrow" data-key="${c.key}">
+      <div class="cust-main"><div class="cust-name">${c.name} ${badge}${li}</div>
+        <div class="cust-sub">${c.phone||'電話未登録'}　最終 ${c.last.replace(/-/g,'/')}　${tm}${ts?' / '+ts:''}</div></div>
+      <div class="cust-right"><span class="cust-chans">${chans}</span><span class="cust-spend">¥${c.spend.toLocaleString()}</span></div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.custrow').forEach(row=>row.onclick=()=>openCustomer(row.dataset.key));
+}
+function openCustomer(key){
+  const rs=db.reservations.filter(r=>custKey(r)===key).sort((a,b)=>(a.date+String(a.start).padStart(4,'0'))<(b.date+String(b.start).padStart(4,'0'))?1:-1);
+  const c=buildCustomers().find(x=>x.key===key);if(!c)return;
+  const hist=rs.map(r=>{const m=MENUS.find(x=>x.id===r.menuId),s=STAFF.find(x=>x.id===r.staffId),ch=CHANNELS[r.channel];
+    return `<div class="chist"><span class="chist-d">${r.date.replace(/-/g,'/')} ${hm(r.start)}</span><span class="chist-m">${m?m.name:''}${s?' / '+s.name:''}</span><span class="badge" style="background:${ch?ch.color:'#999'}">${ch?ch.short:'—'}</span><span class="stbadge st-${r.status}" style="font-size:10px">${STATUS_LABEL[r.status]}</span></div>`;
+  }).join('');
+  document.getElementById('detailmodal').innerHTML=`<h3>${c.name} 様のカルテ</h3>
+    <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd><dt>累計売上</dt><dd>¥${c.spend.toLocaleString()}</dd><dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${c.note}</dd>`:''}</dl>
+    <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">来店履歴</div>
+    <div class="chistwrap">${hist}</div>
+    <div class="row"><button class="btn ghost" style="flex:1" id="cd-close">閉じる</button></div>`;
+  document.getElementById('cd-close').onclick=closeDetail;
+  document.getElementById('detailbg').classList.add('show');
+}
+
+/* =============== 今日ビュー（スタッフの現場ハブ） =============== */
+function renderToday(){
+  const tk=dkey(today());
+  const rs=db.reservations.filter(r=>r.date===tk&&r.status!=='cancelled').sort((a,b)=>a.start-b.start);
+  const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();
+  const t=today();
+  document.getElementById('today-title').textContent=`今日 ${t.getMonth()+1}/${t.getDate()}（${WD[t.getDay()]}）`;
+  const done=rs.filter(r=>r.status==='done').length;
+  const next=rs.find(r=>r.end>nowMin&&r.status==='booked');
+  document.getElementById('today-sum').textContent=rs.length?`${rs.length}件・完了${done}${next?`・次 ${hm(next.start)} ${next.name}様`:''}`:'';
+  const el=document.getElementById('todaylist');
+  if(!rs.length){el.innerHTML='<div class="card" style="color:var(--sub);text-align:center;padding:30px">本日の予約はありません</div>';return}
+  el.innerHTML=rs.map(r=>{
+    const m=MENUS.find(x=>x.id===r.menuId),s=STAFF.find(x=>x.id===r.staffId),c=CHANNELS[r.channel];
+    const vc=visitCount(r.name,r.phone,r.id);
+    const rep=vc>0?`<span class="rep">${vc+1}回目</span>`:'';
+    const isNext=next&&r.id===next.id;
+    const past=r.end<=nowMin;
+    const warn=(r.channel!=='hpb'&&!r.hpbBlocked)?'<span class="tw-warn" title="HPB要ブロック">⚠HPB</span>':'';
+    const dep=r.deposit>0?`<span class="tw-dep">前金¥${r.deposit.toLocaleString()}</span>`:'';
+    const stCls=r.status==='done'?'st-done':(r.status==='noshow'?'st-noshow':'');
+    const stLbl=r.status!=='booked'?`<span class="stbadge st-${r.status}">${STATUS_LABEL[r.status]}</span>`:'';
+    return `<div class="tcard ${isNext?'next':''} ${past&&r.status==='booked'?'past':''} ${stCls}" data-id="${r.id}">
+      <div class="tc-time"><b>${hm(r.start)}</b><span>${hm(r.end)}</span></div>
+      <div class="tc-body">
+        <div class="tc-top">${isNext?'<span class="tc-nextbadge">NEXT</span>':''}<span class="tc-name">${r.name}</span>${rep} ${stLbl}</div>
+        <div class="tc-sub">${m?m.name:''} ・ ${s?s.name:''}</div>
+        <div class="tc-meta"><span class="badge" style="background:${c?c.color:'#999'}">${c?c.short:'—'}</span>${dep}${warn}</div>
+      </div>
+      <div class="tc-arrow">›</div>
+    </div>`;
+  }).join('');
+  el.querySelectorAll('.tcard').forEach(card=>card.onclick=()=>openDetail(card.dataset.id));
+}
+
+function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();if(bk.step===2)renderBook()}
+renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();
+document.getElementById('cust-search').oninput=renderCustomers;
 // D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
 syncFromD1();
 document.getElementById('baseurl').oninput=renderLinks;

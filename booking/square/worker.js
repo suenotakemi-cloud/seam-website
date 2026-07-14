@@ -14,31 +14,79 @@
  *   ALLOW_ORIGIN         … CORS許可オリジン（未設定なら '*'）
  */
 
+import PostalMime from 'postal-mime';   // HPBメールのMIME/日本語解析（npm install postal-mime）
+
 const SQUARE_VERSION = '2025-01-23';
+
+// 予約データ用: 台帳スタッフ・メニュー（アプリと同一）。メール取込のマッピングに使用。
+const STAFF = [
+  { id: 's1', name: '及川 大輝' }, { id: 's2', name: 'ANZU' }, { id: 's3', name: 'CHIKA' },
+];
+const MENUS = [
+  { id: 'm1', name: 'カット', min: 60 }, { id: 'm2', name: 'カット + カラー', min: 150 },
+  { id: 'm3', name: 'カット + パーマ', min: 150 }, { id: 'm4', name: '縮毛矯正', min: 180 },
+  { id: 'm5', name: 'ヘッドスパ 60分', min: 60 }, { id: 'm6', name: 'ヘッドスパ 90分', min: 90 },
+];
 
 export default {
   async fetch(request, env) {
     const cors = {
       'Access-Control-Allow-Origin': env.ALLOW_ORIGIN || '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     };
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 
-    const url = new URL(request.url);
-    if (url.pathname.endsWith('/pay') && request.method === 'POST') return handlePay(request, env, cors);
-    if (url.pathname.endsWith('/sales') && request.method === 'GET') return handleSales(url, env, cors);
-    if (url.pathname.endsWith('/line/push') && request.method === 'POST') return handleLinePush(request, env, cors);
-    if (url.pathname.endsWith('/line/reminders') && request.method === 'POST') return handleLineReminders(request, env, cors);
+    const url = new URL(request.url), p = url.pathname, m = request.method;
+    if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
+    if (p.endsWith('/sales') && m === 'GET') return handleSales(url, env, cors);
+    if (p.endsWith('/line/push') && m === 'POST') return handleLinePush(request, env, cors);
+    if (p.endsWith('/line/reminders') && m === 'POST') return handleLineReminders(request, env, cors);
+    // 予約データAPI（D1永続化）
+    if (p.endsWith('/reservations') && m === 'GET') return handleGetReservations(url, env, cors);
+    if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors);
+    if (p.endsWith('/reservations') && m === 'PATCH') return handlePatchReservation(request, env, cors);
+    if (p.endsWith('/reservations') && m === 'DELETE') return handleDeleteReservation(url, env, cors);
     return json({ error: 'Not found' }, 404, cors);
   },
 
-  // 前日リマインドの自動送信（Cloudflare Cron Triggers）。
-  // wrangler.toml の [triggers] crons を有効化し、明日の予約を D1 等から読んで push する。
+  // 前日リマインドの自動送信（Cloudflare Cron Triggers）。明日の予約でlineUserIdがあるものにpush。
   async scheduled(event, env, ctx) {
-    // 例: const rows = await env.DB.prepare("SELECT ... WHERE date = ? AND lineUserId != ''").bind(tomorrow).all();
-    //     for (const r of rows.results) await linePush(env, r.lineUserId, buildLineMessage('reminder', r));
-    // D1 接続後に実装。今は no-op。
+    if (!env.DB || !env.LINE_CHANNEL_ACCESS_TOKEN) return;
+    const t = new Date(event.scheduledTime + 24 * 3600 * 1000);
+    const tomorrow = `${t.getUTCFullYear()}-${z(t.getUTCMonth() + 1)}-${z(t.getUTCDate())}`;
+    const rows = await env.DB.prepare(
+      "SELECT * FROM reservations WHERE date = ? AND line_user_id != '' AND status != 'cancelled'"
+    ).bind(tomorrow).all();
+    for (const r of (rows.results || [])) {
+      await linePush(env, r.line_user_id, buildLineMessage('reminder', {
+        date: r.date, time: min2hm(r.start), menu: r.menu_id, staff: r.staff_id, salon: 'SEAM 銀座',
+      }));
+    }
+  },
+
+  // HPB予約通知メールの自動取込（Cloudflare Email Routing → このWorkerへ転送）。
+  // MIME/日本語エンコード解析は postal-mime（`npm install` 必要・README参照）。
+  async email(message, env, ctx) {
+    console.log('EMAIL受信 from=', message.from, 'to=', message.to);   // 診断用ログ
+    try {
+      const parsed = await new PostalMime().parse(message.raw);
+      const text = parsed.text || (parsed.html || '').replace(/<[^>]+>/g, ' ');
+      console.log('本文長=', text.length, 'DB=', !!env.DB);
+      const r = parseSalonBoard(text);
+      console.log('パース結果=', r ? `${r.name} ${r.date} ${r.start}` : 'null（解析失敗）');
+      if (r && env.DB) {
+        await env.DB.prepare(
+          `INSERT OR IGNORE INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,created_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+        ).bind(r.id, r.date, r.staffId, r.start, r.end, r.menuId, r.name, '', '', r.note, 'hpb', 'booked', 1, 0, '', new Date().toISOString()).run();
+        console.log('D1へINSERT完了 id=', r.id);
+      }
+    } catch (e) { console.log('EMAIL処理エラー:', e.message); }
+    // スタッフの受信箱にも転送（send_email バインディング経由）
+    try { if (env.SEND_EMAIL) await message.forward(env.FORWARD_TO || 'suenotakemi@gmail.com', env.SEND_EMAIL); } catch (e) {
+      console.log('転送エラー:', e.message);
+    }
   },
 };
 
@@ -204,6 +252,86 @@ async function handleLineReminders(request, env, cors) {
   }
   return json({ ok: true, sent, failed }, 200, cors);
 }
+
+/* ---------- 予約データAPI（D1永続化） ---------- */
+const R2API = r => ({   // D1行 → アプリ形式
+  id: r.id, date: r.date, staffId: r.staff_id, start: r.start, end: r.end, menuId: r.menu_id,
+  name: r.name, phone: r.phone, email: r.email, note: r.note, channel: r.channel,
+  status: r.status, hpbBlocked: !!r.hpb_blocked, deposit: r.deposit, lineUserId: r.line_user_id, createdAt: r.created_at,
+});
+
+async function handleGetReservations(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  const from = url.searchParams.get('from'), to = url.searchParams.get('to') || from;
+  let q, res;
+  if (from) { q = env.DB.prepare('SELECT * FROM reservations WHERE date BETWEEN ? AND ? ORDER BY date,start').bind(from, to); }
+  else { q = env.DB.prepare('SELECT * FROM reservations ORDER BY date,start'); }
+  res = await q.all();
+  return json({ ok: true, reservations: (res.results || []).map(R2API) }, 200, cors);
+}
+
+async function handlePostReservation(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.date || !o.staffId || o.start == null) return json({ error: 'date/staffId/start は必須' }, 400, cors);
+  // ダブルブッキング判定（キャンセル以外の同一スタッフ・時間重複）
+  const clash = await env.DB.prepare(
+    "SELECT id,name,start FROM reservations WHERE date=? AND staff_id=? AND status!='cancelled' AND ? < end AND ? > start LIMIT 1"
+  ).bind(o.date, o.staffId, o.start, o.end).first();
+  if (clash) return json({ ok: false, conflict: { name: clash.name, start: clash.start } }, 409, cors);
+  const id = o.id || ('r' + crypto.randomUUID().slice(0, 8));
+  await env.DB.prepare(
+    `INSERT INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(id, o.date, o.staffId, o.start, o.end, o.menuId || '', o.name || 'お客様', o.phone || '', o.email || '', o.note || '',
+    o.channel || 'own', o.status || 'booked', o.channel === 'hpb' ? 1 : (o.hpbBlocked ? 1 : 0), o.deposit || 0, o.lineUserId || '', new Date().toISOString()).run();
+  return json({ ok: true, id }, 200, cors);
+}
+
+async function handlePatchReservation(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.id) return json({ error: 'id は必須' }, 400, cors);
+  const sets = [], vals = [];
+  if (o.status !== undefined) { sets.push('status=?'); vals.push(o.status); }
+  if (o.hpbBlocked !== undefined) { sets.push('hpb_blocked=?'); vals.push(o.hpbBlocked ? 1 : 0); }
+  if (!sets.length) return json({ error: '更新項目なし' }, 400, cors);
+  vals.push(o.id);
+  await env.DB.prepare(`UPDATE reservations SET ${sets.join(',')} WHERE id=?`).bind(...vals).run();
+  return json({ ok: true }, 200, cors);
+}
+
+async function handleDeleteReservation(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  const id = url.searchParams.get('id');
+  if (!id) return json({ error: 'id は必須' }, 400, cors);
+  await env.DB.prepare('DELETE FROM reservations WHERE id=?').bind(id).run();
+  return json({ ok: true }, 200, cors);
+}
+
+/* ---------- HOT PEPPER「SALON BOARD」通知メールのパーサ ---------- */
+function parseSalonBoard(raw) {
+  const sb = label => { const m = raw.match(new RegExp('■' + label + '[^\\n]*\\n[\\s　]*([^\\n]+)')); return m ? m[1].trim() : ''; };
+  const nameRaw = sb('氏名');
+  const name = nameRaw.replace(/[（(][^)）]*[)）]\s*$/, '').replace(/\s*様\s*$/, '').trim();
+  const dtStr = sb('来店日時');
+  const dt = dtStr.match(/(\d{4})[年\/](\d{1,2})[月\/](\d{1,2})日?[^\d]*(\d{1,2}):(\d{2})/);
+  if (!dt || !name) return null;
+  const stylist = sb('スタイリスト'), menuName = sb('メニュー'), resNo = sb('予約番号');
+  const dm = raw.match(/施術時間目安[：:]?\s*(?:(\d+)\s*時間)?\s*(?:(\d+)\s*分)?/);
+  const menu = MENUS.filter(m => menuName.includes(m.name)).sort((a, b) => b.name.length - a.name.length)[0] || MENUS[0];
+  const dur = (dm && (+dm[1] || +dm[2])) ? ((+dm[1] || 0) * 60 + (+dm[2] || 0)) : menu.min;
+  const sname = stylist.replace(/\s/g, '');
+  let staff = STAFF.find(s => sname && (sname.includes(s.name.split(' ')[0]) || s.name.replace(/\s/g, '').includes(sname)));
+  if (!staff) staff = STAFF[0];
+  const start = (+dt[4]) * 60 + (+dt[5]);
+  const date = `${dt[1]}-${z(+dt[2])}-${z(+dt[3])}`;
+  const note = [resNo && ('予約番号 ' + resNo), stylist && ('HPB担当 ' + stylist), menuName].filter(Boolean).join(' / ');
+  return { id: 'r' + crypto.randomUUID().slice(0, 8), date, staffId: staff.id, start, end: start + dur, menuId: menu.id, name, note };
+}
+
+const z = n => String(n).padStart(2, '0');
+const min2hm = m => `${z(Math.floor(m / 60))}:${z(m % 60)}`;
 
 function json(obj, status, cors) {
   return new Response(JSON.stringify(obj), {

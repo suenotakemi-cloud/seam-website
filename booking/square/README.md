@@ -138,6 +138,45 @@ D1 未導入の間は、予約DBを持つ側から `POST /line/reminders`（`{re
 
 > 🔑 チャネルアクセストークンは **Worker のシークレット**にのみ。`index.html`（フロント）には LIFF_ID と PUSH_ENDPOINT だけ（どちらも公開OK）。
 
+## D1永続化 + HPBメール自動取込 + 前日リマインドCron
+
+予約をブラウザのlocalStorageではなく **Cloudflare D1（DB）** に保存する構成。
+これにより「HPB予約メールを自動で台帳に入れる」「前日リマインドを自動送信」が本番で回る。
+
+```
+HPB予約通知メール ──転送──▶ Email Worker(email())──解析──▶ D1 ◀──API──▶ 予約アプリ
+                                                              ▲
+                                          毎朝Cron(scheduled)─┘ 明日の予約にLINEリマインド
+```
+
+### セットアップ（あなたの作業）
+```bash
+cd booking/square
+npm install                                   # postal-mime を取得（メール解析に必要）
+
+npx wrangler d1 create seam-booking           # → 出力の database_id を wrangler.toml に貼る
+npx wrangler d1 execute seam-booking --remote --file=schema.sql   # テーブル作成
+
+npx wrangler deploy                           # 予約API + email() + cron を反映
+```
+
+### HPBメールの転送設定（Cloudflare Email Routing）
+1. Cloudflareダッシュボード → あなたのドメイン（例 seam.site）→ **Email Routing** を有効化
+2. ルール作成：例 `hpb@seam.site` → **Send to a Worker** → `seam-square-pay`
+3. **サロンボードの予約通知メールの宛先**に、この `hpb@seam.site` を追加（または既存の受信箱から自動転送）
+   → 予約が入るたびメールが届き、Workerが解析してD1へ自動登録
+
+### 予約データAPI（アプリがD1を読み書き）
+- `GET /reservations?from=YYYY-MM-DD&to=YYYY-MM-DD` … 期間の予約
+- `POST /reservations` … 登録（ダブルブッキングは409で拒否）
+- `PATCH /reservations` … `{id,status}` / `{id,hpbBlocked}` 更新
+- `DELETE /reservations?id=…` … 削除
+
+> ⚠️ アプリ（index.html）を localStorage → このAPI に切り替える改修は、**D1作成＆デプロイ後**に実施します（実エンドポイントで検証するため）。`API_BASE` を設定すればD1、空ならlocalStorage（現行）で動くデュアル構成にします。
+
+### 前日リマインド
+`wrangler.toml` の `crons = ["0 0 * * *"]`（毎朝9時JST）で、明日の予約のうち `line_user_id` があるものにLINEリマインドを自動送信。
+
 ## 次の段階（予約同期）
 Square で入った予約を一元台帳に取り込むには、Bookings API の Webhook
 （`booking.created` / `booking.updated` / `booking.canceled`）を購読し、この Worker に受け口を足します。
