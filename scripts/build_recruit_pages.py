@@ -45,7 +45,7 @@ ROLES = {
         "salary_html": "月給30万円〜<br><span style=\"color:#9c8a6a;font-size:12.5px;\">指名売上70万円以上で完全歩合（バック率50%・上限なし）／ 売上70万円→35万円 ・ 100万円→50万円 ・ 150万円→75万円</span>",
         "desc_lead": "サロン専売ヘアケア140ブランドのセレクトショップが入口にある フロントショップ型サロンのスタイリスト職です 物販ノルマはなく 商品が売れる仕組みはお店が持っています",
         "jp_title": "美容師スタイリスト（{city}・正社員）",
-        "jp_desc": "フロントショップ型サロンSEAM {city}のスタイリスト。月給30万円〜 指名売上70万円以上で完全歩合(バック率50%・例:売上70万円で月給35万円)。完全週休2日・産休育休は取得実績あり復帰率100%・社会保険完備・NY/ハワイ研修。まずは見学だけの応募も歓迎。",
+        "jp_desc": "フロントショップ型サロンSEAM {city}のスタイリスト。月給30万円〜 指名売上70万円以上で完全歩合(バック率50%・例:売上70万円で月給35万円)。完全週休2日・産休育休は取得実績あり復帰率100%・社会保険完備・NY/ハワイ研修。試用期間2ヶ月。まずは見学だけの応募も歓迎。",
         "seo_title": "{city}の美容師・スタイリスト求人｜月給30万円〜 歩合50%｜SEAM{city}（正社員）",
         "seo_desc": "{pref}{city}エリア（{area}）の美容師スタイリスト求人 月給30万円〜 指名売上70万円で月給35万円（歩合50%） 完全週休2日 産休育休の復帰率100% NY・ハワイ研修 サロン専売140ブランドのフロントショップ型サロンSEAMで一生美容師でいられる働き方を",
         "h1": "{city}の美容師<br>スタイリスト求人",
@@ -58,7 +58,7 @@ ROLES = {
         "salary_html": "月給30万円〜<br><span style=\"color:#9c8a6a;font-size:12.5px;\">指名歩合あり ／ くわしくは面談でご説明します</span>",
         "desc_lead": "完全個室で お客様と1対1で向き合うヘッドスパ専門職です カットもカラーもしません カラー剤に触れない働き方で 美容師免許を活かす新しいキャリアがひらけます",
         "jp_title": "スパニスト・ヘッドスパニスト（{city}・正社員）",
-        "jp_desc": "完全個室ヘッドスパのスパニスト。月給30万円〜・指名歩合あり。完全週休2日・産休育休は取得実績あり復帰率100%・社会保険完備。美容師免許必須。カットやカラーは行わないヘッドスパ専門職。まずは見学だけの応募も歓迎。",
+        "jp_desc": "完全個室ヘッドスパのスパニスト。月給30万円〜・指名歩合あり。完全週休2日・産休育休は取得実績あり復帰率100%・社会保険完備。美容師免許必須。カットやカラーは行わないヘッドスパ専門職。試用期間2ヶ月。まずは見学だけの応募も歓迎。",
         "seo_title": "{city}のスパニスト求人（ヘッドスパ専門職）｜月給30万円〜｜SEAM{city}（正社員）",
         "seo_desc": "{pref}{city}エリア（{area}）のスパニスト・ヘッドスパニスト求人 月給30万円〜 完全個室で1対1のヘッドスパ専門職 カットカラーなし・カラー剤に触れない働き方 完全週休2日 産休育休の復帰率100% 美容師免許を活かす新しいキャリア",
         "h1": "{city}のスパニスト求人<br><span style=\"font-size:.62em;letter-spacing:.06em;\">ヘッドスパ専門職</span>",
@@ -226,7 +226,7 @@ def page_html(role, slug):
         <h2 class="font-serif text-ink leading-snug" style="font-size:clamp(21px,5vw,28px);letter-spacing:.04em;font-weight:500;" data-reveal>募集要項 — {R["ja"]}（{city}）</h2>
       </div>
       <div class="bg-white border border-line rounded-[18px] px-6 sm:px-9 py-4 sm:py-6 shadow-soft" data-reveal>
-        <div class="rc-spec-row"><div class="rc-spec-key">職種</div><div class="rc-spec-val">{R["ja"]}（正社員）</div></div>
+        <div class="rc-spec-row"><div class="rc-spec-key">職種</div><div class="rc-spec-val">{R["ja"]}（正社員 ・ 試用期間 2ヶ月）</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">勤務地</div><div class="rc-spec-val">{N["name"] or "SEAM " + city}<br>{N["region"]}{N["locality"]}{N["street"]}</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">給与</div><div class="rc-spec-val">{R["salary_html"]}</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">応募資格</div><div class="rc-spec-val">{lic}</div></div>
