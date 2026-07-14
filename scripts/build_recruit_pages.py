@@ -99,6 +99,7 @@ def page_html(role, slug):
          "hiringOrganization": {"@type": "Organization", "name": "株式会社hanico（SEAM）", "sameAs": "https://seam.site/"},
          "jobLocation": {"@type": "Place", "address": {"@type": "PostalAddress", "streetAddress": N["street"], "addressLocality": N["locality"], "addressRegion": N["region"], "addressCountry": "JP"}},
          "baseSalary": {"@type": "MonetaryAmount", "currency": "JPY", "value": {"@type": "QuantitativeValue", "minValue": 300000, "unitText": "MONTH"}},
+         "jobBenefits": "社会保険・厚生年金完備 ／ 交通費支給（月1万5千円まで） ／ ヘアケア・美容用品の社員割引 ／ ニューヨーク・ハワイ研修（実績に応じて） ／ 産休・育休（取得実績あり・復帰率100%）",
          "applicantLocationRequirements": {"@type": "Country", "name": "JP"}, "directApply": True,
          "identifier": {"@type": "PropertyValue", "name": "SEAM", "value": url_slug}},
         {"@type": "BreadcrumbList", "itemListElement": [
