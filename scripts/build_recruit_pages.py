@@ -42,12 +42,12 @@ ROLES = {
         "ja": "美容師スタイリスト", "short": "スタイリスト",
         "ill": "images/lp/recruit/ill_stylist.webp",
         "chips": ["月給30万円〜", "指名歩合50%", "完全週休2日"],
-        "salary_html": "月給30万円〜<br><span style=\"color:#9c8a6a;font-size:12.5px;\">指名売上70万円以上で完全歩合（バック率50%）／ 例：売上70万円でその月の給与は35万円</span>",
+        "salary_html": "月給30万円〜<br><span style=\"color:#9c8a6a;font-size:12.5px;\">指名売上70万円以上で完全歩合（バック率50%・上限なし）／ 売上70万円→35万円 ・ 100万円→50万円 ・ 150万円→75万円</span>",
         "desc_lead": "サロン専売ヘアケア140ブランドのセレクトショップが入口にある フロントショップ型サロンのスタイリスト職です 物販ノルマはなく 商品が売れる仕組みはお店が持っています",
         "jp_title": "美容師スタイリスト（{city}・正社員）",
-        "jp_desc": "フロントショップ型サロンSEAM {city}のスタイリスト。月給30万円〜 指名売上70万円以上で完全歩合(バック率50%・例:売上70万円で月給35万円)。完全週休2日・産休育休実績・社会保険完備・NY/ハワイ研修。まずは見学だけの応募も歓迎。",
+        "jp_desc": "フロントショップ型サロンSEAM {city}のスタイリスト。月給30万円〜 指名売上70万円以上で完全歩合(バック率50%・例:売上70万円で月給35万円)。完全週休2日・産休育休は取得実績あり復帰率100%・社会保険完備・NY/ハワイ研修。まずは見学だけの応募も歓迎。",
         "seo_title": "{city}の美容師・スタイリスト求人｜月給30万円〜 歩合50%｜SEAM{city}（正社員）",
-        "seo_desc": "{pref}{city}エリア（{area}）の美容師スタイリスト求人 月給30万円〜 指名売上70万円で月給35万円（歩合50%） 完全週休2日 産休育休実績あり NY・ハワイ研修 サロン専売140ブランドのフロントショップ型サロンSEAMで一生美容師でいられる働き方を",
+        "seo_desc": "{pref}{city}エリア（{area}）の美容師スタイリスト求人 月給30万円〜 指名売上70万円で月給35万円（歩合50%） 完全週休2日 産休育休の復帰率100% NY・ハワイ研修 サロン専売140ブランドのフロントショップ型サロンSEAMで一生美容師でいられる働き方を",
         "h1": "{city}の美容師<br>スタイリスト求人",
         "italic": "for stylists in {slug}",
     },
@@ -58,9 +58,9 @@ ROLES = {
         "salary_html": "月給30万円〜<br><span style=\"color:#9c8a6a;font-size:12.5px;\">指名歩合あり ／ くわしくは面談でご説明します</span>",
         "desc_lead": "完全個室で お客様と1対1で向き合うヘッドスパ専門職です カットもカラーもしません カラー剤に触れない働き方で 美容師免許を活かす新しいキャリアがひらけます",
         "jp_title": "スパニスト・ヘッドスパニスト（{city}・正社員）",
-        "jp_desc": "完全個室ヘッドスパのスパニスト。月給30万円〜・指名歩合あり。完全週休2日・産休育休実績・社会保険完備。美容師免許必須。カットやカラーは行わないヘッドスパ専門職。まずは見学だけの応募も歓迎。",
+        "jp_desc": "完全個室ヘッドスパのスパニスト。月給30万円〜・指名歩合あり。完全週休2日・産休育休は取得実績あり復帰率100%・社会保険完備。美容師免許必須。カットやカラーは行わないヘッドスパ専門職。まずは見学だけの応募も歓迎。",
         "seo_title": "{city}のスパニスト求人（ヘッドスパ専門職）｜月給30万円〜｜SEAM{city}（正社員）",
-        "seo_desc": "{pref}{city}エリア（{area}）のスパニスト・ヘッドスパニスト求人 月給30万円〜 完全個室で1対1のヘッドスパ専門職 カットカラーなし・カラー剤に触れない働き方 完全週休2日 産休育休実績 美容師免許を活かす新しいキャリア",
+        "seo_desc": "{pref}{city}エリア（{area}）のスパニスト・ヘッドスパニスト求人 月給30万円〜 完全個室で1対1のヘッドスパ専門職 カットカラーなし・カラー剤に触れない働き方 完全週休2日 産休育休の復帰率100% 美容師免許を活かす新しいキャリア",
         "h1": "{city}のスパニスト求人<br><span style=\"font-size:.62em;letter-spacing:.06em;\">ヘッドスパ専門職</span>",
         "italic": "for spanists in {slug}",
     },
@@ -69,7 +69,7 @@ ROLES = {
 FAQS = [
     ("見学だけでも大丈夫ですか", "はい 見学だけ 話を聞くだけのご連絡も歓迎しています LINEかインスタグラムのDMから一言おくってください"),
     ("履歴書は必要ですか", "あとからで大丈夫です まずはLINEかDMでお名前と希望店舗をおしらせください"),
-    ("子育てと両立できますか", "産休・育休の取得実績があり ママさん美容師も多数在籍しています 土日休みの相談も可能です（お子さんのいる方は優先します）"),
+    ("子育てと両立できますか", "産休・育休は取得実績があり 復帰率は100%です 結婚して子どもがふたり 時短の正社員でサロンワークを続けている勤続10年のスタイリストも在籍しています 土日休みの相談も可能です（お子さんのいる方は優先します）"),
     ("応募から入社までの流れは", "LINEまたはDMでご連絡 → 店舗見学・面談 → 条件のご相談 → 入社 という流れです 経験やご希望にあわせてご相談いただけます"),
 ]
 
@@ -230,7 +230,7 @@ def page_html(role, slug):
         <div class="rc-spec-row"><div class="rc-spec-key">勤務地</div><div class="rc-spec-val">{N["name"] or "SEAM " + city}<br>{N["region"]}{N["locality"]}{N["street"]}</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">給与</div><div class="rc-spec-val">{R["salary_html"]}</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">応募資格</div><div class="rc-spec-val">{lic}</div></div>
-        <div class="rc-spec-row"><div class="rc-spec-key">休日休暇</div><div class="rc-spec-val">完全週休2日 ／ 土日休み相談可能（お子さんのいる方は優先）<br>有給休暇 10〜20日 ／ 産休・育休（取得実績あり）</div></div>
+        <div class="rc-spec-row"><div class="rc-spec-key">休日休暇</div><div class="rc-spec-val">完全週休2日 ／ 土日休み相談可能（お子さんのいる方は優先）<br>有給休暇 10〜20日 ／ 産休・育休（取得実績あり・復帰率100%）</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">待遇・福利</div><div class="rc-spec-val">社会保険・厚生年金 完備 ／ 交通費 月1万5千円まで支給 ／ ヘアケア・美容用品の社員割引あり<br>ニューヨーク・ハワイ研修（実績に応じて）／ ママさん美容師 多数在籍</div></div>
         {hours}
         <div class="rc-spec-row"><div class="rc-spec-key">運営会社</div><div class="rc-spec-val">株式会社hanico（SEAM ／ bico ／ HOI ／ BEAPLY）</div></div>
@@ -239,6 +239,23 @@ def page_html(role, slug):
       <div class="text-center mt-6" data-reveal>
         <a href="store-{slug}.html" class="rcd-pill">SEAM {city}の店舗情報をみる →</a>
       </div>
+    </div>
+  </section>
+
+  <!-- 先輩の声 -->
+  <section class="bg-ivory py-12 sm:py-16">
+    <div class="max-w-3xl mx-auto px-6 sm:px-8">
+      <figure class="relative bg-white border border-line rounded-[22px] px-7 sm:px-10 pt-10 pb-7 shadow-soft" data-reveal>
+        <span aria-hidden="true" style="position:absolute;top:8px;left:16px;font-family:'Instrument Serif',serif;font-size:72px;line-height:1;color:rgba(185,138,126,.28);">“</span>
+        <blockquote class="font-serif text-[14px] sm:text-[15px] text-ink leading-[2.1]">
+          結婚して 子どもがふたり生まれて いまは時短の正社員として サロンワークを続けています<br>
+          担当してきたお客様を失うことなく 安定して働けています スタッフも会社も 本当に助けてくれる場所です
+        </blockquote>
+        <figcaption class="mt-5 pt-4 flex items-baseline justify-between flex-wrap gap-2" style="border-top:1px solid rgba(185,138,126,.24);">
+          <p class="font-serif text-[14.5px] text-ink">板東 裕希</p>
+          <p class="text-[11px] text-charcoal/65">グループサロン bico スタイリスト ／ 勤続10年 ・ ふたりの子どものママ</p>
+        </figcaption>
+      </figure>
     </div>
   </section>
 
