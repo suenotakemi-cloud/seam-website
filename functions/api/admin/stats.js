@@ -337,6 +337,21 @@ export async function onRequestGet(context) {
       "SELECT name, CASE WHEN ts>=? THEN 'cur' ELSE 'prev' END w, COUNT(*) c FROM events WHERE name IN ('finder_start','finder_complete','finder_cta') AND ts>=? AND " + NT + " GROUP BY name, w",
       since, since2
     );
+    // 日別推移（戦略用）: 主要イベントを1日単位で横持ち集計（新しい日が先頭・最大62日）
+    const dailyFullRaw = await q(
+      "SELECT date(ts/1000,'unixepoch','localtime') d, " +
+      "SUM(name='page_view') pv, " +
+      "SUM(name='page_view' AND path LIKE '/recruit%') rpv, " +
+      "SUM(name='finder_start') fs, " +
+      "SUM(name='finder_complete') fc, " +
+      "SUM(name='finder_cta') cta, " +
+      "SUM(name='sec_click' AND label IN ('salon_reserve_hpb','salon_reserve_stylist','book_sticky')) sres, " +
+      "SUM(name='sec_click' AND label IN ('spa_reserve_hpb','spa_reserve_spanist','book_sticky_spa')) pres, " +
+      "SUM(name='sec_click' AND label IN ('recruit_apply_line','recruit_apply_ig','recruit_apply_nav')) rap, " +
+      "SUM(name='sec_click' AND label='sale_shop_join') sj " +
+      "FROM events WHERE ts>=? AND " + NT + " GROUP BY d ORDER BY d DESC LIMIT 62",
+      since
+    );
     const kpiWin = { cur: {}, prev: {} };
     (kpiWinRaw.results || []).forEach(r => { kpiWin[r.w][r.name] = r.c; });
     const tmap = {};
@@ -369,6 +384,7 @@ export async function onRequestGet(context) {
       byMode: byMode.results || [],
       ctaTarget: ctaTarget.results || [],
       daily: daily.results || [],
+      dailyFull: dailyFullRaw.results || [],
       bySource: bySource.results || [],
       byCampaign: byCampaign.results || [],
       byDevice: byDevice.results || [],

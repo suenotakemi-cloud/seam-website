@@ -112,6 +112,8 @@
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <select id="rangeSel" class="btn" style="padding:7px 10px">
+          <option value="7">直近7日</option>
+          <option value="14">直近14日</option>
           <option value="30">直近30日</option>
           <option value="90" selected>直近90日</option>
           <option value="365">直近1年</option>
@@ -343,6 +345,7 @@
       byMode:[{m:'a',c:Math.round(completes*.86)},{m:'b',c:Math.round(completes*.56)}],
       ctaTarget:[{target:'reserve_hpb',c:Math.round(completes*.19)},{target:'shop',c:Math.round(completes*.09)},{target:'product',c:Math.round(completes*.06)}],
       daily:d,
+      dailyFull:d.map(function(x){var fc=x.c;var fs=Math.round(fc*1.7+Math.random()*3);return {d:x.d,pv:Math.round(fs*22+Math.random()*60),rpv:Math.round(3+Math.random()*9),fs:fs,fc:fc,cta:Math.round(fc*0.55),sres:Math.round(Math.random()*3),pres:Math.round(Math.random()*2.4),rap:Math.round(Math.random()*3),sj:Math.round(Math.random()*4)};}).reverse(),
       brandSearch:[{label:'オージュア',c:41},{label:'ミルボン',c:33},{label:'頭皮',c:29},{label:'kerastase',c:22},{label:'しっとり シャンプー',c:18},{label:'スカルプ',c:14},{label:'デジタルパーマ',c:9},{label:'ドライヤー',c:8}],
       brandClick:[{label:'Aujua',c:88},{label:'Kérastase',c:64},{label:'Global Milbon',c:52},{label:'SUBLIMIC',c:38},{label:'BYKARTE',c:31},{label:'TOKIO INKARAMI',c:26},{label:'Davines',c:22},{label:'ReFa',c:19}],
       finderFunnel:{opened:1230,started:620,completed:562},
@@ -407,6 +410,29 @@
     var rdAvg = (P.rediagN>0) ? Math.round((P.rediagDaysSum||0)/P.rediagN) : null;
     var rdNote = rdAvg!==null ? noteLine('再診断の平均間隔: '+rdAvg+'日 — リピート診断 '+(P.rediagN||0)+'件(経時データの土台)') : '';
     return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">vs Previous</span>前期比サマリー（同じ長さの直前期間・プロファイル系）</h2><div class="pgrid">'+cells+'</div>'+rdNote+'</div>';
+  }
+  function dailyPanel(rows){
+    if(!rows||!rows.length) return '';
+    var wdays=['日','月','火','水','木','金','土'];
+    function td(v){return '<td class="nums" style="text-align:right;padding:6px 10px;'+(v?'':'color:#C9C2B6;')+'">'+(v||0).toLocaleString()+'</td>';}
+    var tot={pv:0,rpv:0,fs:0,fc:0,cta:0,sres:0,pres:0,rap:0,sj:0};
+    rows.forEach(function(r){for(var k in tot)tot[k]+=(r[k]||0);});
+    var trs=rows.map(function(r){
+      var dt=new Date(r.d+'T00:00:00');var w=dt.getDay();var wk=(w===0||w===6);
+      var rate=r.fs?Math.round((r.fc||0)/r.fs*100)+'%':'—';
+      return '<tr style="border-top:1px solid #F0EBE2;'+(wk?'background:#FBF6EE;':'')+'">'
+        +'<td style="padding:6px 10px;white-space:nowrap;color:'+(w===0?'#B3563E':(w===6?'#4A6FA0':'#4A443C'))+'">'+esc(r.d.slice(5))+'（'+wdays[w]+'）</td>'
+        +td(r.pv)+td(r.fs)+td(r.fc)
+        +'<td class="nums" style="text-align:right;padding:6px 10px;color:#8C8479">'+rate+'</td>'
+        +td(r.cta)+td(r.sres)+td(r.pres)+td(r.rpv)+td(r.rap)+td(r.sj)+'</tr>';
+    }).join('');
+    function th(t){return '<th style="text-align:right;padding:7px 10px;font-weight:600">'+t+'</th>';}
+    var head='<tr style="color:#8C8479;font-size:10.5px;letter-spacing:.03em"><th style="text-align:left;padding:7px 10px;font-weight:600">日付</th>'+th('PV')+th('診断開始')+th('完了')+th('完了率')+th('診断CTA')+th('サロン予約')+th('スパ予約')+th('求人PV')+th('応募')+th('会員登録')+'</tr>';
+    var totRate=tot.fs?Math.round(tot.fc/tot.fs*100)+'%':'—';
+    var totRow='<tr style="border-top:2px solid #E4DCCB;font-weight:600;background:#F7F2E9"><td style="padding:7px 10px;white-space:nowrap">期間計（'+rows.length+'日）</td>'+td(tot.pv)+td(tot.fs)+td(tot.fc)+'<td class="nums" style="text-align:right;padding:6px 10px">'+totRate+'</td>'+td(tot.cta)+td(tot.sres)+td(tot.pres)+td(tot.rpv)+td(tot.rap)+td(tot.sj)+'</tr>';
+    return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Daily</span>日別推移 — 1日ごとの主要指標（新しい日が上・土日は色つき）</h2>'
+      +'<div style="overflow:auto;max-height:480px;border:1px solid #F0EBE2;border-radius:12px"><table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:780px"><thead style="position:sticky;top:0;background:#FDFBF6;z-index:1;box-shadow:0 1px 0 #E4DCCB">'+head+totRow+'</thead><tbody>'+trs+'</tbody></table></div>'
+      +'<p class="muted" style="margin-top:7px;font-size:10.5px;line-height:1.8">PV=全ページ閲覧 ／ 診断CTA=結果からの導線タップ ／ サロン・スパ予約=HPB遷移・指名・追従ボタンの合計タップ ／ 求人PV=採用ページ群の閲覧 ／ 応募=LINE・DM・応募タブのタップ ／ 会員登録=セール→店舗登録タップ（最大62日まで表示・期間は右上で切替）</p></div>';
   }
   function sparkline(daily){
     if(!daily||!daily.length) return '<div class="empty">データなし</div>';
@@ -886,6 +912,7 @@
       kpi('予約・CTA遷移率', cvr, '%', cvrP!==null?dchip(cvr, cvrP):'');
 
     el('panels').innerHTML =
+      dailyPanel(data.dailyFull||[]) +
       (function(){
         var f = data.finderFunnel; if (!f) return '';
         var opened = f.opened||0, started = f.started||0, completed = f.completed||0;
