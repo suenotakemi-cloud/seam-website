@@ -221,6 +221,19 @@ td.slot:hover{background:#f0f7ff}
 .lg-steps b{color:var(--navy)}
 .lg-prev{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;margin-top:6px;display:inline-block}
 
+/* ---- shift editor ---- */
+.wdrow{display:flex;gap:6px;flex-wrap:wrap}
+.wd{width:40px;height:40px;border:1.5px solid var(--line);border-radius:10px;font-weight:800;font-size:14px;background:#fff;color:var(--sub);cursor:pointer;transition:.1s}
+.wd:hover{border-color:var(--accent2)}
+.wd.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.wd.off{background:#fdeaea;border-color:#f3c2c2;color:var(--danger)}
+.shrow{padding:12px 0;border-bottom:1px solid #eef3f8}
+.shrow:last-child{border-bottom:none}
+.shrow-name{font-weight:800;font-size:14px;margin-bottom:8px}
+.shrow-name span{font-weight:600;font-size:11.5px;color:var(--sub);margin-left:8px}
+.shrow-hours{font-size:12.5px;color:var(--sub);font-weight:700;margin-top:8px;display:flex;align-items:center;gap:6px}
+.shrow-hours select{border:1.5px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px;font-weight:700}
+
 /* ---- today (staff hub) ---- */
 .tcard{display:flex;align-items:stretch;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:.12s}
 .tcard:hover{border-color:var(--accent2)}
@@ -314,6 +327,7 @@ td.slot:hover{background:#f0f7ff}
     <button data-v="dash">ダッシュボード</button>
     <button data-v="cal">予約台帳</button>
     <button data-v="cust">顧客カルテ</button>
+    <button data-v="shift">シフト</button>
     <button data-v="book">予約ページ</button>
     <button data-v="chan">チャネル連携</button>
   </nav>
@@ -382,6 +396,21 @@ td.slot:hover{background:#f0f7ff}
   <div class="card">
     <input id="cust-search" placeholder="🔍 名前・電話で検索" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px">
     <div id="custlist"></div>
+  </div>
+</section>
+
+<!-- ============ SHIFT (営業時間・定休日・スタッフ別) ============ -->
+<section class="view" id="v-shift">
+  <h2>シフト・営業時間</h2>
+  <p class="lead">各スタッフの勤務曜日・時間、サロンの定休日を設定。予約の空き枠に即反映されます</p>
+  <div class="card" style="margin-bottom:14px">
+    <h3 style="font-size:14.5px;margin-bottom:8px">定休日（サロン休業）</h3>
+    <div id="closedrow" class="wdrow"></div>
+  </div>
+  <div class="card">
+    <h3 style="font-size:14.5px;margin-bottom:10px">スタッフ別シフト</h3>
+    <div id="shiftgrid"></div>
+    <p style="font-size:11.5px;color:var(--sub);margin-top:10px">曜日をタップで勤務／休みを切替。時間はスタッフごとに設定できます</p>
   </div>
 </section>
 
@@ -486,6 +515,27 @@ const MENUS=[
   {id:'m19',cat:'ヘッドスパ',name:'ヘッドスパ 90分',min:90,price:17800,staff:['s2','s3']},
 ];
 const MENU_CATS=['クーポン','カット','カラー','パーマ','縮毛矯正','トリートメント','ヘッドスパ'];
+
+// ===== 営業時間・定休日・スタッフ別シフト =====
+// 各スタッフの勤務曜日(0=日..6=土)と勤務時間(分)。定休日=サロン全体の休み。
+function loadShifts(){
+  try{const r=localStorage.getItem('stb_shifts');if(r)return JSON.parse(r)}catch(e){}
+  return {closedDays:[],staff:{
+    s1:{days:[3,4,5,6,0],open:600,close:1140}, // 及川: 水木金土日
+    s2:{days:[2,3,4,5,6],open:600,close:1140}, // ANZU: 火水木金土
+    s3:{days:[4,5,6,0,1],open:600,close:1140}, // CHIKA: 木金土日月
+  }};
+}
+let SHIFTS=loadShifts();
+function saveShifts(){localStorage.setItem('stb_shifts',JSON.stringify(SHIFTS))}
+function isClosedDay(dayKey){return SHIFTS.closedDays.includes(new Date(dayKey).getDay())}
+function staffOnDuty(sid,dayKey,t,end){ // その枠でスタッフが勤務中か
+  const wd=new Date(dayKey).getDay();
+  const s=SHIFTS.staff[sid];
+  if(!s||!s.days.includes(wd))return false;      // 勤務日でない
+  if(t<s.open||(end!=null&&end>s.close))return false; // 勤務時間外
+  return true;
+}
 const CHANNELS={
   own:{name:'自社予約',short:'自社',color:'var(--ch-own)'},
   line:{name:'LINE予約',short:'LINE',color:'var(--ch-line)'},
@@ -937,10 +987,11 @@ function freeSlots(dayKey,staffIds,dur){
   const out=[];
   const isToday=dayKey===dkey(today());
   const now=new Date();const nowMin=now.getHours()*60+now.getMinutes()+30; // 直前30分は予約不可
+  const closed=isClosedDay(dayKey);
   for(let t=OPEN;t+dur<=CLOSE;t+=STEP){
-    if(isToday&&t<nowMin){out.push({t,staffId:null});continue;} // 過去/直前の枠は出さない
-    // 空いていて かつ 隙間を作らない スタッフを探す
-    const okStaff=staffIds.find(sid=>conflicts(dayKey,sid,t,t+dur).length===0&&!makesBadGap(dayKey,sid,t,t+dur));
+    if(closed||(isToday&&t<nowMin)){out.push({t,staffId:null});continue;} // 定休日/過去枠は出さない
+    // 勤務中で 空いていて かつ 隙間を作らない スタッフを探す
+    const okStaff=staffIds.find(sid=>staffOnDuty(sid,dayKey,t,t+dur)&&conflicts(dayKey,sid,t,t+dur).length===0&&!makesBadGap(dayKey,sid,t,t+dur));
     out.push({t,staffId:okStaff||null});
   }
   return out;
@@ -1301,8 +1352,36 @@ function renderToday(){
   el.querySelectorAll('.tcard').forEach(card=>card.onclick=()=>openDetail(card.dataset.id));
 }
 
+/* =============== シフト・営業時間の編集 =============== */
+function renderShift(){
+  const cr=document.getElementById('closedrow');if(!cr)return;
+  cr.innerHTML=WD.map((w,i)=>`<button class="wd ${SHIFTS.closedDays.includes(i)?'off':''}" data-wd="${i}">${w}</button>`).join('');
+  cr.querySelectorAll('.wd').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.wd,idx=SHIFTS.closedDays.indexOf(i);
+    if(idx>=0)SHIFTS.closedDays.splice(idx,1);else SHIFTS.closedDays.push(i);
+    saveShifts();renderShift();refreshAll();
+  });
+  const opts=sel=>{let o='';for(let t=OPEN;t<=CLOSE;t+=STEP)o+=`<option value="${t}" ${t===sel?'selected':''}>${hm(t)}</option>`;return o};
+  const g=document.getElementById('shiftgrid');
+  g.innerHTML=STAFF.map(s=>{
+    const sh=SHIFTS.staff[s.id]||{days:[],open:OPEN,close:CLOSE};
+    const wds=WD.map((w,i)=>`<button class="wd ${sh.days.includes(i)?'on':''}" data-sid="${s.id}" data-wd="${i}">${w}</button>`).join('');
+    return `<div class="shrow"><div class="shrow-name">${s.name}<span>${s.role}</span></div>
+      <div class="wdrow">${wds}</div>
+      <div class="shrow-hours">勤務 <select data-sid="${s.id}" data-hk="open">${opts(sh.open)}</select> 〜 <select data-sid="${s.id}" data-hk="close">${opts(sh.close)}</select></div></div>`;
+  }).join('');
+  g.querySelectorAll('.wd').forEach(b=>b.onclick=()=>{
+    const sh=SHIFTS.staff[b.dataset.sid],i=+b.dataset.wd,idx=sh.days.indexOf(i);
+    if(idx>=0)sh.days.splice(idx,1);else sh.days.push(i);
+    saveShifts();renderShift();refreshAll();
+  });
+  g.querySelectorAll('select[data-hk]').forEach(sel=>sel.onchange=()=>{
+    SHIFTS.staff[sel.dataset.sid][sel.dataset.hk]=+sel.value;saveShifts();refreshAll();
+  });
+}
+
 function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();if(bk.step===2)renderBook()}
-renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();
+renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();
 document.getElementById('cust-search').oninput=renderCustomers;
 // D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
 syncFromD1();
