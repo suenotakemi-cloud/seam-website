@@ -183,6 +183,8 @@ td.slot:hover{background:#f0f7ff}
 .rl-last{font-size:12.5px;color:var(--sub);margin:2px 0 10px}
 .yrs{font-size:10.5px;font-weight:700;color:var(--sub);background:#eef2f7;border-radius:99px;padding:1px 7px;margin-left:4px}
 .line-logged{background:#f0fbf3;border:1px solid #bde8c8;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;color:#06843c;margin-bottom:12px}
+.glogin{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.glogin span{font-size:12px;color:var(--sub);font-weight:700}
 
 /* ---- link generator ---- */
 .lg-row{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
@@ -385,7 +387,66 @@ const WD=['日','月','火','水','木','金','土'];
 const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
 const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 
+// ===== D1 API 設定 =====
+// Worker URL を設定すると localStorage の代わりに D1 を使います。
+// 空のままにすると今まで通り localStorage で動きます（ローカル開発・フォールバック）。
+const API_BASE = 'https://seam-square-pay.suenotakemi.workers.dev';
+
+// D1 API ラッパー（fetch 失敗時は localStorage にフォールバック）
+const API = {
+  async list() {
+    if (!API_BASE) return null;
+    try {
+      const r = await fetch(API_BASE + '/reservations');
+      if (!r.ok) return null;
+      const j = await r.json();
+      return j.ok ? j.reservations : null;
+    } catch { return null; }
+  },
+  async add(o) {
+    if (!API_BASE) return null;
+    try {
+      const r = await fetch(API_BASE + '/reservations', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(o)
+      });
+      const j = await r.json();
+      if (r.status === 409) return { ok: false, conflict: j.conflict };
+      if (!r.ok) return null;
+      return j;
+    } catch { return null; }
+  },
+  async patch(id, patch) {
+    if (!API_BASE) return null;
+    try {
+      const r = await fetch(API_BASE + '/reservations/' + id, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify(patch)
+      });
+      return r.ok ? await r.json() : null;
+    } catch { return null; }
+  },
+  async remove(id) {
+    if (!API_BASE) return null;
+    try {
+      const r = await fetch(API_BASE + '/reservations/' + id, { method: 'DELETE' });
+      return r.ok;
+    } catch { return null; }
+  },
+};
+
 let db=load();
+// D1から予約を取得してdbに同期（非同期・画面はロード後に更新）
+async function syncFromD1() {
+  const list = await API.list();
+  if (!list) return; // API未設定 or 失敗 → localStorageのまま
+  db.reservations = list.map(r => ({
+    ...r,
+    start: Number(r.start_min ?? r.start),
+    end: Number(r.end_min ?? r.end),
+    deposit: Number(r.deposit ?? 0),
+    hpbBlocked: Boolean(r.hpb_blocked ?? r.hpbBlocked),
+  }));
+  refreshAll();
+}
 function load(){
   try{const raw=localStorage.getItem(LS);if(raw){const j=JSON.parse(raw);if(j.seedDay===dkey(today()))return j}}catch(e){}
   return seed();
@@ -447,15 +508,31 @@ function addReservation(o){
   if(o.phone===undefined)o.phone='';
   if(o.note===undefined)o.note='';
   if(o.status===undefined)o.status='booked';
-  // HPB以外の予約は、HPB側の枠を手動ブロックするまで「要ブロック」。HPB予約は済み扱い。
   if(o.hpbBlocked===undefined)o.hpbBlocked=(o.channel==='hpb');
   db.reservations.push(o);save();refreshAll();
-  SyncProvider.push(o);   // 外部同期フック（現在no-op・かんざし連携時に有効化）
+  SyncProvider.push(o);
+  // D1に非同期で保存（失敗してもlocalStorageには保存済みなので画面は壊れない）
+  API.add(o).then(res => {
+    if (res && res.ok && res.id && res.id !== o.id) {
+      // D1が発行したIDで上書き
+      const idx = db.reservations.findIndex(r => r.id === o.id);
+      if (idx >= 0) { db.reservations[idx].id = res.id; save(); }
+    }
+  }).catch(() => {});
   return{ok:true,resv:o};
 }
-function removeReservation(id){db.reservations=db.reservations.filter(r=>r.id!==id);save();refreshAll()}
-function markBlocked(id){const r=db.reservations.find(x=>x.id===id);if(r){r.hpbBlocked=true;save();refreshAll()}}
-function setStatus(id,status){const r=db.reservations.find(x=>x.id===id);if(r){r.status=status;save();refreshAll()}}
+function removeReservation(id){
+  db.reservations=db.reservations.filter(r=>r.id!==id);save();refreshAll();
+  API.remove(id).catch(()=>{});
+}
+function markBlocked(id){
+  const r=db.reservations.find(x=>x.id===id);
+  if(r){r.hpbBlocked=true;save();refreshAll();API.patch(id,{hpb_blocked:1}).catch(()=>{});}
+}
+function setStatus(id,status){
+  const r=db.reservations.find(x=>x.id===id);
+  if(r){r.status=status;save();refreshAll();API.patch(id,{status}).catch(()=>{});}
+}
 // 同名（+電話）の予約回数＝リピート判定。キャンセルは除く。
 function visitCount(name,phone,excludeId){
   return db.reservations.filter(r=>r.id!==excludeId&&r.status!=='cancelled'&&r.name===name&&(!phone||!r.phone||r.phone===phone)).length;
@@ -663,11 +740,13 @@ function closeDetail(){document.getElementById('detailbg').classList.remove('sho
 document.getElementById('detailbg').onclick=e=>{if(e.target.id==='detailbg')closeDetail()};
 
 /* =============== customer booking flow =============== */
-let bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:''};
+let bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
 // 流入元: 予約ページのURL ?src=line|google|instagram で自動判定。各チャネルのリンクから来ると自動タグ付け。
 const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');return['line','google','instagram','own'].includes(s)?s:'own'})();
 // ?src= 付き = お客様導線（LINE/Google/Instagram/自社サイト）。管理タブを隠し予約画面のみ表示（管理台帳をお客様に見せない）。
 const IS_CUSTOMER=new URLSearchParams(location.search).has('src');
+// 隙間ブロック: 既存予約との間に minGap 未満の"売れない隙間"を作る枠を、ネット予約で見せない（1cs.jp風の汎用版）
+const GAP_GUARD={on:true,minGap:60}; // minGap分（=最短メニュー）未満の隙間を作る枠を隠す
 const depositOf=price=>Math.max(1000,Math.round(price*0.3/100)*100); // 前金=料金の約30%(最低¥1,000)
 
 // ===== LINE 本格連携（LIFF + Messaging API）=====
@@ -702,10 +781,46 @@ async function sendLineConfirm(r){
     toast('LINEで予約確認メッセージを送信しました');
   }catch(e){toast('LINE送信に失敗しました',true)}
 }
+
+// ===== Googleログイン（海外・LINE以外のお客様向け）=====
+const GOOGLE_CLIENT_ID='';   // Google Cloud Console のOAuthクライアントID（本番で設定）
+let googleProfile=null;      // {name,email}
+function initGoogle(){
+  if(!GOOGLE_CLIENT_ID||lineProfile)return;   // LINE内ならGoogle不要
+  loadScript('https://accounts.google.com/gsi/client').then(()=>{
+    try{
+      google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID,callback:onGoogleCred});
+      if(document.getElementById('v-book').classList.contains('show')&&bk.step===0)renderBook();
+    }catch(e){}
+  }).catch(()=>{});
+}
+function onGoogleCred(resp){
+  try{
+    const p=JSON.parse(atob(resp.credential.split('.')[1]));   // IDトークン(JWT)から氏名・メール
+    googleProfile={name:p.name,email:p.email};
+    bk.name=bk.name||p.name;bk.email=p.email;
+    renderBook();toast('Googleでログインしました');
+  }catch(e){}
+}
+// 隙間ブロック判定: この枠[start,end]がstaffの既存予約との間に minGap 未満の隙間を作るか
+function makesBadGap(dayKey,staffId,start,end){
+  if(!GAP_GUARD.on)return false;
+  const rs=db.reservations.filter(r=>r.date===dayKey&&r.staffId===staffId&&r.status!=='cancelled');
+  let prevEnd=null,nextStart=null;
+  rs.forEach(r=>{
+    if(r.end<=start&&(prevEnd===null||r.end>prevEnd))prevEnd=r.end;   // 直前の予約の終了
+    if(r.start>=end&&(nextStart===null||r.start<nextStart))nextStart=r.start; // 直後の予約の開始
+  });
+  const gapBefore=prevEnd!==null?start-prevEnd:Infinity;
+  const gapAfter=nextStart!==null?nextStart-end:Infinity;
+  const bad=g=>g>0&&g<GAP_GUARD.minGap;   // 0(ぴったり隣接)はOK、大きい隙間もOK、中途半端な隙間だけNG
+  return bad(gapBefore)||bad(gapAfter);
+}
 function freeSlots(dayKey,staffIds,dur){
   const out=[];
   for(let t=OPEN;t+dur<=CLOSE;t+=STEP){
-    const okStaff=staffIds.find(sid=>conflicts(dayKey,sid,t,t+dur).length===0);
+    // 空いていて かつ 隙間を作らない スタッフを探す
+    const okStaff=staffIds.find(sid=>conflicts(dayKey,sid,t,t+dur).length===0&&!makesBadGap(dayKey,sid,t,t+dur));
     out.push({t,staffId:okStaff||null});
   }
   return out;
@@ -716,6 +831,9 @@ function renderBook(){
   if(bk.step===0){
     p.innerHTML=stepsHtml+
       (lineProfile?`<div class="line-logged">✅ LINEログイン済み：${lineProfile.displayName} 様（確認・リマインドをLINEでお届けします）</div>`:'')+
+      (!lineProfile&&GOOGLE_CLIENT_ID?(googleProfile
+        ?`<div class="line-logged" style="background:#eef4ff;border-color:#cfe0fb;color:#1a5fb4">✅ Googleログイン済み：${googleProfile.name} 様</div>`
+        :`<div class="glogin"><span>LINE以外・海外の方はこちら / Sign in</span><div id="gbtn"></div></div>`):'')+
       `<div class="rlook">
         <div class="rl-t">🔁 2回目以降の方 — 電話番号で前回のご予約を呼び出せます</div>
         <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 090-1234-5678）" value="${bk.phone||''}"><button class="btn small pri" id="rlgo">呼び出す</button></div>
@@ -740,6 +858,9 @@ function renderBook(){
         bk.day=null;bk.start=null;bk.step=2;renderBook();
       };
     };
+    if(!lineProfile&&GOOGLE_CLIENT_ID&&!googleProfile&&window.google&&document.getElementById('gbtn')){
+      try{google.accounts.id.renderButton(document.getElementById('gbtn'),{type:'standard',theme:'outline',size:'large',text:'signin_with'});}catch(e){}
+    }
   }
   if(bk.step===1){
     const menu=MENUS.find(m=>m.id===bk.menu);
@@ -791,7 +912,7 @@ function renderBook(){
     const sid=bk.staff==='any'?bk._sid:bk.staff;
     const dep=depositOf(menu.price);
     const commit=(depositAmt)=>{
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,phone:bk.phone||'',channel:BOOK_SRC,deposit:depositAmt,lineUserId:bk.lineUserId||''});
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,lineUserId:bk.lineUserId||''});
       if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
       if(BOOK_SRC==='line')sendLineConfirm(r.resv);  // LINE予約は確認メッセージを自動送信
@@ -825,7 +946,7 @@ function renderBook(){
       <div class="pnav"><button class="btn line" id="baddline">＋ LINE友だち追加</button></div>
       <button class="btn linktext" id="bagain">続けてもう1件予約する</button></div>`;
     document.getElementById('baddline').onclick=()=>toast('（デモ）LINE友だち追加へ遷移します');
-    document.getElementById('bagain').onclick=()=>{bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:''};renderBook()};
+    document.getElementById('bagain').onclick=()=>{bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};renderBook()};
     return;
   }
   const nx=document.getElementById('bnext'),bkb=document.getElementById('bback');
@@ -937,6 +1058,8 @@ function renderLinks(){
 /* =============== boot =============== */
 function refreshAll(){renderDash();renderCal();renderChan();if(bk.step===2)renderBook()}
 renderDash();renderCal();renderBook();renderChan();renderLinks();
+// D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
+syncFromD1();
 document.getElementById('baseurl').oninput=renderLinks;
 if(BOOK_SRC!=='own'){
   const s=document.querySelector('#v-book .phead .s');if(s)s.textContent=CHANNELS[BOOK_SRC].name+'経由 · WEB RESERVATION';
@@ -950,6 +1073,7 @@ if(IS_CUSTOMER){
   const bl=document.querySelector('#v-book .lead');if(bl)bl.style.display='none';
 }
 if(BOOK_SRC==='line')initLiff();  // LINE経由ならLIFF自動ログインを試行（LIFF_ID未設定なら通常動作）
+initGoogle();                     // Googleログイン（GOOGLE_CLIENT_ID未設定なら何もしない）
 </script>
 </body>
 </html>
