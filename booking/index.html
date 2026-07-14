@@ -132,6 +132,10 @@ td.slot:hover{background:#f0f7ff}
 .total-row b{font-size:22px;color:var(--navy)}
 .policy{margin-top:14px;background:#fffdf6;border:1px solid #f0e4c0;border-radius:10px;padding:11px 13px;font-size:12px;color:var(--sub);line-height:1.7}
 .policy b{display:block;color:var(--warn);font-size:12px;margin-bottom:3px}
+.ptable{width:100%;border-collapse:collapse;margin:6px 0 8px;font-size:12px}
+.ptable td{padding:4px 8px;border-bottom:1px solid #f0e4c0}
+.ptable td:first-child{color:var(--ink);font-weight:700}
+.ptable td:last-child{text-align:right;font-weight:800;color:var(--navy)}
 
 /* ---- channels ---- */
 .chcard{display:flex;flex-direction:column;gap:8px}
@@ -177,12 +181,23 @@ td.slot:hover{background:#f0f7ff}
 .gc-move{border:1.5px solid var(--line);color:var(--sub);background:#fff;border-radius:8px;padding:6px 12px;font-weight:800;font-size:12px;white-space:nowrap}
 .gc-move:hover{border-color:var(--ok);color:var(--ok)}
 .gc-sent{margin-left:auto;font-size:11px;font-weight:800;color:var(--ok);background:#eaf7f0;border-radius:6px;padding:3px 8px}
+.askprev{background:#f0fbf3;border:1px solid #bde8c8;border-radius:12px;padding:13px 15px;font-size:13px;line-height:1.8;margin-bottom:4px}
 
 /* ---- smart slot (スマート割) ---- */
 .chip.smart:not(.sel){border-color:#e8b93c;background:#fffaf0}
 .chip .sm{font-size:11px;margin-left:2px}
 .smartnote{font-size:11.5px;color:#8a5a00;background:#fff7e0;border:1px solid #f2d999;border-radius:9px;padding:8px 11px;margin-bottom:12px;line-height:1.6}
 .smartnote b{color:#b45309}
+
+/* ---- 詰めのお願い（予約中ナッジ） ---- */
+.nudgebox{background:#f0fbf3;border:1.5px solid #8fd6a8;border-radius:14px;padding:13px 15px;margin:2px 0 14px;animation:ndin .25s ease}
+@keyframes ndin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.nudgebox .nb-h{font-weight:800;color:#06843c;font-size:13.5px;margin-bottom:5px}
+.nudgebox .nb-p{font-size:12.5px;line-height:1.75;margin-bottom:10px}
+.nudgebox .nb-p b{color:#06843c}
+.nb-btns{display:flex;gap:8px;flex-wrap:wrap}
+.nb-btns .btn.small.pri{background:#0a9e52}
+.nb-btns .btn.small.pri:hover{background:#08813f}
 .resv-dep{position:absolute;bottom:2px;right:4px;font-size:10px;font-weight:800;background:rgba(255,255,255,.85);color:var(--ok);border-radius:4px;padding:0 3px;line-height:1.4}
 
 /* ---- payment step ---- */
@@ -235,6 +250,40 @@ td.slot:hover{background:#f0f7ff}
 .lg-steps{font-size:12px;color:var(--sub);margin-top:8px;line-height:1.75}
 .lg-steps b{color:var(--navy)}
 .lg-prev{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;margin-top:6px;display:inline-block}
+
+/* ---- analytics ---- */
+.an-kpis{display:flex;gap:10px;margin-bottom:12px}
+.an-kpis>div{flex:1;background:#f7fafc;border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+.an-kpis span{display:block;font-size:11px;color:var(--sub);font-weight:700}
+.an-kpis b{font-size:18px;color:var(--navy)}
+.an-sub{font-size:11.5px;font-weight:800;color:var(--sub);margin:10px 0 6px}
+.an-row{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:3px 0}
+.an-l{min-width:96px;font-weight:700}
+.an-bar{flex:1;height:8px;background:#eef2f7;border-radius:99px;overflow:hidden}
+.an-bar span{display:block;height:100%;background:var(--accent);border-radius:99px}
+.an-v{font-weight:800;font-variant-numeric:tabular-nums;min-width:66px;text-align:right}
+
+/* ---- reviews ---- */
+.rvitem{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #eef3f8}
+.rvitem:last-child{border-bottom:none}
+.rvitem.pending{opacity:.85}
+.rv-main{flex:1;min-width:0}
+.rv-top{font-size:13px}
+.rv-top b{margin-left:4px}
+.rv-star-off{color:#dfe6ee}
+.rv-meta{font-size:11px;color:var(--sub);font-weight:600}
+.rv-text{font-size:12.5px;color:var(--ink);margin-top:3px;line-height:1.6}
+.rv-act{display:flex;gap:6px;flex-shrink:0}
+.revcust{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:14px}
+.revcust h4{font-size:13.5px;margin-bottom:8px}
+.stars{display:flex;gap:6px;margin-bottom:10px}
+.star{font-size:28px;color:#dfe6ee;cursor:pointer;line-height:1}
+.star.on{color:#f5b400}
+.revcust textarea{width:100%;height:70px;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;resize:vertical;margin-bottom:8px}
+.pubrev{background:#f7fafc;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.pubrev .pr-top{font-size:12.5px}
+.pubrev .pr-top b{margin-left:4px}
+.pubrev .pr-text{font-size:12.5px;color:var(--sub);margin-top:2px;line-height:1.55}
 
 /* ---- waitlist ---- */
 .waitbox{background:#fffaf0;border:1px solid #f0e4c0;border-radius:12px;padding:14px;margin-top:12px}
@@ -391,6 +440,9 @@ td.slot:hover{background:#f0f7ff}
   </div>
   <div class="card blockcard" id="blockcard" style="margin-bottom:14px"></div>
   <div class="card waitcard" id="waitcard" style="margin-bottom:14px"></div>
+  <div class="card revisitcard" id="revisitcard" style="margin-bottom:14px"></div>
+  <div class="card reviewcard" id="reviewcard" style="margin-bottom:14px"></div>
+  <div class="card analyticscard" id="analyticscard" style="margin-bottom:14px"></div>
   <div class="card gapcard" id="gapcard" style="margin-bottom:14px"></div>
   <div class="grid cols2">
     <div class="card">
@@ -446,7 +498,7 @@ td.slot:hover{background:#f0f7ff}
   <div class="card">
     <h3 style="font-size:14.5px;margin-bottom:10px">スタッフ別シフト</h3>
     <div id="shiftgrid"></div>
-    <p style="font-size:11.5px;color:var(--sub);margin-top:10px">曜日をタップで勤務／休みを切替。時間はスタッフごとに設定できます</p>
+    <p style="font-size:11.5px;color:var(--sub);margin-top:10px">曜日をタップで勤務／休みを切替。時間はスタッフごとに設定できます<br>🉐 スマート割＝前後の予約とすき間なく繋がる枠の割引 ／ 🙏 時間変更のお礼＝お願いに応じてくださったお客様への割引。どちらも各スタイリストが ¥0〜¥1,000 で自由に設定（なし=特典を出さない）</p>
   </div>
 </section>
 
@@ -638,6 +690,22 @@ const API = {
 
 let db=load();
 if(!db.waitlist)db.waitlist=[];   // キャンセル待ち
+if(!db.reviews)db.reviews=seedReviews();   // 口コミ（美容師が公開を選ぶ承認制）
+// ===== 口コミ（承認制モデレーション） =====
+function seedReviews(){
+  const dd=n=>dkey(addDays(today(),-n));
+  return [
+    {id:'rv1',name:'M.K',rating:5,staffId:'s1',menuId:'m1',text:'扱いやすくて朝が楽になりました。仕上がりも艶っぽくて大満足です',date:dd(6),published:true},
+    {id:'rv2',name:'Y.S',rating:5,staffId:'s3',menuId:'m18',text:'完全個室のヘッドスパが最高でした。眠ってしまうほど気持ちよかったです',date:dd(12),published:true},
+    {id:'rv3',name:'匿名',rating:3,staffId:'s2',menuId:'m6',text:'カラーは良かったが待ち時間が少し長かった',date:dd(3),published:false},
+    {id:'rv4',name:'R.T',rating:5,staffId:'s2',menuId:'m18',text:'頭皮の悩みに親身に相談にのってくれました',date:dd(20),published:false},
+  ];
+}
+function addReview(rv){rv.id='rv'+Math.random().toString(36).slice(2,7);rv.date=dkey(today());rv.published=false;db.reviews.push(rv);save();refreshAll();}
+function setReviewPublished(id,pub){const rv=db.reviews.find(x=>x.id===id);if(rv){rv.published=pub;save();refreshAll();}}
+function removeReview(id){db.reviews=db.reviews.filter(x=>x.id!==id);save();refreshAll();}
+const publishedReviews=()=>(db.reviews||[]).filter(r=>r.published).sort((a,b)=>a.date<b.date?1:-1);
+function staffRating(sid){const rs=publishedReviews().filter(r=>r.staffId===sid);return rs.length?(rs.reduce((s,r)=>s+r.rating,0)/rs.length):0;}
 // ===== キャンセル待ち =====
 function addWaitlist(w){
   w.id='w'+Math.random().toString(36).slice(2,8);w.createdAt=new Date().toISOString();w.notified=false;
@@ -741,6 +809,7 @@ function addReservation(o){
   o.createdAt=new Date().toISOString();
   if(o.deposit===undefined)o.deposit=0;
   if(o.discount===undefined)o.discount=0;
+  if(o.discountLabel===undefined)o.discountLabel='';
   if(o.phone===undefined)o.phone='';
   if(o.note===undefined)o.note='';
   if(o.status===undefined)o.status='booked';
@@ -890,23 +959,51 @@ function gapSuggestions(){
         const newStart=prev.end;
         if(k===tk&&newStart<nowMin+30)continue;            // 直前すぎる前倒しは提案しない
         if(!staffOnDuty(s.id,k,newStart,newStart+(cur.end-cur.start)))continue;
-        out.push({id:cur.id,key:cur.id+':'+newStart,date:k,staff:s,resv:cur,gap,newStart});
+        out.push({id:cur.id,key:cur.id+':'+newStart,date:k,staff:s,resv:cur,gap,newStart,disc:moveDiscOf(s.id)});
       }
     });
   }
   return out;
 }
-function moveReservation(id,newStart){
+let GAP_LAST=[]; // 直近描画した提案（お願いモーダルから参照）
+function moveReservation(id,newStart,disc,label){
   const r=db.reservations.find(x=>x.id===id);if(!r)return;
   const dur=r.end-r.start;
   if(conflicts(r.date,r.staffId,newStart,newStart+dur,id).length){toast('⚠️ 移動先が埋まっています',true);return}
-  r.start=newStart;r.end=newStart+dur;save();refreshAll();
+  r.start=newStart;r.end=newStart+dur;
+  if(disc>0){r.discount=(r.discount||0)+disc;r.discountLabel=label||'時間変更のお礼';}
+  save();refreshAll();
   API.patch(id,{start_min:newStart,end_min:newStart+dur}).catch(()=>{});
-  toast(`${r.name}様のご予約を ${hm(newStart)}〜 に移動しました`);
+  toast(`${r.name}様のご予約を ${hm(newStart)}〜 に移動しました${disc>0?`（お礼 −¥${disc.toLocaleString()} 適用）`:''}`);
+}
+// 「◯◯さんからのお願い」メッセージのプレビュー → 送信（デモ）。強制はせず、今のままでもOKと必ず伝える。
+function openAskModal(key){
+  const g=GAP_LAST.find(x=>x.key===key);if(!g)return;
+  const dd=`${g.date.replace(/-/g,'/')}（${WD[new Date(g.date).getDay()]}）`;
+  const msg=`【${g.staff.name}さんからのお願い】
+${g.resv.name}様 いつもありがとうございます、${g.staff.name}です。
+${dd} のご予約について、もしご都合が合えば ${hm(g.resv.start)}〜 → ${hm(g.newStart)}〜 への変更をご検討いただけないでしょうか。${g.disc>0?`
+変更いただけた場合は、お礼として当日のお会計から ¥${g.disc.toLocaleString()} お引きします🉐`:''}
+もちろん、いまのお時間のままでも大丈夫です。ご無理のない範囲でご検討ください🙏`;
+  document.getElementById('detailmodal').innerHTML=`
+    <h3>お願いメッセージのプレビュー</h3>
+    <p style="font-size:12px;color:var(--sub);margin-bottom:10px">LINE／メールでお客様に届く内容です。「今のままでもOK」を必ず添えて、失客を防ぎます</p>
+    <div class="askprev">${msg.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+    <div class="row">
+      <button class="btn ghost" style="flex:1" id="ask-cancel">閉じる</button>
+      <button class="btn pri" id="ask-send">この内容で送信</button>
+    </div>`;
+  document.getElementById('ask-cancel').onclick=closeDetail;
+  document.getElementById('ask-send').onclick=()=>{
+    GAP_ASKED.add(key);closeDetail();renderGapCard();
+    toast(`（デモ）${g.resv.name}様に「${g.staff.name}さんからのお願い」を送信しました`);
+  };
+  document.getElementById('detailbg').classList.add('show');
 }
 function renderGapCard(){
   const el=document.getElementById('gapcard');if(!el)return;
   const sugg=gapSuggestions();const tk=dkey(today());
+  GAP_LAST=sugg;
   if(!sugg.length){el.style.display='none';return}
   el.style.display='';
   let rows='';
@@ -914,13 +1011,17 @@ function renderGapCard(){
     const m=MENUS.find(x=>x.id===g.resv.menuId);
     const dd=g.date===tk?'今日':g.date.slice(5).replace('-','/');
     const asked=GAP_ASKED.has(g.key);
-    rows+=`<div class="bc-item"><span class="t">${dd} ${hm(g.resv.start)} → <b style="color:var(--accent)">${hm(g.newStart)}</b></span><span class="n">${g.resv.name}様</span><span class="m">${m?m.name:''} / ${g.staff.name}・前倒しで<b>${g.gap}分の隙間が解消</b></span>
-      ${asked?'<span class="gc-sent">✓ お願い送信済み</span>':`<button class="gc-ask" data-key="${g.key}" data-name="${g.resv.name}">変更をお願いする</button>`}
-      <button class="gc-move" data-id="${g.id}" data-ns="${g.newStart}">移動を確定</button></div>`;
+    rows+=`<div class="bc-item"><span class="t">${dd} ${hm(g.resv.start)} → <b style="color:var(--accent)">${hm(g.newStart)}</b></span><span class="n">${g.resv.name}様</span><span class="m">${m?m.name:''} / ${g.staff.name}・前倒しで<b>${g.gap}分の隙間が解消</b>${g.disc>0?`・お礼 −¥${g.disc.toLocaleString()}`:''}</span>
+      ${asked?'<span class="gc-sent">✓ お願い送信済み</span>':`<button class="gc-ask" data-key="${g.key}">${g.staff.name}さんからお願い</button>`}
+      <button class="gc-move" data-id="${g.id}" data-ns="${g.newStart}" data-disc="${g.disc}" data-sn="${g.staff.name}">移動を確定</button></div>`;
   });
-  el.innerHTML=`<div class="bc-head"><span class="bc-ic info">⏱</span><div><h3>隙間解消の提案（${sugg.length}件）</h3><p>予約の間に売れない隙間があります。お客様に時間変更をお願いして詰めると、空いた枠がまとまって販売できます。お客様側の空き枠表示は変えず、店からのお願いベースで解消します</p></div></div><div class="bc-list">${rows}</div>`;
-  el.querySelectorAll('.gc-ask').forEach(b=>b.onclick=()=>{GAP_ASKED.add(b.dataset.key);renderGapCard();toast(`（デモ）${b.dataset.name}様に時間変更のお願いをLINE/メールで送りました`)});
-  el.querySelectorAll('.gc-move').forEach(b=>b.onclick=()=>moveReservation(b.dataset.id,+b.dataset.ns));
+  el.innerHTML=`<div class="bc-head"><span class="bc-ic info">⏱</span><div><h3>隙間解消の提案（${sugg.length}件）</h3><p>予約の間に売れない隙間があります。担当スタイリストの名前で時間変更をお願いし、応じてくださったお客様にはお礼割引を。<b>強制はしません</b>（お客様側の空き枠表示は変えない・今のままでもOKと必ず伝える＝失客防止）</p></div></div><div class="bc-list">${rows}</div>`;
+  el.querySelectorAll('.gc-ask').forEach(b=>b.onclick=()=>openAskModal(b.dataset.key));
+  el.querySelectorAll('.gc-move').forEach(b=>b.onclick=()=>{
+    const asked=GAP_ASKED.has(b.dataset.id+':'+b.dataset.ns);
+    // お願い送信後の確定なら、お礼割引を予約に適用（送っていなければ移動のみ）
+    moveReservation(b.dataset.id,+b.dataset.ns,asked?+b.dataset.disc:0,`時間変更のお礼（${b.dataset.sn}さんから）`);
+  });
 }
 
 /* =============== calendar =============== */
@@ -1004,7 +1105,7 @@ function openDetail(id){
     r.phone?['電話',r.phone]:null,
     ['日時',`${r.date.replace(/-/g,'/')} ${hm(r.start)}〜${hm(r.end)}`],
     ['メニュー',`${m.name}（¥${m.price.toLocaleString()}）`],
-    (r.discount>0)?['割引',`🉐 ${SMART_TIME.label} −¥${r.discount.toLocaleString()}`]:null,
+    (r.discount>0)?['割引',`🉐 ${r.discountLabel||'割引'} −¥${r.discount.toLocaleString()}`]:null,
     ['担当',st.name],
     ['チャネル',`<span class="badge" style="background:${c.color}">${c.short}</span> ${c.name}`],
     ['前金',r.deposit>0?`¥${r.deposit.toLocaleString()} 受領済み`:'なし'],
@@ -1034,6 +1135,16 @@ function openDetail(id){
   box.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
     const a=b.dataset.act;
     if(a==='block'){markBlocked(id);toast('HPBブロック済みにしました')}
+    else if(a==='cancelled'){
+      const pct=cancelFeePct(r.date),fee=Math.round((m?m.price:0)*pct/100);
+      const msg=pct?`当日/前日区分でキャンセル料 ${pct}%（¥${fee.toLocaleString()}）が適用されます。前金¥${(r.deposit||0).toLocaleString()}から充当。キャンセルしますか?`:'2日前までのため無料でキャンセルできます。よろしいですか?';
+      if(!confirm(msg))return;
+      setStatus(id,'cancelled');toast(pct?`キャンセル（料 ${pct}% ¥${fee.toLocaleString()}）`:'キャンセルしました（無料）');
+    }
+    else if(a==='noshow'){
+      const cap=avgDamage(m?m.price:0);
+      setStatus(id,'noshow');toast(`無断キャンセル記録。損害上限の目安 ¥${cap.toLocaleString()}（平均的損害の範囲内で請求可）`);
+    }
     else{setStatus(id,a);toast(STATUS_LABEL[a]+'にしました')}
     openDetail(id);
   });
@@ -1053,8 +1164,36 @@ const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');ret
 const IS_CUSTOMER=new URLSearchParams(location.search).has('src');
 // スマートタイム特典（スマート割）: 空き枠は「全部見せたまま」、前後の予約とすき間なく繋がる枠に特典を付けて誘導する。
 // ※隙間ができる枠の自動非表示・最短メニュー時間を閾値にした枠フィルタは coming-soon社特許(JP7617580)の構成に近いため実装しない（ARCHITECTURE.md参照）
-const SMART_TIME={on:true,discount:300,label:'スマート割'};
+const SMART_TIME={on:true,label:'スマート割'};
+// ===== スタッフ別インセンティブ設定 =====
+// 金額は美容師側が「シフト」画面で ¥0〜¥1,000 の範囲で自由に設定（¥0=特典なし）。メニュー時間とは無関係の裁量値。
+// smart=スマート割（すき間なく繋がる枠の割引） / move=時間変更お願いのお礼（応じてくれたお客様への割引）
+function loadIncent(){
+  try{const r=localStorage.getItem('stb_incent');if(r)return JSON.parse(r)}catch(e){}
+  const o={smart:{},move:{}};STAFF.forEach(s=>{o.smart[s.id]=300;o.move[s.id]=500});
+  return o;
+}
+let INCENT=loadIncent();
+function saveIncent(){localStorage.setItem('stb_incent',JSON.stringify(INCENT))}
+const INCENT_MAX=1000;
+const smartDiscOf=sid=>Math.min(INCENT_MAX,Math.max(0,+(INCENT.smart[sid]??0)||0));
+const moveDiscOf=sid=>Math.min(INCENT_MAX,Math.max(0,+(INCENT.move[sid]??0)||0));
+// 予約中の「詰めのお願い」: お客様が選んだ時間が前後の予約と maxGap 分以下の隙間を作るときだけ、
+// その場で「◯◯さんからのお願い」を表示して隣接時間への変更を提案する。選んだ時間のままでも予約できる（強制なし）。
+// ※maxGapはオーナー任意の固定値。最短メニュー時間からの自動算出は特許(JP7617580)の構成要件なので絶対にしない。枠の非表示もしない。
+const GAP_NUDGE={on:true,maxGap:30};
 const depositOf=price=>Math.max(1000,Math.round(price*0.3/100)*100); // 前金=料金の約30%(最低¥1,000)
+// 段階式キャンセルポリシー（消費者契約法9条＝平均的損害の範囲内で設定）。無断は平均的損害まで。
+const CANCEL_POLICY=[{d:2,pct:0,label:'2日前まで'},{d:1,pct:25,label:'前日'},{d:0,pct:50,label:'当日'}];
+const NOSHOW_MAT_RATE=0.2; // 材料費率の目安（平均的損害＝粗利×再販不可率の計算用）
+// 予約日までの残日数から適用キャンセル料率(%)。当日/経過は当日扱い。
+function cancelFeePct(resvDate){
+  const [y,mo,da]=resvDate.split('-').map(Number);
+  const d=Math.round((new Date(y,mo-1,da)-today())/86400000); // ローカル基準で残日数
+  if(d>=2)return 0; if(d===1)return 25; return 50;
+}
+// 平均的損害の目安（無断キャンセル上限）＝(料金−材料費)×再販不可率。再販確率は控えめ10%想定。
+function avgDamage(price){return Math.round(price*(1-NOSHOW_MAT_RATE)*0.9);}
 
 // ===== LINE 本格連携（LIFF + Messaging API）=====
 const LINE_CFG={
@@ -1124,9 +1263,27 @@ function onGoogleCred(resp){
 // スマート枠判定: この枠[start,end]が既存予約とすき間なく隣接するか（=選んでもらえると売れない隙間が生まれない枠）
 // 枠を隠す処理ではない。全枠表示のまま、この枠にだけ特典を付けて「お得だから選ぶ」誘導をする。
 function isSmartSlot(dayKey,staffId,start,end){
-  if(!SMART_TIME.on)return false;
+  if(!SMART_TIME.on||smartDiscOf(staffId)<=0)return false;  // ¥0設定のスタッフはスマート割なし
   const rs=db.reservations.filter(r=>r.date===dayKey&&r.staffId===staffId&&r.status!=='cancelled');
   return rs.some(r=>r.end===start||r.start===end);
+}
+// 「詰めのお願い」判定: 選択枠が前後の予約と 0<gap<=maxGap の隙間を作るとき、隙間ゼロになる隣接開始時刻を返す
+function nudgeFor(dayKey,staffId,start,dur){
+  if(!GAP_NUDGE.on)return null;
+  const rs=db.reservations.filter(r=>r.date===dayKey&&r.staffId===staffId&&r.status!=='cancelled');
+  let prevEnd=null,nextStart=null;
+  rs.forEach(r=>{
+    if(r.end<=start&&(prevEnd===null||r.end>prevEnd))prevEnd=r.end;
+    if(r.start>=start+dur&&(nextStart===null||r.start<nextStart))nextStart=r.start;
+  });
+  const isToday=dayKey===dkey(today());
+  const now=new Date();const nowMin=now.getHours()*60+now.getMinutes()+30;
+  const ok=t=>t!==start&&t>=OPEN&&t+dur<=CLOSE&&(!isToday||t>=nowMin)&&staffOnDuty(staffId,dayKey,t,t+dur)&&conflicts(dayKey,staffId,t,t+dur).length===0;
+  const gb=prevEnd!==null?start-prevEnd:null;
+  if(gb!==null&&gb>0&&gb<=GAP_NUDGE.maxGap&&ok(prevEnd))return{t:prevEnd,gap:gb,dir:'前'};
+  const ga=nextStart!==null?nextStart-(start+dur):null;
+  if(ga!==null&&ga>0&&ga<=GAP_NUDGE.maxGap&&ok(nextStart-dur))return{t:nextStart-dur,gap:ga,dir:'後ろ'};
+  return null;
 }
 function freeSlots(dayKey,staffIds,dur){
   const out=[];
@@ -1138,7 +1295,7 @@ function freeSlots(dayKey,staffIds,dur){
     // 勤務中で空いているスタッフ（すき間なく繋がるスタッフを優先＝スマート割を出しやすくする）
     const avail=staffIds.filter(sid=>staffOnDuty(sid,dayKey,t,t+dur)&&conflicts(dayKey,sid,t,t+dur).length===0);
     const smartSid=avail.find(sid=>isSmartSlot(dayKey,sid,t,t+dur));
-    out.push({t,staffId:smartSid||avail[0]||null,smart:!!smartSid});
+    out.push({t,staffId:smartSid||avail[0]||null,smart:!!smartSid,disc:smartSid?smartDiscOf(smartSid):0});
   }
   return out;
 }
@@ -1166,8 +1323,9 @@ function renderBook(){
         <div class="rl-t">🔁 2回目以降の方 — 電話番号で前回のご予約を呼び出せます</div>
         <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 090-1234-5678）" value="${bk.phone||''}"><button class="btn small pri" id="rlgo">呼び出す</button></div>
         <div id="rlres"></div>
-      </div>
-      <h3 style="margin:6px 0 12px">メニューを選択</h3>`+
+      </div>`+
+      (publishedReviews().length?`<div class="revblock"><div class="rl-t" style="color:var(--navy)">⭐ お客様の声</div>${publishedReviews().slice(0,2).map(rv=>{const s=STAFF.find(x=>x.id===rv.staffId);return `<div class="pubrev"><div class="pr-top">${'★'.repeat(rv.rating)}<span class="rv-star-off">${'★'.repeat(5-rv.rating)}</span> <b>${rv.name}</b> <span class="rv-meta">${s?s.name:''}</span></div><div class="pr-text">${(rv.text||'').replace(/</g,'&lt;')}</div></div>`}).join('')}</div>`:'')+
+      `<h3 style="margin:6px 0 12px">メニューを選択</h3>`+
       MENU_CATS.map(cat=>{
         const items=MENUS.filter(m=>m.cat===cat);if(!items.length)return'';
         return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">約${m.min}分</div></div><div class="pr">¥${m.price.toLocaleString()}</div></div>`).join('')+`</div>`;
@@ -1210,11 +1368,11 @@ function renderBook(){
     const soon=earliestSlot(staffIds,menu.min);
     const soonHtml=soon?`<button class="soonest" id="bsoonest"><span class="so-l">⚡ 最短で予約</span><span class="so-r">${dayLabel(soon.day)} ${hm(soon.t)}〜${soon.smart?' 🉐':''}　→</span></button>`:'';
     const free=freeSlots(bk.day,staffIds,menu.min).filter(s=>s.staffId);
-    const smartNote=(SMART_TIME.on&&free.some(s=>s.smart))?`<div class="smartnote">🉐 <b>${SMART_TIME.label} −¥${SMART_TIME.discount.toLocaleString()}</b>：前後のご予約とすき間なく繋がる時間です。サロンの空き時間を有効活用いただけるお礼に割引でご案内します</div>`:'';
+    const smartNote=(SMART_TIME.on&&free.some(s=>s.smart))?`<div class="smartnote">🉐 <b>${SMART_TIME.label}</b>：前後のご予約とすき間なく繋がる時間です。担当スタイリストからのお礼として、表示の金額を当日のお会計から割引します</div>`:'';
     const groups=[['朝・午前',t=>t<720],['午後',t=>t>=720&&t<1020],['夕方・夜',t=>t>=1020]];
     const chipsHtml=free.length?groups.map(([label,test])=>{
       const g=free.filter(s=>test(s.t));if(!g.length)return'';
-      return `<div class="tgrp"><div class="tgrp-h">${label}</div><div class="chips">${g.map(s=>`<button class="chip ${bk.start===s.t?'sel':''} ${s.smart?'smart':''}" data-t="${s.t}" data-sid="${s.staffId}" data-smart="${s.smart?1:0}">${hm(s.t)}${s.smart?'<span class="sm">🉐</span>':''}</button>`).join('')}</div></div>`;
+      return `<div class="tgrp"><div class="tgrp-h">${label}</div><div class="chips">${g.map(s=>`<button class="chip ${bk.start===s.t?'sel':''} ${s.smart?'smart':''}" data-t="${s.t}" data-sid="${s.staffId}" data-smart="${s.smart?1:0}">${hm(s.t)}${s.smart?`<span class="sm">🉐−¥${s.disc}</span>`:''}</button>`).join('')}</div></div>`;
     }).join(''):`<p class="dayfull">この日は満席です。上の「最短で予約」や別の日もご検討ください</p>
       <div class="waitbox" id="waitbox">
         <div class="wait-h">🔔 キャンセル待ちに登録</div>
@@ -1223,14 +1381,32 @@ function renderBook(){
         <div class="field"><input id="wphone" type="tel" inputmode="tel" placeholder="電話番号" value="${bk.phone||''}"></div>
         <button class="btn pri" id="wgo">この日でキャンセル待ちする</button>
       </div>`;
+    // 詰めのお願い: 選んだ時間が前後の予約と30分以下の隙間を作るときだけ、その場でスタイリスト名でお願いを表示。
+    // 選んだ時間のままでも予約できる（強制なし＝失客防止）。既にすき間なし枠(スマート枠)を選んだ場合は出さない。
+    let nudge=null,nudgeSid=null,nudgeDisc=0;
+    const nudgeKey=bk.day+':'+bk.start;
+    if(bk.start!=null&&!bk._smart&&bk._nudgeDismissed!==nudgeKey){
+      nudgeSid=bk.staff==='any'?bk._sid:bk.staff;
+      nudge=nudgeFor(bk.day,nudgeSid,bk.start,menu.min);
+      if(nudge)nudgeDisc=smartDiscOf(nudgeSid);
+    }
+    const nudgeStaff=nudge?STAFF.find(s=>s.id===nudgeSid):null;
+    const nudgeHtml=nudge?`<div class="nudgebox">
+      <div class="nb-h">🙏 ${nudgeStaff.name}さんからのお願い</div>
+      <p class="nb-p">この時間ですと、${nudge.dir}のご予約と${nudge.gap}分だけすき間ができてしまいます。もし可能でしたら <b>${hm(nudge.t)}〜</b> に詰めていただけると助かります${nudgeDisc>0?`。お礼として当日のお会計から <b>¥${nudgeDisc.toLocaleString()}</b> お引きします`:''}。もちろん ${hm(bk.start)}〜 のままでもご予約いただけます</p>
+      <div class="nb-btns"><button class="btn small pri" id="nd-yes">${hm(nudge.t)}〜 に変更する${nudgeDisc>0?`（🉐−¥${nudgeDisc.toLocaleString()}）`:''}</button><button class="btn small ghost" id="nd-no">このまま ${hm(bk.start)}〜 でOK</button></div>
+    </div>`:'';
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">日時を選択</h3>${soonHtml}
       <div class="daytabs">${days.map(d=>{const k=dkey(d);const cnt=dayFreeCount(k,staffIds,menu.min);const mk=cnt===0?['×','x']:(cnt<=3?['△','t']:['○','o']);return `<button class="daytab ${bk.day===k?'sel':''} ${cnt===0?'nofree':''}" data-d="${k}"><span class="w">${WD[d.getDay()]}</span><span class="d">${d.getDate()}</span><span class="av av-${mk[1]}">${mk[0]}</span></button>`}).join('')}</div>
-      ${smartNote}${chipsHtml}
+      ${smartNote}${chipsHtml}${nudgeHtml}
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext" ${bk.start!=null?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.daytab').forEach(d=>d.onclick=()=>{bk.day=d.dataset.d;bk.start=null;bk._smart=false;renderBook()});
     p.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{bk.start=+c.dataset.t;bk._sid=c.dataset.sid;bk._smart=c.dataset.smart==='1';renderBook()});
     const bs=document.getElementById('bsoonest');
     if(bs)bs.onclick=()=>{bk.day=soon.day;bk.start=soon.t;bk._sid=soon.sid;bk._smart=!!soon.smart;bk.step=3;renderBook()};
+    const ndY=document.getElementById('nd-yes'),ndN=document.getElementById('nd-no');
+    if(ndY)ndY.onclick=()=>{bk.start=nudge.t;bk._smart=nudgeDisc>0;renderBook();toast(nudgeDisc>0?`ありがとうございます！お礼に −¥${nudgeDisc.toLocaleString()} いたします`:'ありがとうございます！')};
+    if(ndN)ndN.onclick=()=>{bk._nudgeDismissed=nudgeKey;renderBook()};
     const wgo=document.getElementById('wgo');
     if(wgo)wgo.onclick=()=>{
       bk.name=document.getElementById('wname').value.trim()||bk.name||'ゲスト';
@@ -1246,8 +1422,8 @@ function renderBook(){
     const st=STAFF.find(s=>s.id===sid);
     const vc=bk.phone?visitCount(bk.name,bk.phone,null):0;
     const repHtml=vc>0?`<dt>ご来店</dt><dd>${vc+1}回目のご来店</dd>`:'';
-    const disc=(bk._smart&&SMART_TIME.on)?SMART_TIME.discount:0;
-    const discHtml=disc?`<dt>割引</dt><dd style="color:var(--ok)">🉐 ${SMART_TIME.label} −¥${disc.toLocaleString()}</dd>`:'';
+    const disc=(bk._smart&&SMART_TIME.on)?smartDiscOf(sid):0;
+    const discHtml=disc?`<dt>割引</dt><dd style="color:var(--ok)">🉐 ${SMART_TIME.label}（${st.name}さんからのお礼）−¥${disc.toLocaleString()}</dd>`:'';
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">ご予約内容の確認</h3>
       <dl class="summary big">
         <dt>メニュー</dt><dd>${menu.tag?`<span class="ctag">${menu.tag}</span>`:''}${menu.name}</dd>
@@ -1260,8 +1436,14 @@ function renderBook(){
       <div class="field" style="margin-top:14px"><label>お名前</label><input id="bname" value="${bk.name}" placeholder="例）鈴木 一花"></div>
       <div class="field"><label>電話番号</label><input id="bphone" type="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
       <div class="policy">
-        <b>キャンセルについて</b>
-        前日までのご連絡は無料です。当日キャンセル・無断キャンセルは、次回以降のご予約をお断りする場合があります。ご予約時間に10分以上遅れる場合はご連絡ください。
+        <b>キャンセルポリシー</b>
+        <table class="ptable">
+          <tr><td>2日前まで</td><td>無料</td></tr>
+          <tr><td>前日</td><td>料金の25%</td></tr>
+          <tr><td>当日</td><td>料金の50%</td></tr>
+          <tr><td>無断キャンセル</td><td>当店に生じた損害の範囲まで</td></tr>
+        </table>
+        キャンセル料は前金から充当し、残額は返金します。料率は当店に生じる平均的な損害（施術料金から材料費を除いた額に、他のお客様のご予約可能性を考慮したもの）にもとづきます。10分以上遅れる場合はご連絡ください。
       </div>
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
     document.getElementById('bnext2').onclick=()=>{
@@ -1275,10 +1457,11 @@ function renderBook(){
   if(bk.step===4){
     const menu=MENUS.find(m=>m.id===bk.menu);
     const sid=bk.staff==='any'?bk._sid:bk.staff;
-    const disc=(bk._smart&&SMART_TIME.on)?SMART_TIME.discount:0;
+    const disc=(bk._smart&&SMART_TIME.on)?smartDiscOf(sid):0;
+    const stName=(STAFF.find(s=>s.id===sid)||{}).name||'';
     const dep=depositOf(menu.price-disc);
     const commit=(depositAmt)=>{
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,lineUserId:bk.lineUserId||''});
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||''});
       if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
       if(r.resv.lineUserId)sendLineConfirm(r.resv);        // LINE友だちにはLINE確認
@@ -1311,8 +1494,23 @@ function renderBook(){
         <div class="line-cta-body"><b>LINEで予約を受け取る</b><span>友だち追加で、前日リマインド・次回予約・お得情報が届きます</span></div>
       </div>
       <div class="pnav"><button class="btn line" id="baddline">＋ LINE友だち追加</button></div>
+      <div class="revcust" style="text-align:left">
+        <h4>⭐ 施術後にぜひ口コミを（任意）</h4>
+        <div class="stars" id="rvstars">${[1,2,3,4,5].map(i=>`<span class="star" data-v="${i}">★</span>`).join('')}</div>
+        <textarea id="rvtext" placeholder="仕上がりや接客のご感想をお聞かせください（掲載はサロンが確認のうえ行います）"></textarea>
+        <button class="btn small pri" id="rvsend">口コミを送る</button>
+      </div>
       <button class="btn linktext" id="bagain">続けてもう1件予約する</button></div>`;
     document.getElementById('baddline').onclick=()=>toast('（デモ）LINE友だち追加へ遷移します');
+    let rvRating=5;
+    const paintStars=()=>document.querySelectorAll('#rvstars .star').forEach(s=>s.classList.toggle('on',+s.dataset.v<=rvRating));
+    document.querySelectorAll('#rvstars .star').forEach(s=>s.onclick=()=>{rvRating=+s.dataset.v;paintStars()});paintStars();
+    document.getElementById('rvsend').onclick=()=>{
+      const txt=document.getElementById('rvtext').value.trim();if(!txt){toast('ご感想をご記入ください',true);return}
+      addReview({name:(bk.name||'匿名').split(' ')[0]+(bk.name&&bk.name.includes(' ')?'.'+bk.name.split(' ')[1][0]:''),rating:rvRating,staffId:(bk.staff==='any'?bk._sid:bk.staff)||'s1',menuId:bk.menu,text:txt});
+      toast('口コミを送信しました。サロンの確認後に掲載されます');
+      document.querySelector('.revcust').innerHTML='<div class="wait-done">✅ 口コミありがとうございました</div>';
+    };
     document.getElementById('bagain').onclick=()=>{bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};renderBook()};
     return;
   }
@@ -1430,11 +1628,11 @@ function buildCustomers(){
   const map={};
   db.reservations.filter(r=>r.status!=='cancelled').forEach(r=>{
     const k=custKey(r);
-    const c=map[k]||(map[k]={key:k,name:r.name,phone:r.phone||'',visits:0,first:r.date,last:r.date,menus:{},staff:{},channels:new Set(),spend:0,note:'',line:false});
+    const c=map[k]||(map[k]={key:k,name:r.name,phone:r.phone||'',visits:0,first:r.date,last:r.date,menus:{},staff:{},channels:new Set(),spend:0,note:'',line:false,lineUserId:'',email:''});
     c.visits++;
     if(r.phone&&!c.phone)c.phone=r.phone;
     if(r.date<c.first)c.first=r.date;
-    if(r.date>=c.last){c.last=r.date;if(r.name)c.name=r.name;}
+    if(r.date>=c.last){c.last=r.date;if(r.name)c.name=r.name;if(r.lineUserId)c.lineUserId=r.lineUserId;if(r.email)c.email=r.email;}
     const m=MENUS.find(x=>x.id===r.menuId);if(m){c.menus[m.name]=(c.menus[m.name]||0)+1;c.spend+=m.price;}
     const s=STAFF.find(x=>x.id===r.staffId);if(s)c.staff[s.name]=(c.staff[s.name]||0)+1;
     c.channels.add(r.channel);
@@ -1534,9 +1732,11 @@ function renderShift(){
   g.innerHTML=STAFF.map(s=>{
     const sh=SHIFTS.staff[s.id]||{days:[],open:OPEN,close:CLOSE};
     const wds=WD.map((w,i)=>`<button class="wd ${sh.days.includes(i)?'on':''}" data-sid="${s.id}" data-wd="${i}">${w}</button>`).join('');
+    const yen=(kind,sel)=>{let o='';for(let v=0;v<=INCENT_MAX;v+=100)o+=`<option value="${v}" ${v===sel?'selected':''}>${v===0?'なし':'¥'+v.toLocaleString()}</option>`;return `<select data-sid="${s.id}" data-ik="${kind}">${o}</select>`};
     return `<div class="shrow"><div class="shrow-name">${s.name}<span>${s.role}</span></div>
       <div class="wdrow">${wds}</div>
-      <div class="shrow-hours">勤務 <select data-sid="${s.id}" data-hk="open">${opts(sh.open)}</select> 〜 <select data-sid="${s.id}" data-hk="close">${opts(sh.close)}</select></div></div>`;
+      <div class="shrow-hours">勤務 <select data-sid="${s.id}" data-hk="open">${opts(sh.open)}</select> 〜 <select data-sid="${s.id}" data-hk="close">${opts(sh.close)}</select></div>
+      <div class="shrow-hours">🉐 スマート割 ${yen('smart',smartDiscOf(s.id))}　🙏 時間変更のお礼 ${yen('move',moveDiscOf(s.id))}</div></div>`;
   }).join('');
   g.querySelectorAll('.wd').forEach(b=>b.onclick=()=>{
     const sh=SHIFTS.staff[b.dataset.sid],i=+b.dataset.wd,idx=sh.days.indexOf(i);
@@ -1545,6 +1745,10 @@ function renderShift(){
   });
   g.querySelectorAll('select[data-hk]').forEach(sel=>sel.onchange=()=>{
     SHIFTS.staff[sel.dataset.sid][sel.dataset.hk]=+sel.value;saveShifts();refreshAll();
+  });
+  g.querySelectorAll('select[data-ik]').forEach(sel=>sel.onchange=()=>{
+    INCENT[sel.dataset.ik][sel.dataset.sid]=+sel.value;saveIncent();refreshAll();
+    toast('割引設定を保存しました');
   });
 }
 
@@ -1564,8 +1768,70 @@ function renderWaitlist(){
   el.querySelectorAll('[data-wnotify]').forEach(b=>b.onclick=()=>notifyWaitlistManual(b.dataset.wnotify));
   el.querySelectorAll('[data-wdel]').forEach(b=>b.onclick=()=>{removeWaitlist(b.dataset.wdel);toast('キャンセル待ちを削除しました')});
 }
-function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();if(bk.step===2)renderBook()}
-renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();
+/* ===== 再来リマインド（来店データ駆動） ===== */
+const REVISIT_DAYS=45; // 最終来店からこの日数を超え、次回予約が無い顧客に再来おすすめ
+function lapsedCustomers(){
+  const tk=dkey(today()),cutoff=dkey(addDays(today(),-REVISIT_DAYS));
+  const future={};db.reservations.filter(r=>r.date>=tk&&r.status!=='cancelled').forEach(r=>future[custKey(r)]=true);
+  return buildCustomers().filter(c=>c.visits>=1&&c.last<cutoff&&!future[c.key]).sort((a,b)=>a.last<b.last?-1:1);
+}
+function sendRevisit(c){
+  if(c.lineUserId&&LINE_CFG.PUSH_ENDPOINT){
+    fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userId:c.lineUserId,text:`【SEAM 銀座】${c.name}様\n\n前回のご来店から少し経ちました。そろそろメンテナンスはいかがですか？ご予約お待ちしております。`})}).catch(()=>{});
+  }else if(c.email&&MAIL_ENDPOINT){
+    fetch(MAIL_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({to:c.email,reservation:{date:'',time:'',menu:'',staff:'',salon:'SEAM 銀座（そろそろメンテナンスはいかがですか）'}})}).catch(()=>{});
+  }
+}
+function renderRevisit(){
+  const el=document.getElementById('revisitcard');if(!el)return;
+  const list=lapsedCustomers();
+  if(!list.length){el.style.display='none';return}
+  el.style.display='';
+  el.innerHTML=`<h3 style="font-size:14.5px;margin-bottom:4px">💌 再来おすすめ（${list.length}名）</h3>
+    <p style="font-size:12px;color:var(--sub);margin-bottom:10px">最終来店から${REVISIT_DAYS}日超・次回予約なし。ワンタップで再来のご案内を送れます</p>`+
+    list.slice(0,8).map(c=>{const dgap=Math.floor((today()-new Date(c.last))/86400000);
+      return `<div class="waititem"><div class="wi-main"><b>${c.name}</b><span class="wi-sub">最終 ${c.last.replace(/-/g,'/')}（${dgap}日前）・${c.visits}回・${topKey(c.menus)}</span></div>
+        <div class="wi-act">${c.lineUserId?'<span class="wi-done" style="background:#e7f6ee;color:#06843c">LINE</span>':''}<button class="btn small block" data-revisit="${c.key}">案内を送る</button></div></div>`;
+    }).join('');
+  el.querySelectorAll('[data-revisit]').forEach(b=>b.onclick=()=>{
+    const c=buildCustomers().find(x=>x.key===b.dataset.revisit);if(c){sendRevisit(c);toast(`${c.name}様に再来のご案内を送信しました`)}
+  });
+}
+/* ===== 口コミ承認（美容師が公開を選ぶ） ===== */
+function renderReviews(){
+  const el=document.getElementById('reviewcard');if(!el)return;
+  const all=(db.reviews||[]).slice().sort((a,b)=>a.date<b.date?1:-1);
+  const pend=all.filter(r=>!r.published).length;
+  el.innerHTML=`<h3 style="font-size:14.5px;margin-bottom:4px">⭐ 口コミ（公開 ${all.length-pend} / 承認待ち ${pend}）</h3>
+    <p style="font-size:12px;color:var(--sub);margin-bottom:10px">公開するものを美容師が選べます。公開ONにすると予約ページに掲載されます</p>`+
+    all.map(r=>{const s=STAFF.find(x=>x.id===r.staffId),m=MENUS.find(x=>x.id===r.menuId);
+      return `<div class="rvitem ${r.published?'':'pending'}"><div class="rv-main"><div class="rv-top">${'★'.repeat(r.rating)}<span class="rv-star-off">${'★'.repeat(5-r.rating)}</span> <b>${r.name}</b> <span class="rv-meta">${s?s.name:''}${m?' / '+m.name:''}・${r.date.slice(5).replace('-','/')}</span></div><div class="rv-text">${(r.text||'').replace(/</g,'&lt;')}</div></div>
+      <div class="rv-act"><button class="btn small ${r.published?'ok':'ghost'}" data-pub="${r.id}">${r.published?'公開中':'公開する'}</button><button class="btn small ghost" data-rvdel="${r.id}">×</button></div></div>`;
+    }).join('');
+  el.querySelectorAll('[data-pub]').forEach(b=>b.onclick=()=>{const rv=db.reviews.find(x=>x.id===b.dataset.pub);setReviewPublished(b.dataset.pub,!rv.published);toast(rv.published?'非公開にしました':'公開しました')});
+  el.querySelectorAll('[data-rvdel]').forEach(b=>b.onclick=()=>{removeReview(b.dataset.rvdel);toast('口コミを削除しました')});
+}
+/* ===== 売上分析（スタッフ別・人気メニュー・リピート） ===== */
+function renderAnalytics(){
+  const el=document.getElementById('analyticscard');if(!el)return;
+  const weekKeys=[...Array(7)].map((_,i)=>dkey(addDays(today(),i)));
+  const rs=db.reservations.filter(r=>weekKeys.includes(r.date)&&r.status!=='cancelled');
+  const byStaff={},byMenu={};let total=0;
+  rs.forEach(r=>{const m=MENUS.find(x=>x.id===r.menuId);if(!m)return;const s=STAFF.find(x=>x.id===r.staffId);
+    byStaff[s?s.name:'—']=(byStaff[s?s.name:'—']||0)+m.price;byMenu[m.name]=(byMenu[m.name]||0)+1;total+=m.price;});
+  const custs=buildCustomers();const rep=custs.filter(c=>c.visits>=2).length;const repRate=custs.length?Math.round(rep/custs.length*100):0;
+  const smax=Math.max(1,...Object.values(byStaff));
+  const staffRows=STAFF.map(s=>{const v=byStaff[s.name]||0;return `<div class="an-row"><span class="an-l">${s.name}</span><span class="an-bar"><span style="width:${Math.round(v/smax*100)}%"></span></span><span class="an-v">¥${v.toLocaleString()}</span></div>`}).join('');
+  const topMenus=Object.entries(byMenu).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  el.innerHTML=`<h3 style="font-size:14.5px;margin-bottom:4px">📊 売上分析（今週）</h3>
+    <div class="an-kpis"><div><span>今週売上</span><b>¥${total.toLocaleString()}</b></div><div><span>リピート率</span><b>${repRate}%</b></div><div><span>顧客数</span><b>${custs.length}</b></div></div>
+    <div class="an-sub">スタッフ別売上</div>${staffRows}
+    <div class="an-sub">人気メニュー</div>${topMenus.length?topMenus.map(([n,c],i)=>`<div class="an-row"><span class="an-l">${i+1}. ${n}</span><span class="an-v">${c}件</span></div>`).join(''):'<div style="font-size:12px;color:var(--sub)">データなし</div>'}`;
+}
+function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();if(bk.step===2)renderBook()}
+renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();
 document.getElementById('cust-search').oninput=renderCustomers;
 // D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
 syncFromD1();
