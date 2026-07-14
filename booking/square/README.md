@@ -177,6 +177,21 @@ npx wrangler deploy                           # 予約API + email() + cron を�
 ### 前日リマインド
 `wrangler.toml` の `crons = ["0 0 * * *"]`（毎朝9時JST）で、明日の予約のうち `line_user_id` があるものにLINEリマインドを自動送信。
 
+## 予約完了メール（LINE以外・海外客向け）
+
+`worker.js` に `POST /mail/confirm` を追加（Resend経由で送信）。LINE友だち以外でメールがある予約に自動送信。
+
+1. [Resend](https://resend.com/) でAPIキーを取得、送信ドメイン（例 seam.site）をDNS認証（SPF/DKIM追加）
+2. シークレット登録＆再デプロイ：
+   ```bash
+   npx wrangler secret put RESEND_API_KEY
+   ```
+   `wrangler.toml` の `[vars]` に `MAIL_FROM = "SEAM 銀座 <yoyaku@seam.site>"` を追加 → `npx wrangler deploy`
+3. 未設定でもアプリは壊れません（「（デモ）送信しました」と表示）
+
+## 施術カルテ（note）の永続化
+予約詳細の「施術カルテ・メモ」は `note` 列に保存。Worker の `PATCH /reservations` が `note` を受けるよう拡張済み（**要再デプロイ**）。D1スキーマ変更は不要（note列は既存）。
+
 ## 次の段階（予約同期）
 Square で入った予約を一元台帳に取り込むには、Bookings API の Webhook
 （`booking.created` / `booking.updated` / `booking.canceled`）を購読し、この Worker に受け口を足します。

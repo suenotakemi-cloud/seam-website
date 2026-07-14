@@ -42,6 +42,7 @@ export default {
     if (p.endsWith('/sales') && m === 'GET') return handleSales(url, env, cors);
     if (p.endsWith('/line/push') && m === 'POST') return handleLinePush(request, env, cors);
     if (p.endsWith('/line/reminders') && m === 'POST') return handleLineReminders(request, env, cors);
+    if (p.endsWith('/mail/confirm') && m === 'POST') return handleMailConfirm(request, env, cors);
     // 予約データAPI（D1永続化）
     if (p.endsWith('/reservations') && m === 'GET') return handleGetReservations(url, env, cors);
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors);
@@ -295,6 +296,7 @@ async function handlePatchReservation(request, env, cors) {
   const sets = [], vals = [];
   if (o.status !== undefined) { sets.push('status=?'); vals.push(o.status); }
   if (o.hpbBlocked !== undefined) { sets.push('hpb_blocked=?'); vals.push(o.hpbBlocked ? 1 : 0); }
+  if (o.note !== undefined) { sets.push('note=?'); vals.push(o.note); }
   if (!sets.length) return json({ error: '更新項目なし' }, 400, cors);
   vals.push(o.id);
   await env.DB.prepare(`UPDATE reservations SET ${sets.join(',')} WHERE id=?`).bind(...vals).run();
@@ -332,6 +334,30 @@ function parseSalonBoard(raw) {
 
 const z = n => String(n).padStart(2, '0');
 const min2hm = m => `${z(Math.floor(m / 60))}:${z(m % 60)}`;
+
+/* ---------- 予約完了メール（Resend経由・LINE以外/海外客向け） ---------- */
+async function handleMailConfirm(request, env, cors) {
+  if (!env.RESEND_API_KEY) return json({ error: 'RESEND_API_KEY が未設定です' }, 500, cors);
+  let p; try { p = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  const { to, reservation } = p || {};
+  if (!to) return json({ error: 'to は必須です' }, 400, cors);
+  const r = reservation || {};
+  const salon = r.salon || 'SEAM 銀座';
+  const subject = `【${salon}】ご予約ありがとうございます`;
+  const text = `${salon} をご予約いただきありがとうございます。\n\n`
+    + `■ご予約内容\n日時: ${(r.date || '').replace(/-/g, '/')} ${r.time || ''}〜\nメニュー: ${r.menu || ''}\n担当: ${r.staff || ''}\n`
+    + (r.total ? `お支払い予定: ¥${Number(r.total).toLocaleString()}\n` : '')
+    + `\nご来店をお待ちしております。\n変更・キャンセルは前日までにご連絡ください。`;
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from: env.MAIL_FROM || 'SEAM <onboarding@resend.dev>', to, subject, text }),
+    });
+    if (!res.ok) return json({ error: 'メール送信失敗: ' + (await res.text()) }, 502, cors);
+    return json({ ok: true }, 200, cors);
+  } catch (e) { return json({ error: 'メール送信エラー: ' + e.message }, 502, cors); }
+}
 
 function json(obj, status, cors) {
   return new Response(JSON.stringify(obj), {
