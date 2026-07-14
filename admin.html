@@ -236,13 +236,17 @@
   function el(id){return document.getElementById(id);}
 
   // ---- デモ用サンプルデータ ----
-  function demoData(){
+  function demoData(days){
+    days = Math.min(365, Math.max(7, parseInt(days,10)||90));
+    // デモ値は固定シード乱数=期間を切り替えても同じ日は同じ数字(実データと同じ振る舞いに見せる)
+    var _s=20260714; function rnd(){_s=(_s*1664525+1013904223)>>>0; return _s/4294967296;}
+    function dstr(t){var x=new Date(t);return x.getFullYear()+'-'+('0'+(x.getMonth()+1)).slice(-2)+'-'+('0'+x.getDate()).slice(-2);}
     var types=['NNW','NNS','NLW','NHW','TLS','TNW','FHC','TLW','NHS','VCC','MSP','ABM','VSC','ASF','AWS','NLS','THS','FLW'];
     var byType=types.map(function(t,i){return {t:t,c:Math.round(120*Math.exp(-i*0.18)+6)};});
-    function dailyGen(){var a=[],base=new Date('2026-04-01').getTime();for(var i=0;i<60;i++){a.push({d:new Date(base+i*864e5).toISOString().slice(0,10),c:Math.round(8+7*Math.sin(i/5)+Math.random()*6)});}return a;}
+    function dailyGen(){var a=[],now=Date.now();for(var i=61;i>=0;i--){a.push({d:dstr(now-i*864e5),c:Math.round(8+7*Math.sin(i/5)+rnd()*6)});}return a;}
     var d=dailyGen();
     var completes=byType.reduce(function(s,x){return s+x.c;},0);
-    function recentGen(){var a=[],now=Date.now(),refs=['instagram','google','direct','x','line'],types=['NNW','TLS','VCC','MSP','FHC'],adv=['frizz','damage','dry','scalp','volume'],tgts=['reserve_hpb','shop','product','product_alt'];for(var i=0;i<24;i++){var isCta=Math.random()<.4;a.push({ts:now-i*37*60000-Math.round(Math.random()*9e5),name:isCta?'finder_cta':'finder_complete',type:types[i%types.length],advice:adv[i%adv.length],tier:1+(i%3),ref:refs[i%refs.length],utm_campaign:i%4===0?'summer_2026':'',target:isCta?tgts[i%tgts.length]:'',device:Math.random()<.85?'mobile':'desktop',gender:Math.random()<.8?'female':'male'});}return a;}
+    function recentGen(){var a=[],now=Date.now(),refs=['instagram','google','direct','x','line'],types=['NNW','TLS','VCC','MSP','FHC'],adv=['frizz','damage','dry','scalp','volume'],tgts=['reserve_hpb','shop','product','product_alt'];for(var i=0;i<24;i++){var isCta=rnd()<.4;a.push({ts:now-i*37*60000-Math.round(rnd()*9e5),name:isCta?'finder_cta':'finder_complete',type:types[i%types.length],advice:adv[i%adv.length],tier:1+(i%3),ref:refs[i%refs.length],utm_campaign:i%4===0?'summer_2026':'',target:isCta?tgts[i%tgts.length]:'',device:rnd()<.85?'mobile':'desktop',gender:rnd()<.8?'female':'male'});}return a;}
     // プロファイル（デモ・実データではありません — 画面確認用の作り値）
     function demoProfile(){
       var byAge={teen:34,'20s':196,'30s':228,'40s':172,'50plus':118,noanswer:22};
@@ -316,7 +320,7 @@
         monthly:monthly
       };
     }
-    return {configured:true, generatedAt:Date.now(), windowDays:90, _demo:true, profile:(function(){var P=demoProfile();window.__demoP=P;return P;})(),
+    return {configured:true, generatedAt:Date.now(), windowDays:days, _demo:true, profile:(function(){var P=demoProfile();window.__demoP=P;return P;})(),
       profilePrev:(function(){var P=window.__demoP||{};function sc(o,f){var r={};for(var k in (o||{}))r[k]=Math.round(o[k]*f);return r;}
         return {n:Math.round((P.n||0)*0.86),kuseByAge:sc(P.kuseByAge,0.9),bleachByAge:sc(P.bleachByAge,0.8),upgradeTotal:sc(P.upgradeTotal,0.8),stHiddenN:Math.round((P.stHiddenN||0)*0.7),rediagN:Math.round((P.rediagN||0)*0.5),rediagDaysSum:Math.round((P.rediagDaysSum||0)*0.5)};})(),
       kpiWin:{cur:{finder_start:620,finder_complete:562,finder_cta:162},prev:{finder_start:540,finder_complete:471,finder_cta:128}},
@@ -344,8 +348,8 @@
       byGender:[{g:'female',c:Math.round(completes*.83)},{g:'male',c:Math.round(completes*.15)},{g:'other',c:Math.round(completes*.02)}],
       byMode:[{m:'a',c:Math.round(completes*.86)},{m:'b',c:Math.round(completes*.56)}],
       ctaTarget:[{target:'reserve_hpb',c:Math.round(completes*.19)},{target:'shop',c:Math.round(completes*.09)},{target:'product',c:Math.round(completes*.06)}],
-      daily:d,
-      dailyFull:d.map(function(x){var fc=x.c;var fs=Math.round(fc*1.7+Math.random()*3);return {d:x.d,pv:Math.round(fs*22+Math.random()*60),rpv:Math.round(3+Math.random()*9),fs:fs,fc:fc,cta:Math.round(fc*0.55),sres:Math.round(Math.random()*3),pres:Math.round(Math.random()*2.4),rap:Math.round(Math.random()*3),sj:Math.round(Math.random()*4)};}).reverse(),
+      daily:d.slice(-Math.min(days,62)),
+      dailyFull:d.map(function(x){var fs=Math.round(x.c*1.15+rnd()*2);var fc=Math.min(fs,Math.round(fs*(0.87+rnd()*0.09)));return {d:x.d,pv:Math.round(fs*22+rnd()*60),rpv:Math.round(3+rnd()*9),fs:fs,fc:fc,cta:Math.round(fc*0.3+rnd()*1.5),sres:Math.round(rnd()*3),pres:Math.round(rnd()*2.4),rap:Math.round(rnd()*3),sj:Math.round(rnd()*4)};}).reverse().slice(0,Math.min(days,62)),
       brandSearch:[{label:'オージュア',c:41},{label:'ミルボン',c:33},{label:'頭皮',c:29},{label:'kerastase',c:22},{label:'しっとり シャンプー',c:18},{label:'スカルプ',c:14},{label:'デジタルパーマ',c:9},{label:'ドライヤー',c:8}],
       brandClick:[{label:'Aujua',c:88},{label:'Kérastase',c:64},{label:'Global Milbon',c:52},{label:'SUBLIMIC',c:38},{label:'BYKARTE',c:31},{label:'TOKIO INKARAMI',c:26},{label:'Davines',c:22},{label:'ReFa',c:19}],
       finderFunnel:{opened:1230,started:620,completed:562},
@@ -1038,7 +1042,7 @@
   function showLogin(msg){ el('app').hidden=true; el('loginOverlay').style.display='flex'; if(msg)el('loginErr').textContent=msg; }
 
   function load(){
-    if(DEMO){ showApp(); render(demoData()); return; }
+    if(DEMO){ showApp(); render(demoData((el('rangeSel')&&el('rangeSel').value)||'90')); return; }
     var key = sessionStorage.getItem(KEY_LS);
     if(!key){ showLogin(''); return; }
     var days = (el('rangeSel')&&el('rangeSel').value) || '90';
