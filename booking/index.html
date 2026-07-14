@@ -171,6 +171,57 @@ td.slot:hover{background:#f0f7ff}
 .btn.line{background:var(--ch-line);color:#fff;flex:1}
 .btn.line:hover{background:#05b34c}
 
+/* ---- repeat lookup (customer) ---- */
+.rlook{background:#f0f7ff;border:1px solid #cfe4fb;border-radius:12px;padding:12px 14px;margin-bottom:14px}
+.rl-t{font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px}
+.rl-row{display:flex;gap:8px}
+.rl-row input{flex:1;border:1.5px solid #cfe4fb;border-radius:9px;padding:9px 11px;font-size:13.5px}
+.btn.small.pri{background:var(--accent);color:#fff}
+.rl-none{font-size:12px;color:var(--sub);margin-top:8px}
+.rl-hit{margin-top:10px;background:#fff;border:1px solid #bde8c8;border-radius:10px;padding:12px}
+.rl-hi{font-weight:800;color:#06843c;font-size:14px}
+.rl-last{font-size:12.5px;color:var(--sub);margin:2px 0 10px}
+.yrs{font-size:10.5px;font-weight:700;color:var(--sub);background:#eef2f7;border-radius:99px;padding:1px 7px;margin-left:4px}
+.line-logged{background:#f0fbf3;border:1px solid #bde8c8;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;color:#06843c;margin-bottom:12px}
+
+/* ---- link generator ---- */
+.lg-row{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.lg-top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.lg-dot{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;flex-shrink:0}
+.lg-top h4{font-size:14px}
+.lg-url{display:flex;gap:8px;align-items:center;background:#f7fafc;border:1px solid var(--line);border-radius:8px;padding:7px 10px}
+.lg-url code{flex:1;font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all;color:var(--navy)}
+.lg-copy{border:1.5px solid var(--accent);color:var(--accent);background:#fff;border-radius:7px;padding:5px 11px;font-weight:800;font-size:12px;white-space:nowrap}
+.lg-copy:hover{background:var(--accent);color:#fff}
+.lg-steps{font-size:12px;color:var(--sub);margin-top:8px;line-height:1.75}
+.lg-steps b{color:var(--navy)}
+.lg-prev{font-size:12px;font-weight:700;color:var(--accent);text-decoration:none;margin-top:6px;display:inline-block}
+
+/* ---- status / repeat / detail ---- */
+.rep{display:inline-block;font-size:10px;font-weight:800;color:#8a5a00;background:#fff3d6;border:1px solid #f2d999;border-radius:99px;padding:1px 7px;margin-left:6px;white-space:nowrap}
+.rep.new{color:var(--sub);background:#eef2f7;border-color:var(--line)}
+.upitem{cursor:pointer}
+.upitem:hover{border-color:var(--accent)}
+.resv.st-cancelled{opacity:.38;text-decoration:line-through}
+.resv.st-noshow{opacity:.6}
+.resv-mark{position:absolute;top:2px;left:4px;font-size:10px;font-weight:800;background:rgba(255,255,255,.9);color:var(--navy);border-radius:4px;padding:0 4px;line-height:1.5}
+.stbadge{display:inline-block;font-size:11px;font-weight:800;padding:2px 10px;border-radius:99px}
+.stbadge.st-booked{background:#eef4ff;color:var(--accent)}
+.stbadge.st-done{background:#e7f6ee;color:var(--ok)}
+.stbadge.st-cancelled{background:#eef0f2;color:var(--sub)}
+.stbadge.st-noshow{background:#fdeaea;color:var(--danger)}
+.dl{display:grid;grid-template-columns:auto 1fr;gap:7px 14px;margin:8px 0 14px;font-size:13.5px}
+.dl dt{color:var(--sub);font-size:12px;font-weight:700;align-self:center;white-space:nowrap}
+.dl dd{font-weight:600}
+.dwarn{background:#fffaf0;border:1px solid #fbdca0;border-radius:9px;padding:8px 10px;font-size:12px;color:var(--warn);margin-bottom:12px}
+.dacts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.btn.small{padding:8px 12px;font-size:12.5px;border-radius:9px;flex:0 0 auto;width:auto}
+.btn.small.ok{background:var(--ok);color:#fff}
+.btn.small.warn{background:#fff;border:1.5px solid var(--warn);color:var(--warn)}
+.btn.small.ghost{background:#fff;border:1.5px solid var(--line);color:var(--sub)}
+.btn.small.block{background:#fff;border:1.5px solid var(--accent);color:var(--accent)}
+.btn.danger{background:#fff;border:1.5px solid var(--danger);color:var(--danger)}
+
 /* ---- modal / toast ---- */
 .modal-bg{position:fixed;inset:0;background:rgba(14,42,71,.45);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
 .modal-bg.show{display:flex}
@@ -224,7 +275,7 @@ td.slot:hover{background:#f0f7ff}
 <!-- ============ CALENDAR ============ -->
 <section class="view" id="v-cal">
   <h2>予約台帳</h2>
-  <p class="lead">スタッフ×時間のマスタ在庫。空き枠クリックで手動登録（電話予約など）。予約クリックで削除</p>
+  <p class="lead">スタッフ×時間のマスタ在庫。空き枠クリックで手動登録（電話予約など）。予約クリックで詳細・ステータス変更</p>
   <div class="calbar">
     <button id="cal-prev">◀</button>
     <button id="cal-today">今日</button>
@@ -252,6 +303,12 @@ td.slot:hover{background:#f0f7ff}
   <h2>チャネル連携</h2>
   <p class="lead">調査結果にもとづく現実的な接続方式。公式APIがない媒体は「通知メール取込」を第一手段にします</p>
   <div class="grid cols3" id="chgrid" style="margin-bottom:16px"></div>
+  <div class="card linkgen" style="margin-bottom:16px">
+    <h3 style="font-size:15px;margin-bottom:6px">📲 予約リンクを設置（LINE / Google / Instagram を連結）</h3>
+    <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">3チャネルはすべて「自社予約ページへのリンク＋流入元タグ」で連結します。下のリンクを各チャネルに貼るだけ。予約時に流入元が自動でタグ付けされ、ダッシュボードでチャネル別に集計されます。</p>
+    <div class="field" style="margin-bottom:14px"><label style="display:block;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:4px">あなたの予約ページURL（本番のドメインに差し替え）</label><input id="baseurl" value="https://booking.seam.site/book" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13.5px"></div>
+    <div id="linkrows"></div>
+  </div>
   <div class="card mailbox">
     <h3 style="font-size:15px;margin-bottom:6px">📧 予約通知メール取込シミュレータ（HPB / 楽天 / minimo）</h3>
     <p style="font-size:12.5px;color:var(--sub);margin-bottom:10px">サロンボード等の予約通知メールを専用アドレスで受信→パース→台帳に自動登録する方式（DOUKI等と同型）。下のサンプルを編集して「取込」を押すと動きがわかります</p>
@@ -274,14 +331,20 @@ td.slot:hover{background:#f0f7ff}
   <div class="modal">
     <h3>予約を登録</h3>
     <div class="field"><label>お客様名</label><input id="m-name" placeholder="例）山田花子"></div>
+    <div class="field"><label>電話番号（任意）</label><input id="m-phone" placeholder="例）090-1234-5678"></div>
     <div class="field"><label>メニュー</label><select id="m-menu"></select></div>
     <div class="field"><label>チャネル</label><select id="m-chan"></select></div>
+    <div class="field"><label>メモ（任意）</label><input id="m-note" placeholder="例）カラーはアッシュ系希望"></div>
     <div style="font-size:12.5px;color:var(--sub)" id="m-info"></div>
     <div class="row">
       <button class="btn ghost" style="flex:1" id="m-cancel">キャンセル</button>
       <button class="btn pri" id="m-save">登録する</button>
     </div>
   </div>
+</div>
+
+<div class="modal-bg" id="detailbg">
+  <div class="modal" id="detailmodal"></div>
 </div>
 
 <div id="toast"></div>
@@ -292,9 +355,9 @@ const LS='stb_v1';
 const OPEN=10*60, CLOSE=19*60, STEP=30; // minutes
 // SEAM 銀座の実在籍（ホットペッパー表記のまま）: 及川 大輝(店長/ヘア)・ANZU(ヘア兼スパ)・CHIKA(スパ)
 const STAFF=[
-  {id:'s1',name:'及川 大輝',role:'店長 / スタイリスト'},
-  {id:'s2',name:'ANZU',role:'スタイリスト / スパニスト'},
-  {id:'s3',name:'CHIKA',role:'スパニスト'},
+  {id:'s1',name:'及川 大輝',role:'店長 / スタイリスト',catch:'艶髪デザイン・扱いやすい仕上がり',yrs:14},
+  {id:'s2',name:'ANZU',role:'スタイリスト / スパニスト',catch:'頭皮と髪を整えるヘア＆スパ',yrs:9},
+  {id:'s3',name:'CHIKA',role:'スパニスト',catch:'極上睡眠ヘッドスパ・完全個室',yrs:3},
 ];
 const MENUS=[
   {id:'m1',name:'カット',min:60,price:4950,staff:['s1','s2']},
@@ -336,7 +399,7 @@ function seed(){
     id:'r'+Math.random().toString(36).slice(2,9),
     date:dkey(addDays(t,dOff)),staffId,start:startMin,
     end:startMin+MENUS.find(m=>m.id===menuId).min,
-    menuId,name,channel:chan,deposit:0,
+    menuId,name,channel:chan,deposit:0,phone:'',note:'',status:'booked',
     hpbBlocked:chan==='hpb'?true:(blocked!==false),
     createdAt:new Date().toISOString()
   });
@@ -352,7 +415,11 @@ function seed(){
     mk(5,'s1',720,'m1','阿部 湊','minimo'),   mk(5,'s2',630,'m2','石川 紬','rakuten'),
     mk(6,'s3',840,'m5','前田 葵','google'),   mk(6,'s1',960,'m1','藤田 樹','own'),
     mk(2,'s1',600,'m1','大野 桜','square'),   mk(4,'s2',660,'m1','谷口 蒼','square',false),
+    mk(3,'s2',780,'m1','小林 芽衣','own'),    mk(5,'s2',900,'m1','渡辺 結衣','line'),
   ];
+  rs[0].status='done';        // 今朝ご来店済みの例
+  rs[0].phone='090-1234-5678';
+  rs[1].phone='080-2222-3333';
   const d={seedDay:dkey(t),reservations:rs};
   localStorage.setItem(LS,JSON.stringify(d));
   return d;
@@ -360,25 +427,54 @@ function seed(){
 
 /* =============== core: inventory guard =============== */
 function conflicts(date,staffId,start,end,ignoreId){
-  return db.reservations.filter(r=>r.date===date&&r.staffId===staffId&&r.id!==ignoreId&&start<r.end&&end>r.start);
+  // キャンセル済みは枠を解放（再予約可能）
+  return db.reservations.filter(r=>r.date===date&&r.staffId===staffId&&r.id!==ignoreId&&r.status!=='cancelled'&&start<r.end&&end>r.start);
 }
+// ===== 外部同期プロバイダ（将来ここに かんざし / Square Bookings を差し込む）=====
+// 自社エンジンが予約マスタ。SyncProvider を差し替えれば、全チャネルへ双方向反映できる設計。
+// 例) provider='kanzashi' にして push/cancel を実装 → かんざし経由で HPB/楽天/minimo に自動反映。
+const SyncProvider = {
+  provider: 'local',                  // 'kanzashi' | 'square' などに差し替え
+  async push(r){ /* TODO: かんざしSaaSに予約を送信（詳細は ARCHITECTURE.md）*/ },
+  async cancel(id){ /* TODO: かんざしSaaSにキャンセルを送信 */ },
+};
 function addReservation(o){
   const c=conflicts(o.date,o.staffId,o.start,o.end);
   if(c.length)return{ok:false,conflict:c[0]};
   o.id='r'+Math.random().toString(36).slice(2,9);
   o.createdAt=new Date().toISOString();
   if(o.deposit===undefined)o.deposit=0;
+  if(o.phone===undefined)o.phone='';
+  if(o.note===undefined)o.note='';
+  if(o.status===undefined)o.status='booked';
   // HPB以外の予約は、HPB側の枠を手動ブロックするまで「要ブロック」。HPB予約は済み扱い。
   if(o.hpbBlocked===undefined)o.hpbBlocked=(o.channel==='hpb');
   db.reservations.push(o);save();refreshAll();
+  SyncProvider.push(o);   // 外部同期フック（現在no-op・かんざし連携時に有効化）
   return{ok:true,resv:o};
 }
 function removeReservation(id){db.reservations=db.reservations.filter(r=>r.id!==id);save();refreshAll()}
 function markBlocked(id){const r=db.reservations.find(x=>x.id===id);if(r){r.hpbBlocked=true;save();refreshAll()}}
-// HPB要ブロック: 今日以降・HPB以外・未ブロックの予約（=他チャネルで埋まったのにHPBが空きのまま=二重予約リスク）
+function setStatus(id,status){const r=db.reservations.find(x=>x.id===id);if(r){r.status=status;save();refreshAll()}}
+// 同名（+電話）の予約回数＝リピート判定。キャンセルは除く。
+function visitCount(name,phone,excludeId){
+  return db.reservations.filter(r=>r.id!==excludeId&&r.status!=='cancelled'&&r.name===name&&(!phone||!r.phone||r.phone===phone)).length;
+}
+// 電話番号から過去の予約を照会（リピーターの前回内容呼び出し）
+function findCustomer(phone){
+  const p=(phone||'').replace(/[^0-9]/g,'');
+  if(p.length<8)return null;
+  const hist=db.reservations
+    .filter(r=>r.phone&&r.phone.replace(/[^0-9]/g,'')===p&&r.status!=='cancelled')
+    .sort((a,b)=>(a.date+String(a.start).padStart(4,'0'))<(b.date+String(b.start).padStart(4,'0'))?1:-1);
+  if(!hist.length)return null;
+  const last=hist[0];
+  return {name:last.name,phone:last.phone,note:last.note||'',lastMenuId:last.menuId,lastStaffId:last.staffId,visits:hist.length};
+}
+// HPB要ブロック: 今日以降・HPB以外・未ブロック・キャンセル以外の予約（=他チャネルで埋まったのにHPBが空きのまま=二重予約リスク）
 function pendingBlocks(){
   const tk=dkey(today());
-  return db.reservations.filter(r=>r.date>=tk&&r.channel!=='hpb'&&!r.hpbBlocked)
+  return db.reservations.filter(r=>r.date>=tk&&r.channel!=='hpb'&&!r.hpbBlocked&&r.status!=='cancelled')
     .sort((a,b)=>a.date===b.date?a.start-b.start:a.date<b.date?-1:1);
 }
 
@@ -393,9 +489,10 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
 /* =============== dashboard =============== */
 function renderDash(){
   const tk=dkey(today());
-  const todays=db.reservations.filter(r=>r.date===tk).sort((a,b)=>a.start-b.start);
+  const live=r=>r.status!=='cancelled';
+  const todays=db.reservations.filter(r=>r.date===tk&&live(r)).sort((a,b)=>a.start-b.start);
   const weekKeys=[...Array(7)].map((_,i)=>dkey(addDays(today(),i)));
-  const week=db.reservations.filter(r=>weekKeys.includes(r.date));
+  const week=db.reservations.filter(r=>weekKeys.includes(r.date)&&live(r));
   document.getElementById('k-today').textContent=todays.length;
   document.getElementById('k-today-sub').textContent=todays.length?`次: ${hm(todays.find(r=>true).start)}〜`:'予約なし';
   document.getElementById('k-week').textContent=week.length;
@@ -415,16 +512,19 @@ function renderDash(){
   });
 
   const now=new Date();const nowMin=now.getHours()*60+now.getMinutes();
-  const up=db.reservations.filter(r=>r.date>tk||(r.date===tk&&r.end>nowMin))
+  const up=db.reservations.filter(r=>live(r)&&(r.date>tk||(r.date===tk&&r.end>nowMin)))
     .sort((a,b)=>a.date===b.date?a.start-b.start:a.date<b.date?-1:1).slice(0,6);
   const ul=document.getElementById('uplist');
   ul.innerHTML=up.length?'':'<div style="color:var(--sub);font-size:13px">この後の予約はありません</div>';
   up.forEach(r=>{
     const st=STAFF.find(s=>s.id===r.staffId),m=MENUS.find(m=>m.id===r.menuId),c=CHANNELS[r.channel];
     const dd=r.date===tk?'今日':r.date.slice(5).replace('-','/');
+    const vc=visitCount(r.name,r.phone,r.id);
+    const rep=vc>0?`<span class="rep">${vc+1}回目</span>`:'';
     ul.insertAdjacentHTML('beforeend',
-      `<div class="upitem"><span class="t">${dd} ${hm(r.start)}</span><span class="n">${r.name}</span><span class="m">${m.name} / ${st.name}</span><span class="badge" style="background:${c.color};margin-left:auto">${c.short}</span></div>`);
+      `<div class="upitem" data-id="${r.id}"><span class="t">${dd} ${hm(r.start)}</span><span class="n">${r.name}</span>${rep}<span class="m">${m.name} / ${st.name}</span><span class="badge" style="background:${c.color};margin-left:auto">${c.short}</span></div>`);
   });
+  ul.querySelectorAll('.upitem').forEach(el=>el.onclick=()=>openDetail(el.dataset.id));
   renderBlockCard();
 }
 function renderBlockCard(){
@@ -467,16 +567,13 @@ function renderCal(){
     if(!cell)return;
     const c=CHANNELS[r.channel],m=MENUS.find(m=>m.id===r.menuId);
     const h=(r.end-r.start)/STEP*rowH-4;
-    const warn=(r.channel!=='hpb'&&!r.hpbBlocked)?'<span class="resv-warn" title="HPBで要ブロック">⚠</span>':'';
+    const warn=(r.channel!=='hpb'&&!r.hpbBlocked&&r.status!=='cancelled')?'<span class="resv-warn" title="HPBで要ブロック">⚠</span>':'';
     const dep=r.deposit>0?'<span class="resv-dep" title="前金あり">¥</span>':'';
+    const mark=r.status==='done'?'<span class="resv-mark">✓</span>':(r.status==='noshow'?'<span class="resv-mark">✕</span>':'');
     cell.insertAdjacentHTML('beforeend',
-      `<div class="resv" data-id="${r.id}" style="background:${c.color};height:${h}px">${warn}${dep}<b>${r.name}</b>${m.name}・${c.short}</div>`);
+      `<div class="resv st-${r.status}" data-id="${r.id}" style="background:${c.color};height:${h}px">${warn}${dep}${mark}<b>${r.name}</b>${m.name}・${c.short}</div>`);
   });
-  tbl.querySelectorAll('.resv').forEach(el=>el.onclick=e=>{
-    e.stopPropagation();
-    const r=db.reservations.find(x=>x.id===el.dataset.id);
-    if(confirm(`${r.name} 様（${hm(r.start)}〜${hm(r.end)} / ${CHANNELS[r.channel].name}）の予約を削除しますか?`)){removeReservation(r.id);toast('予約を削除しました')}
-  });
+  tbl.querySelectorAll('.resv').forEach(el=>el.onclick=e=>{e.stopPropagation();openDetail(el.dataset.id)});
   tbl.querySelectorAll('td.slot').forEach(td=>td.onclick=()=>openModal(td.dataset.s,+td.dataset.t));
 }
 document.getElementById('cal-prev').onclick=()=>{calDay=addDays(calDay,-1);renderCal()};
@@ -494,6 +591,8 @@ function openModal(staffId,start){
   const st=STAFF.find(s=>s.id===staffId);
   document.getElementById('m-info').textContent=`${dkey(calDay)} ${hm(start)}〜 / 担当: ${st.name}`;
   document.getElementById('m-name').value='';
+  document.getElementById('m-phone').value='';
+  document.getElementById('m-note').value='';
   document.getElementById('modalbg').classList.add('show');
 }
 document.getElementById('m-cancel').onclick=()=>document.getElementById('modalbg').classList.remove('show');
@@ -501,15 +600,108 @@ document.getElementById('modalbg').onclick=e=>{if(e.target.id==='modalbg')e.targ
 document.getElementById('m-save').onclick=()=>{
   const name=document.getElementById('m-name').value.trim()||'お客様';
   const menu=MENUS.find(m=>m.id===document.getElementById('m-menu').value);
-  const r=addReservation({date:dkey(calDay),staffId:modalCtx.staffId,start:modalCtx.start,end:modalCtx.start+menu.min,menuId:menu.id,name,channel:document.getElementById('m-chan').value});
+  const r=addReservation({date:dkey(calDay),staffId:modalCtx.staffId,start:modalCtx.start,end:modalCtx.start+menu.min,menuId:menu.id,name,
+    phone:document.getElementById('m-phone').value.trim(),note:document.getElementById('m-note').value.trim(),channel:document.getElementById('m-chan').value});
   if(!r.ok){toast(`⚠️ ${hm(r.conflict.start)}〜の「${r.conflict.name}様」と重複するため登録できません`,true);return}
   document.getElementById('modalbg').classList.remove('show');
   toast('予約を登録しました');
 };
+// スタッフ用: 電話番号を入れると過去の顧客を照会して氏名・メモを補完
+document.getElementById('m-phone').onchange=function(){
+  const cust=findCustomer(this.value);if(!cust)return;
+  const nm=document.getElementById('m-name');if(!nm.value.trim())nm.value=cust.name;
+  const nt=document.getElementById('m-note');if(!nt.value.trim()&&cust.note)nt.value=cust.note;
+  toast(`照会: ${cust.name}様（${cust.visits+1}回目のご来店）`);
+};
+
+/* ===== 予約詳細モーダル（ステータス管理） ===== */
+const STATUS_LABEL={booked:'予約確定',done:'来店済み',cancelled:'キャンセル',noshow:'無断キャンセル'};
+function openDetail(id){
+  const r=db.reservations.find(x=>x.id===id);if(!r)return;
+  const st=STAFF.find(s=>s.id===r.staffId),m=MENUS.find(m=>m.id===r.menuId),c=CHANNELS[r.channel];
+  const vc=visitCount(r.name,r.phone,r.id);
+  const repeat=vc>0?`<span class="rep">${vc+1}回目のご来店</span>`:'<span class="rep new">新規</span>';
+  const needBlock=(r.channel!=='hpb'&&!r.hpbBlocked&&r.status!=='cancelled');
+  const rows=[
+    ['お客様',`${r.name} ${repeat}`],
+    r.phone?['電話',r.phone]:null,
+    ['日時',`${r.date.replace(/-/g,'/')} ${hm(r.start)}〜${hm(r.end)}`],
+    ['メニュー',`${m.name}（¥${m.price.toLocaleString()}）`],
+    ['担当',st.name],
+    ['チャネル',`<span class="badge" style="background:${c.color}">${c.short}</span> ${c.name}`],
+    ['前金',r.deposit>0?`¥${r.deposit.toLocaleString()} 受領済み`:'なし'],
+    r.note?['メモ',r.note]:null,
+    ['ステータス',`<span class="stbadge st-${r.status}">${STATUS_LABEL[r.status]}</span>`],
+  ].filter(Boolean);
+  let acts='';
+  if(r.status!=='done')acts+=`<button class="btn small ok" data-act="done">来店済みにする</button>`;
+  if(r.status!=='booked')acts+=`<button class="btn small ghost" data-act="booked">予約確定に戻す</button>`;
+  if(r.status!=='noshow')acts+=`<button class="btn small warn" data-act="noshow">無断キャンセル</button>`;
+  if(r.status!=='cancelled')acts+=`<button class="btn small warn" data-act="cancelled">キャンセル</button>`;
+  const blockBtn=needBlock?`<button class="btn small block" data-act="block">HPBブロック済みにする</button>`:'';
+  document.getElementById('detailmodal').innerHTML=`
+    <h3>予約の詳細</h3>
+    <dl class="dl">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
+    ${needBlock?'<div class="dwarn">⚠️ この枠はHPBで手動ブロックが必要です</div>':''}
+    <div class="dacts">${acts}${blockBtn}</div>
+    <div class="row">
+      <button class="btn ghost" style="flex:1" id="d-close">閉じる</button>
+      <button class="btn danger" id="d-del">予約を削除</button>
+    </div>`;
+  const box=document.getElementById('detailmodal');
+  box.querySelectorAll('[data-act]').forEach(b=>b.onclick=()=>{
+    const a=b.dataset.act;
+    if(a==='block'){markBlocked(id);toast('HPBブロック済みにしました')}
+    else{setStatus(id,a);toast(STATUS_LABEL[a]+'にしました')}
+    openDetail(id);
+  });
+  document.getElementById('d-close').onclick=closeDetail;
+  document.getElementById('d-del').onclick=()=>{if(confirm(`${r.name}様の予約を完全に削除しますか?`)){removeReservation(id);closeDetail();toast('予約を削除しました')}};
+  document.getElementById('detailbg').classList.add('show');
+}
+function closeDetail(){document.getElementById('detailbg').classList.remove('show')}
+document.getElementById('detailbg').onclick=e=>{if(e.target.id==='detailbg')closeDetail()};
 
 /* =============== customer booking flow =============== */
-let bk={step:0,menu:null,staff:null,day:null,start:null,name:''};
+let bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:''};
+// 流入元: 予約ページのURL ?src=line|google|instagram で自動判定。各チャネルのリンクから来ると自動タグ付け。
+const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');return['line','google','instagram','own'].includes(s)?s:'own'})();
+// ?src= 付き = お客様導線（LINE/Google/Instagram/自社サイト）。管理タブを隠し予約画面のみ表示（管理台帳をお客様に見せない）。
+const IS_CUSTOMER=new URLSearchParams(location.search).has('src');
 const depositOf=price=>Math.max(1000,Math.round(price*0.3/100)*100); // 前金=料金の約30%(最低¥1,000)
+
+// ===== LINE 本格連携（LIFF + Messaging API）=====
+const LINE_CFG={
+  LIFF_ID:'2010490592-nXUUaxqI',   // シフトボード受付ログインチャネルのLIFF（seamginza予約）
+  PUSH_ENDPOINT:'https://seam-square-pay.suenotakemi.workers.dev/line/push',  // 設定済み（トークン有効確認済み）
+};
+let lineProfile=null; // {userId, displayName}
+function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
+async function initLiff(){
+  if(!LINE_CFG.LIFF_ID)return;              // 未設定なら通常のWebページとして動作
+  try{
+    await loadScript('https://static.line-scdn.net/liff/edge/2/sdk.js');
+    await liff.init({liffId:LINE_CFG.LIFF_ID});
+    if(liff.isLoggedIn()){
+      const pf=await liff.getProfile();
+      lineProfile={userId:pf.userId,displayName:pf.displayName};
+      bk.name=bk.name||lineProfile.displayName;bk.lineUserId=lineProfile.userId;
+      if(document.getElementById('v-book').classList.contains('show'))renderBook();
+    }else if(liff.isInClient()){
+      liff.login();  // LINEアプリ内なら自動ログイン。LINE外ブラウザは通常のWebページとして動作
+    }
+  }catch(e){/* LINE外/失敗 → 通常動作 */}
+}
+async function sendLineConfirm(r){
+  const menu=MENUS.find(m=>m.id===r.menuId),staff=STAFF.find(s=>s.id===r.staffId);
+  if(!LINE_CFG.PUSH_ENDPOINT||!r.lineUserId){toast('（デモ）LINEで予約確認メッセージを送信しました');return}
+  try{
+    await fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({userId:r.lineUserId,type:'confirm',reservation:{
+        date:r.date,time:hm(r.start),menu:menu.name,staff:staff.name,salon:'SEAM 銀座'}})});
+    toast('LINEで予約確認メッセージを送信しました');
+  }catch(e){toast('LINE送信に失敗しました',true)}
+}
 function freeSlots(dayKey,staffIds,dur){
   const out=[];
   for(let t=OPEN;t+dur<=CLOSE;t+=STEP){
@@ -522,17 +714,39 @@ function renderBook(){
   const p=document.getElementById('pbody');
   const stepsHtml=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
   if(bk.step===0){
-    p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">メニューを選択</h3>`+
+    p.innerHTML=stepsHtml+
+      (lineProfile?`<div class="line-logged">✅ LINEログイン済み：${lineProfile.displayName} 様（確認・リマインドをLINEでお届けします）</div>`:'')+
+      `<div class="rlook">
+        <div class="rl-t">🔁 2回目以降の方 — 電話番号で前回のご予約を呼び出せます</div>
+        <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 090-1234-5678）" value="${bk.phone||''}"><button class="btn small pri" id="rlgo">呼び出す</button></div>
+        <div id="rlres"></div>
+      </div>
+      <h3 style="margin:6px 0 12px">メニューを選択</h3>`+
       MENUS.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.name}</div><div class="dt">約${m.min}分</div></div><div class="pr">¥${m.price.toLocaleString()}</div></div>`).join('')+
       `<div class="pnav"><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.menu=o.dataset.m;renderBook()});
+    document.getElementById('rlgo').onclick=()=>{
+      const cust=findCustomer(document.getElementById('rlphone').value);
+      const res=document.getElementById('rlres');
+      if(!cust){res.innerHTML='<div class="rl-none">ご予約履歴が見つかりませんでした。下からメニューをお選びください</div>';return}
+      const m=MENUS.find(x=>x.id===cust.lastMenuId),st=STAFF.find(s=>s.id===cust.lastStaffId);
+      res.innerHTML=`<div class="rl-hit"><div class="rl-hi">おかえりなさい、${cust.name}様（${cust.visits+1}回目）</div>
+        <div class="rl-last">前回: ${m?m.name:''}${st?' / '+st.name:''}</div>
+        <button class="btn pri" id="rlsame">前回と同じ内容で予約する →</button></div>`;
+      document.getElementById('rlsame').onclick=()=>{
+        bk.name=cust.name;bk.phone=cust.phone;bk.menu=cust.lastMenuId;
+        const menu=MENUS.find(x=>x.id===bk.menu);
+        bk.staff=(menu&&menu.staff.includes(cust.lastStaffId))?cust.lastStaffId:'any';
+        bk.day=null;bk.start=null;bk.step=2;renderBook();
+      };
+    };
   }
   if(bk.step===1){
     const menu=MENUS.find(m=>m.id===bk.menu);
     const cands=STAFF.filter(s=>menu.staff.includes(s.id));
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">スタッフを選択</h3>
-      <div class="opt ${bk.staff==='any'?'sel':''}" data-s="any"><div><div class="nm">指名なし</div><div class="dt">空いているスタッフが担当します</div></div></div>`+
-      cands.map(s=>`<div class="opt ${bk.staff===s.id?'sel':''}" data-s="${s.id}"><div><div class="nm">${s.name}</div><div class="dt">${s.role}</div></div></div>`).join('')+
+      <div class="opt ${bk.staff==='any'?'sel':''}" data-s="any"><div><div class="nm">指名なし</div><div class="dt">空いているスタッフが担当します（最短でご案内）</div></div></div>`+
+      cands.map(s=>`<div class="opt ${bk.staff===s.id?'sel':''}" data-s="${s.id}"><div><div class="nm">${s.name} <span class="yrs">歴${s.yrs}年</span></div><div class="dt">${s.catch}</div></div></div>`).join('')+
       `<div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext" ${bk.staff?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.staff=o.dataset.s;renderBook()});
   }
@@ -557,6 +771,7 @@ function renderBook(){
     const st=STAFF.find(s=>s.id===sid);
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">お客様情報</h3>
       <div class="field"><label>お名前</label><input id="bname" value="${bk.name}" placeholder="例）鈴木 一花"></div>
+      <div class="field"><label>電話番号</label><input id="bphone" type="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
       <dl class="summary">
         <dt>メニュー</dt><dd>${menu.name} — ¥${menu.price.toLocaleString()}</dd>
         <dt>日時</dt><dd>${bk.day.replace(/-/g,'/')} ${hm(bk.start)}〜${hm(bk.start+menu.min)}</dd>
@@ -565,6 +780,7 @@ function renderBook(){
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
     document.getElementById('bnext2').onclick=()=>{
       bk.name=document.getElementById('bname').value.trim()||'ゲスト';
+      bk.phone=document.getElementById('bphone').value.trim();
       // 先に枠が空いているか確認（決済後に取られる事故を防ぐ）
       if(conflicts(bk.day,sid,bk.start,bk.start+menu.min).length){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk.step=4;renderBook();
@@ -575,9 +791,10 @@ function renderBook(){
     const sid=bk.staff==='any'?bk._sid:bk.staff;
     const dep=depositOf(menu.price);
     const commit=(depositAmt)=>{
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,channel:'own',deposit:depositAmt});
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,phone:bk.phone||'',channel:BOOK_SRC,deposit:depositAmt,lineUserId:bk.lineUserId||''});
       if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
+      if(BOOK_SRC==='line')sendLineConfirm(r.resv);  // LINE予約は確認メッセージを自動送信
     };
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:4px">事前決済（デポジット）</h3>
       <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです</p>
@@ -608,7 +825,7 @@ function renderBook(){
       <div class="pnav"><button class="btn line" id="baddline">＋ LINE友だち追加</button></div>
       <button class="btn linktext" id="bagain">続けてもう1件予約する</button></div>`;
     document.getElementById('baddline').onclick=()=>toast('（デモ）LINE友だち追加へ遷移します');
-    document.getElementById('bagain').onclick=()=>{bk={step:0,menu:null,staff:null,day:null,start:null,name:''};renderBook()};
+    document.getElementById('bagain').onclick=()=>{bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:''};renderBook()};
     return;
   }
   const nx=document.getElementById('bnext'),bkb=document.getElementById('bback');
@@ -619,14 +836,15 @@ function renderBook(){
 /* =============== channels view =============== */
 const CH_INFO=[
   {k:'own',status:['ok','稼働中'],how:'<b>自社予約エンジン</b>＝在庫マスタの本体。ここが全チャネルの土台',desc:'手数料ゼロ。左の「予約ページ」タブが実装デモです'},
-  {k:'line',status:['clean','クリーン'],how:'<b>LIFF</b>で自社予約ページをLINE内に表示 + Messaging APIでリマインド通知',desc:'公式「LINEで予約」は飲食店のみ・指定パートナー限定のため、LIFF自前実装が正攻法'},
-  {k:'google',status:['clean','クリーン'],how:'ビジネスプロフィールの<b>予約リンク</b>に自社予約URLを設定（無料・即日）',desc:'「Googleで予約」(Reserve with Google)は承認制パートナー限定。予約リンク方式で同等の導線を確保'},
-  {k:'instagram',status:['clean','クリーン'],how:'プロフィールの<b>ウェブサイト/アクションリンク</b>＋ストーリーズリンクで自社予約へ',desc:'「予約する」ボタンはMeta提携パートナー経由のみ。リンク導線で実質カバー'},
+  {k:'line',status:['clean','連結'],how:'<b>LIFF</b>で自社予約ページをLINE内に表示 + Messaging APIでリマインド通知',desc:'公式「LINEで予約」は飲食店のみ・指定パートナー限定のため、LIFF自前実装が正攻法。下の予約リンクを設置'},
+  {k:'google',status:['clean','連結'],how:'ビジネスプロフィールの<b>予約リンク</b>に自社予約URLを設定（無料・即日）',desc:'「Googleで予約」(Reserve with Google)は承認制パートナー限定。予約リンク方式で同等の導線を確保。下の予約リンクを設置'},
+  {k:'instagram',status:['clean','連結'],how:'プロフィールの<b>ウェブサイト/アクションリンク</b>＋ストーリーズリンクで自社予約へ',desc:'「予約する」ボタンはMeta提携パートナー経由のみ。リンク導線で実質カバー。下の予約リンクを設置'},
   {k:'square',status:['clean','公式API'],how:'<b>Square Bookings API</b>で双方向同期（日本対応・読取/書込/Webhook）。Squareで入った予約も台帳に集約',desc:'HPBと違い公式API。スクレイピング不要でクリーン連携。上の台帳にSquare予約デモを表示中'},
   {k:'squarepay',name:'Square 決済',short:'¥',color:'#006aff',status:['clean','決済'],how:'<b>Square Web Payments SDK</b>で事前決済・前金。予約と同じSquareアカウントで完結',desc:'予約・決済・POS・売上を1つのSquareダッシュボードで一元管理。契約も1本。「予約ページ」タブで実装デモ'},
   {k:'hpb',status:['risk','要ブロック運用'],how:'<b>予約通知メールを取込</b>（読み取り）。他チャネル予約は<b>ダッシュボードの要ブロック</b>で手動対応',desc:'公式API非公開。自動書き込みは規約グレーのため行わない。全自動が必要ならかんざし等を併用'},
   {k:'rakuten',status:['ext','取込のみ'],how:'<b>通知メール取込</b>（HPBと同方式）。書き込みは手動 or 連携SaaS',desc:'公式APIなし。かんざし等が楽天ビューティー連携に対応'},
   {k:'minimo',status:['ext','取込のみ'],how:'<b>通知メール取込</b>。アプリ内予約が主軸のため導線変更は不可',desc:'公式APIなし。かんざし等が連携対応'},
+  {k:'kanzashi',name:'かんざしSaaS連携',short:'かん',color:'#7c3aed',status:['dev','将来'],how:'<b>SyncProvider</b>を差し替えるだけでHPB/楽天/minimoへ書き込み同期',desc:'自社エンジンをマスタに保ったまま、契約後にかんざし経由で全ポータル反映。疎結合でフォールバック可（ARCHITECTURE.md）'},
 ];
 function renderChan(){
   const g=document.getElementById('chgrid');g.innerHTML='';
@@ -638,39 +856,100 @@ function renderChan(){
   });
 }
 
-/* mail import simulator */
-const SAMPLE_MAIL=`【サロンボード】ネット予約が入りました
+/* mail import simulator — 実際のSALON BOARD通知フォーマットに対応 */
+const _md=(()=>{const t=today();return `${t.getFullYear()}年${pad(t.getMonth()+1)}月${pad(t.getDate())}日（${WD[t.getDay()]}）`})();
+const SAMPLE_MAIL=`SEAM 銀座店【シーム】様
 
-■予約情報
-予約番号：HB2607130042
-ご来店日時：${dkey(addDays(today(),1)).replace(/-/g,'/')} 14:00
-メニュー：カット + カラー
-スタイリスト：青山 さくら
+HOT PEPPER Beauty「SALON BOARD」にお客様から
+ご予約が入りました。
 
-■お客様情報
-お名前：西村 陽葵 様
-電話番号：090-XXXX-XXXX`;
+◇ご予約内容
+■予約番号
+　BF30930139
+■氏名
+　岩下 紘人（イワシタ ヒロト）
+■来店日時
+　${_md}16:30
+■スタイリスト
+　永本 ミツル
+■メニュー
+　カット＋ヘッドスパ
+　（メニュー金額：5,500円）
+　（施術時間目安：1時間）
+■指名料
+　0円
+■合計金額
+　お支払い予定金額　5,500円
+
+予約受付日時：${_md}16:13`;
 document.getElementById('mailraw').value=SAMPLE_MAIL;
 document.getElementById('mailgo').onclick=()=>{
   const raw=document.getElementById('mailraw').value;
   const chan=document.getElementById('mailchan').value;
-  const dt=raw.match(/来店日時[：:]\s*(\d{4})[\/年](\d{1,2})[\/月](\d{1,2})日?\s+(\d{1,2}):(\d{2})/);
-  const nm=raw.match(/お名前[：:]\s*(.+?)(?:\s*様)?\s*$/m);
-  const mn=raw.match(/メニュー[：:]\s*(.+)$/m);
-  const stf=raw.match(/スタイリスト[：:]\s*(.+)$/m);
-  if(!dt||!nm){toast('⚠️ 日時またはお名前をパースできませんでした',true);return}
-  const menu=MENUS.filter(m=>mn&&mn[1].trim().includes(m.name)).sort((a,b)=>b.name.length-a.name.length)[0]||MENUS[0];
-  const staff=STAFF.find(s=>stf&&stf[1].trim().includes(s.name.replace(/\s/g,' ').split(' ')[0]))||STAFF.find(s=>menu.staff.includes(s.id));
+  // SALON BOARD形式: 「■ラベル」の次行に値。旧「ラベル：値」形式にもフォールバック対応。
+  const sb=label=>{const m=raw.match(new RegExp('■'+label+'[^\\n]*\\n[\\s　]*([^\\n]+)'));return m?m[1].trim():''};
+  const inline=label=>{const m=raw.match(new RegExp(label+'[：:]\\s*(.+)'));return m?m[1].trim():''};
+  const nameRaw=sb('氏名')||inline('お名前');
+  const name=nameRaw.replace(/[（(][^)）]*[)）]\s*$/,'').replace(/\s*様\s*$/,'').trim();  // フリガナ・様を除去
+  const dtStr=sb('来店日時')||inline('来店日時')||inline('ご来店日時');
+  const dt=dtStr.match(/(\d{4})[年\/](\d{1,2})[月\/](\d{1,2})日?[^\d]*(\d{1,2}):(\d{2})/);
+  const stylist=sb('スタイリスト')||inline('スタイリスト');
+  const menuName=sb('メニュー')||inline('メニュー');
+  const resNo=sb('予約番号')||inline('予約番号');
+  if(!dt||!name){toast('⚠️ 日時またはお名前をパースできませんでした',true);return}
+  const dm=raw.match(/施術時間目安[：:]?\s*(?:(\d+)\s*時間)?\s*(?:(\d+)\s*分)?/);
+  const menu=MENUS.filter(m=>menuName.includes(m.name)).sort((a,b)=>b.name.length-a.name.length)[0]||MENUS[0];
+  const dur=(dm&&(+dm[1]||+dm[2]))?((+dm[1]||0)*60+(+dm[2]||0)):menu.min;
+  // HPBスタイリスト名 → 自社スタッフ対応づけ。未登録なら空き担当に自動割当し、元担当はメモに残す。
+  const sname=stylist.replace(/\s/g,'');
+  let staff=STAFF.find(s=>sname&&(sname.includes(s.name.split(' ')[0])||s.name.replace(/\s/g,'').includes(sname)));
+  const mapped=!staff&&!!stylist;
+  if(!staff)staff=STAFF.find(s=>menu.staff.includes(s.id))||STAFF[0];
   const start=(+dt[4])*60+(+dt[5]);
   const date=`${dt[1]}-${pad(+dt[2])}-${pad(+dt[3])}`;
-  const r=addReservation({date,staffId:staff.id,start,end:start+menu.min,menuId:menu.id,name:nm[1].trim(),channel:chan});
-  if(!r.ok){toast(`⚠️ ダブルブッキング検知: ${hm(r.conflict.start)}〜 ${r.conflict.name}様（${CHANNELS[r.conflict.channel].short}）と重複。要確認リストへ`,true);return}
-  toast(`✅ ${nm[1].trim()}様の予約を${CHANNELS[chan].short}から取込→台帳に登録しました（${date.replace(/-/g,'/')} ${hm(start)}）`);
+  const note=[resNo&&('予約番号 '+resNo),stylist&&('HPB担当 '+stylist),menuName].filter(Boolean).join(' / ');
+  const r=addReservation({date,staffId:staff.id,start,end:start+dur,menuId:menu.id,name,note,channel:chan});
+  if(!r.ok){toast(`⚠️ ダブルブッキング検知: ${hm(r.conflict.start)}〜 ${r.conflict.name}様（${CHANNELS[r.conflict.channel].short}）と重複。要確認へ`,true);return}
+  toast(`✅ ${name}様を${CHANNELS[chan].short}から取込（${date.slice(5).replace('-','/')} ${hm(start)}）${mapped?` / 担当を${staff.name}に自動割当`:''}`);
 };
+
+/* =============== link generator (LINE / Google / Instagram) =============== */
+function renderLinks(){
+  const cont=document.getElementById('linkrows');if(!cont)return;
+  const base=(document.getElementById('baseurl').value||'https://booking.seam.site/book').trim();
+  const rows=[
+    {k:'line',steps:'公式アカウントのリッチメニュー・あいさつメッセージに設置。<b>LIFF化</b>でLINE内で予約完結＋<b>Messaging API</b>で前日リマインドを自動送信'},
+    {k:'google',steps:'ビジネスプロフィール →「予約リンク」に貼るだけ（無料・即日）。マップ/検索の予約ボタンから流入'},
+    {k:'instagram',steps:'プロフィールの「予約する」ボタン／ウェブサイトリンク、ストーリーズのリンクスタンプに設置'},
+  ];
+  cont.innerHTML=rows.map(r=>{
+    const c=CHANNELS[r.k],url=`${base}?src=${r.k}`;
+    return `<div class="lg-row">
+      <div class="lg-top"><div class="lg-dot" style="background:${c.color}">${c.short.slice(0,2)}</div><h4>${c.name}</h4></div>
+      <div class="lg-url"><code>${url}</code><button class="lg-copy" data-url="${url}">コピー</button></div>
+      <div class="lg-steps">${r.steps}</div>
+      <a class="lg-prev" href="?src=${r.k}">▶ このチャネルの予約ページをプレビュー</a>
+    </div>`;
+  }).join('');
+  cont.querySelectorAll('.lg-copy').forEach(b=>b.onclick=()=>{try{navigator.clipboard.writeText(b.dataset.url)}catch(e){}toast('リンクをコピーしました')});
+}
 
 /* =============== boot =============== */
 function refreshAll(){renderDash();renderCal();renderChan();if(bk.step===2)renderBook()}
-renderDash();renderCal();renderBook();renderChan();
+renderDash();renderCal();renderBook();renderChan();renderLinks();
+document.getElementById('baseurl').oninput=renderLinks;
+if(BOOK_SRC!=='own'){
+  const s=document.querySelector('#v-book .phead .s');if(s)s.textContent=CHANNELS[BOOK_SRC].name+'経由 · WEB RESERVATION';
+}
+if(IS_CUSTOMER){
+  // お客様モード: 管理タブを隠し、予約画面のみ全画面表示（LINE/Google/Instagram/自社サイトからの導線）
+  document.querySelector('header nav').style.display='none';
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.getElementById('v-book').classList.add('show');
+  const bh=document.querySelector('#v-book h2');if(bh)bh.style.display='none';
+  const bl=document.querySelector('#v-book .lead');if(bl)bl.style.display='none';
+}
+if(BOOK_SRC==='line')initLiff();  // LINE経由ならLIFF自動ログインを試行（LIFF_ID未設定なら通常動作）
 </script>
 </body>
 </html>

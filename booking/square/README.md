@@ -48,12 +48,22 @@ AMOUNT: 1500,
 ブラウザで開くと、カード入力欄が出ます。**PAY_ENDPOINT が空でも、トークン化＋3DSまで**動くので、ID が正しいか確認できます。
 
 ### 3. バックエンド（Worker）をデプロイ
+
+**かんたん版（推奨・1行）:**
+```bash
+bash ~/Downloads/code_sandbox_light_a3728b14_1778910042/booking/square/deploy.sh
+```
+`deploy.sh` がデプロイ → Access Token 登録の順で対話的に進めてくれます。
+
+**手動版:**
 ```bash
 cd booking/square
-npx wrangler login
-npx wrangler secret put SQUARE_ACCESS_TOKEN   # ← Sandbox の Access Token を貼る（秘密）
-npx wrangler deploy
+npx wrangler login                            # 済んでいれば不要
+npx wrangler deploy                           # ← 先にデプロイ（Workerを作成）
+npx wrangler secret put SQUARE_ACCESS_TOKEN   # ← 次に Sandbox の Access Token を貼る（秘密）
 ```
+> ⚠️ `wrangler` 単体では動きません。必ず **`npx wrangler`** を使ってください（グローバル未インストールのため）。
+
 デプロイ後に表示される URL（例 `https://seam-square-pay.xxx.workers.dev`）に `/pay` を付けたものを、
 `pay.html` の `PAY_ENDPOINT` に設定 → 再読み込み。
 
@@ -73,6 +83,60 @@ Square Developer の **Sandbox Dashboard** に決済が記録されます。
 3. `ALLOW_ORIGIN` を決済フォームの実オリジンに絞る（`*` のままにしない）
 
 ---
+
+## スタッフ別売上ブリッジ（Square POS → シフトアプリ）
+
+`worker.js` に `GET /sales` を追加済み。Square POS の売上を**スタッフ別に集計**して返します。
+シフト表（誰が入っているか）と並べると、人時売上・指名売上が見えます。
+
+- **使うには Worker を再デプロイ**（`worker.js` を更新したため）:
+  ```bash
+  cd booking/square && npx wrangler deploy
+  ```
+- `wrangler.toml` の `SQUARE_LOCATION_ID`（銀座の Location ID）を集計対象に使用
+- 動作確認: `sales.html` を開いて期間を選び「集計する」。または直接:
+  ```
+  https://<worker>.workers.dev/sales?from=2026-07-13&to=2026-07-13
+  ```
+- 返り値: `{ total, staff:[{ name, count, totalSales }] }`
+- ⚠️ 売上がスタッフに紐づくには、**Square POS で「担当者を選んで会計」**していることが前提
+- 前提: Square 側スタッフ（team_member_id）と、シフトアプリのスタッフ（及川/ANZU/CHIKA）の対応づけ
+
+## LINE 本格連携（LIFF + Messaging API）
+
+`worker.js` に `POST /line/push`（1件送信）と `POST /line/reminders`（一括リマインド）を追加済み。
+予約ページ（`index.html`）には LIFF 連携を実装済み（`LINE_CFG` を設定すると有効化）。
+
+### 1. LINE 側の準備（あなたの作業）
+1. [LINE Developers](https://developers.line.biz/) で **Messaging API チャネル**を作成
+2. **チャネルアクセストークン（長期）**を発行 → これが秘密鍵
+3. **LIFF アプリ**を追加（エンドポイントURL = 予約ページのURL）→ **LIFF ID** を取得
+
+### 2. Worker にトークンを登録＆再デプロイ
+```bash
+cd booking/square
+npx wrangler secret put LINE_CHANNEL_ACCESS_TOKEN   # ← チャネルアクセストークンを貼る（秘密）
+npx wrangler deploy                                  # /line/push /line/reminders を有効化
+```
+
+### 3. 予約ページ（index.html）に設定
+```js
+const LINE_CFG = {
+  LIFF_ID: '<あなたのLIFF ID>',                       // 公開OK
+  PUSH_ENDPOINT: 'https://<worker>.workers.dev/line/push',
+};
+```
+これで、LINEから予約ページを開くと **自動ログイン（LIFF）→ お名前プリフィル → 予約時にLINEで確認メッセージ自動送信**。
+
+### 4. 前日リマインドの自動化（Cron）
+`wrangler.toml` に cron を追加し、`scheduled()` で「明日の予約」を D1 から読んで push:
+```toml
+[triggers]
+crons = ["0 9 * * *"]   # 毎朝9時
+```
+D1 未導入の間は、予約DBを持つ側から `POST /line/reminders`（`{reservations:[{userId,date,time,menu,staff}]}`）を叩けば一括送信できます。
+
+> 🔑 チャネルアクセストークンは **Worker のシークレット**にのみ。`index.html`（フロント）には LIFF_ID と PUSH_ENDPOINT だけ（どちらも公開OK）。
 
 ## 次の段階（予約同期）
 Square で入った予約を一元台帳に取り込むには、Bookings API の Webhook
