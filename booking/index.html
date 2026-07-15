@@ -1461,7 +1461,7 @@ function renderBook(){
     const stName=(STAFF.find(s=>s.id===sid)||{}).name||'';
     const dep=depositOf(menu.price-disc);
     const commit=(depositAmt)=>{
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||''});
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true});
       if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
       if(r.resv.lineUserId)sendLineConfirm(r.resv);        // LINE友だちにはLINE確認

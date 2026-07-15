@@ -15,8 +15,26 @@
  */
 
 import PostalMime from 'postal-mime';   // HPBメールのMIME/日本語解析（npm install postal-mime）
+import { EmailMessage } from 'cloudflare:email';   // オーナー通知（SEND_EMAILバインド・宛先はwrangler.tomlのdestination_address）
 
 const SQUARE_VERSION = '2025-01-23';
+const OWNER_FROM = 'yoyaku@seam.site';   // 送信元（seam.siteドメイン）
+const OWNER_TO = 'suenotakemi@gmail.com';// 通知先（SEND_EMAILの検証済み宛先）
+
+// オーナーのGmailへ通知メール（Cloudflare SEND_EMAIL・自分の検証済み宛先のみ送信可）
+async function notifyOwner(env, subject, text) {
+  if (!env.SEND_EMAIL) return;
+  const b64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
+  const raw = [
+    `From: SEAM 予約 <${OWNER_FROM}>`, `To: ${OWNER_TO}`,
+    `Subject: =?UTF-8?B?${b64(subject)}?=`,
+    `Message-ID: <${crypto.randomUUID()}@seam.site>`,
+    `MIME-Version: 1.0`, `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: base64`, ``, b64(text),
+  ].join('\r\n');
+  try { await env.SEND_EMAIL.send(new EmailMessage(OWNER_FROM, OWNER_TO, raw)); }
+  catch (e) { console.log('notifyOwner失敗:', e.message); }
+}
 
 // 予約データ用: 台帳スタッフ・メニュー（アプリと同一）。メール取込のマッピングに使用。
 const STAFF = [
@@ -82,6 +100,9 @@ export default {
            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
         ).bind(r.id, r.date, r.staffId, r.start, r.end, r.menuId, r.name, '', '', r.note, 'hpb', 'booked', 1, 0, '', new Date().toISOString()).run();
         console.log('D1へINSERT完了 id=', r.id);
+        // オーナーへ通知（HPB予約が入った）
+        await notifyOwner(env, `新規HPB予約 ${r.name}様 ${r.date.slice(5)} ${min2hm(r.start)}`,
+          `HOT PEPPERから予約が入りました。\n\n日時: ${r.date.replace(/-/g, '/')} ${min2hm(r.start)}〜\nお客様: ${r.name}\n${r.note}`);
       }
     } catch (e) { console.log('EMAIL処理エラー:', e.message); }
     // スタッフの受信箱にも転送（send_email バインディング経由）
@@ -286,6 +307,12 @@ async function handlePostReservation(request, env, cors) {
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).bind(id, o.date, o.staffId, o.start, o.end, o.menuId || '', o.name || 'お客様', o.phone || '', o.email || '', o.note || '',
     o.channel || 'own', o.status || 'booked', o.channel === 'hpb' ? 1 : (o.hpbBlocked ? 1 : 0), o.deposit || 0, o.lineUserId || '', new Date().toISOString()).run();
+  // オンライン予約（お客様導線）のみオーナー通知。管理側の手動登録は notify を付けない。
+  if (o.notify) {
+    const ch = { own: '自社サイト', line: 'LINE', google: 'Google', instagram: 'Instagram' }[o.channel] || o.channel;
+    await notifyOwner(env, `新規ネット予約 ${o.name || 'お客様'} ${(o.date || '').slice(5)}`,
+      `${ch}から予約が入りました。\n\n日時: ${(o.date || '').replace(/-/g, '/')} ${min2hm(o.start)}〜\nお客様: ${o.name || ''}${o.phone ? '（' + o.phone + '）' : ''}`);
+  }
   return json({ ok: true, id }, 200, cors);
 }
 
