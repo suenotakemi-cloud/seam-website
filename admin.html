@@ -323,7 +323,7 @@
     return {configured:true, generatedAt:Date.now(), windowDays:days, _demo:true, profile:(function(){var P=demoProfile();window.__demoP=P;return P;})(),
       profilePrev:(function(){var P=window.__demoP||{};function sc(o,f){var r={};for(var k in (o||{}))r[k]=Math.round(o[k]*f);return r;}
         return {n:Math.round((P.n||0)*0.86),kuseByAge:sc(P.kuseByAge,0.9),bleachByAge:sc(P.bleachByAge,0.8),upgradeTotal:sc(P.upgradeTotal,0.8),stHiddenN:Math.round((P.stHiddenN||0)*0.7),rediagN:Math.round((P.rediagN||0)*0.5),rediagDaysSum:Math.round((P.rediagDaysSum||0)*0.5)};})(),
-      kpiWin:{cur:{finder_start:620,finder_complete:562,finder_cta:162},prev:{finder_start:540,finder_complete:471,finder_cta:128}},
+      kpiWin:{cur:{finder_start:1580,finder_complete:1420,finder_cta:410},prev:{finder_start:1330,finder_complete:1180,finder_cta:320}},
       seg:{age:null,cs:null},
       skin:(function(){ var sc=486;
         return { starts:Math.round(sc*1.13), completes:sc, ctas:Math.round(sc*0.29),
@@ -352,8 +352,8 @@
       dailyFull:d.map(function(x){var fs=Math.round(x.c*1.15+rnd()*2);var fc=Math.min(fs,Math.round(fs*(0.87+rnd()*0.09)));return {d:x.d,pv:Math.round(fs*22+rnd()*60),rpv:Math.round(3+rnd()*9),fs:fs,fc:fc,cta:Math.round(fc*0.3+rnd()*1.5),sres:Math.round(rnd()*3),pres:Math.round(rnd()*2.4),rap:Math.round(rnd()*3),sj:Math.round(rnd()*4)};}).reverse().slice(0,Math.min(days,62)),
       brandSearch:[{label:'オージュア',c:41},{label:'ミルボン',c:33},{label:'頭皮',c:29},{label:'kerastase',c:22},{label:'しっとり シャンプー',c:18},{label:'スカルプ',c:14},{label:'デジタルパーマ',c:9},{label:'ドライヤー',c:8}],
       brandClick:[{label:'Aujua',c:88},{label:'Kérastase',c:64},{label:'Global Milbon',c:52},{label:'SUBLIMIC',c:38},{label:'BYKARTE',c:31},{label:'TOKIO INKARAMI',c:26},{label:'Davines',c:22},{label:'ReFa',c:19}],
-      finderFunnel:{opened:1230,started:620,completed:562},
-      serviceReco:{salon:95,spa:120,both:70,none:277},
+      finderFunnel:{opened:3100,started:1580,completed:1420},
+      serviceReco:{salon:240,spa:300,both:180,none:700},
       bookingFunnel:{salon:{pv:190,area:84,hpb:31,stylist:12,sticky:9},spa:{pv:305,area:139,hpb:58,spanist:8,sticky:11}},
       pageViews:[{path:'/',c:2140},{path:'/finder',c:1230},{path:'/brand',c:640},{path:'/shop',c:470},{path:'/headspa',c:305},{path:'/onlineshop',c:280},{path:'/hairsalon',c:190},{path:'/guide-scalp',c:88}],
       pageEngage:[{path:'/',c:1650,sec:46,sd:58},{path:'/finder',c:980,sec:186,sd:74},{path:'/brand',c:520,sec:95,sd:62},{path:'/shop',c:390,sec:52,sd:66},{path:'/headspa',c:260,sec:71,sd:63},{path:'/onlineshop',c:230,sec:38,sd:55},{path:'/hairsalon',c:160,sec:49,sd:60},{path:'/guide-scalp',c:74,sec:112,sd:81}],
@@ -1038,7 +1038,17 @@
     return '﻿'+rows.map(function(r){return r.join(',');}).join('\n');
   }
 
-  function showApp(){ el('loginOverlay').style.display='none'; el('app').hidden=false; }
+  function showApp(){
+    el('loginOverlay').style.display='none'; el('app').hidden=false;
+    // デモ画面を実データと見間違えない大型バナー(実データが消えたと誤解される事故があった)
+    if(DEMO && !document.getElementById('demoStrip')){
+      var ds=document.createElement('div');
+      ds.id='demoStrip';
+      ds.style.cssText='position:sticky;top:0;z-index:999;background:#B4453A;color:#fff;text-align:center;padding:11px 14px;font-size:13.5px;line-height:1.6;letter-spacing:.02em';
+      ds.innerHTML='ここは<b>サンプルデータのデモ画面</b>です（数字はすべて作り値・実際の計測データではありません）<br><span style="font-size:12px;opacity:.9">実データは <a href="/admin" style="color:#fff;text-decoration:underline;font-weight:600">seam.site/admin</a> にログインして確認してください（実データは消えていません）</span>';
+      document.body.prepend(ds);
+    }
+  }
   function showLogin(msg){ el('app').hidden=true; el('loginOverlay').style.display='flex'; if(msg)el('loginErr').textContent=msg; }
 
   function load(){
