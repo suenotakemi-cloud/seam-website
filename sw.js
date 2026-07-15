@@ -2,7 +2,7 @@
    - HTML: network-first (常に最新、オフライン時はキャッシュ)
    - 静的アセット (vendor/css/js/json/font/画像): cache-first (2回目以降は即ロード)
    バージョンを上げるとキャッシュが刷新される */
-const VERSION = 'seam-v150';
+const VERSION = 'seam-v151';
 const CORE_CACHE = VERSION + '-core';
 const ASSET_CACHE = VERSION + '-assets';
 
@@ -10,6 +10,8 @@ const CORE = [
   './',
   './index.html',
   './finder.html',
+  './skinfinder.html',
+  './recruit.html',
   './brand.html',
   './shop.html',
   './haircareshop.html',

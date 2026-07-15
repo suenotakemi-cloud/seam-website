@@ -3428,6 +3428,16 @@ function renderAllCategories(searchQuery) {
     `;
     section.appendChild(header);
 
+    // スキンタブには美肌ヒストリー診断への入口を常設(商品モードだけでは見つけられない指摘への対応)
+    if (catKey === 'skincare') {
+      const sfb = document.createElement('a');
+      sfb.href = 'skinfinder.html';
+      sfb.setAttribute('data-track-click', 'skinfinder_dir');
+      sfb.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 20px;padding:14px 16px;border:1px solid rgba(184,148,90,.4);border-radius:2px;background:linear-gradient(135deg,#FBF7EE,#F6F1E7);text-decoration:none;color:#2E2C28;';
+      sfb.innerHTML = '<span style="min-width:0;"><span style="display:block;font-size:9.5px;letter-spacing:.2em;color:#B8945A;font-family:Inter,monospace;">SKIN HISTORY FINDER</span><span style="display:block;font-size:13.5px;margin-top:3px;font-weight:500;">迷ったら、肌の物語から選ぶ — 美肌ヒストリー診断</span><span style="display:block;font-size:11px;margin-top:2px;color:rgba(60,54,46,.7);">15の質問で、なりたい肌への「次の一本」がわかります</span></span><span aria-hidden style="flex-shrink:0;color:#B8945A;font-size:16px;">→</span>';
+      section.appendChild(sfb);
+    }
+
     // グリッド
     const grid = document.createElement('div');
     grid.className = 'cat-section-grid';
@@ -5120,8 +5130,9 @@ window.SEAM_PAGE_I18N = {
       bn = document.createElement('a');
       bn.id = 'skinFinderBanner';
       bn.href = 'skinfinder.html';
+      bn.setAttribute('data-track-click', 'skinfinder_pm');
       bn.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 2px;padding:13px 16px;border:1px solid rgba(184,148,90,.4);border-radius:2px;background:linear-gradient(135deg,#FBF7EE,#F6F1E7);text-decoration:none;color:#2E2C28;';
-      bn.innerHTML = '<span style="min-width:0;"><span style="display:block;font-size:9.5px;letter-spacing:.2em;color:#B8945A;font-family:Inter,monospace;">SKIN HISTORY FINDER</span><span style="display:block;font-size:13px;margin-top:3px;font-weight:500;">迷ったら、肌の物語から選ぶ — 美肌ヒストリー診断</span><span style="display:block;font-size:11px;margin-top:2px;color:rgba(60,54,46,.7);">9つの質問で、なりたい肌への「次の一本」がわかります</span></span><span aria-hidden style="flex-shrink:0;color:#B8945A;font-size:16px;">→</span>';
+      bn.innerHTML = '<span style="min-width:0;"><span style="display:block;font-size:9.5px;letter-spacing:.2em;color:#B8945A;font-family:Inter,monospace;">SKIN HISTORY FINDER</span><span style="display:block;font-size:13px;margin-top:3px;font-weight:500;">迷ったら、肌の物語から選ぶ — 美肌ヒストリー診断</span><span style="display:block;font-size:11px;margin-top:2px;color:rgba(60,54,46,.7);">15の質問で、なりたい肌への「次の一本」がわかります</span></span><span aria-hidden style="flex-shrink:0;color:#B8945A;font-size:16px;">→</span>';
       const parent = document.getElementById('pmFilterRowSub');
       (parent || catRow).insertAdjacentElement('afterend', bn);
     }
