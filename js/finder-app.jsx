@@ -4575,6 +4575,21 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
               </button>
             </div>
           )}
+
+          {/* 肌ストーリー(美肌ヒストリー)への橋 — トップの「髪格診断 & 肌ストーリー」カードから来た人の受け皿 */}
+          <a
+            href="skinfinder.html"
+            onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'skinfinder_finder' }); } catch (e) {} }}
+            className="mt-7 sm:mt-8 flex items-center justify-between gap-4 max-w-xl border border-gold/40 rounded-[2px] px-5 sm:px-6 py-4"
+            style={{ background: 'linear-gradient(135deg,#FBF7EE,#F5EFE3)', textDecoration: 'none' }}
+          >
+            <span className="min-w-0">
+              <span className="block font-mono tracking-widest2 text-[9px] uppercase text-gold">Skin Story</span>
+              <span className="mt-1 block font-serif text-[15px] sm:text-[16.5px] text-ink leading-snug">肌も 診断できます — 肌ストーリー</span>
+              <span className="mt-0.5 block text-[11px] sm:text-[11.5px] text-charcoal/70 leading-[1.7]">美肌ヒストリー 15の質問で肌質とこれからを読み解きます</span>
+            </span>
+            <span aria-hidden className="shrink-0 text-gold text-[18px]">→</span>
+          </a>
         </div>
 
         <section className="mt-16 sm:mt-24 anim-fade-up" style={{ animationDelay: '240ms' }}>
