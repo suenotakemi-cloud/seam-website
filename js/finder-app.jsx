@@ -3738,6 +3738,9 @@ function SalonSuggestCard({ reason }) {
     color:      { h: 'その色 サロンで長く楽しめます', b: 'カラーの退色が出ています 退色ケアや次のカラー設計はサロンが得意です 診断結果を持って相談すれば 色持ちの提案につながります' },
   };
   const _c = _M[reason] || _M.damage;
+  // 実測: 提案の露出81%に対しサロンページ経由の予約が細い→カード内で信頼(実評価)+料金目安+予約直行を完結させる
+  const _price = reason === 'color' ? 'カット＋カラー ¥12,000〜' : '縮毛矯正 ¥15,500〜';
+  const _chip = 'inline-flex items-center rounded-full border border-gold/45 bg-ivory/85 px-2.5 py-1 text-[10.5px] text-charcoal/85 whitespace-nowrap';
   useEffect(() => { try { window.seamTrack && window.seamTrack('sec_view', { label: 'salon_finder' }); } catch (e) {} }, []);
   return (
     <div className="mt-7 rounded-[2px] border border-gold/40 bg-cream/60 overflow-hidden">
@@ -3749,9 +3752,21 @@ function SalonSuggestCard({ reason }) {
           <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">— Hair Salon</p>
           <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">{_c.h}</h4>
           <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">{_c.b}</p>
-          <a href="hairsalon.html#booking" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'salon_finder' }); } catch (e) {} }} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
-            <span>サロンで相談する</span><span aria-hidden>→</span>
-          </a>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <span className={_chip}>★4.7+ HPB口コミ</span>
+            <span className={_chip}>完全個室</span>
+            <span className={_chip}>カット ¥6,600</span>
+            <span className={_chip}>{_price}</span>
+          </div>
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2.5">
+            <button type="button" data-open-resv data-resv-from="salon_suggest" className="inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
+              <span>予約ページへ</span><span aria-hidden>→</span>
+            </button>
+            <a href="hairsalon.html#booking" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'salon_finder' }); } catch (e) {} }} className="font-serif text-[12px] text-charcoal/70 underline underline-offset-4 decoration-gold/50 hover:text-ink transition-colors">
+              サロンについて詳しく
+            </a>
+          </div>
+          <p className="mt-2 text-[9.5px] text-charcoal/50">料金は目安 メニュー・店舗により異なります</p>
         </div>
       </div>
     </div>
@@ -3760,6 +3775,7 @@ function SalonSuggestCard({ reason }) {
 
 /* ⚜ 頭皮ニーズが深い診断者へのヘッドスパ提案 — 診断→spa事業の橋(常設) */
 function SpaSuggestCard() {
+  const _chip = 'inline-flex items-center rounded-full border border-gold/45 bg-ivory/85 px-2.5 py-1 text-[10.5px] text-charcoal/85 whitespace-nowrap';
   useEffect(() => { try { window.seamTrack && window.seamTrack('sec_view', { label: 'spa_finder' }); } catch (e) {} }, []);
   return (
     <div className="mt-7 rounded-[2px] border border-gold/40 bg-cream/60 overflow-hidden">
@@ -3772,10 +3788,22 @@ function SpaSuggestCard() {
         <div className="px-4 sm:px-5 py-4 sm:py-5 flex-1">
           <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">— Head Spa</p>
           <h4 className="mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">その頭皮 手でほどきに来ませんか</h4>
-          <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">診断で頭皮のサインが出ています ホームケアに加えて 完全個室のヘッドスパで頭皮からゆっくり整えるのが近道です 眠るための施術 90分 ¥17,300</p>
-          <a href="headspa.html#booking" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'spa_finder' }); } catch (e) {} }} className="mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
-            <span>ヘッドスパを見る</span><span aria-hidden>→</span>
-          </a>
+          <p className="mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">診断で頭皮のサインが出ています ホームケアに加えて 眠るための完全個室ヘッドスパで頭皮からゆっくり整えるのが近道です</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            <span className={_chip}>★4.5+ HPB口コミ</span>
+            <span className={_chip}>完全個室</span>
+            <span className={_chip}>60分 ¥13,300</span>
+            <span className={_chip}>90分 ¥17,300</span>
+          </div>
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2.5">
+            <button type="button" data-open-resv data-resv-from="spa_suggest" className="inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors">
+              <span>予約ページへ</span><span aria-hidden>→</span>
+            </button>
+            <a href="headspa.html#booking" onClick={() => { try { window.seamTrack && window.seamTrack('sec_click', { label: 'spa_finder' }); } catch (e) {} }} className="font-serif text-[12px] text-charcoal/70 underline underline-offset-4 decoration-gold/50 hover:text-ink transition-colors">
+              ヘッドスパを詳しく
+            </a>
+          </div>
+          <p className="mt-2 text-[9.5px] text-charcoal/50">銀座・大阪・名古屋の3店舗 料金は目安</p>
         </div>
       </div>
     </div>
@@ -7414,7 +7442,8 @@ function ReservationModal({ open, onClose, from }) {
   const [step, setStep] = useState(1);
   const [selectedStore, setSelectedStore] = useState(null);
   // ヘッドスパは施術店(銀座・大阪・名古屋)のみで承るため、スパ導線からの予約は3店舗に絞る
-  const spaOnly = from === 'spa';
+  // from は 'spa' / 'spa_suggest'(診断結果の提案カード) など spa 始まりを全て対象にする
+  const spaOnly = typeof from === 'string' && from.indexOf('spa') === 0;
   const stores = spaOnly ? RESERVATION_STORES.filter(s => ['ginza', 'osaka', 'nagoya'].indexOf(s.id) > -1) : RESERVATION_STORES;
 
   useEffect(() => {
