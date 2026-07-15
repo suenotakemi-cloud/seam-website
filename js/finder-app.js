@@ -6365,7 +6365,32 @@ function Home({
     className: "inline-block w-4 h-px bg-gold/60 group-hover:w-6 transition-all"
   }), /*#__PURE__*/React.createElement("span", null, "\u81EA\u5206\u306E\u9AEA\u683C\u3092\u3082\u3046\u77E5\u3063\u3066\u3044\u308B\u65B9\u306F\u3001\u3053\u3053\u304B\u3089\u5C65\u6B74\u3060\u3051\u66F4\u65B0"), /*#__PURE__*/React.createElement("span", {
     className: "text-gold"
-  }, "\u2192")))), /*#__PURE__*/React.createElement("section", {
+  }, "\u2192"))), /*#__PURE__*/React.createElement("a", {
+    href: "skinfinder.html",
+    onClick: () => {
+      try {
+        window.seamTrack && window.seamTrack('sec_click', {
+          label: 'skinfinder_finder'
+        });
+      } catch (e) {}
+    },
+    className: "mt-7 sm:mt-8 flex items-center justify-between gap-4 max-w-xl border border-gold/40 rounded-[2px] px-5 sm:px-6 py-4",
+    style: {
+      background: 'linear-gradient(135deg,#FBF7EE,#F5EFE3)',
+      textDecoration: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "block font-mono tracking-widest2 text-[9px] uppercase text-gold"
+  }, "Skin Story"), /*#__PURE__*/React.createElement("span", {
+    className: "mt-1 block font-serif text-[15px] sm:text-[16.5px] text-ink leading-snug"
+  }, "\u808C\u3082 \u8A3A\u65AD\u3067\u304D\u307E\u3059 \u2014 \u808C\u30B9\u30C8\u30FC\u30EA\u30FC"), /*#__PURE__*/React.createElement("span", {
+    className: "mt-0.5 block text-[11px] sm:text-[11.5px] text-charcoal/70 leading-[1.7]"
+  }, "\u7F8E\u808C\u30D2\u30B9\u30C8\u30EA\u30FC 15\u306E\u8CEA\u554F\u3067\u808C\u8CEA\u3068\u3053\u308C\u304B\u3089\u3092\u8AAD\u307F\u89E3\u304D\u307E\u3059")), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true,
+    className: "shrink-0 text-gold text-[18px]"
+  }, "\u2192"))), /*#__PURE__*/React.createElement("section", {
     className: "mt-16 sm:mt-24 anim-fade-up",
     style: {
       animationDelay: '240ms'
