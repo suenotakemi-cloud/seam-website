@@ -5235,6 +5235,9 @@ function SalonSuggestCard({
     }
   };
   const _c = _M[reason] || _M.damage;
+  // 実測: 提案の露出81%に対しサロンページ経由の予約が細い→カード内で信頼(実評価)+料金目安+予約直行を完結させる
+  const _price = reason === 'color' ? 'カット＋カラー ¥12,000〜' : '縮毛矯正 ¥15,500〜';
+  const _chip = 'inline-flex items-center rounded-full border border-gold/45 bg-ivory/85 px-2.5 py-1 text-[10.5px] text-charcoal/85 whitespace-nowrap';
   useEffect(() => {
     try {
       window.seamTrack && window.seamTrack('sec_view', {
@@ -5261,7 +5264,26 @@ function SalonSuggestCard({
     className: "mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
   }, _c.h), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
-  }, _c.b), /*#__PURE__*/React.createElement("a", {
+  }, _c.b), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex flex-wrap gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: _chip
+  }, "\u26054.7+ HPB\u53E3\u30B3\u30DF"), /*#__PURE__*/React.createElement("span", {
+    className: _chip
+  }, "\u5B8C\u5168\u500B\u5BA4"), /*#__PURE__*/React.createElement("span", {
+    className: _chip
+  }, "\u30AB\u30C3\u30C8 \xA56,600"), /*#__PURE__*/React.createElement("span", {
+    className: _chip
+  }, _price)), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2.5"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "data-open-resv": true,
+    "data-resv-from": "salon_suggest",
+    className: "inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors"
+  }, /*#__PURE__*/React.createElement("span", null, "\u4E88\u7D04\u30DA\u30FC\u30B8\u3078"), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true
+  }, "\u2192")), /*#__PURE__*/React.createElement("a", {
     href: "hairsalon.html#booking",
     onClick: () => {
       try {
@@ -5270,14 +5292,15 @@ function SalonSuggestCard({
         });
       } catch (e) {}
     },
-    className: "mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors"
-  }, /*#__PURE__*/React.createElement("span", null, "\u30B5\u30ED\u30F3\u3067\u76F8\u8AC7\u3059\u308B"), /*#__PURE__*/React.createElement("span", {
-    "aria-hidden": true
-  }, "\u2192")))));
+    className: "font-serif text-[12px] text-charcoal/70 underline underline-offset-4 decoration-gold/50 hover:text-ink transition-colors"
+  }, "\u30B5\u30ED\u30F3\u306B\u3064\u3044\u3066\u8A73\u3057\u304F")), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[9.5px] text-charcoal/50"
+  }, "\u6599\u91D1\u306F\u76EE\u5B89 \u30E1\u30CB\u30E5\u30FC\u30FB\u5E97\u8217\u306B\u3088\u308A\u7570\u306A\u308A\u307E\u3059"))));
 }
 
 /* ⚜ 頭皮ニーズが深い診断者へのヘッドスパ提案 — 診断→spa事業の橋(常設) */
 function SpaSuggestCard() {
+  const _chip = 'inline-flex items-center rounded-full border border-gold/45 bg-ivory/85 px-2.5 py-1 text-[10.5px] text-charcoal/85 whitespace-nowrap';
   useEffect(() => {
     try {
       window.seamTrack && window.seamTrack('sec_view', {
@@ -5309,7 +5332,26 @@ function SpaSuggestCard() {
     className: "mt-1.5 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
   }, "\u305D\u306E\u982D\u76AE \u624B\u3067\u307B\u3069\u304D\u306B\u6765\u307E\u305B\u3093\u304B"), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
-  }, "\u8A3A\u65AD\u3067\u982D\u76AE\u306E\u30B5\u30A4\u30F3\u304C\u51FA\u3066\u3044\u307E\u3059 \u30DB\u30FC\u30E0\u30B1\u30A2\u306B\u52A0\u3048\u3066 \u5B8C\u5168\u500B\u5BA4\u306E\u30D8\u30C3\u30C9\u30B9\u30D1\u3067\u982D\u76AE\u304B\u3089\u3086\u3063\u304F\u308A\u6574\u3048\u308B\u306E\u304C\u8FD1\u9053\u3067\u3059 \u7720\u308B\u305F\u3081\u306E\u65BD\u8853 90\u5206 \xA517,300"), /*#__PURE__*/React.createElement("a", {
+  }, "\u8A3A\u65AD\u3067\u982D\u76AE\u306E\u30B5\u30A4\u30F3\u304C\u51FA\u3066\u3044\u307E\u3059 \u30DB\u30FC\u30E0\u30B1\u30A2\u306B\u52A0\u3048\u3066 \u7720\u308B\u305F\u3081\u306E\u5B8C\u5168\u500B\u5BA4\u30D8\u30C3\u30C9\u30B9\u30D1\u3067\u982D\u76AE\u304B\u3089\u3086\u3063\u304F\u308A\u6574\u3048\u308B\u306E\u304C\u8FD1\u9053\u3067\u3059"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 flex flex-wrap gap-1.5"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: _chip
+  }, "\u26054.5+ HPB\u53E3\u30B3\u30DF"), /*#__PURE__*/React.createElement("span", {
+    className: _chip
+  }, "\u5B8C\u5168\u500B\u5BA4"), /*#__PURE__*/React.createElement("span", {
+    className: _chip
+  }, "60\u5206 \xA513,300"), /*#__PURE__*/React.createElement("span", {
+    className: _chip
+  }, "90\u5206 \xA517,300")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3.5 flex flex-wrap items-center gap-x-4 gap-y-2.5"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    "data-open-resv": true,
+    "data-resv-from": "spa_suggest",
+    className: "inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors"
+  }, /*#__PURE__*/React.createElement("span", null, "\u4E88\u7D04\u30DA\u30FC\u30B8\u3078"), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true
+  }, "\u2192")), /*#__PURE__*/React.createElement("a", {
     href: "headspa.html#booking",
     onClick: () => {
       try {
@@ -5318,10 +5360,10 @@ function SpaSuggestCard() {
         });
       } catch (e) {}
     },
-    className: "mt-3 inline-flex items-center gap-2 rounded-full bg-ink text-ivory px-5 py-2.5 font-serif text-[13px] hover:bg-charcoal transition-colors"
-  }, /*#__PURE__*/React.createElement("span", null, "\u30D8\u30C3\u30C9\u30B9\u30D1\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("span", {
-    "aria-hidden": true
-  }, "\u2192")))));
+    className: "font-serif text-[12px] text-charcoal/70 underline underline-offset-4 decoration-gold/50 hover:text-ink transition-colors"
+  }, "\u30D8\u30C3\u30C9\u30B9\u30D1\u3092\u8A73\u3057\u304F")), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[9.5px] text-charcoal/50"
+  }, "\u9280\u5EA7\u30FB\u5927\u962A\u30FB\u540D\u53E4\u5C4B\u306E3\u5E97\u8217 \u6599\u91D1\u306F\u76EE\u5B89"))));
 }
 
 // 今回の優先課題(主訴)を最大3つ。強い履歴(ブリーチ→熱)を先に、次にユーザーが選んだ悩み。
@@ -10115,7 +10157,8 @@ function ReservationModal({
   const [step, setStep] = useState(1);
   const [selectedStore, setSelectedStore] = useState(null);
   // ヘッドスパは施術店(銀座・大阪・名古屋)のみで承るため、スパ導線からの予約は3店舗に絞る
-  const spaOnly = from === 'spa';
+  // from は 'spa' / 'spa_suggest'(診断結果の提案カード) など spa 始まりを全て対象にする
+  const spaOnly = typeof from === 'string' && from.indexOf('spa') === 0;
   const stores = spaOnly ? RESERVATION_STORES.filter(s => ['ginza', 'osaka', 'nagoya'].indexOf(s.id) > -1) : RESERVATION_STORES;
   useEffect(() => {
     if (!open) return;
