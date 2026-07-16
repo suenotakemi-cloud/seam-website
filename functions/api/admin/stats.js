@@ -176,6 +176,9 @@ function aggregateSkin(rows) {
     n: 0, byAge: {}, typeTotal: {}, priTotal: {}, baseTotal: {}, hydTotal: {}, troubleTotal: {},
     goalTotal: {}, budgetTotal: {}, concernTotal: {}, concernByAge: {}, futureTotal: {},
     typeByAge: {}, radarSum: { rm: 0, rt: 0, rf: 0, rc: 0, rb: 0 }, radarN: 0,
+    // v5 追加(8問): 使用中/不満/UV/毛穴ニキビ/生活環境/1品上限/購入場所/美容医療
+    currentTotal: {}, complaintTotal: {}, uvTotal: {}, poreAcneTotal: {}, lifestyleTotal: {},
+    spendTotal: {}, buyPlaceTotal: {}, dermaTotal: {}, extN: 0,
   };
   for (const row of rows) {
     let m; if (row.__m) m = row.__m; else { try { m = JSON.parse(row.meta); } catch (e) { continue; } }
@@ -193,6 +196,18 @@ function aggregateSkin(rows) {
     (String(m.cns || '').split(',').filter(Boolean)).forEach(c => { inc(P.concernTotal, c); if (age) inc2(P.concernByAge, c, age); });
     (String(m.fut || '').split(',').filter(Boolean)).forEach(f => inc(P.futureTotal, f));
     if (m.rm != null) { P.radarN++; P.radarSum.rm += Number(m.rm) || 0; P.radarSum.rt += Number(m.rt) || 0; P.radarSum.rf += Number(m.rf) || 0; P.radarSum.rc += Number(m.rc) || 0; P.radarSum.rb += Number(m.rb) || 0; }
+    // v5: cu/uv/sp/dm=単一, cp/pa/ls/bp=csv。cu を持つ完了のみ extN の分母に入れる
+    if (m.cu != null || m.uv != null || m.sp != null) {
+      P.extN++;
+      inc(P.currentTotal, m.cu);
+      inc(P.uvTotal, m.uv);
+      inc(P.spendTotal, m.sp);
+      inc(P.dermaTotal, m.dm);
+      (String(m.cp || '').split(',').filter(Boolean)).forEach(v => inc(P.complaintTotal, v));
+      (String(m.pa || '').split(',').filter(Boolean)).forEach(v => inc(P.poreAcneTotal, v));
+      (String(m.ls || '').split(',').filter(Boolean)).forEach(v => inc(P.lifestyleTotal, v));
+      (String(m.bp || '').split(',').filter(Boolean)).forEach(v => inc(P.buyPlaceTotal, v));
+    }
   }
   P.radarAvg = P.radarN ? {
     rm: Math.round(P.radarSum.rm / P.radarN * 10) / 10, rt: Math.round(P.radarSum.rt / P.radarN * 10) / 10,
