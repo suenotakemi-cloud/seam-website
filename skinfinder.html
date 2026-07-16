@@ -122,6 +122,8 @@
     .sf-pro { margin-top:14px; background:var(--cream); border-radius:2px; padding:16px 16px 14px; }
     .sf-pro h3 { font-size:14px; font-weight:600; }
     .sf-pro p { font-size:12px; line-height:1.95; color:var(--charcoal); margin-top:5px; }
+    .sf-proCta { display:inline-block; margin-top:11px; font-size:12px; font-weight:600; letter-spacing:.02em; color:var(--gold); text-decoration:none; border-bottom:1px solid var(--gold); padding-bottom:1px; }
+    .sf-proCta:hover { opacity:.75; }
     .sf-sheet { margin-top:34px; border:1px dashed rgba(184,148,90,.55); border-radius:2px; background:#FFFDF8; }
     .sf-sheet summary { padding:14px 16px; font-size:12.5px; font-weight:600; cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px; }
     .sf-sheet summary::before { content:'▸'; color:var(--gold); transition:transform .15s; }
@@ -273,7 +275,8 @@
       { ch:3, id:'catBudget', grid:true, cats:['cleanse','wash','lotion','emul','serum','pack','body'], bands:['skip','b1','b2','b3','b4','b5'] },
       { ch:3, id:'buyValue', multi:true, opts:[{v:'effect'},{v:'gentle'},{v:'ingredient'},{v:'price'},{v:'texture'},{v:'trust'},{v:'review'},{v:'keep'}] },
       { ch:3, id:'buyPlace', multi:true, opts:[{v:'drug'},{v:'depaP'},{v:'dermP'},{v:'ecP'},{v:'salonP'},{v:'otherP',x:true}] },
-      { ch:3, id:'derma', multi:false, opts:[{v:'doing'},{v:'interested'},{v:'no'}] }
+      { ch:3, id:'beautyExp', grid:true, cats:['esthe','device','spa','epi','med'], bands:['none','want','done'] },
+      { ch:3, id:'careStyle', multi:false, opts:[{v:'hand'},{v:'device'},{v:'esthe'},{v:'clinic'}] }
     ];
 
     /* ─────────── 5言語ロケール ─────────── */
@@ -908,8 +911,8 @@
             s1:{l:'〜1,000円'}, s2:{l:'1,000〜3,000円'}, s3:{l:'3,000〜5,000円'}, s4:{l:'5,000〜10,000円'}, s5:{l:'10,000円〜'} } },
           buyPlace:{ q:'スキンケアは、<br>どこで買うことが多いですか？', note:'当てはまるものをすべて。', o:{
             drug:{l:'ドラッグストア'}, depaP:{l:'百貨店・デパコス'}, dermP:{l:'皮膚科・クリニック'}, ecP:{l:'ネット通販'}, salonP:{l:'サロン・美容室'}, otherP:{l:'その他'} } },
-          derma:{ q:'美容医療（クリニックの施術）に<br>ついてはいかがですか？', note:'ご提案の参考にします。無理におすすめはしません。', o:{
-            doing:{l:'受けたことがある・通っている'}, interested:{l:'興味はある'}, no:{l:'いまは考えていない'} } }
+          careStyle:{ q:'じっくりケアするなら、<br>どのスタイルが好みですか？', note:'ご提案の参考にします。あなたに合う入り口をお伝えするためです。', o:{
+            hand:{l:'人の手の施術が好き',s:'サロン・スパでほぐしたい'}, device:{l:'自宅で機械・美顔器',s:'自分のペースで続けたい'}, esthe:{l:'エステの範囲で楽しみたい',s:'医療まではしない'}, clinic:{l:'効果重視でクリニックも',s:'美容医療にも興味あり'} } }
         },
         en: {
           current:{ q:'What kind of skincare<br>do you mostly use now?', note:'A rough sense is fine — we pick your next one as an extension of this.', o:{
@@ -926,8 +929,8 @@
             s1:{l:'Up to ¥1,000'}, s2:{l:'¥1,000–3,000'}, s3:{l:'¥3,000–5,000'}, s4:{l:'¥5,000–10,000'}, s5:{l:'¥10,000+'} } },
           buyPlace:{ q:'Where do you usually<br>buy skincare?', note:'Choose all that apply.', o:{
             drug:{l:'Drugstore'}, depaP:{l:'Department store'}, dermP:{l:'Clinic / dermatology'}, ecP:{l:'Online'}, salonP:{l:'Salon / spa'}, otherP:{l:'Other'} } },
-          derma:{ q:'How about aesthetic medicine<br>(in-clinic treatments)?', note:'Just to inform our suggestions — we never push it.', o:{
-            doing:{l:'Have done it / go regularly'}, interested:{l:'Curious about it'}, no:{l:'Not considering it now'} } }
+          careStyle:{ q:'When you really care for your skin,<br>which style do you prefer?', note:'Just to point you to the right starting place.', o:{
+            hand:{l:'Hands-on treatments',s:'Unwind at a salon / spa'}, device:{l:'At-home devices',s:'Keep it up at my own pace'}, esthe:{l:'Keep it within esthetics',s:'Not going as far as medical'}, clinic:{l:'Results-first, clinic too',s:'Open to aesthetic medicine'} } }
         },
         zh: {
           current:{ q:'你现在用的护肤品，<br>大多是哪一类？', note:'大概即可。我们会顺着现在为你挑下一支。', o:{
@@ -944,8 +947,8 @@
             s1:{l:'～1,000日元'}, s2:{l:'1,000～3,000日元'}, s3:{l:'3,000～5,000日元'}, s4:{l:'5,000～10,000日元'}, s5:{l:'10,000日元～'} } },
           buyPlace:{ q:'护肤品<br>你多在哪里买？', note:'请全选。', o:{
             drug:{l:'药妆店'}, depaP:{l:'百货专柜'}, dermP:{l:'皮肤科·诊所'}, ecP:{l:'网购'}, salonP:{l:'沙龙·美容院'}, otherP:{l:'其他'} } },
-          derma:{ q:'关于医美<br>（诊所疗程）呢？', note:'仅作为建议参考，不会勉强推荐。', o:{
-            doing:{l:'做过·有在做'}, interested:{l:'有兴趣'}, no:{l:'目前没考虑'} } }
+          careStyle:{ q:'认真护理时，<br>你更偏好哪种方式？', note:'仅作为建议参考，为你指出合适的入口。', o:{
+            hand:{l:'喜欢真人手技',s:'在沙龙·SPA放松'}, device:{l:'居家机器·美容仪',s:'按自己的节奏坚持'}, esthe:{l:'停在美容护理范围',s:'不做到医美'}, clinic:{l:'重效果，诊所也行',s:'对医美也有兴趣'} } }
         },
         tw: {
           current:{ q:'你現在用的保養品，<br>大多是哪一類？', note:'大概即可。我們會順著現在為你挑下一支。', o:{
@@ -962,8 +965,8 @@
             s1:{l:'～1,000日圓'}, s2:{l:'1,000～3,000日圓'}, s3:{l:'3,000～5,000日圓'}, s4:{l:'5,000～10,000日圓'}, s5:{l:'10,000日圓～'} } },
           buyPlace:{ q:'保養品<br>你多在哪裡買？', note:'請全選。', o:{
             drug:{l:'藥妝店'}, depaP:{l:'百貨專櫃'}, dermP:{l:'皮膚科·診所'}, ecP:{l:'網購'}, salonP:{l:'沙龍·美容院'}, otherP:{l:'其他'} } },
-          derma:{ q:'關於醫美<br>（診所療程）呢？', note:'僅作為建議參考，不會勉強推薦。', o:{
-            doing:{l:'做過·有在做'}, interested:{l:'有興趣'}, no:{l:'目前沒考慮'} } }
+          careStyle:{ q:'認真保養時，<br>你更偏好哪種方式？', note:'僅作為建議參考，為你指出合適的入口。', o:{
+            hand:{l:'喜歡真人手技',s:'在沙龍·SPA放鬆'}, device:{l:'居家機器·美容儀',s:'按自己的節奏堅持'}, esthe:{l:'停在美容保養範圍',s:'不做到醫美'}, clinic:{l:'重效果，診所也行',s:'對醫美也有興趣'} } }
         },
         ko: {
           current:{ q:'지금 쓰는 스킨케어는<br>주로 어떤 편인가요?', note:'대략이면 충분해요. 지금의 연장선에서 다음 한 병을 골라요.', o:{
@@ -980,16 +983,16 @@
             s1:{l:'~1,000엔'}, s2:{l:'1,000~3,000엔'}, s3:{l:'3,000~5,000엔'}, s4:{l:'5,000~10,000엔'}, s5:{l:'10,000엔~'} } },
           buyPlace:{ q:'스킨케어는<br>주로 어디서 사나요?', note:'해당되는 것 모두.', o:{
             drug:{l:'드럭스토어'}, depaP:{l:'백화점'}, dermP:{l:'피부과·클리닉'}, ecP:{l:'온라인'}, salonP:{l:'살롱·미용실'}, otherP:{l:'기타'} } },
-          derma:{ q:'미용 의료(클리닉 시술)에<br>대해서는 어떠세요?', note:'제안의 참고용이에요. 무리하게 권하지 않아요.', o:{
-            doing:{l:'받은 적 있음·다니는 중'}, interested:{l:'관심 있음'}, no:{l:'지금은 고려 안 함'} } }
+          careStyle:{ q:'제대로 케어한다면<br>어떤 스타일이 좋으세요?', note:'제안의 참고용이에요. 맞는 입구를 알려드리기 위한 거예요.', o:{
+            hand:{l:'사람 손 시술이 좋아요',s:'살롱·스파에서 풀고 싶어요'}, device:{l:'집에서 기기·미용기기',s:'내 페이스로 꾸준히'}, esthe:{l:'에스테 범위에서 즐기기',s:'의료까지는 안 해요'}, clinic:{l:'효과 우선, 클리닉도',s:'미용 의료도 관심 있어요'} } }
         }
       };
       var SL = {
-        ja: { current:'使用中のケア', complaint:'今の不満', uv:'日焼け止め', poreAcne:'毛穴・ニキビ', lifestyle:'生活・環境', spend:'1品の上限', buyPlace:'購入場所', derma:'美容医療' },
-        en: { current:'Current care', complaint:'Frustrations', uv:'Sunscreen', poreAcne:'Pores / acne', lifestyle:'Lifestyle', spend:'Per-item cap', buyPlace:'Where to buy', derma:'Aesthetic medicine' },
-        zh: { current:'在用护肤', complaint:'当前不满', uv:'防晒', poreAcne:'毛孔·痘痘', lifestyle:'生活·环境', spend:'单品上限', buyPlace:'购买渠道', derma:'医美' },
-        tw: { current:'在用保養', complaint:'目前不滿', uv:'防曬', poreAcne:'毛孔·痘痘', lifestyle:'生活·環境', spend:'單品上限', buyPlace:'購買通路', derma:'醫美' },
-        ko: { current:'사용 중 케어', complaint:'현재 불만', uv:'자외선 차단', poreAcne:'모공·여드름', lifestyle:'생활·환경', spend:'1개 상한', buyPlace:'구매처', derma:'미용 의료' }
+        ja: { current:'使用中のケア', complaint:'今の不満', uv:'日焼け止め', poreAcne:'毛穴・ニキビ', lifestyle:'生活・環境', spend:'1品の上限', buyPlace:'購入場所', careStyle:'ケアの好み' },
+        en: { current:'Current care', complaint:'Frustrations', uv:'Sunscreen', poreAcne:'Pores / acne', lifestyle:'Lifestyle', spend:'Per-item cap', buyPlace:'Where to buy', careStyle:'Care style' },
+        zh: { current:'在用护肤', complaint:'当前不满', uv:'防晒', poreAcne:'毛孔·痘痘', lifestyle:'生活·环境', spend:'单品上限', buyPlace:'购买渠道', careStyle:'护理偏好' },
+        tw: { current:'在用保養', complaint:'目前不滿', uv:'防曬', poreAcne:'毛孔·痘痘', lifestyle:'生活·環境', spend:'單品上限', buyPlace:'購買通路', careStyle:'保養偏好' },
+        ko: { current:'사용 중 케어', complaint:'현재 불만', uv:'자외선 차단', poreAcne:'모공·여드름', lifestyle:'생활·환경', spend:'1개 상한', buyPlace:'구매처', careStyle:'케어 스타일' }
       };
       Object.keys(EXT).forEach(function(lg){
         if (!LOCALE[lg]) return;
@@ -1032,6 +1035,30 @@
         LOCALE[lg].sheetLabels = LOCALE[lg].sheetLabels || {};
         LOCALE[lg].sheetLabels.catBudget = SL2[lg].catBudget;
         LOCALE[lg].sheetLabels.buyValue = SL2[lg].buyValue;
+      });
+    })();
+
+    /* ── v7 美容体験グリッド(エステ/美顔器/ヘッドスパ/脱毛/美容医療 × 関心なし/気になる/経験あり)(5言語) ── */
+    (function(){
+      var BEXP = { ja:{esthe:'エステ・フェイシャル',device:'美顔器（自宅ケア）',spa:'ヘッドスパ',epi:'脱毛',med:'美容医療'},
+        en:{esthe:'Esthetics / facial',device:'Home beauty device',spa:'Head spa',epi:'Hair removal',med:'Aesthetic medicine'},
+        zh:{esthe:'美容·脸部护理',device:'家用美容仪',spa:'头皮SPA',epi:'脱毛',med:'医美'},
+        tw:{esthe:'美容·臉部護理',device:'家用美容儀',spa:'頭皮SPA',epi:'除毛',med:'醫美'},
+        ko:{esthe:'에스테·페이셜',device:'홈 미용기기',spa:'헤드스파',epi:'제모',med:'미용 의료'} };
+      var BST = { ja:{none:'関心なし',want:'気になる',done:'経験あり'}, en:{none:'Not for me',want:'Curious',done:'Have tried'},
+        zh:{none:'没兴趣',want:'有点想',done:'体验过'}, tw:{none:'沒興趣',want:'有點想',done:'體驗過'}, ko:{none:'관심 없음',want:'궁금해요',done:'경험 있음'} };
+      var BEQ = { ja:{q:'美容メニュー、<br>それぞれ今の気持ちに近いのは？',note:'各項目について、あてはまるものを。あなたに合う入り口をご提案します。'},
+        en:{q:'For each beauty menu,<br>what’s closest to how you feel?',note:'Pick one per row — we’ll point you to the right starting place.'},
+        zh:{q:'各项美容项目，<br>你现在的想法最接近哪个？',note:'每项选一个。我们会为你指出合适的入口。'},
+        tw:{q:'各項美容項目，<br>你現在的想法最接近哪個？',note:'每項選一個。我們會為你指出合適的入口。'},
+        ko:{q:'미용 메뉴, 각각<br>지금 마음에 가까운 것은?',note:'항목마다 하나씩. 맞는 입구를 제안해 드려요.'} };
+      var SL3 = { ja:{beautyExp:'美容体験'}, en:{beautyExp:'Beauty experience'}, zh:{beautyExp:'美容体验'}, tw:{beautyExp:'美容體驗'}, ko:{beautyExp:'미용 경험'} };
+      ['ja','en','zh','tw','ko'].forEach(function(lg){
+        if (!LOCALE[lg]) return;
+        LOCALE[lg].q = LOCALE[lg].q || {};
+        LOCALE[lg].q.beautyExp = { q:BEQ[lg].q, note:BEQ[lg].note, cats:BEXP[lg], bands:BST[lg] };
+        LOCALE[lg].sheetLabels = LOCALE[lg].sheetLabels || {};
+        LOCALE[lg].sheetLabels.beautyExp = SL3[lg].beautyExp;
       });
     })();
 
@@ -1464,6 +1491,33 @@
         dermaBridge:'미용 의료에 관심 있다면 <b>홈케어로 토대</b>를 다져두면 만족도도 오르기 쉬워요. 무리하게 권하지 않아요.'
       }
     };
+    /* v7 美容体験×ケアの好みから、SEAMの実サービス(ヘッドスパ/美顔器)へ寄り添い提案(5言語・薬機法配慮=断定効能なし) */
+    var PROPOSE = {
+      ja: { h:'あなたに合いそうな、SEAMの入り口', sub:'答えから、いちばん近い一歩をひとつ。無理におすすめはしません。',
+        spa:{ t:'ヘッドスパで、手からのリセット', b:'人の手で頭皮からほぐすと、顔まわりまで軽く感じられます。炭酸やスチームの心地よさは、通ってこそ。', cta:'ヘッドスパを見る' },
+        device:{ t:'自宅で続ける、美顔器という選択', b:'自分のペースで積み重ねたい方に。店頭で実機を試してから選べます。', cta:'店頭で見る・相談する' } },
+      en: { h:'A SEAM starting place that may suit you', sub:'One nearest next step, from your answers. We never push it.',
+        spa:{ t:'Head spa — a reset that starts at the hands', b:'Loosening from the scalp with real hands can leave the whole face area feeling lighter. The comfort of carbonated care and steam is best felt in person.', cta:'See the head spa' },
+        device:{ t:'An at-home beauty device, to keep it up', b:'For those who like building it up at their own pace. Try the real thing in store before choosing.', cta:'See it in store' } },
+      zh: { h:'可能适合你的SEAM入口', sub:'从你的答案，给一个最近的下一步。不会勉强推荐。',
+        spa:{ t:'头皮SPA，从手开始的重置', b:'用真人的手从头皮放松，连脸部一带也会感觉轻盈。碳酸与蒸汽的舒适，要亲身体验才懂。', cta:'看头皮SPA' },
+        device:{ t:'在家坚持的美容仪之选', b:'适合想按自己节奏累积的人。可在店内试用实机后再选。', cta:'到店看·咨询' } },
+      tw: { h:'可能適合你的SEAM入口', sub:'從你的答案，給一個最近的下一步。不會勉強推薦。',
+        spa:{ t:'頭皮SPA，從手開始的重置', b:'用真人的手從頭皮放鬆，連臉部一帶也會感覺輕盈。碳酸與蒸汽的舒適，要親身體驗才懂。', cta:'看頭皮SPA' },
+        device:{ t:'在家堅持的美容儀之選', b:'適合想按自己節奏累積的人。可在店內試用實機後再選。', cta:'到店看·諮詢' } },
+      ko: { h:'당신에게 맞을 SEAM의 입구', sub:'답변에서 가장 가까운 한 걸음. 무리하게 권하지 않아요.',
+        spa:{ t:'헤드스파, 손끝에서 시작되는 리셋', b:'사람 손으로 두피부터 풀면 얼굴 주변까지 가볍게 느껴져요. 탄산과 스팀의 기분 좋음은 직접 받아봐야 알아요.', cta:'헤드스파 보기' },
+        device:{ t:'집에서 이어가는 미용기기라는 선택', b:'내 페이스로 쌓고 싶은 분께. 매장에서 실기기를 써보고 고를 수 있어요.', cta:'매장에서 보기·상담' } }
+    };
+    function buildBeautyProposal(a){
+      var be = a.beautyExp || {}, cs = a.careStyle;
+      var wantSpa = be.spa === 'want' || be.esthe === 'want' || cs === 'hand' || cs === 'esthe';
+      var wantDev = be.device === 'want' || cs === 'device';
+      var order = [];
+      if (cs === 'device') { if (wantDev) order.push('device'); if (wantSpa) order.push('spa'); }
+      else { if (wantSpa) order.push('spa'); if (wantDev) order.push('device'); }
+      return order.slice(0, 2);
+    }
     function buildLifeAdvice(a){
       var D = LIFE_ADVICE[curLang()] || LIFE_ADVICE.ja;
       var cp = Array.isArray(a.complaint) ? a.complaint : [];
@@ -1477,7 +1531,7 @@
       if (['sleep','stress','aircon','mask'].some(function(k){ return ls.indexOf(k) > -1; })) out.push(D.barrier);
       if (pa.indexOf('adultacne') > -1) out.push(D.adultAcne);
       else if (pa.indexOf('openpore') > -1 || pa.indexOf('sagpore') > -1) out.push(D.pore);
-      if (a.derma === 'interested') out.push(D.dermaBridge);
+      if (a.beautyExp && a.beautyExp.med === 'want') out.push(D.dermaBridge);
       return out.slice(0, 3);
     }
 
@@ -1555,6 +1609,20 @@
       if (lifeLines.length) {
         html += '<div class="sf-sec fadein"><h2 class="serif">' + (T().lifeH || '暮らし・習慣からのひとこと') + '</h2><p class="sub">' + (T().lifeSub || 'いまの使い方と暮らしから、次の一手をひとつずつ。') + '</p>';
         lifeLines.forEach(function(ln){ html += '<section class="sf-pro"><p>' + ln + '</p></section>'; });
+        html += '</div>';
+      }
+
+      /* ── v7 SEAMの入り口(美容体験×ケアの好み→ヘッドスパ/美顔器の寄り添い提案・実サービスのみ) ── */
+      var props = buildBeautyProposal(ans);
+      if (props.length) {
+        var PR = PROPOSE[curLang()] || PROPOSE.ja;
+        var hrefs = { spa:'headspa.html', device:'shop.html' };
+        html += '<div class="sf-sec fadein"><h2 class="serif">' + PR.h + '</h2><p class="sub">' + PR.sub + '</p>';
+        props.forEach(function(key){
+          var c = PR[key]; if (!c) return;
+          html += '<section class="sf-pro"><h3 class="serif">' + c.t + '</h3><p>' + c.b + '</p>'
+            + '<a class="sf-proCta" href="' + hrefs[key] + '" onclick="try{sfTrack(\'skinfinder_cta\',{target:\'' + key + '\'})}catch(e){}">' + c.cta + ' →</a></section>';
+        });
         html += '</div>';
       }
 
@@ -1649,10 +1717,13 @@
             cns: csv(ans.concerns), fut: csv(ans.future),
             // v5 追加(8問): 使用中/不満/UV/毛穴ニキビ/生活環境/1品上限/購入場所/美容医療
             cu: ans.current, cp: csv(ans.complaint), uv: ans.uv, pa: csv(ans.poreAcne),
-            ls: csv(ans.lifestyle), sp: ans.spend, bp: csv(ans.buyPlace), dm: ans.derma,
+            ls: csv(ans.lifestyle), sp: ans.spend, bp: csv(ans.buyPlace),
             // v6: cb=カテゴリ別予算(cat:band csv・skip=使わない) / bv=購入で大切にすること
             cb: (function(o){ o = o || {}; return Object.keys(o).map(function(k){ return k + ':' + o[k]; }).join(','); })(ans.catBudget),
             bv: csv(ans.buyValue),
+            // v7: be=美容体験(menu:state csv・none/want/done) / cs=ケアのスタイル
+            be: (function(o){ o = o || {}; return Object.keys(o).map(function(k){ return k + ':' + o[k]; }).join(','); })(ans.beautyExp),
+            cs: ans.careStyle,
             rm: rd.moisture, rt: rd.texture, rf: rd.firmness, rc: rd.clarity, rb: rd.barrier
           };
           sfTrack('skinfinder_complete', { type: computeSkinType(ans), meta: meta });

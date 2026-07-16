@@ -360,7 +360,14 @@
             lifestyleTotal:{sleep:Math.round(sc*.42),aircon:Math.round(sc*.34),stress:Math.round(sc*.31),mask:Math.round(sc*.18),diet:Math.round(sc*.16),nonel:Math.round(sc*.10)},
             spendTotal:{s2:Math.round(sc*.31),s3:Math.round(sc*.27),s1:Math.round(sc*.18),s4:Math.round(sc*.16),s5:Math.round(sc*.08)},
             buyPlaceTotal:{drug:Math.round(sc*.44),depaP:Math.round(sc*.33),ecP:Math.round(sc*.30),dermP:Math.round(sc*.12),salonP:Math.round(sc*.09),otherP:Math.round(sc*.05)},
-            dermaTotal:{interested:Math.round(sc*.38),no:Math.round(sc*.52),doing:Math.round(sc*.10)},
+            beN:sc,
+            beautyExp:{
+              esthe:{none:Math.round(sc*.30),want:Math.round(sc*.48),done:Math.round(sc*.22)},
+              device:{none:Math.round(sc*.34),want:Math.round(sc*.44),done:Math.round(sc*.22)},
+              spa:{none:Math.round(sc*.20),want:Math.round(sc*.55),done:Math.round(sc*.25)},
+              epi:{none:Math.round(sc*.22),want:Math.round(sc*.30),done:Math.round(sc*.48)},
+              med:{none:Math.round(sc*.46),want:Math.round(sc*.36),done:Math.round(sc*.18)} },
+            careStyleTotal:{hand:Math.round(sc*.42),device:Math.round(sc*.24),esthe:Math.round(sc*.22),clinic:Math.round(sc*.12)},
             cbN:sc,
             catBudget:{
               cleanse:{skip:Math.round(sc*.22),b1:Math.round(sc*.30),b2:Math.round(sc*.31),b3:Math.round(sc*.12),b4:Math.round(sc*.04),b5:Math.round(sc*.01)},
@@ -893,7 +900,33 @@
     var LSF={sleep:'睡眠不足',stress:'ストレス・疲れ',aircon:'エアコン乾燥',mask:'マスク荒れ',diet:'食事の偏り',nonel:'なし'};
     var SPD={s1:'〜1,000円',s2:'1,000〜3,000円',s3:'3,000〜5,000円',s4:'5,000〜10,000円',s5:'10,000円〜'};
     var BPL={drug:'ドラッグストア',depaP:'百貨店・デパコス',dermP:'皮膚科・クリニック',ecP:'ネット通販',salonP:'サロン・美容室',otherP:'その他'};
-    var DRM={doing:'受けている',interested:'興味あり',no:'考えていない'};
+    // v7 美容体験(5メニュー×関心なし/気になる/経験あり)・ケアの好み — skinfinder.html と同期
+    var BEXP={esthe:'エステ・フェイシャル',device:'美顔器（自宅ケア）',spa:'ヘッドスパ',epi:'脱毛',med:'美容医療'};
+    var BEXP_ORDER=['esthe','device','spa','epi','med'];
+    var BST={none:'関心なし',want:'気になる',done:'経験あり'};
+    var BSEG={none:'#EDE7DC',want:'#CBA96A',done:'#8C5E2E'};
+    var CST={hand:'人の手の施術が好き',device:'自宅で機械・美顔器',esthe:'エステの範囲で楽しみたい',clinic:'効果重視でクリニックも'};
+    function beautyExpTable(be, beN){
+      be = be || {};
+      if(!beN) return '<div class="empty" style="margin-top:6px">美容体験データは v7(2026-07) 以降の診断完了から貯まります</div>';
+      var body = BEXP_ORDER.map(function(menu){
+        var d = be[menu] || {};
+        var wantPct = Math.round((d.want||0)/beN*100), donePct = Math.round((d.done||0)/beN*100);
+        var seg = ['none','want','done'].map(function(s){ var w=(d[s]||0)/beN*100; return w>0?'<span style="height:100%;width:'+w.toFixed(1)+'%;background:'+BSEG[s]+'" title="'+BST[s]+'：'+(d[s]||0)+'件"></span>':''; }).join('');
+        return '<tr style="border-bottom:1px solid #F1ECE2">'
+          + '<td style="padding:6px 4px;font-weight:600;color:#2B2926;white-space:nowrap">'+BEXP[menu]+'</td>'
+          + '<td style="padding:6px 4px;text-align:right;font-family:ui-monospace,monospace;color:#B4874A"><b>'+wantPct+'</b><span style="font-size:10px">%</span></td>'
+          + '<td style="padding:6px 4px;text-align:right;font-family:ui-monospace,monospace;color:#8C5E2E"><b>'+donePct+'</b><span style="font-size:10px">%</span></td>'
+          + '<td style="padding:6px 4px;width:40%"><span style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#F1ECE2;min-width:100px">'+seg+'</span></td>'
+          + '</tr>';
+      }).join('');
+      var legend = ['none','want','done'].map(function(s){ return '<span style="font-size:9.5px;color:#8C8479;white-space:nowrap"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:'+BSEG[s]+';vertical-align:-1px;margin-right:3px"></span>'+BST[s]+'</span>'; }).join('<span style="display:inline-block;width:10px"></span>');
+      return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px">'
+        + '<thead><tr style="border-bottom:1px solid #E7DFD1;color:#8C8479;font-size:10px;letter-spacing:.05em">'
+        + '<th style="text-align:left;padding:5px 4px">メニュー</th><th style="text-align:right;padding:5px 4px">気になる</th><th style="text-align:right;padding:5px 4px">経験あり</th><th style="text-align:left;padding:5px 4px">分布（関心なし→経験あり）</th></tr></thead>'
+        + '<tbody>'+body+'</tbody></table></div>'
+        + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:9px;align-items:center">'+legend+'</div>';
+    }
     // v6 追加(アイテム別 予算×使う/使わない・選ぶ基準) — skinfinder.html と同期
     var CATS7={cleanse:'クレンジング',wash:'洗顔',lotion:'化粧水',emul:'乳液',serum:'美容液',pack:'パック',body:'ボディソープ・石鹸'};
     var CATORDER=['cleanse','wash','lotion','emul','serum','pack','body'];
@@ -964,7 +997,10 @@
       + panel('Sunscreen','日焼け止め習慣', br(P.uvTotal, UVL) + noteLine('「ほぼ塗らない/季節だけ」の比率＝UV商品の未開拓需要'))
       + panel('Pore/Acne','毛穴・ニキビの実態', br(P.poreAcneTotal, PAC) + noteLine('悩みの解像度。大人ニキビ/たるみ毛穴の多さで売り場の主役が決まる'))
       + panel('Lifestyle','生活・環境の要因', br(P.lifestyleTotal, LSF) + noteLine('睡眠・乾燥・マスク＝インナーケア/保湿の訴求根拠'))
-      + panel('Aesthetic','美容医療への関心', br(P.dermaTotal, DRM) + noteLine('「受けている/興味あり」の比率＝ドクターズコスメ需要の裏付け'))
+      + '<div class="card panel" style="grid-column:1/-1;background:linear-gradient(135deg,#FBF7EE,#F6F1E7)"><h2><span class="eyebrow">Beauty Experience</span>美容体験 × ケアの好み（v7）</h2>'
+        + (P.beN ? '<p style="font-size:10.5px;color:#8C8479;margin:2px 0 8px;line-height:1.55">回答した完了 <b>'+P.beN+'</b> 件が母数。<b>気になる</b>＝まだ試していない＝提案の余地。<b>ヘッドスパ・美顔器はSEAMで応えられる入り口</b>（結果画面で提案中）。脱毛・美容医療は自社サービスが無いので関心の把握用です</p>'
+            : '') + beautyExpTable(P.beautyExp, P.beN) + '</div>'
+      + panel('ケアの好み','じっくりケアするなら、どのスタイル（単一）', (P.beN ? br(P.careStyleTotal, CST) + noteLine('人の手＝ヘッドスパ／自宅マシーン＝美顔器・家電。結果画面の提案カードの出し分けに直結') : '<div class="empty">v7(2026-07)以降に蓄積</div>'))
       + '<div class="card panel" style="grid-column:1/-1;background:linear-gradient(135deg,#FBF7EE,#F6F1E7)"><h2><span class="eyebrow">Category Budget</span>アイテム別 予算 × 使う / 使わない（v6・7カテゴリ）</h2>'
         + (P.cbN ? '<p style="font-size:10.5px;color:#8C8479;margin:2px 0 8px;line-height:1.55">回答した完了 <b>'+P.cbN+'</b> 件が母数。<b>使う率</b>＝そのアイテムを使う人の割合／<b>予算分布</b>＝使う人がいくら出しているか。<br>「使う率は高いのに安い帯に集中」＝“もっと良い一本”に出す余地がある層。ここに公式が“選ぶ理由”を届ければ単価が伸びます（ミルボン/コーセー等の入り込み先）</p>'
             : '') + catBudgetTable(P.catBudget, P.cbN) + '</div>'
@@ -1121,9 +1157,11 @@
     (data.daily||[]).forEach(function(x){rows.push(['daily',x.d,x.c]);});
     if(data.skin){var K=data.skin,SP=K.profile||{};rows.push(['skin','completes',K.completes||0]);rows.push(['skin','starts',K.starts||0]);rows.push(['skin','ctas',K.ctas||0]);
       (K.byType||[]).forEach(function(x){rows.push(['skinType',x.t,x.c]);});
-      ['typeTotal','priTotal','baseTotal','hydTotal','troubleTotal','concernTotal','goalTotal','budgetTotal','byAge','currentTotal','complaintTotal','uvTotal','poreAcneTotal','lifestyleTotal','spendTotal','buyPlaceTotal','dermaTotal','buyValueTotal'].forEach(function(key){var o=SP[key]||{};Object.keys(o).forEach(function(k){rows.push(['skin:'+key,k,o[k]]);});});
+      ['typeTotal','priTotal','baseTotal','hydTotal','troubleTotal','concernTotal','goalTotal','budgetTotal','byAge','currentTotal','complaintTotal','uvTotal','poreAcneTotal','lifestyleTotal','spendTotal','buyPlaceTotal','buyValueTotal','careStyleTotal'].forEach(function(key){var o=SP[key]||{};Object.keys(o).forEach(function(k){rows.push(['skin:'+key,k,o[k]]);});});
       // v6: アイテム別 予算(カテゴリ×バンド) — section=skin:catBudget:<cat>, key=<band>
       var cb=SP.catBudget||{};Object.keys(cb).forEach(function(cat){var d=cb[cat]||{};Object.keys(d).forEach(function(bn){rows.push(['skin:catBudget:'+cat,bn,d[bn]]);});});
+      // v7: 美容体験(メニュー×状態) — section=skin:beautyExp:<menu>, key=<state>
+      var beC=SP.beautyExp||{};Object.keys(beC).forEach(function(menu){var d=beC[menu]||{};Object.keys(d).forEach(function(st){rows.push(['skin:beautyExp:'+menu,st,d[st]]);});});
       if(SP.radarAvg){Object.keys(SP.radarAvg).forEach(function(k){rows.push(['skin:radar',k,SP.radarAvg[k]]);});}}
     (data.brandSearch||[]).forEach(function(x){rows.push(['brandSearch',x.label,x.c]);});
     (data.brandClick||[]).forEach(function(x){rows.push(['brandClick',x.label,x.c]);});
