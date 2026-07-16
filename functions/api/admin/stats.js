@@ -179,6 +179,8 @@ function aggregateSkin(rows) {
     // v5 追加(8問): 使用中/不満/UV/毛穴ニキビ/生活環境/1品上限/購入場所/美容医療
     currentTotal: {}, complaintTotal: {}, uvTotal: {}, poreAcneTotal: {}, lifestyleTotal: {},
     spendTotal: {}, buyPlaceTotal: {}, dermaTotal: {}, extN: 0,
+    // v6 追加: アイテム別 予算×使う/使わない(7カテゴリ)・選ぶ基準
+    catBudget: {}, buyValueTotal: {}, cbN: 0,
   };
   for (const row of rows) {
     let m; if (row.__m) m = row.__m; else { try { m = JSON.parse(row.meta); } catch (e) { continue; } }
@@ -208,6 +210,15 @@ function aggregateSkin(rows) {
       (String(m.ls || '').split(',').filter(Boolean)).forEach(v => inc(P.lifestyleTotal, v));
       (String(m.bp || '').split(',').filter(Boolean)).forEach(v => inc(P.buyPlaceTotal, v));
     }
+    // v6: cb="cleanse:b2,wash:skip,..." (7カテゴリ), bv="gentle,effect" (csv)
+    if (m.cb) {
+      P.cbN++;
+      String(m.cb).split(',').filter(Boolean).forEach(pair => {
+        const i = pair.indexOf(':'); if (i < 0) return;
+        inc2(P.catBudget, pair.slice(0, i), pair.slice(i + 1));
+      });
+    }
+    (String(m.bv || '').split(',').filter(Boolean)).forEach(v => inc(P.buyValueTotal, v));
   }
   P.radarAvg = P.radarN ? {
     rm: Math.round(P.radarSum.rm / P.radarN * 10) / 10, rt: Math.round(P.radarSum.rt / P.radarN * 10) / 10,

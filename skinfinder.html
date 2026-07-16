@@ -54,6 +54,16 @@
     .sf-opt small { display:block; font-size:11.5px; color:var(--charcoal); opacity:.7; margin-top:2px; }
     .sf-opt.on { border-color:var(--gold); background:var(--cream); }
     .sf-opt:active { transform:scale(.985); }
+    /* カテゴリ別 予算×使う/使わない マトリクス */
+    .sf-grid { gap:14px; }
+    .sf-grow { display:block; }
+    .sf-grow-l { font-size:13.5px; font-weight:600; color:var(--ink); margin-bottom:7px; }
+    .sf-grow-b { display:flex; flex-wrap:wrap; gap:6px; }
+    .sf-gpill { flex:1 1 auto; min-width:64px; text-align:center; padding:9px 6px; border:1px solid var(--line); border-radius:99px; background:#fff; font-size:12px; line-height:1.3; color:var(--charcoal); transition:all .12s; white-space:nowrap; }
+    .sf-gpill.skip { color:#B0A79A; }
+    .sf-gpill.on { border-color:var(--gold); background:var(--gold); color:#fff; font-weight:600; }
+    .sf-gpill.skip.on { background:#9A9084; border-color:#9A9084; }
+    .sf-gpill:active { transform:scale(.96); }
     .sf-next { margin-top:26px; width:100%; padding:16px; background:var(--ink); color:var(--ivory); border-radius:2px; font-size:14px; letter-spacing:.08em; opacity:.35; pointer-events:none; transition:opacity .2s; }
     .sf-next.ok { opacity:1; pointer-events:auto; }
     .sf-back { display:block; margin:14px auto 0; font-size:11px; color:var(--charcoal); opacity:.6; letter-spacing:.15em; background:none; }
@@ -260,6 +270,8 @@
       { ch:3, id:'future', multi:true, opts:[{v:'spots'},{v:'sag'},{v:'dryline'},{v:'porefix'},{v:'notyet',x:true}] },
       { ch:3, id:'budget', multi:false, opts:[{v:'b1'},{v:'b2'},{v:'b3'},{v:'b4'}] },
       { ch:3, id:'spend', multi:false, opts:[{v:'s1'},{v:'s2'},{v:'s3'},{v:'s4'},{v:'s5'}] },
+      { ch:3, id:'catBudget', grid:true, cats:['cleanse','wash','lotion','emul','serum','pack','body'], bands:['skip','b1','b2','b3','b4','b5'] },
+      { ch:3, id:'buyValue', multi:true, opts:[{v:'effect'},{v:'gentle'},{v:'ingredient'},{v:'price'},{v:'texture'},{v:'trust'},{v:'review'},{v:'keep'}] },
       { ch:3, id:'buyPlace', multi:true, opts:[{v:'drug'},{v:'depaP'},{v:'dermP'},{v:'ecP'},{v:'salonP'},{v:'otherP',x:true}] },
       { ch:3, id:'derma', multi:false, opts:[{v:'doing'},{v:'interested'},{v:'no'}] }
     ];
@@ -988,6 +1000,41 @@
       });
     })();
 
+    /* ── v6 カテゴリ別 予算×使う/使わない マトリクス + 購入で大切にすること(5言語) ── */
+    (function(){
+      var CATS7 = { ja:{cleanse:'クレンジング',wash:'洗顔',lotion:'化粧水',emul:'乳液',serum:'美容液',pack:'パック',body:'ボディソープ・石鹸'},
+        en:{cleanse:'Cleansing',wash:'Face wash',lotion:'Lotion',emul:'Emulsion',serum:'Serum',pack:'Mask',body:'Body soap'},
+        zh:{cleanse:'卸妆',wash:'洁面',lotion:'化妆水',emul:'乳液',serum:'精华',pack:'面膜',body:'沐浴露·香皂'},
+        tw:{cleanse:'卸妝',wash:'洗臉',lotion:'化妝水',emul:'乳液',serum:'精華',pack:'面膜',body:'沐浴乳·香皂'},
+        ko:{cleanse:'클렌징',wash:'세안',lotion:'토너',emul:'로션',serum:'세럼',pack:'팩',body:'바디워시·비누'} };
+      var BND = { ja:{skip:'使わない',b1:'〜1,000円',b2:'1,000〜3,000円',b3:'3,000〜5,000円',b4:'5,000〜10,000円',b5:'10,000円〜'},
+        en:{skip:"Don't use",b1:'–¥1,000',b2:'¥1–3k',b3:'¥3–5k',b4:'¥5–10k',b5:'¥10k+'},
+        zh:{skip:'不使用',b1:'～1,000',b2:'1,000〜3,000',b3:'3,000〜5,000',b4:'5,000〜10,000',b5:'10,000〜'},
+        tw:{skip:'不使用',b1:'～1,000',b2:'1,000〜3,000',b3:'3,000〜5,000',b4:'5,000〜10,000',b5:'10,000〜'},
+        ko:{skip:'사용 안 함',b1:'~1,000엔',b2:'1,000~3,000',b3:'3,000~5,000',b4:'5,000~10,000',b5:'10,000엔~'} };
+      var CBQ = { ja:{q:'アイテムごとに、<br>1品にかける金額はどれくらい？',note:'使っていないものは「使わない」を。ここがいちばん活きるデータになります。'},
+        en:{q:'For each item,<br>how much do you spend per product?',note:'Pick “Don’t use” for anything you skip — this is the most useful data of all.'},
+        zh:{q:'每类产品，<br>你单品大约花多少？',note:'不用的选「不使用」。这是最有价值的数据。'},
+        tw:{q:'每類產品，<br>你單品大約花多少？',note:'不用的選「不使用」。這是最有價值的數據。'},
+        ko:{q:'아이템별로,<br>1개에 얼마쯤 쓰나요?',note:'안 쓰는 건 「사용 안 함」으로. 가장 값진 데이터예요.'} };
+      var BVQ = { ja:{q:'スキンケアを選ぶとき、<br>大切にしていることは？',note:'当てはまるものをすべて。あなたの「選ぶ基準」を教えてください。',o:{effect:{l:'効果・実感'},gentle:{l:'肌へのやさしさ・低刺激'},ingredient:{l:'成分・処方'},price:{l:'価格・コスパ'},texture:{l:'香り・使い心地'},trust:{l:'ブランドへの信頼'},review:{l:'口コミ・評判'},keep:{l:'続けやすさ'}}},
+        en:{q:'When you choose skincare,<br>what matters most to you?',note:'Choose all that apply — tell us your criteria.',o:{effect:{l:'Results you can feel'},gentle:{l:'Gentle / low-irritation'},ingredient:{l:'Ingredients / formula'},price:{l:'Price / value'},texture:{l:'Scent / feel'},trust:{l:'Trust in the brand'},review:{l:'Reviews / reputation'},keep:{l:'Easy to keep up'}}},
+        zh:{q:'挑选护肤品时，<br>你最看重什么？',note:'请全选——告诉我们你的标准。',o:{effect:{l:'效果·实感'},gentle:{l:'温和·低刺激'},ingredient:{l:'成分·配方'},price:{l:'价格·性价比'},texture:{l:'香味·肤感'},trust:{l:'品牌信赖'},review:{l:'口碑·评价'},keep:{l:'易于坚持'}}},
+        tw:{q:'挑選保養品時，<br>你最看重什麼？',note:'請全選——告訴我們你的標準。',o:{effect:{l:'效果·實感'},gentle:{l:'溫和·低刺激'},ingredient:{l:'成分·配方'},price:{l:'價格·CP值'},texture:{l:'香味·膚感'},trust:{l:'品牌信賴'},review:{l:'口碑·評價'},keep:{l:'易於堅持'}}},
+        ko:{q:'스킨케어를 고를 때,<br>가장 중요하게 보는 것은?',note:'해당되는 것 모두 — 당신의 기준을 알려주세요.',o:{effect:{l:'효과·실감'},gentle:{l:'순함·저자극'},ingredient:{l:'성분·처방'},price:{l:'가격·가성비'},texture:{l:'향·사용감'},trust:{l:'브랜드 신뢰'},review:{l:'리뷰·평판'},keep:{l:'꾸준히 쓰기 쉬움'}}} };
+      var SL2 = { ja:{catBudget:'アイテム別 予算',buyValue:'選ぶ基準'}, en:{catBudget:'Budget by item',buyValue:'Buying criteria'},
+        zh:{catBudget:'各类预算',buyValue:'选购标准'}, tw:{catBudget:'各類預算',buyValue:'選購標準'}, ko:{catBudget:'아이템별 예산',buyValue:'선택 기준'} };
+      ['ja','en','zh','tw','ko'].forEach(function(lg){
+        if (!LOCALE[lg]) return;
+        LOCALE[lg].q = LOCALE[lg].q || {};
+        LOCALE[lg].q.catBudget = { q:CBQ[lg].q, note:CBQ[lg].note, cats:CATS7[lg], bands:BND[lg] };
+        LOCALE[lg].q.buyValue = BVQ[lg];
+        LOCALE[lg].sheetLabels = LOCALE[lg].sheetLabels || {};
+        LOCALE[lg].sheetLabels.catBudget = SL2[lg].catBudget;
+        LOCALE[lg].sheetLabels.buyValue = SL2[lg].buyValue;
+      });
+    })();
+
     function curLang(){
       try { if (window.SEAM_LANG) return window.SEAM_LANG.get(); } catch(e){}
       try { var s = localStorage.getItem('seamLang'); if (s && LOCALE[s]) return s; } catch(e){}
@@ -1134,38 +1181,64 @@
       $('sfQ').innerHTML = lq.q;
       $('sfQnote').textContent = lq.note || '';
       var box = $('sfOpts'); box.innerHTML = '';
+      box.className = st.grid ? 'sf-opts sf-grid' : 'sf-opts';
       var cur = ans[st.id];
-      st.opts.forEach(function(o){
-        var tx = lq.o[o.v] || {};
-        var b = document.createElement('button');
-        b.className = 'sf-opt';
-        b.innerHTML = (tx.l || o.v) + (tx.s ? '<small>' + tx.s + '</small>' : '');
-        var on = st.multi ? (Array.isArray(cur) && cur.indexOf(o.v) > -1) : cur === o.v;
-        if (on) b.classList.add('on');
-        b.onclick = function(){
-          if (st.multi) {
-            var arr = Array.isArray(ans[st.id]) ? ans[st.id].slice() : [];
-            if (o.x) { arr = arr.indexOf(o.v) > -1 ? [] : [o.v]; }
-            else {
-              arr = arr.filter(function(v){ return !st.opts.some(function(p){ return p.x && p.v === v; }); });
-              var i = arr.indexOf(o.v);
-              if (i > -1) arr.splice(i,1); else arr.push(o.v);
+      if (st.grid) {
+        if (!ans[st.id] || typeof ans[st.id] !== 'object') ans[st.id] = {};
+        var g = ans[st.id];
+        st.cats.forEach(function(cat){
+          var row = document.createElement('div'); row.className = 'sf-grow';
+          var lbl = document.createElement('div'); lbl.className = 'sf-grow-l'; lbl.textContent = (lq.cats && lq.cats[cat]) || cat;
+          var bandwrap = document.createElement('div'); bandwrap.className = 'sf-grow-b';
+          st.bands.forEach(function(bn){
+            var bt = document.createElement('button'); bt.type = 'button';
+            bt.className = 'sf-gpill' + (bn === 'skip' ? ' skip' : '') + (g[cat] === bn ? ' on' : '');
+            bt.textContent = (lq.bands && lq.bands[bn]) || bn;
+            // タップはこの行だけ更新(全体再描画しない=ちらつき回避・他行の選択を保持)
+            bt.onclick = function(){
+              g[cat] = bn;
+              Array.prototype.forEach.call(bandwrap.children, function(el){ el.classList.remove('on'); });
+              bt.classList.add('on');
+              $('sfNext').classList.toggle('ok', st.cats.every(function(c){ return g[c]; }));
+            };
+            bandwrap.appendChild(bt);
+          });
+          row.appendChild(lbl); row.appendChild(bandwrap); box.appendChild(row);
+        });
+      } else {
+        st.opts.forEach(function(o){
+          var tx = lq.o[o.v] || {};
+          var b = document.createElement('button');
+          b.className = 'sf-opt';
+          b.innerHTML = (tx.l || o.v) + (tx.s ? '<small>' + tx.s + '</small>' : '');
+          var on = st.multi ? (Array.isArray(cur) && cur.indexOf(o.v) > -1) : cur === o.v;
+          if (on) b.classList.add('on');
+          b.onclick = function(){
+            if (st.multi) {
+              var arr = Array.isArray(ans[st.id]) ? ans[st.id].slice() : [];
+              if (o.x) { arr = arr.indexOf(o.v) > -1 ? [] : [o.v]; }
+              else {
+                arr = arr.filter(function(v){ return !st.opts.some(function(p){ return p.x && p.v === v; }); });
+                var i = arr.indexOf(o.v);
+                if (i > -1) arr.splice(i,1); else arr.push(o.v);
+              }
+              ans[st.id] = arr;
+              renderQ();
+            } else {
+              ans[st.id] = o.v;
+              renderQ();
+              setTimeout(next, 220);
             }
-            ans[st.id] = arr;
-            renderQ();
-          } else {
-            ans[st.id] = o.v;
-            renderQ();
-            setTimeout(next, 220);
-          }
-        };
-        box.appendChild(b);
-      });
-      var ok = st.multi ? (Array.isArray(cur) && cur.length > 0) : !!cur;
+          };
+          box.appendChild(b);
+        });
+      }
+      var ok = st.grid ? st.cats.every(function(c){ return ans[st.id] && ans[st.id][c]; })
+        : (st.multi ? (Array.isArray(cur) && cur.length > 0) : !!cur);
       $('sfNext').textContent = L.next;
       $('sfBack').textContent = L.back;
       $('sfNext').classList.toggle('ok', ok);
-      $('sfNext').style.display = st.multi ? '' : 'none';
+      $('sfNext').style.display = (st.multi || st.grid) ? '' : 'none';
       $('sfBack').style.visibility = idx === 0 ? 'hidden' : 'visible';
       $('sfQuiz').classList.remove('fadein'); void $('sfQuiz').offsetWidth; $('sfQuiz').classList.add('fadein');
     }
@@ -1522,7 +1595,14 @@
       STRUCT.forEach(function(st){
         var lq = L.q[st.id] || LOCALE.ja.q[st.id];
         var v = ans[st.id];
-        var vals = (Array.isArray(v) ? v : [v]).map(function(x){ return (lq.o[x] || {}).l || x || '—'; }).join('、');
+        var vals;
+        if (st.grid) {
+          var g = v || {};
+          vals = st.cats.map(function(cat){ var bn = g[cat]; if (!bn) return null;
+            return ((lq.cats && lq.cats[cat]) || cat) + '：' + ((lq.bands && lq.bands[bn]) || bn); }).filter(Boolean).join(' ／ ') || '—';
+        } else {
+          vals = (Array.isArray(v) ? v : [v]).map(function(x){ return (lq.o[x] || {}).l || x || '—'; }).join('、');
+        }
         html += '<tr><th>' + (L.sheetLabels[st.id] || st.id) + '</th><td>' + vals + '</td></tr>';
       });
       html += '</table>';
@@ -1570,6 +1650,9 @@
             // v5 追加(8問): 使用中/不満/UV/毛穴ニキビ/生活環境/1品上限/購入場所/美容医療
             cu: ans.current, cp: csv(ans.complaint), uv: ans.uv, pa: csv(ans.poreAcne),
             ls: csv(ans.lifestyle), sp: ans.spend, bp: csv(ans.buyPlace), dm: ans.derma,
+            // v6: cb=カテゴリ別予算(cat:band csv・skip=使わない) / bv=購入で大切にすること
+            cb: (function(o){ o = o || {}; return Object.keys(o).map(function(k){ return k + ':' + o[k]; }).join(','); })(ans.catBudget),
+            bv: csv(ans.buyValue),
             rm: rd.moisture, rt: rd.texture, rf: rd.firmness, rc: rd.clarity, rb: rd.barrier
           };
           sfTrack('skinfinder_complete', { type: computeSkinType(ans), meta: meta });

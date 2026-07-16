@@ -361,6 +361,16 @@
             spendTotal:{s2:Math.round(sc*.31),s3:Math.round(sc*.27),s1:Math.round(sc*.18),s4:Math.round(sc*.16),s5:Math.round(sc*.08)},
             buyPlaceTotal:{drug:Math.round(sc*.44),depaP:Math.round(sc*.33),ecP:Math.round(sc*.30),dermP:Math.round(sc*.12),salonP:Math.round(sc*.09),otherP:Math.round(sc*.05)},
             dermaTotal:{interested:Math.round(sc*.38),no:Math.round(sc*.52),doing:Math.round(sc*.10)},
+            cbN:sc,
+            catBudget:{
+              cleanse:{skip:Math.round(sc*.22),b1:Math.round(sc*.30),b2:Math.round(sc*.31),b3:Math.round(sc*.12),b4:Math.round(sc*.04),b5:Math.round(sc*.01)},
+              wash:{skip:Math.round(sc*.05),b1:Math.round(sc*.42),b2:Math.round(sc*.34),b3:Math.round(sc*.14),b4:Math.round(sc*.04),b5:Math.round(sc*.01)},
+              lotion:{skip:Math.round(sc*.09),b1:Math.round(sc*.24),b2:Math.round(sc*.37),b3:Math.round(sc*.21),b4:Math.round(sc*.07),b5:Math.round(sc*.02)},
+              emul:{skip:Math.round(sc*.36),b1:Math.round(sc*.20),b2:Math.round(sc*.28),b3:Math.round(sc*.12),b4:Math.round(sc*.03),b5:Math.round(sc*.01)},
+              serum:{skip:Math.round(sc*.44),b1:Math.round(sc*.09),b2:Math.round(sc*.18),b3:Math.round(sc*.19),b4:Math.round(sc*.08),b5:Math.round(sc*.02)},
+              pack:{skip:Math.round(sc*.50),b1:Math.round(sc*.14),b2:Math.round(sc*.20),b3:Math.round(sc*.11),b4:Math.round(sc*.04),b5:Math.round(sc*.01)},
+              body:{skip:Math.round(sc*.26),b1:Math.round(sc*.44),b2:Math.round(sc*.22),b3:Math.round(sc*.06),b4:Math.round(sc*.02),b5:Math.round(sc*.01)} },
+            buyValueTotal:{price:Math.round(sc*.58),review:Math.round(sc*.44),gentle:Math.round(sc*.38),texture:Math.round(sc*.34),effect:Math.round(sc*.30),trust:Math.round(sc*.22),keep:Math.round(sc*.20),ingredient:Math.round(sc*.14)},
             radarAvg:{rm:2.6,rt:3.1,rf:2.9,rc:2.7,rb:2.8} } };
       })(),
       summary:{starts:Math.round(completes*1.42), completes:completes, ctas:Math.round(completes*0.34)},
@@ -884,6 +894,37 @@
     var SPD={s1:'〜1,000円',s2:'1,000〜3,000円',s3:'3,000〜5,000円',s4:'5,000〜10,000円',s5:'10,000円〜'};
     var BPL={drug:'ドラッグストア',depaP:'百貨店・デパコス',dermP:'皮膚科・クリニック',ecP:'ネット通販',salonP:'サロン・美容室',otherP:'その他'};
     var DRM={doing:'受けている',interested:'興味あり',no:'考えていない'};
+    // v6 追加(アイテム別 予算×使う/使わない・選ぶ基準) — skinfinder.html と同期
+    var CATS7={cleanse:'クレンジング',wash:'洗顔',lotion:'化粧水',emul:'乳液',serum:'美容液',pack:'パック',body:'ボディソープ・石鹸'};
+    var CATORDER=['cleanse','wash','lotion','emul','serum','pack','body'];
+    var CBND={skip:'使わない',b1:'〜1,000円',b2:'1,000〜3,000円',b3:'3,000〜5,000円',b4:'5,000〜10,000円',b5:'10,000円〜'};
+    var BNDORDER=['b1','b2','b3','b4','b5'];
+    var BVL={effect:'効果・実感',gentle:'肌へのやさしさ・低刺激',ingredient:'成分・処方',price:'価格・コスパ',texture:'香り・使い心地',trust:'ブランドへの信頼',review:'口コミ・評判',keep:'続けやすさ'};
+    var SEG=['#EADFC8','#DBC79A','#CBA96A','#B4874A','#8C5E2E']; // b1〜b5 安→高
+    function catBudgetTable(cb, cbN){
+      cb = cb || {};
+      if(!cbN) return '<div class="empty" style="margin-top:6px">アイテム別 予算データは v6(2026-07) 以降の診断完了から貯まります</div>';
+      var body = CATORDER.map(function(cat){
+        var dist = cb[cat] || {};
+        var skip = dist.skip || 0;
+        var usePct = Math.round((cbN - skip) / cbN * 100);
+        var usedTotal = BNDORDER.reduce(function(s,b){ return s + (dist[b]||0); }, 0) || 1;
+        var top=null, topc=-1; BNDORDER.forEach(function(b){ if((dist[b]||0) > topc){ topc = dist[b]||0; top = b; } });
+        var seg = BNDORDER.map(function(b,i){ var w=(dist[b]||0)/usedTotal*100; return w>0 ? '<span style="height:100%;width:'+w.toFixed(1)+'%;background:'+SEG[i]+'" title="'+CBND[b]+'：'+(dist[b]||0)+'件"></span>' : ''; }).join('');
+        return '<tr style="border-bottom:1px solid #F1ECE2">'
+          + '<td style="padding:6px 4px;font-weight:600;color:#2B2926;white-space:nowrap">'+CATS7[cat]+'</td>'
+          + '<td style="padding:6px 4px;text-align:right;font-family:ui-monospace,monospace;color:#2B2926"><b>'+usePct+'</b><span style="font-size:10px;color:#8C8479">%</span></td>'
+          + '<td style="padding:6px 8px 6px 4px;font-size:11px;color:#5C574E;white-space:nowrap">'+(topc>0?CBND[top]:'—')+'</td>'
+          + '<td style="padding:6px 4px;width:46%"><span style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#F1ECE2;min-width:110px">'+seg+'</span></td>'
+          + '</tr>';
+      }).join('');
+      var legend = BNDORDER.map(function(b,i){ return '<span style="font-size:9.5px;color:#8C8479;white-space:nowrap"><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:'+SEG[i]+';vertical-align:-1px;margin-right:3px"></span>'+CBND[b]+'</span>'; }).join('<span style="display:inline-block;width:10px"></span>');
+      return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px">'
+        + '<thead><tr style="border-bottom:1px solid #E7DFD1;color:#8C8479;font-size:10px;letter-spacing:.05em">'
+        + '<th style="text-align:left;padding:5px 4px">アイテム</th><th style="text-align:right;padding:5px 4px">使う率</th><th style="text-align:left;padding:5px 4px">主な予算帯</th><th style="text-align:left;padding:5px 4px">予算分布（使う人の中で・安→高）</th></tr></thead>'
+        + '<tbody>'+body+'</tbody></table></div>'
+        + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:9px;align-items:center">'+legend+'</div>';
+    }
     function rows(obj,lbl){ obj=obj||{}; return Object.keys(obj).map(function(k){return {c:obj[k],nm:(lbl[k]||k)};}).sort(function(a,b){return b.c-a.c;}); }
     function br(obj,lbl){ return barRows(rows(obj,lbl), function(x){return x.nm;}); }
     function skm(l,v,u){ return '<div style="min-width:118px"><div style="font-size:10px;color:#8C8479;letter-spacing:.08em">'+l+'</div><div style="font-size:22px;color:#2B2926;font-family:ui-monospace,monospace;line-height:1.3">'+(v||0)+'<span style="font-size:12px;color:#8C8479"> '+u+'</span></div></div>'; }
@@ -924,6 +965,10 @@
       + panel('Pore/Acne','毛穴・ニキビの実態', br(P.poreAcneTotal, PAC) + noteLine('悩みの解像度。大人ニキビ/たるみ毛穴の多さで売り場の主役が決まる'))
       + panel('Lifestyle','生活・環境の要因', br(P.lifestyleTotal, LSF) + noteLine('睡眠・乾燥・マスク＝インナーケア/保湿の訴求根拠'))
       + panel('Aesthetic','美容医療への関心', br(P.dermaTotal, DRM) + noteLine('「受けている/興味あり」の比率＝ドクターズコスメ需要の裏付け'))
+      + '<div class="card panel" style="grid-column:1/-1;background:linear-gradient(135deg,#FBF7EE,#F6F1E7)"><h2><span class="eyebrow">Category Budget</span>アイテム別 予算 × 使う / 使わない（v6・7カテゴリ）</h2>'
+        + (P.cbN ? '<p style="font-size:10.5px;color:#8C8479;margin:2px 0 8px;line-height:1.55">回答した完了 <b>'+P.cbN+'</b> 件が母数。<b>使う率</b>＝そのアイテムを使う人の割合／<b>予算分布</b>＝使う人がいくら出しているか。<br>「使う率は高いのに安い帯に集中」＝“もっと良い一本”に出す余地がある層。ここに公式が“選ぶ理由”を届ければ単価が伸びます（ミルボン/コーセー等の入り込み先）</p>'
+            : '') + catBudgetTable(P.catBudget, P.cbN) + '</div>'
+      + panel('選ぶ基準','スキンケアを選ぶとき大切にすること（複数選択・率）', (P.cbN ? br(P.buyValueTotal, BVL) + noteLine('“何を刺せば買うか”＝広告コピー・売り場POPの軸。効果／やさしさ／価格／口コミ、どこで動くか') : '<div class="empty">v6(2026-07)以降に蓄積</div>'))
       + panel('Skin CTA','肌診断からの遷移先', (K.ctaTarget&&K.ctaTarget.length? barRows(K.ctaTarget, function(x){return CTA[x.target]||x.target;}) : '<div class="empty">データなし</div>'))
       + '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Skin Trend</span>肌診断 日次トレンド（完了）</h2>'+sparkline(K.daily||[])+'</div>';
   }
@@ -1076,7 +1121,9 @@
     (data.daily||[]).forEach(function(x){rows.push(['daily',x.d,x.c]);});
     if(data.skin){var K=data.skin,SP=K.profile||{};rows.push(['skin','completes',K.completes||0]);rows.push(['skin','starts',K.starts||0]);rows.push(['skin','ctas',K.ctas||0]);
       (K.byType||[]).forEach(function(x){rows.push(['skinType',x.t,x.c]);});
-      ['typeTotal','priTotal','baseTotal','hydTotal','troubleTotal','concernTotal','goalTotal','budgetTotal','byAge','currentTotal','complaintTotal','uvTotal','poreAcneTotal','lifestyleTotal','spendTotal','buyPlaceTotal','dermaTotal'].forEach(function(key){var o=SP[key]||{};Object.keys(o).forEach(function(k){rows.push(['skin:'+key,k,o[k]]);});});
+      ['typeTotal','priTotal','baseTotal','hydTotal','troubleTotal','concernTotal','goalTotal','budgetTotal','byAge','currentTotal','complaintTotal','uvTotal','poreAcneTotal','lifestyleTotal','spendTotal','buyPlaceTotal','dermaTotal','buyValueTotal'].forEach(function(key){var o=SP[key]||{};Object.keys(o).forEach(function(k){rows.push(['skin:'+key,k,o[k]]);});});
+      // v6: アイテム別 予算(カテゴリ×バンド) — section=skin:catBudget:<cat>, key=<band>
+      var cb=SP.catBudget||{};Object.keys(cb).forEach(function(cat){var d=cb[cat]||{};Object.keys(d).forEach(function(bn){rows.push(['skin:catBudget:'+cat,bn,d[bn]]);});});
       if(SP.radarAvg){Object.keys(SP.radarAvg).forEach(function(k){rows.push(['skin:radar',k,SP.radarAvg[k]]);});}}
     (data.brandSearch||[]).forEach(function(x){rows.push(['brandSearch',x.label,x.c]);});
     (data.brandClick||[]).forEach(function(x){rows.push(['brandClick',x.label,x.c]);});
