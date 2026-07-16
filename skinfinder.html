@@ -242,8 +242,13 @@
       { ch:1, id:'age', multi:false, opts:[{v:'10s'},{v:'20s'},{v:'30s'},{v:'40s'},{v:'50s'}] },
       { ch:1, id:'base', multi:false, opts:[{v:'dry'},{v:'oily'},{v:'combo'},{v:'sensitive'},{v:'normal'}] },
       { ch:1, id:'hydration', multi:false, opts:[{v:'low'},{v:'partial'},{v:'inner'},{v:'high'}] },
+      { ch:1, id:'current', multi:false, opts:[{v:'pchi'},{v:'depa'},{v:'derm'},{v:'salon'},{v:'mix'},{v:'none'}] },
       { ch:1, id:'concerns', multi:true, opts:[{v:'dry'},{v:'pore'},{v:'hari'},{v:'tone'},{v:'sensitive'},{v:'acne'},{v:'none',x:true}] },
+      { ch:1, id:'poreAcne', multi:true, opts:[{v:'blackhead'},{v:'openpore'},{v:'sagpore'},{v:'adultacne'},{v:'tzone'},{v:'nonep',x:true}] },
       { ch:1, id:'trouble', multi:false, opts:[{v:'allergy'},{v:'ingredient'},{v:'seasonal'},{v:'none'}] },
+      { ch:1, id:'complaint', multi:true, opts:[{v:'dryC'},{v:'oilyC'},{v:'noEffect'},{v:'pricey'},{v:'irritate'},{v:'noneC',x:true}] },
+      { ch:1, id:'uv', multi:false, opts:[{v:'daily'},{v:'outing'},{v:'season'},{v:'rarely'}] },
+      { ch:1, id:'lifestyle', multi:true, opts:[{v:'sleep'},{v:'stress'},{v:'aircon'},{v:'mask'},{v:'diet'},{v:'nonel',x:true}] },
       { ch:1, id:'lash', multi:false, opts:[{v:'grow'},{v:'curl'},{v:'ok'}] },
       { ch:2, id:'peak', multi:false, opts:[{v:'teen'},{v:'twenties'},{v:'recent'},{v:'future'}] },
       { ch:2, id:'exp', multi:false, opts:[{v:'simple'},{v:'explorer'},{v:'salon'},{v:'doctor'}] },
@@ -253,7 +258,10 @@
       { ch:3, id:'time', multi:false, opts:[{v:'full'},{v:'night'},{v:'quick'},{v:'weekend'}] },
       { ch:3, id:'inner', multi:false, opts:[{v:'yes'},{v:'curious'},{v:'later'}] },
       { ch:3, id:'future', multi:true, opts:[{v:'spots'},{v:'sag'},{v:'dryline'},{v:'porefix'},{v:'notyet',x:true}] },
-      { ch:3, id:'budget', multi:false, opts:[{v:'b1'},{v:'b2'},{v:'b3'},{v:'b4'}] }
+      { ch:3, id:'budget', multi:false, opts:[{v:'b1'},{v:'b2'},{v:'b3'},{v:'b4'}] },
+      { ch:3, id:'spend', multi:false, opts:[{v:'s1'},{v:'s2'},{v:'s3'},{v:'s4'},{v:'s5'}] },
+      { ch:3, id:'buyPlace', multi:true, opts:[{v:'drug'},{v:'depaP'},{v:'dermP'},{v:'ecP'},{v:'salonP'},{v:'otherP',x:true}] },
+      { ch:3, id:'derma', multi:false, opts:[{v:'doing'},{v:'interested'},{v:'no'}] }
     ];
 
     /* ─────────── 5言語ロケール ─────────── */
@@ -870,6 +878,116 @@
     }
     };
 
+    /* ── v5 追加質問(8問) 各言語のqへマージ + sheetLabels拡張。描画/カルテはSTRUCT反復のため自動反映 ── */
+    (function(){
+      var EXT = {
+        ja: {
+          current:{ q:'いま使っているスキンケアは、<br>どんなものが多いですか？', note:'ざっくりで大丈夫です。次の一本を、いまの延長で選べます。', o:{
+            pchi:{l:'プチプラ中心',s:'ドラッグストアで買えるもの'}, depa:{l:'デパコス中心',s:'百貨店ブランドが好き'}, derm:{l:'皮膚科・ドクターズ系',s:'クリニックや処方系'}, salon:{l:'サロン専売',s:'美容室・エステで購入'}, mix:{l:'いろいろ試している',s:'まだ決まっていない'}, none:{l:'とくにこだわりはない'} } },
+          complaint:{ q:'いま使っているものに、<br>「あと一歩」を感じる点は？', note:'当てはまるものをすべて。ここが、次の一本を選ぶヒントになります。', o:{
+            dryC:{l:'物足りない・乾く'}, oilyC:{l:'重い・ベタつく'}, noEffect:{l:'効果を感じにくい'}, pricey:{l:'続けるには高い'}, irritate:{l:'ときどき刺激を感じる'}, noneC:{l:'とくに不満はない'} } },
+          uv:{ q:'日焼け止めは、<br>どのくらい使っていますか？', note:'紫外線対策は、10年後の肌にいちばん効く習慣です。', o:{
+            daily:{l:'毎日、欠かさず',s:'室内でも塗る'}, outing:{l:'外出するときだけ'}, season:{l:'夏やレジャーのときだけ'}, rarely:{l:'ほとんど塗らない'} } },
+          poreAcne:{ q:'毛穴やニキビについて、<br>近いものはありますか？', note:'当てはまるものをすべて。タイプが分かると、選ぶ一本が変わります。', o:{
+            blackhead:{l:'小鼻の黒ずみ毛穴'}, openpore:{l:'頬の開き毛穴'}, sagpore:{l:'たるみ毛穴（涙型）'}, adultacne:{l:'あご・フェイスラインの大人ニキビ'}, tzone:{l:'Tゾーンのテカり'}, nonep:{l:'とくに気にならない'} } },
+          lifestyle:{ q:'最近の生活で、肌に響いていそうな<br>ことはありますか？', note:'当てはまるものをすべて。肌は、暮らしの鏡です。', o:{
+            sleep:{l:'睡眠不足が続いている'}, stress:{l:'ストレス・疲れがたまりがち'}, aircon:{l:'エアコンで空気が乾く環境'}, mask:{l:'マスクで擦れる・蒸れる'}, diet:{l:'食事が偏りがち'}, nonel:{l:'とくに思いあたらない'} } },
+          spend:{ q:'「これ」と思える1品になら、<br>1回いくらまで出せますか？', note:'月の予算とは別に、ここぞの一本の上限を教えてください。', o:{
+            s1:{l:'〜1,000円'}, s2:{l:'1,000〜3,000円'}, s3:{l:'3,000〜5,000円'}, s4:{l:'5,000〜10,000円'}, s5:{l:'10,000円〜'} } },
+          buyPlace:{ q:'スキンケアは、<br>どこで買うことが多いですか？', note:'当てはまるものをすべて。', o:{
+            drug:{l:'ドラッグストア'}, depaP:{l:'百貨店・デパコス'}, dermP:{l:'皮膚科・クリニック'}, ecP:{l:'ネット通販'}, salonP:{l:'サロン・美容室'}, otherP:{l:'その他'} } },
+          derma:{ q:'美容医療（クリニックの施術）に<br>ついてはいかがですか？', note:'ご提案の参考にします。無理におすすめはしません。', o:{
+            doing:{l:'受けたことがある・通っている'}, interested:{l:'興味はある'}, no:{l:'いまは考えていない'} } }
+        },
+        en: {
+          current:{ q:'What kind of skincare<br>do you mostly use now?', note:'A rough sense is fine — we pick your next one as an extension of this.', o:{
+            pchi:{l:'Mostly drugstore',s:'Affordable, easy to find'}, depa:{l:'Mostly department-store',s:'I like prestige brands'}, derm:{l:'Clinic / doctor lines',s:'Dermatology-based'}, salon:{l:'Salon-exclusive',s:'Bought at a salon/spa'}, mix:{l:'Trying all sorts',s:'Not settled yet'}, none:{l:'No strong preference'} } },
+          complaint:{ q:'What feels “one step short”<br>about what you use now?', note:'Choose all that apply — this is the biggest hint for your next one.', o:{
+            dryC:{l:'Not enough / still dry'}, oilyC:{l:'Heavy / greasy'}, noEffect:{l:'Hard to feel results'}, pricey:{l:'Too pricey to keep up'}, irritate:{l:'Occasional stinging'}, noneC:{l:'No real complaints'} } },
+          uv:{ q:'How often do you<br>wear sunscreen?', note:'UV care is the single habit that matters most for skin 10 years from now.', o:{
+            daily:{l:'Every day, without fail',s:'Even indoors'}, outing:{l:'Only when going out'}, season:{l:'Only summer / leisure'}, rarely:{l:'Rarely wear it'} } },
+          poreAcne:{ q:'Anything close to yours<br>on pores or acne?', note:'Choose all that apply — the type changes which one we pick.', o:{
+            blackhead:{l:'Blackheads on the nose'}, openpore:{l:'Open pores on cheeks'}, sagpore:{l:'Teardrop / sagging pores'}, adultacne:{l:'Adult acne on jaw / jawline'}, tzone:{l:'Shine on the T-zone'}, nonep:{l:'Not really a concern'} } },
+          lifestyle:{ q:'Anything in daily life lately<br>that may be showing on your skin?', note:'Choose all that apply — skin mirrors your lifestyle.', o:{
+            sleep:{l:'Ongoing lack of sleep'}, stress:{l:'Stress / fatigue building up'}, aircon:{l:'Dry, air-conditioned rooms'}, mask:{l:'Mask friction / stuffiness'}, diet:{l:'Unbalanced meals'}, nonel:{l:'Nothing in particular'} } },
+          spend:{ q:'For one item you truly love,<br>what is your ceiling per purchase?', note:'Apart from monthly budget — the cap for that special one.', o:{
+            s1:{l:'Up to ¥1,000'}, s2:{l:'¥1,000–3,000'}, s3:{l:'¥3,000–5,000'}, s4:{l:'¥5,000–10,000'}, s5:{l:'¥10,000+'} } },
+          buyPlace:{ q:'Where do you usually<br>buy skincare?', note:'Choose all that apply.', o:{
+            drug:{l:'Drugstore'}, depaP:{l:'Department store'}, dermP:{l:'Clinic / dermatology'}, ecP:{l:'Online'}, salonP:{l:'Salon / spa'}, otherP:{l:'Other'} } },
+          derma:{ q:'How about aesthetic medicine<br>(in-clinic treatments)?', note:'Just to inform our suggestions — we never push it.', o:{
+            doing:{l:'Have done it / go regularly'}, interested:{l:'Curious about it'}, no:{l:'Not considering it now'} } }
+        },
+        zh: {
+          current:{ q:'你现在用的护肤品，<br>大多是哪一类？', note:'大概即可。我们会顺着现在为你挑下一支。', o:{
+            pchi:{l:'开架为主',s:'药妆店能买到'}, depa:{l:'专柜为主',s:'偏好百货品牌'}, derm:{l:'皮肤科·医美系',s:'诊所或处方系'}, salon:{l:'沙龙专售',s:'美容院购买'}, mix:{l:'各种都在试',s:'还没固定'}, none:{l:'没有特别偏好'} } },
+          complaint:{ q:'现在用的产品，<br>让你觉得「还差一点」的是？', note:'请全选。这是挑下一支最好的线索。', o:{
+            dryC:{l:'不够滋润·还是干'}, oilyC:{l:'厚重·黏腻'}, noEffect:{l:'感受不到效果'}, pricey:{l:'长期用太贵'}, irritate:{l:'偶尔有刺激感'}, noneC:{l:'没有特别不满'} } },
+          uv:{ q:'防晒，<br>你多常涂？', note:'防晒是对十年后肌肤最有效的习惯。', o:{
+            daily:{l:'每天必涂',s:'室内也涂'}, outing:{l:'只在外出时'}, season:{l:'只在夏天或户外'}, rarely:{l:'几乎不涂'} } },
+          poreAcne:{ q:'关于毛孔或痘痘，<br>有接近的吗？', note:'请全选。类型不同，挑的产品也不同。', o:{
+            blackhead:{l:'鼻翼黑头毛孔'}, openpore:{l:'脸颊粗大毛孔'}, sagpore:{l:'松弛毛孔（水滴形）'}, adultacne:{l:'下巴·下颌线成人痘'}, tzone:{l:'T区出油'}, nonep:{l:'不太在意'} } },
+          lifestyle:{ q:'最近的生活里，<br>可能反映在肌肤上的有？', note:'请全选。肌肤是生活的镜子。', o:{
+            sleep:{l:'长期睡眠不足'}, stress:{l:'压力·疲劳累积'}, aircon:{l:'空调让空气干燥'}, mask:{l:'口罩摩擦·闷'}, diet:{l:'饮食不均衡'}, nonel:{l:'没有特别想到'} } },
+          spend:{ q:'为一支「就是它」的产品，<br>单次最多愿意花多少？', note:'与月预算分开——为那一支的上限。', o:{
+            s1:{l:'～1,000日元'}, s2:{l:'1,000～3,000日元'}, s3:{l:'3,000～5,000日元'}, s4:{l:'5,000～10,000日元'}, s5:{l:'10,000日元～'} } },
+          buyPlace:{ q:'护肤品<br>你多在哪里买？', note:'请全选。', o:{
+            drug:{l:'药妆店'}, depaP:{l:'百货专柜'}, dermP:{l:'皮肤科·诊所'}, ecP:{l:'网购'}, salonP:{l:'沙龙·美容院'}, otherP:{l:'其他'} } },
+          derma:{ q:'关于医美<br>（诊所疗程）呢？', note:'仅作为建议参考，不会勉强推荐。', o:{
+            doing:{l:'做过·有在做'}, interested:{l:'有兴趣'}, no:{l:'目前没考虑'} } }
+        },
+        tw: {
+          current:{ q:'你現在用的保養品，<br>大多是哪一類？', note:'大概即可。我們會順著現在為你挑下一支。', o:{
+            pchi:{l:'開架為主',s:'藥妝店買得到'}, depa:{l:'專櫃為主',s:'偏好百貨品牌'}, derm:{l:'皮膚科·醫美系',s:'診所或處方系'}, salon:{l:'沙龍專售',s:'美容院購買'}, mix:{l:'各種都在試',s:'還沒固定'}, none:{l:'沒有特別偏好'} } },
+          complaint:{ q:'現在用的產品，<br>讓你覺得「還差一點」的是？', note:'請全選。這是挑下一支最好的線索。', o:{
+            dryC:{l:'不夠滋潤·還是乾'}, oilyC:{l:'厚重·黏膩'}, noEffect:{l:'感受不到效果'}, pricey:{l:'長期用太貴'}, irritate:{l:'偶爾有刺激感'}, noneC:{l:'沒有特別不滿'} } },
+          uv:{ q:'防曬，<br>你多常擦？', note:'防曬是對十年後肌膚最有效的習慣。', o:{
+            daily:{l:'每天必擦',s:'室內也擦'}, outing:{l:'只在外出時'}, season:{l:'只在夏天或戶外'}, rarely:{l:'幾乎不擦'} } },
+          poreAcne:{ q:'關於毛孔或痘痘，<br>有接近的嗎？', note:'請全選。類型不同，挑的產品也不同。', o:{
+            blackhead:{l:'鼻翼黑頭毛孔'}, openpore:{l:'臉頰粗大毛孔'}, sagpore:{l:'鬆弛毛孔（水滴形）'}, adultacne:{l:'下巴·下顎線成人痘'}, tzone:{l:'T區出油'}, nonep:{l:'不太在意'} } },
+          lifestyle:{ q:'最近的生活裡，<br>可能反映在肌膚上的有？', note:'請全選。肌膚是生活的鏡子。', o:{
+            sleep:{l:'長期睡眠不足'}, stress:{l:'壓力·疲勞累積'}, aircon:{l:'空調讓空氣乾燥'}, mask:{l:'口罩摩擦·悶'}, diet:{l:'飲食不均衡'}, nonel:{l:'沒有特別想到'} } },
+          spend:{ q:'為一支「就是它」的產品，<br>單次最多願意花多少？', note:'與月預算分開——為那一支的上限。', o:{
+            s1:{l:'～1,000日圓'}, s2:{l:'1,000～3,000日圓'}, s3:{l:'3,000～5,000日圓'}, s4:{l:'5,000～10,000日圓'}, s5:{l:'10,000日圓～'} } },
+          buyPlace:{ q:'保養品<br>你多在哪裡買？', note:'請全選。', o:{
+            drug:{l:'藥妝店'}, depaP:{l:'百貨專櫃'}, dermP:{l:'皮膚科·診所'}, ecP:{l:'網購'}, salonP:{l:'沙龍·美容院'}, otherP:{l:'其他'} } },
+          derma:{ q:'關於醫美<br>（診所療程）呢？', note:'僅作為建議參考，不會勉強推薦。', o:{
+            doing:{l:'做過·有在做'}, interested:{l:'有興趣'}, no:{l:'目前沒考慮'} } }
+        },
+        ko: {
+          current:{ q:'지금 쓰는 스킨케어는<br>주로 어떤 편인가요?', note:'대략이면 충분해요. 지금의 연장선에서 다음 한 병을 골라요.', o:{
+            pchi:{l:'드럭스토어 위주',s:'부담 없이 구하는 것'}, depa:{l:'백화점 브랜드 위주',s:'프레스티지를 좋아함'}, derm:{l:'피부과·더마 계열',s:'클리닉·처방 계열'}, salon:{l:'살롱 전용',s:'미용실·에스테서 구매'}, mix:{l:'여러 가지 시도 중',s:'아직 정하지 않음'}, none:{l:'특별한 선호 없음'} } },
+          complaint:{ q:'지금 쓰는 것에서<br>「한 끗 아쉬운」 점은?', note:'해당되는 것 모두. 다음 한 병을 고르는 가장 큰 힌트예요.', o:{
+            dryC:{l:'부족함·건조함'}, oilyC:{l:'무거움·번들거림'}, noEffect:{l:'효과가 잘 느껴지지 않음'}, pricey:{l:'계속 쓰기엔 비쌈'}, irritate:{l:'가끔 자극이 있음'}, noneC:{l:'특별한 불만 없음'} } },
+          uv:{ q:'자외선 차단제는<br>얼마나 쓰나요?', note:'자외선 케어는 10년 후 피부에 가장 효과적인 습관이에요.', o:{
+            daily:{l:'매일 빠짐없이',s:'실내에서도 바름'}, outing:{l:'외출할 때만'}, season:{l:'여름·레저 때만'}, rarely:{l:'거의 바르지 않음'} } },
+          poreAcne:{ q:'모공이나 여드름 중<br>가까운 것이 있나요?', note:'해당되는 것 모두. 타입에 따라 고르는 한 병이 달라져요.', o:{
+            blackhead:{l:'콧방울 블랙헤드 모공'}, openpore:{l:'볼의 넓어진 모공'}, sagpore:{l:'처진 모공(물방울형)'}, adultacne:{l:'턱·페이스라인 성인 여드름'}, tzone:{l:'T존 번들거림'}, nonep:{l:'별로 신경 쓰이지 않음'} } },
+          lifestyle:{ q:'최근 생활에서 피부에<br>영향을 줄 만한 것이 있나요?', note:'해당되는 것 모두. 피부는 생활의 거울이에요.', o:{
+            sleep:{l:'수면 부족이 이어짐'}, stress:{l:'스트레스·피로 누적'}, aircon:{l:'에어컨으로 건조한 환경'}, mask:{l:'마스크 마찰·답답함'}, diet:{l:'식사가 불균형함'}, nonel:{l:'딱히 떠오르지 않음'} } },
+          spend:{ q:'「이거다」 싶은 한 병에는<br>1회 얼마까지 낼 수 있나요?', note:'월 예산과 별개로, 바로 그 한 병의 상한을 알려주세요.', o:{
+            s1:{l:'~1,000엔'}, s2:{l:'1,000~3,000엔'}, s3:{l:'3,000~5,000엔'}, s4:{l:'5,000~10,000엔'}, s5:{l:'10,000엔~'} } },
+          buyPlace:{ q:'스킨케어는<br>주로 어디서 사나요?', note:'해당되는 것 모두.', o:{
+            drug:{l:'드럭스토어'}, depaP:{l:'백화점'}, dermP:{l:'피부과·클리닉'}, ecP:{l:'온라인'}, salonP:{l:'살롱·미용실'}, otherP:{l:'기타'} } },
+          derma:{ q:'미용 의료(클리닉 시술)에<br>대해서는 어떠세요?', note:'제안의 참고용이에요. 무리하게 권하지 않아요.', o:{
+            doing:{l:'받은 적 있음·다니는 중'}, interested:{l:'관심 있음'}, no:{l:'지금은 고려 안 함'} } }
+        }
+      };
+      var SL = {
+        ja: { current:'使用中のケア', complaint:'今の不満', uv:'日焼け止め', poreAcne:'毛穴・ニキビ', lifestyle:'生活・環境', spend:'1品の上限', buyPlace:'購入場所', derma:'美容医療' },
+        en: { current:'Current care', complaint:'Frustrations', uv:'Sunscreen', poreAcne:'Pores / acne', lifestyle:'Lifestyle', spend:'Per-item cap', buyPlace:'Where to buy', derma:'Aesthetic medicine' },
+        zh: { current:'在用护肤', complaint:'当前不满', uv:'防晒', poreAcne:'毛孔·痘痘', lifestyle:'生活·环境', spend:'单品上限', buyPlace:'购买渠道', derma:'医美' },
+        tw: { current:'在用保養', complaint:'目前不滿', uv:'防曬', poreAcne:'毛孔·痘痘', lifestyle:'生活·環境', spend:'單品上限', buyPlace:'購買通路', derma:'醫美' },
+        ko: { current:'사용 중 케어', complaint:'현재 불만', uv:'자외선 차단', poreAcne:'모공·여드름', lifestyle:'생활·환경', spend:'1개 상한', buyPlace:'구매처', derma:'미용 의료' }
+      };
+      Object.keys(EXT).forEach(function(lg){
+        if (!LOCALE[lg]) return;
+        LOCALE[lg].q = LOCALE[lg].q || {};
+        var e = EXT[lg]; for (var k in e) LOCALE[lg].q[k] = e[k];
+        LOCALE[lg].sheetLabels = LOCALE[lg].sheetLabels || {};
+        var s = SL[lg]; for (var j in s) LOCALE[lg].sheetLabels[j] = s[j];
+      });
+    })();
+
     function curLang(){
       try { if (window.SEAM_LANG) return window.SEAM_LANG.get(); } catch(e){}
       try { var s = localStorage.getItem('seamLang'); if (s && LOCALE[s]) return s; } catch(e){}
@@ -1219,6 +1337,77 @@
       return out;
     }
 
+    /* v5 追加質問(不満/UV/生活/毛穴ニキビ/美容医療)から、暮らし目線の一言を最大3つ生成。
+       薬機法配慮: 断定的な効能表現は使わず「〜しやすい/近道/見せられます/上がりやすい」で寄り添う。 */
+    var LIFE_ADVICE = {
+      ja: {
+        moreMoist:'いまのケアに「物足りなさ」を感じているなら、うるおいを<b>閉じ込める一本</b>(乳液・クリーム)を一段足すのが近道です。',
+        lighter:'「重い」と感じるなら、テクスチャーは軽く・水分はしっかり。<b>さっぱりなのに乾かない</b>処方が合いやすいタイプです。',
+        keepable:'続けやすさも肌には大切です。予算内で<b>効く役割に絞る</b>と、無理なく続けられます。',
+        uvHabit:'日焼け止めを<b>毎日の習慣</b>にできると、10年後の肌がいちばん変わります。軽いテクスチャーから始めてみてください。',
+        barrier:'睡眠・乾燥・マスクなど、肌がゆらぎやすい時期は<b>夜の保湿をひとつ丁寧に</b>。攻めより「守り」を先にすると立て直しが早いです。',
+        adultAcne:'あご・フェイスラインの大人ニキビは、乾燥や摩擦がサインのことも。<b>保湿と低刺激</b>の見直しから、こすらないケアを。',
+        pore:'毛穴の開き・たるみは、<b>うるおいとハリ</b>のケアで目立ちにくく見せられます。落としすぎないことも同じくらい大切です。',
+        dermaBridge:'美容医療に興味があるなら、<b>ホームケアで土台</b>を整えておくと満足度も上がりやすいです。無理におすすめはしません。'
+      },
+      en: {
+        moreMoist:'If your current care feels “not quite enough,” adding a <b>step that seals in moisture</b> (emulsion/cream) is the fastest fix.',
+        lighter:'If it feels “heavy,” go lighter in texture while keeping hydration — a <b>light-but-not-drying</b> formula suits you.',
+        keepable:'Being able to keep it up matters too. <b>Focusing budget on the role that works</b> makes it sustainable.',
+        uvHabit:'Making sunscreen a <b>daily habit</b> changes your skin the most over 10 years. Start with a light texture.',
+        barrier:'When sleep, dryness or masks make skin wobble, <b>be gentle-thorough with night moisture</b>. Defense before offense recovers faster.',
+        adultAcne:'Adult breakouts on the jaw can signal dryness or friction. Start by <b>revisiting moisture and low-irritation</b>, and avoid rubbing.',
+        pore:'Open/sagging pores can be made <b>less noticeable with hydration and firmness</b> care. Not over-cleansing matters just as much.',
+        dermaBridge:'If you are curious about aesthetic medicine, <b>a solid home-care base</b> tends to raise your satisfaction. We never push it.'
+      },
+      zh: {
+        moreMoist:'若觉得现在的护肤「还差一点」，加一步<b>锁住水分</b>（乳液·面霜）是最快的方式。',
+        lighter:'若觉得「厚重」，就把质地放轻、水分留住——<b>清爽却不干</b>的配方更适合你。',
+        keepable:'能长期坚持也很重要。在预算内<b>聚焦有效的那一步</b>，更容易持续。',
+        uvHabit:'把防晒变成<b>每天的习惯</b>，十年后的肌肤变化最大。先从清爽质地开始。',
+        barrier:'睡眠·干燥·口罩让肌肤不稳时，<b>把夜间保湿做细一点</b>。先守后攻，恢复更快。',
+        adultAcne:'下巴·下颌线的成人痘，有时是干燥或摩擦的信号。先<b>调整保湿与低刺激</b>，别用力搓。',
+        pore:'毛孔的粗大·松弛，可用<b>保湿与紧致</b>护理让它更不明显。不过度清洁同样重要。',
+        dermaBridge:'若对医美有兴趣，<b>先用居家护理打好底子</b>，满意度也更容易提升。我们不会勉强推荐。'
+      },
+      tw: {
+        moreMoist:'若覺得現在的保養「還差一點」，加一步<b>鎖住水分</b>（乳液·乳霜）是最快的方式。',
+        lighter:'若覺得「厚重」，就把質地放輕、水分留住——<b>清爽卻不乾</b>的配方更適合你。',
+        keepable:'能長期堅持也很重要。在預算內<b>聚焦有效的那一步</b>，更容易持續。',
+        uvHabit:'把防曬變成<b>每天的習慣</b>，十年後的肌膚變化最大。先從清爽質地開始。',
+        barrier:'睡眠·乾燥·口罩讓肌膚不穩時，<b>把夜間保濕做細一點</b>。先守後攻，恢復更快。',
+        adultAcne:'下巴·下顎線的成人痘，有時是乾燥或摩擦的訊號。先<b>調整保濕與低刺激</b>，別用力搓。',
+        pore:'毛孔的粗大·鬆弛，可用<b>保濕與緊緻</b>保養讓它更不明顯。不過度清潔同樣重要。',
+        dermaBridge:'若對醫美有興趣，<b>先用居家保養打好底子</b>，滿意度也更容易提升。我們不會勉強推薦。'
+      },
+      ko: {
+        moreMoist:'지금 케어가 「살짝 아쉽다」면, <b>수분을 가두는 한 단계</b>(에멀전·크림)를 더하는 게 가장 빠른 방법이에요.',
+        lighter:'「무겁다」면 질감은 가볍게·수분은 확실히. <b>산뜻한데 당기지 않는</b> 처방이 잘 맞는 타입이에요.',
+        keepable:'꾸준히 쓸 수 있는지도 중요해요. 예산 안에서 <b>효과 있는 역할에 집중</b>하면 무리 없이 이어가요.',
+        uvHabit:'자외선 차단제를 <b>매일의 습관</b>으로 만들면 10년 후 피부가 가장 달라져요. 가벼운 질감부터 시작해 보세요.',
+        barrier:'수면·건조·마스크로 피부가 흔들릴 땐 <b>밤 보습을 하나 꼼꼼히</b>. 공격보다 「방어」를 먼저 하면 회복이 빨라요.',
+        adultAcne:'턱·페이스라인 성인 여드름은 건조나 마찰의 신호일 수 있어요. <b>보습과 저자극</b>부터 점검하고, 문지르지 않는 케어를.',
+        pore:'모공의 넓어짐·처짐은 <b>수분과 탄력</b> 케어로 덜 도드라져 보이게 할 수 있어요. 과도한 클렌징을 피하는 것도 중요해요.',
+        dermaBridge:'미용 의료에 관심 있다면 <b>홈케어로 토대</b>를 다져두면 만족도도 오르기 쉬워요. 무리하게 권하지 않아요.'
+      }
+    };
+    function buildLifeAdvice(a){
+      var D = LIFE_ADVICE[curLang()] || LIFE_ADVICE.ja;
+      var cp = Array.isArray(a.complaint) ? a.complaint : [];
+      var ls = Array.isArray(a.lifestyle) ? a.lifestyle : [];
+      var pa = Array.isArray(a.poreAcne) ? a.poreAcne : [];
+      var out = [];
+      if (cp.indexOf('dryC') > -1) out.push(D.moreMoist);
+      else if (cp.indexOf('oilyC') > -1) out.push(D.lighter);
+      if (cp.indexOf('pricey') > -1) out.push(D.keepable);
+      if (a.uv === 'rarely' || a.uv === 'season') out.push(D.uvHabit);
+      if (['sleep','stress','aircon','mask'].some(function(k){ return ls.indexOf(k) > -1; })) out.push(D.barrier);
+      if (pa.indexOf('adultacne') > -1) out.push(D.adultAcne);
+      else if (pa.indexOf('openpore') > -1 || pa.indexOf('sagpore') > -1) out.push(D.pore);
+      if (a.derma === 'interested') out.push(D.dermaBridge);
+      return out.slice(0, 3);
+    }
+
     /* ─────────── 結果描画(言語切替で再描画可能) ─────────── */
     function renderResult(){
       if (!lastResult) return;
@@ -1287,6 +1476,14 @@
         html += '<section class="sf-pro"><h3 class="serif">' + nt.t + '</h3><p>' + nt.b + '</p></section>';
       });
       html += '</div>';
+
+      /* ── 暮らし・習慣からのひとこと(v5新質問から動的生成・薬機法配慮=「〜しやすい/近道/見せられます」) ── */
+      var lifeLines = buildLifeAdvice(ans);
+      if (lifeLines.length) {
+        html += '<div class="sf-sec fadein"><h2 class="serif">' + (T().lifeH || '暮らし・習慣からのひとこと') + '</h2><p class="sub">' + (T().lifeSub || 'いまの使い方と暮らしから、次の一手をひとつずつ。') + '</p>';
+        lifeLines.forEach(function(ln){ html += '<section class="sf-pro"><p>' + ln + '</p></section>'; });
+        html += '</div>';
+      }
 
       html += '<div class="sf-sec fadein"><h2 class="serif">' + L.routineH + '</h2><p class="sub">' + L.routineSub + '</p>';
       var startCats = startCatsByTime();
@@ -1370,6 +1567,9 @@
             bse: ans.base, hyd: ans.hydration, trb: ans.trouble, age: ans.age,
             gl: ans.goal, bud: ans.budget, tm: ans.time, mk: ans.makeup, lsh: ans.lash, inn: ans.inner,
             cns: csv(ans.concerns), fut: csv(ans.future),
+            // v5 追加(8問): 使用中/不満/UV/毛穴ニキビ/生活環境/1品上限/購入場所/美容医療
+            cu: ans.current, cp: csv(ans.complaint), uv: ans.uv, pa: csv(ans.poreAcne),
+            ls: csv(ans.lifestyle), sp: ans.spend, bp: csv(ans.buyPlace), dm: ans.derma,
             rm: rd.moisture, rt: rd.texture, rf: rd.firmness, rc: rd.clarity, rb: rd.barrier
           };
           sfTrack('skinfinder_complete', { type: computeSkinType(ans), meta: meta });
