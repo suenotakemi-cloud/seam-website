@@ -137,6 +137,16 @@
     </div>
   </header>
   <main>
+    <style>
+      #viewTabs{display:flex;gap:4px;margin:2px 0 20px;border:1px solid var(--line);border-radius:99px;padding:4px;background:#F3EDE2;width:max-content;max-width:100%}
+      .vtab{border:0;background:transparent;padding:9px 26px;border-radius:99px;font-size:14px;font-family:inherit;color:#6B655C;cursor:pointer;font-weight:500;transition:all .15s;white-space:nowrap}
+      .vtab.is-active{background:#fff;color:#2B2926;box-shadow:0 1px 5px rgba(0,0,0,.09)}
+      @media(max-width:520px){.vtab{padding:9px 16px;font-size:13px}}
+    </style>
+    <div id="viewTabs" role="tablist" aria-label="診断の種類">
+      <button type="button" class="vtab is-active" data-view="hair" role="tab">髪格診断</button>
+      <button type="button" class="vtab" data-view="skin" role="tab">肌ストーリー</button>
+    </div>
     <div id="notice"></div>
     <section class="grid kpis" id="kpis"></section>
     <section class="grid panels" id="panels"></section>
@@ -166,6 +176,8 @@
   var KEY_LS = 'seam_admin_key';
   var qs = new URLSearchParams(location.search);
   var DEMO = qs.get('demo') === '1';
+  // 表示ビュー: 髪格診断(hair) / 肌ストーリー(skin) — ?view=skin でブックマーク可
+  var currentView = (qs.get('view') === 'skin') ? 'skin' : 'hair';
 
   // ---- ラベル辞書 ----
   var ADVICE = {scalp:'頭皮ケア', frizz:'うねり・広がり', volume:'ボリューム', damage:'ダメージ補修', dry:'乾燥・うるおい', color:'カラーケア', heat:'熱ダメージ', calm:'コンディション良好'};
@@ -909,13 +921,13 @@
     var cvr = pct(s.ctas, s.completes);
     var crP = sPrev ? pct(sPrev.completes, sPrev.starts) : null;
     var cvrP = sPrev ? pct(sPrev.ctas, sPrev.completes) : null;
-    el('kpis').innerHTML =
+    var hairKpis =
       kpi('診断 完了数', s.completes, '件', sPrev?dchip(s.completes, sPrev.completes):'') +
       kpi('診断 開始数', s.starts, '件', sPrev?dchip(s.starts, sPrev.starts):'') +
       kpi('完了率', cr, '%', crP!==null?dchip(cr, crP):'') +
       kpi('予約・CTA遷移率', cvr, '%', cvrP!==null?dchip(cvr, cvrP):'');
 
-    el('panels').innerHTML =
+    var hairPanels =
       dailyPanel(data.dailyFull||[]) +
       (function(){
         var f = data.finderFunnel; if (!f) return '';
@@ -991,10 +1003,29 @@
       panel('Funnel','予約・誘導クリック', barRows(data.ctaTarget||[], function(x){return TARGET[x.target]||x.target;})) +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Channel</span>チャネル別ファネル（流入→診断→予約）</h2>'+funnelTable(data.sourceFunnel||[])+'</div>' +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Trend</span>日次トレンド（診断完了）</h2>'+sparkline(data.daily||[])+'</div>' +
-      skinPanels(data.skin) +
       prevCompareStrip(data.profile, data.profilePrev) +
       profilePanels(data.profile) +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Log</span>最近のアクティビティ（履歴）</h2>'+recentTable(data.recent||[])+'</div>';
+
+    // 肌ストーリー(肌診断)は独立ページ扱い — skinPanelsは自己完結(独自KPI帯+全ブロック+日次)
+    var skinHtml = skinPanels(data.skin);
+
+    // ビュー切替: 髪はKPI帯+髪パネル / 肌はskinPanelsのみ(独自KPI帯を持つ)
+    if (currentView === 'skin') {
+      el('kpis').innerHTML = '';
+      el('panels').innerHTML = skinHtml || '<div class="card panel" style="grid-column:1/-1"><div class="empty">肌ストーリーのデータがありません</div></div>';
+    } else {
+      el('kpis').innerHTML = hairKpis;
+      el('panels').innerHTML = hairPanels;
+    }
+    // 肌ビューでは髪プロファイル用のセグメント絞り込みは無効なので隠す
+    var showSeg = (currentView !== 'skin') ? '' : 'none';
+    if (el('segAge')) el('segAge').style.display = showSeg;
+    if (el('segCs')) el('segCs').style.display = showSeg;
+    // タブのアクティブ状態を反映
+    Array.prototype.forEach.call(document.querySelectorAll('#viewTabs .vtab'), function(b){
+      b.classList.toggle('is-active', b.getAttribute('data-view') === currentView);
+    });
 
     window.__seamData = data;
   }
@@ -1090,6 +1121,21 @@
   el('logoutBtn').addEventListener('click', function(){ sessionStorage.removeItem(KEY_LS); location.href='admin.html'; });
   el('reloadBtn').addEventListener('click', load);
   el('rangeSel').addEventListener('change', load);
+  // 髪格診断 ⇄ 肌ストーリー のビュー切替(取得済みデータから即再描画・URLも更新)
+  Array.prototype.forEach.call(document.querySelectorAll('#viewTabs .vtab'), function(b){
+    b.addEventListener('click', function(){
+      var v = b.getAttribute('data-view');
+      if (v === currentView) return;
+      currentView = v;
+      try {
+        var u = new URL(location.href);
+        if (v === 'skin') u.searchParams.set('view', 'skin'); else u.searchParams.delete('view');
+        history.replaceState(null, '', u.toString());
+      } catch(e){}
+      if (window.__seamData) render(window.__seamData);
+      window.scrollTo(0, 0);
+    });
+  });
   el('segAge').addEventListener('change', load);
   el('segCs').addEventListener('change', load);
   el('reportBtn').addEventListener('click', openReport);
