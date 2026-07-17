@@ -34,13 +34,28 @@
     .mono { font-family:'Inter',monospace; letter-spacing:.18em; }
     .sf-wrap { max-width:680px; margin:0 auto; padding:0 20px; }
     /* ── intro ── */
-    .sf-hero { padding:56px 0 36px; text-align:center; }
-    .sf-eyebrow { font-size:10.5px; color:var(--gold); text-transform:uppercase; }
-    .sf-title { font-size:30px; line-height:1.45; margin-top:14px; font-weight:500; }
-    @media (min-width:640px){ .sf-title{ font-size:38px; } }
-    .sf-lead { margin-top:16px; font-size:13.5px; color:var(--charcoal); opacity:.85; }
-    .sf-start { display:inline-flex; align-items:center; gap:10px; margin-top:28px; padding:16px 34px; background:var(--ink); color:var(--ivory); border-radius:2px; font-size:14px; letter-spacing:.08em; }
+    .sf-hero { padding:22px 0 40px; text-align:center; }
+    .sf-heroimg { position:relative; margin:0 0 24px; border-radius:22px; overflow:hidden; aspect-ratio:5/6; background:#EFE8DA; box-shadow:0 24px 50px -30px rgba(46,44,40,.5); }
+    @media (min-width:560px){ .sf-heroimg { aspect-ratio:16/11; } }
+    .sf-heroimg img { width:100%; height:100%; object-fit:cover; object-position:70% 24%; display:block; }
+    .sf-heroimg::after { content:""; position:absolute; inset:0; pointer-events:none; z-index:1; background:linear-gradient(to top, rgba(253,251,247,.95) 5%, rgba(253,251,247,.62) 30%, rgba(253,251,247,0) 56%); }
+    .sf-scan { position:absolute; left:0; right:0; top:0; height:30%; z-index:1; pointer-events:none; mix-blend-mode:screen; opacity:0; background:linear-gradient(to bottom, rgba(184,148,90,0), rgba(184,148,90,.14) 46%, rgba(255,250,240,.55) 50%, rgba(184,148,90,.14) 54%, rgba(184,148,90,0)); animation:sfScan 5s ease-in-out 1s infinite; }
+    @keyframes sfScan { 0%{ transform:translateY(-20%); opacity:0 } 14%{ opacity:.85 } 50%{ transform:translateY(240%); opacity:.85 } 62%{ opacity:0 } 100%{ transform:translateY(240%); opacity:0 } }
+    @media (prefers-reduced-motion:reduce){ .sf-scan{ display:none; } }
+    .sf-herocap { position:absolute; left:0; right:0; bottom:0; z-index:2; padding:0 22px 20px; text-align:left; }
+    .sf-eyebrow { font-size:10px; color:var(--gold); text-transform:uppercase; letter-spacing:.26em; }
+    .sf-title { font-size:33px; line-height:1.16; margin-top:7px; font-weight:600; color:var(--ink); letter-spacing:.015em; }
+    @media (min-width:560px){ .sf-title{ font-size:46px; } }
+    .sf-tag { margin-top:8px; font-size:12.5px; color:var(--charcoal); letter-spacing:.03em; }
+    .sf-lead { margin-top:22px; font-size:13.5px; color:var(--charcoal); opacity:.9; }
+    .sf-start { display:inline-flex; align-items:center; gap:10px; margin-top:26px; padding:16px 34px; background:var(--ink); color:var(--ivory); border-radius:2px; font-size:14px; letter-spacing:.08em; }
     .sf-note { margin-top:14px; font-size:11px; color:var(--charcoal); opacity:.6; }
+    .sf-brands { margin-top:36px; padding-top:24px; border-top:1px solid var(--line); }
+    .sf-brands-label { font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--charcoal); opacity:.62; }
+    .sf-brands-row { margin-top:16px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:15px 26px; }
+    .sf-brands-row img { height:19px; width:auto; opacity:.8; }
+    @media (min-width:560px){ .sf-brands-row{ gap:20px 40px; } .sf-brands-row img{ height:23px; } }
+    .sf-brands-more { margin-top:15px; font-size:10.5px; color:var(--charcoal); opacity:.55; letter-spacing:.04em; }
     /* ── question ── */
     .sf-chapter { font-size:10px; color:var(--gold); text-transform:uppercase; letter-spacing:.22em; }
     .sf-chapname { font-size:13px; color:var(--charcoal); margin-top:4px; }
@@ -178,11 +193,30 @@
 
     <!-- ═══ INTRO ═══ -->
     <section id="sfIntro" class="sf-hero fadein">
-      <p class="sf-eyebrow mono">— Skin History Finder</p>
-      <h1 class="sf-title serif" data-i18n="hero.title">美肌ヒストリー</h1>
+      <figure class="sf-heroimg">
+        <img src="images/skin/hero_skin.webp" alt="肌診断のイメージ 澄んだ肌の女性とやわらかな光" width="768" height="1360" fetchpriority="high" decoding="async">
+        <span class="sf-scan" aria-hidden="true"></span>
+        <figcaption class="sf-herocap">
+          <p class="sf-eyebrow mono">— Skin History Finder</p>
+          <h1 class="sf-title serif" data-i18n="hero.title">美肌ヒストリー</h1>
+          <p class="sf-tag" data-i18n="hero.tag">肌の物語から、次の一本へ</p>
+        </figcaption>
+      </figure>
       <p class="sf-lead" data-i18n="hero.lead">肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>15の質問で、あなたの肌質・トラブル歴・これからまで、まるごと読み解きます。</p>
       <button class="sf-start" id="sfStart"><span data-i18n="hero.start">物語をひらく</span> <span aria-hidden>→</span></button>
       <p class="sf-note" data-i18n="hero.note">約4分・登録不要・カウンセリングシート付きで店頭でもそのまま使えます</p>
+      <div class="sf-brands">
+        <p class="sf-brands-label" data-i18n="hero.brands">SEAMがそろえるスキンケアブランド</p>
+        <div class="sf-brands-row">
+          <img src="images/skin/brand/shu_uemura.png" alt="shu uemura" loading="lazy" decoding="async">
+          <img src="images/skin/brand/one_by_kose.png" alt="ONE BY KOSÉ" loading="lazy" decoding="async">
+          <img src="images/skin/brand/dr_soie.png" alt="Dr.SOIE" loading="lazy" decoding="async">
+          <img src="images/skin/brand/imprea.png" alt="iMPREA" loading="lazy" decoding="async">
+          <img src="images/skin/brand/jc_program.png" alt="JC PROGRAM" loading="lazy" decoding="async">
+          <img src="images/skin/brand/meeth.png" alt="meeth" loading="lazy" decoding="async">
+        </div>
+        <p class="sf-brands-more" data-i18n="hero.brandsMore">ほか スキンケア20ブランド以上を店頭に</p>
+      </div>
     </section>
 
     <!-- ═══ QUESTIONS ═══ -->
@@ -209,6 +243,9 @@
       "hero.lead": "肌には、これまでの物語があります。<br>がんばってきた章も、これから書く章も。<br>15の質問で、あなたの肌質・トラブル歴・これからまで、まるごと読み解きます。",
       "hero.start": "物語をひらく",
       "hero.note": "約4分・登録不要・カウンセリングシート付きで店頭でもそのまま使えます",
+      "hero.tag": "肌の物語から、次の一本へ",
+      "hero.brands": "SEAMがそろえるスキンケアブランド",
+      "hero.brandsMore": "ほか スキンケア20ブランド以上を店頭に",
       "foot.terms": "利用規約", "foot.privacy": "プライバシー", "foot.legal": "特定商取引法に基づく表記"
     },
     en: {
@@ -217,6 +254,9 @@
       "hero.lead": "Your skin carries a story —<br>chapters of quiet effort, and chapters yet to be written.<br>Fifteen questions to read your skin type, its history and what comes next.",
       "hero.start": "Open your story",
       "hero.note": "About 4 minutes · no sign-up · comes with a counseling sheet you can show in store",
+      "hero.tag": "From your skin's story to your next step",
+      "hero.brands": "Skincare brands available at SEAM",
+      "hero.brandsMore": "and 20+ more skincare brands in store",
       "foot.terms": "Terms", "foot.privacy": "Privacy", "foot.legal": "Legal Notice"
     },
     zh: {
@@ -225,6 +265,9 @@
       "hero.lead": "肌肤，一直带着自己的故事。<br>有努力过的章节，也有还未写下的章节。<br>15个问题，读懂你的肤质、过敏史，和未来的对策。",
       "hero.start": "翻开我的故事",
       "hero.note": "约4分钟 · 无需注册 · 附咨询表，可在店内直接出示",
+      "hero.tag": "从肌肤的故事，找到下一瓶",
+      "hero.brands": "SEAM 甄选的护肤品牌",
+      "hero.brandsMore": "以及店内 20+ 护肤品牌",
       "foot.terms": "使用条款", "foot.privacy": "隐私政策", "foot.legal": "特定商业交易法标记"
     },
     tw: {
@@ -233,6 +276,9 @@
       "hero.lead": "肌膚，一直帶著自己的故事。<br>有努力過的章節，也有還未寫下的章節。<br>15個問題，讀懂你的膚質、過敏史，和未來的對策。",
       "hero.start": "翻開我的故事",
       "hero.note": "約4分鐘 · 無需註冊 · 附諮詢表，可在店內直接出示",
+      "hero.tag": "從肌膚的故事，找到下一瓶",
+      "hero.brands": "SEAM 嚴選的護膚品牌",
+      "hero.brandsMore": "以及店內 20+ 護膚品牌",
       "foot.terms": "使用條款", "foot.privacy": "隱私權政策", "foot.legal": "特定商業交易法標記"
     },
     ko: {
@@ -241,6 +287,9 @@
       "hero.lead": "피부에는 지금까지의 이야기가 있습니다.<br>애써온 챕터도, 아직 쓰이지 않은 챕터도.<br>15가지 질문으로 피부 타입과 트러블 이력, 앞으로의 대책까지 읽어드립니다.",
       "hero.start": "이야기 펼치기",
       "hero.note": "약 4분 · 가입 불필요 · 카운슬링 시트가 함께라 매장에서 바로 쓸 수 있어요",
+      "hero.tag": "피부의 이야기에서, 다음 한 병으로",
+      "hero.brands": "SEAM이 갖춘 스킨케어 브랜드",
+      "hero.brandsMore": "그 외 매장에 스킨케어 20개 브랜드 이상",
       "foot.terms": "이용약관", "foot.privacy": "개인정보 처리방침", "foot.legal": "특정상거래법 표기"
     }
   };
