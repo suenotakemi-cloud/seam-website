@@ -512,12 +512,20 @@
           <h1 class="mt-1.5 font-serif text-ink leading-[1.2] text-[16px] sm:text-[23px]" data-reveal="" data-i18n="hero.love">让你更喜欢<br>自己的头发</h1>
           <p class="mt-1 font-serif text-gold leading-[0.96] text-[30px] sm:text-[45px]" style="letter-spacing:.02em;" data-reveal="" data-i18n="hero.hairId">发格诊断</p>
           <p class="mt-2 text-[11.5px] sm:text-[13.5px] text-ink leading-[1.55]" data-reveal="" data-i18n="hero.diagLead">根据发质与当前发丝状态 为你推荐合适的护理</p>
-          <div class="mt-3 sm:mt-4" data-reveal="">
-            <a href="/finder.html" class="lift inline-flex items-center gap-1.5 bg-mainBrown text-white rounded-full py-2 px-5 sm:py-2.5 sm:px-7 shadow-card hover:bg-cinnamon transition-colors">
-              <span class="font-serif text-[12px] sm:text-[15px] whitespace-nowrap" data-i18n="hero.ctaStart">立即开始诊断</span>
+          <!-- ① スキャンできる価値チップ -->
+          <div class="mt-2 flex flex-wrap items-center gap-1.5" data-reveal="">
+            <span class="inline-flex items-center rounded-full bg-cream border border-line px-2.5 py-[3px] text-[10px] sm:text-[11.5px] text-charcoal" data-i18n="hero.cFree">免费</span>
+            <span class="inline-flex items-center rounded-full bg-cream border border-line px-2.5 py-[3px] text-[10px] sm:text-[11.5px] text-charcoal" data-i18n="hero.cTime">约3分钟</span>
+            <span class="inline-flex items-center rounded-full bg-cream border border-line px-2.5 py-[3px] text-[10px] sm:text-[11.5px] text-charcoal" data-i18n="hero.cNoReg">无需注册</span>
+          </div>
+          <div class="mt-2.5 sm:mt-3.5" data-reveal="">
+            <a href="/finder.html" class="lift inline-flex items-center gap-1.5 bg-mainBrown text-white rounded-full py-2.5 px-6 sm:py-3 sm:px-8 shadow-card hover:bg-cinnamon transition-colors">
+              <span class="font-serif text-[13px] sm:text-[16px] whitespace-nowrap" data-i18n="hero.ctaStart">立即开始诊断</span>
               <svg class="w-[13px] h-[13px] sm:w-[15px] sm:h-[15px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
             </a>
             <p class="mt-1.5 text-[10.5px] sm:text-[12px] text-charcoal" data-i18n="hero.freeNote">诊断完全免费</p>
+            <!-- ② ライブの診断実績(公開集計 /api/diagstat・件数=正直な単位) -->
+            <p id="heroLive" class="hidden mt-1 text-[10px] sm:text-[11.5px] text-gold font-medium leading-tight"><span data-i18n="hero.livePre">累计</span> <b id="heroLiveN" class="tracking-wide">—</b> <span data-i18n="hero.livePost">次诊断</span></p>
           </div>
         </div>
       </div>
@@ -1043,6 +1051,7 @@
     /* ═══ Page-specific i18n dictionary (index.html) — consumed by js/lang.js ═══ */
     window.SEAM_PAGE_I18N = {
       ja: {
+        'hero.cFree':'無料','hero.cTime':'約3分','hero.cNoReg':'登録不要','hero.livePre':'これまで','hero.livePost':'件の診断',
         'pop.title': 'あの&#8220;知ってる一本&#8221;が ここにある',
         'pop.bridge': '自分の髪に合う一本は 髪格診断でわかります',
         'meta.title': 'SEAM｜サロン専売ヘアケアのセレクトショップ・髪格診断',
@@ -1223,6 +1232,7 @@
         ,'store.nagoyaAddr': '愛知県名古屋市中区栄5-16-19'
       },
       en: {
+        'hero.cFree':'Free','hero.cTime':'~3 min','hero.cNoReg':'No sign-up','hero.livePre':'Total of','hero.livePost':'diagnoses',
         'pop.title': 'The bottles you already know are here',
         'pop.bridge': 'Find the one for your hair with the Hair Diagnosis',
         'meta.title': 'SEAM — Global Hair Care Select Shop | Beautiful hair changes everything.',
@@ -1403,6 +1413,7 @@
         ,'store.nagoyaAddr': 'Sakae 5-16-19, Naka, Nagoya'
       },
       zh: {
+        'hero.cFree':'免费','hero.cTime':'约3分钟','hero.cNoReg':'无需注册','hero.livePre':'累计','hero.livePost':'次诊断',
         'pop.title': '你熟悉的那一瓶 就在这里',
         'pop.bridge': '哪一瓶适合你的头发 交给发质诊断',
         'meta.title': 'SEAM — Global Hair Care Select Shop | 美丽秀发，改变人生。',
@@ -1583,6 +1594,7 @@
         ,'store.nagoyaAddr': '爱知县名古屋市中区荣5-16-19'
       },
       tw: {
+        'hero.cFree':'免費','hero.cTime':'約3分鐘','hero.cNoReg':'無需註冊','hero.livePre':'累計','hero.livePost':'次診斷',
         'pop.title': '你熟悉的那一瓶 就在這裡',
         'pop.bridge': '哪一瓶適合你的頭髮 交給髮質診斷',
         'meta.title': 'SEAM — Global Hair Care Select Shop | 美麗秀髮，改變人生。',
@@ -1763,6 +1775,7 @@
         ,'store.nagoyaAddr': '愛知縣名古屋市中區榮5-16-19'
       },
       ko: {
+        'hero.cFree':'무료','hero.cTime':'약 3분','hero.cNoReg':'가입 불필요','hero.livePre':'지금까지','hero.livePost':'건 진단',
         'pop.title': '알고 있는 그 한 병이 여기에',
         'pop.bridge': '내 머리카락에 맞는 한 병은 모발 진단으로',
         'meta.title': 'SEAM — Global Hair Care Select Shop | 아름다운 머릿결이 인생을 바꿉니다.',
@@ -1948,6 +1961,20 @@
     if (window.SEAM_LANG && document.readyState !== 'loading') {
       window.SEAM_LANG.apply(window.SEAM_LANG.get());
     }
+  </script>
+  <!-- ② トップの診断ライブ実績(公開集計 /api/diagstat)。件数=正直な単位。データ無/過小なら非表示=嘘を出さない -->
+  <script>
+  (function(){
+    try{
+      fetch('/api/diagstat').then(function(r){return r.ok?r.json():null;}).then(function(d){
+        var n = d && Number(d.completed);
+        if(!n || n < 100) return;
+        var el=document.getElementById('heroLiveN'), box=document.getElementById('heroLive');
+        if(el) el.textContent = n.toLocaleString('ja-JP');
+        if(box) box.classList.remove('hidden');
+      }).catch(function(){});
+    }catch(e){}
+  })();
   </script>
 
 
