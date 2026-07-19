@@ -127,6 +127,11 @@
       text-align: center;
       min-height: 1.2em;
     }
+    .remember {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.78rem; color: var(--muted); margin: 0.2rem 0 1rem; line-height: 1.5;
+    }
+    .remember input { width: 16px; height: 16px; accent-color: var(--gold); flex: 0 0 auto; }
 
     /* ─── スキャン画面 ─── */
     .scan-header {
@@ -656,6 +661,7 @@
           placeholder="••••••••"
         >
       </div>
+      <label class="remember"><input type="checkbox" id="input-remember" checked> この端末に保存して自動で復帰（受付専用端末のみ）</label>
       <button id="btn-login" class="btn-primary">ログイン</button>
       <p id="login-error" class="login-error"></p>
     </div>
@@ -749,6 +755,8 @@
     SHOP:    'seam_entrance_shop',
   };
   const LOG_KEY = 'seam_entrance_log';   // 入場ログ（この端末に保存・CSV書き出し可）
+  // 受付専用端末に資格情報を保存（「自動で復帰」ON時のみ）→ token失効時に黙って再ログインし名前表示を復活
+  const CRED = { ID: 'seam_entrance_cred_id', PW: 'seam_entrance_cred_pw' };
   const COOLDOWN = 5500;                 // 同じカードの二度読み防止(ms)
 
   // ── DOM ──
@@ -945,12 +953,21 @@
         return;
       }
 
-      // セッションをsessionStorageに保存（パスワードは一切保存しない）
+      // セッションをsessionStorageに保存
       sessionStorage.setItem(SK.TOKEN, j.token);
       sessionStorage.setItem(SK.UID,   j.uid);
       sessionStorage.setItem(SK.NAME,  j.name);
       sessionStorage.setItem(SK.SHOP,  j.shop_id || '');
       setReloginNeeded(false); // 新しいtokenを取得したので再ログイン表示を消す
+
+      // 「自動で復帰」ON時のみ、この端末に資格情報を保存（token失効時の自動再ログイン用）
+      if ($('input-remember') && $('input-remember').checked) {
+        localStorage.setItem(CRED.ID, mail);
+        localStorage.setItem(CRED.PW, pass);
+      } else {
+        localStorage.removeItem(CRED.ID);
+        localStorage.removeItem(CRED.PW);
+      }
 
       // パスワードフィールドをクリア
       inputPass.value = '';
@@ -965,17 +982,49 @@
     }
   }
 
-  // ── ログアウト ──
+  // ── ログアウト（手動ログアウト時は保存資格情報も消す＝自動復帰も止める） ──
   btnLogout.addEventListener('click', () => {
     sessionStorage.removeItem(SK.TOKEN);
     sessionStorage.removeItem(SK.UID);
     sessionStorage.removeItem(SK.NAME);
     sessionStorage.removeItem(SK.SHOP);
+    localStorage.removeItem(CRED.ID);
+    localStorage.removeItem(CRED.PW);
+    setReloginNeeded(false);
     inputMail.value = '';
     inputPass.value = '';
     loginError.textContent = '';
     showLogin();
   });
+
+  // token失効時、保存済み資格情報で黙って再ログイン（受付を止めず名前表示を自動復活）
+  let reloginInFlight = null;
+  async function silentRelogin() {
+    const id = localStorage.getItem(CRED.ID), pw = localStorage.getItem(CRED.PW);
+    if (!id || !pw) return false;
+    if (reloginInFlight) return reloginInFlight;   // 同時多発の再ログインを1本化（1アカ1セッション対策）
+    reloginInFlight = (async () => {
+      try {
+        const res = await fetch('/entrance/session', {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ mail: id, pass: pw }),
+        });
+        const j = await res.json();
+        if (j && j.ok && j.token) {
+          sessionStorage.setItem(SK.TOKEN, j.token);
+          sessionStorage.setItem(SK.UID,   j.uid);
+          sessionStorage.setItem(SK.NAME,  j.name);
+          sessionStorage.setItem(SK.SHOP,  j.shop_id || '');
+          setReloginNeeded(false);
+          return true;
+        }
+      } catch (e) {}
+      return false;
+    })();
+    const ok = await reloginInFlight;
+    reloginInFlight = null;
+    return ok;
+  }
 
   // ── 再ログイン促し（token失効時にヘッダーに出る）をタップ → ログイン画面へ ──
   $('relogin-badge').addEventListener('click', () => {
@@ -1183,11 +1232,30 @@
       chime(false);
       showResult('error', '会員情報が確認できません', 'お手数ですがスタッフにお声がけください\nPlease ask our staff for assistance', '', 3200);
 
+    } else if (r.status === 'no_auth') {
+      // token失効 → まず保存資格情報で黙って再ログインし、名前表示を自動復活させる
+      const relogged = await silentRelogin();
+      if (relogged) {
+        const r2 = await lookupOnce(code, sessionStorage.getItem(SK.TOKEN), sessionStorage.getItem(SK.UID));
+        if (r2.status === 'ok') {
+          const rp = isRepeat(code);
+          addLog({ t: localISO(), code: code, name: r2.name, ok: 1, rp: rp ? 1 : 0 });
+          sendD1(code, r2.name, true, rp);
+          chime(true);
+          showWelcome(r2.name, rp, code);
+          return;
+        }
+      }
+      // 自動再ログインできない（保存OFF／別端末に取られた等）→ スタッフに促しつつ無難に歓迎
+      setReloginNeeded(true);
+      addLog({ t: localISO(), code: code, name: '', ok: 1, rp: 0, deg: 1 });
+      sendD1(code, '', true, false);
+      chime(true);
+      showGraceful();
+
     } else {
-      // no_auth（token失効）または error（通信/システム側）
-      // ＝会員本人のせいではない。お客様は無難に歓迎＋記録し、絶対に「弾く」画面を出さない
-      if (r.status === 'no_auth') setReloginNeeded(true); // スタッフにだけ再ログインを促す
-      addLog({ t: localISO(), code: code, name: '', ok: 1, rp: 0, deg: 1 }); // 来店として記録（名前取得のみ失敗）
+      // error（通信/システム側）＝会員本人のせいではない。弾かず無難に歓迎＋記録
+      addLog({ t: localISO(), code: code, name: '', ok: 1, rp: 0, deg: 1 });
       sendD1(code, '', true, false);
       chime(true);
       showGraceful();
