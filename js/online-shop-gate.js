@@ -48,9 +48,12 @@
   }
 
   // ── 開閉 ────────────────────────────────────────────
+  var gateOpen = false; // 「開いている意図」を明示追跡（表示状態と分離）
   function openGate() {
     ensureMounted();
+    gateOpen = true;
     modal.style.display = 'flex';
+    modal.style.pointerEvents = ''; // タップ捕捉を有効化
     // フレーム揺らがないため次フレームで opacity を上げる
     requestAnimationFrame(function () {
       modal.style.opacity = '1';
@@ -60,14 +63,38 @@
     document.documentElement.style.overflow = 'hidden';
   }
   function closeGate() {
+    gateOpen = false;
     modal.style.opacity = '0';
+    // ★ 閉じ始めたら即「タップ透過」＋「スクロール復帰」。
+    //   フェード中(200ms)やタイマー凍結でも“不可視のままタップを飲む/スクロール不能”を防ぐ。
+    modal.style.pointerEvents = 'none';
+    document.documentElement.style.overflow = '';
     var card = modal.querySelector('#seam-gate-card');
     if (card) card.style.transform = 'translateY(8px)';
-    setTimeout(function () {
-      modal.style.display = 'none';
-      document.documentElement.style.overflow = '';
-    }, 200);
+    setTimeout(function () { if (!gateOpen) modal.style.display = 'none'; }, 200);
   }
+
+  // ★ bfcache復帰(戻る)・アプリ復帰・タブ再表示で、
+  //   「display:flex かつ opacity:0 の不可視オーバーレイ＋overflow:hidden居残り」を必ず解消。
+  //   Androidでタイマー凍結/rAF未発火のまま前面に残ると全タップ不能になるための防波堤。
+  function reconcileGate() {
+    if (gateOpen) {
+      modal.style.display = 'flex';
+      modal.style.opacity = '1';
+      modal.style.pointerEvents = '';
+    } else {
+      modal.style.display = 'none';
+      modal.style.opacity = '0';
+      modal.style.pointerEvents = '';
+      if (document.documentElement.style.overflow === 'hidden') {
+        document.documentElement.style.overflow = '';
+      }
+    }
+  }
+  window.addEventListener('pageshow', reconcileGate);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) reconcileGate();
+  });
 
   // ── イベント結線 ─────────────────────────────────────
   function bindModalControls() {
