@@ -2,7 +2,7 @@
    - HTML: network-first (常に最新、オフライン時はキャッシュ)
    - 静的アセット (vendor/css/js/json/font/画像): cache-first (2回目以降は即ロード)
    バージョンを上げるとキャッシュが刷新される */
-const VERSION = 'seam-v162';
+const VERSION = 'seam-v163';
 const CORE_CACHE = VERSION + '-core';
 const ASSET_CACHE = VERSION + '-assets';
 
@@ -66,18 +66,21 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  // 資産: stale-while-revalidate。
+  // ★裏の再取得は e.waitUntil で必ず完走させる — これが無いとブラウザがSWを
+  //   打ち切り、キャッシュが実質更新されない(CIがcss/jsを再ビルドしても
+  //   再訪ユーザーに新スタイルが届かない事故が実際に起きた)。
+  const networkUpdate = fetch(req).then((res) => {
+    // 同一オリジンの完全な200のみ保存＝切れた/不透明/部分(206)応答で
+    // キャッシュを汚染しない。汚れたコピーは背後の再取得で正しい版に置き換わる。
+    if (res && res.status === 200 && res.type === 'basic') {
+      const copy = res.clone();
+      caches.open(ASSET_CACHE).then((c) => c.put(req, copy)).catch(() => {});
+    }
+    return res;
+  });
+  e.waitUntil(networkUpdate.catch(() => {}));
   e.respondWith(
-    caches.match(req).then((cached) => {
-      const network = fetch(req).then((res) => {
-        // 同一オリジンの完全な200のみ保存＝切れた/不透明/部分(206)応答で
-        // キャッシュを汚染しない。汚れたコピーは背後の再取得で正しい版に置き換わる。
-        if (res && res.status === 200 && res.type === 'basic') {
-          const copy = res.clone();
-          caches.open(ASSET_CACHE).then((c) => c.put(req, copy)).catch(() => {});
-        }
-        return res;
-      }).catch(() => cached);
-      return cached || network;
-    })
+    caches.match(req).then((cached) => cached || networkUpdate.catch(() => cached))
   );
 });
