@@ -872,6 +872,9 @@
 
   // ── スリープ抑止（Wake Lock） ──
   let wakeLock = null;
+  // カメラ黒画面対策の状態（init時の showScan()→startWatchdog() から参照されるため上で宣言）
+  let recovering = false;
+  let camWatch = null;
   async function keepAwake() {
     try {
       if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen');
@@ -881,7 +884,7 @@
     if (document.hidden) return;
     if (!screenScan.classList.contains('active')) return;
     keepAwake();                            // 復帰時にスリープ抑止を取り直す
-    if (!stream) requestCamera();           // カメラが落ちていたら自動復帰
+    tryRecover();                           // 復帰時：黒画面（固まり）も含めて映像を取り戻す
   });
 
   // ── 初期化：セッション確認 ──
@@ -897,6 +900,7 @@
     screenLogin.classList.add('active');
     screenScan.classList.remove('active');
     stopCamera();
+    stopWatchdog();
   }
 
   function showScan() {
@@ -904,6 +908,7 @@
     screenScan.classList.add('active');
     startCamera();
     keepAwake();
+    startWatchdog();   // カメラ黒画面の自動復旧を開始
     updateCounts();
   }
 
@@ -1034,6 +1039,10 @@
 
   async function requestCamera() {
     try {
+      // 既存ストリームが残っていたら止める（二重取得・競合による真っ暗を防ぐ）
+      if (stream) { try { stream.getTracks().forEach(t => { t.onended = null; t.stop(); }); } catch(e){} stream = null; }
+      cameraWrap.style.display = '';
+      camErrDiv.style.display = 'none';
       stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },  // インカメ優先（お客様がカードをかざす運用）
       });
@@ -1045,7 +1054,8 @@
         };
       });
       video.srcObject = stream;
-      video.play();
+      const pp = video.play();                 // iOSの自動再生拒否は握りつぶす（watchdog/タップで復帰）
+      if (pp && pp.catch) pp.catch(() => {});
       video.addEventListener('loadedmetadata', () => {
         canvas.width  = video.videoWidth  || 640;
         canvas.height = video.videoHeight || 480;
@@ -1069,6 +1079,41 @@
     cameraWrap.style.display = 'none';
     camErrDiv.style.display = '';
   }
+
+  // ── カメラ「真っ暗」対策：映像が生きているか監視して自動復旧 ──
+  // iPadはスリープ/アプリ切替から戻ると、接続は生きたまま映像だけ固まる（黒画面）ことがある。
+  // stream の有無だけでは検知できないので、実際に絵が来ているか(videoWidth>0 等)で判定する。
+  function cameraHealthy() {
+    return !!(stream && video.srcObject && !video.paused && video.videoWidth > 0 &&
+      stream.getVideoTracks().some(t => t.readyState === 'live' && !t.muted));
+  }
+  async function tryRecover() {
+    if (recovering) return;
+    if (!screenScan.classList.contains('active')) return;
+    if (camPermDiv.style.display !== 'none') return; // カメラ許可待ちUI中は触らない
+    recovering = true;
+    try {
+      const pp = video.play && video.play();       // まず軽く再生し直す
+      if (pp && pp.catch) { try { await pp; } catch (e) {} }
+      await new Promise(r => setTimeout(r, 400));
+      if (!cameraHealthy()) { await requestCamera(); await new Promise(r => setTimeout(r, 600)); }
+    } finally { recovering = false; }
+  }
+  function startWatchdog() {
+    if (camWatch) clearInterval(camWatch);
+    camWatch = setInterval(() => {
+      if (!screenScan.classList.contains('active')) return;
+      if (overlay.classList.contains('visible')) return;   // 結果表示中は触らない
+      if (camPermDiv.style.display !== 'none') return;      // 許可待ち中は触らない
+      if (!cameraHealthy()) tryRecover();                  // 黒画面を検知したら自動復旧
+    }, 3000);
+  }
+  function stopWatchdog() { if (camWatch) { clearInterval(camWatch); camWatch = null; } }
+
+  // 画面（カメラ映像）をタップしたら手動でカメラを取り直す（スタッフ用の即復旧）
+  cameraWrap.addEventListener('click', () => { if (!cameraHealthy()) tryRecover(); });
+  // iOSのbfcache復帰（別アプリ→Safari戻り等）でも映像を取り戻す
+  window.addEventListener('pageshow', () => { if (screenScan.classList.contains('active')) tryRecover(); });
 
   function tick() {
     if (!scanning) { rafId = requestAnimationFrame(tick); return; }
