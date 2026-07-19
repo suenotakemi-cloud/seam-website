@@ -71,26 +71,38 @@
           ko: { m: '본 사이트는 광고 성과 측정을 위해 Meta 픽셀 등의 쿠키를 사용합니다.', a: '동의', d: '거부', l: '자세히' }
         };
         var t = T[lang] || T.ja;
+        // 全画面の淡いスクリム（黒バーではなく、中央に白カードを浮かせる）
+        // ※選択で丸ごとDOM削除・スクロールロックなし・不可視残りなし=固まらない設計
         var bar = document.createElement('div');
         bar.id = 'seam-cc';
         bar.setAttribute('role', 'dialog');
+        bar.setAttribute('aria-modal', 'true');
         bar.setAttribute('aria-label', 'Cookie');
-        bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483000;background:#282624;color:#faf9f7;padding:14px 16px calc(14px + env(safe-area-inset-bottom));font-family:inherit;font-size:13px;line-height:1.6;box-shadow:0 -4px 20px rgba(0,0,0,.25)';
-        var wrap = document.createElement('div');
-        wrap.style.cssText = 'max-width:960px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;justify-content:center';
-        var msg = document.createElement('span');
-        msg.style.cssText = 'flex:1 1 260px;min-width:200px';
+        bar.style.cssText = 'position:fixed;inset:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(26,24,21,0.34);font-family:inherit;-webkit-tap-highlight-color:transparent';
+
+        // 中央の白カード
+        var card = document.createElement('div');
+        card.style.cssText = 'position:relative;background:#FFFFFF;border:1px solid #E7E1D6;border-radius:10px;max-width:380px;width:100%;padding:30px 26px 24px;text-align:center;box-shadow:0 26px 64px rgba(26,24,21,0.28);color:#4A443C';
+
+        // ゴールドの小見出し（ブランド感＝怪しくない）
+        var eyebrow = document.createElement('p');
+        eyebrow.textContent = 'COOKIE';
+        eyebrow.style.cssText = "margin:0 0 12px;font-family:Inter,'Noto Sans JP',sans-serif;letter-spacing:0.34em;text-transform:uppercase;font-size:10px;font-weight:600;color:#B8945A";
+
+        var msg = document.createElement('p');
+        msg.style.cssText = "margin:0 0 20px;font-family:'Noto Serif JP',serif;font-size:13px;line-height:2;color:#4A443C";
         msg.textContent = t.m + ' ';
         var link = document.createElement('a');
         link.href = '/privacy.html'; link.textContent = t.l;
-        link.style.cssText = 'color:#e8d9bf;text-decoration:underline;white-space:nowrap';
+        link.style.cssText = 'color:#B8945A;text-decoration:underline;white-space:nowrap';
         msg.appendChild(link);
+
         var btns = document.createElement('div');
-        btns.style.cssText = 'display:flex;gap:8px;flex:0 0 auto';
+        btns.style.cssText = 'display:flex;gap:10px;justify-content:center';
         function mkBtn(label, primary) {
           var b = document.createElement('button');
           b.type = 'button'; b.textContent = label;
-          b.style.cssText = 'cursor:pointer;border:0;border-radius:999px;padding:9px 20px;font-size:13px;font-weight:600;font-family:inherit;' + (primary ? 'background:#b58a56;color:#fff' : 'background:transparent;color:#faf9f7;border:1px solid rgba(250,249,247,.5)');
+          b.style.cssText = 'cursor:pointer;border-radius:999px;padding:12px 22px;font-size:13px;font-weight:600;font-family:inherit;flex:1 1 0;max-width:150px;' + (primary ? 'background:#b58a56;color:#fff;border:0' : 'background:#fff;color:#6B6358;border:1px solid #D8D1C4');
           return b;
         }
         var accept = mkBtn(t.a, true), decline = mkBtn(t.d, false);
@@ -101,8 +113,8 @@
         accept.addEventListener('click', function () { choose('accept'); });
         decline.addEventListener('click', function () { choose('decline'); });
         btns.appendChild(decline); btns.appendChild(accept);
-        wrap.appendChild(msg); wrap.appendChild(btns);
-        bar.appendChild(wrap);
+        card.appendChild(eyebrow); card.appendChild(msg); card.appendChild(btns);
+        bar.appendChild(card);
         (document.body || document.documentElement).appendChild(bar);
       } catch (e) { /* 計測でUIを壊さない */ }
     }
