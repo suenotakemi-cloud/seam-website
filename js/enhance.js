@@ -43,4 +43,31 @@
       }
     }
   } catch (e) {}
+
+  /* 4. 画像の自己修復 —
+        SW/ブラウザのキャッシュに壊れた（切れた）コピーが居座る、または
+        <picture> の AVIF がデコード失敗しても webp/jpg へ落ちない、という
+        2つの壊れ方に対して、その場で一度だけ復旧する。
+        ・キャッシュ回避クエリ(?heal=時刻)で新URL化 → SW/HTTPキャッシュを迂回し必ず取り直す
+        ・<picture> は source を外して、確実にデコードできる jpg(=img.src) へ退避
+        再訪問やバージョン更新を待たずに、この閲覧のうちに直る。 */
+  try {
+    window.addEventListener('error', function (ev) {
+      var img = ev && ev.target;
+      if (!img || img.tagName !== 'IMG' || img.dataset.seamHealed) return;
+      var cur = img.currentSrc || img.src || '';
+      if (!cur || cur.slice(0, 5) === 'data:') return;
+      var sameOrigin;
+      try { sameOrigin = new URL(cur, location.href).origin === location.origin; } catch (e) { sameOrigin = false; }
+      if (!sameOrigin) return; /* 署名付き外部URL等は触らない */
+      img.dataset.seamHealed = '1'; /* 復旧は一度だけ（無限ループ防止） */
+      var pic = img.closest && img.closest('picture');
+      if (pic) {
+        var srcs = pic.querySelectorAll('source');
+        for (var i = 0; i < srcs.length; i++) { srcs[i].parentNode.removeChild(srcs[i]); }
+      }
+      var u = String(img.getAttribute('src') || cur).split('#')[0];
+      img.src = u + (u.indexOf('?') > -1 ? '&' : '?') + 'heal=' + Date.now();
+    }, true); /* capture: <img> の error はバブルしない */
+  } catch (e) {}
 })();

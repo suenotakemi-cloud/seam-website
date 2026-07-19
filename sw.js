@@ -2,7 +2,7 @@
    - HTML: network-first (常に最新、オフライン時はキャッシュ)
    - 静的アセット (vendor/css/js/json/font/画像): cache-first (2回目以降は即ロード)
    バージョンを上げるとキャッシュが刷新される */
-const VERSION = 'seam-v161';
+const VERSION = 'seam-v162';
 const CORE_CACHE = VERSION + '-core';
 const ASSET_CACHE = VERSION + '-assets';
 
@@ -55,8 +55,11 @@ self.addEventListener('fetch', (e) => {
   if (isHTML) {
     e.respondWith(
       fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CORE_CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        // 完全な同一オリジン200のみ保存（エラーページ/不透明応答はキャッシュしない）
+        if (res && res.status === 200 && res.type === 'basic') {
+          const copy = res.clone();
+          caches.open(CORE_CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        }
         return res;
       }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
     );
@@ -66,7 +69,9 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(req).then((cached) => {
       const network = fetch(req).then((res) => {
-        if (res && res.status === 200) {
+        // 同一オリジンの完全な200のみ保存＝切れた/不透明/部分(206)応答で
+        // キャッシュを汚染しない。汚れたコピーは背後の再取得で正しい版に置き換わる。
+        if (res && res.status === 200 && res.type === 'basic') {
           const copy = res.clone();
           caches.open(ASSET_CACHE).then((c) => c.put(req, copy)).catch(() => {});
         }
