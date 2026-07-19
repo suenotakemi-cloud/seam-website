@@ -506,19 +506,19 @@
       <!-- 撮影クレジット -->
       <span class="absolute right-3 bottom-2 sm:right-4 sm:bottom-2.5 z-20 font-mono text-[8px] sm:text-[9px] tracking-wider text-white/80" style="text-shadow:0 1px 4px rgba(0,0,0,.55);">photo : SEAM GINZA</span>
       <!-- テキスト + CTA (白地の上) -->
-      <div class="relative z-10 px-6 sm:px-8 py-3 sm:py-5">
+      <div class="relative z-10 px-6 sm:px-8 py-5 sm:py-7">
         <div class="hero-text">
           <p class="font-mono text-[8.5px] sm:text-[10.5px] tracking-widest2 text-gold uppercase leading-[1.4]" data-reveal="" data-i18n="hero.dEyebrow">HAIR TYPE DIAGNOSIS ・ 27 TYPES</p>
-          <h1 class="mt-1.5 font-serif text-ink leading-[1.2] text-[16px] sm:text-[23px]" data-reveal="" data-i18n="hero.love">Learn to love<br>your hair even more</h1>
-          <p class="mt-1 font-serif text-gold leading-[0.96] text-[30px] sm:text-[45px]" style="letter-spacing:.02em;" data-reveal="" data-i18n="hero.hairId">Hair Type Diagnosis</p>
-          <p class="mt-2 text-[11.5px] sm:text-[13.5px] text-ink leading-[1.55]" data-reveal="" data-i18n="hero.diagLead">From your hair type and current condition, we suggest the care that suits you</p>
-          <!-- ① スキャンできる価値チップ -->
-          <div class="mt-2 flex flex-wrap items-center gap-1.5" data-reveal="">
+          <h1 class="mt-3 font-serif text-ink leading-[1.2] text-[16px] sm:text-[23px]" data-reveal="" data-i18n="hero.love">Learn to love<br>your hair even more</h1>
+          <p class="mt-2 font-serif text-gold leading-[0.96] text-[30px] sm:text-[45px]" style="letter-spacing:.02em;" data-reveal="" data-i18n="hero.hairId">Hair Type Diagnosis</p>
+          <p class="mt-3 text-[11.5px] sm:text-[13.5px] text-ink leading-[1.6]" data-reveal="" data-i18n="hero.diagLead">From your hair type and current condition, we suggest the care that suits you</p>
+          <!-- スキャンできる価値チップ -->
+          <div class="mt-4 flex flex-wrap items-center gap-1.5" data-reveal="">
             <span class="inline-flex items-center rounded-full bg-cream border border-line px-2.5 py-[3px] text-[10px] sm:text-[11.5px] text-charcoal" data-i18n="hero.cFree">Free</span>
             <span class="inline-flex items-center rounded-full bg-cream border border-line px-2.5 py-[3px] text-[10px] sm:text-[11.5px] text-charcoal" data-i18n="hero.cTime">~3 min</span>
             <span class="inline-flex items-center rounded-full bg-cream border border-line px-2.5 py-[3px] text-[10px] sm:text-[11.5px] text-charcoal" data-i18n="hero.cNoReg">No sign-up</span>
           </div>
-          <div class="mt-2.5 sm:mt-3.5" data-reveal="">
+          <div class="mt-4 sm:mt-5" data-reveal="">
             <a href="/finder.html" class="lift inline-flex items-center gap-1.5 bg-mainBrown text-white rounded-full py-2.5 px-6 sm:py-3 sm:px-8 shadow-card hover:bg-cinnamon transition-colors">
               <span class="font-serif text-[13px] sm:text-[16px] whitespace-nowrap" data-i18n="hero.ctaStart">Start the diagnosis</span>
               <svg class="w-[13px] h-[13px] sm:w-[15px] sm:h-[15px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
@@ -1968,20 +1968,6 @@
     if (window.SEAM_LANG && document.readyState !== 'loading') {
       window.SEAM_LANG.apply(window.SEAM_LANG.get());
     }
-  </script>
-  <!-- ② トップの診断ライブ実績(公開集計 /api/diagstat)。件数=正直な単位。データ無/過小なら非表示=嘘を出さない -->
-  <script>
-  (function(){
-    try{
-      fetch('/api/diagstat').then(function(r){return r.ok?r.json():null;}).then(function(d){
-        var n = d && Number(d.completed);
-        if(!n || n < 100) return;
-        var el=document.getElementById('heroLiveN'), box=document.getElementById('heroLive');
-        if(el) el.textContent = n.toLocaleString('ja-JP');
-        if(box) box.classList.remove('hidden');
-      }).catch(function(){});
-    }catch(e){}
-  })();
   </script>
 
 
