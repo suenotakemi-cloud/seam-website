@@ -2,7 +2,7 @@
    - HTML: network-first (常に最新、オフライン時はキャッシュ)
    - 静的アセット (vendor/css/js/json/font/画像): cache-first (2回目以降は即ロード)
    バージョンを上げるとキャッシュが刷新される */
-const VERSION = 'seam-v164';
+const VERSION = 'seam-v165';
 const CORE_CACHE = VERSION + '-core';
 const ASSET_CACHE = VERSION + '-assets';
 
@@ -52,17 +52,14 @@ self.addEventListener('fetch', (e) => {
   const isHTML = req.mode === 'navigate' ||
     (req.headers.get('accept') || '').includes('text/html');
 
-  // ★取得は cache:'no-cache'(ETag条件付き再検証)。CFゾーンのBrowser TTL(4時間)で
-  //   ブラウザHTTPキャッシュが古い資産を最大4時間保持し、素のfetch(req)がそれを
-  //   掴んでSWに焼き直す事故が実際に起きた(CI再ビルドのtailwind.cssが届かない)。
-  //   no-cacheなら 変更なし=304(軽い)/変更あり=即最新。
-  //   例外: Rangeヘッダ付き(動画シーク)は req をそのまま使いRangeを保持する。
-  const hasRange = req.headers.has('range');
-  const netReq = hasRange ? req : new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' });
-
   if (isHTML) {
+    // ★HTMLナビゲーションは必ず元の req のまま fetch する。
+    //   new Request(url) に置き換えると redirect モードが manual→follow に変わり、
+    //   サイト内リンク(.html→CFが308で正規URLへ転送)のクリックが
+    //   「リダイレクト済み応答は manual ナビゲーションに使えない」で全滅した
+    //   (v164事故: 全ページ「ページが開けません」)。opaqueredirect の素通しが正解。
     e.respondWith(
-      fetch(netReq).then((res) => {
+      fetch(req).then((res) => {
         // 完全な同一オリジン200のみ保存（エラーページ/不透明応答はキャッシュしない）
         if (res && res.status === 200 && res.type === 'basic') {
           const copy = res.clone();
@@ -78,6 +75,13 @@ self.addEventListener('fetch', (e) => {
   // ★裏の再取得は e.waitUntil で必ず完走させる — これが無いとブラウザがSWを
   //   打ち切り、キャッシュが実質更新されない(CIがcss/jsを再ビルドしても
   //   再訪ユーザーに新スタイルが届かない事故が実際に起きた)。
+  // ★取得は cache:'no-cache'(ETag条件付き再検証) — CFゾーンのBrowser TTL(4時間)の
+  //   古いHTTPキャッシュを素通りしないため(css/jsの新ビルドが届かない事故の根治)。
+  //   サブリソースは redirect:'follow' が既定なので new Request 化しても安全。
+  //   例外: Rangeヘッダ付き(動画シーク)は req をそのまま使いRangeを保持する。
+  const netReq = req.headers.has('range')
+    ? req
+    : new Request(req.url, { cache: 'no-cache', credentials: 'same-origin' });
   const networkUpdate = fetch(netReq).then((res) => {
     // 同一オリジンの完全な200のみ保存＝切れた/不透明/部分(206)応答で
     // キャッシュを汚染しない。汚れたコピーは背後の再取得で正しい版に置き換わる。
