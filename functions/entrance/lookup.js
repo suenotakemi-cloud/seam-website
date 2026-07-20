@@ -29,7 +29,7 @@ export async function onRequestGet(context) {
     const base = 'https://seam.salon.town';
 
     const r = await lookup(base, { token, user_id: uid }, code);
-    if (r.name) return J({ ok: true, name: surname(r.name).slice(0, 20) }, H);
+    if (r.name) return J({ ok: true, name: smartSurname(r.name).slice(0, 20) }, H);
     return J({ ok: false, reason: r.reason || 'not_found' }, H, r.reason === 'error' ? 502 : 200);
 
   } catch (e) {
@@ -67,8 +67,32 @@ async function lookup(base, sess, code) {
   return { reason: 'not_found' };           // セッションは有効だが該当なし＝本当に非会員
 }
 
-function surname(name) {
-  return String(name).trim().split(/[\s　]+/)[0] || '';
+// 会員DBは氏名が1項目(name)のみで姓・名が分かれていない。
+// スペースがあれば先頭＝姓。無い漢字名は「3文字姓の辞書優先＋既定は先頭2文字」で姓を推定。
+// かな/ローマ字でスペース無しは分割不能なのでそのまま返す。
+const SURNAME4 = new Set(['勅使河原', '武者小路', '大豆生田']);
+const SURNAME3 = new Set([
+  '佐々木', '長谷川', '五十嵐', '小笠原', '久保田', '佐久間', '宇佐美', '小野寺', '大久保', '小早川',
+  '大河原', '大河内', '阿久津', '安孫子', '波多野', '御手洗', '小田島', '大和田', '日比野', '東海林',
+  '小宮山', '二階堂', '九十九', '小長谷', '宇都宮', '伊集院', '八重樫', '喜多村', '喜屋武', '我那覇',
+  '阿波根', '安慶名', '小久保', '小谷野', '長谷部', '宇佐見', '大工原', '小手川', '宇田川', '大城戸',
+  '小田切', '宇田津', '小柳津',
+]);
+function smartSurname(raw) {
+  const s = String(raw).trim();
+  if (!s) return '';
+  // スペース区切りがあれば確実に先頭＝姓
+  const parts = s.split(/[\s　]+/);
+  if (parts.length > 1) return parts[0];
+  // 漢字の先頭ひとかたまりの後にかなが続く（例: 伊藤みなみ）→ 先頭の漢字＝姓
+  const km = s.match(/^([一-鿿々〆ヶ]+)[ぁ-んァ-ヶ]/);
+  if (km) return km[1];
+  // 漢字のみ（々〆ヶ含む）でなければ分割できない → そのまま
+  if (!/^[一-鿿々〆ヶ]+$/.test(s)) return s;
+  if (s.length <= 2) return s;
+  if (s.length >= 4 && SURNAME4.has(s.slice(0, 4))) return s.slice(0, 4);
+  if (SURNAME3.has(s.slice(0, 3))) return s.slice(0, 3);
+  return s.slice(0, 2); // 既定：日本人の姓は2文字が最頻
 }
 
 function J(o, h, s = 200) {
