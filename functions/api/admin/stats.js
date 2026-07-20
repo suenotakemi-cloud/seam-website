@@ -241,10 +241,16 @@ function aggregateSkin(rows) {
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
-  const key = request.headers.get('x-seam-key') || url.searchParams.get('key') || '';
+  const key = (request.headers.get('x-seam-key') || url.searchParams.get('key') || '').trim();
+  const stored = ((env && env.ADMIN_KEY) || '').trim(); // CFに保存した値の余分な空白/改行(貼付事故)を吸収
 
-  if (!env || !env.ADMIN_KEY || key !== env.ADMIN_KEY) {
-    return json({ error: 'unauthorized' }, 401);
+  if (!stored) {
+    // サーバにパスキー未設定 = どのパスワードでも入れない
+    return json({ error: 'unauthorized', keyConfigured: false }, 401);
+  }
+  if (key !== stored) {
+    // 設定済みだが不一致。文字数が合うか(=打ち間違い/全角半角の可能性)だけ返す。値は返さない
+    return json({ error: 'unauthorized', keyConfigured: true, lenMatch: (key.length === stored.length) }, 401);
   }
   if (!env.DB || typeof env.DB.prepare !== 'function') {
     return json({ configured: false, message: 'D1 binding "DB" が未設定です（CFダッシュボードで設定してください）' }, 200);

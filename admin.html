@@ -1205,7 +1205,7 @@
     var sage = (el('segAge')&&el('segAge').value)||'';
     var scs  = (el('segCs')&&el('segCs').value)||'';
     fetch('/api/admin/stats?days='+days+(sage?'&sage='+encodeURIComponent(sage):'')+(scs?'&scs='+encodeURIComponent(scs):''), { headers:{ 'x-seam-key': key } })
-      .then(function(r){ if(r.status===401){ sessionStorage.removeItem(KEY_LS); throw {auth:true}; } return r.json(); })
+      .then(function(r){ if(r.status===401){ sessionStorage.removeItem(KEY_LS); return r.json().catch(function(){return {};}).then(function(j){ throw {auth:true, info:j}; }); } return r.json(); })
       .then(function(d){
         if(d.configured===false){
           showApp();
@@ -1223,7 +1223,15 @@
         if(d.error){ el('notice').innerHTML='<div class="card"><span style="color:#b4453a">エラー: '+esc(d.error)+'</span></div>'; }
         showApp(); render(d);
       })
-      .catch(function(e){ if(e&&e.auth){ showLogin('パスキーが違います'); } else { showLogin('読み込みに失敗しました'); } });
+      .catch(function(e){
+        if(e&&e.auth){
+          var i=(e&&e.info)||{}; var msg='パスキーが違います';
+          if(i.keyConfigured===false) msg='サーバにパスキーが未設定です（Cloudflareで ADMIN_KEY を設定してください）';
+          else if(i.lenMatch===false) msg='パスキーが違います（文字数が合いません＝別のパスワードの可能性）';
+          else if(i.lenMatch===true) msg='パスキーが違います（文字数は合っています＝打ち間違い・全角/半角・記号の可能性）';
+          showLogin(msg);
+        } else { showLogin('読み込みに失敗しました'); }
+      });
   }
 
   // events
