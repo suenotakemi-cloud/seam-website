@@ -13,11 +13,11 @@
   if (/\/finder\.html(?:$|[?#])/.test(location.pathname + location.search)) return;
 
   var LABELS = {
-    ja: { home: 'ホーム', finder: '診断', shop: 'ショップ', stores: '店舗一覧', book: 'サロン予約' },
-    en: { home: 'Home', finder: 'Diagnosis', shop: 'Shop', stores: 'Stores', book: 'Booking' },
-    zh: { home: '首页', finder: '诊断', shop: '商店', stores: '门店', book: '沙龙预约' },
-    tw: { home: '首頁', finder: '診斷', shop: '商店', stores: '門市', book: '沙龍預約' },
-    ko: { home: '홈', finder: '진단', shop: '샵', stores: '매장', book: '살롱예약' }
+    ja: { home: 'ホーム', finder: '診断', shop: 'オンライン', stores: '店舗一覧', book: 'サロン予約' },
+    en: { home: 'Home', finder: 'Diagnosis', shop: 'Online', stores: 'Stores', book: 'Booking' },
+    zh: { home: '首页', finder: '诊断', shop: '网店', stores: '门店', book: '沙龙预约' },
+    tw: { home: '首頁', finder: '診斷', shop: '網店', stores: '門市', book: '沙龍預約' },
+    ko: { home: '홈', finder: '진단', shop: '온라인', stores: '매장', book: '살롱예약' }
   };
   // 「サロン予約」サブメニュー（ヘアサロン / スパサロン）
   var SUB = {
@@ -318,10 +318,11 @@
       '#seam-header-shop svg{width:13px;height:13px;color:#B8945A;}',
       '#seam-header-shop:active{border-color:#B8945A;}',
       '@media(hover:hover){#seam-header-shop:hover{border-color:#B8945A;color:#6E5430;}}',
-      /* モバイルはアイコンのみ(SEAMロゴとの衝突回避・金縁ピルで入口性は担保)/ 640px以上でフルラベル */
-      '#seam-header-shop .shs-short{display:none;}',
+      /* モバイルはアイコン+「SHOP」を縦積み(横に伸ばすと中央のSEAMロゴに衝突するため)。アイコンだけだと"カート"に見える問題を短ラベルで解消。640px以上は横並び+フルラベル */
+      '#seam-header-shop .shs-short{display:block;font-family:Inter,"Noto Sans JP",sans-serif;font-size:7.5px;letter-spacing:.1em;line-height:1;margin-top:1.5px;}',
       '#seam-header-shop .shs-full{display:none;}',
-      '@media (min-width:640px){#seam-header-shop .shs-full{display:inline;font-family:"Noto Serif JP",serif;font-size:11.5px;letter-spacing:.08em;text-transform:none;}}',
+      '@media (max-width:639px){#seam-header-shop{flex-direction:column;gap:0;padding:4px 9px;min-height:38px !important;}}',
+      '@media (min-width:640px){#seam-header-shop .shs-full{display:inline;font-family:"Noto Serif JP",serif;font-size:11.5px;letter-spacing:.08em;text-transform:none;}#seam-header-shop .shs-short{display:none;}}',
       /* デスクトップ: タブバーは非表示だがシート(会員確認)はヘッダー入口用に中央表示で生かす */
       '@media (min-width:1024px){#seam-tabbar{display:none !important;}body{padding-bottom:0;}',
       '#seam-tab-sheet{top:0;bottom:0;align-items:center;}}'
