@@ -243,8 +243,14 @@ export async function onRequestGet(context) {
   const url = new URL(request.url);
   const key = request.headers.get('x-seam-key') || url.searchParams.get('key') || '';
 
-  if (!env || !env.ADMIN_KEY || key !== env.ADMIN_KEY) {
-    return json({ error: 'unauthorized' }, 401);
+  // 診断用: サーバに ADMIN_KEY が設定されているか(=キーの有無)だけを返す。
+  // キーの値そのものは絶対に返さない。keyConfigured:false なら「どのパスワードでも
+  // 入れない=CFのADMIN_KEY未設定」、true なら「設定済み=入力パスワードが不一致」と切り分けられる。
+  if (!env || !env.ADMIN_KEY) {
+    return json({ error: 'unauthorized', keyConfigured: false }, 401);
+  }
+  if (key !== env.ADMIN_KEY) {
+    return json({ error: 'unauthorized', keyConfigured: true }, 401);
   }
   if (!env.DB || typeof env.DB.prepare !== 'function') {
     return json({ configured: false, message: 'D1 binding "DB" が未設定です（CFダッシュボードで設定してください）' }, 200);
