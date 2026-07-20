@@ -366,11 +366,18 @@
         <p class="font-mono tracking-widest3 text-[10px] text-gold uppercase mb-3">— Menu</p>
         <h2 data-reveal="" class="font-serif text-[26px] sm:text-[36px] text-ink leading-snug font-medium" data-i18n="menus.title">당신의 시간에 맞춰 깊이를 고르세요</h2>
         <p class="mt-4 text-[12.5px] sm:text-[14px] text-charcoal/70 leading-[1.85]" data-i18n="menus.desc">모두 완전 개인실, 드라이&amp;블로우 마무리 포함.</p>
+        <!-- 店舗トグル: 料金・メニューを店舗別に出し分け(銀座と大阪を同画面に並べない) -->
+        <style>.spa-store-tab{background:#fff;color:#6B6358;border-color:#E2DDD3;}.spa-store-tab.is-active{background:#282624;color:#F5F1EA;border-color:#282624;}</style>
+        <div class="mt-6 flex justify-center gap-2" role="tablist" data-i18n-attr="aria-label:menus.pickStore" aria-label="店舗を選ぶ">
+          <button type="button" data-set="std" role="tab" aria-selected="true" class="spa-store-tab is-active px-4 py-2 rounded-full text-[11.5px] font-mono tracking-widest2 uppercase border transition-colors cursor-pointer">Ginza</button>
+          <button type="button" data-set="std" role="tab" aria-selected="false" class="spa-store-tab px-4 py-2 rounded-full text-[11.5px] font-mono tracking-widest2 uppercase border transition-colors cursor-pointer">Nagoya</button>
+          <button type="button" data-set="osaka" role="tab" aria-selected="false" class="spa-store-tab px-4 py-2 rounded-full text-[11.5px] font-mono tracking-widest2 uppercase border transition-colors cursor-pointer">Osaka</button>
+        </div>
       </div>
       <p class="sm:hidden text-center text-[11px] text-charcoal/70 mt-6 mb-3 font-mono tracking-widest2">← swipe →</p>
-      <div class="mt-2 sm:mt-10 hscroll flex sm:grid sm:grid-cols-2 lg:grid-cols-4 overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 pb-2 pt-3">
+      <div data-spa-set="std" class="mt-2 sm:mt-10 hscroll flex sm:grid sm:grid-cols-2 lg:grid-cols-4 overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 pb-2 pt-3">
         <div class="relative shrink-0 snap-start w-[78%] max-w-[270px] sm:w-auto sm:max-w-none bg-white border border-line shadow-soft rounded-[14px] p-5 flex flex-col">
-          
+
           <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase"><span class="font-serif text-[30px] text-ink tracking-normal nums" style="text-transform:none;">60</span> min</p>
           <h3 class="mt-1.5 font-serif text-[15.5px] text-ink leading-snug" data-i18n="menus.c60.name">크림 헤드스파</h3>
           <p class="mt-1.5 font-serif text-[22px] text-ink nums">¥13,300</p>
@@ -421,6 +428,69 @@
           <p class="mt-3 text-[10px] text-charcoal/55" data-i18n="menus.c150.time">입점~퇴점 약 150분</p>
           <a href="#booking" class="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full bg-ink text-ivory text-[12.5px] font-serif py-2.5 hover:bg-charcoal transition-colors"><span data-i18n="menus.bookCta">매장을 골라 예약하기</span><span aria-hidden="">→</span></a>
         </div>
+      </div>
+      <!-- 大阪 堀江 メニュー(店舗トグルで表示・定価のみ/会員価格はHPB) -->
+      <div data-spa-set="osaka" class="hidden">
+        <div class="mt-2 sm:mt-10 hscroll flex sm:grid sm:grid-cols-2 lg:grid-cols-4 overflow-x-auto snap-x snap-mandatory gap-3 sm:gap-4 pb-2 pt-3">
+          <div class="relative shrink-0 snap-start w-[78%] max-w-[270px] sm:w-auto sm:max-w-none bg-white border border-gold/60 shadow-card rounded-[14px] p-5 flex flex-col">
+            <span class="absolute -top-2.5 left-4 font-mono text-[8.5px] tracking-widest2 uppercase rounded-full px-2.5 py-1" style="background:#B4453A;color:#fff;" data-i18n="menus.no1">인기 No.1</span>
+            <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase"><span class="font-serif text-[30px] text-ink tracking-normal nums" style="text-transform:none;">60</span> min</p>
+            <h3 class="mt-1.5 font-serif text-[15.5px] text-ink leading-snug" data-i18n="osk.c1.name">首肩ほどきヘッドスパ</h3>
+            <p class="mt-1.5 font-serif text-[22px] text-ink nums">¥11,800</p>
+            <ul class="mt-3 pt-3 border-t border-line/70 space-y-1.5 text-[11.5px] text-charcoal/75 leading-[1.65] flex-1">
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c1.f1">完全個室でじっくりほぐす</span></li>
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c1.f2">首・肩の張りをほどく</span></li>
+            </ul>
+            <p class="mt-3 text-[10px] text-charcoal/55" data-i18n="osk.c1.time">来店〜退店 約95分</p>
+            <a href="#booking" class="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full bg-ink text-ivory text-[12.5px] font-serif py-2.5 hover:bg-charcoal transition-colors"><span data-i18n="menus.bookCta">매장을 골라 예약하기</span><span aria-hidden="">→</span></a>
+          </div>
+          <div class="relative shrink-0 snap-start w-[78%] max-w-[270px] sm:w-auto sm:max-w-none bg-white border border-line shadow-soft rounded-[14px] p-5 flex flex-col">
+            <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase"><span class="font-serif text-[30px] text-ink tracking-normal nums" style="text-transform:none;">90</span> min</p>
+            <h3 class="mt-1.5 font-serif text-[15.5px] text-ink leading-snug" data-i18n="osk.c2.name">首肩ほどき ＋ 頭浸浴</h3>
+            <p class="mt-1.5 font-serif text-[22px] text-ink nums">¥15,800</p>
+            <ul class="mt-3 pt-3 border-t border-line/70 space-y-1.5 text-[11.5px] text-charcoal/75 leading-[1.65] flex-1">
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c2.f1">90分たっぷり 深いリラックス</span></li>
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c2.f2">首・肩・デコルテまで</span></li>
+            </ul>
+            <p class="mt-3 text-[10px] text-charcoal/55" data-i18n="osk.c2.time">来店〜退店 約130分</p>
+            <a href="#booking" class="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full bg-ink text-ivory text-[12.5px] font-serif py-2.5 hover:bg-charcoal transition-colors"><span data-i18n="menus.bookCta">매장을 골라 예약하기</span><span aria-hidden="">→</span></a>
+          </div>
+          <div class="relative shrink-0 snap-start w-[78%] max-w-[270px] sm:w-auto sm:max-w-none bg-white border border-line shadow-soft rounded-[14px] p-5 flex flex-col">
+            <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase"><span class="font-serif text-[30px] text-ink tracking-normal nums" style="text-transform:none;">30</span> min</p>
+            <h3 class="mt-1.5 font-serif text-[15.5px] text-ink leading-snug" data-i18n="osk.c3.name">首肩リセット ドライスパ</h3>
+            <p class="mt-1.5 font-serif text-[22px] text-ink nums">¥6,600</p>
+            <ul class="mt-3 pt-3 border-t border-line/70 space-y-1.5 text-[11.5px] text-charcoal/75 leading-[1.65] flex-1">
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c3.f1">濡らさず 髪を崩さず</span></li>
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c3.f2">仕事や買い物の合間に</span></li>
+            </ul>
+            <p class="mt-3 text-[10px] text-charcoal/55" data-i18n="osk.c3.time">来店〜退店 約40分</p>
+            <a href="#booking" class="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full bg-ink text-ivory text-[12.5px] font-serif py-2.5 hover:bg-charcoal transition-colors"><span data-i18n="menus.bookCta">매장을 골라 예약하기</span><span aria-hidden="">→</span></a>
+          </div>
+          <div class="relative shrink-0 snap-start w-[78%] max-w-[270px] sm:w-auto sm:max-w-none bg-white border border-line shadow-soft rounded-[14px] p-5 flex flex-col">
+            <span class="absolute -top-2.5 left-4 font-mono text-[8.5px] tracking-widest2 uppercase rounded-full px-2.5 py-1" style="background:#6E4E26;color:#F2DCA6;">HAIR CARE</span>
+            <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase"><span class="font-serif text-[30px] text-ink tracking-normal nums" style="text-transform:none;">100</span> min</p>
+            <h3 class="mt-1.5 font-serif text-[15.5px] text-ink leading-snug" data-i18n="osk.c4.name">美髪ヘッドスパ</h3>
+            <p class="mt-1.5 font-serif text-[22px] text-ink nums">¥17,800</p>
+            <ul class="mt-3 pt-3 border-t border-line/70 space-y-1.5 text-[11.5px] text-charcoal/75 leading-[1.65] flex-1">
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c4.f1">スパ ＋ 選べるシステムTr</span></li>
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c4.f2">髪も頭皮も本格ケア</span></li>
+            </ul>
+            <p class="mt-3 text-[10px] text-charcoal/55" data-i18n="osk.c4.time">来店〜退店 約135分</p>
+            <a href="#booking" class="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full bg-ink text-ivory text-[12.5px] font-serif py-2.5 hover:bg-charcoal transition-colors"><span data-i18n="menus.bookCta">매장을 골라 예약하기</span><span aria-hidden="">→</span></a>
+          </div>
+          <div class="relative shrink-0 snap-start w-[78%] max-w-[270px] sm:w-auto sm:max-w-none bg-white border border-line shadow-soft rounded-[14px] p-5 flex flex-col">
+            <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase"><span class="font-serif text-[30px] text-ink tracking-normal nums" style="text-transform:none;">120</span> min</p>
+            <h3 class="mt-1.5 font-serif text-[15.5px] text-ink leading-snug" data-i18n="osk.c5.name">リカバリー</h3>
+            <p class="mt-1.5 font-serif text-[22px] text-ink nums">¥17,600</p>
+            <ul class="mt-3 pt-3 border-t border-line/70 space-y-1.5 text-[11.5px] text-charcoal/75 leading-[1.65] flex-1">
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c5.f1">120分の集中ケア</span></li>
+              <li class="flex items-start gap-1.5"><span aria-hidden="" class="text-gold mt-0.5">·</span><span data-i18n="osk.c5.f2">頭・首・肩を全身リセット</span></li>
+            </ul>
+            <p class="mt-3 text-[10px] text-charcoal/55" data-i18n="osk.c5.time">来店〜退店 約155分</p>
+            <a href="#booking" class="mt-3 inline-flex items-center justify-center gap-1.5 rounded-full bg-ink text-ivory text-[12.5px] font-serif py-2.5 hover:bg-charcoal transition-colors"><span data-i18n="menus.bookCta">매장을 골라 예약하기</span><span aria-hidden="">→</span></a>
+          </div>
+        </div>
+        <p class="mt-4 text-center text-[10.5px] text-charcoal/60 leading-[1.7]" data-i18n="osk.note">大阪 堀江店の料金です 初回・次回予約でお得な会員価格はホットペッパービューティーから</p>
       </div>
       <div class="mt-6 max-w-md mx-auto bg-white/70 border border-line rounded-[12px] px-5 py-4">
         <p class="font-mono tracking-widest2 text-[9.5px] text-gold uppercase" data-i18n="menus.optLabel">옵션</p>
@@ -1330,6 +1400,50 @@
     };
   </script>
   <script src="/js/app-header.js?v=4" defer=""></script>
+  <script>
+  /* 大阪 堀江メニューの多言語辞書を SEAM_PAGE_I18N に統合(lang.jsより前に実行) */
+  (function(){
+    var I = window.SEAM_PAGE_I18N; if(!I) return;
+    var L=['ja','en','zh','tw','ko'];
+    var OSK={
+      'menus.pickStore':['店舗を選ぶ','Choose a store','选择门店','選擇門店','매장 선택'],
+      'osk.c1.name':['首肩ほどきヘッドスパ','Neck & Shoulder Head Spa','颈肩舒缓头疗','頸肩舒緩頭療','목·어깨 이완 헤드스파'],
+      'osk.c1.f1':['完全個室でじっくりほぐす','Unhurried release in a private room','独立包间 细致舒缓','獨立包廂 細緻舒緩','프라이빗 룸에서 꼼꼼히 이완'],
+      'osk.c1.f2':['首・肩の張りをほどく','Releases neck & shoulder tension','舒缓颈肩紧张','舒緩頸肩緊張','목·어깨 결림 이완'],
+      'osk.c1.time':['来店〜退店 約95分','About 95 min door to door','到店至离店 约95分钟','到店至離店 約95分鐘','방문~퇴점 약 95분'],
+      'osk.c2.name':['首肩ほどき ＋ 頭浸浴','Neck & Shoulder + Head Bath','颈肩舒缓＋头浴','頸肩舒緩＋頭浴','목·어깨 이완 ＋ 머리 담금욕'],
+      'osk.c2.f1':['90分たっぷり 深いリラックス','A deep, unhurried 90 min','90分钟充分深度放松','90分鐘充分深度放鬆','90분 충분한 깊은 휴식'],
+      'osk.c2.f2':['首・肩・デコルテまで','Neck, shoulders & décolleté','颈·肩·锁骨一并放松','頸·肩·鎖骨一併放鬆','목·어깨·데콜테까지'],
+      'osk.c2.time':['来店〜退店 約130分','About 130 min door to door','到店至离店 约130分钟','到店至離店 約130分鐘','방문~퇴점 약 130분'],
+      'osk.c3.name':['首肩リセット ドライスパ','Dry Head Spa · Quick Reset','颈肩重置 干式头疗','頸肩重置 乾式頭療','목·어깨 리셋 드라이 스파'],
+      'osk.c3.f1':['濡らさず 髪を崩さず','No wetting, no restyling','不弄湿 不乱发型','不弄濕 不亂髮型','젖지 않고 헤어 유지'],
+      'osk.c3.f2':['仕事や買い物の合間に','Between work or shopping','工作或购物间隙','工作或購物間隙','업무·쇼핑 사이에'],
+      'osk.c3.time':['来店〜退店 約40分','About 40 min door to door','到店至离店 约40分钟','到店至離店 約40分鐘','방문~퇴점 약 40분'],
+      'osk.c4.name':['美髪ヘッドスパ','Beauty-Hair Head Spa','美发头疗','美髮頭療','헤어케어 헤드스파'],
+      'osk.c4.f1':['スパ ＋ 選べるシステムTr','Spa + your choice of treatment','头疗＋可选系统护理','頭療＋可選系統護理','스파＋시스템 트리트먼트 선택'],
+      'osk.c4.f2':['髪も頭皮も本格ケア','Full care for hair & scalp','秀发头皮双重护理','秀髮頭皮雙重護理','모발·두피 본격 케어'],
+      'osk.c4.time':['来店〜退店 約135分','About 135 min door to door','到店至离店 约135分钟','到店至離店 約135分鐘','방문~퇴점 약 135분'],
+      'osk.c5.name':['リカバリー','Recovery','焕活恢复','煥活恢復','리커버리'],
+      'osk.c5.f1':['120分の集中ケア','Intensive 120 min','120分钟集中护理','120分鐘集中護理','120분 집중 케어'],
+      'osk.c5.f2':['頭・首・肩を全身リセット','Reset head, neck & shoulders','头·颈·肩全身重置','頭·頸·肩全身重置','머리·목·어깨 전신 리셋'],
+      'osk.c5.time':['来店〜退店 約155分','About 155 min door to door','到店至离店 约155分钟','到店至離店 約155分鐘','방문~퇴점 약 155분'],
+      'osk.note':['大阪 堀江店の料金です 初回・次回予約でお得な会員価格はホットペッパービューティーから','Osaka-Horie prices. Member rates for first visits & rebooking via Hot Pepper Beauty.','大阪堀江店价格 首次·续约的会员优惠价请见Hot Pepper Beauty','大阪堀江店價格 首次·續約的會員優惠價請見Hot Pepper Beauty','오사카 호리에점 요금 첫 방문·재예약 회원가는 핫페퍼뷰티에서']
+    };
+    Object.keys(OSK).forEach(function(k){ var a=OSK[k]; L.forEach(function(l,i){ if(I[l]) I[l][k]=a[i]; }); });
+  })();
+  /* ヘッドスパ 店舗別メニュー切替(銀座・名古屋=現行 / 大阪=別メニュー。同画面に並べない) */
+  (function(){
+    var tabs=[].slice.call(document.querySelectorAll('.spa-store-tab'));
+    var std=document.querySelector('[data-spa-set="std"]'), osk=document.querySelector('[data-spa-set="osaka"]');
+    if(!tabs.length||!std||!osk) return;
+    tabs.forEach(function(t){ t.addEventListener('click', function(){
+      var isOsaka = t.getAttribute('data-set')==='osaka';
+      std.classList.toggle('hidden', isOsaka);
+      osk.classList.toggle('hidden', !isOsaka);
+      tabs.forEach(function(x){ var on=x===t; x.classList.toggle('is-active', on); x.setAttribute('aria-selected', on?'true':'false'); });
+    }); });
+  })();
+  </script>
   <script src="/js/lang.js?v=2"></script>
   <script src="/js/reveal.js"></script>
   <script src="/js/enhance.js?v=3" defer=""></script>
