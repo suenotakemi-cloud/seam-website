@@ -1225,11 +1225,8 @@
       })
       .catch(function(e){
         if(e&&e.auth){
-          var i=(e&&e.info)||{}; var msg='パスキーが違います';
-          if(i.keyConfigured===false) msg='サーバにパスキーが未設定です（Cloudflareで ADMIN_KEY を設定してください）';
-          else if(i.lenMatch===false) msg='パスキーが違います（文字数が合いません＝別のパスワードの可能性）';
-          else if(i.lenMatch===true) msg='パスキーが違います（文字数は合っています＝打ち間違い・全角/半角・記号の可能性）';
-          showLogin(msg);
+          var i=(e&&e.info)||{};
+          showLogin(i.keyConfigured===false ? 'サーバにパスキーが未設定です（Cloudflareで ADMIN_KEY を設定してください）' : 'パスキーが違います');
         } else { showLogin('読み込みに失敗しました'); }
       });
   }

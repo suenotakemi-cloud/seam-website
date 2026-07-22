@@ -249,8 +249,7 @@ export async function onRequestGet(context) {
     return json({ error: 'unauthorized', keyConfigured: false }, 401);
   }
   if (key !== stored) {
-    // 設定済みだが不一致。文字数が合うか(=打ち間違い/全角半角の可能性)だけ返す。値は返さない
-    return json({ error: 'unauthorized', keyConfigured: true, lenMatch: (key.length === stored.length) }, 401);
+    return json({ error: 'unauthorized', keyConfigured: true }, 401);
   }
   if (!env.DB || typeof env.DB.prepare !== 'function') {
     return json({ configured: false, message: 'D1 binding "DB" が未設定です（CFダッシュボードで設定してください）' }, 200);
