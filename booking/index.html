@@ -1199,10 +1199,35 @@ function avgDamage(price){return Math.round(price*(1-NOSHOW_MAT_RATE)*0.9);}
 const LINE_CFG={
   LIFF_ID:'2010490592-nXUUaxqI',   // シフトボード受付ログインチャネルのLIFF（seamginza予約）
   PUSH_ENDPOINT:'https://seam-square-pay.suenotakemi.workers.dev/line/push',  // 設定済み（トークン有効確認済み）
+  LOGIN_STATE_ENDPOINT:'https://seam-square-pay.suenotakemi.workers.dev/line/login/state',  // OAuth2 state発行
 };
-let lineProfile=null; // {userId, displayName}
+let lineProfile=null; // {userId, displayName, pictureUrl}
+
+// URLパラメータからLINEログイン結果を受け取る（/line/login/result → リダイレクト後）
+(function(){
+  const p=new URLSearchParams(location.search);
+  const uid=p.get('line_user_id'), name=p.get('line_name'), pic=p.get('line_picture');
+  if(uid&&name){
+    lineProfile={userId:uid,displayName:name,pictureUrl:pic||''};
+    // URLパラメータをきれいにする（履歴に残さない）
+    const clean=location.pathname+(location.hash||'');
+    history.replaceState(null,'',clean);
+  }
+})();
+
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
+
+// LINEログインボタンをクリック → state発行 → LINE認証画面へ
+async function startLineLogin(){
+  try{
+    const res=await fetch(LINE_CFG.LOGIN_STATE_ENDPOINT,{method:'POST'});
+    const {authUrl}=await res.json();
+    if(authUrl)location.href=authUrl;
+  }catch(e){toast('LINEログインの準備に失敗しました。しばらくしてお試しください。');}
+}
+
 async function initLiff(){
+  if(lineProfile)return;  // URLパラメータで既にログイン済みなら不要
   if(!LINE_CFG.LIFF_ID)return;              // 未設定なら通常のWebページとして動作
   try{
     await loadScript('https://static.line-scdn.net/liff/edge/2/sdk.js');
@@ -1315,7 +1340,11 @@ function renderBook(){
   const stepsHtml=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
   if(bk.step===0){
     p.innerHTML=stepsHtml+
-      (lineProfile?`<div class="line-logged">✅ LINEログイン済み：${lineProfile.displayName} 様（確認・リマインドをLINEでお届けします）</div>`:'')+
+      (lineProfile?`<div class="line-logged">✅ LINEログイン済み：${lineProfile.displayName} 様（確認・リマインドをLINEでお届けします）</div>`:
+        `<button onclick="startLineLogin()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#06C755;color:#fff;border:none;border-radius:12px;padding:13px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.03 2 11c0 3.16 1.69 5.95 4.28 7.72L5.5 22l3.44-1.8C10.22 20.71 11.1 21 12 21c5.52 0 10-4.03 10-9S17.52 2 12 2z"/></svg>
+          LINEでログイン（予約確認・リマインドをLINEでお届け）
+        </button>`)+
       (!lineProfile&&GOOGLE_CLIENT_ID?(googleProfile
         ?`<div class="line-logged" style="background:#eef4ff;border-color:#cfe0fb;color:#1a5fb4">✅ Googleログイン済み：${googleProfile.name} 様</div>`
         :`<div class="glogin"><span>LINE以外・海外の方はこちら / Sign in</span><div id="gbtn"></div></div>`):'')+
@@ -1847,6 +1876,8 @@ if(IS_CUSTOMER){
   const bh=document.querySelector('#v-book h2');if(bh)bh.style.display='none';
   const bl=document.querySelector('#v-book .lead');if(bl)bl.style.display='none';
 }
+// URLパラメータでLINEログイン済みの場合、bk に反映
+if(lineProfile){bk.name=bk.name||lineProfile.displayName;bk.lineUserId=lineProfile.userId;}
 if(BOOK_SRC==='line')initLiff();  // LINE経由ならLIFF自動ログインを試行（LIFF_ID未設定なら通常動作）
 initGoogle();                     // Googleログイン（GOOGLE_CLIENT_ID未設定なら何もしない）
 </script>
