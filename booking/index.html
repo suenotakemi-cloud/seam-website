@@ -1472,10 +1472,17 @@ function renderBook(){
         ${discHtml}${repHtml}
       </dl>
       <div class="total-row"><span>合計金額</span><b>¥${(menu.price-disc).toLocaleString()}<small style="font-size:11px;color:var(--sub);font-weight:600;margin-left:4px">税込・当日払い</small></b></div>
-      <div class="field" style="margin-top:14px"><label>お名前（姓 名）</label><input id="bname" value="${bk.name||''}" placeholder="例）鈴木 一花"></div>
-      <div class="field"><label>フリガナ（カタカナ・セイ メイ）</label><input id="bkana" value="${bk.kana||''}" placeholder="例）スズキ イチカ"></div>
+      ${(()=>{ // 既存のbk.name/bk.kana（スペース区切り）から4欄へ分解してプリフィル
+        const nsp=(bk.name||'').split(/[\s　]+/),ksp=(bk.kana||'').split(/[\s　]+/);
+        if(bk.sei==null)bk.sei=nsp[0]||'';if(bk.mei==null)bk.mei=nsp[1]||'';
+        if(bk.seiK==null)bk.seiK=ksp[0]||'';if(bk.meiK==null)bk.meiK=ksp[1]||'';
+        return '';})()}
+      <div style="margin-top:14px;font-size:12px;font-weight:800;color:var(--navy)">お名前<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
+      <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bsei" value="${bk.sei||''}" placeholder="姓（例）山田"></div><div style="flex:1"><input id="bmei" value="${bk.mei||''}" placeholder="名（例）花子"></div></div>
+      <div style="font-size:12px;font-weight:800;color:var(--navy)">フリガナ（カタカナ）<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
+      <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bseiK" value="${bk.seiK||''}" placeholder="セイ（例）ヤマダ"></div><div style="flex:1"><input id="bmeiK" value="${bk.meiK||''}" placeholder="メイ（例）ハナコ"></div></div>
       <div class="field"><label>電話番号</label><input id="bphone" type="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
-      <div style="font-size:11.5px;color:var(--sub);margin-top:-4px">※ホットペッパー予約と同じ形式（姓名・フリガナ）でお願いします。ひらがなは自動でカタカナに変換します。</div>
+      <div style="font-size:11.5px;color:var(--sub);margin-top:-4px">※ホットペッパーと同じく<b>姓・名・セイ・メイを分けて</b>ご入力ください。ひらがなは自動でカタカナに変換します。</div>
       <div class="policy">
         <b>キャンセルポリシー</b>
         <table class="ptable">
@@ -1488,10 +1495,20 @@ function renderBook(){
       </div>
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
     document.getElementById('bnext2').onclick=()=>{
-      bk.name=document.getElementById('bname').value.trim()||'ゲスト';
-      bk.kana=hira2kata(document.getElementById('bkana').value.trim());   // ひらがな→カタカナ自動変換
+      // 姓・名・セイ・メイを別々に取得（HotPepper/サロンボードは4欄）
+      bk.sei=document.getElementById('bsei').value.trim();
+      bk.mei=document.getElementById('bmei').value.trim();
+      bk.seiK=hira2kata(document.getElementById('bseiK').value.trim());
+      bk.meiK=hira2kata(document.getElementById('bmeiK').value.trim());
       bk.phone=document.getElementById('bphone').value.trim();
-      if(!bk.kana||!/^[ァ-ヶー\s　]+$/.test(bk.kana)){toast('フリガナをカタカナで入力してください（サロンボード予約に必須）',true);return}
+      const kOk=s=>s&&/^[ァ-ヶー]+$/.test(s);
+      if(!bk.sei){toast('姓を入力してください',true);return}
+      if(!bk.mei){toast('名を入力してください',true);return}
+      if(!kOk(bk.seiK)){toast('セイをカタカナで入力してください',true);return}
+      if(!kOk(bk.meiK)){toast('メイをカタカナで入力してください',true);return}
+      // 「姓 名」「セイ メイ」に組み立て（salonPushがスペースで確実に分割できる）
+      bk.name=bk.sei+' '+bk.mei;
+      bk.kana=bk.seiK+' '+bk.meiK;
       // 先に枠が空いているか確認（決済後に取られる事故を防ぐ）
       if(conflicts(bk.day,sid,bk.start,bk.start+menu.min).length){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk.step=4;renderBook();
