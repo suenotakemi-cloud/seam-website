@@ -570,37 +570,45 @@ td.slot:hover{background:#f0f7ff}
 const LS='stb_v1';
 const OPEN=10*60, CLOSE=19*60, STEP=30; // minutes
 // SEAM 銀座の実在籍（ホットペッパー表記のまま）: 及川 大輝(店長/ヘア)・ANZU(ヘア兼スパ)・CHIKA(スパ)
+// cu=CUEPON実account_id（予約のstaff_account_id）／hpb=HPBスタイリストID（RPAのサロンボード指名用・ヘア掲載）
 const STAFF=[
-  {id:'s1',name:'及川 大輝',role:'店長 / スタイリスト',catch:'艶髪デザイン・扱いやすい仕上がり',yrs:14},
-  {id:'s2',name:'ANZU',role:'スタイリスト / スパニスト',catch:'頭皮と髪を整えるヘア＆スパ',yrs:9},
-  {id:'s3',name:'CHIKA',role:'スパニスト',catch:'極上睡眠ヘッドスパ・完全個室',yrs:3},
+  {id:'s1',name:'及川 大輝',role:'店長 / スタイリスト',catch:'艶髪デザイン・扱いやすい仕上がり',yrs:14,cu:'20260720172047980eihPaAi',hpb:'T001096152'},
+  {id:'s2',name:'ANZU',role:'スタイリスト / スパニスト',catch:'頭皮と髪を整えるヘア＆スパ',yrs:9,cu:'20260720172048371VVaiHGf',hpb:'T001097192',hpbSpa:'W001374984'},
+  {id:'s3',name:'CHIKA',role:'スパニスト',catch:'極上睡眠ヘッドスパ・完全個室',yrs:3,cu:'20260720172736440ZYIefdT',hpb:'W001412775'},
 ];
 // SEAM 銀座のHPB実メニュー・価格（施術時間は目安）。カテゴリでグループ表示。クーポン=お得なセット。
+// ★HotPepper掲載（slnH000802192）と完全一致。クーポン=実掲載13件／単品=サロンボード単品メニュー名と一字一句同じ（RPA書込のメニュー検索一致に必須）
 const MENUS=[
-  {id:'cp1',cat:'クーポン',tag:'メンズ限定',name:'似合わせカット＋アミノクレンジングスパ',min:90,price:5500,staff:['s2']},
-  {id:'cp2',cat:'クーポン',tag:'全員',name:'カット＋ヘッドスパ',min:120,price:15700,staff:['s2']},
-  {id:'cp3',cat:'クーポン',tag:'全員',name:'カット＋トリートメント',min:90,price:9900,staff:['s1','s2']},
-  {id:'cp4',cat:'クーポン',tag:'全員',name:'カラー＋ヘッドスパ',min:150,price:18700,staff:['s2']},
-  {id:'cp5',cat:'クーポン',tag:'全員',name:'縮毛矯正＋トリートメント',min:180,price:30000,staff:['s1','s2']},
+  // ---- クーポン（HotPepper実掲載・価格そのまま） ----
+  {id:'cp1',cat:'クーポン',name:'【完全個室】カット＋ケアカラー＋トリートメント',min:150,price:24000,staff:['s1','s2']},
+  {id:'cp2',cat:'クーポン',name:'【完全個室】カット＋ケアカラー＋ヘッドスパ45min＋トリートメント',min:195,price:31900,staff:['s1','s2']},
+  {id:'cp3',cat:'クーポン',name:'【完全個室】カット＋髪質改善トリートメント',min:150,price:22000,staff:['s1','s2']},
+  {id:'cp4',cat:'クーポン',name:'【完全個室】カット＋ケアカラー＋髪質改善トリートメント',min:180,price:29700,staff:['s1','s2']},
+  {id:'cp5',cat:'クーポン',name:'【完全個室】カット＋美髪縮毛矯正＋トリートメント',min:240,price:35200,staff:['s1','s2']},
+  {id:'cp6',cat:'クーポン',name:'【完全個室】ケアカラー＋トリートメント',min:120,price:17600,staff:['s1','s2']},
+  {id:'cp7',cat:'クーポン',name:'【完全個室】ケアカラー＋45minヘッドスパ',min:135,price:18700,staff:['s1','s2']},
+  {id:'cp8',cat:'クーポン',tag:'メンズ',name:'【メンズ】カット＋お悩みに合わせた頭皮ケア',min:75,price:8800,staff:['s1','s2']},
+  {id:'cp9',cat:'クーポン',name:'【完全個室】カット＋トリートメント',min:90,price:9900,staff:['s1','s2']},
+  {id:'cp10',cat:'クーポン',name:'【完全個室】カット＋【30min】クイックヘッドスパ',min:90,price:15700,staff:['s2']},
+  {id:'cp11',cat:'クーポン',name:'睡眠クリームヘッドスパ　ライトコース【６０min】完全個室&ブロー付き',min:75,price:13800,staff:['s2','s3']},
+  {id:'cp12',cat:'クーポン',name:'カット+微還元トリートメント',min:90,price:30000,staff:['s1','s2']},
+  {id:'cp13',cat:'クーポン',name:'【完全個室】カット+頭身浴付ヘッドスパ90min',min:150,price:27700,staff:['s2']},
+  // ---- 単品メニュー（サロンボード単品名と完全一致） ----
   {id:'m1',cat:'カット',name:'SEAMカット',min:60,price:9900,staff:['s1','s2']},
-  {id:'m2',cat:'カット',name:'カット（会員）',min:60,price:8800,staff:['s1','s2']},
-  {id:'m3',cat:'カット',name:'カット＋ヘッドスパ',min:120,price:15700,staff:['s2']},
-  {id:'m4',cat:'カット',name:'前髪カット',min:20,price:2200,staff:['s1','s2']},
-  {id:'m5',cat:'カラー',name:'ケアリタッチカラー',min:90,price:9900,staff:['s1','s2']},
-  {id:'m6',cat:'カラー',name:'艶ケアカラー',min:120,price:13200,staff:['s1','s2']},
-  {id:'m7',cat:'カラー',name:'カラー＋トリートメント',min:150,price:17600,staff:['s1','s2']},
-  {id:'m8',cat:'カラー',name:'ケアブリーチWカラー（ハイライト全頭）',min:210,price:26400,staff:['s1','s2']},
-  {id:'m9',cat:'パーマ',name:'ケアパーマ',min:120,price:13200,staff:['s1','s2']},
-  {id:'m10',cat:'パーマ',name:'前髪パーマ',min:60,price:5500,staff:['s1','s2']},
-  {id:'m11',cat:'縮毛矯正',name:'縮毛矯正＋トリートメント',min:180,price:30000,staff:['s1','s2']},
-  {id:'m12',cat:'縮毛矯正',name:'カット＋美髪縮毛矯正',min:210,price:35200,staff:['s1']},
-  {id:'m13',cat:'縮毛矯正',name:'前髪縮毛矯正',min:90,price:11000,staff:['s1','s2']},
-  {id:'m14',cat:'トリートメント',name:'髪質改善トリートメント（酸熱系）',min:120,price:16500,staff:['s1','s2']},
-  {id:'m15',cat:'トリートメント',name:'高濃度トリートメント',min:60,price:10350,staff:['s1','s2']},
-  {id:'m16',cat:'トリートメント',name:'トリートメント（Quick Step）',min:30,price:6600,staff:['s1','s2']},
-  {id:'m17',cat:'ヘッドスパ',name:'完全個室ヘッドスパ 45min',min:45,price:12000,staff:['s2','s3']},
-  {id:'m18',cat:'ヘッドスパ',name:'完全個室ヘッドスパ 60min',min:60,price:13800,staff:['s2','s3']},
-  {id:'m19',cat:'ヘッドスパ',name:'ヘッドスパ 90分',min:90,price:17800,staff:['s2','s3']},
+  {id:'m2',cat:'カット',name:'前髪カット',min:20,price:2200,staff:['s1','s2']},
+  {id:'m3',cat:'カラー',name:'ケアリタッチカラー',min:90,price:9900,staff:['s1','s2']},
+  {id:'m4',cat:'カラー',name:'艶ケアカラー',min:120,price:13200,staff:['s1','s2']},
+  {id:'m5',cat:'カラー',name:'ケアブリーチWカラー（ハイライト、全頭）',min:210,price:26400,staff:['s1','s2']},
+  {id:'m6',cat:'パーマ',name:'ケアパーマ',min:120,price:13200,staff:['s1','s2']},
+  {id:'m7',cat:'パーマ',name:'前髪パーマ',min:60,price:5500,staff:['s1','s2']},
+  {id:'m8',cat:'縮毛矯正',name:'カット＋美髪縮毛矯正',min:210,price:35200,staff:['s1','s2']},
+  {id:'m9',cat:'縮毛矯正',name:'前髪縮毛矯正',min:90,price:11000,staff:['s1','s2']},
+  {id:'m10',cat:'トリートメント',name:'髪質改善トリートメント（酸熱系。サブリミック o r つるりんちょ)',min:120,price:16500,staff:['s1','s2']},
+  {id:'m11',cat:'トリートメント',name:'高濃度トリートメント(バイカルテor TOKIO）',min:60,price:10350,staff:['s1','s2']},
+  {id:'m12',cat:'トリートメント',name:'トリートメント（Quick Step treatment）',min:30,price:6600,staff:['s1','s2']},
+  {id:'m13',cat:'ヘッドスパ',name:'完全個室45min コース',min:45,price:12000,staff:['s2','s3']},
+  {id:'m14',cat:'ヘッドスパ',name:'完全個室60min コース',min:60,price:13800,staff:['s2','s3']},
+  {id:'m15',cat:'ヘッドスパ',name:'ヘッドスパ90分',min:90,price:17800,staff:['s2','s3']},
 ];
 const MENU_CATS=['クーポン','カット','カラー','パーマ','縮毛矯正','トリートメント','ヘッドスパ'];
 
@@ -696,9 +704,9 @@ function seedReviews(){
   const dd=n=>dkey(addDays(today(),-n));
   return [
     {id:'rv1',name:'M.K',rating:5,staffId:'s1',menuId:'m1',text:'扱いやすくて朝が楽になりました。仕上がりも艶っぽくて大満足です',date:dd(6),published:true},
-    {id:'rv2',name:'Y.S',rating:5,staffId:'s3',menuId:'m18',text:'完全個室のヘッドスパが最高でした。眠ってしまうほど気持ちよかったです',date:dd(12),published:true},
+    {id:'rv2',name:'Y.S',rating:5,staffId:'s3',menuId:'m15',text:'完全個室のヘッドスパが最高でした。眠ってしまうほど気持ちよかったです',date:dd(12),published:true},
     {id:'rv3',name:'匿名',rating:3,staffId:'s2',menuId:'m6',text:'カラーは良かったが待ち時間が少し長かった',date:dd(3),published:false},
-    {id:'rv4',name:'R.T',rating:5,staffId:'s2',menuId:'m18',text:'頭皮の悩みに親身に相談にのってくれました',date:dd(20),published:false},
+    {id:'rv4',name:'R.T',rating:5,staffId:'s2',menuId:'m15',text:'頭皮の悩みに親身に相談にのってくれました',date:dd(20),published:false},
   ];
 }
 function addReview(rv){rv.id='rv'+Math.random().toString(36).slice(2,7);rv.date=dkey(today());rv.published=false;db.reviews.push(rv);save();refreshAll();}
@@ -769,17 +777,17 @@ function seed(){
   const rs=[
     mk(0,'s1',600,'m1','小林 芽衣','hpb'),   mk(0,'s1',690,'m6','渡辺 結衣','own'),
     mk(0,'s2',630,'m1','中村 蒼','line'),     mk(0,'s2',840,'m9','伊藤 大和','hpb'),
-    mk(0,'s3',660,'m18','山本 凛','instagram'),mk(0,'s3',900,'m19','加藤 心春','own',false),
+    mk(0,'s3',660,'m15','山本 凛','instagram'),mk(0,'s3',900,'m15','加藤 心春','own',false),
     mk(1,'s1',600,'m11','斎藤 陽菜','rakuten'),mk(1,'s2',720,'m6','松本 咲良','minimo'),
-    mk(1,'s3',630,'m18','井上 楓','google',false), mk(2,'s1',840,'m1','木村 悠人','line'),
-    mk(2,'s2',600,'m6','林 美月','hpb'),      mk(2,'s3',960,'m19','清水 詩織','own',false),
-    mk(3,'s1',660,'m6','山口 莉子','own',false),  mk(3,'s3',720,'m18','森 陽翔','line',false),
-    mk(4,'s2',900,'m9','池田 芽依','hpb'),    mk(4,'s3',600,'m19','橋本 澪','instagram'),
+    mk(1,'s3',630,'m15','井上 楓','google',false), mk(2,'s1',840,'m1','木村 悠人','line'),
+    mk(2,'s2',600,'m6','林 美月','hpb'),      mk(2,'s3',960,'m15','清水 詩織','own',false),
+    mk(3,'s1',660,'m6','山口 莉子','own',false),  mk(3,'s3',720,'m15','森 陽翔','line',false),
+    mk(4,'s2',900,'m9','池田 芽依','hpb'),    mk(4,'s3',600,'m15','橋本 澪','instagram'),
     mk(5,'s1',720,'m1','阿部 湊','minimo'),   mk(5,'s2',630,'m6','石川 紬','rakuten'),
-    mk(6,'s3',840,'m18','前田 葵','google'),   mk(6,'s1',960,'m1','藤田 樹','own'),
+    mk(6,'s3',840,'m15','前田 葵','google'),   mk(6,'s1',960,'m1','藤田 樹','own'),
     mk(2,'s1',600,'m1','大野 桜','square'),   mk(4,'s2',660,'m1','谷口 蒼','square',false),
     mk(3,'s2',780,'m1','小林 芽衣','own'),    mk(5,'s2',900,'m1','渡辺 結衣','line'),
-    mk(1,'s2',870,'m16','高橋 さくら','own'), // 前の予約と30分の隙間 → 「隙間解消の提案」デモ用
+    mk(1,'s2',870,'m12','高橋 さくら','own'), // 前の予約と30分の隙間 → 「隙間解消の提案」デモ用
   ];
   rs[0].status='done';        // 今朝ご来店済みの例
   rs[0].phone='090-1234-5678';
@@ -802,6 +810,7 @@ const SyncProvider = {
   async push(r){ /* TODO: かんざしSaaSに予約を送信（詳細は ARCHITECTURE.md）*/ },
   async cancel(id){ /* TODO: かんざしSaaSにキャンセルを送信 */ },
 };
+function hira2kata(s){return (s||'').replace(/[ぁ-ゖ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)+0x60));}
 function addReservation(o){
   const c=conflicts(o.date,o.staffId,o.start,o.end);
   if(c.length)return{ok:false,conflict:c[0]};
@@ -1357,7 +1366,8 @@ function renderBook(){
       `<h3 style="margin:6px 0 12px">メニューを選択</h3>`+
       MENU_CATS.map(cat=>{
         const items=MENUS.filter(m=>m.cat===cat);if(!items.length)return'';
-        return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">約${m.min}分</div></div><div class="pr">¥${m.price.toLocaleString()}</div></div>`).join('')+`</div>`;
+        const durLabel=mm=>mm>=60?`${Math.floor(mm/60)}時間${mm%60?mm%60+'分':''}`:`${mm}分`;
+        return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">所要時間目安：${durLabel(m.min)}</div></div><div class="pr">¥${m.price.toLocaleString()}<small style="display:block;font-size:10px;color:var(--sub);font-weight:600">税込</small></div></div>`).join('')+`</div>`;
       }).join('')+
       `<div class="pnav"><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.menu=o.dataset.m;renderBook()});
@@ -1456,14 +1466,16 @@ function renderBook(){
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">ご予約内容の確認</h3>
       <dl class="summary big">
         <dt>メニュー</dt><dd>${menu.tag?`<span class="ctag">${menu.tag}</span>`:''}${menu.name}</dd>
-        <dt>日時</dt><dd>${bk.day.replace(/-/g,'/')}（${WD[new Date(bk.day).getDay()]}）${hm(bk.start)}〜${hm(bk.start+menu.min)}</dd>
-        <dt>所要時間</dt><dd>約${menu.min}分</dd>
-        <dt>担当</dt><dd>${st.name}${bk.staff==='any'?'（指名なし）':''}</dd>
+        <dt>来店日時</dt><dd>${bk.day.replace(/-/g,'/')}（${WD[new Date(bk.day).getDay()]}）${hm(bk.start)}〜</dd>
+        <dt>所要時間目安</dt><dd>約${menu.min>=60?Math.floor(menu.min/60)+'時間'+(menu.min%60?menu.min%60+'分':''):menu.min+'分'}</dd>
+        <dt>スタイリスト</dt><dd>${st.name}${bk.staff==='any'?'（指名なし）':'（指名）'}</dd>
         ${discHtml}${repHtml}
       </dl>
-      <div class="total-row"><span>お支払い予定</span><b>¥${(menu.price-disc).toLocaleString()}</b></div>
-      <div class="field" style="margin-top:14px"><label>お名前</label><input id="bname" value="${bk.name}" placeholder="例）鈴木 一花"></div>
+      <div class="total-row"><span>合計金額</span><b>¥${(menu.price-disc).toLocaleString()}<small style="font-size:11px;color:var(--sub);font-weight:600;margin-left:4px">税込・当日払い</small></b></div>
+      <div class="field" style="margin-top:14px"><label>お名前（姓 名）</label><input id="bname" value="${bk.name||''}" placeholder="例）鈴木 一花"></div>
+      <div class="field"><label>フリガナ（カタカナ・セイ メイ）</label><input id="bkana" value="${bk.kana||''}" placeholder="例）スズキ イチカ"></div>
       <div class="field"><label>電話番号</label><input id="bphone" type="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
+      <div style="font-size:11.5px;color:var(--sub);margin-top:-4px">※ホットペッパー予約と同じ形式（姓名・フリガナ）でお願いします。ひらがなは自動でカタカナに変換します。</div>
       <div class="policy">
         <b>キャンセルポリシー</b>
         <table class="ptable">
@@ -1477,7 +1489,9 @@ function renderBook(){
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
     document.getElementById('bnext2').onclick=()=>{
       bk.name=document.getElementById('bname').value.trim()||'ゲスト';
+      bk.kana=hira2kata(document.getElementById('bkana').value.trim());   // ひらがな→カタカナ自動変換
       bk.phone=document.getElementById('bphone').value.trim();
+      if(!bk.kana||!/^[ァ-ヶー\s　]+$/.test(bk.kana)){toast('フリガナをカタカナで入力してください（サロンボード予約に必須）',true);return}
       // 先に枠が空いているか確認（決済後に取られる事故を防ぐ）
       if(conflicts(bk.day,sid,bk.start,bk.start+menu.min).length){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk.step=4;renderBook();
@@ -1490,7 +1504,11 @@ function renderBook(){
     const stName=(STAFF.find(s=>s.id===sid)||{}).name||'';
     const dep=depositOf(menu.price-disc);
     const commit=(depositAmt)=>{
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true});
+      const stObj=STAFF.find(s=>s.id===sid)||{};
+      const isSpa=/ヘッドスパ|スパ/.test(menu.cat||'')||/ヘッドスパ/.test(menu.name||'');
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
+        // RPA/サロンボード書込用の解決済みフィールド（CUEPON実ID・HPB ID・SB完全一致メニュー名）
+        staffCu:stObj.cu||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60});
       if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
       if(r.resv.lineUserId)sendLineConfirm(r.resv);        // LINE友だちにはLINE確認
