@@ -75,3 +75,15 @@ CREATE TABLE IF NOT EXISTS products (
   active     INTEGER DEFAULT 1,
   created_at TEXT
 );
+
+-- 入荷（仕入）履歴。入荷で在庫を増やしログを残す（仕入原価も記録）。
+CREATE TABLE IF NOT EXISTS intakes (
+  id           TEXT PRIMARY KEY,
+  product_id   TEXT DEFAULT '',
+  product_name TEXT DEFAULT '',
+  date         TEXT NOT NULL,
+  qty          INTEGER DEFAULT 0,
+  unit_cost    INTEGER DEFAULT 0,     -- 仕入単価（原価）
+  memo         TEXT DEFAULT '',
+  created_at   TEXT
+);

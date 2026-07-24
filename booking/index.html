@@ -556,6 +556,35 @@ td.slot:hover{background:#f0f7ff}
 .co-scan-row{margin-bottom:8px}
 .co-scan-row input{width:100%;border:1.5px solid var(--accent2);border-radius:9px;padding:9px 11px;font-size:13.5px;background:#f7fbff}
 .co-scan-row input:focus{border-color:var(--accent);outline:none}
+.pr-in{flex:0 0 auto}
+/* 予約リマインド状況 */
+.remind-card .rmd-auto{font-size:11px;font-weight:800;color:var(--ok);background:#e7f6ee;border-radius:99px;padding:2px 10px}
+.rmd-row{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 10px}
+.rmd-stat{flex:1;min-width:120px;background:#f7fafc;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.rmd-stat>span{display:block;font-size:11.5px;color:var(--sub);font-weight:700}
+.rmd-stat>b{display:block;font-size:20px;color:var(--navy);margin-top:2px}
+.rmd-stat.ok{background:#eef7f1;border-color:#c6e6d3}.rmd-stat.ok>b{color:#0c7a41}
+.rmd-stat.warn{background:#fff8ec;border-color:#f2d999}.rmd-stat.warn>b{color:#8a5a00}
+.rmd-note{font-size:12px;color:var(--sub);line-height:1.7}
+.rmd-send{margin-left:6px;vertical-align:middle}
+.rc-rcpt{border:none;background:none;font-size:15px;cursor:pointer;flex:0 0 auto;padding:0 2px;opacity:.7}
+.rc-rcpt:hover{opacity:1}
+/* レシート（印刷 / PDF） */
+#receiptArea{display:none}
+.rcpt{width:300px;margin:0 auto;font-family:ui-monospace,Menlo,monospace;color:#000;padding:10px}
+.rcpt-logo{text-align:center;font-size:20px;font-weight:800;font-family:'Noto Serif JP',serif;letter-spacing:.12em}
+.rcpt-sub{text-align:center;font-size:10px;color:#444;margin:3px 0 12px}
+.rcpt-meta{font-size:11px;color:#222;line-height:1.6}
+.rcpt-hr{border-top:1px dashed #000;margin:9px 0}
+.rcpt-item{display:flex;justify-content:space-between;font-size:12px;padding:2px 0}
+.rcpt-total{display:flex;justify-content:space-between;font-size:16px;font-weight:800;margin:2px 0}
+.rcpt-pay{font-size:12px;margin-top:6px}
+.rcpt-foot{text-align:center;font-size:11px;margin-top:16px;color:#333;line-height:1.6}
+@media print{
+  body>*:not(#receiptArea){display:none !important}
+  #receiptArea{display:block !important}
+  @page{margin:8mm}
+}
 @media(max-width:560px){.rep-cards{grid-template-columns:repeat(2,1fr)}}
 
 /* ═══════════════ SEAM 世界観：お客様予約フロー（白 × ゴールド・上質）※全上書きのため末尾に配置 ═══════════════ */
@@ -736,6 +765,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <div class="card kpi"><div class="lbl">自社予約比率</div><div class="num" id="k-own">0%</div><div class="sub">手数料ゼロのチャネル</div></div>
   </div>
   <div id="dashSales" style="margin-bottom:14px"></div>
+  <div id="dashRemind" style="margin-bottom:14px"></div>
   <div class="card blockcard" id="blockcard" style="margin-bottom:14px"></div>
   <div class="card waitcard" id="waitcard" style="margin-bottom:14px"></div>
   <div class="card revisitcard" id="revisitcard" style="margin-bottom:14px"></div>
@@ -910,6 +940,7 @@ body.customer .phone.spa{background:#f7f8f3}
   <div class="modal" id="checkoutmodal"></div>
 </div>
 
+<div id="receiptArea"></div>
 <div id="toast"></div>
 
 <script>
@@ -1067,6 +1098,9 @@ const API = {
   async listProducts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products');if(!r.ok)return null;const j=await r.json();return j.ok?j.products:null;}catch{return null;} },
   async saveProduct(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async removeProduct(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products?id='+encodeURIComponent(id),{method:'DELETE'});return r.ok;}catch{return null;} },
+  async listIntakes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes');if(!r.ok)return null;const j=await r.json();return j.ok?j.intakes:null;}catch{return null;} },
+  async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeIntake(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes?id='+encodeURIComponent(id),{method:'DELETE'});return r.ok;}catch{return null;} },
 };
 
 let db=load();
@@ -1105,13 +1139,20 @@ function addProduct(p){p.id=p.id||('p'+Math.random().toString(36).slice(2,8));co
 function removeProduct(id){db.products=db.products.filter(p=>p.id!==id);save();refreshAll();API.removeProduct(id);}
 function productByBarcode(code){const c=(code||'').trim();return c?db.products.find(p=>p.barcode&&p.barcode===c):null;}
 function adjustStock(id,delta){const p=db.products.find(x=>x.id===id);if(!p)return;p.stock=(p.stock||0)+delta;save();API.saveProduct(p);}
+// 入荷（仕入）: 在庫を増やして履歴を残す
+if(!db.intakes)db.intakes=[];
+function addIntake(x){x.id='in'+Math.random().toString(36).slice(2,8);x.at=new Date().toISOString();x.date=x.date||dkey(today());db.intakes.unshift(x);
+  const p=db.products.find(pp=>pp.id===x.productId);if(p){p.stock=(p.stock||0)+(+x.qty||0);API.saveProduct(p);}
+  save();refreshAll();API.saveIntake(x);return x;}
+function removeIntake(id){db.intakes=db.intakes.filter(x=>x.id!==id);save();refreshAll();API.removeIntake(id);}
 // D1から会計・レジ締め・設定・商品を取得してdbに反映（起動時・非同期）。localStorageで先に表示→D1で上書き。
 async function syncRegisterFromD1(){
   const co=await API.listCheckouts(); if(co)db.checkouts=co;
   const st=await API.listSettlements(); if(st)db.settlements=st;
   const set=await API.getSettings(); if(set){db.settings=set; if(set.cashFloat!=null&&set.cashFloat!=='')db.cashFloat=+set.cashFloat;}
   const pr=await API.listProducts(); if(pr)db.products=pr;
-  if(co||st||set||pr){save();refreshAll();}
+  const ins=await API.listIntakes(); if(ins)db.intakes=ins;
+  if(co||st||set||pr||ins){save();refreshAll();}
 }
 function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
 function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date).sort((a,b)=>a.at<b.at?-1:1);}
@@ -1324,6 +1365,26 @@ function renderDash(){
       <div class="ds-row"><div class="ds-total"><span>総売上</span><b>${money(s.total)}</b><i>${s.count}会計・客単価 ${money(s.avg)}</i></div>
         <div class="ds-pays"><span>💴 現金 <b>${money(s.cash)}</b></span><span>💳 カード <b>${money(s.card)}</b></span><span>📱 QR <b>${money(s.qr)}</b></span><span>技術 <b>${money(s.tech)}</b></span><span>店販 <b>${money(s.retail)}</b></span></div></div>
       ${tgt>0?`<div class="ds-tgt"><span>今月 ${money(mSales)} / 目標 ${money(tgt)}</span><div class="tgt-bar"><span style="width:${Math.min(100,Math.round(mSales/tgt*100))}%" class="${mSales>=tgt?'done':''}"></span></div><span class="ds-pct">${Math.round(mSales/tgt*100)}%</span></div>`:''}</div>`;
+  }
+
+  // 予約リマインドの自動化状況（明日分・前日自動送信の対象）
+  const dr=document.getElementById('dashRemind');
+  if(dr){
+    const tmr=dkey(addDays(today(),1)), tmrList=db.reservations.filter(r=>r.date===tmr&&live(r));
+    const withLine=tmrList.filter(r=>r.lineUserId), phoneOnly=tmrList.filter(r=>!r.lineUserId);
+    dr.innerHTML=`<div class="card remind-card"><div class="rep-h"><h3>🔔 予約リマインド（明日 ${tmr.slice(5).replace('-','/')}）</h3><span class="rmd-auto">前日 自動送信ON</span></div>
+      <div class="rmd-row"><div class="rmd-stat"><span>明日の予約</span><b>${tmrList.length}件</b></div>
+        <div class="rmd-stat ok"><span>💬 LINE自動リマインド</span><b>${withLine.length}件</b></div>
+        <div class="rmd-stat ${phoneOnly.length?'warn':''}"><span>📞 電話のみ（手動連絡）</span><b>${phoneOnly.length}件</b></div></div>
+      <div class="rmd-note">LINE連携のあるお客様には前日にリマインドを自動送信します（Cloudflareの定期実行）。${phoneOnly.length?`電話のみの ${phoneOnly.length}件 はお電話での確認をおすすめします。`:'全員LINEで自動リマインドされます。'}${withLine.length?`<button class="btn small pri rmd-send" id="rmd-send">明日分を今すぐ送信</button>`:''}</div></div>`;
+    const rs=document.getElementById('rmd-send');
+    if(rs)rs.onclick=()=>{
+      if(!confirm(`明日のLINEご予約 ${withLine.length}件 にリマインドを今すぐ送信します。よろしいですか？（前日自動送信とは別に手動で送ります）`))return;
+      let n=0;
+      withLine.forEach(r=>{const m=MENUS.find(x=>x.id===r.menuId),s=STAFF.find(x=>x.id===r.staffId);
+        if(LINE_CFG.PUSH_ENDPOINT&&r.lineUserId){fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:r.lineUserId,text:`【SEAM 銀座】明日のご予約のリマインドです\n\n${r.date.replace(/-/g,'/')} ${hm(r.start)}〜\n${m?m.name:''}${s?' / '+s.name:''}\n\nお気をつけてお越しください。`})}).catch(()=>{});n++;}});
+      toast(`${n}件にリマインドを送信しました`);
+    };
   }
 
   const counts={};Object.keys(CHANNELS).forEach(k=>counts[k]=0);
@@ -1683,7 +1744,7 @@ function renderRegister(){
     <div class="reg-c"><span>技術売上</span><b>${money(s.tech)}</b></div>
     <div class="reg-c"><span>店販売上</span><b>${money(s.retail)}</b></div></div>`;
   const pendHtml=pending.length?`<div class="card reg-sec"><h3>未会計（${pending.length}）</h3>${pending.sort((a,b)=>a.start-b.start).map(r=>{const m=MENUS.find(x=>x.id===r.menuId),stf=STAFF.find(x=>x.id===r.staffId);return `<div class="reg-pend"><span class="rp-t">${hm(r.start)}</span><span class="rp-n">${r.name}</span><span class="rp-m">${m?m.name:''} / ${stf?stf.name:''}</span><button class="btn small pay" data-co="${r.id}">会計</button></div>`;}).join('')}</div>`:'';
-  const listHtml=`<div class="card reg-sec"><h3>本日の会計（${cs.length}）</h3>${cs.length?cs.map(c=>`<div class="reg-co"><span class="rc-t">${c.at?c.at.slice(11,16):''}</span><span class="rc-n">${c.customer||'（予約なし）'}</span><span class="rc-m">${PAYMENTS[c.method].ic}${c.retail>0?` 技${money(c.tech)}＋販${money(c.retail)}`:''}</span><b class="rc-a">${money(c.total)}</b>${closed?'':`<button class="rc-x" data-del="${c.id}" aria-label="取消">✕</button>`}</div>`).join(''):'<div class="co-empty">まだ会計がありません</div>'}${closed?'':'<button class="btn small ghost" id="reg-walkin" style="margin-top:9px">＋ 予約なしの会計（店販のみ等）</button>'}</div>`;
+  const listHtml=`<div class="card reg-sec"><h3>本日の会計（${cs.length}）</h3>${cs.length?cs.map(c=>`<div class="reg-co"><span class="rc-t">${c.at?c.at.slice(11,16):''}</span><span class="rc-n">${c.customer||'（予約なし）'}</span><span class="rc-m">${PAYMENTS[c.method].ic}${c.retail>0?` 技${money(c.tech)}＋販${money(c.retail)}`:''}</span><b class="rc-a">${money(c.total)}</b><button class="rc-rcpt" data-rcpt="${c.id}" aria-label="レシート">🧾</button>${closed?'':`<button class="rc-x" data-del="${c.id}" aria-label="取消">✕</button>`}</div>`).join(''):'<div class="co-empty">まだ会計がありません</div>'}${closed?'':'<button class="btn small ghost" id="reg-walkin" style="margin-top:9px">＋ 予約なしの会計（店販のみ等）</button>'}</div>`;
   const float=openingFloat(dk), expected=float+s.cash, counted=set?set.countedCash:null, diff=counted!=null?counted-expected:null;
   const carried=!set&&priorSettlement(dk);
   const closePanel=`<div class="card reg-close"><h3>レジ締め ${closed?'<span class="reg-closed">締め済み</span>':''}</h3>
@@ -1707,6 +1768,7 @@ function renderRegister(){
   };
   const fl=document.getElementById('rz-float');if(fl){fl.oninput=recompute;fl.onchange=e=>{const v=+e.target.value||0;db.cashFloat=v;save();API.setSetting('cashFloat',v);};}
   const ct=document.getElementById('rz-count');if(ct)ct.oninput=recompute;
+  body.querySelectorAll('[data-rcpt]').forEach(b=>b.onclick=()=>printReceipt(b.dataset.rcpt));
   const cl=document.getElementById('rz-close');if(cl)cl.onclick=()=>{
     const cin=document.getElementById('rz-count');if(cin.value===''){toast('実際の現金を入力してください',true);return;}
     const fv=+document.getElementById('rz-float').value||0, c=+cin.value||0;
@@ -1800,16 +1862,55 @@ document.querySelectorAll('#rep-period [data-p]').forEach(b=>b.onclick=()=>setRe
 document.getElementById('rep-from').onchange=e=>{repFrom=e.target.value;renderReport();};
 document.getElementById('rep-to').onchange=e=>{repTo=e.target.value;renderReport();};
 
+/* ===== 会計レシート（印刷 / PDF） ===== */
+function printReceipt(coId){
+  const co=db.checkouts.find(c=>c.id===coId); if(!co){toast('会計が見つかりません',true);return;}
+  const money=n=>'¥'+(n||0).toLocaleString(), st=STAFF.find(s=>s.id===co.staffId);
+  const dt=((co.at||co.date+'T00:00')+'').replace('T',' ').slice(0,16);
+  const lines=[];
+  if(co.tech>0)lines.push(['技術（施術）',co.tech]);
+  (co.retailItems||[]).forEach(i=>lines.push([i.name||'店販',i.price]));
+  if(co.discount>0)lines.push(['割引',-co.discount]);
+  document.getElementById('receiptArea').innerHTML=`<div class="rcpt">
+    <div class="rcpt-logo">SEAM 銀座</div>
+    <div class="rcpt-sub">Hair &amp; Head Spa ／ 東京・銀座</div>
+    <div class="rcpt-meta">${dt}${co.customer?`　${co.customer} 様`:''}</div>
+    <div class="rcpt-meta">${st?`担当 ${st.name}`:''}　${co.nominated?'ご指名':'フリー'}</div>
+    <div class="rcpt-hr"></div>
+    ${lines.map(([n,v])=>`<div class="rcpt-item"><span>${(n+'').replace(/</g,'&lt;')}</span><span>${v<0?'−':''}¥${Math.abs(v).toLocaleString()}</span></div>`).join('')}
+    <div class="rcpt-hr"></div>
+    <div class="rcpt-total"><span>合計（税込）</span><span>${money(co.total)}</span></div>
+    <div class="rcpt-pay">お支払い　${PAYMENTS[co.method].label}</div>
+    <div class="rcpt-foot">ご来店ありがとうございました<br>またのお越しをお待ちしております</div>
+  </div>`;
+  window.print();
+}
+
 /* ===== 店販の商品マスタ・在庫 ===== */
 function renderProducts(){
   const body=document.getElementById('productsbody'); if(!body)return;
   const ps=(db.products||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
   const money=n=>'¥'+(n||0).toLocaleString();
   const lowN=ps.filter(p=>(p.stock||0)<=3).length;
-  const rows=ps.map(p=>{const low=(p.stock||0)<=3;return `<div class="prod-row"><div class="pr-main"><div class="pr-name">${(p.name||'').replace(/</g,'&lt;')}</div><div class="pr-sub">${money(p.price)}${p.barcode?`　｜　${p.barcode}`:''}</div></div><div class="pr-stock"><button class="pr-mn" data-adj="-1" data-id="${p.id}">−</button><span class="pr-num ${low?'low':''}">${p.stock||0}</span><button class="pr-mn" data-adj="1" data-id="${p.id}">＋</button></div><button class="pr-del" data-del="${p.id}" aria-label="削除">✕</button></div>`;}).join('');
-  body.innerHTML=`<div class="card reg-sec"><div class="rep-h"><h3>商品一覧（${ps.length}）${lowN?`<span class="pr-lowbadge">在庫わずか ${lowN}</span>`:''}</h3></div>${ps.length?rows:'<div class="co-empty">まだ商品がありません。上のフォームから追加してください</div>'}</div>`;
+  const rows=ps.map(p=>{const low=(p.stock||0)<=3;return `<div class="prod-row"><div class="pr-main"><div class="pr-name">${(p.name||'').replace(/</g,'&lt;')}</div><div class="pr-sub">${money(p.price)}${p.barcode?`　｜　${p.barcode}`:''}</div></div><button class="btn small ghost pr-in" data-in="${p.id}">入荷</button><div class="pr-stock"><button class="pr-mn" data-adj="-1" data-id="${p.id}">−</button><span class="pr-num ${low?'low':''}">${p.stock||0}</span><button class="pr-mn" data-adj="1" data-id="${p.id}">＋</button></div><button class="pr-del" data-del="${p.id}" aria-label="削除">✕</button></div>`;}).join('');
+  // 入荷履歴＋今月仕入額
+  const ins=(db.intakes||[]);
+  const t=today(), mF=dkey(new Date(t.getFullYear(),t.getMonth(),1)), mT=dkey(new Date(t.getFullYear(),t.getMonth()+1,0));
+  const mCost=ins.filter(x=>x.date>=mF&&x.date<=mT).reduce((s,x)=>s+(x.qty||0)*(x.unitCost||0),0);
+  const inRows=ins.slice(0,30).map(x=>`<div class="reg-co"><span class="rc-t">${(x.date||'').slice(5).replace('-','/')}</span><span class="rc-n">${(x.productName||'').replace(/</g,'&lt;')}</span><span class="rc-m">${x.qty}個${x.unitCost?` @${money(x.unitCost)}`:''}</span><b class="rc-a">${money((x.qty||0)*(x.unitCost||0))}</b><button class="rc-x" data-delin="${x.id}" aria-label="取消">✕</button></div>`).join('');
+  body.innerHTML=`<div class="card reg-sec"><div class="rep-h"><h3>商品一覧（${ps.length}）${lowN?`<span class="pr-lowbadge">在庫わずか ${lowN}</span>`:''}</h3></div>${ps.length?rows:'<div class="co-empty">まだ商品がありません。上のフォームから追加してください</div>'}</div>
+    <div class="card reg-sec"><div class="rep-h"><h3>入荷（仕入）履歴</h3><span style="font-size:12.5px;color:var(--sub);font-weight:700">今月の仕入 ${money(mCost)}</span></div>${ins.length?inRows:'<div class="co-empty">入荷の記録はまだありません。商品の「入荷」から登録できます</div>'}</div>`;
   body.querySelectorAll('[data-adj]').forEach(b=>b.onclick=()=>adjustStock(b.dataset.id,+b.dataset.adj));
   body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('この商品を削除しますか？'))removeProduct(b.dataset.del);});
+  body.querySelectorAll('[data-delin]').forEach(b=>b.onclick=()=>{if(confirm('この入荷記録を取り消しますか？（在庫は自動では戻りません）'))removeIntake(b.dataset.delin);});
+  body.querySelectorAll('[data-in]').forEach(b=>b.onclick=()=>{
+    const p=db.products.find(x=>x.id===b.dataset.in);if(!p)return;
+    const q=prompt(`「${p.name}」の入荷数を入力してください`,'10');if(q==null)return;const qty=+q;if(!qty||qty<0){toast('数量を正しく入力してください',true);return;}
+    const c=prompt('仕入単価（原価・任意。分からなければ空欄でOK）',p.lastCost||'');
+    addIntake({productId:p.id,productName:p.name,qty,unitCost:+c||0,date:dkey(today())});
+    if(+c)p.lastCost=+c;
+    toast(`入荷 ${qty}個を登録しました（在庫 ${p.stock}）`);
+  });
 }
 document.getElementById('pf-add').onclick=()=>{
   const name=document.getElementById('pf-name').value.trim();

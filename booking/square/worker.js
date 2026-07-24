@@ -103,6 +103,9 @@ export default {
     if (p.endsWith('/products') && m === 'GET') return handleGetProducts(url, env, cors);
     if (p.endsWith('/products') && m === 'POST') return handlePostProduct(request, env, cors);
     if (p.endsWith('/products') && m === 'DELETE') return handleDeleteProduct(url, env, cors);
+    if (p.endsWith('/intakes') && m === 'GET') return handleGetIntakes(url, env, cors);
+    if (p.endsWith('/intakes') && m === 'POST') return handlePostIntake(request, env, cors);
+    if (p.endsWith('/intakes') && m === 'DELETE') return handleDeleteIntake(url, env, cors);
     return json({ error: 'Not found' }, 404, cors);
   },
 
@@ -426,6 +429,7 @@ async function ensureRegisterTables(env) {
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS settlements (date TEXT PRIMARY KEY, float INTEGER DEFAULT 0, cash_sales INTEGER DEFAULT 0, expected_cash INTEGER DEFAULT 0, counted_cash INTEGER DEFAULT 0, diff INTEGER DEFAULT 0, card INTEGER DEFAULT 0, qr INTEGER DEFAULT 0, total INTEGER DEFAULT 0, count INTEGER DEFAULT 0, memo TEXT DEFAULT '', closed_at TEXT)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, name TEXT, price INTEGER DEFAULT 0, barcode TEXT DEFAULT '', stock INTEGER DEFAULT 0, active INTEGER DEFAULT 1, created_at TEXT)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS intakes (id TEXT PRIMARY KEY, product_id TEXT DEFAULT '', product_name TEXT DEFAULT '', date TEXT NOT NULL, qty INTEGER DEFAULT 0, unit_cost INTEGER DEFAULT 0, memo TEXT DEFAULT '', created_at TEXT)`),
   ]);
   // 既存DBへの列追加（SQLiteはIF NOT EXISTS非対応→重複はcatchで無視）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN nominated INTEGER DEFAULT 0`).run(); } catch (e) {}
@@ -503,6 +507,31 @@ async function handleDeleteSettlement(url, env, cors) {
   return json({ ok: true }, 200, cors);
 }
 const PR2API = r => ({ id: r.id, name: r.name || '', price: r.price || 0, barcode: r.barcode || '', stock: r.stock || 0, active: r.active == null ? 1 : r.active });
+const IN2API = r => ({ id: r.id, productId: r.product_id || '', productName: r.product_name || '', date: r.date, qty: r.qty || 0, unitCost: r.unit_cost || 0, memo: r.memo || '', at: r.created_at || '' });
+async function handleGetIntakes(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const res = await env.DB.prepare('SELECT * FROM intakes ORDER BY created_at DESC LIMIT 300').all();
+  return json({ ok: true, intakes: (res.results || []).map(IN2API) }, 200, cors);
+}
+async function handlePostIntake(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.id || !o.date) return json({ error: 'id/date は必須' }, 400, cors);
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO intakes (id,product_id,product_name,date,qty,unit_cost,memo,created_at) VALUES (?,?,?,?,?,?,?,?)`
+  ).bind(o.id, o.productId || '', o.productName || '', o.date, o.qty || 0, o.unitCost || 0, o.memo || '', o.at || new Date().toISOString()).run();
+  return json({ ok: true, id: o.id }, 200, cors);
+}
+async function handleDeleteIntake(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const id = url.searchParams.get('id');
+  if (!id) return json({ error: 'id は必須' }, 400, cors);
+  await env.DB.prepare('DELETE FROM intakes WHERE id=?').bind(id).run();
+  return json({ ok: true }, 200, cors);
+}
 async function handleGetProducts(url, env, cors) {
   if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
   await ensureRegisterTables(env);
