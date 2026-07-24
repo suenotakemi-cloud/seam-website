@@ -5155,6 +5155,8 @@ function isSaleActive() {
 }
 function SaleFinderBanner() {
   const active = isSaleActive();
+  const ONLINE_END = new Date('2026-07-31T00:00:00+09:00').getTime(); // オンライン締切=7/31 0時JST
+  const [nowTs, setNowTs] = useState(Date.now());
   useEffect(() => {
     if (active) {
       try {
@@ -5164,6 +5166,11 @@ function SaleFinderBanner() {
       } catch (e) {}
     }
   }, [active]);
+  useEffect(() => {
+    if (!active) return undefined;
+    const id = setInterval(() => setNowTs(Date.now()), 1000); // カウントダウン毎秒更新
+    return () => clearInterval(id);
+  }, [active]);
   if (!active) return null;
   const click = label => {
     try {
@@ -5172,13 +5179,36 @@ function SaleFinderBanner() {
       });
     } catch (e) {}
   };
+  const left = ONLINE_END - nowTs;
+  let cd = null;
+  if (left > 0) {
+    let s = Math.floor(left / 1000);
+    const d = Math.floor(s / 86400);
+    s -= d * 86400;
+    const h = Math.floor(s / 3600);
+    s -= h * 3600;
+    const m = Math.floor(s / 60);
+    s -= m * 60;
+    const pad = n => (n < 10 ? '0' : '') + n;
+    let unit = '日';
+    try {
+      unit = {
+        ja: '日',
+        en: 'd',
+        zh: '天',
+        tw: '天',
+        ko: '일'
+      }[localStorage.getItem('seamLang') || 'ja'] || '日';
+    } catch (e) {}
+    cd = (d > 0 ? d + unit + ' ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
   return /*#__PURE__*/React.createElement("div", {
     className: "mt-5 rounded-[2px] overflow-hidden",
     style: {
-      background: 'linear-gradient(100deg,#6E4E26,#B8945A 45%,#6E4E26)'
+      background: 'linear-gradient(100deg,#6E4E26,#B8945A 38%,#D9BC85 50%,#B8945A 62%,#6E4E26)'
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "px-4 sm:px-6 py-5 sm:py-6 text-center"
+    className: "px-4 sm:px-6 py-5 text-center"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-center gap-2.5 flex-wrap"
   }, /*#__PURE__*/React.createElement("span", {
@@ -5189,44 +5219,66 @@ function SaleFinderBanner() {
       lineHeight: 1
     }
   }, "SALE"), /*#__PURE__*/React.createElement("span", {
-    className: "font-mono tracking-widest2 text-[10px] uppercase",
-    style: {
-      color: 'rgba(255,255,255,.95)'
-    }
-  }, "Summer Sale"), /*#__PURE__*/React.createElement("span", {
-    className: "font-mono tracking-widest2 text-[10px]",
-    style: {
-      color: 'rgba(255,255,255,.85)'
-    }
-  }, "7.31\u307E\u3067")), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2.5 font-serif leading-none text-[34px] sm:text-[42px]",
+    className: "font-serif leading-none",
     style: {
       color: '#FFF3DC',
-      fontWeight: 500,
-      letterSpacing: '.01em'
+      fontWeight: 600,
+      letterSpacing: '.01em',
+      fontSize: 'clamp(24px,6.5vw,32px)'
     }
-  }, "\u6700\u592730%OFF"), /*#__PURE__*/React.createElement("p", {
+  }, "\u6700\u592730%OFF")), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 font-serif text-[14px] sm:text-[16px] leading-snug",
     style: {
       color: '#FFF3DC'
     }
-  }, "\u3053\u306E\u7D50\u679C\u306E\u30A2\u30A4\u30C6\u30E0\u3082 \u3044\u307E\u30BB\u30FC\u30EB\u4E2D"), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-[11.5px] sm:text-[12.5px] leading-[1.8]",
+  }, "\u3053\u306E\u7D50\u679C\u306E\u30A2\u30A4\u30C6\u30E0\u3082 \u3044\u307E\u30BB\u30FC\u30EB\u4E2D"), left > 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 inline-flex items-baseline gap-2 flex-wrap justify-center"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-[10px]",
     style: {
-      color: 'rgba(255,255,255,.9)'
+      color: 'rgba(255,255,255,.9)',
+      letterSpacing: '.03em'
     }
-  }, "\u5165\u4F1A\u91D11,100\u5186\u3082 \u3044\u307E\u3060\u3051\u7121\u6599 \u30FB \u5E97\u982D\u767B\u9332\u306F\u305D\u306E\u5834\u3067\u5B8C\u4E86"), /*#__PURE__*/React.createElement("a", {
+  }, "\u30AA\u30F3\u30E9\u30A4\u30F3\u7DE0\u5207\u307E\u3067"), /*#__PURE__*/React.createElement("span", {
+    className: "font-mono",
+    style: {
+      color: '#FFF3DC',
+      fontWeight: 700,
+      fontVariantNumeric: 'tabular-nums',
+      letterSpacing: '.02em',
+      background: 'rgba(255,243,220,.16)',
+      padding: '2px 10px',
+      borderRadius: '9px',
+      fontSize: 'clamp(17px,4.6vw,20px)'
+    }
+  }, cd)) : null, /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-[11.5px] sm:text-[12.5px] leading-[1.8]",
+    style: {
+      color: 'rgba(255,255,255,.88)'
+    }
+  }, "\u5165\u4F1A\u91D11,100\u5186\u3082 \u3044\u307E\u3060\u3051\u7121\u6599 \u30FB \u5E97\u982D\u767B\u9332\u306F\u305D\u306E\u5834\u3067\u5B8C\u4E86"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 flex flex-col sm:flex-row items-center justify-center gap-2.5"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: "onlineshop.html",
+    onClick: () => click('sale_finder_online'),
+    className: "inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3 font-serif text-[14px] sm:text-[14.5px]",
+    style: {
+      background: '#FFF3DC',
+      color: '#4a3618',
+      fontWeight: 600
+    }
+  }, /*#__PURE__*/React.createElement("span", null, "\u30AA\u30F3\u30E9\u30A4\u30F3\u30B7\u30E7\u30C3\u30D7\u3067\u8CB7\u3046"), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true
+  }, "\u203A")), /*#__PURE__*/React.createElement("a", {
     href: "shop.html#stores",
     onClick: () => click('sale_finder_store'),
-    className: "mt-4 inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3 font-serif text-[14px] sm:text-[14.5px]",
+    className: "text-[12.5px]",
     style: {
-      background: '#F2DCA6',
-      color: '#2B2926',
-      fontWeight: 500
+      color: 'rgba(255,255,255,.92)',
+      textDecoration: 'underline',
+      textUnderlineOffset: '3px'
     }
-  }, /*#__PURE__*/React.createElement("span", null, "\u8FD1\u304F\u306E\u5E97\u8217\u3092\u63A2\u3059"), /*#__PURE__*/React.createElement("span", {
-    "aria-hidden": true
-  }, "\u2192"))));
+  }, "\u8FD1\u304F\u306E\u5E97\u8217\u3092\u63A2\u3059"))));
 }
 
 /* ⚜ ダメージ・矯正履歴が深い診断者へのサロン相談提案 — SpaSuggestCardと排他表示 */

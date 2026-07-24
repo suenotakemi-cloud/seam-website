@@ -3716,25 +3716,51 @@ function isSaleActive() { const t = Date.now(); return t >= SALE_WINDOW_START &&
 
 function SaleFinderBanner() {
   const active = isSaleActive();
+  const ONLINE_END = new Date('2026-07-31T00:00:00+09:00').getTime(); // オンライン締切=7/31 0時JST
+  const [nowTs, setNowTs] = useState(Date.now());
   useEffect(() => {
     if (active) { try { window.seamTrack && window.seamTrack('sec_view', { label: 'sale_finder' }); } catch (e) {} }
   }, [active]);
+  useEffect(() => {
+    if (!active) return undefined;
+    const id = setInterval(() => setNowTs(Date.now()), 1000); // カウントダウン毎秒更新
+    return () => clearInterval(id);
+  }, [active]);
   if (!active) return null;
   const click = (label) => { try { window.seamTrack && window.seamTrack('sec_click', { label: label }); } catch (e) {} };
+  const left = ONLINE_END - nowTs;
+  let cd = null;
+  if (left > 0) {
+    let s = Math.floor(left / 1000);
+    const d = Math.floor(s / 86400); s -= d * 86400;
+    const h = Math.floor(s / 3600);  s -= h * 3600;
+    const m = Math.floor(s / 60);    s -= m * 60;
+    const pad = (n) => (n < 10 ? '0' : '') + n;
+    let unit = '日';
+    try { unit = ({ ja: '日', en: 'd', zh: '天', tw: '天', ko: '일' })[localStorage.getItem('seamLang') || 'ja'] || '日'; } catch (e) {}
+    cd = (d > 0 ? d + unit + ' ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
+  }
   return (
-    <div className="mt-5 rounded-[2px] overflow-hidden" style={{ background: 'linear-gradient(100deg,#6E4E26,#B8945A 45%,#6E4E26)' }}>
-      <div className="px-4 sm:px-6 py-5 sm:py-6 text-center">
+    <div className="mt-5 rounded-[2px] overflow-hidden" style={{ background: 'linear-gradient(100deg,#6E4E26,#B8945A 38%,#D9BC85 50%,#B8945A 62%,#6E4E26)' }}>
+      <div className="px-4 sm:px-6 py-5 text-center">
         <div className="flex items-center justify-center gap-2.5 flex-wrap">
           <span className="font-mono text-[9px] tracking-widest2 uppercase rounded-full px-2 py-1" style={{ background: '#B4453A', color: '#fff', lineHeight: 1 }}>SALE</span>
-          <span className="font-mono tracking-widest2 text-[10px] uppercase" style={{ color: 'rgba(255,255,255,.95)' }}>Summer Sale</span>
-          <span className="font-mono tracking-widest2 text-[10px]" style={{ color: 'rgba(255,255,255,.85)' }}>7.31まで</span>
+          <span className="font-serif leading-none" style={{ color: '#FFF3DC', fontWeight: 600, letterSpacing: '.01em', fontSize: 'clamp(24px,6.5vw,32px)' }}>最大30%OFF</span>
         </div>
-        <p className="mt-2.5 font-serif leading-none text-[34px] sm:text-[42px]" style={{ color: '#FFF3DC', fontWeight: 500, letterSpacing: '.01em' }}>最大30%OFF</p>
         <p className="mt-2 font-serif text-[14px] sm:text-[16px] leading-snug" style={{ color: '#FFF3DC' }}>この結果のアイテムも いまセール中</p>
-        <p className="mt-1 text-[11.5px] sm:text-[12.5px] leading-[1.8]" style={{ color: 'rgba(255,255,255,.9)' }}>入会金1,100円も いまだけ無料 ・ 店頭登録はその場で完了</p>
-        <a href="shop.html#stores" onClick={() => click('sale_finder_store')} className="mt-4 inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3 font-serif text-[14px] sm:text-[14.5px]" style={{ background: '#F2DCA6', color: '#2B2926', fontWeight: 500 }}>
-          <span>近くの店舗を探す</span><span aria-hidden>→</span>
-        </a>
+        {left > 0 ? (
+          <div className="mt-3 inline-flex items-baseline gap-2 flex-wrap justify-center">
+            <span className="text-[10px]" style={{ color: 'rgba(255,255,255,.9)', letterSpacing: '.03em' }}>オンライン締切まで</span>
+            <span className="font-mono" style={{ color: '#FFF3DC', fontWeight: 700, fontVariantNumeric: 'tabular-nums', letterSpacing: '.02em', background: 'rgba(255,243,220,.16)', padding: '2px 10px', borderRadius: '9px', fontSize: 'clamp(17px,4.6vw,20px)' }}>{cd}</span>
+          </div>
+        ) : null}
+        <p className="mt-3 text-[11.5px] sm:text-[12.5px] leading-[1.8]" style={{ color: 'rgba(255,255,255,.88)' }}>入会金1,100円も いまだけ無料 ・ 店頭登録はその場で完了</p>
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-center gap-2.5">
+          <a href="onlineshop.html" onClick={() => click('sale_finder_online')} className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full px-8 py-3 font-serif text-[14px] sm:text-[14.5px]" style={{ background: '#FFF3DC', color: '#4a3618', fontWeight: 600 }}>
+            <span>オンラインショップで買う</span><span aria-hidden>›</span>
+          </a>
+          <a href="shop.html#stores" onClick={() => click('sale_finder_store')} className="text-[12.5px]" style={{ color: 'rgba(255,255,255,.92)', textDecoration: 'underline', textUnderlineOffset: '3px' }}>近くの店舗を探す</a>
+        </div>
       </div>
     </div>
   );
