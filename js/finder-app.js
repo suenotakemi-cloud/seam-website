@@ -4437,7 +4437,7 @@ function HomeToolsSection({
   }, "\u30D8\u30A2\u30B1\u30A2\u7528\u54C1\u3068\u540C\u3058\u304F\u3089\u3044\u3001", /*#__PURE__*/React.createElement("span", {
     className: "text-ink"
   }, "\u6BCE\u65E5\u306E\u30C9\u30E9\u30A4\u30E4\u30FC\u3084\u30A2\u30A4\u30ED\u30F3"), "\u304C\u9AEA\u3092\u4F5C\u308A\u307E\u3059\u3002 \u8A3A\u65AD\u7D50\u679C\u304B\u3089\u3001\u3044\u307E\u306E\u3042\u306A\u305F\u306E\u9AEA\u306B\u6700\u9069\u306A\u7F8E\u5BB9\u5BB6\u96FB\u3092\u53B3\u9078\u3057\u307E\u3057\u305F\u3002")), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5"
+    className: "grid grid-cols-1 gap-3 sm:gap-5"
   }, picks.map(t => /*#__PURE__*/React.createElement("article", {
     key: t.id,
     className: "bg-white border border-gold/30 rounded-[2px] p-3 sm:p-6 flex flex-col"
@@ -4721,7 +4721,7 @@ function MustPlusOneSection({
   }, "Why"), /*#__PURE__*/React.createElement("span", {
     className: "text-[11.5px] text-ink leading-snug"
   }, rule.must)), /*#__PURE__*/React.createElement("div", {
-    className: `mt-5 grid gap-3 ${products.length > 1 ? 'sm:grid-cols-2' : ''}`
+    className: "mt-5 grid grid-cols-1 gap-3"
   }, products.map(p => /*#__PURE__*/React.createElement("div", {
     key: p.id,
     className: "bg-cream/35 border border-line rounded-[2px] p-4 flex gap-4 items-start"
@@ -6638,7 +6638,7 @@ function CardSingle({
 }) {
   const illus = Q_ILLUS[q.id];
   return /*#__PURE__*/React.createElement("div", {
-    className: "mt-5 grid grid-cols-1 sm:grid-cols-2 gap-1.5"
+    className: "mt-5 grid grid-cols-1 gap-1.5"
   }, q.options.map((o, i) => {
     const active = value === o.v;
     return /*#__PURE__*/React.createElement("button", {
@@ -6786,7 +6786,7 @@ function CardHistory({
   }, q.detailTitle), q.yesPrompt && /*#__PURE__*/React.createElement("p", {
     className: "text-[12.5px] text-charcoal/70 mb-3 leading-relaxed"
   }, q.yesPrompt), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 sm:grid-cols-2 gap-1.5"
+    className: "grid grid-cols-1 gap-1.5"
   }, detailOptions.map((o, i) => {
     const active = value === o.v;
     return /*#__PURE__*/React.createElement("button", {
@@ -7010,7 +7010,7 @@ function StraightenFlow({
     text: q.freqPrompt,
     note: isHidden ? q.hiddenNote : undefined
   }), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 sm:grid-cols-2 gap-1.5"
+    className: "grid grid-cols-1 gap-1.5"
   }, (q.freqOptions || []).map((o, i) => /*#__PURE__*/React.createElement(Tile, {
     key: o.v,
     index: i,
@@ -7366,7 +7366,7 @@ function HeatTools({
   }, "\u666E\u6BB5\u3001\u30D8\u30A2\u30A2\u30A4\u30ED\u30F3\u306F\u4F55\u2103\u304F\u3089\u3044\u3067\u4F7F\u7528\u3057\u3066\u3044\u307E\u3059\u304B\uFF1F"), /*#__PURE__*/React.createElement("p", {
     className: "text-[12px] text-charcoal/70 leading-[1.85] mt-1.5 mb-5"
   }, "\u71B1\u30C0\u30E1\u30FC\u30B8\u3084\u30AB\u30E9\u30FC\u892A\u8272\u306E\u53EF\u80FD\u6027\u3092\u3075\u307E\u3048\u3066\u3001\u5FC5\u8981\u306A\u30B1\u30A2\u3092\u8A3A\u65AD\u3057\u307E\u3059\u3002"), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-1 sm:grid-cols-2 gap-2"
+    className: "grid grid-cols-1 gap-2"
   }, q.tempOptions.map(o => {
     const active = temp === o.v;
     const isWarn180 = o.v === 't180';

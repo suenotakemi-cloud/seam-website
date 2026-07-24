@@ -3112,7 +3112,7 @@ function HomeToolsSection({ tools, answers, scores }) {
           診断結果から、いまのあなたの髪に最適な美容家電を厳選しました。
         </p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5">
+      <div className="grid grid-cols-1 gap-3 sm:gap-5">
         {picks.map(t => (
           <article key={t.id} className="bg-white border border-gold/30 rounded-[2px] p-3 sm:p-6 flex flex-col">
             {/* ━━━━ スマホ: 横並びコンパクト / PC: 縦積み従来レイアウト ━━━━ */}
@@ -3409,7 +3409,7 @@ function MustPlusOneSection({ matches }) {
               </div>
 
               {/* Products */}
-              <div className={`mt-5 grid gap-3 ${products.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+              <div className="mt-5 grid grid-cols-1 gap-3">
                 {products.map(p => (
                   <div key={p.id} className="bg-cream/35 border border-line rounded-[2px] p-4 flex gap-4 items-start">
                     {/* image */}
@@ -4786,7 +4786,7 @@ const Q_ILLUS = (() => {
 function CardSingle({ q, value, onChange }) {
   const illus = Q_ILLUS[q.id];
   return (
-    <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+    <div className="mt-5 grid grid-cols-1 gap-1.5">
       {q.options.map((o, i) => {
         const active = value === o.v;
         return (
@@ -4966,7 +4966,7 @@ function CardHistory({ q, value, onChange, onSet, answers }) {
           {q.yesPrompt && (
             <p className="text-[12.5px] text-charcoal/70 mb-3 leading-relaxed">{q.yesPrompt}</p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-1 gap-1.5">
             {detailOptions.map((o, i) => {
               const active = value === o.v;
               return (
@@ -5156,7 +5156,7 @@ function StraightenFlow({ q, value, onChange, onSet, answers }) {
       {showFreq && (
         <div className="mt-6 anim-fade-up">
           <StepHead text={q.freqPrompt} note={isHidden ? q.hiddenNote : undefined} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+          <div className="grid grid-cols-1 gap-1.5">
             {(q.freqOptions || []).map((o, i) => (
               <Tile key={o.v} index={i} active={freqValue === o.v} label={o.label} sub={o.sub} onClick={() => pickFreq(o.v)} />
             ))}
@@ -5504,7 +5504,7 @@ function HeatTools({ q, value, onChange }) {
         </div>
         <p className="font-serif text-[15px] sm:text-[16px] text-ink leading-snug mt-2">普段、ヘアアイロンは何℃くらいで使用していますか？</p>
         <p className="text-[12px] text-charcoal/70 leading-[1.85] mt-1.5 mb-5">熱ダメージやカラー褪色の可能性をふまえて、必要なケアを診断します。</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2">
           {q.tempOptions.map(o => {
             const active = temp === o.v;
             const isWarn180 = o.v === 't180';
