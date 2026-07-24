@@ -155,10 +155,14 @@
   #saleBar .sb-top{display:inline-flex;align-items:center;gap:8px;}
   #saleBar .sb-tag{background:#B4453A;color:#fff;font-size:9.5px;letter-spacing:.14em;padding:3px 8px;border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.2);}
   #saleBar .sb-kicker{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.95);line-height:1;}
-  #saleBar .sb-main{display:inline-flex;align-items:baseline;gap:9px;}
+  #saleBar .sb-main{display:inline-flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:5px 9px;}
   #saleBar .sb-off{font-family:"Noto Serif JP",serif;font-size:19px;font-weight:600;color:#FFF3DC;line-height:1.25;text-shadow:0 1px 2px rgba(60,40,10,.25);}
   #saleBar .sb-until{font-size:11.5px;color:rgba(255,255,255,.92);}
   #saleBar .sb-arrow{font-size:13.5px;display:inline-block;}
+  /* オンライン締切カウントダウン(オンライン誘導の緊急性) */
+  #saleBar .sb-cd{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;}
+  #saleBar .sb-cd-label{font-size:10px;letter-spacing:.04em;color:rgba(255,255,255,.92);}
+  #saleBar .sb-cd-time{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:600;color:#FFF3DC;font-variant-numeric:tabular-nums;letter-spacing:.03em;text-shadow:0 1px 2px rgba(60,40,10,.28);}
   @media(min-width:640px){
     #saleBar .sb-in{flex-direction:row;gap:16px;padding:12px 28px 13px;}
     #saleBar .sb-off{font-size:21px;}
@@ -174,9 +178,14 @@
     </span>
     <span class="sb-main">
       <span class="sb-off" data-i18n="sale.off">最高30%OFF</span>
-      <span class="sb-until" data-i18n="sale.until">至7/31</span>
+      <span class="sb-cd" hidden="">
+        <span class="sb-cd-label" data-i18n="sale.cd">線上截止還剩</span>
+        <span class="sb-cd-time" id="saleCd" aria-live="off">—</span>
+      </span>
+      <span class="sb-until" data-i18n="sale.until" hidden="">至7/31</span>
       <span aria-hidden="" class="sb-arrow">↓</span>
     </span>
+    <span id="saleCdDay" data-i18n="sale.cdDay" hidden="">天</span>
   </div>
 </div>
 <script>
@@ -188,6 +197,39 @@
   var end   = new Date('2026-08-01T00:00:00+09:00').getTime(); // 期間外は表示しない=消し忘れゼロ
   if (now < start || now >= end) return;
   bar.hidden = false;
+  // オンライン締切カウントダウン(7/31 0時JSTまで) — オンライン誘導の緊急性
+  (function () {
+    var onlineEnd = new Date('2026-07-31T00:00:00+09:00').getTime();
+    var cd = bar.querySelector('.sb-cd'), cdTime = document.getElementById('saleCd'),
+        until = bar.querySelector('.sb-until'), dayEl = document.getElementById('saleCdDay'),
+        scope = bar.querySelector('.sb-scope'), timer = null;
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function tick() {
+      var left = onlineEnd - Date.now();
+      if (left <= 0) { // オンライン受付終了(店頭は7/31まで)=カウント畳んで期限表示に戻す
+        if (cd) cd.hidden = true;
+        if (until) until.hidden = false;
+        if (scope) scope.style.display = 'none';
+        if (timer) { clearInterval(timer); timer = null; }
+        return;
+      }
+      var s = Math.floor(left / 1000);
+      var d = Math.floor(s / 86400); s -= d * 86400;
+      var h = Math.floor(s / 3600);  s -= h * 3600;
+      var m = Math.floor(s / 60);    s -= m * 60;
+      var dayU = (dayEl && dayEl.textContent) || '日';
+      if (cdTime) cdTime.textContent = (d > 0 ? d + dayU + ' ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
+    }
+    if (Date.now() < onlineEnd) {
+      if (cd) cd.hidden = false;
+      if (until) until.hidden = true;
+      tick();
+      timer = setInterval(tick, 1000);
+    } else { // 既にオンライン終了=店頭のみ表示
+      if (until) until.hidden = false;
+      if (scope) scope.style.display = 'none';
+    }
+  })();
   var go = function () { // 同ページ下のセール記事へ(会員/未会員両導線あり)
     var t = document.getElementById('sale');
     if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -773,6 +815,8 @@ window.SEAM_PAGE_I18N = {
     'sale.badge': '半期に一度',
     'sale.off': '最大30%OFF',
     'sale.until': '7.31まで',
+    'sale.cd': 'オンライン締切まで',
+    'sale.cdDay': '日',
     'sale.h2b': '最大30%OFF',
     'sale.body': '年に2回だけの ご褒美期間<br>オンラインショップも 全店舗も まとめてセール<br>気になっていたあの一本 いまが替えどきです',
     'sale.cpTitle': 'いまだけ メンバー入会無料キャンペーン',
@@ -893,6 +937,8 @@ window.SEAM_PAGE_I18N = {
     'sale.badge': 'Twice a year',
     'sale.off': 'Up to 30% OFF',
     'sale.until': 'Until Jul 31',
+    'sale.cd': 'Online ends in',
+    'sale.cdDay': 'd',
     'sale.h2b': 'Up to 30% OFF',
     'sale.body': 'Our reward season, just twice a year<br>Online shop and every store, on sale together<br>That one you have been eyeing — now is the moment',
     'sale.cpTitle': 'Limited time — join membership for free',
@@ -1013,6 +1059,8 @@ window.SEAM_PAGE_I18N = {
     'sale.badge': '半年仅一次',
     'sale.off': '最高30%OFF',
     'sale.until': '至7/31',
+    'sale.cd': '线上截止还剩',
+    'sale.cdDay': '天',
     'sale.h2b': '最高30%OFF',
     'sale.body': '一年仅两次的犒赏时刻<br>线上商店与全门店同步开折<br>心仪已久的那一瓶 就趁现在',
     'sale.cpTitle': '限时 会员免费入会活动',
@@ -1133,6 +1181,8 @@ window.SEAM_PAGE_I18N = {
     'sale.badge': '半年僅一次',
     'sale.off': '最高30%OFF',
     'sale.until': '至7/31',
+    'sale.cd': '線上截止還剩',
+    'sale.cdDay': '天',
     'sale.h2b': '最高30%OFF',
     'sale.body': '一年僅兩次的犒賞時刻<br>線上商店與全門店同步開折<br>心儀已久的那一瓶 就趁現在',
     'sale.cpTitle': '限時 會員免費入會活動',
@@ -1253,6 +1303,8 @@ window.SEAM_PAGE_I18N = {
     'sale.badge': '반년에 한 번',
     'sale.off': '최대 30% OFF',
     'sale.until': '7/31까지',
+    'sale.cd': '온라인 마감까지',
+    'sale.cdDay': '일',
     'sale.h2b': '최대 30% OFF',
     'sale.body': '일 년에 단 두 번뿐인 특별한 기간<br>온라인 스토어와 전 매장이 함께 세일<br>눈여겨보던 그 아이템 지금이 기회입니다',
     'sale.cpTitle': '지금만 멤버 무료 가입 캠페인',

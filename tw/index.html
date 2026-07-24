@@ -382,16 +382,21 @@
   #saleBar .sb-top{display:inline-flex;align-items:center;gap:8px;}
   #saleBar .sb-tag{background:#B4453A;color:#fff;font-size:9.5px;letter-spacing:.14em;padding:3px 8px;border-radius:999px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.2);}
   #saleBar .sb-kicker{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.95);line-height:1;}
-  #saleBar .sb-main{display:inline-flex;align-items:baseline;gap:9px;}
+  #saleBar .sb-main{display:inline-flex;flex-wrap:wrap;align-items:baseline;justify-content:center;gap:5px 9px;}
   #saleBar .sb-off{font-family:"Noto Serif JP",serif;font-size:19px;font-weight:600;color:#FFF3DC;line-height:1.25;text-shadow:0 1px 2px rgba(60,40,10,.25);}
   #saleBar .sb-until{font-size:11.5px;color:rgba(255,255,255,.92);}
-  #saleBar .sb-arrow{font-size:13.5px;transform:translateY(-1px);display:inline-block;}
-  #saleBar .sb-scope{display:inline-flex;align-items:center;font-size:10.5px;color:#FFF3DC;text-decoration:none;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.5);padding-bottom:1px;line-height:1.25;}
+  #saleBar .sb-arrow{font-size:13.5px;transform:translateY(-1px);display:none;}
+  #saleBar .sb-scope{display:inline-flex;align-items:center;font-size:11px;font-weight:600;color:#4a3618;background:#FFF3DC;text-decoration:none;cursor:pointer;padding:5px 13px;border-radius:999px;line-height:1.2;letter-spacing:.02em;box-shadow:0 1px 6px rgba(60,40,10,.18);white-space:nowrap;}
   #saleBar .sb-scope::after{content:'\203A';margin-left:5px;font-size:12px;line-height:1;}
-  @media(hover:hover){#saleBar .sb-scope:hover{color:#fff;border-bottom-color:#fff;}}
+  @media(hover:hover){#saleBar .sb-scope:hover{background:#fff;}}
+  /* オンライン締切カウントダウン(オンライン誘導の緊急性) */
+  #saleBar .sb-cd{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;}
+  #saleBar .sb-cd-label{font-size:10px;letter-spacing:.04em;color:rgba(255,255,255,.92);}
+  #saleBar .sb-cd-time{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:600;color:#FFF3DC;font-variant-numeric:tabular-nums;letter-spacing:.03em;text-shadow:0 1px 2px rgba(60,40,10,.28);}
   @media(min-width:640px){
     #saleBar .sb-in{flex-direction:row;gap:16px;padding:12px 28px 13px;}
     #saleBar .sb-off{font-size:21px;}
+    #saleBar .sb-arrow{display:inline-block;}
   }
   /* sb-scope は常時表示=オンラインショップ導線 */
   @keyframes saleSheen{0%{background-position:0% 0}100%{background-position:220% 0}}
@@ -405,10 +410,15 @@
     </span>
     <span class="sb-main">
       <span class="sb-off" data-i18n="sale.off">最高30%OFF</span>
-      <span class="sb-until" data-i18n="sale.until">至7/31</span>
+      <span class="sb-cd" hidden="">
+        <span class="sb-cd-label" data-i18n="sale.cd">線上截止還剩</span>
+        <span class="sb-cd-time" id="saleCd" aria-live="off">—</span>
+      </span>
+      <span class="sb-until" data-i18n="sale.until" hidden="">至7/31</span>
       <span aria-hidden="" class="sb-arrow">→</span>
     </span>
-    <a href="/onlineshop.html" class="sb-scope" data-track-click="sale_online" aria-label="オンラインショップのセールを見る" data-i18n="sale.scope">線上商店同步進行中</a>
+    <a href="/onlineshop.html" class="sb-scope" data-track-click="sale_online" aria-label="オンラインショップのセールを見る" data-i18n="sale.scope">前往線上商店選購</a>
+    <span id="saleCdDay" data-i18n="sale.cdDay" hidden="">天</span>
   </div>
 </div>
 <script>
@@ -420,6 +430,39 @@
   var end   = new Date('2026-08-01T00:00:00+09:00').getTime(); // 期間外は表示しない=消し忘れゼロ
   if (now < start || now >= end) return;
   bar.hidden = false;
+  // オンライン締切カウントダウン(7/31 0時JSTまで) — オンライン誘導の緊急性
+  (function () {
+    var onlineEnd = new Date('2026-07-31T00:00:00+09:00').getTime();
+    var cd = bar.querySelector('.sb-cd'), cdTime = document.getElementById('saleCd'),
+        until = bar.querySelector('.sb-until'), dayEl = document.getElementById('saleCdDay'),
+        scope = bar.querySelector('.sb-scope'), timer = null;
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function tick() {
+      var left = onlineEnd - Date.now();
+      if (left <= 0) { // オンライン受付終了(店頭は7/31まで)=カウント畳んで期限表示に戻す
+        if (cd) cd.hidden = true;
+        if (until) until.hidden = false;
+        if (scope) scope.style.display = 'none';
+        if (timer) { clearInterval(timer); timer = null; }
+        return;
+      }
+      var s = Math.floor(left / 1000);
+      var d = Math.floor(s / 86400); s -= d * 86400;
+      var h = Math.floor(s / 3600);  s -= h * 3600;
+      var m = Math.floor(s / 60);    s -= m * 60;
+      var dayU = (dayEl && dayEl.textContent) || '日';
+      if (cdTime) cdTime.textContent = (d > 0 ? d + dayU + ' ' : '') + pad(h) + ':' + pad(m) + ':' + pad(s);
+    }
+    if (Date.now() < onlineEnd) {
+      if (cd) cd.hidden = false;
+      if (until) until.hidden = true;
+      tick();
+      timer = setInterval(tick, 1000);
+    } else { // 既にオンライン終了=店頭のみ表示
+      if (until) until.hidden = false;
+      if (scope) scope.style.display = 'none';
+    }
+  })();
   var go = function () { location.href = 'shop.html#sale'; }; // セール記事(会員/未会員両導線あり)へ。オンラインショップ導線(.sb-scope)は online-shop-gate.js がcapture段でゲート表示
   bar.addEventListener('click', go);
   bar.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } });
@@ -1088,8 +1131,10 @@
         'nav.salon': 'ヘアサロン',
         'nav.headspa': 'ヘッドスパ',
         'sale.off': '最大30%OFF',
-        'sale.scope': 'オンラインショップも同時開催',
+        'sale.scope': 'オンラインショップで買う',
         'sale.until': '7.31まで',
+        'sale.cd': 'オンライン締切まで',
+        'sale.cdDay': '日',
         'nav.online': 'オンラインショップ',
         'osEntry.note': 'ご来店の方だけの 特別なお店',
         'cta.finder': '髪格診断を始める',
@@ -1271,8 +1316,10 @@
         'nav.salon': 'Hair Salon',
         'nav.headspa': 'Head Spa',
         'sale.off': 'Up to 30% OFF',
-        'sale.scope': 'Also on at the online shop',
+        'sale.scope': 'Shop the online sale',
         'sale.until': 'Until Jul 31',
+        'sale.cd': 'Online ends in',
+        'sale.cdDay': 'd',
         'nav.online': 'Online Shop',
         'osEntry.note': 'Exclusively for guests of our stores',
         'cta.finder': 'Start Your Hair Diagnosis',
@@ -1454,8 +1501,10 @@
         'nav.salon': '美发沙龙',
         'nav.headspa': '头疗',
         'sale.off': '最高30%OFF',
-        'sale.scope': '线上商店同步进行中',
+        'sale.scope': '前往线上商店选购',
         'sale.until': '至7/31',
+        'sale.cd': '线上截止还剩',
+        'sale.cdDay': '天',
         'nav.online': '在线商店',
         'osEntry.note': '仅限到店顾客的专属商店',
         'cta.finder': '开始发质诊断',
@@ -1637,8 +1686,10 @@
         'nav.salon': '美髮沙龍',
         'nav.headspa': '頭皮SPA',
         'sale.off': '最高30%OFF',
-        'sale.scope': '線上商店同步進行中',
+        'sale.scope': '前往線上商店選購',
         'sale.until': '至7/31',
+        'sale.cd': '線上截止還剩',
+        'sale.cdDay': '天',
         'nav.online': '線上商店',
         'osEntry.note': '僅限到店顧客的專屬商店',
         'cta.finder': '開始髮質診斷',
@@ -1820,8 +1871,10 @@
         'nav.salon': '헤어살롱',
         'nav.headspa': '헤드스파',
         'sale.off': '최대 30% OFF',
-        'sale.scope': '온라인숍도 동시 진행',
+        'sale.scope': '온라인숍에서 구매',
         'sale.until': '7/31까지',
+        'sale.cd': '온라인 마감까지',
+        'sale.cdDay': '일',
         'nav.online': '온라인 스토어',
         'osEntry.note': '매장 방문 고객만을 위한 샵',
         'cta.finder': '모발 진단 시작하기',
