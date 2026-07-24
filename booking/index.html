@@ -585,6 +585,19 @@ td.slot:hover{background:#f0f7ff}
   #receiptArea{display:block !important}
   @page{margin:8mm}
 }
+/* Squareターミナル */
+.term-card .term-on{font-size:11px;font-weight:800;color:#0c7a41;background:#eef7f1;border:1px solid #c6e6d3;border-radius:99px;padding:2px 10px}
+.term-card .term-off{font-size:11px;font-weight:800;color:var(--sub);background:#f4f7fa;border:1px solid var(--line);border-radius:99px;padding:2px 10px}
+.term-info{font-size:12.5px;color:var(--sub);line-height:1.7;margin-bottom:10px}
+.term-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.term-btns input{border:1.5px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px}
+.term-code{font-size:14px;font-weight:700;color:var(--ink);margin:8px 0 4px}
+.term-code b{font-size:24px;letter-spacing:.18em;color:var(--accent);font-family:ui-monospace,Menlo,monospace;margin-left:6px}
+.term-pay{text-align:center;padding:14px 6px}
+.term-pay .tp-amt{font-size:34px;font-weight:800;color:#0f9d58;font-variant-numeric:tabular-nums}
+.term-pay .tp-msg{font-size:13.5px;color:var(--sub);font-weight:700;margin-top:10px;min-height:20px}
+.term-pay .tp-spin{width:38px;height:38px;border:4px solid #e6edf5;border-top-color:#0f9d58;border-radius:50%;margin:16px auto 0;animation:tpspin .9s linear infinite}
+@keyframes tpspin{to{transform:rotate(360deg)}}
 @media(max-width:560px){.rep-cards{grid-template-columns:repeat(2,1fr)}}
 
 /* ═══════════════ SEAM 世界観：お客様予約フロー（白 × ゴールド・上質）※全上書きのため末尾に配置 ═══════════════ */
@@ -912,6 +925,7 @@ body.customer .phone.spa{background:#f7f8f3}
   </div>
   <p class="lead">お会計を記録すると、本日の売上とレジ締め（現金の過不足）が自動で集計されます</p>
   <div id="registerbody"></div>
+  <div id="termCard" style="margin-top:14px"></div>
 </section>
 
 </main>
@@ -1101,6 +1115,12 @@ const API = {
   async listIntakes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes');if(!r.ok)return null;const j=await r.json();return j.ok?j.intakes:null;}catch{return null;} },
   async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
   async removeIntake(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes?id='+encodeURIComponent(id),{method:'DELETE'});return r.ok;}catch{return null;} },
+  // ---- Square Terminal（端末カード決済）----
+  async termCheckout(amount,deviceId,note){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,deviceId,note})});return await r.json();}catch(e){return {error:e.message};} },
+  async termStatus(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout?id='+encodeURIComponent(id));return await r.json();}catch(e){return {error:e.message};} },
+  async termCancel(checkoutId){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({checkoutId})});return await r.json();}catch(e){return {error:e.message};} },
+  async termDeviceCode(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/device-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});return await r.json();}catch(e){return {error:e.message};} },
+  async termDeviceStatus(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/device-code?id='+encodeURIComponent(id));return await r.json();}catch(e){return {error:e.message};} },
 };
 
 let db=load();
@@ -1690,9 +1710,10 @@ function renderCheckout(){
     <div class="co-pays"><button class="co-pay ${coDraft.nominated?'on':''}" data-nom="1">👤 指名</button><button class="co-pay ${!coDraft.nominated?'on':''}" data-nom="0">フリー</button></div>
     <div class="co-sub">担当</div>
     <select id="co-staff" class="co-sel">${STAFF.map(s=>`<option value="${s.id}" ${s.id===coDraft.staffId?'selected':''}>${s.name}</option>`).join('')}</select>
-    <div class="row" style="margin-top:15px">
+    ${(coDraft.method==='card'&&stg('terminalDeviceId',''))?`<button class="btn pay" id="co-term" style="width:100%;margin-top:14px">💳 Squareターミナルで決済（¥${coTotal().toLocaleString()}）</button>`:''}
+    <div class="row" style="margin-top:12px">
       <button class="btn ghost" style="flex:1" id="co-cancel">キャンセル</button>
-      <button class="btn pay" id="co-save">この内容で会計を確定</button>
+      <button class="btn pay" id="co-save">${(coDraft.method==='card'&&stg('terminalDeviceId',''))?'端末なしで記録':'この内容で会計を確定'}</button>
     </div>`;
   const sync=()=>{document.getElementById('co-total').textContent='¥'+coTotal().toLocaleString();};
   box.querySelector('#co-tech').oninput=e=>{coDraft.tech=+e.target.value||0;sync();};
@@ -1711,19 +1732,44 @@ function renderCheckout(){
   box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;renderCheckout();});
   box.querySelectorAll('[data-nom]').forEach(b=>b.onclick=()=>{coDraft.nominated=b.dataset.nom==='1';renderCheckout();});
   box.querySelector('#co-cancel').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
-  box.querySelector('#co-save').onclick=()=>{
-    const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,
-      retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0,productId:i.productId||undefined}))};
-    rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
-    rec.total=Math.max(0,rec.tech+rec.retail-rec.discount);
-    if(rec.total<=0){toast('金額を入力してください',true);return;}
-    const isNew=!coDraft.id;
-    if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
-    if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-1);});  // 在庫を自動減算（新規会計のみ）
-    if(rec.resvId)setStatus(rec.resvId,'done');
-    document.getElementById('checkoutbg').classList.remove('show');
-    toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}）`);
-  };
+  box.querySelector('#co-save').onclick=()=>{const rec=coBuildRec();if(rec.total<=0){toast('金額を入力してください',true);return;}coFinish(rec);};
+  const ct=box.querySelector('#co-term'); if(ct)ct.onclick=()=>runTerminalPayment();
+}
+function coBuildRec(){
+  const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,
+    retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0,productId:i.productId||undefined}))};
+  rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
+  rec.total=Math.max(0,rec.tech+rec.retail-rec.discount);
+  return rec;
+}
+function coFinish(rec){
+  const isNew=!coDraft.id;
+  if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
+  if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-1);});  // 在庫を自動減算（新規会計のみ）
+  if(rec.resvId)setStatus(rec.resvId,'done');
+  document.getElementById('checkoutbg').classList.remove('show');
+  toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}）`);
+}
+// Squareターミナルで決済（金額を端末へ送信→完了までポーリング→会計確定）
+let _termCid=null,_termPoll=null;
+async function runTerminalPayment(){
+  const rec=coBuildRec(); if(rec.total<=0){toast('金額を入力してください',true);return;}
+  const dev=stg('terminalDeviceId',''); if(!dev){toast('Squareターミナルが未設定です',true);return;}
+  rec.method='card';
+  const box=document.getElementById('checkoutmodal');
+  box.innerHTML=`<div class="term-pay"><div class="tp-amt">¥${rec.total.toLocaleString()}</div><div class="tp-spin"></div><div class="tp-msg" id="tp-msg">端末に送信しています…</div><div class="row" style="margin-top:18px"><button class="btn ghost" style="flex:1" id="tp-cancel">キャンセル</button><button class="btn pay" id="tp-manual">端末なしで記録</button></div></div>`;
+  box.querySelector('#tp-manual').onclick=()=>{if(_termCid)API.termCancel(_termCid);if(_termPoll)clearInterval(_termPoll);_termCid=null;coFinish(rec);};
+  box.querySelector('#tp-cancel').onclick=()=>{if(_termCid)API.termCancel(_termCid);if(_termPoll)clearInterval(_termPoll);_termCid=null;renderCheckout();};
+  const r=await API.termCheckout(rec.total,dev,rec.customer||'SEAM 銀座');
+  const msg=document.getElementById('tp-msg');
+  if(!r||!r.checkoutId){if(msg)msg.innerHTML='<span style="color:var(--danger)">送信失敗: '+((r&&r.error)||'不明')+'</span>';return;}
+  _termCid=r.checkoutId;
+  if(msg)msg.textContent='お客様に端末をお渡しください（カードで決済中…）';
+  _termPoll=setInterval(async()=>{
+    const st=await API.termStatus(_termCid); if(!st||st.error)return;
+    if(st.status==='COMPLETED'){clearInterval(_termPoll);_termCid=null;rec.squarePaymentId=(st.paymentIds||[])[0]||'';coFinish(rec);toast('カード決済が完了しました');}
+    else if(st.status==='CANCELED'){clearInterval(_termPoll);_termCid=null;const m=document.getElementById('tp-msg');if(m)m.innerHTML='<span style="color:var(--danger)">決済がキャンセルされました</span>';}
+  },2500);
 }
 document.getElementById('checkoutbg').onclick=e=>{if(e.target.id==='checkoutbg')e.target.classList.remove('show');};
 
@@ -1780,6 +1826,39 @@ function renderRegister(){
 document.getElementById('reg-prev').onclick=()=>{registerDay=addDays(registerDay,-1);renderRegister();};
 document.getElementById('reg-next').onclick=()=>{registerDay=addDays(registerDay,1);renderRegister();};
 document.getElementById('reg-today').onclick=()=>{registerDay=today();renderRegister();};
+
+/* ===== Squareターミナル（端末カード決済）設定・ペアリング ===== */
+let _pairPoll=null;
+function renderTerminal(){
+  const el=document.getElementById('termCard'); if(!el)return;
+  const dev=stg('terminalDeviceId','');
+  if(dev){
+    el.innerHTML=`<div class="card term-card"><div class="rep-h"><h3>💳 Squareターミナル</h3><span class="term-on">接続済み</span></div>
+      <div class="term-info">端末ID …<b>${(''+dev).slice(-6)}</b>　お会計で「カード」を選ぶと、この端末に金額を送信して決済できます（同じSquareアカウントに集約）。</div>
+      <div class="term-btns"><button class="btn small ghost" id="term-test">¥100 テスト送信</button><button class="btn small ghost" id="term-unpair">接続を解除</button></div></div>`;
+    el.querySelector('#term-unpair').onclick=()=>{if(confirm('端末の接続を解除しますか？'))setStg('terminalDeviceId','');};
+    el.querySelector('#term-test').onclick=async()=>{const r=await API.termCheckout(100,dev,'接続テスト');if(r&&r.checkoutId){toast('端末に¥100を送信しました（端末側で操作/取消してください）');}else toast('送信失敗: '+((r&&r.error)||'不明'),true);};
+  }else{
+    el.innerHTML=`<div class="card term-card"><div class="rep-h"><h3>💳 Squareターミナル</h3><span class="term-off">未設定</span></div>
+      <div class="term-info">端末が届いたら「端末をペアリング」→ 表示コードをSquareターミナルに入力すると接続します。以降カード会計を端末に送れます（今は準備だけ・実際の課金は本番切替後）。</div>
+      <div id="term-pairbox"></div>
+      <div class="term-btns"><button class="btn small pri" id="term-pair">端末をペアリング</button>
+        <span class="co-y" style="font-weight:600">または端末ID <input id="term-manual" placeholder="device_id を直接入力" style="width:190px"></span><button class="btn small ghost" id="term-save">保存</button></div></div>`;
+    el.querySelector('#term-save').onclick=()=>{const v=el.querySelector('#term-manual').value.trim();if(!v){toast('device_idを入力してください',true);return;}setStg('terminalDeviceId',v);toast('端末を設定しました');};
+    el.querySelector('#term-pair').onclick=async()=>{
+      const box=el.querySelector('#term-pairbox'); box.innerHTML='<div class="term-info">コードを発行中…</div>';
+      const r=await API.termDeviceCode('SEAM 銀座 レジ');
+      if(!r||!r.code){box.innerHTML=`<div class="term-info" style="color:var(--danger)">発行失敗: ${(r&&r.error)||'不明'}（SquareのアクセストークンとロケーションIDが必要です）</div>`;return;}
+      box.innerHTML=`<div class="term-code">端末に入力するコード <b>${r.code}</b></div><div class="term-info" id="term-pairstat">Squareターミナルの画面でこのコードを入力してください。ペアリングを待っています…</div>`;
+      if(_pairPoll)clearInterval(_pairPoll);
+      _pairPoll=setInterval(async()=>{
+        const st=await API.termDeviceStatus(r.id);
+        if(st&&st.status==='PAIRED'&&st.deviceId){clearInterval(_pairPoll);setStg('terminalDeviceId',st.deviceId);toast('端末とペアリングしました');}
+        else if(st&&st.status==='EXPIRED'){clearInterval(_pairPoll);const s=document.getElementById('term-pairstat');if(s)s.textContent='コードの有効期限が切れました。もう一度お試しください。';}
+      },3000);
+    };
+  }
+}
 
 /* ===== 売上レポート（期間・日別・スタッフ別・CSV） ===== */
 let repFrom=null, repTo=null;
@@ -2713,8 +2792,8 @@ function renderAnalytics(){
     <div class="an-sub">スタッフ別売上</div>${staffRows}
     <div class="an-sub">人気メニュー</div>${topMenus.length?topMenus.map(([n,c],i)=>`<div class="an-row"><span class="an-l">${i+1}. ${n}</span><span class="an-v">${c}件</span></div>`).join(''):'<div style="font-size:12px;color:var(--sub)">データなし</div>'}`;
 }
-function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();if(bk.step===2)renderBook()}
-renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();
+function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();renderTerminal();if(bk.step===2)renderBook()}
+renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();renderTerminal();
 document.getElementById('cust-search').oninput=renderCustomers;
 // D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
 syncFromD1();

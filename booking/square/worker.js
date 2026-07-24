@@ -74,6 +74,12 @@ export default {
 
     const url = new URL(request.url), p = url.pathname, m = request.method;
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
+    // Square Terminal（端末カード決済）
+    if (p.endsWith('/terminal/device-code') && m === 'POST') return handleTermDeviceCode(request, env, cors);
+    if (p.endsWith('/terminal/device-code') && m === 'GET') return handleTermDeviceStatus(url, env, cors);
+    if (p.endsWith('/terminal/checkout') && m === 'POST') return handleTermCheckout(request, env, cors);
+    if (p.endsWith('/terminal/checkout') && m === 'GET') return handleTermStatus(url, env, cors);
+    if (p.endsWith('/terminal/cancel') && m === 'POST') return handleTermCancel(request, env, cors);
     if (p.endsWith('/sales') && m === 'GET') return handleSales(url, env, cors);
     if (p.endsWith('/line/push') && m === 'POST') return handleLinePush(request, env, cors);
     if (p.endsWith('/line/reminders') && m === 'POST') return handleLineReminders(request, env, cors);
@@ -166,6 +172,61 @@ function sqHeaders(env) {
     'Square-Version': SQUARE_VERSION,
     'Content-Type': 'application/json',
   };
+}
+
+/* ---------- Square Terminal（端末カード決済）----------
+ * 端末が届いたら: ①/terminal/device-code でデバイスコード発行→端末に入力してペアリング
+ * ②ペアリング完了で device_id 取得 ③会計時に /terminal/checkout で金額を端末へ送信
+ * ④/terminal/checkout?id= で状態をポーリング→COMPLETEDで会計確定。本番はSQUARE_ENV=production+本番トークン */
+function sqErr(sq, status) { return (sq && sq.errors && sq.errors[0] && sq.errors[0].detail) || ('Square API ' + status); }
+async function handleTermDeviceCode(request, env, cors) {
+  if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 500, cors);
+  let o = {}; try { o = await request.json(); } catch {}
+  const body = { idempotency_key: crypto.randomUUID(), device_code: { name: o.name || 'SEAM 銀座 レジ', product_type: 'TERMINAL_API', location_id: env.SQUARE_LOCATION_ID } };
+  try {
+    const r = await fetch(apiBase(env) + '/v2/devices/codes', { method: 'POST', headers: sqHeaders(env), body: JSON.stringify(body) });
+    const sq = await r.json(); if (!r.ok) return json({ error: sqErr(sq, r.status) }, 502, cors);
+    const dc = sq.device_code || {}; return json({ ok: true, id: dc.id, code: dc.code, status: dc.status, deviceId: dc.device_id || '' }, 200, cors);
+  } catch (e) { return json({ error: e.message }, 502, cors); }
+}
+async function handleTermDeviceStatus(url, env, cors) {
+  if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 500, cors);
+  const id = url.searchParams.get('id'); if (!id) return json({ error: 'id 必須' }, 400, cors);
+  try {
+    const r = await fetch(apiBase(env) + '/v2/devices/codes/' + encodeURIComponent(id), { headers: sqHeaders(env) });
+    const sq = await r.json(); if (!r.ok) return json({ error: sqErr(sq, r.status) }, 502, cors);
+    const dc = sq.device_code || {}; return json({ ok: true, status: dc.status, deviceId: dc.device_id || '' }, 200, cors);
+  } catch (e) { return json({ error: e.message }, 502, cors); }
+}
+async function handleTermCheckout(request, env, cors) {
+  if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 500, cors);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.amount || !o.deviceId) return json({ error: 'amount と deviceId は必須です' }, 400, cors);
+  const body = { idempotency_key: crypto.randomUUID(), checkout: { amount_money: { amount: Math.round(o.amount), currency: 'JPY' }, device_options: { device_id: o.deviceId }, note: (o.note || 'SEAM 銀座').slice(0, 500) } };
+  try {
+    const r = await fetch(apiBase(env) + '/v2/terminals/checkouts', { method: 'POST', headers: sqHeaders(env), body: JSON.stringify(body) });
+    const sq = await r.json(); if (!r.ok) return json({ error: sqErr(sq, r.status) }, 502, cors);
+    const co = sq.checkout || {}; return json({ ok: true, checkoutId: co.id, status: co.status }, 200, cors);
+  } catch (e) { return json({ error: e.message }, 502, cors); }
+}
+async function handleTermStatus(url, env, cors) {
+  if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 500, cors);
+  const id = url.searchParams.get('id'); if (!id) return json({ error: 'id 必須' }, 400, cors);
+  try {
+    const r = await fetch(apiBase(env) + '/v2/terminals/checkouts/' + encodeURIComponent(id), { headers: sqHeaders(env) });
+    const sq = await r.json(); if (!r.ok) return json({ error: sqErr(sq, r.status) }, 502, cors);
+    const co = sq.checkout || {}; return json({ ok: true, status: co.status, paymentIds: co.payment_ids || [] }, 200, cors);
+  } catch (e) { return json({ error: e.message }, 502, cors); }
+}
+async function handleTermCancel(request, env, cors) {
+  if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 500, cors);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.checkoutId) return json({ error: 'checkoutId 必須' }, 400, cors);
+  try {
+    const r = await fetch(apiBase(env) + '/v2/terminals/checkouts/' + encodeURIComponent(o.checkoutId) + '/cancel', { method: 'POST', headers: sqHeaders(env) });
+    const sq = await r.json(); if (!r.ok) return json({ error: sqErr(sq, r.status) }, 502, cors);
+    return json({ ok: true, status: (sq.checkout || {}).status }, 200, cors);
+  } catch (e) { return json({ error: e.message }, 502, cors); }
 }
 
 /* ---------- POST /pay : 課金 ---------- */
@@ -433,12 +494,13 @@ async function ensureRegisterTables(env) {
   ]);
   // 既存DBへの列追加（SQLiteはIF NOT EXISTS非対応→重複はcatchで無視）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN nominated INTEGER DEFAULT 0`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN square_payment_id TEXT DEFAULT ''`).run(); } catch (e) {}
   _regTablesReady = true;
 }
 const CO2API = r => ({
   id: r.id, resvId: r.resv_id || '', date: r.date, staffId: r.staff_id || '', customer: r.customer || '',
   tech: r.tech || 0, retail: r.retail || 0, retailItems: (() => { try { return JSON.parse(r.retail_items || '[]'); } catch { return []; } })(),
-  discount: r.discount || 0, total: r.total || 0, method: r.method || 'cash', nominated: !!r.nominated, at: r.created_at || '',
+  discount: r.discount || 0, total: r.total || 0, method: r.method || 'cash', nominated: !!r.nominated, squarePaymentId: r.square_payment_id || '', at: r.created_at || '',
 });
 const ST2API = r => ({
   date: r.date, float: r.float || 0, cashSales: r.cash_sales || 0, expectedCash: r.expected_cash || 0,
@@ -462,10 +524,10 @@ async function handlePostCheckout(request, env, cors) {
   let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
   if (!o.id || !o.date) return json({ error: 'id/date は必須' }, 400, cors);
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO checkouts (id,resv_id,date,staff_id,customer,tech,retail,retail_items,discount,total,method,nominated,created_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    `INSERT OR REPLACE INTO checkouts (id,resv_id,date,staff_id,customer,tech,retail,retail_items,discount,total,method,nominated,square_payment_id,created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).bind(o.id, o.resvId || '', o.date, o.staffId || '', o.customer || '', o.tech || 0, o.retail || 0,
-    JSON.stringify(o.retailItems || []), o.discount || 0, o.total || 0, o.method || 'cash', o.nominated ? 1 : 0, o.at || new Date().toISOString()).run();
+    JSON.stringify(o.retailItems || []), o.discount || 0, o.total || 0, o.method || 'cash', o.nominated ? 1 : 0, o.squarePaymentId || '', o.at || new Date().toISOString()).run();
   return json({ ok: true, id: o.id }, 200, cors);
 }
 async function handleDeleteCheckout(url, env, cors) {
