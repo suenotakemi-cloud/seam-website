@@ -527,6 +527,14 @@ body.customer .bookshell{max-width:520px;margin:0 auto;padding:0}
 .shop-cta-body b{display:block;font-family:'Noto Serif JP',serif;font-size:14.5px;color:#171614;font-weight:600}
 .shop-cta-body span{display:block;font-size:11.5px;color:#8f887b;line-height:1.55;margin-top:3px}
 .shop-cta-arrow{flex:0 0 auto;color:#B8945A;font-size:18px;font-weight:800}
+/* ── 完了画面：Googleクチコミ導線（サイト内では集めずGoogleへ誘導） ── */
+.grev-cta{display:flex;align-items:center;gap:12px;text-align:left;text-decoration:none;background:#fff;border:1px solid #e7e1d5;border-radius:16px;padding:14px 15px;margin:12px 0 6px;transition:.16s}
+.grev-cta:hover{box-shadow:0 12px 26px -14px rgba(46,44,40,.22);border-color:#d9d2c5}
+.grev-ic{flex:0 0 auto;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #ece4d6;display:flex;align-items:center;justify-content:center}
+.grev-body{flex:1;min-width:0}
+.grev-body b{display:block;font-family:'Noto Serif JP',serif;font-size:14px;color:#171614;font-weight:600}
+.grev-body span{display:block;font-size:11.5px;color:#8f887b;line-height:1.5;margin-top:2px}
+.grev-stars{flex:0 0 auto;color:#FBBC04;font-size:13px;letter-spacing:1px}
 /* ── スパ導線：癒しのトーン（セージ・完全個室のひととき） ── */
 .spa-lead{font-family:'Noto Serif JP',serif;color:#6f8560;font-size:13px;line-height:1.7;letter-spacing:.03em;margin:-2px 0 15px;padding-left:12px;border-left:2px solid #b7c9a6}
 .phone.spa .phead{background:#f7f8f3}
@@ -1343,6 +1351,10 @@ let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',pho
 const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');return['line','google','instagram','own'].includes(s)?s:'own'})();
 // ?src= 付き = お客様導線（LINE/Google/Instagram/自社サイト）。管理タブを隠し予約画面のみ表示（管理台帳をお客様に見せない）。
 const IS_CUSTOMER=new URLSearchParams(location.search).has('src');
+// Googleクチコミ導線: 完了画面から「Googleにクチコミ」へ誘導する。サイト内では口コミを集めない。
+// ★本番: Googleビジネスプロフィールの「クチコミを書く」直リンクに差し替え（https://search.google.com/local/writereview?placeid=＜SEAM銀座のPlace ID＞）。
+//   未設定時はGoogleマップ検索（店舗ページ）へフォールバック。
+const GOOGLE_REVIEW_URL='https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('SEAM 銀座 美容室');
 // スマートタイム特典（スマート割）: 空き枠は「全部見せたまま」、前後の予約とすき間なく繋がる枠に特典を付けて誘導する。
 // ※隙間ができる枠の自動非表示・最短メニュー時間を閾値にした枠フィルタは coming-soon社特許(JP7617580)の構成に近いため実装しない（ARCHITECTURE.md参照）
 const SMART_TIME={on:true,label:'スマート割'};
@@ -1556,7 +1568,6 @@ function renderBook(){
         <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 090-1234-5678）" value="${bk.phone||''}"><button class="btn small pri" id="rlgo">呼び出す</button></div>
         <div id="rlres"></div>
       </div>`+
-      (publishedReviews().length?`<div class="revblock"><div class="rl-t" style="color:var(--navy)">⭐ お客様の声</div>${publishedReviews().slice(0,2).map(rv=>{const s=STAFF.find(x=>x.id===rv.staffId);return `<div class="pubrev"><div class="pr-top">${'★'.repeat(rv.rating)}<span class="rv-star-off">${'★'.repeat(5-rv.rating)}</span> <b>${rv.name}</b> <span class="rv-meta">${s?s.name:''}</span></div><div class="pr-text">${(rv.text||'').replace(/</g,'&lt;')}</div></div>`}).join('')}</div>`:'')+
       `<div class="sec-bar"><span class="sb-ic">${bk.section==='spa'?'💆':'✂️'}</span><span class="sb-t">${bk.section==='spa'?'スパ / ヘッドスパ':'ヘアサロン'}</span><button class="sb-chg" id="secchg">入口を変更</button></div>`+
       (bk.section==='spa'?`<p class="spa-lead">完全個室で、頭皮も気持ちも、ゆっくりほどけていく時間を。</p>`:'')+
       `<h3 style="margin:6px 0 12px">メニューを選択</h3>`+
@@ -1767,23 +1778,13 @@ function renderBook(){
         </div>
         <div class="shop-cta-arrow">→</div>
       </a>
-      <div class="revcust" style="text-align:left">
-        <h4>⭐ 施術後にぜひ口コミを（任意）</h4>
-        <div class="stars" id="rvstars">${[1,2,3,4,5].map(i=>`<span class="star" data-v="${i}">★</span>`).join('')}</div>
-        <textarea id="rvtext" placeholder="仕上がりや接客のご感想をお聞かせください（掲載はサロンが確認のうえ行います）"></textarea>
-        <button class="btn small pri" id="rvsend">口コミを送る</button>
-      </div>
+      <a class="grev-cta" href="${GOOGLE_REVIEW_URL}" target="_blank" rel="noopener">
+        <div class="grev-ic"><svg width="22" height="22" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/><path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24s.85 6.91 2.34 9.88l7.35-5.7z"/><path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/></svg></div>
+        <div class="grev-body"><b>Googleにクチコミを（任意）</b><span>ご満足いただけましたら、Googleでの評価がとても励みになります</span></div>
+        <div class="grev-stars">★★★★★</div>
+      </a>
       <button class="btn linktext" id="bagain">続けてもう1件予約する</button></div>`;
     document.getElementById('baddline').onclick=()=>toast('（デモ）LINE友だち追加へ遷移します');
-    let rvRating=5;
-    const paintStars=()=>document.querySelectorAll('#rvstars .star').forEach(s=>s.classList.toggle('on',+s.dataset.v<=rvRating));
-    document.querySelectorAll('#rvstars .star').forEach(s=>s.onclick=()=>{rvRating=+s.dataset.v;paintStars()});paintStars();
-    document.getElementById('rvsend').onclick=()=>{
-      const txt=document.getElementById('rvtext').value.trim();if(!txt){toast('ご感想をご記入ください',true);return}
-      addReview({name:(bk.name||'匿名').split(' ')[0]+(bk.name&&bk.name.includes(' ')?'.'+bk.name.split(' ')[1][0]:''),rating:rvRating,staffId:(bk.staff==='any'?bk._sid:bk.staff)||'s1',menuId:bk.menu,text:txt});
-      toast('口コミを送信しました。サロンの確認後に掲載されます');
-      document.querySelector('.revcust').innerHTML='<div class="wait-done">✅ 口コミありがとうございました</div>';
-    };
     document.getElementById('bagain').onclick=()=>{bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};renderBook()};
     return;
   }
