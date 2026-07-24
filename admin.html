@@ -193,6 +193,10 @@
   // ---- 診断プロファイル ラベル辞書（finder-app.jsx の選択肢実値と同期必須） ----
   var AGE_ORDER = ['teen','20s','30s','40s','50plus','noanswer'];
   var AGE = {teen:'10代','20s':'20代','30s':'30代','40s':'40代','50plus':'50代以上',noanswer:'未回答'};
+  // 価格受容性パネルの年代切替(価格帯パネルだけを年代で出し分け・他パネルには影響しない)
+  window.seamBudgetAge = function(age){ var w=document.getElementById('budgetAgeWrap'); if(!w)return; Array.prototype.forEach.call(w.querySelectorAll('[data-bage]'), function(el){ el.style.display=(el.getAttribute('data-bage')===age)?'block':'none'; }); };
+  // 年代セレクトはインラインhandlerを使わずイベント委譲(再描画・CSPに強い)
+  document.addEventListener('change', function(e){ var t=e.target; if(t && t.getAttribute && t.getAttribute('data-budget-age-sel')!=null){ window.seamBudgetAge(t.value); } });
   var CONCERN = {dry:'乾燥',frizz:'広がり',wave:'うねり・くせ',rough:'パサつき',tangle:'絡まり',noShine:'ツヤ不足',split:'枝毛・切れ毛',damage:'ダメージ',gummy:'濡れるとゴム状',colorFade:'カラーの色落ち',grayFade:'白髪染めの色落ち',volumeDown:'ボリューム不足',topFlat:'トップぺたん',scalpDry:'頭皮の乾燥・かゆみ',scalpOily:'頭皮のベタつき',thinning:'抜け毛・細毛'};
   var TEXTURE = {moist:'しっとりまとまり',glossy:'ツヤ',firm:'ハリコシ',smooth:'サラサラ',airy:'ふんわり動き',soft:'軽い柔らかさ'};
   var GOAL = {growLong:'きれいに伸ばしたい',keepColor:'髪色を保ちたい',firm:'ハリコシ美髪',easy:'朝セットを楽に',ends:'毛先までまとまり',idle:'未定'};
@@ -649,12 +653,29 @@
       panel('Chemical','薬剤履歴の重なり（ブリーチ×矯正×パーマ）', objRows(P.chemCross, CHEMX, P.n, CHEMX_ORDER) +
         noteLine('複合履歴毛（2つ以上の重なり）の実サイズ — ハイダメージ向け開発・ビビリ毛リスク層の把握・施術メニュー設計の基礎数字')) +
       dealerPanels(P) +
-      panel('Budget','価格受容性 — 1回のお買い物で払う金額',
-        subhead('シャンプー') + objRows(P.budgetSh, BANDL, P.n, BAND_ORDER, true) +
-        subhead('トリートメント') + objRows(P.budgetTr, BANDL, P.n, BAND_ORDER, true) +
-        subhead('アウトバス') + objRows(P.budgetOb, BANDL, P.n, BAND_ORDER, true) +
-        subhead('集中マスク') + objRows(P.budgetMk, BANDL, P.n, BAND_ORDER, true) +
-        noteLine('「買った価格」ではなく本人申告の支払い意思 — 価格設定・プレミアムライン判断の1次データ')) +
+      (function(){
+        var bAges = ['all'].concat(AGE_ORDER.filter(function(k){ return P.byAge && P.byAge[k]; }));
+        function bBlock(age){
+          var perAge = age!=='all' && P.budgetShAge; // 実データは年代別あり / デモは無し→全体でフォールバック
+          var bs = perAge ? ((P.budgetShAge||{})[age]||{}) : P.budgetSh;
+          var bt = perAge ? ((P.budgetTrAge||{})[age]||{}) : P.budgetTr;
+          var bo = perAge ? ((P.budgetObAge||{})[age]||{}) : P.budgetOb;
+          var bm = perAge ? ((P.budgetMkAge||{})[age]||{}) : P.budgetMk;
+          var nn = age==='all' ? P.n : (perAge ? ((P.byAge||{})[age]||0) : P.n);
+          return subhead('シャンプー') + objRows(bs, BANDL, nn, BAND_ORDER, true) +
+                 subhead('トリートメント') + objRows(bt, BANDL, nn, BAND_ORDER, true) +
+                 subhead('アウトバス') + objRows(bo, BANDL, nn, BAND_ORDER, true) +
+                 subhead('集中マスク') + objRows(bm, BANDL, nn, BAND_ORDER, true);
+        }
+        var sel = '<div style="margin:2px 0 12px"><label style="font-size:12px;color:#8C7A63;margin-right:8px">年代で切り替え</label>'
+          + '<select class="btn" style="padding:6px 10px" data-budget-age-sel="1">'
+          + bAges.map(function(k){ return '<option value="'+k+'">'+(k==='all'?'全体':(AGE[k]||k))+'</option>'; }).join('')
+          + '</select></div>';
+        var blocks = bAges.map(function(k){ return '<div data-bage="'+k+'" style="display:'+(k==='all'?'block':'none')+'">'+bBlock(k)+'</div>'; }).join('');
+        return panel('Budget','価格受容性 — 1回のお買い物で払う金額',
+          sel + '<div id="budgetAgeWrap">' + blocks + '</div>'
+          + noteLine('本人申告の支払い意思。年代で切り替えると各世代の価格帯が見えます（価格帯は年代で変わります）— 価格設定・プレミアムライン判断の1次データ'));
+      })() +
       panel('Willingness','値上がり許容と投資カテゴリ',
         objRows(P.upgradeTotal, UPWL, P.n, UPW_ORDER, true) +
         subhead('「合うなら投資したい」率 × 年代') + rateByAge(P.upgradeYesByAge, P.byAge) +

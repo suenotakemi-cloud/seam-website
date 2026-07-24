@@ -60,6 +60,7 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     deviceTotal: {}, deviceWantByAge: {},   // 美容家電の希望 / 希望あり率(年代別 分子)
     // ── v3 価格受容性(bs/bt/bo/bm=1回に払う金額帯・up=値上がり許容・ic=投資カテゴリ・bp=購入場所[]) ──
     budgetSh: {}, budgetTr: {}, budgetOb: {}, budgetMk: {},
+    budgetShAge: {}, budgetTrAge: {}, budgetObAge: {}, budgetMkAge: {}, // 年代別 価格帯(age→band→count)
     upgradeTotal: {}, upgradeYesByAge: {},  // 「合うなら投資したい」率(年代別 分子)=プレミアム許容の金脈
     investCatTotal: {}, buyPlaceTotal: {},
     // ── v4 美容家電(dpd/dpi/dpsw/dpf/dph=使用中家電の購入価格帯・dti=気になるクラス松竹梅) ──
@@ -110,6 +111,7 @@ export function aggregateProfiles(rows) { // export=ブラウザからの単体�
     if (m.rd) { P.rediagN++; P.rediagDaysSum += Number(m.rdd) || 0; }
     // 価格受容性
     inc(P.budgetSh, m.bs); inc(P.budgetTr, m.bt); inc(P.budgetOb, m.bo); inc(P.budgetMk, m.bm);
+    inc2(P.budgetShAge, age, m.bs); inc2(P.budgetTrAge, age, m.bt); inc2(P.budgetObAge, age, m.bo); inc2(P.budgetMkAge, age, m.bm);
     inc(P.upgradeTotal, m.up);
     if (m.up === 'yes') inc(P.upgradeYesByAge, age);
     inc(P.investCatTotal, m.ic);
