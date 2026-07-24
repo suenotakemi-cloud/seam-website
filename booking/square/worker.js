@@ -16,13 +16,30 @@
 
 import PostalMime from 'postal-mime';   // HPBメールのMIME/日本語解析（npm install postal-mime）
 import { EmailMessage } from 'cloudflare:email';   // オーナー通知（SEND_EMAILバインド・宛先はwrangler.tomlのdestination_address）
+import { json, z, min2hm } from './util.js';   // 共有ユーティリティ
+import { salonPush, salonCancel, salonDelete, handleSalonPull, handleSalonSelftest, handleSalonWhoami } from './salon-bridge.js';   // salon.town(CUEPON)ブリッジ
+import { handleAiChat } from './ai-chat.js';   // BYO AI（本人キーでClaude/ChatGPT）
 
 const SQUARE_VERSION = '2025-01-23';
 const OWNER_FROM = 'yoyaku@seam.site';   // 送信元（seam.siteドメイン）
 const OWNER_TO = 'suenotakemi@gmail.com';// 通知先（SEND_EMAILの検証済み宛先）
 
-// オーナーのGmailへ通知メール（Cloudflare SEND_EMAIL・自分の検証済み宛先のみ送信可）
+// Resend（DKIM署名付き・seam.site認証済み）でメール送信。受信箱に確実に届く。
+async function sendResend(env, to, subject, text) {
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: env.MAIL_FROM || `SEAM 予約 <${OWNER_FROM}>`, to, subject, text }),
+  });
+  if (!res.ok) throw new Error('Resend ' + res.status + ': ' + (await res.text()));
+}
+
+// オーナーのGmailへ通知メール。Resend優先（DKIM=受信箱に届く）、無ければ SEND_EMAIL にフォールバック。
 async function notifyOwner(env, subject, text) {
+  if (env.RESEND_API_KEY) {
+    try { await sendResend(env, OWNER_TO, subject, text); return; }
+    catch (e) { console.log('notifyOwner(Resend)失敗→SEND_EMAILへ:', e.message); }
+  }
   if (!env.SEND_EMAIL) return;
   const b64 = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
   const raw = [
@@ -61,6 +78,14 @@ export default {
     if (p.endsWith('/line/push') && m === 'POST') return handleLinePush(request, env, cors);
     if (p.endsWith('/line/reminders') && m === 'POST') return handleLineReminders(request, env, cors);
     if (p.endsWith('/mail/confirm') && m === 'POST') return handleMailConfirm(request, env, cors);
+    if (p.endsWith('/ai/chat') && m === 'POST') return handleAiChat(request, env, cors);
+    // LINEログイン OAuth2フロー
+    if (p.endsWith('/line/login/state') && m === 'POST') return handleLineLoginState(request, env, cors);
+    if (p.endsWith('/line/login/result') && m === 'GET') return handleLineLoginResult(url, env, cors);
+    // salon.town(CUEPON)予約API連携（サーバ側ブリッジ・CORS回避）
+    if (p.endsWith('/salon/selftest') && m === 'POST') return handleSalonSelftest(env, cors);
+    if (p.endsWith('/salon/pull') && m === 'GET') return handleSalonPull(url, env, cors);
+    if (p.endsWith('/salon/whoami') && m === 'GET') return handleSalonWhoami(env, cors);
     // 予約データAPI（D1永続化）
     if (p.endsWith('/reservations') && m === 'GET') return handleGetReservations(url, env, cors);
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors);
@@ -106,7 +131,10 @@ export default {
       }
     } catch (e) { console.log('EMAIL処理エラー:', e.message); }
     // スタッフの受信箱にも転送（send_email バインディング経由）
-    try { if (env.SEND_EMAIL) await message.forward(env.FORWARD_TO || 'suenotakemi@gmail.com', env.SEND_EMAIL); } catch (e) {
+    // hpb@seam.site に届いたメールを suenotakemi@gmail.com にも転送
+    try {
+      await message.forward('suenotakemi@gmail.com');
+    } catch (e) {
       console.log('転送エラー:', e.message);
     }
   },
@@ -279,7 +307,8 @@ async function handleLineReminders(request, env, cors) {
 const R2API = r => ({   // D1行 → アプリ形式
   id: r.id, date: r.date, staffId: r.staff_id, start: r.start, end: r.end, menuId: r.menu_id,
   name: r.name, phone: r.phone, email: r.email, note: r.note, channel: r.channel,
-  status: r.status, hpbBlocked: !!r.hpb_blocked, deposit: r.deposit, lineUserId: r.line_user_id, createdAt: r.created_at,
+  status: r.status, hpbBlocked: !!r.hpb_blocked, deposit: r.deposit, lineUserId: r.line_user_id,
+  salonId: r.salon_id || '', createdAt: r.created_at,
 });
 
 async function handleGetReservations(url, env, cors) {
@@ -307,13 +336,35 @@ async function handlePostReservation(request, env, cors) {
      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).bind(id, o.date, o.staffId, o.start, o.end, o.menuId || '', o.name || 'お客様', o.phone || '', o.email || '', o.note || '',
     o.channel || 'own', o.status || 'booked', o.channel === 'hpb' ? 1 : (o.hpbBlocked ? 1 : 0), o.deposit || 0, o.lineUserId || '', new Date().toISOString()).run();
+  // salon.town(CUEPON)へ同期。SALON_SYNC='on'の時のみ。疎結合=失敗しても自社予約は成功扱い。
+  let salon = null;
+  if (env.SALON_SYNC === 'on' && env.SALON_HOST) {
+    try {
+      salon = await salonPush(env, o);
+      if (salon.salonId) {
+        // salon_id列に保存(キャンセル/削除の同期に使用)。note にも予約番号を人向け追記。
+        try {
+          await env.DB.prepare(
+            "UPDATE reservations SET salon_id=?, note = CASE WHEN note IS NULL OR note='' THEN ? ELSE note || ? END WHERE id=?"
+          ).bind(salon.salonId, `salon#${salon.reserveNum}`, ` / salon#${salon.reserveNum}`, id).run();
+        } catch (e) {
+          // salon_id 列が未追加(マイグレーション前)なら note だけ更新してフォールバック
+          console.log('salon_id保存失敗(列未追加?):', e.message);
+          await env.DB.prepare(
+            "UPDATE reservations SET note = CASE WHEN note IS NULL OR note='' THEN ? ELSE note || ? END WHERE id=?"
+          ).bind(`salon#${salon.reserveNum}`, ` / salon#${salon.reserveNum}`, id).run();
+        }
+      }
+    } catch (e) { console.log('salon同期失敗:', e.message); }
+  }
   // オンライン予約（お客様導線）のみオーナー通知。管理側の手動登録は notify を付けない。
   if (o.notify) {
     const ch = { own: '自社サイト', line: 'LINE', google: 'Google', instagram: 'Instagram' }[o.channel] || o.channel;
     await notifyOwner(env, `新規ネット予約 ${o.name || 'お客様'} ${(o.date || '').slice(5)}`,
-      `${ch}から予約が入りました。\n\n日時: ${(o.date || '').replace(/-/g, '/')} ${min2hm(o.start)}〜\nお客様: ${o.name || ''}${o.phone ? '（' + o.phone + '）' : ''}`);
+      `${ch}から予約が入りました。\n\n日時: ${(o.date || '').replace(/-/g, '/')} ${min2hm(o.start)}〜\nお客様: ${o.name || ''}${o.phone ? '（' + o.phone + '）' : ''}`
+      + (salon && salon.reserveNum ? `\nsalon.town予約番号: ${salon.reserveNum}` : ''));
   }
-  return json({ ok: true, id }, 200, cors);
+  return json({ ok: true, id, salon }, 200, cors);
 }
 
 async function handlePatchReservation(request, env, cors) {
@@ -327,6 +378,13 @@ async function handlePatchReservation(request, env, cors) {
   if (!sets.length) return json({ error: '更新項目なし' }, 400, cors);
   vals.push(o.id);
   await env.DB.prepare(`UPDATE reservations SET ${sets.join(',')} WHERE id=?`).bind(...vals).run();
+  // キャンセルに変更されたら salon.town へも反映(cancel:true)。疎結合=失敗しても自社は成功。
+  if (o.status === 'cancelled' && env.SALON_SYNC === 'on' && env.SALON_HOST) {
+    try {
+      const row = await env.DB.prepare('SELECT salon_id FROM reservations WHERE id=?').bind(o.id).first();
+      if (row && row.salon_id) await salonCancel(env, row.salon_id);
+    } catch (e) { console.log('salonキャンセル同期失敗:', e.message); }
+  }
   return json({ ok: true }, 200, cors);
 }
 
@@ -334,6 +392,13 @@ async function handleDeleteReservation(url, env, cors) {
   if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
   const id = url.searchParams.get('id');
   if (!id) return json({ error: 'id は必須' }, 400, cors);
+  // salon.town側も削除(削除前に salon_id を取得)。疎結合。
+  if (env.SALON_SYNC === 'on' && env.SALON_HOST) {
+    try {
+      const row = await env.DB.prepare('SELECT salon_id FROM reservations WHERE id=?').bind(id).first();
+      if (row && row.salon_id) await salonDelete(env, row.salon_id);
+    } catch (e) { console.log('salon削除同期失敗:', e.message); }
+  }
   await env.DB.prepare('DELETE FROM reservations WHERE id=?').bind(id).run();
   return json({ ok: true }, 200, cors);
 }
@@ -356,11 +421,11 @@ function parseSalonBoard(raw) {
   const start = (+dt[4]) * 60 + (+dt[5]);
   const date = `${dt[1]}-${z(+dt[2])}-${z(+dt[3])}`;
   const note = [resNo && ('予約番号 ' + resNo), stylist && ('HPB担当 ' + stylist), menuName].filter(Boolean).join(' / ');
-  return { id: 'r' + crypto.randomUUID().slice(0, 8), date, staffId: staff.id, start, end: start + dur, menuId: menu.id, name, note };
+  // IDは予約番号ベース（BF12345678 → hpb-BF12345678）にして重複INSERT防止
+  const id = resNo ? 'hpb-' + resNo.replace(/\s/g, '') : 'r' + crypto.randomUUID().slice(0, 8);
+  return { id, date, staffId: staff.id, start, end: start + dur, menuId: menu.id, name, note };
 }
 
-const z = n => String(n).padStart(2, '0');
-const min2hm = m => `${z(Math.floor(m / 60))}:${z(m % 60)}`;
 
 /* ---------- 予約完了メール（Resend経由・LINE以外/海外客向け） ---------- */
 async function handleMailConfirm(request, env, cors) {
@@ -386,9 +451,111 @@ async function handleMailConfirm(request, env, cors) {
   } catch (e) { return json({ error: 'メール送信エラー: ' + e.message }, 502, cors); }
 }
 
-function json(obj, status, cors) {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: { 'Content-Type': 'application/json', ...(cors || {}) },
-  });
+/* ---------- LINE ログイン OAuth2 ----------
+ * フロー:
+ *   フロント → POST /line/login/state  → { authUrl } を返す（stateをKVかD1に一時保存）
+ *   LINEが  → {origin}/line/login/result?code&state  にリダイレクト（フロント中継ページ）
+ *   フロント → GET  /line/login/result?code&state  → Worker がtoken交換→profile取得→302
+ *
+ * 必要シークレット（コードに絶対書かない・wrangler secret put で登録）:
+ *   LINE_LOGIN_CLIENT_ID     … チャネルID（wrangler.toml の [vars] に記載でOK・公開情報）
+ *   LINE_LOGIN_CLIENT_SECRET … チャネルシークレット（秘密。`npx wrangler secret put LINE_LOGIN_CLIENT_SECRET`）
+ *
+ * wrangler.toml に追加:
+ *   LINE_LOGIN_CALLBACK = "https://suenotakemi-cloud.github.io/seam-website/booking/line/login/result"
+ *   LINE_LOGIN_SUCCESS  = "https://suenotakemi-cloud.github.io/seam-website/booking/index.html"
+ */
+
+// state を D1 に一時保存（5分TTL相当。古いものは次回クリーンアップ）
+async function saveState(env, state) {
+  const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS line_login_state (state TEXT PRIMARY KEY, expires TEXT)`
+  ).run().catch(() => {});
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO line_login_state (state, expires) VALUES (?, ?)`
+  ).bind(state, expires).run();
 }
+
+async function verifyState(env, state) {
+  await env.DB.prepare(
+    `CREATE TABLE IF NOT EXISTS line_login_state (state TEXT PRIMARY KEY, expires TEXT)`
+  ).run().catch(() => {});
+  const row = await env.DB.prepare(
+    `SELECT expires FROM line_login_state WHERE state = ?`
+  ).bind(state).first();
+  if (!row) return false;
+  await env.DB.prepare(`DELETE FROM line_login_state WHERE state = ?`).bind(state).run();
+  return new Date(row.expires) > new Date();
+}
+
+// POST /line/login/state — state発行 → LINE認証URLを返す
+async function handleLineLoginState(request, env, cors) {
+  const clientId = env.LINE_LOGIN_CLIENT_ID;
+  const callback = env.LINE_LOGIN_CALLBACK;
+  if (!clientId || !callback) return json({ error: 'LINE_LOGIN_CLIENT_ID / LINE_LOGIN_CALLBACK が未設定' }, 500, cors);
+
+  const state = crypto.randomUUID();
+  await saveState(env, state);
+
+  const params = new URLSearchParams({
+    response_type: 'code',
+    client_id: clientId,
+    redirect_uri: callback,
+    scope: 'profile openid',
+    state,
+  });
+  const authUrl = `https://access.line.me/oauth2/v2.1/authorize?${params}`;
+  return json({ authUrl, state }, 200, cors);
+}
+
+// GET /line/login/result?code=...&state=... — token交換→profile取得→302リダイレクト
+async function handleLineLoginResult(url, env, cors) {
+  const code  = url.searchParams.get('code');
+  const state = url.searchParams.get('state');
+  const successUrl = env.LINE_LOGIN_SUCCESS || '/';
+
+  if (!code || !state) return json({ error: 'code / state が不足しています' }, 400, cors);
+
+  const clientId     = env.LINE_LOGIN_CLIENT_ID;
+  const clientSecret = env.LINE_LOGIN_CLIENT_SECRET;
+  const callback     = env.LINE_LOGIN_CALLBACK;
+  if (!clientId || !clientSecret || !callback)
+    return json({ error: 'LINE_LOGIN_CLIENT_ID / SECRET / CALLBACK が未設定' }, 500, cors);
+
+  // state検証
+  const ok = await verifyState(env, state);
+  if (!ok) return json({ error: 'state が無効または期限切れです' }, 403, cors);
+
+  // code → token 交換
+  const tokenRes = await fetch('https://api.line.me/oauth2/v2.1/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: callback,
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+  if (!tokenRes.ok) return json({ error: 'token交換失敗: ' + (await tokenRes.text()) }, 502, cors);
+  const token = await tokenRes.json();
+
+  // profile取得
+  const profRes = await fetch('https://api.line.me/v2/profile', {
+    headers: { Authorization: 'Bearer ' + token.access_token },
+  });
+  if (!profRes.ok) return json({ error: 'profile取得失敗' }, 502, cors);
+  const profile = await profRes.json();
+
+  // userId・displayName をクエリパラメータに乗せてフロントへリダイレクト
+  const dest = new URL(successUrl);
+  dest.searchParams.set('line_user_id', profile.userId);
+  dest.searchParams.set('line_name', profile.displayName);
+  if (profile.pictureUrl) dest.searchParams.set('line_picture', profile.pictureUrl);
+
+  return Response.redirect(dest.toString(), 302);
+}
+
+

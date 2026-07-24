@@ -8,6 +8,21 @@ SQUARE_ENV = "sandbox"          # テスト中は sandbox / 本番は "productio
 SQUARE_LOCATION_ID = "L4X65VRZXDMV7"  # 売上集計(/sales)の対象店舗ID（公開OK）。銀座のLocation ID
 ALLOW_ORIGIN = "*"              # 決済フォームのオリジンに絞るのが安全。例) "https://booking.seam.site"
 FORWARD_TO = "suenotakemi@gmail.com"  # HPBメールを解析後にここにも転送（承認メール・予約確認も受信可能）
+MAIL_FROM = "SEAM 銀座 <yoyaku@seam.site>"  # Resend送信元（seam.site はDKIM認証済み・受信箱に届く）
+
+# salon.town(CUEPON)予約API連携。SALON_SYNC="on"で予約作成時にsalon.townへも同期。
+SALON_SYNC = "on"                                 # selftest OK → 本番同期ON
+
+# LINEログイン OAuth2設定（チャネルID: 2010812629）
+LINE_LOGIN_CLIENT_ID = "2010812629"
+LINE_LOGIN_CALLBACK  = "https://suenotakemi-cloud.github.io/seam-website/booking/line/login/result"
+LINE_LOGIN_SUCCESS   = "https://suenotakemi-cloud.github.io/seam-website/booking/index.html"
+# シークレットは: npx wrangler secret put LINE_LOGIN_CLIENT_SECRET
+SALON_HOST = "https://sugu-api.salon.town"        # SUGUテナント(エンジニア指定 2026-07-19)。本番は https://api.salon.town
+SALON_SHOP_ID = "20260720171020808ihahgPA"        # SEAM 銀座 ヘア（及川＋ANZUヘア垢）
+SALON_SPA_SHOP_ID = "20260720193503315fjcjHCf"    # SEAM 銀座 SPA（CHIKA＋ANZUスパ垢・spaフラグ時こちらへ）
+# SALON_ACCOUNT_ID = ""                            # 予約者アカウント(未設定ならログインアカウント)
+# 認証(secret・未設定ならtest空ログイン): npx wrangler secret put SALON_LOGIN_ID / SALON_PASS
 
 # 秘密鍵は下記コマンドで登録（wrangler.toml には絶対に書かない）:
 #   npx wrangler secret put SQUARE_ACCESS_TOKEN
