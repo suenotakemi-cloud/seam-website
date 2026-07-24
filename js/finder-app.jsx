@@ -113,9 +113,14 @@ const Q = [
     sequential: true,
     eyebrow: 'Bleach History',
     title: 'ブリーチ（明るく脱色）をしたことは？',
-    note: 'いちばん大切な情報です。まず「したことがあるか」、つぎに「今の状態」を伺います。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば「ある」をお選びください。',
+    note: 'いちばん大切な情報です。まず「したことがあるか」、つぎに「今の状態」を伺います。ハイライト・インナーカラー・裾カラーなども含みます。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば「ある」をお選びください。',
     gateYesLabel: 'ブリーチをしたことがある',
+    gateYesSub: 'ハイライト・インナーカラーも含む',
+    gateNoLabel: '一度もしていない',
+    everKey: 'bleachEver',
     detailTitle: '今の髪の状態に近いものは？',
+    endedLabel: 'もう残っていない（切った・今の髪にはない）',
+    endedSub: '過去にしたが、今の髪には残っていない',
     yesPrompt: '毛先だけ・部分的でも、いちばん近いものを1つお選びください。',
     options: [
       { v: 'none',      label: 'していない',                                           score: {} },
@@ -4686,7 +4691,7 @@ function QuestionCard({ question, value, onChange, onSet, answers }) {
   if (type === 'check-multi')     return <CheckMulti q={question} value={value} onChange={onChange} />;
   if (type === 'carousel-single') return <CarouselSingle q={question} value={value} onChange={onChange} />;
   if (type === 'heat-tools')      return <HeatTools q={question} value={value || {}} onChange={onChange} />;
-  if (type === 'card-history')    return <CardHistory q={question} value={value} onChange={onChange} />;
+  if (type === 'card-history')    return <CardHistory q={question} value={value} onChange={onChange} onSet={onSet} answers={answers} />;
   if (type === 'straighten-flow') return <StraightenFlow q={question} value={value} onChange={onChange} onSet={onSet} answers={answers} />;
   if (type === 'budget-rows')     return <BudgetRows q={question} value={value} onChange={onChange} onSet={onSet} answers={answers} />;
   return null;
@@ -4834,30 +4839,40 @@ function CardSingle({ q, value, onChange }) {
 }
 
 /* ---- Card history (Yes/No → detail) ---- */
-function CardHistory({ q, value, onChange }) {
+function CardHistory({ q, value, onChange, onSet, answers }) {
   // value: undefined | 'none' | <detail value>
   const noneOpt = q.options.find(o => o.v === 'none');
   const detailOptions = q.options.filter(o => o.v !== 'none');
   const hasDetail = !!(value && value !== 'none');
   const seq = !!q.sequential; // 経験(Yes/No)と今の状態を2画面に分けて聞く(bleach)
+  // 経験フラグ(過去にしたか)。「もう残っていない」=経験あり(yes)+今の状態none を区別するため
+  const everYes = !!(q.everKey && answers && answers[q.everKey] === 'yes');
 
-  const [yesIntent, setYesIntent] = useState(() => hasDetail);
-  const [screen, setScreen] = useState(() => (seq && hasDetail) ? 'detail' : 'gate');
+  const [yesIntent, setYesIntent] = useState(() => hasDetail || everYes);
+  const [screen, setScreen] = useState(() => (seq && (hasDetail || everYes)) ? 'detail' : 'gate');
 
   const showDetails = seq ? (screen === 'detail') : (yesIntent || hasDetail);
-  const noActive    = value === 'none';
-  const yesActive   = seq ? (screen === 'detail' || hasDetail) : showDetails;
+  const noActive    = value === 'none' && !everYes;
+  const yesActive   = seq ? (screen === 'detail' || hasDetail || everYes) : showDetails;
 
   const handleYes = () => {
     setYesIntent(true);
+    if (q.everKey && onSet) onSet(q.everKey, 'yes');
     if (value === 'none') onChange(undefined);
     if (seq) setScreen('detail');
   };
   const handleNo = () => {
     setYesIntent(false);
+    if (q.everKey && onSet) onSet(q.everKey, 'no');
     onChange('none');
     if (seq) setScreen('gate');
   };
+  // 「もう残っていない」= 今の状態はnoneだが経験はyesのまま
+  const handleEnded = () => {
+    if (q.everKey && onSet) onSet(q.everKey, 'yes');
+    onChange('none');
+  };
+  const endedActive = value === 'none' && everYes;
 
   return (
     <div className="mt-5">
@@ -4877,6 +4892,10 @@ function CardHistory({ q, value, onChange }) {
               yesActive ? 'text-goldLight' : 'text-charcoal/45'].join(' ')}>Yes</span>
             <span className={['block font-serif text-[15.5px] sm:text-[16.5px]',
               yesActive ? 'text-ivory' : 'text-ink'].join(' ')}>{q.gateYesLabel || '履歴がある'}</span>
+            {q.gateYesSub && (
+              <span className={['block text-[11px] mt-1 leading-snug',
+                yesActive ? 'text-ivory/70' : 'text-charcoal/55'].join(' ')}>{q.gateYesSub}</span>
+            )}
           </span>
           <span
             className={[
@@ -4905,7 +4924,7 @@ function CardHistory({ q, value, onChange }) {
             <span className={['block font-mono tracking-widest2 text-[10.5px] uppercase mb-1',
               noActive ? 'text-goldLight' : 'text-charcoal/45'].join(' ')}>No</span>
             <span className={['block font-serif text-[15.5px] sm:text-[16.5px]',
-              noActive ? 'text-ivory' : 'text-ink'].join(' ')}>{(noneOpt && noneOpt.label) || 'していない'}</span>
+              noActive ? 'text-ivory' : 'text-ink'].join(' ')}>{q.gateNoLabel || (noneOpt && noneOpt.label) || 'していない'}</span>
           </span>
           <span
             className={[
@@ -4987,6 +5006,35 @@ function CardHistory({ q, value, onChange }) {
               );
             })}
           </div>
+          {/* 「もう残っていない」= 経験ありのまま今の状態はnone(過去にしただけ) */}
+          {seq && q.endedLabel && (
+            <button
+              type="button"
+              onClick={handleEnded}
+              className={[
+                'group w-full mt-1.5 text-left px-4 sm:px-5 py-3.5 border transition-all flex items-center gap-4 rounded-[2px]',
+                endedActive ? 'bg-ink text-ivory border-ink' : 'bg-white/60 text-charcoal border-dashed border-line hover:border-ink',
+              ].join(' ')}
+            >
+              <span className={['flex-1 min-w-0', endedActive ? 'text-ivory' : 'text-ink'].join(' ')}>
+                <span className="block font-serif text-[15px] sm:text-[16px] leading-snug">{q.endedLabel}</span>
+                {q.endedSub && (
+                  <span className={['block text-[11px] mt-0.5 leading-snug', endedActive ? 'text-ivory/70' : 'text-charcoal/55'].join(' ')}>{q.endedSub}</span>
+                )}
+              </span>
+              <span
+                className={['w-4 h-4 border inline-flex items-center justify-center shrink-0 rounded-[1px]',
+                  endedActive ? 'border-ivory bg-ivory' : 'border-line group-hover:border-ink'].join(' ')}
+                aria-hidden
+              >
+                {endedActive && (
+                  <svg viewBox="0 0 12 12" className="w-2.5 h-2.5">
+                    <path d="M2 6.5 L 5 9 L 10 3" stroke="#1A1815" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </span>
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -9122,6 +9170,7 @@ function CounselingSheet({ karte, answers, onSaveImage }) {
   const colorItems = [];
   if (a.color) colorItems.push(['カラー履歴', lookupLabelShort('color', a.color)]);
   if (a.bleach && a.bleach !== 'none') colorItems.push(['ブリーチ履歴', lookupLabelShort('bleach', a.bleach)]);
+  else if (a.bleachEver === 'yes') colorItems.push(['ブリーチ履歴', 'あり（今は残っていない）']);
   if (a.colorFreq) colorItems.push(['カラーの頻度', lookupLabel('colorFreq', a.colorFreq)]);
   if (a.grayHair) colorItems.push(['白髪染め', lookupLabel('grayHair', a.grayHair)]);
   if (a.grayFreq) colorItems.push(['白髪染めの頻度', lookupLabelShort('grayFreq', a.grayFreq)]);
@@ -9492,7 +9541,7 @@ function NarrativeJourney({ karte, answers }) {
   // 履歴チップ作成
   const historyChips = [];
   if (answers?.straighten && answers.straighten !== 'none' && answers.straighten !== 'past') historyChips.push('縮毛矯正');
-  if (answers?.bleach && answers.bleach !== 'none') historyChips.push('ブリーチ');
+  if ((answers?.bleach && answers.bleach !== 'none') || answers?.bleachEver === 'yes') historyChips.push('ブリーチ');
   if (answers?.color && answers.color !== 'none') historyChips.push('カラー');
   if (answers?.perm && answers.perm !== 'none') historyChips.push('パーマ');
   const tools = (answers?.styling && answers.styling.tools) || [];
