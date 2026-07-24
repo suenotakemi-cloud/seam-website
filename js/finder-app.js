@@ -259,6 +259,56 @@ const Q = [{
     }
   }]
 }, {
+  id: 'bleach',
+  type: 'card-history',
+  sequential: true,
+  eyebrow: 'Bleach History',
+  title: 'ブリーチ（明るく脱色）をしたことは？',
+  note: 'いちばん大切な情報です。まず「したことがあるか」、つぎに「今の状態」を伺います。ハイライト・インナーカラー・裾カラーなども含みます。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば「ある」をお選びください。',
+  gateYesLabel: 'ブリーチをしたことがある',
+  gateYesSub: 'ハイライト・インナーカラーも含む',
+  gateNoLabel: '一度もしていない',
+  everKey: 'bleachEver',
+  detailTitle: '今の髪の状態に近いものは？',
+  endedLabel: 'もう残っていない（切った・今の髪にはない）',
+  endedSub: '過去にしたが、今の髪には残っていない',
+  yesPrompt: '毛先だけ・部分的でも、いちばん近いものを1つお選びください。',
+  options: [{
+    v: 'none',
+    label: 'していない',
+    score: {}
+  }, {
+    v: 'within3m',
+    label: '今も明るい部分が残っている（ブリーチ毛）',
+    score: {
+      bleachHistory: 4,
+      damage: 3,
+      colorFade: 2
+    }
+  }, {
+    v: 'within1y',
+    label: '今は暗く染めた／伸びたが、ブリーチした髪が残っている',
+    score: {
+      bleachHistory: 3,
+      damage: 2
+    }
+  }, {
+    v: 'multi',
+    label: '白っぽいハイトーンまで、しっかり抜いた',
+    score: {
+      bleachHistory: 5,
+      damage: 5,
+      colorFade: 2
+    }
+  }, {
+    v: 'highlight',
+    label: 'ハイライト・インナーなど部分的に',
+    score: {
+      bleachHistory: 1,
+      damage: 1
+    }
+  }]
+}, {
   id: 'color',
   type: 'card-history',
   eyebrow: 'Color History',
@@ -309,56 +359,6 @@ const Q = [{
     score: {
       damage: 2,
       colorFade: 1
-    }
-  }]
-}, {
-  id: 'bleach',
-  type: 'card-history',
-  sequential: true,
-  eyebrow: 'Bleach History',
-  title: 'ブリーチ（明るく脱色）をしたことは？',
-  note: 'いちばん大切な情報です。まず「したことがあるか」、つぎに「今の状態」を伺います。ハイライト・インナーカラー・裾カラーなども含みます。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば「ある」をお選びください。',
-  gateYesLabel: 'ブリーチをしたことがある',
-  gateYesSub: 'ハイライト・インナーカラーも含む',
-  gateNoLabel: '一度もしていない',
-  everKey: 'bleachEver',
-  detailTitle: '今の髪の状態に近いものは？',
-  endedLabel: 'もう残っていない（切った・今の髪にはない）',
-  endedSub: '過去にしたが、今の髪には残っていない',
-  yesPrompt: '毛先だけ・部分的でも、いちばん近いものを1つお選びください。',
-  options: [{
-    v: 'none',
-    label: 'していない',
-    score: {}
-  }, {
-    v: 'within3m',
-    label: '今も明るい部分が残っている（ブリーチ毛）',
-    score: {
-      bleachHistory: 4,
-      damage: 3,
-      colorFade: 2
-    }
-  }, {
-    v: 'within1y',
-    label: '今は暗く染めた／伸びたが、ブリーチした髪が残っている',
-    score: {
-      bleachHistory: 3,
-      damage: 2
-    }
-  }, {
-    v: 'multi',
-    label: '白っぽいハイトーンまで、しっかり抜いた',
-    score: {
-      bleachHistory: 5,
-      damage: 5,
-      colorFade: 2
-    }
-  }, {
-    v: 'highlight',
-    label: 'ハイライト・インナーなど部分的に',
-    score: {
-      bleachHistory: 1,
-      damage: 1
     }
   }]
 }, {
