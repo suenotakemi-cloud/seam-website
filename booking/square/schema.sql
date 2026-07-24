@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS checkouts (
   discount     INTEGER DEFAULT 0,
   total        INTEGER DEFAULT 0,      -- 税込合計
   method       TEXT DEFAULT 'cash',    -- cash/card/qr
+  nominated    INTEGER DEFAULT 0,      -- 指名=1 / フリー=0
   created_at   TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_co_date ON checkouts(date);

@@ -418,17 +418,19 @@ let _regTablesReady = false;
 async function ensureRegisterTables(env) {
   if (_regTablesReady) return;
   await env.DB.batch([
-    env.DB.prepare(`CREATE TABLE IF NOT EXISTS checkouts (id TEXT PRIMARY KEY, resv_id TEXT DEFAULT '', date TEXT NOT NULL, staff_id TEXT DEFAULT '', customer TEXT DEFAULT '', tech INTEGER DEFAULT 0, retail INTEGER DEFAULT 0, retail_items TEXT DEFAULT '[]', discount INTEGER DEFAULT 0, total INTEGER DEFAULT 0, method TEXT DEFAULT 'cash', created_at TEXT)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS checkouts (id TEXT PRIMARY KEY, resv_id TEXT DEFAULT '', date TEXT NOT NULL, staff_id TEXT DEFAULT '', customer TEXT DEFAULT '', tech INTEGER DEFAULT 0, retail INTEGER DEFAULT 0, retail_items TEXT DEFAULT '[]', discount INTEGER DEFAULT 0, total INTEGER DEFAULT 0, method TEXT DEFAULT 'cash', nominated INTEGER DEFAULT 0, created_at TEXT)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_co_date ON checkouts(date)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS settlements (date TEXT PRIMARY KEY, float INTEGER DEFAULT 0, cash_sales INTEGER DEFAULT 0, expected_cash INTEGER DEFAULT 0, counted_cash INTEGER DEFAULT 0, diff INTEGER DEFAULT 0, card INTEGER DEFAULT 0, qr INTEGER DEFAULT 0, total INTEGER DEFAULT 0, count INTEGER DEFAULT 0, memo TEXT DEFAULT '', closed_at TEXT)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`),
   ]);
+  // 既存DBへの列追加（SQLiteはIF NOT EXISTS非対応→重複はcatchで無視）
+  try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN nominated INTEGER DEFAULT 0`).run(); } catch (e) {}
   _regTablesReady = true;
 }
 const CO2API = r => ({
   id: r.id, resvId: r.resv_id || '', date: r.date, staffId: r.staff_id || '', customer: r.customer || '',
   tech: r.tech || 0, retail: r.retail || 0, retailItems: (() => { try { return JSON.parse(r.retail_items || '[]'); } catch { return []; } })(),
-  discount: r.discount || 0, total: r.total || 0, method: r.method || 'cash', at: r.created_at || '',
+  discount: r.discount || 0, total: r.total || 0, method: r.method || 'cash', nominated: !!r.nominated, at: r.created_at || '',
 });
 const ST2API = r => ({
   date: r.date, float: r.float || 0, cashSales: r.cash_sales || 0, expectedCash: r.expected_cash || 0,
@@ -452,10 +454,10 @@ async function handlePostCheckout(request, env, cors) {
   let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
   if (!o.id || !o.date) return json({ error: 'id/date は必須' }, 400, cors);
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO checkouts (id,resv_id,date,staff_id,customer,tech,retail,retail_items,discount,total,method,created_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+    `INSERT OR REPLACE INTO checkouts (id,resv_id,date,staff_id,customer,tech,retail,retail_items,discount,total,method,nominated,created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`
   ).bind(o.id, o.resvId || '', o.date, o.staffId || '', o.customer || '', o.tech || 0, o.retail || 0,
-    JSON.stringify(o.retailItems || []), o.discount || 0, o.total || 0, o.method || 'cash', o.at || new Date().toISOString()).run();
+    JSON.stringify(o.retailItems || []), o.discount || 0, o.total || 0, o.method || 'cash', o.nominated ? 1 : 0, o.at || new Date().toISOString()).run();
   return json({ ok: true, id: o.id }, 200, cors);
 }
 async function handleDeleteCheckout(url, env, cors) {

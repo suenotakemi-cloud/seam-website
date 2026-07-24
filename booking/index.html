@@ -488,6 +488,26 @@ td.slot:hover{background:#f0f7ff}
 .co-sel{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;font-weight:700;background:#fff}
 .co-done{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#eef7f1;border:1px solid #c6e6d3;border-radius:10px;padding:9px 12px;margin-top:8px;font-size:12.5px;font-weight:700;color:#0c7a41}
 @media(max-width:560px){.reg-cards{grid-template-columns:repeat(2,1fr)}}
+/* ===== 売上レポート ===== */
+.rep-period{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rep-period>button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 11px;font-weight:700;font-size:12.5px;color:var(--navy)}
+.rep-period>button:hover{border-color:var(--accent)}
+.rep-period .rep-sep{color:#cbd5e1}
+.rep-period input[type=date]{border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:600}
+.rep-cards{grid-template-columns:repeat(4,1fr)}
+.rep-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
+.rep-h h3{margin:0;font-size:14.5px}
+.rep-tw{overflow-x:auto}
+.rep-t{width:100%;border-collapse:collapse;font-size:12.5px}
+.rep-t th{background:#f7fafc;color:var(--sub);font-weight:800;padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+.rep-t td{padding:8px 10px;border-bottom:1px solid #eef3f8;white-space:nowrap}
+.rep-t th.num,.rep-t td.num{text-align:right;font-variant-numeric:tabular-nums}
+.rep-t td.b{font-weight:800;color:var(--navy)}
+.rep-t tbody tr:hover td{background:#fafcff}
+.rep-empty{text-align:center;color:var(--sub);padding:16px}
+.txt-short{color:var(--danger)} .txt-over{color:#c47f17}
+.rz-carry{font-style:normal;font-size:11px;font-weight:700;color:var(--accent);background:#eef4ff;border-radius:5px;padding:1px 6px;margin-left:4px}
+@media(max-width:560px){.rep-cards{grid-template-columns:repeat(2,1fr)}}
 
 /* ═══════════════ SEAM 世界観：お客様予約フロー（白 × ゴールド・上質）※全上書きのため末尾に配置 ═══════════════ */
 .bookshell{max-width:480px}
@@ -636,6 +656,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <button data-v="cal">予約台帳</button>
     <button data-v="cust">顧客カルテ</button>
     <button data-v="register">レジ・会計</button>
+    <button data-v="report">売上レポート</button>
     <button data-v="shift">シフト</button>
     <button data-v="book">予約ページ</button>
     <button data-v="chan">チャネル連携</button>
@@ -768,6 +789,21 @@ body.customer .phone.spa{background:#f7f8f3}
     </div>
     <div class="note">⚠️ この方式は「読み取り」専用。HPB側の空き枠を塞ぐ「書き込み」は公式APIがなくRPAは規約・CAPTCHAリスクがあるため、書き込み同期が必要なら かんざし等の既存連携SaaS（月額5,500円〜）を併用するのが現実解です</div>
   </div>
+</section>
+
+<!-- ============ REPORT（売上レポート・スタッフ別・CSV） ============ -->
+<section class="view" id="v-report">
+  <div class="hbar">
+    <h2>売上レポート</h2>
+    <div class="rep-period" id="rep-period">
+      <button data-p="7">過去7日</button><button data-p="30">過去30日</button>
+      <button data-p="month">今月</button><button data-p="lastmonth">先月</button>
+      <span class="rep-sep">|</span>
+      <input type="date" id="rep-from"><span>〜</span><input type="date" id="rep-to">
+    </div>
+  </div>
+  <p class="lead">期間の売上を日別・スタッフ別・技術/店販・支払方法別に集計します。CSVで書き出して会計ソフトにも取り込めます</p>
+  <div id="reportbody"></div>
 </section>
 
 <!-- ============ REGISTER（レジ・会計・レジ締め） ============ -->
@@ -1005,6 +1041,9 @@ function salesSummary(date){
 }
 function settlementFor(date){return db.settlements.find(s=>s.date===date);}
 function saveSettlement(s){const i=db.settlements.findIndex(x=>x.date===s.date);if(i>=0)db.settlements[i]=s;else db.settlements.push(s);save();refreshAll();API.saveSettlement(s);}
+// 前日繰越: その日の釣銭準備金＝直近の過去レジ締めで数えた現金。締め済みの日は保存済みfloat。無ければ既定。
+function priorSettlement(dk){return (db.settlements||[]).filter(s=>s.date<dk&&s.closedAt).sort((a,b)=>a.date<b.date?1:-1)[0]||null;}
+function openingFloat(dk){const set=settlementFor(dk);if(set)return set.float;const p=priorSettlement(dk);return p?p.countedCash:db.cashFloat;}
 // ===== キャンセル待ち =====
 function addWaitlist(w){
   w.id='w'+Math.random().toString(36).slice(2,8);w.createdAt=new Date().toISOString();w.notified=false;
@@ -1469,7 +1508,8 @@ function openCheckout(resvId){
   const existing=resvId?checkoutForResv(resvId):null;
   coDraft=existing?JSON.parse(JSON.stringify(existing)):{
     resvId:resvId||null,date:r?r.date:dkey(registerDay),staffId:r?r.staffId:STAFF[0].id,
-    customer:r?r.name:'',tech:m?Math.max(0,(m.price-(r.discount||0))):0,discount:0,retailItems:[],method:'cash'
+    customer:r?r.name:'',tech:m?Math.max(0,(m.price-(r.discount||0))):0,discount:0,retailItems:[],method:'cash',
+    nominated:resvId?true:false   // 予約からの会計は既定=指名。フリー(予約なし/指名なし)は切替
   };
   renderCheckout();
   document.getElementById('checkoutbg').classList.add('show');
@@ -1488,6 +1528,8 @@ function renderCheckout(){
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     <div class="co-sub">お支払い方法</div>
     <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
+    <div class="co-sub">指名 / フリー</div>
+    <div class="co-pays"><button class="co-pay ${coDraft.nominated?'on':''}" data-nom="1">👤 指名</button><button class="co-pay ${!coDraft.nominated?'on':''}" data-nom="0">フリー</button></div>
     <div class="co-sub">担当</div>
     <select id="co-staff" class="co-sel">${STAFF.map(s=>`<option value="${s.id}" ${s.id===coDraft.staffId?'selected':''}>${s.name}</option>`).join('')}</select>
     <div class="row" style="margin-top:15px">
@@ -1502,7 +1544,8 @@ function renderCheckout(){
   box.querySelectorAll('.co-rp').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].price=e.target.value;sync();});
   box.querySelectorAll('.co-rx').forEach(b=>b.onclick=()=>{coDraft.retailItems.splice(+b.dataset.i,1);renderCheckout();});
   box.querySelector('#co-add').onclick=()=>{coDraft.retailItems.push({name:'',price:''});renderCheckout();};
-  box.querySelectorAll('.co-pay').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;renderCheckout();});
+  box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;renderCheckout();});
+  box.querySelectorAll('[data-nom]').forEach(b=>b.onclick=()=>{coDraft.nominated=b.dataset.nom==='1';renderCheckout();});
   box.querySelector('#co-cancel').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
   box.querySelector('#co-save').onclick=()=>{
     const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,
@@ -1536,9 +1579,10 @@ function renderRegister(){
     <div class="reg-c"><span>店販売上</span><b>${money(s.retail)}</b></div></div>`;
   const pendHtml=pending.length?`<div class="card reg-sec"><h3>未会計（${pending.length}）</h3>${pending.sort((a,b)=>a.start-b.start).map(r=>{const m=MENUS.find(x=>x.id===r.menuId),stf=STAFF.find(x=>x.id===r.staffId);return `<div class="reg-pend"><span class="rp-t">${hm(r.start)}</span><span class="rp-n">${r.name}</span><span class="rp-m">${m?m.name:''} / ${stf?stf.name:''}</span><button class="btn small pay" data-co="${r.id}">会計</button></div>`;}).join('')}</div>`:'';
   const listHtml=`<div class="card reg-sec"><h3>本日の会計（${cs.length}）</h3>${cs.length?cs.map(c=>`<div class="reg-co"><span class="rc-t">${c.at?c.at.slice(11,16):''}</span><span class="rc-n">${c.customer||'（予約なし）'}</span><span class="rc-m">${PAYMENTS[c.method].ic}${c.retail>0?` 技${money(c.tech)}＋販${money(c.retail)}`:''}</span><b class="rc-a">${money(c.total)}</b>${closed?'':`<button class="rc-x" data-del="${c.id}" aria-label="取消">✕</button>`}</div>`).join(''):'<div class="co-empty">まだ会計がありません</div>'}${closed?'':'<button class="btn small ghost" id="reg-walkin" style="margin-top:9px">＋ 予約なしの会計（店販のみ等）</button>'}</div>`;
-  const float=set?set.float:db.cashFloat, expected=float+s.cash, counted=set?set.countedCash:null, diff=counted!=null?counted-expected:null;
+  const float=openingFloat(dk), expected=float+s.cash, counted=set?set.countedCash:null, diff=counted!=null?counted-expected:null;
+  const carried=!set&&priorSettlement(dk);
   const closePanel=`<div class="card reg-close"><h3>レジ締め ${closed?'<span class="reg-closed">締め済み</span>':''}</h3>
-    <div class="rz"><span>釣銭準備金</span><span class="co-y">¥<input id="rz-float" type="number" inputmode="numeric" value="${float}" ${closed?'disabled':''}></span></div>
+    <div class="rz"><span>釣銭準備金${carried?` <em class="rz-carry">前日(${carried.date.slice(5).replace('-','/')})から繰越</em>`:''}</span><span class="co-y">¥<input id="rz-float" type="number" inputmode="numeric" value="${float}" ${closed?'disabled':''}></span></div>
     <div class="rz"><span>現金売上</span><b>${money(s.cash)}</b></div>
     <div class="rz rz-line"><span>現金 理論残高</span><b id="rz-expected">${money(expected)}</b></div>
     <div class="rz"><span>実際の現金（数えた額）</span><span class="co-y">¥<input id="rz-count" type="number" inputmode="numeric" value="${counted!=null?counted:''}" placeholder="0" ${closed?'disabled':''}></span></div>
@@ -1569,6 +1613,57 @@ function renderRegister(){
 document.getElementById('reg-prev').onclick=()=>{registerDay=addDays(registerDay,-1);renderRegister();};
 document.getElementById('reg-next').onclick=()=>{registerDay=addDays(registerDay,1);renderRegister();};
 document.getElementById('reg-today').onclick=()=>{registerDay=today();renderRegister();};
+
+/* ===== 売上レポート（期間・日別・スタッフ別・CSV） ===== */
+let repFrom=null, repTo=null;
+function monthRange(offset){const t=today();const first=new Date(t.getFullYear(),t.getMonth()+offset,1),last=new Date(t.getFullYear(),t.getMonth()+offset+1,0);return [dkey(first),dkey(last)];}
+function setReportPeriod(p){
+  if(p==='month')[repFrom,repTo]=monthRange(0);
+  else if(p==='lastmonth')[repFrom,repTo]=monthRange(-1);
+  else {const n=+p||30;repTo=dkey(today());repFrom=dkey(addDays(today(),-(n-1)));}
+  renderReport();
+}
+function renderReport(){
+  const body=document.getElementById('reportbody');if(!body)return;
+  if(!repFrom)[repFrom,repTo]=monthRange(0);
+  const ff=document.getElementById('rep-from'),ft=document.getElementById('rep-to');if(ff)ff.value=repFrom;if(ft)ft.value=repTo;
+  const cs=db.checkouts.filter(c=>c.date>=repFrom&&c.date<=repTo);
+  const money=n=>'¥'+(n||0).toLocaleString(), sum=f=>cs.reduce((a,c)=>a+(f(c)||0),0), byM=m=>cs.filter(c=>c.method===m).reduce((a,c)=>a+c.total,0);
+  const total=sum(c=>c.total),count=cs.length,days=new Set(cs.map(c=>c.date)).size;
+  const setts=(db.settlements||[]).filter(s=>s.date>=repFrom&&s.date<=repTo&&s.closedAt);
+  const diffSum=setts.reduce((a,s)=>a+s.diff,0);
+  const summary=`<div class="reg-cards rep-cards">
+    <div class="reg-c big"><span>期間の総売上</span><b>${money(total)}</b><i>${count}会計・${days}営業日・客単価 ${money(count?Math.round(total/count):0)}</i></div>
+    <div class="reg-c"><span>技術売上</span><b>${money(sum(c=>c.tech))}</b></div>
+    <div class="reg-c"><span>店販売上</span><b>${money(sum(c=>c.retail))}</b></div>
+    <div class="reg-c"><span>店販比率</span><b>${total?Math.round(sum(c=>c.retail)/total*100):0}%</b></div>
+    <div class="reg-c"><span>💴 現金</span><b>${money(byM('cash'))}</b></div>
+    <div class="reg-c"><span>💳 カード</span><b>${money(byM('card'))}</b></div>
+    <div class="reg-c"><span>📱 QR決済</span><b>${money(byM('qr'))}</b></div>
+    <div class="reg-c"><span>レジ過不足計</span><b class="${diffSum===0?'':(diffSum<0?'txt-short':'txt-over')}">${diffSum>0?'+':''}${money(diffSum)}</b></div></div>`;
+  const dmap={};
+  cs.forEach(c=>{const d=dmap[c.date]||(dmap[c.date]={count:0,tech:0,retail:0,total:0,cash:0,card:0,qr:0});d.count++;d.tech+=c.tech;d.retail+=c.retail;d.total+=c.total;d[c.method]=(d[c.method]||0)+c.total;});
+  const datesDesc=Object.keys(dmap).sort((a,b)=>a<b?1:-1);
+  const dailyRows=datesDesc.map(dt=>{const d=dmap[dt],set=settlementFor(dt);return `<tr><td>${dt.slice(5).replace('-','/')}(${WD[new Date(dt).getDay()]})</td><td class="num">${d.count}</td><td class="num">${money(d.tech)}</td><td class="num">${money(d.retail)}</td><td class="num">${money(d.cash)}</td><td class="num">${money(d.card)}</td><td class="num">${money(d.qr)}</td><td class="num b">${money(d.total)}</td><td class="num ${set&&set.diff<0?'txt-short':(set&&set.diff>0?'txt-over':'')}">${set?((set.diff>0?'+':'')+money(set.diff)):'—'}</td></tr>`;}).join('');
+  const daily=`<div class="card reg-sec"><div class="rep-h"><h3>日別</h3><button class="btn small ghost" id="rep-csv-daily">CSV書き出し</button></div><div class="rep-tw"><table class="rep-t"><thead><tr><th>日付</th><th class="num">会計</th><th class="num">技術</th><th class="num">店販</th><th class="num">現金</th><th class="num">カード</th><th class="num">QR</th><th class="num">合計</th><th class="num">過不足</th></tr></thead><tbody>${dailyRows||'<tr><td colspan="9" class="rep-empty">データがありません</td></tr>'}</tbody></table></div></div>`;
+  const smap={};
+  cs.forEach(c=>{const k=c.staffId||'-';const d=smap[k]||(smap[k]={count:0,tech:0,retail:0,total:0,nom:0});d.count++;d.tech+=c.tech;d.retail+=c.retail;d.total+=c.total;if(c.nominated)d.nom++;});
+  const staffKeys=Object.keys(smap).sort((a,b)=>smap[b].total-smap[a].total);
+  const staffRows=staffKeys.map(k=>{const d=smap[k],st=STAFF.find(x=>x.id===k);return `<tr><td>${st?st.name:k}</td><td class="num">${d.count}</td><td class="num">${money(d.tech)}</td><td class="num">${money(d.retail)}</td><td class="num b">${money(d.total)}</td><td class="num">${money(d.count?Math.round(d.total/d.count):0)}</td><td class="num">${d.nom}</td><td class="num">${d.count?Math.round(d.nom/d.count*100):0}%</td></tr>`;}).join('');
+  const staff=`<div class="card reg-sec"><div class="rep-h"><h3>スタッフ別</h3><button class="btn small ghost" id="rep-csv-staff">CSV書き出し</button></div><div class="rep-tw"><table class="rep-t"><thead><tr><th>スタッフ</th><th class="num">会計</th><th class="num">技術</th><th class="num">店販</th><th class="num">売上</th><th class="num">客単価</th><th class="num">指名</th><th class="num">指名率</th></tr></thead><tbody>${staffRows||'<tr><td colspan="8" class="rep-empty">データがありません</td></tr>'}</tbody></table></div></div>`;
+  body.innerHTML=summary+daily+staff;
+  document.getElementById('rep-csv-daily').onclick=()=>{const rows=[['日付','曜日','会計数','技術','店販','現金','カード','QR','合計','過不足']];datesDesc.slice().reverse().forEach(dt=>{const d=dmap[dt],set=settlementFor(dt);rows.push([dt,WD[new Date(dt).getDay()],d.count,d.tech,d.retail,d.cash,d.card,d.qr,d.total,set?set.diff:'']);});downloadCSV(`SEAM銀座_日別売上_${repFrom}_${repTo}.csv`,rows);};
+  document.getElementById('rep-csv-staff').onclick=()=>{const rows=[['スタッフ','会計数','技術','店販','売上','客単価','指名数','指名率%']];staffKeys.forEach(k=>{const d=smap[k],st=STAFF.find(x=>x.id===k);rows.push([st?st.name:k,d.count,d.tech,d.retail,d.total,d.count?Math.round(d.total/d.count):0,d.nom,d.count?Math.round(d.nom/d.count*100):0]);});downloadCSV(`SEAM銀座_スタッフ別売上_${repFrom}_${repTo}.csv`,rows);};
+}
+function downloadCSV(filename,rows){
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.style.display='none';
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
+}
+document.querySelectorAll('#rep-period [data-p]').forEach(b=>b.onclick=()=>setReportPeriod(b.dataset.p));
+document.getElementById('rep-from').onchange=e=>{repFrom=e.target.value;renderReport();};
+document.getElementById('rep-to').onchange=e=>{repTo=e.target.value;renderReport();};
 
 /* =============== customer booking flow =============== */
 let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
@@ -2352,8 +2447,8 @@ function renderAnalytics(){
     <div class="an-sub">スタッフ別売上</div>${staffRows}
     <div class="an-sub">人気メニュー</div>${topMenus.length?topMenus.map(([n,c],i)=>`<div class="an-row"><span class="an-l">${i+1}. ${n}</span><span class="an-v">${c}件</span></div>`).join(''):'<div style="font-size:12px;color:var(--sub)">データなし</div>'}`;
 }
-function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();if(bk.step===2)renderBook()}
-renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();
+function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();if(bk.step===2)renderBook()}
+renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();
 document.getElementById('cust-search').oninput=renderCustomers;
 // D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
 syncFromD1();
