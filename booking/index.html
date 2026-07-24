@@ -517,6 +517,45 @@ td.slot:hover{background:#f0f7ff}
 .comm-rates input{width:60px;border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:800;text-align:right}
 .rep-t tr.comm-tot td{border-top:2px solid var(--line);font-weight:800;background:#f7fafc}
 .comm-note{font-size:11.5px;color:var(--sub);margin-top:10px}
+/* 本日の売上（ダッシュボード常設） */
+.dash-sales{background:linear-gradient(135deg,#0e2a47,#1c4a7a);border:none;color:#fff}
+.dash-sales .ds-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.dash-sales .ds-head h3{margin:0;font-size:15px;color:#fff}
+.ds-date{font-size:12px;color:rgba(255,255,255,.8);font-weight:700}
+.ds-date em{font-style:normal;margin-left:6px;font-size:11px;border-radius:99px;padding:2px 8px}
+.ds-date .reg-closed{background:rgba(255,255,255,.18);color:#fff}
+.ds-date .ds-pend{background:#f5b301;color:#3a2a00}
+.ds-row{display:flex;flex-wrap:wrap;gap:16px 26px;align-items:flex-end}
+.ds-total>span{font-size:12px;color:rgba(255,255,255,.8);font-weight:700}
+.ds-total>b{display:block;font-size:30px;font-weight:800;line-height:1.1}
+.ds-total>i{font-style:normal;font-size:12px;color:rgba(255,255,255,.8)}
+.ds-pays{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;color:rgba(255,255,255,.8);font-weight:700}
+.ds-pays b{color:#fff;font-weight:800}
+.ds-tgt{display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2);font-size:12px;color:rgba(255,255,255,.85);font-weight:700}
+.ds-tgt .tgt-bar{flex:1;margin:0;background:rgba(255,255,255,.2)}
+.ds-tgt .ds-pct{font-size:14px;font-weight:800;color:#fff}
+/* 商品・在庫 */
+.prod-form{display:flex;gap:8px;flex-wrap:wrap}
+.prod-form input{border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13.5px}
+.prod-form #pf-name{flex:2;min-width:180px}
+.prod-form #pf-price,.prod-form #pf-stock{width:100px}
+.prod-form #pf-barcode{flex:1;min-width:150px}
+.prod-row{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid #eef3f8}
+.prod-row:last-child{border-bottom:none}
+.pr-main{flex:1;min-width:0}
+.pr-name{font-weight:700;font-size:14px}
+.pr-sub{font-size:12px;color:var(--sub);font-variant-numeric:tabular-nums}
+.pr-stock{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.pr-mn{width:30px;height:30px;border:1.5px solid var(--line);background:#fff;border-radius:8px;font-weight:800;font-size:16px;color:var(--navy);cursor:pointer}
+.pr-mn:hover{border-color:var(--accent)}
+.pr-num{min-width:34px;text-align:center;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.pr-num.low{color:var(--danger)}
+.pr-del{border:none;background:none;color:#c3ccd6;font-size:14px;cursor:pointer;flex:0 0 auto}
+.pr-del:hover{color:var(--danger)}
+.pr-lowbadge{font-size:11px;font-weight:800;color:var(--danger);background:#fdeaea;border-radius:99px;padding:2px 10px;margin-left:8px}
+.co-scan-row{margin-bottom:8px}
+.co-scan-row input{width:100%;border:1.5px solid var(--accent2);border-radius:9px;padding:9px 11px;font-size:13.5px;background:#f7fbff}
+.co-scan-row input:focus{border-color:var(--accent);outline:none}
 @media(max-width:560px){.rep-cards{grid-template-columns:repeat(2,1fr)}}
 
 /* ═══════════════ SEAM 世界観：お客様予約フロー（白 × ゴールド・上質）※全上書きのため末尾に配置 ═══════════════ */
@@ -667,6 +706,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <button data-v="cust">顧客カルテ</button>
     <button data-v="register">レジ・会計</button>
     <button data-v="report">売上レポート</button>
+    <button data-v="products">商品・在庫</button>
     <button data-v="shift">シフト</button>
     <button data-v="book">予約ページ</button>
     <button data-v="chan">チャネル連携</button>
@@ -695,6 +735,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <div class="card kpi"><div class="lbl">今日の稼働率</div><div class="num" id="k-occ">0%</div><div class="sub">営業枠に対する予約枠</div></div>
     <div class="card kpi"><div class="lbl">自社予約比率</div><div class="num" id="k-own">0%</div><div class="sub">手数料ゼロのチャネル</div></div>
   </div>
+  <div id="dashSales" style="margin-bottom:14px"></div>
   <div class="card blockcard" id="blockcard" style="margin-bottom:14px"></div>
   <div class="card waitcard" id="waitcard" style="margin-bottom:14px"></div>
   <div class="card revisitcard" id="revisitcard" style="margin-bottom:14px"></div>
@@ -799,6 +840,23 @@ body.customer .phone.spa{background:#f7f8f3}
     </div>
     <div class="note">⚠️ この方式は「読み取り」専用。HPB側の空き枠を塞ぐ「書き込み」は公式APIがなくRPAは規約・CAPTCHAリスクがあるため、書き込み同期が必要なら かんざし等の既存連携SaaS（月額5,500円〜）を併用するのが現実解です</div>
   </div>
+</section>
+
+<!-- ============ PRODUCTS（店販の商品マスタ・バーコード・在庫） ============ -->
+<section class="view" id="v-products">
+  <h2>商品・在庫</h2>
+  <p class="lead">店販商品を登録すると、お会計でバーコード読み取り／一覧から選べ、在庫が自動で減ります</p>
+  <div class="card" style="margin-bottom:14px">
+    <h3 style="font-size:14.5px;margin-bottom:10px">商品を追加</h3>
+    <div class="prod-form">
+      <input id="pf-name" placeholder="商品名（例）oggi ott シャンプー">
+      <input id="pf-price" type="number" inputmode="numeric" placeholder="価格 ¥">
+      <input id="pf-barcode" placeholder="バーコード（任意・スキャン可）">
+      <input id="pf-stock" type="number" inputmode="numeric" placeholder="在庫数">
+      <button class="btn pay" id="pf-add">追加</button>
+    </div>
+  </div>
+  <div id="productsbody"></div>
 </section>
 
 <!-- ============ REPORT（売上レポート・スタッフ別・CSV） ============ -->
@@ -1006,6 +1064,9 @@ const API = {
   async removeSettlement(date){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements?date='+encodeURIComponent(date),{method:'DELETE'});return r.ok;}catch{return null;} },
   async getSettings(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings');if(!r.ok)return null;const j=await r.json();return j.ok?j.settings:null;}catch{return null;} },
   async setSetting(key,value){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,value})});return r.ok;}catch{return null;} },
+  async listProducts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products');if(!r.ok)return null;const j=await r.json();return j.ok?j.products:null;}catch{return null;} },
+  async saveProduct(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeProduct(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products?id='+encodeURIComponent(id),{method:'DELETE'});return r.ok;}catch{return null;} },
 };
 
 let db=load();
@@ -1038,12 +1099,19 @@ const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳
 function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();API.saveCheckout(c);return c;}
 function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}API.saveCheckout(c);}
 function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);save();refreshAll();API.removeCheckout(id);}
-// D1から会計・レジ締め・設定を取得してdbに反映（起動時・非同期）。localStorageで先に表示→D1で上書き。
+// 店販の商品マスタ（バーコード・在庫）
+if(!db.products)db.products=[];
+function addProduct(p){p.id=p.id||('p'+Math.random().toString(36).slice(2,8));const i=db.products.findIndex(x=>x.id===p.id);if(i>=0)db.products[i]=p;else db.products.push(p);save();refreshAll();API.saveProduct(p);return p;}
+function removeProduct(id){db.products=db.products.filter(p=>p.id!==id);save();refreshAll();API.removeProduct(id);}
+function productByBarcode(code){const c=(code||'').trim();return c?db.products.find(p=>p.barcode&&p.barcode===c):null;}
+function adjustStock(id,delta){const p=db.products.find(x=>x.id===id);if(!p)return;p.stock=(p.stock||0)+delta;save();API.saveProduct(p);}
+// D1から会計・レジ締め・設定・商品を取得してdbに反映（起動時・非同期）。localStorageで先に表示→D1で上書き。
 async function syncRegisterFromD1(){
   const co=await API.listCheckouts(); if(co)db.checkouts=co;
   const st=await API.listSettlements(); if(st)db.settlements=st;
   const set=await API.getSettings(); if(set){db.settings=set; if(set.cashFloat!=null&&set.cashFloat!=='')db.cashFloat=+set.cashFloat;}
-  if(co||st||set){save();refreshAll();}
+  const pr=await API.listProducts(); if(pr)db.products=pr;
+  if(co||st||set||pr){save();refreshAll();}
 }
 function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
 function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date).sort((a,b)=>a.at<b.at?-1:1);}
@@ -1243,6 +1311,20 @@ function renderDash(){
   document.getElementById('k-occ').textContent=Math.round(used/capacity*100)+'%';
   const ownish=week.filter(r=>['own','line','google','instagram'].includes(r.channel)).length;
   document.getElementById('k-own').textContent=(week.length?Math.round(ownish/week.length*100):0)+'%';
+
+  // 本日の売上サマリー（レジ会計から集計・常設）
+  const ds=document.getElementById('dashSales');
+  if(ds){
+    const s=salesSummary(tk), money=n=>'¥'+(n||0).toLocaleString();
+    const set=settlementFor(tk), pend=db.reservations.filter(r=>r.date===tk&&r.status!=='cancelled'&&r.status!=='noshow'&&!checkoutForResv(r.id)).length;
+    // 今月の目標進捗
+    const t=today(), mFrom=dkey(new Date(t.getFullYear(),t.getMonth(),1)), mTo=dkey(new Date(t.getFullYear(),t.getMonth()+1,1-0));
+    const mSales=db.checkouts.filter(c=>c.date>=mFrom&&c.date<=mTo).reduce((a,c)=>a+c.total,0), tgt=stgN('monthlyTarget',0);
+    ds.innerHTML=`<div class="card dash-sales"><div class="ds-head"><h3>本日の売上</h3><span class="ds-date">${t.getMonth()+1}/${t.getDate()}（${WD[t.getDay()]}）${set&&set.closedAt?'<em class="reg-closed">レジ締め済み</em>':(pend?`<em class="ds-pend">未会計 ${pend}件</em>`:'')}</span></div>
+      <div class="ds-row"><div class="ds-total"><span>総売上</span><b>${money(s.total)}</b><i>${s.count}会計・客単価 ${money(s.avg)}</i></div>
+        <div class="ds-pays"><span>💴 現金 <b>${money(s.cash)}</b></span><span>💳 カード <b>${money(s.card)}</b></span><span>📱 QR <b>${money(s.qr)}</b></span><span>技術 <b>${money(s.tech)}</b></span><span>店販 <b>${money(s.retail)}</b></span></div></div>
+      ${tgt>0?`<div class="ds-tgt"><span>今月 ${money(mSales)} / 目標 ${money(tgt)}</span><div class="tgt-bar"><span style="width:${Math.min(100,Math.round(mSales/tgt*100))}%" class="${mSales>=tgt?'done':''}"></span></div><span class="ds-pct">${Math.round(mSales/tgt*100)}%</span></div>`:''}</div>`;
+  }
 
   const counts={};Object.keys(CHANNELS).forEach(k=>counts[k]=0);
   week.forEach(r=>counts[r.channel]=(counts[r.channel]||0)+1);
@@ -1536,8 +1618,9 @@ function renderCheckout(){
   box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}</h3>
     <div class="co-line"><span>技術（施術）</span><span class="co-y">¥<input id="co-tech" type="number" inputmode="numeric" value="${coDraft.tech||0}"></span></div>
     <div class="co-sub">店販（商品）</div>
+    <div class="co-scan-row"><input id="co-scan" list="co-prod-list" placeholder="🔎 バーコードをスキャン／商品名で追加" autocomplete="off">${(db.products||[]).length?`<datalist id="co-prod-list">${(db.products||[]).filter(p=>p.active!==0).map(p=>`<option value="${(p.name||'').replace(/"/g,'&quot;')}">`).join('')}</datalist>`:''}</div>
     <div id="co-rows">${rows||'<div class="co-empty">なし</div>'}</div>
-    <button class="btn small ghost" id="co-add">＋ 店販を追加</button>
+    <button class="btn small ghost" id="co-add">＋ 手入力で追加</button>
     <div class="co-line"><span>割引</span><span class="co-y">−¥<input id="co-disc" type="number" inputmode="numeric" value="${coDraft.discount||0}"></span></div>
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     <div class="co-sub">お支払い方法</div>
@@ -1558,16 +1641,24 @@ function renderCheckout(){
   box.querySelectorAll('.co-rp').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].price=e.target.value;sync();});
   box.querySelectorAll('.co-rx').forEach(b=>b.onclick=()=>{coDraft.retailItems.splice(+b.dataset.i,1);renderCheckout();});
   box.querySelector('#co-add').onclick=()=>{coDraft.retailItems.push({name:'',price:''});renderCheckout();};
+  const addFromMaster=v=>{const s=(v||'').trim();if(!s)return false;const p=productByBarcode(s)||(db.products||[]).find(x=>x.name===s)||(db.products||[]).find(x=>x.name&&x.name.includes(s));if(!p)return false;coDraft.retailItems.push({productId:p.id,name:p.name,price:p.price});return true;};
+  const scan=box.querySelector('#co-scan');
+  if(scan){
+    scan.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(addFromMaster(scan.value)){scan.value='';renderCheckout();setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);}else if(scan.value.trim())toast('商品が見つかりません',true);}};
+    scan.onchange=()=>{if(scan.value.trim()&&addFromMaster(scan.value)){scan.value='';renderCheckout();}};
+  }
   box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;renderCheckout();});
   box.querySelectorAll('[data-nom]').forEach(b=>b.onclick=()=>{coDraft.nominated=b.dataset.nom==='1';renderCheckout();});
   box.querySelector('#co-cancel').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
   box.querySelector('#co-save').onclick=()=>{
     const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,
-      retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0}))};
+      retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0,productId:i.productId||undefined}))};
     rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
     rec.total=Math.max(0,rec.tech+rec.retail-rec.discount);
     if(rec.total<=0){toast('金額を入力してください',true);return;}
+    const isNew=!coDraft.id;
     if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
+    if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-1);});  // 在庫を自動減算（新規会計のみ）
     if(rec.resvId)setStatus(rec.resvId,'done');
     document.getElementById('checkoutbg').classList.remove('show');
     toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}）`);
@@ -1672,9 +1763,16 @@ function renderReport(){
   const pct=target>0?Math.round(total/target*100):0, remain=Math.max(0,target-total);
   let pace='';
   if(isCurMonth&&total>0){const elapsed=Math.round((new Date(tkR)-new Date(repFrom))/86400000)+1, totalDays=new Date(fD.getFullYear(),fD.getMonth()+1,0).getDate(), proj=Math.round(total/elapsed*totalDays);pace=`　着地見込み <b>¥${proj.toLocaleString()}</b>（目標比 ${target>0?Math.round(proj/target*100):0}%）`;}
+  // 前年同月比
+  let yoyHtml='';
+  if(isFullMonth){
+    const lyF=dkey(new Date(fD.getFullYear()-1,fD.getMonth(),1)), lyT=dkey(new Date(fD.getFullYear()-1,fD.getMonth()+1,0));
+    const ly=db.checkouts.filter(c=>c.date>=lyF&&c.date<=lyT).reduce((a,c)=>a+c.total,0);
+    yoyHtml=`<div class="tgt-yoy">前年同月（${fD.getFullYear()-1}年${fD.getMonth()+1}月）　${ly>0?`¥${ly.toLocaleString()}　前年比 <b class="${total>=ly?'txt-ok':'txt-short'}">${Math.round(total/ly*100)}%</b>（${total-ly>=0?'+':'−'}¥${Math.abs(total-ly).toLocaleString()}）`:'<span style="color:var(--sub)">データなし</span>'}</div>`;
+  }
   const tgtCard=`<div class="card tgt-card"><div class="rep-h"><h3>月間目標</h3><span class="co-y">目標 ¥<input id="tgt-input" type="number" inputmode="numeric" value="${target||''}" placeholder="0"></span></div>`+
     (target>0&&isFullMonth?`<div class="tgt-bar"><span style="width:${Math.min(100,pct)}%" class="${pct>=100?'done':''}"></span></div><div class="tgt-stats">達成率 <b class="${pct>=100?'txt-ok':''}">${pct}%</b>　実績 ¥${total.toLocaleString()} / 目標 ¥${target.toLocaleString()}　残り ¥${remain.toLocaleString()}${pace}</div>`
-      :`<div class="tgt-stats" style="color:var(--sub)">「今月／先月」を選び目標額を入れると、達成率と着地見込みを表示します</div>`)+`</div>`;
+      :`<div class="tgt-stats" style="color:var(--sub)">「今月／先月」を選び目標額を入れると、達成率と着地見込みを表示します</div>`)+yoyHtml+`</div>`;
   // ② 歩合給（指名技術／フリー技術／店販に率を掛けて自動計算）
   const rNom=stgN('commTechNom',40), rFree=stgN('commTechFree',30), rRet=stgN('commRetail',10);
   const comm=d=>Math.round(d.techNom*rNom/100+d.techFree*rFree/100+d.retail*rRet/100);
@@ -1701,6 +1799,25 @@ function downloadCSV(filename,rows){
 document.querySelectorAll('#rep-period [data-p]').forEach(b=>b.onclick=()=>setReportPeriod(b.dataset.p));
 document.getElementById('rep-from').onchange=e=>{repFrom=e.target.value;renderReport();};
 document.getElementById('rep-to').onchange=e=>{repTo=e.target.value;renderReport();};
+
+/* ===== 店販の商品マスタ・在庫 ===== */
+function renderProducts(){
+  const body=document.getElementById('productsbody'); if(!body)return;
+  const ps=(db.products||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  const money=n=>'¥'+(n||0).toLocaleString();
+  const lowN=ps.filter(p=>(p.stock||0)<=3).length;
+  const rows=ps.map(p=>{const low=(p.stock||0)<=3;return `<div class="prod-row"><div class="pr-main"><div class="pr-name">${(p.name||'').replace(/</g,'&lt;')}</div><div class="pr-sub">${money(p.price)}${p.barcode?`　｜　${p.barcode}`:''}</div></div><div class="pr-stock"><button class="pr-mn" data-adj="-1" data-id="${p.id}">−</button><span class="pr-num ${low?'low':''}">${p.stock||0}</span><button class="pr-mn" data-adj="1" data-id="${p.id}">＋</button></div><button class="pr-del" data-del="${p.id}" aria-label="削除">✕</button></div>`;}).join('');
+  body.innerHTML=`<div class="card reg-sec"><div class="rep-h"><h3>商品一覧（${ps.length}）${lowN?`<span class="pr-lowbadge">在庫わずか ${lowN}</span>`:''}</h3></div>${ps.length?rows:'<div class="co-empty">まだ商品がありません。上のフォームから追加してください</div>'}</div>`;
+  body.querySelectorAll('[data-adj]').forEach(b=>b.onclick=()=>adjustStock(b.dataset.id,+b.dataset.adj));
+  body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('この商品を削除しますか？'))removeProduct(b.dataset.del);});
+}
+document.getElementById('pf-add').onclick=()=>{
+  const name=document.getElementById('pf-name').value.trim();
+  if(!name){toast('商品名を入力してください',true);return;}
+  addProduct({name,price:+document.getElementById('pf-price').value||0,barcode:document.getElementById('pf-barcode').value.trim(),stock:+document.getElementById('pf-stock').value||0,active:1});
+  ['pf-name','pf-price','pf-barcode','pf-stock'].forEach(id=>document.getElementById(id).value='');
+  toast('商品を追加しました');
+};
 
 /* =============== customer booking flow =============== */
 let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
@@ -2495,8 +2612,8 @@ function renderAnalytics(){
     <div class="an-sub">スタッフ別売上</div>${staffRows}
     <div class="an-sub">人気メニュー</div>${topMenus.length?topMenus.map(([n,c],i)=>`<div class="an-row"><span class="an-l">${i+1}. ${n}</span><span class="an-v">${c}件</span></div>`).join(''):'<div style="font-size:12px;color:var(--sub)">データなし</div>'}`;
 }
-function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();if(bk.step===2)renderBook()}
-renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();
+function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();if(bk.step===2)renderBook()}
+renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();
 document.getElementById('cust-search').oninput=renderCustomers;
 // D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
 syncFromD1();

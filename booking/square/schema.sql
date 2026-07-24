@@ -59,8 +59,19 @@ CREATE TABLE IF NOT EXISTS settlements (
   closed_at     TEXT
 );
 
--- 設定（key/value）。cashFloat（釣銭準備金の既定値）などを端末間で共有。
+-- 設定（key/value）。cashFloat（釣銭準備金の既定値）・monthlyTarget・歩合率などを端末間で共有。
 CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,
   value TEXT
+);
+
+-- 店販の商品マスタ（バーコード・在庫）。id はクライアント生成。
+CREATE TABLE IF NOT EXISTS products (
+  id         TEXT PRIMARY KEY,
+  name       TEXT,
+  price      INTEGER DEFAULT 0,
+  barcode    TEXT DEFAULT '',       -- JAN等（キーボードウェッジ式スキャナ入力）
+  stock      INTEGER DEFAULT 0,     -- 在庫数（会計で自動減算）
+  active     INTEGER DEFAULT 1,
+  created_at TEXT
 );

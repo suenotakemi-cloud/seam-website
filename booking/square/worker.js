@@ -100,6 +100,9 @@ export default {
     if (p.endsWith('/settlements') && m === 'DELETE') return handleDeleteSettlement(url, env, cors);
     if (p.endsWith('/settings') && m === 'GET') return handleGetSettings(env, cors);
     if (p.endsWith('/settings') && m === 'POST') return handlePostSetting(request, env, cors);
+    if (p.endsWith('/products') && m === 'GET') return handleGetProducts(url, env, cors);
+    if (p.endsWith('/products') && m === 'POST') return handlePostProduct(request, env, cors);
+    if (p.endsWith('/products') && m === 'DELETE') return handleDeleteProduct(url, env, cors);
     return json({ error: 'Not found' }, 404, cors);
   },
 
@@ -422,6 +425,7 @@ async function ensureRegisterTables(env) {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_co_date ON checkouts(date)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS settlements (date TEXT PRIMARY KEY, float INTEGER DEFAULT 0, cash_sales INTEGER DEFAULT 0, expected_cash INTEGER DEFAULT 0, counted_cash INTEGER DEFAULT 0, diff INTEGER DEFAULT 0, card INTEGER DEFAULT 0, qr INTEGER DEFAULT 0, total INTEGER DEFAULT 0, count INTEGER DEFAULT 0, memo TEXT DEFAULT '', closed_at TEXT)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, name TEXT, price INTEGER DEFAULT 0, barcode TEXT DEFAULT '', stock INTEGER DEFAULT 0, active INTEGER DEFAULT 1, created_at TEXT)`),
   ]);
   // 既存DBへの列追加（SQLiteはIF NOT EXISTS非対応→重複はcatchで無視）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN nominated INTEGER DEFAULT 0`).run(); } catch (e) {}
@@ -496,6 +500,31 @@ async function handleDeleteSettlement(url, env, cors) {
   const date = url.searchParams.get('date');
   if (!date) return json({ error: 'date は必須' }, 400, cors);
   await env.DB.prepare('DELETE FROM settlements WHERE date=?').bind(date).run();
+  return json({ ok: true }, 200, cors);
+}
+const PR2API = r => ({ id: r.id, name: r.name || '', price: r.price || 0, barcode: r.barcode || '', stock: r.stock || 0, active: r.active == null ? 1 : r.active });
+async function handleGetProducts(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const res = await env.DB.prepare('SELECT * FROM products ORDER BY name').all();
+  return json({ ok: true, products: (res.results || []).map(PR2API) }, 200, cors);
+}
+async function handlePostProduct(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.id) return json({ error: 'id は必須' }, 400, cors);
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO products (id,name,price,barcode,stock,active,created_at) VALUES (?,?,?,?,?,?,?)`
+  ).bind(o.id, o.name || '', o.price || 0, o.barcode || '', o.stock || 0, o.active == null ? 1 : (o.active ? 1 : 0), o.createdAt || new Date().toISOString()).run();
+  return json({ ok: true, id: o.id }, 200, cors);
+}
+async function handleDeleteProduct(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const id = url.searchParams.get('id');
+  if (!id) return json({ error: 'id は必須' }, 400, cors);
+  await env.DB.prepare('DELETE FROM products WHERE id=?').bind(id).run();
   return json({ ok: true }, 200, cors);
 }
 async function handleGetSettings(env, cors) {
