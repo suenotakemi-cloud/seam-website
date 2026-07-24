@@ -91,6 +91,15 @@ export default {
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors);
     if (p.endsWith('/reservations') && m === 'PATCH') return handlePatchReservation(request, env, cors);
     if (p.endsWith('/reservations') && m === 'DELETE') return handleDeleteReservation(url, env, cors);
+    // レジ・会計（お会計・レジ締め）D1永続化
+    if (p.endsWith('/checkouts') && m === 'GET') return handleGetCheckouts(url, env, cors);
+    if (p.endsWith('/checkouts') && m === 'POST') return handlePostCheckout(request, env, cors);
+    if (p.endsWith('/checkouts') && m === 'DELETE') return handleDeleteCheckout(url, env, cors);
+    if (p.endsWith('/settlements') && m === 'GET') return handleGetSettlements(url, env, cors);
+    if (p.endsWith('/settlements') && m === 'POST') return handlePostSettlement(request, env, cors);
+    if (p.endsWith('/settlements') && m === 'DELETE') return handleDeleteSettlement(url, env, cors);
+    if (p.endsWith('/settings') && m === 'GET') return handleGetSettings(env, cors);
+    if (p.endsWith('/settings') && m === 'POST') return handlePostSetting(request, env, cors);
     return json({ error: 'Not found' }, 404, cors);
   },
 
@@ -400,6 +409,106 @@ async function handleDeleteReservation(url, env, cors) {
     } catch (e) { console.log('salon削除同期失敗:', e.message); }
   }
   await env.DB.prepare('DELETE FROM reservations WHERE id=?').bind(id).run();
+  return json({ ok: true }, 200, cors);
+}
+
+/* ---------- レジ・会計（お会計・レジ締め）D1 ---------- */
+// テーブルを遅延作成（CREATE TABLE IF NOT EXISTS・インスタンスごと1回）。手動マイグレーション不要。
+let _regTablesReady = false;
+async function ensureRegisterTables(env) {
+  if (_regTablesReady) return;
+  await env.DB.batch([
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS checkouts (id TEXT PRIMARY KEY, resv_id TEXT DEFAULT '', date TEXT NOT NULL, staff_id TEXT DEFAULT '', customer TEXT DEFAULT '', tech INTEGER DEFAULT 0, retail INTEGER DEFAULT 0, retail_items TEXT DEFAULT '[]', discount INTEGER DEFAULT 0, total INTEGER DEFAULT 0, method TEXT DEFAULT 'cash', created_at TEXT)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_co_date ON checkouts(date)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS settlements (date TEXT PRIMARY KEY, float INTEGER DEFAULT 0, cash_sales INTEGER DEFAULT 0, expected_cash INTEGER DEFAULT 0, counted_cash INTEGER DEFAULT 0, diff INTEGER DEFAULT 0, card INTEGER DEFAULT 0, qr INTEGER DEFAULT 0, total INTEGER DEFAULT 0, count INTEGER DEFAULT 0, memo TEXT DEFAULT '', closed_at TEXT)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`),
+  ]);
+  _regTablesReady = true;
+}
+const CO2API = r => ({
+  id: r.id, resvId: r.resv_id || '', date: r.date, staffId: r.staff_id || '', customer: r.customer || '',
+  tech: r.tech || 0, retail: r.retail || 0, retailItems: (() => { try { return JSON.parse(r.retail_items || '[]'); } catch { return []; } })(),
+  discount: r.discount || 0, total: r.total || 0, method: r.method || 'cash', at: r.created_at || '',
+});
+const ST2API = r => ({
+  date: r.date, float: r.float || 0, cashSales: r.cash_sales || 0, expectedCash: r.expected_cash || 0,
+  countedCash: r.counted_cash || 0, diff: r.diff || 0, card: r.card || 0, qr: r.qr || 0, total: r.total || 0,
+  count: r.count || 0, memo: r.memo || '', closedAt: r.closed_at || '',
+});
+
+async function handleGetCheckouts(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const from = url.searchParams.get('from'), to = url.searchParams.get('to') || from;
+  const q = from
+    ? env.DB.prepare('SELECT * FROM checkouts WHERE date BETWEEN ? AND ? ORDER BY created_at').bind(from, to)
+    : env.DB.prepare('SELECT * FROM checkouts ORDER BY created_at');
+  const res = await q.all();
+  return json({ ok: true, checkouts: (res.results || []).map(CO2API) }, 200, cors);
+}
+async function handlePostCheckout(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.id || !o.date) return json({ error: 'id/date は必須' }, 400, cors);
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO checkouts (id,resv_id,date,staff_id,customer,tech,retail,retail_items,discount,total,method,created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(o.id, o.resvId || '', o.date, o.staffId || '', o.customer || '', o.tech || 0, o.retail || 0,
+    JSON.stringify(o.retailItems || []), o.discount || 0, o.total || 0, o.method || 'cash', o.at || new Date().toISOString()).run();
+  return json({ ok: true, id: o.id }, 200, cors);
+}
+async function handleDeleteCheckout(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const id = url.searchParams.get('id');
+  if (!id) return json({ error: 'id は必須' }, 400, cors);
+  await env.DB.prepare('DELETE FROM checkouts WHERE id=?').bind(id).run();
+  return json({ ok: true }, 200, cors);
+}
+async function handleGetSettlements(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const from = url.searchParams.get('from'), to = url.searchParams.get('to') || from;
+  const q = from
+    ? env.DB.prepare('SELECT * FROM settlements WHERE date BETWEEN ? AND ? ORDER BY date').bind(from, to)
+    : env.DB.prepare('SELECT * FROM settlements ORDER BY date');
+  const res = await q.all();
+  return json({ ok: true, settlements: (res.results || []).map(ST2API) }, 200, cors);
+}
+async function handlePostSettlement(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.date) return json({ error: 'date は必須' }, 400, cors);
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO settlements (date,float,cash_sales,expected_cash,counted_cash,diff,card,qr,total,count,memo,closed_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(o.date, o.float || 0, o.cashSales || 0, o.expectedCash || 0, o.countedCash || 0, o.diff || 0,
+    o.card || 0, o.qr || 0, o.total || 0, o.count || 0, o.memo || '', o.closedAt || new Date().toISOString()).run();
+  return json({ ok: true }, 200, cors);
+}
+async function handleDeleteSettlement(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const date = url.searchParams.get('date');
+  if (!date) return json({ error: 'date は必須' }, 400, cors);
+  await env.DB.prepare('DELETE FROM settlements WHERE date=?').bind(date).run();
+  return json({ ok: true }, 200, cors);
+}
+async function handleGetSettings(env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const res = await env.DB.prepare('SELECT * FROM settings').all();
+  const out = {}; for (const r of (res.results || [])) out[r.key] = r.value;
+  return json({ ok: true, settings: out }, 200, cors);
+}
+async function handlePostSetting(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.key) return json({ error: 'key は必須' }, 400, cors);
+  await env.DB.prepare('INSERT OR REPLACE INTO settings (key,value) VALUES (?,?)').bind(o.key, String(o.value ?? '')).run();
   return json({ ok: true }, 200, cors);
 }
 

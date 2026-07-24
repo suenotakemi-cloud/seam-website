@@ -951,6 +951,15 @@ const API = {
       return r.ok;
     } catch { return null; }
   },
+  // ---- レジ・会計（D1）----
+  async listCheckouts(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts'+(from?`?from=${from}&to=${to||from}`:''));if(!r.ok)return null;const j=await r.json();return j.ok?j.checkouts:null;}catch{return null;} },
+  async saveCheckout(c){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeCheckout(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts?id='+encodeURIComponent(id),{method:'DELETE'});return r.ok;}catch{return null;} },
+  async listSettlements(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements'+(from?`?from=${from}&to=${to||from}`:''));if(!r.ok)return null;const j=await r.json();return j.ok?j.settlements:null;}catch{return null;} },
+  async saveSettlement(s){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeSettlement(date){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements?date='+encodeURIComponent(date),{method:'DELETE'});return r.ok;}catch{return null;} },
+  async getSettings(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings');if(!r.ok)return null;const j=await r.json();return j.ok?j.settings:null;}catch{return null;} },
+  async setSetting(key,value){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,value})});return r.ok;}catch{return null;} },
 };
 
 let db=load();
@@ -976,9 +985,16 @@ if(!db.checkouts)db.checkouts=[];        // 会計 [{id,resvId?,date,staffId,cus
 if(!db.settlements)db.settlements=[];    // レジ締め [{date,float,cashSales,expectedCash,countedCash,diff,card,qr,total,count,closedAt,memo}]
 if(db.cashFloat==null)db.cashFloat=30000;// 釣銭準備金（前日から繰越／既定¥30,000）
 const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},qr:{label:'QR決済',ic:'📱'}};
-function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();return c;}
-function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}}
-function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);save();refreshAll();}
+function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();API.saveCheckout(c);return c;}
+function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}API.saveCheckout(c);}
+function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);save();refreshAll();API.removeCheckout(id);}
+// D1から会計・レジ締め・設定を取得してdbに反映（起動時・非同期）。localStorageで先に表示→D1で上書き。
+async function syncRegisterFromD1(){
+  const co=await API.listCheckouts(); if(co)db.checkouts=co;
+  const st=await API.listSettlements(); if(st)db.settlements=st;
+  const set=await API.getSettings(); if(set&&set.cashFloat!=null&&set.cashFloat!=='')db.cashFloat=+set.cashFloat;
+  if(co||st||set){save();refreshAll();}
+}
 function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
 function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date).sort((a,b)=>a.at<b.at?-1:1);}
 function salesSummary(date){
@@ -988,7 +1004,7 @@ function salesSummary(date){
     tech:sum(c=>c.tech),retail:sum(c=>c.retail),discount:sum(c=>c.discount),avg:cs.length?Math.round(sum(c=>c.total)/cs.length):0};
 }
 function settlementFor(date){return db.settlements.find(s=>s.date===date);}
-function saveSettlement(s){const i=db.settlements.findIndex(x=>x.date===s.date);if(i>=0)db.settlements[i]=s;else db.settlements.push(s);save();refreshAll();}
+function saveSettlement(s){const i=db.settlements.findIndex(x=>x.date===s.date);if(i>=0)db.settlements[i]=s;else db.settlements.push(s);save();refreshAll();API.saveSettlement(s);}
 // ===== キャンセル待ち =====
 function addWaitlist(w){
   w.id='w'+Math.random().toString(36).slice(2,8);w.createdAt=new Date().toISOString();w.notified=false;
@@ -1540,7 +1556,7 @@ function renderRegister(){
     if(cv===''){dr.style.display='none';return;}
     const d=(+cv||0)-exp;dr.style.display='';dv.textContent=(d>0?'+':'')+money(d);dv.className=d===0?'ok':(d<0?'short':'over');
   };
-  const fl=document.getElementById('rz-float');if(fl){fl.oninput=recompute;fl.onchange=e=>{db.cashFloat=+e.target.value||0;save();};}
+  const fl=document.getElementById('rz-float');if(fl){fl.oninput=recompute;fl.onchange=e=>{const v=+e.target.value||0;db.cashFloat=v;save();API.setSetting('cashFloat',v);};}
   const ct=document.getElementById('rz-count');if(ct)ct.oninput=recompute;
   const cl=document.getElementById('rz-close');if(cl)cl.onclick=()=>{
     const cin=document.getElementById('rz-count');if(cin.value===''){toast('実際の現金を入力してください',true);return;}
@@ -1548,7 +1564,7 @@ function renderRegister(){
     saveSettlement({date:dk,float:fv,cashSales:s.cash,expectedCash:fv+s.cash,countedCash:c,diff:c-(fv+s.cash),card:s.card,qr:s.qr,total:s.total,count:s.count,closedAt:new Date().toISOString()});
     toast('レジを締めました');
   };
-  const ro=document.getElementById('rz-reopen');if(ro)ro.onclick=()=>{if(confirm('レジ締めを取り消しますか？')){db.settlements=db.settlements.filter(x=>x.date!==dk);save();renderRegister();}};
+  const ro=document.getElementById('rz-reopen');if(ro)ro.onclick=()=>{if(confirm('レジ締めを取り消しますか？')){db.settlements=db.settlements.filter(x=>x.date!==dk);save();refreshAll();API.removeSettlement(dk);}};
 }
 document.getElementById('reg-prev').onclick=()=>{registerDay=addDays(registerDay,-1);renderRegister();};
 document.getElementById('reg-next').onclick=()=>{registerDay=addDays(registerDay,1);renderRegister();};
@@ -2341,6 +2357,7 @@ renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();r
 document.getElementById('cust-search').oninput=renderCustomers;
 // D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
 syncFromD1();
+syncRegisterFromD1();   // 会計・レジ締め・釣銭準備金をD1から取得（端末間で共有・自動バックアップ）
 document.getElementById('baseurl').oninput=renderLinks;
 if(BOOK_SRC!=='own'){
   const s=document.querySelector('#v-book .phead .s');if(s)s.textContent=CHANNELS[BOOK_SRC].name+'経由 · WEB RESERVATION';
