@@ -4904,7 +4904,7 @@ function stItemUrl(p) {
   return p && p.salonTownItemId ? 'https://salon.town/item/' + encodeURIComponent(p.salonTownItemId) : null;
 }
 function memberPriceTag(p) {
-  return saleNow() && p && p.salonTownItemId ? '会員はサマーセール価格' : 'SEAMメンバーはさらにお得';
+  return saleNow() && p && p.salonTownItemId ? '7/31までスペシャルプライス' : 'SEAMメンバーはさらにお得';
 }
 
 // block.items を best(竹) + alts(価格昇順 最大2) に
@@ -5069,8 +5069,8 @@ function DeepAltCard({
   }, /*#__PURE__*/React.createElement("span", {
     className: "flex items-baseline gap-1.5 min-w-0"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "font-mono tracking-widest2 text-[9px] uppercase whitespace-nowrap " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold")
-  }, saleNow() && p.salonTownItemId ? '会員はサマーセール価格' : 'メンバー特別価格'), altPrice != null && /*#__PURE__*/React.createElement("span", {
+    className: "font-mono tracking-widest2 text-[9px] uppercase " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold whitespace-nowrap")
+  }, saleNow() && p.salonTownItemId ? '7/31までスペシャルプライス' : 'メンバー特別価格'), altPrice != null && /*#__PURE__*/React.createElement("span", {
     className: "font-serif text-[12.5px] text-ink nums whitespace-nowrap"
   }, p.salonTownItemId && /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-widest2 text-[8px] uppercase text-charcoal/45 mr-0.5"

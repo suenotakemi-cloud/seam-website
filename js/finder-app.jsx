@@ -3540,7 +3540,7 @@ const SALE_START_TS = Date.parse('2026-07-01T00:00:00+09:00');
 const SALE_END_TS = Date.parse('2026-08-01T00:00:00+09:00');
 function saleNow(){ const t = Date.now(); return t >= SALE_START_TS && t < SALE_END_TS; }
 function stItemUrl(p){ return (p && p.salonTownItemId) ? ('https://salon.town/item/' + encodeURIComponent(p.salonTownItemId)) : null; }
-function memberPriceTag(p){ return (saleNow() && p && p.salonTownItemId) ? '会員はサマーセール価格' : 'SEAMメンバーはさらにお得'; }
+function memberPriceTag(p){ return (saleNow() && p && p.salonTownItemId) ? '7/31までスペシャルプライス' : 'SEAMメンバーはさらにお得'; }
 
 // block.items を best(竹) + alts(価格昇順 最大2) に
 // 候補はベストと異なるブランドを優先し、ブランド横断比較として成立させる
@@ -3650,7 +3650,7 @@ function DeepAltCard({ item, best }){
       <span className="mt-0.5 font-serif text-[13px] text-ink leading-snug">{p.name}</span>
       <span className="mt-2 flex items-center justify-between gap-2">
         <span className="flex items-baseline gap-1.5 min-w-0">
-          <span className={"font-mono tracking-widest2 text-[9px] uppercase whitespace-nowrap " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold")}>{saleNow() && p.salonTownItemId ? '会員はサマーセール価格' : 'メンバー特別価格'}</span>
+          <span className={"font-mono tracking-widest2 text-[9px] uppercase " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold whitespace-nowrap")}>{saleNow() && p.salonTownItemId ? '7/31までスペシャルプライス' : 'メンバー特別価格'}</span>
           {altPrice != null && <span className="font-serif text-[12.5px] text-ink nums whitespace-nowrap">{p.salonTownItemId && <span className="font-mono tracking-widest2 text-[8px] uppercase text-charcoal/45 mr-0.5">定価</span>}¥{altPrice.toLocaleString()}</span>}
         </span>
         <span className="text-gold group-hover:translate-x-0.5 transition-transform text-[13px]" aria-hidden>↗</span>
