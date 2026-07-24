@@ -505,8 +505,18 @@ td.slot:hover{background:#f0f7ff}
 .rep-t td.b{font-weight:800;color:var(--navy)}
 .rep-t tbody tr:hover td{background:#fafcff}
 .rep-empty{text-align:center;color:var(--sub);padding:16px}
-.txt-short{color:var(--danger)} .txt-over{color:#c47f17}
+.txt-short{color:var(--danger)} .txt-over{color:#c47f17} .txt-ok{color:var(--ok)}
 .rz-carry{font-style:normal;font-size:11px;font-weight:700;color:var(--accent);background:#eef4ff;border-radius:5px;padding:1px 6px;margin-left:4px}
+.tgt-card .co-y input{width:130px;border:1.5px solid var(--line);border-radius:9px;padding:7px 10px;font-size:15px;font-weight:800;text-align:right}
+.tgt-bar{height:12px;border-radius:99px;background:#eef3f8;overflow:hidden;margin:8px 0 10px}
+.tgt-bar>span{display:block;height:100%;background:linear-gradient(90deg,#2f7dd1,#5aa9e6);border-radius:99px;transition:width .3s}
+.tgt-bar>span.done{background:linear-gradient(90deg,#0f9d58,#3ec37a)}
+.tgt-stats{font-size:13px;font-weight:700;color:var(--navy)}
+.tgt-stats>b{font-size:15px}
+.comm-rates{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-size:13px;font-weight:700;color:var(--sub);margin-bottom:12px;background:#f7fafc;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.comm-rates input{width:60px;border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:800;text-align:right}
+.rep-t tr.comm-tot td{border-top:2px solid var(--line);font-weight:800;background:#f7fafc}
+.comm-note{font-size:11.5px;color:var(--sub);margin-top:10px}
 @media(max-width:560px){.rep-cards{grid-template-columns:repeat(2,1fr)}}
 
 /* ═══════════════ SEAM 世界観：お客様予約フロー（白 × ゴールド・上質）※全上書きのため末尾に配置 ═══════════════ */
@@ -1020,6 +1030,10 @@ function staffRating(sid){const rs=publishedReviews().filter(r=>r.staffId===sid)
 if(!db.checkouts)db.checkouts=[];        // 会計 [{id,resvId?,date,staffId,customer,tech,retailItems:[{name,price}],retail,discount,total,method,at}]
 if(!db.settlements)db.settlements=[];    // レジ締め [{date,float,cashSales,expectedCash,countedCash,diff,card,qr,total,count,closedAt,memo}]
 if(db.cashFloat==null)db.cashFloat=30000;// 釣銭準備金（前日から繰越／既定¥30,000）
+if(!db.settings)db.settings={};           // 目標・歩合率など（D1のsettingsテーブルと同期）
+function stg(k,def){const v=db.settings[k];return (v==null||v==='')?def:v;}
+function stgN(k,def){const v=+stg(k,def);return isNaN(v)?def:v;}
+function setStg(k,v){db.settings[k]=String(v);save();API.setSetting(k,v);refreshAll();}
 const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},qr:{label:'QR決済',ic:'📱'}};
 function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();API.saveCheckout(c);return c;}
 function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}API.saveCheckout(c);}
@@ -1028,7 +1042,7 @@ function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);save(
 async function syncRegisterFromD1(){
   const co=await API.listCheckouts(); if(co)db.checkouts=co;
   const st=await API.listSettlements(); if(st)db.settlements=st;
-  const set=await API.getSettings(); if(set&&set.cashFloat!=null&&set.cashFloat!=='')db.cashFloat=+set.cashFloat;
+  const set=await API.getSettings(); if(set){db.settings=set; if(set.cashFloat!=null&&set.cashFloat!=='')db.cashFloat=+set.cashFloat;}
   if(co||st||set){save();refreshAll();}
 }
 function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
@@ -1647,11 +1661,34 @@ function renderReport(){
   const dailyRows=datesDesc.map(dt=>{const d=dmap[dt],set=settlementFor(dt);return `<tr><td>${dt.slice(5).replace('-','/')}(${WD[new Date(dt).getDay()]})</td><td class="num">${d.count}</td><td class="num">${money(d.tech)}</td><td class="num">${money(d.retail)}</td><td class="num">${money(d.cash)}</td><td class="num">${money(d.card)}</td><td class="num">${money(d.qr)}</td><td class="num b">${money(d.total)}</td><td class="num ${set&&set.diff<0?'txt-short':(set&&set.diff>0?'txt-over':'')}">${set?((set.diff>0?'+':'')+money(set.diff)):'—'}</td></tr>`;}).join('');
   const daily=`<div class="card reg-sec"><div class="rep-h"><h3>日別</h3><button class="btn small ghost" id="rep-csv-daily">CSV書き出し</button></div><div class="rep-tw"><table class="rep-t"><thead><tr><th>日付</th><th class="num">会計</th><th class="num">技術</th><th class="num">店販</th><th class="num">現金</th><th class="num">カード</th><th class="num">QR</th><th class="num">合計</th><th class="num">過不足</th></tr></thead><tbody>${dailyRows||'<tr><td colspan="9" class="rep-empty">データがありません</td></tr>'}</tbody></table></div></div>`;
   const smap={};
-  cs.forEach(c=>{const k=c.staffId||'-';const d=smap[k]||(smap[k]={count:0,tech:0,retail:0,total:0,nom:0});d.count++;d.tech+=c.tech;d.retail+=c.retail;d.total+=c.total;if(c.nominated)d.nom++;});
+  cs.forEach(c=>{const k=c.staffId||'-';const d=smap[k]||(smap[k]={count:0,tech:0,retail:0,total:0,nom:0,techNom:0,techFree:0});d.count++;d.tech+=c.tech;d.retail+=c.retail;d.total+=c.total;if(c.nominated){d.nom++;d.techNom+=c.tech;}else{d.techFree+=c.tech;}});
   const staffKeys=Object.keys(smap).sort((a,b)=>smap[b].total-smap[a].total);
   const staffRows=staffKeys.map(k=>{const d=smap[k],st=STAFF.find(x=>x.id===k);return `<tr><td>${st?st.name:k}</td><td class="num">${d.count}</td><td class="num">${money(d.tech)}</td><td class="num">${money(d.retail)}</td><td class="num b">${money(d.total)}</td><td class="num">${money(d.count?Math.round(d.total/d.count):0)}</td><td class="num">${d.nom}</td><td class="num">${d.count?Math.round(d.nom/d.count*100):0}%</td></tr>`;}).join('');
   const staff=`<div class="card reg-sec"><div class="rep-h"><h3>スタッフ別</h3><button class="btn small ghost" id="rep-csv-staff">CSV書き出し</button></div><div class="rep-tw"><table class="rep-t"><thead><tr><th>スタッフ</th><th class="num">会計</th><th class="num">技術</th><th class="num">店販</th><th class="num">売上</th><th class="num">客単価</th><th class="num">指名</th><th class="num">指名率</th></tr></thead><tbody>${staffRows||'<tr><td colspan="8" class="rep-empty">データがありません</td></tr>'}</tbody></table></div></div>`;
-  body.innerHTML=summary+daily+staff;
+  // ① 月間目標（暦月選択時に達成率・着地見込み）
+  const target=stgN('monthlyTarget',0), fD=new Date(repFrom);
+  const isFullMonth=repFrom===dkey(new Date(fD.getFullYear(),fD.getMonth(),1))&&repTo===dkey(new Date(fD.getFullYear(),fD.getMonth()+1,0));
+  const tkR=dkey(today()), isCurMonth=isFullMonth&&repFrom<=tkR&&tkR<=repTo;
+  const pct=target>0?Math.round(total/target*100):0, remain=Math.max(0,target-total);
+  let pace='';
+  if(isCurMonth&&total>0){const elapsed=Math.round((new Date(tkR)-new Date(repFrom))/86400000)+1, totalDays=new Date(fD.getFullYear(),fD.getMonth()+1,0).getDate(), proj=Math.round(total/elapsed*totalDays);pace=`　着地見込み <b>¥${proj.toLocaleString()}</b>（目標比 ${target>0?Math.round(proj/target*100):0}%）`;}
+  const tgtCard=`<div class="card tgt-card"><div class="rep-h"><h3>月間目標</h3><span class="co-y">目標 ¥<input id="tgt-input" type="number" inputmode="numeric" value="${target||''}" placeholder="0"></span></div>`+
+    (target>0&&isFullMonth?`<div class="tgt-bar"><span style="width:${Math.min(100,pct)}%" class="${pct>=100?'done':''}"></span></div><div class="tgt-stats">達成率 <b class="${pct>=100?'txt-ok':''}">${pct}%</b>　実績 ¥${total.toLocaleString()} / 目標 ¥${target.toLocaleString()}　残り ¥${remain.toLocaleString()}${pace}</div>`
+      :`<div class="tgt-stats" style="color:var(--sub)">「今月／先月」を選び目標額を入れると、達成率と着地見込みを表示します</div>`)+`</div>`;
+  // ② 歩合給（指名技術／フリー技術／店販に率を掛けて自動計算）
+  const rNom=stgN('commTechNom',40), rFree=stgN('commTechFree',30), rRet=stgN('commRetail',10);
+  const comm=d=>Math.round(d.techNom*rNom/100+d.techFree*rFree/100+d.retail*rRet/100);
+  const commRows=staffKeys.map(k=>{const d=smap[k],st=STAFF.find(x=>x.id===k);return `<tr><td>${st?st.name:k}</td><td class="num">${money(d.techNom)}</td><td class="num">${money(d.techFree)}</td><td class="num">${money(d.retail)}</td><td class="num b">${money(comm(d))}</td></tr>`;}).join('');
+  const commTotal=staffKeys.reduce((a,k)=>a+comm(smap[k]),0);
+  const commSec=`<div class="card reg-sec"><div class="rep-h"><h3>歩合給</h3><button class="btn small ghost" id="rep-csv-comm">CSV書き出し</button></div>
+    <div class="comm-rates">指名技術 <span class="co-y"><input id="cr-nom" type="number" value="${rNom}">%</span>　フリー技術 <span class="co-y"><input id="cr-free" type="number" value="${rFree}">%</span>　店販 <span class="co-y"><input id="cr-ret" type="number" value="${rRet}">%</span></div>
+    <div class="rep-tw"><table class="rep-t"><thead><tr><th>スタッフ</th><th class="num">指名技術</th><th class="num">フリー技術</th><th class="num">店販</th><th class="num">歩合給</th></tr></thead><tbody>${commRows||'<tr><td colspan="5" class="rep-empty">データがありません</td></tr>'}${staffKeys.length?`<tr class="comm-tot"><td>合計</td><td class="num">${money(sum(c=>c.nominated?c.tech:0))}</td><td class="num">${money(sum(c=>c.nominated?0:c.tech))}</td><td class="num">${money(sum(c=>c.retail))}</td><td class="num b">${money(commTotal)}</td></tr>`:''}</tbody></table></div>
+    <p class="comm-note">歩合給 ＝ 指名技術×${rNom}% ＋ フリー技術×${rFree}% ＋ 店販×${rRet}%（率は保存され全端末で共有）</p></div>`;
+  body.innerHTML=summary+tgtCard+daily+staff+commSec;
+  {const ti=document.getElementById('tgt-input');if(ti)ti.onchange=e=>setStg('monthlyTarget',+e.target.value||0);}
+  {const a=document.getElementById('cr-nom'),b=document.getElementById('cr-free'),c=document.getElementById('cr-ret');
+   if(a)a.onchange=e=>setStg('commTechNom',+e.target.value||0);if(b)b.onchange=e=>setStg('commTechFree',+e.target.value||0);if(c)c.onchange=e=>setStg('commRetail',+e.target.value||0);}
+  {const cb=document.getElementById('rep-csv-comm');if(cb)cb.onclick=()=>{const rows=[['スタッフ','指名技術','フリー技術','店販',`歩合給(指${rNom}/フ${rFree}/販${rRet}%)`]];staffKeys.forEach(k=>{const d=smap[k],st=STAFF.find(x=>x.id===k);rows.push([st?st.name:k,d.techNom,d.techFree,d.retail,comm(d)]);});downloadCSV(`SEAM銀座_歩合給_${repFrom}_${repTo}.csv`,rows);};}
   document.getElementById('rep-csv-daily').onclick=()=>{const rows=[['日付','曜日','会計数','技術','店販','現金','カード','QR','合計','過不足']];datesDesc.slice().reverse().forEach(dt=>{const d=dmap[dt],set=settlementFor(dt);rows.push([dt,WD[new Date(dt).getDay()],d.count,d.tech,d.retail,d.cash,d.card,d.qr,d.total,set?set.diff:'']);});downloadCSV(`SEAM銀座_日別売上_${repFrom}_${repTo}.csv`,rows);};
   document.getElementById('rep-csv-staff').onclick=()=>{const rows=[['スタッフ','会計数','技術','店販','売上','客単価','指名数','指名率%']];staffKeys.forEach(k=>{const d=smap[k],st=STAFF.find(x=>x.id===k);rows.push([st?st.name:k,d.count,d.tech,d.retail,d.total,d.count?Math.round(d.total/d.count):0,d.nom,d.count?Math.round(d.nom/d.count*100):0]);});downloadCSV(`SEAM銀座_スタッフ別売上_${repFrom}_${repTo}.csv`,rows);};
 }
@@ -2222,7 +2259,7 @@ function buildCustomers(){
   const map={};
   db.reservations.filter(r=>r.status!=='cancelled').forEach(r=>{
     const k=custKey(r);
-    const c=map[k]||(map[k]={key:k,name:r.name,phone:r.phone||'',visits:0,first:r.date,last:r.date,menus:{},staff:{},channels:new Set(),spend:0,note:'',line:false,lineUserId:'',email:''});
+    const c=map[k]||(map[k]={key:k,name:r.name,phone:r.phone||'',visits:0,first:r.date,last:r.date,menus:{},staff:{},channels:new Set(),spend:0,sales:0,paidVisits:0,note:'',line:false,lineUserId:'',email:''});
     c.visits++;
     if(r.phone&&!c.phone)c.phone=r.phone;
     if(r.date<c.first)c.first=r.date;
@@ -2233,6 +2270,15 @@ function buildCustomers(){
     if(r.note)c.note=r.note;
     if(r.lineUserId)c.line=true;
   });
+  // 実績売上(LTV): お会計を予約経由(resvId)または氏名でお客様に紐付け
+  (db.checkouts||[]).forEach(co=>{
+    let k=null;
+    if(co.resvId){const r=db.reservations.find(x=>x.id===co.resvId);if(r)k=custKey(r);}
+    if(!k&&co.customer){const r=db.reservations.find(x=>x.name===co.customer);k=r?custKey(r):('n:'+co.customer);}
+    if(!k)return;
+    const c=map[k];if(!c)return;   // 予約のない飛び込み客はカルテ未作成のため対象外
+    c.sales+=co.total;c.paidVisits++;
+  });
   return Object.values(map).sort((a,b)=>a.last<b.last?1:-1);
 }
 function renderCustomers(){
@@ -2241,7 +2287,7 @@ function renderCustomers(){
   const rep=all.filter(c=>c.visits>=2).length;
   document.getElementById('c-repeat').textContent=rep;
   document.getElementById('c-rate').textContent=(all.length?Math.round(rep/all.length*100):0)+'%';
-  document.getElementById('c-sales').textContent='¥'+all.reduce((s,c)=>s+c.spend,0).toLocaleString();
+  document.getElementById('c-sales').textContent='¥'+all.reduce((s,c)=>s+(c.paidVisits>0?c.sales:c.spend),0).toLocaleString();
   const q=(document.getElementById('cust-search').value||'').trim();
   const nq=q.replace(/[^0-9]/g,'');
   const list=q?all.filter(c=>c.name.includes(q)||(nq&&c.phone.replace(/[^0-9]/g,'').includes(nq))):all;
@@ -2255,7 +2301,7 @@ function renderCustomers(){
     return `<div class="custrow" data-key="${c.key}">
       <div class="cust-main"><div class="cust-name">${c.name} ${badge}${li}</div>
         <div class="cust-sub">${c.phone||'電話未登録'}　最終 ${c.last.replace(/-/g,'/')}　${tm}${ts?' / '+ts:''}</div></div>
-      <div class="cust-right"><span class="cust-chans">${chans}</span><span class="cust-spend">¥${c.spend.toLocaleString()}</span></div>
+      <div class="cust-right"><span class="cust-chans">${chans}</span>${c.paidVisits>0?`<span class="cust-spend">¥${c.sales.toLocaleString()}</span>`:`<span class="cust-spend" style="color:var(--sub);font-weight:600">¥${c.spend.toLocaleString()}<small style="font-size:9px"> 目安</small></span>`}</div>
     </div>`;
   }).join('');
   el.querySelectorAll('.custrow').forEach(row=>row.onclick=()=>openCustomer(row.dataset.key));
@@ -2269,7 +2315,9 @@ function openCustomer(key){
     return `<div class="chist"><span class="chist-d">${r.date.replace(/-/g,'/')} ${hm(r.start)}</span><span class="chist-m">${m?m.name:''}${s?' / '+s.name:''}</span><span class="badge" style="background:${ch?ch.color:'#999'}">${ch?ch.short:'—'}</span><span class="stbadge st-${r.status}" style="font-size:10px">${STATUS_LABEL[r.status]}</span>${note}</div>`;
   }).join('');
   document.getElementById('detailmodal').innerHTML=`<h3>${c.name} 様のカルテ</h3>
-    <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd><dt>累計売上</dt><dd>¥${c.spend.toLocaleString()}</dd><dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${c.note}</dd>`:''}</dl>
+    <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd>
+      <dt>累計売上 (LTV)</dt><dd>${c.paidVisits>0?`<b style="color:var(--navy)">¥${c.sales.toLocaleString()}</b>　<span style="color:var(--sub);font-size:12px">会計${c.paidVisits}回・平均 ¥${Math.round(c.sales/c.paidVisits).toLocaleString()}</span>`:`<span style="color:var(--sub)">会計記録なし（目安 ¥${c.spend.toLocaleString()}）</span>`}</dd>
+      <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${c.note}</dd>`:''}</dl>
     <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">来店履歴</div>
     <div class="chistwrap">${hist}</div>
     <div class="row"><button class="btn ghost" style="flex:1" id="cd-close">閉じる</button></div>`;
