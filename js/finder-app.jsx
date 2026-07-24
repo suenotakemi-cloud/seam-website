@@ -306,7 +306,8 @@ const Q = [
     title: 'スタイリングで、なりたい仕上がりは？',
     note: '当てはまるものをすべて選んでください。仕上げの一本をご提案します。',
     options: [
-      { v: 'shine',  label: 'ツヤ・濡れ感を出したい',           score: {} },
+      { v: 'shine',  label: 'ツヤを出したい',                   score: {} },
+      { v: 'wet',    label: '濡れ感を出したい',                 score: {} },
       { v: 'tame',   label: '広がり・うねりをまとめたい',       score: {} },
       { v: 'curl',   label: 'パーマ・くせの動きを活かしたい',   score: {} },
       { v: 'hold',   label: '巻き・カールを長くキープしたい',   score: {} },
@@ -2102,7 +2103,8 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
         p.id === 'colormotion-luminous-spray') b += 18;
 
     // ── 仕上がり意図(stylingFinish) — 全員共通 ──
-    if (sf.includes('shine')  && (st === 'oil' || st === 'shine-spray' || st === 'gel'))   b += 16;
+    if (sf.includes('shine')  && (st === 'shine-spray' || st === 'gel' || st === 'oil-light')) b += 16;
+    if (sf.includes('wet')    && (st === 'oil' || st === 'gel' || st === 'balm'))              b += 16;
     if (sf.includes('tame')   && (st === 'balm' || st === 'oil' || st === 'cream'))         b += 16;
     if (sf.includes('curl')   && (st === 'mousse' || st === 'seasalt'))                     b += 24;
     if (sf.includes('hold')   &&  st === 'hold-spray')                                      b += 24;

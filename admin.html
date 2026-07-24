@@ -202,7 +202,7 @@
   var PERMTYPE = {normal:'通常パーマ',digital:'デジタルパーマ',both:'両方経験',unknown:'わからない'};
   var STRAIGHTEN = {none:'していない',yearly:'年1回程度',biannual:'半年に1回',quarterly:'3ヶ月に1回',frequent:'2ヶ月に1回以上',kaizen:'髪質改善(トリートメント系)',past:'過去にしていた'};
   var PERMLOOSE = {veryEasy:'とてもだれやすい',easy:'ややだれやすい',normal:'ふつう',keep:'保ちやすい'};
-  var SFIN = {shine:'ツヤ・濡れ感',tame:'広がりをまとめたい',curl:'パーマ・くせを活かす',hold:'巻き・カールをキープ',volume:'根元ふんわり',matte:'マット束感',light:'軽くベタつかせない',none:'使わない'};
+  var SFIN = {shine:'ツヤ',wet:'濡れ感',tame:'広がりをまとめたい',curl:'パーマ・くせを活かす',hold:'巻き・カールをキープ',volume:'根元ふんわり',matte:'マット束感',light:'軽くベタつかせない',none:'使わない'};
   var MSTY = {wax:'ワックス',gel:'ジェル',grease:'グリース・ポマード',cream:'クリーム・ムーブ系',oil:'オイル',balm:'バーム',spray:'スプレー',none:'決めていない'};
   var SCALPT = {dry:'乾燥しやすい',tendDry:'やや乾燥',normal:'ふつう',tendOily:'ややベタつき',oily:'ベタつきやすい'};
   var GRAYFREQ = {half:'半月に1回',three:'3週間に1回',monthly:'1ヶ月に1回',six:'1.5ヶ月に1回',two:'2ヶ月に1回',over:'それ以上'};
@@ -291,7 +291,7 @@
         stHiddenN:Math.round(n*.04),
         thicknessTotal:{thin:Math.round(n*.30),normal:Math.round(n*.46),thick:Math.round(n*.24)},
         thicknessWave:{thin:{none:88,kuse:104,straightened:31},normal:{none:132,kuse:158,straightened:56},thick:{none:53,kuse:99,straightened:24}},
-        stylingFinishTotal:{tame:Math.round(n*.34),shine:Math.round(n*.30),light:Math.round(n*.22),hold:Math.round(n*.17),volume:Math.round(n*.14),curl:Math.round(n*.12),matte:Math.round(n*.07),none:Math.round(n*.16)},
+        stylingFinishTotal:{tame:Math.round(n*.34),shine:Math.round(n*.24),wet:Math.round(n*.15),light:Math.round(n*.22),hold:Math.round(n*.17),volume:Math.round(n*.14),curl:Math.round(n*.12),matte:Math.round(n*.07),none:Math.round(n*.16)},
         menStylingTotal:{wax:44,balm:28,grease:19,gel:14,cream:13,oil:11,spray:9,none:12},
         toolsTotal:{ironWeekly:Math.round(n*.24),curlerWeekly:Math.round(n*.19),ironDaily:Math.round(n*.17),curlerDaily:Math.round(n*.11),bangsDaily:Math.round(n*.12),rare:Math.round(n*.33)},
         tempTotal:{t160:Math.round(n*.28),t180:Math.round(n*.21),t140:Math.round(n*.08),t200:Math.round(n*.05),tUnknown:Math.round(n*.10)},
@@ -638,7 +638,7 @@
         subhead('種類・持ち') + objRows(P.permTypeTotal, PERMTYPE) + objRows(P.permLooseTotal, PERMLOOSE) +
         noteLine('カール需要の先行指標=「カール意欲」 実績指標=「現役率」— スタイリング剤開発と仕入れの両にらみで')) +
       '<div class="card panel"'+full+'><h2><span class="eyebrow">Trend</span>月次トレンド（該当率の推移）</h2>'+trendSvg(P.monthly)+'</div>' +
-      panel('Styling','スタイリングで なりたい仕上がり（複数選択）', objRows(P.stylingFinishTotal, SFIN, P.n) + noteLine('スタイリング剤開発の需要マップ — 「ツヤ・濡れ感」「キープ」等の伸びに注目')) +
+      panel('Styling','スタイリングで なりたい仕上がり（複数選択）', objRows(P.stylingFinishTotal, SFIN, P.n) + noteLine('スタイリング剤開発の需要マップ — 「ツヤ」「濡れ感」「キープ」等の伸びに注目')) +
       panel('Men','男性のスタイリング剤（使用・気になる）', objRows(P.menStylingTotal, MSTY) + noteLine('男性回答者内の構成比（男性のみに表示される質問）')) +
       panel('Heat','熱ツールの使い方', objRows(P.toolsTotal, TOOLS, P.n) + subhead('設定温度') + objRows(P.tempTotal, TEMPL)) +
       panel('Hair Map','髪質マップ（太さ × くせ）', heatTable(['thin','normal','thick'], THICK, P.thicknessWave,

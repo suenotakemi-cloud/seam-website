@@ -865,7 +865,11 @@ const Q = [{
   note: '当てはまるものをすべて選んでください。仕上げの一本をご提案します。',
   options: [{
     v: 'shine',
-    label: 'ツヤ・濡れ感を出したい',
+    label: 'ツヤを出したい',
+    score: {}
+  }, {
+    v: 'wet',
+    label: '濡れ感を出したい',
     score: {}
   }, {
     v: 'tame',
@@ -3325,7 +3329,8 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     if ((t.color.includes('color_history') || t.color.includes('color_freq_high') || t.color.includes('gray_color')) && p.id === 'colormotion-luminous-spray') b += 18;
 
     // ── 仕上がり意図(stylingFinish) — 全員共通 ──
-    if (sf.includes('shine') && (st === 'oil' || st === 'shine-spray' || st === 'gel')) b += 16;
+    if (sf.includes('shine') && (st === 'shine-spray' || st === 'gel' || st === 'oil-light')) b += 16;
+    if (sf.includes('wet') && (st === 'oil' || st === 'gel' || st === 'balm')) b += 16;
     if (sf.includes('tame') && (st === 'balm' || st === 'oil' || st === 'cream')) b += 16;
     if (sf.includes('curl') && (st === 'mousse' || st === 'seasalt')) b += 24;
     if (sf.includes('hold') && st === 'hold-spray') b += 24;
