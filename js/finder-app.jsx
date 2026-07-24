@@ -110,10 +110,13 @@ const Q = [
   {
     id: 'bleach',
     type: 'card-history',
+    sequential: true,
     eyebrow: 'Bleach History',
     title: 'ブリーチ（明るく脱色）をしたことは？',
-    note: 'いちばん大切な情報です。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば選んでください。1つ選択。',
-    yesPrompt: 'ブリーチ（脱色）をしたことはありますか？（過去・毛先に残っている場合も含む）',
+    note: 'いちばん大切な情報です。まず「したことがあるか」、つぎに「今の状態」を伺います。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば「ある」をお選びください。',
+    gateYesLabel: 'ブリーチをしたことがある',
+    detailTitle: '今の髪の状態に近いものは？',
+    yesPrompt: '毛先だけ・部分的でも、いちばん近いものを1つお選びください。',
     options: [
       { v: 'none',      label: 'していない',                                           score: {} },
       { v: 'within3m',  label: '今も明るい部分が残っている（ブリーチ毛）',               score: { bleachHistory: 4, damage: 3, colorFade: 2 } },
@@ -4833,26 +4836,33 @@ function CardSingle({ q, value, onChange }) {
 /* ---- Card history (Yes/No → detail) ---- */
 function CardHistory({ q, value, onChange }) {
   // value: undefined | 'none' | <detail value>
-  const [yesIntent, setYesIntent] = useState(() => value && value !== 'none');
   const noneOpt = q.options.find(o => o.v === 'none');
   const detailOptions = q.options.filter(o => o.v !== 'none');
+  const hasDetail = !!(value && value !== 'none');
+  const seq = !!q.sequential; // 経験(Yes/No)と今の状態を2画面に分けて聞く(bleach)
 
-  const showDetails = yesIntent || (value && value !== 'none');
+  const [yesIntent, setYesIntent] = useState(() => hasDetail);
+  const [screen, setScreen] = useState(() => (seq && hasDetail) ? 'detail' : 'gate');
+
+  const showDetails = seq ? (screen === 'detail') : (yesIntent || hasDetail);
   const noActive    = value === 'none';
-  const yesActive   = showDetails;
+  const yesActive   = seq ? (screen === 'detail' || hasDetail) : showDetails;
 
   const handleYes = () => {
     setYesIntent(true);
     if (value === 'none') onChange(undefined);
+    if (seq) setScreen('detail');
   };
   const handleNo = () => {
     setYesIntent(false);
     onChange('none');
+    if (seq) setScreen('gate');
   };
 
   return (
     <div className="mt-5">
-      {/* Yes / No */}
+      {/* 経験(Yes/No)。逐次モードでは経験画面のときだけ表示 */}
+      {(!seq || screen === 'gate') && (
       <div className="grid grid-cols-2 gap-1.5">
         <button
           type="button"
@@ -4866,7 +4876,7 @@ function CardHistory({ q, value, onChange }) {
             <span className={['block font-mono tracking-widest2 text-[10.5px] uppercase mb-1',
               yesActive ? 'text-goldLight' : 'text-charcoal/45'].join(' ')}>Yes</span>
             <span className={['block font-serif text-[15.5px] sm:text-[16.5px]',
-              yesActive ? 'text-ivory' : 'text-ink'].join(' ')}>履歴がある</span>
+              yesActive ? 'text-ivory' : 'text-ink'].join(' ')}>{q.gateYesLabel || '履歴がある'}</span>
           </span>
           <span
             className={[
@@ -4912,14 +4922,28 @@ function CardHistory({ q, value, onChange }) {
           </span>
         </button>
       </div>
+      )}
 
-      {/* Detail options (only when Yes) */}
+      {/* 今の状態(経験の次に聞く)。逐次モードでは2画面目として表示 */}
       {showDetails && (
-        <div className="mt-6 anim-fade-up">
+        <div className={seq ? 'anim-fade-up' : 'mt-6 anim-fade-up'}>
+          {seq && (
+            <button
+              type="button"
+              onClick={() => setScreen('gate')}
+              className="mb-5 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/55 hover:text-ink transition-colors inline-flex items-center gap-2"
+            >
+              <span className="inline-block w-4 h-px bg-charcoal/40" />
+              経験の質問にもどる
+            </button>
+          )}
           <div className="flex items-center gap-3 mb-3">
-            <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold">— Detail</span>
+            <span className="font-mono tracking-widest2 text-[10px] uppercase text-gold">— {seq ? '今の状態' : 'Detail'}</span>
             <span className="h-px flex-1 bg-line" />
           </div>
+          {seq && q.detailTitle && (
+            <h3 className="font-serif text-[18px] sm:text-[20px] text-ink mb-2 leading-snug" style={{ wordBreak: 'keep-all', overflowWrap: 'break-word' }}>{q.detailTitle}</h3>
+          )}
           {q.yesPrompt && (
             <p className="text-[12.5px] text-charcoal/70 mb-3 leading-relaxed">{q.yesPrompt}</p>
           )}

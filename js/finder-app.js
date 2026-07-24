@@ -314,10 +314,13 @@ const Q = [{
 }, {
   id: 'bleach',
   type: 'card-history',
+  sequential: true,
   eyebrow: 'Bleach History',
   title: 'ブリーチ（明るく脱色）をしたことは？',
-  note: 'いちばん大切な情報です。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば選んでください。1つ選択。',
-  yesPrompt: 'ブリーチ（脱色）をしたことはありますか？（過去・毛先に残っている場合も含む）',
+  note: 'いちばん大切な情報です。まず「したことがあるか」、つぎに「今の状態」を伺います。今は暗く染めていても・毛先だけでも・部分的でも、したことがあれば「ある」をお選びください。',
+  gateYesLabel: 'ブリーチをしたことがある',
+  detailTitle: '今の髪の状態に近いものは？',
+  yesPrompt: '毛先だけ・部分的でも、いちばん近いものを1つお選びください。',
   options: [{
     v: 'none',
     label: 'していない',
@@ -6674,23 +6677,29 @@ function CardHistory({
   onChange
 }) {
   // value: undefined | 'none' | <detail value>
-  const [yesIntent, setYesIntent] = useState(() => value && value !== 'none');
   const noneOpt = q.options.find(o => o.v === 'none');
   const detailOptions = q.options.filter(o => o.v !== 'none');
-  const showDetails = yesIntent || value && value !== 'none';
+  const hasDetail = !!(value && value !== 'none');
+  const seq = !!q.sequential; // 経験(Yes/No)と今の状態を2画面に分けて聞く(bleach)
+
+  const [yesIntent, setYesIntent] = useState(() => hasDetail);
+  const [screen, setScreen] = useState(() => seq && hasDetail ? 'detail' : 'gate');
+  const showDetails = seq ? screen === 'detail' : yesIntent || hasDetail;
   const noActive = value === 'none';
-  const yesActive = showDetails;
+  const yesActive = seq ? screen === 'detail' || hasDetail : showDetails;
   const handleYes = () => {
     setYesIntent(true);
     if (value === 'none') onChange(undefined);
+    if (seq) setScreen('detail');
   };
   const handleNo = () => {
     setYesIntent(false);
     onChange('none');
+    if (seq) setScreen('gate');
   };
   return /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, (!seq || screen === 'gate') && /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-1.5"
   }, /*#__PURE__*/React.createElement("button", {
     type: "button",
@@ -6700,7 +6709,7 @@ function CardHistory({
     className: ['block font-mono tracking-widest2 text-[10.5px] uppercase mb-1', yesActive ? 'text-goldLight' : 'text-charcoal/45'].join(' ')
   }, "Yes"), /*#__PURE__*/React.createElement("span", {
     className: ['block font-serif text-[15.5px] sm:text-[16.5px]', yesActive ? 'text-ivory' : 'text-ink'].join(' ')
-  }, "\u5C65\u6B74\u304C\u3042\u308B")), /*#__PURE__*/React.createElement("span", {
+  }, q.gateYesLabel || '履歴がある')), /*#__PURE__*/React.createElement("span", {
     className: ['w-4 h-4 border inline-flex items-center justify-center shrink-0 rounded-[1px]', yesActive ? 'border-ivory bg-ivory' : 'border-line group-hover:border-ink'].join(' '),
     "aria-hidden": true
   }, yesActive && /*#__PURE__*/React.createElement("svg", {
@@ -6735,14 +6744,26 @@ function CardHistory({
     strokeLinecap: "round",
     strokeLinejoin: "round"
   }))))), showDetails && /*#__PURE__*/React.createElement("div", {
-    className: "mt-6 anim-fade-up"
-  }, /*#__PURE__*/React.createElement("div", {
+    className: seq ? 'anim-fade-up' : 'mt-6 anim-fade-up'
+  }, seq && /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => setScreen('gate'),
+    className: "mb-5 font-mono tracking-widest2 text-[10.5px] uppercase text-charcoal/55 hover:text-ink transition-colors inline-flex items-center gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inline-block w-4 h-px bg-charcoal/40"
+  }), "\u7D4C\u9A13\u306E\u8CEA\u554F\u306B\u3082\u3069\u308B"), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3 mb-3"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-widest2 text-[10px] uppercase text-gold"
-  }, "\u2014 Detail"), /*#__PURE__*/React.createElement("span", {
+  }, "\u2014 ", seq ? '今の状態' : 'Detail'), /*#__PURE__*/React.createElement("span", {
     className: "h-px flex-1 bg-line"
-  })), q.yesPrompt && /*#__PURE__*/React.createElement("p", {
+  })), seq && q.detailTitle && /*#__PURE__*/React.createElement("h3", {
+    className: "font-serif text-[18px] sm:text-[20px] text-ink mb-2 leading-snug",
+    style: {
+      wordBreak: 'keep-all',
+      overflowWrap: 'break-word'
+    }
+  }, q.detailTitle), q.yesPrompt && /*#__PURE__*/React.createElement("p", {
     className: "text-[12.5px] text-charcoal/70 mb-3 leading-relaxed"
   }, q.yesPrompt), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-2 gap-1.5"
