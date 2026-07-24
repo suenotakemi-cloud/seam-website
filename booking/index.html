@@ -490,9 +490,12 @@ td.slot:hover{background:#f0f7ff}
 <!-- ============ SHIFT (営業時間・定休日・スタッフ別) ============ -->
 <section class="view" id="v-shift">
   <h2>シフト・営業時間</h2>
-  <p class="lead">各スタッフの勤務曜日・時間、サロンの定休日を設定。予約の空き枠に即反映されます</p>
+  <p class="lead">営業時間 11:00–20:00・不定休。休みは「日付」で指定します（その日は予約枠を出しません）。予約の空き枠に即反映されます</p>
   <div class="card" style="margin-bottom:14px">
-    <h3 style="font-size:14.5px;margin-bottom:8px">定休日（サロン休業）</h3>
+    <h3 style="font-size:14.5px;margin-bottom:8px">サロン休業日（この日は全員休み）</h3>
+    <div class="shrow-hours" style="margin-top:0;margin-bottom:10px"><input type="date" id="closedDateInput" style="border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700"><button id="closedDateAdd" class="badge" style="background:var(--accent);border:none;cursor:pointer;padding:7px 14px">休業日に追加</button></div>
+    <div id="closedDatesList" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px"></div>
+    <h3 style="font-size:12.5px;margin-bottom:8px;color:var(--sub)">固定の定休曜日（不定休なら未設定でOK）</h3>
     <div id="closedrow" class="wdrow"></div>
   </div>
   <div class="card">
@@ -568,7 +571,7 @@ td.slot:hover{background:#f0f7ff}
 <script>
 /* =============== data =============== */
 const LS='stb_v1';
-const OPEN=10*60, CLOSE=19*60, STEP=30; // minutes
+const OPEN=11*60, CLOSE=20*60, STEP=30; // minutes（SEAM 銀座 11:00–20:00）
 // SEAM 銀座の実在籍（ホットペッパー表記のまま）: 及川 大輝(店長/ヘア)・ANZU(ヘア兼スパ)・CHIKA(スパ)
 // cu=CUEPON実account_id（予約のstaff_account_id）／hpb=HPBスタイリストID（RPAのサロンボード指名用・ヘア掲載）
 const STAFF=[
@@ -613,22 +616,36 @@ const MENUS=[
 const MENU_CATS=['クーポン','カット','カラー','パーマ','縮毛矯正','トリートメント','ヘッドスパ'];
 
 // ===== 営業時間・定休日・スタッフ別シフト =====
-// 各スタッフの勤務曜日(0=日..6=土)と勤務時間(分)。定休日=サロン全体の休み。
+// SEAM 銀座は不定休＝固定の定休曜日なし。スタッフは基本毎日出勤(減算モデル・サロンボードと同じ)とし、
+// 休みは「日付」で指定する: closedDates=サロン全体の休業日 / staff[].off=各スタイリストの休み(いずれもYYYY-MM-DD)。
+// closedDays(曜日)は将来固定定休日を入れたい時用に残置(不定休なので既定は空)。
 function loadShifts(){
   try{const r=localStorage.getItem('stb_shifts');if(r)return JSON.parse(r)}catch(e){}
-  return {closedDays:[],staff:{
-    s1:{days:[3,4,5,6,0],open:600,close:1140}, // 及川: 水木金土日
-    s2:{days:[2,3,4,5,6],open:600,close:1140}, // ANZU: 火水木金土
-    s3:{days:[4,5,6,0,1],open:600,close:1140}, // CHIKA: 木金土日月
+  return {closedDays:[],closedDates:[],staff:{
+    s1:{days:[0,1,2,3,4,5,6],off:[],open:660,close:1200}, // 及川: 基本毎日 11:00–20:00
+    s2:{days:[0,1,2,3,4,5,6],off:[],open:660,close:1200}, // ANZU: 基本毎日 11:00–20:00
+    s3:{days:[0,1,2,3,4,5,6],off:[],open:660,close:1200}, // CHIKA: 基本毎日 11:00–20:00
   }};
 }
 let SHIFTS=loadShifts();
+// 旧localStorageデータ互換: 新フィールドを補完
+SHIFTS.closedDates=SHIFTS.closedDates||[];
+for(const k in (SHIFTS.staff||{})){const s=SHIFTS.staff[k];s.off=s.off||[];if(!s.days||!s.days.length)s.days=[0,1,2,3,4,5,6];}
+// 営業時間改定(11:00–20:00・不定休/毎日ベース)への一度きり移行。休みは日付指定へ移行するため基準をリセット
+if(!localStorage.getItem('stb_shifts_v2')){
+  for(const k in (SHIFTS.staff||{})){const s=SHIFTS.staff[k];s.open=OPEN;s.close=CLOSE;s.days=[0,1,2,3,4,5,6];s.off=s.off||[];}
+  SHIFTS.closedDays=[];
+  try{saveShifts();localStorage.setItem('stb_shifts_v2','1');}catch(e){}
+}
 function saveShifts(){localStorage.setItem('stb_shifts',JSON.stringify(SHIFTS))}
-function isClosedDay(dayKey){return SHIFTS.closedDays.includes(new Date(dayKey).getDay())}
+// 休業日判定: 固定定休曜日 or 個別指定の休業日(YYYY-MM-DD)
+function isClosedDay(dayKey){return SHIFTS.closedDays.includes(new Date(dayKey).getDay())||(SHIFTS.closedDates||[]).includes(dayKey)}
 function staffOnDuty(sid,dayKey,t,end){ // その枠でスタッフが勤務中か
+  if(isClosedDay(dayKey))return false;           // サロン休業日は全員休み
   const wd=new Date(dayKey).getDay();
   const s=SHIFTS.staff[sid];
-  if(!s||!s.days.includes(wd))return false;      // 勤務日でない
+  if(!s||!s.days.includes(wd))return false;      // 勤務曜日でない
+  if((s.off||[]).includes(dayKey))return false;  // そのスタイリストの休み(日付指定)
   if(t<s.open||(end!=null&&end>s.close))return false; // 勤務時間外
   return true;
 }
@@ -1785,8 +1802,17 @@ function renderToday(){
 }
 
 /* =============== シフト・営業時間の編集 =============== */
+const fmtShiftDate=k=>{const d=new Date(k);return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`};
 function renderShift(){
   const cr=document.getElementById('closedrow');if(!cr)return;
+  // --- サロン休業日（日付指定・その日は全員休み） ---
+  const cdl=document.getElementById('closedDatesList');
+  const cds=(SHIFTS.closedDates||[]).slice().sort();
+  cdl.innerHTML=cds.length?cds.map(k=>`<span class="badge" style="background:#fff3d6;color:#8a5a00;border:1px solid #f2d999">${fmtShiftDate(k)} <b data-rmcd="${k}" style="cursor:pointer;margin-left:3px">✕</b></span>`).join(''):'<span style="font-size:12px;color:var(--sub)">休業日は未設定（不定休）</span>';
+  cdl.querySelectorAll('[data-rmcd]').forEach(b=>b.onclick=()=>{SHIFTS.closedDates=SHIFTS.closedDates.filter(x=>x!==b.dataset.rmcd);saveShifts();renderShift();refreshAll()});
+  const cadd=document.getElementById('closedDateAdd'),cin=document.getElementById('closedDateInput');
+  if(cadd&&cin)cadd.onclick=()=>{const v=cin.value;if(!v){toast('日付を選んでください',true);return}if(!SHIFTS.closedDates.includes(v))SHIFTS.closedDates.push(v);cin.value='';saveShifts();renderShift();refreshAll();toast('休業日を追加しました')};
+  // --- 固定の定休曜日（不定休なら空でOK） ---
   cr.innerHTML=WD.map((w,i)=>`<button class="wd ${SHIFTS.closedDays.includes(i)?'off':''}" data-wd="${i}">${w}</button>`).join('');
   cr.querySelectorAll('.wd').forEach(b=>b.onclick=()=>{
     const i=+b.dataset.wd,idx=SHIFTS.closedDays.indexOf(i);
@@ -1796,17 +1822,31 @@ function renderShift(){
   const opts=sel=>{let o='';for(let t=OPEN;t<=CLOSE;t+=STEP)o+=`<option value="${t}" ${t===sel?'selected':''}>${hm(t)}</option>`;return o};
   const g=document.getElementById('shiftgrid');
   g.innerHTML=STAFF.map(s=>{
-    const sh=SHIFTS.staff[s.id]||{days:[],open:OPEN,close:CLOSE};
+    const sh=SHIFTS.staff[s.id]||{days:[0,1,2,3,4,5,6],off:[],open:OPEN,close:CLOSE};
     const wds=WD.map((w,i)=>`<button class="wd ${sh.days.includes(i)?'on':''}" data-sid="${s.id}" data-wd="${i}">${w}</button>`).join('');
+    const offs=(sh.off||[]).slice().sort();
+    const offHtml=offs.length?offs.map(k=>`<span class="badge" style="background:#f0f7ff;color:var(--navy);border:1px solid #cfe4fb">${fmtShiftDate(k)} <b data-rmoff="${s.id}|${k}" style="cursor:pointer;margin-left:3px">✕</b></span>`).join(''):'<span style="font-size:11px;color:var(--sub)">個別の休みなし</span>';
     const yen=(kind,sel)=>{let o='';for(let v=0;v<=INCENT_MAX;v+=100)o+=`<option value="${v}" ${v===sel?'selected':''}>${v===0?'なし':'¥'+v.toLocaleString()}</option>`;return `<select data-sid="${s.id}" data-ik="${kind}">${o}</select>`};
     return `<div class="shrow"><div class="shrow-name">${s.name}<span>${s.role}</span></div>
       <div class="wdrow">${wds}</div>
       <div class="shrow-hours">勤務 <select data-sid="${s.id}" data-hk="open">${opts(sh.open)}</select> 〜 <select data-sid="${s.id}" data-hk="close">${opts(sh.close)}</select></div>
+      <div class="shrow-hours">🌙 休み <input type="date" data-offin="${s.id}" style="border:1.5px solid var(--line);border-radius:8px;padding:5px 8px;font-size:12.5px;font-weight:700"> <button class="badge" data-offadd="${s.id}" style="background:var(--sub);border:none;cursor:pointer;padding:6px 12px">この日を休みに</button></div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px">${offHtml}</div>
       <div class="shrow-hours">🉐 スマート割 ${yen('smart',smartDiscOf(s.id))}　🙏 時間変更のお礼 ${yen('move',moveDiscOf(s.id))}</div></div>`;
   }).join('');
   g.querySelectorAll('.wd').forEach(b=>b.onclick=()=>{
     const sh=SHIFTS.staff[b.dataset.sid],i=+b.dataset.wd,idx=sh.days.indexOf(i);
     if(idx>=0)sh.days.splice(idx,1);else sh.days.push(i);
+    saveShifts();renderShift();refreshAll();
+  });
+  g.querySelectorAll('[data-offadd]').forEach(b=>b.onclick=()=>{
+    const sid=b.dataset.offadd,inp=g.querySelector(`[data-offin="${sid}"]`),v=inp&&inp.value;
+    if(!v){toast('日付を選んでください',true);return}
+    const sh=SHIFTS.staff[sid];sh.off=sh.off||[];if(!sh.off.includes(v))sh.off.push(v);
+    saveShifts();renderShift();refreshAll();toast(`${(STAFF.find(x=>x.id===sid)||{}).name||''}さんの休みを追加`);
+  });
+  g.querySelectorAll('[data-rmoff]').forEach(b=>b.onclick=()=>{
+    const [sid,k]=b.dataset.rmoff.split('|');const sh=SHIFTS.staff[sid];sh.off=(sh.off||[]).filter(x=>x!==k);
     saveShifts();renderShift();refreshAll();
   });
   g.querySelectorAll('select[data-hk]').forEach(sel=>sel.onchange=()=>{
