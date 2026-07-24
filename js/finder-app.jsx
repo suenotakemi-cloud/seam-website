@@ -3623,7 +3623,7 @@ function DeepBestCard({ item, best = null, variant = 'best', category = null }){
             </>}
             {p.primarySize && <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45 whitespace-nowrap">{p.primarySize}</span>}
           </span>
-          <span className={"font-mono tracking-widest2 text-[9px] uppercase whitespace-nowrap " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold")}>{memberPriceTag(p)}</span>
+          <span className="font-mono tracking-widest2 text-[9px] uppercase whitespace-nowrap text-gold">{memberPriceTag(p)}</span>
         </span>
         <span className="inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap shrink-0">詳しく見る <span className="text-gold group-hover:translate-x-1 transition-transform" aria-hidden>↗</span></span>
       </a>
@@ -3650,7 +3650,7 @@ function DeepAltCard({ item, best }){
       <span className="mt-0.5 font-serif text-[13px] text-ink leading-snug">{p.name}</span>
       <span className="mt-2 flex items-center justify-between gap-2">
         <span className="flex items-baseline gap-1.5 min-w-0">
-          <span className={"font-mono tracking-widest2 text-[9px] uppercase " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold whitespace-nowrap")}>{saleNow() && p.salonTownItemId ? '7/31までスペシャルプライス' : 'メンバー特別価格'}</span>
+          <span className={"font-mono tracking-widest2 text-[9px] uppercase text-gold " + (saleNow() && p.salonTownItemId ? "" : "whitespace-nowrap")}>{saleNow() && p.salonTownItemId ? '7/31までスペシャルプライス' : 'メンバー特別価格'}</span>
           {altPrice != null && <span className="font-serif text-[12.5px] text-ink nums whitespace-nowrap">{p.salonTownItemId && <span className="font-mono tracking-widest2 text-[8px] uppercase text-charcoal/45 mr-0.5">定価</span>}¥{altPrice.toLocaleString()}</span>}
         </span>
         <span className="text-gold group-hover:translate-x-0.5 transition-transform text-[13px]" aria-hidden>↗</span>

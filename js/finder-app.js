@@ -5022,7 +5022,7 @@ function DeepBestCard({
   }, "\u7A0E\u8FBC")), p.primarySize && /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45 whitespace-nowrap"
   }, p.primarySize)), /*#__PURE__*/React.createElement("span", {
-    className: "font-mono tracking-widest2 text-[9px] uppercase whitespace-nowrap " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold")
+    className: "font-mono tracking-widest2 text-[9px] uppercase whitespace-nowrap text-gold"
   }, memberPriceTag(p))), /*#__PURE__*/React.createElement("span", {
     className: "inline-flex items-center gap-1 font-mono tracking-widest2 text-[10px] uppercase text-ink group-hover:text-gold transition-colors whitespace-nowrap shrink-0"
   }, "\u8A73\u3057\u304F\u898B\u308B ", /*#__PURE__*/React.createElement("span", {
@@ -5069,7 +5069,7 @@ function DeepAltCard({
   }, /*#__PURE__*/React.createElement("span", {
     className: "flex items-baseline gap-1.5 min-w-0"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "font-mono tracking-widest2 text-[9px] uppercase " + (saleNow() && p.salonTownItemId ? "text-[#B4453A]" : "text-gold whitespace-nowrap")
+    className: "font-mono tracking-widest2 text-[9px] uppercase text-gold " + (saleNow() && p.salonTownItemId ? "" : "whitespace-nowrap")
   }, saleNow() && p.salonTownItemId ? '7/31までスペシャルプライス' : 'メンバー特別価格'), altPrice != null && /*#__PURE__*/React.createElement("span", {
     className: "font-serif text-[12.5px] text-ink nums whitespace-nowrap"
   }, p.salonTownItemId && /*#__PURE__*/React.createElement("span", {
