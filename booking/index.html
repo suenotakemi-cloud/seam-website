@@ -518,6 +518,42 @@ body.customer .bookshell{max-width:520px;margin:0 auto;padding:0}
   body.customer .bookshell{max-width:100%}
   body.customer .phone{border:none;border-radius:0;box-shadow:none;min-height:100vh}
 }
+/* ── 完了画面：オンラインショップ導線（来店者限定ホームケア） ── */
+.shop-cta{display:flex;align-items:center;gap:13px;text-align:left;text-decoration:none;background:linear-gradient(135deg,#faf6ef,#fdfbf7);border:1px solid #e6dcc7;border-radius:16px;padding:16px 15px;margin:16px 0 6px;transition:.16s}
+.shop-cta:hover{box-shadow:0 12px 26px -14px rgba(184,148,90,.5);border-color:#D9BE93}
+.shop-cta-ic{flex:0 0 auto;width:46px;height:46px;border-radius:12px;background:#f1e6d2;display:flex;align-items:center;justify-content:center;font-size:23px}
+.shop-cta-body{flex:1;min-width:0}
+.shop-cta-en{font-family:'Cormorant Garamond',serif;letter-spacing:.2em;text-transform:uppercase;color:#B8945A;font-size:10.5px;font-weight:600;margin-bottom:2px}
+.shop-cta-body b{display:block;font-family:'Noto Serif JP',serif;font-size:14.5px;color:#171614;font-weight:600}
+.shop-cta-body span{display:block;font-size:11.5px;color:#8f887b;line-height:1.55;margin-top:3px}
+.shop-cta-arrow{flex:0 0 auto;color:#B8945A;font-size:18px;font-weight:800}
+/* ── スパ導線：癒しのトーン（セージ・完全個室のひととき） ── */
+.spa-lead{font-family:'Noto Serif JP',serif;color:#6f8560;font-size:13px;line-height:1.7;letter-spacing:.03em;margin:-2px 0 15px;padding-left:12px;border-left:2px solid #b7c9a6}
+.phone.spa .phead{background:#f7f8f3}
+.phone.spa .phead .s{color:#7d956a}
+.phone.spa .pbody{background:#f7f8f3}
+.phone.spa .pbody .steps div.on{background:#7d956a}
+.phone.spa .pbody .mcat-h{color:#7d956a;border-bottom-color:#e0e6d6}
+.phone.spa .pbody .opt{background:#fff}
+.phone.spa .pbody .opt:hover{border-color:#aabf96;background:#f6f8f1}
+.phone.spa .pbody .opt.sel{border-color:#7d956a;background:#f0f4ea;box-shadow:inset 0 0 0 1px #7d956a}
+.phone.spa .pbody .opt .pr{color:#6f8560}
+.phone.spa .pbody .chip{background:#fff}
+.phone.spa .pbody .chip:hover{border-color:#aabf96}
+.phone.spa .pbody .chip.sel{background:#7d956a;border-color:#7d956a}
+.phone.spa .pbody .daytab.sel{background:#7d956a;border-color:#7d956a}
+.phone.spa .pbody .daytab .av-o{color:#7d956a}
+.phone.spa .pbody .sec-bar{background:#eef3e7;border-color:#dde6d0}
+.phone.spa .pbody .sec-bar .sb-chg{border-color:#7d956a;color:#7d956a}
+.phone.spa .pbody .btn.pri,.phone.spa .pbody .btn.small.pri{background:#7d956a}
+.phone.spa .pbody .btn.pri:hover,.phone.spa .pbody .btn.small.pri:hover{background:#6d8459}
+.phone.spa .pbody .total-row,.phone.spa .pbody .pay-amt{background:#f0f4ea;border-color:#dde6d0}
+.phone.spa .pbody .total-row b,.phone.spa .pbody .pay-amt b{color:#6f8560}
+.phone.spa .pbody .done .ic{background:#eef3e7;color:#7d956a}
+.phone.spa .pbody .soonest{background:linear-gradient(135deg,#eef3e7,#f7faf2);border-color:#c3d4b2}
+.phone.spa .pbody .soonest .so-l{color:#6f8560}
+.phone.spa .pbody .field input:focus,.phone.spa .pbody input[type=tel]:focus,.phone.spa .pbody .rl-row input:focus{border-color:#7d956a}
+body.customer .phone.spa{background:#f7f8f3}
 </style>
 </head>
 <body>
@@ -1482,6 +1518,8 @@ const dayFreeCount=(dayKey,staffIds,dur)=>freeSlots(dayKey,staffIds,dur).filter(
 const dayLabel=k=>k===dkey(today())?'今日':(k===dkey(addDays(today(),1))?'明日':k.slice(5).replace('-','/'));
 function renderBook(){
   const p=document.getElementById('pbody');
+  // スパ導線は癒しのトーン（セージ）に切替。ヘア/入口選択はSEAMゴールド基調
+  const _ph=document.querySelector('.phone');if(_ph)_ph.classList.toggle('spa',bk.section==='spa');
   const stepsHtml=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
@@ -1520,6 +1558,7 @@ function renderBook(){
       </div>`+
       (publishedReviews().length?`<div class="revblock"><div class="rl-t" style="color:var(--navy)">⭐ お客様の声</div>${publishedReviews().slice(0,2).map(rv=>{const s=STAFF.find(x=>x.id===rv.staffId);return `<div class="pubrev"><div class="pr-top">${'★'.repeat(rv.rating)}<span class="rv-star-off">${'★'.repeat(5-rv.rating)}</span> <b>${rv.name}</b> <span class="rv-meta">${s?s.name:''}</span></div><div class="pr-text">${(rv.text||'').replace(/</g,'&lt;')}</div></div>`}).join('')}</div>`:'')+
       `<div class="sec-bar"><span class="sb-ic">${bk.section==='spa'?'💆':'✂️'}</span><span class="sb-t">${bk.section==='spa'?'スパ / ヘッドスパ':'ヘアサロン'}</span><button class="sb-chg" id="secchg">入口を変更</button></div>`+
+      (bk.section==='spa'?`<p class="spa-lead">完全個室で、頭皮も気持ちも、ゆっくりほどけていく時間を。</p>`:'')+
       `<h3 style="margin:6px 0 12px">メニューを選択</h3>`+
       (bk.section==='spa'?['ヘッドスパ']:MENU_CATS.filter(c=>c!=='ヘッドスパ')).map(cat=>{
         const items=MENUS.filter(m=>m.cat===cat);if(!items.length)return'';
@@ -1719,6 +1758,15 @@ function renderBook(){
         <div class="line-cta-body"><b>LINEで予約を受け取る</b><span>友だち追加で、前日リマインド・次回予約・お得情報が届きます</span></div>
       </div>
       <div class="pnav"><button class="btn line" id="baddline">＋ LINE友だち追加</button></div>
+      <a class="shop-cta" href="https://seam.site/onlineshop" target="_blank" rel="noopener">
+        <div class="shop-cta-ic">🧴</div>
+        <div class="shop-cta-body">
+          <div class="shop-cta-en">Home Care · Members Only</div>
+          <b>サロンの仕上がりを、ご自宅でも</b>
+          <span>ご来店の方だけのオンラインショップ。店頭で選んだケアの買い足しも、カルテを引き継いでご注文いただけます</span>
+        </div>
+        <div class="shop-cta-arrow">→</div>
+      </a>
       <div class="revcust" style="text-align:left">
         <h4>⭐ 施術後にぜひ口コミを（任意）</h4>
         <div class="stars" id="rvstars">${[1,2,3,4,5].map(i=>`<span class="star" data-v="${i}">★</span>`).join('')}</div>
