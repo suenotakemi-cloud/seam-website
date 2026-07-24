@@ -392,11 +392,12 @@
   @media(hover:hover){#saleBar .sb-scope:hover{background:#fff;}}
   /* オンライン締切カウントダウン(オンライン誘導の緊急性) */
   #saleBar .sb-cd{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;}
-  #saleBar .sb-cd-label{font-size:10px;letter-spacing:.04em;color:rgba(255,255,255,.92);}
-  #saleBar .sb-cd-time{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;font-weight:600;color:#FFF3DC;font-variant-numeric:tabular-nums;letter-spacing:.03em;text-shadow:0 1px 2px rgba(60,40,10,.28);}
+  #saleBar .sb-cd-label{font-size:10.5px;letter-spacing:.04em;color:rgba(255,255,255,.92);}
+  #saleBar .sb-cd-time{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;font-weight:700;color:#FFF3DC;font-variant-numeric:tabular-nums;letter-spacing:.02em;text-shadow:0 1px 2px rgba(60,40,10,.3);background:rgba(255,243,220,.16);padding:2px 9px;border-radius:8px;}
   @media(min-width:640px){
     #saleBar .sb-in{flex-direction:row;gap:16px;padding:12px 28px 13px;}
     #saleBar .sb-off{font-size:21px;}
+    #saleBar .sb-cd-time{font-size:18px;}
     #saleBar .sb-arrow{display:inline-block;}
   }
   /* sb-scope は常時表示=オンラインショップ導線 */
@@ -571,6 +572,67 @@
         </div>
       </div>
     </div>
+  </section>
+  <!-- オンライン締切 特大カウントダウン(ヒーロー直下・オンライン誘導)。日付ゲート=7/1〜7/31 0時JSTのみ表示・締切後は自動で消える -->
+  <section id="saleCountdown" hidden aria-label="オンライン締切カウントダウン" data-track-view="sale_cd_hero">
+    <style>
+      #saleCountdown{background:linear-gradient(105deg,#6E4E26,#9c7942 34%,#caa669 50%,#9c7942 66%,#6E4E26);background-size:200% 100%;animation:scdSheen 9s linear infinite;color:#FBF7F1;}
+      #saleCountdown .scd-in{max-width:760px;margin:0 auto;padding:32px 18px 36px;text-align:center;}
+      #saleCountdown .scd-eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:rgba(255,255,255,.9);margin:0;}
+      #saleCountdown .scd-title{font-family:"Noto Serif JP",serif;font-weight:600;font-size:clamp(25px,7vw,40px);line-height:1.2;margin:9px 0 4px;color:#FFF6E6;text-shadow:0 2px 8px rgba(50,30,8,.3);}
+      #saleCountdown .scd-sub{font-size:clamp(12px,3.4vw,14px);color:rgba(255,255,255,.92);margin:0 auto 22px;max-width:30em;}
+      #saleCountdown .scd-clock{display:flex;justify-content:center;align-items:stretch;gap:8px;flex-wrap:nowrap;}
+      #saleCountdown .scd-unit{background:#FBF7F1;border-radius:14px;padding:12px 4px 9px;flex:1 1 0;min-width:0;max-width:98px;box-shadow:0 6px 18px rgba(40,24,6,.28),inset 0 -2px 0 rgba(120,90,50,.1);}
+      #saleCountdown .scd-num{display:block;font-family:"Noto Serif JP",serif;font-weight:700;font-size:clamp(30px,9.5vw,54px);line-height:1;color:#5a3d17;font-variant-numeric:tabular-nums;letter-spacing:.01em;}
+      #saleCountdown .scd-lbl{display:block;font-size:11px;letter-spacing:.12em;color:#94724a;margin-top:6px;}
+      #saleCountdown .scd-cta{display:inline-flex;align-items:center;gap:7px;margin-top:24px;background:#FFF3DC;color:#4a3618;font-weight:700;font-size:15px;text-decoration:none;padding:13px 30px;border-radius:999px;box-shadow:0 6px 20px rgba(40,24,6,.3);letter-spacing:.02em;}
+      #saleCountdown .scd-cta::after{content:'\203A';font-size:17px;line-height:1;}
+      @media(hover:hover){#saleCountdown .scd-cta:hover{background:#fff;}}
+      @keyframes scdSheen{0%{background-position:0 0}100%{background-position:200% 0}}
+      @media(prefers-reduced-motion:reduce){#saleCountdown{animation:none!important;}}
+      @media(min-width:640px){
+        #saleCountdown .scd-in{padding:46px 24px 50px;}
+        #saleCountdown .scd-clock{gap:14px;}
+        #saleCountdown .scd-unit{max-width:120px;padding:16px 10px 12px;border-radius:18px;}
+        #saleCountdown .scd-lbl{font-size:12px;}
+      }
+    </style>
+    <div class="scd-in">
+      <p class="scd-eyebrow">Summer&nbsp;Sale</p>
+      <h2 class="scd-title" data-i18n="sale.cd">オンライン締切まで</h2>
+      <p class="scd-sub" data-i18n="sale.cdSub">最大30%OFF オンラインは 7/31 0時まで</p>
+      <div class="scd-clock" role="timer" aria-live="off">
+        <div class="scd-unit"><span class="scd-num" id="cdBigD">–</span><span class="scd-lbl" data-i18n="sale.uDay">日</span></div>
+        <div class="scd-unit"><span class="scd-num" id="cdBigH">–</span><span class="scd-lbl" data-i18n="sale.uHr">時</span></div>
+        <div class="scd-unit"><span class="scd-num" id="cdBigM">–</span><span class="scd-lbl" data-i18n="sale.uMin">分</span></div>
+        <div class="scd-unit"><span class="scd-num" id="cdBigS">–</span><span class="scd-lbl" data-i18n="sale.uSec">秒</span></div>
+      </div>
+      <a href="onlineshop.html" class="scd-cta" data-track-click="sale_cd_online" aria-label="オンラインショップのセールへ" data-i18n="sale.scope">オンラインショップで買う</a>
+    </div>
+    <script>
+    (function(){
+      var sec = document.getElementById('saleCountdown');
+      if(!sec) return;
+      var start = new Date('2026-07-01T00:00:00+09:00').getTime();
+      var onlineEnd = new Date('2026-07-31T00:00:00+09:00').getTime();
+      if(Date.now() < start || Date.now() >= onlineEnd) return; // 期間前/オンライン締切後は非表示
+      sec.hidden = false;
+      var elD=document.getElementById('cdBigD'),elH=document.getElementById('cdBigH'),
+          elM=document.getElementById('cdBigM'),elS=document.getElementById('cdBigS'),timer=null;
+      function pad(n){return (n<10?'0':'')+n;}
+      function tick(){
+        var left=onlineEnd-Date.now();
+        if(left<=0){ sec.hidden=true; if(timer){clearInterval(timer);timer=null;} return; } // 締切到達で自動撤去
+        var s=Math.floor(left/1000);
+        var d=Math.floor(s/86400); s-=d*86400;
+        var h=Math.floor(s/3600);  s-=h*3600;
+        var m=Math.floor(s/60);    s-=m*60;
+        if(elD)elD.textContent=pad(d); if(elH)elH.textContent=pad(h);
+        if(elM)elM.textContent=pad(m); if(elS)elS.textContent=pad(s);
+      }
+      tick(); timer=setInterval(tick,1000);
+    })();
+    </script>
   </section>
   <section class="bg-white pb-6 sm:pb-9">
     <!-- 人気商品オートスライド(オーナー指定14点) — 140ブランド文の直下=「知ってるあの一本がある」を一目で。見出し/診断行は付けない(直下のCTAが診断導線) -->
@@ -1140,6 +1202,11 @@
         'sale.until': '7.31まで',
         'sale.cd': 'オンライン締切まで',
         'sale.cdDay': '日',
+        'sale.cdSub': '最大30%OFF オンラインは 7/31 0時まで',
+        'sale.uDay': '日',
+        'sale.uHr': '時',
+        'sale.uMin': '分',
+        'sale.uSec': '秒',
         'nav.online': 'オンラインショップ',
         'osEntry.note': 'ご来店の方だけの 特別なお店',
         'cta.finder': '髪格診断を始める',
@@ -1325,6 +1392,11 @@
         'sale.until': 'Until Jul 31',
         'sale.cd': 'Online ends in',
         'sale.cdDay': 'd',
+        'sale.cdSub': 'Up to 30% OFF — online ends Jul 31, 0:00',
+        'sale.uDay': 'Days',
+        'sale.uHr': 'Hrs',
+        'sale.uMin': 'Min',
+        'sale.uSec': 'Sec',
         'nav.online': 'Online Shop',
         'osEntry.note': 'Exclusively for guests of our stores',
         'cta.finder': 'Start Your Hair Diagnosis',
@@ -1510,6 +1582,11 @@
         'sale.until': '至7/31',
         'sale.cd': '线上截止还剩',
         'sale.cdDay': '天',
+        'sale.cdSub': '最高30%OFF 线上至7/31 0点',
+        'sale.uDay': '天',
+        'sale.uHr': '时',
+        'sale.uMin': '分',
+        'sale.uSec': '秒',
         'nav.online': '在线商店',
         'osEntry.note': '仅限到店顾客的专属商店',
         'cta.finder': '开始发质诊断',
@@ -1695,6 +1772,11 @@
         'sale.until': '至7/31',
         'sale.cd': '線上截止還剩',
         'sale.cdDay': '天',
+        'sale.cdSub': '最高30%OFF 線上至7/31 0點',
+        'sale.uDay': '天',
+        'sale.uHr': '時',
+        'sale.uMin': '分',
+        'sale.uSec': '秒',
         'nav.online': '線上商店',
         'osEntry.note': '僅限到店顧客的專屬商店',
         'cta.finder': '開始髮質診斷',
@@ -1880,6 +1962,11 @@
         'sale.until': '7/31까지',
         'sale.cd': '온라인 마감까지',
         'sale.cdDay': '일',
+        'sale.cdSub': '최대 30% OFF 온라인은 7/31 0시까지',
+        'sale.uDay': '일',
+        'sale.uHr': '시',
+        'sale.uMin': '분',
+        'sale.uSec': '초',
         'nav.online': '온라인 스토어',
         'osEntry.note': '매장 방문 고객만을 위한 샵',
         'cta.finder': '모발 진단 시작하기',
