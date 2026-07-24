@@ -427,6 +427,68 @@ td.slot:hover{background:#f0f7ff}
   h2{font-size:17px}
 }
 
+/* ===== レジ・会計（管理側・レジ締め） ===== */
+.hbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hbar h2{margin:0}
+.regnav{display:flex;align-items:center;gap:8px}
+.regnav>button{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--navy)}
+.regnav>button:hover{border-color:var(--accent)}
+.regnav #reg-date{font-weight:800;font-size:13.5px;min-width:140px;text-align:center;color:var(--navy);border:none;background:none}
+.btn.pay{background:#0f9d58;color:#fff;border:none;border-radius:10px;padding:11px 18px;font-weight:800;font-size:14px}
+.btn.pay:hover{background:#0c8f4f}
+.btn.small.pay{padding:7px 14px;font-size:12.5px}
+.reg-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.reg-c{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+.reg-c>span{display:block;font-size:11.5px;color:var(--sub);font-weight:700}
+.reg-c>b{display:block;font-size:19px;color:var(--navy);margin-top:3px;font-variant-numeric:tabular-nums}
+.reg-c.big{grid-column:1/-1;background:linear-gradient(135deg,#0e2a47,#1c4a7a);border:none}
+.reg-c.big>span{color:rgba(255,255,255,.82)}
+.reg-c.big>b{color:#fff;font-size:28px}
+.reg-c.big>i{display:block;font-style:normal;font-size:12px;color:rgba(255,255,255,.82);margin-top:2px}
+.reg-sec{margin-bottom:14px}
+.reg-sec h3{font-size:14.5px;margin-bottom:10px}
+.reg-pend,.reg-co{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid #eef3f8;font-size:13px}
+.reg-pend:last-child,.reg-co:last-child{border-bottom:none}
+.rp-t,.rc-t{font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums;flex:0 0 auto;width:44px}
+.rp-n,.rc-n{font-weight:700;flex:0 0 auto;min-width:68px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rp-m,.rc-m{color:var(--sub);font-size:12px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-a{font-weight:800;color:var(--navy);flex:0 0 auto;font-variant-numeric:tabular-nums}
+.rc-x{border:none;background:none;color:#c3ccd6;font-size:13px;cursor:pointer;flex:0 0 auto}
+.rc-x:hover{color:var(--danger)}
+.reg-close h3{font-size:14.5px;margin-bottom:12px}
+.reg-closed{font-size:11px;font-weight:800;color:var(--ok);background:#e7f6ee;border-radius:99px;padding:2px 10px;margin-left:6px}
+.rz{display:flex;align-items:center;justify-content:space-between;padding:9px 0;font-size:13.5px;font-weight:700}
+.rz>span{color:var(--sub)}
+.rz>b{font-size:15px;color:var(--navy);font-variant-numeric:tabular-nums}
+.rz-line{border-top:1px dashed var(--line);border-bottom:1px dashed var(--line);margin:3px 0}
+.rz-line>b{font-size:17px}
+.rz input,.co-y input{border:1.5px solid var(--line);border-radius:9px;padding:8px 10px;font-size:15px;font-weight:800;text-align:right;width:120px;font-variant-numeric:tabular-nums}
+.rz input:focus,.co-y input:focus{border-color:var(--accent);outline:none}
+.co-y{color:var(--sub);font-weight:700;display:inline-flex;align-items:center;gap:3px}
+.rz-diff{background:#f7fafc;border-radius:10px;padding:10px 12px;margin-top:4px}
+.rz-diff>b{font-size:19px}
+.rz-diff>b.ok{color:var(--ok)} .rz-diff>b.short{color:var(--danger)} .rz-diff>b.over{color:#c47f17}
+.rz-ref{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--sub);font-weight:700;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.reg-doneline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--ok);margin-top:11px}
+/* お会計モーダル */
+.co-line{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:700;border-bottom:1px solid #eef3f8}
+.co-line>span:first-child{color:var(--sub)}
+.co-sub{font-size:12px;font-weight:800;color:var(--sub);margin:14px 0 8px;letter-spacing:.03em}
+.co-row{display:flex;gap:8px;margin-bottom:8px}
+.co-row .co-rn{flex:1;border:1.5px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px;min-width:0}
+.co-row .co-rp{width:84px;border:1.5px solid var(--line);border-radius:9px;padding:8px 10px;font-size:13px;text-align:right}
+.co-row .co-rx{border:none;background:#f4f7fa;color:var(--sub);border-radius:8px;width:34px;flex:0 0 auto;cursor:pointer}
+.co-empty{font-size:12.5px;color:var(--sub);padding:4px 0}
+.co-total{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding:13px 15px;background:#eef7f1;border:1px solid #c6e6d3;border-radius:12px}
+.co-total>span{font-size:13px;color:var(--sub);font-weight:800}
+.co-total>b{font-size:24px;color:#0f9d58;font-variant-numeric:tabular-nums}
+.co-pays{display:flex;gap:8px}
+.co-pay{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:11px;padding:11px 6px;font-weight:800;font-size:13px;color:var(--ink)}
+.co-pay.on{border-color:#0f9d58;background:#eef7f1;color:#0c7a41;box-shadow:inset 0 0 0 1px #0f9d58}
+.co-sel{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-size:14px;font-weight:700;background:#fff}
+.co-done{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#eef7f1;border:1px solid #c6e6d3;border-radius:10px;padding:9px 12px;margin-top:8px;font-size:12.5px;font-weight:700;color:#0c7a41}
+@media(max-width:560px){.reg-cards{grid-template-columns:repeat(2,1fr)}}
+
 /* ═══════════════ SEAM 世界観：お客様予約フロー（白 × ゴールド・上質）※全上書きのため末尾に配置 ═══════════════ */
 .bookshell{max-width:480px}
 .phone,.pbody,.pbody input,.pbody select,.pbody textarea,.pbody button{font-family:'Noto Sans JP','Hiragino Sans',sans-serif}
@@ -573,6 +635,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <button data-v="dash">ダッシュボード</button>
     <button data-v="cal">予約台帳</button>
     <button data-v="cust">顧客カルテ</button>
+    <button data-v="register">レジ・会計</button>
     <button data-v="shift">シフト</button>
     <button data-v="book">予約ページ</button>
     <button data-v="chan">チャネル連携</button>
@@ -707,6 +770,16 @@ body.customer .phone.spa{background:#f7f8f3}
   </div>
 </section>
 
+<!-- ============ REGISTER（レジ・会計・レジ締め） ============ -->
+<section class="view" id="v-register">
+  <div class="hbar">
+    <h2>レジ・会計</h2>
+    <div class="regnav"><button id="reg-prev">‹</button><span id="reg-date"></span><button id="reg-next">›</button><button id="reg-today" class="btn ghost small">今日</button></div>
+  </div>
+  <p class="lead">お会計を記録すると、本日の売上とレジ締め（現金の過不足）が自動で集計されます</p>
+  <div id="registerbody"></div>
+</section>
+
 </main>
 
 <div class="modal-bg" id="modalbg">
@@ -727,6 +800,10 @@ body.customer .phone.spa{background:#f7f8f3}
 
 <div class="modal-bg" id="detailbg">
   <div class="modal" id="detailmodal"></div>
+</div>
+
+<div class="modal-bg" id="checkoutbg">
+  <div class="modal" id="checkoutmodal"></div>
 </div>
 
 <div id="toast"></div>
@@ -894,6 +971,24 @@ function setReviewPublished(id,pub){const rv=db.reviews.find(x=>x.id===id);if(rv
 function removeReview(id){db.reviews=db.reviews.filter(x=>x.id!==id);save();refreshAll();}
 const publishedReviews=()=>(db.reviews||[]).filter(r=>r.published).sort((a,b)=>a.date<b.date?1:-1);
 function staffRating(sid){const rs=publishedReviews().filter(r=>r.staffId===sid);return rs.length?(rs.reduce((s,r)=>s+r.rating,0)/rs.length):0;}
+// ===== レジ・会計（お会計 → 本日の売上 → レジ締め）※localStorage保存＝D1同期に壊されない =====
+if(!db.checkouts)db.checkouts=[];        // 会計 [{id,resvId?,date,staffId,customer,tech,retailItems:[{name,price}],retail,discount,total,method,at}]
+if(!db.settlements)db.settlements=[];    // レジ締め [{date,float,cashSales,expectedCash,countedCash,diff,card,qr,total,count,closedAt,memo}]
+if(db.cashFloat==null)db.cashFloat=30000;// 釣銭準備金（前日から繰越／既定¥30,000）
+const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},qr:{label:'QR決済',ic:'📱'}};
+function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();return c;}
+function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}}
+function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);save();refreshAll();}
+function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
+function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date).sort((a,b)=>a.at<b.at?-1:1);}
+function salesSummary(date){
+  const cs=daysCheckouts(date);const sum=f=>cs.reduce((s,c)=>s+(f(c)||0),0);
+  const byM=m=>cs.filter(c=>c.method===m).reduce((s,c)=>s+c.total,0);
+  return {count:cs.length,total:sum(c=>c.total),cash:byM('cash'),card:byM('card'),qr:byM('qr'),
+    tech:sum(c=>c.tech),retail:sum(c=>c.retail),discount:sum(c=>c.discount),avg:cs.length?Math.round(sum(c=>c.total)/cs.length):0};
+}
+function settlementFor(date){return db.settlements.find(s=>s.date===date);}
+function saveSettlement(s){const i=db.settlements.findIndex(x=>x.date===s.date);if(i>=0)db.settlements[i]=s;else db.settlements.push(s);save();refreshAll();}
 // ===== キャンセル待ち =====
 function addWaitlist(w){
   w.id='w'+Math.random().toString(36).slice(2,8);w.createdAt=new Date().toISOString();w.notified=false;
@@ -1311,6 +1406,9 @@ function openDetail(id){
     <dl class="dl">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
     ${needBlock?'<div class="dwarn">⚠️ この枠はHPBで手動ブロックが必要です</div>':''}
     <div class="dacts">${acts}${blockBtn}</div>
+    ${(()=>{const co=checkoutForResv(id);return co
+      ? `<div class="co-done">✅ 会計済み <b>¥${co.total.toLocaleString()}</b>（${PAYMENTS[co.method].ic}${PAYMENTS[co.method].label}${co.retail>0?` / 店販¥${co.retail.toLocaleString()}`:''}）<button class="btn small ghost" id="d-editco" style="margin-left:auto">会計を修正</button></div>`
+      : `<button class="btn pay" id="d-checkout" style="width:100%;margin-top:4px">💳 お会計する</button>`;})()}
     <div class="karte">
       <div class="karte-h">📝 施術カルテ・メモ<span>薬剤・仕上がり・次回提案など。次回来店時に表示されます</span></div>
       <textarea id="d-note" placeholder="例）カラー: イルミナ オーシャン8 + 6% / 毛先ダメージ気味 / 次回は根元リタッチ提案">${(r.note||'').replace(/</g,'&lt;')}</textarea>
@@ -1338,12 +1436,123 @@ function openDetail(id){
     openDetail(id);
   });
   document.getElementById('d-close').onclick=closeDetail;
+  {const cb=document.getElementById('d-checkout');if(cb)cb.onclick=()=>{closeDetail();openCheckout(id);};
+   const ce=document.getElementById('d-editco');if(ce)ce.onclick=()=>{closeDetail();openCheckout(id);};}
   document.getElementById('d-savenote').onclick=()=>{setNote(id,document.getElementById('d-note').value);toast('カルテを保存しました')};
   document.getElementById('d-del').onclick=()=>{if(confirm(`${r.name}様の予約を完全に削除しますか?`)){removeReservation(id);closeDetail();toast('予約を削除しました')}};
   document.getElementById('detailbg').classList.add('show');
 }
 function closeDetail(){document.getElementById('detailbg').classList.remove('show')}
 document.getElementById('detailbg').onclick=e=>{if(e.target.id==='detailbg')closeDetail()};
+
+/* ===== お会計モーダル ===== */
+let coDraft=null;
+function openCheckout(resvId){
+  const r=resvId?db.reservations.find(x=>x.id===resvId):null;
+  const m=r?MENUS.find(x=>x.id===r.menuId):null;
+  const existing=resvId?checkoutForResv(resvId):null;
+  coDraft=existing?JSON.parse(JSON.stringify(existing)):{
+    resvId:resvId||null,date:r?r.date:dkey(registerDay),staffId:r?r.staffId:STAFF[0].id,
+    customer:r?r.name:'',tech:m?Math.max(0,(m.price-(r.discount||0))):0,discount:0,retailItems:[],method:'cash'
+  };
+  renderCheckout();
+  document.getElementById('checkoutbg').classList.add('show');
+}
+function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(+i.price||0),0);}
+function coTotal(){return Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0));}
+function renderCheckout(){
+  const box=document.getElementById('checkoutmodal');
+  const rows=(coDraft.retailItems||[]).map((it,i)=>`<div class="co-row"><input class="co-rn" data-i="${i}" placeholder="商品名（例）oggi ott シャンプー" value="${(it.name||'').replace(/"/g,'&quot;')}"><input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${it.price||''}"><button class="co-rx" data-i="${i}" aria-label="削除">✕</button></div>`).join('');
+  box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}</h3>
+    <div class="co-line"><span>技術（施術）</span><span class="co-y">¥<input id="co-tech" type="number" inputmode="numeric" value="${coDraft.tech||0}"></span></div>
+    <div class="co-sub">店販（商品）</div>
+    <div id="co-rows">${rows||'<div class="co-empty">なし</div>'}</div>
+    <button class="btn small ghost" id="co-add">＋ 店販を追加</button>
+    <div class="co-line"><span>割引</span><span class="co-y">−¥<input id="co-disc" type="number" inputmode="numeric" value="${coDraft.discount||0}"></span></div>
+    <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
+    <div class="co-sub">お支払い方法</div>
+    <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
+    <div class="co-sub">担当</div>
+    <select id="co-staff" class="co-sel">${STAFF.map(s=>`<option value="${s.id}" ${s.id===coDraft.staffId?'selected':''}>${s.name}</option>`).join('')}</select>
+    <div class="row" style="margin-top:15px">
+      <button class="btn ghost" style="flex:1" id="co-cancel">キャンセル</button>
+      <button class="btn pay" id="co-save">この内容で会計を確定</button>
+    </div>`;
+  const sync=()=>{document.getElementById('co-total').textContent='¥'+coTotal().toLocaleString();};
+  box.querySelector('#co-tech').oninput=e=>{coDraft.tech=+e.target.value||0;sync();};
+  box.querySelector('#co-disc').oninput=e=>{coDraft.discount=+e.target.value||0;sync();};
+  box.querySelector('#co-staff').onchange=e=>{coDraft.staffId=e.target.value;};
+  box.querySelectorAll('.co-rn').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].name=e.target.value;});
+  box.querySelectorAll('.co-rp').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].price=e.target.value;sync();});
+  box.querySelectorAll('.co-rx').forEach(b=>b.onclick=()=>{coDraft.retailItems.splice(+b.dataset.i,1);renderCheckout();});
+  box.querySelector('#co-add').onclick=()=>{coDraft.retailItems.push({name:'',price:''});renderCheckout();};
+  box.querySelectorAll('.co-pay').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;renderCheckout();});
+  box.querySelector('#co-cancel').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
+  box.querySelector('#co-save').onclick=()=>{
+    const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,
+      retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0}))};
+    rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
+    rec.total=Math.max(0,rec.tech+rec.retail-rec.discount);
+    if(rec.total<=0){toast('金額を入力してください',true);return;}
+    if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
+    if(rec.resvId)setStatus(rec.resvId,'done');
+    document.getElementById('checkoutbg').classList.remove('show');
+    toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}）`);
+  };
+}
+document.getElementById('checkoutbg').onclick=e=>{if(e.target.id==='checkoutbg')e.target.classList.remove('show');};
+
+/* ===== レジ・会計タブ ===== */
+let registerDay=today();
+function renderRegister(){
+  const body=document.getElementById('registerbody');if(!body)return;
+  const dk=dkey(registerDay);
+  const de=document.getElementById('reg-date');if(de)de.textContent=`${registerDay.getFullYear()}/${registerDay.getMonth()+1}/${registerDay.getDate()}（${WD[registerDay.getDay()]}）`;
+  const s=salesSummary(dk),cs=daysCheckouts(dk),set=settlementFor(dk),closed=!!(set&&set.closedAt);
+  const pending=db.reservations.filter(r=>r.date===dk&&r.status!=='cancelled'&&r.status!=='noshow'&&!checkoutForResv(r.id));
+  const money=n=>'¥'+(n||0).toLocaleString();
+  const summary=`<div class="reg-cards">
+    <div class="reg-c big"><span>総売上</span><b>${money(s.total)}</b><i>${s.count}会計・客単価 ${money(s.avg)}</i></div>
+    <div class="reg-c"><span>💴 現金</span><b>${money(s.cash)}</b></div>
+    <div class="reg-c"><span>💳 カード</span><b>${money(s.card)}</b></div>
+    <div class="reg-c"><span>📱 QR決済</span><b>${money(s.qr)}</b></div>
+    <div class="reg-c"><span>技術売上</span><b>${money(s.tech)}</b></div>
+    <div class="reg-c"><span>店販売上</span><b>${money(s.retail)}</b></div></div>`;
+  const pendHtml=pending.length?`<div class="card reg-sec"><h3>未会計（${pending.length}）</h3>${pending.sort((a,b)=>a.start-b.start).map(r=>{const m=MENUS.find(x=>x.id===r.menuId),stf=STAFF.find(x=>x.id===r.staffId);return `<div class="reg-pend"><span class="rp-t">${hm(r.start)}</span><span class="rp-n">${r.name}</span><span class="rp-m">${m?m.name:''} / ${stf?stf.name:''}</span><button class="btn small pay" data-co="${r.id}">会計</button></div>`;}).join('')}</div>`:'';
+  const listHtml=`<div class="card reg-sec"><h3>本日の会計（${cs.length}）</h3>${cs.length?cs.map(c=>`<div class="reg-co"><span class="rc-t">${c.at?c.at.slice(11,16):''}</span><span class="rc-n">${c.customer||'（予約なし）'}</span><span class="rc-m">${PAYMENTS[c.method].ic}${c.retail>0?` 技${money(c.tech)}＋販${money(c.retail)}`:''}</span><b class="rc-a">${money(c.total)}</b>${closed?'':`<button class="rc-x" data-del="${c.id}" aria-label="取消">✕</button>`}</div>`).join(''):'<div class="co-empty">まだ会計がありません</div>'}${closed?'':'<button class="btn small ghost" id="reg-walkin" style="margin-top:9px">＋ 予約なしの会計（店販のみ等）</button>'}</div>`;
+  const float=set?set.float:db.cashFloat, expected=float+s.cash, counted=set?set.countedCash:null, diff=counted!=null?counted-expected:null;
+  const closePanel=`<div class="card reg-close"><h3>レジ締め ${closed?'<span class="reg-closed">締め済み</span>':''}</h3>
+    <div class="rz"><span>釣銭準備金</span><span class="co-y">¥<input id="rz-float" type="number" inputmode="numeric" value="${float}" ${closed?'disabled':''}></span></div>
+    <div class="rz"><span>現金売上</span><b>${money(s.cash)}</b></div>
+    <div class="rz rz-line"><span>現金 理論残高</span><b id="rz-expected">${money(expected)}</b></div>
+    <div class="rz"><span>実際の現金（数えた額）</span><span class="co-y">¥<input id="rz-count" type="number" inputmode="numeric" value="${counted!=null?counted:''}" placeholder="0" ${closed?'disabled':''}></span></div>
+    <div class="rz rz-diff" id="rz-diffrow" style="${diff==null?'display:none':''}"><span>過不足</span><b id="rz-diff" class="${diff===0?'ok':(diff<0?'short':'over')}">${diff!=null?((diff>0?'+':'')+money(diff)):''}</b></div>
+    <div class="rz-ref"><span>💳 カード ${money(s.card)}</span><span>📱 QR ${money(s.qr)}</span><span>総売上 ${money(s.total)}</span></div>
+    ${closed?`<div class="reg-doneline">✅ ${set.closedAt.slice(0,16).replace('T',' ')} に締めました<button class="btn small ghost" id="rz-reopen">締めを取消</button></div>`:`<button class="btn pay" id="rz-close" style="width:100%;margin-top:11px">この内容でレジを締める</button>`}</div>`;
+  body.innerHTML=summary+pendHtml+listHtml+closePanel;
+  body.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>openCheckout(b.dataset.co));
+  body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('この会計を取り消しますか？'))removeCheckout(b.dataset.del);});
+  const wi=document.getElementById('reg-walkin');if(wi)wi.onclick=()=>openCheckout(null);
+  const recompute=()=>{
+    const fv=+(document.getElementById('rz-float').value)||0, exp=fv+s.cash;
+    document.getElementById('rz-expected').textContent=money(exp);
+    const cv=document.getElementById('rz-count').value, dr=document.getElementById('rz-diffrow'), dv=document.getElementById('rz-diff');
+    if(cv===''){dr.style.display='none';return;}
+    const d=(+cv||0)-exp;dr.style.display='';dv.textContent=(d>0?'+':'')+money(d);dv.className=d===0?'ok':(d<0?'short':'over');
+  };
+  const fl=document.getElementById('rz-float');if(fl){fl.oninput=recompute;fl.onchange=e=>{db.cashFloat=+e.target.value||0;save();};}
+  const ct=document.getElementById('rz-count');if(ct)ct.oninput=recompute;
+  const cl=document.getElementById('rz-close');if(cl)cl.onclick=()=>{
+    const cin=document.getElementById('rz-count');if(cin.value===''){toast('実際の現金を入力してください',true);return;}
+    const fv=+document.getElementById('rz-float').value||0, c=+cin.value||0;
+    saveSettlement({date:dk,float:fv,cashSales:s.cash,expectedCash:fv+s.cash,countedCash:c,diff:c-(fv+s.cash),card:s.card,qr:s.qr,total:s.total,count:s.count,closedAt:new Date().toISOString()});
+    toast('レジを締めました');
+  };
+  const ro=document.getElementById('rz-reopen');if(ro)ro.onclick=()=>{if(confirm('レジ締めを取り消しますか？')){db.settlements=db.settlements.filter(x=>x.date!==dk);save();renderRegister();}};
+}
+document.getElementById('reg-prev').onclick=()=>{registerDay=addDays(registerDay,-1);renderRegister();};
+document.getElementById('reg-next').onclick=()=>{registerDay=addDays(registerDay,1);renderRegister();};
+document.getElementById('reg-today').onclick=()=>{registerDay=today();renderRegister();};
 
 /* =============== customer booking flow =============== */
 let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
@@ -2127,8 +2336,8 @@ function renderAnalytics(){
     <div class="an-sub">スタッフ別売上</div>${staffRows}
     <div class="an-sub">人気メニュー</div>${topMenus.length?topMenus.map(([n,c],i)=>`<div class="an-row"><span class="an-l">${i+1}. ${n}</span><span class="an-v">${c}件</span></div>`).join(''):'<div style="font-size:12px;color:var(--sub)">データなし</div>'}`;
 }
-function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();if(bk.step===2)renderBook()}
-renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();
+function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();if(bk.step===2)renderBook()}
+renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();
 document.getElementById('cust-search').oninput=renderCustomers;
 // D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
 syncFromD1();
