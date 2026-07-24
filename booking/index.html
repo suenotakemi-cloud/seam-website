@@ -86,6 +86,29 @@ td.slot:hover{background:#f0f7ff}
 .opt .nm{font-weight:700}
 .opt .dt{font-size:12px;color:var(--sub)}
 .opt .pr{font-weight:800;color:var(--navy)}
+/* ---- 入口選択（ヘア / スパ） ---- */
+.ent-lead{font-size:14px;font-weight:800;color:var(--ink);margin:2px 0 4px}
+.ent-sub{font-size:12.5px;color:var(--sub);margin-bottom:14px}
+.ent-wrap{display:flex;flex-direction:column;gap:12px}
+.ent-card{width:100%;display:flex;align-items:center;gap:14px;text-align:left;border:1.5px solid var(--line);border-radius:16px;padding:18px 16px;background:#fff;cursor:pointer;transition:.14s;position:relative;overflow:hidden}
+.ent-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,40,70,.1)}
+.ent-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:5px}
+.ent-hair::before{background:linear-gradient(180deg,#2f7dd1,#4aa3e0)}
+.ent-spa::before{background:linear-gradient(180deg,#7b9a6d,#b7cf9f)}
+.ent-hair:hover{border-color:#4aa3e0}
+.ent-spa:hover{border-color:#9bbd85}
+.ent-ic{flex:0 0 auto;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.ent-hair .ent-ic{background:#eaf3ff}
+.ent-spa .ent-ic{background:#eef4e6}
+.ent-main{flex:1;min-width:0}
+.ent-t{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:.01em}
+.ent-en{font-size:10px;font-weight:700;letter-spacing:.14em;color:var(--sub);text-transform:uppercase;margin-bottom:3px}
+.ent-s{font-size:12px;color:var(--sub);line-height:1.5;margin-top:3px}
+.ent-arrow{flex:0 0 auto;color:var(--sub);font-size:18px;font-weight:800}
+.sec-bar{display:flex;align-items:center;gap:8px;background:#f6f9fc;border:1px solid var(--line);border-radius:12px;padding:9px 13px;margin-bottom:14px}
+.sec-bar .sb-ic{font-size:17px}
+.sec-bar .sb-t{font-weight:800;font-size:13.5px;color:var(--ink)}
+.sec-bar .sb-chg{margin-left:auto;border:1.5px solid var(--accent);color:var(--accent);background:#fff;border-radius:8px;padding:5px 12px;font-weight:800;font-size:12px;cursor:pointer}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1.5px solid var(--line);border-radius:99px;padding:8px 15px;font-size:13.5px;font-weight:700;background:#fff;transition:.1s}
 .chip:hover{border-color:var(--accent2)}
@@ -1183,7 +1206,7 @@ function closeDetail(){document.getElementById('detailbg').classList.remove('sho
 document.getElementById('detailbg').onclick=e=>{if(e.target.id==='detailbg')closeDetail()};
 
 /* =============== customer booking flow =============== */
-let bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
+let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
 // 流入元: 予約ページのURL ?src=line|google|instagram で自動判定。各チャネルのリンクから来ると自動タグ付け。
 const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');return['line','google','instagram','own'].includes(s)?s:'own'})();
 // ?src= 付き = お客様導線（LINE/Google/Instagram/自社サイト）。管理タブを隠し予約画面のみ表示（管理台帳をお客様に見せない）。
@@ -1364,6 +1387,26 @@ const dayLabel=k=>k===dkey(today())?'今日':(k===dkey(addDays(today(),1))?'明�
 function renderBook(){
   const p=document.getElementById('pbody');
   const stepsHtml=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
+  // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
+  if(bk.step===0&&!bk.section){
+    p.innerHTML=stepsHtml+
+      `<div class="ent-lead">SEAM 銀座へようこそ</div>
+       <div class="ent-sub">ご希望のメニューをお選びください</div>
+       <div class="ent-wrap">
+         <button class="ent-card ent-hair" data-sec="hair">
+           <div class="ent-ic">✂️</div>
+           <div class="ent-main"><div class="ent-en">Hair Salon</div><div class="ent-t">ヘアサロン</div><div class="ent-s">カット・カラー・パーマ・縮毛矯正・トリートメント</div></div>
+           <div class="ent-arrow">→</div>
+         </button>
+         <button class="ent-card ent-spa" data-sec="spa">
+           <div class="ent-ic">💆</div>
+           <div class="ent-main"><div class="ent-en">Head Spa</div><div class="ent-t">スパ / ヘッドスパ</div><div class="ent-s">完全個室・水素ヘッドスパで頭皮と眠りを整える</div></div>
+           <div class="ent-arrow">→</div>
+         </button>
+       </div>`;
+    p.querySelectorAll('.ent-card').forEach(c=>c.onclick=()=>{bk.section=c.dataset.sec;bk.menu=null;renderBook()});
+    return;
+  }
   if(bk.step===0){
     p.innerHTML=stepsHtml+
       (lineProfile?`<div class="line-logged">✅ LINEログイン済み：${lineProfile.displayName} 様（確認・リマインドをLINEでお届けします）</div>`:
@@ -1380,14 +1423,16 @@ function renderBook(){
         <div id="rlres"></div>
       </div>`+
       (publishedReviews().length?`<div class="revblock"><div class="rl-t" style="color:var(--navy)">⭐ お客様の声</div>${publishedReviews().slice(0,2).map(rv=>{const s=STAFF.find(x=>x.id===rv.staffId);return `<div class="pubrev"><div class="pr-top">${'★'.repeat(rv.rating)}<span class="rv-star-off">${'★'.repeat(5-rv.rating)}</span> <b>${rv.name}</b> <span class="rv-meta">${s?s.name:''}</span></div><div class="pr-text">${(rv.text||'').replace(/</g,'&lt;')}</div></div>`}).join('')}</div>`:'')+
+      `<div class="sec-bar"><span class="sb-ic">${bk.section==='spa'?'💆':'✂️'}</span><span class="sb-t">${bk.section==='spa'?'スパ / ヘッドスパ':'ヘアサロン'}</span><button class="sb-chg" id="secchg">入口を変更</button></div>`+
       `<h3 style="margin:6px 0 12px">メニューを選択</h3>`+
-      MENU_CATS.map(cat=>{
+      (bk.section==='spa'?['ヘッドスパ']:MENU_CATS.filter(c=>c!=='ヘッドスパ')).map(cat=>{
         const items=MENUS.filter(m=>m.cat===cat);if(!items.length)return'';
         const durLabel=mm=>mm>=60?`${Math.floor(mm/60)}時間${mm%60?mm%60+'分':''}`:`${mm}分`;
         return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">所要時間目安：${durLabel(m.min)}</div></div><div class="pr">¥${m.price.toLocaleString()}<small style="display:block;font-size:10px;color:var(--sub);font-weight:600">税込</small></div></div>`).join('')+`</div>`;
       }).join('')+
       `<div class="pnav"><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.menu=o.dataset.m;renderBook()});
+    {const sc=document.getElementById('secchg');if(sc)sc.onclick=()=>{bk.section=null;bk.menu=null;renderBook()};}
     document.getElementById('rlgo').onclick=()=>{
       const cust=findCustomer(document.getElementById('rlphone').value);
       const res=document.getElementById('rlres');
@@ -1399,6 +1444,7 @@ function renderBook(){
       document.getElementById('rlsame').onclick=()=>{
         bk.name=cust.name;bk.phone=cust.phone;bk.menu=cust.lastMenuId;
         const menu=MENUS.find(x=>x.id===bk.menu);
+        bk.section=menu&&menu.cat==='ヘッドスパ'?'spa':'hair';
         bk.staff=(menu&&menu.staff.includes(cust.lastStaffId))?cust.lastStaffId:'any';
         bk.day=null;bk.start=null;bk.step=2;renderBook();
       };
@@ -1594,7 +1640,7 @@ function renderBook(){
       toast('口コミを送信しました。サロンの確認後に掲載されます');
       document.querySelector('.revcust').innerHTML='<div class="wait-done">✅ 口コミありがとうございました</div>';
     };
-    document.getElementById('bagain').onclick=()=>{bk={step:0,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};renderBook()};
+    document.getElementById('bagain').onclick=()=>{bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};renderBook()};
     return;
   }
   const nx=document.getElementById('bnext'),bkb=document.getElementById('bback');
