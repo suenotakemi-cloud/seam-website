@@ -145,49 +145,64 @@
     <div class="why">なお<b>AI検索（ChatGPT・Perplexity等）へのブロックは、方針どおり維持</b>しています。模倣対策として合理的な判断です。<b>Google・Yahoo・Bingの通常検索は許可済み</b>なので、以下の施策の効果には一切影響しません。</div>
   </div>
 
-  <!-- 緊急 -->
+  <!-- 旧サブドメインの整理 -->
   <section>
-    <div class="eyebrow">緊急 ／ 別サブドメインの設定ミス</div>
-    <h2 class="serif">銀座のヘッドスパLPが、検索から消えかけています</h2>
-    <p class="lede">seam.site とは別に運用されている <span class="mono">ginza / nagoya / osaka .seam.site</span> を実測しました。3件とも設定に問題があります。<strong>特に銀座は実害が出ている状態</strong>です。</p>
+    <div class="eyebrow">整理 ／ 旧サブドメインをたたむ</div>
+    <h2 class="serif">使っていない3つのサイトを、閉じます</h2>
+    <p class="lede">別サービスで作られた <span class="mono">ginza / nagoya / osaka .seam.site</span> は、今後使わない方針です。<strong>ただし実測したところ、3つとも今も表示できる状態のまま残っています</strong>（消えていません）。放置すると本体サイトと検索で食い合うため、下の手順で閉じてください。</p>
+
+    <div class="tablewrap" style="margin-bottom:20px;">
+      <table>
+        <thead><tr><th>URL</th><th>いまの状態（実測）</th><th>問題</th></tr></thead>
+        <tbody>
+          <tr><td class="u">ginza.seam.site</td><td>表示できる（86KB）</td><td>「正規版はseam-ginza.com」と申告しているが<b>そのドメインは消滅済み</b></td></tr>
+          <tr><td class="u">nagoya.seam.site</td><td>表示できる（25KB）</td><td>本体の店舗ページと内容が重複</td></tr>
+          <tr><td class="u">osaka.seam.site</td><td>表示できる（2.8KB）</td><td>中身が転送スクリプトのみ＝<b>検索エンジンには空ページ</b></td></tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="field">
-      <div class="fnum">1</div>
+      <div class="fnum">A</div>
       <div class="fbody">
-        <div class="fname">ginza.seam.site ― 存在しないドメインを「正規版」に指定<span class="req">最優先</span></div>
+        <div class="fname">本体へ転送する（おすすめ）<span class="req">推奨</span></div>
         <div class="fdesc">
-          このページには <span class="mono">canonical（正規URL）= https://seam-ginza.com/</span> が設定されていますが、<strong>seam-ginza.com は現在<span class="mono">存在しません</span>（DNSで解決できない状態）</strong>。<br>
-          canonicalは検索エンジンに対する「このページの本物はこちらです」という申告です。その行き先が消えているため、<strong>中身のある銀座ヘッドスパのページ（86KB）が「本物が存在しないページ」と扱われ、検索結果から外れてしまいます</strong>。「銀座 ヘッドスパ」は主力メニューなので、ここは売上に直結します。<br>
-          <strong>直し方：</strong>canonicalを<strong>自分自身のURL（https://ginza.seam.site/）</strong>に変更してください。WordPressの場合は<strong>［設定］→［一般］の「サイトアドレス（URL）」が古いドメインのまま</strong>になっているのが原因です（SEOプラグインのcanonical設定も併せて確認を）。<br>
-          <span style="color:var(--faint);font-size:12px;">※ もし seam-ginza.com を今後も使う予定があるなら、そのドメインを復活させて ginza.seam.site から301リダイレクトする方法もあります。どちらか一方に必ず統一してください。</span>
+          ただ消すよりも、<strong>本体の該当ページへ転送（301リダイレクト）</strong>する方が有利です。これまでこの3つのURLが集めてきた検索の評価が<strong>本体サイトに引き継がれ</strong>、SNSや名刺に古いURLが残っていてもお客様が迷子になりません。<br><br>
+          <strong>手順（Cloudflareだけで完結・Genspark側の操作は不要）：</strong><br>
+          Cloudflareにログイン → 対象ドメイン <span class="mono">seam.site</span> → 左メニュー<strong>［ルール］→［リダイレクトルール］</strong>→「ルールを作成」。<br>
+          以下の3本を、それぞれ<strong>ステータスコード 301</strong>で作成します。
+          <div class="paste" style="margin-top:12px;">
+            <span class="lbl">設定する転送先（3本）</span>
+            <button class="copybtn" data-copy="c0">コピー</button>
+            <p id="c0">ginza.seam.site  → https://seam.site/store-ginza
+nagoya.seam.site → https://seam.site/store-nagoya
+osaka.seam.site  → https://seam.site/store-osaka
+
+※ ヘッドスパを前面に出したい場合は転送先を
+   https://seam.site/headspa にしてもかまいません
+※ ステータスコードは必ず「301（恒久的な移動）」を選択
+※ 「パスを保持」はオフ（トップへまとめて転送）</p>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="field">
-      <div class="fnum">2</div>
+      <div class="fnum">B</div>
       <div class="fbody">
-        <div class="fname">osaka.seam.site ― 検索エンジンには「空のページ」に見えている</div>
+        <div class="fname">完全に消す（シンプルに閉じる場合）</div>
         <div class="fdesc">
-          中身が<strong>JavaScriptで言語別ページへ飛ばすだけ（2.8KB）</strong>で、本文がありません。検索エンジンは中身のないページと判断します。<br>
-          <strong>直し方：</strong>サーバー側で<strong>301リダイレクト</strong>にする（推奨）か、日本語版の内容をこのURLに直接置いてください。
-        </div>
-      </div>
-    </div>
-
-    <div class="field">
-      <div class="fnum">3</div>
-      <div class="fbody">
-        <div class="fname">nagoya.seam.site ― canonicalが未設定</div>
-        <div class="fdesc">
-          中身（25KB）はありますが正規URLの指定がありません。<strong>canonicalに自分自身のURL（https://nagoya.seam.site/）</strong>を設定してください。同じアドレスが複数の形（www有無・末尾スラッシュ等）で拾われるのを防げます。
+          転送が不要であれば、<strong>CloudflareのDNSからサブドメインのレコードを削除</strong>してください。<br>
+          Cloudflare → <span class="mono">seam.site</span> → 左メニュー<strong>［DNS］→［レコード］</strong>→ 名前が <span class="mono">ginza</span> / <span class="mono">nagoya</span> / <span class="mono">osaka</span> の3件を削除。<br>
+          削除した時点でサイトは表示されなくなり、検索結果からも<strong>数週間〜数か月かけて自然に消えます</strong>。<br>
+          <span style="color:var(--faint);font-size:12px;">※ Genspark側の公開停止・プラン解約も、あわせて行っておくと安心です。</span>
         </div>
       </div>
     </div>
 
     <div class="callout">
-      <b>あわせて、役割の整理をおすすめします。</b>現状「ヘッドスパ」の情報が <span class="mono">seam.site/headspa</span>・<span class="mono">seam.site/store-銀座</span>・<span class="mono">ginza.seam.site</span> の3か所にあり、検索エンジンから見ると同じキーワードで自社同士が競合しています。<br>
-      → <strong>サブドメイン＝その店のヘッドスパ専門ページ／seam.site＝店舗情報・物販・診断</strong>と役割を分け、<strong>お互いにリンクを張る</strong>と、評価が分散せずに済みます。
+      <b>閉じても情報は失われません。</b>ヘッドスパの案内は本体の <span class="mono">seam.site/headspa</span>（銀座・名古屋・大阪の3店を掲載）と各店舗ページで完結しています。本体サイトからこれら3つのサブドメインへのリンクも<b>0件</b>なので、閉じてもリンク切れは発生しません。<br>
+      → <b>作業前に一度だけご確認を：</b>InstagramのプロフィールURL・名刺・チラシ・広告に、これら3つのURLを載せていないか。載せている場合は<b>方針A（転送）</b>を選べば、そのまま生かせます。
     </div>
   </section>
 
@@ -202,7 +217,7 @@
       <li><b>サイトマップを送信する</b><span class="hint">左メニュー［サイトマップ］→ <span class="mono">sitemap.xml</span> と入力して送信。147ページを一度に知らせられます。</span></li>
       <li><b>主要ページの登録をリクエストする</b><span class="hint">上部の検索窓にURLを貼る →［インデックス登録をリクエスト］。まずはトップ・髪格診断・店舗7ページから。</span></li>
       <li><b>1か月後に見る数字（3つだけ）</b><span class="hint">①［ページ］のインデックス済み件数（147に近づくほど良い）②［検索結果］の表示回数・クリック数の推移 ③どんな検索語で見られているか（想定と違えば打ち手が変わります）</span></li>
-      <li><b>サブドメインも同じ手順で確認</b><span class="hint">上記の「ドメイン」プロパティで登録すれば ginza / nagoya / osaka も一緒に見られます。緊急対応の効果確認にも使えます。</span></li>
+      <li><b>旧サブドメインの消え具合も確認できます</b><span class="hint">上記の「ドメイン」プロパティで登録すれば ginza / nagoya / osaka も一緒に見られます。閉じたあと、検索結果から実際に消えていく様子を確認できます。</span></li>
     </ul>
     <div class="callout">
       反映には<b>数日〜数週間</b>かかります。すぐ数字が動かなくても正常です。<b>先に登録だけ済ませておくほど、後で振り返れる期間が長くなります。</b>
@@ -300,17 +315,16 @@ TEL：011-218-7930
       <table>
         <thead><tr><th>順</th><th>やること</th><th>担当</th><th>所要</th><th>効きはじめ</th></tr></thead>
         <tbody>
-          <tr><td><span class="name">1</span></td><td><b>ginza.seam.site の canonical 修正</b>（存在しないドメインを指している）</td><td>サブドメイン管理者</td><td>10分</td><td>数日〜2週間</td></tr>
-          <tr><td><span class="name">2</span></td><td><b>GBPのカテゴリに物販を追加</b>（6店）<span style="color:var(--faint);"> ／ 別紙 gbp-guide.html</span></td><td>店舗管理担当</td><td>各店5分</td><td>2週間〜1か月</td></tr>
-          <tr><td><span class="name">3</span></td><td><b>Search Console 登録＋サイトマップ送信</b></td><td>サイト管理者</td><td>15分</td><td>即（計測開始）</td></tr>
+          <tr><td><span class="name">1</span></td><td><b>GBPのカテゴリに物販を追加</b>（6店）<span style="color:var(--faint);"> ／ 別紙 gbp-guide.html</span></td><td>店舗管理担当</td><td>各店5分</td><td>2週間〜1か月</td></tr>
+          <tr><td><span class="name">2</span></td><td><b>Search Console 登録＋サイトマップ送信</b></td><td>サイト管理者</td><td>15分</td><td>即（計測開始）</td></tr>
+          <tr><td><span class="name">3</span></td><td><b>旧サブドメイン3件を閉じる</b>（本体へ301転送 または DNS削除）</td><td>サイト管理者<span style="color:var(--faint);">（Cloudflare）</span></td><td>15分</td><td>数週間</td></tr>
           <tr><td><span class="name">4</span></td><td><b>メーカー公式の取扱店一覧へ掲載依頼</b></td><td>仕入担当／店長</td><td>1社10分</td><td>1〜3か月</td></tr>
-          <tr><td><span class="name">5</span></td><td><b>osaka / nagoya のサブドメイン設定</b></td><td>サブドメイン管理者</td><td>20分</td><td>数週間</td></tr>
-          <tr><td><span class="name">6</span></td><td><b>プレスリリース配信</b>（髪格診断）</td><td>広報</td><td>1時間</td><td>不定（当たれば大）</td></tr>
+          <tr><td><span class="name">5</span></td><td><b>プレスリリース配信</b>（髪格診断）</td><td>広報</td><td>1時間</td><td>不定（当たれば大）</td></tr>
         </tbody>
       </table>
     </div>
     <div class="callout">
-      <b>1と3だけでも先に着手してください。</b>1は放置するほど銀座のヘッドスパページが検索から遠ざかります。3は早く始めるほど、後から振り返れるデータが増えます。
+      <b>1と2だけでも先に着手してください。</b>1は「買いに行く」検索でSEAMが候補に入るようになる、いちばん効きの大きい設定です。2は早く始めるほど、後から振り返れるデータが増えます。
     </div>
   </section>
 
