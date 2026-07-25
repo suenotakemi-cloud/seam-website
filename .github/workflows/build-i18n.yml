@@ -46,17 +46,25 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          rm -rf node_modules package.json package-lock.json
-          git add en zh tw ko sitemap.xml
-          git diff --staged --quiet && { echo "no change"; exit 0; }
           # 注: [skip ci] は付けない。CF Pages は [skip ci] 入りコミットの配信をスキップするため
           # （付けると生成物が本番に出ない）。en/zh/tw/ko/sitemap はこのworkflowのトリガーパス外
           # ＋GITHUB_TOKENのpushは新規workflowを起動しないため、ループにはならない。
-          git commit -m "build: prerender 多言語ページ en/zh/tw/ko"
-          # build-tailwind等が同じ*.html pushで同時起動しpushを奪い合うため、pull --rebase→pushをリトライ
+          #
+          # 以前は「commit → pull --rebase → push」をリトライしていたが、人間の push が
+          # 連続すると毎回 rebase 先が動いて 5回とも負け exit 1 になった(run #127)。
+          # 生成は決定論的(同じjaページ→同じ出力)なので、負けたら
+          # 「リモート最新に合わせ直して作り直す」方が確実。衝突が原理的に起きない。
+          # node_modules は消さない(ループ内で再生成するのに jsdom が要る)。
+          # git add はパス指定なので node_modules/package.json が混入することはない。
           pushed=0
-          for i in 1 2 3 4 5; do
-            git pull --rebase origin main && git push && { pushed=1; break; }
-            echo "push attempt $i rejected, retrying..."; sleep $((i * 3))
+          for i in 1 2 3 4 5 6 7 8; do
+            git fetch origin main
+            git reset --hard origin/main      # tracked のみ戻る = node_modules は残る
+            node .github/scripts/build-i18n.js
+            git add en zh tw ko sitemap.xml
+            if git diff --staged --quiet; then echo "no change (attempt $i)"; pushed=1; break; fi
+            git commit -m "build: prerender 多言語ページ en/zh/tw/ko"
+            if git push; then pushed=1; break; fi
+            echo "push attempt $i rejected, rebuilding from latest main..."; sleep $((i * 5))
           done
-          [ "$pushed" = "1" ] || { echo "push failed after retries"; exit 1; }
+          [ "$pushed" = "1" ] || { echo "push failed after 8 attempts"; exit 1; }
