@@ -2021,9 +2021,12 @@ document.getElementById('pf-add').onclick=()=>{
 /* =============== customer booking flow =============== */
 let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
 // 流入元: 予約ページのURL ?src=line|google|instagram で自動判定。各チャネルのリンクから来ると自動タグ付け。
-const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');return['line','google','instagram','own'].includes(s)?s:'own'})();
+// LINEアプリ内ブラウザ(LIFF)はUAに "Line/12.5.0" 形式を含む。?src が付いていなくても
+// LINEで開いた時は必ずお客様モード＆LINE経由にする（LIFFエンドポイントURLに?srcが無くても管理画面を出さない）。
+const IN_LINE=/Line\/[\d.]/.test(navigator.userAgent||'');
+const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');if(['line','google','instagram','own'].includes(s))return s;return IN_LINE?'line':'own'})();
 // ?src= 付き = お客様導線（LINE/Google/Instagram/自社サイト）。管理タブを隠し予約画面のみ表示（管理台帳をお客様に見せない）。
-const IS_CUSTOMER=new URLSearchParams(location.search).has('src');
+const IS_CUSTOMER=new URLSearchParams(location.search).has('src')||IN_LINE;
 // Googleクチコミ導線: 完了画面から「Googleにクチコミ」へ誘導する。サイト内では口コミを集めない。
 // ★本番: Googleビジネスプロフィールの「クチコミを書く」直リンクに差し替え（https://search.google.com/local/writereview?placeid=＜SEAM銀座のPlace ID＞）。
 //   未設定時はGoogleマップ検索（店舗ページ）へフォールバック。
