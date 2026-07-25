@@ -121,6 +121,47 @@ export async function handleSalonPull(url, env, cors) {
   } catch (e) { return json({ error: 'salon pull失敗: ' + e.message }, 502, cors); }
 }
 
+// GET/POST /salon/noname … 無記名(name空)の予約/予定を両SEAM店から抽出。?commit=1 で削除。
+// 用途: RPAが「名前無し」で書き込もうとして詰まるミラー予定ブロックの残骸掃除（2026-07-25）。
+// 安全策: 既定はドライラン（一覧だけ）。commit時も削除するのは「name空 かつ ミラー/予定ブロックと判別できるもの」に限定し、
+//        名前のある予約・通常予約は一切消さない。判別=status==='block' もしくは info_js に block_for*/mirror痕跡があるもの。
+export async function handleSalonCleanupNoname(url, env, cors, commit) {
+  if (!env.SALON_HOST || !env.SALON_SHOP_ID) return json({ error: 'SALON_HOST/SALON_SHOP_ID未設定' }, 500, cors);
+  const from = url.searchParams.get('from') || '2026-07-01';
+  const to = url.searchParams.get('to') || '2026-12-31';
+  const shops = [{ id: env.SALON_SHOP_ID, label: 'ヘア' }];
+  if (env.SALON_SPA_SHOP_ID) shops.push({ id: env.SALON_SPA_SHOP_ID, label: 'スパ' });
+  const found = [], deleted = [];
+  try {
+    for (const sh of shops) {
+      const j = await salonCall(env, '/get/reservation', {
+        filter: { shop_id: sh.id, reserve_date_start: from, reserve_date_end: to + ' 23:59' },
+        add_staff: true, limit: 500,
+      });
+      for (const r of (j.data || [])) {
+        if (r.delete_date) continue;
+        const nm = (r.name || '').trim();
+        if (nm) continue;                                   // 名前があるものは対象外（絶対に消さない）
+        const ij = r.info_js || {};
+        const blockFor = ij.block_for_reservation_id || ij.block_for || '';
+        const isMirror = r.status === 'block' || !!blockFor || /mirror/i.test(ij.src || '');
+        const rec = {
+          shop: sh.label, salonId: r.id, reserveNum: r.reserve_num,
+          date: (r.reserve_date || ''), end: (r.reserve_end_date || ''),
+          status: r.status, staff: r.staff_account_id || '', block_for: blockFor, src: ij.src || '',
+          isMirror, willDelete: commit && isMirror,
+        };
+        found.push(rec);
+        if (commit && isMirror) { const d = await salonDelete(env, r.id); deleted.push({ salonId: r.id, ok: !!d.result }); }
+      }
+    }
+    const skipped = found.filter(f => !f.isMirror);          // name空だがミラー判別できない=手動確認用に残す
+    return json({ ok: true, commit: !!commit, total_noname: found.length,
+      mirror_noname: found.filter(f => f.isMirror).length, deleted_count: deleted.length,
+      found, deleted, skipped_for_review: skipped }, 200, cors);
+  } catch (e) { return json({ error: 'cleanup失敗: ' + e.message }, 502, cors); }
+}
+
 // GET /salon/whoami … 認証アカウントの権限・所属・見える店舗数（診断用・秘匿情報は返さない）
 export async function handleSalonWhoami(env, cors) {
   if (!env.SALON_HOST) return json({ error: 'SALON_HOST未設定' }, 500, cors);

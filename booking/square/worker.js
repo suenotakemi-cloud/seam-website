@@ -17,7 +17,7 @@
 import PostalMime from 'postal-mime';   // HPBメールのMIME/日本語解析（npm install postal-mime）
 import { EmailMessage } from 'cloudflare:email';   // オーナー通知（SEND_EMAILバインド・宛先はwrangler.tomlのdestination_address）
 import { json, z, min2hm } from './util.js';   // 共有ユーティリティ
-import { salonPush, salonCancel, salonDelete, handleSalonPull, handleSalonSelftest, handleSalonWhoami } from './salon-bridge.js';   // salon.town(CUEPON)ブリッジ
+import { salonPush, salonCancel, salonDelete, handleSalonPull, handleSalonSelftest, handleSalonWhoami, handleSalonCleanupNoname } from './salon-bridge.js';   // salon.town(CUEPON)ブリッジ
 import { handleAiChat } from './ai-chat.js';   // BYO AI（本人キーでClaude/ChatGPT）
 
 const SQUARE_VERSION = '2025-01-23';
@@ -107,6 +107,7 @@ export default {
     // ===== 公開（顧客導線・認証不要） =====
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors); // 顧客の予約作成
+    if (p.endsWith('/availability') && m === 'GET') return handleAvailability(url, env, cors);           // 空き判定用(PII無し・公開)
     if (p.endsWith('/line/login/state') && m === 'POST') return handleLineLoginState(request, env, cors);
     if (p.endsWith('/line/login/result') && m === 'GET') return handleLineLoginResult(url, env, cors);
 
@@ -125,6 +126,9 @@ export default {
     if (p.endsWith('/salon/selftest') && m === 'POST') return A() || handleSalonSelftest(env, cors);
     if (p.endsWith('/salon/pull') && m === 'GET') return A() || handleSalonPull(url, env, cors);
     if (p.endsWith('/salon/whoami') && m === 'GET') return A() || handleSalonWhoami(env, cors);
+    // 無記名ミラー残骸の掃除: GET=ドライラン一覧 / POST=削除実行（?commit=1）。管理トークン必須。
+    if (p.endsWith('/salon/noname') && m === 'GET') return A() || handleSalonCleanupNoname(url, env, cors, false);
+    if (p.endsWith('/salon/noname') && m === 'POST') return A() || handleSalonCleanupNoname(url, env, cors, url.searchParams.get('commit') === '1');
     // 予約データ（GET=全顧客PII / PATCH / DELETE は管理のみ。POSTのみ公開＝上記）
     if (p.endsWith('/reservations') && m === 'GET') return A() || handleGetReservations(url, env, cors);
     if (p.endsWith('/reservations') && m === 'PATCH') return A() || handlePatchReservation(request, env, cors);
@@ -427,6 +431,29 @@ const R2API = r => ({   // D1行 → アプリ形式
   status: r.status, hpbBlocked: !!r.hpb_blocked, deposit: r.deposit, lineUserId: r.line_user_id,
   salonId: r.salon_id || '', createdAt: r.created_at,
 });
+
+// GET /availability?from=&to= … 空き判定用の「埋まっている枠」だけを返す（公開・認証不要・個人情報は一切返さない）。
+// お客様の予約ページ(顧客モード)がこれを読み、実際の予約(自社+LINE+HPB取込)で埋まった枠を×表示にする＝サロンボード超過の予約を防ぐ。
+async function handleAvailability(url, env, cors) {
+  if (!env.DB) return json({ ok: true, busy: [] }, 200, cors);
+  const from = url.searchParams.get('from'), to = url.searchParams.get('to') || from;
+  try {
+    let rows;
+    if (from) {
+      rows = await env.DB.prepare(
+        "SELECT date,staff_id,start,end FROM reservations WHERE status!='cancelled' AND date>=? AND date<=?"
+      ).bind(from, to).all();
+    } else {
+      // 既定は今日以降（過去枠は空き表示に不要）。日付文字列比較でOK。
+      rows = await env.DB.prepare(
+        "SELECT date,staff_id,start,end FROM reservations WHERE status!='cancelled' AND date>=date('now')"
+      ).all();
+    }
+    // 個人情報(氏名/電話/メニュー/チャネル等)は返さない。占有区間だけ。
+    const busy = (rows.results || []).map(r => ({ date: r.date, staffId: r.staff_id, start: r.start, end: r.end }));
+    return json({ ok: true, busy }, 200, cors);
+  } catch (e) { return json({ error: 'availability失敗: ' + e.message }, 502, cors); }
+}
 
 async function handleGetReservations(url, env, cors) {
   if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);

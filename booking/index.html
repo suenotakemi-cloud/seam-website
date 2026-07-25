@@ -2845,6 +2845,18 @@ if(IS_CUSTOMER){
   // 共有端末対策: 顧客モードでは他人のPII・売上をメモリにもlocalStorageにも持たない（重複はサーバ側で判定）
   db.reservations=[];db.checkouts=[];db.settlements=[];db.intakes=[];db.products=[];db.waitlist=[];db.reviews=[];
   save();refreshAll();
+  // ★キャパ超過防止: お客様モードでも「埋まっている枠」だけ（氏名・電話なしのPII無し占有区間）をサーバから取得し、
+  //   実予約(自社+LINE+HPB取込)で埋まった時間を×表示にする＝サロンボードの予約数を超えて受け付けない。
+  (async()=>{
+    try{
+      const r=await fetch(API_BASE+'/availability');
+      if(!r.ok)return; const j=await r.json();
+      if(j&&j.ok&&Array.isArray(j.busy)){
+        db.reservations=j.busy.map((b,i)=>({id:'busy'+i,date:b.date,staffId:b.staffId,start:b.start,end:b.end,status:'booked',name:'',channel:'hpb',hpbBlocked:true}));
+        refreshAll();
+      }
+    }catch(e){}
+  })();
   document.body.classList.add('customer');
   document.querySelector('header nav').style.display='none';
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
