@@ -53,6 +53,39 @@ BRANDS = [
 AREA_JA={'ginza':'銀座','omotesando':'表参道','sapporo':'札幌','osaka':'大阪',
          'nagoya':'名古屋','fukuoka':'福岡','utsunomiya':'宇都宮'}
 
+# エリア固有コンテンツ(重複回避 = 各エリアの実在アクセス+街の性格を厚めにユニーク化)
+# access は store-*.html 本文の実記載と一致 / paras は既知の街の地理・性格+SEAMの実ポリシー(買うだけOK/会員はオンライン)のみ(客層等の憶測は書かない)
+AREA_INFO={
+ 'ginza':      dict(access='銀座一丁目駅 7番出口から徒歩1分（銀座駅・京橋駅からも歩けます）', paras=[
+   '銀座は百貨店やラグジュアリーブランドが集まる 日本を代表する商業地です。美容室やコスメの路面店も多く ヘアケアを見比べながら選びたい方に向いた街です。',
+   'SEAM GINZAは銀座一丁目駅 7番出口から徒歩1分。銀座駅・京橋駅からも歩け 松屋や銀座三越といった百貨店エリアからも近い立地です。',
+   '施術もご予約もいりません。銀座での買い物や会食のついでに サロン専売ヘアケアだけを"買うだけ"で選べます。会員価格で続けたい方は 店頭でそのままメンバー登録も可能です。']),
+ 'omotesando': dict(access='表参道駅 A4出口から徒歩3分（南青山エリア）', paras=[
+   '表参道・南青山は ファッションとビューティの発信地です。感度の高いショップが軒を連ね 新しいヘアケアをいち早く手に取れる街として知られています。',
+   'SEAMは表参道駅 A4出口から徒歩3分 青山通りやキャットストリートにも近い南青山エリアにあります。',
+   '美容室帰りや買い物の途中に 気になっていた一本を実際に見て選べます。予約は不要で お買い物だけのご来店を歓迎しています。']),
+ 'sapporo':    dict(access='地下鉄大通駅から徒歩1分', paras=[
+   '札幌の中心・大通は 大通公園や狸小路商店街に近い街の中心部です。地下歩行空間からもアクセスしやすく 天候を気にせず立ち寄れます。',
+   'SEAMは地下鉄大通駅から徒歩1分。すすきの方面へも歩ける立地で 都心でのお出かけの動線に組み込みやすい場所です。',
+   '寒暖差や乾燥の気になる北海道では 保湿・補修のホームケアを切らさず揃えたいもの。施術なしで サロン専売品だけを買い足せます。']),
+ 'osaka':      dict(access='四ツ橋駅 6番出口から徒歩2分（南堀江）', paras=[
+   '南堀江は セレクトショップやカフェが並ぶ大阪・ミナミのおしゃれエリアです。アメリカ村や心斎橋・なんばからも歩ける距離にあります。',
+   'SEAMは四ツ橋駅 6番出口から徒歩2分。堀江での買い物やカフェめぐりの合間に立ち寄りやすい立地です。',
+   '施術・予約は不要。ホームケアをまとめて揃えたいときも サロン専売品だけを"買うだけ"で選べます。会員登録は店頭でご案内しています。']),
+ 'nagoya':     dict(access='矢場町駅からすぐ（栄エリア・1階と2階のフロア）', paras=[
+   '栄は パルコや松坂屋が集まる名古屋随一の商業地です。矢場町駅からすぐの通り沿いに SEAMは1階と2階のフロアで構えています。',
+   '栄での買い物の帰りに そのまま立ち寄れる動線の良さが特長です。',
+   '実際に手に取りながら サロン専売ヘアケアを選べます。施術は不要で お買い物だけのご来店も歓迎。会員価格で続けたい方は店頭で登録できます。']),
+ 'fukuoka':    dict(access='西鉄天神駅から徒歩5分（大名）', paras=[
+   '大名は 天神に隣接する福岡の流行発信地です。路面のセレクトショップやカフェが集まり 買い物の合間に立ち寄りやすいエリアです。',
+   'SEAMは西鉄天神駅から徒歩5分。天神の百貨店エリアからも歩ける大名の一角にあります。',
+   'アウトバスやスタイリングなど 気になっていたアイテムを実際に試しながら選べます。予約不要 お買い物だけのご来店も歓迎です。']),
+ 'utsunomiya': dict(access='鶴田駅から徒歩6分（お車での来店もしやすい立地）', paras=[
+   'SEAMの宇都宮店は 市内・鶴田エリアにあります。ロードサイドで駐車もしやすく お車での立ち寄りに向いた立地です。',
+   'JR鶴田駅からは徒歩6分。日々の買い物やお出かけの動線に組み込みやすい場所です。',
+   'シャンプー・トリートメントの買い足しから 大容量サイズまで。施術なしで サロン専売ヘアケアだけを"買うだけ"で選べます。']),
+}
+
 # ── 店舗NAP抽出(store-*.htmlのJSON-LDから) ──────────────────
 def load_stores():
     out=[]
@@ -298,14 +331,19 @@ def area_article_html(b, st, stores, lines, tops):
     ja,en,slug=b['ja'],b['en'],b['slug']
     area=st['area']; page=f'{slug}-{st["slug"]}'
     url=f'https://seam.site/{page}'
+    ainfo=AREA_INFO.get(st['slug'],{})
+    access=ainfo.get('access','')
     title=f'{ja} {area}で買うだけOK｜正規取扱 {st["name"]}(購入のみ来店歓迎)'
-    desc=f'{area}で{ja}({en})を"買うだけ"で来店OK 施術・予約なしで店頭購入できます {st["name"]}({st["addr"]}) メーカー公認の正規取扱店 在庫は店舗にご確認ください'
+    desc=f'{area}で{ja}({en})を"買うだけ"で来店OK 施術・予約なしで店頭購入できます {st["name"]}({access or st["addr"]}) メーカー公認の正規取扱店 在庫は店舗にご確認ください'
     hours_line=f'　営業時間 {st["hours"]}' if st.get('hours') else ''
+    access_line=f' {access}' if access else ''
 
     faqs=[(f'{area}で{ja}を買うだけの来店はできますか',
            f'はい {st["name"]}では施術やご予約がなくても {ja}をお買い求めいただけます お買い物だけのご来店を歓迎しています'),
+          (f'{area}店へのアクセスは',
+           f'{access or st["addr"]}です{hours_line}'),
           ('予約は必要ですか',
-           f'不要です 営業時間内にそのままお越しください{hours_line}'),
+           f'不要です{access_line} 営業時間内にそのままお越しください'),
           ('会員でなくても買えますか',
            '店頭はどなたでもご購入いただけます 会員制はオンラインショップのみで ご登録は店頭でご案内しています'),
           (f'{ja}の在庫はありますか',
@@ -327,6 +365,12 @@ def area_article_html(b, st, stores, lines, tops):
 
     ig_row=f'<div class="catrow"><div class="k">Instagram</div><div class="v"><a href="{E(st["ig"])}" target="_blank" rel="noopener" class="text-gold hover:underline underline-offset-4">店舗アカウントを見る ↗</a>(在庫のお問い合わせもこちらへ)</div></div>' if st.get('ig') else ''
     hours_row=f'<div class="catrow"><div class="k">営業時間</div><div class="v nums">{E(st["hours"])}</div></div>' if st.get('hours') else ''
+    access_row=f'<div class="catrow"><div class="k">アクセス</div><div class="v">{E(access)}</div></div>' if access else ''
+    # エリア固有セクション(重複回避のユニークコンテンツ)
+    area_html=''
+    if ainfo and ainfo.get('paras'):
+        paras=''.join(f'<p class="mt-4 text-[13.5px] sm:text-[14px] text-charcoal/80" style="line-height:2.05;">{E(t)}</p>' for t in ainfo['paras'])
+        area_html=f'<h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">{E(area)}での立ち寄り方</h2>{paras}'
 
     # ブランドロゴ帯(ロゴ無しは銘板)
     if b.get('logo'):
@@ -443,17 +487,13 @@ def area_article_html(b, st, stores, lines, tops):
     <div class="mt-5 space-y-3">
       <div class="catrow"><div class="k">店名</div><div class="v">{E(st['name'])}</div></div>
       <div class="catrow"><div class="k">住所</div><div class="v">{E(st['addr'])}</div></div>
+      {access_row}
       {hours_row}
       {ig_row}
       <div class="catrow"><div class="k">くわしく</div><div class="v"><a href="store-{st['slug']}.html" class="text-gold hover:underline underline-offset-4">店舗ページ(アクセス・写真) →</a></div></div>
     </div>
 
-    <h2 class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">"買うだけ来店"の流れ</h2>
-    <div class="mt-5 space-y-4">
-      <div class="step"><div class="n">1</div><div class="v text-[13.5px] text-charcoal/80" style="line-height:1.9;">そのまま入店<br><span class="text-[12px] text-charcoal/60">予約不要 営業時間内ならいつでも</span></div></div>
-      <div class="step"><div class="n">2</div><div class="v text-[13.5px] text-charcoal/80" style="line-height:1.9;">自由に選ぶ or スタッフに相談<br><span class="text-[12px] text-charcoal/60">髪の状態を伝えると{E(ja)}の中から合うものをご案内します</span></div></div>
-      <div class="step"><div class="n">3</div><div class="v text-[13.5px] text-charcoal/80" style="line-height:1.9;">お会計<br><span class="text-[12px] text-charcoal/60">メンバー登録(店頭ですぐ)で会員価格・オンライン買い足しも可能に</span></div></div>
-    </div>
+    {area_html}
 
     {lines_html}
     {tops_html}
