@@ -108,6 +108,7 @@ export default {
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors); // 顧客の予約作成
     if (p.endsWith('/availability') && m === 'GET') return handleAvailability(url, env, cors);           // 空き判定用(PII無し・公開)
+    if (p.endsWith('/admin/purge-test') && m === 'POST') return handlePurgeTest(url, env, cors);         // テスト予約掃除(専用トークン)
     if (p.endsWith('/line/login/state') && m === 'POST') return handleLineLoginState(request, env, cors);
     if (p.endsWith('/line/login/result') && m === 'GET') return handleLineLoginResult(url, env, cors);
 
@@ -453,6 +454,26 @@ async function handleAvailability(url, env, cors) {
     const busy = (rows.results || []).map(r => ({ date: r.date, staffId: r.staff_id, start: r.start, end: r.end }));
     return json({ ok: true, busy }, 200, cors);
   } catch (e) { return json({ error: 'availability失敗: ' + e.message }, 502, cors); }
+}
+
+// POST /admin/purge-test?token= … 氏名が「テスト」で始まる自社/LINEのテスト予約のみを D1＋salon.town から削除。
+// 専用トークン(CLEANUP_TOKEN)必須。検証で誤って作った本番テスト予約の後始末用（実顧客名にはヒットしない狭い条件）。
+async function handlePurgeTest(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  const token = url.searchParams.get('token') || '';
+  if (!env.CLEANUP_TOKEN || token !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+  const rows = await env.DB.prepare(
+    "SELECT id, salon_id, name, date, staff_id, start FROM reservations WHERE name LIKE 'テスト%' AND channel IN ('line','own')"
+  ).all();
+  const deleted = [];
+  for (const r of (rows.results || [])) {
+    if (env.SALON_SYNC === 'on' && env.SALON_HOST && r.salon_id) {
+      try { await salonDelete(env, r.salon_id); } catch (e) { console.log('salon削除失敗:', e.message); }
+    }
+    await env.DB.prepare('DELETE FROM reservations WHERE id=?').bind(r.id).run();
+    deleted.push({ id: r.id, name: r.name, date: r.date, start: r.start, salon_id: r.salon_id || '' });
+  }
+  return json({ ok: true, count: deleted.length, deleted }, 200, cors);
 }
 
 async function handleGetReservations(url, env, cors) {
