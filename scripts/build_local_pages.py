@@ -33,6 +33,8 @@ STORES = {
    # 近隣: 徒歩分数は書かない(実測がないため)。エリアとしての近さのみ述べる
    near=['銀座', '銀座一丁目', '有楽町', '京橋', '東銀座', '日本橋'],
    nearline='銀座一丁目駅の7番出口から徒歩1分 有楽町・京橋・東銀座からも歩いて来られる場所です',
+   note='ONE GINZA の3階　銀座で夜20時まで開いている数少ないサロン専売ショップです　ヘアサロンとヘッドスパを同じフロアに構えています',
+   photo='images/stores/store_ginza.jpg', pw=1024, ph=576,
    salon_hpb='H000802192', spa_hpb='H000800971', spa_set='std'),
  'omotesando': dict(
    area='表参道', name='gallica / SEAM', pref='東京都', locality='港区',
@@ -41,6 +43,8 @@ STORES = {
    opens='10:00', closes='20:00',
    near=['表参道', '南青山', '青山', '外苑前', '原宿'],
    nearline='表参道駅のA4出口から徒歩3分 南青山・外苑前・原宿からも歩ける立地です',
+   note='南青山のLouis IIビル　表参道・外苑前・原宿のいずれからも歩ける立地で 夜20時まで開いています',
+   photo='images/stores/store_omotesando.jpg', pw=765, ph=1024,
    salon_hpb=None, spa_hpb=None, spa_set=None),
  'sapporo': dict(
    area='札幌', name='SEAM SAPPORO', pref='北海道', locality='札幌市中央区',
@@ -49,6 +53,8 @@ STORES = {
    opens='10:00', closes='20:00',
    near=['札幌', '大通', '狸小路', 'すすきの', '札幌駅'],
    nearline='地下鉄大通駅から徒歩1分 狸小路・すすきの・札幌駅からも地下歩行空間でつながっています',
+   note='南2条西 大通駅から地下でつながる立地　平日は夜20時まで 土日も営業しています　個室は半個室でご用意しています',
+   photo='images/stores/store_sapporo.jpg', pw=765, ph=1024,
    salon_hpb='H000417753', spa_hpb=None, spa_set=None),
  'osaka': dict(
    area='大阪', name='SEAM OSAKA HORIE', pref='大阪府', locality='大阪市西区',
@@ -57,6 +63,8 @@ STORES = {
    opens='11:00', closes='19:00',
    near=['大阪', '堀江', '南堀江', '心斎橋', '四ツ橋', 'アメリカ村', 'なんば'],
    nearline='四ツ橋駅の6番出口から徒歩2分 心斎橋・アメリカ村・なんばからも歩いて来られる南堀江です',
+   note='STORK南堀江の1階　全店で唯一 髪を濡らさない30分のドライスパ（¥6,600）を置いている店舗です　料金体系も他店と異なります',
+   photo='images/stores/store_osaka.jpg', pw=572, ph=1024,
    salon_hpb='H000791476', spa_hpb='H000802373', spa_set='osaka'),
  'nagoya': dict(
    area='名古屋', name='SEAM NAGOYA', pref='愛知県', locality='名古屋市中区',
@@ -65,6 +73,8 @@ STORES = {
    opens='11:00', closes='19:00',
    near=['名古屋', '栄', '矢場町', '大須', '伏見', '上前津'],
    nearline='矢場町駅からすぐ 栄・大須・上前津からも歩ける栄エリアです',
+   note='ネイリックスの1階と2階 2フロアを使った店舗です　栄・矢場町・大須から歩けて ヘアサロンとヘッドスパを併設しています',
+   photo='images/stores/store_nagoya.jpg', pw=819, ph=1024,
    salon_hpb='H000800028', spa_hpb='H000791418', spa_set='std'),
  'fukuoka': dict(
    area='福岡', name='SEAM FUKUOKA', pref='福岡県', locality='福岡市中央区',
@@ -73,6 +83,8 @@ STORES = {
    opens='10:00', closes='19:00',
    near=['福岡', '天神', '大名', '今泉', '赤坂', '警固'],
    nearline='西鉄天神駅から徒歩5分 今泉・赤坂・警固からも歩ける大名です',
+   note='BPRスクエア天神大名の1階　天神・今泉・赤坂から歩ける大名エリアです　日曜は18時までの営業　個室は半個室でご用意しています',
+   photo='images/stores/store_fukuoka.jpg', pw=1100, ph=821,
    salon_hpb='H000734442', spa_hpb=None, spa_set=None),
  'utsunomiya': dict(
    area='宇都宮', name='gigi SEAM', pref='栃木県', locality='宇都宮市',
@@ -81,6 +93,8 @@ STORES = {
    opens='9:00', closes='19:00',
    near=['宇都宮', '鶴田', 'インターパーク'],
    nearline='JR鶴田駅から徒歩6分 お車での来店もしやすいインターパーク内です',
+   note='インターパーク内　お車での来店がしやすく 朝9時から開いています　火曜定休です',
+   photo='images/stores/store_gigi.jpg', pw=1024, ph=819,
    salon_hpb=None, spa_hpb=None, spa_set=None),
 }
 
@@ -242,6 +256,91 @@ def ld_place(st, kind, url):
 FOOTER_NOTE = ('<p class="mt-10 text-[11.5px] text-charcoal/55" style="line-height:1.95;">'
                '掲載の料金・営業時間は変更になる場合があります 最新の情報は各予約ページでご確認ください</p>')
 
+# store-*.html と同じ形式のGoogleマップ検索URL(埋め込みではなく検索リンク=APIキー不要)
+def map_url(st):
+    from urllib.parse import quote
+    q = f"SEAM {st['pref']}{st['locality']}{st['street']}"
+    return 'https://www.google.com/maps/search/?api=1&query=' + quote(q)
+
+
+def photo_block(st, caption):
+    """店舗の実写真。avif/webp を優先し、実寸を入れてCLSを出さない。"""
+    base = st['photo'].rsplit('.', 1)[0]
+    return (f'<figure class="mt-7 overflow-hidden rounded-[4px]">'
+            f'<picture>'
+            f'<source srcset="{base}.avif" type="image/avif">'
+            f'<source srcset="{base}.webp" type="image/webp">'
+            f'<img src="{st["photo"]}" alt="{E(st["name"])}の店内" '
+            f'width="{st["pw"]}" height="{st["ph"]}" loading="lazy" decoding="async" '
+            f'class="w-full h-auto object-cover" style="max-height:380px;object-position:center;">'
+            f'</picture>'
+            f'<figcaption class="mt-2 text-[11.5px] text-charcoal/55">{E(caption)}</figcaption></figure>')
+
+
+# store-*.html に載っている実際の取扱ブランド(一次情報)
+STORE_BRANDS = ['オージュア（Aujua）', 'ミルボン / グローバルミルボン', 'サブリミック（SUBLIMIC）',
+                'システムプロフェッショナル', 'ケラスターゼ（Kérastase）', 'TOKIO インカラミ',
+                'Oggi otto（オッジオット）', 'REKERA（リケラ）', 'LOA（ロア）', 'つるりんちょ。',
+                'エルジューダ', 'ダヴィネス（Davines）', 'ハホニコ', 'ルベル']
+
+
+def brands_block(slug, area):
+    chips = ''.join(f'<span>{E(b)}</span>' for b in STORE_BRANDS[:6])
+    return (f'<section class="mt-12">'
+            f'<h2 class="font-serif text-[19px] text-ink">{E(area)}店で買える主なブランド</h2>'
+            f'<p class="mt-2.5 text-[13px] text-charcoal/75" style="line-height:2;">'
+            f'140を超えるサロン専売ブランドを正規取扱しています　施術を受けなくても'
+            f'<a href="store-{slug}.html" class="border-b border-line">購入だけのご来店</a>ができます</p>'
+            f'<div class="chips mt-4">{chips}</div>'
+            f'<p class="mt-3.5 text-[12px] text-charcoal/60">在庫は店舗・時期により異なります　'
+            f'<a href="brand.html" class="border-b border-line">取扱ブランド一覧を見る →</a></p></section>')
+
+
+def flow_block(steps, note=''):
+    rows = ''.join(
+        f'<div class="flex gap-3.5 items-start">'
+        f'<span class="flex-none mt-0.5 font-mono text-[10px] tracking-widest2 text-gold nums">{i+1:02d}</span>'
+        f'<span class="text-[13.5px] text-charcoal/85" style="line-height:1.95;">'
+        f'<strong class="font-normal text-ink">{E(t)}</strong><br>{E(d)}</span></div>'
+        for i, (t, d) in enumerate(steps))
+    tail = f'<p class="mt-4 text-[12px] text-charcoal/60">{E(note)}</p>' if note else ''
+    return (f'<section class="mt-12"><h2 class="font-serif text-[19px] text-ink">当日の流れ</h2>'
+            f'<div class="mt-5 space-y-4">{rows}</div>{tail}</section>')
+
+
+def access_block(st, extra_rows=()):
+    rows = ''.join(f'<div class="kv"><span class="k">{E(k)}</span><span class="v">{v}</span></div>'
+                   for k, v in extra_rows)
+    return (f'<section class="mt-12">'
+            f'<h2 class="font-serif text-[19px] text-ink">{E(st["area"])}店の場所と営業時間</h2>'
+            f'<div class="mt-4 space-y-2.5">'
+            f'<div class="kv"><span class="k">店舗</span><span class="v">{E(st["name"])}</span></div>'
+            f'<div class="kv"><span class="k">住所</span><span class="v">{E(st["pref"])}{E(st["locality"])}{E(st["street"])}</span></div>'
+            f'<div class="kv"><span class="k">アクセス</span><span class="v">{E(st["access"])}</span></div>'
+            f'<div class="kv"><span class="k">営業時間</span><span class="v nums">{E(st["hours"])}</span></div>'
+            f'{rows}</div>'
+            f'<a href="{map_url(st)}" target="_blank" rel="noopener" '
+            f'class="mt-4 inline-block text-[12.5px] border-b border-line hover:text-ink">Googleマップで開く ↗</a>'
+            f'</section>')
+
+
+def area_articles_block(slug, area):
+    """その街のブランド別「買うだけOK」記事へ内部リンク(既存77本を活かす)"""
+    ls = ' '.join(f'<a href="{b}-{slug}.html" class="hover:text-ink border-b border-line pb-0.5">{E(ja)}</a>'
+                  for b, ja, _ in BRANDS)
+    return (f'<section class="mt-12"><h2 class="font-serif text-[19px] text-ink">'
+            f'{E(area)}でブランド別に買う</h2>'
+            f'<p class="mt-3 text-[13px] text-charcoal/75" style="line-height:2.1;">{ls}</p></section>')
+
+
+def sticky_cta(label, href, track):
+    """モバイル追従の予約ボタン。本文が隠れないよう body に余白を足す。"""
+    return (f'<div class="fixed inset-x-0 bottom-0 z-50 sm:hidden px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3" '
+            f'style="background:linear-gradient(to top,rgba(255,255,255,.98) 62%,rgba(255,255,255,0));">'
+            f'<a href="{href}" target="_blank" rel="noopener" data-track-click="{track}" '
+            f'class="flex items-center justify-center rounded-[6px] px-5 py-3.5 text-[14px] text-white" '
+            f'style="background:#B57C5A;">{E(label)}</a></div>')
+
 
 def foot():
     return '''
@@ -305,14 +404,28 @@ def build_spa(slug):
     others = ' '.join(f'<a href="headspa-{s}.html" class="hover:text-ink border-b border-line pb-0.5">{E(STORES[s]["area"])}</a>'
                       for s in ('ginza', 'nagoya', 'osaka') if s != slug)
 
+    shortest = min(menus, key=lambda m: int(m[2].replace('¥', '').replace(',', '')))
+    flow = flow_block([
+        ('ご来店・カウンセリング', f'頭や首肩の張り 睡眠や目の疲れなど 今の状態をうかがいます'),
+        ('完全個室へご案内', 'まわりを気にせず過ごせる個室です　途中で眠ってしまう方も多い時間です'),
+        ('施術', f'{menus[0][1]}のコースで来店から退店まで{menus[0][4].replace("来店〜退店 ", "")}が目安です'),
+        ('仕上げ・ホームケアのご相談', f'ご希望があれば140+ブランドから今の頭皮と髪に合うものをご案内します'),
+    ], note=f'いちばん短いコースは{shortest[0]}（{shortest[1]}・{shortest[2]}）です')
+
     return head(title, desc, url, ld, f'{a}のヘッドスパ｜完全個室 {st["name"]} | SEAM') + header_nav(
         [('headspa.html', 'ヘッドスパ'), (f'store-{slug}.html', '店舗情報')]) + f'''
-  <main class="max-w-3xl mx-auto px-5 sm:px-8 pt-8 pb-4">
+  <main class="max-w-3xl mx-auto px-5 sm:px-8 pt-8 pb-4" style="padding-bottom:88px;">
     {crumbs([('ホーム', 'index.html'), ('ヘッドスパ', 'headspa.html'), (f'{a}のヘッドスパ', None)])}
     <p class="mt-7 font-mono tracking-widest2 text-[10px] uppercase text-gold">Head Spa · {E(a)}</p>
     <h1 class="mt-3 font-serif text-[27px] sm:text-[34px] leading-[1.3] text-ink" style="letter-spacing:.02em;font-weight:500;">{E(a)}で完全個室のヘッドスパ</h1>
     <p class="mt-4 text-[14px] text-charcoal/85" style="line-height:2.05;">{E(st['nearline'])}<br>頭も首も肩も ほどけていく時間を完全個室でご用意しています</p>
     <div class="chips mt-5">{''.join(f'<span>{E(n)}</span>' for n in st['near'])}</div>
+    {photo_block(st, f'{st["name"]}（{st["access"]}）')}
+
+    <section class="mt-10 border-l-2 pl-4" style="border-color:#D9BE93;">
+      <h2 class="font-serif text-[16px] text-ink">この店舗について</h2>
+      <p class="mt-2 text-[13.5px] text-charcoal/80" style="line-height:2;">{E(st['note'])}</p>
+    </section>
 
     <section class="mt-11">
       <h2 class="font-serif text-[19px] text-ink">コースと料金</h2>
@@ -323,15 +436,11 @@ def build_spa(slug):
          class="mt-6 inline-block rounded-[4px] px-6 py-3.5 text-[13.5px] text-white transition-opacity hover:opacity-90" style="background:#B57C5A;">{E(a)}のヘッドスパを予約する →</a>
     </section>
 
-    <section class="mt-12">
-      <h2 class="font-serif text-[19px] text-ink">{E(a)}店の場所と営業時間</h2>
-      <div class="mt-4 space-y-2.5">
-        <div class="kv"><span class="k">店舗</span><span class="v">{E(st['name'])}</span></div>
-        <div class="kv"><span class="k">住所</span><span class="v">{E(st['pref'])}{E(st['locality'])}{E(st['street'])}</span></div>
-        <div class="kv"><span class="k">アクセス</span><span class="v">{E(st['access'])}</span></div>
-        <div class="kv"><span class="k">営業時間</span><span class="v nums">{E(st['hours'])}</span></div>
-      </div>
-    </section>
+    {flow}
+
+    {access_block(st, [('ご予約', 'ホットペッパービューティーから24時間受付')])}
+
+    {brands_block(slug, a)}
 
     <section class="mt-12 rounded-[4px] px-5 py-6" style="background:#F6F1EA;">
       <h2 class="font-serif text-[17px] text-ink">ヘアケア用品の購入だけでもどうぞ</h2>
@@ -340,10 +449,12 @@ def build_spa(slug):
         <a href="store-{slug}.html" class="border-b border-line">販売のみのご来店</a>ができます　予約も不要です<br>
         店頭でご登録いただくと 買い足しは<a href="onlineshop.html" class="border-b border-line">会員制のネットショップ</a>からもご注文いただけます</p>
       <p class="mt-4 text-[12.5px] text-charcoal/70">
-        <a href="store-{slug}.html" class="border-b border-line">{E(a)}の店舗情報</a>　
-        <a href="salon-{slug}.html" class="border-b border-line">{E(a)}のヘアサロン</a>　
-        <a href="brand.html" class="border-b border-line">取扱ブランド一覧</a></p>
+        <a href="store-{slug}.html" class="border-b border-line">{E(a)}の店舗情報</a>
+        <a href="salon-{slug}.html" class="border-b border-line">{E(a)}のヘアサロン</a>
+        <a href="finder.html" class="border-b border-line">髪格診断で髪質を知る</a></p>
     </section>
+
+    {area_articles_block(slug, a)}
 
     <section class="mt-12">
       <h2 class="font-serif text-[19px] text-ink">よくあるご質問</h2>
@@ -352,7 +463,8 @@ def build_spa(slug):
 
     <p class="mt-10 text-[12.5px] text-charcoal/70">ほかのエリアのヘッドスパ　{others}</p>
     {FOOTER_NOTE}
-  </main>''' + foot()
+  </main>
+  {sticky_cta(f'{a}のヘッドスパを予約', spa_url, 'spa_reserve_sticky')}''' + foot()
 
 
 # ══════════════════════════════════════ ヘアサロン 店舗別LP ══════════════════════════════════════
@@ -404,40 +516,65 @@ def build_salon(slug):
     others = ' '.join(f'<a href="salon-{s}.html" class="hover:text-ink border-b border-line pb-0.5">{E(STORES[s]["area"])}</a>'
                       for s in ('ginza', 'sapporo', 'osaka', 'nagoya', 'fukuoka') if s != slug)
 
+    room = '半個室' if slug in ('sapporo', 'fukuoka') else '完全個室'
+    flow = flow_block([
+        ('カウンセリング', 'なりたい仕上がりと 今の髪の履歴（カラー・パーマ・縮毛矯正・ブリーチ）をうかがいます'),
+        (f'{room}で施術', f'{room}をご用意しています　まわりを気にせずご相談いただけます'),
+        ('仕上げ', 'ご自宅で再現できるよう 乾かし方とスタイリングまでお伝えします'),
+        ('ホームケアのご提案', '140+のサロン専売ブランドから 髪質と履歴に合うものだけをお選びします　購入は任意です'),
+    ])
+    concerns = ('<section class="mt-12"><h2 class="font-serif text-[19px] text-ink">こんなお悩みの方へ</h2>'
+                '<p class="mt-3 text-[13px] text-charcoal/75" style="line-height:2.1;">'
+                '<a href="guide-uneri.html" class="hover:text-ink border-b border-line pb-0.5">うねり・広がり</a> '
+                '<a href="guide-damage.html" class="hover:text-ink border-b border-line pb-0.5">ダメージ</a> '
+                '<a href="guide-kansou.html" class="hover:text-ink border-b border-line pb-0.5">乾燥</a> '
+                '<a href="guide-colorfade.html" class="hover:text-ink border-b border-line pb-0.5">色落ち</a> '
+                '<a href="guide-straightening.html" class="hover:text-ink border-b border-line pb-0.5">縮毛矯正後のケア</a> '
+                '<a href="guide-perm.html" class="hover:text-ink border-b border-line pb-0.5">パーマの持ち</a> '
+                '<a href="guide-bleach.html" class="hover:text-ink border-b border-line pb-0.5">ブリーチ毛</a> '
+                '<a href="guide-shiraga.html" class="hover:text-ink border-b border-line pb-0.5">白髪</a> '
+                '<a href="guide-scalp.html" class="hover:text-ink border-b border-line pb-0.5">頭皮</a></p></section>')
+
     return head(title, desc, url, ld, f'{a}のヘアサロン｜{st["name"]} | SEAM') + header_nav(
         [('hairsalon.html', 'ヘアサロン'), (f'store-{slug}.html', '店舗情報')]) + f'''
-  <main class="max-w-3xl mx-auto px-5 sm:px-8 pt-8 pb-4">
+  <main class="max-w-3xl mx-auto px-5 sm:px-8 pt-8 pb-4" style="padding-bottom:88px;">
     {crumbs([('ホーム', 'index.html'), ('ヘアサロン', 'hairsalon.html'), (f'{a}のヘアサロン', None)])}
     <p class="mt-7 font-mono tracking-widest2 text-[10px] uppercase text-gold">Hair Salon · {E(a)}</p>
     <h1 class="mt-3 font-serif text-[27px] sm:text-[34px] leading-[1.3] text-ink" style="letter-spacing:.02em;font-weight:500;">{E(a)}で髪を知る人に任せる</h1>
-    <p class="mt-4 text-[14px] text-charcoal/85" style="line-height:2.05;">{E(st['nearline'])}<br>カット・カラー・パーマ・縮毛矯正・トリートメントまで 140以上のサロン専売ブランドを知るプロが仕上げます</p>
+    <p class="mt-4 text-[14px] text-charcoal/85" style="line-height:2.05;">{E(st['nearline'])}<br>カット・カラー・パーマ・縮毛矯正・トリートメントまで 140以上のサロン専売ブランドを知るプロが{E(room)}で仕上げます</p>
     <div class="chips mt-5">{''.join(f'<span>{E(n)}</span>' for n in st['near'])}</div>
+    {photo_block(st, f'{st["name"]}（{st["access"]}）')}
+
+    <section class="mt-10 border-l-2 pl-4" style="border-color:#D9BE93;">
+      <h2 class="font-serif text-[16px] text-ink">この店舗について</h2>
+      <p class="mt-2 text-[13.5px] text-charcoal/80" style="line-height:2;">{E(st['note'])}</p>
+    </section>
 
     <section class="mt-11">{menu_block}
       <a href="{salon_url}" target="_blank" rel="noopener" data-track-click="salon_reserve_hpb"
          class="mt-6 inline-block rounded-[4px] px-6 py-3.5 text-[13.5px] text-white transition-opacity hover:opacity-90" style="background:#B57C5A;">{E(a)}のサロンを予約する →</a>
     </section>
 
-    <section class="mt-12">
-      <h2 class="font-serif text-[19px] text-ink">{E(a)}店の場所と営業時間</h2>
-      <div class="mt-4 space-y-2.5">
-        <div class="kv"><span class="k">店舗</span><span class="v">{E(st['name'])}</span></div>
-        <div class="kv"><span class="k">住所</span><span class="v">{E(st['pref'])}{E(st['locality'])}{E(st['street'])}</span></div>
-        <div class="kv"><span class="k">アクセス</span><span class="v">{E(st['access'])}</span></div>
-        <div class="kv"><span class="k">営業時間</span><span class="v nums">{E(st['hours'])}</span></div>
-      </div>
-    </section>
+    {flow}
+
+    {access_block(st, [('個室', f'{room}をご用意しています'), ('ご予約', 'ホットペッパービューティーから24時間受付')])}
+
+    {concerns}
+
+    {brands_block(slug, a)}
 
     <section class="mt-12 rounded-[4px] px-5 py-6" style="background:#F6F1EA;">
       <h2 class="font-serif text-[17px] text-ink">施術なし 販売のみのご来店も歓迎です</h2>
       <p class="mt-2.5 text-[13.5px] text-charcoal/80" style="line-height:2;">
-        {E(st['name'])}は美容室専売品（サロン専売品）の正規取扱店です　
+        {E(st['name'])}は美容室専売品（サロン専売品）の正規取扱店です
         <a href="store-{slug}.html" class="border-b border-line">買うだけのご来店</a>もどうぞ　予約は要りません<br>
         店頭でご登録いただくと 買い足しは<a href="onlineshop.html" class="border-b border-line">会員制のネットショップ</a>からもご注文いただけます</p>
       <p class="mt-4 text-[12.5px] text-charcoal/70">
-        <a href="store-{slug}.html" class="border-b border-line">{E(a)}の店舗情報</a>{spa_link}　
+        <a href="store-{slug}.html" class="border-b border-line">{E(a)}の店舗情報</a>{spa_link}
         <a href="finder.html" class="border-b border-line">髪格診断で髪質を知る</a></p>
     </section>
+
+    {area_articles_block(slug, a)}
 
     <section class="mt-12">
       <h2 class="font-serif text-[19px] text-ink">よくあるご質問</h2>
@@ -446,7 +583,8 @@ def build_salon(slug):
 
     <p class="mt-10 text-[12.5px] text-charcoal/70">ほかのエリアのヘアサロン　{others}</p>
     {FOOTER_NOTE}
-  </main>''' + foot()
+  </main>
+  {sticky_cta(f'{a}のサロンを予約', salon_url, 'salon_reserve_sticky')}''' + foot()
 
 
 # ══════════════════════════════════════ ブランド × 都市(東京) ══════════════════════════════════════
@@ -518,17 +656,23 @@ def build_brand_city(slug, ja, en, city):
             f'ラインナップと在庫は店舗により異なります　詳しくは店頭でご案内します　'
             f'<a href="{slug}.html" class="border-b border-line">{E(ja)}の取扱店一覧 →</a></p>')
 
-    cards = ''.join(
-        f'<div class="rounded-[4px] border border-line px-5 py-5">'
-        f'<p class="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">{E(s["area"])}</p>'
-        f'<p class="mt-1.5 font-serif text-[16px] text-ink">{E(s["name"])}</p>'
-        f'<div class="mt-3 space-y-2">'
-        f'<div class="kv"><span class="k">住所</span><span class="v">{E(s["pref"])}{E(s["locality"])}{E(s["street"])}</span></div>'
-        f'<div class="kv"><span class="k">アクセス</span><span class="v">{E(s["access"])}</span></div>'
-        f'<div class="kv"><span class="k">営業時間</span><span class="v nums">{E(s["hours"])}</span></div></div>'
-        f'<p class="mt-3.5 text-[12.5px]"><a href="{slug}-{s_slug}.html" class="border-b border-line">{E(s["area"])}で{E(ja)}を買う →</a>　'
-        f'<a href="store-{s_slug}.html" class="border-b border-line">店舗情報</a></p></div>'
-        for s_slug, s in zip(c['stores'], sts))
+    def card(s_slug, s):
+        b = s['photo'].rsplit('.', 1)[0]
+        return (f'<div class="rounded-[4px] border border-line overflow-hidden">'
+                f'<picture><source srcset="{b}.avif" type="image/avif"><source srcset="{b}.webp" type="image/webp">'
+                f'<img src="{s["photo"]}" alt="{E(s["name"])}の店内" width="{s["pw"]}" height="{s["ph"]}" '
+                f'loading="lazy" decoding="async" class="w-full h-auto object-cover" style="max-height:180px;"></picture>'
+                f'<div class="px-5 py-5">'
+                f'<p class="font-mono tracking-widest2 text-[9.5px] uppercase text-gold">{E(s["area"])}</p>'
+                f'<p class="mt-1.5 font-serif text-[16px] text-ink">{E(s["name"])}</p>'
+                f'<div class="mt-3 space-y-2">'
+                f'<div class="kv"><span class="k">住所</span><span class="v">{E(s["pref"])}{E(s["locality"])}{E(s["street"])}</span></div>'
+                f'<div class="kv"><span class="k">アクセス</span><span class="v">{E(s["access"])}</span></div>'
+                f'<div class="kv"><span class="k">営業時間</span><span class="v nums">{E(s["hours"])}</span></div></div>'
+                f'<p class="mt-3.5 text-[12.5px]"><a href="{slug}-{s_slug}.html" class="border-b border-line">{E(s["area"])}で{E(ja)}を買う →</a>　'
+                f'<a href="{map_url(s)}" target="_blank" rel="noopener" class="border-b border-line">地図 ↗</a></p>'
+                f'</div></div>')
+    cards = ''.join(card(s_slug, s) for s_slug, s in zip(c['stores'], sts))
 
     return head(title, desc, url, ld, f'{ja} {cj}で買うだけOK | SEAM') + header_nav(
         [(f'{slug}.html', f'{ja}取扱店'), ('shop.html', '店舗一覧')]) + f'''
