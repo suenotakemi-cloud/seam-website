@@ -2021,9 +2021,11 @@ document.getElementById('pf-add').onclick=()=>{
 /* =============== customer booking flow =============== */
 let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
 // 流入元: 予約ページのURL ?src=line|google|instagram で自動判定。各チャネルのリンクから来ると自動タグ付け。
-// LINEアプリ内ブラウザ(LIFF)はUAに "Line/12.5.0" 形式を含む。?src が付いていなくても
-// LINEで開いた時は必ずお客様モード＆LINE経由にする（LIFFエンドポイントURLに?srcが無くても管理画面を出さない）。
-const IN_LINE=/Line\/[\d.]/.test(navigator.userAgent||'');
+// LINE経由の判定（?src が無くても管理画面を出さないための多重シグナル）:
+//  ①LINEアプリ内ブラウザのUAは "Line/12.5.0" 形式を含む ②LIFF起動時はURLに liff.state / liff.referrer が付く
+//  ③リファラが liff.line.me。いずれか＝お客様モード＆LINE経由。さらに保険で liff.isInClient() も後段で判定。
+const _lq=new URLSearchParams(location.search);
+const IN_LINE=/Line\/[\d.]/.test(navigator.userAgent||'')||_lq.has('liff.state')||_lq.has('liff.referrer')||/liff\.line\.me/i.test(document.referrer||'');
 const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');if(['line','google','instagram','own'].includes(s))return s;return IN_LINE?'line':'own'})();
 // ?src= 付き = お客様導線（LINE/Google/Instagram/自社サイト）。管理タブを隠し予約画面のみ表示（管理台帳をお客様に見せない）。
 const IS_CUSTOMER=new URLSearchParams(location.search).has('src')||IN_LINE;
@@ -2096,11 +2098,13 @@ async function startLineLogin(){
 }
 
 async function initLiff(){
-  if(lineProfile)return;  // URLパラメータで既にログイン済みなら不要
   if(!LINE_CFG.LIFF_ID)return;              // 未設定なら通常のWebページとして動作
   try{
     await loadScript('https://static.line-scdn.net/liff/edge/2/sdk.js');
     await liff.init({liffId:LINE_CFG.LIFF_ID});
+    // ★保険: UA/URL検知が効かなくても、LINEアプリ内(LIFF)なら公式判定で確実にお客様モードへ切替（管理画面を出さない）
+    if(liff.isInClient&&liff.isInClient()) enterCustomerMode();
+    if(lineProfile)return;  // URLパラメータで既にログイン済みなら以降不要
     if(liff.isLoggedIn()){
       const pf=await liff.getProfile();
       lineProfile={userId:pf.userId,displayName:pf.displayName};
@@ -2854,9 +2858,12 @@ document.getElementById('baseurl').oninput=renderLinks;
 if(BOOK_SRC!=='own'){
   const s=document.querySelector('#v-book .phead .s');if(s)s.textContent=CHANNELS[BOOK_SRC].name+'経由 · WEB RESERVATION';
 }
-if(IS_CUSTOMER){
-  // お客様モード: 管理ヘッダーを隠し、予約画面のみ全画面表示（LINE/Google/Instagram/自社サイトからの導線）
+// お客様モードへの切替（同期検知でも、後段の liff.isInClient() 検知でも呼べるよう関数化。二重実行はガード）。
+let _custEntered=false;
+function enterCustomerMode(){
+  if(_custEntered)return; _custEntered=true;
   ADMIN_TOKEN='';   // 顧客モードでは管理トークンを一切使わない（authHeaders()が空になる）
+  const g=document.getElementById('adminGate'); if(g)g.remove();   // 管理ログインゲートが出ていたら消す
   // 共有端末対策: 顧客モードでは他人のPII・売上をメモリにもlocalStorageにも持たない（重複はサーバ側で判定）
   db.reservations=[];db.checkouts=[];db.settlements=[];db.intakes=[];db.products=[];db.waitlist=[];db.reviews=[];
   save();refreshAll();
@@ -2873,18 +2880,17 @@ if(IS_CUSTOMER){
     }catch(e){}
   })();
   document.body.classList.add('customer');
-  document.querySelector('header nav').style.display='none';
+  const nav=document.querySelector('header nav'); if(nav)nav.style.display='none';
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
   document.getElementById('v-book').classList.add('show');
   const bh=document.querySelector('#v-book h2');if(bh)bh.style.display='none';
   const bl=document.querySelector('#v-book .lead');if(bl)bl.style.display='none';
-}else{
-  // 管理モード: トークン認証が通って初めて顧客PII・売上をD1からロード（未認証はゲート表示）
-  initAdmin();
 }
+if(IS_CUSTOMER){ enterCustomerMode(); }
+else { initAdmin(); }   // 管理モード: トークン認証が通って初めて顧客PII・売上をD1からロード（未認証はゲート表示）
 // URLパラメータでLINEログイン済みの場合、bk に反映
 if(lineProfile){bk.name=bk.name||lineProfile.displayName;bk.lineUserId=lineProfile.userId;}
-if(BOOK_SRC==='line')initLiff();  // LINE経由ならLIFF自動ログインを試行（LIFF_ID未設定なら通常動作）
+initLiff();  // LIFF検知は常に実行（LINEアプリ内なら isInClient() でお客様モードへ確実に切替。LIFF_ID未設定なら何もしない）
 initGoogle();                     // Googleログイン（GOOGLE_CLIENT_ID未設定なら何もしない）
 </script>
 </body>
