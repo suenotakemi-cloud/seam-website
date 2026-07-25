@@ -121,7 +121,12 @@ function setHead(doc, shortLang, htmlLang, pageUrl) {
   const head = doc.querySelector('head');
   // canonical をこの言語URLへ
   const selfUrl = BASE + '/' + shortLang + (pageUrl === '/' ? '/' : pageUrl);
-  let can = doc.querySelector('link[rel="canonical"]');
+  // 元ページに canonical が複数あると querySelector は先頭しか拾わず、
+  // 残りが ja のURLを指したまま言語版に混入する(=言語版が ja へ正規化されて消える)。
+  // 2件目以降は必ず除去してから 1本だけ張り直す。
+  const cans = doc.querySelectorAll('link[rel="canonical"]');
+  for (let i = 1; i < cans.length; i++) cans[i].remove();
+  let can = cans[0];
   if (!can) { can = doc.createElement('link'); can.setAttribute('rel', 'canonical'); head.appendChild(can); }
   can.setAttribute('href', selfUrl);
   // og:locale
