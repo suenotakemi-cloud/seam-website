@@ -2201,6 +2201,15 @@ function earliestSlot(staffIds,dur){
 }
 const dayFreeCount=(dayKey,staffIds,dur)=>freeSlots(dayKey,staffIds,dur).filter(s=>s.staffId).length;
 const dayLabel=k=>k===dkey(today())?'今日':(k===dkey(addDays(today(),1))?'明日':k.slice(5).replace('-','/'));
+// 確定直前に「その枠でいま実際に対応できる担当」を確定し直す（空き情報の遅延ロード/直前埋まり対策）。
+// フリー(指名なし)＝空いている担当へ自動振替（元の担当が埋まっていても他が空いていれば予約可）。指名＝その人が空いていればその人／埋まっていればnull。
+// 真に満席(誰も対応不可)のときだけ null を返し、呼び出し側で「別の時間を」案内する。
+function resolveStaffAt(menu,day,start){
+  const dur=menu.min,end=start+dur;
+  if(bk.staff!=='any') return (staffOnDuty(bk.staff,day,start,end)&&conflicts(day,bk.staff,start,end).length===0)?bk.staff:null;
+  const avail=menu.staff.filter(sid=>staffOnDuty(sid,day,start,end)&&conflicts(day,sid,start,end).length===0);
+  return avail.find(sid=>sid===bk._sid)||avail[0]||null;   // なるべく元の担当・無ければ他の空き担当
+}
 function renderBook(){
   const p=document.getElementById('pbody');
   // スパ導線は癒しのトーン（セージ）に切替。ヘア/入口選択はSEAMゴールド基調
@@ -2339,7 +2348,8 @@ function renderBook(){
   }
   if(bk.step===3){
     const menu=MENUS.find(m=>m.id===bk.menu);
-    const sid=bk.staff==='any'?bk._sid:bk.staff;
+    // 表示用の担当も現在の空きで確定し直す（フリーは空いている担当名を出す）。満席なら元の想定担当で暫定表示し、確定時に弾く。
+    const sid=resolveStaffAt(menu,bk.day,bk.start)||(bk.staff==='any'?bk._sid:bk.staff);
     const st=STAFF.find(s=>s.id===sid);
     const vc=bk.phone?visitCount(bk.name,bk.phone,null):0;
     const repHtml=vc>0?`<dt>ご来店</dt><dd>${vc+1}回目のご来店</dd>`:'';
@@ -2391,8 +2401,10 @@ function renderBook(){
       // 「姓 名」「セイ メイ」に組み立て（salonPushがスペースで確実に分割できる）
       bk.name=bk.sei+' '+bk.mei;
       bk.kana=bk.seiK+' '+bk.meiK;
-      // 先に枠が空いているか確認（決済後に取られる事故を防ぐ）
-      if(conflicts(bk.day,sid,bk.start,bk.start+menu.min).length){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
+      // 確定直前に担当を確定し直す（フリーは空いている担当へ振替）。誰も対応できない＝真の満席のときだけ弾く。
+      const okSid=resolveStaffAt(menu,bk.day,bk.start);
+      if(!okSid){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
+      bk._sid=okSid;   // 振替結果を確定（step4のcommitはbk._sidを使う）
       bk.step=4;renderBook();
     };
   }
