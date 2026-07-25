@@ -578,6 +578,21 @@ def main():
         if i<0: continue
         t=t[:i]+block+t[i:]
         open(p,'w',encoding='utf-8').write(t); patched+=1
+    # 店舗→自エリアのブランド別記事(買うだけOK)への内部リンク(idempotent・別マーカー)
+    MARK2='<!-- AREA_LP_LINKS -->'
+    for s in STORES:
+        p=f'store-{s}.html'; t=open(p,encoding='utf-8').read()
+        if MARK2 in t: continue
+        ja=AREA_JA[s]
+        alinks='　'.join(f'<a href="{b["slug"]}-{s}.html" style="color:inherit;border-bottom:1px solid rgba(60,54,46,.25);padding-bottom:1px;text-decoration:none;">{html.escape(b["ja"])}</a>' for b in BRANDS)
+        ablk=(f'\n  {MARK2}\n  <section class="max-w-3xl mx-auto px-5 sm:px-8 pb-12">\n'
+              f'    <h2 class="font-serif text-[17px] sm:text-[20px]" style="color:#2B2926;">{ja}でブランド別に見る（買うだけOK）</h2>\n'
+              f'    <p style="margin-top:12px;font-size:12.5px;line-height:2.3;color:rgba(43,41,38,.72);">{alinks}</p>\n'
+              f'    <p style="margin-top:10px;font-size:12px;color:rgba(43,41,38,.6);">各ブランドの{ja}での購入案内です　施術・予約なしで店頭購入OK</p>\n'
+              '  </section>\n')
+        i=t.rfind('<footer')
+        if i<0: continue
+        t=t[:i]+ablk+t[i:]; open(p,'w',encoding='utf-8').write(t); patched+=1
     # brand.htmlに内部リンク集(idempotent)
     t=open('brand.html',encoding='utf-8').read()
     if MARK not in t:
