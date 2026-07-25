@@ -131,34 +131,37 @@ export async function handleSalonCleanupNoname(url, env, cors, commit) {
   const to = url.searchParams.get('to') || '2026-12-31';
   const shops = [{ id: env.SALON_SHOP_ID, label: 'ヘア' }];
   if (env.SALON_SPA_SHOP_ID) shops.push({ id: env.SALON_SPA_SHOP_ID, label: 'スパ' });
-  const found = [], deleted = [];
+  const all = [];   // 両店の生存予約(親の生存確認に使う)
   try {
     for (const sh of shops) {
       const j = await salonCall(env, '/get/reservation', {
         filter: { shop_id: sh.id, reserve_date_start: from, reserve_date_end: to + ' 23:59' },
         add_staff: true, limit: 500,
       });
-      for (const r of (j.data || [])) {
-        if (r.delete_date) continue;
-        const nm = (r.name || '').trim();
-        if (nm) continue;                                   // 名前があるものは対象外（絶対に消さない）
-        const ij = r.info_js || {};
-        const blockFor = ij.block_for_reservation_id || ij.block_for || '';
-        const isMirror = r.status === 'block' || !!blockFor || /mirror/i.test(ij.src || '');
-        const rec = {
-          shop: sh.label, salonId: r.id, reserveNum: r.reserve_num,
-          date: (r.reserve_date || ''), end: (r.reserve_end_date || ''),
-          status: r.status, staff: r.staff_account_id || '', block_for: blockFor, src: ij.src || '',
-          isMirror, willDelete: commit && isMirror,
-        };
-        found.push(rec);
-        if (commit && isMirror) { const d = await salonDelete(env, r.id); deleted.push({ salonId: r.id, ok: !!d.result }); }
-      }
+      for (const r of (j.data || [])) { if (!r.delete_date) all.push({ sh: sh.label, r }); }
     }
-    const skipped = found.filter(f => !f.isMirror);          // name空だがミラー判別できない=手動確認用に残す
+    const liveIds = new Set(all.map(x => x.r.id));           // 生存している予約ID(親の存在チェック)
+    const found = [], deleted = [];
+    for (const { sh, r } of all) {
+      const nm = (r.name || '').trim();
+      if (nm) continue;                                       // 名前があるものは対象外（絶対に消さない）
+      const ij = r.info_js || {};
+      const blockFor = ij.block_for_reservation_id || ij.block_for || '';
+      const isMirror = r.status === 'block' || !!blockFor || /mirror/i.test(ij.src || '');
+      // ★孤児判定: ミラーの親予約(block_for)が既に削除済み/不存在。本物予約のミラー(親が生存)は残す=兼任ブロックの役目があるため
+      const orphan = isMirror && (!blockFor || !liveIds.has(blockFor));
+      const rec = {
+        shop: sh, salonId: r.id, reserveNum: r.reserve_num,
+        date: (r.reserve_date || ''), end: (r.reserve_end_date || ''),
+        status: r.status, staff: r.staff_account_id || '', block_for: blockFor, src: ij.src || '',
+        isMirror, orphan, willDelete: commit && orphan,
+      };
+      found.push(rec);
+      if (commit && orphan) { const d = await salonDelete(env, r.id); deleted.push({ salonId: r.id, ok: !!d.result }); }
+    }
     return json({ ok: true, commit: !!commit, total_noname: found.length,
-      mirror_noname: found.filter(f => f.isMirror).length, deleted_count: deleted.length,
-      found, deleted, skipped_for_review: skipped }, 200, cors);
+      orphan_count: found.filter(f => f.orphan).length, deleted_count: deleted.length,
+      found, deleted }, 200, cors);
   } catch (e) { return json({ error: 'cleanup失敗: ' + e.message }, 502, cors); }
 }
 

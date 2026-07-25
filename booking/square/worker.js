@@ -17,7 +17,7 @@
 import PostalMime from 'postal-mime';   // HPBメールのMIME/日本語解析（npm install postal-mime）
 import { EmailMessage } from 'cloudflare:email';   // オーナー通知（SEND_EMAILバインド・宛先はwrangler.tomlのdestination_address）
 import { json, z, min2hm } from './util.js';   // 共有ユーティリティ
-import { salonPush, salonCancel, salonDelete, handleSalonPull, handleSalonSelftest, handleSalonWhoami, handleSalonCleanupNoname } from './salon-bridge.js';   // salon.town(CUEPON)ブリッジ
+import { salonPush, salonCancel, salonDelete, salonCall, handleSalonPull, handleSalonSelftest, handleSalonWhoami, handleSalonCleanupNoname } from './salon-bridge.js';   // salon.town(CUEPON)ブリッジ
 import { handleAiChat } from './ai-chat.js';   // BYO AI（本人キーでClaude/ChatGPT）
 
 const SQUARE_VERSION = '2025-01-23';
@@ -109,6 +109,16 @@ export default {
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors); // 顧客の予約作成
     if (p.endsWith('/availability') && m === 'GET') return handleAvailability(url, env, cors);           // 空き判定用(PII無し・公開)
     if (p.endsWith('/admin/purge-test') && m === 'POST') return handlePurgeTest(url, env, cors);         // テスト予約掃除(専用トークン)
+    if (p.endsWith('/admin/diag-resv') && m === 'GET') return handleDiagResv(url, env, cors);            // 両店予約の診断読取(専用トークン)
+    // 指定IDのsalon.town予約を1件削除(専用トークン)。孤児ミラー(親を消した後に残るブロック)の外科的掃除用。
+    if (p.endsWith('/admin/salon-del') && m === 'POST') {
+      const tk = url.searchParams.get('token') || '';
+      if (!env.CLEANUP_TOKEN || tk !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+      const sid = url.searchParams.get('id') || '';
+      if (!sid) return json({ error: 'id必須' }, 400, cors);
+      try { const d = await salonDelete(env, sid); return json({ ok: !!d.result, result: d }, 200, cors); }
+      catch (e) { return json({ error: e.message }, 502, cors); }
+    }
     if (p.endsWith('/line/login/state') && m === 'POST') return handleLineLoginState(request, env, cors);
     if (p.endsWith('/line/login/result') && m === 'GET') return handleLineLoginResult(url, env, cors);
 
@@ -127,9 +137,11 @@ export default {
     if (p.endsWith('/salon/selftest') && m === 'POST') return A() || handleSalonSelftest(env, cors);
     if (p.endsWith('/salon/pull') && m === 'GET') return A() || handleSalonPull(url, env, cors);
     if (p.endsWith('/salon/whoami') && m === 'GET') return A() || handleSalonWhoami(env, cors);
-    // 無記名ミラー残骸の掃除: GET=ドライラン一覧 / POST=削除実行（?commit=1）。管理トークン必須。
-    if (p.endsWith('/salon/noname') && m === 'GET') return A() || handleSalonCleanupNoname(url, env, cors, false);
-    if (p.endsWith('/salon/noname') && m === 'POST') return A() || handleSalonCleanupNoname(url, env, cors, url.searchParams.get('commit') === '1');
+    // 無記名ミラー残骸の掃除: GET=ドライラン一覧 / POST=削除実行（?commit=1）。管理トークン or CLEANUP_TOKEN。
+    // 削除対象は「親予約が消えた孤児ミラー」のみ(本物予約の兼任ブロックは残す)。
+    const cleanupOk = env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN;
+    if (p.endsWith('/salon/noname') && m === 'GET') return (cleanupOk ? null : A()) || handleSalonCleanupNoname(url, env, cors, false);
+    if (p.endsWith('/salon/noname') && m === 'POST') return (cleanupOk ? null : A()) || handleSalonCleanupNoname(url, env, cors, url.searchParams.get('commit') === '1');
     // 予約データ（GET=全顧客PII / PATCH / DELETE は管理のみ。POSTのみ公開＝上記）
     if (p.endsWith('/reservations') && m === 'GET') return A() || handleGetReservations(url, env, cors);
     if (p.endsWith('/reservations') && m === 'PATCH') return A() || handlePatchReservation(request, env, cors);
@@ -454,6 +466,36 @@ async function handleAvailability(url, env, cors) {
     const busy = (rows.results || []).map(r => ({ date: r.date, staffId: r.staff_id, start: r.start, end: r.end }));
     return json({ ok: true, busy }, 200, cors);
   } catch (e) { return json({ error: 'availability失敗: ' + e.message }, 502, cors); }
+}
+
+// GET /admin/diag-resv?token=&from=&to= … 両SEAM店(ヘア/スパ)のsalon.town予約を診断用に読み取り(削除なし)。
+// RPAが「予約でなく予定」を書く原因調査用。ミラー判定に必要な info_js のキーと status を返す。
+async function handleDiagResv(url, env, cors) {
+  const token = url.searchParams.get('token') || '';
+  if (!env.CLEANUP_TOKEN || token !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+  const from = url.searchParams.get('from') || '2026-07-25';
+  const to = url.searchParams.get('to') || '2026-08-05';
+  const shops = [{ id: env.SALON_SHOP_ID, label: 'hair' }];
+  if (env.SALON_SPA_SHOP_ID) shops.push({ id: env.SALON_SPA_SHOP_ID, label: 'spa' });
+  const out = {};
+  try {
+    for (const sh of shops) {
+      const j = await salonCall(env, '/get/reservation', {
+        filter: { shop_id: sh.id, reserve_date_start: from, reserve_date_end: to + ' 23:59' },
+        add_staff: true, limit: 300,
+      });
+      out[sh.label] = (j.data || []).map(r => ({
+        id: r.id, num: r.reserve_num, name: r.name || '', status: r.status,
+        date: r.reserve_date, end: r.reserve_end_date, staff: r.staff_account_id || '',
+        deleted: !!r.delete_date, cancelled: !!r.cancel_date, type: r.type || '',
+        info: (() => { const ij = r.info_js || {}; return {
+          block_for: ij.block_for_reservation_id || ij.block_for || '', src: ij.src || '',
+          nominated: ij.nominated, duration_min: ij.duration_min, hbp: ij.hbp_stylist_id || '',
+          keys: Object.keys(ij).slice(0, 20) }; })(),
+      }));
+    }
+    return json({ ok: true, ...out }, 200, cors);
+  } catch (e) { return json({ error: 'diag失敗: ' + e.message }, 502, cors); }
 }
 
 // POST /admin/purge-test?token= … 氏名が「テスト」で始まる自社/LINEのテスト予約のみを D1＋salon.town から削除。
