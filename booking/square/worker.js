@@ -171,16 +171,25 @@ export default {
       const text = parsed.text || (parsed.html || '').replace(/<[^>]+>/g, ' ');
       console.log('本文長=', text.length, 'DB=', !!env.DB);
       const r = parseSalonBoard(text);
-      console.log('パース結果=', r ? `${r.name} ${r.date} ${r.start}` : 'null（解析失敗）');
+      console.log('パース結果=', r ? `${r.shop} ${r.name} ${r.date} ${r.start} ${r.cancelled ? 'CANCEL' : ''}` : 'null（対象外/解析失敗）');
       if (r && env.DB) {
-        await env.DB.prepare(
-          `INSERT OR IGNORE INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,created_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-        ).bind(r.id, r.date, r.staffId, r.start, r.end, r.menuId, r.name, '', '', r.note, 'hpb', 'booked', 1, 0, '', new Date().toISOString()).run();
-        console.log('D1へINSERT完了 id=', r.id);
-        // オーナーへ通知（HPB予約が入った）
-        await notifyOwner(env, `新規HPB予約 ${r.name}様 ${r.date.slice(5)} ${min2hm(r.start)}`,
-          `HOT PEPPERから予約が入りました。\n\n日時: ${r.date.replace(/-/g, '/')} ${min2hm(r.start)}〜\nお客様: ${r.name}\n${r.note}`);
+        const shopName = r.shop === 'spa' ? 'SEAM 銀座（スパ）' : 'SEAM 銀座（ヘア）';
+        if (r.cancelled) {
+          // キャンセル連絡＝既存台帳を取消へ（予約番号ベースIDで一致）。無ければ何もしない。
+          await env.DB.prepare("UPDATE reservations SET status='cancelled' WHERE id=?").bind(r.id).run();
+          console.log('D1キャンセル反映 id=', r.id);
+          await notifyOwner(env, `HPBキャンセル ${r.name}様 ${r.date.slice(5)} ${min2hm(r.start)}`,
+            `${shopName}の予約がキャンセルされました。\n\n日時: ${r.date.replace(/-/g, '/')} ${min2hm(r.start)}〜\nお客様: ${r.name}\n${r.note}`);
+        } else {
+          await env.DB.prepare(
+            `INSERT OR IGNORE INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,created_at)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+          ).bind(r.id, r.date, r.staffId, r.start, r.end, r.menuId, r.name, '', '', r.note, 'hpb', 'booked', 1, 0, '', new Date().toISOString()).run();
+          console.log('D1へINSERT完了 id=', r.id, 'shop=', r.shop);
+          // オーナーへ通知（どちらの掲載＝ヘア/スパかを明記）
+          await notifyOwner(env, `新規HPB予約[${r.shop === 'spa' ? 'スパ' : 'ヘア'}] ${r.name}様 ${r.date.slice(5)} ${min2hm(r.start)}`,
+            `${shopName}に予約が入りました。\n\n日時: ${r.date.replace(/-/g, '/')} ${min2hm(r.start)}〜\nお客様: ${r.name}\n${r.note}`);
+        }
       }
     } catch (e) { console.log('EMAIL処理エラー:', e.message); }
     // スタッフの受信箱にも転送（send_email バインディング経由）
@@ -678,24 +687,40 @@ async function handlePostSetting(request, env, cors) {
 /* ---------- HOT PEPPER「SALON BOARD」通知メールのパーサ ---------- */
 function parseSalonBoard(raw) {
   const sb = label => { const m = raw.match(new RegExp('■' + label + '[^\\n]*\\n[\\s　]*([^\\n]+)')); return m ? m[1].trim() : ''; };
+  // ★店舗判定は先頭のサロン名行で行う（例「SEAM 銀座店【シーム】様」）。本文中の他所への言及で誤判定しないよう1行目に限定。
+  //   ヘア掲載=「SEAM 銀座」（bt/CLP）／スパ掲載=「SEAM 銀座店」（KLP・リラク）。スパ名はヘア名の上位互換なので銀座店を先に判定。
+  //   ★SEAM 銀座以外の掲載（天神大名店・他SEAM掲載など）は銀座の台帳を汚さないよう取り込まない（誤配・宛先追加への保険）。
+  const salonLine = (raw.split('\n').find(l => l.trim()) || '').trim();
+  if (!/SEAM\s*銀座/.test(salonLine)) return null;   // 銀座ヘア/スパ掲載以外はスキップ
+  const shop = /銀座店/.test(salonLine) ? 'spa' : 'hair';
+  const shopLabel = shop === 'spa' ? 'スパ' : 'ヘア';
   const nameRaw = sb('氏名');
+  const km = nameRaw.match(/[（(]([^)）]*)[)）]/);            // カナ（「釘崎 愛（クギサキ アイ）」→ クギサキ アイ）
+  const kana = km ? km[1].trim() : '';
   const name = nameRaw.replace(/[（(][^)）]*[)）]\s*$/, '').replace(/\s*様\s*$/, '').trim();
   const dtStr = sb('来店日時');
   const dt = dtStr.match(/(\d{4})[年\/](\d{1,2})[月\/](\d{1,2})日?[^\d]*(\d{1,2}):(\d{2})/);
   if (!dt || !name) return null;
   const stylist = sb('スタイリスト'), menuName = sb('メニュー'), resNo = sb('予約番号');
   const dm = raw.match(/施術時間目安[：:]?\s*(?:(\d+)\s*時間)?\s*(?:(\d+)\s*分)?/);
-  const menu = MENUS.filter(m => menuName.includes(m.name)).sort((a, b) => b.name.length - a.name.length)[0] || MENUS[0];
+  // 店舗でメニュー候補を絞る（スパ掲載＝ヘッドスパ系）。所要時間はメールの施術時間目安を優先。
+  const pool = shop === 'spa' ? MENUS.filter(m => /ヘッドスパ|スパ|個室/.test(m.name)) : MENUS;
+  const menu = (pool.length ? pool : MENUS).filter(m => menuName.includes(m.name)).sort((a, b) => b.name.length - a.name.length)[0]
+    || (shop === 'spa' ? (MENUS.find(m => /ヘッドスパ/.test(m.name)) || MENUS[0]) : MENUS[0]);
   const dur = (dm && (+dm[1] || +dm[2])) ? ((+dm[1] || 0) * 60 + (+dm[2] || 0)) : menu.min;
   const sname = stylist.replace(/\s/g, '');
   let staff = STAFF.find(s => sname && (sname.includes(s.name.split(' ')[0]) || s.name.replace(/\s/g, '').includes(sname)));
-  if (!staff) staff = STAFF[0];
+  // 名前一致で拾えない場合の既定担当（スパ＝CHIKA／ヘア＝及川）。ANZUは名前一致で拾える。
+  if (!staff) staff = shop === 'spa' ? (STAFF.find(s => s.name === 'CHIKA') || STAFF[0]) : STAFF[0];
   const start = (+dt[4]) * 60 + (+dt[5]);
   const date = `${dt[1]}-${z(+dt[2])}-${z(+dt[3])}`;
-  const note = [resNo && ('予約番号 ' + resNo), stylist && ('HPB担当 ' + stylist), menuName].filter(Boolean).join(' / ');
+  // キャンセル連絡（件名/本文「ご予約のキャンセル」）は取消として扱い、既存台帳をcancelledへ更新する。
+  const cancelled = /予約のキャンセル/.test(raw);
+  const note = [`[${shopLabel}]`, resNo && ('予約番号 ' + resNo), kana && ('カナ ' + kana),
+    stylist && ('HPB担当 ' + stylist), menuName].filter(Boolean).join(' / ');
   // IDは予約番号ベース（BF12345678 → hpb-BF12345678）にして重複INSERT防止
   const id = resNo ? 'hpb-' + resNo.replace(/\s/g, '') : 'r' + crypto.randomUUID().slice(0, 8);
-  return { id, date, staffId: staff.id, start, end: start + dur, menuId: menu.id, name, note };
+  return { id, date, staffId: staff.id, start, end: start + dur, menuId: menu.id, name, kana, note, shop, cancelled };
 }
 
 
