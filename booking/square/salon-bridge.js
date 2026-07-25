@@ -36,59 +36,42 @@ export async function salonCall(env, path, extra) {
   return res.json();
 }
 
-// CUEPONメニュー item を名前で解決（id / code / category）。店舗ごとにキャッシュ（ヘア/スパで別item）
-const _itemMaps = {};
-async function resolveItem(env, shopId, name) {
-  if (!name) return null;
-  if (!_itemMaps[shopId]) {
-    try {
-      const j = await salonCall(env, '/get/ec/item', { filter: { shop_id: shopId }, limit: 100 });
-      const map = {};
-      for (const m of (j.data || [])) if (!m.delete_date) map[m.name] = { id: m.id, code: m.code || '', cat: m.category_id1 || '' };
-      _itemMaps[shopId] = map;
-    } catch (e) { _itemMaps[shopId] = {}; }
-  }
-  return _itemMaps[shopId][name] || null;
-}
-
 // 自社予約 → salon.town /save/reservation。返り値 { salonId, reserveNum }
-// ★エンジニア確定パラメータ(2026-07-23): account_id=スタイリスト/from_account_id=顧客(直感と逆)、
-//   個人情報はprivate_js(暗号化)、info_jsは平文で個人情報禁止、メニューはitem_id+info_js.hbp_menu_id(=item.code)
+// ★確定パラメータ: account_id=スタイリスト/from_account_id=顧客(直感と逆)、個人情報はprivate_js(暗号化)、info_jsは平文で個人情報禁止。
+// ★メニュー(item/クーポン)は送らない(2026-07-27): 名称一致でRPA書込がエラーになるため。RPAは指名/フリー・時間・所要時間・氏名カナだけで予約する。
 export async function salonPush(env, r) {
   if (!env.SALON_SHOP_ID) throw new Error('SALON_SHOP_ID未設定');
   const t = await salonToken(env);
   const h2k = (s) => (s || '').replace(/[ぁ-ゖ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60));
   const nm = (r.name || '').trim();                // 「姓 名」
   const kn = h2k((r.kana || '').trim());           // 「セイ メイ」（HotPepperゲストフォーム形式）
-  const menuName = r.menuName || '';
-  const dur = r.menuMin || (r.end != null && r.start != null ? r.end - r.start : 60);
-  // ★スパ予約はSPA店へ振り分け（ANZUはヘア/スパで別account・itemも別店舗）。r.spaはページが判定
+  const dur = r.menuMin || (r.end != null && r.start != null ? r.end - r.start : 60);  // 所要時間(分)
+  // ★スパ予約はSPA店へ振り分け（ANZUはヘア/スパで別account）。r.spaはページが判定
   const shopId = (r.spa && env.SALON_SPA_SHOP_ID) ? env.SALON_SPA_SHOP_ID : env.SALON_SHOP_ID;
-  const item = await resolveItem(env, shopId, menuName);   // CUEPON item（該当店舗のid/code）
   const stylist = r.staffCu || null;               // スタイリストのCUEPON account_id（スパはcuSpa）
+  const nominated = r.nominated !== false;         // 既定=指名。フリーのみ false を明示
+  // ★メニュー(item/クーポン)は送らない＝名称一致でエラーになるため（2026-07-27オーナー指示）。
+  //   RPAは「指名/フリー・開始時間・所要時間・氏名カナ」だけでサロンボードの予約ボタンを押せる（メニュー欄は任意）
   const data = {
     type: 'shop',
     status: 'pending',
     shop_id: shopId,
-    // ★RPAはこの name 欄をサロンボードの顧客名欄へ転記する。メール取込と同形式「姓 名（セイ メイ）」で入れる
-    //   （private_jsは暗号化されRPAが読めないため、表示用の氏名はここに必須。info_jsには入れない）
+    // ★RPAはこの name 欄をサロンボードの顧客名欄へ転記する（メール取込と同形式「姓 名（セイ メイ）」）
     name: kn ? `${nm}（${kn}）` : nm,
-    account_id: stylist,                            // ★枠を占有するスタイリスト（指名なしはnull）
+    account_id: stylist,                            // ★担当スタイリスト（枠を占有・指名/フリーとも設定）
     from_account_id: env.SALON_ACCOUNT_ID || t.uid, // ★予約する顧客
     input_account_id: t.uid, last_input_account_id: t.uid,
-    item_id: item ? item.id : undefined,            // メニューID（CUEPON item）
-    reserve_date: `${r.date} ${min2hm(r.start)}`,
-    reserve_end_date: `${r.date} ${min2hm(r.end)}`,
+    reserve_date: `${r.date} ${min2hm(r.start)}`,          // 開始時間
+    reserve_end_date: `${r.date} ${min2hm(r.end)}`,        // 開始＋所要時間＝終了
     order_limit_date: `${r.date} ${min2hm(r.start)}`,
     required_order: false,
-    check_slot_conflict: true,                      // 自枠＋掛け持ちの重複をサーバ拒否
-    exclude_overlaps: false,                        // 既存は残して新規を断る
-    info_js: {                                      // 平文・個人情報は入れない（表示スナップショット＋HBP連携ID）
-      menu_id: item ? item.id : '', menu_name: menuName, menu_price: r.menuPrice || undefined,
+    check_slot_conflict: true,                      // 自枠＋掛け持ちの重複をサーバ拒否（ダブルブッキング防止）
+    exclude_overlaps: false,
+    info_js: {                                      // RPAが読む: 指名/フリー・所要時間・担当。メニューは含めない（照合不要）
       staff_id: stylist || '', staff_name: r.hbpStylistName || '', duration_min: dur,
-      hbp_stylist_id: r.hbpStylistId || '',         // = account.code（スタイリスト）
-      hbp_menu_id: item ? item.code : '',           // = item.code（メニュー）
-      hbp_menu_category_cd: item ? item.cat : '',
+      hbp_stylist_id: r.hbpStylistId || '',         // = account.code（サロンボードのスタイリスト選択用）
+      nominated: nominated,                          // true=指名予約 / false=フリー
+      menu_label: r.menuName || '',                  // 表示用の控えのみ（サロンボード書込の照合には使わない）
       channel: r.channel || 'own', src: 'seam-booking',
     },
     private_js: {                                   // サーバ側で暗号化保存・個人情報はすべてここ

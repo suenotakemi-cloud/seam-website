@@ -2397,7 +2397,8 @@ function renderBook(){
       const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
         // RPA/サロンボード書込用の解決済みフィールド（CUEPON実ID・HPB ID・SB完全一致メニュー名）
         // ★スパ予約はSPA店＝ANZUのスパ用account_id(cuSpa)とスパHPB IDを使う。spaフラグでWorkerがSPA店へ振り分け
-        spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60});
+        spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60,
+        nominated:bk.staff!=='any'});   // 指名(特定スタッフ選択)=true / 指名なし=フリー。サロンボードRPAの指名チェック用
       if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
       // 予約確認(LINE/メール)は予約作成時にサーバ側(Worker)から送信。フロントからの直接送信は廃止(セキュリティ)。
