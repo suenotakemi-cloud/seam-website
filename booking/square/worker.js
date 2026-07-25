@@ -53,6 +53,31 @@ async function notifyOwner(env, subject, text) {
   catch (e) { console.log('notifyOwner失敗:', e.message); }
 }
 
+// 管理API認証: Authorization: Bearer <ADMIN_TOKEN> を検証。OKなら null、NGなら 401/500 レスポンス。
+// 顧客導線(予約作成POST /reservations・/pay・/line/login)は認証不要。管理系(GET予約=個人情報・売上・削除等)は必須。
+function requireAdmin(request, env, cors) {
+  if (!env.ADMIN_TOKEN) return json({ error: '管理トークンがサーバに未設定です' }, 500, cors);
+  const tok = (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+  if (!tok || tok !== env.ADMIN_TOKEN) return json({ error: '認証が必要です（管理トークン）' }, 401, cors);
+  return null;
+}
+
+// 予約確認メール（顧客宛）。予約作成時にサーバ側から送る（フロントからの直接呼び出しは廃止）。
+async function sendConfirmMail(env, to, r) {
+  if (!env.RESEND_API_KEY || !to) return;
+  const salon = r.salon || 'SEAM 銀座';
+  const subject = `【${salon}】ご予約ありがとうございます`;
+  const text = `${salon} をご予約いただきありがとうございます。\n\n`
+    + `■ご予約内容\n日時: ${(r.date || '').replace(/-/g, '/')} ${r.time || ''}〜\nメニュー: ${r.menu || ''}\n担当: ${r.staff || ''}\n`
+    + (r.total ? `お支払い予定: ¥${Number(r.total).toLocaleString()}\n` : '')
+    + `\nご来店をお待ちしております。\n変更・キャンセルは前日までにご連絡ください。`;
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from: env.MAIL_FROM || 'SEAM <onboarding@resend.dev>', to, subject, text }),
+  });
+}
+
 // 予約データ用: 台帳スタッフ・メニュー（アプリと同一）。メール取込のマッピングに使用。
 const STAFF = [
   { id: 's1', name: '及川 大輝' }, { id: 's2', name: 'ANZU' }, { id: 's3', name: 'CHIKA' },
@@ -65,53 +90,60 @@ const MENUS = [
 
 export default {
   async fetch(request, env) {
+    // CORS: 許可オリジンをホワイトリスト化（* を廃止）。ALLOW_ORIGIN はカンマ区切りで上書き可。
+    const ALLOWED = (env.ALLOW_ORIGIN || 'https://suenotakemi-cloud.github.io,http://localhost:3600').split(',').map(s => s.trim());
+    const reqOrigin = request.headers.get('Origin') || '';
     const cors = {
-      'Access-Control-Allow-Origin': env.ALLOW_ORIGIN || '*',
+      'Access-Control-Allow-Origin': ALLOWED.includes(reqOrigin) ? reqOrigin : ALLOWED[0],
+      'Vary': 'Origin',
       'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     };
     if (request.method === 'OPTIONS') return new Response(null, { headers: cors });
 
     const url = new URL(request.url), p = url.pathname, m = request.method;
+    const A = () => requireAdmin(request, env, cors);   // 管理系: 認証NGならレスポンス、OKならnull
+
+    // ===== 公開（顧客導線・認証不要） =====
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
-    // Square Terminal（端末カード決済）
-    if (p.endsWith('/terminal/device-code') && m === 'POST') return handleTermDeviceCode(request, env, cors);
-    if (p.endsWith('/terminal/device-code') && m === 'GET') return handleTermDeviceStatus(url, env, cors);
-    if (p.endsWith('/terminal/checkout') && m === 'POST') return handleTermCheckout(request, env, cors);
-    if (p.endsWith('/terminal/checkout') && m === 'GET') return handleTermStatus(url, env, cors);
-    if (p.endsWith('/terminal/cancel') && m === 'POST') return handleTermCancel(request, env, cors);
-    if (p.endsWith('/sales') && m === 'GET') return handleSales(url, env, cors);
-    if (p.endsWith('/line/push') && m === 'POST') return handleLinePush(request, env, cors);
-    if (p.endsWith('/line/reminders') && m === 'POST') return handleLineReminders(request, env, cors);
-    if (p.endsWith('/mail/confirm') && m === 'POST') return handleMailConfirm(request, env, cors);
-    if (p.endsWith('/ai/chat') && m === 'POST') return handleAiChat(request, env, cors);
-    // LINEログイン OAuth2フロー
+    if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors); // 顧客の予約作成
     if (p.endsWith('/line/login/state') && m === 'POST') return handleLineLoginState(request, env, cors);
     if (p.endsWith('/line/login/result') && m === 'GET') return handleLineLoginResult(url, env, cors);
-    // salon.town(CUEPON)予約API連携（サーバ側ブリッジ・CORS回避）
-    if (p.endsWith('/salon/selftest') && m === 'POST') return handleSalonSelftest(env, cors);
-    if (p.endsWith('/salon/pull') && m === 'GET') return handleSalonPull(url, env, cors);
-    if (p.endsWith('/salon/whoami') && m === 'GET') return handleSalonWhoami(env, cors);
-    // 予約データAPI（D1永続化）
-    if (p.endsWith('/reservations') && m === 'GET') return handleGetReservations(url, env, cors);
-    if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors);
-    if (p.endsWith('/reservations') && m === 'PATCH') return handlePatchReservation(request, env, cors);
-    if (p.endsWith('/reservations') && m === 'DELETE') return handleDeleteReservation(url, env, cors);
+
+    // ===== 管理（要 Authorization: Bearer ADMIN_TOKEN） =====
+    // Square Terminal（端末カード決済）
+    if (p.endsWith('/terminal/device-code') && m === 'POST') return A() || handleTermDeviceCode(request, env, cors);
+    if (p.endsWith('/terminal/device-code') && m === 'GET') return A() || handleTermDeviceStatus(url, env, cors);
+    if (p.endsWith('/terminal/checkout') && m === 'POST') return A() || handleTermCheckout(request, env, cors);
+    if (p.endsWith('/terminal/checkout') && m === 'GET') return A() || handleTermStatus(url, env, cors);
+    if (p.endsWith('/terminal/cancel') && m === 'POST') return A() || handleTermCancel(request, env, cors);
+    if (p.endsWith('/sales') && m === 'GET') return A() || handleSales(url, env, cors);
+    if (p.endsWith('/line/push') && m === 'POST') return A() || handleLinePush(request, env, cors);
+    if (p.endsWith('/line/reminders') && m === 'POST') return A() || handleLineReminders(request, env, cors);
+    if (p.endsWith('/mail/confirm') && m === 'POST') return A() || handleMailConfirm(request, env, cors);
+    if (p.endsWith('/ai/chat') && m === 'POST') return A() || handleAiChat(request, env, cors);
+    if (p.endsWith('/salon/selftest') && m === 'POST') return A() || handleSalonSelftest(env, cors);
+    if (p.endsWith('/salon/pull') && m === 'GET') return A() || handleSalonPull(url, env, cors);
+    if (p.endsWith('/salon/whoami') && m === 'GET') return A() || handleSalonWhoami(env, cors);
+    // 予約データ（GET=全顧客PII / PATCH / DELETE は管理のみ。POSTのみ公開＝上記）
+    if (p.endsWith('/reservations') && m === 'GET') return A() || handleGetReservations(url, env, cors);
+    if (p.endsWith('/reservations') && m === 'PATCH') return A() || handlePatchReservation(request, env, cors);
+    if (p.endsWith('/reservations') && m === 'DELETE') return A() || handleDeleteReservation(url, env, cors);
     // レジ・会計（お会計・レジ締め）D1永続化
-    if (p.endsWith('/checkouts') && m === 'GET') return handleGetCheckouts(url, env, cors);
-    if (p.endsWith('/checkouts') && m === 'POST') return handlePostCheckout(request, env, cors);
-    if (p.endsWith('/checkouts') && m === 'DELETE') return handleDeleteCheckout(url, env, cors);
-    if (p.endsWith('/settlements') && m === 'GET') return handleGetSettlements(url, env, cors);
-    if (p.endsWith('/settlements') && m === 'POST') return handlePostSettlement(request, env, cors);
-    if (p.endsWith('/settlements') && m === 'DELETE') return handleDeleteSettlement(url, env, cors);
-    if (p.endsWith('/settings') && m === 'GET') return handleGetSettings(env, cors);
-    if (p.endsWith('/settings') && m === 'POST') return handlePostSetting(request, env, cors);
-    if (p.endsWith('/products') && m === 'GET') return handleGetProducts(url, env, cors);
-    if (p.endsWith('/products') && m === 'POST') return handlePostProduct(request, env, cors);
-    if (p.endsWith('/products') && m === 'DELETE') return handleDeleteProduct(url, env, cors);
-    if (p.endsWith('/intakes') && m === 'GET') return handleGetIntakes(url, env, cors);
-    if (p.endsWith('/intakes') && m === 'POST') return handlePostIntake(request, env, cors);
-    if (p.endsWith('/intakes') && m === 'DELETE') return handleDeleteIntake(url, env, cors);
+    if (p.endsWith('/checkouts') && m === 'GET') return A() || handleGetCheckouts(url, env, cors);
+    if (p.endsWith('/checkouts') && m === 'POST') return A() || handlePostCheckout(request, env, cors);
+    if (p.endsWith('/checkouts') && m === 'DELETE') return A() || handleDeleteCheckout(url, env, cors);
+    if (p.endsWith('/settlements') && m === 'GET') return A() || handleGetSettlements(url, env, cors);
+    if (p.endsWith('/settlements') && m === 'POST') return A() || handlePostSettlement(request, env, cors);
+    if (p.endsWith('/settlements') && m === 'DELETE') return A() || handleDeleteSettlement(url, env, cors);
+    if (p.endsWith('/settings') && m === 'GET') return A() || handleGetSettings(env, cors);
+    if (p.endsWith('/settings') && m === 'POST') return A() || handlePostSetting(request, env, cors);
+    if (p.endsWith('/products') && m === 'GET') return A() || handleGetProducts(url, env, cors);
+    if (p.endsWith('/products') && m === 'POST') return A() || handlePostProduct(request, env, cors);
+    if (p.endsWith('/products') && m === 'DELETE') return A() || handleDeleteProduct(url, env, cors);
+    if (p.endsWith('/intakes') && m === 'GET') return A() || handleGetIntakes(url, env, cors);
+    if (p.endsWith('/intakes') && m === 'POST') return A() || handlePostIntake(request, env, cors);
+    if (p.endsWith('/intakes') && m === 'DELETE') return A() || handleDeleteIntake(url, env, cors);
     return json({ error: 'Not found' }, 404, cors);
   },
 
@@ -439,6 +471,15 @@ async function handlePostReservation(request, env, cors) {
     await notifyOwner(env, `新規ネット予約 ${o.name || 'お客様'} ${(o.date || '').slice(5)}`,
       `${ch}から予約が入りました。\n\n日時: ${(o.date || '').replace(/-/g, '/')} ${min2hm(o.start)}〜\nお客様: ${o.name || ''}${o.phone ? '（' + o.phone + '）' : ''}`
       + (salon && salon.reserveNum ? `\nsalon.town予約番号: ${salon.reserveNum}` : ''));
+    // 顧客への予約確認（サーバ側で送信。フロントからの /line/push・/mail/confirm 直叩きは廃止＝管理専用化）
+    const cinfo = { salon: 'SEAM 銀座', date: o.date, time: min2hm(o.start),
+      menu: o.menuName || (MENUS.find(x => x.id === o.menuId) || {}).name || '',
+      staff: o.hbpStylistName || (STAFF.find(x => x.id === o.staffId) || {}).name || '',
+      total: o.deposit || undefined };
+    try {
+      if (o.lineUserId && env.LINE_CHANNEL_ACCESS_TOKEN) await linePush(env, o.lineUserId, buildLineMessage('confirm', cinfo));
+      else if (o.email && env.RESEND_API_KEY) await sendConfirmMail(env, o.email, cinfo);
+    } catch (e) { console.log('顧客確認送信失敗:', e.message); }
   }
   return json({ ok: true, id, salon }, 200, cors);
 }
@@ -664,22 +705,8 @@ async function handleMailConfirm(request, env, cors) {
   let p; try { p = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
   const { to, reservation } = p || {};
   if (!to) return json({ error: 'to は必須です' }, 400, cors);
-  const r = reservation || {};
-  const salon = r.salon || 'SEAM 銀座';
-  const subject = `【${salon}】ご予約ありがとうございます`;
-  const text = `${salon} をご予約いただきありがとうございます。\n\n`
-    + `■ご予約内容\n日時: ${(r.date || '').replace(/-/g, '/')} ${r.time || ''}〜\nメニュー: ${r.menu || ''}\n担当: ${r.staff || ''}\n`
-    + (r.total ? `お支払い予定: ¥${Number(r.total).toLocaleString()}\n` : '')
-    + `\nご来店をお待ちしております。\n変更・キャンセルは前日までにご連絡ください。`;
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: env.MAIL_FROM || 'SEAM <onboarding@resend.dev>', to, subject, text }),
-    });
-    if (!res.ok) return json({ error: 'メール送信失敗: ' + (await res.text()) }, 502, cors);
-    return json({ ok: true }, 200, cors);
-  } catch (e) { return json({ error: 'メール送信エラー: ' + e.message }, 502, cors); }
+  try { await sendConfirmMail(env, to, reservation || {}); return json({ ok: true }, 200, cors); }
+  catch (e) { return json({ error: 'メール送信エラー: ' + e.message }, 502, cors); }
 }
 
 /* ---------- LINE ログイン OAuth2 ----------

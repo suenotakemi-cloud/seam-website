@@ -6,7 +6,8 @@ compatibility_date = "2025-01-01"
 [vars]
 SQUARE_ENV = "sandbox"          # テスト中は sandbox / 本番は "production"
 SQUARE_LOCATION_ID = "L4X65VRZXDMV7"  # 売上集計(/sales)の対象店舗ID（公開OK）。銀座のLocation ID
-ALLOW_ORIGIN = "*"              # 決済フォームのオリジンに絞るのが安全。例) "https://booking.seam.site"
+ALLOW_ORIGIN = "https://suenotakemi-cloud.github.io,http://localhost:3600"   # CORS許可オリジン(カンマ区切り)。*は廃止
+# 管理API認証トークンは secret で設定（コミット禁止）: npx wrangler secret put ADMIN_TOKEN
 FORWARD_TO = "suenotakemi@gmail.com"  # HPBメールを解析後にここにも転送（承認メール・予約確認も受信可能）
 MAIL_FROM = "SEAM 銀座 <yoyaku@seam.site>"  # Resend送信元（seam.site はDKIM認証済み・受信箱に届く）
 

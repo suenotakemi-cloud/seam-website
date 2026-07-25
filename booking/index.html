@@ -598,6 +598,18 @@ td.slot:hover{background:#f0f7ff}
 .term-pay .tp-msg{font-size:13.5px;color:var(--sub);font-weight:700;margin-top:10px;min-height:20px}
 .term-pay .tp-spin{width:38px;height:38px;border:4px solid #e6edf5;border-top-color:#0f9d58;border-radius:50%;margin:16px auto 0;animation:tpspin .9s linear infinite}
 @keyframes tpspin{to{transform:rotate(360deg)}}
+/* 管理ログインゲート */
+#adminGate{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0e2a47,#1c4a7a);display:none;align-items:center;justify-content:center;padding:20px}
+.ag-card{background:#fff;border-radius:18px;padding:34px 26px;width:100%;max-width:360px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.35)}
+.ag-logo{font-weight:800;letter-spacing:.12em;color:var(--navy);font-size:12px;margin-bottom:10px}
+.ag-card h2{margin:0 0 4px;font-size:20px;color:var(--ink)}
+.ag-card p{color:var(--sub);font-size:13px;margin:0 0 18px}
+.ag-card input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px;font-size:15px;margin-bottom:8px;text-align:center;letter-spacing:.05em}
+.ag-card input:focus{border-color:var(--accent);outline:none}
+.ag-err{color:var(--danger);font-size:12.5px;min-height:18px;margin-bottom:10px;font-weight:700}
+.hdr-logout{margin-left:auto;background:rgba(255,255,255,.14);border:none;color:#fff;border-radius:8px;padding:6px 14px;font-weight:700;font-size:12.5px;cursor:pointer;flex:0 0 auto}
+.hdr-logout:hover{background:rgba(255,255,255,.26)}
+body.customer .hdr-logout{display:none}
 @media(max-width:560px){.rep-cards{grid-template-columns:repeat(2,1fr)}}
 
 /* ═══════════════ SEAM 世界観：お客様予約フロー（白 × ゴールド・上質）※全上書きのため末尾に配置 ═══════════════ */
@@ -753,6 +765,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <button data-v="book">予約ページ</button>
     <button data-v="chan">チャネル連携</button>
   </nav>
+  <button class="hdr-logout" onclick="adminLogout()" title="管理からログアウト">ログアウト</button>
 </header>
 
 <main>
@@ -1050,13 +1063,17 @@ const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
 // Worker URL を設定すると localStorage の代わりに D1 を使います。
 // 空のままにすると今まで通り localStorage で動きます（ローカル開発・フォールバック）。
 const API_BASE = 'https://seam-square-pay.suenotakemi.workers.dev';
+// 管理API認証トークン（管理者がログイン時に入力→localStorage保持）。顧客モードでは空＝公開エンドポイントのみ利用。
+const ADMIN_TOK_KEY='stb_admin_tok';
+let ADMIN_TOKEN=(()=>{try{return localStorage.getItem(ADMIN_TOK_KEY)||''}catch(e){return ''}})();
+const authHeaders=()=>ADMIN_TOKEN?{'Authorization':'Bearer '+ADMIN_TOKEN}:{};
 
 // D1 API ラッパー（fetch 失敗時は localStorage にフォールバック）
 const API = {
   async list() {
     if (!API_BASE) return null;
     try {
-      const r = await fetch(API_BASE + '/reservations');
+      const r = await fetch(API_BASE + '/reservations', {headers:authHeaders()});
       if (!r.ok) return null;
       const j = await r.json();
       return j.ok ? j.reservations : null;
@@ -1066,7 +1083,7 @@ const API = {
     if (!API_BASE) return null;
     try {
       const r = await fetch(API_BASE + '/reservations', {
-        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(o)
+        method: 'POST', headers: {...authHeaders(),'Content-Type':'application/json'}, body: JSON.stringify(o)
       });
       const j = await r.json();
       if (r.status === 409) return { ok: false, conflict: j.conflict };
@@ -1078,7 +1095,7 @@ const API = {
     if (!API_BASE) return null;
     try {
       const r = await fetch(API_BASE + '/reservations', {
-        method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ id, ...patch })
+        method: 'PATCH', headers: {...authHeaders(),'Content-Type':'application/json'}, body: JSON.stringify({ id, ...patch })
       });
       return r.ok ? await r.json() : null;
     } catch { return null; }
@@ -1086,31 +1103,31 @@ const API = {
   async remove(id) {
     if (!API_BASE) return null;
     try {
-      const r = await fetch(API_BASE + '/reservations?id=' + encodeURIComponent(id), { method: 'DELETE' });
+      const r = await fetch(API_BASE + '/reservations?id=' + encodeURIComponent(id), { method: 'DELETE', headers: authHeaders() });
       return r.ok;
     } catch { return null; }
   },
   // ---- レジ・会計（D1）----
-  async listCheckouts(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts'+(from?`?from=${from}&to=${to||from}`:''));if(!r.ok)return null;const j=await r.json();return j.ok?j.checkouts:null;}catch{return null;} },
-  async saveCheckout(c){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});return r.ok?await r.json():null;}catch{return null;} },
-  async removeCheckout(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts?id='+encodeURIComponent(id),{method:'DELETE'});return r.ok;}catch{return null;} },
-  async listSettlements(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements'+(from?`?from=${from}&to=${to||from}`:''));if(!r.ok)return null;const j=await r.json();return j.ok?j.settlements:null;}catch{return null;} },
-  async saveSettlement(s){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});return r.ok?await r.json():null;}catch{return null;} },
-  async removeSettlement(date){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements?date='+encodeURIComponent(date),{method:'DELETE'});return r.ok;}catch{return null;} },
-  async getSettings(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings');if(!r.ok)return null;const j=await r.json();return j.ok?j.settings:null;}catch{return null;} },
-  async setSetting(key,value){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,value})});return r.ok;}catch{return null;} },
-  async listProducts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products');if(!r.ok)return null;const j=await r.json();return j.ok?j.products:null;}catch{return null;} },
-  async saveProduct(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
-  async removeProduct(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products?id='+encodeURIComponent(id),{method:'DELETE'});return r.ok;}catch{return null;} },
-  async listIntakes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes');if(!r.ok)return null;const j=await r.json();return j.ok?j.intakes:null;}catch{return null;} },
-  async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
-  async removeIntake(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes?id='+encodeURIComponent(id),{method:'DELETE'});return r.ok;}catch{return null;} },
+  async listCheckouts(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts'+(from?`?from=${from}&to=${to||from}`:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.checkouts:null;}catch{return null;} },
+  async saveCheckout(c){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(c)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeCheckout(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
+  async listSettlements(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements'+(from?`?from=${from}&to=${to||from}`:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.settlements:null;}catch{return null;} },
+  async saveSettlement(s){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(s)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeSettlement(date){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements?date='+encodeURIComponent(date),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
+  async getSettings(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.settings:null;}catch{return null;} },
+  async setSetting(key,value){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({key,value})});return r.ok;}catch{return null;} },
+  async listProducts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.products:null;}catch{return null;} },
+  async saveProduct(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeProduct(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
+  async listIntakes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.intakes:null;}catch{return null;} },
+  async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeIntake(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   // ---- Square Terminal（端末カード決済）----
-  async termCheckout(amount,deviceId,note){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amount,deviceId,note})});return await r.json();}catch(e){return {error:e.message};} },
-  async termStatus(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout?id='+encodeURIComponent(id));return await r.json();}catch(e){return {error:e.message};} },
-  async termCancel(checkoutId){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({checkoutId})});return await r.json();}catch(e){return {error:e.message};} },
-  async termDeviceCode(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/device-code',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});return await r.json();}catch(e){return {error:e.message};} },
-  async termDeviceStatus(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/device-code?id='+encodeURIComponent(id));return await r.json();}catch(e){return {error:e.message};} },
+  async termCheckout(amount,deviceId,note){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({amount,deviceId,note})});return await r.json();}catch(e){return {error:e.message};} },
+  async termStatus(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout?id='+encodeURIComponent(id),{headers:authHeaders()});return await r.json();}catch(e){return {error:e.message};} },
+  async termCancel(checkoutId){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/cancel',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId})});return await r.json();}catch(e){return {error:e.message};} },
+  async termDeviceCode(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/device-code',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({name})});return await r.json();}catch(e){return {error:e.message};} },
+  async termDeviceStatus(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/device-code?id='+encodeURIComponent(id),{headers:authHeaders()});return await r.json();}catch(e){return {error:e.message};} },
 };
 
 let db=load();
@@ -1190,11 +1207,11 @@ function matchingWaitlist(date,staffId){
 // キャンセル待ち1件へ空き連絡（LINE→メールの順。どちらも無ければデモ扱い）
 function sendWaitNotice(w){
   if(w.lineUserId&&LINE_CFG.PUSH_ENDPOINT){
-    fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+    fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
       body:JSON.stringify({userId:w.lineUserId,text:`【SEAM 銀座】キャンセル待ちのお知らせ\n\n${w.date.replace(/-/g,'/')} にご希望のお時間の空きが出ました。先着順です、お早めにご予約ください。`})}).catch(()=>{});
   }else if(w.email&&MAIL_ENDPOINT){
     const m=MENUS.find(x=>x.id===w.menuId);
-    fetch(MAIL_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+    fetch(MAIL_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
       body:JSON.stringify({to:w.email,reservation:{date:w.date,time:'ご希望の時間',menu:m?m.name:'',staff:'',salon:'SEAM 銀座（キャンセル待ち空き連絡）'}})}).catch(()=>{});
   }
   w.notified=true;
@@ -1392,7 +1409,7 @@ function renderDash(){
       if(!confirm(`明日のLINEご予約 ${withLine.length}件 にリマインドを今すぐ送信します。よろしいですか？（前日自動送信とは別に手動で送ります）`))return;
       let n=0;
       withLine.forEach(r=>{const m=MENUS.find(x=>x.id===r.menuId),s=STAFF.find(x=>x.id===r.staffId);
-        if(LINE_CFG.PUSH_ENDPOINT&&r.lineUserId){fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:r.lineUserId,text:`【SEAM 銀座】明日のご予約のリマインドです\n\n${r.date.replace(/-/g,'/')} ${hm(r.start)}〜\n${m?m.name:''}${s?' / '+s.name:''}\n\nお気をつけてお越しください。`})}).catch(()=>{});n++;}});
+        if(LINE_CFG.PUSH_ENDPOINT&&r.lineUserId){fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({userId:r.lineUserId,text:`【SEAM 銀座】明日のご予約のリマインドです\n\n${r.date.replace(/-/g,'/')} ${hm(r.start)}〜\n${m?m.name:''}${s?' / '+s.name:''}\n\nお気をつけてお越しください。`})}).catch(()=>{});n++;}});
       toast(`${n}件にリマインドを送信しました`);
     };
   }
@@ -2086,7 +2103,7 @@ async function sendEmailConfirm(r){
   const menu=MENUS.find(m=>m.id===r.menuId),staff=STAFF.find(s=>s.id===r.staffId);
   if(!MAIL_ENDPOINT){toast('（デモ）予約確認メールを送信しました');return}
   try{
-    const res=await fetch(MAIL_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+    const res=await fetch(MAIL_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
       body:JSON.stringify({to:r.email,reservation:{date:r.date,time:hm(r.start),menu:menu?menu.name:'',staff:staff?staff.name:'',total:menu?menu.price:0,salon:'SEAM 銀座'}})});
     if(res.ok)toast('予約確認メールを送信しました');else toast('（デモ）予約確認メールを送信しました');
   }catch(e){toast('（デモ）予約確認メールを送信しました')}
@@ -2095,7 +2112,7 @@ async function sendLineConfirm(r){
   const menu=MENUS.find(m=>m.id===r.menuId),staff=STAFF.find(s=>s.id===r.staffId);
   if(!LINE_CFG.PUSH_ENDPOINT||!r.lineUserId){toast('（デモ）LINEで予約確認メッセージを送信しました');return}
   try{
-    await fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+    await fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
       body:JSON.stringify({userId:r.lineUserId,type:'confirm',reservation:{
         date:r.date,time:hm(r.start),menu:menu.name,staff:staff.name,salon:'SEAM 銀座'}})});
     toast('LINEで予約確認メッセージを送信しました');
@@ -2383,8 +2400,7 @@ function renderBook(){
         spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60});
       if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
-      if(r.resv.lineUserId)sendLineConfirm(r.resv);        // LINE友だちにはLINE確認
-      else if(r.resv.email)sendEmailConfirm(r.resv);       // LINE以外(Google/海外客)はメール確認
+      // 予約確認(LINE/メール)は予約作成時にサーバ側(Worker)から送信。フロントからの直接送信は廃止(セキュリティ)。
     };
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:4px">事前決済（デポジット）</h3>
       <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです</p>
@@ -2729,10 +2745,10 @@ function lapsedCustomers(){
 }
 function sendRevisit(c){
   if(c.lineUserId&&LINE_CFG.PUSH_ENDPOINT){
-    fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+    fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
       body:JSON.stringify({userId:c.lineUserId,text:`【SEAM 銀座】${c.name}様\n\n前回のご来店から少し経ちました。そろそろメンテナンスはいかがですか？ご予約お待ちしております。`})}).catch(()=>{});
   }else if(c.email&&MAIL_ENDPOINT){
-    fetch(MAIL_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},
+    fetch(MAIL_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
       body:JSON.stringify({to:c.email,reservation:{date:'',time:'',menu:'',staff:'',salon:'SEAM 銀座（そろそろメンテナンスはいかがですか）'}})}).catch(()=>{});
   }
 }
@@ -2783,23 +2799,48 @@ function renderAnalytics(){
     <div class="an-sub">人気メニュー</div>${topMenus.length?topMenus.map(([n,c],i)=>`<div class="an-row"><span class="an-l">${i+1}. ${n}</span><span class="an-v">${c}件</span></div>`).join(''):'<div style="font-size:12px;color:var(--sub)">データなし</div>'}`;
 }
 function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();renderTerminal();if(bk.step===2)renderBook()}
+
+/* ===== 管理ログイン（トークンゲート）===== */
+function startAdminData(){ syncFromD1(); syncRegisterFromD1(); }   // 認証OK後にD1(顧客PII・売上)をロード
+async function verifyAdmin(tok){ try{const d=dkey(today());const r=await fetch(API_BASE+'/reservations?from='+d+'&to='+d,{headers:{'Authorization':'Bearer '+tok}});return r.status;}catch(e){return 0;} }
+async function initAdmin(){
+  if(ADMIN_TOKEN && (await verifyAdmin(ADMIN_TOKEN))===200){ startAdminData(); return; }
+  ADMIN_TOKEN=''; try{localStorage.removeItem(ADMIN_TOK_KEY)}catch(e){}
+  showAdminGate();
+}
+function showAdminGate(msg){
+  let g=document.getElementById('adminGate');
+  if(!g){ g=document.createElement('div'); g.id='adminGate'; document.body.appendChild(g); }
+  g.innerHTML=`<div class="ag-card"><div class="ag-logo">SALON TOWN</div><h2>管理ログイン</h2><p>管理トークンを入力してください</p><input id="ag-input" type="password" placeholder="管理トークン" autocomplete="off"><div class="ag-err" id="ag-err">${escH(msg||'')}</div><button class="btn pri" id="ag-go" style="width:100%">ログイン</button></div>`;
+  g.style.display='flex';
+  const go=async()=>{ const el=document.getElementById('ag-input'), tok=el.value.trim(); if(!tok)return; document.getElementById('ag-err').textContent='確認中…'; const st=await verifyAdmin(tok); if(st===200){ ADMIN_TOKEN=tok; try{localStorage.setItem(ADMIN_TOK_KEY,tok)}catch(e){} g.remove(); startAdminData(); toast('管理画面にログインしました'); } else { document.getElementById('ag-err').textContent = st===401?'トークンが正しくありません':'接続エラー（'+st+'）'; } };
+  document.getElementById('ag-go').onclick=go;
+  document.getElementById('ag-input').onkeydown=e=>{if(e.key==='Enter')go();};
+  document.getElementById('ag-input').focus();
+}
+function adminLogout(){ ADMIN_TOKEN=''; try{localStorage.removeItem(ADMIN_TOK_KEY)}catch(e){} location.reload(); }
 renderToday();renderDash();renderCal();renderBook();renderChan();renderLinks();renderCustomers();renderShift();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();renderTerminal();
 document.getElementById('cust-search').oninput=renderCustomers;
-// D1から最新の予約を取得（非同期・localStorageで先に表示してから上書き）
-syncFromD1();
-syncRegisterFromD1();   // 会計・レジ締め・釣銭準備金をD1から取得（端末間で共有・自動バックアップ）
 document.getElementById('baseurl').oninput=renderLinks;
+// ※D1同期(顧客PII・売上のロード)は管理モードで認証が通ってから initAdmin() 内で実行。顧客モードでは行わない。
 if(BOOK_SRC!=='own'){
   const s=document.querySelector('#v-book .phead .s');if(s)s.textContent=CHANNELS[BOOK_SRC].name+'経由 · WEB RESERVATION';
 }
 if(IS_CUSTOMER){
   // お客様モード: 管理ヘッダーを隠し、予約画面のみ全画面表示（LINE/Google/Instagram/自社サイトからの導線）
+  ADMIN_TOKEN='';   // 顧客モードでは管理トークンを一切使わない（authHeaders()が空になる）
+  // 共有端末対策: 顧客モードでは他人のPII・売上をメモリにもlocalStorageにも持たない（重複はサーバ側で判定）
+  db.reservations=[];db.checkouts=[];db.settlements=[];db.intakes=[];db.products=[];db.waitlist=[];db.reviews=[];
+  save();refreshAll();
   document.body.classList.add('customer');
   document.querySelector('header nav').style.display='none';
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
   document.getElementById('v-book').classList.add('show');
   const bh=document.querySelector('#v-book h2');if(bh)bh.style.display='none';
   const bl=document.querySelector('#v-book .lead');if(bl)bl.style.display='none';
+}else{
+  // 管理モード: トークン認証が通って初めて顧客PII・売上をD1からロード（未認証はゲート表示）
+  initAdmin();
 }
 // URLパラメータでLINEログイン済みの場合、bk に反映
 if(lineProfile){bk.name=bk.name||lineProfile.displayName;bk.lineUserId=lineProfile.userId;}
