@@ -133,7 +133,7 @@ def page_html(b, stores, count, lines, tops):
     ja,en,slug=b['ja'],b['en'],b['slug']
     url=f'https://seam.site/{slug}'
     store_names='銀座・表参道・札幌・大阪・名古屋・福岡・宇都宮'
-    title=f'{ja} 取扱店・正規販売店｜SEAM 全国7店舗({store_names})'
+    title=f'{ja} 取扱店・正規販売店｜SEAM'  # 32字以内(検索結果の切れ防止)
     desc_count=f'取扱{count}点 ' if count else ''
     desc=f'{ja}({en})をメーカー公認の正規ルートで取扱 全国7店舗と会員制オンラインショップ {desc_count}在庫は店舗により異なります 無料の髪格診断で自分に合う一本を'
     if b.get('nofinder'):
@@ -333,7 +333,7 @@ def area_article_html(b, st, stores, lines, tops):
     url=f'https://seam.site/{page}'
     ainfo=AREA_INFO.get(st['slug'],{})
     access=ainfo.get('access','')
-    title=f'{ja} {area}で買うだけOK｜正規取扱 {st["name"]}(購入のみ来店歓迎)'
+    title=f'{ja} {area}で買える｜正規取扱店 SEAM'  # 32字以内(検索結果の切れ防止)
     desc=f'{area}で{ja}({en})を"買うだけ"で来店OK 施術・予約なしで店頭購入できます {st["name"]}({access or st["addr"]}) メーカー公認の正規取扱店 在庫は店舗にご確認ください'
     hours_line=f'　営業時間 {st["hours"]}' if st.get('hours') else ''
     access_line=f' {access}' if access else ''

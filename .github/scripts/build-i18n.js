@@ -165,7 +165,7 @@ function build() {
 
   // sitemap.xml 再生成: ja(7+ジャーナル) + 各言語×6
   // ジャーナル/ガイドはJA専用コンテンツ(多言語prerender対象外)＝ja URLのみ収録
-  const jaUrls = ['/', '/finder', '/brand', '/shop', '/onlineshop', '/hairsalon', '/headspa',
+  const jaUrls = ['/', '/finder', '/skinfinder', '/brand', '/shop', '/onlineshop', '/hairsalon', '/headspa',
     '/journal', '/guide-uneri', '/guide-damage', '/guide-kansou',
     '/guide-shiraga', '/guide-scalp', '/guide-mens',
     '/guide-bleach', '/guide-straightening', '/guide-colorfade', '/guide-perm', '/guide-salon-senyo',
@@ -181,7 +181,10 @@ function build() {
     '/recruit-spanist-ginza',
     '/recruit-spanist-osaka',
     '/recruit-spanist-nagoya'];
-  const urls = [...jaUrls];
+  // ja側も実在チェック(言語版と同じ扱い)。存在しないページをsitemapに載せない=404申告の防止
+  const missingJa = jaUrls.filter(u => !fs.existsSync(path.join(ROOT, u === '/' ? 'index.html' : u.slice(1) + '.html')));
+  if (missingJa.length) summary.push(`WARN sitemap: 実体なしのjaページを除外 ${missingJa.join(', ')}`);
+  const urls = jaUrls.filter(u => !missingJa.includes(u));
   for (const lang of Object.keys(LANGS)) {
     for (const pg of PAGES) {
       // 生成に失敗したページをsitemapに載せない(404防止)。実在ファイルのみ収録
