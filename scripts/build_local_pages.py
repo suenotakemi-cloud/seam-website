@@ -35,7 +35,7 @@ STORES = {
    nearline='銀座一丁目駅の7番出口から徒歩1分 有楽町・京橋・東銀座からも歩いて来られる場所です',
    note='ONE GINZA の3階　銀座で夜20時まで開いている数少ないサロン専売ショップです　ヘアサロンとヘッドスパを同じフロアに構えています',
    photo='images/stores/store_ginza.jpg', pw=1024, ph=576,
-   salon_hpb='H000802192', spa_hpb='H000800971', spa_set='std'),
+   salon_hpb='H000802192', spa_hpb='H000802373', spa_set='std'),
  'omotesando': dict(
    area='表参道', name='gallica / SEAM', pref='東京都', locality='港区',
    street='南青山3-15-15 Louis IIビル', lat='35.664959', lng='139.715393',
@@ -65,7 +65,7 @@ STORES = {
    nearline='四ツ橋駅の6番出口から徒歩2分 心斎橋・アメリカ村・なんばからも歩いて来られる南堀江です',
    note='STORK南堀江の1階　全店で唯一 髪を濡らさない30分のドライスパ（¥6,600）を置いている店舗です　料金体系も他店と異なります',
    photo='images/stores/store_osaka.jpg', pw=572, ph=1024,
-   salon_hpb='H000791476', spa_hpb='H000802373', spa_set='osaka'),
+   salon_hpb='H000791476', spa_hpb='H000791418', spa_set='osaka'),
  'nagoya': dict(
    area='名古屋', name='SEAM NAGOYA', pref='愛知県', locality='名古屋市中区',
    street='栄5-16-19 ネイリックス 1F・2F', lat='35.163364', lng='136.909698',
@@ -75,7 +75,7 @@ STORES = {
    nearline='矢場町駅からすぐ 栄・大須・上前津からも歩ける栄エリアです',
    note='ネイリックスの1階と2階 2フロアを使った店舗です　栄・矢場町・大須から歩けて ヘアサロンとヘッドスパを併設しています',
    photo='images/stores/store_nagoya.jpg', pw=819, ph=1024,
-   salon_hpb='H000800028', spa_hpb='H000791418', spa_set='std'),
+   salon_hpb='H000800028', spa_hpb='H000800971', spa_set='std'),
  'fukuoka': dict(
    area='福岡', name='SEAM FUKUOKA', pref='福岡県', locality='福岡市中央区',
    street='大名2丁目1-53 BPRスクエア天神大名 1F', lat='33.589043', lng='130.395996',
@@ -648,7 +648,7 @@ def build_brand_city(slug, ja, en, city):
             f'<div class="chips mt-2.5">{chips}</div>'
             f'<p class="mt-3.5 text-[12.5px] text-charcoal/70">'
             f'SEAMの商品ページでは{E(ja)}を<span class="nums">{n}</span>点ご紹介しています'
-            f'{"　メーカーは" + E(maker) if maker else ""}　'
+            f'{"　メーカーは「" + E(maker) + "」" if maker else ""}　'
             f'<a href="brand.html?mode=product&amp;brand={slug}" class="border-b border-line">{E(ja)}の商品を見る →</a></p>')
     else:
         brand_lines_block = (
