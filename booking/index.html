@@ -1039,6 +1039,8 @@ const CHANNELS={
 
 const pad=n=>String(n).padStart(2,'0');
 const dkey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+// HTMLエスケープ(格納型XSS対策)。氏名・メモ等の全ユーザー入力をinnerHTML/属性に入れる前に必ず通す。
+const escH=s=>String(s==null?'':s).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const hm=min=>`${pad(Math.floor(min/60))}:${pad(min%60)}`;
 const WD=['日','月','火','水','木','金','土'];
 const today=()=>{const d=new Date();d.setHours(0,0,0,0);return d};
@@ -1415,7 +1417,7 @@ function renderDash(){
     const vc=visitCount(r.name,r.phone,r.id);
     const rep=vc>0?`<span class="rep">${vc+1}回目</span>`:'';
     ul.insertAdjacentHTML('beforeend',
-      `<div class="upitem" data-id="${r.id}"><span class="t">${dd} ${hm(r.start)}</span><span class="n">${r.name}</span>${rep}<span class="m">${m.name} / ${st.name}</span><span class="badge" style="background:${c.color};margin-left:auto">${c.short}</span></div>`);
+      `<div class="upitem" data-id="${r.id}"><span class="t">${dd} ${hm(r.start)}</span><span class="n">${escH(r.name)}</span>${rep}<span class="m">${m.name} / ${st.name}</span><span class="badge" style="background:${c.color};margin-left:auto">${c.short}</span></div>`);
   });
   ul.querySelectorAll('.upitem').forEach(el=>el.onclick=()=>openDetail(el.dataset.id));
   renderBlockCard();
@@ -1434,7 +1436,7 @@ function renderBlockCard(){
   pend.forEach(r=>{
     const st=STAFF.find(s=>s.id===r.staffId),m=MENUS.find(m=>m.id===r.menuId),c=CHANNELS[r.channel];
     const dd=r.date===tk?'今日':r.date.slice(5).replace('-','/');
-    rows+=`<div class="bc-item"><span class="t">${dd} ${hm(r.start)}〜${hm(r.end)}</span><span class="badge" style="background:${c.color}">${c.short}</span><span class="n">${r.name}</span><span class="m">${m.name} / ${st.name}</span><button class="bc-btn" data-id="${r.id}">HPBブロック済みにする</button></div>`;
+    rows+=`<div class="bc-item"><span class="t">${dd} ${hm(r.start)}〜${hm(r.end)}</span><span class="badge" style="background:${c.color}">${c.short}</span><span class="n">${escH(r.name)}</span><span class="m">${m.name} / ${st.name}</span><button class="bc-btn" data-id="${r.id}">HPBブロック済みにする</button></div>`;
   });
   el.innerHTML=`<div class="bc-head"><span class="bc-ic warn">!</span><div><h3>HPBで枠ブロックが必要（${pend.length}件）</h3><p>他チャネルで予約が入った枠です。<b>サロンボードで手動ブロック</b>して二重予約を防いでください（自動書き込みは規約グレーのため行いません）</p></div></div><div class="bc-list">${rows}</div>`;
   el.querySelectorAll('.bc-btn').forEach(b=>b.onclick=()=>{markBlocked(b.dataset.id);toast('HPBブロック済みにしました')});
@@ -1492,7 +1494,7 @@ ${dd} のご予約について、もしご都合が合えば ${hm(g.resv.start)}
   document.getElementById('detailmodal').innerHTML=`
     <h3>お願いメッセージのプレビュー</h3>
     <p style="font-size:12px;color:var(--sub);margin-bottom:10px">LINE／メールでお客様に届く内容です。「今のままでもOK」を必ず添えて、失客を防ぎます</p>
-    <div class="askprev">${msg.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>
+    <div class="askprev">${escH(msg).replace(/\n/g,'<br>')}</div>
     <div class="row">
       <button class="btn ghost" style="flex:1" id="ask-cancel">閉じる</button>
       <button class="btn pri" id="ask-send">この内容で送信</button>
@@ -1553,7 +1555,7 @@ function renderCal(){
     const dep=r.deposit>0?'<span class="resv-dep" title="前金あり">¥</span>':'';
     const mark=r.status==='done'?'<span class="resv-mark">✓</span>':(r.status==='noshow'?'<span class="resv-mark">✕</span>':'');
     cell.insertAdjacentHTML('beforeend',
-      `<div class="resv st-${r.status}" data-id="${r.id}" style="background:${c.color};height:${h}px">${warn}${dep}${mark}<b>${r.name}</b>${m.name}・${c.short}</div>`);
+      `<div class="resv st-${r.status}" data-id="${r.id}" style="background:${c.color};height:${h}px">${warn}${dep}${mark}<b>${escH(r.name)}</b>${m.name}・${c.short}</div>`);
   });
   tbl.querySelectorAll('.resv').forEach(el=>el.onclick=e=>{e.stopPropagation();openDetail(el.dataset.id)});
   tbl.querySelectorAll('td.slot').forEach(td=>td.onclick=()=>openModal(td.dataset.s,+td.dataset.t));
@@ -1605,7 +1607,7 @@ function openDetail(id){
   const repeat=vc>0?`<span class="rep">${vc+1}回目のご来店</span>`:'<span class="rep new">新規</span>';
   const needBlock=(r.channel!=='hpb'&&!r.hpbBlocked&&r.status!=='cancelled');
   const rows=[
-    ['お客様',`${r.name} ${repeat}`],
+    ['お客様',`${escH(r.name)} ${repeat}`],
     r.phone?['電話',r.phone]:null,
     ['日時',`${r.date.replace(/-/g,'/')} ${hm(r.start)}〜${hm(r.end)}`],
     ['メニュー',`${m.name}（¥${m.price.toLocaleString()}）`],
@@ -1631,7 +1633,7 @@ function openDetail(id){
       : `<button class="btn pay" id="d-checkout" style="width:100%;margin-top:4px">💳 お会計する</button>`;})()}
     <div class="karte">
       <div class="karte-h">📝 施術カルテ・メモ<span>薬剤・仕上がり・次回提案など。次回来店時に表示されます</span></div>
-      <textarea id="d-note" placeholder="例）カラー: イルミナ オーシャン8 + 6% / 毛先ダメージ気味 / 次回は根元リタッチ提案">${(r.note||'').replace(/</g,'&lt;')}</textarea>
+      <textarea id="d-note" placeholder="例）カラー: イルミナ オーシャン8 + 6% / 毛先ダメージ気味 / 次回は根元リタッチ提案">${escH(r.note)}</textarea>
       <button class="btn small pri" id="d-savenote">カルテを保存</button>
     </div>
     <div class="row">
@@ -1777,8 +1779,8 @@ function renderRegister(){
     <div class="reg-c"><span>📱 QR決済</span><b>${money(s.qr)}</b></div>
     <div class="reg-c"><span>技術売上</span><b>${money(s.tech)}</b></div>
     <div class="reg-c"><span>店販売上</span><b>${money(s.retail)}</b></div></div>`;
-  const pendHtml=pending.length?`<div class="card reg-sec"><h3>未会計（${pending.length}）</h3>${pending.sort((a,b)=>a.start-b.start).map(r=>{const m=MENUS.find(x=>x.id===r.menuId),stf=STAFF.find(x=>x.id===r.staffId);return `<div class="reg-pend"><span class="rp-t">${hm(r.start)}</span><span class="rp-n">${r.name}</span><span class="rp-m">${m?m.name:''} / ${stf?stf.name:''}</span><button class="btn small pay" data-co="${r.id}">会計</button></div>`;}).join('')}</div>`:'';
-  const listHtml=`<div class="card reg-sec"><h3>本日の会計（${cs.length}）</h3>${cs.length?cs.map(c=>`<div class="reg-co"><span class="rc-t">${c.at?c.at.slice(11,16):''}</span><span class="rc-n">${c.customer||'（予約なし）'}</span><span class="rc-m">${PAYMENTS[c.method].ic}${c.retail>0?` 技${money(c.tech)}＋販${money(c.retail)}`:''}</span><b class="rc-a">${money(c.total)}</b><button class="rc-rcpt" data-rcpt="${c.id}" aria-label="レシート">🧾</button>${closed?'':`<button class="rc-x" data-del="${c.id}" aria-label="取消">✕</button>`}</div>`).join(''):'<div class="co-empty">まだ会計がありません</div>'}${closed?'':'<button class="btn small ghost" id="reg-walkin" style="margin-top:9px">＋ 予約なしの会計（店販のみ等）</button>'}</div>`;
+  const pendHtml=pending.length?`<div class="card reg-sec"><h3>未会計（${pending.length}）</h3>${pending.sort((a,b)=>a.start-b.start).map(r=>{const m=MENUS.find(x=>x.id===r.menuId),stf=STAFF.find(x=>x.id===r.staffId);return `<div class="reg-pend"><span class="rp-t">${hm(r.start)}</span><span class="rp-n">${escH(r.name)}</span><span class="rp-m">${m?m.name:''} / ${stf?stf.name:''}</span><button class="btn small pay" data-co="${r.id}">会計</button></div>`;}).join('')}</div>`:'';
+  const listHtml=`<div class="card reg-sec"><h3>本日の会計（${cs.length}）</h3>${cs.length?cs.map(c=>`<div class="reg-co"><span class="rc-t">${c.at?c.at.slice(11,16):''}</span><span class="rc-n">${escH(c.customer||'（予約なし）')}</span><span class="rc-m">${PAYMENTS[c.method].ic}${c.retail>0?` 技${money(c.tech)}＋販${money(c.retail)}`:''}</span><b class="rc-a">${money(c.total)}</b><button class="rc-rcpt" data-rcpt="${c.id}" aria-label="レシート">🧾</button>${closed?'':`<button class="rc-x" data-del="${c.id}" aria-label="取消">✕</button>`}</div>`).join(''):'<div class="co-empty">まだ会計がありません</div>'}${closed?'':'<button class="btn small ghost" id="reg-walkin" style="margin-top:9px">＋ 予約なしの会計（店販のみ等）</button>'}</div>`;
   const float=openingFloat(dk), expected=float+s.cash, counted=set?set.countedCash:null, diff=counted!=null?counted-expected:null;
   const carried=!set&&priorSettlement(dk);
   const closePanel=`<div class="card reg-close"><h3>レジ締め ${closed?'<span class="reg-closed">締め済み</span>':''}</h3>
@@ -1941,10 +1943,10 @@ function printReceipt(coId){
   document.getElementById('receiptArea').innerHTML=`<div class="rcpt">
     <div class="rcpt-logo">SEAM 銀座</div>
     <div class="rcpt-sub">Hair &amp; Head Spa ／ 東京・銀座</div>
-    <div class="rcpt-meta">${dt}${co.customer?`　${co.customer} 様`:''}</div>
+    <div class="rcpt-meta">${dt}${co.customer?`　${escH(co.customer)} 様`:''}</div>
     <div class="rcpt-meta">${st?`担当 ${st.name}`:''}　${co.nominated?'ご指名':'フリー'}</div>
     <div class="rcpt-hr"></div>
-    ${lines.map(([n,v])=>`<div class="rcpt-item"><span>${(n+'').replace(/</g,'&lt;')}</span><span>${v<0?'−':''}¥${Math.abs(v).toLocaleString()}</span></div>`).join('')}
+    ${lines.map(([n,v])=>`<div class="rcpt-item"><span>${escH(n)}</span><span>${v<0?'−':''}¥${Math.abs(v).toLocaleString()}</span></div>`).join('')}
     <div class="rcpt-hr"></div>
     <div class="rcpt-total"><span>合計（税込）</span><span>${money(co.total)}</span></div>
     <div class="rcpt-pay">お支払い　${PAYMENTS[co.method].label}</div>
@@ -1959,12 +1961,12 @@ function renderProducts(){
   const ps=(db.products||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
   const money=n=>'¥'+(n||0).toLocaleString();
   const lowN=ps.filter(p=>(p.stock||0)<=3).length;
-  const rows=ps.map(p=>{const low=(p.stock||0)<=3;return `<div class="prod-row"><div class="pr-main"><div class="pr-name">${(p.name||'').replace(/</g,'&lt;')}</div><div class="pr-sub">${money(p.price)}${p.barcode?`　｜　${p.barcode}`:''}</div></div><button class="btn small ghost pr-in" data-in="${p.id}">入荷</button><div class="pr-stock"><button class="pr-mn" data-adj="-1" data-id="${p.id}">−</button><span class="pr-num ${low?'low':''}">${p.stock||0}</span><button class="pr-mn" data-adj="1" data-id="${p.id}">＋</button></div><button class="pr-del" data-del="${p.id}" aria-label="削除">✕</button></div>`;}).join('');
+  const rows=ps.map(p=>{const low=(p.stock||0)<=3;return `<div class="prod-row"><div class="pr-main"><div class="pr-name">${escH(p.name)}</div><div class="pr-sub">${money(p.price)}${p.barcode?`　｜　${p.barcode}`:''}</div></div><button class="btn small ghost pr-in" data-in="${p.id}">入荷</button><div class="pr-stock"><button class="pr-mn" data-adj="-1" data-id="${p.id}">−</button><span class="pr-num ${low?'low':''}">${p.stock||0}</span><button class="pr-mn" data-adj="1" data-id="${p.id}">＋</button></div><button class="pr-del" data-del="${p.id}" aria-label="削除">✕</button></div>`;}).join('');
   // 入荷履歴＋今月仕入額
   const ins=(db.intakes||[]);
   const t=today(), mF=dkey(new Date(t.getFullYear(),t.getMonth(),1)), mT=dkey(new Date(t.getFullYear(),t.getMonth()+1,0));
   const mCost=ins.filter(x=>x.date>=mF&&x.date<=mT).reduce((s,x)=>s+(x.qty||0)*(x.unitCost||0),0);
-  const inRows=ins.slice(0,30).map(x=>`<div class="reg-co"><span class="rc-t">${(x.date||'').slice(5).replace('-','/')}</span><span class="rc-n">${(x.productName||'').replace(/</g,'&lt;')}</span><span class="rc-m">${x.qty}個${x.unitCost?` @${money(x.unitCost)}`:''}</span><b class="rc-a">${money((x.qty||0)*(x.unitCost||0))}</b><button class="rc-x" data-delin="${x.id}" aria-label="取消">✕</button></div>`).join('');
+  const inRows=ins.slice(0,30).map(x=>`<div class="reg-co"><span class="rc-t">${(x.date||'').slice(5).replace('-','/')}</span><span class="rc-n">${escH(x.productName)}</span><span class="rc-m">${x.qty}個${x.unitCost?` @${money(x.unitCost)}`:''}</span><b class="rc-a">${money((x.qty||0)*(x.unitCost||0))}</b><button class="rc-x" data-delin="${x.id}" aria-label="取消">✕</button></div>`).join('');
   body.innerHTML=`<div class="card reg-sec"><div class="rep-h"><h3>商品一覧（${ps.length}）${lowN?`<span class="pr-lowbadge">在庫わずか ${lowN}</span>`:''}</h3></div>${ps.length?rows:'<div class="co-empty">まだ商品がありません。上のフォームから追加してください</div>'}</div>
     <div class="card reg-sec"><div class="rep-h"><h3>入荷（仕入）履歴</h3><span style="font-size:12.5px;color:var(--sub);font-weight:700">今月の仕入 ${money(mCost)}</span></div>${ins.length?inRows:'<div class="co-empty">入荷の記録はまだありません。商品の「入荷」から登録できます</div>'}</div>`;
   body.querySelectorAll('[data-adj]').forEach(b=>b.onclick=()=>adjustStock(b.dataset.id,+b.dataset.adj));
@@ -2226,7 +2228,7 @@ function renderBook(){
       const res=document.getElementById('rlres');
       if(!cust){res.innerHTML='<div class="rl-none">ご予約履歴が見つかりませんでした。下からメニューをお選びください</div>';return}
       const m=MENUS.find(x=>x.id===cust.lastMenuId),st=STAFF.find(s=>s.id===cust.lastStaffId);
-      res.innerHTML=`<div class="rl-hit"><div class="rl-hi">おかえりなさい、${cust.name}様（${cust.visits+1}回目）</div>
+      res.innerHTML=`<div class="rl-hit"><div class="rl-hi">おかえりなさい、${escH(cust.name)}様（${cust.visits+1}回目）</div>
         <div class="rl-last">前回: ${m?m.name:''}${st?' / '+st.name:''}</div>
         <button class="btn pri" id="rlsame">前回と同じ内容で予約する →</button></div>`;
       document.getElementById('rlsame').onclick=()=>{
@@ -2583,8 +2585,8 @@ function renderCustomers(){
     const badge=c.visits>=2?`<span class="rep">${c.visits}回</span>`:'<span class="rep new">新規</span>';
     const chans=[...c.channels].map(k=>CHANNELS[k]?`<span class="badge" style="background:${CHANNELS[k].color}">${CHANNELS[k].short}</span>`:'').join('');
     const li=c.line?'<span class="rep" style="background:#e7f6ee;border-color:#bde8c8;color:#06843c">LINE</span>':'';
-    return `<div class="custrow" data-key="${c.key}">
-      <div class="cust-main"><div class="cust-name">${c.name} ${badge}${li}</div>
+    return `<div class="custrow" data-key="${escH(c.key)}">
+      <div class="cust-main"><div class="cust-name">${escH(c.name)} ${badge}${li}</div>
         <div class="cust-sub">${c.phone||'電話未登録'}　最終 ${c.last.replace(/-/g,'/')}　${tm}${ts?' / '+ts:''}</div></div>
       <div class="cust-right"><span class="cust-chans">${chans}</span>${c.paidVisits>0?`<span class="cust-spend">¥${c.sales.toLocaleString()}</span>`:`<span class="cust-spend" style="color:var(--sub);font-weight:600">¥${c.spend.toLocaleString()}<small style="font-size:9px"> 目安</small></span>`}</div>
     </div>`;
@@ -2594,15 +2596,15 @@ function renderCustomers(){
 function openCustomer(key){
   const rs=db.reservations.filter(r=>custKey(r)===key).sort((a,b)=>(a.date+String(a.start).padStart(4,'0'))<(b.date+String(b.start).padStart(4,'0'))?1:-1);
   const c=buildCustomers().find(x=>x.key===key);if(!c)return;
-  const esc=s=>String(s||'').replace(/</g,'&lt;');
+  const esc=escH;
   const hist=rs.map(r=>{const m=MENUS.find(x=>x.id===r.menuId),s=STAFF.find(x=>x.id===r.staffId),ch=CHANNELS[r.channel];
     const note=r.note?`<div class="chist-note">📝 ${esc(r.note)}</div>`:'';
     return `<div class="chist"><span class="chist-d">${r.date.replace(/-/g,'/')} ${hm(r.start)}</span><span class="chist-m">${m?m.name:''}${s?' / '+s.name:''}</span><span class="badge" style="background:${ch?ch.color:'#999'}">${ch?ch.short:'—'}</span><span class="stbadge st-${r.status}" style="font-size:10px">${STATUS_LABEL[r.status]}</span>${note}</div>`;
   }).join('');
-  document.getElementById('detailmodal').innerHTML=`<h3>${c.name} 様のカルテ</h3>
+  document.getElementById('detailmodal').innerHTML=`<h3>${escH(c.name)} 様のカルテ</h3>
     <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd>
       <dt>累計売上 (LTV)</dt><dd>${c.paidVisits>0?`<b style="color:var(--navy)">¥${c.sales.toLocaleString()}</b>　<span style="color:var(--sub);font-size:12px">会計${c.paidVisits}回・平均 ¥${Math.round(c.sales/c.paidVisits).toLocaleString()}</span>`:`<span style="color:var(--sub)">会計記録なし（目安 ¥${c.spend.toLocaleString()}）</span>`}</dd>
-      <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${c.note}</dd>`:''}</dl>
+      <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${escH(c.note)}</dd>`:''}</dl>
     <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">来店履歴</div>
     <div class="chistwrap">${hist}</div>
     <div class="row"><button class="btn ghost" style="flex:1" id="cd-close">閉じる</button></div>`;
@@ -2635,7 +2637,7 @@ function renderToday(){
     return `<div class="tcard ${isNext?'next':''} ${past&&r.status==='booked'?'past':''} ${stCls}" data-id="${r.id}">
       <div class="tc-time"><b>${hm(r.start)}</b><span>${hm(r.end)}</span></div>
       <div class="tc-body">
-        <div class="tc-top">${isNext?'<span class="tc-nextbadge">NEXT</span>':''}<span class="tc-name">${r.name}</span>${rep} ${stLbl}</div>
+        <div class="tc-top">${isNext?'<span class="tc-nextbadge">NEXT</span>':''}<span class="tc-name">${escH(r.name)}</span>${rep} ${stLbl}</div>
         <div class="tc-sub">${m?m.name:''} ・ ${s?s.name:''}</div>
         <div class="tc-meta"><span class="badge" style="background:${c?c.color:'#999'}">${c?c.short:'—'}</span>${dep}${warn}</div>
       </div>
@@ -2742,8 +2744,8 @@ function renderRevisit(){
   el.innerHTML=`<h3 style="font-size:14.5px;margin-bottom:4px">💌 再来おすすめ（${list.length}名）</h3>
     <p style="font-size:12px;color:var(--sub);margin-bottom:10px">最終来店から${REVISIT_DAYS}日超・次回予約なし。ワンタップで再来のご案内を送れます</p>`+
     list.slice(0,8).map(c=>{const dgap=Math.floor((today()-new Date(c.last))/86400000);
-      return `<div class="waititem"><div class="wi-main"><b>${c.name}</b><span class="wi-sub">最終 ${c.last.replace(/-/g,'/')}（${dgap}日前）・${c.visits}回・${topKey(c.menus)}</span></div>
-        <div class="wi-act">${c.lineUserId?'<span class="wi-done" style="background:#e7f6ee;color:#06843c">LINE</span>':''}<button class="btn small block" data-revisit="${c.key}">案内を送る</button></div></div>`;
+      return `<div class="waititem"><div class="wi-main"><b>${escH(c.name)}</b><span class="wi-sub">最終 ${c.last.replace(/-/g,'/')}（${dgap}日前）・${c.visits}回・${topKey(c.menus)}</span></div>
+        <div class="wi-act">${c.lineUserId?'<span class="wi-done" style="background:#e7f6ee;color:#06843c">LINE</span>':''}<button class="btn small block" data-revisit="${escH(c.key)}">案内を送る</button></div></div>`;
     }).join('');
   el.querySelectorAll('[data-revisit]').forEach(b=>b.onclick=()=>{
     const c=buildCustomers().find(x=>x.key===b.dataset.revisit);if(c){sendRevisit(c);toast(`${c.name}様に再来のご案内を送信しました`)}
@@ -2757,7 +2759,7 @@ function renderReviews(){
   el.innerHTML=`<h3 style="font-size:14.5px;margin-bottom:4px">⭐ 口コミ（公開 ${all.length-pend} / 承認待ち ${pend}）</h3>
     <p style="font-size:12px;color:var(--sub);margin-bottom:10px">公開するものを美容師が選べます。公開ONにすると予約ページに掲載されます</p>`+
     all.map(r=>{const s=STAFF.find(x=>x.id===r.staffId),m=MENUS.find(x=>x.id===r.menuId);
-      return `<div class="rvitem ${r.published?'':'pending'}"><div class="rv-main"><div class="rv-top">${'★'.repeat(r.rating)}<span class="rv-star-off">${'★'.repeat(5-r.rating)}</span> <b>${r.name}</b> <span class="rv-meta">${s?s.name:''}${m?' / '+m.name:''}・${r.date.slice(5).replace('-','/')}</span></div><div class="rv-text">${(r.text||'').replace(/</g,'&lt;')}</div></div>
+      return `<div class="rvitem ${r.published?'':'pending'}"><div class="rv-main"><div class="rv-top">${'★'.repeat(r.rating)}<span class="rv-star-off">${'★'.repeat(5-r.rating)}</span> <b>${escH(r.name)}</b> <span class="rv-meta">${s?s.name:''}${m?' / '+m.name:''}・${r.date.slice(5).replace('-','/')}</span></div><div class="rv-text">${escH(r.text)}</div></div>
       <div class="rv-act"><button class="btn small ${r.published?'ok':'ghost'}" data-pub="${r.id}">${r.published?'公開中':'公開する'}</button><button class="btn small ghost" data-rvdel="${r.id}">×</button></div></div>`;
     }).join('');
   el.querySelectorAll('[data-pub]').forEach(b=>b.onclick=()=>{const rv=db.reviews.find(x=>x.id===b.dataset.pub);setReviewPublished(b.dataset.pub,!rv.published);toast(rv.published?'非公開にしました':'公開しました')});
