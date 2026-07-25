@@ -29,7 +29,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      # 既定の fetch-depth:1 は「浅いクローン」なので、リモートが進んだときに
+      # rebase の共通祖先が見つからず push まで到達できない(run #125〜#128の失敗)。
+      # 直近履歴まで取れば reset/rebase/push が安定する。
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
 
       - name: Node.js セットアップ
         uses: actions/setup-node@v4
@@ -56,15 +61,24 @@ jobs:
           # 「リモート最新に合わせ直して作り直す」方が確実。衝突が原理的に起きない。
           # node_modules は消さない(ループ内で再生成するのに jsdom が要る)。
           # git add はパス指定なので node_modules/package.json が混入することはない。
-          pushed=0
+          # set +e: どの git コマンドで落ちたかを握りつぶさず自分で判定して報告する
+          # (ジョブログは管理者しか読めないので、失敗理由を ::error:: 注釈に出す)。
+          set +e
+          pushed=0; last=""
           for i in 1 2 3 4 5 6 7 8; do
-            git fetch origin main
-            git reset --hard origin/main      # tracked のみ戻る = node_modules は残る
-            node .github/scripts/build-i18n.js
-            git add en zh tw ko sitemap.xml
-            if git diff --staged --quiet; then echo "no change (attempt $i)"; pushed=1; break; fi
-            git commit -m "build: prerender 多言語ページ en/zh/tw/ko"
-            if git push; then pushed=1; break; fi
-            echo "push attempt $i rejected, rebuilding from latest main..."; sleep $((i * 5))
+            git fetch origin main            || { last="fetch失敗(attempt $i)"; sleep 5; continue; }
+            git reset --hard FETCH_HEAD      || { last="reset失敗(attempt $i)"; sleep 5; continue; }
+            node .github/scripts/build-i18n.js || { last="生成失敗(attempt $i)"; break; }
+            git add en zh tw ko sitemap.xml  || { last="add失敗(attempt $i)"; break; }
+            if git diff --staged --quiet; then
+              echo "no change (attempt $i)"; pushed=1; break
+            fi
+            git commit -m "build: prerender 多言語ページ en/zh/tw/ko" || { last="commit失敗(attempt $i)"; break; }
+            if git push origin HEAD:main; then pushed=1; break; fi
+            last="push拒否(attempt $i)"
+            echo "$last — リモート最新から作り直して再試行"; sleep $((i * 5))
           done
-          [ "$pushed" = "1" ] || { echo "push failed after 8 attempts"; exit 1; }
+          if [ "$pushed" != "1" ]; then
+            echo "::error title=build-i18n::多言語ページの反映に失敗しました（最後の失敗: ${last}）。ja側の本番配信には影響しません。"
+            exit 1
+          fi
