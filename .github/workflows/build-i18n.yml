@@ -3,6 +3,12 @@ name: Build i18n (prerender localized pages)
 # コンテンツ6ページ or 翻訳辞書(lang.js)が変わったら、各言語の翻訳を焼き込んだ
 # 静的ページを /en/ /zh/ /tw/ /ko/ に生成して commit する（検索に多言語を露出させる）。
 # 生成物は新規ディレクトリのため、既存 ja ページ(本番)には影響しない。
+#
+# 【2026-07-25 の障害メモ】#125〜#129 が step6 で連続失敗した。真因は
+# ワークフローではなく「node_modules 1809ファイルが誤ってコミットされていた」こと。
+# tracked な node_modules があると rm -rf / git reset --hard のどちらでも
+# 破綻する(前者は pull --rebase が拒否、後者は CI が入れた jsdom を巻き戻す)。
+# node_modules は .gitignore 済み。二度とコミットしないこと。
 on:
   push:
     paths:
