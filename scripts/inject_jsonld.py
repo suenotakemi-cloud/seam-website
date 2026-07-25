@@ -19,11 +19,17 @@ ORG = {
     "@type": "Organization",
     "@id": ORG_ID,
     "name": "SEAM",
-    "alternateName": "SEAM — Global Hair Care Select Shop",
+    # カタカナ「シーム」=日本語指名検索のエンティティ受け皿(2026-07-25追加)
+    "alternateName": ["シーム", "SEAM — Global Hair Care Select Shop"],
+    # 法人実体(一次ソース=自社tokushoho.htmlの公開情報のみ・捏造なし)
+    "legalName": "株式会社hanico",
     "url": BASE + "/",
     "logo": {"@type": "ImageObject", "url": BASE + "/images/apple-touch-icon.png", "width": 180, "height": 180},
     "image": BASE + "/images/og/seam-og.jpg",
     "description": "世界中のサロン専売ヘアケアブランドを集めたセレクトショップ＆サロン／髪格診断で今のあなたに合う一本へ",
+    "address": {"@type": "PostalAddress", "streetAddress": "南一条西3丁目8番地11 札石ビル7F",
+                "addressLocality": "札幌市中央区", "addressRegion": "北海道", "addressCountry": "JP"},
+    "telephone": "011-218-7930",
     "sameAs": ["https://www.instagram.com/seam_japan"],
 }
 

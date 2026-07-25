@@ -59,6 +59,33 @@ function extractI18N(doc) {
     vm.createContext(sandbox);
     try { vm.runInContext(s.textContent, sandbox, { timeout: 3000 }); } catch (e) { /* 辞書代入は通る */ }
     if (sandbox.window.SEAM_PAGE_I18N) return sandbox.window.SEAM_PAGE_I18N;
+    // フォールバック: 辞書代入の前にアプリコードがDOM APIで落ちるページ(brand等)は
+    // `window.SEAM_PAGE_I18N = {...}` のオブジェクトリテラルだけをブレーススキャンで
+    // 切り出し、代入文のみを評価する(文字列' " ` とエスケープを考慮)。
+    const lit = extractDictLiteral(s.textContent);
+    if (lit) {
+      const sb = { window: {} };
+      vm.createContext(sb);
+      try { vm.runInContext('window.SEAM_PAGE_I18N=' + lit, sb, { timeout: 5000 }); } catch (e) {}
+      if (sb.window.SEAM_PAGE_I18N) return sb.window.SEAM_PAGE_I18N;
+    }
+  }
+  return null;
+}
+
+function extractDictLiteral(src) {
+  const idx = src.indexOf('window.SEAM_PAGE_I18N');
+  if (idx < 0) return null;
+  const bs = src.indexOf('{', idx);
+  if (bs < 0) return null;
+  let d = 0, mode = null, esc = false;
+  for (let i = bs; i < src.length; i++) {
+    const c = src[i];
+    if (esc) { esc = false; continue; }
+    if (mode) { if (c === '\\') esc = true; else if (c === mode) mode = null; continue; }
+    if (c === "'" || c === '"' || c === '`') { mode = c; continue; }
+    if (c === '{') d++;
+    else if (c === '}') { d--; if (d === 0) return src.slice(bs, i + 1); }
   }
   return null;
 }
@@ -141,7 +168,7 @@ function build() {
   const jaUrls = ['/', '/finder', '/brand', '/shop', '/onlineshop', '/hairsalon', '/headspa',
     '/journal', '/guide-uneri', '/guide-damage', '/guide-kansou',
     '/guide-shiraga', '/guide-scalp', '/guide-mens',
-    '/guide-bleach', '/guide-straightening', '/guide-colorfade', '/guide-perm',
+    '/guide-bleach', '/guide-straightening', '/guide-colorfade', '/guide-perm', '/guide-salon-senyo',
     '/store-ginza', '/store-omotesando', '/store-osaka', '/store-nagoya',
     '/store-fukuoka', '/store-sapporo', '/store-utsunomiya',
     '/aujua', '/kerastase', '/tokio', '/bykarte', '/shu-uemura', '/lashaddict', '/sublimic', '/shiseido-professional', '/tsururincho', '/system-professional', '/milbon', '/aujua-ginza', '/aujua-omotesando', '/aujua-sapporo', '/aujua-osaka', '/aujua-nagoya', '/aujua-fukuoka', '/aujua-utsunomiya', '/kerastase-ginza', '/kerastase-omotesando', '/kerastase-sapporo', '/kerastase-osaka', '/kerastase-nagoya', '/kerastase-fukuoka', '/kerastase-utsunomiya', '/tokio-ginza', '/tokio-omotesando', '/tokio-sapporo', '/tokio-osaka', '/tokio-nagoya', '/tokio-fukuoka', '/tokio-utsunomiya', '/bykarte-ginza', '/bykarte-omotesando', '/bykarte-sapporo', '/bykarte-osaka', '/bykarte-nagoya', '/bykarte-fukuoka', '/bykarte-utsunomiya', '/shu-uemura-ginza', '/shu-uemura-omotesando', '/shu-uemura-sapporo', '/shu-uemura-osaka', '/shu-uemura-nagoya', '/shu-uemura-fukuoka', '/shu-uemura-utsunomiya', '/lashaddict-ginza', '/lashaddict-omotesando', '/lashaddict-sapporo', '/lashaddict-osaka', '/lashaddict-nagoya', '/lashaddict-fukuoka', '/lashaddict-utsunomiya', '/sublimic-ginza', '/sublimic-omotesando', '/sublimic-sapporo', '/sublimic-osaka', '/sublimic-nagoya', '/sublimic-fukuoka', '/sublimic-utsunomiya', '/shiseido-professional-ginza', '/shiseido-professional-omotesando', '/shiseido-professional-sapporo', '/shiseido-professional-osaka', '/shiseido-professional-nagoya', '/shiseido-professional-fukuoka', '/shiseido-professional-utsunomiya', '/tsururincho-ginza', '/tsururincho-omotesando', '/tsururincho-sapporo', '/tsururincho-osaka', '/tsururincho-nagoya', '/tsururincho-fukuoka', '/tsururincho-utsunomiya', '/system-professional-ginza', '/system-professional-omotesando', '/system-professional-sapporo', '/system-professional-osaka', '/system-professional-nagoya', '/system-professional-fukuoka', '/system-professional-utsunomiya', '/milbon-ginza', '/milbon-omotesando', '/milbon-sapporo', '/milbon-osaka', '/milbon-nagoya', '/milbon-fukuoka', '/milbon-utsunomiya',
@@ -156,7 +183,11 @@ function build() {
     '/recruit-spanist-nagoya'];
   const urls = [...jaUrls];
   for (const lang of Object.keys(LANGS)) {
-    for (const pg of PAGES) urls.push('/' + lang + (pg.url === '/' ? '/' : pg.url));
+    for (const pg of PAGES) {
+      // 生成に失敗したページをsitemapに載せない(404防止)。実在ファイルのみ収録
+      if (!fs.existsSync(path.join(ROOT, lang, pg.file))) continue;
+      urls.push('/' + lang + (pg.url === '/' ? '/' : pg.url));
+    }
   }
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
