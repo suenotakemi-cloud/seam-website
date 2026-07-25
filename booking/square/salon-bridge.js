@@ -48,6 +48,24 @@ export async function salonPush(env, r) {
   const dur = r.menuMin || (r.end != null && r.start != null ? r.end - r.start : 60);  // 所要時間(分)
   // ★スパ予約はSPA店へ振り分け（ANZUはヘア/スパで別account）。r.spaはページが判定
   const shopId = (r.spa && env.SALON_SPA_SHOP_ID) ? env.SALON_SPA_SHOP_ID : env.SALON_SHOP_ID;
+  // ★スパのサロンボードは「設備(個室)」が必須項目(2026-07-26オーナー実機で確認・ヘアには無い)。
+  //   RPAが設備プルダウンを選べるよう、割当部屋を info_js.hbp_facility で渡す(名前はSB設備マスタと完全一致必須)。
+  //   部屋一覧は SPA_ROOMS(カンマ区切り・wrangler.toml)。割当=同時間帯の既存スパ予約数で空き部屋へ順繰り。
+  let facility = '', facilityList = [];
+  if (r.spa) {
+    facilityList = (env.SPA_ROOMS || '個室A').split(',').map(s => s.trim()).filter(Boolean);
+    let idx = 0;
+    if (env.DB && r.date && r.start != null && r.end != null) {
+      try {
+        // 自分は既にD1へINSERT済みのため重複数-1が自分より先の予約数(=使用中の部屋数)
+        const c = await env.DB.prepare(
+          "SELECT COUNT(*) AS n FROM reservations WHERE date=? AND status!='cancelled' AND start<? AND end>? AND menu_id IN ('m13','m14','m15')"
+        ).bind(r.date, r.end, r.start).first();
+        idx = Math.max(0, ((c && c.n) || 1) - 1) % facilityList.length;
+      } catch (e) { /* D1不通でも予約は通す(部屋は先頭) */ }
+    }
+    facility = facilityList[idx] || facilityList[0] || '';
+  }
   const stylist = r.staffCu || null;               // スタイリストのCUEPON account_id（スパはcuSpa）
   const nominated = r.nominated !== false;         // 既定=指名。フリーのみ false を明示
   // ★メニュー(item/クーポン)は送らない＝名称一致でエラーになるため（2026-07-27オーナー指示）。
@@ -73,6 +91,9 @@ export async function salonPush(env, r) {
       nominated: nominated,                          // true=指名予約 / false=フリー
       menu_label: r.menuName || '',                  // 表示用の控えのみ（サロンボード書込の照合には使わない）
       channel: r.channel || 'own', src: 'seam-booking',
+      // ★スパのみ: サロンボード必須項目「設備」用。hbp_facility=割当部屋(SB設備名と完全一致)・
+      //   hbp_facility_list=部屋一覧(割当部屋が埋まっていた場合のRPAフォールバック用)。設備の開始/終了時間は予約と同じ。
+      ...(r.spa ? { hbp_facility: facility, hbp_facility_list: facilityList } : {}),
     },
     private_js: {                                   // サーバ側で暗号化保存・個人情報はすべてここ
       customer_name: nm,                            // 姓 名

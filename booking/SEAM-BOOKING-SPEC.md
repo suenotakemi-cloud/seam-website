@@ -69,10 +69,16 @@
 - **Square端末決済**：Terminal API（sandbox実装済み・本番は端末ペアリング＋本番トークンで稼働）。
 - **メール取込**：HotPepper予約通知を受信→パース→D1（channel=hpb）。
 
-### 3.1 salon.town へ送る予約データ形式（2026-07-27 オーナー確定・重要）
-サロンボード書込（RPA）に必要な**赤丸必須項目のみ**を送る。**メニュー/クーポン名は送らない**（名称一致でRPA書込がエラーになるため）。
+### 3.1 salon.town へ送る予約データ形式（2026-07-27 オーナー確定／2026-07-26 スパ設備追加・重要）
+サロンボード書込（RPA・**予約のみ＝予定機能は廃止**）に必要な**赤丸必須項目のみ**を送る。**メニュー/クーポン名は送らない**（名称一致でRPA書込がエラーになるため）。
 - 指名/フリー（`info_js.nominated`）・開始時間（`reserve_date`）・**所要時間**（`reserve_end_date`＝開始＋所要／`info_js.duration_min`）・氏名カナ（`name`欄＝「姓 名（セイ メイ）」／`private_js`にカナ）・担当（`account_id`＋`info_js.hbp_stylist_id`＝account.code）。
 - `item_id`・`menu_id`・`hbp_menu_id` は**送らない**。`menu_label` は表示控えのみ（照合不使用）。
+- **スパのみ追加＝設備（個室）**：スパのサロンボードは予約フォームで**「設備」が必須項目**（ヘアには無い・2026-07-26オーナー実機確認）。
+  - `info_js.hbp_facility`＝割当部屋名（**SB設備プルダウンと完全一致必須**・例「個室A」）
+  - `info_js.hbp_facility_list`＝部屋一覧（割当部屋が塞がっていた場合のRPAフォールバック用）
+  - 設備の開始/終了時間は予約と同じ。部屋一覧は wrangler.toml `SPA_ROOMS`（カンマ区切り）で管理。
+  - 割当ロジック：同時間帯の既存スパ予約数で空き部屋へ順繰り（`salon-bridge.js` salonPush内・SEAM専用のメニューID判定＝統合時に汎用化対象）。
+  - `hbp_facility` 無しの旧予約・メール取込分は**RPA側で先頭の空き個室にフォールバック**する契約とする。
 
 ---
 
@@ -96,10 +102,15 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 | Resend | 予約確認メール・オーナー通知 | `api.resend.com/emails` |
 
 ### 4.3 自社 Worker エンドポイント（フロント↔D1・§6の独自実装）
-公開（顧客導線・認証不要）：`POST /pay`・`POST /reservations`・`POST /line/login/state`・`GET /line/login/result`。
+公開（顧客導線・認証不要）：`POST /pay`・`POST /reservations`・**`GET /availability`**（空き判定用・PII無しの占有区間のみ＝顧客ページのキャパ超過防止）・`POST /line/login/state`・`GET /line/login/result`。
 管理（`Authorization: Bearer ADMIN_TOKEN` 必須）：
 `GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
-メール受信：Cloudflare Email Routing（`hpb@seam.site`）→ Worker `email()` → parseSalonBoard → D1。
+運用ツール（`CLEANUP_TOKEN`＝wrangler secret・オーナー/AI運用専用）：
+`POST /admin/purge-test`（氏名「テスト%」×channel line/own のみD1＋salon.town削除）／`GET /admin/diag-resv`（両店予約の診断読取・add_info付き）／`POST /admin/salon-del?id=`（salon.town予約1件削除＝孤児ミラー掃除）／`POST /admin/salon-patch`（info_js更新＝個室後付け等。**部分dataでも他カラムは無傷を実証済**）／`GET|POST /salon/noname`（無記名ミラーの孤児判定つき掃除・**親生存チェックで本物予約のミラーは残す**）。
+メール受信：Cloudflare Email Routing（`hpb@seam.site`）→ Worker `email()` → parseSalonBoard → **D1のみ**（台帳表示・空き枠×・オーナー通知。**salon.townへは書かない**）。
+- 通知メールはヘア掲載「SEAM 銀座」/スパ掲載「SEAM 銀座店」の**両方**が届く。先頭サロン名行で店舗判定（`銀座店`を先に判定）・**SEAM 銀座以外の掲載は取込対象外**（他店舗混入ガード）・キャンセル連絡は予約番号一致で status=cancelled 反映。
+- **salon.town への HPB 予約作成はエンジニア側 `reserve_<shop_id>@sugu.salon.town` が唯一の書き手**（役割分担・二重処理防止）。
+- **同一ID（HPB予約番号）の重複は自動破棄**：D1のIDを `hpb-BF<番号>` とし `INSERT OR IGNORE`（オーナー方針「同じIDの予約は消去」準拠）。自社予約はサーバ409＋salon.town `check_slot_conflict:true` で二重予約拒否。
 
 ---
 
@@ -164,9 +175,12 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 
 ## 9. 既知の依存・課題
 
-- **RPA（salon.town→サロンボード書込）**：エンジニア側インフラ。停止するとサロンボードに予約が反映されない（予定ミラーは別経路で先に埋まることがある）。予定(block)を予約として書かない運用が前提。
-- **メール取込の二重処理**：`hpb@seam.site`（本システム）と `reserve_<shop_id>@sugu`（エンジニア）で二重にパースすると重複予約。宛先を一本化する。
-- **多テナント非対応**：現状 SEAM 銀座 単一。テナント分離・汎用化は統合時に CUEPON 側で実施（本システムは寄せる側）。
+- **RPA（salon.town→サロンボード書込）**：エンジニア側インフラ。**予約のみ（予定機能は廃止・2026-07-26）**。停止するとサロンボードに予約が反映されない。処理結果は `info_js.hbp_success/hbp_processed_at/hbp_reserve_id` 刻印で確認する。
+  - **RPAへの契約（本システム→RPA）**：§3.1 の最小データ（指名/時間/所要/氏名カナ/担当/スパは個室）。`hbp_facility` 無し予約は先頭の空き個室にフォールバック。メール取込のBF番号予約（既にサロンボードに存在）は**書き戻し不要＝スキップ**（キュー詰まり防止・依頼中）。
+  - **兼任ミラー（block）**：salon.town account_link が自動生成（name「予定あり（他店舗のご予約）」・`info_js.is_block/block_for_reservation_id`）。予定機能廃止後のRPA側の扱いはエンジニア決定事項。
+  - **⚠️孤児ミラー**：兼任スタッフ（ANZU）の予約を削除すると**ミラーは別レコードとして残り**、RPAが処理不能→90秒タイムアウト連発→**キュー全体が詰まる**（2026-07-25実障害）。予約削除時は `/salon/noname`（孤児判定つき）か `/admin/salon-del` でミラーも掃除する。
+- **メール取込の役割分担（2026-07-26確定）**：salon.town予約の作成は `reserve_<shop_id>@sugu`（エンジニア）が唯一。`hpb@seam.site`（本システム）は**D1表示のみで書かない**。二重処理は発生しない。
+- **多テナント非対応**：現状 SEAM 銀座 単一。テナント分離・汎用化は統合時に CUEPON 側で実施（本システムは寄せる側）。スパ個室の割当ロジック（メニューID直書き判定・`SPA_ROOMS`）もSEAM専用＝統合時に設備マスタへ汎用化。
 
 ---
 

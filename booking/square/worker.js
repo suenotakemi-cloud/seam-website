@@ -110,6 +110,16 @@ export default {
     if (p.endsWith('/availability') && m === 'GET') return handleAvailability(url, env, cors);           // 空き判定用(PII無し・公開)
     if (p.endsWith('/admin/purge-test') && m === 'POST') return handlePurgeTest(url, env, cors);         // テスト予約掃除(専用トークン)
     if (p.endsWith('/admin/diag-resv') && m === 'GET') return handleDiagResv(url, env, cors);            // 両店予約の診断読取(専用トークン)
+    // 指定IDのsalon.town予約のinfo_jsを更新(専用トークン)。個室(hbp_facility)の後付け等。bodyに{id, info_js}。
+    if (p.endsWith('/admin/salon-patch') && m === 'POST') {
+      const tk = url.searchParams.get('token') || '';
+      if (!env.CLEANUP_TOKEN || tk !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.id || !o.info_js) return json({ error: 'id/info_js必須' }, 400, cors);
+      try { const d = await salonCall(env, '/save/reservation', { data: { id: o.id, info_js: o.info_js } });
+        return json({ ok: !!d.result, result: d }, 200, cors); }
+      catch (e) { return json({ error: e.message }, 502, cors); }
+    }
     // 指定IDのsalon.town予約を1件削除(専用トークン)。孤児ミラー(親を消した後に残るブロック)の外科的掃除用。
     if (p.endsWith('/admin/salon-del') && m === 'POST') {
       const tk = url.searchParams.get('token') || '';
@@ -482,16 +492,16 @@ async function handleDiagResv(url, env, cors) {
     for (const sh of shops) {
       const j = await salonCall(env, '/get/reservation', {
         filter: { shop_id: sh.id, reserve_date_start: from, reserve_date_end: to + ' 23:59' },
-        add_staff: true, limit: 300,
+        add_staff: true, add_info: true, limit: 300,   // add_info:true が無いと info_js が返らない罠(T系)
       });
       out[sh.label] = (j.data || []).map(r => ({
         id: r.id, num: r.reserve_num, name: r.name || '', status: r.status,
         date: r.reserve_date, end: r.reserve_end_date, staff: r.staff_account_id || '',
+        account_id: r.account_id || '',   // 担当の正はaccount_id(2026-07-24エンジニア確定仕様)。staff_account_idは旧列
+
         deleted: !!r.delete_date, cancelled: !!r.cancel_date, type: r.type || '',
-        info: (() => { const ij = r.info_js || {}; return {
-          block_for: ij.block_for_reservation_id || ij.block_for || '', src: ij.src || '',
-          nominated: ij.nominated, duration_min: ij.duration_min, hbp: ij.hbp_stylist_id || '',
-          keys: Object.keys(ij).slice(0, 20) }; })(),
+        // info_jsは平文メタ(個人情報なし設計)。RPAの処理刻印(hbp_*)と設定値をそのまま返して診断する。
+        info: r.info_js || null,
       }));
     }
     return json({ ok: true, ...out }, 200, cors);
