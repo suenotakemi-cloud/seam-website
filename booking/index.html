@@ -640,7 +640,9 @@ body.customer .hdr-logout{display:none}
 .pbody .chip:hover{border-color:#D9BE93}
 .pbody .chip.sel{border-color:#B8945A;background:#B8945A;color:#fff}
 .pbody .daytab{border:1.5px solid #e7e1d5}
-.pbody .daytab:hover{border-color:#D9BE93}
+/* hoverはマウス環境だけ。タッチ端末では:hoverが最後にタップした枠に残り「2つ選択されて見える」ため無効化 */
+@media(hover:hover){.pbody .daytab:hover{border-color:#D9BE93}}
+.pbody .daytab:focus{outline:none}
 .pbody .daytab.sel{border-color:#B8945A;background:#B8945A}
 .pbody .daytab.sel .w,.pbody .daytab.sel .av{color:rgba(255,255,255,.9)}
 .pbody .daytab .av-o{color:#8a9e6a}
@@ -1441,12 +1443,12 @@ function renderDash(){
   const ul=document.getElementById('uplist');
   ul.innerHTML=up.length?'':'<div style="color:var(--sub);font-size:13px">この後の予約はありません</div>';
   up.forEach(r=>{
-    const st=STAFF.find(s=>s.id===r.staffId),m=MENUS.find(m=>m.id===r.menuId),c=CHANNELS[r.channel];
+    const st=STAFF.find(s=>s.id===r.staffId)||{},m=MENUS.find(m=>m.id===r.menuId)||{},c=CHANNELS[r.channel]||{};
     const dd=r.date===tk?'今日':r.date.slice(5).replace('-','/');
     const vc=visitCount(r.name,r.phone,r.id);
     const rep=vc>0?`<span class="rep">${vc+1}回目</span>`:'';
     ul.insertAdjacentHTML('beforeend',
-      `<div class="upitem" data-id="${r.id}"><span class="t">${dd} ${hm(r.start)}</span><span class="n">${escH(r.name)}</span>${rep}<span class="m">${m.name} / ${st.name}</span><span class="badge" style="background:${c.color};margin-left:auto">${c.short}</span></div>`);
+      `<div class="upitem" data-id="${r.id}"><span class="t">${dd} ${hm(r.start)}</span><span class="n">${escH(r.name)}</span>${rep}<span class="m">${m.name||''} / ${st.name||''}</span><span class="badge" style="background:${c.color||'#ccc'};margin-left:auto">${c.short||''}</span></div>`);
   });
   ul.querySelectorAll('.upitem').forEach(el=>el.onclick=()=>openDetail(el.dataset.id));
   renderBlockCard();
@@ -1578,13 +1580,13 @@ function renderCal(){
   db.reservations.filter(r=>r.date===k).forEach(r=>{
     const cell=tbl.querySelector(`td[data-s="${r.staffId}"][data-t="${r.start}"]`);
     if(!cell)return;
-    const c=CHANNELS[r.channel],m=MENUS.find(m=>m.id===r.menuId);
+    const c=CHANNELS[r.channel]||{},m=MENUS.find(m=>m.id===r.menuId)||{};
     const h=(r.end-r.start)/STEP*rowH-4;
     const warn=(r.channel!=='hpb'&&!r.hpbBlocked&&r.status!=='cancelled')?'<span class="resv-warn" title="HPBで要ブロック">⚠</span>':'';
     const dep=r.deposit>0?'<span class="resv-dep" title="前金あり">¥</span>':'';
     const mark=r.status==='done'?'<span class="resv-mark">✓</span>':(r.status==='noshow'?'<span class="resv-mark">✕</span>':'');
     cell.insertAdjacentHTML('beforeend',
-      `<div class="resv st-${r.status}" data-id="${r.id}" style="background:${c.color};height:${h}px">${warn}${dep}${mark}<b>${escH(r.name)}</b>${m.name}・${c.short}</div>`);
+      `<div class="resv st-${r.status}" data-id="${r.id}" style="background:${c.color||'#ccc'};height:${h}px">${warn}${dep}${mark}<b>${escH(r.name)}</b>${m.name||''}・${c.short||''}</div>`);
   });
   tbl.querySelectorAll('.resv').forEach(el=>el.onclick=e=>{e.stopPropagation();openDetail(el.dataset.id)});
   tbl.querySelectorAll('td.slot').forEach(td=>td.onclick=()=>openModal(td.dataset.s,+td.dataset.t));
@@ -2422,6 +2424,9 @@ function renderBook(){
     const stName=(STAFF.find(s=>s.id===sid)||{}).name||'';
     const dep=depositOf(menu.price-disc);
     const commit=(depositAmt)=>{
+      if(bk._committing)return; bk._committing=true;   // 二重押下防止（1回目の自分の予約と重複してエラーになるのを防ぐ）
+      const _btn=document.getElementById('bpay'),_skip=document.getElementById('bskip');
+      if(_btn)_btn.disabled=true; if(_skip)_skip.style.pointerEvents='none';
       const stObj=STAFF.find(s=>s.id===sid)||{};
       // スパ判定は独立ヘッドスパメニュー(cat=ヘッドスパ=SPA店の掲載)のみ。ヘアクーポン(名前にヘッドスパを含む)はヘア店予約
       const isSpa=(menu.cat==='ヘッドスパ');
@@ -2430,7 +2435,7 @@ function renderBook(){
         // ★スパ予約はSPA店＝ANZUのスパ用account_id(cuSpa)とスパHPB IDを使う。spaフラグでWorkerがSPA店へ振り分け
         spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60,
         nominated:bk.staff!=='any'});   // 指名(特定スタッフ選択)=true / 指名なし=フリー。サロンボードRPAの指名チェック用
-      if(!r.ok){toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
+      if(!r.ok){bk._committing=false;toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
       // 予約確認(LINE/メール)は予約作成時にサーバ側(Worker)から送信。フロントからの直接送信は廃止(セキュリティ)。
     };
@@ -2874,7 +2879,7 @@ function enterCustomerMode(){
       const r=await fetch(API_BASE+'/availability');
       if(!r.ok)return; const j=await r.json();
       if(j&&j.ok&&Array.isArray(j.busy)){
-        db.reservations=j.busy.map((b,i)=>({id:'busy'+i,date:b.date,staffId:b.staffId,start:b.start,end:b.end,status:'booked',name:'',channel:'hpb',hpbBlocked:true}));
+        db.reservations=j.busy.map((b,i)=>({id:'busy'+i,date:b.date,staffId:b.staffId,start:b.start,end:b.end,menuId:(MENUS[0]||{}).id||'',status:'booked',name:'',channel:'hpb',hpbBlocked:true}));
         refreshAll();
       }
     }catch(e){}
