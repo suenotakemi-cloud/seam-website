@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM｜検索まわり 実行指示書</title>
+<style>
+
+  :root{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+    --shadow:0 1px 2px rgba(60,46,20,.05),0 8px 30px rgba(60,46,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+      --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+      --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+  }
+  :root[data-theme="dark"]{
+    --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+    --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+    --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+    font-size:15px; line-height:1.85; letter-spacing:.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 22px 90px;}
+  .serif{font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  /* ── masthead ── */
+  .mast{border-bottom:1.5px solid var(--ink); padding-bottom:22px; margin-bottom:8px;}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; letter-spacing:.42em; font-size:15px; color:var(--ink); font-weight:600;}
+  .kicker{font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-top:20px;}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:29px; line-height:1.35; margin:.24em 0 0; text-wrap:balance; letter-spacing:.02em;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:12px; line-height:1.9;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:16px; font-size:11.5px; color:var(--faint); font-family:ui-monospace,monospace; letter-spacing:.04em;}
+
+  /* ── intro card ── */
+  .lead{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-top:26px; box-shadow:var(--shadow); font-size:14px; line-height:2;}
+  .lead b{color:var(--gold);}
+  .lead .why{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted);}
+
+  /* ── section ── */
+  section{margin-top:46px;}
+  .eyebrow{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:10px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+  h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:21px; margin:12px 0 4px; letter-spacing:.02em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:13px; margin:0 0 18px;}
+
+  /* ── field list ── */
+  .field{display:flex; gap:15px; padding:17px 0; border-top:1px solid var(--line2);}
+  .field:first-of-type{border-top:0;}
+  .fnum{flex:none; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--gold); color:var(--gold); font-family:ui-monospace,monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .fbody{min-width:0; flex:1;}
+  .fname{font-weight:700; font-size:14.5px; color:var(--ink);}
+  .fname .req{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; color:#fff; background:var(--gold); border-radius:3px; padding:2px 6px; margin-left:8px; vertical-align:2px; font-weight:600;}
+  .fdesc{font-size:13px; color:var(--muted); line-height:1.95; margin-top:5px;}
+  .fdesc strong{color:var(--ink); font-weight:600;}
+
+  /* ── paste block ── */
+  .paste{position:relative; background:var(--paste); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px; padding:14px 15px 15px; margin-top:11px;}
+  .paste .lbl{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:8px;}
+  .paste p{margin:0; font-size:13px; line-height:1.95; color:var(--ink); white-space:pre-wrap;}
+  .paste .var{color:var(--bad); font-weight:600;}
+  .copybtn{position:absolute; top:11px; right:11px; font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.08em; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer; transition:all .15s;}
+  .copybtn:hover{color:var(--ink); border-color:var(--gold);}
+  .copybtn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .qa{margin-top:9px;}
+  .qa .q{font-weight:700; font-size:13px; color:var(--ink);}
+  .qa .q::before{content:"Q. "; color:var(--gold); font-family:ui-monospace,monospace;}
+  .qa .a{font-size:12.5px; color:var(--muted); line-height:1.9; margin:2px 0 12px; padding-left:1.4em;}
+  .qa .a::before{content:"A. "; color:var(--faint); font-family:ui-monospace,monospace; margin-left:-1.4em;}
+
+  /* ── checklist ── */
+  ul.check{list-style:none; margin:6px 0 0; padding:0;}
+  ul.check li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line2); font-size:13.5px; line-height:1.75;}
+  ul.check li:first-child{border-top:0;}
+  ul.check li::before{content:""; position:absolute; left:0; top:12px; width:15px; height:15px; border:1.5px solid var(--gold-soft); border-radius:3px; background:var(--panel);}
+  ul.check li b{color:var(--ink);}
+  ul.check li .hint{display:block; color:var(--faint); font-size:11.5px; margin-top:2px;}
+
+  /* ── data table ── */
+  .tablewrap{overflow-x:auto; margin-top:6px; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);}
+  table{border-collapse:collapse; width:100%; min-width:680px; font-size:12px; background:var(--panel);}
+  th,td{text-align:left; padding:11px 13px; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.7;}
+  thead th{background:var(--panel2); font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:600; white-space:nowrap; position:sticky; top:0;}
+  tbody tr:last-child td{border-bottom:0;}
+  td .name{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;}
+  td.u{font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); word-break:break-all;}
+  td .none{color:var(--faint); font-style:italic;}
+
+  /* ── do / dont ── */
+  .rules{display:grid; gap:10px; margin-top:8px;}
+  .rule{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.85;}
+  .rule .ic{flex:none; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; color:#fff; background:var(--bad);}
+  .rule b{color:var(--ink);}
+  .rule .sub{color:var(--muted); font-size:12px;}
+
+  .callout{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:13px 16px; font-size:12.5px; color:var(--muted); line-height:1.9; margin-top:14px;}
+  .callout b{color:var(--gold);}
+
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:11px; color:var(--faint); line-height:1.9; font-family:ui-monospace,monospace; letter-spacing:.03em;}
+
+  @media (max-width:560px){
+    .wrap{padding:30px 16px 70px;} h1{font-size:24px;} .field{gap:12px;}
+  }
+  @media print{
+    body{background:#fff; color:#000; font-size:11.5px;}
+    .copybtn{display:none;} .wrap{max-width:none; padding:0;}
+    .lead,.paste,.tablewrap,.rule,.callout{box-shadow:none;}
+    section{break-inside:avoid;} .field,.rule,.paste{break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">S E A M</div>
+    <div class="kicker">SEO ／ Search Console ・ Subdomain ・ PR</div>
+    <h1 class="serif">検索まわり 実行指示書</h1>
+    <p class="sub">サイト内の対策は完了しています。ここに残すのは<strong>サイトの外側・別管理の領域</strong>で、担当の方の操作が必要なものだけです。上から順に、効きの大きい順に並べています。</p>
+    <div class="meta"><span>宛先：サイト／店舗 管理担当</span><span>作成：2026.07.25</span><span>実測：2026.07.25 時点</span><span>関連：gbp-guide.html</span></div>
+  </header>
+
+  <div class="lead">
+    サイト本体（seam.site）は<b>147ページすべてが正常</b>で、タイトル・説明文・構造化データ・内部リンク・表示速度まで整備済みです。<b>いま順位を押し下げている要因は、すべてサイトの外にあります。</b>
+    <div class="why">なお<b>AI検索（ChatGPT・Perplexity等）へのブロックは、方針どおり維持</b>しています。模倣対策として合理的な判断です。<b>Google・Yahoo・Bingの通常検索は許可済み</b>なので、以下の施策の効果には一切影響しません。</div>
+  </div>
+
+  <!-- 緊急 -->
+  <section>
+    <div class="eyebrow">緊急 ／ 別サブドメインの設定ミス</div>
+    <h2 class="serif">銀座のヘッドスパLPが、検索から消えかけています</h2>
+    <p class="lede">seam.site とは別に運用されている <span class="mono">ginza / nagoya / osaka .seam.site</span> を実測しました。3件とも設定に問題があります。<strong>特に銀座は実害が出ている状態</strong>です。</p>
+
+    <div class="field">
+      <div class="fnum">1</div>
+      <div class="fbody">
+        <div class="fname">ginza.seam.site ― 存在しないドメインを「正規版」に指定<span class="req">最優先</span></div>
+        <div class="fdesc">
+          このページには <span class="mono">canonical（正規URL）= https://seam-ginza.com/</span> が設定されていますが、<strong>seam-ginza.com は現在<span class="mono">存在しません</span>（DNSで解決できない状態）</strong>。<br>
+          canonicalは検索エンジンに対する「このページの本物はこちらです」という申告です。その行き先が消えているため、<strong>中身のある銀座ヘッドスパのページ（86KB）が「本物が存在しないページ」と扱われ、検索結果から外れてしまいます</strong>。「銀座 ヘッドスパ」は主力メニューなので、ここは売上に直結します。<br>
+          <strong>直し方：</strong>canonicalを<strong>自分自身のURL（https://ginza.seam.site/）</strong>に変更してください。WordPressの場合は<strong>［設定］→［一般］の「サイトアドレス（URL）」が古いドメインのまま</strong>になっているのが原因です（SEOプラグインのcanonical設定も併せて確認を）。<br>
+          <span style="color:var(--faint);font-size:12px;">※ もし seam-ginza.com を今後も使う予定があるなら、そのドメインを復活させて ginza.seam.site から301リダイレクトする方法もあります。どちらか一方に必ず統一してください。</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="fnum">2</div>
+      <div class="fbody">
+        <div class="fname">osaka.seam.site ― 検索エンジンには「空のページ」に見えている</div>
+        <div class="fdesc">
+          中身が<strong>JavaScriptで言語別ページへ飛ばすだけ（2.8KB）</strong>で、本文がありません。検索エンジンは中身のないページと判断します。<br>
+          <strong>直し方：</strong>サーバー側で<strong>301リダイレクト</strong>にする（推奨）か、日本語版の内容をこのURLに直接置いてください。
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="fnum">3</div>
+      <div class="fbody">
+        <div class="fname">nagoya.seam.site ― canonicalが未設定</div>
+        <div class="fdesc">
+          中身（25KB）はありますが正規URLの指定がありません。<strong>canonicalに自分自身のURL（https://nagoya.seam.site/）</strong>を設定してください。同じアドレスが複数の形（www有無・末尾スラッシュ等）で拾われるのを防げます。
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>あわせて、役割の整理をおすすめします。</b>現状「ヘッドスパ」の情報が <span class="mono">seam.site/headspa</span>・<span class="mono">seam.site/store-銀座</span>・<span class="mono">ginza.seam.site</span> の3か所にあり、検索エンジンから見ると同じキーワードで自社同士が競合しています。<br>
+      → <strong>サブドメイン＝その店のヘッドスパ専門ページ／seam.site＝店舗情報・物販・診断</strong>と役割を分け、<strong>お互いにリンクを張る</strong>と、評価が分散せずに済みます。
+    </div>
+  </section>
+
+  <!-- Search Console -->
+  <section>
+    <div class="eyebrow">計測 ／ Google Search Console</div>
+    <h2 class="serif">効果を数字で見られるようにする</h2>
+    <p class="lede">今は「対策した結果どうなったか」が分からない状態です。無料・15分ほどで設定できます。</p>
+
+    <ul class="check">
+      <li><b>Search Console に登録する</b><span class="hint">search.google.com/search-console → プロパティを追加 → <b>「ドメイン」</b>を選択して <span class="mono">seam.site</span> と入力（サブドメインもまとめて見られます）。表示されたTXTレコードをドメイン管理画面（Cloudflare）のDNSに追加すると認証完了。</span></li>
+      <li><b>サイトマップを送信する</b><span class="hint">左メニュー［サイトマップ］→ <span class="mono">sitemap.xml</span> と入力して送信。147ページを一度に知らせられます。</span></li>
+      <li><b>主要ページの登録をリクエストする</b><span class="hint">上部の検索窓にURLを貼る →［インデックス登録をリクエスト］。まずはトップ・髪格診断・店舗7ページから。</span></li>
+      <li><b>1か月後に見る数字（3つだけ）</b><span class="hint">①［ページ］のインデックス済み件数（147に近づくほど良い）②［検索結果］の表示回数・クリック数の推移 ③どんな検索語で見られているか（想定と違えば打ち手が変わります）</span></li>
+      <li><b>サブドメインも同じ手順で確認</b><span class="hint">上記の「ドメイン」プロパティで登録すれば ginza / nagoya / osaka も一緒に見られます。緊急対応の効果確認にも使えます。</span></li>
+    </ul>
+    <div class="callout">
+      反映には<b>数日〜数週間</b>かかります。すぐ数字が動かなくても正常です。<b>先に登録だけ済ませておくほど、後で振り返れる期間が長くなります。</b>
+    </div>
+  </section>
+
+  <!-- PR -->
+  <section>
+    <div class="eyebrow">認知 ／ 掲載依頼・PR</div>
+    <h2 class="serif">他サイトから紹介されると、検索順位が上がります</h2>
+    <p class="lede">他社サイトからのリンクは、検索エンジンにとって「信頼できる店の証明」です。広告費をかけずに増やせる先が2つあります。<strong>下の文面はそのまま送れます</strong>（赤字だけ差し替えてください）。</p>
+
+    <div class="field">
+      <div class="fnum">1</div>
+      <div class="fbody">
+        <div class="fname">メーカー公式サイトの「取扱店一覧」に載せてもらう<span class="req">効果大</span></div>
+        <div class="fdesc">
+          ミルボン（オージュア）・資生堂プロフェッショナル・ケラスターゼなど、取り扱いブランドの公式サイトには<strong>正規取扱店の検索ページ</strong>があります。ここへの掲載は<strong>信頼性が非常に高いリンク</strong>で、しかも「オージュア 取扱店」で探しているお客様が直接来ます。<br>
+          <strong>窓口：</strong>担当のディーラー営業さん、またはメーカーの問い合わせ窓口。<strong>すでに取引があるので、多くの場合は申請するだけです。</strong>
+        </div>
+        <div class="paste">
+          <span class="lbl">そのまま送れます（メール・チャット）</span>
+          <button class="copybtn" data-copy="c1">コピー</button>
+          <p id="c1">お世話になっております。株式会社hanico が運営するヘアケアセレクトショップ「SEAM」でございます。
+
+現在、<span class="var">〈ブランド名〉</span>を全国7店舗（銀座・表参道・札幌・大阪・名古屋・福岡・宇都宮）にて正規取扱させていただいております。
+
+つきましては、貴社公式サイトの「取扱店・正規販売店一覧」へ弊社店舗を掲載いただくことは可能でしょうか。掲載用の店舗情報は下記のとおりです。
+
+・店舗名：<span class="var">〈店舗名〉</span>
+・住所：<span class="var">〈住所〉</span>
+・電話：<span class="var">〈電話番号〉</span>
+・営業時間：<span class="var">〈営業時間〉</span>
+・URL：https://seam.site/store-<span class="var">〈エリア〉</span>
+
+必要な書式や追加情報がございましたら、お手数ですがお知らせください。何卒よろしくお願いいたします。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="field">
+      <div class="fnum">2</div>
+      <div class="fbody">
+        <div class="fname">メディアに「髪格診断」を取り上げてもらう</div>
+        <div class="fdesc">
+          <strong>27タイプの無料診断は、他店にはない独自の資産です。</strong>美容メディアやWebメディアは「無料で試せる新しいツール」を記事にしやすいので、取材のきっかけになります。<br>
+          <strong>送り先：</strong>美容系Webメディアの情報提供フォーム、地域情報メディア、無料のプレスリリース配信サービスなど。
+        </div>
+        <div class="paste">
+          <span class="lbl">プレスリリース原稿（そのまま／一部差し替え）</span>
+          <button class="copybtn" data-copy="c2">コピー</button>
+          <p id="c2">【ニュースリリース】
+
+サロン専売ヘアケア140ブランド以上を扱うセレクトショップ「SEAM」、
+髪質を27タイプに分類する無料診断『髪格診断』を公開
+
+株式会社hanico（本社：北海道札幌市）が運営するヘアケアセレクトショップ「SEAM（シーム）」は、髪の太さ・量・くせ・カラーや縮毛矯正の履歴などから髪質を27タイプに分類し、一人ひとりに合うヘアケアを提案する無料のWeb診断『髪格診断』を公開しています。
+
+■ 髪格診断とは
+・登録不要・無料で利用可能
+・髪の状態と施術履歴をもとに、140を超えるサロン専売ブランドの中から適したアイテムを提案
+・診断結果は「カルテ」として保存でき、美容室でのカウンセリングにも使えます
+・URL：https://seam.site/finder
+
+■ SEAMについて
+サロン専売のヘアケアブランドを世界から集めたセレクトショップです。銀座・表参道・札幌・大阪・名古屋・福岡・宇都宮の全国7店舗で、シャンプー・トリートメントからスタイリング・スキンケア・美容機器まで正規取扱しています。施術やご予約がなくても、お買い物だけのご来店を歓迎しています。
+・公式サイト：https://seam.site/
+
+■ 本件に関するお問い合わせ
+株式会社hanico「SEAM」広報担当
+TEL：011-218-7930
+<span class="var">〈担当者名・メールアドレス〉</span></p>
+        </div>
+        <div class="qa">
+          <div class="q">記事にしてもらいやすくするコツは？</div>
+          <div class="a">「無料」「登録不要」「27タイプ」など<strong>具体的な数字と、読者がすぐ試せること</strong>を前に出すこと。あわせて<strong>実際に診断してみた画面のスクリーンショット</strong>を添えると採用率が上がります。</div>
+          <div class="q">お金はかかりますか？</div>
+          <div class="a">メディアへの情報提供・掲載依頼は基本的に無料です。有料のPR配信サービスもありますが、まずは無料の窓口から試すことをおすすめします。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="rules">
+      <div class="rule"><div class="ic">!</div><div><b>数字は必ず事実だけを書く</b><div class="sub">ブランド数・店舗数・会員数などは、公表できる確定値のみ。景品表示法の対象になります。</div></div></div>
+      <div class="rule"><div class="ic">!</div><div><b>効果を断定しない</b><div class="sub">「髪が生える」「シミが消える」などは薬機法違反です。使用感・品揃え・正規取扱で伝えます。</div></div></div>
+      <div class="rule"><div class="ic">!</div><div><b>リンクを買わない</b><div class="sub">有料の被リンク購入はGoogleのペナルティ対象です。掲載依頼・取材はまったく別で、正当な方法です。</div></div></div>
+    </div>
+  </section>
+
+  <!-- 優先順 -->
+  <section>
+    <div class="eyebrow">まとめ ／ 着手の順番</div>
+    <h2 class="serif">この順でお願いします</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>順</th><th>やること</th><th>担当</th><th>所要</th><th>効きはじめ</th></tr></thead>
+        <tbody>
+          <tr><td><span class="name">1</span></td><td><b>ginza.seam.site の canonical 修正</b>（存在しないドメインを指している）</td><td>サブドメイン管理者</td><td>10分</td><td>数日〜2週間</td></tr>
+          <tr><td><span class="name">2</span></td><td><b>GBPのカテゴリに物販を追加</b>（6店）<span style="color:var(--faint);"> ／ 別紙 gbp-guide.html</span></td><td>店舗管理担当</td><td>各店5分</td><td>2週間〜1か月</td></tr>
+          <tr><td><span class="name">3</span></td><td><b>Search Console 登録＋サイトマップ送信</b></td><td>サイト管理者</td><td>15分</td><td>即（計測開始）</td></tr>
+          <tr><td><span class="name">4</span></td><td><b>メーカー公式の取扱店一覧へ掲載依頼</b></td><td>仕入担当／店長</td><td>1社10分</td><td>1〜3か月</td></tr>
+          <tr><td><span class="name">5</span></td><td><b>osaka / nagoya のサブドメイン設定</b></td><td>サブドメイン管理者</td><td>20分</td><td>数週間</td></tr>
+          <tr><td><span class="name">6</span></td><td><b>プレスリリース配信</b>（髪格診断）</td><td>広報</td><td>1時間</td><td>不定（当たれば大）</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <b>1と3だけでも先に着手してください。</b>1は放置するほど銀座のヘッドスパページが検索から遠ざかります。3は早く始めるほど、後から振り返れるデータが増えます。
+    </div>
+  </section>
+
+  <footer>
+    SEAM ／ 検索まわり 実行指示書 ・ 2026.07.25 ・ 実測にもとづく<br>
+    サイト内部（seam.site 全147ページ）の対策は完了済み。本書はサイト外・別管理領域の作業のみを記載。<br>
+    関連資料：Googleビジネスプロフィール運用指示書（gbp-guide.html）
+  </footer>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('.copybtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var el = document.getElementById(btn.getAttribute('data-copy'));
+      if(!el) return;
+      var text = el.innerText.replace(/　+/g,'　').trim();
+      var done = function(){ var o=btn.textContent; btn.textContent='コピー済 ✓'; setTimeout(function(){btn.textContent=o;},1400); };
+      if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(done, done); }
+      else { var t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand('copy');}catch(e){} t.remove(); done(); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
