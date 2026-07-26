@@ -82,10 +82,33 @@ async function sendConfirmMail(env, to, r) {
 const STAFF = [
   { id: 's1', name: '及川 大輝' }, { id: 's2', name: 'ANZU' }, { id: 's3', name: 'CHIKA' },
 ];
+// booking/index.html の MENUS と同期（2026-07-26）。リマインドの名称表示とメール取込の照合に使用。
+// ★ページ側のMENUSを変えたらここも更新すること（IDずれると顧客向けリマインドに生IDが出る）。
 const MENUS = [
-  { id: 'm1', name: 'カット', min: 60 }, { id: 'm2', name: 'カット + カラー', min: 150 },
-  { id: 'm3', name: 'カット + パーマ', min: 150 }, { id: 'm4', name: '縮毛矯正', min: 180 },
-  { id: 'm5', name: 'ヘッドスパ 60分', min: 60 }, { id: 'm6', name: 'ヘッドスパ 90分', min: 90 },
+  { id: 'cp1', name: '【完全個室】カット＋ケアカラー＋トリートメント', min: 150 },
+  { id: 'cp2', name: '【完全個室】カット＋ケアカラー＋ヘッドスパ45min＋トリートメント', min: 195 },
+  { id: 'cp3', name: '【完全個室】カット＋髪質改善トリートメント', min: 150 },
+  { id: 'cp4', name: '【完全個室】カット＋ケアカラー＋髪質改善トリートメント', min: 180 },
+  { id: 'cp5', name: '【完全個室】カット＋美髪縮毛矯正＋トリートメント', min: 240 },
+  { id: 'cp6', name: '【完全個室】ケアカラー＋トリートメント', min: 120 },
+  { id: 'cp7', name: '【完全個室】ケアカラー＋45minヘッドスパ', min: 135 },
+  { id: 'cp8', name: '【メンズ】カット＋お悩みに合わせた頭皮ケア', min: 75 },
+  { id: 'cp9', name: '【完全個室】カット＋トリートメント', min: 90 },
+  { id: 'cp10', name: '【完全個室】カット＋【30min】クイックヘッドスパ', min: 90 },
+  { id: 'cp11', name: '睡眠クリームヘッドスパ　ライトコース【６０min】完全個室&ブロー付き', min: 75 },
+  { id: 'cp12', name: 'カット+微還元トリートメント', min: 90 },
+  { id: 'cp13', name: '【完全個室】カット+頭浸浴付ヘッドスパ90min', min: 150 },
+  { id: 'm1', name: 'SEAMカット', min: 60 }, { id: 'm2', name: '前髪カット', min: 20 },
+  { id: 'm3', name: 'ケアリタッチカラー', min: 90 }, { id: 'm4', name: '艶ケアカラー', min: 120 },
+  { id: 'm5', name: 'ケアブリーチWカラー（ハイライト、全頭）', min: 210 },
+  { id: 'm6', name: 'ケアパーマ', min: 120 }, { id: 'm7', name: '前髪パーマ', min: 60 },
+  { id: 'm8', name: 'カット＋美髪縮毛矯正', min: 210 }, { id: 'm9', name: '前髪縮毛矯正', min: 90 },
+  { id: 'm10', name: '髪質改善トリートメント（酸熱系。サブリミック o r つるりんちょ)', min: 120 },
+  { id: 'm11', name: '高濃度トリートメント(バイカルテor TOKIO）', min: 60 },
+  { id: 'm12', name: 'トリートメント（Quick Step treatment）', min: 30 },
+  { id: 'm13', name: '完全個室45min コース', min: 45 },
+  { id: 'm14', name: '完全個室60min コース', min: 60 },
+  { id: 'm15', name: 'ヘッドスパ90分', min: 90 },
 ];
 
 export default {
@@ -110,6 +133,13 @@ export default {
     if (p.endsWith('/availability') && m === 'GET') return handleAvailability(url, env, cors);           // 空き判定用(PII無し・公開)
     if (p.endsWith('/admin/purge-test') && m === 'POST') return handlePurgeTest(url, env, cors);         // テスト予約掃除(専用トークン)
     if (p.endsWith('/admin/diag-resv') && m === 'GET') return handleDiagResv(url, env, cors);            // 両店予約の診断読取(専用トークン)
+    // D1⇔salon.town台帳の突き合わせ(専用トークン)。salon.townで削除/キャンセル済みなのにD1でbookedの
+    // 「亡霊予約」をcancelledへ修復(誤リマインド防止)。GET=ドライラン / POST=反映。
+    if (p.endsWith('/admin/d1-sync') && (m === 'GET' || m === 'POST')) {
+      const tk = url.searchParams.get('token') || '';
+      if (!env.CLEANUP_TOKEN || tk !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+      return handleD1Sync(env, cors, m === 'POST');
+    }
     // 指定IDのsalon.town予約のinfo_jsを更新(専用トークン)。個室(hbp_facility)の後付け等。bodyに{id, info_js}。
     if (p.endsWith('/admin/salon-patch') && m === 'POST') {
       const tk = url.searchParams.get('token') || '';
@@ -180,11 +210,36 @@ export default {
     const t = new Date(event.scheduledTime + 24 * 3600 * 1000);
     const tomorrow = `${t.getUTCFullYear()}-${z(t.getUTCMonth() + 1)}-${z(t.getUTCDate())}`;
     const rows = await env.DB.prepare(
-      "SELECT * FROM reservations WHERE date = ? AND line_user_id != '' AND status != 'cancelled'"
+      "SELECT * FROM reservations WHERE date = ? AND line_user_id != '' AND status = 'booked'"
     ).bind(tomorrow).all();
-    for (const r of (rows.results || [])) {
+    const list = rows.results || [];
+    if (!list.length) return;
+    // ★台帳ドリフト対策(2026-07-26): salon.town側で削除/キャンセル済みの予約へリマインドを送らない。
+    //   送信前に明日分の生存予約IDを両店から取得して照合。消えていたらD1もcancelledへ自己修復。
+    //   API不通/空応答(稀にブレる)時は照合スキップ=従来通り送る(リマインド全停止を避ける)。
+    let live = null;
+    if (env.SALON_SYNC === 'on' && env.SALON_HOST) {
+      try {
+        const set = new Set(); let okAll = true, total = 0;
+        for (const sid of [env.SALON_SHOP_ID, env.SALON_SPA_SHOP_ID].filter(Boolean)) {
+          const j = await salonCall(env, '/get/reservation', {
+            filter: { shop_id: sid, reserve_date_start: tomorrow, reserve_date_end: tomorrow + ' 23:59' }, limit: 300,
+          });
+          if (!j.result) { okAll = false; break; }
+          for (const r of (j.data || [])) { total++; if (!r.delete_date && !r.cancel_date) set.add(r.id); }
+        }
+        if (okAll) live = set;   // result:false や例外時は null のまま=照合しない
+      } catch (e) { live = null; }
+    }
+    for (const r of list) {
+      if (live && r.salon_id && !live.has(r.salon_id)) {
+        await env.DB.prepare("UPDATE reservations SET status='cancelled' WHERE id=?").bind(r.id).run().catch(() => {});
+        console.log('リマインドskip(salon.townで消滅)→D1をcancelledに:', r.id, r.name);
+        continue;
+      }
+      const mn = MENUS.find(x => x.id === r.menu_id), st = STAFF.find(x => x.id === r.staff_id);
       await linePush(env, r.line_user_id, buildLineMessage('reminder', {
-        date: r.date, time: min2hm(r.start), menu: r.menu_id, staff: r.staff_id, salon: 'SEAM 銀座',
+        date: r.date, time: min2hm(r.start), menu: (mn && mn.name) || '', staff: (st && st.name) || '', salon: 'SEAM 銀座',
       }));
     }
   },
@@ -476,6 +531,37 @@ async function handleAvailability(url, env, cors) {
     const busy = (rows.results || []).map(r => ({ date: r.date, staffId: r.staff_id, start: r.start, end: r.end }));
     return json({ ok: true, busy }, 200, cors);
   } catch (e) { return json({ error: 'availability失敗: ' + e.message }, 502, cors); }
+}
+
+// GET|POST /admin/d1-sync?token= … D1のbooked予約(salon_id付き・今日以降)をsalon.townと突き合わせ、
+// salon.townで消えている(削除/キャンセル)ものをD1でもcancelledへ。誤リマインド(亡霊予約)の一括修復。
+// 安全策: 両店のAPI応答が result:true の時だけ判定(空応答ブレで全滅させない)。GET=ドライラン。
+async function handleD1Sync(env, cors, commit) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  if (!(env.SALON_SYNC === 'on' && env.SALON_HOST)) return json({ error: 'SALON_SYNC無効' }, 500, cors);
+  try {
+    const rows = await env.DB.prepare(
+      "SELECT id,salon_id,name,date,start,status FROM reservations WHERE status='booked' AND salon_id IS NOT NULL AND salon_id!='' AND date>=date('now')"
+    ).all();
+    const targets = rows.results || [];
+    if (!targets.length) return json({ ok: true, checked: 0, ghosts: [] }, 200, cors);
+    const dates = targets.map(r => r.date).sort();
+    const live = new Set();
+    for (const sid of [env.SALON_SHOP_ID, env.SALON_SPA_SHOP_ID].filter(Boolean)) {
+      const j = await salonCall(env, '/get/reservation', {
+        filter: { shop_id: sid, reserve_date_start: dates[0], reserve_date_end: dates[dates.length - 1] + ' 23:59' }, limit: 500,
+      });
+      if (!j.result) return json({ error: 'salon.town応答エラー(安全のため中断)', shop: sid, msg: j.msg || '' }, 502, cors);
+      for (const r of (j.data || [])) if (!r.delete_date && !r.cancel_date) live.add(r.id);
+    }
+    if (!live.size) return json({ error: 'salon.town生存予約0件(空応答ブレの疑い・安全のため中断)' }, 502, cors);
+    const ghosts = targets.filter(r => !live.has(r.salon_id));
+    if (commit) for (const g of ghosts) {
+      await env.DB.prepare("UPDATE reservations SET status='cancelled' WHERE id=?").bind(g.id).run();
+    }
+    return json({ ok: true, commit: !!commit, checked: targets.length, live_count: live.size,
+      ghosts: ghosts.map(g => ({ id: g.id, name: g.name, date: g.date, start: g.start, salon_id: g.salon_id })) }, 200, cors);
+  } catch (e) { return json({ error: 'd1-sync失敗: ' + e.message }, 502, cors); }
 }
 
 // GET /admin/diag-resv?token=&from=&to= … 両SEAM店(ヘア/スパ)のsalon.town予約を診断用に読み取り(削除なし)。
