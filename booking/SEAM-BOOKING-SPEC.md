@@ -74,11 +74,17 @@
 - 指名/フリー（`info_js.nominated`）・開始時間（`reserve_date`）・**所要時間**（`reserve_end_date`＝開始＋所要／`info_js.duration_min`）・氏名カナ（`name`欄＝「姓 名（セイ メイ）」／`private_js`にカナ）・担当（`account_id`＋`info_js.hbp_stylist_id`＝account.code）。
 - `item_id`・`menu_id`・`hbp_menu_id` は**送らない**。`menu_label` は表示控えのみ（照合不使用）。
 - **スパのみ追加＝設備（個室）**：スパのサロンボードは予約フォームで**「設備」が必須項目**（ヘアには無い・2026-07-26オーナー実機確認）。
-  - `info_js.hbp_facility`＝割当部屋名（**SB設備プルダウンと完全一致必須**・例「個室A」）
-  - `info_js.hbp_facility_list`＝部屋一覧（割当部屋が塞がっていた場合のRPAフォールバック用）
-  - 設備の開始/終了時間は予約と同じ。部屋一覧は wrangler.toml `SPA_ROOMS`（カンマ区切り）で管理。
-  - 割当ロジック：同時間帯の既存スパ予約数で空き部屋へ順繰り（`salon-bridge.js` salonPush内・SEAM専用のメニューID判定＝統合時に汎用化対象）。
-  - `hbp_facility` 無しの旧予約・メール取込分は**RPA側で先頭の空き個室にフォールバック**する契約とする。
+  - **RPA実装確認済（2026-07-27・APK解析）**：RPAは`selectAvailableEquipment`で**SB設備プルダウンから空き部屋を自走選択**する（`hbp_facility`は読まない）。全部屋埋まりは「空いている設備が無いためミラー予約をスキップ」。ヘア（設備欄なし＝CLP）は`EQUIP_NOT_REQUIRED`で素通り。
+  - こちらが送る `info_js.hbp_facility`（割当部屋）・`hbp_facility_list`（部屋一覧＝個室A/B）は**台帳側の参考情報**（RPA必須ではないが、どの部屋想定かの記録として送り続ける）。部屋は wrangler.toml `SPA_ROOMS`。
+
+### 3.2 RPAアプリの実装仕様（APK `app-debug(4)` 解析・2026-07-27 学習）
+エンジニアのRPA＝Androidアプリ（WebView＋注入JS・socket.ioでSaaSからジョブ受信）。フロー: ReserveFlow（予約登録）／SchedulePostFlow・ScheduleDeleteFlow（予定・廃止方向）／ScheduleSyncFlow（**SB→SaaSの逆同期あり**）／CancelFlow（キャンセル・キレイサロン対応）／Coupon・Menu・StylistSyncFlow（HBPスクレイプ→SaaSへ saveEcItem/saveEcDiscount/saveAccount）。
+- **読むフィールド**：`hbp_stylist_id`（byCode解決）・`duration_min`・`block_for_reservation_id`・`customer_*`（姓/名/カナ/tel・nameのsplitName）・`payment_type`（prepay=オンライン事前決済/card-on-file/onsite=現地払い）。**`nominated`/`hbp_facility` は読まない**。
+- **所要時間はHBPの30分刻みに自動で丸める**（「HBPは30分刻みのため◯分に丸め」）＝45分スパも問題なし。
+- **メニューは備考欄に記載する運用**（メニュー設定はスキップ＝menu-less設計と整合）。
+- **重複ガード**：枠に既存予約があると予約番号を確認（期待値=hbp_reserve_id照合・「同じ予約番号」）。受付可能数超過/重複の警告ダイアログはOKを最大2回押して進み、解消しなければ中断。
+- **ミラー（予定あり(SUGU)/SUGU_BLOCKメモ）**：スタイリスト不在・枠塞がり・設備満室時はスキップして完了扱い（info_js刻印）。
+- ロボット対策画面（CAPTCHA）検知あり。多店舗は `hbpStoreId`／`info_js.shops` で選択。
 
 ---
 
