@@ -91,6 +91,8 @@ export async function salonPush(env, r) {
       nominated: nominated,                          // true=指名予約 / false=フリー
       menu_label: r.menuName || '',                  // 表示用の控えのみ（サロンボード書込の照合には使わない）
       channel: r.channel || 'own', src: 'seam-booking',
+      // RPAが対応済みの支払い区分(APK解析2026-07-27): prepay=オンライン事前決済(決済済み)/onsite=現地払い
+      payment_type: (r.deposit > 0) ? 'prepay' : 'onsite',
       // ★スパのみ: サロンボード必須項目「設備」用。hbp_facility=割当部屋(SB設備名と完全一致)・
       //   hbp_facility_list=部屋一覧(割当部屋が埋まっていた場合のRPAフォールバック用)。設備の開始/終了時間は予約と同じ。
       ...(r.spa ? { hbp_facility: facility, hbp_facility_list: facilityList } : {}),
