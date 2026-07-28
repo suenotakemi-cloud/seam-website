@@ -35,6 +35,7 @@ STORES = {
    nearline='銀座一丁目駅の7番出口から徒歩1分 有楽町・京橋・東銀座からも歩いて来られる場所です',
    note='ONE GINZA の3階　銀座で夜20時まで開いている数少ないサロン専売ショップです　ヘアサロンとヘッドスパを同じフロアに構えています',
    photo='images/stores/store_ginza.jpg', pw=1024, ph=576,
+   ig='seam.ginza',
    salon_hpb='H000802192', spa_hpb='H000802373', spa_set='std'),
  'omotesando': dict(
    area='表参道', name='gallica / SEAM', pref='東京都', locality='港区',
@@ -45,6 +46,7 @@ STORES = {
    nearline='表参道駅のA4出口から徒歩3分 南青山・外苑前・原宿からも歩ける立地です',
    note='南青山のLouis IIビル　表参道・外苑前・原宿のいずれからも歩ける立地で 夜20時まで開いています',
    photo='images/stores/store_omotesando.jpg', pw=765, ph=1024,
+   ig='gallica_seam',
    salon_hpb=None, spa_hpb=None, spa_set=None),
  'sapporo': dict(
    area='札幌', name='SEAM SAPPORO', pref='北海道', locality='札幌市中央区',
@@ -55,6 +57,7 @@ STORES = {
    nearline='地下鉄大通駅から徒歩1分 狸小路・すすきの・札幌駅からも地下歩行空間でつながっています',
    note='南2条西 大通駅から地下でつながる立地　平日は夜20時まで 土日も営業しています　個室は半個室でご用意しています',
    photo='images/stores/store_sapporo.jpg', pw=765, ph=1024,
+   ig='seam.sapporo',
    salon_hpb='H000417753', spa_hpb=None, spa_set=None),
  'osaka': dict(
    area='大阪', name='SEAM OSAKA HORIE', pref='大阪府', locality='大阪市西区',
@@ -65,6 +68,7 @@ STORES = {
    nearline='四ツ橋駅の6番出口から徒歩2分 心斎橋・アメリカ村・なんばからも歩いて来られる南堀江です',
    note='STORK南堀江の1階　全店で唯一 髪を濡らさない30分のドライスパ（¥6,600）を置いている店舗です　料金体系も他店と異なります',
    photo='images/stores/store_osaka.jpg', pw=572, ph=1024,
+   ig='seam.osaka',
    salon_hpb='H000791476', spa_hpb='H000791418', spa_set='osaka'),
  'nagoya': dict(
    area='名古屋', name='SEAM NAGOYA', pref='愛知県', locality='名古屋市中区',
@@ -75,6 +79,7 @@ STORES = {
    nearline='矢場町駅からすぐ 栄・大須・上前津からも歩ける栄エリアです',
    note='ネイリックスの1階と2階 2フロアを使った店舗です　栄・矢場町・大須から歩けて ヘアサロンとヘッドスパを併設しています',
    photo='images/stores/store_nagoya.jpg', pw=819, ph=1024,
+   ig='seam.nagoya',
    salon_hpb='H000800028', spa_hpb='H000800971', spa_set='std'),
  'fukuoka': dict(
    area='福岡', name='SEAM FUKUOKA', pref='福岡県', locality='福岡市中央区',
@@ -85,6 +90,7 @@ STORES = {
    nearline='西鉄天神駅から徒歩5分 今泉・赤坂・警固からも歩ける大名です',
    note='BPRスクエア天神大名の1階　天神・今泉・赤坂から歩ける大名エリアです　日曜は18時までの営業　個室は半個室でご用意しています',
    photo='images/stores/store_fukuoka.jpg', pw=1100, ph=821,
+   ig='seam.fukuoka',
    salon_hpb='H000734442', spa_hpb=None, spa_set=None),
  'utsunomiya': dict(
    area='宇都宮', name='gigi SEAM', pref='栃木県', locality='宇都宮市',
@@ -95,10 +101,15 @@ STORES = {
    nearline='JR鶴田駅から徒歩6分 お車での来店もしやすいインターパーク内です',
    note='インターパーク内　お車での来店がしやすく 朝9時から開いています　火曜定休です',
    photo='images/stores/store_gigi.jpg', pw=1024, ph=819,
+   ig='gigi_seam_utsunomiya',
    salon_hpb=None, spa_hpb=None, spa_set=None),
 }
 
 # ── ヘッドスパ 実メニュー(headspa.html から) ──
+# sameAs で自社の店舗ページ(store-*.html)を指すために、キーを各店舗dictへ持たせる
+for _slug, _st in STORES.items():
+    _st['slug'] = _slug
+
 SPA_MENU = {
  'std': [
    ('クリームヘッドスパ', '60min', '¥13,300', '頭皮用美容クリームでじっくり揉みほぐす 初めての方に', '来店〜退店 約75分'),
@@ -237,19 +248,46 @@ def ld_bc(items):
         for i, (t, h) in enumerate(items) if True]}
 
 
-def ld_place(st, kind, url):
-    """kind: HairSalon / DaySpa"""
+def price_range(rows):
+    """そのページに実際に載っている料金だけから価格帯を作る（相場の捏造はしない）"""
+    yen = [int(re.sub(r'[^0-9]', '', c)) for r in rows for c in r if isinstance(c, str) and c.startswith('¥')]
+    if not yen:
+        return None
+    lo, hi = min(yen), max(yen)
+    return f'¥{lo:,}' if lo == hi else f'¥{lo:,}〜¥{hi:,}'
+
+
+def ld_place(st, kind, url, menu=None):
+    """kind: HairSalon / DaySpa
+
+    店舗ページ(store-*.html)と同じ「同一エンティティである」という線を必ず張る。
+    sameAs に Instagram店舗アカウント・ホットペッパー掲載・自社の店舗ページを並べると、
+    Google はこのLPと実在の店舗を1つの事業所として結びつけられる。
+    ここが無いと、地域LPが「どこの店の話かわからないページ」として独立評価される。
+    ヘアはサロン掲載、スパはスパ掲載(kr/)と、種別に対応する掲載だけを指す。
+    """
     d = {"@type": kind, "@id": url + '#place', "name": st['name'],
-         "url": url, "image": "https://seam.site/images/og/seam-og.jpg",
+         "url": url, "image": BASE + '/' + st['photo'],
          "address": {"@type": "PostalAddress", "streetAddress": st['street'],
                      "addressLocality": st['locality'], "addressRegion": st['pref'],
                      "addressCountry": "JP"},
          "geo": {"@type": "GeoCoordinates", "latitude": st['lat'], "longitude": st['lng']},
+         "hasMap": map_url(st),
          "openingHoursSpecification": [{"@type": "OpeningHoursSpecification",
                                         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
                                         "opens": st['opens'], "closes": st['closes']}],
          "areaServed": [{"@type": "Place", "name": n} for n in st['near']],
          "parentOrganization": {"@type": "Organization", "name": "SEAM", "url": BASE + "/"}}
+
+    same = [f"https://www.instagram.com/{st['ig']}/", f"{BASE}/store-{st['slug']}"]
+    hpb = st['spa_hpb'] if kind == 'DaySpa' else st['salon_hpb']
+    if hpb:
+        same.append(f"https://beauty.hotpepper.jp/{'kr/' if kind == 'DaySpa' else ''}sln{hpb}/")
+    d['sameAs'] = same
+
+    pr = price_range(menu or [])
+    if pr:
+        d['priceRange'] = pr
     return d
 
 
@@ -385,7 +423,7 @@ def build_spa(slug):
      ('予約はどこからできますか', 'ホットペッパービューティーから24時間ご予約いただけます ページ内のボタンからそのまま進めます'),
     ]
     ld = {"@context": "https://schema.org", "@graph": [
-        ld_place(st, "DaySpa", url),
+        ld_place(st, "DaySpa", url, SPA_MENU[st["spa_set"]]),
         {"@type": "WebPage", "@id": url + '#page', "url": url, "name": title, "description": desc,
          "inLanguage": "ja", "isPartOf": {"@type": "WebSite", "name": "SEAM", "url": BASE + "/"}},
         ld_bc([('ホーム', 'index.html'), ('ヘッドスパ', 'headspa.html'), (f'{a}のヘッドスパ', f'headspa-{slug}.html')]),
@@ -489,7 +527,7 @@ def build_salon(slug):
       'オージュア・ケラスターゼ・ミルボン・システムプロフェッショナル・バイカルテなど140以上のブランドから 髪質と履歴に合うものをお選びします'),
     ]
     ld = {"@context": "https://schema.org", "@graph": [
-        ld_place(st, "HairSalon", url),
+        ld_place(st, "HairSalon", url, SALON_MENU[slug]),
         {"@type": "WebPage", "@id": url + '#page', "url": url, "name": title, "description": desc,
          "inLanguage": "ja", "isPartOf": {"@type": "WebSite", "name": "SEAM", "url": BASE + "/"}},
         ld_bc([('ホーム', 'index.html'), ('ヘアサロン', 'hairsalon.html'), (f'{a}のヘアサロン', f'salon-{slug}.html')]),
