@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM｜ホットペッパー 人気店との差を埋める計画</title>
+<style>
+  :root{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+    --shadow:0 1px 2px rgba(60,46,20,.05),0 8px 30px rgba(60,46,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+      --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+      --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+  }
+  :root[data-theme="dark"]{
+    --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+    --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+    --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+    font-size:15px; line-height:1.85; letter-spacing:.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 22px 90px;}
+  .serif{font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  /* ── masthead ── */
+  .mast{border-bottom:1.5px solid var(--ink); padding-bottom:22px; margin-bottom:8px;}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; letter-spacing:.42em; font-size:15px; color:var(--ink); font-weight:600;}
+  .kicker{font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-top:20px;}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:29px; line-height:1.35; margin:.24em 0 0; text-wrap:balance; letter-spacing:.02em;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:12px; line-height:1.9;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:16px; font-size:11.5px; color:var(--faint); font-family:ui-monospace,monospace; letter-spacing:.04em;}
+
+  /* ── intro card ── */
+  .lead{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-top:26px; box-shadow:var(--shadow); font-size:14px; line-height:2;}
+  .lead b{color:var(--gold);}
+  .lead .why{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted);}
+
+  /* ── section ── */
+  section{margin-top:46px;}
+  .eyebrow{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:10px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+  h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:21px; margin:12px 0 4px; letter-spacing:.02em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:13px; margin:0 0 18px;}
+
+  /* ── field list ── */
+  .field{display:flex; gap:15px; padding:17px 0; border-top:1px solid var(--line2);}
+  .field:first-of-type{border-top:0;}
+  .fnum{flex:none; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--gold); color:var(--gold); font-family:ui-monospace,monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .fbody{min-width:0; flex:1;}
+  .fname{font-weight:700; font-size:14.5px; color:var(--ink);}
+  .fname .req{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; color:#fff; background:var(--gold); border-radius:3px; padding:2px 6px; margin-left:8px; vertical-align:2px; font-weight:600;}
+  .fdesc{font-size:13px; color:var(--muted); line-height:1.95; margin-top:5px;}
+  .fdesc strong{color:var(--ink); font-weight:600;}
+
+  /* ── paste block ── */
+  .paste{position:relative; background:var(--paste); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px; padding:14px 15px 15px; margin-top:11px;}
+  .paste .lbl{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:8px;}
+  .paste p{margin:0; font-size:13px; line-height:1.95; color:var(--ink); white-space:pre-wrap;}
+  .paste .var{color:var(--bad); font-weight:600;}
+  .copybtn{position:absolute; top:11px; right:11px; font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.08em; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer; transition:all .15s;}
+  .copybtn:hover{color:var(--ink); border-color:var(--gold);}
+  .copybtn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .qa{margin-top:9px;}
+  .qa .q{font-weight:700; font-size:13px; color:var(--ink);}
+  .qa .q::before{content:"Q. "; color:var(--gold); font-family:ui-monospace,monospace;}
+  .qa .a{font-size:12.5px; color:var(--muted); line-height:1.9; margin:2px 0 12px; padding-left:1.4em;}
+  .qa .a::before{content:"A. "; color:var(--faint); font-family:ui-monospace,monospace; margin-left:-1.4em;}
+
+  /* ── checklist ── */
+  ul.check{list-style:none; margin:6px 0 0; padding:0;}
+  ul.check li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line2); font-size:13.5px; line-height:1.75;}
+  ul.check li:first-child{border-top:0;}
+  ul.check li::before{content:""; position:absolute; left:0; top:12px; width:15px; height:15px; border:1.5px solid var(--gold-soft); border-radius:3px; background:var(--panel);}
+  ul.check li b{color:var(--ink);}
+  ul.check li .hint{display:block; color:var(--faint); font-size:11.5px; margin-top:2px;}
+
+  /* ── data table ── */
+  .tablewrap{overflow-x:auto; margin-top:6px; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);}
+  table{border-collapse:collapse; width:100%; min-width:680px; font-size:12px; background:var(--panel);}
+  th,td{text-align:left; padding:11px 13px; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.7;}
+  thead th{background:var(--panel2); font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:600; white-space:nowrap; position:sticky; top:0;}
+  tbody tr:last-child td{border-bottom:0;}
+  td .name{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;}
+  td.u{font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); word-break:break-all;}
+  td .none{color:var(--faint); font-style:italic;}
+
+  /* ── do / dont ── */
+  .rules{display:grid; gap:10px; margin-top:8px;}
+  .rule{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.85;}
+  .rule .ic{flex:none; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; color:#fff; background:var(--bad);}
+  .rule b{color:var(--ink);}
+  .rule .sub{color:var(--muted); font-size:12px;}
+
+  .callout{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:13px 16px; font-size:12.5px; color:var(--muted); line-height:1.9; margin-top:14px;}
+  .callout b{color:var(--gold);}
+
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:11px; color:var(--faint); line-height:1.9; font-family:ui-monospace,monospace; letter-spacing:.03em;}
+
+  @media (max-width:560px){
+    .wrap{padding:30px 16px 70px;} h1{font-size:24px;} .field{gap:12px;}
+  }
+  @media print{
+    body{background:#fff; color:#000; font-size:11.5px;}
+    .copybtn{display:none;} .wrap{max-width:none; padding:0;}
+    .lead,.paste,.tablewrap,.rule,.callout{box-shadow:none;}
+    section{break-inside:avoid;} .field,.rule,.paste{break-inside:avoid;}
+  }
+
+
+  /* ── この資料だけの調整 ──
+     共有スタイルの table{min-width:680px} は7列表むけ。ここは3〜4列なので解除し、
+     店長がスマホで開いても横スクロールなしで読めるようにする。 */
+  .tablewrap.fit table{min-width:0;}
+  .tablewrap.fit th,.tablewrap.fit td{padding:10px 9px;}
+  /* 5列表はヘッダーの字間が効いて数px溢れる。この表だけ字間を殺す */
+  .tablewrap.fit thead th{letter-spacing:.02em; padding-left:6px; padding-right:6px;}
+  .tablewrap.fit td.u{font-size:12px; word-break:normal; white-space:nowrap;}
+  @media (max-width:400px){
+    .tablewrap.fit th,.tablewrap.fit td{padding:9px 6px; font-size:11.5px;}
+    .tablewrap.fit td .name{font-size:12px;}
+  }
+  /* 不足を形で示す。数字だけだと「どれくらい足りないか」が伝わらない */
+  .gap{display:inline-block; font-family:ui-monospace,monospace; font-size:11px;
+       padding:2px 6px; border-radius:4px; background:rgba(168,68,58,.1); color:#A8443A; font-weight:600;}
+  .ok{display:inline-block; font-family:ui-monospace,monospace; font-size:11px;
+      padding:2px 6px; border-radius:4px; background:rgba(85,112,73,.12); color:#557049; font-weight:600;}
+  .themes{display:flex; flex-wrap:wrap; gap:6px; margin-top:9px;}
+  .themes span{font-size:11.5px; border:1px solid var(--line); border-radius:14px; padding:4px 10px; color:var(--muted);}
+  .themes span.have{border-color:rgba(85,112,73,.45); color:#557049; background:rgba(85,112,73,.06);}
+  .themes span.want{border-color:rgba(168,68,58,.45); color:#A8443A; background:rgba(168,68,58,.05); font-weight:600;}
+</style>
+</head><body>
+
+<div class="wrap">
+<div class="mast"><span class="brand">SEAM</span></div>
+<p class="kicker">Listing Gap Plan</p>
+<h1>ホットペッパー<br>人気店との差を埋める</h1>
+<p class="sub">各エリアの「人気順」上位8店を取得し、SEAMの掲載と項目ごとに突き合わせました。<br>口コミ件数はオープンから間もないため比較から外し、<strong>書けば今日にも埋まる欄</strong>だけを対象にしています。</p>
+<div class="meta"><span>実測日 2026-07-28</span><span>比較 人気上位8店 × 5エリア</span><span>社内資料・検索非掲載</span></div>
+
+<div class="lead">
+<strong>掲載枠は買っているのに、欄が空いています。</strong>
+人気店との差は技術でも実績でもなく、<b>登録されているかどうか</b>でした。
+費用はかかりません。かかるのは入力の時間だけです。
+<div class="why">とくに<b>名古屋ヘアは掲載の情報量が人気店の4分の1</b>しかありません。
+スタイリスト0名・スタイル写真0枚・サロンからの一言0字・こだわり0字・クーポン6本。
+掲載費がそのまま無駄になっている状態です。</div>
+</div>
+
+<p class="eyebrow">Finding</p>
+<h2>いちばん大きい発見</h2>
+<p class="lede">SEAMは「ケアのサロン」としては出ていますが、<strong>「髪を切る・染める店」として検索に出ていません</strong>。</p>
+<div class="tablewrap fit"><table>
+<thead><tr><th>人気店が使っているテーマ</th><th style="text-align:center">使用店</th><th style="text-align:center">SEAM</th></tr></thead>
+<tbody>
+<tr><td>うるツヤになれる厳選トリートメント</td><td style="text-align:center">25</td><td style="text-align:center"><span class="ok">5店</span></td></tr>
+<tr><td><b>ショートヘアのカットが得意</b></td><td style="text-align:center">22</td><td style="text-align:center"><span class="gap">0店</span></td></tr>
+<tr><td>縮毛矯正・ストレートが得意</td><td style="text-align:center">21</td><td style="text-align:center"><span class="gap">2店</span></td></tr>
+<tr><td><b>メンズカジュアルが得意</b></td><td style="text-align:center">21</td><td style="text-align:center"><span class="gap">0店</span></td></tr>
+<tr><td><b>デザインカラーが得意</b></td><td style="text-align:center">20</td><td style="text-align:center"><span class="gap">0店</span></td></tr>
+<tr><td>顔周りの似合わせカットが得意</td><td style="text-align:center">17</td><td style="text-align:center"><span class="gap">2店</span></td></tr>
+<tr><td><b>グレイカラー・白髪カバーが得意</b></td><td style="text-align:center">17</td><td style="text-align:center"><span class="gap">0店</span></td></tr>
+<tr><td><b>一人ひとりに似合うヘアを提案</b></td><td style="text-align:center">14</td><td style="text-align:center"><span class="gap">0店</span></td></tr>
+<tr><td><b>パーマが得意</b></td><td style="text-align:center">12</td><td style="text-align:center"><span class="gap">0店</span></td></tr>
+</tbody></table></div>
+<div class="callout">
+<b>この「特徴テーマ」は、掲載ページの中でクーポンのまとまりとして表示されています。</b>
+つまり<b>そのテーマのクーポンを登録すると露出する</b>構造です。裏を返せば、
+カット・カラー・メンズのクーポンを出していないから、そのテーマで検索する人の目に触れていません。<br>
+美容室を探す人の多くは「カット」「カラー」「メンズ」から探します。
+SEAMはトリートメント・ヘッドスパ・個室に寄っており、<b>いちばん大きい需要の入口が閉じています</b>。
+</div>
+
+<p class="eyebrow">Measured</p>
+<h2>店舗別の実測</h2>
+<p class="lede">左がSEAM、右が同エリア人気店の中央値です。</p>
+<div class="tablewrap fit"><table>
+<thead><tr><th>ヘアサロン</th><th style="text-align:center">テーマ</th><th style="text-align:center">クーポン</th><th style="text-align:center">こだわり文</th><th style="text-align:center">担当者</th></tr></thead>
+<tbody>
+<tr><td><span class="name">銀座</span></td><td style="text-align:center"><span class="gap">4</span><br><span style="font-size:10.5px;color:var(--faint)">中央6</span></td><td style="text-align:center"><span class="gap">10</span><br><span style="font-size:10.5px;color:var(--faint)">中央18</span></td><td style="text-align:center"><span class="gap">0字</span><br><span style="font-size:10.5px;color:var(--faint)">中央190</span></td><td style="text-align:center"><span class="gap">2</span><br><span style="font-size:10.5px;color:var(--faint)">中央3</span></td></tr>
+<tr><td><span class="name">札幌</span></td><td style="text-align:center"><span class="gap">5</span><br><span style="font-size:10.5px;color:var(--faint)">中央7</span></td><td style="text-align:center">22<br><span style="font-size:10.5px;color:var(--faint)">中央27</span></td><td style="text-align:center"><span class="ok">186字</span></td><td style="text-align:center"><span class="ok">3</span></td></tr>
+<tr><td><span class="name">大阪</span></td><td style="text-align:center"><span class="gap">4</span><br><span style="font-size:10.5px;color:var(--faint)">中央6</span></td><td style="text-align:center"><span class="gap">10</span><br><span style="font-size:10.5px;color:var(--faint)">中央17</span></td><td style="text-align:center"><span class="gap">0字</span><br><span style="font-size:10.5px;color:var(--faint)">中央186</span></td><td style="text-align:center"><span class="gap">1</span><br><span style="font-size:10.5px;color:var(--faint)">中央3</span></td></tr>
+<tr><td><span class="name">名古屋</span></td><td style="text-align:center"><span class="gap">4</span><br><span style="font-size:10.5px;color:var(--faint)">中央6</span></td><td style="text-align:center"><span class="gap">6</span><br><span style="font-size:10.5px;color:var(--faint)">中央28</span></td><td style="text-align:center"><span class="gap">0字</span><br><span style="font-size:10.5px;color:var(--faint)">中央180</span></td><td style="text-align:center"><span class="gap">0</span><br><span style="font-size:10.5px;color:var(--faint)">中央3</span></td></tr>
+<tr><td><span class="name">福岡</span></td><td style="text-align:center"><span class="gap">6</span><br><span style="font-size:10.5px;color:var(--faint)">中央7</span></td><td style="text-align:center"><span class="gap">14</span><br><span style="font-size:10.5px;color:var(--faint)">中央24</span></td><td style="text-align:center"><span class="ok">186字</span></td><td style="text-align:center"><span class="gap">1</span><br><span style="font-size:10.5px;color:var(--faint)">中央3</span></td></tr>
+</tbody></table></div>
+<div class="callout">
+<b>掲載ページ全体の情報量（HTMLの重さ）</b>で見ると差がさらにはっきりします。<br>
+人気店の中央値は 164,000〜174,000。SEAMは 福岡135,460 ／ 札幌133,980 ／ 大阪92,717 ／ 銀座90,861 ／
+<b>名古屋44,779</b>。名古屋は人気店の4分の1です。<br>
+スパ3店は近隣店との比較では概ね互角で、クーポン数だけが下回っています（銀座5・名古屋5・大阪8／中央値7〜10）。
+</div>
+
+<p class="eyebrow">Priority</p>
+<h2>やる順番</h2>
+<p class="lede">上から順に、費用ゼロで効果が大きいものです。</p>
+
+<div class="field">
+<div class="fnum">1</div><div class="fbody">
+<div class="fname">名古屋ヘアの掲載を埋める<span class="req">最優先・今週</span></div>
+<div class="fdesc">5項目すべてで最下位です。<strong>掲載費を払いながら、ほぼ何も載せていない状態</strong>なので、
+他のどの施策よりも先に手を付けます。</div>
+<ul class="check">
+<li><strong>スタイリストを登録する</strong><span class="hint">現在0名　写真と得意分野を入れれば指名検索に乗ります</span></li>
+<li><strong>スタイル写真を載せる</strong><span class="hint">現在0枚　人気店は最低3枚</span></li>
+<li><strong>サロンからの一言を書く</strong><span class="hint">現在0字　人気店の中央値は280字</span></li>
+<li><strong>サロンのこだわりを書く</strong><span class="hint">現在0字　中央値180字　下に文案があります</span></li>
+<li><strong>クーポンを増やす</strong><span class="hint">現在6本　中央値28本　テーマ露出にも直結します</span></li>
+</ul>
+</div></div>
+
+<div class="field">
+<div class="fnum">2</div><div class="fbody">
+<div class="fname">カット・カラー・メンズのクーポンを出す<span class="req">今月</span></div>
+<div class="fdesc">上の「いちばん大きい発見」への対応です。<strong>特徴テーマはクーポンから生まれます</strong>ので、
+テーマを増やしたければ、そのテーマのクーポンを作るのが唯一の道です。</div>
+<div class="themes">
+<span class="have">うるツヤトリートメント（5店とも保有）</span>
+<span class="want">ショートヘアのカット</span>
+<span class="want">メンズカジュアル</span>
+<span class="want">デザインカラー</span>
+<span class="want">グレイカラー・白髪カバー</span>
+<span class="want">一人ひとりに似合うヘアを提案</span>
+<span class="want">パーマ</span>
+</div>
+<div class="callout">ブランドとして「ケアの店」であることは変えません。
+ただ、<b>カットやカラーで探している人にも見つけてもらう</b>ことと、店の性格を変えることは別です。
+「ケアに強い店のカット」という出し方であれば矛盾しません。</div>
+</div></div>
+
+<div class="field">
+<div class="fnum">3</div><div class="fbody">
+<div class="fname">「サロンのこだわり」を3店に書く<span class="req">今週</span></div>
+<div class="fdesc">銀座・大阪・名古屋が<strong>0字</strong>です。札幌と福岡は186字書けているので、
+書き方が分からないのではなく、単に手が回っていないだけです。下の文案をそのまま使えます。</div>
+
+<div class="paste"><button class="copybtn" type="button">COPY</button>
+<span class="lbl">銀座 — サロンのこだわり</span>
+<p>世界140以上のサロン専売ブランドを常時そろえた、ヘアケアのセレクトショップを併設しています。カウンセリングでは、いま使っているシャンプーやアイロンの温度まで伺ったうえで、その方の髪に本当に合う一本をお選びします。施術はすべて完全個室。銀座一丁目駅から徒歩1分、夜20時まで営業しているので、仕事帰りにも通っていただけます。</p></div>
+
+<div class="paste"><button class="copybtn" type="button">COPY</button>
+<span class="lbl">大阪 堀江 — サロンのこだわり</span>
+<p>頭皮をスコープで確認してからご提案する、診断つきのコースをご用意しています。施術の前後を目で見比べられるので、何が変わったのかがはっきり分かります。世界140以上のサロン専売ブランドから、その方の髪と頭皮に合うものだけをお選びします。フェイシャルエステとハーブピーリングも同じ個室で受けていただけます。四ツ橋駅から徒歩2分です。</p></div>
+
+<div class="paste"><button class="copybtn" type="button">COPY</button>
+<span class="lbl">名古屋 栄 — サロンのこだわり</span>
+<p>ヘアサロンとヘッドスパを同じフロアに構え、切る・染めるとケアをひとつづきでご提案しています。世界140以上のサロン専売ブランドを常時そろえているので、施術のあと「家で何を使うか」まで責任を持ってお選びできます。栄・矢場町・大須のいずれからも歩ける立地で、施術は完全個室です。</p></div>
+
+<div class="paste"><button class="copybtn" type="button">COPY</button>
+<span class="lbl">名古屋 栄 — サロンからの一言</span>
+<p>髪のことで長く悩んできた方ほど、ぜひ一度いらしてください。SEAMは世界140以上のサロン専売ブランドを常時そろえたヘアケアのセレクトショップを併設しており、サロンでの施術と、ご自宅でのケアを続けてご提案できます。まずはカウンセリングで、いま使っているものと髪の状態をお聞かせください。そのうえで、必要なものだけをお選びします。完全個室でご案内しますので、人目を気にせずお過ごしいただけます。</p></div>
+</div></div>
+
+<div class="field">
+<div class="fnum">4</div><div class="fbody">
+<div class="fname">スタイリストを3名まで登録する<span class="req">今月</span></div>
+<div class="fdesc">名古屋0名・大阪1名・福岡1名・銀座2名。人気店は全店3名です。
+<strong>指名で探す人に見つけてもらえない</strong>だけでなく、掲載の情報量そのものが薄くなります。</div>
+</div></div>
+
+<div class="field">
+<div class="fnum">5</div><div class="fbody">
+<div class="fname">前回お伝えした3件（掲載名・表記）<span class="req">今週</span></div>
+<div class="fdesc">別途 <b>seam.site/hpb-guide</b> にコピペ用の文言があります。</div>
+<ul class="check">
+<li><strong>札幌ヘア</strong>：掲載名に地名がありません<span class="hint">現在「シーム(SEAM)」　他4店は地名入り</span></li>
+<li><strong>銀座スパ</strong>：【ヘッドスパ】の表記がありません</li>
+<li><strong>大阪スパ</strong>：旧店名「（旧：SEAM 南堀江店【ヘッドスパ】）」が残っています</li>
+<li><strong>銀座スパ</strong>：メニュー2本の「頭身浴」を「頭浸浴」へ</li>
+</ul>
+</div></div>
+
+<p class="eyebrow">Traffic</p>
+<h2>もうひとつの穴 — Instagram</h2>
+<p class="lede">同じ日に、公式サイトの診断データ（30日・5,664セッション）も見ました。</p>
+<div class="tablewrap fit"><table>
+<thead><tr><th>指標</th><th style="text-align:right">実測</th><th>評価</th></tr></thead>
+<tbody>
+<tr><td>1セッションあたりPV</td><td style="text-align:right" class="u"><b>9.5</b></td><td style="font-size:12px">美容室サイトは2〜3ページで終わるのが普通</td></tr>
+<tr><td>診断 開始→完了</td><td style="text-align:right" class="u"><b>98.4%</b></td><td style="font-size:12px">ほぼ天井</td></tr>
+<tr><td>完了→行動</td><td style="text-align:right" class="u"><b>55.2%</b></td><td style="font-size:12px">高い</td></tr>
+<tr><td>外部からの診断開始</td><td style="text-align:right" class="u">855</td><td style="font-size:12px">30日で</td></tr>
+<tr><td>うち Google</td><td style="text-align:right" class="u">92</td><td style="font-size:12px">地域ページは7月に整えたばかり</td></tr>
+<tr><td>うち <b>Instagram</b></td><td style="text-align:right" class="u" style="color:#A8443A"><b>50</b></td><td style="font-size:12px;color:#A8443A"><b>フォロワー8万人に対して0.06%</b></td></tr>
+</tbody></table></div>
+<div class="callout">
+<b>サイトの中身は強く、入口が細い</b>——これが公式サイト側の結論です。
+診断の完了率も回遊も、同種の診断型ブランドと比べて負けていません。触る必要はほぼありません。<br>
+一方で<b>Instagram 8万人からの送客が月50件</b>です。ここは広告費ゼロで動かせる唯一の資産で、
+10倍にできれば外部流入が今の1.5倍になります。プロフィールのリンク・ストーリーズの導線・
+ハイライトの整理から着手できます。
+</div>
+
+<p class="eyebrow">Summary</p>
+<h2>まとめ</h2>
+<div class="rules">
+<div class="rule"><span class="ic">!</span><div>
+<b>掲載の差は、実力ではなく入力です。</b>
+<div class="sub">技術でも実績でもなく、登録されているかどうかでした。費用はかからず、必要なのは入力の時間だけです。</div>
+</div></div>
+<div class="rule"><span class="ic">!</span><div>
+<b>いちばん大きい需要の入口が閉じています。</b>
+<div class="sub">ショートカット・メンズ・デザインカラー・白髪カバー——人気店の20店前後が使っているテーマを、SEAMは1店も持っていません。</div>
+</div></div>
+<div class="rule"><span class="ic" style="background:#557049">✓</span><div>
+<b>公式サイトは強い。触る必要はほぼありません。</b>
+<div class="sub">1セッション9.5ページ、診断完了率98.4%。弱いのは入口の量だけで、その最大の未使用資産がInstagramです。</div>
+</div></div>
+</div>
+
+<footer>
+SEAM ／ 株式会社hanico　社内資料<br>
+比較はホットペッパービューティーの「人気順」上位8店 × 5エリアを 2026-07-28 に取得した実測値です<br>
+口コミ件数はオープンから間もないため比較から除外しています<br>
+関連資料　掲載改善の手順 seam.site/hpb-guide ／ 8月の集客計画 seam.site/august-plan ／ 料金と受賞のご判断 seam.site/exec-brief
+</footer>
+</div>
+
+<script>
+/* コピペ欄。掲載担当がそのまま貼れるようにする */
+document.querySelectorAll('.copybtn').forEach(function(b){
+  b.addEventListener('click', function(){
+    var p = b.parentNode.querySelector('p');
+    if(!p) return;
+    navigator.clipboard.writeText(p.textContent.trim()).then(function(){
+      var o = b.textContent; b.textContent = 'COPIED';
+      setTimeout(function(){ b.textContent = o; }, 1400);
+    });
+  });
+});
+</script>
+</body></html>
