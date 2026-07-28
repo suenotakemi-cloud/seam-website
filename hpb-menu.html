@@ -3,7 +3,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>SEAM｜ホットペッパー メニュー名とクーポン名</title>
+<title>SEAM｜診断データから作るメニューとクーポン名</title>
+<meta name="description" content="髪格診断5,174人の回答から、ヘッドスパとヘアサロンの戦略・メニュー・クーポン名を設計する社内資料">
 <style>
   :root{
     --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
@@ -154,175 +155,130 @@
     .storehead{display:flex;align-items:baseline;gap:12px;}
     .storehead b,.storehead span{display:inline;margin-top:0;}
   }
+
+  /* 該当率の棒。81.8%と4.1%の差は数字より形で伝わる */
+  .bars{margin-top:12px;}
+  .bar{display:grid; grid-template-columns:8.6em 1fr 3.8em; align-items:center; gap:11px; padding:5px 0;}
+  .bar .bl{font-size:12.5px; color:var(--ink); line-height:1.5;}
+  .bar .bt{height:9px; border-radius:5px; background:var(--line2); overflow:hidden;}
+  .bar .bt i{display:block; height:100%; background:var(--gold-soft); border-radius:5px;}
+  .bar.hi .bt i{background:var(--gold);}
+  .bar.dim .bl{color:var(--faint);} .bar.dim .bt i{background:var(--line);}
+  .bar .bv{font-family:ui-monospace,monospace; font-size:11.5px; color:var(--muted);
+           text-align:right; font-variant-numeric:tabular-nums;}
+  .bar.hi .bv{color:var(--gold); font-weight:600;}
+  .barnote{font-size:11.5px; color:var(--faint); margin-top:9px; line-height:1.8;}
+  /* 軸は全チャート 0〜100% 固定。50%の位置に目盛を1本入れて、
+     棒が短いときも「何に対して短いのか」が分かるようにする */
+  .bar .bt{position:relative;}
+  .bar .bt::after{content:""; position:absolute; left:50%; top:0; bottom:0; width:1px;
+                  background:var(--bg); opacity:.8;}
+  /* .lead の補足は span のままだと行ごとに罫線が出る(インライン box の border-top) */
+  .lead .why{display:block;}
+  @media (max-width:420px){
+    .bar{grid-template-columns:7.2em 1fr 3.6em; gap:8px;}
+    .bar .bl{font-size:11.5px;}
+  }
+  /* 現行名 → 改訂案。コピー対象は p だけなので .was は div にする */
+  .was{font-size:11.5px; color:var(--faint); line-height:1.7; margin-top:14px;
+       padding-left:13px; border-left:2px solid var(--line);}
+  .was b{color:var(--muted); font-weight:600; font-family:ui-monospace,monospace;
+         font-size:10px; letter-spacing:.1em; display:block; margin-bottom:2px;}
+  .len{display:inline-block; font-family:ui-monospace,monospace; font-size:10px;
+       color:var(--faint); margin-left:7px; vertical-align:1px;}
+  .len.over{color:var(--bad);}
+  /* 結論の一行。各章の着地を見失わせない */
+  .verdict{background:var(--panel); border:1px solid var(--gold-soft); border-left:3px solid var(--gold);
+           border-radius:9px; padding:15px 17px; margin-top:18px;}
+  .verdict .vl{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.16em;
+               text-transform:uppercase; color:var(--gold); display:block; margin-bottom:6px;}
+  .verdict p{margin:0; font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+             font-size:15.5px; line-height:1.85; color:var(--ink);}
 </style>
 </head><body>
-
 <div class="wrap">
-<div class="mast"><span class="brand">SEAM</span></div>
-<p class="kicker">Menu &amp; Coupon Naming</p>
-<h1>ホットペッパー<br>メニュー名とクーポン名</h1>
-<p class="sub">同エリアの人気店から<strong>クーポン名を1,904本</strong>取得し、名前の付け方を数えました。<br>そのうえで、<strong>スパ＝ウェットスパ／サロン＝高単価</strong>という立ち位置に合わせた名前案を用意しています。</p>
-<div class="meta"><span>実測日 2026-07-28</span><span>人気店1,904本を解析</span><span>社内資料・検索非掲載</span></div>
+
+<header class="mast">
+  <div class="brand">SEAM</div>
+  <div class="kicker">Menu &amp; Coupon Design — from diagnosis data</div>
+  <h1>診断5,174人が言っていること<br>スパとサロン、メニューとクーポン名</h1>
+  <p class="sub">お客様が自分の言葉で書いた症状から、逆算して名前を作ります
+  ここに書いた数字はすべて実測で、推計はひとつも入っていません</p>
+  <div class="meta">
+    <span>2026-07-28</span><span>髪格診断 5,174人 / 30日</span>
+    <span>スパ回答 2,411人</span><span>人気店クーポン 1,904本</span><span>社内資料</span>
+  </div>
+</header>
 
 <div class="lead">
-<strong>いちばん大きい差は「名前に価格を書いているか」でした。</strong>
-人気店は31.1%が名前の中に金額を入れています。SEAMは8.3%です。
-一覧では名前しか見えないので、価格が無いと<b>タップされる前に比較から外れます</b>。
-<div class="why">そして<b>空いている棚</b>が見つかりました。ヘッドスパの競合486本のうち、
-<b>「ウェット」と名乗っているのは8本（1.6%）</b>、<b>「完全個室」と書いているのは0.4%</b>だけです。
-しかもその8本は<b>価格中央が￥16,500</b>で、全員が高単価帯にいます。
-<b>ウェット＝高単価というカテゴリは市場で成立しているのに、名乗る店がほとんどいない</b>——ここが空いています。</div>
+ヘッドスパに来たい人の<b>81.8%が「肩や首がこる」</b>と答え、<b>61.9%が「目が疲れる」</b>と答えています
+いっぽう近隣486本のクーポン名で首肩に触れているのは<b>4.1%</b>、眼精疲労は<b>1.9%</b>です
+<span class="why">需要と供給がここまでずれている場所は、めったにありません
+そして大阪と名古屋はすでにこの言葉を書いていて、銀座だけが書いていません
+この資料は、その差を埋めるための具体的な名前です</span>
 </div>
 
-<p class="eyebrow">Measured</p>
-<h2>人気店の名前の付け方</h2>
-<p class="lede">1,904本を数えた実測です。SEAMと並べています。</p>
-<div class="tablewrap fit"><table>
-<thead><tr><th>型</th><th style="text-align:center">人気店</th><th style="text-align:center">SEAM</th></tr></thead>
-<tbody>
-<tr><td><b>名前に価格を入れる</b></td><td style="text-align:center">31.1%</td><td style="text-align:center"><span class="gap">8.3%</span></td></tr>
-<tr><td>【　】で始める</td><td style="text-align:center">43.4%</td><td style="text-align:center"><span class="ok">45.4%</span></td></tr>
-<tr><td>＋で組み合わせを示す</td><td style="text-align:center">40.2%</td><td style="text-align:center"><span class="ok">39.0%</span></td></tr>
-<tr><td>時間を入れる</td><td style="text-align:center">18.4%</td><td style="text-align:center"><span class="ok">21.6%</span></td></tr>
-<tr><td><b>条件をつける</b><span style="display:block;font-size:11px;color:var(--faint)">平日／土日／限定</span></td><td style="text-align:center">12.9%</td><td style="text-align:center"><span class="gap">5.5%</span></td></tr>
-<tr><td><b>メンズと明示する</b></td><td style="text-align:center">7.2%</td><td style="text-align:center"><span class="gap">3.2%</span></td></tr>
-<tr><td>1本あたりの長さ</td><td style="text-align:center">31字</td><td style="text-align:center">27字</td></tr>
-</tbody></table></div>
-
-<div class="callout">
-<b>ヘッドスパだけを見ると、型がはっきり変わります。</b>近隣486本の実測では
-<b>時間を入れているのが66.7%</b>（ヘアの18.4%より圧倒的に高い）。
-スパは「何分か」が先に見られています。<br>
-一方で<b>悩みワード（不眠・眼精疲労・脳疲労・首肩・自律神経）が12.8%</b>。
-上位店ほどこれを入れています。実例：「【人気No.1】夜ぐっすり眠れる！不眠・睡眠の質改善特化コース　8,000円」<br>
-<span style="color:var(--faint)">なお¥12,000以上の枠は168本あり、その多くは痩身・小顔・整体・鍼です。
-ヘッドスパが主役のものは27本にとどまります。</span>
+<section><div class="eyebrow">Source</div><h2>この資料が見ているもの</h2><p class="lede">推計は使っていません　すべて実測です</p><div class="tablewrap fit"><table><thead><tr><th>データ</th><th>中身</th><th>期間・母数</th></tr></thead><tbody><tr><td><span class="name">髪格診断</span></td><td>サイトの診断に答えた人の回答（admin と同じ集計）</td><td>30日 / <b>5,174人</b></td></tr><tr><td><span class="name">スパのアンケート</span></td><td>「ヘッドスパに興味はありますか」→ はいと答えた人にだけ出る症状の設問</td><td><b>2,411人</b>（全体の46.6%）</td></tr><tr><td><span class="name">人気店クーポン</span></td><td>5エリアの人気店＋スパ近隣店の登録名を全件取得</td><td><b>1,904本</b></td></tr><tr><td><span class="name">予約の埋まり</span></td><td>SEAMスパ3店の予約カレンダーを直接読んだ空き状況</td><td>2週間 / 全枠</td></tr></tbody></table></div><div class="callout">スパの症状設問は<b>「興味あり」と答えた人にしか出ません</b>　つまりこの2,411人は「行きたい気持ちがある人」で、そのまま見込み客の名簿です　母数を全診断者5,174人と取り違えると、率が半分に見えてしまうので注意してください</div></section><section><div class="eyebrow">Spa / 01</div><h2>スパ　── 前提が二つずれていました</h2><p class="lede">狙う年代と、売る言葉です</p><div class="bars">
+<div class="bar"><span class="bl">20代</span><span class="bt"><i style="width:38.6%"></i></span><span class="bv">38.6%</span></div>
+<div class="bar"><span class="bl">30代</span><span class="bt"><i style="width:44.8%"></i></span><span class="bv">44.8%</span></div>
+<div class="bar hi"><span class="bl">40代</span><span class="bt"><i style="width:58.4%"></i></span><span class="bv">58.4%</span></div>
+<div class="bar hi"><span class="bl">50代以上</span><span class="bt"><i style="width:61.7%"></i></span><span class="bv">61.7%</span></div>
 </div>
-
-<p class="eyebrow">Position</p>
-<h2>SEAMが取るべき型</h2>
-
-<div class="field">
-<div class="fnum">スパ</div><div class="fbody">
-<div class="fname">ウェットスパを名乗る<span class="req">空いている</span></div>
-<div class="fdesc">競合486本のうち<strong>「ウェット」と名乗るのは8本（1.6%）、「完全個室」と書くのは0.4%</strong>。
-SEAMはどちらも本当に持っています。<br>
-そして重要なのは<strong>その8本の価格中央が￥16,500</strong>だということです。
-近隣全体の中央値は¥7,990ですから、<strong>ウェットを名乗る店だけが倍の価格で成立しています</strong>。
-市場は「ウェットは高い」と認めている。それなのに名乗る店がほとんどいない。
-SEAMの銀座¥13,800〜25,000は、この相場のど真ん中です。<strong>安く見せる理由がありません</strong>。</div>
-<div class="paste"><span class="lbl">スパの型</span>
-<p>【フック】<span class="var">ウェット</span>ヘッドスパ ＋ 何をするか　<span class="var">完全個室</span>　<span class="var">◯分</span>　￥価格</p></div>
-<ul class="check">
-<li><strong>時間は必ず入れる</strong><span class="hint">競合の66.7%が入れています　スパは「何分か」が先に見られます</span></li>
-<li><strong>「ウェット」「濡らす」を名乗る</strong><span class="hint">ドライスパとの違いが伝わり、8%しかいない棚に入れます</span></li>
-<li><strong>「完全個室」を書く</strong><span class="hint">書いている店が0.4%　持っているのに書かないのはもったいない</span></li>
-<li><strong>悩みは1つに絞る</strong><span class="hint">不眠／眼精疲労／首肩／頭皮　欲張ると誰にも刺さりません</span></li>
-</ul>
-</div></div>
-
-<div class="field">
-<div class="fnum">サロン</div><div class="fbody">
-<div class="fname">高単価だからこそ、価格を書く<span class="req">要変更</span></div>
-<div class="fdesc">高単価店が価格を隠しているわけではありません。実測した人気店の高価格帯を見ると、
-<strong>そのまま単価で書いています</strong>。<br>
-実例：「【広がりとボリュームが落ち着く】カット+質感チェンジトリートメント￥24900」／
-「★人気No.1 極上の艶と手触り★骨格補正カット+プレミアム艶カラー￥19150」</div>
-<div class="paste"><span class="lbl">サロンの型</span>
-<p>【<span class="var">どう変わるか</span>】施術＋施術＋施術　￥価格</p></div>
-<ul class="check">
-<li><strong>二重価格（¥27,100→¥19,998）は使わない</strong><span class="hint">値引き前提の見せ方は高単価と噛み合わず、正価に戻れなくなります　単価だけを書きます</span></li>
-<li><strong>フックは「どう変わるか」</strong><span class="hint">「安い」ではなく「広がりが落ち着く」「艶と手触り」　高単価店はここで戦っています</span></li>
-<li><strong>140以上のブランドを名前に入れる</strong><span class="hint">SEAMにしか書けない一行です　技術だけの勝負を避けられます</span></li>
-</ul>
-</div></div>
-
-<p class="eyebrow">Volume</p>
-<h2>何本出すか</h2>
-<p class="lede">本数そのものが露出です。特徴テーマもクーポンのまとまりとして表示されます。</p>
-<div class="tablewrap fit"><table>
-<thead><tr><th>掲載</th><th style="text-align:center">現在</th><th style="text-align:center">人気店中央</th><th style="text-align:center">目標</th></tr></thead>
-<tbody>
-<tr><td><span class="name">銀座</span> ヘア</td><td style="text-align:center"><span class="gap">10</span></td><td style="text-align:center">18</td><td style="text-align:center"><b>20</b></td></tr>
-<tr><td><span class="name">札幌</span> ヘア</td><td style="text-align:center">22</td><td style="text-align:center">27</td><td style="text-align:center"><b>27</b></td></tr>
-<tr><td><span class="name">大阪</span> ヘア</td><td style="text-align:center"><span class="gap">10</span></td><td style="text-align:center">17</td><td style="text-align:center"><b>20</b></td></tr>
-<tr><td><span class="name">福岡</span> ヘア</td><td style="text-align:center">14</td><td style="text-align:center">24</td><td style="text-align:center"><b>24</b></td></tr>
-<tr><td><span class="name">銀座</span> スパ</td><td style="text-align:center"><span class="gap">5</span></td><td style="text-align:center">7</td><td style="text-align:center"><b>12</b></td></tr>
-<tr><td><span class="name">名古屋</span> スパ</td><td style="text-align:center"><span class="gap">5</span></td><td style="text-align:center">10</td><td style="text-align:center"><b>12</b></td></tr>
-<tr><td><span class="name">大阪</span> スパ</td><td style="text-align:center">8</td><td style="text-align:center">9</td><td style="text-align:center"><b>12</b></td></tr>
-</tbody></table></div>
-<div class="callout">名古屋ヘアは<b>受付休止中のため対象外</b>です。掲載の受付停止をお願いしています。<br>
-スパを12本にしているのは、<b>時間×悩み×対象</b>の掛け算で自然に増えるためです（60分×不眠／60分×眼精疲労／90分×首肩…）。
-同じ施術でも入口が変われば別のクーポンとして成立します。</div>
-
-<p class="eyebrow">Spa Names</p>
-<h2>ヘッドスパ ── 名前案</h2>
-<p class="lede">価格はすべて現在の実売です。そのままコピーして使えます。</p>
-
-<div class="storehead"><b>銀座スパ</b><span>45分¥12,000 / 60分¥13,800 / 90分¥17,800 / 120分¥20,800 / 150分¥25,000</span></div>
-<div class="cp"><button class="copybtn" type="button">COPY</button><p>【眠りが浅い方へ】ウェットヘッドスパ　完全個室　60分　￥13,800<span class="why">悩みを不眠ひとつに絞る　ウェットと完全個室を両方名乗る</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1】頭浸浴つきウェットヘッドスパ　首肩デコルテまで　完全個室　90分　￥17,800<span class="why">現在の主力。人気表記と時間と価格をそろえる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【PC・スマホ疲れに】目の奥の重さをほどくウェットヘッドスパ　完全個室　60分　￥13,800<span class="why">同じ60分でも入口を眼精疲労に変えて別クーポンにする</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【予定の合間に】ショートウェットヘッドスパ　完全個室　45分　￥12,000<span class="why">入口コース。銀座で唯一の短時間枠を前に出す</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】仕事帰りの頭皮リセット　ウェットヘッドスパ　完全個室　60分　￥13,800<span class="why">メンズ明示は競合7.2%　SEAMは3.2%で取りこぼしている</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【全身リセット】頭浸浴つきプレミアムウェットヘッドスパ　完全個室　120分　￥20,800<span class="why">上位コース。時間と価格で本気度が伝わる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【最上位】選べる美髪トリートメントつきプレミアムスパ　完全個室　150分　￥25,000<span class="why">最上位は迷わせない　1本で完結させる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【眼のマッサージつき】ウェットヘッドスパ　完全個室　60分＋10分　￥14,900<span class="why">オプション込みの完成形を1本にする　単品追加より選ばれやすい</span></p></div>
-
-<div class="storehead"><b>名古屋スパ</b><span>初回60分¥8,800 / メンズ60分¥8,800 / 90分¥13,200 / 120分¥17,600 / 150分¥21,800</span></div>
-<div class="cp"><button class="copybtn" type="button">COPY</button><p>【初めての方へ】ウェットヘッドスパ　完全個室　60分　￥8,800<span class="why">入口価格。初回とわかる言葉を先頭に置く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】頭皮と眼精疲労のウェットヘッドスパ　完全個室　60分　￥8,800<span class="why">メンズ限定枠が既にある　名前で拾いにいく</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1】頭浸浴つきウェットヘッドスパ　首肩まで　完全個室　90分　￥13,200<span class="why">主力。時間と価格を必ず添える</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【眠りが浅い方へ】ウェットヘッドスパ　完全個室　90分　￥13,200<span class="why">同じ90分を不眠の入口で別クーポンに</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【栄・矢場町から徒歩すぐ】仕事帰りのウェットヘッドスパ　完全個室　60分　￥8,800<span class="why">立地を書く　名古屋は駅名の検索が効く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【リカバリー】頭浸浴つきプレミアムウェットヘッドスパ　完全個室　120分　￥17,600<span class="why">上位コース</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【最上位】選べるトリートメントつきプレミアムスパ　完全個室　150分　￥21,800<span class="why">最上位</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【2回目以降の方へ】頭浸浴つきウェットヘッドスパ　完全個室　90分　￥13,200<span class="why">再来枠。競合は1.2%しか作っていない　1回目を2回目にする装置</span></p></div>
-
-<div class="storehead"><b>大阪 堀江スパ</b><span>60分¥11,800 / 診断60分¥12,800 / 90分¥15,800 / 診断90分¥16,800 / 診断120分¥19,800</span></div>
-<div class="cp"><button class="copybtn" type="button">COPY</button><p>【頭皮をスコープで見る】診断つきウェットヘッドスパ　完全個室　60分　￥12,800<span class="why">大阪だけの強み。「見える」を先頭に置く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1】頭浸浴つきウェットヘッドスパ　完全個室　90分　￥15,800<span class="why">主力</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【眠りが浅い方へ】ウェットヘッドスパ　完全個室　60分　￥11,800<span class="why">入口。悩みをひとつに絞る</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【首肩がつらい方へ】頭皮診断つきウェットヘッドスパ　首肩ケアまで　完全個室　90分　￥16,800<span class="why">診断つきの上位。悩みで差をつける</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】頭皮を見てから整えるウェットヘッドスパ　完全個室　60分　￥12,800<span class="why">診断つきはメンズと相性が良い　薄毛の悩みに正面から応える</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【根本から整える】頭皮診断つきウェットヘッドスパ　デコルテまで　完全個室　120分　￥19,800<span class="why">最上位</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【ヘッドスパ×フェイシャル】完全個室　120分　￥16,650<span class="why">大阪だけの組み合わせ。他店にない棚に入れる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【四ツ橋駅 徒歩2分】仕事帰りのウェットヘッドスパ　完全個室　60分　￥11,800<span class="why">立地を書く</span></p></div>
-
-<p class="eyebrow">Salon Names</p>
-<h2>ヘアサロン ── 名前案</h2>
-<p class="lede">高単価の見せ方です。値引き表記は使わず、単価だけを書きます。</p>
-
-<div class="storehead"><b>銀座</b><span>カット+TR¥9,900 / 髪質改善TR¥22,000 / カット+ケアカラー+TR¥24,000</span></div>
-<div class="cp"><button class="copybtn" type="button">COPY</button><p>【完全個室】似合わせカット＋髪質改善トリートメント　￥22,000<span class="why">高単価は単価のまま書く。二重価格を使わない</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【140以上のブランドから選ぶ】カット＋ケアカラー＋トリートメント　￥24,000<span class="why">SEAMにしか書けない一行。技術だけの勝負を避ける</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【まずは体験】完全個室のカット＋トリートメント　￥9,900<span class="why">入口。高単価店でも入口は要る</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】完全個室で仕上げるカット＋頭皮ケア　￥9,900<span class="why">メンズ明示。銀座はビジネス層が厚い</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【広がりとうねりを落ち着かせる】カット＋髪質改善トリートメント　￥22,000<span class="why">フックを「どう変わるか」に。人気店の高単価はここで戦っている</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【白髪が気になり始めた方へ】カット＋ケアカラー＋トリートメント　￥24,000<span class="why">グレイカラーは人気店17店が使うテーマ　SEAMは0店</span></p></div>
-
-<div class="storehead"><b>札幌</b><span>カット+オージュアTR¥11,000 / 頭皮洗浄¥6,600 / 水素バイカルテ¥16,700 / 水素縮毛矯正¥26,600</span></div>
-<div class="cp"><button class="copybtn" type="button">COPY</button><p>【4年連続ゴールド賞】カット＋オージュアトリートメント＋毛髪クレンジング　￥11,000<span class="why">受賞は札幌の本物の資産。名前の先頭に置く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【最上級のストレート】超高濃度水素シルク縮毛矯正＋カット＋バイカルテ　￥26,600<span class="why">高単価の主力。単価のまま書く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【髪に水分を】シルクカラー＋高濃度水素バイカルテトリートメント　￥16,700<span class="why">どう変わるかを先頭に</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【頭皮から整える】カット＋頭皮洗浄　￥6,600<span class="why">入口。大通駅すぐという立地と相性が良い</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】カット＋頭皮洗浄　￥6,600<span class="why">メンズ明示。同じ内容でも入口を分ける</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【白髪が気になり始めた方へ】カット＋シルクカラー＋トリートメント　￥16,700<span class="why">グレイカラーの棚を取りにいく</span></p></div>
-
-<div class="storehead"><b>大阪 堀江</b><span>オーダーメイドTR¥9,900 / 頭浸浴×スパ¥14,000 / TR+スパ30分¥14,900 / 頭浸浴90分¥16,800</span></div>
-<div class="cp"><button class="copybtn" type="button">COPY</button><p>【毛髪診断から選ぶ】オーダーメイドトリートメント　BYKARTE／Aujua／TOKIO　￥9,900<span class="why">3ブランドから選べるのはSEAMだけ。名前に出す</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1】オーダーメイドトリートメント＋極上ヘッドスパ30分　￥14,900<span class="why">主力。人気表記を使う</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【日々の疲れに】頭浸浴×ウェットヘッドスパ　￥14,000<span class="why">サロン側にもウェットを書く。スパとの橋になる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】頭浸浴×ウェットヘッドスパ　90分　￥16,800<span class="why">メンズ明示＋時間</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【140以上のブランドから選ぶ】毛髪診断＋オーダーメイドトリートメント　￥9,900<span class="why">SEAMにしか書けない一行</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【四ツ橋駅 徒歩2分】仕事帰りのトリートメント＋ヘッドスパ　￥14,900<span class="why">立地を書く</span></p></div>
-
-<div class="storehead"><b>福岡 天神大名</b><span>オージュアTR¥3,300 / 筋膜リリース+TR¥6,600 / カット+カラー+3step¥13,200 / 髪質改善ストレート¥21,000</span></div>
-<div class="cp"><button class="copybtn" type="button">COPY</button><p>【お気軽体験】オージュアトリートメント　￥3,300<span class="why">現在の入口。そのまま残す</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【迷ったらこれ】似合わせカット＋ケアカラー＋3stepトリートメント　￥13,200<span class="why">主力。フックは短く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【広がり・うねりを整える】髪質改善ストレート＋カット＋3stepトリートメント　￥21,000<span class="why">高単価。単価のまま</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【個室で疲労回復】筋膜リリース＆アミノクレンジング＆オージュアトリートメント　￥6,600<span class="why">個室を書く　競合はほぼ書いていない</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】似合わせカット＋アミノクレンジングスパ　￥6,600<span class="why">メンズ明示</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【白髪が気になり始めた方へ】カット＋ケアカラー＋3stepトリートメント　￥13,200<span class="why">グレイカラーの棚</span></p></div>
-
-<p class="eyebrow">Rules</p>
-<h2>入力するときの決めごと</h2>
-<div class="rules">
-<div class="rule"><span class="ic">!</span><div>
-<b>二重価格（¥27,100→¥19,998）は使わない。</b>
-<div class="sub">人気店には多い型ですが、SEAMは高単価で通す店です。一度この見せ方を始めると正価に戻れません。
-単価だけを書きます。</div>
-</div></div>
-<div class="rule"><span class="ic">!</span><div>
-<b>ひとつのクーポンに悩みは1つ。</b>
-<div class="sub">「不眠にも眼精疲労にも首肩にも」と書くと誰にも刺さりません。同じ施術でも、
-入口の悩みを変えれば別のクーポンとして成立します。本数が自然に増えます。</div>
-</div></div>
-<div class="rule"><span class="ic" style="background:#557049">✓</span><div>
-<b>「ウェット」と「完全個室」は必ず入れる。</b>
-<div class="sub">競合486本のうち、ウェットを名乗るのが8.0%、個室と書くのが0.4%。
-持っているのに書いていないのは、棚を1つ捨てているのと同じです。</div>
-</div></div>
-<div class="rule"><span class="ic" style="background:#557049">✓</span><div>
-<b>公式サイトの料金と必ず揃える。</b>
-<div class="sub">この資料の価格はすべてホットペッパー掲載の実売です。公式サイトも同じ数字に統一済みなので、
-掲載を変えたらお知らせください。サイト側もその日のうちに合わせます。</div>
-</div></div>
+<p class="barnote">各年代の診断者のうち、ヘッドスパに「興味あり」と答えた割合　件数では30代が857人で最多ですが、それは30代の来訪が最も多いからで、<b style="color:var(--gold)">率で見ると40代以上のほうが高い</b></p><h2 style="font-size:17px;margin-top:34px;">求めているのは頭皮ではありません</h2><p class="lede">興味ありと答えた2,411人が選んだ症状（複数回答・1人あたり2.28個）</p><div class="bars">
+<div class="bar hi"><span class="bl">肩や首がこる</span><span class="bt"><i style="width:81.8%"></i></span><span class="bv">81.8%</span></div>
+<div class="bar hi"><span class="bl">目が疲れる</span><span class="bt"><i style="width:61.9%"></i></span><span class="bv">61.9%</span></div>
+<div class="bar"><span class="bl">体がだるい</span><span class="bt"><i style="width:30.4%"></i></span><span class="bv">30.4%</span></div>
+<div class="bar"><span class="bl">寝つきが悪い</span><span class="bt"><i style="width:29.9%"></i></span><span class="bv">29.9%</span></div>
+<div class="bar"><span class="bl">気持ちが休まらない</span><span class="bt"><i style="width:24.2%"></i></span><span class="bv">24.2%</span></div>
+</div><p class="lede" style="margin-top:24px;">いっぽう「頭皮そのものの悩み」を選んだ人は、全診断者5,174人のうち</p><div class="bars">
+<div class="bar dim"><span class="bl">頭皮のベタつき</span><span class="bt"><i style="width:13.1%"></i></span><span class="bv">13.1%</span></div>
+<div class="bar dim"><span class="bl">ボリューム減</span><span class="bt"><i style="width:11.6%"></i></span><span class="bv">11.6%</span></div>
+<div class="bar dim"><span class="bl">トップがぺたんこ</span><span class="bt"><i style="width:8.8%"></i></span><span class="bv">8.8%</span></div>
+<div class="bar dim"><span class="bl">頭皮の乾燥</span><span class="bt"><i style="width:5.6%"></i></span><span class="bv">5.6%</span></div>
+</div><div class="callout">つまり<b>「頭皮を改善します」と言うと、来たい人の8割に当たりません</b>　来たい理由は首肩と目です　頭皮は施術の中身であって、呼び込む言葉ではありません</div></section><section><div class="eyebrow">Spa / 02</div><h2>その言葉は、まだ誰も書いていません</h2><p class="lede">客が使う言葉と、店が使う言葉がずれています</p><div class="bars">
+<div class="bar"><span class="bl">首肩</span><span class="bt"><i style="width:4.1%"></i></span><span class="bv">4.1%</span></div>
+<div class="bar"><span class="bl">肩こり</span><span class="bt"><i style="width:4.5%"></i></span><span class="bv">4.5%</span></div>
+<div class="bar"><span class="bl">眼精疲労</span><span class="bt"><i style="width:1.9%"></i></span><span class="bv">1.9%</span></div>
+<div class="bar"><span class="bl">睡眠・不眠</span><span class="bt"><i style="width:2.3%"></i></span><span class="bv">2.3%</span></div>
+<div class="bar"><span class="bl">ウェット</span><span class="bt"><i style="width:1.6%"></i></span><span class="bv">1.6%</span></div>
+<div class="bar"><span class="bl">完全個室</span><span class="bt"><i style="width:0.4%"></i></span><span class="bv">0.4%</span></div>
 </div>
+<p class="barnote">スパ近隣486本のクーポン名のうち、その語を含む割合</p><div class="callout">需要は<b>首肩81.8% / 目61.9%</b>　供給は<b>首肩4.1% / 眼精疲労1.9%</b>　この差がそのまま空き地です　ただし因果は逆かもしれません（症状語で予約が増えるならみんな書いているはず）ので、<b>効くという保証ではなく、試す価値がある差</b>として読んでください</div><h2 style="font-size:17px;margin-top:34px;">競合はヘッドスパではありません</h2><p class="lede">近隣で¥12,000を超えるメニューが何かを数えると</p><div class="tablewrap fit"><table><thead><tr><th>価格帯</th><th>そこにいるもの</th><th>ヘッドスパ</th></tr></thead><tbody><tr><td><span class="name">¥12,000以上</span></td><td>高周波痩身・整体・コルギ小顔・オイルリンパ・ストレッチ</td><td>168本中 <b>27本</b></td></tr><tr><td><span class="name">エリア中央値</span></td><td>¥7,990</td><td>—</td></tr><tr><td><span class="name">ウェットを名乗る8店</span></td><td>価格中央値 <b>¥16,500</b>（中央値の2倍）</td><td>8本</td></tr></tbody></table></div><div class="callout">SEAMの¥17,800が奪いに行っているのは、隣のヘッドスパのお金ではなく<b>整体・もみほぐしに使われているお金</b>です　そして整体が売っているのも首肩　同じ財布を、同じ症状で、違う気持ちよさで取ります</div></section><section><div class="eyebrow">Spa / 03</div><h2>正解は、すでに自社の中にあります</h2><p class="lede">大阪と名古屋は症状を書いていて、銀座だけが書いていません</p><div class="tablewrap fit"><table><thead><tr><th>店</th><th>現行のクーポン名（60分帯）</th><th>症状語</th><th>2週間の埋まり</th></tr></thead><tbody><tr><td><span class="name">大阪 堀江</span></td><td>極上睡眠×頭浸浴ウェットヘッドスパ【60分】<b>首肩こり・眼精疲労</b>・完全個室</td><td><span class="ok">あり</span></td><td>29.0%</td></tr><tr><td><span class="name">名古屋 栄</span></td><td>【初回人気】<b>睡眠×肩こり</b>　個室シャンプーヘッドスパ60分</td><td><span class="ok">あり</span></td><td>28.6%</td></tr><tr><td><span class="name">銀座</span></td><td>＊深眠クリームヘッドスパ　ライトコース【60分】完全個室＆ブロー付き</td><td><span class="gap">なし</span></td><td>11.8%</td></tr></tbody></table></div><div class="callout"><b>価格帯も違います</b>（銀座¥12,000〜25,000 / 名古屋¥8,800〜21,800 / 大阪¥8,900〜16,800）ので、名前だけが埋まりの差の原因だとは言えません　ただ、症状語を入れない理由も見当たりません　銀座だけが、自社の中ですでにうまくいっている書き方をしていない状態です</div><div class="verdict"><span class="vl">結論</span><p>首肩と目からほどく、しみない完全個室のウェットヘッドスパを、40代以上に売る　頭皮の話は結果として添える</p></div></section><section><div class="eyebrow">Salon</div><h2>サロン　── 主戦場は「うねり」と「ツヤ」</h2><p class="lede">診断5,174人が何に困っているか</p><p class="lede">悩みは年代で入れ替わります　同じ「縮毛矯正」でも、売る言葉を変えないと届きません</p><div class="tablewrap fit"><table><thead><tr><th>悩み</th><th>20代</th><th>30代</th><th>40代</th><th>50代〜</th></tr></thead><tbody><tr><td><span class="name">うねり</span></td><td>38.9%</td><td>37.7%</td><td><b>52.6%</b></td><td><b>55.2%</b></td></tr><tr><td><span class="name">ごわつき</span></td><td>44.0%</td><td>45.3%</td><td>41.8%</td><td>45.5%</td></tr><tr><td><span class="name">広がり</span></td><td>39.5%</td><td>38.5%</td><td>39.5%</td><td>37.7%</td></tr><tr><td><span class="name">ツヤがない</span></td><td>26.9%</td><td>27.7%</td><td>30.0%</td><td>30.9%</td></tr><tr><td><span class="name">ダメージ</span></td><td><b>25.2%</b></td><td>19.9%</td><td>15.4%</td><td>11.7%</td></tr><tr><td><span class="name">枝毛</span></td><td><b>23.6%</b></td><td>13.1%</td><td>7.2%</td><td>4.3%</td></tr><tr><td><span class="name">白髪染めをしている</span></td><td>1.0%</td><td>8.6%</td><td><b>37.0%</b></td><td><b>66.3%</b></td></tr></tbody></table></div><div class="callout"><b>20代は「傷み」、40代以上は「うねり」</b>　枝毛は23.6%→4.3%まで落ち、うねりは38.9%→55.2%まで上がります　40代以上には<b>白髪染めと同じ日にできる</b>ことが効きます（37.0%／66.3%が染めている）</div><h2 style="font-size:17px;margin-top:34px;">全年代の1位は「ツヤ」です</h2><p class="lede">診断で「なりたい質感」に選ばれたもの</p><div class="bars">
+<div class="bar hi"><span class="bl">ツヤ</span><span class="bt"><i style="width:40.1%"></i></span><span class="bv">40.1%</span></div>
+<div class="bar"><span class="bl">サラサラ</span><span class="bt"><i style="width:24.9%"></i></span><span class="bv">24.9%</span></div>
+<div class="bar"><span class="bl">しっとり</span><span class="bt"><i style="width:18.0%"></i></span><span class="bv">18.0%</span></div>
+<div class="bar"><span class="bl">ハリコシ</span><span class="bt"><i style="width:7.4%"></i></span><span class="bv">7.4%</span></div>
+<div class="bar"><span class="bl">やわらか</span><span class="bt"><i style="width:6.2%"></i></span><span class="bv">6.2%</span></div>
+<div class="bar"><span class="bl">ふんわり</span><span class="bt"><i style="width:3.4%"></i></span><span class="bv">3.4%</span></div>
+</div>
+<p class="barnote">ハリコシは20代4.7%に対し40代12.4%・50代12.4%と<b style="color:var(--gold)">約3倍</b>　40代以上向けだけは「ツヤ＋ハリ」の2語で書きます</p><h2 style="font-size:17px;margin-top:34px;">一番払うのは、一番断られている人です</h2><p class="lede">薬剤履歴の掛け合わせ（5,174人）</p><div class="tablewrap fit"><table><thead><tr><th>履歴</th><th>人数</th><th>割合</th><th>意味</th></tr></thead><tbody><tr><td><span class="name">何もしていない</span></td><td>1,951</td><td>37.7%</td><td>施術提案の余地が大きい</td></tr><tr><td><span class="name">縮毛矯正のみ</span></td><td>1,391</td><td>26.9%</td><td>定期客になりやすい</td></tr><tr><td><span class="name">ブリーチのみ</span></td><td>1,017</td><td>19.7%</td><td>補修の単価が乗る</td></tr><tr><td><span class="name">ブリーチ×縮毛矯正</span></td><td><b>414</b></td><td>8.0%</td><td><b>最難度　断られ慣れている　一番払う</b></td></tr></tbody></table></div><div class="callout">この414人はビビリ毛（全体14.7%）や切れ毛（24.0%）を抱えています　<b>「他店で断られた方へ」の枠</b>は、他店が作れません　毛髪診断と全ブランド在庫という裏付けがあるのはSEAMだけです　ただし施術の可否は必ず現場が判断するので、名前には<b>「要相談」を必ず入れます</b></div><h2 style="font-size:17px;margin-top:34px;">ホームケアの不満が、SEAMの入口です</h2><p class="lede">「いま使っているものの不満」（5,174人・複数回答）</p><div class="bars">
+<div class="bar hi"><span class="bl">重い・べたつく</span><span class="bt"><i style="width:43.6%"></i></span><span class="bv">43.6%</span></div>
+<div class="bar"><span class="bl">高い</span><span class="bt"><i style="width:36.6%"></i></span><span class="bv">36.6%</span></div>
+<div class="bar"><span class="bl">持続しない</span><span class="bt"><i style="width:35.4%"></i></span><span class="bv">35.4%</span></div>
+<div class="bar"><span class="bl">頭皮がベタつく</span><span class="bt"><i style="width:32.0%"></i></span><span class="bv">32.0%</span></div>
+<div class="bar"><span class="bl">変化を感じない</span><span class="bt"><i style="width:24.9%"></i></span><span class="bv">24.9%</span></div>
+<div class="bar"><span class="bl">香りが合わない</span><span class="bt"><i style="width:19.7%"></i></span><span class="bv">19.7%</span></div>
+</div>
+<p class="barnote">4割が「重い」と言っています　これは<b style="color:var(--gold)">選び方の問題</b>であって、商品の問題ではありません　診断つきのクーポンは、ここに効きます</p><div class="verdict"><span class="vl">結論</span><p>「うねりとツヤ」を主語に　40代以上には白髪と同時解決を　難しい髪には「他店で断られた方へ」を　そのすべてに診断をつける</p></div></section><section><div class="eyebrow">Rules</div><h2>名前の決めごと</h2><p class="lede">人気店1,904本を測って出た型に、診断の言葉を載せます</p><div class="tablewrap fit"><table><thead><tr><th>測ったこと</th><th>実測値</th><th>だから</th></tr></thead><tbody><tr><td><span class="name">名前の長さ</span></td><td>中央値31字　36字に80本の山</td><td><b>36字を超えない</b>　山は表示の折り返し位置</td></tr><tr><td><span class="name">高額帯の書き出し</span></td><td>¥10,000以上の48%が【★☆で始まる</td><td>高額ほど<b>冒頭に記号タグ</b>を置く</td></tr><tr><td><span class="name">先頭14字の中身</span></td><td>カット22.9% / カラー17.1% / メンズ4.9%</td><td>ほぼ全員が<b>施術名</b>を書いている</td></tr><tr><td><span class="name">症状語の出現</span></td><td>うねり0.1% / 広がり0.2% / 首肩0.6%</td><td><b>症状を先頭に置くだけで、一覧で浮く</b></td></tr></tbody></table></div><div class="rules"><div class="rule"><span class="ic" style="background:var(--good)">1</span><div><b>症状を先頭14字に置く</b><span class="sub" style="display:block">一覧で最初に読まれるのはここ　施術名は後ろでいい</span></div></div><div class="rule"><span class="ic" style="background:var(--good)">2</span><div><b>症状語は診断上位から取る</b><span class="sub" style="display:block">首肩・目・うねり・広がり・ごわつき・艶　この6語で回す</span></div></div><div class="rule"><span class="ic" style="background:var(--good)">3</span><div><b>年代を書くのは40代以上だけ</b><span class="sub" style="display:block">20代に「20代の」と書くと安く見える　40代以上は率が高いので効く</span></div></div><div class="rule"><span class="ic" style="background:var(--good)">4</span><div><b>証拠語は後ろ</b><span class="sub" style="display:block">完全個室・頭浸浴・ウェット・診断つき　これは信じさせる材料で、呼び込む言葉ではない</span></div></div><div class="rule"><span class="ic" style="background:var(--good)">5</span><div><b>価格を名前に入れない</b><span class="sub" style="display:block">HPBが別枠で出す　二重に出ると読みにくいだけ</span></div></div><div class="rule"><span class="ic" style="background:var(--good)">6</span><div><b>時間は【】に入れる</b><span class="sub" style="display:block">外に出すと折り返しで切れる</span></div></div></div><div class="rules" style="margin-top:14px;"><div class="rule"><span class="ic">×</span><div><b>「短時間でも整う」のような、誰の症状でもない言葉</b><span class="sub" style="display:block">整えたいのは分かるが、誰も検索しない</span></div></div><div class="rule"><span class="ic">×</span><div><b>店内で名前が食い違うこと</b><span class="sub" style="display:block">銀座はヘア掲載が「睡眠クリームヘッドスパ」、スパ掲載が「深眠クリームヘッドスパ」</span></div></div><div class="rule"><span class="ic">×</span><div><b>「頭身浴」</b><span class="sub" style="display:block">正しくは<b>頭浸浴</b>　銀座に3本残っている（スパ2・ヘア1）</span></div></div><div class="rule"><span class="ic">×</span><div><b>説明文をそのまま名前欄に入れること</b><span class="sub" style="display:block">「8月1日から5500円に価格改定予定」が札幌のメニュー名として出ている</span></div></div></div></section><section><div class="eyebrow">Spa Names</div><h2>ヘッドスパ　── 名前案</h2><p class="lede">現行名と並べています　1本ずつコピーできます</p><div class="callout">価格は<b>今のまま</b>です　名前だけを入れ替えます　施術の中身を変える提案は最後の章にまとめました</div><div class="storehead"><b>銀座</b><span>beauty.hotpepper.jp/kr/slnH000802373/　¥12,000〜¥25,000　症状語ゼロ　最優先で入れ替える</span></div><div class="was"><b>現行</b>短時間でも整うショートヘッドスパ【45分】</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【45分】首肩ほぐし付ショートヘッドスパ｜完全個室・予定の合間に<span class="len">32字</span><span class="why">45分にも首肩を入れる　「短時間でも整う」は誰の症状でもない</span></p></div><div class="was"><b>現行</b>＊深眠クリームヘッドスパ　ライトコース【60分】完全個室＆ブロー付き</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【60分】肩こり・眼精疲労に　深眠クリームヘッドスパ｜完全個室<span class="len">31字</span><span class="why">大阪・名古屋がすでに使っている書き方に揃える　ブロー付きは説明欄へ</span></p></div><div class="was"><b>現行</b>【人気No.1リラックス】頭身浴付き首肩までほどけるクリームヘッドスパ90分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1・90分】首肩からデコルテまで　頭浸浴ヘッドスパ｜完全個室<span class="len">36字</span><span class="why">人気No.1がすでに首肩の枠　「頭身浴」の誤記を直す</span></p></div><div class="was"><b>現行</b>【リカバリー】頭身浴付き深く落ちるプレミアムヘッドスパ　120分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【120分】眠りが浅い方へ　頭浸浴プレミアムヘッドスパ｜完全個室<span class="len">32字</span><span class="why">寝つきが悪い29.9%・体がだるい30.4%　120分はここに当てる</span></p></div><div class="was"><b>現行</b>【ラグジュアリー】深く落ちる/プレミアムスパ 150分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【最上位150分】首肩・目・全身リセット　プレミアムスパ｜完全個室<span class="len">33字</span><span class="why">上位3症状を全部書く　最上位は「何が全部入るか」で選ばれる</span></p></div><div class="storehead"><b>名古屋 栄</b><span>beauty.hotpepper.jp/kr/slnH000800971/　¥8,800〜¥21,800　すでに症状語あり　整えるだけ</span></div><div class="was"><b>現行</b>【初回人気】睡眠×肩こり　個室シャンプーヘッドスパ60分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【初回人気60分】肩こり・眼精疲労に　個室シャンプーヘッドスパ<span class="len">31字</span><span class="why">「睡眠×肩こり」は良い　眼精疲労を足す（61.9%）</span></p></div><div class="was"><b>現行</b>【メンズ限定】頭皮ケア・眼精疲労爽快ヘッドスパ60分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ60分】肩こり・眼精疲労に　頭皮ケアヘッドスパ｜完全個室<span class="len">32字</span><span class="why">メンズ枠は3店で唯一ここだけ　完全個室を足す</span></p></div><div class="was"><b>現行</b>【人気No.1】頭浸浴付き首肩までほどけるクリームヘッドスパ90分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1・90分】首肩までほどける頭浸浴ヘッドスパ｜完全個室<span class="len">33字</span><span class="why">完全個室が1本にしか入っていない　全コースに入れる</span></p></div><div class="was"><b>現行</b>【リカバリー】頭浸浴付き　深く落ちるプレミアムヘッドスパ　120分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【120分】眠りが浅い方へ　頭浸浴プレミアムヘッドスパ｜完全個室<span class="len">32字</span><span class="why">銀座と同じ形にして、店をまたいでも同じものだと分かるようにする</span></p></div><div class="was"><b>現行</b>【最上位】深く落ちる・選べるトリートメント付プレミアムスパ150分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【最上位150分】首肩・目・全身リセット　選べるTR付プレミアムスパ<span class="len">34字</span><span class="why">トリートメント付きは名古屋だけの強み　残す</span></p></div><div class="storehead"><b>大阪 堀江</b><span>beauty.hotpepper.jp/kr/slnH000791418/　¥11,800〜¥19,800　3店で最良　表記を揃えるだけ</span></div><div class="was"><b>現行</b>頭浸浴×ウェットヘッドスパ 60分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【60分】首肩こり・眼精疲労に　頭浸浴×ウェットヘッドスパ｜完全個室<span class="len">34字</span><span class="why">すでに正解　語順だけ症状を先頭にする</span></p></div><div class="was"><b>現行</b>頭皮診断＋頭浸浴＋ウェットヘッドスパ60分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【頭皮診断付60分】首肩こり・眼精疲労に　頭浸浴×ウェットヘッドスパ<span class="len">34字</span><span class="why">頭皮診断は大阪だけの差別化　冒頭に出す</span></p></div><div class="was"><b>現行</b>頭浸浴×ウェットヘッドスパ 90分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【90分】首肩こり・眼精疲労に　頭浸浴×ウェットヘッドスパ｜完全個室<span class="len">34字</span><span class="why">60分と同じ形で並べる　時間だけの違いが読みやすくなる</span></p></div><div class="was"><b>現行</b>頭皮診断＋頭浸浴＋ウェットヘッドスパ＋首肩ケア90分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【頭皮診断＋首肩90分】頭浸浴×ウェットヘッドスパ｜完全個室<span class="len">30字</span><span class="why">首肩ケアが別付けなのは大阪だけ　これは書く価値がある</span></p></div><div class="was"><b>現行</b>頭皮診断＋頭浸浴＋ウェットヘッドスパ＋デコルテ120分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【デコルテまで120分】頭浸浴×ウェットヘッドスパ＋頭皮診断｜完全個室<span class="len">35字</span><span class="why">最上位　デコルテを冒頭に出す</span></p></div></section><section><div class="eyebrow">Salon Names</div><h2>ヘアサロン　── 名前案</h2><p class="lede">現行名と並べています　1本ずつコピーできます</p><div class="callout"><b>名古屋 栄のヘアは載せていません</b>　スタイリスト不在で受付を休止中のため、クーポンを足すと受けられない予約が入ります　掲載側の受付停止が先です</div><div class="storehead"><b>銀座</b><span>beauty.hotpepper.jp/slnH000802192/　全クーポンが【完全個室】始まり　何が変わるかが書かれていない</span></div><div class="was"><b>現行</b>【完全個室】カット＋美髪縮毛矯正＋トリートメント</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【うねり・広がりに】カット＋美髪縮毛矯正＋TR｜完全個室<span class="len">28字</span><span class="why">うねり42.6%・広がり38.9%　最上位単価をこの2語で取る</span></p></div><div class="was"><b>現行</b>【完全個室】カット＋髪質改善トリートメント</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【朝のアイロンをやめたい方へ】カット＋髪質改善TR｜完全個室<span class="len">30字</span><span class="why">アイロン毎日が31.6%　福岡の「朝のアイロンを短縮」が良い例</span></p></div><div class="was"><b>現行</b>【完全個室】カット＋ケアカラー＋トリートメント</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【艶が戻る】カット＋ケアカラー＋選べる最上級TR｜完全個室<span class="len">29字</span><span class="why">「ツヤ」は全年代1位の40.1%　大阪の「うる艶カラー」と揃う</span></p></div><div class="was"><b>現行</b>（該当なし　新規で足す）</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【40代からのうねり・白髪に】カット＋カラー＋髪質改善TR｜完全個室<span class="len">34字</span><span class="why">40代うねり52.6%・白髪染め37.0%　同じ日に終わることが価値</span></p></div><div class="was"><b>現行</b>（該当なし　新規で足す）</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【他店で断られた方へ】ブリーチ毛の縮毛矯正＋補修TR｜要相談<span class="len">30字</span><span class="why">ブリーチ×矯正が414人（8.0%）　可否は現場判断なので「要相談」必須</span></p></div><div class="was"><b>現行</b>【メンズ】カット＋お悩みに合わせた頭皮ケア</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】カット＋頭皮ケア｜肩こり・眼精疲労に・完全個室<span class="len">28字</span><span class="why">メンズは診断の根拠が使えない（回答者の96.9%が女性）　根拠はHPB側で人気店21店がメンズテーマを立てていること</span></p></div><div class="storehead"><b>札幌</b><span>beauty.hotpepper.jp/slnH000417753/　ベネフィット語はすでに上手　「うねり」と「艶」を足す</span></div><div class="was"><b>現行</b>【収まり柔らかさNo1】カット＋７stepオージュアインメトリィTR</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【うねりを収める】髪質改善ストレート＋カット＋バイカルテTR<span class="len">30字</span><span class="why">「収まり柔らかさNo1」は良い　症状語の「うねり」に置き換える</span></p></div><div class="was"><b>現行</b>（該当なし　新規で足す）</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【40代からのうねり・白髪に】シルクカラー＋髪質改善＋カット<span class="len">30字</span><span class="why">札幌は50代以上の来店が見込める　白髪染め66.3%の年代</span></p></div><div class="was"><b>現行</b>【艶とまとまりを】シルクカラー＋バイカルテトリートメント</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【艶とまとまり】カット＋シルクカラー＋バイカルテTR<span class="len">26字</span><span class="why">すでに「艶とまとまりを」を使っている　カット付きの枠にも展開</span></p></div><div class="was"><b>現行</b>（該当なし　新規で足す）</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】カット＋頭皮ケア｜肩こり・眼精疲労に<span class="len">23字</span><span class="why">札幌にメンズ枠がない　4年連続ゴールドの店にこそ置く</span></p></div><div class="storehead"><b>大阪 堀江</b><span>beauty.hotpepper.jp/slnH000791476/　ヘッドスパ併設が武器　サロン側からスパへ橋を架ける</span></div><div class="was"><b>現行</b>【プレミアム髪質改善ストレート】髪にドラマを。トリートメント付き</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【うねり・広がりに】髪質改善ストレート＋TR付｜完全個室<span class="len">28字</span><span class="why">「プレミアム髪質改善ストレート」の中身は良い　症状語を先頭に</span></p></div><div class="was"><b>現行</b>似合わせカット＋うる艶カラー＋選べるトリートメント付き☆</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【艶が戻る】似合わせカット＋うる艶カラー＋選べる最上級TR<span class="len">29字</span><span class="why">「うる艶」は良い語　カット付きの主力にも載せる</span></p></div><div class="was"><b>現行</b>似合わせカット＋ウエットヘッドスパ30分</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【肩こり・眼精疲労に】似合わせカット＋頭浸浴ウェットヘッドスパ30分<span class="len">34字</span><span class="why">サロンとスパを同時に取れるのは大阪だけ　症状で呼ぶ</span></p></div><div class="was"><b>現行</b>（該当なし　新規で足す）</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【他店で断られた方へ】ブリーチ毛の髪質改善ストレート｜要相談<span class="len">30字</span><span class="why">414人の枠　大阪は毛髪診断メニューがあるので説得力がある</span></p></div><div class="storehead"><b>福岡</b><span>beauty.hotpepper.jp/slnH000734442/　5掲載でいちばん上手　足りないのは40代以上とメンズの症状語</span></div><div class="was"><b>現行</b>【迷ったらこれ！大人気】似合わせカット＋ケアカラー＋3stepTR</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【40代からのうねり・白髪に】カット＋ケアカラー＋3stepTR<span class="len">32字</span><span class="why">「迷ったらこれ！大人気」を年代で刺し直す</span></p></div><div class="was"><b>現行</b>【艶とまとまりを】シルクカラー＋バイカルテトリートメント</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【艶が戻る】カット＋シルクカラー＋バイカルテTR<span class="len">24字</span><span class="why">「艶とまとまりを」をカット付きにも展開</span></p></div><div class="was"><b>現行</b>【仕事帰りにも】似合わせメンズカット+アミノクレンジングスパ</div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【肩こり・眼精疲労に】メンズカット＋アミノクレンジングスパ<span class="len">29字</span><span class="why">「仕事帰りにも」は時間の話　症状に変える</span></p></div></section><section><div class="eyebrow">Decide</div><h2>オーナー判断が要ること</h2><p class="lede">名前より先に決めることです</p><p class="lede">ここから先は名前ではなく<b>中身</b>の話です　現場とオーナーの判断が要ります</p><ul class="check"><li><b>目もとのケアを、90分以上のコースに標準で入れる</b><span class="hint">眼精疲労は61.9%が抱えているのに、銀座では¥1,100の追加オプション最下段にある　2番目に多い症状に対する扱いとして軽すぎる　入れられないなら、せめてコース説明の先頭に「目もとまで届きます」と書く</span></li><li><b>「しみない」をどこかに書けるか</b><span class="hint">頭皮が敏感（高い＋とても高い）が29.7%、薬剤でしみた経験が21.0%　3割が不安を抱えている　書けるなら強い　書けないなら「頭皮の状態を見てから薬剤を決めます」に置き換える</span></li><li><b>銀座のスパ、45分と60分を残すか</b><span class="hint">¥12,000と¥13,800で1,800円差　症状の入口としては60分に寄せたほうが分かりやすい　45分を残すなら「予定の合間」という別の理由を立てる</span></li><li><b>大阪で外れた3コースを戻すか</b><span class="hint">ドライスパ30分¥6,600ほか2本　安い入口が無いと、初めての人が試せない　廃止か復活かを決める</span></li><li><b>国家資格保有者・フェイシャル・ハーブピーリングを名前に出せるか</b><span class="hint">大阪のスパ掲載にはすでにフェイシャルとハーブピーリングがある　サイト側は未掲載　出せるなら差別化になる</span></li><li><b>「他店で断られた方へ」を出せるか</b><span class="hint">414人（8.0%）の枠　ただし受けたうえで断ると信用を失う　出すなら必ず「要相談」つき、かつ現場が判断の基準を持ってから</span></li></ul></section><section><div class="eyebrow">Order</div><h2>やる順番</h2><p class="lede">上から順に　1と3は今日できます</p><div class="tablewrap fit"><table><thead><tr><th>順</th><th>やること</th><th>どこ</th><th>理由</th></tr></thead><tbody><tr><td><b>1</b></td><td>「頭身浴」を「頭浸浴」に直す（3本）</td><td>銀座スパ2本・銀座ヘア1本</td><td>誤記　今すぐ直せて、直さない理由がない</td></tr><tr><td><b>2</b></td><td>スパ5本の名前を入れ替える</td><td>銀座</td><td>3店でここだけ症状語がなく、埋まりも最も低い</td></tr><tr><td><b>3</b></td><td>名古屋ヘアの予約受付を止める</td><td>名古屋ヘア掲載</td><td>受けられない予約が入り続けている　掲載料も出ている</td></tr><tr><td><b>4</b></td><td>サロンに「うねり」「艶」の枠を足す</td><td>銀座・札幌・大阪・福岡</td><td>うねり42.6%・艶40.1%　いま名前に無い</td></tr><tr><td><b>5</b></td><td>40代以上向けの枠を1本ずつ足す</td><td>全ヘア4店</td><td>うねり52.6%／白髪染め37.0%　同時解決が価値</td></tr><tr><td><b>6</b></td><td>メンズ枠を足す</td><td>銀座・札幌ヘア</td><td>スパ2店にはあり、ヘア5掲載にはない　人気店21店が立てている</td></tr><tr><td><b>7</b></td><td>「他店で断られた方へ」を出す</td><td>銀座・大阪</td><td>判断基準が固まってから　急がない</td></tr></tbody></table></div></section><section><div class="eyebrow">Notes</div><h2>数字の読み方</h2><p class="lede">間違って引用されると危ないところ</p><div class="qa"><div class="q">診断の数字は、そのままお客様の姿ですか</div><div class="a">近いですが同じではありません　回答者の<b>96.9%が女性</b>、97.5%がスマホ、84%がサイト内からの流入です　男性の話をこのデータで語ることはできません　メンズの提案は診断ではなく、HPB人気店21店がメンズテーマを立てているという市場側の事実と、現場の実感にもとづいています</div><div class="q">スパの症状の割合が高すぎませんか</div><div class="a">母数が「ヘッドスパに興味あり」と答えた2,411人だからです　全診断者5,174人で割ると首肩は38.1%になります　ただし<b>メニュー名は「行きたい人」に向けて書くもの</b>なので、2,411人を母数にするほうが正しい読み方です</div><div class="q">名前を変えれば予約は増えますか</div><div class="a"><b>保証はできません</b>　症状語のある大阪・名古屋のほうが埋まっていますが、価格帯も立地も違います　これは因果の証明ではなく、相関です　ただ、需要8割・供給4%という差は事実で、試すコストはほぼゼロです</div><div class="q">リラク486本には何が混ざっていますか</div><div class="a">整体・高周波痩身・コルギ・リンパなどが入っています　純粋なヘッドスパだけの母集団ではありません　だからこそ「¥12,000以上の168本のうちヘッドスパは27本」という数字に意味があります</div><div class="q">前に出した資料と食い違う数字はありますか</div><div class="a">あります　スパ興味の年代分布を、以前は件数の内訳（30代35.5%など）として出しました　これは<b>率ではありません</b>　率で見ると40代58.4%・50代61.7%が最も高く、狙う年代の結論が変わります　この資料の数字が正です</div></div></section>
 
 <footer>
-SEAM ／ 株式会社hanico　社内資料<br>
-人気店のクーポン名1,904本（ヘア5エリア×6店＋スパ3エリア×5店）を 2026-07-28 に取得して解析しました<br>
-関連資料　人気店との差 seam.site/hpb-gap ／ 掲載改善の手順 seam.site/hpb-guide ／ 8月の集客計画 seam.site/august-plan
+SEAM ／ 株式会社hanico　社内資料（検索エンジン非掲載）<br>
+出典：髪格診断 2026-06-28〜07-28（5,174人・admin と同一集計）／
+ホットペッパービューティー掲載 実取得 2026-07-28（人気店クーポン1,904本・SEAM8掲載）／
+予約カレンダー実測 2026-07-28（スパ3店・2週間）<br>
+価格は現行のまま　中身の変更が要る提案は「オーナー判断が要ること」にまとめています
 </footer>
-</div>
 
+</div>
 <script>
 document.querySelectorAll('.copybtn').forEach(function(b){
   b.addEventListener('click', function(){
     var p = b.parentNode.querySelector('p');
     if(!p) return;
-    var w = p.querySelector('.why');
-    var t = w ? p.textContent.replace(w.textContent, '') : p.textContent;
+    var w = p.querySelector('.why'), l = p.querySelector('.len');
+    var t = p.textContent;
+    if(w) t = t.replace(w.textContent, '');
+    if(l) t = t.replace(l.textContent, '');
     navigator.clipboard.writeText(t.trim()).then(function(){
       var o = b.textContent; b.textContent = 'COPIED';
       setTimeout(function(){ b.textContent = o; }, 1400);
