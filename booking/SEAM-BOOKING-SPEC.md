@@ -1,6 +1,6 @@
-# SEAM 銀座 予約・POS システム — 仕様書（画面 / 機能 / API接続 / 独自実装）
+# SEAM 銀座 予約・POS エコシステム — 仕様書（画面 / 機能 / API接続 / 独自実装）
 
-> 作成: 2026-07-25 ／ 対象: `booking/`（顧客予約ページ＋店舗管理＋POS を1ファイルに同梱した SEAM 銀座 専用システム）
+> 作成: 2026-07-25 ／ 最終更新: **2026-07-28**（次回予約・ポイント・ギフト券・回数券・スマート支払い・自動フォロー・紹介pt・ノーショー前金・カルテ写真・英語対応・アプリチャネルを追補） ／ 対象: `booking/`（顧客予約ページ＋店舗管理＋POS を1ファイルに同梱した SEAM 銀座 専用システム）
 >
 > **前提と責任の所在（エンジニア確認・2026-07-25）**
 > - 現時点は **SEAM 銀座 単一テナント専用**。この構成のまま運用して問題ない。ただし設計・実装の責任は本システムの作者（AI）が持つ。
@@ -9,6 +9,37 @@
 > - 大原則（2026-07-16 エンジニア方針）: **`AI_API_REFERENCE` に実在する CUEPON API だけで作る／独自バックエンドに依存する機能は作らない／予約の“正”も CUEPON に置く**。本システムは予約はこれに準拠、**POS（会計・在庫・割引）は独自D1で先行実装しており、統合時に CUEPON ec系API へ移行する必要がある**（§6・§8）。
 
 ---
+
+## 0. エコシステム全体図（2026-07-28 現在）
+
+本システムは単機能の予約ページではなく、**「予約 → 来店 → 会計 → 次回予約 → 自動フォロー → 再来店」の顧客ライフサイクル全体を1つの台帳で回すエコシステム**である。
+
+```mermaid
+flowchart LR
+  subgraph 入口["入口(全チャネル)"]
+    LINE["LINE(LIFF)"]; APP["SEAMアプリ(?src=app)"]; WEB["自社/IG/Google"]; HPB["HotPepper(メール取込)"]
+  end
+  subgraph 台帳["一元台帳(D1)＝予約の正"]
+    RESV["reservations"]; PTS["points"]; GIFT["gifts"]; PASS["passes"]; KARTE["karte_photos/checkouts"]
+  end
+  subgraph 外部["外部同期"]
+    ST["salon.town(CUEPON)"]; RPA["RPAアプリ"]; SB["サロンボード(ヘア/スパ)"]
+  end
+  LINE & APP & WEB --> RESV; HPB --> RESV
+  RESV --> ST --> RPA --> SB
+  RESV -->|"空き枠×表示/availability"| 入口
+  subgraph POS["レジ(POS)"]
+    CO["会計(現金/カード/QR/スマート支払い)"]; NV["次回予約提案"]; PT["ポイント付与/利用"]; GF["ギフト券/回数券"]
+  end
+  RESV --> CO; CO --> NV --> RESV; CO --> PT & GF
+  subgraph FOLLOW["自動フォロー(cron 毎朝9時)"]
+    F1["前日リマインド"]; F2["翌日サンクス+Googleクチコミ"]; F3["周期リマインド"]; F4["休眠90日呼び戻し+pt"]
+  end
+  RESV --> FOLLOW -->|LINE| LINE
+```
+
+- **金流**: 現金/カード(Square)/QR＝店頭、スマート支払い＝HPB側決済(レジ現金不算入)、前金＝Square、ギフト券/回数券＝前受金。
+- **HPBとの関係**: 新規獲得はHPBを併用しつつ、ポイント(HPB 2%徴収の代替)・次回予約・LINEフォロー・紹介ptで**再来店を自社台帳側に固定化**する設計。
 
 ## 1. デプロイ構成
 
@@ -36,6 +67,9 @@
 6. **前金決済**（任意）：Square Web Payments。前金なしで店頭払いも可。
 7. **完了**：LINE友だち追加 ／ ホームケア（会員制オンラインショップ `seam.site/onlineshop`）導線 ／ Googleクチコミ導線。
 - ログイン：LINE Login(LIFF)／Google（海外客）。確認はLINE/メールでサーバ送信（§7）。
+- **多言語**：EN⇄日本語トグル（右上）。`?lang=en`／端末言語が日本語以外なら自動EN。方式=描画後DOM置換辞書（メニュー実名・スタッフ名はJP維持）。
+- **チャネル**：`?src=` line/google/instagram/own/**app**（SEAMアプリのWebView埋め込み用）。LINEアプリ内はUA/liff.isInClient()で自動顧客モード。
+- **ノーショー対策**：過去noshow履歴のある電話番号は「前金なしで予約」を非表示（`GET /precheck` PIIレス照会）。
 
 ### 2.2 管理画面（管理モード・トークン認証後）
 ヘッダー nav：**今日 / ダッシュボード / 予約台帳 / 顧客カルテ / レジ・会計 / 売上レポート / 商品・在庫 / シフト / 予約ページ / チャネル連携**＋ログアウト。
@@ -45,9 +79,9 @@
 | 今日 | スタッフ別の当日予約リスト（次客が上）・ステータス変更・詳細 |
 | ダッシュボード | KPI（今日/今週予約・稼働率・自社比率）・**本日の売上パネル**・**予約リマインド状況**・要ブロック・キャンセル待ち・再来おすすめ・チャネル内訳 |
 | 予約台帳 | スタッフ×時間の単日マスタ表・空き枠クリックで登録・予約クリックで詳細/カルテ/会計 |
-| 顧客カルテ | 顧客一覧（LTV順）・**LTV（会計実績）/会計回数/平均単価**・来店履歴・施術メモ |
-| レジ・会計 | お会計（§4.4）・本日の売上・未会計/会計一覧・**レジ締め**・Squareターミナル設定 |
-| 売上レポート | 期間別・日別・スタッフ別（指名率）・**月間目標/前年同月比/歩合給**・CSV書き出し |
+| 顧客カルテ | 顧客一覧（LTV順）・**LTV（会計実績）/会計回数/平均単価**・来店履歴・施術メモ・**施術写真(before/after・カメラ撮影→自動圧縮→拡大/削除)** |
+| レジ・会計 | お会計・本日の売上・未会計/会計一覧・**レジ締め**・Squareターミナル設定・**自社ポイント設定(ON/OFF・還元率0-20%)**・**🎁ギフト券発行/一覧/無効化/券面印刷**・**🎫回数券パス発行/一覧/無効化** |
+| 売上レポート | 期間別・日別・スタッフ別（指名率）・**月間目標/前年同月比/歩合給**・CSV書き出し・**スマート支払い列(HPB入金)** |
 | 商品・在庫 | 商品マスタ（名/価格/バーコード/在庫）・在庫わずか警告・**入荷(仕入)履歴** |
 | シフト | 営業時間11:00–20:00・不定休・サロン休業日/スタッフ個別休み（日付指定）・スマート割/お礼の率 |
 | 予約ページ | 顧客フローのプレビュー |
@@ -68,7 +102,15 @@
 - **リマインド**：前日 LINE 自動送信（Cron）＋状況可視化＋手動送信。
 - **Square端末決済**：Terminal API（sandbox実装済み・本番は端末ペアリング＋本番トークンで稼働）。
 - **メール取込**：HotPepper予約通知を受信→パース→D1（channel=hpb）。
-- **次回予約（店頭・2026-07-28）**：会計確定直後に「次回のご予約」を提案。メニュー周期（カット/カラー42日・パーマ56日・縮毛矯正90日・トリートメント30日・スパ21日）から目安日を算出し、同担当・同時刻が空く直近営業日を自動提案→フリガナ確認してワンタップ登録（通常予約と同経路でサロンボードまで同期・指名扱い・LINE通知）。
+- **次回予約（店頭・2026-07-28）**：会計確定直後に「次回のご予約」を提案。メニュー周期（カット/カラー42日・パーマ56日・縮毛矯正90日・トリートメント30日・スパ21日）から目安日を算出し、同担当・同時刻が空く直近営業日を自動提案→フリガナ確認してワンタップ登録（通常予約と同経路でサロンボードまで同期・指名扱い・LINE通知）。LINE連携状態バッジ付き（未連携客への友だち追加案内）。
+- **自社ポイント**：会計額×還元率（既定1%・0-20%設定可・1pt=¥1）を自動付与。会計で残高利用（上限=残高）。付与は支払額ベース（pt払い分に付かない）。会計取消で巻き戻し。**HPBの還元1%+利用料1%＝計2%徴収の代替**（自社客に預けるだけ・外部流出なし）。
+- **紹介ポイント**：会計の「ご紹介者」欄→紹介した人・された人の**双方にreferralPt（既定500・設定可）**。
+- **ギフト券**：レジ発行（金額/贈り主/期限既定6ヶ月=資金決済法適用外）→店販行として販売（売上・レジ現金整合）→**生成アート券面印刷**（gift-bg.jpg合成）。会計でコード入力→残高充当（分割利用可）。void無効化=履歴保全。
+- **回数券・パス**：レジ発行（名称/回数/価格/期限6ヶ月）→販売→会計でP-コード入力→**1回消化=施術分カバー**。前受金による売上安定・来店固定化（スパ稼働対策）。
+- **スマート支払い（HPB）**：支払方法にhpb区分。売上計上・**レジ現金理論残高に不算入**（入金は後日リクルート）。メール取込が「スマート支払い/事前決済」文言をnoteに刻印→会計で自動選択+「店頭での支払いはありません」警告。
+- **自動フォロー（cron毎朝9時JST・LINE連携客のみ・nudgesテーブルで一度きり・30通/回上限）**：
+  ①前日リマインド（salon.town生存照合つき＝台帳ドリフト自己修復） ②来店翌日サンクス+Googleクチコミ依頼 ③施術周期の「そろそろ」リマインド+予約リンク（次回予約済みの人には送らない） ④休眠90日呼び戻し+ptプレゼント（winbackPt・既定500）。
+- **カルテ写真**：before/after撮影→クライアント側1100px/JPEG圧縮（≦550KB）→保存・拡大・削除。※現状D1格納（R2未有効のため暫定・§6）。
 
 ### 3.1 salon.town へ送る予約データ形式（2026-07-27 オーナー確定／2026-07-26 スパ設備追加・重要）
 サロンボード書込（RPA・**予約のみ＝予定機能は廃止**）に必要な**赤丸必須項目のみ**を送る。**メニュー/クーポン名は送らない**（名称一致でRPA書込がエラーになるため）。
@@ -109,9 +151,10 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 | Resend | 予約確認メール・オーナー通知 | `api.resend.com/emails` |
 
 ### 4.3 自社 Worker エンドポイント（フロント↔D1・§6の独自実装）
-公開（顧客導線・認証不要）：`POST /pay`・`POST /reservations`・**`GET /availability`**（空き判定用・PII無しの占有区間のみ＝顧客ページのキャパ超過防止）・`POST /line/login/state`・`GET /line/login/result`。
+公開（顧客導線・認証不要）：`POST /pay`・`POST /reservations`・**`GET /availability`**（空き判定用・PII無しの占有区間のみ＝顧客ページのキャパ超過防止）・**`GET /precheck?phone=`**（ノーショー履歴→前金必須フラグのみ・PIIレス）・`POST /line/login/state`・`GET /line/login/result`。
 管理（`Authorization: Bearer ADMIN_TOKEN` 必須）：
-`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
+`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
+Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFollowups()`（サンクス/周期/休眠・§3）。
 運用ツール（`CLEANUP_TOKEN`＝wrangler secret・オーナー/AI運用専用）：
 `POST /admin/purge-test`（氏名「テスト%」×channel line/own のみD1＋salon.town削除）／`GET /admin/diag-resv`（両店予約の診断読取・add_info付き）／`POST /admin/salon-del?id=`（salon.town予約1件削除＝孤児ミラー掃除）／`POST /admin/salon-patch`（info_js更新＝個室後付け等。**部分dataでも他カラムは無傷を実証済**）／`GET|POST /salon/noname`（無記名ミラーの孤児判定つき掃除・**親生存チェックで本物予約のミラーは残す**）。
 メール受信：Cloudflare Email Routing（`hpb@seam.site`）→ Worker `email()` → parseSalonBoard → **D1のみ**（台帳表示・空き枠×・オーナー通知。**salon.townへは書かない**）。
@@ -133,6 +176,9 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 | `intakes` | 入荷（仕入）履歴 | `ec/stock`（`/save/ec/stock` type:add・`stock_history`） |
 | `points` | 自社ポイント台帳（増減行の追記型・残高=合計。HPB還元1%+利用料1%徴収の代替・オーナーがON/OFFと還元率0〜20%を設定・1pt=¥1） | **CUEPONポイントAPI**（`/save/point`=付与・`/use/point`=利用 `use_type_idx:0`必須・`/get/point` account_id直下）。delta→point(±)/reason→code/name+phone→account_id名寄せ。**BtoC利用はCUEPON移行後に開放** |
 | `gifts` | ギフト券（id=券面コードG-XXXX-XXXX・残高制で分割利用可・利用履歴uses[]・無効化はvoidフラグで履歴保全）。発行はレジ→店販行「ギフト券」として会計＝売上/レジ現金が正しく揃う。券面印刷あり。**有効期限は既定6ヶ月＝資金決済法(前払式支払手段)の適用外に収める**（延ばす場合は届出要否をオーナー確認） | CUEPONの`ec/discount`/チケット系へ移行（統合時） |
+| `passes` | 回数券・パス（id=P-XXXX-XXXX・remaining残回数・1会計1消化=施術分カバー・期限既定6ヶ月・void無効化） | CUEPONのチケット/サブスク系へ移行（統合時） |
+| `karte_photos` | 施術写真（顧客名キー・圧縮JPEG dataURL≦550KB）。**本来はR2が適所だがアカウント未有効(code:10042)のためD1暫定**。R2有効化後にオブジェクトキーへ移行 | R2（`karte/<customer>/<ts>.jpg`）＋CUEPON顧客IDキー |
+| `nudges` | 自動フォローの送信済みログ（kind×keyで一度きり保証） | （汎用通知基盤に置換） |
 
 ---
 
@@ -148,6 +194,10 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 6. **管理認証（`ADMIN_TOKEN`）** — CUEPON の permission/account 認証ではなく独自共有トークン。統合時は CUEPON の `account.permission`（service/shop/shop_staff…）＋RBAC に置換。
 7. **メール取込パーサ（`parseSalonBoard`）** — HotPepper通知メールを自社パースしD1へ（channel=hpb）。エンジニア側 reserve_@ パーサとの二重処理に注意（要一本化）。
 8. **前金決済/端末決済の集約** — Square は直接叩いている（CUEPON `ec/payment`・Square端末API `start/ec/square/terminal/pairing` 経由ではない）。
+9. **自社ポイント（`points`）** — CUEPONポイントAPI(`/save/point`・`/use/point`)未使用（顧客accountが未作成のため）。台帳形式は1:1対応済みで、統合時は name+phone→account_id 名寄せ＋一括移行。
+10. **ギフト券/回数券（`gifts`/`passes`）** — CUEPONの discount/チケット系未使用。前受金の負債管理も独自。
+11. **自動フォロー（cron `runFollowups`）** — 通知基盤は Worker cron＋LINE Push 直叩き。CUEPON/汎用通知基盤ができたら移行。
+12. **カルテ写真（`karte_photos`）** — R2未有効のためD1にdataURL格納（暫定）。**R2有効化が最初の解消項目**。
 
 ---
 
@@ -177,6 +227,9 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 | 割引・クーポン | `/save/ec/discount`（流派C＝JSONのbase64・multer無し）・`ec_discount` | 07 |
 | 在庫・棚卸 | `/get・save/ec/stock`・`/check/ec/item/stock`・`/commit/ec/shop/stock` | 07 |
 | 認証・権限 | `/login`＋`account.permission`（service/dealer/company/shop/shop_staff/一般）RBAC | 00/02 |
+| 自社ポイント | `/save/point`（付与）・`/use/point`（利用・`use_type_idx:0`必須・所属shopスコープ）・`/get/point`（account_id直下） | 08 |
+| ギフト券・回数券 | `ec/discount`／チケット系（要エンジニア確認：該当API） | 07 |
+| カルテ写真 | R2オブジェクトストレージ（CUEPON顧客IDキー） | — |
 
 **移行順（影響小→大）**：①メニュー item_id 照合 → ②在庫 ec/stock → ③会計 ec/order → ④割引 ec/discount → ⑤決済 ec/payment → ⑥認証 permission。**着手はエンジニアの「移行OK」合図と、予約トークン(shop権限)で ec系を叩けるかの確認後**。
 
@@ -185,7 +238,7 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 ## 9. 既知の依存・課題
 
 - **RPA（salon.town→サロンボード書込）**：エンジニア側インフラ。**予約のみ（予定機能は廃止・2026-07-26）**。停止するとサロンボードに予約が反映されない。処理結果は `info_js.hbp_success/hbp_processed_at/hbp_reserve_id` 刻印で確認する。
-  - **RPAへの契約（本システム→RPA）**：§3.1 の最小データ（指名/時間/所要/氏名カナ/担当/スパは個室）。`hbp_facility` 無し予約は先頭の空き個室にフォールバック。メール取込のBF番号予約（既にサロンボードに存在）は**書き戻し不要＝スキップ**（キュー詰まり防止・依頼中）。
+  - **RPAへの契約（本システム→RPA）**：§3.1 の最小データ（指名/時間/所要/氏名カナ/担当/スパは個室）＋**private_jsに顧客4分割（customer_sei/mei/sei_kana/mei_kana/customer_tel＝RPA読取キーに完全一致・2026-07-28）**。`hbp_facility` 無し予約は先頭の空き個室にフォールバック。メール取込のBF番号予約（既にサロンボードに存在・顧客master無し＝無記名/フリーで必ず失敗）は**書き戻し不要＝スキップ**（キュー詰まり防止・依頼中）。スタイリストIDはHPB公開ページと実測一致を確認済（2026-07-28）。
   - **兼任ミラー（block）**：salon.town account_link が自動生成（name「予定あり（他店舗のご予約）」・`info_js.is_block/block_for_reservation_id`）。予定機能廃止後のRPA側の扱いはエンジニア決定事項。
   - **⚠️孤児ミラー**：兼任スタッフ（ANZU）の予約を削除すると**ミラーは別レコードとして残り**、RPAが処理不能→90秒タイムアウト連発→**キュー全体が詰まる**（2026-07-25実障害）。予約削除時は `/salon/noname`（孤児判定つき）か `/admin/salon-del` でミラーも掃除する。
 - **メール取込の役割分担（2026-07-26確定）**：salon.town予約の作成は `reserve_<shop_id>@sugu`（エンジニア）が唯一。`hpb@seam.site`（本システム）は**D1表示のみで書かない**。二重処理は発生しない。
