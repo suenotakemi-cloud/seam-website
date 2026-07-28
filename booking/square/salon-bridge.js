@@ -97,11 +97,20 @@ export async function salonPush(env, r) {
       //   hbp_facility_list=部屋一覧(割当部屋が埋まっていた場合のRPAフォールバック用)。設備の開始/終了時間は予約と同じ。
       ...(r.spa ? { hbp_facility: facility, hbp_facility_list: facilityList } : {}),
     },
-    private_js: {                                   // サーバ側で暗号化保存・個人情報はすべてここ
-      customer_name: nm,                            // 姓 名
-      customer_kana: kn,                            // セイ メイ（HotPepperゲスト予約フォーム用）
-      phone: r.phone || '', mail: r.email || '',
-    },
+    private_js: (() => {                            // サーバ側で暗号化保存・個人情報はすべてここ
+      // RPAはcustomer_sei/mei/sei_kana/mei_kanaの4分割も読む(APK解析2026-07-28)。スペース分割で明示的に渡し
+      // 「顧客の氏名/カナ/ID がいずれも無指定」警告をこちらの予約では構造的に起こさない。
+      const [sei = '', mei = ''] = nm.split(/[\s　]+/);
+      const [seiK = '', meiK = ''] = kn.split(/[\s　]+/);
+      return {
+        customer_name: nm,                          // 姓 名
+        customer_kana: kn,                          // セイ メイ（HotPepperゲスト予約フォーム用）
+        customer_sei: sei, customer_mei: mei,
+        customer_sei_kana: seiK, customer_mei_kana: meiK,
+        customer_tel: r.phone || '',
+        phone: r.phone || '', mail: r.email || '',
+      };
+    })(),
   };
   const j = await salonCall(env, '/save/reservation', { data });
   if (!j.result) throw new Error('salon予約作成失敗: ' + (j.msg || ''));
