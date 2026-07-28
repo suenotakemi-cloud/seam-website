@@ -52,25 +52,29 @@ function rewriteUrlsToRoot(doc) {
 }
 
 function extractI18N(doc) {
-  const scripts = [...doc.querySelectorAll('script:not([src])')];
+  // 辞書は「本体を定義するスクリプト」と「あとから追記するスクリプト」に分かれている
+  // ことがある(headspa の店舗別メニュー辞書 = 1キー→[ja,en,zh,tw,ko] を後段でマージ)。
+  // 最初の1本を見つけた時点で return すると追記分が丸ごと落ち、その範囲だけ日本語のまま
+  // 多言語ページに焼き込まれる(2026-07-28 に実際にそうなった)。
+  // 該当する全スクリプトを「同じsandbox」で document 順に流し、マージ後の辞書を返す。
+  const scripts = [...doc.querySelectorAll('script:not([src])')]
+    .filter(s => s.textContent && s.textContent.indexOf('SEAM_PAGE_I18N') >= 0);
+  if (!scripts.length) return null;
+
+  const sandbox = { window: {}, document: {}, location: {}, navigator: {}, localStorage: {} };
+  vm.createContext(sandbox);
   for (const s of scripts) {
-    if (!s.textContent || s.textContent.indexOf('SEAM_PAGE_I18N') < 0) continue;
-    const sandbox = { window: {}, document: {}, location: {}, navigator: {}, localStorage: {} };
-    vm.createContext(sandbox);
     try { vm.runInContext(s.textContent, sandbox, { timeout: 3000 }); } catch (e) { /* 辞書代入は通る */ }
-    if (sandbox.window.SEAM_PAGE_I18N) return sandbox.window.SEAM_PAGE_I18N;
+    if (sandbox.window.SEAM_PAGE_I18N) continue;
     // フォールバック: 辞書代入の前にアプリコードがDOM APIで落ちるページ(brand等)は
     // `window.SEAM_PAGE_I18N = {...}` のオブジェクトリテラルだけをブレーススキャンで
     // 切り出し、代入文のみを評価する(文字列' " ` とエスケープを考慮)。
     const lit = extractDictLiteral(s.textContent);
     if (lit) {
-      const sb = { window: {} };
-      vm.createContext(sb);
-      try { vm.runInContext('window.SEAM_PAGE_I18N=' + lit, sb, { timeout: 5000 }); } catch (e) {}
-      if (sb.window.SEAM_PAGE_I18N) return sb.window.SEAM_PAGE_I18N;
+      try { vm.runInContext('window.SEAM_PAGE_I18N=' + lit, sandbox, { timeout: 5000 }); } catch (e) {}
     }
   }
-  return null;
+  return sandbox.window.SEAM_PAGE_I18N || null;
 }
 
 function extractDictLiteral(src) {
