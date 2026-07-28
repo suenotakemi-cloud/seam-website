@@ -2056,31 +2056,35 @@ function renderRegister(){
   };
   const ro=document.getElementById('rz-reopen');if(ro)ro.onclick=()=>{if(confirm('レジ締めを取り消しますか？')){db.settlements=db.settlements.filter(x=>x.date!==dk);save();refreshAll();API.removeSettlement(dk);}};
 }
-// ギフト券の券面印刷（SEAM世界観・コード/金額/期限入り。A6横イメージ）
+// ギフト券の券面印刷（生成アートの券面画像 gift-bg.jpg に文字を重ねる。A6横イメージ）
 function printGift(code){
   const g=giftByCode(code);if(!g){toast('ギフト券が見つかりません',true);return;}
-  const w=window.open('','_blank','width=560,height=420');if(!w){toast('ポップアップを許可してください',true);return;}
+  const bg=new URL('gift-bg.jpg',location.href).href;   // about:blankでは相対が解決できないため絶対URL化
+  const w=window.open('','_blank','width=760,height=560');if(!w){toast('ポップアップを許可してください',true);return;}
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>GIFT TICKET ${g.id}</title><style>
-    body{margin:0;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;background:#f4f0e8;display:flex;align-items:center;justify-content:center;min-height:100vh}
-    .tk{width:480px;background:#fffdf8;border:1px solid #d9c9a8;border-radius:14px;padding:34px 38px;position:relative;box-shadow:0 8px 30px rgba(90,70,30,.12)}
-    .tk:before{content:'';position:absolute;inset:7px;border:1px solid #e2d5b8;border-radius:9px;pointer-events:none}
-    .en{letter-spacing:.42em;font-size:11px;color:#b8945a;text-align:center}
-    h1{font-size:26px;text-align:center;margin:8px 0 2px;letter-spacing:.18em;color:#2b2620}
-    .sub{text-align:center;font-size:11px;color:#8d8474;letter-spacing:.2em;margin-bottom:18px}
-    .amt{text-align:center;font-size:40px;color:#2b2620;margin:6px 0 2px}.amt small{font-size:15px}
-    .code{text-align:center;font-family:monospace;font-size:17px;letter-spacing:.14em;background:#f6f0e2;border:1px dashed #cbb98f;border-radius:8px;padding:8px 0;margin:16px 24px}
-    .meta{display:flex;justify-content:space-between;font-size:11.5px;color:#6f6656;margin:0 6px}
-    .note{font-size:10px;color:#9a9080;margin-top:14px;line-height:1.7;border-top:1px solid #e8dfcb;padding-top:10px}
-    @media print{body{background:#fff}.tk{box-shadow:none}}
-  </style></head><body><div class="tk">
-    <div class="en">S E A M &nbsp; G I N Z A</div>
-    <h1>GIFT TICKET</h1><div class="sub">ギ フ ト チ ケ ッ ト</div>
+    body{margin:0;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;background:#efe9dd;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:12px}
+    .tk{width:660px;aspect-ratio:3/2;background:url('${bg}') center/cover no-repeat;border-radius:10px;position:relative;box-shadow:0 10px 34px rgba(90,70,30,.18);overflow:hidden}
+    .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 70px}
+    .en{letter-spacing:.5em;font-size:12px;color:#a8843e;text-indent:.5em}
+    h1{font-size:34px;margin:6px 0 0;letter-spacing:.22em;color:#3a3226;font-weight:600;text-indent:.22em}
+    .sub{font-size:10.5px;color:#93876e;letter-spacing:.46em;text-indent:.46em;margin:4px 0 16px}
+    .amt{font-size:46px;color:#2f2a20;line-height:1}.amt small{font-size:16px;color:#6f6552}
+    .code{font-family:"Courier New",monospace;font-size:17px;font-weight:700;letter-spacing:.16em;color:#4a4030;background:rgba(255,253,246,.82);border:1px solid #d3bf94;border-radius:8px;padding:7px 26px;margin-top:16px}
+    .meta{display:flex;gap:26px;font-size:11px;color:#7c7059;margin-top:13px}
+    .from{font-size:12px;color:#6f6552;margin-top:7px}
+    .note{width:660px;font-size:9.5px;color:#8d8371;line-height:1.8;text-align:center}
+    @media print{body{background:#fff}.tk{box-shadow:none}@page{margin:10mm}}
+  </style></head><body>
+  <div class="tk"><div class="in">
+    <div class="en">S E A M　G I N Z A</div>
+    <h1>GIFT TICKET</h1><div class="sub">ギフトチケット</div>
     <div class="amt">¥${(g.amount||0).toLocaleString()}<small>（税込）</small></div>
     <div class="code">${g.id}</div>
-    <div class="meta"><span>発行日：${(g.issued||'').replace(/-/g,'/')}</span><span>有効期限：${(g.expires||'').replace(/-/g,'/')}</span></div>
-    ${g.buyer?`<div class="meta" style="margin-top:4px"><span>贈り主：${g.buyer.replace(/</g,'&lt;')} 様より</span></div>`:''}
-    <div class="note">ご来店時にこの券面をご提示ください。施術・店販にご利用いただけます（差額は店頭でお支払い・残高は次回もお使いいただけます）。有効期限を過ぎた券はご利用いただけません。現金とのお引き換えはいたしかねます。<br>SEAM 銀座 ／ ご予約はLINEまたは店頭にて</div>
-  </div><script>window.print()<\/script></body></html>`);
+    <div class="meta"><span>発行日 ${(g.issued||'').replace(/-/g,'/')}</span><span>有効期限 ${(g.expires||'').replace(/-/g,'/')}</span></div>
+    ${g.buyer?`<div class="from">${g.buyer.replace(/</g,'&lt;')} 様より</div>`:''}
+  </div></div>
+  <div class="note">ご来店時にこの券面をご提示ください。施術・店販にご利用いただけます（差額は店頭でお支払い・残高は次回もお使いいただけます）。<br>有効期限を過ぎた券はご利用いただけません。現金とのお引き換えはいたしかねます。　SEAM 銀座</div>
+  <script>window.print()<\/script></body></html>`);
   w.document.close();
 }
 document.getElementById('reg-prev').onclick=()=>{registerDay=addDays(registerDay,-1);renderRegister();};
