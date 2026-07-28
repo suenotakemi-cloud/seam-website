@@ -1768,8 +1768,93 @@ function coFinish(rec){
   if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
   if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-1);});  // 在庫を自動減算（新規会計のみ）
   if(rec.resvId)setStatus(rec.resvId,'done');
-  document.getElementById('checkoutbg').classList.remove('show');
   toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}）`);
+  // ★次回予約（店頭）: 新規会計の直後に「次回のご予約」を提案（大阪店の勝ちパターンを全店へ・HPBには構造上できない）
+  if(isNew){openNextVisit(rec);}else{document.getElementById('checkoutbg').classList.remove('show');}
+}
+
+/* ===== 次回予約（会計直後の店頭提案）=====
+ * メニューの施術周期から次回目安日を計算し、同じ担当・同じ時間で空いている直近日を提案。
+ * 確定すると通常予約と同じ経路（D1→salon.town→RPA→サロンボード）で登録される。 */
+const CYCLE_BY_CAT={'カット':42,'カラー':42,'パーマ':56,'縮毛矯正':90,'トリートメント':30,'ヘッドスパ':21};
+function cycleOfMenu(m){
+  if(!m)return 42;
+  if(m.cat&&CYCLE_BY_CAT[m.cat])return CYCLE_BY_CAT[m.cat];
+  const n=m.name||'';
+  if(/縮毛矯正/.test(n))return 90;if(/パーマ/.test(n))return 56;
+  if(/スパ|個室|頭浸浴/.test(n))return 21;if(/カラー/.test(n))return 42;
+  if(/トリートメント/.test(n))return 30;return 42;
+}
+// 目安日の前後で「同担当・同時刻が空いている」最も近い営業日を探す（±21日・明日以降）
+function nvSuggestDay(staffId,startMin,dur,target){
+  for(let off=0;off<=21;off++){
+    for(const sign of (off===0?[0]:[off,-off])){
+      const d=addDays(target,sign);if(d<addDays(today(),1))continue;
+      const k=dkey(d);
+      if(isClosedDay(k))continue;
+      if(!staffOnDuty(staffId,k,startMin,startMin+dur))continue;
+      if(conflicts(k,staffId,startMin,startMin+dur).length)continue;
+      return k;
+    }
+  }
+  return null;
+}
+let nvDraft=null;
+function openNextVisit(rec){
+  const r=rec.resvId?db.reservations.find(x=>x.id===rec.resvId):null;
+  const menu=r?MENUS.find(m=>m.id===r.menuId):null;
+  const staffId=rec.staffId||(r&&r.staffId)||STAFF[0].id;
+  const cyc=cycleOfMenu(menu);
+  const start=r?r.start:600,dur=menu?menu.min:60;
+  const target=addDays(today(),cyc);
+  const day=nvSuggestDay(staffId,start,dur,target)||dkey(target);
+  let kana=(r&&r.kana)||'';
+  if(!kana&&r&&r.note){const km=r.note.match(/カナ ([ァ-ヶー]+[\s　][ァ-ヶー]+)/);if(km)kana=km[1];}
+  nvDraft={resvId:rec.resvId||null,name:rec.customer||(r&&r.name)||'',kana,staffId,
+    menuId:r?r.menuId:null,day,start,dur,cyc,
+    phone:(r&&r.phone)||'',email:(r&&r.email)||'',lineUserId:(r&&r.lineUserId)||''};
+  renderNextVisit();
+}
+function renderNextVisit(){
+  const d=nvDraft,box=document.getElementById('checkoutmodal');
+  const menu=d.menuId?MENUS.find(m=>m.id===d.menuId):null;
+  const st=STAFF.find(s=>s.id===d.staffId)||{};
+  const wk=Math.round(d.cyc/7);
+  // 時刻プルダウン（30分刻み・選択日の埋まり枠はdisabled）
+  const times=[];for(let t=OPEN;t+d.dur<=CLOSE;t+=30){
+    const ng=isClosedDay(d.day)||!staffOnDuty(d.staffId,d.day,t,t+d.dur)||conflicts(d.day,d.staffId,t,t+d.dur).length>0;
+    times.push(`<option value="${t}" ${t===d.start?'selected':''} ${ng?'disabled':''}>${hm(t)}${ng?'（埋）':''}</option>`);}
+  box.innerHTML=`<h3>🔁 次回のご予約${d.name?`：${escH(d.name)} 様`:''}</h3>
+    <div class="co-sub" style="margin-top:2px">${menu?escH(menu.name):'メニュー未指定'}の目安は<b>約${wk}週間後</b>です。この場で次回を確保しませんか？</div>
+    ${d.name?'':'<div class="co-line"><span>お名前（姓 名）</span><input id="nv-name" placeholder="例）山田 花子" style="flex:1;margin-left:10px"></div>'}
+    <div class="co-line"><span>フリガナ（セイ メイ）</span><input id="nv-kana" value="${escH(d.kana)}" placeholder="例）ヤマダ ハナコ" style="flex:1;margin-left:10px"></div>
+    <div class="co-line"><span>日付</span><input id="nv-day" type="date" value="${d.day}" min="${dkey(addDays(today(),1))}" style="margin-left:auto"></div>
+    <div class="co-line"><span>時間</span><select id="nv-time" class="co-sel" style="margin-left:auto;max-width:140px">${times.join('')}</select></div>
+    <div class="co-line"><span>担当</span><span style="margin-left:auto;font-weight:800">${escH(st.name||'')}（指名）</span></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost" style="flex:1" id="nv-skip">今日はしない</button>
+      <button class="btn pay" style="flex:1.4" id="nv-go">この内容で次回予約</button>
+    </div>`;
+  box.querySelector('#nv-day').onchange=e=>{d.day=e.target.value;renderNextVisit();};
+  box.querySelector('#nv-time').onchange=e=>{d.start=+e.target.value;};
+  box.querySelector('#nv-skip').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
+  box.querySelector('#nv-go').onclick=()=>{
+    const nameEl=box.querySelector('#nv-name');if(nameEl)d.name=nameEl.value.trim();
+    d.kana=hira2kata((box.querySelector('#nv-kana').value||'').trim());
+    if(!d.name){toast('お名前を入力してください',true);return;}
+    if(!/^[ァ-ヶー]+[\s　][ァ-ヶー]+$/.test(d.kana)){toast('フリガナを「セイ メイ」のカタカナで入力してください',true);return;}
+    const m2=d.menuId?MENUS.find(m=>m.id===d.menuId):null;
+    const dur=m2?m2.min:d.dur;
+    const isSpa=!!(m2&&m2.cat==='ヘッドスパ');
+    const res=addReservation({date:d.day,staffId:d.staffId,start:d.start,end:d.start+dur,menuId:d.menuId||'',
+      name:d.name,kana:d.kana,phone:d.phone,email:d.email,channel:'own',deposit:0,note:'次回予約(店頭)',
+      lineUserId:d.lineUserId,notify:true,
+      spa:isSpa,staffCu:(isSpa?(st.cuSpa||st.cu):st.cu)||'',hbpStylistId:(isSpa?(st.hpbSpa||st.hpb):st.hpb)||'',
+      hbpStylistName:st.name||'',menuName:m2?m2.name:'',menuMin:dur,nominated:true});
+    if(!res.ok){toast('その時間は埋まっています。別の時間をお選びください',true);return;}
+    document.getElementById('checkoutbg').classList.remove('show');
+    toast(`次回予約を登録しました：${d.day.replace(/-/g,'/')} ${hm(d.start)}〜`);
+  };
 }
 // Squareターミナルで決済（金額を端末へ送信→完了までポーリング→会計確定）
 let _termCid=null,_termPoll=null;
