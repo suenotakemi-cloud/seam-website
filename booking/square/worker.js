@@ -131,6 +131,17 @@ export default {
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors); // 顧客の予約作成
     if (p.endsWith('/availability') && m === 'GET') return handleAvailability(url, env, cors);           // 空き判定用(PII無し・公開)
+    // ノーショー履歴の事前判定(公開・電話番号→前金必須フラグのみ返す。氏名等のPIIは一切返さない)
+    if (p.endsWith('/precheck') && m === 'GET') {
+      const ph = (url.searchParams.get('phone') || '').replace(/[^0-9]/g, '');
+      if (!env.DB || ph.length < 10) return json({ requireDeposit: false }, 200, cors);
+      try {
+        const hit = await env.DB.prepare(
+          "SELECT 1 AS x FROM reservations WHERE status='noshow' AND REPLACE(REPLACE(phone,'-',''),' ','')=? LIMIT 1"
+        ).bind(ph).first();
+        return json({ requireDeposit: !!hit }, 200, cors);
+      } catch (e) { return json({ requireDeposit: false }, 200, cors); }
+    }
     if (p.endsWith('/admin/purge-test') && m === 'POST') return handlePurgeTest(url, env, cors);         // テスト予約掃除(専用トークン)
     if (p.endsWith('/admin/diag-resv') && m === 'GET') return handleDiagResv(url, env, cors);            // 両店予約の診断読取(専用トークン)
     // D1⇔salon.town台帳の突き合わせ(専用トークン)。salon.townで削除/キャンセル済みなのにD1でbookedの
@@ -209,6 +220,39 @@ export default {
     if (p.endsWith('/gifts') && m === 'GET') return A() || handleGetGifts(env, cors);
     if (p.endsWith('/gifts') && m === 'POST') return A() || handlePostGift(request, env, cors);
     if (p.endsWith('/gifts') && m === 'DELETE') return A() || handleDeleteGift(url, env, cors);
+    // 回数券・パス
+    if (p.endsWith('/passes') && m === 'GET') return A() || handleGetPasses(env, cors);
+    if (p.endsWith('/passes') && m === 'POST') return A() || handlePostPass(request, env, cors);
+    if (p.endsWith('/passes') && m === 'DELETE') return A() || handleDeletePass(url, env, cors);
+    // カルテ写真(顧客名キー・圧縮JPEG dataURL)
+    if (p.endsWith('/karte/photos') && m === 'GET') {
+      const auth = A(); if (auth) return auth;
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const nm = url.searchParams.get('name') || '';
+      const res = await env.DB.prepare('SELECT id,name,date,data,created_at FROM karte_photos WHERE name=? ORDER BY created_at DESC LIMIT 40').bind(nm).all();
+      return json({ ok: true, photos: res.results || [] }, 200, cors);
+    }
+    if (p.endsWith('/karte/photo') && m === 'POST') {
+      const auth = A(); if (auth) return auth;
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.name || !o.data || !/^data:image\/jpeg;base64,/.test(o.data)) return json({ error: 'name/data(JPEG dataURL)必須' }, 400, cors);
+      if (o.data.length > 600000) return json({ error: '画像が大きすぎます(圧縮後600KBまで)' }, 400, cors);
+      const id = 'kp' + crypto.randomUUID().slice(0, 8);
+      await env.DB.prepare('INSERT INTO karte_photos (id,name,date,data,created_at) VALUES (?,?,?,?,?)')
+        .bind(id, o.name, o.date || new Date().toISOString().slice(0, 10), o.data, new Date().toISOString()).run();
+      return json({ ok: true, id }, 200, cors);
+    }
+    if (p.endsWith('/karte/photo') && m === 'DELETE') {
+      const auth = A(); if (auth) return auth;
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const id = url.searchParams.get('id'); if (!id) return json({ error: 'id必須' }, 400, cors);
+      await env.DB.prepare('DELETE FROM karte_photos WHERE id=?').bind(id).run();
+      return json({ ok: true }, 200, cors);
+    }
     return json({ error: 'Not found' }, 404, cors);
   },
 
@@ -250,6 +294,8 @@ export default {
         date: r.date, time: min2hm(r.start), menu: (mn && mn.name) || '', staff: (st && st.name) || '', salon: 'SEAM 銀座',
       }));
     }
+    // ===== 来店後の自動フォロー(A2サンクス/A1周期/B3休眠) — 失敗してもリマインドには影響させない =====
+    try { await runFollowups(env, event.scheduledTime); } catch (e) { console.log('フォロー送信エラー:', e.message); }
   },
 
   // HPB予約通知メールの自動取込（Cloudflare Email Routing → このWorkerへ転送）。
@@ -291,6 +337,91 @@ export default {
     }
   },
 };
+
+/* ===== 来店後の自動フォロー(毎朝9時JSTのcronから) =====
+ * A2: 来店翌日サンクス+Googleクチコミ依頼 / A1: 施術周期の「そろそろ」リマインド / B3: 90日休眠の呼び戻し+pt。
+ * いずれもLINE連携客のみ・nudgesテーブルで一度きり送信・次の予約が既に入っている人には送らない。 */
+const MENU_CYCLE = (id) => {
+  if (['m13', 'm14', 'm15', 'cp10', 'cp11', 'cp13'].includes(id)) return 21;   // ヘッドスパ
+  if (['m8', 'm9', 'cp5'].includes(id)) return 90;                             // 縮毛矯正
+  if (['m6', 'm7'].includes(id)) return 56;                                    // パーマ
+  if (['m10', 'm11', 'm12'].includes(id)) return 30;                           // トリートメント
+  return 42;                                                                   // カット/カラー/その他
+};
+async function runFollowups(env, nowMs) {
+  if (!env.DB || !env.LINE_CHANNEL_ACCESS_TOKEN) return;
+  const d0 = new Date(nowMs);
+  const ds = (offsetDays) => { const t = new Date(nowMs + offsetDays * 86400000); return `${t.getUTCFullYear()}-${z(t.getUTCMonth() + 1)}-${z(t.getUTCDate())}`; };
+  const today = ds(0), yesterday = ds(-1);
+  await env.DB.prepare(`CREATE TABLE IF NOT EXISTS nudges (kind TEXT, key TEXT, date TEXT, PRIMARY KEY(kind,key))`).run().catch(() => {});
+  const once = async (kind, key) => {
+    const hit = await env.DB.prepare('SELECT 1 AS x FROM nudges WHERE kind=? AND key=?').bind(kind, key).first();
+    if (hit) return false;
+    await env.DB.prepare('INSERT OR IGNORE INTO nudges (kind,key,date) VALUES (?,?,?)').bind(kind, key, today).run();
+    return true;
+  };
+  const BOOK_URL = env.BOOK_URL || 'https://suenotakemi-cloud.github.io/seam-website/booking/index.html?src=line';
+  const REVIEW_URL = env.GOOGLE_REVIEW_URL || ('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('SEAM 銀座 美容室'));
+  let sent = 0; const CAP = 30;   // 1回のcronで送る上限(安全弁)
+
+  // A2: 昨日ご来店(会計済=done)のお客様へサンクス+クチコミ依頼
+  const doneY = await env.DB.prepare("SELECT * FROM reservations WHERE date=? AND status='done' AND line_user_id!=''").bind(yesterday).all();
+  for (const r of (doneY.results || [])) {
+    if (sent >= CAP) break;
+    if (!(await once('thanks', r.id))) continue;
+    await linePush(env, r.line_user_id,
+      `【SEAM 銀座】${(r.name || 'お客様')}様\n\n昨日はご来店いただきありがとうございました🌿\n仕上がりはいかがでしょうか。気になる点があればいつでもLINEでご相談ください。\n\nもしよろしければ、Googleでのクチコミがスタッフの励みになります✍️\n${REVIEW_URL}`);
+    sent++;
+  }
+
+  // A1: 施術周期リマインド(前回done+周期日ちょうど・次の予約なし)
+  const past = await env.DB.prepare(
+    "SELECT * FROM reservations WHERE status='done' AND line_user_id!='' AND date>=? AND date<=?"
+  ).bind(ds(-100), ds(-14)).all();
+  for (const r of (past.results || [])) {
+    if (sent >= CAP) break;
+    const cyc = MENU_CYCLE(r.menu_id);
+    const days = Math.round((Date.parse(today) - Date.parse(r.date)) / 86400000);
+    if (days !== cyc) continue;
+    const future = await env.DB.prepare(
+      "SELECT 1 AS x FROM reservations WHERE line_user_id=? AND date>=? AND status='booked' LIMIT 1"
+    ).bind(r.line_user_id, today).first();
+    if (future) continue;
+    if (!(await once('cycle', r.id))) continue;
+    const mn = MENUS.find(x => x.id === r.menu_id);
+    const wk = Math.round(cyc / 7);
+    await linePush(env, r.line_user_id,
+      `【SEAM 銀座】${(r.name || 'お客様')}様\n\n前回の${(mn && mn.name) || 'ご来店'}から約${wk}週間が経ちました。そろそろ次のお手入れの時期です✨\n\nご都合の良い時間をこちらからどうぞ（30秒で完了します）\n${BOOK_URL}`);
+    sent++;
+  }
+
+  // B3: 90日休眠の呼び戻し(最終来店からちょうど90日・次の予約なし・お礼pt付き)
+  const wbRow = await env.DB.prepare("SELECT value FROM settings WHERE key='winbackPt'").first().catch(() => null);
+  const ptOn = await env.DB.prepare("SELECT value FROM settings WHERE key='pointEnabled'").first().catch(() => null);
+  const wbPt = (!ptOn || ptOn.value !== '0') ? Math.max(0, +(wbRow && wbRow.value) || 500) : 0;
+  const lastVisits = await env.DB.prepare(
+    "SELECT line_user_id, MAX(date) AS last, name FROM reservations WHERE status='done' AND line_user_id!='' GROUP BY line_user_id"
+  ).all();
+  for (const v of (lastVisits.results || [])) {
+    if (sent >= CAP) break;
+    const days = Math.round((Date.parse(today) - Date.parse(v.last)) / 86400000);
+    if (days !== 90) continue;
+    const future = await env.DB.prepare(
+      "SELECT 1 AS x FROM reservations WHERE line_user_id=? AND date>=? AND status='booked' LIMIT 1"
+    ).bind(v.line_user_id, today).first();
+    if (future) continue;
+    if (!(await once('winback', v.line_user_id + '-' + v.last))) continue;
+    if (wbPt > 0) {
+      await env.DB.prepare(
+        `INSERT OR IGNORE INTO points (id,name,phone,delta,reason,ref,date,created_at) VALUES (?,?,?,?,?,?,?,?)`
+      ).bind('pt' + crypto.randomUUID().slice(0, 8), v.name || '', '', wbPt, '休眠復帰ポイント', 'winback-' + v.last, today, new Date().toISOString()).run().catch(() => {});
+    }
+    await linePush(env, v.line_user_id,
+      `【SEAM 銀座】${(v.name || 'お客様')}様\n\nお久しぶりです🌿 その後、髪の調子はいかがですか？\n${wbPt > 0 ? `またお会いできるのを楽しみに、次回のお会計で使える ${wbPt}pt をご用意しました🎁\n\n` : '\n'}ご予約はこちらからどうぞ\n${BOOK_URL}`);
+    sent++;
+  }
+  console.log('フォロー送信:', sent, '件');
+}
 
 function apiBase(env) {
   return (env.SQUARE_ENV === 'production')
@@ -742,6 +873,12 @@ async function ensureRegisterTables(env) {
     // ギフト券台帳。id=券面コード(G-XXXX-XXXX)。balance=残高(分割利用可)・uses=利用履歴JSON[{ref,amount,at}]。
     // 有効期限は既定6ヶ月(資金決済法の適用外に収める)。統合時はCUEPONのdiscount/チケット系へ移行。
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS gifts (id TEXT PRIMARY KEY, label TEXT DEFAULT '', amount INTEGER DEFAULT 0, balance INTEGER DEFAULT 0, buyer TEXT DEFAULT '', memo TEXT DEFAULT '', uses TEXT DEFAULT '[]', issued TEXT DEFAULT '', expires TEXT DEFAULT '', void INTEGER DEFAULT 0, created_at TEXT)`),
+    // 回数券・パス(スパ4回券等)。remaining=残回数・1会計で1回消化(施術分をカバー)。期限既定6ヶ月。
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS passes (id TEXT PRIMARY KEY, label TEXT DEFAULT '', customer TEXT DEFAULT '', price INTEGER DEFAULT 0, total INTEGER DEFAULT 0, remaining INTEGER DEFAULT 0, uses TEXT DEFAULT '[]', issued TEXT DEFAULT '', expires TEXT DEFAULT '', void INTEGER DEFAULT 0, created_at TEXT)`),
+    // カルテ写真(before/after)。dataはクライアント側で圧縮したJPEGのdataURL(〜150KB)。
+    // ※本来はR2が適所だがアカウント未有効(code:10042)のためD1暫定。R2有効化後にキー移行(spec参照)。
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS karte_photos (id TEXT PRIMARY KEY, name TEXT NOT NULL, date TEXT, data TEXT, created_at TEXT)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_kp_name ON karte_photos(name)`),
   ]);
   // 既存DBへの列追加（SQLiteはIF NOT EXISTS非対応→重複はcatchで無視）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN nominated INTEGER DEFAULT 0`).run(); } catch (e) {}
@@ -887,6 +1024,38 @@ async function handleDeleteGift(url, env, cors) {
   const id = url.searchParams.get('id');
   if (!id) return json({ error: 'id 必須' }, 400, cors);
   await env.DB.prepare('UPDATE gifts SET void=1 WHERE id=?').bind(id).run();   // 物理削除せず無効化(履歴保全)
+  return json({ ok: true }, 200, cors);
+}
+
+/* ---------- 回数券・パス ---------- */
+const PS2API = r => ({ id: r.id, label: r.label || '', customer: r.customer || '', price: r.price || 0,
+  total: r.total || 0, remaining: r.remaining || 0,
+  uses: (() => { try { return JSON.parse(r.uses || '[]'); } catch { return []; } })(),
+  issued: r.issued || '', expires: r.expires || '', void: !!r.void, at: r.created_at || '' });
+async function handleGetPasses(env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const res = await env.DB.prepare('SELECT * FROM passes ORDER BY created_at DESC LIMIT 1000').all();
+  return json({ ok: true, passes: (res.results || []).map(PS2API) }, 200, cors);
+}
+async function handlePostPass(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.id || o.total == null) return json({ error: 'id/total は必須' }, 400, cors);
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO passes (id,label,customer,price,total,remaining,uses,issued,expires,void,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(o.id, o.label || '', o.customer || '', Math.round(+o.price) || 0, Math.round(+o.total) || 0,
+    Math.round(+o.remaining != null ? +o.remaining : +o.total) || 0, JSON.stringify(o.uses || []),
+    o.issued || new Date().toISOString().slice(0, 10), o.expires || '', o.void ? 1 : 0, o.at || new Date().toISOString()).run();
+  return json({ ok: true, id: o.id }, 200, cors);
+}
+async function handleDeletePass(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const id = url.searchParams.get('id');
+  if (!id) return json({ error: 'id 必須' }, 400, cors);
+  await env.DB.prepare('UPDATE passes SET void=1 WHERE id=?').bind(id).run();
   return json({ ok: true }, 200, cors);
 }
 async function handlePostIntake(request, env, cors) {

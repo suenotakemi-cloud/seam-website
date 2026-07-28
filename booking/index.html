@@ -1141,6 +1141,12 @@ const API = {
   async listGifts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.gifts:null;}catch{return null;} },
   async saveGift(g){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(g)});return r.ok?await r.json():null;}catch{return null;} },
   async voidGift(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
+  async listPasses(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.passes:null;}catch{return null;} },
+  async savePass(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
+  async voidPass(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
+  async listKartePhotos(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photos?name='+encodeURIComponent(name),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.photos:null;}catch{return null;} },
+  async saveKartePhoto(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photo',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
+  async removeKartePhoto(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photo?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
   async removeIntake(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   // ---- Square Terminal（端末カード決済）----
@@ -1185,7 +1191,7 @@ function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=
 function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);
   // この会計に紐づくポイント増減（付与/利用）とギフト券の消込も巻き戻す
   db.points=(db.points||[]).filter(p=>p.ref!==id);API.removePointsByRef(id);
-  restoreGiftByRef(id);
+  restoreGiftByRef(id);restorePassByRef(id);
   save();refreshAll();API.removeCheckout(id);}
 // 店販の商品マスタ（バーコード・在庫）
 if(!db.products)db.products=[];
@@ -1208,7 +1214,8 @@ async function syncRegisterFromD1(){
   const ins=await API.listIntakes(); if(ins)db.intakes=ins;
   const pts=await API.listPoints(); if(pts)db.points=pts;
   const gf=await API.listGifts(); if(gf)db.gifts=gf;
-  if(co||st||set||pr||ins||pts||gf){save();refreshAll();}
+  const ps=await API.listPasses(); if(ps)db.passes=ps;
+  if(co||st||set||pr||ins||pts||gf||ps){save();refreshAll();}
 }
 /* ===== 自社ポイント（HPBの2%徴収の代替・オーナーが使うか/率を決める）=====
  * 付与/利用は増減行の追記型（db.points）。残高=そのお客様の行の合計。
@@ -1243,6 +1250,24 @@ function restoreGiftByRef(ref){
     if(used>0){g.balance=(g.balance||0)+used;g.uses=g.uses.filter(u=>u.ref!==ref);saveGiftLocal(g);}
   });
 }
+/* ===== 回数券・パス（スパ4回券等。1会計で1回消化=施術分をカバー） ===== */
+if(!db.passes)db.passes=[];
+function passCodeGen(){const CH='23456789ABCDEFGHJKMNPQRSTUVWXYZ';const p=n=>[...Array(n)].map(()=>CH[Math.floor(Math.random()*CH.length)]).join('');return 'P-'+p(4)+'-'+p(4);}
+function passByCode(code){const c=(code||'').trim().toUpperCase();return db.passes.find(x=>x.id===c);}
+function passStatus(x){
+  if(!x)return {ok:false,msg:'該当する回数券がありません'};
+  if(x.void)return {ok:false,msg:'無効化された回数券です'};
+  if(x.expires&&x.expires<dkey(today()))return {ok:false,msg:`有効期限切れ（${x.expires.replace(/-/g,'/')}まで）`};
+  if((x.remaining||0)<=0)return {ok:false,msg:'残回数がありません（使い切り）'};
+  return {ok:true,msg:''};
+}
+function savePassLocal(x){const i=db.passes.findIndex(y=>y.id===x.id);if(i>=0)db.passes[i]=x;else db.passes.unshift(x);save();API.savePass(x);}
+function restorePassByRef(ref){
+  db.passes.forEach(x=>{
+    const n=(x.uses||[]).filter(u=>u.ref===ref).length;
+    if(n>0){x.remaining=(x.remaining||0)+n;x.uses=x.uses.filter(u=>u.ref!==ref);savePassLocal(x);}
+  });
+}
 function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
 function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date).sort((a,b)=>a.at<b.at?-1:1);}
 function salesSummary(date){
@@ -1270,7 +1295,7 @@ function matchingWaitlist(date,staffId){
 function sendWaitNotice(w){
   if(w.lineUserId&&LINE_CFG.PUSH_ENDPOINT){
     fetch(LINE_CFG.PUSH_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
-      body:JSON.stringify({userId:w.lineUserId,text:`【SEAM 銀座】キャンセル待ちのお知らせ\n\n${w.date.replace(/-/g,'/')} にご希望のお時間の空きが出ました。先着順です、お早めにご予約ください。`})}).catch(()=>{});
+      body:JSON.stringify({userId:w.lineUserId,text:`【SEAM 銀座】キャンセル待ちのお知らせ\n\n${w.date.replace(/-/g,'/')} にご希望のお時間の空きが出ました。先着順です、お早めにご予約ください。\n\nそのままこちらからご予約いただけます（30秒で完了）\nhttps://suenotakemi-cloud.github.io/seam-website/booking/index.html?src=line`})}).catch(()=>{});
   }else if(w.email&&MAIL_ENDPOINT){
     const m=MENUS.find(x=>x.id===w.menuId);
     fetch(MAIL_ENDPOINT,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},
@@ -1763,7 +1788,8 @@ function openCheckout(resvId){
   document.getElementById('checkoutbg').classList.add('show');
 }
 function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(+i.price||0),0);}
-function coTotal(){return Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0)-(+coDraft.giftUsed||0));}
+function coTotal(){const tech=coDraft.passCode?0:(+coDraft.tech||0);   // 回数券適用時は施術分を消化でカバー
+  return Math.max(0,tech+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0)-(+coDraft.giftUsed||0));}
 // 今回付与予定ポイント＝支払額×還元率（ポイント利用分には付与しない）
 function coPointAward(){return (pointEnabled()&&coDraft.customer)?Math.floor(coTotal()*pointRate()/100):0;}
 function renderCheckout(){
@@ -1781,12 +1807,18 @@ function renderCheckout(){
       const bal=pointBalance(coDraft.customer,'');
       return `<div class="co-sub">ポイント（残高 <b>${bal.toLocaleString()}pt</b>・1pt=¥1）</div>
       <div class="co-line"><span>ポイント利用</span><span class="co-y">−<input id="co-pts" type="number" inputmode="numeric" min="0" max="${bal}" value="${coDraft.pointsUsed||0}">pt</span></div>
-      <div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${pointRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>`;})()}
+      <div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${pointRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>
+      <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px"></div>`;})()}
     ${(()=>{ // ギフト券利用: コード入力→残高から充当
       const g=coDraft.giftCode?giftByCode(coDraft.giftCode):null;
       const applied=g&&coDraft.giftUsed>0?`<div class="co-line" style="color:#0c7a41;font-weight:700"><span>🎁 ${escH(g.id)}（残高¥${(g.balance||0).toLocaleString()}）</span><span style="margin-left:auto">−¥${(+coDraft.giftUsed).toLocaleString()} <button class="co-rx" id="co-gift-x" aria-label="解除">✕</button></span></div>`:'';
       return `<div class="co-sub">ギフト券</div>
       ${applied||`<div class="co-scan-row"><input id="co-gift" placeholder="🎁 券面コード（G-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-gift-go">適用</button></div>`}`;})()}
+    ${(()=>{ // 回数券・パス: コード入力→1回消化(施術分カバー)
+      const x=coDraft.passCode?passByCode(coDraft.passCode):null;
+      if(x)return `<div class="co-line" style="color:#0c7a41;font-weight:700"><span>🎫 ${escH(x.label)}（消化後 残${Math.max(0,(x.remaining||0)-1)}回）</span><span style="margin-left:auto">施術分カバー <button class="co-rx" id="co-pass-x" aria-label="解除">✕</button></span></div>`;
+      return `<div class="co-sub">回数券・パス</div>
+      <div class="co-scan-row"><input id="co-pass" placeholder="🎫 パスコード（P-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-pass-go">消化</button></div>`;})()}
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     <div class="co-sub">お支払い方法</div>
     <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
@@ -1805,6 +1837,7 @@ function renderCheckout(){
   box.querySelector('#co-tech').oninput=e=>{coDraft.tech=+e.target.value||0;sync();};
   box.querySelector('#co-disc').oninput=e=>{coDraft.discount=+e.target.value||0;sync();};
   {const cp=box.querySelector('#co-pts');if(cp)cp.oninput=e=>{const bal=pointBalance(coDraft.customer,'');coDraft.pointsUsed=Math.max(0,Math.min(bal,+e.target.value||0));if(+e.target.value>bal)e.target.value=bal;sync();};}
+  {const cr=box.querySelector('#co-ref');if(cr)cr.oninput=e=>{coDraft.referrer=e.target.value;};}
   {const gg=box.querySelector('#co-gift-go'),gi=box.querySelector('#co-gift');
    const apply=()=>{const g=giftByCode(gi.value);const st=giftStatus(g);
      if(!st.ok){toast(st.msg,true);return;}
@@ -1816,6 +1849,13 @@ function renderCheckout(){
    if(gg)gg.onclick=apply;
    if(gi)gi.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();apply();}};
    const gx=box.querySelector('#co-gift-x');if(gx)gx.onclick=()=>{coDraft.giftCode='';coDraft.giftUsed=0;renderCheckout();};}
+  {const pg=box.querySelector('#co-pass-go'),pi=box.querySelector('#co-pass');
+   const applyP=()=>{const x=passByCode(pi.value);const st=passStatus(x);
+     if(!st.ok){toast(st.msg,true);return;}
+     coDraft.passCode=x.id;renderCheckout();toast(`回数券を適用しました（${x.label}・施術分カバー）`);};
+   if(pg)pg.onclick=applyP;
+   if(pi)pi.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();applyP();}};
+   const px=box.querySelector('#co-pass-x');if(px)px.onclick=()=>{coDraft.passCode='';renderCheckout();};}
   box.querySelector('#co-staff').onchange=e=>{coDraft.staffId=e.target.value;};
   box.querySelectorAll('.co-rn').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].name=e.target.value;});
   box.querySelectorAll('.co-rp').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].price=e.target.value;sync();});
@@ -1836,8 +1876,9 @@ function renderCheckout(){
 function coBuildRec(){
   const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,pointsUsed:+coDraft.pointsUsed||0,giftUsed:+coDraft.giftUsed||0,giftCode:coDraft.giftCode||'',
     retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0,productId:i.productId||undefined}))};
+  rec.passCode=coDraft.passCode||'';
   rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
-  rec.total=Math.max(0,rec.tech+rec.retail-rec.discount-rec.pointsUsed-rec.giftUsed);
+  rec.total=Math.max(0,(rec.passCode?0:rec.tech)+rec.retail-rec.discount-rec.pointsUsed-rec.giftUsed);
   return rec;
 }
 function coFinish(rec){
@@ -1850,12 +1891,24 @@ function coFinish(rec){
     const g=giftByCode(rec.giftCode);
     if(g){g.balance=Math.max(0,(g.balance||0)-rec.giftUsed);g.uses=(g.uses||[]).concat([{ref:rec.id,amount:rec.giftUsed,at:new Date().toISOString()}]);saveGiftLocal(g);}
   }
+  // 回数券の1回消化（新規会計のみ）
+  if(isNew&&rec.passCode){
+    const x=passByCode(rec.passCode);
+    if(x){x.remaining=Math.max(0,(x.remaining||0)-1);x.uses=(x.uses||[]).concat([{ref:rec.id,at:new Date().toISOString()}]);savePassLocal(x);}
+  }
   // 自社ポイントの記録（新規会計のみ）: 利用=マイナス行 / 付与=支払額×還元率のプラス行
   let ptMsg='';
   if(isNew&&rec.customer){
     if(rec.pointsUsed>0){addPointRow({name:rec.customer,phone:'',delta:-rec.pointsUsed,reason:'ポイント利用',ref:rec.id});ptMsg+=` / ${rec.pointsUsed}pt利用`;}
     if(pointEnabled()){const aw=Math.floor(rec.total*pointRate()/100);
       if(aw>0){addPointRow({name:rec.customer,phone:'',delta:aw,reason:`来店ポイント(${pointRate()}%)`,ref:rec.id});ptMsg+=` / +${aw}pt付与`;}}
+    // 紹介ポイント: ご紹介者と本人の双方へ(会計に紹介者名が入っている時のみ・1会計1回)
+    const refName=(rec.referrer||'').trim();
+    if(pointEnabled()&&refName&&refName!==rec.customer){
+      const rp=stgN('referralPt',500);
+      if(rp>0){addPointRow({name:refName,phone:'',delta:rp,reason:`ご紹介ありがとうポイント(${rec.customer}様)`,ref:rec.id});
+        addPointRow({name:rec.customer,phone:'',delta:rp,reason:`ご紹介来店ポイント(${refName}様より)`,ref:rec.id});
+        ptMsg+=` / 紹介${rp}pt×2`;}}
   }
   toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}${ptMsg}）`);
   // ★次回予約（店頭）: 新規会計の直後に「次回のご予約」を提案（大阪店の勝ちパターンを全店へ・HPBには構造上できない）
@@ -2016,7 +2069,19 @@ function renderRegister(){
     <button class="btn pay" id="gf-issue" style="width:100%;margin-top:9px">発行して会計へ（券面はあとから印刷）</button>
     <div class="rz-ref"><span>利用はお会計の「ギフト券」欄にコード入力</span><span>期限は既定6ヶ月＝資金決済法の届出対象外に収まります</span></div>
     ${activeGifts.length?`<div class="co-sub" style="margin-top:10px">有効なギフト券（${activeGifts.length}枚）</div>${giftRows}`:''}</div>`;
-  body.innerHTML=summary+pendHtml+listHtml+closePanel+ptPanel+gfPanel;
+  // 回数券・パスパネル（スパ4回券等。発行→会計に乗せて販売・会計でコード入力→1回消化）
+  const activePasses=(db.passes||[]).filter(x=>!x.void&&(x.remaining||0)>0&&(!x.expires||x.expires>=tdk));
+  const passRows=activePasses.slice(0,12).map(x=>`<div class="reg-pend"><span class="rp-t" style="font-family:monospace">${escH(x.id)}</span><span class="rp-n">${escH(x.customer||'')}</span><span class="rp-m">${escH(x.label)} 残${x.remaining}回${x.expires?` / 〜${x.expires.slice(5).replace('-','/')}`:''}</span><button class="rc-x" data-pvoid="${x.id}" aria-label="無効化">✕</button></div>`).join('');
+  const psPanel=`<div class="card reg-close"><h3>🎫 回数券・パス</h3>
+    <div class="rz"><span>名称</span><input id="ps-label" value="ヘッドスパ4回券" style="margin-left:auto;max-width:200px"></div>
+    <div class="rz"><span>回数</span><span class="co-y"><input id="ps-total" type="number" inputmode="numeric" value="4" min="1" style="width:56px">回</span></div>
+    <div class="rz"><span>価格</span><span class="co-y">¥<input id="ps-price" type="number" inputmode="numeric" value="44000" step="1000" style="width:88px"></span></div>
+    <div class="rz"><span>お客様名</span><input id="ps-cust" placeholder="例）山田 花子" style="margin-left:auto;max-width:180px"></div>
+    <div class="rz"><span>有効期限</span><input id="ps-exp" type="date" value="${dkey(addDays(today(),180))}" style="margin-left:auto"></div>
+    <button class="btn pay" id="ps-issue" style="width:100%;margin-top:9px">発行して会計へ</button>
+    <div class="rz-ref"><span>会計の「回数券・パス」欄にコード入力で1回消化(施術分カバー)</span><span>前受金で売上安定・来店固定化</span></div>
+    ${activePasses.length?`<div class="co-sub" style="margin-top:10px">有効な回数券（${activePasses.length}件）</div>${passRows}`:''}</div>`;
+  body.innerHTML=summary+pendHtml+listHtml+closePanel+ptPanel+gfPanel+psPanel;
   {const on=document.getElementById('pt-on'),off=document.getElementById('pt-off'),rt=document.getElementById('pt-rate');
    if(on)on.onclick=()=>{setStg('pointEnabled','1');};
    if(off)off.onclick=()=>{setStg('pointEnabled','0');};
@@ -2035,6 +2100,21 @@ function renderRegister(){
    };
    body.querySelectorAll('[data-gprint]').forEach(b=>b.onclick=()=>printGift(b.dataset.gprint));
    body.querySelectorAll('[data-gvoid]').forEach(b=>b.onclick=()=>{if(confirm('このギフト券を無効化しますか？（残高が使えなくなります）')){const g=giftByCode(b.dataset.gvoid);if(g){g.void=true;saveGiftLocal(g);API.voidGift(g.id);refreshAll();}}});}
+  {const pi2=document.getElementById('ps-issue');
+   if(pi2)pi2.onclick=()=>{
+     const label=document.getElementById('ps-label').value.trim()||'回数券';
+     const total=Math.max(1,+document.getElementById('ps-total').value||1);
+     const price=Math.max(0,+document.getElementById('ps-price').value||0);
+     const cust=document.getElementById('ps-cust').value.trim();
+     const exp=document.getElementById('ps-exp').value||dkey(addDays(today(),180));
+     if(!cust){toast('お客様名を入力してください',true);return;}
+     const x={id:passCodeGen(),label,customer:cust,price,total,remaining:total,uses:[],issued:tdk,expires:exp,void:false};
+     savePassLocal(x);
+     openCheckout(null);
+     coDraft.customer=cust;coDraft.retailItems=[{name:`${label} ${x.id}`,price}];coDraft.tech=0;renderCheckout();
+     toast(`回数券 ${x.id} を発行しました。お会計を確定してください`);
+   };
+   body.querySelectorAll('[data-pvoid]').forEach(b=>b.onclick=()=>{if(confirm('この回数券を無効化しますか？（残回数が使えなくなります）')){const x=passByCode(b.dataset.pvoid);if(x){x.void=true;savePassLocal(x);API.voidPass(x.id);refreshAll();}}});}
   body.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>openCheckout(b.dataset.co));
   body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('この会計を取り消しますか？'))removeCheckout(b.dataset.del);});
   const wi=document.getElementById('reg-walkin');if(wi)wi.onclick=()=>openCheckout(null);
@@ -2699,6 +2779,11 @@ function renderBook(){
       <button class="btn linktext" id="bskip">前金なしで予約（店頭でお支払い）</button>`;
     document.getElementById('bpay').onclick=()=>commit(dep);
     document.getElementById('bskip').onclick=()=>commit(0);
+    // ★ノーショー履歴のあるお客様は前金必須(店舗の平均的損害の予防)。電話番号でサーバ照会しPIIは受け取らない
+    if(bk.phone){fetch(API_BASE+'/precheck?phone='+encodeURIComponent(bk.phone)).then(r=>r.json()).then(j=>{
+      if(j&&j.requireDeposit){const sk=document.getElementById('bskip');
+        if(sk){sk.remove();p.insertAdjacentHTML('beforeend','<div style="font-size:11.5px;color:var(--sub);text-align:center;margin-top:8px">確実なご案内のため、事前決済のご協力をお願いしております</div>');}}
+    }).catch(()=>{});}
   }
   if(bk.step===5){
     const paid=bk._deposit>0;
@@ -2733,6 +2818,52 @@ function renderBook(){
   if(nx)nx.onclick=()=>{if(!nx.disabled){bk.step++;renderBook()}};
   if(bkb)bkb.onclick=()=>{bk.step--;renderBook()};
 }
+
+/* ===== 予約フロー英語対応（インバウンド・銀座） =====
+ * 方式: 描画後にDOMの静的文言をEN辞書で置換（finder-i18nと同型）。メニュー実名・スタッフ名はJP維持。
+ * 切替: ?lang=en / 端末の言語が日本語以外なら自動EN / 顧客モードの右上トグル。 */
+let BOOK_LANG=(()=>{const q=new URLSearchParams(location.search).get('lang');
+  if(q==='en')return 'en'; if(q==='ja')return 'ja';
+  try{const s=localStorage.getItem('stb_lang');if(s)return s;}catch(e){}
+  return (!/^ja/.test(navigator.language||'ja'))?'en':'ja';})();
+const EN_MAP={
+  'SEAM 銀座へようこそ':'Welcome to SEAM Ginza','ご希望のメニューをお選びください':'Please choose a service',
+  'ヘアサロン':'Hair Salon','カット・カラー・パーマ・縮毛矯正・トリートメント':'Cut / Color / Perm / Straightening / Treatment',
+  'スパ / ヘッドスパ':'Spa / Head Spa','完全個室・水素ヘッドスパで頭皮と眠りを整える':'Private-room hydrogen head spa for scalp & deep rest',
+  'メニューを選択':'Choose your menu','スタイリストを選択':'Choose your stylist','日時を選択':'Choose date & time',
+  'ご予約内容の確認':'Confirm your booking','事前決済（デポジット）':'Deposit (pre-payment)',
+  '次へ':'Next','戻る':'Back','次へ（お支払い）':'Next (Payment)','この日は満席です。上の「最短で予約」や別の日もご検討ください':'Fully booked on this day. Try "Earliest slot" above or another day',
+  '指名なし':'Any stylist','空いているスタッフが担当します（最短でご案内）':'First available stylist (fastest)',
+  '朝・午前':'Morning','午後':'Afternoon','夕方・夜':'Evening','今日':'Today','明日':'Tomorrow',
+  '⚡ 最短で予約':'⚡ Earliest slot','メニュー':'Menu','来店日時':'Date & time','所要時間目安':'Duration',
+  'スタイリスト':'Stylist','合計金額':'Total','税込・当日払い':'tax incl. / pay in store','割引':'Discount','ご来店':'Visits',
+  'お名前':'Name','フリガナ（カタカナ）':'Name (Katakana — staff can help)','電話番号':'Phone','必須':'required',
+  '姓（例）山田':'Family name','名（例）花子':'Given name','セイ（例）ヤマダ':'SEI (Katakana)','メイ（例）ハナコ':'MEI (Katakana)','例）090-1234-5678':'e.g. +81-90-1234-5678',
+  'キャンセルポリシー':'Cancellation policy','2日前まで':'Up to 2 days before','無料':'Free','前日':'Day before',
+  '料金の25%':'25% of price','当日':'Same day','料金の50%':'50% of price','無断キャンセル':'No-show','当店に生じた損害の範囲まで':'Up to actual damages',
+  'お預かりする前金':'Deposit amount','カード番号':'Card number','有効期限':'Expiry','セキュリティコード':'CVC',
+  '前金なしで予約（店頭でお支払い）':'Book without deposit (pay in store)',
+  'ご予約を承りました':'Your booking is confirmed','予約確認とリマインドをLINEでお送りします':'Confirmation & reminders will be sent via LINE',
+  '＋ LINE友だち追加':'+ Add us on LINE','続けてもう1件予約する':'Make another booking',
+  'ご予約':'Reservation','確実なご案内のため、事前決済のご協力をお願いしております':'A deposit is required to secure this booking',
+};
+const EN_RX=[
+  [/^¥([\d,]+) を支払って予約確定$/,'Pay ¥$1 & confirm'],
+  [/^約(\d+)時間(\d+)分$/,'About $1h $2m'],[/^約(\d+)時間$/,'About $1 hr'],[/^約(\d+)分$/,'About $1 min'],
+  [/^(.+)（指名）$/,'$1 (requested)'],[/^(.+)（指名なし）$/,'$1 (any stylist)'],[/^歴(\d+)年$/,'$1 yrs exp.'],
+];
+function applyBookLang(){
+  if(BOOK_LANG!=='en')return;
+  const root=document.getElementById('v-book');if(!root)return;
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  let n;const nodes=[];while(n=walker.nextNode())nodes.push(n);
+  nodes.forEach(nd=>{const t=nd.textContent.trim();if(!t)return;
+    if(EN_MAP[t]){nd.textContent=nd.textContent.replace(t,EN_MAP[t]);return;}
+    for(const [rx,rep] of EN_RX){if(rx.test(t)){nd.textContent=nd.textContent.replace(t,t.replace(rx,rep));break;}}});
+  root.querySelectorAll('input[placeholder]').forEach(i=>{if(EN_MAP[i.placeholder])i.placeholder=EN_MAP[i.placeholder];});
+}
+{const _renderBookJP=renderBook;
+ renderBook=function(){_renderBookJP();applyBookLang();};}
 
 /* =============== channels view =============== */
 const CH_INFO=[
@@ -2902,11 +3033,43 @@ function openCustomer(key){
     <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd>
       <dt>累計売上 (LTV)</dt><dd>${c.paidVisits>0?`<b style="color:var(--navy)">¥${c.sales.toLocaleString()}</b>　<span style="color:var(--sub);font-size:12px">会計${c.paidVisits}回・平均 ¥${Math.round(c.sales/c.paidVisits).toLocaleString()}</span>`:`<span style="color:var(--sub)">会計記録なし（目安 ¥${c.spend.toLocaleString()}）</span>`}</dd>
       <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${escH(c.note)}</dd>`:''}</dl>
-    <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">来店履歴</div>
+    <div style="font-size:12px;font-weight:700;color:var(--sub);margin:8px 0 6px">施術写真（before / after）</div>
+    <div id="kp-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px"><div style="grid-column:1/-1;color:var(--sub);font-size:12px">読み込み中…</div></div>
+    <label class="btn small ghost" style="display:inline-block;cursor:pointer">＋ 写真を追加<input id="kp-file" type="file" accept="image/*" capture="environment" style="display:none"></label>
+    <div style="font-size:12px;font-weight:700;color:var(--sub);margin:10px 0 6px">来店履歴</div>
     <div class="chistwrap">${hist}</div>
     <div class="row"><button class="btn ghost" style="flex:1" id="cd-close">閉じる</button></div>`;
   document.getElementById('cd-close').onclick=closeDetail;
   document.getElementById('detailbg').classList.add('show');
+  // ---- 施術写真: 認証付きAPIから取得して描画・追加はcanvasで1100pxに圧縮してからD1へ ----
+  const kpRender=(photos)=>{
+    const grid=document.getElementById('kp-grid');if(!grid)return;
+    if(!photos||!photos.length){grid.innerHTML='<div style="grid-column:1/-1;color:var(--sub);font-size:12px">まだ写真がありません</div>';return;}
+    grid.innerHTML=photos.map(p=>`<div style="position:relative"><img src="${p.data}" data-kpv="${p.id}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:zoom-in" alt=""><button data-kpdel="${p.id}" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">✕</button><div style="font-size:9px;color:var(--sub);text-align:center">${(p.date||'').slice(5).replace('-','/')}</div></div>`).join('');
+    grid.querySelectorAll('[data-kpv]').forEach(img=>img.onclick=()=>{
+      const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+      ov.innerHTML=`<img src="${img.src}" style="max-width:92vw;max-height:92vh;border-radius:10px">`;ov.onclick=()=>ov.remove();document.body.appendChild(ov);});
+    grid.querySelectorAll('[data-kpdel]').forEach(b=>b.onclick=async()=>{
+      if(!confirm('この写真を削除しますか？'))return;
+      await API.removeKartePhoto(b.dataset.kpdel);const ps=await API.listKartePhotos(c.name);kpRender(ps);});
+  };
+  API.listKartePhotos(c.name).then(kpRender);
+  const kf=document.getElementById('kp-file');
+  if(kf)kf.onchange=()=>{
+    const f=kf.files&&kf.files[0];if(!f)return;
+    const img=new Image();img.onload=async()=>{
+      const MAX=1100,sc=Math.min(1,MAX/Math.max(img.width,img.height));
+      const cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      let q=0.72,data=cv.toDataURL('image/jpeg',q);
+      while(data.length>550000&&q>0.4){q-=0.1;data=cv.toDataURL('image/jpeg',q);}   // 600KB制限内に収める
+      const res=await API.saveKartePhoto({name:c.name,data,date:dkey(today())});
+      if(res&&res.ok){toast('写真を保存しました');const ps=await API.listKartePhotos(c.name);kpRender(ps);}
+      else toast('写真の保存に失敗しました',true);
+      URL.revokeObjectURL(img.src);kf.value='';
+    };
+    img.src=URL.createObjectURL(f);
+  };
 }
 
 /* =============== 今日ビュー（スタッフの現場ハブ） =============== */
@@ -3129,6 +3292,15 @@ function enterCustomerMode(){
     }catch(e){}
   })();
   document.body.classList.add('customer');
+  // 言語トグル(EN⇄日本語・インバウンド対応。端末言語が日本語以外なら最初からEN表示)
+  if(!document.getElementById('langTgl')){
+    const b=document.createElement('button');b.id='langTgl';
+    b.textContent=BOOK_LANG==='en'?'日本語':'EN';
+    b.style.cssText='position:fixed;top:10px;right:10px;z-index:9000;border:1px solid #d8cfc0;background:#fff;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:#6f6552;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)';
+    b.onclick=()=>{BOOK_LANG=BOOK_LANG==='en'?'ja':'en';try{localStorage.setItem('stb_lang',BOOK_LANG)}catch(e){}
+      b.textContent=BOOK_LANG==='en'?'日本語':'EN';renderBook();};
+    document.body.appendChild(b);
+  }
   const nav=document.querySelector('header nav'); if(nav)nav.style.display='none';
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
   document.getElementById('v-book').classList.add('show');
