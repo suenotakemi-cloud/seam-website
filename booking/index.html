@@ -1831,6 +1831,9 @@ function renderNextVisit(){
     <div class="co-line"><span>日付</span><input id="nv-day" type="date" value="${d.day}" min="${dkey(addDays(today(),1))}" style="margin-left:auto"></div>
     <div class="co-line"><span>時間</span><select id="nv-time" class="co-sel" style="margin-left:auto;max-width:140px">${times.join('')}</select></div>
     <div class="co-line"><span>担当</span><span style="margin-left:auto;font-weight:800">${escH(st.name||'')}（指名）</span></div>
+    ${d.lineUserId
+      ?'<div class="co-done" style="margin-top:10px">📱 登録するとお客様のLINEに予約票が自動で届きます</div>'
+      :'<div class="co-done" style="margin-top:10px;background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">📵 LINE未連携のお客様です。友だち追加していただくと次回からスマホに予約票・前日リマインドが届きます</div>'}
     <div class="row" style="margin-top:14px">
       <button class="btn ghost" style="flex:1" id="nv-skip">今日はしない</button>
       <button class="btn pay" style="flex:1.4" id="nv-go">この内容で次回予約</button>
