@@ -36,7 +36,7 @@ STORES = {
    note='ONE GINZA の3階　銀座で夜20時まで開いている数少ないサロン専売ショップです　ヘアサロンとヘッドスパを同じフロアに構えています',
    photo='images/stores/store_ginza.jpg', pw=1024, ph=576,
    ig='seam.ginza',
-   salon_hpb='H000802192', spa_hpb='H000802373', spa_set='std'),
+   salon_hpb='H000802192', spa_hpb='H000802373', spa_set='ginza'),
  'omotesando': dict(
    area='表参道', name='gallica / SEAM', pref='東京都', locality='港区',
    street='南青山3-15-15 Louis IIビル', lat='35.664959', lng='139.715393',
@@ -58,6 +58,8 @@ STORES = {
    note='南2条西 大通駅から地下でつながる立地　平日は夜20時まで 土日も営業しています　個室は半個室でご用意しています',
    photo='images/stores/store_sapporo.jpg', pw=765, ph=1024,
    ig='seam.sapporo',
+   awards=('HOT PEPPER Beauty AWARD 2026　BEST SALON GOLD Prize 受賞',
+           'HOT PEPPER Beauty AWARD 2025　サロン部門 GOLD Prize 受賞'),
    salon_hpb='H000417753', spa_hpb=None, spa_set=None),
  'osaka': dict(
    area='大阪', name='SEAM OSAKA HORIE', pref='大阪府', locality='大阪市西区',
@@ -66,7 +68,7 @@ STORES = {
    opens='11:00', closes='19:00',
    near=['大阪', '堀江', '南堀江', '心斎橋', '四ツ橋', 'アメリカ村', 'なんば'],
    nearline='四ツ橋駅の6番出口から徒歩2分 心斎橋・アメリカ村・なんばからも歩いて来られる南堀江です',
-   note='STORK南堀江の1階　全店で唯一 髪を濡らさない30分のドライスパ（¥6,600）を置いている店舗です　料金体系も他店と異なります',
+   note='STORK南堀江の1階　スコープで頭皮を見る診断つきのコースを置いている店舗です　フェイシャルエステやハーブピーリングも同じ個室でお受けいただけます　料金体系も他店と異なります',
    photo='images/stores/store_osaka.jpg', pw=572, ph=1024,
    ig='seam.osaka',
    salon_hpb='H000791476', spa_hpb='H000791418', spa_set='osaka'),
@@ -80,7 +82,7 @@ STORES = {
    note='ネイリックスの1階と2階 2フロアを使った店舗です　栄・矢場町・大須から歩けて ヘアサロンとヘッドスパを併設しています',
    photo='images/stores/store_nagoya.jpg', pw=819, ph=1024,
    ig='seam.nagoya',
-   salon_hpb='H000800028', spa_hpb='H000800971', spa_set='std'),
+   salon_hpb='H000800028', spa_hpb='H000800971', spa_set='nagoya'),
  'fukuoka': dict(
    area='福岡', name='SEAM FUKUOKA', pref='福岡県', locality='福岡市中央区',
    street='大名2丁目1-53 BPRスクエア天神大名 1F', lat='33.589043', lng='130.395996',
@@ -91,6 +93,7 @@ STORES = {
    note='BPRスクエア天神大名の1階　天神・今泉・赤坂から歩ける大名エリアです　日曜は18時までの営業　個室は半個室でご用意しています',
    photo='images/stores/store_fukuoka.jpg', pw=1100, ph=821,
    ig='seam.fukuoka',
+   awards=('ホットペッパービューティーアワード ゴールド 受賞', '髪カリスマ カット部門 受賞'),
    salon_hpb='H000734442', spa_hpb=None, spa_set=None),
  'utsunomiya': dict(
    area='宇都宮', name='gigi SEAM', pref='栃木県', locality='宇都宮市',
@@ -109,23 +112,42 @@ STORES = {
 # sameAs で自社の店舗ページ(store-*.html)を指すために、キーを各店舗dictへ持たせる
 for _slug, _st in STORES.items():
     _st['slug'] = _slug
+    _st.setdefault('awards', ())   # 受賞はHPB掲載で裏が取れる店だけに出す
 
+# ヘッドスパの料金・コース名はホットペッパービューティーの掲載(実測 2026-07-28)に合わせる。
+# 「合わせる」とは、掲載に無いコースをサイト独自に載せないということ。
+# 3店とも別の値付け・別のラインナップなので、店舗ごとに独立した表を持つ(共用しない)。
+# 銀座のHPB表記は「頭身浴」だが、サイト側の表記は「頭浸浴」で統一(オーナー指定)。
 SPA_MENU = {
- 'std': [
-   ('クリームヘッドスパ', '60min', '¥13,300', '頭皮用美容クリームでじっくり揉みほぐす 初めての方に', '来店〜退店 約75分'),
-   ('首肩までほどけるクリームヘッドスパ', '90min', '¥17,300', '頭浸浴付き 首・肩・デコルテまでほぐす 人気No.1', '来店〜退店 約90分'),
-   ('プレミアムヘッドスパ', '120min', '¥20,300', '頭浸浴付き 足元から頭の先まで全身リセット', '来店〜退店 約120分'),
-   ('トリートメント付プレミアムスパ', '150min', '¥25,000', '全店最上位 頭浸浴付き 選べる美髪トリートメント付き', '来店〜退店 約150分'),
+ 'ginza': [
+   ('ショートヘッドスパ', '45min', '¥12,000', '短時間でも整う 予定の合間に', ''),
+   ('深眠クリームヘッドスパ ライト', '60min', '¥13,800', '完全個室＆ブロー付き 初めての方に', '来店〜退店 約75分'),
+   ('首肩までほどけるクリームヘッドスパ', '90min', '¥17,800', '頭浸浴付き 首・肩・デコルテまで 人気No.1', '来店〜退店 約90分'),
+   ('深く落ちるプレミアムヘッドスパ', '120min', '¥20,800', '頭浸浴付き 足元から頭の先まで全身リセット', '来店〜退店 約120分'),
+   ('プレミアムスパ', '150min', '¥25,000', '頭浸浴付き 深く落ちる最上位コース', '来店〜退店 約150分'),
+ ],
+ 'nagoya': [
+   ('個室シャンプーヘッドスパ', '60min', '¥8,800', '睡眠×肩こり 初めての方に人気', ''),
+   ('頭皮ケア・眼精疲労ヘッドスパ', '60min', '¥8,800', 'メンズ限定 目の疲れと頭皮に', ''),
+   ('首肩までほどけるクリームヘッドスパ', '90min', '¥13,200', '頭浸浴付き 人気No.1', ''),
+   ('深く落ちるプレミアムヘッドスパ', '120min', '¥17,600', '頭浸浴付き じっくりリカバリー', ''),
+   ('トリートメント付プレミアムスパ', '150min', '¥21,800', '最上位 選べるトリートメント付き', ''),
  ],
  'osaka': [
-   ('首肩ほどきヘッドスパ', '60min', '¥11,800', '完全個室でじっくり 首・肩の張りをほどく 人気No.1', '来店〜退店 約95分'),
-   ('首肩ほどき ＋ 頭浸浴', '90min', '¥15,800', '90分たっぷり 首・肩・デコルテまで深いリラックス', '来店〜退店 約130分'),
-   ('首肩リセット ドライスパ', '30min', '¥6,600', '濡らさず髪を崩さず 仕事や買い物の合間に', '来店〜退店 約40分'),
-   ('美髪ヘッドスパ', '100min', '¥17,800', 'スパ ＋ 選べるシステムトリートメント 髪も頭皮も', '来店〜退店 約135分'),
-   ('リカバリー', '120min', '¥17,600', '120分の集中ケア 頭・首・肩を全身リセット', '来店〜退店 約155分'),
+   ('頭浸浴×ウェットヘッドスパ', '60min', '¥11,800', '深層筋までゆるめる本格ウェットヘッドスパ', ''),
+   ('頭皮診断＋頭浸浴＋ウェットヘッドスパ', '60min', '¥12,800', 'スコープで施術前後の頭皮を確認', ''),
+   ('頭浸浴×ウェットヘッドスパ', '90min', '¥15,800', 'シャンプーしながら寝落ちする究極睡眠 人気No.1', ''),
+   ('頭皮診断＋頭浸浴＋ウェットヘッドスパ＋首肩ケア', '90min', '¥16,800', '毛穴汚れをリセット 首肩まで', ''),
+   ('頭皮診断＋頭浸浴＋ウェットヘッドスパ＋デコルテ', '120min', '¥19,800', 'オーダーメイドで根本から', ''),
  ],
 }
-SPA_OPT = [('マッサージ 15分延長', '+¥2,200'), ('マッサージ 30分延長', '+¥4,400'), ('プレミアム美髪トリートメント', '+¥6,600')]
+
+SPA_OPT = {
+ 'ginza': [('マッサージ 15分延長', '+¥2,200'), ('マッサージ 30分延長', '+¥4,400'),
+           ('プレミアム美髪トリートメント', '+¥10,350'), ('眼のマッサージ', '+¥1,100')],
+ 'nagoya': [('マッサージ 15分延長', '+¥2,200'), ('マッサージ 30分延長', '+¥4,400')],
+ 'osaka': [('システムトリートメント追加', '+¥3,300'), ('バイカルテトリートメント', '+¥9,900')],
+}
 
 # ── ヘアサロン 実メニュー(hairsalon.html から) ──
 SALON_MENU = {
@@ -403,6 +425,24 @@ def foot():
 
 
 # ══════════════════════════════════════ ヘッドスパ 店舗別LP ══════════════════════════════════════
+def awards_block(st):
+    """その店舗のHPB掲載が公表している受賞だけを出す。無ければ何も出さない。"""
+    if not st['awards']:
+        return ''
+    items = ''.join(
+        f'<li class="flex items-start gap-2"><span aria-hidden style="color:#B8945A;">✦</span>'
+        f'<span>{E(a)}</span></li>' for a in st['awards'])
+    return ('<section class="mt-8 rounded-[10px] px-4 py-4" style="border:1px solid rgba(184,148,90,.42);background:rgba(184,148,90,.06);">'
+            '<p class="font-mono text-[9.5px] tracking-widest2 uppercase" style="color:#B8945A;">Award</p>'
+            f'<ul class="mt-2 space-y-1.5 text-[13px] text-charcoal/85" style="line-height:1.85;">{items}</ul>'
+            '</section>')
+
+
+def note_x(x):
+    """コース補足。HPBに掲載が無い項目は空欄のまま出す(推測で埋めない)"""
+    return f'　<span class="text-charcoal/50">{E(x)}</span>' if x else ''
+
+
 def build_spa(slug):
     st = STORES[slug]; a = st['area']
     url = f'{BASE}/headspa-{slug}'
@@ -416,8 +456,8 @@ def build_spa(slug):
     qa = [
      (f'{a}のどのあたりにありますか', f'{st["nearline"]}　住所は{st["pref"]}{st["locality"]}{st["street"]}です'),
      ('完全個室ですか', 'はい 施術は完全個室でご案内します 人目を気にせず眠ってしまう方も多い時間です'),
-     ('髪を濡らさないコースはありますか', 'ドライスパをご用意している店舗があります 仕事や買い物の合間でも髪を崩さずお受けいただけます'
-      if st['spa_set'] == 'osaka' else '当店のコースは洗い流しを含みます 髪を濡らさないドライスパは大阪 堀江店でご用意しています'),
+     ('頭皮の状態は見てもらえますか', 'はい 大阪 堀江店にはスコープで頭皮を確認する診断つきのコースがあります 施術前後の変化を目で見て確かめられます'
+      if st['spa_set'] == 'osaka' else '施術の前に頭や首肩の張りをうかがってから力加減を合わせます スコープで頭皮を見る診断つきのコースは大阪 堀江店でご用意しています'),
      ('ヘアケア用品だけ買いに行くこともできますか',
       f'できます {st["name"]}は<a href="store-{slug}.html" class="border-b border-line">サロン専売品の正規取扱店</a>を併設していて 予約なし・施術なしの販売のみのご来店も歓迎です'),
      ('予約はどこからできますか', 'ホットペッパービューティーから24時間ご予約いただけます ページ内のボタンからそのまま進めます'),
@@ -434,10 +474,10 @@ def build_spa(slug):
         f'<li class="flex items-baseline justify-between gap-4">'
         f'<span><span class="font-serif text-[14.5px] text-ink">{E(n)}</span>'
         f'<span class="ml-2 font-mono text-[10.5px] tracking-widest2 text-gold">{E(t)}</span>'
-        f'<span class="block mt-1 text-[12.5px] text-charcoal/70">{E(d)}　<span class="text-charcoal/50">{E(x)}</span></span></span>'
+        f'<span class="block mt-1 text-[12.5px] text-charcoal/70">{E(d)}{note_x(x)}</span></span>'
         f'<span class="flex-none nums font-serif text-[15px] text-ink">{E(p)}</span></li>'
         for n, t, p, d, x in menus)
-    opts = ' ／ '.join(f'{E(n)} {E(p)}' for n, p in SPA_OPT)
+    opts = ' ／ '.join(f'{E(n)} {E(p)}' for n, p in SPA_OPT[st['spa_set']])
     spa_url = f'https://beauty.hotpepper.jp/kr/sln{st["spa_hpb"]}/'
     others = ' '.join(f'<a href="headspa-{s}.html" class="hover:text-ink border-b border-line pb-0.5">{E(STORES[s]["area"])}</a>'
                       for s in ('ginza', 'nagoya', 'osaka') if s != slug)
@@ -446,7 +486,7 @@ def build_spa(slug):
     flow = flow_block([
         ('ご来店・カウンセリング', f'頭や首肩の張り 睡眠や目の疲れなど 今の状態をうかがいます'),
         ('完全個室へご案内', 'まわりを気にせず過ごせる個室です　途中で眠ってしまう方も多い時間です'),
-        ('施術', f'{menus[0][1]}のコースで来店から退店まで{menus[0][4].replace("来店〜退店 ", "")}が目安です'),
+        ('施術', f'いちばん短いコースで{menus[0][1]}　完全個室でそのままお休みいただけます'),
         ('仕上げ・ホームケアのご相談', f'ご希望があれば140+ブランドから今の頭皮と髪に合うものをご案内します'),
     ], note=f'いちばん短いコースは{shortest[0]}（{shortest[1]}・{shortest[2]}）です')
 
@@ -464,6 +504,7 @@ def build_spa(slug):
       <h2 class="font-serif text-[16px] text-ink">この店舗について</h2>
       <p class="mt-2 text-[13.5px] text-charcoal/80" style="line-height:2;">{E(st['note'])}</p>
     </section>
+    {awards_block(st)}
 
     <section class="mt-11">
       <h2 class="font-serif text-[19px] text-ink">コースと料金</h2>
@@ -587,6 +628,7 @@ def build_salon(slug):
       <h2 class="font-serif text-[16px] text-ink">この店舗について</h2>
       <p class="mt-2 text-[13.5px] text-charcoal/80" style="line-height:2;">{E(st['note'])}</p>
     </section>
+    {awards_block(st)}
 
     <section class="mt-11">{menu_block}
       <a href="{salon_url}" target="_blank" rel="noopener" data-track-click="salon_reserve_hpb"
