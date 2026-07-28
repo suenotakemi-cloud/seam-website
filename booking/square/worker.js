@@ -662,7 +662,7 @@ async function handlePostReservation(request, env, cors) {
   }
   // オンライン予約（お客様導線）のみオーナー通知。管理側の手動登録は notify を付けない。
   if (o.notify) {
-    const ch = { own: '自社サイト', line: 'LINE', google: 'Google', instagram: 'Instagram' }[o.channel] || o.channel;
+    const ch = { own: '自社サイト', line: 'LINE', google: 'Google', instagram: 'Instagram', app: 'SEAMアプリ' }[o.channel] || o.channel;
     await notifyOwner(env, `新規ネット予約 ${o.name || 'お客様'} ${(o.date || '').slice(5)}`,
       `${ch}から予約が入りました。\n\n日時: ${(o.date || '').replace(/-/g, '/')} ${min2hm(o.start)}〜\nお客様: ${o.name || ''}${o.phone ? '（' + o.phone + '）' : ''}`
       + (salon && salon.reserveNum ? `\nsalon.town予約番号: ${salon.reserveNum}` : ''));

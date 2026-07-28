@@ -14,7 +14,7 @@
   --bg:#f4f7fa; --card:#ffffff; --line:#e3eaf2; --ink:#1c2b3a; --sub:#68798c;
   --ok:#1f9d61; --warn:#d97706; --danger:#dc2626;
   --ch-own:#2f7dd1; --ch-line:#06c755; --ch-google:#ea4335; --ch-instagram:#c13584;
-  --ch-hpb:#f25c05; --ch-rakuten:#bf0000; --ch-minimo:#00a5bf; --ch-square:#2d3b4e;
+  --ch-hpb:#f25c05; --ch-rakuten:#bf0000; --ch-minimo:#00a5bf; --ch-square:#2d3b4e; --ch-app:#7c5cbf;
   --radius:14px; --shadow:0 2px 10px rgba(14,42,71,.07);
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -1059,6 +1059,7 @@ const CHANNELS={
   google:{name:'Google予約リンク',short:'Google',color:'var(--ch-google)'},
   instagram:{name:'Instagram導線',short:'Insta',color:'var(--ch-instagram)'},
   square:{name:'Square予約',short:'Sq',color:'var(--ch-square)'},
+  app:{name:'SEAMアプリ',short:'アプリ',color:'var(--ch-app)'},
   hpb:{name:'ホットペッパー',short:'HPB',color:'var(--ch-hpb)'},
   rakuten:{name:'楽天ビューティー',short:'楽天',color:'var(--ch-rakuten)'},
   minimo:{name:'minimo',short:'minimo',color:'var(--ch-minimo)'},
@@ -2116,7 +2117,7 @@ let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',pho
 //  ③リファラが liff.line.me。いずれか＝お客様モード＆LINE経由。さらに保険で liff.isInClient() も後段で判定。
 const _lq=new URLSearchParams(location.search);
 const IN_LINE=/Line\/[\d.]/.test(navigator.userAgent||'')||_lq.has('liff.state')||_lq.has('liff.referrer')||/liff\.line\.me/i.test(document.referrer||'');
-const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');if(['line','google','instagram','own'].includes(s))return s;return IN_LINE?'line':'own'})();
+const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');if(['line','google','instagram','own','app'].includes(s))return s;return IN_LINE?'line':'own'})();
 // ?src= 付き = お客様導線（LINE/Google/Instagram/自社サイト）。管理タブを隠し予約画面のみ表示（管理台帳をお客様に見せない）。
 const IS_CUSTOMER=new URLSearchParams(location.search).has('src')||IN_LINE;
 // Googleクチコミ導線: 完了画面から「Googleにクチコミ」へ誘導する。サイト内では口コミを集めない。
