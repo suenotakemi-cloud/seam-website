@@ -1171,7 +1171,9 @@ if(!db.settings)db.settings={};           // 目標・歩合率など（D1のset
 function stg(k,def){const v=db.settings[k];return (v==null||v==='')?def:v;}
 function stgN(k,def){const v=+stg(k,def);return isNaN(v)?def:v;}
 function setStg(k,v){db.settings[k]=String(v);save();API.setSetting(k,v);refreshAll();}
-const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},qr:{label:'QR決済',ic:'📱'}};
+// hpb=ホットペッパーのスマート支払い(オンライン事前決済)。決済処理はHPB側＝店頭で金銭を受け取らない。
+// 売上には計上するがレジ現金には含めない(入金は後日リクルートから・手数料差引)。
+const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},qr:{label:'QR決済',ic:'📱'},hpb:{label:'スマート支払い(HPB)',ic:'🌶️'}};
 function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();API.saveCheckout(c);return c;}
 function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}API.saveCheckout(c);}
 function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);save();refreshAll();API.removeCheckout(id);}
@@ -1201,7 +1203,7 @@ function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date).sort((
 function salesSummary(date){
   const cs=daysCheckouts(date);const sum=f=>cs.reduce((s,c)=>s+(f(c)||0),0);
   const byM=m=>cs.filter(c=>c.method===m).reduce((s,c)=>s+c.total,0);
-  return {count:cs.length,total:sum(c=>c.total),cash:byM('cash'),card:byM('card'),qr:byM('qr'),
+  return {count:cs.length,total:sum(c=>c.total),cash:byM('cash'),card:byM('card'),qr:byM('qr'),hpb:byM('hpb'),
     tech:sum(c=>c.tech),retail:sum(c=>c.retail),discount:sum(c=>c.discount),avg:cs.length?Math.round(sum(c=>c.total)/cs.length):0};
 }
 function settlementFor(date){return db.settlements.find(s=>s.date===date);}
@@ -1405,7 +1407,7 @@ function renderDash(){
     const mSales=db.checkouts.filter(c=>c.date>=mFrom&&c.date<=mTo).reduce((a,c)=>a+c.total,0), tgt=stgN('monthlyTarget',0);
     ds.innerHTML=`<div class="card dash-sales"><div class="ds-head"><h3>本日の売上</h3><span class="ds-date">${t.getMonth()+1}/${t.getDate()}（${WD[t.getDay()]}）${set&&set.closedAt?'<em class="reg-closed">レジ締め済み</em>':(pend?`<em class="ds-pend">未会計 ${pend}件</em>`:'')}</span></div>
       <div class="ds-row"><div class="ds-total"><span>総売上</span><b>${money(s.total)}</b><i>${s.count}会計・客単価 ${money(s.avg)}</i></div>
-        <div class="ds-pays"><span>💴 現金 <b>${money(s.cash)}</b></span><span>💳 カード <b>${money(s.card)}</b></span><span>📱 QR <b>${money(s.qr)}</b></span><span>技術 <b>${money(s.tech)}</b></span><span>店販 <b>${money(s.retail)}</b></span></div></div>
+        <div class="ds-pays"><span>💴 現金 <b>${money(s.cash)}</b></span><span>💳 カード <b>${money(s.card)}</b></span><span>📱 QR <b>${money(s.qr)}</b></span>${s.hpb?`<span>🌶️ スマート <b>${money(s.hpb)}</b></span>`:''}<span>技術 <b>${money(s.tech)}</b></span><span>店販 <b>${money(s.retail)}</b></span></div></div>
       ${tgt>0?`<div class="ds-tgt"><span>今月 ${money(mSales)} / 目標 ${money(tgt)}</span><div class="tgt-bar"><span style="width:${Math.min(100,Math.round(mSales/tgt*100))}%" class="${mSales>=tgt?'done':''}"></span></div><span class="ds-pct">${Math.round(mSales/tgt*100)}%</span></div>`:''}</div>`;
   }
 
@@ -1705,9 +1707,11 @@ function openCheckout(resvId){
   const r=resvId?db.reservations.find(x=>x.id===resvId):null;
   const m=r?MENUS.find(x=>x.id===r.menuId):null;
   const existing=resvId?checkoutForResv(resvId):null;
+  // ★HPBスマート支払い(オンライン事前決済)の予約は支払方法を自動でスマート支払いに（店頭で受け取らない）
+  const isSmartPaid=!!(r&&r.channel==='hpb'&&/スマート支払い|スマート決済|事前決済|オンライン決済/.test(r.note||''));
   coDraft=existing?JSON.parse(JSON.stringify(existing)):{
     resvId:resvId||null,date:r?r.date:dkey(registerDay),staffId:r?r.staffId:STAFF[0].id,
-    customer:r?r.name:'',tech:m?Math.max(0,(m.price-(r.discount||0))):0,discount:0,retailItems:[],method:'cash',
+    customer:r?r.name:'',tech:m?Math.max(0,(m.price-(r.discount||0))):0,discount:0,retailItems:[],method:isSmartPaid?'hpb':'cash',
     nominated:resvId?true:false   // 予約からの会計は既定=指名。フリー(予約なし/指名なし)は切替
   };
   renderCheckout();
@@ -1728,6 +1732,7 @@ function renderCheckout(){
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     <div class="co-sub">お支払い方法</div>
     <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
+    ${coDraft.method==='hpb'?'<div class="co-done" style="background:#fff3ec;border-color:#f2c9ab;color:#b04a12">🌶️ ホットペッパーで決済済み（スマート支払い）。<b>店頭での支払いはありません</b>。売上に計上されますがレジ現金には含まれません（後日リクルートから入金）。店販がある場合は現金/カード等で別会計にしてください</div>':''}
     <div class="co-sub">指名 / フリー</div>
     <div class="co-pays"><button class="co-pay ${coDraft.nominated?'on':''}" data-nom="1">👤 指名</button><button class="co-pay ${!coDraft.nominated?'on':''}" data-nom="0">フリー</button></div>
     <div class="co-sub">担当</div>
@@ -1897,6 +1902,7 @@ function renderRegister(){
     <div class="reg-c"><span>💴 現金</span><b>${money(s.cash)}</b></div>
     <div class="reg-c"><span>💳 カード</span><b>${money(s.card)}</b></div>
     <div class="reg-c"><span>📱 QR決済</span><b>${money(s.qr)}</b></div>
+    ${s.hpb?`<div class="reg-c"><span>🌶️ スマート支払い</span><b>${money(s.hpb)}</b><i>HPB入金・店頭受取なし</i></div>`:''}
     <div class="reg-c"><span>技術売上</span><b>${money(s.tech)}</b></div>
     <div class="reg-c"><span>店販売上</span><b>${money(s.retail)}</b></div></div>`;
   const pendHtml=pending.length?`<div class="card reg-sec"><h3>未会計（${pending.length}）</h3>${pending.sort((a,b)=>a.start-b.start).map(r=>{const m=MENUS.find(x=>x.id===r.menuId),stf=STAFF.find(x=>x.id===r.staffId);return `<div class="reg-pend"><span class="rp-t">${hm(r.start)}</span><span class="rp-n">${escH(r.name)}</span><span class="rp-m">${m?m.name:''} / ${stf?stf.name:''}</span><button class="btn small pay" data-co="${r.id}">会計</button></div>`;}).join('')}</div>`:'';
@@ -1909,7 +1915,7 @@ function renderRegister(){
     <div class="rz rz-line"><span>現金 理論残高</span><b id="rz-expected">${money(expected)}</b></div>
     <div class="rz"><span>実際の現金（数えた額）</span><span class="co-y">¥<input id="rz-count" type="number" inputmode="numeric" value="${counted!=null?counted:''}" placeholder="0" ${closed?'disabled':''}></span></div>
     <div class="rz rz-diff" id="rz-diffrow" style="${diff==null?'display:none':''}"><span>過不足</span><b id="rz-diff" class="${diff===0?'ok':(diff<0?'short':'over')}">${diff!=null?((diff>0?'+':'')+money(diff)):''}</b></div>
-    <div class="rz-ref"><span>💳 カード ${money(s.card)}</span><span>📱 QR ${money(s.qr)}</span><span>総売上 ${money(s.total)}</span></div>
+    <div class="rz-ref"><span>💳 カード ${money(s.card)}</span><span>📱 QR ${money(s.qr)}</span>${s.hpb?`<span>🌶️ スマート支払い ${money(s.hpb)}（HPB入金）</span>`:''}<span>総売上 ${money(s.total)}</span></div>
     ${closed?`<div class="reg-doneline">✅ ${set.closedAt.slice(0,16).replace('T',' ')} に締めました<button class="btn small ghost" id="rz-reopen">締めを取消</button></div>`:`<button class="btn pay" id="rz-close" style="width:100%;margin-top:11px">この内容でレジを締める</button>`}</div>`;
   body.innerHTML=summary+pendHtml+listHtml+closePanel;
   body.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>openCheckout(b.dataset.co));
@@ -1928,7 +1934,7 @@ function renderRegister(){
   const cl=document.getElementById('rz-close');if(cl)cl.onclick=()=>{
     const cin=document.getElementById('rz-count');if(cin.value===''){toast('実際の現金を入力してください',true);return;}
     const fv=+document.getElementById('rz-float').value||0, c=+cin.value||0;
-    saveSettlement({date:dk,float:fv,cashSales:s.cash,expectedCash:fv+s.cash,countedCash:c,diff:c-(fv+s.cash),card:s.card,qr:s.qr,total:s.total,count:s.count,closedAt:new Date().toISOString()});
+    saveSettlement({date:dk,float:fv,cashSales:s.cash,expectedCash:fv+s.cash,countedCash:c,diff:c-(fv+s.cash),card:s.card,qr:s.qr,hpb:s.hpb,total:s.total,count:s.count,closedAt:new Date().toISOString()});
     toast('レジを締めました');
   };
   const ro=document.getElementById('rz-reopen');if(ro)ro.onclick=()=>{if(confirm('レジ締めを取り消しますか？')){db.settlements=db.settlements.filter(x=>x.date!==dk);save();refreshAll();API.removeSettlement(dk);}};
@@ -1996,12 +2002,13 @@ function renderReport(){
     <div class="reg-c"><span>💴 現金</span><b>${money(byM('cash'))}</b></div>
     <div class="reg-c"><span>💳 カード</span><b>${money(byM('card'))}</b></div>
     <div class="reg-c"><span>📱 QR決済</span><b>${money(byM('qr'))}</b></div>
+    <div class="reg-c"><span>🌶️ スマート支払い</span><b>${money(byM('hpb'))}</b><i>HPB入金(手数料差引前)</i></div>
     <div class="reg-c"><span>レジ過不足計</span><b class="${diffSum===0?'':(diffSum<0?'txt-short':'txt-over')}">${diffSum>0?'+':''}${money(diffSum)}</b></div></div>`;
   const dmap={};
-  cs.forEach(c=>{const d=dmap[c.date]||(dmap[c.date]={count:0,tech:0,retail:0,total:0,cash:0,card:0,qr:0});d.count++;d.tech+=c.tech;d.retail+=c.retail;d.total+=c.total;d[c.method]=(d[c.method]||0)+c.total;});
+  cs.forEach(c=>{const d=dmap[c.date]||(dmap[c.date]={count:0,tech:0,retail:0,total:0,cash:0,card:0,qr:0,hpb:0});d.count++;d.tech+=c.tech;d.retail+=c.retail;d.total+=c.total;d[c.method]=(d[c.method]||0)+c.total;});
   const datesDesc=Object.keys(dmap).sort((a,b)=>a<b?1:-1);
-  const dailyRows=datesDesc.map(dt=>{const d=dmap[dt],set=settlementFor(dt);return `<tr><td>${dt.slice(5).replace('-','/')}(${WD[new Date(dt).getDay()]})</td><td class="num">${d.count}</td><td class="num">${money(d.tech)}</td><td class="num">${money(d.retail)}</td><td class="num">${money(d.cash)}</td><td class="num">${money(d.card)}</td><td class="num">${money(d.qr)}</td><td class="num b">${money(d.total)}</td><td class="num ${set&&set.diff<0?'txt-short':(set&&set.diff>0?'txt-over':'')}">${set?((set.diff>0?'+':'')+money(set.diff)):'—'}</td></tr>`;}).join('');
-  const daily=`<div class="card reg-sec"><div class="rep-h"><h3>日別</h3><button class="btn small ghost" id="rep-csv-daily">CSV書き出し</button></div><div class="rep-tw"><table class="rep-t"><thead><tr><th>日付</th><th class="num">会計</th><th class="num">技術</th><th class="num">店販</th><th class="num">現金</th><th class="num">カード</th><th class="num">QR</th><th class="num">合計</th><th class="num">過不足</th></tr></thead><tbody>${dailyRows||'<tr><td colspan="9" class="rep-empty">データがありません</td></tr>'}</tbody></table></div></div>`;
+  const dailyRows=datesDesc.map(dt=>{const d=dmap[dt],set=settlementFor(dt);return `<tr><td>${dt.slice(5).replace('-','/')}(${WD[new Date(dt).getDay()]})</td><td class="num">${d.count}</td><td class="num">${money(d.tech)}</td><td class="num">${money(d.retail)}</td><td class="num">${money(d.cash)}</td><td class="num">${money(d.card)}</td><td class="num">${money(d.qr)}</td><td class="num">${money(d.hpb||0)}</td><td class="num b">${money(d.total)}</td><td class="num ${set&&set.diff<0?'txt-short':(set&&set.diff>0?'txt-over':'')}">${set?((set.diff>0?'+':'')+money(set.diff)):'—'}</td></tr>`;}).join('');
+  const daily=`<div class="card reg-sec"><div class="rep-h"><h3>日別</h3><button class="btn small ghost" id="rep-csv-daily">CSV書き出し</button></div><div class="rep-tw"><table class="rep-t"><thead><tr><th>日付</th><th class="num">会計</th><th class="num">技術</th><th class="num">店販</th><th class="num">現金</th><th class="num">カード</th><th class="num">QR</th><th class="num">スマート</th><th class="num">合計</th><th class="num">過不足</th></tr></thead><tbody>${dailyRows||'<tr><td colspan="10" class="rep-empty">データがありません</td></tr>'}</tbody></table></div></div>`;
   const smap={};
   cs.forEach(c=>{const k=c.staffId||'-';const d=smap[k]||(smap[k]={count:0,tech:0,retail:0,total:0,nom:0,techNom:0,techFree:0});d.count++;d.tech+=c.tech;d.retail+=c.retail;d.total+=c.total;if(c.nominated){d.nom++;d.techNom+=c.tech;}else{d.techFree+=c.tech;}});
   const staffKeys=Object.keys(smap).sort((a,b)=>smap[b].total-smap[a].total);

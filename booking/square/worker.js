@@ -902,7 +902,10 @@ function parseSalonBoard(raw) {
   const date = `${dt[1]}-${z(+dt[2])}-${z(+dt[3])}`;
   // キャンセル連絡（件名/本文「ご予約のキャンセル」）は取消として扱い、既存台帳をcancelledへ更新する。
   const cancelled = /予約のキャンセル/.test(raw);
-  const note = [`[${shopLabel}]`, resNo && ('予約番号 ' + resNo), kana && ('カナ ' + kana),
+  // ★スマート支払い(HPBオンライン事前決済)検知: 決済処理はHPB側=店頭で受け取らない。
+  //   noteに刻んでおくとレジ会計が支払方法を自動で「スマート支払い(HPB)」にする。
+  const smartPay = /スマート支払い|スマート決済|オンライン決済|事前決済/.test(raw);
+  const note = [`[${shopLabel}]`, smartPay && '[スマート支払い]', resNo && ('予約番号 ' + resNo), kana && ('カナ ' + kana),
     stylist && ('HPB担当 ' + stylist), menuName].filter(Boolean).join(' / ');
   // IDは予約番号ベース（BF12345678 → hpb-BF12345678）にして重複INSERT防止
   const id = resNo ? 'hpb-' + resNo.replace(/\s/g, '') : 'r' + crypto.randomUUID().slice(0, 8);
