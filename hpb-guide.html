@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM｜ホットペッパー＆Google 掲載改善 指示書</title>
+<style>
+  :root{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+    --shadow:0 1px 2px rgba(60,46,20,.05),0 8px 30px rgba(60,46,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+      --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+      --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+  }
+  :root[data-theme="dark"]{
+    --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+    --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+    --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+    font-size:15px; line-height:1.85; letter-spacing:.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 22px 90px;}
+  .serif{font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  /* ── masthead ── */
+  .mast{border-bottom:1.5px solid var(--ink); padding-bottom:22px; margin-bottom:8px;}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; letter-spacing:.42em; font-size:15px; color:var(--ink); font-weight:600;}
+  .kicker{font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-top:20px;}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:29px; line-height:1.35; margin:.24em 0 0; text-wrap:balance; letter-spacing:.02em;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:12px; line-height:1.9;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:16px; font-size:11.5px; color:var(--faint); font-family:ui-monospace,monospace; letter-spacing:.04em;}
+
+  /* ── intro card ── */
+  .lead{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-top:26px; box-shadow:var(--shadow); font-size:14px; line-height:2;}
+  .lead b{color:var(--gold);}
+  .lead .why{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted);}
+
+  /* ── section ── */
+  section{margin-top:46px;}
+  .eyebrow{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:10px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+  h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:21px; margin:12px 0 4px; letter-spacing:.02em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:13px; margin:0 0 18px;}
+
+  /* ── field list ── */
+  .field{display:flex; gap:15px; padding:17px 0; border-top:1px solid var(--line2);}
+  .field:first-of-type{border-top:0;}
+  .fnum{flex:none; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--gold); color:var(--gold); font-family:ui-monospace,monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .fbody{min-width:0; flex:1;}
+  .fname{font-weight:700; font-size:14.5px; color:var(--ink);}
+  .fname .req{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; color:#fff; background:var(--gold); border-radius:3px; padding:2px 6px; margin-left:8px; vertical-align:2px; font-weight:600;}
+  .fdesc{font-size:13px; color:var(--muted); line-height:1.95; margin-top:5px;}
+  .fdesc strong{color:var(--ink); font-weight:600;}
+
+  /* ── paste block ── */
+  .paste{position:relative; background:var(--paste); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px; padding:14px 15px 15px; margin-top:11px;}
+  .paste .lbl{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:8px;}
+  .paste p{margin:0; font-size:13px; line-height:1.95; color:var(--ink); white-space:pre-wrap;}
+  .paste .var{color:var(--bad); font-weight:600;}
+  .copybtn{position:absolute; top:11px; right:11px; font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.08em; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer; transition:all .15s;}
+  .copybtn:hover{color:var(--ink); border-color:var(--gold);}
+  .copybtn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .qa{margin-top:9px;}
+  .qa .q{font-weight:700; font-size:13px; color:var(--ink);}
+  .qa .q::before{content:"Q. "; color:var(--gold); font-family:ui-monospace,monospace;}
+  .qa .a{font-size:12.5px; color:var(--muted); line-height:1.9; margin:2px 0 12px; padding-left:1.4em;}
+  .qa .a::before{content:"A. "; color:var(--faint); font-family:ui-monospace,monospace; margin-left:-1.4em;}
+
+  /* ── checklist ── */
+  ul.check{list-style:none; margin:6px 0 0; padding:0;}
+  ul.check li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line2); font-size:13.5px; line-height:1.75;}
+  ul.check li:first-child{border-top:0;}
+  ul.check li::before{content:""; position:absolute; left:0; top:12px; width:15px; height:15px; border:1.5px solid var(--gold-soft); border-radius:3px; background:var(--panel);}
+  ul.check li b{color:var(--ink);}
+  ul.check li .hint{display:block; color:var(--faint); font-size:11.5px; margin-top:2px;}
+
+  /* ── data table ── */
+  .tablewrap{overflow-x:auto; margin-top:6px; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);}
+  table{border-collapse:collapse; width:100%; min-width:680px; font-size:12px; background:var(--panel);}
+  th,td{text-align:left; padding:11px 13px; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.7;}
+  thead th{background:var(--panel2); font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:600; white-space:nowrap; position:sticky; top:0;}
+  tbody tr:last-child td{border-bottom:0;}
+  td .name{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;}
+  td.u{font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); word-break:break-all;}
+  td .none{color:var(--faint); font-style:italic;}
+
+  /* ── do / dont ── */
+  .rules{display:grid; gap:10px; margin-top:8px;}
+  .rule{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.85;}
+  .rule .ic{flex:none; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; color:#fff; background:var(--bad);}
+  .rule b{color:var(--ink);}
+  .rule .sub{color:var(--muted); font-size:12px;}
+
+  .callout{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:13px 16px; font-size:12.5px; color:var(--muted); line-height:1.9; margin-top:14px;}
+  .callout b{color:var(--gold);}
+
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:11px; color:var(--faint); line-height:1.9; font-family:ui-monospace,monospace; letter-spacing:.03em;}
+
+  @media (max-width:560px){
+    .wrap{padding:30px 16px 70px;} h1{font-size:24px;} .field{gap:12px;}
+  }
+  @media print{
+    body{background:#fff; color:#000; font-size:11.5px;}
+    .copybtn{display:none;} .wrap{max-width:none; padding:0;}
+    .lead,.paste,.tablewrap,.rule,.callout{box-shadow:none;}
+    section{break-inside:avoid;} .field,.rule,.paste{break-inside:avoid;}
+  }
+</style>
+</head><body>
+<div class="wrap">
+<div class="mast"><span class="brand">SEAM</span></div>
+<p class="kicker">Listing Audit &amp; Action</p>
+<h1>ホットペッパー8掲載とGoogleを<br>検索に強い状態へ</h1>
+<p class="sub">2026年7月25日時点で、ホットペッパービューティーに公開されている8掲載（ヘア5・スパ3）を全数実測しました。<br>この資料は掲載を管理する担当者がそのまま作業できる形にしています。</p>
+<div class="meta"><span>実測日 2026-07-25</span><span>対象 HPB 8掲載 ＋ GBP 7店</span><span>社内資料・検索非掲載</span></div>
+
+<div class="lead">
+<strong>いちばん効くのは口コミです。</strong>ホットペッパーの検索順位は口コミ件数と評価が大きく効きます。
+実測したところ<strong>8掲載のうち5つが口コミ0件</strong>でした。ここを動かすのが最短です。
+<div class="why">福岡152件・銀座ヘア18件・銀座スパ17件に対し、札幌・大阪ヘア・名古屋ヘア・名古屋スパ・大阪スパが0件。
+福岡は★4.77で152件あり、同じ運用を他店へ広げれば伸びしろがそのまま残っています。</div>
+</div>
+
+<p class="eyebrow">Current State</p>
+<h2>8掲載の実測</h2>
+<p class="lede">数字はすべて公開ページから取得した実データです。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>種別</th><th>エリア</th><th>掲載名</th><th>評価</th><th>口コミ</th><th>写真</th><th>気になる点</th></tr></thead>
+<tbody><tr><td>ヘア</td><td><span class="name">銀座</span></td><td class="u">シーム 銀座(SEAM)</td><td style="text-align:center">4.88</td><td style="text-align:center;">18</td><td style="text-align:center">18</td><td style="color:#c0392b">—</td></tr><tr><td>ヘア</td><td><span class="name">札幌</span></td><td class="u">シーム(SEAM)</td><td style="text-align:center">—</td><td style="text-align:center;color:#c0392b;font-weight:700">0</td><td style="text-align:center">38</td><td style="color:#c0392b">地名なし</td></tr><tr><td>ヘア</td><td><span class="name">大阪</span></td><td class="u">シーム 大阪堀江店(SEAM)</td><td style="text-align:center">—</td><td style="text-align:center;color:#c0392b;font-weight:700">0</td><td style="text-align:center">24</td><td style="color:#c0392b">—</td></tr><tr><td>ヘア</td><td><span class="name">名古屋</span></td><td class="u">シーム 名古屋栄店(SEAM)</td><td style="text-align:center">—</td><td style="text-align:center;color:#c0392b;font-weight:700">0</td><td style="text-align:center">10</td><td style="color:#c0392b">写真が最少</td></tr><tr><td>ヘア</td><td><span class="name">福岡</span></td><td class="u">シーム 天神大名店(SEAM)</td><td style="text-align:center">4.77</td><td style="text-align:center;">152</td><td style="text-align:center">38</td><td style="color:#c0392b">—</td></tr><tr><td>スパ</td><td><span class="name">銀座</span></td><td class="u">シーム 銀座店(SEAM)</td><td style="text-align:center">4.59</td><td style="text-align:center;">17</td><td style="text-align:center">28</td><td style="color:#c0392b">【ヘッドスパ】なし</td></tr><tr><td>スパ</td><td><span class="name">名古屋</span></td><td class="u">シーム 名古屋栄店(SEAM)</td><td style="text-align:center">—</td><td style="text-align:center;color:#c0392b;font-weight:700">0</td><td style="text-align:center">27</td><td style="color:#c0392b">—</td></tr><tr><td>スパ</td><td><span class="name">大阪</span></td><td class="u">シーム 大阪堀江店(SEAM)</td><td style="text-align:center">—</td><td style="text-align:center;color:#c0392b;font-weight:700">0</td><td style="text-align:center">32</td><td style="color:#c0392b">旧店名が残存</td></tr></tbody></table></div>
+
+<p class="eyebrow">Action 1 — Highest impact</p>
+<h2>口コミを集める</h2>
+<p class="lede">0件の5掲載に、まず1件ずつ入れるのが最優先です。0件と1件では表示のされ方が変わります。</p>
+<div class="field"><div class="fnum">1</div><div class="fbody"><div class="fname">会計時にひと言そえる<span class=req>最優先</span></div><div class="fdesc">口コミは「お願いされたら書く」が大半です。施術後の会計時に、担当者から直接お願いするのがいちばん確率が上がります。紙のカードやQRを渡すと、その場で開いてもらえます。</div><div class="paste"><span class="lbl">そのまま貼る</span><button class="copybtn" data-copy="ありがとうございました　もしよろしければ、ホットペッパーで感想を書いていただけると励みになります　こちらのQRからすぐ書けます">COPY</button><p>ありがとうございました　もしよろしければ、ホットペッパーで感想を書いていただけると励みになります　こちらのQRからすぐ書けます</p></div></div></div>
+<div class="field"><div class="fnum">2</div><div class="fbody"><div class="fname">返信を必ず書く<span class=req>推奨</span></div><div class="fdesc">口コミへの返信は検索でも読まれます。<strong>返信の中に施術名と地名を自然に入れる</strong>と、その言葉でも見つかりやすくなります。定型文のコピペは避け、内容に触れてください。</div><div class="paste"><span class="lbl">そのまま貼る</span><button class="copybtn" data-copy="ご来店ありがとうございました　頭浸浴付きのヘッドスパでゆっくりお休みいただけたようで安心しました　銀座へお越しの際はまたお立ち寄りください">COPY</button><p>ご来店ありがとうございました　頭浸浴付きのヘッドスパでゆっくりお休みいただけたようで安心しました　銀座へお越しの際はまたお立ち寄りください</p></div></div></div>
+<div class="field"><div class="fnum">3</div><div class="fbody"><div class="fname">0件の5掲載から着手<span class=req>—</span></div><div class="fdesc">札幌ヘア／大阪ヘア／名古屋ヘア／名古屋スパ／大阪スパ の5つです。1掲載あたり<strong>まず5件</strong>を目標にしてください。</div></div></div>
+
+<p class="eyebrow">Action 2</p>
+<h2>掲載名を直す</h2>
+<p class="lede">ホットペッパーの検索は掲載名との一致が効きます。3つに直したい点があります。</p>
+<div class="field"><div class="fnum">1</div><div class="fbody"><div class="fname">札幌ヘア<span class="req">名称</span></div><div class="fdesc">「札幌」「大通」で名前が一致しない状態です　他の4店は地名入りなので札幌だけ不利になっています</div><div class="paste"><span class="lbl">現在</span><p>シーム(SEAM)</p></div><div class="paste"><span class="lbl">変更案（コピーして貼る）</span><button class="copybtn" data-copy="シーム 札幌大通(SEAM)">COPY</button><p>シーム 札幌大通(SEAM)</p></div></div></div><div class="field"><div class="fnum">2</div><div class="fbody"><div class="fname">銀座スパ<span class="req">名称</span></div><div class="fdesc">名古屋・大阪のスパには【ヘッドスパ】が入っています　銀座だけ入っていません</div><div class="paste"><span class="lbl">現在</span><p>シーム 銀座店(SEAM)</p></div><div class="paste"><span class="lbl">変更案（コピーして貼る）</span><button class="copybtn" data-copy="シーム 銀座店【ヘッドスパ】(SEAM)">COPY</button><p>シーム 銀座店【ヘッドスパ】(SEAM)</p></div></div></div><div class="field"><div class="fnum">3</div><div class="fbody"><div class="fname">大阪スパ<span class="req">名称</span></div><div class="fdesc">旧店名の併記が残っています　文字数を食ううえ古い印象になります</div><div class="paste"><span class="lbl">現在</span><p>シーム 大阪堀江店(SEAM)（旧：SEAM 南堀江店【ヘッドスパ】）</p></div><div class="paste"><span class="lbl">変更案（コピーして貼る）</span><button class="copybtn" data-copy="シーム 大阪堀江店【ヘッドスパ】(SEAM)">COPY</button><p>シーム 大阪堀江店【ヘッドスパ】(SEAM)</p></div></div></div>
+<div class="callout">掲載名の変更はホットペッパーの担当営業を通す必要がある場合があります。管理画面で変えられない時は営業担当へこの指示書を見せてください。</div>
+
+<p class="eyebrow">Action 3</p>
+<h2>表記を「頭浸浴」に揃える</h2>
+<p class="lede">公式サイトは「頭浸浴」に統一済みですが、<strong>銀座スパのメニュー名だけ「頭身浴」のまま</strong>です。同じ施術が2つの名前で出ています。</p>
+<div class="field"><div class="fnum">1</div><div class="fbody"><div class="fname">銀座スパ メニュー名 2本<span class=req>要修正</span></div><div class="fdesc"><strong>【人気No.1リラックス】頭<u>身</u>浴付き…90分</strong> と <strong>【リカバリー】頭<u>身</u>浴付き…120分</strong> の2本です。「身」を「浸」に直してください。</div><div class="paste"><span class="lbl">そのまま貼る</span><button class="copybtn" data-copy="【人気No.1リラックス】頭浸浴付き首肩までほどけるクリームヘッドスパ90分">COPY</button><p>【人気No.1リラックス】頭浸浴付き首肩までほどけるクリームヘッドスパ90分</p></div></div></div>
+
+<p class="eyebrow">Action 4</p>
+<h2>写真を足す（名古屋ヘア）</h2>
+<p class="lede">名古屋ヘアが10枚で、他店の24〜38枚に対して少ない状態です。写真枚数は閲覧時間に直結します。</p>
+<ul class="check">
+<li>外観（看板が写るもの）<span class="hint">初めての人が迷わないための1枚</span></li>
+<li>店内・セット面・個室<span class="hint">1階と2階の両方を見せる</span></li>
+<li>取扱ブランドの棚<span class="hint">SEAMの強みが一目で伝わる唯一の絵</span></li>
+<li>施術中・仕上がり<span class="hint">最低10枚は欲しい</span></li>
+</ul>
+
+<p class="eyebrow">Action 5 — Google</p>
+<h2>Googleビジネスプロフィール</h2>
+<p class="lede">別紙<a href="gbp-guide.html">GBP運用指示書</a>の手順が有効です。今回あらためて確認したい点を挙げます。</p>
+<ul class="check">
+<li>スパ3店（銀座・名古屋・大阪）が<strong>ヘアサロンとは別の登録</strong>になっているか<span class="hint">同じ住所でも業種が違えば別登録できます。「銀座 ヘッドスパ」で地図に出るかが変わります</span></li>
+<li>第2カテゴリに「ヘッドスパ」「 day spa」を入れているか<span class="hint">主カテゴリだけだと拾える検索が狭まります</span></li>
+<li>商品／サービス欄に主要メニューと料金を入れているか<span class="hint">サイトの各店ページと同じ料金にそろえる</span></li>
+<li>ウェブサイト欄を<strong>店舗ページ</strong>に向けているか<span class="hint">トップではなく seam.site/store-ginza など。今回その店舗ページを作ってあります</span></li>
+<li>週1回の投稿<span class="hint">写真1枚＋2〜3行で十分です</span></li>
+</ul>
+
+<p class="eyebrow">Confirm</p>
+<h2>確認したいこと（オーナー判断）</h2>
+<p class="lede">こちらで直せない、事実の確認が要る点です。</p>
+<div class="tablewrap"><table>
+<thead><tr><th>コース（銀座スパ）</th><th>公式サイト</th><th>ホットペッパー</th><th>差</th></tr></thead>
+<tbody><tr><td><span class="name">60分 ライトコース</span></td><td style="text-align:center">¥13,300</td><td style="text-align:center">¥13,800</td><td style="text-align:center;color:#c0392b;font-weight:700">差 500円</td></tr><tr><td><span class="name">90分 首肩までほどける</span></td><td style="text-align:center">¥17,300</td><td style="text-align:center">¥17,800</td><td style="text-align:center;color:#c0392b;font-weight:700">差 500円</td></tr><tr><td><span class="name">120分 プレミアム</span></td><td style="text-align:center">¥20,300</td><td style="text-align:center">¥20,800</td><td style="text-align:center;color:#c0392b;font-weight:700">差 500円</td></tr><tr><td><span class="name">150分 トリートメント付</span></td><td style="text-align:center">¥25,000</td><td style="text-align:center">¥25,000</td><td style="text-align:center;color:#999">一致</td></tr></tbody></table></div>
+<div class="callout"><strong>公式サイトの価格が3コースでホットペッパーより安く出ています。</strong>
+サイトが古いのか、ホットペッパー側が改定後なのか判断できないため、こちらでは変更していません。
+正しい方をお知らせいただければサイトを合わせます。名古屋スパも同様に差があります（サイトは銀座と同額表記ですが、実際は90分¥13,200・120分¥17,600・150分¥21,800）。</div>
+
+<p class="eyebrow">Assets</p>
+<h2>ホットペッパーにあって、サイトに無い強み</h2>
+<p class="lede">掲載を読んで見つけた、公式サイトで使えていない材料です。</p>
+<ul class="check">
+<li><strong>HOT PEPPER Beauty AWARD 2026 BEST SALON GOLD Prize受賞</strong>（札幌）<span class="hint">サイトは2023年の別の賞だけ載せています　2026年の受賞は載っていません</span></li>
+<li><strong>ホットペッパービューティーアワード ゴールド受賞／髪カリスマカット部門受賞</strong>（福岡）<span class="hint">サイト未掲載</span></li>
+<li><strong>国家資格保有者による施術</strong>（銀座スパ・大阪スパ）<span class="hint">スパの信頼材料として強いのにサイトに一言もありません</span></li>
+<li><strong>フェイシャルエステ・ハーブピーリング</strong>（大阪スパ）<span class="hint">ヘッドスパ×フェイシャル120分 ¥16,650 などを提供中　サイトでは一切触れていません</span></li>
+<li><strong>初回60分 ¥8,800／メンズ限定60分 ¥8,800</strong>（名古屋スパ）<span class="hint">入口価格があるのにサイトは¥13,300〜としか出していません</span></li>
+</ul>
+<div class="callout">これらは<strong>SEAM自身がホットペッパーで公開している内容</strong>なので、サイトへ載せてよいかだけご判断ください。ご了承いただければ各店舗ページへ反映します。</div>
+
+<p class="eyebrow">Order</p>
+<h2>着手順</h2>
+<div class="tablewrap"><table>
+<thead><tr><th>順</th><th>やること</th><th>担当</th><th>所要</th><th>効きはじめ</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><span class="name">口コミ0件の5掲載で口コミを集める</span></td><td>各店スタッフ</td><td>毎日の会計時</td><td>2〜4週間</td></tr>
+<tr><td>2</td><td><span class="name">掲載名を直す（札幌・銀座スパ・大阪スパ）</span></td><td>掲載管理者</td><td>30分</td><td>1〜2週間</td></tr>
+<tr><td>3</td><td><span class="name">銀座スパの「頭身浴」を「頭浸浴」へ</span></td><td>掲載管理者</td><td>5分</td><td>即</td></tr>
+<tr><td>4</td><td><span class="name">価格の正解を確認 → サイトを合わせる</span></td><td>オーナー → 制作</td><td>確認のみ</td><td>即</td></tr>
+<tr><td>5</td><td><span class="name">名古屋ヘアの写真を10枚→25枚へ</span></td><td>名古屋スタッフ</td><td>1時間</td><td>2〜3週間</td></tr>
+<tr><td>6</td><td><span class="name">GBPのカテゴリ・サービス・投稿</span></td><td>掲載管理者</td><td>1時間</td><td>2〜6週間</td></tr>
+</tbody></table></div>
+
+<footer>SEAM 社内資料　検索エンジンには表示されません　数値は2026年7月25日にホットペッパービューティーの公開ページから取得した実測値です</footer>
+</div>
+<script>
+document.querySelectorAll('.copybtn').forEach(function(b){
+  b.addEventListener('click',function(){
+    navigator.clipboard.writeText(b.getAttribute('data-copy')).then(function(){
+      var o=b.textContent; b.textContent='COPIED'; setTimeout(function(){b.textContent=o;},1400);
+    });
+  });
+});
+</script>
+</body></html>
