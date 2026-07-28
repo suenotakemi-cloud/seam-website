@@ -132,6 +132,7 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 | `products` | 店販商品マスタ（バーコード/在庫） | `ec/item`＋`ec/stock`（`item_stock`） |
 | `intakes` | 入荷（仕入）履歴 | `ec/stock`（`/save/ec/stock` type:add・`stock_history`） |
 | `points` | 自社ポイント台帳（増減行の追記型・残高=合計。HPB還元1%+利用料1%徴収の代替・オーナーがON/OFFと還元率0〜20%を設定・1pt=¥1） | **CUEPONポイントAPI**（`/save/point`=付与・`/use/point`=利用 `use_type_idx:0`必須・`/get/point` account_id直下）。delta→point(±)/reason→code/name+phone→account_id名寄せ。**BtoC利用はCUEPON移行後に開放** |
+| `gifts` | ギフト券（id=券面コードG-XXXX-XXXX・残高制で分割利用可・利用履歴uses[]・無効化はvoidフラグで履歴保全）。発行はレジ→店販行「ギフト券」として会計＝売上/レジ現金が正しく揃う。券面印刷あり。**有効期限は既定6ヶ月＝資金決済法(前払式支払手段)の適用外に収める**（延ばす場合は届出要否をオーナー確認） | CUEPONの`ec/discount`/チケット系へ移行（統合時） |
 
 ---
 

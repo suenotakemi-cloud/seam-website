@@ -1138,6 +1138,9 @@ const API = {
   async listPoints(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.points:null;}catch{return null;} },
   async savePoint(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async removePointsByRef(ref){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points?ref='+encodeURIComponent(ref),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
+  async listGifts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.gifts:null;}catch{return null;} },
+  async saveGift(g){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(g)});return r.ok?await r.json():null;}catch{return null;} },
+  async voidGift(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
   async removeIntake(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   // ---- Square Terminal（端末カード決済）----
@@ -1180,8 +1183,9 @@ const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳
 function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();API.saveCheckout(c);return c;}
 function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}API.saveCheckout(c);}
 function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);
-  // この会計に紐づくポイント増減（付与/利用）も巻き戻す
+  // この会計に紐づくポイント増減（付与/利用）とギフト券の消込も巻き戻す
   db.points=(db.points||[]).filter(p=>p.ref!==id);API.removePointsByRef(id);
+  restoreGiftByRef(id);
   save();refreshAll();API.removeCheckout(id);}
 // 店販の商品マスタ（バーコード・在庫）
 if(!db.products)db.products=[];
@@ -1203,7 +1207,8 @@ async function syncRegisterFromD1(){
   const pr=await API.listProducts(); if(pr)db.products=pr;
   const ins=await API.listIntakes(); if(ins)db.intakes=ins;
   const pts=await API.listPoints(); if(pts)db.points=pts;
-  if(co||st||set||pr||ins||pts){save();refreshAll();}
+  const gf=await API.listGifts(); if(gf)db.gifts=gf;
+  if(co||st||set||pr||ins||pts||gf){save();refreshAll();}
 }
 /* ===== 自社ポイント（HPBの2%徴収の代替・オーナーが使うか/率を決める）=====
  * 付与/利用は増減行の追記型（db.points）。残高=そのお客様の行の合計。
@@ -1218,6 +1223,25 @@ function pointBalance(name,phone){
 function addPointRow(row){
   row.id='pt'+Math.random().toString(36).slice(2,8);row.at=new Date().toISOString();row.date=row.date||dkey(today());
   db.points.push(row);save();API.savePoint(row);return row;
+}
+/* ===== ギフト券（発行→販売→残高利用。期限は既定6ヶ月=資金決済法の適用外に収める） ===== */
+if(!db.gifts)db.gifts=[];
+function giftCode(){const CH='23456789ABCDEFGHJKMNPQRSTUVWXYZ';const p=n=>[...Array(n)].map(()=>CH[Math.floor(Math.random()*CH.length)]).join('');return 'G-'+p(4)+'-'+p(4);}
+function giftByCode(code){const c=(code||'').trim().toUpperCase();return db.gifts.find(g=>g.id===c);}
+function giftStatus(g){
+  if(!g)return {ok:false,msg:'該当するギフト券がありません'};
+  if(g.void)return {ok:false,msg:'無効化された券です'};
+  if(g.expires&&g.expires<dkey(today()))return {ok:false,msg:`有効期限切れ（${g.expires.replace(/-/g,'/')}まで）`};
+  if((g.balance||0)<=0)return {ok:false,msg:'残高がありません（使用済み）'};
+  return {ok:true,msg:''};
+}
+function saveGiftLocal(g){const i=db.gifts.findIndex(x=>x.id===g.id);if(i>=0)db.gifts[i]=g;else db.gifts.unshift(g);save();API.saveGift(g);}
+// 会計取消時の巻き戻し: この会計で使ったギフト残高を復元
+function restoreGiftByRef(ref){
+  db.gifts.forEach(g=>{
+    const used=(g.uses||[]).filter(u=>u.ref===ref).reduce((s,u)=>s+u.amount,0);
+    if(used>0){g.balance=(g.balance||0)+used;g.uses=g.uses.filter(u=>u.ref!==ref);saveGiftLocal(g);}
+  });
 }
 function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
 function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date).sort((a,b)=>a.at<b.at?-1:1);}
@@ -1739,7 +1763,7 @@ function openCheckout(resvId){
   document.getElementById('checkoutbg').classList.add('show');
 }
 function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(+i.price||0),0);}
-function coTotal(){return Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0));}
+function coTotal(){return Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0)-(+coDraft.giftUsed||0));}
 // 今回付与予定ポイント＝支払額×還元率（ポイント利用分には付与しない）
 function coPointAward(){return (pointEnabled()&&coDraft.customer)?Math.floor(coTotal()*pointRate()/100):0;}
 function renderCheckout(){
@@ -1758,6 +1782,11 @@ function renderCheckout(){
       return `<div class="co-sub">ポイント（残高 <b>${bal.toLocaleString()}pt</b>・1pt=¥1）</div>
       <div class="co-line"><span>ポイント利用</span><span class="co-y">−<input id="co-pts" type="number" inputmode="numeric" min="0" max="${bal}" value="${coDraft.pointsUsed||0}">pt</span></div>
       <div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${pointRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>`;})()}
+    ${(()=>{ // ギフト券利用: コード入力→残高から充当
+      const g=coDraft.giftCode?giftByCode(coDraft.giftCode):null;
+      const applied=g&&coDraft.giftUsed>0?`<div class="co-line" style="color:#0c7a41;font-weight:700"><span>🎁 ${escH(g.id)}（残高¥${(g.balance||0).toLocaleString()}）</span><span style="margin-left:auto">−¥${(+coDraft.giftUsed).toLocaleString()} <button class="co-rx" id="co-gift-x" aria-label="解除">✕</button></span></div>`:'';
+      return `<div class="co-sub">ギフト券</div>
+      ${applied||`<div class="co-scan-row"><input id="co-gift" placeholder="🎁 券面コード（G-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-gift-go">適用</button></div>`}`;})()}
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     <div class="co-sub">お支払い方法</div>
     <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
@@ -1776,6 +1805,17 @@ function renderCheckout(){
   box.querySelector('#co-tech').oninput=e=>{coDraft.tech=+e.target.value||0;sync();};
   box.querySelector('#co-disc').oninput=e=>{coDraft.discount=+e.target.value||0;sync();};
   {const cp=box.querySelector('#co-pts');if(cp)cp.oninput=e=>{const bal=pointBalance(coDraft.customer,'');coDraft.pointsUsed=Math.max(0,Math.min(bal,+e.target.value||0));if(+e.target.value>bal)e.target.value=bal;sync();};}
+  {const gg=box.querySelector('#co-gift-go'),gi=box.querySelector('#co-gift');
+   const apply=()=>{const g=giftByCode(gi.value);const st=giftStatus(g);
+     if(!st.ok){toast(st.msg,true);return;}
+     coDraft.giftCode=g.id;
+     // 充当額=残高と支払額(ギフト以外の控除後)の小さい方
+     const payable=Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0));
+     coDraft.giftUsed=Math.min(g.balance||0,payable);
+     renderCheckout();toast(`ギフト券を適用しました（−¥${coDraft.giftUsed.toLocaleString()}）`);};
+   if(gg)gg.onclick=apply;
+   if(gi)gi.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();apply();}};
+   const gx=box.querySelector('#co-gift-x');if(gx)gx.onclick=()=>{coDraft.giftCode='';coDraft.giftUsed=0;renderCheckout();};}
   box.querySelector('#co-staff').onchange=e=>{coDraft.staffId=e.target.value;};
   box.querySelectorAll('.co-rn').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].name=e.target.value;});
   box.querySelectorAll('.co-rp').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].price=e.target.value;sync();});
@@ -1794,10 +1834,10 @@ function renderCheckout(){
   const ct=box.querySelector('#co-term'); if(ct)ct.onclick=()=>runTerminalPayment();
 }
 function coBuildRec(){
-  const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,pointsUsed:+coDraft.pointsUsed||0,
+  const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,pointsUsed:+coDraft.pointsUsed||0,giftUsed:+coDraft.giftUsed||0,giftCode:coDraft.giftCode||'',
     retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0,productId:i.productId||undefined}))};
   rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
-  rec.total=Math.max(0,rec.tech+rec.retail-rec.discount-rec.pointsUsed);
+  rec.total=Math.max(0,rec.tech+rec.retail-rec.discount-rec.pointsUsed-rec.giftUsed);
   return rec;
 }
 function coFinish(rec){
@@ -1805,6 +1845,11 @@ function coFinish(rec){
   if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
   if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-1);});  // 在庫を自動減算（新規会計のみ）
   if(rec.resvId)setStatus(rec.resvId,'done');
+  // ギフト券の残高消込（新規会計のみ）
+  if(isNew&&rec.giftUsed>0&&rec.giftCode){
+    const g=giftByCode(rec.giftCode);
+    if(g){g.balance=Math.max(0,(g.balance||0)-rec.giftUsed);g.uses=(g.uses||[]).concat([{ref:rec.id,amount:rec.giftUsed,at:new Date().toISOString()}]);saveGiftLocal(g);}
+  }
   // 自社ポイントの記録（新規会計のみ）: 利用=マイナス行 / 付与=支払額×還元率のプラス行
   let ptMsg='';
   if(isNew&&rec.customer){
@@ -1960,11 +2005,36 @@ function renderRegister(){
     <div class="rz"><span>ポイント制度</span><span style="margin-left:auto"><button class="co-pay ${pointEnabled()?'on':''}" id="pt-on">使う</button> <button class="co-pay ${!pointEnabled()?'on':''}" id="pt-off">使わない</button></span></div>
     <div class="rz"><span>還元率（会計額の）</span><span class="co-y"><input id="pt-rate" type="number" inputmode="numeric" min="0" max="20" step="0.5" value="${pointRate()}" style="width:64px">%</span></div>
     <div class="rz-ref"><span>1pt=¥1・お会計で自動付与/利用</span><span>HPB還元1%+利用料1%の代替（自社ならお客様に預けるだけ・外部流出なし）</span></div></div>`;
-  body.innerHTML=summary+pendHtml+listHtml+closePanel+ptPanel;
+  // ギフト券パネル（発行→会計に乗せて販売→券面印刷。利用はお会計のコード入力から）
+  const tdk=dkey(today());
+  const activeGifts=(db.gifts||[]).filter(g=>!g.void&&(g.balance||0)>0&&(!g.expires||g.expires>=tdk));
+  const giftRows=activeGifts.slice(0,12).map(g=>`<div class="reg-pend"><span class="rp-t" style="font-family:monospace">${escH(g.id)}</span><span class="rp-n">${escH(g.buyer||g.label||'')}</span><span class="rp-m">残高¥${(g.balance||0).toLocaleString()}${g.expires?` / 〜${g.expires.slice(5).replace('-','/')}`:''}</span><button class="btn small ghost" data-gprint="${g.id}">🖨</button><button class="rc-x" data-gvoid="${g.id}" aria-label="無効化">✕</button></div>`).join('');
+  const gfPanel=`<div class="card reg-close"><h3>🎁 ギフト券</h3>
+    <div class="rz"><span>金額</span><span class="co-y">¥<input id="gf-amt" type="number" inputmode="numeric" value="5000" step="500" style="width:88px"></span></div>
+    <div class="rz"><span>贈り主（購入者名）</span><input id="gf-buyer" placeholder="例）山田 花子" style="margin-left:auto;max-width:180px"></div>
+    <div class="rz"><span>有効期限</span><input id="gf-exp" type="date" value="${dkey(addDays(today(),180))}" style="margin-left:auto"></div>
+    <button class="btn pay" id="gf-issue" style="width:100%;margin-top:9px">発行して会計へ（券面はあとから印刷）</button>
+    <div class="rz-ref"><span>利用はお会計の「ギフト券」欄にコード入力</span><span>期限は既定6ヶ月＝資金決済法の届出対象外に収まります</span></div>
+    ${activeGifts.length?`<div class="co-sub" style="margin-top:10px">有効なギフト券（${activeGifts.length}枚）</div>${giftRows}`:''}</div>`;
+  body.innerHTML=summary+pendHtml+listHtml+closePanel+ptPanel+gfPanel;
   {const on=document.getElementById('pt-on'),off=document.getElementById('pt-off'),rt=document.getElementById('pt-rate');
    if(on)on.onclick=()=>{setStg('pointEnabled','1');};
    if(off)off.onclick=()=>{setStg('pointEnabled','0');};
    if(rt)rt.onchange=e=>{const v=Math.max(0,Math.min(20,+e.target.value||0));setStg('pointRate',v);};}
+  {const gi=document.getElementById('gf-issue');
+   if(gi)gi.onclick=()=>{
+     const amt=Math.max(500,+document.getElementById('gf-amt').value||0);
+     const buyer=document.getElementById('gf-buyer').value.trim();
+     const exp=document.getElementById('gf-exp').value||dkey(addDays(today(),180));
+     const g={id:giftCode(),label:'ギフト券',amount:amt,balance:amt,buyer,memo:'',uses:[],issued:tdk,expires:exp,void:false};
+     saveGiftLocal(g);
+     // 販売を会計に乗せる（店販行「ギフト券」＝現金/カードで受け取り・売上とレジ現金が正しく揃う）
+     openCheckout(null);
+     coDraft.customer=buyer;coDraft.retailItems=[{name:`ギフト券 ${g.id}`,price:amt}];coDraft.tech=0;renderCheckout();
+     toast(`ギフト券 ${g.id} を発行しました。お会計を確定してください`);
+   };
+   body.querySelectorAll('[data-gprint]').forEach(b=>b.onclick=()=>printGift(b.dataset.gprint));
+   body.querySelectorAll('[data-gvoid]').forEach(b=>b.onclick=()=>{if(confirm('このギフト券を無効化しますか？（残高が使えなくなります）')){const g=giftByCode(b.dataset.gvoid);if(g){g.void=true;saveGiftLocal(g);API.voidGift(g.id);refreshAll();}}});}
   body.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>openCheckout(b.dataset.co));
   body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('この会計を取り消しますか？'))removeCheckout(b.dataset.del);});
   const wi=document.getElementById('reg-walkin');if(wi)wi.onclick=()=>openCheckout(null);
@@ -1985,6 +2055,33 @@ function renderRegister(){
     toast('レジを締めました');
   };
   const ro=document.getElementById('rz-reopen');if(ro)ro.onclick=()=>{if(confirm('レジ締めを取り消しますか？')){db.settlements=db.settlements.filter(x=>x.date!==dk);save();refreshAll();API.removeSettlement(dk);}};
+}
+// ギフト券の券面印刷（SEAM世界観・コード/金額/期限入り。A6横イメージ）
+function printGift(code){
+  const g=giftByCode(code);if(!g){toast('ギフト券が見つかりません',true);return;}
+  const w=window.open('','_blank','width=560,height=420');if(!w){toast('ポップアップを許可してください',true);return;}
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>GIFT TICKET ${g.id}</title><style>
+    body{margin:0;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;background:#f4f0e8;display:flex;align-items:center;justify-content:center;min-height:100vh}
+    .tk{width:480px;background:#fffdf8;border:1px solid #d9c9a8;border-radius:14px;padding:34px 38px;position:relative;box-shadow:0 8px 30px rgba(90,70,30,.12)}
+    .tk:before{content:'';position:absolute;inset:7px;border:1px solid #e2d5b8;border-radius:9px;pointer-events:none}
+    .en{letter-spacing:.42em;font-size:11px;color:#b8945a;text-align:center}
+    h1{font-size:26px;text-align:center;margin:8px 0 2px;letter-spacing:.18em;color:#2b2620}
+    .sub{text-align:center;font-size:11px;color:#8d8474;letter-spacing:.2em;margin-bottom:18px}
+    .amt{text-align:center;font-size:40px;color:#2b2620;margin:6px 0 2px}.amt small{font-size:15px}
+    .code{text-align:center;font-family:monospace;font-size:17px;letter-spacing:.14em;background:#f6f0e2;border:1px dashed #cbb98f;border-radius:8px;padding:8px 0;margin:16px 24px}
+    .meta{display:flex;justify-content:space-between;font-size:11.5px;color:#6f6656;margin:0 6px}
+    .note{font-size:10px;color:#9a9080;margin-top:14px;line-height:1.7;border-top:1px solid #e8dfcb;padding-top:10px}
+    @media print{body{background:#fff}.tk{box-shadow:none}}
+  </style></head><body><div class="tk">
+    <div class="en">S E A M &nbsp; G I N Z A</div>
+    <h1>GIFT TICKET</h1><div class="sub">ギ フ ト チ ケ ッ ト</div>
+    <div class="amt">¥${(g.amount||0).toLocaleString()}<small>（税込）</small></div>
+    <div class="code">${g.id}</div>
+    <div class="meta"><span>発行日：${(g.issued||'').replace(/-/g,'/')}</span><span>有効期限：${(g.expires||'').replace(/-/g,'/')}</span></div>
+    ${g.buyer?`<div class="meta" style="margin-top:4px"><span>贈り主：${g.buyer.replace(/</g,'&lt;')} 様より</span></div>`:''}
+    <div class="note">ご来店時にこの券面をご提示ください。施術・店販にご利用いただけます（差額は店頭でお支払い・残高は次回もお使いいただけます）。有効期限を過ぎた券はご利用いただけません。現金とのお引き換えはいたしかねます。<br>SEAM 銀座 ／ ご予約はLINEまたは店頭にて</div>
+  </div><script>window.print()<\/script></body></html>`);
+  w.document.close();
 }
 document.getElementById('reg-prev').onclick=()=>{registerDay=addDays(registerDay,-1);renderRegister();};
 document.getElementById('reg-next').onclick=()=>{registerDay=addDays(registerDay,1);renderRegister();};
