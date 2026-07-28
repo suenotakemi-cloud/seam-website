@@ -201,6 +201,10 @@ export default {
     if (p.endsWith('/intakes') && m === 'GET') return A() || handleGetIntakes(url, env, cors);
     if (p.endsWith('/intakes') && m === 'POST') return A() || handlePostIntake(request, env, cors);
     if (p.endsWith('/intakes') && m === 'DELETE') return A() || handleDeleteIntake(url, env, cors);
+    // 自社ポイント台帳（付与/利用の増減行）。DELETEはref=会計ID単位（会計取消時の巻き戻し）
+    if (p.endsWith('/points') && m === 'GET') return A() || handleGetPoints(url, env, cors);
+    if (p.endsWith('/points') && m === 'POST') return A() || handlePostPoint(request, env, cors);
+    if (p.endsWith('/points') && m === 'DELETE') return A() || handleDeletePoints(url, env, cors);
     return json({ error: 'Not found' }, 404, cors);
   },
 
@@ -727,6 +731,10 @@ async function ensureRegisterTables(env) {
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, name TEXT, price INTEGER DEFAULT 0, barcode TEXT DEFAULT '', stock INTEGER DEFAULT 0, active INTEGER DEFAULT 1, created_at TEXT)`),
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS intakes (id TEXT PRIMARY KEY, product_id TEXT DEFAULT '', product_name TEXT DEFAULT '', date TEXT NOT NULL, qty INTEGER DEFAULT 0, unit_cost INTEGER DEFAULT 0, memo TEXT DEFAULT '', created_at TEXT)`),
+    // 自社ポイント台帳(HPBの2%徴収の代替)。CUEPONポイントAPIと1:1対応: delta→point(±)/reason→code/
+    // name+phone→account_id解決(統合時に/save/point・/use/pointへ移行・use_type_idx:0)。BtoC利用はCUEPON移行後。
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS points (id TEXT PRIMARY KEY, name TEXT DEFAULT '', phone TEXT DEFAULT '', delta INTEGER DEFAULT 0, reason TEXT DEFAULT '', ref TEXT DEFAULT '', date TEXT NOT NULL, created_at TEXT)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_pt_name ON points(name)`),
   ]);
   // 既存DBへの列追加（SQLiteはIF NOT EXISTS非対応→重複はcatchで無視）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN nominated INTEGER DEFAULT 0`).run(); } catch (e) {}
@@ -811,6 +819,37 @@ async function handleGetIntakes(url, env, cors) {
   await ensureRegisterTables(env);
   const res = await env.DB.prepare('SELECT * FROM intakes ORDER BY created_at DESC LIMIT 300').all();
   return json({ ok: true, intakes: (res.results || []).map(IN2API) }, 200, cors);
+}
+
+/* ---------- 自社ポイント台帳（増減行の追記型・残高=合計） ---------- */
+const PT2API = r => ({ id: r.id, name: r.name || '', phone: r.phone || '', delta: r.delta || 0,
+  reason: r.reason || '', ref: r.ref || '', date: r.date, at: r.created_at || '' });
+async function handleGetPoints(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const res = await env.DB.prepare('SELECT * FROM points ORDER BY created_at DESC LIMIT 2000').all();
+  return json({ ok: true, points: (res.results || []).map(PT2API) }, 200, cors);
+}
+async function handlePostPoint(request, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+  if (!o.name || !o.delta) return json({ error: 'name/delta は必須' }, 400, cors);
+  const id = o.id || ('pt' + crypto.randomUUID().slice(0, 8));
+  await env.DB.prepare(
+    `INSERT OR REPLACE INTO points (id,name,phone,delta,reason,ref,date,created_at) VALUES (?,?,?,?,?,?,?,?)`
+  ).bind(id, o.name, o.phone || '', Math.round(+o.delta) || 0, o.reason || '', o.ref || '',
+    o.date || new Date().toISOString().slice(0, 10), o.at || new Date().toISOString()).run();
+  return json({ ok: true, id }, 200, cors);
+}
+async function handleDeletePoints(url, env, cors) {
+  if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+  await ensureRegisterTables(env);
+  const ref = url.searchParams.get('ref'), id = url.searchParams.get('id');
+  if (!ref && !id) return json({ error: 'ref か id が必須' }, 400, cors);
+  if (ref) await env.DB.prepare('DELETE FROM points WHERE ref=?').bind(ref).run();
+  else await env.DB.prepare('DELETE FROM points WHERE id=?').bind(id).run();
+  return json({ ok: true }, 200, cors);
 }
 async function handlePostIntake(request, env, cors) {
   if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);

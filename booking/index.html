@@ -1135,6 +1135,9 @@ const API = {
   async saveProduct(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async removeProduct(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listIntakes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.intakes:null;}catch{return null;} },
+  async listPoints(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.points:null;}catch{return null;} },
+  async savePoint(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
+  async removePointsByRef(ref){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points?ref='+encodeURIComponent(ref),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
   async removeIntake(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   // ---- Square Terminal（端末カード決済）----
@@ -1176,7 +1179,10 @@ function setStg(k,v){db.settings[k]=String(v);save();API.setSetting(k,v);refresh
 const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},qr:{label:'QR決済',ic:'📱'},hpb:{label:'スマート支払い(HPB)',ic:'🌶️'}};
 function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();API.saveCheckout(c);return c;}
 function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}API.saveCheckout(c);}
-function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);save();refreshAll();API.removeCheckout(id);}
+function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);
+  // この会計に紐づくポイント増減（付与/利用）も巻き戻す
+  db.points=(db.points||[]).filter(p=>p.ref!==id);API.removePointsByRef(id);
+  save();refreshAll();API.removeCheckout(id);}
 // 店販の商品マスタ（バーコード・在庫）
 if(!db.products)db.products=[];
 function addProduct(p){p.id=p.id||('p'+Math.random().toString(36).slice(2,8));const i=db.products.findIndex(x=>x.id===p.id);if(i>=0)db.products[i]=p;else db.products.push(p);save();refreshAll();API.saveProduct(p);return p;}
@@ -1196,7 +1202,22 @@ async function syncRegisterFromD1(){
   const set=await API.getSettings(); if(set){db.settings=set; if(set.cashFloat!=null&&set.cashFloat!=='')db.cashFloat=+set.cashFloat;}
   const pr=await API.listProducts(); if(pr)db.products=pr;
   const ins=await API.listIntakes(); if(ins)db.intakes=ins;
-  if(co||st||set||pr||ins){save();refreshAll();}
+  const pts=await API.listPoints(); if(pts)db.points=pts;
+  if(co||st||set||pr||ins||pts){save();refreshAll();}
+}
+/* ===== 自社ポイント（HPBの2%徴収の代替・オーナーが使うか/率を決める）=====
+ * 付与/利用は増減行の追記型（db.points）。残高=そのお客様の行の合計。
+ * 台帳はCUEPONポイントAPIと1:1（統合時に /save/point・/use/point へ移行・BtoC利用可能に）。 */
+if(!db.points)db.points=[];
+const pointEnabled=()=>stg('pointEnabled','1')==='1';
+const pointRate=()=>Math.max(0,Math.min(20,stgN('pointRate',1)));   // 還元率%（既定1%＝HPBと同等・0〜20%）
+function pointBalance(name,phone){
+  if(!name)return 0;
+  return db.points.filter(p=>p.name===name&&(!phone||!p.phone||p.phone===phone)).reduce((s,p)=>s+(+p.delta||0),0);
+}
+function addPointRow(row){
+  row.id='pt'+Math.random().toString(36).slice(2,8);row.at=new Date().toISOString();row.date=row.date||dkey(today());
+  db.points.push(row);save();API.savePoint(row);return row;
 }
 function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
 function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date).sort((a,b)=>a.at<b.at?-1:1);}
@@ -1718,7 +1739,9 @@ function openCheckout(resvId){
   document.getElementById('checkoutbg').classList.add('show');
 }
 function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(+i.price||0),0);}
-function coTotal(){return Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0));}
+function coTotal(){return Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0));}
+// 今回付与予定ポイント＝支払額×還元率（ポイント利用分には付与しない）
+function coPointAward(){return (pointEnabled()&&coDraft.customer)?Math.floor(coTotal()*pointRate()/100):0;}
 function renderCheckout(){
   const box=document.getElementById('checkoutmodal');
   const rows=(coDraft.retailItems||[]).map((it,i)=>`<div class="co-row"><input class="co-rn" data-i="${i}" placeholder="商品名（例）oggi ott シャンプー" value="${(it.name||'').replace(/"/g,'&quot;')}"><input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${it.price||''}"><button class="co-rx" data-i="${i}" aria-label="削除">✕</button></div>`).join('');
@@ -1729,6 +1752,12 @@ function renderCheckout(){
     <div id="co-rows">${rows||'<div class="co-empty">なし</div>'}</div>
     <button class="btn small ghost" id="co-add">＋ 手入力で追加</button>
     <div class="co-line"><span>割引</span><span class="co-y">−¥<input id="co-disc" type="number" inputmode="numeric" value="${coDraft.discount||0}"></span></div>
+    ${(()=>{ // 自社ポイント（設定ONかつお名前があるとき）: 残高利用と今回付与予定
+      if(!pointEnabled()||!coDraft.customer)return '';
+      const bal=pointBalance(coDraft.customer,'');
+      return `<div class="co-sub">ポイント（残高 <b>${bal.toLocaleString()}pt</b>・1pt=¥1）</div>
+      <div class="co-line"><span>ポイント利用</span><span class="co-y">−<input id="co-pts" type="number" inputmode="numeric" min="0" max="${bal}" value="${coDraft.pointsUsed||0}">pt</span></div>
+      <div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${pointRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>`;})()}
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     <div class="co-sub">お支払い方法</div>
     <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
@@ -1742,9 +1771,11 @@ function renderCheckout(){
       <button class="btn ghost" style="flex:1" id="co-cancel">キャンセル</button>
       <button class="btn pay" id="co-save">${(coDraft.method==='card'&&stg('terminalDeviceId',''))?'端末なしで記録':'この内容で会計を確定'}</button>
     </div>`;
-  const sync=()=>{document.getElementById('co-total').textContent='¥'+coTotal().toLocaleString();};
+  const sync=()=>{document.getElementById('co-total').textContent='¥'+coTotal().toLocaleString();
+    const aw=document.getElementById('co-award');if(aw)aw.textContent='+'+coPointAward().toLocaleString()+'pt';};
   box.querySelector('#co-tech').oninput=e=>{coDraft.tech=+e.target.value||0;sync();};
   box.querySelector('#co-disc').oninput=e=>{coDraft.discount=+e.target.value||0;sync();};
+  {const cp=box.querySelector('#co-pts');if(cp)cp.oninput=e=>{const bal=pointBalance(coDraft.customer,'');coDraft.pointsUsed=Math.max(0,Math.min(bal,+e.target.value||0));if(+e.target.value>bal)e.target.value=bal;sync();};}
   box.querySelector('#co-staff').onchange=e=>{coDraft.staffId=e.target.value;};
   box.querySelectorAll('.co-rn').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].name=e.target.value;});
   box.querySelectorAll('.co-rp').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].price=e.target.value;sync();});
@@ -1763,10 +1794,10 @@ function renderCheckout(){
   const ct=box.querySelector('#co-term'); if(ct)ct.onclick=()=>runTerminalPayment();
 }
 function coBuildRec(){
-  const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,
+  const rec={...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,pointsUsed:+coDraft.pointsUsed||0,
     retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0,productId:i.productId||undefined}))};
   rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
-  rec.total=Math.max(0,rec.tech+rec.retail-rec.discount);
+  rec.total=Math.max(0,rec.tech+rec.retail-rec.discount-rec.pointsUsed);
   return rec;
 }
 function coFinish(rec){
@@ -1774,7 +1805,14 @@ function coFinish(rec){
   if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
   if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-1);});  // 在庫を自動減算（新規会計のみ）
   if(rec.resvId)setStatus(rec.resvId,'done');
-  toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}）`);
+  // 自社ポイントの記録（新規会計のみ）: 利用=マイナス行 / 付与=支払額×還元率のプラス行
+  let ptMsg='';
+  if(isNew&&rec.customer){
+    if(rec.pointsUsed>0){addPointRow({name:rec.customer,phone:'',delta:-rec.pointsUsed,reason:'ポイント利用',ref:rec.id});ptMsg+=` / ${rec.pointsUsed}pt利用`;}
+    if(pointEnabled()){const aw=Math.floor(rec.total*pointRate()/100);
+      if(aw>0){addPointRow({name:rec.customer,phone:'',delta:aw,reason:`来店ポイント(${pointRate()}%)`,ref:rec.id});ptMsg+=` / +${aw}pt付与`;}}
+  }
+  toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}${ptMsg}）`);
   // ★次回予約（店頭）: 新規会計の直後に「次回のご予約」を提案（大阪店の勝ちパターンを全店へ・HPBには構造上できない）
   if(isNew){openNextVisit(rec);}else{document.getElementById('checkoutbg').classList.remove('show');}
 }
@@ -1917,7 +1955,16 @@ function renderRegister(){
     <div class="rz rz-diff" id="rz-diffrow" style="${diff==null?'display:none':''}"><span>過不足</span><b id="rz-diff" class="${diff===0?'ok':(diff<0?'short':'over')}">${diff!=null?((diff>0?'+':'')+money(diff)):''}</b></div>
     <div class="rz-ref"><span>💳 カード ${money(s.card)}</span><span>📱 QR ${money(s.qr)}</span>${s.hpb?`<span>🌶️ スマート支払い ${money(s.hpb)}（HPB入金）</span>`:''}<span>総売上 ${money(s.total)}</span></div>
     ${closed?`<div class="reg-doneline">✅ ${set.closedAt.slice(0,16).replace('T',' ')} に締めました<button class="btn small ghost" id="rz-reopen">締めを取消</button></div>`:`<button class="btn pay" id="rz-close" style="width:100%;margin-top:11px">この内容でレジを締める</button>`}</div>`;
-  body.innerHTML=summary+pendHtml+listHtml+closePanel;
+  // 自社ポイント設定（HPBの2%徴収の代替。使うか/還元率はオーナーが決める。1pt=¥1・BtoC利用はCUEPON統合後）
+  const ptPanel=`<div class="card reg-close"><h3>自社ポイント設定</h3>
+    <div class="rz"><span>ポイント制度</span><span style="margin-left:auto"><button class="co-pay ${pointEnabled()?'on':''}" id="pt-on">使う</button> <button class="co-pay ${!pointEnabled()?'on':''}" id="pt-off">使わない</button></span></div>
+    <div class="rz"><span>還元率（会計額の）</span><span class="co-y"><input id="pt-rate" type="number" inputmode="numeric" min="0" max="20" step="0.5" value="${pointRate()}" style="width:64px">%</span></div>
+    <div class="rz-ref"><span>1pt=¥1・お会計で自動付与/利用</span><span>HPB還元1%+利用料1%の代替（自社ならお客様に預けるだけ・外部流出なし）</span></div></div>`;
+  body.innerHTML=summary+pendHtml+listHtml+closePanel+ptPanel;
+  {const on=document.getElementById('pt-on'),off=document.getElementById('pt-off'),rt=document.getElementById('pt-rate');
+   if(on)on.onclick=()=>{setStg('pointEnabled','1');};
+   if(off)off.onclick=()=>{setStg('pointEnabled','0');};
+   if(rt)rt.onchange=e=>{const v=Math.max(0,Math.min(20,+e.target.value||0));setStg('pointRate',v);};}
   body.querySelectorAll('[data-co]').forEach(b=>b.onclick=()=>openCheckout(b.dataset.co));
   body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('この会計を取り消しますか？'))removeCheckout(b.dataset.del);});
   const wi=document.getElementById('reg-walkin');if(wi)wi.onclick=()=>openCheckout(null);
