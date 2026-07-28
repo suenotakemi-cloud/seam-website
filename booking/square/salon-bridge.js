@@ -48,6 +48,11 @@ async function salonCallMultipart(env, path, dataObj, extra = {}) {
   try { return await res.json(); } catch { return { result: false }; }
 }
 
+// save/accountの生呼び出し(部分update用・multipart)。account-setcode等の運用ツールから使う。
+export async function salonSaveAccountRaw(env, data) {
+  return salonCallMultipart(env, '/save/account', data);
+}
+
 // ★顧客アカウントの解決(2026-07-28エンジニア指示「顧客はsaveAccountして、そのaccount.idを予約時に指定」):
 //   電話番号で名寄せ(/get/account filter.kwd=migrate CLIと同手法)→既存ならそのid/無ければ/save/accountで作成。
 //   account.code=こちらの顧客ID(seam-<電話番号>)を指定(エンジニア指示・台帳の相互参照キー)。

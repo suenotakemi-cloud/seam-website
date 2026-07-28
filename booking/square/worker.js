@@ -17,7 +17,7 @@
 import PostalMime from 'postal-mime';   // HPBメールのMIME/日本語解析（npm install postal-mime）
 import { EmailMessage } from 'cloudflare:email';   // オーナー通知（SEND_EMAILバインド・宛先はwrangler.tomlのdestination_address）
 import { json, z, min2hm } from './util.js';   // 共有ユーティリティ
-import { salonPush, salonCancel, salonDelete, salonCall, handleSalonPull, handleSalonSelftest, handleSalonWhoami, handleSalonCleanupNoname } from './salon-bridge.js';   // salon.town(CUEPON)ブリッジ
+import { salonPush, salonCancel, salonDelete, salonCall, salonSaveAccountRaw, handleSalonPull, handleSalonSelftest, handleSalonWhoami, handleSalonCleanupNoname } from './salon-bridge.js';   // salon.town(CUEPON)ブリッジ
 import { handleAiChat } from './ai-chat.js';   // BYO AI（本人キーでClaude/ChatGPT）
 
 const SQUARE_VERSION = '2025-01-23';
@@ -153,9 +153,24 @@ export default {
         if (url.searchParams.get('kwd')) filter.kwd = url.searchParams.get('kwd');
         if (url.searchParams.get('code')) filter.code = url.searchParams.get('code');
         if (url.searchParams.get('phone')) filter.phone = url.searchParams.get('phone');
+        if (url.searchParams.get('id')) filter.id = url.searchParams.get('id');
+        // staff_shop指定時は店舗スタッフ一覧(codeを含む)を返す
+        if (url.searchParams.get('staff_shop')) {
+          const js = await salonCall(env, '/get/account/shop/staff', { filter: { shop_id: url.searchParams.get('staff_shop') } });
+          return json({ ok: true, accounts: (js.data || []).map(a => ({ id: a.id, code: a.code || '', name: a.name || a.open_name || '', kana: a.kana || '', deleted: !!a.delete_date })) }, 200, cors);
+        }
         const j = await salonCall(env, '/get/account', { filter, limit: 5 });
         return json({ ok: true, accounts: (j.data || []).map(a => ({ id: a.id, code: a.code || '', name: a.name || '', kana: a.kana || '', deleted: !!a.delete_date })) }, 200, cors);
       } catch (e) { return json({ error: e.message }, 502, cors); }
+    }
+    // スタッフaccountのcode設定(専用トークン)。RPAのスタイリスト解決キー=account.code(スパ垢が空でSTYLIST_NOT_FOUNDの修復用)
+    if (p.endsWith('/admin/account-setcode') && m === 'POST') {
+      const tk = url.searchParams.get('token') || '';
+      if (!env.CLEANUP_TOKEN || tk !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+      const id = url.searchParams.get('id'), code = url.searchParams.get('code');
+      if (!id || !code) return json({ error: 'id/code必須' }, 400, cors);
+      try { const j = await salonSaveAccountRaw(env, { id, code }); return json({ ok: !!j.result, result: j }, 200, cors); }
+      catch (e) { return json({ error: e.message }, 502, cors); }
     }
     // テスト顧客accountの削除(専用トークン・id指定1件)
     if (p.endsWith('/admin/account-del') && m === 'POST') {
