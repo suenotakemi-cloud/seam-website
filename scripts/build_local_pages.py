@@ -82,6 +82,8 @@ STORES = {
    note='ネイリックスの1階と2階 2フロアを使った店舗です　栄・矢場町・大須から歩けて ヘアサロンとヘッドスパを併設しています',
    photo='images/stores/store_nagoya.jpg', pw=819, ph=1024,
    ig='seam.nagoya',
+   # 2026-07 スタイリスト不在のためヘアの受付を休止中(ヘッドスパとショップは営業)
+   salon_paused=True,
    salon_hpb='H000800028', spa_hpb='H000800971', spa_set='nagoya'),
  'fukuoka': dict(
    area='福岡', name='SEAM FUKUOKA', pref='福岡県', locality='福岡市中央区',
@@ -112,6 +114,8 @@ STORES = {
 for _slug, _st in STORES.items():
     _st['slug'] = _slug
     _st.setdefault('awards', ())   # 受賞はHPB掲載で裏が取れる店だけに出す
+    # ヘアの受付を休止している店。受けられない予約をサイトから送らないための旗
+    _st.setdefault('salon_paused', False)
 
 # ヘッドスパの料金・コース名はホットペッパービューティーの掲載(実測 2026-07-28)に合わせる。
 # 「合わせる」とは、掲載に無いコースをサイト独自に載せないということ。
@@ -597,6 +601,23 @@ def build_salon(slug):
                       f'{E(a)}店の最新メニューと料金はホットペッパービューティーでご確認ください</p>')
 
     salon_url = f'https://beauty.hotpepper.jp/sln{st["salon_hpb"]}/'
+    # 休止中はヘアの予約先を出さない。ヘッドスパが動いていればそちらへ送る
+    paused = st['salon_paused']
+    if paused and st['spa_hpb']:
+        cta_url = f'https://beauty.hotpepper.jp/kr/sln{st["spa_hpb"]}/'
+        cta_text, cta_track, cta_blank = f'{a}のヘッドスパを予約する', 'spa_reserve_hpb', ' target="_blank" rel="noopener"'
+    elif paused:
+        cta_url = f'store-{slug}.html'
+        cta_text, cta_track, cta_blank = f'{a}の店舗情報を見る', 'store_info', ''
+    else:
+        cta_url = salon_url
+        cta_text, cta_track, cta_blank = f'{a}のサロンを予約する', 'salon_reserve_hpb', ' target="_blank" rel="noopener"'
+    pause_note = (
+        '<p class="mt-6 rounded-[10px] px-4 py-3 text-[13px]" '
+        'style="border:1px solid rgba(184,148,90,.42);background:rgba(184,148,90,.06);'
+        'color:#6B6358;line-height:1.95;">'
+        + E(a) + '店のヘアサロンは現在受付を休止しています　'
+        'ヘッドスパとサロン専売品のショップは通常どおり営業しています</p>') if paused else ''
     spa_link = (f'　<a href="headspa-{slug}.html" class="border-b border-line">{E(a)}のヘッドスパ</a>'
                 if st['spa_hpb'] else '')
     others = ' '.join(f'<a href="salon-{s}.html" class="hover:text-ink border-b border-line pb-0.5">{E(STORES[s]["area"])}</a>'
@@ -629,6 +650,7 @@ def build_salon(slug):
     <h1 class="mt-3 font-serif text-[27px] sm:text-[34px] leading-[1.3] text-ink" style="letter-spacing:.02em;font-weight:500;">{E(a)}で髪を知る人に任せる</h1>
     <p class="mt-4 text-[14px] text-charcoal/85" style="line-height:2.05;">{E(st['nearline'])}<br>カット・カラー・パーマ・縮毛矯正・トリートメントまで 140以上のサロン専売ブランドを知るプロが{E(room)}で仕上げます</p>
     <div class="chips mt-5">{''.join(f'<span>{E(n)}</span>' for n in st['near'])}</div>
+    {pause_note}
     {photo_block(st, f'{st["name"]}（{st["access"]}）')}
 
     <section class="mt-10 border-l-2 pl-4" style="border-color:#D9BE93;">
@@ -638,8 +660,8 @@ def build_salon(slug):
     {awards_block(st)}
 
     <section class="mt-11">{menu_block}
-      <a href="{salon_url}" target="_blank" rel="noopener" data-track-click="salon_reserve_hpb"
-         class="mt-6 inline-block rounded-[4px] px-6 py-3.5 text-[13.5px] text-white transition-opacity hover:opacity-90" style="background:#B57C5A;">{E(a)}のサロンを予約する →</a>
+      <a href="{cta_url}"{cta_blank} data-track-click="{cta_track}"
+         class="mt-6 inline-block rounded-[4px] px-6 py-3.5 text-[13.5px] text-white transition-opacity hover:opacity-90" style="background:#B57C5A;">{E(cta_text)} →</a>
     </section>
 
     {flow}
@@ -671,7 +693,7 @@ def build_salon(slug):
     <p class="mt-10 text-[12.5px] text-charcoal/70">ほかのエリアのヘアサロン　{others}</p>
     {FOOTER_NOTE}
   </main>
-  {sticky_cta(f'{a}のサロンを予約', salon_url, 'salon_reserve_sticky')}''' + foot()
+  {sticky_cta(cta_text.replace('する', ''), cta_url, cta_track + '_sticky')}''' + foot()
 
 
 # ══════════════════════════════════════ ブランド × 都市(東京) ══════════════════════════════════════
