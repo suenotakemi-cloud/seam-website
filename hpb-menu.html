@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM｜ホットペッパー メニュー名とクーポン名</title>
+<style>
+  :root{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+    --shadow:0 1px 2px rgba(60,46,20,.05),0 8px 30px rgba(60,46,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+      --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+      --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+  }
+  :root[data-theme="dark"]{
+    --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+    --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+    --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+    font-size:15px; line-height:1.85; letter-spacing:.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 22px 90px;}
+  .serif{font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  /* ── masthead ── */
+  .mast{border-bottom:1.5px solid var(--ink); padding-bottom:22px; margin-bottom:8px;}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; letter-spacing:.42em; font-size:15px; color:var(--ink); font-weight:600;}
+  .kicker{font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-top:20px;}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:29px; line-height:1.35; margin:.24em 0 0; text-wrap:balance; letter-spacing:.02em;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:12px; line-height:1.9;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:16px; font-size:11.5px; color:var(--faint); font-family:ui-monospace,monospace; letter-spacing:.04em;}
+
+  /* ── intro card ── */
+  .lead{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-top:26px; box-shadow:var(--shadow); font-size:14px; line-height:2;}
+  .lead b{color:var(--gold);}
+  .lead .why{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted);}
+
+  /* ── section ── */
+  section{margin-top:46px;}
+  .eyebrow{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:10px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+  h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:21px; margin:12px 0 4px; letter-spacing:.02em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:13px; margin:0 0 18px;}
+
+  /* ── field list ── */
+  .field{display:flex; gap:15px; padding:17px 0; border-top:1px solid var(--line2);}
+  .field:first-of-type{border-top:0;}
+  .fnum{flex:none; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--gold); color:var(--gold); font-family:ui-monospace,monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .fbody{min-width:0; flex:1;}
+  .fname{font-weight:700; font-size:14.5px; color:var(--ink);}
+  .fname .req{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; color:#fff; background:var(--gold); border-radius:3px; padding:2px 6px; margin-left:8px; vertical-align:2px; font-weight:600;}
+  .fdesc{font-size:13px; color:var(--muted); line-height:1.95; margin-top:5px;}
+  .fdesc strong{color:var(--ink); font-weight:600;}
+
+  /* ── paste block ── */
+  .paste{position:relative; background:var(--paste); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px; padding:14px 15px 15px; margin-top:11px;}
+  .paste .lbl{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:8px;}
+  .paste p{margin:0; font-size:13px; line-height:1.95; color:var(--ink); white-space:pre-wrap;}
+  .paste .var{color:var(--bad); font-weight:600;}
+  .copybtn{position:absolute; top:11px; right:11px; font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.08em; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer; transition:all .15s;}
+  .copybtn:hover{color:var(--ink); border-color:var(--gold);}
+  .copybtn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .qa{margin-top:9px;}
+  .qa .q{font-weight:700; font-size:13px; color:var(--ink);}
+  .qa .q::before{content:"Q. "; color:var(--gold); font-family:ui-monospace,monospace;}
+  .qa .a{font-size:12.5px; color:var(--muted); line-height:1.9; margin:2px 0 12px; padding-left:1.4em;}
+  .qa .a::before{content:"A. "; color:var(--faint); font-family:ui-monospace,monospace; margin-left:-1.4em;}
+
+  /* ── checklist ── */
+  ul.check{list-style:none; margin:6px 0 0; padding:0;}
+  ul.check li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line2); font-size:13.5px; line-height:1.75;}
+  ul.check li:first-child{border-top:0;}
+  ul.check li::before{content:""; position:absolute; left:0; top:12px; width:15px; height:15px; border:1.5px solid var(--gold-soft); border-radius:3px; background:var(--panel);}
+  ul.check li b{color:var(--ink);}
+  ul.check li .hint{display:block; color:var(--faint); font-size:11.5px; margin-top:2px;}
+
+  /* ── data table ── */
+  .tablewrap{overflow-x:auto; margin-top:6px; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);}
+  table{border-collapse:collapse; width:100%; min-width:680px; font-size:12px; background:var(--panel);}
+  th,td{text-align:left; padding:11px 13px; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.7;}
+  thead th{background:var(--panel2); font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:600; white-space:nowrap; position:sticky; top:0;}
+  tbody tr:last-child td{border-bottom:0;}
+  td .name{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;}
+  td.u{font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); word-break:break-all;}
+  td .none{color:var(--faint); font-style:italic;}
+
+  /* ── do / dont ── */
+  .rules{display:grid; gap:10px; margin-top:8px;}
+  .rule{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.85;}
+  .rule .ic{flex:none; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; color:#fff; background:var(--bad);}
+  .rule b{color:var(--ink);}
+  .rule .sub{color:var(--muted); font-size:12px;}
+
+  .callout{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:13px 16px; font-size:12.5px; color:var(--muted); line-height:1.9; margin-top:14px;}
+  .callout b{color:var(--gold);}
+
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:11px; color:var(--faint); line-height:1.9; font-family:ui-monospace,monospace; letter-spacing:.03em;}
+
+  @media (max-width:560px){
+    .wrap{padding:30px 16px 70px;} h1{font-size:24px;} .field{gap:12px;}
+  }
+  @media print{
+    body{background:#fff; color:#000; font-size:11.5px;}
+    .copybtn{display:none;} .wrap{max-width:none; padding:0;}
+    .lead,.paste,.tablewrap,.rule,.callout{box-shadow:none;}
+    section{break-inside:avoid;} .field,.rule,.paste{break-inside:avoid;}
+  }
+
+
+  /* この資料だけの調整。担当者がスマホで見ながら入力する前提 */
+  .tablewrap.fit table{min-width:0;}
+  .tablewrap.fit th,.tablewrap.fit td{padding:10px 9px;}
+  .tablewrap.fit thead th{letter-spacing:.02em; padding-left:6px; padding-right:6px;}
+  @media (max-width:400px){
+    .tablewrap.fit th,.tablewrap.fit td{padding:9px 6px; font-size:11.5px;}
+  }
+  .gap{display:inline-block;font-family:ui-monospace,monospace;font-size:11px;padding:2px 6px;
+       border-radius:4px;background:rgba(168,68,58,.1);color:#A8443A;font-weight:600;}
+  .ok{display:inline-block;font-family:ui-monospace,monospace;font-size:11px;padding:2px 6px;
+      border-radius:4px;background:rgba(85,112,73,.12);color:#557049;font-weight:600;}
+  /* 名前案。1本ずつコピーできるようにする */
+  .cp{position:relative;background:var(--paste);border:1px solid var(--line);
+      border-left:3px solid var(--gold);border-radius:8px;padding:12px 78px 12px 14px;margin-top:8px;}
+  .cp p{margin:0;font-size:13px;line-height:1.75;color:var(--ink);}
+  .cp .why{display:block;margin-top:5px;font-size:11.5px;color:var(--muted);line-height:1.7;}
+  .cp .copybtn{top:10px;right:10px;}
+  /* 店名と価格一覧。スマホでは縦積みにしないと店名が1文字ずつ折れる */
+  .storehead{margin-top:34px;padding-bottom:9px;border-bottom:1px solid var(--line);}
+  .storehead b{display:block;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+               font-size:17px;color:var(--ink);white-space:nowrap;}
+  .storehead span{display:block;margin-top:4px;font-family:ui-monospace,monospace;
+                  font-size:10.5px;line-height:1.75;color:var(--muted);}
+  @media (min-width:620px){
+    .storehead{display:flex;align-items:baseline;gap:12px;}
+    .storehead b,.storehead span{display:inline;margin-top:0;}
+  }
+</style>
+</head><body>
+
+<div class="wrap">
+<div class="mast"><span class="brand">SEAM</span></div>
+<p class="kicker">Menu &amp; Coupon Naming</p>
+<h1>ホットペッパー<br>メニュー名とクーポン名</h1>
+<p class="sub">同エリアの人気店から<strong>クーポン名を1,904本</strong>取得し、名前の付け方を数えました。<br>そのうえで、<strong>スパ＝ウェットスパ／サロン＝高単価</strong>という立ち位置に合わせた名前案を用意しています。</p>
+<div class="meta"><span>実測日 2026-07-28</span><span>人気店1,904本を解析</span><span>社内資料・検索非掲載</span></div>
+
+<div class="lead">
+<strong>いちばん大きい差は「名前に価格を書いているか」でした。</strong>
+人気店は31.1%が名前の中に金額を入れています。SEAMは8.3%です。
+一覧では名前しか見えないので、価格が無いと<b>タップされる前に比較から外れます</b>。
+<div class="why">そして<b>空いている場所が2つ</b>見つかりました。ヘッドスパの競合486本のうち、
+<b>「ウェット」を名乗っている店は8.0%</b>、<b>「個室」と書いている店は0.4%</b>しかありません。
+SEAMはどちらも本当に持っています。名乗れば、それだけで他店と違う棚に並べます。</div>
+</div>
+
+<p class="eyebrow">Measured</p>
+<h2>人気店の名前の付け方</h2>
+<p class="lede">1,904本を数えた実測です。SEAMと並べています。</p>
+<div class="tablewrap fit"><table>
+<thead><tr><th>型</th><th style="text-align:center">人気店</th><th style="text-align:center">SEAM</th></tr></thead>
+<tbody>
+<tr><td><b>名前に価格を入れる</b></td><td style="text-align:center">31.1%</td><td style="text-align:center"><span class="gap">8.3%</span></td></tr>
+<tr><td>【　】で始める</td><td style="text-align:center">43.4%</td><td style="text-align:center"><span class="ok">45.4%</span></td></tr>
+<tr><td>＋で組み合わせを示す</td><td style="text-align:center">40.2%</td><td style="text-align:center"><span class="ok">39.0%</span></td></tr>
+<tr><td>時間を入れる</td><td style="text-align:center">18.4%</td><td style="text-align:center"><span class="ok">21.6%</span></td></tr>
+<tr><td><b>条件をつける</b><span style="display:block;font-size:11px;color:var(--faint)">平日／土日／限定</span></td><td style="text-align:center">12.9%</td><td style="text-align:center"><span class="gap">5.5%</span></td></tr>
+<tr><td><b>メンズと明示する</b></td><td style="text-align:center">7.2%</td><td style="text-align:center"><span class="gap">3.2%</span></td></tr>
+<tr><td>1本あたりの長さ</td><td style="text-align:center">31字</td><td style="text-align:center">27字</td></tr>
+</tbody></table></div>
+
+<div class="callout">
+<b>ヘッドスパだけを見ると、型がはっきり変わります。</b>近隣486本の実測では
+<b>時間を入れているのが66.7%</b>（ヘアの18.4%より圧倒的に高い）。
+スパは「何分か」が先に見られています。<br>
+一方で<b>悩みワード（不眠・眼精疲労・脳疲労・首肩・自律神経）が12.8%</b>。
+上位店ほどこれを入れています。実例：「【人気No.1】夜ぐっすり眠れる！不眠・睡眠の質改善特化コース　8,000円」
+</div>
+
+<p class="eyebrow">Position</p>
+<h2>SEAMが取るべき型</h2>
+
+<div class="field">
+<div class="fnum">スパ</div><div class="fbody">
+<div class="fname">ウェットスパを名乗る<span class="req">空いている</span></div>
+<div class="fdesc">競合486本のうち<strong>「ウェット」を名乗る店は8.0%、「個室」と書く店は0.4%</strong>。
+SEAMはどちらも本当に持っています。しかも価格帯を見ると、近隣の中央値は<strong>¥7,990</strong>で、
+<strong>¥12,000を超える枠は痩身・小顔・鍼といった別ジャンルが占めています</strong>。
+つまり<strong>ウェットヘッドスパの高価格帯は空いています</strong>。安く見せる必要はありません。</div>
+<div class="paste"><span class="lbl">スパの型</span>
+<p>【フック】<span class="var">ウェット</span>ヘッドスパ ＋ 何をするか　<span class="var">完全個室</span>　<span class="var">◯分</span>　￥価格</p></div>
+<ul class="check">
+<li><strong>時間は必ず入れる</strong><span class="hint">競合の66.7%が入れています　スパは「何分か」が先に見られます</span></li>
+<li><strong>「ウェット」「濡らす」を名乗る</strong><span class="hint">ドライスパとの違いが伝わり、8%しかいない棚に入れます</span></li>
+<li><strong>「完全個室」を書く</strong><span class="hint">書いている店が0.4%　持っているのに書かないのはもったいない</span></li>
+<li><strong>悩みは1つに絞る</strong><span class="hint">不眠／眼精疲労／首肩／頭皮　欲張ると誰にも刺さりません</span></li>
+</ul>
+</div></div>
+
+<div class="field">
+<div class="fnum">サロン</div><div class="fbody">
+<div class="fname">高単価だからこそ、価格を書く<span class="req">要変更</span></div>
+<div class="fdesc">高単価店が価格を隠しているわけではありません。実測した人気店の高価格帯を見ると、
+<strong>そのまま単価で書いています</strong>。<br>
+実例：「【広がりとボリュームが落ち着く】カット+質感チェンジトリートメント￥24900」／
+「★人気No.1 極上の艶と手触り★骨格補正カット+プレミアム艶カラー￥19150」</div>
+<div class="paste"><span class="lbl">サロンの型</span>
+<p>【<span class="var">どう変わるか</span>】施術＋施術＋施術　￥価格</p></div>
+<ul class="check">
+<li><strong>二重価格（¥27,100→¥19,998）は使わない</strong><span class="hint">値引き前提の見せ方は高単価と噛み合わず、正価に戻れなくなります　単価だけを書きます</span></li>
+<li><strong>フックは「どう変わるか」</strong><span class="hint">「安い」ではなく「広がりが落ち着く」「艶と手触り」　高単価店はここで戦っています</span></li>
+<li><strong>140以上のブランドを名前に入れる</strong><span class="hint">SEAMにしか書けない一行です　技術だけの勝負を避けられます</span></li>
+</ul>
+</div></div>
+
+<p class="eyebrow">Volume</p>
+<h2>何本出すか</h2>
+<p class="lede">本数そのものが露出です。特徴テーマもクーポンのまとまりとして表示されます。</p>
+<div class="tablewrap fit"><table>
+<thead><tr><th>掲載</th><th style="text-align:center">現在</th><th style="text-align:center">人気店中央</th><th style="text-align:center">目標</th></tr></thead>
+<tbody>
+<tr><td><span class="name">銀座</span> ヘア</td><td style="text-align:center"><span class="gap">10</span></td><td style="text-align:center">18</td><td style="text-align:center"><b>20</b></td></tr>
+<tr><td><span class="name">札幌</span> ヘア</td><td style="text-align:center">22</td><td style="text-align:center">27</td><td style="text-align:center"><b>27</b></td></tr>
+<tr><td><span class="name">大阪</span> ヘア</td><td style="text-align:center"><span class="gap">10</span></td><td style="text-align:center">17</td><td style="text-align:center"><b>20</b></td></tr>
+<tr><td><span class="name">福岡</span> ヘア</td><td style="text-align:center">14</td><td style="text-align:center">24</td><td style="text-align:center"><b>24</b></td></tr>
+<tr><td><span class="name">銀座</span> スパ</td><td style="text-align:center"><span class="gap">5</span></td><td style="text-align:center">7</td><td style="text-align:center"><b>12</b></td></tr>
+<tr><td><span class="name">名古屋</span> スパ</td><td style="text-align:center"><span class="gap">5</span></td><td style="text-align:center">10</td><td style="text-align:center"><b>12</b></td></tr>
+<tr><td><span class="name">大阪</span> スパ</td><td style="text-align:center">8</td><td style="text-align:center">9</td><td style="text-align:center"><b>12</b></td></tr>
+</tbody></table></div>
+<div class="callout">名古屋ヘアは<b>受付休止中のため対象外</b>です。掲載の受付停止をお願いしています。<br>
+スパを12本にしているのは、<b>時間×悩み×対象</b>の掛け算で自然に増えるためです（60分×不眠／60分×眼精疲労／90分×首肩…）。
+同じ施術でも入口が変われば別のクーポンとして成立します。</div>
+
+<p class="eyebrow">Spa Names</p>
+<h2>ヘッドスパ ── 名前案</h2>
+<p class="lede">価格はすべて現在の実売です。そのままコピーして使えます。</p>
+
+<div class="storehead"><b>銀座スパ</b><span>45分¥12,000 / 60分¥13,800 / 90分¥17,800 / 120分¥20,800 / 150分¥25,000</span></div>
+<div class="cp"><button class="copybtn" type="button">COPY</button><p>【眠りが浅い方へ】ウェットヘッドスパ　完全個室　60分　￥13,800<span class="why">悩みを不眠ひとつに絞る　ウェットと完全個室を両方名乗る</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1】頭浸浴つきウェットヘッドスパ　首肩デコルテまで　完全個室　90分　￥17,800<span class="why">現在の主力。人気表記と時間と価格をそろえる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【PC・スマホ疲れに】目の奥の重さをほどくウェットヘッドスパ　完全個室　60分　￥13,800<span class="why">同じ60分でも入口を眼精疲労に変えて別クーポンにする</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【予定の合間に】ショートウェットヘッドスパ　完全個室　45分　￥12,000<span class="why">入口コース。銀座で唯一の短時間枠を前に出す</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】仕事帰りの頭皮リセット　ウェットヘッドスパ　完全個室　60分　￥13,800<span class="why">メンズ明示は競合7.2%　SEAMは3.2%で取りこぼしている</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【全身リセット】頭浸浴つきプレミアムウェットヘッドスパ　完全個室　120分　￥20,800<span class="why">上位コース。時間と価格で本気度が伝わる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【最上位】選べる美髪トリートメントつきプレミアムスパ　完全個室　150分　￥25,000<span class="why">最上位は迷わせない　1本で完結させる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【眼のマッサージつき】ウェットヘッドスパ　完全個室　60分＋10分　￥14,900<span class="why">オプション込みの完成形を1本にする　単品追加より選ばれやすい</span></p></div>
+
+<div class="storehead"><b>名古屋スパ</b><span>初回60分¥8,800 / メンズ60分¥8,800 / 90分¥13,200 / 120分¥17,600 / 150分¥21,800</span></div>
+<div class="cp"><button class="copybtn" type="button">COPY</button><p>【初めての方へ】ウェットヘッドスパ　完全個室　60分　￥8,800<span class="why">入口価格。初回とわかる言葉を先頭に置く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】頭皮と眼精疲労のウェットヘッドスパ　完全個室　60分　￥8,800<span class="why">メンズ限定枠が既にある　名前で拾いにいく</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1】頭浸浴つきウェットヘッドスパ　首肩まで　完全個室　90分　￥13,200<span class="why">主力。時間と価格を必ず添える</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【眠りが浅い方へ】ウェットヘッドスパ　完全個室　90分　￥13,200<span class="why">同じ90分を不眠の入口で別クーポンに</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【栄・矢場町から徒歩すぐ】仕事帰りのウェットヘッドスパ　完全個室　60分　￥8,800<span class="why">立地を書く　名古屋は駅名の検索が効く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【リカバリー】頭浸浴つきプレミアムウェットヘッドスパ　完全個室　120分　￥17,600<span class="why">上位コース</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【最上位】選べるトリートメントつきプレミアムスパ　完全個室　150分　￥21,800<span class="why">最上位</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【2回目以降の方へ】頭浸浴つきウェットヘッドスパ　完全個室　90分　￥13,200<span class="why">再来枠。競合は1.2%しか作っていない　1回目を2回目にする装置</span></p></div>
+
+<div class="storehead"><b>大阪 堀江スパ</b><span>60分¥11,800 / 診断60分¥12,800 / 90分¥15,800 / 診断90分¥16,800 / 診断120分¥19,800</span></div>
+<div class="cp"><button class="copybtn" type="button">COPY</button><p>【頭皮をスコープで見る】診断つきウェットヘッドスパ　完全個室　60分　￥12,800<span class="why">大阪だけの強み。「見える」を先頭に置く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1】頭浸浴つきウェットヘッドスパ　完全個室　90分　￥15,800<span class="why">主力</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【眠りが浅い方へ】ウェットヘッドスパ　完全個室　60分　￥11,800<span class="why">入口。悩みをひとつに絞る</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【首肩がつらい方へ】頭皮診断つきウェットヘッドスパ　首肩ケアまで　完全個室　90分　￥16,800<span class="why">診断つきの上位。悩みで差をつける</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】頭皮を見てから整えるウェットヘッドスパ　完全個室　60分　￥12,800<span class="why">診断つきはメンズと相性が良い　薄毛の悩みに正面から応える</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【根本から整える】頭皮診断つきウェットヘッドスパ　デコルテまで　完全個室　120分　￥19,800<span class="why">最上位</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【ヘッドスパ×フェイシャル】完全個室　120分　￥16,650<span class="why">大阪だけの組み合わせ。他店にない棚に入れる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【四ツ橋駅 徒歩2分】仕事帰りのウェットヘッドスパ　完全個室　60分　￥11,800<span class="why">立地を書く</span></p></div>
+
+<p class="eyebrow">Salon Names</p>
+<h2>ヘアサロン ── 名前案</h2>
+<p class="lede">高単価の見せ方です。値引き表記は使わず、単価だけを書きます。</p>
+
+<div class="storehead"><b>銀座</b><span>カット+TR¥9,900 / 髪質改善TR¥22,000 / カット+ケアカラー+TR¥24,000</span></div>
+<div class="cp"><button class="copybtn" type="button">COPY</button><p>【完全個室】似合わせカット＋髪質改善トリートメント　￥22,000<span class="why">高単価は単価のまま書く。二重価格を使わない</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【140以上のブランドから選ぶ】カット＋ケアカラー＋トリートメント　￥24,000<span class="why">SEAMにしか書けない一行。技術だけの勝負を避ける</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【まずは体験】完全個室のカット＋トリートメント　￥9,900<span class="why">入口。高単価店でも入口は要る</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】完全個室で仕上げるカット＋頭皮ケア　￥9,900<span class="why">メンズ明示。銀座はビジネス層が厚い</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【広がりとうねりを落ち着かせる】カット＋髪質改善トリートメント　￥22,000<span class="why">フックを「どう変わるか」に。人気店の高単価はここで戦っている</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【白髪が気になり始めた方へ】カット＋ケアカラー＋トリートメント　￥24,000<span class="why">グレイカラーは人気店17店が使うテーマ　SEAMは0店</span></p></div>
+
+<div class="storehead"><b>札幌</b><span>カット+オージュアTR¥11,000 / 頭皮洗浄¥6,600 / 水素バイカルテ¥16,700 / 水素縮毛矯正¥26,600</span></div>
+<div class="cp"><button class="copybtn" type="button">COPY</button><p>【4年連続ゴールド賞】カット＋オージュアトリートメント＋毛髪クレンジング　￥11,000<span class="why">受賞は札幌の本物の資産。名前の先頭に置く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【最上級のストレート】超高濃度水素シルク縮毛矯正＋カット＋バイカルテ　￥26,600<span class="why">高単価の主力。単価のまま書く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【髪に水分を】シルクカラー＋高濃度水素バイカルテトリートメント　￥16,700<span class="why">どう変わるかを先頭に</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【頭皮から整える】カット＋頭皮洗浄　￥6,600<span class="why">入口。大通駅すぐという立地と相性が良い</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】カット＋頭皮洗浄　￥6,600<span class="why">メンズ明示。同じ内容でも入口を分ける</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【白髪が気になり始めた方へ】カット＋シルクカラー＋トリートメント　￥16,700<span class="why">グレイカラーの棚を取りにいく</span></p></div>
+
+<div class="storehead"><b>大阪 堀江</b><span>オーダーメイドTR¥9,900 / 頭浸浴×スパ¥14,000 / TR+スパ30分¥14,900 / 頭浸浴90分¥16,800</span></div>
+<div class="cp"><button class="copybtn" type="button">COPY</button><p>【毛髪診断から選ぶ】オーダーメイドトリートメント　BYKARTE／Aujua／TOKIO　￥9,900<span class="why">3ブランドから選べるのはSEAMだけ。名前に出す</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【人気No.1】オーダーメイドトリートメント＋極上ヘッドスパ30分　￥14,900<span class="why">主力。人気表記を使う</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【日々の疲れに】頭浸浴×ウェットヘッドスパ　￥14,000<span class="why">サロン側にもウェットを書く。スパとの橋になる</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】頭浸浴×ウェットヘッドスパ　90分　￥16,800<span class="why">メンズ明示＋時間</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【140以上のブランドから選ぶ】毛髪診断＋オーダーメイドトリートメント　￥9,900<span class="why">SEAMにしか書けない一行</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【四ツ橋駅 徒歩2分】仕事帰りのトリートメント＋ヘッドスパ　￥14,900<span class="why">立地を書く</span></p></div>
+
+<div class="storehead"><b>福岡 天神大名</b><span>オージュアTR¥3,300 / 筋膜リリース+TR¥6,600 / カット+カラー+3step¥13,200 / 髪質改善ストレート¥21,000</span></div>
+<div class="cp"><button class="copybtn" type="button">COPY</button><p>【お気軽体験】オージュアトリートメント　￥3,300<span class="why">現在の入口。そのまま残す</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【迷ったらこれ】似合わせカット＋ケアカラー＋3stepトリートメント　￥13,200<span class="why">主力。フックは短く</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【広がり・うねりを整える】髪質改善ストレート＋カット＋3stepトリートメント　￥21,000<span class="why">高単価。単価のまま</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【個室で疲労回復】筋膜リリース＆アミノクレンジング＆オージュアトリートメント　￥6,600<span class="why">個室を書く　競合はほぼ書いていない</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【メンズ】似合わせカット＋アミノクレンジングスパ　￥6,600<span class="why">メンズ明示</span></p></div><div class="cp"><button class="copybtn" type="button">COPY</button><p>【白髪が気になり始めた方へ】カット＋ケアカラー＋3stepトリートメント　￥13,200<span class="why">グレイカラーの棚</span></p></div>
+
+<p class="eyebrow">Rules</p>
+<h2>入力するときの決めごと</h2>
+<div class="rules">
+<div class="rule"><span class="ic">!</span><div>
+<b>二重価格（¥27,100→¥19,998）は使わない。</b>
+<div class="sub">人気店には多い型ですが、SEAMは高単価で通す店です。一度この見せ方を始めると正価に戻れません。
+単価だけを書きます。</div>
+</div></div>
+<div class="rule"><span class="ic">!</span><div>
+<b>ひとつのクーポンに悩みは1つ。</b>
+<div class="sub">「不眠にも眼精疲労にも首肩にも」と書くと誰にも刺さりません。同じ施術でも、
+入口の悩みを変えれば別のクーポンとして成立します。本数が自然に増えます。</div>
+</div></div>
+<div class="rule"><span class="ic" style="background:#557049">✓</span><div>
+<b>「ウェット」と「完全個室」は必ず入れる。</b>
+<div class="sub">競合486本のうち、ウェットを名乗るのが8.0%、個室と書くのが0.4%。
+持っているのに書いていないのは、棚を1つ捨てているのと同じです。</div>
+</div></div>
+<div class="rule"><span class="ic" style="background:#557049">✓</span><div>
+<b>公式サイトの料金と必ず揃える。</b>
+<div class="sub">この資料の価格はすべてホットペッパー掲載の実売です。公式サイトも同じ数字に統一済みなので、
+掲載を変えたらお知らせください。サイト側もその日のうちに合わせます。</div>
+</div></div>
+</div>
+
+<footer>
+SEAM ／ 株式会社hanico　社内資料<br>
+人気店のクーポン名1,904本（ヘア5エリア×6店＋スパ3エリア×5店）を 2026-07-28 に取得して解析しました<br>
+関連資料　人気店との差 seam.site/hpb-gap ／ 掲載改善の手順 seam.site/hpb-guide ／ 8月の集客計画 seam.site/august-plan
+</footer>
+</div>
+
+<script>
+document.querySelectorAll('.copybtn').forEach(function(b){
+  b.addEventListener('click', function(){
+    var p = b.parentNode.querySelector('p');
+    if(!p) return;
+    var w = p.querySelector('.why');
+    var t = w ? p.textContent.replace(w.textContent, '') : p.textContent;
+    navigator.clipboard.writeText(t.trim()).then(function(){
+      var o = b.textContent; b.textContent = 'COPIED';
+      setTimeout(function(){ b.textContent = o; }, 1400);
+    });
+  });
+});
+</script>
+</body></html>
