@@ -36,6 +36,44 @@ export async function salonCall(env, path, extra) {
   return res.json();
 }
 
+// multipart版(save/accountはmultipart必須=罠T10/T11)。SDK(salon-client.js apiMultipart)と同形:
+// user_id/tokenはFormDataの独立フィールド・dataフィールドはアカウント項目のみのJSON。
+async function salonCallMultipart(env, path, dataObj, extra = {}) {
+  const t = await salonToken(env);
+  const fd = new FormData();
+  fd.append('user_id', t.uid); fd.append('token', t.token);
+  for (const k in extra) fd.append(k, String(extra[k]));
+  fd.append('data', JSON.stringify(dataObj));
+  const res = await fetch(env.SALON_HOST + path, { method: 'POST', body: fd });
+  try { return await res.json(); } catch { return { result: false }; }
+}
+
+// ★顧客アカウントの解決(2026-07-28エンジニア指示「顧客はsaveAccountして、そのaccount.idを予約時に指定」):
+//   電話番号で名寄せ(/get/account filter.kwd=migrate CLIと同手法)→既存ならそのid/無ければ/save/accountで作成。
+//   account.code=こちらの顧客ID(seam-<電話番号>)を指定(エンジニア指示・台帳の相互参照キー)。
+//   失敗しても予約は通す(null→従来のfrom_account_idフォールバック)。電話はphone列(telではない)。
+export async function resolveCustomerAccount(env, { name, kana, phone, mail, shopId }) {
+  try {
+    if (!name) return null;
+    const ph = (phone || '').replace(/[^0-9]/g, '');
+    if (ph.length >= 10) {   // 電話がある時だけ名寄せ。filter.phone=完全一致が正(kwdは電話を見ない/codeフィルタは黙って無視=実測2026-07-28)
+      const found = await salonCall(env, '/get/account', { filter: { phone: ph }, limit: 5 });
+      const hit = (found.data || []).find(a => !a.delete_date);
+      if (hit) return hit.id;
+    }
+    const data = {
+      name, kana: kana || '', phone: ph, mail: mail || '', open_name: name,
+      affilicated_shop_id: shopId || env.SALON_SHOP_ID,   // 所属店舗(alp自動同期)
+      info_js: { src: 'seam-booking' },
+    };
+    if (ph) data.code = 'seam-' + ph;                     // こちら側の顧客ID(電話ベース)を相互参照キーとして刻む
+    const j = await salonCallMultipart(env, '/save/account', data);
+    if (j && j.result && j.id) { console.log('顧客account作成:', j.id, name); return j.id; }
+    console.log('顧客account作成失敗:', JSON.stringify(j).slice(0, 200));
+    return null;
+  } catch (e) { console.log('顧客account解決失敗:', e.message); return null; }
+}
+
 // 自社予約 → salon.town /save/reservation。返り値 { salonId, reserveNum }
 // ★確定パラメータ: account_id=スタイリスト/from_account_id=顧客(直感と逆)、個人情報はprivate_js(暗号化)、info_jsは平文で個人情報禁止。
 // ★メニュー(item/クーポン)は送らない(2026-07-27): 名称一致でRPA書込がエラーになるため。RPAは指名/フリー・時間・所要時間・氏名カナだけで予約する。
@@ -68,6 +106,9 @@ export async function salonPush(env, r) {
   }
   const stylist = r.staffCu || null;               // スタイリストのCUEPON account_id（スパはcuSpa）
   const nominated = r.nominated !== false;         // 既定=指名。フリーのみ false を明示
+  // ★顧客もCUEPON account(saveAccount)にして、そのaccount.idをfrom_account_idに指定(2026-07-28エンジニア指示)。
+  //   解決失敗時は従来どおりログインアカウントにフォールバック(予約を止めない)。
+  const customerId = await resolveCustomerAccount(env, { name: nm, kana: kn, phone: r.phone, mail: r.email, shopId });
   // ★メニュー(item/クーポン)は送らない＝名称一致でエラーになるため（2026-07-27オーナー指示）。
   //   RPAは「指名/フリー・開始時間・所要時間・氏名カナ」だけでサロンボードの予約ボタンを押せる（メニュー欄は任意）
   const data = {
@@ -76,8 +117,8 @@ export async function salonPush(env, r) {
     shop_id: shopId,
     // ★RPAはこの name 欄をサロンボードの顧客名欄へ転記する（メール取込と同形式「姓 名（セイ メイ）」）
     name: kn ? `${nm}（${kn}）` : nm,
-    account_id: stylist,                            // ★担当スタイリスト（枠を占有・指名/フリーとも設定）
-    from_account_id: env.SALON_ACCOUNT_ID || t.uid, // ★予約する顧客
+    account_id: stylist,                            // ★担当スタイリスト（CUEPONのaccount.id・枠を占有・指名/フリーとも設定）
+    from_account_id: customerId || env.SALON_ACCOUNT_ID || t.uid, // ★予約する顧客(saveAccountで作成/名寄せしたaccount.id)
     input_account_id: t.uid, last_input_account_id: t.uid,
     reserve_date: `${r.date} ${min2hm(r.start)}`,          // 開始時間
     reserve_end_date: `${r.date} ${min2hm(r.end)}`,        // 開始＋所要時間＝終了

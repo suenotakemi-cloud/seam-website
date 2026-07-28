@@ -114,7 +114,8 @@ flowchart LR
 
 ### 3.1 salon.town へ送る予約データ形式（2026-07-27 オーナー確定／2026-07-26 スパ設備追加・重要）
 サロンボード書込（RPA・**予約のみ＝予定機能は廃止**）に必要な**赤丸必須項目のみ**を送る。**メニュー/クーポン名は送らない**（名称一致でRPA書込がエラーになるため）。
-- 指名/フリー（`info_js.nominated`）・開始時間（`reserve_date`）・**所要時間**（`reserve_end_date`＝開始＋所要／`info_js.duration_min`）・氏名カナ（`name`欄＝「姓 名（セイ メイ）」／`private_js`にカナ）・担当（`account_id`＋`info_js.hbp_stylist_id`＝account.code）。
+- 指名/フリー（`info_js.nominated`）・開始時間（`reserve_date`）・**所要時間**（`reserve_end_date`＝開始＋所要／`info_js.duration_min`）・氏名カナ（`name`欄＝「姓 名（セイ メイ）」／`private_js`にカナ）・担当（**`account_id`＝CUEPONのaccount.id**。`info_js.hbp_stylist_id`はRPA補助用の別フィールド）。
+- **顧客もCUEPONアカウント（2026-07-28 エンジニア指示・実装済）**：予約前に電話番号で名寄せ（`/get/account filter:{phone}`＝完全一致が正。kwdは電話を見ない/`filter.code`は黙って無視＝実測）→ 無ければ `/save/account`（**multipart必須・user_id/tokenは独立フィールド・dataはアカウント項目のみのJSON**＝SDK apiMultipart同形）で作成 → その**account.idを`from_account_id`に指定**。`account.code`には**こちらの顧客ID（`seam-<電話番号>`）**を刻む（台帳相互参照キー・エンジニア指示）。解決失敗時はログインアカウントにフォールバック（予約を止めない）。E2E実証：作成→from_account_id反映→同一電話の2件目は既存account再利用（重複なし）。
 - `item_id`・`menu_id`・`hbp_menu_id` は**送らない**。`menu_label` は表示控えのみ（照合不使用）。
 - **スパのみ追加＝設備（個室）**：スパのサロンボードは予約フォームで**「設備」が必須項目**（ヘアには無い・2026-07-26オーナー実機確認）。
   - **RPA実装確認済（2026-07-27・APK解析）**：RPAは`selectAvailableEquipment`で**SB設備プルダウンから空き部屋を自走選択**する（`hbp_facility`は読まない）。全部屋埋まりは「空いている設備が無いためミラー予約をスキップ」。ヘア（設備欄なし＝CLP）は`EQUIP_NOT_REQUIRED`で素通り。

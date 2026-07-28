@@ -144,6 +144,27 @@ export default {
     }
     if (p.endsWith('/admin/purge-test') && m === 'POST') return handlePurgeTest(url, env, cors);         // テスト予約掃除(専用トークン)
     if (p.endsWith('/admin/diag-resv') && m === 'GET') return handleDiagResv(url, env, cors);            // 両店予約の診断読取(専用トークン)
+    // 顧客accountの確認(専用トークン・kwd=電話で検索してid/code/name返却。saveAccount検証用)
+    if (p.endsWith('/admin/account-check') && m === 'GET') {
+      const tk = url.searchParams.get('token') || '';
+      if (!env.CLEANUP_TOKEN || tk !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+      try {
+        const filter = {};
+        if (url.searchParams.get('kwd')) filter.kwd = url.searchParams.get('kwd');
+        if (url.searchParams.get('code')) filter.code = url.searchParams.get('code');
+        if (url.searchParams.get('phone')) filter.phone = url.searchParams.get('phone');
+        const j = await salonCall(env, '/get/account', { filter, limit: 5 });
+        return json({ ok: true, accounts: (j.data || []).map(a => ({ id: a.id, code: a.code || '', name: a.name || '', kana: a.kana || '', deleted: !!a.delete_date })) }, 200, cors);
+      } catch (e) { return json({ error: e.message }, 502, cors); }
+    }
+    // テスト顧客accountの削除(専用トークン・id指定1件)
+    if (p.endsWith('/admin/account-del') && m === 'POST') {
+      const tk = url.searchParams.get('token') || '';
+      if (!env.CLEANUP_TOKEN || tk !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+      const id = url.searchParams.get('id'); if (!id) return json({ error: 'id必須' }, 400, cors);
+      try { const j = await salonCall(env, '/delete/account', { ids: [id] }); return json({ ok: !!j.result, result: j }, 200, cors); }
+      catch (e) { return json({ error: e.message }, 502, cors); }
+    }
     // D1⇔salon.town台帳の突き合わせ(専用トークン)。salon.townで削除/キャンセル済みなのにD1でbookedの
     // 「亡霊予約」をcancelledへ修復(誤リマインド防止)。GET=ドライラン / POST=反映。
     if (p.endsWith('/admin/d1-sync') && (m === 'GET' || m === 'POST')) {
@@ -723,6 +744,7 @@ async function handleDiagResv(url, env, cors) {
         id: r.id, num: r.reserve_num, name: r.name || '', status: r.status,
         date: r.reserve_date, end: r.reserve_end_date, staff: r.staff_account_id || '',
         account_id: r.account_id || '',   // 担当の正はaccount_id(2026-07-24エンジニア確定仕様)。staff_account_idは旧列
+        from_account_id: r.from_account_id || '',   // 顧客のaccount.id(saveAccountで作成/名寄せ・2026-07-28)
 
         deleted: !!r.delete_date, cancelled: !!r.cancel_date, type: r.type || '',
         // info_jsは平文メタ(個人情報なし設計)。RPAの処理刻印(hbp_*)と設定値をそのまま返して診断する。
