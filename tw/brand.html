@@ -2503,6 +2503,30 @@
     }
     .pm-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px -10px rgba(40,38,36,0.18); }
     .pm-card:active { transform: scale(0.99); }
+    .pm-search-wrap { position: relative; flex: 1; min-width: 200px; max-width: 460px; }
+    .pm-search {
+      width: 100%; border: 1px solid rgba(40,38,36,0.16); border-radius: 40px;
+      padding: 9px 38px 9px 16px; font-size: 13px; background: #fff; color: var(--charcoal, #3C362E);
+      font-family: inherit;
+    }
+    .pm-search:focus { outline: 2px solid var(--gold, #B8945A); outline-offset: 1px; }
+    .pm-search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 26px; height: 26px; border: none; border-radius: 50%; background: rgba(40,38,36,0.08);
+      color: var(--charcoal, #3C362E); font-size: 14px; line-height: 1; cursor: pointer;
+    }
+    .pm-card-copy {
+      margin: 4px 0 2px; font-size: 11.5px; line-height: 1.75; color: rgba(60,54,46,0.72);
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+      overflow-wrap: anywhere; /* 長い英字がmin-contentでグリッド列を押し広げるのを防ぐ */
+    }
+    .pm-card { min-width: 0; }
+    .dr-tagline {
+      display: block; margin-top: 3px; font-size: 10.5px; line-height: 1.6; color: rgba(60,54,46,0.55);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; min-width: 0;
+    }
+    /* taglineのnowrapが行を押し広げないように(名前列を収縮可能に) */
+    .dir-row .dr-name { min-width: 0; overflow: hidden; }
     .pm-card-img {
       width: 100%; aspect-ratio: 1/1; background: #FBF8F2;
       display: flex; align-items: center; justify-content: center; overflow: hidden;
@@ -2832,6 +2856,14 @@
 <div class="product-mode-wrap" id="productModeWrap">
   <!-- フィルター -->
   <div class="pm-filters" id="pmFilters">
+    <!-- ことば検索(宝探し): 名前・ブランド・説明文・特徴を横断 -->
+    <div class="pm-filter-row" id="pmFilterRowSearch">
+      <span class="pm-filter-label">Search</span>
+      <div class="pm-search-wrap">
+        <input type="text" id="pmSearch" class="pm-search" placeholder="宝探し検索 — 悩み・香り・仕上がり なんでも" autocomplete="off" enterkeyhint="search">
+        <button type="button" class="pm-search-clear" id="pmSearchClear" aria-label="検索をクリア" hidden="">×</button>
+      </div>
+    </div>
     <div class="pm-filter-row" id="pmFilterRowCategory">
       <span class="pm-filter-label">Category</span>
       <!-- 動的に埋める -->
@@ -3950,7 +3982,10 @@ renderBrandRoster();
       b.maker.toLowerCase().includes(q)   ||
       b.makerJp.toLowerCase().includes(q) ||
       b.categoryJp.includes(q)            ||
-      b.categoryEn.toLowerCase().includes(q)
+      b.categoryEn.toLowerCase().includes(q) ||
+      (b.keywords || []).some(k => String(k).toLowerCase().includes(q)) ||
+      (b.tagline || '').toLowerCase().includes(q) ||
+      (b.concept || '').toLowerCase().includes(q)
     );
   }
 
@@ -4066,6 +4101,7 @@ renderBrandRoster();
               <span class="dr-name">
                 <span class="dr-en">${escapeHtml(b.name)}</span>
                 <span class="dr-jp">${escapeHtml(b.nameJp)}</span>
+                ${b.tagline ? `<span class="dr-tagline">${escapeHtml(b.tagline)}</span>` : ''}
               </span>
               ${tagsHtml}
               ${b.site ? '<i class="fas fa-arrow-up-right-from-square dr-action" aria-hidden="true"></i>' : ''}
@@ -4126,7 +4162,7 @@ window.SEAM_PAGE_I18N = {
     'dir.sub': 'メジャーブランドからマイナーブランドまで<br>SEAMが取り扱うすべてのブランドを百貨店のように一覧でご覧いただけます<br>気になるブランドはタップで公式サイトへ',
     'dir.sort.kana': 'あいうえお順',
     'dir.sort.category': 'カテゴリー',
-    'dir.searchPlaceholder': 'ブランド名・メーカー名で検索…',
+    'dir.searchPlaceholder': 'ブランド名・悩み・特徴で検索…',
     'dir.filter.all': 'すべて',
     'dir.filter.both': '店舗・オンライン両方',
     'dir.filter.store': '店舗のみ',
@@ -4228,7 +4264,7 @@ window.SEAM_PAGE_I18N = {
     'dir.sub': 'From major names to rare finds,<br>browse every brand SEAM carries, laid out like the floor of a department store.<br>Tap any brand to visit its official site.',
     'dir.sort.kana': 'Kana Order',
     'dir.sort.category': 'Category',
-    'dir.searchPlaceholder': 'Search by brand or maker…',
+    'dir.searchPlaceholder': 'Search by brand, concern or feature…',
     'dir.filter.all': 'All',
     'dir.filter.both': 'In Store & Online',
     'dir.filter.store': 'In Store Only',
@@ -4917,7 +4953,12 @@ window.SEAM_PAGE_I18N = {
   let allProducts = [];
   let allBrands = []; // 出現するブランド一覧
   let filtered = [];
-  const filters = { category: null, price: null, grade: null, sub: null, brands: new Set(), functions: new Set() };
+  const filters = { category: null, price: null, grade: null, sub: null, q: '', brands: new Set(), functions: new Set() };
+  // ことば検索用の正規化(NFKC+小文字+カタカナ→ひらがな)
+  function normText(s) {
+    return String(s || '').normalize('NFKC').toLowerCase()
+      .replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  }
   // グレード(1ml単価のカテゴリ内5階層 — seam-layers.json)
   const GRADE_NAMES = { 1: 'デイリー', 2: 'スタンダード', 3: 'セレクト', 4: 'プレミアム', 5: 'ラグジュアリー' };
   let LAYER_MAP = {}, LAYER_LABELS = {};
@@ -5058,6 +5099,37 @@ window.SEAM_PAGE_I18N = {
             });
           }
         } catch (e) { console.warn('layers skipped', e); }
+
+        // 説明文サイドカー(全商品リサーチ済みコピー+特徴) — 失敗しても表示は続行
+        try {
+          const cpr2 = await fetch('data/products/seam-copy.json?v=' + Date.now(), { cache: 'no-store' });
+          if (cpr2.ok) {
+            const cj2 = await cpr2.json();
+            const cmap2 = cj2.items || {}, fmap2 = cj2.feat || {};
+            allProducts.forEach(p => {
+              const k = p.salonTownItemId;
+              if (k && cmap2[k]) p._copy = cmap2[k];
+              if (k && fmap2[k] && fmap2[k].length) p._featx = fmap2[k];
+            });
+          }
+        } catch (e) { console.warn('copy sidecar skipped', e); }
+
+        // ブランド和名エイリアス(「ケラスターゼ」→KERASTASE を検索で拾う)
+        try {
+          const dres = await fetch('data/brands_directory.json', { cache: 'no-cache' });
+          if (dres.ok) {
+            const dj = await dres.json();
+            const amap = {};
+            const foldB = s => String(s || '').toLowerCase().normalize('NFKC').replace(/[\s\u3000._\-'&\/\u00ae\u2122]/g, '');
+            (dj.brands || []).forEach(b => {
+              if (b.name && b.nameJp && b.name !== b.nameJp) amap[foldB(b.name)] = b.nameJp;
+            });
+            allProducts.forEach(p => {
+              const al = amap[foldB(p.brand)];
+              if (al) p._alias = al;
+            });
+          }
+        } catch (e) {}
 
         // ブランド一覧 (出現数順)
         const brandCount = {};
@@ -5237,10 +5309,37 @@ window.SEAM_PAGE_I18N = {
         renderSubChips();
         filters.brands.clear();
         filters.functions.clear();
+        filters.q = '';
+        const se0 = document.getElementById('pmSearch');
+        if (se0) se0.value = '';
+        const sc0 = document.getElementById('pmSearchClear');
+        if (sc0) sc0.hidden = true;
         visibleCount = PAGE_SIZE;
         updateChipStates();
         applyAndRender();
       });
+    }
+
+    // ことば検索(宝探し)
+    const searchIn = document.getElementById('pmSearch');
+    const searchClear = document.getElementById('pmSearchClear');
+    if (searchIn && !searchIn.dataset.bound) {
+      searchIn.dataset.bound = '1';
+      let tq = null, lastSent = '';
+      const applyQ = () => {
+        filters.q = normText(searchIn.value).trim().replace(/\s+/g, ' ');
+        if (searchClear) searchClear.hidden = !searchIn.value;
+        visibleCount = PAGE_SIZE;
+        applyAndRender();
+      };
+      searchIn.addEventListener('input', () => { clearTimeout(tq); tq = setTimeout(applyQ, 220); });
+      searchIn.addEventListener('keydown', e => { if (e.key === 'Enter') { clearTimeout(tq); applyQ(); searchIn.blur(); } });
+      // 計測(入力停止1.2秒・2字以上・24字まで・個人情報なし)
+      let tf = null;
+      const fireQ = () => { const v = (searchIn.value || '').trim().slice(0, 24); if (v.length < 2 || v === lastSent) return; lastSent = v; try { window.seamTrack && seamTrack('pm_search', { label: v }); } catch (_) {} };
+      searchIn.addEventListener('input', () => { clearTimeout(tf); tf = setTimeout(fireQ, 1200); });
+      searchIn.addEventListener('blur', fireQ);
+      if (searchClear) searchClear.addEventListener('click', () => { searchIn.value = ''; applyQ(); searchIn.focus(); });
     }
 
     // 並び替えセレクト
@@ -5308,6 +5407,18 @@ window.SEAM_PAGE_I18N = {
     const catGroup = filters.category ? CATEGORY_GROUPS.find(g => g.id === filters.category) : null;
     const fnGroups = Array.from(filters.functions).map(id => FUNCTION_GROUPS.find(g => g.id === id)).filter(Boolean);
     return allProducts.filter(p => {
+      // ことば検索(宝探し): 名前/ブランド/説明/特徴/おすすめ対象を横断・全語AND
+      if (filters.q) {
+        if (!p._hay) {
+          p._hay = normText([
+            p.brand, p._alias || '', p.name, p.line,
+            p._copy || p.pitchCopy || p.cardCopy || '',
+            (p._featx || []).join(' '), (p.featurePoints || []).join(' '),
+            p.recommendedFor || '', p.featureSummary || '', p.targetHair || '',
+          ].join(' '));
+        }
+        if (!filters.q.split(' ').every(t => p._hay.includes(t))) return false;
+      }
       // category
       if (catGroup) {
         if (!catGroup.cats.includes(p.category)) return false;
@@ -5435,6 +5546,10 @@ window.SEAM_PAGE_I18N = {
     if (!tags.length && (p._feats || []).length) {
       p._feats.slice(0, 3).forEach(f => tags.push(LAYER_LABELS[f] || f));
     }
+    // それでも無ければリサーチ由来の特徴短句
+    if (!tags.length && (p._featx || []).length) {
+      p._featx.slice(0, 2).forEach(f => tags.push(f));
+    }
     const gradeHTML = p._layer
       ? `<span class="pm-card-grade g${p._layer}">${GRADE_NAMES[p._layer]}</span>${typeof p._unit === 'number' ? `<span class="pm-card-unit">¥${Math.round(p._unit)}/ml</span>` : ''}`
       : '';
@@ -5472,6 +5587,7 @@ window.SEAM_PAGE_I18N = {
         <span class="pm-card-cat">${escHtml(catLabel)}</span>${gradeHTML}
         <p class="pm-card-brand">${escHtml(p.brand || '')}</p>
         <h4 class="pm-card-name">${escHtml(p.name)}${p.refillAvailable ? '<span class="pm-card-refill">詰替あり</span>' : ''}</h4>
+        ${(() => { const c = p._copy || p.pitchCopy || p.cardCopy || ''; return c ? `<p class="pm-card-copy">${escHtml(c)}</p>` : ''; })()}
         <div class="pm-card-tags">
           ${tags.map(t => `<span class="pm-card-tag">${escHtml(t)}</span>`).join('')}
         </div>
@@ -5584,6 +5700,12 @@ window.SEAM_PAGE_I18N = {
         if (sb && filters.category && (SUB_GROUPS[filters.category] || []).some(d => d.id === sb)) {
           filters.sub = sb;
           setTimeout(renderSubChips, 0);
+        }
+        const qw = q.get('q');
+        if (qw) {
+          const se1 = document.getElementById('pmSearch');
+          if (se1) se1.value = qw.slice(0, 40);
+          filters.q = normText(qw.slice(0, 40)).trim().replace(/\s+/g, ' ');
         }
         const so = q.get('sort');
         const sel = document.getElementById('pmSort');
@@ -5749,6 +5871,26 @@ window.SEAM_PAGE_I18N = {
     return false;
   }
 
+  // ブランド名→directoryレコード(コンセプト/物語/キーワード)を遅延ロードして合流
+  let _dirMap = null;
+  async function dirRecordOf(name, nameJp) {
+    if (_dirMap === null) {
+      try {
+        const r = await fetch('data/brands_directory.json', { cache: 'no-cache' });
+        const j = await r.json();
+        _dirMap = {};
+        const fold = s => (s || '').toLowerCase().normalize('NFKC').replace(/[\s\u3000._\-'&\/\u00ae\u2122]/g, '');
+        (j.brands || []).forEach(b => {
+          _dirMap[fold(b.name)] = b;
+          if (b.nameJp) _dirMap[fold(b.nameJp)] = _dirMap[fold(b.nameJp)] || b;
+        });
+        _dirMap.__fold = fold;
+      } catch (e) { _dirMap = { __fold: s => s }; }
+    }
+    const f = _dirMap.__fold;
+    return _dirMap[f(name)] || (nameJp ? _dirMap[f(nameJp)] : null) || null;
+  }
+
   async function openBrandProducts(brand) {
     // モーダルを開く
     modal.classList.add('is-open');
@@ -5758,7 +5900,13 @@ window.SEAM_PAGE_I18N = {
     // ヘッダー設定
     eyebrow.textContent = 'Brand Products';
     titleEl.innerHTML = `<strong>${escHtml(brand.name)}</strong>`;
-    descEl.textContent = brand.desc || '';
+    // directoryのリサーチ済みコンセプトを合流(あれば)
+    const dirRec = await dirRecordOf(brand.name, brand.nameJp);
+    if (dirRec) {
+      brand = Object.assign({}, dirRec, brand);
+      if (!brand.concept && dirRec.concept) brand.concept = dirRec.concept;
+    }
+    descEl.textContent = brand.desc || brand.tagline || '';
     bodyEl.innerHTML = '<div class="finder-empty" style="padding:32px 20px;text-align:center;color:#999;">商品データを読み込み中…</div>';
     footer.style.display = 'none';
 
@@ -5776,7 +5924,13 @@ window.SEAM_PAGE_I18N = {
       ? `${escHtml(brand.name)} の取扱商品 ${matched.length}点${brand.site ? ' | 公式サイトへ ↗' : ''}`
       : 'Brand Products';
 
-    bodyEl.innerHTML = renderProducts(matched, brand);
+    const conceptHTML = (brand.concept || brand.story) ? `
+      <div style="padding:4px 2px 18px;border-bottom:1px solid rgba(40,38,36,0.08);margin-bottom:16px;">
+        ${brand.concept ? `<p style="font-size:12.5px;line-height:2;color:rgba(60,54,46,0.8);">${escHtml(brand.concept)}</p>` : ''}
+        ${brand.story ? `<p style="margin-top:8px;font-size:11.5px;line-height:1.95;color:rgba(60,54,46,0.62);">${escHtml(brand.story)}</p>` : ''}
+        ${(brand.keywords || []).length ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">${brand.keywords.slice(0, 8).map(k => `<span style="font-size:10.5px;padding:3px 10px;border:1px solid rgba(184,148,90,0.35);border-radius:40px;color:#8A744F;">${escHtml(k)}</span>`).join('')}</div>` : ''}
+      </div>` : '';
+    bodyEl.innerHTML = conceptHTML + renderProducts(matched, brand);
   }
 
   // グローバルに公開（カード生成コードから呼ぶ）
