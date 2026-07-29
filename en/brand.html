@@ -2510,6 +2510,15 @@
       font-family: inherit;
     }
     .pm-search:focus { outline: 2px solid var(--gold, #B8945A); outline-offset: 1px; }
+    .pm-search-hints { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
+    .pm-hint-label { font-family: var(--font-en); font-size: 9.5px; letter-spacing: 2px; color: var(--taupe); text-transform: uppercase; margin-right: 2px; }
+    .pm-hint {
+      border: 1px solid rgba(184,148,90,0.32); background: transparent; border-radius: 40px;
+      padding: 8px 14px; font-size: 11.5px; color: #8A744F; cursor: pointer; font-family: inherit;
+      min-height: 34px; touch-action: manipulation;
+    }
+    .pm-hint:hover, .pm-hint:focus-visible { background: rgba(184,148,90,0.10); }
+    .pm-hint.is-active { background: var(--gold, #B8945A); border-color: var(--gold, #B8945A); color: #fff; }
     .pm-search-clear {
       position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
       width: 26px; height: 26px; border: none; border-radius: 50%; background: rgba(40,38,36,0.08);
@@ -2863,6 +2872,19 @@
         <input type="text" id="pmSearch" class="pm-search" placeholder="宝探し検索 — 悩み・香り・仕上がり なんでも" autocomplete="off" enterkeyhint="search">
         <button type="button" class="pm-search-clear" id="pmSearchClear" aria-label="検索をクリア" hidden="">×</button>
       </div>
+      <div class="pm-search-hints" id="pmSearchHints" aria-label="よく使われる探し方">
+        <span class="pm-hint-label">たとえば</span>
+        <button type="button" class="pm-hint" data-q="うねり">うねり</button>
+        <button type="button" class="pm-hint" data-q="乾燥">乾燥</button>
+        <button type="button" class="pm-hint" data-q="ツヤ">ツヤ</button>
+        <button type="button" class="pm-hint" data-q="ダメージ">ダメージ</button>
+        <button type="button" class="pm-hint" data-q="ブリーチ">ブリーチ毛</button>
+        <button type="button" class="pm-hint" data-q="頭皮">頭皮</button>
+        <button type="button" class="pm-hint" data-q="香り">香り</button>
+        <button type="button" class="pm-hint" data-q="軽い">軽い仕上がり</button>
+        <button type="button" class="pm-hint" data-q="白髪">白髪ケア</button>
+        <button type="button" class="pm-hint" data-q="オーガニック">オーガニック</button>
+      </div>
     </div>
     <div class="pm-filter-row" id="pmFilterRowCategory">
       <span class="pm-filter-label">Category</span>
@@ -2909,6 +2931,7 @@
     <div class="pm-empty-icon">⊘</div>
     <p class="pm-empty-title" data-i18n="pm.empty.title">No matching products found</p>
     <p data-i18n="pm.empty.desc">Please adjust your filters and try again.</p>
+    <button type="button" id="pmEmptyReset" class="pm-hint" style="margin-top:12px;">条件をクリアして探しなおす</button>
   </div>
 
   <!-- 診断誘導 -->
@@ -5120,7 +5143,8 @@ window.SEAM_PAGE_I18N = {
           if (dres.ok) {
             const dj = await dres.json();
             const amap = {};
-            const foldB = s => String(s || '').toLowerCase().normalize('NFKC').replace(/[\s\u3000._\-'&\/\u00ae\u2122]/g, '');
+            const foldB = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+              .normalize('NFKC').replace(/[\s\u3000._\-'&\/\u00ae\u2122]/g, '');
             (dj.brands || []).forEach(b => {
               if (b.name && b.nameJp && b.name !== b.nameJp) amap[foldB(b.name)] = b.nameJp;
             });
@@ -5321,6 +5345,11 @@ window.SEAM_PAGE_I18N = {
     }
 
     // ことば検索(宝探し)
+    function syncHints() {
+      const el = document.getElementById('pmSearch');
+      const cur = el ? el.value.trim() : '';
+      document.querySelectorAll('.pm-hint').forEach(b => b.classList.toggle('is-active', b.dataset.q === cur));
+    }
     const searchIn = document.getElementById('pmSearch');
     const searchClear = document.getElementById('pmSearchClear');
     if (searchIn && !searchIn.dataset.bound) {
@@ -5339,7 +5368,21 @@ window.SEAM_PAGE_I18N = {
       const fireQ = () => { const v = (searchIn.value || '').trim().slice(0, 24); if (v.length < 2 || v === lastSent) return; lastSent = v; try { window.seamTrack && seamTrack('pm_search', { label: v }); } catch (_) {} };
       searchIn.addEventListener('input', () => { clearTimeout(tf); tf = setTimeout(fireQ, 1200); });
       searchIn.addEventListener('blur', fireQ);
-      if (searchClear) searchClear.addEventListener('click', () => { searchIn.value = ''; applyQ(); searchIn.focus(); });
+      if (searchClear) searchClear.addEventListener('click', () => { searchIn.value = ''; applyQ(); syncHints(); searchIn.focus(); });
+
+      // 探し方チップ: 押すと検索欄に入る(同じチップをもう一度押すと解除)
+      const hints = document.getElementById('pmSearchHints');
+      if (hints) {
+        hints.addEventListener('click', e => {
+          const b = e.target.closest('.pm-hint');
+          if (!b) return;
+          const q = b.dataset.q || '';
+          searchIn.value = (searchIn.value.trim() === q) ? '' : q;
+          clearTimeout(tq); applyQ(); syncHints();
+          try { window.seamTrack && seamTrack('pm_hint', { label: q }); } catch (_) {}
+        });
+      }
+      searchIn.addEventListener('input', syncHints);
     }
 
     // 並び替えセレクト
@@ -5349,6 +5392,16 @@ window.SEAM_PAGE_I18N = {
       sortSel.addEventListener('change', () => {
         visibleCount = PAGE_SIZE;
         applyAndRender();
+      });
+    }
+
+    // 空振りからの復帰(クリアボタンと同じ動作)
+    const emptyReset = document.getElementById('pmEmptyReset');
+    if (emptyReset && !emptyReset.dataset.bound) {
+      emptyReset.dataset.bound = '1';
+      emptyReset.addEventListener('click', () => {
+        const rb = document.getElementById('pmReset');
+        if (rb) rb.click();
       });
     }
 
@@ -5712,6 +5765,10 @@ window.SEAM_PAGE_I18N = {
         if (sel && (so === 'asc' || so === 'desc')) sel.value = so;
         const btn = document.querySelector('.mode-toggle-btn[data-mode="product"]');
         if (btn) btn.click();
+        setTimeout(() => { document.querySelectorAll('.pm-hint').forEach(b => {
+          const el = document.getElementById('pmSearch');
+          b.classList.toggle('is-active', !!el && b.dataset.q === el.value.trim());
+        }); }, 0);
       }
     } catch (e) {}
   }
@@ -5879,7 +5936,8 @@ window.SEAM_PAGE_I18N = {
         const r = await fetch('data/brands_directory.json', { cache: 'no-cache' });
         const j = await r.json();
         _dirMap = {};
-        const fold = s => (s || '').toLowerCase().normalize('NFKC').replace(/[\s\u3000._\-'&\/\u00ae\u2122]/g, '');
+        const fold = s => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .normalize('NFKC').replace(/[\s\u3000._\-'&\/\u00ae\u2122]/g, '');
         (j.brands || []).forEach(b => {
           _dirMap[fold(b.name)] = b;
           if (b.nameJp) _dirMap[fold(b.nameJp)] = _dirMap[fold(b.nameJp)] || b;
