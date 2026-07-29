@@ -6356,7 +6356,26 @@ function Home({
     className: "mt-5 sm:mt-7 font-serif text-[19px] sm:text-[22px] text-ink leading-relaxed"
   }, "\u3042\u306A\u305F\u306E\u672C\u5F53\u306E\u9AEA\u306B\u3001\u51FA\u4F1A\u3046"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal"
-  }, "\u751F\u307E\u308C\u6301\u3063\u305F\u9AEA\u3068\u3001\u4ECA\u65E5\u307E\u3067\u306E\u5C65\u6B74\u3000\u305D\u306E\u4E21\u65B9\u304B\u3089\u4ECA\u5408\u3046\u30D8\u30A2\u30B1\u30A2\u3092\u9078\u3073\u307E\u3059")), /*#__PURE__*/React.createElement("div", {
+  }, "\u751F\u307E\u308C\u6301\u3063\u305F\u9AEA\u3068\u3001\u4ECA\u65E5\u307E\u3067\u306E\u5C65\u6B74\u3000\u305D\u306E\u4E21\u65B9\u304B\u3089\u4ECA\u5408\u3046\u30D8\u30A2\u30B1\u30A2\u3092\u9078\u3073\u307E\u3059"), !lastKarte && /*#__PURE__*/React.createElement("div", {
+    className: "mt-7"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: onStartDeep || onStart,
+    className: "karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 py-4 hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-[15px] sm:text-base"
+  }, "\u9AEA\u683C\u3092\u8A3A\u65AD\u3057\u3066 \u4ECA\u5408\u30463\u301C5\u672C\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("svg", {
+    className: "w-[15px] h-[15px]",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.7",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M5 12h14M13 6l6 6-6 6"
+  }))), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2.5 font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55"
+  }, "3\u5206 / \u4F1A\u54E1\u767B\u9332\u4E0D\u8981 / \u7D50\u679C\u306F\u30AB\u30EB\u30C6\u306B\u6B8B\u305B\u307E\u3059"))), /*#__PURE__*/React.createElement("div", {
     className: "mt-8 sm:mt-10 anim-fade-up",
     style: {
       animationDelay: '90ms'
@@ -12822,7 +12841,16 @@ function IngredientGuideSection({
     className: "text-gold"
   }, "\u30D6\u30ED\u30F3\u30C9\u30D7\u30E9\u30B9\u30FB\u30D5\u30A1\u30A4\u30D0\u30FC\u30D7\u30EC\u30C3\u30AF\u30B9\u30FB\u30EA\u30DA\u30A2\u30EA\u30C6\u30A3"), " \u306A\u3069\u304C\u5019\u88DC\u306B\u51FA\u3066\u3044\u307E\u3059", isGray && /*#__PURE__*/React.createElement("span", null, "\u3000\u767D\u9AEA\xD7\u30D6\u30EA\u30FC\u30C1\u306E\u65B9\u306F ", /*#__PURE__*/React.createElement("span", {
     className: "text-gold"
-  }, "\u30A2\u30EB\u30C6\u30A3\u30FC\u30EB\u30FB\u30AF\u30ED\u30CE\u30ED\u30B8\u30B9\u30C8"), " \u306A\u3069\u3082")), /*#__PURE__*/React.createElement("p", {
+  }, "\u30A2\u30EB\u30C6\u30A3\u30FC\u30EB\u30FB\u30AF\u30ED\u30CE\u30ED\u30B8\u30B9\u30C8"), " \u306A\u3069\u3082")), /*#__PURE__*/React.createElement("a", {
+    href: "guide-bleach.html",
+    "data-track-click": "journal_from_finder",
+    className: "mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-charcoal/70 hover:text-gold transition-colors group"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "border-b border-line group-hover:border-gold pb-0.5"
+  }, "\u8AAD\u307F\u3082\u306E\u3000\u30D6\u30EA\u30FC\u30C1\u6BDB\u306E\u30B1\u30A2\u9806\u756A\u3068\u9078\u3073\u65B9"), /*#__PURE__*/React.createElement("span", {
+    className: "text-gold",
+    "aria-hidden": true
+  }, "\u2192")), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-[11px] text-charcoal/55 leading-relaxed"
   }, "\u203B \u6D77\u5916\u30D6\u30E9\u30F3\u30C9\u306F\u30D6\u30EA\u30FC\u30C1\uFF0B\u30AA\u30F3\u30AB\u30E9\u30FC\u3092\u524D\u63D0\u306B\u8A2D\u8A08\u3055\u308C\u3066\u3044\u308B\u3053\u3068\u304C\u591A\u304F\u3001\u30D6\u30EA\u30FC\u30C1\u6BDB\u3068\u76F8\u6027\u304C\u826F\u3044\u50BE\u5411\u3067\u3059"));
 }

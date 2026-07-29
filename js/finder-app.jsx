@@ -4536,6 +4536,21 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
             <p className="mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal">
             生まれ持った髪と、今日までの履歴　その両方から今合うヘアケアを選びます
           </p>
+
+          {/* すぐ始めたい人の入口。定義や27タイプは下に残す=読みたい人だけ読む。
+              前回カルテがある人には出さない(下の再開カードが優先) */}
+          {!lastKarte && (
+            <div className="mt-7">
+              <button
+                onClick={onStartDeep || onStart}
+                className="karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 py-4 hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
+              >
+                <span className="font-serif text-[15px] sm:text-base">髪格を診断して 今合う3〜5本を見る</span>
+                <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+              <p className="mt-2.5 font-mono tracking-widest2 text-[10px] uppercase text-charcoal/55">3分 / 会員登録不要 / 結果はカルテに残せます</p>
+            </div>
+          )}
         </div>
 
         {/* ━━━━━ 髪格とは — 初見で概念が伝わらない問題への回答 ━━━━━
@@ -9462,6 +9477,13 @@ function IngredientGuideSection({ answers }) {
         → あなたには <span className="text-gold">ブロンドプラス・ファイバープレックス・リペアリティ</span> などが候補に出ています
         {isGray && <span>　白髪×ブリーチの方は <span className="text-gold">アルティール・クロノロジスト</span> なども</span>}
       </p>
+      {/* 読みものへの橋。/journal は30日PV0=どこからもリンクされていなかった。
+          読む理由が最も強い場所(ブリーチの人の成分ガイド)から1本だけ張る */}
+      <a href="guide-bleach.html" data-track-click="journal_from_finder"
+         className="mt-4 inline-flex items-center gap-1.5 text-[12.5px] text-charcoal/70 hover:text-gold transition-colors group">
+        <span className="border-b border-line group-hover:border-gold pb-0.5">読みもの　ブリーチ毛のケア順番と選び方</span>
+        <span className="text-gold" aria-hidden>→</span>
+      </a>
       <p className="mt-3 text-[11px] text-charcoal/55 leading-relaxed">※ 海外ブランドはブリーチ＋オンカラーを前提に設計されていることが多く、ブリーチ毛と相性が良い傾向です</p>
     </section>
   );
