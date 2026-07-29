@@ -7853,6 +7853,128 @@ function GemMark({ code, name }) {
   );
 }
 
+/* ---------- WhyThisTypeCard — この髪格になった理由(判定の根拠) ----------
+   selectOriginAnimalId の 3軸ルックアップをそのまま可視化する。
+   ここで新しい判定はしない。表示と実装がずれると信用を失うため。 */
+
+const WHY_AXIS_LABEL = {
+  thickness: { F:'細い', N:'普通', T:'太い' },
+  density:   { L:'少ない', N:'普通', H:'多い' },
+  wave:      { S:'まっすぐ', W:'湿気で出る', C:'はっきりある' },
+};
+// くせは矯正中の方も S に入る。「くせがない」と言い切らない
+const WHY_AXIS_NOTE = {
+  thickness: '1本の太さ',
+  density:   '生えている量',
+  wave:      '髪の動き方',
+};
+
+function whyAxisOf(answers) {
+  const a = answers || {};
+  const t = a.thickness === 'thick' ? 'T' : (a.thickness === 'normal' ? 'N' : 'F');
+  const d = a.density === 'high' ? 'H' : (a.density === 'normal' ? 'N' : 'L');
+  let w = 'S';
+  if (a.wave === 'humid' || a.wave === 'surface')      w = 'W';
+  else if (['midEnd','root','whole'].includes(a.wave)) w = 'C';
+  return { thickness: t, density: d, wave: w };
+}
+
+function WhyThisTypeCard({ karte, answers }) {
+  const origin = karte && karte.origin;
+  if (!origin || !origin.code) return null;
+  const ax = whyAxisOf(answers);
+  const code = ax.thickness + ax.density + ax.wave;
+
+  const AXES = [
+    { key:'thickness', jp:'太さ',  v: ax.thickness, all:['F','N','T'] },
+    { key:'density',   jp:'量',    v: ax.density,   all:['L','N','H'] },
+    { key:'wave',      jp:'くせ',  v: ax.wave,      all:['S','W','C'] },
+  ];
+
+  // 1軸だけ違う型を拾って「その1つが違っていたら別の髪格でした」を見せる。
+  // 同じ軸から2つ出すと「太さだけで決まる」と誤解されるので、必ず別の軸から1つずつ取る。
+  const picked = [];
+  AXES.forEach(axis => {
+    if (picked.length >= 2) return;
+    const alt = axis.all.find(x => {
+      if (x === axis.v) return false;
+      const nx = Object.assign({}, ax); nx[axis.key] = x;
+      const n = KARTE_ORIGIN_ANIMALS[nx.thickness + nx.density + nx.wave];
+      return !!(n && n.name);
+    });
+    if (!alt) return;
+    const nx = Object.assign({}, ax); nx[axis.key] = alt;
+    const nc = nx.thickness + nx.density + nx.wave;
+    picked.push({
+      code: nc, name: KARTE_ORIGIN_ANIMALS[nc].name,
+      axisJp: axis.jp, was: WHY_AXIS_LABEL[axis.key][alt],
+    });
+  });
+
+  return (
+    <section className="mt-10 sm:mt-14 anim-fade-up" style={{ animationDelay: '60ms' }}>
+      <p className="font-mono tracking-widest2 text-[11px] uppercase text-gold">— Why</p>
+      <h2 className="mt-3 font-serif text-[26px] sm:text-[34px] text-ink leading-snug">
+        この髪格になった理由
+      </h2>
+      <p className="mt-2 text-[13px] sm:text-[13.5px] text-charcoal/70 leading-[1.9]">
+        髪格は<span className="text-ink">太さ・量・くせ</span>の3つだけで決まります
+        あなたのお答えは、こうでした
+      </p>
+
+      <div className="mt-6 grid grid-cols-3 gap-2 sm:gap-3">
+        {AXES.map(axis => (
+          <div key={axis.key} className="bg-white/70 border border-line rounded-[2px] p-3 sm:p-4 text-center">
+            <p className="text-[10.5px] sm:text-[11px] text-charcoal/55 leading-snug">{axis.jp}</p>
+            <p className="mt-1.5 font-serif text-[14px] sm:text-[17px] text-ink leading-tight">
+              {WHY_AXIS_LABEL[axis.key][axis.v]}
+            </p>
+            <p className="mt-2 pt-2 border-t border-line/70 font-mono text-[17px] sm:text-[20px] text-gold nums leading-none">
+              {axis.v}
+            </p>
+            <p className="mt-1.5 text-[9.5px] sm:text-[10px] text-charcoal/45 leading-snug">{WHY_AXIS_NOTE[axis.key]}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center justify-center gap-3 flex-wrap
+                      bg-white/70 border border-gold/40 rounded-[2px] px-4 py-4">
+        <span className="font-mono text-[19px] sm:text-[23px] text-gold nums tracking-[.14em]">{code}</span>
+        <span className="text-charcoal/35 text-[13px]">/</span>
+        <span className="font-serif text-[17px] sm:text-[20px] text-ink">{origin.name}</span>
+      </div>
+
+      {picked.length > 0 && (
+        <div className="mt-5">
+          <p className="text-[12px] sm:text-[12.5px] text-charcoal/60 leading-[1.9]">
+            3つのうち1つでも違っていたら、別の髪格でした
+          </p>
+          <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {picked.map((n, i) => (
+              <div key={i} className="bg-white/50 border border-line rounded-[2px] px-4 py-3">
+                <p className="text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]">
+                  {n.axisJp}が「{n.was}」だったら
+                </p>
+                <p className="mt-1 font-serif text-[14px] text-ink leading-snug">
+                  <span className="font-mono text-[11px] text-gold nums mr-1.5">{n.code}</span>
+                  {n.name}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <p className="mt-5 text-[12.5px] sm:text-[13px] text-ink leading-[1.9] border-l-2 border-gold pl-4">
+        カラーやブリーチ、毎日のアイロンは<span className="text-gold">髪格を変えません</span>
+        変わるのは「いまの状態」のほうです
+        SEAMは<span className="text-ink">変わらない髪格</span>と<span className="text-ink">変えられる状態</span>を分けて、
+        商品の選び分けに使っています
+      </p>
+    </section>
+  );
+}
+
 /* ---------- ResultHero — Pokémon カード風 図鑑プロフィールカード ---------- */
 function ResultHero({ karte, answers, onSaveImage, onShare, onSavePdf }) {
   if (!karte) return null;
@@ -10722,6 +10844,9 @@ function Result({ answers, onRestart, onCollection }) {
           onSaveImage={(mode) => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode)}
           onShare={() => shareKarteLink(karte?.origin)}
         />
+
+        {/* ━━━━━ この髪格になった理由(判定の根拠) ━━━━━ */}
+        <WhyThisTypeCard karte={karte} answers={answers} />
 
         {/* ━━━━━ 再診断の差分(前回カルテとの比較・新規完了時のみ) ━━━━━ */}
         <ReturnDiffCard prev={typeof window !== 'undefined' ? window.__seamPrevKarte : null} karte={karte} answers={answers} />

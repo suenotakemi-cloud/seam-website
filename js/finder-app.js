@@ -1,4 +1,3 @@
-/* AUTO-GENERATED from js/finder-app.jsx by CI (build-finder.js). DO NOT EDIT — edit the .jsx source. */
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* =========================================================================
    SEAM Hair Finder
@@ -10909,6 +10908,153 @@ function GemMark({
   }, code));
 }
 
+/* ---------- WhyThisTypeCard — この髪格になった理由(判定の根拠) ----------
+   selectOriginAnimalId の 3軸ルックアップをそのまま可視化する。
+   ここで新しい判定はしない。表示と実装がずれると信用を失うため。 */
+
+const WHY_AXIS_LABEL = {
+  thickness: {
+    F: '細い',
+    N: '普通',
+    T: '太い'
+  },
+  density: {
+    L: '少ない',
+    N: '普通',
+    H: '多い'
+  },
+  wave: {
+    S: 'まっすぐ',
+    W: '湿気で出る',
+    C: 'はっきりある'
+  }
+};
+// くせは矯正中の方も S に入る。「くせがない」と言い切らない
+const WHY_AXIS_NOTE = {
+  thickness: '1本の太さ',
+  density: '生えている量',
+  wave: '髪の動き方'
+};
+function whyAxisOf(answers) {
+  const a = answers || {};
+  const t = a.thickness === 'thick' ? 'T' : a.thickness === 'normal' ? 'N' : 'F';
+  const d = a.density === 'high' ? 'H' : a.density === 'normal' ? 'N' : 'L';
+  let w = 'S';
+  if (a.wave === 'humid' || a.wave === 'surface') w = 'W';else if (['midEnd', 'root', 'whole'].includes(a.wave)) w = 'C';
+  return {
+    thickness: t,
+    density: d,
+    wave: w
+  };
+}
+function WhyThisTypeCard({
+  karte,
+  answers
+}) {
+  const origin = karte && karte.origin;
+  if (!origin || !origin.code) return null;
+  const ax = whyAxisOf(answers);
+  const code = ax.thickness + ax.density + ax.wave;
+  const AXES = [{
+    key: 'thickness',
+    jp: '太さ',
+    v: ax.thickness,
+    all: ['F', 'N', 'T']
+  }, {
+    key: 'density',
+    jp: '量',
+    v: ax.density,
+    all: ['L', 'N', 'H']
+  }, {
+    key: 'wave',
+    jp: 'くせ',
+    v: ax.wave,
+    all: ['S', 'W', 'C']
+  }];
+
+  // 1軸だけ違う型を拾って「その1つが違っていたら別の髪格でした」を見せる。
+  // 同じ軸から2つ出すと「太さだけで決まる」と誤解されるので、必ず別の軸から1つずつ取る。
+  const picked = [];
+  AXES.forEach(axis => {
+    if (picked.length >= 2) return;
+    const alt = axis.all.find(x => {
+      if (x === axis.v) return false;
+      const nx = Object.assign({}, ax);
+      nx[axis.key] = x;
+      const n = KARTE_ORIGIN_ANIMALS[nx.thickness + nx.density + nx.wave];
+      return !!(n && n.name);
+    });
+    if (!alt) return;
+    const nx = Object.assign({}, ax);
+    nx[axis.key] = alt;
+    const nc = nx.thickness + nx.density + nx.wave;
+    picked.push({
+      code: nc,
+      name: KARTE_ORIGIN_ANIMALS[nc].name,
+      axisJp: axis.jp,
+      was: WHY_AXIS_LABEL[axis.key][alt]
+    });
+  });
+  return /*#__PURE__*/React.createElement("section", {
+    className: "mt-10 sm:mt-14 anim-fade-up",
+    style: {
+      animationDelay: '60ms'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[11px] uppercase text-gold"
+  }, "\u2014 Why"), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-3 font-serif text-[26px] sm:text-[34px] text-ink leading-snug"
+  }, "\u3053\u306E\u9AEA\u683C\u306B\u306A\u3063\u305F\u7406\u7531"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[13px] sm:text-[13.5px] text-charcoal/70 leading-[1.9]"
+  }, "\u9AEA\u683C\u306F", /*#__PURE__*/React.createElement("span", {
+    className: "text-ink"
+  }, "\u592A\u3055\u30FB\u91CF\u30FB\u304F\u305B"), "\u306E3\u3064\u3060\u3051\u3067\u6C7A\u307E\u308A\u307E\u3059 \u3042\u306A\u305F\u306E\u304A\u7B54\u3048\u306F\u3001\u3053\u3046\u3067\u3057\u305F"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 grid grid-cols-3 gap-2 sm:gap-3"
+  }, AXES.map(axis => /*#__PURE__*/React.createElement("div", {
+    key: axis.key,
+    className: "bg-white/70 border border-line rounded-[2px] p-3 sm:p-4 text-center"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[10.5px] sm:text-[11px] text-charcoal/55 leading-snug"
+  }, axis.jp), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1.5 font-serif text-[14px] sm:text-[17px] text-ink leading-tight"
+  }, WHY_AXIS_LABEL[axis.key][axis.v]), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 pt-2 border-t border-line/70 font-mono text-[17px] sm:text-[20px] text-gold nums leading-none"
+  }, axis.v), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1.5 text-[9.5px] sm:text-[10px] text-charcoal/45 leading-snug"
+  }, WHY_AXIS_NOTE[axis.key])))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 flex items-center justify-center gap-3 flex-wrap bg-white/70 border border-gold/40 rounded-[2px] px-4 py-4"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-[19px] sm:text-[23px] text-gold nums tracking-[.14em]"
+  }, code), /*#__PURE__*/React.createElement("span", {
+    className: "text-charcoal/35 text-[13px]"
+  }, "/"), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-[17px] sm:text-[20px] text-ink"
+  }, origin.name)), picked.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mt-5"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[12px] sm:text-[12.5px] text-charcoal/60 leading-[1.9]"
+  }, "3\u3064\u306E\u3046\u30611\u3064\u3067\u3082\u9055\u3063\u3066\u3044\u305F\u3089\u3001\u5225\u306E\u9AEA\u683C\u3067\u3057\u305F"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5"
+  }, picked.map((n, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "bg-white/50 border border-line rounded-[2px] px-4 py-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[12px] sm:text-[12.5px] text-charcoal/75 leading-[1.85]"
+  }, n.axisJp, "\u304C\u300C", n.was, "\u300D\u3060\u3063\u305F\u3089"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1 font-serif text-[14px] text-ink leading-snug"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-[11px] text-gold nums mr-1.5"
+  }, n.code), n.name))))), /*#__PURE__*/React.createElement("p", {
+    className: "mt-5 text-[12.5px] sm:text-[13px] text-ink leading-[1.9] border-l-2 border-gold pl-4"
+  }, "\u30AB\u30E9\u30FC\u3084\u30D6\u30EA\u30FC\u30C1\u3001\u6BCE\u65E5\u306E\u30A2\u30A4\u30ED\u30F3\u306F", /*#__PURE__*/React.createElement("span", {
+    className: "text-gold"
+  }, "\u9AEA\u683C\u3092\u5909\u3048\u307E\u305B\u3093"), "\u5909\u308F\u308B\u306E\u306F\u300C\u3044\u307E\u306E\u72B6\u614B\u300D\u306E\u307B\u3046\u3067\u3059 SEAM\u306F", /*#__PURE__*/React.createElement("span", {
+    className: "text-ink"
+  }, "\u5909\u308F\u3089\u306A\u3044\u9AEA\u683C"), "\u3068", /*#__PURE__*/React.createElement("span", {
+    className: "text-ink"
+  }, "\u5909\u3048\u3089\u308C\u308B\u72B6\u614B"), "\u3092\u5206\u3051\u3066\u3001 \u5546\u54C1\u306E\u9078\u3073\u5206\u3051\u306B\u4F7F\u3063\u3066\u3044\u307E\u3059"));
+}
+
 /* ---------- ResultHero — Pokémon カード風 図鑑プロフィールカード ---------- */
 function ResultHero({
   karte,
@@ -14133,6 +14279,9 @@ function Result({
     answers: answers,
     onSaveImage: mode => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode),
     onShare: () => shareKarteLink(karte?.origin)
+  }), /*#__PURE__*/React.createElement(WhyThisTypeCard, {
+    karte: karte,
+    answers: answers
   }), /*#__PURE__*/React.createElement(ReturnDiffCard, {
     prev: typeof window !== 'undefined' ? window.__seamPrevKarte : null,
     karte: karte,
