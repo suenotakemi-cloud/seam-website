@@ -4494,9 +4494,41 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
           <p className="mt-5 sm:mt-7 font-serif text-[19px] sm:text-[22px] text-ink leading-relaxed">
             あなたの本当の髪に、出会う
           </p>
-          <p className="mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal">
-            あなたの髪に残る“履歴”まで見て、今必要なヘアケアルーティンを提案します
+            <p className="mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal">
+            生まれ持った髪と、今日までの履歴　その両方から今合うヘアケアを選びます
           </p>
+        </div>
+
+        {/* ━━━━━ 髪格とは — 初見で概念が伝わらない問題への回答 ━━━━━
+            結果画面の WhyThisTypeCard と同じ言葉にしてある。
+            入口の約束と結果の説明がずれると、診断そのものが信用されない。 */}
+        <div className="mt-8 sm:mt-10 anim-fade-up" style={{ animationDelay: '90ms' }}>
+          <div className="bg-white/70 border border-line rounded-[2px] p-5 sm:p-6 max-w-xl">
+            <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">What is Kamikaku</p>
+            <p className="mt-3 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">
+              髪格とは、生まれ持った髪の設計図です
+            </p>
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[
+                { jp: '太さ', en: '1本の太さ' },
+                { jp: '量',   en: '生えている量' },
+                { jp: 'くせ', en: '髪の動き方' },
+              ].map((x, i) => (
+                <div key={i} className="border border-line/80 rounded-[2px] py-2.5 px-2 text-center">
+                  <p className="font-serif text-[14px] sm:text-[15px] text-ink leading-none">{x.jp}</p>
+                  <p className="mt-1.5 text-[9.5px] sm:text-[10px] text-charcoal/50 leading-snug">{x.en}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[11.5px] sm:text-[12px] text-charcoal/60 leading-[1.85] text-center">
+              この3つの組み合わせで27通り
+            </p>
+            <p className="mt-4 pt-4 border-t border-line text-[12.5px] sm:text-[13px] text-charcoal leading-[1.9]">
+              髪格は<span className="text-gold">カラーやアイロンでは変わりません</span>
+              変わるのは「いまの状態」のほうです
+              SEAMはその2つを分けて、あなたに合う3〜5本を選びます
+            </p>
+          </div>
         </div>
 
         {/* ✦ 27 髪格 Preview Ticker — "あなたはどのタイプ?" */}

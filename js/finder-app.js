@@ -6318,7 +6318,42 @@ function Home({
     className: "mt-5 sm:mt-7 font-serif text-[19px] sm:text-[22px] text-ink leading-relaxed"
   }, "\u3042\u306A\u305F\u306E\u672C\u5F53\u306E\u9AEA\u306B\u3001\u51FA\u4F1A\u3046"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal"
-  }, "\u3042\u306A\u305F\u306E\u9AEA\u306B\u6B8B\u308B\u201C\u5C65\u6B74\u201D\u307E\u3067\u898B\u3066\u3001\u4ECA\u5FC5\u8981\u306A\u30D8\u30A2\u30B1\u30A2\u30EB\u30FC\u30C6\u30A3\u30F3\u3092\u63D0\u6848\u3057\u307E\u3059")), /*#__PURE__*/React.createElement("div", {
+  }, "\u751F\u307E\u308C\u6301\u3063\u305F\u9AEA\u3068\u3001\u4ECA\u65E5\u307E\u3067\u306E\u5C65\u6B74\u3000\u305D\u306E\u4E21\u65B9\u304B\u3089\u4ECA\u5408\u3046\u30D8\u30A2\u30B1\u30A2\u3092\u9078\u3073\u307E\u3059")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-8 sm:mt-10 anim-fade-up",
+    style: {
+      animationDelay: '90ms'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bg-white/70 border border-line rounded-[2px] p-5 sm:p-6 max-w-xl"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[10px] uppercase text-gold"
+  }, "What is Kamikaku"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
+  }, "\u9AEA\u683C\u3068\u306F\u3001\u751F\u307E\u308C\u6301\u3063\u305F\u9AEA\u306E\u8A2D\u8A08\u56F3\u3067\u3059"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-4 grid grid-cols-3 gap-2"
+  }, [{
+    jp: '太さ',
+    en: '1本の太さ'
+  }, {
+    jp: '量',
+    en: '生えている量'
+  }, {
+    jp: 'くせ',
+    en: '髪の動き方'
+  }].map((x, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "border border-line/80 rounded-[2px] py-2.5 px-2 text-center"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-serif text-[14px] sm:text-[15px] text-ink leading-none"
+  }, x.jp), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1.5 text-[9.5px] sm:text-[10px] text-charcoal/50 leading-snug"
+  }, x.en)))), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-[11.5px] sm:text-[12px] text-charcoal/60 leading-[1.85] text-center"
+  }, "\u3053\u306E3\u3064\u306E\u7D44\u307F\u5408\u308F\u305B\u306727\u901A\u308A"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-4 pt-4 border-t border-line text-[12.5px] sm:text-[13px] text-charcoal leading-[1.9]"
+  }, "\u9AEA\u683C\u306F", /*#__PURE__*/React.createElement("span", {
+    className: "text-gold"
+  }, "\u30AB\u30E9\u30FC\u3084\u30A2\u30A4\u30ED\u30F3\u3067\u306F\u5909\u308F\u308A\u307E\u305B\u3093"), "\u5909\u308F\u308B\u306E\u306F\u300C\u3044\u307E\u306E\u72B6\u614B\u300D\u306E\u307B\u3046\u3067\u3059 SEAM\u306F\u305D\u306E2\u3064\u3092\u5206\u3051\u3066\u3001\u3042\u306A\u305F\u306B\u5408\u30463\u301C5\u672C\u3092\u9078\u3073\u307E\u3059"))), /*#__PURE__*/React.createElement("div", {
     className: "mt-9 sm:mt-12 anim-fade-up",
     style: {
       animationDelay: '180ms'
