@@ -784,6 +784,16 @@ body.customer .phone.spa{background:#f7f8f3}
 .ent-steps3{display:grid;grid-template-columns:auto 1fr;gap:7px 9px;align-items:center;font-size:13.5px;font-weight:700;color:#4a4438;line-height:1.5;margin-bottom:16px;background:#faf8f4;border:1px solid #ece5d8;border-radius:12px;padding:12px 14px}
 .ent-steps3 i{display:none}
 .ent-steps3 span{width:22px;height:22px;font-size:12px}
+/* 「押せる」と一目で分かるカード（高齢層は“カード=押せる”を知らない前提で作る）*/
+.pbody .ent-card{border-width:2px;padding:16px 14px;align-items:center;box-shadow:0 2px 0 rgba(138,106,47,.10)}
+.pbody .ent-card:active{transform:translateY(1px)}
+.pbody .ent-t{font-size:19px;font-weight:800;line-height:1.35}
+.pbody .ent-s{margin-top:2px}
+.pbody .ent-go{display:inline-flex;align-items:center;justify-content:center;min-height:46px;margin-top:10px;background:#8a6a2f;color:#fff;font-size:14.5px;font-weight:800;border-radius:99px;padding:0 22px;letter-spacing:.02em}
+.phone .phead .s{color:#8a6a2f}   /* 流入表示(LINE予約) 2.83→5.02 */
+.phone.spa .pbody .ent-go{background:#5f7a4e}
+.pbody .ent-arrow{font-size:22px;color:#8a6a2f;font-weight:700}
+.pbody .ent-ic{width:52px;height:52px;font-size:26px}
 /* 今どこ・あと何回で終わるか（不安を減らす進捗表示）*/
 .pbody .stepnow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;font-weight:800;color:#4a4438;margin:-8px 0 14px}
 .pbody .stepnow b{background:#8a6a2f;color:#fff;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:800}
@@ -909,7 +919,7 @@ body.customer .phone.spa{background:#f7f8f3}
   <p class="lead">自社サイト・LINE・Instagram・Googleの予約ボタン、どこから来ても同じ予約画面につながります</p>
   <div class="bookshell">
     <div class="phone">
-      <div class="phead"><div class="s">WEB RESERVATION</div><div class="n">SEAM GINZA — ご予約</div></div>
+      <div class="phead"><div class="s">ネット予約</div><div class="n">SEAM 銀座 — ご予約</div></div>
       <div class="pbody" id="pbody"></div>
     </div>
   </div>
@@ -2624,22 +2634,22 @@ function renderBook(){
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
     p.innerHTML=stepsHtml+
-      `<div class="ent-lead">SEAM 銀座へようこそ</div>
-       <div class="ent-sub">ご希望のメニューをお選びください</div>
+      `<div class="ent-lead">ご予約ページ</div>
+       <div class="ent-sub">下のどちらかを選んでください</div>
        ${BOOK_SRC==='line'?`<div class="ent-line">
-         <b>LINEからそのまま予約できます</b>
-         <span>空いている時間を選ぶだけ・お電話は不要です</span>
+         <b>お電話は要りません</b>
+         <span>空いている時間を選ぶだけ・その場で予約が終わります</span>
        </div>`:''}
        <div class="ent-steps3"><span>1</span><div>メニューを選ぶ</div><span>2</span><div>空いている日と時間を選ぶ</div><span>3</span><div>お名前を書いて終わり</div></div>
        <div class="ent-wrap">
          <button class="ent-card ent-hair" data-sec="hair">
            <div class="ent-ic">✂️</div>
-           <div class="ent-main"><div class="ent-en">Hair Salon</div><div class="ent-t">ヘアサロン</div><div class="ent-s">カット・カラー・パーマ・縮毛矯正・トリートメント</div></div>
+           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-s">カット・カラー・パーマ・縮毛矯正・トリートメント</div><div class="ent-go">タップして選ぶ</div></div>
            <div class="ent-arrow">→</div>
          </button>
          <button class="ent-card ent-spa" data-sec="spa">
            <div class="ent-ic">💆</div>
-           <div class="ent-main"><div class="ent-en">Head Spa</div><div class="ent-t">スパ / ヘッドスパ</div><div class="ent-s">完全個室・水素ヘッドスパで頭皮と眠りを整える</div></div>
+           <div class="ent-main"><div class="ent-t">スパ・ヘッドスパ</div><div class="ent-s">完全個室でゆっくり休めます</div><div class="ent-go">タップして選ぶ</div></div>
            <div class="ent-arrow">→</div>
          </button>
        </div>`;
@@ -2905,9 +2915,9 @@ let BOOK_LANG=(()=>{const q=new URLSearchParams(location.search).get('lang');
   try{const s=localStorage.getItem('stb_lang');if(s)return s;}catch(e){}
   return (!/^ja/.test(navigator.language||'ja'))?'en':'ja';})();
 const EN_MAP={
-  'SEAM 銀座へようこそ':'Welcome to SEAM Ginza','ご希望のメニューをお選びください':'Please choose a service',
+  'ご予約ページ':'Book an appointment','下のどちらかを選んでください':'Please choose one below',
   'ヘアサロン':'Hair Salon','カット・カラー・パーマ・縮毛矯正・トリートメント':'Cut / Color / Perm / Straightening / Treatment',
-  'スパ / ヘッドスパ':'Spa / Head Spa','完全個室・水素ヘッドスパで頭皮と眠りを整える':'Private-room hydrogen head spa for scalp & deep rest',
+  'スパ・ヘッドスパ':'Spa / Head Spa','完全個室でゆっくり休めます':'Private room — rest deeply',
   'メニューを選択':'Choose your menu','スタイリストを選択':'Choose your stylist','日時を選択':'Choose date & time',
   'ご予約内容の確認':'Confirm your booking','事前決済（デポジット）':'Deposit (pre-payment)',
   '次へ':'Next','戻る':'Back','次へ（お支払い）':'Next (Payment)','この日は満席です。上の「最短で予約」や別の日もご検討ください':'Fully booked on this day. Try "Earliest slot" above or another day',
@@ -2923,11 +2933,13 @@ const EN_MAP={
   '前金なしで予約（店頭でお支払い）':'Book without deposit (pay in store)',
   'ご予約を承りました':'Your booking is confirmed','予約確認とリマインドをLINEでお送りします':'Confirmation & reminders will be sent via LINE',
   '＋ LINE友だち追加':'+ Add us on LINE','続けてもう1件予約する':'Make another booking',
-  'ご予約':'Reservation',
+  'ご予約':'Reservation','ネット予約':'ONLINE BOOKING','タップして選ぶ':'Tap to choose',
+  'SEAM 銀座 — ご予約':'SEAM GINZA — Booking',
+
   'メニューを選ぶ':'Choose a menu','スタイリストを選ぶ':'Choose a stylist','日にちと時間を選ぶ':'Choose date & time',
   'お名前を書く':'Enter your name','お支払い':'Payment','これで最後です':'This is the last step',
   '空いている日と時間を選ぶ':'Pick an open time','お名前を書いて終わり':'Enter your name — done',
-  'LINEからそのまま予約できます':'Book right here from LINE','空いている時間を選ぶだけ・お電話は不要です':'Just pick an open time — no phone call needed',
+  'お電話は要りません':'No phone call needed','空いている時間を選ぶだけ・その場で予約が終わります':'Just pick an open time — done in a minute',
 '確実なご案内のため、事前決済のご協力をお願いしております':'A deposit is required to secure this booking',
 };
 const EN_RX=[
@@ -3385,7 +3397,8 @@ document.getElementById('cust-search').oninput=renderCustomers;
 document.getElementById('baseurl').oninput=renderLinks;
 // ※D1同期(顧客PII・売上のロード)は管理モードで認証が通ってから initAdmin() 内で実行。顧客モードでは行わない。
 if(BOOK_SRC!=='own'){
-  const s=document.querySelector('#v-book .phead .s');if(s)s.textContent=CHANNELS[BOOK_SRC].name+'経由 · WEB RESERVATION';
+  // 流入元の表示も日本語だけに（英語の飾りは読む負担になるだけで意味を足さない）
+  const s=document.querySelector('#v-book .phead .s');if(s)s.textContent=CHANNELS[BOOK_SRC].name;
 }
 // お客様モードへの切替（同期検知でも、後段の liff.isInClient() 検知でも呼べるよう関数化。二重実行はガード）。
 let _custEntered=false;
