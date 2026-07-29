@@ -86,8 +86,10 @@ export async function salonPush(env, r) {
   if (!env.SALON_SHOP_ID) throw new Error('SALON_SHOP_ID未設定');
   const t = await salonToken(env);
   const h2k = (s) => (s || '').replace(/[ぁ-ゖ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60));
-  const nm = (r.name || '').trim();                // 「姓 名」
-  const kn = h2k((r.kana || '').trim());           // 「セイ メイ」（HotPepperゲストフォーム形式）
+  // ★姓名の区切りは半角スペースが正(2026-07-29エンジニア確定)。全角スペース・連続空白を半角1つに正規化
+  const norm = (s) => (s || '').replace(/[\s　]+/g, ' ').trim();
+  const nm = norm(r.name);                         // 「姓 名」(半角スペース区切り)
+  const kn = h2k(norm(r.kana));                    // 「セイ メイ」(半角スペース区切り・HotPepperゲストフォーム形式)
   const dur = r.menuMin || (r.end != null && r.start != null ? r.end - r.start : 60);  // 所要時間(分)
   // ★スパ予約はSPA店へ振り分け（ANZUはヘア/スパで別account）。r.spaはページが判定
   const shopId = (r.spa && env.SALON_SPA_SHOP_ID) ? env.SALON_SPA_SHOP_ID : env.SALON_SHOP_ID;

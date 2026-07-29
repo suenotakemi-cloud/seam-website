@@ -115,6 +115,7 @@ flowchart LR
 ### 3.1 salon.town へ送る予約データ形式（2026-07-27 オーナー確定／2026-07-26 スパ設備追加・重要）
 サロンボード書込（RPA・**予約のみ＝予定機能は廃止**）に必要な**赤丸必須項目のみ**を送る。**メニュー/クーポン名は送らない**（名称一致でRPA書込がエラーになるため）。
 - 指名/フリー（`info_js.nominated`）・開始時間（`reserve_date`）・**所要時間**（`reserve_end_date`＝開始＋所要／`info_js.duration_min`）・氏名カナ（`name`欄＝「姓 名（セイ メイ）」／`private_js`にカナ）・担当（**`account_id`＝CUEPONのaccount.id**。`info_js.hbp_stylist_id`はRPA補助用の別フィールド）。
+- **氏名フォーマット確定（2026-07-29 エンジニア）**：`private_js.customer_name`／`customer_kana` はフラットキー・**姓名は半角スペース区切り**が正。salonPushは全角スペース/連続空白を半角1つに正規化してから送る（name欄・4分割フィールドにも同じ正規化が効く）。
 - **顧客もCUEPONアカウント（2026-07-28 エンジニア指示・実装済）**：予約前に電話番号で名寄せ（`/get/account filter:{phone}`＝完全一致が正。kwdは電話を見ない/`filter.code`は黙って無視＝実測）→ 無ければ `/save/account`（**multipart必須・user_id/tokenは独立フィールド・dataはアカウント項目のみのJSON**＝SDK apiMultipart同形）で作成 → その**account.idを`from_account_id`に指定**。`account.code`には**こちらの顧客ID（`seam-<電話番号>`）**を刻む（台帳相互参照キー・エンジニア指示）。解決失敗時はログインアカウントにフォールバック（予約を止めない）。E2E実証：作成→from_account_id反映→同一電話の2件目は既存account再利用（重複なし）。
 - `item_id`・`menu_id`・`hbp_menu_id` は**送らない**。`menu_label` は表示控えのみ（照合不使用）。
 - **スパのみ追加＝設備（個室）**：スパのサロンボードは予約フォームで**「設備」が必須項目**（ヘアには無い・2026-07-26オーナー実機確認）。
@@ -243,6 +244,7 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
   - **兼任ミラー（block）**：salon.town account_link が自動生成（name「予定あり（他店舗のご予約）」・`info_js.is_block/block_for_reservation_id`）。予定機能廃止後のRPA側の扱いはエンジニア決定事項。
   - **⚠️孤児ミラー**：兼任スタッフ（ANZU）の予約を削除すると**ミラーは別レコードとして残り**、RPAが処理不能→90秒タイムアウト連発→**キュー全体が詰まる**（2026-07-25実障害）。予約削除時は `/salon/noname`（孤児判定つき）か `/admin/salon-del` でミラーも掃除する。
 - **メール取込の役割分担（2026-07-26確定）**：salon.town予約の作成は `reserve_<shop_id>@sugu`（エンジニア）が唯一。`hpb@seam.site`（本システム）は**D1表示のみで書かない**。二重処理は発生しない。
+- **エンジニア側の修正（2026-07-29報告・アプリ/inbound）**：①SBキャンセル確認「はい」押下をCancelFlowに追加（WebChromeClient未設定でconfirm()が常にfalseだった問題も解消）＝**キャンセル伝播が実働化** ②keep-aliveはFLAG_KEEP_SCREEN_ON追加（端末の電池最適化からアプリ除外が必要・次の手はフォアグラウンドサービス） ③アプリにネスト読み+「漢字（カナ）」分解+スペース非依存照合のフォールバック、inboundは今後 info_js.hbp_stylist_id/staff_name と private_js.customer_name/kana を最初から書く（**EC2デプロイ待ち**） ④7/27ミラー2件のhbp_stylist_id:nullは**KLPスタッフ同期を1回流せば解消**（エンジニア作業）。
 - **多テナント非対応**：現状 SEAM 銀座 単一。テナント分離・汎用化は統合時に CUEPON 側で実施（本システムは寄せる側）。スパ個室の割当ロジック（メニューID直書き判定・`SPA_ROOMS`）もSEAM専用＝統合時に設備マスタへ汎用化。
 
 ---
