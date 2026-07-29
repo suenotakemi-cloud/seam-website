@@ -2174,10 +2174,25 @@ function renderRegister(){
     ${activePasses.length?`<div class="co-sub" style="margin-top:10px">有効な回数券（${activePasses.length}件）</div>${passRows}`:''}</div>`;
   // 毎日使う(会計/売上/レジ締め)は常時表示・たまに使う(ポイント設定/ギフト券/回数券)は折りたたみでスッキリ
   const fold=(title,inner)=>`<details class="fold"><summary>${title}</summary>${inner}</details>`;
+  // 前金(デポジット)の設定 — 予約ページの言語ごとに変える。日本語=定額/海外=料金の◯%
+  const DEP_LANGS=[['ja','日本語のお客様'],['en','English'],['zh','简体中文'],['tw','繁體中文']];
+  const depPanel=`<div class="card reg-close"><h3>💳 前金（デポジット）の設定</h3>
+    ${DEP_LANGS.map(([l,label])=>{const r=depositRule(l);return `<div class="rz"><span>${label}</span><span style="margin-left:auto;display:flex;gap:6px;align-items:center">
+      <select class="co-sel dep-type" data-l="${l}" style="max-width:104px">
+        <option value="fixed" ${r.type==='fixed'?'selected':''}>定額</option>
+        <option value="rate" ${r.type==='rate'?'selected':''}>料金の%</option>
+        <option value="off" ${r.type==='off'?'selected':''}>なし</option></select>
+      <input class="dep-val" data-l="${l}" type="number" inputmode="numeric" value="${r.value}" style="width:78px" ${r.type==='off'?'disabled':''}>
+      <b style="font-size:12px;color:var(--sub)">${r.type==='rate'?'%':'円'}</b></span></div>`}).join('')}
+    <div class="rz-ref"><span>お客様が選んだ言語で自動的に切り替わります</span><span>海外は「料金の50%」が一般的（無断キャンセル対策）</span></div></div>`;
   body.innerHTML=summary+pendHtml+listHtml+closePanel
+    +fold('💳 前金（デポジット）の設定（言語ごと）',depPanel)
     +fold('💎 ポイント設定（還元率・使う/使わない）',ptPanel)
     +fold(`🎁 ギフト券（発行・一覧${activeGifts.length?`・有効${activeGifts.length}枚`:''}）`,gfPanel)
     +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel);
+  // 前金設定の保存（言語ごと）
+  body.querySelectorAll('.dep-type').forEach(sel=>sel.onchange=()=>{setStg('depType_'+sel.dataset.l,sel.value);});
+  body.querySelectorAll('.dep-val').forEach(inp=>inp.onchange=()=>{const v=Math.max(0,+inp.value||0);setStg('depVal_'+inp.dataset.l,v);});
   {const on=document.getElementById('pt-on'),off=document.getElementById('pt-off'),rt=document.getElementById('pt-rate');
    if(on)on.onclick=()=>{setStg('pointEnabled','1');};
    if(off)off.onclick=()=>{setStg('pointEnabled','0');};
@@ -2475,7 +2490,22 @@ const moveDiscOf=sid=>Math.min(INCENT_MAX,Math.max(0,+(INCENT.move[sid]??0)||0))
 // その場で「◯◯さんからのお願い」を表示して隣接時間への変更を提案する。選んだ時間のままでも予約できる（強制なし）。
 // ※maxGapはオーナー任意の固定値。最短メニュー時間からの自動算出は特許(JP7617580)の構成要件なので絶対にしない。枠の非表示もしない。
 const GAP_NUDGE={on:true,maxGap:30};
-const depositOf=price=>Math.max(1000,Math.round(price*0.3/100)*100); // 前金=料金の約30%(最低¥1,000)
+/* ===== 前金（デポジット）— 言語ごとに設定を変える =====
+ * 日本語のお客様は「定額」（既定¥3,000）、海外のお客様は「料金の◯%」（既定50%＝海外では一般的）。
+ * 率・金額はレジ画面の「前金の設定」で変更できる（設定はD1に保存＝全端末で共通）。 */
+const DEPOSIT_DEFAULT={ja:{type:'fixed',value:3000},en:{type:'rate',value:50},zh:{type:'rate',value:50},tw:{type:'rate',value:50}};
+function depositRule(lang){
+  const l=lang||(typeof BOOK_LANG!=='undefined'?BOOK_LANG:'ja');
+  const d=DEPOSIT_DEFAULT[l]||DEPOSIT_DEFAULT.ja;
+  const type=stg('depType_'+l,d.type), value=stgN('depVal_'+l,d.value);
+  return {type,value:value||d.value};
+}
+function depositOf(price,lang){
+  const r=depositRule(lang);
+  if(r.type==='off')return 0;                                    // 前金なし
+  if(r.type==='fixed')return Math.min(price,Math.max(0,Math.round(r.value)));
+  return Math.min(price,Math.max(0,Math.round(price*r.value/100/100)*100));  // 率(100円単位)
+}
 // 段階式キャンセルポリシー（消費者契約法9条＝平均的損害の範囲内で設定）。無断は平均的損害まで。
 const CANCEL_POLICY=[{d:2,pct:0,label:'2日前まで'},{d:1,pct:25,label:'前日'},{d:0,pct:50,label:'当日'}];
 const NOSHOW_MAT_RATE=0.2; // 材料費率の目安（平均的損害＝粗利×再販不可率の計算用）
@@ -2936,11 +2966,21 @@ function renderBook(){
 /* ===== 予約フロー英語対応（インバウンド・銀座） =====
  * 方式: 描画後にDOMの静的文言をEN辞書で置換（finder-i18nと同型）。メニュー実名・スタッフ名はJP維持。
  * 切替: ?lang=en / 端末の言語が日本語以外なら自動EN / 顧客モードの右上トグル。 */
-let BOOK_LANG=(()=>{const q=new URLSearchParams(location.search).get('lang');
-  if(q==='en')return 'en'; if(q==='ja')return 'ja';
-  try{const s=localStorage.getItem('stb_lang');if(s)return s;}catch(e){}
-  return (!/^ja/.test(navigator.language||'ja'))?'en':'ja';})();
+// 対応4言語: 日本語 / English / 简体中文 / 繁體中文。?lang= 指定 → 保存値 → 端末の言語 の順で決定
+const LANGS=['ja','en','zh','tw'];
+let BOOK_LANG=(()=>{
+  const q=(new URLSearchParams(location.search).get('lang')||'').toLowerCase();
+  if(LANGS.includes(q))return q;
+  if(q==='zh-cn'||q==='zh-hans')return 'zh';
+  if(q==='zh-tw'||q==='zh-hant'||q==='zh-hk')return 'tw';
+  try{const s=localStorage.getItem('stb_lang');if(LANGS.includes(s))return s;}catch(e){}
+  const nav=(navigator.language||'ja').toLowerCase();
+  if(/^ja/.test(nav))return 'ja';
+  if(/^zh/.test(nav))return (/(tw|hk|mo|hant)/.test(nav))?'tw':'zh';   // 台湾/香港は繁体字
+  return 'en';})();
 const EN_MAP={
+  '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'A deposit secures your booking. Pay the balance at the salon.',
+  'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'Secured by Square. Your card details are never stored by the salon.',
   'ご予約ページ':'Book an appointment','下のどちらかを選んでください':'Please choose one below',
   'ヘアサロン':'Hair Salon','カット・カラー・パーマ・縮毛矯正・トリートメント':'Cut / Color / Perm / Straightening / Treatment',
   'スパ・ヘッドスパ':'Spa / Head Spa','完全個室でゆっくり休めます':'Private room — rest deeply',
@@ -2982,15 +3022,98 @@ const EN_RX=[
   [/^(.+)（指名）$/,'$1 (requested)'],[/^(.+)（指名なし）$/,'$1 (any stylist)'],[/^歴(\d+)年$/,'$1 yrs exp.'],
   [/^あと(\d+)回選ぶと終わります$/,'$1 more steps to go'],
 ];
+/* 简体中文（大陆）辞書 — 予約フローの静的文言のみ。メニュー実名・スタッフ名は日本語のまま */
+const ZH_MAP={
+  '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'支付订金以确保预约。余款请到店支付。',
+  'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'由Square安全处理，门店不保存您的卡号。',
+  'ご予約ページ':'预约页面','下のどちらかを選んでください':'请选择下方其中一项',
+  'ヘアサロン':'美发沙龙','カット・カラー・パーマ・縮毛矯正':'剪发・染发・烫发・离子烫',
+  'ヘッドスパ':'头皮护理','完全個室でお休みいただけます':'独立包间・安心休息',
+  '髪を切る・染める方はこちら':'想剪发・染发请选这里','頭皮ケア・ゆっくりしたい方はこちら':'想护理头皮・放松请选这里',
+  'メニューを選択':'选择项目','スタイリストを選択':'选择造型师','日時を選択':'选择日期和时间',
+  'ご予約内容の確認':'确认预约内容','事前決済（デポジット）':'预先支付（订金）',
+  '次へ':'下一步','戻る':'返回','次へ（お支払い）':'下一步（支付）',
+  'この日は満席です。上の「最短で予約」や別の日もご検討ください':'当天已满。请看上方「最快可预约」或选择其他日期',
+  '指名なし':'不指定','空いているスタッフが担当します（最短でご案内）':'由有空的员工为您服务（最快安排）',
+  '朝・午前':'上午','午後':'下午','夕方・夜':'傍晚・晚上','今日':'今天','明日':'明天','⚡ 最短で予約':'⚡ 最快可预约',
+  'メニュー':'项目','来店日時':'到店时间','所要時間目安':'预计时长','スタイリスト':'造型师',
+  '合計金額':'合计金额','税込・当日払い':'含税・当天支付','割引':'优惠','ご来店':'到店次数',
+  'お名前':'姓名','フリガナ（カタカナ）':'假名（片假名）','電話番号':'电话号码','必須':'必填',
+  '姓（例）山田':'姓','名（例）花子':'名','セイ（例）ヤマダ':'姓（片假名）','メイ（例）ハナコ':'名（片假名）','例）090-1234-5678':'例）+81-90-1234-5678',
+  'キャンセルポリシー':'取消规定','2日前まで':'2天前','無料':'免费','前日':'前一天','料金の25%':'费用的25%',
+  '当日':'当天','料金の50%':'费用的50%','無断キャンセル':'未到店','当店に生じた損害の範囲まで':'按实际损失计算',
+  'お預かりする前金':'订金金额','カード番号':'卡号','有効期限':'有效期','セキュリティコード':'安全码',
+  '前金なしで予約（店頭でお支払い）':'不付订金预约（到店支付）',
+  'ご予約を承りました':'预约已完成','予約確認とリマインドをLINEでお送りします':'我们会通过LINE发送确认和提醒',
+  '＋ LINE友だち追加':'＋ 添加LINE好友','続けてもう1件予約する':'继续预约下一项',
+  'ご予約':'预约','ネット予約':'网上预约','SEAM 銀座 — ご予約':'SEAM 银座 — 预约',
+  'このまま予約できます':'现在就能预约','空いている時間を選ぶだけです':'只需选择有空的时间',
+  'お電話は要りません。':'无需打电话。','1〜2分で予約できます。':'1〜2分钟即可完成。',
+  '予約は3つだけです':'只需3步','ご希望の内容を選んでください':'请选择您想要的服务',
+  'メニューを選ぶ':'选择项目','日にちと時間を選ぶ':'选择日期和时间','お名前を書いて完了':'填写姓名即完成',
+  '空いている時間を見る':'查看可预约时间','タップして選ぶ':'点击选择',
+  'スタイリストを選ぶ':'选择造型师','お名前を書く':'填写姓名','お支払い':'支付','これで最後です':'这是最后一步',
+  '確実なご案内のため、事前決済のご協力をお願いしております':'为确保您的预约，需要预先支付订金',
+};
+const ZH_RX=[
+  [/^¥([\d,]+) を支払って予約確定$/,'支付 ¥$1 完成预约'],
+  [/^約(\d+)時間(\d+)分$/,'约$1小时$2分'],[/^約(\d+)時間$/,'约$1小时'],[/^約(\d+)分$/,'约$1分钟'],
+  [/^(.+)（指名）$/,'$1（指定）'],[/^(.+)（指名なし）$/,'$1（不指定）'],[/^歴(\d+)年$/,'从业$1年'],
+  [/^あと(\d+)回選ぶと終わります$/,'再选$1次即完成'],
+];
+/* 繁體中文（台灣）辞書 */
+const TW_MAP={
+  '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'支付訂金以確保預約。餘款請到店支付。',
+  'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'由Square安全處理，門市不會保存您的卡號。',
+  'ご予約ページ':'預約頁面','下のどちらかを選んでください':'請選擇下方其中一項',
+  'ヘアサロン':'美髮沙龍','カット・カラー・パーマ・縮毛矯正':'剪髮・染髮・燙髮・離子燙',
+  'ヘッドスパ':'頭皮護理','完全個室でお休みいただけます':'獨立包廂・安心休息',
+  '髪を切る・染める方はこちら':'想剪髮・染髮請選這裡','頭皮ケア・ゆっくりしたい方はこちら':'想護理頭皮・放鬆請選這裡',
+  'メニューを選択':'選擇項目','スタイリストを選択':'選擇設計師','日時を選択':'選擇日期與時間',
+  'ご予約内容の確認':'確認預約內容','事前決済（デポジット）':'預先付款（訂金）',
+  '次へ':'下一步','戻る':'返回','次へ（お支払い）':'下一步（付款）',
+  'この日は満席です。上の「最短で予約」や別の日もご検討ください':'當天已額滿。請參考上方「最快可預約」或選擇其他日期',
+  '指名なし':'不指定','空いているスタッフが担当します（最短でご案内）':'由有空的人員為您服務（最快安排）',
+  '朝・午前':'上午','午後':'下午','夕方・夜':'傍晚・晚上','今日':'今天','明日':'明天','⚡ 最短で予約':'⚡ 最快可預約',
+  'メニュー':'項目','来店日時':'到店時間','所要時間目安':'預計時間','スタイリスト':'設計師',
+  '合計金額':'合計金額','税込・当日払い':'含稅・當天付款','割引':'優惠','ご来店':'到店次數',
+  'お名前':'姓名','フリガナ（カタカナ）':'假名（片假名）','電話番号':'電話號碼','必須':'必填',
+  '姓（例）山田':'姓','名（例）花子':'名','セイ（例）ヤマダ':'姓（片假名）','メイ（例）ハナコ':'名（片假名）','例）090-1234-5678':'例）+81-90-1234-5678',
+  'キャンセルポリシー':'取消規定','2日前まで':'2天前','無料':'免費','前日':'前一天','料金の25%':'費用的25%',
+  '当日':'當天','料金の50%':'費用的50%','無断キャンセル':'未到店','当店に生じた損害の範囲まで':'依實際損失計算',
+  'お預かりする前金':'訂金金額','カード番号':'卡號','有効期限':'有效期限','セキュリティコード':'安全碼',
+  '前金なしで予約（店頭でお支払い）':'不付訂金預約（到店付款）',
+  'ご予約を承りました':'預約完成','予約確認とリマインドをLINEでお送りします':'我們會透過LINE傳送確認與提醒',
+  '＋ LINE友だち追加':'＋ 加入LINE好友','続けてもう1件予約する':'繼續預約下一項',
+  'ご予約':'預約','ネット予約':'線上預約','SEAM 銀座 — ご予約':'SEAM 銀座 — 預約',
+  'このまま予約できます':'現在就能預約','空いている時間を選ぶだけです':'只要選擇有空的時間',
+  'お電話は要りません。':'不需要打電話。','1〜2分で予約できます。':'1〜2分鐘即可完成。',
+  '予約は3つだけです':'只要3個步驟','ご希望の内容を選んでください':'請選擇您想要的服務',
+  'メニューを選ぶ':'選擇項目','日にちと時間を選ぶ':'選擇日期與時間','お名前を書いて完了':'填寫姓名即完成',
+  '空いている時間を見る':'查看可預約時間','タップして選ぶ':'點擊選擇',
+  'スタイリストを選ぶ':'選擇設計師','お名前を書く':'填寫姓名','お支払い':'付款','これで最後です':'這是最後一步',
+  '確実なご案内のため、事前決済のご協力をお願いしております':'為確保您的預約，需要預先支付訂金',
+};
+const TW_RX=[
+  [/^¥([\d,]+) を支払って予約確定$/,'支付 ¥$1 完成預約'],
+  [/^約(\d+)時間(\d+)分$/,'約$1小時$2分'],[/^約(\d+)時間$/,'約$1小時'],[/^約(\d+)分$/,'約$1分鐘'],
+  [/^(.+)（指名）$/,'$1（指定）'],[/^(.+)（指名なし）$/,'$1（不指定）'],[/^歴(\d+)年$/,'年資$1年'],
+  [/^あと(\d+)回選ぶと終わります$/,'再選$1次即完成'],
+];
+const LANG_MAPS={en:EN_MAP,zh:ZH_MAP,tw:TW_MAP};
+const LANG_RXS={en:EN_RX,zh:ZH_RX,tw:TW_RX};
+const LANG_LABEL={ja:'日本語',en:'English',zh:'简体中文',tw:'繁體中文'};
 function applyBookLang(){
-  if(BOOK_LANG!=='en')return;
+  if(BOOK_LANG==='ja')return;
+  const MAP=LANG_MAPS[BOOK_LANG], RX=LANG_RXS[BOOK_LANG];
+  if(!MAP)return;
   const root=document.getElementById('v-book');if(!root)return;
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
   let n;const nodes=[];while(n=walker.nextNode())nodes.push(n);
   nodes.forEach(nd=>{const t=nd.textContent.trim();if(!t)return;
-    if(EN_MAP[t]){nd.textContent=nd.textContent.replace(t,EN_MAP[t]);return;}
-    for(const [rx,rep] of EN_RX){if(rx.test(t)){nd.textContent=nd.textContent.replace(t,t.replace(rx,rep));break;}}});
-  root.querySelectorAll('input[placeholder]').forEach(i=>{if(EN_MAP[i.placeholder])i.placeholder=EN_MAP[i.placeholder];});
+    if(MAP[t]){nd.textContent=nd.textContent.replace(t,MAP[t]);return;}
+    for(const [rx,rep] of RX){if(rx.test(t)){nd.textContent=nd.textContent.replace(t,t.replace(rx,rep));break;}}});
+  root.querySelectorAll('input[placeholder]').forEach(i=>{if(MAP[i.placeholder])i.placeholder=MAP[i.placeholder];});
 }
 {const _renderBookJP=renderBook;
  renderBook=function(){_renderBookJP();applyBookLang();};}
@@ -3467,13 +3590,23 @@ function enterCustomerMode(){
   document.querySelectorAll('.view').forEach(v=>{ if(v.id!=='v-book') v.remove(); });
   document.querySelectorAll('header nav, #adminGate').forEach(el=>el.remove());
   // 言語トグル(EN⇄日本語・インバウンド対応。端末言語が日本語以外なら最初からEN表示)
+  // 言語切替（日本語 / English / 简体中文 / 繁體中文）。押すたびに一覧から選ぶ形（4言語なのでトグルにしない）
   if(!document.getElementById('langTgl')){
+    const SHORT={ja:'日本語',en:'EN',zh:'简体',tw:'繁體'};
     const b=document.createElement('button');b.id='langTgl';
-    b.textContent=BOOK_LANG==='en'?'日本語':'EN';
-    b.style.cssText='position:fixed;top:10px;right:10px;z-index:9000;border:1px solid #d8cfc0;background:#fff;border-radius:20px;padding:5px 14px;font-size:12px;font-weight:700;color:#6f6552;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)';
-    b.onclick=()=>{BOOK_LANG=BOOK_LANG==='en'?'ja':'en';try{localStorage.setItem('stb_lang',BOOK_LANG)}catch(e){}
-      b.textContent=BOOK_LANG==='en'?'日本語':'EN';renderBook();};
-    document.body.appendChild(b);
+    b.textContent='🌐 '+SHORT[BOOK_LANG];
+    b.style.cssText='position:fixed;top:10px;right:10px;z-index:9000;border:1px solid #d8cfc0;background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;font-weight:800;color:#6f6552;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)';
+    const menu=document.createElement('div');menu.id='langMenu';
+    menu.style.cssText='position:fixed;top:44px;right:10px;z-index:9001;background:#fff;border:1px solid #e2dbcc;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.14);overflow:hidden;display:none;min-width:150px';
+    menu.innerHTML=LANGS.map(l=>`<button data-l="${l}" style="display:block;width:100%;text-align:left;border:none;background:${l===BOOK_LANG?'#f6f1e6':'#fff'};padding:13px 16px;font-size:14px;font-weight:700;color:#3a3226;cursor:pointer">${LANG_LABEL[l]}</button>`).join('');
+    b.onclick=()=>{menu.style.display=menu.style.display==='none'?'block':'none';};
+    menu.querySelectorAll('[data-l]').forEach(x=>x.onclick=()=>{
+      BOOK_LANG=x.dataset.l;try{localStorage.setItem('stb_lang',BOOK_LANG)}catch(e){}
+      b.textContent='🌐 '+SHORT[BOOK_LANG];menu.style.display='none';
+      menu.querySelectorAll('[data-l]').forEach(y=>y.style.background=y.dataset.l===BOOK_LANG?'#f6f1e6':'#fff');
+      renderBook();});
+    document.body.appendChild(b);document.body.appendChild(menu);
+    document.addEventListener('click',e=>{if(!menu.contains(e.target)&&e.target!==b)menu.style.display='none';});
   }
   const nav=document.querySelector('header nav'); if(nav)nav.style.display='none';
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
