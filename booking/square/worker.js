@@ -1170,8 +1170,9 @@ function parseSalonBoard(raw) {
   const dtStr = sb('来店日時');
   const dt = dtStr.match(/(\d{4})[年\/](\d{1,2})[月\/](\d{1,2})日?[^\d]*(\d{1,2}):(\d{2})/);
   if (!dt || !name) return null;
-  const stylist = sb('スタイリスト'), menuName = sb('メニュー'), resNo = sb('予約番号');
-  const dm = raw.match(/施術時間目安[：:]?\s*(?:(\d+)\s*時間)?\s*(?:(\d+)\s*分)?/);
+  // スパ(キレイサロン)掲載はヘアと書式が違う: 「スタイリスト」→「指名スタッフ」/「施術時間目安」→「所要時間目安」(2026-07-29実メール確認)
+  const stylist = sb('スタイリスト') || sb('指名スタッフ'), menuName = sb('メニュー'), resNo = sb('予約番号');
+  const dm = raw.match(/(?:施術|所要)時間目安[：:]?\s*(?:(\d+)\s*時間)?\s*(?:(\d+)\s*分)?/);
   // 店舗でメニュー候補を絞る（スパ掲載＝ヘッドスパ系）。所要時間はメールの施術時間目安を優先。
   const pool = shop === 'spa' ? MENUS.filter(m => /ヘッドスパ|スパ|個室/.test(m.name)) : MENUS;
   const menu = (pool.length ? pool : MENUS).filter(m => menuName.includes(m.name)).sort((a, b) => b.name.length - a.name.length)[0]
