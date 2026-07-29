@@ -2613,7 +2613,7 @@ function onGoogleCred(resp){
   try{
     const p=JSON.parse(atob(resp.credential.split('.')[1]));   // IDトークン(JWT)から氏名・メール
     googleProfile={name:p.name,email:p.email};
-    bk.name=bk.name||p.name;bk.email=p.email;
+    bk.name=bk.name||p.name;bk.email=p.email;bk.emailProvider='google';bk.emailVerified=true;   // Googleのメールは確認済み
     renderBook();toast('Googleでログインしました');
   }catch(e){}
 }
@@ -2871,6 +2871,20 @@ function renderBook(){
       <div style="font-size:12px;font-weight:800;color:var(--navy)">フリガナ（カタカナ）<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
       <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bseiK" value="${bk.seiK||''}" placeholder="セイ（例）ヤマダ"></div><div style="flex:1"><input id="bmeiK" value="${bk.meiK||''}" placeholder="メイ（例）ハナコ"></div></div>
       <div class="field"><label>電話番号</label><input id="bphone" type="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
+      ${(()=>{ // 予約完了のお知らせ先。LINEログイン済みならLINE、それ以外はメール（本人確認コードあり）
+        if(bk.lineUserId)return `<div class="co-done" style="margin-bottom:10px">📱 予約が完了したら<b>LINEにお知らせ</b>が届きます</div>`;
+        if(bk.emailProvider==='google'&&bk.email)return `<div class="co-done" style="margin-bottom:10px">📧 予約が完了したら <b>${escH(bk.email)}</b> にお知らせが届きます</div>`;
+        const v=bk.emailVerified;
+        return `<div style="font-size:12px;font-weight:800;color:var(--navy);margin-top:2px">メールアドレス<span style="color:var(--sub);font-size:10.5px;margin-left:6px">予約完了のお知らせをお送りします</span></div>
+        <div class="co-scan-row"><input id="bmail" type="email" inputmode="email" value="${escH(bk.email||'')}" placeholder="例）name@example.com" ${v?'disabled':''} style="text-transform:none">
+          <button class="btn small ghost" id="bmailsend" ${v?'disabled':''}>${v?'確認済み':'コードを送る'}</button></div>
+        ${v?`<div class="co-done" style="margin-top:6px">✅ <b>${escH(bk.email)}</b> を確認しました。予約完了のお知らせが届きます</div>`:`
+        <div id="otpbox" style="display:none;margin-top:8px">
+          <div style="font-size:12.5px;color:var(--sub);font-weight:700;margin-bottom:5px">届いた6桁の数字を入れてください（10分以内）</div>
+          <div class="co-scan-row"><input id="botp" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="letter-spacing:.3em;font-size:17px;font-weight:800">
+            <button class="btn small pri" id="botpgo">確認する</button></div>
+          <div id="otpmsg" style="font-size:12px;font-weight:700;margin-top:5px"></div>
+        </div>`}`;})()}
       <div style="font-size:11.5px;color:var(--sub);margin-top:-4px">※ホットペッパーと同じく<b>姓・名・セイ・メイを分けて</b>ご入力ください。ひらがなは自動でカタカナに変換します。</div>
       <div class="policy">
         <b>キャンセルポリシー</b>
@@ -2883,6 +2897,35 @@ function renderBook(){
         キャンセル料は前金から充当し、残額は返金します。料率は当店に生じる平均的な損害（施術料金から材料費を除いた額に、他のお客様のご予約可能性を考慮したもの）にもとづきます。10分以上遅れる場合はご連絡ください。
       </div>
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
+    // ---- メールのワンタイムパスワード（Google以外のメールで予約する方の本人確認）----
+    {const send=document.getElementById('bmailsend'),mail=document.getElementById('bmail');
+     if(send&&mail)send.onclick=async()=>{
+       const em=(mail.value||'').trim();
+       if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast('メールアドレスをご確認ください',true);return;}
+       send.disabled=true;send.textContent='送信中…';
+       try{
+         const r=await fetch(API_BASE+'/otp/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:em})});
+         const j=await r.json();
+         if(j.ok){bk.email=em;document.getElementById('otpbox').style.display='block';
+           send.textContent='再送する';toast('確認コードをメールで送りました');
+           setTimeout(()=>{send.disabled=false;},60000);          // 連打防止（60秒）
+           const bo=document.getElementById('botp');if(bo)bo.focus();
+         }else{toast(j.error||'送信できませんでした',true);send.disabled=false;send.textContent='コードを送る';}
+       }catch(e){toast('送信できませんでした',true);send.disabled=false;send.textContent='コードを送る';}
+     };
+     const go=document.getElementById('botpgo');
+     if(go)go.onclick=async()=>{
+       const code=(document.getElementById('botp').value||'').trim();
+       const msg=document.getElementById('otpmsg');
+       if(!/^\d{6}$/.test(code)){msg.textContent='6桁の数字を入れてください';msg.style.color='#c0392b';return;}
+       go.disabled=true;msg.textContent='確認中…';msg.style.color='var(--sub)';
+       try{
+         const r=await fetch(API_BASE+'/otp/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:bk.email,code})});
+         const j=await r.json();
+         if(j.ok){bk.emailVerified=true;toast('メールアドレスを確認しました');renderBook();}
+         else{msg.textContent=j.error||'コードが違います';msg.style.color='#c0392b';go.disabled=false;}
+       }catch(e){msg.textContent='確認できませんでした';msg.style.color='#c0392b';go.disabled=false;}
+     };}
     document.getElementById('bnext2').onclick=()=>{
       // 姓・名・セイ・メイを別々に取得（HotPepper/サロンボードは4欄）
       bk.sei=document.getElementById('bsei').value.trim();
@@ -2918,7 +2961,7 @@ function renderBook(){
       const stObj=STAFF.find(s=>s.id===sid)||{};
       // スパ判定は独立ヘッドスパメニュー(cat=ヘッドスパ=SPA店の掲載)のみ。ヘアクーポン(名前にヘッドスパを含む)はヘア店予約
       const isSpa=(menu.cat==='ヘッドスパ');
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',emailProvider:bk.emailProvider||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
         // RPA/サロンボード書込用の解決済みフィールド（CUEPON実ID・HPB ID・SB完全一致メニュー名）
         // ★スパ予約はSPA店＝ANZUのスパ用account_id(cuSpa)とスパHPB IDを使う。spaフラグでWorkerがSPA店へ振り分け
         spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60,
@@ -2953,7 +2996,11 @@ function renderBook(){
     const paid=bk._deposit>0;
     p.innerHTML=`<div class="done"><div class="ic">✓</div><h3>ご予約を承りました</h3>
       ${paid?`<p style="color:var(--ok);font-size:13px;margin-top:6px;font-weight:700">前金 ¥${bk._deposit.toLocaleString()} を受け付けました</p>`:''}
-      <p style="color:var(--sub);font-size:13px;margin-top:6px">予約確認とリマインドをLINEでお送りします</p>
+      ${bk.lineUserId
+        ? `<p style="color:var(--sub);font-size:13px;margin-top:6px">予約確認とリマインドをLINEでお送りします</p>`
+        : (bk.email&&(bk.emailVerified||bk.emailProvider==='google')
+          ? `<p style="color:var(--sub);font-size:13px;margin-top:6px">確認メールを <b style="color:var(--ink)">${escH(bk.email)}</b> にお送りしました</p>`
+          : `<p style="color:var(--sub);font-size:13px;margin-top:6px">この画面が予約完了のお知らせです。控えが必要な方は下からLINE友だち追加をどうぞ</p>`)}
       <div class="line-cta">
         <div class="qr" aria-hidden="true"></div>
         <div class="line-cta-body"><b>LINEで予約を受け取る</b><span>友だち追加で、前日リマインド・次回予約・お得情報が届きます</span></div>
@@ -3008,6 +3055,7 @@ let BOOK_LANG=(()=>{
   if(/^zh/.test(nav))return (/(tw|hk|mo|hant)/.test(nav))?'tw':'zh';   // 台湾/香港は繁体字
   return 'en';})();
 const EN_MAP={
+  'メールアドレス':'Email address','予約完了のお知らせをお送りします':'We will send your booking confirmation','コードを送る':'Send code','確認する':'Verify','再送する':'Resend','確認済み':'Verified','届いた6桁の数字を入れてください（10分以内）':'Enter the 6-digit code (valid 10 min)',
   '変更':'Change',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'A deposit secures your booking. Pay the balance at the salon.',
   'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'Secured by Square. Your card details are never stored by the salon.',
@@ -3054,6 +3102,7 @@ const EN_RX=[
 ];
 /* 简体中文（大陆）辞書 — 予約フローの静的文言のみ。メニュー実名・スタッフ名は日本語のまま */
 const ZH_MAP={
+  'メールアドレス':'电子邮箱','予約完了のお知らせをお送りします':'我们会发送预约完成通知','コードを送る':'发送验证码','確認する':'验证','再送する':'重新发送','確認済み':'已验证','届いた6桁の数字を入れてください（10分以内）':'请输入收到的6位数字（10分钟内有效）',
   '変更':'修改',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'支付订金以确保预约。余款请到店支付。',
   'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'由Square安全处理，门店不保存您的卡号。',
@@ -3094,6 +3143,7 @@ const ZH_RX=[
 ];
 /* 繁體中文（台灣）辞書 */
 const TW_MAP={
+  'メールアドレス':'電子郵件','予約完了のお知らせをお送りします':'我們會寄送預約完成通知','コードを送る':'寄送驗證碼','確認する':'驗證','再送する':'重新寄送','確認済み':'已驗證','届いた6桁の数字を入れてください（10分以内）':'請輸入收到的6位數字（10分鐘內有效）',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'支付訂金以確保預約。餘款請到店支付。',
   'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'由Square安全處理，門市不會保存您的卡號。',
   'ご予約ページ':'預約頁面','下のどちらかを選んでください':'請選擇下方其中一項',
@@ -3133,6 +3183,7 @@ const TW_RX=[
 ];
 /* 한국어（韓国語）辞書 — 予約フローの静的文言のみ。メニュー実名・スタッフ名は日本語のまま */
 const KO_MAP={
+  'メールアドレス':'이메일 주소','予約完了のお知らせをお送りします':'예약 완료 안내를 보내드립니다','コードを送る':'인증코드 보내기','確認する':'확인','再送する':'다시 보내기','確認済み':'확인됨','届いた6桁の数字を入れてください（10分以内）':'받으신 6자리 숫자를 입력해 주세요(10분 이내)',
   '変更':'변경',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'예약금으로 예약이 확정됩니다. 잔액은 매장에서 결제해 주세요.',
   'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'Square가 안전하게 처리하며 매장은 카드 정보를 저장하지 않습니다.',

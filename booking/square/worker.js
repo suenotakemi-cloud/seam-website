@@ -137,6 +137,46 @@ export default {
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors); // 顧客の予約作成
     if (p.endsWith('/availability') && m === 'GET') return handleAvailability(url, env, cors);           // 空き判定用(PII無し・公開)
+    /* ---- メールのワンタイムパスワード(OTP)。Google以外のメールで予約する方の本人確認 ----
+       送信: POST /otp/send {email} → 6桁を発行しメール送信(60秒に1回まで)
+       照合: POST /otp/verify {email,code} → 一致で verified=1(10分有効・5回まで) */
+    if (p.endsWith('/otp/send') && m === 'POST') {
+      if (!env.DB || !env.RESEND_API_KEY) return json({ error: 'メール送信が未設定です' }, 500, cors);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      const email = String(o.email || '').trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'メールアドレスの形式が正しくありません' }, 400, cors);
+      await ensureRegisterTables(env);
+      const prev = await env.DB.prepare('SELECT created_at FROM otp WHERE email=?').bind(email).first().catch(() => null);
+      if (prev && (Date.now() - Date.parse(prev.created_at)) < 60000) return json({ error: '少し時間をおいてからお試しください' }, 429, cors);
+      const code = String(Math.floor(100000 + Math.random() * 900000));
+      const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      await env.DB.prepare('INSERT OR REPLACE INTO otp (email,code,expires,verified,tries,created_at) VALUES (?,?,?,0,0,?)')
+        .bind(email, code, expires, new Date().toISOString()).run();
+      try {
+        await fetch('https://api.resend.com/emails', { method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + env.RESEND_API_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: env.MAIL_FROM || 'SEAM 銀座 <yoyaku@seam.site>', to: [email],
+            subject: `【SEAM 銀座】確認コード ${code}`,
+            text: `確認コードは ${code} です。\n\n予約ページの入力欄にこの6桁を入れてください。\n10分以内にご入力ください。\n\nこのメールに心当たりがない場合は破棄してください。\nSEAM 銀座` }) });
+      } catch (e) { return json({ error: 'メール送信に失敗しました' }, 502, cors); }
+      return json({ ok: true }, 200, cors);
+    }
+    if (p.endsWith('/otp/verify') && m === 'POST') {
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      const email = String(o.email || '').trim().toLowerCase(), code = String(o.code || '').trim();
+      await ensureRegisterTables(env);
+      const row = await env.DB.prepare('SELECT * FROM otp WHERE email=?').bind(email).first();
+      if (!row) return json({ ok: false, error: 'もう一度コードを送信してください' }, 400, cors);
+      if (Date.parse(row.expires) < Date.now()) return json({ ok: false, error: 'コードの有効期限が切れました' }, 400, cors);
+      if ((row.tries || 0) >= 5) return json({ ok: false, error: '回数の上限です。もう一度送信してください' }, 429, cors);
+      if (row.code !== code) {
+        await env.DB.prepare('UPDATE otp SET tries=tries+1 WHERE email=?').bind(email).run();
+        return json({ ok: false, error: 'コードが違います' }, 400, cors);
+      }
+      await env.DB.prepare('UPDATE otp SET verified=1 WHERE email=?').bind(email).run();
+      return json({ ok: true }, 200, cors);
+    }
     // ノーショー履歴の事前判定(公開・電話番号→前金必須フラグのみ返す。氏名等のPIIは一切返さない)
     if (p.endsWith('/precheck') && m === 'GET') {
       const ph = (url.searchParams.get('phone') || '').replace(/[^0-9]/g, '');
@@ -922,9 +962,23 @@ async function handlePostReservation(request, env, cors) {
       menu: o.menuName || (MENUS.find(x => x.id === o.menuId) || {}).name || '',
       staff: o.hbpStylistName || (STAFF.find(x => x.id === o.staffId) || {}).name || '',
       total: o.deposit || undefined };
+    // ★LINEとメールの両方に送る(どちらかではなく両方=「予約できたか不安」を無くす)
     try {
-      if (o.lineUserId && env.LINE_CHANNEL_ACCESS_TOKEN) await linePush(env, o.lineUserId, buildLineMessage('confirm', cinfo));
-      else if (o.email && env.RESEND_API_KEY) await sendConfirmMail(env, o.email, cinfo);
+      if (o.lineUserId && env.LINE_CHANNEL_ACCESS_TOKEN) {
+        await linePush(env, o.lineUserId, buildLineMessage('confirm', cinfo));
+        console.log('予約確認をLINEへ送信:', o.name);
+      }
+      if (o.email && env.RESEND_API_KEY) {
+        // Googleログインのメールは本人確認済み。手入力のメールはOTP確認済みのときだけ送る(誤送信防止)
+        let sendable = o.emailProvider === 'google';
+        if (!sendable && env.DB) {
+          const v = await env.DB.prepare('SELECT verified FROM otp WHERE email=?').bind(String(o.email).toLowerCase()).first().catch(() => null);
+          sendable = !!(v && v.verified);
+        }
+        if (sendable) { await sendConfirmMail(env, o.email, cinfo); console.log('予約確認をメールへ送信:', o.email); }
+        else console.log('メール未確認のため確認メールは送信せず:', o.email);
+      }
+      if (!o.lineUserId && !o.email) console.log('連絡先なし＝予約確認を送れません:', o.name);
     } catch (e) { console.log('顧客確認送信失敗:', e.message); }
   }
   return json({ ok: true, id, salon }, 200, cors);
@@ -987,6 +1041,8 @@ async function ensureRegisterTables(env) {
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS gifts (id TEXT PRIMARY KEY, label TEXT DEFAULT '', amount INTEGER DEFAULT 0, balance INTEGER DEFAULT 0, buyer TEXT DEFAULT '', memo TEXT DEFAULT '', uses TEXT DEFAULT '[]', issued TEXT DEFAULT '', expires TEXT DEFAULT '', void INTEGER DEFAULT 0, created_at TEXT)`),
     // 回数券・パス(スパ4回券等)。remaining=残回数・1会計で1回消化(施術分をカバー)。期限既定6ヶ月。
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS passes (id TEXT PRIMARY KEY, label TEXT DEFAULT '', customer TEXT DEFAULT '', price INTEGER DEFAULT 0, total INTEGER DEFAULT 0, remaining INTEGER DEFAULT 0, uses TEXT DEFAULT '[]', issued TEXT DEFAULT '', expires TEXT DEFAULT '', void INTEGER DEFAULT 0, created_at TEXT)`),
+    // メールのワンタイムパスワード(本人確認)。10分有効・5回まで・60秒に1回送信
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS otp (email TEXT PRIMARY KEY, code TEXT, expires TEXT, verified INTEGER DEFAULT 0, tries INTEGER DEFAULT 0, created_at TEXT)`),
     // 顧客ノート(重要メモ=アレルギー等の注意事項・誕生月)。key=custKey(電話番号 or n:氏名)
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS customer_notes (key TEXT PRIMARY KEY, caution TEXT DEFAULT '', birthday TEXT DEFAULT '', updated_at TEXT)`),
     // カルテ写真(before/after)。dataはクライアント側で圧縮したJPEGのdataURL(〜150KB)。
