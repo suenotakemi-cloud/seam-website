@@ -841,7 +841,7 @@ async function handlePurgeTest(url, env, cors) {
   const token = url.searchParams.get('token') || '';
   if (!env.CLEANUP_TOKEN || token !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
   const rows = await env.DB.prepare(
-    "SELECT id, salon_id, name, date, staff_id, start FROM reservations WHERE name LIKE 'テスト%' AND channel IN ('line','own')"
+    "SELECT id, salon_id, name, date, staff_id, start FROM reservations WHERE (name LIKE 'テスト%' OR name LIKE '検証%' OR name LIKE '再検証%') AND channel IN ('line','own')"
   ).all();
   const deleted = [];
   for (const r of (rows.results || [])) {

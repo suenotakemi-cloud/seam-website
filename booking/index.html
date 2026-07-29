@@ -2770,7 +2770,14 @@ function renderBook(){
       <div class="daytabs">${days.map(d=>{const k=dkey(d);const cnt=dayFreeCount(k,staffIds,menu.min);const mk=cnt===0?['×','x']:(cnt<=3?['△','t']:['○','o']);return `<button class="daytab ${bk.day===k?'sel':''} ${cnt===0?'nofree':''}" data-d="${k}"><span class="w">${WD[d.getDay()]}</span><span class="d">${d.getDate()}</span><span class="av av-${mk[1]}">${mk[0]}</span></button>`}).join('')}</div>
       ${smartNote}${chipsHtml}${nudgeHtml}
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext" ${bk.start!=null?'':'disabled'}>次へ</button></div>`;
-    p.querySelectorAll('.daytab').forEach(d=>d.onclick=()=>{bk.day=d.dataset.d;bk.start=null;bk._smart=false;renderBook()});
+    // 日付を選び直しても画面が先頭に戻らないよう、縦スクロール位置を保ち、選んだ日付を横スクロールで見える位置に戻す
+    p.querySelectorAll('.daytab').forEach(d=>d.onclick=()=>{
+      const y=window.scrollY, tabs=p.querySelector('.daytabs'), x=tabs?tabs.scrollLeft:0;
+      bk.day=d.dataset.d;bk.start=null;bk._smart=false;renderBook();
+      window.scrollTo(0,y);
+      const t2=document.querySelector('#pbody .daytabs'); if(t2){t2.scrollLeft=x;
+        const sel=t2.querySelector('.daytab.sel'); if(sel&&sel.scrollIntoView)sel.scrollIntoView({block:'nearest',inline:'center'});}
+    });
     p.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{bk.start=+c.dataset.t;bk._sid=c.dataset.sid;bk._smart=c.dataset.smart==='1';renderBook()});
     const bs=document.getElementById('bsoonest');
     if(bs)bs.onclick=()=>{bk.day=soon.day;bk.start=soon.t;bk._sid=soon.sid;bk._smart=!!soon.smart;bk.step=3;renderBook()};
@@ -3398,7 +3405,12 @@ function renderAnalytics(){
     <div class="an-sub">スタッフ別売上</div>${staffRows}
     <div class="an-sub">人気メニュー</div>${topMenus.length?topMenus.map(([n,c],i)=>`<div class="an-row"><span class="an-l">${i+1}. ${n}</span><span class="an-v">${c}件</span></div>`).join(''):'<div style="font-size:12px;color:var(--sub)">データなし</div>'}`;
 }
-function refreshAll(){renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();renderTerminal();if(bk.step===2)renderBook()}
+// ★お客様モードでは管理画面のDOMを削除しているため、管理系の描画を呼ぶと存在しない要素で例外になり、
+//   予約確定(addReservation→save→refreshAll)がそこで止まる。顧客モードは予約画面だけ描き直す。
+function refreshAll(){
+  if(!document.getElementById('v-dash')){ if(bk.step===2)renderBook(); return; }   // 管理DOMが無い=顧客モード
+  renderToday();renderDash();renderCal();renderChan();renderCustomers();renderWaitlist();renderRevisit();renderReviews();renderAnalytics();renderRegister();renderReport();renderProducts();renderTerminal();if(bk.step===2)renderBook();
+}
 
 /* ===== 管理ログイン（トークンゲート）===== */
 function startAdminData(){ syncFromD1(); syncRegisterFromD1(); }   // 認証OK後にD1(顧客PII・売上)をロード
