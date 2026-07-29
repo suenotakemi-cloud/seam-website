@@ -2175,7 +2175,7 @@ function renderRegister(){
   // 毎日使う(会計/売上/レジ締め)は常時表示・たまに使う(ポイント設定/ギフト券/回数券)は折りたたみでスッキリ
   const fold=(title,inner)=>`<details class="fold"><summary>${title}</summary>${inner}</details>`;
   // 前金(デポジット)の設定 — 予約ページの言語ごとに変える。日本語=定額/海外=料金の◯%
-  const DEP_LANGS=[['ja','日本語のお客様'],['en','English'],['zh','简体中文'],['tw','繁體中文']];
+  const DEP_LANGS=[['ja','日本語のお客様'],['en','English'],['zh','简体中文'],['tw','繁體中文'],['ko','한국어']];
   const depPanel=`<div class="card reg-close"><h3>💳 前金（デポジット）の設定</h3>
     ${DEP_LANGS.map(([l,label])=>{const r=depositRule(l);return `<div class="rz"><span>${label}</span><span style="margin-left:auto;display:flex;gap:6px;align-items:center">
       <select class="co-sel dep-type" data-l="${l}" style="max-width:104px">
@@ -2493,7 +2493,7 @@ const GAP_NUDGE={on:true,maxGap:30};
 /* ===== 前金（デポジット）— 言語ごとに設定を変える =====
  * 日本語のお客様は「定額」（既定¥3,000）、海外のお客様は「料金の◯%」（既定50%＝海外では一般的）。
  * 率・金額はレジ画面の「前金の設定」で変更できる（設定はD1に保存＝全端末で共通）。 */
-const DEPOSIT_DEFAULT={ja:{type:'fixed',value:3000},en:{type:'rate',value:50},zh:{type:'rate',value:50},tw:{type:'rate',value:50}};
+const DEPOSIT_DEFAULT={ja:{type:'fixed',value:3000},en:{type:'rate',value:50},zh:{type:'rate',value:50},tw:{type:'rate',value:50},ko:{type:'rate',value:50}};
 function depositRule(lang){
   const l=lang||(typeof BOOK_LANG!=='undefined'?BOOK_LANG:'ja');
   const d=DEPOSIT_DEFAULT[l]||DEPOSIT_DEFAULT.ja;
@@ -2967,7 +2967,7 @@ function renderBook(){
  * 方式: 描画後にDOMの静的文言をEN辞書で置換（finder-i18nと同型）。メニュー実名・スタッフ名はJP維持。
  * 切替: ?lang=en / 端末の言語が日本語以外なら自動EN / 顧客モードの右上トグル。 */
 // 対応4言語: 日本語 / English / 简体中文 / 繁體中文。?lang= 指定 → 保存値 → 端末の言語 の順で決定
-const LANGS=['ja','en','zh','tw'];
+const LANGS=['ja','en','zh','tw','ko'];
 let BOOK_LANG=(()=>{
   const q=(new URLSearchParams(location.search).get('lang')||'').toLowerCase();
   if(LANGS.includes(q))return q;
@@ -2976,6 +2976,7 @@ let BOOK_LANG=(()=>{
   try{const s=localStorage.getItem('stb_lang');if(LANGS.includes(s))return s;}catch(e){}
   const nav=(navigator.language||'ja').toLowerCase();
   if(/^ja/.test(nav))return 'ja';
+  if(/^ko/.test(nav))return 'ko';
   if(/^zh/.test(nav))return (/(tw|hk|mo|hant)/.test(nav))?'tw':'zh';   // 台湾/香港は繁体字
   return 'en';})();
 const EN_MAP={
@@ -3100,20 +3101,67 @@ const TW_RX=[
   [/^(.+)（指名）$/,'$1（指定）'],[/^(.+)（指名なし）$/,'$1（不指定）'],[/^歴(\d+)年$/,'年資$1年'],
   [/^あと(\d+)回選ぶと終わります$/,'再選$1次即完成'],
 ];
-const LANG_MAPS={en:EN_MAP,zh:ZH_MAP,tw:TW_MAP};
-const LANG_RXS={en:EN_RX,zh:ZH_RX,tw:TW_RX};
-const LANG_LABEL={ja:'日本語',en:'English',zh:'简体中文',tw:'繁體中文'};
+/* 한국어（韓国語）辞書 — 予約フローの静的文言のみ。メニュー実名・スタッフ名は日本語のまま */
+const KO_MAP={
+  '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'예약금으로 예약이 확정됩니다. 잔액은 매장에서 결제해 주세요.',
+  'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'Square가 안전하게 처리하며 매장은 카드 정보를 저장하지 않습니다.',
+  'ご予約ページ':'예약 페이지','下のどちらかを選んでください':'아래에서 선택해 주세요',
+  'ヘアサロン':'헤어살롱','カット・カラー・パーマ・縮毛矯正':'커트・염색・펌・매직스트레이트',
+  'ヘッドスパ':'두피 스파','完全個室でお休みいただけます':'프라이빗 룸에서 편안하게',
+  '髪を切る・染める方はこちら':'커트・염색을 원하시면 여기','頭皮ケア・ゆっくりしたい方はこちら':'두피 관리・휴식을 원하시면 여기',
+  'メニューを選択':'메뉴 선택','スタイリストを選択':'디자이너 선택','日時を選択':'날짜와 시간 선택',
+  'ご予約内容の確認':'예약 내용 확인','事前決済（デポジット）':'사전 결제(예약금)',
+  '次へ':'다음','戻る':'뒤로','次へ（お支払い）':'다음(결제)',
+  'この日は満席です。上の「最短で予約」や別の日もご検討ください':'이 날은 예약이 찼습니다. 위의 「가장 빠른 예약」이나 다른 날짜를 확인해 주세요',
+  '指名なし':'지정 안 함','空いているスタッフが担当します（最短でご案内）':'가능한 스태프가 담당합니다(가장 빠르게 안내)',
+  '朝・午前':'오전','午後':'오후','夕方・夜':'저녁・밤','今日':'오늘','明日':'내일','⚡ 最短で予約':'⚡ 가장 빠른 예약',
+  'メニュー':'메뉴','来店日時':'방문 일시','所要時間目安':'예상 소요시간','スタイリスト':'디자이너',
+  '合計金額':'총 금액','税込・当日払い':'세금 포함・당일 결제','割引':'할인','ご来店':'방문 횟수',
+  'お名前':'이름','フリガナ（カタカナ）':'후리가나(가타카나)','電話番号':'전화번호','必須':'필수',
+  '姓（例）山田':'성','名（例）花子':'이름','セイ（例）ヤマダ':'성(가타카나)','メイ（例）ハナコ':'이름(가타카나)','例）090-1234-5678':'예) +81-90-1234-5678',
+  'キャンセルポリシー':'취소 규정','2日前まで':'2일 전까지','無料':'무료','前日':'전날','料金の25%':'요금의 25%',
+  '当日':'당일','料金の50%':'요금의 50%','無断キャンセル':'노쇼','当店に生じた損害の範囲まで':'실제 손해 범위까지',
+  'お預かりする前金':'예약금','カード番号':'카드 번호','有効期限':'유효기간','セキュリティコード':'보안 코드',
+  '前金なしで予約（店頭でお支払い）':'예약금 없이 예약(매장에서 결제)',
+  'ご予約を承りました':'예약이 완료되었습니다','予約確認とリマインドをLINEでお送りします':'예약 확인과 알림을 LINE으로 보내드립니다',
+  '＋ LINE友だち追加':'＋ LINE 친구 추가','続けてもう1件予約する':'예약 하나 더 하기',
+  'ご予約':'예약','ネット予約':'온라인 예약','SEAM 銀座 — ご予約':'SEAM 긴자 — 예약',
+  'このまま予約できます':'바로 예약할 수 있습니다','空いている時間を選ぶだけです':'비어 있는 시간을 고르기만 하면 됩니다',
+  'お電話は要りません。':'전화하지 않아도 됩니다. ','1〜2分で予約できます。':'1〜2분이면 완료됩니다.',
+  '予約は3つだけです':'3단계면 끝','ご希望の内容を選んでください':'원하시는 시술을 선택해 주세요',
+  'メニューを選ぶ':'메뉴 고르기','日にちと時間を選ぶ':'날짜와 시간 고르기','お名前を書いて完了':'이름 입력하면 완료',
+  '空いている時間を見る':'예약 가능한 시간 보기','タップして選ぶ':'눌러서 선택',
+  'スタイリストを選ぶ':'디자이너 고르기','お名前を書く':'이름 입력','お支払い':'결제','これで最後です':'마지막 단계입니다',
+  '確実なご案内のため、事前決済のご協力をお願いしております':'확실한 예약을 위해 예약금 결제를 부탁드립니다',
+};
+const KO_RX=[
+  [/^¥([\d,]+) を支払って予約確定$/,'¥$1 결제하고 예약 확정'],
+  [/^約(\d+)時間(\d+)分$/,'약 $1시간 $2분'],[/^約(\d+)時間$/,'약 $1시간'],[/^約(\d+)分$/,'약 $1분'],
+  [/^(.+)（指名）$/,'$1(지정)'],[/^(.+)（指名なし）$/,'$1(지정 안 함)'],[/^歴(\d+)年$/,'경력 $1년'],
+  [/^あと(\d+)回選ぶと終わります$/,'$1번만 더 고르면 완료'],
+];
+const LANG_MAPS={en:EN_MAP,zh:ZH_MAP,tw:TW_MAP,ko:KO_MAP};
+const LANG_RXS={en:EN_RX,zh:ZH_RX,tw:TW_RX,ko:KO_RX};
+const LANG_LABEL={ja:'日本語',en:'English',zh:'简体中文',tw:'繁體中文',ko:'한국어'};
+// 翻訳は元の日本語を必ず保持してから当てる（保持しないと ko→en 等の切替で前の言語が残る）
+const _ORIG_TEXT=new WeakMap(), _ORIG_PH=new WeakMap();
 function applyBookLang(){
-  if(BOOK_LANG==='ja')return;
-  const MAP=LANG_MAPS[BOOK_LANG], RX=LANG_RXS[BOOK_LANG];
-  if(!MAP)return;
   const root=document.getElementById('v-book');if(!root)return;
+  const MAP=LANG_MAPS[BOOK_LANG], RX=LANG_RXS[BOOK_LANG];
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
   let n;const nodes=[];while(n=walker.nextNode())nodes.push(n);
-  nodes.forEach(nd=>{const t=nd.textContent.trim();if(!t)return;
+  nodes.forEach(nd=>{
+    if(!_ORIG_TEXT.has(nd))_ORIG_TEXT.set(nd,nd.textContent);   // 初回に日本語原文を記憶
+    else nd.textContent=_ORIG_TEXT.get(nd);                      // 2回目以降は原文に戻してから訳す
+    if(!MAP)return;                                              // 日本語表示のときは原文のまま
+    const t=nd.textContent.trim();if(!t)return;
     if(MAP[t]){nd.textContent=nd.textContent.replace(t,MAP[t]);return;}
-    for(const [rx,rep] of RX){if(rx.test(t)){nd.textContent=nd.textContent.replace(t,t.replace(rx,rep));break;}}});
-  root.querySelectorAll('input[placeholder]').forEach(i=>{if(MAP[i.placeholder])i.placeholder=MAP[i.placeholder];});
+    for(const [rx,rep] of RX){if(rx.test(t)){nd.textContent=nd.textContent.replace(t,t.replace(rx,rep));break;}}
+  });
+  root.querySelectorAll('input[placeholder]').forEach(i=>{
+    if(!_ORIG_PH.has(i))_ORIG_PH.set(i,i.placeholder); else i.placeholder=_ORIG_PH.get(i);
+    if(MAP&&MAP[i.placeholder])i.placeholder=MAP[i.placeholder];
+  });
 }
 {const _renderBookJP=renderBook;
  renderBook=function(){_renderBookJP();applyBookLang();};}
@@ -3592,7 +3640,7 @@ function enterCustomerMode(){
   // 言語トグル(EN⇄日本語・インバウンド対応。端末言語が日本語以外なら最初からEN表示)
   // 言語切替（日本語 / English / 简体中文 / 繁體中文）。押すたびに一覧から選ぶ形（4言語なのでトグルにしない）
   if(!document.getElementById('langTgl')){
-    const SHORT={ja:'日本語',en:'EN',zh:'简体',tw:'繁體'};
+    const SHORT={ja:'日本語',en:'EN',zh:'简体',tw:'繁體',ko:'한국어'};
     const b=document.createElement('button');b.id='langTgl';
     b.textContent='🌐 '+SHORT[BOOK_LANG];
     b.style.cssText='position:fixed;top:10px;right:10px;z-index:9000;border:1px solid #d8cfc0;background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;font-weight:800;color:#6f6552;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)';
