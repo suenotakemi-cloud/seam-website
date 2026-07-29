@@ -814,6 +814,13 @@ body.customer .phone.spa{background:#f7f8f3}
 .phone.spa .pbody .ent-go{background:#5f7a4e}
 .pbody .ent-arrow{font-size:22px;color:#8a6a2f;font-weight:700}
 .pbody .ent-ic{width:52px;height:52px;font-size:26px}
+/* 今なにを選んだか（タップでその画面に戻れる）。「指名したかな？」を画面上で解消する */
+.pbody .pickbar{display:flex;flex-wrap:wrap;gap:6px;margin:-6px 0 14px}
+.pbody .pk{display:inline-flex;align-items:center;gap:8px;background:#faf8f4;border:1.5px solid #e2dbcc;border-radius:99px;padding:8px 12px;font-size:13px;font-weight:800;color:#3a3226;cursor:pointer;min-height:38px}
+.pbody .pk>span{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:800}
+.pbody .pk{color:#6b6459}   /* 「変更」は淡く=値を主役に */
+/* 戻るボタンを押しやすく（指が太くても押せる大きさに） */
+.pbody .pnav .btn.ghost{min-height:46px;font-size:15px;font-weight:800}
 /* 今どこ・あと何回で終わるか（不安を減らす進捗表示）*/
 .pbody .stepnow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;font-weight:800;color:#4a4438;margin:-8px 0 14px}
 .pbody .stepnow b{background:#8a6a2f;color:#fff;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:800}
@@ -2679,7 +2686,18 @@ function renderBook(){
     const bar=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
     if(bk.step<=0||bk.step>=5)return bar;
     const rest=4-bk.step;   // 残りの画面数（step4=お支払いが最後）
-    return bar+`<div class="stepnow"><b>${bk.step+1}/5</b>${STEP_NAMES[bk.step]}<span>${rest>0?`あと${rest}回選ぶと終わります`:'これで最後です'}</span></div>`;
+    // 「今なにを選んだか」を上に出す。タップでその画面に戻れる（指名したかな？を解消）
+    const chips=[];
+    const mm=MENUS.find(m=>m.id===bk.menu);
+    if(mm)chips.push(`<button class="pk" data-jump="0"><span>${escH(mm.name)}</span>変更</button>`);
+    if(bk.step>=2&&bk.staff){
+      const st=STAFF.find(s=>s.id===(bk.staff==='any'?bk._sid:bk.staff));
+      chips.push(`<button class="pk" data-jump="1"><span>${bk.staff==='any'?'指名なし':escH((st||{}).name||'')+'（指名）'}</span>変更</button>`);
+    }
+    if(bk.step>=3&&bk.day&&bk.start!=null)
+      chips.push(`<button class="pk" data-jump="2"><span>${bk.day.slice(5).replace('-','/')}（${WD[new Date(bk.day).getDay()]}）${hm(bk.start)}</span>変更</button>`);
+    const pick=chips.length?`<div class="pickbar">${chips.join('')}</div>`:'';
+    return bar+`<div class="stepnow"><b>${bk.step+1}/5</b>${STEP_NAMES[bk.step]}<span>${rest>0?`あと${rest}回選ぶと終わります`:'これで最後です'}</span></div>`+pick;
   })();
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
@@ -2728,8 +2746,10 @@ function renderBook(){
         const durLabel=mm=>mm>=60?`${Math.floor(mm/60)}時間${mm%60?mm%60+'分':''}`:`${mm}分`;
         return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">所要時間目安：${durLabel(m.min)}</div></div><div class="pr">¥${m.price.toLocaleString()}<small style="display:block;font-size:10px;color:var(--sub);font-weight:600">税込</small></div></div>`).join('')+`</div>`;
       }).join('')+
-      `<div class="pnav"><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
+      `<div class="pnav"><button class="btn ghost" id="bback0">戻る</button><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.menu=o.dataset.m;renderBook()});
+    // メニュー画面にも「戻る」を出す（「入口を変更」は戻る操作だと分かりにくいため）
+    {const b0=document.getElementById('bback0');if(b0)b0.onclick=()=>{bk.section=null;bk.menu=null;renderBook();};}
     {const sc=document.getElementById('secchg');if(sc)sc.onclick=()=>{bk.section=null;bk.menu=null;renderBook()};}
     document.getElementById('rlgo').onclick=()=>{
       const cust=findCustomer(document.getElementById('rlphone').value);
@@ -2961,6 +2981,14 @@ function renderBook(){
   const nx=document.getElementById('bnext'),bkb=document.getElementById('bback');
   if(nx)nx.onclick=()=>{if(!nx.disabled){bk.step++;renderBook()}};
   if(bkb)bkb.onclick=()=>{bk.step--;renderBook()};
+  // 選択バーのタップでその画面へ戻る（1つ前・2つ前にすぐ戻れる）
+  p.querySelectorAll('.pk[data-jump]').forEach(b=>b.onclick=()=>{
+    const to=+b.dataset.jump;
+    if(to===0){bk.menu=null;}                    // メニューから選び直し
+    if(to<=1){bk.staff=null;bk._sid=null;}       // 担当も選び直し
+    if(to<=2){bk.start=null;bk._smart=false;}    // 時間も選び直し
+    bk.step=to;renderBook();window.scrollTo(0,0);
+  });
 }
 
 /* ===== 予約フロー英語対応（インバウンド・銀座） =====
@@ -2980,6 +3008,7 @@ let BOOK_LANG=(()=>{
   if(/^zh/.test(nav))return (/(tw|hk|mo|hant)/.test(nav))?'tw':'zh';   // 台湾/香港は繁体字
   return 'en';})();
 const EN_MAP={
+  '変更':'Change',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'A deposit secures your booking. Pay the balance at the salon.',
   'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'Secured by Square. Your card details are never stored by the salon.',
   'ご予約ページ':'Book an appointment','下のどちらかを選んでください':'Please choose one below',
@@ -3025,6 +3054,7 @@ const EN_RX=[
 ];
 /* 简体中文（大陆）辞書 — 予約フローの静的文言のみ。メニュー実名・スタッフ名は日本語のまま */
 const ZH_MAP={
+  '変更':'修改',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'支付订金以确保预约。余款请到店支付。',
   'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'由Square安全处理，门店不保存您的卡号。',
   'ご予約ページ':'预约页面','下のどちらかを選んでください':'请选择下方其中一项',
@@ -3103,6 +3133,7 @@ const TW_RX=[
 ];
 /* 한국어（韓国語）辞書 — 予約フローの静的文言のみ。メニュー実名・スタッフ名は日本語のまま */
 const KO_MAP={
+  '変更':'변경',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'예약금으로 예약이 확정됩니다. 잔액은 매장에서 결제해 주세요.',
   'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'Square가 안전하게 처리하며 매장은 카드 정보를 저장하지 않습니다.',
   'ご予約ページ':'예약 페이지','下のどちらかを選んでください':'아래에서 선택해 주세요',
