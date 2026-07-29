@@ -784,6 +784,10 @@ body.customer .phone.spa{background:#f7f8f3}
 .ent-steps3{display:grid;grid-template-columns:auto 1fr;gap:7px 9px;align-items:center;font-size:13.5px;font-weight:700;color:#4a4438;line-height:1.5;margin-bottom:16px;background:#faf8f4;border:1px solid #ece5d8;border-radius:12px;padding:12px 14px}
 .ent-steps3 i{display:none}
 .ent-steps3 span{width:22px;height:22px;font-size:12px}
+/* 今どこ・あと何回で終わるか（不安を減らす進捗表示）*/
+.pbody .stepnow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13.5px;font-weight:800;color:#4a4438;margin:-8px 0 14px}
+.pbody .stepnow b{background:#8a6a2f;color:#fff;border-radius:99px;padding:2px 9px;font-size:12px;font-weight:800}
+.pbody .stepnow span{font-size:12.5px;font-weight:700;color:#6b6459}
 .ent-line b{font-size:15px}
 .ent-line span{font-size:13px;color:#3f6b50}
 </style>
@@ -2609,7 +2613,14 @@ function renderBook(){
   const p=document.getElementById('pbody');
   // スパ導線は癒しのトーン（セージ）に切替。ヘア/入口選択はSEAMゴールド基調
   const _ph=document.querySelector('.phone');if(_ph)_ph.classList.toggle('spa',bk.section==='spa');
-  const stepsHtml=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
+  // 進み具合を「バー」だけでなく「言葉」でも出す（あと何回で終わるかが分かると不安が減る）
+  const STEP_NAMES=['メニューを選ぶ','スタイリストを選ぶ','日にちと時間を選ぶ','お名前を書く','お支払い'];
+  const stepsHtml=(()=>{
+    const bar=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
+    if(bk.step<=0||bk.step>=5)return bar;
+    const rest=4-bk.step;   // 残りの画面数（step4=お支払いが最後）
+    return bar+`<div class="stepnow"><b>${bk.step+1}/5</b>${STEP_NAMES[bk.step]}<span>${rest>0?`あと${rest}回選ぶと終わります`:'これで最後です'}</span></div>`;
+  })();
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
     p.innerHTML=stepsHtml+
@@ -2912,12 +2923,18 @@ const EN_MAP={
   '前金なしで予約（店頭でお支払い）':'Book without deposit (pay in store)',
   'ご予約を承りました':'Your booking is confirmed','予約確認とリマインドをLINEでお送りします':'Confirmation & reminders will be sent via LINE',
   '＋ LINE友だち追加':'+ Add us on LINE','続けてもう1件予約する':'Make another booking',
-  'ご予約':'Reservation','確実なご案内のため、事前決済のご協力をお願いしております':'A deposit is required to secure this booking',
+  'ご予約':'Reservation',
+  'メニューを選ぶ':'Choose a menu','スタイリストを選ぶ':'Choose a stylist','日にちと時間を選ぶ':'Choose date & time',
+  'お名前を書く':'Enter your name','お支払い':'Payment','これで最後です':'This is the last step',
+  '空いている日と時間を選ぶ':'Pick an open time','お名前を書いて終わり':'Enter your name — done',
+  'LINEからそのまま予約できます':'Book right here from LINE','空いている時間を選ぶだけ・お電話は不要です':'Just pick an open time — no phone call needed',
+'確実なご案内のため、事前決済のご協力をお願いしております':'A deposit is required to secure this booking',
 };
 const EN_RX=[
   [/^¥([\d,]+) を支払って予約確定$/,'Pay ¥$1 & confirm'],
   [/^約(\d+)時間(\d+)分$/,'About $1h $2m'],[/^約(\d+)時間$/,'About $1 hr'],[/^約(\d+)分$/,'About $1 min'],
   [/^(.+)（指名）$/,'$1 (requested)'],[/^(.+)（指名なし）$/,'$1 (any stylist)'],[/^歴(\d+)年$/,'$1 yrs exp.'],
+  [/^あと(\d+)回選ぶと終わります$/,'$1 more steps to go'],
 ];
 function applyBookLang(){
   if(BOOK_LANG!=='en')return;
