@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM｜髪格診断まわりの改修仕様</title>
+<meta name="description" content="トップ・髪格診断・店舗・ジャーナルの改修仕様。実測にもとづく構造問題と、Claude Codeでそのまま実装できるセクション設計">
+<style>
+  :root{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+    --shadow:0 1px 2px rgba(60,46,20,.05),0 8px 30px rgba(60,46,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+      --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+      --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+  }
+  :root[data-theme="dark"]{
+    --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+    --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+    --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+    font-size:15px; line-height:1.85; letter-spacing:.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 22px 90px;}
+  .serif{font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  /* ── masthead ── */
+  .mast{border-bottom:1.5px solid var(--ink); padding-bottom:22px; margin-bottom:8px;}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; letter-spacing:.42em; font-size:15px; color:var(--ink); font-weight:600;}
+  .kicker{font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-top:20px;}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:29px; line-height:1.35; margin:.24em 0 0; text-wrap:balance; letter-spacing:.02em;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:12px; line-height:1.9;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:16px; font-size:11.5px; color:var(--faint); font-family:ui-monospace,monospace; letter-spacing:.04em;}
+
+  /* ── intro card ── */
+  .lead{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-top:26px; box-shadow:var(--shadow); font-size:14px; line-height:2;}
+  .lead b{color:var(--gold);}
+  .lead .why{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted);}
+
+  /* ── section ── */
+  section{margin-top:46px;}
+  .eyebrow{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:10px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+  h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:21px; margin:12px 0 4px; letter-spacing:.02em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:13px; margin:0 0 18px;}
+
+  /* ── field list ── */
+  .field{display:flex; gap:15px; padding:17px 0; border-top:1px solid var(--line2);}
+  .field:first-of-type{border-top:0;}
+  .fnum{flex:none; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--gold); color:var(--gold); font-family:ui-monospace,monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .fbody{min-width:0; flex:1;}
+  .fname{font-weight:700; font-size:14.5px; color:var(--ink);}
+  .fname .req{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; color:#fff; background:var(--gold); border-radius:3px; padding:2px 6px; margin-left:8px; vertical-align:2px; font-weight:600;}
+  .fdesc{font-size:13px; color:var(--muted); line-height:1.95; margin-top:5px;}
+  .fdesc strong{color:var(--ink); font-weight:600;}
+
+  /* ── paste block ── */
+  .paste{position:relative; background:var(--paste); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px; padding:14px 15px 15px; margin-top:11px;}
+  .paste .lbl{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:8px;}
+  .paste p{margin:0; font-size:13px; line-height:1.95; color:var(--ink); white-space:pre-wrap;}
+  .paste .var{color:var(--bad); font-weight:600;}
+  .copybtn{position:absolute; top:11px; right:11px; font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.08em; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer; transition:all .15s;}
+  .copybtn:hover{color:var(--ink); border-color:var(--gold);}
+  .copybtn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .qa{margin-top:9px;}
+  .qa .q{font-weight:700; font-size:13px; color:var(--ink);}
+  .qa .q::before{content:"Q. "; color:var(--gold); font-family:ui-monospace,monospace;}
+  .qa .a{font-size:12.5px; color:var(--muted); line-height:1.9; margin:2px 0 12px; padding-left:1.4em;}
+  .qa .a::before{content:"A. "; color:var(--faint); font-family:ui-monospace,monospace; margin-left:-1.4em;}
+
+  /* ── checklist ── */
+  ul.check{list-style:none; margin:6px 0 0; padding:0;}
+  ul.check li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line2); font-size:13.5px; line-height:1.75;}
+  ul.check li:first-child{border-top:0;}
+  ul.check li::before{content:""; position:absolute; left:0; top:12px; width:15px; height:15px; border:1.5px solid var(--gold-soft); border-radius:3px; background:var(--panel);}
+  ul.check li b{color:var(--ink);}
+  ul.check li .hint{display:block; color:var(--faint); font-size:11.5px; margin-top:2px;}
+
+  /* ── data table ── */
+  .tablewrap{overflow-x:auto; margin-top:6px; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);}
+  table{border-collapse:collapse; width:100%; min-width:680px; font-size:12px; background:var(--panel);}
+  th,td{text-align:left; padding:11px 13px; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.7;}
+  thead th{background:var(--panel2); font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:600; white-space:nowrap; position:sticky; top:0;}
+  tbody tr:last-child td{border-bottom:0;}
+  td .name{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;}
+  td.u{font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); word-break:break-all;}
+  td .none{color:var(--faint); font-style:italic;}
+
+  /* ── do / dont ── */
+  .rules{display:grid; gap:10px; margin-top:8px;}
+  .rule{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.85;}
+  .rule .ic{flex:none; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; color:#fff; background:var(--bad);}
+  .rule b{color:var(--ink);}
+  .rule .sub{color:var(--muted); font-size:12px;}
+
+  .callout{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:13px 16px; font-size:12.5px; color:var(--muted); line-height:1.9; margin-top:14px;}
+  .callout b{color:var(--gold);}
+
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:11px; color:var(--faint); line-height:1.9; font-family:ui-monospace,monospace; letter-spacing:.03em;}
+
+  @media (max-width:560px){
+    .wrap{padding:30px 16px 70px;} h1{font-size:24px;} .field{gap:12px;}
+  }
+  @media print{
+    body{background:#fff; color:#000; font-size:11.5px;}
+    .copybtn{display:none;} .wrap{max-width:none; padding:0;}
+    .lead,.paste,.tablewrap,.rule,.callout{box-shadow:none;}
+    section{break-inside:avoid;} .field,.rule,.paste{break-inside:avoid;}
+  }
+
+
+  /* この資料だけの調整。担当者がスマホで見ながら入力する前提 */
+  .tablewrap.fit table{min-width:0;}
+  .tablewrap.fit th,.tablewrap.fit td{padding:10px 9px;}
+  .tablewrap.fit thead th{letter-spacing:.02em; padding-left:6px; padding-right:6px;}
+  @media (max-width:400px){
+    .tablewrap.fit th,.tablewrap.fit td{padding:9px 6px; font-size:11.5px;}
+  }
+  .gap{display:inline-block;font-family:ui-monospace,monospace;font-size:11px;padding:2px 6px;
+       border-radius:4px;background:rgba(168,68,58,.1);color:#A8443A;font-weight:600;}
+  .ok{display:inline-block;font-family:ui-monospace,monospace;font-size:11px;padding:2px 6px;
+      border-radius:4px;background:rgba(85,112,73,.12);color:#557049;font-weight:600;}
+  /* 名前案。1本ずつコピーできるようにする */
+  .cp{position:relative;background:var(--paste);border:1px solid var(--line);
+      border-left:3px solid var(--gold);border-radius:8px;padding:12px 78px 12px 14px;margin-top:8px;}
+  .cp p{margin:0;font-size:13px;line-height:1.75;color:var(--ink);}
+  .cp .why{display:block;margin-top:5px;font-size:11.5px;color:var(--muted);line-height:1.7;}
+  .cp .copybtn{top:10px;right:10px;}
+  /* 店名と価格一覧。スマホでは縦積みにしないと店名が1文字ずつ折れる */
+  .storehead{margin-top:34px;padding-bottom:9px;border-bottom:1px solid var(--line);}
+  .storehead b{display:block;font-family:"Hiragino Mincho ProN","Yu Mincho",serif;
+               font-size:17px;color:var(--ink);white-space:nowrap;}
+  .storehead span{display:block;margin-top:4px;font-family:ui-monospace,monospace;
+                  font-size:10.5px;line-height:1.75;color:var(--muted);}
+  @media (min-width:620px){
+    .storehead{display:flex;align-items:baseline;gap:12px;}
+    .storehead b,.storehead span{display:inline;margin-top:0;}
+  }
+
+  .lead .why{display:block;}
+  .fname .req{white-space:nowrap;}
+
+  /* 優先度バッジ */
+  .pri{display:inline-block; font-family:ui-monospace,monospace; font-size:10px; font-weight:700;
+       letter-spacing:.08em; width:19px; height:19px; line-height:19px; text-align:center;
+       border-radius:4px; color:#fff; vertical-align:1px; margin-right:7px;}
+  .pri.S{background:#A8443A;} .pri.A{background:#9A7B43;}
+  .pri.B{background:#6E655A;} .pri.C{background:#A9A296;}
+
+  /* 仕様カード(8項目) */
+  .spec{background:var(--panel); border:1px solid var(--line); border-radius:12px;
+        padding:0; margin-top:14px; box-shadow:var(--shadow); overflow:hidden;}
+  .spec > h3{margin:0; padding:15px 17px; background:var(--panel2);
+             border-bottom:1px solid var(--line);
+             font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:17px;
+             font-weight:600; color:var(--ink); line-height:1.5;}
+  .spec > h3 small{display:block; margin-top:4px; font-family:ui-monospace,monospace;
+                   font-size:10.5px; letter-spacing:.06em; color:var(--gold); font-weight:400;}
+  .spec .part{padding:14px 17px; border-top:1px solid var(--line2);}
+  .spec .part:first-of-type{border-top:0;}
+  .spec .part > b{display:block; font-size:11px; font-family:ui-monospace,monospace;
+                  letter-spacing:.12em; color:var(--gold); margin-bottom:7px;}
+  .spec .part p{margin:0; font-size:12.5px; line-height:1.95; color:var(--muted);}
+  .spec .part p + p{margin-top:7px;}
+  .spec .part p b{color:var(--ink);}
+
+  /* セクション順のリスト */
+  ol.order{counter-reset:o; list-style:none; margin:4px 0 0; padding:0;}
+  ol.order li{position:relative; padding:11px 0 11px 34px; border-top:1px solid var(--line2);}
+  ol.order li:first-child{border-top:0;}
+  ol.order li::before{counter-increment:o; content:counter(o); position:absolute; left:0; top:12px;
+                      width:22px; height:22px; border-radius:5px; background:var(--panel2);
+                      border:1px solid var(--line); color:var(--gold);
+                      font-family:ui-monospace,monospace; font-size:11px; font-weight:700;
+                      display:flex; align-items:center; justify-content:center;}
+  ol.order li b{display:block; font-size:13.5px; color:var(--ink); line-height:1.6;}
+  ol.order li span{display:block; margin-top:4px; font-size:11.5px; color:var(--muted); line-height:1.85;}
+  ol.order li em{font-style:normal; display:inline-block; margin-top:5px; font-size:11px;
+                 font-family:ui-monospace,monospace; letter-spacing:.04em; color:var(--gold);
+                 background:rgba(154,123,67,.09); border:1px solid var(--gold-soft);
+                 border-radius:4px; padding:2px 8px;}
+  ol.order li.cut{opacity:.55;}
+  ol.order li.cut b{text-decoration:line-through; text-decoration-color:var(--bad);}
+
+  /* コピー案 */
+  .cw{position:relative; background:var(--paste); border:1px solid var(--line);
+      border-left:3px solid var(--gold); border-radius:8px;
+      padding:12px 74px 12px 14px; margin-top:8px;}
+  .cw p{margin:0; font-size:13.5px; line-height:1.75; color:var(--ink);
+        font-family:"Hiragino Mincho ProN","Yu Mincho",serif;}
+  .cw .why{display:block; margin-top:6px; font-size:11.5px; color:var(--muted);
+           line-height:1.7; font-family:inherit;}
+  .cw .cb{position:absolute; top:10px; right:10px; font-family:ui-monospace,monospace;
+          font-size:10px; letter-spacing:.08em; color:var(--muted); background:var(--panel);
+          border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer;}
+  .cw .cb:hover{color:var(--ink); border-color:var(--gold);}
+
+  /* 数値サマリ */
+  .sum{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px;}
+  .sum div{background:var(--panel); border:1px solid var(--line); border-radius:9px;
+           padding:11px 8px; text-align:center;}
+  .sum b{display:block; font-family:ui-monospace,monospace; font-size:18px; color:var(--gold);
+         font-variant-numeric:tabular-nums; line-height:1.3;}
+  .sum b.bad{color:var(--bad);}
+  .sum span{display:block; font-size:10.5px; color:var(--muted); margin-top:3px; line-height:1.5;}
+
+  .grp{margin-top:28px; padding-bottom:8px; border-bottom:1px solid var(--line);}
+  .grp b{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:16px; color:var(--ink);}
+  .grp span{display:block; margin-top:3px; font-size:11.5px; color:var(--muted); line-height:1.75;}
+
+  /* ワイヤー */
+  /* 罫線のワイヤーは pre-wrap だと折り返して形が壊れる。pre + 横スクロールにする */
+  .wire{background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+        padding:14px 15px; margin-top:11px; font-family:ui-monospace,monospace;
+        font-size:11px; line-height:1.85; color:var(--ink); white-space:pre;
+        overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .wire::-webkit-scrollbar{height:5px;}
+  .wire::-webkit-scrollbar-thumb{background:var(--line); border-radius:3px;}
+</style>
+</head><body>
+<div class="wrap">
+
+<header class="mast">
+  <div class="brand">SEAM</div>
+  <div class="kicker">Product Spec — 髪格診断を主力にするための改修</div>
+  <h1>診断は本物です<br>サイトが追いついていません</h1>
+  <p class="sub">トップ／髪格診断／店舗／ジャーナルの改修仕様
+  すべて本番HTMLの実測と診断30日分にもとづいています
+  評論ではなく、そのまま実装できる形にしました</p>
+  <div class="meta">
+    <span>2026-07-29</span><span>実測 本番HTML + 診断5,174人</span>
+    <span>5ページ仕様</span><span>社内資料</span>
+  </div>
+</header>
+
+<div class="lead">
+診断の滞在<b>226秒</b>・読了<b>79%</b>・完了率<b>98.4%</b>は、この業界のサイトの数字ではありません
+いっぽうトップは<b>13秒・読了32%</b>で、17倍の差があります
+<span class="why">つまりトップは診断の入口として機能しておらず、通過されているだけです
+そして結果画面には「なぜこの型か」「似た型とどう違うか」「なぜあれを出さなかったか」が1つもありません
+足りないのは装飾ではなく<b>説明責任</b>です</span>
+</div>
+
+<section><div class="eyebrow">Verdict</div><h2>総評</h2><p class="lede">2026-07-29 実測　本番HTMLを直接取得し、診断30日分と突き合わせています</p><div class="sum"><div><b>13秒</b><span>トップの滞在<br>読了32%</span></div><div><b>226秒</b><span>診断の滞在<br>読了79%</span></div><div><b class="bad">0</b><span>ジャーナルの<br>30日PV</span></div></div><div class="callout"><b>診断は本物です　サイトが追いついていません</b>　診断の滞在226秒・読了79%・完了率98.4%は、この業界のサイトの数字ではありません　いっぽうトップは13秒・読了32%で、<b>17倍の差</b>があります<br><br>つまり<b>トップは診断の入口として機能しておらず、通過されている</b>だけです　主力機能を持っているのに、主力機能のためのサイト構造になっていません</div><div class="callout" style="margin-top:10px;">厳しく言うと、いまのSEAMは<b>「診断がすごい小売サイト」</b>です　目指すべき<b>「診断が本体で、小売と施術がその出口」</b>には、構造がまだ一段足りていません<br><br>足りないのは装飾ではなく<b>説明責任</b>です　結果画面を全文検索したところ、<b>「なぜこの型になったか」「似た型とどう違うか」「なぜあの商品を出さなかったか」が1つもありません</b>（優先課題の提示だけはあります）　メーカーが見るのはここです</div></section><section><div class="eyebrow">Top5</div><h2>最大の構造問題 5つ</h2><p class="lede">すべて実測で裏が取れているものだけです</p><div class="tablewrap fit"><table><thead><tr><th>#</th><th>問題</th><th>実測</th><th>なぜ致命的か</th></tr></thead><tbody><tr><td><b>1</b></td><td><span class="name">診断LPが存在しない</span></td><td>/finder の初期HTMLは<br>可視テキスト<b>182字</b></td><td>中身をJSが描くSPAなので、<b>読み込む前の画面に「髪格とは何か」が無い</b>　外部から来た人・検索・AIには何も見えません　外部流入が月855しかない原因の一つです</td></tr><tr><td><b>2</b></td><td><span class="name">ジャーナルが読まれていない</span></td><td>30日PV <b>0</b><br>（記事11本）</td><td>専門性の蓄積装置として作ったのに<b>1件も計測されていません</b>　トップからもshopからも導線が無く、実質存在していない状態です</td></tr><tr><td><b>3</b></td><td><span class="name">結果に根拠が無い</span></td><td>判定理由・似た型との違い・<br>除外理由が<b>0件</b></td><td>「27タイプ」「4,000万+」は<b>規模の主張であって根拠ではありません</b>　メーカーが評価するのは分岐の妥当性です　いま見せる術がありません</td></tr><tr><td><b>4</b></td><td><span class="name">第一声が割引</span></td><td>ファーストビュー最上段が<br>「SALE 最大30%OFF」</td><td>高級感を掲げるブランドの最初の一言が値引きです　セールバーのクリックは6.5%と高く<b>効いてはいる</b>のですが、<b>診断より上に置く合理性はありません</b></td></tr><tr><td><b>5</b></td><td><span class="name">計測が壊れている</span></td><td>hero_product 28要素が<br><b>全部おなじ名前</b></td><td>トップの商品カードがどれも同じトラッキング名なので、<b>どれが押されたか分かりません</b>　さらに hero_products は24,992表示→<b>0クリック</b>で、集計が二重になっています</td></tr></tbody></table></div></section><section><div class="eyebrow">Concept</div><h2>「髪格」の再定義とコピー</h2><p class="lede">概念設計を直さないと、以降のUIを直しても効きません</p><div class="callout"><b>言語化のズレの正体は「そう作ってあるのに、そう説明していない」ことです</b><br><br>27型は <b>太さ × 量 × くせ</b> の3軸（3×3×3＝27）で決まっていて、<b>ダメージや履歴は型の判定に使っていません</b>　つまりSEAMはすでに<b>「変わらないもの」と「変わるもの」を分けて実装している</b>のに、その分け方を一言も説明していません<br><br>ここを言葉にするだけで、「髪格とは何か」「なぜ27なのか」「髪質と何が違うのか」が同時に片付きます</div><div class="tablewrap fit"><table><thead><tr><th>言葉</th><th>SEAMでの定義</th><th>変わるか</th></tr></thead><tbody><tr><td><span class="name">髪格</span></td><td>生まれ持った髪の設計図　<b>太さ・量・くせ</b>の3つ</td><td><b style="color:var(--gold)">変わらない</b></td></tr><tr><td><span class="name">髪の状態</span></td><td>カラー・ブリーチ・矯正・熱でついた<b>今日までの履歴</b></td><td>変わる</td></tr><tr><td><span class="name">悩み</span></td><td>いま困っていること（うねり・広がり・ツヤ）</td><td>変わる</td></tr><tr><td><span class="name">なりたい質感</span></td><td>どこへ向かうか（ツヤ・サラサラ・ハリコシ）</td><td>選べる</td></tr></tbody></table></div><div class="callout" style="margin-top:12px;"><b>提案 ＝ 設計図（髪格） × 状態（履歴） × 行き先（なりたい質感）</b><br>この一行を、トップ・LP・結果画面の3か所に同じ言葉で置いてください</div><div class="grp"><b>ヒーローコピー案　4本</b><span>主語を「髪質」から「変わる/変わらない」に移します</span></div><div class="cw"><button class="cb" type="button">COPY</button><p>髪には、変えられる部分と 変えられない部分があります<span class="why"><b>推奨</b>　いちばん短く「髪格とは何か」に入れます　否定形を使わず、しかも次を読ませます</span></p></div><div class="cw"><button class="cb" type="button">COPY</button><p>生まれ持った設計図と、今日までの履歴。 分けて考えると、選ぶものが決まります<span class="why">説明的だが誤解が起きません　初見の理解を最優先するならこちら</span></p></div><div class="cw"><button class="cb" type="button">COPY</button><p>あなたの髪格は、太さと量とくせでできています<span class="why">3軸を先に言い切る型　「なぜ27なのか」に直結します</span></p></div><div class="cw"><button class="cb" type="button">COPY</button><p>髪質ではなく、髪格から。<span class="why">短く強いが<b>単独では意味が伝わりません</b>　サブコピーと必ずセットで使ってください</span></p></div><div class="grp"><b>サブコピー案　3本</b><span>3軸と履歴の関係を1行で</span></div><div class="cw"><button class="cb" type="button">COPY</button><p>太さ・量・くせで27通り　そこに履歴を重ねて、いま必要な3〜5本を出します<span class="why"><b>推奨</b>　27の根拠（3×3×3）と、出力（3〜5本）が同時に立ちます</span></p></div><div class="cw"><button class="cb" type="button">COPY</button><p>変わらない3つの軸で髪格を、変えられる履歴で処方を決めます<span class="why">構造そのものを説明する型　メーカー向けページにも流用できます</span></p></div><div class="cw"><button class="cb" type="button">COPY</button><p>27の髪格 × あなたの履歴　組み合わせは一人ずつ違います<span class="why">数字を使うが「4,000万+」のような検証できない大きさは使いません</span></p></div><div class="grp"><b>CTA文言案　4本</b><span>「3分」は誠実でない場合があるので設問数で言います</span></div><div class="cw"><button class="cb" type="button">COPY</button><p>髪格をしらべる<span class="why"><b>推奨</b>　「診断する」より軽く、押した先の行為が分かります</span></p></div><div class="cw"><button class="cb" type="button">COPY</button><p>あなたの髪格をみる<span class="why">所有格で自分ごと化　結果を見に行く感覚になります</span></p></div><div class="cw"><button class="cb" type="button">COPY</button><p>◯問こたえて、いまの処方を出す<span class="why">所要を設問数で示す　時間を約束しないので嘘になりません</span></p></div><div class="cw"><button class="cb" type="button">COPY</button><p>無料ではじめる<span class="why"><b>使わないでください</b>　無料を主語にすると、この診断の価値が値段の話になります</span></p></div></section><section><div class="eyebrow">Page 01</div><h2>トップページ 実装仕様</h2><p class="lede">滞在13秒・読了32%　いまは通過されているだけです</p><div class="spec"><h3>seam.site/<small>index.html</small></h3><div class="part"><b>1 ページの目的</b><p><b>診断へ送ること、ただ一つです</b>　商品を売る場所でもブランドを語る場所でもありません　いまは商品カード28枚が最上部にあり、目的が割れています</p></div><div class="part"><b>2 ユーザーの心理状態</b><p>84%がサイト内からの再訪、97.5%がスマホ　外部から来た人（月855）は<b>SEAMを知らない</b>状態で着地します　「ここは何の店か」が3秒で分からないと離脱します　滞在13秒はその症状です</p></div><div class="part"><b>3 必要なセクション順</b><ol class="order"><li><b>ヒーロー ── 髪格の定義を1文で</b><span>写真は現行のまま　コピーだけ差し替え　<b>セールバーはヒーローの下へ移動</b></span><em>CTA 髪格をしらべる（単独・他のCTAを置かない）</em></li><li><b>3つの軸 ── なぜ27なのか</b><span>太さ／量／くせ の3枚だけ　<b>ここが「髪格とは何か」の答え</b>で、いま存在しません</span><em>CTA なし（読ませるだけ）</em></li><li><b>診断でわかること ── 出力の見本</b><span>結果画面の実物を1枚見せる　「3〜5本が出る」「カルテになる」「サロンで使える」</span><em>CTA 髪格をしらべる</em></li><li><b>数字 ── 誠実なものだけ</b><span>完了率98.4%・カルテ保存24.1%・1セッション9.5ページ　<b>4,000万+のような検証できない数字は外す</b></span><em>CTA なし</em></li><li><b>セール告知（期間中のみ）</b><span>現行のバーをここへ　クリック6.5%と効いているので消さない　<b>ただし診断より上には置かない</b></span><em>CTA オンラインショップで買う</em></li><li><b>3つの出口 ── 買う／切る／ほぐす</b><span>ショップ・サロン・スパの3枚　現行のカードは1.0〜1.3%しか押されていないので<b>文言を症状に変える</b></span><em>CTA 各ページへ</em></li><li><b>取扱ブランド</b><span>現行のまま　ブランドクリックは月2,011回あり機能しています</span><em>CTA ブランド一覧</em></li><li><b>読みもの ── ジャーナル入口</b><span><b>いま存在しない導線</b>　PV0の原因　悩み別に3本だけ出す</span><em>CTA 髪の読みものを見る</em></li><li><b>店舗一覧</b><span>現行のまま最下部</span><em>CTA 店舗をさがす</em></li></ol></div><div class="part"><b>4 主要セクションの文言</b><p><b>ヒーロー</b>：髪には、変えられる部分と変えられない部分があります／太さ・量・くせで27通り　そこに履歴を重ねて、いま必要な3〜5本を出します</p><p><b>3つの軸</b>：髪格は、この3つでできています ── 太さ（細い・ふつう・太い）／量（少ない・ふつう・多い）／くせ（ない・波・強い）　3×3×3で27通りです</p><p><b>数字</b>：この1か月で ── 診断を終えた方 5,174人／最後まで進んだ割合 98.4%／カルテを保存した方 24.1%</p></div><div class="part"><b>5 UIコンポーネント指示</b><p><b>ヒーロー</b>：CTAは<b>1つだけ</b>　現在は「髪格診断をはじめる」と「サロンを予約する」が並んでいて、主目的が割れています　サロンは下部の3出口へ</p><p><b>3つの軸カード</b>：横スワイプにしない　3枚は縦に積む　<b>スワイプは「読まなくていい」という合図</b>になります</p><p><b>計測</b>：hero_product を <code>hero_product_{商品ID}</code> に分解　いまは28要素が同名で、どれが押されたか分かりません</p></div><div class="part"><b>6 削除すべき要素</b><p><b>ファーストビュー最上段のセールバー</b>（下へ移動・削除ではない）</p><p><b>商品カード28枚のヒーロー配置</b>　section:hero_products は24,992表示で<b>0クリック</b>　見られているのに1回も押されていません　位置が悪いか、押せる見た目でないかのどちらかです</p><p><b>「4,000万+」「1,000検証」</b>　検証できない大きさは、メーカーの前でむしろ弱点になります</p></div><div class="part"><b>7 残すべき要素</b><p>ヒーローの写真・動画（世界観の中核）／今月の人気ランキング（手動更新の信頼性）／取扱ブランド（月2,011クリックで機能している）／5言語切替／店舗一覧</p></div><div class="part"><b>8 実装優先順位</b><p><span class="pri S">S</span>ヒーローのコピー差し替えとCTA単独化<br><span class="pri S">S</span>セールバーをヒーローの下へ<br><span class="pri A">A</span>「3つの軸」セクションの新設<br><span class="pri A">A</span>hero_product の計測分解<br><span class="pri B">B</span>ジャーナル入口の新設<br><span class="pri B">B</span>3つの出口カードの文言を症状に</p></div></div></section><section><div class="eyebrow">Page 02</div><h2>髪格診断LP 実装仕様</h2><p class="lede">/finder は初期HTMLが182字のSPAシェル　LPが存在しません</p><div class="spec"><h3>seam.site/finder<small>finder.html ＋ 新規 /hairtype（静的LP）</small></h3><div class="part"><b>1 ページの目的</b><p><b>診断を始めさせること</b>と、<b>始めない人にも「髪格」を理解させること</b>の2つ　いまは前者しかなく、しかもJSが動くまで何も表示されません</p><p><b>構成を分けます</b>：<code>/hairtype</code> を静的LPとして新設し、<code>/finder</code> は診断アプリ専用にします　外部・検索・AIが読めるのは前者です</p></div><div class="part"><b>2 ユーザーの心理状態</b><p>すでに始めた人の完了率は98.4%　<b>始めさえすれば終わります</b>　ボトルネックは「始めるまで」です　「何を聞かれるのか」「どのくらいかかるのか」「何が出るのか」が分からないまま押させようとしています</p></div><div class="part"><b>3 必要なセクション順</b><ol class="order"><li><b>ヒーロー ── 髪格の定義</b><span>トップと<b>同じ一文</b>を使う　ページごとに言い方を変えない</span><em>CTA 髪格をしらべる</em></li><li><b>3つの軸 ── 27の根拠</b><span>太さ×量×くせ　3×3×3＝27　<b>数字に意味を持たせる唯一の場所</b></span></li><li><b>何を聞かれるか ── 設問の実物</b><span>実際の質問を3つ抜粋して見せる　「濡れるとゴム状になりますか」など<b>具体的なほど信頼されます</b></span><em>CTA なし</em></li><li><b>何が出るか ── 結果の実物</b><span>結果画面のスクリーンショット　優先課題／3〜5本／選定理由／カルテ　の4点を指し示す</span><em>CTA 髪格をしらべる</em></li><li><b>どう決めているか ── ロジックの公開</b><span><b>いま完全に無い　最重要</b>　設計図(変わらない)と履歴(変わる)を分けていること、除外条件を持っていることを明示</span></li><li><b>できないこと ── 正直に</b><span>医療ではない／頭皮疾患は扱わない／実物を見ないと分からないことがある　<b>限界を書くと信頼が上がります</b></span></li><li><b>数字 ── 誠実なものだけ</b><span>5,174人・完了率98.4%・カルテ24.1%　母数と期間を必ず併記</span></li><li><b>診断後にできること</b><span>カルテをサロンで見せる／店頭で相談する／オンラインで買う</span><em>CTA 髪格をしらべる（最終）</em></li></ol></div><div class="part"><b>4 主要セクションの文言</b><p><b>どう決めているか</b>：SEAMは、<b>変わらないもの</b>と<b>変わるもの</b>を分けて考えます　髪格（太さ・量・くせ）は生まれ持ったもので変わりません　履歴（カラー・ブリーチ・矯正・熱）は変わります　処方は<b>この2つの掛け合わせ</b>で決まります</p><p><b>できないこと</b>：これは医療の診断ではありません　頭皮に痛みやかゆみがある場合は皮膚科へご相談ください　また画面越しでは分からないことがあります　<b>迷ったら店頭で実物を見せてください</b></p></div><div class="part"><b>5 UIコンポーネント指示</b><p><b>/hairtype は静的HTML</b>（Reactを使わない）　JSが落ちても全文読める状態にします　現行 /finder のような「読み込んでいます」だけの画面を外部に見せない</p><p><b>設問の実物</b>は画像ではなくテキストで置く　検索とAIが読めます</p><p><b>H1は1ページ1つ</b>　現行 /finder はH1が2つあります</p></div><div class="part"><b>6 削除すべき要素</b><p><b>/finder の重複H1</b>（「SEAM 髪格診断 — 今の髪に合う一本を見つける」と「髪の太さ・量・動きから導く 27タイプの髪格診断」）</p><p><b>「3分で」</b>　設問数で言い換える　実際の滞在は226秒（3分46秒）なので、3分は事実と合っていません</p></div><div class="part"><b>7 残すべき要素</b><p>27タイプという枠組み（3軸の帰結として正しい）／宝石ビジュアル（世界観の中核）／カルテ保存とURL引き継ぎ（IG内ブラウザ対策）／5言語対応</p></div><div class="part"><b>8 実装優先順位</b><p><span class="pri S">S</span>/hairtype 静的LPの新設<br><span class="pri S">S</span>「どう決めているか」節の執筆<br><span class="pri A">A</span>「できないこと」節の追加<br><span class="pri A">A</span>/finder のH1重複を解消<br><span class="pri B">B</span>「3分」表記の見直し</p></div></div></section><section><div class="eyebrow">Page 03</div><h2>結果画面 情報設計</h2><p class="lede">ResultHero → PlusOne → 商品 → 成分 → 季節 → 道具 → スパ → 来店　が現行の順です</p><div class="spec"><h3>finder 結果画面<small>js/finder-app.js（編集は .jsx 側）</small></h3><div class="part"><b>1 ページの目的</b><p><b>納得させることです</b>　当てることではありません　当たっているかどうかは本人にしか分かりませんが、<b>なぜそう言えるかは説明できます</b>　いまはそこが空白です</p></div><div class="part"><b>2 ユーザーの心理状態</b><p>226秒読んでいて、24.1%がカルテを保存します　<b>すでに真剣に読んでいます</b>　だから足すべきは演出ではなく情報です　「なるほど」が1回起きれば保存率は上がります</p></div><div class="part"><b>3 必要なセクション順（ワイヤー）</b><div class="wire">┌────────────────────────────┐
+│ ① 髪格カード（宝石・型名）           │  ← 現行 ResultHero
+│    太さ ●●○ / 量 ●●● / くせ ●○○   │  ★追加：3軸を目に見える形で
+│    「あなたが◯◯型なのは、量が多く…」  │  ★追加：判定の一文
+├────────────────────────────┤
+│ ② 似た型との違い                  │  ★新設
+│    △△型ではない理由：くせが波だから    │
+├────────────────────────────┤
+│ ③ 今回の優先課題                  │  ← 現行あり（維持）
+├────────────────────────────┤
+│ ④ まず3本                       │  ← 現行 DeepProduct
+│    各カードに「出た理由」ラベル        │  ← 現行あり（維持）
+├────────────────────────────┤
+│ ⑤ 出さなかったもの                │  ★新設・最重要
+│    ブリーチ履歴があるため◯◯系は除外     │
+│    頭皮が敏感なため◯◯は除外          │
+├────────────────────────────┤
+│ ⑥ 迷ったら店頭で                  │  ★昇格（現在は最下部）
+│    このカルテを見せてください          │
+├────────────────────────────┤
+│ ⑦ カルテを保存                   │  ← 現行あり
+├────────────────────────────┤
+│ ⑧ 成分ガイド／季節／道具／スパ／来店     │  ← 現行のまま後方へ
+└────────────────────────────┘</div></div><div class="part"><b>4 追加する3つの根拠</b><p><b>① 判定の一文</b>：「あなたが◯◯型なのは、<b>太さが太く・量が多く・くせが波</b>だからです」　3軸はすでに内部で持っている値なので、表示するだけです</p><p><b>② 似た型との違い</b>：1軸だけ違う隣接型を1〜2つ出し、「△△型ではないのは、くせが波だからです」と書く　<b>境界を示せると、判定が恣意的でないことが伝わります</b></p><p><b>③ 出さなかったもの</b>：「ブリーチ履歴があるため、◯◯系は今回外しました」「頭皮が敏感とのことなので、◯◯は外しました」　<b>これが最も効きます</b>　除外条件はすでにロジックに実装されていて、表示していないだけです</p></div><div class="part"><b>5 UIコンポーネント指示</b><p><b>3軸メーター</b>：●●○ の3段表示　レーダーチャートにしない（27型の差が読めない）</p><p><b>除外理由</b>：閉じた状態のアコーディオンにしない　<b>開いた状態で置く</b>　隠すと「隠している」ことになります</p><p><b>店頭導線を⑥へ昇格</b>：現在 VisitSeam は最下部で、reserve系CTAは月478クリックしかありません　<b>商品の直後、カルテ保存の直前</b>が最も自然な位置です</p></div><div class="part"><b>6 削除すべき要素</b><p>特にありません　<b>いまの結果画面は削るより足す局面です</b>　ただし成分ガイド・季節・道具は<b>後方へ寄せて</b>、根拠と店頭導線を前に出してください</p></div><div class="part"><b>7 残すべき要素</b><p>宝石ビジュアルとリビール演出（保存率の源）／優先課題の提示／商品ごとの選定理由ラベル／カルテ保存とURL引き継ぎ／縮毛矯正ユーザーへの配慮コピー（くせを活かそうと言わない）</p></div><div class="part"><b>8 実装優先順位</b><p><span class="pri S">S</span>③ 出さなかったものの表示<br><span class="pri S">S</span>① 判定の一文＋3軸メーター<br><span class="pri A">A</span>⑥ 店頭導線を商品直後へ昇格<br><span class="pri A">A</span>② 似た型との違い<br><span class="pri B">B</span>成分・季節・道具を後方へ</p></div></div></section><section><div class="eyebrow">Page 04</div><h2>店舗接続導線 実装仕様</h2><p class="lede">/shop 滞在16秒・読了49%　診断からの接続がほぼ起きていません</p><div class="spec"><h3>seam.site/shop ＋ 診断→店舗<small>shop.html / finder VisitSeamSection</small></h3><div class="part"><b>1 ページの目的</b><p><b>来店の理由をつくること</b>　商品を並べる場所ではありません　現行のH2第2位が「SUMMER SALE 最大30%OFF」で、目的が「安いから来て」になっています</p></div><div class="part"><b>2 ユーザーの心理状態</b><p>滞在16秒　<b>ほぼ読まれていません</b>　診断を終えた人が「で、どこへ行けばいいのか」を探しに来ますが、いまのshopは<b>診断の続きになっていません</b></p></div><div class="part"><b>3 必要なセクション順</b><ol class="order"><li><b>（診断から来た人）あなたのカルテを持って</b><span><b>新設</b>　カルテがある人にだけ出す　「このカルテを見せてください　同じものが店頭で出せます」</span><em>CTA 近い店舗をさがす</em></li><li><b>ヒーロー ── 買う場所ではなく選ぶ場所へ</b><span>現行のまま　コピーは良い</span></li><li><b>店頭でできること　3つ</b><span>実物を見る／プロに相談する／カルテの続きをつくる　<b>「安い」を理由にしない</b></span></li><li><b>メーカー公認の正規販売店</b><span>現行のまま　信頼の根拠として機能</span></li><li><b>店舗一覧</b><span>現行のまま</span><em>CTA 店舗をさがす</em></li><li><b>セール（期間中のみ）</b><span><b>現在の2番目から、ここへ降ろす</b>　クリック1.6%しかなく、上に置く根拠がありません</span></li></ol></div><div class="part"><b>4 主要セクションの文言</b><p><b>カルテを持って</b>：診断の結果は、そのまま店頭でお使いいただけます　画面をお見せいただければ、同じ処方から実物をご覧いただけます　合わなければ、その場で選び直せます</p><p><b>店頭でできること</b>：実物を見る（重さと香りは画面では分かりません）／プロに相談する（画面越しでは分からないことがあります）／カルテの続きをつくる（次回の提案が変わります）</p></div><div class="part"><b>5 UIコンポーネント指示</b><p><b>カルテ検出</b>：localStorage にカルテがあるときだけ最上部に出す　無い人には出さない（意味が分からないため）</p><p><b>診断側</b>：VisitSeamSection を商品の直後へ移動し、文言を「来店する」ではなく<b>「このカルテを見せてください」</b>に</p></div><div class="part"><b>6 削除すべき要素</b><p><b>H2の2番目にあるSUMMER SALE</b>（削除ではなく下へ）　「選ぶ場所へ」の直後に「30%OFF」が来ると、前の一文が営業文句に見えます</p></div><div class="part"><b>7 残すべき要素</b><p>「買う場所ではなく選ぶ場所へ」（このサイトで最も良いコピー）／メーカー公認の正規販売店／店舗一覧／会員制オンラインショップの位置づけ</p></div><div class="part"><b>8 実装優先順位</b><p><span class="pri S">S</span>診断→店舗の「カルテを持って」節<br><span class="pri A">A</span>セールを下段へ移動<br><span class="pri A">A</span>店頭でできること3つの新設<br><span class="pri B">B</span>診断側 VisitSeam の位置変更</p></div></div></section><section><div class="eyebrow">Page 05</div><h2>メーカー向け信頼補強セクション</h2><p class="lede">新規 /insight（公開・要問合せ）　いまは社内 /admin しかありません</p><div class="spec"><h3>seam.site/insight<small>新規作成</small></h3><div class="part"><b>1 ページの目的</b><p><b>「上手い小売サイト」から「需要の構造を持っている会社」へ見え方を変えること</b>　メーカーが評価するのは在庫でも世界観でもなく、<b>何人の何が分かっているか</b>です</p></div><div class="part"><b>2 読み手の心理状態</b><p>疑っています　「サンプルは何人か」「いつのデータか」「分母は何か」を最初に見ます　<b>ここが書いていない資料は読まれません</b></p></div><div class="part"><b>3 必要なセクション順</b><ol class="order"><li><b>この数字は何か ── 母数と期間と取り方</b><span><b>最初に置く</b>　5,174人／2026-06-28〜07-28／匿名・個人を特定しない集計であること</span></li><li><b>悩みの分布</b><span>ごわつき44.4%／うねり42.6%／広がり38.9%／ツヤ28.2%</span></li><li><b>年代で入れ替わる悩み</b><span><b>ここが独自価値</b>　うねりは20代38.9%→50代55.2%、枝毛は23.6%→4.3%　一般調査では出ない粒度です</span></li><li><b>薬剤履歴の掛け合わせ</b><span>履歴なし37.7%／矯正のみ26.9%／ブリーチのみ19.7%／ブリーチ×矯正8.0%　<b>単一項目でなく交差で持っているのが強み</b></span></li><li><b>熱の習慣</b><span>アイロン毎日31.6%／160℃が49.1%／何もつけない15.1%　メーカーの熱保護製品の設計に直結します</span></li><li><b>ブランドの見られ方</b><span>クリック2,011回の内訳　<b>自社ブランドの位置が分かる</b></span></li><li><b>行動指標</b><span>完了率98.4%／カルテ保存24.1%／1セッション9.5ページ／診断後に行動した割合55.2%</span></li><li><b>読み方の注意</b><span><b>必ず入れる</b>　回答者の96.9%が女性／条件付き設問の母数が違うこと／来店客そのものではないこと</span></li><li><b>お問い合わせ</b><span>個別レポートの相談窓口</span><em>CTA お問い合わせ</em></li></ol></div><div class="part"><b>4 見せ方の原則</b><p><b>すべての数字に母数と期間を併記</b>　「44.4%」ではなく「5,174人中44.4%（30日）」</p><p><b>条件付き設問は分母を明示</b>　例：ヘッドスパの症状設問は「興味あり」と答えた2,411人が母数　<b>ここを書かない資料は読み手に誤読されます</b></p><p><b>推計を混ぜない</b>　業界平均・推定値は1つも入れない</p></div><div class="part"><b>5 UIコンポーネント指示</b><p><b>棒グラフの軸は全チャート0〜100%固定</b>　グループ内最大値に伸ばすと13.1%が81.8%と同じ長さに見えます</p><p><b>個票は絶対に出さない</b>　集計値のみ　「n<50 は非表示」のルールを明記</p><p>ダウンロード可能なPDFを用意　メーカーは社内で回覧します</p></div><div class="part"><b>6 削除すべき要素</b><p><b>「4,000万+」「1,000検証」</b>　検証方法を示せない数字は、この文脈では<b>信頼を下げます</b></p></div><div class="part"><b>7 残すべき要素</b><p>/admin の集計ロジック（そのまま公開版に流用できます）／匿名計測の設計／月次トレンド</p></div><div class="part"><b>8 実装優先順位</b><p><span class="pri A">A</span>/insight の新設（noindex外す・公開）<br><span class="pri A">A</span>母数と読み方の注意を全チャートに<br><span class="pri B">B</span>PDF出力<br><span class="pri C">C</span>月次トレンドの蓄積</p></div></div></section><section><div class="eyebrow">Fix</div><h2>3つの改修まとめ</h2><p class="lede">ファーストビュー／結果画面／信頼性表現</p><div class="grp"><b>ファーストビューの改修</b><span>現在の第一声は「SALE 最大30%OFF」です</span></div><div class="wire">【現行】
+  言語切替 → SALE 最大30%OFF → ナビ → CTA2つ → 27 TYPES → あなたの髪を、もっと好きになる
+
+【改修後】
+  言語切替 → ナビ → 髪には、変えられる部分と変えられない部分があります
+  → 太さ・量・くせで27通り　そこに履歴を重ねて、いま必要な3〜5本を出します
+  → [ 髪格をしらべる ]  ← CTAは1つだけ
+  → （スクロール）3つの軸 → セール告知</div><div class="callout"><b>変えるのは順番とコピーだけで、写真も動画もそのままです</b>　セールは削除しません　クリック6.5%は効いている証拠です　<b>診断より上に置かない</b>というだけの話です</div><div class="grp"><b>診断結果画面の改修</b><span>足すのは演出ではなく根拠です</span></div><div class="tablewrap fit"><table><thead><tr><th>追加するもの</th><th>内容</th><th>すでにデータはあるか</th></tr></thead><tbody><tr><td><span class="name">判定の一文</span></td><td>太さ・量・くせの3軸で、なぜこの型かを1文</td><td><b style="color:var(--good)">あります</b>　内部の判定値をそのまま出すだけ</td></tr><tr><td><span class="name">3軸メーター</span></td><td>●●○ の3段表示</td><td><b style="color:var(--good)">あります</b></td></tr><tr><td><span class="name">似た型との違い</span></td><td>1軸だけ違う隣接型との境界</td><td><b style="color:var(--good)">計算できます</b>　27型は3軸の直積なので隣接は自明</td></tr><tr><td><span class="name">出さなかったもの</span></td><td>除外した系統とその理由</td><td><b style="color:var(--good)">あります</b>　除外条件は実装済みで、表示していないだけ</td></tr></tbody></table></div><div class="grp"><b>信頼性表現の改修</b><span>大きい数字から、確かめられる数字へ</span></div><div class="tablewrap fit"><table><thead><tr><th>いま出しているもの</th><th>問題</th><th>差し替え先</th></tr></thead><tbody><tr><td><span class="name">4,000万+</span></td><td>何を数えたのか説明できない</td><td><b>診断を終えた方 5,174人（30日）</b></td></tr><tr><td><span class="name">1,000検証</span></td><td>検証の中身が示せない</td><td><b>最後まで進んだ割合 98.4%</b></td></tr><tr><td><span class="name">27タイプ</span></td><td>数だけでは根拠にならない</td><td><b>太さ×量×くせ ＝ 3×3×3</b>　残すが理由を添える</td></tr><tr><td><span class="name">（無し）</span></td><td>限界を書いていない</td><td><b>これは医療の診断ではありません</b>を明記　限界を書くほうが信頼されます</td></tr></tbody></table></div></section><section><div class="eyebrow">Anti</div><h2>実装時に避けること</h2><p class="lede">世界観を壊さずCVRを上げるための境界線</p><div class="rules"><div class="rule"><span class="ic">×</span><div><b>演出を足して納得感を出そうとする</b><span class="sub" style="display:block">アニメーション・グラフ・スコアを増やしても納得はしません　足すのは<b>言葉による根拠</b>です</span></div></div><div class="rule"><span class="ic">×</span><div><b>除外理由をアコーディオンに隠す</b><span class="sub" style="display:block">閉じた状態で置くと「隠している」ことになります　<b>開いたまま置いてください</b></span></div></div><div class="rule"><span class="ic">×</span><div><b>セールを消してしまう</b><span class="sub" style="display:block">クリック6.5%は効いています　<b>位置を下げるだけ</b>　消すと売上が落ちます</span></div></div><div class="rule"><span class="ic">×</span><div><b>3軸をレーダーチャートにする</b><span class="sub" style="display:block">3軸のレーダーは三角形になり、27型の差が読めません　●●○ の3段で十分です</span></div></div><div class="rule"><span class="ic">×</span><div><b>トップのCTAを増やす</b><span class="sub" style="display:block">現在ヒーローに2つあって目的が割れています　<b>1つにするのが改修です</b>　増やすのは逆行</span></div></div><div class="rule"><span class="ic">×</span><div><b>/finder を静的化しようとする</b><span class="sub" style="display:block">診断アプリはReactのままで正しいです　<b>別に静的LPを1枚足す</b>のが答えです</span></div></div><div class="rule"><span class="ic">×</span><div><b>メーカー向けに数字を大きく見せる</b><span class="sub" style="display:block">母数を書かない・分母をぼかす・推計を混ぜる　いずれも<b>一度でも見抜かれたら終わり</b>です</span></div></div><div class="rule"><span class="ic">×</span><div><b>「無料」を診断のCTAにする</b><span class="sub" style="display:block">価値の話が値段の話になります　この診断の強みは無料であることではありません</span></div></div></div></section><section><div class="eyebrow">Now</div><h2>今すぐ直すべき3点</h2><p class="lede">この順で　どれもロジックには触りません</p><div class="pr" style="border-left:3px solid var(--gold);"><div class="pt"><span class="pri S">1</span>結果画面に「出さなかったもの」を出す</div><div class="pd">除外条件はすでにロジックの中にあります　表示していないだけです　<b>出さなかったものを言える店は信用されます</b>　メーカーが見るのもここです　実装は表示だけなので、判定ロジックには触りません</div></div><div class="pr" style="border-left:3px solid var(--gold);"><div class="pt"><span class="pri S">2</span>ファーストビューの第一声をセールから髪格の定義に変える</div><div class="pd">コピーの差し替えとセールバーの移動だけです　写真も動画も触りません　<b>トップ滞在13秒・読了32%の主因はここ</b>だと考えています</div></div><div class="pr" style="border-left:3px solid var(--gold);"><div class="pt"><span class="pri S">3</span>/hairtype を静的LPとして1枚作る</div><div class="pd">/finder は初期HTMLが可視テキスト182字で、外部から来た人にも検索にもAIにも何も見えていません　<b>外部流入が月855しかない構造的な原因</b>です　診断アプリはReactのままでよく、説明用の静的な面を1枚足すだけです</div></div><div class="callout" style="margin-top:14px;"><b>この3つはどれも判定ロジックに触りません</b>　5,000パターンで検証済みの診断本体は、そのままです　直すのは<b>見せ方と説明</b>だけです</div></section>
+
+<footer>
+SEAM ／ 株式会社hanico　社内資料（検索エンジン非掲載）<br>
+実測：本番HTML直接取得 2026-07-29（/ ・/finder・/shop・/journal）／
+髪格診断 2026-06-28〜07-28（5,174人・admin と同一集計）／
+結果画面は compiled js の \u を復号して全文検索し、判定理由・似た型との違い・除外理由が
+いずれも0件であることを確認<br>
+この仕様は判定ロジックに触りません　直すのは見せ方と説明だけです<br>
+関連：seam.site/ginza-menu ／ seam.site/treatment ／ seam.site/strategy
+</footer>
+
+</div>
+<script>
+document.querySelectorAll('.cw .cb').forEach(function(b){
+  b.addEventListener('click', function(){
+    var p = b.parentNode.querySelector('p');
+    if(!p) return;
+    var w = p.querySelector('.why');
+    var t = w ? p.textContent.replace(w.textContent, '') : p.textContent;
+    navigator.clipboard.writeText(t.trim()).then(function(){
+      var o = b.textContent; b.textContent = 'COPIED';
+      setTimeout(function(){ b.textContent = o; }, 1400);
+    });
+  });
+});
+</script>
+</body></html>
