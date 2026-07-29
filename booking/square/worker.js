@@ -273,6 +273,24 @@ export default {
     if (p.endsWith('/passes') && m === 'GET') return A() || handleGetPasses(env, cors);
     if (p.endsWith('/passes') && m === 'POST') return A() || handlePostPass(request, env, cors);
     if (p.endsWith('/passes') && m === 'DELETE') return A() || handleDeletePass(url, env, cors);
+    // 顧客ノート(重要メモ/誕生月)
+    if (p.endsWith('/custnotes') && m === 'GET') {
+      const auth = A(); if (auth) return auth;
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const res = await env.DB.prepare('SELECT * FROM customer_notes LIMIT 2000').all();
+      return json({ ok: true, notes: res.results || [] }, 200, cors);
+    }
+    if (p.endsWith('/custnotes') && m === 'POST') {
+      const auth = A(); if (auth) return auth;
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.key) return json({ error: 'key必須' }, 400, cors);
+      await env.DB.prepare('INSERT OR REPLACE INTO customer_notes (key,caution,birthday,updated_at) VALUES (?,?,?,?)')
+        .bind(o.key, o.caution || '', o.birthday || '', new Date().toISOString()).run();
+      return json({ ok: true }, 200, cors);
+    }
     // カルテ写真(顧客名キー・圧縮JPEG dataURL)
     if (p.endsWith('/karte/photos') && m === 'GET') {
       const auth = A(); if (auth) return auth;
@@ -969,6 +987,8 @@ async function ensureRegisterTables(env) {
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS gifts (id TEXT PRIMARY KEY, label TEXT DEFAULT '', amount INTEGER DEFAULT 0, balance INTEGER DEFAULT 0, buyer TEXT DEFAULT '', memo TEXT DEFAULT '', uses TEXT DEFAULT '[]', issued TEXT DEFAULT '', expires TEXT DEFAULT '', void INTEGER DEFAULT 0, created_at TEXT)`),
     // 回数券・パス(スパ4回券等)。remaining=残回数・1会計で1回消化(施術分をカバー)。期限既定6ヶ月。
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS passes (id TEXT PRIMARY KEY, label TEXT DEFAULT '', customer TEXT DEFAULT '', price INTEGER DEFAULT 0, total INTEGER DEFAULT 0, remaining INTEGER DEFAULT 0, uses TEXT DEFAULT '[]', issued TEXT DEFAULT '', expires TEXT DEFAULT '', void INTEGER DEFAULT 0, created_at TEXT)`),
+    // 顧客ノート(重要メモ=アレルギー等の注意事項・誕生月)。key=custKey(電話番号 or n:氏名)
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS customer_notes (key TEXT PRIMARY KEY, caution TEXT DEFAULT '', birthday TEXT DEFAULT '', updated_at TEXT)`),
     // カルテ写真(before/after)。dataはクライアント側で圧縮したJPEGのdataURL(〜150KB)。
     // ※本来はR2が適所だがアカウント未有効(code:10042)のためD1暫定。R2有効化後にキー移行(spec参照)。
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS karte_photos (id TEXT PRIMARY KEY, name TEXT NOT NULL, date TEXT, data TEXT, created_at TEXT)`),

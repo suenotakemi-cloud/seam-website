@@ -470,6 +470,16 @@ td.slot:hover{background:#f0f7ff}
 .rz-diff>b.ok{color:var(--ok)} .rz-diff>b.short{color:var(--danger)} .rz-diff>b.over{color:#c47f17}
 .rz-ref{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--sub);font-weight:700;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .reg-doneline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--ok);margin-top:11px}
+/* 折りたたみ(レジのたまに使う機能をしまう=毎日の画面をシンプルに) */
+.fold{margin-top:10px}
+.fold summary{cursor:pointer;font-size:13.5px;font-weight:800;color:var(--navy);padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:12px;list-style:none;user-select:none}
+.fold summary::-webkit-details-marker{display:none}
+.fold summary:after{content:'開く ▾';float:right;color:var(--sub);font-size:11px;font-weight:700}
+.fold[open] summary:after{content:'閉じる ▴'}
+.fold[open] summary{border-radius:12px 12px 0 0;border-bottom:1px dashed var(--line)}
+.fold>.reg-close{margin-top:0;border-radius:0 0 12px 12px;border-top:none}
+.fold>.reg-close h3{display:none}
+
 /* お会計モーダル */
 .co-line{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:14px;font-weight:700;border-bottom:1px solid #eef3f8}
 .co-line>span:first-child{color:var(--sub)}
@@ -1145,6 +1155,8 @@ const API = {
   async savePass(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async voidPass(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listKartePhotos(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photos?name='+encodeURIComponent(name),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.photos:null;}catch{return null;} },
+  async listCustNotes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/custnotes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.notes:null;}catch{return null;} },
+  async saveCustNote(n){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/custnotes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(n)});return r.ok;}catch{return null;} },
   async saveKartePhoto(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photo',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async removeKartePhoto(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photo?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
@@ -1215,7 +1227,8 @@ async function syncRegisterFromD1(){
   const pts=await API.listPoints(); if(pts)db.points=pts;
   const gf=await API.listGifts(); if(gf)db.gifts=gf;
   const ps=await API.listPasses(); if(ps)db.passes=ps;
-  if(co||st||set||pr||ins||pts||gf||ps){save();refreshAll();}
+  const cn=await API.listCustNotes(); if(cn){db.custnotes={};cn.forEach(n=>db.custnotes[n.key]=n);}
+  if(co||st||set||pr||ins||pts||gf||ps||cn){save();refreshAll();}
 }
 /* ===== 自社ポイント（HPBの2%徴収の代替・オーナーが使うか/率を決める）=====
  * 付与/利用は増減行の追記型（db.points）。残高=そのお客様の行の合計。
@@ -1710,7 +1723,10 @@ function openDetail(id){
   const vc=visitCount(r.name,r.phone,r.id);
   const repeat=vc>0?`<span class="rep">${vc+1}回目のご来店</span>`:'<span class="rep new">新規</span>';
   const needBlock=(r.channel!=='hpb'&&!r.hpbBlocked&&r.status!=='cancelled');
+  // 重要メモ(カルテ)があれば予約詳細の先頭で警告表示(施術前に必ず目に入る)
+  const knCaution=((db.custnotes||{})[custKey(r)]||{}).caution||'';
   const rows=[
+    knCaution?['⚠ 注意',`<b style="color:#b4302b">${escH(knCaution)}</b>`]:null,
     ['お客様',`${escH(r.name)} ${repeat}`],
     r.phone?['電話',r.phone]:null,
     ['日時',`${r.date.replace(/-/g,'/')} ${hm(r.start)}〜${hm(r.end)}`],
@@ -2081,7 +2097,12 @@ function renderRegister(){
     <button class="btn pay" id="ps-issue" style="width:100%;margin-top:9px">発行して会計へ</button>
     <div class="rz-ref"><span>会計の「回数券・パス」欄にコード入力で1回消化(施術分カバー)</span><span>前受金で売上安定・来店固定化</span></div>
     ${activePasses.length?`<div class="co-sub" style="margin-top:10px">有効な回数券（${activePasses.length}件）</div>${passRows}`:''}</div>`;
-  body.innerHTML=summary+pendHtml+listHtml+closePanel+ptPanel+gfPanel+psPanel;
+  // 毎日使う(会計/売上/レジ締め)は常時表示・たまに使う(ポイント設定/ギフト券/回数券)は折りたたみでスッキリ
+  const fold=(title,inner)=>`<details class="fold"><summary>${title}</summary>${inner}</details>`;
+  body.innerHTML=summary+pendHtml+listHtml+closePanel
+    +fold('💎 ポイント設定（還元率・使う/使わない）',ptPanel)
+    +fold(`🎁 ギフト券（発行・一覧${activeGifts.length?`・有効${activeGifts.length}枚`:''}）`,gfPanel)
+    +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel);
   {const on=document.getElementById('pt-on'),off=document.getElementById('pt-off'),rt=document.getElementById('pt-rate');
    if(on)on.onclick=()=>{setStg('pointEnabled','1');};
    if(off)off.onclick=()=>{setStg('pointEnabled','0');};
@@ -3029,7 +3050,35 @@ function openCustomer(key){
     const note=r.note?`<div class="chist-note">📝 ${esc(r.note)}</div>`:'';
     return `<div class="chist"><span class="chist-d">${r.date.replace(/-/g,'/')} ${hm(r.start)}</span><span class="chist-m">${m?m.name:''}${s?' / '+s.name:''}</span><span class="badge" style="background:${ch?ch.color:'#999'}">${ch?ch.short:'—'}</span><span class="stbadge st-${r.status}" style="font-size:10px">${STATUS_LABEL[r.status]}</span>${note}</div>`;
   }).join('');
-  document.getElementById('detailmodal').innerHTML=`<h3>${escH(c.name)} 様のカルテ</h3>
+  // ---- カルテ拡張: 重要メモ/誕生月・前回のご来店+周期・ポイント/回数券/ギフト保有 ----
+  if(!db.custnotes)db.custnotes={};
+  const ck=c.key, cn=db.custnotes[ck]||{caution:'',birthday:''};
+  const lastDone=rs.find(r=>r.status==='done')||rs.find(r=>r.date<=dkey(today()))||null;
+  let cycleHtml='';
+  if(lastDone){
+    const lm=MENUS.find(m=>m.id===lastDone.menuId);
+    const cyc=cycleOfMenu(lm);
+    const days=Math.round((Date.parse(dkey(today()))-Date.parse(lastDone.date))/86400000);
+    const badge=days>=cyc?`<span class="rep" style="background:#fdecec;border-color:#f3c1c1;color:#b4302b">🔔 そろそろ時期（${days}日経過）</span>`
+      :days>=cyc-7?`<span class="rep" style="background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">まもなく時期（あと${cyc-days}日）</span>`
+      :`<span class="rep">次の目安まで あと${cyc-days}日</span>`;
+    cycleHtml=`<div style="background:#f7f9f5;border:1px solid #e2e8dc;border-radius:10px;padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:3px">前回のご来店</div>
+      <div style="font-size:13px;font-weight:700">${lastDone.date.replace(/-/g,'/')}　${lm?escH(lm.name):''}${(STAFF.find(s=>s.id===lastDone.staffId)||{}).name?' / '+(STAFF.find(s=>s.id===lastDone.staffId)||{}).name:''}　${badge}</div>
+      ${lastDone.note&&!/salon#|予約番号/.test(lastDone.note)?`<div style="font-size:12px;color:var(--sub);margin-top:3px">📝 ${escH(lastDone.note)}</div>`:''}</div>`;
+  }
+  const ptBal=pointBalance(c.name,'');
+  const myPasses=(db.passes||[]).filter(x=>!x.void&&(x.remaining||0)>0&&x.customer===c.name);
+  const holdHtml=`<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;font-weight:700;margin-bottom:10px">
+    <span>💎 ポイント <b>${ptBal.toLocaleString()}pt</b></span>
+    ${myPasses.map(x=>`<span>🎫 ${escH(x.label)} 残${x.remaining}回</span>`).join('')}</div>`;
+  document.getElementById('detailmodal').innerHTML=`<h3>${escH(c.name)} 様のカルテ ${cn.caution?'<span class="rep" style="background:#fdecec;border-color:#f3c1c1;color:#b4302b">⚠ 注意あり</span>':''}</h3>
+    <div style="background:${cn.caution?'#fdecec':'#faf8f4'};border:1px solid ${cn.caution?'#f3c1c1':'#e8e2d6'};border-radius:10px;padding:9px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:800;color:${cn.caution?'#b4302b':'var(--sub)'};margin-bottom:3px">⚠ 重要メモ（アレルギー・薬剤NG・注意事項）</div>
+      <textarea id="kn-caution" placeholder="例）ジアミンアレルギーあり／お子様連れ" style="width:100%;border:none;background:transparent;font-size:13px;font-family:inherit;resize:vertical;min-height:34px">${escH(cn.caution||'')}</textarea>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);margin-top:4px">🎂 誕生月 <select id="kn-bday" style="border:1px solid var(--line);border-radius:6px;padding:2px 6px"><option value="">—</option>${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${String(i+1)===String(cn.birthday)?'selected':''}>${i+1}月</option>`).join('')}</select><span id="kn-saved" style="color:var(--ok);font-weight:700;display:none">✓ 保存しました</span></div>
+    </div>
+    ${cycleHtml}${holdHtml}
     <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd>
       <dt>累計売上 (LTV)</dt><dd>${c.paidVisits>0?`<b style="color:var(--navy)">¥${c.sales.toLocaleString()}</b>　<span style="color:var(--sub);font-size:12px">会計${c.paidVisits}回・平均 ¥${Math.round(c.sales/c.paidVisits).toLocaleString()}</span>`:`<span style="color:var(--sub)">会計記録なし（目安 ¥${c.spend.toLocaleString()}）</span>`}</dd>
       <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${escH(c.note)}</dd>`:''}</dl>
@@ -3041,6 +3090,11 @@ function openCustomer(key){
     <div class="row"><button class="btn ghost" style="flex:1" id="cd-close">閉じる</button></div>`;
   document.getElementById('cd-close').onclick=closeDetail;
   document.getElementById('detailbg').classList.add('show');
+  // ---- 重要メモ/誕生月の保存(フォーカスアウト・変更で自動保存) ----
+  {const ta=document.getElementById('kn-caution'),bd=document.getElementById('kn-bday'),ok=document.getElementById('kn-saved');
+   const saveKn=()=>{const n={key:ck,caution:ta.value.trim(),birthday:bd.value};db.custnotes[ck]=n;save();API.saveCustNote(n);
+     if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none'},1500);}};
+   if(ta)ta.onblur=saveKn; if(bd)bd.onchange=saveKn;}
   // ---- 施術写真: 認証付きAPIから取得して描画・追加はcanvasで1100pxに圧縮してからD1へ ----
   const kpRender=(photos)=>{
     const grid=document.getElementById('kp-grid');if(!grid)return;
