@@ -122,6 +122,13 @@ flowchart LR
   - **RPA実装確認済（2026-07-27・APK解析）**：RPAは`selectAvailableEquipment`で**SB設備プルダウンから空き部屋を自走選択**する（`hbp_facility`は読まない）。全部屋埋まりは「空いている設備が無いためミラー予約をスキップ」。ヘア（設備欄なし＝CLP）は`EQUIP_NOT_REQUIRED`で素通り。
   - こちらが送る `info_js.hbp_facility`（割当部屋）・`hbp_facility_list`（部屋一覧＝個室A/B）は**台帳側の参考情報**（RPA必須ではないが、どの部屋想定かの記録として送り続ける）。部屋は wrangler.toml `SPA_ROOMS`。
 
+### 3.2.1 RPAアプリ v6 の変更点（APK `app-debug(6)` 解析・2026-07-29）
+- **キャンセル確認「はい」自動押下**：`clickCancelConfirmYes`＋注入JSで `window.confirm=()=>true` を上書きし `#warnArea/#cancelDialogArea/.mod_popup_09 a.accept` をクリック（＝**SBキャンセル伝播が実働**。当方のD1キャンセル→salonCancel→RPAでSBまで届く経路が閉じた）。
+- **WebChromeClient追加**：ネイティブconfirm()が常時falseで静かに失敗する問題を解消。
+- **顧客名のネスト読みフォールバック**：`private_js.customer.name`「漢字（カナ）」複合の分解＋スペース非依存照合（メール取込予約向け）。フラットキー（customer_name/kana・半角スペース区切り）が正であることは変わらず＝当方は準拠済み。
+- **マルチ店舗起動**：`info_js.shops` 空/HBP連携情報なしは「フォールバック単店舗で起動」。セッション処理中は同期を待機。
+- 設備自走選択・30分丸め・備考メニュー運用は v4 から変更なし（`hbp_facility` は引き続き読まない＝参考情報）。
+
 ### 3.2 RPAアプリの実装仕様（APK `app-debug(4)` 解析・2026-07-27 学習）
 エンジニアのRPA＝Androidアプリ（WebView＋注入JS・socket.ioでSaaSからジョブ受信）。フロー: ReserveFlow（予約登録）／SchedulePostFlow・ScheduleDeleteFlow（予定・廃止方向）／ScheduleSyncFlow（**SB→SaaSの逆同期あり**）／CancelFlow（キャンセル・キレイサロン対応）／Coupon・Menu・StylistSyncFlow（HBPスクレイプ→SaaSへ saveEcItem/saveEcDiscount/saveAccount）。
 - **読むフィールド**：`hbp_stylist_id`（byCode解決）・`duration_min`・`block_for_reservation_id`・`customer_*`（姓/名/カナ/tel・nameのsplitName）・`payment_type`（prepay=オンライン事前決済/card-on-file/onsite=現地払い）。**`nominated`/`hbp_facility` は読まない**。
