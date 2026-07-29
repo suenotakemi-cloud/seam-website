@@ -1484,11 +1484,16 @@ function applyPenalties(product, userTags) {
   const finishArr = Array.isArray(product.finishTags) ? product.finishTags : (product.finishTags?.finish || []);
   const concernArr = product.concernTags || [];
   const cautionArr = product.cautionTags || [];
-  const weight = product.finishTags?.weight;
+  // weight は商品によって 'medium' と ['medium'] の両方で入っている
+  // (文字列128点 / 配列286点)。文字列比較だけだと配列側の heavy 28点を
+  // 取りこぼし、細い髪の人(診断者の38.2%)に重いものが出続けていた
+  const rawWeight = product.finishTags?.weight;
+  const weightArr = Array.isArray(rawWeight) ? rawWeight : (rawWeight ? [rawWeight] : []);
+  const isHeavy = weightArr.includes('heavy') || weightArr.includes('rich');
 
   // 細毛 × 重め/オイル系
   if (userTags.base.includes('fine_hair')) {
-    if (weight === 'rich' || weight === 'heavy') penalty += 15;
+    if (isHeavy) penalty += 15;
     if (finishArr.includes('rich')) penalty += 8;
     if (cautionArr.includes('may_flatten_fine_hair')) penalty += 20;
   }
@@ -7885,6 +7890,128 @@ function GemMark({ code, name }) {
   );
 }
 
+/* ---------- NotNeededCard — 今回は出していないもの ----------
+   「出さなかった理由」を言えると、出したものの説得力が上がる。守る線:
+     ・商品を否定しない。「あなたの髪には今これは要らない」という適合の話に閉じる
+     ・銘柄名を出さない。カテゴリで言う(メーカーとの関係を壊さない)
+     ・「今は」を必ず付ける。状態が変われば必要になる
+     ・商品側に無いデータ(cautionTags は429点中0点)は使わない。
+       持っていない情報で「要らない」と言うのがいちばん危ない
+
+   入れなかったルール(実測で構造的に発火しないと判明したもの):
+     ・熱から守るもの … 熱を使わない人にも熱保護タグ付きアウトバスが100%出る
+     ・頭皮ケア      … 「30歳以上は必ず頭皮エッセンス」で頭皮ブロックが常に出る
+   どちらも下のガードに必ず引っかかる。残すと推薦側が変わったとき黙って嘘をつく。 */
+
+const NOT_NEEDED_RULES = [
+  {
+    id: 'bleach',
+    when: a => !deriveBleach(a),
+    title: 'ブリーチ毛向けの集中補修',
+    tags: ['for-bleach-damage'],
+    why: 'ブリーチの履歴が無いためです　'
+       + '強い補修は、必要のない髪には重さになります',
+  },
+  {
+    id: 'fine',
+    when: a => a.thickness === 'thick',
+    title: '細い髪向けの軽い処方',
+    tags: ['for-fine-hair'],
+    why: '1本がしっかりしているためです　'
+       + '軽さを足す設計だと、まとまりが足りなくなります',
+  },
+  {
+    id: 'color',
+    when: a => a.color === 'none',
+    title: '色持ちを守るもの',
+    tags: ['color-protect', 'for-color-damage'],
+    why: 'いまカラーをされていないためです　'
+       + '色を守る設計はカラー毛にこそ効きます',
+  },
+  {
+    id: 'frizz',
+    when: a => {
+      const c = a.concerns || [];
+      return a.wave === 'none'
+        && !c.includes('frizz') && !c.includes('wave') && !c.includes('rough');
+    },
+    title: 'くせ・広がりを抑えるもの',
+    tags: ['frizz-control', 'humidity-control', 'wave-care'],
+    why: 'くせや広がりのお悩みが無いためです　'
+       + '抑える成分は、動きのある髪には重く出ることがあります',
+  },
+];
+
+function NotNeededCard({ answers, seamData, deepResult, mustPlusOne }) {
+  const a = answers || {};
+  const all = (seamData && seamData.products) || [];
+
+  // ── いちばん大事なガード ──
+  // 実際に画面へ出した商品の functionTags を集める。
+  // 「出していない」と言ったものが同じ画面に出ていたら診断そのものが嘘になる。
+  // 推薦側の条件を個別に真似すると、ロジックが変わるたびにずれる。出力を見て判断する。
+  const shownTags = new Set();
+  try {
+    const blocks = (deepResult && deepResult.blocks) || {};
+    Object.keys(blocks).forEach(k => {
+      (blocks[k] || []).forEach(it => {
+        const p = it && it.p;
+        if (p && Array.isArray(p.functionTags)) p.functionTags.forEach(t => shownTags.add(t));
+      });
+    });
+    (mustPlusOne || []).forEach(m => {
+      const p = (m && (m.p || m.product)) || m;
+      if (p && Array.isArray(p.functionTags)) p.functionTags.forEach(t => shownTags.add(t));
+    });
+  } catch (e) { /* 集められないときは下で黙る側に倒れる */ }
+
+  const hits = NOT_NEEDED_RULES
+    .map(r => {
+      let fire = false;
+      try { fire = !!r.when(a); } catch (e) { fire = false; }
+      if (!fire) return null;
+      if (r.tags.some(t => shownTags.has(t))) return null;   // 出したものと矛盾するなら黙る
+      const n = all.filter(p => (p.functionTags || []).some(t => r.tags.includes(t))).length;
+      if (!n) return null;
+      return { title: r.title, why: r.why, n };
+    })
+    .filter(Boolean)
+    .slice(0, 3);
+
+  if (!hits.length) return null;
+  const total = hits.reduce((x, y) => x + y.n, 0);
+
+  return (
+    <section className="mt-12 sm:mt-16 anim-fade-up" style={{ animationDelay: '150ms' }}>
+      <p className="font-mono tracking-widest2 text-[11px] uppercase text-gold">— Not Needed</p>
+      <h2 className="mt-3 font-serif text-[26px] sm:text-[34px] text-ink leading-snug">
+        今回は出していないもの
+      </h2>
+      <p className="mt-2 text-[13px] sm:text-[13.5px] text-charcoal/70 leading-[1.9]">
+        あなたの髪にはいま必要がないので、<span className="text-ink nums">{total}</span>点を候補から外しました
+        良い悪いではなく、合うか合わないかの話です
+      </p>
+
+      <div className="mt-6 space-y-2.5">
+        {hits.map((h, i) => (
+          <div key={i} className="bg-white/50 border border-line rounded-[2px] px-4 py-4 sm:px-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-serif text-[15px] sm:text-[16px] text-ink leading-snug">{h.title}</p>
+              <span className="shrink-0 font-mono text-[10.5px] text-charcoal/45 nums">{h.n}点</span>
+            </div>
+            <p className="mt-1.5 text-[12px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]">{h.why}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-5 text-[12.5px] sm:text-[13px] text-ink leading-[1.9] border-l-2 border-gold pl-4">
+        髪の状態が変われば、必要なものも変わります
+        次に診断されたとき、ここに出てくるものは入れ替わります
+      </p>
+    </section>
+  );
+}
+
 /* ---------- WhyThisTypeCard — この髪格になった理由(判定の根拠) ----------
    selectOriginAnimalId の 3軸ルックアップをそのまま可視化する。
    ここで新しい判定はしない。表示と実装がずれると信用を失うため。 */
@@ -10972,6 +11099,12 @@ function Result({ answers, onRestart, onCollection }) {
         {deepResult && (
           <DeepProductSection deepResult={deepResult} seamData={seamData} answers={answers} scores={scores} />
         )}
+
+        {/* ━━━━━ 今回は出していないもの(除外の理由) ━━━━━
+            deepResult の条件ブロックの外に置く。中に入れると兄弟要素でJSXが壊れる。
+            NotNeededCard 自身が該当なしで null を返すので条件は要らない */}
+        <NotNeededCard answers={answers} seamData={seamData}
+                       deepResult={deepResult} mustPlusOne={mustPlusOne} />
 
         {/* ━━━━━ ブリーチ毛の成分ガイド(ブリーチありの人のみ表示) ━━━━━ */}
         <IngredientGuideSection answers={answers} />

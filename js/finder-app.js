@@ -1,4 +1,3 @@
-/* AUTO-GENERATED from js/finder-app.jsx by CI (build-finder.js). DO NOT EDIT — edit the .jsx source. */
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* =========================================================================
    SEAM Hair Finder
@@ -2738,11 +2737,16 @@ function applyPenalties(product, userTags) {
   const finishArr = Array.isArray(product.finishTags) ? product.finishTags : product.finishTags?.finish || [];
   const concernArr = product.concernTags || [];
   const cautionArr = product.cautionTags || [];
-  const weight = product.finishTags?.weight;
+  // weight は商品によって 'medium' と ['medium'] の両方で入っている
+  // (文字列128点 / 配列286点)。文字列比較だけだと配列側の heavy 28点を
+  // 取りこぼし、細い髪の人(診断者の38.2%)に重いものが出続けていた
+  const rawWeight = product.finishTags?.weight;
+  const weightArr = Array.isArray(rawWeight) ? rawWeight : rawWeight ? [rawWeight] : [];
+  const isHeavy = weightArr.includes('heavy') || weightArr.includes('rich');
 
   // 細毛 × 重め/オイル系
   if (userTags.base.includes('fine_hair')) {
-    if (weight === 'rich' || weight === 'heavy') penalty += 15;
+    if (isHeavy) penalty += 15;
     if (finishArr.includes('rich')) penalty += 8;
     if (cautionArr.includes('may_flatten_fine_hair')) penalty += 20;
   }
@@ -10944,6 +10948,124 @@ function GemMark({
   }, code));
 }
 
+/* ---------- NotNeededCard — 今回は出していないもの ----------
+   「出さなかった理由」を言えると、出したものの説得力が上がる。守る線:
+     ・商品を否定しない。「あなたの髪には今これは要らない」という適合の話に閉じる
+     ・銘柄名を出さない。カテゴリで言う(メーカーとの関係を壊さない)
+     ・「今は」を必ず付ける。状態が変われば必要になる
+     ・商品側に無いデータ(cautionTags は429点中0点)は使わない。
+       持っていない情報で「要らない」と言うのがいちばん危ない
+
+   入れなかったルール(実測で構造的に発火しないと判明したもの):
+     ・熱から守るもの … 熱を使わない人にも熱保護タグ付きアウトバスが100%出る
+     ・頭皮ケア      … 「30歳以上は必ず頭皮エッセンス」で頭皮ブロックが常に出る
+   どちらも下のガードに必ず引っかかる。残すと推薦側が変わったとき黙って嘘をつく。 */
+
+const NOT_NEEDED_RULES = [{
+  id: 'bleach',
+  when: a => !deriveBleach(a),
+  title: 'ブリーチ毛向けの集中補修',
+  tags: ['for-bleach-damage'],
+  why: 'ブリーチの履歴が無いためです　' + '強い補修は、必要のない髪には重さになります'
+}, {
+  id: 'fine',
+  when: a => a.thickness === 'thick',
+  title: '細い髪向けの軽い処方',
+  tags: ['for-fine-hair'],
+  why: '1本がしっかりしているためです　' + '軽さを足す設計だと、まとまりが足りなくなります'
+}, {
+  id: 'color',
+  when: a => a.color === 'none',
+  title: '色持ちを守るもの',
+  tags: ['color-protect', 'for-color-damage'],
+  why: 'いまカラーをされていないためです　' + '色を守る設計はカラー毛にこそ効きます'
+}, {
+  id: 'frizz',
+  when: a => {
+    const c = a.concerns || [];
+    return a.wave === 'none' && !c.includes('frizz') && !c.includes('wave') && !c.includes('rough');
+  },
+  title: 'くせ・広がりを抑えるもの',
+  tags: ['frizz-control', 'humidity-control', 'wave-care'],
+  why: 'くせや広がりのお悩みが無いためです　' + '抑える成分は、動きのある髪には重く出ることがあります'
+}];
+function NotNeededCard({
+  answers,
+  seamData,
+  deepResult,
+  mustPlusOne
+}) {
+  const a = answers || {};
+  const all = seamData && seamData.products || [];
+
+  // ── いちばん大事なガード ──
+  // 実際に画面へ出した商品の functionTags を集める。
+  // 「出していない」と言ったものが同じ画面に出ていたら診断そのものが嘘になる。
+  // 推薦側の条件を個別に真似すると、ロジックが変わるたびにずれる。出力を見て判断する。
+  const shownTags = new Set();
+  try {
+    const blocks = deepResult && deepResult.blocks || {};
+    Object.keys(blocks).forEach(k => {
+      (blocks[k] || []).forEach(it => {
+        const p = it && it.p;
+        if (p && Array.isArray(p.functionTags)) p.functionTags.forEach(t => shownTags.add(t));
+      });
+    });
+    (mustPlusOne || []).forEach(m => {
+      const p = m && (m.p || m.product) || m;
+      if (p && Array.isArray(p.functionTags)) p.functionTags.forEach(t => shownTags.add(t));
+    });
+  } catch (e) {/* 集められないときは下で黙る側に倒れる */}
+  const hits = NOT_NEEDED_RULES.map(r => {
+    let fire = false;
+    try {
+      fire = !!r.when(a);
+    } catch (e) {
+      fire = false;
+    }
+    if (!fire) return null;
+    if (r.tags.some(t => shownTags.has(t))) return null; // 出したものと矛盾するなら黙る
+    const n = all.filter(p => (p.functionTags || []).some(t => r.tags.includes(t))).length;
+    if (!n) return null;
+    return {
+      title: r.title,
+      why: r.why,
+      n
+    };
+  }).filter(Boolean).slice(0, 3);
+  if (!hits.length) return null;
+  const total = hits.reduce((x, y) => x + y.n, 0);
+  return /*#__PURE__*/React.createElement("section", {
+    className: "mt-12 sm:mt-16 anim-fade-up",
+    style: {
+      animationDelay: '150ms'
+    }
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[11px] uppercase text-gold"
+  }, "\u2014 Not Needed"), /*#__PURE__*/React.createElement("h2", {
+    className: "mt-3 font-serif text-[26px] sm:text-[34px] text-ink leading-snug"
+  }, "\u4ECA\u56DE\u306F\u51FA\u3057\u3066\u3044\u306A\u3044\u3082\u306E"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[13px] sm:text-[13.5px] text-charcoal/70 leading-[1.9]"
+  }, "\u3042\u306A\u305F\u306E\u9AEA\u306B\u306F\u3044\u307E\u5FC5\u8981\u304C\u306A\u3044\u306E\u3067\u3001", /*#__PURE__*/React.createElement("span", {
+    className: "text-ink nums"
+  }, total), "\u70B9\u3092\u5019\u88DC\u304B\u3089\u5916\u3057\u307E\u3057\u305F \u826F\u3044\u60AA\u3044\u3067\u306F\u306A\u304F\u3001\u5408\u3046\u304B\u5408\u308F\u306A\u3044\u304B\u306E\u8A71\u3067\u3059"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 space-y-2.5"
+  }, hits.map((h, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "bg-white/50 border border-line rounded-[2px] px-4 py-4 sm:px-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-serif text-[15px] sm:text-[16px] text-ink leading-snug"
+  }, h.title), /*#__PURE__*/React.createElement("span", {
+    className: "shrink-0 font-mono text-[10.5px] text-charcoal/45 nums"
+  }, h.n, "\u70B9")), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1.5 text-[12px] sm:text-[12.5px] text-charcoal/70 leading-[1.85]"
+  }, h.why)))), /*#__PURE__*/React.createElement("p", {
+    className: "mt-5 text-[12.5px] sm:text-[13px] text-ink leading-[1.9] border-l-2 border-gold pl-4"
+  }, "\u9AEA\u306E\u72B6\u614B\u304C\u5909\u308F\u308C\u3070\u3001\u5FC5\u8981\u306A\u3082\u306E\u3082\u5909\u308F\u308A\u307E\u3059 \u6B21\u306B\u8A3A\u65AD\u3055\u308C\u305F\u3068\u304D\u3001\u3053\u3053\u306B\u51FA\u3066\u304F\u308B\u3082\u306E\u306F\u5165\u308C\u66FF\u308F\u308A\u307E\u3059"));
+}
+
 /* ---------- WhyThisTypeCard — この髪格になった理由(判定の根拠) ----------
    selectOriginAnimalId の 3軸ルックアップをそのまま可視化する。
    ここで新しい判定はしない。表示と実装がずれると信用を失うため。 */
@@ -14391,6 +14513,11 @@ function Result({
     seamData: seamData,
     answers: answers,
     scores: scores
+  }), /*#__PURE__*/React.createElement(NotNeededCard, {
+    answers: answers,
+    seamData: seamData,
+    deepResult: deepResult,
+    mustPlusOne: mustPlusOne
   }), /*#__PURE__*/React.createElement(IngredientGuideSection, {
     answers: answers
   }), /*#__PURE__*/React.createElement(SeasonalCareSection, {
