@@ -74,7 +74,8 @@ export async function salonSaveAccountRaw(env, data) {
 export async function resolveCustomerAccount(env, { name, kana, phone, mail, shopId }) {
   try {
     if (!name) return null;
-    const ph = (phone || '').replace(/[^0-9]/g, '');
+    // 全角数字も半角へ寄せてから数字だけにする（名寄せキーを揺らさない）
+    const ph = (phone || '').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
     if (ph.length >= 10) {   // 電話がある時だけ名寄せ。filter.phone=完全一致が正(kwdは電話を見ない/codeフィルタは黙って無視=実測2026-07-28)
       const found = await salonCall(env, '/get/account', { filter: { phone: ph }, limit: 5 });
       const hit = (found.data || []).find(a => !a.delete_date);
@@ -102,6 +103,8 @@ export async function salonPush(env, r) {
   const h2k = (s) => (s || '').replace(/[ぁ-ゖ]/g, (ch) => String.fromCharCode(ch.charCodeAt(0) + 0x60));
   // ★姓名の区切りは半角スペースが正(2026-07-29エンジニア確定)。全角スペース・連続空白を半角1つに正規化
   const norm = (s) => (s || '').replace(/[\s　]+/g, ' ').trim();
+  // 電話は半角数字のみに正規化（全角数字→半角・ハイフンや括弧は除去）。サロンボードは記号を受け付けない
+  const tel = (r.phone || '').replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
   const nm = norm(r.name);                         // 「姓 名」(半角スペース区切り)
   const kn = h2k(norm(r.kana));                    // 「セイ メイ」(半角スペース区切り・HotPepperゲストフォーム形式)
   const dur = r.menuMin || (r.end != null && r.start != null ? r.end - r.start : 60);  // 所要時間(分)
@@ -169,8 +172,9 @@ export async function salonPush(env, r) {
         customer_kana: kn,                          // セイ メイ（HotPepperゲスト予約フォーム用）
         customer_sei: sei, customer_mei: mei,
         customer_sei_kana: seiK, customer_mei_kana: meiK,
-        customer_tel: r.phone || '',
-        phone: r.phone || '', mail: r.email || '',
+        // ★電話は半角数字のみ(ハイフン不可)。サロンボードが「使用できない文字列は「-」です」で弾くため
+        customer_tel: tel,
+        phone: tel, mail: r.email || '',
       };
     })(),
   };
