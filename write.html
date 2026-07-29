@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <title>読みもの 執筆室 | SEAM</title>
+  <link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/tailwind.css">
+  <style>
+    input, textarea { font: inherit; }
+    .fld { width:100%; border:1px solid #E2DDD3; border-radius:6px; padding:10px 12px; font-size:13.5px; background:#fff; }
+    .fld:focus { outline:2px solid #B8945A; outline-offset:1px; }
+    .lbl { display:block; font-size:11px; letter-spacing:.08em; color:#8C7A63; margin:14px 0 5px; }
+    .lbl b { color:#B8945A; }
+    .btn { cursor:pointer; border-radius:999px; padding:11px 22px; font-size:13px; font-weight:600; }
+    .prose-preview h2 { font-family:'Noto Serif JP',serif; font-size:19px; margin-top:28px; color:#2B2926; }
+    .prose-preview p { margin-top:14px; font-size:13.5px; line-height:1.95; color:rgba(58,50,42,.85); }
+  </style>
+</head>
+<body class="bg-white text-ink antialiased">
+
+  <header class="sticky top-0 z-40 bg-white/92 backdrop-blur-md border-b border-line">
+    <div class="max-w-5xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
+      <a href="index.html" class="wm text-[19px] text-ink">SEAM</a>
+      <nav class="flex items-center gap-5 text-[12px] text-charcoal/80">
+        <span class="font-mono tracking-widest2 text-[10px] uppercase text-gold">Writing Room</span>
+        <a href="journal.html" class="hover:text-ink">読みもの</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-5 sm:px-8 py-10">
+    <h1 class="font-serif text-[24px] sm:text-[30px] text-ink">読みもの 執筆室</h1>
+    <p class="mt-2 text-[12.5px] text-charcoal/70 leading-[1.9]">
+      保存すると すぐ seam.site/journal/スラッグ で公開されます　サイトの再ビルドは要りません
+    </p>
+
+    <!-- 書きかたの約束(SEAMの家風) -->
+    <div class="mt-5 rounded-[6px] bg-cream/50 border border-line px-5 py-4 text-[12px] leading-[1.95] text-charcoal/80">
+      <p class="font-mono tracking-widest2 text-[9.5px] uppercase text-gold mb-1.5">House Style</p>
+      句点「。」は使いません　読点「、」も最小限に　文の切れ目は スペースか改行で<br>
+      空行をはさむと段落になります　行頭に <span class="font-mono text-[11px]">## </span> を置くとその行が見出しになります<br>
+      効能の断定(治る・改善する等)は書けません　感覚の言葉と メーカー表現の引用でつたえます
+    </div>
+
+    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-10">
+      <!-- ── 執筆フォーム ── -->
+      <section>
+        <label class="lbl">合言葉(パスキー) <b>*</b></label>
+        <input id="key" type="password" class="fld" autocomplete="current-password" placeholder="オーナーから共有されたパスキー">
+
+        <label class="lbl">タイトル <b>*</b> <span id="titleCount" class="text-charcoal/50"></span></label>
+        <input id="title" class="fld" maxlength="60" placeholder="泡の前に 水のはなし">
+
+        <label class="lbl">スラッグ(URLの一部・半角英数とハイフン) <b>*</b></label>
+        <input id="slug" class="fld" maxlength="60" placeholder="mirai-soap-story" pattern="[a-z0-9-]+">
+        <p class="mt-1 text-[11px] text-charcoal/50">公開URL: <span class="font-mono">seam.site/journal/<span id="slugEcho">…</span></span></p>
+
+        <label class="lbl">説明(検索やカードに出る紹介文・160字まで)</label>
+        <textarea id="description" class="fld" rows="2" maxlength="160"></textarea>
+
+        <label class="lbl">英語ラベル(カードの飾り・例 Mirai Soap)</label>
+        <input id="eyebrow" class="fld" maxlength="30" placeholder="Journal">
+
+        <label class="lbl">書き手の名前(空欄可)</label>
+        <input id="author" class="fld" maxlength="30" placeholder="">
+
+        <label class="lbl">ヒーロー画像(このサイトの images/ から・空欄可)</label>
+        <input id="hero_image" class="fld" placeholder="images/journal/mirai-hero.jpg">
+
+        <label class="lbl">本文 <b>*</b> <span id="bodyCount" class="text-charcoal/50"></span></label>
+        <textarea id="body" class="fld" rows="18" placeholder="空行で段落が分かれます&#10;&#10;## ここが見出しになります&#10;&#10;つづきの本文"></textarea>
+
+        <label class="mt-4 flex items-center gap-2 text-[13px] text-charcoal/80">
+          <input id="published" type="checkbox" checked class="w-4 h-4"> すぐ公開する(外すと下書き)
+        </label>
+
+        <div class="mt-6 flex items-center gap-3 flex-wrap">
+          <button id="save" class="btn text-white" style="background:#B57C5A;">保存して公開する</button>
+          <button id="clear" class="btn border border-line text-charcoal/70 bg-white">新規にする</button>
+        </div>
+        <p id="msg" class="mt-4 text-[13px] leading-[1.8]"></p>
+      </section>
+
+      <!-- ── プレビュー＋既存記事 ── -->
+      <section>
+        <p class="font-mono tracking-widest2 text-[10px] uppercase text-gold">Preview</p>
+        <div class="mt-3 border border-line rounded-[6px] p-6 min-h-[220px] bg-white">
+          <h2 id="pvTitle" class="font-serif text-[22px] text-ink leading-snug">タイトル</h2>
+          <p id="pvDate" class="mt-2 font-mono tracking-widest2 text-[10px] text-charcoal/45 uppercase"></p>
+          <div id="pvBody" class="prose-preview"></div>
+        </div>
+
+        <div class="mt-10">
+          <p class="font-mono tracking-widest2 text-[10px] uppercase text-gold">Published</p>
+          <ul id="list" class="mt-3 divide-y divide-line border border-line rounded-[6px] bg-white">
+            <li class="p-4 text-[12.5px] text-charcoal/50">読み込み中…</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+  (function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var msg = $('msg');
+
+    // パスキーは端末に記憶(adminと同じ流儀)
+    try { $('key').value = localStorage.getItem('seam_admin_key') || ''; } catch (e) {}
+
+    function esc(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // 本文→プレビュー(サーバ側 renderBody と同じ規則)
+    function render(body) {
+      return String(body).replace(/\r\n/g, '\n').split(/\n{2,}/).map(function (b) {
+        var t = b.trim();
+        if (!t) return '';
+        if (t.indexOf('## ') === 0) return '<h2>' + esc(t.slice(3)) + '</h2>';
+        return '<p>' + t.split('\n').map(esc).join('<br>') + '</p>';
+      }).join('');
+    }
+
+    function refresh() {
+      $('pvTitle').textContent = $('title').value || 'タイトル';
+      var d = new Date();
+      $('pvDate').textContent = d.getFullYear() + '.' + (d.getMonth() + 1) + '.' + d.getDate()
+        + ($('author').value ? ' · ' + $('author').value : '');
+      $('pvBody').innerHTML = render($('body').value);
+      $('slugEcho').textContent = $('slug').value || '…';
+      $('titleCount').textContent = $('title').value.length + '/60';
+      $('bodyCount').textContent = $('body').value.length.toLocaleString() + '字';
+      // 家風チェック: 句点が入っていたらやさしく知らせる
+      var kuten = ($('body').value.match(/。/g) || []).length + ($('title').value.match(/。/g) || []).length;
+      if (kuten > 0) {
+        msg.textContent = '句点「。」が ' + kuten + ' 個あります　SEAMの読みものでは使いません(保存はできます)';
+        msg.style.color = '#A8443A';
+      } else if (msg.dataset.keep !== '1') { msg.textContent = ''; }
+    }
+    ['title', 'slug', 'description', 'eyebrow', 'author', 'body'].forEach(function (id) {
+      $(id).addEventListener('input', refresh);
+    });
+    refresh();
+
+    // タイトルからスラッグ候補(英数のみ拾う・日本語タイトルなら手入力)
+    $('title').addEventListener('blur', function () {
+      if ($('slug').value) return;
+      var s = $('title').value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      if (s.length >= 3) { $('slug').value = s.slice(0, 60); refresh(); }
+    });
+
+    function note(text, ok) {
+      msg.dataset.keep = '1';
+      msg.innerHTML = text;
+      msg.style.color = ok ? '#557049' : '#A8443A';
+      setTimeout(function () { msg.dataset.keep = ''; }, 6000);
+    }
+
+    $('save').addEventListener('click', function () {
+      var key = $('key').value.trim();
+      if (!key) { note('パスキーを入れてください', false); return; }
+      try { localStorage.setItem('seam_admin_key', key); } catch (e) {}
+      var payload = {
+        slug: $('slug').value.trim().toLowerCase(),
+        title: $('title').value.trim(),
+        description: $('description').value.trim(),
+        eyebrow: $('eyebrow').value.trim(),
+        author: $('author').value.trim(),
+        hero_image: $('hero_image').value.trim(),
+        body: $('body').value,
+        published: $('published').checked ? 1 : 0
+      };
+      $('save').disabled = true;
+      fetch('/api/journal', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-seam-key': key },
+        body: JSON.stringify(payload)
+      }).then(function (r) { return r.json().then(function (j) { return { s: r.status, j: j }; }); })
+        .then(function (res) {
+          $('save').disabled = false;
+          if (res.s === 200 && res.j.ok) {
+            note('保存しました → <a class="underline" href="' + res.j.url + '" target="_blank" rel="noopener">seam.site' + res.j.url + '</a>', true);
+            loadList();
+          } else {
+            note('保存できませんでした: ' + esc(res.j.error || res.s), false);
+          }
+        }).catch(function () { $('save').disabled = false; note('通信エラー', false); });
+    });
+
+    $('clear').addEventListener('click', function () {
+      ['title', 'slug', 'description', 'eyebrow', 'author', 'hero_image', 'body'].forEach(function (id) { $(id).value = ''; });
+      $('published').checked = true; refresh();
+    });
+
+    // 既存記事の一覧(編集で呼び戻し・削除)
+    function loadList() {
+      fetch('/api/journal').then(function (r) { return r.json(); }).then(function (j) {
+        var ul = $('list'); ul.innerHTML = '';
+        var posts = (j && j.posts) || [];
+        if (!posts.length) {
+          ul.innerHTML = '<li class="p-4 text-[12.5px] text-charcoal/50">まだ記事がありません　左のフォームから最初の1本を</li>';
+          return;
+        }
+        posts.forEach(function (p) {
+          var li = document.createElement('li');
+          li.className = 'p-4 flex items-center justify-between gap-3';
+          li.innerHTML = '<div class="min-w-0"><p class="text-[13px] text-ink truncate">' + esc(p.title) + '</p>'
+            + '<p class="font-mono text-[10.5px] text-charcoal/45">/journal/' + esc(p.slug) + '</p></div>'
+            + '<div class="shrink-0 flex gap-2">'
+            + '<a class="btn border border-line text-charcoal/70 bg-white !py-1.5 !px-3 text-[11px]" target="_blank" rel="noopener" href="/journal/' + esc(p.slug) + '">見る</a>'
+            + '<button data-edit="' + esc(p.slug) + '" class="btn border border-line text-charcoal/70 bg-white !py-1.5 !px-3 text-[11px]">編集</button>'
+            + '<button data-del="' + esc(p.slug) + '" class="btn border border-line !py-1.5 !px-3 text-[11px]" style="color:#A8443A;">削除</button>'
+            + '</div>';
+          ul.appendChild(li);
+        });
+      }).catch(function () {
+        $('list').innerHTML = '<li class="p-4 text-[12.5px] text-charcoal/50">一覧を読み込めませんでした</li>';
+      });
+    }
+    loadList();
+
+    document.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t.dataset && t.dataset.edit) {
+        var key = $('key').value.trim();
+        fetch('/api/journal?slug=' + encodeURIComponent(t.dataset.edit), { headers: key ? { 'x-seam-key': key } : {} })
+          .then(function (r) { return r.json(); }).then(function (j) {
+            if (!j.post) { note('読み込めませんでした', false); return; }
+            var p = j.post;
+            $('title').value = p.title; $('slug').value = p.slug;
+            $('description').value = p.description || ''; $('eyebrow').value = p.eyebrow || '';
+            $('author').value = p.author || ''; $('hero_image').value = p.hero_image || '';
+            $('body').value = p.body; $('published').checked = !!p.published;
+            refresh(); window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+      }
+      if (t.dataset && t.dataset.del) {
+        var key2 = $('key').value.trim();
+        if (!key2) { note('削除にはパスキーが必要です', false); return; }
+        if (!confirm('「/journal/' + t.dataset.del + '」を削除します　よろしいですか')) return;
+        fetch('/api/journal?slug=' + encodeURIComponent(t.dataset.del), {
+          method: 'DELETE', headers: { 'x-seam-key': key2 }
+        }).then(function (r) { return r.json(); }).then(function (j) {
+          if (j.ok) { note('削除しました', true); loadList(); }
+          else note('削除できませんでした', false);
+        });
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
