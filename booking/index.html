@@ -92,6 +92,14 @@ td.slot:hover{background:#f0f7ff}
 /* ---- 入口選択（ヘア / スパ） ---- */
 .ent-lead{font-size:14px;font-weight:800;color:var(--ink);margin:2px 0 4px}
 .ent-sub{font-size:12.5px;color:var(--sub);margin-bottom:14px}
+/* LINE流入だけに出す安心コピー（電話不要・1分）*/
+.ent-line{background:#eef7f0;border:1px solid #c6e6d3;border-radius:12px;padding:11px 14px;margin-bottom:12px}
+.ent-line b{display:block;font-size:14px;color:#0c7a41;font-weight:800}
+.ent-line span{font-size:12px;color:#4c6b57}
+/* 予約は3つだけ、を最初に見せる（読解力に頼らない）*/
+.ent-steps3{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;font-weight:700;color:var(--sub);margin-bottom:14px;line-height:1.9}
+.ent-steps3 span{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:800}
+.ent-steps3 i{font-style:normal;color:#c9c2b4}
 .ent-wrap{display:flex;flex-direction:column;gap:12px}
 .ent-card{width:100%;display:flex;align-items:center;gap:14px;text-align:left;border:1.5px solid var(--line);border-radius:16px;padding:18px 16px;background:#fff;cursor:pointer;transition:.14s;position:relative;overflow:hidden}
 .ent-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(20,40,70,.1)}
@@ -795,7 +803,8 @@ body.customer .phone.spa{background:#f7f8f3}
 <!-- ============ DASHBOARD ============ -->
 <section class="view" id="v-dash">
   <h2>ダッシュボード</h2>
-  <p class="lead">全チャネルの予約を1つの台帳に集約。ダブルブッキングはマスタ在庫側で防止します</p>
+  <p class="lead">自社サイト・LINE・ホットペッパー、どこから入った予約もこの1つの表にまとまります。同じ時間に2件入ることはありません</p>
+  <div id="dashEmpty"></div>
   <div class="grid cols4" style="margin-bottom:14px">
     <div class="card kpi"><div class="lbl">今日の予約</div><div class="num" id="k-today">0</div><div class="sub" id="k-today-sub"></div></div>
     <div class="card kpi"><div class="lbl">今週の予約</div><div class="num" id="k-week">0</div><div class="sub">7日間合計</div></div>
@@ -874,7 +883,7 @@ body.customer .phone.spa{background:#f7f8f3}
 <!-- ============ CUSTOMER BOOKING ============ -->
 <section class="view" id="v-book">
   <h2>予約ページ（顧客向けデモ）</h2>
-  <p class="lead">自社サイト・LINE(LIFF)・Instagramリンク・Googleビジネスプロフィールの予約リンクから、この同じフローに着地させます</p>
+  <p class="lead">自社サイト・LINE・Instagram・Googleの予約ボタン、どこから来ても同じ予約画面につながります</p>
   <div class="bookshell">
     <div class="phone">
       <div class="phead"><div class="s">WEB RESERVATION</div><div class="n">SEAM GINZA — ご予約</div></div>
@@ -896,7 +905,7 @@ body.customer .phone.spa{background:#f7f8f3}
   </div>
   <div class="card mailbox">
     <h3 style="font-size:15px;margin-bottom:6px">📧 予約通知メール取込シミュレータ（HPB / 楽天 / minimo）</h3>
-    <p style="font-size:12.5px;color:var(--sub);margin-bottom:10px">サロンボード等の予約通知メールを専用アドレスで受信→パース→台帳に自動登録する方式（DOUKI等と同型）。下のサンプルを編集して「取込」を押すと動きがわかります</p>
+    <p style="font-size:12.5px;color:var(--sub);margin-bottom:10px">ホットペッパーの「予約が入りました」メールを自動で読み取り、この予約表に写します。下のサンプルで動きを試せます</p>
     <textarea id="mailraw"></textarea>
     <div style="display:flex;gap:10px;margin-top:10px;align-items:center">
       <select id="mailchan" style="border:1.5px solid var(--line);border-radius:10px;padding:9px 12px">
@@ -906,7 +915,7 @@ body.customer .phone.spa{background:#f7f8f3}
       </select>
       <button class="btn pri" style="flex:0 0 auto" id="mailgo">メールを取込</button>
     </div>
-    <div class="note">⚠️ この方式は「読み取り」専用。HPB側の空き枠を塞ぐ「書き込み」は公式APIがなくRPAは規約・CAPTCHAリスクがあるため、書き込み同期が必要なら かんざし等の既存連携SaaS（月額5,500円〜）を併用するのが現実解です</div>
+    <div class="note">この機能は「読み取り」だけです。ホットペッパー側の空き枠を自動で埋める（書き込む）のは別の仕組みで行います</div>
   </div>
 </section>
 
@@ -1469,6 +1478,19 @@ function renderDash(){
   const tk=dkey(today());
   const live=r=>r.status!=='cancelled';
   const todays=db.reservations.filter(r=>r.date===tk&&live(r)).sort((a,b)=>a.start-b.start);
+  // 全部0のときは「空っぽの管理画面」に見えないよう、次にやることを案内する
+  {const emp=document.getElementById('dashEmpty');
+   if(emp){
+     const none=!db.reservations.some(live);
+     emp.innerHTML=none?`<div class="card" style="margin-bottom:14px;background:#f7f9f5;border-color:#e2e8dc">
+       <div style="font-size:14px;font-weight:800;color:var(--navy);margin-bottom:6px">まだ予約がありません。ここから始められます</div>
+       <div style="font-size:12.5px;color:var(--sub);line-height:1.9">
+         ① 「予約ページ」タブでお客様の予約画面を確認する<br>
+         ② 「チャネル連携」タブで予約リンクをLINE・Instagramに貼る<br>
+         ③ 電話やご来店の予約は「予約台帳」の空き枠をタップして登録<br>
+         予約が入ると、この画面に今日の予定・売上・要対応が自動でまとまります
+       </div></div>`:'';
+   }}
   const weekKeys=[...Array(7)].map((_,i)=>dkey(addDays(today(),i)));
   const week=db.reservations.filter(r=>weekKeys.includes(r.date)&&live(r));
   document.getElementById('k-today').textContent=todays.length;
@@ -2574,6 +2596,11 @@ function renderBook(){
     p.innerHTML=stepsHtml+
       `<div class="ent-lead">SEAM 銀座へようこそ</div>
        <div class="ent-sub">ご希望のメニューをお選びください</div>
+       ${BOOK_SRC==='line'?`<div class="ent-line">
+         <b>LINEからそのまま予約できます</b>
+         <span>お電話は不要です・1分で終わります</span>
+       </div>`:''}
+       <div class="ent-steps3"><span>1</span>メニューを選ぶ<i>→</i><span>2</span>日にちと時間を選ぶ<i>→</i><span>3</span>お名前を書く</div>
        <div class="ent-wrap">
          <button class="ent-card ent-hair" data-sec="hair">
            <div class="ent-ic">✂️</div>
@@ -2889,15 +2916,15 @@ function applyBookLang(){
 /* =============== channels view =============== */
 const CH_INFO=[
   {k:'own',status:['ok','稼働中'],how:'<b>自社予約エンジン</b>＝在庫マスタの本体。ここが全チャネルの土台',desc:'手数料ゼロ。左の「予約ページ」タブが実装デモです'},
-  {k:'line',status:['clean','連結'],how:'<b>LIFF</b>で自社予約ページをLINE内に表示 + Messaging APIでリマインド通知',desc:'公式「LINEで予約」は飲食店のみ・指定パートナー限定のため、LIFF自前実装が正攻法。下の予約リンクを設置'},
+  {k:'line',status:['clean','連結'],how:'LINEの中でそのまま予約できます。前日のお知らせもLINEで自動送信',desc:'LINEの公式予約機能は飲食店だけなので、自社の予約ページをLINE内で開く形にしています。下のリンクを設置してください'},
   {k:'google',status:['clean','連結'],how:'ビジネスプロフィールの<b>予約リンク</b>に自社予約URLを設定（無料・即日）',desc:'「Googleで予約」(Reserve with Google)は承認制パートナー限定。予約リンク方式で同等の導線を確保。下の予約リンクを設置'},
   {k:'instagram',status:['clean','連結'],how:'プロフィールの<b>ウェブサイト/アクションリンク</b>＋ストーリーズリンクで自社予約へ',desc:'「予約する」ボタンはMeta提携パートナー経由のみ。リンク導線で実質カバー。下の予約リンクを設置'},
   {k:'square',status:['clean','公式API'],how:'<b>Square Bookings API</b>で双方向同期（日本対応・読取/書込/Webhook）。Squareで入った予約も台帳に集約',desc:'HPBと違い公式API。スクレイピング不要でクリーン連携。上の台帳にSquare予約デモを表示中'},
   {k:'squarepay',name:'Square 決済',short:'¥',color:'#006aff',status:['clean','決済'],how:'<b>Square Web Payments SDK</b>で事前決済・前金。予約と同じSquareアカウントで完結',desc:'予約・決済・POS・売上を1つのSquareダッシュボードで一元管理。契約も1本。「予約ページ」タブで実装デモ'},
-  {k:'hpb',status:['risk','要ブロック運用'],how:'<b>予約通知メールを取込</b>（読み取り）。他チャネル予約は<b>ダッシュボードの要ブロック</b>で手動対応',desc:'公式API非公開。自動書き込みは規約グレーのため行わない。全自動が必要ならかんざし等を併用'},
-  {k:'rakuten',status:['ext','取込のみ'],how:'<b>通知メール取込</b>（HPBと同方式）。書き込みは手動 or 連携SaaS',desc:'公式APIなし。かんざし等が楽天ビューティー連携に対応'},
-  {k:'minimo',status:['ext','取込のみ'],how:'<b>通知メール取込</b>。アプリ内予約が主軸のため導線変更は不可',desc:'公式APIなし。かんざし等が連携対応'},
-  {k:'kanzashi',name:'かんざしSaaS連携',short:'かん',color:'#7c3aed',status:['dev','将来'],how:'<b>SyncProvider</b>を差し替えるだけでHPB/楽天/minimoへ書き込み同期',desc:'自社エンジンをマスタに保ったまま、契約後にかんざし経由で全ポータル反映。疎結合でフォールバック可（ARCHITECTURE.md）'},
+  {k:'hpb',status:['risk','要ブロック運用'],how:'<b>予約メールを自動で読み取り</b>ます。他から入った予約は<b>「要ブロック」</b>に出るので手動でホットペッパーを埋めます',desc:'ホットペッパーへの自動書き込みは別の仕組みで行います'},
+  {k:'rakuten',status:['ext','取込のみ'],how:'<b>予約メールを自動で読み取り</b>ます。書き込みは手動です',desc:'楽天ビューティー側への自動書き込みには別サービスが必要です'},
+  {k:'minimo',status:['ext','取込のみ'],how:'<b>予約メールを自動で読み取り</b>ます。minimoはアプリ内予約が中心です',desc:'minimo側への自動書き込みには別サービスが必要です'},
+  {k:'kanzashi',name:'かんざしSaaS連携',short:'かん',color:'#7c3aed',status:['dev','将来'],how:'将来、ホットペッパー・楽天・minimoへ<b>自動で書き込む</b>ようにできます',desc:'この予約表を「正」にしたまま、各サイトへ自動反映できるようになります'},
 ];
 function renderChan(){
   const g=document.getElementById('chgrid');g.innerHTML='';
@@ -2949,7 +2976,7 @@ document.getElementById('mailgo').onclick=()=>{
   const stylist=sb('スタイリスト')||inline('スタイリスト');
   const menuName=sb('メニュー')||inline('メニュー');
   const resNo=sb('予約番号')||inline('予約番号');
-  if(!dt||!name){toast('⚠️ 日時またはお名前をパースできませんでした',true);return}
+  if(!dt||!name){toast('⚠️ 日時またはお名前を読み取れませんでした',true);return}
   const dm=raw.match(/施術時間目安[：:]?\s*(?:(\d+)\s*時間)?\s*(?:(\d+)\s*分)?/);
   const menu=MENUS.filter(m=>menuName.includes(m.name)).sort((a,b)=>b.name.length-a.name.length)[0]||MENUS[0];
   const dur=(dm&&(+dm[1]||+dm[2]))?((+dm[1]||0)*60+(+dm[2]||0)):menu.min;
@@ -2971,7 +2998,7 @@ function renderLinks(){
   const cont=document.getElementById('linkrows');if(!cont)return;
   const base=(document.getElementById('baseurl').value||'https://booking.seam.site/book').trim();
   const rows=[
-    {k:'line',steps:'公式アカウントのリッチメニュー・あいさつメッセージに設置。<b>LIFF化</b>でLINE内で予約完結＋<b>Messaging API</b>で前日リマインドを自動送信'},
+    {k:'line',steps:'公式アカウントのメニューやあいさつメッセージに設置します。<b>LINEの中で予約が完結</b>し、前日のお知らせも自動で届きます'},
     {k:'google',steps:'ビジネスプロフィール →「予約リンク」に貼るだけ（無料・即日）。マップ/検索の予約ボタンから流入'},
     {k:'instagram',steps:'プロフィールの「予約する」ボタン／ウェブサイトリンク、ストーリーズのリンクスタンプに設置'},
   ];
@@ -3346,6 +3373,11 @@ function enterCustomerMode(){
     }catch(e){}
   })();
   document.body.classList.add('customer');
+  // ★役割の分離(2026-07-29): お客様モードでは管理画面のDOMを物理削除する。
+  //   display:noneだと「同じページに管理機能が同居している」ように見え(クローラ/ソース閲覧も同様)、
+  //   予約に不要な情報が混ざる。予約に必要な v-book だけを残す。
+  document.querySelectorAll('.view').forEach(v=>{ if(v.id!=='v-book') v.remove(); });
+  document.querySelectorAll('header nav, #adminGate').forEach(el=>el.remove());
   // 言語トグル(EN⇄日本語・インバウンド対応。端末言語が日本語以外なら最初からEN表示)
   if(!document.getElementById('langTgl')){
     const b=document.createElement('button');b.id='langTgl';
