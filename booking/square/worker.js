@@ -82,6 +82,12 @@ async function sendConfirmMail(env, to, r) {
 const STAFF = [
   { id: 's1', name: '及川 大輝' }, { id: 's2', name: 'ANZU' }, { id: 's3', name: 'CHIKA' },
 ];
+// 再push(同期漏れ修復)用のCUEPON/HPB ID(booking/index.html STAFFと同期)
+const STAFF_CU = {
+  s1: { name: '及川 大輝', cu: '20260720172047980eihPaAi', hpb: 'T001096152' },
+  s2: { name: 'ANZU', cu: '20260720172048371VVaiHGf', cuSpa: '20260721104016592jgjicee', hpb: 'T001097192', hpbSpa: 'W001374984' },
+  s3: { name: 'CHIKA', cu: '20260720172736440ZYIefdT', hpb: 'W001412775' },
+};
 // booking/index.html の MENUS と同期（2026-07-26）。リマインドの名称表示とメール取込の照合に使用。
 // ★ページ側のMENUSを変えたらここも更新すること（IDずれると顧客向けリマインドに生IDが出る）。
 const MENUS = [
@@ -179,6 +185,13 @@ export default {
       const id = url.searchParams.get('id'); if (!id) return json({ error: 'id必須' }, 400, cors);
       try { const j = await salonCall(env, '/delete/account', { ids: [id] }); return json({ ok: !!j.result, result: j }, 200, cors); }
       catch (e) { return json({ error: e.message }, 502, cors); }
+    }
+    // 同期漏れの再push(専用トークン)。salonPush失敗でD1にだけ入った予約(salon_id空)をsalon.townへ送り直す。
+    // GET=ドライラン一覧 / POST=実行。cronでも毎朝自動実行(自己修復)。
+    if (p.endsWith('/admin/salon-repush') && (m === 'GET' || m === 'POST')) {
+      const tk = url.searchParams.get('token') || '';
+      if (!env.CLEANUP_TOKEN || tk !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
+      return json(await repushMissing(env, m === 'POST'), 200, cors);
     }
     // D1⇔salon.town台帳の突き合わせ(専用トークン)。salon.townで削除/キャンセル済みなのにD1でbookedの
     // 「亡霊予約」をcancelledへ修復(誤リマインド防止)。GET=ドライラン / POST=反映。
@@ -332,6 +345,8 @@ export default {
     }
     // ===== 来店後の自動フォロー(A2サンクス/A1周期/B3休眠) — 失敗してもリマインドには影響させない =====
     try { await runFollowups(env, event.scheduledTime); } catch (e) { console.log('フォロー送信エラー:', e.message); }
+    // ===== 同期漏れの自己修復: salonPush失敗でD1にだけ残った予約を毎朝再push =====
+    try { const rp = await repushMissing(env, true); if (rp.missing) console.log('再push:', JSON.stringify(rp.results)); } catch (e) { console.log('再pushエラー:', e.message); }
   },
 
   // HPB予約通知メールの自動取込（Cloudflare Email Routing → このWorkerへ転送）。
@@ -708,6 +723,37 @@ async function handleAvailability(url, env, cors) {
   } catch (e) { return json({ error: 'availability失敗: ' + e.message }, 502, cors); }
 }
 
+// 同期漏れの再push: salonPush失敗でD1にだけ入った予約(salon_id空・hpb取込以外)をsalon.townへ送り直す。
+// kana/nominatedはD1列(2026-07-29追加)から復元・旧行はkana空でも送る(RPA側のname分解フォールバックあり)。
+async function repushMissing(env, commit) {
+  if (!env.DB) return { ok: false, error: 'DB未接続' };
+  if (env.SALON_SYNC !== 'on' || !env.SALON_HOST) return { ok: false, error: 'SALON_SYNC無効' };
+  const rows = await env.DB.prepare(
+    "SELECT * FROM reservations WHERE status='booked' AND (salon_id IS NULL OR salon_id='') AND date>=date('now') AND channel!='hpb'"
+  ).all();
+  const targets = rows.results || [];
+  const results = [];
+  for (const r of targets.slice(0, 10)) {   // 1回10件まで(安全弁)
+    if (!commit) { results.push({ id: r.id, name: r.name, date: r.date, dry: true }); continue; }
+    const st = STAFF_CU[r.staff_id] || {};
+    const spa = ['m13', 'm14', 'm15'].includes(r.menu_id);
+    const mn = MENUS.find(x => x.id === r.menu_id);
+    try {
+      const salon = await salonPush(env, {
+        date: r.date, start: r.start, end: r.end, name: r.name, kana: r.kana || '', phone: r.phone, email: r.email,
+        channel: r.channel, deposit: r.deposit || 0, menuMin: mn ? mn.min : (r.end - r.start), menuName: mn ? mn.name : '',
+        spa, staffCu: (spa ? (st.cuSpa || st.cu) : st.cu) || '', hbpStylistId: (spa ? (st.hpbSpa || st.hpb) : st.hpb) || '',
+        hbpStylistName: st.name || '', nominated: r.nominated != null ? !!r.nominated : true,
+      });
+      if (salon && salon.salonId) {
+        await env.DB.prepare('UPDATE reservations SET salon_id=? WHERE id=?').bind(salon.salonId, r.id).run();
+        results.push({ id: r.id, name: r.name, date: r.date, repushed: true, reserveNum: salon.reserveNum });
+      } else results.push({ id: r.id, name: r.name, error: 'push応答にsalonIdなし' });
+    } catch (e) { results.push({ id: r.id, name: r.name, error: String(e.message || e).slice(0, 120) }); }
+  }
+  return { ok: true, commit: !!commit, missing: targets.length, results };
+}
+
 // GET|POST /admin/d1-sync?token= … D1のbooked予約(salon_id付き・今日以降)をsalon.townと突き合わせ、
 // salon.townで消えている(削除/キャンセル)ものをD1でもcancelledへ。誤リマインド(亡霊予約)の一括修復。
 // 安全策: 両店のAPI応答が result:true の時だけ判定(空応答ブレで全滅させない)。GET=ドライラン。
@@ -810,11 +856,22 @@ async function handlePostReservation(request, env, cors) {
   ).bind(o.date, o.staffId, o.start, o.end).first();
   if (clash) return json({ ok: false, conflict: { name: clash.name, start: clash.start } }, 409, cors);
   const id = o.id || ('r' + crypto.randomUUID().slice(0, 8));
-  await env.DB.prepare(
-    `INSERT INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,created_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-  ).bind(id, o.date, o.staffId, o.start, o.end, o.menuId || '', o.name || 'お客様', o.phone || '', o.email || '', o.note || '',
-    o.channel || 'own', o.status || 'booked', o.channel === 'hpb' ? 1 : (o.hpbBlocked ? 1 : 0), o.deposit || 0, o.lineUserId || '', new Date().toISOString()).run();
+  try {
+    // kana/nominated込み(再push=同期漏れ修復の材料)。列未追加の旧DBはcatchでレガシーINSERTへ
+    await env.DB.prepare(
+      `INSERT INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,kana,nominated,created_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(id, o.date, o.staffId, o.start, o.end, o.menuId || '', o.name || 'お客様', o.phone || '', o.email || '', o.note || '',
+      o.channel || 'own', o.status || 'booked', o.channel === 'hpb' ? 1 : (o.hpbBlocked ? 1 : 0), o.deposit || 0, o.lineUserId || '',
+      o.kana || '', o.nominated === false ? 0 : 1, new Date().toISOString()).run();
+  } catch (e) {
+    await ensureRegisterTables(env).catch(() => {});   // 列を追加して次回から拡張INSERTが通るように
+    await env.DB.prepare(
+      `INSERT INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,created_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(id, o.date, o.staffId, o.start, o.end, o.menuId || '', o.name || 'お客様', o.phone || '', o.email || '', o.note || '',
+      o.channel || 'own', o.status || 'booked', o.channel === 'hpb' ? 1 : (o.hpbBlocked ? 1 : 0), o.deposit || 0, o.lineUserId || '', new Date().toISOString()).run();
+  }
   // salon.town(CUEPON)へ同期。SALON_SYNC='on'の時のみ。疎結合=失敗しても自社予約は成功扱い。
   let salon = null;
   if (env.SALON_SYNC === 'on' && env.SALON_HOST) {
@@ -834,7 +891,7 @@ async function handlePostReservation(request, env, cors) {
           ).bind(`salon#${salon.reserveNum}`, ` / salon#${salon.reserveNum}`, id).run();
         }
       }
-    } catch (e) { console.log('salon同期失敗:', e.message); }
+    } catch (e) { console.log('salon同期失敗:', e.message); salon = { error: String(e.message || e).slice(0, 200) }; }
   }
   // オンライン予約（お客様導線）のみオーナー通知。管理側の手動登録は notify を付けない。
   if (o.notify) {
@@ -920,6 +977,9 @@ async function ensureRegisterTables(env) {
   // 既存DBへの列追加（SQLiteはIF NOT EXISTS非対応→重複はcatchで無視）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN nominated INTEGER DEFAULT 0`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN square_payment_id TEXT DEFAULT ''`).run(); } catch (e) {}
+  // 再push(同期漏れ修復)の材料: 予約にカナ/指名を保存(2026-07-29)
+  try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN kana TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN nominated INTEGER DEFAULT 1`).run(); } catch (e) {}
   _regTablesReady = true;
 }
 const CO2API = r => ({

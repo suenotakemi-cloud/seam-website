@@ -27,25 +27,39 @@ export async function salonToken(env) {
   return _salonTok;
 }
 
+// ★トークンは期限内でもローテーションで失効することがある(NOT FOUND USER)。SDKと同じ自動再ログイン+1リトライを
+//   全呼び出しに適用(2026-07-29・予約同期がsalon:nullで黙って落ちる/診断が空応答になる「ブレ」の根治)。
+const NOT_FOUND_USER = /NOT\s*FOUND\s*USER/i;
+const isTokenDead = (j) => j && j.result === false && (j.error === 1002 || NOT_FOUND_USER.test(j.msg || ''));
 export async function salonCall(env, path, extra) {
-  const t = await salonToken(env);
-  const res = await fetch(env.SALON_HOST + path, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: t.uid, token: t.token, ...extra }),
-  });
-  return res.json();
+  const call = async () => {
+    const t = await salonToken(env);
+    const res = await fetch(env.SALON_HOST + path, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: t.uid, token: t.token, ...extra }),
+    });
+    try { return await res.json(); } catch { return { result: false, msg: 'HTTP ' + res.status }; }
+  };
+  let j = await call();
+  if (isTokenDead(j)) { _salonTok = null; j = await call(); }
+  return j;
 }
 
 // multipart版(save/accountはmultipart必須=罠T10/T11)。SDK(salon-client.js apiMultipart)と同形:
 // user_id/tokenはFormDataの独立フィールド・dataフィールドはアカウント項目のみのJSON。
 async function salonCallMultipart(env, path, dataObj, extra = {}) {
-  const t = await salonToken(env);
-  const fd = new FormData();
-  fd.append('user_id', t.uid); fd.append('token', t.token);
-  for (const k in extra) fd.append(k, String(extra[k]));
-  fd.append('data', JSON.stringify(dataObj));
-  const res = await fetch(env.SALON_HOST + path, { method: 'POST', body: fd });
-  try { return await res.json(); } catch { return { result: false }; }
+  const call = async () => {
+    const t = await salonToken(env);
+    const fd = new FormData();
+    fd.append('user_id', t.uid); fd.append('token', t.token);
+    for (const k in extra) fd.append(k, String(extra[k]));
+    fd.append('data', JSON.stringify(dataObj));
+    const res = await fetch(env.SALON_HOST + path, { method: 'POST', body: fd });
+    try { return await res.json(); } catch { return { result: false }; }
+  };
+  let j = await call();
+  if (isTokenDead(j)) { _salonTok = null; j = await call(); }
+  return j;
 }
 
 // save/accountの生呼び出し(部分update用・multipart)。account-setcode等の運用ツールから使う。
@@ -172,14 +186,9 @@ export async function salonCancel(env, salonId) {
   return salonCall(env, '/save/reservation', { cancel: true, data: { ids: [salonId] } });
 }
 
-// salon.town 予約を削除(実APIは reservation_id を params直下に要求)
+// salon.town 予約を削除(実APIは reservation_id を params直下に要求)。salonCall経由=トークン失効リトライ付き
 export async function salonDelete(env, salonId) {
-  const t = await salonToken(env);
-  const res = await fetch(env.SALON_HOST + '/delete/reservation', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: t.uid, token: t.token, reservation_id: salonId }),
-  });
-  return res.json();
+  return salonCall(env, '/delete/reservation', { reservation_id: salonId });
 }
 
 // GET /salon/pull?from=YYYY-MM-DD&to=YYYY-MM-DD … salon.town の予約を読み取り
