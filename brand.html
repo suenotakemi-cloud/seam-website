@@ -1863,6 +1863,12 @@
     .featured-all > a > span:last-child { font-family: var(--font-jp); font-size: 12px; font-weight: 500; color: var(--charcoal); letter-spacing: 0.03em; line-height: 1.55; }
 
     .dir-empty { padding: 60px 20px; text-align: center; font-family: var(--font-jp); font-size: 12px; color: var(--taupe); }
+    .dir-bridge {
+      margin-top: 16px; border: 1px solid rgba(184,148,90,0.4); background: transparent; border-radius: 40px;
+      padding: 10px 20px; font-size: 12px; color: #8A744F; cursor: pointer; font-family: inherit;
+      min-height: 40px; touch-action: manipulation;
+    }
+    .dir-bridge:hover, .dir-bridge:focus-visible { background: rgba(184,148,90,0.10); }
 
     /* ディレクトリ末尾CTA */
     .dir-cta { margin-top: 56px; background: var(--warm-fill); color: var(--charcoal); padding: 56px 48px; border-radius: var(--r-card); text-align: center; position: relative; overflow: hidden; border: 1px solid rgba(184,148,90,0.18); }
@@ -4080,7 +4086,18 @@ renderBrandRoster();
 
     // 本体
     if (!groups.length) {
-      listEl.innerHTML = `<div class="dir-empty">「${escapeHtml(currentQuery)}」に一致するブランドが見つかりませんでした</div>`;
+      // 行き止まりを作らない: ブランド名で当たらなくても商品カタログ(全1,292点)へ橋渡し
+      const T = (window.SEAM_PAGE_I18N && window.SEAM_PAGE_I18N[document.documentElement.lang]) || {};
+      const bridgeLabel = T['dir.bridge'] || '商品カタログで探す';
+      listEl.innerHTML = `<div class="dir-empty">
+        <p>「${escapeHtml(currentQuery)}」に一致するブランドが見つかりませんでした</p>
+        <button type="button" class="dir-bridge" data-q="${escapeHtml(currentQuery)}">${escapeHtml(bridgeLabel)} →</button>
+      </div>`;
+      const bridge = listEl.querySelector('.dir-bridge');
+      if (bridge) bridge.addEventListener('click', () => {
+        try { window.seamTrack && seamTrack('dir_bridge', { label: currentQuery.slice(0, 24) }); } catch (_) {}
+        location.search = '?mode=product&q=' + encodeURIComponent(currentQuery);
+      });
       return;
     }
 
@@ -4199,6 +4216,7 @@ window.SEAM_PAGE_I18N = {
     'dir.sub': 'メジャーブランドからマイナーブランドまで<br>SEAMが取り扱うすべてのブランドを百貨店のように一覧でご覧いただけます<br>気になるブランドはタップで公式サイトへ',
     'dir.sort.kana': 'あいうえお順',
     'dir.sort.category': 'カテゴリー',
+    'dir.bridge': '商品カタログで探す',
     'dir.searchPlaceholder': 'ブランド名・悩み・特徴で検索…',
     'dir.filter.all': 'すべて',
     'dir.filter.both': '店舗・オンライン両方',
@@ -4314,6 +4332,7 @@ window.SEAM_PAGE_I18N = {
     'dir.sub': 'From major names to rare finds,<br>browse every brand SEAM carries, laid out like the floor of a department store.<br>Tap any brand to visit its official site.',
     'dir.sort.kana': 'Kana Order',
     'dir.sort.category': 'Category',
+    'dir.bridge': 'Search the product catalog',
     'dir.searchPlaceholder': 'Search by brand, concern or feature…',
     'dir.filter.all': 'All',
     'dir.filter.both': 'In Store & Online',
@@ -4429,6 +4448,7 @@ window.SEAM_PAGE_I18N = {
     'dir.sub': '从知名品牌到小众品牌，<br>SEAM经营的所有品牌如百货公司般一览呈现。<br>轻触感兴趣的品牌即可前往官网。',
     'dir.sort.kana': '五十音排序',
     'dir.sort.category': '类别',
+    'dir.bridge': '在商品目录中查找',
     'dir.searchPlaceholder': '按品牌或厂商名称搜索…',
     'dir.filter.all': '全部',
     'dir.filter.both': '门店与在线均有',
@@ -4544,6 +4564,7 @@ window.SEAM_PAGE_I18N = {
     'dir.sub': '從知名品牌到小眾品牌，<br>SEAM經營的所有品牌如百貨公司般一覽呈現。<br>輕觸感興趣的品牌即可前往官網。',
     'dir.sort.kana': '五十音排序',
     'dir.sort.category': '類別',
+    'dir.bridge': '在商品目錄中尋找',
     'dir.searchPlaceholder': '依品牌或廠商名稱搜尋…',
     'dir.filter.all': '全部',
     'dir.filter.both': '門市與線上皆有',
@@ -4659,6 +4680,7 @@ window.SEAM_PAGE_I18N = {
     'dir.sub': '메이저 브랜드부터 희소 브랜드까지,<br>SEAM이 취급하는 모든 브랜드를 백화점처럼 한눈에 보실 수 있습니다.<br>관심 있는 브랜드를 탭하면 공식 사이트로 이동합니다.',
     'dir.sort.kana': '오십음순',
     'dir.sort.category': '카테고리',
+    'dir.bridge': '상품 카탈로그에서 찾기',
     'dir.searchPlaceholder': '브랜드명·제조사명으로 검색…',
     'dir.filter.all': '전체',
     'dir.filter.both': '매장·온라인 모두',
