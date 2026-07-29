@@ -767,6 +767,25 @@ body.customer .bookshell{max-width:520px;margin:0 auto;padding:0}
 .phone.spa .pbody .soonest .so-l{color:#6f8560}
 .phone.spa .pbody .field input:focus,.phone.spa .pbody input[type=tel]:focus,.phone.spa .pbody .rl-row input:focus{border-color:#7d956a}
 body.customer .phone.spa{background:#f7f8f3}
+
+/* ═══════════ 見やすさ優先の上書き（お客様の予約画面のみ・2026-07-29）═══════════
+   方針: 上品さより「見える・押せる・わかる」。老眼・屋外・低視力でも読めるコントラストと文字サイズにする。
+   実測でコントラスト不足だった箇所(金見出し2.83 / 説明文3.51)を基準4.5:1以上へ引き上げる。 */
+.pbody .ent-en{color:#8a6a2f;font-size:12px;letter-spacing:.16em}
+.pbody .ent-s,.pbody .ent-sub{color:#6b6459;font-size:13px;line-height:1.7}
+.pbody .ent-t{font-size:18px}
+.pbody .mcat{color:#8a6a2f}
+.pbody .m-meta,.pbody .m-sub,.pbody .tgrp-h{color:#6b6459;font-size:12.5px}
+.pbody .daytab .w{color:#6b6459;font-size:11.5px}
+.pbody .chip{font-size:15px;font-weight:700;min-height:46px}
+.pbody .opt .dt{color:#6b6459;font-size:12.5px}
+.pbody .summary dt{color:#6b6459}
+/* 予約は3つだけ: 折り返して崩れないよう1行1ステップの縦並びにする（矢印は使わない） */
+.ent-steps3{display:grid;grid-template-columns:auto 1fr;gap:7px 9px;align-items:center;font-size:13.5px;font-weight:700;color:#4a4438;line-height:1.5;margin-bottom:16px;background:#faf8f4;border:1px solid #ece5d8;border-radius:12px;padding:12px 14px}
+.ent-steps3 i{display:none}
+.ent-steps3 span{width:22px;height:22px;font-size:12px}
+.ent-line b{font-size:15px}
+.ent-line span{font-size:13px;color:#3f6b50}
 </style>
 </head>
 <body>
@@ -2598,9 +2617,9 @@ function renderBook(){
        <div class="ent-sub">ご希望のメニューをお選びください</div>
        ${BOOK_SRC==='line'?`<div class="ent-line">
          <b>LINEからそのまま予約できます</b>
-         <span>お電話は不要です・1分で終わります</span>
+         <span>空いている時間を選ぶだけ・お電話は不要です</span>
        </div>`:''}
-       <div class="ent-steps3"><span>1</span>メニューを選ぶ<i>→</i><span>2</span>日にちと時間を選ぶ<i>→</i><span>3</span>お名前を書く</div>
+       <div class="ent-steps3"><span>1</span><div>メニューを選ぶ</div><span>2</span><div>空いている日と時間を選ぶ</div><span>3</span><div>お名前を書いて終わり</div></div>
        <div class="ent-wrap">
          <button class="ent-card ent-hair" data-sec="hair">
            <div class="ent-ic">✂️</div>
