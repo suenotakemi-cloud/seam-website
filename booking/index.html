@@ -772,7 +772,17 @@ body.customer .phone.spa{background:#f7f8f3}
    方針: 上品さより「見える・押せる・わかる」。老眼・屋外・低視力でも読めるコントラストと文字サイズにする。
    実測でコントラスト不足だった箇所(金見出し2.83 / 説明文3.51)を基準4.5:1以上へ引き上げる。 */
 .pbody .ent-en{color:#8a6a2f;font-size:12px;letter-spacing:.16em}
-.pbody .ent-s,.pbody .ent-sub{color:#6b6459;font-size:13px;line-height:1.7}
+/* 補足文は「見える」ではなく「見逃さない」水準に（13px/細字→14.5px/太字・色も濃く）*/
+.pbody .ent-s,.pbody .ent-sub{color:#514b41;font-size:14.5px;font-weight:600;line-height:1.65}
+.pbody .ent-line span{color:#2f5c41;font-size:14px;font-weight:600}
+/* 二択カードの「私はどっち？」を消す生活語の一行 */
+.pbody .ent-who{display:block;margin-bottom:2px;font-size:14.5px;font-weight:800;color:#3a3226}
+/* サブコピーは短文2発（1行目=大きく短く / 2行目=小さく安心）*/
+.pbody .ent-sub1{font-size:17px;font-weight:800;color:#2f2a22;line-height:1.5;margin-bottom:3px}
+.pbody .ent-sub2{font-size:13.5px;font-weight:600;color:#514b41;line-height:1.6;margin-bottom:15px}
+/* 「予約は3つだけです」= 不安軽減装置として見出しをつける */
+.pbody .ent-steps-h{font-size:14.5px;font-weight:800;color:#3a3226;margin-bottom:6px}
+.pbody .ent-pick{font-size:15px;font-weight:800;color:#3a3226;margin:16px 0 9px}
 .pbody .ent-t{font-size:18px}
 .pbody .mcat{color:#8a6a2f}
 .pbody .m-meta,.pbody .m-sub,.pbody .tgrp-h{color:#6b6459;font-size:12.5px}
@@ -785,7 +795,15 @@ body.customer .phone.spa{background:#f7f8f3}
 .ent-steps3 i{display:none}
 .ent-steps3 span{width:22px;height:22px;font-size:12px}
 /* 「押せる」と一目で分かるカード（高齢層は“カード=押せる”を知らない前提で作る）*/
-.pbody .ent-card{border-width:2px;padding:16px 14px;align-items:center;box-shadow:0 2px 0 rgba(138,106,47,.10)}
+/* スマホでは横並びだと説明が細切れに折り返す→アイコンと見出しを上段・説明とボタンを下段の縦組みに */
+/* アイコンは見出しの左に置き、説明とボタンはカード幅いっぱいに（細切れの折り返しを防ぐ）*/
+.pbody .ent-card{display:block;border-width:2px;padding:16px;box-shadow:0 2px 0 rgba(138,106,47,.10);text-align:left}
+.pbody .ent-card .ent-ic{float:left;margin:0 12px 0 0}
+.pbody .ent-card .ent-main{display:block}
+.pbody .ent-card .ent-t{display:flex;align-items:center;min-height:52px;text-align:left}
+.pbody .ent-card .ent-s{clear:both;padding-top:8px}
+.pbody .ent-card .ent-go{width:100%;margin-top:12px}
+.pbody .ent-arrow{display:none}   /* ボタンがあるので矢印は不要（情報を減らす）*/
 .pbody .ent-card:active{transform:translateY(1px)}
 .pbody .ent-t{font-size:19px;font-weight:800;line-height:1.35}
 .pbody .ent-s{margin-top:2px}
@@ -2634,22 +2652,21 @@ function renderBook(){
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
     p.innerHTML=stepsHtml+
-      `<div class="ent-lead">ご予約ページ</div>
-       <div class="ent-sub">下のどちらかを選んでください</div>
-       ${BOOK_SRC==='line'?`<div class="ent-line">
-         <b>お電話は要りません</b>
-         <span>空いている時間を選ぶだけ・その場で予約が終わります</span>
-       </div>`:''}
-       <div class="ent-steps3"><span>1</span><div>メニューを選ぶ</div><span>2</span><div>空いている日と時間を選ぶ</div><span>3</span><div>お名前を書いて終わり</div></div>
+      `<div class="ent-lead">このまま予約できます</div>
+       <div class="ent-sub1">空いている時間を選ぶだけです</div>
+       <div class="ent-sub2">お電話は要りません。1〜2分で予約できます。</div>
+       <div class="ent-steps-h">予約は3つだけです</div>
+       <div class="ent-steps3"><span>1</span><div>メニューを選ぶ</div><span>2</span><div>日にちと時間を選ぶ</div><span>3</span><div>お名前を書いて完了</div></div>
+       <div class="ent-pick">ご希望の内容を選んでください</div>
        <div class="ent-wrap">
          <button class="ent-card ent-hair" data-sec="hair">
            <div class="ent-ic">✂️</div>
-           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-s">カット・カラー・パーマ・縮毛矯正・トリートメント</div><div class="ent-go">タップして選ぶ</div></div>
+           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-s"><span class="ent-who">髪を切る・染める・整える方はこちら</span>カット・カラー・パーマ・縮毛矯正</div><div class="ent-go">空いている時間を見る</div></div>
            <div class="ent-arrow">→</div>
          </button>
          <button class="ent-card ent-spa" data-sec="spa">
            <div class="ent-ic">💆</div>
-           <div class="ent-main"><div class="ent-t">スパ・ヘッドスパ</div><div class="ent-s">完全個室でゆっくり休めます</div><div class="ent-go">タップして選ぶ</div></div>
+           <div class="ent-main"><div class="ent-t">ヘッドスパ</div><div class="ent-s"><span class="ent-who">頭皮ケア・ゆっくり休みたい方はこちら</span>完全個室でお休みいただけます</div><div class="ent-go">空いている時間を見る</div></div>
            <div class="ent-arrow">→</div>
          </button>
        </div>`;
@@ -2933,7 +2950,15 @@ const EN_MAP={
   '前金なしで予約（店頭でお支払い）':'Book without deposit (pay in store)',
   'ご予約を承りました':'Your booking is confirmed','予約確認とリマインドをLINEでお送りします':'Confirmation & reminders will be sent via LINE',
   '＋ LINE友だち追加':'+ Add us on LINE','続けてもう1件予約する':'Make another booking',
-  'ご予約':'Reservation','ネット予約':'ONLINE BOOKING','タップして選ぶ':'Tap to choose',
+  'ご予約':'Reservation','ネット予約':'ONLINE BOOKING',
+  'このまま予約できます':'Book right here','空いている時間を選ぶだけです':'Just pick an open time',
+  'お電話は要りません。1〜2分で予約できます。':'No phone call needed. Takes 1-2 minutes.',
+  '予約は3つだけです':'Only 3 steps','ご希望の内容を選んでください':'What would you like?',
+  'メニューを選ぶ':'Choose a menu','日にちと時間を選ぶ':'Choose date & time','お名前を書いて完了':'Enter your name — done',
+  '空いている時間を見る':'See open times','ヘッドスパ':'Head Spa',
+  '髪を切る・染める・整える方はこちら':'For haircut, color and styling','カット・カラー・パーマ・縮毛矯正':'Cut / Color / Perm / Straightening',
+  '頭皮ケア・ゆっくり休みたい方はこちら':'For scalp care and deep rest','完全個室でお休みいただけます':'Private room — rest deeply',
+'ネット予約':'ONLINE BOOKING','タップして選ぶ':'Tap to choose',
   'SEAM 銀座 — ご予約':'SEAM GINZA — Booking',
 
   'メニューを選ぶ':'Choose a menu','スタイリストを選ぶ':'Choose a stylist','日にちと時間を選ぶ':'Choose date & time',
