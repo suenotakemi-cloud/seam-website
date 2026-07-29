@@ -2049,15 +2049,35 @@ const OVEREXPOSED_PENALTY = {
   'aujua-agingspa-sh':        12,  // Aujua エイジングスパ クリアフォーム(off-concern減点と併用)
 };
 
+/* アイロン・コテの回答は answers.styling = { tools:[], temp:'' } に入る。
+   answers.tools を直接見ているコードが複数あり、いずれも発火していなかったので
+   ここを唯一の読み口にする(古い形が来ても拾えるようフォールバックを残す)。 */
+const HEAT_TOOLS = ['ironDaily', 'ironWeekly', 'curlerDaily', 'curlerWeekly', 'bangsDaily'];
+function readTools(answers) {
+  const a = answers || {};
+  const t = (a.styling && a.styling.tools) || a.tools;
+  return Array.isArray(t) ? t : [];
+}
+function readTemp(answers) {
+  const a = answers || {};
+  return (a.styling && a.styling.temp) || a.temp || null;
+}
+/* 熱を入れているか。未回答(空)のときは「使っている」側に倒す＝勝手に外さない */
+function usesHeatTools(answers) {
+  const t = readTools(answers);
+  return t.length === 0 || t.some(x => HEAT_TOOLS.includes(x));
+}
+
 /* ---------- pickDeepProducts — カテゴリ別ケア処方 (ルーティン順) ---------- */
 function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   const userTags  = buildUserTags(answers, scores);
   // アイロン・コテを使わない方に、熱から守る前提のアウトバスは出さない(オーナー判断 2026-07-29)
   // 熱保護タグ82点のうち67点がアウトバス。残り(シャンプー5/トリートメント6/マスク3/頭皮1)は
   // 熱保護が主目的ではないので巻き込まない。アウトバスは熱保護なしが58点あり枠は埋まる
-  const _heatTools = ['ironDaily', 'ironWeekly', 'curlerDaily', 'curlerWeekly', 'bangsDaily'];
-  const _tools = (answers && Array.isArray(answers.tools)) ? answers.tools : [];
-  const usesHeat = _tools.length === 0 || _tools.some(t => _heatTools.includes(t));
+  const usesHeat = usesHeatTools(answers);
+  // ブリーチ履歴のない方にブリーチ専用ケアは出さない(オーナー判断 2026-07-29)
+  // 判定は自己申告のダメージではなく、何をしたかの事実(bleach設問)から取る
+  const hasBleach = !!deriveBleach(answers);
   const hardRules = checkHardRules(userTags, answers, scores);
   const maxPerBrand = opts.maxPerBrand || 3;
 
@@ -2239,8 +2259,10 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   ]);
   const damageHigh   = (sscores.damage || 0) >= 7;
   const bleachExp    = (sscores.bleachHistory || 0) >= 2;
-  const _toolsHeat   = Array.isArray(answers?.tools) && (answers.tools.includes('ironDaily') || answers.tools.includes('curlerDaily'));
-  const _tempHigh    = answers?.temp === 't180' || answers?.temp === 't200';
+  // 既存バグ修正: 回答は answers.styling.tools/temp に入る。answers.tools は常に undefined で
+  // 熱のシグナル(_toolsHeat/_tempHigh)が丸ごと死んでいた
+  const _toolsHeat   = readTools(answers).some(t => t === 'ironDaily' || t === 'curlerDaily');
+  const _tempHigh    = readTemp(answers) === 't180' || readTemp(answers) === 't200';
   const _straighten  = !!answers?.straighten && answers.straighten !== 'none';
   const heatExp      = _toolsHeat || _tempHigh || _straighten;
   const isWaveC      = (sscores.waveLevel === 'curly') || (answers?.waveLevel === 'curly');
@@ -2325,6 +2347,9 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     // 熱を使わない方のアウトバスから、熱保護が前提の品を外す
     .filter(x => usesHeat || x.deepCat !== 'outbath'
       || !((x.p.functionTags || []).includes('heat-protect')))
+    // ブリーチ履歴のない方から、ブリーチ専用ケアを外す
+    // (mustShowForBleach はブリーチ有りの方への強制表示なので競合しない)
+    .filter(x => hasBleach || !((x.p.functionTags || []).includes('for-bleach-damage')))
     .sort((a, b) => b.s - a.s);
 
   // カテゴリ別バケット
@@ -7922,7 +7947,7 @@ const NOT_NEEDED_RULES = [
     title: 'ブリーチ毛向けの集中補修',
     tags: ['for-bleach-damage'],
     why: 'ブリーチの履歴が無いためです　'
-       + '強い補修は、必要のない髪には重さになります',
+       + 'ブリーチ毛のための補修は、そうでない髪には重さになります',
   },
   {
     id: 'fine',
@@ -7942,11 +7967,12 @@ const NOT_NEEDED_RULES = [
   },
   {
     id: 'heat',
-    // アイロンもコテも前髪も使わない方だけ。tools が空(未回答)のときは黙る
+    // アイロンもコテも前髪も使わない方だけ。未回答のときは黙る
+    // (回答は answers.styling.tools に入る。readTools が唯一の読み口)
     when: a => {
-      const t = a.tools || [];
+      const t = readTools(a);
       if (!t.length) return false;
-      return !t.some(x => ['ironDaily','ironWeekly','curlerDaily','curlerWeekly','bangsDaily'].includes(x));
+      return !t.some(x => HEAT_TOOLS.includes(x));
     },
     title: '熱から守るもの',
     tags: ['heat-protect'],
