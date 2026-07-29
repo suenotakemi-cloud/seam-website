@@ -3270,6 +3270,12 @@ const OVEREXPOSED_PENALTY = {
 /* ---------- pickDeepProducts — カテゴリ別ケア処方 (ルーティン順) ---------- */
 function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   const userTags = buildUserTags(answers, scores);
+  // アイロン・コテを使わない方に、熱から守る前提のアウトバスは出さない(オーナー判断 2026-07-29)
+  // 熱保護タグ82点のうち67点がアウトバス。残り(シャンプー5/トリートメント6/マスク3/頭皮1)は
+  // 熱保護が主目的ではないので巻き込まない。アウトバスは熱保護なしが58点あり枠は埋まる
+  const _heatTools = ['ironDaily', 'ironWeekly', 'curlerDaily', 'curlerWeekly', 'bangsDaily'];
+  const _tools = answers && Array.isArray(answers.tools) ? answers.tools : [];
+  const usesHeat = _tools.length === 0 || _tools.some(t => _heatTools.includes(t));
   const hardRules = checkHardRules(userTags, answers, scores);
   const maxPerBrand = opts.maxPerBrand || 3;
 
@@ -3534,7 +3540,9 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
       isSupplementary: supp,
       affinityReason: [affinity > 0 ? 'character' : null, concernAffinity > 0 ? `concern×${concernHits}` : null, bleach > 0 ? 'bleach-rescue' : null].filter(Boolean).join('+')
     };
-  }).filter(x => x.s > 0 && x.deepCat && !mustIds.has(x.p.id)).sort((a, b) => b.s - a.s);
+  }).filter(x => x.s > 0 && x.deepCat && !mustIds.has(x.p.id))
+  // 熱を使わない方のアウトバスから、熱保護が前提の品を外す
+  .filter(x => usesHeat || x.deepCat !== 'outbath' || !(x.p.functionTags || []).includes('heat-protect')).sort((a, b) => b.s - a.s);
 
   // カテゴリ別バケット
   const blocks = {};
@@ -10957,10 +10965,13 @@ function GemMark({
      ・商品側に無いデータ(cautionTags は429点中0点)は使わない。
        持っていない情報で「要らない」と言うのがいちばん危ない
 
-   入れなかったルール(実測で構造的に発火しないと判明したもの):
-     ・熱から守るもの … 熱を使わない人にも熱保護タグ付きアウトバスが100%出る
-     ・頭皮ケア      … 「30歳以上は必ず頭皮エッセンス」で頭皮ブロックが常に出る
-   どちらも下のガードに必ず引っかかる。残すと推薦側が変わったとき黙って嘘をつく。 */
+   入れなかったルール:
+     ・頭皮ケア … DeepProductSection の「30歳以上は必ず頭皮エッセンス」により
+       頭皮ブロックが常に出る(診断者の65%が30代以上)。下のガードに必ず引っかかる
+
+   熱から守るもの は 2026-07-29 に復活。それまでは熱を使わない人にも
+   熱保護タグ付きアウトバスが100%出ていて言えなかったが、
+   pickDeepProducts 側でアウトバス枠から外したので言えるようになった。 */
 
 const NOT_NEEDED_RULES = [{
   id: 'bleach',
@@ -10980,6 +10991,17 @@ const NOT_NEEDED_RULES = [{
   title: '色持ちを守るもの',
   tags: ['color-protect', 'for-color-damage'],
   why: 'いまカラーをされていないためです　' + '色を守る設計はカラー毛にこそ効きます'
+}, {
+  id: 'heat',
+  // アイロンもコテも前髪も使わない方だけ。tools が空(未回答)のときは黙る
+  when: a => {
+    const t = a.tools || [];
+    if (!t.length) return false;
+    return !t.some(x => ['ironDaily', 'ironWeekly', 'curlerDaily', 'curlerWeekly', 'bangsDaily'].includes(x));
+  },
+  title: '熱から守るもの',
+  tags: ['heat-protect'],
+  why: 'アイロンやコテをお使いにならないためです　' + '毎日お使いになるようになったら、まっさきにお渡しします'
 }, {
   id: 'frizz',
   when: a => {
