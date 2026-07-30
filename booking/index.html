@@ -1413,6 +1413,9 @@ const API = {
   async saveCheckout(c){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(c)});return r.ok?await r.json():null;}catch{return null;} },
   async receiptToken(checkoutId,phone){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/receipt/token',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone})});const j=await r.json();return r.ok?j:null;}catch{return null;} },
   async sendLineReceipt(checkoutId,phone){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/receipt/line',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async customerRank(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/customer/rank?key='+encodeURIComponent(key),{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
+  async rankConfig(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/rank/config',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
+  async saveRankConfig(cfg){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/rank/config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(cfg)});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async memberLookup(code){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/member/lookup?code='+encodeURIComponent(code),{headers:authHeaders()});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async removeCheckout(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listSettlements(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements'+(from?`?from=${from}&to=${to||from}`:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.settlements:null;}catch{return null;} },
@@ -1540,6 +1543,35 @@ async function syncRegisterFromD1(){
 if(!db.points)db.points=[];
 const pointEnabled=()=>stg('pointEnabled','1')==='1';
 const pointRate=()=>Math.max(0,Math.min(20,stgN('pointRate',1)));   // 還元率%（既定1%＝HPBと同等・0〜20%）
+/* ポイントの値打ち。オンライン(商品)は1pt=1円、サロンの施術は1pt=0.5円。
+ * 施術を半分にしているのは、原価がほぼ人の時間なので値引きの重みが違うため。 */
+const ptYenGoods=()=>Math.max(0,Math.min(10,parseFloat(stg('ptYenGoods','1'))||1));
+const ptYenTech =()=>Math.max(0,Math.min(10,parseFloat(stg('ptYenTech','0.5'))||0.5));
+/* ポイントはLINE会員だけに付ける（LINE登録の動機にする）。管理画面で外せる。 */
+const ptLineOnly=()=>stg('ptLineOnly','1')==='1';
+/* 会計中のお客様のランク。会員証を読むかカルテから引くとサーバーから入る。 */
+let CO_RANK=null;
+const coRate=()=>(CO_RANK&&CO_RANK.rate!=null)?CO_RANK.rate:pointRate();
+/* 使ったポイントが何円分になるか。
+ * 施術に当てる分と商品に当てる分でレートが違うので、施術から先に当てる（お客様に有利）。 */
+function ptToYen(pt,techAmt,goodsAmt){
+  pt=Math.max(0,+pt||0);
+  const gT=ptYenTech(),gG=ptYenGoods();
+  // 施術に当てる。値引きに変わらなかった端数ptは使わせない（お客様が損をしないように）
+  const maxTechPt=gT>0?Math.floor(techAmt/gT):0;
+  const usedTechPt=Math.min(pt,maxTechPt);
+  const yenTech=Math.min(techAmt,Math.floor(usedTechPt*gT));
+  // 実際に値引きになった分だけをptとして消費する（1pt=0.5円で奇数ptの端数は返す）
+  const spentTechPt=gT>0?Math.ceil(yenTech/gT):0;
+  const restPt=pt-spentTechPt;
+  const maxGoodsPt=gG>0?Math.floor(goodsAmt/gG):0;
+  const usedGoodsPt=Math.min(restPt,maxGoodsPt);
+  const yenGoods=Math.min(goodsAmt,Math.floor(usedGoodsPt*gG));
+  const spentGoodsPt=gG>0?Math.ceil(yenGoods/gG):0;
+  // 使ったことにするptは、値引きに変わった分だけ
+  const spent=spentTechPt+spentGoodsPt;
+  return {yen:yenTech+yenGoods,yenTech,yenGoods,spent,usedTechPt:spentTechPt,usedGoodsPt:spentGoodsPt};
+}
 function pointBalance(name,phone){
   if(!name)return 0;
   return db.points.filter(p=>p.name===name&&(!phone||!p.phone||p.phone===phone)).reduce((s,p)=>s+(+p.delta||0),0);
@@ -2275,14 +2307,62 @@ function openCheckout(resvId){
     tech:m?Math.max(0,(m.price-(r.discount||0))):0,discount:0,retailItems:[],method:isSmartPaid?'hpb':'cash',
     nominated:resvId?true:false   // 予約からの会計は既定=指名。フリー(予約なし/指名なし)は切替
   };
+  CO_RANK=null;
   renderCheckout();
   document.getElementById('checkoutbg').classList.add('show');
+  // 電話が分かっていればランクを引いてくる（会員証を読まなくてもVIPが分かるように）
+  if(coDraft.phone){loadRankFor(coDraft.phone).then(()=>{if(CO_RANK)renderCheckout();});}
 }
 function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(i.unit!=null?(+i.unit||0)*(+i.qty||1):(+i.price||0)),0);}
+/* ポイントの円換算。施術と商品でレートが違うので、割引を引いたあとの内訳に当てる。 */
+function coPtYen(){
+  const tech=coDraft.passCode?0:(+coDraft.tech||0);
+  const goods=coRetail();
+  const disc=+coDraft.discount||0;
+  // 割引は施術から先に引く（施術のほうが金額が大きいのが普通）
+  const t2=Math.max(0,tech-disc), g2=Math.max(0,goods-Math.max(0,disc-tech));
+  return ptToYen(coDraft.pointsUsed||0,t2,g2);
+}
 function coTotal(){const tech=coDraft.passCode?0:(+coDraft.tech||0);   // 回数券適用時は施術分を消化でカバー
-  return Math.max(0,tech+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0)-(+coDraft.giftUsed||0));}
+  return Math.max(0,tech+coRetail()-(+coDraft.discount||0)-coPtYen().yen-(+coDraft.giftUsed||0));}
 // 今回付与予定ポイント＝支払額×還元率（ポイント利用分には付与しない）
-function coPointAward(){return (pointEnabled()&&coDraft.customer)?Math.floor(coTotal()*pointRate()/100):0;}
+/* 今回付与するポイント。ランクの率で計算する。
+ * ポイント利用分には付与しない（coTotalが控除後なので自然にそうなる）。
+ * LINE会員だけに付ける設定のときは、会員証がなければ0にする。 */
+function coPointAward(){
+  if(!pointEnabled()||!coDraft.customer)return 0;
+  if(ptLineOnly()&&!coDraft.memberCode)return 0;
+  return Math.floor(coTotal()*coRate()/100);
+}
+/* ランクの帯。レジ・受付・カルテで同じ見た目にして、スタッフが一目でVIPと分かるようにする。
+ * 「◯回目のご来店」を必ず出すのは、名前で呼びかけるときの手がかりにするため。 */
+const RANK_COLOR={standard:'#5c534a',bronze:'#8a5a34',silver:'#8d9399',gold:'#b8912a',platinum:'#6b7378'};
+function rankStrip(rk,code,pt){
+  const r=(rk&&rk.rank)||{}, key=r.key||'standard';
+  const vip=key!=='standard';
+  const col=RANK_COLOR[key]||RANK_COLOR.standard;
+  const nx=rk&&rk.next;
+  const soon=nx?(()=>{
+    if(nx.closest==='ySpend'&&nx.ySpend)return `あと¥${Number(nx.ySpend).toLocaleString()}で${nx.name}`;
+    if(nx.closest==='yVisits'&&nx.yVisits)return `この1年であと${nx.yVisits}回で${nx.name}`;
+    if(nx.visits)return `あと${nx.visits}回で${nx.name}`;
+    return `${nx.name}まであと少し`;})():'';
+  return `<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-radius:10px;padding:9px 12px;margin:0 0 9px;
+      background:${vip?col+'14':'#f6f4f1'};border:1px solid ${vip?col+'55':'#e7e1d9'}">
+    ${r.name?`<b style="font-size:12px;letter-spacing:.1em;color:${col};background:#fff;border:1px solid ${col}44;border-radius:99px;padding:3px 10px">${escH(r.name)}</b>`:''}
+    ${rk&&rk.visits?`<span style="font-size:12.5px;font-weight:800">${rk.visits}回目のご来店</span>`:''}
+    <span style="font-size:12px;color:var(--sub)">ポイント${(rk&&rk.rate)||1}%</span>
+    ${pt!=null?`<span style="font-size:12px;color:var(--sub)">残高 <b>${Number(pt||0).toLocaleString()}pt</b></span>`:''}
+    ${code?`<span style="font-size:11.5px;color:var(--sub);margin-left:auto">💳 ${escH(code)}</span>`:''}
+    ${soon?`<div style="flex-basis:100%;font-size:11.5px;color:${col};font-weight:700">${escH(soon)}</div>`:''}
+  </div>`;
+}
+/* お名前と電話からランクを引く（会員証を読まない場合の道）。 */
+async function loadRankFor(key){
+  if(!key){CO_RANK=null;return;}
+  const r=await API.customerRank(key);
+  CO_RANK=(r&&r.ok)?{rank:r.rank,rate:r.rate,visits:r.visits,yVisits:r.yVisits,ySpend:r.ySpend,next:r.next}:null;
+}
 function renderCheckout(){
   const box=document.getElementById('checkoutmodal');
   const rows=(coDraft.retailItems||[]).map((it,i)=>{
@@ -2294,7 +2374,7 @@ function renderCheckout(){
       <input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${(isProd?((it.unit||0)*(it.qty||1)):(it.price||''))}" ${isProd?'readonly':''}>
       <button class="co-rx" data-i="${i}" aria-label="削除">✕</button></div>`;}).join('');
   box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}</h3>
-    ${coDraft.memberCode?`<div class="co-done" style="margin:0 0 8px">💳 会員証 ${escH(coDraft.memberCode)}　残高 <b>${(coDraft.memberPt||0).toLocaleString()}pt</b></div>`:''}
+    ${coDraft.memberCode?rankStrip(CO_RANK,coDraft.memberCode,coDraft.memberPt):''}
     ${isShop()?'':`<div class="co-line"><span>技術（施術）</span><span class="co-y">¥<input id="co-tech" type="number" inputmode="numeric" value="${coDraft.tech||0}"></span></div>`}
     <div class="co-sub">店販（商品）</div>
     <div class="co-scan-row"><input id="co-scan" list="co-prod-list" placeholder="🔎 バーコード・会員証をスキャン／商品名で追加" autocomplete="off">${(db.products||[]).length?`<datalist id="co-prod-list">${(db.products||[]).filter(p=>p.active!==0).map(p=>`<option value="${(p.name||'').replace(/"/g,'&quot;')}">`).join('')}</datalist>`:''}</div>
@@ -2303,10 +2383,21 @@ function renderCheckout(){
     <div class="co-line"><span>割引</span><span class="co-y">−¥<input id="co-disc" type="number" inputmode="numeric" value="${coDraft.discount||0}"></span></div>
     ${(()=>{ // 自社ポイント（設定ONかつお名前があるとき）: 残高利用と今回付与予定
       if(!pointEnabled()||!coDraft.customer)return '';
-      const bal=pointBalance(coDraft.customer,'');
-      return `<div class="co-sub">ポイント（残高 <b>${bal.toLocaleString()}pt</b>・1pt=¥1）</div>
-      <div class="co-line"><span>ポイント利用</span><span class="co-y">−<input id="co-pts" type="number" inputmode="numeric" min="0" max="${bal}" value="${coDraft.pointsUsed||0}">pt</span></div>
-      <div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${pointRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>
+      const bal=coDraft.memberCode&&CO_RANK?(coDraft.memberPt||0):pointBalance(coDraft.customer,'');
+      const pv=coPtYen();
+      // 使い切れる上限pt（これ以上入れても値引きは増えないので、入力を止める）
+      const capPt=(()=>{const t=Math.max(0,(coDraft.passCode?0:(+coDraft.tech||0))-(+coDraft.discount||0));
+        const g=Math.max(0,coRetail()-Math.max(0,(+coDraft.discount||0)-(+coDraft.tech||0)));
+        return (ptYenTech()>0?Math.floor(t/ptYenTech()):0)+(ptYenGoods()>0?Math.floor(g/ptYenGoods()):0);})();
+      const maxPt=Math.min(bal,capPt);
+      const noLine=ptLineOnly()&&!coDraft.memberCode;
+      return `<div class="co-sub">ポイント（残高 <b>${bal.toLocaleString()}pt</b>・施術1pt=¥${ptYenTech()}／商品1pt=¥${ptYenGoods()}）</div>
+      <div class="co-line"><span>ポイント利用</span><span class="co-y">−<input id="co-pts" type="number" inputmode="numeric" min="0" max="${maxPt}" value="${coDraft.pointsUsed||0}">pt</span></div>
+      ${maxPt<bal?`<div class="co-line" style="color:var(--sub);font-size:11.5px"><span>　今回お使いいただける上限</span><b style="margin-left:auto">${maxPt.toLocaleString()}pt</b></div>`:''}
+      ${pv.yen>0?`<div class="co-line" style="color:var(--sub);font-size:12px"><span>　→ 値引き</span><b style="margin-left:auto">−¥${pv.yen.toLocaleString()}</b></div>`:''}
+      ${noLine
+        ?`<div class="co-done" style="margin:6px 0;background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">📵 ポイントは<b>LINE会員のみ</b>です。会計後のQRを読み取っていただくと会員証が発行され、次回から付きます</div>`
+        :`<div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${escH((CO_RANK&&CO_RANK.rank&&CO_RANK.rank.name)||'スタンダード')} ${coRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>`}
       <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px"></div>`;})()}
     ${(()=>{ // ギフト券利用: コード入力→残高から充当
       const g=coDraft.giftCode?giftByCode(coDraft.giftCode):null;
@@ -2345,14 +2436,18 @@ function renderCheckout(){
    if(t)t.oninput=e=>{coDraft.tech=+e.target.value||0;sync();};
    else coDraft.tech=0;}
   box.querySelector('#co-disc').oninput=e=>{coDraft.discount=+e.target.value||0;sync();};
-  {const cp=box.querySelector('#co-pts');if(cp)cp.oninput=e=>{const bal=pointBalance(coDraft.customer,'');coDraft.pointsUsed=Math.max(0,Math.min(bal,+e.target.value||0));if(+e.target.value>bal)e.target.value=bal;sync();};}
+  {const cp=box.querySelector('#co-pts');if(cp)cp.oninput=e=>{
+   const bal=coDraft.memberCode&&CO_RANK?(coDraft.memberPt||0):pointBalance(coDraft.customer,'');
+   const lim=Math.max(0,Math.min(bal,+cp.max||bal));
+   coDraft.pointsUsed=Math.max(0,Math.min(lim,+e.target.value||0));
+   if(+e.target.value>lim)e.target.value=lim;sync();};}
   {const cr=box.querySelector('#co-ref');if(cr)cr.oninput=e=>{coDraft.referrer=e.target.value;};}
   {const gg=box.querySelector('#co-gift-go'),gi=box.querySelector('#co-gift');
    const apply=()=>{const g=giftByCode(gi.value);const st=giftStatus(g);
      if(!st.ok){toast(st.msg,true);return;}
      coDraft.giftCode=g.id;
      // 充当額=残高と支払額(ギフト以外の控除後)の小さい方
-     const payable=Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0));
+     const payable=Math.max(0,(+coDraft.tech||0)+coRetail()-(+coDraft.discount||0)-coPtYen().yen);
      coDraft.giftUsed=Math.min(g.balance||0,payable);
      renderCheckout();toast(`ギフト券を適用しました（−¥${coDraft.giftUsed.toLocaleString()}）`);};
    if(gg)gg.onclick=apply;
@@ -2400,9 +2495,11 @@ function renderCheckout(){
     if(r.name)coDraft.customer=r.name;
     if(r.phone)coDraft.phone=r.phone;
     coDraft.memberCode=r.code; coDraft.memberPt=r.points||0;
+    CO_RANK={rank:r.rank,rate:r.rate,visits:r.visits,yVisits:r.yVisits,ySpend:r.ySpend,next:r.next};
     if(inp)inp.value='';
     renderCheckout();
-    toast(`会員証を読みました${r.name?'：'+r.name+' 様':''}（残高 ${(r.points||0).toLocaleString()}pt）`);
+    const rn=(r.rank&&r.rank.name)||'';
+    toast(`${r.name?r.name+' 様':'会員証'}${rn?'（'+rn+'・'+(r.visits||0)+'回目）':''}　残高 ${(r.points||0).toLocaleString()}pt`);
     setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);
   };
   if(scan){
@@ -2439,7 +2536,10 @@ function coBuildRec(){
       price:i.unit!=null?((+i.unit||0)*Math.max(1,+i.qty||1)):(+i.price||0), productId:i.productId||undefined}))};
   rec.passCode=coDraft.passCode||'';
   rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
-  rec.total=Math.max(0,(rec.passCode?0:rec.tech)+rec.retail-rec.discount-rec.pointsUsed-rec.giftUsed);
+  {const pv=coPtYen();
+   rec.ptYen=pv.yen;              // 何円分の値引きになったか（レートが2種類あるので記録に残す）
+   rec.pointsUsed=pv.spent;}      // 引くのは値引きに変わった分だけ（入力しすぎても余りは減らさない）
+  rec.total=Math.max(0,(rec.passCode?0:rec.tech)+rec.retail-rec.discount-rec.ptYen-rec.giftUsed);
   return rec;
 }
 function coFinish(rec){
@@ -2461,9 +2561,12 @@ function coFinish(rec){
   // 自社ポイントの記録（新規会計のみ）: 利用=マイナス行 / 付与=支払額×還元率のプラス行
   let ptMsg='';
   if(isNew&&rec.customer){
-    if(rec.pointsUsed>0){addPointRow({name:rec.customer,phone:'',delta:-rec.pointsUsed,reason:'ポイント利用',ref:rec.id});ptMsg+=` / ${rec.pointsUsed}pt利用`;}
-    if(pointEnabled()){const aw=Math.floor(rec.total*pointRate()/100);
-      if(aw>0){addPointRow({name:rec.customer,phone:'',delta:aw,reason:`来店ポイント(${pointRate()}%)`,ref:rec.id});ptMsg+=` / +${aw}pt付与`;}}
+    if(rec.pointsUsed>0){addPointRow({name:rec.customer,phone:rec.phone||'',delta:-rec.pointsUsed,
+      reason:`ポイント利用（−¥${(rec.ptYen||0).toLocaleString()}）`,ref:rec.id});ptMsg+=` / ${rec.pointsUsed}pt利用(−¥${(rec.ptYen||0).toLocaleString()})`;}
+    if(pointEnabled()&&!(ptLineOnly()&&!rec.memberCode)){
+      const rt=coRate(), aw=Math.floor(rec.total*rt/100);
+      if(aw>0){addPointRow({name:rec.customer,phone:rec.phone||'',delta:aw,
+        reason:`来店ポイント(${(CO_RANK&&CO_RANK.rank&&CO_RANK.rank.name)||'スタンダード'} ${rt}%)`,ref:rec.id});ptMsg+=` / +${aw}pt付与`;}}
     // 紹介ポイント: ご紹介者と本人の双方へ(会計に紹介者名が入っている時のみ・1会計1回)
     const refName=(rec.referrer||'').trim();
     if(pointEnabled()&&refName&&refName!==rec.customer){
@@ -2721,6 +2824,23 @@ function renderRegister(){
       <span><b>サロンとショップを分ける</b><i>レジ画面に「💇サロン／🛍ショップ」の切り替えが出ます</i></span></label>
     <div id="pos-split-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div></div>`;
 
+  /* 会員ランク。3つの軸のどれかで届いていればそのランクを差し上げる（甘めに見るのは意図的）。
+   * ホットペッパー経由より自社サイトのほうが得になる状態を作るための仕組み。 */
+  const rankPanel=`<div class="card reg-close"><h3>👑 会員ランクとポイント</h3>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:10px">
+      お客様の常連ぶりを<b>3つの軸</b>で見て、<b>いちばん高く出た軸</b>のランクを差し上げます。<br>
+      ①通算のご来店回数　②この1年のご来店回数　③この1年のご利用金額<br>
+      ランクが上がるとポイント付与率が上がります。お客様のLINE会員証には<b>「あと◯回で次のランク」</b>が出ます。
+    </div>
+    <div id="rank-rows" style="font-size:12.5px">読み込んでいます…</div>
+    <div class="co-sub" style="margin-top:14px">ポイントの値打ち</div>
+    <div class="rz"><span>オンラインショップ・店販の商品</span><span style="margin-left:auto">1pt = ¥<input id="rk-goods" type="number" step="0.5" min="0" max="10" value="${ptYenGoods()}" style="width:66px"></span></div>
+    <div class="rz"><span>サロン・スパの施術</span><span style="margin-left:auto">1pt = ¥<input id="rk-tech" type="number" step="0.5" min="0" max="10" value="${ptYenTech()}" style="width:66px"></span></div>
+    <label class="csopt" style="max-width:520px;margin-top:10px"><input type="checkbox" id="rk-lineonly" ${ptLineOnly()?'checked':''}>
+      <span><b>ポイントはLINE会員のみ</b><i>会員証のないお客様には付きません。LINE登録の動機になります</i></span></label>
+    <div class="row" style="margin-top:12px"><button class="btn pay" id="rk-save">この内容で保存</button></div>
+    <div id="rk-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div></div>`;
+
   /* LINEで領収書・会員証。会計のあとにQRを出すかどうか。
    * LINEの公式アカウントを持っていないお店では出さない方がいいので選べるようにしてある。 */
   const linePanel=`<div class="card reg-close"><h3>📱 LINEで領収書・会員証</h3>
@@ -2746,11 +2866,54 @@ function renderRegister(){
     <div class="rz-ref"><span>お客様が選んだ言語で自動的に切り替わります</span><span>海外は「料金の50%」が一般的（無断キャンセル対策）</span></div></div>`;
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧾 レジの分け方（サロン／ショップ）',splitPanel)
+    +fold('👑 会員ランクとポイント',rankPanel)
     +fold('📱 LINEで領収書・会員証',linePanel)
     +fold('💳 前金（デポジット）の設定（言語ごと）',depPanel)
     +fold('💎 ポイント設定（還元率・使う/使わない）',ptPanel)
     +fold(`🎁 ギフト券（発行・一覧${activeGifts.length?`・有効${activeGifts.length}枚`:''}）`,gfPanel)
     +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel);
+  // 会員ランクの読み込みと保存
+  {let RK=null;
+   const drawRanks=()=>{
+     const box=document.getElementById('rank-rows'); if(!box)return;
+     if(!RK||!RK.tiers){box.innerHTML='<span style="color:var(--sub)">サーバーに接続できません</span>';return;}
+     box.innerHTML=`<div style="display:grid;grid-template-columns:1.3fr .7fr .8fr .8fr 1fr;gap:6px;align-items:center;
+         font-size:11.5px;color:var(--sub);font-weight:700;padding-bottom:5px;border-bottom:1px solid var(--line)">
+         <span>ランク名</span><span>付与率%</span><span>通算来店</span><span>年間来店</span><span>年間利用¥</span></div>`
+       + RK.tiers.map((t,i)=>`<div style="display:grid;grid-template-columns:1.3fr .7fr .8fr .8fr 1fr;gap:6px;align-items:center;padding:5px 0">
+         <input class="rk-name" data-i="${i}" value="${escH(t.name||'')}" style="width:100%">
+         <input class="rk-rate" data-i="${i}" type="number" min="0" max="50" value="${t.rate||0}" style="width:100%">
+         <input class="rk-v"    data-i="${i}" type="number" min="0" value="${t.visits||0}" style="width:100%" ${i===0?'disabled':''}>
+         <input class="rk-yv"   data-i="${i}" type="number" min="0" value="${t.yVisits||0}" style="width:100%" ${i===0?'disabled':''}>
+         <input class="rk-ys"   data-i="${i}" type="number" min="0" step="10000" value="${t.ySpend||0}" style="width:100%" ${i===0?'disabled':''}>
+       </div>`).join('')
+       + `<div style="font-size:11.5px;color:var(--sub);margin-top:6px">いちばん上は既定のランクなので、条件は空のままです</div>`;
+   };
+   API.rankConfig().then(r=>{RK=(r&&r.ok)?r.config:null;drawRanks();});
+   const btn=document.getElementById('rk-save');
+   if(btn)btn.onclick=async()=>{
+     if(!RK||!RK.tiers){toast('サーバーに接続できません',true);return;}
+     const g=v=>Array.from(document.querySelectorAll(v));
+     const tiers=RK.tiers.map((t,i)=>({key:t.key,
+       name:(document.querySelector(`.rk-name[data-i="${i}"]`)||{}).value||t.name,
+       rate:+(document.querySelector(`.rk-rate[data-i="${i}"]`)||{}).value||0,
+       visits:+(document.querySelector(`.rk-v[data-i="${i}"]`)||{}).value||0,
+       yVisits:+(document.querySelector(`.rk-yv[data-i="${i}"]`)||{}).value||0,
+       ySpend:+(document.querySelector(`.rk-ys[data-i="${i}"]`)||{}).value||0}));
+     const goods=parseFloat((document.getElementById('rk-goods')||{}).value)||0;
+     const tech =parseFloat((document.getElementById('rk-tech')||{}).value)||0;
+     const lo=!!(document.getElementById('rk-lineonly')||{}).checked;
+     btn.disabled=true;btn.textContent='保存中…';
+     const r=await API.saveRankConfig({tiers,yenPerPointGoods:goods,yenPerPointTech:tech,lineOnly:lo});
+     btn.disabled=false;btn.textContent='この内容で保存';
+     if(r&&r.ok){
+       RK=r.config;
+       // 端末側にも同じ値を持たせる（レジは通信が切れても動くようにしてある）
+       setStg('ptYenGoods',String(goods));setStg('ptYenTech',String(tech));setStg('ptLineOnly',lo?'1':'0');
+       const ok=document.getElementById('rk-saved');if(ok){ok.style.display='block';setTimeout(()=>ok.style.display='none',1800);}
+       drawRanks();toast('会員ランクを保存しました');
+     }else toast((r&&r.error)||'保存できませんでした',true);
+   };}
   // LINEで領収書のON/OFF
   {const el=document.getElementById('line-receipt');
    if(el)el.onchange=()=>{setStg('lineReceipt',el.checked?'1':'0');
