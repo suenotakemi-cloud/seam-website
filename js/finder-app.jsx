@@ -8579,7 +8579,20 @@ function ResultHero({ karte, answers, onSaveImage, onShare, onSavePdf }) {
         pm.rd = 1;
         pm.rdd = Math.min(365, Math.max(0, Math.round((Date.now() - new Date(pk.savedAt).getTime()) / 86400000)));
       }
-      window.seamTrack && window.seamTrack('finder_complete', { type: origin && origin.code, tier: damageTier, advice: karte.adviceKey, gender: gender, meta: pm });
+      // 【重要】カルテ復元(前回のカルテを見る)でも このeffectは走る。
+      // finder_complete を送ると「診断を完走した人数」が水増しされ 完答率(公開指標)が実態より高く出る。
+      // 復元は karte_view として別に記録する(2026-07-30 修正・メディア公表前提の精度確保)。
+      // 復元・共有リンク・サンプル表示は いずれも「その人が答えきった」ではない
+      var _restored = false;
+      try {
+        _restored = !!window.__seamRestored
+          || !!(answers && (answers._isShared || answers._sharedOriginId));
+      } catch (e) {}
+      if (_restored) {
+        window.seamTrack && window.seamTrack('karte_view', { type: origin && origin.code, tier: damageTier, gender: gender });
+      } else {
+        window.seamTrack && window.seamTrack('finder_complete', { type: origin && origin.code, tier: damageTier, advice: karte.adviceKey, gender: gender, meta: pm });
+      }
     } catch (e) {}
   }, []);
   // セクション間をジャンプするヘルパー
@@ -11939,10 +11952,13 @@ function App() {
   const startDeep = () => { try{window.seamTrack&&window.seamTrack('finder_start',{mode:'b'});}catch(e){} setAnswers({}); setView('quizDeep'); };
   const resume = () => {
     if (!lastKarte) return;
+    // 復元表示は「完答」ではない。計測を分けるための印(finder_completeの水増し防止)
+    try { window.__seamRestored = true; } catch (e) {}
     setAnswers(lastKarte.answersSnapshot || {});
     setView('result');
   };
   const complete = () => {
+    try { window.__seamRestored = false; } catch (e) {}
     // 再診断の差分用: 上書きされる前の「前回カルテ」を退避(復元表示では走らない=新規完了のみ)
     try {
       const raw = localStorage.getItem('seam_karte_last');
