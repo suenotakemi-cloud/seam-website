@@ -1105,7 +1105,7 @@ body.customer .phone.spa{background:#f7f8f3}
   </div>
   <p class="lead">お会計を記録すると、本日の売上とレジ締め（現金の過不足）が自動で集計されます</p>
   <div id="registerbody"></div>
-  <div id="termCard" style="margin-top:14px"></div>
+  <div id="payReady" style="margin-top:14px"></div><div id="termCard" style="margin-top:14px"></div>
 </section>
 
 </main>
@@ -2538,8 +2538,31 @@ document.getElementById('reg-today').onclick=()=>{registerDay=today();renderRegi
 
 /* ===== Squareターミナル（端末カード決済）設定・ペアリング ===== */
 let _pairPoll=null;
+/* 前金決済の準備状況を、レジの画面から見えるようにする（本番切替の進み具合が分かるように） */
+async function renderPayReady(){
+  const el=document.getElementById('payReady'); if(!el)return;
+  const c=await payConfig();
+  if(!c||!c.ok){el.innerHTML='';return;}
+  const row=(k,v,ok)=>`<div style="display:flex;gap:8px;padding:3px 0;font-size:12.5px">
+    <span style="flex:0 0 120px;font-weight:800;color:var(--sub)">${k}</span>
+    <span style="flex:1;font-weight:700;color:${ok===false?'#b4302b':ok===true?'var(--ok)':'var(--navy)'}">${escH(v)}</span></div>`;
+  el.innerHTML=`<div class="card term-card">
+    <div class="rep-h"><h3>💳 前金（オンライン事前決済）</h3>
+      <span class="${c.ready?'term-on':''}" style="${c.ready?'':'background:#fff8f0;border:1px solid #f0d9b8;color:#7a5a1e;border-radius:99px;padding:3px 10px;font-size:11.5px;font-weight:800'}">${c.ready?'受付中':'受付していません'}</span></div>
+    <div style="margin-top:6px">
+      ${row('環境',c.env==='production'?'本番':'テスト（sandbox）',c.env==='production')}
+      ${row('アプリID',c.appId?('…'+c.appId.slice(-8)):'未設定',!!c.appId)}
+      ${row('店舗ID',c.locationId||'未設定',!!c.locationId)}
+      ${c.mismatch?row('要対応',c.mismatch,false):''}
+    </div>
+    <div style="font-size:12px;color:var(--sub);line-height:1.75;margin-top:8px">
+      ${c.ready?'お客様の予約画面でカード決済を受け付けています。決済できたときだけ前金が台帳に載ります。'
+               :'いまは予約画面にカード欄を出していません（お客様は「店頭でお支払い」のみ）。受け取っていないお金を前金として記録しないためです。'}
+    </div></div>`;
+}
 function renderTerminal(){
   const el=document.getElementById('termCard'); if(!el)return;
+  renderPayReady();
   const dev=stg('terminalDeviceId','');
   if(dev){
     el.innerHTML=`<div class="card term-card"><div class="rep-h"><h3>💳 Squareターミナル</h3><span class="term-on">接続済み</span></div>

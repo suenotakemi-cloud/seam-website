@@ -261,10 +261,17 @@ export default {
       const appId = env.SQUARE_APP_ID || '';
       const locId = env.SQUARE_LOCATION_ID || '';
       const prod = env.SQUARE_ENV === 'production';
+      // ★環境とアプリIDの食い違いを自動で止める。
+      // 本番のアプリID(sq0idp-)をサンドボックスのSDKに渡す（逆も）と必ず失敗するため、
+      // 揃うまでは ready:false にしてカード欄を出さない（お客様に壊れた画面を見せない）。
+      const idIsProd = appId.startsWith('sq0idp-');
+      const match = !appId || (prod === idIsProd);
       return json({
         ok: true,
-        // 3つが揃っていて初めて「決済できる」。欠けていたら画面はカード欄を出さない
-        ready: !!(appId && locId && env.SQUARE_ACCESS_TOKEN),
+        // 揃って初めて「決済できる」。欠けていたら画面はカード欄を出さない
+        ready: !!(appId && locId && env.SQUARE_ACCESS_TOKEN && match),
+        mismatch: !match ? (prod ? 'SQUARE_ENV=production だがアプリIDが本番のものではありません'
+                                 : 'アプリIDは本番用ですが SQUARE_ENV がまだ sandbox です') : '',
         env: prod ? 'production' : 'sandbox',
         appId, locationId: locId,
         sdk: prod ? 'https://web.squarecdn.com/v1/square.js' : 'https://sandbox.web.squarecdn.com/v1/square.js',
