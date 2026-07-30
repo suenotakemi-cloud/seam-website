@@ -181,7 +181,8 @@
 
   // ---- ラベル辞書 ----
   var ADVICE = {scalp:'頭皮ケア', frizz:'うねり・広がり', volume:'ボリューム', damage:'ダメージ補修', dry:'乾燥・うるおい', color:'カラーケア', heat:'熱ダメージ', calm:'コンディション良好'};
-  var TIER = {1:'軽い (Tier1)', 2:'中ダメージ (Tier2)', 3:'しっかり (Tier3)'};
+  // ダメージ5段階(2026-07-30〜)。それ以前のデータは3段階(1軽/2中/3重)で記録されている
+  var TIER = {1:'ダメージなし', 2:'少しダメージしてる', 3:'ダメージしてる', 4:'結構ダメージしてる', 5:'かなりダメージしてる'};
   var GENDER = {female:'女性', male:'男性', other:'その他', na:'未回答'};
   var TARGET = {reserve_hpb:'サロン予約(HPB)', reserve_open:'予約を開く', shop:'オンラインショップ', product:'商品リンク(公式)', product_alt:'商品→ショップ案内', member_item:'会員EC商品直リンク', online:'オンライン'};
   var MODE = {a:'かんたん(A)', b:'くわしい(B)'};
@@ -262,7 +263,7 @@
     function dailyGen(){var a=[],now=Date.now();for(var i=61;i>=0;i--){a.push({d:dstr(now-i*864e5),c:Math.round(8+7*Math.sin(i/5)+rnd()*6)});}return a;}
     var d=dailyGen();
     var completes=byType.reduce(function(s,x){return s+x.c;},0);
-    function recentGen(){var a=[],now=Date.now(),refs=['instagram','google','direct','x','line'],types=['NNW','TLS','VCC','MSP','FHC'],adv=['frizz','damage','dry','scalp','volume'],tgts=['reserve_hpb','shop','product','product_alt'];for(var i=0;i<24;i++){var isCta=rnd()<.4;a.push({ts:now-i*37*60000-Math.round(rnd()*9e5),name:isCta?'finder_cta':'finder_complete',type:types[i%types.length],advice:adv[i%adv.length],tier:1+(i%3),ref:refs[i%refs.length],utm_campaign:i%4===0?'summer_2026':'',target:isCta?tgts[i%tgts.length]:'',device:rnd()<.85?'mobile':'desktop',gender:rnd()<.8?'female':'male'});}return a;}
+    function recentGen(){var a=[],now=Date.now(),refs=['instagram','google','direct','x','line'],types=['NNW','TLS','VCC','MSP','FHC'],adv=['frizz','damage','dry','scalp','volume'],tgts=['reserve_hpb','shop','product','product_alt'];for(var i=0;i<24;i++){var isCta=rnd()<.4;a.push({ts:now-i*37*60000-Math.round(rnd()*9e5),name:isCta?'finder_cta':'finder_complete',type:types[i%types.length],advice:adv[i%adv.length],tier:1+(i%5),ref:refs[i%refs.length],utm_campaign:i%4===0?'summer_2026':'',target:isCta?tgts[i%tgts.length]:'',device:rnd()<.85?'mobile':'desktop',gender:rnd()<.8?'female':'male'});}return a;}
     // プロファイル（デモ・実データではありません — 画面確認用の作り値）
     function demoProfile(){
       var byAge={teen:34,'20s':196,'30s':228,'40s':172,'50plus':118,noanswer:22};
@@ -386,7 +387,7 @@
       })(),
       summary:{starts:Math.round(completes*1.42), completes:completes, ctas:Math.round(completes*0.34)},
       byType:byType, byAdvice:[{a:'damage',c:Math.round(completes*.28)},{a:'frizz',c:Math.round(completes*.22)},{a:'dry',c:Math.round(completes*.18)},{a:'scalp',c:Math.round(completes*.14)},{a:'volume',c:Math.round(completes*.1)},{a:'color',c:Math.round(completes*.08)}],
-      byTier:[{tier:1,c:Math.round(completes*.22)},{tier:2,c:Math.round(completes*.41)},{tier:3,c:Math.round(completes*.37)}],
+      byTier:[{tier:1,c:Math.round(completes*.10)},{tier:2,c:Math.round(completes*.28)},{tier:3,c:Math.round(completes*.21)},{tier:4,c:Math.round(completes*.30)},{tier:5,c:Math.round(completes*.11)}],
       byGender:[{g:'female',c:Math.round(completes*.83)},{g:'male',c:Math.round(completes*.15)},{g:'other',c:Math.round(completes*.02)}],
       byMode:[{m:'a',c:Math.round(completes*.86)},{m:'b',c:Math.round(completes*.56)}],
       ctaTarget:[{target:'reserve_hpb',c:Math.round(completes*.19)},{target:'shop',c:Math.round(completes*.09)},{target:'product',c:Math.round(completes*.06)}],
@@ -1128,7 +1129,7 @@
       scalpPanel(data) +
       panel('Type','27髪格タイプ 分布', barRows(data.byType||[], function(x){return x.t;})) +
       panel('Concern','悩み（主訴）分布', barRows(data.byAdvice||[], function(x){return ADVICE[x.a]||x.a;})) +
-      panel('Damage','ダメージ履歴 Tier', barRows(data.byTier||[], function(x){return TIER[x.tier]||('Tier'+x.tier);})) +
+      panel('Damage','ダメージ履歴 5段階<span style="font-weight:400;opacity:.55;font-size:11px;"> ※2026-07-30より5段階(以前は3段階)</span>', barRows(data.byTier||[], function(x){return TIER[x.tier]||('Tier'+x.tier);})) +
       panel('Gender','性別 分布', barRows(data.byGender||[], function(x){return GENDER[x.g]||x.g;})) +
       panel('Mode','診断モード（開始）', barRows(data.byMode||[], function(x){return MODE[x.m]||x.m;})) +
       panel('Funnel','予約・誘導クリック', barRows(data.ctaTarget||[], function(x){return TARGET[x.target]||x.target;})) +

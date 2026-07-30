@@ -1095,7 +1095,7 @@ function buildProfileMeta(a) {
 // 診断→在店サービスの出し分け(表示カードと finder_complete の svc で共用)。
 // answers + damageTier のみで判定 → 「表示したカード」と「記録した svc」が必ず一致する。
 // サロン(ダメージ/カラー/矯正)とスパ(頭皮/年齢)は排他にしない(両立可)。該当なしは soft。
-function computeServiceReco(a, damageTier) {
+function computeServiceReco(a, damageTier, heavy) {
   a = a || {};
   const cs = Array.isArray(a.concerns) ? a.concerns : [];
   const has = (v) => cs.indexOf(v) !== -1;
@@ -1103,7 +1103,8 @@ function computeServiceReco(a, damageTier) {
   // 家では戻せない(強ダメージ/縮毛矯正)・頭皮の実ニーズがある人だけに出す。該当なしは none(ケア+ショップに集中)。
   const spa = ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(has)
     || a.scalpType === 'dry' || a.scalpType === 'oily' || a.scalpType === 'sensitive';
-  const highDamage = (typeof damageTier === 'number' && damageTier >= 3);
+  // heavy(=isHeavyDamage)があればそれを使う。無い場合だけ目盛りから近似する
+  const highDamage = (typeof heavy === 'boolean') ? heavy : (typeof damageTier === 'number' && damageTier >= 4);
   const straight = (a.straighten && a.straighten !== 'none') || !!a.straightenHidden;
   const salon = highDamage || straight;
   let reason = null;
@@ -4382,7 +4383,7 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
   const _age = answers && answers.age;
   const isAge30Plus = _age === '30s' || _age === '40s' || _age === '50plus';
   const deepScalpRequired = _cs.includes('thinning') || _cs.includes('volumeDown') || _cs.includes('topFlat') || (answers && answers.thickness === 'thin');
-  const highDamageRequired = (typeof computeDamageTier === 'function' && computeDamageTier(_sc) >= 3) || (_sc.bleachHistory || 0) >= 4;
+  const highDamageRequired = (typeof isHeavyDamage === 'function' && isHeavyDamage(_sc)) || (_sc.bleachHistory || 0) >= 4;
   const scalpRequired = isAge30Plus || deepScalpRequired || _forcedScalp;
   const maskRequired  = highDamageRequired;
   const needMask  = maskRequired || (_sc.damage || 0) >= 2 || (_sc.bleachHistory || 0) > 0 || ['damage','split','rough','tangle'].some(v => _cs.includes(v));
@@ -4543,7 +4544,8 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
 
       {/* ⚜ 診断→在店サービスの橋: ダメージ/カラー/矯正→サロン, 頭皮/年齢→スパ(両立可)。該当なしはソフト誘導 */}
       {(() => {
-        const _reco = computeServiceReco(answers, (typeof computeDamageTier === 'function' ? computeDamageTier(_sc) : undefined));
+        const _reco = computeServiceReco(answers, (typeof computeDamageTier === 'function' ? computeDamageTier(_sc) : undefined),
+          (typeof isHeavyDamage === 'function' ? isHeavyDamage(_sc) : undefined));
         return (
           <>
             {_reco.salon && <SalonSuggestCard reason={_reco.reason} />}
@@ -4755,7 +4757,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
             あなたの本当の髪に、出会う
           </p>
             <p className="mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal">
-            生まれ持った髪と、今日までの履歴　その両方から今合うヘアケアを選びます
+            生まれ持った型と 今日までの履歴 そしていまの状態から これから使う一本を選びます
           </p>
 
           {/* すぐ始めたい人の入口。定義や27タイプは下に残す=読みたい人だけ読む。
@@ -4781,9 +4783,10 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
           <div className="bg-white/70 border border-line rounded-[2px] p-5 sm:p-6 max-w-xl">
             <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">What is Kamikaku</p>
             <p className="mt-3 font-serif text-[17px] sm:text-[19px] text-ink leading-snug">
-              髪格とは、生まれ持った髪の設計図です
+              髪格とは 生まれ持った型と 歩んできた履歴 そして今の状態を ひとつに読むことです
             </p>
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <p className="mt-4 font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">変わらない型 — 27通り</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
               {[
                 { jp: '太さ', en: '1本の太さ' },
                 { jp: '量',   en: '生えている量' },
@@ -4795,13 +4798,24 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-[11.5px] sm:text-[12px] text-charcoal/60 leading-[1.85] text-center">
-              この3つの組み合わせで27通り
-            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {[
+                { t: 'これまで', v: 'カラー・ブリーチ・矯正' },
+                { t: 'いま',     v: '乾燥・ダメージ・頭皮' },
+              ].map((x, i) => (
+                <div key={i} className="border border-gold/25 bg-cream/40 rounded-[2px] py-2.5 px-3">
+                  <p className="font-mono tracking-widest2 text-[9px] uppercase text-gold leading-none">{x.t}</p>
+                  <p className="mt-1.5 text-[10.5px] sm:text-[11px] text-charcoal/70 leading-snug">{x.v}</p>
+                </div>
+              ))}
+            </div>
             <p className="mt-4 pt-4 border-t border-line text-[12.5px] sm:text-[13px] text-charcoal leading-[1.9]">
-              髪格は<span className="text-gold">カラーやアイロンでは変わりません</span>
-              変わるのは「いまの状態」のほうです
-              SEAMはその2つを分けて、あなたに合う3〜5本を選びます
+              型は<span className="text-gold">カラーやアイロンでは変わりません</span>
+              変わるのは 履歴といまの状態です
+              髪格診断は その両方を読んで これから何を使うかまでお出しします
+            </p>
+            <p className="mt-2.5 font-serif text-[13px] sm:text-[14px] text-ink leading-[1.8]">
+              髪質を言い当てるだけなら 髪格とは呼びません
             </p>
           </div>
         </div>
@@ -5504,7 +5518,7 @@ function StraightenFlow({ q, value, onChange, onSet, answers }) {
    ReturnDiffCard — 再診断の差分(前回カルテとの比較)
    complete()時に退避した window.__seamPrevKarte とだけ比較する=復元表示では出ない。
    文言は自己申告の変化の記述に留める(効能断定なし・薬機法配慮)。 ────────────────────────────────────────── */
-const TIER_BAND_LABEL = { 1: '軽やかケア帯', 2: '集中ケア帯', 3: 'しっかり補修帯' };
+const TIER_BAND_LABEL = { 1: 'ダメージなし', 2: '少しダメージ', 3: 'ダメージあり', 4: '結構ダメージ', 5: 'かなりダメージ' };
 function ReturnDiffCard({ prev, karte, answers }) {
   const diff = useMemo(() => {
     if (!prev || !prev.savedAt || !prev.answersSnapshot || !karte) return null;
@@ -7763,15 +7777,36 @@ function selectAdviceKey(scores, answers) {
   return 'calm';
 }
 
-// 履歴ダメージTier: 1=軽 / 2=中 / 3=重（27型=生まれ持った素材とは別レイヤー＝今の状態）
-// color/bleach/perm/straighten/高温アイロン由来の蓄積を集約した damage/heatDamage/bleachHistory から算出
+// 履歴ダメージTier: 1〜5（27型=生まれ持った素材とは別レイヤー＝いまの状態）
+// 1 ダメージなし / 2 少しダメージしてる / 3 ダメージしてる / 4 結構ダメージしてる / 5 かなりダメージしてる
+// color/bleach/perm/straighten/高温アイロン由来の蓄積を集約した damage/heatDamage/bleachHistory から算出。
+// しきい値は実分布に合わせてある(オーナー指示2026-07-30「3段階だと集計が分かりづらい」)。
+// 5,000人シミュレーション(実データのマージナル: ブリーチ27.7%/矯正34.9%/アイロン毎日22%等)で
+// おおよそ 1:11% / 2:28% / 3:27% / 4:23% / 5:11% に分かれる=集計で層が読める。
 function computeDamageTier(scores) {
   const s = scores || {};
   const dmg = s.damage || 0, heat = s.heatDamage || 0, bleach = s.bleachHistory || 0;
   const load = dmg + heat + bleach;
-  if (heat >= 5 || dmg >= 7 || bleach >= 5 || load >= 11) return 3;
-  if (heat >= 2 || dmg >= 3 || bleach >= 2 || load >= 4)  return 2;
+  // かなり: 総負荷が上位1割 または 白っぽく抜いた履歴に強いダメージが重なる
+  if (load >= 13 || (bleach >= 5 && dmg >= 7)) return 5;
+  // 結構: 明るいブリーチが残っている / 毎日の高温 / ダメージ申告が強い / 総負荷が上位3割
+  if (load >= 8 || bleach >= 4 || heat >= 6 || dmg >= 9) return 4;
+  if (load >= 4) return 3;
+  // わずかでも履歴や熱があれば「なし」にはしない(なし=本当に何もない人だけ)
+  if (load >= 1) return 2;
   return 1;
+}
+// 集計・比較で使う呼び名(オーナー指定の言い回し)
+const DAMAGE_TIER_LABEL = { 1: 'ダメージなし', 2: '少しダメージしてる', 3: 'ダメージしてる', 4: '結構ダメージしてる', 5: 'かなりダメージしてる' };
+/* 挙動用の「重ダメージ」判定 — 集中マスク必須とサロン誘導のゲート。
+   **旧3段階のTier3と同一のしきい値を保つ**(母集団33%前後)。
+   5段階化は読みやすさ/集計のための目盛りの細分化であって
+   「サロンを前に出しすぎない」オーナー方針(v48で戻した経緯)を動かさないため
+   ゲートは目盛りと切り離してある。 */
+function isHeavyDamage(scores) {
+  const s = scores || {};
+  const dmg = s.damage || 0, heat = s.heatDamage || 0, bleach = s.bleachHistory || 0;
+  return (heat >= 5 || dmg >= 7 || bleach >= 5 || (dmg + heat + bleach) >= 11);
 }
 
 function deriveTargetRadar(currentRadar, direction) {
@@ -7819,6 +7854,7 @@ function resolveKarteAnimal(answers, scores) {
     stateText, states,
     adviceKey, adviceText,
     damageTier: computeDamageTier(scores),
+    damageHeavy: isHeavyDamage(scores),
   };
 }
 
@@ -8412,10 +8448,11 @@ function WhyThisTypeCard({ karte, answers }) {
       )}
 
       <p className="mt-5 text-[12.5px] sm:text-[13px] text-ink leading-[1.9] border-l-2 border-gold pl-4">
-        カラーやブリーチ、毎日のアイロンは<span className="text-gold">髪格を変えません</span>
-        変わるのは「いまの状態」のほうです
-        SEAMは<span className="text-ink">変わらない髪格</span>と<span className="text-ink">変えられる状態</span>を分けて、
-        商品の選び分けに使っています
+        カラーやブリーチ 毎日のアイロンは<span className="text-gold">型を変えません</span>
+        変わるのは これまでの履歴と いまの状態です
+        髪格は その両方をあわせた見立て
+        <span className="text-ink">変わらない型</span>と<span className="text-ink">変えられる状態</span>を分けて読み
+        これからの一本を選びます
       </p>
     </section>
   );
@@ -8424,14 +8461,14 @@ function WhyThisTypeCard({ karte, answers }) {
 /* ---------- ResultHero — Pokémon カード風 図鑑プロフィールカード ---------- */
 function ResultHero({ karte, answers, onSaveImage, onShare, onSavePdf }) {
   if (!karte) return null;
-  const { origin, radar, mainGoal, gender, damageTier } = karte;
+  const { origin, radar, mainGoal, gender, damageTier, damageHeavy } = karte;
   const heroImgPath = getCharImgPath(origin?.code, gender);  // null なら画像非表示
   // 計測: 結果表示時に1回だけ（type/履歴Tier/advice + プロファイルmeta の実分布を集計。個人情報なし・投げっぱなし）
   useEffect(() => {
     try {
       window.__seamLastType = (origin && origin.code) || '';
       const pm = buildProfileMeta(answers);
-      try { pm.svc = computeServiceReco(answers, damageTier).code; } catch (e) {}
+      try { pm.svc = computeServiceReco(answers, damageTier, damageHeavy).code; } catch (e) {}
       // 再診断シグナル: rd=1(前回カルテあり) rdd=前回から何日(0-365) — 経時データの土台
       const pk = window.__seamPrevKarte;
       if (pk && pk.savedAt) {

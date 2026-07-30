@@ -1,4 +1,3 @@
-/* AUTO-GENERATED from js/finder-app.jsx by CI (build-finder.js). DO NOT EDIT — edit the .jsx source. */
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* =========================================================================
    SEAM Hair Finder
@@ -2290,14 +2289,15 @@ function buildProfileMeta(a) {
 // 診断→在店サービスの出し分け(表示カードと finder_complete の svc で共用)。
 // answers + damageTier のみで判定 → 「表示したカード」と「記録した svc」が必ず一致する。
 // サロン(ダメージ/カラー/矯正)とスパ(頭皮/年齢)は排他にしない(両立可)。該当なしは soft。
-function computeServiceReco(a, damageTier) {
+function computeServiceReco(a, damageTier, heavy) {
   a = a || {};
   const cs = Array.isArray(a.concerns) ? a.concerns : [];
   const has = v => cs.indexOf(v) !== -1;
   // 髪格診断の主役は「あなたに合うケア/ヘアケア(=ショップ導線)」。サロン/スパは前に出しすぎず、
   // 家では戻せない(強ダメージ/縮毛矯正)・頭皮の実ニーズがある人だけに出す。該当なしは none(ケア+ショップに集中)。
   const spa = ['scalpDry', 'scalpOily', 'thinning', 'topFlat', 'volumeDown'].some(has) || a.scalpType === 'dry' || a.scalpType === 'oily' || a.scalpType === 'sensitive';
-  const highDamage = typeof damageTier === 'number' && damageTier >= 3;
+  // heavy(=isHeavyDamage)があればそれを使う。無い場合だけ目盛りから近似する
+  const highDamage = typeof heavy === 'boolean' ? heavy : typeof damageTier === 'number' && damageTier >= 4;
   const straight = a.straighten && a.straighten !== 'none' || !!a.straightenHidden;
   const salon = highDamage || straight;
   let reason = null;
@@ -6048,7 +6048,7 @@ function DeepProductSection({
   const _age = answers && answers.age;
   const isAge30Plus = _age === '30s' || _age === '40s' || _age === '50plus';
   const deepScalpRequired = _cs.includes('thinning') || _cs.includes('volumeDown') || _cs.includes('topFlat') || answers && answers.thickness === 'thin';
-  const highDamageRequired = typeof computeDamageTier === 'function' && computeDamageTier(_sc) >= 3 || (_sc.bleachHistory || 0) >= 4;
+  const highDamageRequired = typeof isHeavyDamage === 'function' && isHeavyDamage(_sc) || (_sc.bleachHistory || 0) >= 4;
   const scalpRequired = isAge30Plus || deepScalpRequired || _forcedScalp;
   const maskRequired = highDamageRequired;
   const needMask = maskRequired || (_sc.damage || 0) >= 2 || (_sc.bleachHistory || 0) > 0 || ['damage', 'split', 'rough', 'tangle'].some(v => _cs.includes(v));
@@ -6250,7 +6250,7 @@ function DeepProductSection({
       category: f.category
     }));
   }))), (() => {
-    const _reco = computeServiceReco(answers, typeof computeDamageTier === 'function' ? computeDamageTier(_sc) : undefined);
+    const _reco = computeServiceReco(answers, typeof computeDamageTier === 'function' ? computeDamageTier(_sc) : undefined, typeof isHeavyDamage === 'function' ? isHeavyDamage(_sc) : undefined);
     return /*#__PURE__*/React.createElement(React.Fragment, null, _reco.salon && /*#__PURE__*/React.createElement(SalonSuggestCard, {
       reason: _reco.reason
     }), _reco.spa && /*#__PURE__*/React.createElement(SpaSuggestCard, null));
@@ -6658,7 +6658,7 @@ function Home({
     className: "mt-5 sm:mt-7 font-serif text-[19px] sm:text-[22px] text-ink leading-relaxed"
   }, "\u3042\u306A\u305F\u306E\u672C\u5F53\u306E\u9AEA\u306B\u3001\u51FA\u4F1A\u3046"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 sm:mt-5 max-w-md text-[13.5px] sm:text-[14.5px] leading-[1.9] text-charcoal"
-  }, "\u751F\u307E\u308C\u6301\u3063\u305F\u9AEA\u3068\u3001\u4ECA\u65E5\u307E\u3067\u306E\u5C65\u6B74\u3000\u305D\u306E\u4E21\u65B9\u304B\u3089\u4ECA\u5408\u3046\u30D8\u30A2\u30B1\u30A2\u3092\u9078\u3073\u307E\u3059"), !lastKarte && /*#__PURE__*/React.createElement("div", {
+  }, "\u751F\u307E\u308C\u6301\u3063\u305F\u578B\u3068 \u4ECA\u65E5\u307E\u3067\u306E\u5C65\u6B74 \u305D\u3057\u3066\u3044\u307E\u306E\u72B6\u614B\u304B\u3089 \u3053\u308C\u304B\u3089\u4F7F\u3046\u4E00\u672C\u3092\u9078\u3073\u307E\u3059"), !lastKarte && /*#__PURE__*/React.createElement("div", {
     className: "mt-7"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onStartDeep || onStart,
@@ -6688,8 +6688,10 @@ function Home({
     className: "font-mono tracking-widest2 text-[10px] uppercase text-gold"
   }, "What is Kamikaku"), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 font-serif text-[17px] sm:text-[19px] text-ink leading-snug"
-  }, "\u9AEA\u683C\u3068\u306F\u3001\u751F\u307E\u308C\u6301\u3063\u305F\u9AEA\u306E\u8A2D\u8A08\u56F3\u3067\u3059"), /*#__PURE__*/React.createElement("div", {
-    className: "mt-4 grid grid-cols-3 gap-2"
+  }, "\u9AEA\u683C\u3068\u306F \u751F\u307E\u308C\u6301\u3063\u305F\u578B\u3068 \u6B69\u3093\u3067\u304D\u305F\u5C65\u6B74 \u305D\u3057\u3066\u4ECA\u306E\u72B6\u614B\u3092 \u3072\u3068\u3064\u306B\u8AAD\u3080\u3053\u3068\u3067\u3059"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-4 font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45"
+  }, "\u5909\u308F\u3089\u306A\u3044\u578B \u2014 27\u901A\u308A"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 grid grid-cols-3 gap-2"
   }, [{
     jp: '太さ',
     en: '1本の太さ'
@@ -6706,13 +6708,28 @@ function Home({
     className: "font-serif text-[14px] sm:text-[15px] text-ink leading-none"
   }, x.jp), /*#__PURE__*/React.createElement("p", {
     className: "mt-1.5 text-[9.5px] sm:text-[10px] text-charcoal/50 leading-snug"
-  }, x.en)))), /*#__PURE__*/React.createElement("p", {
-    className: "mt-3 text-[11.5px] sm:text-[12px] text-charcoal/60 leading-[1.85] text-center"
-  }, "\u3053\u306E3\u3064\u306E\u7D44\u307F\u5408\u308F\u305B\u306727\u901A\u308A"), /*#__PURE__*/React.createElement("p", {
+  }, x.en)))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 grid grid-cols-2 gap-2"
+  }, [{
+    t: 'これまで',
+    v: 'カラー・ブリーチ・矯正'
+  }, {
+    t: 'いま',
+    v: '乾燥・ダメージ・頭皮'
+  }].map((x, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "border border-gold/25 bg-cream/40 rounded-[2px] py-2.5 px-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[9px] uppercase text-gold leading-none"
+  }, x.t), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1.5 text-[10.5px] sm:text-[11px] text-charcoal/70 leading-snug"
+  }, x.v)))), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 pt-4 border-t border-line text-[12.5px] sm:text-[13px] text-charcoal leading-[1.9]"
-  }, "\u9AEA\u683C\u306F", /*#__PURE__*/React.createElement("span", {
+  }, "\u578B\u306F", /*#__PURE__*/React.createElement("span", {
     className: "text-gold"
-  }, "\u30AB\u30E9\u30FC\u3084\u30A2\u30A4\u30ED\u30F3\u3067\u306F\u5909\u308F\u308A\u307E\u305B\u3093"), "\u5909\u308F\u308B\u306E\u306F\u300C\u3044\u307E\u306E\u72B6\u614B\u300D\u306E\u307B\u3046\u3067\u3059 SEAM\u306F\u305D\u306E2\u3064\u3092\u5206\u3051\u3066\u3001\u3042\u306A\u305F\u306B\u5408\u30463\u301C5\u672C\u3092\u9078\u3073\u307E\u3059"))), /*#__PURE__*/React.createElement("div", {
+  }, "\u30AB\u30E9\u30FC\u3084\u30A2\u30A4\u30ED\u30F3\u3067\u306F\u5909\u308F\u308A\u307E\u305B\u3093"), "\u5909\u308F\u308B\u306E\u306F \u5C65\u6B74\u3068\u3044\u307E\u306E\u72B6\u614B\u3067\u3059 \u9AEA\u683C\u8A3A\u65AD\u306F \u305D\u306E\u4E21\u65B9\u3092\u8AAD\u3093\u3067 \u3053\u308C\u304B\u3089\u4F55\u3092\u4F7F\u3046\u304B\u307E\u3067\u304A\u51FA\u3057\u3057\u307E\u3059"), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2.5 font-serif text-[13px] sm:text-[14px] text-ink leading-[1.8]"
+  }, "\u9AEA\u8CEA\u3092\u8A00\u3044\u5F53\u3066\u308B\u3060\u3051\u306A\u3089 \u9AEA\u683C\u3068\u306F\u547C\u3073\u307E\u305B\u3093"))), /*#__PURE__*/React.createElement("div", {
     className: "mt-9 sm:mt-12 anim-fade-up",
     style: {
       animationDelay: '180ms'
@@ -7472,9 +7489,11 @@ function StraightenFlow({
    complete()時に退避した window.__seamPrevKarte とだけ比較する=復元表示では出ない。
    文言は自己申告の変化の記述に留める(効能断定なし・薬機法配慮)。 ────────────────────────────────────────── */
 const TIER_BAND_LABEL = {
-  1: '軽やかケア帯',
-  2: '集中ケア帯',
-  3: 'しっかり補修帯'
+  1: 'ダメージなし',
+  2: '少しダメージ',
+  3: 'ダメージあり',
+  4: '結構ダメージ',
+  5: 'かなりダメージ'
 };
 function ReturnDiffCard({
   prev,
@@ -10557,17 +10576,46 @@ function selectAdviceKey(scores, answers) {
   return 'calm';
 }
 
-// 履歴ダメージTier: 1=軽 / 2=中 / 3=重（27型=生まれ持った素材とは別レイヤー＝今の状態）
-// color/bleach/perm/straighten/高温アイロン由来の蓄積を集約した damage/heatDamage/bleachHistory から算出
+// 履歴ダメージTier: 1〜5（27型=生まれ持った素材とは別レイヤー＝いまの状態）
+// 1 ダメージなし / 2 少しダメージしてる / 3 ダメージしてる / 4 結構ダメージしてる / 5 かなりダメージしてる
+// color/bleach/perm/straighten/高温アイロン由来の蓄積を集約した damage/heatDamage/bleachHistory から算出。
+// しきい値は実分布に合わせてある(オーナー指示2026-07-30「3段階だと集計が分かりづらい」)。
+// 5,000人シミュレーション(実データのマージナル: ブリーチ27.7%/矯正34.9%/アイロン毎日22%等)で
+// おおよそ 1:11% / 2:28% / 3:27% / 4:23% / 5:11% に分かれる=集計で層が読める。
 function computeDamageTier(scores) {
   const s = scores || {};
   const dmg = s.damage || 0,
     heat = s.heatDamage || 0,
     bleach = s.bleachHistory || 0;
   const load = dmg + heat + bleach;
-  if (heat >= 5 || dmg >= 7 || bleach >= 5 || load >= 11) return 3;
-  if (heat >= 2 || dmg >= 3 || bleach >= 2 || load >= 4) return 2;
+  // かなり: 総負荷が上位1割 または 白っぽく抜いた履歴に強いダメージが重なる
+  if (load >= 13 || bleach >= 5 && dmg >= 7) return 5;
+  // 結構: 明るいブリーチが残っている / 毎日の高温 / ダメージ申告が強い / 総負荷が上位3割
+  if (load >= 8 || bleach >= 4 || heat >= 6 || dmg >= 9) return 4;
+  if (load >= 4) return 3;
+  // わずかでも履歴や熱があれば「なし」にはしない(なし=本当に何もない人だけ)
+  if (load >= 1) return 2;
   return 1;
+}
+// 集計・比較で使う呼び名(オーナー指定の言い回し)
+const DAMAGE_TIER_LABEL = {
+  1: 'ダメージなし',
+  2: '少しダメージしてる',
+  3: 'ダメージしてる',
+  4: '結構ダメージしてる',
+  5: 'かなりダメージしてる'
+};
+/* 挙動用の「重ダメージ」判定 — 集中マスク必須とサロン誘導のゲート。
+   **旧3段階のTier3と同一のしきい値を保つ**(母集団33%前後)。
+   5段階化は読みやすさ/集計のための目盛りの細分化であって
+   「サロンを前に出しすぎない」オーナー方針(v48で戻した経緯)を動かさないため
+   ゲートは目盛りと切り離してある。 */
+function isHeavyDamage(scores) {
+  const s = scores || {};
+  const dmg = s.damage || 0,
+    heat = s.heatDamage || 0,
+    bleach = s.bleachHistory || 0;
+  return heat >= 5 || dmg >= 7 || bleach >= 5 || dmg + heat + bleach >= 11;
 }
 function deriveTargetRadar(currentRadar, direction) {
   const t = [...currentRadar];
@@ -10630,7 +10678,8 @@ function resolveKarteAnimal(answers, scores) {
     states,
     adviceKey,
     adviceText,
-    damageTier: computeDamageTier(scores)
+    damageTier: computeDamageTier(scores),
+    damageHeavy: isHeavyDamage(scores)
   };
 }
 
@@ -11574,13 +11623,13 @@ function WhyThisTypeCard({
     className: "font-mono text-[11px] text-gold nums mr-1.5"
   }, n.code), n.name))))), /*#__PURE__*/React.createElement("p", {
     className: "mt-5 text-[12.5px] sm:text-[13px] text-ink leading-[1.9] border-l-2 border-gold pl-4"
-  }, "\u30AB\u30E9\u30FC\u3084\u30D6\u30EA\u30FC\u30C1\u3001\u6BCE\u65E5\u306E\u30A2\u30A4\u30ED\u30F3\u306F", /*#__PURE__*/React.createElement("span", {
+  }, "\u30AB\u30E9\u30FC\u3084\u30D6\u30EA\u30FC\u30C1 \u6BCE\u65E5\u306E\u30A2\u30A4\u30ED\u30F3\u306F", /*#__PURE__*/React.createElement("span", {
     className: "text-gold"
-  }, "\u9AEA\u683C\u3092\u5909\u3048\u307E\u305B\u3093"), "\u5909\u308F\u308B\u306E\u306F\u300C\u3044\u307E\u306E\u72B6\u614B\u300D\u306E\u307B\u3046\u3067\u3059 SEAM\u306F", /*#__PURE__*/React.createElement("span", {
+  }, "\u578B\u3092\u5909\u3048\u307E\u305B\u3093"), "\u5909\u308F\u308B\u306E\u306F \u3053\u308C\u307E\u3067\u306E\u5C65\u6B74\u3068 \u3044\u307E\u306E\u72B6\u614B\u3067\u3059 \u9AEA\u683C\u306F \u305D\u306E\u4E21\u65B9\u3092\u3042\u308F\u305B\u305F\u898B\u7ACB\u3066", /*#__PURE__*/React.createElement("span", {
     className: "text-ink"
-  }, "\u5909\u308F\u3089\u306A\u3044\u9AEA\u683C"), "\u3068", /*#__PURE__*/React.createElement("span", {
+  }, "\u5909\u308F\u3089\u306A\u3044\u578B"), "\u3068", /*#__PURE__*/React.createElement("span", {
     className: "text-ink"
-  }, "\u5909\u3048\u3089\u308C\u308B\u72B6\u614B"), "\u3092\u5206\u3051\u3066\u3001 \u5546\u54C1\u306E\u9078\u3073\u5206\u3051\u306B\u4F7F\u3063\u3066\u3044\u307E\u3059"));
+  }, "\u5909\u3048\u3089\u308C\u308B\u72B6\u614B"), "\u3092\u5206\u3051\u3066\u8AAD\u307F \u3053\u308C\u304B\u3089\u306E\u4E00\u672C\u3092\u9078\u3073\u307E\u3059"));
 }
 
 /* ---------- ResultHero — Pokémon カード風 図鑑プロフィールカード ---------- */
@@ -11597,7 +11646,8 @@ function ResultHero({
     radar,
     mainGoal,
     gender,
-    damageTier
+    damageTier,
+    damageHeavy
   } = karte;
   const heroImgPath = getCharImgPath(origin?.code, gender); // null なら画像非表示
   // 計測: 結果表示時に1回だけ（type/履歴Tier/advice + プロファイルmeta の実分布を集計。個人情報なし・投げっぱなし）
@@ -11606,7 +11656,7 @@ function ResultHero({
       window.__seamLastType = origin && origin.code || '';
       const pm = buildProfileMeta(answers);
       try {
-        pm.svc = computeServiceReco(answers, damageTier).code;
+        pm.svc = computeServiceReco(answers, damageTier, damageHeavy).code;
       } catch (e) {}
       // 再診断シグナル: rd=1(前回カルテあり) rdd=前回から何日(0-365) — 経時データの土台
       const pk = window.__seamPrevKarte;
