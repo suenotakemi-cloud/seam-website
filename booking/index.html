@@ -243,6 +243,9 @@ td.slot:hover{background:#f0f7ff}
 .pay-brand{font-size:11px;color:var(--sub);font-weight:700;letter-spacing:.03em;margin-bottom:8px;display:flex;align-items:center;flex-wrap:wrap}
 .sq-badge{background:#006aff;color:#fff;font-weight:800;font-size:10px;padding:2px 7px;border-radius:5px;letter-spacing:.02em}
 .pay-card input[readonly]{background:#f7fafc;color:var(--ink);letter-spacing:.06em}
+.pay-err{margin-top:10px;background:#fdecec;border:1px solid #f3c9c7;border-radius:8px;padding:9px 11px;font-size:12.5px;font-weight:700;color:#b4302b;line-height:1.7}
+.pay-err[hidden]{display:none}
+#sqcard{margin:4px 0 2px}
 .pay-secure{font-size:11.5px;color:var(--sub);background:#f4fbf7;border:1px solid #cdeede;border-radius:8px;padding:7px 10px;margin-top:4px}
 .btn.linktext{background:none;border:none;color:var(--sub);width:100%;margin-top:10px;font-size:13px;font-weight:700;text-decoration:underline}
 
@@ -1656,6 +1659,86 @@ function pendingBlocks(){
   const tk=dkey(today());
   return db.reservations.filter(r=>r.date>=tk&&r.channel!=='hpb'&&!r.hpbBlocked&&r.status!=='cancelled')
     .sort((a,b)=>a.date===b.date?a.start-b.start:a.date<b.date?-1:1);
+}
+
+/* ===== 前金の決済（Square Web Payments）=====
+ * ★カード番号はこのシステムを一切通らない。Squareのiframeに直接入り、
+ *   返ってくるのは使い捨てのトークンだけ（PCIの負担を持たない作り）。
+ * ★決済が成功したときだけ予約を確定する。失敗したら予約を作らない。
+ * ★アプリID/ロケーションIDはサーバー(/pay/config)から受け取る。
+ *   設定が揃っていなければカード欄を出さず「店頭でお支払い」だけにする
+ *   （受け取っていないお金を「受領済み」として記録しないため）。 */
+let PAY_CFG=null, PAY_CARD=null, PAY_SDK=null;
+async function payConfig(){
+  if(PAY_CFG)return PAY_CFG;
+  try{const r=await fetch(API_BASE+'/pay/config');PAY_CFG=await r.json();}catch(e){PAY_CFG={ok:false};}
+  return PAY_CFG;
+}
+function loadSquareSdk(src){
+  if(PAY_SDK)return PAY_SDK;
+  PAY_SDK=new Promise((res,rej)=>{
+    if(window.Square)return res(window.Square);
+    const el=document.createElement('script');el.src=src;el.async=true;
+    el.onload=()=>window.Square?res(window.Square):rej(new Error('SDK読み込み失敗'));
+    el.onerror=()=>rej(new Error('SDK読み込み失敗'));
+    document.head.appendChild(el);
+  });
+  return PAY_SDK;
+}
+async function setupPay(dep,commit){
+  const box=document.getElementById('paybox'), btn=document.getElementById('bpay');
+  const cfg=await payConfig();
+  const offline=(msg)=>{
+    box.innerHTML=`<div class="pay-card"><div class="pay-secure">${escH(msg)}</div></div>`;
+    if(btn)btn.remove();
+    const sk=document.getElementById('bskip');
+    if(sk)sk.textContent='このまま予約する（店頭でお支払い）';
+  };
+  if(!cfg||!cfg.ok||!cfg.ready){ offline('いまは事前のお支払いを承っておりません。ご来店時に店頭でお願いいたします'); return; }
+  let sq;
+  try{ sq=await loadSquareSdk(cfg.sdk); }catch(e){ offline('決済のご用意が整いませんでした。ご来店時に店頭でお願いいたします'); return; }
+  try{
+    const payments=sq.payments(cfg.appId,cfg.locationId);
+    box.innerHTML=`<div class="pay-card">
+        <div class="pay-brand"><span class="sq-badge">Square</span>&nbsp;VISA&nbsp;•&nbsp;Mastercard&nbsp;•&nbsp;JCB&nbsp;•&nbsp;AMEX</div>
+        <div id="sqcard"></div>
+        <div class="pay-secure">🔒 カード情報はSquareへ直接送られます（当店のサーバーは番号を受け取りません）${cfg.env!=='production'?'／テスト環境のため実際の請求は発生しません':''}</div>
+        <div id="payerr" class="pay-err" hidden></div>
+      </div>`;
+    PAY_CARD=await payments.card();
+    await PAY_CARD.attach('#sqcard');
+    if(btn){
+      btn.disabled=false;
+      btn.onclick=async()=>{
+        const err=document.getElementById('payerr');
+        const show=(m)=>{if(err){err.textContent=m;err.hidden=false;}};
+        btn.disabled=true;btn.textContent='お手続き中…';
+        try{
+          const tok=await PAY_CARD.tokenize();
+          if(tok.status!=='OK')throw new Error((tok.errors&&tok.errors[0]&&tok.errors[0].message)||'カード情報をご確認ください');
+          // 3Dセキュア（本人認証）。日本のカードは求められることが多い
+          let vt='';
+          try{
+            const v=await payments.verifyBuyer(tok.token,{
+              amount:String(dep),currencyCode:'JPY',intent:'CHARGE',
+              billingContact:{familyName:bk.sei||'',givenName:bk.mei||''},
+            });
+            vt=(v&&v.token)||'';
+          }catch(e){/* 認証不要なカードもあるので、ここで止めない */}
+          const r=await fetch(API_BASE+'/pay',{method:'POST',headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({sourceId:tok.token,verificationToken:vt,amount:dep,currency:'JPY',
+              idempotencyKey:'dep-'+(bk.day||'')+'-'+(bk.start||'')+'-'+(bk.phone||''),
+              note:('前金 '+(bk.day||'')+' '+(bk.name||'')).slice(0,60)})});
+          const j=await r.json();
+          if(!r.ok||!j.ok)throw new Error(j.error||'決済ができませんでした');
+          commit(dep,j.paymentId);        // ★決済できた金額と決済IDだけを台帳に載せる
+        }catch(e){
+          show(String(e.message||e)+'　別のカードでもう一度お試しいただけます');
+          btn.disabled=false;btn.textContent='¥'+dep.toLocaleString()+' を支払って予約確定';
+        }
+      };
+    }
+  }catch(e){ offline('決済のご用意が整いませんでした。ご来店時に店頭でお願いいたします'); }
 }
 
 /* =============== toast / nav =============== */
@@ -3134,14 +3217,14 @@ function renderBook(){
     const disc=(bk._smart&&SMART_TIME.on)?smartDiscOf(sid):0;
     const stName=(STAFF.find(s=>s.id===sid)||{}).name||'';
     const dep=depositOf(menu.price-disc);
-    const commit=(depositAmt)=>{
+    const commit=(depositAmt,squarePaymentId)=>{
       if(bk._committing)return; bk._committing=true;   // 二重押下防止（1回目の自分の予約と重複してエラーになるのを防ぐ）
       const _btn=document.getElementById('bpay'),_skip=document.getElementById('bskip');
       if(_btn)_btn.disabled=true; if(_skip)_skip.style.pointerEvents='none';
       const stObj=STAFF.find(s=>s.id===sid)||{};
       // スパ判定は独立ヘッドスパメニュー(cat=ヘッドスパ=SPA店の掲載)のみ。ヘアクーポン(名前にヘッドスパを含む)はヘア店予約
       const isSpa=(menu.cat==='ヘッドスパ');
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',emailProvider:bk.emailProvider||'',channel:BOOK_SRC,deposit:depositAmt,discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',emailProvider:bk.emailProvider||'',channel:BOOK_SRC,deposit:depositAmt,squarePaymentId:squarePaymentId||'',discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
         // RPA/サロンボード書込用の解決済みフィールド（CUEPON実ID・HPB ID・SB完全一致メニュー名）
         // ★スパ予約はSPA店＝ANZUのスパ用account_id(cuSpa)とスパHPB IDを使う。spaフラグでWorkerがSPA店へ振り分け
         spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60,
@@ -3150,22 +3233,15 @@ function renderBook(){
       bk._deposit=depositAmt;bk.step=5;renderBook();
       // 予約確認(LINE/メール)は予約作成時にサーバ側(Worker)から送信。フロントからの直接送信は廃止(セキュリティ)。
     };
+    // 前金は「実際にカードを切れたとき」だけ受け取る。決済が使えない状態ではカード欄を出さない。
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:4px">事前決済（デポジット）</h3>
       <p style="font-size:12.5px;color:var(--sub);margin-bottom:12px">前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです</p>
       <div class="pay-amt"><span>お預かりする前金</span><b>¥${dep.toLocaleString()}</b></div>
-      <div class="pay-card">
-        <div class="pay-brand"><span class="sq-badge">Square</span>&nbsp;VISA&nbsp;•&nbsp;Mastercard&nbsp;•&nbsp;JCB&nbsp;•&nbsp;AMEX</div>
-        <div class="field"><label>カード番号</label><input value="4111 1111 1111 1111" readonly></div>
-        <div style="display:flex;gap:10px">
-          <div class="field" style="flex:1"><label>有効期限</label><input value="12 / 30" readonly></div>
-          <div class="field" style="flex:1"><label>セキュリティコード</label><input value="•••" readonly></div>
-        </div>
-        <div class="pay-secure">🔒 Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）</div>
-      </div>
-      <div class="pnav"><button class="btn pri" id="bpay">¥${dep.toLocaleString()} を支払って予約確定</button></div>
+      <div id="paybox"><div class="pay-card"><div class="pay-secure">決済のご用意を確認しています…</div></div></div>
+      <div class="pnav"><button class="btn pri" id="bpay" disabled>¥${dep.toLocaleString()} を支払って予約確定</button></div>
       <button class="btn linktext" id="bskip">前金なしで予約（店頭でお支払い）</button>`;
-    document.getElementById('bpay').onclick=()=>commit(dep);
     document.getElementById('bskip').onclick=()=>commit(0);
+    setupPay(dep,commit);
     // ★ノーショー履歴のあるお客様は前金必須(店舗の平均的損害の予防)。電話番号でサーバ照会しPIIは受け取らない
     if(bk.phone){fetch(API_BASE+'/precheck?phone='+encodeURIComponent(bk.phone)).then(r=>r.json()).then(j=>{
       if(j&&j.requireDeposit){const sk=document.getElementById('bskip');

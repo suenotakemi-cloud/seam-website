@@ -255,6 +255,21 @@ export default {
 
     // ===== 公開（顧客導線・認証不要） =====
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
+    // 前金決済の公開設定。ブラウザが Square SDK を初期化するのに使う3つだけを返す。
+    // ★アクセストークンは絶対に返さない（サーバー内だけで使う）。
+    if (p.endsWith('/pay/config') && m === 'GET') {
+      const appId = env.SQUARE_APP_ID || '';
+      const locId = env.SQUARE_LOCATION_ID || '';
+      const prod = env.SQUARE_ENV === 'production';
+      return json({
+        ok: true,
+        // 3つが揃っていて初めて「決済できる」。欠けていたら画面はカード欄を出さない
+        ready: !!(appId && locId && env.SQUARE_ACCESS_TOKEN),
+        env: prod ? 'production' : 'sandbox',
+        appId, locationId: locId,
+        sdk: prod ? 'https://web.squarecdn.com/v1/square.js' : 'https://sandbox.web.squarecdn.com/v1/square.js',
+      }, 200, cors);
+    }
     if (p.endsWith('/reservations') && m === 'POST') return handlePostReservation(request, env, cors); // 顧客の予約作成
     if (p.endsWith('/availability') && m === 'GET') return handleAvailability(url, env, cors);           // 空き判定用(PII無し・公開)
     /* ---- メールのワンタイムパスワード(OTP)。Google以外のメールで予約する方の本人確認 ----
@@ -998,10 +1013,13 @@ async function handlePay(request, env, cors) {
 
   const body = {
     source_id: sourceId,
-    idempotency_key: crypto.randomUUID(),
+    idempotency_key: payload.idempotencyKey || crypto.randomUUID(),
     amount_money: { amount: Math.round(amount), currency: currency || 'JPY' },
+    autocomplete: true,
   };
-  if (verificationToken) body.verification_token = verificationToken;
+  if (env.SQUARE_LOCATION_ID) body.location_id = env.SQUARE_LOCATION_ID;   // 対面/オンラインの取引先店舗
+  if (payload.note) body.note = String(payload.note).slice(0, 60);          // 「前金 8/12 山田様」等
+  if (verificationToken) body.verification_token = verificationToken;      // 3Dセキュア(SCA)の結果
 
   try {
     const r = await fetch(apiBase(env) + '/v2/payments', {
@@ -1012,7 +1030,14 @@ async function handlePay(request, env, cors) {
       const msg = (sq.errors && sq.errors[0] && sq.errors[0].detail) || ('Square API ' + r.status);
       return json({ error: msg }, 502, cors);
     }
-    return json({ ok: true, paymentId: sq.payment && sq.payment.id, status: sq.payment && sq.payment.status }, 200, cors);
+    const pay = sq.payment || {};
+    // 手数料は決済確定後に入ることが多い。取れた分だけ返す（あとで照合に使う）
+    const fee = (pay.processing_fee || []).reduce((a, f) => a + ((f.amount_money && f.amount_money.amount) || 0), 0);
+    return json({
+      ok: true, paymentId: pay.id, status: pay.status,
+      amount: (pay.amount_money && pay.amount_money.amount) || 0,
+      fee, receiptUrl: pay.receipt_url || '',
+    }, 200, cors);
   } catch (e) {
     return json({ error: 'Square API 呼び出しに失敗: ' + e.message }, 502, cors);
   }
@@ -1320,6 +1345,9 @@ async function handlePostReservation(request, env, cors) {
     if (chk.ng) return json({ error: chk.ng }, 400, cors);
     o.name = chk.name; o.kana = chk.kana;   // 正規化後の値で保存＝RPAが姓/名に割り戻せる形を保証
   }
+  // ★前金は「実際に決済できた額」しか台帳に載せない。
+  // 決済IDが無いのに金額が付いていたら 0 に落とす（受け取っていないお金を受領済みにしない）。
+  if ((+o.deposit || 0) > 0 && !o.squarePaymentId) o.deposit = 0;
   // ダブルブッキング判定（キャンセル以外の同一スタッフ・時間重複）
   const clash = await env.DB.prepare(
     "SELECT id,name,start FROM reservations WHERE date=? AND staff_id=? AND status!='cancelled' AND ? < end AND ? > start LIMIT 1"
@@ -1329,11 +1357,11 @@ async function handlePostReservation(request, env, cors) {
   try {
     // kana/nominated込み(再push=同期漏れ修復の材料)。列未追加の旧DBはcatchでレガシーINSERTへ
     await env.DB.prepare(
-      `INSERT INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,kana,nominated,created_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+      `INSERT INTO reservations (id,date,staff_id,start,end,menu_id,name,phone,email,note,channel,status,hpb_blocked,deposit,line_user_id,kana,nominated,square_payment_id,created_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     ).bind(id, o.date, o.staffId, o.start, o.end, o.menuId || '', o.name || 'お客様', o.phone || '', o.email || '', o.note || '',
       o.channel || 'own', o.status || 'booked', o.channel === 'hpb' ? 1 : (o.hpbBlocked ? 1 : 0), o.deposit || 0, o.lineUserId || '',
-      o.kana || '', o.nominated === false ? 0 : 1, new Date().toISOString()).run();
+      o.kana || '', o.nominated === false ? 0 : 1, o.squarePaymentId || '', new Date().toISOString()).run();
   } catch (e) {
     await ensureRegisterTables(env).catch(() => {});   // 列を追加して次回から拡張INSERTが通るように
     await env.DB.prepare(
@@ -1481,6 +1509,7 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`ALTER TABLE passes ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE karte_photos ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN void_reason TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN square_payment_id TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN kana TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN nominated INTEGER DEFAULT 1`).run(); } catch (e) {}
   _regTablesReady = true;

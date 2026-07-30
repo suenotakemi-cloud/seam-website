@@ -49,8 +49,9 @@ flowchart LR
 | API | Cloudflare Worker `seam-square-pay`（`booking/square/worker.js`＋`salon-bridge.js`＋`util.js`） | `*.workers.dev` |
 | DB | Cloudflare D1 `seam-booking`（`booking/square/schema.sql`） | 独自バックエンド（統合時 CUEPON へ移行対象） |
 | 秘密情報 | wrangler secret：`ADMIN_TOKEN`／`SQUARE_ACCESS_TOKEN`／`RESEND_API_KEY`／`LINE_CHANNEL_ACCESS_TOKEN`／`SALON_LOGIN_ID/PASS`／`LINE_LOGIN_CLIENT_SECRET` | コード非コミット |
-| 公開変数 | wrangler.toml [vars]：`ALLOW_ORIGIN`（CORS許可）・`SQUARE_ENV`・`SQUARE_LOCATION_ID`・`SALON_HOST/SHOP_ID/SPA_SHOP_ID`・`LINE_LOGIN_CLIENT_ID` 等 | |
+| 公開変数 | wrangler.toml [vars]：**`ALLOW_ORIGIN`（CORS許可・★`https://seam.site` を含めること）**・`SQUARE_ENV`・`SQUARE_LOCATION_ID`・`SALON_HOST/SHOP_ID/SPA_SHOP_ID`・`LINE_LOGIN_CLIENT_ID` 等 | |
 
+- **★CORSに本番ドメインが入っていなかった（2026-07-30修正）**：`ALLOW_ORIGIN` が github.io と localhost だけで、**本番配信の `seam.site` から予約が通らなかった**（preflightの Allow-Origin が別ドメインを返しブラウザが破棄）。`https://seam.site,https://www.seam.site` を追加。seam.site オリジンからのE2Eで予約作成→salon.town同期まで通過を確認。
 - **顧客/管理の分岐はURLパラメータ**：`?src=`（line/google/instagram/own）付き＝顧客モード、無し＝管理モード。
 - **管理モードは管理トークン認証必須**（§7）。顧客モードは PII を保持しない。
 
@@ -64,7 +65,14 @@ flowchart LR
 3. **スタッフ選択**：指名なし（フリー）／各スタイリスト。
 4. **日時選択**：営業時間・シフト・空き枠から。スマート割（隙間なく繋がる枠に特典）・最短予約。
 5. **確認**：姓/名/セイ/メイ の4欄（HotPepper形式）・電話・合計・キャンセルポリシー。
-6. **前金決済**（任意）：Square Web Payments。前金なしで店頭払いも可。
+6. **前金決済**（任意）：**Square Web Payments を実装（2026-07-30）**。
+   - **★それまで前金画面はモックだった**：カード番号は `readonly` のテスト番号で `/pay` を一度も呼んでおらず、それでも予約に `deposit` が「受領済み」として記録されていた（＝1円も切られていないのに前金あり）。本番切替に先立って作り直した。
+   - カード情報は **Squareのiframeに直接入り、当システムのサーバーは番号を受け取らない**（使い捨てトークンのみ）。3Dセキュア（`verifyBuyer`）に対応。
+   - **決済が成功したときだけ予約を確定**する。失敗時は予約を作らず、理由を出して再入力できる。
+   - アプリID/ロケーションID/SDKのURLは **`GET /pay/config`**（公開値のみ・アクセストークンは絶対に返さない）から受け取る。**サーバー設定だけで本番⇄テストが切り替わる**（HTMLの書き換え不要）。
+   - **設定が揃っていなければカード欄を出さない**（「いまは事前のお支払いを承っておりません」＋店頭払いのみ）。嘘の前金記録を作らないため。
+   - **サーバー側の保険**：`POST /reservations` は**決済IDが無いのに `deposit>0` なら 0 に落とす**（実測で確認済み）。`reservations.square_payment_id` に決済IDを保存＝手数料の突き合わせと返金の起点。
+   - 必要な設定：`SQUARE_APP_ID`（公開値・[vars]）／`SQUARE_LOCATION_ID`（**本番はサンドボックスと別ID**）／`SQUARE_ACCESS_TOKEN`（**secret・オーナーが自分で登録**）／`SQUARE_ENV=production`。
 7. **完了**：LINE友だち追加 ／ ホームケア（会員制オンラインショップ `seam.site/onlineshop`）導線 ／ Googleクチコミ導線。
 - ログイン：LINE Login(LIFF)／Google（海外客）。確認はLINE/メールでサーバ送信（§7）。
 - **多言語**：EN⇄日本語トグル（右上）。`?lang=en`／端末言語が日本語以外なら自動EN。方式=描画後DOM置換辞書（メニュー実名・スタッフ名はJP維持）。
