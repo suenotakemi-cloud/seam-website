@@ -87,7 +87,7 @@ ROLES = {
     },
     "shopmanager": {
         "ja": "ショップ管理者", "short": "ショップ管理者",
-        "ill": "images/lp/recruit/ill_hair.webp",
+        "ill": "images/lp/recruit/ill_shop.webp",
         "chips": ["月給25万円〜", "実績に応じて賞与", "商品開発・広報も"],
         "salary_html": "月給25万円〜 ／ 実績に応じて賞与<br><span style=\"color:#9c8a6a;font-size:12.5px;\">試用期間6ヶ月</span>",
         "desc_lead": "サロンの入口にあるビューティーショップの運営をお任せします 接客と売場づくりだけでなく 今後は商品開発や広報にも関わっていける仕事です",
@@ -100,7 +100,7 @@ ROLES = {
     },
     "parttime": {
         "ja": "ショップスタッフ", "short": "ショップスタッフ（アルバイト）",
-        "ill": "images/lp/recruit/ill_hair.webp",
+        "ill": "images/lp/recruit/ill_shop.webp",
         "chips": ["時給1,500円", "土日に入れる方", "未経験OK"],
         "salary_html": "時給1,500円<br><span style=\"color:#9c8a6a;font-size:12.5px;\">平日の勤務日数はご相談ください</span>",
         "desc_lead": "ビューティーショップでお客様のご案内とヘアケアのご紹介をお願いします ヘアケアの知識は入ってから覚えていただいて大丈夫です",
@@ -163,7 +163,24 @@ def page_html(role, slug):
     json.loads(ld_json)
 
     chips = "\n            ".join(f'<span class="rcd-chip">{c}</span>' for c in R["chips"])
-    lic = "美容師免許をお持ちの方" if role in ("stylist", "spanist") else ""
+    # 雇用形態と試用期間は職種で違う
+    EMP = {"stylist": "正社員 ・ 試用期間 2ヶ月 ／ 期間中も給与は変わりません",
+           "spanist": "正社員 ・ 試用期間 2ヶ月 ／ 期間中も給与は変わりません",
+           "assistant": "正社員 ・ 試用期間 2ヶ月 ／ 期間中も給与は変わりません",
+           "shopmanager": "正社員 ・ 試用期間 6ヶ月",
+           "parttime": "アルバイト"}
+    QUAL = {"stylist": "美容師免許をお持ちの方 ／ 土日に勤務できる方",
+            "spanist": "美容師免許をお持ちの方 ／ 土日に勤務できる方",
+            "assistant": "美容師免許をお持ちの方 ／ 土日に勤務できる方",
+            "shopmanager": "土日に勤務できる方<br>今後 商品開発や広報にも関わっていきたい方を歓迎します",
+            "parttime": "土日に勤務できる方<br>ヘアケアの知識は入ってから覚えていただけます ノルマはありません"}
+    HOLIDAY = ("完全週休2日<br>有給休暇 10〜20日 ／ 産休・育休（取得実績あり・復帰率100%）"
+               if role != "parttime" else "シフト制 ／ 平日の勤務日数はご相談ください")
+    BENEFIT = ("社会保険・厚生年金 完備 ／ 交通費 月1万5千円まで支給 ／ ヘアケア・美容用品の社員割引あり<br>"
+               "ニューヨーク・ハワイ研修（実績に応じて）／ ママさん美容師 多数在籍"
+               if role != "parttime" else
+               "交通費支給（月1万5千円まで）／ ヘアケア・美容用品のスタッフ割引あり")
+    lic = QUAL[role]
     hours = f'<div class="rc-spec-row"><div class="rc-spec-key">営業時間</div><div class="rc-spec-val">{N["hours"]}</div></div>' if N["hours"] else ""
 
     return f"""<!DOCTYPE html>
@@ -277,12 +294,12 @@ def page_html(role, slug):
         <h2 class="font-serif text-ink leading-snug" style="font-size:clamp(21px,5vw,28px);letter-spacing:.04em;font-weight:500;" data-reveal>募集要項 — {R["ja"]}（{city}）</h2>
       </div>
       <div class="bg-white border border-line rounded-[18px] px-6 sm:px-9 py-4 sm:py-6 shadow-soft" data-reveal>
-        <div class="rc-spec-row"><div class="rc-spec-key">職種</div><div class="rc-spec-val">{R["ja"]}（正社員 ・ 試用期間 2ヶ月 ／ 期間中も給与は変わりません）</div></div>
+        <div class="rc-spec-row"><div class="rc-spec-key">職種</div><div class="rc-spec-val">{R["ja"]}（{EMP[role]}）</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">勤務地</div><div class="rc-spec-val">{N["name"] or "SEAM " + city}<br>{N["region"]}{N["locality"]}{N["street"]}</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">給与</div><div class="rc-spec-val">{R["salary_html"]}</div></div>
         <div class="rc-spec-row"><div class="rc-spec-key">応募資格</div><div class="rc-spec-val">{lic}</div></div>
-        <div class="rc-spec-row"><div class="rc-spec-key">休日休暇</div><div class="rc-spec-val">完全週休2日 ／ 土日休み相談可能（お子さんのいる方は優先）<br>有給休暇 10〜20日 ／ 産休・育休（取得実績あり・復帰率100%）</div></div>
-        <div class="rc-spec-row"><div class="rc-spec-key">待遇・福利</div><div class="rc-spec-val">社会保険・厚生年金 完備 ／ 交通費 月1万5千円まで支給 ／ ヘアケア・美容用品の社員割引あり<br>ニューヨーク・ハワイ研修（実績に応じて）／ ママさん美容師 多数在籍</div></div>
+        <div class="rc-spec-row"><div class="rc-spec-key">休日休暇</div><div class="rc-spec-val">{HOLIDAY}</div></div>
+        <div class="rc-spec-row"><div class="rc-spec-key">待遇・福利</div><div class="rc-spec-val">{BENEFIT}</div></div>
         {hours}
         <div class="rc-spec-row"><div class="rc-spec-key">運営会社</div><div class="rc-spec-val">株式会社hanico（SEAM ／ bico ／ HOI ／ BEAPLY）</div></div>
       </div>
