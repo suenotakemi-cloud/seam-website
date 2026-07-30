@@ -395,7 +395,7 @@ const Q_DEEP_NEW = [
     type: 'budget-rows',
     eyebrow: 'Budget',
     title: 'ふだん1回のお買い物で かける金額は？',
-    note: '詰め替えや容量で月々の出費は変わるため「1本あたりに払う金額」でお聞きします。ざっくりで大丈夫です。',
+    note: 'ふだんより安いものはご提案しません。この帯を起点に「いつもの価格帯／ワンランク上／ご褒美クラス」の3段でお見せします。詰め替えや容量で月々の出費は変わるため「1本あたりに払う金額」でお聞きします。ざっくりで大丈夫です。',
     options: [],
     rows: [
       { k: 'sh', label: 'シャンプー' },
@@ -421,7 +421,7 @@ const Q_DEEP_NEW = [
     type: 'card-single',
     eyebrow: 'Value',
     title: '本当に合うものが見つかったら 値段が上がっても使いたいですか？',
-    note: '正直なお気持ちで大丈夫です。ご提案の組み立てに使わせていただきます。',
+    note: 'このお答えで最初にお見せする段が変わります。投資したい方にはワンランク上から、価格を優先したい方はご予算内だけをお見せします。正直なお気持ちで大丈夫です。',
     options: [
       { v: 'yes',     label: 'はい 合うなら投資したい',   score: {} },
       { v: 'depends', label: 'ものによる',               score: {} },
@@ -433,7 +433,7 @@ const Q_DEEP_NEW = [
     type: 'card-single',
     eyebrow: 'Priority',
     title: 'いちばんお金をかけたいのは どれですか？',
-    note: 'いま実際にかけているものでも「本当はここにかけたい」でも構いません。',
+    note: 'ここだけはご予算より上のご提案も混ぜます。残りは今の価格帯のままにします。いま実際にかけているものでも「本当はここにかけたい」でも構いません。',
     options: [
       { v: 'shampoo',   label: 'シャンプー',                    score: {} },
       { v: 'treatment', label: 'トリートメント',                score: {} },
@@ -448,7 +448,9 @@ const Q_DEEP_NEW = [
     type: 'check-multi',
     eyebrow: 'Where to buy',
     title: 'ヘアケアはふだん どこで買いますか？',
-    note: '当てはまるものをすべて選んでください。',
+    // このお答えは推薦ロジックには使っていない(カルテ記載＋集計のみ)。
+    // 便益を偽らないため「提案の中身は変わりません」と明記する(2026-07-30)。
+    note: '続けやすさをサロンのスタッフが把握できるよう、カルテに残すためにお聞きします。ご提案の中身は変わりません。',
     options: [
       { v: 'seam',    label: 'SEAMで',              score: {} },
       { v: 'salon',   label: '通っているサロンで',    score: {} },
@@ -491,7 +493,7 @@ const Q_DEEP_NEW = [
     type: 'card-single',
     eyebrow: 'Beauty Device',
     title: 'もし美容家電を新しく選ぶなら どのクラスが気になりますか？',
-    note: '今後の品揃えの参考にさせていただきます。いまのお気持ちで大丈夫です。',
+    note: 'ご提案する価格帯の目安にします。ご予算とかけ離れた機種はお出ししません。いまのお気持ちで大丈夫です。',
     options: [
       { v: 'daily',  label: 'デイリークラス',      sub: '〜2万円 気軽に高性能',            score: {} },
       { v: 'select', label: 'セレクトクラス',      sub: '2〜3.5万円 性能と価格のバランス',  score: {} },
@@ -4482,7 +4484,7 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
 
       {/* ② まず、この◯本 — 基礎3点＋必要に応じ頭皮/マスクで3〜5本(変動) */}
       {primary.length > 0 && (
-        <div className="mt-7">
+        <div className="mt-7" id="deep-primary">
           <div className="flex items-end justify-between gap-3 mb-3">
             <div>
               <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">— Start here</p>
@@ -11436,6 +11438,42 @@ function Result({ answers, onRestart, onCollection }) {
           onSaveImage={(mode) => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode)}
           onShare={() => shareKarteLink(karte?.origin)}
         />
+
+        {/* ━━━━━ 答えへの近道 ━━━━━
+            型の発表から「まず使う3〜5本」までに 物語・優先度チャート・熱の注意が入るため
+            最初の10秒で答えが欲しい人が遠い(外部レビュー2026-07-30)。
+            深さは完答率98%が示すとおり許容されているので 消さずに近道だけ用意する。 */}
+        <div className="mt-6 anim-fade-up" style={{ animationDelay: '60ms' }}>
+          <button type="button"
+            onClick={() => {
+              try { window.seamTrack && seamTrack('jump_primary', {}); } catch (e) {}
+              const el = document.getElementById('deep-primary');
+              if (!el) return;
+              let reduced = false;
+              try { reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+              const yOf = () => el.getBoundingClientRect().top + (window.pageYOffset || 0) - 12;
+              try { window.scrollTo({ top: yOf(), behavior: reduced ? 'auto' : 'smooth' }); }
+              catch (e) { window.scrollTo(0, yOf()); }
+              // 保険: html{scroll-behavior:smooth}のため通常指定は必ずアニメーションになる。
+              // アニメーションが進まない環境(古いWebView・非表示タブ等)では behavior:'instant' で強制着地させる。
+              setTimeout(() => {
+                if (Math.abs(el.getBoundingClientRect().top) > 240) {
+                  try { window.scrollTo({ top: yOf(), behavior: 'instant' }); }
+                  catch (e) { window.scrollTo(0, yOf()); }
+                }
+              }, 700);
+            }}
+            className="w-full group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/50 via-white to-cream/50 rounded-[2px] px-4 sm:px-5 py-3.5 hover:border-gold active:scale-[0.99] transition-all min-h-[52px] no-print">
+            <span className="flex items-center gap-3 min-w-0 text-left">
+              <span aria-hidden className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-gold text-white text-[13px] leading-none">↓</span>
+              <span className="min-w-0">
+                <span className="block font-serif text-[14.5px] sm:text-[15.5px] text-ink leading-snug">先に 今使う3〜5本を見る</span>
+                <span className="block mt-0.5 text-[10.5px] sm:text-[11px] text-charcoal/55 leading-snug">読みものは そのあとでも読めます</span>
+              </span>
+            </span>
+            <span className="font-mono tracking-widest2 text-[9.5px] uppercase text-gold shrink-0 group-hover:translate-x-0.5 transition-transform">Skip to answer</span>
+          </button>
+        </div>
 
         {/* ━━━━━ この髪格になった理由(判定の根拠) ━━━━━ */}
         <WhyThisTypeCard karte={karte} answers={answers} />

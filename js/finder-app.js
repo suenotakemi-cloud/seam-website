@@ -1,4 +1,3 @@
-/* AUTO-GENERATED from js/finder-app.jsx by CI (build-finder.js). DO NOT EDIT — edit the .jsx source. */
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* =========================================================================
    SEAM Hair Finder
@@ -1041,7 +1040,7 @@ const Q_DEEP_NEW = [{
   type: 'budget-rows',
   eyebrow: 'Budget',
   title: 'ふだん1回のお買い物で かける金額は？',
-  note: '詰め替えや容量で月々の出費は変わるため「1本あたりに払う金額」でお聞きします。ざっくりで大丈夫です。',
+  note: 'ふだんより安いものはご提案しません。この帯を起点に「いつもの価格帯／ワンランク上／ご褒美クラス」の3段でお見せします。詰め替えや容量で月々の出費は変わるため「1本あたりに払う金額」でお聞きします。ざっくりで大丈夫です。',
   options: [],
   rows: [{
     k: 'sh',
@@ -1092,7 +1091,7 @@ const Q_DEEP_NEW = [{
   type: 'card-single',
   eyebrow: 'Value',
   title: '本当に合うものが見つかったら 値段が上がっても使いたいですか？',
-  note: '正直なお気持ちで大丈夫です。ご提案の組み立てに使わせていただきます。',
+  note: 'このお答えで最初にお見せする段が変わります。投資したい方にはワンランク上から、価格を優先したい方はご予算内だけをお見せします。正直なお気持ちで大丈夫です。',
   options: [{
     v: 'yes',
     label: 'はい 合うなら投資したい',
@@ -1111,7 +1110,7 @@ const Q_DEEP_NEW = [{
   type: 'card-single',
   eyebrow: 'Priority',
   title: 'いちばんお金をかけたいのは どれですか？',
-  note: 'いま実際にかけているものでも「本当はここにかけたい」でも構いません。',
+  note: 'ここだけはご予算より上のご提案も混ぜます。残りは今の価格帯のままにします。いま実際にかけているものでも「本当はここにかけたい」でも構いません。',
   options: [{
     v: 'shampoo',
     label: 'シャンプー',
@@ -1142,7 +1141,9 @@ const Q_DEEP_NEW = [{
   type: 'check-multi',
   eyebrow: 'Where to buy',
   title: 'ヘアケアはふだん どこで買いますか？',
-  note: '当てはまるものをすべて選んでください。',
+  // このお答えは推薦ロジックには使っていない(カルテ記載＋集計のみ)。
+  // 便益を偽らないため「提案の中身は変わりません」と明記する(2026-07-30)。
+  note: '続けやすさをサロンのスタッフが把握できるよう、カルテに残すためにお聞きします。ご提案の中身は変わりません。',
   options: [{
     v: 'seam',
     label: 'SEAMで',
@@ -1224,7 +1225,7 @@ const Q_DEEP_NEW = [{
   type: 'card-single',
   eyebrow: 'Beauty Device',
   title: 'もし美容家電を新しく選ぶなら どのクラスが気になりますか？',
-  note: '今後の品揃えの参考にさせていただきます。いまのお気持ちで大丈夫です。',
+  note: 'ご提案する価格帯の目安にします。ご予算とかけ離れた機種はお出ししません。いまのお気持ちで大丈夫です。',
   options: [{
     v: 'daily',
     label: 'デイリークラス',
@@ -6169,7 +6170,8 @@ function DeepProductSection({
   }, resultCopy.policyLine), resultCopy.nuanceLine && /*#__PURE__*/React.createElement("p", {
     className: "mt-1.5 text-[12px] text-charcoal/65 leading-[1.85]"
   }, resultCopy.nuanceLine))), /*#__PURE__*/React.createElement(SaleFinderBanner, null), primary.length > 0 && /*#__PURE__*/React.createElement("div", {
-    className: "mt-7"
+    className: "mt-7",
+    id: "deep-primary"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-end justify-between gap-3 mb-3"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
@@ -15009,7 +15011,62 @@ function Result({
     answers: answers,
     onSaveImage: mode => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode),
     onShare: () => shareKarteLink(karte?.origin)
-  }), /*#__PURE__*/React.createElement(WhyThisTypeCard, {
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 anim-fade-up",
+    style: {
+      animationDelay: '60ms'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => {
+      try {
+        window.seamTrack && seamTrack('jump_primary', {});
+      } catch (e) {}
+      const el = document.getElementById('deep-primary');
+      if (!el) return;
+      let reduced = false;
+      try {
+        reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      } catch (e) {}
+      const yOf = () => el.getBoundingClientRect().top + (window.pageYOffset || 0) - 12;
+      try {
+        window.scrollTo({
+          top: yOf(),
+          behavior: reduced ? 'auto' : 'smooth'
+        });
+      } catch (e) {
+        window.scrollTo(0, yOf());
+      }
+      // 保険: html{scroll-behavior:smooth}のため通常指定は必ずアニメーションになる。
+      // アニメーションが進まない環境(古いWebView・非表示タブ等)では behavior:'instant' で強制着地させる。
+      setTimeout(() => {
+        if (Math.abs(el.getBoundingClientRect().top) > 240) {
+          try {
+            window.scrollTo({
+              top: yOf(),
+              behavior: 'instant'
+            });
+          } catch (e) {
+            window.scrollTo(0, yOf());
+          }
+        }
+      }, 700);
+    },
+    className: "w-full group flex items-center justify-between gap-3 border border-gold/45 bg-gradient-to-r from-cream/50 via-white to-cream/50 rounded-[2px] px-4 sm:px-5 py-3.5 hover:border-gold active:scale-[0.99] transition-all min-h-[52px] no-print"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "flex items-center gap-3 min-w-0 text-left"
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true,
+    className: "shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-gold text-white text-[13px] leading-none"
+  }, "\u2193"), /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "block font-serif text-[14.5px] sm:text-[15.5px] text-ink leading-snug"
+  }, "\u5148\u306B \u4ECA\u4F7F\u30463\u301C5\u672C\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("span", {
+    className: "block mt-0.5 text-[10.5px] sm:text-[11px] text-charcoal/55 leading-snug"
+  }, "\u8AAD\u307F\u3082\u306E\u306F \u305D\u306E\u3042\u3068\u3067\u3082\u8AAD\u3081\u307E\u3059"))), /*#__PURE__*/React.createElement("span", {
+    className: "font-mono tracking-widest2 text-[9.5px] uppercase text-gold shrink-0 group-hover:translate-x-0.5 transition-transform"
+  }, "Skip to answer"))), /*#__PURE__*/React.createElement(WhyThisTypeCard, {
     karte: karte,
     answers: answers
   }), /*#__PURE__*/React.createElement(ReturnDiffCard, {
