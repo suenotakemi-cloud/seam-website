@@ -946,6 +946,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <span id="today-sum" style="font-size:13px;color:var(--sub);font-weight:600"></span>
   </div>
   <p class="lead">スタッフの1日をひと目で。次のお客様が一番上。タップでステータス変更・詳細</p>
+  <div id="gap-panel"></div>
   <div id="todaylist"></div>
 </section>
 
@@ -4848,6 +4849,93 @@ function openCustomer(key){
 }
 
 /* =============== 今日ビュー（スタッフの現場ハブ） =============== */
+/* ===== 予約の隙間（スタッフ側だけに見せる）=====
+ * 予約と予約のあいだに、短くて使いにくい空きができることがある。
+ * それをスタッフに見せて、スタイリストがお客様に時間の前後をお願いできるようにする。
+ *
+ * ⚠️お客様の画面では何も変えない。
+ *   ・隙間の枠を隠さない（全部の空き枠を今までどおり出す）
+ *   ・「最大でどれだけ続けて空いているか」をお客様に見せない
+ *   ・短いメニューだけを出すような出し分けもしない
+ *   これは他社の予約特許のクレームに触れる形なので、意図して避けている。
+ *   ここでやるのは「スタッフが隙間に気づいて、人がお願いする」ところまで。 */
+const GAP_MIN=20;    // これ未満の空きは着替え・片付けの時間なので隙間として数えない
+const GAP_MAX=60;    // これを超える空きは普通に予約が入るので、お願いの対象にしない
+
+/* ある日・あるスタッフの隙間を出す。前後どちらに動かせば埋まるかも一緒に返す。 */
+function gapsOf(dayKey,staffId){
+  const rs=db.reservations
+    .filter(r=>r.date===dayKey&&r.staffId===staffId&&r.status!=='cancelled'&&r.status!=='noshow')
+    .sort((a,b)=>a.start-b.start);
+  if(rs.length<2)return [];
+  const sh=SHIFTS.staff[staffId]||{open:OPEN,close:CLOSE};
+  const out=[];
+  for(let i=0;i<rs.length-1;i++){
+    const a=rs[i],b=rs[i+1];
+    const gap=b.start-a.end;
+    if(gap<GAP_MIN||gap>GAP_MAX)continue;
+    // 後ろの予約を前に詰める案（前の予約の直後にくっつける）
+    const pullBack={resv:b,to:a.end,move:gap,dir:'前'};
+    // 前の予約を後ろにずらす案（後ろの予約の直前にくっつける）
+    const pushFwd={resv:a,to:b.start-(a.end-a.start),move:gap,dir:'後'};
+    // 動かせるか（勤務時間内で、他の予約とぶつからないか）
+    const ok=(cand)=>{
+      const dur=cand.resv.end-cand.resv.start;
+      if(cand.to<sh.open||cand.to+dur>sh.close)return false;
+      return conflicts(dayKey,staffId,cand.to,cand.to+dur,cand.resv.id).length===0;
+    };
+    const plans=[pullBack,pushFwd].filter(ok);
+    if(plans.length)out.push({after:a,before:b,gap,at:a.end,plans});
+  }
+  return out;
+}
+/* 今日と明日の隙間をまとめる（直近だけ見せる。先の日付は動かしにくい） */
+function gapsSoon(){
+  const days=[dkey(today()),dkey(addDays(today(),1))];
+  const out=[];
+  days.forEach(d=>STAFF.forEach(st=>{
+    gapsOf(d,st.id).forEach(g=>out.push({day:d,staff:st,...g}));
+  }));
+  return out.sort((a,b)=>a.day.localeCompare(b.day)||a.at-b.at);
+}
+/* お客様にお願いするときの文面。強く言わない・断りやすくする。 */
+function gapAskText(g,plan){
+  const r=plan.resv;
+  const m=MENUS.find(x=>x.id===r.menuId);
+  const to=hm(plan.to), from=hm(r.start);
+  return `${r.name} 様\n`
+    +`${(g.day||'').replace(/-/g,'/')} のご予約について、${m?m.name:'ご施術'}を `
+    +`${from} から ${to} に${plan.dir==='前'?'お早めに':'お遅らせ'}できないでしょうか。\n`
+    +`ご都合が合わないようでしたら、今のお時間のままで問題ございません。\n`
+    +`${g.staff?g.staff.name:''}`;
+}
+function renderGapPanel(){
+  const el=document.getElementById('gap-panel'); if(!el)return;
+  const gs=gapsSoon();
+  if(!gs.length){el.innerHTML='';return;}
+  el.innerHTML=`<div class="card" style="border-left:3px solid var(--gold,#b8912a)">
+    <div class="rep-h"><h3>🧩 短い空きが ${gs.length}件</h3></div>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.75;margin-bottom:10px">
+      予約のあいだに${GAP_MIN}〜${GAP_MAX}分の空きができています。前後に寄せられればまとまった空きになり、次のご予約をお受けできます。<br>
+      <b>お客様の予約画面は何も変わりません</b>（空き枠はすべてそのまま出ています）。ここからは<b>担当がお客様にお願いする</b>形です。
+    </div>
+    ${gs.map((g,i)=>`<div style="border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-bottom:9px">
+      <div style="font-size:12.5px;font-weight:800">${escH((g.day).slice(5).replace('-','/'))} ${hm(g.at)}〜 ${g.gap}分の空き　<span style="color:var(--sub);font-weight:600">${escH(g.staff.name)}</span></div>
+      <div style="font-size:12px;color:var(--sub);margin:3px 0 8px">${escH(g.after.name||'')}様（〜${hm(g.after.end)}）と ${escH(g.before.name||'')}様（${hm(g.before.start)}〜）のあいだ</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        ${g.plans.map((p,j)=>`<button class="btn small ghost gap-ask" data-i="${i}" data-j="${j}">
+          ${escH(p.resv.name||'')}様を ${hm(p.resv.start)}→${hm(p.to)}（${p.dir}へ${p.move}分）のお願い文</button>`).join('')}
+      </div>
+    </div>`).join('')}
+  </div>`;
+  el.querySelectorAll('.gap-ask').forEach(b=>b.onclick=()=>{
+    const g=gs[+b.dataset.i], p=g.plans[+b.dataset.j];
+    const t=gapAskText(g,p);
+    navigator.clipboard?.writeText(t).then(
+      ()=>toast('お願い文をコピーしました。LINEやお電話でお伝えください'),
+      ()=>alert(t));
+  });
+}
 function renderToday(){
   const tk=dkey(today());
   const rs=db.reservations.filter(r=>r.date===tk&&r.status!=='cancelled').sort((a,b)=>a.start-b.start);
@@ -4857,6 +4945,7 @@ function renderToday(){
   const done=rs.filter(r=>r.status==='done').length;
   const next=rs.find(r=>r.end>nowMin&&r.status==='booked');
   document.getElementById('today-sum').textContent=rs.length?`${rs.length}件・完了${done}${next?`・次 ${hm(next.start)} ${next.name}様`:''}`:'';
+  renderGapPanel();
   const el=document.getElementById('todaylist');
   if(!rs.length){el.innerHTML='<div class="card" style="color:var(--sub);text-align:center;padding:30px">本日の予約はありません</div>';return}
   el.innerHTML=rs.map(r=>{
