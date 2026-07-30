@@ -3114,6 +3114,17 @@ function deepCategoryForProduct(p) {
   }
   // 個別ID: カラーモーション ルミナススプレー(仕上げ用ツヤスプレー)
   if (p.id === 'colormotion-luminous-spray') return 'finish';
+  // 頭皮オーバーライド: カテゴリがアウトバスでも 機能が頭皮だけの商品は頭皮枠へ。
+  // 例: Aujua オーセナム ルーセントオーラ / フォルティス ルミナスショット /
+  //     グロウシブ グロースエッセンス は outbath-water だが functionTags は全部scalp系。
+  // 直さないと「仕上げ · アウトバス」の見出しの下に頭皮美容液の説明が出て
+  // 役割ラベルと中身が矛盾する(1,000人検証で発見・2026-07-30)。
+  if (/^(out-?bath|booster|leave-in)/.test(cat)) {
+    const SCALP_FN = ['scalp-care', 'scalp-anti-aging', 'for-scalp', 'scalp-moisture', 'scalp-clean', 'scalp-mask', 'scalp-volume', 'hairloss-care', 'hair-growth'];
+    const OUTBATH_FN = ['moisture', 'hydration', 'shine', 'heat-protect', 'tame', 'smoothing', 'frizz-control', 'humidity-control', 'damage-repair', 'internal-repair', 'softening', 'volume-up'];
+    const isScalpOnly = fns.some(f => SCALP_FN.indexOf(f) > -1) && !fns.some(f => OUTBATH_FN.indexOf(f) > -1);
+    if (isScalpOnly) return 'scalp';
+  }
   // 通常マッピング
   for (const def of Object.values(DEEP_CATEGORY_DEFS)) {
     if (def.cats.includes(cat)) return def.id;
