@@ -330,16 +330,88 @@ export default {
       ).bind(id, key, o.name, o.phone || '', o.kind || 'hair', JSON.stringify(o.answers || {}),
         JSON.stringify(o.consent || {}), (o.sign || '').slice(0, 300000), o.staff || '',
         o.date || new Date().toISOString().slice(0, 10), new Date().toISOString()).run();
-      // 施術上の注意（アレルギー等）はカルテの重要メモにも自動反映＝施術前に必ず目に入る
+      // 施術上の注意（アレルギー等）と写真/音声AIの可否をカルテの重要メモへ自動反映＝施術前に必ず目に入る
       const caution = (o.answers && o.answers.caution || '').trim();
-      if (caution) {
-        const prev = await env.DB.prepare('SELECT caution FROM customer_notes WHERE key=?').bind(key).first().catch(() => null);
-        const merged = prev && prev.caution && prev.caution.includes(caution) ? prev.caution
-          : [(prev && prev.caution) || '', caution].filter(Boolean).join(' / ');
-        await env.DB.prepare('INSERT OR REPLACE INTO customer_notes (key,caution,birthday,updated_at) VALUES (?,?,COALESCE((SELECT birthday FROM customer_notes WHERE key=?),?),?)')
-          .bind(key, merged, key, o.answers.birthMonth || '', new Date().toISOString()).run().catch(() => {});
+      const cs = o.consent || {};
+      // 撮影の可否は毎回「最新の意思」で上書きする（前回OKでも今回NGならNGが正しい）
+      const photo = ['no', 'karte', 'sns'].includes(cs.photo) ? cs.photo : (cs.photo === true ? 'sns' : 'karte');
+      const voice = cs.voice === 'no' ? 'no' : 'ok';
+      const video = ['no', 'karte', 'sns'].includes(cs.video) ? cs.video : 'no';
+      if (caution || photo || voice) {
+        const prev = await env.DB.prepare('SELECT caution,birthday FROM customer_notes WHERE key=?').bind(key).first().catch(() => null);
+        let merged = (prev && prev.caution) || '';
+        if (caution && !merged.includes(caution)) merged = [merged, caution].filter(Boolean).join(' / ');
+        await env.DB.prepare(`INSERT INTO customer_notes (key,caution,birthday,photo_policy,face_ng,video_policy,voice_policy,updated_at)
+             VALUES (?,?,?,?,?,?,?,?)
+             ON CONFLICT(key) DO UPDATE SET caution=excluded.caution, birthday=COALESCE(NULLIF(excluded.birthday,''),customer_notes.birthday),
+               photo_policy=excluded.photo_policy, face_ng=excluded.face_ng, video_policy=excluded.video_policy,
+               voice_policy=excluded.voice_policy, updated_at=excluded.updated_at`)
+          .bind(key, merged, (o.answers && o.answers.birthMonth) || (prev && prev.birthday) || '',
+            photo, cs.faceNg ? 1 : 0, video, voice, new Date().toISOString()).run().catch(() => {});
       }
       return json({ ok: true, id }, 200, cors);
+    }
+    // カウンセリング集計（毎月のミーティング用・悩み/ことば/同意率を数字で見る）
+    if (p.endsWith('/counseling/stats') && m === 'GET') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const from = url.searchParams.get('from') || '2000-01-01', to = url.searchParams.get('to') || '2999-12-31';
+      const kindQ = url.searchParams.get('kind') || '';
+      const res = await env.DB.prepare(
+        `SELECT id,name,kind,date,answers,consent FROM counseling WHERE date>=? AND date<=? ORDER BY date DESC LIMIT 5000`
+      ).bind(from, to).all();
+      let rows = (res.results || []).filter(r => !/^(テスト|検証|再検証)/.test(r.name || ''));
+      if (kindQ) rows = rows.filter(r => r.kind === kindQ);
+
+      const bump = (m2, k) => { if (!k) return; m2[k] = (m2[k] || 0) + 1; };
+      const chips = { concern: {}, history: {}, body: {}, scalp: {}, care: {} };
+      const consent = { photo: {}, video: {}, voice: {}, faceNg: 0 };
+      const byMonth = {}, quotes = [];
+      const words = {}, wordEg = {};
+      // 助詞・言い回しは数えない（「ことば」として意味を持つ語だけ残す）
+      const STOP = new Set(['ください', 'おねがい', 'お願い', 'したい', 'ほしい', '思います', 'カット', 'カラー', 'サロン', 'ヘア']);
+
+      for (const r of rows) {
+        let a = {}, c = {};
+        try { a = JSON.parse(r.answers || '{}'); } catch (e) {}
+        try { c = JSON.parse(r.consent || '{}'); } catch (e) {}
+        bump(byMonth, (r.date || '').slice(0, 7));
+        for (const k of Object.keys(chips)) {
+          const v = a[k];
+          if (Array.isArray(v)) v.forEach(x => bump(chips[k], x));
+          else if (v) bump(chips[k], v);
+        }
+        const ph = ['no', 'karte', 'sns', 'video'].includes(c.photo) ? c.photo : (c.photo === true ? 'sns' : (c.photo === false ? 'no' : 'karte'));
+        bump(consent.photo, ph);
+        bump(consent.voice, c.voice === 'no' ? 'no' : 'ok');
+        if (c.faceNg) consent.faceNg++;
+        bump(consent.video, ['no', 'karte', 'sns'].includes(c.video) ? c.video : 'no');
+
+        // 自由記入＝お客様のことば。原文も残す（会議で読む用）
+        const texts = [a.want, a.caution, a.careFree].filter(Boolean).map(String);
+        for (const t of texts) {
+          if (t.trim().length > 3) quotes.push({ date: r.date, kind: r.kind, text: t.trim().slice(0, 200) });
+          // カタカナ語・漢字語を2文字以上のまとまりで拾う（形態素解析なしの実用近似）
+          const cand = (t.match(/[ァ-ヴー]{2,}|[一-龥]{2,}/g) || []);
+          const seen = new Set();
+          for (let w of cand) {
+            w = w.replace(/^(の|に|は|を|が|で|と)+/, '');
+            if (w.length < 2 || w.length > 8 || STOP.has(w) || seen.has(w)) continue;
+            seen.add(w); bump(words, w);
+            if (!wordEg[w]) wordEg[w] = t.trim().slice(0, 120);
+          }
+        }
+      }
+      const top = (o, n) => Object.entries(o).sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => ({ k, n: v }));
+      return json({
+        ok: true, total: rows.length, from, to,
+        byMonth: Object.entries(byMonth).sort().map(([k, v]) => ({ k, n: v })),
+        concern: top(chips.concern, 30), history: top(chips.history, 30), body: top(chips.body, 30),
+        scalp: top(chips.scalp, 30), care: top(chips.care, 30),
+        consent, words: top(words, 40).map(w => ({ ...w, eg: wordEg[w.k] || '' })),
+        quotes: quotes.slice(0, 80)
+      }, 200, cors);
     }
     if (p.endsWith('/counseling') && m === 'GET') {
       if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
@@ -367,7 +439,9 @@ export default {
       await ensureRegisterTables(env);
       let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
       if (!o.key) return json({ error: 'key必須' }, 400, cors);
-      await env.DB.prepare('INSERT OR REPLACE INTO customer_notes (key,caution,birthday,updated_at) VALUES (?,?,?,?)')
+      // 重要メモ/誕生月だけを更新する。写真・音声AIの同意はお客様の意思表示なのでここでは触らない
+      await env.DB.prepare(`INSERT INTO customer_notes (key,caution,birthday,updated_at) VALUES (?,?,?,?)
+           ON CONFLICT(key) DO UPDATE SET caution=excluded.caution, birthday=excluded.birthday, updated_at=excluded.updated_at`)
         .bind(o.key, o.caution || '', o.birthday || '', new Date().toISOString()).run();
       return json({ ok: true }, 200, cors);
     }
@@ -1107,6 +1181,11 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN nominated INTEGER DEFAULT 0`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN square_payment_id TEXT DEFAULT ''`).run(); } catch (e) {}
   // 再push(同期漏れ修復)の材料: 予約にカナ/指名を保存(2026-07-29)
+  // カウンセリングシートの写真/音声AI同意（用途別・2026-07-30）
+  try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN photo_policy TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN face_ng INTEGER DEFAULT 0`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN voice_policy TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN video_policy TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN kana TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN nominated INTEGER DEFAULT 1`).run(); } catch (e) {}
   _regTablesReady = true;

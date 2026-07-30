@@ -479,6 +479,19 @@ td.slot:hover{background:#f0f7ff}
 .rz-ref{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--sub);font-weight:700;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .reg-doneline{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:13px;font-weight:700;color:var(--ok);margin-top:11px}
 /* 折りたたみ(レジのたまに使う機能をしまう=毎日の画面をシンプルに) */
+.csopt{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:12px 13px;margin-bottom:8px;cursor:pointer;background:#fff}
+.csopt input{width:22px;height:22px;flex:0 0 auto;margin:1px 0 0;accent-color:var(--accent)}
+.csopt b{display:block;font-size:14px}
+.csopt i{display:block;font-style:normal;font-size:12px;color:var(--sub);margin-top:1px}
+.csbar{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.csbar .nm{flex:0 0 42%;font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csbar .tr{flex:1;height:16px;background:#f1f3f6;border-radius:8px;overflow:hidden}
+.csbar .fl{height:100%;background:linear-gradient(90deg,var(--accent),#b99a4f);border-radius:8px}
+.csbar .vl{flex:0 0 74px;text-align:right;font-size:12px;font-weight:800;color:var(--sub)}
+.csq{border-left:3px solid var(--line);padding:4px 0 4px 10px;margin-bottom:9px;font-size:13px}
+.csq .mt{font-size:11px;color:var(--sub);font-weight:700}
+.cswd{display:inline-flex;align-items:baseline;gap:5px;border:1px solid var(--line);border-radius:99px;padding:5px 11px;margin:0 6px 6px 0;font-size:13px;font-weight:700;background:#fff}
+.cswd b{color:var(--accent);font-size:12px}
 .fold{margin-top:10px}
 .fold summary{cursor:pointer;font-size:13.5px;font-weight:800;color:var(--navy);padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:12px;list-style:none;user-select:none}
 .fold summary::-webkit-details-marker{display:none}
@@ -838,6 +851,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <button data-v="dash">ダッシュボード</button>
     <button data-v="cal">予約台帳</button>
     <button data-v="cust">顧客カルテ</button>
+    <button data-v="cs">カウンセリング</button>
     <button data-v="register">レジ・会計</button>
     <button data-v="report">売上レポート</button>
     <button data-v="products">商品・在庫</button>
@@ -920,6 +934,45 @@ body.customer .phone.spa{background:#f7f8f3}
     <input id="cust-search" placeholder="🔍 名前・電話で検索" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px">
     <div id="custlist"></div>
   </div>
+</section>
+
+<!-- ============ COUNSELING (集計＋シート設定) ============ -->
+<section class="view" id="v-cs">
+  <h2>カウンセリング</h2>
+  <p class="lead">お客様が書いてくださったことを、数字とことばで見ます。毎月のミーティングにそのまま使えます</p>
+  <div class="grid cols4" style="margin-bottom:14px">
+    <div class="card kpi"><div class="lbl">シート枚数</div><div class="num" id="cst-total">0</div><div class="sub" id="cst-range">—</div></div>
+    <div class="card kpi"><div class="lbl">一番多いお悩み</div><div class="num" id="cst-top1" style="font-size:20px">—</div><div class="sub" id="cst-top1n">—</div></div>
+    <div class="card kpi"><div class="lbl">SNS・広告OK</div><div class="num" id="cst-snsrate">—</div><div class="sub" id="cst-snsn">撮影の同意</div></div>
+    <div class="card kpi"><div class="lbl">音声AI OK</div><div class="num" id="cst-voicerate">—</div><div class="sub">カウンセリング記録</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+      <div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:3px">開始</div><input type="date" id="cst-from" style="border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px"></div>
+      <div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:3px">終了</div><input type="date" id="cst-to" style="border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px"></div>
+      <div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:3px">対象</div><select id="cst-kind" style="border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px"><option value="">ヘア＋スパ</option><option value="hair">ヘアのみ</option><option value="spa">スパのみ</option></select></div>
+      <button class="btn small" id="cst-go">この期間で見る</button>
+      <button class="btn small ghost" id="cst-m0">今月</button>
+      <button class="btn small ghost" id="cst-m1">先月</button>
+      <button class="btn small ghost" id="cst-y">過去1年</button>
+      <button class="btn small ghost" id="cst-csv">CSVで書き出す</button>
+      <a class="btn small ghost" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none">iPadで記入してもらう ↗</a>
+    </div>
+  </div>
+
+  <div id="cst-body"><div class="card" style="color:var(--sub)">読み込み中…</div></div>
+
+  <details class="fold">
+    <summary>⚙ シートに出す項目（この店舗の設定）</summary>
+    <div class="card" style="border-radius:0 0 12px 12px;border-top:none">
+      <div style="font-size:12.5px;color:var(--sub);margin-bottom:12px">お店の方針に合わせて、お客様に聞く項目を選べます。切り替えるとiPadのシートにすぐ反映されます</div>
+      <label class="csopt"><input type="checkbox" id="cs-opt-photo"><span><b>📷 お写真について</b><i>撮影しない ／ カルテ用だけ ／ SNS・広告もOK の3択</i></span></label>
+      <label class="csopt"><input type="checkbox" id="cs-opt-video"><span><b>🎥 動画の撮影について</b><i>リール・ショート動画を撮るお店はONに（撮影しない／記録用だけ／SNSもOK）</i></span></label>
+      <label class="csopt"><input type="checkbox" id="cs-opt-voice"><span><b>🎙 音声AIカウンセリング</b><i>会話をAIが文字にして記録することへの同意</i></span></label>
+      <div id="cs-opt-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:8px">✓ 保存しました</div>
+    </div>
+  </details>
 </section>
 
 <!-- ============ SHIFT (営業時間・定休日・スタッフ別) ============ -->
@@ -1224,6 +1277,7 @@ const API = {
   async savePass(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async voidPass(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listKartePhotos(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photos?name='+encodeURIComponent(name),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.photos:null;}catch{return null;} },
+  async counselingStats(q){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/counseling/stats?'+new URLSearchParams(q),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j:null;}catch{return null;} },
   async listCounseling(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/counseling?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.sheets:null;}catch{return null;} },
   async listCustNotes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/custnotes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.notes:null;}catch{return null;} },
   async saveCustNote(n){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/custnotes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(n)});return r.ok;}catch{return null;} },
@@ -1532,6 +1586,7 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
   document.getElementById('v-'+b.dataset.v).classList.add('show');
+  if(b.dataset.v==='cs')csInit();
 });
 
 /* =============== dashboard =============== */
@@ -1807,9 +1862,11 @@ function openDetail(id){
   const repeat=vc>0?`<span class="rep">${vc+1}回目のご来店</span>`:'<span class="rep new">新規</span>';
   const needBlock=(r.channel!=='hpb'&&!r.hpbBlocked&&r.status!=='cancelled');
   // 重要メモ(カルテ)があれば予約詳細の先頭で警告表示(施術前に必ず目に入る)
-  const knCaution=((db.custnotes||{})[custKey(r)]||{}).caution||'';
+  const knote=(db.custnotes||{})[custKey(r)]||{};
+  const knCaution=knote.caution||'';
   const rows=[
     knCaution?['⚠ 注意',`<b style="color:#b4302b">${escH(knCaution)}</b>`]:null,
+    (knote.photo_policy||knote.voice_policy)?['同意',consentBadges(knote)]:null,
     ['お客様',`${escH(r.name)} ${repeat}`],
     r.phone?['電話',r.phone]:null,
     ['日時',`${r.date.replace(/-/g,'/')} ${hm(r.start)}〜${hm(r.end)}`],
@@ -3353,6 +3410,17 @@ function renderLinks(){
 /* =============== boot =============== */
 /* =============== 顧客カルテ =============== */
 const custKey=r=>{const p=(r.phone||'').replace(/[^0-9]/g,'');return p||('n:'+r.name)};
+/* 写真・音声AIの同意を一目で分かるバッジに。撮影NGは赤で強く出す（撮ってしまう事故を防ぐ） */
+function consentBadges(n){
+  n=n||{}; const out=[];
+  const pill=(t,bg,bd,fg)=>`<span class="rep" style="background:${bg};border-color:${bd};color:${fg};font-weight:800">${t}</span>`;
+  if(n.photo_policy==='no')        out.push(pill('📷 撮影NG','#fdecec','#f3c9c7','#b4302b'));
+  else if(n.photo_policy==='karte')out.push(pill('📷 カルテ用だけOK','#f4f6f8','#dde3e9','#33475b'));
+  else if(n.photo_policy==='sns')  out.push(pill('📷 SNS・広告OK'+(n.face_ng?'（顔なし）':''),'#eef7f0','#c6e6d3','#0c7a41'));
+  if(n.voice_policy==='no')        out.push(pill('🎙 AI録音NG','#fdecec','#f3c9c7','#b4302b'));
+  else if(n.voice_policy==='ok')   out.push(pill('🎙 AI録音OK','#eef7f0','#c6e6d3','#0c7a41'));
+  return out.join(' ')||'<span style="color:var(--sub)">—</span>';
+}
 const topKey=obj=>{const e=Object.entries(obj).sort((a,b)=>b[1]-a[1])[0];return e?e[0]:''};
 function buildCustomers(){
   const map={};
@@ -3439,6 +3507,7 @@ function openCustomer(key){
     <div style="background:${cn.caution?'#fdecec':'#faf8f4'};border:1px solid ${cn.caution?'#f3c1c1':'#e8e2d6'};border-radius:10px;padding:9px 12px;margin-bottom:10px">
       <div style="font-size:11px;font-weight:800;color:${cn.caution?'#b4302b':'var(--sub)'};margin-bottom:3px">⚠ 重要メモ（アレルギー・薬剤NG・注意事項）</div>
       <textarea id="kn-caution" placeholder="例）ジアミンアレルギーあり／お子様連れ" style="width:100%;border:none;background:transparent;font-size:13px;font-family:inherit;resize:vertical;min-height:34px">${escH(cn.caution||'')}</textarea>
+      <div style="margin-top:6px">${consentBadges(cn)}</div>
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);margin-top:4px">🎂 誕生月 <select id="kn-bday" style="border:1px solid var(--line);border-radius:6px;padding:2px 6px"><option value="">—</option>${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${String(i+1)===String(cn.birthday)?'selected':''}>${i+1}月</option>`).join('')}</select><span id="kn-saved" style="color:var(--ok);font-weight:700;display:none">✓ 保存しました</span></div>
     </div>
     ${cycleHtml}${holdHtml}
@@ -3458,7 +3527,7 @@ function openCustomer(key){
   document.getElementById('detailbg').classList.add('show');
   // ---- 重要メモ/誕生月の保存(フォーカスアウト・変更で自動保存) ----
   {const ta=document.getElementById('kn-caution'),bd=document.getElementById('kn-bday'),ok=document.getElementById('kn-saved');
-   const saveKn=()=>{const n={key:ck,caution:ta.value.trim(),birthday:bd.value};db.custnotes[ck]=n;save();API.saveCustNote(n);
+   const saveKn=()=>{const n={key:ck,caution:ta.value.trim(),birthday:bd.value};db.custnotes[ck]=Object.assign({},cn,n);save();API.saveCustNote(n);
      if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none'},1500);}};
    if(ta)ta.onblur=saveKn; if(bd)bd.onchange=saveKn;}
   // ---- カウンセリングシート: 記入リンクに氏名/電話/種別を引き継ぐ(スタッフが打ち直さない)
@@ -3476,7 +3545,7 @@ function openCustomer(key){
         <div style="font-weight:800;color:var(--ink)">${x.date?x.date.replace(/-/g,'/'):''}　${x.kind==='spa'?'💆 スパ':'✂️ ヘア'}
           ${cn.agreed?'<span class="rep" style="background:#eef7f0;border-color:#c6e6d3;color:#0c7a41">同意済み</span>':''}
           ${x.sign?'<span class="rep">署名あり</span>':''}
-          ${cn.photo?'<span class="rep">写真掲載OK</span>':''}</div>
+          ${consentBadges({photo_policy:(cn.photo===true?'sns':cn.photo)||'',face_ng:cn.faceNg?1:0,voice_policy:cn.voice||''})}</div>
         ${a.caution?`<div style="color:#b4302b;font-weight:800;margin-top:3px">⚠ ${escH(a.caution)}</div>`:''}
         ${a.want?`<div style="margin-top:3px">🗣 ${escH(a.want)}</div>`:''}
         ${chips.length?`<div style="margin-top:3px">${chips.map(v=>escH(v)).join('・')}</div>`:''}
@@ -3550,6 +3619,102 @@ function renderToday(){
 
 /* =============== シフト・営業時間の編集 =============== */
 const fmtShiftDate=k=>{const d=new Date(k);return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`};
+/* =============== カウンセリング集計（毎月のミーティング用） =============== */
+let CST=null, csReady=false;
+const csLbl={no:'撮影しない',karte:'カルテ用だけOK',sns:'SNS・広告もOK'};
+function csMonthRange(back){
+  const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-back);
+  const a=new Date(d.getFullYear(),d.getMonth(),1), b=new Date(d.getFullYear(),d.getMonth()+1,0);
+  return [dkey(a),dkey(b)];
+}
+function csInit(){
+  if(csReady)return; csReady=true;
+  const [f,t]=csMonthRange(0);
+  document.getElementById('cst-from').value=f; document.getElementById('cst-to').value=t;
+  document.getElementById('cst-go').onclick=csLoad;
+  document.getElementById('cst-kind').onchange=csLoad;
+  document.getElementById('cst-m0').onclick=()=>{const[a,b]=csMonthRange(0);csSet(a,b)};
+  document.getElementById('cst-m1').onclick=()=>{const[a,b]=csMonthRange(1);csSet(a,b)};
+  document.getElementById('cst-y').onclick=()=>{const d=new Date();const b=dkey(d);d.setFullYear(d.getFullYear()-1);csSet(dkey(d),b)};
+  document.getElementById('cst-csv').onclick=csCsv;
+  // シートに出す項目（店舗設定）
+  const wire=(id,key,def)=>{const el=document.getElementById(id);if(!el)return;
+    el.checked=stg(key,def?'1':'0')==='1';
+    el.onchange=()=>{setStg(key,el.checked?'1':'0');
+      const ok=document.getElementById('cs-opt-saved');if(ok){ok.style.display='block';setTimeout(()=>ok.style.display='none',1800);}};};
+  wire('cs-opt-photo','csPhoto',true); wire('cs-opt-video','csVideo',false); wire('cs-opt-voice','csVoice',true);
+  csLoad();
+}
+function csSet(f,t){document.getElementById('cst-from').value=f;document.getElementById('cst-to').value=t;csLoad();}
+async function csLoad(){
+  const from=document.getElementById('cst-from').value, to=document.getElementById('cst-to').value;
+  const kind=document.getElementById('cst-kind').value;
+  document.getElementById('cst-body').innerHTML='<div class="card" style="color:var(--sub)">読み込み中…</div>';
+  const j=await API.counselingStats({from,to,kind});
+  if(!j){document.getElementById('cst-body').innerHTML='<div class="card" style="color:var(--sub)">読み込めませんでした（管理ログインを確認してください）</div>';return;}
+  CST=j; csRender(j);
+}
+function csBars(list,total,limit){
+  if(!list||!list.length)return '<div style="color:var(--sub);font-size:13px">まだデータがありません</div>';
+  const max=Math.max(...list.map(x=>x.n))||1;
+  return list.slice(0,limit||12).map(x=>`<div class="csbar">
+    <div class="nm">${escH(x.k)}</div>
+    <div class="tr"><div class="fl" style="width:${Math.round(x.n/max*100)}%"></div></div>
+    <div class="vl">${x.n}件 ${total?`(${Math.round(x.n/total*100)}%)`:''}</div></div>`).join('');
+}
+function csRender(j){
+  const t=j.total||0;
+  const pct=(o,k)=>{const n=(o||{})[k]||0;return t?Math.round(n/t*100)+'%':'—'};
+  document.getElementById('cst-total').textContent=t;
+  document.getElementById('cst-range').textContent=`${(j.from||'').replace(/-/g,'/')}〜${(j.to||'').replace(/-/g,'/')}`;
+  const c1=(j.concern||[])[0];
+  document.getElementById('cst-top1').textContent=c1?c1.k:'—';
+  document.getElementById('cst-top1n').textContent=c1?`${c1.n}件（${t?Math.round(c1.n/t*100):0}%）`:'—';
+  document.getElementById('cst-snsrate').textContent=pct(j.consent&&j.consent.photo,'sns');
+  document.getElementById('cst-snsn').textContent=`撮影しない ${((j.consent||{}).photo||{}).no||0}件 / カルテ用だけ ${((j.consent||{}).photo||{}).karte||0}件`;
+  document.getElementById('cst-voicerate').textContent=pct(j.consent&&j.consent.voice,'ok');
+
+  const sec=(ttl,sub,inner)=>`<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 3px;font-size:15px">${ttl}</h3>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:11px">${sub}</div>${inner}</div>`;
+  const words=(j.words||[]).length
+    ? (j.words||[]).map(w=>`<span class="cswd" title="${escH(w.eg)}">${escH(w.k)}<b>${w.n}</b></span>`).join('')
+    : '<div style="color:var(--sub);font-size:13px">まだ自由記入がありません</div>';
+  const quotes=(j.quotes||[]).length
+    ? (j.quotes||[]).slice(0,25).map(q=>`<div class="csq"><div class="mt">${(q.date||'').replace(/-/g,'/')} ${q.kind==='spa'?'スパ':'ヘア'}</div>${escH(q.text)}</div>`).join('')
+    : '<div style="color:var(--sub);font-size:13px">まだ自由記入がありません</div>';
+  const ph=(j.consent||{}).photo||{}, vd=(j.consent||{}).video||{}, vo=(j.consent||{}).voice||{};
+  const csList=o=>Object.entries(csLbl).map(([k,l])=>({k:l,n:o[k]||0}));
+
+  document.getElementById('cst-body').innerHTML=
+    sec('お悩み・ご希望','いま何に困って来店されているか。多い順',csBars(j.concern,t,14))
+    +sec('お客様のことば','自由記入によく出てくる言葉。数字はのべ回数（カーソルを乗せると実際の文が出ます）',words)
+    +sec('書いてくださったこと（原文）','ミーティングでそのまま読める形にしています',quotes)
+    +sec('これまでの施術','ブリーチ・黒染めなどの履歴。技術の準備と薬剤の在庫に効きます',csBars(j.history,t,14))
+    +sec('お体のこと','妊娠中・アレルギーなど。安全のための把握',csBars(j.body,t,10))
+    +sec('おうちでのお手入れ','店販の提案とメニュー設計の材料',csBars(j.care,t,12))
+    +sec('撮影・音声AIの同意','お店として何ができるかの実態',
+      `<div style="font-weight:800;font-size:13px;margin-bottom:6px">📷 写真</div>${csBars(csList(ph),t)}
+       <div style="font-weight:800;font-size:13px;margin:12px 0 6px">🎥 動画</div>${csBars(csList(vd),t)}
+       <div style="font-weight:800;font-size:13px;margin:12px 0 6px">🎙 音声AIカウンセリング</div>${csBars([{k:'使ってOK',n:vo.ok||0},{k:'使わない',n:vo.no||0}],t)}
+       <div style="font-size:12px;color:var(--sub);margin-top:9px">お顔が写らないように、のご希望：${(j.consent||{}).faceNg||0}件</div>`)
+    +((j.byMonth||[]).length>1?sec('月ごとの枚数','記入していただけた数の推移',csBars(j.byMonth,0,24)):'');
+}
+function csCsv(){
+  if(!CST){toast('先に期間を読み込んでください',true);return;}
+  const rows=[['区分','項目','件数']];
+  const push=(lab,list)=>(list||[]).forEach(x=>rows.push([lab,x.k,x.n]));
+  push('お悩み・ご希望',CST.concern); push('これまでの施術',CST.history); push('お体のこと',CST.body);
+  push('おうちでのお手入れ',CST.care); push('ことば',CST.words);
+  push('写真の同意',Object.entries((CST.consent||{}).photo||{}).map(([k,n])=>({k:csLbl[k]||k,n})));
+  push('動画の同意',Object.entries((CST.consent||{}).video||{}).map(([k,n])=>({k:csLbl[k]||k,n})));
+  push('音声AIの同意',Object.entries((CST.consent||{}).voice||{}).map(([k,n])=>({k:k==='ok'?'使ってOK':'使わない',n})));
+  rows.push([]); rows.push(['原文','日付','内容']);
+  (CST.quotes||[]).forEach(q=>rows.push(['原文',q.date,q.text]));
+  const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`カウンセリング集計_${CST.from}_${CST.to}.csv`;a.click();
+}
+
 function renderShift(){
   const cr=document.getElementById('closedrow');if(!cr)return;
   // --- サロン休業日（日付指定・その日は全員休み） ---

@@ -41,9 +41,20 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .agree{display:flex;gap:11px;align-items:flex-start;background:#f7f9f5;border:1.5px solid #d6e2cd;border-radius:12px;padding:14px;margin-top:14px;cursor:pointer}
 .agree input{width:24px;height:24px;margin:2px 0 0;flex:0 0 auto;accent-color:var(--ok)}
 .agree span{font-size:14.5px;font-weight:800;color:#215c39;line-height:1.6}
-.opt-agree{display:flex;gap:11px;align-items:flex-start;padding:12px 2px;cursor:pointer}
-.opt-agree input{width:22px;height:22px;margin:2px 0 0;flex:0 0 auto;accent-color:var(--gold)}
-.opt-agree span{font-size:13.5px;font-weight:600;color:var(--sub)}
+.optbox{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:13px 12px;background:#fdfcfa}
+.optttl{font-size:14px;font-weight:800;margin-bottom:9px}
+.optttl span{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-top:2px}
+.pick{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:11px;background:#fff;padding:12px 13px;margin-bottom:7px;cursor:pointer;min-height:56px}
+.pick.on{border-color:var(--gold);background:#faf6ee}
+.pick .dot{width:22px;height:22px;border-radius:50%;border:2px solid #cfc6b4;flex:0 0 auto;margin-top:1px;position:relative;background:#fff}
+.pick.on .dot{border-color:var(--gold)}
+.pick.on .dot:after{content:"";position:absolute;left:4px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--gold)}
+.pick .pt b{display:block;font-size:14.5px;font-weight:800;color:var(--ink);line-height:1.5}
+.pick .pt i{display:block;font-style:normal;font-size:12.5px;font-weight:600;color:var(--sub);margin-top:1px}
+.optbox .sub[hidden]{display:none}
+.optbox .sub{display:flex;gap:10px;align-items:center;padding:4px 4px 2px 8px;cursor:pointer}
+.optbox .sub input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--gold)}
+.optbox .sub span{font-size:13.5px;font-weight:700;color:var(--sub)}
 #signwrap{border:1.5px dashed #cbbf9f;border-radius:12px;background:#fffdf8;position:relative}
 #sign{display:block;width:100%;height:150px;touch-action:none;border-radius:12px}
 .signhint{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;color:#b8ad93;font-size:14px;font-weight:700;pointer-events:none}
@@ -78,8 +89,12 @@ const TOK=localStorage.getItem('stb_admin_tok')||'';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast=(m,ng)=>{const t=document.getElementById('toast');t.textContent=m;t.className='toast on'+(ng?' ng':'');setTimeout(()=>t.className='toast',2600)};
 const q=new URLSearchParams(location.search);
+/* 店舗ごとに出す/出さないを管理画面で切り替える（settingsテーブル・既定=写真ON・動画OFF・音声AI ON） */
+let OPT={photo:true,video:false,voice:true};
 let S={kind:q.get('kind')==='spa'?'spa':'hair',name:q.get('name')||'',phone:q.get('phone')||'',
-  a:{concern:[],history:[],care:[],scalp:[],body:[],want:''},c:{agreed:false,photo:false},sign:''};
+  a:{concern:[],history:[],care:[],scalp:[],body:[],want:''},
+  /* photo: no=撮影しない / karte=カルテ用だけ / sns=SNS・広告もOK ／ voice: ok|no */
+  c:{agreed:false,photo:'karte',faceNg:false,video:'no',voice:'ok'},sign:''};
 
 /* ラジオ/チェックの共通描画（複数選択のキーは未初期化でも落ちないようにする） */
 const chips=(key,items,multi)=>{
@@ -172,11 +187,38 @@ function render(){
         <li><b>健康状態について</b><br>アレルギー・通院・妊娠中などをお申し出いただかなかった場合、体調の変化に対応できないことがあります。必ずお知らせください。</li>
         <li><b>お荷物・貴重品</b><br>貴重品はお手元でお預かりください。店内でのお忘れ物・紛失について、当店で管理していないものはお預かりの責任を負えない場合があります。</li>
         <li><b>キャンセル・ご遅刻</b><br>2日前まで無料／前日は料金の25%／当日は50%／無断キャンセルは当店に生じた損害の範囲までを頂戴します。10分以上遅れる場合はご連絡ください。内容を短縮させていただくことがあります。</li>
+        ${OPT.voice?`<li><b>音声AIカウンセリング</b><br>ご要望の聞き違いを防ぐため、カウンセリングの会話をAIが文字にして記録することがあります。使うのは<b>ご要望とカルテの記録のためだけ</b>です。音声そのものは記録を作ったあとに消し、第三者に渡すことはありません。ご希望でなければ使いません（スタッフが手で記録します）。下の「音声AIカウンセリング」でお選びください。</li>`:''}
         <li><b>個人情報の取り扱い</b><br>いただいた情報は、施術・ご予約の管理・ご連絡のためだけに使います。法律で必要な場合を除き、第三者に渡すことはありません。削除をご希望のときはお申し出ください。</li>
       </ol>
     </div>
     <label class="agree"><input type="checkbox" id="c-agree" ${S.c.agreed?'checked':''}><span>上記の内容を読み、理解しました。この内容で施術をお願いします</span></label>
-    <label class="opt-agree"><input type="checkbox" id="c-photo" ${S.c.photo?'checked':''}><span>【任意】仕上がりの写真を、SNSやホームページで使うことに同意します（顔が写らないように配慮します／いつでも取り消せます）</span></label>
+
+    ${OPT.photo?`<div class="optbox">
+      <div class="optttl">📷 お写真について<span>どれか1つお選びください・いつでも変更できます</span></div>
+      ${[['no','撮影しないでください','お写真は一切お撮りしません'],
+         ['karte','カルテ用だけ OK','お店の記録として残します。外には出しません'],
+         ['sns','SNS・ホームページ・広告にも使って OK','カルテ用の記録も兼ねます']]
+        .map(([v,t,d])=>`<label class="pick ${S.c.photo===v?'on':''}" data-photo="${v}">
+          <span class="dot"></span><span class="pt"><b>${t}</b><i>${d}</i></span></label>`).join('')}
+      <label class="sub" id="facewrap" ${S.c.photo==='sns'?'':'hidden'}><input type="checkbox" id="c-facing" ${S.c.faceNg?'checked':''}><span>お顔が写らないようにしてください</span></label>
+    </div>`:''}
+
+    ${OPT.video?`<div class="optbox">
+      <div class="optttl">🎥 動画の撮影について<span>リール・ショート動画などに使わせていただく場合があります</span></div>
+      ${[['no','動画は撮影しないでください',''],
+         ['karte','記録用だけ OK','お店の中だけで使います。外には出しません'],
+         ['sns','SNS・広告にも使って OK','リール／ショート等']]
+        .map(([v,t,d])=>`<label class="pick ${S.c.video===v?'on':''}" data-video="${v}">
+          <span class="dot"></span><span class="pt"><b>${t}</b>${d?`<i>${d}</i>`:''}</span></label>`).join('')}
+    </div>`:''}
+
+    ${OPT.voice?`<div class="optbox">
+      <div class="optttl">🎙 音声AIカウンセリング<span>ご要望の聞き違いを防ぐために使います</span></div>
+      ${[['ok','使って OK','会話をAIが文字にして、ご要望の記録に使います'],
+         ['no','使わないでください','スタッフが手で記録します']]
+        .map(([v,t,d])=>`<label class="pick ${S.c.voice===v?'on':''}" data-voice="${v}">
+          <span class="dot"></span><span class="pt"><b>${t}</b><i>${d}</i></span></label>`).join('')}
+    </div>`:''}
   </div>
 
   <div class="card">
@@ -224,7 +266,16 @@ function wire(){
   ['f-name','f-phone','f-want','f-caution'].forEach(id=>keepEl(id,e=>e.oninput=keep));
   keepEl('f-bmonth',e=>e.onchange=keep);
   keepEl('c-agree',e=>e.onchange=()=>{S.c.agreed=e.checked;});
-  keepEl('c-photo',e=>e.onchange=()=>{S.c.photo=e.checked;});
+  keepEl('c-facing',e=>e.onchange=()=>{S.c.faceNg=e.checked;});
+  // 写真・音声AIの選択は再描画せずその場で切り替える（スクロール位置と署名を保つ）
+  const pickSet=(attr,key)=>document.querySelectorAll('['+attr+']').forEach(el=>el.onclick=ev=>{
+    ev.preventDefault();S.c[key]=el.dataset[key];
+    document.querySelectorAll('['+attr+']').forEach(x=>x.classList.toggle('on',x.dataset[key]===S.c[key]));
+    if(key==='photo'){const fw=document.getElementById('facewrap');
+      if(S.c.photo!=='sns'){S.c.faceNg=false;const cb=document.getElementById('c-facing');if(cb)cb.checked=false;}
+      if(fw)fw.hidden=(S.c.photo!=='sns');}
+  });
+  pickSet('data-photo','photo'); pickSet('data-video','video'); pickSet('data-voice','voice');
   initSign();
   {const tg=document.getElementById('tokgo');
    if(tg)tg.onclick=async()=>{
@@ -295,6 +346,15 @@ async function save(){
   }
 }
 render();
+/* 店舗設定（表示する同意項目）を読み込んで反映。読めなくても既定で動く */
+(async()=>{ if(!TOK)return;
+  try{const r=await fetch(API+'/settings',{headers:{'Authorization':'Bearer '+TOK}});
+    if(!r.ok)return; const j=await r.json(); const g=j.settings||j||{};
+    const on=(k,def)=>g[k]==null||g[k]===''?def:(g[k]==='1'||g[k]===1||g[k]===true);
+    OPT={photo:on('csPhoto',true),video:on('csVideo',false),voice:on('csVoice',true)};
+    render();
+  }catch(e){}
+})();
 window.addEventListener('resize',()=>{const s=S.sign;initSign();S.sign=s;});
 </script>
 </body>
