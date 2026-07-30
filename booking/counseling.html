@@ -89,8 +89,9 @@ const TOK=localStorage.getItem('stb_admin_tok')||'';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast=(m,ng)=>{const t=document.getElementById('toast');t.textContent=m;t.className='toast on'+(ng?' ng':'');setTimeout(()=>t.className='toast',2600)};
 const q=new URLSearchParams(location.search);
-/* 店舗ごとに出す/出さないを管理画面で切り替える（settingsテーブル・既定=写真ON・動画OFF・音声AI ON） */
-let OPT={photo:true,video:false,voice:true};
+/* 店舗ごとに出す/出さないを管理画面で切り替える（settingsテーブル）
+   既定=写真ONのみ。動画と音声AIは端末・環境で差が出るので、使うお店だけONにする */
+let OPT={photo:true,video:false,voice:false};
 let S={kind:q.get('kind')==='spa'?'spa':'hair',name:q.get('name')||'',phone:q.get('phone')||'',
   a:{concern:[],history:[],care:[],scalp:[],body:[],want:''},
   /* photo: no=撮影しない / karte=カルテ用だけ / sns=SNS・広告もOK ／ voice: ok|no */
@@ -187,7 +188,7 @@ function render(){
         <li><b>健康状態について</b><br>アレルギー・通院・妊娠中などをお申し出いただかなかった場合、体調の変化に対応できないことがあります。必ずお知らせください。</li>
         <li><b>お荷物・貴重品</b><br>貴重品はお手元でお預かりください。店内でのお忘れ物・紛失について、当店で管理していないものはお預かりの責任を負えない場合があります。</li>
         <li><b>キャンセル・ご遅刻</b><br>2日前まで無料／前日は料金の25%／当日は50%／無断キャンセルは当店に生じた損害の範囲までを頂戴します。10分以上遅れる場合はご連絡ください。内容を短縮させていただくことがあります。</li>
-        ${OPT.voice?`<li><b>音声AIカウンセリング</b><br>ご要望の聞き違いを防ぐため、カウンセリングの会話をAIが文字にして記録することがあります。使うのは<b>ご要望とカルテの記録のためだけ</b>です。音声そのものは記録を作ったあとに消し、第三者に渡すことはありません。ご希望でなければ使いません（スタッフが手で記録します）。下の「音声AIカウンセリング」でお選びください。</li>`:''}
+        ${OPT.voice?`<li><b>音声AIカウンセリング</b><br>ご要望の聞き違いを防ぐため、カウンセリングの会話をAIが文字にして記録することがあります。使うのは<b>ご要望とカルテの記録のためだけ</b>です。第三者に渡すことはありません。記録の削除をご希望のときはお申し出ください。ご希望でなければ使いません（スタッフが手で記録します）。下の「音声AIカウンセリング」でお選びください。</li>`:''}
         <li><b>個人情報の取り扱い</b><br>いただいた情報は、施術・ご予約の管理・ご連絡のためだけに使います。法律で必要な場合を除き、第三者に渡すことはありません。削除をご希望のときはお申し出ください。</li>
       </ol>
     </div>
@@ -351,7 +352,7 @@ render();
   try{const r=await fetch(API+'/settings',{headers:{'Authorization':'Bearer '+TOK}});
     if(!r.ok)return; const j=await r.json(); const g=j.settings||j||{};
     const on=(k,def)=>g[k]==null||g[k]===''?def:(g[k]==='1'||g[k]===1||g[k]===true);
-    OPT={photo:on('csPhoto',true),video:on('csVideo',false),voice:on('csVoice',true)};
+    OPT={photo:on('csPhoto',true),video:on('csVideo',false),voice:on('csVoice',false)};
     render();
   }catch(e){}
 })();

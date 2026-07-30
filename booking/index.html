@@ -969,7 +969,7 @@ body.customer .phone.spa{background:#f7f8f3}
       <div style="font-size:12.5px;color:var(--sub);margin-bottom:12px">お店の方針に合わせて、お客様に聞く項目を選べます。切り替えるとiPadのシートにすぐ反映されます</div>
       <label class="csopt"><input type="checkbox" id="cs-opt-photo"><span><b>📷 お写真について</b><i>撮影しない ／ カルテ用だけ ／ SNS・広告もOK の3択</i></span></label>
       <label class="csopt"><input type="checkbox" id="cs-opt-video"><span><b>🎥 動画の撮影について</b><i>リール・ショート動画を撮るお店はONに（撮影しない／記録用だけ／SNSもOK）</i></span></label>
-      <label class="csopt"><input type="checkbox" id="cs-opt-voice"><span><b>🎙 音声AIカウンセリング</b><i>会話をAIが文字にして記録することへの同意</i></span></label>
+      <label class="csopt"><input type="checkbox" id="cs-opt-voice"><span><b>🎙 音声AIカウンセリング</b><i>会話をAIが文字にして記録することへの同意。端末や環境で精度に差が出るので、実際に使うお店だけONに（既定OFF）</i></span></label>
       <div id="cs-opt-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:8px">✓ 保存しました</div>
     </div>
   </details>
@@ -3642,7 +3642,7 @@ function csInit(){
     el.checked=stg(key,def?'1':'0')==='1';
     el.onchange=()=>{setStg(key,el.checked?'1':'0');
       const ok=document.getElementById('cs-opt-saved');if(ok){ok.style.display='block';setTimeout(()=>ok.style.display='none',1800);}};};
-  wire('cs-opt-photo','csPhoto',true); wire('cs-opt-video','csVideo',false); wire('cs-opt-voice','csVoice',true);
+  wire('cs-opt-photo','csPhoto',true); wire('cs-opt-video','csVideo',false); wire('cs-opt-voice','csVoice',false);
   csLoad();
 }
 function csSet(f,t){document.getElementById('cst-from').value=f;document.getElementById('cst-to').value=t;csLoad();}
