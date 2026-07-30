@@ -20,6 +20,10 @@ import { json, z, min2hm } from './util.js';   // 共有ユーティリティ
 import { salonPush, salonCancel, salonDelete, salonCall, salonSaveAccountRaw, handleSalonPull, handleSalonSelftest, handleSalonWhoami, handleSalonCleanupNoname } from './salon-bridge.js';   // salon.town(CUEPON)ブリッジ
 import { handleAiChat } from './ai-chat.js';   // BYO AI（本人キーでClaude/ChatGPT）
 
+/* 電話番号を数字だけに寄せる。全角も拾う。カルテのキーはこの形で統一する
+   （同姓同名でも取り違えないよう、電話が本人の見分け方の軸になる） */
+const telN = v => String(v || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
+
 const SQUARE_VERSION = '2025-01-23';
 const OWNER_FROM = 'yoyaku@seam.site';   // 送信元（seam.siteドメイン）
 const OWNER_TO = 'suenotakemi@gmail.com';// 通知先（SEND_EMAILの検証済み宛先）
@@ -322,12 +326,14 @@ export default {
       let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
       if (!o.name) return json({ error: 'お名前は必須です' }, 400, cors);
       if (!o.consent || !o.consent.agreed) return json({ error: '同意のチェックが必要です' }, 400, cors);
-      const ph = String(o.phone || '').replace(/[^0-9]/g, '');
-      const key = ph || ('n:' + o.name);
+      // 電話番号は必須。カルテのキーを常に電話にすることで、同姓同名でも取り違えない
+      const ph = String(o.phone || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
+      if (ph.length < 8) return json({ error: '電話番号は必須です（数字8桁以上）' }, 400, cors);
+      const key = ph;
       const id = 'cs' + crypto.randomUUID().slice(0, 8);
       await env.DB.prepare(
         `INSERT INTO counseling (id,key,name,phone,kind,lang,answers,consent,sign,staff,date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
-      ).bind(id, key, o.name, o.phone || '', o.kind || 'hair',
+      ).bind(id, key, o.name, ph, o.kind || 'hair',
         ['ja', 'en', 'zh', 'tw', 'ko'].includes(o.lang) ? o.lang : 'ja',
         JSON.stringify(o.answers || {}),
         JSON.stringify(o.consent || {}), (o.sign || '').slice(0, 300000), o.staff || '',
@@ -375,16 +381,28 @@ export default {
         const r2 = await env.DB.prepare("SELECT name FROM reservations WHERE replace(replace(phone,'-',''),' ','')=? ORDER BY date DESC LIMIT 1").bind(ph).first().catch(() => null);
         return (r2 && r2.name) || '';
       })();
+      // 同姓同名がいるかを先に判定する。いる場合、電話を持たない古い行は
+      // どちらの人のものか決められないので、氏名での取り込みをやめる（誤って両方に足さない）
+      let sameName = 0;
+      if (nameGuess) {
+        const r = await env.DB.prepare('SELECT COUNT(DISTINCT key) c FROM counseling WHERE name=? AND key<>?').bind(nameGuess, key).first().catch(() => null);
+        sameName = (r && r.c) || 0;
+      }
+      const byName = sameName === 0 ? nameGuess : '\u0000';   // 同姓同名がいるときは氏名一致を無効化
       const [notes, sheets, resv, chk, pts, pass, photos] = await Promise.all([
         env.DB.prepare('SELECT * FROM customer_notes WHERE key=?').bind(key).first().catch(() => null),
         P('SELECT * FROM counseling WHERE key=? ORDER BY created_at DESC LIMIT 30', key),
         ph ? P("SELECT id,date,start,end,menu_id,staff_id,name,status,channel,note,deposit FROM reservations WHERE replace(replace(phone,'-',''),' ','')=? ORDER BY date DESC LIMIT 60", ph)
            : P('SELECT id,date,start,end,menu_id,staff_id,name,status,channel,note,deposit FROM reservations WHERE name=? ORDER BY date DESC LIMIT 60', like),
-        nameGuess ? P('SELECT id,date,tech,retail,discount,total,method,nominated,retail_items FROM checkouts WHERE customer=? ORDER BY date DESC LIMIT 60', nameGuess) : [],
+        // 電話があれば電話で引く。電話を持たない古い行だけ氏名で拾う（同姓同名の混在を防ぐ）
+        ph ? P("SELECT id,date,tech,retail,discount,total,method,nominated,retail_items FROM checkouts WHERE phone=? OR (COALESCE(phone,'')='' AND customer=?) ORDER BY date DESC LIMIT 60", ph, byName)
+           : (nameGuess ? P('SELECT id,date,tech,retail,discount,total,method,nominated,retail_items FROM checkouts WHERE customer=? ORDER BY date DESC LIMIT 60', nameGuess) : []),
         ph ? P("SELECT delta,reason,date FROM points WHERE replace(replace(phone,'-',''),' ','')=? ORDER BY date DESC LIMIT 200", ph)
            : (nameGuess ? P('SELECT delta,reason,date FROM points WHERE name=? ORDER BY date DESC LIMIT 200', nameGuess) : []),
-        nameGuess ? P('SELECT id,label,remaining,expires FROM passes WHERE customer=? AND void=0', nameGuess) : [],
-        nameGuess ? P('SELECT id,date FROM karte_photos WHERE name=? ORDER BY date DESC LIMIT 40', nameGuess) : [],
+        ph ? P("SELECT id,label,remaining,expires FROM passes WHERE (phone=? OR (COALESCE(phone,'')='' AND customer=?)) AND void=0", ph, byName)
+           : (nameGuess ? P('SELECT id,label,remaining,expires FROM passes WHERE customer=? AND void=0', nameGuess) : []),
+        ph ? P("SELECT id,date FROM karte_photos WHERE phone=? OR (COALESCE(phone,'')='' AND name=?) ORDER BY date DESC LIMIT 40", ph, byName)
+           : (nameGuess ? P('SELECT id,date FROM karte_photos WHERE name=? ORDER BY date DESC LIMIT 40', nameGuess) : []),
       ]);
 
       const live = sheets.filter(x => !x.voided);
@@ -394,6 +412,12 @@ export default {
       // 施術上の注意は、重要メモとシートの自由記入を合わせて拾う（見落としを作らない）
       const cautions = [...new Set([(notes && notes.caution) || '', ...parsed.map(x => x.answers.caution || '')].filter(Boolean))];
       const paid = chk.reduce((a, c) => a + (+c.total || 0), 0);
+      // 同姓同名がいる場合、電話を持たない古い会計は誰のものか決められない。件数だけ伝える
+      let legacyUnlinked = 0;
+      if (sameName > 0 && nameGuess) {
+        const r = await env.DB.prepare("SELECT COUNT(*) c FROM checkouts WHERE customer=? AND COALESCE(phone,'')=''").bind(nameGuess).first().catch(() => null);
+        legacyUnlinked = (r && r.c) || 0;
+      }
       const visits = resv.filter(r => r.status === 'done').length;
       const merge = (k) => [...new Set(parsed.flatMap(x => [].concat(x.answers[k] || [])))].filter(Boolean);
 
@@ -415,6 +439,8 @@ export default {
         visits, sales: paid, checkouts: chk.length,
         reservations: resv.slice(0, 20),
         points: pts.reduce((a, r) => a + (+r.delta || 0), 0), passes: pass, photos: photos.length,
+        sameName: sameName,   // 同姓同名の他の方がいるか（電話が違えば別人＝取り違え注意の目印）
+        legacyUnlinked: legacyUnlinked,   // 同姓同名のため、どちらの方か決められない古い記録の件数
       }, 200, cors);
     }
     // 同意書は消さない（オーナー方針 2026-07-30）。あとで何かあったときに記録が無いのが一番まずい。
@@ -1299,6 +1325,10 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN video_policy TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN voided INTEGER DEFAULT 0`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN lang TEXT DEFAULT 'ja'`).run(); } catch (e) {}
+  // 同姓同名の取り違えを防ぐため、氏名キーだったテーブルに電話を持たせる（既存行は空のまま＝氏名で拾う）
+  try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE passes ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE karte_photos ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN void_reason TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN kana TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN nominated INTEGER DEFAULT 1`).run(); } catch (e) {}

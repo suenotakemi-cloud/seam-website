@@ -1277,7 +1277,7 @@ const API = {
   async listPasses(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.passes:null;}catch{return null;} },
   async savePass(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async voidPass(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
-  async listKartePhotos(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photos?name='+encodeURIComponent(name),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.photos:null;}catch{return null;} },
+  async listKartePhotos(name,phone){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photos?name='+encodeURIComponent(name)+(phone?'&phone='+encodeURIComponent(phone):''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.photos:null;}catch{return null;} },
   async customerProfile(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/customer/profile?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j:null;}catch{return null;} },
   async counselingStats(q){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/counseling/stats?'+new URLSearchParams(q),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j:null;}catch{return null;} },
   async listCounseling(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/counseling?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.sheets:null;}catch{return null;} },
@@ -1962,7 +1962,8 @@ function openCheckout(resvId){
   const isSmartPaid=!!(r&&r.channel==='hpb'&&/スマート支払い|スマート決済|事前決済|オンライン決済/.test(r.note||''));
   coDraft=existing?JSON.parse(JSON.stringify(existing)):{
     resvId:resvId||null,date:r?r.date:dkey(registerDay),staffId:r?r.staffId:STAFF[0].id,
-    customer:r?r.name:'',tech:m?Math.max(0,(m.price-(r.discount||0))):0,discount:0,retailItems:[],method:isSmartPaid?'hpb':'cash',
+    customer:r?r.name:'',phone:r?(r.phone||''):'',   // 電話も持つ＝同姓同名でも会計を正しい人に紐づける
+    tech:m?Math.max(0,(m.price-(r.discount||0))):0,discount:0,retailItems:[],method:isSmartPaid?'hpb':'cash',
     nominated:resvId?true:false   // 予約からの会計は既定=指名。フリー(予約なし/指名なし)は切替
   };
   renderCheckout();
@@ -2309,10 +2310,11 @@ function renderRegister(){
      const cust=document.getElementById('ps-cust').value.trim();
      const exp=document.getElementById('ps-exp').value||dkey(addDays(today(),180));
      if(!cust){toast('お客様名を入力してください',true);return;}
-     const x={id:passCodeGen(),label,customer:cust,price,total,remaining:total,uses:[],issued:tdk,expires:exp,void:false};
+     const cph=(db.reservations.find(r=>r.name===cust&&r.phone)||{}).phone||'';   // 同名の混在を防ぐため電話も持たせる
+     const x={id:passCodeGen(),label,customer:cust,phone:cph,price,total,remaining:total,uses:[],issued:tdk,expires:exp,void:false};
      savePassLocal(x);
      openCheckout(null);
-     coDraft.customer=cust;coDraft.retailItems=[{name:`${label} ${x.id}`,price}];coDraft.tech=0;renderCheckout();
+     coDraft.customer=cust;coDraft.phone=cph;coDraft.retailItems=[{name:`${label} ${x.id}`,price}];coDraft.tech=0;renderCheckout();
      toast(`回数券 ${x.id} を発行しました。お会計を確定してください`);
    };
    body.querySelectorAll('[data-pvoid]').forEach(b=>b.onclick=()=>{if(confirm('この回数券を無効化しますか？（残回数が使えなくなります）')){const x=passByCode(b.dataset.pvoid);if(x){x.void=true;savePassLocal(x);API.voidPass(x.id);refreshAll();}}});}
@@ -3609,9 +3611,9 @@ function openCustomer(key){
       ov.innerHTML=`<img src="${img.src}" style="max-width:92vw;max-height:92vh;border-radius:10px">`;ov.onclick=()=>ov.remove();document.body.appendChild(ov);});
     grid.querySelectorAll('[data-kpdel]').forEach(b=>b.onclick=async()=>{
       if(!confirm('この写真を削除しますか？'))return;
-      await API.removeKartePhoto(b.dataset.kpdel);const ps=await API.listKartePhotos(c.name);kpRender(ps);});
+      await API.removeKartePhoto(b.dataset.kpdel);const ps=await API.listKartePhotos(c.name,c.phone||'');kpRender(ps);});
   };
-  API.listKartePhotos(c.name).then(kpRender);
+  API.listKartePhotos(c.name,c.phone||'').then(kpRender);
   const kf=document.getElementById('kp-file');
   if(kf)kf.onchange=()=>{
     const f=kf.files&&kf.files[0];if(!f)return;
@@ -3621,8 +3623,8 @@ function openCustomer(key){
       cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
       let q=0.72,data=cv.toDataURL('image/jpeg',q);
       while(data.length>550000&&q>0.4){q-=0.1;data=cv.toDataURL('image/jpeg',q);}   // 600KB制限内に収める
-      const res=await API.saveKartePhoto({name:c.name,data,date:dkey(today())});
-      if(res&&res.ok){toast('写真を保存しました');const ps=await API.listKartePhotos(c.name);kpRender(ps);}
+      const res=await API.saveKartePhoto({name:c.name,phone:c.phone||'',data,date:dkey(today())});
+      if(res&&res.ok){toast('写真を保存しました');const ps=await API.listKartePhotos(c.name,c.phone||'');kpRender(ps);}
       else toast('写真の保存に失敗しました',true);
       URL.revokeObjectURL(img.src);kf.value='';
     };
@@ -3682,6 +3684,7 @@ function cpRender(cp){
         <span style="font-size:11px;color:var(--sub)">施術前にここだけ見れば分かる形にしています</span>
         <button class="btn small ghost" id="cp-csv" style="margin-left:auto;padding:2px 8px;font-size:11px">書き出す</button>
       </div>
+      ${cp.sameName?`<div style="background:#fff8f0;border:1px solid #f0d9b8;border-radius:8px;padding:7px 10px;color:#7a5a1e;font-weight:800;font-size:12.5px;margin-bottom:7px">同じお名前の方が他に ${cp.sameName}人いらっしゃいます。電話番号で見分けています（${escH(cp.phone||'—')}）${cp.legacyUnlinked?`<br><span style="font-weight:600">電話が入っていない古い会計 ${cp.legacyUnlinked}件は、どちらの方か決められないためこの集計に含めていません</span>`:''}</div>`:''}
       ${cp.cautions.length?`<div style="background:#fdecec;border:1px solid #f3c9c7;border-radius:8px;padding:7px 10px;color:#b4302b;font-weight:800;font-size:13px;margin-bottom:7px">⚠ ${cp.cautions.map(escH).join(' / ')}</div>`:''}
       ${row('髪格診断',cp.finder?`<b>${escH(cp.finder.originName||'')}</b>${cp.finder.damageTier?'　ダメージ '+escH(cp.finder.damageTier):''}${cp.finder.mainGoalName?'　目的 '+escH(cp.finder.mainGoalName):''}<span style="color:var(--sub);font-size:11px">（${(cp.finder.savedAt||'').slice(0,10).replace(/-/g,'/')}）</span>`:'<span style="color:var(--sub)">まだ受けていません</span>')}
       ${row('ご希望',list(cp.profile.concern))}
