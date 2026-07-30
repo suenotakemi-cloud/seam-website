@@ -4981,38 +4981,140 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
           </div>
         </section>
 
-        {/* ✦ Diagnosis Logic — 診断ロジックの根拠 */}
-        <section className="mt-16 sm:mt-24 anim-fade-up" style={{ animationDelay: '300ms' }}>
-          <div className="hairline-center">
-            <span className="font-mono tracking-widest2 text-[10px] uppercase">Diagnosis Logic</span>
-          </div>
-          <div className="mt-8 sm:mt-10 text-center">
-            <h2 className="font-serif text-[26px] sm:text-[34px] text-ink leading-snug">この診断のしくみ</h2>
-            <p className="mt-4 text-[13px] sm:text-[13.5px] leading-[2] text-charcoal/85 max-w-xl mx-auto">
-              美容師の知見をもとに設計したロジックが<br />
-              回答からあなたの髪の状態と履歴を読み解きます
-            </p>
-          </div>
-          <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4">
-            {[
-              ['3×3×3', '27の髪格', '太さ×髪量×くせの3軸で分類'],
-              ['4,000万+', '髪条件の組み合わせ', '主要11問の単一回答のみで算出'],
-              ['1,000', '検証パターン', '髪条件を変えて提案の整合性を確認'],
-              ['140+', 'ブランド横断', '銘柄を問わず合うものだけを選定'],
-            ].map(([num, label, note]) => (
-              <div key={label} className="bg-white border border-line/70 rounded-[16px] shadow-card px-4 py-5 sm:px-5 sm:py-6 text-center">
-                <p className="font-serif text-[22px] sm:text-[26px] text-ink nums leading-none whitespace-nowrap">{num}</p>
-                <p className="mt-2.5 text-[11px] sm:text-[11.5px] text-gold tracking-wide whitespace-nowrap">{label}</p>
-                <p className="mt-1.5 text-[10.5px] sm:text-[11px] leading-[1.75] text-charcoal/60">{note}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* ✦ Diagnosis Logic — 「4,000万通り→あなたの数本」の漏斗で見せる
+            数字を並べた仕様表だと寂しく 何がすごいのか伝わらない(オーナー指摘2026-07-30)。
+            広い可能性が自分ひとり分にたたまれていく物語にして 幅と数字で縮小を体感させる。 */}
+        <DiagnosisLogicSection />
       </main>
       <footer className="relative z-10 py-8 text-center font-mono text-[10px] tracking-widest2 uppercase text-charcoal/40">
         SEAM · Salon Selection Store
       </footer>
     </div>
+  );
+}
+
+/* ---------- 診断のしくみ(漏斗) ----------
+   ・バーの幅は各段の「絞られ方」を表す(4,000万通り→27型→3〜5本)
+   ・初めて画面に入ったときだけ数字を数え上げる(prefers-reduced-motionでは即表示)
+   ・数字はすべて実装の実数(11問=主要単一回答/27型/1,000検証/140+ブランド) */
+function useInViewOnce() {
+  const ref = useRef(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || shown) return;
+    // ① すでに画面内にあるなら即表示(スクロールせずに到達した場合)
+    try {
+      const r = el.getBoundingClientRect();
+      if (r.top < (window.innerHeight || 0) && r.bottom > 0) { setShown(true); return; }
+    } catch (e) {}
+    // ② フェイルセーフ: 非表示タブ・印刷・IO未発火でも数字が0のまま残らないようにする
+    const fallback = setTimeout(() => setShown(true), 1500);
+    if (typeof IntersectionObserver !== 'function') { return () => clearTimeout(fallback); }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { setShown(true); io.disconnect(); } });
+    }, { threshold: 0.25 });
+    io.observe(el);
+    return () => { clearTimeout(fallback); io.disconnect(); };
+  }, [shown]);
+  return [ref, shown];
+}
+
+function CountUp({ to, shown, format, duration = 1000 }) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!shown) return;
+    let reduced = false;
+    try { reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    if (reduced || typeof requestAnimationFrame !== 'function') { setV(to); return; }
+    const t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    let raf = 0;
+    const tick = (now) => {
+      const p = Math.min(1, ((now || Date.now()) - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setV(Math.round(to * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => { if (raf) cancelAnimationFrame(raf); };
+  }, [shown, to, duration]);
+  return <>{format ? format(v) : v.toLocaleString()}</>;
+}
+
+const LOGIC_STEPS = [
+  { key: 'space', to: 4000, format: (v) => v.toLocaleString() + '万+', unit: '通り',
+    label: '髪の条件の組み合わせ', note: '主要11問の単一回答だけで この広さになります', w: 100 },
+  { key: 'type', to: 27, format: (v) => String(v), unit: 'の髪格',
+    label: 'まず あなたの型を決める', note: '太さ×髪量×くせの3軸 生まれ持った設計は変わりません', w: 46 },
+  { key: 'pick', to: 5, format: () => '3〜5', unit: '本',
+    label: 'あなたが今日から使う一式', note: '140を超えるブランドから 銘柄を問わず選び抜きます', w: 14 },
+];
+
+function DiagnosisLogicSection() {
+  const [ref, shown] = useInViewOnce();
+  return (
+    <section ref={ref} className="mt-16 sm:mt-24 anim-fade-up" style={{ animationDelay: '300ms' }}>
+      <div className="hairline-center">
+        <span className="font-mono tracking-widest2 text-[10px] uppercase">Diagnosis Logic</span>
+      </div>
+      <div className="mt-8 sm:mt-10 text-center">
+        <h2 className="font-serif text-[26px] sm:text-[34px] text-ink leading-snug">
+          4,000万通りから<br className="sm:hidden" />あなたの数本へ
+        </h2>
+        <p className="mt-4 text-[13px] sm:text-[13.5px] leading-[2] text-charcoal/85 max-w-xl mx-auto">
+          美容師の知見でつくったロジックが<br />
+          3分の答えを読み解いて この広さをあなた一人分にたたみます
+        </p>
+      </div>
+
+      {/* 漏斗 — 幅が狭まるほど「あなただけ」に近づく */}
+      <div className="mt-8 sm:mt-10 rounded-[16px] border border-line/70 bg-gradient-to-b from-cream/60 via-white to-cream/40 shadow-card px-5 py-6 sm:px-8 sm:py-8">
+        {LOGIC_STEPS.map((st, i) => (
+          <div key={st.key} className={i ? 'mt-6 sm:mt-7 pt-6 sm:pt-7 border-t border-line/60' : ''}>
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="font-mono tracking-widest2 text-[9px] uppercase text-gold shrink-0 nums">
+                {'0' + (i + 1)}
+              </p>
+              <p className="font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45 text-right">
+                {i === LOGIC_STEPS.length - 1 ? 'Your prescription' : i === 0 ? 'Possibilities' : 'Your type'}
+              </p>
+            </div>
+            <p className="mt-2 flex items-baseline gap-1.5 flex-wrap">
+              <span className="font-serif text-[34px] sm:text-[44px] leading-none text-ink nums">
+                <CountUp to={st.to} shown={shown} format={st.format} duration={900 + i * 250} />
+              </span>
+              <span className="font-serif text-[15px] sm:text-[17px] text-charcoal/70">{st.unit}</span>
+            </p>
+            <p className="mt-2 text-[12.5px] sm:text-[13px] text-ink leading-snug">{st.label}</p>
+            <p className="mt-1.5 text-[11px] sm:text-[11.5px] leading-[1.8] text-charcoal/60">{st.note}</p>
+            {/* 絞られ方のバー(幅が事実の縮小を表す) */}
+            <div className="mt-3 h-[3px] w-full bg-line/60 rounded-full overflow-hidden">
+              <div className="h-full rounded-full"
+                style={{ width: (shown ? st.w : 0) + '%', background: '#B8945A',
+                         transition: 'width 1100ms cubic-bezier(.22,.61,.36,1)', transitionDelay: (i * 160) + 'ms' }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 支える事実 — 箱を並べずに罫線で軽く */}
+      <div className="mt-6 grid grid-cols-3 divide-x divide-line/60 border-y border-line/60 py-4">
+        {[
+          ['1,000', 'パターンで検証'],
+          ['140+', 'ブランド横断'],
+          ['4', 'つの時間軸'],
+        ].map(([n, t]) => (
+          <div key={t} className="px-2 text-center">
+            <p className="font-serif text-[19px] sm:text-[22px] text-ink nums leading-none">{n}</p>
+            <p className="mt-1.5 text-[10.5px] sm:text-[11px] text-charcoal/60 leading-snug">{t}</p>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-[11px] sm:text-[11.5px] leading-[1.85] text-charcoal/55 text-center">
+        生まれ持った型 これまでの履歴 いまの状態 そしてこれから
+        この4つを合わせて読むので 髪質を言い当てるだけでは終わりません
+      </p>
+    </section>
   );
 }
 

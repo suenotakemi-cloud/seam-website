@@ -6897,7 +6897,113 @@ function Home({
     className: "font-mono text-[10.5px] tracking-widest2 text-gold nums shrink-0"
   }, n), /*#__PURE__*/React.createElement("span", {
     className: "text-[13px] sm:text-[13.5px] leading-[1.85] text-charcoal/85"
-  }, t))))))), /*#__PURE__*/React.createElement("section", {
+  }, t))))))), /*#__PURE__*/React.createElement(DiagnosisLogicSection, null)), /*#__PURE__*/React.createElement("footer", {
+    className: "relative z-10 py-8 text-center font-mono text-[10px] tracking-widest2 uppercase text-charcoal/40"
+  }, "SEAM \xB7 Salon Selection Store"));
+}
+
+/* ---------- 診断のしくみ(漏斗) ----------
+   ・バーの幅は各段の「絞られ方」を表す(4,000万通り→27型→3〜5本)
+   ・初めて画面に入ったときだけ数字を数え上げる(prefers-reduced-motionでは即表示)
+   ・数字はすべて実装の実数(11問=主要単一回答/27型/1,000検証/140+ブランド) */
+function useInViewOnce() {
+  const ref = useRef(null);
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || shown) return;
+    // ① すでに画面内にあるなら即表示(スクロールせずに到達した場合)
+    try {
+      const r = el.getBoundingClientRect();
+      if (r.top < (window.innerHeight || 0) && r.bottom > 0) {
+        setShown(true);
+        return;
+      }
+    } catch (e) {}
+    // ② フェイルセーフ: 非表示タブ・印刷・IO未発火でも数字が0のまま残らないようにする
+    const fallback = setTimeout(() => setShown(true), 1500);
+    if (typeof IntersectionObserver !== 'function') {
+      return () => clearTimeout(fallback);
+    }
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      });
+    }, {
+      threshold: 0.25
+    });
+    io.observe(el);
+    return () => {
+      clearTimeout(fallback);
+      io.disconnect();
+    };
+  }, [shown]);
+  return [ref, shown];
+}
+function CountUp({
+  to,
+  shown,
+  format,
+  duration = 1000
+}) {
+  const [v, setV] = useState(0);
+  useEffect(() => {
+    if (!shown) return;
+    let reduced = false;
+    try {
+      reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) {}
+    if (reduced || typeof requestAnimationFrame !== 'function') {
+      setV(to);
+      return;
+    }
+    const t0 = typeof performance !== 'undefined' && performance.now ? performance.now() : Date.now();
+    let raf = 0;
+    const tick = now => {
+      const p = Math.min(1, ((now || Date.now()) - t0) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setV(Math.round(to * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [shown, to, duration]);
+  return /*#__PURE__*/React.createElement(React.Fragment, null, format ? format(v) : v.toLocaleString());
+}
+const LOGIC_STEPS = [{
+  key: 'space',
+  to: 4000,
+  format: v => v.toLocaleString() + '万+',
+  unit: '通り',
+  label: '髪の条件の組み合わせ',
+  note: '主要11問の単一回答だけで この広さになります',
+  w: 100
+}, {
+  key: 'type',
+  to: 27,
+  format: v => String(v),
+  unit: 'の髪格',
+  label: 'まず あなたの型を決める',
+  note: '太さ×髪量×くせの3軸 生まれ持った設計は変わりません',
+  w: 46
+}, {
+  key: 'pick',
+  to: 5,
+  format: () => '3〜5',
+  unit: '本',
+  label: 'あなたが今日から使う一式',
+  note: '140を超えるブランドから 銘柄を問わず選び抜きます',
+  w: 14
+}];
+function DiagnosisLogicSection() {
+  const [ref, shown] = useInViewOnce();
+  return /*#__PURE__*/React.createElement("section", {
+    ref: ref,
     className: "mt-16 sm:mt-24 anim-fade-up",
     style: {
       animationDelay: '300ms'
@@ -6910,22 +7016,58 @@ function Home({
     className: "mt-8 sm:mt-10 text-center"
   }, /*#__PURE__*/React.createElement("h2", {
     className: "font-serif text-[26px] sm:text-[34px] text-ink leading-snug"
-  }, "\u3053\u306E\u8A3A\u65AD\u306E\u3057\u304F\u307F"), /*#__PURE__*/React.createElement("p", {
+  }, "4,000\u4E07\u901A\u308A\u304B\u3089", /*#__PURE__*/React.createElement("br", {
+    className: "sm:hidden"
+  }), "\u3042\u306A\u305F\u306E\u6570\u672C\u3078"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-[13px] sm:text-[13.5px] leading-[2] text-charcoal/85 max-w-xl mx-auto"
-  }, "\u7F8E\u5BB9\u5E2B\u306E\u77E5\u898B\u3092\u3082\u3068\u306B\u8A2D\u8A08\u3057\u305F\u30ED\u30B8\u30C3\u30AF\u304C", /*#__PURE__*/React.createElement("br", null), "\u56DE\u7B54\u304B\u3089\u3042\u306A\u305F\u306E\u9AEA\u306E\u72B6\u614B\u3068\u5C65\u6B74\u3092\u8AAD\u307F\u89E3\u304D\u307E\u3059")), /*#__PURE__*/React.createElement("div", {
-    className: "mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4"
-  }, [['3×3×3', '27の髪格', '太さ×髪量×くせの3軸で分類'], ['4,000万+', '髪条件の組み合わせ', '主要11問の単一回答のみで算出'], ['1,000', '検証パターン', '髪条件を変えて提案の整合性を確認'], ['140+', 'ブランド横断', '銘柄を問わず合うものだけを選定']].map(([num, label, note]) => /*#__PURE__*/React.createElement("div", {
-    key: label,
-    className: "bg-white border border-line/70 rounded-[16px] shadow-card px-4 py-5 sm:px-5 sm:py-6 text-center"
+  }, "\u7F8E\u5BB9\u5E2B\u306E\u77E5\u898B\u3067\u3064\u304F\u3063\u305F\u30ED\u30B8\u30C3\u30AF\u304C", /*#__PURE__*/React.createElement("br", null), "3\u5206\u306E\u7B54\u3048\u3092\u8AAD\u307F\u89E3\u3044\u3066 \u3053\u306E\u5E83\u3055\u3092\u3042\u306A\u305F\u4E00\u4EBA\u5206\u306B\u305F\u305F\u307F\u307E\u3059")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-8 sm:mt-10 rounded-[16px] border border-line/70 bg-gradient-to-b from-cream/60 via-white to-cream/40 shadow-card px-5 py-6 sm:px-8 sm:py-8"
+  }, LOGIC_STEPS.map((st, i) => /*#__PURE__*/React.createElement("div", {
+    key: st.key,
+    className: i ? 'mt-6 sm:mt-7 pt-6 sm:pt-7 border-t border-line/60' : ''
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline justify-between gap-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "font-serif text-[22px] sm:text-[26px] text-ink nums leading-none whitespace-nowrap"
-  }, num), /*#__PURE__*/React.createElement("p", {
-    className: "mt-2.5 text-[11px] sm:text-[11.5px] text-gold tracking-wide whitespace-nowrap"
-  }, label), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1.5 text-[10.5px] sm:text-[11px] leading-[1.75] text-charcoal/60"
-  }, note)))))), /*#__PURE__*/React.createElement("footer", {
-    className: "relative z-10 py-8 text-center font-mono text-[10px] tracking-widest2 uppercase text-charcoal/40"
-  }, "SEAM \xB7 Salon Selection Store"));
+    className: "font-mono tracking-widest2 text-[9px] uppercase text-gold shrink-0 nums"
+  }, '0' + (i + 1)), /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45 text-right"
+  }, i === LOGIC_STEPS.length - 1 ? 'Your prescription' : i === 0 ? 'Possibilities' : 'Your type')), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 flex items-baseline gap-1.5 flex-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-[34px] sm:text-[44px] leading-none text-ink nums"
+  }, /*#__PURE__*/React.createElement(CountUp, {
+    to: st.to,
+    shown: shown,
+    format: st.format,
+    duration: 900 + i * 250
+  })), /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-[15px] sm:text-[17px] text-charcoal/70"
+  }, st.unit)), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[12.5px] sm:text-[13px] text-ink leading-snug"
+  }, st.label), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1.5 text-[11px] sm:text-[11.5px] leading-[1.8] text-charcoal/60"
+  }, st.note), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 h-[3px] w-full bg-line/60 rounded-full overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "h-full rounded-full",
+    style: {
+      width: (shown ? st.w : 0) + '%',
+      background: '#B8945A',
+      transition: 'width 1100ms cubic-bezier(.22,.61,.36,1)',
+      transitionDelay: i * 160 + 'ms'
+    }
+  }))))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-6 grid grid-cols-3 divide-x divide-line/60 border-y border-line/60 py-4"
+  }, [['1,000', 'パターンで検証'], ['140+', 'ブランド横断'], ['4', 'つの時間軸']].map(([n, t]) => /*#__PURE__*/React.createElement("div", {
+    key: t,
+    className: "px-2 text-center"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-serif text-[19px] sm:text-[22px] text-ink nums leading-none"
+  }, n), /*#__PURE__*/React.createElement("p", {
+    className: "mt-1.5 text-[10.5px] sm:text-[11px] text-charcoal/60 leading-snug"
+  }, t)))), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3 text-[11px] sm:text-[11.5px] leading-[1.85] text-charcoal/55 text-center"
+  }, "\u751F\u307E\u308C\u6301\u3063\u305F\u578B \u3053\u308C\u307E\u3067\u306E\u5C65\u6B74 \u3044\u307E\u306E\u72B6\u614B \u305D\u3057\u3066\u3053\u308C\u304B\u3089 \u3053\u306E4\u3064\u3092\u5408\u308F\u305B\u3066\u8AAD\u3080\u306E\u3067 \u9AEA\u8CEA\u3092\u8A00\u3044\u5F53\u3066\u308B\u3060\u3051\u3067\u306F\u7D42\u308F\u308A\u307E\u305B\u3093"));
 }
 
 /* ---------- ProgressBar ---------- */
