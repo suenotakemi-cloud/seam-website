@@ -1413,6 +1413,10 @@ const API = {
   async saveCheckout(c){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(c)});return r.ok?await r.json():null;}catch{return null;} },
   async receiptToken(checkoutId,phone){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/receipt/token',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone})});const j=await r.json();return r.ok?j:null;}catch{return null;} },
   async sendLineReceipt(checkoutId,phone){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/receipt/line',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async commConfig(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/comm/config',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
+  async saveCommConfig(cfg){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/comm/config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(cfg)});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async staffPasses(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/staff/passes',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
+  async staffPass(staffId,name){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/staff/pass',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({staffId,name})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async customerRank(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/customer/rank?key='+encodeURIComponent(key),{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async rankConfig(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/rank/config',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async saveRankConfig(cfg){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/rank/config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(cfg)});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
@@ -2247,8 +2251,14 @@ function openDetail(id){
   if(r.status!=='noshow')acts+=`<button class="btn small warn" data-act="noshow">無断キャンセル</button>`;
   if(r.status!=='cancelled')acts+=`<button class="btn small warn" data-act="cancelled">キャンセル</button>`;
   const blockBtn=needBlock?`<button class="btn small block" data-act="block">HPBブロック済みにする</button>`:'';
+  // 常連さんかどうかを施術前に分かるようにする（お名前でお声がけするための手がかり）
+  if(r.phone){API.customerRank(r.phone).then(rr=>{
+    const el=document.getElementById('d-rank');
+    if(el&&rr&&rr.ok&&rr.visits>0)el.innerHTML=rankStrip({rank:rr.rank,rate:rr.rate,visits:rr.visits,next:rr.next});
+  });}
   document.getElementById('detailmodal').innerHTML=`
     <h3>予約の詳細</h3>
+    <div id="d-rank"></div>
     <dl class="dl">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
     ${needBlock?'<div class="dwarn">⚠️ この枠はHPBで手動ブロックが必要です</div>':''}
     <div class="dacts">${acts}${blockBtn}</div>
@@ -2824,6 +2834,27 @@ function renderRegister(){
       <span><b>サロンとショップを分ける</b><i>レジ画面に「💇サロン／🛍ショップ」の切り替えが出ます</i></span></label>
     <div id="pos-split-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div></div>`;
 
+  /* 歩合の段とスタッフのスマホ。
+   * ラインを超えると歩合が発生し、上の段に届くほど率が上がる＝伸ばすほど手取りの増え方が早くなる。
+   * スタッフのスマホ(staff.html)に、次の段まであといくらかがゲージで出る。 */
+  const commPanel=`<div class="card reg-close"><h3>📈 歩合の段とスタッフのスマホ</h3>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:10px">
+      「この売上を超えたら、超えた分にこの率」を段で決めます。<br>
+      いちばん上の段（率0%）が<b>スタートライン</b>です。スタッフのスマホには<b>「歩合まであと◯円」</b>が出ます。<br>
+      上の段に届くほど率が上がるので、伸ばすほど手取りの増え方が早くなります。
+    </div>
+    <div id="comm-rows" style="font-size:12.5px">読み込んでいます…</div>
+    <label class="csopt" style="max-width:520px;margin-top:10px"><input type="checkbox" id="cm-retail">
+      <span><b>店販も売上に数える</b><i>外すと技術売上だけで段を判定します</i></span></label>
+    <div class="row" style="margin-top:12px"><button class="btn pay" id="cm-save">この内容で保存</button></div>
+    <div id="cm-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div>
+    <div class="co-sub" style="margin-top:16px">スタッフのスマホの合言葉</div>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:8px">
+      スタッフに <b>${location.origin}${location.pathname.replace(/[^/]*$/,'')}staff.html</b> を開いてもらい、名前と合言葉を入れるとログインできます。<br>
+      合言葉は<b>発行しなおすと前のものは使えなくなります</b>（端末をなくしたときはこれで止めてください）。
+    </div>
+    <div id="pass-rows" style="font-size:12.5px">読み込んでいます…</div></div>`;
+
   /* 会員ランク。3つの軸のどれかで届いていればそのランクを差し上げる（甘めに見るのは意図的）。
    * ホットペッパー経由より自社サイトのほうが得になる状態を作るための仕組み。 */
   const rankPanel=`<div class="card reg-close"><h3>👑 会員ランクとポイント</h3>
@@ -2866,12 +2897,67 @@ function renderRegister(){
     <div class="rz-ref"><span>お客様が選んだ言語で自動的に切り替わります</span><span>海外は「料金の50%」が一般的（無断キャンセル対策）</span></div></div>`;
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧾 レジの分け方（サロン／ショップ）',splitPanel)
+    +fold('📈 歩合の段とスタッフのスマホ',commPanel)
     +fold('👑 会員ランクとポイント',rankPanel)
     +fold('📱 LINEで領収書・会員証',linePanel)
     +fold('💳 前金（デポジット）の設定（言語ごと）',depPanel)
     +fold('💎 ポイント設定（還元率・使う/使わない）',ptPanel)
     +fold(`🎁 ギフト券（発行・一覧${activeGifts.length?`・有効${activeGifts.length}枚`:''}）`,gfPanel)
     +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel);
+  // 歩合の段の読み込みと保存
+  {let CM=null;
+   const draw=()=>{
+     const box=document.getElementById('comm-rows'); if(!box)return;
+     if(!CM||!CM.steps){box.innerHTML='<span style="color:var(--sub)">サーバーに接続できません</span>';return;}
+     box.innerHTML=`<div style="display:grid;grid-template-columns:1.4fr .8fr auto;gap:7px;align-items:center;
+         font-size:11.5px;color:var(--sub);font-weight:700;padding-bottom:5px;border-bottom:1px solid var(--line)">
+         <span>この売上を超えたら</span><span>超過分の率%</span><span></span></div>`
+       + CM.steps.map((t,i)=>`<div style="display:grid;grid-template-columns:1.4fr .8fr auto;gap:7px;align-items:center;padding:5px 0">
+           <input class="cm-from" data-i="${i}" type="number" min="0" step="50000" value="${t.from||0}" style="width:100%" ${i===0?'disabled':''}>
+           <input class="cm-rate" data-i="${i}" type="number" min="0" max="90" value="${t.rate||0}" style="width:100%">
+           ${i>1?`<button class="btn small ghost cm-del" data-i="${i}">✕</button>`:'<span></span>'}
+         </div>`).join('')
+       + `<button class="btn small ghost" id="cm-add" style="margin-top:6px">＋ 段を足す</button>
+          <div style="font-size:11.5px;color:var(--sub);margin-top:6px">いちばん上はスタートライン前なので金額は0固定です</div>`;
+     box.querySelectorAll('.cm-del').forEach(b=>b.onclick=()=>{CM.steps.splice(+b.dataset.i,1);draw();});
+     const ad=document.getElementById('cm-add');
+     if(ad)ad.onclick=()=>{const last=CM.steps[CM.steps.length-1]||{from:0,rate:0};
+       CM.steps.push({from:(+last.from||0)+200000,rate:Math.min(90,(+last.rate||0)+5)});draw();};
+   };
+   API.commConfig().then(r=>{CM=(r&&r.ok)?r.config:null;
+     const rt=document.getElementById('cm-retail'); if(rt&&CM)rt.checked=!!CM.countRetail;
+     draw();});
+   const btn=document.getElementById('cm-save');
+   if(btn)btn.onclick=async()=>{
+     if(!CM||!CM.steps){toast('サーバーに接続できません',true);return;}
+     const steps=CM.steps.map((t,i)=>({
+       from:i===0?0:(+(document.querySelector(`.cm-from[data-i="${i}"]`)||{}).value||0),
+       rate:+(document.querySelector(`.cm-rate[data-i="${i}"]`)||{}).value||0}));
+     btn.disabled=true;btn.textContent='保存中…';
+     const r=await API.saveCommConfig({steps,countRetail:!!(document.getElementById('cm-retail')||{}).checked});
+     btn.disabled=false;btn.textContent='この内容で保存';
+     if(r&&r.ok){CM=r.config;draw();
+       const ok=document.getElementById('cm-saved');if(ok){ok.style.display='block';setTimeout(()=>ok.style.display='none',1800);}
+       toast('歩合の段を保存しました');
+     }else toast((r&&r.error)||'保存できませんでした',true);
+   };}
+  // スタッフの合言葉
+  {const drawPass=(list)=>{
+     const box=document.getElementById('pass-rows'); if(!box)return;
+     const m={}; (list||[]).forEach(x=>m[x.staff_id]=x);
+     box.innerHTML=STAFF.map(st=>{const p=m[st.id];
+       return `<div class="rz"><span><b>${escH(st.name)}</b>${p?`　<span style="font-family:ui-monospace,monospace;font-size:15px;letter-spacing:.14em">${escH(p.pass)}</span>`:'　<span style="color:var(--sub)">未発行</span>'}</span>
+         <button class="btn small ghost sp-new" data-s="${st.id}" data-n="${escH(st.name)}" style="margin-left:auto">${p?'発行しなおす':'合言葉を発行'}</button></div>`;
+     }).join('');
+     box.querySelectorAll('.sp-new').forEach(b=>b.onclick=async()=>{
+       if(!confirm(`${b.dataset.n} の合言葉を発行しますか？\n前の合言葉とログイン中の端末は使えなくなります`))return;
+       b.disabled=true;b.textContent='発行中…';
+       const r=await API.staffPass(b.dataset.s,b.dataset.n);
+       if(r&&r.ok){const l=await API.staffPasses();drawPass(l&&l.staff);toast(`${b.dataset.n} の合言葉は ${r.pass} です`);}
+       else{b.disabled=false;b.textContent='合言葉を発行';toast((r&&r.error)||'発行できませんでした',true);}
+     });
+   };
+   API.staffPasses().then(r=>drawPass(r&&r.staff));}
   // 会員ランクの読み込みと保存
   {let RK=null;
    const drawRanks=()=>{
