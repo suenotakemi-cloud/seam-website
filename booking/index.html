@@ -1300,7 +1300,10 @@ const API_BASE = 'https://seam-square-pay.suenotakemi.workers.dev';
    受付のiPadはサロン、ショップのレジはショップに固定しておける（毎回切り替えなくていい）。
    売上・在庫・Square端末の宛先が別になる。 */
 let POS_MODE=(()=>{try{const v=localStorage.getItem('stb_pos_mode');if(v==='shop'||v==='salon')return v;}catch(e){}return 'salon';})();
-const isShop=()=>POS_MODE==='shop';
+/* サロンとショップでレジを分けるか。多くのサロンは同じ場所で会計するので既定はOFF。
+   分けている店（SEAM 銀座のようにショップが独立している店）だけONにする。 */
+const posSplit=()=>stg('posSplit','0')==='1';
+const isShop=()=>posSplit()&&POS_MODE==='shop';
 function setPosMode(m){POS_MODE=(m==='shop')?'shop':'salon';
   try{localStorage.setItem('stb_pos_mode',POS_MODE)}catch(e){}
   renderRegister();renderTerminal();renderReport();
@@ -2312,7 +2315,7 @@ function renderCheckout(){
   const ct=box.querySelector('#co-term'); if(ct)ct.onclick=()=>runTerminalPayment();
 }
 /* その会計が今のモードのものか。古い会計は mode 未設定＝サロン扱い */
-const inMode=(c)=>((c&&c.mode)==='shop')===isShop();
+const inMode=(c)=>!posSplit()||(((c&&c.mode)==='shop')===isShop());   // 分けていない店は全部ひとつのレジ
 function coBuildRec(){
   const rec={mode:POS_MODE,...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,pointsUsed:+coDraft.pointsUsed||0,giftUsed:+coDraft.giftUsed||0,giftCode:coDraft.giftCode||'',
     retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0,productId:i.productId||undefined}))};
@@ -2469,6 +2472,9 @@ document.getElementById('checkoutbg').onclick=e=>{if(e.target.id==='checkoutbg')
 let registerDay=today();
 function renderRegister(){
   // モード切替の見た目と説明文
+  {const bar=document.querySelector('.posmode');
+   if(bar)bar.style.display=posSplit()?'flex':'none';   // 分けない店には出さない
+   if(!posSplit())POS_MODE='salon';}
   document.querySelectorAll('[data-pos]').forEach(b=>{b.classList.toggle('on',b.dataset.pos===POS_MODE);
     b.onclick=()=>setPosMode(b.dataset.pos);});
   {const l=document.getElementById('reg-lead');
@@ -2532,6 +2538,17 @@ function renderRegister(){
     ${activePasses.length?`<div class="co-sub" style="margin-top:10px">有効な回数券（${activePasses.length}件）</div>${passRows}`:''}</div>`;
   // 毎日使う(会計/売上/レジ締め)は常時表示・たまに使う(ポイント設定/ギフト券/回数券)は折りたたみでスッキリ
   const fold=(title,inner)=>`<details class="fold"><summary>${title}</summary>${inner}</details>`;
+  // レジの分け方（店の作りに合わせる）
+  const splitPanel=`<div class="card reg-close"><h3>🧾 レジの分け方</h3>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:10px">
+      サロン（施術）とショップ（物販）を<b>別のレジとして扱うか</b>を選びます。<br>
+      同じ場所で会計しているお店は「分けない」のままで大丈夫です。<br>
+      分けると、レジ締めの現金・売上・Squareの店舗・端末がそれぞれ独立します。
+    </div>
+    <label class="csopt" style="max-width:520px"><input type="checkbox" id="pos-split" ${posSplit()?'checked':''}>
+      <span><b>サロンとショップを分ける</b><i>レジ画面に「💇サロン／🛍ショップ」の切り替えが出ます</i></span></label>
+    <div id="pos-split-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div></div>`;
+
   // 前金(デポジット)の設定 — 予約ページの言語ごとに変える。日本語=定額/海外=料金の◯%
   const DEP_LANGS=[['ja','日本語のお客様'],['en','English'],['zh','简体中文'],['tw','繁體中文'],['ko','한국어']];
   const depPanel=`<div class="card reg-close"><h3>💳 前金（デポジット）の設定</h3>
@@ -2544,10 +2561,17 @@ function renderRegister(){
       <b style="font-size:12px;color:var(--sub)">${r.type==='rate'?'%':'円'}</b></span></div>`}).join('')}
     <div class="rz-ref"><span>お客様が選んだ言語で自動的に切り替わります</span><span>海外は「料金の50%」が一般的（無断キャンセル対策）</span></div></div>`;
   body.innerHTML=summary+pendHtml+listHtml+closePanel
+    +fold('🧾 レジの分け方（サロン／ショップ）',splitPanel)
     +fold('💳 前金（デポジット）の設定（言語ごと）',depPanel)
     +fold('💎 ポイント設定（還元率・使う/使わない）',ptPanel)
     +fold(`🎁 ギフト券（発行・一覧${activeGifts.length?`・有効${activeGifts.length}枚`:''}）`,gfPanel)
     +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel);
+  // レジの分け方の保存
+  {const el=document.getElementById('pos-split');
+   if(el)el.onchange=()=>{setStg('posSplit',el.checked?'1':'0');
+     if(!el.checked){POS_MODE='salon';try{localStorage.setItem('stb_pos_mode','salon')}catch(e){}}
+     const ok=document.getElementById('pos-split-saved');if(ok){ok.style.display='block';setTimeout(()=>ok.style.display='none',1600);}
+     renderRegister();renderTerminal();renderReport();};}
   // 前金設定の保存（言語ごと）
   body.querySelectorAll('.dep-type').forEach(sel=>sel.onchange=()=>{setStg('depType_'+sel.dataset.l,sel.value);});
   body.querySelectorAll('.dep-val').forEach(inp=>inp.onchange=()=>{const v=Math.max(0,+inp.value||0);setStg('depVal_'+inp.dataset.l,v);});
@@ -2719,8 +2743,8 @@ function renderReport(){
   const diffSum=setts.reduce((a,s)=>a+s.diff,0);
   const summary=`<div class="reg-cards rep-cards">
     <div class="reg-c big"><span>期間の総売上</span><b>${money(total)}</b><i>${count}会計・${days}営業日・客単価 ${money(count?Math.round(total/count):0)}</i></div>
-    <div class="reg-c"><span>💇 サロン</span><b>${money(csSalon.reduce((a,c)=>a+c.total,0))}</b><i>${csSalon.length}会計</i></div>
-    <div class="reg-c"><span>🛍 ショップ</span><b>${money(csShop.reduce((a,c)=>a+c.total,0))}</b><i>${csShop.length}会計</i></div>
+    ${posSplit()?`<div class="reg-c"><span>💇 サロン</span><b>${money(csSalon.reduce((a,c)=>a+c.total,0))}</b><i>${csSalon.length}会計</i></div>
+    <div class="reg-c"><span>🛍 ショップ</span><b>${money(csShop.reduce((a,c)=>a+c.total,0))}</b><i>${csShop.length}会計</i></div>`:''}
     <div class="reg-c"><span>技術売上</span><b>${money(sum(c=>c.tech))}</b></div>
     <div class="reg-c"><span>店販売上</span><b>${money(sum(c=>c.retail))}</b></div>
     <div class="reg-c"><span>店販比率</span><b>${total?Math.round(sum(c=>c.retail)/total*100):0}%</b></div>

@@ -578,6 +578,116 @@ export default {
     if (p.endsWith('/settlements') && m === 'DELETE') return A() || handleDeleteSettlement(url, env, cors);
     if (p.endsWith('/settings') && m === 'GET') return A() || handleGetSettings(env, cors);
     if (p.endsWith('/settings') && m === 'POST') return A() || handlePostSetting(request, env, cors);
+    /* Squareの商品台帳を取り込む（ショップを自作POSに移すため）。
+     * ★1回で全部読むと上限に当たるので、1ページ（100件）ずつ処理して次のcursorを返す。
+     *   呼び出し側がcursorが空になるまで繰り返す。
+     * 突き合わせ：Squareの商品ID → JAN(GTIN) → SKU(メーカー品番) → 名前 の順。
+     * 価格と名前は「実際に売っているSquare側を正」とする（上代ではなく売値にする）。 */
+    if (p.endsWith('/admin/square-catalog') && m === 'POST') {
+      if (!cleanupTok(url, env)) { const auth = A(); if (auth) return auth; }
+      if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 400, cors);
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const H = { 'Square-Version': '2025-01-23', 'Authorization': 'Bearer ' + env.SQUARE_ACCESS_TOKEN, 'Content-Type': 'application/json' };
+      const cur = url.searchParams.get('cursor') || '';
+      // 対象店舗（既定＝ショップと免税）。ここに置いていない商品は取り込まない
+      const wantLocs = (url.searchParams.get('loc') || [env.SQUARE_LOCATION_ID_SHOP, 'L356YMPP0J4R9'].filter(Boolean).join(','))
+        .split(',').map(x => x.trim()).filter(Boolean);
+
+      // ★ページをまたぐと親の商品名が引けなくなるので、2段構えにする。
+      //   phase=items で商品名だけ控えを作り、phase=vars でバリエーションを入れる。
+      const phase = url.searchParams.get('phase') === 'vars' ? 'vars' : 'items';
+      let j;
+      try {
+        const types = phase === 'items' ? 'ITEM' : 'ITEM_VARIATION';
+        const r = await fetch('https://connect.squareup.com/v2/catalog/list?types=' + types + (cur ? '&cursor=' + encodeURIComponent(cur) : ''), { headers: H });
+        j = await r.json();
+        if (!r.ok) return json({ error: (j.errors && j.errors[0] && (j.errors[0].detail || j.errors[0].code)) || ('HTTP ' + r.status) }, 502, cors);
+      } catch (e) { return json({ error: 'Square取得に失敗: ' + e.message }, 502, cors); }
+
+      const objs = j.objects || [];
+      if (phase === 'items') {
+        const st = [];
+        for (const o2 of objs) if (o2.type === 'ITEM' && o2.item_data)
+          st.push(env.DB.prepare('INSERT OR REPLACE INTO sq_items (item_id,name) VALUES (?,?)').bind(o2.id, o2.item_data.name || ''));
+        try { for (let i = 0; i < st.length; i += 50) await env.DB.batch(st.slice(i, i + 50)); }
+        catch (e) { return json({ error: '商品名の控えに失敗: ' + e.message }, 500, cors); }
+        const c0 = await env.DB.prepare('SELECT COUNT(*) c FROM sq_items').first().catch(() => ({ c: 0 }));
+        return json({ ok: true, phase, cursor: j.cursor || '', seen: objs.length, names: (c0 && c0.c) || 0 }, 200, cors);
+      }
+      // 控えから名前を引く
+      const itemIds = [...new Set(objs.map(o2 => (o2.item_variation_data || {}).item_id).filter(Boolean))];
+      const itemName = new Map();
+      for (let i = 0; i < itemIds.length; i += 90) {
+        const part = itemIds.slice(i, i + 90);
+        const q = await env.DB.prepare(`SELECT item_id,name FROM sq_items WHERE item_id IN (${part.map(() => '?').join(',')})`).bind(...part).all();
+        for (const r of (q.results || [])) itemName.set(r.item_id, r.name || '');
+      }
+      const vars = [];
+      for (const o2 of objs) {
+        if (o2.type !== 'ITEM_VARIATION' || !o2.item_variation_data) continue;
+        const v = o2.item_variation_data;
+        const locs = o2.present_at_all_locations ? null : (o2.present_at_location_ids || []);
+        // 対象店舗に置いていないものは飛ばす（他店舗の商品を混ぜない）
+        if (locs && wantLocs.length && !locs.some(l => wantLocs.includes(l))) continue;
+        const base = itemName.get(v.item_id) || '';
+        const vn = (v.name || '').trim();
+        const name = (base && vn && vn !== '通常' && vn !== 'Regular') ? `${base} ${vn}` : (base || vn);
+        if (!name) continue;
+        vars.push({
+          sqId: o2.id, name,
+          price: Math.round(((v.price_money && v.price_money.amount) || 0)),   // Squareは税込で持っている想定
+          gtin: (v.upc || '').replace(/[^0-9A-Za-z-]/g, ''),
+          sku: (v.sku || '').trim(),
+        });
+      }
+
+      // 既存の照合をまとめて引く（引数上限があるので90個ずつ）
+      const bySq = new Map(), byBc = new Map(), bySku = new Map(), byNm = new Map();
+      const look = async (col, vals, map) => {
+        const u = [...new Set(vals.filter(Boolean))];
+        for (let i = 0; i < u.length; i += 90) {
+          const part = u.slice(i, i + 90);
+          const q = await env.DB.prepare(`SELECT id,${col} k FROM products WHERE ${col} IN (${part.map(() => '?').join(',')})`).bind(...part).all();
+          for (const r of (q.results || [])) if (r.k) map.set(r.k, r.id);
+        }
+      };
+      try {
+        await look('sq_id', vars.map(v => v.sqId), bySq);
+        await look('barcode', vars.map(v => v.gtin), byBc);
+        await look('maker_code', vars.map(v => v.sku), bySku);
+        await look('name', vars.map(v => v.name), byNm);
+      } catch (e) { return json({ error: '照合に失敗: ' + e.message }, 500, cors); }
+
+      const now = new Date().toISOString();
+      const stmts = [];
+      let added = 0, updated = 0;
+      const used = new Set();
+      for (const v of vars) {
+        let id = bySq.get(v.sqId) || (v.gtin && byBc.get(v.gtin)) || (v.sku && bySku.get(v.sku)) || byNm.get(v.name) || '';
+        if (id && used.has(id)) continue;   // 同じ行を二重に触らない
+        if (id) {
+          used.add(id);
+          // 名前と価格は実売のSquare側を正とする。バーコードは空なら埋める（既にあるものは壊さない）
+          stmts.push(env.DB.prepare(
+            `UPDATE products SET name=?, price=?, sq_id=?, barcode=CASE WHEN COALESCE(barcode,'')='' THEN ? ELSE barcode END,
+                 maker_code=CASE WHEN COALESCE(maker_code,'')='' THEN ? ELSE maker_code END, active=1 WHERE id=?`
+          ).bind(v.name, v.price, v.sqId, v.gtin, v.sku, id));
+          updated++;
+        } else {
+          const nid = 'p' + crypto.randomUUID().slice(0, 8);
+          stmts.push(env.DB.prepare('INSERT INTO products (id,name,price,barcode,stock,ext_id,maker_code,brand,sq_id,active,created_at) VALUES (?,?,?,?,0,?,?,?,?,1,?)')
+            .bind(nid, v.name, v.price, v.gtin, '', v.sku, '', v.sqId, now));
+          added++; used.add(nid);
+          if (v.gtin) byBc.set(v.gtin, nid);
+          byNm.set(v.name, nid); bySq.set(v.sqId, nid);
+        }
+      }
+      try { for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50)); }
+      catch (e) { return json({ error: '書き込みに失敗: ' + e.message, added, updated }, 500, cors); }
+      const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM products').first().catch(() => ({ c: 0 }));
+      return json({ ok: true, phase, cursor: j.cursor || '', seen: objs.length, variations: vars.length, added, updated, total: (cnt && cnt.c) || 0 }, 200, cors);
+    }
     /* 商品の一括取り込み（5000点規模を流し込む）。
      * ★1商品ごとにDBへ問い合わせると、1回の実行で許される回数(サブリクエスト上限)を超えて落ちる。
      *   → 「既存の照合を1回のSELECTで済ませ、書き込みは batch() でまとめて1回」にする。
@@ -1927,6 +2037,11 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN maker_code TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN brand TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_ext ON products(ext_id)`).run(); } catch (e) {}
+  // Squareの商品ID（バリエーション）。ショップの実売台帳と結び付ける
+  try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN sq_id TEXT DEFAULT ''`).run(); } catch (e) {}
+  // Squareの商品名の控え。台帳はページで分かれて来るので、名前を別に持っておく
+  try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sq_items (item_id TEXT PRIMARY KEY, name TEXT DEFAULT '')`).run(); } catch (e) {}
+  try { await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_sq ON products(sq_id)`).run(); } catch (e) {}
   // 同姓同名の取り違えを防ぐため、氏名キーだったテーブルに電話を持たせる（既存行は空のまま＝氏名で拾う）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
   // レジをサロン用とショップ用に分ける（売上・在庫・端末の宛先が別）
