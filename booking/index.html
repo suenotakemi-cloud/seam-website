@@ -5729,6 +5729,12 @@ function enterCustomerMode(){
        * お客様の端末にはシフトが無いので、これが無いと
        * 「全員が毎日ぜんぶ出勤」と思い込み、休みの日に予約できてしまう。 */
       applyServerDuty(j);
+      /* 前金の設定もサーバから受け取る。
+       * お客様の端末には設定が無いので、これが無いと画面の中の既定値で出てしまい
+       * 管理画面で変えた金額が効かない。 */
+      if(j&&j.deposit&&typeof j.deposit==='object'){
+        for(const k in j.deposit)db.settings[k]=String(j.deposit[k]);
+      }
       refreshAll();
     }catch(e){}
   })();
