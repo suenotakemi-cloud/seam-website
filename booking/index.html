@@ -575,6 +575,35 @@ td.slot:hover{background:#f0f7ff}
 .prod-form #pf-name{flex:2;min-width:180px}
 .prod-form #pf-price,.prod-form #pf-stock{width:100px}
 .prod-form #pf-barcode{flex:1;min-width:150px}
+/* ── 棚卸し（現場は読むだけ・数字は大きく） ── */
+.st-scanwrap{display:flex;gap:8px;align-items:center}
+#st-scan{flex:1;border:2px solid var(--accent);border-radius:10px;padding:14px 14px;font-size:17px;font-weight:700;min-height:54px}
+#st-scan:focus{outline:none;box-shadow:0 0 0 3px rgba(138,106,47,.15)}
+.st-nums{display:flex;gap:10px;margin:12px 0 8px;flex-wrap:wrap}
+.st-nums>div{flex:1;min-width:120px;background:#f7f9fb;border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.st-nums span{display:block;font-size:11px;font-weight:800;color:var(--sub)}
+.st-nums b{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+.st-nums .st-fail{background:#fdecec;border-color:#f3c9c7}
+.st-nums .st-fail b,.st-nums .st-fail span{color:#b4302b}
+.st-log{border:1px solid var(--line);border-radius:10px;overflow:hidden;max-height:260px;overflow-y:auto}
+.st-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13.5px}
+.st-row:last-child{border-bottom:none}
+.st-row .st-n{flex:1;font-weight:700}
+.st-row b{font-variant-numeric:tabular-nums;font-size:16px}
+.st-row.ng{background:#fdecec;color:#b4302b;font-weight:700}
+.st-empty{padding:16px;text-align:center;color:var(--sub);font-size:12.5px}
+.st-sec{font-size:12px;font-weight:800;color:var(--sub);margin:14px 0 6px}
+.st-drow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);flex-wrap:wrap}
+.st-dn{flex:1;min-width:150px;font-size:13.5px;font-weight:700}
+.st-dn span{display:block;font-size:11px;font-weight:600;color:var(--sub)}
+.st-dq{display:flex;align-items:baseline;gap:10px;font-size:12.5px;color:var(--sub)}
+.st-dq b{font-size:14px;color:var(--ink)}
+.st-dq em{font-style:normal;font-weight:800;font-variant-numeric:tabular-nums}
+.st-dq em.mn{color:#b4302b}.st-dq em.pl{color:var(--ok)}
+.st-dfix{width:78px;border:1.5px solid var(--line);border-radius:8px;padding:7px 8px;font-size:14px;text-align:right}
+.st-zero{display:flex;gap:9px;align-items:flex-start;background:#fff8f0;border:1px solid #f0d9b8;border-radius:10px;padding:11px 12px;margin-top:10px;cursor:pointer}
+.st-zero input{width:22px;height:22px;flex:0 0 auto;margin-top:1px}
+.st-zero span{font-size:12.5px;font-weight:600;color:#7a5a1e;line-height:1.7}
 .prod-row{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid #eef3f8}
 .prod-row:last-child{border-bottom:none}
 .pr-main{flex:1;min-width:0}
@@ -1069,6 +1098,25 @@ body.customer .phone.spa{background:#f7f8f3}
 <section class="view" id="v-products">
   <h2>商品・在庫</h2>
   <p class="lead">店販商品を登録すると、お会計でバーコード読み取り／一覧から選べ、在庫が自動で減ります</p>
+
+  <!-- 棚卸し：現場は「読むだけ」。数えている間は理論在庫を見せない（数字に引っ張られないため） -->
+  <div class="card" id="stCard" style="margin-bottom:14px"></div>
+
+  <details class="fold" style="margin-bottom:14px">
+    <summary>📥 商品をまとめて取り込む（CSV）</summary>
+    <div class="card" style="border-radius:0 0 12px 12px;border-top:none">
+      <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:10px">
+        商品数が多いときは、CSVから一度に取り込めます。1行目に見出しを付けてください。<br>
+        使う列は <b>名前 / 価格 / バーコード / 在庫</b> です（見出しの表記はある程度自動で読み分けます）。<br>
+        <b>バーコードか名前が一致する商品は更新</b>、無ければ追加します。在庫の列が無いときは在庫を触りません。
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <label class="btn small ghost" style="cursor:pointer">CSVを選ぶ<input id="pi-file" type="file" accept=".csv,text/csv" style="display:none"></label>
+        <span id="pi-status" style="font-size:12.5px;color:var(--sub)"></span>
+      </div>
+      <div id="pi-log" style="margin-top:10px;font-size:12px;color:var(--sub);line-height:1.8"></div>
+    </div>
+  </details>
   <div class="card" style="margin-bottom:14px">
     <h3 style="font-size:14.5px;margin-bottom:10px">商品を追加</h3>
     <div class="prod-form">
@@ -1249,6 +1297,22 @@ let ADMIN_TOKEN=(()=>{try{return localStorage.getItem(ADMIN_TOK_KEY)||''}catch(e
 const authHeaders=()=>ADMIN_TOKEN?{'Authorization':'Bearer '+ADMIN_TOKEN}:{};
 
 // D1 API ラッパー（fetch 失敗時は localStorage にフォールバック）
+/* 棚卸しは「静かに失敗する」のが一番怖い（読んだつもりで数えられていない）。
+   共通の呼び出しは必ずエラーを返し、画面側で必ず知らせる。 */
+async function apiPost(path,body){
+  if(!API_BASE)return{error:'APIに接続していません'};
+  try{const r=await fetch(API_BASE+path,{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body||{})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)return{error:j.error||('通信できませんでした（'+r.status+'）')};
+    return j;}catch(e){return{error:'通信できませんでした（'+(e.message||e)+'）'};}
+}
+async function apiGet(path){
+  if(!API_BASE)return{error:'APIに接続していません'};
+  try{const r=await fetch(API_BASE+path,{headers:authHeaders()});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)return{error:j.error||('通信できませんでした（'+r.status+'）')};
+    return j;}catch(e){return{error:'通信できませんでした（'+(e.message||e)+'）'};}
+}
 const API = {
   async list() {
     if (!API_BASE) return null;
@@ -2699,7 +2763,198 @@ function printReceipt(coId){
 }
 
 /* ===== 店販の商品マスタ・在庫 ===== */
+/* ===== 棚卸し =====
+ * 現場の速さを最優先。読むだけで進み、理論在庫は数え終わるまで見せない
+ * （見えていると「合わせにいってしまう」ので、実数が取れなくなる）。
+ * 数はサーバーに置くので、中断しても続きから数えられる／複数の端末で同時に数えられる。 */
+let ST=null, ST_LOG=[], ST_FAIL=0;
+async function renderStocktake(){
+  const el=document.getElementById('stCard'); if(!el)return;
+  if(!ST){
+    const j=await API.stGet();
+    const open=((j&&j.takes)||[]).find(t=>t.status==='open');
+    const done=((j&&j.takes)||[]).filter(t=>t.status!=='open').slice(0,3);
+    el.innerHTML=`<div class="rep-h"><h3>📦 棚卸し</h3></div>
+      <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin:4px 0 12px">
+        商品をひたすら読むだけです。同じ商品を2回読めば2個。<b>数えている間は在庫の数を出しません</b>（見えていると実数が取りにくいため）。<br>
+        途中でやめても続きから数えられます。数え終わってから、ズレた商品だけを確認します。
+      </div>
+      ${open?`<div style="background:#fff8f0;border:1px solid #f0d9b8;border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:13px;font-weight:700;color:#7a5a1e">
+        途中の棚卸しがあります（${escH(open.name||'')}・${(open.started_at||'').slice(0,16).replace('T',' ')}）</div>`:''}
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <button class="btn pay" id="st-start">${open?'続きから数える':'棚卸しをはじめる'}</button>
+        ${open?`<button class="btn small ghost" id="st-drop">この棚卸しをやめる</button>`:''}
+      </div>
+      ${done.length?`<div style="margin-top:12px;font-size:12px;color:var(--sub)">直近: ${done.map(t=>`${(t.started_at||'').slice(0,10)}（${t.status==='done'?'確定':'中止'}）`).join('／')}</div>`:''}`;
+    const b=document.getElementById('st-start');
+    if(b)b.onclick=async()=>{const r=await API.stStart({staff:''});
+      if(r.error){toast(r.error,true);return;} ST=r.take; ST_LOG=[]; ST_FAIL=0; renderStocktake();
+      setTimeout(()=>{const f=document.getElementById('st-scan');if(f)f.focus()},50);};
+    const d=document.getElementById('st-drop');
+    if(d)d.onclick=async()=>{if(!confirm('この棚卸しを破棄しますか？数えた数は消えます'))return;
+      await API.stCancel(open.id); renderStocktake();};
+    return;
+  }
+  // 数えている画面
+  el.innerHTML=`<div class="rep-h"><h3>📦 棚卸し中</h3>
+      <span style="font-size:11.5px;color:var(--sub)">${escH(ST.name||'')}</span></div>
+    <div class="st-scanwrap">
+      <input id="st-scan" placeholder="🔎 バーコードを読む（続けて読めます）" autocomplete="off" inputmode="none">
+      <button class="btn small ghost" id="st-manual">手で足す</button>
+    </div>
+    <div class="st-nums"><div><span>読んだ品目</span><b id="st-items">${ST._items||0}</b></div>
+      <div><span>読んだ個数</span><b id="st-total">${ST._total||0}</b></div>
+      ${ST_FAIL?`<div class="st-fail"><span>読めなかった</span><b>${ST_FAIL}</b></div>`:''}</div>
+    <div id="st-log" class="st-log"></div>
+    <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn pay" id="st-finish">数え終わった（差分を見る）</button>
+      <button class="btn small ghost" id="st-pause">中断する（あとで続ける）</button>
+    </div>`;
+  drawStLog();
+  const f=document.getElementById('st-scan');
+  const send=async(code,qty)=>{
+    const c=(code||'').trim(); if(!c)return;
+    const r=await API.stScan({id:ST.id,barcode:c,qty:qty||1});
+    if(r.error){ST_FAIL++;ST_LOG.unshift({ng:true,text:'読めませんでした：'+r.error+'（'+c+'）'});renderStocktake();return;}
+    if(r.notFound){ST_LOG.unshift({ng:true,text:'登録の無いバーコード：'+c,barcode:c});renderStocktake();return;}
+    ST._items=r.items; ST._total=r.total;
+    ST_LOG.unshift({name:r.product.name,counted:r.counted,pid:r.product.id});
+    ST_LOG=ST_LOG.slice(0,12);
+    document.getElementById('st-items').textContent=r.items;
+    document.getElementById('st-total').textContent=r.total;
+    drawStLog();
+  };
+  f.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const v=f.value;f.value='';send(v);}};
+  f.onchange=()=>{if(f.value.trim()){const v=f.value;f.value='';send(v);}};
+  document.getElementById('st-manual').onclick=async()=>{
+    const c=prompt('バーコード（または商品名の一部）');if(!c)return;
+    const n=prompt('個数','1');if(n===null)return;
+    const bc=c.trim();
+    if(/^[0-9A-Za-z-]+$/.test(bc)){await send(bc,+n||1);return;}
+    const j=await apiGet('/products?q='+encodeURIComponent(bc));
+    const list=(j&&j.products)||[];
+    if(!list.length){toast('商品が見つかりません',true);return;}
+    const pick=list.length===1?list[0]:list[Math.max(0,+(prompt(list.map((p,i)=>i+': '+p.name).join('\n')+'\n\n番号を入力',''))||0)];
+    if(!pick)return;
+    const r=await API.stScan({id:ST.id,productId:pick.id,qty:+n||1});
+    if(r.error){toast(r.error,true);return;}
+    ST._items=r.items;ST._total=r.total;ST_LOG.unshift({name:r.product.name,counted:r.counted,pid:r.product.id});renderStocktake();
+  };
+  document.getElementById('st-pause').onclick=()=>{ST=null;renderStocktake();toast('中断しました。あとで続きから数えられます');};
+  document.getElementById('st-finish').onclick=()=>showStDiff();
+  setTimeout(()=>{const x=document.getElementById('st-scan');if(x)x.focus()},50);
+}
+function drawStLog(){
+  const el=document.getElementById('st-log'); if(!el)return;
+  if(!ST_LOG.length){el.innerHTML='<div class="st-empty">読み取ると、ここに出ます</div>';return;}
+  el.innerHTML=ST_LOG.map(x=>x.ng
+    ? `<div class="st-row ng">⚠ ${escH(x.text)}${x.barcode?` <button class="btn small ghost" data-newbc="${escH(x.barcode)}" style="padding:1px 7px;font-size:11px">商品を登録</button>`:''}</div>`
+    : `<div class="st-row"><span class="st-n">${escH(x.name)}</span><b>${x.counted}</b></div>`).join('');
+  el.querySelectorAll('[data-newbc]').forEach(b=>b.onclick=()=>{
+    document.querySelector('nav button[data-v="products"]').click();
+    const el2=document.getElementById('pf-barcode'); if(el2){el2.value=b.dataset.newbc;document.getElementById('pf-name').focus();}
+    toast('この商品を登録してから、もう一度読んでください');
+  });
+}
+async function showStDiff(){
+  const el=document.getElementById('stCard');
+  el.innerHTML='<div class="rep-h"><h3>📦 差分を確認</h3></div><div style="color:var(--sub);font-size:13px">集計しています…</div>';
+  const j=await API.stDiff(ST.id,true);
+  if(j.error){toast(j.error,true);renderStocktake();return;}
+  const dif=j.diffs||[], un=j.unscanned||[];
+  const line=(x)=>`<div class="st-drow">
+      <div class="st-dn">${escH(x.name)}${x.barcode?`<span>${escH(x.barcode)}</span>`:''}</div>
+      <div class="st-dq"><span>帳簿 ${x.theory}</span><b>実数 ${x.counted}</b>
+        <em class="${x.diff<0?'mn':'pl'}">${x.diff>0?'+':''}${x.diff}</em></div>
+      <input class="st-dfix" type="number" inputmode="numeric" value="${x.counted}" data-fix="${x.id}" aria-label="実数を直す">
+    </div>`;
+  el.innerHTML=`<div class="rep-h"><h3>📦 差分を確認</h3>
+      <span style="font-size:11.5px;color:var(--sub)">合っていた ${j.matched} 点</span></div>
+    ${dif.length?`<div class="st-sec">帳簿と違うもの（${dif.length}点）</div>${dif.map(line).join('')}`
+      :'<div class="st-empty">ズレはありませんでした</div>'}
+    ${un.length?`<div class="st-sec">一度も読めなかったもの（${un.length}点）
+        <span style="font-weight:600;color:var(--sub);font-size:11.5px">棚に無いなら0、読み忘れなら戻って読んでください</span></div>
+      ${un.map(x=>`<div class="st-drow"><div class="st-dn">${escH(x.name)}${x.barcode?`<span>${escH(x.barcode)}</span>`:''}</div>
+        <div class="st-dq"><span>帳簿 ${x.theory}</span><b>読み取り なし</b></div></div>`).join('')}
+      <label class="st-zero"><input type="checkbox" id="st-zero"><span>読めなかった ${un.length}点を <b>0にする</b>（棚に無いことを確認した場合だけ）</span></label>`:''}
+    <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn pay" id="st-commit">この実数で確定する</button>
+      <button class="btn small ghost" id="st-back">戻って続きを読む</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--sub);margin-top:8px">確定すると在庫が実数になり、増減の記録が残ります</div>`;
+  el.querySelectorAll('[data-fix]').forEach(inp=>inp.onchange=async()=>{
+    const r=await API.stSet({id:ST.id,productId:inp.dataset.fix,counted:+inp.value||0});
+    if(r.error)toast(r.error,true); else toast('直しました');
+  });
+  document.getElementById('st-back').onclick=()=>renderStocktake();
+  document.getElementById('st-commit').onclick=async()=>{
+    const z=document.getElementById('st-zero');
+    const msg=dif.length+'点の在庫を実数に更新します'+((z&&z.checked)?'（読めなかった'+un.length+'点は0にします）':'')+'。よろしいですか？';
+    if(!confirm(msg))return;
+    const r=await API.stCommit({id:ST.id,zeroUnscanned:!!(z&&z.checked)});
+    if(r.error){toast(r.error,true);return;}
+    toast('棚卸しを確定しました（'+r.changed+'点更新'+(r.zeroed?'／'+r.zeroed+'点を0に':'')+'）');
+    ST=null;ST_LOG=[];ST_FAIL=0;
+    const pr=await API.listProducts(); if(pr)db.products=pr; save();
+    renderProducts();renderStocktake();
+  };
+}
+/* CSVの取り込み。Squareの商品エクスポートなど、見出しの表記ゆれを吸収して読む。
+   1000件ずつに分けて送る（1回のリクエストを重くしないため）。 */
+function csvRows(text){
+  const rows=[];let f='',row=[],q=false;
+  text=text.replace(/^\uFEFF/,'');
+  for(let i=0;i<text.length;i++){const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"')q=true;
+    else if(c===','){row.push(f);f='';}
+    else if(c==='\n'){row.push(f);f='';rows.push(row);row=[];}
+    else if(c!=='\r')f+=c;}
+  if(f||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(x=>String(x).trim()!==''));
+}
+function csvPick(head){
+  const idx={name:-1,price:-1,barcode:-1,stock:-1};
+  head.forEach((h,i)=>{const t=String(h).toLowerCase().replace(/\s/g,'');
+    if(idx.name<0&&/(商品名|品名|名前|item ?name|name|title)/.test(t))idx.name=i;
+    if(idx.price<0&&/(価格|単価|売価|税込|price|amount)/.test(t))idx.price=i;
+    if(idx.barcode<0&&/(バーコード|jan|ean|sku|gtin|barcode|コード)/.test(t))idx.barcode=i;
+    if(idx.stock<0&&/(在庫|数量|quantity|stock|qty|onhand)/.test(t))idx.stock=i;});
+  return idx;
+}
+function setupProdImport(){
+  const f=document.getElementById('pi-file'); if(!f||f._wired)return; f._wired=true;
+  const st=document.getElementById('pi-status'), log=document.getElementById('pi-log');
+  f.onchange=async()=>{
+    const file=f.files&&f.files[0]; if(!file)return;
+    st.textContent='読み込んでいます…';log.innerHTML='';
+    const text=await file.text();
+    const rows=csvRows(text);
+    if(rows.length<2){st.textContent='';toast('中身が読み取れませんでした（1行目に見出しが必要です）',true);return;}
+    const idx=csvPick(rows[0]);
+    if(idx.name<0){st.textContent='';toast('商品名の列が見つかりません（見出しに「商品名」などを入れてください）',true);return;}
+    const items=rows.slice(1).map(r=>({
+      name:(r[idx.name]||'').trim(),
+      price:idx.price>=0?String(r[idx.price]||'').replace(/[^0-9.]/g,''):0,
+      barcode:idx.barcode>=0?(r[idx.barcode]||'').trim():'',
+      stock:idx.stock>=0?String(r[idx.stock]||'').replace(/[^0-9-]/g,''):undefined,
+    })).filter(x=>x.name);
+    let added=0,updated=0,skipped=0,total=0,err='';
+    for(let i=0;i<items.length;i+=500){
+      st.textContent=`送信中… ${Math.min(i+500,items.length)} / ${items.length}件`;
+      const r=await API.prodImport(items.slice(i,i+500));
+      if(r.error){err=r.error;break;}
+      added+=r.added||0;updated+=r.updated||0;skipped+=r.skipped||0;total=r.total||total;
+    }
+    f.value='';
+    if(err){st.textContent='';toast('取り込みに失敗しました: '+err,true);return;}
+    st.textContent=`完了：追加 ${added}件／更新 ${updated}件${skipped?`／見送り ${skipped}件`:''}（登録商品 ${total}点）`;
+    log.innerHTML=`見出しの読み分け：商品名=${idx.name>=0?escH(rows[0][idx.name]):'—'} ／ 価格=${idx.price>=0?escH(rows[0][idx.price]):'（なし）'} ／ バーコード=${idx.barcode>=0?escH(rows[0][idx.barcode]):'（なし）'} ／ 在庫=${idx.stock>=0?escH(rows[0][idx.stock]):'（なし＝在庫は触りません）'}`;
+    const pr=await API.listProducts(); if(pr)db.products=pr; save(); renderProducts();
+  };
+}
 function renderProducts(){
+  renderStocktake(); setupProdImport();
   const body=document.getElementById('productsbody'); if(!body)return;
   const ps=(db.products||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
   const money=n=>'¥'+(n||0).toLocaleString();

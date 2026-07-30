@@ -474,6 +474,201 @@ export default {
     if (p.endsWith('/settlements') && m === 'DELETE') return A() || handleDeleteSettlement(url, env, cors);
     if (p.endsWith('/settings') && m === 'GET') return A() || handleGetSettings(env, cors);
     if (p.endsWith('/settings') && m === 'POST') return A() || handlePostSetting(request, env, cors);
+    /* 商品の一括取り込み（Squareの商品CSVなどから5000点を流し込む）。
+     * 手入力は現実的でないため。バーコード一致で更新／無ければ追加（在庫は指定があるときだけ触る）。 */
+    if (p.endsWith('/products/import') && m === 'POST') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      const rows = Array.isArray(o.items) ? o.items : [];
+      if (!rows.length) return json({ error: 'items が空です' }, 400, cors);
+      if (rows.length > 1000) return json({ error: '一度に送れるのは1000件までです（分けて送ってください）' }, 400, cors);
+      const now = new Date().toISOString();
+      let added = 0, updated = 0, skipped = 0;
+      const bad = [];
+      for (const r of rows) {
+        const name = String(r.name || '').trim();
+        const bc = String(r.barcode || '').replace(/[^0-9A-Za-z-]/g, '').trim();
+        const price = Math.max(0, Math.round(+r.price || 0));
+        const hasStock = r.stock !== undefined && r.stock !== null && r.stock !== '';
+        const stock = Math.max(0, Math.round(+r.stock || 0));
+        if (!name) { skipped++; bad.push({ row: r, why: '名前が空' }); continue; }
+        let cur = null;
+        if (bc) cur = await env.DB.prepare('SELECT id FROM products WHERE barcode=? LIMIT 1').bind(bc).first();
+        if (!cur) cur = await env.DB.prepare('SELECT id FROM products WHERE name=? LIMIT 1').bind(name).first();
+        if (cur) {
+          // 在庫は指定があるときだけ上書き（取り込みで在庫を0に潰さないため）
+          if (hasStock) await env.DB.prepare('UPDATE products SET name=?, price=?, barcode=?, stock=?, active=1 WHERE id=?').bind(name, price, bc, stock, cur.id).run();
+          else await env.DB.prepare('UPDATE products SET name=?, price=?, barcode=?, active=1 WHERE id=?').bind(name, price, bc, cur.id).run();
+          updated++;
+        } else {
+          await env.DB.prepare('INSERT INTO products (id,name,price,barcode,stock,active,created_at) VALUES (?,?,?,?,?,1,?)')
+            .bind('p' + crypto.randomUUID().slice(0, 8), name, price, bc, hasStock ? stock : 0, now).run();
+          added++;
+        }
+      }
+      const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM products').first().catch(() => ({ c: 0 }));
+      return json({ ok: true, added, updated, skipped, total: (cnt && cnt.c) || 0, bad: bad.slice(0, 20) }, 200, cors);
+    }
+    /* ===== 棚卸し（商品5000点規模）=====
+     * 現場の速さを最優先にした作り：
+     *  ・スキャン1回＝1往復（サーバーでバーコードを引いて数を+1して返す）。全件をブラウザに載せない
+     *  ・数えた数はサーバーに置く → 中断・再開できる／複数の端末で同時に数えられる
+     *  ・数えている間は理論在庫を返さない（数字に引っ張られて実数を間違えないため）
+     *  ・締めてから差分だけを見せる。確定すると増減の記録を残す */
+    if (p.endsWith('/stocktake') && m === 'POST') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o = {}; try { o = await request.json(); } catch (e) {}
+      // 開いている棚卸しがあれば、それを返して続きから数えられるようにする
+      const open = await env.DB.prepare("SELECT * FROM stocktakes WHERE status='open' ORDER BY started_at DESC LIMIT 1").first();
+      if (open) return json({ ok: true, resumed: true, take: open }, 200, cors);
+      const id = 'st' + crypto.randomUUID().slice(0, 8);
+      const now = new Date().toISOString();
+      await env.DB.prepare('INSERT INTO stocktakes (id,name,staff,status,started_at) VALUES (?,?,?,?,?)')
+        .bind(id, o.name || (now.slice(0, 10) + ' 棚卸し'), o.staff || '', 'open', now).run();
+      return json({ ok: true, resumed: false, take: { id, name: o.name || '', staff: o.staff || '', status: 'open', started_at: now } }, 200, cors);
+    }
+    if (p.endsWith('/stocktake') && m === 'GET') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const id = url.searchParams.get('id');
+      if (!id) {   // 一覧（履歴）
+        const res = await env.DB.prepare('SELECT * FROM stocktakes ORDER BY started_at DESC LIMIT 30').all();
+        return json({ ok: true, takes: res.results || [] }, 200, cors);
+      }
+      const take = await env.DB.prepare('SELECT * FROM stocktakes WHERE id=?').bind(id).first();
+      if (!take) return json({ error: '棚卸しが見つかりません' }, 404, cors);
+      const sum = await env.DB.prepare('SELECT COUNT(*) items, COALESCE(SUM(counted),0) qty FROM stocktake_counts WHERE take_id=?').bind(id).first();
+      return json({ ok: true, take, items: (sum && sum.items) || 0, qty: (sum && sum.qty) || 0 }, 200, cors);
+    }
+    // スキャン1回。返すのは「商品名」と「いま数えた数」だけ（理論在庫は返さない）
+    if (p.endsWith('/stocktake/scan') && m === 'POST') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.id) return json({ error: 'id は必須' }, 400, cors);
+      const take = await env.DB.prepare("SELECT id,status FROM stocktakes WHERE id=?").bind(o.id).first();
+      if (!take) return json({ error: '棚卸しが見つかりません' }, 404, cors);
+      if (take.status !== 'open') return json({ error: 'この棚卸しは締められています' }, 400, cors);
+      const qty = Number.isFinite(+o.qty) && +o.qty !== 0 ? Math.round(+o.qty) : 1;
+      let prod = null;
+      if (o.productId) prod = await env.DB.prepare('SELECT id,name,barcode FROM products WHERE id=?').bind(o.productId).first();
+      else if (o.barcode) prod = await env.DB.prepare('SELECT id,name,barcode FROM products WHERE barcode=? LIMIT 1').bind(String(o.barcode).trim()).first();
+      // 登録の無いバーコードは、その場で登録に回せるように「見つからない」ことを明示して返す
+      if (!prod) return json({ ok: false, notFound: true, barcode: String(o.barcode || '') }, 200, cors);
+      const now = new Date().toISOString();
+      await env.DB.prepare(`INSERT INTO stocktake_counts (take_id,product_id,counted,last_at) VALUES (?,?,?,?)
+           ON CONFLICT(take_id,product_id) DO UPDATE SET counted=stocktake_counts.counted+excluded.counted, last_at=excluded.last_at`)
+        .bind(o.id, prod.id, qty, now).run();
+      const row = await env.DB.prepare('SELECT counted FROM stocktake_counts WHERE take_id=? AND product_id=?').bind(o.id, prod.id).first();
+      const sum = await env.DB.prepare('SELECT COUNT(*) items, COALESCE(SUM(counted),0) qty FROM stocktake_counts WHERE take_id=?').bind(o.id).first();
+      return json({ ok: true, product: { id: prod.id, name: prod.name, barcode: prod.barcode || '' },
+        counted: (row && row.counted) || 0, items: (sum && sum.items) || 0, total: (sum && sum.qty) || 0 }, 200, cors);
+    }
+    // 数の直し（数え間違いの訂正）。counted をその値に置き換える
+    if (p.endsWith('/stocktake/set') && m === 'POST') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.id || !o.productId) return json({ error: 'id/productId は必須' }, 400, cors);
+      const v = Math.max(0, Math.round(+o.counted || 0));
+      await env.DB.prepare(`INSERT INTO stocktake_counts (take_id,product_id,counted,last_at) VALUES (?,?,?,?)
+           ON CONFLICT(take_id,product_id) DO UPDATE SET counted=excluded.counted, last_at=excluded.last_at`)
+        .bind(o.id, o.productId, v, new Date().toISOString()).run();
+      return json({ ok: true, counted: v }, 200, cors);
+    }
+    // 差分。合っているものは返さない（5000点でも見る量が増えないように）
+    if (p.endsWith('/stocktake/diff') && m === 'GET') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const id = url.searchParams.get('id');
+      if (!id) return json({ error: 'id は必須' }, 400, cors);
+      const withUnscanned = url.searchParams.get('unscanned') === '1';
+      // 数えた商品のうち、理論在庫と違うものだけ
+      const dif = await env.DB.prepare(`
+        SELECT p.id, p.name, p.barcode, p.price, p.stock AS theory, c.counted
+        FROM stocktake_counts c JOIN products p ON p.id=c.product_id
+        WHERE c.take_id=? AND c.counted <> p.stock ORDER BY (c.counted - p.stock) ASC LIMIT 2000`).bind(id).all();
+      // 一度も読まれていない商品（在庫があるのに読めていない＝紛失の可能性）
+      let un = { results: [] };
+      if (withUnscanned) {
+        un = await env.DB.prepare(`
+          SELECT p.id, p.name, p.barcode, p.price, p.stock AS theory
+          FROM products p WHERE p.active<>0 AND p.stock<>0
+            AND p.id NOT IN (SELECT product_id FROM stocktake_counts WHERE take_id=?)
+          ORDER BY p.stock DESC LIMIT 2000`).bind(id).all();
+      }
+      const okCnt = await env.DB.prepare(`
+        SELECT COUNT(*) c FROM stocktake_counts c JOIN products p ON p.id=c.product_id
+        WHERE c.take_id=? AND c.counted = p.stock`).bind(id).first();
+      return json({ ok: true,
+        diffs: (dif.results || []).map(r => ({ ...r, diff: (r.counted || 0) - (r.theory || 0) })),
+        unscanned: (un.results || []),
+        matched: (okCnt && okCnt.c) || 0 }, 200, cors);
+    }
+    // 確定。数えた数を在庫にして、増減を記録に残す（あとで「いつどれだけズレたか」を追える）
+    if (p.endsWith('/stocktake/commit') && m === 'POST') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.id) return json({ error: 'id は必須' }, 400, cors);
+      const take = await env.DB.prepare('SELECT * FROM stocktakes WHERE id=?').bind(o.id).first();
+      if (!take) return json({ error: '棚卸しが見つかりません' }, 404, cors);
+      if (take.status !== 'open') return json({ error: 'すでに確定しています' }, 400, cors);
+      const zeroUnscanned = o.zeroUnscanned === true;   // 読めなかったものを0にするか（既定はしない）
+      const rows = await env.DB.prepare(`
+        SELECT p.id, p.stock AS theory, c.counted FROM stocktake_counts c JOIN products p ON p.id=c.product_id
+        WHERE c.take_id=? AND c.counted <> p.stock`).bind(o.id).all();
+      const now = new Date().toISOString();
+      let changed = 0;
+      for (const r of (rows.results || [])) {
+        await env.DB.prepare('UPDATE products SET stock=? WHERE id=?').bind(r.counted, r.id).run();
+        await env.DB.prepare('INSERT INTO stock_adjust (id,take_id,product_id,before_qty,after_qty,diff,reason,staff,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+          .bind('sa' + crypto.randomUUID().slice(0, 8), o.id, r.id, r.theory || 0, r.counted || 0, (r.counted || 0) - (r.theory || 0), '棚卸し', o.staff || take.staff || '', now).run();
+        changed++;
+      }
+      let zeroed = 0;
+      if (zeroUnscanned) {
+        const un = await env.DB.prepare(`SELECT id, stock FROM products WHERE active<>0 AND stock<>0
+            AND id NOT IN (SELECT product_id FROM stocktake_counts WHERE take_id=?)`).bind(o.id).all();
+        for (const r of (un.results || [])) {
+          await env.DB.prepare('UPDATE products SET stock=0 WHERE id=?').bind(r.id).run();
+          await env.DB.prepare('INSERT INTO stock_adjust (id,take_id,product_id,before_qty,after_qty,diff,reason,staff,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+            .bind('sa' + crypto.randomUUID().slice(0, 8), o.id, r.id, r.stock || 0, 0, -(r.stock || 0), '棚卸し（読み取りなし→0）', o.staff || take.staff || '', now).run();
+          zeroed++;
+        }
+      }
+      await env.DB.prepare("UPDATE stocktakes SET status='done', closed_at=?, note=? WHERE id=?")
+        .bind(now, o.note || '', o.id).run();
+      return json({ ok: true, changed, zeroed }, 200, cors);
+    }
+    if (p.endsWith('/stocktake/cancel') && m === 'POST') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const id = url.searchParams.get('id');
+      if (!id) return json({ error: 'id は必須' }, 400, cors);
+      await env.DB.prepare("UPDATE stocktakes SET status='cancelled', closed_at=? WHERE id=?").bind(new Date().toISOString(), id).run();
+      await env.DB.prepare('DELETE FROM stocktake_counts WHERE take_id=?').bind(id).run();
+      return json({ ok: true }, 200, cors);
+    }
+    // 在庫の増減記録（棚卸し以外の手直しも含めて後から追える）
+    if (p.endsWith('/stock/adjust') && m === 'GET') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const res = await env.DB.prepare(`SELECT a.*, p.name FROM stock_adjust a LEFT JOIN products p ON p.id=a.product_id
+        ORDER BY a.created_at DESC LIMIT 300`).all();
+      return json({ ok: true, adjusts: res.results || [] }, 200, cors);
+    }
     if (p.endsWith('/products') && m === 'GET') return A() || handleGetProducts(url, env, cors);
     if (p.endsWith('/products') && m === 'POST') return A() || handlePostProduct(request, env, cors);
     if (p.endsWith('/products') && m === 'DELETE') return A() || handleDeleteProduct(url, env, cors);
@@ -1528,6 +1723,15 @@ async function ensureRegisterTables(env) {
     // 来店時のカウンセリングシート＋同意書。key=custKey(電話番号 or n:氏名)・sign=手書き署名(dataURL)
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS counseling (id TEXT PRIMARY KEY, key TEXT, name TEXT, phone TEXT, kind TEXT, answers TEXT, consent TEXT, sign TEXT, staff TEXT, date TEXT, created_at TEXT)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_cs_key ON counseling(key)`),
+    // 商品5000点規模。バーコード引きを索引で速くする（レジのスキャンと棚卸しの両方で使う）
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_barcode ON products(barcode)`),
+    // 棚卸し：セッション（中断・再開できるように、数えた数はサーバーに置く）
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS stocktakes (id TEXT PRIMARY KEY, name TEXT DEFAULT '', staff TEXT DEFAULT '', status TEXT DEFAULT 'open', started_at TEXT, closed_at TEXT DEFAULT '', note TEXT DEFAULT '')`),
+    // 棚卸し：数えた数（product_idごと。スキャンのたびに加算）
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS stocktake_counts (take_id TEXT, product_id TEXT, counted INTEGER DEFAULT 0, last_at TEXT, PRIMARY KEY (take_id, product_id))`),
+    // 棚卸し：確定時の増減記録（いつ・どれだけズレたかを残す）
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS stock_adjust (id TEXT PRIMARY KEY, take_id TEXT DEFAULT '', product_id TEXT, before_qty INTEGER DEFAULT 0, after_qty INTEGER DEFAULT 0, diff INTEGER DEFAULT 0, reason TEXT DEFAULT '', staff TEXT DEFAULT '', created_at TEXT)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_stadj_take ON stock_adjust(take_id)`),
     // メールのワンタイムパスワード(本人確認)。10分有効・5回まで・60秒に1回送信
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS otp (email TEXT PRIMARY KEY, code TEXT, expires TEXT, verified INTEGER DEFAULT 0, tries INTEGER DEFAULT 0, created_at TEXT)`),
     // 顧客ノート(重要メモ=アレルギー等の注意事項・誕生月)。key=custKey(電話番号 or n:氏名)
@@ -1752,8 +1956,26 @@ async function handleDeleteIntake(url, env, cors) {
 async function handleGetProducts(url, env, cors) {
   if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
   await ensureRegisterTables(env);
-  const res = await env.DB.prepare('SELECT * FROM products ORDER BY name').all();
-  return json({ ok: true, products: (res.results || []).map(PR2API) }, 200, cors);
+  // 商品が数千点あるので、必要な分だけ返せるようにする。
+  //   ?barcode=… 1件だけ（レジのスキャン・棚卸しのスキャン）
+  //   ?q=…       名前の一部で検索（最大50件）
+  //   ?limit=&offset= 一覧の分割取得
+  //   引数なしは従来どおり全件（少数店舗の互換のため。5000点でも1回だけなら通る）
+  const bc = (url.searchParams.get('barcode') || '').trim();
+  if (bc) {
+    const r = await env.DB.prepare('SELECT * FROM products WHERE barcode=? LIMIT 1').bind(bc).first();
+    return json({ ok: true, products: r ? [PR2API(r)] : [] }, 200, cors);
+  }
+  const q = (url.searchParams.get('q') || '').trim();
+  if (q) {
+    const res = await env.DB.prepare('SELECT * FROM products WHERE name LIKE ? ORDER BY name LIMIT 50').bind('%' + q + '%').all();
+    return json({ ok: true, products: (res.results || []).map(PR2API) }, 200, cors);
+  }
+  const lim = Math.min(5000, Math.max(1, +(url.searchParams.get('limit') || 5000)));
+  const off = Math.max(0, +(url.searchParams.get('offset') || 0));
+  const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM products').first().catch(() => ({ c: 0 }));
+  const res = await env.DB.prepare('SELECT * FROM products ORDER BY name LIMIT ? OFFSET ?').bind(lim, off).all();
+  return json({ ok: true, total: (cnt && cnt.c) || 0, offset: off, products: (res.results || []).map(PR2API) }, 200, cors);
 }
 async function handlePostProduct(request, env, cors) {
   if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
