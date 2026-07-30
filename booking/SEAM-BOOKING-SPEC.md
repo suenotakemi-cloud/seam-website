@@ -407,6 +407,19 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 - **API**：`POST /receipt/token`（合言葉の発行・管理）／`POST /line/link`（お客様・合言葉+IDトークン）／`GET /member/me?idToken=`（お客様・自分の会員証と履歴）／`GET /member/lookup?code=`（レジ・管理）／`POST /receipt/line`（レジからLINEへ直接送る）／`POST /line/backfill`（予約でLINE連携済みの方を顧客台帳へ取り込む）。
 - **テーブル**：`members(code, cust_key, line_user_id, name, created_at)`・`receipt_tokens(token, checkout_id, cust_key, created_at, used_at)`。`customer_notes` に `line_user_id / line_name / line_linked_at` を追加。
 - **顧客の同一性**：既存方針どおり **電話番号がキー**（`cust_key`）。電話が無い会計は `n:氏名` を使う暫定キー。
+## 6.85 予約確定のLINE通知（2026-07-30）
+
+**予約が確定した時点でLINEに「ご予約が確定しました」を送る。**
+
+- それまでは `o.lineUserId` が付いている予約だけに送っていたため、**電話予約・店頭の次回予約・ホットペッパー取込には飛んでいなかった**。
+- `lineOfCustomer(env, phone, name, shopId)` が **電話番号から会員のLINEを引く**。探す順は ①その店の `line_links` ②どこかの店の `line_links`（直近）③`customer_notes.line_user_id` ④過去の予約に付いていた `line_user_id`。電話は `telN()` で数字だけに寄せるのでハイフン付き入力でも当たる。
+- 送信は**その店のLINE公式アカウント**から（`lineToken(env, shopId)`）。クライアントは `API.add()` で `shopId` を必ず添える。
+- 文面は `buildLineMessage('confirm')`＝「【SEAM 銀座】ご予約が確定しました」＋日時・メニュー・担当（前金があれば金額も）。
+- メールも従来どおり並行して送る（Googleログイン済み or OTP確認済みのみ）。
+- **⚠️`lineOfCustomer` も `export default` より前に置く**（`dutyMap` と同じ罠を一度踏んだ）。
+
+---
+
 ## 6.9 シフト（希望→確定→LINEで通知・2026-07-30）
 
 **⚠️ここは穴を塞いだ修正を含む。** それまでシフトは端末の localStorage (`stb_shifts`) だけにあり、サーバにも他端末にも伝わっていなかった。お客様の予約画面は同じ `index.html`（`?src=` 付き＝`IS_CUSTOMER`）で、空き枠の判定 `staffOnDuty()` はお客様のスマホの localStorage を読む。お客様の端末にはシフトが無いので **「全員が毎日ぜんぶ出勤」と解釈され、スタイリストの休みが予約をブロックしていなかった**。サーバもシフトを知らないので弾けなかった。

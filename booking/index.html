@@ -1448,8 +1448,11 @@ const API = {
   async add(o) {
     if (!API_BASE) return null;
     try {
+      // 店舗を必ず添える（店舗ごとにLINE公式アカウントが違うので、
+      // 確定の知らせをその店のアカウントから送るのに使う）
+      const body = { ...o, shopId: o.shopId || (typeof SHOP_ID !== 'undefined' ? SHOP_ID : 'ginza') };
       const r = await fetch(API_BASE + '/reservations', {
-        method: 'POST', headers: {...authHeaders(),'Content-Type':'application/json'}, body: JSON.stringify(o)
+        method: 'POST', headers: {...authHeaders(),'Content-Type':'application/json'}, body: JSON.stringify(body)
       });
       const j = await r.json();
       if (r.status === 409) return { ok: false, conflict: j.conflict };
