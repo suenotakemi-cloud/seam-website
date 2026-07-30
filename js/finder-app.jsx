@@ -4470,12 +4470,13 @@ function DeepProductSection({ deepResult, seamData, answers, scores }) {
               </span>
             ))}
           </div>
-          <div className="mt-3">
-            {resultCopy.stateLine && <p className="text-[12.5px] sm:text-[13px] text-ink leading-[1.85]">{resultCopy.stateLine}</p>}
-            {resultCopy.causeLine && <p className="mt-1.5 text-[12px] sm:text-[12.5px] text-charcoal/80 leading-[1.85]">{resultCopy.causeLine}</p>}
-            {resultCopy.policyLine && <p className="mt-1.5 text-[12px] sm:text-[12.5px] text-charcoal/80 leading-[1.85]">{resultCopy.policyLine}</p>}
-            {resultCopy.nuanceLine && <p className="mt-1.5 text-[12px] text-charcoal/65 leading-[1.85]">{resultCopy.nuanceLine}</p>}
-          </div>
+          {/* 状態・理由・方向は最上段の結論カードへ移した(重複を避ける)。
+              ここでは補足のニュアンスだけを残す。 */}
+          {resultCopy.nuanceLine && (
+            <div className="mt-3">
+              <p className="text-[12px] text-charcoal/65 leading-[1.85]">{resultCopy.nuanceLine}</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -8563,6 +8564,90 @@ function WhyThisTypeCard({ karte, answers }) {
 }
 
 /* ---------- ResultHero — Pokémon カード風 図鑑プロフィールカード ---------- */
+/* ── 結論カード ──
+   結果の最上段は「説明」ではなく言い切りにする(外部レビュー2026-07-30)。
+   コピーは buildResultCopy が既に生成していて 中盤の優先課題ブロックに埋もれていたものを
+   そのまま引き上げる(新しい主張を作らない=検証済みの言葉だけを使う)。
+   3行: 髪格 / いま乱れている理由 / 選ぶべき方向 ＝「つまり私はこういう髪」を先に確定させる。 */
+function conclusionAfterword(answers, scores) {
+  const a = answers || {}, s = scores || {};
+  const items = Array.isArray(a.items) ? a.items : [];
+  const life  = Array.isArray(a.lifestyle) ? a.lifestyle : [];
+  const cs    = Array.isArray(a.concerns) ? a.concerns : [];
+  const heavyDislike = items.indexOf('heavy') > -1 || items.indexOf('sticky') > -1;
+  if (heavyDislike || a.thickness === 'thin') return '重さを足すより 抜くほうが決まりやすい髪です';
+  if ((s.damage || 0) >= 5 || (s.bleachHistory || 0) >= 3) return 'ツヤは増やすものではなく 戻すものです';
+  if (life.indexOf('noTime') > -1) return '合う一本が決まると 朝の手数が減ります';
+  if (cs.indexOf('frizz') > -1) return '湿気に負けるのではなく 選び方で変わります';
+  return '選び方が変わると 手触りが変わります';
+}
+
+function ConclusionCard({ karte, answers, scores }) {
+  const copy = buildResultCopy(answers, scores);
+  const origin = karte && karte.origin;
+  const head = copy.stateLine;
+  if (!origin && !head) return null;
+  // 必要な役割 — 実際の提案構成と同じ条件で出す(見せかけの役割は作らない)
+  const cs = (answers && Array.isArray(answers.concerns)) ? answers.concerns : [];
+  const sc = scores || {};
+  const age = answers && answers.age;
+  const isAge30Plus = age === '30s' || age === '40s' || age === '50plus';
+  const needScalp = isAge30Plus || cs.indexOf('thinning') > -1 || cs.indexOf('volumeDown') > -1
+    || cs.indexOf('topFlat') > -1 || (answers && answers.thickness === 'thin');
+  const needMask = (typeof isHeavyDamage === 'function' && isHeavyDamage(sc)) || (sc.bleachHistory || 0) >= 4;
+  const roles = ['洗う', '補修', '仕上げ'];
+  if (needScalp) roles.push('頭皮');
+  if (needMask) roles.push('週1の集中補修');
+  const afterword = conclusionAfterword(answers, scores);
+  return (
+    <section className="mt-6 anim-fade-up" style={{ animationDelay: '40ms' }}>
+      <div className="rounded-[3px] border border-gold/45 bg-gradient-to-b from-cream/70 via-white to-cream/40 shadow-card px-5 py-6 sm:px-7 sm:py-8">
+        <p className="font-mono tracking-widest2 text-[10px] uppercase text-gold">— Conclusion</p>
+        {head && (
+          <h2 className="mt-3 font-serif text-[19px] sm:text-[24px] leading-[1.65] text-ink">{head}</h2>
+        )}
+        <div className="mt-5 space-y-3">
+          {origin && (
+            <div className="flex items-baseline gap-3">
+              <span className="shrink-0 w-[6.5em] font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45">あなたの髪格</span>
+              <span className="min-w-0 text-[13px] sm:text-[13.5px] text-ink leading-snug">
+                <span className="font-serif text-[15px] sm:text-[16px]">{origin.name}</span>
+                {origin.code && <span className="ml-2 font-mono text-[10px] text-gold">{origin.code}</span>}
+              </span>
+            </div>
+          )}
+          {copy.causeLine && (
+            <div className="flex items-baseline gap-3">
+              <span className="shrink-0 w-[6.5em] font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45">乱れている理由</span>
+              <span className="min-w-0 text-[12.5px] sm:text-[13px] text-charcoal/85 leading-[1.85]">{copy.causeLine}</span>
+            </div>
+          )}
+          {copy.policyLine && (
+            <div className="flex items-baseline gap-3">
+              <span className="shrink-0 w-[6.5em] font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45">選ぶべき方向</span>
+              <span className="min-w-0 text-[12.5px] sm:text-[13px] text-charcoal/85 leading-[1.85]">{copy.policyLine}</span>
+            </div>
+          )}
+        </div>
+        <div className="mt-5 pt-4 border-t border-line/70">
+          <p className="font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45">今のあなたに必要な役割</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {roles.map((r, i) => (
+              <span key={i} className="inline-flex items-center gap-1.5 bg-white border border-gold/35 rounded-full pl-2 pr-3 py-1">
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-gold text-white font-mono text-[9px] nums" style={{ lineHeight: 1 }}>{i + 1}</span>
+                <span className="text-[12px] text-ink whitespace-nowrap">{r}</span>
+              </span>
+            ))}
+          </div>
+        </div>
+        {afterword && (
+          <p className="mt-5 font-serif text-[14px] sm:text-[15.5px] text-ink leading-[1.8] border-l-2 border-gold pl-3.5">{afterword}</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function ResultHero({ karte, answers, onSaveImage, onShare, onSavePdf }) {
   if (!karte) return null;
   const { origin, radar, mainGoal, gender, damageTier, damageHeavy } = karte;
@@ -11451,6 +11536,9 @@ function Result({ answers, onRestart, onCollection }) {
           onSaveImage={(mode) => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode)}
           onShare={() => shareKarteLink(karte?.origin)}
         />
+
+        {/* ━━━━━ 結論(言い切り＋3行＋必要な役割) ━━━━━ */}
+        <ConclusionCard karte={karte} answers={answers} scores={scores} />
 
         {/* ━━━━━ 答えへの近道 ━━━━━
             型の発表から「まず使う3〜5本」までに 物語・優先度チャート・熱の注意が入るため

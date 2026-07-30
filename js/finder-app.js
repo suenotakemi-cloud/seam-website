@@ -1,4 +1,3 @@
-/* AUTO-GENERATED from js/finder-app.jsx by CI (build-finder.js). DO NOT EDIT — edit the .jsx source. */
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* =========================================================================
    SEAM Hair Finder
@@ -6160,16 +6159,10 @@ function DeepProductSection({
     }
   }, i + 1), /*#__PURE__*/React.createElement("span", {
     className: "font-serif text-[13px] text-ink whitespace-nowrap"
-  }, c)))), /*#__PURE__*/React.createElement("div", {
+  }, c)))), resultCopy.nuanceLine && /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
-  }, resultCopy.stateLine && /*#__PURE__*/React.createElement("p", {
-    className: "text-[12.5px] sm:text-[13px] text-ink leading-[1.85]"
-  }, resultCopy.stateLine), resultCopy.causeLine && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1.5 text-[12px] sm:text-[12.5px] text-charcoal/80 leading-[1.85]"
-  }, resultCopy.causeLine), resultCopy.policyLine && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1.5 text-[12px] sm:text-[12.5px] text-charcoal/80 leading-[1.85]"
-  }, resultCopy.policyLine), resultCopy.nuanceLine && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1.5 text-[12px] text-charcoal/65 leading-[1.85]"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-[12px] text-charcoal/65 leading-[1.85]"
   }, resultCopy.nuanceLine))), /*#__PURE__*/React.createElement(SaleFinderBanner, null), primary.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-7",
     id: "deep-primary"
@@ -11779,6 +11772,99 @@ function WhyThisTypeCard({
 }
 
 /* ---------- ResultHero — Pokémon カード風 図鑑プロフィールカード ---------- */
+/* ── 結論カード ──
+   結果の最上段は「説明」ではなく言い切りにする(外部レビュー2026-07-30)。
+   コピーは buildResultCopy が既に生成していて 中盤の優先課題ブロックに埋もれていたものを
+   そのまま引き上げる(新しい主張を作らない=検証済みの言葉だけを使う)。
+   3行: 髪格 / いま乱れている理由 / 選ぶべき方向 ＝「つまり私はこういう髪」を先に確定させる。 */
+function conclusionAfterword(answers, scores) {
+  const a = answers || {},
+    s = scores || {};
+  const items = Array.isArray(a.items) ? a.items : [];
+  const life = Array.isArray(a.lifestyle) ? a.lifestyle : [];
+  const cs = Array.isArray(a.concerns) ? a.concerns : [];
+  const heavyDislike = items.indexOf('heavy') > -1 || items.indexOf('sticky') > -1;
+  if (heavyDislike || a.thickness === 'thin') return '重さを足すより 抜くほうが決まりやすい髪です';
+  if ((s.damage || 0) >= 5 || (s.bleachHistory || 0) >= 3) return 'ツヤは増やすものではなく 戻すものです';
+  if (life.indexOf('noTime') > -1) return '合う一本が決まると 朝の手数が減ります';
+  if (cs.indexOf('frizz') > -1) return '湿気に負けるのではなく 選び方で変わります';
+  return '選び方が変わると 手触りが変わります';
+}
+function ConclusionCard({
+  karte,
+  answers,
+  scores
+}) {
+  const copy = buildResultCopy(answers, scores);
+  const origin = karte && karte.origin;
+  const head = copy.stateLine;
+  if (!origin && !head) return null;
+  // 必要な役割 — 実際の提案構成と同じ条件で出す(見せかけの役割は作らない)
+  const cs = answers && Array.isArray(answers.concerns) ? answers.concerns : [];
+  const sc = scores || {};
+  const age = answers && answers.age;
+  const isAge30Plus = age === '30s' || age === '40s' || age === '50plus';
+  const needScalp = isAge30Plus || cs.indexOf('thinning') > -1 || cs.indexOf('volumeDown') > -1 || cs.indexOf('topFlat') > -1 || answers && answers.thickness === 'thin';
+  const needMask = typeof isHeavyDamage === 'function' && isHeavyDamage(sc) || (sc.bleachHistory || 0) >= 4;
+  const roles = ['洗う', '補修', '仕上げ'];
+  if (needScalp) roles.push('頭皮');
+  if (needMask) roles.push('週1の集中補修');
+  const afterword = conclusionAfterword(answers, scores);
+  return /*#__PURE__*/React.createElement("section", {
+    className: "mt-6 anim-fade-up",
+    style: {
+      animationDelay: '40ms'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-[3px] border border-gold/45 bg-gradient-to-b from-cream/70 via-white to-cream/40 shadow-card px-5 py-6 sm:px-7 sm:py-8"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[10px] uppercase text-gold"
+  }, "\u2014 Conclusion"), head && /*#__PURE__*/React.createElement("h2", {
+    className: "mt-3 font-serif text-[19px] sm:text-[24px] leading-[1.65] text-ink"
+  }, head), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 space-y-3"
+  }, origin && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "shrink-0 w-[6.5em] font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45"
+  }, "\u3042\u306A\u305F\u306E\u9AEA\u683C"), /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0 text-[13px] sm:text-[13.5px] text-ink leading-snug"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-[15px] sm:text-[16px]"
+  }, origin.name), origin.code && /*#__PURE__*/React.createElement("span", {
+    className: "ml-2 font-mono text-[10px] text-gold"
+  }, origin.code))), copy.causeLine && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "shrink-0 w-[6.5em] font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45"
+  }, "\u4E71\u308C\u3066\u3044\u308B\u7406\u7531"), /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0 text-[12.5px] sm:text-[13px] text-charcoal/85 leading-[1.85]"
+  }, copy.causeLine)), copy.policyLine && /*#__PURE__*/React.createElement("div", {
+    className: "flex items-baseline gap-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "shrink-0 w-[6.5em] font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/45"
+  }, "\u9078\u3076\u3079\u304D\u65B9\u5411"), /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0 text-[12.5px] sm:text-[13px] text-charcoal/85 leading-[1.85]"
+  }, copy.policyLine))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-5 pt-4 border-t border-line/70"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono tracking-widest2 text-[9px] uppercase text-charcoal/45"
+  }, "\u4ECA\u306E\u3042\u306A\u305F\u306B\u5FC5\u8981\u306A\u5F79\u5272"), /*#__PURE__*/React.createElement("div", {
+    className: "mt-2 flex flex-wrap gap-1.5"
+  }, roles.map((r, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    className: "inline-flex items-center gap-1.5 bg-white border border-gold/35 rounded-full pl-2 pr-3 py-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "inline-flex items-center justify-center w-4 h-4 rounded-full bg-gold text-white font-mono text-[9px] nums",
+    style: {
+      lineHeight: 1
+    }
+  }, i + 1), /*#__PURE__*/React.createElement("span", {
+    className: "text-[12px] text-ink whitespace-nowrap"
+  }, r))))), afterword && /*#__PURE__*/React.createElement("p", {
+    className: "mt-5 font-serif text-[14px] sm:text-[15.5px] text-ink leading-[1.8] border-l-2 border-gold pl-3.5"
+  }, afterword)));
+}
 function ResultHero({
   karte,
   answers,
@@ -15028,6 +15114,10 @@ function Result({
     answers: answers,
     onSaveImage: mode => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode),
     onShare: () => shareKarteLink(karte?.origin)
+  }), /*#__PURE__*/React.createElement(ConclusionCard, {
+    karte: karte,
+    answers: answers,
+    scores: scores
   }), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 anim-fade-up",
     style: {
