@@ -1224,6 +1224,7 @@ const API = {
   async savePass(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async voidPass(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listKartePhotos(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photos?name='+encodeURIComponent(name),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.photos:null;}catch{return null;} },
+  async listCounseling(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/counseling?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.sheets:null;}catch{return null;} },
   async listCustNotes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/custnotes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.notes:null;}catch{return null;} },
   async saveCustNote(n){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/custnotes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(n)});return r.ok;}catch{return null;} },
   async saveKartePhoto(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photo',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
@@ -3444,6 +3445,9 @@ function openCustomer(key){
     <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd>
       <dt>累計売上 (LTV)</dt><dd>${c.paidVisits>0?`<b style="color:var(--navy)">¥${c.sales.toLocaleString()}</b>　<span style="color:var(--sub);font-size:12px">会計${c.paidVisits}回・平均 ¥${Math.round(c.sales/c.paidVisits).toLocaleString()}</span>`:`<span style="color:var(--sub)">会計記録なし（目安 ¥${c.spend.toLocaleString()}）</span>`}</dd>
       <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${escH(c.note)}</dd>`:''}</dl>
+    <div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><div style="font-size:12px;font-weight:700;color:var(--sub)">カウンセリングシート・同意書</div>
+      <a class="btn small ghost" id="cs-open" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 9px;font-size:11.5px">iPadで記入してもらう ↗</a></div>
+    <div id="cs-list" style="font-size:12.5px;color:var(--sub);margin-bottom:10px">読み込み中…</div>
     <div style="font-size:12px;font-weight:700;color:var(--sub);margin:8px 0 6px">施術写真（before / after）</div>
     <div id="kp-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px"><div style="grid-column:1/-1;color:var(--sub);font-size:12px">読み込み中…</div></div>
     <label class="btn small ghost" style="display:inline-block;cursor:pointer">＋ 写真を追加<input id="kp-file" type="file" accept="image/*" capture="environment" style="display:none"></label>
@@ -3457,6 +3461,27 @@ function openCustomer(key){
    const saveKn=()=>{const n={key:ck,caution:ta.value.trim(),birthday:bd.value};db.custnotes[ck]=n;save();API.saveCustNote(n);
      if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none'},1500);}};
    if(ta)ta.onblur=saveKn; if(bd)bd.onchange=saveKn;}
+  // ---- カウンセリングシート: 記入リンクに氏名/電話/種別を引き継ぐ(スタッフが打ち直さない)
+  {const lk=document.getElementById('cs-open');
+   if(lk){const kind=/スパ|ヘッドスパ|SPA/i.test(topKey(c.menus)||'')?'spa':'hair';
+     lk.href='counseling.html?'+new URLSearchParams({name:c.name||'',phone:c.phone||'',kind}).toString();}}
+  // ---- カウンセリングシート: 直近の提出を表示(同意・注意事項・署名の有無)
+  API.listCounseling(c.key).then(list=>{
+    const el=document.getElementById('cs-list');if(!el)return;
+    if(!list||!list.length){el.innerHTML='<span style="color:var(--sub)">まだ提出がありません（来店時にiPadでご記入いただけます）</span>';return;}
+    el.innerHTML=list.slice(0,3).map(x=>{
+      const a=x.answers||{},cn=x.consent||{};
+      const chips=[].concat(a.concern||[],a.history||[],a.body||[]).slice(0,6);
+      return `<div style="background:#faf8f4;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px">
+        <div style="font-weight:800;color:var(--ink)">${x.date?x.date.replace(/-/g,'/'):''}　${x.kind==='spa'?'💆 スパ':'✂️ ヘア'}
+          ${cn.agreed?'<span class="rep" style="background:#eef7f0;border-color:#c6e6d3;color:#0c7a41">同意済み</span>':''}
+          ${x.sign?'<span class="rep">署名あり</span>':''}
+          ${cn.photo?'<span class="rep">写真掲載OK</span>':''}</div>
+        ${a.caution?`<div style="color:#b4302b;font-weight:800;margin-top:3px">⚠ ${escH(a.caution)}</div>`:''}
+        ${a.want?`<div style="margin-top:3px">🗣 ${escH(a.want)}</div>`:''}
+        ${chips.length?`<div style="margin-top:3px">${chips.map(v=>escH(v)).join('・')}</div>`:''}
+      </div>`}).join('');
+  });
   // ---- 施術写真: 認証付きAPIから取得して描画・追加はcanvasで1100pxに圧縮してからD1へ ----
   const kpRender=(photos)=>{
     const grid=document.getElementById('kp-grid');if(!grid)return;

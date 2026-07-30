@@ -87,6 +87,21 @@ flowchart LR
 | 予約ページ | 顧客フローのプレビュー |
 | チャネル連携 | 各媒体の接続方式の案内・予約リンク生成・メール取込シミュレータ |
 
+### 2.3 カウンセリングシート・同意書（店頭 iPad／`booking/counseling.html`・2026-07-30）
+来店直後にiPadで記入してもらう独立ページ（管理画面とは別URL・noindex）。全7セクション・上下スクロールのみ（ページ送りなし＝高齢の方でも迷わない）。
+1. **お客様について**：お名前（必須）／電話番号／お誕生月
+2. **今日のご希望**：ヘア⇄ヘッドスパ切替。悩みチップ（複数可・ヘア9種／スパ8種）＋なりたいイメージ自由記入
+3. **これまでの施術**：ブリーチ／黒染め／ヘナ／パーマ／縮毛矯正／セルフカラー等（複数可）→**該当時は薬剤リスクの注意文を自動表示**、最後の施術時期
+4. **お体のこと**：妊娠中・授乳中／アレルギー／皮膚疾患／通院中 等（複数可）＋**⚠自由記入（アレルギー・薬剤NG）**
+5. **おうちでのお手入れ**：使用シャンプー・アイロン頻度・お困り（→店販提案の材料）
+6. **ご確認とご同意**：6項目（仕上がりの個人差／薬剤リスク／健康状態の申告／貴重品／キャンセル料率／個人情報の利用目的）→**同意チェック必須**（未チェックはサーバ側でも400で拒否）＋【任意】SNS・HP写真掲載の可否
+7. **ご署名**：指またはペンで手書き（canvas・PNG化して保存）
+
+- 入口：`counseling.html?name=&phone=&kind=hair|spa`（**顧客カルテの「iPadで記入してもらう ↗」から氏名・電話・種別を引き継いで開く**＝スタッフが打ち直さない）
+- 初回のみ**スタッフの初期設定**カードで管理トークンを入力（実際にAPIへ通るか検証してから端末に記憶・以降非表示・印刷時も非表示）
+- 印刷：記入済み＝選んだ項目のみ（4ページ）／白紙のまま押した場合＝選択肢を残した**手書き用シート**（6ページ）として出力
+- 提出後の反映：カルテの「カウンセリングシート・同意書」に日付／ヘア・スパ／同意済み／署名あり／写真掲載OK／⚠注意／ご要望／選択項目を最新3件表示。**⚠自由記入は顧客の重要メモへ自動マージ＝予約詳細の先頭に赤字警告として出る**（施術前に必ず目に入る）
+
 ---
 
 ## 3. 機能仕様（要約）
@@ -110,6 +125,7 @@ flowchart LR
 - **スマート支払い（HPB）**：支払方法にhpb区分。売上計上・**レジ現金理論残高に不算入**（入金は後日リクルート）。メール取込が「スマート支払い/事前決済」文言をnoteに刻印→会計で自動選択+「店頭での支払いはありません」警告。
 - **自動フォロー（cron毎朝9時JST・LINE連携客のみ・nudgesテーブルで一度きり・30通/回上限）**：
   ①前日リマインド（salon.town生存照合つき＝台帳ドリフト自己修復） ②来店翌日サンクス+Googleクチコミ依頼 ③施術周期の「そろそろ」リマインド+予約リンク（次回予約済みの人には送らない） ④休眠90日呼び戻し+ptプレゼント（winbackPt・既定500）。
+- **カウンセリングシート・同意書（2026-07-30）**：来店時にiPadで記入（§2.3）。同意チェック必須・手書き署名・写真掲載の任意同意。**アレルギー等の⚠は顧客の重要メモへ自動マージし、予約詳細の先頭に赤字警告として出る**。紙運用（白紙印刷して手書き）にも対応。
 - **カルテ写真**：before/after撮影→クライアント側1100px/JPEG圧縮（≦550KB）→保存・拡大・削除。※現状D1格納（R2未有効のため暫定・§6）。
 
 ### 3.1 salon.town へ送る予約データ形式（2026-07-27 オーナー確定／2026-07-26 スパ設備追加・重要）
@@ -162,7 +178,7 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 ### 4.3 自社 Worker エンドポイント（フロント↔D1・§6の独自実装）
 公開（顧客導線・認証不要）：`POST /pay`・`POST /reservations`・**`GET /availability`**（空き判定用・PII無しの占有区間のみ＝顧客ページのキャパ超過防止）・**`GET /precheck?phone=`**（ノーショー履歴→前金必須フラグのみ・PIIレス）・`POST /line/login/state`・`GET /line/login/result`。
 管理（`Authorization: Bearer ADMIN_TOKEN` 必須）：
-`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
+`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／**`GET/POST /counseling`**（カウンセリングシート・同意書。POSTは同意チェック未了を400で拒否・⚠は`customer_notes.caution`へ自動マージ）／`GET/POST /custnotes`（重要メモ・誕生月）／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
 Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFollowups()`（サンクス/周期/休眠・§3）。
 運用ツール（`CLEANUP_TOKEN`＝wrangler secret・オーナー/AI運用専用）：
 `POST /admin/purge-test`（氏名「テスト%」×channel line/own のみD1＋salon.town削除）／`GET /admin/diag-resv`（両店予約の診断読取・add_info付き）／`POST /admin/salon-del?id=`（salon.town予約1件削除＝孤児ミラー掃除）／`POST /admin/salon-patch`（info_js更新＝個室後付け等。**部分dataでも他カラムは無傷を実証済**）／`GET|POST /salon/noname`（無記名ミラーの孤児判定つき掃除・**親生存チェックで本物予約のミラーは残す**）。
@@ -187,6 +203,8 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 | `gifts` | ギフト券（id=券面コードG-XXXX-XXXX・残高制で分割利用可・利用履歴uses[]・無効化はvoidフラグで履歴保全）。発行はレジ→店販行「ギフト券」として会計＝売上/レジ現金が正しく揃う。券面印刷あり。**有効期限は既定6ヶ月＝資金決済法(前払式支払手段)の適用外に収める**（延ばす場合は届出要否をオーナー確認） | CUEPONの`ec/discount`/チケット系へ移行（統合時） |
 | `passes` | 回数券・パス（id=P-XXXX-XXXX・remaining残回数・1会計1消化=施術分カバー・期限既定6ヶ月・void無効化） | CUEPONのチケット/サブスク系へ移行（統合時） |
 | `karte_photos` | 施術写真（顧客名キー・圧縮JPEG dataURL≦550KB）。**本来はR2が適所だがアカウント未有効(code:10042)のためD1暫定**。R2有効化後にオブジェクトキーへ移行 | R2（`karte/<customer>/<ts>.jpg`）＋CUEPON顧客IDキー |
+| `counseling` | カウンセリングシート・同意書（key=電話番号 or `n:氏名`／answers JSON／consent JSON=同意・写真掲載／sign=署名PNG dataURL／kind=hair\|spa）。**同意は必須・サーバ側でも検証**。⚠自由記入は`customer_notes.caution`へ自動マージ | CUEPON顧客の付帯情報（`account.info_js`／カルテ系API・要エンジニア確認）。同意記録は法的保管が要るため移行時も履歴を落とさない |
+| `customer_notes` | 顧客の⚠重要メモ（アレルギー・薬剤NG）＋誕生月。予約詳細の先頭に赤字警告として出す | `account.info_js`（顧客属性） |
 | `nudges` | 自動フォローの送信済みログ（kind×keyで一度きり保証） | （汎用通知基盤に置換） |
 
 ---
@@ -207,6 +225,8 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 10. **ギフト券/回数券（`gifts`/`passes`）** — CUEPONの discount/チケット系未使用。前受金の負債管理も独自。
 11. **自動フォロー（cron `runFollowups`）** — 通知基盤は Worker cron＋LINE Push 直叩き。CUEPON/汎用通知基盤ができたら移行。
 12. **カルテ写真（`karte_photos`）** — R2未有効のためD1にdataURL格納（暫定）。**R2有効化が最初の解消項目**。
+
+13. **カウンセリングシート・同意書（`counseling`/`customer_notes`）** — CUEPONの顧客カルテ/同意記録APIを使わず自社D1。**同意書は法的な保管物**なので、統合時は履歴を消さずに移行すること（保管期間・削除要求への対応もCUEPON側の個人情報方針に合わせる）。署名画像は現状D1のdataURL（写真と同じくR2が適所）。
 
 ---
 
@@ -238,6 +258,7 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 | 認証・権限 | `/login`＋`account.permission`（service/dealer/company/shop/shop_staff/一般）RBAC | 00/02 |
 | 自社ポイント | `/save/point`（付与）・`/use/point`（利用・`use_type_idx:0`必須・所属shopスコープ）・`/get/point`（account_id直下） | 08 |
 | ギフト券・回数券 | `ec/discount`／チケット系（要エンジニア確認：該当API） | 07 |
+| カウンセリングシート・同意書 | CUEPON顧客の付帯情報／カルテ系API（要エンジニア確認）。署名画像はR2 | — |
 | カルテ写真 | R2オブジェクトストレージ（CUEPON顧客IDキー） | — |
 
 **移行順（影響小→大）**：①メニュー item_id 照合 → ②在庫 ec/stock → ③会計 ec/order → ④割引 ec/discount → ⑤決済 ec/payment → ⑥認証 permission。**着手はエンジニアの「移行OK」合図と、予約トークン(shop権限)で ec系を叩けるかの確認後**。

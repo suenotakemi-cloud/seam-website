@@ -313,9 +313,49 @@ export default {
     if (p.endsWith('/passes') && m === 'GET') return A() || handleGetPasses(env, cors);
     if (p.endsWith('/passes') && m === 'POST') return A() || handlePostPass(request, env, cors);
     if (p.endsWith('/passes') && m === 'DELETE') return A() || handleDeletePass(url, env, cors);
+    // カウンセリングシート＋同意書（来店時にiPadで記入 → カルテに保存）
+    if (p.endsWith('/counseling') && m === 'POST') {
+      // スタッフの管理トークン、または運用トークン(検証用)のどちらかで受け付ける
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.name) return json({ error: 'お名前は必須です' }, 400, cors);
+      if (!o.consent || !o.consent.agreed) return json({ error: '同意のチェックが必要です' }, 400, cors);
+      const ph = String(o.phone || '').replace(/[^0-9]/g, '');
+      const key = ph || ('n:' + o.name);
+      const id = 'cs' + crypto.randomUUID().slice(0, 8);
+      await env.DB.prepare(
+        `INSERT INTO counseling (id,key,name,phone,kind,answers,consent,sign,staff,date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(id, key, o.name, o.phone || '', o.kind || 'hair', JSON.stringify(o.answers || {}),
+        JSON.stringify(o.consent || {}), (o.sign || '').slice(0, 300000), o.staff || '',
+        o.date || new Date().toISOString().slice(0, 10), new Date().toISOString()).run();
+      // 施術上の注意（アレルギー等）はカルテの重要メモにも自動反映＝施術前に必ず目に入る
+      const caution = (o.answers && o.answers.caution || '').trim();
+      if (caution) {
+        const prev = await env.DB.prepare('SELECT caution FROM customer_notes WHERE key=?').bind(key).first().catch(() => null);
+        const merged = prev && prev.caution && prev.caution.includes(caution) ? prev.caution
+          : [(prev && prev.caution) || '', caution].filter(Boolean).join(' / ');
+        await env.DB.prepare('INSERT OR REPLACE INTO customer_notes (key,caution,birthday,updated_at) VALUES (?,?,COALESCE((SELECT birthday FROM customer_notes WHERE key=?),?),?)')
+          .bind(key, merged, key, o.answers.birthMonth || '', new Date().toISOString()).run().catch(() => {});
+      }
+      return json({ ok: true, id }, 200, cors);
+    }
+    if (p.endsWith('/counseling') && m === 'GET') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const key = url.searchParams.get('key');
+      const res = key
+        ? await env.DB.prepare('SELECT * FROM counseling WHERE key=? ORDER BY created_at DESC LIMIT 20').bind(key).all()
+        : await env.DB.prepare('SELECT id,key,name,phone,kind,date,created_at FROM counseling ORDER BY created_at DESC LIMIT 100').all();
+      return json({ ok: true, sheets: (res.results || []).map(r => ({ ...r,
+        answers: (() => { try { return JSON.parse(r.answers || '{}'); } catch { return {}; } })(),
+        consent: (() => { try { return JSON.parse(r.consent || '{}'); } catch { return {}; } })() })) }, 200, cors);
+    }
     // 顧客ノート(重要メモ/誕生月)
     if (p.endsWith('/custnotes') && m === 'GET') {
-      const auth = A(); if (auth) return auth;
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
       if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
       await ensureRegisterTables(env);
       const res = await env.DB.prepare('SELECT * FROM customer_notes LIMIT 2000').all();
@@ -891,7 +931,17 @@ async function handlePurgeTest(url, env, cors) {
     await env.DB.prepare('DELETE FROM reservations WHERE id=?').bind(r.id).run();
     deleted.push({ id: r.id, name: r.name, date: r.date, start: r.start, salon_id: r.salon_id || '' });
   }
-  return json({ ok: true, count: deleted.length, deleted }, 200, cors);
+  // 検証で作ったカウンセリングシート・顧客ノートも一緒に掃除（テスト名のみ）
+  let cs = 0;
+  try {
+    const t = await env.DB.prepare("SELECT id,key FROM counseling WHERE name LIKE 'テスト%' OR name LIKE '検証%' OR name='x'").all();
+    for (const r of (t.results || [])) {
+      await env.DB.prepare('DELETE FROM counseling WHERE id=?').bind(r.id).run();
+      await env.DB.prepare('DELETE FROM customer_notes WHERE key=?').bind(r.key).run().catch(() => {});
+      cs++;
+    }
+  } catch (e) {}
+  return json({ ok: true, count: deleted.length, counseling: cs, deleted }, 200, cors);
 }
 
 async function handleGetReservations(url, env, cors) {
@@ -1041,6 +1091,9 @@ async function ensureRegisterTables(env) {
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS gifts (id TEXT PRIMARY KEY, label TEXT DEFAULT '', amount INTEGER DEFAULT 0, balance INTEGER DEFAULT 0, buyer TEXT DEFAULT '', memo TEXT DEFAULT '', uses TEXT DEFAULT '[]', issued TEXT DEFAULT '', expires TEXT DEFAULT '', void INTEGER DEFAULT 0, created_at TEXT)`),
     // 回数券・パス(スパ4回券等)。remaining=残回数・1会計で1回消化(施術分をカバー)。期限既定6ヶ月。
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS passes (id TEXT PRIMARY KEY, label TEXT DEFAULT '', customer TEXT DEFAULT '', price INTEGER DEFAULT 0, total INTEGER DEFAULT 0, remaining INTEGER DEFAULT 0, uses TEXT DEFAULT '[]', issued TEXT DEFAULT '', expires TEXT DEFAULT '', void INTEGER DEFAULT 0, created_at TEXT)`),
+    // 来店時のカウンセリングシート＋同意書。key=custKey(電話番号 or n:氏名)・sign=手書き署名(dataURL)
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS counseling (id TEXT PRIMARY KEY, key TEXT, name TEXT, phone TEXT, kind TEXT, answers TEXT, consent TEXT, sign TEXT, staff TEXT, date TEXT, created_at TEXT)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_cs_key ON counseling(key)`),
     // メールのワンタイムパスワード(本人確認)。10分有効・5回まで・60秒に1回送信
     env.DB.prepare(`CREATE TABLE IF NOT EXISTS otp (email TEXT PRIMARY KEY, code TEXT, expires TEXT, verified INTEGER DEFAULT 0, tries INTEGER DEFAULT 0, created_at TEXT)`),
     // 顧客ノート(重要メモ=アレルギー等の注意事項・誕生月)。key=custKey(電話番号 or n:氏名)
