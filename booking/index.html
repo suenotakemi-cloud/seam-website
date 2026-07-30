@@ -1083,6 +1083,7 @@ body.customer .phone.spa{background:#f7f8f3}
 <section class="view" id="v-shift">
   <h2>シフト・営業時間</h2>
   <p class="lead">営業時間 11:00–20:00・不定休。休みは「日付」で指定します（その日は予約枠を出しません）。予約の空き枠に即反映されます</p>
+  <div id="shift-month"></div>
   <div class="card" style="margin-bottom:14px">
     <h3 style="font-size:14.5px;margin-bottom:8px">サロン休業日（この日は全員休み）</h3>
     <div class="shrow-hours" style="margin-top:0;margin-bottom:10px"><input type="date" id="closedDateInput" style="border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700"><button id="closedDateAdd" class="badge" style="background:var(--accent);border:none;cursor:pointer;padding:7px 14px">休業日に追加</button></div>
@@ -1312,10 +1313,54 @@ if(!localStorage.getItem('stb_shifts_v2')){
   try{saveShifts();localStorage.setItem('stb_shifts_v2','1');}catch(e){}
 }
 function saveShifts(){localStorage.setItem('stb_shifts',JSON.stringify(SHIFTS))}
+/* 管理画面の起動時にサーバの確定シフトを取り込む（全端末で同じ答えにする）。 */
+async function pullShifts(){
+  const from=dkey(today()), to=dkey(addDays(today(),120));
+  const j=await API.getShifts(from,to);
+  if(!j||!j.ok)return;
+  DUTY_BY_DATE={};
+  (j.shifts||[]).filter(x=>x.status==='fixed').forEach(x=>{
+    (DUTY_BY_DATE[x.date]=DUTY_BY_DATE[x.date]||{})[x.staff_id]={kind:x.kind,start:x.start,end:x.end};
+  });
+  if(Array.isArray(j.closed))SHIFTS.closedDates=[...new Set([...(SHIFTS.closedDates||[]),...j.closed])];
+  SHIFT_WANT={};
+  (j.shifts||[]).filter(x=>x.status==='want').forEach(x=>{
+    (SHIFT_WANT[x.date]=SHIFT_WANT[x.date]||{})[x.staff_id]={kind:x.kind,start:x.start,end:x.end,note:x.note};
+  });
+  refreshAll();
+}
+let SHIFT_WANT={};   // スタッフが出した希望 {日付:{スタッフID:{...}}}
+/* サーバの確定シフトを SHIFTS に反映する。
+ * シフトは長らく端末のlocalStorageだけにあり、店長のパソコンで入れた休みが
+ * お客様のスマホに伝わっていなかった（休みの日に予約が取れる状態だった）。
+ * 確定シフトが入っている日だけ上書きし、入っていない日は今までどおり扱う。 */
+let DUTY_BY_DATE={};   // {日付:{スタッフID:{kind,start,end}}}
+function applyServerDuty(j){
+  if(!j)return;
+  if(Array.isArray(j.closed)){
+    // サーバの休業日を取り込む（端末側の指定と合わせる）
+    const set=new Set([...(SHIFTS.closedDates||[]),...j.closed]);
+    SHIFTS.closedDates=[...set];
+  }
+  if(Array.isArray(j.duty)){
+    DUTY_BY_DATE={};
+    j.duty.forEach(d=>{(DUTY_BY_DATE[d.date]=DUTY_BY_DATE[d.date]||{})[d.staffId]={kind:d.kind,start:d.start,end:d.end};});
+  }
+}
 // 休業日判定: 固定定休曜日 or 個別指定の休業日(YYYY-MM-DD)
 function isClosedDay(dayKey){return SHIFTS.closedDays.includes(new Date(dayKey).getDay())||(SHIFTS.closedDates||[]).includes(dayKey)}
 function staffOnDuty(sid,dayKey,t,end){ // その枠でスタッフが勤務中か
   if(isClosedDay(dayKey))return false;           // サロン休業日は全員休み
+  /* ★確定シフトが入っている日は、それだけで決める（全端末で同じ答えになる）。
+   * 入っていない日は下の曜日ベースの判定に落ちる＝シフトを入れ始める前と同じ動き。 */
+  const day=DUTY_BY_DATE[dayKey];
+  if(day&&Object.keys(day).length){
+    const d=day[sid];
+    if(!d||d.kind==='off')return false;
+    if(d.start!=null&&t<d.start)return false;
+    if(d.end!=null&&end!=null&&end>d.end)return false;
+    return true;
+  }
   const wd=new Date(dayKey).getDay();
   const s=SHIFTS.staff[sid];
   if(!s||!s.days.includes(wd))return false;      // 勤務曜日でない
@@ -1435,6 +1480,9 @@ const API = {
   async sendLineReceipt(checkoutId,phone,shopId){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/receipt/line',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone,shopId})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async lineShopStatus(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/line/shop-status',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async saveLineShopConfig(shopId,liffId,oaUrl){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/line/shop-config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({shopId,liffId,oaUrl})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async getShifts(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+`/shifts?from=${from}&to=${to}`,{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
+  async saveShifts(shifts,closed){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/shifts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({shifts,closed})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async notifyShifts(from,to,shopId){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/shifts/notify',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({from,to,shopId})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async commConfig(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/comm/config',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async saveCommConfig(cfg){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/comm/config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(cfg)});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async staffPasses(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/staff/passes',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
@@ -5278,7 +5326,116 @@ function csCsv(){
   a.download=`カウンセリング集計_${CST.from}_${CST.to}.csv`;a.click();
 }
 
+/* ===== シフト表（希望→確定→LINEで通知）=====
+ * スタッフはスマホ(staff.html)から希望を出す。ここでそれを見て確定する。
+ * 確定したものだけが予約の可否に効き、サーバにも入るので全端末で同じ答えになる。 */
+let SHIFT_MONTH=null;   // 表示中の月の1日
+function shiftMonthKey(){ const d=SHIFT_MONTH||new Date(today().getFullYear(),today().getMonth(),1); return d; }
+function renderShiftMonth(){
+  const box=document.getElementById('shift-month'); if(!box)return;
+  const m0=shiftMonthKey();
+  const y=m0.getFullYear(), mo=m0.getMonth();
+  const last=new Date(y,mo+1,0).getDate();
+  const days=[]; for(let i=1;i<=last;i++)days.push(dkey(new Date(y,mo,i)));
+  const hmv=t=>t==null?'':hm(t);
+  // 希望が出ている日の数
+  const wantCount=days.reduce((n,d)=>n+Object.keys(SHIFT_WANT[d]||{}).length,0);
+  box.innerHTML=`<div class="card" style="margin-bottom:14px">
+    <div class="rep-h" style="align-items:center">
+      <h3 style="font-size:14.5px">🗓 シフト表 ${y}年${mo+1}月</h3>
+      <button class="btn small ghost" id="sm-prev">← 前の月</button>
+      <button class="btn small ghost" id="sm-next">次の月 →</button>
+      <button class="btn small ghost" id="sm-reload">読み込み直す</button>
+    </div>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.75;margin-bottom:10px">
+      スタッフがスマホから出した<b>希望</b>（薄い色）を見て、<b>確定</b>を押してください。<br>
+      確定したシフトだけが予約の空き枠に効きます。<b>お客様のスマホにも伝わります</b>。
+      ${wantCount?`<br><b style="color:var(--accent2,#0a6)">希望が ${wantCount}件 出ています</b>`:''}
+    </div>
+    <div style="overflow-x:auto">
+      <table class="rep-t" style="min-width:${Math.max(560,120+last*46)}px">
+        <thead><tr><th style="position:sticky;left:0;background:var(--card,#fff);z-index:1">スタッフ</th>
+          ${days.map(d=>{const dt=new Date(d);const wd=WD[dt.getDay()];const cl=(SHIFTS.closedDates||[]).includes(d);
+            return `<th style="min-width:44px;text-align:center;${cl?'background:#fff3d6':''}">${dt.getDate()}<br><span style="font-weight:400;font-size:10.5px;color:var(--sub)">${wd}</span></th>`;}).join('')}
+        </tr></thead>
+        <tbody>${STAFF.map(st=>`<tr>
+          <td style="position:sticky;left:0;background:var(--card,#fff);white-space:nowrap;font-weight:800">${escH(st.name)}</td>
+          ${days.map(d=>{
+            const fx=(DUTY_BY_DATE[d]||{})[st.id];
+            const wt=(SHIFT_WANT[d]||{})[st.id];
+            const cl=(SHIFTS.closedDates||[]).includes(d);
+            let lab='', bg='', title='';
+            if(cl){lab='休';bg='#fff3d6';title='サロン休業日';}
+            else if(fx){ if(fx.kind==='off'){lab='休';bg='#ffe9e9';title='確定：お休み';}
+              else{lab='◯';bg='#e8f6ee';title='確定：'+hmv(fx.start)+'〜'+hmv(fx.end);} }
+            else if(wt){ if(wt.kind==='off'){lab='休';bg='#fdf3f3';title='希望：お休み';}
+              else{lab='△';bg='#f3f8f4';title='希望：'+hmv(wt.start)+'〜'+hmv(wt.end);} }
+            else {lab='·';title='未定';}
+            return `<td class="sm-cell" data-s="${st.id}" data-d="${d}" title="${escH(title)}"
+              style="text-align:center;cursor:pointer;background:${bg};font-weight:700;user-select:none">${lab}</td>`;
+          }).join('')}
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div style="font-size:11.5px;color:var(--sub);margin-top:8px">
+      ◯＝確定の出勤　休＝確定のお休み　△＝希望の出勤　·＝未定（今までどおり営業時間ぜんぶ出勤の扱い）<br>
+      マスを押すと 出勤 → 休み → 未定 の順に切り替わります
+    </div>
+    <div class="row" style="margin-top:12px;flex-wrap:wrap;gap:8px">
+      <button class="btn small ghost" id="sm-fill-want">希望をそのまま確定に入れる</button>
+      <button class="btn pay" id="sm-save">この月を確定して保存</button>
+      <button class="btn small ghost" id="sm-notify">確定をLINEで知らせる</button>
+    </div>
+    <div id="sm-msg" style="font-size:12.5px;font-weight:700;margin-top:8px"></div>
+  </div>`;
+  const setMsg=(t,ng)=>{const e=document.getElementById('sm-msg');if(e){e.textContent=t;e.style.color=ng?'var(--danger,#c0392b)':'var(--ok)';}};
+  box.querySelector('#sm-prev').onclick=()=>{SHIFT_MONTH=new Date(y,mo-1,1);renderShiftMonth();};
+  box.querySelector('#sm-next').onclick=()=>{SHIFT_MONTH=new Date(y,mo+1,1);renderShiftMonth();};
+  box.querySelector('#sm-reload').onclick=()=>pullShifts().then(()=>{renderShiftMonth();setMsg('読み込み直しました');});
+  // マスを押して切り替える（出勤→休み→未定）
+  box.querySelectorAll('.sm-cell').forEach(td=>td.onclick=()=>{
+    const sid=td.dataset.s, d=td.dataset.d;
+    const cur=(DUTY_BY_DATE[d]||{})[sid];
+    const sh=SHIFTS.staff[sid]||{open:OPEN,close:CLOSE};
+    DUTY_BY_DATE[d]=DUTY_BY_DATE[d]||{};
+    if(!cur)DUTY_BY_DATE[d][sid]={kind:'work',start:sh.open,end:sh.close};
+    else if(cur.kind==='work')DUTY_BY_DATE[d][sid]={kind:'off',start:null,end:null};
+    else delete DUTY_BY_DATE[d][sid];
+    renderShiftMonth();
+  });
+  box.querySelector('#sm-fill-want').onclick=()=>{
+    let n=0;
+    days.forEach(d=>{const w=SHIFT_WANT[d]||{};
+      for(const sid in w){DUTY_BY_DATE[d]=DUTY_BY_DATE[d]||{};
+        const sh=SHIFTS.staff[sid]||{open:OPEN,close:CLOSE};
+        DUTY_BY_DATE[d][sid]=w[sid].kind==='off'?{kind:'off',start:null,end:null}
+          :{kind:'work',start:w[sid].start!=null?w[sid].start:sh.open,end:w[sid].end!=null?w[sid].end:sh.close};
+        n++;}});
+    renderShiftMonth();
+    setMsg(n?`希望 ${n}件を入れました。内容を確かめて「この月を確定して保存」を押してください`:'希望はまだ出ていません',!n);
+  };
+  box.querySelector('#sm-save').onclick=async(e)=>{
+    const b=e.target;b.disabled=true;b.textContent='保存中…';
+    const rows=[];
+    days.forEach(d=>{const day=DUTY_BY_DATE[d]||{};
+      for(const sid in day)rows.push({staffId:sid,date:d,kind:day[sid].kind,start:day[sid].start,end:day[sid].end});});
+    const r=await API.saveShifts(rows,SHIFTS.closedDates||[]);
+    b.disabled=false;b.textContent='この月を確定して保存';
+    if(r&&r.ok){setMsg(`確定しました（${r.saved}件）。お客様の予約画面にも反映されます`);refreshAll();}
+    else setMsg((r&&r.error)||'保存できませんでした',true);
+  };
+  box.querySelector('#sm-notify').onclick=async(e)=>{
+    const b=e.target;b.disabled=true;b.textContent='送信中…';
+    const r=await API.notifyShifts(days[0],days[days.length-1],SHOP_ID);
+    b.disabled=false;b.textContent='確定をLINEで知らせる';
+    if(r&&r.ok){
+      const ng=(r.noLine||[]).map(id=>(STAFF.find(x=>x.id===id)||{}).name||id);
+      setMsg(`${r.sent}人に送りました`+(ng.length?`／LINEが繋がっていない方: ${ng.join('・')}`:''),!r.sent);
+    } else setMsg((r&&r.error)||'送れませんでした',true);
+  };
+}
 function renderShift(){
+  renderShiftMonth();
   const cr=document.getElementById('closedrow');if(!cr)return;
   // --- サロン休業日（日付指定・その日は全員休み） ---
   const cdl=document.getElementById('closedDatesList');
@@ -5419,7 +5576,7 @@ function refreshAll(){
 }
 
 /* ===== 管理ログイン（トークンゲート）===== */
-function startAdminData(){ syncFromD1(); syncRegisterFromD1(); }   // 認証OK後にD1(顧客PII・売上)をロード
+function startAdminData(){ syncFromD1(); syncRegisterFromD1(); pullShifts(); }   // 認証OK後にD1(顧客PII・売上・シフト)をロード
 async function verifyAdmin(tok){ try{const d=dkey(today());const r=await fetch(API_BASE+'/reservations?from='+d+'&to='+d,{headers:{'Authorization':'Bearer '+tok}});return r.status;}catch(e){return 0;} }
 async function initAdmin(){
   if(ADMIN_TOKEN && (await verifyAdmin(ADMIN_TOKEN))===200){ startAdminData(); return; }
@@ -5462,8 +5619,12 @@ function enterCustomerMode(){
       if(!r.ok)return; const j=await r.json();
       if(j&&j.ok&&Array.isArray(j.busy)){
         db.reservations=j.busy.map((b,i)=>({id:'busy'+i,date:b.date,staffId:b.staffId,start:b.start,end:b.end,menuId:(MENUS[0]||{}).id||'',status:'booked',name:'',channel:'hpb',hpbBlocked:true}));
-        refreshAll();
       }
+      /* ★確定シフトをサーバから受け取る。
+       * お客様の端末にはシフトが無いので、これが無いと
+       * 「全員が毎日ぜんぶ出勤」と思い込み、休みの日に予約できてしまう。 */
+      applyServerDuty(j);
+      refreshAll();
     }catch(e){}
   })();
   document.body.classList.add('customer');

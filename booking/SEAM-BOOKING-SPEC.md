@@ -407,6 +407,26 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 - **API**：`POST /receipt/token`（合言葉の発行・管理）／`POST /line/link`（お客様・合言葉+IDトークン）／`GET /member/me?idToken=`（お客様・自分の会員証と履歴）／`GET /member/lookup?code=`（レジ・管理）／`POST /receipt/line`（レジからLINEへ直接送る）／`POST /line/backfill`（予約でLINE連携済みの方を顧客台帳へ取り込む）。
 - **テーブル**：`members(code, cust_key, line_user_id, name, created_at)`・`receipt_tokens(token, checkout_id, cust_key, created_at, used_at)`。`customer_notes` に `line_user_id / line_name / line_linked_at` を追加。
 - **顧客の同一性**：既存方針どおり **電話番号がキー**（`cust_key`）。電話が無い会計は `n:氏名` を使う暫定キー。
+## 6.9 シフト（希望→確定→LINEで通知・2026-07-30）
+
+**⚠️ここは穴を塞いだ修正を含む。** それまでシフトは端末の localStorage (`stb_shifts`) だけにあり、サーバにも他端末にも伝わっていなかった。お客様の予約画面は同じ `index.html`（`?src=` 付き＝`IS_CUSTOMER`）で、空き枠の判定 `staffOnDuty()` はお客様のスマホの localStorage を読む。お客様の端末にはシフトが無いので **「全員が毎日ぜんぶ出勤」と解釈され、スタイリストの休みが予約をブロックしていなかった**。サーバもシフトを知らないので弾けなかった。
+
+### 直した形
+
+- **D1 `shifts(staff_id, date, kind, start, end, note, status, updated_at)`**（PK＝`staff_id,date,status`）。`kind` は `work`/`off`、`status` は `want`（スタッフの希望）/`fixed`（店長の確定）。**予約の可否に効くのは `fixed` だけ。**
+- **サロン休業日**は D1 `settings.closed_dates`（JSON配列）。
+- **`GET /availability` が `duty` と `closed` を返す**（出勤の有無と勤務時間だけ＝個人情報ではない）。お客様の画面は `applyServerDuty()` で `DUTY_BY_DATE` に取り込み、`staffOnDuty()` が**確定シフトがある日はそれだけで判定**する。確定が無い日は従来の曜日ベースに落ちる＝**シフトを入れ始める前の予約が急に取れなくなるのを避ける**。
+- **`POST /reservations` がサーバ側でも弾く**（`dutyOk()`）。休み・出勤なし・勤務時間外は409。11パターンで検証済、本番で「その日は担当者がお休みです」を実測。
+- **スタッフの希望**：`booking/staff.html` の「シフト希望」タブ（60日ぶん・出勤/休みを押すだけ）→ `POST /shifts/mine?token=`。過去日は受けない。
+- **店長の確定**：シフトタブの月表（`renderShiftMonth`）。希望が薄い色（△）、確定が濃い色（◯/休）。「希望をそのまま確定に入れる」で一括、マスを押すと 出勤→休み→未定 で切り替え。`POST /shifts`（400件まで・50件ずつバッチ）。
+- **LINEで通知**：`POST /shifts/notify`（店長が押す）。スタッフのLINEは `staff_auth.line_user_id`。**未連携のスタッフ名を返す**ので誰に届いていないか分かる。
+
+### ⚠️踏んだ罠（同種の再発防止）
+
+`dutyMap`/`dutyOk` を **`fetch` ハンドラの中に定義**してしまい、トップレベルの `handleAvailability` から `dutyMap is not defined` になった（本番で `/availability` が502）。**ルート側とトップレベル関数の両方から使う関数は `export default` より前に置く。** 行頭に書いてあっても字下げは関係なく、`fetch` の波括弧の中なら外からは見えない。
+
+---
+
 ### 入場受付との会員QR統一（2026-07-30）
 
 **LINEの会員証に出すQRを、物理の会員カードと同じ salon.town の会員番号にした。1枚で入場もお会計も済む。**

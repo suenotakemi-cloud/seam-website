@@ -64,6 +64,23 @@
     font-size:15px;font-weight:700;font-family:inherit;cursor:pointer}
   .err{color:#c0392b;font-size:13px;font-weight:700;margin-top:10px;min-height:20px}
   .load{text-align:center;color:var(--sub);padding:40px 0;font-size:14px}
+  /* タブ */
+  .tabs{display:flex;gap:6px;margin-bottom:13px}
+  .tabs button{flex:1;background:#fff;border:1px solid var(--line);border-radius:11px;padding:10px;
+    font-size:13.5px;font-weight:700;font-family:inherit;color:var(--sub);cursor:pointer}
+  .tabs button.on{background:#26221e;color:#fff;border-color:#26221e}
+  /* シフト希望 */
+  .sh{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid #f2ede7}
+  .sh:last-child{border-bottom:0}
+  .sh .d{font-size:13.5px;font-weight:700}
+  .sh .d i{font-style:normal;font-weight:400;color:var(--sub);font-size:12px;margin-left:5px}
+  .sh .pick{display:flex;gap:5px}
+  .sh .pick button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 11px;
+    font-size:12.5px;font-weight:700;font-family:inherit;color:var(--sub);cursor:pointer}
+  .sh .pick button.on{background:#26221e;color:#fff;border-color:#26221e}
+  .sh .pick button.off.on{background:#c0392b;border-color:#c0392b}
+  .sh.closed{opacity:.5}
+  .fixed{font-size:11px;font-weight:700;color:var(--ok);margin-left:6px}
 </style>
 </head>
 <body>
@@ -150,6 +167,9 @@ function home(){
       <div class="top"><span class="b">S E A M</span>
         <span class="who">${esc(j.name||j.staffId||'')}</span>
         <button class="out" id="out">ログアウト</button></div>
+      <div class="tabs"><button data-t="num" class="on">売上・予約</button><button data-t="shift">シフト希望</button></div>
+      <div id="pane-shift" style="display:none"><div class="load">読み込んでいます…</div></div>
+      <div id="pane-num">
       ${gauge(c)}
       <div class="card"><h2>今日</h2>
         <div class="kpi">
@@ -174,14 +194,96 @@ function home(){
             </div>
             ${r.deposit>0?`<div style="font-size:11.5px;color:var(--ok);font-weight:700;white-space:nowrap">前金 ${yen(r.deposit)}</div>`:''}
           </div>`).join(''):'<div class="empty">これからの予約はありません</div>'}
-      </div>`;
+      </div></div>`;
     document.getElementById('out').onclick=()=>{setTok('');login('');};
+    wireTabs();
   }).catch(e=>{
     if(e.status===401){setTok('');login(e.message);return;}
     app.innerHTML=`<div class="card"><h2>読み込めませんでした</h2>
       <p style="font-size:13px;color:var(--sub);margin:0">${esc(e.message)}</p>
       <button class="go" style="margin-top:12px" onclick="location.reload()">もう一度</button></div>`;
   });
+}
+
+/* ===== シフト希望 =====
+ * 60日ぶんの日付を並べ、出勤／休みを押すだけで出せるようにする。
+ * 店長が確定したものは「確定」と出して、希望と区別する。 */
+let SH_WANT={};   // {日付:'work'|'off'}
+let SH_FIXED={};  // {日付:{kind,start,end}}
+let SH_CLOSED=[];
+function wireTabs(){
+  const bs=document.querySelectorAll('.tabs button');
+  bs.forEach(b=>b.onclick=()=>{
+    bs.forEach(x=>x.classList.toggle('on',x===b));
+    document.getElementById('pane-num').style.display=b.dataset.t==='num'?'':'none';
+    document.getElementById('pane-shift').style.display=b.dataset.t==='shift'?'':'none';
+    if(b.dataset.t==='shift'&&!Object.keys(SH_FIXED).length&&!Object.keys(SH_WANT).length)loadShift();
+  });
+}
+async function loadShift(){
+  const pane=document.getElementById('pane-shift'); if(!pane)return;
+  try{
+    const j=await jget(API+'/shifts/mine?token='+encodeURIComponent(tok()));
+    SH_WANT={};SH_FIXED={};SH_CLOSED=j.closed||[];
+    (j.shifts||[]).forEach(x=>{ if(x.status==='want')SH_WANT[x.date]=x.kind; else SH_FIXED[x.date]={kind:x.kind,start:x.start,end:x.end}; });
+    drawShift();
+  }catch(e){
+    if(e.status===401){setTok('');login(e.message);return;}
+    pane.innerHTML=`<div class="card"><h2>読み込めませんでした</h2><p style="font-size:13px;color:var(--sub);margin:0">${esc(e.message)}</p></div>`;
+  }
+}
+function drawShift(){
+  const pane=document.getElementById('pane-shift'); if(!pane)return;
+  const WD=['日','月','火','水','木','金','土'];
+  const now=new Date(); const rows=[];
+  for(let i=0;i<60;i++){
+    const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()+i);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    rows.push({k,d});
+  }
+  const hmv=t=>t==null?'':String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+  pane.innerHTML=`<div class="card">
+    <h2>シフト希望（これから60日）</h2>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.7;margin-bottom:12px">
+      出たい日と休みたい日を押してください。店長が確定すると<b class="fixed">確定</b>と出ます。<br>
+      確定したシフトはLINEにも届きます。
+    </div>
+    ${rows.map(r=>{
+      const closed=SH_CLOSED.includes(r.k);
+      const fx=SH_FIXED[r.k];
+      const w=SH_WANT[r.k]||'';
+      return `<div class="sh ${closed?'closed':''}">
+        <div class="d">${r.d.getMonth()+1}/${r.d.getDate()}<i>${WD[r.d.getDay()]}</i>
+          ${closed?'<i>サロン休業日</i>':''}
+          ${fx?`<span class="fixed">確定：${fx.kind==='off'?'お休み':hmv(fx.start)+'〜'+hmv(fx.end)}</span>`:''}</div>
+        <div class="pick">
+          <button data-k="${r.k}" data-v="work" class="${w==='work'?'on':''}" ${closed?'disabled':''}>出勤</button>
+          <button data-k="${r.k}" data-v="off" class="off ${w==='off'?'on':''}" ${closed?'disabled':''}>休み</button>
+        </div></div>`;
+    }).join('')}
+    <button class="go" id="sh-save" style="margin-top:14px">この希望を出す</button>
+    <div class="err" id="sh-msg"></div>
+  </div>`;
+  pane.querySelectorAll('.pick button').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k,v=b.dataset.v;
+    SH_WANT[k]=SH_WANT[k]===v?'':v;      // 同じものを押したら取り消し
+    if(!SH_WANT[k])delete SH_WANT[k];
+    drawShift();
+  });
+  const btn=pane.querySelector('#sh-save');
+  btn.onclick=async()=>{
+    const list=Object.entries(SH_WANT).map(([date,kind])=>({date,kind}));
+    if(!list.length){document.getElementById('sh-msg').textContent='出勤か休みを選んでください';return;}
+    btn.disabled=true;btn.textContent='送信中…';
+    try{
+      const r=await jpost(API+'/shifts/mine?token='+encodeURIComponent(tok()),{shifts:list});
+      const m=document.getElementById('sh-msg');
+      m.style.color='var(--ok)';m.textContent=`希望を出しました（${r.saved}日）`;
+    }catch(e){
+      const m=document.getElementById('sh-msg');m.style.color='#c0392b';m.textContent=e.message;
+    }
+    btn.disabled=false;btn.textContent='この希望を出す';
+  };
 }
 
 tok()?home():login('');
