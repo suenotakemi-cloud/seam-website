@@ -5929,7 +5929,7 @@ function DeepFullBreakdown({
 }) {
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "mt-5 text-[12px] sm:text-[12.5px] text-charcoal/70 leading-[1.9] max-w-xl"
-  }, "140+\u30D6\u30E9\u30F3\u30C9\u304B\u3089\u9298\u67C4\u3092\u554F\u308F\u305A\u6A2A\u65AD\u3057\u3066\u9078\u5B9A\u3057\u3066\u3044\u307E\u3059", /*#__PURE__*/React.createElement("br", null), "\u540C\u3058\u30B1\u30A2\u65B9\u91DD\u306E\u307E\u307E\u4E0A\u8CEA\u306A\u5019\u88DC\u3084\u624B\u9803\u306A\u5019\u88DC\u3068\u3082\u6BD4\u8F03\u3067\u304D\u307E\u3059"), hardRules.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "197\u30D6\u30E9\u30F3\u30C9\u304B\u3089\u9298\u67C4\u3092\u554F\u308F\u305A\u6A2A\u65AD\u3057\u3066\u9078\u5B9A\u3057\u3066\u3044\u307E\u3059", /*#__PURE__*/React.createElement("br", null), "\u540C\u3058\u30B1\u30A2\u65B9\u91DD\u306E\u307E\u307E\u4E0A\u8CEA\u306A\u5019\u88DC\u3084\u624B\u9803\u306A\u5019\u88DC\u3068\u3082\u6BD4\u8F03\u3067\u304D\u307E\u3059"), hardRules.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-5 border-l-2 border-gold pl-4 sm:pl-5 py-1"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold"
