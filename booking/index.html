@@ -852,6 +852,11 @@ body.customer .phone.spa{background:#f7f8f3}
 /* 予約の判断に必要な3点（料金・所要・はじめての方）を、詳細を増やさずに前に出す */
 .pbody .ent-intl{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 2px}
 /* 便利訴求は主役にしない。安心の補助線として小さく置く */
+.needcontact{background:#fff6ed;border:1px solid #f0d2ae;color:#8a5116;border-radius:10px;
+  padding:10px 12px;font-size:12.5px;font-weight:700;line-height:1.6;margin-bottom:9px}
+.depnote{background:#f2fbf5;border:1px solid #c9e9d5;color:#0c6b3c;border-radius:10px;
+  padding:11px 13px;font-size:12.5px;line-height:1.7;margin:10px 0 0}
+.depnote b{color:#0a5730}
 .lineconn{background:#f2fbf5;border:1px solid #c9e9d5;border-radius:11px;padding:12px 13px;margin-bottom:10px}
 .lineconn .lc-t{font-size:13.5px;font-weight:800;color:#0c7a41}
 .lineconn .lc-s{font-size:11.5px;color:var(--sub);line-height:1.6;margin:3px 0 9px}
@@ -4351,6 +4356,12 @@ function renderBook(){
           <div class="lc-o">またはメールアドレスをご記入ください</div>
         </div>`+mailBlock();
         return mailBlock();})()}
+      ${(()=>{ /* 前金は「預かり」であって別料金ではない、と先に伝える（金額は設定から自動で入る） */
+        const d=depositOf(menu.price-disc,BOOK_LANG);
+        if(!d)return '';
+        return `<div class="depnote">
+          <b>${d.toLocaleString()}円の預かり金</b>をお預かりします。当日は<b>差額の ¥${(menu.price-disc-d).toLocaleString()}</b> のお支払いになりますのでご安心ください
+        </div>`;})()}
       <div class="policy">
         <b>キャンセルポリシー</b>
         <table class="ptable">
@@ -4361,6 +4372,9 @@ function renderBook(){
         </table>
         キャンセル料は前金から充当し、残額は返金します。料率は当店に生じる平均的な損害（施術料金から材料費を除いた額に、他のお客様のご予約可能性を考慮したもの）にもとづきます。10分以上遅れる場合はご連絡ください。
       </div>
+      ${(()=>{ /* ご連絡先が無いと、予約できたことをお伝えできない＝必ずどちらかを結んでいただく */
+        const ok=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
+        return ok?'':`<div class="needcontact">ご予約の確定をお送りするため、<b>LINE</b>か<b>メールアドレス</b>のどちらかをご登録ください</div>`;})()}
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
     // ---- メールのワンタイムパスワード（Google以外のメールで予約する方の本人確認）----
     // LINEとつなぐ（LINEの中で開いているが、まだ誰か分からない場合）
@@ -4407,7 +4421,14 @@ function renderBook(){
          else{msg.textContent=j.error||'コードが違います';msg.style.color='#c0392b';go.disabled=false;}
        }catch(e){msg.textContent='確認できませんでした';msg.style.color='#c0392b';go.disabled=false;}
      };}
+    /* ご連絡先が結ばれるまで「次へ（お支払い）」を押せなくする。
+     * 予約できたことをお伝えできない相手からは、お受けしない。 */
+    {const nb=document.getElementById('bnext2');
+     const ok=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
+     if(nb&&!ok){nb.disabled=true;nb.style.opacity='.45';nb.style.cursor='not-allowed';}}
     document.getElementById('bnext2').onclick=()=>{
+      const okc=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
+      if(!okc){toast('LINEかメールアドレスのご登録をお願いします',true);return}
       // 姓・名・セイ・メイを別々に取得（HotPepper/サロンボードは4欄）
       bk.sei=document.getElementById('bsei').value.trim();
       bk.mei=document.getElementById('bmei').value.trim();
