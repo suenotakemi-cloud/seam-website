@@ -1267,9 +1267,15 @@ async function handlePurgeTest(url, env, cors) {
   if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
   const token = url.searchParams.get('token') || '';
   if (!env.CLEANUP_TOKEN || token !== env.CLEANUP_TOKEN) return json({ error: 'forbidden' }, 403, cors);
-  const rows = await env.DB.prepare(
-    "SELECT id, salon_id, name, date, staff_id, start FROM reservations WHERE (name LIKE 'テスト%' OR name LIKE '検証%' OR name LIKE '再検証%') AND channel IN ('line','own')"
-  ).all();
+  // ids= を渡したときは、その予約だけを掃除する（誤登録・検証の後始末用）
+  const ids = (url.searchParams.get('ids') || '').split(',').map(x => x.trim()).filter(Boolean);
+  const rows = ids.length
+    ? await env.DB.prepare(
+        `SELECT id, salon_id, name, date, staff_id, start FROM reservations WHERE id IN (${ids.map(() => '?').join(',')})`
+      ).bind(...ids).all()
+    : await env.DB.prepare(
+        "SELECT id, salon_id, name, date, staff_id, start FROM reservations WHERE (name LIKE 'テスト%' OR name LIKE '検証%' OR name LIKE '再検証%') AND channel IN ('line','own')"
+      ).all();
   const deleted = [];
   for (const r of (rows.results || [])) {
     if (env.SALON_SYNC === 'on' && env.SALON_HOST && r.salon_id) {

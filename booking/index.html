@@ -1555,6 +1555,17 @@ const KN_OK=/^[\u30A1-\u30FAー・]+$/;
 const NM_MAX=16;
 function nmNorm(v){let x=String(v==null?'':v).replace(NM_ZW,'');try{x=x.normalize('NFKC')}catch(e){}
   return x.replace(/^[\s\u3000]+|[\s\u3000]+$/g,'');}
+/* 「姓 名」の1本で持っている画面（管理の手動登録・次回予約）用のゲート。
+   規則はサーバー(worker.js checkNameJoined)と必ず同じにする。 */
+function nameGate(name,kana){
+  const parts=nmNorm(name).split(/[\s\u3000]+/).filter(Boolean);
+  const kparts=nmNorm(kana||'').split(/[\s\u3000]+/).filter(Boolean);
+  if(parts.length!==2)return{ng:'お名前は「姓 名」の形で入力してください（間は1つのスペース）'};
+  if(kparts.length&&kparts.length!==2)return{ng:'フリガナは「セイ メイ」の形で入力してください'};
+  const c=nameCheck(parts[0],parts[1],kparts[0]||'ダミー',kparts[1]||'ダミー');
+  if(c.ng)return c;
+  return{name:c.name,kana:kparts.length?c.kana:''};
+}
 function nameCheck(sei,mei,seiK,meiK){
   const S=nmNorm(sei),M=nmNorm(mei),SK=hira2kata(nmNorm(seiK)),MK=hira2kata(nmNorm(meiK));
   if(!S)return{ng:'姓を入力してください'};
@@ -1595,6 +1606,13 @@ function addReservation(o){
       // D1が発行したIDで上書き
       const idx = db.reservations.findIndex(r => r.id === o.id);
       if (idx >= 0) { db.reservations[idx].id = res.id; save(); }
+      return;
+    }
+    // サーバーが受け付けなかった（名前がサロンボードに入らない形など）＝上流に予約は無い。
+    // 台帳に残すと「入っているつもりで入っていない」状態になるので取り消して理由を出す。
+    if (res && res.error) {
+      db.reservations = db.reservations.filter(r => r.id !== o.id); save(); refreshAll();
+      toast(res.error, true);
     }
   }).catch(() => {});
   return{ok:true,resv:o};
@@ -1897,8 +1915,10 @@ function openModal(staffId,start){
 document.getElementById('m-cancel').onclick=()=>document.getElementById('modalbg').classList.remove('show');
 document.getElementById('modalbg').onclick=e=>{if(e.target.id==='modalbg')e.target.classList.remove('show')};
 document.getElementById('m-save').onclick=()=>{
-  const name=document.getElementById('m-name').value.trim()||'お客様';
+  let name=document.getElementById('m-name').value.trim();
   const menu=MENUS.find(m=>m.id===document.getElementById('m-menu').value);
+  // サロンボードに入る形だけ通す（お客様の予約画面と同じ規則）
+  {const c=nameGate(name);if(c.ng){toast(c.ng,true);return;}name=c.name;}
   const r=addReservation({date:dkey(calDay),staffId:modalCtx.staffId,start:modalCtx.start,end:modalCtx.start+menu.min,menuId:menu.id,name,
     phone:document.getElementById('m-phone').value.trim(),note:document.getElementById('m-note').value.trim(),channel:document.getElementById('m-chan').value});
   if(!r.ok){toast(`⚠️ ${hm(r.conflict.start)}〜の「${r.conflict.name}様」と重複するため登録できません`,true);return}
@@ -2231,6 +2251,7 @@ function renderNextVisit(){
     const m2=d.menuId?MENUS.find(m=>m.id===d.menuId):null;
     const dur=m2?m2.min:d.dur;
     const isSpa=!!(m2&&m2.cat==='ヘッドスパ');
+    {const c=nameGate(d.name,d.kana);if(c.ng){toast(c.ng,true);return;}d.name=c.name;d.kana=c.kana;}
     const res=addReservation({date:d.day,staffId:d.staffId,start:d.start,end:d.start+dur,menuId:d.menuId||'',
       name:d.name,kana:d.kana,phone:d.phone,email:d.email,channel:'own',deposit:0,note:'次回予約(店頭)',
       lineUserId:d.lineUserId,notify:true,
