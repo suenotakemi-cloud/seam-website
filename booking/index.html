@@ -1431,6 +1431,7 @@ const API = {
   async customerRank(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/customer/rank?key='+encodeURIComponent(key),{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async rankConfig(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/rank/config',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async saveRankConfig(cfg){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/rank/config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(cfg)});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async salonLink(salonId,phone,name){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/member/salon-link',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({salonId,phone,name})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async memberLookup(code){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/member/lookup?code='+encodeURIComponent(code),{headers:authHeaders()});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async removeCheckout(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listSettlements(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements'+(from?`?from=${from}&to=${to||from}`:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.settlements:null;}catch{return null;} },
@@ -2375,6 +2376,7 @@ function rankStrip(rk,code,pt){
     <span style="font-size:12px;color:var(--sub)">ポイント${(rk&&rk.rate)||1}%</span>
     ${pt!=null?`<span style="font-size:12px;color:var(--sub)">残高 <b>${Number(pt||0).toLocaleString()}pt</b></span>`:''}
     ${code?`<span style="font-size:11.5px;color:var(--sub);margin-left:auto">💳 ${escH(code)}</span>`:''}
+    ${coDraft&&coDraft.salonId?`<span style="font-size:11px;color:var(--ok);font-weight:700">🎫 会員カード連携済み（ご入場も同じQR）</span>`:''}
     ${soon?`<div style="flex-basis:100%;font-size:11.5px;color:${col};font-weight:700">${escH(soon)}</div>`:''}
   </div>`;
 }
@@ -2512,10 +2514,21 @@ function renderCheckout(){
   // 会員証を読んだらお客様を会計に入れる（お名前と電話が入り、ポイント残高も分かる）
   window.coApplyMember=async(code,inp)=>{
     const r=await API.memberLookup(code);
-    if(!r||r.error){toast((r&&r.error)||'会員証を読めませんでした',true);if(inp)inp.value='';return;}
+    if(inp)inp.value='';
+    // 物理の会員カードで、まだお客様と結び付いていない場合はその場で結び付ける
+    if(r&&r.needLink&&r.salonId){
+      const who=(coDraft.phone||'').trim()||(coDraft.customer||'').trim();
+      if(!who){toast('先にお客様のお名前か電話番号を入れてください',true);return;}
+      if(!confirm(`この会員カードを ${coDraft.customer||who} 様に登録しますか？\n以後はLINEの会員証に同じQRが出て、ご入場にもお使いいただけます`))return;
+      const lr=await API.salonLink(r.salonId,coDraft.phone||'',coDraft.customer||'');
+      if(!lr||!lr.ok){toast((lr&&lr.error)||'登録できませんでした',true);return;}
+      toast('会員カードを登録しました');
+      return coApplyMember(lr.code,null);
+    }
+    if(!r||r.error){toast((r&&r.error)||'会員証を読めませんでした',true);return;}
     if(r.name)coDraft.customer=r.name;
     if(r.phone)coDraft.phone=r.phone;
-    coDraft.memberCode=r.code; coDraft.memberPt=r.points||0;
+    coDraft.memberCode=r.code; coDraft.memberPt=r.points||0; coDraft.salonId=r.salonId||'';
     CO_RANK={rank:r.rank,rate:r.rate,visits:r.visits,yVisits:r.yVisits,ySpend:r.ySpend,next:r.next};
     if(inp)inp.value='';
     renderCheckout();
@@ -2526,8 +2539,9 @@ function renderCheckout(){
   if(scan){
     // 商品が数千点あるので、手元に無ければサーバーのバーコード引きに聞く
     const scanAdd=async(v)=>{
-      // 会員証（99+8桁）はJANとぶつからないので、同じ欄で読める
-      if(/^99\d{8}$/.test((v||'').trim())){await coApplyMember((v||'').trim(),scan);return;}
+      // 会員証（99+8桁）と物理の会員カード（salon.townの24桁）はJANとぶつからないので同じ欄で読める
+      const vv=(v||'').trim();
+      if(/^99\d{8}$/.test(vv)||SALON_ID_RE.test(vv)){await coApplyMember(vv,scan);return;}
       if(addFromMaster(v)){scan.value='';renderCheckout();
         setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);return;}
       const code=(v||'').trim(); if(!code)return;
@@ -2744,6 +2758,10 @@ async function openLineReceipt(rec){
     else{b.disabled=false;b.textContent='LINEに直接送る';toast((r&&r.error)||'送れませんでした',true);}
   };
 }
+/* salon.town の会員番号の形（日時17桁＋英数7桁の24文字）。
+ * 物理の会員カードのQRに入っている値で、入場受付(/entrance)が読んでいるものと同じ。
+ * うちの会員番号(99+8桁)や商品のJAN(13桁/8桁)とは長さで区別できる。 */
+const SALON_ID_RE=/^\d{17}[0-9A-Za-z]{7}$/;
 let nvPendingRec=null;
 
 // Squareターミナルで決済（金額を端末へ送信→完了までポーリング→会計確定）

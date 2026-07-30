@@ -23,6 +23,10 @@
   .mem{background:linear-gradient(160deg,#26221e,#413931);color:#fff;border-radius:16px;padding:20px 18px;text-align:center;margin-bottom:14px}
   .mem .lbl{font-size:11px;letter-spacing:.24em;color:#b8ada0;margin-bottom:10px}
   .mem .no{font-size:27px;font-weight:700;letter-spacing:.16em;font-variant-numeric:tabular-nums}
+  .qr{background:#fff;border-radius:12px;padding:13px;margin-top:14px;display:inline-block}
+  .qr img{display:block;width:186px;height:186px}
+  .qr .cap{font-size:10.5px;color:#8a8177;letter-spacing:.06em;margin-top:6px;text-align:center}
+  .use{font-size:11.5px;color:#cfc5b8;margin-top:10px;line-height:1.6}
   .bc{background:#fff;border-radius:8px;padding:11px 10px 7px;margin-top:14px}
   .bc svg{display:block;width:100%;height:58px}
   .bc .cap{font-size:10.5px;color:#8a8177;letter-spacing:.1em;margin-top:3px}
@@ -70,6 +74,20 @@ const app=document.getElementById('app');
 const yen=n=>'¥'+Number(n||0).toLocaleString();
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
+/* QRコード。入場受付が読むのと同じ値（salon.townの会員番号）を出す。
+ * これで1枚のカードで入場もポイントも済む。 */
+let _qrP=null;
+function loadQR(){
+  if(window.qrcode)return Promise.resolve();
+  if(_qrP)return _qrP;
+  _qrP=new Promise((res,rej)=>{const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  return _qrP;
+}
+function qrDataUrl(v,cell){
+  try{const q=qrcode(0,'M');q.addData(String(v));q.make();return q.createDataURL(cell||6);}catch(e){return '';}
+}
+
 /* Code39のバーコード。数字だけ扱う。
  * レジのバーコードリーダー（1次元）でそのまま読める形にしてある。 */
 const C39={'0':'101001101101','1':'110100101011','2':'101100101011','3':'110110010101','4':'101001101011',
@@ -111,18 +129,23 @@ function axes(j){
 function memberCard(code,points,name,j){
   j=j||{};
   const rk=j.rank||{}, key=rk.key||'standard';
+  const sal=j.salonId||'';
+  // 物理の会員カードと同じQR。これ1枚で入場もポイントも済む
+  const qr=sal&&window.qrcode?qrDataUrl(sal,6):'';
   return `<div class="mem">
     <div class="lbl">SEAM MEMBER</div>
     ${rk.name?`<div><span class="rk rk-${esc(key)}">${esc(rk.name)}　ポイント${j.rate||1}%</span></div>`:''}
-    <div class="no">${esc(String(code).replace(/(\d{2})(\d{4})(\d{4})/,'$1 $2 $3'))}</div>
-    ${name?`<div style="font-size:13px;color:#cfc5b8;margin-top:6px">${esc(name)} 様</div>`:''}
+    ${name?`<div style="font-size:15px;font-weight:700;margin-top:8px">${esc(name)} 様</div>`:''}
+    ${qr?`<div class="qr"><img src="${qr}" alt=""><div class="cap">入場・お会計 兼用</div></div>
+        <div class="use">ご入場のときは受付のiPadに、お会計のときはレジにこの画面をお見せください</div>`
+      :''}
     <div class="bc">${code39(code)}<div class="cap">${esc(code)}</div></div>
+    ${qr?'':'<div class="use">レジでこの番号を読み取ってポイントをお付けします</div>'}
     <div class="pt"><b>${Number(points||0).toLocaleString()}</b><s>ポイント</s></div>
     ${axes(j)}
     ${nextLine(j.next)}
   </div>
-  <div class="note">レジでこの画面をお見せください。番号を読み取ってポイントをお付けします<br>
-    ポイントは<b>オンラインショップで1pt=${j.ptGoods!=null?j.ptGoods:1}円</b>、<b>サロンの施術で1pt=${j.ptTech!=null?j.ptTech:0.5}円</b>としてお使いいただけます</div>`;
+  <div class="note">${qr?'ご入場のときも同じ画面をお見せいただけます。<br>':''}ポイントは<b>オンラインショップで1pt=${j.ptGoods!=null?j.ptGoods:1}円</b>、<b>サロンの施術で1pt=${j.ptTech!=null?j.ptTech:0.5}円</b>としてお使いいただけます</div>`;
 }
 
 function receiptCard(r){
@@ -193,6 +216,7 @@ async function run(){
     let j;
     try{ j=await jpost(API+'/line/link',{token:t,lineUserId:uid,idToken,displayName:dispName}); }
     catch(e){ fail(e.message,'お手数ですがスタッフにお声がけください'); return; }
+    if(j.salonId)await loadQR().catch(()=>{});
     app.innerHTML=(j.receipt?receiptCard(j.receipt):'')
       + (j.memberCode?memberCard(j.memberCode,j.points,'',j):'')
       + `<div class="note ok">LINEに登録しました。次回からご予約のお知らせ・領収のご案内がこちらに届きます</div>`
@@ -210,6 +234,7 @@ async function run(){
   let j;
   try{ j=await jget(API+'/member/me?s='+encodeURIComponent(SHOP)+'&uid='+encodeURIComponent(uid)+'&idToken='+encodeURIComponent(idToken)); }
   catch(e){ fail(e.message); return; }
+  if(j.salonId)await loadQR().catch(()=>{});
   if(!j.linked){
     app.innerHTML=`<div class="card"><h1 style="font-size:16px">まだ会員証がありません</h1>
       <p class="sub">次回ご来店のお会計のときに、レジでコードを読み取っていただくと会員証が作られます</p></div>`;
