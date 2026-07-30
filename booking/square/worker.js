@@ -256,6 +256,109 @@ export default {
 
     // ===== 公開（顧客導線・認証不要） =====
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
+    // 【調査用・読み取りだけ】Squareの売上（注文）と商品台帳が、こちらの商品と突き合わせられるかを見る。
+    // 何も書き込まない。トークンも返さない。
+    if (p.endsWith('/admin/square-probe') && m === 'GET') {
+      if (!cleanupTok(url, env)) return json({ error: 'forbidden' }, 403, cors);
+      if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 400, cors);
+      const H = { 'Square-Version': '2025-01-23', 'Authorization': 'Bearer ' + env.SQUARE_ACCESS_TOKEN, 'Content-Type': 'application/json' };
+      const base = 'https://connect.squareup.com';
+      const out = {};
+      // 1) 店舗一覧（ショップ系のLocationを拾う）
+      try {
+        const r = await fetch(base + '/v2/locations', { headers: H });
+        const j = await r.json();
+        out.locations = (j.locations || []).map(l => ({ id: l.id, name: l.name }));
+      } catch (e) { out.locations = 'ERR ' + e.message; }
+      // 2) 注文（売れたもの）を読めるか。直近14日・指定Locationまたは全店舗
+      const locs = (url.searchParams.get('loc') || '').split(',').map(x => x.trim()).filter(Boolean);
+      const days = Math.min(60, Math.max(1, +(url.searchParams.get('days') || 14)));
+      const since = new Date(Date.now() - days * 86400000).toISOString();
+      try {
+        const body = {
+          location_ids: locs.length ? locs : (out.locations || []).map(l => l.id).slice(0, 10),
+          limit: 50,
+          query: {
+            filter: {
+              date_time_filter: { closed_at: { start_at: since } },
+              state_filter: { states: ['COMPLETED'] },   // 完了した売上だけ（下書き・取消は除く）
+            },
+            sort: { sort_field: 'CLOSED_AT', sort_order: 'DESC' },
+          },
+        };
+        const r = await fetch(base + '/v2/orders/search', { method: 'POST', headers: H, body: JSON.stringify(body) });
+        const j = await r.json();
+        if (!r.ok) out.orders = { ok: false, error: (j.errors && j.errors[0] && (j.errors[0].detail || j.errors[0].code)) || ('HTTP ' + r.status) };
+        else {
+          const os = j.orders || [];
+          const items = [];
+          for (const o of os) for (const li of (o.line_items || [])) items.push({
+            loc: o.location_id, at: (o.closed_at || o.created_at || '').slice(0, 10),
+            name: li.name || '', qty: li.quantity || '', catalogId: li.catalog_object_id || '', variation: li.variation_name || '',
+          });
+          out.orders = { ok: true, count: os.length, lineItems: items.length, sample: items.slice(0, 8) };
+        }
+      } catch (e) { out.orders = { ok: false, error: e.message }; }
+      // 3) （商品台帳の全件読みは上限に当たるため、調査から外した）
+      // 4) いちばん大事な数字：実際に売れた明細のうち、何割をこちらの商品に結び付けられるか。
+      //    ★商品台帳を丸ごと読むと「1回の実行で読める上限」に当たる（実測）。
+      //    そこで本番の同期と同じ方式にする＝売れた商品のIDだけを個別に引く（数が少ない）。
+      try {
+        const locs2 = (url.searchParams.get('loc') || '').split(',').map(x => x.trim()).filter(Boolean);
+        const ids = locs2.length ? locs2 : (out.locations || []).map(l => l.id).slice(0, 10);
+        let lines = [], oc = '', op = 0;
+        do {
+          const body = { location_ids: ids, limit: 200, cursor: oc || undefined,
+            query: { filter: { date_time_filter: { closed_at: { start_at: since } }, state_filter: { states: ['COMPLETED'] } },
+                     sort: { sort_field: 'CLOSED_AT', sort_order: 'DESC' } } };
+          const r = await fetch(base + '/v2/orders/search', { method: 'POST', headers: H, body: JSON.stringify(body) });
+          const j = await r.json(); if (!r.ok) break;
+          for (const o3 of (j.orders || [])) for (const li of (o3.line_items || []))
+            lines.push({ name: li.name || '', qty: +(li.quantity || 0), cat: li.catalog_object_id || '' });
+          oc = j.cursor || ''; op++;
+        } while (oc && op < 3);
+        // 売れた商品のIDだけを引く（重複は1回だけ。まとめて取れるAPIを使う）
+        const uniq = [...new Set(lines.map(l => l.cat).filter(Boolean))];
+        const info = new Map();
+        for (let i = 0; i < uniq.length && i < 900; i += 100) {
+          const part = uniq.slice(i, i + 100);
+          const r = await fetch(base + '/v2/catalog/batch-retrieve', { method: 'POST', headers: H,
+            body: JSON.stringify({ object_ids: part }) });
+          const txt = await r.text();
+          let j = {}; try { j = JSON.parse(txt); } catch (e) {}
+          if (url.searchParams.get('raw') === '1' && !out.rawCatalog) out.rawCatalog = { status: r.status, sent: part.slice(0, 3), body: txt.slice(0, 600) };
+          if (!r.ok) { out.catalogFetchError = (j.errors && j.errors[0] && (j.errors[0].detail || j.errors[0].code)) || ('HTTP ' + r.status); break; }
+          for (const o4 of (j.objects || [])) {
+            const v = o4.item_variation_data || {};
+            info.set(o4.id, { gtin: v.upc || '', sku: v.sku || '', name: v.name || '' });
+          }
+        }
+        const gtins = [...new Set([...info.values()].map(v => v.gtin).filter(Boolean))];
+        const names = [...new Set(lines.map(l => l.name).filter(Boolean))];
+        const okBc = new Set(), okNm = new Set();
+        for (let i = 0; i < gtins.length; i += 90) { const part = gtins.slice(i, i + 90);
+          const q = await env.DB.prepare(`SELECT barcode FROM products WHERE barcode IN (${part.map(() => '?').join(',')})`).bind(...part).all();
+          for (const r of (q.results || [])) okBc.add(r.barcode); }
+        for (let i = 0; i < names.length; i += 90) { const part = names.slice(i, i + 90);
+          const q = await env.DB.prepare(`SELECT name FROM products WHERE name IN (${part.map(() => '?').join(',')})`).bind(...part).all();
+          for (const r of (q.results || [])) okNm.add(r.name); }
+        let byBarcode = 0, byName = 0, unmatched = 0, noCat = 0, noGtinInOurs = 0, noGtinAtAll = 0;
+        const miss = [];
+        for (const l of lines) {
+          if (!l.cat) { noCat++; continue; }
+          const g = (info.get(l.cat) || {}).gtin || '';
+          if (g && okBc.has(g)) byBarcode++;
+          else if (okNm.has(l.name)) byName++;
+          else { unmatched++; if (g) noGtinInOurs++; else noGtinAtAll++;
+            if (miss.length < 12) miss.push({ name: l.name, gtin: g || '（なし）' }); }
+        }
+        out.match = { 明細数: lines.length, 売れた商品の種類: uniq.length, 引けた商品情報: info.size,
+          バーコードで一致: byBarcode, 名前で一致: byName, 結び付かない: unmatched, 商品IDなし_技術売上など: noCat,
+          GTINはあるがこちらに無い: noGtinInOurs, GTINが付いていない: noGtinAtAll,
+          結び付かない例: miss };
+      } catch (e) { out.match = { error: e.message }; }
+      return json({ ok: true, ...out }, 200, cors);
+    }
     // Squareの設定確認（読み取りだけ・課金なし）。
     // 同じトークンを本番とサンドボックスの両方に投げて、どちらで通るか＝どちらのトークンかを判定し、
     // その環境の店舗一覧（Location ID）も返す。トークン自体は絶対に返さない。
@@ -1046,8 +1149,8 @@ export default {
       if (!o.name || !o.data || !/^data:image\/jpeg;base64,/.test(o.data)) return json({ error: 'name/data(JPEG dataURL)必須' }, 400, cors);
       if (o.data.length > 600000) return json({ error: '画像が大きすぎます(圧縮後600KBまで)' }, 400, cors);
       const id = 'kp' + crypto.randomUUID().slice(0, 8);
-      await env.DB.prepare('INSERT INTO karte_photos (id,name,date,data,created_at) VALUES (?,?,?,?,?)')
-        .bind(id, o.name, o.date || new Date().toISOString().slice(0, 10), o.data, new Date().toISOString()).run();
+      await env.DB.prepare('INSERT INTO karte_photos (id,name,phone,date,data,created_at) VALUES (?,?,?,?,?,?)')
+        .bind(id, o.name, telN(o.phone), o.date || new Date().toISOString().slice(0, 10), o.data, new Date().toISOString()).run();
       return json({ ok: true, id }, 200, cors);
     }
     if (p.endsWith('/karte/photo') && m === 'DELETE') {
@@ -1267,11 +1370,21 @@ async function handleTermDeviceStatus(url, env, cors) {
     const dc = sq.device_code || {}; return json({ ok: true, status: dc.status, deviceId: dc.device_id || '' }, 200, cors);
   } catch (e) { return json({ error: e.message }, 502, cors); }
 }
+/* レジのモードでSquareの店舗を選ぶ。ショップの売上はショップの店舗に計上する */
+function locFor(env, mode) {
+  if (mode === 'shop' && env.SQUARE_LOCATION_ID_SHOP) return env.SQUARE_LOCATION_ID_SHOP;
+  return env.SQUARE_LOCATION_ID || '';
+}
 async function handleTermCheckout(request, env, cors) {
   if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 500, cors);
   let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
   if (!o.amount || !o.deviceId) return json({ error: 'amount と deviceId は必須です' }, 400, cors);
-  const body = { idempotency_key: crypto.randomUUID(), checkout: { amount_money: { amount: Math.round(o.amount), currency: 'JPY' }, device_options: { device_id: o.deviceId }, note: (o.note || 'SEAM 銀座').slice(0, 500) } };
+  const loc = locFor(env, o.mode);
+  const body = { idempotency_key: crypto.randomUUID(), checkout: {
+    amount_money: { amount: Math.round(o.amount), currency: 'JPY' },
+    device_options: { device_id: o.deviceId },
+    location_id: loc || undefined,
+    note: (o.note || (o.mode === 'shop' ? 'SEAM 銀座 ショップ' : 'SEAM 銀座 サロン')).slice(0, 500) } };
   try {
     const r = await fetch(apiBase(env) + '/v2/terminals/checkouts', { method: 'POST', headers: sqHeaders(env), body: JSON.stringify(body) });
     const sq = await r.json(); if (!r.ok) return json({ error: sqErr(sq, r.status) }, 502, cors);
@@ -1816,6 +1929,8 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_ext ON products(ext_id)`).run(); } catch (e) {}
   // 同姓同名の取り違えを防ぐため、氏名キーだったテーブルに電話を持たせる（既存行は空のまま＝氏名で拾う）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
+  // レジをサロン用とショップ用に分ける（売上・在庫・端末の宛先が別）
+  try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN mode TEXT DEFAULT 'salon'`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE passes ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE karte_photos ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN void_reason TEXT DEFAULT ''`).run(); } catch (e) {}
@@ -1851,9 +1966,10 @@ async function handlePostCheckout(request, env, cors) {
   let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
   if (!o.id || !o.date) return json({ error: 'id/date は必須' }, 400, cors);
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO checkouts (id,resv_id,date,staff_id,customer,tech,retail,retail_items,discount,total,method,nominated,square_payment_id,created_at)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
-  ).bind(o.id, o.resvId || '', o.date, o.staffId || '', o.customer || '', o.tech || 0, o.retail || 0,
+    `INSERT OR REPLACE INTO checkouts (id,resv_id,date,staff_id,customer,phone,mode,tech,retail,retail_items,discount,total,method,nominated,square_payment_id,created_at)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(o.id, o.resvId || '', o.date, o.staffId || '', o.customer || '', telN(o.phone),
+    o.mode === 'shop' ? 'shop' : 'salon', o.tech || 0, o.retail || 0,
     JSON.stringify(o.retailItems || []), o.discount || 0, o.total || 0, o.method || 'cash', o.nominated ? 1 : 0, o.squarePaymentId || '', o.at || new Date().toISOString()).run();
   return json({ ok: true, id: o.id }, 200, cors);
 }
@@ -1983,8 +2099,8 @@ async function handlePostPass(request, env, cors) {
   let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
   if (!o.id || o.total == null) return json({ error: 'id/total は必須' }, 400, cors);
   await env.DB.prepare(
-    `INSERT OR REPLACE INTO passes (id,label,customer,price,total,remaining,uses,issued,expires,void,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
-  ).bind(o.id, o.label || '', o.customer || '', Math.round(+o.price) || 0, Math.round(+o.total) || 0,
+    `INSERT OR REPLACE INTO passes (id,label,customer,phone,price,total,remaining,uses,issued,expires,void,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+  ).bind(o.id, o.label || '', o.customer || '', telN(o.phone), Math.round(+o.price) || 0, Math.round(+o.total) || 0,
     Math.round(+o.remaining != null ? +o.remaining : +o.total) || 0, JSON.stringify(o.uses || []),
     o.issued || new Date().toISOString().slice(0, 10), o.expires || '', o.void ? 1 : 0, o.at || new Date().toISOString()).run();
   return json({ ok: true, id: o.id }, 200, cors);
