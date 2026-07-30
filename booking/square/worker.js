@@ -22,6 +22,7 @@ import { handleAiChat } from './ai-chat.js';   // BYO AI（本人キーでClaude
 
 /* 電話番号を数字だけに寄せる。全角も拾う。カルテのキーはこの形で統一する
    （同姓同名でも取り違えないよう、電話が本人の見分け方の軸になる） */
+const cleanupTok = (url, env) => !!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN);
 const telN = v => String(v || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
 
 /* ───────── お名前の正規化と検証（サロンボード/ホットペッパーに入る形だけ通す） ─────────
@@ -474,8 +475,10 @@ export default {
     if (p.endsWith('/settlements') && m === 'DELETE') return A() || handleDeleteSettlement(url, env, cors);
     if (p.endsWith('/settings') && m === 'GET') return A() || handleGetSettings(env, cors);
     if (p.endsWith('/settings') && m === 'POST') return A() || handlePostSetting(request, env, cors);
-    /* 商品の一括取り込み（Squareの商品CSVなどから5000点を流し込む）。
-     * 手入力は現実的でないため。バーコード一致で更新／無ければ追加（在庫は指定があるときだけ触る）。 */
+    /* 商品の一括取り込み（5000点規模を流し込む）。
+     * ★1商品ごとにDBへ問い合わせると、1回の実行で許される回数(サブリクエスト上限)を超えて落ちる。
+     *   → 「既存の照合を1回のSELECTで済ませ、書き込みは batch() でまとめて1回」にする。
+     * バーコード/商品ID/名前で既存を見つけて更新、無ければ追加。在庫は指定があるときだけ触る。 */
     if (p.endsWith('/products/import') && m === 'POST') {
       if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
       if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
@@ -483,33 +486,87 @@ export default {
       let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
       const rows = Array.isArray(o.items) ? o.items : [];
       if (!rows.length) return json({ error: 'items が空です' }, 400, cors);
-      if (rows.length > 1000) return json({ error: '一度に送れるのは1000件までです（分けて送ってください）' }, 400, cors);
-      const now = new Date().toISOString();
-      let added = 0, updated = 0, skipped = 0;
-      const bad = [];
+      if (rows.length > 150) return json({ error: '一度に送れるのは150件までです（分けて送ってください）' }, 400, cors);
+
+      // 送られてきた行を整える
+      const clean = [];
+      let skipped = 0;
       for (const r of rows) {
         const name = String(r.name || '').trim();
-        const bc = String(r.barcode || '').replace(/[^0-9A-Za-z-]/g, '').trim();
-        const price = Math.max(0, Math.round(+r.price || 0));
-        const hasStock = r.stock !== undefined && r.stock !== null && r.stock !== '';
-        const stock = Math.max(0, Math.round(+r.stock || 0));
-        if (!name) { skipped++; bad.push({ row: r, why: '名前が空' }); continue; }
-        let cur = null;
-        if (bc) cur = await env.DB.prepare('SELECT id FROM products WHERE barcode=? LIMIT 1').bind(bc).first();
-        if (!cur) cur = await env.DB.prepare('SELECT id FROM products WHERE name=? LIMIT 1').bind(name).first();
-        if (cur) {
-          // 在庫は指定があるときだけ上書き（取り込みで在庫を0に潰さないため）
-          if (hasStock) await env.DB.prepare('UPDATE products SET name=?, price=?, barcode=?, stock=?, active=1 WHERE id=?').bind(name, price, bc, stock, cur.id).run();
-          else await env.DB.prepare('UPDATE products SET name=?, price=?, barcode=?, active=1 WHERE id=?').bind(name, price, bc, cur.id).run();
+        if (!name) { skipped++; continue; }
+        clean.push({
+          name,
+          price: Math.max(0, Math.round(+r.price || 0)),
+          barcode: String(r.barcode || '').replace(/[^0-9A-Za-z-]/g, '').trim(),
+          extId: String(r.extId || '').trim(),
+          makerCode: String(r.makerCode || '').trim(),
+          brand: String(r.brand || '').trim(),
+          hasStock: r.stock !== undefined && r.stock !== null && r.stock !== '',
+          stock: Math.max(0, Math.round(+r.stock || 0)),
+        });
+      }
+      if (!clean.length) return json({ ok: true, added: 0, updated: 0, skipped, total: 0 }, 200, cors);
+
+      // 既存の照合。★DBは1回の問い合わせに渡せる値の数に上限があるので、90個ずつに割って引く
+      //（まとめすぎるとエラーになり、取り込みが丸ごと落ちる）
+      const byExt = new Map(), byBc = new Map(), byNm = new Map();
+      const lookup = async (col, values) => {
+        const vals = [...new Set(values.filter(Boolean))];
+        for (let i = 0; i < vals.length; i += 90) {
+          const part = vals.slice(i, i + 90);
+          const res = await env.DB.prepare(
+            `SELECT id,name,barcode,ext_id FROM products WHERE ${col} IN (${part.map(() => '?').join(',')})`
+          ).bind(...part).all();
+          for (const r of (res.results || [])) {
+            if (r.ext_id) byExt.set(r.ext_id, r.id);
+            if (r.barcode) byBc.set(r.barcode, r.id);
+            if (r.name) byNm.set(r.name, r.id);
+          }
+        }
+      };
+      try {
+        await lookup('ext_id', clean.map(x => x.extId));
+        await lookup('barcode', clean.map(x => x.barcode));
+        await lookup('name', clean.map(x => x.name));
+      } catch (e) {
+        return json({ error: '既存商品の照合に失敗: ' + (e && e.message || e) }, 500, cors);
+      }
+
+      // 書き込みは1回のbatchにまとめる（サブリクエストを使い切らない）
+      const now = new Date().toISOString();
+      const stmts = [];
+      let added = 0, updated = 0;
+      const seen = new Set();   // 同じ送信内での重複（同一IDへの二重更新）を防ぐ
+      for (const x of clean) {
+        let id = (x.extId && byExt.get(x.extId)) || (x.barcode && byBc.get(x.barcode)) || byNm.get(x.name) || '';
+        if (id && seen.has(id)) id = '';        // 既に同じ行を更新済み → 新規として扱わず見送る
+        if (id) {
+          seen.add(id);
+          stmts.push(x.hasStock
+            ? env.DB.prepare('UPDATE products SET name=?, price=?, barcode=?, stock=?, ext_id=?, maker_code=?, brand=?, active=1 WHERE id=?')
+                .bind(x.name, x.price, x.barcode, x.stock, x.extId, x.makerCode, x.brand, id)
+            : env.DB.prepare('UPDATE products SET name=?, price=?, barcode=?, ext_id=?, maker_code=?, brand=?, active=1 WHERE id=?')
+                .bind(x.name, x.price, x.barcode, x.extId, x.makerCode, x.brand, id));
           updated++;
         } else {
-          await env.DB.prepare('INSERT INTO products (id,name,price,barcode,stock,active,created_at) VALUES (?,?,?,?,?,1,?)')
-            .bind('p' + crypto.randomUUID().slice(0, 8), name, price, bc, hasStock ? stock : 0, now).run();
+          const nid = 'p' + crypto.randomUUID().slice(0, 8);
+          stmts.push(env.DB.prepare('INSERT INTO products (id,name,price,barcode,stock,ext_id,maker_code,brand,active,created_at) VALUES (?,?,?,?,?,?,?,?,1,?)')
+            .bind(nid, x.name, x.price, x.barcode, x.hasStock ? x.stock : 0, x.extId, x.makerCode, x.brand, now));
           added++;
+          if (x.extId) byExt.set(x.extId, nid);
+          if (x.barcode) byBc.set(x.barcode, nid);
+          byNm.set(x.name, nid);
+          seen.add(nid);
         }
       }
+      // 書き込みも割って実行する（1回のbatchが大きすぎると落ちるため）
+      try {
+        for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
+      } catch (e) {
+        return json({ error: '書き込みに失敗: ' + (e && e.message || e), added, updated }, 500, cors);
+      }
       const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM products').first().catch(() => ({ c: 0 }));
-      return json({ ok: true, added, updated, skipped, total: (cnt && cnt.c) || 0, bad: bad.slice(0, 20) }, 200, cors);
+      return json({ ok: true, added, updated, skipped, total: (cnt && cnt.c) || 0 }, 200, cors);
     }
     /* ===== 棚卸し（商品5000点規模）=====
      * 現場の速さを最優先にした作り：
@@ -669,7 +726,7 @@ export default {
         ORDER BY a.created_at DESC LIMIT 300`).all();
       return json({ ok: true, adjusts: res.results || [] }, 200, cors);
     }
-    if (p.endsWith('/products') && m === 'GET') return A() || handleGetProducts(url, env, cors);
+    if (p.endsWith('/products') && m === 'GET') return (cleanupTok(url, env) ? null : A()) || handleGetProducts(url, env, cors);
     if (p.endsWith('/products') && m === 'POST') return A() || handlePostProduct(request, env, cors);
     if (p.endsWith('/products') && m === 'DELETE') return A() || handleDeleteProduct(url, env, cors);
     if (p.endsWith('/intakes') && m === 'GET') return A() || handleGetIntakes(url, env, cors);
@@ -1752,6 +1809,11 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN video_policy TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN voided INTEGER DEFAULT 0`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN lang TEXT DEFAULT 'ja'`).run(); } catch (e) {}
+  // salon.town(CUEPON)の商品ID・メーカー品番・ブランド。統合時の照合キーと、レジでの見分けに使う
+  try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN ext_id TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN maker_code TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN brand TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_ext ON products(ext_id)`).run(); } catch (e) {}
   // 同姓同名の取り違えを防ぐため、氏名キーだったテーブルに電話を持たせる（既存行は空のまま＝氏名で拾う）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE passes ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}

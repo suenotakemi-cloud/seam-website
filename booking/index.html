@@ -2271,8 +2271,20 @@ function renderCheckout(){
   const addFromMaster=v=>{const s=(v||'').trim();if(!s)return false;const p=productByBarcode(s)||(db.products||[]).find(x=>x.name===s)||(db.products||[]).find(x=>x.name&&x.name.includes(s));if(!p)return false;coDraft.retailItems.push({productId:p.id,name:p.name,price:p.price});return true;};
   const scan=box.querySelector('#co-scan');
   if(scan){
-    scan.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();if(addFromMaster(scan.value)){scan.value='';renderCheckout();setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);}else if(scan.value.trim())toast('商品が見つかりません',true);}};
-    scan.onchange=()=>{if(scan.value.trim()&&addFromMaster(scan.value)){scan.value='';renderCheckout();}};
+    // 商品が数千点あるので、手元に無ければサーバーのバーコード引きに聞く
+    const scanAdd=async(v)=>{
+      if(addFromMaster(v)){scan.value='';renderCheckout();
+        setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);return;}
+      const code=(v||'').trim(); if(!code)return;
+      const p=await API.prodByBarcode(code);
+      if(!p){toast('商品が見つかりません（'+code+'）',true);return;}
+      db.products.push(p); save();                       // 次からは手元で引けるようにする
+      coDraft.retailItems=(coDraft.retailItems||[]).concat([{name:p.name,price:+p.price||0,productId:p.id}]);
+      scan.value=''; renderCheckout();
+      setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);
+    };
+    scan.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();scanAdd(scan.value);}};
+    scan.onchange=()=>{if(scan.value.trim())scanAdd(scan.value);};
   }
   box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;renderCheckout();});
   box.querySelectorAll('[data-nom]').forEach(b=>b.onclick=()=>{coDraft.nominated=b.dataset.nom==='1';renderCheckout();});
