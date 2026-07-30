@@ -4279,7 +4279,7 @@ function DeepFullBreakdown({ orderedBlocks, hardRules }) {
   return (
     <div>
       <p className="mt-5 text-[12px] sm:text-[12.5px] text-charcoal/70 leading-[1.9] max-w-xl">
-        140+ブランドから銘柄を問わず横断して選定しています<br />
+        197ブランドから銘柄を問わず横断して選定しています<br />
         同じケア方針のまま上質な候補や手頃な候補とも比較できます
       </p>
 
@@ -4998,7 +4998,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
 /* ---------- 診断のしくみ(漏斗) ----------
    ・バーの幅は各段の「絞られ方」を表す(4,000万通り→27型→3〜5本)
    ・初めて画面に入ったときだけ数字を数え上げる(prefers-reduced-motionでは即表示)
-   ・数字はすべて実装の実数(11問=主要単一回答/27型/1,000検証/140+ブランド) */
+   ・数字はすべて実装の実数(11問=主要単一回答/27型/1,000検証/197ブランド) */
 function useInViewOnce() {
   const ref = useRef(null);
   const [shown, setShown] = useState(false);
@@ -5049,7 +5049,7 @@ const LOGIC_STEPS = [
   { key: 'type', to: 27, format: (v) => String(v), unit: 'の髪格',
     label: 'まず あなたの型を決める', note: '太さ×髪量×くせの3軸 生まれ持った設計は変わりません', w: 46 },
   { key: 'pick', to: 5, format: () => '3〜5', unit: '本',
-    label: 'あなたが今日から使う一式', note: '140を超えるブランドから 銘柄を問わず選び抜きます', w: 14 },
+    label: 'あなたが今日から使う一式', note: '197ブランドから 銘柄を問わず選び抜きます', w: 14 },
 ];
 
 function DiagnosisLogicSection() {
@@ -5103,7 +5103,7 @@ function DiagnosisLogicSection() {
       <div className="mt-6 grid grid-cols-3 divide-x divide-line/60 border-y border-line/60 py-4">
         {[
           ['1,000', 'パターンで検証'],
-          ['140+', 'ブランド横断'],
+          ['197', 'ブランド横断'],
           ['4', 'つの時間軸'],
         ].map(([n, t]) => (
           <div key={t} className="px-2 text-center">

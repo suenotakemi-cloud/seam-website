@@ -6908,7 +6908,7 @@ function Home({
 /* ---------- 診断のしくみ(漏斗) ----------
    ・バーの幅は各段の「絞られ方」を表す(4,000万通り→27型→3〜5本)
    ・初めて画面に入ったときだけ数字を数え上げる(prefers-reduced-motionでは即表示)
-   ・数字はすべて実装の実数(11問=主要単一回答/27型/1,000検証/140+ブランド) */
+   ・数字はすべて実装の実数(11問=主要単一回答/27型/1,000検証/197ブランド) */
 function useInViewOnce() {
   const ref = useRef(null);
   const [shown, setShown] = useState(false);
@@ -7000,7 +7000,7 @@ const LOGIC_STEPS = [{
   format: () => '3〜5',
   unit: '本',
   label: 'あなたが今日から使う一式',
-  note: '140を超えるブランドから 銘柄を問わず選び抜きます',
+  note: '197ブランドから 銘柄を問わず選び抜きます',
   w: 14
 }];
 function DiagnosisLogicSection() {
@@ -7061,7 +7061,7 @@ function DiagnosisLogicSection() {
     }
   }))))), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 grid grid-cols-3 divide-x divide-line/60 border-y border-line/60 py-4"
-  }, [['1,000', 'パターンで検証'], ['140+', 'ブランド横断'], ['4', 'つの時間軸']].map(([n, t]) => /*#__PURE__*/React.createElement("div", {
+  }, [['1,000', 'パターンで検証'], ['197', 'ブランド横断'], ['4', 'つの時間軸']].map(([n, t]) => /*#__PURE__*/React.createElement("div", {
     key: t,
     className: "px-2 text-center"
   }, /*#__PURE__*/React.createElement("p", {

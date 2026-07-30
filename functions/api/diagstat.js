@@ -10,10 +10,12 @@ export async function onRequestGet(context) {
   };
   try {
     if (env && env.DB && typeof env.DB.prepare === 'function') {
-      // 【計測修正の境目】2026-07-30 以前は カルテ復元・共有リンクの表示でも
-      // finder_complete を送っていたため completed が水増しされている(rateが実態より高い)。
+      // 【計測修正の境目】これ以前は カルテ復元・共有リンクの表示でも finder_complete を
+      // 送っていたため completed が水増しされている(日別の完了率が105〜109%と100%を超えていた)。
       // 過去は書き換えられないので、境目以降だけで計算した「クリーンな完答率」を併せて返す。
-      const CUTOVER = Date.parse('2026-07-30T00:00:00+09:00');
+      // 境目 = 修正コミット d85e50e(13:03 JST)のCloudflare反映後。日付境界(00:00)にすると
+      // 反映前の13時間分が混ざるため 安全側に13:15を採る。
+      const CUTOVER = Date.parse('2026-07-30T13:15:00+09:00');
       const row = await env.DB.prepare(
         "SELECT " +
         "(SELECT COUNT(*) FROM events WHERE name='finder_start')    AS started, " +

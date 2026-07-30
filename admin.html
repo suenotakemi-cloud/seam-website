@@ -1059,7 +1059,20 @@
       kpi('完了率', cr, '%', crP!==null?dchip(cr, crP):'') +
       kpi('予約・CTA遷移率', cvr, '%', cvrP!==null?dchip(cvr, cvrP):'');
 
+    // 計測修正の告知 — 2026-07-30 13:15 JST より前の finder_complete は
+    // カルテ復元・共有リンクの表示でも発火していたため完了数が水増しされている
+    // (日別の完了率が105〜109%と100%を超えていたのがその痕跡)。
+    var fixNote =
+      '<div style="margin:14px 0 0;padding:11px 14px;border:1px solid #E7DFD0;border-radius:8px;background:#FBF7F1;">'
+      + '<p style="margin:0;font-size:11.5px;line-height:1.9;color:#5A534B;">'
+      + '<b style="color:#8A6B3F;">計測の注意</b>　2026-07-30 13:15 より前は「前回のカルテを見る」や共有リンクの表示でも'
+      + '完了として記録していたため、完了数と完了率が実態より高く出ています'
+      + '（日別で100%を超えている日がその痕跡です）。同時刻以降は復元を別イベントに分離済みで、'
+      + '以降のデータが実力値です。対外的に数字を出すときはこの日付以降をお使いください。'
+      + '</p></div>';
+
     var hairPanels =
+      fixNote +
       dailyPanel(data.dailyFull||[]) +
       (function(){
         var f = data.finderFunnel; if (!f) return '';

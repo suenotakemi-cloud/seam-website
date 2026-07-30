@@ -352,7 +352,7 @@ def brands_block(slug, area):
     return (f'<section class="mt-12">'
             f'<h2 class="font-serif text-[19px] text-ink">{E(area)}店で買える主なブランド</h2>'
             f'<p class="mt-2.5 text-[13px] text-charcoal/75" style="line-height:2;">'
-            f'140を超えるサロン専売ブランドを正規取扱しています　施術を受けなくても'
+            f'197のサロン専売ブランドを正規取扱しています　施術を受けなくても'
             f'<a href="store-{slug}.html" class="border-b border-line">購入だけのご来店</a>ができます</p>'
             f'<div class="chips mt-4">{chips}</div>'
             f'<p class="mt-3.5 text-[12px] text-charcoal/60">在庫は店舗・時期により異なります　'
@@ -498,7 +498,7 @@ def build_spa(slug):
         ('ご来店・カウンセリング', f'頭や首肩の張り 睡眠や目の疲れなど 今の状態をうかがいます'),
         ('完全個室へご案内', 'まわりを気にせず過ごせる個室です　途中で眠ってしまう方も多い時間です'),
         ('施術', f'いちばん短いコースで{menus[0][1]}　完全個室でそのままお休みいただけます'),
-        ('仕上げ・ホームケアのご相談', f'ご希望があれば140+ブランドから今の頭皮と髪に合うものをご案内します'),
+        ('仕上げ・ホームケアのご相談', f'ご希望があれば197ブランドから今の頭皮と髪に合うものをご案内します'),
     ], note=f'いちばん短いコースは{shortest[0]}（{shortest[1]}・{shortest[2]}）です')
 
     return head(title, desc, url, ld, f'{a}のヘッドスパ｜完全個室 {st["name"]} | SEAM') + header_nav(
@@ -567,7 +567,7 @@ def build_salon(slug):
     if len(title) > 32: title = f'{a}のヘアサロン・美容室｜SEAM'
     price = f'{menus[0][1]}〜のメニュー例つき｜' if menus else ''
     desc = (f'{a}でカット・カラー・パーマ・縮毛矯正まで完全個室のヘアサロン｜{kw}エリアの{st["name"]}｜'
-            f'{price}140+のサロン専売ブランドを知るプロが担当します｜{st["access"]}')[:120]
+            f'{price}197のサロン専売ブランドを知るプロが担当します｜{st["access"]}')[:120]
 
     qa = [
      (f'{a}のどのあたりですか', f'{st["nearline"]}　住所は{st["pref"]}{st["locality"]}{st["street"]}です'),
@@ -576,7 +576,7 @@ def build_salon(slug):
      ('施術を受けずに商品だけ買えますか',
       f'買えます {st["name"]}は美容室専売品の正規取扱店を併設していて <a href="store-{slug}.html" class="border-b border-line">販売のみのご来店</a>も歓迎です'),
      ('どんなヘアケアを扱っていますか',
-      'オージュア・ケラスターゼ・ミルボン・システムプロフェッショナル・バイカルテなど140以上のブランドから 髪質と履歴に合うものをお選びします'),
+      'オージュア・ケラスターゼ・ミルボン・システムプロフェッショナル・バイカルテなど197ブランドから 髪質と履歴に合うものをお選びします'),
     ]
     ld = {"@context": "https://schema.org", "@graph": [
         ld_place(st, "HairSalon", url, SALON_MENU[slug]),
@@ -628,7 +628,7 @@ def build_salon(slug):
         ('カウンセリング', 'なりたい仕上がりと 今の髪の履歴（カラー・パーマ・縮毛矯正・ブリーチ）をうかがいます'),
         (f'{room}で施術', f'{room}をご用意しています　まわりを気にせずご相談いただけます'),
         ('仕上げ', 'ご自宅で再現できるよう 乾かし方とスタイリングまでお伝えします'),
-        ('ホームケアのご提案', '140+のサロン専売ブランドから 髪質と履歴に合うものだけをお選びします　購入は任意です'),
+        ('ホームケアのご提案', '197のサロン専売ブランドから 髪質と履歴に合うものだけをお選びします　購入は任意です'),
     ])
     concerns = ('<section class="mt-12"><h2 class="font-serif text-[19px] text-ink">こんなお悩みの方へ</h2>'
                 '<p class="mt-3 text-[13px] text-charcoal/75" style="line-height:2.1;">'
@@ -648,7 +648,7 @@ def build_salon(slug):
     {crumbs([('ホーム', 'index.html'), ('ヘアサロン', 'hairsalon.html'), (f'{a}のヘアサロン', None)])}
     <p class="mt-7 font-mono tracking-widest2 text-[10px] uppercase text-gold">Hair Salon · {E(a)}</p>
     <h1 class="mt-3 font-serif text-[27px] sm:text-[34px] leading-[1.3] text-ink" style="letter-spacing:.02em;font-weight:500;">{E(a)}で髪を知る人に任せる</h1>
-    <p class="mt-4 text-[14px] text-charcoal/85" style="line-height:2.05;">{E(st['nearline'])}<br>カット・カラー・パーマ・縮毛矯正・トリートメントまで 140以上のサロン専売ブランドを知るプロが{E(room)}で仕上げます</p>
+    <p class="mt-4 text-[14px] text-charcoal/85" style="line-height:2.05;">{E(st['nearline'])}<br>カット・カラー・パーマ・縮毛矯正・トリートメントまで 197のサロン専売ブランドを知るプロが{E(room)}で仕上げます</p>
     <div class="chips mt-5">{''.join(f'<span>{E(n)}</span>' for n in st['near'])}</div>
     {pause_note}
     {photo_block(st, f'{st["name"]}（{st["access"]}）')}
@@ -808,7 +808,7 @@ def build_brand_city(slug, ja, en, city):
       <h2 class="font-serif text-[19px] text-ink">買い方は3つあります</h2>
       <div class="mt-4 space-y-3.5 text-[13.5px] text-charcoal/85" style="line-height:2;">
         <p><span class="text-gold">01</span>　<strong class="font-normal text-ink">店頭で買うだけ</strong>　{E(areas)}の店頭でそのままご購入いただけます　施術も予約も不要です</p>
-        <p><span class="text-gold">02</span>　<strong class="font-normal text-ink">相談してから選ぶ</strong>　髪質と履歴をうかがって140以上のブランドから候補を絞り込みます</p>
+        <p><span class="text-gold">02</span>　<strong class="font-normal text-ink">相談してから選ぶ</strong>　髪質と履歴をうかがって197ブランドから候補を絞り込みます</p>
         <p><span class="text-gold">03</span>　<strong class="font-normal text-ink">ネットショップで買い足す</strong>　店頭でご登録いただくと<a href="onlineshop.html" class="border-b border-line">会員制ネットショップ</a>から通販でご注文いただけます</p>
       </div>
     </section>
