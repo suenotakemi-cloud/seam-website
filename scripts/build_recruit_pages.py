@@ -145,7 +145,7 @@ def page_html(role, slug):
   <script type="application/ld+json">{ld_json}</script>
   <style>
     html {{ scroll-behavior:smooth; background:#FFFFFF; -webkit-text-size-adjust:100%; }}
-    body {{ background:#FFFFFF; color:#2E2C28; font-family:'Noto Sans JP','Inter',sans-serif; -webkit-font-smoothing:antialiased; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); font-size:15px; line-height:1.85; }}
+    body {{ background:#FFFFFF; color:#2A2D34; font-family:'Noto Sans JP','Inter',sans-serif; -webkit-font-smoothing:antialiased; padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); font-size:15px; line-height:1.85; }}
     @media (min-width:640px) {{ body {{ padding-bottom:0; }} }}
     .bottom-nav {{ padding-bottom: env(safe-area-inset-bottom, 0); }}
     .bottom-nav a {{ min-height:56px; }}

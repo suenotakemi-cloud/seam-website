@@ -39,7 +39,7 @@
     var bn = document.createElement('div');
     bn.id = 'seamInappNotice';
     bn.setAttribute('role', 'note');
-    bn.style.cssText = 'margin:0;padding:14px 16px;background:linear-gradient(135deg,#FFF9EC,#F8F1E2);border-bottom:1px solid rgba(184,148,90,.5);font-family:"Noto Sans JP",sans-serif;color:#2E2C28;position:relative;z-index:40;';
+    bn.style.cssText = 'margin:0;padding:14px 16px;background:linear-gradient(135deg,#FFF9EC,#F8F1E2);border-bottom:1px solid rgba(184,148,90,.5);font-family:"Noto Sans JP",sans-serif;color:#2A2D34;position:relative;z-index:40;';
     bn.innerHTML =
       '<div style="max-width:680px;margin:0 auto;display:flex;gap:10px;align-items:flex-start;">' +
         '<span aria-hidden="true" style="flex-shrink:0;font-size:15px;line-height:1.5;">&#128241;</span>' +
@@ -47,7 +47,7 @@
           '<p style="margin:0;font-weight:700;font-size:12.5px;">' + APP_NAME[app] + 'のブラウザでは 結果の保存・LINEで送るが使えません</p>' +
           '<p style="margin:2px 0 0;">' + HOW[app] + ' に切り替えると このまま全部使えます</p>' +
           '<p style="margin:2px 0 0;font-size:10.5px;color:rgba(60,54,46,.65);">Saving &amp; sharing are limited in this in-app browser &mdash; please open in Safari or Chrome.</p>' +
-          '<button type="button" id="seamInappCopy" style="margin-top:8px;padding:9px 14px;border:1px solid rgba(184,148,90,.6);border-radius:2px;background:#fff;font-size:11.5px;color:#2E2C28;cursor:pointer;">リンクをコピー（ブラウザに貼り付け用）</button>' +
+          '<button type="button" id="seamInappCopy" style="margin-top:8px;padding:9px 14px;border:1px solid rgba(184,148,90,.6);border-radius:2px;background:#fff;font-size:11.5px;color:#2A2D34;cursor:pointer;">リンクをコピー（ブラウザに貼り付け用）</button>' +
         '</div>' +
         '<button type="button" id="seamInappClose" aria-label="閉じる" style="flex-shrink:0;background:none;border:0;font-size:16px;line-height:1;color:rgba(60,54,46,.5);padding:2px 4px;cursor:pointer;">&#10005;</button>' +
       '</div>';

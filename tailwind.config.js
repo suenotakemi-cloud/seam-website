@@ -21,8 +21,8 @@ module.exports = {
         ivory:         '#FFFFFF',
         cream:         '#F4F0EA',
         beige:         '#D9CFC3',
-        ink:           '#171614',
-        charcoal:      '#2E2C28',
+        ink:           '#16171B',
+        charcoal:      '#2A2D34',
         gold:          '#B8945A',
         goldLight:     '#D9BE93',
         line:          '#D9CFC3',
@@ -31,7 +31,9 @@ module.exports = {
         deepSection:   '#D9CFC3',
         warmFill:      '#E9D8C8',
         highlightFill: '#F4F0EA',
-        mainBrown:     '#A87456',
+        obsidian:      '#16171B',   // CTAの面(プレステージ基調・2026-07-30採用)
+        obsidianHover: '#23262D',
+        mainBrown:     '#A87456',   // 文字/罫のアクセントとして継続使用(面には使わない)
         cinnamon:      '#A87456',
         rose:          '#D7A39A',
         sage:          '#6C7168',

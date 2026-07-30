@@ -200,14 +200,14 @@ def page_html(b, stores, count, lines, tops):
               '<p class="font-mono tracking-widest2 text-[10px] text-gold uppercase mb-3">Visit</p>'
               f'<h3 class="font-serif text-[19px] sm:text-[22px] text-ink leading-snug">{E(ja)}のご相談は店頭で</h3>'
               '<p class="mt-4 text-[12.5px] sm:text-[13.5px] text-charcoal/75 max-w-sm mx-auto">在庫・価格・選び方はスタッフがご案内します<br>お買い物だけのご来店も歓迎です</p>'
-              '<a href="shop.html#stores" class="mt-6 inline-flex items-center justify-center gap-3 px-7 py-3.5 text-white font-serif text-[14.5px] rounded-full shadow-card" style="background:#B57C5A;letter-spacing:.02em;">'
+              '<a href="shop.html#stores" class="mt-6 inline-flex items-center justify-center gap-3 px-7 py-3.5 text-white font-serif text-[14.5px] rounded-full shadow-card" style="background:#16171B;letter-spacing:.02em;">'
               '<span>近くの店舗を探す</span><span class="inline-flex items-center justify-center w-8 h-8 rounded-full" style="background:#fff;color:#B57C5A;">→</span></a></div>')
     else:
         cta=( '<div class="mt-12 rounded-[4px] bg-cream/60 border border-line px-6 py-9 text-center">'
               '<p class="font-mono tracking-widest2 text-[10px] text-gold uppercase mb-3">Hair Finder</p>'
               f'<h3 class="font-serif text-[19px] sm:text-[22px] text-ink leading-snug">{E(ja)}が今の髪に合うか<br>3分でわかります</h3>'
               '<p class="mt-4 text-[12.5px] sm:text-[13.5px] text-charcoal/75 max-w-sm mx-auto">髪の太さ・量・くせ・カラーや矯正の履歴から<br>197ブランド横断であなたに合うアイテムをご提案します</p>'
-              '<a href="finder.html" class="mt-6 inline-flex items-center justify-center gap-3 px-7 py-3.5 text-white font-serif text-[14.5px] rounded-full shadow-card" style="background:#B57C5A;letter-spacing:.02em;">'
+              '<a href="finder.html" class="mt-6 inline-flex items-center justify-center gap-3 px-7 py-3.5 text-white font-serif text-[14.5px] rounded-full shadow-card" style="background:#16171B;letter-spacing:.02em;">'
               '<span>無料で髪格診断する</span><span class="inline-flex items-center justify-center w-8 h-8 rounded-full" style="background:#fff;color:#B57C5A;">→</span></a>'
               '<p class="mt-4 text-[12px] text-charcoal/60">実際に見て選びたい方は <a href="shop.html" class="text-gold hover:underline underline-offset-4">SEAMの店舗</a> へ（購入だけの来店OK）</p></div>')
 
@@ -457,7 +457,7 @@ def area_article_html(b, st, stores, lines, tops):
     .catrow .v{{font-size:13.5px;color:rgba(43,41,38,.82);line-height:1.9;}}
     .nums{{font-variant-numeric:tabular-nums;}}
     .step{{display:flex;gap:12px;align-items:flex-start;}}
-    .step .n{{flex:none;width:26px;height:26px;border-radius:999px;background:#B57C5A;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;}}
+    .step .n{{flex:none;width:26px;height:26px;border-radius:999px;background:#16171B;color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;}}
   </style>
 </head>
 <body>
@@ -504,7 +504,7 @@ def area_article_html(b, st, stores, lines, tops):
       <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase mb-3">Hair Finder</p>
       <h3 class="font-serif text-[18px] sm:text-[21px] text-ink leading-snug">来店前に 合うかどうか知りたい方へ</h3>
       <p class="mt-3 text-[12.5px] sm:text-[13.5px] text-charcoal/75 max-w-sm mx-auto">無料の髪格診断で 髪質・履歴から<br>あなたに合うアイテムを先にチェックできます</p>
-      <a href="finder.html" class="mt-5 inline-flex items-center justify-center gap-3 px-7 py-3 text-white font-serif text-[14px] rounded-full shadow-card" style="background:#B57C5A;letter-spacing:.02em;">
+      <a href="finder.html" class="mt-5 inline-flex items-center justify-center gap-3 px-7 py-3 text-white font-serif text-[14px] rounded-full shadow-card" style="background:#16171B;letter-spacing:.02em;">
         <span>無料で髪格診断する</span><span aria-hidden>→</span>
       </a>
     </div>

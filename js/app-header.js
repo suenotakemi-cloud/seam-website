@@ -42,13 +42,13 @@
       '#seam-appheader .sah-in{position:relative;max-width:1152px;margin:0 auto;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;}',
       '@media(min-width:640px){#seam-appheader .sah-in{height:64px;padding:0 28px;}}',
       /* hamburger (left) */
-      '#seam-appheader .sah-burger{position:relative;z-index:2;width:44px;height:44px;margin-left:-8px;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;cursor:pointer;color:#171614;-webkit-tap-highlight-color:transparent;}',
+      '#seam-appheader .sah-burger{position:relative;z-index:2;width:44px;height:44px;margin-left:-8px;display:inline-flex;align-items:center;justify-content:center;background:none;border:0;cursor:pointer;color:#16171B;-webkit-tap-highlight-color:transparent;}',
       '#seam-appheader .sah-burger .l{display:flex;flex-direction:column;gap:5px;}',
       '#seam-appheader .sah-burger i{display:block;height:1.6px;background:currentColor;border-radius:2px;}',
       '#seam-appheader .sah-burger i:nth-child(1),#seam-appheader .sah-burger i:nth-child(2){width:22px;}',
       '#seam-appheader .sah-burger i:nth-child(3){width:15px;}',
       /* centered wordmark */
-      '#seam-appheader .sah-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:25px;letter-spacing:.26em;padding-left:.26em;color:#171614;text-decoration:none;line-height:1;white-space:nowrap;}',
+      '#seam-appheader .sah-logo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:25px;letter-spacing:.26em;padding-left:.26em;color:#16171B;text-decoration:none;line-height:1;white-space:nowrap;}',
       '@media(min-width:640px){#seam-appheader .sah-logo{font-size:27px;}}',
       /* right cluster: lang + injected shop pill (app-tabbar) — .sah-in は space-between
          なので直下に3つ目の子が入るとそれが中央=ロゴ上に落ちる。注入物は必ずこの箱の中に収める */
@@ -56,22 +56,22 @@
       '@media(max-width:400px){#seam-appheader .sah-logo{font-size:22px;letter-spacing:.22em;padding-left:.22em;}}',
       '@media(max-width:350px){#seam-appheader .sah-logo{font-size:19px;letter-spacing:.16em;padding-left:.16em;}}',
       /* language toggle (right) */
-      '#seam-appheader .sah-lang{position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:0 4px;background:none;border:0;cursor:pointer;color:#171614;font-size:11.5px;line-height:1;-webkit-tap-highlight-color:transparent;transition:opacity .2s;}',
+      '#seam-appheader .sah-lang{position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:0 4px;background:none;border:0;cursor:pointer;color:#16171B;font-size:11.5px;line-height:1;-webkit-tap-highlight-color:transparent;transition:opacity .2s;}',
       '#seam-appheader .sah-lang:hover{opacity:.7;}',
       '#seam-appheader .sah-lang #langCurrentLabel{letter-spacing:.1em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}',
       /* slide-out menu */
       '#seam-mobilenav{position:fixed;inset:0;z-index:60;background:#fff;transform:translateX(100%);transition:transform .3s ease;overflow-y:auto;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0);}',
       '#seam-mobilenav.open{transform:translateX(0);}',
       '#seam-mobilenav .smn-top{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #E2DDD3;}',
-      '#seam-mobilenav .smn-logo{font-size:21px;letter-spacing:.24em;padding-left:.24em;color:#171614;}',
-      '#seam-mobilenav .smn-close{width:44px;height:44px;margin-right:-8px;display:flex;align-items:center;justify-content:center;background:none;border:0;color:#171614;cursor:pointer;-webkit-tap-highlight-color:transparent;}',
+      '#seam-mobilenav .smn-logo{font-size:21px;letter-spacing:.24em;padding-left:.24em;color:#16171B;}',
+      '#seam-mobilenav .smn-close{width:44px;height:44px;margin-right:-8px;display:flex;align-items:center;justify-content:center;background:none;border:0;color:#16171B;cursor:pointer;-webkit-tap-highlight-color:transparent;}',
       '#seam-mobilenav ul{list-style:none;margin:0;padding:22px 24px 4px;display:flex;flex-direction:column;gap:2px;}',
-      '#seam-mobilenav li a{display:block;padding:12px 0;font-size:17px;color:#171614;text-decoration:none;transition:color .2s;}',
+      '#seam-mobilenav li a{display:block;padding:12px 0;font-size:17px;color:#16171B;text-decoration:none;transition:color .2s;}',
       '#seam-mobilenav li a:hover{color:#B8945A;}',
       '#seam-mobilenav .smn-cta{padding:18px 24px;margin-top:6px;border-top:1px solid #E2DDD3;display:flex;flex-direction:column;gap:12px;}',
       '#seam-mobilenav .smn-cta a{display:block;text-align:center;padding:14px;border-radius:9999px;font-size:15px;text-decoration:none;}',
-      '#seam-mobilenav .smn-cta .is-fill{background:#A87456;color:#fff;}',
-      '#seam-mobilenav .smn-cta .is-out{border:1px solid rgba(23,22,20,.25);color:#171614;}'
+      '#seam-mobilenav .smn-cta .is-fill{background:#16171B;color:#fff;}',
+      '#seam-mobilenav .smn-cta .is-out{border:1px solid rgba(23,22,20,.25);color:#16171B;}'
     ].join('');
     document.head.appendChild(s);
   }

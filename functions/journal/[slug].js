@@ -124,7 +124,7 @@ export async function onRequestGet(context) {
       <p class="font-mono tracking-widest2 text-[10px] text-gold uppercase mb-3">Hair Finder</p>
       <h3 class="font-serif text-[19px] sm:text-[22px] text-ink leading-snug">あなたの髪に合う一本を</h3>
       <p class="mt-4 text-[12.5px] sm:text-[13.5px] text-charcoal/75 max-w-sm mx-auto">髪の太さ・量・くせから 27タイプの髪格を導き 今のあなたに合う3〜5本をご提案します</p>
-      <a href="/finder.html" class="mt-6 inline-flex items-center justify-center gap-3 px-7 py-3.5 text-white font-serif text-[14.5px] rounded-full shadow-card" style="background:#B57C5A;letter-spacing:.02em;">
+      <a href="/finder.html" class="mt-6 inline-flex items-center justify-center gap-3 px-7 py-3.5 text-white font-serif text-[14.5px] rounded-full shadow-card" style="background:#16171B;letter-spacing:.02em;">
         <span>髪格診断をはじめる</span><span class="inline-flex items-center justify-center w-8 h-8 rounded-full" style="background:#fff;color:#B57C5A;">→</span>
       </a>
     </div>

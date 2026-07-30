@@ -1,4 +1,3 @@
-/* AUTO-GENERATED from js/finder-app.jsx by CI (build-finder.js). DO NOT EDIT — edit the .jsx source. */
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* =========================================================================
    SEAM Hair Finder
@@ -6540,7 +6539,7 @@ function TopBar({
     className: "font-mono text-[10px] tracking-widest text-charcoal/35 uppercase"
   }, "Online")))), /*#__PURE__*/React.createElement("a", {
     href: "index.html",
-    className: "mt-8 block w-full text-center bg-mainBrown text-white py-3.5 rounded-full font-serif text-[15px] shadow-card"
+    className: "mt-8 block w-full text-center bg-obsidian text-white py-3.5 rounded-full font-serif text-[15px] shadow-card"
   }, "SEAM \u30C8\u30C3\u30D7\u3078"))));
 }
 
@@ -6691,7 +6690,7 @@ function Home({
     className: "mt-7"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: onStartDeep || onStart,
-    className: "karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 py-4 hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
+    className: "karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-obsidian text-white px-8 py-4 hover:bg-obsidian transition-all w-full sm:w-auto rounded-full shadow-card relative"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-serif text-[15px] sm:text-base"
   }, "\u9AEA\u683C\u3092\u8A3A\u65AD\u3057\u3066 \u4ECA\u5408\u30463\u301C5\u672C\u3092\u898B\u308B"), /*#__PURE__*/React.createElement("svg", {
@@ -6837,7 +6836,7 @@ function Home({
     "aria-hidden": true
   }, "/"), /*#__PURE__*/React.createElement("span", null, "\u5E97\u982D\u76F8\u8AC7\u306B\u9023\u643A")), /*#__PURE__*/React.createElement("button", {
     onClick: onStartDeep || onStart,
-    className: "karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 sm:px-10 py-4 sm:py-[18px] hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
+    className: "karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-obsidian text-white px-8 sm:px-10 py-4 sm:py-[18px] hover:bg-obsidian transition-all w-full sm:w-auto rounded-full shadow-card relative"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-serif text-[15px] sm:text-base"
   }, lastKarte ? '新しく診断をはじめる' : '髪格を診断して 今合う3〜5本を見る'), /*#__PURE__*/React.createElement("span", {
@@ -15417,20 +15416,20 @@ function Result({
     "data-resv-from": "hero",
     className: "relative inline-flex items-center justify-center gap-3 px-7 py-4 sm:py-5 text-white font-serif text-[14px] sm:text-[15px] rounded-full transition-colors shadow-card",
     style: {
-      background: '#B57C5A',
+      background: '#16171B',
       letterSpacing: '0.02em'
     },
     onMouseEnter: e => {
-      e.currentTarget.style.background = '#9F6A4B';
+      e.currentTarget.style.background = '#23262D';
     },
     onMouseLeave: e => {
-      e.currentTarget.style.background = '#B57C5A';
+      e.currentTarget.style.background = '#16171B';
     }
   }, /*#__PURE__*/React.createElement("span", null, "\u8FD1\u304F\u306ESEAM\u3092\u63A2\u3059"), /*#__PURE__*/React.createElement("span", {
     className: "inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full ml-1",
     style: {
       background: '#ffffff',
-      color: '#B57C5A'
+      color: '#16171B'
     }
   }, "\u2192")))), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 sm:mt-5 flex items-center justify-center gap-2 text-[11.5px] sm:text-[12px] text-charcoal/65"

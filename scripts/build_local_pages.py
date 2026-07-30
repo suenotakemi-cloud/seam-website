@@ -402,7 +402,7 @@ def sticky_cta(label, href, track):
             f'style="background:linear-gradient(to top,rgba(255,255,255,.98) 62%,rgba(255,255,255,0));">'
             f'<a href="{href}" target="_blank" rel="noopener" data-track-click="{track}" '
             f'class="flex items-center justify-center rounded-[6px] px-5 py-3.5 text-[14px] text-white" '
-            f'style="background:#B57C5A;">{E(label)}</a></div>')
+            f'style="background:#16171B;">{E(label)}</a></div>')
 
 
 def foot():
@@ -523,7 +523,7 @@ def build_spa(slug):
       <ul class="menu mt-5">{mrows}</ul>
       <p class="mt-4 text-[12.5px] text-charcoal/70">オプション　{opts}</p>
       <a href="{spa_url}" target="_blank" rel="noopener" data-track-click="spa_reserve_hpb"
-         class="mt-6 inline-block rounded-[4px] px-6 py-3.5 text-[13.5px] text-white transition-opacity hover:opacity-90" style="background:#B57C5A;">{E(a)}のヘッドスパを予約する →</a>
+         class="mt-6 inline-block rounded-[4px] px-6 py-3.5 text-[13.5px] text-white transition-opacity hover:opacity-90" style="background:#16171B;">{E(a)}のヘッドスパを予約する →</a>
     </section>
 
     {flow}
@@ -661,7 +661,7 @@ def build_salon(slug):
 
     <section class="mt-11">{menu_block}
       <a href="{cta_url}"{cta_blank} data-track-click="{cta_track}"
-         class="mt-6 inline-block rounded-[4px] px-6 py-3.5 text-[13.5px] text-white transition-opacity hover:opacity-90" style="background:#B57C5A;">{E(cta_text)} →</a>
+         class="mt-6 inline-block rounded-[4px] px-6 py-3.5 text-[13.5px] text-white transition-opacity hover:opacity-90" style="background:#16171B;">{E(cta_text)} →</a>
     </section>
 
     {flow}

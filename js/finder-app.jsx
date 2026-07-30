@@ -4757,7 +4757,7 @@ function TopBar({ step, total }) {
               <li><a href="headspa.html" className="flex items-center justify-between py-3.5 text-ink"><span>ヘッドスパ</span><span className="font-mono text-[10px] tracking-widest text-charcoal/35 uppercase">Spa</span></a></li>
               <li><a href="onlineshop.html" className="flex items-center justify-between py-3.5 text-ink"><span>オンラインショップ</span><span className="font-mono text-[10px] tracking-widest text-charcoal/35 uppercase">Online</span></a></li>
             </ul>
-            <a href="index.html" className="mt-8 block w-full text-center bg-mainBrown text-white py-3.5 rounded-full font-serif text-[15px] shadow-card">SEAM トップへ</a>
+            <a href="index.html" className="mt-8 block w-full text-center bg-obsidian text-white py-3.5 rounded-full font-serif text-[15px] shadow-card">SEAM トップへ</a>
           </nav>
         </div>
       )}
@@ -4819,7 +4819,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
             <div className="mt-7">
               <button
                 onClick={onStartDeep || onStart}
-                className="karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 py-4 hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
+                className="karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-obsidian text-white px-8 py-4 hover:bg-obsidian transition-all w-full sm:w-auto rounded-full shadow-card relative"
               >
                 <span className="font-serif text-[15px] sm:text-base">髪格を診断して 今合う3〜5本を見る</span>
                 <svg className="w-[15px] h-[15px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -4955,7 +4955,7 @@ function Home({ onStart, onStartDeep, lastKarte, onResume, onClearLast, onCollec
           {/* 主CTA: 押した先で何が返るかを明示(結果志向) + 遊び心(sparkle + bounce) */}
           <button
             onClick={onStartDeep || onStart}
-            className="karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-mainBrown text-white px-8 sm:px-10 py-4 sm:py-[18px] hover:bg-cinnamon transition-all w-full sm:w-auto rounded-full shadow-card relative"
+            className="karte-cta-playful group inline-flex items-center justify-center gap-2.5 bg-obsidian text-white px-8 sm:px-10 py-4 sm:py-[18px] hover:bg-obsidian transition-all w-full sm:w-auto rounded-full shadow-card relative"
           >
             <span className="font-serif text-[15px] sm:text-base">{lastKarte ? '新しく診断をはじめる' : '髪格を診断して 今合う3〜5本を見る'}</span>
             <span className="karte-sparkle text-white/90" style={{fontSize:'12px'}}>✦</span>
@@ -11841,12 +11841,12 @@ function Result({ answers, onRestart, onCollection }) {
                 data-open-resv
                 data-resv-from="hero"
                 className="relative inline-flex items-center justify-center gap-3 px-7 py-4 sm:py-5 text-white font-serif text-[14px] sm:text-[15px] rounded-full transition-colors shadow-card"
-                style={{background:'#B57C5A', letterSpacing:'0.02em'}}
-                onMouseEnter={(e)=>{e.currentTarget.style.background='#9F6A4B'}}
-                onMouseLeave={(e)=>{e.currentTarget.style.background='#B57C5A'}}
+                style={{background:'#16171B', letterSpacing:'0.02em'}}
+                onMouseEnter={(e)=>{e.currentTarget.style.background='#23262D'}}
+                onMouseLeave={(e)=>{e.currentTarget.style.background='#16171B'}}
               >
                 <span>近くのSEAMを探す</span>
-                <span className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full ml-1" style={{background:'#ffffff', color:'#B57C5A'}}>→</span>
+                <span className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full ml-1" style={{background:'#ffffff', color:'#16171B'}}>→</span>
               </button>
             </div>
           </div>
