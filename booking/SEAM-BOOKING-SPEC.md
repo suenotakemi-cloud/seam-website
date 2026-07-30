@@ -407,7 +407,21 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 - **API**：`POST /receipt/token`（合言葉の発行・管理）／`POST /line/link`（お客様・合言葉+IDトークン）／`GET /member/me?idToken=`（お客様・自分の会員証と履歴）／`GET /member/lookup?code=`（レジ・管理）／`POST /receipt/line`（レジからLINEへ直接送る）／`POST /line/backfill`（予約でLINE連携済みの方を顧客台帳へ取り込む）。
 - **テーブル**：`members(code, cust_key, line_user_id, name, created_at)`・`receipt_tokens(token, checkout_id, cust_key, created_at, used_at)`。`customer_notes` に `line_user_id / line_name / line_linked_at` を追加。
 - **顧客の同一性**：既存方針どおり **電話番号がキー**（`cust_key`）。電話が無い会計は `n:氏名` を使う暫定キー。
-- **未確定**：LINE公式アカウントは全店で1つか店舗ごとか（Workerは `LINE_CHANNEL_ACCESS_TOKEN` 1本＝現状は1つ前提）。店舗ごとにする場合は店舗別トークンとLIFFの用意が必要。
+### 店舗ごとのLINE公式アカウント（2026-07-30確定）
+
+**方針：店舗ごとに別のLINE公式アカウント。ただし走り出しは銀座だけ。**
+
+⚠️**LINEのお客様ID（userId）は公式アカウント（チャネル）ごとに別の値**になる。銀座のOAで取ったIDは札幌のOAには送れない。そのため「どの店のLINEでのIDか」を必ず一緒に持つ。
+
+- **`line_links(cust_key, shop_id, line_user_id, line_name, linked_at)`** が本体（PK＝顧客キー＋店舗）。同じお客様が複数店のLINEに入れる。`customer_notes.line_user_id` は表示と既存の通知経路のために併記する。
+- **LIFF**：店舗ごとに `shops.liff_id`（公開情報）。管理画面（設定→📱LINEで領収書・会員証→店舗ごとのLINE公式アカウント）から入れる。会員証URLは `line.html?s=<店舗ID>`、QRは `https://liff.line.me/<その店のLIFF>?t=<合言葉>&s=<店舗ID>`。
+- **本人確認**：`verifyLineUser(env, idToken, liffId)` が **LIFF IDの「-」より前をチャネルID**として `client_id` に使う＝店舗ごとに正しく検証される。
+- **送信トークン**：店舗ごとの秘密 **`LINE_TOKEN_<店舗IDを大文字>`**（例 `npx wrangler secret put LINE_TOKEN_SAPPORO`）。`lineToken(env, shopId)` が引く。未設定なら `LINE_CHANNEL_ACCESS_TOKEN`（いまは銀座）。
+- **⚠️安全側の作り**：LIFFが入っていない店舗には**既定のLIFFを使わせない**（空を返してQRを出さない）。既定に落とすと、その店のお客様が別の店のチャネルで結び付き混線するため。既定LIFFを使えるのは `LINE_DEFAULT_SHOP`（＝`ginza`）だけ。
+- **状態確認**：`GET /line/shop-status`（管理）が店舗ごとに LIFF有無・自店トークン有無を返す（トークンの中身は返さない）。
+- **⚠️過去の不具合**：`/receipt/line` が `linePush` にオブジェクトを渡していてLINEに弾かれていた（`linePush(env, uid, text, shopId)` は文字列を受ける）。2026-07-30修正。
+
+**札幌の店舗間ヘルプは保留**（2026-07-30オーナー判断）。このD1には銀座の予約しか入っていないため、着手時は札幌の店舗一覧とHPBサロンIDが必要。円山は移動15分を考慮する要望。
 
 ---
 

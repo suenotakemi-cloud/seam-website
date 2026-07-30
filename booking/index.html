@@ -1412,8 +1412,10 @@ const API = {
   // ---- レジ・会計（D1）----
   async listCheckouts(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts'+(from?`?from=${from}&to=${to||from}`:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.checkouts:null;}catch{return null;} },
   async saveCheckout(c){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(c)});return r.ok?await r.json():null;}catch{return null;} },
-  async receiptToken(checkoutId,phone){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/receipt/token',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone})});const j=await r.json();return r.ok?j:null;}catch{return null;} },
-  async sendLineReceipt(checkoutId,phone){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/receipt/line',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async receiptToken(checkoutId,phone,shopId){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/receipt/token',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone,shopId})});const j=await r.json();return r.ok?j:null;}catch{return null;} },
+  async sendLineReceipt(checkoutId,phone,shopId){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/receipt/line',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone,shopId})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async lineShopStatus(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/line/shop-status',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
+  async saveLineShopConfig(shopId,liffId,oaUrl){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/line/shop-config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({shopId,liffId,oaUrl})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async commConfig(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/comm/config',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async saveCommConfig(cfg){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/comm/config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(cfg)});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async staffPasses(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/staff/passes',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
@@ -2684,7 +2686,8 @@ function renderNextVisit(){
  * お客様がレジ前にいるこの瞬間が、LINEに入っていただける一番の機会。
  * QRをLINEのカメラで読むと、その方のLINEと顧客台帳が結び付き、
  * 以後は領収のご案内・ご予約のお知らせ・ポイントがLINEで完結する。 */
-const LINE_LIFF_URL='https://liff.line.me/2010490592-nXUUaxqI';
+/* 会計後のQR。店舗ごとにLINE公式アカウントが違うので、
+ * LIFFはサーバーから店舗ぶんを受け取って組む（決め打ちにしない）。 */
 let _qrLibP=null;
 function loadQRLib(){
   if(window.qrcode)return Promise.resolve();
@@ -2701,9 +2704,12 @@ async function openLineReceipt(rec){
   document.getElementById('checkoutbg').classList.add('show');
   box.innerHTML=`<h3>📱 領収のご案内をLINEで</h3><div class="co-sub" style="margin-top:2px">準備しています…</div>`;
   const phone=rec.phone||'';
-  const [tk]=await Promise.all([API.receiptToken(rec.id,phone),loadQRLib().catch(()=>null)]);
-  const url=tk&&tk.token?LINE_LIFF_URL+'?t='+tk.token:'';
+  const [tk]=await Promise.all([API.receiptToken(rec.id,phone,SHOP_ID),loadQRLib().catch(()=>null)]);
+  const url=(tk&&tk.token&&tk.liffId)
+    ? `https://liff.line.me/${tk.liffId}?t=${tk.token}&s=${encodeURIComponent(tk.shopId||SHOP_ID||'')}`
+    : '';
   const img=url&&window.qrcode?qrImg(url,7):'';
+  const noLiff=!!(tk&&tk.token&&!tk.liffId);
   box.innerHTML=`<h3>📱 領収のご案内をLINEで</h3>
     <div class="co-sub" style="margin-top:2px">${escH(rec.customer||'お客様')} 様　¥${rec.total.toLocaleString()}</div>
     ${img?`<div style="text-align:center;margin:14px 0 6px">
@@ -2712,7 +2718,8 @@ async function openLineReceipt(rec){
           お客様のスマホでこちらを読み取っていただくと<br>領収のご案内と<b>会員証</b>がLINEに届きます</div>
       </div>`
       :`<div class="co-done" style="margin-top:12px;background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">
-          QRを準備できませんでした。通信を確認してください。紙のレシートでお渡しください</div>`}
+          ${noLiff?'この店舗のLINEがまだ設定されていません（設定→📱LINEで領収書・会員証）。紙のレシートでお渡しください'
+                  :'QRを準備できませんでした。通信を確認してください。紙のレシートでお渡しください'}</div>`}
     <div class="co-line" style="margin-top:6px"><span style="font-size:12.5px;color:#7d746b">すでにLINEでお繋がりの方は</span>
       <button class="btn small" id="lr-push" style="margin-left:auto">LINEに直接送る</button></div>
     <div class="row" style="margin-top:14px">
@@ -2724,7 +2731,7 @@ async function openLineReceipt(rec){
   box.querySelector('#lr-next').onclick=done;
   box.querySelector('#lr-push').onclick=async(e)=>{
     const b=e.target;b.disabled=true;b.textContent='送信中…';
-    const r=await API.sendLineReceipt(rec.id,phone);
+    const r=await API.sendLineReceipt(rec.id,phone,SHOP_ID);
     if(r&&r.ok){b.textContent='送信しました';toast('LINEに領収のご案内を送りました');}
     else{b.disabled=false;b.textContent='LINEに直接送る';toast((r&&r.error)||'送れませんでした',true);}
   };
@@ -2883,7 +2890,15 @@ function renderRegister(){
     </div>
     <label class="csopt" style="max-width:520px"><input type="checkbox" id="line-receipt" ${stg('lineReceipt','1')==='1'?'checked':''}>
       <span><b>会計のあとにLINEのQRを出す</b><i>LINE公式アカウントをお持ちのお店向け。外すと今までどおり紙のレシートだけになります</i></span></label>
-    <div id="line-receipt-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div></div>`;
+    <div id="line-receipt-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div>
+    <div class="co-sub" style="margin-top:16px">店舗ごとのLINE公式アカウント</div>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:8px">
+      LINEのお客様IDは<b>公式アカウントごとに別の値</b>になります。店舗ごとにアカウントを分ける場合は、
+      店舗ごとに<b>LIFF ID</b>を入れ、送信用のトークンを店舗ごとの秘密に入れてください。<br>
+      <span style="font-family:ui-monospace,monospace;font-size:11.5px">npx wrangler secret put LINE_TOKEN_&lt;店舗IDを大文字&gt;</span><br>
+      トークンが無い店舗は<b>既定のアカウント（いまは銀座）</b>で送られます。
+    </div>
+    <div id="line-shops" style="font-size:12.5px">読み込んでいます…</div></div>`;
 
   // 前金(デポジット)の設定 — 予約ページの言語ごとに変える。日本語=定額/海外=料金の◯%
   const DEP_LANGS=[['ja','日本語のお客様'],['en','English'],['zh','简体中文'],['tw','繁體中文'],['ko','한국어']];
@@ -3001,6 +3016,36 @@ function renderRegister(){
        drawRanks();toast('会員ランクを保存しました');
      }else toast((r&&r.error)||'保存できませんでした',true);
    };}
+  // 店舗ごとのLINE設定
+  {const draw=(j)=>{
+     const box=document.getElementById('line-shops'); if(!box)return;
+     if(!j||!j.shops){box.innerHTML='<span style="color:var(--sub)">サーバーに接続できません</span>';return;}
+     box.innerHTML=j.shops.map(sh=>`<div style="border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:8px">
+       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+         <b>${escH(sh.name)}</b>
+         <span style="font-size:11px;color:var(--sub)">${escH(sh.id)}</span>
+         <span style="font-size:11px;font-weight:700;margin-left:auto;color:${sh.hasOwnToken?'var(--ok)':'var(--sub)'}">
+           ${sh.hasOwnToken?'✓ この店舗のトークンあり':(j.hasDefaultToken?'既定のアカウントで送信':'⚠ トークン未設定')}</span>
+       </div>
+       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+         <input class="ls-liff" data-s="${escH(sh.id)}" value="${escH(sh.liffId)}" placeholder="LIFF ID（例 2010490592-nXUUaxqI）" style="flex:1;min-width:190px">
+         <input class="ls-oa" data-s="${escH(sh.id)}" value="${escH(sh.oaUrl)}" placeholder="友だち追加URL（任意）" style="flex:1;min-width:170px">
+         <button class="btn small ghost ls-save" data-s="${escH(sh.id)}">保存</button>
+       </div>
+       ${sh.liffId?`<div style="font-size:11px;color:var(--sub);margin-top:5px">会員証: ${escH(location.origin+location.pathname.replace(/[^/]*$/,''))}line.html?s=${escH(sh.id)}</div>`:''}
+     </div>`).join('');
+     box.querySelectorAll('.ls-save').forEach(b=>b.onclick=async()=>{
+       const id=b.dataset.s;
+       const liff=(box.querySelector(`.ls-liff[data-s="${id}"]`)||{}).value||'';
+       const oa=(box.querySelector(`.ls-oa[data-s="${id}"]`)||{}).value||'';
+       b.disabled=true;b.textContent='保存中…';
+       const r=await API.saveLineShopConfig(id,liff.trim(),oa.trim());
+       b.disabled=false;b.textContent='保存';
+       if(r&&r.ok){toast('保存しました');API.lineShopStatus().then(draw);}
+       else toast((r&&r.error)||'保存できませんでした',true);
+     });
+   };
+   API.lineShopStatus().then(draw);}
   // LINEで領収書のON/OFF
   {const el=document.getElementById('line-receipt');
    if(el)el.onchange=()=>{setStg('lineReceipt',el.checked?'1':'0');

@@ -60,8 +60,12 @@
 </div>
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';
-const LIFF_ID='2010490592-nXUUaxqI';
 const Q=new URLSearchParams(location.search);
+/* どの店舗のLINEで開いているか。LINEのuserIdは店舗のOAごとに別の値なので、
+ * 必ずその店のLIFFで開かないと本人確認が通らない。
+ * 店舗はURLの ?s= で渡す（レジが出すQRに入っている）。 */
+const SHOP=(Q.get('s')||'ginza').replace(/[^a-z0-9_-]/gi,'');
+let LIFF_ID='';   // その店のLIFF。サーバーから取る
 const app=document.getElementById('app');
 const yen=n=>'¥'+Number(n||0).toLocaleString();
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -157,7 +161,16 @@ function fail(msg,hint){
 }
 
 async function run(){
-  let uid='', dispName='', idToken='';
+  let uid='', dispName='', idToken='', oaUrl='';
+  // その店のLIFFを取ってくる（店舗ごとにLINE公式アカウントが違う）
+  try{
+    const cfg=await jget(API+'/line/shop-config?shop='+encodeURIComponent(SHOP));
+    LIFF_ID=cfg.liffId||''; oaUrl=cfg.oaUrl||'';
+  }catch(e){}
+  if(!LIFF_ID){
+    fail('この店舗のLINEの設定がまだありません','お手数ですがスタッフにお声がけください');
+    return;
+  }
   // LINEの中で開かれたときは、その方のLINEを確かめる
   try{
     await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://static.line-scdn.net/liff/edge/2/sdk.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
@@ -183,7 +196,7 @@ async function run(){
     app.innerHTML=(j.receipt?receiptCard(j.receipt):'')
       + (j.memberCode?memberCard(j.memberCode,j.points,'',j):'')
       + `<div class="note ok">LINEに登録しました。次回からご予約のお知らせ・領収のご案内がこちらに届きます</div>`
-      + `<a class="btn" href="./line.html">会員証をひらく</a>`;
+      + `<a class="btn" href="./line.html?s=${encodeURIComponent(SHOP)}">会員証をひらく</a>`;
     return;
   }
 
@@ -191,11 +204,11 @@ async function run(){
   if(!uid){
     app.innerHTML=`<div class="card"><h1 style="font-size:16px">会員証</h1>
       <p class="sub">LINEアプリの中で開くと会員証が表示されます</p>
-      <a class="btn line" href="https://liff.line.me/${LIFF_ID}">LINEでひらく</a></div>`;
+      <a class="btn line" href="https://liff.line.me/${LIFF_ID}?s=${encodeURIComponent(SHOP)}">LINEでひらく</a></div>`;
     return;
   }
   let j;
-  try{ j=await jget(API+'/member/me?uid='+encodeURIComponent(uid)+'&idToken='+encodeURIComponent(idToken)); }
+  try{ j=await jget(API+'/member/me?s='+encodeURIComponent(SHOP)+'&uid='+encodeURIComponent(uid)+'&idToken='+encodeURIComponent(idToken)); }
   catch(e){ fail(e.message); return; }
   if(!j.linked){
     app.innerHTML=`<div class="card"><h1 style="font-size:16px">まだ会員証がありません</h1>
