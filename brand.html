@@ -2443,29 +2443,14 @@
       .brand-store-picker { padding: 40px 16px; }
     }
 
-    /* ═══════════════════════════════════════════════════════════════
-       App-Fit Container — 全ページ共通 (max-width: 480px)
-       ─────────────────────────────────────────────────────────────── */
-    :root { --app-max-width: 480px; --app-frame-color: #EFE6D8; }
-    @media (min-width: 720px) {
-      html { background: var(--app-frame-color); }
-      body {
-        max-width: var(--app-max-width);
-        margin: 0 auto;
-        background: var(--off-white);
-        box-shadow: 0 0 80px rgba(26,24,21,0.06), 0 0 1px rgba(184,148,90,0.2);
-        min-height: 100vh;
-        position: relative;
-      }
-      /* Fixed elements (header / ticker) — center align */
-      .header, .ticker, .header-top, .header-nav, [class*="fixed"] {
-        max-width: var(--app-max-width) !important;
-        left: 50% !important;
-        right: auto !important;
-        transform: translateX(-50%) !important;
-        width: 100% !important;
-      }
-    }
+    /* App-Fit Container は除去(2026-07-30)
+       PC(720px以上)で body を max-width:480px に固定していたため
+       ブランド一覧がスマホ幅の縦1列になり カード内の文字が1文字ずつ折り返していた。
+       さらに [class*="fixed"] を強制的に中央寄せしていたため
+       ヘッダーのロゴと「オンラインショップ」が重なっていた。
+       このページは .mode-toggle-wrap(1080px) や .dir-inner(1100px) など
+       広い画面を前提に作られており アプリ枠は合わない。
+       ※ finder.html と onlineshop.html のアプリ枠は意図的な設計なので残す */
 
     /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     /* ★ Mode Toggle — ブランドから探す / 商品から探す       */
