@@ -825,6 +825,84 @@ export default {
       const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM products').first().catch(() => ({ c: 0 }));
       return json({ ok: true, added, updated, skipped, total: (cnt && cnt.c) || 0 }, 200, cors);
     }
+    /* ===== 店舗ごとの在庫 =====
+     * 免税は銀座と同じ商品を扱うため、在庫は銀座と一体（Square店舗は2つ／在庫はひとつ）。 */
+    if (p.endsWith('/shops') && m === 'GET') {
+      if (!cleanupTok(url, env)) { const auth = A(); if (auth) return auth; }
+      await ensureRegisterTables(env);
+      const r = await env.DB.prepare('SELECT * FROM shops WHERE active<>0 ORDER BY sort_num').all();
+      return json({ ok: true, shops: r.results || [] }, 200, cors);
+    }
+    // 1商品の全店在庫（「どこにあるか」を即答するための画面用）
+    if (p.endsWith('/stock/product') && m === 'GET') {
+      if (!cleanupTok(url, env)) { const auth = A(); if (auth) return auth; }
+      await ensureRegisterTables(env);
+      const pid = url.searchParams.get('productId') || '';
+      if (!pid) return json({ error: 'productId は必須' }, 400, cors);
+      const r = await env.DB.prepare(`SELECT s.id shop_id, s.name shop_name, COALESCE(b.qty,0) qty
+        FROM shops s LEFT JOIN stock_by_shop b ON b.shop_id=s.id AND b.product_id=?
+        WHERE s.active<>0 ORDER BY s.sort_num`).bind(pid).all();
+      const pr = await env.DB.prepare('SELECT id,name,price,barcode,brand FROM products WHERE id=?').bind(pid).first();
+      return json({ ok: true, product: pr || null, stocks: r.results || [] }, 200, cors);
+    }
+    // 在庫の増減（会計・入荷・手直し）。店舗を指定して足し引きする
+    if (p.endsWith('/stock/adjust') && m === 'POST') {
+      if (!cleanupTok(url, env)) { const auth = A(); if (auth) return auth; }
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      const shop = String(o.shopId || 'ginza'), pid = String(o.productId || '');
+      const d = Math.round(+o.delta || 0);
+      if (!pid || !d) return json({ error: 'productId と delta は必須' }, 400, cors);
+      const now = new Date().toISOString();
+      await env.DB.prepare(`INSERT INTO stock_by_shop (shop_id,product_id,qty,updated_at) VALUES (?,?,?,?)
+        ON CONFLICT(shop_id,product_id) DO UPDATE SET qty=stock_by_shop.qty+excluded.qty, updated_at=excluded.updated_at`)
+        .bind(shop, pid, d, now).run();
+      const cur = await env.DB.prepare('SELECT qty FROM stock_by_shop WHERE shop_id=? AND product_id=?').bind(shop, pid).first();
+      // 記録を残す（あとで「いつ何が動いたか」を追える）
+      await env.DB.prepare('INSERT INTO stock_adjust (id,take_id,product_id,before_qty,after_qty,diff,reason,staff,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+        .bind('sa' + crypto.randomUUID().slice(0, 8), '', pid, ((cur && cur.qty) || 0) - d, (cur && cur.qty) || 0, d, o.reason || '手直し', o.staff || '', now).run().catch(() => {});
+      return json({ ok: true, shopId: shop, qty: (cur && cur.qty) || 0 }, 200, cors);
+    }
+    // ★店舗間の在庫移動。出す店から引いて、入れる店に足し、記録を残す
+    if (p.endsWith('/stock/move') && m === 'POST') {
+      if (!cleanupTok(url, env)) { const auth = A(); if (auth) return auth; }
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      const pid = String(o.productId || ''), from = String(o.fromShop || ''), to = String(o.toShop || '');
+      const qty = Math.round(+o.qty || 0);
+      if (!pid || !from || !to) return json({ error: '商品と、出す店・入れる店が必要です' }, 400, cors);
+      if (from === to) return json({ error: '同じ店舗には移動できません' }, 400, cors);
+      if (qty <= 0) return json({ error: '数量は1以上にしてください' }, 400, cors);
+      // 出す店の在庫が足りるか（マイナスにしない）
+      const src = await env.DB.prepare('SELECT qty FROM stock_by_shop WHERE shop_id=? AND product_id=?').bind(from, pid).first();
+      const have = (src && src.qty) || 0;
+      if (have < qty && o.force !== true) {
+        return json({ error: `出す店の在庫が足りません（${have}個しかありません）`, have }, 400, cors);
+      }
+      const now = new Date().toISOString();
+      const mid = 'mv' + crypto.randomUUID().slice(0, 8);
+      await env.DB.batch([
+        env.DB.prepare(`INSERT INTO stock_by_shop (shop_id,product_id,qty,updated_at) VALUES (?,?,?,?)
+          ON CONFLICT(shop_id,product_id) DO UPDATE SET qty=stock_by_shop.qty-?, updated_at=excluded.updated_at`).bind(from, pid, -qty, now, qty),
+        env.DB.prepare(`INSERT INTO stock_by_shop (shop_id,product_id,qty,updated_at) VALUES (?,?,?,?)
+          ON CONFLICT(shop_id,product_id) DO UPDATE SET qty=stock_by_shop.qty+?, updated_at=excluded.updated_at`).bind(to, pid, qty, now, qty),
+        env.DB.prepare('INSERT INTO stock_moves (id,product_id,from_shop,to_shop,qty,staff,note,created_at) VALUES (?,?,?,?,?,?,?,?)')
+          .bind(mid, pid, from, to, qty, o.staff || '', o.note || '', now),
+      ]);
+      const a = await env.DB.prepare('SELECT qty FROM stock_by_shop WHERE shop_id=? AND product_id=?').bind(from, pid).first();
+      const b = await env.DB.prepare('SELECT qty FROM stock_by_shop WHERE shop_id=? AND product_id=?').bind(to, pid).first();
+      return json({ ok: true, id: mid, from: { shopId: from, qty: (a && a.qty) || 0 }, to: { shopId: to, qty: (b && b.qty) || 0 } }, 200, cors);
+    }
+    // 移動の履歴
+    if (p.endsWith('/stock/moves') && m === 'GET') {
+      if (!cleanupTok(url, env)) { const auth = A(); if (auth) return auth; }
+      await ensureRegisterTables(env);
+      const r = await env.DB.prepare(`SELECT mv.*, p.name product_name, sf.name from_name, st.name to_name
+        FROM stock_moves mv LEFT JOIN products p ON p.id=mv.product_id
+        LEFT JOIN shops sf ON sf.id=mv.from_shop LEFT JOIN shops st ON st.id=mv.to_shop
+        ORDER BY mv.created_at DESC LIMIT 200`).all();
+      return json({ ok: true, moves: r.results || [] }, 200, cors);
+    }
     /* ===== 棚卸し（商品5000点規模）=====
      * 現場の速さを最優先にした作り：
      *  ・スキャン1回＝1往復（サーバーでバーコードを引いて数を+1して返す）。全件をブラウザに載せない
@@ -841,9 +919,10 @@ export default {
       if (open) return json({ ok: true, resumed: true, take: open }, 200, cors);
       const id = 'st' + crypto.randomUUID().slice(0, 8);
       const now = new Date().toISOString();
-      await env.DB.prepare('INSERT INTO stocktakes (id,name,staff,status,started_at) VALUES (?,?,?,?,?)')
-        .bind(id, o.name || (now.slice(0, 10) + ' 棚卸し'), o.staff || '', 'open', now).run();
-      return json({ ok: true, resumed: false, take: { id, name: o.name || '', staff: o.staff || '', status: 'open', started_at: now } }, 200, cors);
+      const shop = String(o.shopId || 'ginza');   // どの店舗を数えているか
+      await env.DB.prepare('INSERT INTO stocktakes (id,name,staff,status,started_at,shop_id) VALUES (?,?,?,?,?,?)')
+        .bind(id, o.name || (now.slice(0, 10) + ' 棚卸し'), o.staff || '', 'open', now, shop).run();
+      return json({ ok: true, resumed: false, take: { id, name: o.name || '', staff: o.staff || '', status: 'open', started_at: now, shop_id: shop } }, 200, cors);
     }
     if (p.endsWith('/stocktake') && m === 'GET') {
       if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
@@ -906,22 +985,28 @@ export default {
       if (!id) return json({ error: 'id は必須' }, 400, cors);
       const withUnscanned = url.searchParams.get('unscanned') === '1';
       // 数えた商品のうち、理論在庫と違うものだけ
+      const tk = await env.DB.prepare('SELECT shop_id FROM stocktakes WHERE id=?').bind(id).first();
+      const shop = (tk && tk.shop_id) || 'ginza';
+      // 比べる相手は「その店舗の在庫」
       const dif = await env.DB.prepare(`
-        SELECT p.id, p.name, p.barcode, p.price, p.stock AS theory, c.counted
+        SELECT p.id, p.name, p.barcode, p.price, COALESCE(b.qty,0) AS theory, c.counted
         FROM stocktake_counts c JOIN products p ON p.id=c.product_id
-        WHERE c.take_id=? AND c.counted <> p.stock ORDER BY (c.counted - p.stock) ASC LIMIT 2000`).bind(id).all();
+        LEFT JOIN stock_by_shop b ON b.shop_id=? AND b.product_id=p.id
+        WHERE c.take_id=? AND c.counted <> COALESCE(b.qty,0) ORDER BY (c.counted - COALESCE(b.qty,0)) ASC LIMIT 2000`).bind(shop, id).all();
       // 一度も読まれていない商品（在庫があるのに読めていない＝紛失の可能性）
       let un = { results: [] };
       if (withUnscanned) {
         un = await env.DB.prepare(`
-          SELECT p.id, p.name, p.barcode, p.price, p.stock AS theory
-          FROM products p WHERE p.active<>0 AND p.stock<>0
+          SELECT p.id, p.name, p.barcode, p.price, b.qty AS theory
+          FROM stock_by_shop b JOIN products p ON p.id=b.product_id
+          WHERE b.shop_id=? AND b.qty<>0 AND p.active<>0
             AND p.id NOT IN (SELECT product_id FROM stocktake_counts WHERE take_id=?)
-          ORDER BY p.stock DESC LIMIT 2000`).bind(id).all();
+          ORDER BY b.qty DESC LIMIT 2000`).bind(shop, id).all();
       }
       const okCnt = await env.DB.prepare(`
         SELECT COUNT(*) c FROM stocktake_counts c JOIN products p ON p.id=c.product_id
-        WHERE c.take_id=? AND c.counted = p.stock`).bind(id).first();
+        LEFT JOIN stock_by_shop b ON b.shop_id=? AND b.product_id=p.id
+        WHERE c.take_id=? AND c.counted = COALESCE(b.qty,0)`).bind(shop, id).first();
       return json({ ok: true,
         diffs: (dif.results || []).map(r => ({ ...r, diff: (r.counted || 0) - (r.theory || 0) })),
         unscanned: (un.results || []),
@@ -938,27 +1023,36 @@ export default {
       if (!take) return json({ error: '棚卸しが見つかりません' }, 404, cors);
       if (take.status !== 'open') return json({ error: 'すでに確定しています' }, 400, cors);
       const zeroUnscanned = o.zeroUnscanned === true;   // 読めなかったものを0にするか（既定はしない）
+      const shop = take.shop_id || 'ginza';
       const rows = await env.DB.prepare(`
-        SELECT p.id, p.stock AS theory, c.counted FROM stocktake_counts c JOIN products p ON p.id=c.product_id
-        WHERE c.take_id=? AND c.counted <> p.stock`).bind(o.id).all();
+        SELECT p.id, COALESCE(b.qty,0) AS theory, c.counted FROM stocktake_counts c JOIN products p ON p.id=c.product_id
+        LEFT JOIN stock_by_shop b ON b.shop_id=? AND b.product_id=p.id
+        WHERE c.take_id=? AND c.counted <> COALESCE(b.qty,0)`).bind(shop, o.id).all();
       const now = new Date().toISOString();
       let changed = 0;
+      // まとめて書く（1件ずつだと回数の上限に当たる）
+      const st = [];
       for (const r of (rows.results || [])) {
-        await env.DB.prepare('UPDATE products SET stock=? WHERE id=?').bind(r.counted, r.id).run();
-        await env.DB.prepare('INSERT INTO stock_adjust (id,take_id,product_id,before_qty,after_qty,diff,reason,staff,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
-          .bind('sa' + crypto.randomUUID().slice(0, 8), o.id, r.id, r.theory || 0, r.counted || 0, (r.counted || 0) - (r.theory || 0), '棚卸し', o.staff || take.staff || '', now).run();
+        st.push(env.DB.prepare(`INSERT INTO stock_by_shop (shop_id,product_id,qty,updated_at) VALUES (?,?,?,?)
+          ON CONFLICT(shop_id,product_id) DO UPDATE SET qty=excluded.qty, updated_at=excluded.updated_at`).bind(shop, r.id, r.counted, now));
+        st.push(env.DB.prepare('INSERT INTO stock_adjust (id,take_id,product_id,before_qty,after_qty,diff,reason,staff,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+          .bind('sa' + crypto.randomUUID().slice(0, 8), o.id, r.id, r.theory || 0, r.counted || 0, (r.counted || 0) - (r.theory || 0), '棚卸し', o.staff || take.staff || '', now));
         changed++;
       }
+      for (let i = 0; i < st.length; i += 50) await env.DB.batch(st.slice(i, i + 50));
       let zeroed = 0;
       if (zeroUnscanned) {
-        const un = await env.DB.prepare(`SELECT id, stock FROM products WHERE active<>0 AND stock<>0
-            AND id NOT IN (SELECT product_id FROM stocktake_counts WHERE take_id=?)`).bind(o.id).all();
+        const un = await env.DB.prepare(`SELECT b.product_id id, b.qty FROM stock_by_shop b JOIN products p ON p.id=b.product_id
+            WHERE b.shop_id=? AND b.qty<>0 AND p.active<>0
+            AND b.product_id NOT IN (SELECT product_id FROM stocktake_counts WHERE take_id=?)`).bind(shop, o.id).all();
+        const zs = [];
         for (const r of (un.results || [])) {
-          await env.DB.prepare('UPDATE products SET stock=0 WHERE id=?').bind(r.id).run();
-          await env.DB.prepare('INSERT INTO stock_adjust (id,take_id,product_id,before_qty,after_qty,diff,reason,staff,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
-            .bind('sa' + crypto.randomUUID().slice(0, 8), o.id, r.id, r.stock || 0, 0, -(r.stock || 0), '棚卸し（読み取りなし→0）', o.staff || take.staff || '', now).run();
+          zs.push(env.DB.prepare('UPDATE stock_by_shop SET qty=0, updated_at=? WHERE shop_id=? AND product_id=?').bind(now, shop, r.id));
+          zs.push(env.DB.prepare('INSERT INTO stock_adjust (id,take_id,product_id,before_qty,after_qty,diff,reason,staff,created_at) VALUES (?,?,?,?,?,?,?,?,?)')
+            .bind('sa' + crypto.randomUUID().slice(0, 8), o.id, r.id, r.qty || 0, 0, -(r.qty || 0), '棚卸し（読み取りなし→0）', o.staff || take.staff || '', now));
           zeroed++;
         }
+        for (let i = 0; i < zs.length; i += 50) await env.DB.batch(zs.slice(i, i + 50));
       }
       await env.DB.prepare("UPDATE stocktakes SET status='done', closed_at=?, note=? WHERE id=?")
         .bind(now, o.note || '', o.id).run();
@@ -2087,6 +2181,33 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sq_items (item_id TEXT PRIMARY KEY, name TEXT DEFAULT '')`).run(); } catch (e) {}
   // 出所。'list'=アイテム一覧（メーカー正規・名前と価格の正）／'square'=Squareにしか無い商品
   try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN source TEXT DEFAULT 'list'`).run(); } catch (e) {}
+  // ===== 店舗ごとの在庫 =====
+  // 免税（銀座ショップ免税）は銀座と同じ商品を扱うので、在庫は銀座と一体で持つ（オーナー確認済み）
+  await env.DB.batch([
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS shops (id TEXT PRIMARY KEY, name TEXT, sq_locations TEXT DEFAULT '', sort_num INTEGER DEFAULT 0, active INTEGER DEFAULT 1)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS stock_by_shop (shop_id TEXT, product_id TEXT, qty INTEGER DEFAULT 0, updated_at TEXT, PRIMARY KEY (shop_id, product_id))`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_sbs_prod ON stock_by_shop(product_id)`),
+    env.DB.prepare(`CREATE TABLE IF NOT EXISTS stock_moves (id TEXT PRIMARY KEY, product_id TEXT, from_shop TEXT, to_shop TEXT, qty INTEGER DEFAULT 0, staff TEXT DEFAULT '', note TEXT DEFAULT '', created_at TEXT)`),
+    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_moves_at ON stock_moves(created_at)`),
+  ]).catch(() => {});
+  try { await env.DB.prepare(`ALTER TABLE stocktakes ADD COLUMN shop_id TEXT DEFAULT 'ginza'`).run(); } catch (e) {}
+  // 店舗の初期登録（1回だけ入る。名前や並びはあとから変えられる）
+  try {
+    const c = await env.DB.prepare('SELECT COUNT(*) c FROM shops').first();
+    if (!c || !c.c) {
+      await env.DB.batch([
+        // 銀座は物販店と免税店の2つのSquare店舗を持つが、在庫はひとつ
+        env.DB.prepare(`INSERT INTO shops (id,name,sq_locations,sort_num) VALUES ('ginza','SEAM 銀座','L2954TC12Y6QF,L356YMPP0J4R9',1)`),
+        env.DB.prepare(`INSERT INTO shops (id,name,sq_locations,sort_num) VALUES ('sapporo','SEAM 札幌','L48Q4Y1923PYB',2)`),
+        env.DB.prepare(`INSERT INTO shops (id,name,sq_locations,sort_num) VALUES ('nagoya','SEAM 名古屋','LG5B3TV8MQG9F',3)`),
+        env.DB.prepare(`INSERT INTO shops (id,name,sq_locations,sort_num) VALUES ('fukuoka','SEAM 福岡','LQ5YDX8V6M97H',4)`),
+        env.DB.prepare(`INSERT INTO shops (id,name,sq_locations,sort_num) VALUES ('horie','SEAM 南堀江','L9E1R5RM7M2JB',5)`),
+      ]);
+      // いまの在庫（1店舗前提の値）は銀座のものとして移す
+      await env.DB.prepare(`INSERT OR IGNORE INTO stock_by_shop (shop_id,product_id,qty,updated_at)
+        SELECT 'ginza', id, COALESCE(stock,0), ? FROM products WHERE COALESCE(stock,0)<>0`).bind(new Date().toISOString()).run();
+    }
+  } catch (e) {}
   try { await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_sq ON products(sq_id)`).run(); } catch (e) {}
   // 同姓同名の取り違えを防ぐため、氏名キーだったテーブルに電話を持たせる（既存行は空のまま＝氏名で拾う）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}

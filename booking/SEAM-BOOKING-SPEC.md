@@ -224,6 +224,14 @@ flowchart LR
 - **レジ・会計**：お会計（技術＋店販＋割引・支払方法 現金/カード/QR・指名/フリー）、バーコード店販＋在庫自動減算、本日売上、レジ締め（釣銭準備金→理論残高→実査→過不足、前日繰越）。
 - **売上レポート**：期間/日別/スタッフ別（客単価・指名率）、月間目標（達成率・着地見込み）、前年同月比、歩合給（指名技術/フリー技術/店販に率）、CSV。
 - **商品・在庫・仕入**：商品マスタ、在庫、入荷履歴（仕入原価）。
+- **★店舗ごとの在庫（2026-07-30・オーナー要望）**：`products.stock` の1本値から **`stock_by_shop`（店舗×商品×数量）** に移した。
+  - 店舗：`ginza` / `sapporo` / `nagoya` / `fukuoka` / `horie` の5店（`shops` テーブル・Squareの店舗IDを紐付け）
+  - **★免税（SEAM GINZAショップ免税 `L356YMPP0J4R9`）は銀座と同じ商品を扱うため、在庫は銀座と一体**（Square店舗は2つ／在庫はひとつ）。オーナー確認済み
+  - **棚卸しは店舗を選んで行う**（`stocktakes.shop_id`）。差分も確定もその店舗の在庫と比べる
+  - **1商品の全店在庫を一覧**（`GET /stock/product`）＝「札幌にございます」と即答できる
+  - **★店舗間の在庫移動**（`POST /stock/move`）：出す店から引いて入れる店に足し、`stock_moves` に記録（誰が・いつ・何を・何個）。**出す店の在庫が足りなければ止める**（マイナスにしない・`force:true`で上書き可）。同じ店舗への移動も止める。実測で確認済み
+  - 在庫の手直しは `POST /stock/adjust`（店舗指定・`stock_adjust` に記録）
+  - 既存の1本値は初回に**銀座の在庫として移す**（移行の取りこぼしを作らない）
 - **★棚卸し（2026-07-30・商品5000点規模を想定）**：ショップの棚卸しがSquare POSでは大変というオーナー要望。
   - **現場は読むだけ**。同じ商品を2回読めば2個。**数えている間は理論在庫を画面に出さない**（見えていると「合わせにいってしまい」実数が取れないため）
   - **数はサーバーに置く**（`stocktakes`/`stocktake_counts`）→**中断・再開できる／複数の端末で同時に数えられる**
@@ -336,7 +344,10 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 | `settlements` | レジ締め（釣銭/理論残高/過不足） | （CUEPON側の相当機能を要確認・売上は order 集計） |
 | `settings` | 目標/歩合率/釣銭準備金/端末ID 等 | （汎用設定・統合時に再設計） |
 | `products` | 店販商品マスタ（バーコード/在庫・**barcode索引つき**） | `ec/item`＋`ec/stock`（`item_stock`） |
-| `stocktakes` / `stocktake_counts` | 棚卸しのセッションと数えた数（中断・再開・複数端末の同時作業のため） | `ec/stock` 棚卸し系（`/commit/ec/shop/stock`）へ移行 |
+| `shops` | 在庫を持つ店舗（銀座/札幌/名古屋/福岡/南堀江・Squareの店舗IDを紐付け・**免税は銀座に含める**） | CUEPONの `shop` |
+| `stock_by_shop` | 店舗×商品の在庫 | `ec/stock`（`item_stock`・shop単位） |
+| `stock_moves` | 店舗間の在庫移動の記録（出す店/入れる店/数量/担当/メモ） | `ec/stock` の移動系 |
+| `stocktakes` / `stocktake_counts` | 棚卸しのセッションと数えた数（**`shop_id`つき**・中断・再開・複数端末の同時作業のため） | `ec/stock` 棚卸し系（`/commit/ec/shop/stock`）へ移行 |
 | `stock_adjust` | 在庫の増減記録（棚卸し確定時の before/after/diff・理由・担当） | `stock_history` |
 | `intakes` | 入荷（仕入）履歴 | `ec/stock`（`/save/ec/stock` type:add・`stock_history`） |
 | `points` | 自社ポイント台帳（増減行の追記型・残高=合計。HPB還元1%+利用料1%徴収の代替・オーナーがON/OFFと還元率0〜20%を設定・1pt=¥1） | **CUEPONポイントAPI**（`/save/point`=付与・`/use/point`=利用 `use_type_idx:0`必須・`/get/point` account_id直下）。delta→point(±)/reason→code/name+phone→account_id名寄せ。**BtoC利用はCUEPON移行後に開放** |
