@@ -852,6 +852,19 @@ body.customer .phone.spa{background:#f7f8f3}
 /* 予約の判断に必要な3点（料金・所要・はじめての方）を、詳細を増やさずに前に出す */
 .pbody .ent-intl{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 2px}
 /* 便利訴求は主役にしない。安心の補助線として小さく置く */
+.lineconn{background:#f2fbf5;border:1px solid #c9e9d5;border-radius:11px;padding:12px 13px;margin-bottom:10px}
+.lineconn .lc-t{font-size:13.5px;font-weight:800;color:#0c7a41}
+.lineconn .lc-s{font-size:11.5px;color:var(--sub);line-height:1.6;margin:3px 0 9px}
+.lineconn .lc-o{font-size:11px;color:var(--sub);margin-top:9px}
+.memoff{display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,#26221e,#4a3f34);
+  color:#fff;border-radius:14px;padding:15px 17px;margin:0 0 14px}
+.memoff-l{flex:1;min-width:0}
+.memoff-big{font-size:20px;font-weight:800;letter-spacing:.01em;line-height:1.35}
+.memoff-big b{color:#f0d878;font-size:25px}
+.memoff-sub{font-size:12px;color:#cfc5b8;margin-top:3px;line-height:1.55}
+.memoff-r{flex:none;background:#f0d878;color:#2b230a;font-weight:800;font-size:12.5px;
+  border-radius:99px;padding:6px 13px;letter-spacing:.04em}
+@media(max-width:380px){.memoff-big{font-size:17.5px}.memoff-big b{font-size:22px}}
 .ent-trust{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
 .ent-trust span{font-size:11.5px;font-weight:700;color:#6d6658;background:#f5f3ee;border:1px solid #e5e0d6;border-radius:99px;padding:4px 10px;letter-spacing:.02em}
 
@@ -1927,6 +1940,7 @@ function pendingBlocks(){
  *   設定が揃っていなければカード欄を出さず「店頭でお支払い」だけにする
  *   （受け取っていないお金を「受領済み」として記録しないため）。 */
 let PAY_CFG=null, PAY_CARD=null, PAY_SDK=null;
+let PAY_RETRY_KEY='';   // 通信が切れたときだけ、次の送信で同じ鍵を使い回す（二重請求よけ）
 async function payConfig(){
   if(PAY_CFG)return PAY_CFG;
   try{const r=await fetch(API_BASE+'/pay/config');PAY_CFG=await r.json();}catch(e){PAY_CFG={ok:false};}
@@ -1972,6 +1986,14 @@ async function setupPay(dep,commit){
         const show=(m)=>{if(err){err.textContent=m;err.hidden=false;}};
         btn.disabled=true;btn.textContent='お手続き中…';
         try{
+          /* ★二重請求よけの鍵。
+           * 予約ごとに固定にしていたため、1度でも失敗すると2回目はカード情報が変わり
+           * 「同じ鍵で違う内容」とSquareに拒否され、その予約では二度と決済できなくなっていた。
+           * 正しくは「同じ1回の送信」を守るための鍵なので、押すたびに作り直す。
+           * ただし通信が切れた場合だけは、Squareに届いていた可能性があるので
+           * 同じ鍵で送り直す（そうしないと二重に請求されうる）。 */
+          const idem=PAY_RETRY_KEY||((self.crypto&&crypto.randomUUID)?crypto.randomUUID()
+            :('dep-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)));
           const tok=await PAY_CARD.tokenize();
           if(tok.status!=='OK')throw new Error((tok.errors&&tok.errors[0]&&tok.errors[0].message)||'カード情報をご確認ください');
           // 3Dセキュア（本人認証）。日本のカードは求められることが多い
@@ -1983,20 +2005,48 @@ async function setupPay(dep,commit){
             });
             vt=(v&&v.token)||'';
           }catch(e){/* 認証不要なカードもあるので、ここで止めない */}
-          const r=await fetch(API_BASE+'/pay',{method:'POST',headers:{'Content-Type':'application/json'},
+          let r;
+          try{
+          r=await fetch(API_BASE+'/pay',{method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({sourceId:tok.token,verificationToken:vt,amount:dep,currency:'JPY',
-              idempotencyKey:'dep-'+(bk.day||'')+'-'+(bk.start||'')+'-'+(bk.phone||''),
+              idempotencyKey:idem,
               note:('前金 '+(bk.day||'')+' '+(bk.name||'')).slice(0,60)})});
-          const j=await r.json();
-          if(!r.ok||!j.ok)throw new Error(j.error||'決済ができませんでした');
+          }catch(ne){
+            // 送れたかどうか分からない＝同じ鍵で送り直せるようにしておく
+            PAY_RETRY_KEY=idem;
+            throw Object.assign(new Error('通信が不安定です'),{net:true});
+          }
+          let j=null;
+          try{ j=await r.json(); }catch(pe){ throw Object.assign(new Error('通信が不安定です'),{net:true}); }
+          if(!r.ok||!j.ok){
+            PAY_RETRY_KEY='';             // サーバーが答えを返した＝この決済は成立していない
+            throw new Error(j.error||'決済ができませんでした');
+          }
+          PAY_RETRY_KEY='';
           commit(dep,j.paymentId);        // ★決済できた金額と決済IDだけを台帳に載せる
         }catch(e){
-          show(String(e.message||e)+'　別のカードでもう一度お試しいただけます');
+          show(payErrJa(e)+'　もう一度お試しいただけます');
           btn.disabled=false;btn.textContent='¥'+dep.toLocaleString()+' を支払って予約確定';
         }
       };
     }
   }catch(e){ offline('決済のご用意が整いませんでした。ご来店時に店頭でお願いいたします'); }
+}
+
+/* Squareから返る英語のエラーを、お客様に分かる日本語に言い換える。
+ * 原文のままだと「何を直せばいいか」が伝わらず、店頭に電話が来る。 */
+function payErrJa(e){
+  const m=String((e&&e.message)||e||'');
+  if(/idempotency/i.test(m))return 'お手続きをやり直してください';
+  if(/CVV|cvv|verification code|security code/i.test(m))return 'カード裏面のセキュリティコードをご確認ください';
+  if(/expir/i.test(m))return 'カードの有効期限をご確認ください';
+  if(/postal|zip/i.test(m))return '郵便番号をご確認ください';
+  if(/card.*(declin|not.*support)|declin/i.test(m))return 'このカードはお使いいただけませんでした。別のカードをお試しください';
+  if(/insufficient/i.test(m))return 'ご利用可能額が不足しています';
+  if(/invalid.*card|card.*invalid|number/i.test(m))return 'カード番号をご確認ください';
+  if(/network|fetch|timeout/i.test(m))return '通信が不安定です。電波の良い場所でお試しください';
+  if(/3ds|verif|authenticat/i.test(m))return 'カード会社の本人確認が完了しませんでした';
+  return m||'決済ができませんでした';
 }
 
 /* =============== toast / nav =============== */
@@ -3795,7 +3845,19 @@ document.getElementById('pf-add').onclick=()=>{
 };
 
 /* =============== customer booking flow =============== */
-let bk={step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
+/* 予約の下書き。
+ * LINE連携やGoogleログインで画面がいったん離れて戻ってくるので、
+ * 途中の入力が消えないように端末に持たせる（このタブだけ・1時間で捨てる）。 */
+const BK_KEY='stb_bk';
+function saveBk(){try{sessionStorage.setItem(BK_KEY,JSON.stringify({at:Date.now(),bk}))}catch(e){}}
+function loadBk(){
+  try{
+    const j=JSON.parse(sessionStorage.getItem(BK_KEY)||'null');
+    if(j&&j.bk&&Date.now()-(j.at||0)<3600000)return j.bk;
+  }catch(e){}
+  return null;
+}
+let bk=loadBk()||{step:0,section:null,menu:null,staff:null,day:null,start:null,name:'',phone:'',lineUserId:'',email:''};
 // 流入元: 予約ページのURL ?src=line|google|instagram で自動判定。各チャネルのリンクから来ると自動タグ付け。
 // LINE経由の判定（?src が無くても管理画面を出さないための多重シグナル）:
 //  ①LINEアプリ内ブラウザのUAは "Line/12.5.0" 形式を含む ②LIFF起動時はURLに liff.state / liff.referrer が付く
@@ -3890,6 +3952,8 @@ const OFF_LABEL = Math.round(MEMBER_RATE*100) + '%OFF';
   const uid=p.get('line_user_id'), name=p.get('line_name'), pic=p.get('line_picture');
   if(uid&&name){
     lineProfile={userId:uid,displayName:name,pictureUrl:pic||''};
+    // 戻ってきた下書きにLINEを結び付ける（お知らせをLINEで受け取れるようにする）
+    try{ if(typeof bk==='object'&&bk){ bk.lineUserId=uid; if(!bk.name)bk.name=name; } }catch(e){}
     // URLパラメータをきれいにする（履歴に残さない）
     const clean=location.pathname+(location.hash||'');
     history.replaceState(null,'',clean);
@@ -4027,7 +4091,23 @@ function resolveStaffAt(menu,day,start){
   const avail=menu.staff.filter(sid=>staffOnDuty(sid,day,start,end)&&conflicts(day,sid,start,end).length===0);
   return avail.find(sid=>sid===bk._sid)||avail[0]||null;   // なるべく元の担当・無ければ他の空き担当
 }
+/* メールでお知らせを受け取る欄（本人確認コードつき）。
+ * LINEと繋がっていない方の受け取り先。LINE導線の下にも同じものを出す。 */
+function mailBlock(){
+  const v=bk.emailVerified;
+  return `<div style="font-size:12px;font-weight:800;color:var(--navy);margin-top:2px">メールアドレス<span style="color:var(--sub);font-size:10.5px;margin-left:6px">予約完了のお知らせをお送りします</span></div>
+  <div class="co-scan-row"><input id="bmail" type="email" inputmode="email" value="${escH(bk.email||'')}" placeholder="例）name@example.com" ${v?'disabled':''} style="text-transform:none">
+    <button class="btn small ghost" id="bmailsend" ${v?'disabled':''}>${v?'確認済み':'コードを送る'}</button></div>
+  ${v?`<div class="co-done" style="margin-top:6px">✅ <b>${escH(bk.email)}</b> を確認しました。予約完了のお知らせが届きます</div>`:`
+  <div id="otpbox" style="display:none;margin-top:8px">
+    <div style="font-size:12.5px;color:var(--sub);font-weight:700;margin-bottom:5px">届いた6桁の数字を入れてください（10分以内）</div>
+    <div class="co-scan-row"><input id="botp" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="letter-spacing:.3em;font-size:17px;font-weight:800">
+      <button class="btn small pri" id="botpgo">確認する</button></div>
+    <div id="otpmsg" style="font-size:12px;font-weight:700;margin-top:5px"></div>
+  </div>`}`;
+}
 function renderBook(){
+  saveBk();   // 途中で画面が離れても入力が消えないようにする
   const p=document.getElementById('pbody');
   // スパ導線は癒しのトーン（セージ）に切替。ヘア/入口選択はSEAMゴールド基調
   const _ph=document.querySelector('.phone');if(_ph)_ph.classList.toggle('spa',bk.section==='spa');
@@ -4053,7 +4133,14 @@ function renderBook(){
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
     p.innerHTML=stepsHtml+
-      `<div class="ent-sub1">ご希望に近い内容をお選びください</div>
+      `<div class="memoff">
+         <div class="memoff-l">
+           <div class="memoff-big">会員は <b>10%OFF</b></div>
+           <div class="memoff-sub">ご来店時のご登録は数十秒で終わります</div>
+         </div>
+         <div class="memoff-r">無料</div>
+       </div>
+       <div class="ent-sub1">ご希望に近い内容をお選びください</div>
        <div class="ent-sub2">メニューに迷う方は ご来店時にご相談いただけます</div>
        <div class="ent-trust"><span>初めての方も歓迎</span><span>お電話不要</span><span>数分でご予約</span></div>
        ${BOOK_LANG!=='ja'?`<div class="ent-intl">
@@ -4253,18 +4340,17 @@ function renderBook(){
       ${(()=>{ // 予約完了のお知らせ先。LINEログイン済みならLINE、それ以外はメール（本人確認コードあり）
         if(bk.lineUserId)return `<div class="co-done" style="margin-bottom:10px">📱 予約が完了したら<b>LINEにお知らせ</b>が届きます</div>`;
         if(bk.emailProvider==='google'&&bk.email)return `<div class="co-done" style="margin-bottom:10px">📧 予約が完了したら <b>${escH(bk.email)}</b> にお知らせが届きます</div>`;
-        const v=bk.emailVerified;
-        return `<div style="font-size:12px;font-weight:800;color:var(--navy);margin-top:2px">メールアドレス<span style="color:var(--sub);font-size:10.5px;margin-left:6px">予約完了のお知らせをお送りします</span></div>
-        <div class="co-scan-row"><input id="bmail" type="email" inputmode="email" value="${escH(bk.email||'')}" placeholder="例）name@example.com" ${v?'disabled':''} style="text-transform:none">
-          <button class="btn small ghost" id="bmailsend" ${v?'disabled':''}>${v?'確認済み':'コードを送る'}</button></div>
-        ${v?`<div class="co-done" style="margin-top:6px">✅ <b>${escH(bk.email)}</b> を確認しました。予約完了のお知らせが届きます</div>`:`
-        <div id="otpbox" style="display:none;margin-top:8px">
-          <div style="font-size:12.5px;color:var(--sub);font-weight:700;margin-bottom:5px">届いた6桁の数字を入れてください（10分以内）</div>
-          <div class="co-scan-row"><input id="botp" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="letter-spacing:.3em;font-size:17px;font-weight:800">
-            <button class="btn small pri" id="botpgo">確認する</button></div>
-          <div id="otpmsg" style="font-size:12px;font-weight:700;margin-top:5px"></div>
-        </div>`}`;})()}
-      <div style="font-size:11.5px;color:var(--sub);margin-top:-4px">※ホットペッパーと同じく<b>姓・名・セイ・メイを分けて</b>ご入力ください。ひらがなは自動でカタカナに変換します。</div>
+        /* LINEの中で開いているのに、まだLINEと繋がっていない場合。
+         * LINEのリンクをそのまま踏むと「アプリ内のブラウザ」で開くだけで、
+         * どなたか分からない（LIFFで開いたときだけIDが取れる）。
+         * ここで1タップ繋いでいただければ、以後のお知らせがLINEに届く。 */
+        if(IN_LINE)return `<div class="lineconn">
+          <div class="lc-t">📱 LINEでお知らせを受け取る</div>
+          <div class="lc-s">予約完了・前日のご連絡がLINEに届きます。入力中の内容はそのままです</div>
+          <button class="btn small pri" id="blineconn" type="button">LINEとつなぐ</button>
+          <div class="lc-o">またはメールアドレスをご記入ください</div>
+        </div>`+mailBlock();
+        return mailBlock();})()}
       <div class="policy">
         <b>キャンセルポリシー</b>
         <table class="ptable">
@@ -4277,6 +4363,22 @@ function renderBook(){
       </div>
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
     // ---- メールのワンタイムパスワード（Google以外のメールで予約する方の本人確認）----
+    // LINEとつなぐ（LINEの中で開いているが、まだ誰か分からない場合）
+    {const lc=document.getElementById('blineconn');
+     if(lc)lc.onclick=async()=>{
+       lc.disabled=true;lc.textContent='LINEをひらいています…';
+       saveBk();                     // 画面が離れるので入力を残す
+       try{
+         // LIFFが使えるならその場でログイン（画面遷移が最小）
+         if(window.liff&&liff.isInClient&&liff.isInClient()&&!liff.isLoggedIn()){ liff.login(); return; }
+         if(window.liff&&liff.isLoggedIn&&liff.isLoggedIn()){
+           const pf=await liff.getProfile();
+           bk.lineUserId=pf.userId; if(!bk.name)bk.name=pf.displayName||'';
+           saveBk(); renderBook(); toast('LINEとつながりました'); return;
+         }
+       }catch(e){}
+       startLineLogin();             // それ以外は通常のLINEログインへ
+     };}
     {const send=document.getElementById('bmailsend'),mail=document.getElementById('bmail');
      if(send&&mail)send.onclick=async()=>{
        const em=(mail.value||'').trim();
