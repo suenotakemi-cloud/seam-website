@@ -73,6 +73,11 @@ flowchart LR
    - **設定が揃っていなければカード欄を出さない**（「いまは事前のお支払いを承っておりません」＋店頭払いのみ）。嘘の前金記録を作らないため。
    - **サーバー側の保険**：`POST /reservations` は**決済IDが無いのに `deposit>0` なら 0 に落とす**（実測で確認済み）。`reservations.square_payment_id` に決済IDを保存＝手数料の突き合わせと返金の起点。
    - 必要な設定：`SQUARE_APP_ID`（公開値・[vars]）／`SQUARE_LOCATION_ID`（**本番はサンドボックスと別ID**）／`SQUARE_ACCESS_TOKEN`（**secret・オーナーが自分で登録**）／`SQUARE_ENV=production`。
+   - **本番切替 完了（2026-07-30）**：`SQUARE_ENV=production` ／ `SQUARE_APP_ID=sq0idp-Hs1OE2-B0BMPzwPEEgF9dA` ／ `SQUARE_LOCATION_ID=LRKDJ0YV23GJZ`（**SEAM 銀座 サロン**）／本番アクセストークンはオーナーが secret 登録済み。`/pay/config` が `ready:true`、予約画面に Square の本物のカード欄（iframe）が出ることを確認。
+   - **★旧 `SQUARE_LOCATION_ID=L4X65VRZXDMV7` は本番に存在しなかった**（サンドボックスのID）。**`GET /admin/square-check`（読み取りのみ・課金なし・CLEANUP_TOKEN必須）** で、同じトークンを本番/サンドボックス両方に投げて**どちらのトークンかを実測**し、本番の店舗一覧からIDを確定した。トークン自体は絶対に返さない。
+   - **環境の食い違いを自動で止める**：`SQUARE_ENV` とアプリIDの向き先（`sq0idp-`=本番）が一致しないと `/pay/config` は `ready:false` を返し、カード欄を出さない。切替途中でお客様に壊れた画面を見せないため。
+   - 管理画面「レジ・会計」に**前金の準備状況パネル**（環境／アプリID／店舗ID／要対応）を表示。
+   - 同一Squareアカウントに他店舗のLocationも多数ある（札幌・名古屋・福岡・南堀江・銀座shop・免税など）。**前金と端末は「SEAM 銀座 サロン」に紐づける**。
 7. **完了**：LINE友だち追加 ／ ホームケア（会員制オンラインショップ `seam.site/onlineshop`）導線 ／ Googleクチコミ導線。
 - ログイン：LINE Login(LIFF)／Google（海外客）。確認はLINE/メールでサーバ送信（§7）。
 - **多言語**：EN⇄日本語トグル（右上）。`?lang=en`／端末言語が日本語以外なら自動EN。方式=描画後DOM置換辞書（メニュー実名・スタッフ名はJP維持）。

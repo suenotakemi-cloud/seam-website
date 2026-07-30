@@ -255,6 +255,43 @@ export default {
 
     // ===== 公開（顧客導線・認証不要） =====
     if (p.endsWith('/pay') && m === 'POST') return handlePay(request, env, cors);
+    // Squareの設定確認（読み取りだけ・課金なし）。
+    // 同じトークンを本番とサンドボックスの両方に投げて、どちらで通るか＝どちらのトークンかを判定し、
+    // その環境の店舗一覧（Location ID）も返す。トークン自体は絶対に返さない。
+    if (p.endsWith('/admin/square-check') && m === 'GET') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) return json({ error: 'forbidden' }, 403, cors);
+      if (!env.SQUARE_ACCESS_TOKEN) return json({ error: 'SQUARE_ACCESS_TOKEN が未設定です' }, 400, cors);
+      const probe = async (host) => {
+        try {
+          const r = await fetch(host + '/v2/locations', {
+            headers: { 'Square-Version': '2025-01-23', 'Authorization': 'Bearer ' + env.SQUARE_ACCESS_TOKEN, 'Content-Type': 'application/json' },
+          });
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) return { ok: false, status: r.status, error: (j.errors && j.errors[0] && (j.errors[0].detail || j.errors[0].code)) || ('HTTP ' + r.status) };
+          return {
+            ok: true, status: r.status,
+            locations: (j.locations || []).map(l => ({
+              id: l.id, name: l.name, status: l.status, country: l.country, currency: l.currency,
+              type: l.type || '', capabilities: l.capabilities || [],
+            })),
+          };
+        } catch (e) { return { ok: false, error: String(e.message || e) }; }
+      };
+      const [prod, sand] = await Promise.all([probe('https://connect.squareup.com'), probe('https://connect.squareupsandbox.com')]);
+      const which = prod.ok ? 'production' : (sand.ok ? 'sandbox' : 'unknown');
+      const list = prod.ok ? prod.locations : (sand.ok ? sand.locations : []);
+      return json({
+        ok: true,
+        tokenIs: which,                                  // トークンがどちら向けか（実測）
+        envNow: env.SQUARE_ENV === 'production' ? 'production' : 'sandbox',
+        appIdIs: (env.SQUARE_APP_ID || '').startsWith('sq0idp-') ? 'production' : 'sandbox',
+        locationIdNow: env.SQUARE_LOCATION_ID || '',
+        locationIdValid: list.some(l => l.id === env.SQUARE_LOCATION_ID),
+        locations: list,
+        production: { ok: prod.ok, error: prod.error || '' },
+        sandbox: { ok: sand.ok, error: sand.error || '' },
+      }, 200, cors);
+    }
     // 前金決済の公開設定。ブラウザが Square SDK を初期化するのに使う3つだけを返す。
     // ★アクセストークンは絶対に返さない（サーバー内だけで使う）。
     if (p.endsWith('/pay/config') && m === 'GET') {
