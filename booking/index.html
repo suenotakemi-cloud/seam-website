@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Salon Town Booking — 予約一元管理</title>
+<title>ヘアサロン・ヘッドスパのご予約｜SEAM GINZA</title>
+  <meta name="description" content="SEAM GINZAのご予約ページ。ヘアサロンとヘッドスパから選んで空いている時間をそのままお取りいただけます。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script src="cs-i18n.js"></script>
@@ -109,7 +110,10 @@ td.slot:hover{background:#f0f7ff}
 .ent-spa::before{background:linear-gradient(180deg,#7b9a6d,#b7cf9f)}
 .ent-hair:hover{border-color:#4aa3e0}
 .ent-spa:hover{border-color:#9bbd85}
-.ent-ic{flex:0 0 auto;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px}
+.ent-ic{flex:0 0 auto;width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.ent-ic svg{width:24px;height:24px}
+.ent-hair .ent-ic{color:#2f7dd1}
+.ent-spa .ent-ic{color:#6f8f61}
 .ent-hair .ent-ic{background:#eaf3ff}
 .ent-spa .ent-ic{background:#eef4e6}
 .ent-main{flex:1;min-width:0}
@@ -847,6 +851,10 @@ body.customer .phone.spa{background:#f7f8f3}
 .pbody .ent-who{display:block;margin-bottom:2px;font-size:14.5px;font-weight:800;color:#3a3226}
 /* 予約の判断に必要な3点（料金・所要・はじめての方）を、詳細を増やさずに前に出す */
 .pbody .ent-intl{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 2px}
+/* 便利訴求は主役にしない。安心の補助線として小さく置く */
+.ent-trust{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 16px}
+.ent-trust span{font-size:11.5px;font-weight:700;color:#6d6658;background:#f5f3ee;border:1px solid #e5e0d6;border-radius:99px;padding:4px 10px;letter-spacing:.02em}
+
 .pbody .ei{font-size:12.5px;font-weight:700;color:#2c4a36;background:#f2f7f0;border:1px solid #d6e2cd;border-radius:99px;padding:6px 12px}
 .pbody .ei:before{content:"✓";color:#4f6b3f;font-weight:900;margin-right:5px}
 .pbody .ent-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#e7e1d5;border:1px solid #e7e1d5;border-radius:12px;overflow:hidden;margin:16px 0 4px}
@@ -3944,9 +3952,9 @@ function renderBook(){
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
     p.innerHTML=stepsHtml+
-      `<div class="ent-lead">このまま予約できます</div>
-       <div class="ent-sub1">空いている時間を選ぶだけです</div>
-       <div class="ent-sub2">お電話は要りません。<b>1〜2分で予約できます。</b></div>
+      `<div class="ent-sub1">今日の髪に合うほうを お選びください</div>
+       <div class="ent-sub2">迷ったままでも大丈夫です</div>
+       <div class="ent-trust"><span>はじめての方歓迎</span><span>お電話不要</span><span>1〜2分で予約</span></div>
        ${BOOK_LANG!=='ja'?`<div class="ent-intl">
          <div class="ei">英語で対応できます</div>
          <div class="ei">日本語のお電話は要りません</div>
@@ -3963,13 +3971,13 @@ function renderBook(){
        <div class="ent-pick">ご希望の内容を選んでください</div>
        <div class="ent-wrap">
          <button class="ent-card ent-hair" data-sec="hair">
-           <div class="ent-ic">✂️</div>
-           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-mood">今日そのまま出かけたくなる髪へ</div><div class="ent-s"><span class="ent-who">髪を切る・染める方はこちら</span>カット・カラー・パーマ・縮毛矯正</div><div class="ent-go">空いている時間を見る</div></div>
+           <div class="ent-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M8.2 7.6 20 18M8.2 16.4 20 6"/></svg></div>
+           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-mood">今日そのまま出かけたくなる髪へ</div><div class="ent-s"><span class="ent-who">切る 染める 直す</span>カット・カラー・パーマ・縮毛矯正</div><div class="ent-go">空いている時間を見る</div></div>
            <div class="ent-arrow">→</div>
          </button>
          <button class="ent-card ent-spa" data-sec="spa">
-           <div class="ent-ic">💆</div>
-           <div class="ent-main"><div class="ent-t">ヘッドスパ</div><div class="ent-mood">根元から軽くなって、頭がほどける時間</div><div class="ent-s"><span class="ent-who">頭皮ケア・ゆっくりしたい方はこちら</span>完全個室でお休みいただけます</div><div class="ent-go">空いている時間を見る</div></div>
+           <div class="ent-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c2.6 2.9 4 5.2 4 7.2a4 4 0 0 1-8 0C8 8.2 9.4 5.9 12 3Z"/><path d="M4.5 19.5c2.2-1.4 4.6-1.4 7.5 0 2.9-1.4 5.3-1.4 7.5 0"/></svg></div>
+           <div class="ent-main"><div class="ent-t">ヘッドスパ</div><div class="ent-mood">根元から軽くなって、頭がほどける時間</div><div class="ent-s"><span class="ent-who">頭皮から ほどく</span>完全個室でお休みいただけます</div><div class="ent-go">空いている時間を見る</div></div>
            <div class="ent-arrow">→</div>
          </button>
        </div>
@@ -3997,7 +4005,7 @@ function renderBook(){
         <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 090-1234-5678）" value="${bk.phone||''}"><button class="btn small pri" id="rlgo">呼び出す</button></div>
         <div id="rlres"></div>
       </div>`+
-      `<div class="sec-bar"><span class="sb-ic">${bk.section==='spa'?'💆':'✂️'}</span><span class="sb-t">${bk.section==='spa'?'スパ / ヘッドスパ':'ヘアサロン'}</span><button class="sb-chg" id="secchg">入口を変更</button></div>`+
+      `<div class="sec-bar"><span class="sb-ic"></span><span class="sb-t">${bk.section==='spa'?'スパ / ヘッドスパ':'ヘアサロン'}</span><button class="sb-chg" id="secchg">入口を変更</button></div>`+
       (bk.section==='spa'?`<p class="spa-lead">完全個室で、頭皮も気持ちも、ゆっくりほどけていく時間を。</p>`:'')+
       `<h3 style="margin:6px 0 12px">メニューを選択</h3>`+
       (bk.section==='spa'?['ヘッドスパ']:MENU_CATS.filter(c=>c!=='ヘッドスパ')).map(cat=>{
@@ -4353,19 +4361,21 @@ const EN_MAP={
   '＋ LINE友だち追加':'+ Add us on LINE','続けてもう1件予約する':'Make another booking',
   'ご予約':'Reservation','ネット予約':'ONLINE BOOKING',
   'このまま予約できます':'Book right here','空いている時間を選ぶだけです':'Just pick an open time',
+'ご予約':'Booking','切る 染める 直す':'Cut, color and repair','頭皮から ほどく':'Released from the scalp up','今日の髪に合うほうを お選びください':'Choose the service that fits you best','迷ったままでも大丈夫です':'Not sure yet? That is completely fine.','はじめての方歓迎':'First visit welcome','お電話不要':'No phone call needed','1〜2分で予約':'Takes 1-2 minutes',
+
   'お電話は要りません。':'No phone call needed. ','1〜2分で予約できます。':'Takes just 1-2 minutes.',
-  '予約は3つだけです':'Only 3 steps','ご希望の内容を選んでください':'What would you like?',
+  '予約は3つだけです':'Booking in 3 simple steps','ご希望の内容を選んでください':'Choose the service that suits you today',
   'メニューを選ぶ':'Choose a menu','日にちと時間を選ぶ':'Choose date & time','お名前を書いて完了':'Enter your name — done',
   '空いている時間を見る':'See open times','ヘッドスパ':'Head Spa',
-  '髪を切る・染める方はこちら':'For haircut and color','カット・カラー・パーマ・縮毛矯正':'Cut / Color / Perm / Straightening',
-  '頭皮ケア・ゆっくりしたい方はこちら':'For scalp care and relaxing','完全個室でお休みいただけます':'Private room — rest deeply',
+  '髪を切る・染める方はこちら':'Cut, color and repair','カット・カラー・パーマ・縮毛矯正':'Cut / Color / Perm / Straightening',
+  '頭皮ケア・ゆっくりしたい方はこちら':'Scalp care and deep rest','完全個室でお休みいただけます':'A quiet private room, from the roots up',
 'ネット予約':'ONLINE BOOKING','タップして選ぶ':'Tap to choose',
   'SEAM 銀座 — ご予約':'SEAM GINZA — Booking',
 
   'メニューを選ぶ':'Choose a menu','スタイリストを選ぶ':'Choose a stylist','日にちと時間を選ぶ':'Choose date & time',
   'お名前を書く':'Enter your name','お支払い':'Payment','これで最後です':'This is the last step',
   '空いている日と時間を選ぶ':'Pick an open time','お名前を書いて終わり':'Enter your name — done',
-  'お電話は要りません':'No phone call needed','空いている時間を選ぶだけ・その場で予約が終わります':'Just pick an open time — done in a minute',
+  'お電話は要りません':'No phone call needed','空いている時間を選ぶだけ・その場で予約が終わります':'Pick an open time and you are done',
 '確実なご案内のため、事前決済のご協力をお願いしております':'A deposit is required to secure this booking',
 };
 const EN_RX=[
@@ -4846,7 +4856,7 @@ function openCustomer(key){
       const chips=[].concat(a.concern||[],a.history||[],a.body||[]).slice(0,6).map(CT);
       return `<div style="background:${x.voided?'#f6f6f7':'#faf8f4'};border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px${x.voided?';opacity:.6':''}">
         ${x.voided?`<div style="font-size:11px;font-weight:800;color:var(--sub)">取り消し済み${x.void_reason?'（'+escH(x.void_reason)+'）':''}・記録は保管しています</div>`:''}
-        <div style="font-weight:800;color:var(--ink)">${x.date?x.date.replace(/-/g,'/'):''}　${x.kind==='spa'?'💆 スパ':'✂️ ヘア'}
+        <div style="font-weight:800;color:var(--ink)">${x.date?x.date.replace(/-/g,'/'):''}　${x.kind==='spa'?'スパ':'ヘア'}
           ${(x.lang&&x.lang!=='ja')?`<span class="rep" style="background:#eef2fb;border-color:#cfdcf3;color:#2b4c86">${escH((window.CS_I18N?(window.CS_I18N.langs.find(l=>l.code===x.lang)||{}).label:'')||x.lang)}で記入</span>`:''}
           ${cn.agreed?'<span class="rep" style="background:#eef7f0;border-color:#c6e6d3;color:#0c7a41">同意済み</span>':''}
           ${x.sign?'<span class="rep">署名あり</span>':''}
