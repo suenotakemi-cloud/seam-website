@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM 会員証</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;
+    background:#f5f3f0;color:#1c1a18;padding:16px 14px 40px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:460px;margin:0 auto}
+  .brand{text-align:center;letter-spacing:.32em;font-size:12px;font-weight:700;color:#8a8177;margin:6px 0 18px}
+  .card{background:#fff;border-radius:16px;padding:20px 18px;box-shadow:0 2px 14px rgba(30,24,18,.07);margin-bottom:14px}
+  h1{font-size:19px;margin:0 0 4px;font-weight:700}
+  .sub{font-size:13px;color:#7d746b;margin:0 0 14px}
+  .amt{font-size:30px;font-weight:700;letter-spacing:-.01em}
+  .rows{border-top:1px solid #eee9e3;margin-top:12px;padding-top:12px;font-size:14px}
+  .row{display:flex;justify-content:space-between;gap:12px;padding:4px 0}
+  .row span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+  .tot{border-top:1px solid #eee9e3;margin-top:10px;padding-top:10px;font-weight:700;font-size:16px}
+  /* 会員証 */
+  .mem{background:linear-gradient(160deg,#26221e,#413931);color:#fff;border-radius:16px;padding:20px 18px;text-align:center;margin-bottom:14px}
+  .mem .lbl{font-size:11px;letter-spacing:.24em;color:#b8ada0;margin-bottom:10px}
+  .mem .no{font-size:27px;font-weight:700;letter-spacing:.16em;font-variant-numeric:tabular-nums}
+  .bc{background:#fff;border-radius:8px;padding:11px 10px 7px;margin-top:14px}
+  .bc svg{display:block;width:100%;height:58px}
+  .bc .cap{font-size:10.5px;color:#8a8177;letter-spacing:.1em;margin-top:3px}
+  .pt{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:14px}
+  .pt b{font-size:26px;font-weight:700}
+  .pt s{text-decoration:none;font-size:12px;color:#b8ada0}
+  .note{font-size:12.5px;color:#7d746b;background:#faf8f5;border:1px solid #eee9e3;border-radius:10px;padding:11px 13px;margin-top:12px}
+  .ok{background:#eef7f1;border-color:#c6e6d3;color:#166b3e}
+  .warn{background:#fdf6ec;border-color:#ecd9b0;color:#8a611d}
+  .hist{font-size:13.5px}
+  .hist .h{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f2ede7;color:#4a443d}
+  .hist .h:last-child{border-bottom:0}
+  .load{text-align:center;color:#9a9188;padding:40px 0;font-size:14px}
+  .btn{display:block;width:100%;text-align:center;background:#26221e;color:#fff;border:0;border-radius:11px;
+    padding:14px;font-size:15px;font-weight:700;font-family:inherit;text-decoration:none;margin-top:10px;cursor:pointer}
+  .btn.line{background:#06c755}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">S E A M</div>
+  <div id="app"><div class="load">読み込んでいます…</div></div>
+</div>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const LIFF_ID='2010490592-nXUUaxqI';
+const Q=new URLSearchParams(location.search);
+const app=document.getElementById('app');
+const yen=n=>'¥'+Number(n||0).toLocaleString();
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* Code39のバーコード。数字だけ扱う。
+ * レジのバーコードリーダー（1次元）でそのまま読める形にしてある。 */
+const C39={'0':'101001101101','1':'110100101011','2':'101100101011','3':'110110010101','4':'101001101011',
+  '5':'110100110101','6':'101100110101','7':'101001011011','8':'110100101101','9':'101100101101','*':'100101101101'};
+function code39(txt){
+  const s='*'+String(txt).replace(/\D/g,'')+'*';
+  let bits='';
+  for(const ch of s){ bits+=(C39[ch]||C39['*'])+'0'; }
+  const w=2, h=58, W=bits.length*w;
+  let r='';
+  for(let i=0;i<bits.length;i++){ if(bits[i]==='1') r+=`<rect x="${i*w}" y="0" width="${w}" height="${h}"/>`; }
+  return `<svg viewBox="0 0 ${W} ${h}" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" fill="#111">${r}</svg>`;
+}
+
+function memberCard(code,points,name){
+  return `<div class="mem">
+    <div class="lbl">SEAM MEMBER</div>
+    <div class="no">${esc(String(code).replace(/(\d{2})(\d{4})(\d{4})/,'$1 $2 $3'))}</div>
+    ${name?`<div style="font-size:13px;color:#cfc5b8;margin-top:6px">${esc(name)} 様</div>`:''}
+    <div class="bc">${code39(code)}<div class="cap">${esc(code)}</div></div>
+    <div class="pt"><b>${Number(points||0).toLocaleString()}</b><s>ポイント</s></div>
+  </div>
+  <div class="note">レジでこの画面をお見せください。番号を読み取ってポイントをお付けします</div>`;
+}
+
+function receiptCard(r){
+  const rows=[];
+  if(r.tech)rows.push(['施術',r.tech]);
+  (r.items||[]).forEach(i=>rows.push([i.name+(i.qty>1?' ×'+i.qty:''),(+i.price||0)*(+i.qty||1)]));
+  if(r.discount)rows.push(['割引',-r.discount]);
+  const PM={cash:'現金',card:'カード',qr:'QR決済',hpb:'スマート支払い'};
+  return `<div class="card">
+    <h1>ご利用ありがとうございました</h1>
+    <p class="sub">${esc((r.date||'').replace(/-/g,'/'))}　SEAM 銀座${r.customer?'　'+esc(r.customer)+' 様':''}</p>
+    <div class="amt">${yen(r.total)}</div>
+    <div class="rows">${rows.map(([a,b])=>`<div class="row"><span>${esc(a)}</span><span>${b<0?'−':''}${yen(Math.abs(b))}</span></div>`).join('')}
+      <div class="row tot"><span>合計</span><span>${yen(r.total)}</span></div>
+      <div class="row" style="color:#7d746b;font-size:13px"><span>お支払い</span><span>${esc(PM[r.method]||r.method||'')}</span></div>
+    </div>
+  </div>`;
+}
+
+function histCard(h){
+  if(!h||!h.length)return '';
+  const PM={cash:'現金',card:'カード',qr:'QR決済',hpb:'スマート支払い'};
+  return `<div class="card hist"><h1 style="font-size:15px;margin-bottom:10px">これまでのご利用</h1>
+    ${h.map(x=>`<div class="h"><span>${esc((x.date||'').replace(/-/g,'/'))}</span><span>${yen(x.total)}　<s style="color:#a29a91;text-decoration:none;font-size:12px">${esc(PM[x.method]||'')}</s></span></div>`).join('')}
+  </div>`;
+}
+
+async function jget(u){const r=await fetch(u);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('通信に失敗しました('+r.status+')'));return j;}
+async function jpost(u,b){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('通信に失敗しました('+r.status+')'));return j;}
+
+function fail(msg,hint){
+  app.innerHTML=`<div class="card"><h1 style="font-size:16px">表示できませんでした</h1>
+    <p class="sub" style="margin:6px 0 0">${esc(msg)}</p>
+    ${hint?`<div class="note warn">${esc(hint)}</div>`:''}</div>`;
+}
+
+async function run(){
+  let uid='', dispName='', idToken='';
+  // LINEの中で開かれたときは、その方のLINEを確かめる
+  try{
+    await new Promise((res,rej)=>{const s=document.createElement('script');s.src='https://static.line-scdn.net/liff/edge/2/sdk.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    await liff.init({liffId:LIFF_ID});
+    if(!liff.isLoggedIn()){liff.login({redirectUri:location.href});return;}
+    const pf=await liff.getProfile();
+    uid=pf.userId; dispName=pf.displayName||'';
+    // LINEが発行した本人確認用のトークン。サーバはこれをLINEに問い合わせて本人を確かめる
+    idToken=liff.getIDToken()||'';
+  }catch(e){ /* LINE以外のブラウザで開かれた場合 */ }
+
+  const t=Q.get('t');
+  if(t){
+    // 会計直後：合言葉つきで開かれた。LINEと結び付けて領収のご案内を出す
+    if(!uid){
+      app.innerHTML=`<div class="card"><h1 style="font-size:16px">LINEで開いてください</h1>
+        <p class="sub">この画面はLINEアプリの中でご覧いただけます。レジでお見せしているコードをLINEのカメラで読み取ってください</p></div>`;
+      return;
+    }
+    let j;
+    try{ j=await jpost(API+'/line/link',{token:t,lineUserId:uid,idToken,displayName:dispName}); }
+    catch(e){ fail(e.message,'お手数ですがスタッフにお声がけください'); return; }
+    app.innerHTML=(j.receipt?receiptCard(j.receipt):'')
+      + (j.memberCode?memberCard(j.memberCode,j.points,''):'')
+      + `<div class="note ok">LINEに登録しました。次回からご予約のお知らせ・領収のご案内がこちらに届きます</div>`
+      + `<a class="btn" href="./line.html">会員証をひらく</a>`;
+    return;
+  }
+
+  // 会員証だけを見にきた場合
+  if(!uid){
+    app.innerHTML=`<div class="card"><h1 style="font-size:16px">会員証</h1>
+      <p class="sub">LINEアプリの中で開くと会員証が表示されます</p>
+      <a class="btn line" href="https://liff.line.me/${LIFF_ID}">LINEでひらく</a></div>`;
+    return;
+  }
+  let j;
+  try{ j=await jget(API+'/member/me?uid='+encodeURIComponent(uid)+'&idToken='+encodeURIComponent(idToken)); }
+  catch(e){ fail(e.message); return; }
+  if(!j.linked){
+    app.innerHTML=`<div class="card"><h1 style="font-size:16px">まだ会員証がありません</h1>
+      <p class="sub">次回ご来店のお会計のときに、レジでコードを読み取っていただくと会員証が作られます</p></div>`;
+    return;
+  }
+  app.innerHTML=memberCard(j.memberCode,j.points,j.name)+histCard(j.history);
+}
+run();
+</script>
+</body>
+</html>

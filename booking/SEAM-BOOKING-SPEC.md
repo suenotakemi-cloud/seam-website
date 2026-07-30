@@ -395,6 +395,22 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 
 ---
 
+## 6.5 LINE会員証・LINE領収書（2026-07-30）
+
+会計を確定すると、レジにQRコード（`https://liff.line.me/2010490592-nXUUaxqI?t=<合言葉>`）が出る。お客様がスマホで読み取ると **①領収のご案内がLINEに届く ②LINE公式アカウントの友だちになる ③会員証（`99`+8桁）が発行される**。次回来店時はレジのスキャン欄でその番号を読むだけで、お客様とポイント残高が分かる。
+
+- **画面**：`booking/line.html`（お客様用・LIFF・単一HTML）。`?t=` つき＝領収のご案内＋会員証、`?t=` なし＝会員証と利用履歴。
+- **会員番号の形**：`99` + 8桁の10桁。**商品のJAN（13桁/8桁）と桁数が重ならない**ので、レジのスキャン欄（`#co-scan`）を商品と会員証で共用できる。Code39バーコードで表示＝1次元リーダーでそのまま読める（規格適合を検証済）。手入力でも同じ欄で通る。
+- **本人確認**：`liff.getIDToken()` を `https://api.line.me/oauth2/v2.1/verify`（`client_id=LIFF_CHANNEL_ID=2010490592`）でLINEに検証させ、返ってきた `sub` だけを使う。**画面から送られてきた `lineUserId` は信じない**（他人の購買履歴を見られないようにする）。`LIFF_CHANNEL_ID` 未設定時のみ旧挙動にフォールバック。
+- **合言葉の期限**：発行から6時間。会計の場を離れたあとのURL流用を防ぐ。1会計1トークン・`used_at` を刻む。
+- **管理画面で選べる**：設定 → 「📱 LINEで領収書・会員証」。LINE公式アカウントを持たない店は外せる（`lineReceipt` / 既定ON）。
+- **API**：`POST /receipt/token`（合言葉の発行・管理）／`POST /line/link`（お客様・合言葉+IDトークン）／`GET /member/me?idToken=`（お客様・自分の会員証と履歴）／`GET /member/lookup?code=`（レジ・管理）／`POST /receipt/line`（レジからLINEへ直接送る）／`POST /line/backfill`（予約でLINE連携済みの方を顧客台帳へ取り込む）。
+- **テーブル**：`members(code, cust_key, line_user_id, name, created_at)`・`receipt_tokens(token, checkout_id, cust_key, created_at, used_at)`。`customer_notes` に `line_user_id / line_name / line_linked_at` を追加。
+- **顧客の同一性**：既存方針どおり **電話番号がキー**（`cust_key`）。電話が無い会計は `n:氏名` を使う暫定キー。
+- **未確定**：LINE公式アカウントは全店で1つか店舗ごとか（Workerは `LINE_CHANNEL_ACCESS_TOKEN` 1本＝現状は1つ前提）。店舗ごとにする場合は店舗別トークンとLIFFの用意が必要。
+
+---
+
 ## 7. セキュリティ（2026-07-24 P0対応済み）
 
 - **管理API認証**：管理系全エンドポイントに `Authorization: Bearer ADMIN_TOKEN`（wrangler secret）。公開は予約作成/決済/LINEログインのみ。無認証は 401。

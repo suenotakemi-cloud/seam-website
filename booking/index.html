@@ -1411,6 +1411,9 @@ const API = {
   // ---- レジ・会計（D1）----
   async listCheckouts(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts'+(from?`?from=${from}&to=${to||from}`:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.checkouts:null;}catch{return null;} },
   async saveCheckout(c){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(c)});return r.ok?await r.json():null;}catch{return null;} },
+  async receiptToken(checkoutId,phone){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/receipt/token',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone})});const j=await r.json();return r.ok?j:null;}catch{return null;} },
+  async sendLineReceipt(checkoutId,phone){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/receipt/line',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async memberLookup(code){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/member/lookup?code='+encodeURIComponent(code),{headers:authHeaders()});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async removeCheckout(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listSettlements(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements'+(from?`?from=${from}&to=${to||from}`:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.settlements:null;}catch{return null;} },
   async saveSettlement(s){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(s)});return r.ok?await r.json():null;}catch{return null;} },
@@ -2291,9 +2294,10 @@ function renderCheckout(){
       <input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${(isProd?((it.unit||0)*(it.qty||1)):(it.price||''))}" ${isProd?'readonly':''}>
       <button class="co-rx" data-i="${i}" aria-label="削除">✕</button></div>`;}).join('');
   box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}</h3>
+    ${coDraft.memberCode?`<div class="co-done" style="margin:0 0 8px">💳 会員証 ${escH(coDraft.memberCode)}　残高 <b>${(coDraft.memberPt||0).toLocaleString()}pt</b></div>`:''}
     ${isShop()?'':`<div class="co-line"><span>技術（施術）</span><span class="co-y">¥<input id="co-tech" type="number" inputmode="numeric" value="${coDraft.tech||0}"></span></div>`}
     <div class="co-sub">店販（商品）</div>
-    <div class="co-scan-row"><input id="co-scan" list="co-prod-list" placeholder="🔎 バーコードをスキャン／商品名で追加" autocomplete="off">${(db.products||[]).length?`<datalist id="co-prod-list">${(db.products||[]).filter(p=>p.active!==0).map(p=>`<option value="${(p.name||'').replace(/"/g,'&quot;')}">`).join('')}</datalist>`:''}</div>
+    <div class="co-scan-row"><input id="co-scan" list="co-prod-list" placeholder="🔎 バーコード・会員証をスキャン／商品名で追加" autocomplete="off">${(db.products||[]).length?`<datalist id="co-prod-list">${(db.products||[]).filter(p=>p.active!==0).map(p=>`<option value="${(p.name||'').replace(/"/g,'&quot;')}">`).join('')}</datalist>`:''}</div>
     <div id="co-rows">${rows||'<div class="co-empty">なし</div>'}</div>
     <button class="btn small ghost" id="co-add">＋ 手入力で追加</button>
     <div class="co-line"><span>割引</span><span class="co-y">−¥<input id="co-disc" type="number" inputmode="numeric" value="${coDraft.discount||0}"></span></div>
@@ -2389,9 +2393,23 @@ function renderCheckout(){
     const p=productByBarcode(s)||(db.products||[]).find(x=>x.name===s)||(db.products||[]).find(x=>x.name&&x.name.includes(s));
     if(!p)return false; return addItem(p,1);};
   const scan=box.querySelector('#co-scan');
+  // 会員証を読んだらお客様を会計に入れる（お名前と電話が入り、ポイント残高も分かる）
+  window.coApplyMember=async(code,inp)=>{
+    const r=await API.memberLookup(code);
+    if(!r||r.error){toast((r&&r.error)||'会員証を読めませんでした',true);if(inp)inp.value='';return;}
+    if(r.name)coDraft.customer=r.name;
+    if(r.phone)coDraft.phone=r.phone;
+    coDraft.memberCode=r.code; coDraft.memberPt=r.points||0;
+    if(inp)inp.value='';
+    renderCheckout();
+    toast(`会員証を読みました${r.name?'：'+r.name+' 様':''}（残高 ${(r.points||0).toLocaleString()}pt）`);
+    setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);
+  };
   if(scan){
     // 商品が数千点あるので、手元に無ければサーバーのバーコード引きに聞く
     const scanAdd=async(v)=>{
+      // 会員証（99+8桁）はJANとぶつからないので、同じ欄で読める
+      if(/^99\d{8}$/.test((v||'').trim())){await coApplyMember((v||'').trim(),scan);return;}
       if(addFromMaster(v)){scan.value='';renderCheckout();
         setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);return;}
       const code=(v||'').trim(); if(!code)return;
@@ -2456,7 +2474,9 @@ function coFinish(rec){
   }
   toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}${ptMsg}）`);
   // ★次回予約（店頭）: 新規会計の直後に「次回のご予約」を提案（大阪店の勝ちパターンを全店へ・HPBには構造上できない）
-  if(isNew){openNextVisit(rec);}else{document.getElementById('checkoutbg').classList.remove('show');}
+  if(isNew&&stg('lineReceipt','1')==='1'){nvPendingRec=rec;openLineReceipt(rec);}
+  else if(isNew){openNextVisit(rec);}
+  else{document.getElementById('checkoutbg').classList.remove('show');}
 }
 
 /* ===== 次回予約（会計直後の店頭提案）=====
@@ -2546,6 +2566,57 @@ function renderNextVisit(){
     toast(`次回予約を登録しました：${d.day.replace(/-/g,'/')} ${hm(d.start)}〜`);
   };
 }
+/* ===== 会計後のLINE（領収のご案内＋会員証）=====
+ * お客様がレジ前にいるこの瞬間が、LINEに入っていただける一番の機会。
+ * QRをLINEのカメラで読むと、その方のLINEと顧客台帳が結び付き、
+ * 以後は領収のご案内・ご予約のお知らせ・ポイントがLINEで完結する。 */
+const LINE_LIFF_URL='https://liff.line.me/2010490592-nXUUaxqI';
+let _qrLibP=null;
+function loadQRLib(){
+  if(window.qrcode)return Promise.resolve();
+  if(_qrLibP)return _qrLibP;
+  _qrLibP=new Promise((res,rej)=>{const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';s.onload=res;s.onerror=rej;document.head.appendChild(s);});
+  return _qrLibP;
+}
+function qrImg(url,cell){
+  try{const q=qrcode(0,'M');q.addData(url);q.make();return q.createDataURL(cell||7);}catch(e){return '';}
+}
+async function openLineReceipt(rec){
+  const box=document.getElementById('checkoutmodal');
+  document.getElementById('checkoutbg').classList.add('show');
+  box.innerHTML=`<h3>📱 領収のご案内をLINEで</h3><div class="co-sub" style="margin-top:2px">準備しています…</div>`;
+  const phone=rec.phone||'';
+  const [tk]=await Promise.all([API.receiptToken(rec.id,phone),loadQRLib().catch(()=>null)]);
+  const url=tk&&tk.token?LINE_LIFF_URL+'?t='+tk.token:'';
+  const img=url&&window.qrcode?qrImg(url,7):'';
+  box.innerHTML=`<h3>📱 領収のご案内をLINEで</h3>
+    <div class="co-sub" style="margin-top:2px">${escH(rec.customer||'お客様')} 様　¥${rec.total.toLocaleString()}</div>
+    ${img?`<div style="text-align:center;margin:14px 0 6px">
+        <img src="${img}" alt="" style="width:196px;height:196px;border:1px solid #e7e1d9;border-radius:12px;background:#fff">
+        <div style="font-size:12.5px;color:#7d746b;margin-top:8px;line-height:1.6">
+          お客様のスマホでこちらを読み取っていただくと<br>領収のご案内と<b>会員証</b>がLINEに届きます</div>
+      </div>`
+      :`<div class="co-done" style="margin-top:12px;background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">
+          QRを準備できませんでした。通信を確認してください。紙のレシートでお渡しください</div>`}
+    <div class="co-line" style="margin-top:6px"><span style="font-size:12.5px;color:#7d746b">すでにLINEでお繋がりの方は</span>
+      <button class="btn small" id="lr-push" style="margin-left:auto">LINEに直接送る</button></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost" style="flex:1" id="lr-skip">紙で渡す・あとで</button>
+      <button class="btn pay" style="flex:1.2" id="lr-next">次へ（次回のご予約）</button>
+    </div>`;
+  const done=()=>{if(nvPendingRec){const r=nvPendingRec;nvPendingRec=null;openNextVisit(r);}else document.getElementById('checkoutbg').classList.remove('show');};
+  box.querySelector('#lr-skip').onclick=done;
+  box.querySelector('#lr-next').onclick=done;
+  box.querySelector('#lr-push').onclick=async(e)=>{
+    const b=e.target;b.disabled=true;b.textContent='送信中…';
+    const r=await API.sendLineReceipt(rec.id,phone);
+    if(r&&r.ok){b.textContent='送信しました';toast('LINEに領収のご案内を送りました');}
+    else{b.disabled=false;b.textContent='LINEに直接送る';toast((r&&r.error)||'送れませんでした',true);}
+  };
+}
+let nvPendingRec=null;
+
 // Squareターミナルで決済（金額を端末へ送信→完了までポーリング→会計確定）
 let _termCid=null,_termPoll=null;
 async function runTerminalPayment(){
@@ -2650,6 +2721,18 @@ function renderRegister(){
       <span><b>サロンとショップを分ける</b><i>レジ画面に「💇サロン／🛍ショップ」の切り替えが出ます</i></span></label>
     <div id="pos-split-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div></div>`;
 
+  /* LINEで領収書・会員証。会計のあとにQRを出すかどうか。
+   * LINEの公式アカウントを持っていないお店では出さない方がいいので選べるようにしてある。 */
+  const linePanel=`<div class="card reg-close"><h3>📱 LINEで領収書・会員証</h3>
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:10px">
+      会計を確定したあとに<b>QRコード</b>を出します。お客様がスマホで読み取ると、<br>
+      領収のご案内がLINEに届き、同時に<b>会員証（番号つき）</b>が発行されます。<br>
+      次のご来店ではレジのスキャン欄でその番号を読むだけで、お客様とポイントが分かります。
+    </div>
+    <label class="csopt" style="max-width:520px"><input type="checkbox" id="line-receipt" ${stg('lineReceipt','1')==='1'?'checked':''}>
+      <span><b>会計のあとにLINEのQRを出す</b><i>LINE公式アカウントをお持ちのお店向け。外すと今までどおり紙のレシートだけになります</i></span></label>
+    <div id="line-receipt-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:6px">✓ 保存しました</div></div>`;
+
   // 前金(デポジット)の設定 — 予約ページの言語ごとに変える。日本語=定額/海外=料金の◯%
   const DEP_LANGS=[['ja','日本語のお客様'],['en','English'],['zh','简体中文'],['tw','繁體中文'],['ko','한국어']];
   const depPanel=`<div class="card reg-close"><h3>💳 前金（デポジット）の設定</h3>
@@ -2663,10 +2746,15 @@ function renderRegister(){
     <div class="rz-ref"><span>お客様が選んだ言語で自動的に切り替わります</span><span>海外は「料金の50%」が一般的（無断キャンセル対策）</span></div></div>`;
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧾 レジの分け方（サロン／ショップ）',splitPanel)
+    +fold('📱 LINEで領収書・会員証',linePanel)
     +fold('💳 前金（デポジット）の設定（言語ごと）',depPanel)
     +fold('💎 ポイント設定（還元率・使う/使わない）',ptPanel)
     +fold(`🎁 ギフト券（発行・一覧${activeGifts.length?`・有効${activeGifts.length}枚`:''}）`,gfPanel)
     +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel);
+  // LINEで領収書のON/OFF
+  {const el=document.getElementById('line-receipt');
+   if(el)el.onchange=()=>{setStg('lineReceipt',el.checked?'1':'0');
+     const ok=document.getElementById('line-receipt-saved');if(ok){ok.style.display='block';setTimeout(()=>ok.style.display='none',1600);}};}
   // レジの分け方の保存
   {const el=document.getElementById('pos-split');
    if(el)el.onchange=()=>{setStg('posSplit',el.checked?'1':'0');
