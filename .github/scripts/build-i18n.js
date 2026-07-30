@@ -190,7 +190,13 @@ function build() {
     '/recruit-stylist-fukuoka',
     '/recruit-spanist-ginza',
     '/recruit-spanist-osaka',
-    '/recruit-spanist-nagoya'];
+    '/recruit-spanist-nagoya',
+    '/recruit-assistant-fukuoka',
+    '/recruit-shopmanager-ginza',
+    '/recruit-shopmanager-omotesando',
+    '/recruit-shopmanager-sapporo',
+    '/recruit-parttime-ginza',
+    '/recruit-parttime-omotesando'];
   // ja側も実在チェック(言語版と同じ扱い)。存在しないページをsitemapに載せない=404申告の防止
   const missingJa = jaUrls.filter(u => !fs.existsSync(path.join(ROOT, u === '/' ? 'index.html' : u.slice(1) + '.html')));
   if (missingJa.length) summary.push(`WARN sitemap: 実体なしのjaページを除外 ${missingJa.join(', ')}`);

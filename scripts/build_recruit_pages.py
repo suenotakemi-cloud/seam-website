@@ -22,9 +22,17 @@ STORES = {
     "osaka":    {"ja": "大阪",   "pref": "大阪",  "area": "南堀江・心斎橋", "en": "Osaka · Horie"},
     "nagoya":   {"ja": "名古屋", "pref": "愛知",  "area": "栄・矢場町",    "en": "Nagoya · Sakae"},
     "fukuoka":  {"ja": "福岡",   "pref": "福岡",  "area": "天神・大名",    "en": "Fukuoka · Tenjin"},
+    "omotesando": {"ja": "表参道", "pref": "東京", "area": "表参道・青山", "en": "Tokyo · Omotesando"},
 }
 STYLIST_STORES = ["ginza", "sapporo", "osaka", "nagoya", "fukuoka"]
 SPANIST_STORES = ["ginza", "osaka", "nagoya"]
+ASSISTANT_STORES = ["fukuoka"]
+SHOPMGR_STORES = ["ginza", "omotesando", "sapporo"]
+PARTTIME_STORES = ["ginza", "omotesando"]
+# 職種ごとの給与形態。JobPosting の baseSalary と employmentType に効く
+PAY = {"stylist": (300000, "MONTH", "FULL_TIME"), "spanist": (300000, "MONTH", "FULL_TIME"),
+       "assistant": (250000, "MONTH", "FULL_TIME"), "shopmanager": (250000, "MONTH", "FULL_TIME"),
+       "parttime": (1500, "HOUR", "PART_TIME")}
 
 def nap(slug):
     t = open(f"store-{slug}.html", encoding="utf-8").read()
@@ -64,24 +72,66 @@ ROLES = {
         "h1": "{city}のスパニスト求人<br><span style=\"font-size:.62em;letter-spacing:.06em;\">ヘッドスパ専門職</span>",
         "italic": "for spanists in {slug}",
     },
+    "assistant": {
+        "ja": "アシスタント", "short": "アシスタント",
+        "ill": "images/lp/recruit/ill_stylist.webp",
+        "chips": ["月給25万円〜", "完全週休2日", "美容師免許"],
+        "salary_html": "月給25万円〜<br><span style=\"color:#9c8a6a;font-size:12.5px;\">試用期間2ヶ月（期間中も給与は変わりません）</span>",
+        "desc_lead": "技術だけでなく 接客やヘアケアの考え方まで含めて基礎から学べるアシスタント職です サロン専売197ブランドが並ぶ環境で 商品知識も一緒に育ちます",
+        "jp_title": "美容師アシスタント（{city}・正社員）",
+        "jp_desc": "フロントショップ型サロンSEAM {city}のアシスタント。月給25万円〜。完全週休2日・産休育休は取得実績あり復帰率100%・社会保険完備・NY/ハワイ研修。美容師免許必須。試用期間2ヶ月(期間中も給与は同額)。土日に勤務できる方。まずは見学だけの応募も歓迎。",
+        "seo_title": "{city}の美容師アシスタント求人｜月給25万円〜｜SEAM{city}（正社員）",
+        "seo_desc": "{pref}{city}エリア（{area}）の美容師アシスタント求人 月給25万円〜 完全週休2日 産休育休の復帰率100% サロン専売197ブランドのフロントショップ型サロンSEAMで 技術も商品知識も基礎から育てられる環境",
+        "h1": "{city}の美容師<br>アシスタント求人",
+        "italic": "for assistants in {slug}",
+    },
+    "shopmanager": {
+        "ja": "ショップ管理者", "short": "ショップ管理者",
+        "ill": "images/lp/recruit/ill_hair.webp",
+        "chips": ["月給25万円〜", "実績に応じて賞与", "商品開発・広報も"],
+        "salary_html": "月給25万円〜 ／ 実績に応じて賞与<br><span style=\"color:#9c8a6a;font-size:12.5px;\">試用期間6ヶ月</span>",
+        "desc_lead": "サロンの入口にあるビューティーショップの運営をお任せします 接客と売場づくりだけでなく 今後は商品開発や広報にも関わっていける仕事です",
+        "jp_title": "ショップ管理者（{city}・正社員）",
+        "jp_desc": "サロン専売ヘアケア197ブランドのビューティーショップ運営。SEAM {city}。月給25万円〜・実績に応じて賞与。完全週休2日・社会保険完備。試用期間6ヶ月。土日に勤務できる方。今後 商品開発や広報にも関わっていきたい方を歓迎します。",
+        "seo_title": "{city}のショップ管理者求人｜月給25万円〜 賞与あり｜SEAM{city}（正社員）",
+        "seo_desc": "{pref}{city}エリア（{area}）のビューティーショップ管理者求人 月給25万円〜 実績に応じて賞与 完全週休2日 社会保険完備 サロン専売197ブランドの売場づくりから 商品開発や広報まで関われる仕事",
+        "h1": "{city}の<br>ショップ管理者求人",
+        "italic": "for shop managers in {slug}",
+    },
+    "parttime": {
+        "ja": "ショップスタッフ", "short": "ショップスタッフ（アルバイト）",
+        "ill": "images/lp/recruit/ill_hair.webp",
+        "chips": ["時給1,500円", "土日に入れる方", "未経験OK"],
+        "salary_html": "時給1,500円<br><span style=\"color:#9c8a6a;font-size:12.5px;\">平日の勤務日数はご相談ください</span>",
+        "desc_lead": "ビューティーショップでお客様のご案内とヘアケアのご紹介をお願いします ヘアケアの知識は入ってから覚えていただいて大丈夫です",
+        "jp_title": "ショップスタッフ（{city}・アルバイト）",
+        "jp_desc": "サロン専売ヘアケアのビューティーショップスタッフ。SEAM {city}。時給1,500円。土日に勤務できる方。ヘアケアの知識は入社後に学べます。ノルマはありません。まずは見学だけの応募も歓迎。",
+        "seo_title": "{city}のショップスタッフ求人（アルバイト）｜時給1,500円｜SEAM{city}",
+        "seo_desc": "{pref}{city}エリア（{area}）のビューティーショップ アルバイト求人 時給1,500円 土日に勤務できる方 ヘアケアの知識は入ってから覚えられます ノルマなし サロン専売197ブランドが並ぶ売場での接客",
+        "h1": "{city}の<br>ショップスタッフ求人",
+        "italic": "for shop staff in {slug}",
+    },
 }
 
 FAQS = [
     ("見学だけでも大丈夫ですか", "はい 見学だけ 話を聞くだけのご連絡も歓迎しています LINEかインスタグラムのDMから一言おくってください"),
     ("履歴書は必要ですか", "あとからで大丈夫です まずはLINEかDMでお名前と希望店舗をおしらせください"),
-    ("子育てと両立できますか", "産休・育休は取得実績があり 復帰率は100%です 結婚して子どもがふたり 時短の正社員でサロンワークを続けている勤続10年のスタイリストも在籍しています 土日休みの相談も可能です（お子さんのいる方は優先します）"),
+    ("子育てと両立できますか", "産休・育休は取得実績があり 復帰率は100%です 結婚して子どもがふたり 時短の正社員でサロンワークを続けている勤続10年のスタイリストも在籍しています "),
     ("応募から入社までの流れは", "LINEまたはDMでご連絡 → 店舗見学・面談 → 条件のご相談 → 入社 という流れです 経験やご希望にあわせてご相談いただけます"),
 ]
 
+ROLE_STORES = {"stylist": STYLIST_STORES, "spanist": SPANIST_STORES,
+               "assistant": ASSISTANT_STORES, "shopmanager": SHOPMGR_STORES, "parttime": PARTTIME_STORES}
+
 def other_links(role, slug):
+    """同じ職種の他店 → その店で募集している他職種 の順に並べる"""
     items = []
-    stores = STYLIST_STORES if role == "stylist" else SPANIST_STORES
-    for s in stores:
+    for s in ROLE_STORES[role]:
         if s == slug: continue
         items.append(f'<a href="recruit-{role}-{s}.html" class="rcd-pill">{STORES[s]["ja"]}</a>')
-    other_role = "spanist" if role == "stylist" else "stylist"
-    if slug in (SPANIST_STORES if other_role == "spanist" else STYLIST_STORES):
-        items.append(f'<a href="recruit-{other_role}-{slug}.html" class="rcd-pill" style="border-color:rgba(168,116,86,.5);">{STORES[slug]["ja"]}の{ROLES[other_role]["short"]}求人</a>')
+    for r2, stores2 in ROLE_STORES.items():
+        if r2 == role or slug not in stores2: continue
+        items.append(f'<a href="recruit-{r2}-{slug}.html" class="rcd-pill" style="border-color:rgba(168,116,86,.5);">{STORES[slug]["ja"]}の{ROLES[r2]["short"]}求人</a>')
     return "\n            ".join(items)
 
 def page_html(role, slug):
@@ -95,10 +145,10 @@ def page_html(role, slug):
     ld = {"@context": "https://schema.org", "@graph": [
         {"@type": "JobPosting", "title": R["jp_title"].format(city=city),
          "description": R["jp_desc"].format(city=city),
-         "datePosted": DATE_POSTED, "validThrough": VALID_THROUGH, "employmentType": "FULL_TIME",
+         "datePosted": DATE_POSTED, "validThrough": VALID_THROUGH, "employmentType": PAY[role][2],
          "hiringOrganization": {"@type": "Organization", "name": "株式会社hanico（SEAM）", "sameAs": "https://seam.site/"},
          "jobLocation": {"@type": "Place", "address": {"@type": "PostalAddress", "streetAddress": N["street"], "addressLocality": N["locality"], "addressRegion": N["region"], "addressCountry": "JP"}},
-         "baseSalary": {"@type": "MonetaryAmount", "currency": "JPY", "value": {"@type": "QuantitativeValue", "minValue": 300000, "unitText": "MONTH"}},
+         "baseSalary": {"@type": "MonetaryAmount", "currency": "JPY", "value": {"@type": "QuantitativeValue", "minValue": PAY[role][0], "unitText": PAY[role][1]}},
          "jobBenefits": "社会保険・厚生年金完備 ／ 交通費支給（月1万5千円まで） ／ ヘアケア・美容用品の社員割引 ／ ニューヨーク・ハワイ研修（実績に応じて） ／ 産休・育休（取得実績あり・復帰率100%）",
          "applicantLocationRequirements": {"@type": "Country", "name": "JP"}, "directApply": True,
          "identifier": {"@type": "PropertyValue", "name": "SEAM", "value": url_slug}},
@@ -358,7 +408,7 @@ def faq_block():
 def main():
     pages = []
     faqs = faq_block()
-    for role, stores in (("stylist", STYLIST_STORES), ("spanist", SPANIST_STORES)):
+    for role, stores in ROLE_STORES.items():
         for slug in stores:
             html = page_html(role, slug)
             html = html.replace("{faq_html}", faqs).replace("{others}", other_links(role, slug))
@@ -430,7 +480,9 @@ def main():
         assert types == ["JobPosting", "BreadcrumbList", "FAQPage"], (fn, types)
         assert "{" + "role}" not in h and "{" + "slug}" not in h and "{faq_html}" not in h and "{others}" not in h, fn
         assert "css/lang.css" in h and "langOverlay" in h and "seam-analytics" in h, fn
-    print("verify OK: 8 pages / LD types / template vars / shared assets")
+        for im in re.findall(r'src="(images/[^"]+)"', h):        # 画像の実在も見る
+            assert os.path.exists(im), (fn, im)
+    print(f"verify OK: {len(pages)} pages / LD types / template vars / shared assets / images")
 
 if __name__ == "__main__":
     main()
