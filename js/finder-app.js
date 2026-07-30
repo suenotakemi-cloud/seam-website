@@ -1,4 +1,3 @@
-/* AUTO-GENERATED from js/finder-app.jsx by CI (build-finder.js). DO NOT EDIT — edit the .jsx source. */
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* =========================================================================
    SEAM Hair Finder
@@ -3545,7 +3544,7 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     let upsell = 0;
     const _ub = deepUserBand(a, dcat);
     if (_ub != null) {
-      const _pb = bandOfPrice(deepMinPrice(p));
+      const _pb = bandOfPrice(deepRepPrice(p));
       if (_pb != null && _pb > _ub) {
         const _will = a.upgradeWill || '';
         if (_pb === _ub + 1 && _will !== 'price') upsell += 4;
@@ -3574,8 +3573,13 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   const catSubUsed = {}; // 各バケット内で seam-master.json category の重複を避ける(legacy)
   const suppCountInBucket = {}; // 各バケット内の補助ブランド本数(おまけ枠制限)
   const brandCountInBucket = {}; // 各バケット内の同ブランド本数(バケット内多様性)
+  // 価格の段(いつもの/ワンランク上/ご褒美)用の候補プール。
+  // blocks は各カテゴリ3本までに絞るため 段を組むには候補が足りない。
+  // ここで「予算フロアを通った候補」をスコア順に多めに残しておく(推薦本命は blocks 側で不変)。
+  const pools = {};
   for (const id of Object.keys(DEEP_CATEGORY_DEFS)) {
     blocks[id] = [];
+    pools[id] = [];
     catSubUsed[id] = new Set();
     suppCountInBucket[id] = 0;
     brandCountInBucket[id] = {};
@@ -3593,9 +3597,11 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     if (!def) continue;
     // 予算フロア(帯未回答のバケットはnull=無効)
     if (floorByBucket[bucket] != null) {
-      const _pb = bandOfPrice(deepMinPrice(item.p));
+      const _pb = bandOfPrice(deepRepPrice(item.p));
       if (_pb != null && _pb < floorByBucket[bucket]) continue;
     }
+    // 段用プール(容量・ブランド上限より前に確保。補助ブランドは段に出さない)
+    if (!item.isSupplementary && pools[bucket].length < 14) pools[bucket].push(item);
     // バケット容量
     if (blocks[bucket].length >= (def.max || 3)) continue;
     // ブランド集中防止 (グローバル: 全カテゴリ合計の上限)
@@ -3629,7 +3635,7 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
         if (item.deepCat !== id) continue;
         if (blocks[id].length >= (DEEP_CATEGORY_DEFS[id].max || 3)) break;
         if (blocks[id].some(x => x.p.id === item.p.id)) continue;
-        const _pb = bandOfPrice(deepMinPrice(item.p));
+        const _pb = bandOfPrice(deepRepPrice(item.p));
         if (_pb != null && _pb < fl) continue;
         blocks[id].push(item);
       }
@@ -3788,6 +3794,7 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
   }
   return {
     blocks,
+    pools,
     userTags,
     hardRules
   };
@@ -4790,7 +4797,7 @@ function MustPlusOneSection({
     rel: "noopener noreferrer",
     className: "mt-2 inline-flex items-center gap-1.5 font-mono tracking-widest2 text-[10.5px] uppercase text-ink hover:text-gold no-print transition-colors"
   }, (() => {
-    const v = deepMinPrice(p);
+    const v = deepRepPrice(p);
     return v != null ? /*#__PURE__*/React.createElement("span", {
       className: "font-serif text-[13px] text-ink nums normal-case tracking-normal"
     }, p.salonTownItemId && /*#__PURE__*/React.createElement("span", {
@@ -4822,6 +4829,14 @@ function deepMinPrice(p) {
   const ps = (p.sizes || []).map(s => s && s.price).filter(v => typeof v === 'number' && v > 0);
   return ps.length ? Math.min.apply(null, ps) : null;
 }
+/* 代表価格 = 主要サイズの価格(1本あたり)。
+   予算の質問が「1本あたりに払う金額」なので 価格帯の判定と表示はこれに揃える。
+   deepMinPrice は最小サイズ(75mlの試供品など)を返すため 本体4,180円の商品が
+   1,320円=〜2,000円帯として扱われ 予算フロアと段組みが崩れていた(2026-07-30 修正)。 */
+function deepRepPrice(p) {
+  if (p && typeof p.priceApprox === 'number' && p.priceApprox > 0) return p.priceApprox;
+  return deepMinPrice(p);
+}
 const DEEP_TIER_RANK = {
   entry: 0,
   value: 0,
@@ -4832,7 +4847,7 @@ const DEEP_TIER_RANK = {
 };
 function deepPriceRank(p) {
   if (p.priceTier && DEEP_TIER_RANK[p.priceTier] != null) return DEEP_TIER_RANK[p.priceTier];
-  const v = deepMinPrice(p);
+  const v = deepRepPrice(p);
   if (v == null) return 1;
   if (v < 2500) return 0;
   if (v < 5000) return 1;
@@ -4864,8 +4879,8 @@ function deepWhyFits(p, cat) {
 }
 // 価格差で松(上質)/梅(手頃)/ほかに のラベル
 function deepAltRole(altP, bestP) {
-  const a = deepMinPrice(altP),
-    b = deepMinPrice(bestP);
+  const a = deepRepPrice(altP),
+    b = deepRepPrice(bestP);
   if (a != null && b != null) {
     if (a > b) return '上質に';
     if (a < b) return '手頃に';
@@ -4915,7 +4930,7 @@ function deepUserBand(answers, bucketId) {
 // 「これ使ってみたい」の一言(予算との関係で言い分け)
 function bandRelForItem(p, ub) {
   if (ub == null) return null;
-  const pb = bandOfPrice(deepMinPrice(p));
+  const pb = bandOfPrice(deepRepPrice(p));
   if (pb == null) return null;
   if (pb <= ub) return {
     tag: 'いつもの価格帯',
@@ -4954,8 +4969,8 @@ function deepPriceTrio(items) {
   };
   const best = items[0];
   const rest = items.slice(1).slice().sort(function (a, b) {
-    const pa = deepMinPrice(a.p),
-      pb = deepMinPrice(b.p);
+    const pa = deepRepPrice(a.p),
+      pb = deepRepPrice(b.p);
     const ra = pa != null ? pa : deepPriceRank(a.p) * 1000 + 500;
     const rb = pb != null ? pb : deepPriceRank(b.p) * 1000 + 500;
     return rb - ra; // 高い→安い の順
@@ -4979,27 +4994,139 @@ function deepPriceTrio(items) {
   };
 }
 
+/* ── 予算アンカーの3段(いつもの / ワンランク上 / ご褒美) ──
+   聞いた予算帯を起点に 上へ伸ばす(既存ルール「普段より安い提案はしない」を守る)。
+   ・いつもの = 予算帯(その帯に無ければ直上の実在帯)
+   ・ワンランク上 = その1つ上で実在する帯
+   ・ご褒美     = 実在する中でいちばん上の帯
+   段が埋まらないときは埋め合わせない(実在しない価格帯を作らない)。
+   9,000円以上は在庫が薄く(トリートメントは0点)「最上位帯」では成立しないため
+   ご褒美は絶対価格ではなく「実在する中の最上位」で定義する。 */
+const BAND_LABELS = ['〜2,000円', '2,000〜4,000円', '4,000〜6,000円', '6,000〜9,000円', '9,000円〜'];
+function deepBudgetTiers(items, ub, will, preferred) {
+  if (!items || !items.length || ub == null) return null;
+  const byBand = {};
+  for (const it of items) {
+    if (!it || !it.p) continue;
+    const b = bandOfPrice(deepRepPrice(it.p));
+    if (b == null) continue;
+    (byBand[b] = byBand[b] || []).push(it); // items はスコア順なので各帯の先頭が最も合う一本
+  }
+  const allBands = Object.keys(byBand).map(Number).sort(function (a, b) {
+    return a - b;
+  });
+  const bands = allBands.filter(function (b) {
+    return b >= ub;
+  });
+  if (!allBands.length) return null;
+  // ご予算以上に一点も無いカテゴリ(例: トリートメントの9,000円以上は0点)は
+  // 黙って安いものを出さず「上限はここまで」と告げる
+  if (!bands.length) {
+    const top = allBands[allBands.length - 1];
+    return {
+      tiers: [{
+        key: 'usual',
+        label: 'いちばん上のご用意',
+        band: top,
+        item: byBand[top][0],
+        delta: null
+      }],
+      defaultIndex: 0,
+      honest: 'ご予算の帯には お悩みに合うご用意がなく ' + BAND_LABELS[top] + 'が上限です',
+      noHigher: false
+    };
+  }
+  const usualBand = bands[0];
+  const upBand = bands.find(function (b) {
+    return b > usualBand;
+  });
+  const topBand = bands[bands.length - 1];
+  const tiers = [];
+  const push = (key, label, band) => {
+    if (band == null || !byBand[band] || tiers.some(function (t) {
+      return t.band === band;
+    })) return;
+    tiers.push({
+      key,
+      label,
+      band,
+      item: byBand[band][0]
+    });
+  };
+  push('usual', 'いつもの価格帯', usualBand);
+  // 「いつもの」は現行の本命(blocks先頭)と一致させる — 段の導入で推薦が変わらないようにする
+  if (preferred && preferred.p && tiers.length && tiers[0].band === bandOfPrice(deepRepPrice(preferred.p))) {
+    tiers[0].item = preferred;
+  }
+  push('up', 'ワンランク上', upBand);
+  push('top', 'ご褒美クラス', topBand);
+  if (!tiers.length) return null;
+  // 同一商品が2段に出ないように(帯が同じでも別商品を選ぶ)
+  const seenIds = new Set();
+  for (let i = 0; i < tiers.length; i++) {
+    const t = tiers[i];
+    const id = t.item && t.item.p && t.item.p.id;
+    if (id && seenIds.has(id)) {
+      const alt = (byBand[t.band] || []).find(function (x) {
+        return x.p && !seenIds.has(x.p.id);
+      });
+      if (alt) t.item = alt;else {
+        tiers.splice(i, 1);
+        i--;
+        continue;
+      }
+    }
+    if (t.item && t.item.p) seenIds.add(t.item.p.id);
+  }
+  // 価格優先の方には背伸び提案を出さない(オーナー指定)
+  const trimmed = will === 'price' ? tiers.slice(0, 1) : tiers;
+  // 差額(いつもの価格帯との差)
+  const base = deepRepPrice(trimmed[0].item.p);
+  for (const t of trimmed) {
+    const v = deepRepPrice(t.item.p);
+    t.delta = base != null && v != null && v > base ? '+¥' + (v - base).toLocaleString() : null;
+  }
+  // 聞いた予算帯に実在しなかったときだけ 正直に言う
+  const honest = usualBand > ub ? 'ご予算の帯に お悩みに合うものがなく ' + BAND_LABELS[usualBand] + 'からが本命です' : null;
+  // 既定の段: 投資意向ありならワンランク上 / 価格優先はいつもの
+  let defaultIndex = 0;
+  if (will === 'yes') {
+    const i = trimmed.findIndex(function (t) {
+      return t.key === 'up';
+    });
+    if (i > -1) defaultIndex = i;
+  }
+  return {
+    tiers: trimmed,
+    defaultIndex,
+    honest,
+    noHigher: trimmed.length === 1 && will !== 'price'
+  };
+}
+
 /* ── ベスト1本カード(竹) ── */
 function DeepBestCard({
   item,
   best = null,
   variant = 'best',
-  category = null
+  category = null,
+  tierLabel = null,
+  showBadge = true
 }) {
   const p = item.p;
   const reason = deepWhyFits(p, category);
   const src = p.image || p.imageUrl;
   const showImg = src && !isRefillImage(src);
   const chips = getProductChips(p, 4);
-  const priceVal = deepMinPrice(p);
+  const priceVal = deepRepPrice(p);
   const role = variant === 'alt' && best && best.p ? deepAltRole(p, best.p) : null;
-  const badgeText = variant === 'best' ? 'あなたにベスト' : role === '手頃に' ? '手頃な候補' : role === '上質に' ? '上質な候補' : '別ブランドの候補';
+  const badgeText = tierLabel ? tierLabel : variant === 'best' ? 'あなたにベスト' : role === '手頃に' ? '手頃な候補' : role === '上質に' ? '上質な候補' : '別ブランドの候補';
   const badgeCls = variant === 'best' ? 'bg-gold text-white' : 'bg-cream text-gold border border-gold/45';
   return /*#__PURE__*/React.createElement("article", {
     className: "bg-white border border-gold/45 p-5 pt-6 rounded-[2px] flex flex-col relative shadow-soft"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, showBadge && /*#__PURE__*/React.createElement("div", {
     className: `absolute -top-2.5 left-4 inline-flex items-center gap-1.5 ${badgeCls} font-mono tracking-widest2 text-[9.5px] uppercase px-2.5 py-1 rounded-[1px]`
-  }, variant === 'best' && /*#__PURE__*/React.createElement("span", {
+  }, variant === 'best' && !tierLabel && /*#__PURE__*/React.createElement("span", {
     "aria-hidden": true
   }, "\u2605"), /*#__PURE__*/React.createElement("span", null, badgeText)), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-4"
@@ -5030,7 +5157,7 @@ function DeepBestCard({
     className: "font-mono tracking-widest2 text-[8.5px] uppercase text-gold mr-1.5 align-[1px]"
   }, "\u306A\u305C\u5408\u3046"), reason), item.bandRel && /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[11.5px] leading-[1.7] text-charcoal/80"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, !tierLabel && /*#__PURE__*/React.createElement("span", {
     className: "inline-block text-[9.5px] px-1.5 py-0.5 mr-1.5 bg-cream/70 text-gold border border-gold/35 rounded-[1px] align-[1px] whitespace-nowrap"
   }, item.bandRel.tag), item.bandRel.line))), chips.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-2.5 flex flex-wrap gap-1"
@@ -5079,6 +5206,63 @@ function DeepBestCard({
   }, "\u2197")));
 }
 
+/* ── 予算3段の切替(いつもの / ワンランク上 / ご褒美) ──
+   既定は upgradeWill に従う。段は1本価格で作り(質問がそう聞いているため)、
+   差額を明示して「いくら足すと何が変わるか」だけを判断してもらう。 */
+function DeepTierBlock({
+  tiers,
+  defaultIndex = 0,
+  honest = null,
+  noHigher = false,
+  category = null
+}) {
+  const [sel, setSel] = useState(Math.min(defaultIndex || 0, Math.max(0, tiers.length - 1)));
+  if (!tiers || !tiers.length) return null;
+  const cur = tiers[Math.min(sel, tiers.length - 1)];
+  return /*#__PURE__*/React.createElement("div", null, honest && /*#__PURE__*/React.createElement("p", {
+    className: "mb-2 text-[11.5px] leading-[1.75] text-charcoal/70"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-mono tracking-widest2 text-[8.5px] uppercase text-gold mr-1.5 align-[1px]"
+  }, "\u6B63\u76F4\u306B"), honest), tiers.length > 1 && /*#__PURE__*/React.createElement("div", {
+    role: "tablist",
+    "aria-label": "\u4E88\u7B97\u306E\u6BB5",
+    className: "mb-2.5 grid gap-1.5",
+    style: {
+      gridTemplateColumns: 'repeat(' + tiers.length + ', minmax(0, 1fr))'
+    }
+  }, tiers.map((t, i) => {
+    const on = i === (sel < tiers.length ? sel : 0);
+    return /*#__PURE__*/React.createElement("button", {
+      key: t.key,
+      type: "button",
+      role: "tab",
+      "aria-selected": on,
+      onClick: () => {
+        setSel(i);
+        try {
+          window.seamTrack && seamTrack('tier_pick', {
+            label: t.key
+          });
+        } catch (_) {}
+      },
+      className: 'flex flex-col items-center justify-center gap-0.5 rounded-[2px] px-2 py-2 min-h-[46px] transition-colors border ' + (on ? 'bg-gold text-white border-gold' : 'bg-white text-charcoal/75 border-line hover:border-gold/60')
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-[11.5px] leading-tight text-center"
+    }, t.label), /*#__PURE__*/React.createElement("span", {
+      className: 'font-mono text-[9.5px] nums leading-none ' + (on ? 'text-white/85' : 'text-gold')
+    }, t.delta || 'ご予算内'));
+  })), /*#__PURE__*/React.createElement(DeepBestCard, {
+    item: cur.item,
+    category: category,
+    variant: cur.key === 'usual' ? 'best' : 'alt',
+    best: tiers[0].item,
+    tierLabel: cur.label,
+    showBadge: tiers.length === 1
+  }), noHigher && /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[11px] leading-[1.7] text-charcoal/55"
+  }, "\u3053\u306E\u4FA1\u683C\u5E2F\u3088\u308A\u4E0A\u306B \u3054\u63D0\u6848\u3067\u304D\u308B\u3082\u306E\u306F\u3042\u308A\u307E\u305B\u3093"));
+}
+
 /* ── 価格で選ぶ コンパクトカード(松/梅) ── */
 function DeepAltCard({
   item,
@@ -5086,7 +5270,7 @@ function DeepAltCard({
 }) {
   const p = item.p;
   const role = best && best.p ? deepAltRole(p, best.p) : null;
-  const altPrice = deepMinPrice(p);
+  const altPrice = deepRepPrice(p);
   return /*#__PURE__*/React.createElement("a", {
     href: p.productPageUrl || SHOP_URL,
     target: "_blank",
@@ -5788,13 +5972,26 @@ function DeepProductSection({
   // 代替(specialCleanse↔shampoo 等)は禁止。finish・specialCleanse は初見に出さず「すべて見る」へ回す。
   // (オーナー要件＋外部5000件検証: 基礎が安定して前に出ない/finish混入 を解消)
   const _catTitle = id => (DEEP_CATEGORY_DEFS[id] || BLOCK_DEFS[id] || {}).title || '';
+  const _will = answers && answers.upgradeWill || '';
   const bestOf = id => {
     const arr = blocks[id] || [];
     if (!arr.length) return null;
+    // 予算を聞けているカテゴリは「いつもの / ワンランク上 / ご褒美」の3段で見せる
+    // 段は広い候補プールから組み(上の段が埋まりやすい)、「いつもの」は現行の本命を維持する
+    const _pool = deepResult.pools && deepResult.pools[id] && deepResult.pools[id].length ? deepResult.pools[id] : arr;
+    const tierSet = deepBudgetTiers(_pool, deepUserBand(answers, id), _will, arr[0]);
+    if (tierSet) {
+      return {
+        item: tierSet.tiers[0].item,
+        tierSet,
+        category: id,
+        blockTitle: _catTitle(id)
+      };
+    }
+    // 予算未回答(使わない/スキップ)はブランド違いの候補スライドのまま
     const trio = deepPriceTrio(arr);
     const best = trio.best || arr[0];
     if (!best) return null;
-    // best + 同カテゴリのブランド違い候補(最大2) → スライドで「次におすすめ / その次におすすめ」
     const items = [best].concat((trio.alts || []).filter(a => a && a.p && a.p.id !== best.p.id).slice(0, 2));
     return {
       item: best,
@@ -5909,7 +6106,13 @@ function DeepProductSection({
         color: '#B8945A',
         opacity: 0.7
       }
-    }, "\u306A\u305C"), _reason), cands.length > 1 ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    }, "\u306A\u305C"), _reason), f.tierSet ? /*#__PURE__*/React.createElement(DeepTierBlock, {
+      tiers: f.tierSet.tiers,
+      defaultIndex: f.tierSet.defaultIndex,
+      honest: f.tierSet.honest,
+      noHigher: f.tierSet.noHigher,
+      category: f.category
+    }) : cands.length > 1 ? /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
       className: "mb-2 flex items-center gap-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/50"
     }, /*#__PURE__*/React.createElement("svg", {
       "aria-hidden": true,
