@@ -4098,6 +4098,21 @@ function resolveStaffAt(menu,day,start){
 }
 /* メールでお知らせを受け取る欄（本人確認コードつき）。
  * LINEと繋がっていない方の受け取り先。LINE導線の下にも同じものを出す。 */
+/* 電話番号。全角も半角に寄せ、数字だけにして桁数で見る。
+ * 当日ご連絡が取れないと席を空けたまま待つことになるので必須にしている。 */
+function telDigits(v){
+  return String(v||'').replace(/[０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0)).replace(/[^0-9]/g,'');
+}
+function telCheck(v){
+  const raw=String(v||'').trim();
+  const d=telDigits(raw);
+  if(!d)return {ng:'お電話番号をご記入ください'};
+  // 「+」で始まる＝海外の番号。国番号のぶん桁が増えるので長めに許す（E.164は最大15桁）
+  const intl=/^[+＋]/.test(raw);
+  const min=10, max=intl?15:11;
+  if(d.length<min||d.length>max)return {ng:'お電話番号の桁数をご確認ください'};
+  return {tel:d};
+}
 function mailBlock(){
   const v=bk.emailVerified;
   return `<div style="font-size:12px;font-weight:800;color:var(--navy);margin-top:2px">メールアドレス<span style="color:var(--sub);font-size:10.5px;margin-left:6px">予約完了のお知らせをお送りします</span></div>
@@ -4341,7 +4356,7 @@ function renderBook(){
       <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bsei" value="${bk.sei||''}" placeholder="姓（例）山田"></div><div style="flex:1"><input id="bmei" value="${bk.mei||''}" placeholder="名（例）花子"></div></div>
       <div style="font-size:12px;font-weight:800;color:var(--navy)">フリガナ（カタカナ）<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
       <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bseiK" value="${bk.seiK||''}" placeholder="セイ（例）ヤマダ"></div><div style="flex:1"><input id="bmeiK" value="${bk.meiK||''}" placeholder="メイ（例）ハナコ"></div></div>
-      <div class="field"><label>電話番号</label><input id="bphone" type="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
+      <div class="field"><label>電話番号<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></label><input id="bphone" type="tel" inputmode="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
       ${(()=>{ // 予約完了のお知らせ先。LINEログイン済みならLINE、それ以外はメール（本人確認コードあり）
         if(bk.lineUserId)return `<div class="co-done" style="margin-bottom:10px">📱 予約が完了したら<b>LINEにお知らせ</b>が届きます</div>`;
         if(bk.emailProvider==='google'&&bk.email)return `<div class="co-done" style="margin-bottom:10px">📧 予約が完了したら <b>${escH(bk.email)}</b> にお知らせが届きます</div>`;
@@ -4372,9 +4387,14 @@ function renderBook(){
         </table>
         キャンセル料は前金から充当し、残額は返金します。料率は当店に生じる平均的な損害（施術料金から材料費を除いた額に、他のお客様のご予約可能性を考慮したもの）にもとづきます。10分以上遅れる場合はご連絡ください。
       </div>
-      ${(()=>{ /* ご連絡先が無いと、予約できたことをお伝えできない＝必ずどちらかを結んでいただく */
-        const ok=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
-        return ok?'':`<div class="needcontact">ご予約の確定をお送りするため、<b>LINE</b>か<b>メールアドレス</b>のどちらかをご登録ください</div>`;})()}
+      ${(()=>{ /* ご連絡先が無いと、予約できたことをお伝えできない＝必ず結んでいただく */
+        const okC=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
+        const okT=!telCheck(bk.phone).ng;
+        if(okC&&okT)return '';
+        const miss=[];
+        if(!okT)miss.push('<b>お電話番号</b>');
+        if(!okC)miss.push('<b>LINE</b>か<b>メールアドレス</b>のどちらか');
+        return `<div class="needcontact">ご予約の確定とご連絡のため、${miss.join('と')}をご記入ください</div>`;})()}
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext2">次へ（お支払い）</button></div>`;
     // ---- メールのワンタイムパスワード（Google以外のメールで予約する方の本人確認）----
     // LINEとつなぐ（LINEの中で開いているが、まだ誰か分からない場合）
@@ -4423,12 +4443,19 @@ function renderBook(){
      };}
     /* ご連絡先が結ばれるまで「次へ（お支払い）」を押せなくする。
      * 予約できたことをお伝えできない相手からは、お受けしない。 */
-    {const nb=document.getElementById('bnext2');
-     const ok=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
-     if(nb&&!ok){nb.disabled=true;nb.style.opacity='.45';nb.style.cursor='not-allowed';}}
+    {const nb=document.getElementById('bnext2'),ph=document.getElementById('bphone');
+     const okAll=()=>!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified)
+       && !telCheck((ph&&ph.value)||bk.phone).ng;
+     const sync=()=>{ if(!nb)return; const ok=okAll();
+       nb.disabled=!ok; nb.style.opacity=ok?'':'.45'; nb.style.cursor=ok?'':'not-allowed'; };
+     sync();
+     // 電話を打っている途中でもボタンの状態を追う（打ち終わって押せないまま迷わせない）
+     if(ph)ph.addEventListener('input',()=>{bk.phone=ph.value;sync();});}
     document.getElementById('bnext2').onclick=()=>{
       const okc=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
       if(!okc){toast('LINEかメールアドレスのご登録をお願いします',true);return}
+      {const t=telCheck(document.getElementById('bphone').value);
+       if(t.ng){toast(t.ng,true);document.getElementById('bphone').focus();return}}
       // 姓・名・セイ・メイを別々に取得（HotPepper/サロンボードは4欄）
       bk.sei=document.getElementById('bsei').value.trim();
       bk.mei=document.getElementById('bmei').value.trim();
