@@ -873,10 +873,21 @@ body.customer .phone.spa{background:#f7f8f3}
 .pbody .efd-t{font-size:14px;font-weight:800;color:#171614}
 .pbody .efd-s{font-size:12.5px;font-weight:600;color:#6b6355;line-height:1.75;margin-top:3px}
 .pbody .efd-go{font-size:13px;font-weight:800;color:#8a6a2f;margin-top:7px}
+/* 会員特典。押し売りにならないよう 診断導線の下に静かに置く */
+.pbody .ent-member{margin-top:12px;background:#fbf8f2;border:1px solid #e7dcc4;border-radius:12px;padding:14px 15px}
+.pbody .emb-h{font-size:14.5px;font-weight:800;color:#7a5a1c}
+.pbody .emb-b{font-size:12.5px;font-weight:600;color:#6b6355;line-height:1.8;margin-top:4px}
+.pbody .emb-l{margin:9px 0 0;padding-left:17px;font-size:12.5px;font-weight:600;color:#4d463a;line-height:1.9}
+.pbody .emb-act{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:11px}
+.pbody .emb-btn{display:inline-flex;align-items:center;justify-content:center;background:#16171B;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;text-decoration:none}
+.pbody .emb-btn:hover{background:#2A2D34}
+.pbody .emb-g-slot{display:inline-flex;align-items:center;min-height:40px}
+.pbody .emb-note{font-size:11.5px;color:#8a8271;font-weight:600}
+.pbody .emb-ok{margin-top:10px;background:#eef7f0;border:1px solid #c6e6d3;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;color:#0c7a41}
 /* サブコピーは短文2発（1行目=大きく短く / 2行目=小さく安心）。補足は「絶対に見逃さない」濃さへ */
 .pbody .ent-sub1{font-size:17px;font-weight:800;color:#2f2a22;line-height:1.5;margin-bottom:3px}
 .pbody .ent-sub2{font-size:14px;font-weight:700;color:#3d382f;line-height:1.8;margin-bottom:16px}
-/* 「1〜2分」は所要時間＝いちばん背中を押す情報なので、太字＋下線で主役にする */
+/* 便利訴求は ent-trust のラベルへ降格済み。ここでは強調しない */
 .pbody .ent-sub2 b{font-weight:800;color:#8a6a2f;border-bottom:2px solid #e0cfa8;padding-bottom:1px}
 /* 「予約は3つだけです」= 不安軽減装置として見出しをつける */
 .pbody .ent-steps-h{font-size:14.5px;font-weight:800;color:#3a3226;margin-bottom:6px}
@@ -3800,6 +3811,25 @@ const LINE_CFG={
   LOGIN_STATE_ENDPOINT:'https://seam-square-pay.suenotakemi.workers.dev/line/login/state',  // OAuth2 state発行
 };
 let lineProfile=null; // {userId, displayName, pictureUrl}
+/* ── 会員(メンバー) ──────────────────────────────────────────────
+   条件: LINEまたはGoogleでログイン済み ＋ 髪格診断のカルテがある
+   割引: 施術料金から MEMBER_RATE。物販のカード会員10%OFFに揃えた(2026-07-30 オーナー確認)
+   ※率を変えるときはここ1行だけ変える。表示は全メニュー・確認画面に自動反映される */
+const MEMBER_RATE = 0.10;
+const memberUser = () => lineProfile || googleProfile;
+/* 髪格診断のカルテ。finderが localStorage に残す鍵を順に見る */
+function hasKarte(){
+  try{
+    for(const k of ['seam_karte','seamKarte','seam_finder_karte','seam_finder_answers']){
+      const v=localStorage.getItem(k); if(v && v.length>2) return true;
+    }
+  }catch(e){}
+  return false;
+}
+const isMember = () => !!memberUser() && hasKarte();
+const memberPrice = n => Math.round((n||0) * (1-MEMBER_RATE) / 10) * 10;   // 10円単位
+const OFF_LABEL = Math.round(MEMBER_RATE*100) + '%OFF';
+
 
 // URLパラメータからLINEログイン結果を受け取る（/line/login/result → リダイレクト後）
 (function(){
@@ -3970,9 +4000,9 @@ function renderBook(){
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
     p.innerHTML=stepsHtml+
-      `<div class="ent-sub1">今日の髪に合うほうを お選びください</div>
-       <div class="ent-sub2">迷ったままでも大丈夫です</div>
-       <div class="ent-trust"><span>はじめての方歓迎</span><span>お電話不要</span><span>1〜2分で予約</span></div>
+      `<div class="ent-sub1">ご希望に近い内容をお選びください</div>
+       <div class="ent-sub2">メニューに迷う方は ご来店時にご相談いただけます</div>
+       <div class="ent-trust"><span>初めての方も歓迎</span><span>お電話不要</span><span>数分でご予約</span></div>
        ${BOOK_LANG!=='ja'?`<div class="ent-intl">
          <div class="ei">英語で対応できます</div>
          <div class="ei">日本語のお電話は要りません</div>
@@ -3984,27 +4014,37 @@ function renderBook(){
          <div class="ef"><div class="efl">はじめての方</div><div class="efv">カウンセリングの時間つき<br>施術前に一緒に確かめます</div></div>
          <div class="ef"><div class="efl">ことば</div><div class="efv">日本語・English<br>中文・한국어</div></div>
        </div>
-       <div class="ent-steps-h">予約は3つだけです</div>
+       <div class="ent-steps-h">ご予約の流れ</div>
        <div class="ent-steps3"><span>1</span><div>メニューを選ぶ</div><span>2</span><div>日にちと時間を選ぶ</div><span>3</span><div>お名前を書いて完了</div></div>
-       <div class="ent-pick">ご希望の内容を選んでください</div>
+       <div class="ent-pick">今回はどちらをご希望ですか</div>
        <div class="ent-wrap">
          <button class="ent-card ent-hair" data-sec="hair">
            <div class="ent-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2.6"/><circle cx="6" cy="18" r="2.6"/><path d="M8.2 7.6 20 18M8.2 16.4 20 6"/></svg></div>
-           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-mood">今日そのまま出かけたくなる髪へ</div><div class="ent-s"><span class="ent-who">切る 染める 直す</span>カット・カラー・パーマ・縮毛矯正</div><div class="ent-go">空いている時間を見る</div></div>
+           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-mood">カットやカラー 補修をされたい方へ</div><div class="ent-s"><span class="ent-who">整える 変える 補修する</span>カット・カラー・パーマ・縮毛矯正</div><div class="ent-go">空いている時間を見る</div></div>
            <div class="ent-arrow">→</div>
          </button>
          <button class="ent-card ent-spa" data-sec="spa">
            <div class="ent-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c2.6 2.9 4 5.2 4 7.2a4 4 0 0 1-8 0C8 8.2 9.4 5.9 12 3Z"/><path d="M4.5 19.5c2.2-1.4 4.6-1.4 7.5 0 2.9-1.4 5.3-1.4 7.5 0"/></svg></div>
-           <div class="ent-main"><div class="ent-t">ヘッドスパ</div><div class="ent-mood">根元から軽くなって、頭がほどける時間</div><div class="ent-s"><span class="ent-who">頭皮から ほどく</span>完全個室でお休みいただけます</div><div class="ent-go">空いている時間を見る</div></div>
+           <div class="ent-main"><div class="ent-t">ヘッドスパ</div><div class="ent-mood">頭皮やお疲れを整えたい方へ</div><div class="ent-s"><span class="ent-who">頭皮を整える ゆっくり休む</span>完全個室でゆっくりお過ごしいただけます</div><div class="ent-go">空いている時間を見る</div></div>
            <div class="ent-arrow">→</div>
          </button>
        </div>
-       <div class="ent-relief">はじめてのご来店でも大丈夫です。<b>メニューは施術前に一緒に確かめます</b>ので、今ここで決め切らなくても平気です。</div>
+       <div class="ent-relief">内容に迷う場合は ご来店時にご相談ください<br><b>施術前に髪の状態を見ながら確認してから進めます</b></div>
        <a class="ent-finder" href="/finder" target="_blank" rel="noopener">
-         <div class="efd-t">どれが合うか迷っていますか</div>
-         <div class="efd-s">髪格診断（3分ほど）でお悩みを整えてからご来店いただけます。結果は担当者にも届きます</div>
-         <div class="efd-go">髪格診断をみる →</div>
-       </a>`;
+         <div class="efd-t">メニュー選びに迷う方へ</div>
+         <div class="efd-s">髪格診断（約3分）で今の髪の傾向を見てからご来店いただけます 結果は担当者も確認しカウンセリングに使います</div>
+         <div class="efd-go">髪格診断を見る →</div>
+       </a>
+       <div class="ent-member">
+         <div class="emb-h">会員になると ${OFF_LABEL}</div>
+         <div class="emb-b">LINEまたはGoogleでログインし 髪格診断を受けていただくと会員になります<br>次回からは施術料金が会員価格になります</div>
+         <ul class="emb-l"><li>施術料金が ${OFF_LABEL}</li><li>髪格カルテを担当者が見たうえでご案内します</li><li>ご予約時のお名前とお電話の入力が省けます</li></ul>
+         ${isMember()
+           ? `<div class="emb-ok">会員です（${escH(memberUser().displayName||memberUser().name||'')} 様）会員価格でご予約いただけます</div>`
+           : `<div class="emb-act">${memberUser()
+               ? `<a class="emb-btn" href="/finder" target="_blank" rel="noopener">髪格診断を受ける →</a><span class="emb-note">ログインは完了しています</span>`
+               : `<button class="emb-btn" onclick="startLineLogin()">LINEでログイン</button>${GOOGLE_CLIENT_ID?`<div id="embGoogle" class="emb-g-slot"></div>`:``}<span class="emb-note">髪格診断（約3分）を受けると会員になります</span>`}</div>`}
+       </div>`;
     p.querySelectorAll('.ent-card').forEach(c=>c.onclick=()=>{bk.section=c.dataset.sec;bk.menu=null;renderBook()});
     return;
   }
@@ -4029,7 +4069,7 @@ function renderBook(){
       (bk.section==='spa'?['ヘッドスパ']:MENU_CATS.filter(c=>c!=='ヘッドスパ')).map(cat=>{
         const items=MENUS.filter(m=>m.cat===cat);if(!items.length)return'';
         const durLabel=mm=>mm>=60?`${Math.floor(mm/60)}時間${mm%60?mm%60+'分':''}`:`${mm}分`;
-        return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">所要時間目安：${durLabel(m.min)}</div></div><div class="pr">¥${m.price.toLocaleString()}<small style="display:block;font-size:10px;color:var(--sub);font-weight:600">税込</small></div></div>`).join('')+`</div>`;
+        return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">所要時間目安：${durLabel(m.min)}</div></div><div class="pr">${isMember()?`<s style="font-weight:600;color:var(--sub);font-size:12px">¥${m.price.toLocaleString()}</s><span style="display:block;color:#8a6a2f">¥${memberPrice(m.price).toLocaleString()}</span><small style="display:block;font-size:10px;color:#8a6a2f;font-weight:700">会員価格・税込</small>`:`¥${m.price.toLocaleString()}<small style="display:block;font-size:10px;color:var(--sub);font-weight:600">税込</small><small style="display:block;font-size:10px;color:#8a6a2f;font-weight:700">会員 ¥${memberPrice(m.price).toLocaleString()}</small>`}</div></div>`).join('')+`</div>`;
       }).join('')+
       `<div class="pnav"><button class="btn ghost" id="bback0">戻る</button><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.menu=o.dataset.m;renderBook()});
