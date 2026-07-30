@@ -825,6 +825,56 @@ export default {
       const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM products').first().catch(() => ({ c: 0 }));
       return json({ ok: true, added, updated, skipped, total: (cnt && cnt.c) || 0 }, 200, cors);
     }
+    /* 重複した商品をひとつにまとめる。
+     * 残す側にJANを寄せて（旧JANも読めるように）、消す側は無効化して記録を残す（削除しない＝戻せる）。 */
+    if (p.endsWith('/admin/merge-products') && m === 'POST') {
+      if (!cleanupTok(url, env)) { const auth = A(); if (auth) return auth; }
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      const pairs = Array.isArray(o.merges) ? o.merges : [];
+      if (!pairs.length) return json({ error: 'merges が空です' }, 400, cors);
+      if (pairs.length > 100) return json({ error: '一度に送れるのは100組までです' }, 400, cors);
+      const now = new Date().toISOString();
+      let merged = 0, moved = 0;
+      const done = [];
+      for (const mg of pairs) {
+        const keep = String(mg.keepId || ''), drops = (mg.dropIds || []).map(String).filter(x => x && x !== keep);
+        if (!keep || !drops.length) continue;
+        const k = await env.DB.prepare('SELECT id,barcode,alt_barcodes,maker_code,sq_id FROM products WHERE id=?').bind(keep).first();
+        if (!k) continue;
+        const ds = await env.DB.prepare(`SELECT id,barcode,maker_code,sq_id FROM products WHERE id IN (${drops.map(() => '?').join(',')})`).bind(...drops).all();
+        // JANを集める（重複は除く）
+        const codes = new Set(String(k.alt_barcodes || '').split(',').filter(Boolean));
+        if (k.barcode) codes.add(k.barcode);
+        let sq = k.sq_id || '', mk = k.maker_code || '';
+        for (const d of (ds.results || [])) {
+          if (d.barcode) codes.add(d.barcode);
+          if (!sq && d.sq_id) sq = d.sq_id;
+          if (!mk && d.maker_code) mk = d.maker_code;
+        }
+        // 主バーコードは既にあるものを尊重し、無ければ集めた中の1つを使う
+        const main = k.barcode || [...codes][0] || '';
+        const alt = ',' + [...codes].filter(Boolean).join(',') + ',';
+        const st = [
+          env.DB.prepare('UPDATE products SET barcode=?, alt_barcodes=?, sq_id=?, maker_code=? WHERE id=?')
+            .bind(main, codes.size ? alt : '', sq, mk, keep),
+        ];
+        for (const d of (ds.results || [])) {
+          // 在庫が入っていたら残す側へ寄せる（いまは0だが、あとで統合しても取りこぼさない）
+          st.push(env.DB.prepare(`INSERT INTO stock_by_shop (shop_id,product_id,qty,updated_at)
+              SELECT shop_id, ?, qty, ? FROM stock_by_shop WHERE product_id=? AND qty<>0
+              ON CONFLICT(shop_id,product_id) DO UPDATE SET qty=stock_by_shop.qty+excluded.qty, updated_at=excluded.updated_at`)
+            .bind(keep, now, d.id));
+          st.push(env.DB.prepare('DELETE FROM stock_by_shop WHERE product_id=?').bind(d.id));
+          st.push(env.DB.prepare("UPDATE products SET active=0, merged_into=?, barcode='' WHERE id=?").bind(keep, d.id));
+          moved++;
+        }
+        await env.DB.batch(st);
+        merged++;
+        done.push({ keep, drops: (ds.results || []).map(x => x.id), codes: [...codes] });
+      }
+      return json({ ok: true, merged, dropped: moved, done: done.slice(0, 50) }, 200, cors);
+    }
     /* ===== 店舗ごとの在庫 =====
      * 免税は銀座と同じ商品を扱うため、在庫は銀座と一体（Square店舗は2つ／在庫はひとつ）。 */
     if (p.endsWith('/shops') && m === 'GET') {
@@ -951,7 +1001,12 @@ export default {
       const qty = Number.isFinite(+o.qty) && +o.qty !== 0 ? Math.round(+o.qty) : 1;
       let prod = null;
       if (o.productId) prod = await env.DB.prepare('SELECT id,name,barcode FROM products WHERE id=?').bind(o.productId).first();
-      else if (o.barcode) prod = await env.DB.prepare('SELECT id,name,barcode FROM products WHERE barcode=? LIMIT 1').bind(String(o.barcode).trim()).first();
+      else if (o.barcode) {
+        const bcx = String(o.barcode).trim();
+        prod = await env.DB.prepare('SELECT id,name,barcode FROM products WHERE barcode=? AND active<>0 LIMIT 1').bind(bcx).first();
+        // 旧パッケージのJANでも同じ商品として数える
+        if (!prod) prod = await env.DB.prepare("SELECT id,name,barcode FROM products WHERE alt_barcodes LIKE ? AND active<>0 LIMIT 1").bind('%,' + bcx + ',%').first();
+      }
       // 登録の無いバーコードは、その場で登録に回せるように「見つからない」ことを明示して返す
       if (!prod) return json({ ok: false, notFound: true, barcode: String(o.barcode || '') }, 200, cors);
       const now = new Date().toISOString();
@@ -2181,6 +2236,10 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sq_items (item_id TEXT PRIMARY KEY, name TEXT DEFAULT '')`).run(); } catch (e) {}
   // 出所。'list'=アイテム一覧（メーカー正規・名前と価格の正）／'square'=Squareにしか無い商品
   try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN source TEXT DEFAULT 'list'`).run(); } catch (e) {}
+  // 1商品に複数のJAN（旧パッケージと新パッケージ等）。前後をカンマで囲って持つ ,JAN,JAN,
+  try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN alt_barcodes TEXT DEFAULT ''`).run(); } catch (e) {}
+  // 統合したとき、どの商品にまとめたかを残す（あとで戻せる）
+  try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN merged_into TEXT DEFAULT ''`).run(); } catch (e) {}
   // ===== 店舗ごとの在庫 =====
   // 免税（銀座ショップ免税）は銀座と同じ商品を扱うので、在庫は銀座と一体で持つ（オーナー確認済み）
   await env.DB.batch([
@@ -2423,7 +2482,9 @@ async function handleGetProducts(url, env, cors) {
   //   引数なしは従来どおり全件（少数店舗の互換のため。5000点でも1回だけなら通る）
   const bc = (url.searchParams.get('barcode') || '').trim();
   if (bc) {
-    const r = await env.DB.prepare('SELECT * FROM products WHERE barcode=? LIMIT 1').bind(bc).first();
+    // まず主バーコード（索引つきで速い）、無ければ追加JAN（旧パッケージ等）を探す
+    let r = await env.DB.prepare("SELECT * FROM products WHERE barcode=? AND active<>0 LIMIT 1").bind(bc).first();
+    if (!r) r = await env.DB.prepare("SELECT * FROM products WHERE alt_barcodes LIKE ? AND active<>0 LIMIT 1").bind('%,' + bc + ',%').first();
     return json({ ok: true, products: r ? [PR2API(r)] : [] }, 200, cors);
   }
   const q = (url.searchParams.get('q') || '').trim();
