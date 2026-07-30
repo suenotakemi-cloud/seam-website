@@ -944,7 +944,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <div class="card kpi"><div class="lbl">シート枚数</div><div class="num" id="cst-total">0</div><div class="sub" id="cst-range">—</div></div>
     <div class="card kpi"><div class="lbl">一番多いお悩み</div><div class="num" id="cst-top1" style="font-size:20px">—</div><div class="sub" id="cst-top1n">—</div></div>
     <div class="card kpi"><div class="lbl">SNS・広告OK</div><div class="num" id="cst-snsrate">—</div><div class="sub" id="cst-snsn">撮影の同意</div></div>
-    <div class="card kpi"><div class="lbl">音声AI OK</div><div class="num" id="cst-voicerate">—</div><div class="sub">カウンセリング記録</div></div>
+    <div class="card kpi"><div class="lbl">音声AI OK</div><div class="num" id="cst-voicerate">—</div><div class="sub" id="cst-findern">カウンセリング記録</div></div>
   </div>
 
   <div class="card" style="margin-bottom:14px">
@@ -1855,6 +1855,27 @@ document.getElementById('m-phone').onchange=function(){
 
 /* ===== 予約詳細モーダル（ステータス管理） ===== */
 const STATUS_LABEL={booked:'予約確定',done:'来店済み',cancelled:'キャンセル',noshow:'無断キャンセル'};
+/* ご来店を記録したら、そのままiPadを渡してシートを書いていただく（待ち時間の使い方） */
+const CS_SHEET_TODAY={};                       // key→日付（同じ日に二度聞かない）
+const hasSheetToday=r=>CS_SHEET_TODAY[custKey(r)]===dkey(today());
+function csSheetUrl(r){
+  const mn=(MENUS.find(x=>x.id===r.menuId)||{}).name||'';
+  const kind=/スパ|ヘッドスパ|SPA/i.test(mn)?'spa':'hair';
+  return 'counseling.html?'+new URLSearchParams({name:r.name||'',phone:r.phone||'',kind,from:'admin'}).toString();
+}
+function askSheet(r){
+  const box=document.getElementById('detailmodal');
+  box.innerHTML=`<h3>ご来店を記録しました</h3>
+    <div style="font-size:14px;font-weight:800;margin:2px 0 4px">${escH(r.name)}様</div>
+    <p class="lead" style="margin-bottom:14px">このままiPadをお渡しして、お待ちの間にカウンセリングシートを書いていただけます（2〜3分）。<br>提出後は続けて髪格診断（任意・3分ほど）にご案内します</p>
+    <div class="row" style="gap:8px">
+      <button class="btn ok" style="flex:1;min-height:52px" id="cs-hand">📝 シートを渡す</button>
+      <button class="btn ghost" style="flex:0 0 130px" id="cs-skip">あとで</button>
+    </div>
+    <div style="font-size:12px;color:var(--sub);margin-top:10px">「あとで」を押しても、カルテからいつでも開けます</div>`;
+  document.getElementById('cs-skip').onclick=()=>{CS_SHEET_TODAY[custKey(r)]=dkey(today());openDetail(r.id)};
+  document.getElementById('cs-hand').onclick=()=>{CS_SHEET_TODAY[custKey(r)]=dkey(today());location.href=csSheetUrl(r)};
+}
 function openDetail(id){
   const r=db.reservations.find(x=>x.id===id);if(!r)return;
   const st=STAFF.find(s=>s.id===r.staffId),m=MENUS.find(m=>m.id===r.menuId),c=CHANNELS[r.channel];
@@ -1914,7 +1935,9 @@ function openDetail(id){
       const cap=avgDamage(m?m.price:0);
       setStatus(id,'noshow');toast(`無断キャンセル記録。損害上限の目安 ¥${cap.toLocaleString()}（平均的損害の範囲内で請求可）`);
     }
-    else{setStatus(id,a);toast(STATUS_LABEL[a]+'にしました')}
+    else{setStatus(id,a);toast(STATUS_LABEL[a]+'にしました');
+      // ご来店を記録した直後が、シートを渡す一番いいタイミング
+      if(a==='done'&&!hasSheetToday(r)){ askSheet(r); return; } }
     openDetail(id);
   });
   document.getElementById('d-close').onclick=closeDetail;
@@ -3547,6 +3570,8 @@ function openCustomer(key){
           ${x.sign?'<span class="rep">署名あり</span>':''}
           ${consentBadges({photo_policy:(cn.photo===true?'sns':cn.photo)||'',face_ng:cn.faceNg?1:0,voice_policy:cn.voice||''})}</div>
         ${a.caution?`<div style="color:#b4302b;font-weight:800;margin-top:3px">⚠ ${escH(a.caution)}</div>`:''}
+        ${a.finder?`<div style="margin-top:4px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 9px">
+          <b style="color:var(--accent)">髪格診断</b> ${escH([a.finder.originName,a.finder.damageTier?('ダメージ '+a.finder.damageTier):'',a.finder.mainGoalName].filter(Boolean).join(' ／ '))}</div>`:''}
         ${a.want?`<div style="margin-top:3px">🗣 ${escH(a.want)}</div>`:''}
         ${chips.length?`<div style="margin-top:3px">${chips.map(v=>escH(v)).join('・')}</div>`:''}
       </div>`}).join('');
@@ -3673,6 +3698,8 @@ function csRender(j){
   document.getElementById('cst-snsrate').textContent=pct(j.consent&&j.consent.photo,'sns');
   document.getElementById('cst-snsn').textContent=`撮影しない ${((j.consent||{}).photo||{}).no||0}件 / カルテ用だけ ${((j.consent||{}).photo||{}).karte||0}件`;
   document.getElementById('cst-voicerate').textContent=pct(j.consent&&j.consent.voice,'ok');
+  {const fd=(j.finder||{}).done||0, el=document.getElementById('cst-findern');
+   if(el)el.textContent=fd?`髪格診断 ${fd}件（${t?Math.round(fd/t*100):0}%）`:'髪格診断 まだ0件';}
 
   const sec=(ttl,sub,inner)=>`<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 3px;font-size:15px">${ttl}</h3>
     <div style="font-size:12px;color:var(--sub);margin-bottom:11px">${sub}</div>${inner}</div>`;
@@ -3689,6 +3716,10 @@ function csRender(j){
     sec('お悩み・ご希望','いま何に困って来店されているか。多い順',csBars(j.concern,t,14))
     +sec('お客様のことば','自由記入によく出てくる言葉。数字はのべ回数（カーソルを乗せると実際の文が出ます）',words)
     +sec('書いてくださったこと（原文）','ミーティングでそのまま読める形にしています',quotes)
+    +((j.finder&&j.finder.done)?sec('髪格診断（seam.site）',`お待ちの間に受けていただいた診断 ${j.finder.done}件（シートの ${t?Math.round(j.finder.done/t*100):0}%）。次回のケア提案とメニュー設計の材料`,
+      `<div style="font-weight:800;font-size:13px;margin-bottom:6px">髪質タイプ</div>${csBars(j.finder.origin,j.finder.done,10)}
+       <div style="font-weight:800;font-size:13px;margin:12px 0 6px">ダメージ</div>${csBars(j.finder.damage,j.finder.done,6)}
+       <div style="font-weight:800;font-size:13px;margin:12px 0 6px">いちばんの目的</div>${csBars(j.finder.goal,j.finder.done,10)}`):'')
     +sec('これまでの施術','ブリーチ・黒染めなどの履歴。技術の準備と薬剤の在庫に効きます',csBars(j.history,t,14))
     +sec('お体のこと','妊娠中・アレルギーなど。安全のための把握',csBars(j.body,t,10))
     +sec('おうちでのお手入れ','店販の提案とメニュー設計の材料',csBars(j.care,t,12))
@@ -3705,6 +3736,7 @@ function csCsv(){
   const push=(lab,list)=>(list||[]).forEach(x=>rows.push([lab,x.k,x.n]));
   push('お悩み・ご希望',CST.concern); push('これまでの施術',CST.history); push('お体のこと',CST.body);
   push('おうちでのお手入れ',CST.care); push('ことば',CST.words);
+  if(CST.finder){push('髪格診断:髪質タイプ',CST.finder.origin);push('髪格診断:ダメージ',CST.finder.damage);push('髪格診断:目的',CST.finder.goal);}
   push('写真の同意',Object.entries((CST.consent||{}).photo||{}).map(([k,n])=>({k:csLbl[k]||k,n})));
   push('動画の同意',Object.entries((CST.consent||{}).video||{}).map(([k,n])=>({k:csLbl[k]||k,n})));
   push('音声AIの同意',Object.entries((CST.consent||{}).voice||{}).map(([k,n])=>({k:k==='ok'?'使ってOK':'使わない',n})));

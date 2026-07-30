@@ -351,6 +351,43 @@ export default {
       }
       return json({ ok: true, id }, 200, cors);
     }
+    // シートの削除。id=1件（二重提出の取消）／key=そのお客様の全件＋重要メモ
+    // （同意書に「削除をご希望のときはお申し出ください」と書いているので、応えられる口を持つ）
+    if (p.endsWith('/counseling') && m === 'DELETE') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      const id = url.searchParams.get('id'), key = url.searchParams.get('key');
+      if (!id && !key) return json({ error: 'id または key が必要です' }, 400, cors);
+      if (id) {
+        await env.DB.prepare('DELETE FROM counseling WHERE id=?').bind(id).run();
+        return json({ ok: true, id }, 200, cors);
+      }
+      const ph = String(key).replace(/[^0-9]/g, '') || key;   // 電話は数字だけに寄せる
+      const r1 = await env.DB.prepare('DELETE FROM counseling WHERE key=?').bind(ph).run();
+      await env.DB.prepare('DELETE FROM customer_notes WHERE key=?').bind(ph).run().catch(() => {});
+      return json({ ok: true, key: ph, sheets: (r1.meta && r1.meta.changes) || 0, notes: 'deleted' }, 200, cors);
+    }
+    // 髪格診断(seam.site/finder)の結果を、提出済みのカウンセリングシートに後から紐付ける
+    // お客様が待ち時間に診断→スタッフの手を介さずカルテに届く導線
+    if (p.endsWith('/counseling/attach') && m === 'POST') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.id || !o.finder) return json({ error: 'id と finder が必要です' }, 400, cors);
+      const row = await env.DB.prepare('SELECT answers FROM counseling WHERE id=?').bind(o.id).first();
+      if (!row) return json({ error: 'シートが見つかりません' }, 404, cors);
+      let a = {}; try { a = JSON.parse(row.answers || '{}'); } catch (e) {}
+      const f = o.finder;
+      a.finder = {
+        typeId: String(f.typeId || ''), typeName: String(f.typeName || ''),
+        damageTier: String(f.damageTier || ''), originName: String(f.originName || ''),
+        mainGoalName: String(f.mainGoalName || ''), radar: f.radar || null,
+        savedAt: String(f.savedAt || new Date().toISOString())
+      };
+      await env.DB.prepare('UPDATE counseling SET answers=? WHERE id=?').bind(JSON.stringify(a), o.id).run();
+      return json({ ok: true, id: o.id }, 200, cors);
+    }
     // カウンセリング集計（毎月のミーティング用・悩み/ことば/同意率を数字で見る）
     if (p.endsWith('/counseling/stats') && m === 'GET') {
       if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
@@ -369,6 +406,7 @@ export default {
       const consent = { photo: {}, video: {}, voice: {}, faceNg: 0 };
       const byMonth = {}, quotes = [];
       const words = {}, wordEg = {};
+      const finder = { done: 0, type: {}, damage: {}, goal: {}, origin: {} };
       // 助詞・言い回しは数えない（「ことば」として意味を持つ語だけ残す）
       const STOP = new Set(['ください', 'おねがい', 'お願い', 'したい', 'ほしい', '思います', 'カット', 'カラー', 'サロン', 'ヘア']);
 
@@ -388,6 +426,10 @@ export default {
         if (c.faceNg) consent.faceNg++;
         bump(consent.video, ['no', 'karte', 'sns'].includes(c.video) ? c.video : 'no');
 
+        if (a.finder) { finder.done++;
+          bump(finder.type, a.finder.typeName || a.finder.typeId);
+          bump(finder.damage, a.finder.damageTier); bump(finder.goal, a.finder.mainGoalName);
+          bump(finder.origin, a.finder.originName); }
         // 自由記入＝お客様のことば。原文も残す（会議で読む用）
         const texts = [a.want, a.caution, a.careFree].filter(Boolean).map(String);
         for (const t of texts) {
@@ -410,6 +452,7 @@ export default {
         concern: top(chips.concern, 30), history: top(chips.history, 30), body: top(chips.body, 30),
         scalp: top(chips.scalp, 30), care: top(chips.care, 30),
         consent, words: top(words, 40).map(w => ({ ...w, eg: wordEg[w.k] || '' })),
+        finder: { done: finder.done, type: top(finder.type, 30), damage: top(finder.damage, 10), goal: top(finder.goal, 20), origin: top(finder.origin, 20) },
         quotes: quotes.slice(0, 80)
       }, 200, cors);
     }
@@ -1008,7 +1051,7 @@ async function handlePurgeTest(url, env, cors) {
   // 検証で作ったカウンセリングシート・顧客ノートも一緒に掃除（テスト名のみ）
   let cs = 0;
   try {
-    const t = await env.DB.prepare("SELECT id,key FROM counseling WHERE name LIKE 'テスト%' OR name LIKE '検証%' OR name='x'").all();
+    const t = await env.DB.prepare("SELECT id,key FROM counseling WHERE name LIKE 'テスト%' OR name LIKE '検証%' OR name LIKE 'ダミー%' OR name='x'").all();
     for (const r of (t.results || [])) {
       await env.DB.prepare('DELETE FROM counseling WHERE id=?').bind(r.id).run();
       await env.DB.prepare('DELETE FROM customer_notes WHERE key=?').bind(r.key).run().catch(() => {});

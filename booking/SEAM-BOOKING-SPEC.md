@@ -101,12 +101,24 @@ flowchart LR
    - 一括同意にしない理由＝「カルテ用はOKだがSNSは嫌」が実際に多く、美容師が撮る前に可否を判断できる必要があるため。**可否は毎回その日の意思で上書き**（前回OKでも今回NGならNG）
 7. **ご署名**：指またはペンで手書き（canvas・PNG化して保存）
 
-- 入口：`counseling.html?name=&phone=&kind=hair|spa`（**顧客カルテの「iPadで記入してもらう ↗」から氏名・電話・種別を引き継いで開く**＝スタッフが打ち直さない）
+- 入口：`counseling.html?name=&phone=&kind=hair|spa&from=admin`（**受付の来店処理から、または顧客カルテの「iPadで記入してもらう ↗」から氏名・電話・種別を引き継いで開く**＝スタッフが打ち直さない）
+- **受付導線（2026-07-30）**：予約詳細で「来店済みにする」を押すと、そのまま「📝 シートを渡す／あとで」の確認が出る。渡す＝同じタブでシートを開くのでiPadをそのままお客様へ。同じお客様には同じ日に二度出さない。`from=admin` のときは完了画面に「受付の画面にもどる」が出る
 - 初回のみ**スタッフの初期設定**カードで管理トークンを入力（実際にAPIへ通るか検証してから端末に記憶・以降非表示・印刷時も非表示）
 - 印刷：記入済み＝選んだ項目のみ（4ページ）／白紙のまま押した場合＝選択肢を残した**手書き用シート**（6ページ）として出力
 - 提出後の反映：カルテの「カウンセリングシート・同意書」に日付／ヘア・スパ／⚠注意／ご要望／選択項目を最新3件表示。**⚠自由記入は顧客の重要メモへ自動マージ＝予約詳細の先頭に赤字警告として出る**（施術前に必ず目に入る）
 - **撮影可否バッジ**：写真・動画・音声AIの可否を `customer_notes` に保存し、**カルテと予約詳細の両方にバッジ表示**（📷撮影NG＝赤／カルテ用だけOK＝グレー／SNS・広告OK＝緑・顔なし注記／🎙AI録音NG＝赤）。席に着く前に見える位置に置く
 - 重要メモの手編集（`POST /custnotes`）では写真・音声の同意を**上書きしない**（お客様の意思表示なのでスタッフ操作で消えない）
+
+### 2.3.1 お待ちの間の髪格診断（seam.site/finder 連携・2026-07-30）
+待ち時間を「診断の時間」に変える導線。**シートは先に提出して終わらせ、そのあと任意で診断**（シートの途中に長い診断を挟むと止まるため）。
+1. シート提出 → 完了画面に「お待ちの間に、もうひとつ／髪格診断をはじめる（3分ほど）」＋「任意です。途中でやめても大丈夫です」
+2. タップ → **同じ画面の中に全画面 iframe で `/finder?src=salon` を開く**（別タブにしないのでお客様が迷子にならない。`X-Frame-Options: SAMEORIGIN` なので同一オリジンで埋め込み可）
+3. 診断完了 → finder が `localStorage['seam_karte_last']` に結果を書く → シート側が1.5秒ごとに監視して検出
+4. `POST /counseling/attach` で**提出済みシートに後から紐付け**（スタッフの手を介さない）→ 完了画面に「診断の結果を担当者にお届けしました／髪質タイプ・ダメージ・目的」を表示
+- **共有iPadの取り違え対策（重要）**：①診断を開いた時刻より新しい `savedAt` だけ採用＝前のお客様の結果を拾わない ②紐付け後に `seam_karte_last` を端末から**消す**
+- 保存形：`answers.finder = {typeId,typeName,damageTier,originName,mainGoalName,radar,savedAt}`
+- 反映先：カルテのシート表示に「髪格診断 ○○タイプ／ダメージB／ツヤ」、集計に髪質タイプ・ダメージ・目的の内訳と実施率
+- finder 側は**無改造**（localStorage を読むだけ）。診断の主役はケア＋ショップ導線という位置づけを崩さない
 
 ### 2.4 カウンセリング集計（管理タブ「カウンセリング」・2026-07-30）
 毎月のミーティングにそのまま使える集計画面。`GET /counseling/stats?from&to&kind` をWorker側で集計（テスト名は除外）。
@@ -143,6 +155,7 @@ flowchart LR
 - **自動フォロー（cron毎朝9時JST・LINE連携客のみ・nudgesテーブルで一度きり・30通/回上限）**：
   ①前日リマインド（salon.town生存照合つき＝台帳ドリフト自己修復） ②来店翌日サンクス+Googleクチコミ依頼 ③施術周期の「そろそろ」リマインド+予約リンク（次回予約済みの人には送らない） ④休眠90日呼び戻し+ptプレゼント（winbackPt・既定500）。
 - **カウンセリングシート・同意書（2026-07-30）**：来店時にiPadで記入（§2.3）。同意チェック必須・手書き署名。**写真／動画／音声AIカウンセリングは用途別の3択で取得**し、可否をカルテと予約詳細にバッジ表示（撮る前に判断できる）。**アレルギー等の⚠は顧客の重要メモへ自動マージし、予約詳細の先頭に赤字警告として出る**。項目は店舗設定でON/OFF。紙運用（白紙印刷して手書き）にも対応。
+- **お待ちの間の髪格診断（2026-07-30）**：来店処理→シート記入→提出→そのまま任意で髪格診断（§2.3.1）。結果は提出済みシートへ自動紐付けし、カルテと集計に出る。**共有iPadの取り違え対策として、診断を開いた後に完了した結果だけを採用し、紐付け後は端末から結果を消す**。
 - **カウンセリング集計（2026-07-30）**：管理タブ「カウンセリング」（§2.4）。お悩み・履歴・お手入れの内訳、自由記入の頻出語と原文、撮影・音声AIの同意実態、月次推移、CSV書き出し。**毎月のミーティング資料をそのまま画面で見る**用途。
 - **カルテ写真**：before/after撮影→クライアント側1100px/JPEG圧縮（≦550KB）→保存・拡大・削除。※現状D1格納（R2未有効のため暫定・§6）。
 
@@ -196,7 +209,7 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 ### 4.3 自社 Worker エンドポイント（フロント↔D1・§6の独自実装）
 公開（顧客導線・認証不要）：`POST /pay`・`POST /reservations`・**`GET /availability`**（空き判定用・PII無しの占有区間のみ＝顧客ページのキャパ超過防止）・**`GET /precheck?phone=`**（ノーショー履歴→前金必須フラグのみ・PIIレス）・`POST /line/login/state`・`GET /line/login/result`。
 管理（`Authorization: Bearer ADMIN_TOKEN` 必須）：
-`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／**`GET/POST /counseling`**（カウンセリングシート・同意書。POSTは同意チェック未了を400で拒否・⚠は`customer_notes.caution`へ自動マージ・写真/動画/音声AIの可否も同時保存）／**`GET /counseling/stats?from&to&kind`**（集計：悩み/履歴/お体/お手入れ/頻出語/原文/同意内訳/月次）／`GET/POST /custnotes`（重要メモ・誕生月）／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
+`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／**`GET/POST /counseling`**（カウンセリングシート・同意書。POSTは同意チェック未了を400で拒否・⚠は`customer_notes.caution`へ自動マージ・写真/動画/音声AIの可否も同時保存）／**`GET /counseling/stats?from&to&kind`**（集計：悩み/履歴/お体/お手入れ/頻出語/原文/同意内訳/髪格診断/月次）／**`POST /counseling/attach`**（提出済みシートへ髪格診断の結果を紐付け）／**`DELETE /counseling?id=`**（二重提出の取消）・**`DELETE /counseling?key=`**（そのお客様の全シート＋重要メモ＝**同意書に書いた削除依頼への対応**）／`GET/POST /custnotes`（重要メモ・誕生月）／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
 Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFollowups()`（サンクス/周期/休眠・§3）。
 運用ツール（`CLEANUP_TOKEN`＝wrangler secret・オーナー/AI運用専用）：
 `POST /admin/purge-test`（氏名「テスト%」×channel line/own のみD1＋salon.town削除）／`GET /admin/diag-resv`（両店予約の診断読取・add_info付き）／`POST /admin/salon-del?id=`（salon.town予約1件削除＝孤児ミラー掃除）／`POST /admin/salon-patch`（info_js更新＝個室後付け等。**部分dataでも他カラムは無傷を実証済**）／`GET|POST /salon/noname`（無記名ミラーの孤児判定つき掃除・**親生存チェックで本物予約のミラーは残す**）。
@@ -221,7 +234,7 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 | `gifts` | ギフト券（id=券面コードG-XXXX-XXXX・残高制で分割利用可・利用履歴uses[]・無効化はvoidフラグで履歴保全）。発行はレジ→店販行「ギフト券」として会計＝売上/レジ現金が正しく揃う。券面印刷あり。**有効期限は既定6ヶ月＝資金決済法(前払式支払手段)の適用外に収める**（延ばす場合は届出要否をオーナー確認） | CUEPONの`ec/discount`/チケット系へ移行（統合時） |
 | `passes` | 回数券・パス（id=P-XXXX-XXXX・remaining残回数・1会計1消化=施術分カバー・期限既定6ヶ月・void無効化） | CUEPONのチケット/サブスク系へ移行（統合時） |
 | `karte_photos` | 施術写真（顧客名キー・圧縮JPEG dataURL≦550KB）。**本来はR2が適所だがアカウント未有効(code:10042)のためD1暫定**。R2有効化後にオブジェクトキーへ移行 | R2（`karte/<customer>/<ts>.jpg`）＋CUEPON顧客IDキー |
-| `counseling` | カウンセリングシート・同意書（key=電話番号 or `n:氏名`／answers JSON／consent JSON=`agreed`＋`photo:no\|karte\|sns`＋`faceNg`＋`video:no\|karte\|sns`＋`voice:ok\|no`／sign=署名PNG dataURL／kind=hair\|spa）。**同意は必須・サーバ側でも検証**。⚠自由記入は`customer_notes.caution`へ自動マージ | CUEPON顧客の付帯情報（`account.info_js`／カルテ系API・要エンジニア確認）。同意記録は法的保管が要るため移行時も履歴を落とさない |
+| `counseling` | カウンセリングシート・同意書（key=電話番号 or `n:氏名`／answers JSON（`finder`＝髪格診断の結果を含む）／consent JSON=`agreed`＋`photo:no\|karte\|sns`＋`faceNg`＋`video:no\|karte\|sns`＋`voice:ok\|no`／sign=署名PNG dataURL／kind=hair\|spa）。**同意は必須・サーバ側でも検証**。⚠自由記入は`customer_notes.caution`へ自動マージ | CUEPON顧客の付帯情報（`account.info_js`／カルテ系API・要エンジニア確認）。同意記録は法的保管が要るため移行時も履歴を落とさない |
 | `customer_notes` | 顧客の⚠重要メモ（アレルギー・薬剤NG）＋誕生月＋**撮影/音声AIの可否**（`photo_policy`・`face_ng`・`video_policy`・`voice_policy`＝最新シートの意思で上書き）。予約詳細の先頭に赤字警告＋バッジとして出す | `account.info_js`（顧客属性） |
 | `nudges` | 自動フォローの送信済みログ（kind×keyで一度きり保証） | （汎用通知基盤に置換） |
 

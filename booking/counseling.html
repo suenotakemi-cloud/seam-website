@@ -66,6 +66,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .btn.go:disabled{background:#d8cfc0;cursor:default}
 .btn.pr{background:#fff;border:1.5px solid var(--line);color:var(--sub);flex:0 0 108px}
 .done{text-align:center;padding:48px 20px}
+.nextbox{margin:26px auto 0;max-width:520px;text-align:left;border:1px solid #f0d9b8;background:#fff8f0;border-radius:14px;padding:16px}
+.nxttl{font-size:15.5px;font-weight:800;margin-bottom:5px}
+.nxsub{font-size:13px;color:var(--sub);font-weight:500;line-height:1.85;margin-bottom:13px}
+.nxnote{font-size:12px;color:var(--sub);font-weight:600;text-align:center;margin-top:8px}
+#fov{position:fixed;inset:0;background:#fff;z-index:200;display:flex;flex-direction:column}
+.fovbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:14px;font-weight:800;flex:0 0 auto}
+#fov iframe{flex:1;width:100%;border:none}
 .done .ic{width:74px;height:74px;border-radius:50%;background:#eef7f0;color:var(--ok);font-size:36px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
 .toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:#2b2620;color:#fff;padding:13px 20px;border-radius:10px;font-size:14px;font-weight:700;z-index:99;opacity:0;transition:.2s;pointer-events:none;max-width:88vw;text-align:center}
 .toast.on{opacity:1}
@@ -322,6 +329,71 @@ function initSign(){
   document.getElementById('signclear').onclick=()=>{ctx.clearRect(0,0,cv.width,cv.height);S.sign='';document.getElementById('signhint').style.display='';};
 }
 
+/* ================= 完了画面と、お待ちの間の髪格診断 =================
+   シートは先に提出して終わらせる（スタッフがすぐ確認できる）。
+   そのあとの待ち時間で任意の髪格診断（seam.site/finder）を受けていただき、
+   結果は提出済みシートへ自動で紐付ける（スタッフの手を介さない）。
+   共有iPadなので、紐付けたら端末に残った診断結果は消す。 */
+let CSID='';
+const FROM_ADMIN=q.get('from')==='admin';
+const OPENED_AT=Date.now();
+const readKarte=()=>{try{return JSON.parse(localStorage.getItem('seam_karte_last')||'null')}catch(e){return null}};
+const clearKarte=()=>{try{localStorage.removeItem('seam_karte_last')}catch(e){}};
+
+function doneScreen(msg){
+  document.querySelector('.bar')&&document.querySelector('.bar').remove();
+  document.getElementById('app').innerHTML=`<div class="done">
+    <div class="ic">✓</div>
+    <h1 style="font-size:21px">ありがとうございました</h1>
+    <p style="color:var(--sub);font-size:14.5px;margin-top:8px">${msg||'スタッフがすぐに確認いたします<br>本日はどうぞゆっくりお過ごしください'}</p>
+    ${CSID?`<div class="nextbox">
+      <div class="nxttl">お待ちの間に、もうひとつ</div>
+      <div class="nxsub">かんたんな質問にお答えいただくと、髪質のタイプと今いちばん必要なケアが分かります。<br>結果はそのまま担当者に届くので、カウンセリングが早く深くなります</div>
+      <button class="btn go" id="gofinder" style="width:100%;min-height:56px;border-radius:12px">髪格診断をはじめる（3分ほど）</button>
+      <div class="nxnote">任意です。途中でやめても大丈夫です</div>
+    </div>`:''}
+    <button class="mini" style="margin-top:20px" onclick="location.href=location.pathname${FROM_ADMIN?"+'?from=admin'":''}">次のお客様へ</button>
+    ${FROM_ADMIN?`<button class="mini" style="margin-top:8px" onclick="location.href='./'">受付の画面にもどる</button>`:''}
+  </div>`;
+  const gf=document.getElementById('gofinder'); if(gf)gf.onclick=openFinder;
+}
+
+/* 診断を同じ画面の中で開く（別タブにしないので、お客様が迷子にならない） */
+function openFinder(){
+  const base=Date.now();
+  const ov=document.createElement('div'); ov.id='fov';
+  ov.innerHTML=`<div class="fovbar">
+      <span>髪格診断</span>
+      <button class="mini" id="fovclose">とじる</button>
+    </div>
+    <iframe src="/finder?src=salon" title="髪格診断"></iframe>`;
+  document.body.appendChild(ov);
+  document.getElementById('fovclose').onclick=()=>{clearInterval(t);ov.remove();};
+  // 診断が終わると finder が端末に結果を書くので、それを見て取り込む
+  const t=setInterval(async()=>{
+    const k=readKarte();
+    if(!k||!k.savedAt)return;
+    if(new Date(k.savedAt).getTime()<base)return;      // 前のお客様の結果は拾わない
+    clearInterval(t); ov.remove();
+    await attachFinder(k);
+  },1500);
+}
+
+async function attachFinder(k){
+  try{
+    const r=await fetch(API+'/counseling/attach',{method:'POST',
+      headers:{'Content-Type':'application/json',...(TOK?{'Authorization':'Bearer '+TOK}:{})},
+      body:JSON.stringify({id:CSID,finder:{
+        typeId:k.typeId,typeName:k.typeName||k.originName,damageTier:k.damageTier,
+        originName:k.originName,mainGoalName:k.mainGoalName,radar:k.radar,savedAt:k.savedAt}})});
+    const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+    clearKarte();                                       // 共有iPadに前のお客様の結果を残さない
+    const line=[k.originName,k.damageTier?('ダメージ '+k.damageTier):'',k.mainGoalName].filter(Boolean).join('／');
+    doneScreen(`診断の結果を担当者にお届けしました<br><b style="color:var(--gold)">${esc(line||'診断結果')}</b><br>このあとのカウンセリングでご一緒に見ていきます`);
+    document.querySelector('.nextbox')&&document.querySelector('.nextbox').remove();
+  }catch(e){ toast('結果を送れませんでした（スタッフにお伝えください）',true); doneScreen(); }
+}
+
 async function save(){
   keep();
   if(!S.name){toast('お名前をご記入ください',true);document.getElementById('f-name').focus();return;}
@@ -334,13 +406,8 @@ async function save(){
       body:JSON.stringify({name:S.name,phone:S.phone,kind:S.kind,answers:S.a,consent:S.c,sign:S.sign,date:new Date().toISOString().slice(0,10)})});
     const j=await r.json();
     if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    document.getElementById('app').innerHTML=`<div class="done">
-      <div class="ic">✓</div>
-      <h1 style="font-size:21px">ありがとうございました</h1>
-      <p style="color:var(--sub);font-size:14.5px;margin-top:8px">スタッフがすぐに確認いたします<br>本日はどうぞゆっくりお過ごしください</p>
-      <button class="mini" style="margin-top:22px" onclick="location.href=location.pathname">次のお客様へ</button>
-    </div>`;
-    document.querySelector('.bar')&&document.querySelector('.bar').remove();
+    CSID=j.id; try{localStorage.setItem('stb_cs_last',j.id)}catch(e){}
+    doneScreen();
   }catch(e){
     btn.disabled=false;btn.textContent='この内容で提出する';
     toast(String(e.message).includes('401')?'管理ログインが必要です（スタッフにお伝えください）':'送信できませんでした: '+e.message,true);
