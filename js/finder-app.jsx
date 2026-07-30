@@ -2385,7 +2385,11 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
     // 予算フロア(帯未回答のバケットはnull=無効)
     if (floorByBucket[bucket] != null) {
       const _pb = bandOfPrice(deepRepPrice(item.p));
-      if (_pb != null && _pb < floorByBucket[bucket]) continue;
+      // 価格が取れない商品(17点)は帯を判定できず フロアをすり抜けていた。
+      // 予算をいくらと答えても提案に混ざり 段(いつもの/ワンランク上/ご褒美)にも載らない。
+      // 価格を言えない商品は 予算を聞いた人には出さない(1,000人検証で発見・2026-07-30)。
+      if (_pb == null) continue;
+      if (_pb < floorByBucket[bucket]) continue;
     }
     // 段用プール(容量・ブランド上限より前に確保。補助ブランドは段に出さない)
     if (!item.isSupplementary && pools[bucket].length < 14) pools[bucket].push(item);
@@ -8574,11 +8578,28 @@ function conclusionAfterword(answers, scores) {
   const items = Array.isArray(a.items) ? a.items : [];
   const life  = Array.isArray(a.lifestyle) ? a.lifestyle : [];
   const cs    = Array.isArray(a.concerns) ? a.concerns : [];
-  const heavyDislike = items.indexOf('heavy') > -1 || items.indexOf('sticky') > -1;
-  if (heavyDislike || a.thickness === 'thin') return '重さを足すより 抜くほうが決まりやすい髪です';
+  const has = c => cs.indexOf(c) > -1;
+  // 1,000人検証で「重さを足すより…」が66.8%に出て単調だったため 判定を細かくした(2026-07-30)。
+  // 上から順に「その人にだけ当たる話」を先に見る。最後の既定文に落ちる人を減らすのが狙い。
+  if ((s.bleachHistory || 0) >= 4)               return 'ブリーチした髪は 足すより 抜けたものを戻す順番です';
+  if (has('thinning') || has('volumeDown'))      return '毛先より先に 土台が変わると 見た目の印象が変わります';
+  if (a.straighten && a.straighten !== 'none')   return '矯正した髪は 直すのではなく 保つケアに切り替える時期です';
+  if ((s.heatDamage || 0) >= 5)                  return '熱を弱めるより 熱の前後を変えるほうが早いです';
   if ((s.damage || 0) >= 5 || (s.bleachHistory || 0) >= 3) return 'ツヤは増やすものではなく 戻すものです';
-  if (life.indexOf('noTime') > -1) return '合う一本が決まると 朝の手数が減ります';
-  if (cs.indexOf('frizz') > -1) return '湿気に負けるのではなく 選び方で変わります';
+  if (a.color === 'gray' || has('grayFade'))     return '白髪を隠すケアと 髪を守るケアは 分けたほうがきれいです';
+  if (has('scalpOily') || has('scalpDry'))       return '髪ではなく 頭皮が変わると 手触りは後からついてきます';
+  if (life.indexOf('noTime') > -1)               return '合う一本が決まると 朝の手数が減ります';
+  if (life.indexOf('sleepWet') > -1)             return '乾かし方をひとつ変えるだけで 翌朝が変わります';
+  if (items.indexOf('heavy') > -1 || items.indexOf('sticky') > -1) return '重さを足すより 抜くほうが決まりやすい髪です';
+  if (items.indexOf('noLast') > -1)              return '効き目が続かないのは 量ではなく順番のせいかもしれません';
+  if (has('frizz') && (a.environment === 'humid' || life.indexOf('humidity') > -1)) return '湿気に負けるのではなく 選び方で変わります';
+  if (has('frizz'))                              return 'くせは抑え込むより 活かす向きに整えるほうが楽です';
+  if (has('dry'))                                return '足りないのは量ではなく 水分の置き場所です';
+  if (has('noShine'))                            return 'ツヤは表面ではなく 内側の整い方から出ます';
+  if (a.thickness === 'thin')                    return '細い髪は 守るより 軽く保つほうが強く見えます';
+  if (a.thickness === 'thick')                   return '硬い髪は 押さえるより やわらげるほうが早いです';
+  if (a.goalTexture === 'airy')                  return '軽さは 減らして作るものです';
+  if (a.goalTexture === 'glossy' || a.goalTexture === 'moist') return 'うるおいは 重ねるより 逃がさないほうが続きます';
   return '選び方が変わると 手触りが変わります';
 }
 
