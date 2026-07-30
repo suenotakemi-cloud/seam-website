@@ -375,7 +375,8 @@ def area_article_html(b, st, stores, lines, tops):
     # ブランドロゴ帯(ロゴ無しは銘板)
     if b.get('logo'):
         logo_html=(f'<div class="mt-7 rounded-[4px] border border-line bg-white px-6 py-5 flex items-center justify-center">'
-                   f'<img src="{E(b["logo"])}" alt="{E(ja)} ロゴ" loading="lazy" decoding="async" style="max-height:44px;max-width:70%;object-fit:contain;mix-blend-mode:multiply;"></div>')
+                   # つるりんちょの画像はブランド名でなくタグライン「髪にドラマを。」の版なので altを実物に合わせる
+                   f'<img src="{E(b["logo"])}" alt="{E(ja)}{" 髪にドラマを" if b.get("slug")=="tsururincho" else " ロゴ"}" loading="lazy" decoding="async" style="max-height:44px;max-width:70%;object-fit:contain;mix-blend-mode:multiply;"></div>')
     else:
         logo_html=(f'<div class="mt-7 rounded-[4px] border border-line bg-white px-6 py-6 text-center">'
                    f'<span class="font-serif text-[17px] tracking-[0.18em] text-ink">{E(en)}</span></div>')
