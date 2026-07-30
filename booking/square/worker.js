@@ -326,8 +326,10 @@ export default {
       const key = ph || ('n:' + o.name);
       const id = 'cs' + crypto.randomUUID().slice(0, 8);
       await env.DB.prepare(
-        `INSERT INTO counseling (id,key,name,phone,kind,answers,consent,sign,staff,date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`
-      ).bind(id, key, o.name, o.phone || '', o.kind || 'hair', JSON.stringify(o.answers || {}),
+        `INSERT INTO counseling (id,key,name,phone,kind,lang,answers,consent,sign,staff,date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+      ).bind(id, key, o.name, o.phone || '', o.kind || 'hair',
+        ['ja', 'en', 'zh', 'tw', 'ko'].includes(o.lang) ? o.lang : 'ja',
+        JSON.stringify(o.answers || {}),
         JSON.stringify(o.consent || {}), (o.sign || '').slice(0, 300000), o.staff || '',
         o.date || new Date().toISOString().slice(0, 10), new Date().toISOString()).run();
       // 施術上の注意（アレルギー等）と写真/音声AIの可否をカルテの重要メモへ自動反映＝施術前に必ず目に入る
@@ -350,6 +352,70 @@ export default {
             photo, cs.faceNg ? 1 : 0, video, voice, new Date().toISOString()).run().catch(() => {});
       }
       return json({ ok: true, id }, 200, cors);
+    }
+    // 顧客データの一枚まとめ（担当者が施術前にこれだけ見れば分かる状態にする）
+    // 予約・会計・シート・髪格診断・同意・重要メモ・ポイント・回数券を1つのJSONに集約
+    if (p.endsWith('/customer/profile') && m === 'GET') {
+      if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
+      if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
+      await ensureRegisterTables(env);
+      const raw = url.searchParams.get('key') || '';
+      if (!raw) return json({ error: 'key が必要です' }, 400, cors);
+      const ph = raw.replace(/[^0-9]/g, '');
+      const key = ph || raw;                       // 電話が無い方は 'n:氏名' キー
+      const like = ph ? null : String(raw).replace(/^n:/, '');
+      const P = (q, ...b) => env.DB.prepare(q).bind(...b).all().then(r => r.results || []).catch(() => []);
+      const jp = v => { try { return JSON.parse(v || '{}'); } catch { return {}; } };
+
+      // 予約は電話の表記ゆれを吸収して突き合わせる。会計/回数券/写真は氏名キーなので氏名で引く
+      const nameGuess = await (async () => {
+        const r = await env.DB.prepare('SELECT name FROM counseling WHERE key=? ORDER BY created_at DESC LIMIT 1').bind(key).first().catch(() => null);
+        if (r && r.name) return r.name;
+        if (like) return like;
+        const r2 = await env.DB.prepare("SELECT name FROM reservations WHERE replace(replace(phone,'-',''),' ','')=? ORDER BY date DESC LIMIT 1").bind(ph).first().catch(() => null);
+        return (r2 && r2.name) || '';
+      })();
+      const [notes, sheets, resv, chk, pts, pass, photos] = await Promise.all([
+        env.DB.prepare('SELECT * FROM customer_notes WHERE key=?').bind(key).first().catch(() => null),
+        P('SELECT * FROM counseling WHERE key=? ORDER BY created_at DESC LIMIT 30', key),
+        ph ? P("SELECT id,date,start,end,menu_id,staff_id,name,status,channel,note,deposit FROM reservations WHERE replace(replace(phone,'-',''),' ','')=? ORDER BY date DESC LIMIT 60", ph)
+           : P('SELECT id,date,start,end,menu_id,staff_id,name,status,channel,note,deposit FROM reservations WHERE name=? ORDER BY date DESC LIMIT 60', like),
+        nameGuess ? P('SELECT id,date,tech,retail,discount,total,method,nominated,retail_items FROM checkouts WHERE customer=? ORDER BY date DESC LIMIT 60', nameGuess) : [],
+        ph ? P("SELECT delta,reason,date FROM points WHERE replace(replace(phone,'-',''),' ','')=? ORDER BY date DESC LIMIT 200", ph)
+           : (nameGuess ? P('SELECT delta,reason,date FROM points WHERE name=? ORDER BY date DESC LIMIT 200', nameGuess) : []),
+        nameGuess ? P('SELECT id,label,remaining,expires FROM passes WHERE customer=? AND void=0', nameGuess) : [],
+        nameGuess ? P('SELECT id,date FROM karte_photos WHERE name=? ORDER BY date DESC LIMIT 40', nameGuess) : [],
+      ]);
+
+      const live = sheets.filter(x => !x.voided);
+      const parsed = live.map(x => ({ ...x, answers: jp(x.answers), consent: jp(x.consent), sign: x.sign ? true : false }));
+      const latest = parsed[0] || null;
+      const finder = (parsed.find(x => x.answers.finder) || { answers: {} }).answers.finder || null;
+      // 施術上の注意は、重要メモとシートの自由記入を合わせて拾う（見落としを作らない）
+      const cautions = [...new Set([(notes && notes.caution) || '', ...parsed.map(x => x.answers.caution || '')].filter(Boolean))];
+      const paid = chk.reduce((a, c) => a + (+c.total || 0), 0);
+      const visits = resv.filter(r => r.status === 'done').length;
+      const merge = (k) => [...new Set(parsed.flatMap(x => [].concat(x.answers[k] || [])))].filter(Boolean);
+
+      return json({
+        ok: true, key,
+        name: nameGuess || (latest && latest.name) || '',
+        phone: ph || '', lang: (latest && latest.lang) || 'ja',
+        birthday: (notes && notes.birthday) || '',
+        cautions,
+        consent: notes ? {
+          photo: notes.photo_policy || '', faceNg: !!notes.face_ng,
+          video: notes.video_policy || '', voice: notes.voice_policy || '',
+        } : null,
+        finder,
+        profile: { concern: merge('concern'), history: merge('history'), body: merge('body'), scalp: merge('scalp'), care: merge('care'), henna: (latest && latest.answers.henna) || '' },
+        wants: parsed.map(x => ({ date: x.date, lang: x.lang || 'ja', text: x.answers.want || '' })).filter(x => x.text),
+        sheets: parsed.map(x => ({ id: x.id, date: x.date, kind: x.kind, lang: x.lang || 'ja', signed: x.sign, agreed: !!x.consent.agreed })),
+        voidedSheets: sheets.filter(x => x.voided).length,
+        visits, sales: paid, checkouts: chk.length,
+        reservations: resv.slice(0, 20),
+        points: pts.reduce((a, r) => a + (+r.delta || 0), 0), passes: pass, photos: photos.length,
+      }, 200, cors);
     }
     // 同意書は消さない（オーナー方針 2026-07-30）。あとで何かあったときに記録が無いのが一番まずい。
     // 二重提出などは「取り消し」印をつけるだけ＝一覧では薄く出るが記録そのものは残る。
@@ -395,7 +461,7 @@ export default {
       const from = url.searchParams.get('from') || '2000-01-01', to = url.searchParams.get('to') || '2999-12-31';
       const kindQ = url.searchParams.get('kind') || '';
       const res = await env.DB.prepare(
-        `SELECT id,name,kind,date,answers,consent,voided FROM counseling WHERE date>=? AND date<=? ORDER BY date DESC LIMIT 5000`
+        `SELECT id,name,kind,date,lang,answers,consent,voided FROM counseling WHERE date>=? AND date<=? ORDER BY date DESC LIMIT 5000`
       ).bind(from, to).all();
       let rows = (res.results || []).filter(r => !/^(テスト|検証|再検証|ダミー)/.test(r.name || '') && !r.voided);
       if (kindQ) rows = rows.filter(r => r.kind === kindQ);
@@ -406,6 +472,7 @@ export default {
       const byMonth = {}, quotes = [];
       const words = {}, wordEg = {};
       const finder = { done: 0, type: {}, damage: {}, goal: {}, origin: {} };
+      const byLang = {};
       // 助詞・言い回しは数えない（「ことば」として意味を持つ語だけ残す）
       const STOP = new Set(['ください', 'おねがい', 'お願い', 'したい', 'ほしい', '思います', 'カット', 'カラー', 'サロン', 'ヘア']);
 
@@ -414,6 +481,7 @@ export default {
         try { a = JSON.parse(r.answers || '{}'); } catch (e) {}
         try { c = JSON.parse(r.consent || '{}'); } catch (e) {}
         bump(byMonth, (r.date || '').slice(0, 7));
+        bump(byLang, r.lang || 'ja');
         for (const k of Object.keys(chips)) {
           const v = a[k];
           if (Array.isArray(v)) v.forEach(x => bump(chips[k], x));
@@ -448,6 +516,7 @@ export default {
       return json({
         ok: true, total: rows.length, from, to,
         byMonth: Object.entries(byMonth).sort().map(([k, v]) => ({ k, n: v })),
+        byLang: Object.entries(byLang).sort((a, b) => b[1] - a[1]).map(([k, v]) => ({ k, n: v })),
         concern: top(chips.concern, 30), history: top(chips.history, 30), body: top(chips.body, 30),
         scalp: top(chips.scalp, 30), care: top(chips.care, 30),
         consent, words: top(words, 40).map(w => ({ ...w, eg: wordEg[w.k] || '' })),
@@ -1229,6 +1298,7 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN voice_policy TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN video_policy TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN voided INTEGER DEFAULT 0`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN lang TEXT DEFAULT 'ja'`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN void_reason TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN kana TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN nominated INTEGER DEFAULT 1`).run(); } catch (e) {}

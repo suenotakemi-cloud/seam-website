@@ -109,6 +109,17 @@ flowchart LR
 - **撮影可否バッジ**：写真・動画・音声AIの可否を `customer_notes` に保存し、**カルテと予約詳細の両方にバッジ表示**（📷撮影NG＝赤／カルテ用だけOK＝グレー／SNS・広告OK＝緑・顔なし注記／🎙AI録音NG＝赤）。席に着く前に見える位置に置く
 - 重要メモの手編集（`POST /custnotes`）では写真・音声の同意を**上書きしない**（お客様の意思表示なのでスタッフ操作で消えない）
 
+### 2.3.0 多言語（5言語・ワンタッチ切替・2026-07-30）
+海外のお客様のカウンセリングをその方の言葉で行うための仕組み。予約ページと同じ **日本語 / English / 简体中文 / 繁體中文 / 한국어**。
+- 辞書は **`booking/cs-i18n.js`（独立ファイル・167語）**。iPadのシートと管理画面の**両方から同じ辞書を読む**
+- 切替はヘッダーのボタンでワンタッチ。`?lang=` 指定／端末の言語から自動判定／この端末の前回選択を記憶
+- **★保存されるデータは常に日本語**：チップの `data-v` は日本語のまま（見える文字だけ訳す）。だから担当者はいつも日本語で読め、カルテも集計もCSVも言語に関係なく動く
+- 自由記入だけはお客様の言葉のまま残す（訳すと本人の言い回しが失われるため）。カルテに「English で記入」バッジと注記を出す
+- 言語を切り替えても**入力・選択・署名は消えない**（`keep()`→再描画→署名は `S.sign` から復元）
+- 同意文（7項目すべて）も全言語。**同意は理解できる言葉で取らないと意味がないため、長文も省略せず訳す**
+- **管理画面側もワンタッチ**：カルテのシート欄に「English で表示 ⇄ 日本語で表示」ボタン（そのお客様の言語のシートがある時だけ出る）。画面を見せながら説明できる
+- シートに `lang` を保存し、集計に「記入された言語」の内訳を出す（接客体制の判断材料）
+
 ### 2.3.1 お待ちの間の髪格診断（seam.site/finder 連携・2026-07-30）
 待ち時間を「診断の時間」に変える導線。**シートは先に提出して終わらせ、そのあと任意で診断**（シートの途中に長い診断を挟むと止まるため）。
 1. シート提出 → 完了画面に「お待ちの間に、もうひとつ／髪格診断をはじめる（3分ほど）」＋「任意です。途中でやめても大丈夫です」
@@ -119,6 +130,23 @@ flowchart LR
 - 保存形：`answers.finder = {typeId,typeName,damageTier,originName,mainGoalName,radar,savedAt}`
 - 反映先：カルテのシート表示に「髪格診断 ○○タイプ／ダメージB／ツヤ」、集計に髪質タイプ・ダメージ・目的の内訳と実施率
 - finder 側は**無改造**（localStorage を読むだけ）。診断の主役はケア＋ショップ導線という位置づけを崩さない
+- スパのお客様も**髪格診断のまま**（`/skinfinder` には切り替えない・オーナー判断 2026-07-30）
+- **★診断とかぶる質問はシートで聞かない（2026-07-30）**：半年以内の髪格診断がある方は、シートを開いた時点で `GET /counseling?key=電話` から検出し、診断が聞いている項目を省く（7節→6節）。
+  - 省くもの：今日のご希望のチップ（診断の concerns/goal と重複）・これまでの施術（bleach/color/perm/straighten）・頭皮の状態（scalpType）・おうちでのお手入れ（items/tools/heatProtect）
+  - **省かないもの**：お体のこと（診断は医療系を一切聞いていない）／**ヘナ**（finderに項目が無い＝薬剤の相性に関わるので必ず聞く。「ひとつだけ確認させてください」として1問だけ出す）／同意／署名／今日のご要望の自由記入（今日固有の話なので残す）
+  - 黙って減らさない：先頭に「✓ 髪格診断の結果をお預かりしています／診断で伺った内容は、この用紙では重ねてお聞きしません」＋診断の要約を出す
+  - 半年より古い診断は省略に使わない（髪の状態が変わっているので聞き直す）
+
+### 2.3.2 顧客データのまとめ（`GET /customer/profile`・2026-07-30）
+散らばっていた情報を1人分1枚に集約する。カルテを開くと最上部に出る「**この方のまとめ**」。
+集約元：予約履歴／会計・LTV／カウンセリングシート（全枚数を統合）／髪格診断／撮影・音声AIの同意／⚠重要メモ／ポイント／回数券／写真枚数。
+- ⚠注意は**重要メモとシートの自由記入の両方から拾って重複を除く**（見落としを作らない）
+- 選択項目は複数シートを**マージ**（前回はブリーチと書き、今回は書かなかった、で消えない）
+- ご要望は原文＋日付＋言語で最新2件
+- 右上の「書き出す」で1人分のCSV（項目／ご要望原文／来店履歴）＝引き継ぎと持ち出し用
+- 名寄せの実態：`counseling`/`customer_notes`/`points` は電話キー、`checkouts`/`passes`/`karte_photos` は氏名キー。プロファイルAPIが**電話→氏名を解決してから横断**する（統合時はCUEPONの `account_id` 一本に寄せる）
+
+
 
 ### 2.4 カウンセリング集計（管理タブ「カウンセリング」・2026-07-30）
 毎月のミーティングにそのまま使える集計画面。`GET /counseling/stats?from&to&kind` をWorker側で集計（テスト名は除外）。
@@ -156,6 +184,8 @@ flowchart LR
   ①前日リマインド（salon.town生存照合つき＝台帳ドリフト自己修復） ②来店翌日サンクス+Googleクチコミ依頼 ③施術周期の「そろそろ」リマインド+予約リンク（次回予約済みの人には送らない） ④休眠90日呼び戻し+ptプレゼント（winbackPt・既定500）。
 - **カウンセリングシート・同意書（2026-07-30）**：来店時にiPadで記入（§2.3）。同意チェック必須・手書き署名。**写真／動画／音声AIカウンセリングは用途別の3択で取得**し、可否をカルテと予約詳細にバッジ表示（撮る前に判断できる）。**アレルギー等の⚠は顧客の重要メモへ自動マージし、予約詳細の先頭に赤字警告として出る**。項目は店舗設定でON/OFF。紙運用（白紙印刷して手書き）にも対応。
 - **お待ちの間の髪格診断（2026-07-30）**：来店処理→シート記入→提出→そのまま任意で髪格診断（§2.3.1）。結果は提出済みシートへ自動紐付けし、カルテと集計に出る。**共有iPadの取り違え対策として、診断を開いた後に完了した結果だけを採用し、紐付け後は端末から結果を消す**。
+- **多言語カウンセリング（2026-07-30）**：シートと同意書を5言語でワンタッチ切替（§2.3.0）。**保存データは常に日本語**なので担当者・カルテ・集計は言語に影響されない。管理画面からもお客様の言葉に切り替えて見せられる。
+- **顧客データのまとめ（2026-07-30）**：`GET /customer/profile` で1人分を1枚に集約（§2.3.2）。カルテ最上部に表示＋CSV書き出し。
 - **カウンセリング集計（2026-07-30）**：管理タブ「カウンセリング」（§2.4）。お悩み・履歴・お手入れの内訳、自由記入の頻出語と原文、撮影・音声AIの同意実態、月次推移、CSV書き出し。**毎月のミーティング資料をそのまま画面で見る**用途。
 - **カルテ写真**：before/after撮影→クライアント側1100px/JPEG圧縮（≦550KB）→保存・拡大・削除。※現状D1格納（R2未有効のため暫定・§6）。
 
@@ -209,7 +239,7 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 ### 4.3 自社 Worker エンドポイント（フロント↔D1・§6の独自実装）
 公開（顧客導線・認証不要）：`POST /pay`・`POST /reservations`・**`GET /availability`**（空き判定用・PII無しの占有区間のみ＝顧客ページのキャパ超過防止）・**`GET /precheck?phone=`**（ノーショー履歴→前金必須フラグのみ・PIIレス）・`POST /line/login/state`・`GET /line/login/result`。
 管理（`Authorization: Bearer ADMIN_TOKEN` 必須）：
-`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／**`GET/POST /counseling`**（カウンセリングシート・同意書。POSTは同意チェック未了を400で拒否・⚠は`customer_notes.caution`へ自動マージ・写真/動画/音声AIの可否も同時保存）／**`GET /counseling/stats?from&to&kind`**（集計：悩み/履歴/お体/お手入れ/頻出語/原文/同意内訳/髪格診断/月次）／**`POST /counseling/attach`**（提出済みシートへ髪格診断の結果を紐付け）／**`POST /counseling/void`**（二重提出などに「取り消し」印。`undo:true`で戻せる。**記録そのものは消さない**）。**シートの削除APIは持たない**（§6-13）／`GET/POST /custnotes`（重要メモ・誕生月）／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
+`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／**`GET/POST /counseling`**（カウンセリングシート・同意書。POSTは同意チェック未了を400で拒否・⚠は`customer_notes.caution`へ自動マージ・写真/動画/音声AIの可否も同時保存）／**`GET /counseling/stats?from&to&kind`**（集計：悩み/履歴/お体/お手入れ/頻出語/原文/同意内訳/髪格診断/月次）／**`POST /counseling/attach`**（提出済みシートへ髪格診断の結果を紐付け）／**`GET /customer/profile?key=`**（顧客データの一枚まとめ＝§2.3.2）／**`POST /counseling/void`**（二重提出などに「取り消し」印。`undo:true`で戻せる。**記録そのものは消さない**）。**シートの削除APIは持たない**（§6-13）／`GET/POST /custnotes`（重要メモ・誕生月）／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
 Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFollowups()`（サンクス/周期/休眠・§3）。
 運用ツール（`CLEANUP_TOKEN`＝wrangler secret・オーナー/AI運用専用）：
 `POST /admin/purge-test`（氏名「テスト%」×channel line/own のみD1＋salon.town削除）／`GET /admin/diag-resv`（両店予約の診断読取・add_info付き）／`POST /admin/salon-del?id=`（salon.town予約1件削除＝孤児ミラー掃除）／`POST /admin/salon-patch`（info_js更新＝個室後付け等。**部分dataでも他カラムは無傷を実証済**）／`GET|POST /salon/noname`（無記名ミラーの孤児判定つき掃除・**親生存チェックで本物予約のミラーは残す**）。
@@ -234,7 +264,7 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 | `gifts` | ギフト券（id=券面コードG-XXXX-XXXX・残高制で分割利用可・利用履歴uses[]・無効化はvoidフラグで履歴保全）。発行はレジ→店販行「ギフト券」として会計＝売上/レジ現金が正しく揃う。券面印刷あり。**有効期限は既定6ヶ月＝資金決済法(前払式支払手段)の適用外に収める**（延ばす場合は届出要否をオーナー確認） | CUEPONの`ec/discount`/チケット系へ移行（統合時） |
 | `passes` | 回数券・パス（id=P-XXXX-XXXX・remaining残回数・1会計1消化=施術分カバー・期限既定6ヶ月・void無効化） | CUEPONのチケット/サブスク系へ移行（統合時） |
 | `karte_photos` | 施術写真（顧客名キー・圧縮JPEG dataURL≦550KB）。**本来はR2が適所だがアカウント未有効(code:10042)のためD1暫定**。R2有効化後にオブジェクトキーへ移行 | R2（`karte/<customer>/<ts>.jpg`）＋CUEPON顧客IDキー |
-| `counseling` | カウンセリングシート・同意書（key=電話番号 or `n:氏名`／answers JSON（`finder`＝髪格診断の結果を含む）／consent JSON=`agreed`＋`photo:no\|karte\|sns`＋`faceNg`＋`video:no\|karte\|sns`＋`voice:ok\|no`／sign=署名PNG dataURL／kind=hair\|spa）。**同意は必須・サーバ側でも検証**。⚠自由記入は`customer_notes.caution`へ自動マージ | CUEPON顧客の付帯情報（`account.info_js`／カルテ系API・要エンジニア確認）。同意記録は法的保管が要るため移行時も履歴を落とさない |
+| `counseling` | カウンセリングシート・同意書（key=電話番号 or `n:氏名`／`lang`＝記入された言語／`voided`＋`void_reason`＝取り消し印／answers JSON（`finder`＝髪格診断の結果、`priorFinder`＝診断流用の記録、`henna` を含む）／consent JSON=`agreed`＋`photo:no\|karte\|sns`＋`faceNg`＋`video:no\|karte\|sns`＋`voice:ok\|no`／sign=署名PNG dataURL／kind=hair\|spa）。**同意は必須・サーバ側でも検証**。⚠自由記入は`customer_notes.caution`へ自動マージ | CUEPON顧客の付帯情報（`account.info_js`／カルテ系API・要エンジニア確認）。同意記録は法的保管が要るため移行時も履歴を落とさない |
 | `customer_notes` | 顧客の⚠重要メモ（アレルギー・薬剤NG）＋誕生月＋**撮影/音声AIの可否**（`photo_policy`・`face_ng`・`video_policy`・`voice_policy`＝最新シートの意思で上書き）。予約詳細の先頭に赤字警告＋バッジとして出す | `account.info_js`（顧客属性） |
 | `nudges` | 自動フォローの送信済みログ（kind×keyで一度きり保証） | （汎用通知基盤に置換） |
 

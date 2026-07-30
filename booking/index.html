@@ -7,6 +7,7 @@
 <title>Salon Town Booking — 予約一元管理</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<script src="cs-i18n.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+JP:wght@500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1277,6 +1278,7 @@ const API = {
   async savePass(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async voidPass(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/passes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listKartePhotos(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/photos?name='+encodeURIComponent(name),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.photos:null;}catch{return null;} },
+  async customerProfile(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/customer/profile?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j:null;}catch{return null;} },
   async counselingStats(q){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/counseling/stats?'+new URLSearchParams(q),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j:null;}catch{return null;} },
   async listCounseling(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/counseling?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.sheets:null;}catch{return null;} },
   async listCustNotes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/custnotes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.notes:null;}catch{return null;} },
@@ -3538,8 +3540,10 @@ function openCustomer(key){
       <dt>累計売上 (LTV)</dt><dd>${c.paidVisits>0?`<b style="color:var(--navy)">¥${c.sales.toLocaleString()}</b>　<span style="color:var(--sub);font-size:12px">会計${c.paidVisits}回・平均 ¥${Math.round(c.sales/c.paidVisits).toLocaleString()}</span>`:`<span style="color:var(--sub)">会計記録なし（目安 ¥${c.spend.toLocaleString()}）</span>`}</dd>
       <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${escH(c.note)}</dd>`:''}</dl>
     <div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><div style="font-size:12px;font-weight:700;color:var(--sub)">カウンセリングシート・同意書<span style="font-weight:600;margin-left:6px">（記録として保管します・消せません）</span></div>
-      <a class="btn small ghost" id="cs-open" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 9px;font-size:11.5px">iPadで記入してもらう ↗</a></div>
+      <a class="btn small ghost" id="cs-open" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 9px;font-size:11.5px">iPadで記入してもらう ↗</a>
+      <button class="btn small ghost" id="cs-lang" style="display:none;padding:3px 9px;font-size:11.5px"></button></div>
     <div id="cs-list" style="font-size:12.5px;color:var(--sub);margin-bottom:10px">読み込み中…</div>
+    <div id="cp-box" style="margin:10px 0 12px"></div>
     <div style="font-size:12px;font-weight:700;color:var(--sub);margin:8px 0 6px">施術写真（before / after）</div>
     <div id="kp-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px"><div style="grid-column:1/-1;color:var(--sub);font-size:12px">読み込み中…</div></div>
     <label class="btn small ghost" style="display:inline-block;cursor:pointer">＋ 写真を追加<input id="kp-file" type="file" accept="image/*" capture="environment" style="display:none"></label>
@@ -3553,6 +3557,8 @@ function openCustomer(key){
    const saveKn=()=>{const n={key:ck,caution:ta.value.trim(),birthday:bd.value};db.custnotes[ck]=Object.assign({},cn,n);save();API.saveCustNote(n);
      if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none'},1500);}};
    if(ta)ta.onblur=saveKn; if(bd)bd.onchange=saveKn;}
+  // ---- この方のまとめ: 予約/会計/シート/髪格診断/同意/注意を1枚に集約して先に見せる
+  API.customerProfile(c.key).then(cpRender);
   // ---- カウンセリングシート: 記入リンクに氏名/電話/種別を引き継ぐ(スタッフが打ち直さない)
   {const lk=document.getElementById('cs-open');
    if(lk){const kind=/スパ|ヘッドスパ|SPA/i.test(topKey(c.menus)||'')?'spa':'hair';
@@ -3561,12 +3567,26 @@ function openCustomer(key){
   API.listCounseling(c.key).then(list=>{
     const el=document.getElementById('cs-list');if(!el)return;
     if(!list||!list.length){el.innerHTML='<span style="color:var(--sub)">まだ提出がありません（来店時にiPadでご記入いただけます）</span>';return;}
+    // 海外のお客様のシートは、そのお客様の言葉にワンタッチで戻せる（画面を見せながら話せる）
+    const sheetLang=(list.find(x=>x.lang&&x.lang!=='ja')||{}).lang||'';
+    let showLang='ja';
+    const btn=document.getElementById('cs-lang');
+    if(btn&&sheetLang&&window.CS_I18N){
+      const nm=(window.CS_I18N.langs.find(l=>l.code===sheetLang)||{}).label||sheetLang;
+      btn.style.display='inline-block';
+      const paint=()=>{btn.textContent=showLang==='ja'?`${nm}で表示`:'日本語で表示';draw();};
+      btn.onclick=()=>{showLang=showLang==='ja'?sheetLang:'ja';paint();};
+      paint();
+    }
+    function draw(){
+    const CT=v=>(showLang==='ja'||!window.CS_I18N)?v:window.CS_I18N.t(v,showLang);
     el.innerHTML=list.slice(0,3).map(x=>{
       const a=x.answers||{},cn=x.consent||{};
-      const chips=[].concat(a.concern||[],a.history||[],a.body||[]).slice(0,6);
+      const chips=[].concat(a.concern||[],a.history||[],a.body||[]).slice(0,6).map(CT);
       return `<div style="background:${x.voided?'#f6f6f7':'#faf8f4'};border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px${x.voided?';opacity:.6':''}">
         ${x.voided?`<div style="font-size:11px;font-weight:800;color:var(--sub)">取り消し済み${x.void_reason?'（'+escH(x.void_reason)+'）':''}・記録は保管しています</div>`:''}
         <div style="font-weight:800;color:var(--ink)">${x.date?x.date.replace(/-/g,'/'):''}　${x.kind==='spa'?'💆 スパ':'✂️ ヘア'}
+          ${(x.lang&&x.lang!=='ja')?`<span class="rep" style="background:#eef2fb;border-color:#cfdcf3;color:#2b4c86">${escH((window.CS_I18N?(window.CS_I18N.langs.find(l=>l.code===x.lang)||{}).label:'')||x.lang)}で記入</span>`:''}
           ${cn.agreed?'<span class="rep" style="background:#eef7f0;border-color:#c6e6d3;color:#0c7a41">同意済み</span>':''}
           ${x.sign?'<span class="rep">署名あり</span>':''}
           ${consentBadges({photo_policy:(cn.photo===true?'sns':cn.photo)||'',face_ng:cn.faceNg?1:0,voice_policy:cn.voice||''})}</div>
@@ -3576,6 +3596,8 @@ function openCustomer(key){
         ${a.want?`<div style="margin-top:3px">🗣 ${escH(a.want)}</div>`:''}
         ${chips.length?`<div style="margin-top:3px">${chips.map(v=>escH(v)).join('・')}</div>`:''}
       </div>`}).join('');
+    }
+    draw();
   });
   // ---- 施術写真: 認証付きAPIから取得して描画・追加はcanvasで1100pxに圧縮してからD1へ ----
   const kpRender=(photos)=>{
@@ -3645,6 +3667,62 @@ function renderToday(){
 
 /* =============== シフト・営業時間の編集 =============== */
 const fmtShiftDate=k=>{const d=new Date(k);return `${d.getMonth()+1}/${d.getDate()}(${WD[d.getDay()]})`};
+/* この方のまとめを1枚に描く（施術前にここだけ見れば分かる状態にする） */
+function cpRender(cp){
+
+    const el=document.getElementById('cp-box'); if(!el||!cp)return;
+    CP_LAST=cp;
+    const L=v=>({no:'撮影NG',karte:'カルテ用だけ',sns:'SNS・広告OK'})[v]||'—';
+    const langName=(window.CS_I18N?(window.CS_I18N.langs.find(l=>l.code===cp.lang)||{}).label:'')||'';
+    const row=(k,v)=>v?`<div style="display:flex;gap:8px;padding:3px 0"><div style="flex:0 0 96px;font-size:11.5px;font-weight:800;color:var(--sub)">${k}</div><div style="flex:1;font-size:13px">${v}</div></div>`:'';
+    const list=a=>(a&&a.length)?a.map(escH).join('・'):'';
+    el.innerHTML=`<div style="border:1.5px solid var(--accent);border-radius:12px;padding:12px 14px;background:#fffdf8">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <b style="font-size:13.5px">この方のまとめ</b>
+        <span style="font-size:11px;color:var(--sub)">施術前にここだけ見れば分かる形にしています</span>
+        <button class="btn small ghost" id="cp-csv" style="margin-left:auto;padding:2px 8px;font-size:11px">書き出す</button>
+      </div>
+      ${cp.cautions.length?`<div style="background:#fdecec;border:1px solid #f3c9c7;border-radius:8px;padding:7px 10px;color:#b4302b;font-weight:800;font-size:13px;margin-bottom:7px">⚠ ${cp.cautions.map(escH).join(' / ')}</div>`:''}
+      ${row('髪格診断',cp.finder?`<b>${escH(cp.finder.originName||'')}</b>${cp.finder.damageTier?'　ダメージ '+escH(cp.finder.damageTier):''}${cp.finder.mainGoalName?'　目的 '+escH(cp.finder.mainGoalName):''}<span style="color:var(--sub);font-size:11px">（${(cp.finder.savedAt||'').slice(0,10).replace(/-/g,'/')}）</span>`:'<span style="color:var(--sub)">まだ受けていません</span>')}
+      ${row('ご希望',list(cp.profile.concern))}
+      ${row('施術履歴',list(cp.profile.history)+(cp.profile.henna?`　ヘナ:${escH(cp.profile.henna)}`:''))}
+      ${row('お体',list(cp.profile.body))}
+      ${row('頭皮',list(cp.profile.scalp))}
+      ${row('ホームケア',list(cp.profile.care))}
+      ${row('ご要望',cp.wants.length?cp.wants.slice(0,2).map(w=>`${escH(w.text)}<span style="color:var(--sub);font-size:11px">（${w.date.replace(/-/g,'/')}${w.lang!=='ja'?'・'+escH(w.lang):''}）</span>`).join('<br>'):'')}
+      ${row('同意',cp.consent?`📷 ${L(cp.consent.photo)}${cp.consent.faceNg?'（顔なし）':''}　🎥 ${L(cp.consent.video)}　🎙 ${cp.consent.voice==='no'?'AI録音NG':cp.consent.voice==='ok'?'AI録音OK':'—'}`:'')}
+      ${row('記録',`シート ${cp.sheets.length}枚${cp.voidedSheets?`（取り消し ${cp.voidedSheets}）`:''}　写真 ${cp.photos}枚　来店 ${cp.visits}回　累計 ¥${(cp.sales||0).toLocaleString()}${cp.points?`　${cp.points}pt`:''}${(cp.passes||[]).length?`　回数券 ${cp.passes.length}`:''}`)}
+      ${langName&&cp.lang!=='ja'?row('記入言語',`${escH(langName)}（自由記入はお客様の言葉のまま。選択項目は日本語で保存しています）`):''}
+    </div>`;
+    const b=document.getElementById('cp-csv'); if(b)b.onclick=()=>cpCsv(cp);
+  
+}
+
+/* この方のまとめをCSVで書き出す（引き継ぎ・持ち出し用） */
+let CP_LAST=null;
+function cpCsv(cp){
+  if(!cp)return;
+  const L=v=>({no:'撮影NG',karte:'カルテ用だけ',sns:'SNS・広告OK'})[v]||'';
+  const rows=[['項目','内容'],
+    ['お名前',cp.name],['電話',cp.phone],['記入言語',cp.lang],['誕生月',cp.birthday],
+    ['⚠注意',(cp.cautions||[]).join(' / ')],
+    ['髪格診断',cp.finder?[cp.finder.originName,cp.finder.damageTier,cp.finder.mainGoalName,(cp.finder.savedAt||'').slice(0,10)].filter(Boolean).join(' / '):''],
+    ['ご希望',(cp.profile.concern||[]).join('・')],['施術履歴',(cp.profile.history||[]).join('・')],
+    ['ヘナ',cp.profile.henna||''],['お体',(cp.profile.body||[]).join('・')],
+    ['頭皮',(cp.profile.scalp||[]).join('・')],['ホームケア',(cp.profile.care||[]).join('・')],
+    ['写真の同意',L(cp.consent&&cp.consent.photo)+((cp.consent&&cp.consent.faceNg)?'（顔なし）':'')],
+    ['動画の同意',L(cp.consent&&cp.consent.video)],
+    ['音声AIの同意',cp.consent?(cp.consent.voice==='no'?'NG':'OK'):''],
+    ['来店回数',cp.visits],['累計売上',cp.sales],['ポイント',cp.points],['シート枚数',(cp.sheets||[]).length],['写真枚数',cp.photos]];
+  rows.push([]); rows.push(['ご要望（原文）','日付','言語']);
+  (cp.wants||[]).forEach(w=>rows.push([w.text,w.date,w.lang]));
+  rows.push([]); rows.push(['来店履歴','日付','担当','状態']);
+  (cp.reservations||[]).forEach(r=>rows.push(['',r.date,r.staff_id,r.status]));
+  const csv='\ufeff'+rows.map(r=>r.map(v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=`顧客データ_${cp.name||cp.key}.csv`;a.click();
+}
+
 /* =============== カウンセリング集計（毎月のミーティング用） =============== */
 let CST=null, csReady=false;
 const csLbl={no:'撮影しない',karte:'カルテ用だけOK',sns:'SNS・広告もOK'};
@@ -3729,6 +3807,8 @@ function csRender(j){
        <div style="font-weight:800;font-size:13px;margin:12px 0 6px">🎥 動画</div>${csBars(csList(vd),t)}
        <div style="font-weight:800;font-size:13px;margin:12px 0 6px">🎙 音声AIカウンセリング</div>${csBars([{k:'使ってOK',n:vo.ok||0},{k:'使わない',n:vo.no||0}],t)}
        <div style="font-size:12px;color:var(--sub);margin-top:9px">お顔が写らないように、のご希望：${(j.consent||{}).faceNg||0}件</div>`)
+    +(((j.byLang||[]).length>1)?sec('記入された言語','海外のお客様がどれだけ来ているか。接客体制の判断に',
+        csBars((j.byLang||[]).map(x=>({k:({ja:'日本語',en:'English',zh:'简体中文',tw:'繁體中文',ko:'한국어'})[x.k]||x.k,n:x.n})),t)):'')
     +((j.byMonth||[]).length>1?sec('月ごとの枚数','記入していただけた数の推移',csBars(j.byMonth,0,24)):'');
 }
 function csCsv(){

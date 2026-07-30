@@ -12,6 +12,9 @@
 body{margin:0;font-family:'Zen Kaku Gothic New',-apple-system,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.7}
 .wrap{max-width:720px;margin:0 auto;padding:18px 16px 120px}
 header{text-align:center;padding:22px 0 16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+.langbar{display:flex;gap:5px;justify-content:center;margin-bottom:14px;flex-wrap:wrap}
+.lgb{border:1.5px solid var(--line);background:#fff;border-radius:99px;padding:8px 14px;font-size:13px;font-weight:700;color:var(--sub);cursor:pointer;font-family:inherit;min-height:40px}
+.lgb.on{border-color:var(--gold);background:#faf6ee;color:var(--gold)}
 .en{font-family:'Cormorant Garamond',serif;font-size:12px;letter-spacing:.34em;color:var(--gold);font-weight:600}
 h1{font-size:22px;font-weight:700;margin:6px 0 2px;letter-spacing:.04em}
 .lead{font-size:14px;color:var(--sub);font-weight:500}
@@ -41,6 +44,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .agree{display:flex;gap:11px;align-items:flex-start;background:#f7f9f5;border:1.5px solid #d6e2cd;border-radius:12px;padding:14px;margin-top:14px;cursor:pointer}
 .agree input{width:24px;height:24px;margin:2px 0 0;flex:0 0 auto;accent-color:var(--ok)}
 .agree span{font-size:14.5px;font-weight:800;color:#215c39;line-height:1.6}
+.priorbox{border:1.5px solid #cfe3d4;background:#f5faf6;border-radius:14px;padding:14px 16px;margin-bottom:16px}
+.prttl{font-size:14.5px;font-weight:800;color:#215c39}
+.prsum{font-size:15px;font-weight:800;margin-top:4px}
+.prnote{font-size:12.5px;color:var(--sub);font-weight:600;margin-top:4px}
 .optbox{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:13px 12px;background:#fdfcfa}
 .optttl{font-size:14px;font-weight:800;margin-bottom:9px}
 .optttl span{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-top:2px}
@@ -90,12 +97,22 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 <body>
 <div class="wrap" id="app"></div>
 <div class="toast" id="toast"></div>
+<script src="cs-i18n.js"></script>
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';
 const TOK=localStorage.getItem('stb_admin_tok')||'';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast=(m,ng)=>{const t=document.getElementById('toast');t.textContent=m;t.className='toast on'+(ng?' ng':'');setTimeout(()=>t.className='toast',2600)};
 const q=new URLSearchParams(location.search);
+/* 言語：URL ?lang= → この端末の前回選択 → 端末の言語。データは常に日本語で保存する */
+const LANGS=['ja','en','zh','tw','ko'];
+const guessLang=()=>{const n=(navigator.language||'ja').toLowerCase();
+  if(n.startsWith('ja'))return 'ja'; if(n.startsWith('ko'))return 'ko';
+  if(n.startsWith('zh'))return /tw|hk|hant/.test(n)?'tw':'zh'; return 'en';};
+let LANG=(()=>{const u=q.get('lang'); if(LANGS.includes(u))return u;
+  try{const v=localStorage.getItem('stb_cs_lang'); if(LANGS.includes(v))return v;}catch(e){}
+  return guessLang();})();
+const T=ja=>window.CS_I18N?window.CS_I18N.t(ja,LANG):ja;
 /* 店舗ごとに出す/出さないを管理画面で切り替える（settingsテーブル）
    既定=写真ONのみ。動画と音声AIは端末・環境で差が出るので、使うお店だけONにする */
 let OPT={photo:true,video:false,voice:false};
@@ -109,148 +126,167 @@ const chips=(key,items,multi)=>{
   if(multi&&!Array.isArray(S.a[key]))S.a[key]=[];
   return `<div class="chips">${items.map(v=>{
     const on=multi?S.a[key].includes(v):S.a[key]===v;
-    return `<label class="chip ${on?'on':''}" data-k="${key}" data-v="${esc(v)}" data-m="${multi?1:0}">${esc(v)}</label>`}).join('')}</div>`;
+    /* data-v は日本語のまま＝保存されるデータは常に日本語。見える文字だけ訳す */
+    return `<label class="chip ${on?'on':''}" data-k="${key}" data-v="${esc(v)}" data-m="${multi?1:0}">${esc(T(v))}</label>`}).join('')}</div>`;
 };
 
 function render(){
   const spa=S.kind==='spa';
+  /* 髪格診断の結果がある場合は、診断で聞いている項目を省く（同じことを二度聞かない）
+     省かないもの＝お体のこと（診断は医療系を聞いていない）・ヘナ（診断に項目がない）・同意・署名 */
+  const skip=!!PRIOR;
+  let _n=0; const N=()=>++_n;
   document.getElementById('app').innerHTML=`
   <header>
+    <div class="langbar">${LANGS.map(l=>`<button class="lgb ${LANG===l?'on':''}" data-lang="${l}">${
+      ({ja:'日本語',en:'English',zh:'简体',tw:'繁體',ko:'한국어'})[l]}</button>`).join('')}</div>
     <div class="en">S E A M　G I N Z A</div>
-    <h1>カウンセリングシート・同意書</h1>
-    <div class="lead">はじめに、いくつか教えてください（2〜3分で終わります）</div>
+    <h1>${T('カウンセリングシート・同意書')}</h1>
+    <div class="lead">${T('はじめに、いくつか教えてください（2〜3分で終わります）')}</div>
   </header>
 
+  ${PRIOR?`<div class="priorbox">
+    <div class="prttl">✓ ${T('髪格診断の結果をお預かりしています')}</div>
+    <div class="prsum">${esc([PRIOR.originName,PRIOR.damageTier?('ダメージ '+PRIOR.damageTier):'',PRIOR.mainGoalName].filter(Boolean).join(' ／ '))}</div>
+    <div class="prnote">${T('診断で伺った内容は、この用紙では重ねてお聞きしません')}</div>
+  </div>`:''}
+
   <div class="card">
-    <h2><i>1</i>お客様について</h2>
-    <div class="h2sub">お名前とご連絡先を教えてください</div>
-    <label class="f">お名前<em>必須</em></label>
-    <input type="text" id="f-name" value="${esc(S.name)}" placeholder="例）山田 花子">
-    <label class="f">電話番号<span>ご予約の確認に使います</span></label>
-    <input type="tel" id="f-phone" inputmode="tel" value="${esc(S.phone)}" placeholder="例）09012345678">
-    <label class="f">お誕生月<span>任意・お祝いのご案内に使います</span></label>
+    <h2><i>${N()}</i>${T('お客様について')}</h2>
+    <div class="h2sub">${T('お名前とご連絡先を教えてください')}</div>
+    <label class="f">${T('お名前')}<em>${T('必須')}</em></label>
+    <input type="text" id="f-name" value="${esc(S.name)}" placeholder="${T('例）山田 花子')}">
+    <label class="f">${T('電話番号')}<span>${T('ご予約の確認に使います')}</span></label>
+    <input type="tel" id="f-phone" inputmode="tel" value="${esc(S.phone)}" placeholder="${T('例）09012345678')}">
+    <label class="f">${T('お誕生月')}<span>${T('任意・お祝いのご案内に使います')}</span></label>
     <select id="f-bmonth">${['',1,2,3,4,5,6,7,8,9,10,11,12].map(m=>`<option value="${m}" ${String(m)===String(S.a.birthMonth||'')?'selected':''}>${m?m+'月':'—'}</option>`).join('')}</select>
   </div>
 
   <div class="card">
-    <h2><i>2</i>今日のご希望</h2>
-    <div class="h2sub">どちらのご利用ですか</div>
+    <h2><i>${N()}</i>${T('今日のご希望')}</h2>
+    <div class="h2sub">${T('どちらのご利用ですか')}</div>
     <div class="seg">
-      <button data-kind="hair" class="${!spa?'on':''}">✂️ ヘア</button>
-      <button data-kind="spa" class="${spa?'on':''}">💆 ヘッドスパ</button>
+      <button data-kind="hair" class="${!spa?'on':''}">${T('✂️ ヘア')}</button>
+      <button data-kind="spa" class="${spa?'on':''}">${T('💆 ヘッドスパ')}</button>
     </div>
-    <label class="f">今日はどうされたいですか<span>いくつでも</span></label>
-    ${chips('concern',spa
+    ${skip?'':`<label class="f">${T('今日はどうされたいですか')}<span>${T('いくつでも')}</span></label>`+chips('concern',spa
       ?['頭が重い・かたい','首や肩がつらい','よく眠れない','頭皮のかゆみ','頭皮のにおい','抜け毛が気になる','ふけが出る','とにかくリラックスしたい']
       :['伸びたので整えたい','白髪を目立たなくしたい','明るくしたい','ツヤを出したい','広がりを抑えたい','くせを伸ばしたい','ダメージを直したい','ボリュームを出したい','イメージを変えたい'],true)}
-    <label class="f">なりたいイメージ・ご要望<span>自由にお書きください</span></label>
-    <textarea id="f-want" placeholder="${spa?'例）強めに揉んでほしい／眠ってしまっても大丈夫です':'例）肩につくくらいの長さで、明るすぎない茶色にしたい'}">${esc(S.a.want||'')}</textarea>
+    <label class="f">${T('なりたいイメージ・ご要望')}<span>${T('自由にお書きください')}</span></label>
+    <textarea id="f-want" placeholder="${T(spa?'例）強めに揉んでほしい／眠ってしまっても大丈夫です':'例）肩につくくらいの長さで、明るすぎない茶色にしたい')}">${esc(S.a.want||'')}</textarea>
   </div>
 
-  ${spa?`
+  ${skip?`
   <div class="card">
-    <h2><i>3</i>頭皮の状態</h2>
-    <div class="h2sub">今の状態を教えてください</div>
-    <label class="f">当てはまるもの<span>いくつでも</span></label>
+    <h2><i>${N()}</i>${T('ひとつだけ確認させてください')}</h2>
+    <div class="h2sub">${T('診断では伺っていない項目です')}</div>
+    <label class="f">${T('ヘナ（植物染め）を使ったことはありますか')}<span>${T('薬剤の相性に関わるため必ず確認します')}</span></label>
+    ${chips('henna',['ある（1年以内）','ある（1年以上前）','ない・わからない'],false)}
+  </div>`:(spa?`
+  <div class="card">
+    <h2><i>${N()}</i>${T('頭皮の状態')}</h2>
+    <div class="h2sub">${T('今の状態を教えてください')}</div>
+    <label class="f">${T('当てはまるもの')}<span>${T('いくつでも')}</span></label>
     ${chips('scalp',['乾燥しやすい','脂っぽい','日焼けしている','傷やかさぶたがある','市販の育毛剤を使っている','皮膚科に通っている','とくにない'],true)}
-    <label class="f">シャンプーの回数</label>
+    <label class="f">${T('シャンプーの回数')}</label>
     ${chips('wash',['毎日1回','毎日2回','2日に1回','それ以上あける'],false)}
   </div>`:`
   <div class="card">
-    <h2><i>3</i>これまでの施術</h2>
-    <div class="h2sub">薬剤を安全に選ぶために、とても大切な項目です</div>
-    <label class="f">1年以内にしたこと<span>いくつでも</span></label>
+    <h2><i>${N()}</i>${T('これまでの施術')}</h2>
+    <div class="h2sub">${T('薬剤を安全に選ぶために、とても大切な項目です')}</div>
+    <label class="f">${T('1年以内にしたこと')}<span>${T('いくつでも')}</span></label>
     ${chips('history',['ブリーチ（脱色）','ハイライト','縮毛矯正','パーマ','黒染め','ヘナ','セルフカラー','とくにない'],true)}
-    <label class="f">前回のカラーはいつ頃ですか</label>
+    <label class="f">${T('前回のカラーはいつ頃ですか')}</label>
     ${chips('lastColor',['1か月以内','2〜3か月前','半年以上前','していない'],false)}
-    <label class="f">前回の縮毛矯正・パーマはいつ頃ですか</label>
+    <label class="f">${T('前回の縮毛矯正・パーマはいつ頃ですか')}</label>
     ${chips('lastPerm',['3か月以内','半年以内','1年以上前','していない'],false)}
-    <div class="warn">⚠️ <b>ブリーチ・黒染め・ヘナ・セルフカラー</b>の履歴は、次の施術の仕上がりに大きく影響します。思い出せる範囲でかまいませんので、あてはまるものを選んでください。</div>
+    <div class="warn">⚠️ <b>${T('ブリーチ・黒染め・ヘナ・セルフカラー')}</b>${T('の履歴は、次の施術の仕上がりに大きく影響します。思い出せる範囲でかまいませんので、あてはまるものを選んでください。')}</div>
+  </div>`)}
+
+  <div class="card">
+    <h2><i>${N()}</i>${T('お体のこと')}</h2>
+    <div class="h2sub">${T('安全に施術するために確認しています')}</div>
+    <label class="f">${T('当てはまるもの')}<span>${T('いくつでも')}</span></label>
+    ${chips('body',['アレルギーがある','肌が弱い・敏感肌','薬でかゆくなったことがある','妊娠中・産後','通院中','首や肩を痛めている','とくにない'],true)}
+    <label class="f">${T('アレルギー・気をつけてほしいこと')}<span>${T('あればお書きください')}</span></label>
+    <textarea id="f-caution" placeholder="${T('例）ジアミンでかゆくなったことがある／首を反らすのがつらい')}">${esc(S.a.caution||'')}</textarea>
+    <div class="warn">${T('パッチテストをご希望の場合はスタッフにお伝えください。少しでも不安があるときは、施術内容を一緒に見直します。')}</div>
+  </div>
+
+  ${skip?'':`
+  <div class="card">
+    <h2><i>${N()}</i>${T('おうちでのお手入れ')}</h2>
+    <div class="h2sub">${T('ご自宅のケアに合わせてご提案します')}</div>
+    <label class="f">${T('使っているもの')}<span>${T('いくつでも')}</span></label>
+    ${chips('care',['サロンのシャンプー','市販のシャンプー','トリートメント','洗い流さないオイル','ドライヤーだけ','アイロン・コテを使う','とくになし'],true)}
   </div>`}
 
   <div class="card">
-    <h2><i>4</i>お体のこと</h2>
-    <div class="h2sub">安全に施術するために確認しています</div>
-    <label class="f">当てはまるもの<span>いくつでも</span></label>
-    ${chips('body',['アレルギーがある','肌が弱い・敏感肌','薬でかゆくなったことがある','妊娠中・産後','通院中','首や肩を痛めている','とくにない'],true)}
-    <label class="f">アレルギー・気をつけてほしいこと<span>あればお書きください</span></label>
-    <textarea id="f-caution" placeholder="例）ジアミンでかゆくなったことがある／首を反らすのがつらい">${esc(S.a.caution||'')}</textarea>
-    <div class="warn">パッチテストをご希望の場合はスタッフにお伝えください。少しでも不安があるときは、施術内容を一緒に見直します。</div>
-  </div>
-
-  <div class="card">
-    <h2><i>5</i>おうちでのお手入れ</h2>
-    <div class="h2sub">ご自宅のケアに合わせてご提案します</div>
-    <label class="f">使っているもの<span>いくつでも</span></label>
-    ${chips('care',['サロンのシャンプー','市販のシャンプー','トリートメント','洗い流さないオイル','ドライヤーだけ','アイロン・コテを使う','とくになし'],true)}
-  </div>
-
-  <div class="card">
-    <h2><i>6</i>ご確認とご同意</h2>
-    <div class="h2sub">下記をお読みいただき、ご同意のうえチェックをお願いします</div>
+    <h2><i>${N()}</i>${T('ご確認とご同意')}</h2>
+    <div class="h2sub">${T('下記をお読みいただき、ご同意のうえチェックをお願いします')}</div>
     <div class="consent">
       <ol>
-        <li><b>施術の仕上がりについて</b><br>髪の状態や履歴（ブリーチ・黒染め・ヘナなど）によって、ご希望の色や形にならない場合があります。その場合は事前にご説明し、一緒に方法を考えます。</li>
-        <li><b>薬剤について</b><br>カラー・パーマ・縮毛矯正の薬剤は、まれに かゆみ・赤み・かぶれ が起こることがあります。過去に異常があった方、不安のある方はお申し出ください。施術中に異常を感じたら、すぐにお知らせください。</li>
-        <li><b>健康状態について</b><br>アレルギー・通院・妊娠中などをお申し出いただかなかった場合、体調の変化に対応できないことがあります。必ずお知らせください。</li>
-        <li><b>お荷物・貴重品</b><br>貴重品はお手元でお預かりください。店内でのお忘れ物・紛失について、当店で管理していないものはお預かりの責任を負えない場合があります。</li>
-        <li><b>キャンセル・ご遅刻</b><br>2日前まで無料／前日は料金の25%／当日は50%／無断キャンセルは当店に生じた損害の範囲までを頂戴します。10分以上遅れる場合はご連絡ください。内容を短縮させていただくことがあります。</li>
-        ${OPT.voice?`<li><b>音声AIカウンセリング</b><br>ご要望の聞き違いを防ぐため、カウンセリングの会話をAIが文字にして記録することがあります。使うのは<b>ご要望とカルテの記録のためだけ</b>です。第三者に渡すことはありません。ご希望でなければ使いません（スタッフが手で記録します）。下の「音声AIカウンセリング」でお選びください。</li>`:''}
-        <li><b>個人情報の取り扱いと保管</b><br>いただいた情報は、施術・ご予約の管理・ご連絡のためだけに使います。法律で必要な場合を除き、第三者に渡すことはありません。<br>このシートと同意書は、<b>次回以降の施術を安全に行うため、また万一のときにお互いの記録として</b>、一定期間そのまま保管します。お取り扱いについてご不安な点は、いつでもスタッフにお尋ねください。</li>
+        <li><b>${T('施術の仕上がりについて')}</b><br>${T('髪の状態や履歴（ブリーチ・黒染め・ヘナなど）によって、ご希望の色や形にならない場合があります。その場合は事前にご説明し、一緒に方法を考えます。')}</li>
+        <li><b>${T('薬剤について')}</b><br>${T('カラー・パーマ・縮毛矯正の薬剤は、まれに かゆみ・赤み・かぶれ が起こることがあります。過去に異常があった方、不安のある方はお申し出ください。施術中に異常を感じたら、すぐにお知らせください。')}</li>
+        <li><b>${T('健康状態について')}</b><br>${T('アレルギー・通院・妊娠中などをお申し出いただかなかった場合、体調の変化に対応できないことがあります。必ずお知らせください。')}</li>
+        <li><b>${T('お荷物・貴重品')}</b><br>${T('貴重品はお手元でお預かりください。店内でのお忘れ物・紛失について、当店で管理していないものはお預かりの責任を負えない場合があります。')}</li>
+        <li><b>${T('キャンセル・ご遅刻')}</b><br>${T('2日前まで無料／前日は料金の25%／当日は50%／無断キャンセルは当店に生じた損害の範囲までを頂戴します。10分以上遅れる場合はご連絡ください。内容を短縮させていただくことがあります。')}</li>
+        ${OPT.voice?`<li><b>${T('音声AIカウンセリング')}</b><br>${T('ご要望の聞き違いを防ぐため、カウンセリングの会話をAIが文字にして記録することがあります。使うのは')}<b>${T('ご要望とカルテの記録のためだけ')}</b>${T('です。第三者に渡すことはありません。ご希望でなければ使いません（スタッフが手で記録します）。下の「音声AIカウンセリング」でお選びください。')}</li>`:''}
+        <li><b>${T('個人情報の取り扱いと保管')}</b><br>${T('いただいた情報は、施術・ご予約の管理・ご連絡のためだけに使います。法律で必要な場合を除き、第三者に渡すことはありません。')}<br>${T('このシートと同意書は、')}<b>${T('次回以降の施術を安全に行うため、また万一のときにお互いの記録として')}</b>${T('、一定期間そのまま保管します。お取り扱いについてご不安な点は、いつでもスタッフにお尋ねください。')}</li>
       </ol>
     </div>
-    <label class="agree"><input type="checkbox" id="c-agree" ${S.c.agreed?'checked':''}><span>上記の内容を読み、理解しました。この内容で施術をお願いします</span></label>
+    <label class="agree"><input type="checkbox" id="c-agree" ${S.c.agreed?'checked':''}><span>${T('上記の内容を読み、理解しました。この内容で施術をお願いします')}</span></label>
 
     ${OPT.photo?`<div class="optbox">
-      <div class="optttl">📷 お写真について<span>どれか1つお選びください・いつでも変更できます</span></div>
+      <div class="optttl">${T('📷 お写真について')}<span>${T('どれか1つお選びください・いつでも変更できます')}</span></div>
       ${[['no','撮影しないでください','お写真は一切お撮りしません'],
          ['karte','カルテ用だけ OK','お店の記録として残します。外には出しません'],
          ['sns','SNS・ホームページ・広告にも使って OK','カルテ用の記録も兼ねます']]
         .map(([v,t,d])=>`<label class="pick ${S.c.photo===v?'on':''}" data-photo="${v}">
-          <span class="dot"></span><span class="pt"><b>${t}</b><i>${d}</i></span></label>`).join('')}
-      <label class="sub" id="facewrap" ${S.c.photo==='sns'?'':'hidden'}><input type="checkbox" id="c-facing" ${S.c.faceNg?'checked':''}><span>お顔が写らないようにしてください</span></label>
+          <span class="dot"></span><span class="pt"><b>${T(t)}</b><i>${T(d)}</i></span></label>`).join('')}
+      <label class="sub" id="facewrap" ${S.c.photo==='sns'?'':'hidden'}><input type="checkbox" id="c-facing" ${S.c.faceNg?'checked':''}><span>${T('お顔が写らないようにしてください')}</span></label>
     </div>`:''}
 
     ${OPT.video?`<div class="optbox">
-      <div class="optttl">🎥 動画の撮影について<span>リール・ショート動画などに使わせていただく場合があります</span></div>
+      <div class="optttl">${T('🎥 動画の撮影について')}<span>${T('リール・ショート動画などに使わせていただく場合があります')}</span></div>
       ${[['no','動画は撮影しないでください',''],
          ['karte','記録用だけ OK','お店の中だけで使います。外には出しません'],
          ['sns','SNS・広告にも使って OK','リール／ショート等']]
         .map(([v,t,d])=>`<label class="pick ${S.c.video===v?'on':''}" data-video="${v}">
-          <span class="dot"></span><span class="pt"><b>${t}</b>${d?`<i>${d}</i>`:''}</span></label>`).join('')}
+          <span class="dot"></span><span class="pt"><b>${T(t)}</b>${d?`<i>${T(d)}</i>`:''}</span></label>`).join('')}
     </div>`:''}
 
     ${OPT.voice?`<div class="optbox">
-      <div class="optttl">🎙 音声AIカウンセリング<span>ご要望の聞き違いを防ぐために使います</span></div>
+      <div class="optttl">${T('🎙 音声AIカウンセリング')}<span>${T('ご要望の聞き違いを防ぐために使います')}</span></div>
       ${[['ok','使って OK','会話をAIが文字にして、ご要望の記録に使います'],
          ['no','使わないでください','スタッフが手で記録します']]
         .map(([v,t,d])=>`<label class="pick ${S.c.voice===v?'on':''}" data-voice="${v}">
-          <span class="dot"></span><span class="pt"><b>${t}</b><i>${d}</i></span></label>`).join('')}
+          <span class="dot"></span><span class="pt"><b>${T(t)}</b><i>${T(d)}</i></span></label>`).join('')}
     </div>`:''}
   </div>
 
   <div class="card">
-    <h2><i>7</i>ご署名</h2>
-    <div class="h2sub">指またはペンで、下の枠にお名前をお書きください</div>
+    <h2><i>${N()}</i>${T('ご署名')}</h2>
+    <div class="h2sub">${T('指またはペンで、下の枠にお名前をお書きください')}</div>
     <div id="signwrap">
       <canvas id="sign"></canvas>
-      <div class="signhint" id="signhint">ここにご署名ください</div>
+      <div class="signhint" id="signhint">${T('ここにご署名ください')}</div>
     </div>
     <div class="signbar">
       <span style="font-size:12.5px;color:var(--sub);font-weight:600">${new Date().toLocaleDateString('ja-JP')}</span>
-      <button class="mini" id="signclear">書き直す</button>
+      <button class="mini" id="signclear">${T('書き直す')}</button>
     </div>
   </div>
 
   ${TOK?'':`<div class="card nopr" style="border-color:#f0d9b8;background:#fff8f0">
-    <h2 style="font-size:15px"><i>⚙</i>スタッフの初期設定（この端末で1回だけ）</h2>
-    <div class="h2sub" style="margin-left:35px">保存先につなぐため、管理トークンを入力してください。次回からは不要です</div>
-    <div class="row2"><input type="password" id="f-tok" placeholder="管理トークン"><button class="mini" id="tokgo" style="flex:0 0 110px">保存する</button></div>
+    <h2 style="font-size:15px"><i>⚙</i>${T('スタッフの初期設定（この端末で1回だけ）')}</h2>
+    <div class="h2sub" style="margin-left:35px">${T('保存先につなぐため、管理トークンを入力してください。次回からは不要です')}</div>
+    <div class="row2"><input type="password" id="f-tok" placeholder="${T('管理トークン')}"><button class="mini" id="tokgo" style="flex:0 0 110px">${T('保存する')}</button></div>
   </div>`}
 
   <div class="bar">
-    <button class="btn pr" id="doprint">🖨 印刷</button>
-    <button class="btn go" id="dosave">この内容で提出する</button>
+    <button class="btn pr" id="doprint">${T('🖨 印刷')}</button>
+    <button class="btn go" id="dosave">${T('この内容で提出する')}</button>
   </div>`;
   wire();
 }
@@ -284,6 +320,11 @@ function wire(){
       if(fw)fw.hidden=(S.c.photo!=='sns');}
   });
   pickSet('data-photo','photo'); pickSet('data-video','video'); pickSet('data-voice','voice');
+  document.querySelectorAll('[data-lang]').forEach(b=>b.onclick=()=>{
+    keep(); LANG=b.dataset.lang; try{localStorage.setItem('stb_cs_lang',LANG)}catch(e){}
+    document.documentElement.lang=(LANG==='tw'?'zh-Hant':LANG==='zh'?'zh-Hans':LANG);
+    render();                                  // 署名はS.signから復元されるので消えない
+  });
   initSign();
   {const tg=document.getElementById('tokgo');
    if(tg)tg.onclick=async()=>{
@@ -335,6 +376,9 @@ function initSign(){
    結果は提出済みシートへ自動で紐付ける（スタッフの手を介さない）。
    共有iPadなので、紐付けたら端末に残った診断結果は消す。 */
 let CSID='';
+/* 髪格診断の結果を既に持っている場合、診断で聞いている質問はシートで重ねて聞かない
+   （お客様に同じことを二度聞かない。finderが聞いていない医療系とヘナだけは必ず残す） */
+let PRIOR=null;
 const FROM_ADMIN=q.get('from')==='admin';
 const OPENED_AT=Date.now();
 const readKarte=()=>{try{return JSON.parse(localStorage.getItem('seam_karte_last')||'null')}catch(e){return null}};
@@ -344,16 +388,16 @@ function doneScreen(msg){
   document.querySelector('.bar')&&document.querySelector('.bar').remove();
   document.getElementById('app').innerHTML=`<div class="done">
     <div class="ic">✓</div>
-    <h1 style="font-size:21px">ありがとうございました</h1>
-    <p style="color:var(--sub);font-size:14.5px;margin-top:8px">${msg||'スタッフがすぐに確認いたします<br>本日はどうぞゆっくりお過ごしください'}</p>
+    <h1 style="font-size:21px">${T('ありがとうございました')}</h1>
+    <p style="color:var(--sub);font-size:14.5px;margin-top:8px">${msg||(T('スタッフがすぐに確認いたします')+'<br>'+T('本日はどうぞゆっくりお過ごしください'))}</p>
     ${CSID?`<div class="nextbox">
-      <div class="nxttl">お待ちの間に、もうひとつ</div>
-      <div class="nxsub">かんたんな質問にお答えいただくと、髪質のタイプと今いちばん必要なケアが分かります。<br>結果はそのまま担当者に届くので、カウンセリングが早く深くなります</div>
-      <button class="btn go" id="gofinder" style="width:100%;min-height:56px;border-radius:12px">髪格診断をはじめる（3分ほど）</button>
-      <div class="nxnote">任意です。途中でやめても大丈夫です</div>
+      <div class="nxttl">${T('お待ちの間に、もうひとつ')}</div>
+      <div class="nxsub">${T('かんたんな質問にお答えいただくと、髪質のタイプと今いちばん必要なケアが分かります。')}<br>${T('結果はそのまま担当者に届くので、カウンセリングが早く深くなります')}</div>
+      <button class="btn go" id="gofinder" style="width:100%;min-height:56px;border-radius:12px">${T('髪格診断をはじめる（3分ほど）')}</button>
+      <div class="nxnote">${T('任意です。途中でやめても大丈夫です')}</div>
     </div>`:''}
-    <button class="mini" style="margin-top:20px" onclick="location.href=location.pathname${FROM_ADMIN?"+'?from=admin'":''}">次のお客様へ</button>
-    ${FROM_ADMIN?`<button class="mini" style="margin-top:8px" onclick="location.href='./'">受付の画面にもどる</button>`:''}
+    <button class="mini" style="margin-top:20px" onclick="location.href=location.pathname${FROM_ADMIN?"+'?from=admin'":''}">${T('次のお客様へ')}</button>
+    ${FROM_ADMIN?`<button class="mini" style="margin-top:8px" onclick="location.href='./'">${T('受付の画面にもどる')}</button>`:''}
   </div>`;
   const gf=document.getElementById('gofinder'); if(gf)gf.onclick=openFinder;
 }
@@ -363,10 +407,10 @@ function openFinder(){
   const base=Date.now();
   const ov=document.createElement('div'); ov.id='fov';
   ov.innerHTML=`<div class="fovbar">
-      <span>髪格診断</span>
-      <button class="mini" id="fovclose">とじる</button>
+      <span>${T('髪格診断')}</span>
+      <button class="mini" id="fovclose">${T('とじる')}</button>
     </div>
-    <iframe src="/finder?src=salon" title="髪格診断"></iframe>`;
+    <iframe src="/finder?src=salon&lang=${LANG}" title="髪格診断"></iframe>`;
   document.body.appendChild(ov);
   document.getElementById('fovclose').onclick=()=>{clearInterval(t);ov.remove();};
   // 診断が終わると finder が端末に結果を書くので、それを見て取り込む
@@ -396,32 +440,47 @@ async function attachFinder(k){
 
 async function save(){
   keep();
-  if(!S.name){toast('お名前をご記入ください',true);document.getElementById('f-name').focus();return;}
-  if(!S.c.agreed){toast('同意のチェックをお願いします',true);document.getElementById('c-agree').scrollIntoView({block:'center'});return;}
-  if(!S.sign){toast('ご署名をお願いします',true);document.getElementById('sign').scrollIntoView({block:'center'});return;}
-  const btn=document.getElementById('dosave');btn.disabled=true;btn.textContent='送信中…';
+  if(!S.name){toast(T('お名前をご記入ください'),true);document.getElementById('f-name').focus();return;}
+  if(PRIOR)S.a.priorFinder={originName:PRIOR.originName,damageTier:PRIOR.damageTier,mainGoalName:PRIOR.mainGoalName,savedAt:PRIOR.savedAt};
+  if(!S.c.agreed){toast(T('同意のチェックをお願いします'),true);document.getElementById('c-agree').scrollIntoView({block:'center'});return;}
+  if(!S.sign){toast(T('ご署名をお願いします'),true);document.getElementById('sign').scrollIntoView({block:'center'});return;}
+  const btn=document.getElementById('dosave');btn.disabled=true;btn.textContent=T('送信中…');
   try{
     const r=await fetch(API+'/counseling',{method:'POST',
       headers:{'Content-Type':'application/json',...(TOK?{'Authorization':'Bearer '+TOK}:{})},
-      body:JSON.stringify({name:S.name,phone:S.phone,kind:S.kind,answers:S.a,consent:S.c,sign:S.sign,date:new Date().toISOString().slice(0,10)})});
+      body:JSON.stringify({name:S.name,phone:S.phone,kind:S.kind,lang:LANG,answers:S.a,consent:S.c,sign:S.sign,date:new Date().toISOString().slice(0,10)})});
     const j=await r.json();
     if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
     CSID=j.id; try{localStorage.setItem('stb_cs_last',j.id)}catch(e){}
     doneScreen();
   }catch(e){
-    btn.disabled=false;btn.textContent='この内容で提出する';
+    btn.disabled=false;btn.textContent=T('この内容で提出する');
     toast(String(e.message).includes('401')?'管理ログインが必要です（スタッフにお伝えください）':'送信できませんでした: '+e.message,true);
   }
 }
 render();
-/* 店舗設定（表示する同意項目）を読み込んで反映。読めなくても既定で動く */
+/* 起動時：店舗設定（出す同意項目）と、このお客様の髪格診断の有無をまとめて読み込む */
 (async()=>{ if(!TOK)return;
   try{const r=await fetch(API+'/settings',{headers:{'Authorization':'Bearer '+TOK}});
-    if(!r.ok)return; const j=await r.json(); const g=j.settings||j||{};
-    const on=(k,def)=>g[k]==null||g[k]===''?def:(g[k]==='1'||g[k]===1||g[k]===true);
-    OPT={photo:on('csPhoto',true),video:on('csVideo',false),voice:on('csVoice',false)};
-    render();
+    if(r.ok){const j=await r.json(); const g=j.settings||j||{};
+      const on=(k,def)=>g[k]==null||g[k]===''?def:(g[k]==='1'||g[k]===1||g[k]===true);
+      OPT={photo:on('csPhoto',true),video:on('csVideo',false),voice:on('csVoice',false)};}
   }catch(e){}
+  // 電話番号が分かっているときだけ、過去のシートから髪格診断の結果を探す
+  // （半年以内のものを有効とする。古すぎる診断で質問を省くのは危ないので聞き直す）
+  const ph=(S.phone||'').replace(/[^0-9]/g,'');
+  if(ph){
+    try{const r=await fetch(API+'/counseling?key='+encodeURIComponent(ph),{headers:{'Authorization':'Bearer '+TOK}});
+      if(r.ok){const j=await r.json();
+        for(const x of (j.sheets||[])){
+          const f=x.answers&&x.answers.finder;
+          if(!f||!f.savedAt)continue;
+          if(Date.now()-new Date(f.savedAt).getTime()>180*86400000)continue;
+          PRIOR=f; break;
+        }}
+    }catch(e){}
+  }
+  render();
 })();
 window.addEventListener('resize',()=>{const s=S.sign;initSign();S.sign=s;});
 </script>
