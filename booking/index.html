@@ -580,6 +580,14 @@ td.slot:hover{background:#f0f7ff}
 .prod-form #pf-price,.prod-form #pf-stock{width:100px}
 .prod-form #pf-barcode{flex:1;min-width:150px}
 /* ── 棚卸し（現場は読むだけ・数字は大きく） ── */
+.rows-shop{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.rs-row{display:grid;grid-template-columns:1fr 62px 40px 40px;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+.rs-row:last-child{border-bottom:none}
+.rs-row.me{background:#f7fbff}
+.rs-row.me i{font-style:normal;font-size:10.5px;font-weight:800;color:var(--accent);margin-left:7px}
+.rs-row b{text-align:right;font-size:18px;font-variant-numeric:tabular-nums}
+.rs-row b.zero{color:var(--sub);font-weight:600}
+.rs-row.total{background:var(--wash,#f4f6f8);font-weight:800}
 .st-scanwrap{display:flex;gap:8px;align-items:center}
 #st-scan{flex:1;border:2px solid var(--accent);border-radius:10px;padding:14px 14px;font-size:17px;font-weight:700;min-height:54px}
 #st-scan:focus{outline:none;box-shadow:0 0 0 3px rgba(138,106,47,.15)}
@@ -621,6 +629,16 @@ td.slot:hover{background:#f0f7ff}
 .pr-del{border:none;background:none;color:#c3ccd6;font-size:14px;cursor:pointer;flex:0 0 auto}
 .pr-del:hover{color:var(--danger)}
 .pr-lowbadge{font-size:11px;font-weight:800;color:var(--danger);background:#fdeaea;border-radius:99px;padding:2px 10px;margin-left:8px}
+.co-rq{width:58px;border:1.5px solid var(--line);border-radius:8px;padding:7px 6px;font-size:14px;text-align:right}
+.co-ru{font-size:11.5px;color:var(--sub);white-space:nowrap}
+.co-cash{margin-top:10px;background:#f7fbff;border:1px solid var(--accent2);border-radius:10px;padding:11px 12px}
+.co-quick{display:flex;gap:6px;margin:7px 0;flex-wrap:wrap}
+.co-quick button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:800;color:var(--navy)}
+.co-change{display:flex;align-items:baseline;gap:10px;font-size:14px;font-weight:800}
+.co-change b{margin-left:auto;font-size:22px;font-variant-numeric:tabular-nums}
+.co-change.ng b{color:var(--sub)}
+.co-change.ok b{color:var(--ok)}
+.co-change i{font-style:normal;font-size:12px;color:#b4302b;font-weight:700}
 .co-scan-row{margin-bottom:8px}
 .co-scan-row input{width:100%;border:1.5px solid var(--accent2);border-radius:9px;padding:9px 11px;font-size:13.5px;background:#f7fbff}
 .co-scan-row input:focus{border-color:var(--accent);outline:none}
@@ -1103,8 +1121,17 @@ body.customer .phone.spa{background:#f7f8f3}
   <h2>商品・在庫</h2>
   <p class="lead">店販商品を登録すると、お会計でバーコード読み取り／一覧から選べ、在庫が自動で減ります</p>
 
+  <!-- どの店舗の在庫を扱うか。端末ごとに覚える（銀座のiPadは銀座） -->
+  <div class="card" id="shopBar" style="margin-bottom:14px"></div>
+
   <!-- 棚卸し：現場は「読むだけ」。数えている間は理論在庫を見せない（数字に引っ張られないため） -->
   <div class="card" id="stCard" style="margin-bottom:14px"></div>
+
+  <!-- 店舗間の在庫移動（たまに使う） -->
+  <details class="fold" style="margin-bottom:14px">
+    <summary>🚚 店舗間で在庫を移す</summary>
+    <div class="card" id="mvCard" style="border-radius:0 0 12px 12px;border-top:none"></div>
+  </details>
 
   <details class="fold" style="margin-bottom:14px">
     <summary>📥 商品をまとめて取り込む（CSV）</summary>
@@ -1130,6 +1157,11 @@ body.customer .phone.spa{background:#f7f8f3}
       <input id="pf-stock" type="number" inputmode="numeric" placeholder="在庫数">
       <button class="btn pay" id="pf-add">追加</button>
     </div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <input id="prod-search" placeholder="🔎 バーコードを読む／商品名で探す" autocomplete="off"
+      style="width:100%;border:1.5px solid var(--accent2);border-radius:10px;padding:11px 13px;font-size:15px;background:#f7fbff">
+    <div id="prod-count" style="font-size:12px;color:var(--sub);margin-top:6px"></div>
   </div>
   <div id="productsbody"></div>
 </section>
@@ -1303,6 +1335,14 @@ let POS_MODE=(()=>{try{const v=localStorage.getItem('stb_pos_mode');if(v==='shop
 /* サロンとショップでレジを分けるか。多くのサロンは同じ場所で会計するので既定はOFF。
    分けている店（SEAM 銀座のようにショップが独立している店）だけONにする。 */
 const posSplit=()=>stg('posSplit','0')==='1';
+/* この端末がどの店舗のものか。在庫はこの店舗に対して増減する。
+   免税は銀座と同じ在庫なので、銀座を選んでおけばよい。 */
+let SHOPS=[];
+let SHOP_ID=(()=>{try{return localStorage.getItem('stb_shop')||'ginza'}catch(e){return 'ginza'}})();
+const shopName=(id)=>((SHOPS.find(s=>s.id===(id||SHOP_ID))||{}).name)||id||SHOP_ID;
+function setShop(id){SHOP_ID=id;try{localStorage.setItem('stb_shop',id)}catch(e){}
+  renderProducts();toast(shopName(id)+'の在庫を扱います');}
+async function loadShops(){const j=await API.shops();if(j&&j.shops&&j.shops.length)SHOPS=j.shops;return SHOPS;}
 const isShop=()=>posSplit()&&POS_MODE==='shop';
 function setPosMode(m){POS_MODE=(m==='shop')?'shop':'salon';
   try{localStorage.setItem('stb_pos_mode',POS_MODE)}catch(e){}
@@ -1377,6 +1417,22 @@ const API = {
   async removeSettlement(date){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settlements?date='+encodeURIComponent(date),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async getSettings(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.settings:null;}catch{return null;} },
   async setSetting(key,value){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/settings',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({key,value})});return r.ok;}catch{return null;} },
+  // 棚卸し・店舗別在庫・商品取り込み
+  async shops(){ return apiGet('/shops'); },
+  async stockOfProduct(pid){ return apiGet('/stock/product?productId='+encodeURIComponent(pid)); },
+  async stockAdjust(body){ return apiPost('/stock/adjust',body); },
+  async stockMove(body){ return apiPost('/stock/move',body); },
+  async stockMoves(){ return apiGet('/stock/moves'); },
+  async prodSearch(q){ const j=await apiGet('/products?q='+encodeURIComponent(q)); return (j&&j.products)||[]; },
+  async prodByBarcode(bc){ const j=await apiGet('/products?barcode='+encodeURIComponent(bc)); return (j&&j.products&&j.products[0])||null; },
+  async prodImport(items){ return apiPost('/products/import',{items}); },
+  async stStart(body){ return apiPost('/stocktake',body); },
+  async stGet(id){ return apiGet('/stocktake'+(id?'?id='+encodeURIComponent(id):'')); },
+  async stScan(body){ return apiPost('/stocktake/scan',body); },
+  async stSet(body){ return apiPost('/stocktake/set',body); },
+  async stDiff(id,un){ return apiGet('/stocktake/diff?id='+encodeURIComponent(id)+(un?'&unscanned=1':'')); },
+  async stCommit(body){ return apiPost('/stocktake/commit',body); },
+  async stCancel(id){ return apiPost('/stocktake/cancel?id='+encodeURIComponent(id),{}); },
   async listProducts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.products:null;}catch{return null;} },
   async saveProduct(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
   async removeProduct(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
@@ -1449,11 +1505,17 @@ if(!db.products)db.products=[];
 function addProduct(p){p.id=p.id||('p'+Math.random().toString(36).slice(2,8));const i=db.products.findIndex(x=>x.id===p.id);if(i>=0)db.products[i]=p;else db.products.push(p);save();refreshAll();API.saveProduct(p);return p;}
 function removeProduct(id){db.products=db.products.filter(p=>p.id!==id);save();refreshAll();API.removeProduct(id);}
 function productByBarcode(code){const c=(code||'').trim();return c?db.products.find(p=>p.barcode&&p.barcode===c):null;}
-function adjustStock(id,delta){const p=db.products.find(x=>x.id===id);if(!p)return;p.stock=(p.stock||0)+delta;save();API.saveProduct(p);}
+/* 在庫はサーバーの店舗別在庫を動かす（この端末の店舗に対して増減する）。
+   以前は手元の1本値を書き換えていたので、店舗別にすると合わなくなる。 */
+function adjustStock(id,delta,shopId){
+  API.stockAdjust({shopId:shopId||SHOP_ID,productId:id,delta,reason:'手直し'}).then(r=>{
+    if(r&&r.error)toast(r.error,true); else renderProducts();
+  });
+}
 // 入荷（仕入）: 在庫を増やして履歴を残す
 if(!db.intakes)db.intakes=[];
 function addIntake(x){x.id='in'+Math.random().toString(36).slice(2,8);x.at=new Date().toISOString();x.date=x.date||dkey(today());db.intakes.unshift(x);
-  const p=db.products.find(pp=>pp.id===x.productId);if(p){p.stock=(p.stock||0)+(+x.qty||0);API.saveProduct(p);}
+  if(x.productId)API.stockAdjust({shopId:SHOP_ID,productId:x.productId,delta:+x.qty||0,reason:'入荷'});
   save();refreshAll();API.saveIntake(x);return x;}
 function removeIntake(id){db.intakes=db.intakes.filter(x=>x.id!==id);save();refreshAll();API.removeIntake(id);}
 // D1から会計・レジ締め・設定・商品を取得してdbに反映（起動時・非同期）。localStorageで先に表示→D1で上書き。
@@ -2213,14 +2275,21 @@ function openCheckout(resvId){
   renderCheckout();
   document.getElementById('checkoutbg').classList.add('show');
 }
-function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(+i.price||0),0);}
+function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(i.unit!=null?(+i.unit||0)*(+i.qty||1):(+i.price||0)),0);}
 function coTotal(){const tech=coDraft.passCode?0:(+coDraft.tech||0);   // 回数券適用時は施術分を消化でカバー
   return Math.max(0,tech+coRetail()-(+coDraft.discount||0)-(+coDraft.pointsUsed||0)-(+coDraft.giftUsed||0));}
 // 今回付与予定ポイント＝支払額×還元率（ポイント利用分には付与しない）
 function coPointAward(){return (pointEnabled()&&coDraft.customer)?Math.floor(coTotal()*pointRate()/100):0;}
 function renderCheckout(){
   const box=document.getElementById('checkoutmodal');
-  const rows=(coDraft.retailItems||[]).map((it,i)=>`<div class="co-row"><input class="co-rn" data-i="${i}" placeholder="商品名（例）oggi ott シャンプー" value="${(it.name||'').replace(/"/g,'&quot;')}"><input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${it.price||''}"><button class="co-rx" data-i="${i}" aria-label="削除">✕</button></div>`).join('');
+  const rows=(coDraft.retailItems||[]).map((it,i)=>{
+    const isProd=it.unit!=null;   // 商品マスタから入れた行は 単価×数量 で扱う
+    return `<div class="co-row">
+      <input class="co-rn" data-i="${i}" placeholder="商品名（例）oggi ott シャンプー" value="${(it.name||'').replace(/"/g,'&quot;')}" ${isProd?'readonly':''}>
+      ${isProd?`<input class="co-rq" data-i="${i}" type="number" inputmode="numeric" min="1" value="${it.qty||1}" aria-label="個数">
+        <span class="co-ru">×¥${(it.unit||0).toLocaleString()}</span>`:''}
+      <input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${(isProd?((it.unit||0)*(it.qty||1)):(it.price||''))}" ${isProd?'readonly':''}>
+      <button class="co-rx" data-i="${i}" aria-label="削除">✕</button></div>`;}).join('');
   box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}</h3>
     ${isShop()?'':`<div class="co-line"><span>技術（施術）</span><span class="co-y">¥<input id="co-tech" type="number" inputmode="numeric" value="${coDraft.tech||0}"></span></div>`}
     <div class="co-sub">店販（商品）</div>
@@ -2246,6 +2315,14 @@ function renderCheckout(){
       return `<div class="co-sub">回数券・パス</div>
       <div class="co-scan-row"><input id="co-pass" placeholder="🎫 パスコード（P-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-pass-go">消化</button></div>`;})()}
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
+    ${coDraft.method==='cash'?`<div class="co-cash">
+      <div class="co-line"><span>お預かり</span><span class="co-y">¥<input id="co-recv" type="number" inputmode="numeric" value="${coDraft.received||''}" placeholder="0"></span></div>
+      <div class="co-quick">${[1000,5000,10000].map(v=>`<button data-recv="${v}">¥${v.toLocaleString()}</button>`).join('')}
+        <button data-recv="exact">ちょうど</button></div>
+      <div class="co-change ${(+coDraft.received||0)>=coTotal()?'ok':'ng'}">
+        <span>お釣り</span><b>${(+coDraft.received||0)>=coTotal()?'¥'+((+coDraft.received||0)-coTotal()).toLocaleString():'—'}</b>
+        ${(+coDraft.received||0)>0&&(+coDraft.received||0)<coTotal()?`<i>あと ¥${(coTotal()-(+coDraft.received||0)).toLocaleString()}</i>`:''}</div>
+    </div>`:''}
     <div class="co-sub">お支払い方法</div>
     <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
     ${coDraft.method==='hpb'?'<div class="co-done" style="background:#fff3ec;border-color:#f2c9ab;color:#b04a12">🌶️ ホットペッパーで決済済み（スマート支払い）。<b>店頭での支払いはありません</b>。売上に計上されますがレジ現金には含まれません（後日リクルートから入金）。店販がある場合は現金/カード等で別会計にしてください</div>':''}
@@ -2288,8 +2365,29 @@ function renderCheckout(){
   box.querySelectorAll('.co-rn').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].name=e.target.value;});
   box.querySelectorAll('.co-rp').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].price=e.target.value;sync();});
   box.querySelectorAll('.co-rx').forEach(b=>b.onclick=()=>{coDraft.retailItems.splice(+b.dataset.i,1);renderCheckout();});
+  // 個数の変更（商品マスタの行）
+  box.querySelectorAll('.co-rq').forEach(inp=>inp.onchange=e=>{
+    const it=coDraft.retailItems[+e.target.dataset.i]; if(!it)return;
+    it.qty=Math.max(1,Math.round(+e.target.value||1)); it.price=(+it.unit||0)*it.qty; renderCheckout();});
+  // お預かりとお釣り（現金のとき）
+  {const r=box.querySelector('#co-recv');
+   if(r)r.oninput=e=>{coDraft.received=+e.target.value||0;sync();
+     const box2=box.querySelector('.co-change'); if(box2)renderCheckout();};
+   box.querySelectorAll('[data-recv]').forEach(b=>b.onclick=()=>{
+     coDraft.received=b.dataset.recv==='exact'?coTotal():((+coDraft.received||0)+(+b.dataset.recv||0));
+     renderCheckout();});}
   box.querySelector('#co-add').onclick=()=>{coDraft.retailItems.push({name:'',price:''});renderCheckout();};
-  const addFromMaster=v=>{const s=(v||'').trim();if(!s)return false;const p=productByBarcode(s)||(db.products||[]).find(x=>x.name===s)||(db.products||[]).find(x=>x.name&&x.name.includes(s));if(!p)return false;coDraft.retailItems.push({productId:p.id,name:p.name,price:p.price});return true;};
+  /* 同じ商品を続けて読んだら、行を増やさず数量を足す（ショップのレジで1個ずつ行が伸びると見づらい） */
+  const addItem=(p,qty)=>{
+    const q=Math.max(1,Math.round(+qty||1));
+    const cur=(coDraft.retailItems||[]).find(i=>i.productId&&i.productId===p.id);
+    if(cur){cur.qty=(+cur.qty||1)+q; cur.price=(+p.price||0)*cur.qty;}
+    else coDraft.retailItems.push({productId:p.id,name:p.name,unit:+p.price||0,qty:q,price:(+p.price||0)*q});
+    return true;
+  };
+  const addFromMaster=v=>{const s=(v||'').trim();if(!s)return false;
+    const p=productByBarcode(s)||(db.products||[]).find(x=>x.name===s)||(db.products||[]).find(x=>x.name&&x.name.includes(s));
+    if(!p)return false; return addItem(p,1);};
   const scan=box.querySelector('#co-scan');
   if(scan){
     // 商品が数千点あるので、手元に無ければサーバーのバーコード引きに聞く
@@ -2300,14 +2398,14 @@ function renderCheckout(){
       const p=await API.prodByBarcode(code);
       if(!p){toast('商品が見つかりません（'+code+'）',true);return;}
       db.products.push(p); save();                       // 次からは手元で引けるようにする
-      coDraft.retailItems=(coDraft.retailItems||[]).concat([{name:p.name,price:+p.price||0,productId:p.id}]);
+      addItem(p,1);
       scan.value=''; renderCheckout();
       setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);
     };
     scan.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();scanAdd(scan.value);}};
     scan.onchange=()=>{if(scan.value.trim())scanAdd(scan.value);};
   }
-  box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;renderCheckout();});
+  box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;if(b.dataset.m!=='cash')coDraft.received=0;renderCheckout();});
   box.querySelectorAll('[data-nom]').forEach(b=>b.onclick=()=>{coDraft.nominated=b.dataset.nom==='1';renderCheckout();});
   if(isShop())coDraft.nominated=false;   // ショップに指名は無い
   box.querySelector('#co-cancel').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
@@ -2318,7 +2416,9 @@ function renderCheckout(){
 const inMode=(c)=>!posSplit()||(((c&&c.mode)==='shop')===isShop());   // 分けていない店は全部ひとつのレジ
 function coBuildRec(){
   const rec={mode:POS_MODE,...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,pointsUsed:+coDraft.pointsUsed||0,giftUsed:+coDraft.giftUsed||0,giftCode:coDraft.giftCode||'',
-    retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',price:+i.price||0,productId:i.productId||undefined}))};
+    retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',
+      qty:Math.max(1,+i.qty||1), unit:i.unit!=null?(+i.unit||0):(+i.price||0),
+      price:i.unit!=null?((+i.unit||0)*Math.max(1,+i.qty||1)):(+i.price||0), productId:i.productId||undefined}))};
   rec.passCode=coDraft.passCode||'';
   rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
   rec.total=Math.max(0,(rec.passCode?0:rec.tech)+rec.retail-rec.discount-rec.pointsUsed-rec.giftUsed);
@@ -2327,7 +2427,8 @@ function coBuildRec(){
 function coFinish(rec){
   const isNew=!coDraft.id;
   if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
-  if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-1);});  // 在庫を自動減算（新規会計のみ）
+  // 在庫を自動減算（新規会計のみ）。この端末の店舗の在庫から引く
+  if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-(+i.qty||1));});
   if(rec.resvId)setStatus(rec.resvId,'done');
   // ギフト券の残高消込（新規会計のみ）
   if(isNew&&rec.giftUsed>0&&rec.giftCode){
@@ -2832,6 +2933,123 @@ function printReceipt(coId){
 }
 
 /* ===== 店販の商品マスタ・在庫 ===== */
+/* 1商品を開くと全店の在庫が並ぶ。「札幌にございます」と即答するための画面。 */
+async function openStockDetail(pid){
+  const box=document.getElementById('detailmodal'); if(!box)return;
+  box.innerHTML='<h3>在庫を確認しています…</h3>';
+  document.getElementById('detailbg').classList.add('show');
+  const j=await API.stockOfProduct(pid);
+  if(!j||j.error){box.innerHTML='<h3>読み込めませんでした</h3>'+(j&&j.error?`<p class="lead">${escH(j.error)}</p>`:'');return;}
+  const p=j.product||{}, st=j.stocks||[];
+  const tot=st.reduce((a,x)=>a+(x.qty||0),0);
+  box.innerHTML=`<h3>${escH(p.name||'')}</h3>
+    <div style="font-size:12.5px;color:var(--sub);margin-bottom:12px">
+      ¥${(p.price||0).toLocaleString()}${p.barcode?`　｜　${escH(p.barcode)}`:''}${p.brand?`　｜　${escH(p.brand)}`:''}</div>
+    <div class="rows-shop">${st.map(x=>`<div class="rs-row ${x.shop_id===SHOP_ID?'me':''}">
+        <span>${escH(x.shop_name)}${x.shop_id===SHOP_ID?'<i>この端末</i>':''}</span>
+        <b class="${x.qty?'':'zero'}">${x.qty}</b>
+        <button class="btn small ghost" data-pm="-1" data-shop="${x.shop_id}">−</button>
+        <button class="btn small ghost" data-pm="1" data-shop="${x.shop_id}">＋</button></div>`).join('')}
+      <div class="rs-row total"><span>合計</span><b>${tot}</b><span></span><span></span></div></div>
+    <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn ok" id="sd-move">🚚 他店へ移す</button>
+      <button class="btn ghost" id="sd-close">閉じる</button></div>`;
+  box.querySelectorAll('[data-pm]').forEach(b=>b.onclick=async()=>{
+    const r=await API.stockAdjust({shopId:b.dataset.shop,productId:pid,delta:+b.dataset.pm,reason:'手直し'});
+    if(r.error){toast(r.error,true);return;} openStockDetail(pid); renderProducts();});
+  box.querySelector('#sd-close').onclick=closeDetail;
+  box.querySelector('#sd-move').onclick=async()=>{
+    closeDetail(); MV.pid=pid; MV.name=p.name; MV.from=SHOP_ID;
+    const d=document.querySelector('#v-products details.fold'); if(d)d.open=true;
+    await renderMove(); document.getElementById('mvCard').scrollIntoView({block:'center'});};
+}
+
+/* ===== 店舗の選択と、店舗間の在庫移動 ===== */
+async function renderShopBar(){
+  const el=document.getElementById('shopBar'); if(!el)return;
+  if(!SHOPS.length)await loadShops();
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <b style="font-size:13.5px">この端末で扱う在庫</b>
+      <div class="posmode" style="background:#eef1f5">${SHOPS.map(s=>
+        `<button data-shop="${s.id}" class="${s.id===SHOP_ID?'on':''}">${escH(s.name)}</button>`).join('')}</div>
+    </div>
+    <div style="font-size:12px;color:var(--sub);margin-top:7px;line-height:1.7">
+      棚卸し・レジの在庫減算・入荷は、選んだ店舗に対して行われます。<br>
+      免税（銀座ショップ免税）は銀座と同じ在庫として扱います。</div>`;
+  el.querySelectorAll('[data-shop]').forEach(b=>b.onclick=()=>setShop(b.dataset.shop));
+}
+
+let MV={pid:null,name:'',from:SHOP_ID,to:'',qty:1};
+async function renderMove(){
+  const el=document.getElementById('mvCard'); if(!el)return;
+  if(!SHOPS.length)await loadShops();
+  const opts=(sel)=>SHOPS.map(s=>`<option value="${s.id}" ${s.id===sel?'selected':''}>${escH(s.name)}</option>`).join('');
+  el.innerHTML=`
+    <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:10px">
+      商品をバーコードで読むか名前で探して、出す店・入れる店と個数を決めます。<br>
+      <b>出す店の在庫が足りないときは止まります</b>。誰がいつ何を動かしたかは記録に残ります。</div>
+    <div class="co-scan-row"><input id="mv-scan" placeholder="🔎 バーコードを読む／商品名で探す" autocomplete="off"></div>
+    <div id="mv-hits" style="margin-bottom:8px"></div>
+    ${MV.pid?`<div style="background:#f7fbff;border:1px solid var(--accent2);border-radius:10px;padding:11px 13px;margin-bottom:10px">
+        <b style="font-size:14px">${escH(MV.name)}</b>
+        <div id="mv-stocks" style="font-size:12.5px;color:var(--sub);margin-top:5px">在庫を確認しています…</div></div>`:''}
+    <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+      <div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:3px">出す店</div>
+        <select id="mv-from" style="border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px">${opts(MV.from)}</select></div>
+      <div style="align-self:center;padding-top:14px;color:var(--accent);font-weight:800">→</div>
+      <div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:3px">入れる店</div>
+        <select id="mv-to" style="border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px"><option value="">選ぶ</option>${opts(MV.to)}</select></div>
+      <div><div style="font-size:11px;font-weight:800;color:var(--sub);margin-bottom:3px">個数</div>
+        <input id="mv-qty" type="number" inputmode="numeric" value="${MV.qty}" style="width:80px;border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px;text-align:right"></div>
+      <button class="btn pay" id="mv-go" ${MV.pid?'':'disabled'}>この内容で移す</button>
+    </div>
+    <div id="mv-log" style="margin-top:12px"></div>`;
+
+  const scan=el.querySelector('#mv-scan');
+  const pick=async(p)=>{MV.pid=p.id;MV.name=p.name;renderMove();
+    const j=await API.stockOfProduct(p.id);
+    const box=document.getElementById('mv-stocks');
+    if(box&&j&&j.stocks)box.innerHTML=j.stocks.map(x=>`${escH(x.shop_name)} <b style="color:${x.qty?'var(--ink)':'var(--sub)'}">${x.qty}</b>`).join('　／　');};
+  const find=async(v)=>{
+    const q=(v||'').trim(); if(!q)return;
+    const hits=document.getElementById('mv-hits');
+    if(/^[0-9A-Za-z-]{6,}$/.test(q)){
+      const p=await API.prodByBarcode(q);
+      if(!p){hits.innerHTML='<div style="font-size:12.5px;color:#b4302b;font-weight:700">見つかりません（'+escH(q)+'）</div>';return;}
+      scan.value='';hits.innerHTML='';pick(p);return;
+    }
+    const list=await API.prodSearch(q);
+    if(!list.length){hits.innerHTML='<div style="font-size:12.5px;color:var(--sub)">見つかりません</div>';return;}
+    hits.innerHTML=list.slice(0,8).map(p=>`<button class="btn small ghost" data-pk="${p.id}" style="display:block;width:100%;text-align:left;margin-bottom:4px">${escH(p.name)}<span style="color:var(--sub)">　¥${(p.price||0).toLocaleString()}</span></button>`).join('');
+    hits.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{const p=list.find(x=>x.id===b.dataset.pk);scan.value='';hits.innerHTML='';pick(p);});
+  };
+  if(scan){scan.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();find(scan.value);}};
+    setTimeout(()=>{if(MV.pid)scan.focus()},30);}
+  el.querySelector('#mv-from').onchange=e=>{MV.from=e.target.value;};
+  el.querySelector('#mv-to').onchange=e=>{MV.to=e.target.value;};
+  el.querySelector('#mv-qty').oninput=e=>{MV.qty=Math.max(1,+e.target.value||1);};
+  el.querySelector('#mv-go').onclick=async()=>{
+    if(!MV.pid){toast('商品を選んでください',true);return;}
+    if(!MV.to){toast('入れる店を選んでください',true);return;}
+    const r=await API.stockMove({productId:MV.pid,fromShop:MV.from,toShop:MV.to,qty:MV.qty,staff:'',note:''});
+    if(r.error){toast(r.error,true);return;}
+    toast(`${shopName(MV.from)} → ${shopName(MV.to)} へ ${MV.qty}個 移しました`);
+    MV={pid:null,name:'',from:MV.from,to:MV.to,qty:1};
+    renderMove();renderProducts();
+  };
+  // 直近の移動
+  const j=await API.stockMoves();
+  const log=document.getElementById('mv-log');
+  if(log&&j&&j.moves){
+    log.innerHTML=j.moves.length
+      ? `<div style="font-size:11.5px;font-weight:800;color:var(--sub);margin-bottom:5px">最近の移動</div>`
+        +j.moves.slice(0,6).map(m=>`<div style="font-size:12.5px;padding:4px 0;border-bottom:1px dashed var(--line)">
+          <span style="color:var(--sub)">${(m.created_at||'').slice(5,16).replace('T',' ')}</span>　${escH(m.product_name||'')}
+          <b>${escH(m.from_name||m.from_shop)} → ${escH(m.to_name||m.to_shop)} ${m.qty}個</b></div>`).join('')
+      : '<div style="font-size:12.5px;color:var(--sub)">まだ移動の記録はありません</div>';
+  }
+}
+
 /* ===== 棚卸し =====
  * 現場の速さを最優先。読むだけで進み、理論在庫は数え終わるまで見せない
  * （見えていると「合わせにいってしまう」ので、実数が取れなくなる）。
@@ -2843,7 +3061,7 @@ async function renderStocktake(){
     const j=await API.stGet();
     const open=((j&&j.takes)||[]).find(t=>t.status==='open');
     const done=((j&&j.takes)||[]).filter(t=>t.status!=='open').slice(0,3);
-    el.innerHTML=`<div class="rep-h"><h3>📦 棚卸し</h3></div>
+    el.innerHTML=`<div class="rep-h"><h3>📦 棚卸し</h3><span style="font-size:11.5px;color:var(--sub)">${escH(shopName())}を数えます</span></div>
       <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin:4px 0 12px">
         商品をひたすら読むだけです。同じ商品を2回読めば2個。<b>数えている間は在庫の数を出しません</b>（見えていると実数が取りにくいため）。<br>
         途中でやめても続きから数えられます。数え終わってから、ズレた商品だけを確認します。
@@ -2856,7 +3074,7 @@ async function renderStocktake(){
       </div>
       ${done.length?`<div style="margin-top:12px;font-size:12px;color:var(--sub)">直近: ${done.map(t=>`${(t.started_at||'').slice(0,10)}（${t.status==='done'?'確定':'中止'}）`).join('／')}</div>`:''}`;
     const b=document.getElementById('st-start');
-    if(b)b.onclick=async()=>{const r=await API.stStart({staff:''});
+    if(b)b.onclick=async()=>{const r=await API.stStart({staff:'',shopId:SHOP_ID});
       if(r.error){toast(r.error,true);return;} ST=r.take; ST_LOG=[]; ST_FAIL=0; renderStocktake();
       setTimeout(()=>{const f=document.getElementById('st-scan');if(f)f.focus()},50);};
     const d=document.getElementById('st-drop');
@@ -2866,7 +3084,7 @@ async function renderStocktake(){
   }
   // 数えている画面
   el.innerHTML=`<div class="rep-h"><h3>📦 棚卸し中</h3>
-      <span style="font-size:11.5px;color:var(--sub)">${escH(ST.name||'')}</span></div>
+      <span style="font-size:11.5px;color:var(--sub)">${escH(shopName(ST.shop_id))}／${escH(ST.name||'')}</span></div>
     <div class="st-scanwrap">
       <input id="st-scan" placeholder="🔎 バーコードを読む（続けて読めます）" autocomplete="off" inputmode="none">
       <button class="btn small ghost" id="st-manual">手で足す</button>
@@ -3022,13 +3240,37 @@ function setupProdImport(){
     const pr=await API.listProducts(); if(pr)db.products=pr; save(); renderProducts();
   };
 }
+let PROD_HITS=[], PROD_TOTAL=0;
+function setupProdSearch(){
+  const el=document.getElementById('prod-search'); if(!el||el._wired)return; el._wired=true;
+  const run=async(v)=>{
+    const q=(v||'').trim(); if(!q){PROD_HITS=[];renderProducts();return;}
+    if(/^[0-9A-Za-z-]{6,}$/.test(q)){                 // バーコードらしければ1件引き
+      const p=await API.prodByBarcode(q);
+      PROD_HITS=p?[p]:[];
+      if(!p)toast('見つかりません（'+q+'）',true);
+    }else{
+      PROD_HITS=await API.prodSearch(q);
+    }
+    el.value=''; renderProducts();
+  };
+  el.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();run(el.value);}};
+}
 function renderProducts(){
-  renderStocktake(); setupProdImport();
+  renderShopBar(); renderStocktake(); setupProdImport(); setupProdSearch(); renderMove();
   const body=document.getElementById('productsbody'); if(!body)return;
-  const ps=(db.products||[]).slice().sort((a,b)=>(a.name||'').localeCompare(b.name||'','ja'));
+  // 商品が数千点あるので全部は並べない。検索で探す（サーバー側で引く）
   const money=n=>'¥'+(n||0).toLocaleString();
-  const lowN=ps.filter(p=>(p.stock||0)<=3).length;
-  const rows=ps.map(p=>{const low=(p.stock||0)<=3;return `<div class="prod-row"><div class="pr-main"><div class="pr-name">${escH(p.name)}</div><div class="pr-sub">${money(p.price)}${p.barcode?`　｜　${p.barcode}`:''}</div></div><button class="btn small ghost pr-in" data-in="${p.id}">入荷</button><div class="pr-stock"><button class="pr-mn" data-adj="-1" data-id="${p.id}">−</button><span class="pr-num ${low?'low':''}">${p.stock||0}</span><button class="pr-mn" data-adj="1" data-id="${p.id}">＋</button></div><button class="pr-del" data-del="${p.id}" aria-label="削除">✕</button></div>`;}).join('');
+  const ps=(PROD_HITS||[]).slice(0,60);
+  const lowN=0;
+  const rows=ps.length
+    ? ps.map(p=>`<div class="prod-row" data-open="${p.id}"><div class="pr-main"><div class="pr-name">${escH(p.name)}</div>
+        <div class="pr-sub">${money(p.price)}${p.barcode?`　｜　${p.barcode}`:''}${p.brand?`　｜　${escH(p.brand)}`:''}</div></div>
+        <div class="pr-stock"><span class="pr-num" id="pn-${p.id}">…</span></div>
+        <button class="btn small ghost" data-mv="${p.id}" style="padding:3px 9px;font-size:11px">移す</button></div>`).join('')
+    : `<div style="padding:18px;text-align:center;color:var(--sub);font-size:13px">
+        バーコードを読むか、商品名の一部を入れて探してください<br>
+        <span style="font-size:12px">登録 ${(PROD_TOTAL||0).toLocaleString()} 点</span></div>`;
   // 入荷履歴＋今月仕入額
   const ins=(db.intakes||[]);
   const t=today(), mF=dkey(new Date(t.getFullYear(),t.getMonth(),1)), mT=dkey(new Date(t.getFullYear(),t.getMonth()+1,0));
@@ -3036,6 +3278,29 @@ function renderProducts(){
   const inRows=ins.slice(0,30).map(x=>`<div class="reg-co"><span class="rc-t">${(x.date||'').slice(5).replace('-','/')}</span><span class="rc-n">${escH(x.productName)}</span><span class="rc-m">${x.qty}個${x.unitCost?` @${money(x.unitCost)}`:''}</span><b class="rc-a">${money((x.qty||0)*(x.unitCost||0))}</b><button class="rc-x" data-delin="${x.id}" aria-label="取消">✕</button></div>`).join('');
   body.innerHTML=`<div class="card reg-sec"><div class="rep-h"><h3>商品一覧（${ps.length}）${lowN?`<span class="pr-lowbadge">在庫わずか ${lowN}</span>`:''}</h3></div>${ps.length?rows:'<div class="co-empty">まだ商品がありません。上のフォームから追加してください</div>'}</div>
     <div class="card reg-sec"><div class="rep-h"><h3>入荷（仕入）履歴</h3><span style="font-size:12.5px;color:var(--sub);font-weight:700">今月の仕入 ${money(mCost)}</span></div>${ins.length?inRows:'<div class="co-empty">入荷の記録はまだありません。商品の「入荷」から登録できます</div>'}</div>`;
+  // 検索で出た商品：この店舗の在庫を出し、開くと全店の在庫が並ぶ
+  document.getElementById('prod-count').textContent=PROD_HITS.length
+    ? `${PROD_HITS.length}件見つかりました（${shopName()}の在庫を表示しています）` : '';
+  PROD_HITS.forEach(async p=>{
+    const j=await API.stockOfProduct(p.id);
+    const cell=document.getElementById('pn-'+p.id);
+    if(!cell||!j||!j.stocks)return;
+    const mine=(j.stocks.find(x=>x.shop_id===SHOP_ID)||{}).qty||0;
+    cell.textContent=mine; cell.className='pr-num'+(mine<=3?' low':'');
+    cell.title=j.stocks.map(x=>`${x.shop_name} ${x.qty}`).join(' / ');
+  });
+  body.querySelectorAll('[data-open]').forEach(r=>r.onclick=e=>{
+    if(e.target.closest('[data-mv]'))return; openStockDetail(r.dataset.open);});
+  body.querySelectorAll('[data-mv]').forEach(b=>b.onclick=async()=>{
+    const p=PROD_HITS.find(x=>x.id===b.dataset.mv); if(!p)return;
+    MV.pid=p.id;MV.name=p.name;MV.from=SHOP_ID;
+    const d=document.querySelector('#v-products details.fold'); if(d)d.open=true;
+    await renderMove();
+    const box=document.getElementById('mv-stocks');
+    const j=await API.stockOfProduct(p.id);
+    if(box&&j&&j.stocks)box.innerHTML=j.stocks.map(x=>`${escH(x.shop_name)} <b>${x.qty}</b>`).join('　／　');
+    document.getElementById('mvCard').scrollIntoView({block:'center'});
+  });
   body.querySelectorAll('[data-adj]').forEach(b=>b.onclick=()=>adjustStock(b.dataset.id,+b.dataset.adj));
   body.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('この商品を削除しますか？'))removeProduct(b.dataset.del);});
   body.querySelectorAll('[data-delin]').forEach(b=>b.onclick=()=>{if(confirm('この入荷記録を取り消しますか？（在庫は自動では戻りません）'))removeIntake(b.dataset.delin);});
