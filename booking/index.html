@@ -3537,7 +3537,7 @@ function openCustomer(key){
     <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd>
       <dt>累計売上 (LTV)</dt><dd>${c.paidVisits>0?`<b style="color:var(--navy)">¥${c.sales.toLocaleString()}</b>　<span style="color:var(--sub);font-size:12px">会計${c.paidVisits}回・平均 ¥${Math.round(c.sales/c.paidVisits).toLocaleString()}</span>`:`<span style="color:var(--sub)">会計記録なし（目安 ¥${c.spend.toLocaleString()}）</span>`}</dd>
       <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${escH(c.note)}</dd>`:''}</dl>
-    <div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><div style="font-size:12px;font-weight:700;color:var(--sub)">カウンセリングシート・同意書</div>
+    <div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><div style="font-size:12px;font-weight:700;color:var(--sub)">カウンセリングシート・同意書<span style="font-weight:600;margin-left:6px">（記録として保管します・消せません）</span></div>
       <a class="btn small ghost" id="cs-open" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 9px;font-size:11.5px">iPadで記入してもらう ↗</a></div>
     <div id="cs-list" style="font-size:12.5px;color:var(--sub);margin-bottom:10px">読み込み中…</div>
     <div style="font-size:12px;font-weight:700;color:var(--sub);margin:8px 0 6px">施術写真（before / after）</div>
@@ -3564,7 +3564,8 @@ function openCustomer(key){
     el.innerHTML=list.slice(0,3).map(x=>{
       const a=x.answers||{},cn=x.consent||{};
       const chips=[].concat(a.concern||[],a.history||[],a.body||[]).slice(0,6);
-      return `<div style="background:#faf8f4;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px">
+      return `<div style="background:${x.voided?'#f6f6f7':'#faf8f4'};border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px${x.voided?';opacity:.6':''}">
+        ${x.voided?`<div style="font-size:11px;font-weight:800;color:var(--sub)">取り消し済み${x.void_reason?'（'+escH(x.void_reason)+'）':''}・記録は保管しています</div>`:''}
         <div style="font-weight:800;color:var(--ink)">${x.date?x.date.replace(/-/g,'/'):''}　${x.kind==='spa'?'💆 スパ':'✂️ ヘア'}
           ${cn.agreed?'<span class="rep" style="background:#eef7f0;border-color:#c6e6d3;color:#0c7a41">同意済み</span>':''}
           ${x.sign?'<span class="rep">署名あり</span>':''}

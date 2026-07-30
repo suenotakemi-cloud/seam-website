@@ -94,7 +94,7 @@ flowchart LR
 3. **これまでの施術**：ブリーチ／黒染め／ヘナ／パーマ／縮毛矯正／セルフカラー等（複数可）→**該当時は薬剤リスクの注意文を自動表示**、最後の施術時期
 4. **お体のこと**：妊娠中・授乳中／アレルギー／皮膚疾患／通院中 等（複数可）＋**⚠自由記入（アレルギー・薬剤NG）**
 5. **おうちでのお手入れ**：使用シャンプー・アイロン頻度・お困り（→店販提案の材料）
-6. **ご確認とご同意**：7項目（仕上がりの個人差／薬剤リスク／健康状態の申告／貴重品／キャンセル料率／**音声AIカウンセリング**／個人情報の利用目的）→**同意チェック必須**（未チェックはサーバ側でも400で拒否）。続けて**用途別の任意同意**を3ブロック（店舗設定で出し入れ）
+6. **ご確認とご同意**：7項目（仕上がりの個人差／薬剤リスク／健康状態の申告／貴重品／キャンセル料率／**音声AIカウンセリング**／**個人情報の取り扱いと保管**）→**同意チェック必須**（未チェックはサーバ側でも400で拒否）。続けて**用途別の任意同意**を3ブロック（店舗設定で出し入れ）
    - **📷 写真**：撮影しない／カルテ用だけOK（外に出さない）／SNS・HP・広告もOK の3択＋「お顔が写らないように」（SNS選択時のみ）
    - **🎥 動画**：撮影しない／記録用だけOK／SNS・広告もOK の3択（リール・ショート想定）
    - **🎙 音声AIカウンセリング**：使ってOK／使わないで（＝スタッフが手で記録）。**端末・環境によって精度に差が出るため既定OFF＝実際に使う店だけON**。OFFのときは同意本文の項目自体も出ない（6項目→ONで7項目）
@@ -209,7 +209,7 @@ Worker（`salon-bridge.js`）→ `SALON_HOST`（`sugu-api.salon.town`）。認�
 ### 4.3 自社 Worker エンドポイント（フロント↔D1・§6の独自実装）
 公開（顧客導線・認証不要）：`POST /pay`・`POST /reservations`・**`GET /availability`**（空き判定用・PII無しの占有区間のみ＝顧客ページのキャパ超過防止）・**`GET /precheck?phone=`**（ノーショー履歴→前金必須フラグのみ・PIIレス）・`POST /line/login/state`・`GET /line/login/result`。
 管理（`Authorization: Bearer ADMIN_TOKEN` 必須）：
-`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／**`GET/POST /counseling`**（カウンセリングシート・同意書。POSTは同意チェック未了を400で拒否・⚠は`customer_notes.caution`へ自動マージ・写真/動画/音声AIの可否も同時保存）／**`GET /counseling/stats?from&to&kind`**（集計：悩み/履歴/お体/お手入れ/頻出語/原文/同意内訳/髪格診断/月次）／**`POST /counseling/attach`**（提出済みシートへ髪格診断の結果を紐付け）／**`DELETE /counseling?id=`**（二重提出の取消）・**`DELETE /counseling?key=`**（そのお客様の全シート＋重要メモ＝**同意書に書いた削除依頼への対応**）／`GET/POST /custnotes`（重要メモ・誕生月）／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
+`GET/PATCH/DELETE /reservations`／`GET/POST/DELETE /checkouts`／`GET/POST/DELETE /settlements`／`GET/POST /settings`／`GET/POST/DELETE /products`／`GET/POST/DELETE /intakes`／**`GET/POST/DELETE /points`**（増減行・DELETEはref単位）／**`GET/POST/DELETE /gifts`**（DELETEはvoid化）／**`GET/POST/DELETE /passes`**／**`GET /karte/photos`・`POST/DELETE /karte/photo`**／**`GET/POST /counseling`**（カウンセリングシート・同意書。POSTは同意チェック未了を400で拒否・⚠は`customer_notes.caution`へ自動マージ・写真/動画/音声AIの可否も同時保存）／**`GET /counseling/stats?from&to&kind`**（集計：悩み/履歴/お体/お手入れ/頻出語/原文/同意内訳/髪格診断/月次）／**`POST /counseling/attach`**（提出済みシートへ髪格診断の結果を紐付け）／**`POST /counseling/void`**（二重提出などに「取り消し」印。`undo:true`で戻せる。**記録そのものは消さない**）。**シートの削除APIは持たない**（§6-13）／`GET/POST /custnotes`（重要メモ・誕生月）／`GET /sales`／`POST /line/push`・`/line/reminders`・`/mail/confirm`・`/ai/chat`／`/salon/selftest|pull|whoami`／`/terminal/*`。
 Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFollowups()`（サンクス/周期/休眠・§3）。
 運用ツール（`CLEANUP_TOKEN`＝wrangler secret・オーナー/AI運用専用）：
 `POST /admin/purge-test`（氏名「テスト%」×channel line/own のみD1＋salon.town削除）／`GET /admin/diag-resv`（両店予約の診断読取・add_info付き）／`POST /admin/salon-del?id=`（salon.town予約1件削除＝孤児ミラー掃除）／`POST /admin/salon-patch`（info_js更新＝個室後付け等。**部分dataでも他カラムは無傷を実証済**）／`GET|POST /salon/noname`（無記名ミラーの孤児判定つき掃除・**親生存チェックで本物予約のミラーは残す**）。
@@ -257,7 +257,13 @@ Cron（毎朝9時JST）：前日リマインド（生存照合つき）＋`runFo
 11. **自動フォロー（cron `runFollowups`）** — 通知基盤は Worker cron＋LINE Push 直叩き。CUEPON/汎用通知基盤ができたら移行。
 12. **カルテ写真（`karte_photos`）** — R2未有効のためD1にdataURL格納（暫定）。**R2有効化が最初の解消項目**。
 
-13. **音声AIカウンセリングの同意文** — 録音データの保持/削除は**端末・環境によって運用が変わる**（オーナー判断・2026-07-30）ため、同意文では保存期間や自動削除を約束していない。書いているのは「用途＝要望とカルテの記録のみ」「第三者提供なし」「削除依頼を受け付ける」の3点だけ。**実装で自動削除を保証できるようになったら同意文に追記する**。
+13. **★カウンセリングシート・同意書は削除しない（オーナー方針・2026-07-30）** — 理由は「あとでトラブルがあったときに記録が無いことがトラブルになる。これは美容師・美容室がしっかり仕事をするためのもの」。したがって：
+    - **削除APIを持たない**（実装していた `DELETE /counseling` は撤去済み）。二重提出などは `POST /counseling/void` で「取り消し」印をつけるだけ＝一覧では薄く出るが**記録・同意・署名は残る**（`undo:true`で戻せる）。
+    - 管理画面にも削除ボタンを置かない。カルテの見出しに「記録として保管します・消せません」と明示（スタッフが消せると誤解しないように）。
+    - 唯一削除できるのは `POST /admin/purge-test`（**氏名が テスト/検証/再検証/ダミー で始まる検証データのみ**）。
+    - 同意文も保管する前提の文言に統一：「このシートと同意書は、次回以降の施術を安全に行うため、また万一のときにお互いの記録として、一定期間そのまま保管します」。**「削除をご希望のときはお申し出ください」は削除した**（守れない約束を書かない）。
+    - 音声AIの同意文も同様に、保存期間や自動削除は約束していない（録音の扱いは端末・環境で運用が変わるため）。書いているのは「用途＝要望とカルテの記録のみ」「第三者提供なし」の2点。
+    - **統合時（CUEPON移行）も履歴を落とさないこと。**
 14. **カウンセリングシート・同意書（`counseling`/`customer_notes`）** — CUEPONの顧客カルテ/同意記録APIを使わず自社D1。**同意書は法的な保管物**なので、統合時は履歴を消さずに移行すること（保管期間・削除要求への対応もCUEPON側の個人情報方針に合わせる）。署名画像は現状D1のdataURL（写真と同じくR2が適所）。
 
 ---

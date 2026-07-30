@@ -351,21 +351,20 @@ export default {
       }
       return json({ ok: true, id }, 200, cors);
     }
-    // シートの削除。id=1件（二重提出の取消）／key=そのお客様の全件＋重要メモ
-    // （同意書に「削除をご希望のときはお申し出ください」と書いているので、応えられる口を持つ）
-    if (p.endsWith('/counseling') && m === 'DELETE') {
+    // 同意書は消さない（オーナー方針 2026-07-30）。あとで何かあったときに記録が無いのが一番まずい。
+    // 二重提出などは「取り消し」印をつけるだけ＝一覧では薄く出るが記録そのものは残る。
+    if (p.endsWith('/counseling/void') && m === 'POST') {
       if (!(env.CLEANUP_TOKEN && url.searchParams.get('token') === env.CLEANUP_TOKEN)) { const auth = A(); if (auth) return auth; }
       if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
-      const id = url.searchParams.get('id'), key = url.searchParams.get('key');
-      if (!id && !key) return json({ error: 'id または key が必要です' }, 400, cors);
-      if (id) {
-        await env.DB.prepare('DELETE FROM counseling WHERE id=?').bind(id).run();
-        return json({ ok: true, id }, 200, cors);
-      }
-      const ph = String(key).replace(/[^0-9]/g, '') || key;   // 電話は数字だけに寄せる
-      const r1 = await env.DB.prepare('DELETE FROM counseling WHERE key=?').bind(ph).run();
-      await env.DB.prepare('DELETE FROM customer_notes WHERE key=?').bind(ph).run().catch(() => {});
-      return json({ ok: true, key: ph, sheets: (r1.meta && r1.meta.changes) || 0, notes: 'deleted' }, 200, cors);
+      await ensureRegisterTables(env);
+      let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
+      if (!o.id) return json({ error: 'id が必要です' }, 400, cors);
+      const row = await env.DB.prepare('SELECT id FROM counseling WHERE id=?').bind(o.id).first();
+      if (!row) return json({ error: 'シートが見つかりません' }, 404, cors);
+      const undo = o.undo === true;
+      await env.DB.prepare('UPDATE counseling SET voided=?, void_reason=? WHERE id=?')
+        .bind(undo ? 0 : 1, undo ? '' : String(o.reason || '取り消し'), o.id).run();
+      return json({ ok: true, id: o.id, voided: !undo }, 200, cors);
     }
     // 髪格診断(seam.site/finder)の結果を、提出済みのカウンセリングシートに後から紐付ける
     // お客様が待ち時間に診断→スタッフの手を介さずカルテに届く導線
@@ -396,9 +395,9 @@ export default {
       const from = url.searchParams.get('from') || '2000-01-01', to = url.searchParams.get('to') || '2999-12-31';
       const kindQ = url.searchParams.get('kind') || '';
       const res = await env.DB.prepare(
-        `SELECT id,name,kind,date,answers,consent FROM counseling WHERE date>=? AND date<=? ORDER BY date DESC LIMIT 5000`
+        `SELECT id,name,kind,date,answers,consent,voided FROM counseling WHERE date>=? AND date<=? ORDER BY date DESC LIMIT 5000`
       ).bind(from, to).all();
-      let rows = (res.results || []).filter(r => !/^(テスト|検証|再検証)/.test(r.name || ''));
+      let rows = (res.results || []).filter(r => !/^(テスト|検証|再検証|ダミー)/.test(r.name || '') && !r.voided);
       if (kindQ) rows = rows.filter(r => r.kind === kindQ);
 
       const bump = (m2, k) => { if (!k) return; m2[k] = (m2[k] || 0) + 1; };
@@ -1229,6 +1228,8 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN face_ng INTEGER DEFAULT 0`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN voice_policy TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE customer_notes ADD COLUMN video_policy TEXT DEFAULT ''`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN voided INTEGER DEFAULT 0`).run(); } catch (e) {}
+  try { await env.DB.prepare(`ALTER TABLE counseling ADD COLUMN void_reason TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN kana TEXT DEFAULT ''`).run(); } catch (e) {}
   try { await env.DB.prepare(`ALTER TABLE reservations ADD COLUMN nominated INTEGER DEFAULT 1`).run(); } catch (e) {}
   _regTablesReady = true;
