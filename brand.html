@@ -926,6 +926,44 @@
       border-color: var(--charcoal);
     }
 
+    /* Brand Modal — コンセプト部(組版を詰めて 商品を早く見せる) */
+    .bm-concept { padding: 14px 24px 16px; border-bottom: 1px solid rgba(232,223,209,0.7); }
+    .bm-thumbs { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .bm-thumbs::-webkit-scrollbar { display: none; }
+    .bm-thumb {
+      flex: 0 0 auto; width: 62px; height: 74px; background: #fff; border: 1px solid rgba(232,223,209,0.9);
+      border-radius: var(--r-card); display: flex; align-items: center; justify-content: center; padding: 6px; overflow: hidden;
+    }
+    .bm-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .bm-concept-body {
+      font-family: var(--font-jp); font-size: 12.5px; font-weight: 300; line-height: 1.95;
+      letter-spacing: 0.02em; color: rgba(60,54,46,0.82); max-width: 40em;
+      text-align: left; word-break: normal; overflow-wrap: anywhere; line-break: strict;
+    }
+    .bm-concept-body.is-clamped {
+      display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .bm-more {
+      margin-top: 8px; border: none; background: transparent; padding: 4px 0; cursor: pointer;
+      font-family: var(--font-en); font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gold); border-bottom: 1px solid rgba(184,148,90,0.4); min-height: 32px;
+    }
+    .bm-concept-story {
+      margin-top: 10px; font-family: var(--font-jp); font-size: 11.5px; font-weight: 300; line-height: 1.9;
+      letter-spacing: 0.02em; color: rgba(60,54,46,0.6); max-width: 40em;
+    }
+    .bm-story-label {
+      font-family: var(--font-en); font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gold); margin-right: 8px; vertical-align: 1px;
+    }
+    .bm-keywords { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .bm-kw { font-size: 10.5px; padding: 3px 10px; border: 1px solid rgba(184,148,90,0.32); border-radius: 40px; color: #8A744F; white-space: nowrap; }
+    @media (max-width: 600px) {
+      .bm-concept { padding: 12px 18px 14px; }
+      .bm-concept-body { font-size: 12px; line-height: 1.9; }
+      .bm-thumb { width: 54px; height: 64px; }
+    }
+
     /* Modal Body — Product List */
     .finder-mb {
       flex: 1;
@@ -6038,6 +6076,14 @@ window.SEAM_PAGE_I18N = {
     return _dirMap[f(name)] || (nameJp ? _dirMap[f(nameJp)] : null) || null;
   }
 
+  // コンセプト本文がタグラインと同じ一文で始まる場合(Aujua等)は 見出し側のタグラインを省く
+  // ※本文を削ると「掲げる…」のように文が壊れるので 本文には手を入れない
+  function startsWithTagline(concept, tagline) {
+    const norm = x => String(x || '').replace(/[\s\u3000]/g, '');
+    const c = norm(concept), t = norm(tagline);
+    return !!c && !!t && c.startsWith(t);
+  }
+
   async function openBrandProducts(brand) {
     // モーダルを開く
     modal.classList.add('is-open');
@@ -6053,7 +6099,7 @@ window.SEAM_PAGE_I18N = {
       brand = Object.assign({}, dirRec, brand);
       if (!brand.concept && dirRec.concept) brand.concept = dirRec.concept;
     }
-    descEl.textContent = brand.desc || brand.tagline || '';
+    descEl.textContent = startsWithTagline(brand.concept, brand.tagline) ? '' : (brand.tagline || brand.desc || '');
     bodyEl.innerHTML = '<div class="finder-empty" style="padding:32px 20px;text-align:center;color:#999;">商品データを読み込み中…</div>';
     footer.style.display = 'none';
 
@@ -6071,13 +6117,37 @@ window.SEAM_PAGE_I18N = {
       ? `${escHtml(brand.name)} の取扱商品 ${matched.length}点${brand.site ? ' | 公式サイトへ ↗' : ''}`
       : 'Brand Products';
 
-    const conceptHTML = (brand.concept || brand.story) ? `
-      <div style="padding:4px 2px 18px;border-bottom:1px solid rgba(40,38,36,0.08);margin-bottom:16px;">
-        ${brand.concept ? `<p style="font-size:12.5px;line-height:2;color:rgba(60,54,46,0.8);">${escHtml(brand.concept)}</p>` : ''}
-        ${brand.story ? `<p style="margin-top:8px;font-size:11.5px;line-height:1.95;color:rgba(60,54,46,0.62);">${escHtml(brand.story)}</p>` : ''}
-        ${(brand.keywords || []).length ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px;">${brand.keywords.slice(0, 8).map(k => `<span style="font-size:10.5px;padding:3px 10px;border:1px solid rgba(184,148,90,0.35);border-radius:40px;color:#8A744F;">${escHtml(k)}</span>`).join('')}</div>` : ''}
+    // 代表商品(画像がある上位5点)をサムネイルで先に見せる — ブランドの顔が一目でわかる
+    // 詰め替え画像は顔に使わない(判定はこのスコープ内に持つ: 商品カタログ側の同名関数は別スコープ)
+    const isRefillImg = src => !!src && /refill|pouch|リフィル|レフィル|詰め?替え?|詰替|パウチ|sachet/i.test(String(src).toLowerCase());
+    const thumbs = matched.filter(p => (p.image || p.imageUrl) && !isRefillImg(p.image || p.imageUrl)).slice(0, 5);
+    const thumbsHTML = thumbs.length ? `
+        <div class="bm-thumbs">
+          ${thumbs.map(p => { const im = String(p.image || p.imageUrl).replace(/\.(jpe?g|png)(\?.*)?$/i, '.webp$2');
+            return `<span class="bm-thumb"><img src="${escHtml(im)}" alt="${escHtml(p.name)}" data-fb="${escHtml(p.image || p.imageUrl)}" loading="lazy"
+              onerror="if(this.dataset.fb&&this.src!==this.dataset.fb){this.src=this.dataset.fb;this.removeAttribute('data-fb');}else{this.parentElement.style.display='none';}"></span>`;
+          }).join('')}
+        </div>` : '';
+    const conceptText = String(brand.concept || '').trim();
+    const conceptHTML = (conceptText || brand.story || thumbs.length) ? `
+      <div class="bm-concept">
+        ${thumbsHTML}
+        ${conceptText ? `<p class="bm-concept-body is-clamped">${escHtml(conceptText)}</p>` : ''}
+        ${brand.story ? `<p class="bm-concept-story" hidden><span class="bm-story-label">Story</span>${escHtml(brand.story)}</p>` : ''}
+        ${(conceptText || brand.story) ? `<button type="button" class="bm-more">続きを読む</button>` : ''}
+        ${(brand.keywords || []).length ? `<div class="bm-keywords">${brand.keywords.slice(0, 8).map(k => `<span class="bm-kw">${escHtml(k)}</span>`).join('')}</div>` : ''}
       </div>` : '';
     bodyEl.innerHTML = conceptHTML + renderProducts(matched, brand);
+    // コンセプトの折りたたみ(既定は4行 → 商品がすぐ視界に入る)
+    const moreBtn = bodyEl.querySelector('.bm-more');
+    if (moreBtn) moreBtn.addEventListener('click', () => {
+      const body = bodyEl.querySelector('.bm-concept-body');
+      const story = bodyEl.querySelector('.bm-concept-story');
+      const open = body ? body.classList.contains('is-clamped') : !!(story && story.hidden);
+      if (body) body.classList.toggle('is-clamped', !open);
+      if (story) story.hidden = !open;
+      moreBtn.textContent = open ? '閉じる' : '続きを読む';
+    });
   }
 
   // グローバルに公開（カード生成コードから呼ぶ）
