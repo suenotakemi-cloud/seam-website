@@ -3769,9 +3769,63 @@ function DeepBestCard({ item, best = null, variant = 'best', category = null, ti
    既定は upgradeWill に従う。段は1本価格で作り(質問がそう聞いているため)、
    差額を明示して「いくら足すと何が変わるか」だけを判断してもらう。 */
 function DeepTierBlock({ tiers, defaultIndex = 0, honest = null, noHigher = false, category = null }){
-  const [sel, setSel] = useState(Math.min(defaultIndex || 0, Math.max(0, tiers.length - 1)));
+  const safeDefault = Math.min(defaultIndex || 0, Math.max(0, tiers.length - 1));
+  const [sel, setSel] = useState(safeDefault);
+  const railRef = useRef(null);
+  const slideRefs = useRef([]);
+  const lockUntil = useRef(0);   // タップ由来のスクロール中はスワイプ同期を止める
+  const rafPending = useRef(false);
+
+  const leftOf = (i) => {
+    const rail = railRef.current, slide = slideRefs.current[i];
+    if (!rail || !slide) return null;
+    return slide.getBoundingClientRect().left - rail.getBoundingClientRect().left + rail.scrollLeft;
+  };
+
+  // 既定の段をスワイプ位置にも合わせる(投資意向ありなら「ワンランク上」から見えるように)
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail || tiers.length < 2) return;
+    const left = leftOf(safeDefault);
+    if (left != null) { lockUntil.current = Date.now() + 500; rail.scrollLeft = left; }
+  }, []);
+
+  const goTo = (i) => {
+    setSel(i);
+    const rail = railRef.current;
+    const left = leftOf(i);
+    if (!rail || left == null) return;
+    lockUntil.current = Date.now() + 700;
+    if (rail.scrollTo) rail.scrollTo({ left, behavior: 'smooth' }); else rail.scrollLeft = left;
+  };
+
+  // スワイプ(横スクロール)でもタブの選択を追従させる
+  const onRailScroll = () => {
+    if (rafPending.current) return;
+    rafPending.current = true;
+    const run = () => {
+      rafPending.current = false;
+      if (Date.now() < lockUntil.current) return;
+      const rail = railRef.current;
+      if (!rail) return;
+      // PC等で3枚とも収まっている場合はスクロールが起きない=タップ選択を保つ
+      if (rail.scrollWidth <= rail.clientWidth + 2) return;
+      const base = rail.getBoundingClientRect().left;
+      let best = 0, bestD = Infinity;
+      slideRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const d = Math.abs(el.getBoundingClientRect().left - base);
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      setSel(prev => (prev === best ? prev : best));
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run); else setTimeout(run, 60);
+  };
+
   if (!tiers || !tiers.length) return null;
-  const cur = tiers[Math.min(sel, tiers.length - 1)];
+  const single = tiers.length === 1;
+  const curIdx = Math.min(sel, tiers.length - 1);
+
   return (
     <div>
       {honest && (
@@ -3780,14 +3834,14 @@ function DeepTierBlock({ tiers, defaultIndex = 0, honest = null, noHigher = fals
           {honest}
         </p>
       )}
-      {tiers.length > 1 && (
-        <div role="tablist" aria-label="予算の段" className="mb-2.5 grid gap-1.5"
+      {!single && (
+        <div role="tablist" aria-label="予算の段" className="mb-2 grid gap-1.5"
           style={{ gridTemplateColumns: 'repeat(' + tiers.length + ', minmax(0, 1fr))' }}>
           {tiers.map((t, i) => {
-            const on = i === (sel < tiers.length ? sel : 0);
+            const on = i === curIdx;
             return (
               <button key={t.key} type="button" role="tab" aria-selected={on}
-                onClick={() => { setSel(i); try { window.seamTrack && seamTrack('tier_pick', { label: t.key }); } catch (_) {} }}
+                onClick={() => { goTo(i); try { window.seamTrack && seamTrack('tier_pick', { label: t.key }); } catch (_) {} }}
                 className={'flex flex-col items-center justify-center gap-0.5 rounded-[2px] px-2 py-2 min-h-[46px] transition-colors border '
                   + (on ? 'bg-gold text-white border-gold' : 'bg-white text-charcoal/75 border-line hover:border-gold/60')}>
                 <span className="text-[11.5px] leading-tight text-center">{t.label}</span>
@@ -3799,8 +3853,29 @@ function DeepTierBlock({ tiers, defaultIndex = 0, honest = null, noHigher = fals
           })}
         </div>
       )}
-      <DeepBestCard item={cur.item} category={category} variant={cur.key === 'usual' ? 'best' : 'alt'}
-        best={tiers[0].item} tierLabel={cur.label} showBadge={tiers.length === 1} />
+      {!single && (
+        <div className="mb-2 flex items-center gap-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/50">
+          <svg aria-hidden viewBox="0 0 24 24" className="w-3.5 h-3.5 shrink-0 text-gold" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M8 7l-4 5 4 5M16 7l4 5-4 5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          <span>タップでも 横スワイプでも 切り替えられます</span>
+        </div>
+      )}
+      {single ? (
+        <DeepBestCard item={tiers[0].item} category={category} variant="best"
+          best={tiers[0].item} tierLabel={tiers[0].label} showBadge={true} />
+      ) : (
+        <div ref={railRef} onScroll={onRailScroll}
+          className="flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1"
+          style={{ WebkitOverflowScrolling: 'touch' }}>
+          {tiers.map((t, i) => (
+            <div key={t.key} ref={el => { slideRefs.current[i] = el; }}
+              className="snap-start shrink-0 flex flex-col"
+              style={{ width: '88%', maxWidth: '440px' }}>
+              <DeepBestCard item={t.item} category={category} variant={t.key === 'usual' ? 'best' : 'alt'}
+                best={tiers[0].item} tierLabel={t.label} showBadge={true} />
+            </div>
+          ))}
+        </div>
+      )}
       {noHigher && (
         <p className="mt-2 text-[11px] leading-[1.7] text-charcoal/55">この価格帯より上に ご提案できるものはありません</p>
       )}

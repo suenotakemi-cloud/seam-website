@@ -1,4 +1,3 @@
-/* AUTO-GENERATED from js/finder-app.jsx by CI (build-finder.js). DO NOT EDIT — edit the .jsx source. */
 function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 /* =========================================================================
    SEAM Hair Finder
@@ -5217,29 +5216,90 @@ function DeepTierBlock({
   noHigher = false,
   category = null
 }) {
-  const [sel, setSel] = useState(Math.min(defaultIndex || 0, Math.max(0, tiers.length - 1)));
+  const safeDefault = Math.min(defaultIndex || 0, Math.max(0, tiers.length - 1));
+  const [sel, setSel] = useState(safeDefault);
+  const railRef = useRef(null);
+  const slideRefs = useRef([]);
+  const lockUntil = useRef(0); // タップ由来のスクロール中はスワイプ同期を止める
+  const rafPending = useRef(false);
+  const leftOf = i => {
+    const rail = railRef.current,
+      slide = slideRefs.current[i];
+    if (!rail || !slide) return null;
+    return slide.getBoundingClientRect().left - rail.getBoundingClientRect().left + rail.scrollLeft;
+  };
+
+  // 既定の段をスワイプ位置にも合わせる(投資意向ありなら「ワンランク上」から見えるように)
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail || tiers.length < 2) return;
+    const left = leftOf(safeDefault);
+    if (left != null) {
+      lockUntil.current = Date.now() + 500;
+      rail.scrollLeft = left;
+    }
+  }, []);
+  const goTo = i => {
+    setSel(i);
+    const rail = railRef.current;
+    const left = leftOf(i);
+    if (!rail || left == null) return;
+    lockUntil.current = Date.now() + 700;
+    if (rail.scrollTo) rail.scrollTo({
+      left,
+      behavior: 'smooth'
+    });else rail.scrollLeft = left;
+  };
+
+  // スワイプ(横スクロール)でもタブの選択を追従させる
+  const onRailScroll = () => {
+    if (rafPending.current) return;
+    rafPending.current = true;
+    const run = () => {
+      rafPending.current = false;
+      if (Date.now() < lockUntil.current) return;
+      const rail = railRef.current;
+      if (!rail) return;
+      // PC等で3枚とも収まっている場合はスクロールが起きない=タップ選択を保つ
+      if (rail.scrollWidth <= rail.clientWidth + 2) return;
+      const base = rail.getBoundingClientRect().left;
+      let best = 0,
+        bestD = Infinity;
+      slideRefs.current.forEach((el, i) => {
+        if (!el) return;
+        const d = Math.abs(el.getBoundingClientRect().left - base);
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+        }
+      });
+      setSel(prev => prev === best ? prev : best);
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);else setTimeout(run, 60);
+  };
   if (!tiers || !tiers.length) return null;
-  const cur = tiers[Math.min(sel, tiers.length - 1)];
+  const single = tiers.length === 1;
+  const curIdx = Math.min(sel, tiers.length - 1);
   return /*#__PURE__*/React.createElement("div", null, honest && /*#__PURE__*/React.createElement("p", {
     className: "mb-2 text-[11.5px] leading-[1.75] text-charcoal/70"
   }, /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-widest2 text-[8.5px] uppercase text-gold mr-1.5 align-[1px]"
-  }, "\u6B63\u76F4\u306B"), honest), tiers.length > 1 && /*#__PURE__*/React.createElement("div", {
+  }, "\u6B63\u76F4\u306B"), honest), !single && /*#__PURE__*/React.createElement("div", {
     role: "tablist",
     "aria-label": "\u4E88\u7B97\u306E\u6BB5",
-    className: "mb-2.5 grid gap-1.5",
+    className: "mb-2 grid gap-1.5",
     style: {
       gridTemplateColumns: 'repeat(' + tiers.length + ', minmax(0, 1fr))'
     }
   }, tiers.map((t, i) => {
-    const on = i === (sel < tiers.length ? sel : 0);
+    const on = i === curIdx;
     return /*#__PURE__*/React.createElement("button", {
       key: t.key,
       type: "button",
       role: "tab",
       "aria-selected": on,
       onClick: () => {
-        setSel(i);
+        goTo(i);
         try {
           window.seamTrack && seamTrack('tier_pick', {
             label: t.key
@@ -5252,14 +5312,51 @@ function DeepTierBlock({
     }, t.label), /*#__PURE__*/React.createElement("span", {
       className: 'font-mono text-[9.5px] nums leading-none ' + (on ? 'text-white/85' : 'text-gold')
     }, t.delta || 'ご予算内'));
-  })), /*#__PURE__*/React.createElement(DeepBestCard, {
-    item: cur.item,
+  })), !single && /*#__PURE__*/React.createElement("div", {
+    className: "mb-2 flex items-center gap-1.5 font-mono tracking-widest2 text-[9.5px] uppercase text-charcoal/50"
+  }, /*#__PURE__*/React.createElement("svg", {
+    "aria-hidden": true,
+    viewBox: "0 0 24 24",
+    className: "w-3.5 h-3.5 shrink-0 text-gold",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.6"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M8 7l-4 5 4 5M16 7l4 5-4 5",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  })), /*#__PURE__*/React.createElement("span", null, "\u30BF\u30C3\u30D7\u3067\u3082 \u6A2A\u30B9\u30EF\u30A4\u30D7\u3067\u3082 \u5207\u308A\u66FF\u3048\u3089\u308C\u307E\u3059")), single ? /*#__PURE__*/React.createElement(DeepBestCard, {
+    item: tiers[0].item,
     category: category,
-    variant: cur.key === 'usual' ? 'best' : 'alt',
+    variant: "best",
     best: tiers[0].item,
-    tierLabel: cur.label,
-    showBadge: tiers.length === 1
-  }), noHigher && /*#__PURE__*/React.createElement("p", {
+    tierLabel: tiers[0].label,
+    showBadge: true
+  }) : /*#__PURE__*/React.createElement("div", {
+    ref: railRef,
+    onScroll: onRailScroll,
+    className: "flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar pb-1",
+    style: {
+      WebkitOverflowScrolling: 'touch'
+    }
+  }, tiers.map((t, i) => /*#__PURE__*/React.createElement("div", {
+    key: t.key,
+    ref: el => {
+      slideRefs.current[i] = el;
+    },
+    className: "snap-start shrink-0 flex flex-col",
+    style: {
+      width: '88%',
+      maxWidth: '440px'
+    }
+  }, /*#__PURE__*/React.createElement(DeepBestCard, {
+    item: t.item,
+    category: category,
+    variant: t.key === 'usual' ? 'best' : 'alt',
+    best: tiers[0].item,
+    tierLabel: t.label,
+    showBadge: true
+  })))), noHigher && /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[11px] leading-[1.7] text-charcoal/55"
   }, "\u3053\u306E\u4FA1\u683C\u5E2F\u3088\u308A\u4E0A\u306B \u3054\u63D0\u6848\u3067\u304D\u308B\u3082\u306E\u306F\u3042\u308A\u307E\u305B\u3093"));
 }
