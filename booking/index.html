@@ -791,6 +791,26 @@ body.customer .phone.spa{background:#f7f8f3}
 .pbody .ent-line span{color:#2f5c41;font-size:14px;font-weight:600}
 /* 二択カードの「私はどっち？」を消す生活語の一行 */
 .pbody .ent-who{display:block;margin-bottom:2px;font-size:14.5px;font-weight:800;color:#3a3226}
+/* 予約の判断に必要な3点（料金・所要・はじめての方）を、詳細を増やさずに前に出す */
+.pbody .ent-intl{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 2px}
+.pbody .ei{font-size:12.5px;font-weight:700;color:#2c4a36;background:#f2f7f0;border:1px solid #d6e2cd;border-radius:99px;padding:6px 12px}
+.pbody .ei:before{content:"✓";color:#4f6b3f;font-weight:900;margin-right:5px}
+.pbody .ent-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:#e7e1d5;border:1px solid #e7e1d5;border-radius:12px;overflow:hidden;margin:16px 0 4px}
+.pbody .ef{background:#fff;padding:11px 12px}
+.pbody .efl{font-size:10.5px;font-weight:800;letter-spacing:.06em;color:#8a6a2f;margin-bottom:3px}
+.pbody .efv{font-size:12.5px;font-weight:700;color:#3a3226;line-height:1.65}
+@media (max-width:640px){.pbody .ent-facts{grid-template-columns:1fr 1fr}}
+/* どちらを受けたいかは、気分で決まる。名前の下に1行だけ理由を置く */
+.pbody .ent-mood{font-size:13.5px;font-weight:700;color:#8a6a2f;margin:1px 0 5px;line-height:1.6}
+/* 「今ここで決め切らないといけないのでは」という不安を消す一言 */
+.pbody .ent-relief{margin-top:14px;background:#f7f9f5;border:1px solid #d6e2cd;border-radius:12px;padding:12px 14px;font-size:13.5px;font-weight:600;color:#2c4a36;line-height:1.8}
+.pbody .ent-relief b{font-weight:800}
+/* 迷っている方には、空き枠より先に診断という入口も見せる（主CTAの下に置く） */
+.pbody .ent-finder{display:block;margin-top:12px;background:#fff;border:1px solid #e7e1d5;border-radius:12px;padding:13px 15px;text-decoration:none}
+.pbody .ent-finder:hover{border-color:#8a6a2f}
+.pbody .efd-t{font-size:14px;font-weight:800;color:#171614}
+.pbody .efd-s{font-size:12.5px;font-weight:600;color:#6b6355;line-height:1.75;margin-top:3px}
+.pbody .efd-go{font-size:13px;font-weight:800;color:#8a6a2f;margin-top:7px}
 /* サブコピーは短文2発（1行目=大きく短く / 2行目=小さく安心）。補足は「絶対に見逃さない」濃さへ */
 .pbody .ent-sub1{font-size:17px;font-weight:800;color:#2f2a22;line-height:1.5;margin-bottom:3px}
 .pbody .ent-sub2{font-size:14px;font-weight:700;color:#3d382f;line-height:1.8;margin-bottom:16px}
@@ -972,6 +992,15 @@ body.customer .phone.spa{background:#f7f8f3}
       <label class="csopt"><input type="checkbox" id="cs-opt-video"><span><b>🎥 動画の撮影について</b><i>リール・ショート動画を撮るお店はONに（撮影しない／記録用だけ／SNSもOK）</i></span></label>
       <label class="csopt"><input type="checkbox" id="cs-opt-voice"><span><b>🎙 音声AIカウンセリング</b><i>会話をAIが文字にして記録することへの同意。端末や環境で精度に差が出るので、実際に使うお店だけONに（既定OFF）</i></span></label>
       <div id="cs-opt-saved" style="color:var(--ok);font-weight:800;font-size:12.5px;display:none;margin-top:8px">✓ 保存しました</div>
+      <div style="border-top:1px dashed var(--line);margin-top:14px;padding-top:12px">
+        <div style="font-size:12.5px;font-weight:800;margin-bottom:3px">📱 iPadの初期設定（この端末で1回だけ）</div>
+        <div style="font-size:12px;color:var(--sub);line-height:1.75;margin-bottom:8px">
+          お客様に見える画面には設定欄を出していません。新しいiPadを使うときだけ、下のURLをその端末で開いて管理トークンを入れてください。以降は設定なしのURLで運用します。</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <code style="font-size:12px;background:#f4f6f8;padding:5px 9px;border-radius:6px">counseling.html?setup=1</code>
+          <a class="btn small ghost" href="counseling.html?setup=1" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 9px;font-size:11.5px">この端末で開く ↗</a>
+        </div>
+      </div>
     </div>
   </details>
 </section>
@@ -1516,6 +1545,35 @@ const SyncProvider = {
   async push(r){ /* TODO: かんざしSaaSに予約を送信（詳細は ARCHITECTURE.md）*/ },
   async cancel(id){ /* TODO: かんざしSaaSにキャンセルを送信 */ },
 };
+/* ───── お名前の検証（サロンボードに入る形だけ通す・worker.js checkNameParts と同一規則） ─────
+   ・前後の空白／ゼロ幅文字／全角英数／半角カナ は黙って直す
+   ・内部の空白・記号・数字・絵文字 は直さず弾く
+     （「山田 太」を黙って「山田太」に繋ぐと 別人の名前でサロンボードに登録されてしまう） */
+const NM_ZW=/[\u200B-\u200D\u2060\uFEFF\u0000-\u001F\u007F]/g;
+const NM_OK=/^[\u4E00-\u9FFF\u3005\u3006\u3007\u30F6\u30F5\u3041-\u309F\u30A1-\u30FAー・A-Za-z]+$/;
+const KN_OK=/^[\u30A1-\u30FAー・]+$/;
+const NM_MAX=16;
+function nmNorm(v){let x=String(v==null?'':v).replace(NM_ZW,'');try{x=x.normalize('NFKC')}catch(e){}
+  return x.replace(/^[\s\u3000]+|[\s\u3000]+$/g,'');}
+function nameCheck(sei,mei,seiK,meiK){
+  const S=nmNorm(sei),M=nmNorm(mei),SK=hira2kata(nmNorm(seiK)),MK=hira2kata(nmNorm(meiK));
+  if(!S)return{ng:'姓を入力してください'};
+  if(!M)return{ng:'名を入力してください'};
+  if(/[\s\u3000]/.test(S))return{ng:'姓の欄に空白は使えません（姓と名は別の欄に分けてください）'};
+  if(/[\s\u3000]/.test(M))return{ng:'名の欄に空白は使えません（姓と名は別の欄に分けてください）'};
+  if(S.length>NM_MAX||M.length>NM_MAX)return{ng:'お名前が長すぎます（姓・名それぞれ'+NM_MAX+'文字以内）'};
+  if(!NM_OK.test(S))return{ng:'姓に使えない文字が含まれています（記号・数字・絵文字は使えません）'};
+  if(!NM_OK.test(M))return{ng:'名に使えない文字が含まれています（記号・数字・絵文字は使えません）'};
+  if(!SK)return{ng:'セイを入力してください'};
+  if(!MK)return{ng:'メイを入力してください'};
+  if(/[\s\u3000]/.test(SK))return{ng:'セイの欄に空白は使えません'};
+  if(/[\s\u3000]/.test(MK))return{ng:'メイの欄に空白は使えません'};
+  if(SK.length>NM_MAX||MK.length>NM_MAX)return{ng:'フリガナが長すぎます（'+NM_MAX+'文字以内）'};
+  if(!KN_OK.test(SK))return{ng:'セイはカタカナで入力してください'};
+  if(!KN_OK.test(MK))return{ng:'メイはカタカナで入力してください'};
+  return{sei:S,mei:M,seiK:SK,meiK:MK,name:S+' '+M,kana:SK+' '+MK};
+}
+
 function hira2kata(s){return (s||'').replace(/[ぁ-ゖ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)+0x60));}
 function addReservation(o){
   const c=conflicts(o.date,o.staffId,o.start,o.end);
@@ -2790,21 +2848,38 @@ function renderBook(){
       `<div class="ent-lead">このまま予約できます</div>
        <div class="ent-sub1">空いている時間を選ぶだけです</div>
        <div class="ent-sub2">お電話は要りません。<b>1〜2分で予約できます。</b></div>
+       ${BOOK_LANG!=='ja'?`<div class="ent-intl">
+         <div class="ei">英語で対応できます</div>
+         <div class="ei">日本語のお電話は要りません</div>
+         <div class="ei">施術前にプランを一緒に確認します</div>
+       </div>`:''}
+       <div class="ent-facts">
+         <div class="ef"><div class="efl">料金の目安</div><div class="efv">カット ¥9,900／カラー ¥9,900〜<br>ヘッドスパ ¥12,000〜</div></div>
+         <div class="ef"><div class="efl">所要時間</div><div class="efv">45分〜2時間ほど<br>メニューごとに表示します</div></div>
+         <div class="ef"><div class="efl">はじめての方</div><div class="efv">カウンセリングの時間つき<br>施術前に一緒に確かめます</div></div>
+         <div class="ef"><div class="efl">ことば</div><div class="efv">日本語・English<br>中文・한국어</div></div>
+       </div>
        <div class="ent-steps-h">予約は3つだけです</div>
        <div class="ent-steps3"><span>1</span><div>メニューを選ぶ</div><span>2</span><div>日にちと時間を選ぶ</div><span>3</span><div>お名前を書いて完了</div></div>
        <div class="ent-pick">ご希望の内容を選んでください</div>
        <div class="ent-wrap">
          <button class="ent-card ent-hair" data-sec="hair">
            <div class="ent-ic">✂️</div>
-           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-s"><span class="ent-who">髪を切る・染める方はこちら</span>カット・カラー・パーマ・縮毛矯正</div><div class="ent-go">空いている時間を見る</div></div>
+           <div class="ent-main"><div class="ent-t">ヘアサロン</div><div class="ent-mood">今日そのまま出かけたくなる髪へ</div><div class="ent-s"><span class="ent-who">髪を切る・染める方はこちら</span>カット・カラー・パーマ・縮毛矯正</div><div class="ent-go">空いている時間を見る</div></div>
            <div class="ent-arrow">→</div>
          </button>
          <button class="ent-card ent-spa" data-sec="spa">
            <div class="ent-ic">💆</div>
-           <div class="ent-main"><div class="ent-t">ヘッドスパ</div><div class="ent-s"><span class="ent-who">頭皮ケア・ゆっくりしたい方はこちら</span>完全個室でお休みいただけます</div><div class="ent-go">空いている時間を見る</div></div>
+           <div class="ent-main"><div class="ent-t">ヘッドスパ</div><div class="ent-mood">根元から軽くなって、頭がほどける時間</div><div class="ent-s"><span class="ent-who">頭皮ケア・ゆっくりしたい方はこちら</span>完全個室でお休みいただけます</div><div class="ent-go">空いている時間を見る</div></div>
            <div class="ent-arrow">→</div>
          </button>
-       </div>`;
+       </div>
+       <div class="ent-relief">はじめてのご来店でも大丈夫です。<b>メニューは施術前に一緒に確かめます</b>ので、今ここで決め切らなくても平気です。</div>
+       <a class="ent-finder" href="/finder" target="_blank" rel="noopener">
+         <div class="efd-t">どれが合うか迷っていますか</div>
+         <div class="efd-s">髪格診断（3分ほど）でお悩みを整えてからご来店いただけます。結果は担当者にも届きます</div>
+         <div class="efd-go">髪格診断をみる →</div>
+       </a>`;
     p.querySelectorAll('.ent-card').forEach(c=>c.onclick=()=>{bk.section=c.dataset.sec;bk.menu=null;renderBook()});
     return;
   }
@@ -3018,11 +3093,10 @@ function renderBook(){
       bk.seiK=hira2kata(document.getElementById('bseiK').value.trim());
       bk.meiK=hira2kata(document.getElementById('bmeiK').value.trim());
       bk.phone=document.getElementById('bphone').value.trim();
-      const kOk=s=>s&&/^[ァ-ヶー]+$/.test(s);
-      if(!bk.sei){toast('姓を入力してください',true);return}
-      if(!bk.mei){toast('名を入力してください',true);return}
-      if(!kOk(bk.seiK)){toast('セイをカタカナで入力してください',true);return}
-      if(!kOk(bk.meiK)){toast('メイをカタカナで入力してください',true);return}
+      // ホットペッパー/サロンボードに入る形だけ通す（worker.js の checkNameParts と同じ規則）
+      const chk=nameCheck(bk.sei,bk.mei,bk.seiK,bk.meiK);
+      if(chk.ng){toast(chk.ng,true);return}
+      bk.sei=chk.sei;bk.mei=chk.mei;bk.seiK=chk.seiK;bk.meiK=chk.meiK;
       // 「姓 名」「セイ メイ」に組み立て（salonPushがスペースで確実に分割できる）
       bk.name=bk.sei+' '+bk.mei;
       bk.kana=bk.seiK+' '+bk.meiK;
@@ -3140,6 +3214,29 @@ let BOOK_LANG=(()=>{
   if(/^zh/.test(nav))return (/(tw|hk|mo|hant)/.test(nav))?'tw':'zh';   // 台湾/香港は繁体字
   return 'en';})();
 const EN_MAP={
+  '料金の目安':'From',
+  '所要時間':'Time needed',
+  'はじめての方':'First visit',
+  'ことば':'Languages',
+  'カット ¥9,900／カラー ¥9,900〜':'Cut ¥9,900 / Colour from ¥9,900',
+  'ヘッドスパ ¥12,000〜':'Head Spa from ¥12,000',
+  '45分〜2時間ほど':'45 min – 2 hours',
+  'メニューごとに表示します':'Shown on each menu',
+  'カウンセリングの時間つき':'Consultation included',
+  '施術前に一緒に確かめます':'We confirm your plan before we begin',
+  '日本語・English':'Japanese / English',
+  '中文・한국어':'Chinese / Korean',
+  '今日そのまま出かけたくなる髪へ':'Shape, colour and repair — for hair you want to wear out today',
+  '根元から軽くなって、頭がほどける時間':'Scalp reset and deep rest — feel lighter from the roots',
+  'はじめてのご来店でも大丈夫です。':'First visit is very welcome. ',
+  'メニューは施術前に一緒に確かめます':'We will confirm your plan together before we begin',
+  'ので、今ここで決め切らなくても平気です。':' — you do not have to decide everything now.',
+  'どれが合うか迷っていますか':'Not sure which suits your hair?',
+  '髪格診断（3分ほど）でお悩みを整えてからご来店いただけます。結果は担当者にも届きます':'Start with our Hair Type Finder (about 3 min) and arrive with your concerns already organised. The result reaches your stylist too',
+  '髪格診断をみる →':'Try the Hair Type Finder →',
+  '英語で対応できます':'English support at the salon',
+  '日本語のお電話は要りません':'No Japanese phone call needed',
+  '施術前にプランを一緒に確認します':'We confirm your plan with you before starting',
   'メールアドレス':'Email address','予約完了のお知らせをお送りします':'We will send your booking confirmation','コードを送る':'Send code','確認する':'Verify','再送する':'Resend','確認済み':'Verified','届いた6桁の数字を入れてください（10分以内）':'Enter the 6-digit code (valid 10 min)',
   '変更':'Change',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'A deposit secures your booking. Pay the balance at the salon.',
@@ -3187,6 +3284,29 @@ const EN_RX=[
 ];
 /* 简体中文（大陆）辞書 — 予約フローの静的文言のみ。メニュー実名・スタッフ名は日本語のまま */
 const ZH_MAP={
+  '料金の目安':'价格参考',
+  '所要時間':'所需时间',
+  'はじめての方':'初次到店',
+  'ことば':'语言',
+  'カット ¥9,900／カラー ¥9,900〜':'剪发 ¥9,900／染发 ¥9,900起',
+  'ヘッドスパ ¥12,000〜':'头皮护理 ¥12,000起',
+  '45分〜2時間ほど':'约45分钟〜2小时',
+  'メニューごとに表示します':'每个项目都会标示',
+  'カウンセリングの時間つき':'包含咨询时间',
+  '施術前に一緒に確かめます':'施作前会与您一起确认',
+  '日本語・English':'日语／英语',
+  '中文・한국어':'中文／韩语',
+  '今日そのまま出かけたくなる髪へ':'剪、染、修护——让您今天就想这样出门',
+  '根元から軽くなって、頭がほどける時間':'从发根开始变轻，让头脑放松的时间',
+  'はじめてのご来店でも大丈夫です。':'第一次来也没问题。',
+  'メニューは施術前に一緒に確かめます':'项目会在施作前与您一起确认',
+  'ので、今ここで決め切らなくても平気です。':'，现在不必全部决定。',
+  'どれが合うか迷っていますか':'不确定哪个适合您的头发吗？',
+  '髪格診断（3分ほど）でお悩みを整えてからご来店いただけます。結果は担当者にも届きます':'可以先做发质诊断（约3分钟），把烦恼整理好再来店。结果也会传给您的设计师',
+  '髪格診断をみる →':'查看发质诊断 →',
+  '英語で対応できます':'店内可用英语沟通',
+  '日本語のお電話は要りません':'不需要用日语打电话',
+  '施術前にプランを一緒に確認します':'施作前会与您一起确认方案',
   'メールアドレス':'电子邮箱','予約完了のお知らせをお送りします':'我们会发送预约完成通知','コードを送る':'发送验证码','確認する':'验证','再送する':'重新发送','確認済み':'已验证','届いた6桁の数字を入れてください（10分以内）':'请输入收到的6位数字（10分钟内有效）',
   '変更':'修改',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'支付订金以确保预约。余款请到店支付。',
@@ -3228,6 +3348,29 @@ const ZH_RX=[
 ];
 /* 繁體中文（台灣）辞書 */
 const TW_MAP={
+  '料金の目安':'價格參考',
+  '所要時間':'所需時間',
+  'はじめての方':'初次到店',
+  'ことば':'語言',
+  'カット ¥9,900／カラー ¥9,900〜':'剪髮 ¥9,900／染髮 ¥9,900起',
+  'ヘッドスパ ¥12,000〜':'頭皮護理 ¥12,000起',
+  '45分〜2時間ほど':'約45分鐘〜2小時',
+  'メニューごとに表示します':'每個項目都會標示',
+  'カウンセリングの時間つき':'包含諮詢時間',
+  '施術前に一緒に確かめます':'施作前會與您一起確認',
+  '日本語・English':'日語／英語',
+  '中文・한국어':'中文／韓語',
+  '今日そのまま出かけたくなる髪へ':'剪、染、修護——讓您今天就想這樣出門',
+  '根元から軽くなって、頭がほどける時間':'從髮根開始變輕，讓頭腦放鬆的時間',
+  'はじめてのご来店でも大丈夫です。':'第一次來也沒問題。',
+  'メニューは施術前に一緒に確かめます':'項目會在施作前與您一起確認',
+  'ので、今ここで決め切らなくても平気です。':'，現在不必全部決定。',
+  'どれが合うか迷っていますか':'不確定哪個適合您的頭髮嗎？',
+  '髪格診断（3分ほど）でお悩みを整えてからご来店いただけます。結果は担当者にも届きます':'可以先做髮質診斷（約3分鐘），把煩惱整理好再來店。結果也會傳給您的設計師',
+  '髪格診断をみる →':'查看髮質診斷 →',
+  '英語で対応できます':'店內可用英語溝通',
+  '日本語のお電話は要りません':'不需要用日語打電話',
+  '施術前にプランを一緒に確認します':'施作前會與您一起確認方案',
   'メールアドレス':'電子郵件','予約完了のお知らせをお送りします':'我們會寄送預約完成通知','コードを送る':'寄送驗證碼','確認する':'驗證','再送する':'重新寄送','確認済み':'已驗證','届いた6桁の数字を入れてください（10分以内）':'請輸入收到的6位數字（10分鐘內有效）',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'支付訂金以確保預約。餘款請到店支付。',
   'Square Web Payments SDK で処理（予約・決済・POSが同じSquareに集約／このデモでは実際の請求は発生しません）':'由Square安全處理，門市不會保存您的卡號。',
@@ -3268,6 +3411,29 @@ const TW_RX=[
 ];
 /* 한국어（韓国語）辞書 — 予約フローの静的文言のみ。メニュー実名・スタッフ名は日本語のまま */
 const KO_MAP={
+  '料金の目安':'가격 안내',
+  '所要時間':'소요 시간',
+  'はじめての方':'첫 방문',
+  'ことば':'언어',
+  'カット ¥9,900／カラー ¥9,900〜':'커트 ¥9,900／염색 ¥9,900부터',
+  'ヘッドスパ ¥12,000〜':'두피 스파 ¥12,000부터',
+  '45分〜2時間ほど':'약 45분〜2시간',
+  'メニューごとに表示します':'메뉴별로 표시합니다',
+  'カウンセリングの時間つき':'상담 시간 포함',
+  '施術前に一緒に確かめます':'시술 전에 함께 확인합니다',
+  '日本語・English':'일본어／영어',
+  '中文・한국어':'중국어／한국어',
+  '今日そのまま出かけたくなる髪へ':'커트・염색・케어 — 오늘 그대로 나가고 싶어지는 머리로',
+  '根元から軽くなって、頭がほどける時間':'뿌리부터 가벼워지고 머리가 풀리는 시간',
+  'はじめてのご来店でも大丈夫です。':'처음 오셔도 괜찮습니다. ',
+  'メニューは施術前に一緒に確かめます':'메뉴는 시술 전에 함께 확인합니다',
+  'ので、今ここで決め切らなくても平気です。':' 지금 다 정하지 않으셔도 됩니다.',
+  'どれが合うか迷っていますか':'어느 것이 맞을지 고민되시나요?',
+  '髪格診断（3分ほど）でお悩みを整えてからご来店いただけます。結果は担当者にも届きます':'헤어 진단(약 3분)으로 고민을 정리하고 오실 수 있습니다. 결과는 담당 스타일리스트에게도 전달됩니다',
+  '髪格診断をみる →':'헤어 진단 보기 →',
+  '英語で対応できます':'매장에서 영어로 응대 가능',
+  '日本語のお電話は要りません':'일본어 전화는 필요 없습니다',
+  '施術前にプランを一緒に確認します':'시술 전에 플랜을 함께 확인합니다',
   'メールアドレス':'이메일 주소','予約完了のお知らせをお送りします':'예약 완료 안내를 보내드립니다','コードを送る':'인증코드 보내기','確認する':'확인','再送する':'다시 보내기','確認済み':'확인됨','届いた6桁の数字を入れてください（10分以内）':'받으신 6자리 숫자를 입력해 주세요(10분 이내)',
   '変更':'변경',
   '前金をお預かりすることで無断キャンセルを防ぎます。当日は残額のみのお支払いです':'예약금으로 예약이 확정됩니다. 잔액은 매장에서 결제해 주세요.',
@@ -3441,7 +3607,8 @@ const custKey=r=>{const p=(r.phone||'').replace(/[^0-9]/g,'');return p||('n:'+r.
 function consentBadges(n){
   n=n||{}; const out=[];
   const pill=(t,bg,bd,fg)=>`<span class="rep" style="background:${bg};border-color:${bd};color:${fg};font-weight:800">${t}</span>`;
-  if(n.photo_policy==='no')        out.push(pill('📷 撮影NG','#fdecec','#f3c9c7','#b4302b'));
+  if(!n.photo_policy)              out.push(pill('📷 未選択・撮影前に確認','#fff8f0','#f0d9b8','#7a5a1e'));
+  else if(n.photo_policy==='no')   out.push(pill('📷 撮影NG','#fdecec','#f3c9c7','#b4302b'));
   else if(n.photo_policy==='karte')out.push(pill('📷 カルテ用だけOK','#f4f6f8','#dde3e9','#33475b'));
   else if(n.photo_policy==='sns')  out.push(pill('📷 SNS・広告OK'+(n.face_ng?'（顔なし）':''),'#eef7f0','#c6e6d3','#0c7a41'));
   if(n.voice_policy==='no')        out.push(pill('🎙 AI録音NG','#fdecec','#f3c9c7','#b4302b'));
@@ -3731,7 +3898,7 @@ function cpCsv(cp){
 
 /* =============== カウンセリング集計（毎月のミーティング用） =============== */
 let CST=null, csReady=false;
-const csLbl={no:'撮影しない',karte:'カルテ用だけOK',sns:'SNS・広告もOK'};
+const csLbl={no:'撮影しない',karte:'カルテ用だけOK',sns:'SNS・広告もOK',unset:'未選択'};
 function csMonthRange(back){
   const d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-back);
   const a=new Date(d.getFullYear(),d.getMonth(),1), b=new Date(d.getFullYear(),d.getMonth()+1,0);

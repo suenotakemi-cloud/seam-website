@@ -24,6 +24,57 @@ import { handleAiChat } from './ai-chat.js';   // BYO AI（本人キーでClaude
    （同姓同名でも取り違えないよう、電話が本人の見分け方の軸になる） */
 const telN = v => String(v || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
 
+/* ───────── お名前の正規化と検証（サロンボード/ホットペッパーに入る形だけ通す） ─────────
+   背景: 姓と名は `姓 + ' ' + 名` で1本にまとめて保存し、RPAがスペースで姓/名に割り戻す。
+   そのため **姓や名の内部に空白が混ざると割り戻しが壊れる**（「山田 太 花子」で3分割になる）。
+   さらに絵文字・記号・数字・半角カナはサロンボードの顧客名として通らない/文字化けの原因になる。
+   方針:
+     ・直せるもの（前後の空白・全角英数・半角カナ・ゼロ幅文字）は黙って直す
+     ・直せないもの（記号・数字・絵文字・内部の空白）は **予約を通さない**
+   ※このルールはクライアント(booking/index.html の nmOk/knOk)と必ず同じにする。 */
+const ZERO_WIDTH = /[\u200B-\u200D\u2060\uFEFF\u0000-\u001F\u007F]/g;
+// 姓名に使える文字: 漢字・ひらがな・全角カタカナ・長音/々/〆/ヵヶ・中黒・半角英字
+const NAME_OK = /^[\u4E00-\u9FFF\u3005\u3006\u3007\u30F6\u30F5\u3041-\u309F\u30A1-\u30FAー・A-Za-z]+$/;
+const KANA_OK = /^[\u30A1-\u30FAー・]+$/;
+const NAME_MAX = 16;
+function normName(v) {
+  let s = String(v == null ? '' : v).replace(ZERO_WIDTH, '');
+  try { s = s.normalize('NFKC'); } catch (e) {}   // 半角カナ→全角カナ / 全角英数→半角
+  // 前後の空白は打ち間違いなので黙って落とす。**内部の空白は落とさない**
+  //（「山田 太」を黙って「山田太」に繋ぐと 別人の名前でサロンボードに登録されてしまう）
+  return s.replace(/^[\s\u3000]+|[\s\u3000]+$/g, '');
+}
+const hira2kataW = v => String(v || '').replace(/[\u3041-\u3096]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+/* 姓・名・セイ・メイを検証して返す。ng に理由が入っていたら予約を通さない。 */
+function checkNameParts(sei, mei, seiK, meiK) {
+  const S = normName(sei), M = normName(mei);
+  const SK = hira2kataW(normName(seiK)), MK = hira2kataW(normName(meiK));
+  if (!S) return { ng: '姓を入力してください' };
+  if (!M) return { ng: '名を入力してください' };
+  // 内部の空白は「姓の欄にフルネームを入れた」等の入力間違い。直さずに弾く
+  if (/[\s\u3000]/.test(S)) return { ng: '姓の欄に空白は使えません（姓と名は別の欄に分けてください）' };
+  if (/[\s\u3000]/.test(M)) return { ng: '名の欄に空白は使えません（姓と名は別の欄に分けてください）' };
+  if (/[\s\u3000]/.test(SK)) return { ng: 'セイの欄に空白は使えません' };
+  if (/[\s\u3000]/.test(MK)) return { ng: 'メイの欄に空白は使えません' };
+  if (S.length > NAME_MAX || M.length > NAME_MAX) return { ng: 'お名前が長すぎます（姓・名それぞれ' + NAME_MAX + '文字以内）' };
+  if (!NAME_OK.test(S)) return { ng: '姓に使えない文字が含まれています（記号・数字・絵文字は使えません）' };
+  if (!NAME_OK.test(M)) return { ng: '名に使えない文字が含まれています（記号・数字・絵文字は使えません）' };
+  if (!SK) return { ng: 'セイを入力してください' };
+  if (!MK) return { ng: 'メイを入力してください' };
+  if (SK.length > NAME_MAX || MK.length > NAME_MAX) return { ng: 'フリガナが長すぎます（' + NAME_MAX + '文字以内）' };
+  if (!KANA_OK.test(SK)) return { ng: 'セイはカタカナで入力してください' };
+  if (!KANA_OK.test(MK)) return { ng: 'メイはカタカナで入力してください' };
+  return { sei: S, mei: M, seiK: SK, meiK: MK, name: S + ' ' + M, kana: SK + ' ' + MK };
+}
+/* 「姓 名」の形で来た1本の文字列を検証する（旧クライアント・LINE経由の受け口用） */
+function checkNameJoined(name, kana) {
+  const parts = String(name == null ? '' : name).split(/[\s\u3000]+/).filter(Boolean);
+  const kparts = String(kana == null ? '' : kana).split(/[\s\u3000]+/).filter(Boolean);
+  if (parts.length !== 2) return { ng: 'お名前は「姓 名」の形で入力してください（間は1つのスペース）' };
+  if (kparts.length && kparts.length !== 2) return { ng: 'フリガナは「セイ メイ」の形で入力してください' };
+  return checkNameParts(parts[0], parts[1], kparts[0] || '', kparts[1] || '');
+}
+
 /* 海外のお客様が母国語で書いた自由記入に、日本語の下訳を付ける。
    ★これは「参考」であって「事実」ではない。実測で以下の誤りが出たため、原文を必ず主として残す：
      ・"bleached twice" → 「二度毛染めをしました」（ブリーチが毛染めに化けた）
@@ -390,6 +441,14 @@ export default {
       await ensureRegisterTables(env);
       let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
       if (!o.name) return json({ error: 'お名前は必須です' }, 400, cors);
+      {
+        // 受付シートの名前もサロンボードへ渡るため 予約と同じ規則で通す
+        const chk = (o.sei != null || o.mei != null)
+          ? checkNameParts(o.sei, o.mei, o.seiK, o.meiK)
+          : checkNameJoined(o.name, o.kana);
+        if (chk.ng) return json({ error: chk.ng }, 400, cors);
+        o.name = chk.name; if (chk.kana) o.kana = chk.kana;
+      }
       if (!o.consent || !o.consent.agreed) return json({ error: '同意のチェックが必要です' }, 400, cors);
       // 電話番号は必須。カルテのキーを常に電話にすることで、同姓同名でも取り違えない
       const ph = String(o.phone || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
@@ -418,9 +477,10 @@ export default {
       const caution = (cRaw && lang !== 'ja') ? (cRaw + '（外国語の記入・要確認）') : cRaw;
       const cs = o.consent || {};
       // 撮影の可否は毎回「最新の意思」で上書きする（前回OKでも今回NGならNGが正しい）
-      const photo = ['no', 'karte', 'sns'].includes(cs.photo) ? cs.photo : (cs.photo === true ? 'sns' : 'karte');
+      // ★未選択を 'karte' に丸めていたのは誤り（選んでいない同意を記録することになる）→ 空のまま持つ
+      const photo = ['no', 'karte', 'sns'].includes(cs.photo) ? cs.photo : (cs.photo === true ? 'sns' : '');
       const voice = cs.voice === 'no' ? 'no' : 'ok';
-      const video = ['no', 'karte', 'sns'].includes(cs.video) ? cs.video : 'no';
+      const video = ['no', 'karte', 'sns'].includes(cs.video) ? cs.video : '';
       if (caution || photo || voice) {
         const prev = await env.DB.prepare('SELECT caution,birthday FROM customer_notes WHERE key=?').bind(key).first().catch(() => null);
         let merged = (prev && prev.caution) || '';
@@ -589,11 +649,11 @@ export default {
           if (Array.isArray(v)) v.forEach(x => bump(chips[k], x));
           else if (v) bump(chips[k], v);
         }
-        const ph = ['no', 'karte', 'sns', 'video'].includes(c.photo) ? c.photo : (c.photo === true ? 'sns' : (c.photo === false ? 'no' : 'karte'));
+        const ph = ['no', 'karte', 'sns'].includes(c.photo) ? c.photo : (c.photo === true ? 'sns' : (c.photo === false ? 'no' : 'unset'));
         bump(consent.photo, ph);
         bump(consent.voice, c.voice === 'no' ? 'no' : 'ok');
         if (c.faceNg) consent.faceNg++;
-        bump(consent.video, ['no', 'karte', 'sns'].includes(c.video) ? c.video : 'no');
+        bump(consent.video, ['no', 'karte', 'sns'].includes(c.video) ? c.video : 'unset');
 
         if (a.finder) { finder.done++;
           bump(finder.type, a.finder.typeName || a.finder.typeId);
@@ -1245,6 +1305,15 @@ async function handlePostReservation(request, env, cors) {
   if (!env.DB) return json({ error: 'DB未接続' }, 500, cors);
   let o; try { o = await request.json(); } catch { return json({ error: 'invalid JSON' }, 400, cors); }
   if (!o.date || !o.staffId || o.start == null) return json({ error: 'date/staffId/start は必須' }, 400, cors);
+  // お名前はサロンボードに入る形だけ通す（前後の空白は直す・記号や内部の空白は弾く）
+  // 分割4欄で来ていればそれを、1本で来ていれば「姓 名」として検証する
+  {
+    const chk = (o.sei != null || o.mei != null)
+      ? checkNameParts(o.sei, o.mei, o.seiK != null ? o.seiK : o.kanaSei, o.meiK != null ? o.meiK : o.kanaMei)
+      : checkNameJoined(o.name, o.kana);
+    if (chk.ng) return json({ error: chk.ng }, 400, cors);
+    o.name = chk.name; o.kana = chk.kana;   // 正規化後の値で保存＝RPAが姓/名に割り戻せる形を保証
+  }
   // ダブルブッキング判定（キャンセル以外の同一スタッフ・時間重複）
   const clash = await env.DB.prepare(
     "SELECT id,name,start FROM reservations WHERE date=? AND staff_id=? AND status!='cancelled' AND ? < end AND ? > start LIMIT 1"

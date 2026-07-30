@@ -40,7 +40,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .consent{font-size:13.5px;line-height:1.95;color:var(--sub);font-weight:500}
 .consent b{color:var(--ink)}
 .consent ol{padding-left:1.3em;margin:8px 0}
-.consent li{margin-bottom:9px}
+.consent li{margin-bottom:12px}
+/* 要点を1行だけ太字で先に出す。長い説明は補足として小さく回す（読み終えやすさの調整） */
+.consent .pt1{display:block;font-size:14px;font-weight:800;color:var(--ink);line-height:1.7;margin-bottom:2px}
+.consent .sup{display:block;font-size:12.5px;font-weight:500;color:var(--sub);line-height:1.85}
 .agree{display:flex;gap:11px;align-items:flex-start;background:#f7f9f5;border:1.5px solid #d6e2cd;border-radius:12px;padding:14px;margin-top:14px;cursor:pointer}
 .agree input{width:24px;height:24px;margin:2px 0 0;flex:0 0 auto;accent-color:var(--ok)}
 .agree span{font-size:14.5px;font-weight:800;color:#215c39;line-height:1.6}
@@ -50,6 +53,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .prnote{font-size:12.5px;color:var(--sub);font-weight:600;margin-top:4px}
 .optbox{margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:13px 12px;background:#fdfcfa}
 .optttl{font-size:14px;font-weight:800;margin-bottom:9px}
+.optnote{font-size:12.5px;font-weight:600;color:var(--sub);background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:9px;line-height:1.7}
 .optttl span{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-top:2px}
 .pick{display:flex;gap:11px;align-items:flex-start;border:1.5px solid var(--line);border-radius:11px;background:#fff;padding:12px 13px;margin-bottom:7px;cursor:pointer;min-height:56px}
 .pick.on{border-color:var(--gold);background:#faf6ee}
@@ -105,6 +109,9 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const toast=(m,ng)=>{const t=document.getElementById('toast');t.textContent=m;t.className='toast on'+(ng?' ng':'');setTimeout(()=>t.className='toast',2600)};
 const q=new URLSearchParams(location.search);
 /* 言語：URL ?lang= → この端末の前回選択 → 端末の言語。データは常に日本語で保存する */
+/* スタッフの初期設定は、専用URL(?setup=1)でしか出さない。
+   お客様の画面に内部設定が見えるのは、意味が分からなくても不安にさせるため（DOMにも作らない）。 */
+const SETUP=q.get('setup')==='1';
 const LANGS=['ja','en','zh','tw','ko'];
 const guessLang=()=>{const n=(navigator.language||'ja').toLowerCase();
   if(n.startsWith('ja'))return 'ja'; if(n.startsWith('ko'))return 'ko';
@@ -119,7 +126,8 @@ let OPT={photo:true,video:false,voice:false};
 let S={kind:q.get('kind')==='spa'?'spa':'hair',name:q.get('name')||'',phone:q.get('phone')||'',
   a:{concern:[],history:[],care:[],scalp:[],body:[],want:''},
   /* photo: no=撮影しない / karte=カルテ用だけ / sns=SNS・広告もOK ／ voice: ok|no */
-  c:{agreed:false,photo:'karte',faceNg:false,video:'no',voice:'ok'},sign:''};
+  /* 写真・動画は既定を「未選択」にする。選んでいないものを同意として記録してはいけない */
+  c:{agreed:false,photo:'',faceNg:false,video:'',voice:'ok'},sign:''};
 
 /* ラジオ/チェックの共通描画（複数選択のキーは未初期化でも落ちないようにする） */
 const chips=(key,items,multi)=>{
@@ -226,19 +234,20 @@ function render(){
     <div class="h2sub">${T('下記をお読みいただき、ご同意のうえチェックをお願いします')}</div>
     <div class="consent">
       <ol>
-        <li><b>${T('施術の仕上がりについて')}</b><br>${T('髪の状態や履歴（ブリーチ・黒染め・ヘナなど）によって、ご希望の色や形にならない場合があります。その場合は事前にご説明し、一緒に方法を考えます。')}</li>
-        <li><b>${T('薬剤について')}</b><br>${T('カラー・パーマ・縮毛矯正の薬剤は、まれに かゆみ・赤み・かぶれ が起こることがあります。過去に異常があった方、不安のある方はお申し出ください。施術中に異常を感じたら、すぐにお知らせください。')}</li>
-        <li><b>${T('健康状態について')}</b><br>${T('アレルギー・通院・妊娠中などをお申し出いただかなかった場合、体調の変化に対応できないことがあります。必ずお知らせください。')}</li>
-        <li><b>${T('お荷物・貴重品')}</b><br>${T('貴重品はお手元でお預かりください。店内でのお忘れ物・紛失について、当店で管理していないものはお預かりの責任を負えない場合があります。')}</li>
-        <li><b>${T('キャンセル・ご遅刻')}</b><br>${T('2日前まで無料／前日は料金の25%／当日は50%／無断キャンセルは当店に生じた損害の範囲までを頂戴します。10分以上遅れる場合はご連絡ください。内容を短縮させていただくことがあります。')}</li>
-        ${OPT.voice?`<li><b>${T('音声AIカウンセリング')}</b><br>${T('ご要望の聞き違いを防ぐため、カウンセリングの会話をAIが文字にして記録することがあります。使うのは')}<b>${T('ご要望とカルテの記録のためだけ')}</b>${T('です。第三者に渡すことはありません。ご希望でなければ使いません（スタッフが手で記録します）。下の「音声AIカウンセリング」でお選びください。')}</li>`:''}
-        <li><b>${T('個人情報の取り扱いと保管')}</b><br>${T('いただいた情報は、施術・ご予約の管理・ご連絡のためだけに使います。法律で必要な場合を除き、第三者に渡すことはありません。')}<br>${T('このシートと同意書は、')}<b>${T('次回以降の施術を安全に行うため、また万一のときにお互いの記録として')}</b>${T('、一定期間そのまま保管します。お取り扱いについてご不安な点は、いつでもスタッフにお尋ねください。')}</li>
+        <li><b>${T('施術の仕上がりについて')}</b><br><span class="pt1">${T('ご希望どおりにならない場合は、始める前に必ずご説明します')}</span><span class="sup">${T('髪の状態や履歴（ブリーチ・黒染め・ヘナなど）によって、ご希望の色や形にならない場合があります。その場合は事前にご説明し、一緒に方法を考えます。')}</span></li>
+        <li><b>${T('薬剤について')}</b><br><span class="pt1">${T('過去に薬剤で異常が出たことがある方は、お知らせください')}</span><span class="sup">${T('カラー・パーマ・縮毛矯正の薬剤は、まれに かゆみ・赤み・かぶれ が起こることがあります。過去に異常があった方、不安のある方はお申し出ください。施術中に異常を感じたら、すぐにお知らせください。')}</span></li>
+        <li><b>${T('健康状態について')}</b><br><span class="pt1">${T('アレルギー・通院・妊娠中は、必ずお申し出ください')}</span><span class="sup">${T('アレルギー・通院・妊娠中などをお申し出いただかなかった場合、体調の変化に対応できないことがあります。必ずお知らせください。')}</span></li>
+        <li><b>${T('お荷物・貴重品')}</b><br><span class="pt1">${T('貴重品はお手元でお持ちください')}</span><span class="sup">${T('貴重品はお手元でお預かりください。店内でのお忘れ物・紛失について、当店で管理していないものはお預かりの責任を負えない場合があります。')}</span></li>
+        <li><b>${T('キャンセル・ご遅刻')}</b><br><span class="pt1">${T('2日前まで無料・前日25%・当日50%です')}</span><span class="sup">${T('2日前まで無料／前日は料金の25%／当日は50%／無断キャンセルは当店に生じた損害の範囲までを頂戴します。10分以上遅れる場合はご連絡ください。内容を短縮させていただくことがあります。')}</span></li>
+        ${OPT.voice?`<li><b>${T('音声AIカウンセリング')}</b><br><span class="pt1">${T('会話を文字にして記録に使います・ご希望でなければ使いません')}</span><span class="sup">${T('ご要望の聞き違いを防ぐため、カウンセリングの会話をAIが文字にして記録することがあります。使うのは')}<b>${T('ご要望とカルテの記録のためだけ')}</b>${T('です。第三者に渡すことはありません。ご希望でなければ使いません（スタッフが手で記録します）。下の「音声AIカウンセリング」でお選びください。')}</span></li>`:''}
+        <li><b>${T('個人情報の取り扱いと保管')}</b><br><span class="pt1">${T('施術とご連絡のためだけに使い、記録として保管します')}</span><span class="sup">${T('いただいた情報は、施術・ご予約の管理・ご連絡のためだけに使います。法律で必要な場合を除き、第三者に渡すことはありません。')}<br>${T('このシートと同意書は、')}<b>${T('次回以降の施術を安全に行うため、また万一のときにお互いの記録として')}</b>${T('、一定期間そのまま保管します。お取り扱いについてご不安な点は、いつでもスタッフにお尋ねください。')}</span></li>
       </ol>
     </div>
     <label class="agree"><input type="checkbox" id="c-agree" ${S.c.agreed?'checked':''}><span>${T('上記の内容を読み、理解しました。この内容で施術をお願いします')}</span></label>
 
     ${OPT.photo?`<div class="optbox">
       <div class="optttl">${T('📷 お写真について')}<span>${T('どれか1つお選びください・いつでも変更できます')}</span></div>
+      <div class="optnote">${T('撮る前に必ずお声をかけます。あとからいつでも変えられます')}</div>
       ${[['no','撮影しないでください','お写真は一切お撮りしません'],
          ['karte','カルテ用だけ OK','お店の記録として残します。外には出しません'],
          ['sns','SNS・ホームページ・広告にも使って OK','カルテ用の記録も兼ねます']]
@@ -278,11 +287,11 @@ function render(){
     </div>
   </div>
 
-  ${TOK?'':`<div class="card nopr" style="border-color:#f0d9b8;background:#fff8f0">
+  ${(SETUP&&!TOK)?`<div class="card nopr" style="border-color:#f0d9b8;background:#fff8f0">
     <h2 style="font-size:15px"><i>⚙</i>${T('スタッフの初期設定（この端末で1回だけ）')}</h2>
     <div class="h2sub" style="margin-left:35px">${T('保存先につなぐため、管理トークンを入力してください。次回からは不要です')}</div>
     <div class="row2"><input type="password" id="f-tok" placeholder="${T('管理トークン')}"><button class="mini" id="tokgo" style="flex:0 0 110px">${T('保存する')}</button></div>
-  </div>`}
+  </div>`:''}
 
   <div class="bar">
     <button class="btn pr" id="doprint">${T('🖨 印刷')}</button>
@@ -448,6 +457,8 @@ async function save(){
     const el=document.getElementById('f-phone');el.scrollIntoView({block:'center'});el.focus();return;}
   S.phone=telDigits(S.phone);
   if(PRIOR)S.a.priorFinder={originName:PRIOR.originName,damageTier:PRIOR.damageTier,mainGoalName:PRIOR.mainGoalName,savedAt:PRIOR.savedAt};
+  if(OPT.photo&&!S.c.photo){toast(T('お写真についてお選びください'),true);
+    const el=document.querySelector('[data-photo]');if(el)el.scrollIntoView({block:'center'});return;}
   if(!S.c.agreed){toast(T('同意のチェックをお願いします'),true);document.getElementById('c-agree').scrollIntoView({block:'center'});return;}
   if(!S.sign){toast(T('ご署名をお願いします'),true);document.getElementById('sign').scrollIntoView({block:'center'});return;}
   const btn=document.getElementById('dosave');btn.disabled=true;btn.textContent=T('送信中…');
