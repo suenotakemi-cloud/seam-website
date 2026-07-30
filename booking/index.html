@@ -2617,8 +2617,10 @@ function coFinish(rec){
     const refName=(rec.referrer||'').trim();
     if(pointEnabled()&&refName&&refName!==rec.customer){
       const rp=stgN('referralPt',500);
+      // ご紹介者の電話は分からないので氏名だけ。ご本人の分は電話を必ず入れる
+      // （電話が無い行はLINEの会員証の集計から漏れるため）
       if(rp>0){addPointRow({name:refName,phone:'',delta:rp,reason:`ご紹介ありがとうポイント(${rec.customer}様)`,ref:rec.id});
-        addPointRow({name:rec.customer,phone:'',delta:rp,reason:`ご紹介来店ポイント(${refName}様より)`,ref:rec.id});
+        addPointRow({name:rec.customer,phone:rec.phone||'',delta:rp,reason:`ご紹介来店ポイント(${refName}様より)`,ref:rec.id});
         ptMsg+=` / 紹介${rp}pt×2`;}}
   }
   toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}${ptMsg}）`);

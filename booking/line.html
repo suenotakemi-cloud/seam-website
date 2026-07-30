@@ -153,6 +153,9 @@ function receiptCard(r){
   if(r.tech)rows.push(['施術',r.tech]);
   (r.items||[]).forEach(i=>rows.push([i.name+(i.qty>1?' ×'+i.qty:''),(+i.price||0)*(+i.qty||1)]));
   if(r.discount)rows.push(['割引',-r.discount]);
+  // 値引きを必ず載せる（明細と合計が合わなくなるため）
+  if(r.ptYen)rows.push([`ポイント利用（${Number(r.pointsUsed||0).toLocaleString()}pt）`,-r.ptYen]);
+  if(r.giftUsed)rows.push(['ギフト券',-r.giftUsed]);
   const PM={cash:'現金',card:'カード',qr:'QR決済',hpb:'スマート支払い'};
   return `<div class="card">
     <h1>ご利用ありがとうございました</h1>
