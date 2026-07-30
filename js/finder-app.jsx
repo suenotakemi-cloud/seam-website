@@ -4184,11 +4184,20 @@ function buildResultCopy(answers, scores) {
   else if (isBleachHeavy && isHighHeat && wantsKeepColor) S(98, '熱とブリーチの負担で色が抜けやすい状態なので 手触りだけでなく退色の止まりやすさも優先しています');
   else if (isBleachHeavy && isHighHeat) S(97, 'ブリーチと高温の熱が重なっているため 軽さより先に 内部の補修を優先する状態です');
   if (isBleachVeryHeavy) S(96, 'いまのダメージは表面の手触りより 内側が抜けて空洞化していることが問題です 集中補修を先に入れる段階です');
+  // 1,000人検証で「熱の蓄積」19.0%と「髪が細いことで」18.5%に集中していたため
+  // 熱の出方・細毛の出方で分岐を足して散らした(2026-07-30)。
+  else if ((s.heatDamage || 0) >= 5 && st.temp === 't200') S(95.4, '200度の熱は 一度で形が決まるかわりに 内部の水分ごと抜けていきます いま必要なのは温度を下げる前の受け皿です');
+  else if ((s.heatDamage || 0) >= 5 && tools.indexOf('curlerDaily') > -1) S(95.3, 'コテを毎日通す髪は 曲げる場所に負担が集まります 全体を直すより 熱が当たる面を守るのが先です');
+  else if ((s.heatDamage || 0) >= 5 && wantsGlossy) S(95.2, 'ツヤを求めて熱を入れるほど 反射する面が乱れていく段階です いまは整えるより 削らない設計に切り替えます');
+  else if ((s.heatDamage || 0) >= 5 && a.thickness === 'thin') S(95.1, '細い髪に熱が積もると 傷みより先に「弱く見える」が出ます 補修の前に 熱の前後を変えます');
   else if ((s.heatDamage || 0) >= 5) S(95, '傷みの中心は熱の蓄積です 毎回整えているつもりでも 内部では削られやすい状態です');
   else if (has('split') || has('gummy')) S(94, 'ダメージが毛先のもろさとして出ているので まず崩れた部分を支える必要があります');
   else if (isHighDamage) S(93, '特別な一撃より 日常の積み重ねで傷みが深くなっている状態です 基礎の強度から上げていきます');
   if (has('thinning')) S(90, '今回の優先課題は 髪そのものの質感よりも 抜け毛・細毛の土台側のケアです');
-  else if (a.thickness === 'thin' && (has('volumeDown') || has('topFlat') || isDeepScalp)) S(89, '髪が細いことで 少しの乾燥や熱でも印象が弱く見えやすいので 補修より前に土台設計を入れています');
+  else if (a.thickness === 'thin' && has('topFlat')) S(89.3, '細い髪のいちばんの弱点は 分け目から見えるトップの潰れです 毛先より先に 立ち上がる場所を作ります');
+  else if (a.thickness === 'thin' && a.density === 'low') S(89.2, '細くて量も多くない髪は 足すほど沈みます 増やすのではなく 減らさない方向で組みました');
+  else if (a.thickness === 'thin' && waveConcern) S(89.1, '細い髪のくせは 押さえ込むと余計に弱く見えます 抑えるのではなく そろえる方向に切り替えます');
+  else if (a.thickness === 'thin' && (has('volumeDown') || isDeepScalp)) S(89, '髪が細いことで 少しの乾燥や熱でも印象が弱く見えやすいので 補修より前に土台設計を入れています');
   else if (has('volumeDown') || has('topFlat')) S(88, '悩みの中心はダメージというより 根元の立ち上がり不足です 量よりも ふんわり見えにくさを先に補正します');
   if (isHumidityWave) S(80, '広がりの主因は髪質そのものより湿気反応です 朝きれいに整っても 空気中の水分で形が戻りやすい状態です');
   else if (isHistoryWave) S(79, 'いま出ている広がりは もとのくせだけでなく 矯正やパーマの履歴で形が不安定になっていることが影響しています');
@@ -4206,16 +4215,35 @@ function buildResultCopy(answers, scores) {
   else if (has('scalpDry') || has('scalpOily')) S(43, '頭皮のコンディションがゆらぎやすく そこから毛先の扱いやすさにも出ている状態です');
   S(1, 'いまの髪は大きな傷みは少なく 質感を丁寧に整えていく段階です');
 
-  // ── causeLine(なぜそうなっているか): ズレ(群9)>生活(群8) ──
+  // ── causeLine(なぜそうなっているか): ズレ(群9)>生活(群8)>履歴・素材(群8.5) ──
+  // 1,000人検証で7種しか出ず中段が単調だったため 履歴と素材由来の理由を追加した(2026-07-30)。
+  // 生活習慣を選んでいない人が既定で「なし」になっていたのが主因。
   const causeC = [];
   const C = (p, t) => causeC.push({ p, t });
   if ((has('damage') || has('rough')) && wantsAiry) C(55, '補修は必要ですが 重くなると理想の軽さから離れるので 直しすぎない設計にしています');
   else if (waveConcern && wantsEasy) C(54, '本当は簡単に整えたいのに 素材側がそれを邪魔しやすいので まず扱いやすさを取り戻します');
   else if (has('scalpOily') && (items.indexOf('oil') > -1 || items.indexOf('milk') > -1)) C(53, '補いたい気持ちは強い一方で いまは足しすぎるほど 重さとして返りやすい状態です');
+  else if (has('noShine') && isHighHeat) C(52, 'ツヤが出にくいのは表面の問題ではなく 熱で整えるたびに反射する面が乱れていることが理由です');
+  else if (has('dry') && a.thickness === 'thick') C(51, '硬さと乾燥が同時に出ていると 保湿しても内側まで届きにくいので 入り口を変えます');
   if (noTime) C(40, 'いま必要なのは手数の多いケアより 少ない工程でも崩れにくい土台づくりです');
   else if (sleepWet) C(39, '乾かし残しが続くと 広がりやダメージが翌日に持ち越されやすい状態です');
   else if (humidLife) C(38, '湿気の影響を受けやすい前提で 朝の仕上がりを保ちやすい組み方にしています');
   else if (outsideLife) C(37, '外的ダメージが積み上がりやすい前提で 守るケアを少し強めに入れています');
+  // 履歴由来(生活習慣を選んでいない人にも理由が届くように)
+  if (isBleachVeryHeavy) C(34, '一度抜いた部分は元に戻らないので 足して支え続ける前提で組んでいます');
+  else if (isBleachHeavy) C(33, 'ブリーチした部分と地毛の部分で 必要なケアが違うため 両方に効く組み方にしています');
+  else if (a.straighten && a.straighten !== 'none' && a.straighten !== 'long') C(32, '矯正した部分はもう形が決まっているので 新しく伸びた根元との差をならすのが先です');
+  else if (a.perm && a.perm !== 'none') C(31, 'パーマの形は水分の抜け方で崩れるので 乾かす前の一手を変えます');
+  else if (isGrayColor) C(30, '白髪染めは繰り返すほど蓄積するので 染めることと守ることを分けて考えます');
+  else if (isFashionColor) C(29, '色が抜けるのはダメージの結果でもあるので 退色対策と補修を同時に置いています');
+  else if (isHomeColor) C(28, 'ご自宅のカラーは塗り重なりが出やすいので ムラを増やさないケアを選んでいます');
+  // 素材由来(履歴も生活も無い人の受け皿=既定文に落ちる人を減らす)
+  if (a.thickness === 'thin' && (a.density === 'low' || has('volumeDown'))) C(24, '細くて量も多くないと 少しの重さでも印象が変わるので 足す量そのものを設計します');
+  else if (a.thickness === 'thin') C(23, '細い髪は一度の負担が残りやすいので 強く直すより 減らさないケアを選びます');
+  else if (a.thickness === 'thick' && waveConcern) C(22, '硬さとくせが重なると 押さえ込むほど反発するので ゆるめる方向で組んでいます');
+  else if (a.thickness === 'thick') C(21, '硬い髪は水分が入るまでに時間がかかるので 待てるケアを選んでいます');
+  else if (a.length === 'long') C(20, '長さがあるほど毛先は古い髪なので 根元と毛先で別のケアが必要です');
+  else if (a.length === 'short') C(19, '短いほど毎日の乾かし方が仕上がりを決めるので 扱いやすさを優先しています');
 
   // ── policyLine(だから何を優先): 主方針 + 仕上がり希望(群7) ──
   let mainPolicy;
@@ -4278,7 +4306,14 @@ function buildPrimaryReason(category, answers, scores) {
     if (has('scalpOily')) return '頭皮のベタつきに合わせて追加';
     if (a.grayHair === 'yes' || a.color === 'gray') return '白髪世代の頭皮ケアとして追加';
     if (a.thickness === 'thin') return '細い髪の 根元の土台づくりとして追加';
-    if (is30) return '根元とハリの変化に合わせて追加';
+    // 頭皮の悩みを挙げていない人にも30代以降は必ず出すため(オーナー方針)
+    // 「頼んでいないものが出た」と見えないよう 出した理由を明示する。
+    // 1,000人検証で頭皮の悩み一致が53%=約半数が未申告だったため追加(2026-07-30)。
+    if (is30) {
+      const scalpAsked = has('scalpDry') || has('scalpOily') || has('thinning') || has('topFlat') || has('volumeDown');
+      if (!scalpAsked) return 'ご相談には挙がっていませんが 30代以降は根元の土台が仕上がりを左右するため 先に入れています';
+      return '根元とハリの変化に合わせて追加';
+    }
     return '頭皮環境を整えるために追加';
   }
   if (category === 'mask') {
