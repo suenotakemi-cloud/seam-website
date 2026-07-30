@@ -24,6 +24,71 @@ import { handleAiChat } from './ai-chat.js';   // BYO AI（本人キーでClaude
    （同姓同名でも取り違えないよう、電話が本人の見分け方の軸になる） */
 const telN = v => String(v || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
 
+/* 海外のお客様が母国語で書いた自由記入に、日本語の下訳を付ける。
+   ★これは「参考」であって「事実」ではない。実測で以下の誤りが出たため、原文を必ず主として残す：
+     ・"bleached twice" → 「二度毛染めをしました」（ブリーチが毛染めに化けた）
+     ・"염모제 알레르기 / 두피가 붓고" → パーマ剤を足し、腫れを落とした
+   したがって施術の安全に関わる事実は、日本語で保存される選択肢（お体のことのチップ）が担う。
+   自由記入の訳は下訳として、原文とセットで、必ず「機械翻訳・要確認」の印つきで出す。
+   Workers AI を使うので外部のAPIキーを預からない（鍵がブラウザやiPadに渡らない）。 */
+const AI_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
+/* 施術名の取り違えは事故につながる（実測で 염모제=染毛剤 が「パーマ」と訳された）。
+   間違えやすい語だけ対訳を渡して、勝手な言い換えを防ぐ。 */
+const AI_GLOSSARY = [
+  'bleach / 탈색 / 漂发 / 漂髮 = ブリーチ',
+  'hair dye, hair colour / 염모제, 염색 / 染发剂 / 染髮劑 = 染毛剤（ヘアカラー）',
+  'perm / 펌, 파마 / 烫发 / 燙髮 = パーマ',
+  'straightening, relaxer / 매직, 스트레이트 / 离子烫, 直发 / 離子燙 = 縮毛矯正',
+  'treatment / 트리트먼트 / 护发 / 護髮 = トリートメント',
+  'scalp / 두피 / 头皮 / 頭皮 = 頭皮',
+  'itchy / 가렵다 / 发痒 / 發癢 = かゆみ',
+  'swollen / 붓다 / 肿 / 腫 = 腫れ',
+  'rash, hives / 두드러기 / 起疹子 / 起疹子 = 発疹',
+  'pregnant / 임신 / 怀孕 / 懷孕 = 妊娠中',
+].join('／');
+const AI_SYS = '次の文を自然な日本語に訳してください。美容室のカウンセリング用紙の記入です。'
+  + 'アレルギー・薬剤・施術名・体調に関わる語は、絶対に省略・言い換え・追加をしないでください。'
+  + '施術名の取り違えは事故につながるため、次の対訳に必ず従ってください：' + AI_GLOSSARY + '。'
+  + '分からない語はそのまま残してください。訳文だけを、日本語で出力してください。';
+/* 下訳として出してよい出力かを見る。実測で次の2つの壊れ方が出たので厳しく弾く：
+     ①中国語のまま返る（訳されていない）
+     ②意味不明な文字列が延々と返る（モデルの出力崩壊）
+   偽の下訳を出すより、原文だけの方が誤解が少ない。 */
+function saneJa(out, src) {
+  const v = String(out || '').trim();
+  if (!v || v === src) return false;
+  if (!/[ぁ-んァ-ヶ]/.test(v)) return false;                 // かなが無い＝日本語になっていない
+  if (/[A-Za-z]{14,}/.test(v)) return false;                 // 長い英字の連なり＝崩壊
+  if (/[\u0400-\u04FF\u0600-\u06FF\u0E00-\u0E7F\uAC00-\uD7AF]/.test(v)) return false;  // 別言語の混入＝崩壊
+  const latin = (v.match(/[A-Za-z]/g) || []).length;
+  if (latin / v.length > 0.25) return false;                 // 英字が多すぎる＝崩壊
+  const r = v.length / Math.max(1, String(src).length);
+  if (r < 0.3 || r > 3.5) return false;                      // 長さが原文と釣り合わない
+  // 原文の一部をそのまま抱えていたら訳せていない（「原文＋です」で通り抜けるのを防ぐ）
+  const src8 = String(src);
+  for (let i = 0; i + 8 <= v.length; i++) { if (src8.includes(v.slice(i, i + 8))) return false; }
+  return true;
+}
+async function toJa(env, text, lang) {
+  const t = String(text || '').trim();
+  if (!t || !env.AI || lang === 'ja' || !['en', 'zh', 'tw', 'ko'].includes(lang)) return '';
+  const once = async (extra) => {
+    const r = await env.AI.run(AI_MODEL, {
+      messages: [{ role: 'system', content: AI_SYS + (extra || '') }, { role: 'user', content: t.slice(0, 900) }],
+      max_tokens: 400,
+    });
+    return String((r && (r.response || r.result)) || '').trim().replace(/^["「]|["」]$/g, '');
+  };
+  try {
+    let out = await once();
+    if (!saneJa(out, t)) {
+      // 一度だけやり直す。それでもだめなら下訳は付けない
+      out = await once('必ず日本語（ひらがな・カタカナを含む文）で、原文と同じくらいの長さで出力してください。原文の言語のまま返してはいけません。');
+    }
+    return saneJa(out, t) ? out : '';
+  } catch (e) { return ''; }
+}
+
 const SQUARE_VERSION = '2025-01-23';
 const OWNER_FROM = 'yoyaku@seam.site';   // 送信元（seam.siteドメイン）
 const OWNER_TO = 'suenotakemi@gmail.com';// 通知先（SEND_EMAILの検証済み宛先）
@@ -330,16 +395,27 @@ export default {
       const ph = String(o.phone || '').replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/[^0-9]/g, '');
       if (ph.length < 8) return json({ error: '電話番号は必須です（数字8桁以上）' }, 400, cors);
       const key = ph;
+      // 母国語で書かれた自由記入は、この時点で日本語にして一緒に保存する（原文はそのまま残す）
+      const lang = ['ja', 'en', 'zh', 'tw', 'ko'].includes(o.lang) ? o.lang : 'ja';
+      if (lang !== 'ja' && o.answers) {
+        const [wj, cj] = await Promise.all([toJa(env, o.answers.want, lang), toJa(env, o.answers.caution, lang)]);
+        if (wj) o.answers.wantJa = wj;
+        if (cj) o.answers.cautionJa = cj;
+      }
       const id = 'cs' + crypto.randomUUID().slice(0, 8);
       await env.DB.prepare(
         `INSERT INTO counseling (id,key,name,phone,kind,lang,answers,consent,sign,staff,date,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
-      ).bind(id, key, o.name, ph, o.kind || 'hair',
-        ['ja', 'en', 'zh', 'tw', 'ko'].includes(o.lang) ? o.lang : 'ja',
+      ).bind(id, key, o.name, ph, o.kind || 'hair', lang,
         JSON.stringify(o.answers || {}),
         JSON.stringify(o.consent || {}), (o.sign || '').slice(0, 300000), o.staff || '',
         o.date || new Date().toISOString().slice(0, 10), new Date().toISOString()).run();
       // 施術上の注意（アレルギー等）と写真/音声AIの可否をカルテの重要メモへ自動反映＝施術前に必ず目に入る
-      const caution = (o.answers && o.answers.caution || '').trim();
+      // ★赤い警告（重要メモ）に機械翻訳は入れない。
+      // 実測で「染毛剤」が消える／出力が崩壊する事故が出たため、警告文はお客様の原文のままにし、
+      // 外国語であることを印で伝えて、担当者が本人に確認する動きを作る。
+      // 下訳はシート側(answers.cautionJa)に持ち、カルテで原文と並べて「要確認」つきで見せる。
+      const cRaw = (o.answers && o.answers.caution || '').trim();
+      const caution = (cRaw && lang !== 'ja') ? (cRaw + '（外国語の記入・要確認）') : cRaw;
       const cs = o.consent || {};
       // 撮影の可否は毎回「最新の意思」で上書きする（前回OKでも今回NGならNGが正しい）
       const photo = ['no', 'karte', 'sns'].includes(cs.photo) ? cs.photo : (cs.photo === true ? 'sns' : 'karte');
@@ -433,7 +509,7 @@ export default {
         } : null,
         finder,
         profile: { concern: merge('concern'), history: merge('history'), body: merge('body'), scalp: merge('scalp'), care: merge('care'), henna: (latest && latest.answers.henna) || '' },
-        wants: parsed.map(x => ({ date: x.date, lang: x.lang || 'ja', text: x.answers.want || '' })).filter(x => x.text),
+        wants: parsed.map(x => ({ date: x.date, lang: x.lang || 'ja', text: x.answers.want || '', ja: x.answers.wantJa || '' })).filter(x => x.text),
         sheets: parsed.map(x => ({ id: x.id, date: x.date, kind: x.kind, lang: x.lang || 'ja', signed: x.sign, agreed: !!x.consent.agreed })),
         voidedSheets: sheets.filter(x => x.voided).length,
         visits, sales: paid, checkouts: chk.length,

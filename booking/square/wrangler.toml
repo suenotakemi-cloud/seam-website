@@ -32,6 +32,11 @@ SPA_ROOMS = "個室A,個室B"   # オーナー確認済(2026-07-26): スパの�
 #   npx wrangler secret put SQUARE_ACCESS_TOKEN
 #   npx wrangler secret put LINE_CHANNEL_ACCESS_TOKEN
 
+# Workers AI（海外のお客様の自由記入を日本語にする用）
+# 外部のAPIキーを預からずに済むので、鍵がブラウザやiPadに渡ることがない
+[ai]
+binding = "AI"
+
 # D1データベース（予約永続化・HPBメール取込・リマインドCron用）
 # 1) npx wrangler d1 create seam-booking  → 出力の database_id を下に貼る
 # 2) npx wrangler d1 execute seam-booking --remote --file=schema.sql

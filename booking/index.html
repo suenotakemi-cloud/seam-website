@@ -3593,9 +3593,11 @@ function openCustomer(key){
           ${x.sign?'<span class="rep">署名あり</span>':''}
           ${consentBadges({photo_policy:(cn.photo===true?'sns':cn.photo)||'',face_ng:cn.faceNg?1:0,voice_policy:cn.voice||''})}</div>
         ${a.caution?`<div style="color:#b4302b;font-weight:800;margin-top:3px">⚠ ${escH(a.caution)}</div>`:''}
+        ${a.cautionJa?`<div style="margin-top:1px;padding-left:16px;color:#b4302b;font-weight:700;font-size:12.5px">↳ ${escH(a.cautionJa)} <span style="font-weight:600;font-size:10.5px;color:var(--sub)">下訳・機械翻訳です。必ずご本人に確認してください</span></div>`:''}
         ${a.finder?`<div style="margin-top:4px;background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 9px">
           <b style="color:var(--accent)">髪格診断</b> ${escH([a.finder.originName,a.finder.damageTier?('ダメージ '+a.finder.damageTier):'',a.finder.mainGoalName].filter(Boolean).join(' ／ '))}</div>`:''}
         ${a.want?`<div style="margin-top:3px">🗣 ${escH(a.want)}</div>`:''}
+        ${a.wantJa?`<div style="margin-top:1px;padding-left:16px;color:var(--sub)">↳ ${escH(a.wantJa)} <span style="font-size:10.5px">機械翻訳・要確認</span></div>`:''}
         ${chips.length?`<div style="margin-top:3px">${chips.map(v=>escH(v)).join('・')}</div>`:''}
       </div>`}).join('');
     }
@@ -3685,14 +3687,15 @@ function cpRender(cp){
         <button class="btn small ghost" id="cp-csv" style="margin-left:auto;padding:2px 8px;font-size:11px">書き出す</button>
       </div>
       ${cp.sameName?`<div style="background:#fff8f0;border:1px solid #f0d9b8;border-radius:8px;padding:7px 10px;color:#7a5a1e;font-weight:800;font-size:12.5px;margin-bottom:7px">同じお名前の方が他に ${cp.sameName}人いらっしゃいます。電話番号で見分けています（${escH(cp.phone||'—')}）${cp.legacyUnlinked?`<br><span style="font-weight:600">電話が入っていない古い会計 ${cp.legacyUnlinked}件は、どちらの方か決められないためこの集計に含めていません</span>`:''}</div>`:''}
-      ${cp.cautions.length?`<div style="background:#fdecec;border:1px solid #f3c9c7;border-radius:8px;padding:7px 10px;color:#b4302b;font-weight:800;font-size:13px;margin-bottom:7px">⚠ ${cp.cautions.map(escH).join(' / ')}</div>`:''}
+      ${cp.cautions.length?`<div style="background:#fdecec;border:1px solid #f3c9c7;border-radius:8px;padding:7px 10px;color:#b4302b;font-weight:800;font-size:13px;margin-bottom:7px">⚠ ${cp.cautions.map(escH).join(' / ')}
+        ${cp.cautions.some(c=>c.includes('外国語の記入'))?`<div style="font-weight:700;font-size:11.5px;margin-top:3px">お客様の言葉のまま載せています。下訳はカウンセリングシートの欄に出ます。<b>施術前にご本人へ必ず確認してください</b>（正確な事実は「お体」の選択項目をご覧ください）</div>`:''}</div>`:''}
       ${row('髪格診断',cp.finder?`<b>${escH(cp.finder.originName||'')}</b>${cp.finder.damageTier?'　ダメージ '+escH(cp.finder.damageTier):''}${cp.finder.mainGoalName?'　目的 '+escH(cp.finder.mainGoalName):''}<span style="color:var(--sub);font-size:11px">（${(cp.finder.savedAt||'').slice(0,10).replace(/-/g,'/')}）</span>`:'<span style="color:var(--sub)">まだ受けていません</span>')}
       ${row('ご希望',list(cp.profile.concern))}
       ${row('施術履歴',list(cp.profile.history)+(cp.profile.henna?`　ヘナ:${escH(cp.profile.henna)}`:''))}
       ${row('お体',list(cp.profile.body))}
       ${row('頭皮',list(cp.profile.scalp))}
       ${row('ホームケア',list(cp.profile.care))}
-      ${row('ご要望',cp.wants.length?cp.wants.slice(0,2).map(w=>`${escH(w.text)}<span style="color:var(--sub);font-size:11px">（${w.date.replace(/-/g,'/')}${w.lang!=='ja'?'・'+escH(w.lang):''}）</span>`).join('<br>'):'')}
+      ${row('ご要望',cp.wants.length?cp.wants.slice(0,2).map(w=>`${escH(w.text)}<span style="color:var(--sub);font-size:11px">（${w.date.replace(/-/g,'/')}${w.lang&&w.lang!=='ja'?'・'+escH(w.lang):''}）</span>${w.ja?`<div style="padding-left:14px;color:var(--sub);font-size:12.5px">↳ ${escH(w.ja)} <span style="font-size:10.5px">機械翻訳・要確認</span></div>`:''}`).join('<br>'):'')}
       ${row('同意',cp.consent?`📷 ${L(cp.consent.photo)}${cp.consent.faceNg?'（顔なし）':''}　🎥 ${L(cp.consent.video)}　🎙 ${cp.consent.voice==='no'?'AI録音NG':cp.consent.voice==='ok'?'AI録音OK':'—'}`:'')}
       ${row('記録',`シート ${cp.sheets.length}枚${cp.voidedSheets?`（取り消し ${cp.voidedSheets}）`:''}　写真 ${cp.photos}枚　来店 ${cp.visits}回　累計 ¥${(cp.sales||0).toLocaleString()}${cp.points?`　${cp.points}pt`:''}${(cp.passes||[]).length?`　回数券 ${cp.passes.length}`:''}`)}
       ${langName&&cp.lang!=='ja'?row('記入言語',`${escH(langName)}（自由記入はお客様の言葉のまま。選択項目は日本語で保存しています）`):''}
