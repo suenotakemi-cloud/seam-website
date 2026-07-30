@@ -578,6 +578,43 @@ export default {
     if (p.endsWith('/settlements') && m === 'DELETE') return A() || handleDeleteSettlement(url, env, cors);
     if (p.endsWith('/settings') && m === 'GET') return A() || handleGetSettings(env, cors);
     if (p.endsWith('/settings') && m === 'POST') return A() || handlePostSetting(request, env, cors);
+    /* 【調査・読み取りだけ】salon.town の商品(ec/item)から、こちらの商品の価格を更新できるか確かめる。
+     * 取り込んだ商品IDが salon.town の item.id と一致するはずなので、それで引けるかを試す。 */
+    if (p.endsWith('/admin/salontown-item-probe') && m === 'GET') {
+      if (!cleanupTok(url, env)) { const auth = A(); if (auth) return auth; }
+      const out = {};
+      // こちらが持っている商品IDを数件取り出す
+      const rs = await env.DB.prepare("SELECT id,name,price,barcode,ext_id FROM products WHERE ext_id<>'' LIMIT 3").all();
+      out.ours = (rs.results || []).map(r => ({ name: r.name, price: r.price, jan: r.barcode, extId: r.ext_id }));
+      const ids = out.ours.map(x => x.extId);
+      const tries = [];
+      // 記録されている罠（filter.id が黙って無視される等）があるので、形をいくつか試す
+      const shapes = [
+        { label: 'filter.id（単体）', body: { filter: { id: ids[0] }, limit: 5 } },
+        { label: 'filter.ids（配列）', body: { filter: { ids }, limit: 5 } },
+        { label: 'filter.jan', body: { filter: { jan: out.ours[0] && out.ours[0].jan }, limit: 5 } },
+        { label: 'filter.kwd（商品名）', body: { filter: { kwd: (out.ours[0] && out.ours[0].name || '').slice(0, 10) }, limit: 5 } },
+        { label: 'shop_id（ヘア店）', body: { filter: { shop_id: env.SALON_SHOP_ID }, limit: 5 } },
+        { label: 'フィルタなし', body: { limit: 5 } },
+        { label: 'filter.company_id（メーカー）', body: { filter: { company_id: url.searchParams.get('company') || '' }, limit: 5 } },
+        { label: 'filter.maker_id', body: { filter: { maker_id: url.searchParams.get('company') || '' }, limit: 5 } },
+        { label: 'filter.code（商品ID）', body: { filter: { code: ids[0] }, limit: 5 } },
+        { label: 'filter.item_id', body: { filter: { item_id: ids[0] }, limit: 5 } },
+        { label: 'data.id（保存形と同じ）', body: { data: { id: ids[0] }, limit: 5 } },
+      ];
+      for (const sh of shapes) {
+        try {
+          const r = await salonCall(env, '/get/ec/item', sh.body);
+          const list = (r && (r.data || r.items || r.list || r.result)) || [];
+          const arr = Array.isArray(list) ? list : (list.items || []);
+          tries.push({ 形: sh.label, 件数: arr.length,
+            例: arr.slice(0, 2).map(x => ({ id: x.id, name: x.name, price: x.price, retail: x.retail_sell_price, sell: x.sell_price, jan: x.jan, brand: x.brand_name })),
+            生の鍵: arr.length ? Object.keys(arr[0]).slice(0, 18) : Object.keys(r || {}).slice(0, 10) });
+        } catch (e) { tries.push({ 形: sh.label, エラー: String(e.message || e) }); }
+      }
+      out.tries = tries;
+      return json({ ok: true, ...out }, 200, cors);
+    }
     /* Squareの商品台帳を取り込む（ショップを自作POSに移すため）。
      * ★1回で全部読むと上限に当たるので、1ページ（100件）ずつ処理して次のcursorを返す。
      *   呼び出し側がcursorが空になるまで繰り返す。
@@ -656,7 +693,7 @@ export default {
         await look('sq_id', vars.map(v => v.sqId), bySq);
         await look('barcode', vars.map(v => v.gtin), byBc);
         await look('maker_code', vars.map(v => v.sku), bySku);
-        await look('name', vars.map(v => v.name), byNm);
+        // 名前引きは使わない
       } catch (e) { return json({ error: '照合に失敗: ' + e.message }, 500, cors); }
 
       const now = new Date().toISOString();
@@ -664,19 +701,24 @@ export default {
       let added = 0, updated = 0;
       const used = new Set();
       for (const v of vars) {
-        let id = bySq.get(v.sqId) || (v.gtin && byBc.get(v.gtin)) || (v.sku && bySku.get(v.sku)) || byNm.get(v.name) || '';
+        // ★名前での突き合わせはしない（Squareとアイテム一覧で表記が違うのが前提＝誤って別商品に結び付く）
+        let id = bySq.get(v.sqId) || (v.gtin && byBc.get(v.gtin)) || (v.sku && bySku.get(v.sku)) || '';
         if (id && used.has(id)) continue;   // 同じ行を二重に触らない
         if (id) {
           used.add(id);
-          // 名前と価格は実売のSquare側を正とする。バーコードは空なら埋める（既にあるものは壊さない）
+          // ★JANで一致した商品は、名前と価格を上書きしない。
+          //   アイテム一覧（メーカー正規・salon.townと同じ）を正とし、Squareの表記ゆれを持ち込まない。
+          //   Squareの商品IDと、空だったバーコード／メーカー品番だけを埋める。
           stmts.push(env.DB.prepare(
-            `UPDATE products SET name=?, price=?, sq_id=?, barcode=CASE WHEN COALESCE(barcode,'')='' THEN ? ELSE barcode END,
+            `UPDATE products SET sq_id=?, barcode=CASE WHEN COALESCE(barcode,'')='' THEN ? ELSE barcode END,
                  maker_code=CASE WHEN COALESCE(maker_code,'')='' THEN ? ELSE maker_code END, active=1 WHERE id=?`
-          ).bind(v.name, v.price, v.sqId, v.gtin, v.sku, id));
+          ).bind(v.sqId, v.gtin, v.sku, id));
           updated++;
         } else {
+          // アイテム一覧に無い商品（棚にはあるが正規リストに載っていない）。
+          //   棚卸しで数えられるように登録するが、出所を square として区別する。
           const nid = 'p' + crypto.randomUUID().slice(0, 8);
-          stmts.push(env.DB.prepare('INSERT INTO products (id,name,price,barcode,stock,ext_id,maker_code,brand,sq_id,active,created_at) VALUES (?,?,?,?,0,?,?,?,?,1,?)')
+          stmts.push(env.DB.prepare("INSERT INTO products (id,name,price,barcode,stock,ext_id,maker_code,brand,sq_id,source,active,created_at) VALUES (?,?,?,?,0,?,?,?,?,'square',1,?)")
             .bind(nid, v.name, v.price, v.gtin, '', v.sku, '', v.sqId, now));
           added++; used.add(nid);
           if (v.gtin) byBc.set(v.gtin, nid);
@@ -686,7 +728,9 @@ export default {
       try { for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50)); }
       catch (e) { return json({ error: '書き込みに失敗: ' + e.message, added, updated }, 500, cors); }
       const cnt = await env.DB.prepare('SELECT COUNT(*) c FROM products').first().catch(() => ({ c: 0 }));
-      return json({ ok: true, phase, cursor: j.cursor || '', seen: objs.length, variations: vars.length, added, updated, total: (cnt && cnt.c) || 0 }, 200, cors);
+      return json({ ok: true, phase, cursor: j.cursor || '', seen: objs.length, variations: vars.length,
+        JANで一致_名前と価格は据え置き: updated, Squareにしか無い_新規登録: added,
+        total: (cnt && cnt.c) || 0 }, 200, cors);
     }
     /* 商品の一括取り込み（5000点規模を流し込む）。
      * ★1商品ごとにDBへ問い合わせると、1回の実行で許される回数(サブリクエスト上限)を超えて落ちる。
@@ -2041,6 +2085,8 @@ async function ensureRegisterTables(env) {
   try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN sq_id TEXT DEFAULT ''`).run(); } catch (e) {}
   // Squareの商品名の控え。台帳はページで分かれて来るので、名前を別に持っておく
   try { await env.DB.prepare(`CREATE TABLE IF NOT EXISTS sq_items (item_id TEXT PRIMARY KEY, name TEXT DEFAULT '')`).run(); } catch (e) {}
+  // 出所。'list'=アイテム一覧（メーカー正規・名前と価格の正）／'square'=Squareにしか無い商品
+  try { await env.DB.prepare(`ALTER TABLE products ADD COLUMN source TEXT DEFAULT 'list'`).run(); } catch (e) {}
   try { await env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_prod_sq ON products(sq_id)`).run(); } catch (e) {}
   // 同姓同名の取り違えを防ぐため、氏名キーだったテーブルに電話を持たせる（既存行は空のまま＝氏名で拾う）
   try { await env.DB.prepare(`ALTER TABLE checkouts ADD COLUMN phone TEXT DEFAULT ''`).run(); } catch (e) {}
