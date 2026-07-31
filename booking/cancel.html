@@ -22,8 +22,12 @@
   .fee{border-radius:13px;padding:15px 16px;margin-top:14px;line-height:1.7}
   .fee.free{background:#eef7f1;border:1px solid #c6e6d3;color:#0c6b3c}
   .fee.charge{background:#fdf3ec;border:1px solid #ecccae;color:#8a4a16}
-  .fee .big{font-size:19px;font-weight:800;display:block;margin-bottom:3px}
-  .fee .sub{font-size:12.5px;opacity:.9}
+  .fee .big{font-size:18px;font-weight:800;display:block;margin-bottom:5px;line-height:1.5}
+  .fee .sub{font-size:12.5px;opacity:.92;line-height:1.8;display:block}
+  /* 「3〜／10日ほど」のように数字の途中で行が割れるのを防ぐ */
+  .nb{white-space:nowrap}
+  .fee .big,.done h1,.done .when{white-space:nowrap}
+  @media(max-width:360px){.fee .big,.done h1{white-space:normal}}
   .btn{display:block;width:100%;text-align:center;border:0;border-radius:12px;padding:15px;
     font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:12px}
   .btn.go{background:#26221e;color:#fff}
@@ -31,9 +35,15 @@
   .btn:disabled{opacity:.5;cursor:not-allowed}
   .note{font-size:12.5px;color:#7d746b;margin-top:14px;line-height:1.75}
   .load{text-align:center;color:#9a9188;padding:44px 0;font-size:14px}
-  .done{text-align:center;padding:12px 0}
-  .done .ic{font-size:40px;line-height:1}
-  .done h1{margin:12px 0 6px}
+  /* ★.card と同じ要素に付くので、横の余白を消さないよう上下だけ足す
+   *   （padding の一括指定で書くと .card の 20px 18px を丸ごと上書きしてしまう） */
+  .done{text-align:center;padding-top:26px;padding-bottom:24px}
+  .done .ic{font-size:38px;line-height:1;color:#0c7a41}
+  .done h1{margin:14px 0 4px;font-size:20px}
+  .done .when{font-size:13.5px;color:#7d746b;margin:0}
+  .done .rows{margin-top:18px;text-align:left}
+  .done .fee{text-align:left}
+  .done .note{text-align:center;margin-top:18px}
   .err{color:#c0392b;font-size:13.5px;font-weight:700;margin-top:10px;min-height:20px}
   .ask{margin-top:16px;padding-top:15px;border-top:1px solid #f2ede7}
   .ask-t{font-size:13px;font-weight:700;color:#4a443d;margin-bottom:9px;line-height:1.6}
@@ -87,7 +97,7 @@ async function run(){
   if(j.already){
     app.innerHTML=`<div class="card done"><div class="ic">✓</div>
       <h1>すでにキャンセル済みです</h1>
-      <p style="font-size:13.5px;color:#7d746b;margin:0">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜のご予約</p></div>`;
+      <p class="when">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜のご予約</p></div>`;
     return;
   }
 
@@ -109,9 +119,9 @@ async function run(){
   </div>`;
 
   document.getElementById('back').onclick=()=>{
-    app.innerHTML=`<div class="card done"><div class="ic">🙂</div>
+    app.innerHTML=`<div class="card done"><div class="ic" style="color:#b8912a">🙂</div>
       <h1>そのままお待ちしております</h1>
-      <p style="font-size:13.5px;color:#7d746b;margin:0">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜</p></div>`;
+      <p class="when">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜のご予約</p></div>`;
   };
   document.getElementById('go').onclick=()=>confirmStep(j);
 }
@@ -171,18 +181,20 @@ function confirmStep(j){
 }
 
 function done(j,r){
-  app.innerHTML=`<div class="card done"><div class="ic">✓</div>
+  // 同じ金額を2回出さない。返金があるときは緑の箱だけ、無いときは行だけにする
+  const box = r.refund
+    ? `<div class="fee free"><span class="big">${yen(r.refund)} をご返金します</span>
+        <span class="sub">お手続きは完了しています。<br>
+        カード会社を通すため、お手元に戻るまで<br><b class="nb">3〜10日ほど</b>かかります</span></div>`
+    : (r.fee ? `<div class="rows"><div class="rw"><span>キャンセル料</span><b>${yen(r.fee)}</b></div></div>` : '');
+  app.innerHTML=`<div class="card done">
+    <div class="ic">✓</div>
     <h1>キャンセルを承りました</h1>
-    <p style="font-size:13.5px;color:#7d746b;margin:0 0 4px">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜のご予約</p>
-    ${(r.fee||r.refund)?`<div class="rows" style="text-align:left;margin-top:16px">
-      ${r.fee?`<div class="rw"><span>キャンセル料</span><b>${yen(r.fee)}</b></div>`:''}
-      ${r.refund?`<div class="rw"><span>ご返金</span><b>${yen(r.refund)}</b></div>`:''}
-    </div>`:''}
-    ${r.refund?`<div class="fee free" style="text-align:left;margin-top:14px">
-      <span class="big">${yen(r.refund)} のご返金を受け付けました</span>
-      <span class="sub">お手続きは完了しています。カード会社を通すため、お手元に戻るまで
-      <b>3〜10日ほど</b>かかります。ご利用明細への反映もカード会社の締め日によって前後します</span></div>`:''}
-    <div class="note" style="text-align:left">またお目にかかれる日を楽しみにしております</div></div>`;
+    <p class="when">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜のご予約</p>
+    ${box}
+    ${(r.refund&&r.fee)?`<div class="rows"><div class="rw"><span>キャンセル料</span><b>${yen(r.fee)}</b></div></div>`:''}
+    <div class="note">またお目にかかれる日を<br>楽しみにしております</div>
+  </div>`;
 }
 run();
 </script>
