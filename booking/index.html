@@ -4126,6 +4126,19 @@ function telCheck(v){
   if(d.length<min||d.length>max)return {ng:'お電話番号の桁数をご確認ください'};
   return {tel:d};
 }
+/* いま画面に入っている内容を下書きへ写す。
+ * LINE連携やGoogleログインで画面がいったん離れるとき、これを呼ばないと
+ * 打ったばかりのお名前やフリガナが消えて、打ち直しになる（実際に起きた）。 */
+function grabForm(){
+  const g=id=>{const e=document.getElementById(id);return e?e.value:undefined;};
+  const v=(k,id)=>{const x=g(id);if(x!==undefined)bk[k]=x.trim();};
+  v('sei','bsei'); v('mei','bmei'); v('phone','bphone');
+  {const x=g('bseiK'); if(x!==undefined)bk.seiK=hira2kata(x.trim());}
+  {const x=g('bmeiK'); if(x!==undefined)bk.meiK=hira2kata(x.trim());}
+  {const x=g('bmail'); if(x!==undefined)bk.email=x.trim();}
+  if(bk.sei||bk.mei)bk.name=((bk.sei||'')+' '+(bk.mei||'')).trim();
+  if(bk.seiK||bk.meiK)bk.kana=((bk.seiK||'')+' '+(bk.meiK||'')).trim();
+}
 function mailBlock(){
   const v=bk.emailVerified;
   return `<div style="font-size:12px;font-weight:800;color:var(--navy);margin-top:2px">メールアドレス<span style="color:var(--sub);font-size:10.5px;margin-left:6px">予約完了のお知らせをお送りします</span></div>
@@ -4417,7 +4430,7 @@ function renderBook(){
     {const lc=document.getElementById('blineconn');
      if(lc)lc.onclick=async()=>{
        lc.disabled=true;lc.textContent='LINEをひらいています…';
-       saveBk();                     // 画面が離れるので入力を残す
+       grabForm(); saveBk();         // 画面が離れるので、入力中の内容ごと残す
        try{
          // LIFFが使えるならその場でログイン（画面遷移が最小）
          if(window.liff&&liff.isInClient&&liff.isInClient()&&!liff.isLoggedIn()){ liff.login(); return; }
@@ -4430,6 +4443,7 @@ function renderBook(){
        startLineLogin();             // それ以外は通常のLINEログインへ
      };}
     {const send=document.getElementById('bmailsend'),mail=document.getElementById('bmail');
+     if(send)send.addEventListener('click',()=>{grabForm();saveBk();},{capture:true});
      if(send&&mail)send.onclick=async()=>{
        const em=(mail.value||'').trim();
        if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){toast('メールアドレスをご確認ください',true);return;}
@@ -4466,7 +4480,12 @@ function renderBook(){
        nb.disabled=!ok; nb.style.opacity=ok?'':'.45'; nb.style.cursor=ok?'':'not-allowed'; };
      sync();
      // 電話を打っている途中でもボタンの状態を追う（打ち終わって押せないまま迷わせない）
-     if(ph)ph.addEventListener('input',()=>{bk.phone=ph.value;sync();});}
+     if(ph)ph.addEventListener('input',()=>{bk.phone=ph.value;sync();});
+     // 打っている内容を都度ひかえる（画面が離れても・戻っても消えない）
+     ['bsei','bmei','bseiK','bmeiK','bphone','bmail'].forEach(id=>{
+       const e=document.getElementById(id);
+       if(e)e.addEventListener('input',()=>{grabForm();saveBk();});
+     });}
     document.getElementById('bnext2').onclick=()=>{
       const okc=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
       if(!okc){toast('LINEかメールアドレスのご登録をお願いします',true);return}
