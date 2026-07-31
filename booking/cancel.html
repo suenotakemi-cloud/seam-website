@@ -35,6 +35,13 @@
   .done .ic{font-size:40px;line-height:1}
   .done h1{margin:12px 0 6px}
   .err{color:#c0392b;font-size:13.5px;font-weight:700;margin-top:10px;min-height:20px}
+  .ask{margin-top:16px;padding-top:15px;border-top:1px solid #f2ede7}
+  .ask-t{font-size:13px;font-weight:700;color:#4a443d;margin-bottom:9px;line-height:1.6}
+  .ask-t span{display:block;font-weight:400;font-size:11.5px;color:#9a9188;margin-top:2px}
+  .ask-c{display:flex;flex-wrap:wrap;gap:7px}
+  .rsn{background:#fff;border:1px solid #e7e1d9;border-radius:99px;padding:8px 14px;
+    font-size:12.5px;font-family:inherit;color:#7d746b;cursor:pointer}
+  .rsn.on{background:#26221e;color:#fff;border-color:#26221e}
 </style>
 </head>
 <body>
@@ -106,24 +113,76 @@ async function run(){
       <h1>そのままお待ちしております</h1>
       <p style="font-size:13.5px;color:#7d746b;margin:0">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜</p></div>`;
   };
-  document.getElementById('go').onclick=async()=>{
-    const b=document.getElementById('go'), er=document.getElementById('er');
-    if(!confirm(`${(j.date||'').replace(/-/g,'/')} ${hm(j.start)}〜のご予約をキャンセルします。よろしいですか`))return;
-    b.disabled=true;b.textContent='手続き中…';
+  document.getElementById('go').onclick=()=>confirmStep(j);
+}
+
+/* 確認の一段。ブラウザの素っ気ないダイアログではなく、
+ * 何が起きるかを最後にもう一度そろえてお見せする。
+ * お金が動くので、返金の額と届くまでの時間まで書く。 */
+function confirmStep(j){
+  app.innerHTML=`<div class="card">
+    <h1>この内容でよろしいですか</h1>
+    <div class="rows">
+      <div class="rw"><span>キャンセルするご予約</span><b>${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜</b></div>
+      <div class="rw"><span>メニュー</span><b>${esc(j.menu||'')}</b></div>
+      ${j.charge?`<div class="rw"><span>キャンセル料</span><b>${yen(j.charge)}</b></div>`:''}
+      ${j.refund?`<div class="rw"><span>ご返金</span><b>${yen(j.refund)}</b></div>`:''}
+    </div>
+    ${j.refund?`<div class="fee free" style="margin-top:12px">
+        <span class="big">${yen(j.refund)} をご返金します</span>
+        <span class="sub">お手続きはこの場で完了します。カード会社を通すため、
+        お手元に戻るまで <b>3〜10日ほど</b>かかります（カード会社により異なります）</span></div>`
+      :(j.charge?`<div class="fee charge" style="margin-top:12px">
+        <span class="big">お預かりした ${yen(j.deposit)} はご返金されません</span>
+        <span class="sub">${j.daysLeft<=0?'当日':'前日'}のキャンセルのため、キャンセル料に充てさせていただきます</span></div>`:'')}
+
+    <div class="ask">
+      <div class="ask-t">差し支えなければ、理由をお聞かせください<span>（任意・お答えいただかなくても手続きは進みます）</span></div>
+      <div class="ask-c">
+        ${['予定が変わった','体調がすぐれない','日程を変えたい','旅行の予定が変わった','その他']
+          .map(r=>`<button type="button" class="rsn" data-r="${r}">${r}</button>`).join('')}
+      </div>
+    </div>
+
+    <button class="btn go" id="yes">はい、キャンセルします</button>
+    <button class="btn back" id="no">いいえ、予約はそのままにします</button>
+    <div class="err" id="er"></div>
+  </div>`;
+
+  let reason='';
+  app.querySelectorAll('.rsn').forEach(b=>b.onclick=()=>{
+    reason=(reason===b.dataset.r)?'':b.dataset.r;      // もう一度押すと取り消し
+    app.querySelectorAll('.rsn').forEach(x=>x.classList.toggle('on',x.dataset.r===reason));
+  });
+  document.getElementById('no').onclick=()=>run();      // 元の画面へ戻す
+  document.getElementById('yes').onclick=async()=>{
+    const b=document.getElementById('yes'), er=document.getElementById('er');
+    b.disabled=true;b.textContent='お手続きしています…';
+    document.getElementById('no').disabled=true;
     try{
-      const r=await jpost(API+'/reservations/cancel',{token:T});
-      app.innerHTML=`<div class="card done"><div class="ic">✓</div>
-        <h1>キャンセルしました</h1>
-        <div class="rows" style="text-align:left;margin-top:14px">
-          ${r.fee?`<div class="rw"><span>キャンセル料</span><b>${yen(r.fee)}</b></div>`:''}
-          ${r.refund?`<div class="rw"><span>ご返金</span><b>${yen(r.refund)}</b></div>`:''}
-        </div>
-        ${r.refund?`<div class="note" style="text-align:left">ご返金はカード会社を通すため、お手元に戻るまで数日かかります</div>`:''}
-        <div class="note" style="text-align:left">またのご利用をお待ちしております</div></div>`;
+      const r=await jpost(API+'/reservations/cancel',{token:T,reason});
+      done(j,r);
     }catch(e){
-      er.textContent=e.message; b.disabled=false; b.textContent='このご予約をキャンセルする';
+      er.textContent=e.message;
+      b.disabled=false;b.textContent='はい、キャンセルします';
+      document.getElementById('no').disabled=false;
     }
   };
+}
+
+function done(j,r){
+  app.innerHTML=`<div class="card done"><div class="ic">✓</div>
+    <h1>キャンセルを承りました</h1>
+    <p style="font-size:13.5px;color:#7d746b;margin:0 0 4px">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜のご予約</p>
+    ${(r.fee||r.refund)?`<div class="rows" style="text-align:left;margin-top:16px">
+      ${r.fee?`<div class="rw"><span>キャンセル料</span><b>${yen(r.fee)}</b></div>`:''}
+      ${r.refund?`<div class="rw"><span>ご返金</span><b>${yen(r.refund)}</b></div>`:''}
+    </div>`:''}
+    ${r.refund?`<div class="fee free" style="text-align:left;margin-top:14px">
+      <span class="big">${yen(r.refund)} のご返金を受け付けました</span>
+      <span class="sub">お手続きは完了しています。カード会社を通すため、お手元に戻るまで
+      <b>3〜10日ほど</b>かかります。ご利用明細への反映もカード会社の締め日によって前後します</span></div>`:''}
+    <div class="note" style="text-align:left">またお目にかかれる日を楽しみにしております</div></div>`;
 }
 run();
 </script>
