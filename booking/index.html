@@ -1301,8 +1301,21 @@ const OPEN=11*60, CLOSE=20*60, STEP=30; // minutes（SEAM 銀座 11:00–20:00�
 const STAFF=[
   {id:'s1',name:'及川 大輝',role:'店長 / スタイリスト',catch:'艶髪デザイン・扱いやすい仕上がり',yrs:14,cu:'20260720172047980eihPaAi',hpb:'T001096152'},
   {id:'s2',name:'ANZU',role:'スタイリスト / スパニスト',catch:'頭皮と髪を整えるヘア＆スパ',yrs:9,cu:'20260720172048371VVaiHGf',cuSpa:'20260721104016592jgjicee',hpb:'T001097192',hpbSpa:'W001374984'},
-  {id:'s3',name:'CHIKA',role:'スパニスト',catch:'極上睡眠ヘッドスパ・完全個室',yrs:3,cu:'20260720172736440ZYIefdT',hpb:'W001412775'},
+  /* ⚠️CHIKAはsalon.townでは「SEAM 銀座 SPA」にしか居ない（ヘア店のアカウントが無い）。
+     だからスパ用の欄(cuSpa/hpbSpa)にだけ入れる。ヘア店へ送るメニューの担当に入れると
+     「別の店のaccount_id」で予約を作ることになり、サロンボードで必ず弾かれる。 */
+  {id:'s3',name:'CHIKA',role:'スパニスト',catch:'極上睡眠ヘッドスパ・完全個室',yrs:3,cuSpa:'20260720172736440ZYIefdT',hpbSpa:'W001412775'},
 ];
+/* そのメニューを送る店に、そのスタッフのアカウントがあるか。
+   ヘア店へ送るメニュー=cu / SPA店へ送るメニュー=cuSpa（無ければcu）。 */
+const menuToSpa=(m)=>!!m&&m.cat==='ヘッドスパ';
+const staffCuFor=(st,m)=>((menuToSpa(m)?(st&&(st.cuSpa||st.cu)):(st&&st.cu))||'');
+const hbpIdFor=(st,m)=>((menuToSpa(m)?(st&&(st.hpbSpa||st.hpb)):(st&&st.hpb))||'');
+const canServe=(st,m)=>!!staffCuFor(st,m);
+/* ★メニューの担当候補はここだけを通す（m.staff を直接見ない）。
+   例: cp11 睡眠クリームスパはヘア店へ送るのでCHIKAが自動的に外れる。
+   将来cp11をSPA店へ回すならcatを変えるだけでCHIKAが戻る。 */
+const menuStaff=(m)=>((m&&m.staff)||[]).filter(sid=>canServe(STAFF.find(s=>s.id===sid),m));
 // SEAM 銀座のHPB実メニュー・価格（施術時間は目安）。カテゴリでグループ表示。クーポン=お得なセット。
 // ★HotPepper掲載（slnH000802192）と完全一致。クーポン=実掲載13件／単品=サロンボード単品メニュー名と一字一句同じ（RPA書込のメニュー検索一致に必須）
 const MENUS=[
@@ -2403,7 +2416,7 @@ let modalCtx=null;
 function openModal(staffId,start){
   modalCtx={staffId,start};
   const ms=document.getElementById('m-menu');
-  ms.innerHTML=MENUS.filter(m=>m.staff.includes(staffId)).map(m=>`<option value="${m.id}">${m.name}（${m.min}分 / ¥${m.price.toLocaleString()}）</option>`).join('');
+  ms.innerHTML=MENUS.filter(m=>menuStaff(m).includes(staffId)).map(m=>`<option value="${m.id}">${m.name}（${m.min}分 / ¥${m.price.toLocaleString()}）</option>`).join('');
   const cs=document.getElementById('m-chan');
   cs.innerHTML=Object.entries(CHANNELS).map(([k,c])=>`<option value="${k}">${c.name}</option>`).join('');
   const st=STAFF.find(s=>s.id===staffId);
@@ -2938,7 +2951,7 @@ function renderNextVisit(){
     const res=addReservation({date:d.day,staffId:d.staffId,start:d.start,end:d.start+dur,menuId:d.menuId||'',
       name:d.name,kana:d.kana,phone:d.phone,email:d.email,channel:'own',deposit:0,note:'次回予約(店頭)',
       lineUserId:d.lineUserId,notify:true,
-      spa:isSpa,staffCu:(isSpa?(st.cuSpa||st.cu):st.cu)||'',hbpStylistId:(isSpa?(st.hpbSpa||st.hpb):st.hpb)||'',
+      spa:isSpa,staffCu:staffCuFor(st,m2),hbpStylistId:hbpIdFor(st,m2),
       hbpStylistName:st.name||'',menuName:m2?m2.name:'',menuMin:dur,nominated:true});
     if(!res.ok){toast('その時間は埋まっています。別の時間をお選びください',true);return;}
     document.getElementById('checkoutbg').classList.remove('show');
@@ -4242,7 +4255,7 @@ const dayLabel=k=>k===dkey(today())?'今日':(k===dkey(addDays(today(),1))?'明�
 function resolveStaffAt(menu,day,start){
   const dur=menu.min,end=start+dur;
   if(bk.staff!=='any') return (staffOnDuty(bk.staff,day,start,end)&&conflicts(day,bk.staff,start,end).length===0)?bk.staff:null;
-  const avail=menu.staff.filter(sid=>staffOnDuty(sid,day,start,end)&&conflicts(day,sid,start,end).length===0);
+  const avail=menuStaff(menu).filter(sid=>staffOnDuty(sid,day,start,end)&&conflicts(day,sid,start,end).length===0);
   return avail.find(sid=>sid===bk._sid)||avail[0]||null;   // なるべく元の担当・無ければ他の空き担当
 }
 /* メールでお知らせを受け取る欄（本人確認コードつき）。
@@ -4416,7 +4429,7 @@ function renderBook(){
         bk.name=cust.name;bk.phone=cust.phone;bk.menu=cust.lastMenuId;
         const menu=MENUS.find(x=>x.id===bk.menu);
         bk.section=menu&&menu.cat==='ヘッドスパ'?'spa':'hair';
-        bk.staff=(menu&&menu.staff.includes(cust.lastStaffId))?cust.lastStaffId:'any';
+        bk.staff=(menu&&menuStaff(menu).includes(cust.lastStaffId))?cust.lastStaffId:'any';
         bk.day=null;bk.start=null;bk.step=2;renderBook();
       };
     };
@@ -4426,7 +4439,7 @@ function renderBook(){
   }
   if(bk.step===1){
     const menu=MENUS.find(m=>m.id===bk.menu);
-    const cands=STAFF.filter(s=>menu.staff.includes(s.id));
+    const cands=STAFF.filter(s=>menuStaff(menu).includes(s.id));
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">スタッフを選択</h3>
       <div class="opt ${bk.staff==='any'?'sel':''}" data-s="any"><div><div class="nm">指名なし</div><div class="dt">空いているスタッフが担当します（最短でご案内）</div></div></div>`+
       cands.map(s=>`<div class="opt ${bk.staff===s.id?'sel':''}" data-s="${s.id}"><div><div class="nm">${s.name} <span class="yrs">歴${s.yrs}年</span></div><div class="dt">${s.catch}</div></div></div>`).join('')+
@@ -4435,7 +4448,7 @@ function renderBook(){
   }
   if(bk.step===2){
     const menu=MENUS.find(m=>m.id===bk.menu);
-    const staffIds=bk.staff==='any'?menu.staff:[bk.staff];
+    const staffIds=bk.staff==='any'?menuStaff(menu):[bk.staff];
     if(!bk.day)bk.day=dkey(today());
     const days=[...Array(14)].map((_,i)=>addDays(today(),i));
     const soon=earliestSlot(staffIds,menuMinWithPerk(menu));   // 特典の10分を含めて探す
@@ -4683,10 +4696,18 @@ function renderBook(){
       const stObj=STAFF.find(s=>s.id===sid)||{};
       // スパ判定は独立ヘッドスパメニュー(cat=ヘッドスパ=SPA店の掲載)のみ。ヘアクーポン(名前にヘッドスパを含む)はヘア店予約
       const isSpa=(menu.cat==='ヘッドスパ');
+      /* ⚠️送り先の店にそのスタッフのアカウントが無いまま予約を作らせない。
+         別店舗のaccount_idで予約を作ると salon.town には入るのにサロンボードで必ず弾かれ、
+         お客様には「予約できた」と見えるのに台帳に無い、という一番まずい形になる。 */
+      if(!staffCuFor(stObj,menu)){
+        bk._committing=false; if(_btn)_btn.disabled=false; if(_skip)_skip.style.pointerEvents='';
+        alert('この内容は担当者の変更が必要です 恐れ入りますが担当を選び直してください');
+        bk.staff='any'; bk.step=1; renderBook(); return;
+      }
       const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menuMinWithPerk(menu),menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',emailProvider:bk.emailProvider||'',channel:BOOK_SRC,deposit:depositAmt,squarePaymentId:squarePaymentId||'',discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
         // RPA/サロンボード書込用の解決済みフィールド（CUEPON実ID・HPB ID・SB完全一致メニュー名）
         // ★スパ予約はSPA店＝ANZUのスパ用account_id(cuSpa)とスパHPB IDを使う。spaフラグでWorkerがSPA店へ振り分け
-        spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menuMinWithPerk(menu),
+        spa:isSpa,staffCu:staffCuFor(stObj,menu),hbpStylistId:hbpIdFor(stObj,menu),hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menuMinWithPerk(menu),
         perk:bk.perk||'',perkLabel:perkLabel(menu,bk.perk),
         note:('🎁会員のおまけ: '+perkLabel(menu,bk.perk)).trim(),
         nominated:bk.staff!=='any'});   // 指名(特定スタッフ選択)=true / 指名なし=フリー。サロンボードRPAの指名チェック用
@@ -5196,7 +5217,7 @@ document.getElementById('mailgo').onclick=()=>{
   const sname=stylist.replace(/\s/g,'');
   let staff=STAFF.find(s=>sname&&(sname.includes(s.name.split(' ')[0])||s.name.replace(/\s/g,'').includes(sname)));
   const mapped=!staff&&!!stylist;
-  if(!staff)staff=STAFF.find(s=>menu.staff.includes(s.id))||STAFF[0];
+  if(!staff)staff=STAFF.find(s=>menuStaff(menu).includes(s.id))||STAFF[0];
   const start=(+dt[4])*60+(+dt[5]);
   const date=`${dt[1]}-${pad(+dt[2])}-${pad(+dt[3])}`;
   const note=[resNo&&('予約番号 '+resNo),stylist&&('HPB担当 '+stylist),menuName].filter(Boolean).join(' / ');
