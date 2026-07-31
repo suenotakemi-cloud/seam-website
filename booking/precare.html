@@ -174,6 +174,7 @@ const app=document.getElementById('app'), foot=document.getElementById('foot');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
+let ALLOW={parts:['head','neck','dec','arm','foot'],skip:[]};   // メニューで触る範囲が違う
 
 /* ── 部位マップ ── */
 const PARTS={head:'頭',neck:'首',dec:'デコルテ',arm:'手と腕',foot:'足'};
@@ -194,9 +195,13 @@ const SHAPES=[
  ['foot','<path d="M336 640L512 640C522 800 498 998 476 1116 468 1156 450 1176 424 1176 398 1176 380 1156 372 1116 350 998 326 800 336 640Z"/>'],
  ['neck','<rect x="386" y="240" width="76" height="62" rx="26"/>'],
 ];
-const lay=(cls)=>SHAPES.map(([p,s])=>s.replace(/^<(\w+)/,`<$1 class="z" data-p="${p}"`)).join('');
+const lay=(cls)=>SHAPES.filter(([p])=>ALLOW.parts.includes(p))
+  .map(([p,s])=>s.replace(/^<(\w+)/,`<$1 class="z" data-p="${p}"`)).join('');
 function mapHtml(){
-  return `<div class="mapwrap">
+  // 「触れない部位」を並べて見せるのではなく、含まれているものを言う
+  const inc=ALLOW.parts.map(k=>PARTS[k]).join('・');
+  return `<span class="incl">今回のコースは ${inc} まで含まれています</span>
+  <div class="mapwrap">
     <svg class="wash" viewBox="0 0 848 1264" aria-hidden="true">${lay()}</svg>
     <img src="../images/lp/spa/bodymap_figure.webp" alt="からだの図">
     <svg class="hit" viewBox="0 0 848 1264">${lay()}</svg></div>
@@ -205,6 +210,8 @@ function mapHtml(){
 }
 function mapWire(){
   A.parts=A.parts||{};
+  // 前回の内容を引き継いだとき、今回のコースに無い部位が残らないようにする
+  Object.keys(A.parts).forEach(k=>{ if(!ALLOW.parts.includes(k)) delete A.parts[k]; });
   const paint=()=>{
     document.querySelectorAll('.wash .z').forEach(z=>{const v=A.parts[z.dataset.p];
       if(v)z.dataset.s=v;else delete z.dataset.s;});
@@ -347,7 +354,9 @@ function screens(){
 
   S.push({id:'confirm',confirm:true});
   S.push({id:'done',done:true});
-  return S;
+  // メニューに関係のない画面は出さない（カットの予約に頭浸浴を聞かない）
+  const skip=new Set(ALLOW.skip||[]);
+  return S.filter(s=>!skip.has(s.id));
 }
 let SC=[];
 
@@ -440,7 +449,7 @@ function drawConfirm(){
   const P=[];
   const push=(k,v)=>{ if(v&&String(v).trim())P.push([k,v]); };
   push('Mood',A.goal);
-  const pk=k=>A.parts&&A.parts[k];
+  const pk=k=>A.parts&&A.parts[k]&&ALLOW.parts.includes(k)?A.parts[k]:'';
   push('Avoid',Object.keys(PARTS).filter(k=>pk(k)==='avoid').map(k=>PARTS[k]).join('・'));
   push('Care',Object.keys(PARTS).filter(k=>pk(k)&&pk(k)!=='avoid').map(k=>PARTS[k]+' '+LVN[A.parts[k]]).join(' ／ '));
   push('Bath',A.bath);
@@ -517,6 +526,7 @@ document.getElementById('back').onclick=()=>{ if(i>0){i--;draw();} };
     const j=await r.json();
     if(!r.ok)throw new Error(j.error||'読み込めませんでした');
     RESV=j.reservation; SEASON=j.season||'mid'; LAST=j.last||null;
+    if(j.allow&&Array.isArray(j.allow.parts))ALLOW=j.allow;
     A=(j.answers&&Object.keys(j.answers).length)?j.answers:(LAST?JSON.parse(JSON.stringify(LAST)):{});
     SC=screens(); if(A.soda==='はい お願いします'){const k=SC.findIndex(x=>x.id==='soda'); if(k>=0&&SC[k].then)SC.splice(k+1,0,{...SC[k].then});}
     foot.hidden=false; draw();
