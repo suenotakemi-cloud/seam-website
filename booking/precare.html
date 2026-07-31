@@ -78,12 +78,34 @@ textarea:focus{outline:0;border-color:var(--clay)}
 
 /* 部位マップ */
 .mapwrap{position:relative;margin:20px auto 0;max-width:290px}
-.mapwrap img{width:100%;display:block;mix-blend-mode:multiply}
+.mapwrap img{width:100%;display:block}
 .mapwrap svg{position:absolute;inset:0;width:100%;height:100%}
 .mapwrap .wash{filter:blur(10px);pointer-events:none}
 .wash .z{fill:transparent;transition:fill .4s ease}
 .wash .z[data-s="soft"]{fill:#DE9E92}.wash .z[data-s="normal"]{fill:#BCAB95}
 .wash .z[data-s="strong"]{fill:#C79A45}.wash .z[data-s="focus"]{fill:#A56A42}
+/* 苦手は「強さ」ではないので、温かい色をやめて冷たい灰にする＝ひと目で別物と分かる */
+.wash .z[data-s="avoid"]{fill:#93A0A4}
+/* 部位ごとの選択シート */
+.sheet{position:fixed;inset:0;z-index:50;display:none}
+.sheet.on{display:block}
+.sheet .bd{position:absolute;inset:0;background:rgba(22,23,27,.34);animation:fade .25s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet .pn{position:absolute;left:0;right:0;bottom:0;background:var(--cream);border-radius:22px 22px 0 0;
+  padding:8px 20px calc(22px + env(safe-area-inset-bottom,0px));max-width:520px;margin:0 auto;
+  animation:up .32s cubic-bezier(.16,1,.3,1);max-height:88vh;overflow-y:auto}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.sheet .grip{width:38px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 14px}
+.sheet h3{margin:0;font-family:'Noto Serif JP',serif;font-size:19px;color:var(--ink);font-weight:500}
+.sheet .sd{font-size:12.5px;color:var(--sub);margin:6px 0 0}
+.lv{display:grid;gap:8px;margin-top:16px}
+.lvb{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:#fff;
+  border:1px solid var(--line);border-radius:13px;padding:14px 15px;font:inherit;color:var(--body);cursor:pointer;transition:.18s}
+.lvb.on{border-color:var(--clay);background:rgba(168,116,86,.07)}
+.lvb .sw{flex:0 0 34px;height:34px;border-radius:10px;border:1px solid rgba(22,23,27,.08)}
+.lvb b{display:block;font-weight:500;font-size:15px;color:var(--ink)}
+.lvb s{display:block;text-decoration:none;font-size:12px;color:var(--sub);margin-top:2px}
+.lvb.clear{background:transparent;border-style:dashed;justify-content:center;color:var(--sub);font-size:13.5px}
 .hit .z{fill:transparent;cursor:pointer}
 .hit .z:hover{fill:rgba(184,148,90,.10)}
 .legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px}
@@ -114,7 +136,7 @@ textarea:focus{outline:0;border-color:var(--clay)}
 .tl b{display:block;font-family:'Noto Serif JP',serif;font-size:14.5px;color:var(--ink);font-weight:500}
 .tl s{display:block;text-decoration:none;font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.8}
 
-.ill{display:block;width:100%;max-width:210px;margin:20px auto 0;mix-blend-mode:multiply}
+.ill{display:block;width:100%;max-width:210px;margin:20px auto 0}
 
 /* 下の操作 */
 .foot{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(180deg,rgba(247,244,238,0),var(--cream) 34%);
@@ -155,8 +177,15 @@ let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
 
 /* ── 部位マップ ── */
 const PARTS={head:'頭',neck:'首',dec:'デコルテ',arm:'手と腕',foot:'足'};
-const LV=['soft','normal','strong','focus',''];
-const LVN={soft:'やさしく',normal:'標準',strong:'しっかり',focus:'たっぷり'};
+/* ★「苦手」は強さではなく“触れないでほしい”。他と並べず、色も冷たい灰にして別物に見せる */
+const LVS=[
+  {k:'avoid', n:'ここは苦手',   d:'触れずにおきます',       c:'#93A0A4'},
+  {k:'soft',  n:'やさしく',     d:'そっと',                 c:'#DE9E92'},
+  {k:'normal',n:'標準',         d:'ふつうの強さで',         c:'#BCAB95'},
+  {k:'strong',n:'しっかり',     d:'強めに',                 c:'#C79A45'},
+  {k:'focus', n:'重点的に',     d:'ここを長めに',           c:'#A56A42'},
+];
+const LVN=Object.fromEntries(LVS.map(x=>[x.k,x.n]));
 const SHAPES=[
  ['head','<ellipse cx="424" cy="170" rx="76" ry="84"/>'],
  ['dec','<path d="M312 300Q424 274 536 300L544 350Q424 374 304 350Z"/>'],
@@ -171,9 +200,7 @@ function mapHtml(){
     <svg class="wash" viewBox="0 0 848 1264" aria-hidden="true">${lay()}</svg>
     <img src="../images/lp/spa/bodymap_figure.webp" alt="からだの図">
     <svg class="hit" viewBox="0 0 848 1264">${lay()}</svg></div>
-  <div class="legend">
-    <span><i style="background:#DE9E92"></i>やさしく</span><span><i style="background:#BCAB95"></i>標準</span>
-    <span><i style="background:#C79A45"></i>しっかり</span><span><i style="background:#A56A42"></i>たっぷり</span></div>
+  <div class="legend">${LVS.map(x=>`<span><i style="background:${x.c}"></i>${x.n}</span>`).join('')}</div>
   <div class="picked" id="picked"></div>`;
 }
 function mapWire(){
@@ -183,14 +210,38 @@ function mapWire(){
       if(v)z.dataset.s=v;else delete z.dataset.s;});
     const t=Object.keys(PARTS).filter(k=>A.parts[k]).map(k=>PARTS[k]+' '+LVN[A.parts[k]]);
     document.getElementById('picked').innerHTML=t.length?t.join(' ／ ')
-      :'<span class="maphint">図に触れると そこを選べます<br>触れるたびに やさしく → 標準 → しっかり → たっぷり と変わります</span>';
+      :'<span class="maphint">図の気になるところに触れてください<br>強さを選べます　苦手なところも伝えられます</span>';
   };
-  document.querySelectorAll('.hit .z').forEach(z=>z.onclick=()=>{
-    const p=z.dataset.p, cur=A.parts[p]||'', nx=LV[(LV.indexOf(cur)+1)%LV.length];
-    if(nx)A.parts[p]=nx;else delete A.parts[p];
-    paint(); save();
-  });
+  window.__paintMap=paint;
+  document.querySelectorAll('.hit .z').forEach(z=>z.onclick=()=>openSheet(z.dataset.p));
   paint();
+}
+
+/* 部位を押したら開く選択シート。連打で回すより、名前で選べる方が分かりやすいし
+   「苦手」のような“強さではないもの”も同じ場所に置ける。 */
+function openSheet(part){
+  const cur=(A.parts||{})[part]||'';
+  const el=document.createElement('div'); el.className='sheet on'; el.id='sheet';
+  el.innerHTML=`<div class="bd"></div><div class="pn" role="dialog" aria-label="${PARTS[part]}の希望">
+    <div class="grip"></div>
+    <h3>${PARTS[part]}</h3>
+    <p class="sd">どのくらいがお好みですか</p>
+    <div class="lv">
+      ${LVS.map(x=>`<button class="lvb${cur===x.k?' on':''}" data-k="${x.k}">
+        <span class="sw" style="background:${x.c}"></span>
+        <span><b>${x.n}</b><s>${x.d}</s></span></button>`).join('')}
+      ${cur?'<button class="lvb clear" data-k="">選ばない状態にもどす</button>':''}
+    </div></div>`;
+  document.body.appendChild(el);
+  const close=()=>{el.remove();};
+  el.querySelector('.bd').onclick=close;
+  el.querySelectorAll('.lvb').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k;
+    A.parts=A.parts||{};
+    if(k)A.parts[part]=k; else delete A.parts[part];
+    if(window.__paintMap)window.__paintMap();
+    save(); close();
+  });
 }
 
 /* ── 画面の定義 ──
@@ -228,7 +279,7 @@ function screens(){
     lead:'図に触れて 強さまで決められます　選ばなくても大丈夫です',
     custom:mapHtml, wire:mapWire, incl:'どこを選んでも料金は変わりません'});
 
-  S.push({id:'bath',title:'頭浸浴の温度',
+  S.push({id:'bath',title:'頭浸浴の温度', ill:'ill_bath',
     lead:'温かいお湯と冷たいお水を交互にすると すっきりします<br>冷たいのが苦手な方は 温かいだけでも',
     one:'bath', opts:[
       ['温冷を交互に','いちばんすっきりします　おすすめ'],
@@ -236,7 +287,7 @@ function screens(){
       ['おまかせ','その日の様子でお選びします']],
     incl:'どちらも料金は同じです'});
 
-  if(summer) S.push({id:'soda',title:'一度 炭酸でさっぱりしますか',
+  if(summer) S.push({id:'soda',title:'一度 炭酸でさっぱりしますか', ill:'ill_soda',
     lead:'夏のあいだは 炭酸のシャンプーで一度洗い流すと<br>頭皮がすっと軽くなります',
     one:'soda', opts:[
       ['はい お願いします','汗と皮脂をすっきり流します'],
@@ -250,12 +301,12 @@ function screens(){
         ['ほんのりでいい',''],
         ['ミントは苦手です','清涼感のないものにします']]}});
 
-  S.push({id:'wash',title:'洗いかたの好み',
+  S.push({id:'wash',title:'洗いかたの好み', ill:'ill_bubble',
     lead:'いくつでもどうぞ',
     many:'wash', chips:['長めがいい','マッサージするように','しっかり落としたい',
       '包み込まれるように','泡をたっぷり','すすぎはていねいに','おまかせ']});
 
-  S.push({id:'scent',title:'香りと 灯りと 音',
+  S.push({id:'scent',title:'香りと 灯りと 音', ill:'ill_room',
     lead:'お部屋のしつらえです',
     groups:[
       {k:'scent',h:'香り',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']},
@@ -279,7 +330,7 @@ function screens(){
     after:{k:'avoid',h:'苦手なこと（あれば）',
       chips:['強い圧は苦手','首まわりはやさしく','耳のまわりは触らないで','香りは控えめに','商品のお話はいらない']}});
 
-  S.push({id:'care',title:'仕上げに使うもの',
+  S.push({id:'care',title:'仕上げに使うもの', ill:'ill_care',
     lead:'お帰りのときの髪の感じです',
     one:'finish', opts:[
       ['軽く さらっと','このあと人に会う日に'],
@@ -316,6 +367,7 @@ function draw(){
   else{
     h=`<h1>${s.title}</h1>${s.lead?`<p class="lead">${s.lead}</p>`:''}`;
     if(s.incl)h+=`<span class="incl">${esc(s.incl)}</span>`;
+    if(s.ill)h+=`<img class="ill" src="../images/lp/spa/${s.ill}.webp" alt="" aria-hidden="true" loading="lazy">`;
     if(s.custom)h+=s.custom();
     if(s.opts)h+=`<div class="opts">${s.opts.map(([t,d])=>
       `<button class="opt${A[s.one]===t?' on':''}" data-v="${esc(t)}">
@@ -388,7 +440,9 @@ function drawConfirm(){
   const P=[];
   const push=(k,v)=>{ if(v&&String(v).trim())P.push([k,v]); };
   push('Mood',A.goal);
-  push('Care',Object.keys(PARTS).filter(k=>A.parts&&A.parts[k]).map(k=>PARTS[k]+' '+LVN[A.parts[k]]).join(' ／ '));
+  const pk=k=>A.parts&&A.parts[k];
+  push('Avoid',Object.keys(PARTS).filter(k=>pk(k)==='avoid').map(k=>PARTS[k]).join('・'));
+  push('Care',Object.keys(PARTS).filter(k=>pk(k)&&pk(k)!=='avoid').map(k=>PARTS[k]+' '+LVN[A.parts[k]]).join(' ／ '));
   push('Bath',A.bath);
   push('Soda',A.soda&&A.soda!=='今回はいいです'?[A.soda,A.mint].filter(Boolean).join(' ／ '):A.soda);
   push('Wash',(A.wash||[]).join('・'));
