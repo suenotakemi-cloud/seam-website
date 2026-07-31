@@ -55,6 +55,30 @@
   .btn{display:block;width:100%;text-align:center;background:#26221e;color:#fff;border:0;border-radius:11px;
     padding:14px;font-size:15px;font-weight:700;font-family:inherit;text-decoration:none;margin-top:10px;cursor:pointer}
   .btn.line{background:#06c755}
+  .btn.ghost{background:#fff;color:#26221e;border:1px solid #ded6cc}
+  .btn.quiet{background:transparent;color:#8a8177;border:0;font-weight:400;font-size:13px;padding:10px;text-decoration:underline}
+  .btn[disabled]{opacity:.5}
+  /* 月額会員 */
+  .subc{background:linear-gradient(160deg,#1f2a27,#33443f);color:#fff;border-radius:16px;padding:20px 18px;margin-bottom:14px}
+  .subc .lbl{font-size:11px;letter-spacing:.24em;color:#9fc0b4;margin-bottom:12px}
+  .subc .big{display:flex;align-items:baseline;gap:9px}
+  .subc .big b{font-size:34px;font-weight:700;line-height:1}
+  .subc .big s{text-decoration:none;font-size:13px;color:#b6ccc4}
+  .subc .meta{font-size:12.5px;color:#c9ddd6;margin-top:12px;line-height:1.8}
+  .subc .meta i{font-style:normal;color:#8fb3a7}
+  .subc .st{display:inline-block;font-size:11px;letter-spacing:.14em;font-weight:700;padding:4px 11px;border-radius:99px;margin-bottom:10px}
+  .st-active{background:#2f6b52;color:#d9f0e4}
+  .st-past_due{background:#8a4a1d;color:#ffe6cf}
+  .st-paused{background:#4a5560;color:#dce4ec}
+  .st-canceled{background:#5c534a;color:#e0d8ce}
+  .subact{display:flex;gap:8px;margin-top:14px}
+  .subact .btn{margin-top:0;flex:1;font-size:13px;padding:11px}
+  .terms{font-size:11.5px;color:#7d746b;background:#faf8f5;border:1px solid #eee9e3;border-radius:10px;padding:12px 13px;margin-top:12px;line-height:1.85}
+  .terms b{color:#4a443d}
+  .terms ul{margin:6px 0 0;padding-left:18px}
+  #sqcardbox{margin-top:12px}
+  .pay-secure{font-size:11px;color:#8a8177;margin-top:8px;line-height:1.6}
+  .err{font-size:13px;color:#b3261e;background:#fdeceb;border:1px solid #f5c6c2;border-radius:10px;padding:10px 12px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -176,6 +200,152 @@ function histCard(h){
   </div>`;
 }
 
+/* ══════════ 月額会員 ══════════
+ * 残回数・次回請求日・カードを見せ、休会と解約を2タップで置く。
+ * 解約しづらい会員制は口コミを壊すので、ここは必ず前に出す（特商法の要件でもある）。 */
+const ST={active:'ご利用中',past_due:'カードのご確認をお願いします',paused:'お休み中',canceled:'自動更新を止めています'};
+let SUB=null, SUBCFG=null, IDTOK='', UID='';
+
+function subCard(sub,cfg){
+  cfg=cfg||{};
+  if(!sub){
+    if(!cfg.enabled)return '';
+    return `<div class="card">
+      <h1 style="font-size:16px">${esc(cfg.label||'月額会員')}</h1>
+      <p class="sub" style="margin:6px 0 0">ひと月に一度いらっしゃる方のための会員です<br>
+        月額のなかに90分が一回ふくまれていて 使わなかった月は次の月に持ち越せます</p>
+      <div class="rows"><div class="row"><span>月額</span><span>${yen(cfg.priceYen)}</span></div>
+        <div class="row"><span>繰越</span><span>${cfg.carryCap||3}回まで</span></div>
+        <div class="row"><span>お約束の期間</span><span>なし（いつでも解約）</span></div></div>
+      <button class="btn" id="subJoin">会員になる</button></div>`;
+  }
+  const st=sub.status||'active';
+  const canceled=st==='canceled';
+  return `<div class="subc">
+    <div class="lbl">SEAM GINZA MEMBER</div>
+    <div><span class="st st-${esc(st)}">${esc(ST[st]||st)}</span></div>
+    <div class="big"><b>${sub.remaining||0}</b><s>回 お使いいただけます</s></div>
+    <div class="meta">
+      ${canceled
+        ? `<i>お使いいただける期限</i> ${esc((sub.expires||'').replace(/-/g,'/')||'—')}`
+        : (st==='paused'
+            ? `<i>お休み明け</i> ${esc((sub.pausedUntil||'').replace(/-/g,'/')||'—')}`
+            : `<i>次回のお引き落とし</i> ${esc((sub.nextChargeAt||'').replace(/-/g,'/')||'—')}　${yen(sub.priceYen)}`)}
+      ${sub.cardLast4?`<br><i>カード</i> ${esc(sub.cardBrand||'')} ····${esc(sub.cardLast4)}`:''}
+      ${sub.carryCap?`<br><i>繰越</i> ${sub.carryCap}回まで`:''}
+    </div>
+    <div class="subact">
+      ${canceled
+        ? `<button class="btn ghost" id="subResume">再開する</button>`
+        : `<button class="btn ghost" id="subCard">カードを変える</button>
+           ${st==='paused'?'':'<button class="btn ghost" id="subPause">1ヶ月休む</button>'}`}
+    </div>
+    ${canceled?'':'<button class="btn quiet" id="subCancel">自動更新をやめる</button>'}
+  </div>
+  <div id="submsg"></div>`;
+}
+
+function termsHtml(cfg){
+  return `<div class="terms"><b>お申し込みの前にご確認ください</b>
+    <ul>
+      <li>月額 ${yen(cfg.priceYen)}（税込）を毎月同じ日にご登録のカードからお引き落としします</li>
+      <li><b>自動更新です</b>。止めるまで毎月続きます</li>
+      <li>解約はこの会員証の画面からいつでもできます。次回のお引き落とし日の前日までにお手続きください</li>
+      <li>お預かり済みの回数は解約後 ${cfg.graceMonths||3}ヶ月お使いいただけます</li>
+      <li>繰越は ${cfg.carryCap||3}回までです。上限に達している月もお引き落としは続きます</li>
+      <li>販売元・お問い合わせ先は<a href="https://seam.site/tokushoho" target="_blank" rel="noopener">特定商取引法に基づく表記</a>をご覧ください</li>
+    </ul></div>`;
+}
+
+/* Square のカード欄。番号は Square へ直接送られ、当店のサーバーは受け取らない。 */
+async function mountCard(boxId){
+  const cfg=await jget(API+'/pay/config').catch(()=>null);
+  if(!cfg||!cfg.ready)throw new Error('いまカードのお手続きを承っておりません');
+  await new Promise((res,rej)=>{const s=document.createElement('script');s.src=cfg.sdk;s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+  const payments=window.Square.payments(cfg.appId,cfg.locationId);
+  const card=await payments.card();
+  await card.attach('#'+boxId);
+  return {card,payments,env:cfg.env};
+}
+
+async function subFlow(mode){
+  const msg=document.getElementById('submsg')||document.getElementById('app');
+  const isJoin=mode==='join';
+  msg.innerHTML=`<div class="card"><h1 style="font-size:16px">${isJoin?'会員のお申し込み':'カードを変える'}</h1>
+    ${isJoin?termsHtml(SUBCFG):''}
+    <div id="sqcardbox"></div>
+    <div class="pay-secure">🔒 カード情報はSquareへ直接送られます（当店のサーバーは番号を受け取りません）</div>
+    <div id="suberr"></div>
+    ${isJoin?`<label style="display:flex;gap:9px;align-items:flex-start;font-size:13px;margin-top:12px;color:#4a443d">
+      <input type="checkbox" id="subAgree" style="margin-top:4px"><span>上の内容に同意します</span></label>`:''}
+    <button class="btn" id="subGo" disabled>${isJoin?yen(SUBCFG.priceYen)+'で申し込む':'このカードに変える'}</button>
+    <button class="btn quiet" id="subBack">やめる</button></div>`;
+  const err=t=>{const e=document.getElementById('suberr');if(e)e.innerHTML=t?`<div class="err">${esc(t)}</div>`:'';};
+  let c;
+  try{ c=await mountCard('sqcardbox'); }catch(e){ err(e.message); return; }
+  const go=document.getElementById('subGo'), ag=document.getElementById('subAgree');
+  const sync=()=>{ go.disabled = isJoin ? !(ag&&ag.checked) : false; };
+  if(ag)ag.addEventListener('change',sync); sync();
+  document.getElementById('subBack').onclick=()=>render();
+  go.onclick=async()=>{
+    go.disabled=true; err(''); go.textContent='お手続き中…';
+    try{
+      const r=await c.card.tokenize();
+      if(r.status!=='OK')throw new Error((r.errors&&r.errors[0]&&r.errors[0].message)||'カードを確認できませんでした');
+      const body={idToken:IDTOK,uid:UID,s:SHOP,cardToken:r.token,verificationToken:r.details&&r.details.verificationToken};
+      if(isJoin){ body.agreed=true; body.customer=(SUB&&SUB.customer)||''; }
+      const j=await jpost(API+(isJoin?'/member/subscribe':'/member/card'),body);
+      await render(isJoin?'会員のお手続きが終わりました':'カードを変えました');
+    }catch(e){ err(e.message); go.disabled=false; go.textContent=isJoin?yen(SUBCFG.priceYen)+'で申し込む':'このカードに変える'; }
+  };
+}
+
+/* ★confirm()/alert()は使わない。
+ * このページは必ずLINEのアプリ内ブラウザで開かれ、そこでは confirm() が
+ * ダイアログを出さずに false を返すことがある＝ボタンが無反応になる
+ * （キャンセルページで実際に起きた・サロンボードRPAでも同じ罠があった）。
+ * 確認はページの中に出す。 */
+async function subAction(kind){
+  const labels={pause:'1ヶ月お休みにします。よろしいですか',
+    cancel:'自動更新をやめます。お預かり済みの残り回数はそのままお使いいただけます。よろしいですか',
+    resume:'会員を再開します。よろしいですか'};
+  const doneMsg={pause:'1ヶ月のお休みにしました',cancel:'自動更新をやめました',resume:'再開しました'};
+  const btnIds={pause:'subPause',cancel:'subCancel',resume:'subResume'};
+  const anchor=document.getElementById(btnIds[kind]);
+  const old=document.getElementById('subconf'); if(old)old.remove();
+  if(!anchor)return;
+  anchor.insertAdjacentHTML('afterend',
+    `<div id="subconf" class="note" style="border-color:#e0c9a6;background:#fdf8ef;color:#6b4e1d">
+       ${esc(labels[kind])}
+       <div style="display:flex;gap:8px;margin-top:9px">
+         <button type="button" id="subyes" class="btn" style="margin:0;flex:1;padding:12px">はい</button>
+         <button type="button" id="subno" class="btn" style="margin:0;flex:1;padding:12px;background:#fff;color:#7d746b;border:1px solid #e7e1d9">やめる</button>
+       </div>
+       <div id="suberr" style="color:#c0392b;font-weight:700;margin-top:6px;min-height:18px"></div>
+     </div>`);
+  document.getElementById('subno').onclick=()=>{const c=document.getElementById('subconf');if(c)c.remove();};
+  document.getElementById('subyes').onclick=async()=>{
+    const y=document.getElementById('subyes');
+    y.disabled=true;y.textContent='お手続き中…';
+    try{
+      await jpost(API+'/member/'+kind,{idToken:IDTOK,uid:UID,s:SHOP});
+      await render(doneMsg[kind]);
+    }catch(e){
+      const el=document.getElementById('suberr'); if(el)el.textContent=e.message;
+      y.disabled=false;y.textContent='はい';
+    }
+  };
+}
+
+function wireSub(){
+  const on=(id,fn)=>{const el=document.getElementById(id);if(el)el.onclick=fn;};
+  on('subJoin',()=>subFlow('join'));
+  on('subCard',()=>subFlow('card'));
+  on('subPause',()=>subAction('pause'));
+  on('subCancel',()=>subAction('cancel'));
+  on('subResume',()=>subAction('resume'));
+}
+
 async function jget(u){const r=await fetch(u);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('通信に失敗しました('+r.status+')'));return j;}
 async function jpost(u,b){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('通信に失敗しました('+r.status+')'));return j;}
@@ -234,16 +404,32 @@ async function run(){
       <a class="btn line" href="https://liff.line.me/${LIFF_ID}?s=${encodeURIComponent(SHOP)}">LINEでひらく</a></div>`;
     return;
   }
+  UID=uid; IDTOK=idToken;
+  await render();
+}
+
+/* 会員証・月額会員・履歴をまとめて描く（休会や解約のあとも同じ関数で描き直す） */
+async function render(okMsg){
+  app.innerHTML='<div class="load">読み込んでいます…</div>';
+  const q='s='+encodeURIComponent(SHOP)+'&uid='+encodeURIComponent(UID)+'&idToken='+encodeURIComponent(IDTOK);
   let j;
-  try{ j=await jget(API+'/member/me?s='+encodeURIComponent(SHOP)+'&uid='+encodeURIComponent(uid)+'&idToken='+encodeURIComponent(idToken)); }
+  try{ j=await jget(API+'/member/me?'+q); }
   catch(e){ fail(e.message); return; }
+  // 月額会員は未導入の店舗でも画面が壊れないよう、失敗したら黙って出さない
+  let sres=null;
+  try{ sres=await jget(API+'/member/subscription?'+q); }catch(e){}
+  SUB=(sres&&sres.subscription)||null; SUBCFG=(sres&&sres.config)||null;
   if(j.salonId)await loadQR().catch(()=>{});
   if(!j.linked){
     app.innerHTML=`<div class="card"><h1 style="font-size:16px">まだ会員証がありません</h1>
       <p class="sub">次回ご来店のお会計のときに、レジでコードを読み取っていただくと会員証が作られます</p></div>`;
     return;
   }
-  app.innerHTML=memberCard(j.memberCode,j.points,j.name,j)+histCard(j.history);
+  app.innerHTML=(okMsg?`<div class="note ok">${esc(okMsg)}</div>`:'')
+    + memberCard(j.memberCode,j.points,j.name,j)
+    + (SUBCFG?subCard(SUB,SUBCFG):'')
+    + histCard(j.history);
+  wireSub();
 }
 run();
 </script>
