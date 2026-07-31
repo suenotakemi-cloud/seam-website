@@ -796,6 +796,23 @@ body.customer .bookshell{max-width:520px;margin:0 auto;padding:0}
   body.customer .phone{border:none;border-radius:0;box-shadow:none;min-height:100vh}
 }
 /* ── 完了画面：オンラインショップ導線（来店者限定ホームケア） ── */
+/* 予約完了 → 事前カウンセリングへの導線。ここが体験のはじまりなので一番前に強く出す */
+.pre-cta{display:block;text-decoration:none;background:linear-gradient(150deg,#1f2a27,#33443f);border-radius:18px;
+  padding:20px 18px 18px;margin:18px 0 6px;color:#EFEAE2;text-align:left;position:relative;overflow:hidden;transition:.16s}
+.pre-cta:hover{box-shadow:0 16px 34px -16px rgba(31,42,39,.7)}
+.pre-cta .en{font-family:'Cormorant Garamond',serif;letter-spacing:.22em;text-transform:uppercase;
+  color:#9FC0B4;font-size:10.5px;font-weight:600}
+.pre-cta .en,.pre-cta h4,.pre-cta p{text-align:left}
+.pre-cta h4{margin:8px 0 0;font-family:'Noto Serif JP',serif;font-size:18px;line-height:1.55;color:#fff;font-weight:600}
+.pre-cta p{margin:9px 0 0;font-size:12.5px;line-height:1.85;color:#C9DDD6}
+.pre-why{display:grid;gap:7px;margin-top:14px}
+.pre-why i{display:flex;gap:9px;align-items:flex-start;font-style:normal;font-size:12.5px;color:#DDEAE5;line-height:1.7;text-align:left}
+.pre-why i b{color:#fff;font-weight:600}
+.pre-why i::before{content:"";flex:0 0 6px;height:6px;border-radius:99px;background:#9FC0B4;margin-top:7px}
+.pre-go{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:16px;background:#fff;color:#1f2a27;
+  border-radius:999px;padding:14px;font-family:'Noto Serif JP',serif;font-size:15px;font-weight:600}
+.pre-go span{width:26px;height:26px;border-radius:99px;background:#1f2a27;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px}
+.pre-min{text-align:center;margin-top:9px;font-size:11.5px;color:#9FC0B4}
 .shop-cta{display:flex;align-items:center;gap:13px;text-align:left;text-decoration:none;background:linear-gradient(135deg,#faf6ef,#fdfbf7);border:1px solid #e6dcc7;border-radius:16px;padding:16px 15px;margin:16px 0 6px;transition:.16s}
 .shop-cta:hover{box-shadow:0 12px 26px -14px rgba(184,148,90,.5);border-color:#D9BE93}
 .shop-cta-ic{flex:0 0 auto;width:46px;height:46px;border-radius:12px;background:#f1e6d2;display:flex;align-items:center;justify-content:center;font-size:23px}
@@ -1927,6 +1944,11 @@ function addReservation(o){
   SyncProvider.push(o);
   // D1に非同期で保存（失敗してもlocalStorageには保存済みなので画面は壊れない）
   API.add(o).then(res => {
+    if (res && res.precareUrl) {
+      // 来店前の「今日のご希望」へのリンク。完了画面が先に出ていることがあるので描き直す
+      window.__PRECARE_URL = res.precareUrl;
+      try { if (typeof bk !== 'undefined' && bk.step === 5) renderBook(); } catch (e) {}
+    }
     if (res && res.ok && res.id && res.id !== o.id) {
       // D1が発行したIDで上書き
       const idx = db.reservations.findIndex(r => r.id === o.id);
@@ -4654,6 +4676,19 @@ function renderBook(){
         : (bk.email&&(bk.emailVerified||bk.emailProvider==='google')
           ? `<p style="color:var(--sub);font-size:13px;margin-top:6px">確認メールを <b style="color:var(--ink)">${escH(bk.email)}</b> にお送りしました</p>`
           : `<p style="color:var(--sub);font-size:13px;margin-top:6px">この画面が予約完了のお知らせです。控えが必要な方は下からLINE友だち追加をどうぞ</p>`)}
+      ${window.__PRECARE_URL?`
+      <a class="pre-cta" href="${window.__PRECARE_URL}">
+        <div class="en">Next — for your visit</div>
+        <h4>当日を もっと自分好みに</h4>
+        <p>力加減も 香りも 灯りも お部屋も いま選んでおけます</p>
+        <div class="pre-why">
+          <i><b>ご来店後すぐにはじめられます</b></i>
+          <i>受付で書くものはありません そのままお部屋へ</i>
+          <i>当日は言わなくて大丈夫です 目を閉じているだけで</i>
+        </div>
+        <div class="pre-go">今日のご希望を選ぶ<span>→</span></div>
+        <div class="pre-min">2分ほど　あとからでも変えられます</div>
+      </a>`:''}
       <div class="line-cta">
         <div class="qr" aria-hidden="true"></div>
         <div class="line-cta-body"><b>LINEで予約を受け取る</b><span>友だち追加で、前日リマインド・次回予約・お得情報が届きます</span></div>
