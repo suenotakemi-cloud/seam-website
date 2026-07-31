@@ -174,7 +174,11 @@ function memberCard(code,points,name,j){
 
 function receiptCard(r){
   const rows=[];
-  if(r.tech)rows.push(['施術',r.tech]);
+  // 回数券・月額会員で施術分をカバーしたときは、必ず1行出す。
+  // 0円の領収書だけを出すと「何も買っていない」ように見えて不信感を生む。
+  if(r.passCode&&r.techCovered){
+    rows.push([r.passKind==='membership'?'施術（会員の1回を利用・今月分お預かり済み）':'施術（回数券を1回利用）',0]);
+  }else if(r.tech)rows.push(['施術',r.tech]);
   (r.items||[]).forEach(i=>rows.push([i.name+(i.qty>1?' ×'+i.qty:''),(+i.price||0)*(+i.qty||1)]));
   if(r.discount)rows.push(['割引',-r.discount]);
   // 値引きを必ず載せる（明細と合計が合わなくなるため）

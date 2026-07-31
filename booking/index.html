@@ -1692,6 +1692,7 @@ const ptYenTech =()=>Math.max(0,Math.min(10,parseFloat(stg('ptYenTech','0.5'))||
 const ptLineOnly=()=>stg('ptLineOnly','1')==='1';
 /* 会計中のお客様のランク。会員証を読むかカルテから引くとサーバーから入る。 */
 let CO_RANK=null;
+let CO_MEMBERSHIP=null;   // レジで読んだお客様の月額会員（member/lookup が返す）
 const coRate=()=>(CO_RANK&&CO_RANK.rate!=null)?CO_RANK.rate:pointRate();
 /* 使ったポイントが何円分になるか。
  * 施術に当てる分と商品に当てる分でレートが違うので、施術から先に当てる（お客様に有利）。 */
@@ -2516,6 +2517,7 @@ function openCheckout(resvId){
     nominated:resvId?true:false   // 予約からの会計は既定=指名。フリー(予約なし/指名なし)は切替
   };
   CO_RANK=null;
+  CO_MEMBERSHIP=null;
   renderCheckout();
   document.getElementById('checkoutbg').classList.add('show');
   // 電話が分かっていればランクを引いてくる（会員証を読まなくてもVIPが分かるように）
@@ -2615,8 +2617,12 @@ function renderCheckout(){
       ${applied||`<div class="co-scan-row"><input id="co-gift" placeholder="🎁 券面コード（G-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-gift-go">適用</button></div>`}`;})()}
     ${(()=>{ // 回数券・パス: コード入力→1回消化(施術分カバー)
       const x=coDraft.passCode?passByCode(coDraft.passCode):null;
-      if(x)return `<div class="co-line" style="color:#0c7a41;font-weight:700"><span>🎫 ${escH(x.label)}（消化後 残${Math.max(0,(x.remaining||0)-1)}回）</span><span style="margin-left:auto">施術分カバー <button class="co-rx" id="co-pass-x" aria-label="解除">✕</button></span></div>`;
-      return `<div class="co-sub">回数券・パス</div>
+      const isMs=x&&(x.kind==='membership'||(CO_MEMBERSHIP&&CO_MEMBERSHIP.id===x.id));
+      if(x)return `<div class="co-line" style="color:#0c7a41;font-weight:700"><span>${isMs?'👑 月額会員':'🎫 '+escH(x.label)}（消化後 残${Math.max(0,(x.remaining||0)-1)}回）</span><span style="margin-left:auto">${isMs?'今月分お預かり済み':'施術分カバー'} <button class="co-rx" id="co-pass-x" aria-label="解除">✕</button></span></div>`;
+      // 会員なのにまだ使っていないとき（施術がある会計）は、押すだけで使えるボタンを出す
+      if(CO_MEMBERSHIP&&CO_MEMBERSHIP.remaining>0&&!isShop())return `<div class="co-sub">月額会員</div>
+      <div class="co-line" style="color:#0c7a41"><span>👑 残${CO_MEMBERSHIP.remaining}回${CO_MEMBERSHIP.status==='canceled'?'（自動更新は停止中）':''}</span><span style="margin-left:auto"><button class="btn small ghost" id="co-ms-go">1回を使う</button></span></div>
+      <div class="co-sub">回数券・パス</div>
       <div class="co-scan-row"><input id="co-pass" placeholder="🎫 パスコード（P-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-pass-go">消化</button></div>`;})()}
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     ${coDraft.method==='cash'?`<div class="co-cash">
@@ -2668,7 +2674,10 @@ function renderCheckout(){
      coDraft.passCode=x.id;renderCheckout();toast(`回数券を適用しました（${x.label}・施術分カバー）`);};
    if(pg)pg.onclick=applyP;
    if(pi)pi.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();applyP();}};
-   const px=box.querySelector('#co-pass-x');if(px)px.onclick=()=>{coDraft.passCode='';renderCheckout();};}
+   const px=box.querySelector('#co-pass-x');if(px)px.onclick=()=>{coDraft.passCode='';renderCheckout();};
+   const mg=box.querySelector('#co-ms-go');if(mg)mg.onclick=()=>{
+     if((+coDraft.tech||0)<=0&&!confirm('施術の金額が入っていません。それでも会員の1回を使いますか'))return;
+     coDraft.passCode=CO_MEMBERSHIP.id;renderCheckout();toast('会員の1回を使います');};}
   box.querySelector('#co-staff').onchange=e=>{coDraft.staffId=e.target.value;};
   box.querySelectorAll('.co-rn').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].name=e.target.value;});
   box.querySelectorAll('.co-rp').forEach(inp=>inp.oninput=e=>{coDraft.retailItems[+e.target.dataset.i].price=e.target.value;sync();});
@@ -2716,9 +2725,18 @@ function renderCheckout(){
     if(r.phone)coDraft.phone=r.phone;
     coDraft.memberCode=r.code; coDraft.memberPt=r.points||0; coDraft.salonId=r.salonId||'';
     CO_RANK={rank:r.rank,rate:r.rate,visits:r.visits,yVisits:r.yVisits,ySpend:r.ySpend,next:r.next};
+    // 月額会員は「会員1回を使う」を既定にする。スタッフが支払方法で迷う余地を消すため。
+    // 施術がある会計のときだけ（店販だけの会計で1回を溶かさない）
+    CO_MEMBERSHIP=r.membership||null;
+    if(CO_MEMBERSHIP&&CO_MEMBERSHIP.remaining>0&&!coDraft.passCode&&!isShop()&&(+coDraft.tech||0)>0){
+      coDraft.passCode=CO_MEMBERSHIP.id;
+    }
     if(inp)inp.value='';
     renderCheckout();
     const rn=(r.rank&&r.rank.name)||'';
+    if(CO_MEMBERSHIP&&CO_MEMBERSHIP.remaining>0){
+      toast(`${r.name?r.name+' 様':'会員証'}　月額会員（残${CO_MEMBERSHIP.remaining}回）${coDraft.passCode===CO_MEMBERSHIP.id?'／1回を使います':''}`);
+    }else
     toast(`${r.name?r.name+' 様':'会員証'}${rn?'（'+rn+'・'+(r.visits||0)+'回目）':''}　残高 ${(r.points||0).toLocaleString()}pt`);
     setTimeout(()=>{const s2=document.getElementById('co-scan');if(s2)s2.focus();},0);
   };
