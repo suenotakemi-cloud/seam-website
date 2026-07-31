@@ -220,7 +220,7 @@ function subCard(sub,cfg){
         月額のなかに90分が一回ふくまれていて 使わなかった月は次の月に持ち越せます</p>
       <div class="rows"><div class="row"><span>月額</span><span>${yen(cfg.priceYen)}</span></div>
         <div class="row"><span>繰越</span><span>${cfg.carryCap||3}回まで</span></div>
-        <div class="row"><span>お約束の期間</span><span>なし（いつでも解約）</span></div></div>
+        <div class="row"><span>お約束の期間</span><span>${cfg.minTermMonths?cfg.minTermMonths+'ヶ月':'なし（いつでも解約）'}</span></div></div>
       <button class="btn" id="subJoin">会員になる</button></div>`;
   }
   const st=sub.status||'active';
@@ -237,14 +237,18 @@ function subCard(sub,cfg){
             : `<i>次回のお引き落とし</i> ${esc((sub.nextChargeAt||'').replace(/-/g,'/')||'—')}　${yen(sub.priceYen)}`)}
       ${sub.cardLast4?`<br><i>カード</i> ${esc(sub.cardBrand||'')} ····${esc(sub.cardLast4)}`:''}
       ${sub.carryCap?`<br><i>繰越</i> ${sub.carryCap}回まで`:''}
+      ${sub.termEndsAt&&!canceled?`<br><i>お約束の期間</i> ${esc(sub.termEndsAt.replace(/-/g,'/'))}まで`:''}
     </div>
+    ${sub.cancelAt&&!canceled?`<div class="note" style="background:rgba(255,255,255,.1);border:0;color:#e6d9c4;margin-top:12px">
+      ${esc(sub.cancelAt.replace(/-/g,'/'))}で自動更新が終わるよう承っています<br>それまではこれまでどおりお使いいただけます
+      <button class="btn ghost" id="subUndo" style="margin-top:9px;padding:10px;font-size:13px">やっぱり続ける</button></div>`:''}
     <div class="subact">
       ${canceled
         ? `<button class="btn ghost" id="subResume">再開する</button>`
         : `<button class="btn ghost" id="subCard">カードを変える</button>
            ${st==='paused'?'':'<button class="btn ghost" id="subPause">1ヶ月休む</button>'}`}
     </div>
-    ${canceled?'':'<button class="btn quiet" id="subCancel">自動更新をやめる</button>'}
+    ${(canceled||sub.cancelAt)?'':'<button class="btn quiet" id="subCancel">自動更新をやめる</button>'}
   </div>
   <div id="submsg"></div>`;
 }
@@ -254,7 +258,10 @@ function termsHtml(cfg){
     <ul>
       <li>月額 ${yen(cfg.priceYen)}（税込）を毎月同じ日にご登録のカードからお引き落としします</li>
       <li><b>自動更新です</b>。止めるまで毎月続きます</li>
-      <li>解約はこの会員証の画面からいつでもできます。次回のお引き落とし日の前日までにお手続きください</li>
+      ${cfg.minTermMonths?`<li><b>お約束の期間は${cfg.minTermMonths}ヶ月です</b>。期間中に解約をお申し出いただいた場合、満了日で自動更新が終わり、それまでは毎月のお引き落としが続きます</li>
+      <li>お申し込みから${cfg.coolOffDays||8}日以内は、その場で解約を承ります</li>`
+      :'<li>解約はこの会員証の画面からいつでもできます。次回のお引き落とし日の前日までにお手続きください</li>'}
+      <li>解約のお手続きはこの会員証の画面からできます</li>
       <li>お預かり済みの回数は解約後 ${cfg.graceMonths||3}ヶ月お使いいただけます</li>
       <li>繰越は ${cfg.carryCap||3}回までです。上限に達している月もお引き落としは続きます</li>
       <li>販売元・お問い合わせ先は<a href="https://seam.site/tokushoho" target="_blank" rel="noopener">特定商取引法に基づく表記</a>をご覧ください</li>
@@ -310,11 +317,15 @@ async function subFlow(mode){
  * （キャンセルページで実際に起きた・サロンボードRPAでも同じ罠があった）。
  * 確認はページの中に出す。 */
 async function subAction(kind){
+  const inTerm=SUB&&SUB.termEndsAt&&SUB.termEndsAt>new Date(Date.now()+9*3600*1000).toISOString().slice(0,10);
   const labels={pause:'1ヶ月お休みにします。よろしいですか',
-    cancel:'自動更新をやめます。お預かり済みの残り回数はそのままお使いいただけます。よろしいですか',
-    resume:'会員を再開します。よろしいですか'};
-  const doneMsg={pause:'1ヶ月のお休みにしました',cancel:'自動更新をやめました',resume:'再開しました'};
-  const btnIds={pause:'subPause',cancel:'subCancel',resume:'subResume'};
+    cancel:inTerm
+      ? 'お約束の期間は'+String(SUB.termEndsAt).replace(/-/g,'/')+'までです。その日で自動更新が終わるように承ります。それまでは毎月のお引き落としが続きます。よろしいですか'
+      : '自動更新をやめます。お預かり済みの残り回数はそのままお使いいただけます。よろしいですか',
+    resume:'会員を再開します。よろしいですか',
+    'cancel-undo':'解約のご予約を取り消して、このまま続けます。よろしいですか'};
+  const doneMsg={pause:'1ヶ月のお休みにしました',cancel:'承りました',resume:'再開しました','cancel-undo':'このまま続けます'};
+  const btnIds={pause:'subPause',cancel:'subCancel',resume:'subResume','cancel-undo':'subUndo'};
   const anchor=document.getElementById(btnIds[kind]);
   const old=document.getElementById('subconf'); if(old)old.remove();
   if(!anchor)return;
@@ -348,6 +359,7 @@ function wireSub(){
   on('subPause',()=>subAction('pause'));
   on('subCancel',()=>subAction('cancel'));
   on('subResume',()=>subAction('resume'));
+  on('subUndo',()=>subAction('cancel-undo'));
 }
 
 async function jget(u){const r=await fetch(u);const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||('通信に失敗しました('+r.status+')'));return j;}
