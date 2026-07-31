@@ -504,7 +504,7 @@ async function render(okMsg){
   let sres=null, gres=null;
   try{ sres=await jget(API+'/member/subscription?'+q); }catch(e){}
   SUB=(sres&&sres.subscription)||null; SUBCFG=(sres&&sres.config)||null;
-  if(SUB)try{ gres=await jget(API+'/member/gifts?'+q); }catch(e){}
+  if(SUB)try{ gres=await jget(API+'/member/gift-list?'+q); }catch(e){}
   if(j.salonId)await loadQR().catch(()=>{});
   if(!j.linked){
     app.innerHTML=`<div class="card"><h1 style="font-size:16px">まだ会員証がありません</h1>
