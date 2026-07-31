@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>今日のご希望｜SEAM GINZA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   SEAM GINZA — 今日のご希望（来店前）
+   ★これは問診票ではない。「要望を聞いて叶える」ための注文書。
+     - 悩み／症状／気になることは聞かない。どうしたいかだけ聞く
+     - 質問文ではなく、選べるものを差し出す言い方にする
+     - 選んでも料金が増えないものは、その場で「含まれています」と言う
+     - 決められないものは「おまかせ」を必ず用意する
+     - 確約できないもの（お部屋）は確約しない、と正直に書く
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#16171B; --body:#4A4741; --sub:#7C776E;
+  --cream:#F7F4EE; --sand:#EFE9DF; --line:#E3DCD0;
+  --gold:#B8945A; --clay:#A87456; --rose:#D7A39A; --jade:#1F2A27;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--cream);color:var(--body);
+  font-family:'Noto Sans JP',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:15px;line-height:1.9;-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:520px;margin:0 auto;padding:0 20px}
+
+/* 進み具合 */
+.top{position:sticky;top:0;z-index:20;background:rgba(247,244,238,.94);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding-top:env(safe-area-inset-top,0)}
+.top .bar{height:2px;background:var(--line)}
+.top .bar i{display:block;height:100%;background:var(--clay);width:0;transition:width .5s cubic-bezier(.16,1,.3,1)}
+.top .in{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;max-width:520px;margin:0 auto}
+.brand{font-family:'Noto Serif JP',serif;letter-spacing:.26em;font-size:14px;color:var(--ink)}
+.step{font-family:'Instrument Serif',serif;font-size:13px;color:var(--sub);letter-spacing:.08em}
+.back{background:none;border:0;font:inherit;font-size:13px;color:var(--sub);cursor:pointer;padding:6px 2px}
+
+/* 画面 */
+.scr{display:none;padding:26px 0 8px;animation:in .45s cubic-bezier(.16,1,.3,1)}
+.scr.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.eyebrow{font-family:'Instrument Serif',serif;font-style:italic;font-size:16px;color:var(--clay);margin:0 0 8px}
+h1{font-family:'Noto Serif JP',serif;font-weight:500;color:var(--ink);
+  font-size:clamp(22px,5.6vw,27px);line-height:1.5;letter-spacing:.02em;margin:0}
+.lead{font-size:14px;line-height:2;color:var(--sub);margin:14px 0 0}
+.hint{font-size:12.5px;color:var(--sub);margin:10px 0 0}
+.incl{display:inline-block;font-size:11.5px;color:var(--clay);border:1px solid rgba(168,116,86,.32);
+  border-radius:999px;padding:3px 11px;margin-top:12px}
+
+/* 選ぶもの */
+.opts{margin-top:22px;display:grid;gap:9px}
+.opt{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;
+  background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px 16px;
+  font:inherit;color:var(--body);cursor:pointer;transition:border-color .2s,background .2s,transform .12s}
+.opt:active{transform:scale(.985)}
+.opt.on{border-color:var(--clay);background:rgba(168,116,86,.06)}
+.opt .tick{flex:0 0 20px;height:20px;border-radius:999px;border:1.4px solid var(--line);margin-top:2px;
+  display:grid;place-items:center;transition:.2s}
+.opt.on .tick{border-color:var(--clay);background:var(--clay)}
+.opt.on .tick::after{content:"";width:6px;height:10px;border:2px solid #fff;border-top:0;border-left:0;
+  transform:rotate(45deg) translate(-1px,-1px)}
+.opt b{display:block;font-weight:500;color:var(--ink);font-size:15px;line-height:1.6}
+.opt s{display:block;text-decoration:none;font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.75}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:10px 15px;
+  font:inherit;font-size:13.5px;color:var(--body);cursor:pointer;transition:.2s}
+.chip.on{border-color:var(--clay);background:rgba(168,116,86,.09);color:var(--ink)}
+.sub-h{font-size:12px;letter-spacing:.1em;color:var(--sub);margin:26px 0 0}
+textarea{width:100%;margin-top:12px;min-height:82px;padding:13px;border:1px solid var(--line);
+  border-radius:12px;font:inherit;font-size:14px;background:#fff;color:var(--body);resize:vertical}
+textarea:focus{outline:0;border-color:var(--clay)}
+
+/* 部位マップ */
+.mapwrap{position:relative;margin:20px auto 0;max-width:290px}
+.mapwrap img{width:100%;display:block;mix-blend-mode:multiply}
+.mapwrap svg{position:absolute;inset:0;width:100%;height:100%}
+.mapwrap .wash{filter:blur(10px);pointer-events:none}
+.wash .z{fill:transparent;transition:fill .4s ease}
+.wash .z[data-s="soft"]{fill:#DE9E92}.wash .z[data-s="normal"]{fill:#BCAB95}
+.wash .z[data-s="strong"]{fill:#C79A45}.wash .z[data-s="focus"]{fill:#A56A42}
+.hit .z{fill:transparent;cursor:pointer}
+.hit .z:hover{fill:rgba(184,148,90,.10)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px}
+.legend span{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--sub)}
+.legend i{width:10px;height:10px;border-radius:3px}
+.maphint{color:var(--sub);font-family:'Noto Sans JP',sans-serif;font-size:13.5px}
+.picked{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-top:16px;
+  font-family:'Noto Serif JP',serif;font-size:14.5px;color:var(--ink);line-height:1.9;min-height:56px}
+
+/* 叶えます、の返し */
+.grant{margin-top:16px;background:rgba(168,116,86,.07);border:1px solid rgba(168,116,86,.22);
+  border-radius:12px;padding:13px 15px;font-size:13.5px;color:var(--clay);line-height:1.85;
+  display:none;animation:in .4s}
+.grant.on{display:block}
+
+/* 今日のあなた */
+.plan{background:#fff;border:1px solid var(--line);border-radius:15px;padding:6px 18px 18px;margin-top:22px}
+.prow{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.prow:last-child{border-bottom:0}
+.prow b{flex:0 0 74px;font-weight:400;font-size:10.5px;letter-spacing:.14em;color:var(--gold);
+  text-transform:uppercase;padding-top:5px;font-family:'Instrument Serif',serif}
+.prow span{font-family:'Noto Serif JP',serif;font-size:14.5px;color:var(--ink);line-height:1.85}
+.tl{margin-top:22px;border-left:1px solid var(--line);padding-left:20px}
+.tl div{position:relative;padding:0 0 20px}
+.tl div:last-child{padding-bottom:0}
+.tl div::before{content:"";position:absolute;left:-25px;top:8px;width:9px;height:9px;border-radius:999px;
+  background:var(--cream);border:1.4px solid var(--clay)}
+.tl b{display:block;font-family:'Noto Serif JP',serif;font-size:14.5px;color:var(--ink);font-weight:500}
+.tl s{display:block;text-decoration:none;font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.8}
+
+.ill{display:block;width:100%;max-width:210px;margin:20px auto 0;mix-blend-mode:multiply}
+
+/* 下の操作 */
+.foot{position:fixed;left:0;right:0;bottom:0;z-index:30;background:linear-gradient(180deg,rgba(247,244,238,0),var(--cream) 34%);
+  padding:20px 20px calc(18px + env(safe-area-inset-bottom,0px))}
+.foot .in{max-width:520px;margin:0 auto;display:flex;gap:10px}
+.btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;min-height:54px;
+  border:0;border-radius:999px;background:var(--ink);color:#fff;font:inherit;font-family:'Noto Serif JP',serif;
+  font-size:15.5px;letter-spacing:.04em;cursor:pointer;transition:opacity .2s}
+.btn:disabled{opacity:.38}
+.btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);flex:0 0 auto;padding:0 20px;font-size:14px}
+.btn .ar{width:30px;height:30px;border-radius:999px;background:#fff;color:var(--ink);display:grid;place-items:center;font-size:13px}
+.skip{display:block;width:100%;text-align:center;background:none;border:0;font:inherit;font-size:13px;
+  color:var(--sub);margin-top:12px;cursor:pointer;text-decoration:underline}
+.load{text-align:center;padding:80px 0;color:var(--sub)}
+.err{background:#fdeceb;border:1px solid #f5c6c2;color:#a3271f;border-radius:12px;padding:14px;margin-top:16px;font-size:13.5px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="bar"><i id="bar"></i></div>
+  <div class="in"><button class="back" id="back" hidden>← もどる</button>
+    <span class="brand">S E A M</span><span class="step" id="stepn"></span></div></div>
+
+<div class="wrap" id="app"><div class="load">読み込んでいます…</div></div>
+
+<div class="foot" id="foot" hidden><div class="in">
+  <button class="btn" id="next">次へ<span class="ar">→</span></button>
+</div></div>
+
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const T=new URLSearchParams(location.search).get('t')||'';
+const app=document.getElementById('app'), foot=document.getElementById('foot');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
+
+/* ── 部位マップ ── */
+const PARTS={head:'頭',neck:'首',dec:'デコルテ',arm:'手と腕',foot:'足'};
+const LV=['soft','normal','strong','focus',''];
+const LVN={soft:'やさしく',normal:'標準',strong:'しっかり',focus:'たっぷり'};
+const SHAPES=[
+ ['head','<ellipse cx="424" cy="170" rx="76" ry="84"/>'],
+ ['dec','<path d="M312 300Q424 274 536 300L544 350Q424 374 304 350Z"/>'],
+ ['arm','<path d="M316 300C304 340 296 440 288 556 283 636 285 686 297 720 308 736 324 730 330 712 320 656 328 558 340 472 346 404 346 344 344 302Z"/>'],
+ ['arm','<path d="M532 300C544 340 552 440 560 556 565 636 563 686 551 720 540 736 524 730 518 712 528 656 520 558 508 472 502 404 502 344 504 302Z"/>'],
+ ['foot','<path d="M336 640L512 640C522 800 498 998 476 1116 468 1156 450 1176 424 1176 398 1176 380 1156 372 1116 350 998 326 800 336 640Z"/>'],
+ ['neck','<rect x="386" y="240" width="76" height="62" rx="26"/>'],
+];
+const lay=(cls)=>SHAPES.map(([p,s])=>s.replace(/^<(\w+)/,`<$1 class="z" data-p="${p}"`)).join('');
+function mapHtml(){
+  return `<div class="mapwrap">
+    <svg class="wash" viewBox="0 0 848 1264" aria-hidden="true">${lay()}</svg>
+    <img src="../images/lp/spa/bodymap_figure.webp" alt="からだの図">
+    <svg class="hit" viewBox="0 0 848 1264">${lay()}</svg></div>
+  <div class="legend">
+    <span><i style="background:#DE9E92"></i>やさしく</span><span><i style="background:#BCAB95"></i>標準</span>
+    <span><i style="background:#C79A45"></i>しっかり</span><span><i style="background:#A56A42"></i>たっぷり</span></div>
+  <div class="picked" id="picked"></div>`;
+}
+function mapWire(){
+  A.parts=A.parts||{};
+  const paint=()=>{
+    document.querySelectorAll('.wash .z').forEach(z=>{const v=A.parts[z.dataset.p];
+      if(v)z.dataset.s=v;else delete z.dataset.s;});
+    const t=Object.keys(PARTS).filter(k=>A.parts[k]).map(k=>PARTS[k]+' '+LVN[A.parts[k]]);
+    document.getElementById('picked').innerHTML=t.length?t.join(' ／ ')
+      :'<span class="maphint">図に触れると そこを選べます<br>触れるたびに やさしく → 標準 → しっかり → たっぷり と変わります</span>';
+  };
+  document.querySelectorAll('.hit .z').forEach(z=>z.onclick=()=>{
+    const p=z.dataset.p, cur=A.parts[p]||'', nx=LV[(LV.indexOf(cur)+1)%LV.length];
+    if(nx)A.parts[p]=nx;else delete A.parts[p];
+    paint(); save();
+  });
+  paint();
+}
+
+/* ── 画面の定義 ──
+   ★聞き方はぜんぶ「どれにします？」。悩みや症状は聞かない。 */
+function screens(){
+  const r=RESV||{}, summer=SEASON==='summer';
+  const S=[];
+
+  S.push({id:'hello',render:()=>`
+    <p class="eyebrow">for your visit</p>
+    <h1>当日のことを<br>いま決めておけます</h1>
+    <p class="lead">力加減も 香りも 灯りも お部屋も<br>
+      ぜんぶ選んでおけるので 当日は目を閉じているだけで大丈夫です<br>
+      2分ほど 気楽にどうぞ</p>
+    <div class="plan" style="margin-top:24px">
+      <div class="prow"><b>Date</b><span>${esc((r.date||'').replace(/-/g,'/'))}　${esc(hm(r.start||0))}</span></div>
+      <div class="prow"><b>Menu</b><span>${esc(r.menu||'ウェットヘッドスパ')}</span></div>
+      ${r.staff?`<div class="prow"><b>With</b><span>${esc(r.staff)}</span></div>`:''}
+    </div>
+    <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="">
+    ${LAST?`<p class="hint" style="text-align:center">前回のご希望が残っています<br>そのままでよければ最後まで送るだけで終わります</p>`:''}`,
+    next:'はじめる', noskip:true});
+
+  S.push({id:'goal',title:'今日は どう過ごしましょう',
+    lead:'いちばん近いものをひとつ選んでください',
+    one:'goal', opts:[
+      ['ねむってしまいたい','いちばん深いところまでゆるめます'],
+      ['頭を軽くしたい','こめかみと後頭部をていねいに'],
+      ['目のあたりを楽にしたい','眉から目のまわりをほどきます'],
+      ['首と肩までほどきたい','デコルテまでつなげます'],
+      ['すっきりしたい','洗い上がりの軽さを主役にします'],
+      ['ごほうびの時間にしたい','いちばん心地よいところを長めに']]});
+
+  S.push({id:'parts',title:'触れてほしいところ',
+    lead:'図に触れて 強さまで決められます　選ばなくても大丈夫です',
+    custom:mapHtml, wire:mapWire, incl:'どこを選んでも料金は変わりません'});
+
+  S.push({id:'bath',title:'頭浸浴の温度',
+    lead:'温かいお湯と冷たいお水を交互にすると すっきりします<br>冷たいのが苦手な方は 温かいだけでも',
+    one:'bath', opts:[
+      ['温冷を交互に','いちばんすっきりします　おすすめ'],
+      ['温かいだけで','冷たいのが苦手な方はこちら'],
+      ['おまかせ','その日の様子でお選びします']],
+    incl:'どちらも料金は同じです'});
+
+  if(summer) S.push({id:'soda',title:'一度 炭酸でさっぱりしますか',
+    lead:'夏のあいだは 炭酸のシャンプーで一度洗い流すと<br>頭皮がすっと軽くなります',
+    one:'soda', opts:[
+      ['はい お願いします','汗と皮脂をすっきり流します'],
+      ['今回はいいです','いつもの洗い上がりで'],
+      ['おまかせ','その日の頭皮を見てお選びします']],
+    incl:'追加料金はありません',
+    then:{when:v=>v==='はい お願いします', id:'mint', title:'清涼感はどのくらい',
+      lead:'ミントの香りと冷たさが苦手な方もいらっしゃるので',
+      one:'mint', opts:[
+        ['しっかり冷たいのが好き',''],
+        ['ほんのりでいい',''],
+        ['ミントは苦手です','清涼感のないものにします']]}});
+
+  S.push({id:'wash',title:'洗いかたの好み',
+    lead:'いくつでもどうぞ',
+    many:'wash', chips:['長めがいい','マッサージするように','しっかり落としたい',
+      '包み込まれるように','泡をたっぷり','すすぎはていねいに','おまかせ']});
+
+  S.push({id:'scent',title:'香りと 灯りと 音',
+    lead:'お部屋のしつらえです',
+    groups:[
+      {k:'scent',h:'香り',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']},
+      {k:'light',h:'灯り',chips:['暗めがいい','ほんのり','ふつう','おまかせ']},
+      {k:'sound',h:'音',chips:['静かに','小さめのヒーリング','ふつう','おまかせ']}],
+    incl:'どれを選んでも料金は変わりません'});
+
+  S.push({id:'room',title:'お部屋のご希望',
+    lead:'空いていればご希望に沿います<br><b style="color:#A87456">満席のときは別のお部屋になります</b>ので お約束はできません',
+    one:'room', opts:[
+      ['窓side がいい','外の光が入るお部屋です'],
+      ['いちばん静かなところ','奥のお部屋になります'],
+      ['どこでも大丈夫','']]});
+
+  S.push({id:'talk',title:'当日の過ごしかた',
+    lead:'そっとしておいてほしいときは そう言ってください',
+    one:'talk', opts:[
+      ['話しかけないでほしい','必要なことだけ短くお伝えします'],
+      ['少しだけ話したい',''],
+      ['いろいろ相談したい','髪のことも聞いてください']],
+    after:{k:'avoid',h:'苦手なこと（あれば）',
+      chips:['強い圧は苦手','首まわりはやさしく','耳のまわりは触らないで','香りは控えめに','商品のお話はいらない']}});
+
+  S.push({id:'care',title:'仕上げに使うもの',
+    lead:'お帰りのときの髪の感じです',
+    one:'finish', opts:[
+      ['軽く さらっと','このあと人に会う日に'],
+      ['しっとりまとまる',''],
+      ['自然のまま',''],
+      ['おまかせ','髪を見てお選びします']],
+    after:{k:'care',h:'使ってみたいものがあれば',
+      chips:['頭皮用のもの','ダメージ補修','うるおい','香りの良いもの','おまかせ']}});
+
+  S.push({id:'after',title:'このあとのご予定',
+    lead:'仕上がりの軽さを合わせます',
+    one:'after', opts:[['お仕事にもどる',''],['人に会う',''],['食事に行く',''],['そのまま帰る',''],['とくにない','']],
+    note:true});
+
+  S.push({id:'confirm',confirm:true});
+  S.push({id:'done',done:true});
+  return S;
+}
+let SC=[];
+
+/* ── 描画 ── */
+function draw(){
+  const s=SC[i];
+  document.getElementById('back').hidden = i===0 || !!s.done;
+  document.getElementById('stepn').textContent = (s.done||s.id==='hello')?'':`${i} / ${SC.length-2}`;
+  document.getElementById('bar').style.width = Math.round(i/(SC.length-1)*100)+'%';
+  foot.hidden=!!s.done;
+
+  if(s.confirm) return drawConfirm();
+  if(s.done) return drawDone();
+
+  let h='';
+  if(s.render){ h=s.render(); }
+  else{
+    h=`<h1>${s.title}</h1>${s.lead?`<p class="lead">${s.lead}</p>`:''}`;
+    if(s.incl)h+=`<span class="incl">${esc(s.incl)}</span>`;
+    if(s.custom)h+=s.custom();
+    if(s.opts)h+=`<div class="opts">${s.opts.map(([t,d])=>
+      `<button class="opt${A[s.one]===t?' on':''}" data-v="${esc(t)}">
+        <span class="tick"></span><span><b>${esc(t)}</b>${d?`<s>${esc(d)}</s>`:''}</span></button>`).join('')}</div>`;
+    if(s.chips)h+=`<div class="chips">${s.chips.map(c=>
+      `<button class="chip${(A[s.many]||[]).includes(c)?' on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
+    if(s.groups)h+=s.groups.map(g=>`<p class="sub-h">${g.h}</p><div class="chips" data-g="${g.k}">${
+      g.chips.map(c=>`<button class="chip${A[g.k]===c?' on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`).join('');
+    if(s.after)h+=`<p class="sub-h">${s.after.h}</p><div class="chips" data-g2="${s.after.k}">${
+      s.after.chips.map(c=>`<button class="chip${(A[s.after.k]||[]).includes(c)?' on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
+    if(s.note)h+=`<p class="sub-h">ほかにご希望があれば</p><textarea id="note" placeholder="例：終わったあと少しだけ静かに休みたいです">${esc(A.note||'')}</textarea>`;
+    h+=`<div class="grant" id="grant"></div>`;
+  }
+  app.innerHTML=`<div class="scr on">${h}</div>`;
+  document.getElementById('next').innerHTML=(s.next||'次へ')+'<span class="ar">→</span>';
+  if(s.wire)s.wire();
+  wire(s);
+  window.scrollTo(0,0);
+}
+
+/* 選んだら その場で「できます」と返す＝叶えてもらえる感じを作る */
+const GRANT={
+  goal:'承りました　その形でご用意します',
+  bath:'かしこまりました　そのように整えます',
+  soda:'ご用意しておきます',
+  mint:'覚えておきます',
+  scent:'お部屋をそのように整えておきます',
+  room:'空いていれば そちらでご案内します',
+  talk:'担当に伝えておきます',
+  finish:'そのように仕上げます',
+  after:'それに合わせて仕上げます'};
+function grant(k){
+  const g=document.getElementById('grant'); if(!g||!GRANT[k])return;
+  g.textContent=GRANT[k]; g.classList.add('on');
+}
+
+function wire(s){
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    A[s.one]=b.dataset.v;
+    app.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===b));
+    grant(s.one); save(); sync();
+    if(s.then&&s.then.when(b.dataset.v)) ensureThen(s);
+  });
+  app.querySelectorAll('.chips').forEach(box=>{
+    const gk=box.dataset.g, g2=box.dataset.g2;
+    box.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
+      const c=b.dataset.c;
+      if(gk){ A[gk]=A[gk]===c?'':c; box.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',A[gk]===x.dataset.c)); grant(gk); }
+      else{ const k=g2||s.many; A[k]=A[k]||[];
+        A[k]=A[k].includes(c)?A[k].filter(x=>x!==c):A[k].concat([c]);
+        b.classList.toggle('on',A[k].includes(c)); }
+      save(); sync();
+    });
+  });
+  const n=document.getElementById('note'); if(n)n.oninput=()=>{A.note=n.value;save();};
+  sync();
+}
+/* 炭酸を選んだ人にだけ ミントの画面を差し込む */
+function ensureThen(s){
+  if(SC.some(x=>x.id===s.then.id))return;
+  SC.splice(i+1,0,{...s.then});
+}
+function sync(){
+  const s=SC[i];
+  const need = s.one && !s.render && !s.confirm;
+  document.getElementById('next').disabled = need ? !A[s.one] : false;
+}
+
+function drawConfirm(){
+  const P=[];
+  const push=(k,v)=>{ if(v&&String(v).trim())P.push([k,v]); };
+  push('Mood',A.goal);
+  push('Care',Object.keys(PARTS).filter(k=>A.parts&&A.parts[k]).map(k=>PARTS[k]+' '+LVN[A.parts[k]]).join(' ／ '));
+  push('Bath',A.bath);
+  push('Soda',A.soda&&A.soda!=='今回はいいです'?[A.soda,A.mint].filter(Boolean).join(' ／ '):A.soda);
+  push('Wash',(A.wash||[]).join('・'));
+  push('Room',[A.scent,A.light,A.sound].filter(Boolean).join(' ／ '));
+  push('Seat',A.room);
+  push('Time',A.talk);
+  push('Finish',[A.finish,(A.care||[]).join('・')].filter(Boolean).join(' ／ '));
+  push('After',A.after);
+  push('Care',(A.avoid||[]).length?'苦手：'+A.avoid.join('・'):'');
+  push('Note',A.note);
+  app.innerHTML=`<div class="scr on">
+    <p class="eyebrow">your day</p>
+    <h1>今日の あなたの時間</h1>
+    <p class="lead">この内容でご用意します<br>直したいところがあれば もどってください</p>
+    <div class="plan">${P.map(([k,v])=>`<div class="prow"><b>${k}</b><span>${esc(v)}</span></div>`).join('')||
+      '<div class="prow"><span>まだ何も選ばれていません　当日おうかがいします</span></div>'}</div>
+    <img class="ill" src="../images/lp/spa/ill_decollete.webp" alt="">
+    <div class="grant on" style="margin-top:20px">お部屋のご希望は 空いていればお応えします　満席のときは別のお部屋になります</div>
+    <div id="err"></div></div>`;
+  document.getElementById('next').innerHTML='これでお願いします<span class="ar">→</span>';
+  document.getElementById('next').disabled=false;
+}
+
+function drawDone(){
+  const st=RESV&&RESV.start||0, mn=(RESV&&RESV.minutes)||90;
+  const t=(m)=>hm(Math.max(0,st+m));
+  app.innerHTML=`<div class="scr on" style="text-align:center">
+    <p class="eyebrow">see you soon</p>
+    <h1>お待ちしています</h1>
+    <p class="lead">ご希望はすべて担当に届きました<br>当日は 何も言わなくて大丈夫です</p>
+    <img class="ill" src="../images/lp/spa/ill_afterglow.webp" alt="">
+    <div class="tl" style="text-align:left">
+      <div><b>${t(0)}　お越しください</b><s>受付で書くものはありません そのままお部屋へ</s></div>
+      <div><b>${t(5)}　はじまります</b><s>${esc(A.goal||'今日のご希望')}　と うかがっています とだけお伝えします</s></div>
+      <div><b>${t(15)}　洗いながら ほぐしていきます</b><s>${A.bath?esc(A.bath)+'　':''}${A.soda==='はい お願いします'?'炭酸でさっぱりしてから　':''}${(A.wash||[]).slice(0,2).join('・')||'心地よい強さで'}</s></div>
+      <div><b>${t(mn-15)}　ゆっくり戻ってきます</b><s>${esc([A.scent,A.light].filter(Boolean).join(' ／ ')||'静かなお部屋で')}</s></div>
+      <div><b>${t(mn)}　仕上げてお帰りです</b><s>${esc(A.finish||'髪を見て仕上げます')}</s></div>
+    </div>
+    <p class="hint">変えたくなったら このページからいつでも直せます</p></div>`;
+}
+
+/* ── 保存（1問ごと・落としても続きから） ── */
+function save(){
+  clearTimeout(saving);
+  saving=setTimeout(()=>{ fetch(API+'/precare',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token:T,answers:A,done:false})}).catch(()=>{}); },600);
+}
+async function finish(){
+  const b=document.getElementById('next'); b.disabled=true; b.textContent='お送りしています…';
+  try{
+    const r=await fetch(API+'/precare',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({token:T,answers:A,done:true})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(j.error||'送れませんでした');
+    i=SC.length-1; draw();
+  }catch(e){
+    const el=document.getElementById('err'); if(el)el.innerHTML=`<div class="err">${esc(e.message)}</div>`;
+    b.disabled=false; b.innerHTML='これでお願いします<span class="ar">→</span>';
+  }
+}
+
+document.getElementById('next').onclick=()=>{
+  if(SC[i].confirm)return finish();
+  if(i<SC.length-1){i++;draw();}
+};
+document.getElementById('back').onclick=()=>{ if(i>0){i--;draw();} };
+
+(async function(){
+  if(!T){ app.innerHTML='<div class="err">リンクが正しくありません。ご予約のご案内から開いてください</div>'; return; }
+  try{
+    const r=await fetch(API+'/precare?t='+encodeURIComponent(T));
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||'読み込めませんでした');
+    RESV=j.reservation; SEASON=j.season||'mid'; LAST=j.last||null;
+    A=(j.answers&&Object.keys(j.answers).length)?j.answers:(LAST?JSON.parse(JSON.stringify(LAST)):{});
+    SC=screens(); if(A.soda==='はい お願いします'){const k=SC.findIndex(x=>x.id==='soda'); if(k>=0&&SC[k].then)SC.splice(k+1,0,{...SC[k].then});}
+    foot.hidden=false; draw();
+  }catch(e){ app.innerHTML=`<div class="err">${esc(e.message)}</div>`; }
+})();
+</script>
+</body>
+</html>
