@@ -869,6 +869,19 @@ body.customer .phone.spa{background:#f7f8f3}
 /* 予約の判断に必要な3点（料金・所要・はじめての方）を、詳細を増やさずに前に出す */
 .pbody .ent-intl{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 2px}
 /* 便利訴求は主役にしない。安心の補助線として小さく置く */
+.perk{background:#fbf7ef;border:1px solid #ead9bb;border-radius:12px;padding:13px 14px;margin:12px 0 0}
+.perk-t{font-size:13.5px;font-weight:800;color:#8a6a12;line-height:1.5}
+.perk-t span{display:block;font-weight:400;font-size:11.5px;color:var(--sub);margin-top:2px}
+.perk-c{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.perkb{flex:1;min-width:140px;background:#fff;border:1.5px solid #ead9bb;border-radius:10px;padding:11px 12px;
+  font-family:inherit;text-align:left;cursor:pointer;line-height:1.5}
+.perkb b{display:block;font-size:13.5px;color:var(--ink)}
+.perkb i{display:block;font-style:normal;font-size:11.5px;color:var(--sub);margin-top:2px}
+.perkb.on{border-color:#b8912a;background:#fff9ec;box-shadow:0 0 0 2px #b8912a22}
+.perk-one{margin-top:9px;background:#fff;border:1.5px solid #ead9bb;border-radius:10px;padding:11px 12px;line-height:1.5}
+.perk-one b{display:block;font-size:13.5px}
+.perk-one i{display:block;font-style:normal;font-size:11.5px;color:var(--sub);margin-top:2px}
+.perk-n{font-size:11.5px;color:var(--sub);margin-top:9px;line-height:1.6}
 .needcontact{background:#fff6ed;border:1px solid #f0d2ae;color:#8a5116;border-radius:10px;
   padding:10px 12px;font-size:12.5px;font-weight:700;line-height:1.6;margin-bottom:9px}
 .depnote{background:#f2fbf5;border:1px solid #c9e9d5;color:#0c6b3c;border-radius:10px;
@@ -4014,6 +4027,26 @@ const GAP_NUDGE={on:true,maxGap:30};
 /* ===== 前金（デポジット）— 言語ごとに設定を変える =====
  * 日本語のお客様は「定額」（既定¥3,000）、海外のお客様は「料金の◯%」（既定50%＝海外では一般的）。
  * 率・金額はレジ画面の「前金の設定」で変更できる（設定はD1に保存＝全端末で共通）。 */
+/* ===== 会員特典 =====
+ * 値引きではなく「施術がひとつ増える」形にする（オーナー判断2026-07-31）。
+ *   スパが入っていないメニュー → 10分スパが付く
+ *   スパが入っているメニュー   → もう10分スパ（ランクアップ）か トリートメント を選べる
+ * ★ネット予約はLINEかメールの登録が必須なので、ご予約の方は全員が対象。
+ * ★どちらを選んでも施術は10分延びる。枠取りの時点から10分足しておかないと
+ *   次のお客様と重なるので、空き枠の計算にも必ずこの分を含める。 */
+const PERK_MIN=10;
+const hasSpa=(m)=>!!m&&(m.cat==='ヘッドスパ'||/スパ/.test(m.name||''));
+/* そのメニューでお選びいただける特典 */
+function perkOptions(m){
+  return hasSpa(m)
+    ? [{id:'spa10',label:'ヘッドスパを10分延長',note:'いまのスパがそのぶん長くなります'},
+       {id:'treat',label:'トリートメントを追加',note:'仕上がりの手ざわりが変わります'}]
+    : [{id:'spa10',label:'10分ヘッドスパ',note:'シャンプー時に頭皮をほぐします'}];
+}
+const perkLabel=(m,id)=>((perkOptions(m).find(o=>o.id===id)||perkOptions(m)[0]||{}).label||'');
+/* 枠取りに使う所要時間（特典の分を含む） */
+const menuMinWithPerk=(m)=>((m&&m.min)||60)+PERK_MIN;
+
 const DEPOSIT_DEFAULT={ja:{type:'fixed',value:3000},en:{type:'rate',value:50},zh:{type:'rate',value:50},tw:{type:'rate',value:50},ko:{type:'rate',value:50}};
 function depositRule(lang){
   const l=lang||(typeof BOOK_LANG!=='undefined'?BOOK_LANG:'ja');
@@ -4287,8 +4320,8 @@ function renderBook(){
     p.innerHTML=stepsHtml+
       `<div class="memoff">
          <div class="memoff-l">
-           <div class="memoff-big">会員は <b>10%OFF</b></div>
-           <div class="memoff-sub">ご来店時のご登録は数十秒で終わります</div>
+           <div class="memoff-big">会員は <b>ひと施術おまけ</b></div>
+           <div class="memoff-sub">ネット予約の方はヘッドスパかトリートメントが付きます</div>
          </div>
          <div class="memoff-r">無料</div>
        </div>
@@ -4403,9 +4436,9 @@ function renderBook(){
     const staffIds=bk.staff==='any'?menu.staff:[bk.staff];
     if(!bk.day)bk.day=dkey(today());
     const days=[...Array(14)].map((_,i)=>addDays(today(),i));
-    const soon=earliestSlot(staffIds,menu.min);
+    const soon=earliestSlot(staffIds,menuMinWithPerk(menu));   // 特典の10分を含めて探す
     const soonHtml=soon?`<button class="soonest" id="bsoonest"><span class="so-l">⚡ 最短で予約</span><span class="so-r">${dayLabel(soon.day)} ${hm(soon.t)}〜${soon.smart?' 🉐':''}　→</span></button>`:'';
-    const free=freeSlots(bk.day,staffIds,menu.min).filter(s=>s.staffId);
+    const free=freeSlots(bk.day,staffIds,menuMinWithPerk(menu)).filter(s=>s.staffId);
     const smartNote=(SMART_TIME.on&&free.some(s=>s.smart))?`<div class="smartnote">🉐 <b>${SMART_TIME.label}</b>：前後のご予約とすき間なく繋がる時間です。担当スタイリストからのお礼として、表示の金額を当日のお会計から割引します</div>`:'';
     const groups=[['朝・午前',t=>t<720],['午後',t=>t>=720&&t<1020],['夕方・夜',t=>t>=1020]];
     const chipsHtml=free.length?groups.map(([label,test])=>{
@@ -4425,7 +4458,7 @@ function renderBook(){
     const nudgeKey=bk.day+':'+bk.start;
     if(bk.start!=null&&!bk._smart&&bk._nudgeDismissed!==nudgeKey){
       nudgeSid=bk.staff==='any'?bk._sid:bk.staff;
-      nudge=nudgeFor(bk.day,nudgeSid,bk.start,menu.min);
+      nudge=nudgeFor(bk.day,nudgeSid,bk.start,menuMinWithPerk(menu));
       if(nudge)nudgeDisc=smartDiscOf(nudgeSid);
     }
     const nudgeStaff=nudge?STAFF.find(s=>s.id===nudgeSid):null;
@@ -4435,7 +4468,7 @@ function renderBook(){
       <div class="nb-btns"><button class="btn small pri" id="nd-yes">${hm(nudge.t)}〜 に変更する${nudgeDisc>0?`（🉐−¥${nudgeDisc.toLocaleString()}）`:''}</button><button class="btn small ghost" id="nd-no">このまま ${hm(bk.start)}〜 でOK</button></div>
     </div>`:'';
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">日時を選択</h3>${soonHtml}
-      <div class="daytabs">${days.map(d=>{const k=dkey(d);const cnt=dayFreeCount(k,staffIds,menu.min);const mk=cnt===0?['×','x']:(cnt<=3?['△','t']:['○','o']);return `<button class="daytab ${bk.day===k?'sel':''} ${cnt===0?'nofree':''}" data-d="${k}"><span class="w">${WD[d.getDay()]}</span><span class="d">${d.getDate()}</span><span class="av av-${mk[1]}">${mk[0]}</span></button>`}).join('')}</div>
+      <div class="daytabs">${days.map(d=>{const k=dkey(d);const cnt=dayFreeCount(k,staffIds,menuMinWithPerk(menu));const mk=cnt===0?['×','x']:(cnt<=3?['△','t']:['○','o']);return `<button class="daytab ${bk.day===k?'sel':''} ${cnt===0?'nofree':''}" data-d="${k}"><span class="w">${WD[d.getDay()]}</span><span class="d">${d.getDate()}</span><span class="av av-${mk[1]}">${mk[0]}</span></button>`}).join('')}</div>
       ${smartNote}${chipsHtml}${nudgeHtml}
       <div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext" ${bk.start!=null?'':'disabled'}>次へ</button></div>`;
     // 日付を選び直しても画面が先頭に戻らないよう、縦スクロール位置を保ち、選んだ日付を横スクロールで見える位置に戻す
@@ -4503,6 +4536,19 @@ function renderBook(){
           <div class="lc-o">またはメールアドレスをご記入ください</div>
         </div>`+mailBlock();
         return mailBlock();})()}
+      ${(()=>{ /* 会員特典。値引きではなく施術がひとつ増える。
+                  スパ入りのメニューだけ「延長」か「トリートメント」を選べる。 */
+        const opts=perkOptions(menu);
+        if(!opts.length)return '';
+        if(bk.perk==null)bk.perk=opts[0].id;
+        return `<div class="perk">
+          <div class="perk-t">🎁 会員のおまけ<span>ご予約の方に無料でお付けします</span></div>
+          ${opts.length===1
+            ? `<div class="perk-one"><b>${escH(opts[0].label)}</b><i>${escH(opts[0].note)}</i></div>`
+            : `<div class="perk-c">${opts.map(o=>`<button type="button" class="perkb ${bk.perk===o.id?'on':''}" data-p="${o.id}">
+                 <b>${escH(o.label)}</b><i>${escH(o.note)}</i></button>`).join('')}</div>`}
+          <div class="perk-n">施術は${PERK_MIN}分ほど長くなります。お時間はご予約の枠に含めております</div>
+        </div>`;})()}
       ${(()=>{ /* 前金は「預かり」であって別料金ではない、と先に伝える（金額は設定から自動で入る） */
         const d=depositOf(menu.price-disc,BOOK_LANG);
         if(!d)return '';
@@ -4579,6 +4625,11 @@ function renderBook(){
      };}
     /* ご連絡先が結ばれるまで「次へ（お支払い）」を押せなくする。
      * 予約できたことをお伝えできない相手からは、お受けしない。 */
+    // 会員特典の選択
+    p.querySelectorAll('.perkb').forEach(b=>b.onclick=()=>{
+      bk.perk=b.dataset.p; saveBk();
+      p.querySelectorAll('.perkb').forEach(x=>x.classList.toggle('on',x.dataset.p===bk.perk));
+    });
     {const nb=document.getElementById('bnext2'),ph=document.getElementById('bphone');
      const okAll=()=>!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified)
        && !telCheck((ph&&ph.value)||bk.phone).ng;
@@ -4630,10 +4681,12 @@ function renderBook(){
       const stObj=STAFF.find(s=>s.id===sid)||{};
       // スパ判定は独立ヘッドスパメニュー(cat=ヘッドスパ=SPA店の掲載)のみ。ヘアクーポン(名前にヘッドスパを含む)はヘア店予約
       const isSpa=(menu.cat==='ヘッドスパ');
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menu.min,menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',emailProvider:bk.emailProvider||'',channel:BOOK_SRC,deposit:depositAmt,squarePaymentId:squarePaymentId||'',discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menuMinWithPerk(menu),menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',emailProvider:bk.emailProvider||'',channel:BOOK_SRC,deposit:depositAmt,squarePaymentId:squarePaymentId||'',discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
         // RPA/サロンボード書込用の解決済みフィールド（CUEPON実ID・HPB ID・SB完全一致メニュー名）
         // ★スパ予約はSPA店＝ANZUのスパ用account_id(cuSpa)とスパHPB IDを使う。spaフラグでWorkerがSPA店へ振り分け
-        spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60,
+        spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menuMinWithPerk(menu),
+        perk:bk.perk||'',perkLabel:perkLabel(menu,bk.perk),
+        note:('🎁会員のおまけ: '+perkLabel(menu,bk.perk)).trim(),
         nominated:bk.staff!=='any'});   // 指名(特定スタッフ選択)=true / 指名なし=フリー。サロンボードRPAの指名チェック用
       if(!r.ok){
         bk._committing=false;
