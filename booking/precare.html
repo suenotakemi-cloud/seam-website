@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=1"></script>
+<script src="pc-i18n.js?v=2"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -80,9 +80,17 @@ h1{font-family:var(--serif);font-weight:500;color:var(--ink);
   font:inherit;font-size:13.5px;color:var(--body);cursor:pointer;transition:.2s}
 .chip.on{border-color:var(--clay);background:rgba(168,116,86,.09);color:var(--ink)}
 .sub-h{font-size:12px;letter-spacing:.1em;color:var(--sub);margin:26px 0 0}
+/* 見出しに線画を添える（香り・灯り・音）。
+   絵によって横長・縦長が違うので、高さだけそろえて比率はいじらない＝つぶれない */
+.grp{display:flex;align-items:flex-end;gap:12px;margin-top:26px}
+.grp .sub-h{margin:0 0 4px}
+.gill{height:52px;width:auto;max-width:110px;opacity:.92;display:block}
 textarea{width:100%;margin-top:12px;min-height:82px;padding:13px;border:1px solid var(--line);
   border-radius:12px;font:inherit;font-size:14px;background:#fff;color:var(--body);resize:vertical}
 textarea:focus{outline:0;border-color:var(--clay)}
+.other{width:100%;margin-top:10px;padding:12px 13px;border:1px solid var(--line);border-radius:12px;
+  font:inherit;font-size:14px;background:#fff;color:var(--body)}
+.other:focus{outline:0;border-color:var(--clay)}
 
 /* 部位マップ */
 .mapwrap{position:relative;margin:20px auto 0;max-width:290px}
@@ -116,6 +124,21 @@ textarea:focus{outline:0;border-color:var(--clay)}
 .lvb.clear{background:transparent;border-style:dashed;justify-content:center;color:var(--sub);font-size:13.5px}
 .hit .z{fill:transparent;cursor:pointer}
 .hit .z:hover{fill:rgba(184,148,90,.10)}
+/* 行わない範囲 */
+.hit .off path{fill:#CFC6B8;opacity:.30;pointer-events:none}
+.offnote{text-align:center;font-size:11.5px;color:var(--sub);margin:10px 0 0}
+/* 押す場所の印 */
+.pin{cursor:pointer}
+.pin .ld{stroke:#C9BCA8;stroke-width:1.6}
+.pin .dot{fill:#fff;stroke:var(--clay);stroke-width:3.4;transition:fill .2s}
+.pin .tap{fill:transparent}
+.pin text{font-family:'Noto Sans JP',sans-serif;font-size:34px;fill:var(--body);letter-spacing:.04em}
+.pin.on .dot{fill:var(--clay)}
+.pin.on text{fill:var(--ink)}
+@media(prefers-reduced-motion:no-preference){
+  .pin:not(.on) .dot{animation:beat 2.6s ease-in-out infinite}
+  @keyframes beat{0%,72%,100%{r:15}82%{r:19}}
+}
 .legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px}
 .legend span{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--sub)}
 .legend i{width:10px;height:10px;border-radius:3px}
@@ -198,7 +221,7 @@ const T=Q.get('t')||'';
    メニューごとに見え方が変わるので、実際のパターンをそのまま並べてある。 */
 const DEMOS={
   spa90:{label:'スパ 90分',   resv:{date:'2026-08-08',start:14*60,menu:'人気No.1 頭浸浴付き ヘッドスパ 90min',minutes:90,staff:'ANZU',name:'見本',nominated:true},
-         allow:{parts:['head','neck','dec','arm','foot'],skip:[],mode:'full',spotMinutes:0}},
+         allow:{parts:['head','neck','dec','arm','calf','sole'],skip:[],mode:'full',spotMinutes:0}},
   spa45:{label:'スパ 45分',   resv:{date:'2026-08-08',start:11*60,menu:'ショートヘッドスパ 45min',minutes:45,staff:'ANZU',name:'見本',nominated:false},
          allow:{parts:['head','neck'],skip:[],mode:'full',spotMinutes:0}},
   hair10:{label:'ヘア＋会員10分',resv:{date:'2026-08-08',start:13*60,menu:'カット＋カラー',minutes:150,staff:'CHIKA',name:'見本',nominated:true},
@@ -231,16 +254,25 @@ let LANG=(()=>{
      「はい」「お願いします」に分かれて、どちらも辞書に無く訳が落ちる。 */
 // 記号の前後の空白も区切りに含める。含めないと「はい お願いします ／ …」の
 // 先頭側が「はい お願いします 」（末尾に空白）になって辞書に当たらない
-const SEPS=[/(\s*[・／：]+\s*)/, /([・／：\s]+)/];
+/* ★記号で割るときは「ひとつでも辞書に当たれば」訳す。全部当たることを求めると、
+   お客様の自由記入がひとつ混ざっただけで行まるごと日本語のまま落ちる
+   （例: しっとりと ／ オージュア ／ My own brand）。
+   空白まで割る2段目だけは、ふつうの文を壊さないよう「全部当たること」を保つ。 */
+/* 順番が肝。まず「全部当たる」割り方を2通り試し、どちらも駄目なときだけ
+   「ひとつでも当たれば」に落とす。逆にすると
+   「温冷を交互に　炭酸でさっぱりしてから　長めがいい・泡をたっぷり」の
+   前半だけ日本語で残る。 */
+const SEPS=[[/(\s*[・／：]+\s*)/,'all'], [/([・／：\s]+)/,'all'], [/(\s*[・／：]+\s*)/,'any']];
 function tr(s){
   const MAP=PC_I18N.map(LANG); if(!MAP)return s;
   const RX=PC_I18N.rx(LANG), PU=PC_I18N.punct(LANG);
   if(MAP[s]!=null)return MAP[s];
   for(const [rx,fn] of RX){ const m=s.match(rx); if(m)return fn(m,tr); }
-  for(const SEP of SEPS){
+  for(const [SEP,need] of SEPS){
     if(!SEP.test(s))continue;
     const seg=s.split(SEP), words=seg.filter((_,k)=>k%2===0).filter(Boolean);
-    if(words.length>1&&words.every(w=>MAP[w]!=null)){
+    const hit=words.filter(w=>MAP[w]!=null).length;
+    if(words.length>1 && (need==='any' ? hit>0 : hit===words.length)){
       const out=seg.map((p,k)=>k%2?p:(MAP[p]!=null?MAP[p]:p)).join('');
       return PU?PU(out):out;
     }
@@ -285,10 +317,10 @@ function langBar(){
 }
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
-let ALLOW={parts:['head','neck','dec','arm','foot'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
+let ALLOW={parts:['head','neck','dec','arm','calf','sole'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
 
 /* ── 部位マップ ── */
-const PARTS={head:'頭',neck:'首',dec:'デコルテ',arm:'手と腕',foot:'足'};
+const PARTS={head:'頭',neck:'首',dec:'デコルテ',arm:'手と腕',calf:'ふくらはぎ',sole:'足裏'};
 /* ★「苦手」は強さではなく“触れないでほしい”。他と並べず、色も冷たい灰にして別物に見せる */
 const LVS=[
   {k:'avoid', n:'ここは苦手',   d:'触れずにおきます',       c:'#93A0A4'},
@@ -298,24 +330,60 @@ const LVS=[
   {k:'focus', n:'重点的に',     d:'ここを長めに',           c:'#A56A42'},
 ];
 const LVN=Object.fromEntries(LVS.map(x=>[x.k,x.n]));
+/* 形はPILで人体線画の実座標を測って置いてある（勘で置くとズレる）。
+   viewBox 848×1264 は元画像 760×1133 の1.1157倍。 */
 const SHAPES=[
- ['head','<ellipse cx="424" cy="170" rx="76" ry="84"/>'],
+ ['head','<ellipse cx="424" cy="176" rx="74" ry="90"/>'],
  ['dec','<path d="M312 300Q424 274 536 300L544 350Q424 374 304 350Z"/>'],
  ['arm','<path d="M316 300C304 340 296 440 288 556 283 636 285 686 297 720 308 736 324 730 330 712 320 656 328 558 340 472 346 404 346 344 344 302Z"/>'],
  ['arm','<path d="M532 300C544 340 552 440 560 556 565 636 563 686 551 720 540 736 524 730 518 712 528 656 520 558 508 472 502 404 502 344 504 302Z"/>'],
- ['foot','<path d="M336 640L512 640C522 800 498 998 476 1116 468 1156 450 1176 424 1176 398 1176 380 1156 372 1116 350 998 326 800 336 640Z"/>'],
  ['neck','<rect x="386" y="240" width="76" height="62" rx="26"/>'],
+ // ★足は「ふくらはぎ」と「足裏」に分ける。ここは実際に触る範囲が違う
+ ['calf','<path d="M346 892 L414 892 L408 1050 Q390 1120 372 1122 L358 1050 Z"/>'],
+ ['calf','<path d="M434 892 L502 892 L490 1050 L476 1122 Q458 1120 440 1050 Z"/>'],
+ ['sole','<path d="M352 1124 Q392 1108 414 1126 L410 1186 Q382 1200 356 1186 Z"/>'],
+ ['sole','<path d="M434 1126 Q456 1108 496 1124 L492 1186 Q466 1200 438 1186 Z"/>'],
 ];
+/* ★行わない範囲。「無い」ことを黙っていると、押しても反応しないだけの画面になる。
+   うすく描いて理由を1行そえる方が、いちばん親切で正直。 */
+const OFF_SHAPES=[
+ '<path d="M348 384 Q424 368 500 384 L512 566 Q424 604 336 566 Z"/>',
+ '<path d="M336 618 L418 618 L412 880 L354 880 Z"/>',
+ '<path d="M430 618 L512 618 L494 880 L436 880 Z"/>',
+];
+/* 押す場所の印。ラベルは体の外に出して、細い引き線でつなぐ＝図版らしく、押す所も一目で分かる */
+const MARKS={
+  head:{x:424,y:150, lx:566,ly:150, side:'start'},
+  neck:{x:424,y:272, lx:282,ly:272, side:'end'},
+  dec: {x:424,y:330, lx:594,ly:334, side:'start'},
+  arm: {x:300,y:540, lx:258,ly:540, side:'end'},
+  calf:{x:466,y:980, lx:566,ly:980, side:'start'},
+  sole:{x:466,y:1172,lx:566,ly:1172,side:'start'},
+};
 const lay=(cls)=>SHAPES.filter(([p])=>ALLOW.parts.includes(p))
   .map(([p,s])=>s.replace(/^<(\w+)/,`<$1 class="z" data-p="${p}"`)).join('');
+function pins(){
+  return ALLOW.parts.filter(p=>MARKS[p]).map(p=>{
+    const m=MARKS[p], x2=m.side==='start'?m.lx-14:m.lx+14;
+    return `<g class="pin" data-p="${p}">
+      <line class="ld" x1="${m.x}" y1="${m.y}" x2="${x2}" y2="${m.ly}"/>
+      <circle class="dot" cx="${m.x}" cy="${m.y}" r="15"/>
+      <circle class="tap" cx="${m.x}" cy="${m.y}" r="46"/>
+      <text x="${m.lx}" y="${m.ly+11}" text-anchor="${m.side}">${PARTS[p]}</text></g>`;
+  }).join('');
+}
 function mapHtml(){
   // 「触れない部位」を並べて見せるのではなく、含まれているものを言う
   const inc=ALLOW.parts.map(k=>PARTS[k]).join('・');
+  const off=ALLOW.parts.includes('calf')||ALLOW.parts.includes('sole');
   return `<span class="incl">今回のコースは ${inc} まで含まれています</span>
   <div class="mapwrap">
     <svg class="wash" viewBox="0 0 848 1264" aria-hidden="true">${lay()}</svg>
     <img src="../images/lp/spa/bodymap_figure.webp" alt="からだの図">
-    <svg class="hit" viewBox="0 0 848 1264">${lay()}</svg></div>
+    <svg class="hit" viewBox="0 0 848 1264">
+      ${off?`<g class="off" aria-hidden="true">${OFF_SHAPES.join('')}</g>`:''}
+      ${lay()}${pins()}</svg></div>
+  ${off?`<p class="offnote">うすいところ（お腹・腿）は 今回はいたしません</p>`:''}
   <div class="legend">${LVS.map(x=>`<span><i style="background:${x.c}"></i>${x.n}</span>`).join('')}</div>
   <div class="picked" id="picked"></div>`;
 }
@@ -326,12 +394,15 @@ function mapWire(){
   const paint=()=>{
     document.querySelectorAll('.wash .z').forEach(z=>{const v=A.parts[z.dataset.p];
       if(v)z.dataset.s=v;else delete z.dataset.s;});
+    document.querySelectorAll('.pin').forEach(g=>g.classList.toggle('on',!!A.parts[g.dataset.p]));
     const t=Object.keys(PARTS).filter(k=>A.parts[k]).map(k=>PARTS[k]+'：'+LVN[A.parts[k]]);
     document.getElementById('picked').innerHTML=t.length?t.join(' ／ ')
-      :'<span class="maphint">図の気になるところに触れてください<br>強さを選べます　苦手なところも伝えられます</span>';
+      :'<span class="maphint">印のところを押してみてください<br>強さを選べます　苦手なところも伝えられます</span>';
+    applyLang();
   };
   window.__paintMap=paint;
   document.querySelectorAll('.hit .z').forEach(z=>z.onclick=()=>openSheet(z.dataset.p));
+  document.querySelectorAll('.pin').forEach(g=>g.onclick=()=>openSheet(g.dataset.p));
   paint();
 }
 
@@ -386,14 +457,14 @@ function screens(){
     ${langBar()}`,
     next:'はじめる', noskip:true});
 
-  S.push({id:'goal',title:'今日は どう過ごしましょう',
+  S.push({id:'goal',title:'当日を どう過ごされますか',
     lead:'いちばん近いものをひとつ選んでください',
     one:'goal', opts:[
       ['ねむってしまいたい','いちばん深いところまでゆるめます'],
       ['頭を軽くしたい','こめかみと後頭部をていねいに'],
-      ['目のあたりを楽にしたい','眉から目のまわりをほどきます'],
       ['首と肩までほどきたい','デコルテまでつなげます'],
       ['すっきりしたい','洗い上がりの軽さを主役にします'],
+      ['髪もきれいにしたい','洗いながら 毛先まで整えます'],
       ['ごほうびの時間にしたい','いちばん心地よいところを長めに']]});
 
   if(ALLOW.mode==='spot'){
@@ -422,39 +493,40 @@ function screens(){
       ['おまかせ','その日の様子でお選びします']],
     incl:'どちらも料金は同じです'});
 
+  /* 炭酸の有無と清涼感の強さは、分けて2画面にすると同じ話を2回聞かれた感じになる。
+     ミントが苦手な方もいるので、その逃げ道まで含めてひと息で選べるようにする。 */
   if(summer) S.push({id:'soda',title:'一度 炭酸でさっぱりしますか', ill:'ill_soda',
     lead:'夏のあいだは 炭酸のシャンプーで一度洗い流すと<br>頭皮がすっと軽くなります',
     one:'soda', opts:[
-      ['はい お願いします','汗と皮脂をすっきり流します'],
+      ['はい しっかり冷たいのが好き','清涼感をきかせます'],
+      ['はい ほんのりでいい','やさしい清涼感で'],
+      ['はい ミントは苦手です','清涼感のないものでご用意します'],
       ['今回はいいです','いつもの洗い上がりで'],
       ['おまかせ','その日の頭皮を見てお選びします']],
-    incl:'追加料金はありません',
-    then:{when:v=>v==='はい お願いします', id:'mint', title:'清涼感はどのくらい',
-      lead:'ミントの香りと冷たさが苦手な方もいらっしゃるので',
-      one:'mint', opts:[
-        ['しっかり冷たいのが好き',''],
-        ['ほんのりでいい',''],
-        ['ミントは苦手です','清涼感のないものにします']]}});
+    incl:'追加料金はありません'});
 
   S.push({id:'wash',title:'洗いかたの好み', ill:'ill_bubble',
     lead:'いくつでもどうぞ',
     many:'wash', chips:['長めがいい','マッサージするように','しっかり落としたい',
       '包み込まれるように','泡をたっぷり','すすぎはていねいに','おまかせ']});
 
-  S.push({id:'scent',title:'香りと 灯りと 音', ill:'ill_room',
+  // 見出しだけが3つ並ぶと事務的になるので、それぞれに線画を添える
+  S.push({id:'scent',title:'香りと 灯りと 音',
     lead:'お部屋のしつらえです',
     groups:[
-      {k:'scent',h:'香り',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']},
-      {k:'light',h:'灯り',chips:['暗めがいい','ほんのり','ふつう','おまかせ']},
-      {k:'sound',h:'音',chips:['静かに','小さめのヒーリング','ふつう','おまかせ']}],
+      {k:'scent',h:'香り',ill:'ill_scent',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']},
+      {k:'light',h:'灯り',ill:'ill_light',chips:['暗めがいい','ほんのり','ふつう','おまかせ']},
+      {k:'sound',h:'音',  ill:'ill_sound',chips:['静かに','小さめのヒーリング','ふつう','おまかせ']}],
     incl:'どれを選んでも料金は変わりません'});
 
   S.push({id:'room',title:'お部屋のご希望',
     lead:'空いていればご希望に沿います<br><b style="color:#A87456">満席のときは別のお部屋になります</b>ので お約束はできません',
     one:'room', opts:[
-      ['窓side がいい','外の光が入るお部屋です'],
+      ['窓際VIP（＋¥3,000）','外の光が入る いちばん広いお部屋です'],
       ['いちばん静かなところ','奥のお部屋になります'],
-      ['どこでも大丈夫','']]});
+      ['どこでも大丈夫','']],
+    // 有料席なので、取れなかったときに払わされない ということを先に言う
+    incl:'窓際が取れなかったときは いただきません'});
 
   S.push({id:'talk',title:'当日の過ごしかた',
     lead:'そっとしておいてほしいときは そう言ってください',
@@ -468,16 +540,26 @@ function screens(){
   S.push({id:'care',title:'仕上げに使うもの', ill:'ill_care',
     lead:'お帰りのときの髪の感じです',
     one:'finish', opts:[
-      ['軽く さらっと','このあと人に会う日に'],
-      ['しっとりまとまる',''],
+      ['軽く さらっと',''],
+      ['しっとりと',''],
       ['自然のまま',''],
       ['おまかせ','髪を見てお選びします']],
-    after:{k:'care',h:'使ってみたいものがあれば',
-      chips:['頭皮用のもの','ダメージ補修','うるおい','香りの良いもの','おまかせ']}});
+    // ブランド指名はご褒美感につながるので、こちらの都合で丸めず 名前のまま並べる
+    after:{k:'care',h:'使ってみたいものをリクエスト',
+      chips:['オージュア','バイカルテ','サブリミック','システムプロフェッショナル',
+             'トキオ','オジオット','グローバルミルボン','おまかせ'],
+      other:'careOther', otherPh:'そのほか ご希望のブランドがあれば'}});
 
-  S.push({id:'after',title:'このあとのご予定',
-    lead:'仕上がりの軽さを合わせます',
-    one:'after', opts:[['お仕事にもどる',''],['人に会う',''],['食事に行く',''],['そのまま帰る',''],['とくにない','']],
+  /* ★「このあとのご予定」は聞かない。人によっては立ち入られたと感じる。
+     知りたいのは結局「どんな状態でお帰りになりたいか」なので、仕上げで聞く。 */
+  S.push({id:'styling',title:'お帰りのしたく',
+    lead:'仕上げのスタイリングもお選びいただけます',
+    one:'styling', opts:[
+      ['ドライと軽いブロー','ふんわり整えてお帰りです　追加料金なし'],
+      ['カールアイロンでスタイリング','やわらかな動きをつけます　＋¥3,300'],
+      ['ストレートアイロンでスタイリング','まっすぐ 艶やかに　＋¥3,300'],
+      ['ドライのまま','乾かすところまでで　追加料金なし']],
+    incl:'アイロンは当日のお会計に加わります　やめても大丈夫です',
     note:true});
 
   S.push({id:'confirm',confirm:true});
@@ -511,10 +593,14 @@ function draw(){
         <span class="tick"></span><span><b>${esc(t)}</b>${d?`<s>${esc(d)}</s>`:''}</span></button>`).join('')}</div>`;
     if(s.chips)h+=`<div class="chips">${s.chips.map(c=>
       `<button class="chip${(A[s.many]||[]).includes(c)?' on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
-    if(s.groups)h+=s.groups.map(g=>`<p class="sub-h">${g.h}</p><div class="chips" data-g="${g.k}">${
+    if(s.groups)h+=s.groups.map(g=>`<div class="grp">
+      ${g.ill?`<img class="gill" src="../images/lp/spa/${g.ill}.webp" alt="" aria-hidden="true" loading="lazy">`:''}
+      <p class="sub-h">${g.h}</p></div><div class="chips" data-g="${g.k}">${
       g.chips.map(c=>`<button class="chip${A[g.k]===c?' on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`).join('');
-    if(s.after)h+=`<p class="sub-h">${s.after.h}</p><div class="chips" data-g2="${s.after.k}">${
+    if(s.after){h+=`<p class="sub-h">${s.after.h}</p><div class="chips" data-g2="${s.after.k}">${
       s.after.chips.map(c=>`<button class="chip${(A[s.after.k]||[]).includes(c)?' on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
+      if(s.after.other)h+=`<input id="other" class="other" type="text"
+        placeholder="${esc(s.after.otherPh||'')}" value="${esc(A[s.after.other]||'')}">`;}
     if(s.note)h+=`<p class="sub-h">ほかにご希望があれば</p><textarea id="note" placeholder="例：終わったあと少しだけ静かに休みたいです">${esc(A.note||'')}</textarea>`;
     h+=`<div class="grant" id="grant"></div>`;
   }
@@ -548,7 +634,6 @@ function wire(s){
     A[s.one]=b.dataset.v;
     app.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===b));
     grant(s.one); save(); sync();
-    if(s.then&&s.then.when(b.dataset.v)) ensureThen(s);
   });
   app.querySelectorAll('.chips').forEach(box=>{
     const gk=box.dataset.g, g2=box.dataset.g2;
@@ -562,12 +647,9 @@ function wire(s){
     });
   });
   const n=document.getElementById('note'); if(n)n.oninput=()=>{A.note=n.value;save();};
+  const o=document.getElementById('other');
+  if(o&&s.after&&s.after.other)o.oninput=()=>{A[s.after.other]=o.value;save();};
   sync();
-}
-/* 炭酸を選んだ人にだけ ミントの画面を差し込む */
-function ensureThen(s){
-  if(SC.some(x=>x.id===s.then.id))return;
-  SC.splice(i+1,0,{...s.then});
 }
 function sync(){
   const s=SC[i];
@@ -584,18 +666,18 @@ function drawConfirm(){
   push('Avoid',Object.keys(PARTS).filter(k=>pk(k)==='avoid').map(k=>PARTS[k]).join('・'));
   push('Care',Object.keys(PARTS).filter(k=>pk(k)&&pk(k)!=='avoid').map(k=>PARTS[k]+'：'+LVN[A.parts[k]]).join(' ／ '));
   push('Bath',A.bath);
-  push('Soda',A.soda&&A.soda!=='今回はいいです'?[A.soda,A.mint].filter(Boolean).join(' ／ '):A.soda);
+  push('Soda',A.soda);
   push('Wash',(A.wash||[]).join('・'));
   push('Room',[A.scent,A.light,A.sound].filter(Boolean).join(' ／ '));
   push('Seat',A.room);
   push('Time',A.talk);
-  push('Finish',[A.finish,(A.care||[]).join('・')].filter(Boolean).join(' ／ '));
-  push('After',A.after);
+  push('Finish',[A.finish,(A.care||[]).join('・'),A.careOther].filter(Boolean).join(' ／ '));
+  push('Style',A.styling);
   push('Care',(A.avoid||[]).length?'苦手：'+A.avoid.join('・'):'');
   push('Note',A.note);
   app.innerHTML=`<div class="scr on">
     <p class="eyebrow">your day</p>
-    <h1>今日の あなたの時間</h1>
+    <h1>当日の あなたの時間</h1>
     <p class="lead">この内容でご用意します<br>直したいところがあれば もどってください</p>
     <div class="plan">${P.map(([k,v])=>`<div class="prow"><b>${k}</b><span>${esc(v)}</span></div>`).join('')||
       '<div class="prow"><span>まだ何も選ばれていません　当日おうかがいします</span></div>'}</div>
@@ -619,9 +701,9 @@ function drawDone(){
       <div><b>${t(0)}　お越しください</b><s>受付で書くものはありません そのままお部屋へ</s></div>
       <div><b>${t(5)}　はじまります</b><s>${esc(A.goal||'今日のご希望')}　と うかがっています とだけお伝えします</s></div>
       ${A.spot?`<div><b>シャンプーのとき　${esc(A.spot)}</b><s>${ALLOW.spotMinutes||10}分ぶん ここに使います</s></div>`:''}
-      <div${A.spot?' hidden':''}><b>${t(15)}　洗いながら ほぐしていきます</b><s>${A.bath?esc(A.bath)+'　':''}${A.soda==='はい お願いします'?'炭酸でさっぱりしてから　':''}${(A.wash||[]).slice(0,2).join('・')||'心地よい強さで'}</s></div>
+      <div${A.spot?' hidden':''}><b>${t(15)}　洗いながら ほぐしていきます</b><s>${A.bath?esc(A.bath)+'　':''}${/^はい/.test(A.soda||'')?'炭酸でさっぱりしてから　':''}${(A.wash||[]).slice(0,2).join('・')||'心地よい強さで'}</s></div>
       <div><b>${t(mn-15)}　ゆっくり戻ってきます</b><s>${esc([A.scent,A.light].filter(Boolean).join(' ／ ')||'静かなお部屋で')}</s></div>
-      <div><b>${t(mn)}　仕上げてお帰りです</b><s>${esc(A.finish||'髪を見て仕上げます')}</s></div>
+      <div><b>${t(mn)}　仕上げてお帰りです</b><s>${esc([A.finish,A.styling].filter(Boolean).join(' ／ ')||'髪を見て仕上げます')}</s></div>
     </div>
     <p class="hint">変えたくなったら このページからいつでも直せます</p></div>`;
   applyLang();
@@ -679,7 +761,7 @@ function startDemo(){
     RESV=j.reservation; SEASON=j.season||'mid'; LAST=j.last||null;
     if(j.allow&&Array.isArray(j.allow.parts))ALLOW=j.allow;
     A=(j.answers&&Object.keys(j.answers).length)?j.answers:(LAST?JSON.parse(JSON.stringify(LAST)):{});
-    SC=screens(); if(A.soda==='はい お願いします'){const k=SC.findIndex(x=>x.id==='soda'); if(k>=0&&SC[k].then)SC.splice(k+1,0,{...SC[k].then});}
+    SC=screens();
     foot.hidden=false; draw();
   }catch(e){ app.innerHTML=`<div class="err">${esc(e.message)}</div>`; applyLang(); }
 })();
