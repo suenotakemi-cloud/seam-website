@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=2"></script>
+<script src="pc-i18n.js?v=3"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -221,9 +221,9 @@ const T=Q.get('t')||'';
    メニューごとに見え方が変わるので、実際のパターンをそのまま並べてある。 */
 const DEMOS={
   spa90:{label:'スパ 90分',   resv:{date:'2026-08-08',start:14*60,menu:'人気No.1 頭浸浴付き ヘッドスパ 90min',minutes:90,staff:'ANZU',name:'見本',nominated:true},
-         allow:{parts:['head','neck','dec','arm','calf','sole'],skip:[],mode:'full',spotMinutes:0}},
+         allow:{parts:['head','eye','neck','dec','arm','calf','sole'],skip:[],mode:'full',spotMinutes:0}},
   spa45:{label:'スパ 45分',   resv:{date:'2026-08-08',start:11*60,menu:'ショートヘッドスパ 45min',minutes:45,staff:'ANZU',name:'見本',nominated:false},
-         allow:{parts:['head','neck'],skip:[],mode:'full',spotMinutes:0}},
+         allow:{parts:['head','eye','neck'],skip:[],mode:'full',spotMinutes:0}},
   hair10:{label:'ヘア＋会員10分',resv:{date:'2026-08-08',start:13*60,menu:'カット＋カラー',minutes:150,staff:'CHIKA',name:'見本',nominated:true},
          allow:{parts:[],skip:['parts','bath','soda','wash'],mode:'spot',spotMinutes:10}},
 };
@@ -317,10 +317,12 @@ function langBar(){
 }
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
-let ALLOW={parts:['head','neck','dec','arm','calf','sole'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
+let ALLOW={parts:['head','eye','neck','dec','arm','calf','sole'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
 
 /* ── 部位マップ ── */
-const PARTS={head:'頭',neck:'首',dec:'デコルテ',arm:'手と腕',calf:'ふくらはぎ',sole:'足裏'};
+const PARTS={head:'頭',eye:'目のまわり',neck:'首',dec:'デコルテ',arm:'手と腕',calf:'ふくらはぎ',sole:'足裏'};
+/* 部位ごとに ひとこと添えられる。★目は「押す」ではなく「まわりをほどく」と必ず言う */
+const PNOTE={eye:'目のうえは押しません　こめかみと眉のまわり 後頭部からほどきます'};
 /* ★「苦手」は強さではなく“触れないでほしい”。他と並べず、色も冷たい灰にして別物に見せる */
 const LVS=[
   {k:'avoid', n:'ここは苦手',   d:'触れずにおきます',       c:'#93A0A4'},
@@ -337,6 +339,8 @@ const SHAPES=[
  ['dec','<path d="M312 300Q424 274 536 300L544 350Q424 374 304 350Z"/>'],
  ['arm','<path d="M316 300C304 340 296 440 288 556 283 636 285 686 297 720 308 736 324 730 330 712 320 656 328 558 340 472 346 404 346 344 344 302Z"/>'],
  ['arm','<path d="M532 300C544 340 552 440 560 556 565 636 563 686 551 720 540 736 524 730 518 712 528 656 520 558 508 472 502 404 502 344 504 302Z"/>'],
+ // 目のまわり＝こめかみと眉のうえの帯。頭より後に置くので、この帯を押すと目が選ばれる
+ ['eye','<ellipse cx="424" cy="200" rx="80" ry="27"/>'],
  ['neck','<rect x="386" y="240" width="76" height="62" rx="26"/>'],
  // ★足は「ふくらはぎ」と「足裏」に分ける。ここは実際に触る範囲が違う
  ['calf','<path d="M346 892 L414 892 L408 1050 Q390 1120 372 1122 L358 1050 Z"/>'],
@@ -353,9 +357,10 @@ const OFF_SHAPES=[
 ];
 /* 押す場所の印。ラベルは体の外に出して、細い引き線でつなぐ＝図版らしく、押す所も一目で分かる */
 const MARKS={
-  head:{x:424,y:150, lx:566,ly:150, side:'start'},
-  neck:{x:424,y:272, lx:282,ly:272, side:'end'},
-  dec: {x:424,y:330, lx:594,ly:334, side:'start'},
+  head:{x:424,y:126, lx:566,ly:126, side:'start'},
+  eye: {x:378,y:200, lx:290,ly:200, side:'end'},
+  neck:{x:424,y:276, lx:566,ly:276, side:'start'},
+  dec: {x:424,y:336, lx:282,ly:340, side:'end'},
   arm: {x:300,y:540, lx:258,ly:540, side:'end'},
   calf:{x:466,y:980, lx:566,ly:980, side:'start'},
   sole:{x:466,y:1172,lx:566,ly:1172,side:'start'},
@@ -414,7 +419,7 @@ function openSheet(part){
   el.innerHTML=`<div class="bd"></div><div class="pn" role="dialog" aria-label="${PARTS[part]}の希望">
     <div class="grip"></div>
     <h3>${PARTS[part]}</h3>
-    <p class="sd">どのくらいがお好みですか</p>
+    <p class="sd">${PNOTE[part]||'どのくらいがお好みですか'}</p>
     <div class="lv">
       ${LVS.map(x=>`<button class="lvb${cur===x.k?' on':''}" data-k="${x.k}">
         <span class="sw" style="background:${x.c}"></span>
@@ -462,6 +467,8 @@ function screens(){
     one:'goal', opts:[
       ['ねむってしまいたい','いちばん深いところまでゆるめます'],
       ['頭を軽くしたい','こめかみと後頭部をていねいに'],
+      // ★目そのものは押さない。目につながる場所をほぐす、という言い方を守る
+      ['目のまわりを楽にしたい','こめかみと眉のうえ 後頭部からほどきます'],
       ['首と肩までほどきたい','デコルテまでつなげます'],
       ['すっきりしたい','洗い上がりの軽さを主役にします'],
       ['髪もきれいにしたい','洗いながら 毛先まで整えます'],
