@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
+<script src="pc-i18n.js?v=1"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -152,6 +154,11 @@ textarea:focus{outline:0;border-color:var(--clay)}
   color:var(--sub);margin-top:12px;cursor:pointer;text-decoration:underline}
 .load{text-align:center;padding:80px 0;color:var(--sub)}
 .err{background:#fdeceb;border:1px solid #f5c6c2;color:#a3271f;border-radius:12px;padding:14px;margin-top:16px;font-size:13.5px}
+/* ことばの切り替え（はじめの画面にだけ置く＝以降は選ばせない） */
+.langs{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:26px}
+.langs button{background:transparent;border:1px solid var(--line);border-radius:999px;padding:7px 13px;
+  font:inherit;font-size:12.5px;color:var(--sub);cursor:pointer;transition:.2s}
+.langs button.on{border-color:var(--clay);color:var(--ink);background:rgba(168,116,86,.07)}
 /* 見本モード（スタッフ研修用・実データを書かない） */
 .demo{position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--jade);color:#F3EFE8;
   padding:9px 14px calc(9px + env(safe-area-inset-bottom,0px));font-size:12px;line-height:1.7;text-align:center}
@@ -195,6 +202,72 @@ const DEMO=DEMOS[Q.get('demo')||''] || (Q.has('demo')?DEMOS.spa90:null);
 const DEMOKEY=DEMO?(DEMOS[Q.get('demo')]?Q.get('demo'):'spa90'):'';
 const app=document.getElementById('app'), foot=document.getElementById('foot');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ══════ ことば ══════
+   日本語で組んだ画面を、描画のあとにDOMのテキストだけ差し替える（予約フローと同型）。
+   ★選択肢の値(data-v/data-c)と保存する A は日本語のまま＝担当はいつも日本語で読める。
+   自由記入(note)とメニュー名・スタッフ名は訳さない。 */
+const LANGS=PC_I18N.langs;
+let LANG=(()=>{
+  const q=(Q.get('lang')||'').toLowerCase();
+  if(LANGS.includes(q))return q;
+  if(q==='zh-cn'||q==='zh-hans')return 'zh';
+  if(q==='zh-tw'||q==='zh-hant'||q==='zh-hk')return 'tw';
+  try{const s=localStorage.getItem('stb_lang'); if(LANGS.includes(s))return s;}catch(e){}
+  const nav=(navigator.language||'ja').toLowerCase();
+  if(/^ja/.test(nav))return 'ja';
+  if(/^ko/.test(nav))return 'ko';
+  if(/^zh/.test(nav))return /(tw|hk|mo|hant)/.test(nav)?'tw':'zh';
+  return 'en';
+})();
+/* 「頭：しっかり ／ 首：やさしく」のような組み合わせは、語ごとに訳してつなぎ直す。
+   ★記号だけで割るのを先に試す。空白まで一緒に割ると「はい お願いします」が
+     「はい」「お願いします」に分かれて、どちらも辞書に無く訳が落ちる。 */
+// 記号の前後の空白も区切りに含める。含めないと「はい お願いします ／ …」の
+// 先頭側が「はい お願いします 」（末尾に空白）になって辞書に当たらない
+const SEPS=[/(\s*[・／：]+\s*)/, /([・／：\s]+)/];
+function tr(s){
+  const MAP=PC_I18N.map(LANG); if(!MAP)return s;
+  const RX=PC_I18N.rx(LANG), PU=PC_I18N.punct(LANG);
+  if(MAP[s]!=null)return MAP[s];
+  for(const [rx,fn] of RX){ const m=s.match(rx); if(m)return fn(m,tr); }
+  for(const SEP of SEPS){
+    if(!SEP.test(s))continue;
+    const seg=s.split(SEP), words=seg.filter((_,k)=>k%2===0).filter(Boolean);
+    if(words.length>1&&words.every(w=>MAP[w]!=null)){
+      const out=seg.map((p,k)=>k%2?p:(MAP[p]!=null?MAP[p]:p)).join('');
+      return PU?PU(out):out;
+    }
+  }
+  return s;   // 訳が無いものは日本語のまま（メニュー名・お客様の自由記入など）
+}
+// 元の日本語を必ず持っておく。持たないと ko→en の切替で前の言語が残る
+const _O=new WeakMap(), _OP=new WeakMap();
+function applyLang(){
+  document.documentElement.lang = LANG==='tw' ? 'zh-Hant' : (LANG==='zh'?'zh-Hans':LANG);
+  document.title = tr('今日のご希望｜SEAM GINZA');
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>{
+    const p=n.parentNode&&n.parentNode.nodeName;
+    return (p==='SCRIPT'||p==='STYLE')?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT;}});
+  const nodes=[]; let n; while(n=w.nextNode())nodes.push(n);
+  nodes.forEach(nd=>{
+    if(!_O.has(nd))_O.set(nd,nd.textContent); else nd.textContent=_O.get(nd);
+    const t=nd.textContent.trim(); if(!t)return;
+    const v=tr(t); if(v!==t)nd.textContent=nd.textContent.replace(t,v);
+  });
+  document.querySelectorAll('[placeholder]').forEach(el=>{
+    if(!_OP.has(el))_OP.set(el,el.placeholder); else el.placeholder=_OP.get(el);
+    el.placeholder=tr(el.placeholder);
+  });
+}
+function setLang(l){
+  LANG=l; try{localStorage.setItem('stb_lang',l);}catch(e){}
+  draw();
+}
+function langBar(){
+  return `<div class="langs">${LANGS.map(l=>
+    `<button data-l="${l}" class="${l===LANG?'on':''}">${PC_I18N.label[l]}</button>`).join('')}</div>`;
+}
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
 let ALLOW={parts:['head','neck','dec','arm','foot'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
@@ -238,7 +311,7 @@ function mapWire(){
   const paint=()=>{
     document.querySelectorAll('.wash .z').forEach(z=>{const v=A.parts[z.dataset.p];
       if(v)z.dataset.s=v;else delete z.dataset.s;});
-    const t=Object.keys(PARTS).filter(k=>A.parts[k]).map(k=>PARTS[k]+' '+LVN[A.parts[k]]);
+    const t=Object.keys(PARTS).filter(k=>A.parts[k]).map(k=>PARTS[k]+'：'+LVN[A.parts[k]]);
     document.getElementById('picked').innerHTML=t.length?t.join(' ／ ')
       :'<span class="maphint">図の気になるところに触れてください<br>強さを選べます　苦手なところも伝えられます</span>';
   };
@@ -263,6 +336,7 @@ function openSheet(part){
       ${cur?'<button class="lvb clear" data-k="">選ばない状態にもどす</button>':''}
     </div></div>`;
   document.body.appendChild(el);
+  applyLang();
   const close=()=>{el.remove();};
   el.querySelector('.bd').onclick=close;
   el.querySelectorAll('.lvb').forEach(b=>b.onclick=()=>{
@@ -293,7 +367,8 @@ function screens(){
     </div>
     <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="">
     ${ALLOW.mode==='spot'?`<p class="hint" style="text-align:center">今回は <b style="color:#A87456">${ALLOW.spotMinutes||10}分のヘッドスパ</b> がついています<br>どこに使うか お選びいただけます</p>`:''}
-    ${LAST?`<p class="hint" style="text-align:center">前回のご希望が残っています<br>そのままでよければ最後まで送るだけで終わります</p>`:''}`,
+    ${LAST?`<p class="hint" style="text-align:center">前回のご希望が残っています<br>そのままでよければ最後まで送るだけで終わります</p>`:''}
+    ${langBar()}`,
     next:'はじめる', noskip:true});
 
   S.push({id:'goal',title:'今日は どう過ごしましょう',
@@ -432,6 +507,8 @@ function draw(){
   document.getElementById('next').innerHTML=(s.next||'次へ')+'<span class="ar">→</span>';
   if(s.wire)s.wire();
   wire(s);
+  app.querySelectorAll('.langs button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
+  applyLang();
   window.scrollTo(0,0);
 }
 
@@ -490,7 +567,7 @@ function drawConfirm(){
   push('Spot',A.spot);
   const pk=k=>A.parts&&A.parts[k]&&ALLOW.parts.includes(k)?A.parts[k]:'';
   push('Avoid',Object.keys(PARTS).filter(k=>pk(k)==='avoid').map(k=>PARTS[k]).join('・'));
-  push('Care',Object.keys(PARTS).filter(k=>pk(k)&&pk(k)!=='avoid').map(k=>PARTS[k]+' '+LVN[A.parts[k]]).join(' ／ '));
+  push('Care',Object.keys(PARTS).filter(k=>pk(k)&&pk(k)!=='avoid').map(k=>PARTS[k]+'：'+LVN[A.parts[k]]).join(' ／ '));
   push('Bath',A.bath);
   push('Soda',A.soda&&A.soda!=='今回はいいです'?[A.soda,A.mint].filter(Boolean).join(' ／ '):A.soda);
   push('Wash',(A.wash||[]).join('・'));
@@ -512,6 +589,7 @@ function drawConfirm(){
     <div id="err"></div></div>`;
   document.getElementById('next').innerHTML='これでお願いします<span class="ar">→</span>';
   document.getElementById('next').disabled=false;
+  applyLang();
 }
 
 function drawDone(){
@@ -531,6 +609,7 @@ function drawDone(){
       <div><b>${t(mn)}　仕上げてお帰りです</b><s>${esc(A.finish||'髪を見て仕上げます')}</s></div>
     </div>
     <p class="hint">変えたくなったら このページからいつでも直せます</p></div>`;
+  applyLang();
 }
 
 /* ── 保存（1問ごと・落としても続きから） ── */
@@ -542,7 +621,7 @@ function save(){
 }
 async function finish(){
   if(DEMO){ i=SC.length-1; draw(); return; }
-  const b=document.getElementById('next'); b.disabled=true; b.textContent='お送りしています…';
+  const b=document.getElementById('next'); b.disabled=true; b.textContent='お送りしています…'; applyLang();
   try{
     const r=await fetch(API+'/precare',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({token:T,answers:A,done:true})});
@@ -551,7 +630,7 @@ async function finish(){
     i=SC.length-1; draw();
   }catch(e){
     const el=document.getElementById('err'); if(el)el.innerHTML=`<div class="err">${esc(e.message)}</div>`;
-    b.disabled=false; b.innerHTML='これでお願いします<span class="ar">→</span>';
+    b.disabled=false; b.innerHTML='これでお願いします<span class="ar">→</span>'; applyLang();
   }
 }
 
@@ -568,12 +647,16 @@ function startDemo(){
   bar.innerHTML='<b>見本</b>　お客様の画面と同じものです　選んでも保存されません<br>'
     + Object.keys(DEMOS).map(k=>`<a href="?demo=${k}" class="${k===DEMOKEY?'on':''}">${DEMOS[k].label}</a>`).join('');
   document.body.appendChild(bar);
+  // ことばを変えても見本のまま切り替えられるよう、押した時点の言語を持っていく
+  const as=bar.querySelectorAll('a');
+  Object.keys(DEMOS).forEach((k,n)=>{ as[n].onclick=e=>{
+    e.preventDefault(); location.search='?demo='+k+(LANG!=='ja'?'&lang='+LANG:''); }; });
   SC=screens(); foot.hidden=false; draw();
 }
 
 (async function(){
   if(DEMO) return startDemo();
-  if(!T){ app.innerHTML='<div class="err">リンクが正しくありません。ご予約のご案内から開いてください</div>'; return; }
+  if(!T){ app.innerHTML='<div class="err">リンクが正しくありません。ご予約のご案内から開いてください</div>'; applyLang(); return; }
   try{
     const r=await fetch(API+'/precare?t='+encodeURIComponent(T));
     const j=await r.json();
@@ -583,7 +666,7 @@ function startDemo(){
     A=(j.answers&&Object.keys(j.answers).length)?j.answers:(LAST?JSON.parse(JSON.stringify(LAST)):{});
     SC=screens(); if(A.soda==='はい お願いします'){const k=SC.findIndex(x=>x.id==='soda'); if(k>=0&&SC[k].then)SC.splice(k+1,0,{...SC[k].then});}
     foot.hidden=false; draw();
-  }catch(e){ app.innerHTML=`<div class="err">${esc(e.message)}</div>`; }
+  }catch(e){ app.innerHTML=`<div class="err">${esc(e.message)}</div>`; applyLang(); }
 })();
 </script>
 </body>
