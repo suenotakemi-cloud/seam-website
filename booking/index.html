@@ -1298,14 +1298,24 @@ const LS='stb_v1';
 const OPEN=11*60, CLOSE=20*60, STEP=30; // minutes（SEAM 銀座 11:00–20:00）
 // SEAM 銀座の実在籍（ホットペッパー表記のまま）: 及川 大輝(店長/ヘア)・ANZU(ヘア兼スパ)・CHIKA(スパ)
 // cu=CUEPON実account_id（予約のstaff_account_id）／hpb=HPBスタイリストID（RPAのサロンボード指名用・ヘア掲載）
+/* ★スタイリストの情報はホットペッパーの掲載そのまま（2026-07-31 エンジニア指示）。
+   氏名・カナ・肩書・歴・キャッチは一字も変えない。こちらで書き直すと掲載とずれる。
+   出典 ヘア: beauty.hotpepper.jp/slnH000802192/stylist/
+        スパ: beauty.hotpepper.jp/kr/slnH000802373/staff/  （取得 2026-07-31）
+   ⚠️ANZUはヘアとスパで掲載が別（歴9年/8年・肩書もキャッチも違う）。
+     メニューの行き先に合わせて出し分ける＝spa側の掲載は spa:{} に持つ。
+   ⚠️CHIKAはSPA店にしか居ない（ヘア店のアカウントが無い）ので cuSpa/hpbSpa だけ。 */
 const STAFF=[
-  {id:'s1',name:'及川 大輝',role:'店長 / スタイリスト',catch:'艶髪デザイン・扱いやすい仕上がり',yrs:14,cu:'20260720172047980eihPaAi',hpb:'T001096152'},
-  {id:'s2',name:'ANZU',role:'スタイリスト / スパニスト',catch:'頭皮と髪を整えるヘア＆スパ',yrs:9,cu:'20260720172048371VVaiHGf',cuSpa:'20260721104016592jgjicee',hpb:'T001097192',hpbSpa:'W001374984'},
-  /* ⚠️CHIKAはsalon.townでは「SEAM 銀座 SPA」にしか居ない（ヘア店のアカウントが無い）。
-     だからスパ用の欄(cuSpa/hpbSpa)にだけ入れる。ヘア店へ送るメニューの担当に入れると
-     「別の店のaccount_id」で予約を作ることになり、サロンボードで必ず弾かれる。 */
-  {id:'s3',name:'CHIKA',role:'スパニスト',catch:'極上睡眠ヘッドスパ・完全個室',yrs:3,cuSpa:'20260720172736440ZYIefdT',hpbSpa:'W001412775'},
+  {id:'s1',name:'及川 大輝',kana:'オイカワ ヒロキ',role:'店長 insta@oooichan',catch:'未来まで扱いやすい艶髪デザインを叶える提案',yrs:14,
+   cu:'20260720172047980eihPaAi',hpb:'T001096152'},
+  {id:'s2',name:'ANZU',kana:'アンズ',role:'',catch:'頭皮と髪を整える美容師',yrs:9,
+   spa:{role:'スパニスト',catch:'頭皮の状態・お悩みに合わせたパーソナルスパ',yrs:8},
+   cu:'20260720172048371VVaiHGf',cuSpa:'20260721104016592jgjicee',hpb:'T001097192',hpbSpa:'W001374984'},
+  {id:'s3',name:'CHIKA',kana:'チカ',role:'スパニスト',catch:'丁寧な接客で導く極上睡眠ヘッドスパ/完全個室',yrs:3,
+   cuSpa:'20260720172736440ZYIefdT',hpbSpa:'W001412775'},
 ];
+/* そのメニューの行き先の掲載を返す（スパのメニューならスパの掲載）。 */
+const profFor=(st,m)=>{const b=st||{};const o=(menuToSpa(m)&&b.spa)?b.spa:{};return {role:o.role!=null?o.role:(b.role||''),catch:o.catch||b.catch||'',yrs:o.yrs||b.yrs||0};};
 /* そのメニューを送る店に、そのスタッフのアカウントがあるか。
    ヘア店へ送るメニュー=cu / SPA店へ送るメニュー=cuSpa（無ければcu）。 */
 const menuToSpa=(m)=>!!m&&m.cat==='ヘッドスパ';
@@ -4442,7 +4452,8 @@ function renderBook(){
     const cands=STAFF.filter(s=>menuStaff(menu).includes(s.id));
     p.innerHTML=stepsHtml+`<h3 style="margin-bottom:12px">スタッフを選択</h3>
       <div class="opt ${bk.staff==='any'?'sel':''}" data-s="any"><div><div class="nm">指名なし</div><div class="dt">空いているスタッフが担当します（最短でご案内）</div></div></div>`+
-      cands.map(s=>`<div class="opt ${bk.staff===s.id?'sel':''}" data-s="${s.id}"><div><div class="nm">${s.name} <span class="yrs">歴${s.yrs}年</span></div><div class="dt">${s.catch}</div></div></div>`).join('')+
+      cands.map(s=>{const pf=profFor(s,menu);   // ★掲載はホットペッパーそのまま。スパのメニューならスパの掲載を出す
+        return `<div class="opt ${bk.staff===s.id?'sel':''}" data-s="${s.id}"><div><div class="nm">${s.name} <span class="yrs">歴${pf.yrs}年</span></div><div class="dt">${pf.role?escH(pf.role)+'　':''}${escH(pf.catch)}</div></div></div>`}).join('')+
       `<div class="pnav"><button class="btn ghost" id="bback">戻る</button><button class="btn pri" id="bnext" ${bk.staff?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.staff=o.dataset.s;renderBook()});
   }
