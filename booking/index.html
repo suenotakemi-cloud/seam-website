@@ -3058,7 +3058,13 @@ function renderRegister(){
         <option value="off" ${r.type==='off'?'selected':''}>なし</option></select>
       <input class="dep-val" data-l="${l}" type="number" inputmode="numeric" value="${r.value}" style="width:78px" ${r.type==='off'?'disabled':''}>
       <b style="font-size:12px;color:var(--sub)">${r.type==='rate'?'%':'円'}</b></span></div>`}).join('')}
-    <div class="rz-ref"><span>お客様が選んだ言語で自動的に切り替わります</span><span>海外は「料金の50%」が一般的（無断キャンセル対策）</span></div></div>`;
+    <div class="rz-ref"><span>お客様が選んだ言語で自動的に切り替わります</span><span>海外は「料金の50%」が一般的（無断キャンセル対策）</span></div>
+    <div style="font-size:12px;color:var(--sub);line-height:1.8;margin-top:10px;border-top:1px solid var(--line);padding-top:10px">
+      <b>いまの設定</b><br>
+      日本　定額 ¥${stgN('depVal_ja',3300).toLocaleString()}　当日キャンセル料 ¥${stgN('cancelFixed_ja',3300).toLocaleString()}<br>
+      海外　料金の${stgN('depVal_en',50)}%（上限 ¥${stgN('depCap_en',10000).toLocaleString()}）<br>
+      <span style="color:var(--danger,#c0392b)">※預かった額しか頂けません。当日のキャンセル料と預かり金は同じ額にしてください</span>
+    </div></div>`;
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧾 レジの分け方（サロン／ショップ）',splitPanel)
     +fold('📈 歩合の段とスタッフのスマホ',commPanel)
@@ -3913,7 +3919,11 @@ function depositOf(price,lang){
   const r=depositRule(lang);
   if(r.type==='off')return 0;                                    // 前金なし
   if(r.type==='fixed')return Math.min(price,Math.max(0,Math.round(r.value)));
-  return Math.min(price,Math.max(0,Math.round(price*r.value/100/100)*100));  // 率(100円単位)
+  // 率(100円単位・切り捨て)。切り上げると「料金の50%」と言いながら50%を超えてしまう
+  let d=Math.floor(price*r.value/100/100)*100;
+  const cap=stgN('depCap_'+(lang||BOOK_LANG||'ja'),0);
+  if(cap>0)d=Math.min(d,cap);
+  return Math.min(price,Math.max(0,d));
 }
 // 段階式キャンセルポリシー（消費者契約法9条＝平均的損害の範囲内で設定）。無断は平均的損害まで。
 const CANCEL_POLICY=[{d:2,pct:0,label:'2日前まで'},{d:1,pct:25,label:'前日'},{d:0,pct:50,label:'当日'}];
@@ -4385,10 +4395,13 @@ function renderBook(){
         <table class="ptable">
           <tr><td>2日前まで</td><td>無料</td></tr>
           <tr><td>前日</td><td>料金の25%</td></tr>
-          <tr><td>当日</td><td>料金の50%</td></tr>
+          <tr><td>当日</td><td>${(()=>{const r=depositRule(BOOK_LANG);
+            return (r.type==='fixed'&&stgN('cancelFixed_'+BOOK_LANG,0))
+              ? '¥'+stgN('cancelFixed_'+BOOK_LANG,0).toLocaleString()+'（一律）' : '料金の50%';})()}</td></tr>
           <tr><td>無断キャンセル</td><td>当店に生じた損害の範囲まで</td></tr>
         </table>
-        キャンセル料は前金から充当し、残額は返金します。料率は当店に生じる平均的な損害（施術料金から材料費を除いた額に、他のお客様のご予約可能性を考慮したもの）にもとづきます。10分以上遅れる場合はご連絡ください。
+        キャンセル料は前金から充当し、残額は返金します。<b>お預かりした額を上限とします。</b>料率は当店に生じる平均的な損害（施術料金から材料費を除いた額に、他のお客様のご予約可能性を考慮したもの）にもとづきます。10分以上遅れる場合はご連絡ください。<br>
+        <b>キャンセルは、ご予約完了のお知らせに入っているリンクからいつでもお手続きいただけます。</b>
       </div>
       ${(()=>{ /* ご連絡先が無いと、予約できたことをお伝えできない＝必ず結んでいただく */
         const okC=!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified);
