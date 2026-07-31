@@ -4085,9 +4085,8 @@ const LINE_CFG={
 let lineProfile=null; // {userId, displayName, pictureUrl}
 /* ── 会員(メンバー) ──────────────────────────────────────────────
    条件: LINEまたはGoogleでログイン済み ＋ 髪格診断のカルテがある
-   割引: 施術料金から MEMBER_RATE。物販のカード会員10%OFFに揃えた(2026-07-30 オーナー確認)
-   ※率を変えるときはここ1行だけ変える。表示は全メニュー・確認画面に自動反映される */
-const MEMBER_RATE = 0.10;
+   特典: 値引きではなく「ひと施術おまけ」(perkOptions)＋ポイントでランクが上がる
+   　　　2026-07-31 オーナー判断で 10%OFF は廃止。単価を下げずに体験を増やす */
 const memberUser = () => lineProfile || googleProfile;
 /* 髪格診断のカルテ。finderが localStorage に残す鍵を順に見る */
 function hasKarte(){
@@ -4099,8 +4098,6 @@ function hasKarte(){
   return false;
 }
 const isMember = () => !!memberUser() && hasKarte();
-const memberPrice = n => Math.round((n||0) * (1-MEMBER_RATE) / 10) * 10;   // 10円単位
-const OFF_LABEL = Math.round(MEMBER_RATE*100) + '%OFF';
 
 
 // URLパラメータからLINEログイン結果を受け取る（/line/login/result → リダイレクト後）
@@ -4292,6 +4289,11 @@ function mailBlock(){
   </div>`}`;
 }
 function renderBook(){
+  /* ⚠️保存された途中状態が壊れていたら最初に戻す。
+     メニューを選ばずに先の画面へ進んだ状態が localStorage に残ると
+     menu が undefined のまま描画に入って落ち、以後そのお客様の端末では
+     予約ページが二度と開かなくなる（メニューIDを入れ替えたときも同じ）。 */
+  if(bk.step>0 && !MENUS.find(m=>m.id===bk.menu)){ bk.step=0; bk.menu=null; bk.staff=null; bk.day=null; bk.start=null; }
   saveBk();   // 途中で画面が離れても入力が消えないようにする
   const p=document.getElementById('pbody');
   // スパ導線は癒しのトーン（セージ）に切替。ヘア/入口選択はSEAMゴールド基調
@@ -4361,12 +4363,12 @@ function renderBook(){
          <div class="efd-go">髪格診断を見る →</div>
        </a>
        <div class="ent-member">
-         <!-- 表示文は静的。MEMBER_RATEを変えたらこの2文も直す(辞書キーのため) -->
-         <div class="emb-h">会員になると 10%OFF</div>
-         <div class="emb-b">LINEまたはGoogleでログインし 髪格診断を受けていただくと会員になります<br>次回からは施術料金が会員価格になります</div>
-         <ul class="emb-l"><li>施術料金が 10%OFF になります</li><li>髪格カルテを担当者が見たうえでご案内します</li><li>ご予約時のお名前とお電話の入力が省けます</li></ul>
+         <!-- 表示文は静的（辞書キーのため）。特典を変えるときはこの3文も直す -->
+         <div class="emb-h">会員になると ひと施術おまけ</div>
+         <div class="emb-b">LINEまたはGoogleでログインし 髪格診断を受けていただくと会員になります<br>ご来店ごとにポイントが貯まりランクが上がります</div>
+         <ul class="emb-l"><li>ヘッドスパかトリートメントを無料でお付けします</li><li>ポイントが貯まり ランクが上がります</li><li>髪格カルテを担当者が見たうえでご案内します</li><li>ご予約時のお名前とお電話の入力が省けます</li></ul>
          ${isMember()
-           ? `<div class="emb-ok">会員です（${escH(memberUser().displayName||memberUser().name||'')} 様）会員価格でご予約いただけます</div>`
+           ? `<div class="emb-ok">会員です（${escH(memberUser().displayName||memberUser().name||'')} 様）おまけつきでご予約いただけます</div>`
            : `<div class="emb-act">${memberUser()
                ? `<a class="emb-btn" href="/finder" target="_blank" rel="noopener">髪格診断を受ける →</a><span class="emb-note">ログインは完了しています</span>`
                : `<button class="emb-btn" onclick="startLineLogin()">LINEでログイン</button>${GOOGLE_CLIENT_ID?`<div id="embGoogle" class="emb-g-slot"></div>`:``}<span class="emb-note">髪格診断（約3分）を受けると会員になります</span>`}</div>`}
@@ -4395,7 +4397,7 @@ function renderBook(){
       (bk.section==='spa'?['ヘッドスパ']:MENU_CATS.filter(c=>c!=='ヘッドスパ')).map(cat=>{
         const items=MENUS.filter(m=>m.cat===cat);if(!items.length)return'';
         const durLabel=mm=>mm>=60?`${Math.floor(mm/60)}時間${mm%60?mm%60+'分':''}`:`${mm}分`;
-        return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">所要時間目安：${durLabel(m.min)}</div></div><div class="pr">${isMember()?`<s style="font-weight:600;color:var(--sub);font-size:12px">¥${m.price.toLocaleString()}</s><span style="display:block;color:#8a6a2f">¥${memberPrice(m.price).toLocaleString()}</span><small style="display:block;font-size:10px;color:#8a6a2f;font-weight:700">会員価格・税込</small>`:`¥${m.price.toLocaleString()}<small style="display:block;font-size:10px;color:var(--sub);font-weight:600">税込</small><small style="display:block;font-size:10px;color:#8a6a2f;font-weight:700">会員 ¥${memberPrice(m.price).toLocaleString()}</small>`}</div></div>`).join('')+`</div>`;
+        return `<div class="mcat"><div class="mcat-h">${cat}</div>`+items.map(m=>`<div class="opt ${bk.menu===m.id?'sel':''}" data-m="${m.id}"><div><div class="nm">${m.tag?`<span class="ctag">${m.tag}</span>`:''}${m.name}</div><div class="dt">所要時間目安：${durLabel(m.min)}</div></div><div class="pr">¥${m.price.toLocaleString()}<small style="display:block;font-size:10px;color:var(--sub);font-weight:600">税込</small><small style="display:block;font-size:10px;color:#8a6a2f;font-weight:700">${hasSpa(m)?'スパ延長 or トリートメント':'10分スパ付き'}</small></div></div>`).join('')+`</div>`;
       }).join('')+
       `<div class="pnav"><button class="btn ghost" id="bback0">戻る</button><button class="btn pri" id="bnext" ${bk.menu?'':'disabled'}>次へ</button></div>`;
     p.querySelectorAll('.opt').forEach(o=>o.onclick=()=>{bk.menu=o.dataset.m;renderBook()});
@@ -4861,15 +4863,29 @@ const EN_MAP={
 '髪格診断を受ける →':'Take the hair diagnosis →',
 'LINEでログイン':'Sign in with LINE',
 'LINEまたはGoogleでログインし 髪格診断を受けていただくと会員になります':'Sign in with LINE or Google and take the hair diagnosis to become a member.',
-'次回からは施術料金が会員価格になります':'From your next visit, member pricing applies.',
+'ご来店ごとにポイントが貯まりランクが上がります':'Earn points on every visit and move up a rank.',
+'ヘッドスパかトリートメントを無料でお付けします':'A head spa or a treatment, on us',
+'ポイントが貯まり ランクが上がります':'Collect points and move up a rank',
 '髪格カルテを担当者が見たうえでご案内します':'Your stylist sees your hair chart before your visit',
 'ご予約時のお名前とお電話の入力が省けます':'No need to re-enter your name and phone',
 '髪格診断（約3分）を受けると会員になります':'Take the hair diagnosis (about 3 min) to become a member',
 'ログインは完了しています':'You are signed in',
-'会員価格・税込':'Member price, tax incl.',
+/* 会員特典（おまけ）。値引きをやめた 2026-07-31 以降の文言 */
+'スパ延長 or トリートメント':'Longer spa or a treatment',
+'10分スパ付き':'10-min head spa included',
+'🎁 会員のおまけ':'🎁 Your member extra',
+'ご予約の方に無料でお付けします':'Included free with your booking',
+'ヘッドスパを10分延長':'10 more minutes of head spa',
+'いまのスパがそのぶん長くなります':'Your head spa simply runs longer',
+'トリートメントを追加':'Add a treatment',
+'仕上がりの手ざわりが変わります':'You will feel the difference in the finish',
+'10分ヘッドスパ':'10-minute head spa',
+'シャンプー時に頭皮をほぐします':'We release your scalp during the shampoo',
+'施術は10分ほど長くなります。お時間はご予約の枠に含めております':'Your service runs about 10 minutes longer. The time is already held in your booking.',
+'会員は ':'Members get ','ひと施術おまけ':'one service on us',
+'ネット予約の方はヘッドスパかトリートメントが付きます':'Book online and a head spa or treatment comes with it',
   'このまま予約できます':'Book right here','空いている時間を選ぶだけです':'Just pick an open time',
-'会員になると 10%OFF':'Members get 10% off',
-'施術料金が 10%OFF になります':'10% off every service','切る 染める 直す':'Cut, color and repair','頭皮から ほどく':'Released from the scalp up','今日の髪に合うほうを お選びください':'Choose the service that fits you best','迷ったままでも大丈夫です':'Not sure yet? That is completely fine.','はじめての方歓迎':'First visit welcome','お電話不要':'No phone call needed','1〜2分で予約':'Takes 1-2 minutes',
+'会員になると ひと施術おまけ':'Members get one service on us','切る 染める 直す':'Cut, color and repair','頭皮から ほどく':'Released from the scalp up','今日の髪に合うほうを お選びください':'Choose the service that fits you best','迷ったままでも大丈夫です':'Not sure yet? That is completely fine.','はじめての方歓迎':'First visit welcome','お電話不要':'No phone call needed','1〜2分で予約':'Takes 1-2 minutes',
 
   'お電話は要りません。':'No phone call needed. ','1〜2分で予約できます。':'Takes just 1-2 minutes.',
   '予約は3つだけです':'Booking in 3 simple steps','ご希望の内容を選んでください':'Choose the service that suits you today',
