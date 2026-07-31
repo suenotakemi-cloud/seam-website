@@ -174,7 +174,7 @@ const app=document.getElementById('app'), foot=document.getElementById('foot');
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
-let ALLOW={parts:['head','neck','dec','arm','foot'],skip:[]};   // メニューで触る範囲が違う
+let ALLOW={parts:['head','neck','dec','arm','foot'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
 
 /* ── 部位マップ ── */
 const PARTS={head:'頭',neck:'首',dec:'デコルテ',arm:'手と腕',foot:'足'};
@@ -269,6 +269,7 @@ function screens(){
       ${r.staff?`<div class="prow"><b>With</b><span>${esc(r.staff)}</span></div>`:''}
     </div>
     <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="">
+    ${ALLOW.mode==='spot'?`<p class="hint" style="text-align:center">今回は <b style="color:#A87456">${ALLOW.spotMinutes||10}分のヘッドスパ</b> がついています<br>どこに使うか お選びいただけます</p>`:''}
     ${LAST?`<p class="hint" style="text-align:center">前回のご希望が残っています<br>そのままでよければ最後まで送るだけで終わります</p>`:''}`,
     next:'はじめる', noskip:true});
 
@@ -282,9 +283,23 @@ function screens(){
       ['すっきりしたい','洗い上がりの軽さを主役にします'],
       ['ごほうびの時間にしたい','いちばん心地よいところを長めに']]});
 
-  S.push({id:'parts',title:'触れてほしいところ',
-    lead:'図に触れて 強さまで決められます　選ばなくても大丈夫です',
-    custom:mapHtml, wire:mapWire, incl:'どこを選んでも料金は変わりません'});
+  if(ALLOW.mode==='spot'){
+    // 短いスパは部位を細かく決めるより「どこに使うか」を1つ選ぶ方が楽しい
+    const mn=ALLOW.spotMinutes||10;
+    S.push({id:'spot',title:`${mn}分を どこに使いましょう`,
+      lead:'シャンプーのときに ここをほぐします<br>ひとつ選んでください',
+      ill:'ill_bubble', incl:'ご予約に含まれています',
+      one:'spot', opts:[
+        ['頭のこりをほぐす','こめかみと後頭部を中心に'],
+        ['首すじを軽くする','うつむきがちな首をゆるめます'],
+        ['目のまわりをゆるめる','眉のうえから こめかみへ'],
+        ['頭皮をすっきり','炭酸で一度 洗い流します'],
+        ['おまかせ','その日の頭皮を見てお選びします']]});
+  }else{
+    S.push({id:'parts',title:'触れてほしいところ',
+      lead:'図に触れて 強さまで決められます　選ばなくても大丈夫です',
+      custom:mapHtml, wire:mapWire, incl:'どこを選んでも料金は変わりません'});
+  }
 
   S.push({id:'bath',title:'頭浸浴の温度', ill:'ill_bath',
     lead:'温かいお湯と冷たいお水を交互にすると すっきりします<br>冷たいのが苦手な方は 温かいだけでも',
@@ -449,6 +464,7 @@ function drawConfirm(){
   const P=[];
   const push=(k,v)=>{ if(v&&String(v).trim())P.push([k,v]); };
   push('Mood',A.goal);
+  push('Spot',A.spot);
   const pk=k=>A.parts&&A.parts[k]&&ALLOW.parts.includes(k)?A.parts[k]:'';
   push('Avoid',Object.keys(PARTS).filter(k=>pk(k)==='avoid').map(k=>PARTS[k]).join('・'));
   push('Care',Object.keys(PARTS).filter(k=>pk(k)&&pk(k)!=='avoid').map(k=>PARTS[k]+' '+LVN[A.parts[k]]).join(' ／ '));
@@ -486,7 +502,8 @@ function drawDone(){
     <div class="tl" style="text-align:left">
       <div><b>${t(0)}　お越しください</b><s>受付で書くものはありません そのままお部屋へ</s></div>
       <div><b>${t(5)}　はじまります</b><s>${esc(A.goal||'今日のご希望')}　と うかがっています とだけお伝えします</s></div>
-      <div><b>${t(15)}　洗いながら ほぐしていきます</b><s>${A.bath?esc(A.bath)+'　':''}${A.soda==='はい お願いします'?'炭酸でさっぱりしてから　':''}${(A.wash||[]).slice(0,2).join('・')||'心地よい強さで'}</s></div>
+      ${A.spot?`<div><b>シャンプーのとき　${esc(A.spot)}</b><s>${ALLOW.spotMinutes||10}分ぶん ここに使います</s></div>`:''}
+      <div${A.spot?' hidden':''}><b>${t(15)}　洗いながら ほぐしていきます</b><s>${A.bath?esc(A.bath)+'　':''}${A.soda==='はい お願いします'?'炭酸でさっぱりしてから　':''}${(A.wash||[]).slice(0,2).join('・')||'心地よい強さで'}</s></div>
       <div><b>${t(mn-15)}　ゆっくり戻ってきます</b><s>${esc([A.scent,A.light].filter(Boolean).join(' ／ ')||'静かなお部屋で')}</s></div>
       <div><b>${t(mn)}　仕上げてお帰りです</b><s>${esc(A.finish||'髪を見て仕上げます')}</s></div>
     </div>
