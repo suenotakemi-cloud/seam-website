@@ -1598,8 +1598,49 @@ function setStg(k,v){db.settings[k]=String(v);save();API.setSetting(k,v);refresh
 // hpb=ホットペッパーのスマート支払い(オンライン事前決済)。決済処理はHPB側＝店頭で金銭を受け取らない。
 // 売上には計上するがレジ現金には含めない(入金は後日リクルートから・手数料差引)。
 const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},qr:{label:'QR決済',ic:'📱'},hpb:{label:'スマート支払い(HPB)',ic:'🌶️'}};
-function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();API.saveCheckout(c);return c;}
-function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}API.saveCheckout(c);}
+/* ===== 送信箱 =====
+ * 会計・ポイント・レジ締め・ギフト券・回数券の保存は、失敗すると
+ * 「この端末にはあるのに、次の読み込みでD1の内容に置き換わって消える」
+ * ＝売上やポイントの記録が黙って失われる。
+ * 失敗した記録はここに貯めて、起動時と1分ごとに送り直す。 */
+const OUTBOX_KEY='stb_outbox';
+const OUTBOX_API={checkout:c=>API.saveCheckout(c),point:c=>API.savePoint(c),
+  gift:c=>API.saveGift(c),pass:c=>API.savePass(c),settlement:c=>API.saveSettlement(c),intake:c=>API.saveIntake(c)};
+function outboxAll(){try{return JSON.parse(localStorage.getItem(OUTBOX_KEY)||'[]')}catch(e){return[]}}
+function outboxPut(kind,payload){
+  const q=outboxAll();
+  q.push({kind,payload,at:Date.now()});
+  try{localStorage.setItem(OUTBOX_KEY,JSON.stringify(q.slice(-200)))}catch(e){}
+  toast('⚠️ 保存がサーバーに届いていません。自動で送り直します（電波をご確認ください）',true);
+}
+/* 保存を投げ、失敗したら送信箱へ。成功の判定は「応答が返り error が無い」こと。 */
+function saveOrQueue(kind,payload){
+  const fn=OUTBOX_API[kind]; if(!fn)return;
+  Promise.resolve(fn(payload)).then(r=>{
+    if(!r || r.error) outboxPut(kind,payload);
+  }).catch(()=>outboxPut(kind,payload));
+}
+let _outboxBusy=false;
+async function flushOutbox(){
+  if(_outboxBusy)return; _outboxBusy=true;
+  try{
+    const q=outboxAll(); if(!q.length)return;
+    const rest=[];
+    for(const item of q){
+      const fn=OUTBOX_API[item.kind];
+      if(!fn){continue}
+      try{ const r=await fn(item.payload); if(!r||r.error)rest.push(item); }
+      catch(e){ rest.push(item); }
+    }
+    try{localStorage.setItem(OUTBOX_KEY,JSON.stringify(rest))}catch(e){}
+    if(q.length&&!rest.length)toast('たまっていた保存をすべて送り直しました');
+  }finally{_outboxBusy=false;}
+}
+setInterval(()=>{flushOutbox()},60000);
+setTimeout(()=>{flushOutbox()},4000);   // 起動直後にも一度
+
+function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();saveOrQueue('checkout',c);return c;}
+function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}saveOrQueue('checkout',c);}
 function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);
   // この会計に紐づくポイント増減（付与/利用）とギフト券の消込も巻き戻す
   db.points=(db.points||[]).filter(p=>p.ref!==id);API.removePointsByRef(id);
@@ -1621,10 +1662,11 @@ function adjustStock(id,delta,shopId){
 if(!db.intakes)db.intakes=[];
 function addIntake(x){x.id='in'+Math.random().toString(36).slice(2,8);x.at=new Date().toISOString();x.date=x.date||dkey(today());db.intakes.unshift(x);
   if(x.productId)API.stockAdjust({shopId:SHOP_ID,productId:x.productId,delta:+x.qty||0,reason:'入荷'});
-  save();refreshAll();API.saveIntake(x);return x;}
+  save();refreshAll();saveOrQueue('intake',x);return x;}
 function removeIntake(id){db.intakes=db.intakes.filter(x=>x.id!==id);save();refreshAll();API.removeIntake(id);}
 // D1から会計・レジ締め・設定・商品を取得してdbに反映（起動時・非同期）。localStorageで先に表示→D1で上書き。
 async function syncRegisterFromD1(){
+  await flushOutbox();   // ★先に送信箱を流す。流す前にD1で置き換えると未送信の記録が消える
   const co=await API.listCheckouts(); if(co)db.checkouts=co;
   const st=await API.listSettlements(); if(st)db.settlements=st;
   const set=await API.getSettings(); if(set){db.settings=set; if(set.cashFloat!=null&&set.cashFloat!=='')db.cashFloat=+set.cashFloat;}
@@ -1677,7 +1719,7 @@ function pointBalance(name,phone){
 }
 function addPointRow(row){
   row.id='pt'+Math.random().toString(36).slice(2,8);row.at=new Date().toISOString();row.date=row.date||dkey(today());
-  db.points.push(row);save();API.savePoint(row);return row;
+  db.points.push(row);save();saveOrQueue('point',row);return row;
 }
 /* ===== ギフト券（発行→販売→残高利用。期限は既定6ヶ月=資金決済法の適用外に収める） ===== */
 if(!db.gifts)db.gifts=[];
@@ -1690,7 +1732,7 @@ function giftStatus(g){
   if((g.balance||0)<=0)return {ok:false,msg:'残高がありません（使用済み）'};
   return {ok:true,msg:''};
 }
-function saveGiftLocal(g){const i=db.gifts.findIndex(x=>x.id===g.id);if(i>=0)db.gifts[i]=g;else db.gifts.unshift(g);save();API.saveGift(g);}
+function saveGiftLocal(g){const i=db.gifts.findIndex(x=>x.id===g.id);if(i>=0)db.gifts[i]=g;else db.gifts.unshift(g);save();saveOrQueue('gift',g);}
 // 会計取消時の巻き戻し: この会計で使ったギフト残高を復元
 function restoreGiftByRef(ref){
   db.gifts.forEach(g=>{
@@ -1709,7 +1751,7 @@ function passStatus(x){
   if((x.remaining||0)<=0)return {ok:false,msg:'残回数がありません（使い切り）'};
   return {ok:true,msg:''};
 }
-function savePassLocal(x){const i=db.passes.findIndex(y=>y.id===x.id);if(i>=0)db.passes[i]=x;else db.passes.unshift(x);save();API.savePass(x);}
+function savePassLocal(x){const i=db.passes.findIndex(y=>y.id===x.id);if(i>=0)db.passes[i]=x;else db.passes.unshift(x);save();saveOrQueue('pass',x);}
 function restorePassByRef(ref){
   db.passes.forEach(x=>{
     const n=(x.uses||[]).filter(u=>u.ref===ref).length;
@@ -1727,7 +1769,7 @@ function salesSummary(date){
     tech:sum(c=>c.tech),retail:sum(c=>c.retail),discount:sum(c=>c.discount),avg:cs.length?Math.round(sum(c=>c.total)/cs.length):0};
 }
 function settlementFor(date){return db.settlements.find(s=>s.date===date);}
-function saveSettlement(s){const i=db.settlements.findIndex(x=>x.date===s.date);if(i>=0)db.settlements[i]=s;else db.settlements.push(s);save();refreshAll();API.saveSettlement(s);}
+function saveSettlement(s){const i=db.settlements.findIndex(x=>x.date===s.date);if(i>=0)db.settlements[i]=s;else db.settlements.push(s);save();refreshAll();saveOrQueue('settlement',s);}
 // 前日繰越: その日の釣銭準備金＝直近の過去レジ締めで数えた現金。締め済みの日は保存済みfloat。無ければ既定。
 function priorSettlement(dk){return (db.settlements||[]).filter(s=>s.date<dk&&s.closedAt).sort((a,b)=>a.date<b.date?1:-1)[0]||null;}
 function openingFloat(dk){const set=settlementFor(dk);if(set)return set.float;const p=priorSettlement(dk);return p?p.countedCash:db.cashFloat;}
@@ -1894,7 +1936,18 @@ function addReservation(o){
     // 台帳に残すと「入っているつもりで入っていない」状態になるので取り消して理由を出す。
     if (res && res.error) {
       db.reservations = db.reservations.filter(r => r.id !== o.id); save(); refreshAll();
-      toast(res.error, true);
+      /* ★前金つきの予約が上流で拒否された＝お金だけ取られて予約なしの状態。
+       *   その場で全額返し、完了画面が出ていたら選び直しへ戻す。 */
+      if (o.squarePaymentId && typeof refundOrphanDeposit === 'function') {
+        refundOrphanDeposit(o.squarePaymentId).then(rr => {
+          toast(res.error + (rr && rr.ok ? '　前金は全額返金しました（数日で戻ります）' : '　前金の返金は店舗で確認します'), true);
+        });
+      } else {
+        toast(res.error, true);
+      }
+      try {
+        if (typeof bk !== 'undefined' && bk.step === 5) { bk.step = 2; bk.start = null; bk._committing = false; bk._deposit = 0; renderBook(); }
+      } catch (e) {}
     }
   }).catch(() => {});
   return{ok:true,resv:o};
@@ -2039,6 +2092,19 @@ async function setupPay(dep,commit){
       };
     }
   }catch(e){ offline('決済のご用意が整いませんでした。ご来店時に店頭でお願いいたします'); }
+}
+
+/* 迷子になった前金を返す。
+ * 決済は通ったのに予約が確定しなかったとき（枠の衝突・サーバの拒否）に呼ぶ。
+ * サーバ側で「予約に紐づいていない・当店の前金・1時間以内」だけに絞ってあり、
+ * 鍵が決済IDに固定なので何度呼んでも返金は1回にまとまる。 */
+async function refundOrphanDeposit(paymentId){
+  if(!paymentId)return {ok:false};
+  try{
+    const r=await fetch(API_BASE+'/pay/refund-orphan',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify({paymentId})});
+    return await r.json();
+  }catch(e){return {ok:false};}
 }
 
 /* Squareから返る英語のエラーを、お客様に分かる日本語に言い換える。
@@ -4529,7 +4595,20 @@ function renderBook(){
         // ★スパ予約はSPA店＝ANZUのスパ用account_id(cuSpa)とスパHPB IDを使う。spaフラグでWorkerがSPA店へ振り分け
         spa:isSpa,staffCu:(isSpa?(stObj.cuSpa||stObj.cu):stObj.cu)||'',hbpStylistId:(isSpa?(stObj.hpbSpa||stObj.hpb):stObj.hpb)||'',hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menu.min||60,
         nominated:bk.staff!=='any'});   // 指名(特定スタッフ選択)=true / 指名なし=フリー。サロンボードRPAの指名チェック用
-      if(!r.ok){bk._committing=false;toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);bk.step=2;bk.start=null;renderBook();return}
+      if(!r.ok){
+        bk._committing=false;
+        /* ★決済が先に通っているので、予約が作れなかったら前金をその場で全額返す。
+         *   これをしないと「お金だけ取られて予約なし」になる（実際に起き得た）。 */
+        if(squarePaymentId){
+          refundOrphanDeposit(squarePaymentId).then(res=>{
+            toast(res&&res.ok
+              ?'⚠️ 直前に枠が埋まりました。前金は全額返金しました（数日で戻ります）。別の時間をお選びください'
+              :'⚠️ 直前に枠が埋まりました。前金の返金は店舗で確認します。別の時間をお選びください',true);
+          });
+        }else{
+          toast('⚠️ 直前に枠が埋まりました。別の時間をお選びください',true);
+        }
+        bk.step=2;bk.start=null;renderBook();return}
       bk._deposit=depositAmt;bk.step=5;renderBook();
       // 予約確認(LINE/メール)は予約作成時にサーバ側(Worker)から送信。フロントからの直接送信は廃止(セキュリティ)。
     };
