@@ -983,6 +983,7 @@ body.customer .phone.spa{background:#f7f8f3}
     <span id="today-sum" style="font-size:13px;color:var(--sub);font-weight:600"></span>
   </div>
   <p class="lead">スタッフの1日をひと目で。次のお客様が一番上。タップでステータス変更・詳細</p>
+  <div id="sync-panel"></div>
   <div id="gap-panel"></div>
   <div id="todaylist"></div>
 </section>
@@ -1501,6 +1502,8 @@ const API = {
   async sendLineReceipt(checkoutId,phone,shopId){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/receipt/line',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone,shopId})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async lineShopStatus(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/line/shop-status',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async saveLineShopConfig(shopId,liffId,oaUrl){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/line/shop-config',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({shopId,liffId,oaUrl})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
+  async salonHealth(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/salon/health',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
+  async salonRepush(){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/admin/salon-repush',{method:'POST',headers:authHeaders()});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async getShifts(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+`/shifts?from=${from}&to=${to}`,{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
   async saveShifts(shifts,closed){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/shifts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({shifts,closed})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async notifyShifts(from,to,shopId){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/shifts/notify',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({from,to,shopId})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
@@ -5279,6 +5282,40 @@ function renderGapPanel(){
       ()=>alert(t));
   });
 }
+/* salon.town との同期の見張り。
+ * SaaSが切れている間、予約はこちらのD1にだけ残りサロンボードへ流れない。
+ * 気づかないまま営業すると、当日に「予約が入っていない」ことになる。
+ * ふだんは何も出さず、届いていない予約があるときだけ赤い帯を出す。 */
+async function renderSyncPanel(){
+  const el=document.getElementById('sync-panel'); if(!el)return;
+  const h=await API.salonHealth();
+  if(!h||!h.ok){el.innerHTML='';return;}
+  const bad=(h.missingCount||0)>0, loginNg=h.login&&h.login.ok===false;
+  if(!bad&&!loginNg){el.innerHTML='';return;}   // 正常なときは何も出さない
+  el.innerHTML=`<div class="card" style="border-left:3px solid var(--danger,#c0392b);background:#fff6f5">
+    <div class="rep-h"><h3>⚠️ サロンボードへの同期</h3></div>
+    ${loginNg?`<div style="font-size:13px;font-weight:800;color:var(--danger,#c0392b);margin-bottom:8px">
+        salon.town にログインできていません（${escH((h.login&&h.login.error)||'')}）<br>
+        <span style="font-weight:600;color:var(--sub)">この間の予約はサロンボードに流れません。エンジニアにご連絡ください</span></div>`:''}
+    ${bad?`<div style="font-size:13px;line-height:1.75">
+        <b>${h.missingCount}件</b>の予約が salon.town に届いていません。<br>
+        <span style="color:var(--sub);font-size:12.5px">このままだとサロンボードにも入りません。下のボタンで送り直せます（毎朝の自動送り直しもあります）</span>
+        <div style="margin-top:8px;font-size:12.5px">
+          ${h.missing.map(m=>`<div style="padding:3px 0">${escH((m.date||'').slice(5).replace('-','/'))} ${hm(m.start)}　${escH(m.name||'')}</div>`).join('')}
+        </div>
+        <button class="btn small pay" id="sync-repush" style="margin-top:10px">いま送り直す</button>
+        <span id="sync-msg" style="font-size:12.5px;font-weight:700;margin-left:8px"></span>
+      </div>`:''}
+  </div>`;
+  const b=document.getElementById('sync-repush');
+  if(b)b.onclick=async()=>{
+    b.disabled=true;b.textContent='送り直しています…';
+    const r=await API.salonRepush();
+    const m=document.getElementById('sync-msg');
+    if(r&&r.ok!==false){ if(m){m.style.color='var(--ok)';m.textContent='送り直しました';} renderSyncPanel(); }
+    else { b.disabled=false;b.textContent='いま送り直す'; if(m){m.style.color='var(--danger,#c0392b)';m.textContent=(r&&r.error)||'送り直せませんでした';} }
+  };
+}
 function renderToday(){
   const tk=dkey(today());
   const rs=db.reservations.filter(r=>r.date===tk&&r.status!=='cancelled').sort((a,b)=>a.start-b.start);
@@ -5289,6 +5326,7 @@ function renderToday(){
   const next=rs.find(r=>r.end>nowMin&&r.status==='booked');
   document.getElementById('today-sum').textContent=rs.length?`${rs.length}件・完了${done}${next?`・次 ${hm(next.start)} ${next.name}様`:''}`:'';
   renderGapPanel();
+  renderSyncPanel();   // 同期が切れているときだけ帯が出る
   const el=document.getElementById('todaylist');
   if(!rs.length){el.innerHTML='<div class="card" style="color:var(--sub);text-align:center;padding:30px">本日の予約はありません</div>';return}
   el.innerHTML=rs.map(r=>{
