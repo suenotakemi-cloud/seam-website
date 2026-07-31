@@ -191,14 +191,20 @@
   @media(min-width:880px){.gj-map{grid-template-columns:minmax(0,340px) 1fr;gap:56px;}}
   .gj-map-fig{background:#fff;border:1px solid var(--gj-line);border-radius:3px;padding:22px 10px;}
   .gj-map-fig svg{width:100%;height:auto;display:block;}
-  .gj-zone{cursor:pointer;fill:#EAE3D7;stroke:#D5CABA;stroke-width:1;transition:fill .3s,stroke .3s;}
-  .gj-zone:hover{fill:#DFD4C2;}
-  .gj-zone[data-state="soft"]{fill:#E9C6BE;stroke:#D7A39A;}
-  .gj-zone[data-state="normal"]{fill:#CDBFAF;stroke:#B59F8E;}
-  .gj-zone[data-state="strong"]{fill:#C9A96E;stroke:#B8945A;}
-  .gj-zone[data-state="focus"]{fill:#A87456;stroke:#8E5C40;}
-  .gj-zone:focus-visible{outline:2px solid var(--gj-gold);outline-offset:2px;}
-  .gj-inert{fill:#F2EDE4;stroke:#E2D9CA;stroke-width:1;}
+  /* 部位マップ: 生成した線画の上に、選んだ部位だけ淡いにじみが乗る。
+     面で塗るとステッカーのように浮くので、ぼかして墨のかすみにしている。 */
+  .gj-figwrap{position:relative;}
+  .gj-figwrap img{width:100%;display:block;position:relative;mix-blend-mode:multiply;}
+  .gj-lay{position:absolute;inset:0;width:100%;height:100%;}
+  .gj-wash{filter:blur(10px);pointer-events:none;}
+  .gj-wash .gj-zone{fill:transparent;transition:fill .4s ease;}
+  .gj-wash .gj-zone[data-state="soft"]{fill:#DE9E92;}
+  .gj-wash .gj-zone[data-state="normal"]{fill:#BCAB95;}
+  .gj-wash .gj-zone[data-state="strong"]{fill:#C79A45;}
+  .gj-wash .gj-zone[data-state="focus"]{fill:#A56A42;}
+  .gj-hit .gj-zone{fill:transparent;cursor:pointer;transition:fill .25s;}
+  .gj-hit .gj-zone:hover{fill:rgba(184,148,90,.10);}
+  .gj-hit .gj-zone:focus-visible{outline:2px solid var(--gj-gold);outline-offset:2px;}
   .gj-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:18px;}
   .gj-legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;color:#6E6960;}
   .gj-legend i{width:11px;height:11px;border-radius:3px;display:block;}
@@ -211,6 +217,10 @@
   .gj-feat .gj-it{font-size:19px;}
   .gj-feat h4{font-family:'Noto Serif JP',serif;font-weight:500;font-size:17px;color:var(--gj-ink);margin:8px 0 12px;letter-spacing:.03em;}
   .gj-feat p{font-size:13.5px;line-height:2.05;}
+
+  /* 一筆書きイラスト（採用ページと同じ線・同じ紙地） */
+  .gj-ill{display:block;width:100%;max-width:340px;margin:0 auto;mix-blend-mode:multiply;}
+  .gj-ill--sm{max-width:230px;}
 
   /* ── hydrogen (dark) ── */
   .gj-hydro{position:relative;overflow:hidden;color:#EFEAE2;
@@ -465,7 +475,7 @@
         </div>
       </div>
       <div class="gj-step-media">
-        <img src="images/spa-real/gallery/g2_foam.jpg" alt="濃密な泡でのシャンプー" loading="lazy" width="854" height="480">
+        <img class="gj-ill" src="images/lp/spa/ill_prep.webp" alt="来店前にご希望をお預かりする" loading="lazy" width="900" height="900">
       </div>
     </div>
 
@@ -523,7 +533,7 @@
         </div>
       </div>
       <div class="gj-step-media">
-        <img src="images/spa-real/06_finishing.jpg" alt="ドライとブローで仕上げ" loading="lazy" width="854" height="480">
+        <img class="gj-ill" src="images/lp/spa/ill_afterglow.webp" alt="仕上げたあとの余韻" loading="lazy" width="900" height="900">
       </div>
     </div>
   </div>
@@ -544,27 +554,30 @@
     <div class="gj-map" data-reveal="">
       <div>
         <div class="gj-map-fig" data-lbl-soft="やさしく" data-lbl-normal="標準" data-lbl-strong="しっかり" data-lbl-focus="重点的に" data-lbl-sep=" ／ " data-i18n-attr="data-lbl-soft:mp.soft;data-lbl-normal:mp.normal;data-lbl-strong:mp.strong;data-lbl-focus:mp.focus;data-lbl-sep:mp.sep">
-          <svg viewBox="0 0 220 400" role="group" aria-label="部位を選ぶ図">
-            <!-- 選べない部分（胴） -->
-            <rect class="gj-inert" x="80" y="108" width="60" height="94" rx="16"></rect>
-            <!-- 選べる部位 -->
-            <ellipse class="gj-zone" data-part="head" data-label="頭" data-i18n-attr="data-label:mp.head;aria-label:mp.head" cx="110" cy="30" rx="22" ry="24" tabindex="0" role="button" aria-label="頭"></ellipse>
-            <rect class="gj-zone" data-part="neck" data-label="首" data-i18n-attr="data-label:mp.neck;aria-label:mp.neck" x="101" y="50" width="18" height="32" rx="8" tabindex="0" role="button" aria-label="首"></rect>
-            <path class="gj-zone" data-part="decollete" data-label="デコルテ" data-i18n-attr="data-label:mp.dec;aria-label:mp.dec" d="M66 98c0-12 9-20 21-20h46c12 0 21 8 21 20v14H66z" tabindex="0" role="button" aria-label="デコルテ"></path>
-            <rect class="gj-zone" data-part="arm" data-label="手と腕" data-i18n-attr="data-label:mp.arm" x="48" y="92" width="18" height="96" rx="9" tabindex="0" role="button" aria-label="右の腕"></rect>
-            <rect class="gj-zone" data-part="arm" data-label="手と腕" data-i18n-attr="data-label:mp.arm" x="154" y="92" width="18" height="96" rx="9" tabindex="0" role="button" aria-label="左の腕"></rect>
-            <ellipse class="gj-zone" data-part="arm" data-label="手と腕" data-i18n-attr="data-label:mp.arm" cx="57" cy="198" rx="10.5" ry="12.5" tabindex="0" role="button" aria-label="右の手"></ellipse>
-            <ellipse class="gj-zone" data-part="arm" data-label="手と腕" data-i18n-attr="data-label:mp.arm" cx="163" cy="198" rx="10.5" ry="12.5" tabindex="0" role="button" aria-label="左の手"></ellipse>
-            <rect class="gj-zone" data-part="foot" data-label="足" data-i18n-attr="data-label:mp.foot" x="83" y="200" width="24" height="150" rx="12" tabindex="0" role="button" aria-label="右の脚"></rect>
-            <rect class="gj-zone" data-part="foot" data-label="足" data-i18n-attr="data-label:mp.foot" x="113" y="200" width="24" height="150" rx="12" tabindex="0" role="button" aria-label="左の脚"></rect>
-            <rect class="gj-zone" data-part="foot" data-label="足" data-i18n-attr="data-label:mp.foot" x="78" y="344" width="30" height="24" rx="9" tabindex="0" role="button" aria-label="右の足"></rect>
-            <rect class="gj-zone" data-part="foot" data-label="足" data-i18n-attr="data-label:mp.foot" x="112" y="344" width="30" height="24" rx="9" tabindex="0" role="button" aria-label="左の足"></rect>
-          </svg>
+          <div class="gj-figwrap">
+            <svg class="gj-lay gj-wash" viewBox="0 0 848 1264" aria-hidden="true">
+              <ellipse class="gj-zone" data-part="head" data-label="頭" data-i18n-attr="data-label:mp.head" cx="424" cy="170" rx="76" ry="84"/>
+              <path class="gj-zone" data-part="dec" data-label="デコルテ" data-i18n-attr="data-label:mp.dec" d="M312 300Q424 274 536 300L544 350Q424 374 304 350Z"/>
+              <path class="gj-zone" data-part="arm" data-label="手と腕" data-i18n-attr="data-label:mp.arm" d="M316 300C304 340 296 440 288 556 283 636 285 686 297 720 308 736 324 730 330 712 320 656 328 558 340 472 346 404 346 344 344 302Z"/>
+              <path class="gj-zone" data-part="arm" data-label="手と腕" data-i18n-attr="data-label:mp.arm" d="M532 300C544 340 552 440 560 556 565 636 563 686 551 720 540 736 524 730 518 712 528 656 520 558 508 472 502 404 502 344 504 302Z"/>
+              <path class="gj-zone" data-part="foot" data-label="足" data-i18n-attr="data-label:mp.foot" d="M336 640L512 640C522 800 498 998 476 1116 468 1156 450 1176 424 1176 398 1176 380 1156 372 1116 350 998 326 800 336 640Z"/>
+              <rect class="gj-zone" data-part="neck" data-label="首" data-i18n-attr="data-label:mp.neck" x="386" y="240" width="76" height="62" rx="26"/>
+            </svg>
+            <img src="images/lp/spa/bodymap_figure.webp" alt="部位を選ぶ図" width="760" height="1133" loading="lazy">
+            <svg class="gj-lay gj-hit" viewBox="0 0 848 1264" role="group" aria-label="部位を選ぶ図">
+              <ellipse class="gj-zone" data-part="head" data-label="頭" data-i18n-attr="data-label:mp.head;aria-label:mp.head" tabindex="0" role="button" aria-label="頭" cx="424" cy="170" rx="76" ry="84"/>
+              <path class="gj-zone" data-part="dec" data-label="デコルテ" data-i18n-attr="data-label:mp.dec;aria-label:mp.dec" tabindex="0" role="button" aria-label="デコルテ" d="M312 300Q424 274 536 300L544 350Q424 374 304 350Z"/>
+              <path class="gj-zone" data-part="arm" data-label="手と腕" data-i18n-attr="data-label:mp.arm;aria-label:mp.arm" tabindex="0" role="button" aria-label="手と腕" d="M316 300C304 340 296 440 288 556 283 636 285 686 297 720 308 736 324 730 330 712 320 656 328 558 340 472 346 404 346 344 344 302Z"/>
+              <path class="gj-zone" data-part="arm" data-label="手と腕" data-i18n-attr="data-label:mp.arm;aria-label:mp.arm" tabindex="0" role="button" aria-label="手と腕" d="M532 300C544 340 552 440 560 556 565 636 563 686 551 720 540 736 524 730 518 712 528 656 520 558 508 472 502 404 502 344 504 302Z"/>
+              <path class="gj-zone" data-part="foot" data-label="足" data-i18n-attr="data-label:mp.foot;aria-label:mp.foot" tabindex="0" role="button" aria-label="足" d="M336 640L512 640C522 800 498 998 476 1116 468 1156 450 1176 424 1176 398 1176 380 1156 372 1116 350 998 326 800 336 640Z"/>
+              <rect class="gj-zone" data-part="neck" data-label="首" data-i18n-attr="data-label:mp.neck;aria-label:mp.neck" tabindex="0" role="button" aria-label="首" x="386" y="240" width="76" height="62" rx="26"/>
+            </svg>
+          </div>
           <div class="gj-legend" aria-hidden="true">
-            <span data-i18n="t50"><i style="background:#E9C6BE"></i>やさしく</span>
-            <span data-i18n="t51"><i style="background:#CDBFAF"></i>標準</span>
-            <span data-i18n="t52"><i style="background:#C9A96E"></i>しっかり</span>
-            <span data-i18n="t53"><i style="background:#A87456"></i>重点的に</span>
+            <span data-i18n="t50"><i style="background:#DE9E92"></i>やさしく</span>
+            <span data-i18n="t51"><i style="background:#BCAB95"></i>標準</span>
+            <span data-i18n="t52"><i style="background:#C79A45"></i>しっかり</span>
+            <span data-i18n="t53"><i style="background:#A56A42"></i>重点的に</span>
           </div>
         </div>
       </div>
@@ -574,6 +587,7 @@
           <dt>Your setting</dt>
           <dd id="gjMapOut" data-empty="まだ選ばれていません<br>気になる部位に触れてみてください" data-i18n-attr="data-empty:mp.empty" data-i18n="t55">まだ選ばれていません<br>気になる部位に触れてみてください</dd>
         </dl>
+        <img class="gj-ill gj-ill--sm" src="images/lp/spa/ill_decollete.webp" alt="" aria-hidden="true" loading="lazy" width="900" height="900" style="margin:22px auto 4px">
         <p class="gj-note" style="margin-top:12px;" data-i18n="t56">このページの図はご希望の伝わりかたをご覧いただくためのものです<br>実際のご予約時にあらためて設定していただけます</p>
 
         <div class="gj-feat">
@@ -664,6 +678,7 @@
         <p data-i18n="t81">事前カウンセリングで 希望する 内容を見てから決めたい 通常で受けたい からお選びいただけます</p>
       </div>
     </div>
+    <img class="gj-ill gj-ill--sm" src="images/lp/spa/ill_bubble.webp" alt="" aria-hidden="true" loading="lazy" width="900" height="900" style="margin-top:38px;mix-blend-mode:screen;opacity:.42">
     <p class="gj-note" data-i18n="t82">※水素の還元力は機能水の技術による表現です 医薬品的な効果効能をお約束するものではありません 感じ方には個人差があります</p>
   </div>
 </section>
@@ -734,20 +749,7 @@
           <div class="gj-ps-body">
             <p class="gj-ps-title" style="font-size:14.5px;" data-i18n="t101">整えたい部位を教えてください</p>
             <div class="gj-ps-fig">
-              <svg viewBox="0 0 220 400" aria-hidden="true">
-                <rect class="gj-inert" x="80" y="108" width="60" height="94" rx="16"></rect>
-                <ellipse cx="110" cy="30" rx="22" ry="24" fill="#C9A96E" stroke="#B8945A"></ellipse>
-                <rect x="101" y="50" width="18" height="32" rx="8" fill="#E9C6BE" stroke="#D7A39A"></rect>
-                <path d="M66 98c0-12 9-20 21-20h46c12 0 21 8 21 20v14H66z" fill="#A87456" stroke="#8E5C40"></path>
-                <rect x="48" y="92" width="18" height="96" rx="9" fill="#EAE3D7" stroke="#D5CABA"></rect>
-                <rect x="154" y="92" width="18" height="96" rx="9" fill="#EAE3D7" stroke="#D5CABA"></rect>
-                <ellipse cx="57" cy="198" rx="10.5" ry="12.5" fill="#EAE3D7" stroke="#D5CABA"></ellipse>
-                <ellipse cx="163" cy="198" rx="10.5" ry="12.5" fill="#EAE3D7" stroke="#D5CABA"></ellipse>
-                <rect x="83" y="200" width="24" height="150" rx="12" fill="#EAE3D7" stroke="#D5CABA"></rect>
-                <rect x="113" y="200" width="24" height="150" rx="12" fill="#EAE3D7" stroke="#D5CABA"></rect>
-                <rect x="78" y="344" width="30" height="24" rx="9" fill="#EAE3D7" stroke="#D5CABA"></rect>
-                <rect x="112" y="344" width="30" height="24" rx="9" fill="#EAE3D7" stroke="#D5CABA"></rect>
-              </svg>
+              <img src="images/lp/spa/bodymap_figure.webp" alt="" style="width:100%;display:block;mix-blend-mode:multiply" loading="lazy">
             </div>
             <div class="gj-ps-tags">
               <span class="gj-ps-tag is-on" data-i18n="t102">頭 しっかり</span>
