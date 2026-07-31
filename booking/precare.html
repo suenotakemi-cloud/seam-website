@@ -24,7 +24,13 @@
   --ink:#16171B; --body:#4A4741; --sub:#7C776E;
   --cream:#F7F4EE; --sand:#EFE9DF; --line:#E3DCD0;
   --gold:#B8945A; --clay:#A87456; --rose:#D7A39A; --jade:#1F2A27;
+  /* 明朝は言語で差し替える。Noto Serif JP に簡体字の一部が無く、
+     中国語だと「现」だけ別フォントに落ちて字面が揃わないため */
+  --serif:'Noto Serif JP',serif;
 }
+html[lang="zh-Hans"]{--serif:'Noto Serif SC','Noto Serif JP',serif}
+html[lang="zh-Hant"]{--serif:'Noto Serif TC','Noto Serif JP',serif}
+html[lang="ko"]{--serif:'Noto Serif KR','Noto Serif JP',serif}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{background:var(--cream);color:var(--body);
@@ -39,7 +45,7 @@ body{background:var(--cream);color:var(--body);
 .top .bar{height:2px;background:var(--line)}
 .top .bar i{display:block;height:100%;background:var(--clay);width:0;transition:width .5s cubic-bezier(.16,1,.3,1)}
 .top .in{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;max-width:520px;margin:0 auto}
-.brand{font-family:'Noto Serif JP',serif;letter-spacing:.26em;font-size:14px;color:var(--ink)}
+.brand{font-family:var(--serif);letter-spacing:.26em;font-size:14px;color:var(--ink)}
 .step{font-family:'Instrument Serif',serif;font-size:13px;color:var(--sub);letter-spacing:.08em}
 .back{background:none;border:0;font:inherit;font-size:13px;color:var(--sub);cursor:pointer;padding:6px 2px}
 
@@ -48,7 +54,7 @@ body{background:var(--cream);color:var(--body);
 .scr.on{display:block}
 @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .eyebrow{font-family:'Instrument Serif',serif;font-style:italic;font-size:16px;color:var(--clay);margin:0 0 8px}
-h1{font-family:'Noto Serif JP',serif;font-weight:500;color:var(--ink);
+h1{font-family:var(--serif);font-weight:500;color:var(--ink);
   font-size:clamp(22px,5.6vw,27px);line-height:1.5;letter-spacing:.02em;margin:0}
 .lead{font-size:14px;line-height:2;color:var(--sub);margin:14px 0 0}
 .hint{font-size:12.5px;color:var(--sub);margin:10px 0 0}
@@ -98,7 +104,7 @@ textarea:focus{outline:0;border-color:var(--clay)}
   animation:up .32s cubic-bezier(.16,1,.3,1);max-height:88vh;overflow-y:auto}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
 .sheet .grip{width:38px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 14px}
-.sheet h3{margin:0;font-family:'Noto Serif JP',serif;font-size:19px;color:var(--ink);font-weight:500}
+.sheet h3{margin:0;font-family:var(--serif);font-size:19px;color:var(--ink);font-weight:500}
 .sheet .sd{font-size:12.5px;color:var(--sub);margin:6px 0 0}
 .lv{display:grid;gap:8px;margin-top:16px}
 .lvb{display:flex;align-items:center;gap:13px;width:100%;text-align:left;background:#fff;
@@ -115,7 +121,7 @@ textarea:focus{outline:0;border-color:var(--clay)}
 .legend i{width:10px;height:10px;border-radius:3px}
 .maphint{color:var(--sub);font-family:'Noto Sans JP',sans-serif;font-size:13.5px}
 .picked{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-top:16px;
-  font-family:'Noto Serif JP',serif;font-size:14.5px;color:var(--ink);line-height:1.9;min-height:56px}
+  font-family:var(--serif);font-size:14.5px;color:var(--ink);line-height:1.9;min-height:56px}
 
 /* 叶えます、の返し */
 .grant{margin-top:16px;background:rgba(168,116,86,.07);border:1px solid rgba(168,116,86,.22);
@@ -129,13 +135,13 @@ textarea:focus{outline:0;border-color:var(--clay)}
 .prow:last-child{border-bottom:0}
 .prow b{flex:0 0 74px;font-weight:400;font-size:10.5px;letter-spacing:.14em;color:var(--gold);
   text-transform:uppercase;padding-top:5px;font-family:'Instrument Serif',serif}
-.prow span{font-family:'Noto Serif JP',serif;font-size:14.5px;color:var(--ink);line-height:1.85}
+.prow span{font-family:var(--serif);font-size:14.5px;color:var(--ink);line-height:1.85}
 .tl{margin-top:22px;border-left:1px solid var(--line);padding-left:20px}
 .tl div{position:relative;padding:0 0 20px}
 .tl div:last-child{padding-bottom:0}
 .tl div::before{content:"";position:absolute;left:-25px;top:8px;width:9px;height:9px;border-radius:999px;
   background:var(--cream);border:1.4px solid var(--clay)}
-.tl b{display:block;font-family:'Noto Serif JP',serif;font-size:14.5px;color:var(--ink);font-weight:500}
+.tl b{display:block;font-family:var(--serif);font-size:14.5px;color:var(--ink);font-weight:500}
 .tl s{display:block;text-decoration:none;font-size:12.5px;color:var(--sub);margin-top:3px;line-height:1.8}
 
 .ill{display:block;width:100%;max-width:210px;margin:20px auto 0}
@@ -145,7 +151,7 @@ textarea:focus{outline:0;border-color:var(--clay)}
   padding:20px 20px calc(18px + env(safe-area-inset-bottom,0px))}
 .foot .in{max-width:520px;margin:0 auto;display:flex;gap:10px}
 .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;min-height:54px;
-  border:0;border-radius:999px;background:var(--ink);color:#fff;font:inherit;font-family:'Noto Serif JP',serif;
+  border:0;border-radius:999px;background:var(--ink);color:#fff;font:inherit;font-family:var(--serif);
   font-size:15.5px;letter-spacing:.04em;cursor:pointer;transition:opacity .2s}
 .btn:disabled{opacity:.38}
 .btn.ghost{background:transparent;color:var(--sub);border:1px solid var(--line);flex:0 0 auto;padding:0 20px;font-size:14px}
@@ -243,8 +249,17 @@ function tr(s){
 }
 // 元の日本語を必ず持っておく。持たないと ko→en の切替で前の言語が残る
 const _O=new WeakMap(), _OP=new WeakMap();
+/* その言語を選んだ人にだけ明朝を足す（日本語・英語の人に余計な読み込みをさせない） */
+const FONTS={zh:'Noto+Serif+SC',tw:'Noto+Serif+TC',ko:'Noto+Serif+KR'};
+function ensureFont(){
+  const f=FONTS[LANG]; if(!f||document.getElementById('f-'+LANG))return;
+  const l=document.createElement('link'); l.id='f-'+LANG; l.rel='stylesheet';
+  l.href=`https://fonts.googleapis.com/css2?family=${f}:wght@400;500&display=swap`;
+  document.head.appendChild(l);
+}
 function applyLang(){
   document.documentElement.lang = LANG==='tw' ? 'zh-Hant' : (LANG==='zh'?'zh-Hans':LANG);
+  ensureFont();
   document.title = tr('今日のご希望｜SEAM GINZA');
   const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>{
     const p=n.parentNode&&n.parentNode.nodeName;
