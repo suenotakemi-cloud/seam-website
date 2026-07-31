@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM銀座｜サロンボード入力シート</title>
+<style>
+  :root{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+    --shadow:0 1px 2px rgba(60,46,20,.05),0 8px 30px rgba(60,46,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+      --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+      --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+  }
+  :root[data-theme="dark"]{
+    --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+    --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+    --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+  }
+
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+    font-size:15px; line-height:1.85; letter-spacing:.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 22px 90px;}
+  .serif{font-family:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+
+  /* ── masthead ── */
+  .mast{border-bottom:1.5px solid var(--ink); padding-bottom:22px; margin-bottom:8px;}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; letter-spacing:.42em; font-size:15px; color:var(--ink); font-weight:600;}
+  .kicker{font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-top:20px;}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:29px; line-height:1.35; margin:.24em 0 0; text-wrap:balance; letter-spacing:.02em;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:12px; line-height:1.9;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:16px; font-size:11.5px; color:var(--faint); font-family:ui-monospace,monospace; letter-spacing:.04em;}
+
+  /* ── intro card ── */
+  .lead{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-top:26px; box-shadow:var(--shadow); font-size:14px; line-height:2;}
+  .lead b{color:var(--gold);}
+  .lead .why{margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); font-size:12.5px; color:var(--muted);}
+
+  /* ── section ── */
+  section{margin-top:46px;}
+  .eyebrow{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:10px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+  h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:21px; margin:12px 0 4px; letter-spacing:.02em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:13px; margin:0 0 18px;}
+
+  /* ── field list ── */
+  .field{display:flex; gap:15px; padding:17px 0; border-top:1px solid var(--line2);}
+  .field:first-of-type{border-top:0;}
+  .fnum{flex:none; width:30px; height:30px; border-radius:50%; border:1.5px solid var(--gold); color:var(--gold); font-family:ui-monospace,monospace; font-size:12.5px; font-weight:600; display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .fbody{min-width:0; flex:1;}
+  .fname{font-weight:700; font-size:14.5px; color:var(--ink);}
+  .fname .req{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; color:#fff; background:var(--gold); border-radius:3px; padding:2px 6px; margin-left:8px; vertical-align:2px; font-weight:600;}
+  .fdesc{font-size:13px; color:var(--muted); line-height:1.95; margin-top:5px;}
+  .fdesc strong{color:var(--ink); font-weight:600;}
+
+  /* ── paste block ── */
+  .paste{position:relative; background:var(--paste); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:8px; padding:14px 15px 15px; margin-top:11px;}
+  .paste .lbl{font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--gold); display:block; margin-bottom:8px;}
+  .paste p{margin:0; font-size:13px; line-height:1.95; color:var(--ink); white-space:pre-wrap;}
+  .paste .var{color:var(--bad); font-weight:600;}
+  .copybtn{position:absolute; top:11px; right:11px; font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.08em; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:4px 9px; cursor:pointer; transition:all .15s;}
+  .copybtn:hover{color:var(--ink); border-color:var(--gold);}
+  .copybtn:focus-visible{outline:2px solid var(--gold); outline-offset:2px;}
+  .qa{margin-top:9px;}
+  .qa .q{font-weight:700; font-size:13px; color:var(--ink);}
+  .qa .q::before{content:"Q. "; color:var(--gold); font-family:ui-monospace,monospace;}
+  .qa .a{font-size:12.5px; color:var(--muted); line-height:1.9; margin:2px 0 12px; padding-left:1.4em;}
+  .qa .a::before{content:"A. "; color:var(--faint); font-family:ui-monospace,monospace; margin-left:-1.4em;}
+
+  /* ── checklist ── */
+  ul.check{list-style:none; margin:6px 0 0; padding:0;}
+  ul.check li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line2); font-size:13.5px; line-height:1.75;}
+  ul.check li:first-child{border-top:0;}
+  ul.check li::before{content:""; position:absolute; left:0; top:12px; width:15px; height:15px; border:1.5px solid var(--gold-soft); border-radius:3px; background:var(--panel);}
+  ul.check li b{color:var(--ink);}
+  ul.check li .hint{display:block; color:var(--faint); font-size:11.5px; margin-top:2px;}
+
+  /* ── data table ── */
+  .tablewrap{overflow-x:auto; margin-top:6px; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);}
+  table{border-collapse:collapse; width:100%; min-width:680px; font-size:12px; background:var(--panel);}
+  th,td{text-align:left; padding:11px 13px; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.7;}
+  thead th{background:var(--panel2); font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--gold); font-weight:600; white-space:nowrap; position:sticky; top:0;}
+  tbody tr:last-child td{border-bottom:0;}
+  td .name{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:13px; color:var(--ink); white-space:nowrap;}
+  td.u{font-family:ui-monospace,monospace; font-size:11px; color:var(--muted); word-break:break-all;}
+  td .none{color:var(--faint); font-style:italic;}
+
+  /* ── do / dont ── */
+  .rules{display:grid; gap:10px; margin-top:8px;}
+  .rule{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.85;}
+  .rule .ic{flex:none; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; color:#fff; background:var(--bad);}
+  .rule b{color:var(--ink);}
+  .rule .sub{color:var(--muted); font-size:12px;}
+
+  .callout{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:13px 16px; font-size:12.5px; color:var(--muted); line-height:1.9; margin-top:14px;}
+  .callout b{color:var(--gold);}
+
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:11px; color:var(--faint); line-height:1.9; font-family:ui-monospace,monospace; letter-spacing:.03em;}
+
+  @media (max-width:560px){
+    .wrap{padding:30px 16px 70px;} h1{font-size:24px;} .field{gap:12px;}
+  }
+  @media print{
+    body{background:#fff; color:#000; font-size:11.5px;}
+    .copybtn{display:none;} .wrap{max-width:none; padding:0;}
+    .lead,.paste,.tablewrap,.rule,.callout{box-shadow:none;}
+    section{break-inside:avoid;} .field,.rule,.paste{break-inside:avoid;}
+  }
+
+
+  /* ── この資料だけの調整 ──
+     共有スタイルの table{min-width:680px} は7列表むけ。ここは3〜4列なので解除し、
+     店長がスマホで開いても横スクロールなしで読めるようにする。 */
+  .tablewrap.fit table{min-width:0;}
+  .tablewrap.fit th,.tablewrap.fit td{padding:10px 9px;}
+  /* 5列表はヘッダーの字間が効いて数px溢れる。この表だけ字間を殺す */
+  .tablewrap.fit thead th{letter-spacing:.02em; padding-left:6px; padding-right:6px;}
+  .tablewrap.fit td.u{font-size:12px; word-break:normal; white-space:nowrap;}
+  @media (max-width:400px){
+    .tablewrap.fit th,.tablewrap.fit td{padding:9px 6px; font-size:11.5px;}
+    .tablewrap.fit td .name{font-size:12px;}
+  }
+  /* 不足を形で示す。数字だけだと「どれくらい足りないか」が伝わらない */
+  .gap{display:inline-block; font-family:ui-monospace,monospace; font-size:11px;
+       padding:2px 6px; border-radius:4px; background:rgba(168,68,58,.1); color:#A8443A; font-weight:600;}
+  .ok{display:inline-block; font-family:ui-monospace,monospace; font-size:11px;
+      padding:2px 6px; border-radius:4px; background:rgba(85,112,73,.12); color:#557049; font-weight:600;}
+  .themes{display:flex; flex-wrap:wrap; gap:6px; margin-top:9px;}
+  .themes span{font-size:11.5px; border:1px solid var(--line); border-radius:14px; padding:4px 10px; color:var(--muted);}
+  .themes span.have{border-color:rgba(85,112,73,.45); color:#557049; background:rgba(85,112,73,.06);}
+  .themes span.want{border-color:rgba(168,68,58,.45); color:#A8443A; background:rgba(168,68,58,.05); font-weight:600;}
+
+  .fixed{display:grid; grid-template-columns:auto 1fr; gap:6px 14px; margin-top:12px; padding:12px 14px; background:var(--panel2); border:1px solid var(--line); border-radius:8px; font-size:13px;}
+  .fixed span{color:var(--muted); font-size:12px;}
+  .fixed b{color:var(--ink);}
+  .sbcard{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:0 0 4px; margin-top:14px; box-shadow:var(--shadow); overflow:hidden;}
+  .sbcard.mens{border-color:rgba(60,110,160,.45);}
+  .sbhead{display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--panel2); border-bottom:1px solid var(--line2); flex-wrap:wrap;}
+  .sbcard.mens .sbhead{background:rgba(60,110,160,.10);}
+  .sbno{flex:none; min-width:26px; height:26px; padding:0 6px; border-radius:13px; border:1.5px solid var(--gold); color:var(--gold); font-family:ui-monospace,monospace; font-size:12px; font-weight:600; display:flex; align-items:center; justify-content:center;}
+  .sbname{font-weight:700; font-size:13.5px;}
+  .sbmeta{margin-left:auto; font-family:ui-monospace,monospace; font-size:12px; color:var(--muted);}
+  .sbrow{display:flex; gap:10px; align-items:flex-start; padding:9px 14px; border-top:1px solid var(--line2);}
+  .sbrow:first-of-type{border-top:0;}
+  .sblbl{flex:none; width:88px; font-size:11.5px; color:var(--muted); padding-top:9px;}
+  .sbval{position:relative; flex:1; min-width:0; background:var(--paste); border:1px solid var(--line); border-radius:7px; padding:8px 62px 8px 11px;}
+  .sbval p{margin:0; font-size:13px; line-height:1.85; white-space:pre-wrap; word-break:break-word;}
+  .sbval.mono p{font-family:ui-monospace,monospace; font-size:14px;}
+  .sbval .copybtn{top:6px; right:7px;}
+  .sbval.inline{background:transparent; border:0; padding:2px 58px 2px 0;}
+  .sbval.inline p{font-size:12.5px;}
+  .sbval.inline .copybtn{top:0; right:0;}
+  tr.cat td{background:var(--panel2); font-weight:700; font-size:12px; color:var(--gold); letter-spacing:.06em;}
+  @media (max-width:560px){ .sbrow{flex-direction:column; gap:4px;} .sblbl{width:auto; padding-top:0;} }
+</style>
+</head><body>
+
+<div class="wrap">
+<div class="mast"><span class="brand">SEAM</span></div>
+<p class="kicker">Salon Board 入力シート</p>
+<h1>サロンボードに<br>そのまま入れる</h1>
+<p class="sub">上から順に入力してください　項目ごとにCOPYボタンが付いています<br>クーポン18本・オプション3本・単品メニュー24行</p>
+<div class="meta"><span>2026-07-31</span><span>銀座ヘア H000802192</span><span>社内資料・検索非掲載</span></div>
+
+<div class="lead">
+<strong>先に、全クーポン共通の設定を覚えてください　18本すべて同じです</strong>
+<div class="fixed">
+<span>クーポン種別</span><b>全員</b>
+<span>対象スタイリスト</span><b>全員</b>
+<span>来店日条件</span><b>指定なし</b>
+<span>その他条件</span><b>併用不可</b>
+<span>クーポン写真</span><b>完全個室の施術写真</b>
+</div>
+<div class="why"><b>新規／再来で分けないでください</b>　分けるとホットペッパー側からNGが返ります　実際に前回、同名重複と新規限定でNGが2本出ています</div>
+</div>
+
+<p class="eyebrow">Coupon</p>
+<h2>クーポン18本</h2>
+<p class="lede">この番号順に登録すると、そのまま掲載順になります　<strong>青いカードがメンズ</strong>です</p>
+<div class="sbcard"><div class="sbhead"><span class="sbno">1</span><span class="sbname">入口・トリートメント単体</span><span class="sbmeta">¥9,900／45分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【完全個室】オージュア・TOKIO・バイカルテ｜TR45分・ブロー込</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>9,900</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>45</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>いま使っているものが重い、べたつく、続かない——そう感じている方へ　オージュア／バイカルテ／TOKIOインカラミから、髪を見てお選びします　完全個室で45分、シャンプーとブローまで込み　いま通っている美容室はそのままで大丈夫です</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">2</span><span class="sbname">カット＋個室スパ10分</span><span class="sbmeta">¥12,650／60分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【60分で終わる】カット＋個室ヘッドスパ10分｜お時間そのまま</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>12,650</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>60</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>カットの施術中に10分のヘッドスパをお入れするので、お帰りの時間は変わりません　完全個室・マンツーマンで60分　仕事帰りや予定の合間にも　銀座一丁目駅1分・夜20時まで受付</p></div></div></div><div class="sbcard mens"><div class="sbhead"><span class="sbno">3</span><span class="sbname">メンズ・時間単価の核</span><span class="sbmeta">¥11,000／50分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【メンズ】カット＋個室ヘッドスパ10分｜50分で終わる完全個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>11,000</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>50</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>カットと10分のヘッドスパを50分で　頭皮のベタつきや疲れが気になる方、短時間でもすっきりしたい方に　完全個室・マンツーマンなので周りを気にせず休めます　19時からのご予約でも間に合います</p></div></div></div><div class="sbcard mens"><div class="sbhead"><span class="sbno">4</span><span class="sbname">メンズ・本命</span><span class="sbmeta">¥16,500／80分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【メンズ】カット＋カラー＋個室ヘッドスパ10分｜80分で完了</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>16,500</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>80</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>カット、カラー、10分の個室ヘッドスパを80分で　髪色も頭皮も一度に整えたい方に　完全個室・マンツーマンなので、周りを気にせずお過ごしいただけます　仕事帰りにもどうぞ</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">5</span><span class="sbname">個室ヘッドスパ30分</span><span class="sbmeta">¥15,700／90分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【首肩・目の疲れに】カット＋頭浸浴つき個室ヘッドスパ30分</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>15,700</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>90</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>頭浸浴つきの個室ヘッドスパ30分　頭皮だけでなく首肩と目もとまでほぐします　完全個室なので人目を気にせずお過ごしいただけます　仕事帰りに90分で終わります</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">6</span><span class="sbname">カット＋ブランドTR</span><span class="sbmeta">¥19,800／90分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【ごわつき・広がりに】カット＋選べるトリートメント｜完全個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>19,800</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>90</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>ごわつき・広がり・パサつきが気になる方へ　オージュア／バイカルテ／TOKIOインカラミから、髪を見てお選びします　硬い髪・やわらかい髪・ブリーチ毛では合うものが違います　完全個室で90分、仕事帰りにも間に合います</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">7</span><span class="sbname">時短のいちばん強い形</span><span class="sbmeta">¥26,750／120分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【2時間で終わる】カット＋艶ケアカラー＋TR＋個室スパ10分</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>26,750</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>120</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>カラーもトリートメントもヘッドスパも、同じ日に2時間で終わります　完全個室なので席の移動がありません　スパの10分は施術中にお入れするので、お帰りの時間は変わりません</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">8</span><span class="sbname">主力の中心</span><span class="sbmeta">¥24,000／120分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【頭皮が敏感な方にも】カット＋艶ケアカラー＋選べるTR｜完全個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>24,000</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>120</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>頭皮の状態を見てから薬剤を決めますので、しみやすい方もご相談ください　カラーのあとのパサつきや広がりを抑えて、ツヤと色持ちも整えます　トリートメントはオージュア／バイカルテ／TOKIOから髪を見てお選びします</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">9</span><span class="sbname">40代以上・白髪と同時に</span><span class="sbmeta">¥29,700／150分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【40代からのうねり・白髪・ハリに】カット＋カラー＋髪質改善TR｜個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>29,700</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>150</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>白髪をカバーしながら、年齢とともに気になりやすいうねり・広がり・乾燥まで同じ日に整えます　完全個室でご案内しますので、人目を気にせずご相談いただけます</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">10</span><span class="sbname">最上位単価</span><span class="sbmeta">¥35,200／180分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【うねり・広がりに】カット＋美髪縮毛矯正＋TR｜完全個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>35,200</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>180</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>まっすぐにするだけでなく、自然にまとまって扱いやすい髪へ　毎朝のアイロンの時間が短くなります　薬剤は髪の状態を見てから決めます　完全個室・マンツーマンでご案内します</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">11</span><span class="sbname">矯正までは要らない方</span><span class="sbmeta">¥22,000／120分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【朝のまとまらなさに】カット＋髪質改善TR｜完全個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>22,000</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>120</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>縮毛矯正まではしたくないけれど、うねり・広がり・扱いづらさは整えたい方へ　髪の状態を見ながら、無理のないケアをご提案します　完全個室でご案内します</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">12</span><span class="sbname">カットなしのメンテナンス</span><span class="sbmeta">¥17,600／120分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【色落ちが気になる前に】艶ケアカラー＋選べるTR｜完全個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>17,600</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>120</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>カットはまだ必要ないけれど、色の抜けやパサつきが気になる方へ　次のご来店まできれいをつなぐメンテナンスです　トリートメントは髪を見てお選びします</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">13</span><span class="sbname">カットの入口</span><span class="sbmeta">¥9,900／60分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【顔まわりの似合わせ】カット＋アイロン温度診断つき｜完全個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>9,900</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>60</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>顔まわりと骨格を見ながら、いまの長さで似合う形をご提案します　あわせて、その方の髪に合うアイロンの温度と、熱から守るアウトバスもご案内します　料金はいただきません　完全個室</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">14</span><span class="sbname">矯正の合間のメンテナンス</span><span class="sbmeta">¥9,900／45分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【矯正と矯正の間に】中間・毛先を守るメンテナンスTR｜完全個室</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>9,900</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>45</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>縮毛矯正を定期的にかけている方へ　次の矯正までの間、中間から毛先の傷みだけを補います　髪を見てオージュア／バイカルテ／TOKIOからお選びします　完全個室で45分、ブローまで込みです</p></div></div></div><div class="sbcard mens"><div class="sbhead"><span class="sbno">15</span><span class="sbname">メンズ・スパ不要の方</span><span class="sbmeta">¥14,300／75分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【メンズ】カット＋カラー｜完全個室・マンツーマン・75分</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>14,300</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>75</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>カットとカラーを75分で　赤みを抑えたい方、印象を少し変えたい方、仕事帰りにまとめて整えたい方に　完全個室・マンツーマンでご案内します</p></div></div></div><div class="sbcard mens"><div class="sbhead"><span class="sbno">16</span><span class="sbname">メンズ・しっかり休む</span><span class="sbmeta">¥14,300／75分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【メンズ｜首肩・目の疲れに】カット＋頭浸浴つき個室スパ30分</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>14,300</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>75</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>頭浸浴つきの個室ヘッドスパ30分　首肩や目もとの疲れが気になる方、静かにしっかり休みたい方に　完全個室なので、周りを気にせずお過ごしいただけます</p></div></div></div><div class="sbcard mens"><div class="sbhead"><span class="sbno">17</span><span class="sbname">メンズ・比較用</span><span class="sbmeta">¥8,800／45分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【メンズ】カット｜完全個室・マンツーマン・45分</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>8,800</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>45</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>完全個室・マンツーマンでご案内するメンズカットです　周りを気にせず、短時間で整えたい方に　頭皮ケアやヘッドスパをご希望の方は、スパつきのメニューもお選びいただけます</p></div></div></div><div class="sbcard mens"><div class="sbhead"><span class="sbno">18</span><span class="sbname">メンズ・上限</span><span class="sbmeta">¥19,800／100分</span></div><div class="sbrow"><span class="sblbl">クーポン名</span><div class="sbval"><button class="copybtn">COPY</button><p>【メンズ】カット＋カラー＋頭浸浴つき個室ヘッドスパ30分</p></div></div><div class="sbrow"><span class="sblbl">価格</span><div class="sbval mono"><button class="copybtn">COPY</button><p>19,800</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>100</p></div></div><div class="sbrow"><span class="sblbl">クーポン説明</span><div class="sbval"><button class="copybtn">COPY</button><p>カット、カラー、頭浸浴つき個室ヘッドスパ30分を1回で　髪色も整えたい、疲れも取りたいという方に　完全個室・マンツーマンで、仕事帰りにも使いやすい上位メニューです</p></div></div></div>
+
+<p class="eyebrow">Option</p>
+<h2>オプション3本</h2>
+<p class="lede">オプションメニュー欄に登録します　クーポンを増やさずに全部へスパを付けられます</p>
+<div class="sbcard"><div class="sbhead"><span class="sbno">O1</span><span class="sbname">オプション</span><span class="sbmeta">+¥2,750／10分</span></div><div class="sbrow"><span class="sblbl">メニュー名</span><div class="sbval"><button class="copybtn">COPY</button><p>個室ヘッドスパ10分｜お時間そのまま</p></div></div><div class="sbrow"><span class="sblbl">価格（＋）</span><div class="sbval mono"><button class="copybtn">COPY</button><p>2,750</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>10</p></div></div><div class="sbrow"><span class="sblbl">説明</span><div class="sbval"><button class="copybtn">COPY</button><p>施術の中でお入れしますので、お帰りの時間は変わりません</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">O2</span><span class="sbname">オプション</span><span class="sbmeta">+¥4,400／20分</span></div><div class="sbrow"><span class="sblbl">メニュー名</span><div class="sbval"><button class="copybtn">COPY</button><p>個室ヘッドスパ20分｜首肩・目の疲れに</p></div></div><div class="sbrow"><span class="sblbl">価格（＋）</span><div class="sbval mono"><button class="copybtn">COPY</button><p>4,400</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>20</p></div></div><div class="sbrow"><span class="sblbl">説明</span><div class="sbval"><button class="copybtn">COPY</button><p>完全個室でご案内します</p></div></div></div><div class="sbcard"><div class="sbhead"><span class="sbno">O3</span><span class="sbname">オプション</span><span class="sbmeta">+¥5,800／30分</span></div><div class="sbrow"><span class="sblbl">メニュー名</span><div class="sbval"><button class="copybtn">COPY</button><p>個室ヘッドスパ30分｜頭浸浴つき</p></div></div><div class="sbrow"><span class="sblbl">価格（＋）</span><div class="sbval mono"><button class="copybtn">COPY</button><p>5,800</p></div></div><div class="sbrow"><span class="sblbl">施術時間</span><div class="sbval mono"><button class="copybtn">COPY</button><p>30</p></div></div><div class="sbrow"><span class="sblbl">説明</span><div class="sbval"><button class="copybtn">COPY</button><p>頭浸浴つき　いちばんおすすめです</p></div></div></div>
+<div class="callout">メンズのスパを女性より下げる案（10分¥2,200／20分¥3,850／30分¥5,500）もありますが、<b>同じ施術に2つの値段ができる</b>ので、この表では共通料金に統一しています</div>
+
+<p class="eyebrow">Menu</p>
+<h2>単品メニュー 24行</h2>
+<p class="lede">メニュー欄は「何がいくらでできる店か」の説明です　クーポンとは別に登録します</p>
+<div class="tablewrap fit"><table>
+<thead><tr><th style="text-align:center">#</th><th>メニュー名</th><th style="text-align:center">価格</th><th style="text-align:center">時間</th></tr></thead>
+<tbody>
+<tr class="cat"><td colspan="4">カット</td></tr><tr><td style="text-align:center" class="mono">1</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>カット｜完全個室・マンツーマン</p></div></td><td style="text-align:center" class="mono">¥9,900</td><td style="text-align:center" class="mono">60分</td></tr><tr><td style="text-align:center" class="mono">2</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>【メンズ】カット｜完全個室・45分</p></div></td><td style="text-align:center" class="mono">¥8,800</td><td style="text-align:center" class="mono">45分</td></tr><tr class="cat"><td colspan="4">カラー</td></tr><tr><td style="text-align:center" class="mono">3</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>艶ケアカラー（全体）｜ツヤと色持ちを整える</p></div></td><td style="text-align:center" class="mono">¥7,700</td><td style="text-align:center" class="mono">75分</td></tr><tr><td style="text-align:center" class="mono">4</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>リタッチカラー（根元）｜白髪・伸びた根元に</p></div></td><td style="text-align:center" class="mono">¥6,600</td><td style="text-align:center" class="mono">60分</td></tr><tr><td style="text-align:center" class="mono">5</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>【メンズ】カラー｜赤みを抑えて印象を変える</p></div></td><td style="text-align:center" class="mono">¥5,500</td><td style="text-align:center" class="mono">45分</td></tr><tr><td style="text-align:center" class="mono">6</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>ハイライト・デザインカラー</p></div></td><td style="text-align:center" class="mono">—</td><td style="text-align:center" class="mono">—</td></tr><tr class="cat"><td colspan="4">パーマ</td></tr><tr><td style="text-align:center" class="mono">7</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>パーマ｜完全個室</p></div></td><td style="text-align:center" class="mono">¥7,700</td><td style="text-align:center" class="mono">75分</td></tr><tr><td style="text-align:center" class="mono">8</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>【メンズ】パーマ｜完全個室</p></div></td><td style="text-align:center" class="mono">¥7,700</td><td style="text-align:center" class="mono">75分</td></tr><tr class="cat"><td colspan="4">縮毛矯正</td></tr><tr><td style="text-align:center" class="mono">9</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>美髪縮毛矯正｜うねり・広がりに</p></div></td><td style="text-align:center" class="mono">¥15,400</td><td style="text-align:center" class="mono">150分</td></tr><tr><td style="text-align:center" class="mono">10</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>前髪・部分縮毛矯正</p></div></td><td style="text-align:center" class="mono">—</td><td style="text-align:center" class="mono">—</td></tr><tr class="cat"><td colspan="4">髪質改善</td></tr><tr><td style="text-align:center" class="mono">11</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>髪質改善トリートメント｜ごわつき・うねり・広がりに</p></div></td><td style="text-align:center" class="mono">¥12,100</td><td style="text-align:center" class="mono">90分</td></tr><tr><td style="text-align:center" class="mono">12</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>サブリミック｜うねり・矯正毛の形状ケア（酸熱）</p></div></td><td style="text-align:center" class="mono">¥16,500</td><td style="text-align:center" class="mono">90分</td></tr><tr><td style="text-align:center" class="mono">13</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>つるりんちょ｜髪質改善（酸熱）｜完全個室</p></div></td><td style="text-align:center" class="mono">¥16,500</td><td style="text-align:center" class="mono">90分</td></tr><tr class="cat"><td colspan="4">トリートメント</td></tr><tr><td style="text-align:center" class="mono">14</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>オージュア｜ごわつき・広がり・パサつきに｜ブロー込み</p></div></td><td style="text-align:center" class="mono">¥9,900</td><td style="text-align:center" class="mono">45分</td></tr><tr><td style="text-align:center" class="mono">15</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>バイカルテ｜硬い髪・やわらかい髪・ハイダメージで分ける</p></div></td><td style="text-align:center" class="mono">¥9,900</td><td style="text-align:center" class="mono">45分</td></tr><tr><td style="text-align:center" class="mono">16</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>TOKIOインカラミ｜ブリーチ毛・ハイダメージの内部補修</p></div></td><td style="text-align:center" class="mono">¥9,900</td><td style="text-align:center" class="mono">45分</td></tr><tr><td style="text-align:center" class="mono">17</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>ケラスターゼ｜部位別のダメージに合わせて調合</p></div></td><td style="text-align:center" class="mono">¥13,200</td><td style="text-align:center" class="mono">60分</td></tr><tr class="cat"><td colspan="4">ヘッドスパ</td></tr><tr><td style="text-align:center" class="mono">18</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>個室ヘッドスパ10分｜お時間そのまま</p></div></td><td style="text-align:center" class="mono">¥2,750</td><td style="text-align:center" class="mono">10分</td></tr><tr><td style="text-align:center" class="mono">19</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>個室ヘッドスパ20分｜首肩・目の疲れに</p></div></td><td style="text-align:center" class="mono">¥4,400</td><td style="text-align:center" class="mono">20分</td></tr><tr><td style="text-align:center" class="mono">20</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>個室ヘッドスパ30分｜頭浸浴つき</p></div></td><td style="text-align:center" class="mono">¥5,800</td><td style="text-align:center" class="mono">30分</td></tr><tr class="cat"><td colspan="4">見立て</td></tr><tr><td style="text-align:center" class="mono">21</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>毛髪診断＋ブランド選定｜施術は別途</p></div></td><td style="text-align:center" class="mono">¥3,300</td><td style="text-align:center" class="mono">15分</td></tr><tr><td style="text-align:center" class="mono">22</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>アイロン温度診断｜髪に合う温度とアウトバスをご案内</p></div></td><td style="text-align:center" class="mono">無料</td><td style="text-align:center" class="mono">数分</td></tr><tr><td style="text-align:center" class="mono">23</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>ブリーチ履歴チェック｜髪の状態と残留履歴を見立てます</p></div></td><td style="text-align:center" class="mono">無料</td><td style="text-align:center" class="mono">数分</td></tr><tr><td style="text-align:center" class="mono">24</td><td><div class="sbval inline"><button class="copybtn">COPY</button><p>頭皮状態チェック｜ベタつき・乾燥が気になる方へ</p></div></td><td style="text-align:center" class="mono">無料</td><td style="text-align:center" class="mono">数分</td></tr>
+</tbody></table></div>
+<div class="callout">「—」の2行は価格が未定です　<b>ハイライト・デザインカラー</b>と<b>前髪・部分縮毛矯正</b>　決まり次第で足してください</div>
+
+<p class="eyebrow">Salon</p>
+<h2>サロンのこだわり</h2>
+<p class="lede">いま<strong>0字</strong>です　人気店の中央値は190字　ここが空いていると、価格の理由が伝わりません</p>
+<div class="sbcard"><div class="sbhead"><span class="sbno">◆</span><span class="sbname">サロンのこだわり</span><span class="sbmeta">179字</span></div>
+<div class="sbrow"><span class="sblbl">本文</span><div class="sbval"><button class="copybtn">COPY</button><p>世界140以上のサロン専売ブランドを扱うヘアケアのセレクトショップを併設した、完全個室・マンツーマンのプライベートサロンです。カット、カラー、パーマ、ヘッドスパ、髪質改善トリートメントまで、その方の髪の状態に合わせてご提案します。トリートメントだけのご来店も歓迎です。銀座一丁目駅から徒歩1分、夜20時まで受付しているので、仕事帰りにも通いやすいサロンです。</p></div></div></div>
+
+<p class="eyebrow">Check</p>
+<h2>入力のあとに確認すること</h2>
+<ul class="check">
+<li><b>「頭身浴」を「頭浸浴」に直す</b><span class="hint">ヘア1本・スパ2本に残っています　誤記です</span></li>
+<li><b>19:30の予約枠を閉じる</b><span class="hint">2週間すべて×でした　20時閉店なので1時間の施術は入りません</span></li>
+<li><b>スタイリストを3名まで登録する</b><span class="hint">いま2名　人気店は全店3名です</span></li>
+<li><b>下ろすクーポンを消す</b><span class="hint">カット＋カラー＋45分スパ＋TR ¥31,900／頭浸浴90分 ¥27,700／カラー＋45分スパ ¥18,700／睡眠クリームスパ60分 ¥13,800／微還元TR ¥30,000／カット＋TR ¥9,900</span></li>
+<li><b>掲載順が番号どおりか見る</b><span class="hint">1〜4番が45〜80分　平日夕方に入る枠を上に置いています</span></li>
+</ul>
+
+<footer>
+SEAM ／ 株式会社hanico　社内資料（検索エンジン非掲載）　2026-07-31<br>
+考え方と根拠は seam.site/ginza-no1 にあります　このページは入力だけのシートです
+</footer>
+</div>
+
+<script>
+document.querySelectorAll('.copybtn').forEach(function(b){
+  b.addEventListener('click', function(){
+    var p = b.parentNode.querySelector('p');
+    if(!p) return;
+    navigator.clipboard.writeText(p.textContent.trim()).then(function(){
+      var o = b.textContent; b.textContent = 'COPIED';
+      setTimeout(function(){ b.textContent = o; }, 1200);
+    });
+  });
+});
+</script>
+
+</body></html>
