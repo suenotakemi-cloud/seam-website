@@ -5323,12 +5323,19 @@ async function renderSyncPanel(){
   const h=await API.salonHealth();
   if(!h||!h.ok){el.innerHTML='';return;}
   const bad=(h.missingCount||0)>0, loginNg=h.login&&h.login.ok===false;
-  if(!bad&&!loginNg){el.innerHTML='';return;}   // 正常なときは何も出さない
+  const stuck=(h.cancelStuckCount||0)>0;
+  if(!bad&&!loginNg&&!stuck){el.innerHTML='';return;}   // 正常なときは何も出さない
   el.innerHTML=`<div class="card" style="border-left:3px solid var(--danger,#c0392b);background:#fff6f5">
     <div class="rep-h"><h3>⚠️ サロンボードへの同期</h3></div>
     ${loginNg?`<div style="font-size:13px;font-weight:800;color:var(--danger,#c0392b);margin-bottom:8px">
         salon.town にログインできていません（${escH((h.login&&h.login.error)||'')}）<br>
         <span style="font-weight:600;color:var(--sub)">この間の予約はサロンボードに流れません。エンジニアにご連絡ください</span></div>`:''}
+    ${stuck?`<div style="font-size:13px;line-height:1.75;margin-bottom:10px">
+        <b>${h.cancelStuckCount}件</b>のキャンセルが salon.town に届いていません。<br>
+        <span style="color:var(--sub);font-size:12.5px">お客様のキャンセルと返金は済んでいますが、<b>枠が開いていない可能性</b>があります。サロンボードもあわせてご確認ください</span>
+        <div style="margin-top:8px;font-size:12.5px">
+          ${(h.cancelStuck||[]).map(m=>`<div style="padding:3px 0">${escH((m.date||'').slice(5).replace('-','/'))} ${hm(m.start)}　${escH(m.name||'')}</div>`).join('')}
+        </div></div>`:''}
     ${bad?`<div style="font-size:13px;line-height:1.75">
         <b>${h.missingCount}件</b>の予約が salon.town に届いていません。<br>
         <span style="color:var(--sub);font-size:12.5px">このままだとサロンボードにも入りません。下のボタンで送り直せます（毎朝の自動送り直しもあります）</span>
