@@ -21,6 +21,10 @@ TAXFREE = {
     "value": True,
     "description": "Tax-free from 5,000 yen for visitors from overseas. Please show your passport."
 }
+# オーナー確認済み(2026-08-01)「クレジットカード・交通系・QR どれも使えます」。
+# 現金は言われていないので書かない。paymentAccepted は「使える手段の列挙」であって
+# 書いていない手段を拒否する意味にはならないため、これで正しい。
+PAYMENT = "Credit Card, Transportation IC card, QR code payment"
 
 def enrich(node, is_retail, is_ginza):
     changed = False
@@ -29,6 +33,9 @@ def enrich(node, is_retail, is_ginza):
         changed = True
     if 'currenciesAccepted' not in node:
         node['currenciesAccepted'] = 'JPY'
+        changed = True
+    if node.get('paymentAccepted') != PAYMENT:
+        node['paymentAccepted'] = PAYMENT
         changed = True
     if is_ginza and not any(
             (a.get('name') == 'Tax-free shopping') for a in node.get('amenityFeature', [])):
