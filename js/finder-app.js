@@ -14888,6 +14888,201 @@ async function shareCounselingSheetImage() {
   }
 }
 
+/* ---------- InboundGinzaCard — 日本語以外のときだけ出す「銀座へ」の橋 ----------
+   オンラインショップは来店者限定(意図的にクローズド)で海外発送もない。
+   そのため海外から診断した人は、結果を見たあと行き先が無かった。
+   銀座本店は免税店なので、日本に来る人にはそこが答えになる。
+   【日本語では出さない】= 日本のお客様にはオンライン/各店の導線が別にあるため。 */
+const INBOUND_GINZA = {
+  en: {
+    eyebrow: 'Visiting Tokyo',
+    title: 'Bring this result to Ginza',
+    body: ['Everything in your result sits on the shelf at our Ginza flagship.', 'Show this page to our staff and they will find it with you.'],
+    taxLabel: 'Tax-free',
+    taxValue: 'From ¥5,000 — please bring your passport',
+    addrLabel: 'Address',
+    addrValue: 'ONE GINZA 3F, 1-8-19 Ginza, Chuo-ku, Tokyo',
+    openLabel: 'Open',
+    openValue: '11:00–20:00',
+    cta: 'See our stores',
+    map: 'Open in Maps'
+  },
+  zh: {
+    eyebrow: '来东京时',
+    title: '带着这份结果来银座',
+    body: ['结果里的商品，都在银座旗舰店的货架上', '把这个页面给店员看，我们会陪您一起找'],
+    taxLabel: '免税',
+    taxValue: '满5,000日元免税 — 请携带护照',
+    addrLabel: '地址',
+    addrValue: '東京都中央区銀座1-8-19 ONE GINZA 3F',
+    openLabel: '营业时间',
+    openValue: '11:00–20:00',
+    cta: '查看门店',
+    map: '在地图中打开'
+  },
+  tw: {
+    eyebrow: '來東京時',
+    title: '帶著這份結果來銀座',
+    body: ['結果裡的商品，都在銀座旗艦店的架上', '把這個頁面給店員看，我們會陪您一起找'],
+    taxLabel: '免稅',
+    taxValue: '滿5,000日圓免稅 — 請攜帶護照',
+    addrLabel: '地址',
+    addrValue: '東京都中央区銀座1-8-19 ONE GINZA 3F',
+    openLabel: '營業時間',
+    openValue: '11:00–20:00',
+    cta: '查看門市',
+    map: '在地圖中開啟'
+  },
+  ko: {
+    eyebrow: '도쿄에 오실 때',
+    title: '이 결과를 긴자로 가져오세요',
+    body: ['결과에 나온 제품은 긴자 플래그십 매장 진열대에 있습니다', '이 페이지를 직원에게 보여주시면 함께 찾아드립니다'],
+    taxLabel: '면세',
+    taxValue: '5,000엔 이상 면세 — 여권을 지참해 주세요',
+    addrLabel: '주소',
+    addrValue: '東京都中央区銀座1-8-19 ONE GINZA 3F',
+    openLabel: '영업시간',
+    openValue: '11:00–20:00',
+    cta: '매장 보기',
+    map: '지도에서 열기'
+  }
+};
+const GINZA_MAP_URL = 'https://www.google.com/maps/search/?api=1&query=SEAM%20%E9%8A%80%E5%BA%A7%201-8-19%20ONE%20GINZA%203F';
+function InboundGinzaCard() {
+  // TopBar の言語切替は Result を再描画しないので、ここで seamlangchange を購読する。
+  // (翻訳ウォーカーは文字を置換するだけで、要素の出し分けはできない)
+  const [lang, setLang] = React.useState(() => {
+    try {
+      return localStorage.getItem('seamLang') || 'ja';
+    } catch (e) {
+      return 'ja';
+    }
+  });
+  React.useEffect(() => {
+    const sync = () => {
+      try {
+        setLang(localStorage.getItem('seamLang') || 'ja');
+      } catch (e) {}
+    };
+    window.addEventListener('seamlangchange', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('seamlangchange', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  const T = INBOUND_GINZA[lang];
+  if (!T) return null; // ja および未知の言語では出さない
+
+  const track = to => {
+    try {
+      window.seamTrack && window.seamTrack('finder_inbound_ginza', {
+        lang,
+        to
+      });
+    } catch (e) {}
+  };
+  const Row = ({
+    label,
+    value
+  }) => /*#__PURE__*/React.createElement("div", {
+    className: "flex items-start gap-3 border-t border-line pt-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-mono text-[10px] uppercase text-gold",
+    style: {
+      letterSpacing: '0.18em',
+      minWidth: '78px',
+      paddingTop: '3px'
+    }
+  }, label), /*#__PURE__*/React.createElement("span", {
+    className: "text-[12.5px] text-charcoal/70 leading-relaxed",
+    style: {
+      flex: 1
+    }
+  }, value));
+  return /*#__PURE__*/React.createElement("section", {
+    className: "mt-10 sm:mt-14 no-print anim-fade-up"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-[3px] border border-gold/30 px-6 py-9 sm:px-10 sm:py-11 relative overflow-hidden",
+    style: {
+      background: 'linear-gradient(160deg, #FFFFFF 0%, #FBF7EF 55%, #F4ECDA 100%)'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true,
+    className: "absolute top-3 left-3 w-3 h-3 border-t border-l border-gold/50"
+  }), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true,
+    className: "absolute top-3 right-3 w-3 h-3 border-t border-r border-gold/50"
+  }), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true,
+    className: "absolute bottom-3 left-3 w-3 h-3 border-b border-l border-gold/50"
+  }), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true,
+    className: "absolute bottom-3 right-3 w-3 h-3 border-b border-r border-gold/50"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "text-center"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "font-mono text-[10px] uppercase text-gold mb-3",
+    style: {
+      letterSpacing: '0.3em'
+    }
+  }, "\u2014 ", T.eyebrow), /*#__PURE__*/React.createElement("h3", {
+    className: "font-serif text-[22px] sm:text-[28px] text-ink leading-snug"
+  }, T.title), /*#__PURE__*/React.createElement("p", {
+    className: "mt-3.5 text-[12.5px] sm:text-[13.5px] text-charcoal/70 leading-[2]"
+  }, T.body.map((line, i) => /*#__PURE__*/React.createElement(React.Fragment, {
+    key: i
+  }, line, i < T.body.length - 1 && /*#__PURE__*/React.createElement("br", null))))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-7 flex flex-col gap-3"
+  }, /*#__PURE__*/React.createElement(Row, {
+    label: T.taxLabel,
+    value: T.taxValue
+  }), /*#__PURE__*/React.createElement(Row, {
+    label: T.addrLabel,
+    value: T.addrValue
+  }), /*#__PURE__*/React.createElement(Row, {
+    label: T.openLabel,
+    value: T.openValue
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "mt-7 sm:mt-8 flex flex-col items-center gap-3"
+  }, /*#__PURE__*/React.createElement("a", {
+    href: `/${lang}/shop`,
+    onClick: () => track('store'),
+    className: "inline-flex items-center justify-center gap-2.5 bg-ink text-ivory px-7 py-3.5 rounded-[2px] hover:bg-charcoal active:scale-[0.99] transition-all w-full sm:w-auto",
+    style: {
+      textDecoration: 'none'
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "font-serif text-[14px]"
+  }, T.cta)), /*#__PURE__*/React.createElement("a", {
+    href: GINZA_MAP_URL,
+    target: "_blank",
+    rel: "noopener",
+    onClick: () => track('map'),
+    className: "inline-flex items-center gap-2 text-[11px] text-charcoal/60",
+    style: {
+      textDecoration: 'underline',
+      textUnderlineOffset: '3px'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "12",
+    height: "12",
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    "aria-hidden": "true"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "10",
+    r: "3"
+  })), T.map))));
+}
+
 /* ---------- Result ---------- */
 function Result({
   answers,
@@ -15298,7 +15493,7 @@ function Result({
     seamData: seamData,
     answers: answers,
     scores: scores
-  }), /*#__PURE__*/React.createElement(NotNeededCard, {
+  }), /*#__PURE__*/React.createElement(InboundGinzaCard, null), /*#__PURE__*/React.createElement(NotNeededCard, {
     answers: answers,
     seamData: seamData,
     deepResult: deepResult,

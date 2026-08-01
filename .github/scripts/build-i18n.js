@@ -79,9 +79,16 @@ function extractI18N(doc) {
 }
 
 function extractDictLiteral(src) {
-  const idx = src.indexOf('window.SEAM_PAGE_I18N');
-  if (idx < 0) return null;
-  const bs = src.indexOf('{', idx);
+  // 【罠】identifier を indexOf で探すと、辞書を"読む"側のコードを先に拾ってしまう。
+  // brand.html には辞書の定義より前に
+  //   const T = (window.SEAM_PAGE_I18N && window.SEAM_PAGE_I18N[...]) || {};
+  // があり、そこの `{}` を辞書literalとして切り出して 空の辞書を返していた
+  //   → build() が「no dict」でSKIP → en/zh/tw/ko の brand が再生成されず古いまま
+  //     (説明文が日本語のまま本番に出ていた。2026-08-01 修正)
+  // 代入文 `window.SEAM_PAGE_I18N = {` だけに当てる。
+  const m = /window\.SEAM_PAGE_I18N\s*=\s*\{/.exec(src);
+  if (!m) return null;
+  const bs = src.indexOf('{', m.index);
   if (bs < 0) return null;
   let d = 0, mode = null, esc = false;
   for (let i = bs; i < src.length; i++) {
@@ -118,6 +125,27 @@ function applyLang(doc, dict, shortLang, htmlLang) {
   if (dict['meta.title'] !== undefined) {
     const t = doc.querySelector('title');
     if (t) t.textContent = dict['meta.title'];
+  }
+  // meta description / og:description（2026-08-01 追加）
+  // これが無かったため title だけ翻訳され、検索結果のスニペットが全言語で日本語のままだった。
+  // og が辞書に無いときは description で代用する(日本語が出るよりは同文のほうが良い)。
+  if (dict['meta.description'] !== undefined) {
+    const head = doc.querySelector('head');
+    let d = doc.querySelector('meta[name="description"]');
+    if (!d && head) {
+      d = doc.createElement('meta'); d.setAttribute('name', 'description'); head.appendChild(d);
+    }
+    if (d) d.setAttribute('content', dict['meta.description']);
+
+    const ogText = dict['meta.ogDescription'] !== undefined
+      ? dict['meta.ogDescription'] : dict['meta.description'];
+    // og:description と twitter:description を揃える(片方だけ日本語が残る事故を防ぐ)
+    [['meta[property="og:description"]', 'property', 'og:description'],
+     ['meta[name="twitter:description"]', 'name', 'twitter:description']].forEach(([sel, attr, key]) => {
+      let el = doc.querySelector(sel);
+      if (!el && head) { el = doc.createElement('meta'); el.setAttribute(attr, key); head.appendChild(el); }
+      if (el) el.setAttribute('content', ogText);
+    });
   }
   return n;
 }
