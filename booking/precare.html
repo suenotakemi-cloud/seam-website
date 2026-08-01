@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=3"></script>
+<script src="pc-i18n.js?v=7"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -146,6 +146,33 @@ textarea:focus{outline:0;border-color:var(--clay)}
 .picked{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-top:16px;
   font-family:var(--serif);font-size:14.5px;color:var(--ink);line-height:1.9;min-height:56px}
 
+/* ══ 最後の演出 ══
+   「送信できました」で終わらせない。ゆっくり呼吸する絵と、順に浮かぶ文字で
+   読み終わるまでに ひと息つけるようにする。動きは全部ゆっくり＝急かさない。 */
+.finale{position:relative;margin:6px auto 22px;max-width:420px;isolation:isolate}
+.finale img{width:100%;display:block;position:relative;z-index:1;
+  animation:breath 11s ease-in-out infinite}
+/* 背後のあたたかい滲み。ゆっくり明滅して 呼吸のリズムをつくる */
+.finale .aura{position:absolute;left:50%;top:52%;width:78%;aspect-ratio:1;transform:translate(-50%,-50%);
+  border-radius:50%;z-index:0;filter:blur(34px);
+  background:radial-gradient(circle,rgba(215,163,154,.42) 0%,rgba(184,148,90,.20) 45%,transparent 72%);
+  animation:aura 11s ease-in-out infinite}
+/* ひとすじの光。一度だけ流れて消える＝解けた合図 */
+.finale .sweep{position:absolute;inset:0;z-index:2;pointer-events:none;overflow:hidden;border-radius:12px}
+.finale .sweep::after{content:"";position:absolute;top:-40%;bottom:-40%;width:38%;left:-45%;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.72),transparent);
+  transform:skewX(-14deg);animation:sweep 2.6s cubic-bezier(.22,.61,.36,1) .55s 1 both}
+@keyframes breath{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
+@keyframes aura{0%,100%{opacity:.5;transform:translate(-50%,-50%) scale(.94)}
+                50%{opacity:1;transform:translate(-50%,-50%) scale(1.06)}}
+@keyframes sweep{from{left:-45%}to{left:118%}}
+/* 順に浮かび上がる */
+.rise{animation:rise 1.1s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0s)}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* 深呼吸をうながす一行 */
+.breathe{font-family:var(--serif);font-size:15.5px;line-height:2.1;color:var(--clay);
+  margin:22px 0 0;letter-spacing:.06em}
+
 /* 叶えます、の返し */
 .grant{margin-top:16px;background:rgba(168,116,86,.07);border:1px solid rgba(168,116,86,.22);
   border-radius:12px;padding:13px 15px;font-size:13.5px;color:var(--clay);line-height:1.85;
@@ -197,7 +224,10 @@ textarea:focus{outline:0;border-color:var(--clay)}
 .demo a.on{background:#F3EFE8;color:var(--jade);border-color:#F3EFE8}
 body.isdemo{padding-bottom:calc(160px + env(safe-area-inset-bottom,0px))}
 body.isdemo .foot{bottom:58px}
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* 動きが苦手な方には止めて出す（演出より読めることが先） */
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
+  .rise{opacity:1!important;transform:none!important}
+  .finale .sweep{display:none}}
 </style>
 </head>
 <body>
@@ -221,7 +251,7 @@ const T=Q.get('t')||'';
    メニューごとに見え方が変わるので、実際のパターンをそのまま並べてある。 */
 const DEMOS={
   spa90:{label:'スパ 90分',   resv:{date:'2026-08-08',start:14*60,menu:'人気No.1 頭浸浴付き ヘッドスパ 90min',minutes:90,staff:'ANZU',name:'見本',nominated:true},
-         allow:{parts:['head','eye','neck','dec','arm','calf','sole'],skip:[],mode:'full',spotMinutes:0}},
+         allow:{parts:['head','eye','neck','dec','arm','hand','calf','sole'],skip:[],mode:'full',spotMinutes:0}},
   spa45:{label:'スパ 45分',   resv:{date:'2026-08-08',start:11*60,menu:'ショートヘッドスパ 45min',minutes:45,staff:'ANZU',name:'見本',nominated:false},
          allow:{parts:['head','eye','neck'],skip:[],mode:'full',spotMinutes:0}},
   hair10:{label:'ヘア＋会員10分',resv:{date:'2026-08-08',start:13*60,menu:'カット＋カラー',minutes:150,staff:'CHIKA',name:'見本',nominated:true},
@@ -317,12 +347,12 @@ function langBar(){
 }
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
-let ALLOW={parts:['head','eye','neck','dec','arm','calf','sole'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
+let ALLOW={parts:['head','eye','neck','dec','arm','hand','calf','sole'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
 
 /* ── 部位マップ ── */
-const PARTS={head:'頭',eye:'目のまわり',neck:'首',dec:'デコルテ',arm:'手と腕',calf:'ふくらはぎ',sole:'足裏'};
+const PARTS={head:'頭',eye:'こめかみ',neck:'首',dec:'デコルテ',arm:'腕',hand:'手',calf:'ふくらはぎ',sole:'足裏'};
 /* 部位ごとに ひとこと添えられる。★目は「押す」ではなく「まわりをほどく」と必ず言う */
-const PNOTE={eye:'目のうえは押しません　こめかみと眉のまわり 後頭部からほどきます'};
+const PNOTE={eye:'目の疲れにはここです　目もとにも眉のうえにも触れません　後頭部のツボと合わせてほどきます'};
 /* ★「苦手」は強さではなく“触れないでほしい”。他と並べず、色も冷たい灰にして別物に見せる */
 const LVS=[
   {k:'avoid', n:'ここは苦手',   d:'触れずにおきます',       c:'#93A0A4'},
@@ -337,10 +367,14 @@ const LVN=Object.fromEntries(LVS.map(x=>[x.k,x.n]));
 const SHAPES=[
  ['head','<ellipse cx="424" cy="176" rx="74" ry="90"/>'],
  ['dec','<path d="M312 300Q424 274 536 300L544 350Q424 374 304 350Z"/>'],
- ['arm','<path d="M316 300C304 340 296 440 288 556 283 636 285 686 297 720 308 736 324 730 330 712 320 656 328 558 340 472 346 404 346 344 344 302Z"/>'],
- ['arm','<path d="M532 300C544 340 552 440 560 556 565 636 563 686 551 720 540 736 524 730 518 712 528 656 520 558 508 472 502 404 502 344 504 302Z"/>'],
- // 目のまわり＝こめかみと眉のうえの帯。頭より後に置くので、この帯を押すと目が選ばれる
- ['eye','<ellipse cx="424" cy="200" rx="80" ry="27"/>'],
+ ['arm','<path d="M304 300 L346 302 L354 520 L332 618 L282 618 L286 520 Z"/>'],
+ ['arm','<path d="M544 300 L502 302 L494 520 L516 618 L566 618 L562 520 Z"/>'],
+ ['hand','<path d="M280 620 Q306 606 332 620 L330 700 Q306 738 288 700 Z"/>'],
+ ['hand','<path d="M568 620 Q542 606 516 620 L518 700 Q542 738 560 700 Z"/>'],
+ /* 目の疲れ＝左右のこめかみ。★目も眉のうえも触らないので、帯で顔を横切らせない。
+    頭より後に置くことで、こめかみを押すと目が選ばれる */
+ ['eye','<ellipse cx="372" cy="198" rx="32" ry="38"/>'],
+ ['eye','<ellipse cx="476" cy="198" rx="32" ry="38"/>'],
  ['neck','<rect x="386" y="240" width="76" height="62" rx="26"/>'],
  // ★足は「ふくらはぎ」と「足裏」に分ける。ここは実際に触る範囲が違う
  ['calf','<path d="M346 892 L414 892 L408 1050 Q390 1120 372 1122 L358 1050 Z"/>'],
@@ -361,7 +395,8 @@ const MARKS={
   eye: {x:378,y:200, lx:290,ly:200, side:'end'},
   neck:{x:424,y:276, lx:566,ly:276, side:'start'},
   dec: {x:424,y:336, lx:282,ly:340, side:'end'},
-  arm: {x:300,y:540, lx:258,ly:540, side:'end'},
+  arm: {x:314,y:500, lx:262,ly:500, side:'end'},
+  hand:{x:306,y:664, lx:262,ly:664, side:'end'},
   calf:{x:466,y:980, lx:566,ly:980, side:'start'},
   sole:{x:466,y:1172,lx:566,ly:1172,side:'start'},
 };
@@ -468,7 +503,7 @@ function screens(){
       ['ねむってしまいたい','いちばん深いところまでゆるめます'],
       ['頭を軽くしたい','こめかみと後頭部をていねいに'],
       // ★目そのものは押さない。目につながる場所をほぐす、という言い方を守る
-      ['目のまわりを楽にしたい','こめかみと眉のうえ 後頭部からほどきます'],
+      ['目の疲れを楽にしたい','目もとには触れず こめかみと後頭部のツボからほどきます'],
       ['首と肩までほどきたい','デコルテまでつなげます'],
       ['すっきりしたい','洗い上がりの軽さを主役にします'],
       ['髪もきれいにしたい','洗いながら 毛先まで整えます'],
@@ -483,7 +518,7 @@ function screens(){
       one:'spot', opts:[
         ['頭のこりをほぐす','こめかみと後頭部を中心に'],
         ['首すじを軽くする','うつむきがちな首をゆるめます'],
-        ['目のまわりをゆるめる','眉のうえから こめかみへ'],
+        ['目の疲れをほぐす','こめかみと後頭部のツボから'],
         ['頭皮をすっきり','炭酸で一度 洗い流します'],
         ['おまかせ','その日の頭皮を見てお選びします']]});
   }else{
@@ -699,12 +734,19 @@ function drawConfirm(){
 function drawDone(){
   const st=RESV&&RESV.start||0, mn=(RESV&&RESV.minutes)||90;
   const t=(m)=>hm(Math.max(0,st+m));
-  app.innerHTML=`<div class="scr on" style="text-align:center">
-    <p class="eyebrow">see you soon</p>
-    <h1>お待ちしています</h1>
-    <p class="lead">ご希望はすべて担当に届きました<br>当日は 何も言わなくて大丈夫です</p>
-    <img class="ill" src="../images/lp/spa/ill_afterglow.webp" alt="">
-    <div class="tl" style="text-align:left">
+  /* ★最後は「送信完了」で終わらせない。ここが当日への期待がいちばん高まる瞬間。
+     ゆっくり呼吸する絵と、順に浮かび上がる文字で ひと息つける間をつくる。 */
+  app.innerHTML=`<div class="scr on done" style="text-align:center">
+    <div class="finale">
+      <span class="aura"></span>
+      <img src="../images/lp/spa/ill_finale.webp" alt="" aria-hidden="true">
+      <span class="sweep"></span>
+    </div>
+    <p class="eyebrow rise" style="--d:.15s">see you soon</p>
+    <h1 class="rise" style="--d:.3s">お待ちしています</h1>
+    <p class="lead rise" style="--d:.5s">ご希望はすべて担当に届きました<br>当日は 何も言わなくて大丈夫です</p>
+    <p class="breathe rise" style="--d:.7s">ここから先は<br>何も考えなくて大丈夫です</p>
+    <div class="tl rise" style="text-align:left;--d:.9s">
       <div><b>${t(0)}　お越しください</b><s>受付で書くものはありません そのままお部屋へ</s></div>
       <div><b>${t(5)}　はじまります</b><s>${esc(A.goal||'今日のご希望')}　と うかがっています とだけお伝えします</s></div>
       ${A.spot?`<div><b>シャンプーのとき　${esc(A.spot)}</b><s>${ALLOW.spotMinutes||10}分ぶん ここに使います</s></div>`:''}
@@ -712,7 +754,7 @@ function drawDone(){
       <div><b>${t(mn-15)}　ゆっくり戻ってきます</b><s>${esc([A.scent,A.light].filter(Boolean).join(' ／ ')||'静かなお部屋で')}</s></div>
       <div><b>${t(mn)}　仕上げてお帰りです</b><s>${esc([A.finish,A.styling].filter(Boolean).join(' ／ ')||'髪を見て仕上げます')}</s></div>
     </div>
-    <p class="hint">変えたくなったら このページからいつでも直せます</p></div>`;
+    <p class="hint rise" style="--d:1.1s">変えたくなったら このページからいつでも直せます</p></div>`;
   applyLang();
 }
 
