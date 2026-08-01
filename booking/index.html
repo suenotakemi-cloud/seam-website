@@ -2958,7 +2958,8 @@ function renderNextVisit(){
     if(!d.name){toast('お名前を入力してください',true);return;}
     if(!/^[ァ-ヶー]+[\s　][ァ-ヶー]+$/.test(d.kana)){toast('フリガナを「セイ メイ」のカタカナで入力してください',true);return;}
     const m2=d.menuId?MENUS.find(m=>m.id===d.menuId):null;
-    const dur=m2?m2.min:d.dur;
+    // 店頭の次回予約も同じ規則で押さえる（施術時間だけだと準備・乾かしの15分が落ちる）
+    const dur=m2?menuMinWithPerk(m2):d.dur;
     const isSpa=!!(m2&&m2.cat==='ヘッドスパ');
     {const c=nameGate(d.name,d.kana);if(c.ng){toast(c.ng,true);return;}d.name=c.name;d.kana=c.kana;}
     const res=addReservation({date:d.day,staffId:d.staffId,start:d.start,end:d.start+dur,menuId:d.menuId||'',
@@ -4070,8 +4071,16 @@ function perkOptions(m){
     : [{id:'spa10',label:'10分ヘッドスパ',note:'シャンプー時に頭皮をほぐします'}];
 }
 const perkLabel=(m,id)=>((perkOptions(m).find(o=>o.id===id)||perkOptions(m)[0]||{}).label||'');
-/* 枠取りに使う所要時間（特典の分を含む） */
-const menuMinWithPerk=(m)=>((m&&m.min)||60)+PERK_MIN;
+/* ★お迎えからお見送りまでの準備・乾かしに15分かかる（オーナー確認 2026-08-01:
+   「施術が60分の場合は75分所要します」）。ここを入れ忘れると、押さえる時間が
+   実際より15分短くなり、埋まってきたときに次のお客様と重なる。
+   掲載の所要時間ともズレる（60分コース＝所要75分）。 */
+const PREP_MIN=15;
+/* 枠取りに使う所要時間＝施術＋準備・乾かし＋特典
+   実測(OPEN11:00/CLOSE20:00/STEP30)では、60分以上のコースは
+   これを足しても選べる開始時刻の数が1つも減らない。45分だけ1枠減る
+   （45+15+10=70分。おまけの対象外にすれば45+15=60でぴったり収まり、減らない）。 */
+const menuMinWithPerk=(m)=>((m&&m.min)||60)+PREP_MIN+PERK_MIN;
 
 const DEPOSIT_DEFAULT={ja:{type:'fixed',value:3000},en:{type:'rate',value:50},zh:{type:'rate',value:50},tw:{type:'rate',value:50},ko:{type:'rate',value:50}};
 function depositRule(lang){
