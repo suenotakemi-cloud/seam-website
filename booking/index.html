@@ -1101,7 +1101,8 @@ body.customer .phone.spa{background:#f7f8f3}
       <button class="btn small ghost" id="cst-m1">先月</button>
       <button class="btn small ghost" id="cst-y">過去1年</button>
       <button class="btn small ghost" id="cst-csv">CSVで書き出す</button>
-      <a class="btn small ghost" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none">iPadで記入してもらう ↗</a>
+      <a class="btn small ghost" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none">iPadで記入してもらう（ヘア）↗</a>
+      <a class="btn small ghost" href="counseling-spa.html" target="_blank" rel="noopener" style="text-decoration:none">iPadで記入してもらう（スパ）↗</a>
     </div>
   </div>
 
@@ -2464,8 +2465,10 @@ const CS_SHEET_TODAY={};                       // key→日付（同じ日に二
 const hasSheetToday=r=>CS_SHEET_TODAY[custKey(r)]===dkey(today());
 function csSheetUrl(r){
   const mn=(MENUS.find(x=>x.id===r.menuId)||{}).name||'';
-  const kind=/スパ|ヘッドスパ|SPA/i.test(mn)?'spa':'hair';
-  return 'counseling.html?'+new URLSearchParams({name:r.name||'',phone:r.phone||'',kind,from:'admin'}).toString();
+  const kind=/スパ|ヘッドスパ|SPA|頭浸浴|頭皮/i.test(mn)?'spa':'hair';
+  /* ★スパは別の同意書。聞くことが違う（薬剤の履歴ではなく、水と温冷とうつむき姿勢の安全） */
+  const page=kind==='spa'?'counseling-spa.html':'counseling.html';
+  return page+'?'+new URLSearchParams({name:r.name||'',phone:r.phone||'',kind,from:'admin'}).toString();
 }
 function askSheet(r){
   const box=document.getElementById('detailmodal');
