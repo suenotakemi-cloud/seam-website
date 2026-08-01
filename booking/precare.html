@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=8"></script>
+<script src="pc-i18n.js?v=10"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -139,9 +139,10 @@ textarea:focus{outline:0;border-color:var(--clay)}
   .pin:not(.on) .dot{animation:beat 2.6s ease-in-out infinite}
   @keyframes beat{0%,72%,100%{r:15}82%{r:19}}
 }
-.legend{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:14px}
-.legend span{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--sub)}
-.legend i{width:10px;height:10px;border-radius:3px}
+.scale{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px}
+.scale span{font-size:11.5px;color:var(--sub);white-space:nowrap}
+.scale i{flex:0 1 150px;height:7px;border-radius:99px;
+  background:linear-gradient(90deg,#DE9E92,#BCAB95,#C79A45,#A56A42)}
 .maphint{color:var(--sub);font-family:'Noto Sans JP',sans-serif;font-size:13.5px}
 .picked{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-top:16px;
   font-family:var(--serif);font-size:14.5px;color:var(--ink);line-height:1.9;min-height:56px}
@@ -172,6 +173,35 @@ textarea:focus{outline:0;border-color:var(--clay)}
 /* 深呼吸をうながす一行 */
 .breathe{font-family:var(--serif);font-size:15.5px;line-height:2.1;color:var(--clay);
   margin:22px 0 0;letter-spacing:.06em}
+
+/* ══ 強さのバー（10段階）══
+   ★言葉で「ふつう」「しっかり」と言われても、人によって指す強さが違う。
+     指で動かせるバーにすると、その人の中の位置がそのまま伝わる。
+   ★さわるまでは「おまかせ」。選ばせない自由を残す。 */
+.gauge{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 16px 12px}
+.gauge .gh{font-size:13.5px;font-weight:500;color:var(--ink)}
+.gauge .gv{display:flex;align-items:baseline;gap:8px;margin-top:2px;min-height:30px}
+.gauge .gv b{font-family:var(--serif);font-size:19px;font-weight:500;color:var(--sub)}
+.gauge.set .gv b{color:var(--clay)}
+.gauge .gv i{font-style:normal;font-family:'Instrument Serif',serif;font-size:14px;color:var(--sub);opacity:0}
+.gauge.set .gv i{opacity:1}
+.gauge input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;margin:2px 0 0;display:block}
+.gauge input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:99px;
+  background:linear-gradient(90deg,#EFE6DA,#DE9E92 32%,#C79A45 68%,#A56A42)}
+.gauge input[type=range]::-moz-range-track{height:8px;border-radius:99px;
+  background:linear-gradient(90deg,#EFE6DA,#DE9E92 32%,#C79A45 68%,#A56A42)}
+.gauge input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:30px;height:30px;border-radius:50%;background:#fff;border:2.4px solid #CFC6B4;margin-top:-11px;
+  box-shadow:0 2px 7px rgba(22,23,27,.16);transition:border-color .2s,transform .12s}
+.gauge input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;
+  border:2.4px solid #CFC6B4;box-shadow:0 2px 7px rgba(22,23,27,.16)}
+.gauge.set input[type=range]::-webkit-slider-thumb{border-color:var(--clay)}
+.gauge.set input[type=range]::-moz-range-thumb{border-color:var(--clay)}
+.gauge input[type=range]:active::-webkit-slider-thumb{transform:scale(1.12)}
+.gends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--sub);margin-top:-2px}
+.gclear{display:block;margin:8px auto 0;background:none;border:0;font:inherit;font-size:12px;
+  color:var(--sub);text-decoration:underline;cursor:pointer;padding:4px}
+.gauge:not(.set) .gclear{visibility:hidden}
 
 /* 叶えます、の返し */
 .grant{margin-top:16px;background:rgba(168,116,86,.07);border:1px solid rgba(168,116,86,.22);
@@ -293,17 +323,25 @@ let LANG=(()=>{
    「温冷を交互に　炭酸でさっぱりしてから　長めがいい・泡をたっぷり」の
    前半だけ日本語で残る。 */
 const SEPS=[[/(\s*[・／：]+\s*)/,'all'], [/([・／：\s]+)/,'all'], [/(\s*[・／：]+\s*)/,'any']];
-function tr(s){
+/* deep=いま何段目か。0=行全体 / 1=組み立て文の中身 / 2=語。
+   2まで割れれば足りる（例: 今回のコースは[頭・首・…]まで含まれています）。
+   上限を置かないと、規則の中身がまた同じ規則に当たったときに戻ってこなくなる。 */
+function tr(s,deep){
+  deep=deep||0;
   const MAP=PC_I18N.map(LANG); if(!MAP)return s;
   const RX=PC_I18N.rx(LANG), PU=PC_I18N.punct(LANG);
   if(MAP[s]!=null)return MAP[s];
-  for(const [rx,fn] of RX){ const m=s.match(rx); if(m)return fn(m,tr); }
+  if(deep<3)for(const [rx,fn] of RX){ const m=s.match(rx); if(m)return fn(m,x=>tr(x,deep+1)); }
+  if(deep>=2)return s;              // 語まで来たら、それ以上は割らない
+  /* ★語ごとの判定は辞書の直引きではなく tr() を通す。
+     でないと「頭：しっかり（7/10）」のように 語そのものが
+     組み立て文になっている場合を拾えない。 */
   for(const [SEP,need] of SEPS){
     if(!SEP.test(s))continue;
     const seg=s.split(SEP), words=seg.filter((_,k)=>k%2===0).filter(Boolean);
-    const hit=words.filter(w=>MAP[w]!=null).length;
+    const hit=words.filter(w=>tr(w,deep+1)!==w).length;
     if(words.length>1 && (need==='any' ? hit>0 : hit===words.length)){
-      const out=seg.map((p,k)=>k%2?p:(MAP[p]!=null?MAP[p]:p)).join('');
+      const out=seg.map((p,k)=>k%2?p:tr(p,deep+1)).join('');
       return PU?PU(out):out;
     }
   }
@@ -349,19 +387,61 @@ const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart
 let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
 let ALLOW={parts:['head','eye','neck','dec','arm','hand','calf','sole'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
 
+/* ══ 強さのバー ══
+   10段階の数字と、その位置を表すことば。保存するのは日本語の文字列
+   （例「しっかり（7/10）」）なので、担当はいつも日本語で読める。 */
+const GAUGES={
+  washPower:{h:'シャンプーの強さ',lo:'やさしく',hi:'しっかり'},
+  power:    {h:'強さ',            lo:'やさしく',hi:'しっかり'},
+  sound:    {h:'音の大きさ',      lo:'静かに',  hi:'しっかり'},
+  light:    {h:'灯りの暗さ',      lo:'明るめ',  hi:'暗め'},
+};
+const GWORD={
+  washPower:['とてもやさしく','やさしく','ふつう','しっかり','とてもしっかり'],
+  power:    ['とてもやさしく','やさしく','ふつう','しっかり','とてもしっかり'],
+  sound:    ['ほとんど無音','静かに','ふつう','しっかり','大きめに'],
+  light:    ['明るめ','ややおさえて','ふつう','暗め','かなり暗く'],
+};
+const gword=(k,n)=>GWORD[k][Math.min(4,Math.floor((n-1)/2))];
+const gtext=(k,n)=>`${gword(k,n)}（${n}/10）`;
+/* 保存された「しっかり（7/10）」から数字だけ取り出す */
+const gnum=v=>{const m=String(v||'').match(/（(\d+)\/10）/);return m?+m[1]:0;};
+function gaugeHtml(k){
+  const c=GAUGES[k], n=gnum(A[k]), on=n>0;
+  return `<div class="gauge${on?' set':''}" data-g="${k}">
+    <div class="gh">${c.h}</div>
+    <div class="gv"><b>${on?gword(k,n):'おまかせ'}</b><i>${on?n+' / 10':''}</i></div>
+    <input type="range" min="1" max="10" step="1" value="${on?n:5}" aria-label="${c.h}">
+    <div class="gends"><span>${c.lo}</span><span>${c.hi}</span></div>
+    <button class="gclear" type="button">おまかせに戻す</button></div>`;
+}
+function gaugeWire(root,onChange){
+  (root||document).querySelectorAll('.gauge').forEach(g=>{
+    const k=g.dataset.g, r=g.querySelector('input'), b=g.querySelector('.gv b'), i=g.querySelector('.gv i');
+    const put=n=>{ g.classList.add('set'); b.textContent=gword(k,n); i.textContent=n+' / 10';
+      A[k]=gtext(k,n); applyLang(); save(); if(onChange)onChange(k,n); };
+    r.oninput=()=>put(+r.value);
+    g.querySelector('.gclear').onclick=()=>{ g.classList.remove('set');
+      b.textContent='おまかせ'; i.textContent=''; r.value=5; delete A[k];
+      applyLang(); save(); if(onChange)onChange(k,0); };
+  });
+}
+
 /* ── 部位マップ ── */
 const PARTS={head:'頭',eye:'こめかみ',neck:'首',dec:'デコルテ',arm:'腕',hand:'手',calf:'ふくらはぎ',sole:'足裏'};
 /* 部位ごとに ひとこと添えられる。★目は「押す」ではなく「まわりをほどく」と必ず言う */
 const PNOTE={eye:'目の疲れにはここです　目もとにも眉のうえにも触れません　後頭部のツボと合わせてほどきます'};
 /* ★「苦手」は強さではなく“触れないでほしい”。他と並べず、色も冷たい灰にして別物に見せる */
-const LVS=[
-  {k:'avoid', n:'ここは苦手',   d:'触れずにおきます',       c:'#93A0A4'},
-  {k:'soft',  n:'やさしく',     d:'そっと',                 c:'#DE9E92'},
-  {k:'normal',n:'標準',         d:'ふつうの強さで',         c:'#BCAB95'},
-  {k:'strong',n:'しっかり',     d:'強めに',                 c:'#C79A45'},
-  {k:'focus', n:'重点的に',     d:'ここを長めに',           c:'#A56A42'},
-];
-const LVN=Object.fromEntries(LVS.map(x=>[x.k,x.n]));
+/* にじみの色。10段階を4つの帯に落とす（1-2 / 3-5 / 6-8 / 9-10） */
+const TONE=n=>n<=2?'soft':(n<=5?'normal':(n<=8?'strong':'focus'));
+/* 保存されている値を、担当が読む日本語にする */
+function partText(part){
+  const v=(A.parts||{})[part];
+  const long=!!(A.long||{})[part];
+  if(v==='avoid')return 'ここは苦手';
+  if(typeof v==='number')return gtext('power',v)+(long?'・長めに':'');
+  return long?'長めに':'';
+}
 /* 形はPILで人体線画の実座標を測って置いてある（勘で置くとズレる）。
    viewBox 848×1264 は元画像 760×1133 の1.1157倍。 */
 const SHAPES=[
@@ -424,18 +504,21 @@ function mapHtml(){
       ${off?`<g class="off" aria-hidden="true">${OFF_SHAPES.join('')}</g>`:''}
       ${lay()}${pins()}</svg></div>
   ${off?`<p class="offnote">うすいところ（お腹・腿）は 今回はいたしません</p>`:''}
-  <div class="legend">${LVS.map(x=>`<span><i style="background:${x.c}"></i>${x.n}</span>`).join('')}</div>
+  <div class="scale"><span>やさしく</span><i></i><span>しっかり</span></div>
   <div class="picked" id="picked"></div>`;
 }
 function mapWire(){
   A.parts=A.parts||{};
   // 前回の内容を引き継いだとき、今回のコースに無い部位が残らないようにする
+  A.long=A.long||{};
   Object.keys(A.parts).forEach(k=>{ if(!ALLOW.parts.includes(k)) delete A.parts[k]; });
+  Object.keys(A.long).forEach(k=>{ if(!ALLOW.parts.includes(k)) delete A.long[k]; });
   const paint=()=>{
     document.querySelectorAll('.wash .z').forEach(z=>{const v=A.parts[z.dataset.p];
-      if(v)z.dataset.s=v;else delete z.dataset.s;});
-    document.querySelectorAll('.pin').forEach(g=>g.classList.toggle('on',!!A.parts[g.dataset.p]));
-    const t=Object.keys(PARTS).filter(k=>A.parts[k]).map(k=>PARTS[k]+'：'+LVN[A.parts[k]]);
+      const s=(v==='avoid')?'avoid':(typeof v==='number'?TONE(v):((A.long||{})[z.dataset.p]?'focus':''));
+      if(s)z.dataset.s=s;else delete z.dataset.s;});
+    document.querySelectorAll('.pin').forEach(g=>g.classList.toggle('on',!!partText(g.dataset.p)));
+    const t=Object.keys(PARTS).filter(k=>partText(k)).map(k=>PARTS[k]+'：'+partText(k));
     document.getElementById('picked').innerHTML=t.length?t.join(' ／ ')
       :'<span class="maphint">印のところを押してみてください<br>強さを選べます　苦手なところも伝えられます</span>';
     applyLang();
@@ -448,27 +531,50 @@ function mapWire(){
 
 /* 部位を押したら開く選択シート。連打で回すより、名前で選べる方が分かりやすいし
    「苦手」のような“強さではないもの”も同じ場所に置ける。 */
+/* 部位ごとの希望。★強さは10段階のバーで受ける（言葉では人によって指す強さが違う）。
+   「ここは苦手」と「ここを長めに」は強さではないので、バーと混ぜず別のボタンにする。 */
 function openSheet(part){
-  const cur=(A.parts||{})[part]||'';
+  const cur=(A.parts||{})[part]||'';        // 'avoid' か 1〜10 の数字
+  const avoid=cur==='avoid', n=(typeof cur==='number')?cur:0;
+  const long=!!(A.long||{})[part];
   const el=document.createElement('div'); el.className='sheet on'; el.id='sheet';
   el.innerHTML=`<div class="bd"></div><div class="pn" role="dialog" aria-label="${PARTS[part]}の希望">
     <div class="grip"></div>
     <h3>${PARTS[part]}</h3>
     <p class="sd">${PNOTE[part]||'どのくらいがお好みですか'}</p>
+    <div class="gauge${(!avoid&&n)?' set':''}" data-g="power" data-part="${part}">
+      <div class="gh">強さ</div>
+      <div class="gv"><b>${(!avoid&&n)?gword('power',n):'おまかせ'}</b><i>${(!avoid&&n)?n+' / 10':''}</i></div>
+      <input type="range" min="1" max="10" step="1" value="${n||5}" aria-label="強さ" ${avoid?'disabled':''}>
+      <div class="gends"><span>やさしく</span><span>しっかり</span></div>
+    </div>
     <div class="lv">
-      ${LVS.map(x=>`<button class="lvb${cur===x.k?' on':''}" data-k="${x.k}">
-        <span class="sw" style="background:${x.c}"></span>
-        <span><b>${x.n}</b><s>${x.d}</s></span></button>`).join('')}
-      ${cur?'<button class="lvb clear" data-k="">選ばない状態にもどす</button>':''}
+      <button class="lvb${long?' on':''}" data-t="long">
+        <span class="sw" style="background:#A56A42"></span>
+        <span><b>ここを長めに</b><s>時間をかけてほぐします</s></span></button>
+      <button class="lvb${avoid?' on':''}" data-t="avoid">
+        <span class="sw" style="background:#93A0A4"></span>
+        <span><b>ここは苦手</b><s>触れずにおきます</s></span></button>
+      ${(cur||long)?'<button class="lvb clear" data-t="reset">選ばない状態にもどす</button>':''}
     </div></div>`;
   document.body.appendChild(el);
   applyLang();
   const close=()=>{el.remove();};
   el.querySelector('.bd').onclick=close;
+  const g=el.querySelector('.gauge'), r=g.querySelector('input');
+  r.oninput=()=>{ const v=+r.value;
+    A.parts=A.parts||{}; A.parts[part]=v; delete (A.long||{})[part+'__x'];
+    g.classList.add('set');
+    g.querySelector('.gv b').textContent=gword('power',v);
+    g.querySelector('.gv i').textContent=v+' / 10';
+    applyLang(); if(window.__paintMap)window.__paintMap(); save();
+  };
   el.querySelectorAll('.lvb').forEach(b=>b.onclick=()=>{
-    const k=b.dataset.k;
-    A.parts=A.parts||{};
-    if(k)A.parts[part]=k; else delete A.parts[part];
+    const t=b.dataset.t;
+    A.parts=A.parts||{}; A.long=A.long||{};
+    if(t==='reset'){ delete A.parts[part]; delete A.long[part]; }
+    else if(t==='avoid'){ if(A.parts[part]==='avoid')delete A.parts[part]; else {A.parts[part]='avoid'; delete A.long[part];} }
+    else { A.long[part]=!A.long[part]; }
     if(window.__paintMap)window.__paintMap();
     save(); close();
   });
@@ -548,7 +654,8 @@ function screens(){
     incl:'追加料金はありません'});
 
   S.push({id:'wash',title:'洗いかたの好み', ill:'ill_bubble',
-    lead:'いくつでもどうぞ',
+    lead:'強さは 指で動かして選べます',
+    gauges:['washPower'],
     many:'wash', chips:['長めがいい','マッサージするように','しっかり落としたい',
       '包み込まれるように','泡をたっぷり','すすぎはていねいに','おまかせ']});
 
@@ -556,9 +663,9 @@ function screens(){
   S.push({id:'scent',title:'香りと 灯りと 音',
     lead:'お部屋のしつらえです',
     groups:[
-      {k:'scent',h:'香り',ill:'ill_scent',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']},
-      {k:'light',h:'灯り',ill:'ill_light',chips:['暗めがいい','ほんのり','ふつう','おまかせ']},
-      {k:'sound',h:'音',  ill:'ill_sound',chips:['静かに','小さめのヒーリング','ふつう','おまかせ']}],
+      {k:'scent',h:'香り',ill:'ill_scent',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']}],
+    // ★灯りと音は「ふつう」が人によって違う。ことばをやめて指で決めていただく
+    gauges:['light','sound'],
     incl:'どれを選んでも料金は変わりません'});
 
   S.push({id:'room',title:'お部屋のご希望',
@@ -633,6 +740,7 @@ function draw(){
     h=`<h1>${s.title}</h1>${s.lead?`<p class="lead">${s.lead}</p>`:''}`;
     if(s.incl)h+=`<span class="incl">${esc(s.incl)}</span>`;
     if(s.ill)h+=`<img class="ill" src="../images/lp/spa/${s.ill}.webp" alt="" aria-hidden="true" loading="lazy">`;
+    if(s.gauges)h+=s.gauges.map(k=>gaugeHtml(k)).join('');
     if(s.custom)h+=s.custom();
     if(s.opts)h+=`<div class="opts">${s.opts.map(([t,d])=>
       `<button class="opt${A[s.one]===t?' on':''}" data-v="${esc(t)}">
@@ -692,6 +800,7 @@ function wire(s){
       save(); sync();
     });
   });
+  gaugeWire(app,()=>sync());
   const n=document.getElementById('note'); if(n)n.oninput=()=>{A.note=n.value;save();};
   const o=document.getElementById('other');
   if(o&&s.after&&s.after.other)o.oninput=()=>{A[s.after.other]=o.value;save();};
@@ -708,9 +817,10 @@ function drawConfirm(){
   const push=(k,v)=>{ if(v&&String(v).trim())P.push([k,v]); };
   push('Mood',A.goal);
   push('Spot',A.spot);
-  const pk=k=>A.parts&&A.parts[k]&&ALLOW.parts.includes(k)?A.parts[k]:'';
-  push('Avoid',Object.keys(PARTS).filter(k=>pk(k)==='avoid').map(k=>PARTS[k]).join('・'));
-  push('Care',Object.keys(PARTS).filter(k=>pk(k)&&pk(k)!=='avoid').map(k=>PARTS[k]+'：'+LVN[A.parts[k]]).join(' ／ '));
+  const ok=k=>ALLOW.parts.includes(k);
+  push('Avoid',Object.keys(PARTS).filter(k=>ok(k)&&(A.parts||{})[k]==='avoid').map(k=>PARTS[k]).join('・'));
+  push('Care',Object.keys(PARTS).filter(k=>ok(k)&&(A.parts||{})[k]!=='avoid'&&partText(k))
+        .map(k=>PARTS[k]+'：'+partText(k)).join(' ／ '));
   push('Bath',A.bath);
   push('Soda',A.soda);
   push('Wash',(A.wash||[]).join('・'));
