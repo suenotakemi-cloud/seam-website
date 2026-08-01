@@ -1,0 +1,78 @@
+# SEAM: 海外のお客様向けに構造化データを足す。
+#
+#   1. 物販の店舗ノードに Store を併記 → "beauty shop"/"化粧品店" 系の検索で拾われる余地を作る
+#      (いまは HairSalon のみ＝美容室としてしか読まれない)
+#   2. currenciesAccepted: JPY  … 日本円での販売であることを明示(海外客の判断材料)
+#   3. 銀座だけ 免税を amenityFeature で明示 … schema.org に免税の専用プロパティは無いので
+#      LocationFeatureSpecification で表す。**銀座本店のみ**(オーナー指示)
+#
+#   paymentAccepted と availableLanguage は事実が確認できないため入れない(捏造しない)。
+import re, json, sys, os
+
+ROOT = sys.argv[1]
+STORE_FILES = [f'store-{s}.html' for s in
+               ['ginza', 'omotesando', 'osaka', 'nagoya', 'fukuoka', 'sapporo', 'utsunomiya']]
+BRAND_TOKYO = [f for f in os.listdir(ROOT) if f.endswith('-tokyo.html')]
+SALON_LP = [f'salon-{s}.html' for s in ['ginza', 'sapporo', 'osaka', 'nagoya', 'fukuoka']]
+
+TAXFREE = {
+    "@type": "LocationFeatureSpecification",
+    "name": "Tax-free shopping",
+    "value": True,
+    "description": "Tax-free from 5,000 yen for visitors from overseas. Please show your passport."
+}
+
+def enrich(node, is_retail, is_ginza):
+    changed = False
+    if is_retail and node.get('@type') == 'HairSalon':
+        node['@type'] = ['HairSalon', 'Store']
+        changed = True
+    if 'currenciesAccepted' not in node:
+        node['currenciesAccepted'] = 'JPY'
+        changed = True
+    if is_ginza and not any(
+            (a.get('name') == 'Tax-free shopping') for a in node.get('amenityFeature', [])):
+        node.setdefault('amenityFeature', []).append(TAXFREE)
+        changed = True
+    return changed
+
+def patch(path, is_retail):
+    s = open(path, encoding='utf-8').read()
+    is_ginza = 'ginza' in os.path.basename(path) or 'store-ginza' in path
+    blocks = list(re.finditer(r'(<script type="application/ld\+json">)(.*?)(</script>)', s, re.S))
+    hits = 0
+    # 後ろから置換してオフセットのずれを避ける
+    for m in reversed(blocks):
+        try:
+            d = json.loads(m.group(2))
+        except Exception:
+            continue
+        nodes = d.get('@graph', []) if isinstance(d, dict) else (d if isinstance(d, list) else [d])
+        ch = False
+        for x in nodes:
+            if not isinstance(x, dict):
+                continue
+            t = x.get('@type')
+            t0 = t[0] if isinstance(t, list) else t
+            if t0 in ('HairSalon', 'DaySpa', 'Store', 'HealthAndBeautyBusiness'):
+                if enrich(x, is_retail, is_ginza):
+                    ch = True
+        if ch:
+            hits += 1
+            body = json.dumps(d, ensure_ascii=False, separators=(',', ':'))
+            s = s[:m.start()] + m.group(1) + body + m.group(3) + s[m.end():]
+    if hits:
+        open(path, 'w', encoding='utf-8').write(s)
+    return hits
+
+total = 0
+for f in STORE_FILES:
+    n = patch(os.path.join(ROOT, f), is_retail=True)
+    print(f'{f:26} 物販として拡張 {n}ブロック'); total += n
+for f in sorted(BRAND_TOKYO):
+    n = patch(os.path.join(ROOT, f), is_retail=True)
+    print(f'{f:26} 物販として拡張 {n}ブロック'); total += n
+for f in SALON_LP + ['headspa-ginza.html', 'headspa-nagoya.html', 'headspa-osaka.html']:
+    n = patch(os.path.join(ROOT, f), is_retail=False)   # サービス面なので Store は付けない
+    print(f'{f:26} 通貨/免税のみ    {n}ブロック'); total += n
+print('\n更新ブロック合計:', total)

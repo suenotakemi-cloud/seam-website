@@ -24,6 +24,38 @@ const PAGES = [
   { file: 'brand.html',      url: '/brand' },
   { file: 'onlineshop.html', url: '/onlineshop' },
   { file: 'ginza-spa-journey.html', url: '/ginza-spa-journey' },
+
+  // 2026-08-01 追加: 海外からの検索の受け皿。店舗7 + 地域LP19。
+  // 辞書は scratchpad の共通辞書から一括生成して各HTMLに焼き込み済み(data-i18n方式)。
+  { file: 'store-ginza.html',       url: '/store-ginza' },
+  { file: 'store-omotesando.html',  url: '/store-omotesando' },
+  { file: 'store-osaka.html',       url: '/store-osaka' },
+  { file: 'store-nagoya.html',      url: '/store-nagoya' },
+  { file: 'store-fukuoka.html',     url: '/store-fukuoka' },
+  { file: 'store-sapporo.html',     url: '/store-sapporo' },
+  { file: 'store-utsunomiya.html',  url: '/store-utsunomiya' },
+
+  { file: 'headspa-ginza.html',     url: '/headspa-ginza' },
+  { file: 'headspa-nagoya.html',    url: '/headspa-nagoya' },
+  { file: 'headspa-osaka.html',     url: '/headspa-osaka' },
+
+  { file: 'salon-ginza.html',       url: '/salon-ginza' },
+  { file: 'salon-sapporo.html',     url: '/salon-sapporo' },
+  { file: 'salon-osaka.html',       url: '/salon-osaka' },
+  { file: 'salon-nagoya.html',      url: '/salon-nagoya' },
+  { file: 'salon-fukuoka.html',     url: '/salon-fukuoka' },
+
+  { file: 'aujua-tokyo.html',                 url: '/aujua-tokyo' },
+  { file: 'kerastase-tokyo.html',             url: '/kerastase-tokyo' },
+  { file: 'tokio-tokyo.html',                 url: '/tokio-tokyo' },
+  { file: 'bykarte-tokyo.html',               url: '/bykarte-tokyo' },
+  { file: 'shu-uemura-tokyo.html',            url: '/shu-uemura-tokyo' },
+  { file: 'lashaddict-tokyo.html',            url: '/lashaddict-tokyo' },
+  { file: 'sublimic-tokyo.html',              url: '/sublimic-tokyo' },
+  { file: 'shiseido-professional-tokyo.html', url: '/shiseido-professional-tokyo' },
+  { file: 'tsururincho-tokyo.html',           url: '/tsururincho-tokyo' },
+  { file: 'system-professional-tokyo.html',   url: '/system-professional-tokyo' },
+  { file: 'milbon-tokyo.html',                url: '/milbon-tokyo' },
 ];
 // ja=ルート(既存)。生成するのは以下4言語。値は <html lang> 用。
 const LANGS = { en: 'en', zh: 'zh-Hans', tw: 'zh-Hant', ko: 'ko' };
@@ -32,12 +64,27 @@ function isRel(v) {
   return !!v && !/^(https?:|\/\/|#|mailto:|tel:|data:|javascript:|\/)/i.test(v);
 }
 
-function rewriteUrlsToRoot(doc) {
-  // サブディレクトリ(/en/ 等)配下でも相対アセット/リンクが解決するよう / 起点へ
+// 言語版が存在するページのファイル名。ここに載っているリンクは同じ言語へ送る。
+const TRANSLATED = new Set(PAGES.map(p => p.file));
+
+function rewriteUrlsToRoot(doc, shortLang) {
+  // サブディレクトリ(/en/ 等)配下でも相対アセット/リンクが解決するよう / 起点へ。
+  // ただし【リンク先に言語版がある場合は /en/ 等へ送る】。
+  // これが無いと 英語ページから1回クリックしただけで日本語サイトに戻ってしまい、
+  // 海外のお客様が読み進められない(2026-08-01 修正)。
   doc.querySelectorAll('[src],[href],[poster],[data-src]').forEach(el => {
     ['src', 'href', 'poster', 'data-src'].forEach(a => {
       const v = el.getAttribute(a);
-      if (isRel(v)) el.setAttribute(a, '/' + v);
+      if (!isRel(v)) return;
+      if (a === 'href' && shortLang) {
+        // "shop.html#stores" / "brand.html?mode=product" からファイル名だけ取り出す
+        const file = v.split(/[?#]/)[0];
+        if (TRANSLATED.has(file)) {
+          el.setAttribute(a, '/' + shortLang + '/' + v);
+          return;
+        }
+      }
+      el.setAttribute(a, '/' + v);
     });
   });
   doc.querySelectorAll('[srcset]').forEach(el => {
@@ -188,7 +235,7 @@ function build() {
       const I18N = extractI18N(doc);
       if (!I18N || !I18N[lang]) { summary.push(`SKIP ${lang}/${pg.file} (no dict)`); continue; }
       const applied = applyLang(doc, I18N[lang], lang, htmlLang);
-      rewriteUrlsToRoot(doc);
+      rewriteUrlsToRoot(doc, lang);
       setHead(doc, lang, htmlLang, pg.url);
       let out = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
       // DOM属性以外(JS文字列・inline style url等)の相対アセットパスも / 起点へ。

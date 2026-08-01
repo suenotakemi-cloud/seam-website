@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# 【重要】このスクリプトを再実行すると 地域LP19枚が上書きされ data-i18n が消えます。
+# 再生成したら必ず `node scripts/i18n/inject_pages.js .` を流し直してください。
+# 詳細は scripts/i18n/README.md
+
 """
 地域×サービス のローカルLPを生成する。
 
@@ -302,6 +306,8 @@ def ld_place(st, kind, url, menu=None):
                                         "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
                                         "opens": st['opens'], "closes": st['closes']}],
          "areaServed": [{"@type": "Place", "name": n} for n in st['near']],
+         # 海外のお客様向け: 日本円での販売であることを明示する(2026-08-01)
+         "currenciesAccepted": "JPY",
          "parentOrganization": {"@type": "Organization", "name": "SEAM", "url": BASE + "/"}}
 
     same = [f"https://www.instagram.com/{st['ig']}/", f"{BASE}/store-{st['slug']}"]
