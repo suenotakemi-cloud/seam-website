@@ -1269,7 +1269,7 @@ body.customer .phone.spa{background:#f7f8f3}
   <div class="modal">
     <h3>予約を登録</h3>
     <div class="field"><label>お客様名</label><input id="m-name" placeholder="例）山田花子"></div>
-    <div class="field"><label>電話番号（任意）</label><input id="m-phone" placeholder="例）090-1234-5678"></div>
+    <div class="field"><label>電話番号（任意）</label><input id="m-phone" placeholder="例）09012345678"></div>
     <div class="field"><label>メニュー</label><select id="m-menu"></select></div>
     <div class="field"><label>チャネル</label><select id="m-chan"></select></div>
     <div class="field"><label>メモ（任意）</label><input id="m-note" placeholder="例）カラーはアッシュ系希望"></div>
@@ -4411,7 +4411,7 @@ function renderBook(){
         :`<div class="glogin"><span>LINE以外・海外の方はこちら / Sign in</span><div id="gbtn"></div></div>`):'')+
       `<div class="rlook">
         <div class="rl-t">🔁 2回目以降の方 — 電話番号で前回のご予約を呼び出せます</div>
-        <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 090-1234-5678）" value="${bk.phone||''}"><button class="btn small pri" id="rlgo">呼び出す</button></div>
+        <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 09012345678）" value="${bk.phone||''}"><button class="btn small pri" id="rlgo">呼び出す</button></div>
         <div id="rlres"></div>
       </div>`+
       `<div class="sec-bar"><span class="sb-ic"></span><span class="sb-t">${bk.section==='spa'?'スパ / ヘッドスパ':'ヘアサロン'}</span><button class="sb-chg" id="secchg">入口を変更</button></div>`+
@@ -4547,7 +4547,7 @@ function renderBook(){
       <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bsei" value="${bk.sei||''}" placeholder="姓（例）山田"></div><div style="flex:1"><input id="bmei" value="${bk.mei||''}" placeholder="名（例）花子"></div></div>
       <div style="font-size:12px;font-weight:800;color:var(--navy)">フリガナ（カタカナ）<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
       <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bseiK" value="${bk.seiK||''}" placeholder="セイ（例）ヤマダ"></div><div style="flex:1"><input id="bmeiK" value="${bk.meiK||''}" placeholder="メイ（例）ハナコ"></div></div>
-      <div class="field"><label>電話番号<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></label><input id="bphone" type="tel" inputmode="tel" value="${bk.phone||''}" placeholder="例）090-1234-5678"></div>
+      <div class="field"><label>電話番号<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></label><input id="bphone" type="tel" inputmode="tel" value="${bk.phone||''}" placeholder="例）09012345678"></div>
       ${(()=>{ // 予約完了のお知らせ先。LINEログイン済みならLINE、それ以外はメール（本人確認コードあり）
         if(bk.lineUserId)return `<div class="co-done" style="margin-bottom:10px">📱 予約が完了したら<b>LINEにお知らせ</b>が届きます</div>`;
         if(bk.emailProvider==='google'&&bk.email)return `<div class="co-done" style="margin-bottom:10px">📧 予約が完了したら <b>${escH(bk.email)}</b> にお知らせが届きます</div>`;
