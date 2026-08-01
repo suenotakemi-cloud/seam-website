@@ -1984,6 +1984,18 @@ function addReservation(o){
     if (res && res.precareUrl) {
       // 来店前の「今日のご希望」へのリンク。完了画面が先に出ていることがあるので描き直す
       window.__PRECARE_URL = res.precareUrl;
+      /* ★ご予約の前に組み立てていただいた内容を、そのまま担当へ届ける。
+         これをやらないと「もう一度おなじことを聞かれた」になり、
+         せっかく作ったものが捨てられる。届いたら下書きは消す。 */
+      try {
+        const d = JSON.parse(localStorage.getItem('seam_precare_draft') || 'null');
+        const tk = (res.precareUrl.split('t=')[1] || '').split('&')[0];
+        if (d && d.a && tk && Object.keys(d.a).length) {
+          fetch(API_BASE + '/precare', { method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ token: tk, answers: d.a, done: true }) })
+            .then(r => { if (r.ok) localStorage.removeItem('seam_precare_draft'); }).catch(()=>{});
+        }
+      } catch (e) {}
       try { if (typeof bk !== 'undefined' && bk.step === 5) renderBook(); } catch (e) {}
     }
     if (res && res.ok && res.id && res.id !== o.id) {

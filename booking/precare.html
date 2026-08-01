@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=11"></script>
+<script src="pc-i18n.js?v=13"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -174,6 +174,15 @@ textarea:focus{outline:0;border-color:var(--clay)}
 /* 順に浮かび上がる */
 .rise{animation:rise 1.1s cubic-bezier(.16,1,.3,1) both;animation-delay:var(--d,0s)}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* 予約への橋。ここだけは押したくなる形にする */
+.gobook{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;
+  margin:24px auto 0;max-width:340px;min-height:64px;padding:16px 22px;border-radius:999px;
+  background:var(--ink);color:#fff;text-decoration:none;font-family:var(--serif);font-size:17px;
+  box-shadow:0 10px 26px rgba(22,23,27,.18)}
+.gobook span{width:32px;height:32px;border-radius:999px;background:#fff;color:var(--ink);
+  display:grid;place-items:center;font-size:14px;font-family:'Noto Sans JP',sans-serif}
+.gobook i{flex:1 0 100%;font-style:normal;font-family:'Noto Sans JP',sans-serif;font-size:12px;
+  color:rgba(255,255,255,.72);text-align:center;margin-top:-4px}
 /* 深呼吸をうながす一行 */
 .breathe{font-family:var(--serif);font-size:15.5px;line-height:2.1;color:var(--clay);
   margin:22px 0 0;letter-spacing:.06em}
@@ -326,6 +335,19 @@ const DEMOS={
   hair10:{label:'ヘア＋会員10分',resv:{date:'2026-08-08',start:13*60,menu:'カット＋カラー',minutes:150,staff:'CHIKA',name:'見本',nominated:true},
          allow:{parts:[],skip:['parts','bath','soda','wash'],mode:'spot',spotMinutes:10}},
 };
+/* ★公開モード ?open=1 — ご予約の前に、体験を組み立てていただく。
+   予約トークンが要らない代わりに、答えはこの端末に置いておき、
+   ご予約が取れた瞬間にそのまま担当へ届ける（二度聞かない）。
+   ★終わりを「予約」にしないと、満足して閉じられて終わる。 */
+const OPEN=Q.get('open')==='1';
+const DRAFT='seam_precare_draft';
+/* 公開モードで選べるコース。★価格は出さない（決裁前のものを公開面に出さない） */
+const COURSES=[
+  {id:'c45', name:'ショート 45分',  min:45,  d:'頭とこめかみ 首まで',            parts:['head','eye','neck']},
+  {id:'c60', name:'スタンダード 60分',min:60, d:'デコルテまでつなげます',        parts:['head','eye','neck','dec']},
+  {id:'c90', name:'頭浸浴つき 90分', min:90,  d:'いちばん選ばれています',        parts:['head','eye','neck','dec','arm','hand','calf','sole']},
+  {id:'c120',name:'ゆっくり 120分',  min:120, d:'手足までしっかり',              parts:['head','eye','neck','dec','arm','hand','calf','sole']},
+];
 const DEMO=DEMOS[Q.get('demo')||''] || (Q.has('demo')?DEMOS.spa90:null);
 const DEMOKEY=DEMO?(DEMOS[Q.get('demo')]?Q.get('demo'):'spa90'):'';
 const app=document.getElementById('app'), foot=document.getElementById('foot');
@@ -625,17 +647,36 @@ function screens(){
   const r=RESV||{}, summer=SEASON==='summer';
   const S=[];
 
+  if(OPEN) S.push({id:'course',render:()=>`
+    <p class="eyebrow">design your spa</p>
+    <h1>あなたの時間を<br>組み立ててみませんか</h1>
+    <p class="lead">強さも 香りも 灯りも ぜんぶ選べます<br>
+      2分ほど　ご予約はまだ要りません</p>
+    <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="">
+    <p class="sub-h">まず 長さをお選びください</p>
+    <div class="opts">${COURSES.map(c=>`
+      <button class="opt${COURSE&&COURSE.id===c.id?' on':''}" data-c="${c.id}">
+        <span class="tick"></span><span><b>${c.name}</b><s>${c.d}</s></span></button>`).join('')}</div>
+    ${langBar()}`,
+    wire:()=>{ app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      const c=COURSES.find(x=>x.id===b.dataset.c); applyCourse(c);
+      A.parts=A.parts||{}; Object.keys(A.parts).forEach(k=>{if(!c.parts.includes(k))delete A.parts[k];});
+      SC=screens(); i=1; save(); draw(); }); },
+    next:'', noskip:true});
+
   S.push({id:'hello',render:()=>`
     <p class="eyebrow">for your visit</p>
     <h1>当日のことを<br>いま決めておけます</h1>
     <p class="lead">力加減も 香りも 灯りも お部屋も<br>
       ぜんぶ選んでおけるので 当日は目を閉じているだけで大丈夫です<br>
       2分ほど 気楽にどうぞ</p>
-    <div class="plan" style="margin-top:24px">
+    ${OPEN?`<div class="plan" style="margin-top:24px">
+      <div class="prow"><b>Course</b><span>${esc(r.menu||'')}</span></div></div>`
+    :`<div class="plan" style="margin-top:24px">
       <div class="prow"><b>Date</b><span>${esc((r.date||'').replace(/-/g,'/'))}　${esc(hm(r.start||0))}</span></div>
       <div class="prow"><b>Menu</b><span>${esc(r.menu||'ウェットヘッドスパ')}</span></div>
       ${r.staff?`<div class="prow"><b>With</b><span>${esc(r.staff)}</span></div>`:''}
-    </div>
+    </div>`}
     <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="">
     ${ALLOW.mode==='spot'?`<p class="hint" style="text-align:center">今回は <b style="color:#A87456">${ALLOW.spotMinutes||10}分のヘッドスパ</b> がついています<br>どこに使うか お選びいただけます</p>`:''}
     ${LAST?`<p class="hint" style="text-align:center">前回のご希望が残っています<br>そのままでよければ最後まで送るだけで終わります</p>`:''}
@@ -766,7 +807,8 @@ let SC=[];
 function draw(){
   const s=SC[i];
   document.getElementById('back').hidden = i===0 || !!s.done;
-  document.getElementById('stepn').textContent = (s.done||s.id==='hello')?'':`${i} / ${SC.length-2}`;
+  document.getElementById('stepn').textContent = (s.done||s.id==='hello'||s.id==='course')?''
+    :`${i-(OPEN?1:0)} / ${SC.length-2-(OPEN?1:0)}`;
   document.getElementById('bar').style.width = Math.round(i/(SC.length-1)*100)+'%';
   foot.hidden=!!s.done;
 
@@ -799,8 +841,12 @@ function draw(){
   }
   app.innerHTML=`<div class="scr on">${h}</div>`;
   document.getElementById('next').innerHTML=(s.next||'次へ')+'<span class="ar">→</span>';
-  if(s.wire)s.wire();
+  /* ★共通の配線を先に。あとから画面ごとの配線で上書きする。
+     逆にすると wire() が .opt の onclick を張り直して、
+     画面ごとに用意した動き（コース選択など）が消える。 */
   wire(s);
+  if(s.wire)s.wire();
+  if(s.id==='course')sync();
   app.querySelectorAll('.langs button').forEach(b=>b.onclick=()=>setLang(b.dataset.l));
   applyLang();
   window.scrollTo(0,0);
@@ -850,6 +896,8 @@ function wire(s){
 }
 function sync(){
   const s=SC[i];
+  // コースを選ぶまでは進めない（選ばないと出し分けが決まらない）
+  if(s.id==='course'){ document.getElementById('next').disabled=!COURSE; return; }
   const need = s.one && !s.render && !s.confirm;
   document.getElementById('next').disabled = need ? !A[s.one] : false;
 }
@@ -927,7 +975,35 @@ function drawConfirm(){
   applyLang();
 }
 
+/* ══ 公開モードの終わり＝予約への橋 ══
+   ★ここで完結させない。「作ったものを持ったまま予約に進める」から捨てるのが惜しくなる。
+     診断(髪格診断)は完了率98.4%なのに予約に結びついていない。
+     満足させて終わると、行く理由が消える。 */
+function drawOpenDone(){
+  const mn=(COURSE&&COURSE.min)||90;
+  const url='./index.html'+(LANG!=='ja'?('?lang='+LANG):'');
+  app.innerHTML=`<div class="scr on done" style="text-align:center">
+    <div class="finale">
+      <span class="aura"></span>
+      <img src="../images/lp/spa/ill_finale.webp" alt="" aria-hidden="true">
+      <span class="sweep"></span>
+    </div>
+    <p class="eyebrow rise" style="--d:.15s">your ${mn} minutes</p>
+    <h1 class="rise" style="--d:.3s">あなたの${mn}分が<br>できました</h1>
+    <p class="lead rise" style="--d:.5s">あとは 日にちを選ぶだけです<br>
+      いま選んだ内容は <b style="color:var(--clay)">そのまま担当に届きます</b></p>
+    <a class="gobook rise" style="--d:.7s" href="${url}">日にちを選ぶ<span>→</span>
+      <i>30秒ほどで終わります</i></a>
+    <p class="hint rise" style="--d:.9s">選んだ内容はこの端末に残ります　あとから変えられます</p>
+    <button class="skip rise" style="--d:1s" id="again">もう一度 組み立てなおす</button></div>`;
+  applyLang();
+  const ag=document.getElementById('again');
+  if(ag)ag.onclick=()=>{ try{localStorage.removeItem(DRAFT);}catch(e){}
+    A={}; COURSE=null; RESV=null; SC=screens(); i=0; draw(); };
+}
+
 function drawDone(){
+  if(OPEN) return drawOpenDone();
   const st=RESV&&RESV.start||0, mn=(RESV&&RESV.minutes)||90;
   const t=(m)=>hm(Math.max(0,st+m));
   /* ★最後は「送信完了」で終わらせない。ここが当日への期待がいちばん高まる瞬間。
@@ -957,12 +1033,13 @@ function drawDone(){
 /* ── 保存（1問ごと・落としても続きから） ── */
 function save(){
   if(DEMO)return;                       // 見本は書かない
+  if(OPEN){ try{localStorage.setItem(DRAFT,JSON.stringify({a:A,course:COURSE&&COURSE.id,at:Date.now()}));}catch(e){} return; }
   clearTimeout(saving);
   saving=setTimeout(()=>{ fetch(API+'/precare',{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({token:T,answers:A,done:false})}).catch(()=>{}); },600);
 }
 async function finish(){
-  if(DEMO){ i=SC.length-1; draw(); return; }
+  if(DEMO||OPEN){ save(); i=SC.length-1; draw(); return; }
   const b=document.getElementById('next'); b.disabled=true; b.textContent='お送りしています…'; applyLang();
   try{
     const r=await fetch(API+'/precare',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -996,8 +1073,22 @@ function startDemo(){
   SC=screens(); foot.hidden=false; draw();
 }
 
+let COURSE=null;
+function startOpen(){
+  try{const d=JSON.parse(localStorage.getItem(DRAFT)||'null');
+    if(d&&d.a&&Date.now()-d.at<7*86400000){A=d.a;COURSE=COURSES.find(c=>c.id===d.course)||null;}}catch(e){}
+  if(COURSE)applyCourse(COURSE);
+  SC=screens(); foot.hidden=false; draw();
+}
+function applyCourse(c){
+  COURSE=c; RESV={date:'',start:0,menu:c.name,minutes:c.min,staff:'',name:''};
+  ALLOW={parts:c.parts.slice(),skip:[],mode:'full',spotMinutes:0};
+  SEASON=(new Date().getMonth()+1>=6&&new Date().getMonth()+1<=9)?'summer':'mid';
+}
+
 (async function(){
   if(DEMO) return startDemo();
+  if(OPEN) return startOpen();
   if(!T){ app.innerHTML='<div class="err">リンクが正しくありません。ご予約のご案内から開いてください</div>'; applyLang(); return; }
   try{
     const r=await fetch(API+'/precare?t='+encodeURIComponent(T));
