@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=10"></script>
+<script src="pc-i18n.js?v=11"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -42,7 +42,9 @@ body{background:var(--cream);color:var(--body);
 /* 進み具合 */
 .top{position:sticky;top:0;z-index:20;background:rgba(247,244,238,.94);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);padding-top:env(safe-area-inset-top,0)}
-.top .bar{height:2px;background:var(--line)}
+.top .bar{height:3px;background:var(--line);
+  -webkit-mask-image:repeating-linear-gradient(90deg,#000 0 calc(100%/13 - 3px),transparent calc(100%/13 - 3px) calc(100%/13));
+  mask-image:repeating-linear-gradient(90deg,#000 0 calc(100%/13 - 3px),transparent calc(100%/13 - 3px) calc(100%/13))}
 .top .bar i{display:block;height:100%;background:var(--clay);width:0;transition:width .5s cubic-bezier(.16,1,.3,1)}
 .top .in{display:flex;align-items:center;justify-content:space-between;padding:11px 20px;max-width:520px;margin:0 auto}
 .brand{font-family:var(--serif);letter-spacing:.26em;font-size:14px;color:var(--ink)}
@@ -50,7 +52,7 @@ body{background:var(--cream);color:var(--body);
 .back{background:none;border:0;font:inherit;font-size:13px;color:var(--sub);cursor:pointer;padding:6px 2px}
 
 /* 画面 */
-.scr{display:none;padding:26px 0 8px;animation:in .45s cubic-bezier(.16,1,.3,1)}
+.scr{display:none;padding:18px 0 8px;animation:in .45s cubic-bezier(.16,1,.3,1)}
 .scr.on{display:block}
 @keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .eyebrow{font-family:'Instrument Serif',serif;font-style:italic;font-size:16px;color:var(--clay);margin:0 0 8px}
@@ -67,7 +69,9 @@ h1{font-family:var(--serif);font-weight:500;color:var(--ink);
   background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px 16px;
   font:inherit;color:var(--body);cursor:pointer;transition:border-color .2s,background .2s,transform .12s}
 .opt:active{transform:scale(.985)}
-.opt.on{border-color:var(--clay);background:rgba(168,116,86,.06)}
+.opt.on{border-color:var(--clay);background:linear-gradient(180deg,rgba(168,116,86,.10),rgba(168,116,86,.04))}
+.opt{position:relative;overflow:hidden}
+.opt.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--clay)}
 .opt .tick{flex:0 0 20px;height:20px;border-radius:999px;border:1.4px solid var(--line);margin-top:2px;
   display:grid;place-items:center;transition:.2s}
 .opt.on .tick{border-color:var(--clay);background:var(--clay)}
@@ -203,11 +207,46 @@ textarea:focus{outline:0;border-color:var(--clay)}
   color:var(--sub);text-decoration:underline;cursor:pointer;padding:4px}
 .gauge:not(.set) .gclear{visibility:hidden}
 
-/* 叶えます、の返し */
-.grant{margin-top:16px;background:rgba(168,116,86,.07);border:1px solid rgba(168,116,86,.22);
-  border-radius:12px;padding:13px 15px;font-size:13.5px;color:var(--clay);line-height:1.85;
-  display:none;animation:in .4s}
-.grant.on{display:block}
+/* ══ 叶えます、の返し ══
+   ★押した0.2秒がいちばん気持ちいい。下の方に小さく出しても誰も気づかない。
+     押したカードのすぐ下に、チェックと一緒にふわっと出す。 */
+.grant{margin-top:9px;background:linear-gradient(180deg,rgba(168,116,86,.11),rgba(168,116,86,.05));
+  border:1px solid rgba(168,116,86,.30);border-radius:13px;padding:13px 15px 13px 44px;
+  font-size:14px;color:var(--clay);line-height:1.8;font-weight:500;display:none;position:relative}
+.grant.on{display:block;animation:pop .5s cubic-bezier(.16,1,.3,1)}
+.grant::before{content:"";position:absolute;left:16px;top:50%;margin-top:-8px;width:16px;height:16px;
+  border-radius:50%;background:var(--clay)}
+.grant::after{content:"";position:absolute;left:21.5px;top:50%;margin-top:-5px;width:4px;height:8px;
+  border:1.8px solid #fff;border-top:0;border-left:0;transform:rotate(45deg)}
+@keyframes pop{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+
+/* ══ 確認画面＝設計図 ══ */
+.csheet{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 16px 14px;margin-top:16px}
+.cttl{font-size:11.5px;letter-spacing:.14em;color:var(--clay);margin:0 0 12px}
+.cbody{display:flex;gap:14px;align-items:flex-start}
+.cfig{position:relative;flex:0 0 96px;width:96px}
+.cfig img{width:100%;display:block;opacity:.55}
+.cfig svg{position:absolute;inset:0;width:100%;height:100%;filter:blur(5px);opacity:.9}
+.clist{flex:1;min-width:0}
+.crow{display:flex;gap:10px;align-items:baseline;padding:5px 0;border-bottom:1px solid #F2EDE4}
+.crow:last-child{border-bottom:0}
+.crow b{flex:0 0 78px;font-weight:500;font-size:13px;color:var(--ink)}
+.crow span{font-size:13px;color:var(--sub);line-height:1.7}
+.crow.off b,.crow.off span{color:#93A0A4}
+.cstep{padding:9px 0;border-bottom:1px solid #F2EDE4}
+.cstep:last-child{border-bottom:0;padding-bottom:0}
+.cstep b{display:block;font-family:var(--serif);font-size:14.5px;font-weight:500;color:var(--ink);line-height:1.7}
+.cchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.cchip{font-size:12.5px;color:var(--body);background:#FAF6EE;border:1px solid rgba(168,116,86,.24);
+  border-radius:999px;padding:4px 11px;line-height:1.7}
+.cmeter{display:flex;align-items:center;gap:10px;padding:7px 0}
+.cmeter span{flex:0 0 42px;font-size:12.5px;color:var(--sub)}
+.cmeter strong{font-weight:500;font-size:13.5px;color:var(--ink)}
+.cmeter i{flex:1;height:7px;border-radius:99px;background:#F0EAE0;overflow:hidden}
+.cmeter i u{display:block;height:100%;text-decoration:none;border-radius:99px;
+  background:linear-gradient(90deg,#DE9E92,#C79A45)}
+.cmeter em{font-style:normal;font-family:'Instrument Serif',serif;font-size:13px;color:var(--sub);width:16px;text-align:right}
+.cnote{font-size:12.5px;color:var(--sub);line-height:1.85;margin:8px 0 0}
 
 /* 今日のあなた */
 .plan{background:#fff;border:1px solid var(--line);border-radius:15px;padding:6px 18px 18px;margin-top:22px}
@@ -603,7 +642,7 @@ function screens(){
     ${langBar()}`,
     next:'はじめる', noskip:true});
 
-  S.push({id:'goal',title:'当日を どう過ごされますか',
+  S.push({id:'goal',title:'当日を どう過ごされますか', ill:'ill_goal',
     lead:'いちばん近いものをひとつ選んでください',
     one:'goal', opts:[
       ['ねむってしまいたい','いちばん深いところまでゆるめます'],
@@ -668,7 +707,7 @@ function screens(){
     gauges:['light','sound'],
     incl:'どれを選んでも料金は変わりません'});
 
-  S.push({id:'room',title:'お部屋のご希望',
+  S.push({id:'room',title:'お部屋のご希望', ill:'ill_window',
     lead:'空いていればご希望に沿います<br><b style="color:#A87456">満席のときは別のお部屋になります</b>ので お約束はできません',
     one:'room', opts:[
       ['窓際VIP（＋¥3,000）','外の光が入る いちばん広いお部屋です'],
@@ -677,7 +716,7 @@ function screens(){
     // 有料席なので、取れなかったときに払わされない ということを先に言う
     incl:'窓際が取れなかったときは いただきません'});
 
-  S.push({id:'talk',title:'当日の過ごしかた',
+  S.push({id:'talk',title:'当日の過ごしかた', ill:'ill_quiet',
     lead:'そっとしておいてほしいときは そう言ってください',
     one:'talk', opts:[
       ['話しかけないでほしい','必要なことだけ短くお伝えします'],
@@ -701,7 +740,7 @@ function screens(){
 
   /* ★「このあとのご予定」は聞かない。人によっては立ち入られたと感じる。
      知りたいのは結局「どんな状態でお帰りになりたいか」なので、仕上げで聞く。 */
-  S.push({id:'styling',title:'お帰りのしたく',
+  S.push({id:'styling',title:'お帰りのしたく', ill:'ill_mirror',
     lead:'仕上げのスタイリングもお選びいただけます',
     one:'styling', opts:[
       ['ドライと軽いブロー','ふんわり整えてお帰りです　追加料金なし'],
@@ -778,22 +817,25 @@ const GRANT={
   talk:'担当に伝えておきます',
   finish:'そのように仕上げます',
   after:'それに合わせて仕上げます'};
-function grant(k){
+function grant(k,near){
   const g=document.getElementById('grant'); if(!g||!GRANT[k])return;
-  g.textContent=GRANT[k]; g.classList.add('on');
+  // 押したカードのすぐ下へ移してから出す＝視線を動かさずに気づける
+  if(near&&near.parentNode)near.parentNode.insertBefore(g,near.nextSibling);
+  g.classList.remove('on'); void g.offsetWidth;      // もう一度アニメさせる
+  g.textContent=GRANT[k]; g.classList.add('on'); applyLang();
 }
 
 function wire(s){
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
     A[s.one]=b.dataset.v;
     app.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===b));
-    grant(s.one); save(); sync();
+    grant(s.one,b); save(); sync();
   });
   app.querySelectorAll('.chips').forEach(box=>{
     const gk=box.dataset.g, g2=box.dataset.g2;
     box.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
       const c=b.dataset.c;
-      if(gk){ A[gk]=A[gk]===c?'':c; box.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',A[gk]===x.dataset.c)); grant(gk); }
+      if(gk){ A[gk]=A[gk]===c?'':c; box.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',A[gk]===x.dataset.c)); grant(gk,box); }
       else{ const k=g2||s.many; A[k]=A[k]||[];
         A[k]=A[k].includes(c)?A[k].filter(x=>x!==c):A[k].concat([c]);
         b.classList.toggle('on',A[k].includes(c)); }
@@ -812,36 +854,76 @@ function sync(){
   document.getElementById('next').disabled = need ? !A[s.one] : false;
 }
 
+/* ══ 確認画面 ══
+   ★ここは「入力の控え」ではなく「あなたの設計図」。
+     明細（ラベル＋値の表）にすると、11問答えた見せ場がシステムのダンプになる。
+     図（からだ）＋帯（時間）＋しつらえ で、作ったものを見せる。 */
 function drawConfirm(){
-  const P=[];
-  const push=(k,v)=>{ if(v&&String(v).trim())P.push([k,v]); };
-  push('Mood',A.goal);
-  push('Spot',A.spot);
+  const st=RESV&&RESV.start||0, mn=(RESV&&RESV.minutes)||90;
+  const t=(m)=>hm(Math.max(0,st+m));
   const ok=k=>ALLOW.parts.includes(k);
-  push('Avoid',Object.keys(PARTS).filter(k=>ok(k)&&(A.parts||{})[k]==='avoid').map(k=>PARTS[k]).join('・'));
-  push('Care',Object.keys(PARTS).filter(k=>ok(k)&&(A.parts||{})[k]!=='avoid'&&partText(k))
-        .map(k=>PARTS[k]+'：'+partText(k)).join(' ／ '));
-  push('Bath',A.bath);
-  push('Soda',A.soda);
-  push('Wash',(A.wash||[]).join('・'));
-  push('Room',[A.scent,A.light,A.sound].filter(Boolean).join(' ／ '));
-  push('Seat',A.room);
-  push('Time',A.talk);
-  push('Finish',[A.finish,(A.care||[]).join('・'),A.careOther].filter(Boolean).join(' ／ '));
-  push('Style',A.styling);
-  push('Care',(A.avoid||[]).length?'苦手：'+A.avoid.join('・'):'');
-  push('Note',A.note);
+  const has=Object.keys(PARTS).some(k=>ok(k)&&partText(k));
+  const avoid=Object.keys(PARTS).filter(k=>ok(k)&&(A.parts||{})[k]==='avoid').map(k=>PARTS[k]);
+  const care =Object.keys(PARTS).filter(k=>ok(k)&&(A.parts||{})[k]!=='avoid'&&partText(k));
+  const chips=a=>(a||[]).filter(Boolean).map(x=>`<span class="cchip">${esc(x)}</span>`).join('');
+  const step=(time,ttl,items)=>{
+    const c=chips(items); if(!c&&!ttl)return '';
+    return `<div class="cstep"><b>${time?time+'　':''}${ttl}</b><div class="cchips">${c}</div></div>`;
+  };
+  /* 部屋のしつらえは 文字ではなくバーで見せる（選んだ位置がそのまま絵になる） */
+  const meter=(k,label)=>{ const n=gnum(A[k]); if(!n)return '';
+    return `<div class="cmeter"><span>${label}</span><i><u style="width:${n*10}%"></u></i><em>${n}</em></div>`; };
+
   app.innerHTML=`<div class="scr on">
     <p class="eyebrow">your day</p>
     <h1>当日の あなたの時間</h1>
     <p class="lead">この内容でご用意します<br>直したいところがあれば もどってください</p>
-    <div class="plan">${P.map(([k,v])=>`<div class="prow"><b>${k}</b><span>${esc(v)}</span></div>`).join('')||
-      '<div class="prow"><span>まだ何も選ばれていません　当日おうかがいします</span></div>'}</div>
-    <img class="ill" src="../images/lp/spa/ill_decollete.webp" alt="">
-    <div class="grant on" style="margin-top:20px">お部屋のご希望は 空いていればお応えします　満席のときは別のお部屋になります</div>
+
+    ${has?`<div class="csheet">
+      <div class="cttl">触れてほしいところ</div>
+      <div class="cbody">
+        <div class="cfig">
+          <svg class="wash" viewBox="0 0 848 1264" aria-hidden="true">${lay()}</svg>
+          <img src="../images/lp/spa/bodymap_figure.webp" alt="">
+        </div>
+        <div class="clist">
+          ${care.map(k=>`<div class="crow"><b>${PARTS[k]}</b><span>${esc(partText(k))}</span></div>`).join('')}
+          ${avoid.length?`<div class="crow off"><b>${esc(avoid.join('・'))}</b><span>ここは苦手</span></div>`:''}
+        </div>
+      </div></div>`:''}
+
+    <div class="csheet">
+      <div class="cttl">当日の流れ</div>
+      ${step(t(0),'お越しください',[A.goal])}
+      ${step('', A.spot?'シャンプーのとき':'', [A.spot])}
+      ${step(t(15),'洗いながら ほぐしていきます',[A.bath,A.soda,A.washPower].concat(A.wash||[]))}
+      ${step(t(mn-15),'ゆっくり戻ってきます',[A.talk])}
+      ${step(t(mn),'仕上げてお帰りです',[A.finish,A.styling].concat(A.care||[],[A.careOther],A.face||[]))}
+    </div>
+
+    ${(A.scent||gnum(A.light)||gnum(A.sound)||A.room)?`<div class="csheet">
+      <div class="cttl">お部屋のしつらえ</div>
+      ${A.scent?`<div class="cmeter"><span>香り</span><strong>${esc(A.scent)}</strong></div>`:''}
+      ${meter('light','灯り')}
+      ${meter('sound','音')}
+      ${A.room?`<div class="cmeter"><span>お席</span><strong>${esc(A.room)}</strong></div>`:''}
+      ${A.room&&/VIP/.test(A.room)?`<p class="cnote">空いていればご希望に沿います　満席のときは別のお部屋になり、ご料金はいただきません</p>`:''}
+    </div>`:''}
+
+    ${((A.avoid||[]).length||A.note)?`<div class="csheet">
+      <div class="cttl">お伝えしておくこと</div>
+      <div class="cchips">${chips(A.avoid)}</div>
+      ${A.note?`<p class="cnote">${esc(A.note)}</p>`:''}
+    </div>`:''}
+
+    ${(!has&&!A.goal)?`<div class="csheet"><p class="cnote">まだ何も選ばれていません　当日おうかがいします</p></div>`:''}
     <div id="err"></div></div>`;
   document.getElementById('next').innerHTML='これでお願いします<span class="ar">→</span>';
   document.getElementById('next').disabled=false;
+  // 図のにじみは、部位マップと同じ規則で塗る
+  document.querySelectorAll('.cfig .wash .z').forEach(z=>{const v=(A.parts||{})[z.dataset.p];
+    const c=(v==='avoid')?'avoid':(typeof v==='number'?TONE(v):((A.long||{})[z.dataset.p]?'focus':''));
+    if(c)z.dataset.s=c;});
   applyLang();
 }
 
