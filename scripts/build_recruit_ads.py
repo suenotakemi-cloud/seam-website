@@ -74,6 +74,7 @@ ADS = [
 EYEBROW = 'いま 転職を考えていなくても'      # 二人称・事実の主張をしない
 CLOSING = '見学・相談からで大丈夫です'        # 求人ページに見学導線が実在する
 
+VER = 'v2'      # クリエイティブ版数。上げるとURLが変わりCDNキャッシュを確実に回避できる
 SIZE = 1080
 BRIGHTNESS = 0.30      # 文字が確実に読める暗さ
 GOLD = (198, 166, 106)
@@ -143,7 +144,9 @@ def build(spec):
     draw_center(d, y, CLOSING, f_end, (214, 206, 194))
 
     os.makedirs(OUT, exist_ok=True)
-    p = os.path.join(OUT, f"seam_recruit_{spec['key']}_1080.jpg")
+    # 【罠】同じファイル名で差し替えるとCloudflareが旧画像を配信し続ける(?cb=も効かない)。
+    # バージョンを名前に持たせてURLごと変える。差し替えるときは VER を上げること。
+    p = os.path.join(OUT, f"seam_recruit_{spec['key']}_1080_{VER}.jpg")
     img.save(p, quality=90, optimize=True)
     return p, hook, role_lines
 
