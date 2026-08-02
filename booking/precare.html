@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=13"></script>
+<script src="pc-i18n.js?v=15"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -491,7 +491,7 @@ function gaugeWire(root,onChange){
 /* ── 部位マップ ── */
 const PARTS={head:'頭',eye:'こめかみ',neck:'首',dec:'デコルテ',arm:'腕',hand:'手',calf:'ふくらはぎ',sole:'足裏'};
 /* 部位ごとに ひとこと添えられる。★目は「押す」ではなく「まわりをほどく」と必ず言う */
-const PNOTE={eye:'目の疲れにはここです　目もとにも眉のうえにも触れません　後頭部のツボと合わせてほどきます'};
+const PNOTE={eye:'目の疲れにはここです　目もとや額は ご希望がなければ触れません　後頭部のツボと合わせてほどきます'};
 /* ★「苦手」は強さではなく“触れないでほしい”。他と並べず、色も冷たい灰にして別物に見せる */
 /* にじみの色。10段階を4つの帯に落とす（1-2 / 3-5 / 6-8 / 9-10） */
 const TONE=n=>n<=2?'soft':(n<=5?'normal':(n<=8?'strong':'focus'));
@@ -743,7 +743,12 @@ function screens(){
   S.push({id:'scent',title:'香りと 灯りと 音',
     lead:'お部屋のしつらえです',
     groups:[
+      /* ★ヘッドスパに合うものだけ。歌もの・テンポのあるものは入れない
+         （眠っていただくのが仕事なので、言葉と拍は邪魔になる） */
+      {k:'music',h:'音楽',ill:'ill_sound',chips:['ヒーリング（ピアノ）','川のせせらぎ','波の音',
+        '雨と森の音','シンギングボウル','宇宙・瞑想','おまかせ']},
       {k:'scent',h:'香り',ill:'ill_scent',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']}],
+    free:{k:'musicOther',ph:'そのほか 聴きたいものがあれば'},
     // ★灯りと音は「ふつう」が人によって違う。ことばをやめて指で決めていただく
     gauges:['light','sound'],
     incl:'どれを選んでも料金は変わりません'});
@@ -789,10 +794,14 @@ function screens(){
       ['ストレートアイロンでスタイリング','まっすぐ 艶やかに　＋¥3,300'],
       ['ドライのまま','乾かすところまでで　追加料金なし']],
     incl:'アイロンは当日のお会計に加わります　やめても大丈夫です',
-    /* ★「メイクが崩れませんか」とは聞かない。心配を確認させると心配が増える。
-       どうお帰りになりたいかだけ伺う。 */
-    after:{k:'face',h:'お顔まわりのご希望',
-      chips:['メイクはそのままで お帰りになりたい','前髪もふんわり整えてほしい','おまかせ']},
+    /* ★「メイクはそのままで」だけでは何をしてほしいのか伝わらない。
+       崩さない／崩れてもいいから額や目もともほぐす、の二択にする。
+       後者は「そんなこともできるのか」という発見になる（ふだんは触れない）。
+       ★どちらか一方なので、複数選べる形にしない。 */
+    groups:[{k:'face',h:'お顔まわりのご希望',
+      chips:['このあと出かけるので メイクは崩さないで',
+             'メイクは崩れても大丈夫　額や目もともほぐして',
+             '前髪もふんわり整えてほしい','おまかせ']}],
     note:true});
 
   S.push({id:'confirm',confirm:true});
@@ -836,6 +845,8 @@ function draw(){
       s.after.chips.map(c=>`<button class="chip${(A[s.after.k]||[]).includes(c)?' on':''}" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`;
       if(s.after.other)h+=`<input id="other" class="other" type="text"
         placeholder="${esc(s.after.otherPh||'')}" value="${esc(A[s.after.other]||'')}">`;}
+    if(s.free)h+=`<input id="free" class="other" type="text"
+      placeholder="${esc(s.free.ph||'')}" value="${esc(A[s.free.k]||'')}">`;
     if(s.note)h+=`<p class="sub-h">ほかにご希望があれば</p><textarea id="note" placeholder="例：終わったあと少しだけ静かに休みたいです">${esc(A.note||'')}</textarea>`;
     h+=`<div class="grant" id="grant"></div>`;
   }
@@ -890,6 +901,8 @@ function wire(s){
   });
   gaugeWire(app,()=>sync());
   const n=document.getElementById('note'); if(n)n.oninput=()=>{A.note=n.value;save();};
+  const fr=document.getElementById('free');
+  if(fr&&s.free)fr.oninput=()=>{A[s.free.k]=fr.value;save();};
   const o=document.getElementById('other');
   if(o&&s.after&&s.after.other)o.oninput=()=>{A[s.after.other]=o.value;save();};
   sync();
@@ -949,11 +962,12 @@ function drawConfirm(){
       ${step(t(mn),'仕上げてお帰りです',[A.finish,A.styling].concat(A.care||[],[A.careOther],A.face||[]))}
     </div>
 
-    ${(A.scent||gnum(A.light)||gnum(A.sound)||A.room)?`<div class="csheet">
+    ${(A.scent||A.music||A.musicOther||gnum(A.light)||gnum(A.sound)||A.room)?`<div class="csheet">
       <div class="cttl">お部屋のしつらえ</div>
       ${A.scent?`<div class="cmeter"><span>香り</span><strong>${esc(A.scent)}</strong></div>`:''}
+      ${(A.music||A.musicOther)?`<div class="cmeter"><span>音楽</span><strong>${esc([A.music,A.musicOther].filter(Boolean).join(' ／ '))}</strong></div>`:''}
       ${meter('light','灯り')}
-      ${meter('sound','音')}
+      ${meter('sound','音の大きさ')}
       ${A.room?`<div class="cmeter"><span>お席</span><strong>${esc(A.room)}</strong></div>`:''}
       ${A.room&&/VIP/.test(A.room)?`<p class="cnote">空いていればご希望に沿います　満席のときは別のお部屋になり、ご料金はいただきません</p>`:''}
     </div>`:''}
@@ -1023,7 +1037,7 @@ function drawDone(){
       <div><b>${t(5)}　はじまります</b><s>${esc(A.goal||'今日のご希望')}　と うかがっています とだけお伝えします</s></div>
       ${A.spot?`<div><b>シャンプーのとき　${esc(A.spot)}</b><s>${ALLOW.spotMinutes||10}分ぶん ここに使います</s></div>`:''}
       <div${A.spot?' hidden':''}><b>${t(15)}　洗いながら ほぐしていきます</b><s>${A.bath?esc(A.bath)+'　':''}${/^はい/.test(A.soda||'')?'炭酸でさっぱりしてから　':''}${(A.wash||[]).slice(0,2).join('・')||'心地よい強さで'}</s></div>
-      <div><b>${t(mn-15)}　ゆっくり戻ってきます</b><s>${esc([A.scent,A.light].filter(Boolean).join(' ／ ')||'静かなお部屋で')}</s></div>
+      <div><b>${t(mn-15)}　ゆっくり戻ってきます</b><s>${esc([A.scent,A.music,A.light].filter(Boolean).join(' ／ ')||'静かなお部屋で')}</s></div>
       <div><b>${t(mn)}　仕上げてお帰りです</b><s>${esc([A.finish,A.styling].filter(Boolean).join(' ／ ')||'髪を見て仕上げます')}</s></div>
     </div>
     <p class="hint rise" style="--d:1.1s">変えたくなったら このページからいつでも直せます</p></div>`;
