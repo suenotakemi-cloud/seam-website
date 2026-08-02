@@ -1695,10 +1695,15 @@ setTimeout(()=>{flushOutbox()},4000);   // 起動直後にも一度
 
 function addCheckout(c){c.id='co'+Math.random().toString(36).slice(2,8);c.at=new Date().toISOString();db.checkouts.push(c);save();refreshAll();saveOrQueue('checkout',c);return c;}
 function updateCheckout(c){const i=db.checkouts.findIndex(x=>x.id===c.id);if(i>=0){db.checkouts[i]=c;save();refreshAll();}saveOrQueue('checkout',c);}
-function removeCheckout(id){db.checkouts=db.checkouts.filter(c=>c.id!==id);
+function removeCheckout(id){
+  const gone=db.checkouts.find(c=>c.id===id);        // 消す前に控えておく（在庫を戻すのに要る）
+  db.checkouts=db.checkouts.filter(c=>c.id!==id);
   // この会計に紐づくポイント増減（付与/利用）とギフト券の消込も巻き戻す
   db.points=(db.points||[]).filter(p=>p.ref!==id);API.removePointsByRef(id);
   restoreGiftByRef(id);restorePassByRef(id);
+  // 店販の在庫も戻す。ポイント・ギフト券・回数券だけ戻して在庫を戻さないと、
+  // 打ち間違いで会計を取り消すたびに在庫が減りっぱなしになり、実数と合わなくなる。
+  if(gone)(gone.retailItems||[]).forEach(i=>{if(i.productId)adjustStock(i.productId,+(+i.qty||1),null,'会計取消');});
   save();refreshAll();API.removeCheckout(id);}
 // 店販の商品マスタ（バーコード・在庫）
 if(!db.products)db.products=[];
@@ -1707,8 +1712,8 @@ function removeProduct(id){db.products=db.products.filter(p=>p.id!==id);save();r
 function productByBarcode(code){const c=(code||'').trim();return c?db.products.find(p=>p.barcode&&p.barcode===c):null;}
 /* 在庫はサーバーの店舗別在庫を動かす（この端末の店舗に対して増減する）。
    以前は手元の1本値を書き換えていたので、店舗別にすると合わなくなる。 */
-function adjustStock(id,delta,shopId){
-  API.stockAdjust({shopId:shopId||SHOP_ID,productId:id,delta,reason:'手直し'}).then(r=>{
+function adjustStock(id,delta,shopId,reason){
+  API.stockAdjust({shopId:shopId||SHOP_ID,productId:id,delta,reason:reason||'手直し'}).then(r=>{
     if(r&&r.error)toast(r.error,true); else renderProducts();
   });
 }
@@ -2851,14 +2856,19 @@ function coBuildRec(){
   {const pv=coPtYen();
    rec.ptYen=pv.yen;              // 何円分の値引きになったか（レートが2種類あるので記録に残す）
    rec.pointsUsed=pv.spent;}      // 引くのは値引きに変わった分だけ（入力しすぎても余りは減らさない）
-  rec.total=Math.max(0,(rec.passCode?0:rec.tech)+rec.retail-rec.discount-rec.ptYen-rec.giftUsed);
+  /* ギフト券もポイントと同じで「値引きに変わった分」だけ消す。
+     券を当てたあとに施術料を下げたり商品を消したりすると、
+     当てた金額のほうが請求より大きくなる。そのまま引くと余りまで券から消える。 */
+  {const before=Math.max(0,(rec.passCode?0:rec.tech)+rec.retail-rec.discount-rec.ptYen);
+   rec.giftUsed=Math.min(+rec.giftUsed||0,before);
+   rec.total=before-rec.giftUsed;}
   return rec;
 }
 function coFinish(rec){
   const isNew=!coDraft.id;
   if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
   // 在庫を自動減算（新規会計のみ）。この端末の店舗の在庫から引く
-  if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-(+i.qty||1));});
+  if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-(+i.qty||1),null,'店販');});
   if(rec.resvId)setStatus(rec.resvId,'done');
   // ギフト券の残高消込（新規会計のみ）
   if(isNew&&rec.giftUsed>0&&rec.giftCode){
