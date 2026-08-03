@@ -183,6 +183,8 @@ function paint(){
     /* したく＝お迎えの前に整えるもの */
     p.innerHTML=`
       ${stop?`<div class="sec stop"><h3>先に確認</h3><p class="mid">${esc(stop)}</p></div>`:''}
+      ${(CUR.sheet&&CUR.sheet!=='今回はいいです')?`<div class="sec"><h3>お召し替えの前に</h3>
+        <p class="big">リフレッシュシート　${esc(CUR.sheet)}</p></div>`:''}
       <div class="sec"><h3>お部屋</h3>
         ${V('お席',CUR.room)}${meter('灯り','',CUR.lightN)}${meter('音の大きさ','',CUR.soundN)}
         ${V('音楽',CUR.music)}${V('香り',CUR.scent)}${V('お飲みもの',CUR.drink)}</div>

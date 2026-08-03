@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=16"></script>
+<script src="pc-i18n.js?v=18"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -333,7 +333,7 @@ const DEMOS={
   spa45:{label:'スパ 45分',   resv:{date:'2026-08-08',start:11*60,menu:'ショートヘッドスパ 45min',minutes:45,staff:'ANZU',name:'見本',nominated:false},
          allow:{parts:['head','eye','neck'],skip:[],mode:'full',spotMinutes:0}},
   hair10:{label:'ヘア＋会員10分',resv:{date:'2026-08-08',start:13*60,menu:'カット＋カラー',minutes:150,staff:'CHIKA',name:'見本',nominated:true},
-         allow:{parts:[],skip:['parts','bath','soda','wash'],mode:'spot',spotMinutes:10}},
+         allow:{parts:[],skip:['parts','bath','soda','wash','sheet'],mode:'spot',spotMinutes:10}},
 };
 /* ★公開モード ?open=1 — ご予約の前に、体験を組み立てていただく。
    予約トークンが要らない代わりに、答えはこの端末に置いておき、
@@ -742,6 +742,22 @@ function screens(){
       ['髪もきれいにしたい','洗いながら 毛先まで整えます'],
       ['ごほうびの時間にしたい','いちばん心地よいところを長めに']]});
 
+  /* ══ 夏だけ：お召し替えの前のリフレッシュシート ══
+     ★汗のことは一言も言わない。「暑いですよね」と確認させると恥ずかしさになる。
+       先に差し出して、受け取るかどうかだけ選んでいただく。
+       銀座を歩いて来た方には「お風呂あがりから はじめませんか」で完全に伝わる。 */
+  if(summer) S.push({id:'sheet',title:'お風呂あがりから はじめませんか', ill:'ill_towel',
+    lead:'ガウンにお召し替えの前に<br>全身をさっぱりとぬぐえるシートをご用意しています',
+    incl:'追加料金はありません',
+    one:'sheet', opts:[
+      ['シトラール','レモンのような すっと明るい香り'],
+      ['ベルガモット','紅茶のような 落ち着く柑橘'],
+      ['ラベンダー','やわらかく 眠りに寄せる香り'],
+      ['ローズ','ほのかに甘く 華やかに'],
+      ['ペパーミント','いちばんさっぱり　清涼感があります'],
+      ['おまかせ','その日のお天気に合わせてお選びします'],
+      ['今回はいいです','']]});
+
   if(ALLOW.mode==='spot'){
     // 短いスパは部位を細かく決めるより「どこに使うか」を1つ選ぶ方が楽しい
     const mn=ALLOW.spotMinutes||10;
@@ -1005,7 +1021,7 @@ function drawConfirm(){
 
     <div class="csheet">
       <div class="cttl">当日の流れ</div>
-      ${step(t(0),'お越しください',[A.goal])}
+      ${step(t(0),'お越しください',[A.goal, A.sheet&&A.sheet!=='今回はいいです'?('お着替え前に '+A.sheet):''])}
       ${step('', A.spot?'シャンプーのとき':'', [A.spot])}
       ${step(t(15),'洗いながら ほぐしていきます',[A.bath,A.soda,A.washPower].concat(A.wash||[]))}
       ${step(t(mn-15),'ゆっくり戻ってきます',[A.talk])}
