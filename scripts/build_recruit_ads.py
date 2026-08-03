@@ -26,7 +26,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'images', 'ads', 'recruit')
 MINCHO = '/System/Library/Fonts/ヒラギノ明朝 ProN.ttc'
 
-VER = 'v3'   # 差し替えるたびに上げる。同名だとCloudflareが旧画像を配信し続ける
+VER = 'v4'   # 差し替えるたびに上げる。同名だとCloudflareが旧画像を配信し続ける
 
 # ── build_recruit_pages.py と同じ定義（ズレたら広告が嘘になる） ──────────
 ROLE_STORES = {
@@ -58,6 +58,22 @@ ADS = [
     {"key": "fukuoka", "title": "SEAM 福岡",   "slugs": ["fukuoka"],
      "photo": "images/stores/store_fukuoka.jpg"},
 ]
+
+# 個室の一言。オーナー「贅沢な個室でお客さまの満足度アップ／美容師はお客様を大切にしたい生き物」
+# 銀座・大阪・名古屋は完全個室、札幌・福岡は半個室（実態どおりに出し分ける）
+ROOM = {
+    'tokyo':   '完全個室だから 隣を気にせず お客様だけを見ていられます',
+    'osaka':   '完全個室だから 隣を気にせず お客様だけを見ていられます',
+    'nagoya':  '完全個室だから 隣を気にせず お客様だけを見ていられます',
+    'sapporo': '半個室で ひとりのお客様に集中できます',
+    'fukuoka': '半個室で ひとりのお客様に集中できます',
+}
+
+# エリア固有の注記。隠すより先に言ったほうが強い事実だけを置く
+# 名古屋はオーナー確認: 休止ではなく「いまはスパが主軸」＝スタイリストにはチャンス
+NOTES = {
+    'nagoya': '名古屋はいまヘッドスパを主軸に営んでいます\nヘアサロンを担うスタイリストの方にはチャンスです',
+}
 
 EYEBROW = 'いま 転職を考えていなくても'
 CLOSING = '見学・相談からで大丈夫です'
@@ -140,7 +156,9 @@ def build(spec):
 
     # 全体の高さを見てから開始位置を決める（行数が2〜4で変わるため）
     h_eye, h_ttl, h_lead, h_end = 30, 92, 34, 28
-    body = h_eye + 34 + h_ttl + 44 + 34 + h_lead + 28 + (46 * len(rows)) + 26 + h_end
+    room = ROOM.get(spec['key'], '')
+    body = (h_eye + 34 + h_ttl + 44 + 34 + h_lead + 28 + (46 * len(rows))
+            + (40 if room else 0) + 26 + h_end)
     y = max(230, (SIZE - body) // 2)
 
     y += draw_center(d, y, EYEBROW, ImageFont.truetype(MINCHO, h_eye), (255, 252, 246)) + 34
@@ -151,6 +169,9 @@ def build(spec):
     y += draw_center(d, y, lead, fit(h_lead, lead), (245, 240, 232)) + 28
     for role, pay, tag in rows:
         y += draw_row(d, y, role, pay, tag) + 18
+    if room:
+        y += 16
+        y += draw_center(d, y, room, fit(27, room), (238, 231, 220)) + 14
     y += 12
     draw_center(d, y, CLOSING, ImageFont.truetype(MINCHO, h_end), (214, 206, 194))
 
@@ -165,17 +186,14 @@ def ad_body(spec):
     rows = rows_for(spec['slugs'])
     head = f"{spec['title'].replace('SEAM ', '')}で {len(rows)}つの職種を募集しています"
     lines = [f"{r}　{p}" + (f"（{t}）" if t else '') for r, p, t in rows]
-    # 【罠】試用期間は職種で違う。スタイリスト・スパニスト・アシスタントは2ヶ月で
-    # 「期間中も給与は変わりません」、ショップ管理者は6ヶ月（給与据え置きの記載なし）。
-    # 一律に「2ヶ月も給与は変わりません」と書くと ショップ管理者に対して嘘になる。
-    TRIAL2 = {"スタイリスト", "スパニスト", "アシスタント"}
-    names = {r for r, _, _ in rows}
-    tail = []
-    if names <= TRIAL2:
-        tail.append("試用期間の2ヶ月も 給与は変わりません")
-    elif names & TRIAL2:
-        ns = "・".join(r for r, _, _ in rows if r in TRIAL2)
-        tail.append(f"{ns}は 試用期間の2ヶ月も給与が変わりません")
+    # 試用期間は職種で長さが違う（スタイリスト等2ヶ月／ショップ管理者6ヶ月）が、
+    # **どちらも期間中の給与は変わらない**（2026-08-01 オーナー確認）。
+    # 長さを書くと職種ごとに分岐して読みにくいので「期間中も」で揃える。
+    tail = ["試用期間中も 給与は変わりません"]
+    if spec['key'] in ROOM:
+        tail.append(ROOM[spec['key']])
+    if spec['key'] in NOTES:
+        tail.insert(0, NOTES[spec['key']])
     tail.append("見学だけ 話を聞くだけでも大丈夫です")
     return head + "\n\n" + "\n".join(lines) + "\n\n" + "\n\n".join(tail)
 
