@@ -43,6 +43,8 @@ h1{font-family:'Noto Serif JP',serif;font-weight:500;font-size:21px;margin:22px 
 .tag{margin-left:auto;font-size:11.5px;border-radius:999px;padding:4px 10px;white-space:nowrap}
 .tag.on{background:rgba(168,116,86,.12);color:var(--clay);border:1px solid rgba(168,116,86,.3)}
 .tag.off{background:#F1EEE8;color:var(--sub);border:1px solid var(--line)}
+/* 書きおき済＝翌朝の便りが用意できている印 */
+.tag.wr{background:rgba(31,42,39,.1);color:var(--jade);border:1px solid rgba(31,42,39,.28)}
 .empty{background:#fff;border:1px dashed var(--line);border-radius:14px;padding:26px 16px;text-align:center;color:var(--sub);font-size:13.5px}
 .err{background:#fdeceb;border:1px solid #f5c6c2;color:#a3271f;border-radius:12px;padding:13px 14px;font-size:13.5px;margin-top:14px}
 .mini{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 13px;font:inherit;
@@ -72,6 +74,14 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .stop{background:rgba(211,110,98,.16);border:1px solid rgba(211,110,98,.5);border-radius:14px;padding:14px 16px}
 .stop h3{color:#F0A79C}
 .stop .mid{color:#FFD9D2;font-weight:500}
+/* ★アレルギーはいちばん強い赤。苦手（薄い赤）と一段はっきり分ける */
+.alrg{background:rgba(211,60,45,.2);border:2px solid rgba(232,96,80,.85);border-radius:14px;padding:14px 16px}
+.alrg h3{color:#FFB0A4;font-weight:700;letter-spacing:.2em}
+.alrg .mid{color:#FFE2DC;font-weight:700;font-size:22px}
+.algsub{font-size:14px;color:#FFC0B6;margin:6px 0 0}
+.okrg{background:rgba(120,170,140,.13);border:1px solid rgba(140,200,165,.4);border-radius:14px;padding:12px 16px}
+.okrg h3{color:#A9D6BA}
+.okv{font-size:16px;color:#CDE8D8;margin:0}
 .plist{display:grid;gap:8px}
 .pr{display:flex;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid rgba(239,233,223,.1)}
 .pr:last-child{border-bottom:0}
@@ -86,6 +96,26 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .kv span{font-size:19px;color:#fff}
 .note{background:rgba(239,233,223,.07);border-radius:12px;padding:13px 15px;font-size:16px;line-height:1.85;color:#EFE9DF}
 .none{color:rgba(239,233,223,.4);font-size:15px}
+/* ══ おわりに（施術のあと1行だけ書く） ══
+   ★お客様に届く一行と、店内のメモは必ず分ける。
+     欄がひとつだと、お見せできないことがそのままLINEに出てしまう。 */
+.wbox{background:rgba(239,233,223,.07);border-radius:14px;padding:14px 15px;margin-top:10px}
+.wbox label{display:block;font-size:12px;letter-spacing:.1em;color:rgba(239,233,223,.55);margin-bottom:7px}
+.wbox textarea{width:100%;background:#1B1815;border:1px solid rgba(239,233,223,.22);border-radius:11px;
+  color:#EFE9DF;font:inherit;font-size:17px;line-height:1.75;padding:12px 13px;resize:vertical;min-height:92px}
+.wbox textarea:focus{outline:none;border-color:#C79A45}
+.wbox .cnt{font-size:11.5px;color:rgba(239,233,223,.4);text-align:right;margin-top:5px}
+.wbox.priv textarea{min-height:66px;font-size:15px}
+.wbox.priv label{color:rgba(239,233,223,.42)}
+.hint{font-size:13px;line-height:1.8;color:rgba(239,233,223,.55);margin:6px 0 0}
+.ex{font-size:14px;line-height:1.8;color:rgba(239,233,223,.72);background:rgba(199,154,69,.1);
+  border-left:2px solid rgba(199,154,69,.5);border-radius:0 10px 10px 0;padding:10px 13px;margin-top:9px}
+.save{width:100%;margin-top:16px;background:#EFE9DF;color:#12100E;border:0;border-radius:999px;
+  padding:15px;font:inherit;font-size:16px;font-weight:500;cursor:pointer}
+.save:disabled{opacity:.45}
+.mini2{background:none;border:1px solid rgba(239,233,223,.32);color:#EFE9DF;border-radius:999px;
+  padding:12px 20px;font:inherit;font-size:15px;cursor:pointer;margin-top:10px}
+.saved{text-align:center;font-size:13.5px;color:#9ED2AE;margin-top:10px;min-height:20px}
 @media(min-width:700px){.big{font-size:30px}.pr span,.kv span{font-size:21px}}
 </style>
 </head>
@@ -99,6 +129,7 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   <div class="tabs">
     <button data-t="prep" class="on">したく</button>
     <button data-t="care">施術中</button>
+    <button data-t="after">おわりに</button>
   </div>
   <div class="opane" id="opane"></div>
 </div>
@@ -139,15 +170,15 @@ function askToken(msg){
   };
 }
 function render(){
-  const done=ROWS.filter(r=>r.done).length;
+  const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
   app.innerHTML=`<h1>今日のお客様</h1>
-    <p class="lead">${ROWS.length}件　うち ${done}件 ご希望をお預かりしています</p>
+    <p class="lead">${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
       <button class="card" data-i="${n}">
         <span class="t">${hm(r.start||0)}</span>
         <span><span class="n">${esc(r.name||'（お名前なし）')}</span>
           <span class="m">${esc(r.menuId||'')}</span></span>
-        <span class="tag ${r.done?'on':'off'}">${r.done?'ご希望あり':'未記入'}</span>
+        <span class="tag ${r.wrote?'wr':(r.done?'on':'off')}">${r.wrote?'書きおき済':(r.done?'ご希望あり':'未記入')}</span>
       </button>`).join('')}</div>`
     :'<div class="empty">この日のご予約はまだありません</div>'}
     <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`;
@@ -156,7 +187,7 @@ function render(){
 }
 
 /* ── 1人分 ── */
-let CUR=null, TAB='prep';
+let CUR=null, TAB='prep', RESV=null, NOTE={note:'',memo:''};
 async function open(n){
   const r=ROWS[n]; if(!r)return;
   document.getElementById('onm').textContent=r.name||'お客様';
@@ -167,6 +198,11 @@ async function open(n){
     const q=await fetch(`${API}/precare/for-staff?resv=${encodeURIComponent(r.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
     const j=await q.json(); CUR=(j.precare&&j.precare.summary)||null;
   }catch(e){ CUR=null; }
+  RESV=r; NOTE={note:'',memo:''};
+  try{
+    const w=await fetch(`${API}/visit/note?resv=${encodeURIComponent(r.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
+    const wj=await w.json(); if(wj&&wj.note)NOTE={note:wj.note.note||'',memo:wj.note.memo||''};
+  }catch(e){}
   paint();
 }
 const V=(t,v)=>v?`<div class="kv"><b>${t}</b><span>${esc(v)}</span></div>`:'';
@@ -177,11 +213,23 @@ function meter(t,label,n){
 }
 function paint(){
   const p=document.getElementById('opane');
+  /* ★おわりに は ご記入が無い方にも書ける。
+       事前カウンセリングを出していない方こそ、翌日の便りが効く。 */
+  if(TAB==='after'){ paintAfter(p); return; }
   if(!CUR){ p.innerHTML='<p class="none" style="margin-top:20px">このお客様は まだご記入がありません<br>当日おうかがいしてください</p>'; return; }
   const stop=[CUR.avoidParts&&('触れない：'+CUR.avoidParts),CUR.avoid].filter(Boolean).join('　／　');
+  /* ★アレルギーは「苦手」と混ぜない。苦手は好みだが、これは安全の話。
+       うかがえていない方は、その事実を出す（空欄＝無し と読ませない）。 */
+  const alg = CUR.allergy
+    ? `<div class="sec alrg"><h3>アレルギー</h3><p class="mid">${esc(CUR.allergy)}</p>
+        ${CUR.noScent?'<p class="algsub">香りのご案内は控える　無香でご用意する</p>':''}</div>`
+    : (CUR.allergyNone
+      ? '<div class="sec okrg"><h3>アレルギー</h3><p class="okv">うかがいました　特にありません</p></div>'
+      : '<div class="sec alrg"><h3>アレルギー</h3><p class="mid">まだうかがえていません</p><p class="algsub">当日 必ずご確認ください</p></div>');
   if(TAB==='prep'){
     /* したく＝お迎えの前に整えるもの */
     p.innerHTML=`
+      ${alg}
       ${stop?`<div class="sec stop"><h3>先に確認</h3><p class="mid">${esc(stop)}</p></div>`:''}
       ${(CUR.sheet&&CUR.sheet!=='今回はいいです')?`<div class="sec"><h3>お召し替えの前に</h3>
         <p class="big">リフレッシュシート　${esc(CUR.sheet)}</p></div>`:''}
@@ -194,6 +242,7 @@ function paint(){
   }else{
     /* 施術中＝触ってはいけない所と強さだけ。上から順に読めば足りる形にする */
     p.innerHTML=`
+      ${alg}
       ${stop?`<div class="sec stop"><h3>触れない・苦手</h3><p class="mid">${esc(stop)}</p></div>`:''}
       ${CUR.goal?`<div class="sec"><h3>今日のご希望</h3><p class="big">${esc(CUR.goal)}</p></div>`:''}
       ${CUR.spot?`<div class="sec"><h3>短いスパはここに</h3><p class="big">${esc(CUR.spot)}</p></div>`:''}
@@ -211,6 +260,64 @@ function paint(){
       ${CUR.note?`<div class="sec"><h3>ひとこと</h3><p class="note">${esc(CUR.note)}</p></div>`:''}`;
   }
 }
+/* ══ おわりに ══
+   ★ここで書く一行が 翌朝そのままお客様に届く。
+     「またお越しください」は誰でも言える。
+     「次は そこから始めさせてください」は 覚えていないと書けない。
+     果たせるのは書いた本人だけ＝開いたままの輪がひとつ残る。 */
+function paintAfter(p){
+  const nm=(RESV&&RESV.name)||'お客様';
+  p.innerHTML=`
+    <div class="sec"><h3>翌朝 ${esc(nm)}様に届きます</h3>
+      <p class="hint">今日 気づいたことを ひとつだけ<br>
+        次に会うときの約束になるように書いてください</p>
+      <div class="ex">首の左側が 右よりずっと張っていました<br>次は そこから始めさせてください</div>
+      <div class="wbox">
+        <label>お客様に届く一行</label>
+        <textarea id="wnote" maxlength="160" placeholder="書かなければ 便りにこの欄は出ません">${esc(NOTE.note)}</textarea>
+        <div class="cnt" id="wcnt"></div>
+      </div>
+      <div class="wbox priv">
+        <label>店内だけのメモ　※お客様には届きません</label>
+        <textarea id="wmemo" maxlength="600" placeholder="次回への申し送り 薬剤 苦手なことなど">${esc(NOTE.memo)}</textarea>
+      </div>
+      <button class="save" id="wsave">保存する</button>
+      <p class="saved" id="wmsg"></p>
+    </div>
+    <div class="sec"><h3>お帰りぎわに お渡しする1枚</h3>
+      <p class="hint">その方が選んだものだけを並べた記念の1枚です<br>
+        この画面をお見せして 撮っていただいてください</p>
+      <button class="mini2" id="wkeep">1枚をひらく</button></div>`;
+  const kb=document.getElementById('wkeep');
+  if(kb)kb.onclick=async()=>{
+    /* ★合言葉は必要になった1件だけ取りに行く（その日ぶんを一覧で持ち歩かない） */
+    kb.disabled=true;
+    try{
+      const r=await fetch(`${API}/visit/keepsake?resv=${encodeURIComponent(RESV.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
+      const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+      window.open(j.url,'_blank');
+    }catch(e){ const m=document.getElementById('wmsg'); m.style.color='#F0A79C'; m.textContent='ひらけませんでした: '+e.message; }
+    kb.disabled=false;
+  };
+  const t=document.getElementById('wnote'), c=document.getElementById('wcnt');
+  const cnt=()=>{ const n=t.value.length; c.textContent=n?`${n} / 160`:''; };
+  t.oninput=cnt; cnt();
+  document.getElementById('wsave').onclick=async()=>{
+    const btn=document.getElementById('wsave'), msg=document.getElementById('wmsg');
+    btn.disabled=true; msg.textContent='';
+    NOTE={note:t.value,memo:document.getElementById('wmemo').value};
+    try{
+      const r=await fetch(`${API}/visit/note`,{method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOK},
+        body:JSON.stringify({resv:RESV.id,note:NOTE.note,memo:NOTE.memo,staffId:RESV.staffId||'',staffName:STAFFNM[RESV.staffId]||''})});
+      const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+      msg.textContent=NOTE.note.trim()?'保存しました　翌朝お届けします':'保存しました';
+    }catch(e){ msg.style.color='#F0A79C'; msg.textContent='保存できませんでした: '+e.message; }
+    btn.disabled=false;
+  };
+}
+const STAFFNM={s1:'及川 大輝',s2:'ANZU',s3:'CHIKA'};
+
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   TAB=b.dataset.t;
   document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));

@@ -44,6 +44,11 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 .chip{display:inline-flex;align-items:center;min-height:46px;padding:0 15px;border:1.5px solid var(--line);border-radius:99px;background:#fff;font-size:14.5px;font-weight:700;color:var(--ink);cursor:pointer}
 .chip.on{background:var(--gold);border-color:var(--gold);color:#fff}
 .warn{background:#fff8f0;border:1px solid #f0d9b8;border-radius:12px;padding:13px 14px;font-size:13.5px;font-weight:600;color:#7a5a1e;margin-top:12px;line-height:1.85}
+/* ★アレルギーは ほかの記入欄と同じ見た目にしない。埋もれると書かれない */
+.alg{border:1.5px solid rgba(178,58,44,.4);background:rgba(178,58,44,.045);border-radius:13px;padding:13px 14px 14px;margin:14px 0}
+.alg .f{color:#B23A2C;font-weight:700}
+.alg textarea{border-color:rgba(178,58,44,.34)}
+.algn{font-size:12px;line-height:1.75;color:#9A5347;margin-top:7px}
 .note{background:#f5faf6;border:1px solid #cfe3d4;border-radius:12px;padding:13px 14px;font-size:13.5px;font-weight:600;color:#215c39;margin-bottom:14px;line-height:1.85}
 .consent{font-size:13.5px;line-height:1.95;color:var(--sub);font-weight:500}
 .consent b{color:var(--ink)}
@@ -115,7 +120,7 @@ const T=ja=>window.CS_I18N?window.CS_I18N.t(ja,LANG):ja;
 const FROM_ADMIN=q.get('from')==='admin';
 let OPT={photo:true};
 let S={kind:'spa',name:q.get('name')||'',phone:q.get('phone')||'',
-  a:{face:[],scalp:[],body:[],caution:'',want:'',birthMonth:''},
+  a:{face:[],scalp:[],body:[],caution:'',want:'',birthMonth:'',allergy:''},
   c:{agreed:false,photo:'',faceNg:false},sign:''};
 
 /* 選択肢の値(data-v)は日本語のまま＝保存されるデータは常に日本語。見える文字だけ訳す */
@@ -172,6 +177,11 @@ function render(){
     <div class="h2sub">${T('温冷とうつむき姿勢がありますので、安全のために必ず伺います')}</div>
     <label class="f">${T('当てはまるもの')}<span>${T('いくつでも')}</span></label>
     ${chips('body',['妊娠中・産後','高血圧・低血圧','めまいを起こしやすい','首や肩を痛めている','首を反らすのがつらい','心臓・呼吸の疾患がある','通院中','アレルギーがある','とくにない'],true)}
+    <div class="alg">
+      <label class="f">${T('アレルギー')}<span>${T('あるものをすべてお書きください')}</span></label>
+      <textarea id="f-allergy" placeholder="${T('例）香料でかゆくなる　ヘナで腫れたことがある　金属　ナッツ')}">${esc(S.a.allergy||'')}</textarea>
+      <div class="algn">${T('うかがった内容は 当日の担当者全員に共有します')}<br>${T('香料をお避けする場合は 無香のものだけをお持ちします')}</div>
+    </div>
     <label class="f">${T('気をつけてほしいこと')}<span>${T('あればお書きください')}</span></label>
     <textarea id="f-caution" placeholder="${T('例）首を反らすのがつらいので枕を高めにしてほしい')}">${esc(S.a.caution||'')}</textarea>
     <div class="warn">${T('妊娠中・産後の方は、施術の内容と姿勢を調整いたします。必ずお申し出ください。')}<br>${T('少しでもご不安があるときは、一緒に内容を見直します。')}</div>
@@ -236,7 +246,7 @@ function wire(){
     }
   });
   const keepEl=(id,fn)=>{const e=document.getElementById(id);if(e)fn(e)};
-  ['f-name','f-phone','f-caution'].forEach(id=>keepEl(id,e=>e.oninput=keep));
+  ['f-name','f-phone','f-caution','f-allergy'].forEach(id=>keepEl(id,e=>e.oninput=keep));
   keepEl('f-bmonth',e=>e.onchange=keep);
   keepEl('c-agree',e=>e.onchange=()=>{S.c.agreed=e.checked;});
   keepEl('c-facing',e=>e.onchange=()=>{S.c.faceNg=e.checked;});
@@ -266,6 +276,7 @@ function keep(){
   const g=id=>(document.getElementById(id)||{}).value||'';
   S.name=g('f-name').trim(); S.phone=g('f-phone').trim();
   S.a.caution=g('f-caution').trim(); S.a.birthMonth=g('f-bmonth');
+  S.a.allergy=g('f-allergy').trim();
 }
 
 /* 手書き署名（サロン用と同じ挙動にそろえる） */

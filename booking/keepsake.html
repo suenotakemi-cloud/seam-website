@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Your session｜SEAM GINZA</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Noto+Serif+JP:wght@300;400&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   SEAM 銀座 — お持ち帰りの1枚（Your session）
+
+   海外のお客様は もう一度いらっしゃらない。追うべきは再来ではなく
+   **人に見せたくなるか**。だから作るのは案内ではなく「記念」にする。
+
+   ★撮られる前提で組む。スクリーンショット1枚で完結すること
+     ・縦1枚に収める（スクロールした先に大事なものを置かない）
+     ・文字は少なく 余白は多く
+     ・その方が選んだ言葉だけを置く（説明を足さない）
+   ★最後にQR。友達がその場で同じ体験を試せる＝いちばん安い紹介になる
+     （体験版 ?open=1 は作ってあるので、渡すだけで足りる）
+   ══════════════════════════════════════════════════════════════ */
+:root{--ink:#16171B;--body:#4A4741;--sub:#8A8377;--cream:#F7F4EE;--line:#E6DFD3;--clay:#A87456}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:#EFEAE1;color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
+  font-size:15px;line-height:1.85;padding:22px 16px 40px;display:flex;justify-content:center}
+.card{width:100%;max-width:430px;background:var(--cream);border-radius:22px;padding:38px 30px 32px;
+  box-shadow:0 22px 60px rgba(60,48,36,.13),0 2px 6px rgba(60,48,36,.05);position:relative;overflow:hidden}
+/* 紙の質感。撮ったときに「画面」ではなく「紙」に見せる */
+.card::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(120% 70% at 50% -10%,rgba(255,255,255,.85),transparent 60%)}
+.brand{font-family:'Cormorant Garamond',serif;letter-spacing:.42em;font-size:15px;
+  text-align:center;color:var(--ink);text-indent:.42em}
+.sub{font-family:'Cormorant Garamond',serif;font-size:12px;letter-spacing:.3em;
+  text-align:center;color:var(--sub);margin-top:5px;text-indent:.3em;text-transform:uppercase}
+.rule{width:34px;height:1px;background:var(--clay);opacity:.5;margin:20px auto}
+.ttl{font-family:'Noto Serif JP',serif;font-weight:300;font-size:25px;line-height:1.55;
+  text-align:center;color:var(--ink);margin:0}
+.date{font-family:'Cormorant Garamond',serif;font-size:15px;letter-spacing:.24em;
+  text-align:center;color:var(--sub);margin:8px 0 0}
+.ill{display:block;width:132px;margin:20px auto 4px;opacity:.9}
+.list{margin:22px 0 0;border-top:1px solid var(--line)}
+.it{display:flex;gap:14px;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line)}
+.it b{flex:0 0 96px;font-weight:400;font-size:11px;letter-spacing:.16em;color:var(--sub);
+  text-transform:uppercase;font-family:'Cormorant Garamond',serif}
+.it span{flex:1;font-family:'Noto Serif JP',serif;font-size:16.5px;color:var(--ink);line-height:1.6}
+.note{margin:20px 0 0;padding:15px 16px;background:rgba(168,116,86,.07);
+  border-radius:13px;font-size:14px;line-height:1.85;color:var(--body)}
+.note b{display:block;font-family:'Cormorant Garamond',serif;font-size:11px;letter-spacing:.18em;
+  color:var(--clay);text-transform:uppercase;font-weight:400;margin-bottom:4px}
+.qr{margin:26px 0 0;padding-top:24px;border-top:1px solid var(--line);text-align:center}
+.qr img{width:112px;height:112px;display:block;margin:0 auto 11px;border-radius:9px}
+.qr p{margin:0;font-size:13px;color:var(--sub);line-height:1.8}
+.qr .u{font-family:'Cormorant Garamond',serif;letter-spacing:.2em;font-size:13px;color:var(--ink);margin-top:5px}
+.langs{display:flex;justify-content:center;gap:5px;margin:20px auto 0;flex-wrap:wrap}
+.langs button{background:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;
+  font:inherit;font-size:11.5px;color:var(--sub);cursor:pointer;font-family:'Cormorant Garamond',serif;letter-spacing:.1em}
+.langs button.on{border-color:var(--clay);color:var(--clay)}
+.err{max-width:430px;background:#fdeceb;border:1px solid #f5c6c2;color:#a3271f;
+  border-radius:14px;padding:16px;font-size:14px}
+@media print{body{background:#fff;padding:0}.card{box-shadow:none}.langs{display:none}}
+</style>
+</head>
+<body>
+<div id="app"><div class="card"><p class="sub">loading…</p></div></div>
+<script src="pc-i18n.js?v=19"></script>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const Q=new URLSearchParams(location.search), T=Q.get('t')||'';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* 短い1枚なので辞書はここに置く（別ファイルにするほどの量ではない） */
+const L={
+  ja:{sub:'your session',ttl:'ありがとうございました',scent:'香り',sheet:'シート',press:'強さ',
+      light:'灯り',music:'音',care:'お試し',with:'担当',visits:'ご来店',
+      qr1:'ご自身の時間を 組み立ててみませんか',qr2:'2分ほど　ご予約はまだ要りません',
+      nth:n=>`${n}回目`,honor:n=>`${n}様`},
+  en:{sub:'your session',ttl:'Thank you for visiting',scent:'Aroma',sheet:'Sheet',press:'Pressure',
+      light:'Light',music:'Sound',care:'Tried',with:'With',visits:'Visits',
+      qr1:'Design a session of your own',qr2:'About 2 minutes — no booking needed',
+      nth:n=>`${n}${n==1?'st':n==2?'nd':n==3?'rd':'th'} visit`,honor:n=>n},
+  zh:{sub:'your session',ttl:'感谢您的光临',scent:'香气',sheet:'湿巾',press:'力度',
+      light:'灯光',music:'音乐',care:'试用',with:'担当',visits:'到店',
+      qr1:'试着组合属于您的时间',qr2:'约2分钟　还不需要预约',
+      nth:n=>`第${n}次`,honor:n=>`${n}女士/先生`},
+  tw:{sub:'your session',ttl:'感謝您的光臨',scent:'香氣',sheet:'濕巾',press:'力度',
+      light:'燈光',music:'音樂',care:'試用',with:'擔當',visits:'到店',
+      qr1:'試著組合屬於您的時間',qr2:'約2分鐘　還不需要預約',
+      nth:n=>`第${n}次`,honor:n=>`${n}女士/先生`},
+  ko:{sub:'your session',ttl:'찾아주셔서 감사합니다',scent:'향',sheet:'시트',press:'세기',
+      light:'조명',music:'소리',care:'체험',with:'담당',visits:'방문',
+      qr1:'나만의 시간을 만들어 보세요',qr2:'약 2분　예약은 아직 필요 없습니다',
+      nth:n=>`${n}번째`,honor:n=>`${n}님`},
+};
+const NAMES={ja:'日本語',en:'English',zh:'简体',tw:'繁體',ko:'한국어'};
+const auto=()=>{ const n=(navigator.language||'en').toLowerCase();
+  if(n.startsWith('ja'))return 'ja'; if(n.startsWith('ko'))return 'ko';
+  if(n.startsWith('zh'))return /tw|hk|hant/.test(n)?'tw':'zh'; return 'en'; };
+let LANG=Q.get('lang')||localStorage.getItem('stb_lang')||auto();
+if(!L[LANG])LANG='en';
+
+let D=null;
+const noNum=s=>String(s||'').replace(/（\d+\/10）/g,'').replace(/\(\d+\)/g,'').trim();
+/* ★答えは日本語のまま保存されている（診断と同じ）。
+     ラベルだけ英語で中身が「ペパーミント」では、お渡しする意味がない。
+     診断の辞書をそのまま借りて、選ばれた言葉ごと訳す。 */
+function tv(x){
+  const v=String(x||'').trim(); if(!v||LANG==='ja'||!window.PC_I18N)return v;
+  const M=PC_I18N.map(LANG); if(!M)return v;
+  if(M[v]!=null)return M[v];
+  for(const [rx,fn] of PC_I18N.rx(LANG)){ const m=v.match(rx); if(m)return fn(m,y=>tv(y)); }
+  // 「・」や「／」で並んでいる答えは、語ごとに訳して組み直す
+  if(/[・／]/.test(v)){
+    const parts=v.split(/([・／])/);
+    if(parts.filter(w=>!/^[・／]$/.test(w)).some(w=>tv(w)!==w))
+      return parts.map(w=>/^[・／]$/.test(w)?w:tv(w)).join('');
+  }
+  return v;
+}
+
+function render(){
+  const t=L[LANG], a=(D&&D.answers)||{}, r=(D&&D.reservation)||{}, rec=(D&&D.record)||null;
+  const row=(k,v)=>v?`<div class="it"><b>${esc(t[k])}</b><span>${esc(tv(v))}</span></div>`:'';
+  /* ★出すのは その方が選んだ言葉だけ。説明を足すと記念ではなく明細書になる */
+  const parts=(()=>{ const P={head:'頭',eye:'こめかみ',neck:'首',dec:'デコルテ',arm:'腕',hand:'手',calf:'ふくらはぎ',sole:'足裏'};
+    const PE={head:'Head',eye:'Temples',neck:'Neck',dec:'Décolleté',arm:'Arms',hand:'Hands',calf:'Calves',sole:'Feet'};
+    const LB=LANG==='ja'?P:(LANG==='en'?PE:P);
+    const o=a.parts||{}; let top='',n=0;
+    for(const k of Object.keys(P)) if(typeof o[k]==='number'&&o[k]>n){n=o[k];top=LB[k];}
+    return top?top:''; })();
+  const date=(r.date||'').replace(/-/g,' . ');
+  const nm=r.name?t.honor(r.name):'';
+  const qrUrl='https://seam.site/booking/precare.html?open=1'+(LANG!=='ja'?'&lang='+LANG:'');
+
+  document.getElementById('app').innerHTML=`<div class="card">
+    <p class="brand">SEAM</p>
+    <p class="sub">${esc(t.sub)}</p>
+    <div class="rule"></div>
+    <h1 class="ttl">${esc(t.ttl)}</h1>
+    ${date?`<p class="date">${esc(date)}</p>`:''}
+    <img class="ill" src="../images/lp/spa/ill_finale.webp" alt="" aria-hidden="true">
+    <div class="list">
+      ${nm?`<div class="it"><b>&nbsp;</b><span style="font-size:19px">${esc(nm)}</span></div>`:''}
+      ${row('sheet',a.sheet&&a.sheet!=='今回はいいです'&&a.sheet!=='おまかせ'?a.sheet:'')}
+      ${row('scent',noNum(a.scent))}
+      ${row('press',parts)}
+      ${row('light',noNum(a.light))}
+      ${row('music',noNum(a.music||''))}
+      ${row('care',[].concat(a.care||[]).filter(Boolean).slice(0,2).join(' / '))}
+      ${row('with',r.staff||'')}
+      ${rec&&rec.visits>=2?`<div class="it"><b>${esc(t.visits)}</b><span>${esc(t.nth(rec.visits))}</span></div>`:''}
+    </div>
+    <div class="qr">
+      <img src="../images/lp/spa/qr_try.png" alt="">
+      <p>${esc(t.qr1)}<br>${esc(t.qr2)}</p>
+      <p class="u">seam.site</p>
+    </div>
+    <div class="langs">${Object.keys(L).map(k=>
+      `<button data-l="${k}" class="${k===LANG?'on':''}">${NAMES[k]}</button>`).join('')}</div>
+  </div>`;
+  document.documentElement.lang=LANG;
+  document.querySelectorAll('.langs button').forEach(b=>b.onclick=()=>{
+    LANG=b.dataset.l; try{localStorage.setItem('stb_lang',LANG);}catch(e){} render(); });
+  // QRは実物のリンク先を合わせておく（言語つきで開ける）
+  const qi=document.querySelector('.qr img'); if(qi)qi.title=qrUrl;
+}
+
+(async function(){
+  if(!T){ document.getElementById('app').innerHTML='<div class="err">This link is not valid.</div>'; return; }
+  try{
+    const r=await fetch(API+'/precare?t='+encodeURIComponent(T));
+    const j=await r.json(); if(!r.ok)throw new Error(j.error||'could not load');
+    D={reservation:j.reservation,answers:j.answers||{}};
+    render();
+    // 記録は後から足す（無くても1枚は成立する）
+    fetch(API+'/visit/record?t='+encodeURIComponent(T)).then(x=>x.json())
+      .then(x=>{ if(x&&x.ok){D.record=x.record;render();} }).catch(()=>{});
+  }catch(e){ document.getElementById('app').innerHTML=`<div class="err">${esc(e.message)}</div>`; }
+})();
+</script>
+</body>
+</html>

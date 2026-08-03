@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=18"></script>
+<script src="pc-i18n.js?v=19"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -60,6 +60,25 @@ h1{font-family:var(--serif);font-weight:500;color:var(--ink);
   font-size:clamp(22px,5.6vw,27px);line-height:1.5;letter-spacing:.02em;margin:0}
 .lead{font-size:14px;line-height:2;color:var(--sub);margin:14px 0 0}
 .hint{font-size:12.5px;color:var(--sub);margin:10px 0 0}
+/* ══ アレルギー ══
+   ★ここだけは色を変える。ほかの選択と同じ見た目にすると、埋もれて読み飛ばされる。
+     お客様の画面（この赤）とスタッフの画面（暗い地の赤）は同じ意味の色にする。 */
+.csheet.alg{border-color:rgba(178,58,44,.34);background:rgba(178,58,44,.05)}
+.csheet.alg .cttl{color:#B23A2C}
+.algv{font-family:'Noto Serif JP',serif;font-size:18px;line-height:1.6;color:var(--ink);margin:2px 0 6px;padding:0 16px}
+.algn{font-size:12.5px;color:#9A5347;margin:0 0 2px;padding:0 16px 14px;line-height:1.7}
+.alg2{border:1px solid rgba(178,58,44,.32);background:rgba(178,58,44,.05);border-radius:15px;
+  padding:14px 16px;margin:18px 0 4px;text-align:left}
+.alg2 b{display:block;font-size:11.5px;letter-spacing:.14em;color:#B23A2C;font-weight:500;margin-bottom:4px}
+.alg2 s{display:block;text-decoration:none;font-size:12.5px;color:#9A5347;margin-top:5px}
+/* ══ あなたの記録 ══ 試した香りは灯し、まだの香りは薄いまま置いておく */
+.rec{border:1px solid var(--line);border-radius:15px;padding:15px 16px;margin:18px 0 4px;background:rgba(255,255,255,.55)}
+.rect{font-family:'Noto Serif JP',serif;font-size:17px;color:var(--ink);margin:0 0 10px}
+.recs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px}
+.recs span{font-size:12px;border-radius:999px;padding:4px 11px;border:1px solid var(--line);color:var(--sub);background:#fff}
+.recs span.on{border-color:rgba(168,116,86,.42);color:var(--clay);background:rgba(168,116,86,.09);font-weight:500}
+.recn{font-size:12.5px;color:var(--sub);margin:0}
+.recn+.recn{margin-top:3px}
 .incl{display:inline-block;font-size:11.5px;color:var(--clay);border:1px solid rgba(168,116,86,.32);
   border-radius:999px;padding:3px 11px;margin-top:12px}
 
@@ -446,6 +465,7 @@ function langBar(){
 }
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
+let REC=null;                      // あなたの記録（回を重ねると育つ）
 let ALLOW={parts:['head','eye','neck','dec','arm','hand','calf','sole'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
 
 /* ══ 強さのバー ══
@@ -671,6 +691,7 @@ function screens(){
   if(LAST&&!OPEN) S.push({id:'quick',render:()=>`
     <p class="eyebrow">welcome back</p>
     <h1>前回と同じで<br>ご用意できます</h1>
+    ${recordStrip()}
     <p class="lead">そのままでよければ ひとつ押すだけで終わります<br>
       今日だけ変えたいところがあれば こちらから</p>
     <div class="opts" style="margin-top:20px">
@@ -742,21 +763,44 @@ function screens(){
       ['髪もきれいにしたい','洗いながら 毛先まで整えます'],
       ['ごほうびの時間にしたい','いちばん心地よいところを長めに']]});
 
+  /* ══ アレルギー ══
+     ★この画面だけは「叶えられることだけ聞く」の例外。
+       安全に関わることなので、答えるまで先へ進めない（sync で止める）。
+     ★聞いて終わりにしない。うかがった内容で **このあとの選択肢そのものを変える**。
+       香料をお避けする方に香りを5つ並べるのは、聞いていないのと同じ。
+     ★前回の内容は持ち越すが、必ずもう一度お見せして確かめていただく。
+       黙って引き継ぐと、変わっていたときに気づけない。 */
+  S.push({id:'allergy',title:'お避けするものは ありますか', ill:'ill_care',
+    lead:'安全に関わることなので 先にうかがいます<br>あてはまるものを すべて選んでください',
+    many:'allergy',
+    chips:['特にありません','香料・アロマ','植物（ヘナ・ラテックスなど）','金属',
+           '食物','お薬','そのほか'],
+    free:{k:'allergyNote',ph:'差し支えなければ 具体的にお書きください'},
+    incl:'うかがった内容は 当日の担当者全員に共有します',
+    noskip:true});
+
   /* ══ 夏だけ：お召し替えの前のリフレッシュシート ══
      ★汗のことは一言も言わない。「暑いですよね」と確認させると恥ずかしさになる。
        先に差し出して、受け取るかどうかだけ選んでいただく。
        銀座を歩いて来た方には「お風呂あがりから はじめませんか」で完全に伝わる。 */
-  if(summer) S.push({id:'sheet',title:'お風呂あがりから はじめませんか', ill:'ill_towel',
-    lead:'ガウンにお召し替えの前に<br>全身をさっぱりとぬぐえるシートをご用意しています',
-    incl:'追加料金はありません',
-    one:'sheet', opts:[
-      ['シトラール','レモンのような すっと明るい香り'],
-      ['ベルガモット','紅茶のような 落ち着く柑橘'],
-      ['ラベンダー','やわらかく 眠りに寄せる香り'],
-      ['ローズ','ほのかに甘く 華やかに'],
-      ['ペパーミント','いちばんさっぱり　清涼感があります'],
-      ['おまかせ','その日のお天気に合わせてお選びします'],
-      ['今回はいいです','']]});
+  if(summer) S.push(noScent()
+    ? {id:'sheet',title:'香りのないシートを ご用意します', ill:'ill_towel',
+       lead:'香料をお避けするとうかがいました<br>お召し替えの前に 香りのついていないシートをお出しできます',
+       incl:'追加料金はありません',
+       one:'sheet', opts:[
+         ['無香料のシートをお願いします','香りのついていないものだけをお持ちします'],
+         ['今回はいいです','']]}
+    : {id:'sheet',title:'お風呂あがりから はじめませんか', ill:'ill_towel',
+       lead:'ガウンにお召し替えの前に<br>全身をさっぱりとぬぐえるシートをご用意しています',
+       incl:'追加料金はありません',
+       one:'sheet', opts:[
+         ['シトラール','レモンのような すっと明るい香り'],
+         ['ベルガモット','紅茶のような 落ち着く柑橘'],
+         ['ラベンダー','やわらかく 眠りに寄せる香り'],
+         ['ローズ','ほのかに甘く 華やかに'],
+         ['ペパーミント','いちばんさっぱり　清涼感があります'],
+         ['おまかせ','その日のお天気に合わせてお選びします'],
+         ['今回はいいです','']]});
 
   if(ALLOW.mode==='spot'){
     // 短いスパは部位を細かく決めるより「どこに使うか」を1つ選ぶ方が楽しい
@@ -810,7 +854,10 @@ function screens(){
          （眠っていただくのが仕事なので、言葉と拍は邪魔になる） */
       {k:'music',h:'音楽',ill:'ill_sound',chips:['ヒーリング（ピアノ）','川のせせらぎ','波の音',
         '雨と森の音','シンギングボウル','宇宙・瞑想','おまかせ']},
-      {k:'scent',h:'香り',ill:'ill_scent',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']},
+      /* ★香料をお避けする方には、香りを並べない。無香だけをお見せする＝
+           うかがったことが画面に出ている状態にする */
+      {k:'scent',h:'香り',ill:'ill_scent',
+        chips:noScent()?['無香でご用意します']:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']},
       /* ★実際にお出ししているものに合わせて差し替えること */
       {k:'drink',h:'お飲みもの',ill:'ill_quiet',chips:['ハーブティー','ルイボスティー','ほうじ茶',
         '白湯','冷たいお水','炭酸水','おまかせ']}],
@@ -878,6 +925,23 @@ function screens(){
 }
 let SC=[];
 
+/* ══ あなたの記録 ══
+   ★香りを5種類にしたので、そのまま集める楽しみになる。
+     値引きより強い再来の理由は「まだ試していないものがある」こと。
+     ただし1回目のお客様には出さない（「1回目のご来店」は何も言っていない）。 */
+function recordStrip(){
+  if(!REC||(REC.visits||0)<2)return '';
+  const left=(REC.scentsLeft||[]);
+  const tried=(REC.scents||[]).length, all=(REC.scents||[]).length+left.length;
+  return `<div class="rec">
+    <p class="rect">${REC.visits}回目のご来店</p>
+    ${all?`<div class="recs">${(REC.scents||[]).concat(left).map(x=>
+      `<span class="${(REC.scents||[]).includes(x)?'on':''}">${esc(x)}</span>`).join('')}</div>
+      <p class="recn">試した香り　${tried} / ${all}${left.length?`　まだ ${esc(left.slice(0,2).join('・'))}${left.length>2?' ほか':''}`:'　ぜんぶ試されました'}</p>`:''}
+    ${REC.topPart?`<p class="recn">いちばん深くほぐしたのは ${esc(REC.topPart)}</p>`:''}
+  </div>`;
+}
+
 /* ── 描画 ── */
 function draw(){
   const s=SC[i];
@@ -929,6 +993,19 @@ function draw(){
   window.scrollTo(0,0);
 }
 
+/* ══ アレルギーの判定 ══
+   ★ここが「聞いただけ」と「効いている」の分かれ目。
+     香料をお避けするとうかがったら、香りの選択肢そのものを出さない。 */
+function allergyList(){ return (A.allergy||[]).filter(x=>x&&x!=='特にありません'); }
+function hasAllergy(){ return allergyList().length>0 || !!String(A.allergyNote||'').trim(); }
+function noScent(){ return (A.allergy||[]).includes('香料・アロマ'); }
+/** お客様にもスタッフにも同じ言葉で見せる1行 */
+function allergyText(){
+  const L=allergyList(), n=String(A.allergyNote||'').trim();
+  if(!L.length&&!n)return '';
+  return [L.join('・'), n].filter(Boolean).join('　');
+}
+
 /* 選んだら その場で「できます」と返す＝叶えてもらえる感じを作る */
 const GRANT={
   goal:'承りました　その形でご用意します',
@@ -939,7 +1016,10 @@ const GRANT={
   room:'空いていれば そちらでご案内します',
   talk:'担当に伝えておきます',
   finish:'そのように仕上げます',
-  after:'それに合わせて仕上げます'};
+  after:'それに合わせて仕上げます',
+  /* ★安全に関わることは「承りました」で終えない。
+       どこまで届くのかを言い切る＝伝わっている実感になる */
+  allergy:'承りました　当日の担当者全員に共有します'};
 function grant(k,near){
   const g=document.getElementById('grant'); if(!g||!GRANT[k])return;
   // 押したカードのすぐ下へ移してから出す＝視線を動かさずに気づける
@@ -961,7 +1041,15 @@ function wire(s){
       if(gk){ A[gk]=A[gk]===c?'':c; box.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',A[gk]===x.dataset.c)); grant(gk,box); }
       else{ const k=g2||s.many; A[k]=A[k]||[];
         A[k]=A[k].includes(c)?A[k].filter(x=>x!==c):A[k].concat([c]);
-        b.classList.toggle('on',A[k].includes(c)); }
+        /* ★「特にありません」と中身は同時に立たない。
+             両方立っていると、どちらを信じればいいのか現場で迷う */
+        if(k==='allergy'){
+          if(c==='特にありません'&&A[k].includes(c))A[k]=['特にありません'];
+          else if(c!=='特にありません')A[k]=A[k].filter(x=>x!=='特にありません');
+          box.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',A[k].includes(x.dataset.c)));
+          grant('allergy',box);
+          SC=screens();                       // 香りの選択肢を組み直す
+        }else b.classList.toggle('on',A[k].includes(c)); }
       save(); sync();
     });
   });
@@ -977,6 +1065,9 @@ function sync(){
   const s=SC[i];
   // コースを選ぶまでは進めない（選ばないと出し分けが決まらない）
   if(s.id==='course'){ document.getElementById('next').disabled=!COURSE; return; }
+  /* ★アレルギーだけは答えていただくまで進めない。
+       「特にありません」を押していただくのも、うかがった証になる */
+  if(s.id==='allergy'){ document.getElementById('next').disabled=!(A.allergy||[]).length; return; }
   const need = s.one && !s.render && !s.confirm;
   document.getElementById('next').disabled = need ? !A[s.one] : false;
 }
@@ -1005,6 +1096,12 @@ function drawConfirm(){
     <p class="eyebrow">your day</p>
     <h1>当日の あなたの時間</h1>
     <p class="lead">この内容でご用意します<br>直したいところがあれば もどってください</p>
+
+    ${allergyText()?`<div class="csheet alg">
+      <div class="cttl">お避けするもの　うけたまわりました</div>
+      <p class="algv">${esc(allergyText())}</p>
+      <p class="algn">当日の担当者全員に共有します${noScent()?'<br>香りのご案内は控え 無香でご用意します':''}</p>
+    </div>`:''}
 
     ${has?`<div class="csheet">
       <div class="cttl">触れてほしいところ</div>
@@ -1107,6 +1204,10 @@ function drawDone(){
       <div><b>${t(mn-15)}　ゆっくり戻ってきます</b><s>${esc([A.scent,A.music,A.light].filter(Boolean).join(' ／ ')||'静かなお部屋で')}</s></div>
       <div><b>${t(mn)}　仕上げてお帰りです</b><s>${esc([A.finish,A.styling].filter(Boolean).join(' ／ ')||'髪を見て仕上げます')}</s></div>
     </div>
+    ${allergyText()?`<div class="alg2 rise" style="--d:1.05s">
+      <b>お避けするもの</b>${esc(allergyText())}
+      <s>担当者全員に共有しました${noScent()?'　香りのご案内は控えます':''}</s></div>`:''}
+    ${REC&&REC.visits>=2?`<div class="rise" style="--d:1.2s">${recordStrip()}</div>`:''}
     <p class="hint rise" style="--d:1.1s">変えたくなったら このページからいつでも直せます</p></div>`;
   applyLang();
 }
@@ -1114,6 +1215,9 @@ function drawDone(){
 /* ── 保存（1問ごと・落としても続きから） ── */
 function save(){
   if(DEMO)return;                       // 見本は書かない
+  /* ★お選びになったことばを一緒に残す。
+       お帰りの1枚を その方の言語のまま開けるようにする（推測させない） */
+  if(LANG&&LANG!=='ja')A.lang=LANG; else delete A.lang;
   if(OPEN){ try{localStorage.setItem(DRAFT,JSON.stringify({a:A,course:COURSE&&COURSE.id,at:Date.now()}));}catch(e){} return; }
   clearTimeout(saving);
   saving=setTimeout(()=>{ fetch(API+'/precare',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1176,6 +1280,9 @@ function applyCourse(c){
     const j=await r.json();
     if(!r.ok)throw new Error(j.error||'読み込めませんでした');
     RESV=j.reservation; SEASON=j.season||'mid'; LAST=j.last||null;
+    // 記録は無くても本編は動く（落ちても画面を止めない）
+    fetch(API+'/visit/record?t='+encodeURIComponent(T)).then(x=>x.json())
+      .then(x=>{ if(x&&x.ok){REC=x.record;draw();} }).catch(()=>{});
     if(j.allow&&Array.isArray(j.allow.parts))ALLOW=j.allow;
     A=(j.answers&&Object.keys(j.answers).length)?j.answers:(LAST?JSON.parse(JSON.stringify(LAST)):{});
     SC=screens();
