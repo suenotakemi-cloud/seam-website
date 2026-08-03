@@ -32,6 +32,14 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
   padding-top:calc(10px + env(safe-area-inset-top))}
 .brand{font-family:'Cormorant Garamond',serif;font-size:20px;letter-spacing:.18em;color:var(--ink)}
 .top select{border:1px solid var(--line);border-radius:3px;padding:9px 12px;background:#fff;color:var(--ink)}
+/* 価格の出し方を切り替える。押した色でいまどれなのか一目で分かるようにする */
+.modes{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.modes button{padding:10px 18px;border:0;background:#fff;font-size:13.5px;color:var(--sub);letter-spacing:.05em}
+.modes button.on{background:var(--ink);color:#fff}
+.modes button.on[data-pm="member"]{background:var(--ok)}
+.modes button.on[data-pm="sale"]{background:var(--ng)}
+.ci-was{font-size:11px;color:#B9B2A6;text-decoration:line-through;margin-right:5px}
+.sr.cut b{font-family:'Cormorant Garamond',serif;font-size:18px}
 .spacer{flex:1}
 /* 読み取り待機のランプ。緑＝いつでも読める */
 .lamp{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub);letter-spacing:.04em}
@@ -157,6 +165,11 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
   <div class="top">
     <span class="brand">SEAM SHOP</span>
     <select id="shopSel"></select>
+    <div class="modes" id="priceModes">
+      <button data-pm="normal" class="on">通常</button>
+      <button data-pm="member">メンバー</button>
+      <button data-pm="sale">セール</button>
+    </div>
     <span class="spacer"></span>
     <span class="lamp" id="lamp"><i></i><span id="lampT">読み取り待機中</span></span>
   </div>
@@ -190,6 +203,23 @@ const TOKK='stb_admin_tok', SHOPK='stb_shop';
 let TOK=localStorage.getItem(TOKK)||'';
 let SHOP=localStorage.getItem(SHOPK)||'ginza';
 let SHOPS=[], TAB='prod', CART=[], MEMBER=null, PAY='cash', STOCKVIEW=null;
+/* 価格の出し方。normal=定価 / member=メンバー価格 / sale=セール価格。
+   割引の率は「価格設定」の画面(prices.html)で決めたものを settings から読む。 */
+let PMODE='normal', RULES={member:{},sale:{}};
+const SIZE_RE=/(\d+(?:\.\d+)?)\s*(mL|ml|ML|Ml|g|G|kg|KG|L)\b/;
+function sizeOf(name){const m=SIZE_RE.exec(String(name||''));if(!m)return '';
+  const u=m[2].toLowerCase()==='ml'?'ml':(m[2].toLowerCase()==='kg'?'kg':m[2].toLowerCase());return m[1]+u;}
+const brandOf=p=>String(p.brand||'').trim()||'（ブランド未設定）';
+/* 細かいほうが勝つ: 商品ごと → ブランド＋サイズ → ブランド → 既定 */
+function pctFor(p){
+  if(PMODE==='normal')return 0;
+  const r=RULES[PMODE]||{}, b=brandOf(p), sz=sizeOf(p.name||p.nm);
+  if(r.product&&r.product[p.productId||p.id]!=null)return +r.product[p.productId||p.id];
+  if(sz&&r.size&&r.size[b+'|'+sz]!=null)return +r.size[b+'|'+sz];
+  if(r.brand&&r.brand[b]!=null)return +r.brand[b];
+  return +(r.default||0);
+}
+const lineNow=i=>Math.round(i.unit*(1-pctFor(i)/100));   // 1点あたりの今の値段
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -244,17 +274,19 @@ async function onProductCode(code){
 /* ══════════ 会計 ══════════ */
 function addToCart(p){
   const f=CART.find(x=>x.productId===p.id);
-  if(f)f.qty++; else CART.push({productId:p.id,name:p.name,unit:+p.price||0,qty:1});
+  if(f)f.qty++; else CART.push({productId:p.id,name:p.name,brand:p.brand||'',unit:+p.price||0,qty:1});
   render();
 }
-function cartTotal(){ return CART.reduce((s,i)=>s+i.unit*i.qty,0); }
+function cartList(){ return CART.reduce((s,i)=>s+i.unit*i.qty,0); }            // 定価の合計
+function cartTotal(){ return CART.reduce((s,i)=>s+lineNow(i)*i.qty,0); }        // 実際にいただく額
+function cartCut(){ return cartList()-cartTotal(); }                            // 引いた額
 function renderCart(){
   if(!CART.length){ $('cart').innerHTML='<div class="empty">バーコードを読み取ると ここに並びます</div>'; return; }
-  $('cart').innerHTML=CART.map((i,ix)=>`<div class="ci">
-    <div class="ci-n">${esc(i.name)}<div class="ci-b">${yen(i.unit)}</div></div>
+  $('cart').innerHTML=CART.map((i,ix)=>{const now=lineNow(i),cut=i.unit!==now;return `<div class="ci">
+    <div class="ci-n">${esc(i.name)}<div class="ci-b">${cut?`<span class="ci-was">${yen(i.unit)}</span>${yen(now)}　−${pctFor(i)}％`:yen(i.unit)}</div></div>
     <div class="ci-q"><button data-q="-" data-i="${ix}">−</button><span>${i.qty}</span><button data-q="+" data-i="${ix}">＋</button></div>
-    <div class="ci-p">${yen(i.unit*i.qty)}</div>
-    <button class="ci-x" data-x="${ix}">×</button></div>`).join('');
+    <div class="ci-p">${yen(now*i.qty)}</div>
+    <button class="ci-x" data-x="${ix}">×</button></div>`;}).join('');
   $('cart').querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{
     const i=CART[+b.dataset.i]; if(b.dataset.q==='+')i.qty++; else if(--i.qty<=0)CART.splice(+b.dataset.i,1); render();});
   $('cart').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{CART.splice(+b.dataset.x,1);render();});
@@ -262,8 +294,11 @@ function renderCart(){
 function renderSum(){
   const t=cartTotal();
   const m=MEMBER?`<div class="sr cut"><span>${esc(MEMBER.name||'会員')} 様（${esc(MEMBER.rank||'')}）</span><span>${MEMBER.points||0} pt</span></div>`:'';
+  const cut=cartCut();
   $('sum').innerHTML=m+
     `<div class="sr"><span>点数</span><span>${CART.reduce((s,i)=>s+i.qty,0)} 点</span></div>
+     ${cut>0?`<div class="sr"><span>定価</span><span>${yen(cartList())}</span></div>
+       <div class="sr cut"><span>${PMODE==='member'?'メンバー価格':'セール価格'}</span><b>−${yen(cut)}</b></div>`:''}
      <div class="sr big"><span>合計</span><b>${yen(t)}</b></div>
      <div class="pay">${['cash:現金','card:カード','qr:QR決済'].map(x=>{const[v,l]=x.split(':');
        return `<button data-p="${v}" class="${PAY===v?'on':''}">${l}</button>`}).join('')}</div>
@@ -283,8 +318,11 @@ async function doCheckout(){
   try{
     await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
       mode:'shop',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
-      tech:0,retail:t,retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId})),
-      discount:0,total:t,method:PAY,memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
+      tech:0,retail:cartList(),
+      retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId})),
+      discount:cartCut(),
+      discountLabel:PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),
+      total:t,method:PAY,memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
     // 在庫を引く。1件ずつ（どれが失敗したか分かるように）
     for(const i of CART){ await post('/stock/adjust',{shopId:SHOP,productId:i.productId,delta:-i.qty,reason:'店販'}).catch(()=>{}); }
     // ポイントを付ける（会員のときだけ・商品は1円=1pt）
@@ -322,7 +360,8 @@ async function doSearch(v){
   const list=(j.products||[]).slice(0,60);
   $('pl').innerHTML=list.length?list.map(p=>`<button class="pc" data-p="${esc(p.id)}">
       <span class="pc-n">${esc(p.name)}</span>
-      <span class="pc-f"><span class="pc-p">${yen(p.price)}</span><span class="pc-s">${esc(p.barcode||'')}</span></span>
+      <span class="pc-f"><span class="pc-p">${(()=>{const n=Math.round(p.price*(1-pctFor({productId:p.id,name:p.name,brand:p.brand})/100));
+        return n!==p.price?`<span class="ci-was">${yen(p.price)}</span>${yen(n)}`:yen(p.price);})()}</span><span class="pc-s">${esc(p.barcode||'')}</span></span>
     </button>`).join(''):'<div class="empty">見つかりませんでした</div>';
   $('pl').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
     const p=list.find(x=>x.id===b.dataset.p); if(!p)return;
@@ -404,6 +443,12 @@ async function boot(){
   }
   $('gate').style.display='none'; $('app').style.display='block';
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;syncTabs();renderRight();});
+  document.querySelectorAll('#priceModes button').forEach(b=>b.onclick=()=>{
+    PMODE=b.dataset.pm;
+    document.querySelectorAll('#priceModes button').forEach(x=>x.classList.toggle('on',x.dataset.pm===PMODE));
+    render(); toast({normal:'通常の値段にしました',member:'メンバー価格にしました',sale:'セール価格にしました'}[PMODE]);});
+  try{ const sj=await get('/settings'); const v=(sj.settings||{}).price_rules;
+       if(v){const r=JSON.parse(v);RULES.member=r.member||{};RULES.sale=r.sale||{};} }catch(e){}
   render();
   // 画面のどこを触っても、読み取りが効くように隠し欄へ戻す
   const focusSink=()=>{const el=document.activeElement;

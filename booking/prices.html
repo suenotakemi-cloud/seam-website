@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>価格設定｜SEAM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══ SEAM 価格設定（iPad用）══
+   メンバー価格とセール価格を、ブランド単位・サイズ単位でまとめて決めるための画面。
+   1点ずつ値段を打ち直すのではなく「何％引くか」を置く。
+   細かいほうが勝つ: 商品ごと → ブランド＋サイズ → ブランド → 全体の既定。 */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--ink:#16171B;--body:#3E3B36;--sub:#7C776E;--line:#E3DCD0;--cream:#FBF9F5;
+  --gold:#B8945A;--clay:#A87456;--ng:#B4442E;--bg:#F7F5F1;--mem:#1F6B45;--sale:#B4442E}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
+  font-size:15px;line-height:1.7;-webkit-text-size-adjust:100%}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:16px}
+
+.top{display:flex;align-items:center;gap:14px;padding:10px 16px;background:#fff;
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;
+  padding-top:calc(10px + env(safe-area-inset-top));flex-wrap:wrap}
+.brand{font-family:'Cormorant Garamond',serif;font-size:20px;letter-spacing:.18em;color:var(--ink)}
+.spacer{flex:1}
+.modes{display:flex;gap:0;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.modes button{padding:11px 22px;border:0;background:#fff;font-size:14px;color:var(--sub);letter-spacing:.06em}
+.modes button.on{background:var(--ink);color:#fff}
+.modes button.on[data-m="sale"]{background:var(--sale)}
+.modes button.on[data-m="member"]{background:var(--mem)}
+.save{padding:12px 26px;border:0;border-radius:3px;background:var(--ink);color:#fff;font-size:14px;letter-spacing:.06em}
+.save[disabled]{background:#D6D0C6}
+
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 80px}
+h2{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;letter-spacing:.14em;
+  color:var(--clay);margin:26px 0 12px}
+h2:first-child{margin-top:6px}
+.note{font-size:12.5px;color:var(--sub);line-height:1.9;margin:0 0 14px}
+
+/* 既定 */
+.def{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);
+  border-radius:3px;padding:18px 20px;flex-wrap:wrap}
+.def label{font-size:14px;color:var(--ink)}
+.pin{width:96px;border:1px solid var(--line);border-radius:3px;padding:12px;text-align:right;
+  font-size:19px;font-family:'Cormorant Garamond',serif;background:#fff}
+.pin.set{border-color:var(--gold);background:#FFFCF5}
+.unit{font-size:14px;color:var(--sub)}
+.quick{display:flex;gap:6px;flex-wrap:wrap}
+.quick button{border:1px solid var(--line);background:#fff;border-radius:3px;padding:9px 14px;font-size:13px;color:var(--body)}
+
+/* 一覧 */
+.rows{border-top:1px solid var(--line);background:#fff;border:1px solid var(--line);border-radius:3px}
+.row{display:flex;align-items:center;gap:14px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.row:last-child{border-bottom:0}
+.row.open{background:var(--cream)}
+.r-n{flex:1;min-width:170px;font-size:14.5px;color:var(--ink)}
+.r-c{font-size:12px;color:var(--sub);letter-spacing:.04em}
+.r-ex{font-size:12.5px;color:var(--sub);min-width:170px;text-align:right}
+.r-ex b{color:var(--ink);font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600}
+.r-ex s{color:#B9B2A6}
+.r-in{display:flex;align-items:center;gap:6px}
+.r-more{border:1px solid var(--line);background:#fff;border-radius:3px;padding:8px 12px;font-size:12px;color:var(--sub)}
+.sizes{width:100%;padding:4px 0 8px 0;border-top:1px dashed var(--line);margin-top:6px}
+.srow{display:flex;align-items:center;gap:12px;padding:9px 0 9px 18px;font-size:13.5px;flex-wrap:wrap}
+.srow .r-n{min-width:120px}
+.empty{color:var(--sub);font-size:13px;padding:26px;text-align:center}
+
+.gate{max-width:400px;margin:16vh auto;background:#fff;border:1px solid var(--line);border-radius:3px;padding:32px 26px}
+.gate h1{font-family:'Cormorant Garamond',serif;font-size:24px;letter-spacing:.16em;color:var(--ink);margin:0 0 6px;font-weight:600}
+.gate p{font-size:13px;color:var(--sub);margin:0 0 18px}
+.gate input{width:100%;border:1px solid var(--line);border-radius:3px;padding:14px}
+.gate button{width:100%;margin-top:12px;padding:15px;border:0;border-radius:3px;background:var(--ink);color:#fff;font-size:15px}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ink);color:#fff;padding:13px 22px;border-radius:3px;font-size:14px;z-index:200;
+  transition:.22s;pointer-events:none}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ng{background:var(--ng)}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate" style="display:none">
+  <h1>SEAM PRICES</h1>
+  <p>メンバー価格とセール価格を決める画面です</p>
+  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off">
+  <button id="gbtn">開く</button>
+</div>
+
+<div id="app" style="display:none">
+  <div class="top">
+    <span class="brand">SEAM PRICES</span>
+    <div class="modes">
+      <button data-m="member" class="on">メンバー価格</button>
+      <button data-m="sale">セール価格</button>
+    </div>
+    <span class="spacer"></span>
+    <button class="save" id="saveBtn">保存する</button>
+  </div>
+  <div class="wrap">
+    <h2 id="h-def">ぜんぶに効く割引</h2>
+    <p class="note" id="note-def"></p>
+    <div class="def">
+      <label>既定の割引</label>
+      <input class="pin" id="defIn" type="number" min="0" max="90" step="1" inputmode="numeric">
+      <span class="unit">％引き</span>
+      <div class="quick" id="defQ"></div>
+    </div>
+
+    <h2>ブランドごと</h2>
+    <p class="note">空欄なら既定の割引を使います　「サイズ別」を開くと 同じブランドでも大きさで変えられます</p>
+    <div class="rows" id="brands"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const TOKK='stb_admin_tok';
+let TOK=localStorage.getItem(TOKK)||'';
+let MODE='member', PRODUCTS=[], RULES={member:{},sale:{}}, OPEN=null, DIRTY=false;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>'¥'+Math.round(+n||0).toLocaleString();
+const H=(...a)=>({'Authorization':'Bearer '+TOK,...Object.assign({},...a)});
+async function get(p){const r=await fetch(API+p,{headers:H()});if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:H({'Content-Type':'application/json'}),body:JSON.stringify(b)});
+  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+let tt;function toast(m,ng){const t=$('toast');t.textContent=m;t.className='on'+(ng?' ng':'');clearTimeout(tt);tt=setTimeout(()=>t.className='',ng?3000:1800);}
+
+/* ══ サイズは商品名から読む（250ml / 500g / 1kg など）══ */
+const SIZE_RE=/(\d+(?:\.\d+)?)\s*(mL|ml|ML|Ml|g|G|kg|KG|L)\b/;
+function sizeOf(name){
+  const m=SIZE_RE.exec(String(name||''));
+  if(!m)return '';
+  const u=m[2].toLowerCase()==='ml'?'ml':(m[2].toLowerCase()==='kg'?'kg':m[2].toLowerCase());
+  return m[1]+u;
+}
+const brandOf=p=>String(p.brand||'').trim()||'（ブランド未設定）';
+
+/* ══ 割引の決め方。細かいほうが勝つ ══ */
+function pctFor(p,mode){
+  const r=RULES[mode]||{};
+  const b=brandOf(p), s=sizeOf(p.name);
+  if(r.product&&r.product[p.id]!=null)return +r.product[p.id];
+  if(s&&r.size&&r.size[b+'|'+s]!=null)return +r.size[b+'|'+s];
+  if(r.brand&&r.brand[b]!=null)return +r.brand[b];
+  return +(r.default||0);
+}
+const priceWith=(price,pct)=>Math.round((+price||0)*(1-(+pct||0)/100));
+
+/* ══ 画面 ══ */
+function groups(){
+  const g={};
+  for(const p of PRODUCTS){
+    const b=brandOf(p);
+    (g[b]=g[b]||{n:0,items:[],sizes:{}}).n++;
+    g[b].items.push(p);
+    const s=sizeOf(p.name); if(s){ (g[b].sizes[s]=g[b].sizes[s]||[]).push(p); }
+  }
+  return Object.entries(g).sort((a,b)=>b[1].n-a[1].n);
+}
+function exampleOf(items,mode,pctOverride){
+  const p=items.find(x=>+x.price>0); if(!p)return '';
+  const pct=pctOverride!=null?pctOverride:pctFor(p,mode);
+  if(!pct)return `<s>${yen(p.price)}</s> そのまま`;
+  return `<s>${yen(p.price)}</s> → <b>${yen(priceWith(p.price,pct))}</b>`;
+}
+function render(){
+  const r=RULES[MODE]||(RULES[MODE]={});
+  $('h-def').textContent=MODE==='member'?'メンバー価格 — ぜんぶに効く割引':'セール価格 — ぜんぶに効く割引';
+  $('note-def').textContent=MODE==='member'
+    ?'会員のお客様に出す値段です　レジで「メンバー」を押すと この割引で計算します'
+    :'キャンペーン中の値段です　レジで「セール」を押すと この割引で計算します';
+  $('defIn').value=r.default!=null?r.default:'';
+  $('defIn').className='pin'+(r.default?' set':'');
+  $('defQ').innerHTML=[0,5,10,15,20,30].map(v=>`<button data-v="${v}">${v}％</button>`).join('');
+  $('defQ').querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{r.default=+b.dataset.v;DIRTY=true;render();});
+
+  const gs=groups();
+  $('brands').innerHTML=gs.length?gs.map(([b,g])=>{
+    const bp=(r.brand&&r.brand[b]!=null)?r.brand[b]:'';
+    const sizeKeys=Object.keys(g.sizes).sort((x,y)=>parseFloat(x)-parseFloat(y));
+    return `<div class="row ${OPEN===b?'open':''}">
+      <span class="r-n">${esc(b)}<span class="r-c">　${g.n}点</span></span>
+      <span class="r-in"><input class="pin ${bp!==''?'set':''}" data-b="${esc(b)}" type="number" min="0" max="90" step="1"
+        inputmode="numeric" value="${bp}" placeholder="—"><span class="unit">％</span></span>
+      <span class="r-ex">${exampleOf(g.items,MODE,bp!==''?+bp:null)}</span>
+      ${sizeKeys.length>1?`<button class="r-more" data-open="${esc(b)}">${OPEN===b?'閉じる':'サイズ別'}</button>`:''}
+      ${OPEN===b?`<div class="sizes">${sizeKeys.map(s=>{
+        const sv=(r.size&&r.size[b+'|'+s]!=null)?r.size[b+'|'+s]:'';
+        return `<div class="srow"><span class="r-n">${esc(s)}<span class="r-c">　${g.sizes[s].length}点</span></span>
+          <span class="r-in"><input class="pin ${sv!==''?'set':''}" data-s="${esc(b+'|'+s)}" type="number" min="0" max="90"
+            step="1" inputmode="numeric" value="${sv}" placeholder="—"><span class="unit">％</span></span>
+          <span class="r-ex">${exampleOf(g.sizes[s],MODE,sv!==''?+sv:null)}</span></div>`;}).join('')}</div>`:''}
+    </div>`;}).join(''):'<div class="empty">商品がまだありません</div>';
+
+  $('brands').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{OPEN=(OPEN===b.dataset.open)?null:b.dataset.open;render();});
+  $('brands').querySelectorAll('[data-b]').forEach(i=>i.onchange=()=>{
+    r.brand=r.brand||{}; const v=i.value.trim();
+    if(v==='')delete r.brand[i.dataset.b]; else r.brand[i.dataset.b]=Math.max(0,Math.min(90,+v||0));
+    DIRTY=true;render();});
+  $('brands').querySelectorAll('[data-s]').forEach(i=>i.onchange=()=>{
+    r.size=r.size||{}; const v=i.value.trim();
+    if(v==='')delete r.size[i.dataset.s]; else r.size[i.dataset.s]=Math.max(0,Math.min(90,+v||0));
+    DIRTY=true;render();});
+  $('saveBtn').disabled=!DIRTY;
+  $('saveBtn').textContent=DIRTY?'保存する':'保存済み';
+}
+$('defIn').onchange=()=>{const r=RULES[MODE];const v=$('defIn').value.trim();
+  if(v==='')delete r.default; else r.default=Math.max(0,Math.min(90,+v||0));DIRTY=true;render();};
+document.querySelectorAll('.modes button').forEach(b=>b.onclick=()=>{
+  MODE=b.dataset.m;OPEN=null;
+  document.querySelectorAll('.modes button').forEach(x=>x.classList.toggle('on',x.dataset.m===MODE));
+  render();});
+$('saveBtn').onclick=async()=>{
+  $('saveBtn').disabled=true;$('saveBtn').textContent='保存中…';
+  try{ await post('/settings',{key:'price_rules',value:JSON.stringify(RULES)});
+    DIRTY=false; toast('保存しました　レジに反映されます'); render();
+  }catch(err){ toast(err.message||'保存できませんでした',true); $('saveBtn').disabled=false;$('saveBtn').textContent='保存する'; }
+};
+window.addEventListener('beforeunload',e=>{ if(DIRTY){e.preventDefault();e.returnValue='';} });
+
+async function boot(){
+  try{
+    const [pj,sj]=await Promise.all([get('/products'),get('/settings')]);
+    PRODUCTS=(pj.products||[]).filter(p=>p.active===undefined||p.active);
+    try{ const v=(sj.settings||{}).price_rules; if(v)RULES=JSON.parse(v); }catch(e){}
+    RULES.member=RULES.member||{}; RULES.sale=RULES.sale||{};
+  }catch(err){ localStorage.removeItem(TOKK);TOK='';showGate();toast('合言葉が違うようです',true);return; }
+  $('gate').style.display='none';$('app').style.display='block';
+  render();
+}
+function showGate(){$('gate').style.display='block';$('app').style.display='none';}
+$('gbtn').onclick=()=>{const v=$('gtok').value.trim();if(!v)return;TOK=v;localStorage.setItem(TOKK,v);boot();};
+$('gtok').onkeydown=e=>{if(e.key==='Enter')$('gbtn').click();};
+if(TOK)boot(); else showGate();
+</script>
+</body>
+</html>
