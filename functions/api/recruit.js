@@ -28,10 +28,16 @@ async function ensureTable(db) {
     " message TEXT DEFAULT ''," +        // 自由記入
     " kind TEXT DEFAULT 'apply'," +      // apply(応募) / visit(見学) / ask(質問)
     " src TEXT DEFAULT ''," +            // 広告などの流入元(?src=)
+    " callable TEXT DEFAULT ''," +       // 連絡してよい時間帯・方法(在職中の方向け)
     " ua TEXT DEFAULT ''," +
     " created_at INTEGER NOT NULL," +
     " handled INTEGER DEFAULT 0)"        // 担当者が対応済みにする用
   ).run();
+
+  // 既存テーブルには CREATE TABLE IF NOT EXISTS では列が増えないので追加する。
+  // 既にある場合は duplicate column エラーになるだけなので握りつぶしてよい。
+  try { await db.prepare("ALTER TABLE recruit_entries ADD COLUMN callable TEXT DEFAULT ''").run(); }
+  catch (e) { /* 追加済み */ }
 }
 
 function checkKey(request, env) {
@@ -66,11 +72,11 @@ export async function onRequest(context) {
 
     await ensureTable(db);
     await db.prepare(
-      "INSERT INTO recruit_entries (name,contact,role,store,experience,message,kind,src,ua,created_at)" +
-      " VALUES (?,?,?,?,?,?,?,?,?,?)"
+      "INSERT INTO recruit_entries (name,contact,role,store,experience,message,kind,src,callable,ua,created_at)" +
+      " VALUES (?,?,?,?,?,?,?,?,?,?,?)"
     ).bind(
       name, contact, clip(b.role, 40), clip(b.store, 40), clip(b.experience, 40),
-      message, clip(b.kind, 12) || 'apply', clip(b.src, 60),
+      message, clip(b.kind, 12) || 'apply', clip(b.src, 60), clip(b.callable, 60),
       clip(request.headers.get('user-agent'), 200), Date.now()
     ).run();
 
@@ -85,7 +91,7 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10) || 100, 500);
     const r = await db.prepare(
-      "SELECT id,name,contact,role,store,experience,message,kind,src,created_at,handled" +
+      "SELECT id,name,contact,role,store,experience,message,kind,src,callable,created_at,handled" +
       " FROM recruit_entries ORDER BY created_at DESC LIMIT ?"
     ).bind(limit).all();
     return json({ entries: r.results || [] });
