@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=15"></script>
+<script src="pc-i18n.js?v=16"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -664,6 +664,53 @@ function screens(){
       SC=screens(); i=1; save(); draw(); }); },
     next:'', noskip:true});
 
+  /* ══ 2回目からのクイック ══
+     ★VIPの本体は「前回と同じ」ではなく「前回と同じ、でも今日はここだけ違う」。
+       毎回同じ長さ・同じ強さになるなら、それは選べていないのと同じ。
+       11問をもう一度やらせず、ひとつだけ変えて終われる道を先に出す。 */
+  if(LAST&&!OPEN) S.push({id:'quick',render:()=>`
+    <p class="eyebrow">welcome back</p>
+    <h1>前回と同じで<br>ご用意できます</h1>
+    <p class="lead">そのままでよければ ひとつ押すだけで終わります<br>
+      今日だけ変えたいところがあれば こちらから</p>
+    <div class="opts" style="margin-top:20px">
+      <button class="opt qk" data-q="same"><span class="tick"></span>
+        <span><b>前回と同じで お願いします</b><s>いちばん早く終わります</s></span></button>
+    </div>
+    <p class="sub-h">今日だけ 変えるなら</p>
+    <div class="opts">
+      <button class="opt qk" data-q="strong"><span class="tick"></span>
+        <span><b>今日は 強めに</b><s>前回よりしっかりほぐします</s></span></button>
+      <button class="opt qk" data-q="soft"><span class="tick"></span>
+        <span><b>今日は やさしく</b><s>前回よりそっと</s></span></button>
+      <button class="opt qk" data-q="sleep"><span class="tick"></span>
+        <span><b>今日は 眠ってしまいたい</b><s>灯りを落として 音も静かに</s></span></button>
+      <button class="opt qk" data-q="drink"><span class="tick"></span>
+        <span><b>お飲みものを変える</b><s>それだけ選んで終われます</s></span></button>
+    </div>
+    <button class="skip" id="qall">ぜんぶ見直す</button>
+    ${langBar()}`,
+    wire:()=>{
+      const jump=id=>{ const k=SC.findIndex(x=>x.id===id); if(k>=0){i=k;save();draw();} };
+      const bump=(d)=>{ A.parts=A.parts||{};
+        Object.keys(A.parts).forEach(k=>{ const v=A.parts[k];
+          if(typeof v==='number')A.parts[k]=Math.max(1,Math.min(10,v+d)); });
+        const n=gnum(A.washPower); if(n)A.washPower=gtext('washPower',Math.max(1,Math.min(10,n+d)));
+      };
+      app.querySelectorAll('.qk').forEach(b=>b.onclick=()=>{
+        const q=b.dataset.q;
+        if(q==='strong')bump(2);
+        else if(q==='soft')bump(-2);
+        else if(q==='sleep'){ A.goal='ねむってしまいたい';
+          A.light=gtext('light',9); A.sound=gtext('sound',2); A.talk='話しかけないでほしい'; }
+        if(q==='drink'){ save(); jump('scent'); return; }
+        save(); jump('confirm');
+      });
+      const all=document.getElementById('qall');
+      if(all)all.onclick=()=>{ i=1; draw(); };
+    },
+    next:'', noskip:true});
+
   S.push({id:'hello',render:()=>`
     <p class="eyebrow">for your visit</p>
     <h1>当日のことを<br>いま決めておけます</h1>
@@ -747,7 +794,10 @@ function screens(){
          （眠っていただくのが仕事なので、言葉と拍は邪魔になる） */
       {k:'music',h:'音楽',ill:'ill_sound',chips:['ヒーリング（ピアノ）','川のせせらぎ','波の音',
         '雨と森の音','シンギングボウル','宇宙・瞑想','おまかせ']},
-      {k:'scent',h:'香り',ill:'ill_scent',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']}],
+      {k:'scent',h:'香り',ill:'ill_scent',chips:['無香','柑橘','ウッディ','フローラル','ハーブ','おまかせ']},
+      /* ★実際にお出ししているものに合わせて差し替えること */
+      {k:'drink',h:'お飲みもの',ill:'ill_quiet',chips:['ハーブティー','ルイボスティー','ほうじ茶',
+        '白湯','冷たいお水','炭酸水','おまかせ']}],
     free:{k:'musicOther',ph:'そのほか 聴きたいものがあれば'},
     // ★灯りと音は「ふつう」が人によって違う。ことばをやめて指で決めていただく
     gauges:['light','sound'],
@@ -816,10 +866,10 @@ let SC=[];
 function draw(){
   const s=SC[i];
   document.getElementById('back').hidden = i===0 || !!s.done;
-  document.getElementById('stepn').textContent = (s.done||s.id==='hello'||s.id==='course')?''
+  document.getElementById('stepn').textContent = (s.done||s.id==='hello'||s.id==='course'||s.id==='quick')?''
     :`${i-(OPEN?1:0)} / ${SC.length-2-(OPEN?1:0)}`;
   document.getElementById('bar').style.width = Math.round(i/(SC.length-1)*100)+'%';
-  foot.hidden=!!s.done;
+  foot.hidden=!!s.done||s.id==='quick';
 
   if(s.confirm) return drawConfirm();
   if(s.done) return drawDone();
@@ -962,10 +1012,11 @@ function drawConfirm(){
       ${step(t(mn),'仕上げてお帰りです',[A.finish,A.styling].concat(A.care||[],[A.careOther],A.face||[]))}
     </div>
 
-    ${(A.scent||A.music||A.musicOther||gnum(A.light)||gnum(A.sound)||A.room)?`<div class="csheet">
+    ${(A.scent||A.music||A.musicOther||A.drink||gnum(A.light)||gnum(A.sound)||A.room)?`<div class="csheet">
       <div class="cttl">お部屋のしつらえ</div>
       ${A.scent?`<div class="cmeter"><span>香り</span><strong>${esc(A.scent)}</strong></div>`:''}
       ${(A.music||A.musicOther)?`<div class="cmeter"><span>音楽</span><strong>${esc([A.music,A.musicOther].filter(Boolean).join(' ／ '))}</strong></div>`:''}
+      ${A.drink?`<div class="cmeter"><span>お飲みもの</span><strong>${esc(A.drink)}</strong></div>`:''}
       ${meter('light','灯り')}
       ${meter('sound','音の大きさ')}
       ${A.room?`<div class="cmeter"><span>お席</span><strong>${esc(A.room)}</strong></div>`:''}
