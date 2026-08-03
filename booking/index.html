@@ -4486,7 +4486,6 @@ function renderBook(){
   const stepsHtml=(()=>{
     const bar=`<div class="steps">${[0,1,2,3,4].map(i=>`<div class="${bk.step>=i?'on':''}"></div>`).join('')}</div>`;
     if(bk.step<=0||bk.step>=5)return bar;
-    const rest=4-bk.step;   // 残りの画面数（step4=お支払いが最後）
     // 「今なにを選んだか」を上に出す。タップでその画面に戻れる（指名したかな？を解消）
     const chips=[];
     const mm=MENUS.find(m=>m.id===bk.menu);
@@ -4498,7 +4497,7 @@ function renderBook(){
     if(bk.step>=3&&bk.day&&bk.start!=null)
       chips.push(`<button class="pk" data-jump="2"><span>${bk.day.slice(5).replace('-','/')}（${WD[new Date(bk.day).getDay()]}）${hm(bk.start)}</span>変更</button>`);
     const pick=chips.length?`<div class="pickbar">${chips.join('')}</div>`:'';
-    return bar+`<div class="stepnow"><b>${bk.step+1}/5</b>${STEP_NAMES[bk.step]}<span>${rest>0?`あと${rest}回選ぶと終わります`:'これで最後です'}</span></div>`+pick;
+    return bar+`<div class="stepnow"><b>${bk.step+1}/5</b>${STEP_NAMES[bk.step]}</div>`+pick;
   })();
   // ステップ0の前に「ヘアサロン / スパ」の入口を選ぶ。選んだ入口のメニューだけ表示（スパ=ヘッドスパ / ヘア=それ以外）
   if(bk.step===0&&!bk.section){
