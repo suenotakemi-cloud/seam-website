@@ -891,6 +891,54 @@ body.customer .phone.spa{background:#f7f8f3}
 .lineconn .lc-t{font-size:13.5px;font-weight:800;color:#0c7a41}
 .lineconn .lc-s{font-size:11.5px;color:var(--sub);line-height:1.6;margin:3px 0 9px}
 .lineconn .lc-o{font-size:11px;color:var(--sub);margin-top:9px}
+/* ══ お客様の予約画面ぜんぶ（作り直し 2026-08）══
+   body.customer にだけ効かせる＝スタッフの台帳画面には触らない。
+   太字・原色・影・角丸を減らし 罫線と余白で組む。 */
+body.customer{--ci:#16171B;--cb:#4A4741;--cs:#7C776E;--cl:#E3DCD0;--cg:#B8945A;--cc:#A87456;--ccr:#FBF9F5}
+body.customer h3{font-family:'Noto Serif JP',serif;font-weight:500;font-size:16px;color:var(--ci);
+  letter-spacing:.05em}
+/* LINEログイン。緑は残す（見慣れた色なので）が 主役の顔をやめる */
+body.customer button[onclick*="startLineLogin"]{
+  border-radius:2px!important;font-weight:400!important;font-size:13px!important;
+  padding:12px!important;letter-spacing:.03em!important;box-shadow:none!important;
+  background:#fff!important;color:#1a7f45!important;border:1px solid rgba(6,199,85,.45)!important;gap:8px!important}
+body.customer button[onclick*="startLineLogin"] svg{fill:#06C755!important;width:18px!important;height:18px!important}
+body.customer .rlook .btn.pri{background:#fff;border:1px solid var(--cl);color:var(--cb)}
+body.customer .line-logged{border-radius:2px;font-size:12.5px;font-weight:400;letter-spacing:.02em}
+body.customer .glogin{border-radius:2px;font-size:12.5px}
+/* 前回の呼び出し */
+body.customer .rlook{background:var(--ccr);border:1px solid var(--cl);border-radius:2px;padding:16px 14px}
+body.customer .rl-t{font-size:12px;font-weight:400;color:var(--cs);line-height:1.8;letter-spacing:.02em}
+body.customer .rlook input{border:1px solid var(--cl);border-radius:2px;font-size:13px;padding:11px 12px}
+body.customer .rlook .btn{border-radius:2px;font-weight:400;letter-spacing:.04em;font-size:13px}
+/* いま選んでいる入口 */
+body.customer .sec-bar{background:none;border:0;border-bottom:1px solid var(--cl);border-radius:0;
+  padding:14px 2px;margin:22px 0 4px}
+body.customer .sb-t{font-family:'Noto Serif JP',serif;font-weight:500;font-size:16px;color:var(--ci);letter-spacing:.05em}
+body.customer .sb-chg{border:1px solid var(--cl);background:#fff;border-radius:2px;font-size:11.5px;
+  font-weight:400;color:var(--cs);letter-spacing:.04em;padding:6px 12px}
+body.customer .spa-lead{font-size:12.5px;line-height:2;color:var(--cs)}
+/* メニューの見出し（クーポン等） */
+body.customer .mcat{margin-top:26px}
+body.customer .mcat-h{font-family:'Cormorant Garamond',serif;font-size:13px;font-weight:500;
+  letter-spacing:.16em;color:var(--cg);border-bottom:1px solid var(--cl);padding-bottom:8px;margin-bottom:0}
+/* メニュー1件。囲みをやめ 罫線で区切る。値段は右に十分な幅を確保して折り返しの孤立を防ぐ */
+body.customer .opt{background:none;border:0;border-bottom:1px solid var(--cl);border-radius:0;
+  padding:18px 2px;gap:14px;align-items:flex-start}
+body.customer .opt.sel{background:var(--ccr);border-bottom-color:var(--cg)}
+body.customer .opt .nm{font-size:14.5px;font-weight:400;line-height:1.75;color:var(--ci);letter-spacing:.01em}
+body.customer .opt .ctag{font-size:10.5px;font-weight:400;letter-spacing:.06em;border-radius:2px;
+  background:none;border:1px solid var(--cl);color:var(--cc);padding:2px 7px;margin-right:7px}
+body.customer .opt .dt{font-size:11.5px;color:var(--cs);margin-top:7px;letter-spacing:.02em}
+body.customer .opt .pr{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--ci);
+  min-width:108px;text-align:right;line-height:1.25;flex:none}
+body.customer .opt .pr small{font-family:'Noto Sans JP',sans-serif;font-weight:400!important;
+  color:var(--cs)!important;letter-spacing:.02em}
+body.customer .opt .pr small:last-child{color:var(--cc)!important;margin-top:3px}
+/* 下の操作 */
+body.customer .pnav .btn{border-radius:2px;font-weight:400;letter-spacing:.06em;font-size:13.5px;padding:13px 18px}
+body.customer .pnav .btn.pri{background:var(--ci);border-color:var(--ci)}
+body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:var(--cb)}
 /* ══ ご予約の入口（作り直し 2026-08）══
    カウンセリング画面と同じ言葉づかいに揃える。
    要素を減らし 余白で格を出す。囲みと色数を絞り 太字と黄色は使わない。 */
@@ -6249,15 +6297,15 @@ function enterCustomerMode(){
     const SHORT={ja:'日本語',en:'EN',zh:'简体',tw:'繁體',ko:'한국어'};
     const b=document.createElement('button');b.id='langTgl';
     b.textContent='🌐 '+SHORT[BOOK_LANG];
-    b.style.cssText='position:fixed;top:10px;right:10px;z-index:9000;border:1px solid #d8cfc0;background:#fff;border-radius:20px;padding:6px 13px;font-size:12.5px;font-weight:800;color:#6f6552;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08)';
+    b.style.cssText='position:fixed;top:12px;right:12px;z-index:9000;border:1px solid #E3DCD0;background:rgba(255,255,255,.92);border-radius:2px;padding:7px 13px;font-size:11.5px;font-weight:400;letter-spacing:.08em;color:#7C776E;cursor:pointer;backdrop-filter:blur(6px)';
     const menu=document.createElement('div');menu.id='langMenu';
-    menu.style.cssText='position:fixed;top:44px;right:10px;z-index:9001;background:#fff;border:1px solid #e2dbcc;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.14);overflow:hidden;display:none;min-width:150px';
-    menu.innerHTML=LANGS.map(l=>`<button data-l="${l}" style="display:block;width:100%;text-align:left;border:none;background:${l===BOOK_LANG?'#f6f1e6':'#fff'};padding:13px 16px;font-size:14px;font-weight:700;color:#3a3226;cursor:pointer">${LANG_LABEL[l]}</button>`).join('');
+    menu.style.cssText='position:fixed;top:46px;right:12px;z-index:9001;background:#fff;border:1px solid #E3DCD0;border-radius:2px;box-shadow:0 6px 20px rgba(22,23,27,.08);overflow:hidden;display:none;min-width:152px';
+    menu.innerHTML=LANGS.map(l=>`<button data-l="${l}" style="display:block;width:100%;text-align:left;border:none;background:${l===BOOK_LANG?'#FBF9F5':'#fff'};padding:13px 16px;font-size:13px;font-weight:400;letter-spacing:.04em;color:#4A4741;cursor:pointer">${LANG_LABEL[l]}</button>`).join('');
     b.onclick=()=>{menu.style.display=menu.style.display==='none'?'block':'none';};
     menu.querySelectorAll('[data-l]').forEach(x=>x.onclick=()=>{
       BOOK_LANG=x.dataset.l;try{localStorage.setItem('stb_lang',BOOK_LANG)}catch(e){}
       b.textContent='🌐 '+SHORT[BOOK_LANG];menu.style.display='none';
-      menu.querySelectorAll('[data-l]').forEach(y=>y.style.background=y.dataset.l===BOOK_LANG?'#f6f1e6':'#fff');
+      menu.querySelectorAll('[data-l]').forEach(y=>y.style.background=y.dataset.l===BOOK_LANG?'#FBF9F5':'#fff');
       renderBook();});
     document.body.appendChild(b);document.body.appendChild(menu);
     document.addEventListener('click',e=>{if(!menu.contains(e.target)&&e.target!==b)menu.style.display='none';});
