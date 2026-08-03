@@ -45,7 +45,10 @@ def enrich(node, is_retail, is_ginza):
 
 def patch(path, is_retail):
     s = open(path, encoding='utf-8').read()
-    is_ginza = 'ginza' in os.path.basename(path) or 'store-ginza' in path
+    # 【罠】ファイル名に ginza が入るだけで免税を付けると salon-ginza / headspa-ginza
+    # (役務のノード)にも付いてしまう。日本の輸出免税は物品が対象なので、
+    # 免税を書いてよいのは物販の店舗ページ store-ginza.html だけ。
+    is_ginza = os.path.basename(path) == 'store-ginza.html'
     blocks = list(re.finditer(r'(<script type="application/ld\+json">)(.*?)(</script>)', s, re.S))
     hits = 0
     # 後ろから置換してオフセットのずれを避ける
