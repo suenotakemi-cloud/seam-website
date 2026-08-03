@@ -1970,6 +1970,24 @@ function nameCheck(sei,mei,seiK,meiK){
 }
 
 function hira2kata(s){return (s||'').replace(/[ぁ-ゖ]/g,ch=>String.fromCharCode(ch.charCodeAt(0)+0x60));}
+/* 同じお客様が同じ日に重ねて取っていないか。見つかったら文言を返す（空文字＝問題なし）。
+   ご家族で同じ番号を使うこともあるので、これは注意であって禁止ではない。
+   端末の台帳で調べる（スタッフ端末には全部入っている）。 */
+function sameCustomerWarn(date,phone,name,start,end,exceptId){
+  const ph=(phone||'').replace(/[^0-9]/g,'');
+  if(ph.length<10)return '';
+  const nm=(name||'').replace(/\s+/g,'');
+  const same=(db.reservations||[]).filter(r=>r.date===date&&r.status!=='cancelled'&&r.id!==exceptId
+    &&(r.phone||'').replace(/[^0-9]/g,'')===ph);
+  if(!same.length)return '';
+  const sameName=same.some(r=>(r.name||'').replace(/\s+/g,'')===nm);
+  const ov=same.find(r=>start<r.end&&end>r.start);
+  const who=sameName?'同じお名前・お電話番号':'同じお電話番号';
+  const one=ov||same[0];
+  const when=`${hm(one.start)}〜「${one.name}様」`;
+  return ov?`${who}で、時間が重なるご予約があります（${when}）`
+           :`${who}で、同じ日にご予約があります（${when}）`;
+}
 function addReservation(o){
   const c=conflicts(o.date,o.staffId,o.start,o.end);
   if(c.length)return{ok:false,conflict:c[0]};
@@ -1986,6 +2004,9 @@ function addReservation(o){
   SyncProvider.push(o);
   // D1に非同期で保存（失敗してもlocalStorageには保存済みなので画面は壊れない）
   API.add(o).then(res => {
+    /* サーバー側でも同じお客様の重なりを見ている。台帳に無い経路（LINE等）で入った分も拾えるので、
+       手元の確認をすり抜けた分の控えとして出す。★スタッフ端末だけ＝お客様には出さない。 */
+    if (res && res.warn && ADMIN_TOKEN) toast('⚠️ ' + res.warn, true);
     if (res && res.precareUrl) {
       // 来店前の「今日のご希望」へのリンク。完了画面が先に出ていることがあるので描き直す
       window.__PRECARE_URL = res.precareUrl;
@@ -2461,6 +2482,9 @@ document.getElementById('m-save').onclick=()=>{
   const menu=MENUS.find(m=>m.id===document.getElementById('m-menu').value);
   // サロンボードに入る形だけ通す（お客様の予約画面と同じ規則）
   {const c=nameGate(name);if(c.ng){toast(c.ng,true);return;}name=c.name;}
+  /* 同じお客様が重ねて取っていないか。止めずに一度だけ確認する。 */
+  {const w=sameCustomerWarn(dkey(calDay),document.getElementById('m-phone').value,name,modalCtx.start,modalCtx.start+menu.min);
+   if(w&&!confirm(w+'\n\nこのまま登録しますか？'))return;}
   const r=addReservation({date:dkey(calDay),staffId:modalCtx.staffId,start:modalCtx.start,end:modalCtx.start+menu.min,menuId:menu.id,name,
     phone:document.getElementById('m-phone').value.trim(),note:document.getElementById('m-note').value.trim(),channel:document.getElementById('m-chan').value});
   if(!r.ok){toast(`⚠️ ${hm(r.conflict.start)}〜の「${r.conflict.name}様」と重複するため登録できません`,true);return}
