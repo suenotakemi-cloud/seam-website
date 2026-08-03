@@ -38,6 +38,17 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .modes button.on{background:var(--ink);color:#fff}
 .modes button.on[data-pm="member"]{background:var(--ok)}
 .modes button.on[data-pm="sale"]{background:var(--ng)}
+.dispBtn{border:1px solid var(--line);background:#fff;border-radius:3px;padding:9px 14px;
+  font-size:12.5px;color:var(--sub);letter-spacing:.04em}
+.dlg{position:fixed;inset:0;background:rgba(22,23,27,.42);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px}
+.dlg-b{background:#fff;border-radius:3px;max-width:620px;width:100%;padding:30px 28px}
+.dlg-b h3{font-family:'Cormorant Garamond',serif;font-size:19px;letter-spacing:.14em;color:var(--ink);margin:0 0 6px;font-weight:600}
+.dlg-b p{font-size:13px;color:var(--sub);line-height:2;margin:0 0 16px}
+.dlg-u{border:1px solid var(--line);background:var(--cream);border-radius:3px;padding:14px;
+  font-size:13px;word-break:break-all;line-height:1.8;color:var(--ink)}
+.dlg-a{display:flex;gap:8px;margin-top:14px}
+.dlg-a button{flex:1;padding:13px;border:1px solid var(--line);background:#fff;border-radius:3px;font-size:13.5px}
+.dlg-a button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
 .ci-was{font-size:11px;color:#B9B2A6;text-decoration:line-through;margin-right:5px}
 .sr.cut b{font-family:'Cormorant Garamond',serif;font-size:18px}
 .spacer{flex:1}
@@ -171,6 +182,7 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
       <button data-pm="sale">セール</button>
     </div>
     <span class="spacer"></span>
+    <button class="dispBtn" id="dispBtn">お客様画面</button>
     <span class="lamp" id="lamp"><i></i><span id="lampT">読み取り待機中</span></span>
   </div>
 
@@ -220,6 +232,20 @@ function pctFor(p){
   return +(r.default||0);
 }
 const lineNow=i=>Math.round(i.unit*(1-pctFor(i)/100));   // 1点あたりの今の値段
+/* お客様側のタブレットへ、いまの明細を置く。
+   置くのは見せてよいものだけ（在庫も原価も他のお客様も送らない）。 */
+let pushT=null;
+function pushDisplay(done){
+  clearTimeout(pushT);
+  pushT=setTimeout(()=>{
+    const t=cartTotal();
+    const earn=(MEMBER&&MEMBER.name)?Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)):0;
+    post('/display/push',{shopId:SHOP,mode:PMODE,done:!!done,
+      items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i)})),
+      list:cartList(),cut:cartCut(),total:t,
+      member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn}:null}).catch(()=>{});
+  },250);
+}
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -331,6 +357,7 @@ async function doCheckout(){
         delta:Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)),reason:'店販',ref:id,
         date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)}).catch(()=>{});
     }
+    pushDisplay(true);                       // お客様側は「ありがとうございました」に切り替わる
     CART=[]; said('会計しました',yen(t)+'　'+({cash:'現金',card:'カード',qr:'QR決済'}[PAY]));
     toast('会計しました');
     if(MEMBER)await loadMember(MEMBER.salonId||MEMBER.code);   // ポイントを取り直す
@@ -427,7 +454,7 @@ function memHtml(){
     <button class="mini" id="memoff" style="margin-top:18px">お客様を外す</button>`;
 }
 function syncTabs(){ document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===TAB)); }
-function render(){ renderCart(); renderSum(); renderRight();
+function render(){ renderCart(); renderSum(); renderRight(); pushDisplay(false);
   const mo=$('memoff'); if(mo)mo.onclick=()=>{MEMBER=null;HIST=[];render();}; }
 
 /* ══════════ 起動 ══════════ */
@@ -443,6 +470,7 @@ async function boot(){
   }
   $('gate').style.display='none'; $('app').style.display='block';
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;syncTabs();renderRight();});
+  $('dispBtn').onclick=showDisplayUrl;
   document.querySelectorAll('#priceModes button').forEach(b=>b.onclick=()=>{
     PMODE=b.dataset.pm;
     document.querySelectorAll('#priceModes button').forEach(x=>x.classList.toggle('on',x.dataset.pm===PMODE));
@@ -455,6 +483,27 @@ async function boot(){
     if(!el||(el.tagName!=='INPUT'&&el.tagName!=='TEXTAREA'&&el.tagName!=='SELECT'))$('sink').focus({preventScroll:true});};
   document.addEventListener('click',()=>setTimeout(focusSink,60));
   setInterval(focusSink,4000); focusSink();
+}
+async function showDisplayUrl(){
+  let tk='';
+  try{ const j=await post('/display/token',{}); tk=j.token||''; }
+  catch(err){ toast(err.message||'合言葉を作れませんでした',true); return; }
+  const url=location.origin+location.pathname.replace(/shop\.html$/,'display.html')
+    +'?s='+encodeURIComponent(SHOP)+'&t='+encodeURIComponent(tk);
+  const d=document.createElement('div'); d.className='dlg';
+  d.innerHTML=`<div class="dlg-b">
+    <h3>お客様にお見せする画面</h3>
+    <p>もう1台のタブレットのブラウザで、この住所を開いてください　一度開いたらブックマークに入れておけば、次からは開くだけです<br>
+       この画面には いまのお会計しか出ません（在庫や他のお客様は出ません）</p>
+    <div class="dlg-u">${esc(url)}</div>
+    <div class="dlg-a"><button id="dcopy" class="pri">住所をコピー</button><button id="dclose">閉じる</button></div>
+  </div>`;
+  document.body.appendChild(d);
+  d.querySelector('#dcopy').onclick=async()=>{
+    try{ await navigator.clipboard.writeText(url); toast('コピーしました'); }
+    catch(e){ toast('長押しで選んでコピーしてください',true); }};
+  d.querySelector('#dclose').onclick=()=>d.remove();
+  d.onclick=e=>{ if(e.target===d)d.remove(); };
 }
 function showGate(){ $('gate').style.display='block'; $('app').style.display='none'; }
 $('gbtn').onclick=()=>{ const v=$('gtok').value.trim(); if(!v)return;

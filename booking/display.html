@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ══ SEAM お客様にお見せする画面（カウンターの2台目）══
+   レジのiPadが置いた明細を、1秒ごとに覗きにいって映すだけの画面。
+   お客様の目の前に置くので、出すのは「その方のお会計」だけにする。
+   在庫・原価・他のお客様・操作ボタンは一切置かない。 */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+:root{--ink:#16171B;--body:#4A4741;--sub:#8C8579;--line:#E3DCD0;--cream:#FBF9F5;
+  --gold:#B8945A;--clay:#A87456;--bg:#F7F5F1}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}
+body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
+  font-size:17px;line-height:1.8;-webkit-text-size-adjust:100%}
+.screen{height:100%;display:flex;flex-direction:column;padding:clamp(20px,4vh,44px) clamp(20px,5vw,64px);
+  padding-top:calc(clamp(20px,4vh,44px) + env(safe-area-inset-top))}
+
+/* ── 待っているとき ── */
+.idle{margin:auto;text-align:center}
+.idle .mk{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,6vw,58px);letter-spacing:.34em;
+  color:var(--ink);font-weight:500}
+.idle .sb{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(15px,2vw,20px);
+  letter-spacing:.14em;color:var(--clay);margin-top:14px}
+.idle .ms{font-size:clamp(13px,1.5vw,16px);color:var(--sub);margin-top:26px;line-height:2.2;letter-spacing:.04em}
+
+/* ── お会計 ── */
+.hd{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+  border-bottom:1px solid var(--line);padding-bottom:14px;flex:none}
+.hd .mk{font-family:'Cormorant Garamond',serif;font-size:clamp(19px,2.4vw,26px);letter-spacing:.26em;color:var(--ink)}
+.hd .who{font-family:'Noto Serif JP',serif;font-size:clamp(15px,1.9vw,21px);color:var(--ink);letter-spacing:.04em}
+.hd .rk{font-size:clamp(10px,1.1vw,12px);letter-spacing:.12em;color:var(--clay);
+  border:1px solid rgba(168,116,86,.35);border-radius:2px;padding:2px 9px;margin-left:9px}
+
+.list{flex:1;overflow:hidden;padding:6px 0}
+.li{display:flex;align-items:flex-start;gap:16px;border-bottom:1px solid var(--line);
+  padding:clamp(11px,1.7vh,18px) 0}
+.li-n{flex:1;min-width:0;font-size:clamp(14px,1.7vw,19px);color:var(--ink);line-height:1.65}
+.li-q{flex:none;font-size:clamp(12px,1.3vw,15px);color:var(--sub);min-width:44px;text-align:right}
+.li-p{flex:none;text-align:right;min-width:clamp(110px,13vw,170px)}
+.li-was{display:block;font-size:clamp(11px,1.2vw,14px);color:#B9B2A6;text-decoration:line-through;line-height:1.4}
+.li-now{font-family:'Cormorant Garamond',serif;font-size:clamp(18px,2.2vw,26px);color:var(--ink);font-weight:600}
+.more{font-size:13px;color:var(--sub);padding:10px 0;letter-spacing:.04em}
+
+/* ── 合計 ── */
+.ft{flex:none;border-top:1px solid var(--line);padding-top:clamp(12px,2vh,20px)}
+.fr{display:flex;justify-content:space-between;font-size:clamp(13px,1.5vw,17px);padding:4px 0}
+.fr.cut{color:var(--clay)}
+.fr.cut b{font-family:'Cormorant Garamond',serif;font-size:clamp(17px,2vw,23px);font-weight:600}
+.fr.tot{align-items:baseline;border-top:1px solid var(--line);margin-top:10px;padding-top:clamp(10px,1.6vh,16px)}
+.fr.tot span{font-size:clamp(15px,1.8vw,20px);color:var(--ink);letter-spacing:.06em}
+.fr.tot b{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,5vw,60px);color:var(--ink);
+  font-weight:600;line-height:1.05}
+
+/* ── ポイント ── */
+.pt{margin-top:clamp(12px,2vh,20px);background:var(--cream);border:1px solid rgba(184,148,90,.32);
+  border-radius:3px;padding:clamp(13px,2vh,20px) clamp(16px,2.5vw,26px);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.pt-l{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(13px,1.5vw,17px);
+  letter-spacing:.1em;color:var(--gold)}
+.pt-e{font-size:clamp(14px,1.7vw,19px);color:var(--ink)}
+.pt-e b{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,3vw,34px);color:var(--clay);font-weight:600;margin:0 3px}
+.pt-b{font-size:clamp(12px,1.4vw,15px);color:var(--sub)}
+.pt-b b{font-family:'Cormorant Garamond',serif;font-size:clamp(16px,2vw,22px);color:var(--ink);font-weight:600;margin:0 3px}
+
+/* ── ありがとうございました ── */
+.done{margin:auto;text-align:center}
+.done .t{font-family:'Noto Serif JP',serif;font-size:clamp(22px,3.4vw,38px);color:var(--ink);letter-spacing:.08em;line-height:1.8}
+.done .s{font-size:clamp(13px,1.5vw,17px);color:var(--sub);margin-top:18px;letter-spacing:.06em}
+
+.err{margin:auto;text-align:center;color:var(--sub);font-size:14px;line-height:2}
+.fade{animation:fi .5s ease}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="screen" id="scr"></div>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const Q=new URLSearchParams(location.search);
+const SHOP=Q.get('s')||'ginza', TOKEN=Q.get('t')||'';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>'¥'+Math.round(+n||0).toLocaleString();
+let lastJson='';
+
+/* お待ちいただいている間の画面 */
+function idle(){
+  return `<div class="idle fade">
+    <div class="mk">SEAM</div>
+    <div class="sb">GINZA</div>
+    <div class="ms">ごゆっくりご覧ください<br>会員の方はお会計時に会員証をお見せください</div>
+  </div>`;
+}
+function done(st){
+  return `<div class="done fade">
+    <div class="t">ありがとうございました</div>
+    <div class="s">${st&&st.member&&st.member.earn?`本日 ${st.member.earn} ポイントたまりました`:'またお待ちしております'}</div>
+  </div>`;
+}
+function bill(st){
+  const items=st.items||[];
+  const show=items.slice(0,8), rest=items.length-show.length;
+  const m=st.member;
+  return `<div class="hd">
+      <span class="mk">SEAM</span>
+      ${m&&m.name?`<span class="who">${esc(m.name)} 様${m.rank?`<span class="rk">${esc(m.rank)}</span>`:''}</span>`:''}
+    </div>
+    <div class="list">
+      ${show.map(i=>`<div class="li">
+        <span class="li-n">${esc(i.name)}</span>
+        <span class="li-q">${i.qty>1?'×'+i.qty:''}</span>
+        <span class="li-p">${i.was&&i.was!==i.now?`<span class="li-was">${yen(i.was*i.qty)}</span>`:''}
+          <span class="li-now">${yen((i.now||i.was)*i.qty)}</span></span>
+      </div>`).join('')}
+      ${rest>0?`<div class="more">ほか ${rest} 点</div>`:''}
+    </div>
+    <div class="ft">
+      ${st.cut>0?`<div class="fr"><span>定価</span><span>${yen(st.list)}</span></div>
+        <div class="fr cut"><span>${st.mode==='sale'?'セール価格':'メンバー価格'}</span><b>−${yen(st.cut)}</b></div>`:''}
+      <div class="fr tot"><span>合計</span><b>${yen(st.total)}</b></div>
+      ${m?`<div class="pt">
+        <span class="pt-l">Points</span>
+        <span class="pt-e">このお買い物で<b>+${m.earn||0}</b>ポイント</span>
+        <span class="pt-b">お持ちのポイント <b>${m.points||0}</b>→<b>${(m.points||0)+(m.earn||0)}</b></span>
+      </div>`:''}
+    </div>`;
+}
+function paint(st){
+  const j=JSON.stringify(st);
+  if(j===lastJson)return;            // 変わっていないなら描き直さない（ちらつき防止）
+  lastJson=j;
+  const s=$('scr');
+  if(!st){ s.innerHTML=idle(); return; }
+  if(st.done){ s.innerHTML=done(st); return; }
+  if(!(st.items||[]).length){ s.innerHTML=idle(); return; }
+  s.innerHTML=bill(st);
+}
+async function tick(){
+  try{
+    const r=await fetch(`${API}/display/state?s=${encodeURIComponent(SHOP)}&t=${encodeURIComponent(TOKEN)}`,{cache:'no-store'});
+    if(r.status===403){ $('scr').innerHTML=`<div class="err">この画面の合言葉が違います<br>レジの「お客様画面」からQRを読み直してください</div>`; return; }
+    const j=await r.json();
+    let st=j.state||null;
+    // レジが5分以上置きっぱなしなら、待機の画面に戻す（前のお客様の明細を残さない）
+    if(st&&st.at&&Date.now()-st.at>5*60*1000)st=null;
+    paint(st);
+  }catch(e){ /* 電波が切れても前の表示のままにする */ }
+}
+if(!TOKEN){ $('scr').innerHTML=`<div class="err">レジの「お客様画面」からQRを読み取って開いてください</div>`; }
+else{ paint(null); tick(); setInterval(tick,1000); }
+/* 画面を消さない（iOSは電源に挿していれば自動ロックを切れる。念のため復帰時に読み直す） */
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden)tick(); });
+</script>
+</body>
+</html>
