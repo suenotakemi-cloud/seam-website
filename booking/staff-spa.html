@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>今日のお客様｜SEAM GINZA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   SEAM 銀座 — 担当者が読む「今日のご希望」
+
+   ★2つの場面で使う。求めるものが違う。
+     したく（接客前）… 何を用意するか。部屋・灯り・音楽・飲みもの
+     施術中          … 手が濡れていて 部屋は暗い。触ってはいけない所と強さだけ
+
+   ★施術中は暗い個室で腕の長さから見る。だから
+     ・地を暗くする（明るい画面は個室で浮く・お客様のまぶたにも入る）
+     ・字を大きく、押す所を減らす
+     ・スクロールさせない（1画面に収める）
+   ★いちばん上は必ず「触れない・苦手」。安全に関わることから読ませる。
+   ══════════════════════════════════════════════════════════════ */
+:root{--ink:#16171B;--body:#4A4741;--sub:#7C776E;--cream:#F7F4EE;--line:#E3DCD0;--clay:#A87456;--jade:#1F2A27}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--cream);color:var(--body);
+  font-family:'Noto Sans JP',-apple-system,sans-serif;font-size:15px;line-height:1.8}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 40px}
+header{position:sticky;top:0;z-index:10;background:rgba(247,244,238,.96);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.hin{max-width:760px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.brand{font-family:'Noto Serif JP',serif;letter-spacing:.24em;font-size:14px;color:var(--ink)}
+.day{font-size:13px;color:var(--sub);margin-left:auto}
+h1{font-family:'Noto Serif JP',serif;font-weight:500;font-size:21px;margin:22px 0 4px;color:var(--ink)}
+.lead{font-size:13px;color:var(--sub);margin:0 0 14px}
+/* 一覧 */
+.g{display:grid;gap:10px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 15px;
+  display:flex;gap:13px;align-items:center;cursor:pointer;text-align:left;width:100%;font:inherit;color:inherit}
+.card .t{font-family:'Noto Serif JP',serif;font-size:19px;color:var(--ink);flex:0 0 62px}
+.card .n{font-weight:500;color:var(--ink);font-size:16px}
+.card .m{font-size:12.5px;color:var(--sub);margin-top:1px}
+.tag{margin-left:auto;font-size:11.5px;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.tag.on{background:rgba(168,116,86,.12);color:var(--clay);border:1px solid rgba(168,116,86,.3)}
+.tag.off{background:#F1EEE8;color:var(--sub);border:1px solid var(--line)}
+.empty{background:#fff;border:1px dashed var(--line);border-radius:14px;padding:26px 16px;text-align:center;color:var(--sub);font-size:13.5px}
+.err{background:#fdeceb;border:1px solid #f5c6c2;color:#a3271f;border-radius:12px;padding:13px 14px;font-size:13.5px;margin-top:14px}
+.mini{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 13px;font:inherit;
+  font-size:13px;color:var(--sub);cursor:pointer}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:15px}
+
+/* ══ 1人分の画面（暗い地） ══ */
+#one{position:fixed;inset:0;z-index:60;background:#12100E;color:#EFE9DF;display:none;flex-direction:column}
+#one.on{display:flex}
+.obar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid rgba(239,233,223,.14);flex:0 0 auto}
+.obar .nm{font-family:'Noto Serif JP',serif;font-size:19px;color:#fff}
+.obar .tm{font-size:13px;color:rgba(239,233,223,.6)}
+.obar button{margin-left:auto;background:none;border:1px solid rgba(239,233,223,.3);color:#EFE9DF;
+  border-radius:8px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
+.tabs{display:flex;gap:8px;padding:12px 16px 0;flex:0 0 auto}
+.tabs button{flex:1;background:none;border:1px solid rgba(239,233,223,.24);color:rgba(239,233,223,.72);
+  border-radius:999px;padding:11px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
+.tabs button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
+.opane{flex:1;overflow-y:auto;padding:14px 16px 30px}
+.sec{margin-top:18px}
+.sec:first-child{margin-top:6px}
+.sec h3{font-size:12px;letter-spacing:.14em;color:rgba(239,233,223,.5);margin:0 0 8px;font-weight:500}
+.big{font-family:'Noto Serif JP',serif;font-size:26px;line-height:1.5;color:#fff;margin:0}
+.mid{font-size:19px;line-height:1.7;color:#fff;margin:0}
+/* ★触れない・苦手はいちばん強く出す */
+.stop{background:rgba(211,110,98,.16);border:1px solid rgba(211,110,98,.5);border-radius:14px;padding:14px 16px}
+.stop h3{color:#F0A79C}
+.stop .mid{color:#FFD9D2;font-weight:500}
+.plist{display:grid;gap:8px}
+.pr{display:flex;align-items:baseline;gap:12px;padding:9px 0;border-bottom:1px solid rgba(239,233,223,.1)}
+.pr:last-child{border-bottom:0}
+.pr b{flex:0 0 96px;font-weight:500;font-size:17px;color:#fff}
+.pr span{font-size:19px;color:#EFE9DF}
+.pr i{font-style:normal;font-family:'Noto Serif JP',serif;font-size:15px;color:rgba(239,233,223,.55);margin-left:2px}
+.bar{flex:1;height:10px;border-radius:99px;background:rgba(239,233,223,.16);overflow:hidden;min-width:90px}
+.bar u{display:block;height:100%;text-decoration:none;border-radius:99px;background:linear-gradient(90deg,#DE9E92,#C79A45)}
+.kv{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(239,233,223,.1)}
+.kv:last-child{border-bottom:0}
+.kv b{flex:0 0 96px;font-weight:500;font-size:15px;color:rgba(239,233,223,.62)}
+.kv span{font-size:19px;color:#fff}
+.note{background:rgba(239,233,223,.07);border-radius:12px;padding:13px 15px;font-size:16px;line-height:1.85;color:#EFE9DF}
+.none{color:rgba(239,233,223,.4);font-size:15px}
+@media(min-width:700px){.big{font-size:30px}.pr span,.kv span{font-size:21px}}
+</style>
+</head>
+<body>
+<header><div class="hin"><span class="brand">S E A M</span><span class="day" id="day"></span></div></header>
+<div class="wrap" id="app"><p class="lead" style="margin-top:24px">読み込んでいます…</p></div>
+
+<div id="one">
+  <div class="obar"><span class="nm" id="onm"></span><span class="tm" id="otm"></span>
+    <button id="oclose">とじる</button></div>
+  <div class="tabs">
+    <button data-t="prep" class="on">したく</button>
+    <button data-t="care">施術中</button>
+  </div>
+  <div class="opane" id="opane"></div>
+</div>
+
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+let TOK=localStorage.getItem('stb_admin_tok')||'';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+const todayKey=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+const q=new URLSearchParams(location.search);
+const DAY=q.get('d')||todayKey();
+document.getElementById('day').textContent=DAY.replace(/-/g,'/');
+
+const app=document.getElementById('app');
+let ROWS=[];
+
+async function load(){
+  if(!TOK)return askToken();
+  app.innerHTML='<p class="lead" style="margin-top:24px">読み込んでいます…</p>';
+  try{
+    const r=await fetch(`${API}/precare/list?from=${DAY}&to=${DAY}`,{headers:{'Authorization':'Bearer '+TOK}});
+    if(r.status===401){TOK='';localStorage.removeItem('stb_admin_tok');return askToken('もう一度お願いします');}
+    const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+    ROWS=j.rows||[]; render();
+  }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
+}
+function askToken(msg){
+  app.innerHTML=`<h1>スタッフの方へ</h1>
+    <p class="lead">この端末で1回だけ 管理トークンを入れてください${msg?'　'+esc(msg):''}</p>
+    <div class="row"><input type="password" id="tk" placeholder="管理トークン">
+      <button class="mini" id="tkgo">つなぐ</button></div>`;
+  document.getElementById('tkgo').onclick=async()=>{
+    const v=(document.getElementById('tk').value||'').trim(); if(!v)return;
+    const r=await fetch(`${API}/precare/list?from=${DAY}&to=${DAY}`,{headers:{'Authorization':'Bearer '+v}}).catch(()=>null);
+    if(r&&r.status===200){TOK=v;localStorage.setItem('stb_admin_tok',v);load();}
+    else app.querySelector('.lead').textContent='トークンが違うようです';
+  };
+}
+function render(){
+  const done=ROWS.filter(r=>r.done).length;
+  app.innerHTML=`<h1>今日のお客様</h1>
+    <p class="lead">${ROWS.length}件　うち ${done}件 ご希望をお預かりしています</p>
+    ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
+      <button class="card" data-i="${n}">
+        <span class="t">${hm(r.start||0)}</span>
+        <span><span class="n">${esc(r.name||'（お名前なし）')}</span>
+          <span class="m">${esc(r.menuId||'')}</span></span>
+        <span class="tag ${r.done?'on':'off'}">${r.done?'ご希望あり':'未記入'}</span>
+      </button>`).join('')}</div>`
+    :'<div class="empty">この日のご予約はまだありません</div>'}
+    <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`;
+  app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
+  document.getElementById('rl').onclick=load;
+}
+
+/* ── 1人分 ── */
+let CUR=null, TAB='prep';
+async function open(n){
+  const r=ROWS[n]; if(!r)return;
+  document.getElementById('onm').textContent=r.name||'お客様';
+  document.getElementById('otm').textContent=hm(r.start||0);
+  document.getElementById('one').classList.add('on');
+  document.getElementById('opane').innerHTML='<p class="none" style="margin-top:20px">読み込んでいます…</p>';
+  try{
+    const q=await fetch(`${API}/precare/for-staff?resv=${encodeURIComponent(r.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
+    const j=await q.json(); CUR=(j.precare&&j.precare.summary)||null;
+  }catch(e){ CUR=null; }
+  paint();
+}
+const V=(t,v)=>v?`<div class="kv"><b>${t}</b><span>${esc(v)}</span></div>`:'';
+function meter(t,label,n){
+  if(!n)return '';
+  return `<div class="kv"><b>${t}</b><div class="bar"><u style="width:${n*10}%"></u></div>
+    <span style="font-size:17px;min-width:34px;text-align:right">${n}/10</span></div>`;
+}
+function paint(){
+  const p=document.getElementById('opane');
+  if(!CUR){ p.innerHTML='<p class="none" style="margin-top:20px">このお客様は まだご記入がありません<br>当日おうかがいしてください</p>'; return; }
+  const stop=[CUR.avoidParts&&('触れない：'+CUR.avoidParts),CUR.avoid].filter(Boolean).join('　／　');
+  if(TAB==='prep'){
+    /* したく＝お迎えの前に整えるもの */
+    p.innerHTML=`
+      ${stop?`<div class="sec stop"><h3>先に確認</h3><p class="mid">${esc(stop)}</p></div>`:''}
+      <div class="sec"><h3>お部屋</h3>
+        ${V('お席',CUR.room)}${meter('灯り','',CUR.lightN)}${meter('音の大きさ','',CUR.soundN)}
+        ${V('音楽',CUR.music)}${V('香り',CUR.scent)}${V('お飲みもの',CUR.drink)}</div>
+      <div class="sec"><h3>ご用意するもの</h3>
+        ${V('頭浸浴',CUR.bath)}${V('炭酸',CUR.soda)}${V('ヘアケア',CUR.care)}${V('仕上げ',CUR.finish)}${V('スタイリング',CUR.styling)}</div>
+      ${CUR.note?`<div class="sec"><h3>ひとこと</h3><p class="note">${esc(CUR.note)}</p></div>`:''}`;
+  }else{
+    /* 施術中＝触ってはいけない所と強さだけ。上から順に読めば足りる形にする */
+    p.innerHTML=`
+      ${stop?`<div class="sec stop"><h3>触れない・苦手</h3><p class="mid">${esc(stop)}</p></div>`:''}
+      ${CUR.goal?`<div class="sec"><h3>今日のご希望</h3><p class="big">${esc(CUR.goal)}</p></div>`:''}
+      ${CUR.spot?`<div class="sec"><h3>短いスパはここに</h3><p class="big">${esc(CUR.spot)}</p></div>`:''}
+      <div class="sec"><h3>強さ</h3>
+        ${CUR.parts?`<div class="plist">${CUR.parts.split(' ／ ').map(x=>{
+          const m=x.match(/^(\S+)\s+(.+)$/)||[,x,''];
+          return `<div class="pr"><b>${esc(m[1])}</b><span>${esc(m[2])}</span></div>`;}).join('')}</div>`
+        :'<p class="none">おまかせ</p>'}
+        ${CUR.washPower?`<div class="pr"><b>シャンプー</b><span>${esc(CUR.washPower)}</span></div>`:''}
+      </div>
+      ${(CUR.wash||CUR.face)?`<div class="sec"><h3>洗いかた・お顔まわり</h3>
+        ${CUR.wash?`<p class="mid">${esc(CUR.wash)}</p>`:''}
+        ${CUR.face?`<p class="mid">${esc(CUR.face)}</p>`:''}</div>`:''}
+      ${CUR.talk?`<div class="sec"><h3>過ごしかた</h3><p class="big">${esc(CUR.talk)}</p></div>`:''}
+      ${CUR.note?`<div class="sec"><h3>ひとこと</h3><p class="note">${esc(CUR.note)}</p></div>`:''}`;
+  }
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
+  TAB=b.dataset.t;
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  paint();
+});
+document.getElementById('oclose').onclick=()=>{document.getElementById('one').classList.remove('on');};
+load();
+</script>
+</body>
+</html>
