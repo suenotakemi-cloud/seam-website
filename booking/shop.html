@@ -243,7 +243,8 @@ function pushDisplay(done){
     post('/display/push',{shopId:SHOP,mode:PMODE,done:!!done,
       items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i)})),
       list:cartList(),cut:cartCut(),total:t,
-      member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn}:null}).catch(()=>{});
+      member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn,
+        expiring:MEMBER.expiring,expireOn:MEMBER.expireOn}:null}).catch(()=>{});
   },250);
 }
 
@@ -415,6 +416,7 @@ async function adjust(d){
 async function loadMember(code){
   const j=await get('/member/lookup?code='+encodeURIComponent(code));
   MEMBER={code:j.code,name:j.name||'',phone:j.phone||'',salonId:j.salonId||'',points:j.points||0,
+    expiring:j.pointExpiring||0,expireOn:j.pointExpireOn||'',
     rank:j.rank||'',rate:j.rate,visits:j.visits||0,yVisits:j.yVisits||0,ySpend:j.ySpend||0,
     membership:j.membership||null,hasLine:!!j.hasLine};
   said('会員カード',esc(MEMBER.name||'（お名前未登録）')+'　'+MEMBER.points+' pt');
@@ -440,7 +442,8 @@ function memHtml(){
     ${m.rank?`<div class="mem-r">${esc(m.rank)}</div>`:''}
     ${m.membership?`<div class="mem-r" style="margin-left:6px">月額会員 残り${m.membership.remaining}回</div>`:''}
     <div class="mem-g">
-      <div class="mg"><div class="mg-k">ポイント</div><div class="mg-v">${m.points}</div></div>
+      <div class="mg"><div class="mg-k">ポイント</div><div class="mg-v">${m.points}</div>
+        ${m.expireOn?`<div class="mg-k" style="margin-top:5px">${String(m.expireOn).slice(5).replace('-','/')} に ${m.expiring}pt 期限</div>`:''}</div>
       <div class="mg"><div class="mg-k">来店</div><div class="mg-v">${m.visits}</div></div>
       <div class="mg"><div class="mg-k">今年の来店</div><div class="mg-v">${m.yVisits}</div></div>
       <div class="mg"><div class="mg-k">今年のお買い上げ</div><div class="mg-v" style="font-size:19px">${yen(m.ySpend)}</div></div>

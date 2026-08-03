@@ -1875,10 +1875,33 @@ function ptToYen(pt,techAmt,goodsAmt){
   const spent=spentTechPt+spentGoodsPt;
   return {yen:yenTech+yenGoods,yenTech,yenGoods,spent,usedTechPt:spentTechPt,usedGoodsPt:spentGoodsPt};
 }
-function pointBalance(name,phone){
-  if(!name)return 0;
-  return db.points.filter(p=>p.name===name&&(!phone||!p.phone||p.phone===phone)).reduce((s,p)=>s+(+p.delta||0),0);
+/* ポイントの有効期限は「たまった日から半年」。サーバー側(pointsFromRows)と同じ数え方にする。
+   古くたまったものから先に使い、半年たっても残っている分はそこで消える。 */
+const POINT_MONTHS=6;
+function ptLimitYmd(){const d=new Date();d.setMonth(d.getMonth()-POINT_MONTHS);return dkey(d);}
+function ptExpireOn(ymd){const[a,b,c]=String(ymd).split('-').map(Number);
+  return new Date(Date.UTC(a,(b-1)+POINT_MONTHS,c)).toISOString().slice(0,10);}
+function pointDetail(name,phone){
+  if(!name)return{balance:0,expiring:0,expireOn:''};
+  const rows=db.points.filter(p=>p.name===name&&(!phone||!p.phone||p.phone===phone));
+  const limit=ptLimitYmd();
+  const earned=[],used=[];
+  for(const r of rows){const d=String(r.date||'').slice(0,10),v=+r.delta||0;
+    if(v>0)earned.push({date:d,left:v}); else if(v<0)used.push(-v);}
+  earned.sort((a,b)=>a.date<b.date?-1:1);
+  let need=used.reduce((s,v)=>s+v,0);
+  for(const e of earned){if(need<=0)break;const t=Math.min(e.left,need);e.left-=t;need-=t;}
+  let balance=0,expiring=0,expireOn='';
+  for(const e of earned){
+    if(e.left<=0||e.date<limit)continue;
+    balance+=e.left;
+    const on=ptExpireOn(e.date);
+    if(!expireOn||on<expireOn){expireOn=on;expiring=e.left;}
+    else if(on===expireOn)expiring+=e.left;
+  }
+  return{balance,expiring,expireOn};
 }
+function pointBalance(name,phone){ return pointDetail(name,phone).balance; }
 function addPointRow(row){
   row.id='pt'+Math.random().toString(36).slice(2,8);row.at=new Date().toISOString();row.date=row.date||dkey(today());
   db.points.push(row);save();saveOrQueue('point',row);return row;

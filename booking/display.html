@@ -101,7 +101,7 @@ function idle(){
 function done(st){
   return `<div class="done fade">
     <div class="t">ありがとうございました</div>
-    <div class="s">${st&&st.member&&st.member.earn?`本日 ${st.member.earn} ポイントたまりました`:'またお待ちしております'}</div>
+    <div class="s">${st&&st.member&&st.member.earn?`本日 ${st.member.earn} ポイントたまりました<br><span style="font-size:.86em">ポイントは半年間おつかいいただけます</span>`:'またお待ちしております'}</div>
   </div>`;
 }
 function bill(st){
@@ -128,7 +128,8 @@ function bill(st){
       ${m?`<div class="pt">
         <span class="pt-l">Points</span>
         <span class="pt-e">このお買い物で<b>+${m.earn||0}</b>ポイント</span>
-        <span class="pt-b">お持ちのポイント <b>${m.points||0}</b>→<b>${(m.points||0)+(m.earn||0)}</b></span>
+        <span class="pt-b">お持ちのポイント <b>${m.points||0}</b>→<b>${(m.points||0)+(m.earn||0)}</b>
+          ${m.expireOn?`<br><span style="font-size:.86em">${String(m.expireOn).replace(/^\d{4}-/,'').replace('-','月')}日までに ${m.expiring} ポイントが期限</span>`:''}</span>
       </div>`:''}
     </div>`;
 }
