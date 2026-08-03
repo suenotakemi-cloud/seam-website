@@ -26,7 +26,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, 'images', 'ads', 'recruit')
 MINCHO = '/System/Library/Fonts/ヒラギノ明朝 ProN.ttc'
 
-VER = 'v4'   # 差し替えるたびに上げる。同名だとCloudflareが旧画像を配信し続ける
+VER = 'v5'   # 差し替えるたびに上げる。同名だとCloudflareが旧画像を配信し続ける
 
 # ── build_recruit_pages.py と同じ定義（ズレたら広告が嘘になる） ──────────
 ROLE_STORES = {
@@ -58,6 +58,11 @@ ADS = [
     {"key": "fukuoka", "title": "SEAM 福岡",   "slugs": ["fukuoka"],
      "photo": "images/stores/store_fukuoka.jpg"},
 ]
+
+# 【いちばん強い一言】新規のお客様は店から案内する＝「自分の客がいないと稼げない」という
+# 最大の不安に答える。ただし「新規は追わなくていい」と書くと *すでに顧客がいる人* 向けになり、
+# 転職を考えている側（顧客が少ない人）に響かない。店から案内する と書くこと。
+GROWTH = '新規のお客様は 店からご案内します'
 
 # 個室の一言。オーナー「贅沢な個室でお客さまの満足度アップ／美容師はお客様を大切にしたい生き物」
 # 銀座・大阪・名古屋は完全個室、札幌・福岡は半個室（実態どおりに出し分ける）
@@ -158,7 +163,7 @@ def build(spec):
     h_eye, h_ttl, h_lead, h_end = 30, 92, 34, 28
     room = ROOM.get(spec['key'], '')
     body = (h_eye + 34 + h_ttl + 44 + 34 + h_lead + 28 + (46 * len(rows))
-            + (40 if room else 0) + 26 + h_end)
+            + 40 + (38 if room else 0) + 26 + h_end)
     y = max(230, (SIZE - body) // 2)
 
     y += draw_center(d, y, EYEBROW, ImageFont.truetype(MINCHO, h_eye), (255, 252, 246)) + 34
@@ -169,9 +174,10 @@ def build(spec):
     y += draw_center(d, y, lead, fit(h_lead, lead), (245, 240, 232)) + 28
     for role, pay, tag in rows:
         y += draw_row(d, y, role, pay, tag) + 18
+    y += 16
+    y += draw_center(d, y, GROWTH, fit(28, GROWTH), (255, 252, 246)) + 12
     if room:
-        y += 16
-        y += draw_center(d, y, room, fit(27, room), (238, 231, 220)) + 14
+        y += draw_center(d, y, room, fit(24, room), (226, 219, 208)) + 12
     y += 12
     draw_center(d, y, CLOSING, ImageFont.truetype(MINCHO, h_end), (214, 206, 194))
 
@@ -189,7 +195,10 @@ def ad_body(spec):
     # 試用期間は職種で長さが違う（スタイリスト等2ヶ月／ショップ管理者6ヶ月）が、
     # **どちらも期間中の給与は変わらない**（2026-08-01 オーナー確認）。
     # 長さを書くと職種ごとに分岐して読みにくいので「期間中も」で揃える。
-    tail = ["試用期間中も 給与は変わりません"]
+    tail = ["新規のお客様は店からご案内します\n"
+            "ご自身で集めていただく必要はないので\n"
+            "顧客がまだ少なくても ゼロから積み上げていけます",
+            "試用期間中も 給与は変わりません"]
     if spec['key'] in ROOM:
         tail.append(ROOM[spec['key']])
     if spec['key'] in NOTES:
