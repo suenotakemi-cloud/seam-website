@@ -50,6 +50,9 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .dlg-a button{flex:1;padding:13px;border:1px solid var(--line);background:#fff;border-radius:3px;font-size:13.5px}
 .dlg-a button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
 .ci-was{font-size:11px;color:#B9B2A6;text-decoration:line-through;margin-right:5px}
+.srch button.on2{border-color:var(--ink);background:var(--ink);color:#fff}
+.srch select{border:1px solid var(--line);border-radius:3px;padding:0 12px;background:#fff;color:var(--ink)}
+.stk-r[data-h]:active{background:var(--cream)}
 .sr.cut b{font-family:'Cormorant Garamond',serif;font-size:18px}
 .spacer{flex:1}
 /* 読み取り待機のランプ。緑＝いつでも読める */
@@ -199,6 +202,8 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
         <button data-t="prod" class="on">商品</button>
         <button data-t="stock">在庫</button>
         <button data-t="mem">お客様</button>
+        <button data-t="hist">履歴</button>
+        <button data-t="close">レジ締め</button>
       </div>
       <div id="rbody"></div>
     </div>
@@ -218,6 +223,11 @@ let SHOPS=[], TAB='prod', CART=[], MEMBER=null, PAY='cash', STOCKVIEW=null;
 /* 価格の出し方。normal=定価 / member=メンバー価格 / sale=セール価格。
    割引の率は「価格設定」の画面(prices.html)で決めたものを settings から読む。 */
 let PMODE='normal', RULES={member:{},sale:{}};
+/* 免税は「値引きだけ」こちらで行い、申請書類は別のしくみを使う（オーナー方針）。
+   税率10%ぶんを引く＝税抜相当。免税の可否判定はここではしない。 */
+let TAXFREE=false;
+const TAXFREE_RATE=10;
+let HISTORY=[], HDETAIL=null, TERM={deviceId:localStorage.getItem('stb_term_dev')||'',checkoutId:'',timer:null};
 const SIZE_RE=/(\d+(?:\.\d+)?)\s*(mL|ml|ML|Ml|g|G|kg|KG|L)\b/;
 function sizeOf(name){const m=SIZE_RE.exec(String(name||''));if(!m)return '';
   const u=m[2].toLowerCase()==='ml'?'ml':(m[2].toLowerCase()==='kg'?'kg':m[2].toLowerCase());return m[1]+u;}
@@ -305,8 +315,10 @@ function addToCart(p){
   render();
 }
 function cartList(){ return CART.reduce((s,i)=>s+i.unit*i.qty,0); }            // 定価の合計
-function cartTotal(){ return CART.reduce((s,i)=>s+lineNow(i)*i.qty,0); }        // 実際にいただく額
-function cartCut(){ return cartList()-cartTotal(); }                            // 引いた額
+function cartBefore(){ return CART.reduce((s,i)=>s+lineNow(i)*i.qty,0); }       // 免税を引く前
+function taxCut(){ return TAXFREE?Math.round(cartBefore()*TAXFREE_RATE/(100+TAXFREE_RATE)):0; }
+function cartTotal(){ return Math.max(0,cartBefore()-taxCut()); }               // 実際にいただく額
+function cartCut(){ return cartList()-cartTotal(); }                            // 引いた額（合計）
 function renderCart(){
   if(!CART.length){ $('cart').innerHTML='<div class="empty">バーコードを読み取ると ここに並びます</div>'; return; }
   $('cart').innerHTML=CART.map((i,ix)=>{const now=lineNow(i),cut=i.unit!==now;return `<div class="ci">
@@ -326,15 +338,19 @@ function renderSum(){
     `<div class="sr"><span>点数</span><span>${CART.reduce((s,i)=>s+i.qty,0)} 点</span></div>
      ${cut>0?`<div class="sr"><span>定価</span><span>${yen(cartList())}</span></div>
        <div class="sr cut"><span>${PMODE==='member'?'メンバー価格':'セール価格'}</span><b>−${yen(cut)}</b></div>`:''}
+     ${TAXFREE?`<div class="sr cut"><span>免税ぶん（申請は別）</span><b>−${yen(taxCut())}</b></div>`:''}
      <div class="sr big"><span>合計</span><b>${yen(t)}</b></div>
-     <div class="pay">${['cash:現金','card:カード','qr:QR決済'].map(x=>{const[v,l]=x.split(':');
+     <div class="pay">${['cash:現金','term:カード（端末）','card:カード（手入力）','qr:QR決済'].map(x=>{const[v,l]=x.split(':');
        return `<button data-p="${v}" class="${PAY===v?'on':''}">${l}</button>`}).join('')}</div>
+     ${CART.length?`<button class="mini" id="taxfree">${TAXFREE?'免税の値引きを外す':'免税ぶんを値引く（申請は別）'}</button>`:''}
      <button class="go" id="go" ${CART.length?'':'disabled'}>会計する</button>
      ${CART.length?`<button class="mini" id="clr">明細を消す</button>`:''}`;
   $('sum').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{PAY=b.dataset.p;render();});
   if($('go'))$('go').onclick=doCheckout;
   if($('clr'))$('clr').onclick=()=>{if(confirm('明細をすべて消しますか'))
-    {CART=[];render();}};
+    {CART=[];TAXFREE=false;render();}};
+  if($('taxfree'))$('taxfree').onclick=()=>{TAXFREE=!TAXFREE;render();
+    toast(TAXFREE?'免税ぶんを値引きました　申請は別の仕組みで行ってください':'免税の値引きを外しました');};
 }
 async function doCheckout(){
   const t=cartTotal();
@@ -342,14 +358,21 @@ async function doCheckout(){
   if(!confirm(`${yen(t)} で会計します よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
   const id='co'+Math.random().toString(36).slice(2,8);
+  let payId='';
   try{
+    if(PAY==='term'){                       // Squareターミナルでカードを通す
+      btn.textContent='端末をご案内中…';
+      payId=await payByTerminal(t);
+      if(payId===null||payId===undefined){ btn.disabled=false;btn.textContent='会計する'; return; }
+    }
     await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
       mode:'shop',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
       tech:0,retail:cartList(),
       retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId})),
       discount:cartCut(),
-      discountLabel:PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),
-      total:t,method:PAY,memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
+      discountLabel:[PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),TAXFREE?'免税':''].filter(Boolean).join('＋'),
+      total:t,method:PAY==='term'?'card':PAY,squarePaymentId:payId||'',
+      memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
     // 在庫を引く。1件ずつ（どれが失敗したか分かるように）
     for(const i of CART){ await post('/stock/adjust',{shopId:SHOP,productId:i.productId,delta:-i.qty,reason:'店販'}).catch(()=>{}); }
     // ポイントを付ける（会員のときだけ・商品は1円=1pt）
@@ -359,7 +382,8 @@ async function doCheckout(){
         date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)}).catch(()=>{});
     }
     pushDisplay(true);                       // お客様側は「ありがとうございました」に切り替わる
-    CART=[]; said('会計しました',yen(t)+'　'+({cash:'現金',card:'カード',qr:'QR決済'}[PAY]));
+    CART=[]; TAXFREE=false;
+    said('会計しました',yen(t)+'　'+({cash:'現金',card:'カード',term:'カード（端末）',qr:'QR決済'}[PAY]||''));
     toast('会計しました');
     if(MEMBER)await loadMember(MEMBER.salonId||MEMBER.code);   // ポイントを取り直す
     render();
@@ -368,6 +392,149 @@ async function doCheckout(){
 }
 
 /* ══════════ 右側 ══════════ */
+/* ══════════ 取引履歴・返金・訂正 ══════════ */
+const jstDay=(off=0)=>new Date(Date.now()+9*3600e3-off*86400e3).toISOString().slice(0,10);
+let HDAYS=1;                                   // 何日ぶん見るか
+async function loadHistory2(){
+  const j=await get(`/checkouts?from=${jstDay(HDAYS-1)}&to=${jstDay(0)}`).catch(()=>({checkouts:[]}));
+  HISTORY=(j.checkouts||[]).filter(c=>c.mode!=='salon').sort((a,b)=>a.at<b.at?1:-1);
+}
+const payLabel=m=>({cash:'現金',card:'カード',term:'カード',qr:'QR決済'}[m]||m||'—');
+function histHtml(){
+  const cardOnly=HFILTER==='card';
+  const rows=HISTORY.filter(c=>!cardOnly||c.method==='card'||c.method==='term'||c.squarePaymentId);
+  const sum=rows.filter(c=>!c.voided).reduce((s,c)=>s+(c.total-(c.refund||0)),0);
+  return `<div class="srch">
+      <button class="${HFILTER==='all'?'on2':''}" data-hf="all">すべて</button>
+      <button class="${HFILTER==='card'?'on2':''}" data-hf="card">カードのみ</button>
+      <select id="hdays">${[[1,'今日'],[3,'3日'],[7,'1週間'],[31,'1か月']].map(([v,l])=>
+        `<option value="${v}" ${HDAYS===v?'selected':''}>${l}</option>`).join('')}</select>
+    </div>
+    <div class="sr" style="padding:0 2px 12px"><span>${rows.length} 件</span><span>差引 ${yen(sum)}</span></div>
+    <div class="stk">${rows.length?rows.map(c=>`<div class="stk-r" data-h="${esc(c.id)}" style="cursor:pointer;${c.voided?'opacity:.5':''}">
+      <span style="flex:1;min-width:0">
+        <span style="font-size:13px;color:var(--sub)">${esc(String(c.at).slice(11,16))}　${payLabel(c.method)}${c.squarePaymentId?'　Square':''}</span><br>
+        ${esc(c.customer||'（お名前なし）')}
+        ${c.voided?'<span class="mem-r" style="margin-left:6px">取消</span>':''}
+        ${(c.refund>0&&!c.voided)?`<span class="mem-r" style="margin-left:6px">返金 ${yen(c.refund)}</span>`:''}
+      </span>
+      <b>${yen(c.total)}</b></div>`).join(''):'<div class="empty">まだ会計がありません</div>'}</div>`;
+}
+let HFILTER='all';
+function histDetail(c){
+  const items=(c.retailItems||[]);
+  const left=Math.max(0,(c.total||0)-(c.refund||0));
+  return `<div class="dlg" id="hdlg"><div class="dlg-b">
+    <h3>お会計の中身</h3>
+    <p>${esc(String(c.at).replace('T',' ').slice(0,16))}　${payLabel(c.method)}${c.squarePaymentId?`　Square ${esc(c.squarePaymentId.slice(0,12))}…`:''}<br>
+       ${esc(c.customer||'（お名前なし）')}${c.memberCode?`　会員 ${esc(c.memberCode)}`:''}</p>
+    <div class="stk">${items.map(i=>`<div class="stk-r"><span>${esc(i.name)}${i.qty>1?' ×'+i.qty:''}</span><b>${yen(i.price)}</b></div>`).join('')}
+      ${c.discount?`<div class="stk-r"><span>値引き</span><b>−${yen(c.discount)}</b></div>`:''}
+      <div class="stk-r"><span>合計</span><b>${yen(c.total)}</b></div>
+      ${c.refund?`<div class="stk-r"><span>返金済み</span><b>−${yen(c.refund)}</b></div>`:''}
+      ${c.voided?`<div class="stk-r"><span>取消</span><b>${esc(c.voidReason||'')}</b></div>`:''}</div>
+    <div class="dlg-a">
+      <button id="hclose">閉じる</button>
+      ${(!c.voided&&left>0)?`<button id="hrefund">${c.squarePaymentId?'カードへ返金':'返金（現金）'} ${yen(left)}</button>`:''}
+      ${(!c.voided)?`<button class="pri" id="hvoid">訂正（取消）</button>`:''}
+    </div></div></div>`;
+}
+function openDetail(id){
+  const c=HISTORY.find(x=>x.id===id); if(!c)return;
+  document.body.insertAdjacentHTML('beforeend',histDetail(c));
+  const close=()=>{const d=$('hdlg');if(d)d.remove();};
+  $('hclose').onclick=close;
+  if($('hrefund'))$('hrefund').onclick=async()=>{
+    const left=Math.max(0,(c.total||0)-(c.refund||0));
+    if(!confirm(`${yen(left)} を返金します よろしいですか`))return;
+    try{ const r=await post('/checkouts/refund',{id:c.id,shopId:SHOP,reason:'レジ返金'});
+      toast(r.card?`カードへ ${yen(r.refunded)} 返金しました`:`${yen(r.refunded)} の返金を記録しました　現金をお返しください`);
+      close(); await loadHistory2(); renderRight();
+    }catch(err){ toast(err.message||'返金できませんでした',true); }};
+  if($('hvoid'))$('hvoid').onclick=async()=>{
+    const why=prompt('訂正の理由を入れてください（例: 打ち間違い）','打ち間違い');
+    if(why===null)return;
+    try{ await post('/checkouts/void',{id:c.id,shopId:SHOP,reason:why});
+      toast('取り消しました　在庫とポイントを戻しました'); close(); await loadHistory2(); renderRight();
+    }catch(err){ toast(err.message||'取り消せませんでした',true); }};
+}
+
+/* ══════════ レジ締め ══════════ */
+function closeHtml(){
+  const live=HISTORY.filter(c=>!c.voided&&c.date===jstDay(0));
+  const net=c=>(c.total||0)-(c.refund||0);
+  const cash=live.filter(c=>c.method==='cash').reduce((s,c)=>s+net(c),0);
+  const card=live.filter(c=>c.method==='card'||c.method==='term').reduce((s,c)=>s+net(c),0);
+  const qr=live.filter(c=>c.method==='qr').reduce((s,c)=>s+net(c),0);
+  const back=HISTORY.filter(c=>c.date===jstDay(0)).reduce((s,c)=>s+(c.refund||0),0);
+  const flo=+(localStorage.getItem('stb_float')||0);
+  return `<div class="stk">
+      <div class="stk-r"><span>現金</span><b>${yen(cash)}</b></div>
+      <div class="stk-r"><span>カード</span><b>${yen(card)}</b></div>
+      <div class="stk-r"><span>QR決済</span><b>${yen(qr)}</b></div>
+      <div class="stk-r"><span>返金</span><b>−${yen(back)}</b></div>
+      <div class="stk-r here"><span>売上の合計</span><b>${yen(cash+card+qr)}</b></div>
+      <div class="stk-r"><span>件数</span><b>${live.length}</b></div>
+    </div>
+    <div class="srch" style="margin-top:18px"><span style="align-self:center;font-size:13px">釣銭準備金</span>
+      <input id="floIn" type="number" inputmode="numeric" value="${flo}"></div>
+    <div class="stk"><div class="stk-r here"><span>金庫にあるはずの現金</span><b>${yen(flo+cash)}</b></div></div>
+    <div class="srch" style="margin-top:14px"><span style="align-self:center;font-size:13px">数えた現金</span>
+      <input id="cntIn" type="number" inputmode="numeric" placeholder="実際に数えた額"></div>
+    <div id="diffBox"></div>
+    <button class="go" id="closeGo" style="margin-top:16px">レジを締める</button>`;
+}
+function wireClose(){
+  const f=$('floIn'), c=$('cntIn');
+  const calc=()=>{
+    const live=HISTORY.filter(x=>!x.voided&&x.date===jstDay(0));
+    const cash=live.filter(x=>x.method==='cash').reduce((s,x)=>s+((x.total||0)-(x.refund||0)),0);
+    const want=(+f.value||0)+cash, got=+c.value||0;
+    const d=got-want;
+    $('diffBox').innerHTML=c.value===''?'':
+      `<div class="stk"><div class="stk-r" style="${d?'color:var(--ng)':''}"><span>${d===0?'ぴったりです':(d>0?'多い':'足りない')}</span><b>${d>0?'+':''}${yen(d)}</b></div></div>`;
+  };
+  if(f)f.oninput=()=>{localStorage.setItem('stb_float',f.value);calc();};
+  if(c)c.oninput=calc;
+  if($('closeGo'))$('closeGo').onclick=async()=>{
+    const live=HISTORY.filter(x=>!x.voided&&x.date===jstDay(0));
+    const net=x=>(x.total||0)-(x.refund||0);
+    const cash=live.filter(x=>x.method==='cash').reduce((s,x)=>s+net(x),0);
+    const card=live.filter(x=>x.method==='card'||x.method==='term').reduce((s,x)=>s+net(x),0);
+    const qr=live.filter(x=>x.method==='qr').reduce((s,x)=>s+net(x),0);
+    const flo=+($('floIn').value||0), got=+($('cntIn').value||0);
+    if(!$('cntIn').value){ toast('数えた現金を入れてください',true); return; }
+    try{ await post('/settlements',{date:jstDay(0),float:flo,cashSales:cash,expectedCash:flo+cash,
+        countedCash:got,diff:got-(flo+cash),card,qr,total:cash+card+qr,count:live.length,
+        memo:'',closedAt:new Date().toISOString()});
+      toast('レジを締めました');
+    }catch(err){ toast(err.message||'締められませんでした',true); }};
+}
+
+/* ══════════ Squareターミナル ══════════ */
+async function payByTerminal(amount){
+  if(!TERM.deviceId){
+    const code=prompt('Square ターミナルの端末コードを作ります\n端末に出ている「デバイスコード」を入れてください\n（初回だけ・空欄でこちらから発行）','');
+    if(code===null)return null;
+    if(!code){ try{ const d=await post('/terminal/device-code',{name:'SEAM ショップ'});
+        alert('この番号をSquareターミナルに入れてください：\n\n'+d.code+'\n\n入れ終わったらもう一度「会計する」を押してください');
+        return null; }catch(e){ toast(e.message||'端末コードを作れませんでした',true); return null; } }
+    TERM.deviceId=code.trim(); localStorage.setItem('stb_term_dev',TERM.deviceId);
+  }
+  const r=await post('/terminal/checkout',{amount,deviceId:TERM.deviceId,mode:'shop',note:'SEAM ショップ'});
+  TERM.checkoutId=r.checkoutId;
+  toast('ターミナルでお支払いをご案内ください');
+  // 端末の結果を待つ（最長3分）
+  for(let i=0;i<90;i++){
+    await new Promise(r=>setTimeout(r,2000));
+    const st=await get('/terminal/checkout?id='+encodeURIComponent(TERM.checkoutId)).catch(()=>null);
+    if(!st)continue;
+    if(st.status==='COMPLETED')return (st.paymentIds||[])[0]||'';
+    if(['CANCELED','CANCEL_REQUESTED'].includes(st.status)){ toast('端末で取り消されました',true); return null; }
+  }
+  toast('端末の返事が来ませんでした',true); return null;
+}
+
 async function renderRight(){
   const b=$('rbody');
   if(TAB==='prod'){
@@ -378,8 +545,19 @@ async function renderRight(){
     b.innerHTML=STOCKVIEW||`<div class="empty">バーコードを読み取ると 各店の在庫が出ます</div>`;
     const a=b.querySelector('#adjP'),m=b.querySelector('#adjM');
     if(a)a.onclick=()=>adjust(+1); if(m)m.onclick=()=>adjust(-1);
-  }else{
+  }else if(TAB==='mem'){
     b.innerHTML=MEMBER?memHtml():`<div class="empty">会員カードのQRを読み取ると お客様の情報が出ます</div>`;
+  }else if(TAB==='hist'){
+    b.innerHTML='<div class="empty">読み込んでいます…</div>';
+    await loadHistory2();
+    b.innerHTML=histHtml();
+    b.querySelectorAll('[data-hf]').forEach(x=>x.onclick=()=>{HFILTER=x.dataset.hf;renderRight();});
+    if(b.querySelector('#hdays'))b.querySelector('#hdays').onchange=e=>{HDAYS=+e.target.value;renderRight();};
+    b.querySelectorAll('[data-h]').forEach(x=>x.onclick=()=>openDetail(x.dataset.h));
+  }else if(TAB==='close'){
+    b.innerHTML='<div class="empty">読み込んでいます…</div>';
+    await loadHistory2();
+    b.innerHTML=closeHtml(); wireClose();
   }
 }
 async function doSearch(v){
