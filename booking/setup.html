@@ -146,7 +146,18 @@ h2:first-child{margin-top:4px}
       <div class="st" id="pinSt">まだ何も設定していません</div>
     </div>
 
-    <h2>⑤ 使いはじめる</h2>
+    <h2>⑤ 本番の切り替え</h2>
+    <p class="note">テスト中は、担当を選ばなくても会計できます　本番を始める日にここを「必要」にしてください<br>
+      「必要」にすると、出勤して担当を選ぶまで会計ボタンが押せなくなります（打った人が分からない会計を作らないため）</p>
+    <div class="card">
+      <div class="row">
+        <button class="btn" id="rsOff">テスト中（担当なしでも会計できる）</button>
+        <button class="btn" id="rsOn">本番（担当が必要）</button>
+      </div>
+      <div class="st" id="rsSt">読み込んでいます…</div>
+    </div>
+
+    <h2>⑥ 使いはじめる</h2>
     <p class="note">両方うまくいったら、こちらがふだん使うレジの画面です</p>
     <div class="card">
       <div class="row"><a class="btn pri" style="text-decoration:none;text-align:center;flex:1"
@@ -328,11 +339,27 @@ $('pinList').onclick=async()=>{
   }catch(err){ toast(err.message||'読めませんでした',true); }
 };
 
+async function rsDraw(){
+  try{ const j=await get('/settings'); const on=String((j.settings||{}).require_staff||'')==='1';
+    $('rsSt').innerHTML=on?'<span class="ok">いま：本番（担当が必要）</span>'
+                          :'いま：テスト中（担当なしでも会計できます）';
+    $('rsOn').className='btn'+(on?' pri':''); $('rsOff').className='btn'+(on?'':' pri');
+  }catch(e){ $('rsSt').textContent='読み込めませんでした'; }
+}
+async function rsSet(v){
+  try{ await post('/settings',{key:'require_staff',value:v?'1':''});
+    toast(v?'本番にしました　担当を選ばないと会計できません':'テスト中にしました');
+    rsDraw();
+  }catch(err){ toast(err.message||'変えられませんでした',true); }
+}
+$('rsOn').onclick=()=>rsSet(true);
+$('rsOff').onclick=()=>rsSet(false);
+
 async function boot(){
   try{ await get('/shops'); }
   catch(err){ localStorage.removeItem(TOKK);TOK='';showGate();toast('合言葉が違うようです',true);return; }
   $('gate').style.display='none'; $('app').style.display='block';
-  devDraw(); drawLog();
+  devDraw(); drawLog(); rsDraw();
   const focusSink=()=>{const el=document.activeElement;
     if(!el||el.tagName!=='INPUT')$('sink').focus({preventScroll:true});};
   document.addEventListener('click',()=>setTimeout(focusSink,60));

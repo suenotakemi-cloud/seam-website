@@ -235,6 +235,9 @@ let SHOP=localStorage.getItem(SHOPK)||'ginza';
 let REG=localStorage.getItem(REGK)||'';
 /* いまレジに立っている人。社員証のQRで入れ替える。
    誰が打ったか分からない会計を作らないため、会計の前に必ず要る。 */
+/* 担当者を必ず選ばせるか。設定 require_staff が '1' のときだけ会計を止める。
+   本番前のテスト中は止めない（既定）。設定は接続テスト画面から切り替える。 */
+let REQUIRE_STAFF=false;
 let STAFF=null;
 try{ STAFF=JSON.parse(localStorage.getItem('stb_staff')||'null'); }catch(e){}
 let SHOPS=[], TAB='prod', CART=[], MEMBER=null, PAY='cash', STOCKVIEW=null;
@@ -397,8 +400,8 @@ async function doCheckout(){
   const t=cartTotal();
   if(!CART.length)return;
   if(!REG){ toast('先に「レジ ◯番」を決めてください',true); showRegisterPick(); return; }
-  if(!STAFF){ toast('先に担当を選んでください',true); showStaffPick(); return; }
-  if(!confirm(`${yen(t)} で会計します　担当 ${STAFF.name}　よろしいですか`))return;
+  if(REQUIRE_STAFF&&!STAFF){ toast('先に担当を選んでください',true); showStaffPick(); return; }
+  if(!confirm(`${yen(t)} で会計します${STAFF?'　担当 '+STAFF.name:''}　よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
   const id='co'+Math.random().toString(36).slice(2,8);
   let payId='';
@@ -810,8 +813,10 @@ async function boot(){
     PMODE=b.dataset.pm;
     document.querySelectorAll('#priceModes button').forEach(x=>x.classList.toggle('on',x.dataset.pm===PMODE));
     render(); toast({normal:'通常の値段にしました',member:'メンバー価格にしました',sale:'セール価格にしました'}[PMODE]);});
-  try{ const sj=await get('/settings'); const v=(sj.settings||{}).price_rules;
-       if(v){const r=JSON.parse(v);RULES.member=r.member||{};RULES.sale=r.sale||{};} }catch(e){}
+  try{ const sj=await get('/settings'); const st=sj.settings||{};
+       const v=st.price_rules;
+       if(v){const r=JSON.parse(v);RULES.member=r.member||{};RULES.sale=r.sale||{};}
+       REQUIRE_STAFF=String(st.require_staff||'')==='1'; }catch(e){}
   render();
   // 画面のどこを触っても、読み取りが効くように隠し欄へ戻す
   const focusSink=()=>{const el=document.activeElement;
