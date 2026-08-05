@@ -132,7 +132,21 @@ h2:first-child{margin-top:4px}
       <div id="badges" class="row" style="gap:14px"></div>
     </div>
 
-    <h2>④ 使いはじめる</h2>
+    <h2>④ 出勤の暗証番号（3桁）</h2>
+    <p class="note">レジは「今日出勤した人」だけを担当の候補に出します　名前を押したあと3桁を入れるので、他の人が名乗れません<br>
+      シフトの担当者ごとに、3桁の数字を決めてください</p>
+    <div class="card">
+      <div class="row">
+        <input id="pinSid" placeholder="社員番号（例 s2）" autocomplete="off" style="max-width:190px">
+        <input id="pinName" placeholder="お名前" autocomplete="off" style="max-width:220px">
+        <input id="pinVal" placeholder="3桁" inputmode="numeric" maxlength="3" style="max-width:110px">
+        <button class="btn pri" id="pinSave">決める</button>
+        <button class="btn" id="pinList">一覧を見る</button>
+      </div>
+      <div class="st" id="pinSt">まだ何も設定していません</div>
+    </div>
+
+    <h2>⑤ 使いはじめる</h2>
     <p class="note">両方うまくいったら、こちらがふだん使うレジの画面です</p>
     <div class="card">
       <div class="row"><a class="btn pri" style="text-decoration:none;text-align:center;flex:1"
@@ -297,6 +311,22 @@ $('badgeLoad').onclick=async()=>{
   }catch(err){ toast(err.message||'読み込めませんでした',true); }
 };
 $('badgePrint').onclick=()=>{ if(!$('badges').innerHTML.trim()){toast('先に読み込んでください',true);return;} window.print(); };
+
+$('pinSave').onclick=async()=>{
+  const sid=$('pinSid').value.trim(), nm=$('pinName').value.trim(), pin=$('pinVal').value.replace(/\D/g,'');
+  if(!sid){toast('社員番号を入れてください',true);return;}
+  if(pin.length!==3){toast('暗証番号は3桁です',true);return;}
+  try{ await post('/staff/pin',{staffId:sid,name:nm,pin});
+    $('pinVal').value=''; toast(`${nm||sid} さんの暗証番号を決めました`); $('pinList').click();
+  }catch(err){ toast(err.message||'決められませんでした',true); }
+};
+$('pinList').onclick=async()=>{
+  try{ const j=await get('/attendance/list');
+    $('pinSt').innerHTML=(j.staff||[]).length
+      ? '暗証番号あり：'+(j.staff||[]).map(x=>esc(x.name||x.staffId)+'（'+esc(x.staffId)+'）').join('　')
+      : 'まだ誰も設定されていません';
+  }catch(err){ toast(err.message||'読めませんでした',true); }
+};
 
 async function boot(){
   try{ await get('/shops'); }

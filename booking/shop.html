@@ -125,6 +125,9 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 .plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .pc{text-align:left;border:1px solid var(--line);background:#fff;border-radius:3px;padding:14px;min-height:96px;
   display:flex;flex-direction:column;justify-content:space-between}
+/* 商品の写真。名前を読むより速く正しく選べる。無い商品は枠だけ出さない */
+.pc-img{width:100%;height:104px;object-fit:contain;background:var(--cream);border-radius:2px;margin-bottom:10px}
+.ci-img{width:44px;height:44px;object-fit:contain;background:var(--cream);border-radius:2px;flex:none}
 .pc:active{background:var(--cream)}
 .pc-n{font-size:13.5px;color:var(--ink);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pc-f{display:flex;justify-content:space-between;align-items:flex-end;margin-top:10px;gap:8px}
@@ -222,6 +225,8 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 <script>
 /* ══════════ 土台 ══════════ */
 const API='https://seam-square-pay.suenotakemi.workers.dev';
+/* 商品の写真はホームページと同じものを使う（images/catalog/<商品ID>.webp） */
+const IMGBASE='https://seam.site/';
 const TOKK='stb_admin_tok', SHOPK='stb_shop', REGK='stb_register';
 let TOK=localStorage.getItem(TOKK)||'';
 let SHOP=localStorage.getItem(SHOPK)||'ginza';
@@ -264,7 +269,7 @@ function pushDisplay(done){
     const t=cartTotal();
     const earn=(MEMBER&&MEMBER.name)?Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)):0;
     post('/display/push',{shopId:SHOP,register:REG,mode:PMODE,done:!!done,
-      items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i)})),
+      items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||''})),
       list:cartList(),cut:cartCut(),total:t,
       member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn,
         expiring:MEMBER.expiring,expireOn:MEMBER.expireOn}:null}).catch(()=>{});
@@ -342,7 +347,7 @@ async function onProductCode(code){
 /* ══════════ 会計 ══════════ */
 function addToCart(p){
   const f=CART.find(x=>x.productId===p.id);
-  if(f)f.qty++; else CART.push({productId:p.id,name:p.name,brand:p.brand||'',unit:+p.price||0,qty:1});
+  if(f)f.qty++; else CART.push({productId:p.id,name:p.name,brand:p.brand||'',image:p.image||'',unit:+p.price||0,qty:1});
   render();
 }
 function cartList(){ return CART.reduce((s,i)=>s+i.unit*i.qty,0); }            // 定価の合計
@@ -353,6 +358,7 @@ function cartCut(){ return cartList()-cartTotal(); }                            
 function renderCart(){
   if(!CART.length){ $('cart').innerHTML='<div class="empty">バーコードを読み取ると ここに並びます</div>'; return; }
   $('cart').innerHTML=CART.map((i,ix)=>{const now=lineNow(i),cut=i.unit!==now;return `<div class="ci">
+    ${i.image?`<img class="ci-img" src="${IMGBASE+i.image}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}
     <div class="ci-n">${esc(i.name)}<div class="ci-b">${cut?`<span class="ci-was">${yen(i.unit)}</span>${yen(now)}　−${pctFor(i)}％`:yen(i.unit)}</div></div>
     <div class="ci-q"><button data-q="-" data-i="${ix}">−</button><span>${i.qty}</span><button data-q="+" data-i="${ix}">＋</button></div>
     <div class="ci-p">${yen(now*i.qty)}</div>
@@ -387,7 +393,7 @@ async function doCheckout(){
   const t=cartTotal();
   if(!CART.length)return;
   if(!REG){ toast('先に「レジ ◯番」を決めてください',true); showRegisterPick(); return; }
-  if(!STAFF){ toast('担当者の社員証を読み取ってください',true); return; }
+  if(!STAFF){ toast('先に担当を選んでください',true); showStaffPick(); return; }
   if(!confirm(`${yen(t)} で会計します　担当 ${STAFF.name}　よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
   const id='co'+Math.random().toString(36).slice(2,8);
@@ -602,6 +608,7 @@ async function doSearch(v){
   const j=await get('/products'+(q?'?q='+encodeURIComponent(q):'?limit=60')).catch(()=>({products:[]}));
   const list=(j.products||[]).slice(0,60);
   $('pl').innerHTML=list.length?list.map(p=>`<button class="pc" data-p="${esc(p.id)}">
+      ${p.image?`<img class="pc-img" src="${IMGBASE+esc(p.image)}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}
       <span class="pc-n">${esc(p.name)}</span>
       <span class="pc-f"><span class="pc-p">${(()=>{const n=Math.round(p.price*(1-pctFor({productId:p.id,name:p.name,brand:p.brand})/100));
         return n!==p.price?`<span class="ci-was">${yen(p.price)}</span>${yen(n)}`:yen(p.price);})()}</span><span class="pc-s">${esc(p.barcode||'')}</span></span>
@@ -635,6 +642,70 @@ async function loadStaff(code){
   staffDraw(); said('担当者',esc(STAFF.name)+' さんに切り替えました'); render();
 }
 function staffDraw(){ const b=$('staffBtn'); if(b)b.textContent=STAFF?`担当 ${STAFF.name}`:'担当 未設定'; }
+
+/* ── 出勤している人から担当を選ぶ ──
+   朝に出勤を打った人だけが並ぶ。名前を押したあと3桁の暗証番号が要るので、
+   忙しくて置きっぱなしのiPadでも、他の人の名前で打たれることがない。 */
+async function showStaffPick(){
+  const d=document.createElement('div'); d.className='dlg';
+  d.innerHTML=`<div class="dlg-b"><h3>担当を選ぶ</h3><p>読み込んでいます…</p></div>`;
+  document.body.appendChild(d);
+  const close=()=>d.remove();
+  let att={staff:[]};
+  try{ att=await get('/attendance?shop='+encodeURIComponent(SHOP)); }catch(e){}
+  const on=(att.staff||[]).filter(x=>x.working);
+  d.innerHTML=`<div class="dlg-b">
+    <h3>担当を選ぶ</h3>
+    <p>今日 出勤している人だけが出ます　名前を押して 3桁の暗証番号を入れてください</p>
+    ${on.length?`<div class="stk">${on.map(x=>`<div class="stk-r" data-s="${esc(x.staffId)}" style="cursor:pointer">
+        <span>${esc(x.name)}</span><b style="font-size:13px;color:var(--sub)">${esc(String(x.inAt).slice(11,16))} 出勤</b></div>`).join('')}</div>`
+      :`<div class="empty">今日の出勤がまだありません<br>下の「出勤を打つ」から始めてください</div>`}
+    <div class="dlg-a">
+      <button id="spIn" class="pri">出勤を打つ</button>
+      ${STAFF?`<button id="spOut">${esc(STAFF.name)} を退勤にする</button>`:''}
+      <button id="spClose">閉じる</button></div>
+  </div>`;
+  d.querySelectorAll('[data-s]').forEach(b=>b.onclick=async()=>{
+    const pin=prompt('3桁の暗証番号を入れてください','');
+    if(pin===null)return;
+    try{ const j=await post('/staff/take',{staffId:b.dataset.s,pin});
+      STAFF={id:j.staffId,name:j.name}; localStorage.setItem('stb_staff',JSON.stringify(STAFF));
+      close(); staffDraw(); render(); toast(`担当を ${STAFF.name} さんにしました`);
+    }catch(err){ toast(err.message||'入れませんでした',true); }});
+  d.querySelector('#spIn').onclick=()=>{ close(); showCheckIn(); };
+  if(d.querySelector('#spOut'))d.querySelector('#spOut').onclick=async()=>{
+    if(!confirm(`${STAFF.name} さんを退勤にしますか`))return;
+    try{ await post('/attendance/checkout',{staffId:STAFF.id});
+      STAFF=null; localStorage.removeItem('stb_staff'); close(); staffDraw(); render(); toast('退勤にしました');
+    }catch(err){ toast(err.message||'できませんでした',true); }};
+  d.querySelector('#spClose').onclick=close;
+  d.onclick=e=>{ if(e.target===d)close(); };
+}
+/* 出勤を打つ。名前を押して3桁。 */
+async function showCheckIn(){
+  const d=document.createElement('div'); d.className='dlg';
+  d.innerHTML=`<div class="dlg-b"><h3>出勤</h3><p>読み込んでいます…</p></div>`;
+  document.body.appendChild(d);
+  const close=()=>d.remove();
+  let list={staff:[]};
+  try{ list=await get('/attendance/list'); }catch(e){}
+  d.innerHTML=`<div class="dlg-b">
+    <h3>出勤</h3><p>お名前を押して 3桁の暗証番号を入れてください</p>
+    ${(list.staff||[]).length?`<div class="stk">${list.staff.map(x=>
+      `<div class="stk-r" data-s="${esc(x.staffId)}" style="cursor:pointer"><span>${esc(x.name)}</span><b style="font-size:13px;color:var(--sub)">→</b></div>`).join('')}</div>`
+      :'<div class="empty">暗証番号が設定された方がいません<br>接続テスト画面から設定してください</div>'}
+    <div class="dlg-a"><button id="ciClose">閉じる</button></div>
+  </div>`;
+  d.querySelectorAll('[data-s]').forEach(b=>b.onclick=async()=>{
+    const pin=prompt('3桁の暗証番号を入れてください','');
+    if(pin===null)return;
+    try{ const j=await post('/attendance/checkin',{staffId:b.dataset.s,pin,shopId:SHOP});
+      STAFF={id:j.staffId,name:j.name}; localStorage.setItem('stb_staff',JSON.stringify(STAFF));
+      close(); staffDraw(); render(); toast(`${j.name} さん おはようございます　担当になりました`);
+    }catch(err){ toast(err.message||'出勤できませんでした',true); }});
+  d.querySelector('#ciClose').onclick=close;
+  d.onclick=e=>{ if(e.target===d)close(); };
+}
 async function loadMember(code){
   const j=await get('/member/lookup?code='+encodeURIComponent(code));
   MEMBER={code:j.code,name:j.name||'',phone:j.phone||'',salonId:j.salonId||'',points:j.points||0,
@@ -697,10 +768,7 @@ async function boot(){
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;syncTabs();renderRight();});
   $('dispBtn').onclick=showDisplayUrl;
   regDraw(); $('regBtn').onclick=showRegisterPick;
-  staffDraw(); $('staffBtn').onclick=()=>{
-    if(STAFF&&confirm(`担当を ${STAFF.name} さんから外しますか`)){
-      STAFF=null; localStorage.removeItem('stb_staff'); staffDraw(); render(); toast('担当を外しました');
-    }else if(!STAFF){ toast('担当者の社員証を読み取ってください'); }};
+  staffDraw(); $('staffBtn').onclick=showStaffPick;
   document.querySelectorAll('#priceModes button').forEach(b=>b.onclick=()=>{
     PMODE=b.dataset.pm;
     document.querySelectorAll('#priceModes button').forEach(x=>x.classList.toggle('on',x.dataset.pm===PMODE));

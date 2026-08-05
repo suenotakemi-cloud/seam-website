@@ -145,10 +145,12 @@ function drawRange(){
 }
 
 /* ── 売上 ── */
+const IMGBASE='https://seam.site/';
 function barRows(list,unit){
   if(!list||!list.length)return '<div class="empty">この期間の記録がありません</div>';
   const max=Math.max(...list.map(x=>x.v||0),1);
   return `<div class="rows">`+list.map(x=>`<div class="r">
+    ${x.image?`<img src="${IMGBASE+esc(x.image)}" alt="" loading="lazy" style="width:38px;height:38px;object-fit:contain;background:var(--cream);border-radius:2px;flex:none" onerror="this.style.display='none'">`:''}
     <span class="r-w"><span class="r-n">${esc(x.k)}</span>
       <span class="bar"><i style="width:${Math.round((x.v||0)/max*100)}%"></i></span></span>
     ${x.q!=null?`<span class="r-q">${x.q}${unit||'点'}</span>`:(x.n!=null?`<span class="r-q">${x.n}件</span>`:'')}
@@ -177,6 +179,24 @@ function salesHtml(){
 }
 
 /* ── 発注書 ── */
+/* 1つの仕入先ぶんの表。上に合計、下に品目。そのまま印刷しても読める形にする。 */
+function tbl(title,d){
+  return `<div class="mk">
+    <div class="mk-h">
+      <span class="mk-n">${esc(title)}</span>
+      <span class="mk-s">${d.lines}品目 / ${d.qty}点</span>
+      <span class="mk-v">${yen(d.amount)}</span>
+    </div>
+    <div class="oi" style="background:var(--cream);font-size:11.5px;color:var(--sub);letter-spacing:.06em">
+      <span style="width:40px;flex:none"></span>
+      <span class="oi-n">商品</span><span class="oi-s">売れた ／ 在庫</span><span class="oi-q">発注</span></div>
+    ${d.items.map(x=>`<div class="oi">
+      ${x.image?`<img src="${IMGBASE+esc(x.image)}" alt="" loading="lazy" style="width:40px;height:40px;object-fit:contain;background:var(--cream);border-radius:2px;flex:none" onerror="this.style.display='none'">`:'<span style="width:40px;flex:none"></span>'}
+      <span class="oi-n">${esc(x.name)}<div class="oi-b">${esc(x.brand||'')}${x.barcode?'　'+esc(x.barcode):''}</div></span>
+      <span class="oi-s">${x.sold} ／ ${x.stock}</span>
+      <span class="oi-q">${x.order}</span></div>`).join('')}
+  </div>`;
+}
 function orderHtml(){
   if(!ORDER)return '<div class="empty">読み込んでいます…</div>';
   const t=ORDER.total;
@@ -192,17 +212,13 @@ function orderHtml(){
       ${[0,1,2,3].map(v=>`<button data-b="${v}" class="${BUFFER===v?'pri':''}">+${v}</button>`).join('')}
       <button id="prt">発注書を印刷</button>
     </div>
-    ${ORDER.makers.length?ORDER.makers.map((m,i)=>`<div class="mk">
-      <div class="mk-h" data-mk="${i}">
-        <span class="mk-n">${esc(m.maker)}</span>
-        <span class="mk-s">${m.lines}品目 / ${m.qty}点</span>
-        <span class="mk-v">${yen(m.amount)}</span>
-      </div>
-      <div>${m.items.map(x=>`<div class="oi">
-        <span class="oi-n">${esc(x.name)}<div class="oi-b">${esc(x.brand||'')}${x.barcode?'　'+esc(x.barcode):''}</div></span>
-        <span class="oi-s">売れた ${x.sold} ／ 在庫 ${x.stock}</span>
-        <span class="oi-q">${x.order}</span></div>`).join('')}</div>
-    </div>`).join(''):'<div class="empty">この期間に発注が要るものはありません</div>'}`;
+    ${(ORDER.direct||[]).length?`<h2>メーカーサイトから直接 発注するもの</h2>
+      <p class="note">窓口がブランドごとに分かれているので、1つずつ表にしています　そのままメーカーのサイトに打ち込めます</p>
+      ${ORDER.direct.map(d=>tbl(d.label,d)).join('')}`:''}
+    ${(ORDER.makers||[]).length?`<h2>そのほか（まとめて）</h2>
+      <p class="note">今後BtoBでまとめて頼むぶんです　メーカーごとに並べています${ORDER.restTotal?`　合計 ${ORDER.restTotal.lines}品目 / ${ORDER.restTotal.qty}点 / ${yen(ORDER.restTotal.amount)}`:''}</p>
+      ${ORDER.makers.map(m=>tbl(m.maker,m)).join('')}`:''}
+    ${!(ORDER.direct||[]).length&&!(ORDER.makers||[]).length?'<div class="empty">この期間に発注が要るものはありません</div>':''}`;
 }
 
 /* ── 在庫アラート ── */
