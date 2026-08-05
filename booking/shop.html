@@ -377,8 +377,12 @@ function renderSum(){
        <div class="sr cut"><span>${PMODE==='member'?'メンバー価格':'セール価格'}</span><b>−${yen(cut)}</b></div>`:''}
      ${TAXFREE?`<div class="sr cut"><span>免税ぶん（申請は別）</span><b>−${yen(taxCut())}</b></div>`:''}
      <div class="sr big"><span>合計</span><b>${yen(t)}</b></div>
-     <div class="pay">${['cash:現金','term:カード（端末）','card:カード（手入力）','qr:QR決済'].map(x=>{const[v,l]=x.split(':');
-       return `<button data-p="${v}" class="${PAY===v?'on':''}">${l}</button>`}).join('')}</div>
+     <div class="pay">${[['cash','現金'],['card','カード'],['emoney','電子マネー'],['qr','QR決済']].map(([v,l])=>
+       `<button data-p="${v}" class="${PAY===v?'on':''}">${l}</button>`).join('')}</div>
+     ${PAY!=='cash'?`<div class="sr" style="color:var(--sub);font-size:12px;padding:6px 2px 0">
+       ${PAY==='emoney'?'端末で iD・QUICPay・交通系（Suica等）から選んでいただきます'
+        :PAY==='qr'?'端末にQRが出ます　PayPay・d払いなど'
+        :'端末にカードをかざす／差し込んでいただきます'}</div>`:''}
      ${CART.length?`<button class="mini" id="taxfree">${TAXFREE?'免税の値引きを外す':'免税ぶんを値引く（申請は別）'}</button>`:''}
      <button class="go" id="go" ${CART.length?'':'disabled'}>会計する</button>
      ${CART.length?`<button class="mini" id="clr">明細を消す</button>`:''}`;
@@ -399,10 +403,11 @@ async function doCheckout(){
   const id='co'+Math.random().toString(36).slice(2,8);
   let payId='';
   try{
-    if(PAY==='term'){                       // Squareターミナルでカードを通す
+    if(PAY!=='cash'){                       // 現金以外はSquareの端末で通す
       btn.textContent='端末をご案内中…';
-      payId=await payByTerminal(t);
-      if(payId===null||payId===undefined){ btn.disabled=false;btn.textContent='会計する'; return; }
+      const r=await payByTerminal(t,PAY);
+      if(r===null||r===undefined){ btn.disabled=false;btn.textContent='会計する'; return; }
+      payId=r.paymentId||''; if(r.paidBy)PAY=r.paidBy;   // 実際に選ばれた方法で記録する
     }
     await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
       mode:'shop',register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
@@ -410,7 +415,7 @@ async function doCheckout(){
       retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId})),
       discount:cartCut(),
       discountLabel:[PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),TAXFREE?'免税':''].filter(Boolean).join('＋'),
-      total:t,method:PAY==='term'?'card':PAY,squarePaymentId:payId||'',
+      total:t,method:PAY,squarePaymentId:payId||'',
       memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
     // 在庫を引く。1件ずつ（どれが失敗したか分かるように）
     for(const i of CART){ await post('/stock/adjust',{shopId:SHOP,productId:i.productId,delta:-i.qty,reason:'店販'}).catch(()=>{}); }
@@ -422,7 +427,7 @@ async function doCheckout(){
     }
     pushDisplay(true);                       // お客様側は「ありがとうございました」に切り替わる
     CART=[]; TAXFREE=false;
-    said('会計しました',yen(t)+'　'+({cash:'現金',card:'カード',term:'カード（端末）',qr:'QR決済'}[PAY]||''));
+    said('会計しました',yen(t)+'　'+payLabel(PAY));
     toast('会計しました');
     if(MEMBER)await loadMember(MEMBER.salonId||MEMBER.code);   // ポイントを取り直す
     render();
@@ -438,16 +443,16 @@ async function loadHistory2(){
   const j=await get(`/checkouts?from=${jstDay(HDAYS-1)}&to=${jstDay(0)}`).catch(()=>({checkouts:[]}));
   HISTORY=(j.checkouts||[]).filter(c=>c.mode!=='salon').sort((a,b)=>a.at<b.at?1:-1);
 }
-const payLabel=m=>({cash:'現金',card:'カード',term:'カード',qr:'QR決済'}[m]||m||'—');
+const payLabel=m=>({cash:'現金',card:'カード',term:'カード',emoney:'電子マネー',qr:'QR決済'}[m]||m||'—');
 let HSCOPE='mine';
 const inScope=c=>HSCOPE==='all'||String(c.register||'')===String(REG||'');
 function histHtml(){
   const cardOnly=HFILTER==='card';
-  const rows=HISTORY.filter(inScope).filter(c=>!cardOnly||c.method==='card'||c.method==='term'||c.squarePaymentId);
+  const rows=HISTORY.filter(inScope).filter(c=>!cardOnly||c.method!=='cash');
   const sum=rows.filter(c=>!c.voided).reduce((s,c)=>s+(c.total-(c.refund||0)),0);
   return `<div class="srch">
       <button class="${HFILTER==='all'?'on2':''}" data-hf="all">すべて</button>
-      <button class="${HFILTER==='card'?'on2':''}" data-hf="card">カードのみ</button>
+      <button class="${HFILTER==='card'?'on2':''}" data-hf="card">現金以外</button>
       <select id="hdays">${[[1,'今日'],[3,'3日'],[7,'1週間'],[31,'1か月']].map(([v,l])=>
         `<option value="${v}" ${HDAYS===v?'selected':''}>${l}</option>`).join('')}</select>
     </div>
@@ -506,6 +511,7 @@ function closeHtml(){
   const net=c=>(c.total||0)-(c.refund||0);
   const cash=live.filter(c=>c.method==='cash').reduce((s,c)=>s+net(c),0);
   const card=live.filter(c=>c.method==='card'||c.method==='term').reduce((s,c)=>s+net(c),0);
+  const emo=live.filter(c=>c.method==='emoney').reduce((s,c)=>s+net(c),0);
   const qr=live.filter(c=>c.method==='qr').reduce((s,c)=>s+net(c),0);
   const back=HISTORY.filter(c=>c.date===jstDay(0)).reduce((s,c)=>s+(c.refund||0),0);
   const flo=+(localStorage.getItem('stb_float:'+REG)||0);
@@ -513,9 +519,10 @@ function closeHtml(){
     <div class="stk">
       <div class="stk-r"><span>現金</span><b>${yen(cash)}</b></div>
       <div class="stk-r"><span>カード</span><b>${yen(card)}</b></div>
+      <div class="stk-r"><span>電子マネー</span><b>${yen(emo)}</b></div>
       <div class="stk-r"><span>QR決済</span><b>${yen(qr)}</b></div>
       <div class="stk-r"><span>返金</span><b>−${yen(back)}</b></div>
-      <div class="stk-r here"><span>売上の合計</span><b>${yen(cash+card+qr)}</b></div>
+      <div class="stk-r here"><span>売上の合計</span><b>${yen(cash+card+emo+qr)}</b></div>
       <div class="stk-r"><span>件数</span><b>${live.length}</b></div>
     </div>
     <div class="srch" style="margin-top:18px"><span style="align-self:center;font-size:13px">釣銭準備金</span>
@@ -543,18 +550,19 @@ function wireClose(){
     const net=x=>(x.total||0)-(x.refund||0);
     const cash=live.filter(x=>x.method==='cash').reduce((s,x)=>s+net(x),0);
     const card=live.filter(x=>x.method==='card'||x.method==='term').reduce((s,x)=>s+net(x),0);
+    const emo=live.filter(x=>x.method==='emoney').reduce((s,x)=>s+net(x),0);
     const qr=live.filter(x=>x.method==='qr').reduce((s,x)=>s+net(x),0);
     const flo=+($('floIn').value||0), got=+($('cntIn').value||0);
     if(!$('cntIn').value){ toast('数えた現金を入れてください',true); return; }
     try{ await post('/settlements',{date:jstDay(0),register:REG,shopId:SHOP,float:flo,cashSales:cash,expectedCash:flo+cash,
-        countedCash:got,diff:got-(flo+cash),card,qr,total:cash+card+qr,count:live.length,
+        countedCash:got,diff:got-(flo+cash),card:card+emo,qr,total:cash+card+emo+qr,count:live.length,
         memo:'',closedAt:new Date().toISOString()});
       toast('レジを締めました');
     }catch(err){ toast(err.message||'締められませんでした',true); }};
 }
 
 /* ══════════ Squareターミナル ══════════ */
-async function payByTerminal(amount){
+async function payByTerminal(amount,kind){
   if(!TERM.deviceId){
     const code=prompt('Square ターミナルの端末コードを作ります\n端末に出ている「デバイスコード」を入れてください\n（初回だけ・空欄でこちらから発行）','');
     if(code===null)return null;
@@ -563,7 +571,9 @@ async function payByTerminal(amount){
         return null; }catch(e){ toast(e.message||'端末コードを作れませんでした',true); return null; } }
     TERM.deviceId=code.trim(); localStorage.setItem('stb_term_dev:'+REG,TERM.deviceId);
   }
-  const r=await post('/terminal/checkout',{amount,deviceId:TERM.deviceId,mode:'shop',note:'SEAM ショップ'});
+  const PT={card:'CARD_PRESENT',emoney:'FELICA_ALL',qr:'QR_CODE'};
+  const r=await post('/terminal/checkout',{amount,deviceId:TERM.deviceId,mode:'shop',
+    paymentType:PT[kind]||'CARD_PRESENT',note:'SEAM ショップ'});
   TERM.checkoutId=r.checkoutId;
   toast('ターミナルでお支払いをご案内ください');
   // 端末の結果を待つ（最長3分）
@@ -571,7 +581,7 @@ async function payByTerminal(amount){
     await new Promise(r=>setTimeout(r,2000));
     const st=await get('/terminal/checkout?id='+encodeURIComponent(TERM.checkoutId)).catch(()=>null);
     if(!st)continue;
-    if(st.status==='COMPLETED')return (st.paymentIds||[])[0]||'';
+    if(st.status==='COMPLETED')return {paymentId:(st.paymentIds||[])[0]||'',paidBy:st.paidBy||''};
     if(['CANCELED','CANCEL_REQUESTED'].includes(st.status)){ toast('端末で取り消されました',true); return null; }
   }
   toast('端末の返事が来ませんでした',true); return null;
@@ -646,6 +656,33 @@ function staffDraw(){ const b=$('staffBtn'); if(b)b.textContent=STAFF?`担当 ${
 /* ── 出勤している人から担当を選ぶ ──
    朝に出勤を打った人だけが並ぶ。名前を押したあと3桁の暗証番号が要るので、
    忙しくて置きっぱなしのiPadでも、他の人の名前で打たれることがない。 */
+/* 3桁の暗証番号を、大きな数字キーで入れる。
+   レジは指で速く打てることが大事なので、小さな入力欄は使わない。 */
+function askPin(title,cb){
+  const d=document.createElement('div'); d.className='dlg';
+  let v='';
+  const draw=()=>{ d.querySelector('#pinDots').textContent='●●●'.slice(0,v.length)+'○○○'.slice(0,3-v.length); };
+  d.innerHTML=`<div class="dlg-b" style="max-width:340px">
+    <h3>${esc(title)}</h3><p>3桁の暗証番号を入れてください</p>
+    <div id="pinDots" style="text-align:center;font-size:34px;letter-spacing:.4em;color:var(--ink);margin:6px 0 18px">○○○</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="btn" data-k="${n}" style="padding:20px;font-size:22px">${n}</button>`).join('')}
+      <button class="btn" data-k="back" style="padding:20px;font-size:16px">戻す</button>
+      <button class="btn" data-k="0" style="padding:20px;font-size:22px">0</button>
+      <button class="btn" data-k="x" style="padding:20px;font-size:16px">やめる</button>
+    </div></div>`;
+  document.body.appendChild(d);
+  draw();
+  d.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.k;
+    if(k==='x'){ d.remove(); return; }
+    if(k==='back'){ v=v.slice(0,-1); draw(); return; }
+    if(v.length>=3)return;
+    v+=k; draw();
+    if(v.length===3){ const p=v; setTimeout(()=>{ d.remove(); cb(p); },160); }
+  });
+  d.onclick=e=>{ if(e.target===d)d.remove(); };
+}
 async function showStaffPick(){
   const d=document.createElement('div'); d.className='dlg';
   d.innerHTML=`<div class="dlg-b"><h3>担当を選ぶ</h3><p>読み込んでいます…</p></div>`;
@@ -665,13 +702,13 @@ async function showStaffPick(){
       ${STAFF?`<button id="spOut">${esc(STAFF.name)} を退勤にする</button>`:''}
       <button id="spClose">閉じる</button></div>
   </div>`;
-  d.querySelectorAll('[data-s]').forEach(b=>b.onclick=async()=>{
-    const pin=prompt('3桁の暗証番号を入れてください','');
-    if(pin===null)return;
-    try{ const j=await post('/staff/take',{staffId:b.dataset.s,pin});
-      STAFF={id:j.staffId,name:j.name}; localStorage.setItem('stb_staff',JSON.stringify(STAFF));
-      close(); staffDraw(); render(); toast(`担当を ${STAFF.name} さんにしました`);
-    }catch(err){ toast(err.message||'入れませんでした',true); }});
+  d.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{
+    const sid=b.dataset.s, nm=b.parentElement.querySelector('span').textContent;
+    askPin(nm+' さん',async pin=>{
+      try{ const j=await post('/staff/take',{staffId:sid,pin});
+        STAFF={id:j.staffId,name:j.name}; localStorage.setItem('stb_staff',JSON.stringify(STAFF));
+        close(); staffDraw(); render(); toast(`担当を ${STAFF.name} さんにしました`);
+      }catch(err){ toast(err.message||'入れませんでした',true); }});});
   d.querySelector('#spIn').onclick=()=>{ close(); showCheckIn(); };
   if(d.querySelector('#spOut'))d.querySelector('#spOut').onclick=async()=>{
     if(!confirm(`${STAFF.name} さんを退勤にしますか`))return;
@@ -696,13 +733,13 @@ async function showCheckIn(){
       :'<div class="empty">暗証番号が設定された方がいません<br>接続テスト画面から設定してください</div>'}
     <div class="dlg-a"><button id="ciClose">閉じる</button></div>
   </div>`;
-  d.querySelectorAll('[data-s]').forEach(b=>b.onclick=async()=>{
-    const pin=prompt('3桁の暗証番号を入れてください','');
-    if(pin===null)return;
-    try{ const j=await post('/attendance/checkin',{staffId:b.dataset.s,pin,shopId:SHOP});
-      STAFF={id:j.staffId,name:j.name}; localStorage.setItem('stb_staff',JSON.stringify(STAFF));
-      close(); staffDraw(); render(); toast(`${j.name} さん おはようございます　担当になりました`);
-    }catch(err){ toast(err.message||'出勤できませんでした',true); }});
+  d.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{
+    const sid=b.dataset.s, nm=b.querySelector('span').textContent;
+    askPin(nm+' さん　出勤',async pin=>{
+      try{ const j=await post('/attendance/checkin',{staffId:sid,pin,shopId:SHOP});
+        STAFF={id:j.staffId,name:j.name}; localStorage.setItem('stb_staff',JSON.stringify(STAFF));
+        close(); staffDraw(); render(); toast(`${j.name} さん おはようございます　担当になりました`);
+      }catch(err){ toast(err.message||'出勤できませんでした',true); }});});
   d.querySelector('#ciClose').onclick=close;
   d.onclick=e=>{ if(e.target===d)close(); };
 }
