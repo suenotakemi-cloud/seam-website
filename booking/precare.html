@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
 <!-- 辞書を直したら ?v= を必ず上げる（HTML側の ?cb= では別ファイルは新しくならない） -->
-<script src="pc-i18n.js?v=20"></script>
+<script src="pc-i18n.js?v=21"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════
    SEAM GINZA — 今日のご希望（来店前）
@@ -1282,12 +1282,11 @@ async function demoAllowed(){
     return !!(r.ok&&j&&j.ok);
   }catch(e){ return false; }
 }
+/* ★閉じていることを知らせない。「いまは見せていません」と書くと、
+     その先に何かある と教えることになる。リンク切れと同じ見え方にする
+     ＝存在ごと分からない状態にする。文言は既存のものを使い回す。 */
 function demoClosed(){
-  app.innerHTML=`<div class="scr on" style="text-align:center;padding-top:40px">
-    <p class="eyebrow">closed</p>
-    <h1>この見本は<br>いまお見せしていません</h1>
-    <p class="lead">ご予約のお客様は ご案内のリンクからお進みください<br>
-      スタッフの方は店長までお問い合わせください</p></div>`;
+  app.innerHTML='<div class="err">リンクが正しくありません。ご予約のご案内から開いてください</div>';
   foot.hidden=true; applyLang();
 }
 
