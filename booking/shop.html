@@ -708,7 +708,8 @@ async function showDisplayUrl(){
        この画面には いまのお会計しか出ません（在庫や他のお客様は出ません）</p>
     <div class="qrwrap" id="qrwrap"><div class="qrload">QRを作っています…</div></div>
     <div class="dlg-u">${esc(url)}</div>
-    <div class="dlg-a"><button id="dcopy" class="pri">住所をコピー</button><button id="dclose">閉じる</button></div>
+    <div class="dlg-a"><button id="dcopy" class="pri">住所をコピー</button>
+      <button id="dopen">この端末で見てみる</button><button id="dclose">閉じる</button></div>
   </div>`;
   document.body.appendChild(d);
   /* もう1台のタブレットのカメラで読めるようにQRを出す。
@@ -723,6 +724,8 @@ async function showDisplayUrl(){
   d.querySelector('#dcopy').onclick=async()=>{
     try{ await navigator.clipboard.writeText(url); toast('コピーしました'); }
     catch(e){ toast('長押しで選んでコピーしてください',true); }};
+  /* どんな画面になるのか、その場で確かめられるようにする（別タブで開く＝レジは消えない） */
+  d.querySelector('#dopen').onclick=()=>{ window.open(url,'_blank'); };
   d.querySelector('#dclose').onclick=()=>d.remove();
   d.onclick=e=>{ if(e.target===d)d.remove(); };
 }
