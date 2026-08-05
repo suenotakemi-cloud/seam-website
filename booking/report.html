@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>売上と発注｜SEAM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══ SEAM 売上と発注（iPad用）══
+   売れたものを見て、そのまま発注書にして、余っているものに気づくための画面。
+   数字を出すだけで、勝手に発注も返品もしない。 */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--ink:#16171B;--body:#3E3B36;--sub:#7C776E;--line:#E3DCD0;--cream:#FBF9F5;
+  --gold:#B8945A;--clay:#A87456;--ok:#1F6B45;--ng:#B4442E;--bg:#F7F5F1}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
+  font-size:15px;line-height:1.7;-webkit-text-size-adjust:100%}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit;font-size:16px}
+.top{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#fff;
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;flex-wrap:wrap;
+  padding-top:calc(10px + env(safe-area-inset-top))}
+.brand{font-family:'Cormorant Garamond',serif;font-size:19px;letter-spacing:.16em;color:var(--ink)}
+.spacer{flex:1}
+.tabs{display:flex;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.tabs button{padding:10px 18px;border:0;background:#fff;font-size:13.5px;color:var(--sub);letter-spacing:.05em}
+.tabs button.on{background:var(--ink);color:#fff}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 90px}
+.range{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+.range button{border:1px solid var(--line);background:#fff;border-radius:3px;padding:10px 16px;font-size:13px;color:var(--body)}
+.range button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.range input[type=date]{border:1px solid var(--line);border-radius:3px;padding:9px 12px;background:#fff;color:var(--ink)}
+h2{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;letter-spacing:.14em;
+  color:var(--clay);margin:28px 0 10px}
+h2:first-child{margin-top:2px}
+.note{font-size:12.5px;color:var(--sub);line-height:2;margin:0 0 12px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kc{background:#fff;border:1px solid var(--line);border-radius:3px;padding:16px 18px}
+.kc-k{font-size:11.5px;letter-spacing:.08em;color:var(--sub)}
+.kc-v{font-family:'Cormorant Garamond',serif;font-size:27px;color:var(--ink);line-height:1.2;margin-top:4px;font-weight:600}
+.kc-s{font-size:11.5px;color:var(--sub);margin-top:3px}
+.rows{background:#fff;border:1px solid var(--line);border-radius:3px}
+.r{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
+.r:last-child{border-bottom:0}
+.r-n{flex:1;min-width:0;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-q{font-size:12px;color:var(--sub);white-space:nowrap}
+.r-v{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);white-space:nowrap;min-width:96px;text-align:right}
+.bar{height:4px;background:var(--sand,#EFE9DF);border-radius:2px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--gold)}
+.r-w{flex:1;min-width:0}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:820px){.two{grid-template-columns:1fr}}
+.mk{background:#fff;border:1px solid var(--line);border-radius:3px;margin-bottom:12px}
+.mk-h{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.mk-n{flex:1;font-size:15px;color:var(--ink)}
+.mk-s{font-size:12px;color:var(--sub);white-space:nowrap}
+.mk-v{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--ink)}
+.oi{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13.5px}
+.oi:last-child{border-bottom:0}
+.oi-n{flex:1;min-width:0}
+.oi-b{font-size:11px;color:var(--sub);letter-spacing:.04em}
+.oi-q{font-family:'Cormorant Garamond',serif;font-size:19px;color:var(--ink);min-width:44px;text-align:right}
+.oi-s{font-size:11.5px;color:var(--sub);min-width:112px;text-align:right}
+.tag{display:inline-block;font-size:11px;letter-spacing:.06em;border:1px solid var(--line);
+  border-radius:2px;padding:2px 8px;color:var(--clay);margin-left:6px}
+.tag.ng{color:var(--ng);border-color:rgba(180,68,46,.34)}
+.act{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+.act button{border:1px solid var(--line);background:#fff;border-radius:3px;padding:12px 20px;font-size:13.5px;color:var(--body)}
+.act button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.empty{color:var(--sub);font-size:13px;padding:30px;text-align:center}
+.gate{max-width:400px;margin:16vh auto;background:#fff;border:1px solid var(--line);border-radius:3px;padding:32px 26px}
+.gate h1{font-family:'Cormorant Garamond',serif;font-size:22px;letter-spacing:.14em;color:var(--ink);margin:0 0 6px;font-weight:600}
+.gate p{font-size:13px;color:var(--sub);margin:0 0 18px}
+.gate input{width:100%;border:1px solid var(--line);border-radius:3px;padding:14px}
+.gate button{width:100%;margin-top:12px;padding:15px;border:0;border-radius:3px;background:var(--ink);color:#fff;font-size:15px}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ink);color:#fff;padding:13px 22px;border-radius:3px;font-size:14px;z-index:200;transition:.22s;pointer-events:none}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ng{background:var(--ng)}
+@media print{
+  .top,.range,.act,.note,#toast{display:none!important}
+  body{background:#fff}
+  .mk{break-inside:avoid;border-color:#ccc}
+}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate" style="display:none">
+  <h1>売上と発注</h1>
+  <p>売れたものを見て、そのまま発注書にする画面です</p>
+  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off">
+  <button id="gbtn">開く</button>
+</div>
+
+<div id="app" style="display:none">
+  <div class="top">
+    <span class="brand">SEAM REPORT</span>
+    <select id="shopSel"></select>
+    <div class="tabs" id="tabs">
+      <button data-t="sales" class="on">売上</button>
+      <button data-t="order">発注書</button>
+      <button data-t="alert">在庫アラート</button>
+    </div>
+    <span class="spacer"></span>
+  </div>
+  <div class="wrap">
+    <div class="range" id="range"></div>
+    <div id="body"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const TOKK='stb_admin_tok', SHOPK='stb_shop';
+let TOK=localStorage.getItem(TOKK)||'';
+let SHOP=localStorage.getItem(SHOPK)||'ginza';
+let TAB='sales', FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null;
+let BUFFER=0, ALERT_DAYS=90, ALERT_MONTHS=6;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>'¥'+Math.round(+n||0).toLocaleString();
+const H=(...a)=>({'Authorization':'Bearer '+TOK,...Object.assign({},...a)});
+async function get(p){const r=await fetch(API+p,{headers:H()});if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+let tt;function toast(m,ng){const t=$('toast');t.textContent=m;t.className='on'+(ng?' ng':'');clearTimeout(tt);tt=setTimeout(()=>t.className='',ng?3000:1800);}
+const jst=(off=0)=>new Date(Date.now()+9*3600e3-off*86400e3).toISOString().slice(0,10);
+
+/* ── 期間の選び方。よく使う幅はボタン、細かいときは日付で ── */
+function drawRange(){
+  const P=[['0','今日'],['7','1週間'],['30','1か月'],['90','3か月'],['365','1年']];
+  $('range').innerHTML=P.map(([v,l])=>`<button data-p="${v}" class="${PRESET===v?'on':''}">${l}</button>`).join('')
+    +`<span style="color:var(--sub);font-size:12.5px;margin:0 4px">または</span>
+      <input type="date" id="f" value="${FROM}"><span style="color:var(--sub)">〜</span><input type="date" id="t" value="${TO}">
+      <button id="go2">この期間で見る</button>`;
+  $('range').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{
+    PRESET=b.dataset.p; TO=jst(0); FROM=jst(+b.dataset.p); load();});
+  $('go2').onclick=()=>{const f=$('f').value,t=$('t').value;
+    if(!f||!t){toast('日付を2つ選んでください',true);return;}
+    PRESET=''; FROM=f<t?f:t; TO=f<t?t:f; load();};
+}
+
+/* ── 売上 ── */
+function barRows(list,unit){
+  if(!list||!list.length)return '<div class="empty">この期間の記録がありません</div>';
+  const max=Math.max(...list.map(x=>x.v||0),1);
+  return `<div class="rows">`+list.map(x=>`<div class="r">
+    <span class="r-w"><span class="r-n">${esc(x.k)}</span>
+      <span class="bar"><i style="width:${Math.round((x.v||0)/max*100)}%"></i></span></span>
+    ${x.q!=null?`<span class="r-q">${x.q}${unit||'点'}</span>`:(x.n!=null?`<span class="r-q">${x.n}件</span>`:'')}
+    <span class="r-v">${yen(x.v)}</span></div>`).join('')+`</div>`;
+}
+function salesHtml(){
+  if(!DATA)return '<div class="empty">読み込んでいます…</div>';
+  const s=DATA.summary;
+  const M={cash:'現金',card:'カード',term:'カード',qr:'QR決済'};
+  const meth=DATA.byMethod.map(x=>({...x,k:M[x.k]||x.k}));
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">総売上</div><div class="kc-v">${yen(s.gross)}</div></div>
+      <div class="kc"><div class="kc-k">純売上</div><div class="kc-v">${yen(s.net)}</div><div class="kc-s">返金を引いた額</div></div>
+      <div class="kc"><div class="kc-k">件数</div><div class="kc-v">${s.count}</div></div>
+      <div class="kc"><div class="kc-k">平均</div><div class="kc-v">${yen(s.avg)}</div><div class="kc-s">1件あたり</div></div>
+      <div class="kc"><div class="kc-k">返金</div><div class="kc-v">${yen(s.refund)}</div></div>
+      <div class="kc"><div class="kc-k">値引き</div><div class="kc-v">${yen(s.discount)}</div><div class="kc-s">メンバー・セール・免税</div></div>
+    </div>
+    <h2>支払方法</h2>${barRows(meth)}
+    <h2>日別</h2>${barRows(DATA.byDay)}
+    <div class="two"><div><h2>ブランド別</h2>${barRows(DATA.byBrand.slice(0,15))}</div>
+      <div><h2>メーカー別</h2>${barRows(DATA.byMaker.slice(0,15))}</div></div>
+    <div class="two"><div><h2>種類別</h2>${barRows(DATA.byCategory.slice(0,15))}</div>
+      <div><h2>レジ別 / 担当別</h2>${barRows(DATA.byRegister)}<div style="height:10px"></div>${barRows(DATA.byStaff)}</div></div>
+    <h2>売れた商品</h2>${barRows(DATA.byProduct.slice(0,40))}`;
+}
+
+/* ── 発注書 ── */
+function orderHtml(){
+  if(!ORDER)return '<div class="empty">読み込んでいます…</div>';
+  const t=ORDER.total;
+  return `<p class="note">この期間に<b>売れた数</b>から<b>いまの在庫</b>を引いた数を出しています　売れたぶんを戻すだけなので、考えて決める必要がありません<br>
+      仕入れはメーカー単位なので、メーカーごとにまとめてあります</p>
+    <div class="cards">
+      <div class="kc"><div class="kc-k">発注する品目</div><div class="kc-v">${t.lines}</div></div>
+      <div class="kc"><div class="kc-k">合計の数</div><div class="kc-v">${t.qty}</div></div>
+      <div class="kc"><div class="kc-k">およその金額</div><div class="kc-v">${yen(t.amount)}</div><div class="kc-s">上代での目安</div></div>
+    </div>
+    <div class="act">
+      <span style="align-self:center;font-size:13px;color:var(--sub)">余裕を持たせる</span>
+      ${[0,1,2,3].map(v=>`<button data-b="${v}" class="${BUFFER===v?'pri':''}">+${v}</button>`).join('')}
+      <button id="prt">発注書を印刷</button>
+    </div>
+    ${ORDER.makers.length?ORDER.makers.map((m,i)=>`<div class="mk">
+      <div class="mk-h" data-mk="${i}">
+        <span class="mk-n">${esc(m.maker)}</span>
+        <span class="mk-s">${m.lines}品目 / ${m.qty}点</span>
+        <span class="mk-v">${yen(m.amount)}</span>
+      </div>
+      <div>${m.items.map(x=>`<div class="oi">
+        <span class="oi-n">${esc(x.name)}<div class="oi-b">${esc(x.brand||'')}${x.barcode?'　'+esc(x.barcode):''}</div></span>
+        <span class="oi-s">売れた ${x.sold} ／ 在庫 ${x.stock}</span>
+        <span class="oi-q">${x.order}</span></div>`).join('')}</div>
+    </div>`).join(''):'<div class="empty">この期間に発注が要るものはありません</div>'}`;
+}
+
+/* ── 在庫アラート ── */
+function alertHtml(){
+  if(!ALERT)return '<div class="empty">読み込んでいます…</div>';
+  const box=(t,d,cls)=>`<h2>${t}</h2>
+    <div class="cards" style="margin-bottom:10px">
+      <div class="kc"><div class="kc-k">品目</div><div class="kc-v">${d.count}</div></div>
+      <div class="kc"><div class="kc-k">寝ている金額</div><div class="kc-v">${yen(d.value)}</div><div class="kc-s">上代での目安</div></div>
+    </div>
+    ${d.items.length?`<div class="rows">`+d.items.slice(0,60).map(x=>`<div class="r">
+      <span class="r-w"><span class="r-n">${esc(x.name)}<span class="tag ${cls}">${x.months!=null?x.months+'ヶ月分':'売れていません'}</span></span>
+        <span class="oi-b">${esc(x.maker)}　在庫 ${x.stock}${x.sold?'　売れた '+x.sold:''}</span></span>
+      <span class="r-v">${yen(x.value)}</span></div>`).join('')+`</div>`
+      :'<div class="empty">ありません</div>'}`;
+  return `<p class="note">返品や値下げを決めるための材料です　数字を出すだけで、勝手に何かを動かすことはありません<br>
+      不良在庫＝${ALERT.days}日まったく売れていないもの　過剰在庫＝いまの売れ方だと使い切るのに${ALERT.months}ヶ月以上かかるもの</p>
+    <div class="act">
+      <span style="align-self:center;font-size:13px;color:var(--sub)">売れていない期間</span>
+      ${[30,60,90,180].map(v=>`<button data-d="${v}" class="${ALERT_DAYS===v?'pri':''}">${v}日</button>`).join('')}
+      <span style="align-self:center;font-size:13px;color:var(--sub);margin-left:10px">多すぎの目安</span>
+      ${[3,6,12].map(v=>`<button data-m="${v}" class="${ALERT_MONTHS===v?'pri':''}">${v}ヶ月分</button>`).join('')}
+    </div>
+    ${box('不良在庫（まったく売れていない）',ALERT.dead,'ng')}
+    ${box('過剰在庫（多すぎる）',ALERT.over,'')}`;
+}
+
+async function load(){
+  $('body').innerHTML='<div class="empty">読み込んでいます…</div>';
+  drawRange();
+  try{
+    if(TAB==='sales'){ DATA=await get(`/analytics?from=${FROM}&to=${TO}&shop=${encodeURIComponent(SHOP)}`); $('body').innerHTML=salesHtml(); }
+    else if(TAB==='order'){ ORDER=await get(`/order-sheet?from=${FROM}&to=${TO}&shop=${encodeURIComponent(SHOP)}&buffer=${BUFFER}`);
+      $('body').innerHTML=orderHtml();
+      $('body').querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>{BUFFER=+b.dataset.b;load();});
+      if($('prt'))$('prt').onclick=()=>window.print();
+    }
+    else { ALERT=await get(`/stock-alert?days=${ALERT_DAYS}&months=${ALERT_MONTHS}&shop=${encodeURIComponent(SHOP)}`);
+      $('body').innerHTML=alertHtml();
+      $('body').querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ALERT_DAYS=+b.dataset.d;load();});
+      $('body').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ALERT_MONTHS=+b.dataset.m;load();});
+    }
+  }catch(err){ $('body').innerHTML=`<div class="empty">${esc(err.message||'読み込めませんでした')}</div>`; }
+}
+
+async function boot(){
+  try{ const j=await get('/shops'); const shops=j.shops||[];
+    if(!shops.some(s=>s.id===SHOP))SHOP=(shops[0]||{}).id||'ginza';
+    $('shopSel').innerHTML=shops.map(s=>`<option value="${esc(s.id)}" ${s.id===SHOP?'selected':''}>${esc(s.name)}</option>`).join('');
+    $('shopSel').style.cssText='border:1px solid var(--line);border-radius:3px;padding:9px 12px;background:#fff;color:var(--ink)';
+    $('shopSel').onchange=e=>{SHOP=e.target.value;localStorage.setItem(SHOPK,SHOP);load();};
+  }catch(err){ localStorage.removeItem(TOKK);TOK='';showGate();toast('合言葉が違うようです',true);return; }
+  $('gate').style.display='none'; $('app').style.display='block';
+  document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+    TAB=b.dataset.t;
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x.dataset.t===TAB));
+    load();});
+  TO=jst(0); FROM=jst(7); load();
+}
+function showGate(){$('gate').style.display='block';$('app').style.display='none';}
+$('gbtn').onclick=()=>{const v=$('gtok').value.trim();if(!v)return;TOK=v;localStorage.setItem(TOKK,v);boot();};
+$('gtok').onkeydown=e=>{if(e.key==='Enter')$('gbtn').click();};
+if(TOK)boot(); else showGate();
+</script>
+</body>
+</html>
