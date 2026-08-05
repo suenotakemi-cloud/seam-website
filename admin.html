@@ -46,10 +46,14 @@
   .panel h2{margin:0 0 14px;font-size:14px;font-weight:600;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
   .panel h2 .eyebrow{font-family:'Cormorant Garamond',serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
   .bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:12.5px}
-  .bar-row .nm{width:104px;flex-shrink:0;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* 項目名は省略しない。固定104pxだと日本語ラベルの4割が途中で切れて
+     「広がりをまとめ…」のように別の意味に読めてしまうため、
+     パネル幅に応じて伸びる幅＋折り返しにする（…は出さない）。 */
+  .bar-row .nm{width:38%;min-width:104px;max-width:176px;flex-shrink:0;color:var(--ink);line-height:1.35;overflow-wrap:anywhere}
   .bar-track{flex:1;height:18px;background:#F1EBE2;border-radius:6px;overflow:hidden}
   .bar-fill{display:block;height:100%;background:linear-gradient(90deg,#C79A6E,#A87456);border-radius:6px;min-width:2px;transition:width .5s ease}
-  .bar-row .ct{width:64px;text-align:right;flex-shrink:0;color:var(--char);font-variant-numeric:tabular-nums}
+  .bar-row .ct{width:78px;text-align:right;flex-shrink:0;color:var(--char);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .bar-row .ct.wide{width:96px}   /* 「61.7% 1234/2411」のように分子分母まで出す行 */
   .bar-row .ct b{color:var(--ink)}
   .empty{color:var(--char);font-size:12px;padding:10px 0}
   /* login & states */
@@ -183,7 +187,9 @@
   var ADVICE = {scalp:'頭皮ケア', frizz:'うねり・広がり', volume:'ボリューム', damage:'ダメージ補修', dry:'乾燥・うるおい', color:'カラーケア', heat:'熱ダメージ', calm:'コンディション良好'};
   // ダメージ5段階(2026-07-30〜)。それ以前のデータは3段階(1軽/2中/3重)で記録されている
   var TIER = {1:'ダメージなし', 2:'少しダメージしてる', 3:'ダメージしてる', 4:'結構ダメージしてる', 5:'かなりダメージしてる'};
-  var GENDER = {female:'女性', male:'男性', other:'その他', na:'未回答'};
+  // 診断が送ってくる値は 'noanswer'（'na' ではない）。ここがズレていたため
+  // 「答えない」を選んだ方が性別分布に noanswer と生のまま出ていた。
+  var GENDER = {female:'女性', male:'男性', other:'その他', noanswer:'未回答', na:'未回答'};
   var TARGET = {reserve_hpb:'サロン予約(HPB)', reserve_open:'予約を開く', shop:'オンラインショップ', product:'商品リンク(公式)', product_alt:'商品→ショップ案内', member_item:'会員EC商品直リンク', online:'オンライン'};
   var MODE = {a:'かんたん(A)', b:'くわしい(B)'};
   var REF = {direct:'直接 / ブックマーク', google:'Google', instagram:'Instagram', x:'X (Twitter)', line:'LINE', facebook:'Facebook', yahoo:'Yahoo', bing:'Bing', tiktok:'TikTok', youtube:'YouTube', internal:'サイト内リンク', other:'その他'};
@@ -521,7 +527,7 @@
       var n=numByAge[a]||0, d=byAge[a]||0, r=pct(n,d);
       return '<div class="bar-row"><span class="nm">'+esc(AGE[a])+'</span>'+
         '<span class="bar-track"><span class="bar-fill" style="width:'+Math.max(2,r)+'%"></span></span>'+
-        '<span class="ct"><b>'+r+'%</b> <span class="muted">'+n+'/'+d+'</span></span></div>';
+        '<span class="ct wide"><b>'+r+'%</b> <span class="muted">'+n+'/'+d+'</span></span></div>';
     }).join('');
   }
   // 次元×列 ヒート表（既定は列=年代。セル=その列内での該当率%）
@@ -841,7 +847,7 @@
       rblock('頭皮タイプ ＋ ヘッドスパ興味×年代', objRows(P.scalpTotal, SCALPT, P.n) + rateByAge(P.spaByAge, P.byAge)) +
       (function(){
         var s=scalpStats(data);
-        var line=function(k,v){return '<div class="bar-row"><span class="nm" style="width:220px">'+esc(k)+'</span><span class="ct" style="width:auto;text-align:left"><b>'+v+'</b></span></div>';};
+        var line=function(k,v){return '<div class="bar-row"><span class="nm" style="width:220px;max-width:220px">'+esc(k)+'</span><span class="ct" style="width:auto;text-align:left"><b>'+v+'</b></span></div>';};
         return rblock('頭皮ケアへの関心 — 行動 × 診断回答',
           line('診断で頭皮悩みを選択（乾燥/ベタつき/抜け毛）', s.concern+'%')+
           line('ヘッドスパに興味あり', s.spaWant+'%')+
