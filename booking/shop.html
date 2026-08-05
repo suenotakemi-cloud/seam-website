@@ -516,7 +516,7 @@ async function payByTerminal(amount){
   if(!TERM.deviceId){
     const code=prompt('Square ターミナルの端末コードを作ります\n端末に出ている「デバイスコード」を入れてください\n（初回だけ・空欄でこちらから発行）','');
     if(code===null)return null;
-    if(!code){ try{ const d=await post('/terminal/device-code',{name:'SEAM ショップ'});
+    if(!code){ try{ const d=await post('/terminal/device-code',{name:'SEAM 銀座 ショップ',mode:'shop'});
         alert('この番号をSquareターミナルに入れてください：\n\n'+d.code+'\n\n入れ終わったらもう一度「会計する」を押してください');
         return null; }catch(e){ toast(e.message||'端末コードを作れませんでした',true); return null; } }
     TERM.deviceId=code.trim(); localStorage.setItem('stb_term_dev',TERM.deviceId);

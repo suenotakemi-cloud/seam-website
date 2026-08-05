@@ -193,7 +193,7 @@ function devDraw(){
 }
 $('devSave').onclick=()=>{DEV=$('devIn').value.trim();localStorage.setItem(DEVK,DEV);devDraw();toast(DEV?'保存しました':'消しました');};
 $('devNew').onclick=async()=>{
-  try{ const d=await post('/terminal/device-code',{name:'SEAM ショップ'});
+  try{ const d=await post('/terminal/device-code',{name:'SEAM 銀座 ショップ',mode:'shop'});
     $('devSt').innerHTML=`端末に次の数字を入れてください<br><b style="font-size:26px;letter-spacing:.2em">${esc(d.code)}</b>
       <br>入れ終わると自動で下に出ます`;
     // 端末側で入力が終わるのを待って device_id を受け取る
