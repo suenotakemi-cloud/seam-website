@@ -110,6 +110,11 @@ h2:first-child{margin-top:6px}
       <div class="quick" id="defQ"></div>
     </div>
 
+    <h2 id="h-rules">決まっている割引</h2>
+    <p class="note">上から順に見て、最初に当てはまったものを使います　細かい指定（エルジューダ20%）が大きい指定（ミルボン製品10%）より上にあります<br>
+      ％だけ変えられます　当てはまらない商品は下の「既定の割引」になります</p>
+    <div class="rows" id="rulelist"></div>
+
     <h2>ブランドごと</h2>
     <p class="note">空欄なら既定の割引を使います　「サイズ別」を開くと 同じブランドでも大きさで変えられます</p>
     <div class="rows" id="brands"></div>
@@ -148,6 +153,10 @@ function pctFor(p,mode){
   const b=brandOf(p), s=sizeOf(p.name);
   if(r.product&&r.product[p.id]!=null)return +r.product[p.id];
   if(s&&r.size&&r.size[b+'|'+s]!=null)return +r.size[b+'|'+s];
+  if(Array.isArray(r.rules)){
+    const hay=[b,p.name||'',p.maker||'',p.category||''].join(' / ');
+    for(const x of r.rules){ try{ if(new RegExp(x.re,'i').test(hay))return +x.pct; }catch(e){} }
+  }
   if(r.brand&&r.brand[b]!=null)return +r.brand[b];
   return +(r.default||0);
 }
@@ -181,6 +190,22 @@ function render(){
   $('defQ').innerHTML=[0,5,10,15,20,30].map(v=>`<button data-v="${v}">${v}％</button>`).join('');
   $('defQ').querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{r.default=+b.dataset.v;DIRTY=true;render();});
 
+  // 決まっている割引（並び順つき）
+  const rl=$('rulelist');
+  if(rl){
+    const rs=Array.isArray(r.rules)?r.rules:[];
+    rl.innerHTML=rs.length?rs.map((x,i)=>{
+      const n=PRODUCTS.filter(p=>{try{return new RegExp(x.re,'i').test([brandOf(p),p.name||'',p.maker||'',p.category||''].join(' / '))}catch(e){return false}}).length;
+      return `<div class="row">
+        <span class="r-n">${esc(x.label||x.re)}<span class="r-c">　${n}点</span></span>
+        <span class="r-in"><input class="pin set" data-r="${i}" type="number" min="0" max="90" step="1"
+          inputmode="numeric" value="${x.pct}"><span class="unit">％</span></span>
+        <span class="r-ex">${x.pct?`${x.pct}％引き`:'割引なし'}</span></div>`;}).join('')
+      :'<div class="empty">まだ決まっている割引はありません</div>';
+    rl.querySelectorAll('[data-r]').forEach(i=>i.onchange=()=>{
+      const v=i.value.trim(); r.rules[+i.dataset.r].pct=v===''?0:Math.max(0,Math.min(90,+v||0));
+      DIRTY=true; render();});
+  }
   const gs=groups();
   $('brands').innerHTML=gs.length?gs.map(([b,g])=>{
     const bp=(r.brand&&r.brand[b]!=null)?r.brand[b]:'';

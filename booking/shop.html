@@ -259,6 +259,13 @@ function pctFor(p){
   const r=RULES[PMODE]||{}, b=brandOf(p), sz=sizeOf(p.name||p.nm);
   if(r.product&&r.product[p.productId||p.id]!=null)return +r.product[p.productId||p.id];
   if(sz&&r.size&&r.size[b+'|'+sz]!=null)return +r.size[b+'|'+sz];
+  /* ★並び順のある規則。上から順に見て、最初に当たったものを使う。
+     細かい指定（エルジューダ20%）を、大きい指定（ミルボン製品10%）より上に置くこと。
+     照合はブランド・商品名・メーカー・種類をつないだ文字列に対して行う。 */
+  if(Array.isArray(r.rules)){
+    const hay=[b,p.name||p.nm||'',p.maker||'',p.category||''].join(' / ');
+    for(const x of r.rules){ try{ if(new RegExp(x.re,'i').test(hay))return +x.pct; }catch(e){} }
+  }
   if(r.brand&&r.brand[b]!=null)return +r.brand[b];
   return +(r.default||0);
 }
@@ -351,7 +358,8 @@ async function onProductCode(code){
 /* ══════════ 会計 ══════════ */
 function addToCart(p){
   const f=CART.find(x=>x.productId===p.id);
-  if(f)f.qty++; else CART.push({productId:p.id,name:p.name,brand:p.brand||'',image:p.image||'',unit:+p.price||0,qty:1});
+  if(f)f.qty++; else CART.push({productId:p.id,name:p.name,brand:p.brand||'',maker:p.maker||'',
+    category:p.category||'',image:p.image||'',unit:+p.price||0,qty:1});
   render();
 }
 function cartList(){ return CART.reduce((s,i)=>s+i.unit*i.qty,0); }            // 定価の合計
