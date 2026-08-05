@@ -928,9 +928,15 @@ const Q = [{
     v: 'grease',
     label: 'グリース・ポマード',
     score: {}
-  }, {
+  },
+  // クリームとムースは別物。まとめて聞くと提案する一本が決まらないので分けている
+  {
     v: 'cream',
-    label: 'クリーム・ムーブ系',
+    label: 'クリーム',
+    score: {}
+  }, {
+    v: 'mousse',
+    label: 'ムース',
     score: {}
   }, {
     v: 'oil',
@@ -3413,6 +3419,7 @@ function pickDeepProducts(products, answers, scores, flags, opts = {}) {
         gel: ['gel'],
         grease: ['grease'],
         cream: ['cream'],
+        mousse: ['mousse'],
         oil: ['oil', 'oil-light'],
         balm: ['balm'],
         spray: ['hold-spray', 'shine-spray']

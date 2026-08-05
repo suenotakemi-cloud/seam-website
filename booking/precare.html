@@ -1253,8 +1253,11 @@ function startDemo(){
   document.body.appendChild(bar);
   // ことばを変えても見本のまま切り替えられるよう、押した時点の言語を持っていく
   const as=bar.querySelectorAll('a');
+  /* ★見本の鍵(k)を必ず持っていく。落とすと切り替えた先で閉じてしまう */
   Object.keys(DEMOS).forEach((k,n)=>{ as[n].onclick=e=>{
-    e.preventDefault(); location.search='?demo='+k+(LANG!=='ja'?'&lang='+LANG:''); }; });
+    e.preventDefault();
+    location.search='?demo='+k+(Q.get('k')?'&k='+encodeURIComponent(Q.get('k')):'')
+      +(LANG!=='ja'?'&lang='+LANG:''); }; });
   SC=screens(); foot.hidden=false; draw();
 }
 
