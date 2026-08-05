@@ -399,8 +399,12 @@ function renderSum(){
 async function doCheckout(){
   const t=cartTotal();
   if(!CART.length)return;
-  if(!REG){ toast('先に「レジ ◯番」を決めてください',true); showRegisterPick(); return; }
-  if(REQUIRE_STAFF&&!STAFF){ toast('先に担当を選んでください',true); showStaffPick(); return; }
+  /* 本番モードのときだけ、レジ番号と担当をそろえてから会計させる。
+     テスト中は何も聞かない（毎回 出勤→担当 を通すのは検証の邪魔になる）。 */
+  if(REQUIRE_STAFF){
+    if(!REG){ toast('先に「レジ ◯番」を決めてください',true); showRegisterPick(); return; }
+    if(!STAFF){ toast('先に担当を選んでください',true); showStaffPick(); return; }
+  }
   if(!confirm(`${yen(t)} で会計します${STAFF?'　担当 '+STAFF.name:''}　よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
   const id='co'+Math.random().toString(36).slice(2,8);
