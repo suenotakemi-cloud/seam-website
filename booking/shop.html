@@ -699,7 +699,12 @@ async function showDisplayUrl(){
   let tk='';
   try{ const j=await post('/display/token',{}); tk=j.token||''; }
   catch(err){ toast(err.message||'合言葉を作れませんでした',true); return; }
-  const url=location.origin+location.pathname.replace(/shop\.html$/,'display.html')
+  /* ★住所は「いまいるフォルダ＋display.html」で作る。
+     seam.site は .html を外した住所（/booking/shop）で配信されるので、
+     "shop.html を display.html に置き換える"という作り方だと置換が効かず、
+     レジの住所のまま開いてしまう（実機で発覚）。 */
+  const dir=location.pathname.replace(/\/[^/]*$/,'/');      // 例: /booking/
+  const url=location.origin+dir+'display.html'
     +'?s='+encodeURIComponent(SHOP)+'&t='+encodeURIComponent(tk);
   const d=document.createElement('div'); d.className='dlg';
   d.innerHTML=`<div class="dlg-b">
