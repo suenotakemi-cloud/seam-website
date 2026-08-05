@@ -148,6 +148,22 @@ const now=()=>new Date(Date.now()+9*3600e3).toISOString().slice(11,19);
 
 /* ══ 読み取り。レジ画面と同じ判定を使う（ここで通れば本番でも通る）══ */
 const SALON_QR=/^\d{17}[0-9A-Za-z]{7}$/, MEMNO=/^\d{10}$/, JAN=/^\d{8}$|^\d{12,14}$/;
+/* ★一部のバーコードリーダーは「ALTキーを押しながら数字」で文字を送る設定になっている
+   （Windows向けの方式）。iPadはこれを解釈しないので、数字がそのまま流れてくる。
+   例: 4595315570400 → 052053057053051049053053055048052048048（1文字が3桁）
+   端末の設定を直すのが本筋だが、直っていなくても読めるようにここで元へ戻す。
+   3桁ずつが文字として成り立ち、かつ本来ありえない長さのときだけ変換する。 */
+function fromAltCodes(s){
+  if(!/^\d+$/.test(s)||s.length<18||s.length%3)return '';
+  let out='';
+  for(let i=0;i<s.length;i+=3){
+    const n=+s.slice(i,i+3);
+    if(n<32||n>126)return '';       // 文字にならない＝ふつうのバーコード
+    out+=String.fromCharCode(n);
+  }
+  return out;
+}
+
 let buf='', last=0;
 document.addEventListener('keydown',e=>{
   const el=document.activeElement;
@@ -158,6 +174,8 @@ document.addEventListener('keydown',e=>{
   if(e.key.length===1)buf+=e.key;
 });
 async function onScan(code){
+  let alt=false;
+  {const d=fromAltCodes(code); if(d){code=d;alt=true;}}
   const kind=SALON_QR.test(code)?'会員カードのQR':MEMNO.test(code)?'会員番号':JAN.test(code)?'商品のバーコード':'（形が分かりません）';
   let detail='', ok=true;
   try{
@@ -175,6 +193,7 @@ async function onScan(code){
   $('scanBox').innerHTML=`<div class="big-k">${esc(kind)}</div>
     <div class="big-v">${esc(code)}</div>
     <div class="big-s">${ok?'':'⚠ '}${esc(detail)}</div>`;
+  if(alt)detail+='（リーダーがALTモードでしたのでこちらで戻しました）';
   LOG.unshift({t:now(),code,kind,detail,ok}); LOG=LOG.slice(0,20); drawLog();
 }
 function drawLog(){
