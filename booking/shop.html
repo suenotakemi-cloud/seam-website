@@ -46,6 +46,10 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .dlg-b p{font-size:13px;color:var(--sub);line-height:2;margin:0 0 16px}
 .dlg-u{border:1px solid var(--line);background:var(--cream);border-radius:3px;padding:14px;
   font-size:13px;word-break:break-all;line-height:1.8;color:var(--ink)}
+.qrwrap{text-align:center;padding:6px 0 16px}
+.qrwrap img{width:220px;height:220px;image-rendering:pixelated;border:1px solid var(--line);background:#fff;padding:10px}
+.qrnote{font-size:12px;color:var(--sub);margin-top:10px;letter-spacing:.04em}
+.qrload{font-size:12.5px;color:var(--sub);padding:40px 0}
 .dlg-a{display:flex;gap:8px;margin-top:14px}
 .dlg-a button{flex:1;padding:13px;border:1px solid var(--line);background:#fff;border-radius:3px;font-size:13.5px}
 .dlg-a button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -681,6 +685,16 @@ async function boot(){
   document.addEventListener('click',()=>setTimeout(focusSink,60));
   setInterval(focusSink,4000); focusSink();
 }
+/* QRは台帳（index.html）と同じ作り方をする。必要になったときだけ読み込む。 */
+function loadQRLib(){
+  if(window.qrcode)return Promise.resolve();
+  return new Promise((res,rej)=>{const sc=document.createElement('script');
+    sc.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+    sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);});
+}
+function qrImg(url,cell){
+  try{const q=qrcode(0,'M');q.addData(url);q.make();return q.createDataURL(cell||6);}catch(e){return '';}
+}
 async function showDisplayUrl(){
   let tk='';
   try{ const j=await post('/display/token',{}); tk=j.token||''; }
@@ -692,10 +706,20 @@ async function showDisplayUrl(){
     <h3>お客様にお見せする画面</h3>
     <p>もう1台のタブレットのブラウザで、この住所を開いてください　一度開いたらブックマークに入れておけば、次からは開くだけです<br>
        この画面には いまのお会計しか出ません（在庫や他のお客様は出ません）</p>
+    <div class="qrwrap" id="qrwrap"><div class="qrload">QRを作っています…</div></div>
     <div class="dlg-u">${esc(url)}</div>
     <div class="dlg-a"><button id="dcopy" class="pri">住所をコピー</button><button id="dclose">閉じる</button></div>
   </div>`;
   document.body.appendChild(d);
+  /* もう1台のタブレットのカメラで読めるようにQRを出す。
+     打ち間違いが起きないので、住所を手で入れるより速い。 */
+  loadQRLib().then(()=>{
+    const img=qrImg(url,6);
+    const w=d.querySelector('#qrwrap');
+    if(w)w.innerHTML=img?`<img src="${img}" alt="お客様画面のQR"><div class="qrnote">もう1台のカメラでこれを読み取ってください</div>`
+                       :'<div class="qrload">QRを作れませんでした　下の住所をお使いください</div>';
+  }).catch(()=>{const w=d.querySelector('#qrwrap');
+    if(w)w.innerHTML='<div class="qrload">QRを読み込めませんでした　下の住所をお使いください</div>';});
   d.querySelector('#dcopy').onclick=async()=>{
     try{ await navigator.clipboard.writeText(url); toast('コピーしました'); }
     catch(e){ toast('長押しで選んでコピーしてください',true); }};
