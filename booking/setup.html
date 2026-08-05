@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>機器の接続テスト｜SEAM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══ SEAM 機器の接続テスト（iPad用）══
+   バーコードリーダーとSquare端末を、本番の会計を1件も作らずに試すための画面。
+   ここで作られるのは Square のテスト決済だけで、
+   会計・在庫・ポイントには一切触れない（レジ画面とは別物）。 */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--ink:#16171B;--body:#3E3B36;--sub:#7C776E;--line:#E3DCD0;--cream:#FBF9F5;
+  --gold:#B8945A;--clay:#A87456;--ok:#1F6B45;--ng:#B4442E;--bg:#F7F5F1}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
+  font-size:15px;line-height:1.7;-webkit-text-size-adjust:100%}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit;font-size:16px}
+.top{display:flex;align-items:center;gap:14px;padding:10px 16px;background:#fff;
+  border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;
+  padding-top:calc(10px + env(safe-area-inset-top))}
+.brand{font-family:'Cormorant Garamond',serif;font-size:19px;letter-spacing:.16em;color:var(--ink)}
+.spacer{flex:1}
+.lamp{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--sub)}
+.lamp i{width:9px;height:9px;border-radius:50%;background:var(--ok);display:block;
+  box-shadow:0 0 0 0 rgba(31,107,69,.5);animation:pulse 2.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(31,107,69,.45)}70%{box-shadow:0 0 0 9px rgba(31,107,69,0)}100%{box-shadow:0 0 0 0 rgba(31,107,69,0)}}
+.wrap{max-width:960px;margin:0 auto;padding:20px 16px 90px}
+h2{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;letter-spacing:.14em;
+  color:var(--clay);margin:30px 0 10px}
+h2:first-child{margin-top:4px}
+.note{font-size:12.5px;color:var(--sub);line-height:2;margin:0 0 14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:3px;padding:20px}
+.big{border:2px dashed var(--line);border-radius:3px;background:var(--cream);
+  padding:34px 20px;text-align:center;margin-bottom:14px}
+.big.hit{border-style:solid;border-color:var(--ok);background:#F4F9F6}
+.big.miss{border-style:solid;border-color:var(--ng);background:#FCF6F4}
+.big-k{font-size:12px;letter-spacing:.1em;color:var(--sub)}
+.big-v{font-size:26px;color:var(--ink);margin-top:8px;word-break:break-all;line-height:1.4}
+.big-s{font-size:13px;color:var(--sub);margin-top:10px;line-height:1.9}
+.log{border-top:1px solid var(--line)}
+.lr{display:flex;gap:12px;border-bottom:1px solid var(--line);padding:11px 2px;font-size:13px;align-items:baseline}
+.lr-t{color:var(--sub);font-size:12px;white-space:nowrap}
+.lr-c{flex:1;min-width:0;word-break:break-all;color:var(--ink)}
+.lr-k{font-size:11.5px;letter-spacing:.06em;border:1px solid var(--line);border-radius:2px;
+  padding:2px 8px;color:var(--clay);white-space:nowrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.row input{flex:1;min-width:170px;border:1px solid var(--line);border-radius:3px;padding:13px 14px;background:#fff}
+.btn{padding:13px 20px;border:1px solid var(--line);background:#fff;border-radius:3px;font-size:14px;color:var(--body)}
+.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn[disabled]{opacity:.45}
+.st{margin-top:14px;border:1px solid var(--line);border-radius:3px;background:var(--cream);padding:14px 16px;
+  font-size:13px;line-height:1.9;color:var(--ink);word-break:break-all}
+.ok{color:var(--ok)}.ng{color:var(--ng)}
+.gate{max-width:400px;margin:16vh auto;background:#fff;border:1px solid var(--line);border-radius:3px;padding:32px 26px}
+.gate h1{font-family:'Cormorant Garamond',serif;font-size:22px;letter-spacing:.14em;color:var(--ink);margin:0 0 6px;font-weight:600}
+.gate p{font-size:13px;color:var(--sub);margin:0 0 18px}
+.gate input{width:100%;border:1px solid var(--line);border-radius:3px;padding:14px}
+.gate button{width:100%;margin-top:12px;padding:15px;border:0;border-radius:3px;background:var(--ink);color:#fff;font-size:15px}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--ink);color:#fff;padding:13px 22px;border-radius:3px;font-size:14px;z-index:200;transition:.22s;pointer-events:none;max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.ng{background:var(--ng)}
+.hidesink{position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0}
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate" style="display:none">
+  <h1>機器の接続テスト</h1>
+  <p>バーコードリーダーとSquare端末を試す画面です<br>会計は1件も作りません</p>
+  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off">
+  <button id="gbtn">開く</button>
+</div>
+
+<div id="app" style="display:none">
+  <div class="top">
+    <span class="brand">SEAM · 接続テスト</span>
+    <span class="spacer"></span>
+    <span class="lamp"><i></i><span>読み取り待機中</span></span>
+  </div>
+  <div class="wrap">
+
+    <h2>① バーコードリーダー</h2>
+    <p class="note">iPadの設定 → Bluetooth でリーダーを接続してから、何か読み取ってみてください<br>
+      キーボードとして繋がります　画面のどこも触らずに読めます　ここでは会計に入りません</p>
+    <div class="card">
+      <div class="big" id="scanBox">
+        <div class="big-k">READY</div>
+        <div class="big-v">読み取り待ちです</div>
+        <div class="big-s">商品のバーコード／会員カードのQR　どちらでも試せます</div>
+      </div>
+      <div class="log" id="scanLog"></div>
+      <div class="row"><button class="btn" id="clrLog">読み取りの記録を消す</button></div>
+    </div>
+
+    <h2>② Square 端末（カード決済）</h2>
+    <p class="note">はじめに端末をこのお店に紐づけます　端末に出ている数字を入れるか、こちらから発行してください<br>
+      そのあと <b>¥1</b> で試し決済し、そのまま返金します　実際のお金はほぼ動きません</p>
+    <div class="card">
+      <div class="row">
+        <input id="devIn" placeholder="端末のデバイスID（登録済みならそのまま）" autocomplete="off">
+        <button class="btn" id="devSave">保存</button>
+        <button class="btn" id="devNew">端末コードを発行</button>
+      </div>
+      <div class="st" id="devSt">まだ端末が登録されていません</div>
+      <div class="row">
+        <button class="btn pri" id="payGo">¥1 で試し決済</button>
+        <button class="btn" id="payCancel" disabled>取り消す</button>
+        <button class="btn" id="payRefund" disabled>返金する</button>
+      </div>
+      <div class="st" id="paySt">まだ試していません</div>
+    </div>
+
+    <h2>③ 使いはじめる</h2>
+    <p class="note">両方うまくいったら、こちらがふだん使うレジの画面です</p>
+    <div class="card">
+      <div class="row"><a class="btn pri" style="text-decoration:none;text-align:center;flex:1"
+        href="/booking/shop.html">レジを開く</a>
+        <a class="btn" style="text-decoration:none;text-align:center" href="/booking/prices.html">価格設定</a></div>
+    </div>
+  </div>
+</div>
+
+<input class="hidesink" id="sink" autocomplete="off" aria-hidden="true">
+<div id="toast"></div>
+
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const TOKK='stb_admin_tok', DEVK='stb_term_dev';
+let TOK=localStorage.getItem(TOKK)||'';
+let DEV=localStorage.getItem(DEVK)||'';
+let LOG=[], CHECKOUT='', PAYID='';
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const H=(...a)=>({'Authorization':'Bearer '+TOK,...Object.assign({},...a)});
+async function get(p){const r=await fetch(API+p,{headers:H()});if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:H({'Content-Type':'application/json'}),body:JSON.stringify(b||{})});
+  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+let tt;function toast(m,ng){const t=$('toast');t.textContent=m;t.className='on'+(ng?' ng':'');clearTimeout(tt);tt=setTimeout(()=>t.className='',ng?3200:1900);}
+const now=()=>new Date(Date.now()+9*3600e3).toISOString().slice(11,19);
+
+/* ══ 読み取り。レジ画面と同じ判定を使う（ここで通れば本番でも通る）══ */
+const SALON_QR=/^\d{17}[0-9A-Za-z]{7}$/, MEMNO=/^\d{10}$/, JAN=/^\d{8}$|^\d{12,14}$/;
+let buf='', last=0;
+document.addEventListener('keydown',e=>{
+  const el=document.activeElement;
+  const typing=el&&(el.tagName==='INPUT')&&el.id!=='sink';
+  const t=Date.now(); if(t-last>120)buf=''; last=t;
+  if(e.key==='Enter'){ const c=buf.trim(); buf='';
+    if(c.length>=4&&!typing){ e.preventDefault(); onScan(c); } return; }
+  if(e.key.length===1)buf+=e.key;
+});
+async function onScan(code){
+  const kind=SALON_QR.test(code)?'会員カードのQR':MEMNO.test(code)?'会員番号':JAN.test(code)?'商品のバーコード':'（形が分かりません）';
+  let detail='', ok=true;
+  try{
+    if(kind==='会員カードのQR'||kind==='会員番号'){
+      const j=await get('/member/lookup?code='+encodeURIComponent(code));
+      detail=`${j.name||'（お名前未登録）'} 様　${j.points||0}pt　${j.rank||''}`;
+    }else{
+      const j=await get('/products?barcode='+encodeURIComponent(code));
+      const p=(j.products||[])[0];
+      if(p)detail=`${p.name}　¥${(+p.price||0).toLocaleString()}`;
+      else{ ok=false; detail='この番号の商品は登録されていません'; }
+    }
+  }catch(err){ ok=false; detail=err.message||'引けませんでした'; }
+  $('scanBox').className='big '+(ok?'hit':'miss');
+  $('scanBox').innerHTML=`<div class="big-k">${esc(kind)}</div>
+    <div class="big-v">${esc(code)}</div>
+    <div class="big-s">${ok?'':'⚠ '}${esc(detail)}</div>`;
+  LOG.unshift({t:now(),code,kind,detail,ok}); LOG=LOG.slice(0,20); drawLog();
+}
+function drawLog(){
+  $('scanLog').innerHTML=LOG.map(l=>`<div class="lr">
+    <span class="lr-t">${l.t}</span><span class="lr-k">${esc(l.kind)}</span>
+    <span class="lr-c">${esc(l.code)}<br><span style="color:var(--sub);font-size:12px">${l.ok?'':'⚠ '}${esc(l.detail)}</span></span></div>`).join('');
+}
+$('clrLog').onclick=()=>{LOG=[];drawLog();
+  $('scanBox').className='big';
+  $('scanBox').innerHTML='<div class="big-k">READY</div><div class="big-v">読み取り待ちです</div><div class="big-s">商品のバーコード／会員カードのQR　どちらでも試せます</div>';};
+
+/* ══ Square 端末 ══ */
+function devDraw(){
+  $('devIn').value=DEV;
+  $('devSt').innerHTML=DEV?`<span class="ok">この端末を使います</span>　${esc(DEV)}`:'まだ端末が登録されていません';
+}
+$('devSave').onclick=()=>{DEV=$('devIn').value.trim();localStorage.setItem(DEVK,DEV);devDraw();toast(DEV?'保存しました':'消しました');};
+$('devNew').onclick=async()=>{
+  try{ const d=await post('/terminal/device-code',{name:'SEAM ショップ'});
+    $('devSt').innerHTML=`端末に次の数字を入れてください<br><b style="font-size:26px;letter-spacing:.2em">${esc(d.code)}</b>
+      <br>入れ終わると自動で下に出ます`;
+    // 端末側で入力が終わるのを待って device_id を受け取る
+    for(let i=0;i<60;i++){
+      await new Promise(r=>setTimeout(r,3000));
+      const s=await get('/terminal/device-code?id='+encodeURIComponent(d.id)).catch(()=>null);
+      if(s&&s.deviceId){ DEV=s.deviceId; localStorage.setItem(DEVK,DEV); devDraw(); toast('端末がつながりました'); return; }
+    }
+    toast('端末の返事が来ませんでした',true);
+  }catch(err){ toast(err.message||'発行できませんでした',true); }
+};
+$('payGo').onclick=async()=>{
+  if(!DEV){ toast('先に端末を登録してください',true); return; }
+  $('payGo').disabled=true; $('paySt').innerHTML='端末に ¥1 を送りました　端末の画面をご確認ください';
+  try{
+    const r=await post('/terminal/checkout',{amount:1,deviceId:DEV,mode:'shop',note:'SEAM 接続テスト'});
+    CHECKOUT=r.checkoutId; $('payCancel').disabled=false;
+    for(let i=0;i<90;i++){
+      await new Promise(x=>setTimeout(x,2000));
+      const st=await get('/terminal/checkout?id='+encodeURIComponent(CHECKOUT)).catch(()=>null);
+      if(!st)continue;
+      $('paySt').innerHTML=`状態: ${esc(st.status)}`;
+      if(st.status==='COMPLETED'){
+        PAYID=(st.paymentIds||[])[0]||'';
+        $('paySt').innerHTML=`<span class="ok">つながりました　カード決済ができました</span><br>決済ID ${esc(PAYID)}<br>下の「返金する」で ¥1 を戻せます`;
+        $('payCancel').disabled=true; $('payRefund').disabled=!PAYID; $('payGo').disabled=false; return;
+      }
+      if(['CANCELED','CANCEL_REQUESTED'].includes(st.status)){
+        $('paySt').innerHTML='<span class="ng">端末で取り消されました</span>'; $('payCancel').disabled=true; $('payGo').disabled=false; return;
+      }
+    }
+    $('paySt').innerHTML='<span class="ng">端末の返事が来ませんでした</span>'; $('payGo').disabled=false;
+  }catch(err){ $('paySt').innerHTML='<span class="ng">'+esc(err.message||'失敗しました')+'</span>'; $('payGo').disabled=false; }
+};
+$('payCancel').onclick=async()=>{
+  if(!CHECKOUT)return;
+  try{ await post('/terminal/cancel',{checkoutId:CHECKOUT}); toast('取り消しました'); $('payCancel').disabled=true; }
+  catch(err){ toast(err.message||'取り消せませんでした',true); }
+};
+$('payRefund').onclick=async()=>{
+  if(!PAYID)return;
+  $('payRefund').disabled=true;
+  try{ await post('/pay/refund-orphan',{paymentId:PAYID});
+    $('paySt').innerHTML+='<br><span class="ok">¥1 を返金しました</span>'; toast('返金しました');
+  }catch(err){ toast('返金は店舗のSquare画面から行ってください（'+(err.message||'')+'）',true); $('payRefund').disabled=false; }
+};
+
+async function boot(){
+  try{ await get('/shops'); }
+  catch(err){ localStorage.removeItem(TOKK);TOK='';showGate();toast('合言葉が違うようです',true);return; }
+  $('gate').style.display='none'; $('app').style.display='block';
+  devDraw(); drawLog();
+  const focusSink=()=>{const el=document.activeElement;
+    if(!el||el.tagName!=='INPUT')$('sink').focus({preventScroll:true});};
+  document.addEventListener('click',()=>setTimeout(focusSink,60));
+  setInterval(focusSink,4000); focusSink();
+}
+function showGate(){$('gate').style.display='block';$('app').style.display='none';}
+$('gbtn').onclick=()=>{const v=$('gtok').value.trim();if(!v)return;TOK=v;localStorage.setItem(TOKK,v);boot();};
+$('gtok').onkeydown=e=>{if(e.key==='Enter'){e.stopPropagation();$('gbtn').click();}};
+if(TOK)boot(); else showGate();
+</script>
+</body>
+</html>
