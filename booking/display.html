@@ -106,13 +106,27 @@ function done(st){
     <div class="s">${st&&st.member&&st.member.earn?`本日 ${st.member.earn} ポイントたまりました<br><span style="font-size:.86em">ポイントは半年間おつかいいただけます</span>`:'またお待ちしております'}</div>
   </div>`;
 }
+/* 会員証を読んだ瞬間の画面。まだ商品が入っていないときに出す。
+   はじめての方には「ようこそ」、2回目以降は「いつもありがとうございます」。 */
+function welcome(m){
+  const again=m.greet==='again';
+  return `<div class="idle fade">
+    <div class="sb">${again?'Welcome back':'Welcome'}</div>
+    <div class="mk" style="font-size:clamp(26px,4.4vw,44px);letter-spacing:.12em;margin-top:14px">${esc(m.name||'')} 様</div>
+    <div class="ms" style="font-size:clamp(15px,1.9vw,21px);color:var(--ink);margin-top:20px">
+      ${again?'いつもありがとうございます':'ようこそ SEAM へ'}</div>
+    ${m.rank?`<div class="ms" style="margin-top:14px"><span style="border:1px solid rgba(168,116,86,.35);border-radius:2px;padding:4px 14px;color:var(--clay);letter-spacing:.12em">${esc(m.rank)}</span></div>`:''}
+    <div class="ms" style="margin-top:18px">メンバー価格でご用意しています${m.points?`　お持ちのポイント ${m.points}`:''}</div>
+  </div>`;
+}
 function bill(st){
   const items=st.items||[];
   const show=items.slice(0,8), rest=items.length-show.length;
   const m=st.member;
   return `<div class="hd">
       <span class="mk">SEAM</span>
-      ${m&&m.name?`<span class="who">${esc(m.name)} 様${m.rank?`<span class="rk">${esc(m.rank)}</span>`:''}</span>`:''}
+      ${m&&m.name?`<span class="who">${esc(m.name)} 様${m.rank?`<span class="rk">${esc(m.rank)}</span>`:''}
+        <div style="font-size:.62em;color:var(--clay);letter-spacing:.06em;margin-top:2px">${m.greet==='again'?'いつもありがとうございます':'ようこそ SEAM へ'}</div></span>`:''}
     </div>
     <div class="list">
       ${show.map(i=>`<div class="li">
@@ -143,7 +157,7 @@ function paint(st){
   const s=$('scr');
   if(!st){ s.innerHTML=idle(); return; }
   if(st.done){ s.innerHTML=done(st); return; }
-  if(!(st.items||[]).length){ s.innerHTML=idle(); return; }
+  if(!(st.items||[]).length){ s.innerHTML=st.member?welcome(st.member):idle(); return; }
   s.innerHTML=bill(st);
 }
 async function tick(){

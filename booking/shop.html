@@ -275,7 +275,8 @@ function pushDisplay(done){
       items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||''})),
       list:cartList(),cut:cartCut(),total:t,
       member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn,
-        expiring:MEMBER.expiring,expireOn:MEMBER.expireOn}:null}).catch(()=>{});
+        expiring:MEMBER.expiring,expireOn:MEMBER.expireOn,
+        visits:MEMBER.visits||0,greet:(MEMBER.visits||0)>=1?'again':'first'}:null}).catch(()=>{});
   },250);
 }
 
@@ -752,11 +753,21 @@ async function showCheckIn(){
 }
 async function loadMember(code){
   const j=await get('/member/lookup?code='+encodeURIComponent(code));
+  const first=!MEMBER;   // いま読み取ったところか（値段の切り替えは1回だけでよい）
   MEMBER={code:j.code,name:j.name||'',phone:j.phone||'',salonId:j.salonId||'',points:j.points||0,
     expiring:j.pointExpiring||0,expireOn:j.pointExpireOn||'',
     rank:j.rank||'',rate:j.rate,visits:j.visits||0,yVisits:j.yVisits||0,ySpend:j.ySpend||0,
     membership:j.membership||null,hasLine:!!j.hasLine};
-  said('会員カード',esc(MEMBER.name||'（お名前未登録）')+'　'+MEMBER.points+' pt');
+  /* ★会員証を読んだら、何も押さずにメンバー価格へ切り替える。
+     「メンバーを押し忘れて定価で会計した」が起きなくなる。 */
+  if(first&&PMODE==='normal'){
+    PMODE='member';
+    document.querySelectorAll('#priceModes button').forEach(x=>x.classList.toggle('on',x.dataset.pm==='member'));
+  }
+  const greet=(MEMBER.visits||0)>=1?'いつもありがとうございます':'ようこそ SEAM へ';
+  said('会員カード',esc(MEMBER.name||'（お名前未登録）')+' 様　'+greet+'　'+MEMBER.points+' pt'
+    +(PMODE==='member'?'　<span style="color:var(--ok)">メンバー価格になりました</span>':''));
+  toast(`${MEMBER.name||'会員'} 様　${greet}`);
   TAB='mem'; syncTabs(); await loadHistory(); render();
 }
 let HIST=[];
