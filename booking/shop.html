@@ -183,6 +183,8 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
   <div class="top">
     <span class="brand">SEAM SHOP</span>
     <select id="shopSel"></select>
+    <button class="dispBtn" id="regBtn">レジ —</button>
+    <button class="dispBtn" id="staffBtn">担当 —</button>
     <div class="modes" id="priceModes">
       <button data-pm="normal" class="on">通常</button>
       <button data-pm="member">メンバー</button>
@@ -220,9 +222,16 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 <script>
 /* ══════════ 土台 ══════════ */
 const API='https://seam-square-pay.suenotakemi.workers.dev';
-const TOKK='stb_admin_tok', SHOPK='stb_shop';
+const TOKK='stb_admin_tok', SHOPK='stb_shop', REGK='stb_register';
 let TOK=localStorage.getItem(TOKK)||'';
 let SHOP=localStorage.getItem(SHOPK)||'ginza';
+/* ★1つの店にレジが複数ある（銀座は3台）。この端末がどのレジかを覚えておく。
+   お客様画面・履歴・レジ締めはこの番号で分かれ、データはすべて同じ場所に集まる。 */
+let REG=localStorage.getItem(REGK)||'';
+/* いまレジに立っている人。社員証のQRで入れ替える。
+   誰が打ったか分からない会計を作らないため、会計の前に必ず要る。 */
+let STAFF=null;
+try{ STAFF=JSON.parse(localStorage.getItem('stb_staff')||'null'); }catch(e){}
 let SHOPS=[], TAB='prod', CART=[], MEMBER=null, PAY='cash', STOCKVIEW=null;
 /* 価格の出し方。normal=定価 / member=メンバー価格 / sale=セール価格。
    割引の率は「価格設定」の画面(prices.html)で決めたものを settings から読む。 */
@@ -231,7 +240,7 @@ let PMODE='normal', RULES={member:{},sale:{}};
    税率10%ぶんを引く＝税抜相当。免税の可否判定はここではしない。 */
 let TAXFREE=false;
 const TAXFREE_RATE=10;
-let HISTORY=[], HDETAIL=null, TERM={deviceId:localStorage.getItem('stb_term_dev')||'',checkoutId:'',timer:null};
+let HISTORY=[], HDETAIL=null, TERM={deviceId:localStorage.getItem('stb_term_dev:'+(localStorage.getItem('stb_register')||''))||'',checkoutId:'',timer:null};
 const SIZE_RE=/(\d+(?:\.\d+)?)\s*(mL|ml|ML|Ml|g|G|kg|KG|L)\b/;
 function sizeOf(name){const m=SIZE_RE.exec(String(name||''));if(!m)return '';
   const u=m[2].toLowerCase()==='ml'?'ml':(m[2].toLowerCase()==='kg'?'kg':m[2].toLowerCase());return m[1]+u;}
@@ -254,7 +263,7 @@ function pushDisplay(done){
   pushT=setTimeout(()=>{
     const t=cartTotal();
     const earn=(MEMBER&&MEMBER.name)?Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)):0;
-    post('/display/push',{shopId:SHOP,mode:PMODE,done:!!done,
+    post('/display/push',{shopId:SHOP,register:REG,mode:PMODE,done:!!done,
       items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i)})),
       list:cartList(),cut:cartCut(),total:t,
       member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn,
@@ -290,6 +299,7 @@ function fromAltCodes(s){
   }
   return out;
 }
+const STAFF_QR=/^SEAMSTAFF:[A-Za-z0-9_-]{1,24}:\d{6}$/;   // 担当者の社員証
 const SALON_QR=/^\d{17}[0-9A-Za-z]{7}$/;   // 会員カードのQR（24桁）
 const MEMNO=/^\d{10}$/;                     // うちの会員番号（10桁）
 const JAN=/^\d{8}$|^\d{12,14}$/;            // 商品のバーコード
@@ -312,6 +322,7 @@ document.addEventListener('keydown',e=>{
 async function onScan(code){
   {const d=fromAltCodes(code); if(d)code=d;}     // ALTモードのリーダーを元へ戻す
   try{
+    if(STAFF_QR.test(code)){ await loadStaff(code); return; }
     if(SALON_QR.test(code)||MEMNO.test(code)){ await loadMember(code); return; }
     if(JAN.test(code)){ await onProductCode(code); return; }
     // 形が分からないときも、いちおう商品として引いてみる（社内コード等）
@@ -375,7 +386,9 @@ function renderSum(){
 async function doCheckout(){
   const t=cartTotal();
   if(!CART.length)return;
-  if(!confirm(`${yen(t)} で会計します よろしいですか`))return;
+  if(!REG){ toast('先に「レジ ◯番」を決めてください',true); showRegisterPick(); return; }
+  if(!STAFF){ toast('担当者の社員証を読み取ってください',true); return; }
+  if(!confirm(`${yen(t)} で会計します　担当 ${STAFF.name}　よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
   const id='co'+Math.random().toString(36).slice(2,8);
   let payId='';
@@ -386,7 +399,7 @@ async function doCheckout(){
       if(payId===null||payId===undefined){ btn.disabled=false;btn.textContent='会計する'; return; }
     }
     await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
-      mode:'shop',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
+      mode:'shop',register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
       tech:0,retail:cartList(),
       retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId})),
       discount:cartCut(),
@@ -420,9 +433,11 @@ async function loadHistory2(){
   HISTORY=(j.checkouts||[]).filter(c=>c.mode!=='salon').sort((a,b)=>a.at<b.at?1:-1);
 }
 const payLabel=m=>({cash:'現金',card:'カード',term:'カード',qr:'QR決済'}[m]||m||'—');
+let HSCOPE='mine';
+const inScope=c=>HSCOPE==='all'||String(c.register||'')===String(REG||'');
 function histHtml(){
   const cardOnly=HFILTER==='card';
-  const rows=HISTORY.filter(c=>!cardOnly||c.method==='card'||c.method==='term'||c.squarePaymentId);
+  const rows=HISTORY.filter(inScope).filter(c=>!cardOnly||c.method==='card'||c.method==='term'||c.squarePaymentId);
   const sum=rows.filter(c=>!c.voided).reduce((s,c)=>s+(c.total-(c.refund||0)),0);
   return `<div class="srch">
       <button class="${HFILTER==='all'?'on2':''}" data-hf="all">すべて</button>
@@ -433,7 +448,7 @@ function histHtml(){
     <div class="sr" style="padding:0 2px 12px"><span>${rows.length} 件</span><span>差引 ${yen(sum)}</span></div>
     <div class="stk">${rows.length?rows.map(c=>`<div class="stk-r" data-h="${esc(c.id)}" style="cursor:pointer;${c.voided?'opacity:.5':''}">
       <span style="flex:1;min-width:0">
-        <span style="font-size:13px;color:var(--sub)">${esc(String(c.at).slice(11,16))}　${payLabel(c.method)}${c.squarePaymentId?'　Square':''}</span><br>
+        <span style="font-size:13px;color:var(--sub)">${esc(String(c.at).slice(11,16))}　${payLabel(c.method)}${c.squarePaymentId?'　Square':''}${c.register?'　'+esc(c.register)+'番レジ':''}${c.staffName?'　'+esc(c.staffName):''}</span><br>
         ${esc(c.customer||'（お名前なし）')}
         ${c.voided?'<span class="mem-r" style="margin-left:6px">取消</span>':''}
         ${(c.refund>0&&!c.voided)?`<span class="mem-r" style="margin-left:6px">返金 ${yen(c.refund)}</span>`:''}
@@ -481,14 +496,15 @@ function openDetail(id){
 
 /* ══════════ レジ締め ══════════ */
 function closeHtml(){
-  const live=HISTORY.filter(c=>!c.voided&&c.date===jstDay(0));
+  const live=HISTORY.filter(c=>!c.voided&&c.date===jstDay(0)&&String(c.register||'')===String(REG||''));
   const net=c=>(c.total||0)-(c.refund||0);
   const cash=live.filter(c=>c.method==='cash').reduce((s,c)=>s+net(c),0);
   const card=live.filter(c=>c.method==='card'||c.method==='term').reduce((s,c)=>s+net(c),0);
   const qr=live.filter(c=>c.method==='qr').reduce((s,c)=>s+net(c),0);
   const back=HISTORY.filter(c=>c.date===jstDay(0)).reduce((s,c)=>s+(c.refund||0),0);
-  const flo=+(localStorage.getItem('stb_float')||0);
-  return `<div class="stk">
+  const flo=+(localStorage.getItem('stb_float:'+REG)||0);
+  return `<div class="sr" style="padding:0 2px 12px"><span>${REG?REG+'番レジ':'このレジ'} の本日分</span><span>${live.length} 件</span></div>
+    <div class="stk">
       <div class="stk-r"><span>現金</span><b>${yen(cash)}</b></div>
       <div class="stk-r"><span>カード</span><b>${yen(card)}</b></div>
       <div class="stk-r"><span>QR決済</span><b>${yen(qr)}</b></div>
@@ -507,24 +523,24 @@ function closeHtml(){
 function wireClose(){
   const f=$('floIn'), c=$('cntIn');
   const calc=()=>{
-    const live=HISTORY.filter(x=>!x.voided&&x.date===jstDay(0));
+    const live=HISTORY.filter(x=>!x.voided&&x.date===jstDay(0)&&String(x.register||'')===String(REG||''));
     const cash=live.filter(x=>x.method==='cash').reduce((s,x)=>s+((x.total||0)-(x.refund||0)),0);
     const want=(+f.value||0)+cash, got=+c.value||0;
     const d=got-want;
     $('diffBox').innerHTML=c.value===''?'':
       `<div class="stk"><div class="stk-r" style="${d?'color:var(--ng)':''}"><span>${d===0?'ぴったりです':(d>0?'多い':'足りない')}</span><b>${d>0?'+':''}${yen(d)}</b></div></div>`;
   };
-  if(f)f.oninput=()=>{localStorage.setItem('stb_float',f.value);calc();};
+  if(f)f.oninput=()=>{localStorage.setItem('stb_float:'+REG,f.value);calc();};
   if(c)c.oninput=calc;
   if($('closeGo'))$('closeGo').onclick=async()=>{
-    const live=HISTORY.filter(x=>!x.voided&&x.date===jstDay(0));
+    const live=HISTORY.filter(x=>!x.voided&&x.date===jstDay(0)&&String(x.register||'')===String(REG||''));
     const net=x=>(x.total||0)-(x.refund||0);
     const cash=live.filter(x=>x.method==='cash').reduce((s,x)=>s+net(x),0);
     const card=live.filter(x=>x.method==='card'||x.method==='term').reduce((s,x)=>s+net(x),0);
     const qr=live.filter(x=>x.method==='qr').reduce((s,x)=>s+net(x),0);
     const flo=+($('floIn').value||0), got=+($('cntIn').value||0);
     if(!$('cntIn').value){ toast('数えた現金を入れてください',true); return; }
-    try{ await post('/settlements',{date:jstDay(0),float:flo,cashSales:cash,expectedCash:flo+cash,
+    try{ await post('/settlements',{date:jstDay(0),register:REG,shopId:SHOP,float:flo,cashSales:cash,expectedCash:flo+cash,
         countedCash:got,diff:got-(flo+cash),card,qr,total:cash+card+qr,count:live.length,
         memo:'',closedAt:new Date().toISOString()});
       toast('レジを締めました');
@@ -539,7 +555,7 @@ async function payByTerminal(amount){
     if(!code){ try{ const d=await post('/terminal/device-code',{name:'SEAM 銀座 ショップ',mode:'shop'});
         alert('この番号をSquareターミナルに入れてください：\n\n'+d.code+'\n\n入れ終わったらもう一度「会計する」を押してください');
         return null; }catch(e){ toast(e.message||'端末コードを作れませんでした',true); return null; } }
-    TERM.deviceId=code.trim(); localStorage.setItem('stb_term_dev',TERM.deviceId);
+    TERM.deviceId=code.trim(); localStorage.setItem('stb_term_dev:'+REG,TERM.deviceId);
   }
   const r=await post('/terminal/checkout',{amount,deviceId:TERM.deviceId,mode:'shop',note:'SEAM ショップ'});
   TERM.checkoutId=r.checkoutId;
@@ -571,7 +587,8 @@ async function renderRight(){
     b.innerHTML='<div class="empty">読み込んでいます…</div>';
     await loadHistory2();
     b.innerHTML=histHtml();
-    b.querySelectorAll('[data-hf]').forEach(x=>x.onclick=()=>{HFILTER=x.dataset.hf;renderRight();});
+    b.querySelectorAll('[data-hf]').forEach(x=>x.onclick=()=>{HFILTER=HFILTER==='card'?'all':'card';renderRight();});
+    b.querySelectorAll('[data-hs]').forEach(x=>x.onclick=()=>{HSCOPE=x.dataset.hs;renderRight();});
     if(b.querySelector('#hdays'))b.querySelector('#hdays').onchange=e=>{HDAYS=+e.target.value;renderRight();};
     b.querySelectorAll('[data-h]').forEach(x=>x.onclick=()=>openDetail(x.dataset.h));
   }else if(TAB==='close'){
@@ -611,6 +628,13 @@ async function adjust(d){
     toast(d>0?'1つ足しました':'1つ引きました'); await showStock(STOCK_PID);
   }catch(err){ toast(err.message||'変えられませんでした',true); }
 }
+async function loadStaff(code){
+  const j=await post('/staff/scan',{code});
+  STAFF={id:j.staffId,name:j.name||j.staffId};
+  localStorage.setItem('stb_staff',JSON.stringify(STAFF));
+  staffDraw(); said('担当者',esc(STAFF.name)+' さんに切り替えました'); render();
+}
+function staffDraw(){ const b=$('staffBtn'); if(b)b.textContent=STAFF?`担当 ${STAFF.name}`:'担当 未設定'; }
 async function loadMember(code){
   const j=await get('/member/lookup?code='+encodeURIComponent(code));
   MEMBER={code:j.code,name:j.name||'',phone:j.phone||'',salonId:j.salonId||'',points:j.points||0,
@@ -672,6 +696,11 @@ async function boot(){
   $('gate').style.display='none'; $('app').style.display='block';
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;syncTabs();renderRight();});
   $('dispBtn').onclick=showDisplayUrl;
+  regDraw(); $('regBtn').onclick=showRegisterPick;
+  staffDraw(); $('staffBtn').onclick=()=>{
+    if(STAFF&&confirm(`担当を ${STAFF.name} さんから外しますか`)){
+      STAFF=null; localStorage.removeItem('stb_staff'); staffDraw(); render(); toast('担当を外しました');
+    }else if(!STAFF){ toast('担当者の社員証を読み取ってください'); }};
   document.querySelectorAll('#priceModes button').forEach(b=>b.onclick=()=>{
     PMODE=b.dataset.pm;
     document.querySelectorAll('#priceModes button').forEach(x=>x.classList.toggle('on',x.dataset.pm===PMODE));
@@ -695,6 +724,30 @@ function loadQRLib(){
 function qrImg(url,cell){
   try{const q=qrcode(0,'M');q.addData(url);q.make();return q.createDataURL(cell||6);}catch(e){return '';}
 }
+/* この端末がどのレジかを決める。店ごとに1〜9台を想定。
+   ここで分かれるのは「お客様画面・履歴・レジ締め」で、データの保存先は同じ。 */
+function showRegisterPick(){
+  const d=document.createElement('div'); d.className='dlg';
+  const opts=['1','2','3','4','5','6'].map(v=>
+    `<button class="btn ${REG===v?'pri':''}" data-r="${v}" style="min-width:74px">${v}番</button>`).join('');
+  d.innerHTML=`<div class="dlg-b">
+    <h3>このiPadはどのレジですか</h3>
+    <p>1つのお店にレジが何台あっても、それぞれが自分のお客様画面・自分のレジ締めを持ちます<br>
+       売上や在庫の記録は すべて同じ場所にまとまります</p>
+    <div class="dlg-a" style="flex-wrap:wrap">${opts}</div>
+    <div class="dlg-a"><button class="btn" data-r="">分けない（1台だけの店）</button><button id="rclose">閉じる</button></div>
+  </div>`;
+  document.body.appendChild(d);
+  d.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{
+    REG=b.dataset.r; localStorage.setItem(REGK,REG);
+    TERM.deviceId=localStorage.getItem('stb_term_dev:'+REG)||'';
+    d.remove(); regDraw(); render();
+    toast(REG?`このiPadを ${REG}番レジ にしました`:'レジを分けない設定にしました');});
+  d.querySelector('#rclose').onclick=()=>d.remove();
+  d.onclick=e=>{ if(e.target===d)d.remove(); };
+}
+function regDraw(){ const b=$('regBtn'); if(b)b.textContent=REG?`レジ ${REG}番`:'レジ 未設定'; }
+
 async function showDisplayUrl(){
   let tk='';
   try{ const j=await post('/display/token',{}); tk=j.token||''; }
@@ -705,7 +758,7 @@ async function showDisplayUrl(){
      レジの住所のまま開いてしまう（実機で発覚）。 */
   const dir=location.pathname.replace(/\/[^/]*$/,'/');      // 例: /booking/
   const url=location.origin+dir+'display.html'
-    +'?s='+encodeURIComponent(SHOP)+'&t='+encodeURIComponent(tk);
+    +'?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG)+'&t='+encodeURIComponent(tk);
   const d=document.createElement('div'); d.className='dlg';
   d.innerHTML=`<div class="dlg-b">
     <h3>お客様にお見せする画面</h3>
