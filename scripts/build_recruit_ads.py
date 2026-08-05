@@ -80,6 +80,33 @@ NOTES = {
     'nagoya': '名古屋はいまヘッドスパを主軸に営んでいます\nヘアサロンを担うスタイリストの方にはチャンスです',
 }
 
+# ── 職種を主役にした強化版（2026-08-03 オーナー指示: 福岡スタイリスト /
+#    名古屋スタイリスト / 銀座・表参道のショップ職 をつよめる）──
+# 通常版と同じ広告セットに追加して並走させる。通常版は消さない
+# （銀座のスタイリスト・スパニストも募集中で、消すと届かなくなる）。
+FOCUS_ADS = [
+    {"key": "fukuoka-stylist", "title": "SEAM 福岡", "adset": "fukuoka",
+     "photo": "images/stores/store_fukuoka.jpg",
+     "lead": "スタイリストを募集しています",
+     "rows": [("スタイリスト", "月給30万円〜 ／ 指名歩合50%", "")],
+     "extra": "指名売上70万円から 完全歩合（バック率50%）",
+     "room": "半個室で ひとりのお客様に集中できます"},
+    {"key": "nagoya-stylist", "title": "SEAM 名古屋", "adset": "nagoya",
+     "photo": "images/stores/store_nagoya.jpg",
+     "lead": "スタイリストを募集しています",
+     "rows": [("スタイリスト", "月給30万円〜 ／ 指名歩合50%", "")],
+     "extra": "いまはヘッドスパが主軸です ヘアサロンを担う方にはチャンスです",
+     "room": "完全個室だから 隣を気にせず お客様だけを見ていられます"},
+    {"key": "tokyo-shop", "title": "SEAM 銀座・表参道", "adset": "tokyo",
+     "photo": "images/lp/hero_ginza_shelf.jpg",
+     "lead": "ショップの仕事を募集しています",
+     "rows": [("ショップ管理者", "正社員 月給25万円〜 ／ 実績で賞与", ""),
+              ("ショップスタッフ", "アルバイト 時給1,500円", "")],
+     "extra": "世界197ブランドのサロン専売ヘアケアを扱います",
+     "room": "ヘアケアの知識は 入ってから覚えていただけます",
+     "growth": False},   # ショップ職は顧客を持たないので「新規は店からご案内」は出さない
+]
+
 EYEBROW = 'いま 転職を考えていなくても'
 CLOSING = '見学・相談からで大丈夫です'
 SIZE = 1080
@@ -207,9 +234,62 @@ def ad_body(spec):
     return head + "\n\n" + "\n".join(lines) + "\n\n" + "\n\n".join(tail)
 
 
+def build_focus(spec):
+    """職種を主役にした強化版。行は spec で明示する（通常版の自動生成とは別経路）。"""
+    src = os.path.join(ROOT, spec['photo'])
+    assert os.path.exists(src), f"写真が無い: {src}"
+    img = ImageEnhance.Brightness(cover(Image.open(src).convert('RGB'), SIZE)).enhance(BRIGHTNESS)
+    d = ImageDraw.Draw(img)
+    rows = spec['rows']
+
+    h_eye, h_ttl, h_lead, h_end = 30, 84, 34, 28
+    body = (h_eye + 34 + h_ttl + 44 + 34 + h_lead + 28 + (46 * len(rows))
+            + 40 + 38 + 26 + h_end)
+    y = max(240, (SIZE - body) // 2)
+
+    y += draw_center(d, y, EYEBROW, ImageFont.truetype(MINCHO, h_eye), (255, 252, 246)) + 34
+    y += draw_center(d, y, spec['title'], fit(h_ttl, spec['title']), (255, 255, 255)) + 44
+    d.line([(238, y), (842, y)], fill=(190, 168, 128), width=1)
+    d.ellipse([(SIZE // 2 - 3, y - 3), (SIZE // 2 + 3, y + 3)], fill=GOLD)
+    y += 34
+    y += draw_center(d, y, spec['lead'], fit(h_lead, spec['lead']), (245, 240, 232)) + 28
+    for role, pay, tag in rows:
+        y += draw_row(d, y, role, pay, tag) + 18
+    y += 16
+    y += draw_center(d, y, spec['extra'], fit(26, spec['extra']), (255, 252, 246)) + 12
+    if spec.get('growth', True):
+        y += draw_center(d, y, GROWTH, fit(26, GROWTH), (238, 231, 220)) + 12
+    y += draw_center(d, y, spec['room'], fit(23, spec['room']), (214, 206, 194)) + 14
+    draw_center(d, y, CLOSING, ImageFont.truetype(MINCHO, h_end), (206, 198, 186))
+
+    os.makedirs(OUT, exist_ok=True)
+    pth = os.path.join(OUT, f"seam_recruit_{spec['key']}_1080_{VER}.jpg")
+    img.save(pth, quality=90, optimize=True)
+    return pth
+
+
+def focus_body(spec):
+    lines = [f"{r}　{p}" for r, p, _ in spec['rows']]
+    return (f"{spec['title'].replace('SEAM ', '')}で{spec['lead']}\n\n"
+            + "\n".join(lines) + "\n\n"
+            + spec['extra'] + "\n\n"
+            + ("新規のお客様は店からご案内します\n"
+               "ご自身で集めていただく必要はないので\n"
+               "顧客がまだ少なくても ゼロから積み上げていけます\n\n"
+               if spec.get('growth', True) else "")
+            + "試用期間中も 給与は変わりません\n\n"
+            + spec['room'] + "\n\n"
+            + "見学だけ 話を聞くだけでも大丈夫です")
+
+
 if __name__ == '__main__':
     for spec in ADS:
         p, rows = build(spec)
         print(f"■ {spec['key']}  {os.path.basename(p)}")
         for r, pay, tag in rows:
             print(f"    {r}　{pay}" + (f"　（{tag}）" if tag else ''))
+    print()
+    for spec in FOCUS_ADS:
+        pth = build_focus(spec)
+        print(f"★ {spec['key']}  {os.path.basename(pth)}  → 広告セット {spec['adset']}")
+        print(f"    {spec['lead']} / " + ' / '.join(f'{r} {p}' for r, p, _ in spec['rows']))
