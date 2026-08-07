@@ -235,7 +235,11 @@ function paint(){
         <p class="big">リフレッシュシート　${esc(CUR.sheet)}</p></div>`:''}
       <div class="sec"><h3>お部屋</h3>
         ${V('お席',CUR.room)}${meter('灯り','',CUR.lightN)}${meter('音の大きさ','',CUR.soundN)}
-        ${V('音楽',CUR.music)}${V('香り',CUR.scent)}${V('お飲みもの',CUR.drink)}</div>
+        ${meter('お部屋の温度','',CUR.roomTempN)}${V('ブランケット',CUR.blanket)}
+        ${V('音楽',CUR.music)}${V('香り',CUR.scent)}${V('香りの強さ',CUR.scentPower)}
+        ${V('お飲みもの',CUR.drink)}${V('お出しするのは',CUR.drinkTime)}</div>
+      ${(CUR.tempN||CUR.pillow)?`<div class="sec"><h3>台にご案内する前に</h3>
+        ${meter('お湯の温度','',CUR.tempN)}${V('枕',CUR.pillow)}</div>`:''}
       <div class="sec"><h3>ご用意するもの</h3>
         ${V('頭浸浴',CUR.bath)}${V('炭酸',CUR.soda)}${V('ヘアケア',CUR.care)}${V('仕上げ',CUR.finish)}${V('スタイリング',CUR.styling)}</div>
       ${CUR.note?`<div class="sec"><h3>ひとこと</h3><p class="note">${esc(CUR.note)}</p></div>`:''}`;
@@ -257,6 +261,9 @@ function paint(){
         ${CUR.wash?`<p class="mid">${esc(CUR.wash)}</p>`:''}
         ${CUR.face?`<p class="mid">${esc(CUR.face)}</p>`:''}</div>`:''}
       ${CUR.talk?`<div class="sec"><h3>過ごしかた</h3><p class="big">${esc(CUR.talk)}</p></div>`:''}
+      ${CUR.sleep?`<div class="sec"><h3>眠ってしまったら</h3><p class="big">${esc(CUR.sleep)}</p></div>`:''}
+      ${(CUR.tempN||CUR.pillow)?`<div class="sec"><h3>お湯と枕</h3>
+        ${meter('お湯の温度','',CUR.tempN)}${V('枕',CUR.pillow)}</div>`:''}
       ${CUR.note?`<div class="sec"><h3>ひとこと</h3><p class="note">${esc(CUR.note)}</p></div>`:''}`;
   }
 }
