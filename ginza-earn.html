@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM銀座｜予約が埋まるほど 年収になる（スタッフ向け試算）</title>
+<style>
+  :root{
+    --bg:#FBF8F2; --panel:#FFFFFF; --panel2:#F4EFE3; --paste:#FBF6EA;
+    --ink:#2B2926; --muted:#6E655A; --faint:#8C8375; --line:#E7DDCB; --line2:#EFE7D7;
+    --gold:#9A7B43; --gold-soft:#C9AF7E; --good:#557049; --bad:#A8443A;
+    --shadow:0 1px 2px rgba(60,46,20,.05),0 8px 30px rgba(60,46,20,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#191614; --panel:#221E19; --panel2:#2A241C; --paste:#251F16;
+      --ink:#ECE5D8; --muted:#A99E8C; --faint:#8A8072; --line:#39322A; --line2:#332C25;
+      --gold:#CBA96B; --gold-soft:#B29464; --good:#8FB07F; --bad:#D98A7F;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 34px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",YuGothic,"Noto Sans JP",system-ui,sans-serif;
+    font-size:15px; line-height:1.85; letter-spacing:.01em;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:840px; margin:0 auto; padding:40px 22px 90px;}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .mast{border-bottom:1.5px solid var(--ink); padding-bottom:22px; margin-bottom:8px;}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; letter-spacing:.42em; font-size:15px; font-weight:600;}
+  .kicker{font-family:ui-monospace,monospace; font-size:10.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); margin-top:20px;}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:29px; line-height:1.35; margin:.24em 0 0; text-wrap:balance; letter-spacing:.02em;}
+  .sub{color:var(--muted); font-size:13.5px; margin-top:12px; line-height:1.9;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:16px; font-size:11.5px; color:var(--faint); font-family:ui-monospace,monospace; letter-spacing:.04em;}
+  .lead{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin-top:26px; box-shadow:var(--shadow); font-size:14px; line-height:2;}
+  .lead b{color:var(--gold);}
+  section{margin-top:46px;}
+  .eyebrow{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:var(--gold); display:flex; align-items:center; gap:10px;}
+  .eyebrow::after{content:""; flex:1; height:1px; background:var(--line);}
+  h2{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-weight:600; font-size:21px; margin:12px 0 4px; letter-spacing:.02em; text-wrap:balance;}
+  .lede{color:var(--muted); font-size:13px; margin:0 0 18px;}
+  .tablewrap{overflow-x:auto; margin-top:6px; border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow);}
+  table{border-collapse:collapse; width:100%; font-size:12.5px; background:var(--panel);}
+  th,td{text-align:left; padding:11px 13px; border-bottom:1px solid var(--line2); vertical-align:top; line-height:1.7;}
+  thead th{background:var(--panel2); font-family:ui-monospace,monospace; font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--gold); font-weight:600; white-space:nowrap;}
+  tbody tr:last-child td{border-bottom:0;}
+  .callout{background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:13px 16px; font-size:12.5px; color:var(--muted); line-height:1.9; margin-top:14px;}
+  .callout b{color:var(--gold);}
+  .rules{display:grid; gap:10px; margin-top:8px;}
+  .rule{display:flex; gap:12px; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.85;}
+  .rule .ic{flex:none; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; margin-top:1px; color:#fff; background:var(--bad);}
+  .rule b{color:var(--ink);}
+  .rule .sub{color:var(--muted); font-size:12px;}
+  footer{margin-top:56px; padding-top:20px; border-top:1px solid var(--line); font-size:11px; color:var(--faint); line-height:1.9; font-family:ui-monospace,monospace; letter-spacing:.03em;}
+
+  /* ── シミュレーター ── */
+  .sim{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:24px 22px; margin-top:14px; box-shadow:var(--shadow);}
+  .srow{margin-top:18px;}
+  .srow:first-child{margin-top:0;}
+  .slab{display:flex; justify-content:space-between; align-items:baseline; font-size:13px; font-weight:700;}
+  .slab .v{font-family:ui-monospace,monospace; font-size:16px; color:var(--gold);}
+  .srow input[type=range]{width:100%; margin-top:8px; accent-color:var(--gold); height:28px;}
+  .shint{font-size:11px; color:var(--faint); margin-top:2px;}
+  .bigout{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:22px;}
+  .bcard{background:var(--paste); border:1px solid var(--line); border-radius:10px; padding:14px 16px; text-align:center;}
+  .bcard .t{font-family:ui-monospace,monospace; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold);}
+  .bcard .n{font-family:"Hiragino Mincho ProN","Yu Mincho",serif; font-size:27px; font-weight:600; margin-top:4px; letter-spacing:.02em;}
+  .bcard .n small{font-size:13px; color:var(--muted); font-weight:400;}
+  .bcard.main{grid-column:1/-1; background:var(--panel2); border-color:var(--gold-soft);}
+  .bcard.main .n{font-size:38px; color:var(--gold);}
+  .subout{display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:14px; font-size:12px; color:var(--muted); justify-content:center;}
+  .subout b{color:var(--ink); font-family:ui-monospace,monospace;}
+  .bench{margin-top:20px;}
+  .bar{display:flex; align-items:center; gap:10px; margin-top:8px;}
+  .bar .nm{flex:none; width:9.5em; font-size:12px; color:var(--muted);}
+  .bar .tr{flex:1; height:16px; background:var(--panel2); border-radius:8px; overflow:hidden;}
+  .bar .fl{height:100%; border-radius:8px; background:var(--gold-soft); min-width:2%;}
+  .bar.me .fl{background:var(--gold);}
+  .bar .am{flex:none; font-family:ui-monospace,monospace; font-size:12px; width:5.5em; text-align:right;}
+  @media (max-width:560px){
+    .wrap{padding:30px 16px 70px;} h1{font-size:24px;}
+    .bcard .n{font-size:22px;} .bcard.main .n{font-size:31px;}
+  }
+  @media print{
+    body{background:#fff; color:#000; font-size:11.5px;}
+    .wrap{max-width:none; padding:0;}
+    .lead,.sim,.tablewrap,.rule,.callout{box-shadow:none;}
+    section{break-inside:avoid;}
+  }
+</style>
+</head><body>
+
+<div class="wrap">
+<div class="mast"><span class="brand">SEAM</span></div>
+<p class="kicker">Ginza Hair — Stylist Income Simulation ／ 第1版</p>
+<h1>予約が埋まるほど そのまま年収になる</h1>
+<p class="sub">掲載改定（seam.site/ginza-no1 第5版）の価格で、予約率が60〜80%になったとき<br><strong>週休2日・有給10日で、年収がいくらになるか</strong>を試算しました　スライダーを動かして確かめられます</p>
+<div class="meta"><span>2026-08-09 第1版</span><span>銀座ヘア</span><span>社内資料・検索非掲載</span><span>給与の約束ではなく試算です</span></div>
+
+<div class="lead">
+<strong>前提は4つだけです</strong>
+<b>① 歩合は指名売上の50%</b>　<b>② 枠1時間あたりの平均売上 ¥10,700</b>（クーポン17本の平均・値引きは1本もありません）　<b>③ 1日の枠は8時間</b>（11時〜20時から休憩を引いた席の時間）　<b>④ 年間の勤務は251日</b>（365日−週休2日の104日−有給10日）
+</div>
+
+<p class="eyebrow">Simulator</p>
+<h2>動かして確かめる</h2>
+<p class="lede">予約率＝自分の8枠時間のうち、お客様が入っている割合です</p>
+<div class="sim">
+  <div class="srow">
+    <div class="slab"><span>予約率</span><span class="v" id="vRate">70%</span></div>
+    <input type="range" id="sRate" min="40" max="90" step="5" value="70">
+    <div class="shint">60%＝1日およそ3人　70%＝3〜4人　80%＝4人（平均1.75時間/人で換算）</div>
+  </div>
+  <div class="srow">
+    <div class="slab"><span>指名率</span><span class="v" id="vShimei">90%</span></div>
+    <input type="range" id="sShimei" min="50" max="100" step="5" value="90">
+    <div class="shint">SEAMは完全個室のマンツーマンなので、2回目からのお客様はほぼ指名になります</div>
+  </div>
+  <div class="bigout">
+    <div class="bcard main"><div class="t">年収（歩合）</div><div class="n" id="oYear">—</div></div>
+    <div class="bcard"><div class="t">月収</div><div class="n" id="oMonth">—</div></div>
+    <div class="bcard"><div class="t">1日の目安</div><div class="n" id="oDay">—</div></div>
+  </div>
+  <div class="subout">
+    <span>あなたの年間売上 <b id="oSales">—</b></span>
+    <span>1日の施術 <b id="oHours">—</b></span>
+    <span>お客様 <b id="oCust">—</b></span>
+  </div>
+  <div class="bench">
+    <div class="bar"><span class="nm">美容師の平均年収</span><div class="tr"><div class="fl" style="width:38%"></div></div><span class="am">約330万</span></div>
+    <div class="bar me"><span class="nm">この試算のあなた</span><div class="tr"><div class="fl" id="bMe" style="width:70%"></div></div><span class="am" id="bMeAmt">—</span></div>
+  </div>
+</div>
+
+<p class="eyebrow">Table</p>
+<h2>予約率60・70・80%の早見表</h2>
+<p class="lede">指名率90%（2回目からほぼ指名になる想定）での数字です　カッコ内は指名率100%</p>
+<div class="tablewrap"><table>
+<thead><tr><th style="text-align:center">予約率</th><th style="text-align:center">1日の施術</th><th style="text-align:center">1日の売上</th><th style="text-align:center">年間売上</th><th style="text-align:center">年収（歩合）</th><th style="text-align:center">月収</th></tr></thead>
+<tbody>
+<tr><td style="text-align:center"><strong>60%</strong></td><td style="text-align:center">4.8時間・約3人</td><td style="text-align:center">¥51,360</td><td style="text-align:center">約1,289万</td><td style="text-align:center"><strong>約580万</strong>（645万）</td><td style="text-align:center">約48万</td></tr>
+<tr><td style="text-align:center"><strong>70%</strong></td><td style="text-align:center">5.6時間・3〜4人</td><td style="text-align:center">¥59,920</td><td style="text-align:center">約1,504万</td><td style="text-align:center"><strong>約677万</strong>（752万）</td><td style="text-align:center">約56万</td></tr>
+<tr><td style="text-align:center"><strong>80%</strong></td><td style="text-align:center">6.4時間・約4人</td><td style="text-align:center">¥68,480</td><td style="text-align:center">約1,719万</td><td style="text-align:center"><strong>約773万</strong>（859万）</td><td style="text-align:center">約64万</td></tr>
+</tbody></table></div>
+<div class="callout">
+<b>これは休みを削った数字ではありません</b>　週休2日で104日休み、有給も10日ぜんぶ使って、それでも予約率60%なら<b>年収約580万</b>です　美容師の平均年収はおよそ330万円といわれますから、<b>60%で約1.8倍、80%なら約2.3倍</b>になります<br><br>
+理由は単価です　SEAMは<b>エリアでいちばん高いカット¥9,900</b>を値引きなしで置き、枠1時間あたり平均¥10,700で設計しています　<b>安売りで数をこなす形ではなく、1枠の価値で稼ぐ形</b>なので、予約率がそのまま生活に返ってきます
+</div>
+
+<p class="eyebrow">How</p>
+<h2>どうやって60%まで埋めるか　── それが掲載改定です</h2>
+<p class="lede">いまの平日夕方は9割空いています　ここを埋める道具はもう用意してあります</p>
+<div class="rules">
+<div class="rule"><span class="ic" style="background:var(--good)">1</span><div>
+<b>店の中に月3,000人いる</b>
+<div class="sub">ショップに買いに来る方の<b>1.5〜2%</b>が施術に流れるだけで、平日夕方の空き（月40〜60組）は埋まります　棚のPOPとレジの一言が入口です</div>
+</div></div>
+<div class="rule"><span class="ic" style="background:var(--good)">2</span><div>
+<b>45〜80分の入口メニューを掲載の上に置いた</b>
+<div class="sub">トリートメント単体¥9,900・カット＋スパ10分¥9,900・メンズ¥8,800　<b>17時以降に入るのはこの長さだけ</b>なので、空いている枠に直接刺さります</div>
+</div></div>
+<div class="rule"><span class="ic" style="background:var(--good)">3</span><div>
+<b>指名につながる仕掛けが標準でついている</b>
+<div class="sub">完全個室のマンツーマン＝担当した瞬間から次も自分　スパ10分・アイロン温度診断・矯正の間のメンテTR（90日周期の真ん中にもう1回）が<b>次回の理由</b>になります　カウンセリング（今日のご希望）の記録が残るので「前回と同じで」が効きます</div>
+</div></div>
+</div>
+<div class="callout">
+<b>だから掲載改定はスタッフの年収の設計図です</b>　値引きを1本も持たない価格表を守るほど、同じ予約率でも受け取る額が大きくなります　逆に1回の値引きは、歩合50%ならその半分が自分の給与から消える——という関係です
+</div>
+
+<p class="eyebrow">Notes</p>
+<h2>この試算の読み方</h2>
+<div class="rules">
+<div class="rule"><span class="ic">!</span><div><b>給与の約束ではありません</b>
+<div class="sub">実際の給与制度（固定給との組み合わせ・社会保険・税）はオーナーと個別の取り決めです　この紙は「予約率と収入の関係」を見るためのものです</div></div></div>
+<div class="rule"><span class="ic">!</span><div><b>価格は第5版の提案ベースです</b>
+<div class="sub">一部は承認前の提案価格を含みます　店販（商品販売）の歩合・フリーのお客様の扱いは計算に入れていません＝<b>入れば上乗せ</b>です</div></div></div>
+<div class="rule"><span class="ic">!</span><div><b>1人で1席を回した場合の数字です</b>
+<div class="sub">枠1時間あたり¥10,700はクーポン17本の平均です　組み合わせの重いメニュー（¥12,000〜13,375/時）に寄るほど、同じ予約率でも上振れします</div></div></div>
+</div>
+
+<footer>
+SEAM ／ 株式会社hanico　社内資料（検索エンジン非掲載）　2026-08-09 第1版<br>
+前提：勤務251日（365−週休104−有給10）／1日8枠時間／枠あたり¥10,700（seam.site/ginza-no1 第5版クーポン17本の平均）／歩合＝指名売上×50%・税社保引前<br>
+平均年収の参考値はおよその公表統計にもとづく概算です　関連資料　価格設計 seam.site/ginza-no1 ／ メニューと会員設計 seam.site/ginza-menu
+</footer>
+</div>
+
+<script>
+(function(){
+  var DAYS=251, HOURS=8, PER=10700;
+  var sR=document.getElementById('sRate'), sS=document.getElementById('sShimei');
+  function man(n){ return (n/10000).toLocaleString('ja-JP',{maximumFractionDigits:0}); }
+  function upd(){
+    var r=sR.value/100, s=sS.value/100;
+    var day=HOURS*r*PER;
+    var sales=day*DAYS;
+    var inc=sales*s*0.5;
+    document.getElementById('vRate').textContent=sR.value+'%';
+    document.getElementById('vShimei').textContent=sS.value+'%';
+    document.getElementById('oYear').innerHTML='約'+man(inc)+'<small>万円</small>';
+    document.getElementById('oMonth').innerHTML='約'+Math.round(inc/12/10000)+'<small>万円</small>';
+    document.getElementById('oDay').innerHTML='¥'+Math.round(day).toLocaleString()+'<small> 売上</small>';
+    document.getElementById('oSales').textContent='約'+man(sales)+'万円';
+    var h=HOURS*r;
+    document.getElementById('oHours').textContent=(Math.round(h*10)/10)+'時間';
+    document.getElementById('oCust').textContent='約'+(Math.round(h/1.75*10)/10)+'人';
+    var pct=Math.min(100, inc/3300000*38);
+    document.getElementById('bMe').style.width=pct+'%';
+    document.getElementById('bMeAmt').textContent='約'+man(inc)+'万';
+  }
+  sR.addEventListener('input',upd); sS.addEventListener('input',upd);
+  upd();
+})();
+</script>
+
+</body></html>
