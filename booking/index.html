@@ -4839,7 +4839,8 @@ function renderBook(){
            </button>
          </div>
 
-         <div class="bkx-perk">
+         ${MEMBER_OK()
+         ? `<div class="bkx-perk">
            <p class="bkx-perk-e">For members</p>
            <p class="bkx-perk-h">ひと施術を添えて</p>
            <p class="bkx-perk-b">ネット予約の会員の方へ 炭酸シャンプーで酸化した油分をリセットします</p>
@@ -4849,7 +4850,13 @@ function renderBook(){
                  ? (featOn('finder')?`<a class="bkx-btn" href="/finder" target="_blank" rel="noopener">髪格診断を受ける</a>`:'')
                  : `<button class="bkx-btn" onclick="startLineLogin()">LINEでログイン</button>${GOOGLE_CLIENT_ID?`<div id="embGoogle" class="emb-g-slot"></div>`:``}`}
                 <p class="bkx-perk-n">髪格診断（約3分）を受けると会員になります</p></div>`}
-         </div>
+         </div>`
+         : `<div class="bkx-perk">
+           <p class="bkx-perk-e">Tax-free</p>
+           <p class="bkx-perk-h">${TAXFREE_T().h}</p>
+           <p class="bkx-perk-b">${TAXFREE_T().b}</p>
+           <p class="bkx-perk-n">${TAXFREE_T().n}</p>
+         </div>`}
 
          <dl class="bkx-facts">
            <dt>料金の目安</dt><dd>カット ¥9,900／カラー ¥9,900〜<br>ヘッドスパ ¥12,000〜</dd>
@@ -5036,6 +5043,11 @@ function renderBook(){
         const opts=perkOptions(menu);
         if(!opts.length)return '';
         if(bk.perk==null)bk.perk=opts[0].id;
+        // 日本語以外の方には会員の話を出さない（会員は日本在住の方だけのため）
+        if(!MEMBER_OK())return `<div class="perk">
+          <div class="perk-t">🧾 ${TAXFREE_T().h}</div>
+          <div class="perk-one"><b>${escH(TAXFREE_T().b)}</b><i>${escH(TAXFREE_T().n)}</i></div>
+        </div>`;
         return `<div class="perk">
           <div class="perk-t">🎁 会員のおまけ<span>ご予約の方に無料でお付けします</span></div>
           ${opts.length===1
@@ -5290,6 +5302,30 @@ function renderBook(){
  * 切替: ?lang=en / 端末の言語が日本語以外なら自動EN / 顧客モードの右上トグル。 */
 // 対応4言語: 日本語 / English / 简体中文 / 繁體中文。?lang= 指定 → 保存値 → 端末の言語 の順で決定
 const LANGS=['ja','en','zh','tw','ko'];
+/* ★会員は日本にお住まいの方だけ（海外へは発送できないため）。
+   日本語以外でご覧の方には、会員・ポイントの話をそもそも出さない。
+   代わりに、その方に本当に役に立つ免税のご案内を出す。
+   ⚠️免税は「お持ち帰りいただく商品」に対するもの。施術は対象外なので、
+     施術まで免税と読めることは書かないこと。
+   ⚠️免税をやっているのは銀座本店だけ（他店は登録申請中）。 */
+const MEMBER_OK=()=>(typeof BOOK_LANG==='undefined')||BOOK_LANG==='ja';
+const TAXFREE_T=()=>({
+  en:{h:'Tax-free shopping',
+      b:'Visitors from overseas can buy our hair care products tax-free at the salon. Please bring your passport.',
+      n:'Tax-free applies to products you take home, not to salon services.'},
+  zh:{h:'免税购物',
+      b:'持短期签证入境的旅客，可在店内免税选购我们的护发产品。请携带护照。',
+      n:'免税适用于带回国的商品，不适用于店内服务。'},
+  tw:{h:'免稅購物',
+      b:'持短期簽證入境的旅客，可在店內免稅選購我們的護髮產品。請攜帶護照。',
+      n:'免稅適用於帶回國的商品，不適用於店內服務。'},
+  ko:{h:'면세 쇼핑',
+      b:'해외에서 오신 분은 매장에서 헤어케어 제품을 면세로 구입하실 수 있습니다. 여권을 지참해 주세요.',
+      n:'면세는 가지고 돌아가시는 상품에 적용되며, 시술에는 적용되지 않습니다.'},
+}[BOOK_LANG]||{h:'Tax-free shopping',
+      b:'Visitors from overseas can buy our hair care products tax-free at the salon. Please bring your passport.',
+      n:'Tax-free applies to products you take home, not to salon services.'});
+
 let BOOK_LANG=(()=>{
   const q=(new URLSearchParams(location.search).get('lang')||'').toLowerCase();
   if(LANGS.includes(q))return q;
