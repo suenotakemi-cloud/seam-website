@@ -60,6 +60,70 @@
   <div id="app"><div class="load">読み込んでいます…</div></div>
 </div>
 <script>
+
+/* ★このページは、ご予約のときに選ばれた言語で出す。
+   APIが lang を返しているのに日本語で出していたので、海外の方には読めなかった。
+   足りない訳は日本語にそのまま落ちる（画面が空白になるより読めるほうがよい）。 */
+const L={
+ ja:{h:'ご予約のキャンセル',dt:'日時',me:'メニュー',st:'担当',nm:'お名前',dp:'お預かり',
+   go:'このご予約をキャンセルする',back:'やめる（予約はそのまま）',
+   note:'日時の変更をご希望の場合は、キャンセルのうえ改めてご予約ください。ご不明な点は SEAM 銀座までお気軽にご連絡ください',
+   free:'キャンセル料はかかりません',noDep:'お預かりはございません',
+   depAll:d=>`お預かりした ${d} は全額ご返金します`,
+   fee:a=>`キャンセル料 ${a}`,today:'当日のキャンセルのため',prev:'前日のキャンセルのため',
+   sub2:(d,r)=>`いただきます。お預かりした ${d} から差し引き、${r} をご返金します`,
+   sub3:d=>`いただきます。お預かりした ${d} を充てさせていただきます`,
+   already:'すでにキャンセル済みです',ofResv:'のご予約',
+   done:'キャンセルを承りました',bad:'ご確認ください',call:'お手数ですが SEAM 銀座までご連絡ください',
+   badlink:'リンクが正しくありません',loading:'読み込んでいます…',working:'手続きしています…'},
+ en:{h:'Cancel your booking',dt:'Date',me:'Menu',st:'Stylist',nm:'Name',dp:'Deposit',
+   go:'Cancel this booking',back:'Keep my booking',
+   note:'To change the date, please cancel and book again. Feel free to contact SEAM GINZA with any questions',
+   free:'No cancellation fee',noDep:'No deposit was taken',
+   depAll:d=>`Your ${d} deposit will be refunded in full`,
+   fee:a=>`Cancellation fee ${a}`,today:'For same-day cancellation, ',prev:'For next-day cancellation, ',
+   sub2:(d,r)=>`this is charged. It is taken from your ${d} deposit and ${r} will be refunded`,
+   sub3:d=>`this is charged and covered by your ${d} deposit`,
+   already:'This booking is already cancelled',ofResv:'',
+   done:'Your booking has been cancelled',bad:'Please check',call:'Please contact SEAM GINZA',
+   badlink:'This link is not valid',loading:'Loading…',working:'Processing…'},
+ zh:{h:'取消预约',dt:'日期',me:'项目',st:'指定',nm:'姓名',dp:'预付款',
+   go:'取消这次预约',back:'保留预约',
+   note:'如需改期，请先取消后重新预约。有任何疑问请联系 SEAM 银座',
+   free:'不收取取消费用',noDep:'未收取预付款',
+   depAll:d=>`已收取的 ${d} 将全额退还`,
+   fee:a=>`取消费用 ${a}`,today:'当日取消，',prev:'前一日取消，',
+   sub2:(d,r)=>`将从预付款 ${d} 中扣除，退还 ${r}`,
+   sub3:d=>`将由预付款 ${d} 抵扣`,
+   already:'该预约已取消',ofResv:'的预约',
+   done:'已为您取消预约',bad:'请确认',call:'请联系 SEAM 银座',
+   badlink:'链接无效',loading:'读取中…',working:'处理中…'},
+ tw:{h:'取消預約',dt:'日期',me:'項目',st:'指定',nm:'姓名',dp:'預付款',
+   go:'取消這次預約',back:'保留預約',
+   note:'如需改期，請先取消後重新預約。有任何疑問請聯繫 SEAM 銀座',
+   free:'不收取取消費用',noDep:'未收取預付款',
+   depAll:d=>`已收取的 ${d} 將全額退還`,
+   fee:a=>`取消費用 ${a}`,today:'當日取消，',prev:'前一日取消，',
+   sub2:(d,r)=>`將從預付款 ${d} 中扣除，退還 ${r}`,
+   sub3:d=>`將由預付款 ${d} 抵扣`,
+   already:'該預約已取消',ofResv:'的預約',
+   done:'已為您取消預約',bad:'請確認',call:'請聯繫 SEAM 銀座',
+   badlink:'連結無效',loading:'讀取中…',working:'處理中…'},
+ ko:{h:'예약 취소',dt:'일시',me:'메뉴',st:'담당',nm:'성함',dp:'예약금',
+   go:'이 예약을 취소합니다',back:'예약을 유지합니다',
+   note:'일정 변경을 원하시면 취소 후 다시 예약해 주세요. 문의는 SEAM 긴자로 연락해 주세요',
+   free:'취소 수수료는 없습니다',noDep:'예약금은 없습니다',
+   depAll:d=>`받은 ${d} 은 전액 환불해 드립니다`,
+   fee:a=>`취소 수수료 ${a}`,today:'당일 취소이므로 ',prev:'전일 취소이므로 ',
+   sub2:(d,r)=>`부과됩니다. 예약금 ${d} 에서 차감하고 ${r} 을 환불해 드립니다`,
+   sub3:d=>`부과되며 예약금 ${d} 으로 충당합니다`,
+   already:'이미 취소된 예약입니다',ofResv:' 예약',
+   done:'예약을 취소했습니다',bad:'확인해 주세요',call:'SEAM 긴자로 연락해 주세요',
+   badlink:'링크가 올바르지 않습니다',loading:'불러오는 중…',working:'처리 중…'},
+};
+let LANG='ja';
+const t=(k,...a)=>{const d=L[LANG]||L.ja;const v=d[k]!=null?d[k]:L.ja[k];
+  return typeof v==='function'?v(...a):v;};
 const API='https://seam-square-pay.suenotakemi.workers.dev';
 const T=new URLSearchParams(location.search).get('t')||'';
 const app=document.getElementById('app');
@@ -72,50 +136,51 @@ async function jpost(u,b){const r=await fetch(u,{method:'POST',headers:{'Content
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'手続きができませんでした');return j;}
 
 function fail(msg){
-  app.innerHTML=`<div class="card"><h1 style="font-size:17px">ご確認ください</h1>
+  app.innerHTML=`<div class="card"><h1 style="font-size:17px">${t('bad')}</h1>
     <p style="font-size:14px;margin:0">${esc(msg)}</p>
-    <div class="note">お手数ですが SEAM 銀座までご連絡ください</div></div>`;
+    <div class="note">${t('call')}</div></div>`;
 }
 
 /* キャンセル料の告知。
  * 押す前に必ず金額を見せる。押したあとに知らせるのは不誠実になる。 */
 function feeBox(j){
-  if(!j.charge)return `<div class="fee free"><span class="big">キャンセル料はかかりません</span>
-    <span class="sub">${j.deposit?`お預かりした ${yen(j.deposit)} は全額ご返金します`:'お預かりはございません'}</span></div>`;
-  return `<div class="fee charge"><span class="big">キャンセル料 ${yen(j.charge)}</span>
-    <span class="sub">${j.daysLeft<=0?'当日のキャンセルのため':'前日のキャンセルのため'}いただきます。
-    ${j.refund?`お預かりした ${yen(j.deposit)} から差し引き、${yen(j.refund)} をご返金します`
-      :`お預かりした ${yen(j.deposit)} を充てさせていただきます`}</span></div>`;
+  if(!j.charge)return `<div class="fee free"><span class="big">${t('free')}</span>
+    <span class="sub">${j.deposit?t('depAll',yen(j.deposit)):t('noDep')}</span></div>`;
+  return `<div class="fee charge"><span class="big">${t('fee',yen(j.charge))}</span>
+    <span class="sub">${j.daysLeft<=0?t('today'):t('prev')}${
+      j.refund?t('sub2',yen(j.deposit),yen(j.refund)):t('sub3',yen(j.deposit))}</span></div>`;
 }
 
 async function run(){
-  if(!T){fail('リンクが正しくありません');return;}
+  if(!T){fail(t('badlink'));return;}
   let j;
   try{ j=await jget(API+'/reservations/cancel-info?t='+encodeURIComponent(T)); }
   catch(e){ fail(e.message); return; }
+  // ご予約のときに選ばれた言語で出す
+  if(j.lang&&L[j.lang])LANG=j.lang;
+  document.documentElement.lang=LANG==='tw'?'zh-Hant':(LANG==='zh'?'zh-Hans':LANG);
 
   if(j.already){
     app.innerHTML=`<div class="card done"><div class="ic">✓</div>
-      <h1>すでにキャンセル済みです</h1>
-      <p class="when">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜のご予約</p></div>`;
+      <h1>${t('already')}</h1>
+      <p class="when">${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜${t('ofResv')}</p></div>`;
     return;
   }
 
   app.innerHTML=`<div class="card">
-    <h1>ご予約のキャンセル</h1>
+    <h1>${t('h')}</h1>
     <div class="rows">
-      <div class="rw"><span>日時</span><b>${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜</b></div>
-      <div class="rw"><span>メニュー</span><b>${esc(j.menu||'')}</b></div>
-      <div class="rw"><span>担当</span><b>${esc(j.staff||'')}</b></div>
-      <div class="rw"><span>お名前</span><b>${esc(j.name||'')}</b></div>
-      ${j.deposit?`<div class="rw"><span>お預かり</span><b>${yen(j.deposit)}</b></div>`:''}
+      <div class="rw"><span>${t('dt')}</span><b>${esc((j.date||'').replace(/-/g,'/'))} ${hm(j.start)}〜</b></div>
+      <div class="rw"><span>${t('me')}</span><b>${esc(j.menu||'')}</b></div>
+      <div class="rw"><span>${t('st')}</span><b>${esc(j.staff||'')}</b></div>
+      <div class="rw"><span>${t('nm')}</span><b>${esc(j.name||'')}</b></div>
+      ${j.deposit?`<div class="rw"><span>${t('dp')}</span><b>${yen(j.deposit)}</b></div>`:''}
     </div>
     ${feeBox(j)}
-    <button class="btn go" id="go">このご予約をキャンセルする</button>
-    <button class="btn back" id="back">やめる（予約はそのまま）</button>
+    <button class="btn go" id="go">${t('go')}</button>
+    <button class="btn back" id="back">${t('back')}</button>
     <div class="err" id="er"></div>
-    <div class="note">日時の変更をご希望の場合は、キャンセルのうえ改めてご予約ください。
-      ご不明な点は SEAM 銀座までお気軽にご連絡ください</div>
+    <div class="note">${t('note')}</div>
   </div>`;
 
   document.getElementById('back').onclick=()=>{
