@@ -2169,6 +2169,13 @@ function sameCustomerWarn(date,phone,name,start,end,exceptId){
            :`${who}で、同じ日にご予約があります（${when}）`;
 }
 function addReservation(o){
+  /* ★お客様が予約したときの言語を記録する（2026-08-09）。
+     reservations.lang 列も Worker の受け口も前からあったのに、ここが送っていなかったため
+     全予約が ja で入り、確認・リマインドの通知が海外の方にも日本語で届いていた。
+     入口を1か所にしておけば、店頭・電話・HPB取込などどの経路から作っても付く。 */
+  if(o.lang===undefined){
+    try{ o.lang = localStorage.getItem('stb_lang') || 'ja'; }catch(e){ o.lang='ja'; }
+  }
   const c=conflicts(o.date,o.staffId,o.start,o.end);
   if(c.length)return{ok:false,conflict:c[0]};
   o.id='r'+Math.random().toString(36).slice(2,9);
