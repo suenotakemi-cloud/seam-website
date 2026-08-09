@@ -933,7 +933,11 @@ async function boot(){
     SHOPS=j.shops||[];
     if(!SHOPS.some(s=>s.id===SHOP))SHOP=(SHOPS[0]||{}).id||'ginza';
     $('shopSel').innerHTML=SHOPS.map(s=>`<option value="${esc(s.id)}" ${s.id===SHOP?'selected':''}>${esc(s.name)}</option>`).join('');
-    $('shopSel').onchange=e=>{SHOP=e.target.value;localStorage.setItem(SHOPK,SHOP);render();toast(($('shopSel').selectedOptions[0]||{}).text+' に切り替えました');};
+    $('shopSel').onchange=async e=>{SHOP=e.target.value;localStorage.setItem(SHOPK,SHOP);
+      // お店ごとに出す機能がちがうので、切り替えたら読み直す
+      try{ const sj2=await get('/settings'); const st2=sj2.settings||{};
+           USEFEAT=JSON.parse(st2['useFeat:'+SHOP]||st2.useFeat||'{}')||{}; }catch(err){}
+      render();toast(($('shopSel').selectedOptions[0]||{}).text+' に切り替えました');};
     // お店がひとつなら、選ぶところは出さない
     if(SHOPS.length<2)$('shopSel').style.display='none';
   }catch(err){
@@ -953,7 +957,8 @@ async function boot(){
        if(v){const r=JSON.parse(v);RULES.member=r.member||{};RULES.sale=r.sale||{};}
        REQUIRE_STAFF=String(st.require_staff||'')==='1';
        // 管理画面で消した機能は、このレジでも出さない
-       try{ USEFEAT=JSON.parse(st.useFeat||'{}')||{}; }catch(e){ USEFEAT={}; } }catch(e){}
+       // お店ごとの設定を先に見る。無ければ昔の全店共通ぶん
+       try{ USEFEAT=JSON.parse(st['useFeat:'+SHOP]||st.useFeat||'{}')||{}; }catch(e){ USEFEAT={}; } }catch(e){}
   render();
   // 画面のどこを触っても、読み取りが効くように隠し欄へ戻す
   const focusSink=()=>{const el=document.activeElement;

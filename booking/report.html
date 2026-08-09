@@ -268,7 +268,8 @@ async function load(){
 let USEFEAT={};
 const useFeat=(v)=>USEFEAT[v]!==false;
 async function applyFeat(){
-  try{ const sj=await get('/settings'); USEFEAT=JSON.parse((sj.settings||{}).useFeat||'{}')||{}; }catch(e){ USEFEAT={}; }
+  try{ const sj=await get('/settings'); const st=sj.settings||{};
+       USEFEAT=JSON.parse(st['useFeat:'+SHOP]||st.useFeat||'{}')||{}; }catch(e){ USEFEAT={}; }
   document.querySelectorAll('[data-feat]').forEach(el=>{
     const on=useFeat(el.dataset.feat);
     el.style.display=on?'':'none';
