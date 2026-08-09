@@ -6284,6 +6284,20 @@ function buildModeASequence(answers) {
     });
 }
 
+/* ── どこで抜けたかを測れるようにする（2026-08-09）──
+ * それまで記録していたのは finder_start と finder_complete だけ。
+ * 直近の完答率は84%（1,188開始→1,002完了）で、16%＝186人が途中でやめている。
+ * どの設問でやめたのかが分からないと、38問のどこを削ればいいか決められない。
+ * 同じ設問を行き来しても1回しか送らない（戻るボタンで水増ししない）。 */
+function useStepTrack(qid, n, total) {
+  const sent = React.useRef({});
+  React.useEffect(() => {
+    if (!qid || sent.current[qid]) return;
+    sent.current[qid] = 1;
+    try { window.seamTrack && window.seamTrack('finder_step', { label: qid, target: String(n) + '/' + String(total) }); } catch (e) {}
+  }, [qid, n, total]);
+}
+
 function Quiz({ answers, setAnswers, onComplete, onBackHome }) {
   const sequence = useMemo(() => buildModeASequence(answers), [answers]);
   const total = sequence.length;
@@ -6320,6 +6334,7 @@ function Quiz({ answers, setAnswers, onComplete, onBackHome }) {
     else setIdx(safeIdx - 1);
   };
 
+  useStepTrack(q && q.id, safeIdx + 1, total);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [safeIdx]);
 
   if (!q) return null;
@@ -6452,6 +6467,7 @@ function QuizDeep({ answers, setAnswers, onComplete, onBackHome }) {
     else setIdx(safeIdx - 1);
   };
 
+  useStepTrack(q && q.id, safeIdx + 1, total);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }); }, [safeIdx]);
 
   if (!q) return null;

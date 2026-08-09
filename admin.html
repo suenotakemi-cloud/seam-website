@@ -464,7 +464,40 @@
     var rdNote = rdAvg!==null ? noteLine('再診断の平均間隔: '+rdAvg+'日 — リピート診断 '+(P.rediagN||0)+'件(経時データの土台)') : '';
     return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">vs Previous</span>前期比サマリー（同じ長さの直前期間・プロファイル系）</h2><div class="pgrid">'+cells+'</div>'+rdNote+'</div>';
   }
-  function dailyPanel(rows){
+  /* 設問ごとの到達数。target は "3/38" の形なので順番で並べ直し、
+     前の設問から何%残ったかを出す。減り方が大きい所＝そこで諦められている。 */
+  function stepPanel(rows){
+    if(!rows.length) return '<div class="empty">データなし（計測を入れた2026-08-09以降にたまります）</div>';
+    var r = rows.map(function(x){
+      var m = /^(\d+)\/(\d+)$/.exec(x.target||'');
+      return {n: m?parseInt(m[1],10):9999, of: m?m[2]:'', id:x.label, c:x.c};
+    }).sort(function(a,b){return a.n-b.n;});
+    var top = r.length ? r[0].c : 1;
+    return r.map(function(x,i){
+      var prev = i ? r[i-1].c : x.c;
+      var keep = prev ? Math.round(x.c/prev*100) : 100;
+      var all  = top ? Math.round(x.c/top*100) : 0;
+      var warn = i && keep < 92;                       // 1問で8%以上減ったら赤信号
+      return '<div class="bar-row"><span class="nm" title="'+esc(x.id)+'">'
+        + '<span class="muted" style="font-variant-numeric:tabular-nums">'+x.n+'.</span> '+esc(QLABEL[x.id]||x.id)+'</span>'
+        + '<span class="bar-track"><span class="bar-fill" style="width:'+Math.max(2,all)+'%'
+        + (warn?';background:linear-gradient(90deg,#D08A6E,#B3563E)':'')+'"></span></span>'
+        + '<span class="ct wide"><b>'+x.c+'</b> <span class="muted" style="'
+        + (warn?'color:#B3563E;font-weight:600':'')+'">'+keep+'%</span></span></div>';
+    }).join('') + noteLine('各行の%＝ひとつ前の設問から残った割合。8%以上減った設問を赤で出す＝そこが重い設問。バーの長さは1問目を100とした到達率');
+  }
+  /* 設問IDを日本語に。finder-app.jsx の id と同期（増えたら足す） */
+  var QLABEL = {age:'年代',gender:'性別',length:'髪の長さ',thickness:'髪の太さ',density:'髪の量',
+    rootVolume:'根元のボリューム',wave:'くせ・うねり',scalpType:'頭皮の状態',scalpSensitivity:'頭皮の敏感さ',
+    bleach:'ブリーチ履歴',color:'カラー',colorFreq:'カラー頻度',grayHair:'白髪',grayFreq:'白髪染め頻度',
+    bleachLocation:'ブリーチ残り',straighten:'縮毛矯正・髪質改善',perm:'パーマ',permType:'パーマの種類',
+    permLoose:'パーマの強さ',styling:'アイロン・コテ',heatProtect:'熱保護',scalpAllergy:'アレルギー',
+    hairTrouble:'過去のトラブル',concerns:'悩み',concernsItem:'今のアイテムへの不満',budget:'予算',
+    upgradeWill:'投資意欲',investCat:'投資したいもの',buyPlace:'購入場所',goalTexture:'なりたい質感',
+    goal:'髪の目標',stylingFinish:'スタイリングの仕上がり',menStyling:'使うスタイリング剤',
+    deviceOwned:'持っている家電',deviceInterest:'欲しい家電',deviceTier:'家電の価格帯',
+    headSpaInterest:'ヘッドスパへの興味',wellness:'体の症状'};
+    function dailyPanel(rows){
     if(!rows||!rows.length) return '';
     var wdays=['日','月','火','水','木','金','土'];
     function td(v){return '<td class="nums" style="text-align:right;padding:6px 10px;'+(v?'':'color:#C9C2B6;')+'">'+(v||0).toLocaleString()+'</td>';}
@@ -1153,6 +1186,7 @@
       panel('Concern','悩み（主訴）分布', barRows(data.byAdvice||[], function(x){return ADVICE[x.a]||x.a;})) +
       panel('Damage','ダメージ履歴 5段階<span style="font-weight:400;opacity:.55;font-size:11px;"> ※2026-07-30より5段階(以前は3段階)</span>', barRows(data.byTier||[], function(x){return TIER[x.tier]||('Tier'+x.tier);})) +
       panel('Gender','性別 分布', barRows(data.byGender||[], function(x){return GENDER[x.g]||x.g;})) +
+      panel('Dropoff','設問ごとの到達 — どこでやめているか', stepPanel(data.stepReach||[])) +
       panel('Mode','診断モード（開始）', barRows(data.byMode||[], function(x){return MODE[x.m]||x.m;})) +
       panel('Funnel','予約・誘導クリック', barRows(data.ctaTarget||[], function(x){return TARGET[x.target]||x.target;})) +
       '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Channel</span>チャネル別ファネル（流入→診断→予約）</h2>'+funnelTable(data.sourceFunnel||[])+'</div>' +

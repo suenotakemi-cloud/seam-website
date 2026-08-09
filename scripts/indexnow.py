@@ -12,7 +12,9 @@ KEY = sys.argv[1]
 SITEMAP = sys.argv[2] if len(sys.argv) > 2 else 'https://seam.site/sitemap.xml'
 HOST = 'seam.site'
 
-xml = urllib.request.urlopen(SITEMAP, timeout=30).read().decode()
+# 【罠】UAを付けないと Cloudflare に 403 で弾かれる（既定の python-urllib は通らない）
+_req = urllib.request.Request(SITEMAP, headers={'User-Agent': 'Mozilla/5.0 (SEAM IndexNow)'})
+xml = urllib.request.urlopen(_req, timeout=30).read().decode()
 urls = re.findall(r'<loc>([^<]+)</loc>', xml)
 print(f'sitemap から {len(urls)} URL')
 

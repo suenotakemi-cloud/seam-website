@@ -269,13 +269,17 @@ export async function onRequestGet(context) {
     // テスト行の自動除外 — utm_campaign='__test__' 印は全集計に含めない
     // （テストは https://seam.site/finder?utm_campaign=__test__ で行う運用）
     const NT = "(utm_campaign IS NULL OR utm_campaign<>'__test__')";
-    const [totals, byType, byAdvice, byTier, byGender, byMode, ctaTarget, daily,
+    const [totals, byType, byAdvice, byTier, byGender, stepReach, byMode, ctaTarget, daily,
            bySource, byCampaign, byDevice, byCountry, byLanding, sourceFunnel, recent] = await Promise.all([
       q("SELECT name, COUNT(*) c FROM events WHERE " + NT + " GROUP BY name"),
       q("SELECT type t, COUNT(*) c FROM events WHERE name='finder_complete' AND type<>'' AND " + NT + " GROUP BY type ORDER BY c DESC"),
       q("SELECT advice a, COUNT(*) c FROM events WHERE name='finder_complete' AND advice<>'' AND " + NT + " GROUP BY advice ORDER BY c DESC"),
       q("SELECT tier, COUNT(*) c FROM events WHERE name='finder_complete' AND tier>0 AND " + NT + " GROUP BY tier ORDER BY tier"),
       q("SELECT gender g, COUNT(*) c FROM events WHERE name='finder_complete' AND gender<>'' AND " + NT + " GROUP BY gender ORDER BY c DESC"),
+      // 設問ごとの到達数。target に "3/38" の形で順番が入るので、それで並べれば
+      // どこで人が減っているか(＝どの設問でやめたか)が読める
+      q("SELECT label, target, COUNT(*) c FROM events WHERE name='finder_step' AND " + NT +
+        " GROUP BY label, target ORDER BY c DESC LIMIT 60"),
       q("SELECT mode m, COUNT(*) c FROM events WHERE name='finder_start' AND mode<>'' AND " + NT + " GROUP BY mode"),
       q("SELECT target, COUNT(*) c FROM events WHERE name='finder_cta' AND target<>'' AND " + NT + " GROUP BY target ORDER BY c DESC"),
       q("SELECT date(ts/1000,'unixepoch','localtime') d, COUNT(*) c FROM events WHERE name='finder_complete' AND ts>=? AND " + NT + " GROUP BY d ORDER BY d", since),
@@ -428,6 +432,7 @@ export async function onRequestGet(context) {
       byAdvice: byAdvice.results || [],
       byTier: byTier.results || [],
       byGender: byGender.results || [],
+      stepReach: stepReach.results || [],      // 設問ごとの到達数（どこでやめたかを読む）
       byMode: byMode.results || [],
       ctaTarget: ctaTarget.results || [],
       daily: daily.results || [],
