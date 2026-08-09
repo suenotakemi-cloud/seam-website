@@ -2424,26 +2424,28 @@ const FEATURES=[
   {v:'cust',       n:'お客様',          d:'カルテと、来られた記録',                solo:true, price:0, grp:'base'},
   {v:'register',   n:'レジ',            d:'お会計をする',                          solo:true, price:0, grp:'base'},
   {v:'products',   n:'商品と在庫',      d:'売る商品と、残りの数',                  price:0, grp:'base'},
-  {v:'cs',         n:'カウンセリング',   d:'来る前にご希望をうかがう',              price:480, grp:'yoyaku'},
-  {v:'member',     n:'ポイントと会員証', d:'LINEの会員証・ためて使えるポイント',    price:480, grp:'yoyaku'},
-  {v:'deposit',    n:'前金・キャンセル料', d:'当日キャンセルを減らす　言語ごとに決められます', price:380, grp:'yoyaku'},
-  {v:'nextvisit',  n:'次回のご予約',    d:'お会計のあとに、次の日をその場で押さえる', price:380, grp:'yoyaku'},
-  {v:'letter',     n:'翌日のお便り',    d:'来られた次の日に、担当から一言お送りする', price:280, grp:'yoyaku'},
-  {v:'order',      n:'発注書',          d:'売れた分から自動でつくる　残りすぎも教えます', price:380, grp:'add'},
-  {v:'report',     n:'売上',            d:'いくら売れたか　ブランドごとにも出ます', price:480, grp:'add'},
-  {v:'dash',       n:'今月の数字',      d:'まとめて見る',                          price:280, grp:'add'},
-  {v:'shift',      n:'シフト',          d:'出勤の予定（ひとりなら要りません）',     price:280, grp:'add'},
-  {v:'comm',       n:'歩合',            d:'スタッフごとの取り分',                  price:280, grp:'add'},
-  {v:'taxfree',    n:'免税',            d:'海外のお客様　申請に出す数字も出ます',   price:280, grp:'add'},
-  {v:'pass',       n:'月額会員・回数券・ギフト券', d:'先にお預かりして、来店を固定する', price:680, grp:'add'},
-  {v:'sqterm',     n:'カード・QR決済',   d:'Squareの端末　iD・交通系も使えます',     price:480, grp:'add'},
-  {v:'kiosk',      n:'入場の受付',      d:'iPadに会員証をかざして入っていただく',   price:680, grp:'add'},
+  /* あったらいいな＝無料。使ってもらうほど離れられなくなるので、ここは取らない */
+  {v:'cs',         n:'カウンセリング',   d:'来る前にご希望をうかがう',              price:0, grp:'free'},
+  {v:'letter',     n:'翌日のお便り',    d:'来られた次の日に、担当から一言お送りする', price:0, grp:'free'},
+  {v:'dash',       n:'今月の数字',      d:'まとめて見る',                          price:0, grp:'free'},
+  {v:'shift',      n:'シフト',          d:'出勤の予定（ひとりなら要りません）',     price:0, grp:'free'},
+  {v:'comm',       n:'歩合',            d:'スタッフごとの取り分',                  price:0, grp:'free'},
+  {v:'sqterm',     n:'カード・QR決済',   d:'Squareの端末　iD・交通系も使えます',     price:0, grp:'free'},
+  {v:'kiosk',      n:'入場の受付',      d:'iPadに会員証をかざして入っていただく',   price:0, grp:'free'},
+  /* どうしても欲しくなる＝お金か、お客様か、時間が返ってくるもの */
   {v:'finder',     n:'髪の診断',        d:'新しいお客様を連れてくる',              price:1480, grp:'add'},
+  {v:'member',     n:'ポイントと会員証', d:'また来ていただく　ホットペッパーの2%から抜ける', price:980, grp:'add'},
   {v:'multi',      n:'多店舗',          d:'お店が2つ以上あるとき',                 price:980, grp:'add'},
+  {v:'pass',       n:'月額会員・回数券・ギフト券', d:'先にお預かりする　毎月の入りが読めます', price:880, grp:'add'},
+  {v:'order',      n:'発注書・在庫アラート', d:'売れた分から自動でつくる　発注の時間がなくなります', price:780, grp:'add'},
+  {v:'report',     n:'売上（ブランド別）', d:'何が売れているか　仕入れと商品づくりに効きます', price:680, grp:'add'},
+  {v:'nextvisit',  n:'次回のご予約',    d:'お会計のあとに次を押さえる　再来率が上がります', price:580, grp:'add'},
+  {v:'deposit',    n:'前金・キャンセル料', d:'当日キャンセルの穴を埋めます',          price:580, grp:'add'},
+  {v:'taxfree',    n:'免税',            d:'海外のお客様　申請に出す数字も出ます',   price:480, grp:'add'},
 ];
 
-const GRP_LABEL={ base:'基本に入っています', yoyaku:'予約とお客様まわり',
-                  add:'そのほか　使う月だけで大丈夫です', once:'最初だけ　毎月はかかりません' };
+const GRP_LABEL={ base:'基本に入っています', free:'これも無料です　いらなければ消せます',
+                  add:'足すもの　使う月だけで大丈夫です', once:'最初だけ　毎月はかかりません' };
 /* 最初だけかかるもの。月々とは分けて出す＝毎月これがかかると思わせない。 */
 const SETUPS=[
   {v:'retailsetup', n:'商品の登録をこちらでやる',
@@ -3544,7 +3546,7 @@ function renderRegister(){
       <button class="mini" id="featSolo">ひとりのお店の形にする</button>
       <button class="mini" id="featAll">ぜんぶ出す</button>
     </div>
-    ${['base','yoyaku','add'].map(g=>`<div class="featgrp">${GRP_LABEL[g]}</div>`
+    ${['base','free','add'].map(g=>`<div class="featgrp">${GRP_LABEL[g]}</div>`
       + FEATURES.filter(f=>f.grp===g).map(f=>featRow(f)).join('')).join('')}
     <div class="featgrp">${GRP_LABEL.once}</div>
     ${SETUPS.map(f=>featRow({...f,once:true})).join('')}
