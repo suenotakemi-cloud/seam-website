@@ -1,3 +1,50 @@
+# ─────────────────────────────────────────────────────────────
+# AI・生成系のクローラーへ（2026-08-09 オーナー方針変更）
+#
+# サイトの学習・引用は歓迎します。海外のお客様がChatGPTやPerplexityで
+# 旅程を組むとき、SEAMが候補に上がらないほうが損だからです。
+#
+# ただし **髪格診断と肌診断だけは読ませません**。
+# 38の設問・27型の判定・出し分けの規則は SEAM が積み上げた固有の設計で、
+# 丸ごと読めれば同じものが作れてしまいます。
+#   ・/finder  /skinfinder … 診断そのもの
+#   ・js/finder-app.js     … 設問と判定ロジック（754KB）
+#   ・js/finder-i18n.js    … 診断の全訳（2.7MB）
+#   ・/data/               … 商品DB（同一オリジン外は403で拒否済み。二重の備え）
+#
+# ★検索エンジン（Googlebot / Bingbot 等）にはこの制限をかけません。
+#   かけると「髪質診断」で拾われなくなり、本末転倒になります。
+#
+# ★robots.txt は守る側の任意です。守らない相手には効きません。
+#   本当の防波堤は、実店舗・実データ・目利きという真似できない側にあります。
+# ─────────────────────────────────────────────────────────────
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: Claude-SearchBot
+User-agent: anthropic-ai
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: Bytespider
+User-agent: CCBot
+User-agent: meta-externalagent
+User-agent: Amazonbot
+User-agent: cohere-ai
+User-agent: Diffbot
+User-agent: Omgilibot
+User-agent: Timpibot
+Disallow: /finder
+Disallow: /skinfinder
+Disallow: /js/finder-app.js
+Disallow: /js/finder-i18n.js
+Disallow: /data/
+Allow: /
+
+# 検索エンジンほか（診断も含めて全て読んでよい）
 User-agent: *
 Allow: /
 
