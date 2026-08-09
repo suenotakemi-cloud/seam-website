@@ -140,6 +140,24 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 .stk-r{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:14px 2px;font-size:14px}
 .stk-r b{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--ink);font-weight:600}
 .stk-r.here{background:var(--cream)}
+/* ── レジ締め：免税と金種 ── */
+.cl-h{font-size:12px;letter-spacing:.16em;color:var(--sub);font-weight:600;
+  margin:26px 0 10px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+.tfl{border-top:1px solid var(--line)}
+.tfl-r{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:baseline;
+  border-bottom:1px solid var(--line);padding:11px 2px;font-size:13px}
+.tfl-r b{font-size:13px;font-weight:600;color:var(--body);white-space:nowrap}
+.tfl-r em{font-style:normal;font-family:'Cormorant Garamond',serif;font-size:16px;
+  color:var(--ink);white-space:nowrap;min-width:72px;text-align:right}
+.dn{border-top:1px solid var(--line);margin-top:12px}
+.dn-r{display:grid;grid-template-columns:64px 1fr 26px 88px;gap:9px;align-items:center;
+  border-bottom:1px solid var(--line);padding:8px 2px}
+.dn-d{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink)}
+.dn-i{width:100%;padding:11px 10px;border:1px solid var(--line);border-radius:3px;
+  font-size:17px;text-align:right;background:#fff;-moz-appearance:textfield}
+.dn-i::-webkit-outer-spin-button,.dn-i::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.dn-u{font-size:12px;color:var(--sub)}
+.dn-s{font-style:normal;font-size:13px;color:var(--sub);text-align:right}
 .stk-adj{display:flex;gap:8px;margin-top:16px}
 .stk-adj button{flex:1;padding:14px;border:1px solid var(--line);background:#fff;border-radius:3px;font-size:14px}
 
@@ -241,6 +259,10 @@ let REQUIRE_STAFF=false;
 let STAFF=null;
 try{ STAFF=JSON.parse(localStorage.getItem('stb_staff')||'null'); }catch(e){}
 let SHOPS=[], TAB='prod', CART=[], MEMBER=null, PAY='cash', STOCKVIEW=null;
+/* 管理画面の「つかう機能をえらぶ」で消したものは、レジでも出さない。
+   何も決めていなければ、ぜんぶ出す。 */
+let USEFEAT={};
+const useFeat=(v)=>USEFEAT[v]!==false;
 /* 価格の出し方。normal=定価 / member=メンバー価格 / sale=セール価格。
    割引の率は「価格設定」の画面(prices.html)で決めたものを settings から読む。 */
 let PMODE='normal', RULES={member:{},sale:{}};
@@ -277,7 +299,7 @@ function pushDisplay(done){
   clearTimeout(pushT);
   pushT=setTimeout(()=>{
     const t=cartTotal();
-    const earn=(MEMBER&&MEMBER.name)?Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)):0;
+    const earn=(useFeat('member')&&MEMBER&&MEMBER.name)?Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)):0;
     post('/display/push',{shopId:SHOP,register:REG,mode:PMODE,done:!!done,
       items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||''})),
       list:cartList(),cut:cartCut(),total:t,
@@ -364,7 +386,7 @@ function addToCart(p){
 }
 function cartList(){ return CART.reduce((s,i)=>s+i.unit*i.qty,0); }            // 定価の合計
 function cartBefore(){ return CART.reduce((s,i)=>s+lineNow(i)*i.qty,0); }       // 免税を引く前
-function taxCut(){ return TAXFREE?Math.round(cartBefore()*TAXFREE_RATE/(100+TAXFREE_RATE)):0; }
+function taxCut(){ return (useFeat('taxfree')&&TAXFREE)?Math.round(cartBefore()*TAXFREE_RATE/(100+TAXFREE_RATE)):0; }
 function cartTotal(){ return Math.max(0,cartBefore()-taxCut()); }               // 実際にいただく額
 function cartCut(){ return cartList()-cartTotal(); }                            // 引いた額（合計）
 function renderCart(){
@@ -387,7 +409,7 @@ function renderSum(){
     `<div class="sr"><span>点数</span><span>${CART.reduce((s,i)=>s+i.qty,0)} 点</span></div>
      ${cut>0?`<div class="sr"><span>定価</span><span>${yen(cartList())}</span></div>
        <div class="sr cut"><span>${PMODE==='member'?'メンバー価格':'セール価格'}</span><b>−${yen(cut)}</b></div>`:''}
-     ${TAXFREE?`<div class="sr cut"><span>免税ぶん（申請は別）</span><b>−${yen(taxCut())}</b></div>`:''}
+     ${(useFeat('taxfree')&&TAXFREE)?`<div class="sr cut"><span>免税ぶん（申請は別）</span><b>−${yen(taxCut())}</b></div>`:''}
      <div class="sr big"><span>合計</span><b>${yen(t)}</b></div>
      <div class="pay">${[['cash','現金'],['card','カード'],['emoney','電子マネー'],['qr','QR決済']].map(([v,l])=>
        `<button data-p="${v}" class="${PAY===v?'on':''}">${l}</button>`).join('')}</div>
@@ -395,7 +417,7 @@ function renderSum(){
        ${PAY==='emoney'?'端末で iD・QUICPay・交通系（Suica等）から選んでいただきます'
         :PAY==='qr'?'端末にQRが出ます　PayPay・d払いなど'
         :'端末にカードをかざす／差し込んでいただきます'}</div>`:''}
-     ${CART.length?`<button class="mini" id="taxfree">${TAXFREE?'免税の値引きを外す':'免税ぶんを値引く（申請は別）'}</button>`:''}
+     ${(useFeat('taxfree')&&CART.length)?`<button class="mini" id="taxfree">${TAXFREE?'免税の値引きを外す':'免税ぶんを値引く（申請は別）'}</button>`:''}
      <button class="go" id="go" ${CART.length?'':'disabled'}>会計する</button>
      ${CART.length?`<button class="mini" id="clr">明細を消す</button>`:''}`;
   $('sum').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{PAY=b.dataset.p;render();});
@@ -431,14 +453,16 @@ async function doCheckout(){
       retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId})),
       discount:cartCut(),
       discountLabel:[PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),TAXFREE?'免税':''].filter(Boolean).join('＋'),
+      taxfree:TAXFREE?1:0, taxfreeCut:taxCut(),   // 免税は記録として持つ（申請のときに集計する）
       total:t,method:PAY,squarePaymentId:payId||'',
       memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
     // 在庫を引く。1件ずつ（どれが失敗したか分かるように）
     for(const i of CART){ await post('/stock/adjust',{shopId:SHOP,productId:i.productId,delta:-i.qty,reason:'店販'}).catch(()=>{}); }
     // ポイントを付ける（会員のときだけ・商品は1円=1pt）
-    if(MEMBER&&MEMBER.name){
+    if(useFeat('member')&&MEMBER&&MEMBER.name){
       await post('/points',{id:'pt'+Math.random().toString(36).slice(2,8),name:MEMBER.name,phone:MEMBER.phone||'',
         delta:Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)),reason:'店販',ref:id,
+        salonId:MEMBER.salonId||'',   // 会員証が繋がっていれば salon.town 側に付く（ECでも同じ数字になる）
         date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)}).catch(()=>{});
     }
     pushDisplay(true);                       // お客様側は「ありがとうございました」に切り替わる
@@ -522,6 +546,32 @@ function openDetail(id){
 }
 
 /* ══════════ レジ締め ══════════ */
+/* 日本のお札と硬貨。上から順に数えていく並び */
+const DENOMS=[10000,5000,2000,1000,500,100,50,10,5,1];
+const denomKey=()=>'stb_denom:'+(REG||'');
+function denomLoad(){ try{ return JSON.parse(localStorage.getItem(denomKey())||'{}'); }catch(e){ return {}; } }
+function denomSave(o){ try{ localStorage.setItem(denomKey(),JSON.stringify(o)); }catch(e){} }
+function denomTotal(o){ return DENOMS.reduce((s,d)=>s+d*(+o[d]||0),0); }
+
+/* その日そのレジの、免税だけを集める。
+ * 免税の申請には「売上・商品の点数・お買い上げになった人数」が要るので、
+ * 締めの画面でそのまま書き写せる形にしておく。 */
+function taxfreeOf(live){
+  const only=live.filter(c=>c.taxfree);
+  const byItem=new Map(); let qty=0, sales=0, cut=0;
+  for(const c of only){
+    for(const it of (c.retailItems||[])){
+      const q=Math.max(1,+it.qty||1); qty+=q;
+      const k=String(it.productId||it.name||'');
+      const cur=byItem.get(k)||{name:it.name||'',qty:0,amount:0};
+      cur.qty+=q; cur.amount+=(+it.price||0); byItem.set(k,cur);
+    }
+    sales+=(c.total||0)-(c.refund||0); cut+=(+c.taxfreeCut||0);
+  }
+  return {people:only.length, qty, sales, cut,
+    items:[...byItem.values()].sort((a,b)=>b.qty-a.qty)};
+}
+
 function closeHtml(){
   const live=HISTORY.filter(c=>!c.voided&&c.date===jstDay(0)&&String(c.register||'')===String(REG||''));
   const net=c=>(c.total||0)-(c.refund||0);
@@ -531,6 +581,8 @@ function closeHtml(){
   const qr=live.filter(c=>c.method==='qr').reduce((s,c)=>s+net(c),0);
   const back=HISTORY.filter(c=>c.date===jstDay(0)).reduce((s,c)=>s+(c.refund||0),0);
   const flo=+(localStorage.getItem('stb_float:'+REG)||0);
+  const tf=taxfreeOf(live);
+  const dn=denomLoad();
   return `<div class="sr" style="padding:0 2px 12px"><span>${REG?REG+'番レジ':'このレジ'} の本日分</span><span>${live.length} 件</span></div>
     <div class="stk">
       <div class="stk-r"><span>現金</span><b>${yen(cash)}</b></div>
@@ -541,37 +593,95 @@ function closeHtml(){
       <div class="stk-r here"><span>売上の合計</span><b>${yen(cash+card+emo+qr)}</b></div>
       <div class="stk-r"><span>件数</span><b>${live.length}</b></div>
     </div>
-    <div class="srch" style="margin-top:18px"><span style="align-self:center;font-size:13px">釣銭準備金</span>
+
+    ${useFeat('taxfree')?`    <h3 class="cl-h">免税\${tf.people?'':'（本日はありません）'}</h3>
+    <div class="stk">
+      <div class="stk-r here"><span>免税だけの売上</span><b>\${yen(tf.sales)}</b></div>
+      <div class="stk-r"><span>免税で引いた額</span><b>−\${yen(tf.cut)}</b></div>
+      <div class="stk-r"><span>お買い上げの人数</span><b>\${tf.people} 人</b></div>
+      <div class="stk-r"><span>商品の点数</span><b>\${tf.qty} 点</b></div>
+      <div class="stk-r"><span>品目</span><b>\${tf.items.length} 品目</b></div>
+    </div>
+    \${tf.items.length?\`<div class="tfl">
+      \${tf.items.map(i=>\`<div class="tfl-r"><span>\${esc(i.name)}</span><b>\${i.qty}点</b><em>\${yen(i.amount)}</em></div>\`).join('')}
+    </div>
+    <button class="mini" id="tfCopy" style="margin-top:8px">免税申請のために書き出す</button>\`:''}
+
+    `:''}
+
+    <h3 class="cl-h">現金を数える</h3>
+    <div class="srch"><span style="align-self:center;font-size:13px">釣銭準備金</span>
       <input id="floIn" type="number" inputmode="numeric" value="${flo}"></div>
     <div class="stk"><div class="stk-r here"><span>金庫にあるはずの現金</span><b>${yen(flo+cash)}</b></div></div>
-    <div class="srch" style="margin-top:14px"><span style="align-self:center;font-size:13px">数えた現金</span>
-      <input id="cntIn" type="number" inputmode="numeric" placeholder="実際に数えた額"></div>
+    <div class="dn">
+      ${DENOMS.map(d=>`<div class="dn-r">
+        <span class="dn-d">${d>=1000?'￥'+d.toLocaleString():d+'円'}</span>
+        <input class="dn-i" data-d="${d}" type="number" inputmode="numeric" min="0" placeholder="0" value="${dn[d]!=null&&dn[d]!==''?dn[d]:''}">
+        <span class="dn-u">枚</span>
+        <em class="dn-s" data-s="${d}">${yen(d*(+dn[d]||0))}</em>
+      </div>`).join('')}
+    </div>
+    <div class="stk"><div class="stk-r here"><span>数えた現金</span><b id="cntSum">${yen(denomTotal(dn))}</b></div></div>
     <div id="diffBox"></div>
     <button class="go" id="closeGo" style="margin-top:16px">レジを締める</button>`;
 }
 function wireClose(){
-  const f=$('floIn'), c=$('cntIn');
+  const f=$('floIn');
+  const liveNow=()=>HISTORY.filter(x=>!x.voided&&x.date===jstDay(0)&&String(x.register||'')===String(REG||''));
+  const cashNow=()=>liveNow().filter(x=>x.method==='cash').reduce((s,x)=>s+((x.total||0)-(x.refund||0)),0);
+  /* 金種を入れるたびに、その段の金額と合計を出し直す。
+   * 合計は「数えた現金」そのもの＝別に入れ直さなくてよい。 */
   const calc=()=>{
-    const live=HISTORY.filter(x=>!x.voided&&x.date===jstDay(0)&&String(x.register||'')===String(REG||''));
-    const cash=live.filter(x=>x.method==='cash').reduce((s,x)=>s+((x.total||0)-(x.refund||0)),0);
-    const want=(+f.value||0)+cash, got=+c.value||0;
-    const d=got-want;
-    $('diffBox').innerHTML=c.value===''?'':
-      `<div class="stk"><div class="stk-r" style="${d?'color:var(--ng)':''}"><span>${d===0?'ぴったりです':(d>0?'多い':'足りない')}</span><b>${d>0?'+':''}${yen(d)}</b></div></div>`;
+    const o={};
+    document.querySelectorAll('.dn-i').forEach(el=>{
+      const d=+el.dataset.d, n=el.value===''?'':Math.max(0,Math.floor(+el.value||0));
+      o[d]=n;
+      const cell=document.querySelector('.dn-s[data-s="'+d+'"]');
+      if(cell)cell.textContent=yen(d*(+n||0));
+    });
+    denomSave(o);
+    const got=denomTotal(o), want=(+f.value||0)+cashNow();
+    const sum=$('cntSum'); if(sum)sum.textContent=yen(got);
+    const any=DENOMS.some(d=>o[d]!==''&&o[d]!=null);
+    const d2=got-want;
+    $('diffBox').innerHTML=!any?'':
+      `<div class="stk"><div class="stk-r" style="${d2?'color:var(--ng)':'color:var(--ok)'}"><span>${d2===0?'ぴったりです':(d2>0?'多い':'足りない')}</span><b>${d2===0?yen(0):(d2>0?'+':'−')+yen(Math.abs(d2))}</b></div></div>`;
+    return {counts:o,got,want,any};
   };
   if(f)f.oninput=()=>{localStorage.setItem('stb_float:'+REG,f.value);calc();};
-  if(c)c.oninput=calc;
+  document.querySelectorAll('.dn-i').forEach(el=>{ el.oninput=calc; });
+  calc();
+
+  /* 免税の申請に写すための書き出し。画面で長押しして選ばなくてよいように、
+   * その場でコピーできる形にしておく。 */
+  if($('tfCopy'))$('tfCopy').onclick=async()=>{
+    const tf=taxfreeOf(liveNow());
+    const lines=[`SEAM 免税 ${jstDay(0)}${REG?'（'+REG+'番レジ）':''}`,
+      `免税だけの売上　${yen(tf.sales)}`,
+      `免税で引いた額　${yen(tf.cut)}`,
+      `お買い上げの人数　${tf.people}人`,
+      `商品の点数　${tf.qty}点（${tf.items.length}品目）`,'',
+      ...tf.items.map(i=>`${i.name}\t${i.qty}点\t${yen(i.amount)}`)];
+    const txt=lines.join('\n');
+    try{ await navigator.clipboard.writeText(txt); toast('免税の内訳を写しました　申請の書類に貼り付けてください'); }
+    catch(e){ prompt('この内容を写してお使いください',txt); }
+  };
+
   if($('closeGo'))$('closeGo').onclick=async()=>{
-    const live=HISTORY.filter(x=>!x.voided&&x.date===jstDay(0)&&String(x.register||'')===String(REG||''));
+    const live=liveNow();
     const net=x=>(x.total||0)-(x.refund||0);
     const cash=live.filter(x=>x.method==='cash').reduce((s,x)=>s+net(x),0);
     const card=live.filter(x=>x.method==='card'||x.method==='term').reduce((s,x)=>s+net(x),0);
     const emo=live.filter(x=>x.method==='emoney').reduce((s,x)=>s+net(x),0);
     const qr=live.filter(x=>x.method==='qr').reduce((s,x)=>s+net(x),0);
-    const flo=+($('floIn').value||0), got=+($('cntIn').value||0);
-    if(!$('cntIn').value){ toast('数えた現金を入れてください',true); return; }
+    const tf=taxfreeOf(live);
+    const r=calc();
+    if(!r.any){ toast('現金の枚数を入れてください',true); return; }
+    const flo=+($('floIn').value||0);
     try{ await post('/settlements',{date:jstDay(0),register:REG,shopId:SHOP,float:flo,cashSales:cash,expectedCash:flo+cash,
-        countedCash:got,diff:got-(flo+cash),card:card+emo,qr,total:cash+card+emo+qr,count:live.length,
+        countedCash:r.got,diff:r.got-(flo+cash),card:card+emo,qr,total:cash+card+emo+qr,count:live.length,
+        taxfreeTotal:tf.sales,taxfreeCut:tf.cut,taxfreeCount:tf.people,taxfreeQty:tf.qty,
+        cashCounts:r.counts,
         memo:'',closedAt:new Date().toISOString()});
       toast('レジを締めました');
     }catch(err){ toast(err.message||'締められませんでした',true); }};
@@ -824,6 +934,8 @@ async function boot(){
     if(!SHOPS.some(s=>s.id===SHOP))SHOP=(SHOPS[0]||{}).id||'ginza';
     $('shopSel').innerHTML=SHOPS.map(s=>`<option value="${esc(s.id)}" ${s.id===SHOP?'selected':''}>${esc(s.name)}</option>`).join('');
     $('shopSel').onchange=e=>{SHOP=e.target.value;localStorage.setItem(SHOPK,SHOP);render();toast(($('shopSel').selectedOptions[0]||{}).text+' に切り替えました');};
+    // お店がひとつなら、選ぶところは出さない
+    if(SHOPS.length<2)$('shopSel').style.display='none';
   }catch(err){
     localStorage.removeItem(TOKK); TOK=''; showGate(); toast('合言葉が違うようです',true); return;
   }
@@ -839,7 +951,9 @@ async function boot(){
   try{ const sj=await get('/settings'); const st=sj.settings||{};
        const v=st.price_rules;
        if(v){const r=JSON.parse(v);RULES.member=r.member||{};RULES.sale=r.sale||{};}
-       REQUIRE_STAFF=String(st.require_staff||'')==='1'; }catch(e){}
+       REQUIRE_STAFF=String(st.require_staff||'')==='1';
+       // 管理画面で消した機能は、このレジでも出さない
+       try{ USEFEAT=JSON.parse(st.useFeat||'{}')||{}; }catch(e){ USEFEAT={}; } }catch(e){}
   render();
   // 画面のどこを触っても、読み取りが効くように隠し欄へ戻す
   const focusSink=()=>{const el=document.activeElement;

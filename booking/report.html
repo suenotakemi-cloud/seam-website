@@ -102,8 +102,8 @@ h2:first-child{margin-top:2px}
     <select id="shopSel"></select>
     <div class="tabs" id="tabs">
       <button data-t="sales" class="on">売上</button>
-      <button data-t="order">発注書</button>
-      <button data-t="alert">在庫アラート</button>
+      <button data-t="order" data-feat="order">発注書</button>
+      <button data-t="alert" data-feat="order">在庫アラート</button>
     </div>
     <span class="spacer"></span>
   </div>
@@ -264,7 +264,22 @@ async function load(){
   }catch(err){ $('body').innerHTML=`<div class="empty">${esc(err.message||'読み込めませんでした')}</div>`; }
 }
 
+/* 管理画面の「つかう機能をえらぶ」で消したものは、この画面でも出さない */
+let USEFEAT={};
+const useFeat=(v)=>USEFEAT[v]!==false;
+async function applyFeat(){
+  try{ const sj=await get('/settings'); USEFEAT=JSON.parse((sj.settings||{}).useFeat||'{}')||{}; }catch(e){ USEFEAT={}; }
+  document.querySelectorAll('[data-feat]').forEach(el=>{
+    const on=useFeat(el.dataset.feat);
+    el.style.display=on?'':'none';
+    if(!on&&el.classList.contains('on')){
+      const first=document.querySelector('nav button:not([style*="none"])')||document.querySelector('[data-t="sales"]');
+      if(first)first.click();
+    }
+  });
+}
 async function boot(){
+  await applyFeat();
   try{ const j=await get('/shops'); const shops=j.shops||[];
     if(!shops.some(s=>s.id===SHOP))SHOP=(shops[0]||{}).id||'ginza';
     $('shopSel').innerHTML=shops.map(s=>`<option value="${esc(s.id)}" ${s.id===SHOP?'selected':''}>${esc(s.name)}</option>`).join('');
