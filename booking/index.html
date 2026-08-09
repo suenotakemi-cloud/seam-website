@@ -105,6 +105,39 @@ td.slot:hover{background:#f0f7ff}
 .pl-once b{font-weight:700;color:var(--clay)}
 .fonce{display:block;font-style:normal;font-size:10px;color:var(--sub);letter-spacing:.04em}
 .pl-n{font-size:11px;color:var(--sub);margin-top:5px}
+/* ── カルテ ── */
+/* 記録は縦に長い。ふつうの小窓のまま出すと、上が画面の外に出て戻せない。
+   カルテだけ上そろえにして、窓ごと巻けるようにしてある。 */
+#kartebg{align-items:flex-start;overflow-y:auto;padding:16px 16px 40px}
+#kartemodal{max-width:560px}
+.ktlast{background:#f5f8fb;border:1px solid var(--line);border-left:3px solid var(--navy);
+  border-radius:10px;padding:11px 13px;margin-bottom:14px}
+.ktlast-h{font-size:11.5px;font-weight:800;color:var(--sub);letter-spacing:.04em;margin-bottom:4px}
+.ktlast-n{font-size:14px;font-weight:700;color:var(--ink);line-height:1.5}
+.ktlast-s{font-size:12.5px;color:var(--sub);margin-top:4px;line-height:1.5}
+.ktlast .btn{margin-top:9px}
+.ktphotos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.ktphotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px}
+.ktphotos .ktnone{grid-column:1/-1}
+.ktsub{font-size:12.5px;color:var(--sub);margin:-4px 0 12px}
+.ktsec{margin-bottom:14px}
+.kth{font-size:12px;font-weight:800;color:var(--sub);letter-spacing:.06em;margin-bottom:6px}
+.ktchips{display:flex;flex-wrap:wrap;gap:7px}
+.ktchip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:9px 14px;
+  font:inherit;font-size:13px;color:var(--ink);cursor:pointer}
+.ktchip.on{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700}
+.ktsec input,.ktsec textarea{width:100%;margin-top:7px;padding:11px 12px;border:1px solid var(--line);
+  border-radius:8px;font:inherit;font-size:14px;background:#fff}
+.ktsec textarea{min-height:62px;resize:vertical}
+/* 見本の文字が濃いと、もう書いてあるように見えて飛ばされる */
+.ktsec input::placeholder,.ktsec textarea::placeholder,.ktcol input::placeholder{color:#a9b2bd}
+.ktcol{display:grid;grid-template-columns:1fr 1fr 74px 62px 32px;gap:6px;align-items:center;margin-bottom:6px}
+.ktcol input,.ktcol select{margin-top:0;padding:9px 8px;font-size:13px;width:100%;
+  border:1px solid var(--line);border-radius:7px;background:#fff}
+.ktc-x{background:none;border:0;font-size:15px;color:var(--sub);cursor:pointer}
+.ktnone{font-size:12.5px;color:var(--sub);padding:4px 2px}
+.ktbtns{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+@media(max-width:520px){.ktcol{grid-template-columns:1fr 1fr 66px 54px 28px;gap:4px}}
 .note-warn{background:#fdf3f0;border:1px solid #f0d6cd;border-radius:8px;padding:10px 12px;
   font-size:12px;line-height:1.75;color:#8c3d28}
 .resv{position:absolute;left:3px;right:3px;top:1px;border-radius:8px;color:#fff;padding:4px 8px;font-size:11.5px;line-height:1.35;overflow:hidden;z-index:2;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.14)}
@@ -1424,6 +1457,10 @@ body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:
   <div class="modal" id="detailmodal"></div>
 </div>
 
+<div class="modal-bg" id="kartebg">
+  <div class="modal" id="kartemodal"></div>
+</div>
+
 <div class="modal-bg" id="checkoutbg">
   <div class="modal" id="checkoutmodal"></div>
 </div>
@@ -1771,6 +1808,10 @@ const API = {
   async listIntakes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.intakes:null;}catch{return null;} },
   async listPoints(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.points:null;}catch{return null;} },
   async savePoint(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
+  /* ── カルテ（施術の記録）── */
+  async karteList(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.karte:null;}catch{return null;} },
+  async karteLast(key,before){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/last?key='+encodeURIComponent(key)+(before?'&before='+before:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.karte:null;}catch{return null;} },
+  async karteSave(k){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(k)});return r.ok?await r.json():null;}catch{return null;} },
   async removePointsByRef(ref){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points?ref='+encodeURIComponent(ref),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listGifts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.gifts:null;}catch{return null;} },
   async saveGift(g){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(g)});return r.ok?await r.json():null;}catch{return null;} },
@@ -2869,9 +2910,22 @@ function openDetail(id){
     const el=document.getElementById('d-rank');
     if(el&&rr&&rr.ok&&rr.visits>0)el.innerHTML=rankStrip({rank:rr.rank,rate:rr.rate,visits:rr.visits,next:rr.next});
   });}
+  /* 前回の申し送りを、施術のまえに出す。ここに出ないと、書いても読まれない */
+  API.karteLast(custKey(r), r.date).then(kr=>{
+    const el=document.getElementById('d-ktlast'); const k=kr&&kr.ok&&kr.karte;
+    if(!el||!k)return;
+    const kb=k.body||{};
+    el.innerHTML=`<div class="ktlast">
+      <div class="ktlast-h">前回 ${String(k.date||'').replace(/-/g,'/')}${k.staff?'　'+escH(k.staff):''}${k.menu?'　'+escH(k.menu):''}</div>
+      ${k.next_note?`<div class="ktlast-n">${escH(k.next_note)}</div>`:''}
+      ${(kb.color||[]).length?`<div class="ktlast-s">薬剤 ${(kb.color||[]).map(c=>escH([c.where,c.no,c.oxy,c.min?c.min+'分':''].filter(Boolean).join(' '))).join(' ／ ')}</div>`:''}
+      ${(kb.avoid||[]).length?`<div class="ktlast-s">気をつけること ${escH((kb.avoid||[]).join('・'))}</div>`:''}
+    </div>`;
+  }).catch(()=>{});
   document.getElementById('detailmodal').innerHTML=`
     <h3>予約の詳細</h3>
     <div id="d-rank"></div>
+    <div id="d-ktlast"></div>
     <dl class="dl">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
     ${needBlock?'<div class="dwarn">⚠️ この枠はHPBで手動ブロックが必要です</div>':''}
     <div class="dacts">${acts}${blockBtn}</div>
@@ -2882,6 +2936,7 @@ function openDetail(id){
       <div class="karte-h">📝 施術カルテ・メモ<span>薬剤・仕上がり・次回提案など。次回来店時に表示されます</span></div>
       <textarea id="d-note" placeholder="例）カラー: イルミナ オーシャン8 + 6% / 毛先ダメージ気味 / 次回は根元リタッチ提案">${escH(r.note)}</textarea>
       <button class="btn small pri" id="d-savenote">カルテを保存</button>
+      <button class="btn small ghost" id="d-karteopen">施術の記録を書く</button>
     </div>
     <div class="row">
       <button class="btn ghost" style="flex:1" id="d-close">閉じる</button>
@@ -2910,10 +2965,183 @@ function openDetail(id){
   {const cb=document.getElementById('d-checkout');if(cb)cb.onclick=()=>{closeDetail();openCheckout(id);};
    const ce=document.getElementById('d-editco');if(ce)ce.onclick=()=>{closeDetail();openCheckout(id);};}
   document.getElementById('d-savenote').onclick=()=>{setNote(id,document.getElementById('d-note').value);toast('カルテを保存しました')};
+  document.getElementById('d-karteopen').onclick=()=>{
+    closeDetail();
+    karteOpen({key:custKey(r),name:r.name,phone:r.phone||'',date:r.date,
+      staff:(st||{}).name||'',menu:(m||{}).name||'',resvId:r.id});
+  };
   document.getElementById('d-del').onclick=()=>{if(confirm(`${r.name}様の予約を完全に削除しますか?`)){removeReservation(id);closeDetail();toast('予約を削除しました')}};
   document.getElementById('detailbg').classList.add('show');
 }
 function closeDetail(){document.getElementById('detailbg').classList.remove('show')}
+
+/* ══════════ カルテ（施術の記録）══════════
+ * これまで残っていたのは予約の事務情報だけで、その方の髪のことが
+ * 一行も残っていなかった。次に担当が見て分かるものを、会計のあと
+ * 短い時間で入れられるようにする。
+ *
+ * 打たせない。ほとんどタップで済むようにしてある。
+ * 入れる項目はメニューに合わせて出し分ける（カットだけの方にカラー欄は出さない）。 */
+const KT_CUT=['そろえた','軽くした','短くした','形を変えた','前髪だけ','おまかせ'];
+const KT_REACT=['気に入られた','ちょうどよいと','短いと言われた','明るいと言われた','暗いと言われた','もう少し軽くと'];
+const KT_AVOID=['前髪を短くしすぎない','毛先を軽くしすぎない','明るくしすぎない','しみやすい','香りが苦手','会話は控えめ'];
+const KT_OXY=['3%','4.5%','6%'];
+let KT=null, KT_LAST=null, KT_PHOTOS=null, KT_PENDING=null;   // いま書いているカルテ
+
+function karteOpen(o){
+  /* o: {key,name,phone,date,staff,menu,resvId,checkoutId,id,body,nextNote} */
+  KT={ id:o.id||('kt'+Math.random().toString(36).slice(2,10)),
+       key:o.key, name:o.name||'', phone:o.phone||'', date:o.date||dkey(today()),
+       staff:o.staff||'', menu:o.menu||'', resvId:o.resvId||'', checkoutId:o.checkoutId||'',
+       body:Object.assign({color:[],cut:'',treat:'',reaction:[],avoid:[],free:''},o.body||{}),
+       nextNote:o.nextNote||'' };
+  KT_LAST=null; KT_PHOTOS=null;
+  document.getElementById('kartebg').classList.add('show');
+  karteDraw();
+  /* 前回の記録を出す。書いたものが次に効くから、みんな書いてくれる。
+     読めるまで待たない（読めなくても、今日の記録は入れられる）。 */
+  if(o.key)API.karteLast(o.key, KT.date).then(r=>{
+    if(!KT||!r||!r.ok||!r.karte)return;
+    KT_LAST=r.karte; karteDraw();
+  }).catch(()=>{});
+}
+/* 前回の薬剤を、そのまま今日の行に写す。だいたい同じだから、写して直すのが速い */
+function ktCopyLast(){
+  const c=((KT_LAST||{}).body||{}).color||[];
+  if(!c.length)return;
+  KT.body.color=c.map(x=>({where:x.where||'',no:x.no||'',oxy:x.oxy||'',min:x.min||''}));
+  karteDraw();
+}
+/* 写真は、その場で撮るのが一番早い。iPadのカメラをそのまま開く。
+   大きいまま送るとD1に入らないので、長辺1100pxのJPEGに縮めてから送る（顧客カルテと同じ扱い）。 */
+function ktPhotoPick(file, onDone){
+  const img=new Image();
+  img.onload=async()=>{
+    const MAX=1100, sc=Math.min(1,MAX/Math.max(img.width,img.height));
+    const cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+    let q=0.72,data=cv.toDataURL('image/jpeg',q);
+    while(data.length>550000&&q>0.4){q-=0.1;data=cv.toDataURL('image/jpeg',q);}
+    const res=await API.saveKartePhoto({name:KT.name,phone:KT.phone||'',data,date:KT.date});
+    URL.revokeObjectURL(img.src);
+    if(res&&res.ok)toast('写真を保存しました'); else toast('写真の保存に失敗しました',true);
+    onDone&&onDone();
+  };
+  img.src=URL.createObjectURL(file);
+}
+/* 画面はチップを押すたび描き直すので、そのたびに読みに行かない。
+   一度読んだら持っておいて、撮ったときだけ読み直す。 */
+function ktPhotoPaint(){
+  const g=document.getElementById('kt-photos'); if(!g)return;
+  if(KT_PHOTOS===null){g.innerHTML='<div class="ktnone">読み込み中…</div>';return;}
+  const mine=KT_PHOTOS.filter(p=>p.date===KT.date);
+  g.innerHTML=mine.length ? mine.map(p=>`<img src="${p.data}" alt="">`).join('')
+                          : '<div class="ktnone">まだありません</div>';
+}
+function ktPhotoLoad(force){
+  if(!KT||!KT.name){KT_PHOTOS=[];ktPhotoPaint();return;}
+  if(KT_PHOTOS!==null&&!force){ktPhotoPaint();return;}
+  API.listKartePhotos(KT.name,KT.phone||'').then(ps=>{
+    if(!KT)return; KT_PHOTOS=ps||[]; ktPhotoPaint();
+  }).catch(()=>{KT_PHOTOS=[];ktPhotoPaint();});
+}
+/* 会計まわりの画面が閉じたら、たまっているカルテを出す */
+function ktFlush(){
+  const o=KT_PENDING; KT_PENDING=null;
+  if(o)setTimeout(()=>karteOpen(o),260);
+}
+function karteClose(){document.getElementById('kartebg').classList.remove('show');KT=null;}
+const ktHasColor=()=>/カラー|白髪|ブリーチ/.test(KT.menu||'');
+const ktHasPerm =()=>/パーマ|矯正|ストレート/.test(KT.menu||'');
+
+function karteDraw(){
+  const b=KT.body;
+  const chips=(list,sel,attr)=>list.map(x=>
+    `<button type="button" class="ktchip ${sel.includes(x)?'on':''}" data-${attr}="${escH(x)}">${escH(x)}</button>`).join('');
+  const colorRows=(b.color||[]).map((c,i)=>`<div class="ktcol">
+      <input class="ktc-w" data-i="${i}" data-f="where" value="${escH(c.where||'')}" placeholder="根元／毛先">
+      <input class="ktc-n" data-i="${i}" data-f="no" value="${escH(c.no||'')}" placeholder="7-NB">
+      <select class="ktc-o" data-i="${i}" data-f="oxy"><option value="" ${c.oxy?'':'selected'}>オキシ</option>${KT_OXY.map(o=>`<option ${((c.oxy||'')===o)?'selected':''}>${o}</option>`).join('')}</select>
+      <input class="ktc-m" data-i="${i}" data-f="min" type="number" inputmode="numeric" value="${c.min||''}" placeholder="分">
+      <button type="button" class="ktc-x" data-del="${i}" aria-label="消す">✕</button>
+    </div>`).join('');
+  const L=KT_LAST, LB=(L&&L.body)||{};
+  const lastBox=!L?'':`<div class="ktlast">
+      <div class="ktlast-h">前回 ${String(L.date||'').replace(/-/g,'/')}${L.staff?'　'+escH(L.staff):''}${L.menu?'　'+escH(L.menu):''}</div>
+      ${L.next_note?`<div class="ktlast-n">${escH(L.next_note)}</div>`:''}
+      ${(LB.color||[]).length?`<div class="ktlast-s">薬剤 ${(LB.color||[]).map(c=>escH([c.where,c.no,c.oxy,c.min?c.min+'分':''].filter(Boolean).join(' '))).join(' ／ ')}</div>`:''}
+      ${(LB.avoid||[]).length?`<div class="ktlast-s">気をつけること ${escH((LB.avoid||[]).join('・'))}</div>`:''}
+      ${(LB.color||[]).length&&ktHasColor()?`<button type="button" class="btn small ghost" id="kt-copylast">前回の薬剤を写す</button>`:''}
+    </div>`;
+  document.getElementById('kartemodal').innerHTML=`
+    <h3>${escH(KT.name||'お客様')} のカルテ</h3>
+    <div class="ktsub">${KT.date.replace(/-/g,'/')}　${escH(KT.menu||'')}${KT.staff?'　'+escH(KT.staff):''}</div>
+    ${lastBox}
+
+    ${ktHasColor()?`<div class="ktsec"><div class="kth">使った薬剤</div>
+      ${colorRows||'<div class="ktnone">まだありません</div>'}
+      <button type="button" class="btn small ghost" id="kt-addcolor">＋ 一行ふやす</button></div>`:''}
+
+    ${ktHasPerm()?`<div class="ktsec"><div class="kth">薬液と時間</div>
+      <input id="kt-perm" value="${escH(b.perm||'')}" placeholder="例）1剤20分・2剤10分"></div>`:''}
+
+    <div class="ktsec"><div class="kth">切り方</div>
+      <div class="ktchips">${chips(KT_CUT,[b.cut||''],'cut')}</div>
+      <input id="kt-cutfree" value="${escH(b.cutFree||'')}" placeholder="例）肩上5cm・重め（なくても大丈夫）"></div>
+
+    <div class="ktsec"><div class="kth">使ったトリートメント・店販</div>
+      <input id="kt-treat" value="${escH(b.treat||'')}" placeholder="例）オージュア クエンチ"></div>
+
+    <div class="ktsec"><div class="kth">お客様の反応</div>
+      <div class="ktchips">${chips(KT_REACT,b.reaction||[],'react')}</div></div>
+
+    <div class="ktsec"><div class="kth">気をつけること</div>
+      <div class="ktchips">${chips(KT_AVOID,b.avoid||[],'avoid')}</div></div>
+
+    <div class="ktsec"><div class="kth">今日の写真</div>
+      <div class="ktphotos" id="kt-photos"><div class="ktnone">読み込み中…</div></div>
+      <label class="btn small ghost" style="display:inline-block;cursor:pointer;margin-top:8px">＋ 写真を撮る<input id="kt-file" type="file" accept="image/*" capture="environment" style="display:none"></label></div>
+
+    <div class="ktsec"><div class="kth">次回への申し送り</div>
+      <textarea id="kt-next" placeholder="例）次回は根元だけ・毛先は触らない">${escH(KT.nextNote||'')}</textarea></div>
+
+    <div class="ktsec"><div class="kth">そのほか</div>
+      <textarea id="kt-free" placeholder="例）お話しされたこと・ご様子など">${escH(b.free||'')}</textarea></div>
+
+    <div class="ktbtns">
+      <button class="btn pay" id="kt-save">保存する</button>
+      <button class="btn small ghost" id="kt-cancel">あとにする</button>
+    </div>`;
+  karteWire();
+}
+function karteWire(){
+  const M=document.getElementById('kartemodal'), b=KT.body;
+  M.querySelectorAll('[data-cut]').forEach(x=>x.onclick=()=>{b.cut=(b.cut===x.dataset.cut)?'':x.dataset.cut;karteDraw();});
+  const tog=(arrName,attr)=>M.querySelectorAll('['+'data-'+attr+']').forEach(x=>x.onclick=()=>{
+    const v=x.dataset[attr]; const a=b[arrName]||(b[arrName]=[]);
+    const i=a.indexOf(v); if(i>=0)a.splice(i,1); else a.push(v); karteDraw();});
+  tog('reaction','react'); tog('avoid','avoid');
+  if(M.querySelector('#kt-copylast'))M.querySelector('#kt-copylast').onclick=ktCopyLast;
+  const kf=M.querySelector('#kt-file');
+  if(kf)kf.onchange=()=>{const f=kf.files&&kf.files[0];if(f)ktPhotoPick(f,()=>{kf.value='';ktPhotoLoad(true)});};
+  ktPhotoLoad();
+  if(M.querySelector('#kt-addcolor'))M.querySelector('#kt-addcolor').onclick=()=>{
+    (b.color||(b.color=[])).push({where:'',no:'',oxy:'',min:''});karteDraw();};
+  M.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{b.color.splice(+x.dataset.del,1);karteDraw();});
+  M.querySelectorAll('.ktcol input,.ktcol select').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.i,f=el.dataset.f; b.color[i][f]=(f==='min')?(+el.value||''):el.value;});
+  const set=(id,fn)=>{const el=M.querySelector(id); if(el)el.oninput=()=>fn(el.value);};
+  set('#kt-perm',v=>b.perm=v); set('#kt-cutfree',v=>b.cutFree=v);
+  set('#kt-treat',v=>b.treat=v); set('#kt-free',v=>b.free=v);
+  set('#kt-next',v=>KT.nextNote=v);
+  M.querySelector('#kt-cancel').onclick=karteClose;
+  M.querySelector('#kt-save').onclick=async()=>{
+    const btn=M.querySelector('#kt-save'); btn.disabled=true; btn.textContent='保存しています…';
+    const r=await API.karteSave(KT);
+    if(r&&r.ok){ toast('カルテを保存しました'); karteClose(); }
+    else { btn.disabled=false; btn.textContent='保存する'; toast('保存できませんでした',true); }
+  };
+}
 document.getElementById('detailbg').onclick=e=>{if(e.target.id==='detailbg')closeDetail()};
 
 /* ===== お会計モーダル ===== */
@@ -3236,10 +3464,19 @@ function coFinish(rec){
         ptMsg+=` / 紹介${rp}pt×2`;}}
   }
   toast(`会計を記録しました ¥${rec.total.toLocaleString()}（${PAYMENTS[rec.method].label}${ptMsg}）`);
+  /* ★会計のあとにカルテを出す。あとで書こうと思うと、書かれない。
+     ただし会計のすぐ後ろにはLINEのご案内と次回予約が並んでいるので、
+     それが終わってから（ktFlush）出す。重ねて出すと、どれを触ればいいか分からなくなる。 */
+  if(isNew&&rec.customer&&featOn('cust')){
+    const mn=(MENUS.find(m=>m.id===(rec.menuId||(db.reservations.find(r=>r.id===rec.resvId)||{}).menuId))||{}).name||'';
+    const st=(STAFF.find(x=>x.id===rec.staffId)||{}).name||'';
+    KT_PENDING={key:custKey({phone:rec.phone,name:rec.customer}),name:rec.customer,phone:rec.phone||'',
+      date:rec.date,staff:st,menu:mn||rec.menuName||'',checkoutId:rec.id,resvId:rec.resvId||''};
+  }
   // ★次回予約（店頭）: 新規会計の直後に「次回のご予約」を提案（大阪店の勝ちパターンを全店へ・HPBには構造上できない）
   if(isNew&&stg('lineReceipt','1')==='1'){nvPendingRec=rec;openLineReceipt(rec);}
   else if(isNew){openNextVisit(rec);}
-  else{document.getElementById('checkoutbg').classList.remove('show');}
+  else{document.getElementById('checkoutbg').classList.remove('show');ktFlush();}
 }
 
 /* ===== 次回予約（会計直後の店頭提案）=====
@@ -3310,7 +3547,7 @@ function renderNextVisit(){
     </div>`;
   box.querySelector('#nv-day').onchange=e=>{d.day=e.target.value;renderNextVisit();};
   box.querySelector('#nv-time').onchange=e=>{d.start=+e.target.value;};
-  box.querySelector('#nv-skip').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
+  box.querySelector('#nv-skip').onclick=()=>{document.getElementById('checkoutbg').classList.remove('show');ktFlush();};
   box.querySelector('#nv-go').onclick=()=>{
     const nameEl=box.querySelector('#nv-name');if(nameEl)d.name=nameEl.value.trim();
     d.kana=hira2kata((box.querySelector('#nv-kana').value||'').trim());
@@ -3329,6 +3566,7 @@ function renderNextVisit(){
     if(!res.ok){toast('その時間は埋まっています。別の時間をお選びください',true);return;}
     document.getElementById('checkoutbg').classList.remove('show');
     toast(`次回予約を登録しました：${d.day.replace(/-/g,'/')} ${hm(d.start)}〜`);
+    ktFlush();
   };
 }
 /* ===== 会計後のLINE（領収のご案内＋会員証）=====
@@ -3375,7 +3613,8 @@ async function openLineReceipt(rec){
       <button class="btn ghost" style="flex:1" id="lr-skip">紙で渡す・あとで</button>
       <button class="btn pay" style="flex:1.2" id="lr-next">次へ（次回のご予約）</button>
     </div>`;
-  const done=()=>{if(nvPendingRec){const r=nvPendingRec;nvPendingRec=null;openNextVisit(r);}else document.getElementById('checkoutbg').classList.remove('show');};
+  const done=()=>{if(nvPendingRec){const r=nvPendingRec;nvPendingRec=null;openNextVisit(r);}
+    else{document.getElementById('checkoutbg').classList.remove('show');ktFlush();}};
   box.querySelector('#lr-skip').onclick=done;
   box.querySelector('#lr-next').onclick=done;
   box.querySelector('#lr-push').onclick=async(e)=>{
