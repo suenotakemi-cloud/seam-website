@@ -439,13 +439,14 @@ async function doCheckout(){
   if(!confirm(`${yen(t)} で会計します${STAFF?'　担当 '+STAFF.name:''}　よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
   const id='co'+Math.random().toString(36).slice(2,8);
-  let payId='';
+  let payId='', BRAND='', FEE=0;
   try{
     if(PAY!=='cash'){                       // 現金以外はSquareの端末で通す
       btn.textContent='端末をご案内中…';
       const r=await payByTerminal(t,PAY);
       if(r===null||r===undefined){ btn.disabled=false;btn.textContent='会計する'; return; }
       payId=r.paymentId||''; if(r.paidBy)PAY=r.paidBy;   // 実際に選ばれた方法で記録する
+      BRAND=r.cardBrand||''; FEE=+r.fee||0;              // ブランド別の手数料を出すため
     }
     await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
       mode:'shop',register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
@@ -454,7 +455,7 @@ async function doCheckout(){
       discount:cartCut(),
       discountLabel:[PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),TAXFREE?'免税':''].filter(Boolean).join('＋'),
       taxfree:TAXFREE?1:0, taxfreeCut:taxCut(),   // 免税は記録として持つ（申請のときに集計する）
-      total:t,method:PAY,squarePaymentId:payId||'',
+      total:t,method:PAY,squarePaymentId:payId||'',cardBrand:BRAND,fee:FEE,
       memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
     // 在庫を引く。1件ずつ（どれが失敗したか分かるように）
     for(const i of CART){ await post('/stock/adjust',{shopId:SHOP,productId:i.productId,delta:-i.qty,reason:'店販'}).catch(()=>{}); }
@@ -707,7 +708,8 @@ async function payByTerminal(amount,kind){
     await new Promise(r=>setTimeout(r,2000));
     const st=await get('/terminal/checkout?id='+encodeURIComponent(TERM.checkoutId)).catch(()=>null);
     if(!st)continue;
-    if(st.status==='COMPLETED')return {paymentId:(st.paymentIds||[])[0]||'',paidBy:st.paidBy||''};
+    if(st.status==='COMPLETED')return {paymentId:(st.paymentIds||[])[0]||'',paidBy:st.paidBy||'',
+      cardBrand:st.cardBrand||'',fee:+st.fee||0};   // 何のカードで・手数料いくら引かれたか
     if(['CANCELED','CANCEL_REQUESTED'].includes(st.status)){ toast('端末で取り消されました',true); return null; }
   }
   toast('端末の返事が来ませんでした',true); return null;

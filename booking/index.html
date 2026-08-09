@@ -1865,7 +1865,14 @@ function stgN(k,def){const v=+stg(k,def);return isNaN(v)?def:v;}
 function setStg(k,v){db.settings[k]=String(v);save();API.setSetting(k,v);refreshAll();}
 // hpb=ホットペッパーのスマート支払い(オンライン事前決済)。決済処理はHPB側＝店頭で金銭を受け取らない。
 // 売上には計上するがレジ現金には含めない(入金は後日リクルートから・手数料差引)。
-const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},qr:{label:'QR決済',ic:'📱'},hpb:{label:'スマート支払い(HPB)',ic:'🌶️'}};
+const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},emoney:{label:'電子マネー',ic:'🚃'},qr:{label:'QR決済',ic:'📱'},hpb:{label:'スマート支払い(HPB)',ic:'🌶️'}};
+/* 手数料はブランドごとに違うので、何で払われたかまで残す。
+   Squareの端末を通したときは自動で入る。ここは端末を使わないとき（他社の端末・締めのあとの手入力）用。 */
+const BRANDS={
+  card:  ['VISA','Mastercard','JCB','AMEX','Diners','銀聯'],
+  emoney:['交通系IC','iD','QUICPay','WAON','nanaco','楽天Edy'],
+  qr:    ['PayPay','d払い','au PAY','楽天ペイ','メルペイ','Alipay','WeChat Pay'],
+};
 /* ===== 送信箱 =====
  * 会計・ポイント・レジ締め・ギフト券・回数券の保存は、失敗すると
  * 「この端末にはあるのに、次の読み込みでD1の内容に置き換わって消える」
@@ -3277,6 +3284,8 @@ function renderCheckout(){
     </div>`:''}
     <div class="co-sub">お支払い方法</div>
     <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
+    ${BRANDS[coDraft.method]?`<div class="co-sub">どれで払われましたか<span style="font-weight:600;color:var(--sub);margin-left:6px">手数料がブランドごとに違うので、選んでおくと手取りが出ます</span></div>
+      <div class="co-pays">${BRANDS[coDraft.method].map(b2=>`<button class="co-pay ${coDraft.cardBrand===b2?'on':''}" data-brand="${b2}">${b2}</button>`).join('')}</div>`:''}
     ${coDraft.method==='hpb'?'<div class="co-done" style="background:#fff3ec;border-color:#f2c9ab;color:#b04a12">🌶️ ホットペッパーで決済済み（スマート支払い）。<b>店頭での支払いはありません</b>。売上に計上されますがレジ現金には含まれません（後日リクルートから入金）。店販がある場合は現金/カード等で別会計にしてください</div>':''}
     <div class="co-sub">指名 / フリー</div>
     <div class="co-pays"><button class="co-pay ${coDraft.nominated?'on':''}" data-nom="1">👤 指名</button><button class="co-pay ${!coDraft.nominated?'on':''}" data-nom="0">フリー</button></div>
@@ -3401,7 +3410,12 @@ function renderCheckout(){
     scan.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();scanAdd(scan.value);}};
     scan.onchange=()=>{if(scan.value.trim())scanAdd(scan.value);};
   }
-  box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;if(b.dataset.m!=='cash')coDraft.received=0;renderCheckout();});
+  box.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{coDraft.method=b.dataset.m;
+    if(b.dataset.m!=='cash')coDraft.received=0;
+    coDraft.cardBrand='';   // 支払方法を変えたら、選んだブランドは外す（現金なのにVISAが残る事故を防ぐ）
+    renderCheckout();});
+  box.querySelectorAll('[data-brand]').forEach(b=>b.onclick=()=>{
+    coDraft.cardBrand=(coDraft.cardBrand===b.dataset.brand)?'':b.dataset.brand;renderCheckout();});
   box.querySelectorAll('[data-nom]').forEach(b=>b.onclick=()=>{coDraft.nominated=b.dataset.nom==='1';renderCheckout();});
   if(isShop())coDraft.nominated=false;   // ショップに指名は無い
   box.querySelector('#co-cancel').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
@@ -3647,7 +3661,13 @@ async function runTerminalPayment(){
   if(msg)msg.textContent='お客様に端末をお渡しください（カードで決済中…）';
   _termPoll=setInterval(async()=>{
     const st=await API.termStatus(_termCid); if(!st||st.error)return;
-    if(st.status==='COMPLETED'){clearInterval(_termPoll);_termCid=null;rec.squarePaymentId=(st.paymentIds||[])[0]||'';coFinish(rec);toast('カード決済が完了しました');}
+    if(st.status==='COMPLETED'){clearInterval(_termPoll);_termCid=null;
+      rec.squarePaymentId=(st.paymentIds||[])[0]||'';
+      /* 端末が「実際に何で払われたか」を返す。カードのつもりが交通系だったこともあるので、そちらを正とする。
+         ブランド（VISA/JCB…）と引かれた手数料もここで受け取る＝ブランドごとの手数料が出せる。 */
+      if(st.paidBy)rec.method=st.paidBy;
+      rec.cardBrand=st.cardBrand||''; rec.fee=+st.fee||0;
+      coFinish(rec);toast('カード決済が完了しました');}
     else if(st.status==='CANCELED'){clearInterval(_termPoll);_termCid=null;const m=document.getElementById('tp-msg');if(m)m.innerHTML='<span style="color:var(--danger)">決済がキャンセルされました</span>';}
   },2500);
 }
@@ -3857,6 +3877,24 @@ function renderRegister(){
     </div></div>`;
   /* ★消した機能の設定は出さない。使わないものの設定が並んでいると、
      それだけで「難しそう」になる。 */
+  /* ── 決済手数料の料率 ──
+     ブランドごとに率が違い、しかも店ごとの契約で違う。ここに入れておくと、
+     レポートで「手数料いくら・手取りいくら」まで出る。
+     Squareの端末を通した会計は、実際に引かれた額が入るので、そちらを正として使う。 */
+  const FR=(()=>{try{return JSON.parse(stg('feeRates','{}'))||{};}catch(e){return {};}})();
+  const FR_ROWS=[['VISA','VISA'],['Mastercard','Mastercard'],['JCB','JCB'],['AMEX','AMEX'],['Diners','Diners'],
+                 ['銀聯','銀聯'],['交通系IC','交通系IC'],['iD','iD'],['QUICPay','QUICPay'],
+                 ['PayPay','PayPay'],['d払い','d払い'],['au PAY','au PAY'],['楽天ペイ','楽天ペイ'],['メルペイ','メルペイ']];
+  const feePanel=`<div class="card reg-close"><h3>決済手数料の料率</h3>
+    <div class="rz-ref" style="margin-bottom:8px"><span>ご契約の料率を入れてください</span>
+      <span>はじめは対面の標準（3.25%）を入れてあります　実際に引かれた額が分かる会計は、そちらを使います</span></div>
+    ${FR_ROWS.map(([k,l])=>`<div class="rz"><span>${l}</span><span class="co-y">
+      <input class="fr-in" data-k="${k}" type="number" inputmode="decimal" min="0" max="10" step="0.01"
+        value="${FR[k]!=null?FR[k]:3.25}" style="width:74px">%</span></div>`).join('')}
+    <div class="rz"><span>そのほか（上に無いもの）</span><span class="co-y">
+      <input class="fr-in" data-k="default" type="number" inputmode="decimal" min="0" max="10" step="0.01"
+        value="${FR.default!=null?FR.default:3.25}" style="width:74px">%</span></div>
+    <button class="btn pay" id="fr-save" style="width:100%;margin-top:9px">この料率で保存する</button></div>`;
   const ifOn=(v,html)=>featOn(v)?html:'';
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧭 つかう機能をえらぶ',featPanel,true)
@@ -3868,7 +3906,12 @@ function renderRegister(){
     +fold('💳 前金（デポジット）の設定（言語ごと）',depPanel)
     +ifOn('member', fold('💎 ポイント設定（還元率・使う/使わない）',ptPanel))
     +fold(`🎁 ギフト券（発行・一覧${activeGifts.length?`・有効${activeGifts.length}枚`:''}）`,gfPanel)
-    +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel);
+    +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel)
+    +fold('🏦 決済手数料の料率（ブランドごと）',feePanel);
+  {const b3=document.getElementById('fr-save');
+   if(b3)b3.onclick=()=>{
+     const o={};document.querySelectorAll('.fr-in').forEach(i=>{o[i.dataset.k]=+i.value||0;});
+     setStg('feeRates',JSON.stringify(o));toast('料率を保存しました');};}
   // 歩合の段の読み込みと保存
   {let CM=null;
    const draw=()=>{
@@ -4320,9 +4363,21 @@ async function openStockDetail(pid){
         <button class="btn small ghost" data-pm="-1" data-shop="${x.shop_id}">−</button>
         <button class="btn small ghost" data-pm="1" data-shop="${x.shop_id}">＋</button></div>`).join('')}
       <div class="rs-row total"><span>合計</span><b>${tot}</b><span></span><span></span></div></div>
+    <div class="rz" style="margin-top:12px"><span>仕入値（1個）</span><span class="co-y">¥
+      <input id="sd-cost" type="number" inputmode="numeric" min="0" step="10" value="${p.cost||''}" placeholder="—" style="width:92px"></span></div>
+    <div class="rz-ref"><span id="sd-margin">${p.cost?`1個の利益 ¥${((p.price||0)-(p.cost||0)).toLocaleString()}（${p.price?Math.round(((p.price||0)-(p.cost||0))/p.price*100):0}%）`:'仕入値を入れると、利益と利益率が出ます'}</span>
+      <span>入荷のときに単価を入れると、ここも自動で新しくなります</span></div>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">
+      <button class="btn pay" id="sd-savecost">仕入値を保存</button>
       <button class="btn ok" id="sd-move">🚚 他店へ移す</button>
       <button class="btn ghost" id="sd-close">閉じる</button></div>`;
+  box.querySelector('#sd-savecost').onclick=async()=>{
+    const c=Math.max(0,Math.round(+box.querySelector('#sd-cost').value||0));
+    const r=await API.saveProduct({...p,cost:c});
+    if(r&&!r.error){const lp=(db.products||[]).find(x=>x.id===pid);if(lp)lp.cost=c;save();
+      toast('仕入値を保存しました');openStockDetail(pid);}
+    else toast((r&&r.error)||'保存できませんでした',true);
+  };
   box.querySelectorAll('[data-pm]').forEach(b=>b.onclick=async()=>{
     const r=await API.stockAdjust({shopId:b.dataset.shop,productId:pid,delta:+b.dataset.pm,reason:'手直し'});
     if(r.error){toast(r.error,true);return;} openStockDetail(pid); renderProducts();});
@@ -4680,9 +4735,9 @@ function renderProducts(){
   body.querySelectorAll('[data-in]').forEach(b=>b.onclick=()=>{
     const p=db.products.find(x=>x.id===b.dataset.in);if(!p)return;
     const q=prompt(`「${p.name}」の入荷数を入力してください`,'10');if(q==null)return;const qty=+q;if(!qty||qty<0){toast('数量を正しく入力してください',true);return;}
-    const c=prompt('仕入単価（原価・任意。分からなければ空欄でOK）',p.lastCost||'');
+    const c=prompt('仕入単価（原価・任意。分からなければ空欄でOK）',p.cost||p.lastCost||'');
     addIntake({productId:p.id,productName:p.name,qty,unitCost:+c||0,date:dkey(today())});
-    if(+c)p.lastCost=+c;
+    if(+c){p.lastCost=+c;p.cost=+c;save();}   // 商品にも残す（利益の計算に使う）
     toast(`入荷 ${qty}個を登録しました（在庫 ${p.stock}）`);
   });
 }

@@ -76,6 +76,14 @@ h2:first-child{margin-top:2px}
 .gate p{font-size:13px;color:var(--sub);margin:0 0 18px}
 .gate input{width:100%;border:1px solid var(--line);border-radius:3px;padding:14px}
 .gate button{width:100%;margin-top:12px;padding:15px;border:0;border-radius:3px;background:var(--ink);color:#fff;font-size:15px}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#fff;margin-bottom:6px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-size:11.5px;letter-spacing:.05em;color:var(--sub);font-weight:800;
+  padding:9px 12px;background:var(--cream);white-space:nowrap}
+.tbl td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:top}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl .tsub{color:var(--sub);font-size:11.5px}
+.tbl tr.tot td{font-weight:800;background:var(--cream)}
 #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
   background:var(--ink);color:#fff;padding:13px 22px;border-radius:3px;font-size:14px;z-index:200;transition:.22s;pointer-events:none}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -119,7 +127,7 @@ const API='https://seam-square-pay.suenotakemi.workers.dev';
 const TOKK='stb_admin_tok', SHOPK='stb_shop';
 let TOK=localStorage.getItem(TOKK)||'';
 let SHOP=localStorage.getItem(SHOPK)||'ginza';
-let TAB='sales', FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null;
+let TAB='sales', FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null, PSORT='v';
 let BUFFER=0, ALERT_DAYS=90, ALERT_MONTHS=6;
 
 const $=id=>document.getElementById(id);
@@ -149,7 +157,7 @@ const IMGBASE='https://seam.site/';
 function barRows(list,unit){
   if(!list||!list.length)return '<div class="empty">この期間の記録がありません</div>';
   const max=Math.max(...list.map(x=>x.v||0),1);
-  return `<div class="rows">`+list.map(x=>`<div class="r">
+  return `<div class="rows">`+list.map(x=>`<div class="num">
     ${x.image?`<img src="${IMGBASE+esc(x.image)}" alt="" loading="lazy" style="width:38px;height:38px;object-fit:contain;background:var(--cream);border-radius:2px;flex:none" onerror="this.style.display='none'">`:''}
     <span class="r-w"><span class="r-n">${esc(x.k)}</span>
       <span class="bar"><i style="width:${Math.round((x.v||0)/max*100)}%"></i></span></span>
@@ -159,23 +167,74 @@ function barRows(list,unit){
 function salesHtml(){
   if(!DATA)return '<div class="empty">読み込んでいます…</div>';
   const s=DATA.summary;
-  const M={cash:'現金',card:'カード',term:'カード',qr:'QR決済'};
+  const M={cash:'現金',card:'クレジット',term:'クレジット',emoney:'電子マネー',qr:'QR決済',hpb:'スマート支払い(HPB)'};
   const meth=DATA.byMethod.map(x=>({...x,k:M[x.k]||x.k}));
+  const db=DATA.discountBreak||{}, pf=DATA.profit||{};
+  const brands=DATA.byCardBrand||[];
+  /* 手数料はブランドごとに率が違う。実際に引かれた額が分かるものは●、
+     料率からの見積もりは印を付けない（見積もりを実績に見せない） */
+  const brandRows=!brands.length?'<div class="empty">現金以外の会計がありません</div>':
+    `<div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>ブランド</th><th>種類</th><th class="num">売上</th><th class="num">件数</th>
+      <th class="num">料率</th><th class="num">手数料</th></tr></thead><tbody>`
+    +brands.map(b=>`<tr><td>${esc(b.k)}</td><td class="tsub">${esc(b.method)}</td>
+      <td class="num">${yen(b.v)}</td><td class="num">${b.n}</td>
+      <td class="num tsub">${b.feeIsReal?'実額':b.rate+'%'}</td>
+      <td class="num">${yen(b.fee)}${b.feeIsReal?' <span title="Squareから受け取った実際の手数料">●</span>':''}</td></tr>`).join('')
+    +`</tbody></table></div>
+      <p class="note">● は Square から受け取った<b>実際に引かれた額</b>です　印の無い行は、設定した料率からの見積もりです
+      ${s.feeUnknownSales?`<br>ブランドが記録されていない会計が ${yen(s.feeUnknownSales)} あります（レジで1タップ選ぶと、ここに分かれます）`:''}</p>`;
+  const dr=[['値引き（メンバー・セール）',db.value],['ポイント利用',db.point],['ギフト券',db.gift],['免税ぶん',db.taxfree]]
+    .filter(([,v])=>v>0);
   return `<div class="cards">
       <div class="kc"><div class="kc-k">総売上</div><div class="kc-v">${yen(s.gross)}</div></div>
       <div class="kc"><div class="kc-k">純売上</div><div class="kc-v">${yen(s.net)}</div><div class="kc-s">返金を引いた額</div></div>
+      <div class="kc"><div class="kc-k">決済手数料</div><div class="kc-v">−${yen(s.fee)}</div><div class="kc-s">ブランド別の料率で計算</div></div>
+      <div class="kc"><div class="kc-k">手取り</div><div class="kc-v">${yen(s.take)}</div><div class="kc-s">手数料を引いた額</div></div>
       <div class="kc"><div class="kc-k">件数</div><div class="kc-v">${s.count}</div></div>
       <div class="kc"><div class="kc-k">平均</div><div class="kc-v">${yen(s.avg)}</div><div class="kc-s">1件あたり</div></div>
-      <div class="kc"><div class="kc-k">返金</div><div class="kc-v">${yen(s.refund)}</div></div>
-      <div class="kc"><div class="kc-k">値引き</div><div class="kc-v">${yen(s.discount)}</div><div class="kc-s">メンバー・セール・免税</div></div>
+      <div class="kc"><div class="kc-k">施術</div><div class="kc-v">${yen(s.tech)}</div></div>
+      <div class="kc"><div class="kc-k">店販</div><div class="kc-v">${yen(s.retail)}</div>
+        ${pf.margin!=null?`<div class="kc-s">粗利 ${yen(pf.retail)}（${pf.margin}%）</div>`:'<div class="kc-s">仕入値が未入力です</div>'}</div>
     </div>
-    <h2>支払方法</h2>${barRows(meth)}
+    <h2>お支払いの内訳</h2>${barRows(meth)}
+    <h2>ブランド別と手数料</h2>${brandRows}
+    <h2>値引き・ポイント・ギフト・免税</h2>
+    ${dr.length?`<div class="tblwrap"><table class="tbl"><tbody>
+      ${dr.map(([k,v])=>`<tr><td>${k}</td><td class="num">−${yen(v)}</td></tr>`).join('')}
+      <tr class="tot"><td>合計</td><td class="num">−${yen(dr.reduce((a,[,v])=>a+v,0))}</td></tr>
+    </tbody></table></div>`:'<div class="empty">この期間は値引きがありません</div>'}
     <h2>日別</h2>${barRows(DATA.byDay)}
     <div class="two"><div><h2>ブランド別</h2>${barRows(DATA.byBrand.slice(0,15))}</div>
       <div><h2>メーカー別</h2>${barRows(DATA.byMaker.slice(0,15))}</div></div>
     <div class="two"><div><h2>種類別</h2>${barRows(DATA.byCategory.slice(0,15))}</div>
       <div><h2>レジ別 / 担当別</h2>${barRows(DATA.byRegister)}<div style="height:10px"></div>${barRows(DATA.byStaff)}</div></div>
-    <h2>売れた商品</h2>${barRows(DATA.byProduct.slice(0,40))}`;
+    <h2>売れた商品と利益</h2>
+    <div class="act" style="margin-bottom:8px">
+      <span style="align-self:center;font-size:13px;color:var(--sub)">並べ方</span>
+      <button data-sort="v" class="${PSORT==='v'?'pri':''}">売れた順</button>
+      <button data-sort="p" class="${PSORT==='p'?'pri':''}">もうかった順</button>
+    </div>
+    ${prodTable()}`;
+}
+/* 商品の表。利益は仕入値が入っているものだけ出す。
+   分からないものを0円や推定で埋めると、合計が本当の利益に見えてしまう。 */
+function prodTable(){
+  const list=(DATA.byProduct||[]).slice();
+  if(PSORT==='p')list.sort((a,b)=>(b.profit==null?-1:b.profit)-(a.profit==null?-1:a.profit));
+  const rows=list.slice(0,60);
+  if(!rows.length)return '<div class="empty">この期間の記録がありません</div>';
+  const noCost=list.filter(x=>x.profit==null).length;
+  return `<div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>商品</th><th class="num">点数</th><th class="num">売上</th>
+      <th class="num">仕入</th><th class="num">粗利</th><th class="num">粗利率</th></tr></thead><tbody>`
+    +rows.map(x=>`<tr><td>${esc(x.k)}${x.maker?`<div class="tsub">${esc(x.maker)}</div>`:''}</td>
+      <td class="num">${x.q||0}</td><td class="num">${yen(x.v)}</td>
+      <td class="num tsub">${x.cost?yen(x.cost):'—'}</td>
+      <td class="num">${x.profit==null?'<span class="tsub">—</span>':yen(x.profit)}</td>
+      <td class="num">${x.margin==null?'<span class="tsub">—</span>':x.margin+'%'}</td></tr>`).join('')
+    +`</tbody></table></div>
+    ${noCost?`<p class="note">${noCost}点は仕入値が入っていないので、粗利を出していません　商品の画面で仕入値を入れるか、入荷のときに単価を入れると出ます</p>`:''}`;
 }
 
 /* ── 発注書 ── */
@@ -229,7 +288,7 @@ function alertHtml(){
       <div class="kc"><div class="kc-k">品目</div><div class="kc-v">${d.count}</div></div>
       <div class="kc"><div class="kc-k">寝ている金額</div><div class="kc-v">${yen(d.value)}</div><div class="kc-s">上代での目安</div></div>
     </div>
-    ${d.items.length?`<div class="rows">`+d.items.slice(0,60).map(x=>`<div class="r">
+    ${d.items.length?`<div class="rows">`+d.items.slice(0,60).map(x=>`<div class="num">
       <span class="r-w"><span class="r-n">${esc(x.name)}<span class="tag ${cls}">${x.months!=null?x.months+'ヶ月分':'売れていません'}</span></span>
         <span class="oi-b">${esc(x.maker)}　在庫 ${x.stock}${x.sold?'　売れた '+x.sold:''}</span></span>
       <span class="r-v">${yen(x.value)}</span></div>`).join('')+`</div>`
@@ -250,7 +309,7 @@ async function load(){
   $('body').innerHTML='<div class="empty">読み込んでいます…</div>';
   drawRange();
   try{
-    if(TAB==='sales'){ DATA=await get(`/analytics?from=${FROM}&to=${TO}&shop=${encodeURIComponent(SHOP)}`); $('body').innerHTML=salesHtml(); }
+    if(TAB==='sales'){ DATA=await get(`/analytics?from=${FROM}&to=${TO}&shop=${encodeURIComponent(SHOP)}`); drawSales(); }
     else if(TAB==='order'){ ORDER=await get(`/order-sheet?from=${FROM}&to=${TO}&shop=${encodeURIComponent(SHOP)}&buffer=${BUFFER}`);
       $('body').innerHTML=orderHtml();
       $('body').querySelectorAll('[data-b]').forEach(b=>b.onclick=()=>{BUFFER=+b.dataset.b;load();});
@@ -262,6 +321,12 @@ async function load(){
       $('body').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{ALERT_MONTHS=+b.dataset.m;load();});
     }
   }catch(err){ $('body').innerHTML=`<div class="empty">${esc(err.message||'読み込めませんでした')}</div>`; }
+}
+
+/* 並べ方を変えたときは、読み直さずに描き直すだけ（同じ数字を並べ替えるだけなので） */
+function drawSales(){
+  $('body').innerHTML=salesHtml();
+  $('body').querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{PSORT=b.dataset.sort;drawSales();});
 }
 
 /* 管理画面の「つかう機能をえらぶ」で消したものは、この画面でも出さない */
