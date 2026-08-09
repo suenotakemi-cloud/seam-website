@@ -1434,6 +1434,21 @@ body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:
 <script>
 /* =============== data =============== */
 const LS='stb_v1';
+/* ★お客様に渡るものに出す会社情報。ここ1か所だけに書く。
+   領収・ギフト券・レシートは必ずここを見ること（何箇所にも書かない）。
+   出典＝seam.site の特定商取引法に基づく表記。変えるときはそちらと必ず揃える。
+   ⚠️適格請求書（インボイス）の登録番号は未取得のため空。取れたら invoiceNo に入れる。
+     入れるまでは、書面で「適格請求書」と名乗らないこと。 */
+const COMPANY={
+  name:'株式会社hanico',
+  shop:'SEAM 銀座',
+  ceo:'末野 武己',
+  addr:'北海道札幌市中央区南一条西3丁目8番地11 札石ビル7F',
+  tel:'011-218-7930',
+  web:'https://hanico.jp/',
+  invoiceNo:'',          // 例 T1234567890123
+};
+
 const OPEN=11*60, CLOSE=20*60, STEP=30; // minutes（SEAM 銀座 11:00–20:00）
 /* ★ご予約の「刻み」。お店ごとに変えられる。
    ホットペッパーは ヘア=30分・リラク=15分 で固定されていて、こちらからは変えられない。
@@ -3872,7 +3887,7 @@ function printGift(code){
     <div class="meta"><span>発行日 ${(g.issued||'').replace(/-/g,'/')}</span><span>有効期限 ${(g.expires||'').replace(/-/g,'/')}</span></div>
     ${g.buyer?`<div class="from">${g.buyer.replace(/</g,'&lt;')} 様より</div>`:''}
   </div></div>
-  <div class="note">ご来店時にこの券面をご提示ください。施術・店販にご利用いただけます（差額は店頭でお支払い・残高は次回もお使いいただけます）。<br>有効期限を過ぎた券はご利用いただけません。現金とのお引き換えはいたしかねます。　SEAM 銀座</div>
+  <div class="note">ご来店時にこの券面をご提示ください。施術・店販にご利用いただけます（差額は店頭でお支払い・残高は次回もお使いいただけます）。<br>有効期限を過ぎた券はご利用いただけません。現金とのお引き換えはいたしかねます。<br><b>発行 ${COMPANY.name}（${COMPANY.shop}）　${COMPANY.tel}</b></div>
   <script>window.print()<\/script></body></html>`);
   w.document.close();
 }
