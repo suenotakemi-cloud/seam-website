@@ -285,12 +285,46 @@ function build() {
       urls.push('/' + lang + (pg.url === '/' ? '/' : pg.url));
     }
   }
+  // ── sitemapに言語版の相互リンク(xhtml:link)を入れる ──
+  // 【なぜ要るか】2026-08-09の実測で、sitemapに載せた en/zh/tw/ko 各33ページのうち
+  // 索引に入っていたのは合計9ページだけだった(zhとkoはトップ1枚のみ)。HTML側のhreflangは
+  // 全ページに正しく入っているのに読まれていない。sitemapにも同じ組を書くと、
+  // 「この5本は同じページの言語違い」とまとめて認識され、1本見つかれば残りも辿られる。
+  // hreflangは相互申告が必須なので、ja側にも同じ組を書く(片側だけだと無視される)。
+  const HREF = { ja: 'ja', en: 'en', zh: 'zh-Hans', tw: 'zh-Hant', ko: 'ko' };
+  function altsFor(u) {
+    // u は ja の絶対パス(/headspa 等)。言語版が実在するものだけ組にする
+    const pg = PAGES.find(p => (p.url === '/' ? '/' : p.url) === u);
+    if (!pg) return null;                       // 多言語対象外(ジャーナル等)は単独のまま
+    const set = [['ja', BASE + u]];
+    for (const lang of Object.keys(LANGS)) {
+      if (!fs.existsSync(path.join(ROOT, lang, pg.file))) continue;
+      set.push([HREF[lang], BASE + '/' + lang + (pg.url === '/' ? '/' : pg.url)]);
+    }
+    if (set.length < 2) return null;            // 訳が1本も無ければ組にしない
+    set.push(['x-default', BASE + u]);
+    return set;
+  }
+  // 言語版URLからja側のパスを引く(同じ組を全言語のエントリに書くため)
+  function jaPathOf(u) {
+    const m = /^\/(en|zh|tw|ko)(\/.*)$/.exec(u);
+    if (!m) return u;
+    return m[2] === '/' ? '/' : m[2];
+  }
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
-    urls.map(u => '  <url><loc>' + BASE + u + '</loc></url>').join('\n') +
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n' +
+    '        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
+    urls.map(u => {
+      const set = altsFor(jaPathOf(u));
+      if (!set) return '  <url><loc>' + BASE + u + '</loc></url>';
+      const links = set.map(([h, href]) =>
+        '\n    <xhtml:link rel="alternate" hreflang="' + h + '" href="' + href + '"/>').join('');
+      return '  <url><loc>' + BASE + u + '</loc>' + links + '\n  </url>';
+    }).join('\n') +
     '\n</urlset>\n';
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), xml, 'utf-8');
-  summary.push(`sitemap.xml urls=${urls.length}`);
+  const withAlts = urls.filter(u => altsFor(jaPathOf(u))).length;
+  summary.push(`sitemap.xml urls=${urls.length} (言語版の組つき ${withAlts})`);
 
   console.log(summary.join('\n'));
 }
