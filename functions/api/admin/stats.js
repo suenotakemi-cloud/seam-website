@@ -391,6 +391,10 @@ export async function onRequestGet(context) {
       "SUM(name='sec_click' AND label IN ('salon_reserve_hpb','salon_reserve_stylist','book_sticky')) sres, " +
       "SUM(name='sec_click' AND label IN ('spa_reserve_hpb','spa_reserve_spanist','book_sticky_spa')) pres, " +
       "SUM(name='sec_click' AND label IN ('recruit_apply_line','recruit_apply_ig','recruit_apply_nav')) rap, " +
+      // rap は「応募ボタンを押した数」。実際にフォームから届いた件数は別イベントで、
+      // 長らくどの列にも出ていなかったので rform として出す（成果の本体はこちら）。
+      "SUM(name='recruit_form_sent') rform, " +
+      "SUM(name='recruit_save') rsave, " +          // 「あとで見る」= 読んだ人の温度
       "SUM(name='sec_click' AND label='sale_shop_join') sj " +
       "FROM events WHERE ts>=? AND " + NT + " GROUP BY d ORDER BY d DESC LIMIT 62",
       since

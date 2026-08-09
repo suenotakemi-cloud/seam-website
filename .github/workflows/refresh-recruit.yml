@@ -1,0 +1,31 @@
+name: 求人ページの掲載日を毎月焼き直す
+
+# Googleしごと検索とIndeedは datePosted が古い求人を順位から落とす。
+# 掲載日を手で書いていた頃、1か月放置で露出が落ちていたので自動化した。
+# 生成器は走らせた日を掲載日・そこから90日を掲載期限にする。
+on:
+  schedule:
+    # 毎月1日と15日の午前9時（日本時間）= UTC 0:00
+    - cron: '0 0 1,15 * *'
+  workflow_dispatch:  # 募集内容を変えた直後に手で回したいとき用
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 求人ページを再生成
+        run: python3 scripts/build_recruit_pages.py
+
+      - name: 生成物をコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add recruit-*.html
+          git diff --staged --quiet && { echo "変化なし"; exit 0; }
+          # [skip ci]は付けない: CF Pagesが[skip ci]入りコミットの配信をスキップし
+          # 生成物が本番に出ない（build-finder.yml と同じ理由）
+          git commit -m "求人: 掲載日を更新（自動）"
+          git pull --rebase origin main
+          git push

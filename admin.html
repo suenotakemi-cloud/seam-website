@@ -468,7 +468,10 @@
     if(!rows||!rows.length) return '';
     var wdays=['日','月','火','水','木','金','土'];
     function td(v){return '<td class="nums" style="text-align:right;padding:6px 10px;'+(v?'':'color:#C9C2B6;')+'">'+(v||0).toLocaleString()+'</td>';}
-    var tot={pv:0,rpv:0,fs:0,fc:0,cta:0,sres:0,pres:0,rap:0,sj:0};
+    // 実応募だけは 0 と 1件以上の差が一目で分かるようにする（探す列なので）
+    function tdHit(v){return '<td class="nums" style="text-align:right;padding:6px 10px;'
+      +(v?'color:#8A6A3C;font-weight:600;background:rgba(184,148,90,.10)':'color:#C9C2B6')+'">'+(v||0).toLocaleString()+'</td>';}
+    var tot={pv:0,rpv:0,fs:0,fc:0,cta:0,sres:0,pres:0,rap:0,rsave:0,rform:0,sj:0};
     rows.forEach(function(r){for(var k in tot)tot[k]+=(r[k]||0);});
     var trs=rows.map(function(r){
       var dt=new Date(r.d+'T00:00:00');var w=dt.getDay();var wk=(w===0||w===6);
@@ -477,15 +480,15 @@
         +'<td style="padding:6px 10px;white-space:nowrap;color:'+(w===0?'#B3563E':(w===6?'#4A6FA0':'#4A443C'))+'">'+esc(r.d.slice(5))+'（'+wdays[w]+'）</td>'
         +td(r.pv)+td(r.fs)+td(r.fc)
         +'<td class="nums" style="text-align:right;padding:6px 10px;color:#8C8479">'+rate+'</td>'
-        +td(r.cta)+td(r.sres)+td(r.pres)+td(r.rpv)+td(r.rap)+td(r.sj)+'</tr>';
+        +td(r.cta)+td(r.sres)+td(r.pres)+td(r.rpv)+td(r.rap)+td(r.rsave)+tdHit(r.rform)+td(r.sj)+'</tr>';
     }).join('');
     function th(t){return '<th style="text-align:right;padding:7px 10px;font-weight:600">'+t+'</th>';}
-    var head='<tr style="color:#8C8479;font-size:10.5px;letter-spacing:.03em"><th style="text-align:left;padding:7px 10px;font-weight:600">日付</th>'+th('PV')+th('診断開始')+th('完了')+th('完了率')+th('診断CTA')+th('サロン予約')+th('スパ予約')+th('求人PV')+th('応募')+th('会員登録')+'</tr>';
+    var head='<tr style="color:#8C8479;font-size:10.5px;letter-spacing:.03em"><th style="text-align:left;padding:7px 10px;font-weight:600">日付</th>'+th('PV')+th('診断開始')+th('完了')+th('完了率')+th('診断CTA')+th('サロン予約')+th('スパ予約')+th('求人PV')+th('応募タップ')+th('保存')+th('応募<b style="color:#8A6A3C">実</b>')+th('会員登録')+'</tr>';
     var totRate=tot.fs?Math.round(tot.fc/tot.fs*100)+'%':'—';
-    var totRow='<tr style="border-top:2px solid #E4DCCB;font-weight:600;background:#F7F2E9"><td style="padding:7px 10px;white-space:nowrap">期間計（'+rows.length+'日）</td>'+td(tot.pv)+td(tot.fs)+td(tot.fc)+'<td class="nums" style="text-align:right;padding:6px 10px">'+totRate+'</td>'+td(tot.cta)+td(tot.sres)+td(tot.pres)+td(tot.rpv)+td(tot.rap)+td(tot.sj)+'</tr>';
+    var totRow='<tr style="border-top:2px solid #E4DCCB;font-weight:600;background:#F7F2E9"><td style="padding:7px 10px;white-space:nowrap">期間計（'+rows.length+'日）</td>'+td(tot.pv)+td(tot.fs)+td(tot.fc)+'<td class="nums" style="text-align:right;padding:6px 10px">'+totRate+'</td>'+td(tot.cta)+td(tot.sres)+td(tot.pres)+td(tot.rpv)+td(tot.rap)+td(tot.rsave)+tdHit(tot.rform)+td(tot.sj)+'</tr>';
     return '<div class="card panel" style="grid-column:1/-1"><h2><span class="eyebrow">Daily</span>日別推移 — 1日ごとの主要指標（新しい日が上・土日は色つき）</h2>'
       +'<div style="overflow:auto;max-height:480px;border:1px solid #F0EBE2;border-radius:12px"><table style="width:100%;border-collapse:collapse;font-size:12.5px;min-width:780px"><thead style="position:sticky;top:0;background:#FDFBF6;z-index:1;box-shadow:0 1px 0 #E4DCCB">'+head+totRow+'</thead><tbody>'+trs+'</tbody></table></div>'
-      +'<p class="muted" style="margin-top:7px;font-size:10.5px;line-height:1.8">PV=全ページ閲覧 ／ 診断CTA=結果からの導線タップ ／ サロン・スパ予約=HPB遷移・指名・追従ボタンの合計タップ ／ 求人PV=採用ページ群の閲覧 ／ 応募=LINE・DM・応募タブのタップ ／ 会員登録=セール→店舗登録タップ（最大62日まで表示・期間は右上で切替）</p></div>';
+      +'<p class="muted" style="margin-top:7px;font-size:10.5px;line-height:1.8">PV=全ページ閲覧 ／ 診断CTA=結果からの導線タップ ／ サロン・スパ予約=HPB遷移・指名・追従ボタンの合計タップ ／ 求人PV=採用ページ群の閲覧 ／ <b>応募タップ</b>=LINE・DM・応募タブを押した数（届いたとは限りません） ／ <b>保存</b>=「あとで見る」を押した数 ／ <b style="color:#8A6A3C">応募実</b>=応募フォームから実際に送信された件数＝成果の本体 ／ 会員登録=セール→店舗登録タップ（最大62日まで表示・期間は右上で切替）</p></div>';
   }
   function sparkline(daily){
     if(!daily||!daily.length) return '<div class="empty">データなし</div>';

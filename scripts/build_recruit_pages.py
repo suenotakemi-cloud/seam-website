@@ -13,8 +13,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 
 LINE_URL = "https://lin.ee/OoWKoie"
-DATE_POSTED = "2026-07-13"
-VALID_THROUGH = "2026-10-31"
+
+# 【日付を固定値で書かない】
+# Googleしごと検索とIndeedは datePosted が古い求人を落とす。以前ここを
+# 手打ちの "2026-07-13" にしていたため、1か月放置で露出が落ちていた。
+# 走らせた日を掲載日、そこから90日を掲載期限にして、月次のworkflowで焼き直す。
+# 検証で日付を固定したいときだけ環境変数で上書きする。
+import datetime as _dt
+_today = _dt.date.today()
+DATE_POSTED = os.environ.get("RECRUIT_DATE_POSTED") or _today.isoformat()
+VALID_THROUGH = os.environ.get("RECRUIT_VALID_THROUGH") or (_today + _dt.timedelta(days=90)).isoformat()
 
 STORES = {
     "ginza":    {"ja": "銀座",   "pref": "東京",  "area": "銀座・有楽町",  "en": "Tokyo · Ginza"},
@@ -37,7 +45,12 @@ PAY = {"stylist": (300000, "MONTH", "FULL_TIME"), "spanist": (300000, "MONTH", "
 def nap(slug):
     t = open(f"store-{slug}.html", encoding="utf-8").read()
     g = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', t, re.S).group(1))
-    n = [x for x in g["@graph"] if x.get("@type") == "HairSalon"][0]
+    # 【罠】海外向けに store-*.html の @type を ["HairSalon","Store"] の配列にしたため、
+    # 文字列の完全一致だと1件も拾えず IndexError で生成が止まる。配列も受ける。
+    def is_salon(x):
+        t = x.get("@type")
+        return t == "HairSalon" or (isinstance(t, list) and "HairSalon" in t)
+    n = [x for x in g["@graph"] if is_salon(x)][0]
     a = n["address"]
     return {
         "street": a.get("streetAddress", ""), "locality": a.get("addressLocality", ""),

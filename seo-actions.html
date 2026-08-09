@@ -148,18 +148,24 @@
   <!-- 旧サブドメインの整理 -->
   <section>
     <div class="eyebrow">整理 ／ 旧サブドメインをたたむ</div>
-    <h2 class="serif">使っていない3つのサイトを、閉じます</h2>
-    <p class="lede">別サービスで作られた <span class="mono">ginza / nagoya / osaka .seam.site</span> は、今後使わない方針です。<strong>ただし実測したところ、3つとも今も表示できる状態のまま残っています</strong>（消えていません）。放置すると本体サイトと検索で食い合うため、下の手順で閉じてください。</p>
+    <h2 class="serif">使っていない4つのサイトを、閉じます</h2>
+    <p class="lede">別サービスで作られた <span class="mono">ginza / headspa / nagoya / osaka .seam.site</span> は、今後使わない方針です。<strong>2026年8月9日に測り直したところ、4つとも今も表示できる状態のまま残っています</strong>（消えていません）。放置すると本体サイトと検索で食い合うため、下の手順で閉じてください。</p>
+
+    <div class="callout" style="margin-bottom:18px;">
+      <b>実害が出ています。</b>「ヘッドスパ 銀座」で検索すると、本体もサブドメインも<b>1本も出てきません</b>（2026年8月9日実測・上位は禅／ラビクール／まとめ記事）。同じ内容のページが5本に分かれているうえ、いちばん中身の厚い ginza.seam.site が<b>存在しないドメインを「正規版」だと申告している</b>ためです。検索エンジンには「本物は別の場所にある」と伝わり、そのページは索引から外れます。
+    </div>
 
     <div class="tablewrap" style="margin-bottom:20px;">
       <table>
-        <thead><tr><th>URL</th><th>いまの状態（実測）</th><th>問題</th></tr></thead>
+        <thead><tr><th>URL</th><th>いまの状態（8/9実測）</th><th>問題</th></tr></thead>
         <tbody>
-          <tr><td class="u">ginza.seam.site</td><td>表示できる（86KB）</td><td>「正規版はseam-ginza.com」と申告しているが<b>そのドメインは消滅済み</b></td></tr>
-          <tr><td class="u">nagoya.seam.site</td><td>表示できる（25KB）</td><td>本体の店舗ページと内容が重複</td></tr>
+          <tr><td class="u">ginza.seam.site</td><td>表示できる（87KB・本文 約2.9万字）</td><td>「正規版はseam-ginza.com」と申告しているが<b>そのドメインは今もつながらない</b>。hreflangとOGPの5箇所も同じ死んだドメインを指している</td></tr>
+          <tr><td class="u">headspa.seam.site</td><td>表示できる（33KB・本文 約1万字）</td><td><b>前回の指示書に載っていなかった4本目</b>。本体の <span class="mono">seam.site/headspa</span> とほぼ同じ内容で、正規版の申告が無い</td></tr>
+          <tr><td class="u">nagoya.seam.site</td><td>表示できる（26KB・本文 約7.7千字）</td><td>本体の店舗ページと内容が重複・正規版の申告が無い</td></tr>
           <tr><td class="u">osaka.seam.site</td><td>表示できる（2.8KB）</td><td>中身が転送スクリプトのみ＝<b>検索エンジンには空ページ</b></td></tr>
         </tbody>
       </table>
+      <p style="font-size:12px;color:var(--faint);margin-top:8px;">※ 4本とも<b>どのURLを開いても同じ1ページが返る</b>状態です（/finder でも /sitemap.xml でも同じ内容が200で返ります）。検索エンジンから見ると同じ内容のURLが無限にあることになり、これ自体も評価を下げます。</p>
     </div>
 
     <div class="field">
@@ -170,16 +176,17 @@
           ただ消すよりも、<strong>本体の該当ページへ転送（301リダイレクト）</strong>する方が有利です。これまでこの3つのURLが集めてきた検索の評価が<strong>本体サイトに引き継がれ</strong>、SNSや名刺に古いURLが残っていてもお客様が迷子になりません。<br><br>
           <strong>手順（Cloudflareだけで完結・Genspark側の操作は不要）：</strong><br>
           Cloudflareにログイン → 対象ドメイン <span class="mono">seam.site</span> → 左メニュー<strong>［ルール］→［リダイレクトルール］</strong>→「ルールを作成」。<br>
-          以下の3本を、それぞれ<strong>ステータスコード 301</strong>で作成します。
+          以下の4本を、それぞれ<strong>ステータスコード 301</strong>で作成します。
           <div class="paste" style="margin-top:12px;">
-            <span class="lbl">設定する転送先（3本）</span>
+            <span class="lbl">設定する転送先（4本）</span>
             <button class="copybtn" data-copy="c0">コピー</button>
-            <p id="c0">ginza.seam.site  → https://seam.site/store-ginza
-nagoya.seam.site → https://seam.site/store-nagoya
-osaka.seam.site  → https://seam.site/store-osaka
+            <p id="c0">ginza.seam.site   → https://seam.site/headspa-ginza
+headspa.seam.site → https://seam.site/headspa
+nagoya.seam.site  → https://seam.site/headspa-nagoya
+osaka.seam.site   → https://seam.site/headspa-osaka
 
-※ ヘッドスパを前面に出したい場合は転送先を
-   https://seam.site/headspa にしてもかまいません
+※ 4本ともヘッドスパの内容なので、転送先もヘッドスパのページに
+   合わせています（物販の店舗ページに送ると内容がずれます）
 ※ ステータスコードは必ず「301（恒久的な移動）」を選択
 ※ 「パスを保持」はオフ（トップへまとめて転送）</p>
           </div>
@@ -193,7 +200,7 @@ osaka.seam.site  → https://seam.site/store-osaka
         <div class="fname">完全に消す（シンプルに閉じる場合）</div>
         <div class="fdesc">
           転送が不要であれば、<strong>CloudflareのDNSからサブドメインのレコードを削除</strong>してください。<br>
-          Cloudflare → <span class="mono">seam.site</span> → 左メニュー<strong>［DNS］→［レコード］</strong>→ 名前が <span class="mono">ginza</span> / <span class="mono">nagoya</span> / <span class="mono">osaka</span> の3件を削除。<br>
+          Cloudflare → <span class="mono">seam.site</span> → 左メニュー<strong>［DNS］→［レコード］</strong>→ 名前が <span class="mono">ginza</span> / <span class="mono">headspa</span> / <span class="mono">nagoya</span> / <span class="mono">osaka</span> の4件を削除。<br>
           削除した時点でサイトは表示されなくなり、検索結果からも<strong>数週間〜数か月かけて自然に消えます</strong>。<br>
           <span style="color:var(--faint);font-size:12px;">※ Genspark側の公開停止・プラン解約も、あわせて行っておくと安心です。</span>
         </div>
