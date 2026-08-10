@@ -1519,6 +1519,14 @@ const STAFF=[
   {id:'s3',name:'CHIKA',kana:'チカ',role:'スパニスト',catch:'丁寧な接客で導く極上睡眠ヘッドスパ/完全個室',yrs:3,
    cuSpa:'20260801004115525XQTEdjK',hpbSpa:'W001412775'},
 ];
+/* 担当の名前は、この画面にしか無い（予約は staff_id しか持っていない）。
+   レポートの画面で「s1」と出ても誰か分からないので、名前だけサーバーに預けておく。 */
+setTimeout(()=>{
+  const m={}; STAFF.forEach(s=>m[s.id]=s.name);
+  const j=JSON.stringify(m);
+  if(stg('staffNames','')!==j)setStg('staffNames',j);
+},4000);
+
 /* そのメニューの行き先の掲載を返す（スパのメニューならスパの掲載）。 */
 const profFor=(st,m)=>{const b=st||{};const o=(menuToSpa(m)&&b.spa)?b.spa:{};return {role:o.role!=null?o.role:(b.role||''),catch:o.catch||b.catch||'',yrs:o.yrs||b.yrs||0};};
 /* そのメニューを送る店に、そのスタッフのアカウントがあるか。
