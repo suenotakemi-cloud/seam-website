@@ -128,6 +128,7 @@ h2:first-child{margin-top:2px}
       <button data-t="pay">支払い</button>
       <button data-t="cash">現金</button>
       <button data-t="acc">経理</button>
+      <button data-t="tf">免税</button>
       <button data-t="order" data-feat="order">発注書</button>
       <button data-t="alert" data-feat="order">在庫アラート</button>
     </div>
@@ -147,7 +148,7 @@ let TOK=localStorage.getItem(TOKK)||'';
 let SHOP=localStorage.getItem(SHOPK)||'ginza';
 let TAB='home', FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null, PSORT='v';
 let REP=null, RWIN=90, RLOST=180;
-let REC=null, HOME=null, PAY=null, PB=null, CB=null, CBMON='', JR=null;
+let REC=null, HOME=null, PAY=null, PB=null, CB=null, CBMON='', JR=null, TF=null;
 let BUFFER=0, ALERT_DAYS=90, ALERT_MONTHS=6;
 
 const $=id=>document.getElementById(id);
@@ -357,7 +358,8 @@ async function loadHome(){
     g2(`/stock-alert?days=90&months=6&shop=${encodeURIComponent(SHOP)}`),
     g2(`/payables?month=${day.slice(0,7)}`),
   ]);
-  HOME={day,y,rec,ord,alert,pb};
+  const tf=await g2('/taxfree/records?status=waiting');
+  HOME={day,y,rec,ord,alert,pb,tf};
 }
 function homeHtml(){
   if(!HOME)return '<div class="empty">読み込んでいます…</div>';
@@ -369,6 +371,9 @@ function homeHtml(){
     s:`${ord.total.qty}点　およそ ${yen(ord.total.amount)}（上代の目安）`,a:'発注書を出す',tab:'order'});
   if(pb&&pb.rows&&pb.rows.filter(x=>!x.paid).length)items.push({i:'💰',t:`今月の支払い ${pb.rows.filter(x=>!x.paid).length}件`,
     s:`${yen(pb.rows.filter(x=>!x.paid).reduce((a,x)=>a+x.amount,0))}　入荷の記録から出しています`,a:'支払いを見る',tab:'pay'});
+  if(HOME.tf&&HOME.tf.まとめ&&HOME.tf.まとめ.返金待ち)items.push({i:'🛂',
+    t:`免税のお返しが ${HOME.tf.まとめ.返金待ち}件`,
+    s:`${yen(HOME.tf.まとめ.返金待ちの額)}　お返しする約束が残っています`,a:'免税を見る',tab:'tf'});
   items.push({i:'🧾',t:'給与・歩合の締め',s:'今月ぶんの担当別の売上と歩合　マネーフォワードへCSVで渡せます',a:'見る',tab:'payroll'});
   items.push({i:'💴',t:'現金の出し入れ',s:'両替・銀行入金・立替　レジ締めの差の理由がここに残ります',a:'開く',tab:'cash'});
   return `<p class="note">${day.replace(/-/g,'/')}　残っているものだけ出しています</p>
@@ -449,6 +454,46 @@ function cashHtml(){
         <td><button class="mini cb-del" data-id="${esc(x.id)}">消す</button></td></tr>`).join('')}
     </tbody></table></div>`:'<div class="empty">まだ記録がありません</div>'}
     <p class="note">売上の現金はここに入れません　ここに入れるのは、売上以外で金庫が動いた分だけです</p>`;
+}
+
+/* ── 免税（2026年11月1日からの返金方式）──
+ * お客様は出国してしまうので、こちらから追えない。
+ * 「返す約束をしたのに返していない」が残らないよう、待ちを必ず上に出す。 */
+const TF_ST={waiting:'税関の確認待ち',customs:'確認できた（お返しできます）',refunded:'お返し済み',void:'取りやめ'};
+function tfHtml(){
+  if(!TF)return '<div class="empty">読み込んでいます…</div>';
+  const m=TF.まとめ||{}, rows=TF.rows||[];
+  const wait=rows.filter(x=>x.status==='waiting'||x.status==='customs');
+  const done=rows.filter(x=>x.status==='refunded');
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">お返しする約束</div><div class="kc-v">${m.返金待ち}</div>
+        <div class="kc-s">${yen(m.返金待ちの額)}　まだお返ししていません</div></div>
+      <div class="kc"><div class="kc-k">お返し済み</div><div class="kc-v">${m.返金済み}</div>
+        <div class="kc-s">${yen(m.返金済みの額)}</div></div>
+    </div>
+    <p class="note">2026年11月1日の販売から、免税は「いったん税込でいただき、税関で持ち出しが確認できてからお返しする」形に変わりました<br>
+      旅券の番号は控えていません　お返しのときは下4桁で確かめてください</p>
+    <h2>お返しする方 ${wait.length}件</h2>
+    ${wait.length?`<div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>お買い上げ</th><th>お客様</th><th class="num">お返しする額</th><th>いま</th><th></th></tr></thead><tbody>
+      ${wait.map(x=>`<tr>
+        <td>${x.date.replace(/-/g,'/')}<div class="tsub">${yen(x.sale)}</div></td>
+        <td>${esc(x.name||'（お名前なし）')}<div class="tsub">${esc(x.country||'')}${x.last4?`　旅券 …${esc(x.last4)}`:''}</div></td>
+        <td class="num"><b>${yen(x.tax)}</b></td>
+        <td class="tsub">${TF_ST[x.status]||x.status}</td>
+        <td>${x.status==='waiting'
+          ? `<button class="mini tf-go" data-id="${esc(x.id)}" data-s="customs">確認できた</button>`
+          : `<button class="mini pri tf-go" data-id="${esc(x.id)}" data-s="refunded">お返しした</button>`}</td>
+      </tr>`).join('')}
+    </tbody></table></div>`:'<div class="empty">お返しする約束はありません</div>'}
+    ${done.length?`<h2>お返し済み ${done.length}件</h2>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>お買い上げ</th><th>お客様</th><th class="num">額</th><th>お返しした日</th><th>方法</th></tr></thead><tbody>
+      ${done.slice(0,60).map(x=>`<tr><td>${x.date.replace(/-/g,'/')}</td>
+        <td>${esc(x.name||'')}<div class="tsub">${x.last4?'旅券 …'+esc(x.last4):''}</div></td>
+        <td class="num">${yen(x.tax)}</td><td>${(x.refundAt||'').slice(0,10).replace(/-/g,'/')}</td>
+        <td class="tsub">${esc(x.method||'')}</td></tr>`).join('')}
+    </tbody></table></div>`:''}`;
 }
 
 /* ── 経理（マネーフォワードへ渡す仕訳）── */
@@ -607,6 +652,19 @@ async function load(){
       $('body').querySelectorAll('.pb-t').forEach(b=>b.onclick=async()=>{
         const paid=!b.classList.contains('pri');
         await post('/payables',{maker:b.dataset.m,month:PB.month,amount:+b.dataset.a,paid});
+        load();});
+    }
+    else if(TAB==='tf'){ TF=await get('/taxfree/records');
+      $('body').innerHTML=tfHtml();
+      $('body').querySelectorAll('.tf-go').forEach(b=>b.onclick=async()=>{
+        const s2=b.dataset.s;
+        if(s2==='refunded'){
+          const how=prompt('どうやってお返ししましたか\n（現金／振込／カードへ戻す　など）','現金');
+          if(how==null)return;
+          await post('/taxfree/step',{id:b.dataset.id,status:'refunded',method:how});
+        }else{
+          await post('/taxfree/step',{id:b.dataset.id,status:'customs'});
+        }
         load();});
     }
     else if(TAB==='acc'){ JR=await get(`/journal?from=${FROM}&to=${TO}`);

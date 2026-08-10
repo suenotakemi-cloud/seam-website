@@ -102,6 +102,12 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 .sr.big{font-size:16px;color:var(--ink);border-top:1px solid var(--line);margin-top:8px;padding-top:12px}
 .sr.big b{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600}
 .sr.cut{color:var(--clay)}
+.tfbox{border:1px solid rgba(0,0,0,.12);border-radius:11px;padding:11px 12px;margin:9px 0;background:#fff}
+.tfh{font-size:12px;font-weight:800;color:#6a5a4a;margin-bottom:7px}
+.tfbox input{width:100%;padding:10px 11px;border:1px solid rgba(0,0,0,.14);border-radius:8px;
+  font:inherit;font-size:15px;margin-bottom:6px}
+.tfrow{display:grid;grid-template-columns:1fr 116px;gap:6px}
+.tfn{font-size:11px;color:#8a7d70;line-height:1.5}
 .pay{display:flex;gap:8px;margin:14px 0 0}
 .pay button{flex:1;padding:12px 6px;border:1px solid var(--line);background:#fff;border-radius:3px;
   font-size:13px;color:var(--body);letter-spacing:.04em}
@@ -386,7 +392,15 @@ function addToCart(p){
 }
 function cartList(){ return CART.reduce((s,i)=>s+i.unit*i.qty,0); }            // 定価の合計
 function cartBefore(){ return CART.reduce((s,i)=>s+lineNow(i)*i.qty,0); }       // 免税を引く前
-function taxCut(){ return (useFeat('taxfree')&&TAXFREE)?Math.round(cartBefore()*TAXFREE_RATE/(100+TAXFREE_RATE)):0; }
+/* ★2026年11月1日から、免税は「値引き」ではなく「いったん税込でいただき、
+   出国の確認がとれてからお返しする」に変わる（リファンド方式）。
+   その日を境に、レジの動きが変わる。日付で自動的に切り替える。 */
+const TF_REFUND_FROM='2026-11-01';
+let TFINFO={name:'',country:'',last4:''};
+const tfRefundMode=()=>jstDay(0)>=TF_REFUND_FROM;
+/* 消費税ぶん。旧方式は「その場で引く額」、新方式は「あとでお返しする額」 */
+function taxAmt(){ return (useFeat('taxfree')&&TAXFREE)?Math.round(cartBefore()*TAXFREE_RATE/(100+TAXFREE_RATE)):0; }
+function taxCut(){ return tfRefundMode()?0:taxAmt(); }                          // その場で引く額
 function cartTotal(){ return Math.max(0,cartBefore()-taxCut()); }               // 実際にいただく額
 function cartCut(){ return cartList()-cartTotal(); }                            // 引いた額（合計）
 function renderCart(){
@@ -409,7 +423,9 @@ function renderSum(){
     `<div class="sr"><span>点数</span><span>${CART.reduce((s,i)=>s+i.qty,0)} 点</span></div>
      ${cut>0?`<div class="sr"><span>定価</span><span>${yen(cartList())}</span></div>
        <div class="sr cut"><span>${PMODE==='member'?'メンバー価格':'セール価格'}</span><b>−${yen(cut)}</b></div>`:''}
-     ${(useFeat('taxfree')&&TAXFREE)?`<div class="sr cut"><span>免税ぶん（申請は別）</span><b>−${yen(taxCut())}</b></div>`:''}
+     ${(useFeat('taxfree')&&TAXFREE)?(tfRefundMode()
+       ? `<div class="sr"><span>免税ぶん（あとでお返しします）</span><b>${yen(taxAmt())}</b></div>`
+       : `<div class="sr cut"><span>免税ぶん（申請は別）</span><b>−${yen(taxCut())}</b></div>`):''}
      <div class="sr big"><span>合計</span><b>${yen(t)}</b></div>
      <div class="pay">${[['cash','現金'],['card','カード'],['emoney','電子マネー'],['qr','QR決済']].map(([v,l])=>
        `<button data-p="${v}" class="${PAY===v?'on':''}">${l}</button>`).join('')}</div>
@@ -417,15 +433,32 @@ function renderSum(){
        ${PAY==='emoney'?'端末で iD・QUICPay・交通系（Suica等）から選んでいただきます'
         :PAY==='qr'?'端末にQRが出ます　PayPay・d払いなど'
         :'端末にカードをかざす／差し込んでいただきます'}</div>`:''}
-     ${(useFeat('taxfree')&&CART.length)?`<button class="mini" id="taxfree">${TAXFREE?'免税の値引きを外す':'免税ぶんを値引く（申請は別）'}</button>`:''}
+     ${(useFeat('taxfree')&&TAXFREE&&tfRefundMode())?`<div class="tfbox">
+       <div class="tfh">お返しするために、3つだけ</div>
+       <input id="tf-nm" value="${esc(TFINFO.name)}" placeholder="お名前（パスポートのとおり）">
+       <div class="tfrow">
+         <input id="tf-co" value="${esc(TFINFO.country)}" placeholder="国・地域">
+         <input id="tf-p4" value="${esc(TFINFO.last4)}" maxlength="4" placeholder="旅券の下4桁">
+       </div>
+       <div class="tfn">旅券の番号は控えません　お返しのときは下4桁で確かめます</div>
+     </div>`:''}
+     ${(useFeat('taxfree')&&CART.length)?`<button class="mini" id="taxfree">${TAXFREE
+       ?(tfRefundMode()?'免税をやめる':'免税の値引きを外す')
+       :(tfRefundMode()?'免税にする（税込でいただき、あとで返金）':'免税ぶんを値引く（申請は別）')}</button>`:''}
      <button class="go" id="go" ${CART.length?'':'disabled'}>会計する</button>
      ${CART.length?`<button class="mini" id="clr">明細を消す</button>`:''}`;
   $('sum').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{PAY=b.dataset.p;render();});
   if($('go'))$('go').onclick=doCheckout;
   if($('clr'))$('clr').onclick=()=>{if(confirm('明細をすべて消しますか'))
     {CART=[];TAXFREE=false;render();}};
+  {const a=$('tf-nm'),b=$('tf-co'),c=$('tf-p4');
+   if(a)a.oninput=()=>TFINFO.name=a.value;
+   if(b)b.oninput=()=>TFINFO.country=b.value;
+   if(c)c.oninput=()=>TFINFO.last4=c.value.replace(/[^0-9A-Za-z]/g,'').slice(-4);}
   if($('taxfree'))$('taxfree').onclick=()=>{TAXFREE=!TAXFREE;render();
-    toast(TAXFREE?'免税ぶんを値引きました　申請は別の仕組みで行ってください':'免税の値引きを外しました');};
+    toast(TAXFREE
+      ?(tfRefundMode()?'免税にしました　税込でいただき、出国の確認がとれてからお返しします':'免税ぶんを値引きました　申請は別の仕組みで行ってください')
+      :'免税をやめました');};
 }
 async function doCheckout(){
   const t=cartTotal();
@@ -436,6 +469,8 @@ async function doCheckout(){
     if(!REG){ toast('先に「レジ ◯番」を決めてください',true); showRegisterPick(); return; }
     if(!STAFF){ toast('先に担当を選んでください',true); showStaffPick(); return; }
   }
+  if(TAXFREE&&tfRefundMode()&&(!TFINFO.name.trim()||TFINFO.last4.length<4)){
+    toast('お名前と旅券の下4桁を入れてください　これが無いと、あとでお返しできません',true);return;}
   if(!confirm(`${yen(t)} で会計します${STAFF?'　担当 '+STAFF.name:''}　よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
   const id='co'+Math.random().toString(36).slice(2,8);
@@ -455,8 +490,16 @@ async function doCheckout(){
       discount:cartCut(),
       discountLabel:[PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),TAXFREE?'免税':''].filter(Boolean).join('＋'),
       taxfree:TAXFREE?1:0, taxfreeCut:taxCut(),   // 免税は記録として持つ（申請のときに集計する）
+      taxfreeMode:TAXFREE?(tfRefundMode()?'refund':'cut'):'', taxfreeTax:TAXFREE?taxAmt():0,
       total:t,method:PAY,squarePaymentId:payId||'',cardBrand:BRAND,fee:FEE,
       memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
+    /* 11月からの免税は「あとでお返しする約束」なので、待ちの記録を必ず作る。
+       ここで作らないと、返し忘れが起きる（お客様は出国後で、こちらから追えない）。 */
+    if(TAXFREE&&tfRefundMode()){
+      await post('/taxfree/records',{checkoutId:id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
+        shopId:SHOP,name:TFINFO.name,country:TFINFO.country,passportLast4:TFINFO.last4,
+        sale:t,tax:taxAmt()}).catch(()=>{});
+    }
     // 在庫を引く。1件ずつ（どれが失敗したか分かるように）
     for(const i of CART){ await post('/stock/adjust',{shopId:SHOP,productId:i.productId,delta:-i.qty,reason:'店販'}).catch(()=>{}); }
     // ポイントを付ける（会員のときだけ・商品は1円=1pt）
@@ -467,7 +510,7 @@ async function doCheckout(){
         date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)}).catch(()=>{});
     }
     pushDisplay(true);                       // お客様側は「ありがとうございました」に切り替わる
-    CART=[]; TAXFREE=false;
+    CART=[]; TAXFREE=false; TFINFO={name:'',country:'',last4:''};
     said('会計しました',yen(t)+'　'+payLabel(PAY));
     toast('会計しました');
     if(MEMBER)await loadMember(MEMBER.salonId||MEMBER.code);   // ポイントを取り直す
