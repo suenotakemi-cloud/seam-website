@@ -65,6 +65,24 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   border-radius:999px;padding:11px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
 .tabs button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
 .opane{flex:1;overflow-y:auto;padding:14px 16px 30px}
+/* ── カルテ（暗い画面で、指で押せる大きさに）── */
+.kmix{border:1px solid rgba(239,233,223,.2);border-radius:12px;padding:11px 12px;margin-bottom:10px;
+  background:rgba(239,233,223,.04)}
+.kmh{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.kmh select{flex:0 0 118px;width:auto}
+.kmh b{flex:1;font-size:13px;color:rgba(239,233,223,.75);font-weight:600;white-space:nowrap}
+.kmh button,.kag button{background:none;border:0;color:rgba(239,233,223,.5);font-size:16px;
+  padding:4px 6px;cursor:pointer}
+.kag{display:grid;grid-template-columns:1fr 78px 34px;gap:7px;align-items:center;margin-bottom:6px}
+.kag span{font-size:16px;color:#fff;line-height:1.35}
+.kmix input,.kmix select,.kin{width:100%;background:#1B1815;border:1px solid rgba(239,233,223,.22);
+  border-radius:10px;color:#EFE9DF;font:inherit;font-size:16px;padding:10px 11px}
+.kml{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px;
+  font-size:10.5px;color:rgba(239,233,223,.45);font-weight:600}
+.kmb{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:2px}
+.ksc{margin-top:2px}
+.kbtn{width:100%;margin-top:8px;background:none;border:1px solid rgba(239,233,223,.3);
+  color:#EFE9DF;border-radius:11px;padding:12px;font:inherit;font-size:15px;cursor:pointer}
 .sec{margin-top:18px}
 .sec:first-child{margin-top:6px}
 .sec h3{font-size:12px;letter-spacing:.14em;color:rgba(239,233,223,.5);margin:0 0 8px;font-weight:500}
@@ -130,6 +148,7 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
     <button data-t="prep" class="on">したく</button>
     <button data-t="care">施術中</button>
     <button data-t="after">おわりに</button>
+    <button data-t="karte">カルテ</button>
   </div>
   <div class="opane" id="opane"></div>
 </div>
@@ -198,7 +217,7 @@ async function open(n){
     const q=await fetch(`${API}/precare/for-staff?resv=${encodeURIComponent(r.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
     const j=await q.json(); CUR=(j.precare&&j.precare.summary)||null;
   }catch(e){ CUR=null; }
-  RESV=r; NOTE={note:'',memo:''};
+  RESV=r; NOTE={note:'',memo:''}; KT=null; KT_LAST=null;
   try{
     const w=await fetch(`${API}/visit/note?resv=${encodeURIComponent(r.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
     const wj=await w.json(); if(wj&&wj.note)NOTE={note:wj.note.note||'',memo:wj.note.memo||''};
@@ -216,6 +235,7 @@ function paint(){
   /* ★おわりに は ご記入が無い方にも書ける。
        事前カウンセリングを出していない方こそ、翌日の便りが効く。 */
   if(TAB==='after'){ paintAfter(p); return; }
+  if(TAB==='karte'){ paintKarte(p); return; }
   if(!CUR){ p.innerHTML='<p class="none" style="margin-top:20px">このお客様は まだご記入がありません<br>当日おうかがいしてください</p>'; return; }
   const stop=[CUR.avoidParts&&('触れない：'+CUR.avoidParts),CUR.avoid].filter(Boolean).join('　／　');
   /* ★アレルギーは「苦手」と混ぜない。苦手は好みだが、これは安全の話。
@@ -272,6 +292,125 @@ function paint(){
      「またお越しください」は誰でも言える。
      「次は そこから始めさせてください」は 覚えていないと書けない。
      果たせるのは書いた本人だけ＝開いたままの輪がひとつ残る。 */
+/* ── カルテ（スタイリストとアシスタントで同じものを見て、同じものに書く）──
+ * 誰が書いたかはサーバーが決める（ログインした人の名前）。
+ * この画面から名乗ることはできない＝他人の名前で書けない。 */
+let KT=null, KT_LAST=null, KT_BUSY=false;
+const KWHERE=['根元','中間','毛先','全体','前髪','リタッチ','ハイライト','その他'];
+const KOXY=['3%','4.5%','6%'];
+const kRatio=(a,b)=>(!a||!b)?'':('1:'+String(Math.round(b/a*100)/100));
+const kMixes=b=>((b||{}).mix||[]);
+const kMixText=b=>kMixes(b).map(m=>[m.where,
+  (m.agents||[]).map(a=>a.name+(a.g?' '+a.g+'g':'')).join('＋'),
+  m.oxy?(m.oxy+(m.oxyG?' '+m.oxyG+'g':'')):'', m.min?m.min+'分':'']
+  .filter(Boolean).join(' ')).filter(Boolean).join(' ／ ');
+
+async function kLoad(){
+  const key=(String(RESV.phone||'').replace(/[^0-9]/g,''))||('n:'+(RESV.name||''));
+  KT={key,name:RESV.name||'',phone:RESV.phone||'',date:DAY,staff:STAFFNM[RESV.staffId]||'',
+      menu:RESV.menuName||'',resvId:RESV.id,body:{mix:[],treat:'',free:''},nextNote:'',assistant:''};
+  KT_LAST=null;
+  try{
+    const r=await fetch(`${API}/karte?key=${encodeURIComponent(key)}`,{headers:{'Authorization':'Bearer '+TOK}});
+    const j=await r.json();
+    const list=(j&&j.karte)||[];
+    const today=list.find(x=>x.date===DAY);
+    if(today)KT=Object.assign(KT,today,{body:Object.assign({mix:[],treat:'',free:''},today.body||{})});
+    KT_LAST=list.find(x=>x.date!==DAY)||null;
+  }catch(e){}
+}
+function paintKarte(p){
+  if(!KT){ p.innerHTML='<p class="none" style="margin-top:20px">読み込んでいます…</p>';
+    kLoad().then(()=>paint()); return; }
+  const b=KT.body, L=KT_LAST;
+  const mix=kMixes(b).map((m,i)=>{
+    const gA=(m.agents||[]).reduce((s2,a)=>s2+(+a.g||0),0);
+    const rat=kRatio(gA,+m.oxyG||0);
+    return `<div class="kmix">
+      <div class="kmh"><select data-i="${i}" data-f="where">${KWHERE.map(w=>`<option ${m.where===w?'selected':''}>${w}</option>`).join('')}</select>
+        <b>${rat?'比率 '+rat:''}</b><button data-dm="${i}">✕</button></div>
+      ${(m.agents||[]).map((a,j)=>`<div class="kag"><span>${esc(a.name)}</span>
+        <input data-i="${i}" data-j="${j}" class="kg" type="number" inputmode="decimal" value="${a.g||''}" placeholder="g">
+        <button data-da="${i}:${j}">✕</button></div>`).join('')}
+      <input class="ksc" data-i="${i}" placeholder="バーコードを読む／薬剤名で探す" inputmode="search">
+      <div class="kml"><span>オキシ</span><span>オキシ g</span><span>置き時間 分</span></div>
+      <div class="kmb">
+        <select data-i="${i}" data-f="oxy"><option value="">オキシ</option>${KOXY.map(o=>`<option ${m.oxy===o?'selected':''}>${o}</option>`).join('')}</select>
+        <input data-i="${i}" data-f="oxyG" type="number" inputmode="decimal" value="${m.oxyG||''}" placeholder="オキシg">
+        <input data-i="${i}" data-f="min" type="number" inputmode="numeric" value="${m.min||''}" placeholder="分">
+      </div></div>`;}).join('');
+  p.innerHTML=`
+    ${L?`<div class="sec"><h3>前回 ${String(L.date||'').replace(/-/g,'/')}${L.staff?'　'+esc(L.staff):''}</h3>
+      ${L.nextNote?`<p class="big">${esc(L.nextNote)}</p>`:''}
+      ${kMixText(L.body)?`<p class="mid">薬剤 ${esc(kMixText(L.body))}</p>`:''}
+      ${L.assistant?`<p class="mid">アシスタント ${esc(L.assistant)}</p>`:''}
+      ${kMixText(L.body)?`<button class="kbtn" id="kcopy">前回の薬剤を写す</button>`:''}</div>`:''}
+    <div class="sec"><h3>使った薬剤</h3>${mix||'<p class="mid">まだありません</p>'}
+      <button class="kbtn" id="kadd">＋ 塗りを足す</button></div>
+    <div class="sec"><h3>ついたアシスタント</h3>
+      <input id="kasst" class="kin" value="${esc(KT.assistant||'')}" placeholder="例）田中（シャンプー・塗布）"></div>
+    <div class="sec"><h3>次回への申し送り</h3>
+      <textarea id="knext" class="kin" rows="3" placeholder="例）次回は根元だけ・毛先は触らない">${esc(KT.nextNote||'')}</textarea></div>
+    <div class="sec"><h3>そのほか</h3>
+      <textarea id="kfree" class="kin" rows="2" placeholder="お話しされたこと・ご様子など">${esc(b.free||'')}</textarea></div>
+    <p class="none" style="text-align:left">記入 ${esc(KT.author||'ログインした人')}${(KT.editors&&KT.editors.length)?'　修正 '+esc(KT.editors.map(e=>e.split('@')[0]).join('・')):''}<br>
+      記録は上書きされません　直した中身も残ります</p>
+    <button class="save" id="ksave">${KT_BUSY?'保存しています…':'カルテを保存'}</button>
+    <p class="none" id="kmsg" class="saved"></p>`;
+  kWire(p);
+}
+function kWire(p){
+  const b=KT.body;
+  p.querySelectorAll('.kmix select,.kmb input').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.i,f=el.dataset.f; if(!b.mix[i]||!f)return;
+    b.mix[i][f]=(f==='min'||f==='oxyG')?(+el.value||''):el.value; paint();});
+  p.querySelectorAll('.kg').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.i,j=+el.dataset.j; if(b.mix[i]&&b.mix[i].agents[j])b.mix[i].agents[j].g=+el.value||''; paint();});
+  p.querySelectorAll('[data-dm]').forEach(x=>x.onclick=()=>{b.mix.splice(+x.dataset.dm,1);paint();});
+  p.querySelectorAll('[data-da]').forEach(x=>x.onclick=()=>{
+    const [i,j]=x.dataset.da.split(':').map(Number); b.mix[i].agents.splice(j,1); paint();});
+  const add=p.querySelector('#kadd'); if(add)add.onclick=()=>{(b.mix||(b.mix=[])).push({where:'根元',agents:[],oxy:'',oxyG:'',min:''});paint();};
+  const cp=p.querySelector('#kcopy'); if(cp)cp.onclick=()=>{
+    b.mix=kMixes(KT_LAST.body).map(m=>({where:m.where||'',oxy:m.oxy||'',oxyG:m.oxyG||'',min:m.min||'',
+      agents:(m.agents||[]).map(a=>({id:a.id||'',name:a.name||'',brand:a.brand||'',g:a.g||''}))})); paint();};
+  p.querySelectorAll('.ksc').forEach(el=>el.onkeydown=async e=>{
+    if(e.key!=='Enter')return; e.preventDefault();
+    const v=el.value.trim(); if(!v)return; const i=+el.dataset.i;
+    const g=async u=>{try{const r=await fetch(API+u,{headers:{'Authorization':'Bearer '+TOK}});const j=await r.json();return j.agents||[];}catch{return [];}};
+    let hits=/^[0-9]{8,14}$/.test(v)?await g('/agents?barcode='+encodeURIComponent(v)):await g('/agents?q='+encodeURIComponent(v));
+    let a=hits[0];
+    if(hits.length>1){ const n=+prompt('どれですか　番号を\n\n'+hits.slice(0,12).map((x,k)=>`${k+1}. ${x.name}`).join('\n'),'1'); a=hits[n-1]; }
+    if(!a){
+      const isBc=/^[0-9]{8,14}$/.test(v);
+      const nm=prompt(isBc?`はじめての薬剤です\n${v}\n\n名前を入れてください`:'薬剤の名前', isBc?'':v);
+      if(nm==null||!nm.trim()){el.value='';return;}
+      try{
+        const r=await fetch(API+'/agents',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOK},
+          body:JSON.stringify({barcode:isBc?v:'',name:nm.trim()})});
+        const j=await r.json(); if(!j.ok)throw 0; a={id:j.id,name:nm.trim()};
+      }catch{ return; }
+    }
+    (b.mix[i].agents||(b.mix[i].agents=[])).push({id:a.id||'',name:a.name||'',brand:a.brand||'',g:''});
+    el.value=''; paint();
+  });
+  const sv=v=>{};
+  const ks=p.querySelector('#kasst'); if(ks)ks.oninput=()=>KT.assistant=ks.value;
+  const kn=p.querySelector('#knext'); if(kn)kn.oninput=()=>KT.nextNote=kn.value;
+  const kf=p.querySelector('#kfree'); if(kf)kf.oninput=()=>b.free=kf.value;
+  const btn=p.querySelector('#ksave');
+  if(btn)btn.onclick=async()=>{
+    const msg=p.querySelector('#kmsg'); btn.disabled=true; msg.textContent='';
+    try{
+      const r=await fetch(API+'/karte',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOK},
+        body:JSON.stringify(KT)});
+      const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+      KT.id=j.id; if(j.author)KT.author=j.author;
+      msg.textContent='保存しました';
+    }catch(e){ msg.style.color='#F0A79C'; msg.textContent='保存できませんでした: '+e.message; }
+    btn.disabled=false;
+  };
+}
+
 function paintAfter(p){
   const nm=(RESV&&RESV.name)||'お客様';
   p.innerHTML=`

@@ -116,6 +116,26 @@ td.slot:hover{background:#f0f7ff}
 .ktlast-n{font-size:14px;font-weight:700;color:var(--ink);line-height:1.5}
 .ktlast-s{font-size:12.5px;color:var(--sub);margin-top:4px;line-height:1.5}
 .ktlast .btn{margin-top:9px}
+/* 薬剤の1かたまり。1回の塗りに、剤が何本か入る */
+.ktmix{border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:9px;background:#fcfbf9}
+.ktmix-h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.ktmix-h select{flex:none;width:104px;margin-top:0;padding:7px 8px;font-size:13px;border:1px solid var(--line);border-radius:7px;background:#fff}
+.ktmix-r{flex:1;font-size:12px;font-weight:800;color:var(--navy);letter-spacing:.03em}
+.ktag{display:grid;grid-template-columns:1fr 74px 30px;gap:6px;align-items:center;margin-bottom:5px}
+.ktag-n{font-size:13.5px;font-weight:700;line-height:1.35}
+.ktag-n i{display:block;font-style:normal;font-size:11px;color:var(--sub);font-weight:600}
+.ktag input{margin-top:0;padding:8px;font-size:13px;border:1px solid var(--line);border-radius:7px;background:#fff;width:100%}
+.ktag-add{grid-template-columns:1fr}
+.ktag-s{background:#fff}
+.ktmix-l{display:grid;grid-template-columns:104px 74px 74px;gap:6px;margin-top:9px;
+  font-size:10.5px;color:var(--sub);font-weight:700;letter-spacing:.03em}
+.ktmix-b{display:grid;grid-template-columns:104px 74px 74px;gap:6px;margin-top:2px}
+.ktmix-b input,.ktmix-b select{margin-top:0;padding:8px;font-size:13px;border:1px solid var(--line);border-radius:7px;background:#fff;width:100%}
+.ktwho{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);
+  font-size:12px;color:var(--sub);font-weight:700;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.ktwho span{font-weight:600;font-size:11px;flex-basis:100%}
+.ktlink{background:none;border:0;padding:0;font:inherit;font-size:12px;color:var(--navy);
+  text-decoration:underline;cursor:pointer}
 .ktphotos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .ktphotos img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px}
 .ktphotos .ktnone{grid-column:1/-1}
@@ -1819,6 +1839,11 @@ const API = {
   /* ── カルテ（施術の記録）── */
   async karteList(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.karte:null;}catch{return null;} },
   async karteLast(key,before){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/last?key='+encodeURIComponent(key)+(before?'&before='+before:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.karte:null;}catch{return null;} },
+  async agentByBarcode(bc){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/agents?barcode='+encodeURIComponent(bc),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return (j.agents||[])[0]||null;}catch{return null;} },
+  async agentSearch(q){ if(!API_BASE)return [];try{const r=await fetch(API_BASE+'/agents?q='+encodeURIComponent(q||''),{headers:authHeaders()});if(!r.ok)return [];const j=await r.json();return j.agents||[];}catch{return [];} },
+  async agentSave(a){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/agents',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(a)});return r.ok?await r.json():null;}catch{return null;} },
+  async agentUsed(ids){ if(!API_BASE||!ids.length)return; try{await fetch(API_BASE+'/agents/used',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({ids})});}catch{} },
+  async karteLog(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/log?id='+encodeURIComponent(id),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.log:null;}catch{return null;} },
   async karteSave(k){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(k)});return r.ok?await r.json():null;}catch{return null;} },
   async removePointsByRef(ref){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points?ref='+encodeURIComponent(ref),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listGifts(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/gifts',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.gifts:null;}catch{return null;} },
@@ -3001,6 +3026,12 @@ const KT_CUT=['そろえた','軽くした','短くした','形を変えた','�
 const KT_REACT=['気に入られた','ちょうどよいと','短いと言われた','明るいと言われた','暗いと言われた','もう少し軽くと'];
 const KT_AVOID=['前髪を短くしすぎない','毛先を軽くしすぎない','明るくしすぎない','しみやすい','香りが苦手','会話は控えめ'];
 const KT_OXY=['3%','4.5%','6%'];
+const KT_WHERE=['根元','中間','毛先','全体','前髪','リタッチ','ハイライト','その他'];
+/* 比率は g から出す。1:2 のように、いつもの書き方にそろえる */
+function ktRatio(a,b2){
+  if(!a||!b2)return '';
+  return '1:'+String(Math.round(b2/a*100)/100);
+}
 let KT=null, KT_LAST=null, KT_PHOTOS=null, KT_PENDING=null;   // いま書いているカルテ
 
 function karteOpen(o){
@@ -3008,8 +3039,9 @@ function karteOpen(o){
   KT={ id:o.id||('kt'+Math.random().toString(36).slice(2,10)),
        key:o.key, name:o.name||'', phone:o.phone||'', date:o.date||dkey(today()),
        staff:o.staff||'', menu:o.menu||'', resvId:o.resvId||'', checkoutId:o.checkoutId||'',
-       body:Object.assign({color:[],cut:'',treat:'',reaction:[],avoid:[],free:''},o.body||{}),
-       nextNote:o.nextNote||'' };
+       body:Object.assign({mix:[],cut:'',treat:'',reaction:[],avoid:[],free:''},o.body||{}),
+       nextNote:o.nextNote||'', assistant:o.assistant||'',
+       author:o.author||'', editors:o.editors||[] };
   KT_LAST=null; KT_PHOTOS=null;
   document.getElementById('kartebg').classList.add('show');
   karteDraw();
@@ -3020,11 +3052,46 @@ function karteOpen(o){
     KT_LAST=r.karte; karteDraw();
   }).catch(()=>{});
 }
-/* 前回の薬剤を、そのまま今日の行に写す。だいたい同じだから、写して直すのが速い */
+/* 前回の薬剤を、そのまま今日に写す。だいたい同じだから、写して直すのが速い。
+   古い形（color）で残っている記録も読めるようにしておく。 */
+function ktMixes(body){
+  const b=body||{};
+  if((b.mix||[]).length)return b.mix;
+  return (b.color||[]).map(c=>({where:c.where||'',agents:c.no?[{name:c.no,g:''}]:[],oxy:c.oxy||'',oxyG:'',min:c.min||''}));
+}
+function ktMixText(body){
+  return ktMixes(body).map(m=>[
+    m.where,
+    (m.agents||[]).map(a=>a.name+(a.g?' '+a.g+'g':'')).join('＋'),
+    m.oxy?(m.oxy+(m.oxyG?' '+m.oxyG+'g':'')):'',
+    m.min?m.min+'分':''
+  ].filter(Boolean).join(' ')).filter(Boolean).join(' ／ ');
+}
+/* 薬剤を1本、その塗りに足す */
+function ktAddAgent(i,a){
+  const b=KT.body; if(!b.mix||!b.mix[i])return;
+  (b.mix[i].agents||(b.mix[i].agents=[])).push({id:a.id||'',name:a.name||'',brand:a.brand||'',g:''});
+  karteDraw();
+  /* 足した行の g にすぐ入れられるようにする（打ちに行かせない） */
+  setTimeout(()=>{const gs=document.querySelectorAll(`.ktag-g[data-i="${i}"]`);
+    const last=gs[gs.length-1]; if(last)last.focus();},30);
+}
+/* 名前で探して何本か出たとき、選んでもらう */
+function ktPickAgent(i,hits){
+  const t=hits.slice(0,12).map((a,n)=>`${n+1}. ${a.name}${a.brand?'（'+a.brand+'）':''}`).join('\n');
+  const v=prompt('どれですか　番号を入れてください\n\n'+t,'1');
+  const n=+v; if(!n||!hits[n-1])return;
+  ktAddAgent(i,hits[n-1]);
+}
+/* 誰が書いたか。レジに立っている人＝いま選んでいる担当を既定にする */
+function ktWho(){
+  return (KT&&KT.staff)||(STAFF.find(x=>x.id===(coDraft&&coDraft.staffId))||{}).name||'';
+}
 function ktCopyLast(){
-  const c=((KT_LAST||{}).body||{}).color||[];
-  if(!c.length)return;
-  KT.body.color=c.map(x=>({where:x.where||'',no:x.no||'',oxy:x.oxy||'',min:x.min||''}));
+  const ms=ktMixes((KT_LAST||{}).body);
+  if(!ms.length)return;
+  KT.body.mix=ms.map(m=>({where:m.where||'',oxy:m.oxy||'',oxyG:m.oxyG||'',min:m.min||'',
+    agents:(m.agents||[]).map(a=>({id:a.id||'',name:a.name||'',brand:a.brand||'',g:a.g||''}))}));
   karteDraw();
 }
 /* 写真は、その場で撮るのが一番早い。iPadのカメラをそのまま開く。
@@ -3073,32 +3140,56 @@ function karteDraw(){
   const b=KT.body;
   const chips=(list,sel,attr)=>list.map(x=>
     `<button type="button" class="ktchip ${sel.includes(x)?'on':''}" data-${attr}="${escH(x)}">${escH(x)}</button>`).join('');
-  const colorRows=(b.color||[]).map((c,i)=>`<div class="ktcol">
-      <input class="ktc-w" data-i="${i}" data-f="where" value="${escH(c.where||'')}" placeholder="根元／毛先">
-      <input class="ktc-n" data-i="${i}" data-f="no" value="${escH(c.no||'')}" placeholder="7-NB">
-      <select class="ktc-o" data-i="${i}" data-f="oxy"><option value="" ${c.oxy?'':'selected'}>オキシ</option>${KT_OXY.map(o=>`<option ${((c.oxy||'')===o)?'selected':''}>${o}</option>`).join('')}</select>
-      <input class="ktc-m" data-i="${i}" data-f="min" type="number" inputmode="numeric" value="${c.min||''}" placeholder="分">
-      <button type="button" class="ktc-x" data-del="${i}" aria-label="消す">✕</button>
-    </div>`).join('');
+  /* 塗布のかたまり。1回の塗りに、剤が何本か入り、オキシと時間が付く。
+     比率は g から出す（打たせない）。書くのが面倒だと、書かれないため。 */
+  const mixRows=(b.mix||[]).map((mx,i)=>{
+    const gA=(mx.agents||[]).reduce((s2,a)=>s2+(+a.g||0),0), gO=+mx.oxyG||0;
+    const rat=(gA>0&&gO>0)?ktRatio(gA,gO):'';
+    return `<div class="ktmix">
+      <div class="ktmix-h">
+        <select class="ktm-f" data-i="${i}" data-f="where">${KT_WHERE.map(w=>`<option ${((mx.where||'')===w)?'selected':''}>${w}</option>`).join('')}</select>
+        <span class="ktmix-r">${rat?`比率 ${rat}`:'&nbsp;'}</span>
+        <button type="button" class="ktc-x" data-delmix="${i}" aria-label="この塗りを消す">✕</button>
+      </div>
+      ${(mx.agents||[]).map((a,j)=>`<div class="ktag">
+        <span class="ktag-n">${escH(a.name||'')}${a.brand?`<i>${escH(a.brand)}</i>`:''}</span>
+        <input class="ktag-g" data-i="${i}" data-j="${j}" type="number" inputmode="decimal" step="1" value="${a.g||''}" placeholder="g">
+        <button type="button" class="ktc-x" data-delag="${i}:${j}" aria-label="消す">✕</button>
+      </div>`).join('')}
+      <div class="ktag ktag-add">
+        <input class="ktag-s" data-i="${i}" placeholder="バーコードを読む／薬剤名で探す" autocomplete="off" inputmode="search">
+      </div>
+      <div class="ktmix-l"><span>オキシ</span><span>オキシ g</span><span>置き時間 分</span></div>
+      <div class="ktmix-b">
+        <select class="ktm-f" data-i="${i}" data-f="oxy"><option value="" ${mx.oxy?'':'selected'}>オキシ</option>${KT_OXY.map(o=>`<option ${((mx.oxy||'')===o)?'selected':''}>${o}</option>`).join('')}</select>
+        <input class="ktm-n" data-i="${i}" data-f="oxyG" type="number" inputmode="decimal" value="${mx.oxyG||''}" placeholder="g">
+        <input class="ktm-n" data-i="${i}" data-f="min" type="number" inputmode="numeric" value="${mx.min||''}" placeholder="分">
+      </div>
+    </div>`;}).join('');
   const L=KT_LAST, LB=(L&&L.body)||{};
   const lastBox=!L?'':`<div class="ktlast">
       <div class="ktlast-h">前回 ${String(L.date||'').replace(/-/g,'/')}${L.staff?'　'+escH(L.staff):''}${L.menu?'　'+escH(L.menu):''}</div>
       ${L.next_note?`<div class="ktlast-n">${escH(L.next_note)}</div>`:''}
-      ${(LB.color||[]).length?`<div class="ktlast-s">薬剤 ${(LB.color||[]).map(c=>escH([c.where,c.no,c.oxy,c.min?c.min+'分':''].filter(Boolean).join(' '))).join(' ／ ')}</div>`:''}
+      ${ktMixText(LB)?`<div class="ktlast-s">薬剤 ${escH(ktMixText(LB))}</div>`:''}
       ${(LB.avoid||[]).length?`<div class="ktlast-s">気をつけること ${escH((LB.avoid||[]).join('・'))}</div>`:''}
-      ${(LB.color||[]).length&&ktHasColor()?`<button type="button" class="btn small ghost" id="kt-copylast">前回の薬剤を写す</button>`:''}
+      ${L.assistant?`<div class="ktlast-s">前回のアシスタント ${escH(L.assistant)}</div>`:''}
+      ${L.author?`<div class="ktlast-s">記入 ${escH(L.author)}${(L.editors&&L.editors.length)?`　修正 ${escH(L.editors.map(e=>e.split('@')[0]).join('・'))}`:''}</div>`:''}
+      ${ktMixText(LB)?`<button type="button" class="btn small ghost" id="kt-copylast">前回の薬剤を写す</button>`:''}
     </div>`;
   document.getElementById('kartemodal').innerHTML=`
     <h3>${escH(KT.name||'お客様')} のカルテ</h3>
     <div class="ktsub">${KT.date.replace(/-/g,'/')}　${escH(KT.menu||'')}${KT.staff?'　'+escH(KT.staff):''}</div>
     ${lastBox}
 
-    ${ktHasColor()?`<div class="ktsec"><div class="kth">使った薬剤</div>
-      ${colorRows||'<div class="ktnone">まだありません</div>'}
-      <button type="button" class="btn small ghost" id="kt-addcolor">＋ 一行ふやす</button></div>`:''}
+    ${(ktHasColor()||ktHasPerm())?`<div class="ktsec"><div class="kth">使った薬剤</div>
+      ${mixRows||'<div class="ktnone">まだありません</div>'}
+      <button type="button" class="btn small ghost" id="kt-addmix">＋ 塗りを足す</button></div>`:''}
 
-    ${ktHasPerm()?`<div class="ktsec"><div class="kth">薬液と時間</div>
-      <input id="kt-perm" value="${escH(b.perm||'')}" placeholder="例）1剤20分・2剤10分"></div>`:''}
+    ${ktHasPerm()?`<div class="ktsec"><div class="kth">巻き方・その他の時間</div>
+      <input id="kt-perm" value="${escH(b.perm||'')}" placeholder="例）ロッド12mm・中間巻き"></div>`:''}
+
+    <div class="ktsec"><div class="kth">ついたアシスタント</div>
+      <input id="kt-asst" value="${escH(KT.assistant||'')}" placeholder="例）田中（シャンプー・カラー塗布）"></div>
 
     <div class="ktsec"><div class="kth">切り方</div>
       <div class="ktchips">${chips(KT_CUT,[b.cut||''],'cut')}</div>
@@ -3123,6 +3214,10 @@ function karteDraw(){
     <div class="ktsec"><div class="kth">そのほか</div>
       <textarea id="kt-free" placeholder="例）お話しされたこと・ご様子など">${escH(b.free||'')}</textarea></div>
 
+    <div class="ktwho">記入 ${escH(KT.author||ktWho()||'—')}${(KT.editors&&KT.editors.length)?`　修正 ${escH(KT.editors.map(e=>e.split('@')[0]).join('・'))}`:''}
+      ${KT.author?`<button type="button" class="ktlink" id="kt-hist">書き換えの跡を見る</button>`:''}
+      <span>記録は上書きされません　直した中身も残ります</span></div>
+
     <div class="ktbtns">
       <button class="btn pay" id="kt-save">保存する</button>
       <button class="btn small ghost" id="kt-cancel">あとにする</button>
@@ -3140,20 +3235,68 @@ function karteWire(){
   const kf=M.querySelector('#kt-file');
   if(kf)kf.onchange=()=>{const f=kf.files&&kf.files[0];if(f)ktPhotoPick(f,()=>{kf.value='';ktPhotoLoad(true)});};
   ktPhotoLoad();
-  if(M.querySelector('#kt-addcolor'))M.querySelector('#kt-addcolor').onclick=()=>{
-    (b.color||(b.color=[])).push({where:'',no:'',oxy:'',min:''});karteDraw();};
-  M.querySelectorAll('[data-del]').forEach(x=>x.onclick=()=>{b.color.splice(+x.dataset.del,1);karteDraw();});
-  M.querySelectorAll('.ktcol input,.ktcol select').forEach(el=>el.onchange=()=>{
-    const i=+el.dataset.i,f=el.dataset.f; b.color[i][f]=(f==='min')?(+el.value||''):el.value;});
+  if(M.querySelector('#kt-addmix'))M.querySelector('#kt-addmix').onclick=()=>{
+    (b.mix||(b.mix=[])).push({where:'根元',agents:[],oxy:'',oxyG:'',min:''});karteDraw();};
+  M.querySelectorAll('[data-delmix]').forEach(x=>x.onclick=()=>{b.mix.splice(+x.dataset.delmix,1);karteDraw();});
+  M.querySelectorAll('[data-delag]').forEach(x=>x.onclick=()=>{
+    const [i,j]=x.dataset.delag.split(':').map(Number); b.mix[i].agents.splice(j,1);karteDraw();});
+  M.querySelectorAll('.ktmix select,.ktm-n').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.i,f=el.dataset.f; if(!b.mix[i])return;
+    b.mix[i][f]=(f==='min'||f==='oxyG')?(+el.value||''):el.value; karteDraw();});
+  M.querySelectorAll('.ktag-g').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.i,j=+el.dataset.j; if(b.mix[i]&&b.mix[i].agents[j])b.mix[i].agents[j].g=+el.value||''; karteDraw();});
+  /* バーコードを読む。読み取り機は「文字を打ってEnter」なので、Enterで拾う。
+     知らないバーコードは、その場で名前を入れて1回だけ登録＝次からは読むだけで出る。 */
+  M.querySelectorAll('.ktag-s').forEach(el=>{
+    el.onkeydown=async e=>{
+      if(e.key!=='Enter')return;
+      e.preventDefault();
+      const v=el.value.trim(); if(!v)return;
+      const i=+el.dataset.i;
+      let a=/^[0-9]{8,14}$/.test(v) ? await API.agentByBarcode(v) : null;
+      if(!a){
+        const hits=await API.agentSearch(v);
+        if(hits.length===1)a=hits[0];
+        else if(hits.length>1){ ktPickAgent(i,hits); el.value=''; return; }
+      }
+      if(!a){
+        /* 見つからない。ここで諦めさせない＝その場で登録して、そのまま使えるようにする */
+        const isBc=/^[0-9]{8,14}$/.test(v);
+        const nm=prompt(isBc?`はじめての薬剤です\nバーコード ${v}\n\n薬剤の名前を入れてください（例）オルディーブ 7-NB`:'薬剤の名前を入れてください', isBc?'':v);
+        if(nm==null||!nm.trim()){el.value='';return;}
+        const br=prompt('メーカー・ブランド（分からなければ空欄でOK）','')||'';
+        const r=await API.agentSave({barcode:isBc?v:'',name:nm.trim(),brand:br.trim(),kind:ktHasPerm()?'perm':'color'});
+        if(!r||!r.ok){toast('登録できませんでした',true);return;}
+        a={id:r.id,name:nm.trim(),brand:br.trim()};
+        toast('薬剤を登録しました　次からは読むだけで出ます');
+      }
+      ktAddAgent(i,a); el.value='';
+    };
+  });
   const set=(id,fn)=>{const el=M.querySelector(id); if(el)el.oninput=()=>fn(el.value);};
+  set('#kt-asst',v=>KT.assistant=v);
   set('#kt-perm',v=>b.perm=v); set('#kt-cutfree',v=>b.cutFree=v);
   set('#kt-treat',v=>b.treat=v); set('#kt-free',v=>b.free=v);
   set('#kt-next',v=>KT.nextNote=v);
+  if(M.querySelector('#kt-hist'))M.querySelector('#kt-hist').onclick=async()=>{
+    const lg=await API.karteLog(KT.id);
+    if(!lg||!lg.length){toast('跡がありません');return;}
+    alert('書き換えの跡\n\n'+lg.map(x=>
+      `${x.at.slice(0,16).replace('T',' ')}　${x.who||'—'}　${x.action==='create'?'記入':'修正'}\n`+
+      `　申し送り「${x.nextNote||'—'}」\n　薬剤 ${ktMixText(x.body)||'—'}`).join('\n\n'));
+  };
   M.querySelector('#kt-cancel').onclick=karteClose;
   M.querySelector('#kt-save').onclick=async()=>{
     const btn=M.querySelector('#kt-save'); btn.disabled=true; btn.textContent='保存しています…';
+    /* 誰が書いたかを一緒に送る。あとから直したときも、直した人が残る */
+    KT.who=ktWho();
     const r=await API.karteSave(KT);
-    if(r&&r.ok){ toast('カルテを保存しました'); karteClose(); }
+    if(r&&r.ok){
+      /* よく使う薬剤が上に並ぶように、使った回数を足しておく */
+      const ids=[].concat(...(KT.body.mix||[]).map(m=>(m.agents||[]).map(a=>a.id).filter(Boolean)));
+      if(ids.length)API.agentUsed(ids);
+      toast('カルテを保存しました'); karteClose();
+    }
     else { btn.disabled=false; btn.textContent='保存する'; toast('保存できませんでした',true); }
   };
 }
