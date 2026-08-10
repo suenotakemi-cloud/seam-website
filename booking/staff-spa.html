@@ -155,7 +155,13 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';
-let TOK=localStorage.getItem('stb_admin_tok')||'';
+/* 一人ひとりでログインする。カルテに残る名前は、このログインから取る。
+   端末を共有していても「誰が書いたか」が本物になる。
+   ★サーバーへは ?stok=<自分の札> を必ず付ける（みんなで同じ管理トークンは使わない）。 */
+let TOK=localStorage.getItem('stb_staff_tok')||'';
+let ME={id:localStorage.getItem('stb_staff_id')||'',name:localStorage.getItem('stb_staff_nm')||''};
+const U=(path)=>API+path+(path.indexOf('?')>=0?'&':'?')+'stok='+encodeURIComponent(TOK);
+const H=()=>({'Content-Type':'application/json'});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 const todayKey=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
@@ -170,28 +176,59 @@ async function load(){
   if(!TOK)return askToken();
   app.innerHTML='<p class="lead" style="margin-top:24px">読み込んでいます…</p>';
   try{
-    const r=await fetch(`${API}/precare/list?from=${DAY}&to=${DAY}`,{headers:{'Authorization':'Bearer '+TOK}});
-    if(r.status===401){TOK='';localStorage.removeItem('stb_admin_tok');return askToken('もう一度お願いします');}
+    const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
+    if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
     ROWS=j.rows||[]; render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
-function askToken(msg){
-  app.innerHTML=`<h1>スタッフの方へ</h1>
-    <p class="lead">この端末で1回だけ 管理トークンを入れてください${msg?'　'+esc(msg):''}</p>
-    <div class="row"><input type="password" id="tk" placeholder="管理トークン">
-      <button class="mini" id="tkgo">つなぐ</button></div>`;
-  document.getElementById('tkgo').onclick=async()=>{
-    const v=(document.getElementById('tk').value||'').trim(); if(!v)return;
-    const r=await fetch(`${API}/precare/list?from=${DAY}&to=${DAY}`,{headers:{'Authorization':'Bearer '+v}}).catch(()=>null);
-    if(r&&r.status===200){TOK=v;localStorage.setItem('stb_admin_tok',v);load();}
-    else app.querySelector('.lead').textContent='トークンが違うようです';
-  };
+async function askToken(msg){
+  app.innerHTML=`<h1>ログイン</h1><p class="lead">読み込んでいます…</p>`;
+  let list=[];
+  try{ const r=await fetch(`${API}/staff/list`); const j=await r.json(); list=j.staff||[]; }catch(e){}
+  if(!list.length){
+    app.innerHTML=`<h1>ログイン</h1>
+      <p class="lead">まだ暗証番号が決まっていません<br>
+        レジの画面の「設定 → スタッフの暗証番号」で、ひとりずつ3桁を決めてください</p>`;
+    return;
+  }
+  app.innerHTML=`<h1>ログイン</h1>
+    <p class="lead">自分を選んで、3桁の暗証番号を入れてください${msg?'　'+esc(msg):''}</p>
+    <div class="g">${list.map(x=>`<button class="card" data-s="${esc(x.id)}" data-n="${esc(x.name)}">
+      <span class="t">　</span><span><span class="n">${esc(x.name)}</span></span></button>`).join('')}</div>`;
+  app.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{
+    app.innerHTML=`<h1>${esc(b.dataset.n)}</h1>
+      <p class="lead" id="lmsg">暗証番号（3桁）</p>
+      <div class="row"><input type="password" id="pin" inputmode="numeric" maxlength="3"
+        placeholder="＿＿＿" style="text-align:center;letter-spacing:.4em;font-size:22px">
+        <button class="mini" id="pingo">入る</button></div>
+      <p class="lead"><button class="mini" id="back">ひとつ戻る</button></p>`;
+    const el=document.getElementById('pin'); el.focus();
+    const go=async()=>{
+      const v=(el.value||'').replace(/[^0-9]/g,'');
+      if(v.length!==3){document.getElementById('lmsg').textContent='3桁の数字を入れてください';return;}
+      try{
+        const r=await fetch(`${API}/staff/login`,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({staffId:b.dataset.s,pass:v})});
+        const j=await r.json();
+        if(!r.ok||!j.ok)throw new Error(j.error||'入れませんでした');
+        TOK=j.token; ME={id:j.staffId,name:j.name||b.dataset.n};
+        localStorage.setItem('stb_staff_tok',TOK);
+        localStorage.setItem('stb_staff_id',ME.id);
+        localStorage.setItem('stb_staff_nm',ME.name);
+        load();
+      }catch(e){ document.getElementById('lmsg').textContent=e.message; el.value=''; el.focus(); }
+    };
+    document.getElementById('pingo').onclick=go;
+    el.onkeydown=e=>{if(e.key==='Enter')go();};
+    document.getElementById('back').onclick=()=>askToken();
+  });
 }
+
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
   app.innerHTML=`<h1>今日のお客様</h1>
-    <p class="lead">${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
+    <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
       <button class="card" data-i="${n}">
         <span class="t">${hm(r.start||0)}</span>
@@ -214,12 +251,12 @@ async function open(n){
   document.getElementById('one').classList.add('on');
   document.getElementById('opane').innerHTML='<p class="none" style="margin-top:20px">読み込んでいます…</p>';
   try{
-    const q=await fetch(`${API}/precare/for-staff?resv=${encodeURIComponent(r.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
+    const q=await fetch(U(`/precare/for-staff?resv=${encodeURIComponent(r.id)}`));
     const j=await q.json(); CUR=(j.precare&&j.precare.summary)||null;
   }catch(e){ CUR=null; }
   RESV=r; NOTE={note:'',memo:''}; KT=null; KT_LAST=null;
   try{
-    const w=await fetch(`${API}/visit/note?resv=${encodeURIComponent(r.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
+    const w=await fetch(U(`/visit/note?resv=${encodeURIComponent(r.id)}`));
     const wj=await w.json(); if(wj&&wj.note)NOTE={note:wj.note.note||'',memo:wj.note.memo||''};
   }catch(e){}
   paint();
@@ -311,7 +348,7 @@ async function kLoad(){
       menu:RESV.menuName||'',resvId:RESV.id,body:{mix:[],treat:'',free:''},nextNote:'',assistant:''};
   KT_LAST=null;
   try{
-    const r=await fetch(`${API}/karte?key=${encodeURIComponent(key)}`,{headers:{'Authorization':'Bearer '+TOK}});
+    const r=await fetch(U(`/karte?key=${encodeURIComponent(key)}`));
     const j=await r.json();
     const list=(j&&j.karte)||[];
     const today=list.find(x=>x.date===DAY);
@@ -376,7 +413,7 @@ function kWire(p){
   p.querySelectorAll('.ksc').forEach(el=>el.onkeydown=async e=>{
     if(e.key!=='Enter')return; e.preventDefault();
     const v=el.value.trim(); if(!v)return; const i=+el.dataset.i;
-    const g=async u=>{try{const r=await fetch(API+u,{headers:{'Authorization':'Bearer '+TOK}});const j=await r.json();return j.agents||[];}catch{return [];}};
+    const g=async u=>{try{const r=await fetch(U(u));const j=await r.json();return j.agents||[];}catch{return [];}};
     let hits=/^[0-9]{8,14}$/.test(v)?await g('/agents?barcode='+encodeURIComponent(v)):await g('/agents?q='+encodeURIComponent(v));
     let a=hits[0];
     if(hits.length>1){ const n=+prompt('どれですか　番号を\n\n'+hits.slice(0,12).map((x,k)=>`${k+1}. ${x.name}`).join('\n'),'1'); a=hits[n-1]; }
@@ -385,7 +422,7 @@ function kWire(p){
       const nm=prompt(isBc?`はじめての薬剤です\n${v}\n\n名前を入れてください`:'薬剤の名前', isBc?'':v);
       if(nm==null||!nm.trim()){el.value='';return;}
       try{
-        const r=await fetch(API+'/agents',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOK},
+        const r=await fetch(U('/agents'),{method:'POST', headers:H(),
           body:JSON.stringify({barcode:isBc?v:'',name:nm.trim()})});
         const j=await r.json(); if(!j.ok)throw 0; a={id:j.id,name:nm.trim()};
       }catch{ return; }
@@ -401,7 +438,7 @@ function kWire(p){
   if(btn)btn.onclick=async()=>{
     const msg=p.querySelector('#kmsg'); btn.disabled=true; msg.textContent='';
     try{
-      const r=await fetch(API+'/karte',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOK},
+      const r=await fetch(U('/karte'),{method:'POST', headers:H(),
         body:JSON.stringify(KT)});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
       KT.id=j.id; if(j.author)KT.author=j.author;
@@ -439,7 +476,7 @@ function paintAfter(p){
     /* ★合言葉は必要になった1件だけ取りに行く（その日ぶんを一覧で持ち歩かない） */
     kb.disabled=true;
     try{
-      const r=await fetch(`${API}/visit/keepsake?resv=${encodeURIComponent(RESV.id)}`,{headers:{'Authorization':'Bearer '+TOK}});
+      const r=await fetch(U(`/visit/keepsake?resv=${encodeURIComponent(RESV.id)}`));
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
       window.open(j.url,'_blank');
     }catch(e){ const m=document.getElementById('wmsg'); m.style.color='#F0A79C'; m.textContent='ひらけませんでした: '+e.message; }
@@ -453,8 +490,7 @@ function paintAfter(p){
     btn.disabled=true; msg.textContent='';
     NOTE={note:t.value,memo:document.getElementById('wmemo').value};
     try{
-      const r=await fetch(`${API}/visit/note`,{method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':'Bearer '+TOK},
+      const r=await fetch(U(`/visit/note`),{method:'POST', headers:H(),
         body:JSON.stringify({resv:RESV.id,note:NOTE.note,memo:NOTE.memo,staffId:RESV.staffId||'',staffName:STAFFNM[RESV.staffId]||''})});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
       msg.textContent=NOTE.note.trim()?'保存しました　翌朝お届けします':'保存しました';
@@ -470,6 +506,13 @@ document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{
   paint();
 });
 document.getElementById('oclose').onclick=()=>{document.getElementById('one').classList.remove('on');};
+/* 端末を共有しているので、抜ける口を分かりやすいところに置く */
+document.getElementById('day').onclick=()=>{
+  if(!TOK||!confirm((ME.name||'')+' さんからログアウトしますか'))return;
+  TOK='';ME={id:'',name:''};
+  ['stb_staff_tok','stb_staff_id','stb_staff_nm'].forEach(k=>localStorage.removeItem(k));
+  askToken();
+};
 load();
 </script>
 </body>

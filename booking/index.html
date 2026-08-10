@@ -1843,6 +1843,7 @@ const API = {
   async agentSearch(q){ if(!API_BASE)return [];try{const r=await fetch(API_BASE+'/agents?q='+encodeURIComponent(q||''),{headers:authHeaders()});if(!r.ok)return [];const j=await r.json();return j.agents||[];}catch{return [];} },
   async agentSave(a){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/agents',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(a)});return r.ok?await r.json():null;}catch{return null;} },
   async agentUsed(ids){ if(!API_BASE||!ids.length)return; try{await fetch(API_BASE+'/agents/used',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({ids})});}catch{} },
+  async staffPin(staffId,pin,name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/staff/pin',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({staffId,pin,name})});return await r.json();}catch{return null;} },
   async karteLog(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/log?id='+encodeURIComponent(id),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.log:null;}catch{return null;} },
   async karteSave(k){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(k)});return r.ok?await r.json():null;}catch{return null;} },
   async removePointsByRef(ref){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points?ref='+encodeURIComponent(ref),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
@@ -4046,6 +4047,18 @@ function renderRegister(){
       <input class="fr-in" data-k="default" type="number" inputmode="decimal" min="0" max="10" step="0.01"
         value="${FR.default!=null?FR.default:3.25}" style="width:74px">%</span></div>
     <button class="btn pay" id="fr-save" style="width:100%;margin-top:9px">この料率で保存する</button></div>`;
+  /* ── スタッフの暗証番号 ──
+     スマホの画面を「みんなで同じ合言葉」から「一人ひとり」に変える。
+     カルテに残る名前が本物になる＝あとから直しても、誰が直したか分かる。 */
+  const pinPanel=`<div class="card reg-close"><h3>スタッフの暗証番号（スマホ用）</h3>
+    <div class="rz-ref" style="margin-bottom:8px"><span>3桁の数字をひとりずつ決めます</span>
+      <span>決めた人だけが、スマホの画面（今日のお客様・カルテ）に入れます　カルテに残る名前は、ここでのログインから取ります</span></div>
+    ${STAFF.map(x=>`<div class="rz"><span>${escH(x.name)}</span><span class="co-y">
+      <input class="pin-in" data-id="${x.id}" data-name="${escH(x.name)}" type="text" inputmode="numeric"
+        maxlength="3" placeholder="___" style="width:64px;text-align:center;letter-spacing:.3em;font-size:16px">
+      <button class="btn small ghost pin-save" data-id="${x.id}">決める</button></span></div>`).join('')}
+    <div class="rz-ref"><span>番号は表示されません（決め直しはいつでもできます）</span>
+      <span>スマホの画面 ${location.origin}/booking/staff-spa</span></div></div>`;
   const ifOn=(v,html)=>featOn(v)?html:'';
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧭 つかう機能をえらぶ',featPanel,true)
@@ -4058,7 +4071,18 @@ function renderRegister(){
     +ifOn('member', fold('💎 ポイント設定（還元率・使う/使わない）',ptPanel))
     +fold(`🎁 ギフト券（発行・一覧${activeGifts.length?`・有効${activeGifts.length}枚`:''}）`,gfPanel)
     +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel)
-    +fold('🏦 決済手数料の料率（ブランドごと）',feePanel);
+    +fold('🏦 決済手数料の料率（ブランドごと）',feePanel)
+    +fold('🔑 スタッフの暗証番号（スマホ用）',pinPanel);
+  document.querySelectorAll('.pin-save').forEach(b=>b.onclick=async()=>{
+    const el=document.querySelector(`.pin-in[data-id="${b.dataset.id}"]`);
+    const pin=(el.value||'').replace(/[^0-9]/g,'');
+    if(pin.length!==3){toast('3桁の数字を入れてください',true);return;}
+    b.disabled=true;
+    const r=await API.staffPin(b.dataset.id,pin,el.dataset.name);
+    b.disabled=false;
+    if(r&&r.ok){el.value='';toast(`${el.dataset.name} さんの暗証番号を決めました`);}
+    else toast((r&&r.error)||'決められませんでした',true);
+  });
   {const b3=document.getElementById('fr-save');
    if(b3)b3.onclick=()=>{
      const o={};document.querySelectorAll('.fr-in').forEach(i=>{o[i.dataset.k]=+i.value||0;});
