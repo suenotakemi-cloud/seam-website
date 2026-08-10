@@ -4067,6 +4067,23 @@ function renderRegister(){
     ${STAFF.map(x=>`<div class="rz"><span>${escH(x.name)}</span><span class="co-y">
       <input class="emp-in" data-id="${x.id}" value="${escH(EN[x.id]||'')}" placeholder="例）101" style="width:96px"></span></div>`).join('')}
     <button class="btn pay" id="emp-save" style="width:100%;margin-top:9px">番号を保存する</button></div>`;
+  /* 勘定科目。会計ソフトに合わせて名前を変えられるようにしておく
+     （科目名が1文字違うだけで、仕訳が取り込めないため） */
+  const AC=(()=>{try{return JSON.parse(stg('accounts','{}'))||{};}catch(e){return {};}})();
+  const AC_ROWS=[['現金','現金'],['売掛','売掛金（カード等の未入金）'],['預金','普通預金'],
+    ['技術売上','売上高（施術）'],['店販売上','売上高（店販）'],['値引','売上値引高'],
+    ['手数料','支払手数料'],['仕入','仕入高'],['未払','買掛金'],['立替','立替金'],
+    ['技術補助','補助科目（施術）'],['店販補助','補助科目（店販）'],
+    ['税区分売上','税区分（売上）'],['税区分仕入','税区分（仕入）']];
+  const AC_DEF={現金:'現金',売掛:'売掛金',預金:'普通預金',技術売上:'売上高',店販売上:'売上高',
+    値引:'売上値引高',手数料:'支払手数料',仕入:'仕入高',未払:'買掛金',立替:'立替金',
+    技術補助:'施術',店販補助:'店販',税区分売上:'課税売上 10%',税区分仕入:'課税仕入 10%'};
+  const accPanel=`<div class="card reg-close"><h3>勘定科目（会計ソフトに合わせる）</h3>
+    <div class="rz-ref" style="margin-bottom:8px"><span>仕訳CSVで使う科目名です</span>
+      <span>マネーフォワードに登録されている名前と、1文字も違わないように入れてください</span></div>
+    ${AC_ROWS.map(([k,l])=>`<div class="rz"><span>${escH(l)}</span>
+      <input class="ac-in" data-k="${k}" value="${escH(AC[k]||AC_DEF[k]||'')}" style="margin-left:auto;max-width:190px"></div>`).join('')}
+    <button class="btn pay" id="ac-save" style="width:100%;margin-top:9px">この科目名で保存する</button></div>`;
   const ifOn=(v,html)=>featOn(v)?html:'';
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧭 つかう機能をえらぶ',featPanel,true)
@@ -4081,7 +4098,12 @@ function renderRegister(){
     +fold(`🎫 回数券・パス（発行・一覧${activePasses.length?`・有効${activePasses.length}件`:''}）`,psPanel)
     +fold('🏦 決済手数料の料率（ブランドごと）',feePanel)
     +fold('🔑 スタッフの暗証番号（スマホ用）',pinPanel)
-    +fold('🧾 従業員番号（マネーフォワード）',empPanel);
+    +fold('🧾 従業員番号（マネーフォワード）',empPanel)
+    +fold('📒 勘定科目（会計ソフトに合わせる）',accPanel);
+  {const b5=document.getElementById('ac-save');
+   if(b5)b5.onclick=()=>{
+     const o={};document.querySelectorAll('.ac-in').forEach(i=>{const v=(i.value||'').trim();if(v)o[i.dataset.k]=v;});
+     setStg('accounts',JSON.stringify(o));toast('勘定科目を保存しました');};}
   {const b4=document.getElementById('emp-save');
    if(b4)b4.onclick=()=>{
      const o={};document.querySelectorAll('.emp-in').forEach(i=>{const v=(i.value||'').trim();if(v)o[i.dataset.id]=v;});
