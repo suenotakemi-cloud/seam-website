@@ -742,8 +742,14 @@ async function payByTerminal(amount,kind){
     TERM.deviceId=code.trim(); localStorage.setItem('stb_term_dev:'+REG,TERM.deviceId);
   }
   const PT={card:'CARD_PRESENT',emoney:'FELICA_ALL',qr:'QR_CODE'};
+  /* Squareにも明細と担当を渡す（商品別売上・スタッフ別売上に出るように）。
+     値引きで合計がずれるときは1行にまとめる（Squareが弾くため）。 */
+  const its=CART.map(i=>({name:i.name,qty:i.qty,price:i.unit*i.qty}));
+  const sum=its.reduce((a,x)=>a+x.price,0);
+  const items=(!its.length)?[]:(sum===amount?its:[{name:its[0].name+(its.length>1?'ほか':''),qty:1,price:amount}]);
   const r=await post('/terminal/checkout',{amount,deviceId:TERM.deviceId,mode:'shop',
-    paymentType:PT[kind]||'CARD_PRESENT',note:'SEAM ショップ'});
+    paymentType:PT[kind]||'CARD_PRESENT',note:'SEAM ショップ',
+    items,staffName:(STAFF&&STAFF.name)||'',ref:''});
   TERM.checkoutId=r.checkoutId;
   toast('ターミナルでお支払いをご案内ください');
   // 端末の結果を待つ（最長3分）

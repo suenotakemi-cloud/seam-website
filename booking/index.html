@@ -1870,7 +1870,7 @@ const API = {
   async saveIntake(x){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(x)});return r.ok?await r.json():null;}catch{return null;} },
   async removeIntake(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   // ---- Square Terminal（端末カード決済）----
-  async termCheckout(amount,deviceId,note){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({amount,deviceId,note,mode:POS_MODE})});return await r.json();}catch(e){return {error:e.message};} },
+  async termCheckout(amount,deviceId,note,extra){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({amount,deviceId,note,mode:POS_MODE,...(extra||{})})});return await r.json();}catch(e){return {error:e.message};} },
   async termStatus(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/checkout?id='+encodeURIComponent(id),{headers:authHeaders()});return await r.json();}catch(e){return {error:e.message};} },
   async termCancel(checkoutId){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/cancel',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId})});return await r.json();}catch(e){return {error:e.message};} },
   async termDeviceCode(name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/terminal/device-code',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({name})});return await r.json();}catch(e){return {error:e.message};} },
@@ -3897,7 +3897,23 @@ async function runTerminalPayment(){
   box.innerHTML=`<div class="term-pay"><div class="tp-amt">¥${rec.total.toLocaleString()}</div><div class="tp-spin"></div><div class="tp-msg" id="tp-msg">端末に送信しています…</div><div class="row" style="margin-top:18px"><button class="btn ghost" style="flex:1" id="tp-cancel">キャンセル</button><button class="btn pay" id="tp-manual">端末なしで記録</button></div></div>`;
   box.querySelector('#tp-manual').onclick=()=>{if(_termCid)API.termCancel(_termCid);if(_termPoll)clearInterval(_termPoll);_termCid=null;coFinish(rec);};
   box.querySelector('#tp-cancel').onclick=()=>{if(_termCid)API.termCancel(_termCid);if(_termPoll)clearInterval(_termPoll);_termCid=null;renderCheckout();};
-  const r=await API.termCheckout(rec.total,dev,rec.customer||'SEAM 銀座');
+  /* ★Squareにも「何が売れたか」「誰が担当したか」を渡す。
+     渡さないと、Squareの商品別売上・スタッフ別売上にこちらのぶんが出ない。
+     明細の合計と請求額が1円でも違うとSquareが弾くので、
+     ずれるとき（値引き・ポイント・ギフト券を使ったとき）は1行にまとめて送る。 */
+  const sqItems=(()=>{
+    const its=[];
+    const mn=(MENUS.find(m=>m.id===(rec.menuId||(db.reservations.find(x=>x.id===rec.resvId)||{}).menuId))||{}).name||'施術';
+    if((+rec.tech||0)>0)its.push({name:mn,qty:1,price:+rec.tech||0});
+    (rec.retailItems||[]).forEach(i=>{if((+i.price||0)>0)its.push({name:i.name||'店販',qty:Math.max(1,+i.qty||1),price:+i.price||0});});
+    const sum=its.reduce((a,x)=>a+x.price,0);
+    if(!its.length)return [];
+    if(sum!==rec.total)return [{name:mn+(rec.retailItems&&rec.retailItems.length?'ほか':''),qty:1,price:rec.total}];
+    return its;
+  })();
+  const stName=(STAFF.find(x=>x.id===rec.staffId)||{}).name||'';
+  const r=await API.termCheckout(rec.total,dev,rec.customer||'SEAM 銀座',
+    {items:sqItems,staffName:stName,ref:rec.id});
   const msg=document.getElementById('tp-msg');
   if(!r||!r.checkoutId){if(msg)msg.innerHTML='<span style="color:var(--danger)">送信失敗: '+((r&&r.error)||'不明')+'</span>';return;}
   _termCid=r.checkoutId;
