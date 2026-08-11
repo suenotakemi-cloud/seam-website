@@ -131,6 +131,9 @@ h2:first-child{margin-top:2px}
       <button data-t="tf">免税</button>
       <button data-t="rev">口コミ</button>
       <button data-t="noti">申し送り</button>
+      <button data-t="sup">備品</button>
+      <button data-t="ap">応募</button>
+      <button data-t="li">掲載</button>
       <button data-t="order" data-feat="order">発注書</button>
       <button data-t="alert" data-feat="order">在庫アラート</button>
     </div>
@@ -151,6 +154,7 @@ let SHOP=localStorage.getItem(SHOPK)||'ginza';
 let TAB='home', FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null, PSORT='v';
 let REP=null, RWIN=90, RLOST=180;
 let REC=null, HOME=null, PAY=null, PB=null, CB=null, CBMON='', JR=null, TF=null, RV=null, NO=null;
+let SUP=null, AP=null, LI=null;
 let BUFFER=0, ALERT_DAYS=90, ALERT_MONTHS=6;
 
 const $=id=>document.getElementById(id);
@@ -360,8 +364,10 @@ async function loadHome(){
     g2(`/stock-alert?days=90&months=6&shop=${encodeURIComponent(SHOP)}`),
     g2(`/payables?month=${day.slice(0,7)}`),
   ]);
-  const [tf,no]=await Promise.all([g2('/taxfree/records?status=waiting'),g2(`/notices?shop=${encodeURIComponent(SHOP)}`)]);
-  HOME={day,y,rec,ord,alert,pb,tf,no};
+  const [tf,no,ap,sup,li]=await Promise.all([
+    g2('/taxfree/records?status=waiting'), g2(`/notices?shop=${encodeURIComponent(SHOP)}`),
+    g2('/recruit/list'), g2(`/supplies?shop=${encodeURIComponent(SHOP)}`), g2(`/listing?shop=${encodeURIComponent(SHOP)}`)]);
+  HOME={day,y,rec,ord,alert,pb,tf,no,ap,sup,li};
 }
 function homeHtml(){
   if(!HOME)return '<div class="empty">読み込んでいます…</div>';
@@ -376,6 +382,12 @@ function homeHtml(){
   if(HOME.tf&&HOME.tf.まとめ&&HOME.tf.まとめ.返金待ち)items.push({i:'🛂',
     t:`免税のお返しが ${HOME.tf.まとめ.返金待ち}件`,
     s:`${yen(HOME.tf.まとめ.返金待ちの額)}　お返しする約束が残っています`,a:'免税を見る',tab:'tf'});
+  if(HOME.ap&&HOME.ap.新着)items.push({i:'📮',t:`求人の応募が ${HOME.ap.新着}件`,
+    s:'まだ見ていない応募です　早く返すほど会えます',a:'応募を見る',tab:'ap'});
+  if(HOME.sup&&HOME.sup.足りないもの)items.push({i:'🧻',t:`足りない備品 ${HOME.sup.足りないもの}件`,
+    s:'下限を割っています',a:'備品を見る',tab:'sup'});
+  if(HOME.li&&HOME.li.rows)  {const n=HOME.li.rows.filter(x=>x.そろそろ).length;
+    if(n)items.push({i:'📰',t:`掲載で見るものが ${n}件`,s:'前にやってから間が空いています',a:'掲載を見る',tab:'li'});}
   if(HOME.no&&HOME.no.未読)items.push({i:'📣',t:`まだ読まれていない申し送り ${HOME.no.未読}件`,
     s:'読んでいない人の名前が出ます',a:'申し送りを見る',tab:'noti'});
   items.push({i:'🧾',t:'給与・歩合の締め',s:'今月ぶんの担当別の売上と歩合　マネーフォワードへCSVで渡せます',a:'見る',tab:'payroll'});
@@ -458,6 +470,102 @@ function cashHtml(){
         <td><button class="mini cb-del" data-id="${esc(x.id)}">消す</button></td></tr>`).join('')}
     </tbody></table></div>`:'<div class="empty">まだ記録がありません</div>'}
     <p class="note">売上の現金はここに入れません　ここに入れるのは、売上以外で金庫が動いた分だけです</p>`;
+}
+
+/* ── 備品・消耗品 ──
+ * 売り物ではないので、売れた数から発注は作れない。下限を割ったら出すだけにする。 */
+function supHtml(){
+  if(!SUP)return '<div class="empty">読み込んでいます…</div>';
+  const rows=SUP.rows||[];
+  const low=rows.filter(x=>x.min_stock>0&&x.qty<=x.min_stock);
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">足りないもの</div>
+        <div class="kc-v" style="color:${low.length?'var(--danger)':'var(--ok)'}">${low.length}</div>
+        <div class="kc-s">下限を割っているもの</div></div>
+      <div class="kc"><div class="kc-k">登録している備品</div><div class="kc-v">${rows.length}</div></div>
+    </div>
+    <div class="tblwrap" style="padding:14px 16px">
+      <div class="act">
+        <input id="sp-nm" placeholder="備品の名前（例）タオル・レジロール" style="flex:1;min-width:180px">
+        <input id="sp-mk" placeholder="仕入先" style="width:140px">
+        <input id="sp-bc" placeholder="バーコード" style="width:150px">
+        <input id="sp-ct" type="number" placeholder="仕入値" style="width:110px">
+        <input id="sp-mn" type="number" placeholder="下限" style="width:90px">
+        <button id="sp-add" class="pri">足す</button>
+      </div>
+      <p class="note" style="margin:8px 0 0">下限を入れておくと、そこを割ったときに「足りないもの」に出ます　備品はレジには出ません（間違って売らないため）</p>
+    </div>
+    ${rows.length?`<div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>備品</th><th>仕入先</th><th class="num">いま</th><th class="num">下限</th><th class="num">仕入値</th></tr></thead><tbody>
+      ${rows.map(x=>`<tr style="${x.min_stock>0&&x.qty<=x.min_stock?'background:#fdf3f0':''}">
+        <td>${esc(x.name)}${x.barcode?`<div class="tsub">${esc(x.barcode)}</div>`:''}</td>
+        <td class="tsub">${esc(x.maker||'')}</td>
+        <td class="num"><b>${x.qty}</b></td><td class="num tsub">${x.min_stock||'—'}</td>
+        <td class="num tsub">${x.cost?yen(x.cost):'—'}</td></tr>`).join('')}
+    </tbody></table></div>`:'<div class="empty">まだ登録がありません</div>'}
+    <p class="note">数を増やすときは、レジの「商品と在庫」から入荷を入れてください　備品も同じ入れ方です</p>`;
+}
+
+/* ── 求人の応募 ── */
+const AP_ST={new:'新着',seen:'見た',called:'連絡した',met:'面接した',hired:'採用',no:'見送り'};
+function apHtml(){
+  if(!AP)return '<div class="empty">読み込んでいます…</div>';
+  const rows=AP.rows||[];
+  const live=rows.filter(x=>!['hired','no'].includes(x.status));
+  const past=rows.filter(x=>['hired','no'].includes(x.status));
+  const card=x=>`<div class="tblwrap" style="padding:15px 17px;margin-bottom:10px">
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <div style="font-weight:800;font-size:15.5px">${esc(x.name)}
+          ${x.kind&&x.kind!=='apply'?`<span class="tsub">　${x.kind==='visit'?'見学':'質問'}</span>`:''}</div>
+        <div class="tsub" style="margin-top:3px">${esc(x.role||'')}${x.store?`　${esc(x.store)}`:''}${x.years?`　${esc(x.years)}`:''}${x.source?`　${esc(x.source)}から`:''}</div>
+        <div style="font-size:14px;margin-top:5px;font-weight:700">${esc(x.contact||'')}</div>
+        ${x.callable?`<div class="tsub" style="margin-top:3px">連絡してよいとき ${esc(x.callable)}</div>`:''}
+        ${x.message?`<div style="font-size:13.5px;color:var(--sub);line-height:1.75;margin-top:6px;white-space:pre-wrap">${esc(x.message)}</div>`:''}
+        <div class="tsub" style="margin-top:6px">${(x.at||'').slice(0,16).replace('T',' ').replace(/-/g,'/')}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${Object.entries(AP_ST).map(([k,l])=>`<button class="mini ap-st ${x.status===k?'pri':''}" data-id="${esc(x.id)}" data-s="${k}">${l}</button>`).join('')}
+      </div>
+    </div></div>`;
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">新着</div>
+        <div class="kc-v" style="color:${AP.新着?'var(--danger)':'inherit'}">${AP.新着}</div>
+        <div class="kc-s">まだ見ていない応募</div></div>
+      <div class="kc"><div class="kc-k">やりとり中</div><div class="kc-v">${live.length}</div></div>
+    </div>
+    <p class="note">応募は採用ページのフォームから届きます（seam.site/recruit）　LINEとインスタのDMは、いまも別で見てください</p>
+    <h2>やりとり中 ${live.length}件</h2>
+    ${live.length?live.map(card).join(''):'<div class="empty">いまやりとり中の方はいません</div>'}
+    ${past.length?`<h2>終わったもの ${past.length}件</h2>${past.slice(0,20).map(card).join('')}`:''}`;
+}
+
+/* ── 掲載でやること ── */
+function liHtml(){
+  if(!LI)return '<div class="empty">読み込んでいます…</div>';
+  const rows=LI.rows||[];
+  const now=rows.filter(x=>x.そろそろ);
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">そろそろ見るもの</div>
+        <div class="kc-v" style="color:${now.length?'var(--danger)':'var(--ok)'}">${now.length}</div>
+        <div class="kc-s">前にやってから間が空いているもの</div></div>
+    </div>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>やること</th><th>どのくらいで</th><th>前回</th><th></th></tr></thead><tbody>
+      ${rows.map(x=>`<tr style="${x.そろそろ?'background:#fdf6ec':''}">
+        <td><b>${esc(x.item)}</b>${x.note?`<div class="tsub">${esc(x.note)}</div>`:''}</td>
+        <td class="tsub">${esc(x.cycle)}に一度</td>
+        <td class="tsub">${x.lastDone?`${x.lastDone.replace(/-/g,'/')}（${x.経過}日前）${x.lastBy?'　'+esc(x.lastBy):''}`:'まだ'}</td>
+        <td><button class="mini li-do" data-id="${esc(x.id)}">やった</button></td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="tblwrap" style="padding:14px 16px;margin-top:10px">
+      <div class="act">
+        <input id="li-it" placeholder="やることを足す" style="flex:1;min-width:200px">
+        <select id="li-cy"><option value="週">週に一度</option><option value="月" selected>月に一度</option><option value="まれ">まれに</option></select>
+        <button id="li-add" class="pri">足す</button>
+      </div>
+    </div>
+    <p class="note">ホットペッパーはAPIが無いので、直すのは掲載の管理画面です　ここは「いつ誰が確かめたか」を残す場所です</p>`;
 }
 
 /* ── 申し送り板 ──
@@ -740,6 +848,32 @@ async function load(){
         const paid=!b.classList.contains('pri');
         await post('/payables',{maker:b.dataset.m,month:PB.month,amount:+b.dataset.a,paid});
         load();});
+    }
+    else if(TAB==='sup'){ SUP=await get(`/supplies?shop=${encodeURIComponent(SHOP)}`);
+      $('body').innerHTML=supHtml();
+      const b=$('body').querySelector('#sp-add');
+      if(b)b.onclick=async()=>{
+        const n=($('sp-nm').value||'').trim();
+        if(!n){toast('名前を入れてください',true);return;}
+        await post('/supplies',{name:n,maker:$('sp-mk').value,barcode:$('sp-bc').value,
+          cost:+$('sp-ct').value||0,minStock:+$('sp-mn').value||0});
+        toast('足しました'); load();};
+    }
+    else if(TAB==='ap'){ AP=await get('/recruit/list');
+      $('body').innerHTML=apHtml();
+      $('body').querySelectorAll('.ap-st').forEach(b=>b.onclick=async()=>{
+        await post('/recruit/status',{id:b.dataset.id,status:b.dataset.s}); load();});
+    }
+    else if(TAB==='li'){ LI=await get(`/listing?shop=${encodeURIComponent(SHOP)}`);
+      $('body').innerHTML=liHtml();
+      $('body').querySelectorAll('.li-do').forEach(b=>b.onclick=async()=>{
+        const who=prompt('確かめた方のお名前','')||'';
+        await post('/listing',{id:b.dataset.id,done:1,by:who}); load();});
+      const ab=$('body').querySelector('#li-add');
+      if(ab)ab.onclick=async()=>{
+        const it=($('li-it').value||'').trim();
+        if(!it){toast('やることを入れてください',true);return;}
+        await post('/listing',{shopId:SHOP,item:it,cycle:$('li-cy').value}); load();};
     }
     else if(TAB==='noti'){ NO=await get(`/notices?shop=${encodeURIComponent(SHOP)}`);
       $('body').innerHTML=notiHtml();
