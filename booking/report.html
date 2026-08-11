@@ -124,6 +124,7 @@ h2:first-child{margin-top:2px}
       <button data-t="sales">売上</button>
       <button data-t="repeat">再来</button>
       <button data-t="nps">推薦</button>
+      <button data-t="tm">時間</button>
       <button data-t="rec">照合</button>
       <button data-t="payroll">給与</button>
       <button data-t="pay">支払い</button>
@@ -157,7 +158,7 @@ let TAB=(new URLSearchParams(location.search).get('tab'))||'home';
 let FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null, PSORT='v';
 let REP=null, RWIN=90, RLOST=180;
 let REC=null, HOME=null, PAY=null, PB=null, CB=null, CBMON='', JR=null, TF=null, RV=null, NO=null;
-let SUP=null, AP=null, LI=null, NP=null, IMP=null;
+let SUP=null, AP=null, LI=null, NP=null, IMP=null, TMS=null;
 let BUFFER=0, ALERT_DAYS=90, ALERT_MONTHS=6;
 
 const $=id=>document.getElementById(id);
@@ -622,6 +623,56 @@ function notiHtml(){
       済んだものは「終わり」で下に沈みます　スタッフのスマホには、読んでいないものだけが上に出ます</p>`;
 }
 
+/* ── 時間の守り方 ──
+ * 終わる予定を過ぎると失客が増える。そして時間が無くなると顔まわりが削られる。
+ * だから合計時間ではなく「始まり」「仕上げに使えた時間」「終わり」を見る。 */
+function tmHtml(){
+  if(!TMS)return '<div class="empty">読み込んでいます…</div>';
+  const a=TMS.全体||{}, ppl=(TMS.people||[]).filter(x=>x.件数);
+  const mn=v=>v==null?'—':(v>0?`+${v}分`:`${v}分`);
+  const pc2=v=>v==null?'—':v+'%';
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">時間どおりに始めた</div>
+        <div class="kc-v" style="color:${(a.時間どおりに始めた率||0)>=80?'var(--ok)':'var(--danger)'}">${pc2(a.時間どおりに始めた率)}</div>
+        <div class="kc-s">5分以内に始められた割合　遅れの平均 ${mn(a.始まりの遅れ)}</div></div>
+      <div class="kc"><div class="kc-k">予定内に終わった</div>
+        <div class="kc-v" style="color:${(a.予定内に終わった率||0)>=80?'var(--ok)':'var(--danger)'}">${pc2(a.予定内に終わった率)}</div>
+        <div class="kc-s">遅れの平均 ${mn(a.終わりの遅れ)}</div></div>
+      <div class="kc"><div class="kc-k">顔まわりに使えた時間</div>
+        <div class="kc-v">${a.仕上げに使えた==null?'—':a.仕上げに使えた+'分'}</div>
+        <div class="kc-s">仕上げからお帰りまで　ここが削られると失客します</div></div>
+      <div class="kc"><div class="kc-k">ご来店からお会計まで</div>
+        <div class="kc-v">${a.滞在==null?'—':a.滞在+'分'}</div>
+        <div class="kc-s">お客様の遅れ 平均 ${mn(a.お客様の遅れ)}</div></div>
+    </div>
+    <h2>担当ごと</h2>
+    ${ppl.length?`<div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>担当</th><th class="num">件数</th><th class="num">時間どおりに始めた</th>
+      <th class="num">予定内に終わった</th><th class="num">終わりの遅れ</th>
+      <th class="num">顔まわり</th></tr></thead><tbody>
+      ${ppl.map((x,i)=>`<tr><td>${i<3?'<b>'+(i+1)+'位</b>　':''}${esc(x.name)}</td>
+        <td class="num tsub">${x.件数}</td>
+        <td class="num">${pc2(x.時間どおりに始めた率)}</td>
+        <td class="num"><b>${pc2(x.予定内に終わった率)}</b></td>
+        <td class="num">${mn(x.終わりの遅れ)}</td>
+        <td class="num">${x.仕上げに使えた==null?'—':x.仕上げに使えた+'分'}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="note">順位は「予定内に終わった割合」で並べています　早さを競うためではなく、<b>約束した時刻を守れているか</b>を見る場所です</p>`
+    :'<div class="empty">まだ記録がありません　スタッフのスマホの「時間」で押していただくと貯まります</div>'}
+
+    ${(TMS.おそかった||[]).length?`<h2>10分より おそく終わった日 ${TMS.おそかった.length}件</h2>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>日</th><th>お客様</th><th>担当</th><th class="num">終わりの遅れ</th>
+      <th class="num">顔まわり</th><th class="num">お客様の遅れ</th></tr></thead><tbody>
+      ${TMS.おそかった.map(x=>`<tr><td>${(x.date||'').slice(5).replace('-','/')}</td>
+        <td>${esc(x.name||'')}</td><td class="tsub">${esc(x.staff||'')}</td>
+        <td class="num" style="color:var(--danger)">${mn(x.終わりの遅れ)}</td>
+        <td class="num">${x.仕上げに使えた==null?'—':x.仕上げに使えた+'分'}</td>
+        <td class="num tsub">${mn(x.お客様の遅れ)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="note">お客様が遅れてお見えの日は、そこも一緒に出しています　担当だけの責任にしないためです</p>`:''}`;
+}
+
 /* ── 推薦（NPS）──
  * 「良かったです」は推薦者からも中立者からも返ってくる。店頭では区別がつかない。
  * だから1問だけ数字で預かる。9・10が推薦者、7・8は失客予備軍。 */
@@ -988,6 +1039,7 @@ async function load(){
         const row=(NO.rows||[]).find(r=>r.id===x.dataset.id); if(!row)return;
         await post('/notices',{...row,shopId:row.shopId,done:+x.dataset.d}); load();});
     }
+    else if(TAB==='tm'){ TMS=await get(`/timeline/stats?from=${FROM}&to=${TO}`); $('body').innerHTML=tmHtml(); }
     else if(TAB==='nps'){ NP=await get(`/nps/stats?from=${FROM}&to=${TO}`); $('body').innerHTML=npsHtml(); }
     else if(TAB==='rev'){ RV=await get(`/review/stats?from=${FROM}&to=${TO}`);
       $('body').innerHTML=revHtml();

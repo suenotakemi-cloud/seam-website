@@ -69,6 +69,26 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .mood{background:rgba(201,182,142,.12);border:1px solid rgba(201,182,142,.4);
   border-radius:14px;padding:14px 16px}
 .mood h3{color:#C9B68E}
+/* ── 時間（いちばん大きく出すのは「顔まわりに使える時間」）── */
+.tbig{background:rgba(239,233,223,.06);border:1px solid rgba(239,233,223,.22);
+  border-radius:16px;padding:18px;text-align:center;margin-bottom:4px}
+.tbig.ng{background:rgba(211,60,45,.16);border-color:rgba(232,96,80,.8)}
+.tb-l{font-size:12px;letter-spacing:.14em;color:rgba(239,233,223,.5)}
+.tb-n{font-family:'Noto Serif JP',serif;font-size:38px;line-height:1.2;color:#fff;margin:6px 0 4px}
+.tbig.ng .tb-n{color:#FFD9D2}
+.tb-s{font-size:12.5px;color:rgba(239,233,223,.55);line-height:1.7}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tbtn{background:none;border:1px solid rgba(239,233,223,.26);border-radius:12px;
+  padding:14px 10px;font:inherit;color:#EFE9DF;cursor:pointer;text-align:center}
+.tbtn b{display:block;font-size:16px;font-weight:600}
+.tbtn span{display:block;font-size:12px;color:rgba(239,233,223,.5);margin-top:3px}
+.tbtn.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
+.tbtn.on span{color:rgba(18,16,14,.6)}
+.soak{text-align:center;border:1px solid rgba(239,233,223,.26);border-radius:14px;padding:18px}
+.soak.ng{background:rgba(211,60,45,.18);border-color:rgba(232,96,80,.85)}
+.sk-n{font-family:'Noto Serif JP',serif;font-size:46px;color:#fff;line-height:1}
+.sk-s{font-size:13px;color:rgba(239,233,223,.6);margin:6px 0 12px}
 /* 推薦度のQR。読み取る側がお客様なので、大きめに白地で出す */
 .npsqr{text-align:center;margin-top:14px}
 .npsqr img{width:210px;height:210px;background:#fff;padding:10px;border-radius:12px}
@@ -254,6 +274,7 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
     <button data-t="score">譜面</button>
     <button data-t="care">施術中</button>
     <button data-t="after">おわりに</button>
+    <button data-t="time">時間</button>
     <button data-t="karte">カルテ</button>
   </div>
   <div class="opane" id="opane"></div>
@@ -430,7 +451,7 @@ async function open(n){
     const q=await fetch(U(`/precare/for-staff?resv=${encodeURIComponent(r.id)}`));
     const j=await q.json(); CUR=(j.precare&&j.precare.summary)||null;
   }catch(e){ CUR=null; }
-  RESV=r; NOTE={note:'',memo:''}; KT=null; KT_LAST=null;
+  RESV=r; NOTE={note:'',memo:''}; KT=null; KT_LAST=null; TM=null; SOAK=null;
   try{
     const w=await fetch(U(`/visit/note?resv=${encodeURIComponent(r.id)}`));
     const wj=await w.json(); if(wj&&wj.note)NOTE={note:wj.note.note||'',memo:wj.note.memo||''};
@@ -709,6 +730,7 @@ function paint(){
        事前カウンセリングを出していない方こそ、翌日の便りが効く。 */
   if(TAB==='after'){ paintAfter(p); return; }
   if(TAB==='score'){ paintScore(p); return; }
+  if(TAB==='time'){ paintTime(p); return; }
   if(TAB==='karte'){ paintKarte(p); return; }
   /* ★事前にうかがった力加減を、カルテの初期値にする。
      お客様は先に答えてくださっている。もう一度聞くのは、聞いていないのと同じ。 */
@@ -774,6 +796,119 @@ function paint(){
      「またお越しください」は誰でも言える。
      「次は そこから始めさせてください」は 覚えていないと書けない。
      果たせるのは書いた本人だけ＝開いたままの輪がひとつ残る。 */
+/* ══════════ 時間 ══════════
+ * ★終わる予定を過ぎると、失客がはっきり増える。
+ *   そして時間が無くなると、いちばん最後の「顔まわり」が削られる。
+ *   削られたお客様は、鏡の前で「今日はこんなものか」と思って帰られる。
+ *
+ * だからこの画面がやることは1つだけ。
+ *   **仕上げに使う時間を、先に取り置く。**
+ *   残り時間ではなく「顔まわりに使える時間」を出す。
+ *   そこを食い始めたら、赤で知らせる。
+ *
+ * 押した時刻はそのまま残る（あとで担当ごとの守り方になる）。 */
+let TM=null, TMTICK=null, SOAK=null;
+const TSTEP=[
+  ['arrive','ご来店'],['start','はじめ'],['apply','塗布'],['soak','放置'],
+  ['rinse','流し'],['cut','カット'],['finish','仕上げ'],['done','おわり'],
+];
+async function tLoad(){
+  TM={times:{}};
+  try{ const r=await fetch(U(`/timeline?resv=${encodeURIComponent(RESV.id)}`));
+    const j=await r.json(); if(j&&j.ok)TM={times:j.times||{}}; }catch(e){}
+}
+const tMin=iso=>{ if(!iso)return null; const d=new Date(Date.parse(iso)+9*3600e3);
+  return d.getUTCHours()*60+d.getUTCMinutes(); };
+const nowMin=()=>{ const d=new Date(Date.now()+9*3600e3); return d.getUTCHours()*60+d.getUTCMinutes(); };
+const mmss=s2=>`${String(Math.floor(Math.abs(s2)/60)).padStart(2,'0')}:${String(Math.abs(s2)%60).padStart(2,'0')}`;
+/* 仕上げに残しておく時間。ここを削らせない */
+const FINISH_KEEP=15;
+
+function paintTime(p){
+  if(!TM){ p.innerHTML='<p class="none" style="margin-top:20px">読み込んでいます…</p>';
+    tLoad().then(()=>paint()); return; }
+  const t=TM.times, s0=RESV.start||0, e0=RESV.end||(s0+60), n=nowMin();
+  const doneAt=t.done?tMin(t.done.at):null;
+  const finAt=t.finish?tMin(t.finish.at):null;
+  /* 顔まわりに使える時間＝終わりの予定 − いま（仕上げがまだなら） */
+  const leftToEnd=e0-n;
+  const keepFrom=e0-FINISH_KEEP;          // ここまでに仕上げへ入りたい
+  const beforeFinish=!finAt;
+  const room=beforeFinish?(keepFrom-n):(e0-n);
+  const warn=beforeFinish&&room<=0;
+  const late=t.start?(tMin(t.start.at)-s0):null;
+  const custLate=t.arrive?(tMin(t.arrive.at)-s0):null;
+
+  p.innerHTML=`
+    <div class="tbig ${warn?'ng':''}">
+      <div class="tb-l">${beforeFinish?'顔まわりに使える時間':'終わりの予定まで'}</div>
+      <div class="tb-n">${doneAt!=null?'おわりました':(room>=0?`あと ${room}分`:`${-room}分 こえています`)}</div>
+      <div class="tb-s">ご予約 ${hm(s0)}〜${hm(e0)}${beforeFinish?`　仕上げは ${hm(keepFrom)} までに始めたい`:''}</div>
+    </div>
+    ${custLate!=null&&custLate>5?`<div class="sec stop"><h3>お客様のご到着</h3>
+      <p class="mid">ご予約より ${custLate}分 おそくお見えです</p>
+      <p class="algsub">終わりの時刻は変わりません　どこを短くするか 先に決めてください</p></div>`:''}
+    ${late!=null&&late>5?`<div class="sec"><h3>はじまり</h3>
+      <p class="mid">ご予約より ${late}分 おそく始まりました</p></div>`:''}
+    <div class="sec"><h3>押すだけで残ります</h3>
+      <div class="tgrid">
+        ${TSTEP.map(([k,l])=>`<button class="tbtn ${t[k]?'on':''}" data-tk="${k}">
+          <b>${l}</b><span>${t[k]?hm(tMin(t[k].at)):'—'}</span></button>`).join('')}
+      </div></div>
+    <div class="sec"><h3>放置のタイマー</h3>
+      ${SOAK?`<div class="soak ${SOAK.left<=0?'ng':''}">
+          <div class="sk-n">${mmss(SOAK.left)}</div>
+          <div class="sk-s">${SOAK.left>0?`${SOAK.min}分で鳴らします`:'時間です'}</div>
+          <button class="wbtn" id="skStop">とめる</button>
+        </div>`
+        :`<div class="tgrid3">${[5,10,15,20,25,30].map(mn=>`<button class="tbtn" data-sk="${mn}"><b>${mn}分</b></button>`).join('')}</div>`}
+    </div>
+    <p class="none" style="text-align:left">押した時刻はそのまま残ります<br>
+      あとから直せますが、直した跡も残ります</p>`;
+  tWire(p);
+  tTick();
+}
+function tWire(p){
+  p.querySelectorAll('[data-tk]').forEach(b=>b.onclick=async()=>{
+    const k=b.dataset.tk;
+    if(TM.times[k]&&!confirm('もう押してあります。いまの時刻に直しますか'))return;
+    b.disabled=true;
+    const at=new Date().toISOString();
+    TM.times[k]={at,by:(ME&&ME.name)||''};
+    try{ await fetch(U('/timeline'),{method:'POST',headers:H(),
+      body:JSON.stringify({resvId:RESV.id,kind:k,at,shopId:'ginza'})}); }catch(e){}
+    paint();
+  });
+  p.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{
+    const mn=+b.dataset.sk;
+    SOAK={min:mn,left:mn*60,end:Date.now()+mn*60000};
+    /* 放置に入ったことも残す（何分置いたかは、次の来店で効く） */
+    fetch(U('/timeline'),{method:'POST',headers:H(),
+      body:JSON.stringify({resvId:RESV.id,kind:'soak',at:new Date().toISOString(),minutes:mn})}).catch(()=>{});
+    TM.times.soak={at:new Date().toISOString(),minutes:mn};
+    paint();
+  });
+  const st=p.querySelector('#skStop'); if(st)st.onclick=()=>{SOAK=null;paint();};
+}
+/* 1秒ごとに数える。画面を開いているあいだだけ */
+function tTick(){
+  if(TMTICK)clearInterval(TMTICK);
+  if(!SOAK)return;
+  TMTICK=setInterval(()=>{
+    if(!SOAK){clearInterval(TMTICK);return;}
+    SOAK.left=Math.round((SOAK.end-Date.now())/1000);
+    const el=document.querySelector('.sk-n'); if(!el){clearInterval(TMTICK);return;}
+    el.textContent=mmss(SOAK.left);
+    const box=document.querySelector('.soak');
+    if(SOAK.left<=0&&box&&!box.classList.contains('ng')){
+      box.classList.add('ng');
+      document.querySelector('.sk-s').textContent='時間です';
+      /* 音は鳴らせないことがあるので、震わせるのと色で伝える */
+      if(navigator.vibrate)navigator.vibrate([300,150,300]);
+    }
+  },1000);
+}
+
 /* ── カルテ（スタイリストとアシスタントで同じものを見て、同じものに書く）──
  * 誰が書いたかはサーバーが決める（ログインした人の名前）。
  * この画面から名乗ることはできない＝他人の名前で書けない。 */
