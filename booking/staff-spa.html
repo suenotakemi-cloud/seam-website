@@ -385,7 +385,15 @@ async function askToken(msg){
     <p class="lead">自分を選んで、3桁の暗証番号を入れてください${msg?'　'+esc(msg):''}</p>
     <div class="g">${list.map(x=>`<button class="card" data-s="${esc(x.id)}" data-n="${esc(x.name)}">
       <span class="t">　</span><span><span class="n">${esc(x.name)}</span></span></button>`).join('')}</div>`;
-  app.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{
+  app.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>pinStep(b));
+  /* ★自分だけのQRから開いたときは、名前を選ぶところを飛ばす。
+     フロアで開くたびに一覧から自分を探すのは、毎日効いてくる手間。 */
+  {const q=(new URLSearchParams(location.search).get('s')||'').replace(/[^a-z0-9_-]/gi,'');
+   const me=q&&app.querySelector(`[data-s="${q}"]`);
+   if(me)pinStep(me);}
+}
+function pinStep(b){
+  {
     app.innerHTML=`<h1>${esc(b.dataset.n)}</h1>
       <p class="lead" id="lmsg">暗証番号（3桁）</p>
       <div class="row"><input type="password" id="pin" inputmode="numeric" maxlength="3"
@@ -411,7 +419,7 @@ async function askToken(msg){
     document.getElementById('pingo').onclick=go;
     el.onkeydown=e=>{if(e.key==='Enter')go();};
     document.getElementById('back').onclick=()=>askToken();
-  });
+  }
 }
 
 /* ── 申し送り ──

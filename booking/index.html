@@ -28,10 +28,24 @@ input,select,textarea{font-family:inherit;font-size:14px}
 header{background:var(--navy);color:#fff;padding:0 20px;display:flex;align-items:center;gap:16px;height:56px;position:sticky;top:0;z-index:50}
 header .logo{font-weight:800;font-size:16px;letter-spacing:.04em}
 header .logo span{color:var(--accent2);font-weight:600;font-size:11px;margin-left:8px;border:1px solid rgba(255,255,255,.3);padding:1px 8px;border-radius:99px;vertical-align:2px}
-nav{display:flex;gap:4px;margin-left:auto}
-nav button{background:transparent;border:none;color:rgba(255,255,255,.72);padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600}
-nav button.active{background:rgba(255,255,255,.14);color:#fff}
-nav button:hover{color:#fff}
+/* ★同じ色の帯に文字が並んでいるだけだと、押せるものだと分からない。
+   実際に「タブだと認識できない」と言われた。押せる形をはっきり出す。
+     ふだん   … 枠のある札に見せる
+     いま居る … 白い札にして、下に太い線（紙のタブと同じ形） */
+/* ★折り返させない。帯の高さが決まっているので、折り返すと上の段が切れる。
+   入りきらないときは横に流す（1行のまま＝タブの形が壊れない）。 */
+nav{display:flex;gap:5px;margin-left:auto;flex-wrap:nowrap;
+  overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;align-items:flex-end;align-self:stretch}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.24);
+  border-bottom:none;color:rgba(255,255,255,.9);padding:8px 13px 7px;
+  border-radius:9px 9px 0 0;font-size:13px;font-weight:700;white-space:nowrap;
+  box-shadow:inset 0 -3px 0 rgba(255,255,255,0);transition:background .12s,color .12s,box-shadow .12s}
+nav button.active{background:#fff;color:var(--navy);border-color:#fff;font-weight:800;
+  box-shadow:inset 0 -3px 0 var(--accent2,#c8a96a)}
+nav button:hover{background:rgba(255,255,255,.2);color:#fff}
+nav button.active:hover{background:#fff;color:var(--navy)}
 
 main{max-width:1180px;margin:0 auto;padding:22px 20px 80px}
 .view{display:none}.view.show{display:block}
@@ -4301,9 +4315,11 @@ function renderRegister(){
     ${STAFF.map(x=>`<div class="rz"><span>${escH(x.name)}</span><span class="co-y">
       <input class="pin-in" data-id="${x.id}" data-name="${escH(x.name)}" type="text" inputmode="numeric"
         maxlength="3" placeholder="___" style="width:64px;text-align:center;letter-spacing:.3em;font-size:16px">
-      <button class="btn small ghost pin-save" data-id="${x.id}">決める</button></span></div>`).join('')}
+      <button class="btn small ghost pin-save" data-id="${x.id}">決める</button>
+      <button class="btn small ghost pin-qr" data-id="${x.id}" data-name="${escH(x.name)}">QR</button></span></div>`).join('')}
     <div class="rz-ref"><span>番号は表示されません（決め直しはいつでもできます）</span>
-      <span>スマホの画面 ${location.origin}/booking/staff-spa</span></div></div>`;
+      <span>「QR」を押すと、その人だけの入口が出ます　スマホで読むと名前を選ぶ手間もいりません</span></div>
+    <div id="pin-qrbox"></div></div>`;
   /* マネーフォワードの従業員番号。給与CSVはこの番号で人を結びます */
   const EN=(()=>{try{return JSON.parse(stg('empNo','{}'))||{};}catch(e){return {};}})();
   const empPanel=`<div class="card reg-close"><h3>従業員番号（マネーフォワード）</h3>
@@ -4369,6 +4385,36 @@ function renderRegister(){
     +fold('📒 勘定科目（会計ソフトに合わせる）',accPanel)
     +fold('⭐ 口コミのリンク（Google・ホットペッパー）',revPanel)
     +fold('🧪 材料費の目標',matPanel);
+  /* ★スマホでURLを打たせない。フロアで文字を打つ時間は、お客様の時間。 */
+  document.querySelectorAll('.pin-qr').forEach(b=>b.onclick=async()=>{
+    const box=document.getElementById('pin-qrbox'); if(!box)return;
+    const url=`${location.origin}/booking/staff-spa.html?s=${encodeURIComponent(b.dataset.id)}`;
+    await loadQRLib().catch(()=>null);
+    const img=window.qrcode?qrImg(url,8):'';
+    box.innerHTML=`<div class="card reg-close" style="margin-top:10px;text-align:center">
+      <div style="font-size:15px;font-weight:800;margin-bottom:8px">${escH(b.dataset.name)} さんの入口</div>
+      ${img?`<img src="${img}" alt="" style="width:220px;height:220px;border:1px solid #e7e1d9;border-radius:12px;background:#fff">`
+        :'<div style="font-size:13px;color:var(--sub)">QRを作れませんでした</div>'}
+      <div style="font-size:12.5px;color:var(--sub);line-height:1.9;margin-top:8px">
+        スマホのカメラで読み取ると、暗証番号の画面が開きます<br>
+        読み取ったあとは、ホーム画面に追加しておくと次からは1タップです</div>
+      <div style="font-size:11px;color:var(--sub);margin-top:6px;word-break:break-all">${escH(url)}</div>
+      <button class="btn small ghost" id="pin-qr-print" style="margin-top:10px">印刷する</button>
+    </div>`;
+    box.scrollIntoView({block:'center',behavior:'smooth'});
+    const pb=document.getElementById('pin-qr-print');
+    if(pb)pb.onclick=()=>{const w=window.open('','_blank');
+      w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escH(b.dataset.name)}</title>
+        <style>body{font-family:"Hiragino Sans",sans-serif;text-align:center;padding:40px}
+        h1{font-size:22px;margin:0 0 6px}p{font-size:13px;color:#666;line-height:1.9}
+        img{width:280px;height:280px}</style></head><body>
+        <h1>${escH(b.dataset.name)} さん</h1>
+        <p>スマホのカメラで読み取ってください</p>
+        ${img?`<img src="${img}" alt="">`:''}
+        <p>暗証番号（3桁）を入れると入れます<br>ホーム画面に追加すると、次からは1タップです</p>
+        </body></html>`);
+      w.document.close(); setTimeout(()=>w.print(),400);};
+  });
   {const b7=document.getElementById('mat-save');
    if(b7)b7.onclick=()=>{const v=+document.getElementById('mat-t').value||10;
      setStg('matTarget',String(v));toast(`材料費の目標を ${v}% にしました`);};}
