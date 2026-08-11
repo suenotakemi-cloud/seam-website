@@ -1843,6 +1843,7 @@ const API = {
   async agentSearch(q){ if(!API_BASE)return [];try{const r=await fetch(API_BASE+'/agents?q='+encodeURIComponent(q||''),{headers:authHeaders()});if(!r.ok)return [];const j=await r.json();return j.agents||[];}catch{return [];} },
   async agentSave(a){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/agents',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(a)});return r.ok?await r.json():null;}catch{return null;} },
   async agentUsed(ids){ if(!API_BASE||!ids.length)return; try{await fetch(API_BASE+'/agents/used',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({ids})});}catch{} },
+  async reviewAsk(a){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/review/ask',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(a)});return await r.json();}catch{return null;} },
   async staffPin(staffId,pin,name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/staff/pin',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({staffId,pin,name})});return await r.json();}catch{return null;} },
   async karteLog(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/log?id='+encodeURIComponent(id),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.log:null;}catch{return null;} },
   async karteSave(k){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(k)});return r.ok?await r.json():null;}catch{return null;} },
@@ -3133,6 +3134,37 @@ function ktFlush(){
   const o=KT_PENDING; KT_PENDING=null;
   if(o)setTimeout(()=>karteOpen(o),260);
 }
+
+/* ── 口コミのお願い ──
+ * 口コミは Google と ホットペッパー に書かれる。どちらも外なので、
+ * 「誰の施術の口コミか」はこちらでは分からない（書く人は名乗らないため）。
+ * だから数えるのは「お願いした」と「開いてくださった」の2つだけにする。
+ * 「◯◯さんの口コミが何件」は作らない＝嘘にならない。 */
+let RV_PENDING=null;
+async function reviewAsk(rec,channel){
+  const st=(STAFF.find(x=>x.id===rec.staffId)||{});
+  const r=await API.reviewAsk({date:rec.date,shopId:SHOP_ID,staffId:rec.staffId||'',staffName:st.name||'',
+    customer:rec.customer||'',phone:rec.phone||'',checkoutId:rec.id,channel});
+  if(!r||!r.ok){toast('うまくいきませんでした',true);return;}
+  const box=document.getElementById('checkoutmodal');
+  document.getElementById('checkoutbg').classList.add('show');
+  await loadQRLib().catch(()=>null);
+  const img=window.qrcode?qrImg(r.url,7):'';
+  const where=channel==='hpb'?'ホットペッパー':'Google';
+  box.innerHTML=`<h3>⭐ ${where}に口コミをお願いする</h3>
+    <div class="co-sub" style="margin-top:2px">${escH(rec.customer||'お客様')} 様</div>
+    ${img?`<div style="text-align:center;margin:14px 0 6px">
+      <img src="${img}" alt="" style="width:196px;height:196px;border:1px solid #e7e1d9;border-radius:12px;background:#fff">
+      <div style="font-size:12.5px;color:#7d746b;margin-top:8px;line-height:1.6">
+        お客様のスマホで読み取っていただくと<br>${where}の口コミの画面がひらきます</div></div>`
+      :`<div class="co-done" style="margin-top:12px">${escH(r.url)}</div>`}
+    <div class="rz-ref" style="margin-top:4px"><span>お願いしたことは記録しました</span>
+      <span>開いてくださったかどうかも分かります　書かれた口コミが誰のものかは分かりません（名乗らずに書かれるため）</span></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn pay" style="flex:1" id="rv-close">とじる</button></div>`;
+  box.querySelector('#rv-close').onclick=()=>{
+    document.getElementById('checkoutbg').classList.remove('show');ktFlush();};
+}
 function karteClose(){document.getElementById('kartebg').classList.remove('show');KT=null;}
 const ktHasColor=()=>/カラー|白髪|ブリーチ/.test(KT.menu||'');
 const ktHasPerm =()=>/パーマ|矯正|ストレート/.test(KT.menu||'');
@@ -3636,6 +3668,7 @@ function coFinish(rec){
   if(isNew&&rec.customer&&featOn('cust')){
     const mn=(MENUS.find(m=>m.id===(rec.menuId||(db.reservations.find(r=>r.id===rec.resvId)||{}).menuId))||{}).name||'';
     const st=(STAFF.find(x=>x.id===rec.staffId)||{}).name||'';
+    RV_PENDING=rec;
     KT_PENDING={key:custKey({phone:rec.phone,name:rec.customer}),name:rec.customer,phone:rec.phone||'',
       date:rec.date,staff:st,menu:mn||rec.menuName||'',checkoutId:rec.id,resvId:rec.resvId||''};
   }
@@ -3709,11 +3742,14 @@ function renderNextVisit(){
       :'<div class="co-done" style="margin-top:10px;background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">📵 LINE未連携のお客様です。友だち追加していただくと次回からスマホに予約票・前日リマインドが届きます</div>'}
     <div class="row" style="margin-top:14px">
       <button class="btn ghost" style="flex:1" id="nv-skip">今日はしない</button>
+      <button class="btn small ghost" id="nv-rev" style="flex:1">⭐ 口コミをお願いする</button>
       <button class="btn pay" style="flex:1.4" id="nv-go">この内容で次回予約</button>
     </div>`;
   box.querySelector('#nv-day').onchange=e=>{d.day=e.target.value;renderNextVisit();};
   box.querySelector('#nv-time').onchange=e=>{d.start=+e.target.value;};
   box.querySelector('#nv-skip').onclick=()=>{document.getElementById('checkoutbg').classList.remove('show');ktFlush();};
+  {const rb=box.querySelector('#nv-rev');
+   if(rb)rb.onclick=()=>reviewAsk(RV_PENDING||{date:dkey(today()),staffId:nvDraft.staffId,customer:nvDraft.name,phone:nvDraft.phone,id:''},'google');}
   box.querySelector('#nv-go').onclick=()=>{
     const nameEl=box.querySelector('#nv-name');if(nameEl)d.name=nameEl.value.trim();
     d.kana=hira2kata((box.querySelector('#nv-kana').value||'').trim());
@@ -4084,6 +4120,20 @@ function renderRegister(){
     ${AC_ROWS.map(([k,l])=>`<div class="rz"><span>${escH(l)}</span>
       <input class="ac-in" data-k="${k}" value="${escH(AC[k]||AC_DEF[k]||'')}" style="margin-left:auto;max-width:190px"></div>`).join('')}
     <button class="btn pay" id="ac-save" style="width:100%;margin-top:9px">この科目名で保存する</button></div>`;
+  /* 口コミの行き先。店舗ごと・GoogleとHPBで別 */
+  const RL=(()=>{try{return JSON.parse(stg('reviewLinks','{}'))||{};}catch(e){return {};}})();
+  const revPanel=`<div class="card reg-close"><h3>口コミのリンク</h3>
+    <div class="rz-ref" style="margin-bottom:8px"><span>お客様に読み取っていただくQRの行き先です</span>
+      <span>Google は「クチコミを書く」の直リンク　ホットペッパーは掲載ページの口コミ投稿URL</span></div>
+    <div class="rz"><span>Google（この店舗）</span>
+      <input class="rl-in" data-k="${SHOP_ID}:google" value="${escH(RL[SHOP_ID+':google']||'')}"
+        placeholder="https://search.google.com/local/writereview?placeid=…" style="margin-left:auto;max-width:280px"></div>
+    <div class="rz"><span>ホットペッパー（この店舗）</span>
+      <input class="rl-in" data-k="${SHOP_ID}:hpb" value="${escH(RL[SHOP_ID+':hpb']||'')}"
+        placeholder="https://beauty.hotpepper.jp/…" style="margin-left:auto;max-width:280px"></div>
+    <button class="btn pay" id="rl-save" style="width:100%;margin-top:9px">リンクを保存する</button>
+    <div class="rz-ref"><span>入れていないと、QRを読んでも行き先がありません</span>
+      <span>お願いした数と開いてくださった数は、売上レポートの「口コミ」で見られます</span></div></div>`;
   const ifOn=(v,html)=>featOn(v)?html:'';
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧭 つかう機能をえらぶ',featPanel,true)
@@ -4099,7 +4149,13 @@ function renderRegister(){
     +fold('🏦 決済手数料の料率（ブランドごと）',feePanel)
     +fold('🔑 スタッフの暗証番号（スマホ用）',pinPanel)
     +fold('🧾 従業員番号（マネーフォワード）',empPanel)
-    +fold('📒 勘定科目（会計ソフトに合わせる）',accPanel);
+    +fold('📒 勘定科目（会計ソフトに合わせる）',accPanel)
+    +fold('⭐ 口コミのリンク（Google・ホットペッパー）',revPanel);
+  {const b6=document.getElementById('rl-save');
+   if(b6)b6.onclick=()=>{
+     const o=(()=>{try{return JSON.parse(stg('reviewLinks','{}'))||{};}catch(e){return {};}})();
+     document.querySelectorAll('.rl-in').forEach(i=>{const v=(i.value||'').trim();if(v)o[i.dataset.k]=v;else delete o[i.dataset.k];});
+     setStg('reviewLinks',JSON.stringify(o));toast('口コミのリンクを保存しました');};}
   {const b5=document.getElementById('ac-save');
    if(b5)b5.onclick=()=>{
      const o={};document.querySelectorAll('.ac-in').forEach(i=>{const v=(i.value||'').trim();if(v)o[i.dataset.k]=v;});
