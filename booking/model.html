@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>ヘアモデルさん募集｜SEAM</title>
+<meta property="og:title" content="ヘアモデルさん募集｜SEAM">
+<meta property="og:description" content="営業時間の外で、練習にお付き合いいただける方を探しています">
+<meta property="og:type" content="website">
+<style>
+  /* ★このページは人から人へ回る。スクリーンショットで回ることも多い。
+     だから最初の一画面だけで「誰が・何を・いくらで・いつ」が分かるようにする。 */
+  *{box-sizing:border-box}
+  body{margin:0;background:#F7F4EF;color:#2f2a24;
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+    line-height:1.85;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:560px;margin:0 auto;padding:30px 18px 70px}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;letter-spacing:.36em;
+    font-size:15px;color:#7a6f60;text-align:center;margin-bottom:22px}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:26px;font-weight:600;
+    line-height:1.5;margin:0 0 10px;text-wrap:balance}
+  .lead{font-size:14.5px;color:#6c6357;margin:0 0 22px}
+  .card{background:#fff;border:1px solid #e7e1d5;border-radius:18px;padding:22px 20px;margin-bottom:14px}
+  .who{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+  .who-n{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:22px}
+  .who-s{font-size:12.5px;color:#8a8177}
+  h2{font-size:13px;letter-spacing:.12em;color:#a08c6a;font-weight:800;margin:0 0 10px}
+  .row{display:flex;gap:10px;padding:9px 0;border-top:1px solid #f0ebe2;font-size:14px}
+  .row:first-of-type{border-top:0}
+  .row b{flex:0 0 88px;color:#8a8177;font-weight:600;font-size:12.5px;padding-top:2px}
+  .row span{flex:1}
+  label{display:block;font-size:12.5px;color:#8a8177;font-weight:600;margin:14px 0 5px}
+  input,textarea,select{width:100%;padding:13px;border:1px solid #ddd5c8;border-radius:11px;
+    font:inherit;font-size:16px;background:#fff;color:#2f2a24}
+  textarea{min-height:76px;resize:vertical}
+  .btn{width:100%;margin-top:18px;background:#12233A;color:#fff;border:0;border-radius:13px;
+    padding:16px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.5}
+  .sub{width:100%;margin-top:10px;background:none;border:1px solid #ddd5c8;border-radius:12px;
+    padding:13px;font:inherit;font-size:14px;color:#6c6357;cursor:pointer}
+  .note{font-size:12px;color:#8a8177;line-height:1.8;margin-top:14px}
+  .done{text-align:center;padding:22px 0}
+  .err{color:#B4302B;font-size:13px;margin-top:8px}
+  .foot{text-align:center;font-size:11.5px;color:#a49a8c;margin-top:26px;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">SEAM</div>
+  <div id="app"></div>
+  <div class="foot">株式会社hanico ／ SEAM<br>ご不明な点は、お声がけくださった担当までどうぞ</div>
+</div>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const Q=new URLSearchParams(location.search);
+const S=(Q.get('s')||'').replace(/[^a-z0-9_-]/gi,'');
+const FROM=(Q.get('from')||'').slice(0,40);
+const app=document.getElementById('app');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ★担当のお名前は、こちらの台帳から引く（URLに名前を書かせない）。
+   URLに書けると、他人の名前で募集できてしまう。 */
+let me=null;
+async function loadStaff(){
+  if(!S)return;
+  try{ const r=await fetch(API+'/staff/list'); const j=await r.json();
+    const hit=(j.staff||[]).find(x=>x.id===S);
+    if(hit)me={name:hit.name}; }catch(e){}
+}
+
+const MENUS=['カット','カラー','ハイライト・ブリーチ','パーマ','縮毛矯正','ヘッドスパ','まだ決めていない'];
+
+function form(){
+  app.innerHTML=`
+    <h1>ヘアモデルさんを<br>探しています</h1>
+    <p class="lead">営業時間の外で、練習にお付き合いいただける方を募集しています</p>
+
+    ${me?`<div class="card">
+      <div class="who"><div><div class="who-n">${esc(me.name)}</div>
+        <div class="who-s">が、お待ちしています</div></div></div>
+    </div>`:''}
+
+    <div class="card">
+      <h2>おやくそく</h2>
+      <div class="row"><b>いつ</b><span>営業時間の外（早い時間・閉店後・お休みの日）<br>ご都合を伺って決めます</span></div>
+      <div class="row"><b>ご料金</b><span>材料の実費のみ<br>担当からお伝えします<br>技術料はいただきません</span></div>
+      <div class="row"><b>お時間</b><span>内容によって 1〜3時間ほど</span></div>
+      <div class="row"><b>お写真</b><span>お撮りしてもよいかは、当日おうかがいします<br>お断りいただいて大丈夫です</span></div>
+    </div>
+
+    <div class="card">
+      <h2>ご応募</h2>
+      <label>お名前 <span style="color:#B4302B">必須</span></label>
+      <input id="f-name" maxlength="60" placeholder="山田 花子">
+      <label>ご連絡先 <span style="color:#B4302B">必須</span></label>
+      <input id="f-contact" maxlength="120" placeholder="LINE ID ／ メール ／ お電話　どれでも">
+      <label>やってみたいこと</label>
+      <select id="f-menu">${MENUS.map(x=>`<option>${x}</option>`).join('')}</select>
+      <label>ご都合のよい曜日・時間帯</label>
+      <input id="f-want" maxlength="200" placeholder="例）平日の夜、土曜の朝">
+      <label>ひとこと（なくても大丈夫です）</label>
+      <textarea id="f-note" maxlength="1000" placeholder="髪のお悩みや、してみたいことなど"></textarea>
+      <button class="btn" id="f-go">この内容で送る</button>
+      <div class="err" id="f-err" style="display:none"></div>
+      <p class="note">お預かりするのは、ご連絡と当日のご準備のためだけに使います<br>
+        こちらから折り返しご連絡いたします</p>
+    </div>
+
+    <button class="sub" id="f-share">このページを人に送る</button>`;
+
+  document.getElementById('f-go').onclick=async()=>{
+    const b=document.getElementById('f-go'), er=document.getElementById('f-err');
+    const name=document.getElementById('f-name').value.trim();
+    const contact=document.getElementById('f-contact').value.trim();
+    er.style.display='none';
+    if(!name||!contact){er.textContent='お名前とご連絡先を入れてください';er.style.display='block';return;}
+    b.disabled=true; b.textContent='送っています…';
+    try{
+      const r=await fetch(API+'/model/apply',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({staffId:S,name,contact,
+          menu:document.getElementById('f-menu').value,
+          want:document.getElementById('f-want').value,
+          note:document.getElementById('f-note').value, from:FROM})});
+      const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'送れませんでした');
+      app.innerHTML=`<div class="card done">
+        <h1 style="font-size:22px">ありがとうございます</h1>
+        <p class="lead" style="margin:8px 0 0">${me?esc(me.name)+' より':'担当より'}、折り返しご連絡いたします<br>
+          お会いできるのを楽しみにしております</p></div>
+        <button class="sub" id="f-share2">このページを人に送る</button>`;
+      const s2=document.getElementById('f-share2'); if(s2)s2.onclick=share;
+    }catch(e){ b.disabled=false; b.textContent='この内容で送る';
+      er.textContent=e.message; er.style.display='block'; }
+  };
+  document.getElementById('f-share').onclick=share;
+}
+/* 人から人へ回るページなので、送るところまで用意する */
+async function share(){
+  const url=location.href;
+  const text='SEAMでヘアモデルさんを募集しています';
+  if(navigator.share){ try{ await navigator.share({title:text,text,url}); return; }catch(e){} }
+  try{ await navigator.clipboard.writeText(url); alert('リンクをコピーしました'); }
+  catch(e){ prompt('このリンクを送ってください',url); }
+}
+loadStaff().then(form);
+</script>
+</body>
+</html>

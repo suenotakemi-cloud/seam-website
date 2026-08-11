@@ -80,6 +80,18 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .pr-on b{font-family:'Noto Serif JP',serif;font-size:30px;color:#12100E}
 .pr-on span{flex:1;font-size:13px;color:#7a6f60}
 .pr-on .pr-b{background:#12100E;color:#fff;border-color:#12100E;padding:12px 18px}
+/* ── モデル募集 ── */
+.md-new{display:inline-block;background:#B4302B;color:#fff;border-radius:9px;
+  padding:1px 7px;font-size:11px;font-weight:700;margin-left:6px}
+.md-a{background:#fff;border:1px solid #ece5d9;border-radius:11px;padding:11px 12px;margin-top:7px}
+.md-a .n{font-size:15px;font-weight:700}
+.md-a .s{font-size:12px;color:#8a8177;line-height:1.75;margin-top:2px}
+.md-a .c{font-size:13px;margin-top:5px;word-break:break-all}
+.md-btns{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.md-btns button{flex:1;min-width:88px;background:#fff;border:1px solid #ddd5c8;border-radius:9px;
+  padding:9px 6px;font:inherit;font-size:12.5px;color:#2f2a24;cursor:pointer}
+.md-btns button.on{background:#12100E;color:#fff;border-color:#12100E}
+.md-st{font-size:11.5px;color:#a08c6a;font-weight:700}
 /* ── 練習の記録 ── */
 .prform{padding:4px 0 30px}
 .pf-h{font-family:'Noto Serif JP',serif;font-size:22px;color:#12100E;margin:8px 0 16px}
@@ -346,7 +358,7 @@ async function load(){
     const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad()]); render();
+    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad()]); render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
 async function askToken(msg){
@@ -462,6 +474,59 @@ function prHtml(){
         <button class="pr-b line" id="prHand">あとから入れる</button></div>`}
   </div>`;
 }
+/* ── モデル募集 ──
+ * ★営業時間の外のことなので、予約表とは繋げない。
+ *   担当ごとのリンクにする＝誰が声をかけて来てくださったかが残る。
+ *   これが「紹介をいただく」練習そのものになる。 */
+let MD=null;
+async function mdLoad(){
+  try{ const r=await fetch(U('/model/apps')); const j=await r.json(); MD=j&&j.ok?j:null; }catch(e){ MD=null; }
+}
+function mdLink(){ return location.origin+location.pathname.replace(/[^/]*$/,'')+'model.html?s='+encodeURIComponent(ME.id); }
+function mdHtml(){
+  if(!MD)return '';
+  const rows=(MD.rows||[]).filter(x=>x.status!=='done');
+  const nw=MD.新着||0;
+  return `<div class="prbox">
+    <div class="pr-h">モデル募集${nw?`<span class="md-new">新しいご応募 ${nw}件</span>`:''}</div>
+    <div class="pr-btns">
+      <button class="pr-b" id="mdShare">募集ページを送る</button>
+      <button class="pr-b" id="mdOpen">開いてみる</button>
+    </div>
+    ${rows.length?rows.map(a=>`<div class="md-a" data-ma="${a.id}">
+      <div class="n">${esc(a.name)} <span class="md-st">${a.status==='fixed'?'日時が決まりました':'ご連絡まち'}</span></div>
+      <div class="s">${esc(a.menu||'')}${a.want?'　／　'+esc(a.want):''}</div>
+      ${a.note?`<div class="s">${esc(a.note)}</div>`:''}
+      <div class="c">${esc(a.contact)}</div>
+      <div class="md-btns">
+        <button data-mv="fixed" class="${a.status==='fixed'?'on':''}">日時が決まった</button>
+        <button data-mv="done">終わりました</button>
+      </div></div>`).join('')
+    :'<div class="md-a"><div class="s">まだご応募はありません。リンクを送ってみてください</div></div>'}
+  </div>`;
+}
+function mdWire(){
+  const sh=document.getElementById('mdShare'); if(!sh)return;
+  sh.onclick=async()=>{
+    const url=mdLink(), text='SEAMでヘアモデルさんを募集しています';
+    if(navigator.share){ try{ await navigator.share({title:text,text,url}); return; }catch(e){} }
+    try{ await navigator.clipboard.writeText(url); alert('リンクをコピーしました\n\n'+url); }
+    catch(e){ prompt('このリンクを送ってください',url); }
+  };
+  document.getElementById('mdOpen').onclick=()=>window.open(mdLink(),'_blank');
+  document.querySelectorAll('[data-ma]').forEach(box=>{
+    box.querySelectorAll('[data-mv]').forEach(b=>b.onclick=async()=>{
+      const v=b.dataset.mv;
+      if(v==='done'&&!confirm('この方の募集を、一覧から外します'))return;
+      b.disabled=true;
+      try{ await fetch(U('/model/status'),{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({id:box.dataset.ma,status:v,
+          fixedAt:v==='fixed'?new Date().toISOString():''})}); }catch(e){}
+      await mdLoad(); render();
+    });
+  });
+}
+
 /* 練習が終わったら、その場で記録する。
    ★教育を「上手くなった」で終わらせないために、
      モデルさんに次回のご予約をお取りできたかまで残す。 */
@@ -618,7 +683,7 @@ function meHtml(){
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
   if(PRF){ app.innerHTML=prFormHtml(); prFormWire(); return; }
-  app.innerHTML=meHtml()+prHtml()+notiHtml()+`<h1>今日のお客様</h1>
+  app.innerHTML=meHtml()+prHtml()+mdHtml()+notiHtml()+`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
       <button class="card" data-i="${n}">
@@ -630,7 +695,7 @@ function render(){
     :'<div class="empty">この日のご予約はまだありません</div>'}
     <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`;
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
-  notiWire(); prWire();
+  notiWire(); prWire(); mdWire();
   document.getElementById('rl').onclick=load;
 }
 

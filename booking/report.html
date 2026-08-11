@@ -138,6 +138,7 @@ h2:first-child{margin-top:2px}
       <button data-t="noti">申し送り</button>
       <button data-t="sup">備品</button>
       <button data-t="ap">応募</button>
+      <button data-t="md">モデル</button>
       <button data-t="li">掲載</button>
       <button data-t="order" data-feat="order">発注書</button>
       <button data-t="alert" data-feat="order">在庫アラート</button>
@@ -386,7 +387,8 @@ async function loadHome(){
   const [tf,no,ap,sup,li]=await Promise.all([
     g2('/taxfree/records?status=waiting'), g2(`/notices?shop=${encodeURIComponent(SHOP)}`),
     g2('/recruit/list'), g2(`/supplies?shop=${encodeURIComponent(SHOP)}`), g2(`/listing?shop=${encodeURIComponent(SHOP)}`)]);
-  HOME={day,y,rec,ord,alert,pb,tf,no,ap,sup,li};
+  const md=await g2('/model/apps');
+  HOME={day,y,rec,ord,alert,pb,tf,no,ap,sup,li,md};
 }
 function homeHtml(){
   if(!HOME)return '<div class="empty">読み込んでいます…</div>';
@@ -403,6 +405,8 @@ function homeHtml(){
     s:`${yen(HOME.tf.まとめ.返金待ちの額)}　お返しする約束が残っています`,a:'免税を見る',tab:'tf'});
   if(HOME.ap&&HOME.ap.新着)items.push({i:'📮',t:`求人の応募が ${HOME.ap.新着}件`,
     s:'まだ見ていない応募です　早く返すほど会えます',a:'応募を見る',tab:'ap'});
+  if(HOME.md&&HOME.md.新着)items.push({i:'✂',t:`モデルさんのご応募が ${HOME.md.新着}件`,
+    s:'担当がまだご連絡していません　スタッフのスマホにも出ています',a:'モデルを見る',tab:'md'});
   if(HOME.sup&&HOME.sup.足りないもの)items.push({i:'🧻',t:`足りない備品 ${HOME.sup.足りないもの}件`,
     s:'下限を割っています',a:'備品を見る',tab:'sup'});
   if(HOME.li&&HOME.li.rows)  {const n=HOME.li.rows.filter(x=>x.そろそろ).length;
@@ -523,6 +527,49 @@ function supHtml(){
         <td class="num tsub">${x.cost?yen(x.cost):'—'}</td></tr>`).join('')}
     </tbody></table></div>`:'<div class="empty">まだ登録がありません</div>'}
     <p class="note">数を増やすときは、レジの「商品と在庫」から入荷を入れてください　備品も同じ入れ方です</p>`;
+}
+
+/* ── モデル募集 ──
+ * ★事務は「担当が返していない応募」だけ見ればいい。
+ *   担当ごとの本数も出す。声をかけられている人と、そうでない人が分かる。 */
+let MD=null;
+const MD_ST={new:'ご連絡まち',fixed:'日時が決まった',done:'終わった'};
+function mdHtml(){
+  if(!MD)return '<div class="empty">読み込んでいます…</div>';
+  const rows=MD.rows||[];
+  const live=rows.filter(x=>x.status!=='done');
+  const by={}; rows.forEach(x=>{const k=x.staff||'（担当なし）';
+    by[k]=by[k]||{応募:0,決まった:0}; by[k].応募++; if(x.status!=='new')by[k].決まった++;});
+  const card=x=>`<div class="tblwrap" style="padding:15px 17px;margin-bottom:10px">
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:220px">
+        <div style="font-weight:800;font-size:15.5px">${esc(x.name)}
+          <span class="tsub">　${esc(MD_ST[x.status]||x.status)}</span></div>
+        <div class="tsub" style="margin-top:3px">${x.staff?esc(x.staff)+' の募集から':'担当のわからない応募'}${x.from?`　${esc(x.from)}さんの紹介`:''}</div>
+        <div style="font-size:14px;margin-top:5px;font-weight:700">${esc(x.contact||'')}</div>
+        <div class="tsub" style="margin-top:3px">${esc(x.menu||'')}${x.want?`　${esc(x.want)}`:''}</div>
+        ${x.note?`<div style="font-size:13.5px;color:var(--sub);line-height:1.75;margin-top:6px;white-space:pre-wrap">${esc(x.note)}</div>`:''}
+        <div class="tsub" style="margin-top:6px">${(x.at||'').slice(0,16).replace('T',' ').replace(/-/g,'/')}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${Object.entries(MD_ST).map(([k,l])=>`<button class="mini md-st ${x.status===k?'pri':''}" data-id="${esc(x.id)}" data-s="${k}">${l}</button>`).join('')}
+      </div>
+    </div></div>`;
+  const sm=MD.まとめ||{};
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">ご連絡まち</div>
+        <div class="kc-v" style="color:${MD.新着?'var(--danger)':'inherit'}">${MD.新着||0}</div>
+        <div class="kc-s">担当がまだ返していません</div></div>
+      <div class="kc"><div class="kc-k">ご応募</div><div class="kc-v">${sm.応募||0}</div></div>
+      <div class="kc"><div class="kc-k">日時が決まった</div><div class="kc-v">${sm.決まった||0}</div></div>
+    </div>
+    <p class="note">スタッフのスマホに、担当ごとの募集ページのリンクが出ています<br>営業時間の外のことなので、予約表には入りません</p>
+    ${Object.keys(by).length?`<h2>担当ごと</h2>
+    <div class="tblwrap"><table><thead><tr><th>担当</th><th class="num">ご応募</th><th class="num">お返しした</th></tr></thead>
+      <tbody>${Object.entries(by).sort((a,b)=>b[1].応募-a[1].応募).map(([k,v])=>
+        `<tr><td>${esc(k)}</td><td class="num">${v.応募}</td><td class="num">${v.決まった}</td></tr>`).join('')}</tbody></table></div>`:''}
+    <h2>やりとり中 ${live.length}件</h2>
+    ${live.length?live.map(card).join(''):'<div class="empty">いまやりとり中の方はいません</div>'}`;
 }
 
 /* ── 求人の応募 ── */
@@ -1105,6 +1152,12 @@ async function load(){
       $('body').innerHTML=apHtml();
       $('body').querySelectorAll('.ap-st').forEach(b=>b.onclick=async()=>{
         await post('/recruit/status',{id:b.dataset.id,status:b.dataset.s}); load();});
+    }
+    else if(TAB==='md'){ MD=await get('/model/apps');
+      $('body').innerHTML=mdHtml();
+      $('body').querySelectorAll('.md-st').forEach(b=>b.onclick=async()=>{
+        await post('/model/status',{id:b.dataset.id,status:b.dataset.s,
+          fixedAt:b.dataset.s==='fixed'?new Date().toISOString():''}); load();});
     }
     else if(TAB==='li'){ LI=await get(`/listing?shop=${encodeURIComponent(SHOP)}`);
       $('body').innerHTML=liHtml();
