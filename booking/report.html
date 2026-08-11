@@ -95,6 +95,7 @@ h2:first-child{margin-top:2px}
 .tbl .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .tbl .tsub{color:var(--sub);font-size:11.5px}
 .tbl tr.tot td{font-weight:800;background:var(--cream)}
+.prth{width:38px;height:38px;object-fit:cover;border-radius:5px;background:var(--cream)}
 #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);opacity:0;
   background:var(--ink);color:#fff;padding:13px 22px;border-radius:3px;font-size:14px;z-index:200;transition:.22s;pointer-events:none}
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -641,6 +642,8 @@ function matHtml(){
       <div class="kc"><div class="kc-k">カルテ</div><div class="kc-v">${a.件数}</div>
         <div class="kc-s">薬剤を書いた件数　ブリーチ ${a.ブリーチ}件</div></div>
     </div>
+    ${(MAT.練習&&MAT.練習.件数)?`<p class="note">このほかに<b>練習（モデル）の材料費が ${yen(MAT.練習.材料費)}</b>あります（${MAT.練習.件数}件・モデル料金 ${yen(MAT.練習.モデル料金)}）<br>
+      モデル料金でしか回収しないので、<b>上の材料費率には入れていません</b>　練習のタブで見られます</p>`:''}
     ${a.値段のない薬剤?`<p class="note"><b>値段の入っていない薬剤が ${a.値段のない薬剤}回 使われています。</b>その分は金額に入っていません　下に一覧があります</p>`:''}
     <h2>担当ごと</h2>
     ${(MAT.people||[]).length?`<div class="tblwrap"><table class="tbl"><thead><tr>
@@ -681,7 +684,16 @@ function praHtml(){
   return `<div class="cards">
       <div class="kc"><div class="kc-k">この期間の練習</div>
         <div class="kc-v">${Math.floor((g.分||0)/60)}<span style="font-size:19px">時間</span>${(g.分||0)%60}<span style="font-size:19px">分</span></div>
-        <div class="kc-s">${g.回数||0}回</div></div>
+        <div class="kc-s">${g.回数||0}回　うちモデル ${g.モデル||0}回</div></div>
+      <div class="kc"><div class="kc-k">モデルの次回予約</div>
+        <div class="kc-v" style="color:${(g.モデル&&g.モデルのうち次回予約)?'var(--ok)':'inherit'}">${g.モデル?Math.round((g.モデルのうち次回予約||0)/g.モデル*100)+'%':'—'}</div>
+        <div class="kc-s">${g.モデルのうち次回予約||0} / ${g.モデル||0}人　<b>ここが再来の練習です</b></div></div>
+      <div class="kc"><div class="kc-k">モデルの材料費</div>
+        <div class="kc-v">${yen(g.材料費)}</div>
+        <div class="kc-s">モデル料金 ${yen(g.モデル料金)}　差引 ${yen((g.モデル料金||0)-(g.材料費||0))}<br>営業の材料費率には入れていません</div></div>
+      <div class="kc"><div class="kc-k">見てもらった</div>
+        <div class="kc-v">${g.回数?Math.round((g.見てもらった||0)/g.回数*100)+'%':'—'}</div>
+        <div class="kc-s">${g.見てもらった||0}回　教育者に提出できた割合</div></div>
     </div>
     <p class="note">これは労働時間ではなく、自主的に施設を使った時間です　分は丸めずそのまま出しています</p>
     ${(PRA.people||[]).length?`<h2>スタッフごと</h2>
@@ -693,10 +705,18 @@ function praHtml(){
     ${(PRA.rows||[]).length?`<h2>ひとつずつ</h2>
     <div class="act" style="margin-bottom:8px"><button id="pr-csv" class="pri">CSVで書き出す（届け出用）</button></div>
     <div class="tblwrap"><table class="tbl"><thead><tr>
-      <th>日</th><th>スタッフ</th><th>いつ</th><th class="num">分</th><th>内容</th></tr></thead><tbody>
+      <th>日</th><th>スタッフ</th><th>いつ</th><th class="num">分</th><th>内容</th>
+      <th>モデル</th><th class="num">材料費</th><th>見てもらった</th><th>次回</th><th>写真</th></tr></thead><tbody>
       ${PRA.rows.map(x=>`<tr><td>${x.date.replace(/-/g,'/')}</td><td>${esc(x.name)}</td>
         <td class="tsub">${esc(x.kind||'')}</td><td class="num">${x.minutes}</td>
-        <td class="tsub">${esc(x.note||'')}</td></tr>`).join('')}
+        <td class="tsub">${esc(x.note||'')}</td>
+        <td>${x.modelName?esc(x.modelName):'<span class="tsub">—</span>'}${x.modelFee?`<div class="tsub">¥${x.modelFee.toLocaleString()}</div>`:''}</td>
+        <td class="num tsub">${x.matCost?yen(x.matCost):'—'}</td>
+        <td class="tsub">${x.teacher?esc(x.teacher):'—'}</td>
+        <td>${x.modelName?(x.nextBooked?'<b style="color:var(--ok)">取れた</b>':'<span style="color:var(--danger)">まだ</span>'):'<span class="tsub">—</span>'}</td>
+        <td>${(x.photoB||x.photoA)?`<div style="display:flex;gap:4px">
+          ${x.photoB?`<img src="${x.photoB}" class="prth" alt="">`:''}
+          ${x.photoA?`<img src="${x.photoA}" class="prth" alt="">`:''}</div>`:'<span class="tsub">—</span>'}</td></tr>`).join('')}
     </tbody></table></div>`:'<div class="empty">まだ記録がありません　スタッフのスマホから押していただくと貯まります</div>'}`;
 }
 
@@ -1124,8 +1144,9 @@ async function load(){
       $('body').innerHTML=praHtml();
       const b=$('body').querySelector('#pr-csv');
       if(b)b.onclick=()=>{
-        const rows=[['日付','スタッフ','いつ','分','内容']];
-        (PRA.rows||[]).forEach(x=>rows.push([x.date,x.name,x.kind,x.minutes,x.note]));
+        const rows=[['日付','スタッフ','いつ','分','内容','モデル','モデル料金','材料費','見てもらった方','次回予約']];
+        (PRA.rows||[]).forEach(x=>rows.push([x.date,x.name,x.kind,x.minutes,x.note,
+          x.modelName,x.modelFee||'',x.matCost||'',x.teacher,x.modelName?(x.nextBooked?'取れた':'まだ'):'']));
         csvDL(`練習_施設利用時間_${PRA.from}_${PRA.to}.csv`,rows);};
     }
     else if(TAB==='tm'){ TMS=await get(`/timeline/stats?from=${FROM}&to=${TO}`); $('body').innerHTML=tmHtml(); }

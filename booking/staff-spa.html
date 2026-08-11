@@ -80,6 +80,27 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .pr-on b{font-family:'Noto Serif JP',serif;font-size:30px;color:#12100E}
 .pr-on span{flex:1;font-size:13px;color:#7a6f60}
 .pr-on .pr-b{background:#12100E;color:#fff;border-color:#12100E;padding:12px 18px}
+/* ── 練習の記録 ── */
+.prform{padding:4px 0 30px}
+.pf-h{font-family:'Noto Serif JP',serif;font-size:22px;color:#12100E;margin:8px 0 16px}
+.pf-l{display:block;font-size:12px;letter-spacing:.1em;color:#7a6f60;margin:16px 0 6px;font-weight:600}
+.prform .kin{background:#fff;border:1px solid #ddd5c8;color:#2f2a24}
+.prform .kchip{border-color:#ddd5c8;color:#4a443c}
+.prform .kchip.on{background:#12100E;color:#fff;border-color:#12100E}
+.prform .kmix{background:#F3F0EA;border-color:#E2DACB}
+.prform .kmix input,.prform .kmix select{background:#fff;border-color:#ddd5c8;color:#2f2a24}
+.prform .kag span,.prform .kmh b{color:#2f2a24}
+.prform .kbtn{border-color:#ddd5c8;color:#4a443c}
+.prform .hint{color:#8a8177}
+.prform .matbox{background:#F3F0EA;border-color:#E2DACB}
+.prform .matbox.hi{background:#FCEFEA;border-color:#E0A896}
+.prform .mat-l,.prform .mat-s{color:#7a6f60}
+.prform .mat-n{color:#12100E}
+.pfimgs{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.pfimg{display:grid;place-items:center;aspect-ratio:1;background:#fff;border:1px dashed #ddd5c8;
+  border-radius:12px;overflow:hidden;cursor:pointer}
+.pfimg img{width:100%;height:100%;object-fit:cover}
+.pfimg span{font-size:13px;color:#8a8177}
 /* ── 材料費（塗っているその場で見せる）── */
 .matbox{background:rgba(239,233,223,.06);border:1px solid rgba(239,233,223,.22);
   border-radius:13px;padding:14px 16px;margin:14px 0}
@@ -441,29 +462,136 @@ function prHtml(){
         <button class="pr-b line" id="prHand">あとから入れる</button></div>`}
   </div>`;
 }
+/* 練習が終わったら、その場で記録する。
+   ★教育を「上手くなった」で終わらせないために、
+     モデルさんに次回のご予約をお取りできたかまで残す。 */
+let PRF=null;   // 記録の下書き
+function prFormHtml(){
+  const f=PRF; if(!f)return '';
+  const mc=matCost({mix:f.mix});
+  return `<div class="prform">
+    <div class="pf-h">${f.mins}分の練習を 記録します</div>
+    <label class="pf-l">何の練習でしたか</label>
+    <input class="kin" id="pf-note" value="${esc(f.note||'')}" placeholder="例）ハイライトの引き方">
+    <label class="pf-l">モデルさん</label>
+    <div class="kchips">
+      <button class="kchip ${f.hasModel?'on':''}" id="pf-hm">モデルを呼んだ</button>
+      <button class="kchip ${!f.hasModel?'on':''}" id="pf-nm">ウィッグ・自主練</button>
+    </div>
+    ${f.hasModel?`
+      <input class="kin" id="pf-mn" value="${esc(f.modelName||'')}" placeholder="モデルさんのお名前">
+      <label class="pf-l">いただいたモデル料金</label>
+      <input class="kin" id="pf-mf" type="number" inputmode="numeric" value="${f.modelFee||''}" placeholder="例）3000">
+      <label class="pf-l">使った薬剤</label>
+      ${(f.mix||[]).map((m,i)=>`<div class="kmix">
+        <div class="kmh"><b>${m.where||'全体'}</b><button data-pdm="${i}">✕</button></div>
+        ${(m.agents||[]).map((a,j)=>`<div class="kag"><span>${esc(a.name)}</span>
+          <input class="kg" data-pi="${i}" data-pj="${j}" type="number" value="${a.g||''}" placeholder="g">
+          <button data-pda="${i}:${j}">✕</button></div>`).join('')}
+        <input class="ksc pf-sc" data-i="${i}" placeholder="バーコードを読む／薬剤名で探す" inputmode="search">
+        <div class="kmb">
+          <select data-pi="${i}" data-pf="oxy"><option value="">オキシ</option>${KOXY.map(o=>`<option ${m.oxy===o?'selected':''}>${o}</option>`).join('')}</select>
+          <input data-pi="${i}" data-pf="oxyG" type="number" value="${m.oxyG||''}" placeholder="オキシg">
+          <input data-pi="${i}" data-pf="min" type="number" value="${m.min||''}" placeholder="分">
+        </div></div>`).join('')}
+      <button class="kbtn" id="pf-add">＋ 塗りを足す</button>
+      ${mc.g?`<div class="matbox ${mc.bleach?'hi':''}">
+        <div class="mat-l">この練習の材料費</div><div class="mat-n">${mc.yen?('¥'+mc.yen.toLocaleString()):'—'}</div>
+        <div class="mat-s">${mc.g}g　${f.modelFee?`モデル料金 ¥${(+f.modelFee).toLocaleString()}　差引 ¥${((+f.modelFee||0)-mc.yen).toLocaleString()}`:'モデル料金を入れると差引が出ます'}
+          <br>営業の材料費率には入れません</div></div>`:''}
+      <label class="pf-l">ビフォー・アフター</label>
+      <div class="pfimgs">
+        <label class="pfimg">${f.photoB?`<img src="${f.photoB}">`:'<span>ビフォー</span>'}
+          <input type="file" accept="image/*" capture="environment" id="pf-pb" style="display:none"></label>
+        <label class="pfimg">${f.photoA?`<img src="${f.photoA}">`:'<span>アフター</span>'}
+          <input type="file" accept="image/*" capture="environment" id="pf-pa" style="display:none"></label>
+      </div>
+      <label class="pf-l">次回のご予約</label>
+      <div class="kchips">
+        <button class="kchip ${f.nextBooked?'on':''}" id="pf-nb">お取りできた</button>
+        <button class="kchip ${!f.nextBooked?'on':''}" id="pf-nn">まだ</button>
+      </div>
+      <p class="hint">モデルさんこそ、次にお会いする約束が練習になります</p>
+    `:''}
+    <label class="pf-l">見てもらった方</label>
+    <input class="kin" id="pf-tc" value="${esc(f.teacher||'')}" placeholder="例）及川（提出済み）">
+    <button class="save" id="pf-save">この内容で記録する</button>
+    <button class="kbtn" id="pf-cancel">やめる</button>
+  </div>`;
+}
 function prWire(){
   app.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{
     PRON={t:Date.now(),kind:b.dataset.pk};
     localStorage.setItem('stb_practice_on',JSON.stringify(PRON)); render();});
   const e=document.getElementById('prEnd');
   if(e)e.onclick=async()=>{
-    const mins=Math.max(1,Math.round((Date.now()-PRON.t)/60000));
-    const note=prompt(`${mins}分でした。何の練習でしたか（空欄でもかまいません）`,'')||'';
-    const st=new Date(PRON.t).toISOString();
-    await fetch(U('/practice'),{method:'POST',headers:H(),
-      body:JSON.stringify({minutes:mins,kind:PRON.kind,note,startAt:st,endAt:new Date().toISOString(),
-        date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)})}).catch(()=>{});
-    PRON=null; localStorage.removeItem('stb_practice_on');
-    await prLoad(); render();};
+    if(!Object.keys(AGP).length)await loadAgentPrice();
+    PRF={mins:Math.max(1,Math.round((Date.now()-PRON.t)/60000)),kind:PRON.kind,
+      startAt:new Date(PRON.t).toISOString(),endAt:new Date().toISOString(),
+      date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
+      hasModel:false,modelName:'',modelFee:'',mix:[],teacher:'',nextBooked:false,note:'',photoB:'',photoA:''};
+    render();};
   const h=document.getElementById('prHand');
   if(h)h.onclick=async()=>{
+    if(!Object.keys(AGP).length)await loadAgentPrice();
     const d=prompt('いつの練習ですか（例）2026-08-11',new Date(Date.now()+9*3600e3).toISOString().slice(0,10));
     if(!d)return;
     const mn=+prompt('何分でしたか','60'); if(!mn)return;
-    const k=prompt('いつの時間ですか（出勤前／退勤後／休みの日）','退勤後')||'';
-    const note=prompt('何の練習でしたか（空欄でもかまいません）','')||'';
+    PRF={mins:mn,kind:prompt('いつの時間ですか（出勤前／退勤後／休みの日）','退勤後')||'',
+      date:d,hasModel:false,modelName:'',modelFee:'',mix:[],teacher:'',nextBooked:false,note:'',photoB:'',photoA:''};
+    render();};
+  prFormWire();
+}
+function prFormWire(){
+  if(!PRF)return;
+  const f=PRF, $$=id=>document.getElementById(id);
+  const bind=(id,k)=>{const el=$$(id); if(el)el.oninput=()=>{f[k]=el.value;};};
+  bind('pf-note','note'); bind('pf-mn','modelName'); bind('pf-mf','modelFee'); bind('pf-tc','teacher');
+  if($$('pf-hm'))$$('pf-hm').onclick=()=>{f.hasModel=true;render();};
+  if($$('pf-nm'))$$('pf-nm').onclick=()=>{f.hasModel=false;render();};
+  if($$('pf-nb'))$$('pf-nb').onclick=()=>{f.nextBooked=true;render();};
+  if($$('pf-nn'))$$('pf-nn').onclick=()=>{f.nextBooked=false;render();};
+  if($$('pf-add'))$$('pf-add').onclick=()=>{f.mix.push({where:'全体',agents:[],oxy:'',oxyG:'',min:''});render();};
+  document.querySelectorAll('[data-pdm]').forEach(x=>x.onclick=()=>{f.mix.splice(+x.dataset.pdm,1);render();});
+  document.querySelectorAll('[data-pda]').forEach(x=>x.onclick=()=>{
+    const [i,j]=x.dataset.pda.split(':').map(Number); f.mix[i].agents.splice(j,1); render();});
+  document.querySelectorAll('.kg[data-pi]').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.pi,j=+el.dataset.pj; if(f.mix[i]&&f.mix[i].agents[j])f.mix[i].agents[j].g=+el.value||''; render();});
+  document.querySelectorAll('[data-pf]').forEach(el=>el.onchange=()=>{
+    const i=+el.dataset.pi,k=el.dataset.pf; if(!f.mix[i])return;
+    f.mix[i][k]=(k==='min'||k==='oxyG')?(+el.value||''):el.value; render();});
+  document.querySelectorAll('.pf-sc').forEach(el=>el.onkeydown=async ev=>{
+    if(ev.key!=='Enter')return; ev.preventDefault();
+    const v=el.value.trim(); if(!v)return; const i=+el.dataset.i;
+    const g=async u=>{try{const r=await fetch(U(u));const j=await r.json();return j.agents||[];}catch{return [];}};
+    let hits=/^[0-9]{8,14}$/.test(v)?await g('/agents?barcode='+encodeURIComponent(v)):await g('/agents?q='+encodeURIComponent(v));
+    let a=hits[0];
+    if(!a&&/^[0-9]{8,14}$/.test(v)){ const hit=await kmFind(v); if(hit)a={id:'',name:hit.n,brand:hit.b||''}; }
+    if(!a){ const nm=prompt('薬剤の名前',v); if(!nm)return; a={id:'',name:nm}; }
+    (f.mix[i].agents||(f.mix[i].agents=[])).push({id:a.id||'',name:a.name,g:''});
+    el.value=''; render();});
+  ['pf-pb','pf-pa'].forEach((id,n)=>{const el=$$(id); if(!el)return;
+    el.onchange=()=>{const file=el.files&&el.files[0]; if(!file)return;
+      const img=new Image();
+      img.onload=()=>{ const MAX=1100,sc=Math.min(1,MAX/Math.max(img.width,img.height));
+        const cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+        let q=0.72,data=cv.toDataURL('image/jpeg',q);
+        while(data.length>550000&&q>0.4){q-=0.1;data=cv.toDataURL('image/jpeg',q);}
+        f[n?'photoA':'photoB']=data; URL.revokeObjectURL(img.src); render();};
+      img.src=URL.createObjectURL(file);};});
+  if($$('pf-cancel'))$$('pf-cancel').onclick=()=>{PRF=null;render();};
+  if($$('pf-save'))$$('pf-save').onclick=async()=>{
+    const mc=matCost({mix:f.mix});
+    const b=$$('pf-save'); b.disabled=true; b.textContent='記録しています…';
     await fetch(U('/practice'),{method:'POST',headers:H(),
-      body:JSON.stringify({date:d,minutes:mn,kind:k,note})}).catch(()=>{});
+      body:JSON.stringify({date:f.date,minutes:f.mins,kind:f.kind,note:f.note,
+        startAt:f.startAt||'',endAt:f.endAt||'',
+        modelName:f.hasModel?f.modelName:'',modelFee:f.hasModel?(+f.modelFee||0):0,
+        agents:f.hasModel?f.mix:[],matCost:f.hasModel?mc.yen:0,
+        teacher:f.teacher,checked:!!f.teacher,nextBooked:!!f.nextBooked,
+        photoB:f.photoB,photoA:f.photoA})}).catch(()=>{});
+    PRF=null; PRON=null; localStorage.removeItem('stb_practice_on');
     await prLoad(); render();};
 }
 function meHtml(){
@@ -489,6 +617,7 @@ function meHtml(){
 }
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
+  if(PRF){ app.innerHTML=prFormHtml(); prFormWire(); return; }
   app.innerHTML=meHtml()+prHtml()+notiHtml()+`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
