@@ -366,6 +366,35 @@ def fix_paused_hero(f, s, d):
         s, ok = swap_text(s, k, PAUSED_OFFER['ja'])
         if not ok:
             break                                  # 本文に無ければ無限ループを避ける
+
+    # ①-4 🔴 JSON-LD の FAQPage にも同じ嘘が残っていた。
+    #     見えている本文だけ直して構造化データを放置すると、**検索結果のリッチリザルトに
+    #     「縮毛矯正やパーマもできますか → お受けしています」が出続ける**。
+    #     可視FAQとschemaは一致していることがGoogleの要件でもある。
+    m = re.search(r'(<script type="application/ld\+json">)([\s\S]*?)(</script>)', s)
+    if m:
+        o = json.loads(m.group(2))
+        hit = [0]
+
+        def walk(n):
+            if isinstance(n, dict):
+                if n.get('@type') == 'Question':
+                    ans = n.get('acceptedAnswer', {})
+                    txt = ans.get('text', '')
+                    if 'までお受けしています' in txt or '縮毛矯正やパーマもできますか' in n.get('name', ''):
+                        n['name'] = PAUSED_FAQ_Q['ja']
+                        ans['text'] = PAUSED_FAQ_A['ja']
+                        hit[0] += 1
+                for v in n.values():
+                    walk(v)
+            elif isinstance(n, list):
+                for v in n:
+                    walk(v)
+        walk(o)
+        if hit[0]:
+            s = (s[:m.start()] + m.group(1)
+                 + json.dumps(o, ensure_ascii=False, separators=(',', ':'))
+                 + m.group(3) + s[m.end():])
     # ② 休止告知を「ラベル＋見出し＋本文」に置き換える（既にあれば入れ替え＝冪等）
     for L in LANGS:
         d[L]['pause.label'], d[L]['pause.title'], d[L]['pause.body'] = PAUSED[L]
