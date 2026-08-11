@@ -1,8 +1,16 @@
 name: Build i18n (prerender localized pages)
 
-# コンテンツ6ページ or 翻訳辞書(lang.js)が変わったら、各言語の翻訳を焼き込んだ
-# 静的ページを /en/ /zh/ /tw/ /ko/ に生成して commit する（検索に多言語を露出させる）。
+# ja ページが変わったら、各言語の翻訳を焼き込んだ静的ページを
+# /en/ /zh/ /tw/ /ko/ に生成して commit する（検索に多言語を露出させる）。
 # 生成物は新規ディレクトリのため、既存 ja ページ(本番)には影響しない。
+#
+# 【2026-08-11 に見つけた抜け】build-i18n.js の PAGES は33枚あるのに、
+# ここの paths には最初の6枚しか書いていなかった。2026-08-01 に
+# 店舗7 + 地域LP19 + スパ3 を PAGES に足したとき、paths を足し忘れている。
+# そのため salon-*.html などを直しても多言語版が再生成されず、27枚が凍結していた
+# (免税の追記も、先回りブロックも、/en/ /zh/ /tw/ /ko/ には届いていなかった)。
+# 一枚ずつ列挙するとまた同じズレが起きるので、ルート直下の .html はすべて対象にする。
+# 生成は決定論的で、出力が変わらなければ commit しないので、余分に起動しても害はない。
 #
 # 【2026-07-25 の障害メモ】#125〜#129 が step6 で連続失敗した。真因は
 # ワークフローではなく「node_modules 1809ファイルが誤ってコミットされていた」こと。
@@ -12,12 +20,7 @@ name: Build i18n (prerender localized pages)
 on:
   push:
     paths:
-      - 'index.html'
-      - 'shop.html'
-      - 'hairsalon.html'
-      - 'headspa.html'
-      - 'brand.html'
-      - 'onlineshop.html'
+      - '*.html'
       - 'js/lang.js'
       - '.github/scripts/build-i18n.js'
       - '.github/workflows/build-i18n.yml'
