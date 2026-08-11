@@ -3558,7 +3558,10 @@ function renderCheckout(){
       if(CO_MEMBERSHIP&&CO_MEMBERSHIP.remaining>0&&!isShop())return `<div class="co-sub">月額会員</div>
       <div class="co-line" style="color:#0c7a41"><span>👑 残${CO_MEMBERSHIP.remaining}回${CO_MEMBERSHIP.status==='canceled'?'（自動更新は停止中）':''}</span><span style="margin-left:auto"><button class="btn small ghost" id="co-ms-go">1回を使う</button></span></div>
       <div class="co-sub">回数券・パス</div>
-      <div class="co-scan-row"><input id="co-pass" placeholder="🎫 パスコード（P-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-pass-go">消化</button></div>`;})()}
+      <div class="co-scan-row"><input id="co-pass" placeholder="🎫 パスコード（P-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-pass-go">消化</button></div>`;
+      /* ★returnを書き忘れると、テンプレートに undefined という文字がそのまま出る。
+         回数券も月額会員もお持ちでない、いちばん多いお会計で出ていた。 */
+      return '';})()}
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     ${coDraft.method==='cash'?`<div class="co-cash">
       <div class="co-line"><span>お預かり</span><span class="co-y">¥<input id="co-recv" type="number" inputmode="numeric" value="${coDraft.received||''}" placeholder="0"></span></div>
