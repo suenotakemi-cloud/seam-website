@@ -61,8 +61,9 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .obar button{margin-left:auto;background:none;border:1px solid rgba(239,233,223,.3);color:#EFE9DF;
   border-radius:8px;padding:7px 13px;font:inherit;font-size:13px;cursor:pointer}
 .tabs{display:flex;gap:8px;padding:12px 16px 0;flex:0 0 auto}
-.tabs button{flex:1;background:none;border:1px solid rgba(239,233,223,.24);color:rgba(239,233,223,.72);
-  border-radius:999px;padding:11px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
+.tabs{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs button{flex:1 0 auto;background:none;border:1px solid rgba(239,233,223,.24);color:rgba(239,233,223,.72);
+  border-radius:999px;padding:11px 15px;font:inherit;font-size:14.5px;font-weight:500;cursor:pointer;white-space:nowrap}
 .tabs button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
 .opane{flex:1;overflow-y:auto;padding:14px 16px 30px}
 /* ── 申し送り（いちばん上・読むまで消えない）── */
@@ -77,6 +78,10 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .noti-ok{width:100%;margin-top:11px;background:#12100E;border:0;color:#fff;
   border-radius:11px;padding:13px;font:inherit;font-size:15px;font-weight:600;cursor:pointer}
 /* ── カルテ（暗い画面で、指で押せる大きさに）── */
+.kchips{display:flex;flex-wrap:wrap;gap:8px}
+.kchip{background:none;border:1px solid rgba(239,233,223,.28);color:rgba(239,233,223,.85);
+  border-radius:999px;padding:11px 15px;font:inherit;font-size:15px;cursor:pointer}
+.kchip.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF;font-weight:600}
 .kmix{border:1px solid rgba(239,233,223,.2);border-radius:12px;padding:11px 12px;margin-bottom:10px;
   background:rgba(239,233,223,.04)}
 .kmh{display:flex;align-items:center;gap:9px;margin-bottom:8px}
@@ -144,6 +149,42 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .save:disabled{opacity:.45}
 .mini2{background:none;border:1px solid rgba(239,233,223,.32);color:#EFE9DF;border-radius:999px;
   padding:12px 20px;font:inherit;font-size:15px;cursor:pointer;margin-top:10px}
+
+/* ══ 譜面 ══
+   ★楽譜に見せるための3つ：左端に通し番号（小節）、縦の1本線、そして余白。
+     詰めると手順書に戻ってしまうので、行間はふつうより広く取る。 */
+.scn{font-size:13px;line-height:1.85;color:rgba(239,233,223,.55);margin:0}
+.staff5{margin-top:14px;position:relative;padding-left:2px}
+/* 五線の代わりに 1本の縦線を通す＝ここが譜面の背骨 */
+.staff5::before{content:'';position:absolute;left:19px;top:8px;bottom:8px;width:1px;
+  background:linear-gradient(180deg,transparent,rgba(239,233,223,.22) 8%,rgba(239,233,223,.22) 92%,transparent)}
+.mv{position:relative;padding:0 0 22px 44px}
+.mv:last-child{padding-bottom:6px}
+.mvh{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+/* 小節番号＝譜面の左肩にある数字 */
+.mv .bar{position:absolute;left:8px;width:23px;height:23px;border-radius:50%;
+  border:1px solid rgba(239,233,223,.3);background:#12100E;color:rgba(239,233,223,.6);
+  font-size:12px;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
+.mv .tm{font-family:'Noto Serif JP',serif;font-size:17px;color:#EFE9DF;font-variant-numeric:tabular-nums}
+.mv .nm{font-family:'Noto Serif JP',serif;font-size:19px;color:#fff}
+.mv .mvh i{font-style:italic;font-size:12.5px;color:rgba(239,233,223,.42);letter-spacing:.04em}
+.mv .ck{margin-left:auto;flex:0 0 auto;width:34px;height:34px;border-radius:50%;
+  border:1px solid rgba(239,233,223,.28);background:none;color:rgba(239,233,223,.35);
+  font-size:15px;cursor:pointer;line-height:1}
+.mv.done .bar{background:#9ED2AE;border-color:#9ED2AE;color:#12100E}
+.mv.done .ck{background:#9ED2AE;border-color:#9ED2AE;color:#12100E}
+.mv.done .nm,.mv.done .tm{color:rgba(239,233,223,.45)}
+.mv.done .line{opacity:.4}
+.line{display:flex;gap:12px;margin-top:8px}
+.line b{flex:0 0 52px;font-size:11.5px;letter-spacing:.12em;font-weight:500;padding-top:4px}
+.line ul{margin:0;padding-left:17px}
+.line li{font-size:16.5px;line-height:1.85;color:#EFE9DF;margin-bottom:3px}
+/* 声がけ＝旋律、心遣い＝伴奏。色で役割を分ける */
+.line.say b{color:#E2C27A}
+.line.say li::marker{color:rgba(226,194,122,.7)}
+.line.care b{color:#A9C4E8}
+.line.care li{color:rgba(239,233,223,.86);font-size:16px}
+.line.care li::marker{color:rgba(169,196,232,.7)}
 .saved{text-align:center;font-size:13.5px;color:#9ED2AE;margin-top:10px;min-height:20px}
 @media(min-width:700px){.big{font-size:30px}.pr span,.kv span{font-size:21px}}
 </style>
@@ -157,6 +198,7 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
     <button id="oclose">とじる</button></div>
   <div class="tabs">
     <button data-t="prep" class="on">したく</button>
+    <button data-t="score">譜面</button>
     <button data-t="care">施術中</button>
     <button data-t="after">おわりに</button>
     <button data-t="karte">カルテ</button>
@@ -308,11 +350,138 @@ function meter(t,label,n){
   return `<div class="kv"><b>${t}</b><div class="bar"><u style="width:${n*10}%"></u></div>
     <span style="font-size:17px;min-width:34px;text-align:right">${n}/10</span></div>`;
 }
+/* ══════════════════════════════════════════════════════════
+   譜面 — ヘッドスパの工程を、楽譜のように読む
+
+   ★手順書は「読むもの」だが、譜面は「見ながら演奏するもの」。
+     施術は90分ぜんぶ手が塞がっているので、
+     文章ではなく **いま何小節目か** が一目で分かる形にする。
+
+   ★いちばんの肝は、譜面が一人ひとり違うこと。
+     お客様が選んだ強さ・灯り・音は、そのまま **強弱記号** になる。
+     だから同じ工程でも、この方のための譜面になる。
+
+   ★声がけ（言うこと）と 心遣い（言わずにやること）を分けて書く。
+     2万人レポート p18「会話の上手さより、困る前に気づく接客」。
+     心遣いは言葉にしない仕事なので、書いておかないと消える。
+   ══════════════════════════════════════════════════════════ */
+const DYN=n=>!n?'':(n<=2?'pp':n<=4?'p':n<=6?'mp':n<=8?'f':'ff');
+const DYNJ=n=>!n?'':(n<=2?'ごく弱く':n<=4?'弱く':n<=6?'ふつうに':n<=8?'強く':'いちばん強く');
+
+/* 工程＝楽章。時間は施術の開始からの分（所要は施術＋15分） */
+function score(){
+  const q=CUR||{}, mn=(RESV&&RESV.minutes)||90;
+  const quiet=/話しかけない|静か|ゆっくり|眠/.test(String(q.talk||'')+String(q.goal||''));
+  const sleepy=/眠って|ねむって/.test(String(q.goal||''));
+  const parts=String(q.parts||'').split('／').map(x=>x.trim()).filter(Boolean);
+  const M=[];
+
+  M.push({t:-15,name:'お迎え',it:'Preludio',
+    say: quiet?['お名前だけ確認して お部屋へ　説明は最小限に']
+              :['「本日はありがとうございます」','ご希望はもう届いていますと ひと言だけ'],
+    care:['受付で書くものは出さない（もう頂いている）',
+          q.room?`お席：${q.room}`:'',
+          'お手洗いをこの時点で一度うかがう'].filter(Boolean)});
+
+  if(q.sheet&&q.sheet!=='今回はいいです')
+    M.push({t:-8,name:'お召し替え',it:'Intermezzo',
+      say:[`「${q.sheet}のシートをご用意しています」`,'香りだけ先にお見せする'],
+      care:['ガウンの前にシートをお渡しする','汗のことは言わない　差し出すだけ']});
+
+  M.push({t:0,name:'お席へ',it:'Adagio',
+    say:[ q.drink&&q.drinkTime!=='終わってから'?`「${q.drink}をお持ちしますね」`:'',
+          '「姿勢はつらくないですか」' ].filter(Boolean),
+    care:[ q.pillow?`枕：${q.pillow}`:'',
+           q.blanket&&q.blanket!=='かけないで'?`ブランケット：${q.blanket}`:'',
+           q.lightN?`灯りを ${DYNJ(q.lightN)} 落とす（${DYN(q.lightN)}）`:'',
+           q.soundN?`音は ${DYNJ(q.soundN)}（${DYN(q.soundN)}）`:'',
+           q.music?`音楽：${q.music}`:'' ].filter(Boolean)});
+
+  if(q.bath) M.push({t:8,name:'頭浸浴',it:'Andante',
+    say:['「お湯の温度はいかがですか」','ここから先は 目を閉じていて大丈夫ですと伝える'],
+    care:[ q.tempN?`お湯 ${DYNJ(q.tempN)}（${DYN(q.tempN)}）`:'',
+           '生えぎわにタオルを当ててから流す',
+           q.face?`お顔まわり：${q.face}`:'' ].filter(Boolean)});
+
+  M.push({t:q.bath?18:8,name:'洗い',it:'Allegretto',
+    say:[ q.washPower?`「${q.washPower.replace(/（.*/,'')}でまいります」と先に言う`:'',
+          '強さを一度だけ確かめる　そのあとは聞かない' ].filter(Boolean),
+    care:[ q.washPower?`シャンプー ${q.washPower}`:'',
+           q.soda?`炭酸：${q.soda}`:'',
+           '爪を立てない　指の腹だけ',
+           ...(q.wash?[String(q.wash)]:[]) ]});
+
+  M.push({t:q.bath?30:20,name:'ほぐし',it:'Largo　—　この楽章がいちばん長い',
+    say: quiet?['声はかけない　力を変えるときだけ短く']
+              :['部位を移るときに ひと言だけ添える'],
+    care:[ ...(parts.length?parts:['おまかせ']),
+           q.avoidParts?`★触れない：${q.avoidParts}`:'',
+           '同じ場所を続けすぎない　左右差を最後に整える' ].filter(Boolean)});
+
+  M.push({t:mn-12,name:'戻ってくる',it:'Ritardando',
+    say: sleepy?[`「${q.sleep||'そのまま'}」とうかがっています`,'起こす場合は 名前を呼ばず 手の圧をゆるめてから']
+               :['「そろそろお戻りいただきます」と 小さな声で'],
+    care:[ q.sleep?`眠ってしまったら：${q.sleep}`:'',
+           '灯りを一段だけ上げる（急に明るくしない）',
+           q.drinkTime&&q.drinkTime!=='着いてすぐ'?`お飲みもの：${q.drink||''} を ${q.drinkTime}`:'' ].filter(Boolean)});
+
+  M.push({t:mn,name:'仕上げ・お見送り',it:'Coda',
+    say:['「キレイになりましたね」を必ず言う　←ここで満足が完成する',
+         'おうちでのケアを ひとつだけお伝えする',
+         '次回のご予約を その場でおすすめする'],
+    care:[ q.finish?`仕上げ：${q.finish}`:'',
+           q.styling?`スタイリング：${q.styling}`:'',
+           q.care?`お試し：${q.care}`:'',
+           '「おわりに」タブに 今日の一行を書く（翌朝お届けします）' ].filter(Boolean)});
+  return M;
+}
+
+function paintScore(p){
+  /* ★アレルギーと「触れない・苦手」は どのタブでも最上段。
+       タブを切り替えた拍子に見落とす、が起きない形にする。 */
+  const stop=[CUR.avoidParts&&('触れない：'+CUR.avoidParts),CUR.avoid].filter(Boolean).join('　／　');
+  const alg = CUR.allergy
+    ? `<div class="sec alrg"><h3>アレルギー</h3><p class="mid">${esc(CUR.allergy)}</p>
+        ${CUR.noScent?'<p class="algsub">香りのご案内は控える　無香でご用意する</p>':''}</div>`
+    : (CUR.allergyNone
+      ? '<div class="sec okrg"><h3>アレルギー</h3><p class="okv">うかがいました　特にありません</p></div>'
+      : '<div class="sec alrg"><h3>アレルギー</h3><p class="mid">まだうかがえていません</p><p class="algsub">当日 必ずご確認ください</p></div>');
+  const top = alg + (stop?`<div class="sec stop"><h3>触れない・苦手</h3><p class="mid">${esc(stop)}</p></div>`:'');
+  const st=(RESV&&RESV.start)||0;
+  const key='sc_'+((RESV&&RESV.id)||'x');
+  let done={}; try{ done=JSON.parse(localStorage.getItem(key)||'{}'); }catch(e){}
+  const M=score();
+  p.innerHTML=top+`
+    <div class="sec"><h3>今日の譜面</h3>
+      <p class="scn">上から順に　声がけは言うこと　心遣いは言わずにすること<br>
+        強弱記号は このお客様が選んだ強さです</p></div>
+    <div class="staff5">
+      ${M.map((m,n)=>`
+      <div class="mv${done[n]?' done':''}" data-n="${n}">
+        <div class="mvh">
+          <span class="bar">${n+1}</span>
+          <span class="tm">${hm(Math.max(0,st+m.t))}</span>
+          <span class="nm">${esc(m.name)}</span>
+          <i>${esc(m.it)}</i>
+          <button class="ck" aria-label="この楽章を終えた">✓</button>
+        </div>
+        ${m.say.length?`<div class="line say"><b>声がけ</b><ul>${m.say.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
+        ${m.care.length?`<div class="line care"><b>心遣い</b><ul>${m.care.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
+      </div>`).join('')}
+    </div>`;
+  p.querySelectorAll('.mv .ck').forEach(b=>b.onclick=()=>{
+    const mv=b.closest('.mv'), n=mv.dataset.n;
+    done[n]=!done[n]; mv.classList.toggle('done',!!done[n]);
+    try{ localStorage.setItem(key,JSON.stringify(done)); }catch(e){}
+  });
+}
+
 function paint(){
   const p=document.getElementById('opane');
   /* ★おわりに は ご記入が無い方にも書ける。
        事前カウンセリングを出していない方こそ、翌日の便りが効く。 */
   if(TAB==='after'){ paintAfter(p); return; }
+  if(TAB==='score'){ paintScore(p); return; }
   if(TAB==='karte'){ paintKarte(p); return; }
   if(!CUR){ p.innerHTML='<p class="none" style="margin-top:20px">このお客様は まだご記入がありません<br>当日おうかがいしてください</p>'; return; }
   const stop=[CUR.avoidParts&&('触れない：'+CUR.avoidParts),CUR.avoid].filter(Boolean).join('　／　');
@@ -376,6 +545,9 @@ function paint(){
 let KT=null, KT_LAST=null, KT_BUSY=false;
 const KWHERE=['根元','中間','毛先','全体','前髪','リタッチ','ハイライト','その他'];
 const KOXY=['3%','4.5%','6%'];
+/* 伝えた回数が、そのまま次の来店になる（2万人の調査） */
+const KADV=['スタイリングの仕方','おうちでのケア','使っている薬剤のこと','次回の提案','髪の状態の説明'];
+const KSHAM=['ちょうどよい','弱め希望','強め希望','痛がられた'];
 const kRatio=(a,b)=>(!a||!b)?'':('1:'+String(Math.round(b/a*100)/100));
 /* 菊池マスタ（JAN→商品名の辞書・5,700件）。知らないバーコードでも名前が出る。
    大きいので、必要になった最初の1回だけ読む。 */
@@ -396,7 +568,8 @@ const kMixText=b=>kMixes(b).map(m=>[m.where,
 async function kLoad(){
   const key=(String(RESV.phone||'').replace(/[^0-9]/g,''))||('n:'+(RESV.name||''));
   KT={key,name:RESV.name||'',phone:RESV.phone||'',date:DAY,staff:STAFFNM[RESV.staffId]||'',
-      menu:RESV.menuName||'',resvId:RESV.id,body:{mix:[],treat:'',free:''},nextNote:'',assistant:''};
+      menu:RESV.menuName||'',resvId:RESV.id,body:{mix:[],treat:'',free:''},nextNote:'',assistant:'',
+      advice:[],shampoo:''};
   KT_LAST=null;
   try{
     const r=await fetch(U(`/karte?key=${encodeURIComponent(key)}`));
@@ -431,10 +604,15 @@ function paintKarte(p){
     ${L?`<div class="sec"><h3>前回 ${String(L.date||'').replace(/-/g,'/')}${L.staff?'　'+esc(L.staff):''}</h3>
       ${L.nextNote?`<p class="big">${esc(L.nextNote)}</p>`:''}
       ${kMixText(L.body)?`<p class="mid">薬剤 ${esc(kMixText(L.body))}</p>`:''}
+      ${L.shampoo?`<p class="mid"${L.shampoo==='痛がられた'?' style="color:#F0A79C;font-weight:600"':''}>シャンプー ${esc(L.shampoo)}</p>`:''}
       ${L.assistant?`<p class="mid">アシスタント ${esc(L.assistant)}</p>`:''}
       ${kMixText(L.body)?`<button class="kbtn" id="kcopy">前回の薬剤を写す</button>`:''}</div>`:''}
     <div class="sec"><h3>使った薬剤</h3>${mix||'<p class="mid">まだありません</p>'}
       <button class="kbtn" id="kadd">＋ 塗りを足す</button></div>
+    <div class="sec"><h3>今日お伝えしたこと</h3>
+      <div class="kchips">${KADV.map(x=>`<button class="kchip ${(KT.advice||[]).includes(x)?'on':''}" data-adv="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
+    <div class="sec"><h3>シャンプーの強さ</h3>
+      <div class="kchips">${KSHAM.map(x=>`<button class="kchip ${KT.shampoo===x?'on':''}" data-sham="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
     <div class="sec"><h3>ついたアシスタント</h3>
       <input id="kasst" class="kin" value="${esc(KT.assistant||'')}" placeholder="例）田中（シャンプー・塗布）"></div>
     <div class="sec"><h3>次回への申し送り</h3>
@@ -491,6 +669,11 @@ function kWire(p){
     (b.mix[i].agents||(b.mix[i].agents=[])).push({id:a.id||'',name:a.name||'',brand:a.brand||'',g:''});
     el.value=''; paint();
   });
+  p.querySelectorAll('[data-adv]').forEach(x=>x.onclick=()=>{
+    const v=x.dataset.adv, a=KT.advice||(KT.advice=[]);
+    const i=a.indexOf(v); if(i>=0)a.splice(i,1); else a.push(v); paint();});
+  p.querySelectorAll('[data-sham]').forEach(x=>x.onclick=()=>{
+    KT.shampoo=(KT.shampoo===x.dataset.sham)?'':x.dataset.sham; paint();});
   const sv=v=>{};
   const ks=p.querySelector('#kasst'); if(ks)ks.oninput=()=>KT.assistant=ks.value;
   const kn=p.querySelector('#knext'); if(kn)kn.oninput=()=>KT.nextNote=kn.value;

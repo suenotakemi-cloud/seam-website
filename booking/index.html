@@ -3033,6 +3033,14 @@ const KT_CUT=['そろえた','軽くした','短くした','形を変えた','�
 const KT_REACT=['気に入られた','ちょうどよいと','短いと言われた','明るいと言われた','暗いと言われた','もう少し軽くと'];
 const KT_AVOID=['前髪を短くしすぎない','毛先を軽くしすぎない','明るくしすぎない','しみやすい','香りが苦手','会話は控えめ'];
 const KT_OXY=['3%','4.5%','6%'];
+/* ── 今日お伝えしたこと（アドバイス率）──
+ * 2万人の調査で、いちばん簡単に上がって、いちばん効く数字。
+ * 全国はスタイリング85%・ヘアケア77%。優秀店は98%・95%。
+ * 技術を変えずに、伝える回数を増やすだけで上がる。 */
+const KT_ADVICE=['スタイリングの仕方','おうちでのケア','使っている薬剤のこと','次回の提案','髪の状態の説明'];
+/* シャンプーの強さ。「痛い」は即減点で、しかも人によって差が出る。
+   次に入る人に渡せば防げる。 */
+const KT_SHAMPOO=['ちょうどよい','弱め希望','強め希望','痛がられた'];
 const KT_WHERE=['根元','中間','毛先','全体','前髪','リタッチ','ハイライト','その他'];
 /* 比率は g から出す。1:2 のように、いつもの書き方にそろえる */
 function ktRatio(a,b2){
@@ -3048,6 +3056,7 @@ function karteOpen(o){
        staff:o.staff||'', menu:o.menu||'', resvId:o.resvId||'', checkoutId:o.checkoutId||'',
        body:Object.assign({mix:[],cut:'',treat:'',reaction:[],avoid:[],free:''},o.body||{}),
        nextNote:o.nextNote||'', assistant:o.assistant||'',
+       advice:o.advice||[], shampoo:o.shampoo||'',
        author:o.author||'', editors:o.editors||[] };
   KT_LAST=null; KT_PHOTOS=null;
   document.getElementById('kartebg').classList.add('show');
@@ -3228,6 +3237,7 @@ function karteDraw(){
       ${L.next_note?`<div class="ktlast-n">${escH(L.next_note)}</div>`:''}
       ${ktMixText(LB)?`<div class="ktlast-s">薬剤 ${escH(ktMixText(LB))}</div>`:''}
       ${(LB.avoid||[]).length?`<div class="ktlast-s">気をつけること ${escH((LB.avoid||[]).join('・'))}</div>`:''}
+      ${L.shampoo?`<div class="ktlast-s"${L.shampoo==='痛がられた'?' style="color:var(--danger);font-weight:800"':''}>シャンプー ${escH(L.shampoo)}</div>`:''}
       ${L.assistant?`<div class="ktlast-s">前回のアシスタント ${escH(L.assistant)}</div>`:''}
       ${L.author?`<div class="ktlast-s">記入 ${escH(L.author)}${(L.editors&&L.editors.length)?`　修正 ${escH(L.editors.map(e=>e.split('@')[0]).join('・'))}`:''}</div>`:''}
       ${ktMixText(LB)?`<button type="button" class="btn small ghost" id="kt-copylast">前回の薬剤を写す</button>`:''}
@@ -3243,6 +3253,12 @@ function karteDraw(){
 
     ${ktHasPerm()?`<div class="ktsec"><div class="kth">巻き方・その他の時間</div>
       <input id="kt-perm" value="${escH(b.perm||'')}" placeholder="例）ロッド12mm・中間巻き"></div>`:''}
+
+    <div class="ktsec"><div class="kth">今日お伝えしたこと<span style="font-weight:600;color:var(--sub);margin-left:6px">伝えた回数が、そのまま次の来店になります</span></div>
+      <div class="ktchips">${chips(KT_ADVICE,KT.advice||[],'adv')}</div></div>
+
+    <div class="ktsec"><div class="kth">シャンプーの強さ<span style="font-weight:600;color:var(--sub);margin-left:6px">次に入る人に渡します</span></div>
+      <div class="ktchips">${chips(KT_SHAMPOO,[KT.shampoo||''],'sham')}</div></div>
 
     <div class="ktsec"><div class="kth">ついたアシスタント</div>
       <input id="kt-asst" value="${escH(KT.assistant||'')}" placeholder="例）田中（シャンプー・カラー塗布）"></div>
@@ -3287,6 +3303,12 @@ function karteWire(){
     const v=x.dataset[attr]; const a=b[arrName]||(b[arrName]=[]);
     const i=a.indexOf(v); if(i>=0)a.splice(i,1); else a.push(v); karteDraw();});
   tog('reaction','react'); tog('avoid','avoid');
+  /* お伝えしたことは複数、シャンプーの強さは1つ */
+  M.querySelectorAll('[data-adv]').forEach(x=>x.onclick=()=>{
+    const v=x.dataset.adv, a=KT.advice||(KT.advice=[]);
+    const i=a.indexOf(v); if(i>=0)a.splice(i,1); else a.push(v); karteDraw();});
+  M.querySelectorAll('[data-sham]').forEach(x=>x.onclick=()=>{
+    KT.shampoo=(KT.shampoo===x.dataset.sham)?'':x.dataset.sham;karteDraw();});
   if(M.querySelector('#kt-copylast'))M.querySelector('#kt-copylast').onclick=ktCopyLast;
   const kf=M.querySelector('#kt-file');
   if(kf)kf.onchange=()=>{const f=kf.files&&kf.files[0];if(f)ktPhotoPick(f,()=>{kf.value='';ktPhotoLoad(true)});};

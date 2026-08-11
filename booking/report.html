@@ -123,6 +123,7 @@ h2:first-child{margin-top:2px}
       <button data-t="home" class="on">事務</button>
       <button data-t="sales">売上</button>
       <button data-t="repeat">再来</button>
+      <button data-t="nps">推薦</button>
       <button data-t="rec">照合</button>
       <button data-t="payroll">給与</button>
       <button data-t="pay">支払い</button>
@@ -156,7 +157,7 @@ let TAB=(new URLSearchParams(location.search).get('tab'))||'home';
 let FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null, PSORT='v';
 let REP=null, RWIN=90, RLOST=180;
 let REC=null, HOME=null, PAY=null, PB=null, CB=null, CBMON='', JR=null, TF=null, RV=null, NO=null;
-let SUP=null, AP=null, LI=null;
+let SUP=null, AP=null, LI=null, NP=null;
 let BUFFER=0, ALERT_DAYS=90, ALERT_MONTHS=6;
 
 const $=id=>document.getElementById(id);
@@ -310,6 +311,15 @@ function repeatHtml(){
         <div class="kc-v">${REP.lostCount}</div><div class="kc-s">下にお名前が並びます</div></div>
     </div>
     ${!ready?`<p class="note"><b>まだ再来率は出せません。</b>この画面は、はじめてお見えになった日から ${REP.window}日 が過ぎた方だけで数えます　記録が貯まるとここに数字が出ます　いま判定待ちの方は ${r.newPending+r.exPending}人です</p>`:''}
+
+    ${(REP.年数別||[]).length?`<h2>通い年数ごと</h2>
+      <div class="tblwrap"><table class="tbl"><thead><tr>
+        <th>通い年数</th><th class="num">人数</th><th class="num">判定できた</th><th class="num">また来てくださった</th><th class="num">率</th></tr></thead><tbody>
+        ${REP.年数別.map(x=>`<tr><td><b>${esc(x.帯)}</b></td><td class="num">${x.人数}</td>
+          <td class="num">${x.判定できた}</td><td class="num">${x.再来}</td>
+          <td class="num"><b>${x.再来率==null?'—':x.再来率+'%'}</b></td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="note">2万人の調査でいちばん大きな発見は「1年を過ぎるとファンの伸びが止まる」ことでした　常連＝ファン という思い込みを、自分の店の数字で確かめる場所です</p>`:''}
 
     <h2>担当ごとのランキング</h2>
     ${staff.length?`<div class="tblwrap"><table class="tbl"><thead><tr>
@@ -612,6 +622,68 @@ function notiHtml(){
       済んだものは「終わり」で下に沈みます　スタッフのスマホには、読んでいないものだけが上に出ます</p>`;
 }
 
+/* ── 推薦（NPS）──
+ * 「良かったです」は推薦者からも中立者からも返ってくる。店頭では区別がつかない。
+ * だから1問だけ数字で預かる。9・10が推薦者、7・8は失客予備軍。 */
+function npsHtml(){
+  if(!NP)return '<div class="empty">読み込んでいます…</div>';
+  const a=NP.全体||{}, ppl=(NP.people||[]).filter(x=>x.会計||x.n);
+  const mid=NP['あと一歩の方']||[], low=NP['気になる方']||[];
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">推薦度（NPS）</div>
+        <div class="kc-v">${a.nps==null?'—':a.nps}</div>
+        <div class="kc-s">${a.n?`${a.n}人が答えてくださいました`:'まだ答えがありません'}　全国平均は49</div></div>
+      <div class="kc"><div class="kc-k">推薦者</div><div class="kc-v" style="color:var(--ok)">${a.p||0}</div>
+        <div class="kc-s">9・10点　この方たちが値上げを受け入れてくださいます</div></div>
+      <div class="kc"><div class="kc-k">あと一歩の方</div><div class="kc-v" style="color:var(--danger)">${a.mid||0}</div>
+        <div class="kc-s">7・8点　不満は無いが、千円の値上げで離れます</div></div>
+      <div class="kc"><div class="kc-k">気になる方</div><div class="kc-v">${a.d||0}</div>
+        <div class="kc-s">0〜6点</div></div>
+    </div>
+    <h2>担当ごと</h2>
+    ${ppl.length?`<div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>担当</th><th class="num">推薦度</th><th class="num">推薦者</th><th class="num">あと一歩</th>
+      <th class="num">答えてくださった</th></tr></thead><tbody>
+      ${ppl.map((x,i)=>`<tr><td>${i<3&&x.nps!=null?'<b>'+(i+1)+'位</b>　':''}${esc(x.name)}</td>
+        <td class="num"><b>${x.nps==null?'—':x.nps}</b></td>
+        <td class="num" style="color:var(--ok)">${x.p||0}</td>
+        <td class="num">${x.mid||0}</td>
+        <td class="num tsub">${x.n}/${x.会計}${x.答えてくださった率!=null?`（${x.答えてくださった率}%）`:''}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="note">答えてくださった数が少ないうちは、順位より人数を見てください　1〜2人では順位になりません</p>`
+    :'<div class="empty">まだ答えがありません</div>'}
+
+    ${(NP.アドバイス||[]).length?`<h2>お伝えした率</h2>
+    <p class="note">2万人の調査で「いちばん簡単に上がって、いちばん効く」とされた数字です　全国はスタイリング85%・ヘアケア77%　優秀店は98%・95%</p>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>担当</th><th class="num">カルテ</th><th class="num">何か伝えた</th>
+      <th class="num">スタイリング</th><th class="num">ケア</th><th class="num">次回の提案</th></tr></thead><tbody>
+      ${NP.アドバイス.map(x=>`<tr><td>${esc(x.name)}</td><td class="num tsub">${x.カルテ}</td>
+        <td class="num"><b>${x.伝えた率==null?'—':x.伝えた率+'%'}</b></td>
+        <td class="num" style="color:${(x.スタイリング率||0)>=85?'var(--ok)':'inherit'}">${x.スタイリング率==null?'—':x.スタイリング率+'%'}</td>
+        <td class="num" style="color:${(x.ケア率||0)>=77?'var(--ok)':'inherit'}">${x.ケア率==null?'—':x.ケア率+'%'}</td>
+        <td class="num">${x.次回率==null?'—':x.次回率+'%'}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="note">緑は全国平均を超えているところです　カルテを書いていない日は数えられないので、まずカルテが先です</p>`:''}
+
+    ${mid.length?`<h2>あと一歩の方 ${mid.length}人</h2>
+    <p class="note">不満があるわけではありません　もう一歩で推薦者になる方です　次にお会いする前に、担当へ渡してください</p>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>お客様</th><th class="num">点</th><th>ご来店</th><th>担当</th></tr></thead><tbody>
+      ${mid.map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.score}</td>
+        <td class="tsub">${x.date.replace(/-/g,'/')}</td><td class="tsub">${esc(x.staff)}</td></tr>`).join('')}
+    </tbody></table></div>`:''}
+
+    ${low.length?`<h2>気になる方 ${low.length}人</h2>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>お客様</th><th class="num">点</th><th>ご来店</th><th>担当</th></tr></thead><tbody>
+      ${low.map(x=>`<tr><td>${esc(x.name)}${x.comment?`<div class="tsub">${esc(x.comment)}</div>`:''}</td>
+        <td class="num" style="color:var(--danger)">${x.score}</td>
+        <td class="tsub">${x.date.replace(/-/g,'/')}</td><td class="tsub">${esc(x.staff)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="note">その場でお詫びは出していません　謝られると正直に答えられなくなるためです　どう動くかは、お店で決めてください</p>`:''}`;
+}
+
 /* ── 口コミ ──
  * 口コミは Google と ホットペッパー に書かれる。どちらも外にあるので、
  * 「誰の施術に対する口コミか」はこちらでは分からない（書く人は名乗らない）。
@@ -893,6 +965,7 @@ async function load(){
         const row=(NO.rows||[]).find(r=>r.id===x.dataset.id); if(!row)return;
         await post('/notices',{...row,shopId:row.shopId,done:+x.dataset.d}); load();});
     }
+    else if(TAB==='nps'){ NP=await get(`/nps/stats?from=${FROM}&to=${TO}`); $('body').innerHTML=npsHtml(); }
     else if(TAB==='rev'){ RV=await get(`/review/stats?from=${FROM}&to=${TO}`);
       $('body').innerHTML=revHtml();
       const b=$('body').querySelector('#rv-add');

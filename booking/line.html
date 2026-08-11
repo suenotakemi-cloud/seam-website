@@ -89,6 +89,13 @@
   #sqcardbox{margin-top:12px}
   .pay-secure{font-size:11px;color:#8a8177;margin-top:8px;line-height:1.6}
   .err{font-size:13px;color:#b3261e;background:#fdeceb;border:1px solid #f5c6c2;border-radius:10px;padding:10px 12px;margin-top:10px}
+/* ひとつだけのおうかがい */
+.npsrow{display:grid;grid-template-columns:repeat(11,1fr);gap:4px}
+.npsbtn{background:#fff;border:1px solid #e2dbd0;border-radius:8px;padding:11px 0;
+  font:inherit;font-size:14px;color:#2f2a24;cursor:pointer;min-height:44px}
+.npsbtn.on{background:#12233A;border-color:#12233A;color:#fff;font-weight:700}
+.npsend{display:flex;justify-content:space-between;font-size:10.5px;color:#9b9385;margin-top:6px}
+@media(max-width:380px){ .npsbtn{font-size:12.5px;padding:10px 0} }
 </style>
 </head>
 <body>
@@ -210,6 +217,37 @@ function memberCard(code,points,name,j){
   <div class="note">${qr?'ご入場のときも同じ画面をお見せいただけます。<br>':''}ポイントは<b>オンラインショップで1pt=${j.ptGoods!=null?j.ptGoods:1}円</b>、<b>サロンの施術で1pt=${j.ptTech!=null?j.ptTech:0.5}円</b>としてお使いいただけます。ポイントはお付けした日から${j.pointMonths||6}か月お使いいただけます</div>`;
 }
 
+/* ── ひとつだけ、おうかがい ──
+ * ★お客様を追い詰めるためのものではない。
+ *   ・1問だけ。文章は求めない
+ *   ・「答えずに閉じる」を同じ大きさで置く
+ *   ・低い数字を選んでも、その場では何も言わない（お詫びも謝罪も出さない）
+ *     その場で謝られると、正直に答えられなくなるため
+ *   ・答えてくださった方にだけ、短くお礼を出す */
+function npsCard(){
+  return `<div class="card" id="npsCard">
+    <h1 style="font-size:15.5px;margin-bottom:4px">ひとつだけ、おうかがいします</h1>
+    <p class="sub" style="margin-bottom:12px">このお店を、ご友人におすすめしたいと思われますか</p>
+    <div class="npsrow" id="npsRow">
+      ${[...Array(11).keys()].map(n=>`<button class="npsbtn" data-n="${n}">${n}</button>`).join('')}
+    </div>
+    <div class="npsend"><span>まったく思わない</span><span>とてもそう思う</span></div>
+    <button class="btn ghost" id="npsSkip" style="margin-top:12px">答えずに閉じる</button>
+  </div>`;
+}
+function npsWire(token){
+  const card=document.getElementById('npsCard'); if(!card)return;
+  const close=()=>{ card.style.display='none'; };
+  document.getElementById('npsSkip').onclick=close;
+  card.querySelectorAll('.npsbtn').forEach(b=>b.onclick=async()=>{
+    card.querySelectorAll('.npsbtn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    try{ await jpost(API+'/nps',{token,score:+b.dataset.n}); }catch(e){}
+    /* どの数字でも、返す言葉は同じ。低い点のときだけ謝ると、正直に答えられなくなる */
+    card.innerHTML=`<h1 style="font-size:15.5px;margin-bottom:4px">ありがとうございます</h1>
+      <p class="sub">またお会いできるのを楽しみにしております</p>`;
+  });
+}
 function receiptCard(r){
   const rows=[];
   // 回数券・月額会員で施術分をカバーしたときは、必ず1行出す。
@@ -518,8 +556,10 @@ async function run(){
     if(j.salonId)await loadQR().catch(()=>{});
     app.innerHTML=(j.receipt?receiptCard(j.receipt):'')
       + (j.memberCode?memberCard(j.memberCode,j.points,'',j):'')
+      + npsCard()
       + `<div class="note ok">LINEに登録しました。次回からご予約のお知らせ・領収のご案内がこちらに届きます</div>`
       + `<a class="btn" href="./line.html?s=${encodeURIComponent(SHOP)}">会員証をひらく</a>`;
+    npsWire(t);
     return;
   }
 
