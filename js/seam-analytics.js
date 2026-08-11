@@ -76,11 +76,29 @@
         // 最初の数秒ふさいでいた。同意は求めるが、閲覧は止めない。
         // ※選択で丸ごとDOM削除・スクロールロックなし・外側は pointer-events:none で
         //   ページ操作を一切妨げない
+        // 【2026-08-11】下部タブバー(#seam-tabbar・1024px未満で表示・高さ58px)の
+        // 真上に置く。以前は bottom:0 だったので、実測で 682〜808px に出て
+        // タブバー(759〜812px)を覆っていた。z-indexはこちらが上なので同意は押せるが、
+        // 選ぶまでナビが隠れる。バナーは閲覧も操作も止めない、が方針。
+        var ccStyle = document.getElementById('seam-cc-style');
+        if (!ccStyle) {
+          ccStyle = document.createElement('style');
+          ccStyle.id = 'seam-cc-style';
+          ccStyle.textContent = [
+            '#seam-cc{bottom:calc(58px + env(safe-area-inset-bottom,0px));}',
+            '@media (min-width:1024px){#seam-cc{bottom:0;}}',
+            // 「詳細」は本文に混ざる小さなリンクで、実測 24×18px しかなかった。
+            // タップ領域だけ広げる（見た目の行送りは変えない）
+            '#seam-cc a.seam-cc-more{display:inline-block;padding:13px 8px;margin:-13px -2px;}'
+          ].join('');
+          document.head.appendChild(ccStyle);
+        }
+
         var bar = document.createElement('div');
         bar.id = 'seam-cc';
         bar.setAttribute('role', 'region');
         bar.setAttribute('aria-label', 'Cookie');
-        bar.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:2147483000;display:flex;justify-content:center;padding:0 12px calc(12px + env(safe-area-inset-bottom,0px));pointer-events:none;font-family:inherit;-webkit-tap-highlight-color:transparent';
+        bar.style.cssText = 'position:fixed;left:0;right:0;z-index:2147483000;display:flex;justify-content:center;padding:0 12px 12px;pointer-events:none;font-family:inherit;-webkit-tap-highlight-color:transparent';
 
         // 下部の白カード(操作できるのはカードだけ)
         var card = document.createElement('div');
@@ -91,6 +109,7 @@
         msg.textContent = t.m + ' ';
         var link = document.createElement('a');
         link.href = '/privacy.html'; link.textContent = t.l;
+        link.className = 'seam-cc-more';
         link.style.cssText = 'color:#B8945A;text-decoration:underline;white-space:nowrap';
         msg.appendChild(link);
 

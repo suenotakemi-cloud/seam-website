@@ -322,6 +322,11 @@
       '#seam-header-shop .shs-short{display:block;font-family:Inter,"Noto Sans JP",sans-serif;font-size:7.5px;letter-spacing:.1em;line-height:1;margin-top:1.5px;}',
       '#seam-header-shop .shs-full{display:none;}',
       '@media (max-width:639px){#seam-header-shop{flex-direction:column;gap:0;padding:4px 9px;min-height:38px !important;}}',
+      /* 【2026-08-11】360px以下では出さない。実測(320px)で SEAMロゴ 107〜213px に対し
+         このピルが 191〜235px に来て、ロゴの「M」に22px重なっていた。
+         縦積みにしてもこの幅では逃げ場がない。オンラインショップは下部タブバーの
+         「オンライン」から同じ場所へ行けるので、ここを消しても入口は失われない。 */
+      '@media (max-width:360px){#seam-header-shop{display:none !important;}}',
       '@media (min-width:640px){#seam-header-shop .shs-full{display:inline;font-family:"Noto Serif JP",serif;font-size:11.5px;letter-spacing:.08em;text-transform:none;}#seam-header-shop .shs-short{display:none;}}',
       /* デスクトップ: タブバーは非表示だがシート(会員確認)はヘッダー入口用に中央表示で生かす */
       '@media (min-width:1024px){#seam-tabbar{display:none !important;}body{padding-bottom:0;}',
