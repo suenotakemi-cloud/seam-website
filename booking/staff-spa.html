@@ -191,14 +191,39 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .kmh b{flex:1;font-size:13px;color:rgba(239,233,223,.75);font-weight:600;white-space:nowrap}
 .kmh button,.kag button{background:none;border:0;color:rgba(239,233,223,.5);font-size:16px;
   padding:4px 6px;cursor:pointer}
-.kag{display:grid;grid-template-columns:1fr 78px 34px;gap:7px;align-items:center;margin-bottom:6px}
+/* ★「アッシュとマットを混ぜている」ことが目で分かるようにする。
+   薬剤が縦に並んでいるだけだと、別々に塗ったのか混ぜたのかが読めない。
+   行と行のあいだに ＋ を置き、上に出来上がりの式を出す。 */
+.kag{display:grid;grid-template-columns:1fr 78px 34px;gap:7px;align-items:center;margin-bottom:6px;
+  position:relative}
+.kag+.kag{margin-top:14px}
+.kag+.kag::before{content:'＋';position:absolute;left:2px;top:-15px;
+  font-size:15px;font-weight:700;color:rgba(239,233,223,.6);line-height:1}
 .kag span{font-size:16px;color:#fff;line-height:1.35}
+.kfx{font-size:14px;color:#EFE9DF;line-height:1.65;background:rgba(239,233,223,.07);
+  border:1px solid rgba(239,233,223,.16);border-radius:9px;padding:8px 11px;margin-bottom:9px;
+  word-break:break-word}
+.kfx b{color:#fff;font-weight:700}
+.kfx i{font-style:normal;color:rgba(239,233,223,.6);margin:0 4px}
+.kfx .none{color:rgba(239,233,223,.45);font-size:13px}
 .kmix input,.kmix select,.kin{width:100%;background:#1B1815;border:1px solid rgba(239,233,223,.22);
   border-radius:10px;color:#EFE9DF;font:inherit;font-size:16px;padding:10px 11px}
 .kml{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px;
   font-size:10.5px;color:rgba(239,233,223,.45);font-weight:600}
 .kmb{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:2px}
-.ksc{margin-top:2px}
+.kscrow{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:2px;align-items:center}
+.kcam{background:#EFE9DF;color:#12100E;border:0;border-radius:10px;padding:11px 13px;
+  font:inherit;font-size:15px;font-weight:700;white-space:nowrap;cursor:pointer}
+/* カメラ。読めたら閉じる。枠を出して「ここに合わせる」を分かるようにする */
+.cam{position:fixed;inset:0;background:#000;z-index:999;display:flex;flex-direction:column}
+.cam video{flex:1;width:100%;object-fit:cover}
+.cam .frame{position:absolute;left:8%;right:8%;top:34%;height:22%;
+  border:2px solid rgba(255,255,255,.9);border-radius:12px;box-shadow:0 0 0 100vmax rgba(0,0,0,.45)}
+.cam .msg{position:absolute;left:0;right:0;top:calc(34% + 22% + 16px);text-align:center;
+  color:#fff;font-size:14px;line-height:1.8;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.cam .close{position:absolute;left:0;right:0;bottom:calc(24px + env(safe-area-inset-bottom));
+  margin:0 auto;width:70%;background:#fff;color:#12100E;border:0;border-radius:12px;
+  padding:15px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
 .kbtn{width:100%;margin-top:8px;background:none;border:1px solid rgba(239,233,223,.3);
   color:#EFE9DF;border-radius:11px;padding:12px;font:inherit;font-size:15px;cursor:pointer}
 .sec{margin-top:18px}
@@ -621,10 +646,13 @@ function prFormHtml(){
       <label class="pf-l">使った薬剤</label>
       ${(f.mix||[]).map((m,i)=>`<div class="kmix">
         <div class="kmh"><b>${m.where||'全体'}</b><button data-pdm="${i}">✕</button></div>
+        ${kFormula(m)}
         ${(m.agents||[]).map((a,j)=>`<div class="kag"><span>${esc(a.name)}</span>
           <input class="kg" data-pi="${i}" data-pj="${j}" type="number" value="${a.g||''}" placeholder="g">
           <button data-pda="${i}:${j}">✕</button></div>`).join('')}
-        <input class="ksc pf-sc" data-i="${i}" placeholder="バーコードを読む／薬剤名で探す" inputmode="search">
+        <div class="kscrow">
+          <input class="ksc pf-sc" data-i="${i}" placeholder="薬剤名で探す" inputmode="search">
+          <button class="kcam" data-pcam="${i}">📷 読む</button></div>
         <div class="kmb">
           <select data-pi="${i}" data-pf="oxy"><option value="">オキシ</option>${KOXY.map(o=>`<option ${m.oxy===o?'selected':''}>${o}</option>`).join('')}</select>
           <input data-pi="${i}" data-pf="oxyG" type="number" value="${m.oxyG||''}" placeholder="オキシg">
@@ -706,16 +734,24 @@ function prFormWire(){
   document.querySelectorAll('[data-pf]').forEach(el=>el.onchange=()=>{
     const i=+el.dataset.pi,k=el.dataset.pf; if(!f.mix[i])return;
     f.mix[i][k]=(k==='min'||k==='oxyG')?(+el.value||''):el.value; render();});
-  document.querySelectorAll('.pf-sc').forEach(el=>el.onkeydown=async ev=>{
-    if(ev.key!=='Enter')return; ev.preventDefault();
-    const v=el.value.trim(); if(!v)return; const i=+el.dataset.i;
+  /* 練習の記録でも、打つ道とカメラの道を同じ中身にする */
+  const pfAdd=async(i,v)=>{
+    if(!v||!f.mix[i])return;
     const g=async u=>{try{const r=await fetch(U(u));const j=await r.json();return j.agents||[];}catch{return [];}};
     let hits=/^[0-9]{8,14}$/.test(v)?await g('/agents?barcode='+encodeURIComponent(v)):await g('/agents?q='+encodeURIComponent(v));
     let a=hits[0];
     if(!a&&/^[0-9]{8,14}$/.test(v)){ const hit=await kmFind(v); if(hit)a={id:'',name:hit.n,brand:hit.b||''}; }
     if(!a){ const nm=prompt('薬剤の名前',v); if(!nm)return; a={id:'',name:nm}; }
     (f.mix[i].agents||(f.mix[i].agents=[])).push({id:a.id||'',name:a.name,g:''});
-    el.value=''; render();});
+    render();
+  };
+  document.querySelectorAll('.pf-sc').forEach(el=>el.onkeydown=async ev=>{
+    if(ev.key!=='Enter')return; ev.preventDefault();
+    const v=el.value.trim(); if(!v)return; el.value='';
+    await pfAdd(+el.dataset.i, v);});
+  document.querySelectorAll('[data-pcam]').forEach(bt=>bt.onclick=async()=>{
+    const code=await scanBarcode();
+    if(code)await pfAdd(+bt.dataset.pcam, code);});
   ['pf-pb','pf-pa'].forEach((id,n)=>{const el=$$(id); if(!el)return;
     el.onchange=()=>{const file=el.files&&el.files[0]; if(!file)return;
       const img=new Image();
@@ -1254,7 +1290,106 @@ const KOXY=['3%','4.5%','6%'];
 /* 伝えた回数が、そのまま次の来店になる（2万人の調査） */
 const KADV=['スタイリングの仕方','おうちでのケア','使っている薬剤のこと','次回の提案','髪の状態の説明'];
 const KSHAM=['ちょうどよい','弱め希望','強め希望','痛がられた'];
+/* ═══ バーコードをカメラで読む ═══
+ * ★ボトルの番号を指で打つのは、施術の途中では無理。
+ *   ここが打てないと、材料費は永久に入らない＝作った意味が無くなる。
+ *
+ * 端末で事情が違う。
+ *   Android Chrome … BarcodeDetector が標準で入っている
+ *   iPhone Safari  … 入っていない。読み取りの部品を後から取ってくる
+ * どちらでも同じボタンで済むように、ここで吸収する。
+ * カメラは背面を使う。読めたらすぐ閉じる（開いたままだと熱を持つ）。 */
+let _zx=null;
+function zxLoad(){
+  if(_zx)return _zx;
+  _zx=new Promise((res,rej)=>{
+    const t=document.createElement('script');
+    t.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+    t.onload=()=>res(window.ZXing||null); t.onerror=()=>rej(new Error('読み取りの部品を取れませんでした'));
+    document.head.appendChild(t);
+  });
+  return _zx;
+}
+/* 読めたコードを返す。閉じられたら '' を返す */
+function scanBarcode(){
+  return new Promise(async (resolve)=>{
+    const box=document.createElement('div'); box.className='cam';
+    box.innerHTML=`<video playsinline muted></video>
+      <div class="frame"></div>
+      <div class="msg">ボトルのバーコードを枠に合わせてください</div>
+      <button class="close">閉じる</button>`;
+    document.body.appendChild(box);
+    const video=box.querySelector('video'), msg=box.querySelector('.msg');
+    let stream=null, stop=false, ctrl=null;
+    const finish=(code)=>{
+      if(stop)return; stop=true;
+      try{ if(ctrl&&ctrl.stop)ctrl.stop(); }catch(e){}
+      try{ if(stream)stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+      box.remove(); resolve(code||'');
+    };
+    box.querySelector('.close').onclick=()=>finish('');
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+      video.srcObject=stream; await video.play();
+    }catch(e){
+      msg.textContent='カメラを使えませんでした　設定でカメラを許可してください';
+      setTimeout(()=>finish(''),2600); return;
+    }
+    /* ① 端末に読み取りが入っている場合 */
+    if(window.BarcodeDetector){
+      try{
+        const det=new BarcodeDetector({formats:['ean_13','ean_8','code_128','upc_a','upc_e','itf','code_39']});
+        const tick=async()=>{
+          if(stop)return;
+          try{ const r=await det.detect(video);
+            if(r&&r.length&&r[0].rawValue){ finish(String(r[0].rawValue)); return; } }catch(e){}
+          requestAnimationFrame(tick);
+        };
+        tick(); return;
+      }catch(e){ /* だめなら②へ落ちる */ }
+    }
+    /* ② iPhone など。部品を取ってきて読む。
+       ★この部品は版によって呼び名が変わる（decodeFromStream が無い版がある）。
+         無い呼び名を呼ぶと、その場で落ちてカメラが開いたまま固まるので、
+         あるものを探してから呼ぶ。どれも無ければ、正直にそう出す。 */
+    try{
+      const ZX=await zxLoad();
+      const R=ZX&&(ZX.BrowserMultiFormatReader||ZX.BrowserBarcodeReader);
+      if(!R)throw new Error('読み取りの部品がありません');
+      const reader=new R();
+      const hit=(res)=>{ if(res&&typeof res.getText==='function')finish(String(res.getText())); };
+      if(typeof reader.decodeFromStream==='function'){
+        reader.decodeFromStream(stream,video,(res,err,c)=>{ if(c&&!ctrl)ctrl=c; hit(res); });
+      }else if(typeof reader.decodeFromVideoDevice==='function'){
+        /* こちらは部品が自分でカメラを開くので、こちらで開いた分は先に閉じる
+           （2つ開いたままだと、端末によっては真っ黒になる） */
+        try{ stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+        stream=null;
+        ctrl={stop:()=>{try{reader.reset();}catch(e){}}};
+        reader.decodeFromVideoDevice(null,video,(res)=>hit(res));
+      }else{
+        throw new Error('読み取りの部品が合いません');
+      }
+    }catch(e){
+      msg.textContent='この端末では読み取れません　薬剤名で探してください';
+      setTimeout(()=>finish(''),2800);
+    }
+  });
+}
 const kRatio=(a,b)=>(!a||!b)?'':('1:'+String(Math.round(b/a*100)/100));
+/* ★調合を1行の式で見せる。
+ *   アッシュ 20g ＋ マット 10g ＝ 1剤30g／OX6% 60g
+ * 数字を入れた瞬間にここが動くので、「いま何を混ぜているか」が手元で読める。
+ * 空のときは、何を入れればいいかを書いておく（空欄だけ並ぶと手が止まる）。 */
+function kFormula(m){
+  const ag=(m.agents||[]).filter(a=>a&&a.name);
+  if(!ag.length)return `<div class="kfx"><span class="none">薬剤を足すと、調合の式がここに出ます（例）アッシュ 20g ＋ マット 10g</span></div>`;
+  const parts=ag.map(a=>`<b>${esc(a.name)}</b>${a.g?' '+a.g+'g':''}`).join('<i>＋</i>');
+  const g1=ag.reduce((s,a)=>s+(+a.g||0),0);
+  const tail=[g1?`1剤 ${g1}g`:'', m.oxy?(m.oxy+(m.oxyG?' '+m.oxyG+'g':'')):'', m.min?m.min+'分':'']
+    .filter(Boolean).join('　');
+  return `<div class="kfx">${parts}${tail?`<i>＝</i>${tail}`:''}</div>`;
+}
 /* ── 材料費 ──
  * ★あとから「今月は材料費が高かった」と言っても、もう戻せない。
  *   だから、いま塗っているその場で見せる。
@@ -1328,11 +1463,14 @@ function paintKarte(p){
     const rat=kRatio(gA,+m.oxyG||0);
     return `<div class="kmix">
       <div class="kmh"><select data-i="${i}" data-f="where">${KWHERE.map(w=>`<option ${m.where===w?'selected':''}>${w}</option>`).join('')}</select>
-        <b>${rat?'比率 '+rat:''}</b><button data-dm="${i}">✕</button></div>
+        <b>${rat?'1剤 : 2剤 = '+rat.replace('1:','1 : '):''}</b><button data-dm="${i}">✕</button></div>
+      ${kFormula(m)}
       ${(m.agents||[]).map((a,j)=>`<div class="kag"><span>${esc(a.name)}</span>
         <input data-i="${i}" data-j="${j}" class="kg" type="number" inputmode="decimal" value="${a.g||''}" placeholder="g">
         <button data-da="${i}:${j}">✕</button></div>`).join('')}
-      <input class="ksc" data-i="${i}" placeholder="バーコードを読む／薬剤名で探す" inputmode="search">
+      <div class="kscrow">
+        <input class="ksc" data-i="${i}" placeholder="薬剤名で探す" inputmode="search">
+        <button class="kcam" data-cam="${i}">📷 読む</button></div>
       <div class="kml"><span>オキシ</span><span>オキシ g</span><span>置き時間 分</span></div>
       <div class="kmb">
         <select data-i="${i}" data-f="oxy"><option value="">オキシ</option>${KOXY.map(o=>`<option ${m.oxy===o?'selected':''}>${o}</option>`).join('')}</select>
@@ -1387,9 +1525,10 @@ function kWire(p){
   const cp=p.querySelector('#kcopy'); if(cp)cp.onclick=()=>{
     b.mix=kMixes(KT_LAST.body).map(m=>({where:m.where||'',oxy:m.oxy||'',oxyG:m.oxyG||'',min:m.min||'',
       agents:(m.agents||[]).map(a=>({id:a.id||'',name:a.name||'',brand:a.brand||'',g:a.g||''}))})); paint();};
-  p.querySelectorAll('.ksc').forEach(el=>el.onkeydown=async e=>{
-    if(e.key!=='Enter')return; e.preventDefault();
-    const v=el.value.trim(); if(!v)return; const i=+el.dataset.i;
+  /* ★打つ道とカメラの道を、同じ中身にする。
+     別々に書くと、片方だけ直して、もう片方が動かない事故になる。 */
+  const kAdd=async(i,v)=>{
+    if(!v)return;
     const g=async u=>{try{const r=await fetch(U(u));const j=await r.json();return j.agents||[];}catch{return [];}};
     let hits=/^[0-9]{8,14}$/.test(v)?await g('/agents?barcode='+encodeURIComponent(v)):await g('/agents?q='+encodeURIComponent(v));
     let a=hits[0];
@@ -1407,7 +1546,7 @@ function kWire(p){
     if(!a){
       const isBc=/^[0-9]{8,14}$/.test(v);
       const nm=prompt(isBc?`はじめての薬剤です\n${v}\n\n名前を入れてください`:'薬剤の名前', isBc?'':v);
-      if(nm==null||!nm.trim()){el.value='';return;}
+      if(nm==null||!nm.trim())return;
       try{
         const r=await fetch(U('/agents'),{method:'POST', headers:H(),
           body:JSON.stringify({barcode:isBc?v:'',name:nm.trim()})});
@@ -1415,7 +1554,17 @@ function kWire(p){
       }catch{ return; }
     }
     (b.mix[i].agents||(b.mix[i].agents=[])).push({id:a.id||'',name:a.name||'',brand:a.brand||'',g:''});
-    el.value=''; paint();
+    paint();
+  };
+  p.querySelectorAll('.ksc').forEach(el=>el.onkeydown=async e=>{
+    if(e.key!=='Enter')return; e.preventDefault();
+    const v=el.value.trim(); if(!v)return; el.value='';
+    await kAdd(+el.dataset.i, v);
+  });
+  /* カメラで読む。読めたら、打ったときとまったく同じ道を通す */
+  p.querySelectorAll('[data-cam]').forEach(bt=>bt.onclick=async()=>{
+    const code=await scanBarcode();
+    if(code)await kAdd(+bt.dataset.cam, code);
   });
   p.querySelectorAll('[data-adv]').forEach(x=>x.onclick=()=>{
     const v=x.dataset.adv, a=KT.advice||(KT.advice=[]);
