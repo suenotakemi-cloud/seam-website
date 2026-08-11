@@ -151,7 +151,9 @@ const API='https://seam-square-pay.suenotakemi.workers.dev';
 const TOKK='stb_admin_tok', SHOPK='stb_shop';
 let TOK=localStorage.getItem(TOKK)||'';
 let SHOP=localStorage.getItem(SHOPK)||'ginza';
-let TAB='home', FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null, PSORT='v';
+/* ?tab=ap のように指定して開ける（レジの画面から、その場所へ直接飛ぶため） */
+let TAB=(new URLSearchParams(location.search).get('tab'))||'home';
+let FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null, PSORT='v';
 let REP=null, RWIN=90, RLOST=180;
 let REC=null, HOME=null, PAY=null, PB=null, CB=null, CBMON='', JR=null, TF=null, RV=null, NO=null;
 let SUP=null, AP=null, LI=null;
@@ -168,6 +170,9 @@ let tt;function toast(m,ng){const t=$('toast');t.textContent=m;t.className='on'+
 const jst=(off=0)=>new Date(Date.now()+9*3600e3-off*86400e3).toISOString().slice(0,10);
 
 /* ── 期間の選び方。よく使う幅はボタン、細かいときは日付で ── */
+/* 指定されたタブに、見た目もそろえる */
+(function(){const b=document.querySelector(`#tabs button[data-t="${TAB}"]`);
+  if(b){document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('on'));b.classList.add('on');}})();
 function drawRange(){
   const P=[['0','今日'],['7','1週間'],['30','1か月'],['90','3か月'],['365','1年']];
   $('range').innerHTML=P.map(([v,l])=>`<button data-p="${v}" class="${PRESET===v?'on':''}">${l}</button>`).join('')

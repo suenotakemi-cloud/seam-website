@@ -1206,6 +1206,7 @@ body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:
   </div>
   <p class="lead">スタッフの1日をひと目で。次のお客様が一番上。タップでステータス変更・詳細</p>
   <div id="sync-panel"></div>
+  <div id="apply-panel"></div>
   <div id="gap-panel"></div>
   <div id="todaylist"></div>
 </section>
@@ -1845,6 +1846,7 @@ const API = {
   async agentSearch(q){ if(!API_BASE)return [];try{const r=await fetch(API_BASE+'/agents?q='+encodeURIComponent(q||''),{headers:authHeaders()});if(!r.ok)return [];const j=await r.json();return j.agents||[];}catch{return [];} },
   async agentSave(a){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/agents',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(a)});return r.ok?await r.json():null;}catch{return null;} },
   async agentUsed(ids){ if(!API_BASE||!ids.length)return; try{await fetch(API_BASE+'/agents/used',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({ids})});}catch{} },
+  async recruitList(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/recruit/list',{headers:authHeaders()});if(!r.ok)return null;return await r.json();}catch{return null;} },
   async referrals(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/referrals?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;return await r.json();}catch{return null;} },
   async reviewAsk(a){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/review/ask',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(a)});return await r.json();}catch{return null;} },
   async staffPin(staffId,pin,name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/staff/pin',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({staffId,pin,name})});return await r.json();}catch{return null;} },
@@ -6728,6 +6730,29 @@ function renderGapPanel(){
  * SaaSが切れている間、予約はこちらのD1にだけ残りサロンボードへ流れない。
  * 気づかないまま営業すると、当日に「予約が入っていない」ことになる。
  * ふだんは何も出さず、届いていない予約があるときだけ赤い帯を出す。 */
+/* ── 求人の応募 ──
+ * 応募は「見る場所を持っていない」だけで、半日ほったらかしになる。
+ * 事務が毎日いちばん最初に開くのはこの画面なので、ここに出す。
+ * 来ていないときは何も出さない（毎日ゼロを見せられると、見なくなるため）。 */
+async function renderApplyPanel(){
+  const el=document.getElementById('apply-panel'); if(!el)return;
+  const j=await API.recruitList(); if(!el)return;
+  if(!j||!j.ok||!j.新着){el.innerHTML='';return;}
+  const rows=(j.rows||[]).filter(x=>x.status==='new').slice(0,5);
+  el.innerHTML=`<div class="card" style="border-left:3px solid #B8945A;background:#fdf8f0">
+    <div class="rep-h"><h3>📮 求人の応募が ${j.新着}件 届いています</h3>
+      <span style="font-size:12.5px;color:var(--sub);font-weight:700">まだ誰も見ていません</span></div>
+    ${rows.map(x=>`<div class="reg-pend">
+      <span class="rp-t">${(x.at||'').slice(5,10).replace('-','/')}</span>
+      <span class="rp-n"><b>${escH(x.name)}</b>${x.store?`　${escH(x.store)}`:''}${x.role?`　${escH(x.role)}`:''}
+        ${x.kind==='ask'?'　<span style="color:#8a611d">お問い合わせ</span>':''}</span>
+      <span class="rp-m">${escH(x.contact||'')}</span></div>`).join('')}
+    <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+      <a class="btn small pri" href="report.html?tab=ap" target="_blank" rel="noopener"
+         style="text-decoration:none">応募を見る・状態を変える</a>
+      <span style="align-self:center;font-size:12px;color:var(--sub)">早く返すほど、会えます</span>
+    </div></div>`;
+}
 async function renderSyncPanel(){
   const el=document.getElementById('sync-panel'); if(!el)return;
   const h=await API.salonHealth();
@@ -6776,6 +6801,7 @@ function renderToday(){
   document.getElementById('today-sum').textContent=rs.length?`${rs.length}件・完了${done}${next?`・次 ${hm(next.start)} ${next.name}様`:''}`:'';
   renderGapPanel();
   renderSyncPanel();   // 同期が切れているときだけ帯が出る
+  renderApplyPanel();  // 求人の応募が来ているときだけ帯が出る
   const el=document.getElementById('todaylist');
   if(!rs.length){el.innerHTML='<div class="card" style="color:var(--sub);text-align:center;padding:30px">本日の予約はありません</div>';return}
   el.innerHTML=rs.map(r=>{
