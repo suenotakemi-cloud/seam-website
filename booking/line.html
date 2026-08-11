@@ -105,7 +105,24 @@
 </div>
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';
-const Q=new URLSearchParams(location.search);
+/* ★LINEは ?t=…&s=… をそのまま渡してこない。
+ * liff.line.me/<LIFF>?t=X&s=ginza を開くと、行き先には
+ *   line.html?liff.state=%3Ft%3DX%26s%3Dginza
+ * の形で届く（中身を liff.state に包んでくる）。
+ * SDKが初期化後にURLを戻してくれるが、こちらは初期化より前に
+ * 店舗を決めてLIFFを取りにいくので、自分でほどく。
+ * ここを読めないと ?t= が拾えず、会計直後のご案内が出ない
+ * （＝レジのQRを読んでも会員証しか出ない）。 */
+function readQuery(){
+  const sp=new URLSearchParams(location.search);
+  const st=sp.get('liff.state');
+  if(st){
+    try{ new URLSearchParams(String(st).replace(/^\?/,'')).forEach((v,k)=>{ if(!sp.has(k))sp.set(k,v); }); }
+    catch(e){}
+  }
+  return sp;
+}
+let Q=readQuery();
 /* どの店舗のLINEで開いているか。LINEのuserIdは店舗のOAごとに別の値なので、
  * 必ずその店のLIFFで開かないと本人確認が通らない。
  * 店舗はURLの ?s= で渡す（レジが出すQRに入っている）。 */
@@ -242,26 +259,10 @@ function npsWire(token){
   card.querySelectorAll('.npsbtn').forEach(b=>b.onclick=async()=>{
     card.querySelectorAll('.npsbtn').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');
-    const score=+b.dataset.n;
-    try{ await jpost(API+'/nps',{token,score}); }catch(e){}
-    /* ★点数のあとに、アドバイスの有無だけ聞く（2万人レポート 2026-05）。
-       業界のアドバイス率はスタイリング85%・ヘアケア77%で、上位店は95%超。
-       ここが店販の入口なので、担当ごとに測れるようにする。
-       ★点数を答えた方にだけ出す。最初から2問並べると答えてもらえない。 */
+    try{ await jpost(API+'/nps',{token,score:+b.dataset.n}); }catch(e){}
+    /* どの数字でも、返す言葉は同じ。低い点のときだけ謝ると、正直に答えられなくなる */
     card.innerHTML=`<h1 style="font-size:15.5px;margin-bottom:4px">ありがとうございます</h1>
-      <p class="sub" style="margin-bottom:12px">最後にひとつ 今日おうちでのお手入れについて お話はありましたか</p>
-      <div class="npsrow" style="grid-template-columns:1fr 1fr" id="advRow">
-        <button class="npsbtn" data-a="1">あった</button>
-        <button class="npsbtn" data-a="0">なかった</button>
-      </div>
-      <button class="btn ghost" id="advSkip" style="margin-top:12px">答えずに閉じる</button>`;
-    const done=()=>{ card.innerHTML=`<h1 style="font-size:15.5px;margin-bottom:4px">ありがとうございます</h1>
-      <p class="sub">またお会いできるのを楽しみにしております</p>`; };
-    const sk=document.getElementById('advSkip'); if(sk) sk.onclick=done;
-    card.querySelectorAll('#advRow .npsbtn').forEach(a=>a.onclick=async()=>{
-      try{ await jpost(API+'/nps',{token,score,advice:+a.dataset.a}); }catch(e){}
-      done();
-    });
+      <p class="sub">またお会いできるのを楽しみにしております</p>`;
   });
 }
 function receiptCard(r){
@@ -558,6 +559,7 @@ async function run(){
     idToken=liff.getIDToken()||'';
   }catch(e){ /* LINE以外のブラウザで開かれた場合 */ }
 
+  Q=readQuery();          // SDKがURLを戻していることがあるので読み直す
   const t=Q.get('t');
   if(t){
     // 会計直後：合言葉つきで開かれた。LINEと結び付けて領収のご案内を出す
