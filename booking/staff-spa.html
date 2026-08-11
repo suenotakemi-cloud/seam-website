@@ -69,6 +69,25 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .mood{background:rgba(201,182,142,.12);border:1px solid rgba(201,182,142,.4);
   border-radius:14px;padding:14px 16px}
 .mood h3{color:#C9B68E}
+/* ── 練習（施設利用時間）── */
+.prbox{background:#F3F0EA;border:1px solid #E2DACB;border-radius:14px;padding:14px 15px;margin:0 0 16px}
+.pr-h{font-size:12px;font-weight:700;color:#7a6f60;margin-bottom:9px}
+.pr-btns{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.pr-b{background:#fff;border:1px solid #ddd5c8;border-radius:10px;padding:12px 8px;
+  font:inherit;font-size:13.5px;color:#2f2a24;cursor:pointer}
+.pr-b.line{grid-column:1/-1;background:none}
+.pr-on{display:flex;align-items:center;gap:12px}
+.pr-on b{font-family:'Noto Serif JP',serif;font-size:30px;color:#12100E}
+.pr-on span{flex:1;font-size:13px;color:#7a6f60}
+.pr-on .pr-b{background:#12100E;color:#fff;border-color:#12100E;padding:12px 18px}
+/* ── 材料費（塗っているその場で見せる）── */
+.matbox{background:rgba(239,233,223,.06);border:1px solid rgba(239,233,223,.22);
+  border-radius:13px;padding:14px 16px;margin:14px 0}
+.matbox.hi{background:rgba(211,110,98,.16);border-color:rgba(211,110,98,.55)}
+.mat-l{font-size:11.5px;letter-spacing:.12em;color:rgba(239,233,223,.5)}
+.mat-n{font-family:'Noto Serif JP',serif;font-size:30px;color:#fff;line-height:1.2;margin:3px 0}
+.mat-s{font-size:12.5px;color:rgba(239,233,223,.6);line-height:1.7}
+.matbox.hi .mat-s b{color:#FFD9D2}
 /* ── 時間（終わりの予定まで あと何分か） ── */
 .tbig{background:rgba(239,233,223,.06);border:1px solid rgba(239,233,223,.22);
   border-radius:16px;padding:18px;text-align:center;margin-bottom:4px}
@@ -306,7 +325,7 @@ async function load(){
     const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe()]); render();
+    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad()]); render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
 async function askToken(msg){
@@ -400,6 +419,53 @@ async function loadMe(){
   try{ const r=await fetch(`${API}/staff/me?token=${encodeURIComponent(TOK)}`);
     const j=await r.json(); ME_NUM=j&&j.ok?j:null; }catch(e){ ME_NUM=null; }
 }
+/* ── 練習（施設利用時間）──
+ * ★これは労働時間ではない。自主的に施設を使った時間として、そのまま残す。
+ *   紙に書かせると必ず抜けるので、終わったその場でスマホから押す。
+ *   こちらで勝手に丸めない（丸めると届け出に使えなくなる）。 */
+let PR=null, PRON=null;
+async function prLoad(){
+  try{ const r=await fetch(U('/practice')); const j=await r.json(); PR=j&&j.ok?j:null; }catch(e){ PR=null; }
+  try{ PRON=JSON.parse(localStorage.getItem('stb_practice_on')||'null'); }catch(e){ PRON=null; }
+}
+function prHtml(){
+  if(!PR)return '';
+  const g=PR.合計||{};
+  const now=PRON?Math.max(0,Math.round((Date.now()-PRON.t)/60000)):0;
+  return `<div class="prbox">
+    <div class="pr-h">練習（施設利用時間）　今月 ${Math.floor((g.分||0)/60)}時間${(g.分||0)%60}分</div>
+    ${PRON?`<div class="pr-on"><b>${now}分</b><span>${esc(PRON.kind||'練習中')}</span>
+        <button class="pr-b" id="prEnd">終わる</button></div>`
+      :`<div class="pr-btns">
+        ${['出勤前','退勤後','休みの日'].map(k=>`<button class="pr-b" data-pk="${k}">${k}に始める</button>`).join('')}
+        <button class="pr-b line" id="prHand">あとから入れる</button></div>`}
+  </div>`;
+}
+function prWire(){
+  app.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{
+    PRON={t:Date.now(),kind:b.dataset.pk};
+    localStorage.setItem('stb_practice_on',JSON.stringify(PRON)); render();});
+  const e=document.getElementById('prEnd');
+  if(e)e.onclick=async()=>{
+    const mins=Math.max(1,Math.round((Date.now()-PRON.t)/60000));
+    const note=prompt(`${mins}分でした。何の練習でしたか（空欄でもかまいません）`,'')||'';
+    const st=new Date(PRON.t).toISOString();
+    await fetch(U('/practice'),{method:'POST',headers:H(),
+      body:JSON.stringify({minutes:mins,kind:PRON.kind,note,startAt:st,endAt:new Date().toISOString(),
+        date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)})}).catch(()=>{});
+    PRON=null; localStorage.removeItem('stb_practice_on');
+    await prLoad(); render();};
+  const h=document.getElementById('prHand');
+  if(h)h.onclick=async()=>{
+    const d=prompt('いつの練習ですか（例）2026-08-11',new Date(Date.now()+9*3600e3).toISOString().slice(0,10));
+    if(!d)return;
+    const mn=+prompt('何分でしたか','60'); if(!mn)return;
+    const k=prompt('いつの時間ですか（出勤前／退勤後／休みの日）','退勤後')||'';
+    const note=prompt('何の練習でしたか（空欄でもかまいません）','')||'';
+    await fetch(U('/practice'),{method:'POST',headers:H(),
+      body:JSON.stringify({date:d,minutes:mn,kind:k,note})}).catch(()=>{});
+    await prLoad(); render();};
+}
 function meHtml(){
   if(!ME_NUM)return '';
   const n=ME_NUM.nps||{}, m=ME_NUM.month||{};
@@ -423,7 +489,7 @@ function meHtml(){
 }
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
-  app.innerHTML=meHtml()+notiHtml()+`<h1>今日のお客様</h1>
+  app.innerHTML=meHtml()+prHtml()+notiHtml()+`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
       <button class="card" data-i="${n}">
@@ -435,7 +501,7 @@ function render(){
     :'<div class="empty">この日のご予約はまだありません</div>'}
     <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`;
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
-  notiWire();
+  notiWire(); prWire();
   document.getElementById('rl').onclick=load;
 }
 
@@ -907,6 +973,29 @@ const KOXY=['3%','4.5%','6%'];
 const KADV=['スタイリングの仕方','おうちでのケア','使っている薬剤のこと','次回の提案','髪の状態の説明'];
 const KSHAM=['ちょうどよい','弱め希望','強め希望','痛がられた'];
 const kRatio=(a,b)=>(!a||!b)?'':('1:'+String(Math.round(b/a*100)/100));
+/* ── 材料費 ──
+ * ★あとから「今月は材料費が高かった」と言っても、もう戻せない。
+ *   だから、いま塗っているその場で見せる。
+ *   グラムを入れた瞬間に金額が動く＝ひとりひとりが意識できる。
+ * 値段が入っていない薬剤は足さない。分からないものを混ぜると、数字が嘘になる。 */
+let AGP={};   // 薬剤の1gあたり（id と 名前 の両方で引けるように）
+async function loadAgentPrice(){
+  try{ const r=await fetch(U('/agents')); const j=await r.json();
+    (j.agents||[]).forEach(a=>{ if(a.perG){AGP[a.id]=a.perG; AGP[a.name]=a.perG;} }); }catch(e){}
+}
+function matCost(body){
+  let yen=0, unknown=0, g=0, bleach=false;
+  (((body||{}).mix)||[]).forEach(m=>{
+    (m.agents||[]).forEach(a=>{
+      const gg=+a.g||0; if(!gg)return; g+=gg;
+      if(/ブリーチ|ライトナー|パウダー/i.test(a.name||''))bleach=true;
+      const per=AGP[a.id]||AGP[a.name]; if(per)yen+=per*gg; else unknown++;
+    });
+    const og=+m.oxyG||0;
+    if(og){ g+=og; const per=AGP[m.oxy]; if(per)yen+=per*og; else unknown++; }
+  });
+  return {yen:Math.round(yen), unknown, g:Math.round(g), bleach};
+}
 /* 菊池マスタ（JAN→商品名の辞書・5,700件）。知らないバーコードでも名前が出る。
    大きいので、必要になった最初の1回だけ読む。 */
 let _km=null,_kmP=null;
@@ -933,6 +1022,7 @@ function preShampoo(){
   return '';
 }
 async function kLoad(){
+  if(!Object.keys(AGP).length)await loadAgentPrice();
   const key=(String(RESV.phone||'').replace(/[^0-9]/g,''))||('n:'+(RESV.name||''));
   KT={key,name:RESV.name||'',phone:RESV.phone||'',date:DAY,staff:STAFFNM[RESV.staffId]||'',
       menu:RESV.menuName||'',resvId:RESV.id,body:{mix:[],treat:'',free:''},nextNote:'',assistant:'',
@@ -976,6 +1066,15 @@ function paintKarte(p){
       ${kMixText(L.body)?`<button class="kbtn" id="kcopy">前回の薬剤を写す</button>`:''}</div>`:''}
     <div class="sec"><h3>使った薬剤</h3>${mix||'<p class="mid">まだありません</p>'}
       <button class="kbtn" id="kadd">＋ 塗りを足す</button></div>
+    ${(()=>{const mc=matCost(b);
+      if(!mc.g)return '';
+      return `<div class="matbox ${mc.bleach?'hi':''}">
+        <div class="mat-l">今日の材料費</div>
+        <div class="mat-n">${mc.yen?('¥'+mc.yen.toLocaleString()):'—'}</div>
+        <div class="mat-s">${mc.g}g${mc.unknown?`　値段の入っていない薬剤が ${mc.unknown}本あります`:''}
+          ${mc.bleach?'<br><b>ブリーチは材料費が跳ね上がります　価格に反映されているか確かめてください</b>':''}</div>
+      </div>`;})()}
+
     <div class="sec"><h3>今日お伝えしたこと</h3>
       <div class="kchips">${KADV.map(x=>`<button class="kchip ${(KT.advice||[]).includes(x)?'on':''}" data-adv="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
     <div class="sec"><h3>シャンプーの強さ${(CUR&&CUR.washPower)?`<span style="color:rgba(239,233,223,.5);letter-spacing:0;margin-left:8px">来店前のご希望 ${esc(CUR.washPower)}</span>`:''}</h3>

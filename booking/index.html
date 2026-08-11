@@ -4205,6 +4205,14 @@ function renderRegister(){
     <button class="btn pay" id="rl-save" style="width:100%;margin-top:9px">リンクを保存する</button>
     <div class="rz-ref"><span>入れていないと、QRを読んでも行き先がありません</span>
       <span>お願いした数と開いてくださった数は、売上レポートの「口コミ」で見られます</span></div></div>`;
+  /* 材料費の目標。10%のお店も8%のお店もある */
+  const matPanel=`<div class="card reg-close"><h3>材料費の目標</h3>
+    <div class="rz"><span>売上に対する材料費</span><span class="co-y">
+      <input id="mat-t" type="number" inputmode="decimal" min="1" max="30" step="0.5"
+        value="${escH(stg('matTarget','10'))}" style="width:74px">%</span></div>
+    <div class="rz-ref"><span>この数字を超えたら赤で出します</span>
+      <span>カルテに書いたグラムと、薬剤の1本の値段・内容量から計算します　薬剤の値段は売上レポートの「材料費」から入れられます</span></div>
+    <button class="btn pay" id="mat-save" style="width:100%;margin-top:9px">この目標で保存する</button></div>`;
   const ifOn=(v,html)=>featOn(v)?html:'';
   body.innerHTML=summary+pendHtml+listHtml+closePanel
     +fold('🧭 つかう機能をえらぶ',featPanel,true)
@@ -4221,7 +4229,11 @@ function renderRegister(){
     +fold('🔑 スタッフの暗証番号（スマホ用）',pinPanel)
     +fold('🧾 従業員番号（マネーフォワード）',empPanel)
     +fold('📒 勘定科目（会計ソフトに合わせる）',accPanel)
-    +fold('⭐ 口コミのリンク（Google・ホットペッパー）',revPanel);
+    +fold('⭐ 口コミのリンク（Google・ホットペッパー）',revPanel)
+    +fold('🧪 材料費の目標',matPanel);
+  {const b7=document.getElementById('mat-save');
+   if(b7)b7.onclick=()=>{const v=+document.getElementById('mat-t').value||10;
+     setStg('matTarget',String(v));toast(`材料費の目標を ${v}% にしました`);};}
   {const b6=document.getElementById('rl-save');
    if(b6)b6.onclick=()=>{
      const o=(()=>{try{return JSON.parse(stg('reviewLinks','{}'))||{};}catch(e){return {};}})();

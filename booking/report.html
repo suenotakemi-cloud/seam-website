@@ -125,6 +125,8 @@ h2:first-child{margin-top:2px}
       <button data-t="repeat">再来</button>
       <button data-t="nps">推薦</button>
       <button data-t="tm">時間</button>
+      <button data-t="mat">材料費</button>
+      <button data-t="pr">練習</button>
       <button data-t="rec">照合</button>
       <button data-t="payroll">給与</button>
       <button data-t="pay">支払い</button>
@@ -158,7 +160,7 @@ let TAB=(new URLSearchParams(location.search).get('tab'))||'home';
 let FROM='', TO='', PRESET='7', DATA=null, ORDER=null, ALERT=null, PSORT='v';
 let REP=null, RWIN=90, RLOST=180;
 let REC=null, HOME=null, PAY=null, PB=null, CB=null, CBMON='', JR=null, TF=null, RV=null, NO=null;
-let SUP=null, AP=null, LI=null, NP=null, IMP=null, TMS=null;
+let SUP=null, AP=null, LI=null, NP=null, IMP=null, TMS=null, MAT=null, PRA=null;
 let BUFFER=0, ALERT_DAYS=90, ALERT_MONTHS=6;
 
 const $=id=>document.getElementById(id);
@@ -623,6 +625,81 @@ function notiHtml(){
       済んだものは「終わり」で下に沈みます　スタッフのスマホには、読んでいないものだけが上に出ます</p>`;
 }
 
+/* ── 材料費 ──
+ * カルテのグラム × 薬剤の1gあたり で積む。
+ * ★値段が入っていない薬剤は金額に入れない。埋めると、材料費率が本物に見えてしまう。 */
+function matHtml(){
+  if(!MAT)return '<div class="empty">読み込んでいます…</div>';
+  const a=MAT.全体||{}, tg=MAT.目標||10;
+  const over=(a.材料費率||0)>tg;
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">材料費率</div>
+        <div class="kc-v" style="color:${a.材料費率==null?'inherit':(over?'var(--danger)':'var(--ok)')}">${a.材料費率==null?'—':a.材料費率+'%'}</div>
+        <div class="kc-s">目標 ${tg}%　${a.材料費率==null?'':(over?`${(a.材料費率-tg).toFixed(1)}ポイント 超えています`:'目標の中です')}</div></div>
+      <div class="kc"><div class="kc-k">材料費</div><div class="kc-v">${yen(a.材料費)}</div>
+        <div class="kc-s">売上（技術）${yen(a.売上)}</div></div>
+      <div class="kc"><div class="kc-k">カルテ</div><div class="kc-v">${a.件数}</div>
+        <div class="kc-s">薬剤を書いた件数　ブリーチ ${a.ブリーチ}件</div></div>
+    </div>
+    ${a.値段のない薬剤?`<p class="note"><b>値段の入っていない薬剤が ${a.値段のない薬剤}回 使われています。</b>その分は金額に入っていません　下に一覧があります</p>`:''}
+    <h2>担当ごと</h2>
+    ${(MAT.people||[]).length?`<div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>担当</th><th class="num">件数</th><th class="num">材料費</th>
+      <th class="num">材料費率</th><th class="num">ひとりあたり</th><th class="num">ブリーチ</th></tr></thead><tbody>
+      ${MAT.people.map(x=>`<tr><td>${esc(x.name)}</td><td class="num tsub">${x.件数}</td>
+        <td class="num">${yen(x.材料費)}</td>
+        <td class="num"><b style="color:${x.材料費率==null?'inherit':(x.材料費率>tg?'var(--danger)':'var(--ok)')}">${x.材料費率==null?'—':x.材料費率+'%'}</b></td>
+        <td class="num">${yen(x.ひとりあたり)}</td><td class="num tsub">${x.ブリーチ}件</td></tr>`).join('')}
+    </tbody></table></div>`:'<div class="empty">まだ記録がありません</div>'}
+
+    ${(MAT.高いもの||[]).length?`<h2>材料費が高かったお客様</h2>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>日</th><th>お客様</th><th>担当</th><th class="num">材料費</th>
+      <th class="num">売上</th><th class="num">率</th></tr></thead><tbody>
+      ${MAT.高いもの.map(x=>`<tr><td>${x.date.slice(5).replace('-','/')}</td>
+        <td>${esc(x.name||'')}${x.ブリーチ?'<span class="tsub">　ブリーチ</span>':''}<div class="tsub">${esc(x.menu||'')}</div></td>
+        <td class="tsub">${esc(x.staff)}</td><td class="num">${yen(x.材料費)}</td>
+        <td class="num tsub">${yen(x.売上)}</td>
+        <td class="num" style="color:${x.材料費率>tg?'var(--danger)':'inherit'}"><b>${x.材料費率}%</b></td></tr>`).join('')}
+    </tbody></table></div>
+    <p class="note">ブリーチは材料費が一気に上がります　率が高いものが続くなら、価格の見直しどきです</p>`:''}
+
+    ${(MAT.値段のない薬剤||[]).length?`<h2>値段が入っていない薬剤 ${MAT.値段のない薬剤.length}本</h2>
+    <p class="note">1本の値段と内容量（g）を入れると、その薬剤も材料費に入ります</p>
+    <div class="tblwrap"><table class="tbl"><tbody>
+      ${MAT.値段のない薬剤.map(x=>`<tr><td>${esc(x.name)}<div class="tsub">${esc(x.brand||'')}</div></td>
+        <td class="num"><input class="ag-c" data-id="${esc(x.id)}" type="number" placeholder="1本の値段" style="width:110px"></td>
+        <td class="num"><input class="ag-s" data-id="${esc(x.id)}" type="number" placeholder="内容量 g" style="width:100px"></td>
+        <td><button class="mini ag-save" data-id="${esc(x.id)}" data-n="${esc(x.name)}">入れる</button></td></tr>`).join('')}
+    </tbody></table></div>`:''}`;
+}
+
+/* ── 練習（施設利用時間）── */
+function praHtml(){
+  if(!PRA)return '<div class="empty">読み込んでいます…</div>';
+  const g=PRA.合計||{};
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">この期間の練習</div>
+        <div class="kc-v">${Math.floor((g.分||0)/60)}<span style="font-size:19px">時間</span>${(g.分||0)%60}<span style="font-size:19px">分</span></div>
+        <div class="kc-s">${g.回数||0}回</div></div>
+    </div>
+    <p class="note">これは労働時間ではなく、自主的に施設を使った時間です　分は丸めずそのまま出しています</p>
+    ${(PRA.people||[]).length?`<h2>スタッフごと</h2>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>スタッフ</th><th class="num">回数</th><th class="num">時間</th></tr></thead><tbody>
+      ${PRA.people.map(x=>`<tr><td>${esc(x.name)}</td><td class="num">${x.回数}</td>
+        <td class="num"><b>${Math.floor(x.分/60)}時間${x.分%60}分</b></td></tr>`).join('')}
+    </tbody></table></div>`:''}
+    ${(PRA.rows||[]).length?`<h2>ひとつずつ</h2>
+    <div class="act" style="margin-bottom:8px"><button id="pr-csv" class="pri">CSVで書き出す（届け出用）</button></div>
+    <div class="tblwrap"><table class="tbl"><thead><tr>
+      <th>日</th><th>スタッフ</th><th>いつ</th><th class="num">分</th><th>内容</th></tr></thead><tbody>
+      ${PRA.rows.map(x=>`<tr><td>${x.date.replace(/-/g,'/')}</td><td>${esc(x.name)}</td>
+        <td class="tsub">${esc(x.kind||'')}</td><td class="num">${x.minutes}</td>
+        <td class="tsub">${esc(x.note||'')}</td></tr>`).join('')}
+    </tbody></table></div>`:'<div class="empty">まだ記録がありません　スタッフのスマホから押していただくと貯まります</div>'}`;
+}
+
 /* ── 時間の守り方 ──
  * 終わる予定を過ぎると失客が増える。
  * だから合計時間ではなく「時間どおりに始められたか」「予定内に終われたか」を見る。 */
@@ -1032,6 +1109,24 @@ async function load(){
       $('body').querySelectorAll('.no-done').forEach(x=>x.onclick=async()=>{
         const row=(NO.rows||[]).find(r=>r.id===x.dataset.id); if(!row)return;
         await post('/notices',{...row,shopId:row.shopId,done:+x.dataset.d}); load();});
+    }
+    else if(TAB==='mat'){ MAT=await get(`/material?from=${FROM}&to=${TO}`);
+      $('body').innerHTML=matHtml();
+      $('body').querySelectorAll('.ag-save').forEach(b=>b.onclick=async()=>{
+        const id=b.dataset.id;
+        const c=+$('body').querySelector(`.ag-c[data-id="${id}"]`).value||0;
+        const sz=+$('body').querySelector(`.ag-s[data-id="${id}"]`).value||0;
+        if(!c||!sz){toast('値段と内容量の両方を入れてください',true);return;}
+        await post('/agents',{id,name:b.dataset.n,cost:c,size:sz});
+        toast('入れました'); load();});
+    }
+    else if(TAB==='pr'){ PRA=await get(`/practice?from=${FROM}&to=${TO}`);
+      $('body').innerHTML=praHtml();
+      const b=$('body').querySelector('#pr-csv');
+      if(b)b.onclick=()=>{
+        const rows=[['日付','スタッフ','いつ','分','内容']];
+        (PRA.rows||[]).forEach(x=>rows.push([x.date,x.name,x.kind,x.minutes,x.note]));
+        csvDL(`練習_施設利用時間_${PRA.from}_${PRA.to}.csv`,rows);};
     }
     else if(TAB==='tm'){ TMS=await get(`/timeline/stats?from=${FROM}&to=${TO}`); $('body').innerHTML=tmHtml(); }
     else if(TAB==='nps'){ NP=await get(`/nps/stats?from=${FROM}&to=${TO}`); $('body').innerHTML=npsHtml(); }
