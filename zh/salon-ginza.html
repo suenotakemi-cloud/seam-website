@@ -41,6 +41,26 @@
   <link rel="alternate" hreflang="zh-Hant" href="https://seam.site/tw/salon-ginza">
   <link rel="alternate" hreflang="ko" href="https://seam.site/ko/salon-ginza">
   <link rel="alternate" hreflang="x-default" href="https://seam.site/salon-ginza">
+<!-- seam:lp-mobile-type:start -->
+  <style>
+  /* モバイルの本文だけ大きく・濃くする（PCは不変）。2026-08-11
+     数字はレビュー指摘（主本文15〜16 / 補足13〜14 / 行間1.75〜1.9）に合わせた。
+     main を前置して Tailwind のユーティリティより詳細度を1段上げている。 */
+  @media (max-width: 639px) {
+    main .text-\[13\.5px\] { font-size: 15px;   line-height: 1.85; }
+    main .text-\[13px\]     { font-size: 14.5px; line-height: 1.85; }
+    main .text-\[12\.5px\] { font-size: 13.5px; line-height: 1.9;  }
+    main .text-\[12px\]     { font-size: 13px;   line-height: 1.85; }
+    main .text-\[11\.5px\] { font-size: 12.5px; }
+    /* 薄すぎる注記だけ1段濃く。85%/80%は実機で読めているので触らない */
+    main .text-charcoal\/60 { color: rgba(42,45,52,.75); }
+    main .text-charcoal\/65 { color: rgba(42,45,52,.78); }
+    main .text-charcoal\/70 { color: rgba(42,45,52,.8);  }
+    /* タグ列は折り返す。横に切れて「読めない語」が出るのを防ぐ */
+    main .chips { flex-wrap: wrap; }
+  }
+  </style>
+<!-- seam:lp-mobile-type:end -->
 <meta name="twitter:description" content="在银座提供剪发、染发、烫发、缩毛矫正与护发。由熟知197个沙龙专售品牌的专业人员担当，设有包间。"></head>
 <body>
   <header class="sticky top-0 z-40 bg-white/92 backdrop-blur-md border-b border-line">
