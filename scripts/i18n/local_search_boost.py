@@ -164,6 +164,24 @@ NAGI_FOOT = {
     'ko': '凪의 요금은 최신 메뉴에서 확인해 주세요　예약하실 때 상담하실 수 있습니다.',
 }
 
+# 「できることと できないこと」を2列で先に見せるための文言。
+# **新しい約束はしない**。nagi.honestB（オーナー承認済み）を分けただけ。
+#   原文: 波のようにうねって広がる髪は かなり変わります
+#         しっかり巻いたカールは のびません そこは正直にお伝えします
+#         まっすぐにしたい方には 縮毛矯正のほうが向いています
+NAGI_FIT = {
+    'ja': ('向いている髪', '波のようにうねって広がる髪　湿気の日にふくらむ髪',
+           '向いていない髪', 'しっかり巻いたカール　まっすぐにしたい方は縮毛矯正のほうが向いています'),
+    'en': ('Suited to', 'Hair that waves and swells, and hair that puffs up on humid days',
+           'Not suited to', 'A firm curl. If you want it straight, a straightening treatment suits you better.'),
+    'zh': ('适合的发质', '像波浪般起伏、膨胀的头发，以及潮湿天里会膨胀的头发',
+           '不适合的发质', '卷度明显的卷发。若您希望头发笔直，缩毛矫正更适合您。'),
+    'tw': ('適合的髮質', '像波浪般起伏、膨脹的頭髮，以及潮濕天裡會膨脹的頭髮',
+           '不適合的髮質', '捲度明顯的捲髮。若您希望頭髮筆直，縮毛矯正更適合您。'),
+    'ko': ('어울리는 모발', '물결처럼 굽이치며 퍼지는 머리, 습한 날 부푸는 머리',
+           '어울리지 않는 모발', '확실하게 말린 컬. 곧게 펴고 싶으시다면 매직 스트레이트가 더 맞습니다.'),
+}
+
 NAGI_OPEN = '<!-- 凪＝髪質改善トリートメント'
 NAGI_BLOCK = '''<!-- 凪＝髪質改善トリートメント（hairsalon.html から移植・2026-08-11）
          入れた理由: サロンLP5枚の本文に「髪質改善」がほぼ無く(1,0,0,0,1回)、
@@ -173,9 +191,25 @@ NAGI_BLOCK = '''<!-- 凪＝髪質改善トリートメント（hairsalon.html �
       <p class="font-mono text-[10px] tracking-widest2 text-gold" data-i18n="nagi.eyebrow">Nagi</p>
       <h2 class="mt-1.5 font-serif text-[19px] text-ink"><span data-i18n="nagi.title">凪</span> <span class="text-[13.5px] text-charcoal/70" data-i18n="nagi.sub">髪質改善トリートメント</span></h2>
       <p class="mt-3 text-[13.5px] text-charcoal/80" style="line-height:2;" data-i18n="nagi.lead">__lead__</p>
-      <div class="mt-5 bg-cream border border-line rounded-[12px] px-5 py-4">
-        <p class="text-[13px] text-ink font-medium" data-i18n="nagi.honestT">__honestT__</p>
-        <p class="mt-2 text-[12.5px] leading-[1.95] text-charcoal/70" data-i18n="nagi.honestB">__honestB__</p>
+      <!-- 「できることと できないこと」を散文でなく2列で見せる。
+           文章だけだと読むほど説明書に見えてくる、というレビュー指摘への対応。
+           見出し(honestT)は残し、散文(honestB)は2列に分解した＝**新しい約束はしていない**。 -->
+      <p class="mt-5 text-[13px] text-ink font-medium" data-i18n="nagi.honestT">__honestT__</p>
+      <div class="mt-2.5 grid grid-cols-2 gap-3">
+        <div class="rounded-[12px] px-4 py-4" style="border:1px solid rgba(184,148,90,.42);background:rgba(184,148,90,.06);">
+          <p class="flex items-center gap-1.5 text-[11px] tracking-widest2" style="color:#8A6A3C;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+            <span data-i18n="nagi.fitT">__fitT__</span>
+          </p>
+          <p class="mt-2 text-[12.5px] leading-[1.9] text-charcoal/80" data-i18n="nagi.fitB">__fitB__</p>
+        </div>
+        <div class="rounded-[12px] px-4 py-4 border border-line">
+          <p class="flex items-center gap-1.5 text-[11px] tracking-widest2 text-charcoal/60">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg>
+            <span data-i18n="nagi.unfitT">__unfitT__</span>
+          </p>
+          <p class="mt-2 text-[12.5px] leading-[1.9] text-charcoal/70" data-i18n="nagi.unfitB">__unfitB__</p>
+        </div>
       </div>
       <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div class="border border-line rounded-[12px] px-5 py-4">
@@ -230,11 +264,21 @@ def normalize_join(s, d):
     return s[:start].rstrip('\n ') + JOIN + s[start:]
 
 
+FIT_SLOT = {'fitT': 0, 'fitB': 1, 'unfitT': 2, 'unfitB': 3}
+
+
+def nagi_val(slot, lang):
+    if slot == 'foot':
+        return NAGI_FOOT[lang]
+    if slot in FIT_SLOT:
+        return NAGI_FIT[lang][FIT_SLOT[slot]]
+    return NAGI[lang][f'nagi.{slot}']
+
+
 def render_nagi():
     blk = NAGI_BLOCK
     for slot in re.findall(r'__([a-zA-Z0-9]+)__', NAGI_BLOCK):
-        val = NAGI_FOOT['ja'] if slot == 'foot' else NAGI['ja'][f'nagi.{slot}']
-        blk = blk.replace(f'__{slot}__', val)
+        blk = blk.replace(f'__{slot}__', nagi_val(slot, 'ja'))
     return blk
 
 
@@ -251,10 +295,13 @@ def add_nagi(s, d):
     if start < 0:
         return s, d, '⚠ section が見つからない'
     s = s[:start].rstrip('\n ') + JOIN + render_nagi() + JOIN + s[start:]
-    for L in LANGS:                            # 辞書もそろえ直す（締め行の差し替えを含む）
+    for L in LANGS:                            # 辞書もそろえ直す（締め行と2列比較を含む）
         assert L in d, f'{L} が無い'
         d[L].update(NAGI[L])
         d[L]['nagi.foot'] = NAGI_FOOT[L]
+        for slot in FIT_SLOT:
+            d[L][f'nagi.{slot}'] = nagi_val(slot, L)
+        d[L].pop('nagi.honestB', None)     # 散文は2列に分解したので使わない（孤児キーを残さない）
     return s, d, '凪'
 
 
