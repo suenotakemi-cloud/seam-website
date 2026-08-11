@@ -1793,6 +1793,7 @@ const API = {
   // ---- レジ・会計（D1）----
   async listCheckouts(from,to){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts'+(from?`?from=${from}&to=${to||from}`:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.checkouts:null;}catch{return null;} },
   async saveCheckout(c){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/checkouts',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(c)});return r.ok?await r.json():null;}catch{return null;} },
+  async pushDisplay(body){ if(!API_BASE)return null; try{return await fetch(API_BASE+'/display/push',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});}catch{return null;} },
   async receiptToken(checkoutId,phone,shopId){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/receipt/token',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone,shopId})});const j=await r.json();return r.ok?j:null;}catch{return null;} },
   async sendLineReceipt(checkoutId,phone,shopId){ if(!API_BASE)return {error:'サーバ未接続'}; try{const r=await fetch(API_BASE+'/receipt/line',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({checkoutId,phone,shopId})});return await r.json();}catch(e){return {error:'通信に失敗しました'};} },
   async lineShopStatus(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/line/shop-status',{headers:authHeaders()});return r.ok?await r.json():null;}catch{return null;} },
@@ -3412,6 +3413,49 @@ function openCheckout(resvId){
   if(coDraft.phone){loadRankFor(coDraft.phone).then(()=>{if(CO_RANK)renderCheckout();});}
 }
 function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(i.unit!=null?(+i.unit||0)*(+i.qty||1):(+i.price||0)),0);}
+/* ═══ お客様にお見せする画面へ ═══
+ * 店販のレジ（shop.html）だけが繋がっていて、サロンの会計は繋がっていなかった。
+ * お客様から見ると同じカウンターなので、施術のお会計こそ見えていてほしい。
+ * 送るのは見せてよいものだけ。原価も在庫も他のお客様も送らない。
+ * ★レジ番号は店販レジと同じ置き場（stb_register）を使う。
+ *   同じiPadなら番号もひとつ＝お客様画面の r= と自然にそろう。 */
+const CO_REGK='stb_register';
+const coRegNo=()=>{try{return localStorage.getItem(CO_REGK)||''}catch(e){return ''}};
+let coPushT=null;
+function coPushDisplay(done){
+  clearTimeout(coPushT);
+  coPushT=setTimeout(()=>{
+    if(!coDraft&&!done)return;
+    const d=coDraft||{};
+    const items=[];
+    if(!done){
+      /* 施術は1行にまとめる。メニュー名が分かるときは名前で出す
+         （「施術」とだけ出ると、何のお会計か分からない） */
+      const tech=d.passCode?0:(+d.tech||0);
+      if(tech>0||d.passCode){
+        const r=(db.reservations||[]).find(x=>x.id===d.resvId);
+        const mn=(MENUS.find(x=>x.id===(r&&r.menuId))||{}).name||d.menuName||'施術';
+        items.push({name:mn,qty:1,was:tech,now:tech,image:''});
+      }
+      (d.retailItems||[]).forEach(i=>{
+        const unit=i.unit!=null?(+i.unit||0):(+i.price||0);
+        if(!i.name&&!unit)return;
+        const pr=(db.products||[]).find(x=>x.id===i.productId);
+        items.push({name:i.name||'店販',qty:Math.max(1,+i.qty||1),was:unit,now:unit,image:(pr&&pr.image)||''});
+      });
+    }
+    const list=(d.passCode?0:(+d.tech||0))+coRetail();
+    const cut=(+d.discount||0)+(coPtYen().yen||0)+(+d.giftUsed||0);
+    const rk=(CO_RANK&&CO_RANK.rank)||null;
+    API.pushDisplay({shopId:SHOP_ID,register:coRegNo(),
+      mode:d.memberCode?'member':'normal',done:!!done,
+      items,list,cut,total:done?0:coTotal(),
+      member:(d.customer&&(d.memberCode||CO_RANK))?{
+        name:d.customer,rank:(rk&&rk.name)||'',points:+d.memberPt||0,earn:coPointAward(),
+        visits:(CO_RANK&&CO_RANK.visits)||0,
+        greet:((CO_RANK&&CO_RANK.visits)||0)>=1?'again':'first'}:null});
+  },250);
+}
 /* ポイントの円換算。施術と商品でレートが違うので、割引を引いたあとの内訳に当てる。 */
 function coPtYen(){
   const tech=coDraft.passCode?0:(+coDraft.tech||0);
@@ -3463,6 +3507,7 @@ async function loadRankFor(key){
   CO_RANK=(r&&r.ok)?{rank:r.rank,rate:r.rate,visits:r.visits,yVisits:r.yVisits,ySpend:r.ySpend,next:r.next}:null;
 }
 function renderCheckout(){
+  coPushDisplay(false);              // 画面を描くたびに、お客様側もそろえる
   const box=document.getElementById('checkoutmodal');
   const rows=(coDraft.retailItems||[]).map((it,i)=>{
     const isProd=it.unit!=null;   // 商品マスタから入れた行は 単価×数量 で扱う
@@ -3472,7 +3517,9 @@ function renderCheckout(){
         <span class="co-ru">×¥${(it.unit||0).toLocaleString()}</span>`:''}
       <input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${(isProd?((it.unit||0)*(it.qty||1)):(it.price||''))}" ${isProd?'readonly':''}>
       <button class="co-rx" data-i="${i}" aria-label="削除">✕</button></div>`;}).join('');
-  box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}</h3>
+  box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}
+      <button id="co-reg" class="btn small ghost" style="float:right;font-size:11.5px;padding:4px 10px"
+        title="お客様にお見せする画面と揃える番号です">${coRegNo()?`レジ ${escH(coRegNo())}番`:'レジ番号'}</button></h3>
     ${(featOn('member')&&coDraft.memberCode)?rankStrip(CO_RANK,coDraft.memberCode,coDraft.memberPt):''}
     ${isShop()?'':`<div class="co-line"><span>技術（施術）</span><span class="co-y">¥<input id="co-tech" type="number" inputmode="numeric" value="${coDraft.tech||0}"></span></div>`}
     <div class="co-sub">店販（商品）</div>
@@ -3536,7 +3583,10 @@ function renderCheckout(){
       <button class="btn pay" id="co-save">${(coDraft.method==='card'&&stg(isShop()?'terminalDeviceIdShop':'terminalDeviceId',''))?'端末なしで記録':'この内容で会計を確定'}</button>
     </div>`;
   const sync=()=>{document.getElementById('co-total').textContent='¥'+coTotal().toLocaleString();
-    const aw=document.getElementById('co-award');if(aw)aw.textContent='+'+coPointAward().toLocaleString()+'pt';};
+    const aw=document.getElementById('co-award');if(aw)aw.textContent='+'+coPointAward().toLocaleString()+'pt';
+    /* 金額を打っている最中もお客様側をそろえる（送り出しは250ms待つので打鍵ごとには飛ばない）。
+       ここを忘れると、レジの合計とお客様画面の合計が違う数字のまま並ぶ。 */
+    coPushDisplay(false);};
   {const t=box.querySelector('#co-tech');   // ショップのレジには技術欄が無い
    if(t)t.oninput=e=>{coDraft.tech=+e.target.value||0;sync();};
    else coDraft.tech=0;}
@@ -3657,14 +3707,24 @@ function renderCheckout(){
     coDraft.cardBrand=(coDraft.cardBrand===b.dataset.brand)?'':b.dataset.brand;renderCheckout();});
   box.querySelectorAll('[data-nom]').forEach(b=>b.onclick=()=>{coDraft.nominated=b.dataset.nom==='1';renderCheckout();});
   if(isShop())coDraft.nominated=false;   // ショップに指名は無い
-  box.querySelector('#co-cancel').onclick=()=>document.getElementById('checkoutbg').classList.remove('show');
+  /* ★お客様画面と対にする番号。同じ番号どうしでしか繋がらない。
+     ここがずれていると、隣のレジの明細がお客様に見えてしまう。 */
+  box.querySelector('#co-reg').onclick=()=>{
+    const v=prompt('このレジの番号（お客様にお見せする画面の r= と同じ番号）\n空にすると番号なしのレジになります',coRegNo());
+    if(v===null)return;
+    try{localStorage.setItem(CO_REGK,String(v).replace(/[^0-9A-Za-z_-]/g,'').slice(0,24));}catch(e){}
+    renderCheckout();
+  };
+  box.querySelector('#co-cancel').onclick=()=>{
+    coDraft=null; coPushDisplay(false);          // お客様画面も待機に戻す
+    document.getElementById('checkoutbg').classList.remove('show');};
   box.querySelector('#co-save').onclick=()=>{const rec=coBuildRec();if(rec.total<=0){toast('金額を入力してください',true);return;}coFinish(rec);};
   const ct=box.querySelector('#co-term'); if(ct)ct.onclick=()=>runTerminalPayment();
 }
 /* その会計が今のモードのものか。古い会計は mode 未設定＝サロン扱い */
 const inMode=(c)=>!posSplit()||(((c&&c.mode)==='shop')===isShop());   // 分けていない店は全部ひとつのレジ
 function coBuildRec(){
-  const rec={mode:POS_MODE,...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,pointsUsed:+coDraft.pointsUsed||0,giftUsed:+coDraft.giftUsed||0,giftCode:coDraft.giftCode||'',
+  const rec={mode:POS_MODE,register:coRegNo(),...coDraft,tech:+coDraft.tech||0,discount:+coDraft.discount||0,pointsUsed:+coDraft.pointsUsed||0,giftUsed:+coDraft.giftUsed||0,giftCode:coDraft.giftCode||'',
     retailItems:(coDraft.retailItems||[]).filter(i=>i.name||i.price).map(i=>({name:i.name||'店販',
       qty:Math.max(1,+i.qty||1), unit:i.unit!=null?(+i.unit||0):(+i.price||0),
       price:i.unit!=null?((+i.unit||0)*Math.max(1,+i.qty||1)):(+i.price||0), productId:i.productId||undefined}))};
@@ -3683,6 +3743,14 @@ function coBuildRec(){
 }
 function coFinish(rec){
   const isNew=!coDraft.id;
+  /* お客様画面を「ありがとうございました」に切り替える。
+     たまったポイントもここで出る（会計が終わってから出さないと、数字が動いて見える） */
+  if(isNew){
+    const aw=coPointAward();
+    API.pushDisplay({shopId:SHOP_ID,register:coRegNo(),mode:'normal',done:true,
+      items:[],list:0,cut:0,total:0,
+      member:aw>0?{name:rec.customer||'',rank:'',points:+coDraft.memberPt||0,earn:aw,visits:0,greet:'again'}:null});
+  }
   if(coDraft.id)updateCheckout(rec);else addCheckout(rec);
   // 在庫を自動減算（新規会計のみ）。この端末の店舗の在庫から引く
   if(isNew)rec.retailItems.forEach(i=>{if(i.productId)adjustStock(i.productId,-(+i.qty||1),null,'店販');});
