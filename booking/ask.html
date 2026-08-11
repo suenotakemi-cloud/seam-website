@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>SEAM</title>
+<style>
+  /* ★お客様のスマホで、お帰りぎわに一瞬だけ開かれる画面。
+     読むものを増やさない。1問だけ。答えない自由も同じ大きさで置く。 */
+  *{box-sizing:border-box}
+  body{margin:0;background:#F7F4EF;color:#2f2a24;
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.8}
+  .wrap{max-width:520px;margin:0 auto;padding:34px 18px 60px}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;letter-spacing:.34em;
+    font-size:15px;color:#7a6f60;text-align:center;margin-bottom:26px}
+  .card{background:#fff;border:1px solid #e7e1d5;border-radius:18px;padding:24px 20px}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:19px;font-weight:600;
+    margin:0 0 6px;line-height:1.5}
+  .sub{font-size:14px;color:#7d746b;margin:0 0 20px;line-height:1.75}
+  .row{display:grid;grid-template-columns:repeat(11,1fr);gap:4px}
+  .btn{background:#fff;border:1px solid #e2dbd0;border-radius:9px;padding:14px 0;
+    font:inherit;font-size:15px;color:#2f2a24;cursor:pointer;min-height:50px}
+  .btn:active{background:#f3efe8}
+  .btn.on{background:#12233A;border-color:#12233A;color:#fff;font-weight:700}
+  .ends{display:flex;justify-content:space-between;font-size:11px;color:#9b9385;margin-top:8px}
+  .skip{display:block;width:100%;margin-top:20px;background:none;border:1px solid #ddd5c8;
+    border-radius:12px;padding:15px;font:inherit;font-size:15px;color:#7d746b;cursor:pointer}
+  .done{text-align:center;padding:14px 0 6px}
+  .done h1{margin-bottom:8px}
+  .foot{text-align:center;font-size:11.5px;color:#a49a8c;margin-top:22px;line-height:1.8}
+  @media(max-width:380px){ .btn{font-size:13px;padding:13px 0} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">SEAM</div>
+  <div id="app"></div>
+  <div class="foot">株式会社hanico</div>
+</div>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const T=new URLSearchParams(location.search).get('t')||'';
+const app=document.getElementById('app');
+
+function ask(){
+  app.innerHTML=`<div class="card">
+    <h1>ひとつだけ、おうかがいします</h1>
+    <p class="sub">このお店を、ご友人におすすめしたいと思われますか</p>
+    <div class="row">${[...Array(11).keys()].map(n=>`<button class="btn" data-n="${n}">${n}</button>`).join('')}</div>
+    <div class="ends"><span>まったく思わない</span><span>とてもそう思う</span></div>
+    <button class="skip" id="skip">答えずに閉じる</button>
+  </div>`;
+  document.getElementById('skip').onclick=()=>{
+    app.innerHTML=`<div class="card done"><h1>ありがとうございました</h1>
+      <p class="sub">またお会いできるのを楽しみにしております</p></div>`;
+  };
+  app.querySelectorAll('.btn').forEach(b=>b.onclick=async()=>{
+    app.querySelectorAll('.btn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    try{
+      await fetch(API+'/nps',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({token:T,score:+b.dataset.n})});
+    }catch(e){}
+    /* ★どの数字でも、返す言葉は同じ。
+       低い点のときだけお詫びを出すと、次から正直に答えられなくなる。 */
+    app.innerHTML=`<div class="card done"><h1>ありがとうございます</h1>
+      <p class="sub">またお会いできるのを楽しみにしております</p></div>`;
+  });
+}
+
+if(!T){
+  app.innerHTML=`<div class="card"><h1>この画面は、お店でお渡しするコードからひらけます</h1>
+    <p class="sub">お手数ですがスタッフにお声がけください</p></div>`;
+}else ask();
+</script>
+</body>
+</html>

@@ -66,6 +66,10 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   border-radius:999px;padding:11px 15px;font:inherit;font-size:14.5px;font-weight:500;cursor:pointer;white-space:nowrap}
 .tabs button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
 .opane{flex:1;overflow-y:auto;padding:14px 16px 30px}
+/* 推薦度のQR。読み取る側がお客様なので、大きめに白地で出す */
+.npsqr{text-align:center;margin-top:14px}
+.npsqr img{width:210px;height:210px;background:#fff;padding:10px;border-radius:12px}
+.npsqr p{font-size:13px;color:rgba(239,233,223,.65);line-height:1.7;margin-top:9px}
 /* ── 自分の数字（推薦者をいちばん大きく）── */
 /* ★この帯は「今日のお客様」の明るい画面に出る。暗い画面の色を使うと読めない。 */
 .mecard{background:#FFF7EC;border:1px solid #E9CFA6;border-radius:16px;padding:18px 18px 16px;margin:6px 0 16px}
@@ -296,6 +300,16 @@ async function askToken(msg){
 /* ── 申し送り ──
  * LINEは次の日には流れて消える。ここは消えない。読んだ人も残る。 */
 let NOTI=[];
+/* QRの部品。使うときだけ読む */
+let _qrlibP=null;
+function loadQRlib(){
+  if(window.qrcode)return Promise.resolve();
+  if(_qrlibP)return _qrlibP;
+  _qrlibP=new Promise((res,rej)=>{const s2=document.createElement('script');
+    s2.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+    s2.onload=res;s2.onerror=res;document.head.appendChild(s2);});
+  return _qrlibP;
+}
 async function loadNoti(){
   try{ const r=await fetch(U('/notices')); const j=await r.json(); NOTI=j.rows||[]; }catch(e){ NOTI=[]; }
 }
@@ -760,7 +774,12 @@ function paintAfter(p){
     <div class="sec"><h3>お帰りぎわに お渡しする1枚</h3>
       <p class="hint">その方が選んだものだけを並べた記念の1枚です<br>
         この画面をお見せして 撮っていただいてください</p>
-      <button class="mini2" id="wkeep">1枚をひらく</button></div>`;
+      <button class="mini2" id="wkeep">1枚をひらく</button></div>
+    <div class="sec"><h3>ひとつだけ おうかがいする</h3>
+      <p class="hint">この画面をお見せして 読み取っていただきます<br>
+        「またおすすめしたいか」を 数字ひとつだけ お聞きします</p>
+      <button class="mini2" id="wnps">コードを出す</button>
+      <div id="npsBox"></div></div>`;
   const kb=document.getElementById('wkeep');
   if(kb)kb.onclick=async()=>{
     /* ★合言葉は必要になった1件だけ取りに行く（その日ぶんを一覧で持ち歩かない） */
@@ -771,6 +790,26 @@ function paintAfter(p){
       window.open(j.url,'_blank');
     }catch(e){ const m=document.getElementById('wmsg'); m.style.color='#F0A79C'; m.textContent='ひらけませんでした: '+e.message; }
     kb.disabled=false;
+  };
+  /* ── 推薦度のQR ──
+   * 端末をこちらのレジに繋いでいなくても、担当のスマホからなら聞ける。
+   * どの予約かが分かっているので、担当もお名前も日付も紐づく。 */
+  const nb=document.getElementById('wnps');
+  if(nb)nb.onclick=async()=>{
+    nb.disabled=true; nb.textContent='つくっています…';
+    try{
+      const r=await fetch(U('/nps/token'),{method:'POST',headers:H(),
+        body:JSON.stringify({resvId:RESV.id,shopId:'ginza'})});
+      const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'つくれませんでした');
+      await loadQRlib();
+      const url2=location.origin+location.pathname.replace(/staff-spa\.html?$/,'')+'ask.html?t='+encodeURIComponent(j.token);
+      const img=window.qrcode?(()=>{const q=qrcode(0,'M');q.addData(url2);q.make();return q.createDataURL(7);})():'';
+      document.getElementById('npsBox').innerHTML=img
+        ? `<div class="npsqr"><img src="${img}" alt=""><p>お客様のスマホで<br>読み取っていただいてください</p></div>`
+        : `<p class="hint" style="word-break:break-all">${esc(url2)}</p>`;
+      nb.style.display='none';
+    }catch(e){ nb.disabled=false; nb.textContent='コードを出す';
+      const m2=document.getElementById('wmsg'); if(m2){m2.style.color='#F0A79C';m2.textContent=e.message;} }
   };
   const t=document.getElementById('wnote'), c=document.getElementById('wcnt');
   const cnt=()=>{ const n=t.value.length; c.textContent=n?`${n} / 160`:''; };
