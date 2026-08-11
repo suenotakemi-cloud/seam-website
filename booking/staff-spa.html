@@ -65,6 +65,17 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   border-radius:999px;padding:11px;font:inherit;font-size:15px;font-weight:500;cursor:pointer}
 .tabs button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
 .opane{flex:1;overflow-y:auto;padding:14px 16px 30px}
+/* ── 申し送り（いちばん上・読むまで消えない）── */
+/* ★この帯は「今日のお客様」の明るい画面の上に出る。
+   暗い画面の色をそのまま使うと、本文が読めない。 */
+.noti{margin:6px 0 18px}
+.noti-h{font-size:12px;letter-spacing:.14em;color:#A9722F;margin-bottom:9px;font-weight:700}
+.noti-c{background:#FFF7EC;border:1px solid #E9CFA6;border-radius:14px;padding:15px 16px;margin-bottom:9px}
+.noti-t{font-size:18px;font-weight:700;color:#12100E;line-height:1.5}
+.noti-b{font-size:15px;color:#4a443c;line-height:1.75;margin-top:5px;white-space:pre-wrap}
+.noti-m{font-size:12px;color:#8a8177;margin-top:7px}
+.noti-ok{width:100%;margin-top:11px;background:#12100E;border:0;color:#fff;
+  border-radius:11px;padding:13px;font:inherit;font-size:15px;font-weight:600;cursor:pointer}
 /* ── カルテ（暗い画面で、指で押せる大きさに）── */
 .kmix{border:1px solid rgba(239,233,223,.2);border-radius:12px;padding:11px 12px;margin-bottom:10px;
   background:rgba(239,233,223,.04)}
@@ -179,7 +190,7 @@ async function load(){
     const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    ROWS=j.rows||[]; render();
+    ROWS=j.rows||[]; await loadNoti(); render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
 async function askToken(msg){
@@ -225,9 +236,38 @@ async function askToken(msg){
   });
 }
 
+/* ── 申し送り ──
+ * LINEは次の日には流れて消える。ここは消えない。読んだ人も残る。 */
+let NOTI=[];
+async function loadNoti(){
+  try{ const r=await fetch(U('/notices')); const j=await r.json(); NOTI=j.rows||[]; }catch(e){ NOTI=[]; }
+}
+function notiHtml(){
+  const yet=NOTI.filter(x=>!x.done&&!x.自分は読んだ);
+  if(!yet.length)return '';
+  return `<div class="noti">
+    <div class="noti-h">読んでいない申し送り ${yet.length}件</div>
+    ${yet.map(x=>`<div class="noti-c" data-n="${esc(x.id)}">
+      <div class="noti-t">${x.pinned?'📌 ':''}${esc(x.title)}</div>
+      ${x.body?`<div class="noti-b">${esc(x.body)}</div>`:''}
+      <div class="noti-m">${esc(x.by||'')}${x.due?`　${esc(x.due)}まで`:''}</div>
+      <button class="noti-ok" data-ok="${esc(x.id)}">読みました</button>
+    </div>`).join('')}
+  </div>`;
+}
+function notiWire(){
+  app.querySelectorAll('[data-ok]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true; b.textContent='…';
+    try{
+      await fetch(U('/notices/read'),{method:'POST',headers:H(),body:JSON.stringify({id:b.dataset.ok})});
+      const n=NOTI.find(x=>x.id===b.dataset.ok); if(n)n.自分は読んだ=true;
+      render();
+    }catch(e){ b.disabled=false; b.textContent='読みました'; }
+  });
+}
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
-  app.innerHTML=`<h1>今日のお客様</h1>
+  app.innerHTML=notiHtml()+`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
       <button class="card" data-i="${n}">
@@ -239,6 +279,7 @@ function render(){
     :'<div class="empty">この日のご予約はまだありません</div>'}
     <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`;
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
+  notiWire();
   document.getElementById('rl').onclick=load;
 }
 
