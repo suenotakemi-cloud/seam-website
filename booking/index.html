@@ -131,6 +131,8 @@ td.slot:hover{background:#f0f7ff}
   font-size:10.5px;color:var(--sub);font-weight:700;letter-spacing:.03em}
 .ktmix-b{display:grid;grid-template-columns:104px 74px 74px;gap:6px;margin-top:2px}
 .ktmix-b input,.ktmix-b select{margin-top:0;padding:8px;font-size:13px;border:1px solid var(--line);border-radius:7px;background:#fff;width:100%}
+.refbox{background:#fdf7f2;border:1px solid #edd9c9;border-radius:11px;padding:12px 13px;margin:10px 0 12px}
+.refbox .rz{padding:5px 0}
 .ktwho{margin-top:14px;padding-top:11px;border-top:1px solid var(--line);
   font-size:12px;color:var(--sub);font-weight:700;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .ktwho span{font-weight:600;font-size:11px;flex-basis:100%}
@@ -1843,6 +1845,7 @@ const API = {
   async agentSearch(q){ if(!API_BASE)return [];try{const r=await fetch(API_BASE+'/agents?q='+encodeURIComponent(q||''),{headers:authHeaders()});if(!r.ok)return [];const j=await r.json();return j.agents||[];}catch{return [];} },
   async agentSave(a){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/agents',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(a)});return r.ok?await r.json():null;}catch{return null;} },
   async agentUsed(ids){ if(!API_BASE||!ids.length)return; try{await fetch(API_BASE+'/agents/used',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({ids})});}catch{} },
+  async referrals(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/referrals?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;return await r.json();}catch{return null;} },
   async reviewAsk(a){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/review/ask',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(a)});return await r.json();}catch{return null;} },
   async staffPin(staffId,pin,name){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/staff/pin',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify({staffId,pin,name})});return await r.json();}catch{return null;} },
   async karteLog(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/log?id='+encodeURIComponent(id),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.log:null;}catch{return null;} },
@@ -3069,6 +3072,24 @@ function ktMixText(body){
     m.min?m.min+'分':''
   ].filter(Boolean).join(' ')).filter(Boolean).join(' ／ ');
 }
+/* ─── 菊池マスタ（JAN→商品名の辞書・5,700件）───
+ * ディーラー（菊池）取扱の全商品。知らないバーコードを読んだときに、
+ * お客様の前で「これ何でしたっけ」と聞かずに済ませるための辞書。
+ * 価格と原価は入っていない（名前を当てるためだけのもの）。
+ * 大きいので、必要になった最初の1回だけ読む。 */
+let _kmaster=null,_kmasterP=null;
+function ktLoadMaster(){
+  if(_kmaster)return Promise.resolve(_kmaster);
+  if(!_kmasterP)_kmasterP=fetch('master-kikuchi.json?v=20260811')
+    .then(r=>r.ok?r.json():{items:[]})
+    .then(j=>{_kmaster=j.items||[];return _kmaster;})
+    .catch(()=>{_kmaster=[];return _kmaster;});
+  return _kmasterP;
+}
+async function ktMasterFind(code){
+  const m=await ktLoadMaster();
+  return m.find(x=>x.c===String(code))||null;
+}
 /* 薬剤を1本、その塗りに足す */
 function ktAddAgent(i,a){
   const b=KT.body; if(!b.mix||!b.mix[i])return;
@@ -3292,8 +3313,18 @@ function karteWire(){
         if(hits.length===1)a=hits[0];
         else if(hits.length>1){ ktPickAgent(i,hits); el.value=''; return; }
       }
+      if(!a&&/^[0-9]{8,14}$/.test(v)){
+        /* お店の台帳に無くても、菊池の辞書にあれば名前が分かる。
+           分かったらその場で台帳にも入れる＝次からは辞書を読みに行かなくて済む。 */
+        const hit=await ktMasterFind(v);
+        if(hit){
+          const r=await API.agentSave({barcode:v,name:hit.n,brand:hit.b||'',kind:ktHasPerm()?'perm':'color'});
+          a={id:(r&&r.id)||'',name:hit.n,brand:hit.b||''};
+          toast(`${hit.n}`);
+        }
+      }
       if(!a){
-        /* 見つからない。ここで諦めさせない＝その場で登録して、そのまま使えるようにする */
+        /* 辞書にも無い。ここで諦めさせない＝その場で登録して、そのまま使えるようにする */
         const isBc=/^[0-9]{8,14}$/.test(v);
         const nm=prompt(isBc?`はじめての薬剤です\nバーコード ${v}\n\n薬剤の名前を入れてください（例）オルディーブ 7-NB`:'薬剤の名前を入れてください', isBc?'':v);
         if(nm==null||!nm.trim()){el.value='';return;}
@@ -6468,6 +6499,16 @@ function openCustomer(key){
     <dl class="dl"><dt>電話</dt><dd>${c.phone||'—'}</dd><dt>ご来店</dt><dd>${c.visits}回（初回 ${c.first.replace(/-/g,'/')}）</dd>
       <dt>累計売上 (LTV)</dt><dd>${c.paidVisits>0?`<b style="color:var(--navy)">¥${c.sales.toLocaleString()}</b>　<span style="color:var(--sub);font-size:12px">会計${c.paidVisits}回・平均 ¥${Math.round(c.sales/c.paidVisits).toLocaleString()}</span>`:`<span style="color:var(--sub)">会計記録なし（目安 ¥${c.spend.toLocaleString()}）</span>`}</dd>
       <dt>よく使う</dt><dd>${topKey(c.menus)||'—'}${topKey(c.staff)?' / '+topKey(c.staff):''}</dd>${c.note?`<dt>メモ</dt><dd>${escH(c.note)}</dd>`:''}</dl>
+    <div class="refbox" id="ref-box">
+      <div style="font-size:12px;font-weight:800;color:var(--sub);margin-bottom:7px">💛 ご紹介のつながり</div>
+      <div class="rz"><span>紹介してくださった方</span>
+        <input id="ref-nm" list="ref-list" value="${escH(cn.referrer_name||'')}" placeholder="お名前で探す" style="margin-left:auto;max-width:200px"></div>
+      <datalist id="ref-list"></datalist>
+      <div class="rz"><span>ご関係</span>
+        <input id="ref-rel" value="${escH(cn.relation||'')}" placeholder="例）職場のご同僚・妹さま" style="margin-left:auto;max-width:200px"></div>
+      <button class="btn small pri" id="ref-save" style="margin-top:8px">つながりを保存</button>
+      <div id="ref-view" style="font-size:12.5px;color:var(--sub);margin-top:8px"></div>
+    </div>
     <div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><div style="font-size:12px;font-weight:700;color:var(--sub)">カウンセリングシート・同意書<span style="font-weight:600;margin-left:6px">（記録として保管します・消せません）</span></div>
       <a class="btn small ghost" id="cs-open" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 9px;font-size:11.5px">iPadで記入してもらう ↗</a>
       <button class="btn small ghost" id="cs-lang" style="display:none;padding:3px 9px;font-size:11.5px"></button></div>
@@ -6486,6 +6527,40 @@ function openCustomer(key){
    const saveKn=()=>{const n={key:ck,caution:ta.value.trim(),birthday:bd.value};db.custnotes[ck]=Object.assign({},cn,n);save();API.saveCustNote(n);
      if(ok){ok.style.display='inline';setTimeout(()=>{ok.style.display='none'},1500);}};
    if(ta)ta.onblur=saveKn; if(bd)bd.onchange=saveKn;}
+  /* ── ご紹介のつながり ──
+     紹介してくださる方こそが本当のVIP。その方が離れると、連れてきてくださった方まで離れる。
+     線で持っておくと、お礼を言う相手が分かる。 */
+  {
+    const all=buildCustomers().filter(x=>x.key!==ck);
+    const dl=document.getElementById('ref-list');
+    if(dl)dl.innerHTML=all.slice(0,400).map(x=>`<option value="${escH(x.name)}">`).join('');
+    const refDraw=async()=>{
+      const el=document.getElementById('ref-view'); if(!el)return;
+      const j=await API.referrals(ck); if(!j||!j.ok)return;
+      const el2=document.getElementById('ref-view'); if(!el2)return;
+      const from=j['紹介してくれた方'], kids=j['この方が紹介した方']||[];
+      el2.innerHTML=[
+        from?`💛 ${escH(from.name)} 様からのご紹介${from.relation?`（${escH(from.relation)}）`:''}`:'',
+        kids.length?`🎁 この方のご紹介 ${kids.map(x=>escH(x.name)+' 様').join('・')}　<b>お礼を忘れずに</b>`:'',
+      ].filter(Boolean).join('<br>')||'<span>まだつながりの記録はありません</span>';
+    };
+    const rb=document.getElementById('ref-save');
+    if(rb)rb.onclick=async()=>{
+      const nm=(document.getElementById('ref-nm').value||'').trim();
+      const hit=all.find(x=>x.name===nm);
+      const rel=(document.getElementById('ref-rel').value||'').trim();
+      const ta=document.getElementById('kn-caution'), bd=document.getElementById('kn-bday');
+      const ok=await API.saveCustNote({key:ck,caution:(ta&&ta.value)||cn.caution||'',
+        birthday:(bd&&bd.value)||cn.birthday||'',
+        referrerKey:hit?hit.key:'', referrerName:nm, relation:rel});
+      if(ok){
+        db.custnotes[ck]=Object.assign({},cn,{referrer_key:hit?hit.key:'',referrer_name:nm,relation:rel});save();
+        toast(nm?`${nm} 様からのご紹介として保存しました`:'つながりを外しました');
+        refDraw();
+      } else toast('保存できませんでした',true);
+    };
+    refDraw();
+  }
   // ---- この方のまとめ: 予約/会計/シート/髪格診断/同意/注意を1枚に集約して先に見せる
   API.customerProfile(c.key).then(cpRender);
   // ---- カウンセリングシート: 記入リンクに氏名/電話/種別を引き継ぐ(スタッフが打ち直さない)

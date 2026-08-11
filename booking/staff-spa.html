@@ -377,6 +377,16 @@ let KT=null, KT_LAST=null, KT_BUSY=false;
 const KWHERE=['根元','中間','毛先','全体','前髪','リタッチ','ハイライト','その他'];
 const KOXY=['3%','4.5%','6%'];
 const kRatio=(a,b)=>(!a||!b)?'':('1:'+String(Math.round(b/a*100)/100));
+/* 菊池マスタ（JAN→商品名の辞書・5,700件）。知らないバーコードでも名前が出る。
+   大きいので、必要になった最初の1回だけ読む。 */
+let _km=null,_kmP=null;
+function kmLoad(){
+  if(_km)return Promise.resolve(_km);
+  if(!_kmP)_kmP=fetch('master-kikuchi.json?v=20260811').then(r=>r.ok?r.json():{items:[]})
+    .then(j=>{_km=j.items||[];return _km;}).catch(()=>{_km=[];return _km;});
+  return _kmP;
+}
+async function kmFind(code){ const m=await kmLoad(); return m.find(x=>x.c===String(code))||null; }
 const kMixes=b=>((b||{}).mix||[]);
 const kMixText=b=>kMixes(b).map(m=>[m.where,
   (m.agents||[]).map(a=>a.name+(a.g?' '+a.g+'g':'')).join('＋'),
@@ -458,6 +468,16 @@ function kWire(p){
     let hits=/^[0-9]{8,14}$/.test(v)?await g('/agents?barcode='+encodeURIComponent(v)):await g('/agents?q='+encodeURIComponent(v));
     let a=hits[0];
     if(hits.length>1){ const n=+prompt('どれですか　番号を\n\n'+hits.slice(0,12).map((x,k)=>`${k+1}. ${x.name}`).join('\n'),'1'); a=hits[n-1]; }
+    if(!a&&/^[0-9]{8,14}$/.test(v)){
+      const hit=await kmFind(v);
+      if(hit){
+        try{
+          const r=await fetch(U('/agents'),{method:'POST',headers:H(),
+            body:JSON.stringify({barcode:v,name:hit.n,brand:hit.b||''})});
+          const j=await r.json(); a={id:j.id||'',name:hit.n,brand:hit.b||''};
+        }catch{ a={id:'',name:hit.n,brand:hit.b||''}; }
+      }
+    }
     if(!a){
       const isBc=/^[0-9]{8,14}$/.test(v);
       const nm=prompt(isBc?`はじめての薬剤です\n${v}\n\n名前を入れてください`:'薬剤の名前', isBc?'':v);
