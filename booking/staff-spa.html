@@ -66,6 +66,9 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   border-radius:999px;padding:11px 15px;font:inherit;font-size:14.5px;font-weight:500;cursor:pointer;white-space:nowrap}
 .tabs button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
 .opane{flex:1;overflow-y:auto;padding:14px 16px 30px}
+.mood{background:rgba(201,182,142,.12);border:1px solid rgba(201,182,142,.4);
+  border-radius:14px;padding:14px 16px}
+.mood h3{color:#C9B68E}
 /* 推薦度のQR。読み取る側がお客様なので、大きめに白地で出す */
 .npsqr{text-align:center;margin-top:14px}
 .npsqr img{width:210px;height:210px;background:#fff;padding:10px;border-radius:12px}
@@ -184,8 +187,9 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   font-size:12px;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .mv .tm{font-family:'Noto Serif JP',serif;font-size:17px;color:#EFE9DF;font-variant-numeric:tabular-nums}
 .mv .nm{font-family:'Noto Serif JP',serif;font-size:19px;color:#fff}
-.mv .ital{font-style:italic;font-size:12.5px;color:rgba(239,233,223,.42);
-  letter-spacing:.04em;margin:-4px 0 8px}
+.mv .ital{font-size:13px;color:rgba(239,233,223,.55);margin:-4px 0 8px}
+.mv .ital em{font-style:italic;font-size:11.5px;color:rgba(239,233,223,.3);
+  letter-spacing:.06em;margin-left:9px}
 .mv .nm{white-space:nowrap}
 .mv .ck{margin-left:auto;flex:0 0 auto;width:34px;height:34px;border-radius:50%;
   border:1px solid rgba(239,233,223,.28);background:none;color:rgba(239,233,223,.35);
@@ -204,6 +208,36 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .line.care b{color:#A9C4E8}
 .line.care li{color:rgba(239,233,223,.86);font-size:16px}
 .line.care li::marker{color:rgba(169,196,232,.7)}
+.mv .dur{font-size:12px;color:rgba(239,233,223,.42);border:1px solid rgba(239,233,223,.2);
+  border-radius:999px;padding:2px 8px;font-variant-numeric:tabular-nums}
+/* ★いま演奏している楽章。練習モードのときだけ光る */
+.mv.now{background:rgba(199,154,69,.07);border-radius:14px;margin-left:-8px;padding-left:52px}
+.mv.now .bar{background:#C79A45;border-color:#C79A45;color:#12100E}
+.mv.now .nm{color:#F2E3C0}
+/* ══ 練習モード ══ 本番と間違えないよう 見た目をはっきり変える */
+.reh{border:1px dashed rgba(239,233,223,.3);border-radius:14px;padding:14px 15px;margin-top:12px}
+.rehh{font-size:13px;letter-spacing:.1em;color:#EFE9DF}
+.rehh i{font-style:normal;font-size:12px;color:#F0A79C}
+.rehd{font-size:12.5px;line-height:1.8;color:rgba(239,233,223,.5);margin:6px 0 0}
+.rehT{font-family:'Noto Serif JP',serif;font-size:34px;color:#fff;margin-top:10px;font-variant-numeric:tabular-nums}
+.rehT s{text-decoration:none;font-size:14px;color:rgba(239,233,223,.45);margin-left:8px}
+.rehN{font-size:17px;color:#F2E3C0;margin-top:2px}
+.rehN i{font-style:normal;font-size:13px;color:rgba(239,233,223,.5);margin-left:10px}
+.rehP{height:6px;border-radius:99px;background:rgba(239,233,223,.14);overflow:hidden;margin-top:9px}
+.rehP i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#C9A88C,#C79A45)}
+.rehb{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.rehb button{flex:1 0 auto;background:none;border:1px solid rgba(239,233,223,.3);color:#EFE9DF;
+  border-radius:999px;padding:11px 14px;font:inherit;font-size:13.5px;cursor:pointer;white-space:nowrap}
+.rehb button.stop{border-color:rgba(240,167,156,.5);color:#F0A79C}
+/* ★本番の合図は 練習と取り違えないよう 枠を実線にして色を分ける */
+.reh.sig{border-style:solid;border-color:rgba(199,154,69,.4);background:rgba(199,154,69,.05)}
+.sigT{font-family:'Noto Serif JP',serif;font-size:30px;color:#fff;margin-top:10px;font-variant-numeric:tabular-nums}
+.sigN{font-size:15px;color:rgba(239,233,223,.7);margin-top:2px}
+.sigN b{color:#F2E3C0}
+.sigL{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.sigL span{font-size:12px;border:1px solid rgba(239,233,223,.22);border-radius:999px;
+  padding:4px 10px;color:rgba(239,233,223,.45)}
+.sigL span.on{border-color:#9ED2AE;color:#9ED2AE}
 .saved{text-align:center;font-size:13.5px;color:#9ED2AE;margin-top:10px;min-height:20px}
 @media(min-width:700px){.big{font-size:30px}.pr span,.kv span{font-size:21px}}
 </style>
@@ -427,15 +461,30 @@ function meter(t,label,n){
 const DYN=n=>!n?'':(n<=2?'pp':n<=4?'p':n<=6?'mp':n<=8?'f':'ff');
 const DYNJ=n=>!n?'':(n<=2?'ごく弱く':n<=4?'弱く':n<=6?'ふつうに':n<=8?'強く':'いちばん強く');
 
-/* 工程＝楽章。時間は施術の開始からの分（所要は施術＋15分） */
+/* ══ 持ち時間の割り付け ══
+   ★所要 = 施術 + 15分（2026-08-01 オーナー確認）。
+     その15分は お迎え6＋お召し替え5＋お席へ4 として施術の前に置く。
+   ★コースの長さで伸び縮みするのは「ほぐし」だけ。
+     短いコースほど主役が痩せるので、数字で見えるようにしておく。 */
+function durations(mn, hasBath){
+  const bath = hasBath ? 10 : 0;
+  const wash = Math.min(12, Math.max(6, Math.round(mn*0.2)));
+  const back = Math.min(12, Math.max(5, Math.round(mn*0.15)));
+  const fin  = 8;
+  const relax = Math.max(5, mn - bath - wash - back - fin);
+  return {welcome:6, change:5, seat:4, bath, wash, relax, back, fin};
+}
+
+/* 工程＝楽章。持ち時間から組み立てる */
 function score(){
   const q=CUR||{}, mn=(RESV&&RESV.minutes)||90;
+  const D=durations(mn, !!q.bath);
   const quiet=/話しかけない|静か|ゆっくり|眠/.test(String(q.talk||'')+String(q.goal||''));
   const sleepy=/眠って|ねむって/.test(String(q.goal||''));
   const parts=String(q.parts||'').split('／').map(x=>x.trim()).filter(Boolean);
   const M=[];
 
-  M.push({t:-15,name:'お迎え',it:'Preludio',
+  M.push({dur:D.welcome,name:'お迎え',it:'はじまり',it2:'Preludio',
     say: quiet?['お名前だけ確認して お部屋へ　説明は最小限に']
               :['「本日はありがとうございます」','ご希望はもう届いていますと ひと言だけ'],
     care:['受付で書くものは出さない（もう頂いている）',
@@ -443,11 +492,11 @@ function score(){
           'お手洗いをこの時点で一度うかがう'].filter(Boolean)});
 
   if(q.sheet&&q.sheet!=='今回はいいです')
-    M.push({t:-8,name:'お召し替え',it:'Intermezzo',
+    M.push({dur:D.change,name:'お召し替え',it:'あいだに',it2:'Intermezzo',
       say:[`「${q.sheet}のシートをご用意しています」`,'香りだけ先にお見せする'],
       care:['ガウンの前にシートをお渡しする','汗のことは言わない　差し出すだけ']});
 
-  M.push({t:0,name:'お席へ',it:'Adagio',
+  M.push({dur:D.seat,name:'お席へ',it:'ゆっくりと',it2:'Adagio',
     say:[ q.drink&&q.drinkTime!=='終わってから'?`「${q.drink}をお持ちしますね」`:'',
           '「姿勢はつらくないですか」' ].filter(Boolean),
     care:[ q.pillow?`枕：${q.pillow}`:'',
@@ -456,13 +505,13 @@ function score(){
            q.soundN?`音は ${DYNJ(q.soundN)}（${DYN(q.soundN)}）`:'',
            q.music?`音楽：${q.music}`:'' ].filter(Boolean)});
 
-  if(q.bath) M.push({t:8,name:'頭浸浴',it:'Andante',
+  if(q.bath) M.push({dur:D.bath,name:'頭浸浴',it:'歩くはやさで',it2:'Andante',
     say:['「お湯の温度はいかがですか」','ここから先は 目を閉じていて大丈夫ですと伝える'],
     care:[ q.tempN?`お湯 ${DYNJ(q.tempN)}（${DYN(q.tempN)}）`:'',
            '生えぎわにタオルを当ててから流す',
            q.face?`お顔まわり：${q.face}`:'' ].filter(Boolean)});
 
-  M.push({t:q.bath?18:8,name:'洗い',it:'Allegretto',
+  M.push({dur:D.wash,name:'洗い',it:'すこし軽やかに',it2:'Allegretto',
     say:[ q.washPower?`「${q.washPower.replace(/（.*/,'')}でまいります」と先に言う`:'',
           '強さを一度だけ確かめる　そのあとは聞かない' ].filter(Boolean),
     care:[ q.washPower?`シャンプー ${q.washPower}`:'',
@@ -470,21 +519,21 @@ function score(){
            '爪を立てない　指の腹だけ',
            ...(q.wash?[String(q.wash)]:[]) ]});
 
-  M.push({t:q.bath?30:20,name:'ほぐし',it:'Largo　—　この楽章がいちばん長い',
+  M.push({dur:D.relax,name:'ほぐし',it:'いちばん長く',it2:'Largo',
     say: quiet?['声はかけない　力を変えるときだけ短く']
               :['部位を移るときに ひと言だけ添える'],
     care:[ ...(parts.length?parts:['おまかせ']),
            q.avoidParts?`★触れない：${q.avoidParts}`:'',
            '同じ場所を続けすぎない　左右差を最後に整える' ].filter(Boolean)});
 
-  M.push({t:mn-12,name:'戻ってくる',it:'Ritardando',
+  M.push({dur:D.back,name:'戻ってくる',it:'だんだん ゆるめて',it2:'Ritardando',
     say: sleepy?[`「${q.sleep||'そのまま'}」とうかがっています`,'起こす場合は 名前を呼ばず 手の圧をゆるめてから']
                :['「そろそろお戻りいただきます」と 小さな声で'],
     care:[ q.sleep?`眠ってしまったら：${q.sleep}`:'',
            '灯りを一段だけ上げる（急に明るくしない）',
            q.drinkTime&&q.drinkTime!=='着いてすぐ'?`お飲みもの：${q.drink||''} を ${q.drinkTime}`:'' ].filter(Boolean)});
 
-  M.push({t:mn,name:'仕上げ・お見送り',it:'Coda',
+  M.push({dur:D.fin,name:'仕上げ・お見送り',it:'おわり',it2:'Coda',
     say:['「キレイになりましたね」を必ず言う　←ここで満足が完成する',
          'おうちでのケアを ひとつだけお伝えする',
          '次回のご予約を その場でおすすめする'],
@@ -492,8 +541,94 @@ function score(){
            q.styling?`スタイリング：${q.styling}`:'',
            q.care?`お試し：${q.care}`:'',
            '「おわりに」タブに 今日の一行を書く（翌朝お届けします）' ].filter(Boolean)});
+  /* ご来店を0分として積み上げる */
+  let acc=0;
+  for(const m of M){ m.at=acc; acc+=m.dur; }
   /* ★空の行が「・」だけになって残る事故を防ぐ（実際に出た） */
   return M.map(m=>({...m, say:(m.say||[]).filter(Boolean), care:(m.care||[]).filter(Boolean)}));
+}
+
+/* ══════════════════════════════════════════════════════════
+   練習モード
+
+   ★「誰がやっても同じ」は、本番で画面を見て作るものではない。
+     施術中は手が濡れていて触れないし、画面を見ている人は
+     お客様を見ていない（＝2万人レポートがいちばん評価すると
+     結論づけた「言う前に気づく」が消える）。
+
+   ★だから時計はフロアの外で使う。ここで身体にリズムを入れて、
+     本番は譜面を見なくても進める状態にする。
+   ★4倍速まで出せるのは、90分を通しで練習させないため。
+     22分で全体の形が1周できる。
+   ══════════════════════════════════════════════════════════ */
+/* ══ 本番の合図 ══
+   ★画面は見ない。時間が本当にお金になる3点だけ 手を止めずに分かればいい。
+     ・ほぐしに入る　・戻し始める（外すと必ず押す）　・仕上げ5分前
+   ★正直な限界：ブラウザは 画面を消すと時計が止まります（iOSは特に）。
+     伏せて置く（画面はついたまま）なら動きます。
+     ポケットで確実に受け取りたければ Apple Watch か専用アプリが要ります。
+     ここでは まず「3点で足りるのか」を確かめるための試作として置きます。 */
+let SIG=null;
+function sigStop(){ if(SIG&&SIG.timer)clearInterval(SIG.timer); SIG=null; paintSig(); }
+function sigStart(){
+  const M=score();
+  let acc=0; const marks=[];
+  M.forEach(m=>{ 
+    if(m.name==='ほぐし') marks.push({at:acc, why:'ほぐしに入る'});
+    if(m.name==='戻ってくる') marks.push({at:acc, why:'戻し始める'});
+    if(m.name==='仕上げ・お見送り') marks.push({at:acc-5, why:'仕上げ5分前'});
+    acc+=m.dur; });
+  SIG={t0:Date.now(), marks, fired:{}, total:acc};
+  SIG.timer=setInterval(()=>{
+    const min=(Date.now()-SIG.t0)/60000;
+    SIG.marks.forEach((k,n)=>{
+      if(!SIG.fired[n] && min>=k.at){ SIG.fired[n]=true;
+        try{ navigator.vibrate&&navigator.vibrate([180,90,180]); }catch(e){}
+      }});
+    paintSig();
+    if(min>SIG.total) sigStop();
+  },1000);
+  paintSig();
+}
+function paintSig(){
+  const el=document.getElementById('sigBar'); if(!el)return;
+  if(!SIG){ el.innerHTML=''; return; }
+  const min=(Date.now()-SIG.t0)/60000;
+  const nx=SIG.marks.find((k,n)=>!SIG.fired[n]);
+  el.innerHTML=`<div class="sigT">${String(Math.floor(min)).padStart(2,'0')}:${String(Math.floor((min%1)*60)).padStart(2,'0')}</div>
+    ${nx?`<div class="sigN">つぎの合図　<b>${esc(nx.why)}</b>　あと ${Math.max(0,Math.ceil(nx.at-min))}分</div>`
+        :'<div class="sigN">合図はすべて鳴りました</div>'}
+    <div class="sigL">${SIG.marks.map((k,n)=>`<span class="${SIG.fired[n]?'on':''}">${esc(k.why)}</span>`).join('')}</div>`;
+}
+
+let REH=null;   // {t0, sec, speed, timer}
+function rehStop(){ if(REH&&REH.timer)clearInterval(REH.timer); REH=null; }
+function rehStart(speed){
+  rehStop();
+  REH={sec:0, speed:speed||1};
+  REH.timer=setInterval(()=>{ REH.sec+=REH.speed; rehTick(); }, 1000);
+  rehTick();
+}
+function rehTick(){
+  const M=score(), total=M.reduce((a,m)=>a+m.dur,0);
+  const min=REH?REH.sec/60:0;
+  let cur=-1, acc=0;
+  M.forEach((m,n)=>{ if(min>=acc && min<acc+m.dur)cur=n; acc+=m.dur; });
+  if(min>=total){ cur=M.length-1; }
+  const bar=document.getElementById('rehBar');
+  if(bar){
+    const m0=Math.floor(min), s0=Math.floor((min-m0)*60);
+    const c=cur>=0?M[cur]:null;
+    let left=0, a2=0;
+    M.forEach((m,n)=>{ if(n===cur)left=(a2+m.dur)-min; a2+=m.dur; });
+    bar.innerHTML=`<div class="rehT">${String(m0).padStart(2,'0')}:${String(s0).padStart(2,'0')}
+        <s>/ ${total}分</s></div>
+      ${c?`<div class="rehN">${esc(c.name)}<i>のこり ${Math.max(0,Math.ceil(left))}分</i></div>`:''}
+      <div class="rehP"><i style="width:${Math.min(100,min/total*100)}%"></i></div>`;
+  }
+  document.querySelectorAll('.mv').forEach((el,n)=>el.classList.toggle('now',n===cur));
+  const el=document.querySelectorAll('.mv')[cur];
+  if(el&&REH&&Math.floor(min*60)%5===0)el.scrollIntoView({block:'center',behavior:'smooth'});
 }
 
 function paintScore(p){
@@ -515,20 +650,52 @@ function paintScore(p){
     <div class="sec"><h3>今日の譜面</h3>
       <p class="scn">上から順に　声がけは言うこと　心遣いは言わずにすること<br>
         強弱記号は このお客様が選んだ強さです</p></div>
+    <div class="reh">
+      <div class="rehh">練習モード　<i>フロアでは使いません</i></div>
+      <p class="rehd">施術中は手が濡れていて画面を触れませんし、画面を見ている間は
+        お客様を見ていません。ここでリズムを覚えて、本番は見ないで進めてください。</p>
+      <div id="rehBar"></div>
+      <div class="rehb">
+        <button data-sp="1">等速で通す</button>
+        <button data-sp="4">4倍速（${Math.ceil(score().reduce((a,m)=>a+m.dur,0)/4)}分で1周）</button>
+        <button data-sp="0" class="stop">とめる</button>
+      </div>
+    </div>
+    <div class="reh sig">
+      <div class="rehh">本番の合図　<i>試作</i></div>
+      <p class="rehd">画面は見ません。時間がお金になる3点だけ 振動でお知らせします。<br>
+        <b style="color:#F0A79C">画面を消すと時計が止まります</b>（伏せて置いてください）。
+        ポケットで確実に受け取るには Apple Watch が要ります。</p>
+      <div id="sigBar"></div>
+      <div class="rehb">
+        <button id="sigGo">お客様がお席についたら押す</button>
+        <button id="sigOff" class="stop">とめる</button>
+      </div>
+    </div>
     <div class="staff5">
       ${M.map((m,n)=>`
       <div class="mv${done[n]?' done':''}" data-n="${n}">
         <div class="mvh">
           <span class="bar">${n+1}</span>
-          <span class="tm">${hm(Math.max(0,st+m.t))}</span>
+          <span class="tm">${hm(Math.max(0,st-15+m.at))}</span>
+          <span class="dur">${m.dur}分</span>
           <span class="nm">${esc(m.name)}</span>
           <button class="ck" aria-label="この楽章を終えた">✓</button>
         </div>
-        <p class="ital">${esc(m.it)}</p>
+        <p class="ital">${esc(m.it)}<em>${esc(m.it2||'')}</em></p>
         ${m.say.length?`<div class="line say"><b>声がけ</b><ul>${m.say.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
         ${m.care.length?`<div class="line care"><b>心遣い</b><ul>${m.care.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
       </div>`).join('')}
     </div>`;
+  const sg=p.querySelector('#sigGo'), so=p.querySelector('#sigOff');
+  if(sg)sg.onclick=()=>{ try{navigator.vibrate&&navigator.vibrate(60);}catch(e){} sigStart(); };
+  if(so)so.onclick=sigStop;
+  p.querySelectorAll('.rehb button[data-sp]').forEach(b=>b.onclick=()=>{
+    const sp=+b.dataset.sp;
+    if(!sp){ rehStop(); document.getElementById('rehBar').innerHTML='';
+      document.querySelectorAll('.mv').forEach(x=>x.classList.remove('now')); return; }
+    rehStart(sp);
+  });
   p.querySelectorAll('.mv .ck').forEach(b=>b.onclick=()=>{
     const mv=b.closest('.mv'), n=mv.dataset.n;
     done[n]=!done[n]; mv.classList.toggle('done',!!done[n]);
@@ -543,6 +710,8 @@ function paint(){
   if(TAB==='after'){ paintAfter(p); return; }
   if(TAB==='score'){ paintScore(p); return; }
   if(TAB==='karte'){ paintKarte(p); return; }
+  /* ★事前にうかがった力加減を、カルテの初期値にする。
+     お客様は先に答えてくださっている。もう一度聞くのは、聞いていないのと同じ。 */
   if(!CUR){ p.innerHTML='<p class="none" style="margin-top:20px">このお客様は まだご記入がありません<br>当日おうかがいしてください</p>'; return; }
   const stop=[CUR.avoidParts&&('触れない：'+CUR.avoidParts),CUR.avoid].filter(Boolean).join('　／　');
   /* ★アレルギーは「苦手」と混ぜない。苦手は好みだが、これは安全の話。
@@ -553,10 +722,16 @@ function paint(){
     : (CUR.allergyNone
       ? '<div class="sec okrg"><h3>アレルギー</h3><p class="okv">うかがいました　特にありません</p></div>'
       : '<div class="sec alrg"><h3>アレルギー</h3><p class="mid">まだうかがえていません</p><p class="algsub">当日 必ずご確認ください</p></div>');
+  /* きょうの気分は、いちばん先に読んでほしい。
+     「いつも通り」と答えた方にこそ、ひと匙だけ足す余地がある（2万人調査）。 */
+  const mood=CUR.mood?`<div class="sec mood"><h3>きょうの気分</h3><p class="big">${esc(CUR.mood)}</p>
+    ${CUR.mood.indexOf('いつも通り')>=0?'<p class="algsub">いつもの心地よさに ひと匙だけ足してください</p>':''}
+    ${CUR.mood.indexOf('思いきって')>=0?'<p class="algsub">印象が変わるご提案を 用意してお迎えしてください</p>':''}</div>`:'';
   if(TAB==='prep'){
     /* したく＝お迎えの前に整えるもの */
     p.innerHTML=`
       ${alg}
+      ${mood}
       ${stop?`<div class="sec stop"><h3>先に確認</h3><p class="mid">${esc(stop)}</p></div>`:''}
       ${(CUR.sheet&&CUR.sheet!=='今回はいいです')?`<div class="sec"><h3>お召し替えの前に</h3>
         <p class="big">リフレッシュシート　${esc(CUR.sheet)}</p></div>`:''}
@@ -625,11 +800,20 @@ const kMixText=b=>kMixes(b).map(m=>[m.where,
   m.oxy?(m.oxy+(m.oxyG?' '+m.oxyG+'g':'')):'', m.min?m.min+'分':'']
   .filter(Boolean).join(' ')).filter(Boolean).join(' ／ ');
 
+/* 来店前にうかがった力加減を、カルテの言葉に置きかえる */
+function preShampoo(){
+  const w=(CUR&&(CUR.washPower||''))||'';
+  if(!w)return '';
+  if(/とてもやさし|やさしく/.test(w))return '弱め希望';
+  if(/とてもしっかり|しっかり/.test(w))return '強め希望';
+  if(/ふつう/.test(w))return 'ちょうどよい';
+  return '';
+}
 async function kLoad(){
   const key=(String(RESV.phone||'').replace(/[^0-9]/g,''))||('n:'+(RESV.name||''));
   KT={key,name:RESV.name||'',phone:RESV.phone||'',date:DAY,staff:STAFFNM[RESV.staffId]||'',
       menu:RESV.menuName||'',resvId:RESV.id,body:{mix:[],treat:'',free:''},nextNote:'',assistant:'',
-      advice:[],shampoo:''};
+      advice:[],shampoo:preShampoo()};
   KT_LAST=null;
   try{
     const r=await fetch(U(`/karte?key=${encodeURIComponent(key)}`));
@@ -671,7 +855,7 @@ function paintKarte(p){
       <button class="kbtn" id="kadd">＋ 塗りを足す</button></div>
     <div class="sec"><h3>今日お伝えしたこと</h3>
       <div class="kchips">${KADV.map(x=>`<button class="kchip ${(KT.advice||[]).includes(x)?'on':''}" data-adv="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
-    <div class="sec"><h3>シャンプーの強さ</h3>
+    <div class="sec"><h3>シャンプーの強さ${(CUR&&CUR.washPower)?`<span style="color:rgba(239,233,223,.5);letter-spacing:0;margin-left:8px">来店前のご希望 ${esc(CUR.washPower)}</span>`:''}</h3>
       <div class="kchips">${KSHAM.map(x=>`<button class="kchip ${KT.shampoo===x?'on':''}" data-sham="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
     <div class="sec"><h3>ついたアシスタント</h3>
       <input id="kasst" class="kin" value="${esc(KT.assistant||'')}" placeholder="例）田中（シャンプー・塗布）"></div>
