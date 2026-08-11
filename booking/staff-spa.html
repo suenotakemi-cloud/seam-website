@@ -547,6 +547,19 @@ function prFormHtml(){
       <input class="kin" id="pf-mn" value="${esc(f.modelName||'')}" placeholder="モデルさんのお名前">
       <label class="pf-l">いただいたモデル料金</label>
       <input class="kin" id="pf-mf" type="number" inputmode="numeric" value="${f.modelFee||''}" placeholder="例）3000">
+      ${+f.modelFee?`
+      <div class="kchips">
+        ${[['cash','現金'],['card','カード'],['qr','QR'],['emoney','電子マネー']].map(([k,l])=>
+          `<button class="kchip ${(f.feeMethod||'cash')===k?'on':''}" data-pfm="${k}">${l}</button>`).join('')}
+      </div>
+      ${(f.feeMethod||'cash')==='cash'?`
+        <div class="kchips">
+          <button class="kchip ${f.feeInReg?'on':''}" id="pf-fr">レジに入れた</button>
+          <button class="kchip ${!f.feeInReg?'on':''}" id="pf-fk">預かっている</button>
+        </div>
+        <p class="hint">${f.feeInReg?'ありがとうございます':'預かったままだと、翌日の現金が合いません。事務の画面に残ります'}</p>`:''}
+      <p class="hint">この金額はレジを通ります（お店の売上として記録されます）<br>
+        歩合や客単価には入りません</p>`:''}
       <label class="pf-l">使った薬剤</label>
       ${(f.mix||[]).map((m,i)=>`<div class="kmix">
         <div class="kmh"><b>${m.where||'全体'}</b><button data-pdm="${i}">✕</button></div>
@@ -562,8 +575,12 @@ function prFormHtml(){
       <button class="kbtn" id="pf-add">＋ 塗りを足す</button>
       ${mc.g?`<div class="matbox ${mc.bleach?'hi':''}">
         <div class="mat-l">この練習の材料費</div><div class="mat-n">${mc.yen?('¥'+mc.yen.toLocaleString()):'—'}</div>
-        <div class="mat-s">${mc.g}g　${f.modelFee?`モデル料金 ¥${(+f.modelFee).toLocaleString()}　差引 ¥${((+f.modelFee||0)-mc.yen).toLocaleString()}`:'モデル料金を入れると差引が出ます'}
-          <br>営業の材料費率には入れません</div></div>`:''}
+        <div class="mat-s">${mc.g}g　${
+          mc.unknown?`単価の分からない薬剤が ${mc.unknown}件あります　差引は出せません`
+          :(f.modelFee?`モデル料金 ¥${(+f.modelFee).toLocaleString()}　差引 ¥${((+f.modelFee||0)-mc.yen).toLocaleString()}`
+                     :'モデル料金を入れると差引が出ます')}
+          <br>営業の材料費率には入れません
+          ${!mc.unknown&&f.modelFee&&(+f.modelFee)>mc.yen?'<br>実費より多くいただいています　実費までにしてください':''}</div></div>`:''}
       <label class="pf-l">ビフォー・アフター</label>
       <div class="pfimgs">
         <label class="pfimg">${f.photoB?`<img src="${f.photoB}">`:'<span>ビフォー</span>'}
@@ -594,7 +611,7 @@ function prWire(){
     PRF={mins:Math.max(1,Math.round((Date.now()-PRON.t)/60000)),kind:PRON.kind,
       startAt:new Date(PRON.t).toISOString(),endAt:new Date().toISOString(),
       date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
-      hasModel:false,modelName:'',modelFee:'',mix:[],teacher:'',nextBooked:false,note:'',photoB:'',photoA:''};
+      hasModel:false,modelName:'',modelFee:'',feeMethod:'cash',feeInReg:true,mix:[],teacher:'',nextBooked:false,note:'',photoB:'',photoA:''};
     render();};
   const h=document.getElementById('prHand');
   if(h)h.onclick=async()=>{
@@ -603,7 +620,7 @@ function prWire(){
     if(!d)return;
     const mn=+prompt('何分でしたか','60'); if(!mn)return;
     PRF={mins:mn,kind:prompt('いつの時間ですか（出勤前／退勤後／休みの日）','退勤後')||'',
-      date:d,hasModel:false,modelName:'',modelFee:'',mix:[],teacher:'',nextBooked:false,note:'',photoB:'',photoA:''};
+      date:d,hasModel:false,modelName:'',modelFee:'',feeMethod:'cash',feeInReg:true,mix:[],teacher:'',nextBooked:false,note:'',photoB:'',photoA:''};
     render();};
   prFormWire();
 }
@@ -611,9 +628,15 @@ function prFormWire(){
   if(!PRF)return;
   const f=PRF, $$=id=>document.getElementById(id);
   const bind=(id,k)=>{const el=$$(id); if(el)el.oninput=()=>{f[k]=el.value;};};
-  bind('pf-note','note'); bind('pf-mn','modelName'); bind('pf-mf','modelFee'); bind('pf-tc','teacher');
+  bind('pf-note','note'); bind('pf-mn','modelName'); bind('pf-tc','teacher');
+  /* 金額は、入れ終わったところで描き直す（打っている途中で消えないように） */
+  if($$('pf-mf'))$$('pf-mf').onchange=()=>{f.modelFee=$$('pf-mf').value;render();};
+  if($$('pf-mf'))$$('pf-mf').oninput=()=>{f.modelFee=$$('pf-mf').value;};
   if($$('pf-hm'))$$('pf-hm').onclick=()=>{f.hasModel=true;render();};
   if($$('pf-nm'))$$('pf-nm').onclick=()=>{f.hasModel=false;render();};
+  document.querySelectorAll('[data-pfm]').forEach(x=>x.onclick=()=>{f.feeMethod=x.dataset.pfm;render();});
+  if($$('pf-fr'))$$('pf-fr').onclick=()=>{f.feeInReg=true;render();};
+  if($$('pf-fk'))$$('pf-fk').onclick=()=>{f.feeInReg=false;render();};
   if($$('pf-nb'))$$('pf-nb').onclick=()=>{f.nextBooked=true;render();};
   if($$('pf-nn'))$$('pf-nn').onclick=()=>{f.nextBooked=false;render();};
   if($$('pf-add'))$$('pf-add').onclick=()=>{f.mix.push({where:'全体',agents:[],oxy:'',oxyG:'',min:''});render();};
@@ -653,6 +676,7 @@ function prFormWire(){
       body:JSON.stringify({date:f.date,minutes:f.mins,kind:f.kind,note:f.note,
         startAt:f.startAt||'',endAt:f.endAt||'',
         modelName:f.hasModel?f.modelName:'',modelFee:f.hasModel?(+f.modelFee||0):0,
+        feeMethod:f.feeMethod||'cash',feeInReg:!!f.feeInReg,
         agents:f.hasModel?f.mix:[],matCost:f.hasModel?mc.yen:0,
         teacher:f.teacher,checked:!!f.teacher,nextBooked:!!f.nextBooked,
         photoB:f.photoB,photoA:f.photoA})}).catch(()=>{});
