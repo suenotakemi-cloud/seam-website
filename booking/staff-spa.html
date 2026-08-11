@@ -757,7 +757,12 @@ function meHtml(){
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
   if(PRF){ app.innerHTML=prFormHtml(); prFormWire(); return; }
-  app.innerHTML=meHtml()+snHtml()+prHtml()+mdHtml()+notiHtml()+`<h1>今日のお客様</h1>
+  /* ★開いた瞬間に見えるのは「今日のお客様」だけでいい。
+     ここに来るのは施術の合間の数十秒で、見たいのは次にお会いする方だから。
+     自分の数字・そろそろの方・練習・モデル・申し送りを上に積んでいたせいで、
+     本題にたどり着くまで1.8画面ぶんスクロールする画面になっていた（実測1,480px）。
+     読ませたいものほど下に置く。上に積むのは、こちらの都合。 */
+  app.innerHTML=`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
       <button class="card" data-i="${n}">
@@ -767,7 +772,8 @@ function render(){
         <span class="tag ${r.wrote?'wr':(r.done?'on':'off')}">${r.wrote?'書きおき済':(r.done?'ご希望あり':'未記入')}</span>
       </button>`).join('')}</div>`
     :'<div class="empty">この日のご予約はまだありません</div>'}
-    <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`;
+    <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`
+    +notiHtml()+snHtml()+mdHtml()+prHtml()+meHtml();
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
   notiWire(); prWire(); mdWire(); snWire();
   document.getElementById('rl').onclick=load;
