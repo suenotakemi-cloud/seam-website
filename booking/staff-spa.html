@@ -92,6 +92,16 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   padding:9px 6px;font:inherit;font-size:12.5px;color:#2f2a24;cursor:pointer}
 .md-btns button.on{background:#12100E;color:#fff;border-color:#12100E}
 .md-st{font-size:11.5px;color:#a08c6a;font-weight:700}
+/* ── そろそろの方 ── */
+.sn-a{background:#fff;border:1px solid #ece5d9;border-radius:11px;padding:11px 12px;margin-top:7px}
+.sn-a .n{font-size:15.5px;font-weight:700}
+.sn-a .m{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
+.sn-a .d{font-size:12px;color:#8a8177;font-weight:600;white-space:nowrap}
+.sn-a .no{font-size:10.5px;color:#B4302B;font-weight:800;border:1px solid #f0cdcb;
+  border-radius:7px;padding:1px 6px;white-space:nowrap}
+.sn-a .ok{margin-left:auto;background:none;border:1px solid #ddd5c8;border-radius:9px;padding:8px 12px;
+  font:inherit;font-size:12.5px;color:#2f2a24;cursor:pointer;white-space:nowrap}
+.sn-t{font-size:11.5px;color:#7a6f60;font-weight:700;margin:12px 0 0}
 /* ── 練習の記録 ── */
 .prform{padding:4px 0 30px}
 .pf-h{font-family:'Noto Serif JP',serif;font-size:22px;color:#12100E;margin:8px 0 16px}
@@ -358,7 +368,7 @@ async function load(){
     const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad()]); render();
+    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad(),snLoad()]); render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
 async function askToken(msg){
@@ -474,6 +484,46 @@ function prHtml(){
         <button class="pr-b line" id="prHand">あとから入れる</button></div>`}
   </div>`;
 }
+/* ── そろそろの方 ──
+ * ★自動のLINEは、LINEに登録された方にしか飛ばない。
+ *   登録されていない方は、時期が来ても誰の目にも触れないまま失客する。
+ *   そこを埋めるのはこの名簿だけ。だから「LINEなし」を目立たせる。
+ * ★出すのは自分のお客様だけ。他の担当のお客様に声をかけると角が立つ。 */
+let SN=null;
+async function snLoad(){
+  try{ const r=await fetch(U('/soon')); const j=await r.json(); SN=j&&j.ok?j:null; }catch(e){ SN=null; }
+}
+function snRow(x){
+  return `<div class="sn-a" data-sn="${esc(x.key)}">
+    <div class="n">${esc(x.name)} 様</div>
+    <div class="m">
+      <span class="d">前回から ${x.since}日${x.cycle?`　いつもは ${x.cycle}日`:''}</span>
+      ${x.line?'':'<span class="no">LINEなし</span>'}
+      <button class="ok">お声がけした</button></div></div>`;
+}
+function snHtml(){
+  if(!SN)return '';
+  const f=SN.はじめて||[], r=SN.いつもの||[];
+  if(!f.length&&!r.length)return '';
+  return `<div class="prbox">
+    <div class="pr-h">そろそろの方　${f.length+r.length}人</div>
+    ${f.length?`<div class="sn-t">はじめてお越しになって、まだ次が無い方</div>
+      ${f.slice(0,8).map(snRow).join('')}`:''}
+    ${r.length?`<div class="sn-t">いつもの間隔を過ぎている方</div>
+      ${r.slice(0,8).map(snRow).join('')}`:''}
+  </div>`;
+}
+function snWire(){
+  document.querySelectorAll('[data-sn]').forEach(box=>{
+    box.querySelector('.ok').onclick=async()=>{
+      box.querySelector('.ok').disabled=true;
+      try{ await fetch(U('/soon/done'),{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({key:box.dataset.sn})}); }catch(e){}
+      box.style.display='none';
+    };
+  });
+}
+
 /* ── モデル募集 ──
  * ★営業時間の外のことなので、予約表とは繋げない。
  *   担当ごとのリンクにする＝誰が声をかけて来てくださったかが残る。
@@ -707,7 +757,7 @@ function meHtml(){
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
   if(PRF){ app.innerHTML=prFormHtml(); prFormWire(); return; }
-  app.innerHTML=meHtml()+prHtml()+mdHtml()+notiHtml()+`<h1>今日のお客様</h1>
+  app.innerHTML=meHtml()+snHtml()+prHtml()+mdHtml()+notiHtml()+`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
       <button class="card" data-i="${n}">
@@ -719,7 +769,7 @@ function render(){
     :'<div class="empty">この日のご予約はまだありません</div>'}
     <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`;
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
-  notiWire(); prWire(); mdWire();
+  notiWire(); prWire(); mdWire(); snWire();
   document.getElementById('rl').onclick=load;
 }
 

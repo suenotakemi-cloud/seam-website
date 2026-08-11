@@ -534,6 +534,45 @@ function supHtml(){
     <p class="note">数を増やすときは、レジの「商品と在庫」から入荷を入れてください　備品も同じ入れ方です</p>`;
 }
 
+/* ── そろそろの方 ──
+ * ★事務が見るのは名前ではなく「担当ごとの本数」と「LINEなしの人数」。
+ *   LINEなしの方は自動のご案内が飛ばないので、人が動かないと必ず失客する。
+ *   ここが担当によって偏っていたら、それは仕組みでなく人の問題として扱える。 */
+let SN=null;
+function snHtml(){
+  if(!SN)return '<div class="empty">読み込んでいます…</div>';
+  const f=SN.はじめて||[], r=SN.いつもの||[], m=SN.まとめ||{};
+  const row=x=>`<tr><td>${esc(x.name)}${x.uncertain?'<span class="tsub">　電話なし</span>':''}</td>
+    <td>${esc(x.staff||'—')}</td><td class="num">${x.visits}</td>
+    <td class="num">${x.since}</td><td class="num">${x.over}</td>
+    <td>${x.line?'<span class="tsub">LINEあり</span>':'<b style="color:var(--danger)">LINEなし</b>'}</td></tr>`;
+  const tbl=(a,cap)=>a.length?`<h2>${cap} ${a.length}人</h2>
+    <div class="tblwrap"><table><thead><tr><th>お客様</th><th>担当</th><th class="num">ご来店</th>
+      <th class="num">前回から</th><th class="num">超過</th><th>LINE</th></tr></thead>
+      <tbody>${a.map(row).join('')}</tbody></table></div>`:'';
+  const by=SN.担当ごと||{};
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">はじめての方</div>
+        <div class="kc-v">${(m.はじめて||{}).人数||0}</div>
+        <div class="kc-s">${SN.firstDays}日たっても2回目が無い方</div></div>
+      <div class="kc"><div class="kc-k">いつもの間隔を過ぎた方</div>
+        <div class="kc-v">${(m.いつもの||{}).人数||0}</div></div>
+      <div class="kc"><div class="kc-k">LINEなし</div>
+        <div class="kc-v" style="color:var(--danger)">${((m.はじめて||{}).LINEなし||0)+((m.いつもの||{}).LINEなし||0)}</div>
+        <div class="kc-s">自動のご案内が飛びません</div></div>
+    </div>
+    <p class="note">先のご予約がある方 ${m.予約あり||0}人・お声がけ済み ${m.お声がけ済み||0}人・まだ判定しない方 ${m.まだ判定しない||0}人は外しています<br>
+      ${esc(SN.ことわり||'')}　スタッフのスマホには、その人のお客様だけが出ています</p>
+    ${Object.keys(by).length?`<h2>担当ごと</h2>
+      <div class="tblwrap"><table><thead><tr><th>担当</th><th class="num">はじめて</th>
+        <th class="num">いつもの</th><th class="num">うちLINEなし</th></tr></thead>
+        <tbody>${Object.entries(by).sort((a,b)=>(b[1].はじめて+b[1].いつもの)-(a[1].はじめて+a[1].いつもの))
+          .map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v.はじめて}</td>
+            <td class="num">${v.いつもの}</td><td class="num">${v.LINEなし}</td></tr>`).join('')}</tbody></table></div>`:''}
+    ${tbl(f,'はじめてお越しになって、まだ次が無い方')}
+    ${tbl(r,'いつもの間隔を過ぎている方')}`;
+}
+
 /* ── モデル募集 ──
  * ★事務は「担当が返していない応募」だけ見ればいい。
  *   担当ごとの本数も出す。声をかけられている人と、そうでない人が分かる。 */
@@ -1204,6 +1243,7 @@ async function load(){
       $('body').querySelectorAll('.ap-st').forEach(b=>b.onclick=async()=>{
         await post('/recruit/status',{id:b.dataset.id,status:b.dataset.s}); load();});
     }
+    else if(TAB==='soon'){ SN=await get('/soon'); $('body').innerHTML=snHtml(); }
     else if(TAB==='md'){
       [MD,MDM]=await Promise.all([get('/model/apps'),
         get(`/model/money?from=${FROM}&to=${TO}`).catch(()=>null)]);
