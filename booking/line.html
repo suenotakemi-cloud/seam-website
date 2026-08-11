@@ -242,10 +242,26 @@ function npsWire(token){
   card.querySelectorAll('.npsbtn').forEach(b=>b.onclick=async()=>{
     card.querySelectorAll('.npsbtn').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');
-    try{ await jpost(API+'/nps',{token,score:+b.dataset.n}); }catch(e){}
-    /* どの数字でも、返す言葉は同じ。低い点のときだけ謝ると、正直に答えられなくなる */
+    const score=+b.dataset.n;
+    try{ await jpost(API+'/nps',{token,score}); }catch(e){}
+    /* ★点数のあとに、アドバイスの有無だけ聞く（2万人レポート 2026-05）。
+       業界のアドバイス率はスタイリング85%・ヘアケア77%で、上位店は95%超。
+       ここが店販の入口なので、担当ごとに測れるようにする。
+       ★点数を答えた方にだけ出す。最初から2問並べると答えてもらえない。 */
     card.innerHTML=`<h1 style="font-size:15.5px;margin-bottom:4px">ありがとうございます</h1>
-      <p class="sub">またお会いできるのを楽しみにしております</p>`;
+      <p class="sub" style="margin-bottom:12px">最後にひとつ 今日おうちでのお手入れについて お話はありましたか</p>
+      <div class="npsrow" style="grid-template-columns:1fr 1fr" id="advRow">
+        <button class="npsbtn" data-a="1">あった</button>
+        <button class="npsbtn" data-a="0">なかった</button>
+      </div>
+      <button class="btn ghost" id="advSkip" style="margin-top:12px">答えずに閉じる</button>`;
+    const done=()=>{ card.innerHTML=`<h1 style="font-size:15.5px;margin-bottom:4px">ありがとうございます</h1>
+      <p class="sub">またお会いできるのを楽しみにしております</p>`; };
+    const sk=document.getElementById('advSkip'); if(sk) sk.onclick=done;
+    card.querySelectorAll('#advRow .npsbtn').forEach(a=>a.onclick=async()=>{
+      try{ await jpost(API+'/nps',{token,score,advice:+a.dataset.a}); }catch(e){}
+      done();
+    });
   });
 }
 function receiptCard(r){
