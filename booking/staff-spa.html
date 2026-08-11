@@ -69,7 +69,7 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .mood{background:rgba(201,182,142,.12);border:1px solid rgba(201,182,142,.4);
   border-radius:14px;padding:14px 16px}
 .mood h3{color:#C9B68E}
-/* ── 時間（いちばん大きく出すのは「顔まわりに使える時間」）── */
+/* ── 時間（終わりの予定まで あと何分か） ── */
 .tbig{background:rgba(239,233,223,.06);border:1px solid rgba(239,233,223,.22);
   border-radius:16px;padding:18px;text-align:center;margin-bottom:4px}
 .tbig.ng{background:rgba(211,60,45,.16);border-color:rgba(232,96,80,.8)}
@@ -798,13 +798,8 @@ function paint(){
      果たせるのは書いた本人だけ＝開いたままの輪がひとつ残る。 */
 /* ══════════ 時間 ══════════
  * ★終わる予定を過ぎると、失客がはっきり増える。
- *   そして時間が無くなると、いちばん最後の「顔まわり」が削られる。
- *   削られたお客様は、鏡の前で「今日はこんなものか」と思って帰られる。
- *
- * だからこの画面がやることは1つだけ。
- *   **仕上げに使う時間を、先に取り置く。**
- *   残り時間ではなく「顔まわりに使える時間」を出す。
- *   そこを食い始めたら、赤で知らせる。
+ *   だからこの画面は「終わりの予定まで あと何分か」だけを大きく出す。
+ *   過ぎたら赤にする。それだけ。
  *
  * 押した時刻はそのまま残る（あとで担当ごとの守り方になる）。 */
 let TM=null, TMTICK=null, SOAK=null;
@@ -821,29 +816,22 @@ const tMin=iso=>{ if(!iso)return null; const d=new Date(Date.parse(iso)+9*3600e3
   return d.getUTCHours()*60+d.getUTCMinutes(); };
 const nowMin=()=>{ const d=new Date(Date.now()+9*3600e3); return d.getUTCHours()*60+d.getUTCMinutes(); };
 const mmss=s2=>`${String(Math.floor(Math.abs(s2)/60)).padStart(2,'0')}:${String(Math.abs(s2)%60).padStart(2,'0')}`;
-/* 仕上げに残しておく時間。ここを削らせない */
-const FINISH_KEEP=15;
 
 function paintTime(p){
   if(!TM){ p.innerHTML='<p class="none" style="margin-top:20px">読み込んでいます…</p>';
     tLoad().then(()=>paint()); return; }
   const t=TM.times, s0=RESV.start||0, e0=RESV.end||(s0+60), n=nowMin();
   const doneAt=t.done?tMin(t.done.at):null;
-  const finAt=t.finish?tMin(t.finish.at):null;
-  /* 顔まわりに使える時間＝終わりの予定 − いま（仕上げがまだなら） */
-  const leftToEnd=e0-n;
-  const keepFrom=e0-FINISH_KEEP;          // ここまでに仕上げへ入りたい
-  const beforeFinish=!finAt;
-  const room=beforeFinish?(keepFrom-n):(e0-n);
-  const warn=beforeFinish&&room<=0;
+  const room=e0-n;                        // 終わりの予定まで、あと何分
+  const warn=room<0&&doneAt==null;
   const late=t.start?(tMin(t.start.at)-s0):null;
   const custLate=t.arrive?(tMin(t.arrive.at)-s0):null;
 
   p.innerHTML=`
     <div class="tbig ${warn?'ng':''}">
-      <div class="tb-l">${beforeFinish?'顔まわりに使える時間':'終わりの予定まで'}</div>
+      <div class="tb-l">終わりの予定まで</div>
       <div class="tb-n">${doneAt!=null?'おわりました':(room>=0?`あと ${room}分`:`${-room}分 こえています`)}</div>
-      <div class="tb-s">ご予約 ${hm(s0)}〜${hm(e0)}${beforeFinish?`　仕上げは ${hm(keepFrom)} までに始めたい`:''}</div>
+      <div class="tb-s">ご予約 ${hm(s0)}〜${hm(e0)}</div>
     </div>
     ${custLate!=null&&custLate>5?`<div class="sec stop"><h3>お客様のご到着</h3>
       <p class="mid">ご予約より ${custLate}分 おそくお見えです</p>
