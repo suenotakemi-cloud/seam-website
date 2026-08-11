@@ -66,6 +66,19 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   border-radius:999px;padding:11px 15px;font:inherit;font-size:14.5px;font-weight:500;cursor:pointer;white-space:nowrap}
 .tabs button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
 .opane{flex:1;overflow-y:auto;padding:14px 16px 30px}
+/* ── 自分の数字（推薦者をいちばん大きく）── */
+/* ★この帯は「今日のお客様」の明るい画面に出る。暗い画面の色を使うと読めない。 */
+.mecard{background:#FFF7EC;border:1px solid #E9CFA6;border-radius:16px;padding:18px 18px 16px;margin:6px 0 16px}
+.me-h{font-size:12px;letter-spacing:.14em;color:#A9722F;font-weight:700}
+.me-hero{display:flex;align-items:center;gap:14px;margin:10px 0 4px}
+.me-n{font-family:'Noto Serif JP',serif;font-size:54px;line-height:1;color:#12100E;font-weight:500}
+.me-l{font-size:15px;line-height:1.55;color:#3f3a33;font-weight:600}
+.me-sub{font-size:12.5px;color:#8a8177;line-height:1.7;margin-top:6px}
+.me-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:14px;
+  padding-top:14px;border-top:1px solid #E9CFA6}
+.me-c{text-align:center}
+.me-c b{display:block;font-size:19px;color:#12100E;font-weight:700}
+.me-c span{display:block;font-size:11px;color:#8a8177;margin-top:3px}
 /* ── 申し送り（いちばん上・読むまで消えない）── */
 /* ★この帯は「今日のお客様」の明るい画面の上に出る。
    暗い画面の色をそのまま使うと、本文が読めない。 */
@@ -167,7 +180,9 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   font-size:12px;display:flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}
 .mv .tm{font-family:'Noto Serif JP',serif;font-size:17px;color:#EFE9DF;font-variant-numeric:tabular-nums}
 .mv .nm{font-family:'Noto Serif JP',serif;font-size:19px;color:#fff}
-.mv .mvh i{font-style:italic;font-size:12.5px;color:rgba(239,233,223,.42);letter-spacing:.04em}
+.mv .ital{font-style:italic;font-size:12.5px;color:rgba(239,233,223,.42);
+  letter-spacing:.04em;margin:-4px 0 8px}
+.mv .nm{white-space:nowrap}
 .mv .ck{margin-left:auto;flex:0 0 auto;width:34px;height:34px;border-radius:50%;
   border:1px solid rgba(239,233,223,.28);background:none;color:rgba(239,233,223,.35);
   font-size:15px;cursor:pointer;line-height:1}
@@ -232,7 +247,7 @@ async function load(){
     const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    ROWS=j.rows||[]; await loadNoti(); render();
+    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe()]); render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
 async function askToken(msg){
@@ -307,9 +322,39 @@ function notiWire(){
     }catch(e){ b.disabled=false; b.textContent='読みました'; }
   });
 }
+/* ── 自分の数字 ──
+ * ★いちばん上に「推薦してくださった方」を置く。売上より先に。
+ *   売上は月末にしか動かないが、推薦者は今日の1人で1人増える。
+ *   自分を求めて来てくださる方が何人いるか。ここが見えると、仕事が続く。 */
+let ME_NUM=null;
+async function loadMe(){
+  try{ const r=await fetch(`${API}/staff/me?token=${encodeURIComponent(TOK)}`);
+    const j=await r.json(); ME_NUM=j&&j.ok?j:null; }catch(e){ ME_NUM=null; }
+}
+function meHtml(){
+  if(!ME_NUM)return '';
+  const n=ME_NUM.nps||{}, m=ME_NUM.month||{};
+  const yen2=v=>'¥'+Number(v||0).toLocaleString();
+  return `<div class="mecard">
+    <div class="me-h">${esc(ME_NUM.name||'')} さんの今月</div>
+    <div class="me-hero">
+      <div class="me-n">${n.推薦者||0}</div>
+      <div class="me-l">人が あなたを<br>推薦してくださいました</div>
+    </div>
+    ${n.答え?`<div class="me-sub">${n.答え}人が答えてくださいました${n.あと一歩?`　あと一歩の方 ${n.あと一歩}人`:''}</div>`
+      :`<div class="me-sub">まだ答えが届いていません　お会計のあと、LINEでおうかがいしています</div>`}
+    <div class="me-row">
+      <div class="me-c"><b>${n.伝えた率==null?'—':n.伝えた率+'%'}</b><span>お伝えした率</span></div>
+      <div class="me-c"><b>${m.count||0}</b><span>お会計</span></div>
+      <div class="me-c"><b>${yen2(m.total)}</b><span>売上</span></div>
+    </div>
+    ${n.カルテ?`<div class="me-sub">カルテ ${n.カルテ}件のうち ${n.伝えた}件でお伝えしています</div>`
+      :`<div class="me-sub">カルテを書くと、お伝えした率が出ます</div>`}
+  </div>`;
+}
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
-  app.innerHTML=notiHtml()+`<h1>今日のお客様</h1>
+  app.innerHTML=meHtml()+notiHtml()+`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
       <button class="card" data-i="${n}">
@@ -433,7 +478,8 @@ function score(){
            q.styling?`スタイリング：${q.styling}`:'',
            q.care?`お試し：${q.care}`:'',
            '「おわりに」タブに 今日の一行を書く（翌朝お届けします）' ].filter(Boolean)});
-  return M;
+  /* ★空の行が「・」だけになって残る事故を防ぐ（実際に出た） */
+  return M.map(m=>({...m, say:(m.say||[]).filter(Boolean), care:(m.care||[]).filter(Boolean)}));
 }
 
 function paintScore(p){
@@ -462,9 +508,9 @@ function paintScore(p){
           <span class="bar">${n+1}</span>
           <span class="tm">${hm(Math.max(0,st+m.t))}</span>
           <span class="nm">${esc(m.name)}</span>
-          <i>${esc(m.it)}</i>
           <button class="ck" aria-label="この楽章を終えた">✓</button>
         </div>
+        <p class="ital">${esc(m.it)}</p>
         ${m.say.length?`<div class="line say"><b>声がけ</b><ul>${m.say.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
         ${m.care.length?`<div class="line care"><b>心遣い</b><ul>${m.care.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}
       </div>`).join('')}
