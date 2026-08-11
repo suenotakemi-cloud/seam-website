@@ -14,69 +14,79 @@
    お客様の目の前に置くので、出すのは「その方のお会計」だけにする。
    在庫・原価・他のお客様・操作ボタンは一切置かない。 */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
-:root{--ink:#16171B;--body:#4A4741;--sub:#8C8579;--line:#E3DCD0;--cream:#FBF9F5;
-  --gold:#B8945A;--clay:#A87456;--bg:#F7F5F1}
+:root{--ink:#16171B;--body:#4A4741;--sub:#7C7568;--line:#E3DCD0;--cream:#FBF9F5;
+  --gold:#A8823F;--clay:#96613F;--bg:#F7F5F1}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg)}
 body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
-  font-size:17px;line-height:1.8;-webkit-text-size-adjust:100%}
-.screen{height:100%;display:flex;flex-direction:column;padding:clamp(20px,4vh,44px) clamp(20px,5vw,64px);
-  padding-top:calc(clamp(20px,4vh,44px) + env(safe-area-inset-top))}
+  line-height:1.7;-webkit-text-size-adjust:100%}
+/* ★お客様は、カウンター越しに 60〜80cm 離れて座っておられる。
+   画面の幅だけで文字を決めると、iPadを縦にした瞬間に小さくなる。
+   だから縦と横の両方から基準の大きさを作り、あとは全部その倍数で書く。
+   これ以上は触らなくていいように、ここ1か所で全体が大きくなる。 */
+.screen{height:100%;display:flex;flex-direction:column;
+  font-size:clamp(20px, calc(1.15vw + 1.4vh), 34px);
+  padding:clamp(20px,3.6vh,44px) clamp(20px,4.4vw,64px);
+  padding-top:calc(clamp(20px,3.6vh,44px) + env(safe-area-inset-top))}
 
 /* ── 待っているとき ── */
 .idle{margin:auto;text-align:center}
-.idle .mk{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,6vw,58px);letter-spacing:.34em;
-  color:var(--ink);font-weight:500}
-.idle .sb{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(15px,2vw,20px);
-  letter-spacing:.14em;color:var(--clay);margin-top:14px}
-.idle .ms{font-size:clamp(13px,1.5vw,16px);color:var(--sub);margin-top:26px;line-height:2.2;letter-spacing:.04em}
+.idle .mk{font-family:'Cormorant Garamond',serif;font-size:3em;letter-spacing:.34em;
+  color:var(--ink);font-weight:500;line-height:1.2}
+.idle .sb{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:1.05em;
+  letter-spacing:.14em;color:var(--clay);margin-top:.5em}
+.idle .ms{font-size:1em;color:var(--body);margin-top:1.2em;line-height:2;letter-spacing:.04em}
+.idle .rg{font-size:.6em;color:var(--sub);margin-top:2em;letter-spacing:.2em}
 
 /* ── お会計 ── */
-.hd{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
-  border-bottom:1px solid var(--line);padding-bottom:14px;flex:none}
-.hd .mk{font-family:'Cormorant Garamond',serif;font-size:clamp(19px,2.4vw,26px);letter-spacing:.26em;color:var(--ink)}
-.hd .who{font-family:'Noto Serif JP',serif;font-size:clamp(15px,1.9vw,21px);color:var(--ink);letter-spacing:.04em}
-.hd .rk{font-size:clamp(10px,1.1vw,12px);letter-spacing:.12em;color:var(--clay);
-  border:1px solid rgba(168,116,86,.35);border-radius:2px;padding:2px 9px;margin-left:9px}
+.hd{display:flex;align-items:baseline;justify-content:space-between;gap:.7em;
+  border-bottom:1px solid var(--line);padding-bottom:.5em;flex:none}
+.hd .mk{font-family:'Cormorant Garamond',serif;font-size:1.3em;letter-spacing:.26em;color:var(--ink)}
+.hd .who{font-family:'Noto Serif JP',serif;font-size:1.2em;color:var(--ink);letter-spacing:.04em}
+.hd .rk{font-size:.55em;letter-spacing:.12em;color:var(--clay);
+  border:1px solid rgba(150,97,63,.4);border-radius:2px;padding:.2em .7em;margin-left:.5em}
 
-.list{flex:1;overflow:hidden;padding:6px 0}
-.li{display:flex;align-items:flex-start;gap:16px;border-bottom:1px solid var(--line);
-  padding:clamp(11px,1.7vh,18px) 0}
-.li-img{width:clamp(42px,4.6vw,60px);height:clamp(42px,4.6vw,60px);object-fit:contain;
-  background:#fff;border-radius:2px;flex:none}
-.li-n{flex:1;min-width:0;font-size:clamp(14px,1.7vw,19px);color:var(--ink);line-height:1.65}
-.li-q{flex:none;font-size:clamp(12px,1.3vw,15px);color:var(--sub);min-width:44px;text-align:right}
-.li-p{flex:none;text-align:right;min-width:clamp(110px,13vw,170px)}
-.li-was{display:block;font-size:clamp(11px,1.2vw,14px);color:#B9B2A6;text-decoration:line-through;line-height:1.4}
-.li-now{font-family:'Cormorant Garamond',serif;font-size:clamp(18px,2.2vw,26px);color:var(--ink);font-weight:600}
-.more{font-size:13px;color:var(--sub);padding:10px 0;letter-spacing:.04em}
+.list{flex:1;overflow:hidden;padding:.3em 0}
+.li{display:flex;align-items:center;gap:.7em;border-bottom:1px solid var(--line);
+  padding:.6em 0}
+.li-img{width:2.6em;height:2.6em;object-fit:contain;background:#fff;border-radius:2px;flex:none}
+.li-n{flex:1;min-width:0;font-size:1.08em;color:var(--ink);line-height:1.5}
+.li-q{flex:none;font-size:.92em;color:var(--body);min-width:2.2em;text-align:right}
+.li-p{flex:none;text-align:right;min-width:6.4em}
+.li-was{display:block;font-size:.8em;color:#A9A296;text-decoration:line-through;line-height:1.3}
+.li-now{font-family:'Cormorant Garamond',serif;font-size:1.5em;color:var(--ink);font-weight:600}
+.more{font-size:.9em;color:var(--body);padding:.5em 0;letter-spacing:.04em}
 
 /* ── 合計 ── */
-.ft{flex:none;border-top:1px solid var(--line);padding-top:clamp(12px,2vh,20px)}
-.fr{display:flex;justify-content:space-between;font-size:clamp(13px,1.5vw,17px);padding:4px 0}
+.ft{flex:none;border-top:1px solid var(--line);padding-top:.6em}
+.fr{display:flex;justify-content:space-between;font-size:1em;padding:.15em 0}
 .fr.cut{color:var(--clay)}
-.fr.cut b{font-family:'Cormorant Garamond',serif;font-size:clamp(17px,2vw,23px);font-weight:600}
-.fr.tot{align-items:baseline;border-top:1px solid var(--line);margin-top:10px;padding-top:clamp(10px,1.6vh,16px)}
-.fr.tot span{font-size:clamp(15px,1.8vw,20px);color:var(--ink);letter-spacing:.06em}
-.fr.tot b{font-family:'Cormorant Garamond',serif;font-size:clamp(34px,5vw,60px);color:var(--ink);
-  font-weight:600;line-height:1.05}
+.fr.cut b{font-family:'Cormorant Garamond',serif;font-size:1.3em;font-weight:600}
+.fr.tot{align-items:baseline;border-top:1px solid var(--line);margin-top:.4em;padding-top:.5em}
+.fr.tot span{font-size:1.2em;color:var(--ink);letter-spacing:.06em}
+.fr.tot b{font-family:'Cormorant Garamond',serif;font-size:3.2em;color:var(--ink);
+  font-weight:600;line-height:1}
 
 /* ── ポイント ── */
-.pt{margin-top:clamp(12px,2vh,20px);background:var(--cream);border:1px solid rgba(184,148,90,.32);
-  border-radius:3px;padding:clamp(13px,2vh,20px) clamp(16px,2.5vw,26px);
-  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.pt-l{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:clamp(13px,1.5vw,17px);
+.pt{margin-top:.6em;background:var(--cream);border:1px solid rgba(168,130,63,.34);
+  border-radius:3px;padding:.6em .9em;
+  display:flex;align-items:center;justify-content:space-between;gap:.7em;flex-wrap:wrap}
+.pt-l{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:.9em;
   letter-spacing:.1em;color:var(--gold)}
-.pt-e{font-size:clamp(14px,1.7vw,19px);color:var(--ink)}
-.pt-e b{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,3vw,34px);color:var(--clay);font-weight:600;margin:0 3px}
-.pt-b{font-size:clamp(12px,1.4vw,15px);color:var(--sub)}
-.pt-b b{font-family:'Cormorant Garamond',serif;font-size:clamp(16px,2vw,22px);color:var(--ink);font-weight:600;margin:0 3px}
+.pt-e{font-size:1.1em;color:var(--ink)}
+.pt-e b{font-family:'Cormorant Garamond',serif;font-size:1.8em;color:var(--clay);font-weight:600;margin:0 .1em}
+.pt-b{font-size:.9em;color:var(--body)}
+.pt-b b{font-family:'Cormorant Garamond',serif;font-size:1.3em;color:var(--ink);font-weight:600;margin:0 .1em}
 
 /* ── ありがとうございました ── */
 .done{margin:auto;text-align:center}
-.done .t{font-family:'Noto Serif JP',serif;font-size:clamp(22px,3.4vw,38px);color:var(--ink);letter-spacing:.08em;line-height:1.8}
-.done .s{font-size:clamp(13px,1.5vw,17px);color:var(--sub);margin-top:18px;letter-spacing:.06em}
+.done .t{font-family:'Noto Serif JP',serif;font-size:2em;color:var(--ink);letter-spacing:.08em;line-height:1.7}
+.done .s{font-size:1.05em;color:var(--body);margin-top:.8em;letter-spacing:.06em}
 
-.err{margin:auto;text-align:center;color:var(--sub);font-size:14px;line-height:2}
+.err{margin:auto;text-align:center;color:var(--body);font-size:1em;line-height:2}
+/* ★Cormorant は既定でオールドスタイル数字（1240 の 2 や 4 が下がる書体）。
+   きれいだが、お会計の金額としては一瞬読み違える。数字だけ高さを揃える。 */
+.li-now,.fr.cut b,.fr.tot b,.pt-e b,.pt-b b{font-variant-numeric:lining-nums tabular-nums;
+  font-feature-settings:'lnum' 1,'tnum' 1}
 .fade{animation:fi .5s ease}
 @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 </style>
@@ -86,7 +96,7 @@ body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';
 const Q=new URLSearchParams(location.search);
-const SHOP=Q.get('s')||'ginza', TOKEN=Q.get('t')||'';
+const SHOP=Q.get('s')||'ginza', TOKEN=Q.get('t')||'', REG=Q.get('r')||'';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const yen=n=>'¥'+Math.round(+n||0).toLocaleString();
@@ -98,6 +108,7 @@ function idle(){
     <div class="mk">SEAM</div>
     <div class="sb">GINZA</div>
     <div class="ms">ごゆっくりご覧ください<br>会員の方はお会計時に会員証をお見せください</div>
+    ${REG?`<div class="rg">レジ ${esc(REG)}</div>`:''}
   </div>`;
 }
 function done(st){
@@ -112,16 +123,16 @@ function welcome(m){
   const again=m.greet==='again';
   return `<div class="idle fade">
     <div class="sb">${again?'Welcome back':'Welcome'}</div>
-    <div class="mk" style="font-size:clamp(26px,4.4vw,44px);letter-spacing:.12em;margin-top:14px">${esc(m.name||'')} 様</div>
-    <div class="ms" style="font-size:clamp(15px,1.9vw,21px);color:var(--ink);margin-top:20px">
+    <div class="mk" style="font-size:2.4em;letter-spacing:.12em;margin-top:.5em">${esc(m.name||'')} 様</div>
+    <div class="ms" style="font-size:1.2em;color:var(--ink);margin-top:.7em">
       ${again?'いつもありがとうございます':'ようこそ SEAM へ'}</div>
-    ${m.rank?`<div class="ms" style="margin-top:14px"><span style="border:1px solid rgba(168,116,86,.35);border-radius:2px;padding:4px 14px;color:var(--clay);letter-spacing:.12em">${esc(m.rank)}</span></div>`:''}
-    <div class="ms" style="margin-top:18px">メンバー価格でご用意しています${m.points?`　お持ちのポイント ${m.points}`:''}</div>
+    ${m.rank?`<div class="ms" style="margin-top:.6em"><span style="border:1px solid rgba(150,97,63,.4);border-radius:2px;padding:.2em .7em;color:var(--clay);letter-spacing:.12em">${esc(m.rank)}</span></div>`:''}
+    <div class="ms" style="margin-top:.8em">メンバー価格でご用意しています${m.points?`　お持ちのポイント ${m.points}`:''}</div>
   </div>`;
 }
 function bill(st){
   const items=st.items||[];
-  const show=items.slice(0,8), rest=items.length-show.length;
+  const show=items, rest=0;
   const m=st.member;
   return `<div class="hd">
       <span class="mk">SEAM</span>
@@ -136,7 +147,7 @@ function bill(st){
         <span class="li-p">${i.was&&i.was!==i.now?`<span class="li-was">${yen(i.was*i.qty)}</span>`:''}
           <span class="li-now">${yen((i.now||i.was)*i.qty)}</span></span>
       </div>`).join('')}
-      ${rest>0?`<div class="more">ほか ${rest} 点</div>`:''}
+      <div class="more" id="more" style="display:none"></div>
     </div>
     <div class="ft">
       ${st.cut>0?`<div class="fr"><span>定価</span><span>${yen(st.list)}</span></div>
@@ -150,6 +161,21 @@ function bill(st){
       </div>`:''}
     </div>`;
 }
+/* ★入りきらない明細を黙って切らない。
+ * 画面の高さは iPad の向きでも変わるので、描いたあとに実際にはかって、
+ * 入らなかった分は「ほか◯点」と必ず言う。
+ * お客様の前で金額の行が半分だけ見えている状態が、いちばん信用を落とす。 */
+function fitList(){
+  const list=document.querySelector('.list'), more=document.getElementById('more');
+  if(!list||!more)return;
+  const rows=[...list.querySelectorAll('.li')];
+  let hidden=0;
+  for(let i=rows.length-1;i>0&&list.scrollHeight>list.clientHeight;i--){
+    rows[i].style.display='none'; hidden++;
+    more.style.display=''; more.textContent=`ほか ${hidden} 点`;
+  }
+  if(!hidden)more.style.display='none';
+}
 function paint(st){
   const j=JSON.stringify(st);
   if(j===lastJson)return;            // 変わっていないなら描き直さない（ちらつき防止）
@@ -158,11 +184,11 @@ function paint(st){
   if(!st){ s.innerHTML=idle(); return; }
   if(st.done){ s.innerHTML=done(st); return; }
   if(!(st.items||[]).length){ s.innerHTML=st.member?welcome(st.member):idle(); return; }
-  s.innerHTML=bill(st);
+  s.innerHTML=bill(st); fitList();
 }
 async function tick(){
   try{
-    const r=await fetch(`${API}/display/state?s=${encodeURIComponent(SHOP)}&t=${encodeURIComponent(TOKEN)}`,{cache:'no-store'});
+    const r=await fetch(`${API}/display/state?s=${encodeURIComponent(SHOP)}&r=${encodeURIComponent(REG)}&t=${encodeURIComponent(TOKEN)}`,{cache:'no-store'});
     if(r.status===403){ $('scr').innerHTML=`<div class="err">この画面の合言葉が違います<br>レジの「お客様画面」からQRを読み直してください</div>`; return; }
     const j=await r.json();
     let st=j.state||null;
@@ -175,6 +201,8 @@ if(!TOKEN){ $('scr').innerHTML=`<div class="err">レジの「お客様画面」�
 else{ paint(null); tick(); setInterval(tick,1000); }
 /* 画面を消さない（iOSは電源に挿していれば自動ロックを切れる。念のため復帰時に読み直す） */
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden)tick(); });
+/* 向きを変えると入る行数が変わる。測り直す（描き直しはしない＝ちらつかない） */
+window.addEventListener('resize',()=>{ lastJson=''; tick(); });
 </script>
 </body>
 </html>
