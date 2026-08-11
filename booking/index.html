@@ -2645,6 +2645,33 @@ document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
   document.getElementById('v-'+b.dataset.v).classList.add('show');
   if(b.dataset.v==='cs')csInit();
 });
+/* ★設定はレジ画面の折りたたみの中に16個並んでいる。
+   人に「あそこを開いて」と伝えるのに毎回説明が要るのは、こちらの都合。
+   URLで直接その場所を開けるようにする。
+     ?v=register            … その画面をひらく
+     ?v=register&open=暗証番号 … 見出しにその文字を含む折りたたみをひらいて、そこまで送る */
+(function(){
+  const q=new URLSearchParams(location.search);
+  const v=(q.get('v')||'').replace(/[^a-z]/gi,'');
+  const open=q.get('open')||'';
+  if(!v&&!open)return;
+  const go=()=>{
+    if(v){const b=document.querySelector(`nav button[data-v="${v}"]`); if(b)b.click();}
+    if(!open)return;
+    /* 画面を描き終わるのを待つ。折りたたみは描いたあとにしか無い */
+    let n=0;
+    const t=setInterval(()=>{
+      const d=[...document.querySelectorAll('details.fold')]
+        .find(x=>(x.querySelector('summary')||{}).textContent&&x.querySelector('summary').textContent.includes(open));
+      if(d){ clearInterval(t); d.open=true;
+        d.scrollIntoView({block:'start',behavior:'smooth'});
+        d.style.outline='2px solid var(--ok,#0c7a41)'; d.style.borderRadius='12px';
+        setTimeout(()=>{d.style.outline='';},2600); }
+      else if(++n>40) clearInterval(t);
+    },120);
+  };
+  if(document.readyState==='complete')go(); else window.addEventListener('load',go);
+})();
 
 /* =============== dashboard =============== */
 function renderDash(){
