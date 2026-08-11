@@ -87,8 +87,13 @@ def load(f):
 
 
 def put_dict(s, d):
+    # sort_keys=True にしている理由:
+    #   キーの並びは辞書の意味に一切関係ない（build-i18n はJSONとして読む）のに、
+    #   足す順番が実行経路で変わるため「変更前から流した結果」と「今から流した結果」が
+    #   バイト一致しなくなっていた。並べてしまえば、どこから流しても同じになる。
     m = re.search(r'(window\.SEAM_PAGE_I18N\s*=\s*)(\{.*?\})(\s*;)', s, re.S)
-    return s[:m.start()] + m.group(1) + json.dumps(d, ensure_ascii=False, separators=(',', ':')) + m.group(3) + s[m.end():]
+    body = json.dumps(d, ensure_ascii=False, separators=(',', ':'), sort_keys=True)
+    return s[:m.start()] + m.group(1) + body + m.group(3) + s[m.end():]
 
 
 def key_of(d, needles, lang='ja'):
@@ -253,6 +258,136 @@ def add_nagi(s, d):
     return s, d, '凪'
 
 
+# ── ヘア休止中の店のヒーローと休止告知
+#
+# 【2026-08-11 に見つけた矛盾】休止のお知らせのすぐ上のリード文が
+#   「カット・カラー・パーマ・縮毛矯正・トリートメントまで … 完全個室で仕上げます」
+#   のままだった。受けられない施術を約束してから、その下で休止を告げていた。
+#   見た目の弱さより、こちらのほうが重い。
+#
+# 【告知の見え方】薄い枠の小さな本文で、店舗紹介カードの一つに見えていた。
+#   一方で画面下には「ヘッドスパを予約」の固定CTAがある。
+#   → ラベル＋見出し＋本文の3段にして、何が休みで何が開いているかを一目で分ける。
+#   赤い警告にはしない。金とクリームのままで十分伝わる。
+PAUSED_LEAD = {
+    'ja': '矢場町駅からすぐ 栄・大須・上前津からも歩ける栄エリアです<br>ヘッドスパと 197のサロン専売ブランドのショップをご用意しています',
+    'en': 'Right by Yabacho Station, within walking distance of Sakae, Osu and Kamimaezu.<br>Here you will find our head spa and a shop carrying 197 salon-exclusive brands.',
+    'zh': '矢场町站近在咫尺，从荣、大须、上前津步行可达。<br>这里为您准备了头部水疗与汇集197个沙龙专售品牌的商店。',
+    'tw': '矢場町站近在咫尺，從榮、大須、上前津步行可達。<br>這裡為您準備了頭部水療與匯集197個沙龍專售品牌的商店。',
+    'ko': '야바초역 바로 앞, 사카에·오스·가미마에즈에서도 걸어오실 수 있습니다.<br>헤드스파와 197개 살롱 전용 브랜드의 숍을 준비하고 있습니다.',
+}
+PAUSED = {
+    'ja': ('ヘアサロン', '受付休止中', 'ヘッドスパとサロン専売品のショップは 通常どおり営業しています'),
+    'en': ('Hair salon', 'Bookings paused', 'Our head spa and the salon-exclusive shop are open as usual.'),
+    'zh': ('美发沙龙', '暂停接受预约', '头部水疗与沙龙专售商品的商店照常营业。'),
+    'tw': ('美髮沙龍', '暫停接受預約', '頭部水療與沙龍專售商品的商店照常營業。'),
+    'ko': ('헤어살롱', '예약 접수 중지', '헤드스파와 살롱 전용 제품 숍은 평소대로 영업하고 있습니다.'),
+}
+PAUSE_MARK = '<!-- seam:paused-notice -->'
+PAUSE_BLOCK = PAUSE_MARK + '''<div class="mt-6 rounded-[10px] px-4 py-4" style="border:1px solid rgba(184,148,90,.42);background:rgba(184,148,90,.06);">
+      <p class="flex items-center gap-2 text-[11px] tracking-widest2" style="color:#B8945A;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.2l3 1.8"/></svg>
+        <span data-i18n="pause.label">__LABEL__</span>
+      </p>
+      <p class="mt-1.5 font-serif text-[15.5px] text-ink" data-i18n="pause.title">__TITLE__</p>
+      <p class="mt-1.5 text-[13px]" style="color:#6B6358;line-height:1.95;" data-i18n="pause.body">__BODY__</p>
+    </div>'''
+
+
+# 休止中なのに「お受けしています」と言い切っていた2箇所（本文とFAQの回答）。
+# ページ全体を書き替えるのではなく、**受けられないと言い切っている嘘だけ**を正す。
+PAUSED_OFFER = {
+    'ja': 'ヘアサロンは現在受付を休止しています　ヘッドスパと197のサロン専売ブランドのショップは通常どおり営業しています　最新の情報はホットペッパービューティーでご確認ください',
+    'en': 'Hair salon bookings are currently paused. Our head spa and the shop carrying 197 salon-exclusive brands are open as usual. Please see Hot Pepper Beauty for the latest.',
+    'zh': '美发沙龙目前暂停接受预约。头部水疗与汇集197个沙龙专售品牌的商店照常营业。最新信息请见Hot Pepper Beauty。',
+    'tw': '美髮沙龍目前暫停接受預約。頭部水療與匯集197個沙龍專售品牌的商店照常營業。最新資訊請見Hot Pepper Beauty。',
+    'ko': '헤어살롱은 현재 예약 접수를 중지하고 있습니다. 헤드스파와 197개 살롱 전용 브랜드의 숍은 평소대로 영업합니다. 최신 정보는 핫페퍼뷰티에서 확인해 주세요.',
+}
+PAUSED_FAQ_Q = {
+    'ja': 'いまヘアサロンの予約はできますか',
+    'en': 'Can I book the hair salon right now?',
+    'zh': '现在可以预约美发沙龙吗',
+    'tw': '現在可以預約美髮沙龍嗎',
+    'ko': '지금 헤어살롱을 예약할 수 있나요',
+}
+PAUSED_FAQ_A = {
+    'ja': 'ヘアサロンは受付を休止しています　ヘッドスパとサロン専売品のショップは通常どおり営業していますので そちらはご予約・ご来店いただけます',
+    'en': 'Hair salon bookings are paused. Our head spa and the salon-exclusive shop are open as usual, so you are welcome to book or drop in for those.',
+    'zh': '美发沙龙暂停接受预约。头部水疗与沙龙专售商品的商店照常营业，欢迎预约或到店。',
+    'tw': '美髮沙龍暫停接受預約。頭部水療與沙龍專售商品的商店照常營業，歡迎預約或到店。',
+    'ko': '헤어살롱은 예약 접수를 중지하고 있습니다. 헤드스파와 살롱 전용 제품 숍은 평소대로 영업하고 있으니 예약하시거나 들러 주세요.',
+}
+
+
+def swap_text(s, key, ja):
+    """data-i18n の要素の中身を差し替える。中にタグを含む場合もあるので閉じタグまで見る。"""
+    m = re.search(r'(data-i18n="' + re.escape(key) + r'"[^>]*>)([\s\S]*?)(</(?:p|span|h2|h3|li|div|summary)>)', s)
+    if not m:
+        return s, False
+    return s[:m.start()] + m.group(1) + ja + m.group(3) + s[m.end():], True
+
+
+def fix_paused_hero(f, s, d):
+    # ① リード文から受けられない施術を消す
+    lead_k = key_of(d, ['カット・カラー・パーマ'])
+    if lead_k:
+        for L in LANGS:
+            d[L][lead_k] = PAUSED_LEAD[L]
+        s = re.sub(r'(data-i18n="' + re.escape(lead_k) + r'">)[\s\S]*?(</p>)',
+                   lambda o: o.group(1) + PAUSED_LEAD['ja'] + o.group(2), s, count=1)
+
+    # ①-2 FAQ を先に処理する。設問→回答は**HTML上の並び**で特定する。
+    #     値の一致で探すと、同じ文言に置き換えた別の要素を拾って本文とFAQが入れ替わる
+    #     （最初の実装で実際にそうなった）。
+    qk = key_of(d, ['縮毛矯正やパーマもできますか', 'いまヘアサロンの予約はできますか'])
+    if qk:
+        for L in LANGS:
+            d[L][qk] = PAUSED_FAQ_Q[L]
+        # 設問は <summary> 内で ＋ 記号を伴うのでテキストノードだけ差し替える
+        s = re.sub(r'(data-i18n="' + re.escape(qk) + r'"[^>]*>)([^<]*)',
+                   lambda o: o.group(1) + PAUSED_FAQ_Q['ja'], s, count=1)
+        # 設問の直後に現れる data-i18n がその回答
+        after = s.find(f'data-i18n="{qk}"')
+        m = re.search(r'data-i18n="([A-Za-z0-9._]+)"', s[after + 20:])
+        if m:
+            ak = m.group(1)
+            for L in LANGS:
+                d[L][ak] = PAUSED_FAQ_A[L]
+            s, _ = swap_text(s, ak, PAUSED_FAQ_A['ja'])
+
+    # ①-3 残りの「までお受けしています」（本文の店舗紹介）をたたむ。
+    #     休止中に書いてよい言葉ではない。
+    while True:
+        k = key_of(d, ['までお受けしています'])
+        if not k:
+            break
+        for L in LANGS:
+            d[L][k] = PAUSED_OFFER[L]
+        s, ok = swap_text(s, k, PAUSED_OFFER['ja'])
+        if not ok:
+            break                                  # 本文に無ければ無限ループを避ける
+    # ② 休止告知を「ラベル＋見出し＋本文」に置き換える（既にあれば入れ替え＝冪等）
+    for L in LANGS:
+        d[L]['pause.label'], d[L]['pause.title'], d[L]['pause.body'] = PAUSED[L]
+    blk = (PAUSE_BLOCK.replace('__LABEL__', PAUSED['ja'][0])
+                      .replace('__TITLE__', PAUSED['ja'][1])
+                      .replace('__BODY__', PAUSED['ja'][2]))
+    if PAUSE_MARK in s:
+        # 【罠】末尾に \n? を付けると再実行のたびに改行を1つ食い、
+        #       「変更前から流したとき」と結果が食い違う。閉じタグまでで止める。
+        s = re.sub(re.escape(PAUSE_MARK) + r'[\s\S]*?</div>', lambda _: blk, s, count=1)
+    else:
+        note_k = key_of(d, ['受付を休止しています'])
+        assert note_k, f'{f}: 休止のお知らせが見つからない'
+        i = s.find(f'data-i18n="{note_k}"')
+        start = s.rfind('<p', 0, i)
+        end = s.find('</p>', i) + len('</p>')
+        s = s[:start] + blk + s[end:]
+        for L in LANGS:                       # 旧の1行版は使わなくなるので辞書から落とす
+            d[L].pop(note_k, None)
+    return s, d
+
+
 # ══ 実行
 print('■ サロンLP 5枚')
 for slug, st in SALON.items():
@@ -271,6 +406,7 @@ for slug, st in SALON.items():
         # headspa-{slug}（ヘッドスパ）と store-{slug}（サロン専売）とも食い合わない語を選ぶ。
         s, d, dropped = drop_nagi(s, d)
         s = normalize_join(s, d)
+        s, d = fix_paused_hero(f, s, d)
         nmsg = '凪を外した（ヘア休止中）' if dropped else '凪なし（ヘア休止中）'
         title = f"{st['name']} {c['ja']} 栄・矢場町｜ヘッドスパとヘアケアの店"
         desc = (f"{c['ja']} 栄・矢場町の{st['name']}｜ヘアサロンは現在受付を休止しています　"
