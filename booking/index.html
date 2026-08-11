@@ -729,6 +729,27 @@ td.slot:hover{background:#f0f7ff}
 .co-cash{margin-top:10px;background:#f7fbff;border:1px solid var(--accent2);border-radius:10px;padding:11px 12px}
 .co-quick{display:flex;gap:6px;margin:7px 0;flex-wrap:wrap}
 .co-quick button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:800;color:var(--navy)}
+/* ★お会計は、施術で濡れた手・カウンターの照明・お客様の視線の中で触る画面。
+   実測で12〜13pxの文字が33箇所、高さ21pxのボタンまであった。
+   ここは読みやすさと押しやすさに下限を置く。全体の見た目は変えない。
+     文字   14px以上（お客様の目にも入る）
+     押す物 44px以上（Appleの指針。濡れた手なら本当に要る） */
+#checkoutmodal{font-size:14px}
+#checkoutmodal .co-line,#checkoutmodal .co-sub{font-size:14px}
+#checkoutmodal .co-sub{font-size:13px}
+#checkoutmodal [style*="font-size:11"],#checkoutmodal [style*="font-size:12"]{font-size:13px !important}
+#checkoutmodal button,#checkoutmodal input,#checkoutmodal select{min-height:44px}
+#checkoutmodal .co-rx{min-height:38px;min-width:38px}
+#checkoutmodal .co-quick button{padding:11px 14px;font-size:14px}
+#checkoutmodal input{font-size:16px}
+/* 支払い方法は、間違えると現金が合わなくなる。ここだけは大きく。
+   ★ただし5つを横一列に並べたまま字だけ大きくすると、
+     「カー」「電子」のように文字が切れて、かえって押し間違える。
+     折り返せる並びに変えてから大きくする。 */
+#checkoutmodal .co-pays{flex-wrap:wrap}
+#checkoutmodal .co-pay{flex:1 1 30%;min-width:104px;font-size:14.5px;font-weight:800;
+  white-space:nowrap;padding:12px 8px}
+#checkoutmodal .btn.small,#checkoutmodal .co-empty{font-size:13.5px}
 .co-change{display:flex;align-items:baseline;gap:10px;font-size:14px;font-weight:800}
 .co-change b{margin-left:auto;font-size:22px;font-variant-numeric:tabular-nums}
 .co-change.ng b{color:var(--sub)}
@@ -2956,7 +2977,7 @@ function openDetail(id){
   // 常連さんかどうかを施術前に分かるようにする（お名前でお声がけするための手がかり）
   if(r.phone){API.customerRank(r.phone).then(rr=>{
     const el=document.getElementById('d-rank');
-    if(el&&rr&&rr.ok&&rr.visits>0)el.innerHTML=rankStrip({rank:rr.rank,rate:rr.rate,visits:rr.visits,next:rr.next});
+    if(el&&rr&&rr.ok)el.innerHTML=rankStrip({rank:rr.rank,rate:rr.rate,visits:(rr.visits||0)+1,next:rr.next});
   });}
   /* 前回の申し送りを、施術のまえに出す。ここに出ないと、書いても読まれない */
   API.karteLast(custKey(r), r.date).then(kr=>{
@@ -3410,7 +3431,11 @@ function openCheckout(resvId){
   renderCheckout();
   document.getElementById('checkoutbg').classList.add('show');
   // 電話が分かっていればランクを引いてくる（会員証を読まなくてもVIPが分かるように）
-  if(coDraft.phone){loadRankFor(coDraft.phone).then(()=>{if(CO_RANK)renderCheckout();});}
+  /* ★「この方は初めてかどうか」を、レジで必ず分かるようにする。
+     ここが分からないまま会計して帰っていただくのが、再来をいちばん落とす。
+     電話が無いお客様はお名前で引く（同姓同名は混ざるので、判定は控えめに扱う）。 */
+  {const k=(coDraft.phone||'').trim()||(coDraft.customer?'n:'+coDraft.customer.trim():'');
+   if(k)loadRankFor(k).then(()=>renderCheckout());}
 }
 function coRetail(){return (coDraft.retailItems||[]).reduce((s,i)=>s+(i.unit!=null?(+i.unit||0)*(+i.qty||1):(+i.price||0)),0);}
 /* ═══ お客様にお見せする画面へ ═══
@@ -3479,8 +3504,13 @@ function coPointAward(){
 /* ランクの帯。レジ・受付・カルテで同じ見た目にして、スタッフが一目でVIPと分かるようにする。
  * 「◯回目のご来店」を必ず出すのは、名前で呼びかけるときの手がかりにするため。 */
 const RANK_COLOR={standard:'#5c534a',bronze:'#8a5a34',silver:'#8d9399',gold:'#b8912a',platinum:'#6b7378'};
+/* ★rk.visits は「今回を含めたご来店回数」。数え直しは呼ぶ側でやる。
+   サーバーが返すのは今回より前の回数なので、
+   まだ保存していないお会計なら +1 する（保存済みを開き直したときは足さない）。
+   ここで足すと、開き直すたびに1回ずつ増えていく。 */
 function rankStrip(rk,code,pt){
   const r=(rk&&rk.rank)||{}, key=r.key||'standard';
+  const first=!(rk&&rk.visits>1);
   const vip=key!=='standard';
   const col=RANK_COLOR[key]||RANK_COLOR.standard;
   const nx=rk&&rk.next;
@@ -3491,8 +3521,9 @@ function rankStrip(rk,code,pt){
     return `${nx.name}まであと少し`;})():'';
   return `<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;border-radius:10px;padding:9px 12px;margin:0 0 9px;
       background:${vip?col+'14':'#f6f4f1'};border:1px solid ${vip?col+'55':'#e7e1d9'}">
-    ${r.name?`<b style="font-size:12px;letter-spacing:.1em;color:${col};background:#fff;border:1px solid ${col}44;border-radius:99px;padding:3px 10px">${escH(r.name)}</b>`:''}
-    ${rk&&rk.visits?`<span style="font-size:12.5px;font-weight:800">${rk.visits}回目のご来店</span>`:''}
+    ${(r.name&&!first)?`<b style="font-size:12px;letter-spacing:.1em;color:${col};background:#fff;border:1px solid ${col}44;border-radius:99px;padding:3px 10px">${escH(r.name)}</b>`:''}
+    ${first?`<span style="font-size:13px;font-weight:800;color:#0c7a41">はじめてのご来店</span>`
+      :`<span style="font-size:13px;font-weight:800">${rk.visits}回目のご来店</span>`}
     <span style="font-size:12px;color:var(--sub)">ポイント${(rk&&rk.rate)||1}%</span>
     ${pt!=null?`<span style="font-size:12px;color:var(--sub)">残高 <b>${Number(pt||0).toLocaleString()}pt</b></span>`:''}
     ${code?`<span style="font-size:11.5px;color:var(--sub);margin-left:auto">💳 ${escH(code)}</span>`:''}
@@ -3520,7 +3551,8 @@ function renderCheckout(){
   box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}
       <button id="co-reg" class="btn small ghost" style="float:right;font-size:11.5px;padding:4px 10px"
         title="お客様にお見せする画面と揃える番号です">${coRegNo()?`レジ ${escH(coRegNo())}番`:'レジ番号'}</button></h3>
-    ${(featOn('member')&&coDraft.memberCode)?rankStrip(CO_RANK,coDraft.memberCode,coDraft.memberPt):''}
+    ${CO_RANK?rankStrip({...CO_RANK,visits:(CO_RANK.visits||0)+(coDraft.id?0:1)},
+        (featOn('member')&&coDraft.memberCode)||'',coDraft.memberCode?coDraft.memberPt:null):''}
     ${isShop()?'':`<div class="co-line"><span>技術（施術）</span><span class="co-y">¥<input id="co-tech" type="number" inputmode="numeric" value="${coDraft.tech||0}"></span></div>`}
     <div class="co-sub">店販（商品）</div>
     <div class="co-scan-row"><input id="co-scan" list="co-prod-list" placeholder="🔎 バーコード・会員証をスキャン／商品名で追加" autocomplete="off">${(db.products||[]).length?`<datalist id="co-prod-list">${(db.products||[]).filter(p=>p.active!==0).map(p=>`<option value="${(p.name||'').replace(/"/g,'&quot;')}">`).join('')}</datalist>`:''}</div>
@@ -3537,6 +3569,14 @@ function renderCheckout(){
         return (ptYenTech()>0?Math.floor(t/ptYenTech()):0)+(ptYenGoods()>0?Math.floor(g/ptYenGoods()):0);})();
       const maxPt=Math.min(bal,capPt);
       const noLine=ptLineOnly()&&!coDraft.memberCode;
+      /* ★残高が無い方に「ポイント利用」の入力欄を出さない。
+         はじめてのお客様には必ず0で並ぶ欄で、一度も使われないのに毎回読ませていた。
+         レートの説明も、使える方にだけお見せすればいい。 */
+      if(bal<=0)return noLine
+        ? `<div class="co-done" style="margin:6px 0;background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">会計後のQRを読み取っていただくと会員証が発行され、次回からポイントが付きます</div>
+           <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px"></div>`
+        : `<div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${escH((CO_RANK&&CO_RANK.rank&&CO_RANK.rank.name)||'スタンダード')} ${coRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>
+           <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px"></div>`;
       return `<div class="co-sub">ポイント（残高 <b>${bal.toLocaleString()}pt</b>・施術1pt=¥${ptYenTech()}／商品1pt=¥${ptYenGoods()}）</div>
       <div class="co-line"><span>ポイント利用</span><span class="co-y">−<input id="co-pts" type="number" inputmode="numeric" min="0" max="${maxPt}" value="${coDraft.pointsUsed||0}">pt</span></div>
       ${maxPt<bal?`<div class="co-line" style="color:var(--sub);font-size:11.5px"><span>　今回お使いいただける上限</span><b style="margin-left:auto">${maxPt.toLocaleString()}pt</b></div>`:''}
