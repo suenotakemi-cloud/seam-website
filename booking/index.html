@@ -5943,8 +5943,11 @@ function renderBook(){
         return '';})()}
       ${bk.memberCode?`<div class="mcard-on">
           <b>${escH(bk.memberName||'')} 様</b>
-          <span>${bk.memberRank?escH(bk.memberRank)+'　':''}${bk.memberVisits?bk.memberVisits+'回目のご来店　':''}${bk.memberPoints!=null?'ポイント '+Number(bk.memberPoints).toLocaleString():''}</span>
-          <span class="mc-s">会員証から読み込みました　書き直していただく必要はありません</span>
+          <span>${bk.memberFirst?'オンラインの会員様　サロンははじめてです'
+            :`${bk.memberRank?escH(bk.memberRank)+'　':''}${bk.memberVisits?bk.memberVisits+'回目のご来店　':''}${bk.memberPoints!=null?'ポイント '+Number(bk.memberPoints).toLocaleString():''}`}</span>
+          <span class="mc-s">${bk.memberFirst
+            ? 'オンラインショップの会員証から読み込みました　サロンでも会員価格でご用意しています'
+            : '会員証から読み込みました　書き直していただく必要はありません'}</span>
         </div>`:`<div class="mcard">
           <b>会員証をお持ちの方</b>
           <span class="mc-s">読み取ると、お名前とお電話が入ります　入力はいりません</span>
@@ -6089,7 +6092,7 @@ function renderBook(){
          }
          if(!r.ok||!j.ok){ toast(j.error||'読み取れませんでした',true); return; }
          bk.memberCode=j.code; bk.memberName=j.name; bk.memberRank=(j.rank&&j.rank.name)||'';
-         bk.memberVisits=j.nextVisit; bk.memberPoints=j.points;
+         bk.memberVisits=j.nextVisit; bk.memberPoints=j.points; bk.memberFirst=!!j.はじめて;
          if(j.name){const sp=String(j.name).split(/[\s　]+/);
            bk.sei=sp[0]||''; bk.mei=sp[1]||''; bk.name=j.name;}
          if(j.phone)bk.phone=j.phone;
