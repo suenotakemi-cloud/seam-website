@@ -635,6 +635,15 @@ function stfHtml(){
         <div style="margin-top:10px;padding:10px;background:#faf8f4;border:1px solid #ece5d9;border-radius:10px">
           <b style="font-size:12.5px">勤務の条件（本部が決めます）</b>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;align-items:flex-end">
+            <label style="font-size:11.5px;color:var(--sub)">雇用の形<br>
+              <select class="wk-emp" data-id="${esc(x.id)}" style="font-size:13px">
+                ${[['staff','スタッフ（月給）'],['part','アルバイト（時給）'],['contract','業務委託（歩合）']]
+                  .map(([v,l])=>`<option value="${v}" ${(x.empType||'staff')===v?'selected':''}>${l}</option>`).join('')}
+              </select></label>
+            <label style="font-size:11.5px;color:var(--sub)">時給<br>
+              <input type="number" class="wk-hr" data-id="${esc(x.id)}" value="${x.hourly||0}" min="0" max="20000" step="10" style="width:86px;font-size:13px"></label>
+            <label style="font-size:11.5px;color:var(--sub)">歩合(%)<br>
+              <input type="number" class="wk-cm" data-id="${esc(x.id)}" value="${x.commRate||0}" min="0" max="100" step="1" style="width:70px;font-size:13px"></label>
             <label style="font-size:11.5px;color:var(--sub)">入社日<br>
               <input type="date" class="wk-hire" data-id="${esc(x.id)}" value="${esc(x.hire||'')}" style="font-size:13px"></label>
             <label style="font-size:11.5px;color:var(--sub)">週の日数<br>
@@ -647,7 +656,8 @@ function stfHtml(){
               <input type="number" class="wk-pm" data-id="${esc(x.id)}" value="${x.ptoManual==null?'':x.ptoManual}" min="0" max="40" step="0.5" placeholder="空＝法どおり" style="width:110px;font-size:13px"></label>
             <button class="mini pri wk-save" data-id="${esc(x.id)}">この条件で保存</button>
           </div>
-          <div class="tsub" style="margin-top:5px">みなし残業は「基本給に何時間ぶん含むか」　超えた分は別途お支払いの対象として勤怠に出ます</div>
+          <div class="tsub" style="margin-top:5px">みなし残業は「基本給に何時間ぶん含むか」　超えた分は別途お支払いの対象として勤怠に出ます<br>
+            アルバイトは時給、業務委託は歩合(%)を入れると、本人の画面に毎日の稼ぎが出ます（概算）</div>
         </div>
         <div class="tsub" style="margin-top:6px">${(x.appliedAt||'').slice(0,16).replace('T',' ').replace(/-/g,'/')}</div>
       </div>
@@ -1430,7 +1440,8 @@ async function load(){
             await post('/staff/work',{id:b.dataset.id,
               hire:q('wk-hire').value, weekDays:+q('wk-wd').value||5,
               workHours:+q('wk-wh').value||8, deemedOt:+q('wk-ot').value||0,
-              ptoManual:q('wk-pm').value===''?null:+q('wk-pm').value});
+              ptoManual:q('wk-pm').value===''?null:+q('wk-pm').value,
+              empType:q('wk-emp').value, hourly:+q('wk-hr').value||0, commRate:+q('wk-cm').value||0});
             toast('保存しました　勤怠の画面に反映されます');
           }catch(e){ toast(e.message,true); }});
         $('body').querySelectorAll('.stf-ok').forEach(b=>b.onclick=async()=>{
