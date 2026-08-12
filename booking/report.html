@@ -139,6 +139,7 @@ h2:first-child{margin-top:2px}
       <button data-t="sup">備品</button>
       <button data-t="ap">応募</button>
       <button data-t="stf">スタッフ</button>
+      <button data-t="kin">勤怠</button>
       <button data-t="md">モデル</button>
       <button data-t="li">掲載</button>
       <button data-t="order" data-feat="order">発注書</button>
@@ -533,6 +534,54 @@ function supHtml(){
         <td class="num tsub">${x.cost?yen(x.cost):'—'}</td></tr>`).join('')}
     </tbody></table></div>`:'<div class="empty">まだ登録がありません</div>'}
     <p class="note">数を増やすときは、レジの「商品と在庫」から入荷を入れてください　備品も同じ入れ方です</p>`;
+}
+
+/* ── 勤怠 ──
+ * ★お給料と法令に直接ひびく。だから「足りない」を先に出す。
+ *   年5日の取得義務（労基法39条7項）は、放っておくと年度末に間に合わなくなる。
+ * ★みなし残業の超過は、別途お支払いする対象。見落とすと未払いになる。 */
+let KIN=null;
+function kinHtml(){
+  if(!KIN)return '<div class="empty">読み込んでいます…</div>';
+  const ap=KIN.申請||[], st=KIN.スタッフ||[];
+  const 足りない=st.filter(x=>x.足りない>0);
+  const 超過=st.filter(x=>x.みなし超過>0);
+  const 合わない=st.filter(x=>x.今月&&x.今月.合わない日&&x.今月.合わない日.length);
+  const SPAN={day:'1日',half:'半日',hour:'時間'};
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">承認まちの申請</div>
+        <div class="kc-v" style="color:${ap.length?'var(--danger)':'inherit'}">${ap.length}</div></div>
+      <div class="kc"><div class="kc-k">年5日が足りない人</div>
+        <div class="kc-v" style="color:${足りない.length?'var(--danger)':'inherit'}">${足りない.length}</div>
+        <div class="kc-s">法律で取らせる義務があります</div></div>
+      <div class="kc"><div class="kc-k">みなしを超えた人</div>
+        <div class="kc-v" style="color:${超過.length?'var(--danger)':'inherit'}">${超過.length}</div>
+        <div class="kc-s">別途お支払いの対象です</div></div>
+    </div>
+    ${合わない.length?`<p class="note" style="color:var(--danger)">打刻がそろっていない人が ${合わない.length}人います　${合わない.map(x=>esc(x.name)+'（'+x.今月.合わない日.length+'日）').join('・')}</p>`:''}
+    <h2>承認まち ${ap.length}件</h2>
+    ${ap.length?`<div class="tblwrap"><table><thead><tr><th>お名前</th><th>日</th><th>単位</th><th>種類</th><th>ひとこと</th><th></th></tr></thead>
+      <tbody>${ap.map(x=>`<tr>
+        <td>${esc(x.名前)}</td><td>${String(x.日).replace(/-/g,'/')}</td>
+        <td>${SPAN[x.単位]||x.単位}${x.単位==='hour'?' '+x.時間+'h':''}</td>
+        <td>${esc(x.種類)}</td><td>${esc(x.ひとこと||'')}</td>
+        <td><button class="mini pri kin-ok" data-id="${esc(x.id)}">承認</button>
+          <button class="mini kin-no" data-id="${esc(x.id)}">見送り</button></td></tr>`).join('')}</tbody></table></div>`
+      :'<div class="empty">いまありません</div>'}
+    <h2>スタッフごと</h2>
+    <div class="tblwrap"><table><thead><tr><th>お名前</th><th>入社日</th><th class="num">付与</th><th class="num">残り</th>
+      <th class="num">今年とった</th><th class="num">今月の実働</th><th class="num">残業</th><th class="num">みなし枠</th><th>状態</th></tr></thead>
+      <tbody>${st.map(x=>`<tr>
+        <td>${esc(x.name)}</td><td>${x.入社日?String(x.入社日).replace(/-/g,'/'):'—'}</td>
+        <td class="num">${x.付与日数}日</td><td class="num">${x.残り日数}日</td>
+        <td class="num">${x.今年とった日}日</td>
+        <td class="num">${(x.今月||{}).実働||0}h</td><td class="num">${(x.今月||{}).残業||0}h</td>
+        <td class="num">${x.みなし枠||'—'}</td>
+        <td>${x.足りない>0?`<b style="color:var(--danger)">年5日まで あと${x.足りない}日</b>`:''}
+          ${x.みなし超過>0?`<b style="color:var(--danger)">みなし超過 ${x.みなし超過}h</b>`:''}
+          ${!x.入社日?'<span class="tsub">入社日が未入力</span>':''}</td></tr>`).join('')}</tbody></table></div>
+    <p class="note">有給の付与は入社日と週の所定日数から法どおりに出しています（労基法39条）　付与から2年で時効です<br>
+      時間で取る有給は、労使協定があるときだけ・年5日ぶんまでです（39条4項）　協定が無い場合はお使いにならないでください</p>`;
 }
 
 /* ── スタッフ登録 ──
@@ -1316,6 +1365,18 @@ async function load(){
       $('body').innerHTML=apHtml();
       $('body').querySelectorAll('.ap-st').forEach(b=>b.onclick=async()=>{
         await post('/recruit/status',{id:b.dataset.id,status:b.dataset.s}); load();});
+    }
+    else if(TAB==='kin'){
+      KIN=await get('/leave/all'); $('body').innerHTML=kinHtml();
+      const rl=async()=>{KIN=await get('/leave/all');$('body').innerHTML=kinHtml();wire2();};
+      const wire2=()=>{
+        $('body').querySelectorAll('.kin-ok').forEach(b=>b.onclick=async()=>{
+          await post('/leave/decide',{id:b.dataset.id,status:'ok'}); toast('承認しました'); rl();});
+        $('body').querySelectorAll('.kin-no').forEach(b=>b.onclick=async()=>{
+          if(!confirm('この申請を見送りにします'))return;
+          await post('/leave/decide',{id:b.dataset.id,status:'no'}); rl();});
+      };
+      wire2();
     }
     else if(TAB==='stf'){
       STF=await get('/staff/apps'); $('body').innerHTML=stfHtml();

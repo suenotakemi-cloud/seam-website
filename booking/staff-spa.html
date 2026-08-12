@@ -102,6 +102,31 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .sn-a .ok{margin-left:auto;background:none;border:1px solid #ddd5c8;border-radius:9px;padding:8px 12px;
   font:inherit;font-size:12.5px;color:#2f2a24;cursor:pointer;white-space:nowrap}
 .sn-t{font-size:11.5px;color:#7a6f60;font-weight:700;margin:12px 0 0}
+/* ── 打刻・有給 ── */
+.pc{background:#12100E;color:#EFE9DF;border-radius:14px;padding:15px 16px;margin:0 0 16px}
+.pc-h{font-size:12px;font-weight:700;color:rgba(239,233,223,.6);margin-bottom:10px}
+.pc-now{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
+.pc-now b{font-family:'Noto Serif JP',serif;font-size:34px;line-height:1}
+.pc-now span{font-size:12.5px;color:rgba(239,233,223,.7)}
+.pc-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pc-b{background:none;border:1px solid rgba(239,233,223,.35);color:#EFE9DF;border-radius:11px;
+  padding:15px 8px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;min-height:52px}
+.pc-b.go{background:#EFE9DF;color:#12100E;border-color:#EFE9DF}
+.pc-b:disabled{opacity:.35}
+.pc-s{font-size:12px;color:rgba(239,233,223,.6);line-height:1.8;margin-top:10px}
+.lv{background:#fff;border:1px solid #ece5d9;border-radius:14px;padding:15px 16px;margin:0 0 16px}
+.lv-h{font-size:12px;font-weight:700;color:#7a6f60;margin-bottom:8px}
+.lv-n{display:flex;align-items:baseline;gap:8px}
+.lv-n b{font-family:'Noto Serif JP',serif;font-size:32px;color:#12100E;line-height:1}
+.lv-n span{font-size:13px;color:#7a6f60}
+.lv-s{font-size:12px;color:#8a8177;line-height:1.8;margin-top:6px}
+.lv-b{width:100%;margin-top:11px;background:none;border:1px solid #ddd5c8;border-radius:11px;
+  padding:13px;font:inherit;font-size:14.5px;color:#2f2a24;cursor:pointer}
+.lv-r{display:flex;gap:8px;align-items:center;font-size:13px;padding:8px 0;border-top:1px solid #f0ebe2}
+.lv-r .st{font-size:11px;font-weight:800;padding:1px 7px;border-radius:7px}
+.lv-r .st.p{background:#fdf6ec;color:#8a611d}
+.lv-r .st.o{background:#eef7f0;color:#0c7a41}
+.lv-r .st.n{background:#fdf0ef;color:#B4302B}
 .rfbtns{display:flex;gap:7px;margin-top:10px}
 .rf-b{flex:1;background:#fff;border:1px solid #ddd5c8;border-radius:10px;padding:11px 6px;
   font:inherit;font-size:13px;color:#2f2a24;cursor:pointer}
@@ -434,7 +459,7 @@ async function load(){
     const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad(),snLoad(),tmdLoad(),rfLoad()]); render();
+    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad(),snLoad(),tmdLoad(),rfLoad(),punLoad(),lvLoad()]); render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
 async function askToken(msg){
@@ -870,6 +895,108 @@ function prFormWire(){
  *   これはSNSを続ける力になる数字で、しかも本当に人を連れてくる。
  * ★これで全部の紹介が数えられるわけではない（リンクを通らない紹介は残らない）。
  *   だから「少なくともこれだけ」と書く。多く見せない。 */
+/* ═══ 打刻 ═══
+ * ★お給料に直結する。だから丸めない・推測しない。
+ *   打刻はそのままの分で送り、丸めるのは集計のときだけ。
+ * ★押し間違いをその場で気づけるよう、次に押せるボタンだけを濃くする。 */
+let PUN=null, LV=null;
+async function punLoad(){
+  try{ const r=await fetch(U(`/punch/day?date=${DAY}`)); const j=await r.json();
+    PUN=(j&&j.ok&&j.punches&&j.punches[ME.id])||[]; }catch(e){ PUN=null; }
+}
+async function lvLoad(){
+  try{ const r=await fetch(U('/leave/me')); const j=await r.json(); LV=j&&j.ok?j:null; }catch(e){ LV=null; }
+}
+const punLast=()=>(PUN&&PUN.length)?PUN[PUN.length-1].kind:'';
+function punHtml(){
+  if(!PUN)return '';
+  const last=punLast();
+  const t=k=>{const x=(PUN||[]).filter(p=>p.kind===k).pop();
+    return x?hm(tmMin(x.at)):'';};
+  /* いま働いている時間（休憩を引く） */
+  let mins=0;
+  {const ps=[...(PUN||[])].sort((a,b)=>Date.parse(a.at)-Date.parse(b.at));
+   const i0=ps.find(x=>x.kind==='in');
+   if(i0){ const end=ps.slice().reverse().find(x=>x.kind==='out');
+     mins=Math.max(0,Math.round(((end?Date.parse(end.at):Date.now())-Date.parse(i0.at))/60000));
+     const bs=ps.filter(x=>x.kind==='bin'), be=ps.filter(x=>x.kind==='bout');
+     for(let i=0;i<Math.min(bs.length,be.length);i++)
+       mins-=Math.max(0,Math.round((Date.parse(be[i].at)-Date.parse(bs[i].at))/60000));
+     if(bs.length>be.length)mins-=Math.max(0,Math.round((Date.now()-Date.parse(bs[bs.length-1].at))/60000));
+   }}
+  const h=Math.floor(Math.max(0,mins)/60), mm2=Math.max(0,mins)%60;
+  const B=(k,l,go)=>`<button class="pc-b ${go?'go':''}" data-pun="${k}">${l}</button>`;
+  let btns='';
+  if(!last||last==='out')btns=B('in','出勤',true);
+  else if(last==='in'||last==='bout')btns=B('bin','休憩に入る')+B('out','退勤',true);
+  else if(last==='bin')btns=B('bout','休憩から戻る',true);
+  return `<div class="pc">
+    <div class="pc-h">きょうの打刻</div>
+    <div class="pc-now"><b>${h}時間${mm2}分</b><span>${last==='bin'?'休憩中':(last==='out'?'退勤しました':(last?'勤務中':'まだ打っていません'))}</span></div>
+    <div class="pc-btns">${btns}</div>
+    <div class="pc-s">出勤 ${t('in')||'—'}　休憩 ${t('bin')||'—'}〜${t('bout')||'—'}　退勤 ${t('out')||'—'}</div>
+  </div>`;
+}
+function punWire(){
+  document.querySelectorAll('[data-pun]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{
+      const r=await fetch(U('/punch'),{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({kind:b.dataset.pun,date:DAY})});
+      const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'打てませんでした');
+    }catch(e){ alert(e.message); }
+    await punLoad(); render();
+  });
+}
+/* ═══ 有給 ═══
+ * ★時間で取れるのは、労使協定があるときだけ・年5日ぶんまで（労基法39条4項）。
+ *   上限はサーバーで止めるが、押す前に画面にも出す。 */
+function lvHtml(){
+  if(!LV)return '';
+  const y=LV.有給||{}, hr=y.時間休||{};
+  const pend=(LV.申請||[]).filter(x=>x.状態==='pending');
+  const SPAN={day:'1日',half:'半日',hour:'時間'};
+  const ST={pending:['p','承認まち'],ok:['o','承認'],no:['n','見送り']};
+  return `<div class="lv">
+    <div class="lv-h">有給の残り</div>
+    <div class="lv-n"><b>${y.残り日数!=null?y.残り日数:'—'}</b><span>日（${y.残り時間||0}時間）</span></div>
+    <div class="lv-s">時間で取れる残り ${hr.残り!=null?hr.残り:'—'}時間（年に5日ぶんまで）<br>
+      ${LV.入社日?`入社 ${String(LV.入社日).replace(/-/g,'/')}　これまでの付与 ${y.付与日数}日`:'入社日が入っていません　本部にお伝えください'}</div>
+    <button class="lv-b" id="lvGo">有給を申請する</button>
+    ${(LV.申請||[]).slice(0,5).map(x=>`<div class="lv-r">
+      <span>${String(x.日).slice(5).replace('-','/')}</span>
+      <span>${SPAN[x.単位]||x.単位}${x.単位==='hour'?' '+x.時間+'h':''}</span>
+      <span style="flex:1">${esc(x.種類)}</span>
+      <span class="st ${(ST[x.状態]||['p'])[0]}">${(ST[x.状態]||['','—'])[1]}</span></div>`).join('')}
+    ${LV.今月&&LV.今月.みなし枠?`<div class="lv-s" style="margin-top:10px">
+      今月の残業 ${LV.今月.残業}時間　みなしの枠 ${LV.今月.みなし枠}時間
+      ${LV.今月.みなし超過>0?`　<b style="color:#B4302B">超過 ${LV.今月.みなし超過}時間</b>`:''}</div>`:''}
+    ${LV.今月&&LV.今月.合わない日&&LV.今月.合わない日.length?`<div class="lv-s" style="color:#B4302B">
+      打刻がそろっていない日が ${LV.今月.合わない日.length}日あります　本部にお伝えください</div>`:''}
+  </div>`;
+}
+function lvWire(){
+  const b=document.getElementById('lvGo'); if(!b)return;
+  b.onclick=async()=>{
+    const d=prompt('いつのぶんですか（例）2026-08-20', DAY); if(!d)return;
+    const sp=prompt('1日 / 半日 / 時間　のどれですか','1日'); if(!sp)return;
+    const span=/半/.test(sp)?'half':(/時間/.test(sp)?'hour':'day');
+    let hours=0;
+    if(span==='hour'){
+      const v=prompt('何時間ですか　2時間単位でお願いします（例）2','2'); if(!v)return;
+      hours=+v||0;
+    }
+    const note=prompt('ひとこと（なくても大丈夫です）','')||'';
+    try{
+      const r=await fetch(U('/leave/apply'),{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({date:d,span,hours,kind:'有給',note})});
+      const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'出せませんでした');
+      alert('申請しました　本部の承認をお待ちください');
+    }catch(e){ alert(e.message); }
+    await lvLoad(); render();
+  };
+}
+
 let RF=null;
 async function rfLoad(){
   try{ const r=await fetch(U('/ref/stats')); const j=await r.json(); RF=j&&j.ok?j:null; }catch(e){ RF=null; }
@@ -934,7 +1061,7 @@ function render(){
      自分の数字・そろそろの方・練習・モデル・申し送りを上に積んでいたせいで、
      本題にたどり着くまで1.8画面ぶんスクロールする画面になっていた（実測1,480px）。
      読ませたいものほど下に置く。上に積むのは、こちらの都合。 */
-  app.innerHTML=`<h1>今日のお客様</h1>
+  app.innerHTML=punHtml()+`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
     ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>{
       const t=TMD[r.id]||{}, ing=(t.arrive||t.start)&&!t.done;
@@ -947,9 +1074,9 @@ function render(){
       </button>`;}).join('')}</div>`
     :'<div class="empty">この日のご予約はまだありません</div>'}
     <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`
-    +notiHtml()+snHtml()+mdHtml()+prHtml()+meHtml();
+    +notiHtml()+snHtml()+lvHtml()+mdHtml()+prHtml()+meHtml();
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
-  notiWire(); prWire(); mdWire(); snWire(); tmStart(); meWire();
+  notiWire(); prWire(); mdWire(); snWire(); tmStart(); meWire(); punWire(); lvWire();
   document.getElementById('rl').onclick=load;
 }
 
