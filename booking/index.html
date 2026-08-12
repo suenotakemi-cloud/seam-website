@@ -743,6 +743,27 @@ td.slot:hover{background:#f0f7ff}
 .co-cash{margin-top:10px;background:#f7fbff;border:1px solid var(--accent2);border-radius:10px;padding:11px 12px}
 .co-quick{display:flex;gap:6px;margin:7px 0;flex-wrap:wrap}
 .co-quick button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:800;color:var(--navy)}
+/* ── 会員証で入る（お客様の予約画面）──
+   ★書かせないことが目的。読み取ったら、その場で「◯回目」「ランク」を出す。
+     入っている方が得をしていると、その場で分かるようにする。 */
+.mcard{margin-top:14px;padding:14px;border:1px dashed var(--line);border-radius:12px;background:#fafbfc}
+.mcard b{display:block;font-size:13.5px;color:var(--navy)}
+.mcard .mc-s{display:block;font-size:11.5px;color:var(--sub);line-height:1.7;margin-top:2px}
+.mc-b{width:100%;margin-top:10px;background:var(--navy);color:#fff;border:0;border-radius:11px;
+  padding:14px;font:inherit;font-size:15px;font-weight:700;cursor:pointer;min-height:50px}
+.mcard-on{margin-top:14px;padding:14px;border:1.5px solid #0c7a41;border-radius:12px;background:#f2f9f4}
+.mcard-on b{display:block;font-size:16px;color:#0c5c33}
+.mcard-on span{display:block;font-size:12.5px;color:#0c7a41;font-weight:700;margin-top:2px}
+.mcard-on .mc-s{color:var(--sub);font-weight:400;font-size:11.5px;margin-top:4px}
+.mcam{position:fixed;inset:0;background:#000;z-index:999;display:flex;flex-direction:column}
+.mcam video{flex:1;width:100%;object-fit:cover}
+.mcam .fr{position:absolute;left:12%;right:12%;top:32%;height:26%;border:2px solid #fff;
+  border-radius:14px;box-shadow:0 0 0 100vmax rgba(0,0,0,.5)}
+.mcam .ms{position:absolute;left:0;right:0;top:60%;text-align:center;color:#fff;font-size:14px;
+  line-height:1.8;text-shadow:0 1px 3px rgba(0,0,0,.6);padding:0 20px}
+.mcam .cl{position:absolute;left:0;right:0;bottom:calc(24px + env(safe-area-inset-bottom));margin:0 auto;
+  width:70%;background:#fff;color:#111;border:0;border-radius:12px;padding:15px;font:inherit;
+  font-size:16px;font-weight:700}
 /* ★お会計は、施術で濡れた手・カウンターの照明・お客様の視線の中で触る画面。
    実測で12〜13pxの文字が33箇所、高さ21pxのボタンまであった。
    ここは読みやすさと押しやすさに下限を置く。全体の見た目は変えない。
@@ -5304,6 +5325,58 @@ const _lq=new URLSearchParams(location.search);
 const IN_LINE=/Line\/[\d.]/.test(navigator.userAgent||'')||_lq.has('liff.state')||_lq.has('liff.referrer')||/liff\.line\.me/i.test(document.referrer||'');
 const BOOK_SRC=(()=>{const s=new URLSearchParams(location.search).get('src');if(['line','google','instagram','own','app'].includes(s))return s;return IN_LINE?'line':'own'})();
 // ?src= 付き = お客様導線（LINE/Google/Instagram/自社サイト）。管理タブを隠し予約画面のみ表示（管理台帳をお客様に見せない）。
+/* 会員証のQRをカメラで読む。
+   ★お客様の端末はiPhoneが多い。SafariにはQRの読み取りが入っていないので、
+     部品を後から取ってくる。取れなければ番号を打つ道を出す（行き止まりにしない）。 */
+let _zxP=null;
+function zxLoad2(){
+  if(_zxP)return _zxP;
+  _zxP=new Promise((res,rej)=>{const t=document.createElement('script');
+    t.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+    t.onload=()=>res(window.ZXing||null); t.onerror=()=>rej(new Error('x'));
+    document.head.appendChild(t);});
+  return _zxP;
+}
+function scanMemberQR(){
+  return new Promise(async(resolve)=>{
+    const box=document.createElement('div'); box.className='mcam';
+    box.innerHTML=`<video playsinline muted></video><div class="fr"></div>
+      <div class="ms">会員証のQRを枠に合わせてください</div>
+      <button class="cl">閉じる</button>`;
+    document.body.appendChild(box);
+    const v=box.querySelector('video'), ms=box.querySelector('.ms');
+    let stream=null, done=false, ctrl=null;
+    const fin=(c)=>{ if(done)return; done=true;
+      try{ if(ctrl&&ctrl.stop)ctrl.stop(); }catch(e){}
+      try{ if(stream)stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+      box.remove(); resolve(c||''); };
+    box.querySelector('.cl').onclick=()=>fin('');
+    const byHand=()=>{ const t=prompt('会員証の番号を入れてください'); fin((t||'').trim()); };
+    try{ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
+      v.srcObject=stream; await v.play(); }
+    catch(e){ box.remove(); return byHand(); }
+    if(window.BarcodeDetector){
+      try{ const det=new BarcodeDetector({formats:['qr_code']});
+        const tick=async()=>{ if(done)return;
+          try{ const r=await det.detect(v); if(r&&r.length&&r[0].rawValue)return fin(String(r[0].rawValue)); }catch(e){}
+          requestAnimationFrame(tick); };
+        tick(); return;
+      }catch(e){}
+    }
+    try{
+      const ZX=await zxLoad2(); const R=ZX&&(ZX.BrowserMultiFormatReader||ZX.BrowserQRCodeReader);
+      if(!R)throw 0;
+      const rd=new R();
+      const hit=res=>{ if(res&&typeof res.getText==='function')fin(String(res.getText())); };
+      if(typeof rd.decodeFromStream==='function')rd.decodeFromStream(stream,v,(res,e,c)=>{if(c&&!ctrl)ctrl=c;hit(res);});
+      else if(typeof rd.decodeFromVideoDevice==='function'){
+        try{stream.getTracks().forEach(t=>t.stop());}catch(e){} stream=null;
+        ctrl={stop:()=>{try{rd.reset();}catch(e){}}};
+        rd.decodeFromVideoDevice(null,v,hit);
+      } else throw 0;
+    }catch(e){ ms.textContent='この端末では読み取れません'; setTimeout(()=>{box.remove(); byHand();},1400); }
+  });
+}
 const IS_CUSTOMER=new URLSearchParams(location.search).has('src')||IN_LINE;
 /* ═══ 紹介リンク ═══
  * ★スタッフが自分のInstagramに貼るリンク。?ref=oikawa が付いている。
@@ -5868,6 +5941,15 @@ function renderBook(){
         if(bk.sei==null)bk.sei=nsp[0]||'';if(bk.mei==null)bk.mei=nsp[1]||'';
         if(bk.seiK==null)bk.seiK=ksp[0]||'';if(bk.meiK==null)bk.meiK=ksp[1]||'';
         return '';})()}
+      ${bk.memberCode?`<div class="mcard-on">
+          <b>${escH(bk.memberName||'')} 様</b>
+          <span>${bk.memberRank?escH(bk.memberRank)+'　':''}${bk.memberVisits?bk.memberVisits+'回目のご来店　':''}${bk.memberPoints!=null?'ポイント '+Number(bk.memberPoints).toLocaleString():''}</span>
+          <span class="mc-s">会員証から読み込みました　書き直していただく必要はありません</span>
+        </div>`:`<div class="mcard">
+          <b>会員証をお持ちの方</b>
+          <span class="mc-s">読み取ると、お名前とお電話が入ります　入力はいりません</span>
+          <button type="button" class="mc-b" id="mcScan">📷 会員証を読み取る</button>
+        </div>`}
       <div style="margin-top:14px;font-size:12px;font-weight:800;color:var(--navy)">お名前<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
       <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bsei" value="${bk.sei||''}" placeholder="姓（例）山田"></div><div style="flex:1"><input id="bmei" value="${bk.mei||''}" placeholder="名（例）花子"></div></div>
       <div style="font-size:12px;font-weight:800;color:var(--navy)">フリガナ（カタカナ）<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
@@ -5990,6 +6072,32 @@ function renderBook(){
       bk.perk=b.dataset.p; saveBk();
       p.querySelectorAll('.perkb').forEach(x=>x.classList.toggle('on',x.dataset.p===bk.perk));
     });
+    /* ── 会員証を読む ──
+       ★番号だけでお名前と電話が返る口は作らない。当てずっぽうで名簿が抜ける。
+         お電話の下4桁を合わせていただく＝お客様には4タップ、他人には1万分の1の壁。 */
+    {const mb=document.getElementById('mcScan');
+     if(mb)mb.onclick=async()=>{
+       const code=await scanMemberQR();
+       if(!code)return;
+       const ask=async(last4)=>{
+         const r=await fetch(API_BASE+'/member/scan',{method:'POST',headers:{'Content-Type':'application/json'},
+           body:JSON.stringify({code,last4:last4||''})});
+         const j=await r.json();
+         if(j.need==='last4'){
+           const v=prompt('ご本人さまの確認です\nお電話の下4桁を入れてください');
+           if(!v)return; return ask(v.replace(/[^0-9]/g,''));
+         }
+         if(!r.ok||!j.ok){ toast(j.error||'読み取れませんでした',true); return; }
+         bk.memberCode=j.code; bk.memberName=j.name; bk.memberRank=(j.rank&&j.rank.name)||'';
+         bk.memberVisits=j.nextVisit; bk.memberPoints=j.points;
+         if(j.name){const sp=String(j.name).split(/[\s　]+/);
+           bk.sei=sp[0]||''; bk.mei=sp[1]||''; bk.name=j.name;}
+         if(j.phone)bk.phone=j.phone;
+         saveBk(); renderBook();
+         toast(`${j.name||'会員'} 様　${j.nextVisit}回目のご来店です`);
+       };
+       await ask('');
+     };}
     {const nb=document.getElementById('bnext2'),ph=document.getElementById('bphone');
      const okAll=()=>!!(bk.lineUserId||(bk.emailProvider==='google'&&bk.email)||bk.emailVerified)
        && !telCheck((ph&&ph.value)||bk.phone).ng;
@@ -6049,7 +6157,7 @@ function renderBook(){
         alert('この内容は担当者の変更が必要です 恐れ入りますが担当を選び直してください');
         bk.staff='any'; bk.step=1; renderBook(); return;
       }
-      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menuMinWithPerk(menu,bk.perk),menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',emailProvider:bk.emailProvider||'',channel:BOOK_SRC,ref:REF,deposit:depositAmt,squarePaymentId:squarePaymentId||'',discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
+      const r=addReservation({date:bk.day,staffId:sid,start:bk.start,end:bk.start+menuMinWithPerk(menu,bk.perk),menuId:menu.id,name:bk.name,kana:bk.kana||'',phone:bk.phone||'',email:bk.email||'',emailProvider:bk.emailProvider||'',channel:BOOK_SRC,ref:REF,memberCode:bk.memberCode||'',deposit:depositAmt,squarePaymentId:squarePaymentId||'',discount:disc,discountLabel:disc?`${SMART_TIME.label}（${stName}さんからのお礼）`:'',lineUserId:bk.lineUserId||'',notify:true,
         // RPA/サロンボード書込用の解決済みフィールド（CUEPON実ID・HPB ID・SB完全一致メニュー名）
         // ★スパ予約はSPA店＝ANZUのスパ用account_id(cuSpa)とスパHPB IDを使う。spaフラグでWorkerがSPA店へ振り分け
         spa:isSpa,staffCu:staffCuFor(stObj,menu),hbpStylistId:hbpIdFor(stObj,menu),hbpStylistName:stObj.name||'',menuName:menu.name||'',menuMin:menuMinWithPerk(menu,bk.perk),

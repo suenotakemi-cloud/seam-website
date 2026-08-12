@@ -102,6 +102,12 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .sn-a .ok{margin-left:auto;background:none;border:1px solid #ddd5c8;border-radius:9px;padding:8px 12px;
   font:inherit;font-size:12.5px;color:#2f2a24;cursor:pointer;white-space:nowrap}
 .sn-t{font-size:11.5px;color:#7a6f60;font-weight:700;margin:12px 0 0}
+/* ★ご予約のときに会員証を読んでくださった方。ひと目で分かるようにする。
+   お名前も電話も書かずに取ってくださった＝いちばん手間をかけてくださっていない方。
+   その分をお迎えでお返しする。 */
+.vip{display:inline-block;margin-left:7px;font-size:10.5px;font-weight:800;
+  color:#0c5c33;background:#e8f4ec;border:1px solid #bcdcc7;border-radius:7px;padding:1px 6px;
+  vertical-align:2px}
 /* ── 打刻・有給 ── */
 .pc{background:#12100E;color:#EFE9DF;border-radius:14px;padding:15px 16px;margin:0 0 16px}
 .pc-h{font-size:12px;font-weight:700;color:rgba(239,233,223,.6);margin-bottom:10px}
@@ -1067,7 +1073,7 @@ function render(){
       const t=TMD[r.id]||{}, ing=(t.arrive||t.start)&&!t.done;
       return `<button class="card ${ing?'now':''}" data-i="${n}">
         <span class="t">${hm(r.start||0)}</span>
-        <span><span class="n">${esc(r.name||'（お名前なし）')}</span>
+        <span><span class="n">${esc(r.name||'（お名前なし）')}${r.memberCode?'<span class="vip">会員</span>':''}</span>
           <span class="m">${esc(r.menuId||'')}</span>
           ${tmzHtml(r).replace('<div class="tmz"',`<div class="tmz" data-tmz="${esc(r.id)}"`)}</span>
         <span class="tag ${r.wrote?'wr':(r.done?'on':'off')}">${r.wrote?'書きおき済':(r.done?'ご希望あり':'未記入')}</span>
