@@ -148,6 +148,7 @@ h2:first-child{margin-top:2px}
     <span class="spacer"></span>
   </div>
   <div class="wrap">
+    <div id="boardWarn"></div>
     <div class="range" id="range"></div>
     <div id="body"></div>
   </div>
@@ -176,6 +177,32 @@ async function del(p){const r=await fetch(API+p,{method:'DELETE',headers:H()});i
 async function get(p){const r=await fetch(API+p,{headers:H()});if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
 let tt;function toast(m,ng){const t=$('toast');t.textContent=m;t.className='on'+(ng?' ng':'');clearTimeout(tt);tt=setTimeout(()=>t.className='',ng?3000:1800);}
 const jst=(off=0)=>new Date(Date.now()+9*3600e3-off*86400e3).toISOString().slice(0,10);
+
+/* ── サロンボードに届いていない予約 ──
+   seam.site の予約は salon.town を通ってロボットがサロンボードへ書く。
+   ロボットが書けないと、ホットペッパー側からは空いて見えるので同じ時間に別の方が入る。
+   届いていない分をここに赤で出す。手でサロンボードに入れれば消える。 */
+async function drawBoardWarn(){
+  const el=$('boardWarn'); if(!el)return;
+  let d; try{ d=await get('/staff/board-check'); }catch(e){ return; }
+  const list=(d&&d.未反映)||[];
+  if(!list.length){ el.innerHTML=''; return; }
+  el.innerHTML=`<div style="border:2px solid #c0392b;background:#fdf0ee;border-radius:12px;padding:14px 16px;margin-bottom:14px">
+    <div style="font-weight:700;color:#c0392b;font-size:16px;margin-bottom:6px">
+      サロンボードに届いていない予約が ${list.length}件あります</div>
+    <div style="font-size:13.5px;color:#6b4a45;margin-bottom:10px">
+      ホットペッパー側からは、この時間が空いて見えています。手でサロンボードに入れてください</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${list.map(r=>`<div style="background:#fff;border-radius:8px;padding:9px 12px;font-size:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <b style="font-variant-numeric:tabular-nums">${esc(r.日時)}</b>
+        <span>${esc(r.名前)}</span>
+        <span style="color:var(--sub);font-size:12.5px">${esc(r.staff)}</span>
+        <span style="margin-left:auto;color:#c0392b;font-size:12.5px">${esc(r.状態)}</span>
+      </div>`).join('')}
+    </div></div>`;
+}
+drawBoardWarn();
+setInterval(drawBoardWarn, 5*60*1000);
 
 /* ── 期間の選び方。よく使う幅はボタン、細かいときは日付で ── */
 /* 指定されたタブに、見た目もそろえる */
@@ -1354,7 +1381,7 @@ function alertHtml(){
 
 async function load(){
   $('body').innerHTML='<div class="empty">読み込んでいます…</div>';
-  drawRange();
+  drawRange(); drawBoardWarn();
   try{
     if(TAB==='home'){ await loadHome(); $('body').innerHTML=homeHtml();
       $('body').querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{
