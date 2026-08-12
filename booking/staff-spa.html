@@ -102,6 +102,16 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .sn-a .ok{margin-left:auto;background:none;border:1px solid #ddd5c8;border-radius:9px;padding:8px 12px;
   font:inherit;font-size:12.5px;color:#2f2a24;cursor:pointer;white-space:nowrap}
 .sn-t{font-size:11.5px;color:#7a6f60;font-weight:700;margin:12px 0 0}
+/* ── 一覧に出す時間 ──
+   ★施術中は「あと何分か」だけが要る。数字が大きいほど、目を離さずに読める。
+     こえたら色を変える。読まなくても分かる状態にしておく。 */
+.tmz{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:6px;
+  font-size:12.5px;color:#7a6f60;font-weight:600}
+.tmz b{font-size:15px;font-weight:800;color:#12100E}
+.tmz .ok{color:#0c7a41}
+.tmz .ng{color:#B4302B}
+.tmz .yet{color:#a49a8c;font-weight:600}
+.card.now{border-color:#12100E;box-shadow:0 0 0 2px rgba(18,16,14,.08)}
 /* ── 練習の記録 ── */
 .prform{padding:4px 0 30px}
 .pf-h{font-family:'Noto Serif JP',serif;font-size:22px;color:#12100E;margin:8px 0 16px}
@@ -393,7 +403,7 @@ async function load(){
     const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad(),snLoad()]); render();
+    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad(),snLoad(),tmdLoad()]); render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
 async function askToken(msg){
@@ -522,6 +532,51 @@ function prHtml(){
  *   登録されていない方は、時期が来ても誰の目にも触れないまま失客する。
  *   そこを埋めるのはこの名簿だけ。だから「LINEなし」を目立たせる。
  * ★出すのは自分のお客様だけ。他の担当のお客様に声をかけると角が立つ。 */
+/* ── 一覧の時間 ──
+ * ★これまで時間は、お客様を開いて「時間」のタブまで行かないと見えなかった。
+ *   施術中に片手で開いて、タブを選んで、では見ない。トップに出す。
+ * ★担当で絞らない。ヘルプで付いているアシスタントも、
+ *   自分が付いている方の残りが見えないと動けない。 */
+let TMD={}, TMTIMER=null;
+async function tmdLoad(){
+  try{ const r=await fetch(U(`/timeline/day?date=${DAY}`)); const j=await r.json();
+    TMD=(j&&j.ok&&j.times)||{}; }catch(e){ TMD={}; }
+}
+const tmMin=iso=>{ if(!iso)return null; const d=new Date(Date.parse(iso)+9*3600e3);
+  return d.getUTCHours()*60+d.getUTCMinutes(); };
+/* 1件ぶんの時間の文字。入り／タイムアップ／残り */
+function tmzHtml(r){
+  const t=TMD[r.id]||{};
+  const s0=r.start||0, e0=r.end||(s0+60);
+  const arrive=tmMin(t.arrive), start=tmMin(t.start), done=tmMin(t.done);
+  const n=nowMin();
+  if(done!=null){
+    return `<div class="tmz"><span>入り ${arrive!=null?hm(arrive):'—'}</span>
+      <span class="ok">おわりました ${hm(done)}</span></div>`;
+  }
+  if(arrive==null&&start==null){
+    return `<div class="tmz"><span class="yet">ご予約 ${hm(s0)}〜${hm(e0)}　まだお見えではありません</span></div>`;
+  }
+  const room=e0-n;
+  return `<div class="tmz">
+    <span>入り <b>${hm(arrive!=null?arrive:start)}</b></span>
+    <span>タイムアップ <b>${hm(e0)}</b></span>
+    <b class="${room<0?'ng':(room<=10?'ng':'ok')}">${room>=0?`あと ${room}分`:`${-room}分 こえています`}</b></div>`;
+}
+/* ★1分ごとに書き換える。全部を描き直すと、押している途中の指がずれるので
+   時間の行だけ差し替える。 */
+function tmTick(){
+  document.querySelectorAll('[data-tmz]').forEach(el=>{
+    const r=ROWS.find(x=>x.id===el.dataset.tmz); if(!r)return;
+    el.outerHTML=tmzHtml(r).replace('<div class="tmz"',`<div class="tmz" data-tmz="${r.id}"`);
+  });
+}
+function tmStart(){
+  clearInterval(TMTIMER);
+  TMTIMER=setInterval(()=>{ if(!document.hidden)tmTick(); },30000);
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden)tmTick(); });
+
 let SN=null;
 async function snLoad(){
   try{ const r=await fetch(U('/soon')); const j=await r.json(); SN=j&&j.ok?j:null; }catch(e){ SN=null; }
@@ -808,18 +863,20 @@ function render(){
      読ませたいものほど下に置く。上に積むのは、こちらの都合。 */
   app.innerHTML=`<h1>今日のお客様</h1>
     <p class="lead">${ME.name?esc(ME.name)+' さん　':''}${ROWS.length}件　うち ${done}件 ご希望をお預かりしています${wrote?`　${wrote}件 書きおき済`:''}</p>
-    ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>`
-      <button class="card" data-i="${n}">
+    ${ROWS.length?`<div class="g">${ROWS.map((r,n)=>{
+      const t=TMD[r.id]||{}, ing=(t.arrive||t.start)&&!t.done;
+      return `<button class="card ${ing?'now':''}" data-i="${n}">
         <span class="t">${hm(r.start||0)}</span>
         <span><span class="n">${esc(r.name||'（お名前なし）')}</span>
-          <span class="m">${esc(r.menuId||'')}</span></span>
+          <span class="m">${esc(r.menuId||'')}</span>
+          ${tmzHtml(r).replace('<div class="tmz"',`<div class="tmz" data-tmz="${esc(r.id)}"`)}</span>
         <span class="tag ${r.wrote?'wr':(r.done?'on':'off')}">${r.wrote?'書きおき済':(r.done?'ご希望あり':'未記入')}</span>
-      </button>`).join('')}</div>`
+      </button>`;}).join('')}</div>`
     :'<div class="empty">この日のご予約はまだありません</div>'}
     <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`
     +notiHtml()+snHtml()+mdHtml()+prHtml()+meHtml();
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
-  notiWire(); prWire(); mdWire(); snWire();
+  notiWire(); prWire(); mdWire(); snWire(); tmStart();
   document.getElementById('rl').onclick=load;
 }
 
