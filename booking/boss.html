@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>今日のお店｜SEAM</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════
+   幹部・事務のスマホ画面
+
+   ★見る人は、移動中か、店を出たあとに開く。だから
+     ・開いた瞬間に「今日、合っているか」だけが分かること
+     ・合っていないときだけ、色がつくこと
+   ★数字を並べない。判断が要るものだけを出す。
+     並べると、毎日見る画面ではなくなる。
+   ══════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:#F7F4EF;color:#2f2a24;font-family:'Noto Sans JP',system-ui,sans-serif;
+  font-size:15px;line-height:1.8;-webkit-font-smoothing:antialiased}
+.wrap{max-width:640px;margin:0 auto;padding:0 15px 90px}
+header{position:sticky;top:0;z-index:10;background:rgba(247,244,239,.96);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid #e7e1d5}
+.hd{max-width:640px;margin:0 auto;padding:14px 15px;display:flex;align-items:center;gap:10px}
+.hd .b{font-family:'Noto Serif JP',serif;letter-spacing:.3em;font-size:14px;color:#7a6f60}
+.hd .d{margin-left:auto;font-size:13px;color:#8a8177}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:0 15px 10px;max-width:640px;margin:0 auto;
+  scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:0 0 auto;background:#fff;border:1px solid #ddd5c8;border-radius:999px;
+  padding:9px 15px;font:inherit;font-size:13.5px;color:#4a443c;cursor:pointer;white-space:nowrap}
+.tabs button.on{background:#12100E;color:#fff;border-color:#12100E;font-weight:700}
+h1{font-family:'Noto Serif JP',serif;font-size:21px;font-weight:500;margin:20px 0 4px}
+.lead{font-size:13px;color:#8a8177;margin:0 0 14px}
+.card{background:#fff;border:1px solid #ece5d9;border-radius:15px;padding:16px;margin-bottom:12px}
+.card.ng{border-color:#e9bfbc;background:#fdf7f6}
+.card.ok{border-color:#cfe3d4}
+.ttl{font-size:12px;font-weight:700;color:#8a8177;margin-bottom:8px}
+.big{font-family:'Noto Serif JP',serif;font-size:32px;line-height:1.1;color:#12100E}
+.big.ng{color:#B4302B}
+.big.ok{color:#0c7a41}
+.sub{font-size:12.5px;color:#8a8177;line-height:1.8;margin-top:5px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-top:12px}
+.row3 .c{text-align:center}
+.row3 b{display:block;font-family:'Noto Serif JP',serif;font-size:19px;color:#12100E}
+.row3 span{font-size:11px;color:#8a8177}
+.li{display:flex;gap:10px;align-items:center;padding:11px 0;border-top:1px solid #f2ede4;font-size:14px}
+.li:first-of-type{border-top:0}
+.li .g{flex:1;min-width:0}
+.li .m{font-family:'Noto Serif JP',serif;font-size:17px;white-space:nowrap}
+.li .s{font-size:12px;color:#8a8177}
+.btn{width:100%;background:#12100E;color:#fff;border:0;border-radius:12px;padding:15px;
+  font:inherit;font-size:15.5px;font-weight:700;cursor:pointer;min-height:52px}
+.btn.line{background:none;color:#2f2a24;border:1px solid #ddd5c8}
+.btn+.btn{margin-top:8px}
+.mini{background:none;border:1px solid #ddd5c8;border-radius:9px;padding:8px 12px;
+  font:inherit;font-size:13px;color:#2f2a24;cursor:pointer;min-height:40px}
+.mini.pri{background:#12100E;color:#fff;border-color:#12100E;font-weight:700}
+label{display:block;font-size:12.5px;color:#7a6f60;font-weight:700;margin:12px 0 4px}
+input,select,textarea{width:100%;padding:13px;border:1px solid #ddd5c8;border-radius:11px;
+  font:inherit;font-size:16px;background:#fff;color:#2f2a24;min-height:48px}
+.cats{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.cats button{background:#fff;border:1px solid #ddd5c8;border-radius:999px;padding:9px 13px;
+  font:inherit;font-size:13.5px;cursor:pointer;min-height:44px}
+.cats button.on{background:#12100E;color:#fff;border-color:#12100E;font-weight:700}
+.shot{width:100%;height:190px;border:1px dashed #ddd5c8;border-radius:12px;background:#faf8f4;
+  display:flex;align-items:center;justify-content:center;color:#a49a8c;font-size:13.5px;
+  overflow:hidden;margin-top:6px;cursor:pointer}
+.shot img{width:100%;height:100%;object-fit:cover}
+.empty{text-align:center;color:#a49a8c;font-size:13.5px;padding:22px 0}
+.gate{position:fixed;inset:0;background:#12100E;display:flex;align-items:center;justify-content:center;
+  padding:20px;z-index:50}
+.gate .box{background:#fff;border-radius:16px;padding:22px;max-width:340px;width:100%}
+.tag{font-size:11px;font-weight:800;border-radius:8px;padding:2px 8px}
+.tag.p{background:#fdf6ec;color:#8a611d}
+.tag.n{background:#fdf0ef;color:#B4302B}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:#12100E;color:#fff;border-radius:11px;padding:12px 18px;font-size:14px;
+  transition:.2s;pointer-events:none;z-index:60;max-width:88vw;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%)}
+#toast.ng{background:#B4302B}
+</style>
+</head>
+<body>
+<header><div class="hd"><span class="b">SEAM</span><span style="font-size:13px">幹部・事務</span>
+  <span class="d" id="day"></span></div>
+  <div class="tabs" id="tabs">
+    <button data-t="today" class="on">今日</button>
+    <button data-t="money">お金</button>
+    <button data-t="leave">休みの承認</button>
+    <button data-t="add">レシートを入れる</button>
+  </div>
+</header>
+<div class="wrap"><div id="app"></div></div>
+<div class="gate" id="gate"><div class="box">
+  <div style="font-family:'Noto Serif JP',serif;letter-spacing:.3em;font-size:13px;color:#7a6f60">SEAM</div>
+  <div style="font-size:18px;font-weight:700;margin:6px 0 4px">幹部・事務</div>
+  <div style="font-size:12.5px;color:#8a8177;line-height:1.8">管理トークンを入れてください</div>
+  <input id="gtok" type="password" placeholder="管理トークン" style="margin-top:10px">
+  <button class="btn" id="ggo" style="margin-top:10px">ひらく</button>
+</div></div>
+<div id="toast"></div>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>'¥'+Math.round(+n||0).toLocaleString();
+const jst=(off=0)=>new Date(Date.now()+9*3600e3-off*86400e3).toISOString().slice(0,10);
+const DAY=jst();
+let TOK=localStorage.getItem('stb_admin_tok')||'';
+let TAB='today';
+const H=(...a)=>({'Authorization':'Bearer '+TOK,...Object.assign({},...a)});
+async function get(p){const r=await fetch(API+p,{headers:H()});
+  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:H({'Content-Type':'application/json'}),body:JSON.stringify(b)});
+  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+let tt;function toast(m,ng){const t=$('toast');t.textContent=m;t.className='on'+(ng?' ng':'');
+  clearTimeout(tt);tt=setTimeout(()=>t.className='',ng?3200:1900);}
+$('day').textContent=DAY.replace(/-/g,'/');
+
+/* ── 今日 ──
+ * ★開いた瞬間に見たいのは「今日、合っているか」だけ。
+ *   合っていれば緑で一行。合っていなければ赤で、いくら違うかを出す。 */
+let REC=null, PET=null, KIN=null;
+async function loadToday(){
+  const y=jst(1);
+  [REC,PET,KIN]=await Promise.all([
+    get(`/reconcile?date=${y}&to=${DAY}`).catch(()=>null),
+    get(`/petty?from=${DAY.slice(0,8)}01&to=${DAY}`).catch(()=>null),
+    get('/leave/all').catch(()=>null),
+  ]);
+}
+function todayHtml(){
+  const sm=(REC&&REC.まとめ)||{}, diff=(REC&&REC.差)||[];
+  const ap=(KIN&&KIN.申請)||[];
+  const st=(KIN&&KIN.スタッフ)||[];
+  const 足りない=st.filter(x=>x.足りない>0);
+  const 超過=st.filter(x=>x.みなし超過>0);
+  const 合わない=st.filter(x=>x.今月&&x.今月.合わない日&&x.今月.合わない日.length);
+  const mise=(PET&&PET.まとめ)||{};
+  const items=[];
+  if(diff.length)items.push({ng:1,t:`会計に 直すところが ${diff.length}件`,s:'Squareと台帳が合っていません',tab:'money'});
+  if(ap.length)items.push({t:`休みの申請が ${ap.length}件`,s:'承認をお待ちです',tab:'leave'});
+  if(合わない.length)items.push({ng:1,t:`打刻がそろっていない人 ${合わない.length}人`,s:合わない.map(x=>x.name).join('・'),tab:'leave'});
+  if(超過.length)items.push({ng:1,t:`みなし残業を超えた人 ${超過.length}人`,s:'別途お支払いの対象です',tab:'leave'});
+  if(足りない.length)items.push({t:`年5日の有給が足りない人 ${足りない.length}人`,s:'法律で取らせる義務があります',tab:'leave'});
+  if(mise.未精算)items.push({t:`立替の未精算 ${yen(mise.未精算)}`,s:'お返ししていません',tab:'money'});
+  return `<h1>今日のお店</h1>
+    <p class="lead">合っていないことだけを出しています</p>
+    ${items.length?items.map(x=>`<div class="card ${x.ng?'ng':''}" data-go="${x.tab}" style="cursor:pointer">
+        <div class="ttl">${x.ng?'⚠ ':''}見ていただきたいこと</div>
+        <div style="font-size:16.5px;font-weight:700">${esc(x.t)}</div>
+        <div class="sub">${esc(x.s)}</div></div>`).join('')
+      :`<div class="card ok"><div class="big ok">ぜんぶ合っています</div>
+        <div class="sub">直すところ・承認まちはありません</div></div>`}
+    <div class="card">
+      <div class="ttl">昨日と今日の売上（Square）</div>
+      <div class="big">${yen(sm.Square合計)}</div>
+      <div class="row3">
+        <div class="c"><b>${sm.件数||0}</b><span>お会計</span></div>
+        <div class="c"><b>${yen(sm.手数料)}</b><span>手数料</span></div>
+        <div class="c"><b>${yen(sm.台帳の現金以外)}</b><span>台帳（現金以外）</span></div>
+      </div>
+      <div class="sub">現金は「お金」でレジ締めと合わせます</div>
+    </div>`;
+}
+
+/* ── お金 ── */
+function moneyHtml(){
+  const diff=(REC&&REC.差)||[];
+  const m=(PET&&PET.まとめ)||{}, rows=(PET&&PET.rows)||[];
+  const use=(PET&&PET.使いみち)||[];
+  const adv=rows.filter(x=>x.kind==='advance'&&!x.paid_back);
+  return `<h1>お金</h1>
+    <p class="lead">今月ぶん　小口 ${yen(m.小口)}　立替 ${yen(m.立替)}</p>
+    ${diff.length?`<div class="card ng">
+      <div class="ttl">⚠ 会計の直すところ</div>
+      ${diff.slice(0,8).map(x=>`<div class="li"><div class="g">${esc(x.理由||x.reason||'')}
+        <div class="s">${esc(x.日||x.date||'')}</div></div>
+        <div class="m">${yen(x.金額||x.amount||0)}</div></div>`).join('')}
+    </div>`:''}
+    ${adv.length?`<div class="card">
+      <div class="ttl">お返ししていない立替</div>
+      ${adv.map(x=>`<div class="li"><div class="g">${esc(x.who||'')}
+        <div class="s">${String(x.date).slice(5).replace('-','/')}　${esc(x.category)}</div></div>
+        <div class="m">${yen(x.amount)}</div>
+        <button class="mini pri pay" data-id="${esc(x.id)}">返した</button></div>`).join('')}
+    </div>`:''}
+    <div class="card">
+      <div class="ttl">何に使ったか（今月）</div>
+      ${use.length?use.map(x=>`<div class="li"><div class="g">${esc(x.項目)}</div>
+        <div class="m">${yen(x.金額)}</div></div>`).join(''):'<div class="empty">まだありません</div>'}
+    </div>
+    <div class="card">
+      <div class="ttl">レシート（今月 ${rows.length}件）</div>
+      ${rows.length?rows.slice(0,30).map(x=>`<div class="li">
+        <div class="g">${esc(x.category)}${x.memo?`<div class="s">${esc(x.memo)}</div>`:''}
+          <div class="s">${String(x.date).slice(5).replace('-','/')}　${esc(x.who||'')}
+            ${x.kind==='advance'?'　立替':''}</div></div>
+        <div class="m">${yen(x.amount)}</div>
+        <button class="mini shotb" data-id="${esc(x.id)}">写真</button></div>`).join('')
+        :'<div class="empty">まだありません</div>'}
+    </div>`;
+}
+
+/* ── 休みの承認 ── */
+const SPAN={day:'1日',half:'半日',hour:'時間'};
+function leaveHtml(){
+  const ap=(KIN&&KIN.申請)||[], st=(KIN&&KIN.スタッフ)||[];
+  return `<h1>休みの承認</h1>
+    <p class="lead">2時間ずつの申請もここで承認します</p>
+    ${ap.length?ap.map(x=>`<div class="card">
+      <div style="font-size:16.5px;font-weight:700">${esc(x.名前)}</div>
+      <div class="sub">${String(x.日).replace(/-/g,'/')}　${SPAN[x.単位]||x.単位}${x.単位==='hour'?' '+x.時間+'時間':''}　${esc(x.種類)}
+        ${x.ひとこと?`<br>${esc(x.ひとこと)}`:''}</div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="mini pri lv-ok" data-id="${esc(x.id)}" style="flex:1">承認する</button>
+        <button class="mini lv-no" data-id="${esc(x.id)}" style="flex:1">見送り</button></div>
+    </div>`).join(''):'<div class="card"><div class="empty">承認まちはありません</div></div>'}
+    <div class="card">
+      <div class="ttl">スタッフごと</div>
+      ${st.length?st.map(x=>`<div class="li"><div class="g">${esc(x.name)}
+        <div class="s">残り ${x.残り日数}日　今年 ${x.今年とった日}日
+          ${x.足りない>0?`<span class="tag n">年5日まで あと${x.足りない}日</span>`:''}
+          ${x.みなし超過>0?`<span class="tag n">みなし超過 ${x.みなし超過}h</span>`:''}</div></div>
+        <div class="m">${(x.今月||{}).実働||0}h</div></div>`).join(''):'<div class="empty">スタッフの登録がまだです</div>'}
+    </div>`;
+}
+
+/* ── レシートを入れる ──
+ * ★写真は撮ったその場で小さくしてから送る。
+ *   そのまま送ると1枚3〜5MBあり、置き場が重くなって全部の画面が遅くなる。 */
+const CATS=['薬剤・材料','備品・消耗品','交通費','飲食（会議）','広告','通信','修繕','雑費'];
+let ADD={kind:'petty',category:'',photo:'',amount:'',memo:'',who:''};
+function addHtml(){
+  return `<h1>レシートを入れる</h1>
+    <p class="lead">写真を撮って、金額と使いみちを選ぶだけです</p>
+    <div class="card">
+      <label>どちらですか</label>
+      <div class="cats">
+        <button data-kind="petty" class="${ADD.kind==='petty'?'on':''}">小口から出した</button>
+        <button data-kind="advance" class="${ADD.kind==='advance'?'on':''}">自分で立て替えた</button>
+      </div>
+      <label>レシートの写真</label>
+      <div class="shot" id="shot">${ADD.photo?`<img src="${ADD.photo}">`:'ここを押して撮る'}</div>
+      <input type="file" id="file" accept="image/*" capture="environment" style="display:none">
+      <label>金額</label>
+      <input id="amt" type="number" inputmode="numeric" value="${ADD.amount}" placeholder="1200">
+      <label>何に使いましたか</label>
+      <div class="cats">${CATS.map(c=>`<button data-cat="${c}" class="${ADD.category===c?'on':''}">${c}</button>`).join('')}</div>
+      <label>ひとこと（なくても大丈夫です）</label>
+      <input id="memo" value="${esc(ADD.memo)}" placeholder="例）銀座 カラー剤の買い足し">
+      ${ADD.kind==='advance'?`<label>お名前</label><input id="who" value="${esc(ADD.who)}" placeholder="立て替えた方">`:''}
+      <button class="btn" id="save" style="margin-top:16px">この内容で入れる</button>
+    </div>`;
+}
+function addWire(){
+  document.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{ADD.kind=b.dataset.kind;draw();});
+  document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{ADD.category=b.dataset.cat;draw();});
+  const f=$('file');
+  $('shot').onclick=()=>f.click();
+  f.onchange=()=>{
+    const file=f.files&&f.files[0]; if(!file)return;
+    const img=new Image();
+    img.onload=()=>{
+      /* 長辺1200pxまで・JPEG。文字が読めればいいので、これで十分 */
+      const MAX=1200, sc=Math.min(1,MAX/Math.max(img.width,img.height));
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(img.width*sc); cv.height=Math.round(img.height*sc);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      let q=0.7, d=cv.toDataURL('image/jpeg',q);
+      while(d.length>420000&&q>0.35){q-=0.1;d=cv.toDataURL('image/jpeg',q);}
+      ADD.photo=d; URL.revokeObjectURL(img.src);
+      ADD.amount=$('amt').value; ADD.memo=$('memo').value;
+      draw();
+    };
+    img.src=URL.createObjectURL(file);
+  };
+  $('save').onclick=async()=>{
+    const b=$('save');
+    const amount=+$('amt').value||0;
+    if(!amount){toast('金額を入れてください',true);return;}
+    if(!ADD.category){toast('何に使ったかを選んでください',true);return;}
+    b.disabled=true; b.textContent='入れています…';
+    try{
+      await post('/petty',{date:DAY,kind:ADD.kind,amount,category:ADD.category,
+        memo:$('memo').value,photo:ADD.photo,who:ADD.kind==='advance'?(($('who')||{}).value||''):''});
+      ADD={kind:ADD.kind,category:'',photo:'',amount:'',memo:'',who:''};
+      toast('入れました');
+      PET=await get(`/petty?from=${DAY.slice(0,8)}01&to=${DAY}`).catch(()=>PET);
+      draw();
+    }catch(e){ toast(e.message,true); }
+    b.disabled=false; b.textContent='この内容で入れる';
+  };
+}
+
+function draw(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===TAB));
+  const a=$('app');
+  if(TAB==='today')a.innerHTML=todayHtml();
+  else if(TAB==='money')a.innerHTML=moneyHtml();
+  else if(TAB==='leave')a.innerHTML=leaveHtml();
+  else a.innerHTML=addHtml();
+  a.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>{TAB=x.dataset.go;draw();});
+  a.querySelectorAll('.lv-ok').forEach(b=>b.onclick=async()=>{
+    await post('/leave/decide',{id:b.dataset.id,status:'ok'});
+    toast('承認しました'); KIN=await get('/leave/all'); draw();});
+  a.querySelectorAll('.lv-no').forEach(b=>b.onclick=async()=>{
+    if(!confirm('この申請を見送りにします'))return;
+    await post('/leave/decide',{id:b.dataset.id,status:'no'});
+    KIN=await get('/leave/all'); draw();});
+  a.querySelectorAll('.pay').forEach(b=>b.onclick=async()=>{
+    await post('/petty/paid',{id:b.dataset.id});
+    toast('お返ししたことにしました');
+    PET=await get(`/petty?from=${DAY.slice(0,8)}01&to=${DAY}`); draw();});
+  a.querySelectorAll('.shotb').forEach(b=>b.onclick=async()=>{
+    const j=await get('/petty/photo?id='+encodeURIComponent(b.dataset.id));
+    if(!j.photo){toast('写真がありません',true);return;}
+    const w=window.open('','_blank');
+    w.document.write(`<body style="margin:0;background:#111"><img src="${j.photo}" style="width:100%"></body>`);
+  });
+  if(TAB==='add')addWire();
+}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;draw();});
+
+async function boot(){
+  $('gate').style.display='none';
+  $('app').innerHTML='<p class="lead" style="margin-top:24px">読み込んでいます…</p>';
+  try{ await loadToday(); draw(); }
+  catch(e){ $('app').innerHTML=`<div class="card ng"><div class="ttl">読み込めませんでした</div>
+    <div class="sub">${esc(e.message)}</div></div>`; }
+}
+$('ggo').onclick=()=>{
+  const v=($('gtok').value||'').trim(); if(!v)return;
+  TOK=v; localStorage.setItem('stb_admin_tok',v); boot();
+};
+$('gtok').onkeydown=e=>{if(e.key==='Enter')$('ggo').click();};
+if(TOK)boot();
+</script>
+</body>
+</html>
