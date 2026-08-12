@@ -123,6 +123,17 @@ function form(){
     </div>
 
     <div class="card">
+      <h2>お仕事のこと</h2>
+      <p class="h2s">有給の日数は、入社日と週の勤務日数で法律どおりに決まります　ここが違うと日数が変わります</p>
+      <label>入社日<span class="req">必須</span>
+        <span class="why">分からなければ、いちばん近いと思う日で構いません　本部で確かめます</span>
+        <input id="f-hire" type="date"></label>
+      <label>週に何日 勤務ですか<span class="req">必須</span>
+        <span class="why">週4日以下の方は、有給の付与が「比例付与」という別の数になります</span>
+        <select id="f-wd">${[5,6,4,3,2,1].map(v=>`<option value="${v}">${v}日</option>`).join('')}</select></label>
+    </div>
+
+    <div class="card">
       <h2>労務のこと</h2>
       <p class="h2s">雇用の手続き（社会保険・住民税）に要るものです　この2つは本部だけが見られます　一覧には出ません</p>
       <label>生年月日
@@ -173,6 +184,7 @@ function form(){
       er.textContent='ホットペッパーの掲載名を入れてください　掲載に出ているとおりにお願いします';er.style.display='block';return;}
     if(!shops.length){er.textContent='所属の店舗を選んでください';er.style.display='block';return;}
     if(!g('f-tel')){er.textContent='お電話を入れてください';er.style.display='block';return;}
+    if(!g('f-hire')){er.textContent='入社日を入れてください　有給の日数がここで決まります';er.style.display='block';return;}
     const hpbIds={};
     document.querySelectorAll('.hpbid').forEach(x=>{ if(x.value.trim())hpbIds[x.dataset.s]=x.value.trim(); });
     b.disabled=true; b.textContent='送っています…';
@@ -183,7 +195,8 @@ function form(){
           last:g('f-last'),first:g('f-first'),kanaLast:g('f-klast'),kanaFirst:g('f-kfirst'),
           hpbLast:g('f-hlast'),hpbFirst:g('f-hfirst'),hpbName:g('f-hpbname'),
           shops,hpbIds,tel:g('f-tel'),email:g('f-email'),lineId:g('f-line'),insta:g('f-insta'),
-          birth:g('f-birth'),addr:g('f-addr'),note:g('f-note')})});
+          birth:g('f-birth'),addr:g('f-addr'),note:g('f-note'),
+          hire:g('f-hire'),weekDays:+g('f-wd')||5})});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'送れませんでした');
       app.innerHTML=`<div class="card done">
         <h1 style="font-size:21px">ありがとうございます</h1>

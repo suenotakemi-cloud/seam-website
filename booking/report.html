@@ -630,6 +630,25 @@ function stfHtml(){
           <b>あなたのリンク</b><br>
           <span style="word-break:break-all">${esc(link(x.code))}</span>
           <button class="mini stf-qr" data-c="${esc(x.code)}" data-n="${esc(x.name)}" style="margin-left:6px">QR</button></div>`:''}
+        <!-- ★勤務の条件は会社が決めるもの。本人の申告はここに入っているが、必ず確かめる。
+             週の所定日数を間違えると、有給の付与日数そのものが変わる（比例付与）。 -->
+        <div style="margin-top:10px;padding:10px;background:#faf8f4;border:1px solid #ece5d9;border-radius:10px">
+          <b style="font-size:12.5px">勤務の条件（本部が決めます）</b>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:7px;align-items:flex-end">
+            <label style="font-size:11.5px;color:var(--sub)">入社日<br>
+              <input type="date" class="wk-hire" data-id="${esc(x.id)}" value="${esc(x.hire||'')}" style="font-size:13px"></label>
+            <label style="font-size:11.5px;color:var(--sub)">週の日数<br>
+              <input type="number" class="wk-wd" data-id="${esc(x.id)}" value="${x.weekDays||5}" min="1" max="7" style="width:62px;font-size:13px"></label>
+            <label style="font-size:11.5px;color:var(--sub)">1日の所定<br>
+              <input type="number" class="wk-wh" data-id="${esc(x.id)}" value="${x.workHours||8}" min="1" max="12" step="0.5" style="width:70px;font-size:13px"></label>
+            <label style="font-size:11.5px;color:var(--sub)">みなし残業(h)<br>
+              <input type="number" class="wk-ot" data-id="${esc(x.id)}" value="${x.deemedOt||0}" min="0" max="80" style="width:80px;font-size:13px"></label>
+            <label style="font-size:11.5px;color:var(--sub)">有給を手で決める<br>
+              <input type="number" class="wk-pm" data-id="${esc(x.id)}" value="${x.ptoManual==null?'':x.ptoManual}" min="0" max="40" step="0.5" placeholder="空＝法どおり" style="width:110px;font-size:13px"></label>
+            <button class="mini pri wk-save" data-id="${esc(x.id)}">この条件で保存</button>
+          </div>
+          <div class="tsub" style="margin-top:5px">みなし残業は「基本給に何時間ぶん含むか」　超えた分は別途お支払いの対象として勤怠に出ます</div>
+        </div>
         <div class="tsub" style="margin-top:6px">${(x.appliedAt||'').slice(0,16).replace('T',' ').replace(/-/g,'/')}</div>
       </div>
       ${x.status==='pending'?`<div style="display:flex;flex-direction:column;gap:6px">
@@ -1405,6 +1424,15 @@ async function load(){
           const sp=$('pii-'+b.dataset.id);
           sp.textContent='　'+[x.birth,x.addr].filter(Boolean).join('　')||'　（入っていません）';
           b.style.display='none';});
+        $('body').querySelectorAll('.wk-save').forEach(b=>b.onclick=async()=>{
+          const q=c=>$('body').querySelector(`.${c}[data-id="${b.dataset.id}"]`);
+          try{
+            await post('/staff/work',{id:b.dataset.id,
+              hire:q('wk-hire').value, weekDays:+q('wk-wd').value||5,
+              workHours:+q('wk-wh').value||8, deemedOt:+q('wk-ot').value||0,
+              ptoManual:q('wk-pm').value===''?null:+q('wk-pm').value});
+            toast('保存しました　勤怠の画面に反映されます');
+          }catch(e){ toast(e.message,true); }});
         $('body').querySelectorAll('.stf-ok').forEach(b=>b.onclick=async()=>{
           const inp=$('body').querySelector(`.stf-code[data-id="${b.dataset.id}"]`);
           try{
