@@ -221,6 +221,13 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .kml{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px;
   font-size:10.5px;color:rgba(239,233,223,.45);font-weight:600}
 .kmb{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:2px}
+.kvoice{width:100%;margin:0 0 10px;background:#EFE9DF;color:#12100E;border:0;border-radius:12px;
+  padding:14px;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+.kvoice.on{background:#B4302B;color:#fff}
+.kvlive{display:none;font-size:14px;line-height:1.7;color:#EFE9DF;background:rgba(239,233,223,.08);
+  border:1px solid rgba(239,233,223,.2);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.kvmsg{font-size:12.5px;color:#C9B79A;line-height:1.7;margin:0 0 10px}
+.kvhint{font-size:12px;color:rgba(239,233,223,.5);line-height:1.8;margin:0 0 10px}
 .kscrow{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:2px;align-items:center}
 .kcam{background:#EFE9DF;color:#12100E;border:0;border-radius:10px;padding:11px 13px;
   font:inherit;font-size:15px;font-weight:700;white-space:nowrap;cursor:pointer}
@@ -1434,6 +1441,201 @@ function scanBarcode(){
   });
 }
 const kRatio=(a,b)=>(!a||!b)?'':('1:'+String(Math.round(b/a*100)/100));
+/* ═══ 話して記入 ═══
+ * salontown-booking で作った解析をそのまま持ってきた（同じ中身にしておく）。
+ * 「N-8を30グラム 1対2 放置20分 次回は7週間後」のような話し言葉を
+ * 薬剤・量・比率・放置・部位・次回に振り分ける。
+ * ★入れっぱなしにしない。行として出して、必ず目で確かめられる形で反映する。
+ *   聞き違いは必ず起きる。起きたときに直せることのほうが、精度より大事。
+ */
+const kataV = (s) => s.replace(/[ぁ-ん]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
+
+const normV = (s) => kataV(String(s).toLowerCase())
+  .replace(/[ー\-\s・]/g, '')
+  .replace(/エヌ/g, 'n').replace(/オキシ/g, 'ox').replace(/オー|オウ/g, 'o')
+  .replace(/エックス/g, 'x').replace(/ハチ/g, '8').replace(/ロク/g, '6')
+  .replace(/[％]/g, '%');
+function matchProductV(word, products) {
+  const w = normV(word);
+  if (!w || w.length < 2) return null;
+  let best = null, bestScore = 0;
+  for (const p of (products || [])) {
+    const n = normV(p.name);
+    let score = 0;
+    if (n.includes(w) || w.includes(n)) score = Math.min(w.length, n.length) / Math.max(w.length, n.length);
+    else {
+      for (let len = Math.min(w.length, n.length); len >= 2; len--) {
+        let hit = false;
+        for (let i = 0; i + len <= w.length; i++) {
+          if (n.includes(w.slice(i, i + len))) { score = len / Math.max(w.length, n.length); hit = true; break; }
+        }
+        if (hit) break;
+      }
+    }
+    if (score > bestScore) { bestScore = score; best = p; }
+  }
+  if (bestScore >= 0.3) return best;
+  /* 短い通称（「オキシ」→ox等）: 台帳でその語を含む薬剤が1つだけなら採用。複数なら？のまま */
+  const contains = (products || []).filter(p => normV(p.name).includes(w));
+  if (contains.length === 1) return contains[0];
+  return null;
+}
+/* 音声認識の器。無い端末では null（呼ぶ側が文字入力に切り替える）
+   ★iPhoneのSafariは対応していない。だから「使えません」で終わらせず、
+     必ず打つ道を出す。 */
+function makeSpeech(onText, onEnd) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.lang = 'ja-JP'; r.interimResults = true; r.continuous = true;
+  let finalText = '';
+  r.onresult = (e) => {
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    onText(finalText, interim);
+  };
+  r.onend = () => onEnd(finalText);
+  r.onerror = () => {};
+  return r;
+}
+/* 話した内容を、SEAMのカルテの形（mix）に置きかえる。
+ * ★salontown は1行に「name(A + B) / g / ratio」を持つが、
+ *   SEAMは1つの塗りに薬剤が何本もぶら下がる形。ここで橋渡しする。
+ * ★勝手に決めない。比率から割れるときだけ割る。割れないものは空で置いて、
+ *   スタッフに埋めてもらう（数字を推測で埋めると、材料費が嘘になる）。 */
+function voiceToMix(r){
+  const out=[];
+  (r.meds||[]).forEach(m=>{
+    const names=String(m.name||'').split(' + ').map(x=>x.replace(/^？/,'').trim()).filter(Boolean);
+    if(!names.length)return;
+    const tot=+m.g||0;
+    let gs=names.map(()=>'');
+    if(tot){
+      const rt=String(m.ratio||'').split(':').map(Number).filter(x=>x>0);
+      if(names.length===1)gs=[tot];
+      else if(rt.length===names.length){
+        const sum=rt.reduce((a,b)=>a+b,0);
+        gs=rt.map(x=>Math.round(tot*x/sum*10)/10);
+      }
+      /* 数が合わないときは分けない。合計だけ1本目に置くと嘘になるので空のまま */
+    }
+    const e={where:(m.zone&&KWHERE.includes(m.zone))?m.zone:'全体',
+      agents:names.map((n,i)=>({id:'',name:n,g:gs[i]||''})),
+      oxy:'',oxyG:'',min:m.min||''};
+    /* 薬剤1本＋「1対2」＝ 1剤:2剤 と読む（現場のいちばん多い言い方）。
+       オキシの濃度は言葉から決められないので、選ぶのは人にまかせる */
+    if(names.length===1&&tot){
+      const rt=String(m.ratio||'').split(':').map(Number);
+      if(rt.length===2&&rt[0]>0&&rt[1]>0)e.oxyG=Math.round(tot*rt[1]/rt[0]*10)/10;
+    }
+    out.push(e);
+  });
+  return out;
+}
+function parseVoice(text, products) {
+  const t = String(text)
+    .replace(/[０-９．]/g, c => c === '．' ? '.' : String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+    .replace(/ミリリットル|みりりっとる|ｍｌ|ＭＬ|シーシー|cc/g, 'ml')
+    .replace(/(\d)\s*(?:ミリ|みり)(?:リットル|りっとる)?/g, '$1ml')
+    .replace(/グラム|ぐらむ/g, 'g')
+    .replace(/パーセント|ぱーせんと/g, '%')
+    .replace(/ワンツー|いちたいに|一対二/g, '1:2')
+    .replace(/(\d+(?:\.\d+)?)対(\d+(?:\.\d+)?)/g, '$1:$2')
+    .replace(/放置/g, ' 放置');
+  const out = { meds: [], next: '', state: '', zoneStates: {}, memo: [] };
+  const nx = t.match(/次回[はにも]?(.+?)(?:[。]|$)/);
+  if (nx) out.next = nx[1].trim();
+  /* ★取り出した「次回…」は、ここで文から抜く。
+     抜かずに進むと、句読点を入れずに話したとき（＝ふつうの話し方）に
+     文がひとかたまりのまま「次回を含む」と判定され、薬剤ごと捨てられていた。
+     「N-8を30グラム 1対2 放置20分 次回は7週間後」が丸ごと消えていた。 */
+  let tt = t.replace(/次回[はにも]?.*$/, ' ');
+  /* 来店時の状態（「来た時の状態に対して薬剤設定をする」＝ビフォーの記録） */
+  /* ★「来た時は毛先が褪色 根元にアッシュ8を30グラム」のように、
+     状態を先に言ってから調合に入るのがふつうの話し方。
+     ここで最後まで取ってしまうと、そのあとの薬剤が全部消える。
+     句読点か、調合が始まったと分かるところ（部位＋数字＋g/分）で切る。 */
+  const STOP = '(?:[、。]|(?:根元|中間|毛先|全体|前髪|もみあげ|襟足|表面|ホイル|インナー)[はにをがのも]?[^、。]{0,24}?\\d+\\s*(?:g|ml|分)|$)';
+  const stRe = new RegExp('(?:来た時の状態|来店時の状態|来た時|来店時)[はがも]?(.+?)(?=' + STOP + ')');
+  const stM = t.match(stRe);
+  if (stM && stM[1].trim()) {
+    out.state = stM[1].trim();
+    tt = tt.replace(stM[0], ' ');
+  }
+
+  const ZONES = /(根元|中間|毛先|全体|ホイル|ホイール|インナー|前髪|もみあげ|襟足|表面)/;
+  /* 番号でも呼べる: ①/1番=根元・②/2番=中間・③/3番=毛先 */
+  const tz = tt
+    .replace(/[①]|[1１一]\s*番(?:目)?/g, '根元')
+    .replace(/[②]|[2２二]\s*番(?:目)?/g, '中間')
+    .replace(/[③]|[3３三]\s*番(?:目)?/g, '毛先')
+    .replace(/根本/g, '根元');
+  const segs = tz.split(/[、。,]|そして|あと/).map(s => s.trim()).filter(Boolean);
+  let cur = null, lastZone = '';
+  for (const seg of segs) {
+    if (/次回|来た時|来店時|状態/.test(seg)) continue;
+    /* 量は「はかりで量る」＝単位はgかml。比率は薬剤どうしの割合（3:1等） */
+    const amt = seg.match(/(\d+(?:\.\d+)?)\s*(ml|g)\b/);
+    const min = seg.match(/(?:放置)?\s*(\d+)\s*分/);
+    const ratio = seg.match(/(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)/);
+    const zoneM = seg.match(ZONES);
+    /* ★「根元にアッシュ、マット10g」のように、2つ目で部位を言い直さないのがふつう。
+       言われなければ直前の部位のままにする（言い直さないと全体になっていた）。 */
+    const zone = zoneM ? zoneM[1].replace('ホイール', 'ホイル') : lastZone;
+    if (zoneM) lastZone = zone;
+
+    /* エリアの状態（薬剤でなく髪の説明）:「根元 2センチ新生毛」「毛先 13レベル ベージュ…」
+       明度レベル(4〜15)とダメージレベルも拾い、髪の図の色に使う */
+    const STATEY = /新生|センチ|cm|ダメージ|明度|残留|赤み|黄み|褪色|退色|レベル|トーン|バージン|黒染め|白髪|ブリーチ毛/;
+    if (zone && !amt && !ratio && STATEY.test(seg)) {
+      const desc = seg.replace(new RegExp(ZONES.source, 'g'), '').replace(/^[はがのにで]+/, '').trim();
+      if (desc) {
+        const lv = desc.match(/(\d{1,2})\s*(?:レベル|トーン)/) || desc.match(/明度\s*(\d{1,2})/);
+        const dmg = desc.match(/ダメージ(?:レベル)?\s*(?:は)?\s*(\d)/);
+        out.zoneStates[zone] = { text: desc,
+          level: lv ? Math.min(15, Math.max(3, +lv[1])) : null,
+          damage: dmg ? +dmg[1] : null };
+        continue;
+      }
+    }
+
+    /* 薬剤名の部分だけ残す（量・比率・時間・部位を除く。レベル番号「サファイア12」は残す） */
+    const nameArea = seg
+      .replace(/(\d+(?:\.\d+)?)\s*(ml|g|分|%)/g, ' ')
+      .replace(/\d+(?:\.\d+)?:\d+(?:\.\d+)?/g, ' ')
+      .replace(/放置|置いて|置きました/g, ' ')
+      .replace(new RegExp(ZONES.source, 'g'), ' ');
+    /* 「AとBを3対1で40g」＝1つのボウル（配合）。と/＋で薬剤を分ける */
+    const parts = nameArea.split(/と|＋|\+|たす/)
+      .map(p => p.replace(/[のでをはにが]/g, ' ').trim())
+      .filter(p => p.replace(/\s/g, '').length >= 2);
+    const names = parts.map(p => { const h = matchProductV(p, products);
+      return h ? h.name : '？' + p.replace(/\s+/g, ' '); });
+    const anyHit = names.some(n => !n.startsWith('？'));
+
+    if (names.length && (anyHit || amt || ratio)) {
+      cur = { code: '', name: names.join(' + '), g: '', unit: 'g', min: '', ratio: '', zone };
+      out.meds.push(cur);
+    } else if (zone && cur && !cur.zone) {
+      cur.zone = zone;   // 「根元に」だけの言い足し
+    }
+    if (amt) {
+      if (cur && cur.g === '') { cur.g = amt[1]; cur.unit = amt[2]; }
+      else { /* 名前が取れないまま量だけ来た→上書きせず「要確認」行を作る */
+        cur = { code: '', name: '？薬剤名を確認', g: amt[1], unit: amt[2], min: '', ratio: '', zone };
+        out.meds.push(cur);
+      }
+    }
+    if (min && cur) cur.min = min[1];
+    if (ratio && cur && !cur.ratio) cur.ratio = ratio[1] + ':' + ratio[2];
+    if (!amt && !min && !ratio && !names.length && !zone && seg.length > 3) out.memo.push(seg);
+  }
+  return out;
+}
+
 /* ★調合を1行の式で見せる。
  *   アッシュ 20g ＋ マット 10g ＝ 1剤30g／OX6% 60g
  * 数字を入れた瞬間にここが動くので、「いま何を混ぜているか」が手元で読める。
@@ -1452,6 +1654,17 @@ function kFormula(m){
  *   だから、いま塗っているその場で見せる。
  *   グラムを入れた瞬間に金額が動く＝ひとりひとりが意識できる。
  * 値段が入っていない薬剤は足さない。分からないものを混ぜると、数字が嘘になる。 */
+let KVOICE=null;
+/* 話した名前を薬剤の台帳と照合するための一覧。
+   台帳に無い薬剤は「？名前」のまま行になる（勝手に別のものにしない） */
+let _vag=null;
+async function voiceAgents(){
+  if(_vag)return _vag;
+  try{ const r=await fetch(U('/agents')); const j=await r.json();
+    _vag=(j.agents||[]).map(a=>({name:a.name||'',id:a.id||''})).filter(a=>a.name); }
+  catch(e){ _vag=[]; }
+  return _vag;
+}
 let AGP={};   // 薬剤の1gあたり（id と 名前 の両方で引けるように）
 async function loadAgentPrice(){
   try{ const r=await fetch(U('/agents')); const j=await r.json();
@@ -1541,7 +1754,12 @@ function paintKarte(p){
       ${L.shampoo?`<p class="mid"${L.shampoo==='痛がられた'?' style="color:#F0A79C;font-weight:600"':''}>シャンプー ${esc(L.shampoo)}</p>`:''}
       ${L.assistant?`<p class="mid">アシスタント ${esc(L.assistant)}</p>`:''}
       ${kMixText(L.body)?`<button class="kbtn" id="kcopy">前回の薬剤を写す</button>`:''}</div>`:''}
-    <div class="sec"><h3>使った薬剤</h3>${mix||'<p class="mid">まだありません</p>'}
+    <div class="sec"><h3>使った薬剤</h3>
+      <button class="kvoice" id="kvoice">🎤 話して記入</button>
+      <div class="kvlive" id="kvlive"></div>
+      <div class="kvmsg" id="kvmsg"></div>
+      <p class="kvhint">例）根元にアッシュ8を20グラム、マット6を10グラム、1対2で放置25分</p>
+      ${mix||'<p class="mid">まだありません</p>'}
       <button class="kbtn" id="kadd">＋ 塗りを足す</button></div>
     ${(()=>{const mc=matCost(b);
       if(!mc.g)return '';
@@ -1578,6 +1796,41 @@ function kWire(p){
   p.querySelectorAll('[data-dm]').forEach(x=>x.onclick=()=>{b.mix.splice(+x.dataset.dm,1);paint();});
   p.querySelectorAll('[data-da]').forEach(x=>x.onclick=()=>{
     const [i,j]=x.dataset.da.split(':').map(Number); b.mix[i].agents.splice(j,1); paint();});
+  /* ── 話して記入 ──
+     ★話した内容を、そのまま行にして出す。書き換えはしない。
+       聞き違いは必ず起きるので、直せる形で置くことが精度より大事。 */
+  {const vb=p.querySelector('#kvoice');
+   if(vb)vb.onclick=async()=>{
+     if(KVOICE){ try{KVOICE.stop();}catch(e){} return; }
+     const live=p.querySelector('#kvlive'), msg=p.querySelector('#kvmsg');
+     const apply=async(text)=>{
+       KVOICE=null; vb.textContent='🎤 話して記入'; vb.classList.remove('on');
+       if(live){live.style.display='none';live.textContent='';}
+       const t=String(text||'').trim(); if(!t)return;
+       const prods=await voiceAgents();
+       const r=parseVoice(t,prods);
+       const adds=voiceToMix(r);
+       adds.forEach(x=>(b.mix||(b.mix=[])).push(x));
+       /* 次回のご提案とメモは、書きおきの欄へ足す（消さずに足す） */
+       const extra=[...(r.next?['【次回】'+r.next]:[]),...(r.state?['【来た時】'+r.state]:[]),...(r.memo||[])];
+       if(extra.length)b.free=(b.free?b.free+'\n':'')+extra.join('\n');
+       KT._vmsg=adds.length
+         ?`${adds.length}件を入れました　g数とオキシを確かめてください`
+         :'薬剤は聞き取れませんでした　書きおきに残しています';
+       paint();
+     };
+     KVOICE=makeSpeech((fin,interim)=>{ if(live){live.style.display='block';live.textContent=fin+interim;} }, apply);
+     if(!KVOICE){
+       /* iPhoneのSafariはここに来る。使えませんで終わらせず、打つ道を出す */
+       const t=prompt('この端末は話して記入に対応していません\nそのまま文字で入れてください\n\n例）根元にアッシュ8を20グラム、マット6を10グラム、1対2で放置25分');
+       if(t)await apply(t);
+       return;
+     }
+     vb.textContent='⏹ 話し終えたらタップ'; vb.classList.add('on');
+     if(msg)msg.textContent='';
+     try{ KVOICE.start(); }catch(e){ KVOICE=null; vb.textContent='🎤 話して記入'; vb.classList.remove('on'); }
+   };}
+  {const mg=p.querySelector('#kvmsg'); if(mg&&KT._vmsg){mg.textContent=KT._vmsg; KT._vmsg='';}}
   const add=p.querySelector('#kadd'); if(add)add.onclick=()=>{(b.mix||(b.mix=[])).push({where:'根元',agents:[],oxy:'',oxyG:'',min:''});paint();};
   const cp=p.querySelector('#kcopy'); if(cp)cp.onclick=()=>{
     b.mix=kMixes(KT_LAST.body).map(m=>({where:m.where||'',oxy:m.oxy||'',oxyG:m.oxyG||'',min:m.min||'',
