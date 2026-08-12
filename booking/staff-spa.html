@@ -375,7 +375,7 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
     <button id="oclose">とじる</button></div>
   <div class="tabs">
     <button data-t="prep" class="on">したく</button>
-    <button data-t="score">譜面</button>
+    <button data-t="score" id="tab-score">譜面</button>
     <button data-t="care">施術中</button>
     <button data-t="after">おわりに</button>
     <button data-t="time">時間</button>
@@ -900,6 +900,14 @@ async function open(n){
     const j=await q.json(); CUR=(j.precare&&j.precare.summary)||null;
   }catch(e){ CUR=null; }
   RESV=r; NOTE={note:'',memo:''}; KT=null; KT_LAST=null; TM=null; SOAK=null;
+  /* ★譜面はヘッドスパの工程表。ヘアのお客様には要らない。
+     出しっぱなしだと、毎回いちばん左に関係のないタブが居座る。
+     メニューにスパが入っているときだけ出す。 */
+  {const mn=String(r.menuId||r.menuName||'');
+   const spa=/スパ|ヘッドスパ|SPA|spa|水素|炭酸/.test(mn);
+   const tb=document.getElementById('tab-score');
+   if(tb){ tb.style.display=spa?'':'none';
+     if(!spa&&TAB==='score')TAB='prep'; }}
   try{
     const w=await fetch(U(`/visit/note?resv=${encodeURIComponent(r.id)}`));
     const wj=await w.json(); if(wj&&wj.note)NOTE={note:wj.note.note||'',memo:wj.note.memo||''};
@@ -1535,6 +1543,37 @@ function voiceToMix(r){
   });
   return out;
 }
+/* 読点の無い一続きの言葉から、台帳にある薬剤名を拾い出す。
+ * ★長いものから探す。「アッシュ」と「アッシュ 12」があるとき、
+ *   短いほうで先に当たると、12が量として拾われてしまう。
+ * ★名前のすぐ後ろにある数字＋g を、その薬剤の量として一緒に取る
+ *   （「アッシュ12を20グラムマット6を10グラム」＝2本それぞれに量がある）。 */
+function scanNames(seg, products){
+  const list=(products||[]).map(p=>String(p.name||'')).filter(n=>n.length>=2)
+    .sort((a,b)=>normV(b).length-normV(a).length);
+  const nseg=normV(seg);
+  const used=new Array(nseg.length).fill(false);
+  const hits=[];
+  for(const nm of list){
+    const nn=normV(nm); if(nn.length<2)continue;
+    let from=0;
+    while(from<=nseg.length-nn.length){
+      const i=nseg.indexOf(nn,from); if(i<0)break;
+      let free=true; for(let k=i;k<i+nn.length;k++) if(used[k]){free=false;break;}
+      if(free){ for(let k=i;k<i+nn.length;k++)used[k]=true;
+        hits.push({name:nm,at:i,end:i+nn.length}); }
+      from=i+1;
+    }
+  }
+  hits.sort((a,b)=>a.at-b.at);
+  const gs=hits.map((h,i)=>{
+    const nx=hits[i+1]?hits[i+1].at:nseg.length;
+    const m=nseg.slice(h.end,nx).match(/(\d+(?:\.\d+)?)\s*(?:g|ml)/);
+    return m?m[1]:'';
+  });
+  let rest=''; for(let i=0;i<nseg.length;i++) if(!used[i])rest+=nseg[i];
+  return {names:hits.map(h=>h.name), gs, rest};
+}
 function parseVoice(text, products) {
   const t = String(text)
     .replace(/[０-９．]/g, c => c === '．' ? '.' : String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
@@ -1602,6 +1641,33 @@ function parseVoice(text, products) {
       }
     }
 
+    /* ★話し言葉には読点が入らない。
+       「アッシュ12マット20新生毛NB9…30グラム」のように全部くっついて届く。
+       読点で切る前提のままだと、これがまるごと1つの薬剤名になっていた
+       （実機で「アッシュ 12 マット 20 新繊毛な NB 9 ダメージもな 30g」という
+        1行ができた）。
+       そこで、台帳にある薬剤名を長いものから順に探して、当たったところで切る。
+       当たらなかった言葉は捨てずに、書きおきへ回す。 */
+    {
+      const found = scanNames(seg, products);
+      if (found.names.length > 1) {
+        const gAll = amt ? +amt[1] : 0;
+        const rt = ratio ? [+ratio[1], +ratio[2]] : null;
+        const sumR = rt ? (rt[0] + rt[1]) : 0;
+        found.names.forEach((nm, k) => {
+          let g = found.gs[k] || '';
+          if (!g && gAll && rt && found.names.length === 2 && sumR)
+            g = String(Math.round(gAll * rt[k] / sumR * 10) / 10);
+          cur = { code: '', name: nm, g: g, unit: (amt && amt[2]) || 'g',
+            min: min ? min[1] : '', ratio: '', zone };
+          out.meds.push(cur);
+        });
+        /* ★当たらなかった言葉は書きおきに回さない。
+           ここに残るのは正規化したあとの文字（「根元ニヲ20gヲ10g1:2デ放置25分」）で、
+           人が読めるものではない。読めないものをカルテに残すと、次の人が困る。 */
+        continue;
+      }
+    }
     /* 薬剤名の部分だけ残す（量・比率・時間・部位を除く。レベル番号「サファイア12」は残す） */
     const nameArea = seg
       .replace(/(\d+(?:\.\d+)?)\s*(ml|g|分|%)/g, ' ')

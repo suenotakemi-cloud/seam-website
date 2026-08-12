@@ -29,6 +29,8 @@
   input,select,textarea{width:100%;padding:13px;border:1px solid #ddd5c8;border-radius:11px;
     font:inherit;font-size:16px;background:#fff;color:#2f2a24;min-height:48px}
   textarea{min-height:74px;resize:vertical}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .why2{font-size:11.5px;color:#8a8177;line-height:1.7;margin:8px 0 0}
   .shops{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
   .sh{display:flex;align-items:center;gap:9px;border:1px solid #ddd5c8;border-radius:11px;
     padding:12px;font-size:14.5px;cursor:pointer;background:#fff;min-height:48px}
@@ -72,15 +74,29 @@ function form(){
     <div class="card">
       <h2>お名前</h2>
       <p class="h2s">給与・カルテ・レジに出る名前です</p>
-      <label>お名前<span class="req">必須</span>
-        <span class="why">戸籍のお名前でお願いします</span>
-        <input id="f-name" maxlength="40" placeholder="山田 花子"></label>
-      <label>ふりがな<span class="req">必須</span>
-        <span class="why">五十音で並べるときに使います</span>
-        <input id="f-kana" maxlength="40" placeholder="やまだ はなこ"></label>
-      <label>ホットペッパーの表示名
-        <span class="why">掲載に出ているお名前　うちのシステムと突き合わせるために使います　同じなら空欄で構いません</span>
-        <input id="f-hpbname" maxlength="40" placeholder="例）HANA"></label>
+      <div class="two">
+        <label>姓<span class="req">必須</span><input id="f-last" maxlength="20" placeholder="山田"></label>
+        <label>名<span class="req">必須</span><input id="f-first" maxlength="20" placeholder="花子"></label>
+      </div>
+      <div class="two">
+        <label>セイ<span class="req">必須</span>
+          <input id="f-klast" maxlength="20" placeholder="ヤマダ"></label>
+        <label>メイ<span class="req">必須</span>
+          <input id="f-kfirst" maxlength="20" placeholder="ハナコ"></label>
+      </div>
+      <p class="why2">ふりがなはカタカナでお願いします　ひらがなで入れても、カタカナに直ります</p>
+    </div>
+
+    <div class="card">
+      <h2>ホットペッパー</h2>
+      <p class="h2s">掲載に出ているとおりに書いてください　1文字でも違うと、あとで突き合わせるときに全部手で直すことになります</p>
+      <div class="two">
+        <label>掲載の姓<span class="req">必須</span><input id="f-hlast" maxlength="20" placeholder="山田"></label>
+        <label>掲載の名<span class="req">必須</span><input id="f-hfirst" maxlength="20" placeholder="ハナ"></label>
+      </div>
+      <label>掲載の表示名<span class="req">必須</span>
+        <span class="why">お客様に見えている呼び名です（例）HANA</span>
+        <input id="f-hpbname" maxlength="40" placeholder="HANA"></label>
     </div>
 
     <div class="card">
@@ -151,7 +167,10 @@ function form(){
     const er=document.getElementById('err'), b=document.getElementById('go');
     er.style.display='none';
     const shops=shopBoxes.filter(x=>x.querySelector('input').checked).map(x=>x.dataset.sh);
-    if(!g('f-name')||!g('f-kana')){er.textContent='お名前とふりがなを入れてください';er.style.display='block';return;}
+    if(!g('f-last')||!g('f-first')){er.textContent='姓と名を入れてください';er.style.display='block';return;}
+    if(!g('f-klast')||!g('f-kfirst')){er.textContent='セイとメイを入れてください';er.style.display='block';return;}
+    if(!g('f-hlast')||!g('f-hfirst')||!g('f-hpbname')){
+      er.textContent='ホットペッパーの掲載名を入れてください　掲載に出ているとおりにお願いします';er.style.display='block';return;}
     if(!shops.length){er.textContent='所属の店舗を選んでください';er.style.display='block';return;}
     if(!g('f-tel')){er.textContent='お電話を入れてください';er.style.display='block';return;}
     const hpbIds={};
@@ -159,7 +178,10 @@ function form(){
     b.disabled=true; b.textContent='送っています…';
     try{
       const r=await fetch(API+'/staff/apply',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({invite:INV,name:g('f-name'),kana:g('f-kana'),hpbName:g('f-hpbname'),
+        body:JSON.stringify({invite:INV,
+          name:g('f-last')+' '+g('f-first'), kana:g('f-klast')+' '+g('f-kfirst'),
+          last:g('f-last'),first:g('f-first'),kanaLast:g('f-klast'),kanaFirst:g('f-kfirst'),
+          hpbLast:g('f-hlast'),hpbFirst:g('f-hfirst'),hpbName:g('f-hpbname'),
           shops,hpbIds,tel:g('f-tel'),email:g('f-email'),lineId:g('f-line'),insta:g('f-insta'),
           birth:g('f-birth'),addr:g('f-addr'),note:g('f-note')})});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'送れませんでした');
@@ -170,6 +192,12 @@ function form(){
     }catch(e){ b.disabled=false; b.textContent='この内容で送る';
       er.textContent=e.message; er.style.display='block'; }
   };
+  /* ★ふりがなはカタカナ（ホットペッパーがカナ表記なので、そろえないと突き合わない）。
+     ひらがなで入れても直す。注意書きだけ出して直さないと、必ず混ざる。 */
+  ['f-klast','f-kfirst'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.oninput=()=>{ el.value=el.value.replace(/[ぁ-ゖ]/g,c=>String.fromCharCode(c.charCodeAt(0)+0x60)); };
+  });
   drawHpb();
 }
 
