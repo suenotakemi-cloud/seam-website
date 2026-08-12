@@ -228,6 +228,27 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
   border:1px solid rgba(239,233,223,.2);border-radius:10px;padding:10px 12px;margin-bottom:10px}
 .kvmsg{font-size:12.5px;color:#C9B79A;line-height:1.7;margin:0 0 10px}
 .kvhint{font-size:12px;color:rgba(239,233,223,.5);line-height:1.8;margin:0 0 10px}
+/* ── 毛束と頭の図 ──
+   ★塗る場所は「頭のどこか」と「毛束のどこか」の2つで決まる。
+     選択肢の名前だけ並べても、どこを指しているか人によってずれる。絵で押す。
+   ★分割は2〜5で変わる。3つ固定にすると、現場の言い方に合わない。 */
+.kdia{display:flex;gap:12px;background:rgba(239,233,223,.05);border:1px solid rgba(239,233,223,.16);
+  border-radius:12px;padding:12px;margin-bottom:10px}
+.kdia svg{flex:none}
+.kdia .side{flex:1;min-width:0}
+.kdl{font-size:11px;color:rgba(239,233,223,.5);font-weight:700;margin:0 0 5px}
+.ksp{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.ksp button{background:none;border:1px solid rgba(239,233,223,.28);color:#EFE9DF;border-radius:999px;
+  padding:7px 11px;font:inherit;font-size:12.5px;cursor:pointer}
+.ksp button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF;font-weight:700}
+.kdiv{display:flex;gap:5px;margin-bottom:8px}
+.kdiv button{flex:1;background:none;border:1px solid rgba(239,233,223,.28);color:#EFE9DF;
+  border-radius:9px;padding:8px 0;font:inherit;font-size:13px;cursor:pointer}
+.kdiv button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF;font-weight:700}
+.kband{cursor:pointer}
+.kbandt{font-size:11px;fill:#12100E;font-weight:700;pointer-events:none}
+.kbandt.off{fill:rgba(239,233,223,.75)}
+.khint2{font-size:11.5px;color:rgba(239,233,223,.5);line-height:1.7}
 .kscrow{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:2px;align-items:center}
 .kcam{background:#EFE9DF;color:#12100E;border:0;border-radius:10px;padding:11px 13px;
   font:inherit;font-size:15px;font-weight:700;white-space:nowrap;cursor:pointer}
@@ -1358,6 +1379,54 @@ function tTick(){
  * この画面から名乗ることはできない＝他人の名前で書けない。 */
 let KT=null, KT_LAST=null, KT_BUSY=false;
 const KWHERE=['根元','中間','毛先','全体','前髪','リタッチ','ハイライト','その他'];
+/* ═══ 毛束と頭の図 ═══
+ * ★塗る場所は「頭のどこか」と「毛束のどこか」の2つで決まる。
+ *   名前を並べただけの選択肢では、人によって指す場所がずれる。絵で押す。
+ * ★分割は2〜5。3つ固定にすると、現場の言い方に合わない。 */
+const KSPOT=['全体','前髪','トップ','サイド','バック','襟足'];
+const KBANDS={
+  2:['根元','毛先'],
+  3:['根元','中間','毛先'],
+  4:['根元','中間①','中間②','毛先'],
+  5:['根元','中間①','中間②','中間③','毛先'],
+};
+/* 横から見た頭。前が左。押した場所が塗る場所になる */
+function headSvg(sel){
+  /* ★輪郭は「頭だ」と分かればいい。押すのは印のほう。
+     区画を多角形で塗り分けようとすると、どうしても頭に見えない形になり、
+     「これは何の絵か」を考えさせてしまう。丸と首だけにする。
+     顔は描かない（描くと絵に気を取られる）。左が前。 */
+  const L='rgba(239,233,223,.5)';
+  const P=[['前髪',40,44],['トップ',68,24],['サイド',40,76],['バック',98,60],['襟足',88,100]];
+  return `<svg viewBox="0 0 128 132" width="120" height="124" role="img" aria-label="頭の図　左が前">
+    <ellipse cx="68" cy="60" rx="38" ry="42" fill="none" stroke="${L}" stroke-width="1.5"/>
+    <path d="M54 100 v18 M86 100 v18" fill="none" stroke="${L}" stroke-width="1.5"/>
+    <path d="M30 56 l-7 5 l7 5" fill="none" stroke="${L}" stroke-width="1.3"/>
+    <text x="14" y="76" font-size="9" fill="${L}">前</text>
+    ${P.map(([v,x,y])=>{const on=(sel||'全体')===v;
+      return `<g class="kband" data-spot="${v}">
+        <circle cx="${x}" cy="${y}" r="13" fill="${on?'#EFE9DF':'rgba(18,16,14,.9)'}"
+          stroke="${L}" stroke-width="1.2"/>
+        <text x="${x}" y="${y+4}" class="kbandt ${on?'':'off'}" text-anchor="middle">${v[0]}</text>
+      </g>`;}).join('')}
+  </svg>`;
+}
+/* 毛束。上が根元、下が毛先。段の数はえらべる */
+function strandSvg(n, filled){
+  const H=126, W=40, top=4, h=(H-top)/n;
+  const L='rgba(239,233,223,.55)';
+  let out=`<svg viewBox="0 0 ${W} ${H+6}" width="${W}" height="${H+6}" role="img" aria-label="毛束の図">`;
+  for(let i=0;i<n;i++){
+    const y=top+h*i, last=i===n-1;
+    const f=filled[i]?'#EFE9DF':'rgba(239,233,223,.10)';
+    const d=last
+      ? `M6 ${y} h28 v${h-16} q0 12 -14 ${h*0.5>16?16:h*0.5} q-14 -4 -14 -${h*0.5>16?16:h*0.5} z`
+      : `M6 ${y} h28 v${h-3} h-28 z`;
+    out+=`<path class="kband" data-band="${i}" d="${d}" fill="${f}" stroke="${L}" stroke-width="1.2"/>`;
+    out+=`<text x="20" y="${y+h/2+4}" class="kbandt ${filled[i]?'':'off'}" text-anchor="middle">${i+1}</text>`;
+  }
+  return out+'</svg>';
+}
 const KOXY=['3%','4.5%','6%'];
 /* 伝えた回数が、そのまま次の来店になる（2万人の調査） */
 const KADV=['スタイリングの仕方','おうちでのケア','使っている薬剤のこと','次回の提案','髪の状態の説明'];
@@ -1790,6 +1859,23 @@ async function kLoad(){
     KT_LAST=list.find(x=>x.date!==DAY)||null;
   }catch(e){}
 }
+/* 図をひとまとめに。押した場所から塗りを作る */
+function kDiaHtml(b){
+  const n=Math.min(5,Math.max(2,+b.split||3));
+  const labels=KBANDS[n];
+  const filled=labels.map(l=>kMixes(b).some(m=>m.where===l&&(m.agents||[]).length));
+  return `<div class="kdia">
+      ${strandSvg(n,filled)}
+      <div class="side">
+        <div class="kdl">頭のどこ</div>
+        ${headSvg(b.spot||'全体')}
+        <div class="ksp">${KSPOT.map(v=>`<button data-spot="${v}" class="${(b.spot||'全体')===v?'on':''}">${v}</button>`).join('')}</div>
+        <div class="kdl">毛束を いくつに分ける</div>
+        <div class="kdiv">${[2,3,4,5].map(v=>`<button data-split="${v}" class="${n===v?'on':''}">${v}</button>`).join('')}</div>
+        <p class="khint2">図の段を押すと、その段の塗りができます</p>
+      </div>
+    </div>`;
+}
 function paintKarte(p){
   if(!KT){ p.innerHTML='<p class="none" style="margin-top:20px">読み込んでいます…</p>';
     kLoad().then(()=>paint()); return; }
@@ -1798,7 +1884,8 @@ function paintKarte(p){
     const gA=(m.agents||[]).reduce((s2,a)=>s2+(+a.g||0),0);
     const rat=kRatio(gA,+m.oxyG||0);
     return `<div class="kmix">
-      <div class="kmh"><select data-i="${i}" data-f="where">${KWHERE.map(w=>`<option ${m.where===w?'selected':''}>${w}</option>`).join('')}</select>
+      <div class="kmh"><select data-i="${i}" data-f="where">${[...new Set([...(KBANDS[Math.min(5,Math.max(2,+b.split||3))]||[]),...KWHERE,m.where||''].filter(Boolean))].map(w=>`<option ${m.where===w?'selected':''}>${w}</option>`).join('')}</select>
+        ${m.spot&&m.spot!=='全体'?`<span style="font-size:12px;color:rgba(239,233,223,.7)">${esc(m.spot)}</span>`:''}
         <b>${rat?'1剤 : 2剤 = '+rat.replace('1:','1 : '):''}</b><button data-dm="${i}">✕</button></div>
       ${kFormula(m)}
       ${(m.agents||[]).map((a,j)=>`<div class="kag"><span>${esc(a.name)}</span>
@@ -1821,6 +1908,7 @@ function paintKarte(p){
       ${L.assistant?`<p class="mid">アシスタント ${esc(L.assistant)}</p>`:''}
       ${kMixText(L.body)?`<button class="kbtn" id="kcopy">前回の薬剤を写す</button>`:''}</div>`:''}
     <div class="sec"><h3>使った薬剤</h3>
+      ${kDiaHtml(b)}
       <button class="kvoice" id="kvoice">🎤 話して記入</button>
       <div class="kvlive" id="kvlive"></div>
       <div class="kvmsg" id="kvmsg"></div>
@@ -1865,6 +1953,21 @@ function kWire(p){
   /* ── 話して記入 ──
      ★話した内容を、そのまま行にして出す。書き換えはしない。
        聞き違いは必ず起きるので、直せる形で置くことが精度より大事。 */
+  /* 図の配線。押した場所を、そのまま塗りにする */
+  p.querySelectorAll('[data-split]').forEach(x=>x.onclick=()=>{ b.split=+x.dataset.split; paint(); });
+  p.querySelectorAll('[data-spot]').forEach(x=>x.onclick=()=>{ b.spot=x.dataset.spot; paint(); });
+  p.querySelectorAll('[data-band]').forEach(x=>x.onclick=()=>{
+    const n=Math.min(5,Math.max(2,+b.split||3));
+    const w=(KBANDS[n]||[])[+x.dataset.band]; if(!w)return;
+    const spot=b.spot||'全体';
+    /* 同じ場所・同じ段の塗りがあれば、そこへ足す。無ければ作る */
+    let hit=kMixes(b).find(m=>m.where===w&&(m.spot||'全体')===spot);
+    if(!hit){ (b.mix||(b.mix=[])).push({where:w,spot,agents:[],oxy:'',oxyG:'',min:''}); }
+    paint();
+    setTimeout(()=>{const boxes=p.querySelectorAll('.kmix');
+      const idx=kMixes(b).findIndex(m=>m.where===w&&(m.spot||'全体')===spot);
+      if(boxes[idx])boxes[idx].scrollIntoView({block:'center',behavior:'smooth'});},60);
+  });
   {const vb=p.querySelector('#kvoice');
    if(vb)vb.onclick=async()=>{
      if(KVOICE){ try{KVOICE.stop();}catch(e){} return; }
