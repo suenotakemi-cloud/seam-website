@@ -102,6 +102,9 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .sn-a .ok{margin-left:auto;background:none;border:1px solid #ddd5c8;border-radius:9px;padding:8px 12px;
   font:inherit;font-size:12.5px;color:#2f2a24;cursor:pointer;white-space:nowrap}
 .sn-t{font-size:11.5px;color:#7a6f60;font-weight:700;margin:12px 0 0}
+.rfbtns{display:flex;gap:7px;margin-top:10px}
+.rf-b{flex:1;background:#fff;border:1px solid #ddd5c8;border-radius:10px;padding:11px 6px;
+  font:inherit;font-size:13px;color:#2f2a24;cursor:pointer}
 /* ── 一覧に出す時間 ──
    ★施術中は「あと何分か」だけが要る。数字が大きいほど、目を離さずに読める。
      こえたら色を変える。読まなくても分かる状態にしておく。 */
@@ -431,7 +434,7 @@ async function load(){
     const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
-    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad(),snLoad(),tmdLoad()]); render();
+    ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad(),snLoad(),tmdLoad(),rfLoad()]); render();
   }catch(e){ app.innerHTML=`<div class="err">読み込めませんでした: ${esc(e.message)}</div>`; }
 }
 async function askToken(msg){
@@ -860,26 +863,68 @@ function prFormWire(){
     PRF=null; PRON=null; localStorage.removeItem('stb_practice_on');
     await prLoad(); render();};
 }
+/* ── あなたのリンク ──
+ * ★推薦（0〜10で聞く点数）はやめた。どこにも出せず、打ち手にも繋がらず、
+ *   答えが1件も無いうちは「0人があなたを推薦」とだけ出て、逆に人を傷つけていた。
+ * ★代わりに、自分のリンクが何回見られて、そこから何人が予約したかを出す。
+ *   これはSNSを続ける力になる数字で、しかも本当に人を連れてくる。
+ * ★これで全部の紹介が数えられるわけではない（リンクを通らない紹介は残らない）。
+ *   だから「少なくともこれだけ」と書く。多く見せない。 */
+let RF=null;
+async function rfLoad(){
+  try{ const r=await fetch(U('/ref/stats')); const j=await r.json(); RF=j&&j.ok?j:null; }catch(e){ RF=null; }
+}
+function refLink(){ return RF&&RF.code?`https://seam.site/booking/?src=instagram&ref=${encodeURIComponent(RF.code)}`:''; }
 function meHtml(){
-  if(!ME_NUM)return '';
-  const n=ME_NUM.nps||{}, m=ME_NUM.month||{};
+  const m=(ME_NUM&&ME_NUM.month)||{};
   const yen2=v=>'¥'+Number(v||0).toLocaleString();
+  const link=refLink();
   return `<div class="mecard">
-    <div class="me-h">${esc(ME_NUM.name||'')} さんの今月</div>
-    <div class="me-hero">
-      <div class="me-n">${n.推薦者||0}</div>
-      <div class="me-l">人が あなたを<br>推薦してくださいました</div>
-    </div>
-    ${n.答え?`<div class="me-sub">${n.答え}人が答えてくださいました${n.あと一歩?`　あと一歩の方 ${n.あと一歩}人`:''}</div>`
-      :`<div class="me-sub">まだ答えが届いていません　お会計のあと、LINEでおうかがいしています</div>`}
+    <div class="me-h">${esc((ME_NUM&&ME_NUM.name)||ME.name||'')} さんの今月</div>
+    ${link?`<div class="me-hero">
+        <div class="me-n">${(RF.予約||0)}</div>
+        <div class="me-l">人が あなたのリンクから<br>ご予約くださいました</div>
+      </div>
+      <div class="me-row">
+        <div class="me-c"><b>${RF.見られた||0}</b><span>見られた回数</span></div>
+        <div class="me-c"><b>${RF.人数||0}</b><span>見た人数</span></div>
+        <div class="me-c"><b>${RF.ご来店||0}</b><span>ご来店</span></div>
+      </div>
+      <div class="me-sub">直近30日　リンクを通らないご紹介は入っていません（少なくともこれだけ、という数です）</div>
+      <div class="rfbtns">
+        <button class="rf-b" id="rfShare">リンクを送る</button>
+        <button class="rf-b" id="rfCopy">コピー</button>
+        <button class="rf-b" id="rfQr">QR</button>
+      </div>
+      <div id="rfQrBox"></div>
+      <div class="me-sub" style="word-break:break-all">${esc(link)}</div>`
+    :`<div class="me-sub">あなたのリンクはまだ発行されていません　本部にお伝えください</div>`}
     <div class="me-row">
-      <div class="me-c"><b>${n.伝えた率==null?'—':n.伝えた率+'%'}</b><span>お伝えした率</span></div>
       <div class="me-c"><b>${m.count||0}</b><span>お会計</span></div>
       <div class="me-c"><b>${yen2(m.total)}</b><span>売上</span></div>
     </div>
-    ${n.カルテ?`<div class="me-sub">カルテ ${n.カルテ}件のうち ${n.伝えた}件でお伝えしています</div>`
-      :`<div class="me-sub">カルテを書くと、お伝えした率が出ます</div>`}
   </div>`;
+}
+function meWire(){
+  const link=refLink(); if(!link)return;
+  const sh=document.getElementById('rfShare');
+  if(sh)sh.onclick=async()=>{
+    const text='SEAM のご予約はこちらから';
+    if(navigator.share){ try{ await navigator.share({title:text,text,url:link}); return; }catch(e){} }
+    try{ await navigator.clipboard.writeText(link); alert('リンクをコピーしました'); }catch(e){ prompt('このリンクを送ってください',link); }
+  };
+  const cp=document.getElementById('rfCopy');
+  if(cp)cp.onclick=async()=>{ try{ await navigator.clipboard.writeText(link); cp.textContent='コピーしました'; setTimeout(()=>cp.textContent='コピー',1600); }
+    catch(e){ prompt('このリンクをコピーしてください',link); } };
+  const qb=document.getElementById('rfQr');
+  if(qb)qb.onclick=async()=>{
+    await loadQRlib().catch(()=>null);
+    const box=document.getElementById('rfQrBox'); if(!box)return;
+    if(!window.qrcode){ box.textContent='QRを作れませんでした'; return; }
+    const q=qrcode(0,'M'); q.addData(link); q.make();
+    box.innerHTML=`<div style="text-align:center;margin:10px 0"><img src="${q.createDataURL(7,8)}"
+      style="width:200px;height:200px;background:#fff;border-radius:12px;padding:6px"></div>`;
+  };
 }
 function render(){
   const done=ROWS.filter(r=>r.done).length, wrote=ROWS.filter(r=>r.wrote).length;
@@ -904,7 +949,7 @@ function render(){
     <div class="row" style="margin-top:16px"><button class="mini" id="rl">読み直す</button></div>`
     +notiHtml()+snHtml()+mdHtml()+prHtml()+meHtml();
   app.querySelectorAll('.card').forEach(b=>b.onclick=()=>open(+b.dataset.i));
-  notiWire(); prWire(); mdWire(); snWire(); tmStart();
+  notiWire(); prWire(); mdWire(); snWire(); tmStart(); meWire();
   document.getElementById('rl').onclick=load;
 }
 

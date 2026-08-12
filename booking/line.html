@@ -574,10 +574,11 @@ async function run(){
     if(j.salonId)await loadQR().catch(()=>{});
     app.innerHTML=(j.receipt?receiptCard(j.receipt):'')
       + (j.memberCode?memberCard(j.memberCode,j.points,'',j):'')
-      + npsCard()
+      /* ★推薦（0〜10で聞く点数）はやめた。
+         どこにも出せず、打ち手にも繋がらず、お客様の時間だけ使っていた。
+         集めた分は消していないので、判断が変われば1行戻すだけで再開できる。 */
       + `<div class="note ok">LINEに登録しました。次回からご予約のお知らせ・領収のご案内がこちらに届きます</div>`
       + `<a class="btn" href="./line.html?s=${encodeURIComponent(SHOP)}">会員証をひらく</a>`;
-    npsWire(t);
     return;
   }
 
