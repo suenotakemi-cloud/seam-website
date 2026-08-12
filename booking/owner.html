@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>会社のいま｜SEAM</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════
+   代表取締役だけの画面
+
+   ★事務・幹部の画面とは鍵が別。同じ鍵にすると「他の幹部には見えない」
+     が守れないので、ここは OWNER_TOKEN でしか開かない。
+   ★出すのは「会社ぜんぶ」の数字。店ごと・担当ごとの内訳はその下。
+   ★分からない数字は空欄にして、なぜ空かを書く。
+     推測で埋めると、その数字のまま経営の判断に使われてしまう。
+   ══════════════════════════════════════════════════════════ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:#12100E;color:#EFE9DF;font-family:'Noto Sans JP',system-ui,sans-serif;
+  font-size:15px;line-height:1.8;-webkit-font-smoothing:antialiased}
+.wrap{max-width:660px;margin:0 auto;padding:0 16px 80px}
+header{position:sticky;top:0;z-index:10;background:rgba(18,16,14,.95);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(239,233,223,.14)}
+.hd{max-width:660px;margin:0 auto;padding:15px 16px;display:flex;align-items:center;gap:10px}
+.hd .b{font-family:'Noto Serif JP',serif;letter-spacing:.32em;font-size:14px;color:#C9B79A}
+.hd .r{margin-left:auto;font-size:12.5px;color:rgba(239,233,223,.6)}
+h1{font-family:'Noto Serif JP',serif;font-size:20px;font-weight:400;margin:22px 0 3px;
+  color:#EFE9DF;letter-spacing:.04em}
+.lead{font-size:12.5px;color:rgba(239,233,223,.55);margin:0 0 14px;line-height:1.8}
+.hero{background:rgba(239,233,223,.06);border:1px solid rgba(239,233,223,.16);
+  border-radius:16px;padding:20px 18px;margin-bottom:12px}
+.hero .k{font-size:12px;color:rgba(239,233,223,.6);font-weight:700}
+.hero .v{font-family:'Noto Serif JP',serif;font-size:40px;line-height:1.1;margin-top:4px;
+  font-variant-numeric:tabular-nums}
+.hero .s{font-size:12.5px;color:rgba(239,233,223,.6);margin-top:6px;line-height:1.8}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.cell{background:rgba(239,233,223,.05);border:1px solid rgba(239,233,223,.14);
+  border-radius:13px;padding:14px}
+.cell .k{font-size:11.5px;color:rgba(239,233,223,.55);font-weight:700}
+.cell .v{font-family:'Noto Serif JP',serif;font-size:23px;margin-top:2px;
+  font-variant-numeric:tabular-nums}
+.cell .s{font-size:11px;color:rgba(239,233,223,.45);margin-top:2px}
+.cell.warn{border-color:rgba(240,167,156,.45)}
+.cell.warn .v{color:#F0A79C}
+.sec{margin-top:22px}
+.sec h2{font-size:12px;font-weight:700;color:rgba(239,233,223,.55);margin:0 0 8px;letter-spacing:.06em}
+.li{display:flex;align-items:baseline;gap:10px;padding:12px 0;
+  border-top:1px solid rgba(239,233,223,.1);font-size:14.5px}
+.li:first-of-type{border-top:0}
+.li .g{flex:1;min-width:0}
+.li .s{font-size:11.5px;color:rgba(239,233,223,.5)}
+.li .m{font-family:'Noto Serif JP',serif;font-size:19px;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.bar{height:3px;background:rgba(239,233,223,.14);border-radius:99px;margin-top:5px;overflow:hidden}
+.bar u{display:block;height:100%;background:#C9B79A}
+.note{font-size:11.5px;color:rgba(239,233,223,.45);line-height:1.9;margin-top:12px}
+.note.warn{color:#F0A79C}
+.range{display:flex;gap:6px;margin:14px 0}
+.range button{flex:1;background:none;border:1px solid rgba(239,233,223,.25);color:#EFE9DF;
+  border-radius:9px;padding:10px 0;font:inherit;font-size:13px;cursor:pointer}
+.range button.on{background:#EFE9DF;color:#12100E;border-color:#EFE9DF;font-weight:700}
+.gate{position:fixed;inset:0;background:#12100E;display:flex;align-items:center;
+  justify-content:center;padding:20px;z-index:50}
+.gate .box{max-width:340px;width:100%}
+.gate .t{font-family:'Noto Serif JP',serif;letter-spacing:.32em;font-size:13px;color:#C9B79A}
+.gate input{width:100%;margin-top:12px;padding:14px;border:1px solid rgba(239,233,223,.3);
+  border-radius:11px;background:#1B1815;color:#EFE9DF;font:inherit;font-size:16px}
+.gate button{width:100%;margin-top:10px;background:#EFE9DF;color:#12100E;border:0;
+  border-radius:11px;padding:15px;font:inherit;font-size:15.5px;font-weight:700;cursor:pointer}
+.err{color:#F0A79C;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body>
+<header><div class="hd"><span class="b">SEAM</span><span style="font-size:13px">会社のいま</span>
+  <span class="r" id="rg"></span></div></header>
+<div class="wrap"><div id="app"></div></div>
+<div class="gate" id="gate"><div class="box">
+  <div class="t">SEAM</div>
+  <div style="font-size:19px;margin:8px 0 2px">代表取締役</div>
+  <div style="font-size:12.5px;color:rgba(239,233,223,.55);line-height:1.8">
+    この画面は、事務や幹部の管理トークンでは開きません</div>
+  <input id="k" type="password" placeholder="代表の鍵" autocomplete="off">
+  <button id="go">ひらく</button>
+  <div class="err" id="err" style="display:none"></div>
+</div></div>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>'¥'+Math.round(+n||0).toLocaleString();
+const jst=(off=0)=>new Date(Date.now()+9*3600e3-off*86400e3).toISOString().slice(0,10);
+let KEY=localStorage.getItem('stb_owner')||'';
+let RANGE='month', D=null;
+
+function span(){
+  const t=jst();
+  if(RANGE==='today')return [t,t];
+  if(RANGE==='week')return [jst(6),t];
+  if(RANGE==='prev'){const p=new Date(Date.now()+9*3600e3); p.setUTCDate(0);
+    const y=p.toISOString().slice(0,7); return [y+'-01', y+'-'+String(p.getUTCDate()).padStart(2,'0')];}
+  return [t.slice(0,8)+'01', t];
+}
+async function load(){
+  const [f,t]=span();
+  const r=await fetch(`${API}/owner/summary?from=${f}&to=${t}`,{headers:{'Authorization':'Bearer '+KEY}});
+  if(r.status===401)throw new Error('鍵が違います');
+  if(r.status===503)throw new Error('代表の鍵がまだ設定されていません');
+  const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'読み込めませんでした');
+  D=j;
+}
+function draw(){
+  const z=D.ぜんぶ, mo=D.材料費のもと, hi=D.人の時間;
+  const shops=D.店ごと||[], staff=D.担当ごと||[];
+  const top=shops.reduce((a,x)=>Math.max(a,x.売上),0)||1;
+  const topS=staff.reduce((a,x)=>Math.max(a,x.売上),0)||1;
+  $('rg').textContent=`${D.from.slice(5).replace('-','/')}〜${D.to.slice(5).replace('-','/')}`;
+  $('app').innerHTML=`
+    <div class="range">
+      ${[['today','今日'],['week','7日'],['month','今月'],['prev','先月']].map(([v,l])=>
+        `<button data-r="${v}" class="${RANGE===v?'on':''}">${l}</button>`).join('')}
+    </div>
+    <div class="hero">
+      <div class="k">売上</div>
+      <div class="v">${yen(z.売上)}</div>
+      <div class="s">${z.件数}件　客単価 ${yen(z.客単価)}　技術 ${yen(z.技術)}／店販 ${yen(z.店販)}</div>
+    </div>
+    <div class="grid">
+      <div class="cell"><div class="k">材料費</div><div class="v">${yen(z.材料費)}</div>
+        <div class="s">${z.売上?((z.材料費/z.売上*100).toFixed(1)+'%'):'—'}</div></div>
+      <div class="cell"><div class="k">決済手数料</div><div class="v">${yen(z.決済手数料)}</div>
+        <div class="s">${z.売上?((z.決済手数料/z.売上*100).toFixed(1)+'%'):'—'}</div></div>
+      <div class="cell"><div class="k">小口</div><div class="v">${yen(z.小口)}</div></div>
+      <div class="cell"><div class="k">立替</div><div class="v">${yen(z.立替)}</div></div>
+    </div>
+    <div class="hero">
+      <div class="k">ざっくり残り</div>
+      <div class="v">${yen(z.ざっくり残り)}</div>
+      <div class="s">売上から 手数料・材料費・小口・立替 を引いた数<br>
+        <b style="color:#F0A79C">人件費と家賃は入っていません</b>　これは利益ではありません</div>
+    </div>
+    ${mo.注意?`<div class="cell warn" style="margin-bottom:12px"><div class="k">材料費が足りていません</div>
+      <div class="s" style="color:#F0A79C;font-size:12.5px">${esc(mo.注意)}</div>
+      <div class="s">カルテ ${mo.カルテ}件のうち ${mo.入っている}件に入っています</div></div>`:''}
+
+    <div class="sec"><h2>人の時間</h2>
+      <div class="grid">
+        <div class="cell"><div class="k">実働</div><div class="v">${hi.実働}h</div></div>
+        <div class="cell ${hi.残業?'warn':''}"><div class="k">残業</div><div class="v">${hi.残業}h</div></div>
+      </div>
+      ${hi.合わない日?`<div class="note warn">打刻がそろっていない日が ${hi.合わない日}日あります　この分は時間に入っていません</div>`:''}
+      <div class="note">${esc(hi.注意)}</div>
+    </div>
+
+    <div class="sec"><h2>店ごと</h2>
+      ${shops.length?shops.map(x=>`<div class="li"><div class="g">${esc(x.店)}
+        <div class="s">${x.件数}件　技術 ${yen(x.技術)}／店販 ${yen(x.店販)}</div>
+        <div class="bar"><u style="width:${Math.round(x.売上/top*100)}%"></u></div></div>
+        <div class="m">${yen(x.売上)}</div></div>`).join('')
+        :'<div class="note">この期間の会計がありません</div>'}
+    </div>
+
+    <div class="sec"><h2>担当ごと</h2>
+      ${staff.length?staff.map(x=>`<div class="li"><div class="g">${esc(x.担当)}
+        <div class="s">${x.件数}件　客単価 ${yen(x.件数?Math.round(x.売上/x.件数):0)}　店販 ${yen(x.店販)}</div>
+        <div class="bar"><u style="width:${Math.round(x.売上/topS*100)}%"></u></div></div>
+        <div class="m">${yen(x.売上)}</div></div>`).join('')
+        :'<div class="note">この期間の会計がありません</div>'}
+    </div>
+
+    <div class="note">${esc(D.ことわり)}<br>
+      この画面は代表の鍵でしか開きません　事務・幹部の管理トークンでは開けません</div>`;
+  document.querySelectorAll('[data-r]').forEach(b=>b.onclick=async()=>{
+    RANGE=b.dataset.r; $('app').innerHTML='<p class="lead" style="margin-top:24px">読み込んでいます…</p>';
+    try{ await load(); draw(); }catch(e){ $('app').innerHTML=`<div class="note warn">${esc(e.message)}</div>`; }
+  });
+}
+async function boot(){
+  $('gate').style.display='none';
+  $('app').innerHTML='<p class="lead" style="margin-top:24px">読み込んでいます…</p>';
+  try{ await load(); draw(); }
+  catch(e){
+    $('gate').style.display='flex'; $('err').textContent=e.message; $('err').style.display='block';
+  }
+}
+$('go').onclick=()=>{
+  const v=($('k').value||'').trim(); if(!v)return;
+  KEY=v; localStorage.setItem('stb_owner',v); boot();
+};
+$('k').onkeydown=e=>{if(e.key==='Enter')$('go').click();};
+if(KEY)boot();
+</script>
+</body>
+</html>
