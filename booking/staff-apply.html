@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>スタッフ登録｜SEAM</title>
+<style>
+  /* ★書く人はスタッフ。フロアの合間にスマホで書く。
+     だから「何のために聞いているか」を項目ごとに1行で書く。
+     理由の分からない欄は、埋められないか、嘘が入る。 */
+  *{box-sizing:border-box}
+  body{margin:0;background:#F7F4EF;color:#2f2a24;
+    font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;
+    line-height:1.8;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:600px;margin:0 auto;padding:28px 18px 80px}
+  .brand{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;letter-spacing:.36em;
+    font-size:14px;color:#7a6f60;text-align:center;margin-bottom:20px}
+  h1{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:24px;font-weight:600;
+    line-height:1.5;margin:0 0 8px}
+  .lead{font-size:14px;color:#6c6357;margin:0 0 20px}
+  .card{background:#fff;border:1px solid #e7e1d5;border-radius:16px;padding:20px 18px;margin-bottom:14px}
+  h2{font-size:12.5px;letter-spacing:.12em;color:#a08c6a;font-weight:800;margin:0 0 4px}
+  .h2s{font-size:12px;color:#8a8177;margin:0 0 14px;line-height:1.7}
+  label{display:block;font-size:13px;color:#4a443c;font-weight:700;margin:15px 0 4px}
+  label:first-of-type{margin-top:4px}
+  label .why{display:block;font-weight:400;font-size:11.5px;color:#8a8177;line-height:1.7;margin-top:1px}
+  label .req{color:#B4302B;font-size:11px;margin-left:5px}
+  input,select,textarea{width:100%;padding:13px;border:1px solid #ddd5c8;border-radius:11px;
+    font:inherit;font-size:16px;background:#fff;color:#2f2a24;min-height:48px}
+  textarea{min-height:74px;resize:vertical}
+  .shops{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+  .sh{display:flex;align-items:center;gap:9px;border:1px solid #ddd5c8;border-radius:11px;
+    padding:12px;font-size:14.5px;cursor:pointer;background:#fff;min-height:48px}
+  .sh.on{border-color:#12233A;background:#f4f6f9;font-weight:700}
+  .sh input{width:auto;min-height:0;margin:0}
+  .hpb{margin-top:10px;padding:12px;background:#faf8f4;border:1px solid #ece5d9;border-radius:11px}
+  .hpb b{font-size:13px}
+  .btn{width:100%;margin-top:20px;background:#12233A;color:#fff;border:0;border-radius:13px;
+    padding:17px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;min-height:54px}
+  .btn:disabled{opacity:.5}
+  .note{font-size:12px;color:#8a8177;line-height:1.8;margin-top:14px}
+  .err{color:#B4302B;font-size:13.5px;margin-top:10px;font-weight:700}
+  .done{text-align:center;padding:26px 0}
+  .foot{text-align:center;font-size:11.5px;color:#a49a8c;margin-top:24px;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">SEAM</div>
+  <div id="app"></div>
+  <div class="foot">株式会社hanico ／ SEAM</div>
+</div>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const Q=new URLSearchParams(location.search);
+const INV=(Q.get('k')||'').replace(/[^a-z0-9]/gi,'');
+const app=document.getElementById('app');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* 店舗。スパとサロンは別店舗として数えるので、両方に入る人は両方えらぶ */
+const SHOPS=[
+  ['ginza','銀座'],['omotesando','表参道'],['sapporo','札幌'],
+  ['nagoya','名古屋'],['fukuoka','福岡'],['horie','南堀江'],
+];
+
+function form(){
+  app.innerHTML=`
+    <h1>スタッフ登録</h1>
+    <p class="lead">ご自身で書いて送ってください　本部で確認したあと、あなた専用のリンクとQRをお渡しします</p>
+
+    <div class="card">
+      <h2>お名前</h2>
+      <p class="h2s">給与・カルテ・レジに出る名前です</p>
+      <label>お名前<span class="req">必須</span>
+        <span class="why">戸籍のお名前でお願いします</span>
+        <input id="f-name" maxlength="40" placeholder="山田 花子"></label>
+      <label>ふりがな<span class="req">必須</span>
+        <span class="why">五十音で並べるときに使います</span>
+        <input id="f-kana" maxlength="40" placeholder="やまだ はなこ"></label>
+      <label>ホットペッパーの表示名
+        <span class="why">掲載に出ているお名前　うちのシステムと突き合わせるために使います　同じなら空欄で構いません</span>
+        <input id="f-hpbname" maxlength="40" placeholder="例）HANA"></label>
+    </div>
+
+    <div class="card">
+      <h2>所属</h2>
+      <p class="h2s">サロンとスパは別の店舗として選んでください　両方に入る方は両方に</p>
+      <div class="shops">${SHOPS.map(([v,n])=>`
+        <label class="sh" data-sh="${v}"><input type="checkbox" value="${v}"><span>${n}</span></label>`).join('')}</div>
+      <div id="f-hpb"></div>
+    </div>
+
+    <div class="card">
+      <h2>ご連絡先</h2>
+      <p class="h2s">シフト・急なご連絡に使います</p>
+      <label>お電話<span class="req">必須</span>
+        <input id="f-tel" type="tel" inputmode="tel" maxlength="20" placeholder="090-0000-0000"></label>
+      <label>メールアドレス
+        <input id="f-email" type="email" inputmode="email" maxlength="120" placeholder="hana@example.com"></label>
+      <label>LINE ID
+        <span class="why">お店のグループにお呼びするときに使います</span>
+        <input id="f-line" maxlength="60" placeholder="hana_0101"></label>
+      <label>Instagram のID
+        <span class="why">＠のあとの文字だけで大丈夫です　あなたのリンクを貼っていただく場所です</span>
+        <input id="f-insta" maxlength="40" placeholder="hana.hair"></label>
+    </div>
+
+    <div class="card">
+      <h2>労務のこと</h2>
+      <p class="h2s">雇用の手続き（社会保険・住民税）に要るものです　この2つは本部だけが見られます　一覧には出ません</p>
+      <label>生年月日
+        <input id="f-birth" type="date"></label>
+      <label>ご住所
+        <input id="f-addr" maxlength="200" placeholder="東京都中央区銀座0-0-0 ○○マンション000"></label>
+      <label>ひとこと（なくても大丈夫です）
+        <textarea id="f-note" maxlength="300" placeholder="入社日・その他お伝えしたいこと"></textarea></label>
+    </div>
+
+    <button class="btn" id="go">この内容で送る</button>
+    <div class="err" id="err" style="display:none"></div>
+    <p class="note">お預かりするのは、お給料のお支払いとお店の運営のためだけに使います<br>
+      本部で確認したあと、ご連絡します</p>`;
+
+  /* 選んだ店舗のぶんだけ、ホットペッパーのIDを聞く。
+     ★2つの店舗に入っている人はIDも2つある。まとめて1つにすると、
+       どちらの掲載の数字か分からなくなる。 */
+  const shopBoxes=[...app.querySelectorAll('.sh')];
+  const drawHpb=()=>{
+    const on=shopBoxes.filter(b=>b.querySelector('input').checked);
+    const box=document.getElementById('f-hpb');
+    box.innerHTML=on.length?`<div class="hpb">
+      <b>ホットペッパーのスタッフID</b>
+      <div style="font-size:11.5px;color:#8a8177;line-height:1.7;margin:2px 0 8px">
+        掲載のご自身のページのURLに出ている T から始まる番号です　分からなければ空欄で構いません</div>
+      ${on.map(b=>{const v=b.dataset.sh,n=(SHOPS.find(x=>x[0]===v)||[])[1]||v;
+        return `<label style="margin-top:8px">${n}
+          <input class="hpbid" data-s="${v}" maxlength="20" placeholder="T001096152"></label>`;}).join('')}
+    </div>`:'';
+  };
+  /* ★<label>で<input>を包むと、押した時点でブラウザが勝手に切り替える。
+     そこで自分でも切り替えると、2回まわって元に戻る＝いつまでも選べない。
+     切り替えはブラウザにまかせて、こちらは結果を見るだけにする。 */
+  shopBoxes.forEach(b=>{
+    const cb=b.querySelector('input');
+    cb.onchange=()=>{ b.classList.toggle('on',cb.checked); drawHpb(); };
+  });
+
+  document.getElementById('go').onclick=async()=>{
+    const g=id=>(document.getElementById(id).value||'').trim();
+    const er=document.getElementById('err'), b=document.getElementById('go');
+    er.style.display='none';
+    const shops=shopBoxes.filter(x=>x.querySelector('input').checked).map(x=>x.dataset.sh);
+    if(!g('f-name')||!g('f-kana')){er.textContent='お名前とふりがなを入れてください';er.style.display='block';return;}
+    if(!shops.length){er.textContent='所属の店舗を選んでください';er.style.display='block';return;}
+    if(!g('f-tel')){er.textContent='お電話を入れてください';er.style.display='block';return;}
+    const hpbIds={};
+    document.querySelectorAll('.hpbid').forEach(x=>{ if(x.value.trim())hpbIds[x.dataset.s]=x.value.trim(); });
+    b.disabled=true; b.textContent='送っています…';
+    try{
+      const r=await fetch(API+'/staff/apply',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({invite:INV,name:g('f-name'),kana:g('f-kana'),hpbName:g('f-hpbname'),
+          shops,hpbIds,tel:g('f-tel'),email:g('f-email'),lineId:g('f-line'),insta:g('f-insta'),
+          birth:g('f-birth'),addr:g('f-addr'),note:g('f-note')})});
+      const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'送れませんでした');
+      app.innerHTML=`<div class="card done">
+        <h1 style="font-size:21px">ありがとうございます</h1>
+        <p class="lead" style="margin:8px 0 0">本部で確認したあと、あなた専用のリンクとQRをお渡しします<br>
+          そのリンクをInstagramに貼っていただくと、あなたから来てくださった方が分かります</p></div>`;
+    }catch(e){ b.disabled=false; b.textContent='この内容で送る';
+      er.textContent=e.message; er.style.display='block'; }
+  };
+  drawHpb();
+}
+
+if(!INV){
+  app.innerHTML=`<div class="card"><h1 style="font-size:19px">このリンクからは開けません</h1>
+    <p class="lead" style="margin:8px 0 0">お店から届いたリンクをお使いください</p></div>`;
+}else form();
+</script>
+</body>
+</html>

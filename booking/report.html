@@ -138,6 +138,7 @@ h2:first-child{margin-top:2px}
       <button data-t="noti">申し送り</button>
       <button data-t="sup">備品</button>
       <button data-t="ap">応募</button>
+      <button data-t="stf">スタッフ</button>
       <button data-t="md">モデル</button>
       <button data-t="li">掲載</button>
       <button data-t="order" data-feat="order">発注書</button>
@@ -532,6 +533,79 @@ function supHtml(){
         <td class="num tsub">${x.cost?yen(x.cost):'—'}</td></tr>`).join('')}
     </tbody></table></div>`:'<div class="empty">まだ登録がありません</div>'}
     <p class="note">数を増やすときは、レジの「商品と在庫」から入荷を入れてください　備品も同じ入れ方です</p>`;
+}
+
+/* ── スタッフ登録 ──
+ * ★本部が一人ずつ打つのは手間なので、本人に書いてもらって承認する形にした。
+ * ★生年月日と住所は労務のためのもの。一覧には出さず、押したときだけ開く。
+ *   ずらりと並べておくと、画面を見せただけで人の住所が漏れる。
+ * ★承認したときに紹介リンクのコードを1回だけ発行し、あとは変えない。
+ *   名前や店舗が変わってもリンクが死なないようにする。 */
+/* QRの部品。使う画面を開いた最初の1回だけ取ってくる */
+let _qrP=null;
+function loadQR(){
+  if(window.qrcode)return Promise.resolve();
+  if(_qrP)return _qrP;
+  _qrP=new Promise(res=>{const t=document.createElement('script');
+    t.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+    t.onload=res;t.onerror=res;document.head.appendChild(t);});
+  return _qrP;
+}
+function qrImg(text,cell){
+  if(!window.qrcode)return '';
+  try{ const q=qrcode(0,'M'); q.addData(String(text)); q.make();
+    return q.createDataURL(cell||6,8); }catch(e){ return ''; }
+}
+let STF=null, STF_INV='';
+const SHOPNM={ginza:'銀座',omotesando:'表参道',sapporo:'札幌',nagoya:'名古屋',fukuoka:'福岡',horie:'南堀江'};
+function stfHtml(){
+  if(!STF)return '<div class="empty">読み込んでいます…</div>';
+  const rows=STF.rows||[];
+  const wait=rows.filter(x=>x.status==='pending');
+  const ok=rows.filter(x=>x.status==='ok');
+  const link=c=>`${location.origin}/booking/?ref=${encodeURIComponent(c)}`;
+  const card=x=>`<div class="tblwrap" style="padding:15px 17px;margin-bottom:10px" data-sm="${esc(x.id)}">
+    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+      <div style="flex:1;min-width:230px">
+        <div style="font-weight:800;font-size:15.5px">${esc(x.name)}
+          <span class="tsub">　${esc(x.kana)}</span>${x.hpbName?`<span class="tsub">　HPB ${esc(x.hpbName)}</span>`:''}</div>
+        <div class="tsub" style="margin-top:3px">${(x.shops||[]).map(v=>SHOPNM[v]||v).join('・')||'—'}
+          ${Object.keys(x.hpbIds||{}).length?'　'+Object.entries(x.hpbIds).map(([k,v])=>`${SHOPNM[k]||k} ${esc(v)}`).join('／'):''}</div>
+        <div style="font-size:13.5px;margin-top:5px">${esc(x.tel)}${x.email?`　${esc(x.email)}`:''}</div>
+        <div class="tsub">${x.insta?`Instagram @${esc(x.insta)}`:''}${x.lineId?`　LINE ${esc(x.lineId)}`:''}</div>
+        ${x.note?`<div style="font-size:13px;color:var(--sub);margin-top:5px;white-space:pre-wrap">${esc(x.note)}</div>`:''}
+        ${x.piiあり?`<div class="tsub" style="margin-top:6px">
+          <button class="mini stf-pii" data-id="${esc(x.id)}">生年月日・住所を開く</button>
+          <span id="pii-${esc(x.id)}"></span></div>`:''}
+        ${x.status==='ok'?`<div style="margin-top:8px;font-size:13px">
+          <b>あなたのリンク</b><br>
+          <span style="word-break:break-all">${esc(link(x.code))}</span>
+          <button class="mini stf-qr" data-c="${esc(x.code)}" data-n="${esc(x.name)}" style="margin-left:6px">QR</button></div>`:''}
+        <div class="tsub" style="margin-top:6px">${(x.appliedAt||'').slice(0,16).replace('T',' ').replace(/-/g,'/')}</div>
+      </div>
+      ${x.status==='pending'?`<div style="display:flex;flex-direction:column;gap:6px">
+        <input class="stf-code" data-id="${esc(x.id)}" placeholder="リンクの文字（例 oikawa）" style="min-width:180px">
+        <button class="mini pri stf-ok" data-id="${esc(x.id)}">承認する</button>
+        <button class="mini stf-no" data-id="${esc(x.id)}">見送り</button></div>`:''}
+    </div></div>`;
+  return `<div class="cards">
+      <div class="kc"><div class="kc-k">承認まち</div>
+        <div class="kc-v" style="color:${wait.length?'var(--danger)':'inherit'}">${wait.length}</div></div>
+      <div class="kc"><div class="kc-k">登録ずみ</div><div class="kc-v">${ok.length}</div></div>
+    </div>
+    <div class="tblwrap" style="padding:15px 17px;margin-bottom:12px">
+      <b style="font-size:14px">登録のリンク（本人に送るもの）</b>
+      <div class="tsub" style="margin:4px 0 8px">このリンクを知っている人だけが書けます　外に出さないでください</div>
+      <div style="word-break:break-all;font-size:13px" id="stf-invurl">${STF_INV?esc(location.origin+'/booking/staff-apply.html?k='+STF_INV):'—'}</div>
+      <div style="margin-top:8px"><button class="mini" id="stf-inv">リンクを出す</button>
+        <button class="mini" id="stf-invnew">作り直す</button>
+        <button class="mini" id="stf-invqr">QR</button></div>
+      <div id="stf-qrbox"></div>
+    </div>
+    <p class="note">生年月日と住所は、この一覧には出していません　押したときだけ開きます</p>
+    <h2>承認まち ${wait.length}件</h2>
+    ${wait.length?wait.map(card).join(''):'<div class="empty">いまありません</div>'}
+    ${ok.length?`<h2>登録ずみ ${ok.length}件</h2>${ok.map(card).join('')}`:''}`;
 }
 
 /* ── そろそろの方 ──
@@ -1242,6 +1316,47 @@ async function load(){
       $('body').innerHTML=apHtml();
       $('body').querySelectorAll('.ap-st').forEach(b=>b.onclick=async()=>{
         await post('/recruit/status',{id:b.dataset.id,status:b.dataset.s}); load();});
+    }
+    else if(TAB==='stf'){
+      STF=await get('/staff/apps'); $('body').innerHTML=stfHtml();
+      const draw=()=>{$('body').innerHTML=stfHtml(); wire();};
+      const qrShow=async(text,title)=>{
+        await loadQR(); const box=$('stf-qrbox');
+        box.innerHTML=`<div style="text-align:center;margin-top:10px">
+          <div style="font-weight:800;margin-bottom:6px">${esc(title)}</div>
+          ${qrImg(text,8)?`<img src="${qrImg(text,8)}" style="width:220px;height:220px;border:1px solid #e7e1d9;border-radius:12px;background:#fff">`:'QRを作れませんでした'}
+          <div style="font-size:11.5px;color:var(--sub);margin-top:6px;word-break:break-all">${esc(text)}</div></div>`;
+        box.scrollIntoView({block:'center',behavior:'smooth'});
+      };
+      const wire=()=>{
+        const ib=$('stf-inv'), nb=$('stf-invnew'), qb=$('stf-invqr');
+        const getInv=async(renew)=>{const j=await get('/staff/invite'+(renew?'?renew=1':''));
+          STF_INV=j.invite||''; $('stf-invurl').textContent=location.origin+'/booking/staff-apply.html?k='+STF_INV;};
+        if(ib)ib.onclick=()=>getInv(false);
+        if(nb)nb.onclick=async()=>{ if(!confirm('作り直すと、前のリンクは使えなくなります'))return; await getInv(true); };
+        if(qb)qb.onclick=async()=>{ if(!STF_INV)await getInv(false);
+          qrShow(location.origin+'/booking/staff-apply.html?k='+STF_INV,'スタッフ登録のリンク'); };
+        $('body').querySelectorAll('.stf-qr').forEach(b=>b.onclick=()=>
+          qrShow(location.origin+'/booking/?ref='+encodeURIComponent(b.dataset.c), b.dataset.n+' さんのリンク'));
+        $('body').querySelectorAll('.stf-pii').forEach(b=>b.onclick=async()=>{
+          const j=await get('/staff/apps?open=1');
+          const x=(j.rows||[]).find(r=>r.id===b.dataset.id); if(!x)return;
+          const sp=$('pii-'+b.dataset.id);
+          sp.textContent='　'+[x.birth,x.addr].filter(Boolean).join('　')||'　（入っていません）';
+          b.style.display='none';});
+        $('body').querySelectorAll('.stf-ok').forEach(b=>b.onclick=async()=>{
+          const inp=$('body').querySelector(`.stf-code[data-id="${b.dataset.id}"]`);
+          try{
+            const r=await post('/staff/approve',{id:b.dataset.id,code:(inp&&inp.value)||''});
+            toast(`承認しました（担当 ${r.staffId}）　暗証番号はレジの設定から決めてください`);
+            STF=await get('/staff/apps'); draw();
+          }catch(e){ toast(e.message,true); }});
+        $('body').querySelectorAll('.stf-no').forEach(b=>b.onclick=async()=>{
+          if(!confirm('この方を見送りにします'))return;
+          await post('/staff/approve',{id:b.dataset.id,status:'no'});
+          STF=await get('/staff/apps'); draw();});
+      };
+      wire();
     }
     else if(TAB==='soon'){ SN=await get('/soon'); $('body').innerHTML=snHtml(); }
     else if(TAB==='md'){
