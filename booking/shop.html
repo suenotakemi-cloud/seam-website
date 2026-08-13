@@ -594,6 +594,15 @@ async function doCheckout(){
     toast('お名前と旅券の下4桁を入れてください　これが無いと、あとでお返しできません',true);return;}
   if(!confirm(`${yen(t)} で会計します${STAFF?'　担当 '+STAFF.name:''}　よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
+  /* ★値引きしてお売りするときは、先にお客様画面で押していただく。
+       押していただけなければ会計しない。 */
+  CONSENT=null;
+  if(PMODE!=='normal'){
+    btn.textContent='お客様画面をご確認ください…';
+    const ok=await needConsent();
+    if(!ok){ btn.disabled=false; btn.textContent='会計する'; render(); return; }
+    btn.textContent='送信中…';
+  }
   const id='co'+Math.random().toString(36).slice(2,8);
   let payId='', BRAND='', FEE=0;
   try{
@@ -611,6 +620,9 @@ async function doCheckout(){
         ...(i.tfx?{tfx:1}:{})})),   // tfx=免税にしない行（袋）
       discount:cartCut(),
       discountLabel:[PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),TAXFREE?'免税':''].filter(Boolean).join('＋'),
+      /* 返品交換をお受けしないことに、お客様が同意された記録 */
+      consent:CONSENT?1:0, consentAt:CONSENT?new Date(CONSENT.at).toISOString():'',
+      consentText:CONSENT?CONSENT.text:'',
       taxfree:TAXFREE?1:0, taxfreeCut:taxCut(),   // 免税は記録として持つ（申請のときに集計する）
       taxfreeMode:TAXFREE?(tfRefundMode()?'refund':'cut'):'', taxfreeTax:TAXFREE?taxAmt():0,
       total:t,method:PAY,squarePaymentId:payId||'',cardBrand:BRAND,fee:FEE,
@@ -643,6 +655,52 @@ async function doCheckout(){
   }catch(err){ toast(err.message||'会計に失敗しました',true); }
   finally{ if($('go')){$('go').disabled=false;$('go').textContent='会計する';} }
 }
+
+/* ══════════ お客様の同意（メンバー価格・セール価格） ══════════
+   ★値引きしてお売りするものは、返品交換をお受けしない。
+     だから「お買い上げの前に」お客様ご自身に押していただく。
+     あとから説明しても遅い。押していただくまで会計に進まない。
+   ★押した事実と、そのとき見せた文面を会計に残す。 */
+const ASK_NORETURN={kind:'noreturn',title:'ご確認ください',
+  lines:['メンバー価格・セール価格でお求めの商品は、ご返品・お取り替えをお受けしておりません',
+         '不良品の場合はこの限りではありません　その場でお声がけください',
+         '数量とお色をお確かめのうえ、お進みください'],
+  button:'確認しました'};
+let ASKWAIT=null;
+async function needConsent(){
+  if(PMODE==='normal')return true;                  // 定価なら要らない
+  ASKWAIT={t:Date.now()};
+  await post('/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG),{}).catch(()=>{});
+  await fetch(API+'/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG),
+    {method:'DELETE',headers:H()}).catch(()=>{});   // 前のお客様の同意を消しておく
+  pushAsk(ASK_NORETURN);
+  const ok=await waitConsent(120);                  // 2分待つ
+  pushAsk(null);
+  ASKWAIT=null;
+  if(!ok)toast('お客様の同意が確認できませんでした',true);
+  return ok;
+}
+function pushAsk(ask){
+  const t=cartTotal();
+  post('/display/push',{shopId:SHOP,register:REG,mode:PMODE,done:false,
+    items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||''})),
+    list:cartList(),cut:cartCut(),total:t,ask:ask||null,
+    member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn:0,
+      visits:MEMBER.visits||0,greet:(MEMBER.visits||0)>=1?'again':'first'}:null}).catch(()=>{});
+}
+async function waitConsent(sec){
+  const until=Date.now()+sec*1000;
+  while(Date.now()<until){
+    if(!ASKWAIT)return false;                       // やめたとき
+    await new Promise(r=>setTimeout(r,1200));
+    try{
+      const j=await get('/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG));
+      if(j.consent&&j.consent.at>=ASKWAIT.t){ CONSENT=j.consent; return true; }
+    }catch(e){}
+  }
+  return false;
+}
+let CONSENT=null;
 
 /* ══════════ 返品 ══════════
    ★ここに書く日数は、すべて一次情報の裏づけがあるものだけ（2026-08-13 確認）。
@@ -687,8 +745,14 @@ const rfKey=m=>m==='cash'?'cash':(m==='emoney'?'emoney':(m==='qr'?'qr':'card'));
    QR決済は PayPay・d払い・au PAY・メルペイ等は一部返金できるので選べるままにし、
    楽天ペイだったときに備えて注意だけ出す。
    出典 https://squareup.com/help/jp/ja/article/5060-refunds-faq */
-const rfPartialOK=m=>rfKey(m)!=='emoney';
-const RF_FULLONLY='この決済手段は一部返金ができません　全額のご返金になります';
+/* ★オーナー判断（2026-08-14）: 返品は全額返金して、必要なら打ち直す。
+   一部返金はSquare側の扱いが決済手段ごとに違って読み切れないので、使わない。
+     iD・QUICPay・楽天ペイ … 一部返金そのものが不可
+     商品別の返金 … APIでは記録が「金額1行」になり、何を返したか残らない
+   全額に統一すれば、どの決済手段でも同じ動きになる。 */
+const rfPartialOK=()=>false;
+const RF_FULLONLY='返品は全額のご返金になります　一部だけお返しする場合は、'
+  +'いったん全額をお返しして、残るぶんをもう一度お会計させていただきます';
 /* 見せた文面をそのまま控えに残すので、画面と同じ文字列を作る */
 function rfNoticeText(m,amt){
   const n=RF_NOTE[rfKey(m)];

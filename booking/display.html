@@ -114,6 +114,20 @@ body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
 .done .s{font-size:1.05em;color:var(--body);margin-top:.8em;letter-spacing:.06em}
 
 .err{margin:auto;text-align:center;color:var(--body);font-size:1em;line-height:2}
+/* ── お客様に押していただく画面 ── */
+.ask{margin:auto;text-align:center;max-width:26em;padding:1em 0}
+.ask-t{font-family:'Noto Serif JP',serif;font-size:1.5em;color:var(--ink);letter-spacing:.06em;line-height:1.7}
+.ask-l{list-style:none;margin:1.4em 0 1.8em;padding:0;text-align:left;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ask-l li{font-size:.98em;color:var(--ink);line-height:1.9;padding:.7em .2em;
+  border-bottom:1px solid var(--line)}
+.ask-l li:last-child{border-bottom:none}
+.ask-b{font:inherit;font-size:1.05em;letter-spacing:.14em;color:#fff;background:var(--ink);
+  border:none;border-radius:3px;padding:.95em 3.4em;min-height:3.4em;cursor:pointer;
+  -webkit-tap-highlight-color:transparent}
+.ask-b:active{opacity:.8}
+.ask-b:disabled{background:var(--clay);opacity:1}
+.ask-n{font-size:.72em;color:var(--sub);margin-top:1.3em;letter-spacing:.08em}
 /* ★Cormorant は既定でオールドスタイル数字（1240 の 2 や 4 が下がる書体）。
    きれいだが、お会計の金額としては一瞬読み違える。数字だけ高さを揃える。 */
 .li-now,.fr.cut b,.fr.tot b,.pt-e b,.pt-b b{font-variant-numeric:lining-nums tabular-nums;
@@ -223,13 +237,43 @@ function fitList(){
     more.style.display=''; more.textContent=`ほか ${hidden} 点`;
   }
 }
+/* ★お客様ご自身に押していただく画面。
+   メンバー価格・セール価格でお売りするときは返品交換をお受けしないので、
+   お買い上げの前にご確認いただく。押していただくまでレジは先に進まない。
+   ★一度押したら、同じお会計では二度と出さない（押し直しを求めない）。 */
+let ASKED='';
+function askScreen(st){
+  const a=st.ask;
+  return `<div class="ask fade">
+    <div class="ask-t">${esc(a.title||'ご確認ください')}</div>
+    <ul class="ask-l">${(a.lines||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+    <button class="ask-b" id="askB">${esc(a.button||'同意します')}</button>
+    <div class="ask-n">お手数ですが、お客様ご自身でお願いいたします</div>
+  </div>`;
+}
+async function sendConsent(st){
+  const b=document.getElementById('askB'); if(b){b.disabled=true;b.textContent='ありがとうございます';}
+  try{
+    await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:st.ask.kind,
+        text:[st.ask.title,...(st.ask.lines||[])].join('\n')})});
+    ASKED=JSON.stringify(st.ask);
+    lastJson='';                   // 次の巡回で明細の画面に戻す
+  }catch(e){ if(b){b.disabled=false;b.textContent=st.ask.button||'同意します';} }
+}
 function paint(st){
   const j=JSON.stringify(st);
   if(j===lastJson)return;            // 変わっていないなら描き直さない（ちらつき防止）
   lastJson=j;
   const s=$('scr');
   if(!st){ s.innerHTML=idle(); return; }
-  if(st.done){ s.innerHTML=done(st); return; }
+  if(st.done){ ASKED=''; s.innerHTML=done(st); return; }
+  /* お願いが来ていて、まだ押していただいていなければ、それを出す */
+  if(st.ask&&JSON.stringify(st.ask)!==ASKED){
+    s.innerHTML=askScreen(st);
+    const b=document.getElementById('askB'); if(b)b.onclick=()=>sendConsent(st);
+    return;
+  }
   if(!(st.items||[]).length){ s.innerHTML=st.member?welcome(st.member):idle(); return; }
   s.innerHTML=bill(st); fitList();
 }
