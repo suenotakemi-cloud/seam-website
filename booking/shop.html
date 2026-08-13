@@ -50,6 +50,32 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .qrwrap img{width:220px;height:220px;image-rendering:pixelated;border:1px solid var(--line);background:#fff;padding:10px}
 .qrnote{font-size:12px;color:var(--sub);margin-top:10px;letter-spacing:.04em}
 .qrload{font-size:12.5px;color:var(--sub);padding:40px 0}
+/* ── 返品 ── */
+.rfbox{max-width:640px;max-height:92vh;overflow:auto}
+.rfr{align-items:center!important}
+.rfr span i{display:block;font-size:11.5px;color:var(--sub);font-style:normal;margin-top:2px}
+.rfq{display:flex;align-items:center;gap:8px;margin:0 12px}
+.rfq button{font:inherit;width:38px;height:38px;border:1px solid var(--line);background:#fff;
+  border-radius:3px;cursor:pointer;font-size:16px;line-height:1}
+.rfq b{min-width:1.6em;text-align:center;font-variant-numeric:tabular-nums}
+.rfr em{font-style:normal;font-variant-numeric:tabular-nums;min-width:5em;text-align:right}
+.rfall{display:flex;gap:8px;margin:8px 0 14px}
+.rfall button{font:inherit;font-size:12.5px;padding:8px 14px;min-height:40px;
+  border:1px solid var(--line);background:#fff;border-radius:3px;cursor:pointer}
+.rfnote{border:1px solid #e0b8ae;background:#fdf6f4;border-radius:3px;padding:14px 16px;margin:14px 0}
+.rfnote-h{font-weight:600;color:#8c3a22;font-size:14px;margin-bottom:8px}
+.rfnote ul{margin:0;padding-left:1.1em}
+.rfnote li{font-size:12.8px;line-height:1.85;color:var(--ink);margin-bottom:4px}
+.rfsend{border:1px solid var(--line);border-radius:3px;padding:14px 16px;margin-bottom:14px}
+.rfsend-h{font-size:13px;margin-bottom:8px}
+.rfsend-b{display:flex;gap:6px;flex-wrap:wrap}
+.rfh{font:inherit;font-size:12.5px;padding:9px 16px;min-height:42px;border:1px solid var(--line);
+  background:#fff;border-radius:3px;cursor:pointer}
+.rfh.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.rfsend input{margin-top:10px;width:100%;font:inherit;font-size:14px;padding:11px 12px;
+  border:1px solid var(--line);border-radius:3px;min-height:44px}
+.rfn{margin-top:8px;font-size:12px;color:var(--sub);line-height:1.7}
+.rfwarn{font-size:12px;color:#8c3a22;text-align:center;margin:10px 0 0!important}
 /* ── 免税の申請シート ── */
 .tfsheet{max-width:760px}
 .ci-tfx{display:inline-block;margin-left:8px;font-size:11px;letter-spacing:.06em;color:#a8624a;
@@ -617,6 +643,124 @@ async function doCheckout(){
   finally{ if($('go')){$('go').disabled=false;$('go').textContent='会計する';} }
 }
 
+/* ══════════ 返品 ══════════
+   ★ここに書く日数は、すべて一次情報の裏づけがあるものだけ（2026-08-13 確認）。
+     Square公式  https://squareup.com/help/jp/ja/article/5060-refunds-faq
+       ・カード … 翌営業日までにカード発行会社へ依頼、明細に反映まで さらに2〜7営業日
+       ・デビット … 通常は数日、場合により最長45〜60日
+       ・交通系IC … 返金できない（現金でお返し・決済手数料も戻らない）
+       ・iD / QUICPay … 全額返金のみ（一部返金は不可）
+       ・返金でお客様に追加の手数料はかからない
+     Square公式  https://squareup.com/jp/ja/townsquare/kihon-no-ki-6
+       ・QRコード決済 … 手続き後24時間以内
+     JCB公式     https://j-faq.jcb.co.jp/faq/show/454
+       ・締め日をまたぐと、翌月に一度引き落とし → 翌々月に返金
+   ★言ってはいけないこと: 「◯日で口座に戻ります」と言い切ること。
+     Squareの表記は「かかる場合があります」で、カード発行会社しだい。
+     上限も約束しない（デビットは最長60日と書かれている）。 */
+const RF_NOTE={
+  cash:{h:'現金でお返しします',
+    b:['この場で全額をお返しします','お手元でお確かめください']},
+  card:{h:'カードへのご返金になります',
+    b:['店頭での手続きは、いまこの場で完了します',
+       'お客様のご利用明細に反映されるまで、通常2〜7営業日ほどかかる場合があります（カード会社により異なります）',
+       'カード会社の締め日の関係で、一度ご請求が発生したうえで、翌月または翌々月のご請求と相殺・ご返金となる場合があります',
+       'デビットカードの場合、通常は数日ですが、場合により45〜60日かかることがあります',
+       '反映の時期を当店から確定的にお伝えすることはできません　詳しくはご利用のカード会社へお問い合わせください',
+       'ご返金にあたって、お客様に手数料のご負担はありません']},
+  emoney:{h:'電子マネーへのご返金になります',
+    b:['iD・QUICPay は、一部返金ができないため全額のご返金となります',
+       '交通系IC（Suica・PASMO など）は、システム上ご返金ができません　その場合は現金でお返しします',
+       'ご利用明細に反映される時期は、カード発行会社により異なります',
+       'ご返金にあたって、お客様に手数料のご負担はありません']},
+  qr:{h:'QRコード決済へのご返金になります',
+    b:['手続き後24時間以内に返金処理が行われます',
+       'クレジットカードを紐づけてお支払いの場合は、カード会社の処理により時間がかかることがあります',
+       'ご返金にあたって、お客様に手数料のご負担はありません']}
+};
+const rfKey=m=>m==='cash'?'cash':(m==='emoney'?'emoney':(m==='qr'?'qr':'card'));
+/* 見せた文面をそのまま控えに残すので、画面と同じ文字列を作る */
+function rfNoticeText(m,amt){
+  const n=RF_NOTE[rfKey(m)];
+  return `ご返金 ${yen(amt)}\n${n.h}\n`+n.b.map(x=>'・'+x).join('\n');
+}
+
+let RF={co:null,pick:{},how:'',to:''};
+function openRefund(c){
+  RF={co:c,pick:{},how:'',to:(c.email||'')};
+  (c.retailItems||[]).forEach((it,ix)=>RF.pick[ix]=0);
+  const d=document.createElement('div'); d.className='dlg'; d.id='rfdlg';
+  const paint=()=>{
+    const items=(RF.co.retailItems||[]);
+    const chosen=items.map((it,ix)=>({...it,back:RF.pick[ix]||0})).filter(x=>x.back>0);
+    const unit=it=>(+it.unit||Math.round((+it.price||0)/Math.max(1,+it.qty||1)));
+    const amt=chosen.reduce((s,x)=>s+unit(x)*x.back,0);
+    const left=Math.max(0,(RF.co.total||0)-(RF.co.refund||0));
+    const over=amt>left;
+    const n=RF_NOTE[rfKey(RF.co.method)];
+    d.innerHTML=`<div class="dlg-b rfbox">
+      <h3>ご返品</h3>
+      <p>${esc(String(RF.co.at).replace('T',' ').slice(0,16))}　${payLabel(RF.co.method)}　${esc(RF.co.customer||'お客様')}</p>
+      <div class="stk">
+        ${items.map((it,ix)=>`<div class="stk-r rfr">
+          <span>${esc(it.name)}<i>お買い上げ ${it.qty||1} 点</i></span>
+          <div class="rfq"><button data-m="-" data-i="${ix}">−</button><b>${RF.pick[ix]||0}</b><button data-m="+" data-i="${ix}">＋</button></div>
+          <em>${yen(unit(it)*(RF.pick[ix]||0))}</em>
+        </div>`).join('')}
+      </div>
+      <div class="rfall"><button id="rfAll">ぜんぶ返す</button><button id="rfNone">えらび直す</button></div>
+      <div class="stk"><div class="stk-r here"><span>お返しする金額</span><b>${yen(amt)}</b></div>
+        ${over?`<div class="stk-r"><span style="color:#a03a24">返せるのは ${yen(left)} までです</span><b></b></div>`:''}</div>
+
+      <div class="rfnote">
+        <div class="rfnote-h">${esc(n.h)}</div>
+        <ul>${n.b.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      </div>
+
+      <div class="rfsend">
+        <div class="rfsend-h">控えをお送りしますか</div>
+        <div class="rfsend-b">
+          <button class="rfh ${RF.how==='mail'?'on':''}" data-h="mail">メール</button>
+          <button class="rfh ${RF.how==='line'?'on':''}" data-h="line">LINE・SNS</button>
+          <button class="rfh ${RF.how===''?'on':''}" data-h="">いらない</button>
+        </div>
+        ${RF.how==='mail'?`<input id="rfTo" value="${esc(RF.to)}" placeholder="メールアドレス" inputmode="email">`:''}
+        ${RF.how==='line'?`<div class="rfn">お会計のあとに出るQRから、お客様ご自身で受け取っていただけます　控えはお店にも残ります</div>`:''}
+      </div>
+
+      <div class="dlg-a">
+        <button id="rfX">やめる</button>
+        <button class="pri" id="rfGo" ${(amt>0&&!over)?'':'disabled'}>この内容に同意いただき、返金する</button>
+      </div>
+      <p class="rfwarn">お客様にこの画面をお見せして、ご同意のうえで押してください</p>
+    </div>`;
+    d.querySelectorAll('.rfq button').forEach(b=>b.onclick=()=>{
+      const ix=+b.dataset.i, max=+(items[ix].qty||1);
+      RF.pick[ix]=Math.max(0,Math.min(max,(RF.pick[ix]||0)+(b.dataset.m==='+'?1:-1)));paint();});
+    d.querySelector('#rfAll').onclick=()=>{items.forEach((it,ix)=>RF.pick[ix]=+(it.qty||1));paint();};
+    d.querySelector('#rfNone').onclick=()=>{items.forEach((it,ix)=>RF.pick[ix]=0);paint();};
+    d.querySelectorAll('.rfh').forEach(b=>b.onclick=()=>{RF.how=b.dataset.h;paint();});
+    const t=d.querySelector('#rfTo'); if(t)t.oninput=()=>RF.to=t.value.trim();
+    d.querySelector('#rfX').onclick=()=>d.remove();
+    d.querySelector('#rfGo').onclick=async()=>{
+      const g=d.querySelector('#rfGo'); g.disabled=true; g.textContent='返金しています…';
+      try{
+        const r=await post('/checkouts/refund',{id:RF.co.id,shopId:SHOP,register:REG,amount:amt,
+          items:chosen.map(x=>({productId:x.productId,name:x.name,qty:x.back,price:unit(x)*x.back})),
+          method:RF.co.method,reason:'店頭でのご返品',
+          notice:rfNoticeText(RF.co.method,amt),agreed:1,agreedAt:new Date().toISOString(),
+          sendHow:RF.how,sendTo:RF.how==='mail'?RF.to:'',
+          staffName:(STAFF&&STAFF.name)||''});
+        d.remove();
+        toast(r.card?`カードへ ${yen(r.refunded)} を返金しました`:`${yen(r.refunded)} の返金を記録しました　現金をお返しください`);
+        if(r.送った)toast('控えを '+r.送った+' に送りました');
+        await loadHistory2(); render();
+      }catch(err){ toast(err.message||'返金できませんでした',true); g.disabled=false; g.textContent='この内容に同意いただき、返金する'; }};
+  };
+  paint();
+  document.body.appendChild(d);
+}
+
 /* ══════════ 免税の申請シート ══════════
    会計のあと、免税アプリ（国税庁の輸出物品販売場システム）に打ち込むための一覧を出す。
    ★これを閉じるまで次の会計に進めない。押し忘れを無くすため。
@@ -735,7 +879,7 @@ function histDetail(c){
       ${c.voided?`<div class="stk-r"><span>取消</span><b>${esc(c.voidReason||'')}</b></div>`:''}</div>
     <div class="dlg-a">
       <button id="hclose">閉じる</button>
-      ${(!c.voided&&left>0)?`<button id="hrefund">${c.squarePaymentId?'カードへ返金':'返金（現金）'} ${yen(left)}</button>`:''}
+      ${(!c.voided&&left>0)?`<button id="hrefund">返品する（${yen(left)}まで）</button>`:''}
       ${(!c.voided)?`<button class="pri" id="hvoid">訂正（取消）</button>`:''}
     </div></div></div>`;
 }
@@ -744,13 +888,9 @@ function openDetail(id){
   document.body.insertAdjacentHTML('beforeend',histDetail(c));
   const close=()=>{const d=$('hdlg');if(d)d.remove();};
   $('hclose').onclick=close;
-  if($('hrefund'))$('hrefund').onclick=async()=>{
-    const left=Math.max(0,(c.total||0)-(c.refund||0));
-    if(!confirm(`${yen(left)} を返金します よろしいですか`))return;
-    try{ const r=await post('/checkouts/refund',{id:c.id,shopId:SHOP,reason:'レジ返金'});
-      toast(r.card?`カードへ ${yen(r.refunded)} 返金しました`:`${yen(r.refunded)} の返金を記録しました　現金をお返しください`);
-      close(); await loadHistory2(); renderRight();
-    }catch(err){ toast(err.message||'返金できませんでした',true); }};
+  /* ★返金は「いくら返すか」だけでは足りない。何を返すか、何を説明したか、
+       ご同意いただいたかまで残す。openRefund がその画面。 */
+  if($('hrefund'))$('hrefund').onclick=()=>{ const dl=$('hdlg'); if(dl)dl.remove(); openRefund(c); };
   if($('hvoid'))$('hvoid').onclick=async()=>{
     const why=prompt('訂正の理由を入れてください（例: 打ち間違い）','打ち間違い');
     if(why===null)return;
