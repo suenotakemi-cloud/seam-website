@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>ご返金の控え｜SEAM</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Noto+Serif+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#26231f;--body:#5b554d;--sub:#938c82;--line:#e4ded5;--paper:#faf8f4;--cream:#f4f0e9;--clay:#96613f}
+@media(prefers-color-scheme:dark){:root{--ink:#f2ece4;--body:#c8c0b6;--sub:#8f877d;
+  --line:#39332c;--paper:#171512;--cream:#221e19;--clay:#c8916a}}
+*{box-sizing:border-box;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--body);
+  font-family:'Noto Serif JP',serif;font-size:15px;line-height:1.9;letter-spacing:.02em}
+.wrap{max-width:600px;margin:0 auto;padding:38px 22px 70px}
+.mk{font-family:'Cormorant Garamond',serif;font-size:20px;letter-spacing:.3em;color:var(--ink);text-align:center}
+h1{font-size:19px;font-weight:500;color:var(--ink);text-align:center;margin:26px 0 4px;letter-spacing:.06em}
+.en{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--sub);
+  text-align:center;letter-spacing:.06em;margin:0 0 26px}
+.amt{text-align:center;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:24px 0;margin-bottom:26px}
+.amt b{font-family:'Cormorant Garamond',serif;font-size:46px;font-weight:600;color:var(--ink);
+  display:block;line-height:1.1;font-variant-numeric:lining-nums tabular-nums}
+.amt span{font-size:12.5px;color:var(--sub);letter-spacing:.1em}
+.rows{border:1px solid var(--line);border-radius:3px;background:var(--cream);padding:4px 16px;margin-bottom:26px}
+.r{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+.r:last-child{border-bottom:none}
+.r span{color:var(--sub);font-size:12.5px;flex:none}
+.r b{font-weight:400;color:var(--ink);text-align:right;font-variant-numeric:tabular-nums}
+h2{font-size:14.5px;font-weight:500;color:var(--ink);margin:30px 0 2px;letter-spacing:.04em}
+h2 i{display:block;font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12.5px;
+  color:var(--sub);letter-spacing:.05em;margin-top:2px}
+ul{margin:12px 0 0;padding:0;list-style:none}
+li{font-size:13.5px;line-height:1.9;padding:9px 0 9px 16px;border-bottom:1px solid var(--line);position:relative;color:var(--body)}
+li:last-child{border-bottom:none}
+li::before{content:'';position:absolute;left:2px;top:1.05em;width:5px;height:1px;background:var(--clay)}
+li em{display:block;font-style:normal;font-size:12px;color:var(--sub);line-height:1.7;margin-top:3px}
+.ft{margin-top:38px;padding-top:22px;border-top:1px solid var(--line);text-align:center;
+  font-size:12px;color:var(--sub);line-height:2}
+.load,.err{text-align:center;padding:70px 0;color:var(--sub);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap" id="w"><div class="load">読み込んでいます…</div></div>
+<script>
+const API='https://seam-square-pay.suenotakemi.workers.dev';
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const yen=n=>'¥'+(+n||0).toLocaleString();
+const T=new URLSearchParams(location.search).get('t')||'';
+
+/* ★決済手段ごとの案内。日本語と英語を並べる。
+   数字の根拠（2026-08 確認）
+     Square公式 https://squareup.com/help/jp/ja/article/5060-refunds-faq
+       カード=明細反映まで2〜7営業日／デビット=通常数日・最長45〜60日
+       交通系IC=返金不可／iD・QUICPay=全額のみ／返金に追加手数料なし
+     Square公式 https://squareup.com/jp/ja/townsquare/kihon-no-ki-6  QR決済=24時間以内
+     JCB公式   https://j-faq.jcb.co.jp/faq/show/454  締め日をまたぐと翌月請求→翌々月返金
+   ★「◯日で口座に戻る」とは書かない。Squareの表記が「かかる場合があります」のため。 */
+const NOTE={
+ cash:{ja:['この場で全額をお返ししました'],
+       en:['Refunded in full, in cash, at the time of return.']},
+ card:{ja:['店頭でのお手続きは完了しています',
+           'ご利用明細に反映されるまで、通常2〜7営業日ほどかかる場合があります（カード会社により異なります）',
+           'カード会社の締め日により、一度ご請求が発生したうえで、翌月または翌々月のご請求と相殺・ご返金となる場合があります',
+           'デビットカードの場合、通常は数日ですが、場合により45〜60日かかることがあります',
+           'ご返金に手数料はかかりません'],
+       en:['The refund was processed in store at the time of return.',
+           'It usually takes about 2–7 business days to appear on your card statement. The exact timing depends on your card issuer.',
+           'Depending on your issuer’s billing cycle, the original charge may still appear once, and the refund may be offset against the following month’s or the month after’s statement.',
+           'For debit cards it is usually a few days, but it can take 45–60 days in some cases.',
+           'No fee is charged to you for this refund.']},
+ emoney:{ja:['店頭でのお手続きは完了しています',
+             'iD・QUICPay は一部返金ができないため、全額のご返金となります',
+             '交通系IC（Suica・PASMO など）はシステム上ご返金ができないため、現金でお返ししています',
+             'ご利用明細への反映時期は、カード発行会社により異なります',
+             'ご返金に手数料はかかりません'],
+         en:['The refund was processed in store at the time of return.',
+             'iD and QUICPay do not support partial refunds, so the full amount is refunded.',
+             'Transit IC cards (Suica, PASMO, etc.) cannot be refunded through the system, so we refund in cash.',
+             'When it appears on your statement depends on your card issuer.',
+             'No fee is charged to you for this refund.']},
+ qr:{ja:['店頭でのお手続きは完了しています',
+         '24時間以内に返金処理が行われます',
+         'クレジットカードを紐づけてお支払いの場合は、カード会社の処理により時間がかかることがあります',
+         'ご返金に手数料はかかりません'],
+     en:['The refund was processed in store at the time of return.',
+         'The refund is processed within 24 hours.',
+         'If you paid with a credit card linked to the app, it may take longer depending on your card issuer.',
+         'No fee is charged to you for this refund.']}
+};
+const key=m=>m==='cash'?'cash':(m==='emoney'?'emoney':(m==='qr'?'qr':'card'));
+const LABEL={cash:['現金','Cash'],card:['クレジットカード','Credit card'],
+ emoney:['電子マネー','Electronic money'],qr:['QRコード決済','QR code payment']};
+
+(async()=>{
+  const w=document.getElementById('w');
+  if(!T){ w.innerHTML='<div class="err">この控えは開けません<br>Cannot open this receipt</div>'; return; }
+  let d;
+  try{ const r=await fetch(`${API}/refund/view?t=${encodeURIComponent(T)}`); d=await r.json();
+    if(!r.ok||!d.ok)throw 0; }
+  catch(e){ w.innerHTML='<div class="err">この控えは見つかりませんでした<br>Receipt not found</div>'; return; }
+  const k=key(d.method), L=LABEL[k], N=NOTE[k];
+  const when=String(d.at||'').replace('T',' ').slice(0,16);
+  w.innerHTML=`
+    <div class="mk">SEAM</div>
+    <h1>ご返金の控え</h1>
+    <p class="en">Refund Receipt</p>
+    <div class="amt"><b>${yen(d.amount)}</b><span>ご返金額　REFUNDED</span></div>
+    <div class="rows">
+      <div class="r"><span>日時 / Date</span><b>${esc(when)}</b></div>
+      <div class="r"><span>返金方法 / Method</span><b>${esc(L[0])}　${esc(L[1])}</b></div>
+      ${(d.items||[]).length?`<div class="r"><span>返品 / Items</span><b>${
+        (d.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join('<br>')}</b></div>`:''}
+    </div>
+    <h2>ご返金について<i>About your refund</i></h2>
+    <ul>${N.ja.map((x,i)=>`<li>${esc(x)}<em>${esc(N.en[i]||'')}</em></li>`).join('')}</ul>
+    <div class="ft">
+      ご不明な点は、お気軽にお声がけください<br>
+      If you have any questions, please contact us.<br><br>
+      SEAM 銀座　東京都中央区銀座
+    </div>`;
+})();
+</script>
+</body>
+</html>

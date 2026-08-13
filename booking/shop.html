@@ -63,6 +63,8 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .rffull{margin:8px 0 14px;font-size:12.5px;color:#8c3a22;background:#fdf6f4;border:1px solid #e0b8ae;border-radius:3px;padding:10px 12px;line-height:1.7}
 .rfall button{font:inherit;font-size:12.5px;padding:8px 14px;min-height:40px;
   border:1px solid var(--line);background:#fff;border-radius:3px;cursor:pointer}
+.rfsay{background:var(--ink);color:#fff;border-radius:3px;padding:12px 14px;margin:14px 0 0;font-size:13.5px;line-height:1.75}
+.hmine{font-size:12px;color:var(--clay);padding:0 2px 10px;letter-spacing:.04em}
 .rfnote{border:1px solid #e0b8ae;background:#fdf6f4;border-radius:3px;padding:14px 16px;margin:14px 0}
 .rfnote-h{font-weight:600;color:#8c3a22;font-size:14px;margin-bottom:8px}
 .rfnote ul{margin:0;padding-left:1.1em}
@@ -759,6 +761,63 @@ function rfNoticeText(m,amt){
   return `ご返金 ${yen(amt)}\n${n.h}\n`+n.b.map(x=>'・'+x).join('\n');
 }
 
+/* ★スタッフが迷わないように、そのまま言える一言を出す。
+   返品でもたつくのがいちばん印象を悪くする。何を言うか考える時間をなくす。 */
+const RF_SAY={
+  cash:'ただいまお返しいたします　お確かめください',
+  card:'いまこの場で手続きいたします　カード会社さまへの反映に2〜7営業日ほどいただきます',
+  emoney:'いまこの場で手続きいたします　ご利用明細への反映はカード会社さまによって変わります',
+  qr:'いまこの場で手続きいたします　24時間以内にお戻りいたします'};
+/* 決済手段ごとの「いつ戻るか」。根拠は RF_NOTE と同じ（Square公式・JCB公式） */
+const RF_WHEN={cash:'この場でお返しします',
+  card:'ご利用明細への反映まで　通常2〜7営業日',
+  emoney:'ご利用明細への反映まで　カード会社により異なります',
+  qr:'24時間以内に返金処理が行われます'};
+/* ★返金の前に、お客様ご自身に押していただく。
+     金額・決済手段・いつ戻るかを、日本語と英語で並べて出す。
+     海外のお客様も同じ画面で分かるように。 */
+const RF_ASK_EN={cash:'Refunded in cash at the time of return.',
+  card:'Usually 2–7 business days to appear on your card statement. Timing depends on your card issuer.',
+  emoney:'Timing depends on your card issuer. iD / QUICPay are refunded in full only.',
+  qr:'Processed within 24 hours.'};
+async function askRefundConsent(method,amt){
+  const k=rfKey(method), n=RF_NOTE[k];
+  await fetch(API+'/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG),
+    {method:'DELETE',headers:H()}).catch(()=>{});
+  const t0=Date.now();
+  post('/display/push',{shopId:SHOP,register:REG,mode:'normal',done:false,items:[],list:0,cut:0,total:0,
+    ask:{kind:'refund',title:`ご返金 ${yen(amt)}　Refund`,
+      lines:[n.h,RF_WHEN[k]+'　'+RF_ASK_EN[k],'ご返金に手数料はかかりません　No fee is charged to you.',
+             '内容をご確認のうえ、お進みください　Please confirm and continue.'],
+      button:'確認しました　Confirm'}}).catch(()=>{});
+  const until=Date.now()+120000;
+  while(Date.now()<until){
+    await new Promise(r=>setTimeout(r,1200));
+    try{ const j=await get('/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG));
+      if(j.consent&&j.consent.at>=t0){ RFCONSENT=j.consent; return true; } }catch(e){}
+  }
+  return false;
+}
+let RFCONSENT=null;
+
+/* 返金のあと、お客様画面に出す */
+function showRefundDone(method,amt,token){
+  const k=rfKey(method);
+  const lines=k==='cash'?['お手元でお確かめください']
+    :['店頭でのお手続きは完了しています',
+      k==='card'?'カード会社の締め日により、翌月または翌々月のご請求と相殺になる場合があります':'',
+      'ご返金に手数料はかかりません',
+      'ご不明な点は、いつでもお店にお声がけください'].filter(Boolean);
+  /* 控えのQR。お客様のスマホで読んで、そのままお持ち帰りいただく（日英併記のページ） */
+  const url=token?('https://seam.site/booking/refund.html?t='+encodeURIComponent(token)):'';
+  const qr=url?('https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data='+encodeURIComponent(url)):'';
+  post('/display/push',{shopId:SHOP,register:REG,mode:'normal',done:false,items:[],list:0,cut:0,total:0,
+    refund:{amount:amt,when:RF_WHEN[k],lines,qr}}).catch(()=>{});
+  /* 45秒たったら待機の画面に戻す（QRを読む時間をとる） */
+  setTimeout(()=>{post('/display/push',{shopId:SHOP,register:REG,mode:'normal',done:false,
+    items:[],list:0,cut:0,total:0}).catch(()=>{});},45000);
+}
+
 let RF={co:null,pick:{},how:'',to:''};
 function openRefund(c){
   RF={co:c,pick:{},how:'',to:(c.email||'')};
@@ -790,6 +849,7 @@ function openRefund(c){
       <div class="stk"><div class="stk-r here"><span>お返しする金額</span><b>${yen(amt)}</b></div>
         ${over?`<div class="stk-r"><span style="color:#a03a24">返せるのは ${yen(left)} までです</span><b></b></div>`:''}</div>
 
+      <div class="rfsay">お客様にはこのように　「${esc(RF_SAY[rfKey(RF.co.method)])}」</div>
       <div class="rfnote">
         <div class="rfnote-h">${esc(n.h)}</div>
         <ul>${n.b.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
@@ -808,7 +868,7 @@ function openRefund(c){
 
       <div class="dlg-a">
         <button id="rfX">やめる</button>
-        <button class="pri" id="rfGo" ${(amt>0&&!over)?'':'disabled'}>この内容に同意いただき、返金する</button>
+        <button class="pri" id="rfGo" ${(amt>0&&!over)?'':'disabled'}>お客様に確認していただく</button>
       </div>
       <p class="rfwarn">お客様にこの画面をお見せして、ご同意のうえで押してください</p>
     </div>`;
@@ -821,18 +881,30 @@ function openRefund(c){
     const t=d.querySelector('#rfTo'); if(t)t.oninput=()=>RF.to=t.value.trim();
     d.querySelector('#rfX').onclick=()=>d.remove();
     d.querySelector('#rfGo').onclick=async()=>{
-      const g=d.querySelector('#rfGo'); g.disabled=true; g.textContent='返金しています…';
+      const g=d.querySelector('#rfGo'); g.disabled=true;
+      /* ★お客様ご自身に、返金の内容と「いつ戻るか」を見て押していただく。
+           押していただいてから返金する。順番を逆にしない。 */
+      g.textContent='お客様画面をご確認ください…';
+      const okc=await askRefundConsent(RF.co.method,amt);
+      if(!okc){ toast('お客様の同意が確認できませんでした',true); g.disabled=false;
+        g.textContent='お客様に確認していただく'; return; }
+      g.textContent='返金しています…';
       try{
         const r=await post('/checkouts/refund',{id:RF.co.id,shopId:SHOP,register:REG,amount:amt,
           items:chosen.map(x=>({productId:x.productId,name:x.name,qty:x.back,price:unit(x)*x.back})),
           method:RF.co.method,reason:'店頭でのご返品',
-          notice:rfNoticeText(RF.co.method,amt),agreed:1,agreedAt:new Date().toISOString(),
+          notice:(RFCONSENT&&RFCONSENT.text)||rfNoticeText(RF.co.method,amt),
+          agreed:1,agreedAt:RFCONSENT?new Date(RFCONSENT.at).toISOString():new Date().toISOString(),
           sendHow:RF.how,sendTo:RF.how==='mail'?RF.to:'',
           staffName:(STAFF&&STAFF.name)||''});
         d.remove();
         /* ★Squareは PENDING で返る。完了していないので「返金しました」とは書かない */
         toast(r.card?`カードへ ${yen(r.refunded)} の返金手続きをしました　お客様への反映には数日かかります`
                     :`${yen(r.refunded)} の返金を記録しました　現金をお返しください`);
+        /* ★お客様画面に、いつ戻るかを大きく出す。
+             返金でいちばん不安なのは「いつ戻るか分からない」こと。
+             ここで黙っていると、そのまま持ち帰らせてしまう。 */
+        showRefundDone(RF.co.method,amt,r['控えの鍵']||'');
         if(r.送った)toast('控えを '+r.送った+' に送りました');
         await loadHistory2(); render();
       }catch(err){ toast(err.message||'返金できませんでした',true); g.disabled=false; g.textContent='この内容に同意いただき、返金する'; }};
@@ -924,16 +996,37 @@ async function loadHistory2(){
 const payLabel=m=>({cash:'現金',card:'カード',term:'カード',emoney:'電子マネー',qr:'QR決済'}[m]||m||'—');
 let HSCOPE='mine';
 const inScope=c=>HSCOPE==='all'||String(c.register||'')===String(REG||'');
+/* ★返品のとき、その会計をすぐ出せることがいちばん大事。
+   お客様の前で探しているあいだが、いちばん気まずい。
+   お名前・電話の下4桁・金額のどれでも当たるようにする。
+   会員証を読んでいれば、その方の会計を最初から絞って出す。 */
+let HQ='';
+function histMatch(c){
+  const q=HQ.trim(); if(!q)return true;
+  const n=q.replace(/[^0-9]/g,'');
+  return String(c.customer||'').includes(q)
+    || (n&&String(c.phone||'').replace(/[^0-9]/g,'').endsWith(n))
+    || (n&&String(c.total||'').includes(n))
+    || String(c.id||'').includes(q);
+}
 function histHtml(){
   const cardOnly=HFILTER==='card';
-  const rows=HISTORY.filter(inScope).filter(c=>!cardOnly||c.method!=='cash');
+  let rows=HISTORY.filter(inScope).filter(c=>!cardOnly||c.method!=='cash').filter(histMatch);
+  /* 会員証を読んでいるなら、その方の分を上に */
+  if(MEMBER&&MEMBER.name){const mine=c=>String(c.customer||'')===MEMBER.name;
+    rows=[...rows.filter(mine),...rows.filter(c=>!mine(c))];}
   const sum=rows.filter(c=>!c.voided).reduce((s,c)=>s+(c.total-(c.refund||0)),0);
   return `<div class="srch">
+      <input id="hq" value="${esc(HQ)}" placeholder="お名前・電話の下4桁・金額でさがす" style="flex:1;min-width:0">
+      ${HQ?`<button data-hclr="1">×</button>`:''}
+    </div>
+    <div class="srch">
       <button class="${HFILTER==='all'?'on2':''}" data-hf="all">すべて</button>
       <button class="${HFILTER==='card'?'on2':''}" data-hf="card">現金以外</button>
       <select id="hdays">${[[1,'今日'],[3,'3日'],[7,'1週間'],[31,'1か月']].map(([v,l])=>
         `<option value="${v}" ${HDAYS===v?'selected':''}>${l}</option>`).join('')}</select>
     </div>
+    ${MEMBER&&MEMBER.name?`<div class="hmine">${esc(MEMBER.name)} 様のお会計を上に出しています</div>`:''}
     <div class="sr" style="padding:0 2px 12px"><span>${rows.length} 件</span><span>差引 ${yen(sum)}</span></div>
     <div class="stk">${rows.length?rows.map(c=>`<div class="stk-r" data-h="${esc(c.id)}" style="cursor:pointer;${c.voided?'opacity:.5':''}">
       <span style="flex:1;min-width:0">
@@ -1173,6 +1266,13 @@ async function renderRight(){
     await loadHistory2();
     b.innerHTML=histHtml();
     b.querySelectorAll('[data-hf]').forEach(x=>x.onclick=()=>{HFILTER=HFILTER==='card'?'all':'card';renderRight();});
+    if(b.querySelector('#hq')){const q=b.querySelector('#hq');
+      q.oninput=()=>{HQ=q.value; const box=b.querySelector('.stk'); if(!box)return;
+        /* 打つたびに全部描き直すとカーソルが飛ぶので、一覧だけ入れ替える */
+        const tmp=document.createElement('div'); tmp.innerHTML=histHtml();
+        const nb=tmp.querySelector('.stk'); if(nb)box.innerHTML=nb.innerHTML;
+        box.querySelectorAll('[data-h]').forEach(x=>x.onclick=()=>openDetail(x.dataset.h));};}
+    b.querySelectorAll('[data-hclr]').forEach(x=>x.onclick=()=>{HQ='';renderRight();});
     b.querySelectorAll('[data-hs]').forEach(x=>x.onclick=()=>{HSCOPE=x.dataset.hs;renderRight();});
     if(b.querySelector('#hdays'))b.querySelector('#hdays').onchange=e=>{HDAYS=+e.target.value;renderRight();};
     b.querySelectorAll('[data-h]').forEach(x=>x.onclick=()=>openDetail(x.dataset.h));

@@ -128,6 +128,21 @@ body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
 .ask-b:active{opacity:.8}
 .ask-b:disabled{background:var(--clay);opacity:1}
 .ask-n{font-size:.72em;color:var(--sub);margin-top:1.3em;letter-spacing:.08em}
+/* ── 返金が終わった画面 ── */
+.rdone{margin:auto;text-align:center;max-width:28em;padding:1em 0}
+.rdone-t{font-family:'Noto Serif JP',serif;font-size:1.35em;color:var(--ink);letter-spacing:.06em}
+.rdone-a{font-family:'Cormorant Garamond',serif;font-size:3.4em;color:var(--ink);
+  font-weight:600;line-height:1.2;margin:.25em 0 .1em;font-variant-numeric:lining-nums tabular-nums}
+.rdone-w{font-size:1.05em;color:var(--clay);letter-spacing:.04em;margin-bottom:1.1em}
+.rdone-l{list-style:none;margin:0 0 1.2em;padding:0;text-align:left;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.rdone-l li{font-size:.86em;color:var(--body);line-height:1.85;padding:.55em .2em;
+  border-bottom:1px solid var(--line)}
+.rdone-l li:last-child{border-bottom:none}
+.rdone-q img{width:8.4em;height:8.4em;image-rendering:pixelated;border:1px solid var(--line);
+  background:#fff;padding:.5em}
+.rdone-q div{font-size:.72em;color:var(--sub);margin-top:.5em;letter-spacing:.06em}
+.rdone-n{font-size:.82em;color:var(--sub);margin-top:1.2em;letter-spacing:.08em}
 /* ★Cormorant は既定でオールドスタイル数字（1240 の 2 や 4 が下がる書体）。
    きれいだが、お会計の金額としては一瞬読み違える。数字だけ高さを揃える。 */
 .li-now,.fr.cut b,.fr.tot b,.pt-e b,.pt-b b{font-variant-numeric:lining-nums tabular-nums;
@@ -241,6 +256,20 @@ function fitList(){
    メンバー価格・セール価格でお売りするときは返品交換をお受けしないので、
    お買い上げの前にご確認いただく。押していただくまでレジは先に進まない。
    ★一度押したら、同じお会計では二度と出さない（押し直しを求めない）。 */
+/* ★返金が終わったときの画面。
+   お客様がいちばん知りたいのは「いつ戻るか」。それを最初に、大きく出す。
+   お詫びより先に、事実を出す。もたつかないことが、いちばんの誠意になる。 */
+function refundDone(st){
+  const r=st.refund;
+  return `<div class="rdone fade">
+    <div class="rdone-t">ご返金の手続きが完了しました</div>
+    <div class="rdone-a">${yen(r.amount||0)}</div>
+    <div class="rdone-w">${esc(r.when||'')}</div>
+    <ul class="rdone-l">${(r.lines||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+    ${r.qr?`<div class="rdone-q"><img src="${esc(r.qr)}" alt=""><div>控えをお持ち帰りいただけます</div></div>`:''}
+    <div class="rdone-n">本日はご不便をおかけしました</div>
+  </div>`;
+}
 let ASKED='';
 function askScreen(st){
   const a=st.ask;
@@ -267,6 +296,7 @@ function paint(st){
   lastJson=j;
   const s=$('scr');
   if(!st){ s.innerHTML=idle(); return; }
+  if(st.refund){ ASKED=''; s.innerHTML=refundDone(st); return; }
   if(st.done){ ASKED=''; s.innerHTML=done(st); return; }
   /* お願いが来ていて、まだ押していただいていなければ、それを出す */
   if(st.ask&&JSON.stringify(st.ask)!==ASKED){
