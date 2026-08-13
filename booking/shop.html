@@ -50,6 +50,37 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .qrwrap img{width:220px;height:220px;image-rendering:pixelated;border:1px solid var(--line);background:#fff;padding:10px}
 .qrnote{font-size:12px;color:var(--sub);margin-top:10px;letter-spacing:.04em}
 .qrload{font-size:12.5px;color:var(--sub);padding:40px 0}
+/* ── 免税の申請シート ── */
+.tfsheet{max-width:760px}
+.ci-tfx{display:inline-block;margin-left:8px;font-size:11px;letter-spacing:.06em;color:#a8624a;
+  border:1px solid #e3cfc6;border-radius:999px;padding:1px 8px;vertical-align:middle}
+.tflock{background:#fdf0ee;border:1px solid #e0b8ae;border-radius:3px;color:#a03a24;
+  font-size:12.5px;line-height:1.7;padding:10px 12px;margin:8px 0}
+.tfsum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:4px 0 16px}
+.tfsum>div{border:1px solid var(--line);border-radius:3px;padding:12px 14px;background:var(--cream)}
+.tfsum span{display:block;font-size:11.5px;letter-spacing:.08em;color:var(--sub)}
+.tfsum b{display:block;font-size:20px;font-variant-numeric:tabular-nums;margin-top:4px}
+.tfsum i{font-size:12px;color:var(--sub);font-style:normal}
+.tfsum .tot{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tfsum .tot span,.tfsum .tot i{color:rgba(255,255,255,.72)}
+.tfrows{max-height:44vh;overflow:auto;border:1px solid var(--line);border-radius:3px}
+.tfr{display:grid;grid-template-columns:1fr auto auto auto auto;gap:12px;align-items:center;
+  padding:11px 14px;border-bottom:1px solid var(--line)}
+.tfr:last-child{border-bottom:none}
+.tfr-n{font-size:13.5px;line-height:1.5}
+.tfr-g{display:flex;gap:4px}
+.tfk{font:inherit;font-size:12px;padding:6px 12px;min-height:38px;border:1px solid var(--line);
+  background:#fff;border-radius:3px;cursor:pointer;white-space:nowrap}
+.tfk.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tfr-v{text-align:right;white-space:nowrap}
+.tfr-v span{display:block;font-size:10.5px;letter-spacing:.06em;color:var(--sub)}
+.tfr-v b{font-size:16px;font-variant-numeric:tabular-nums}
+.tfr-v b.cp{cursor:pointer;border-bottom:1px dashed var(--line)}
+.tfbag{margin-top:12px;font-size:12.5px;color:var(--sub);background:var(--cream);
+  border-radius:3px;padding:10px 12px}
+.tfwarn{font-size:12px;color:#a03a24;text-align:center;margin:10px 0 0!important}
+@media(max-width:700px){.tfr{grid-template-columns:1fr;gap:6px}.tfr-v{text-align:left}
+  .tfsum{grid-template-columns:1fr}}
 .dlg-a{display:flex;gap:8px;margin-top:14px}
 .dlg-a button{flex:1;padding:13px;border:1px solid var(--line);background:#fff;border-radius:3px;font-size:13.5px}
 .dlg-a button.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
@@ -390,6 +421,42 @@ function addToCart(p){
     category:p.category||'',image:p.image||'',unit:+p.price||0,qty:1});
   render();
 }
+
+/* ── 免税の袋 ────────────────────────────────────────────
+   免税にした会計では、袋を必ずカートに入れる。ただし免税にはしない。
+   どの商品を袋として使うかは店で決められる（一度選べば覚える）。 */
+function addBag(){
+  if(CART.some(isBag))return;
+  const b=tfBag();
+  if(!b){ pickBag(); return; }
+  CART.push({productId:b.productId||'',name:b.name,unit:+b.price||0,qty:1,tfx:true,image:b.image||''});
+}
+function dropBag(){ CART=CART.filter(i=>!isBag(i)); }
+/* 袋にする商品を選ぶ。名前に「袋」「ショッパー」を含むものを候補に出す */
+async function pickBag(){
+  const d=document.createElement('div'); d.className='dlg';
+  d.innerHTML=`<div class="dlg-b"><h3>免税の袋を選んでください</h3>
+    <p>一度選べば、次から自動で入ります　免税の対象にはしません</p>
+    <div class="stk" id="bagl"><div class="empty">探しています…</div></div>
+    <div class="dlg-a"><button id="bagX">やめる</button></div></div>`;
+  document.body.appendChild(d);
+  d.querySelector('#bagX').onclick=()=>{d.remove();TAXFREE=false;dropBag();render();};
+  let cand=[];
+  for(const q of ['袋','ショッパー']){
+    const j=await get('/products?q='+encodeURIComponent(q)+'&limit=40').catch(()=>({products:[]}));
+    for(const p of (j.products||[])) if(!cand.some(x=>x.id===p.id)) cand.push(p);
+  }
+  const box=d.querySelector('#bagl');
+  if(!box)return;
+  box.innerHTML=cand.length?cand.slice(0,24).map(p=>`<div class="stk-r bagpick" role="button" tabindex="0"
+      data-i="${esc(p.id)}" data-n="${esc(p.name)}" data-p="${+p.price||0}"
+      style="cursor:pointer"><span>${esc(p.name)}</span><b>${yen(+p.price||0)}</b></div>`).join('')
+    :'<div class="empty">候補が見つかりません　商品名に「袋」か「ショッパー」が入るものを登録してください</div>';
+  box.querySelectorAll('.bagpick').forEach(b=>b.onclick=()=>{
+    const v={productId:b.dataset.i,name:b.dataset.n,price:+b.dataset.p||0};
+    localStorage.setItem(TFBAG_K,JSON.stringify(v));
+    d.remove(); addBag(); render(); toast('免税の袋を「'+v.name+'」にしました');});
+}
 function cartList(){ return CART.reduce((s,i)=>s+i.unit*i.qty,0); }            // 定価の合計
 function cartBefore(){ return CART.reduce((s,i)=>s+lineNow(i)*i.qty,0); }       // 免税を引く前
 /* ★2026年11月1日から、免税は「値引き」ではなく「いったん税込でいただき、
@@ -398,8 +465,16 @@ function cartBefore(){ return CART.reduce((s,i)=>s+lineNow(i)*i.qty,0); }       
 const TF_REFUND_FROM='2026-11-01';
 let TFINFO={name:'',country:'',last4:''};
 const tfRefundMode=()=>jstDay(0)>=TF_REFUND_FROM;
+/* ★免税の袋は免税にならない（お客様が持ち帰る商品ではなく、包装のため）。
+   免税にした会計では必ずカートに入れるが、免税の計算からは外す。
+   カートの行に tfx:true が付いているものが「免税にしない行」。 */
+const TFBAG_K='stb_tfbag';                     // {productId,name,price} を覚えておく
+const tfBag=()=>{try{return JSON.parse(localStorage.getItem(TFBAG_K)||'null')}catch(e){return null}};
+const isBag=i=>!!i.tfx;
+/* 免税の対象になる金額（袋を除いた分） */
+function cartTaxable(){ return CART.filter(i=>!isBag(i)).reduce((s,i)=>s+lineNow(i)*i.qty,0); }
 /* 消費税ぶん。旧方式は「その場で引く額」、新方式は「あとでお返しする額」 */
-function taxAmt(){ return (useFeat('taxfree')&&TAXFREE)?Math.round(cartBefore()*TAXFREE_RATE/(100+TAXFREE_RATE)):0; }
+function taxAmt(){ return (useFeat('taxfree')&&TAXFREE)?Math.round(cartTaxable()*TAXFREE_RATE/(100+TAXFREE_RATE)):0; }
 function taxCut(){ return tfRefundMode()?0:taxAmt(); }                          // その場で引く額
 function cartTotal(){ return Math.max(0,cartBefore()-taxCut()); }               // 実際にいただく額
 function cartCut(){ return cartList()-cartTotal(); }                            // 引いた額（合計）
@@ -407,7 +482,7 @@ function renderCart(){
   if(!CART.length){ $('cart').innerHTML='<div class="empty">バーコードを読み取ると ここに並びます</div>'; return; }
   $('cart').innerHTML=CART.map((i,ix)=>{const now=lineNow(i),cut=i.unit!==now;return `<div class="ci">
     ${i.image?`<img class="ci-img" src="${IMGBASE+i.image}" alt="" loading="lazy" onerror="this.style.display='none'">`:''}
-    <div class="ci-n">${esc(i.name)}<div class="ci-b">${cut?`<span class="ci-was">${yen(i.unit)}</span>${yen(now)}　−${pctFor(i)}％`:yen(i.unit)}</div></div>
+    <div class="ci-n">${esc(i.name)}${isBag(i)?'<span class="ci-tfx">免税にしません</span>':''}<div class="ci-b">${cut?`<span class="ci-was">${yen(i.unit)}</span>${yen(now)}　−${pctFor(i)}％`:yen(i.unit)}</div></div>
     <div class="ci-q"><button data-q="-" data-i="${ix}">−</button><span>${i.qty}</span><button data-q="+" data-i="${ix}">＋</button></div>
     <div class="ci-p">${yen(now*i.qty)}</div>
     <button class="ci-x" data-x="${ix}">×</button></div>`;}).join('');
@@ -445,7 +520,8 @@ function renderSum(){
      ${(useFeat('taxfree')&&CART.length)?`<button class="mini" id="taxfree">${TAXFREE
        ?(tfRefundMode()?'免税をやめる':'免税の値引きを外す')
        :(tfRefundMode()?'免税にする（税込でいただき、あとで返金）':'免税ぶんを値引く（申請は別）')}</button>`:''}
-     <button class="go" id="go" ${CART.length?'':'disabled'}>会計する</button>
+     ${TF_LOCK?`<div class="tflock">免税の申請が終わっていません　シートの「入れ終わりました」を押してください</div>`:''}
+     <button class="go" id="go" ${(CART.length&&!TF_LOCK)?'':'disabled'}>会計する</button>
      ${CART.length?`<button class="mini" id="clr">明細を消す</button>`:''}`;
   $('sum').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{PAY=b.dataset.p;render();});
   if($('go'))$('go').onclick=doCheckout;
@@ -455,7 +531,9 @@ function renderSum(){
    if(a)a.oninput=()=>TFINFO.name=a.value;
    if(b)b.oninput=()=>TFINFO.country=b.value;
    if(c)c.oninput=()=>TFINFO.last4=c.value.replace(/[^0-9A-Za-z]/g,'').slice(-4);}
-  if($('taxfree'))$('taxfree').onclick=()=>{TAXFREE=!TAXFREE;render();
+  if($('taxfree'))$('taxfree').onclick=()=>{TAXFREE=!TAXFREE;
+    TAXFREE?addBag():dropBag();
+    render();
     toast(TAXFREE
       ?(tfRefundMode()?'免税にしました　税込でいただき、出国の確認がとれてからお返しします':'免税ぶんを値引きました　申請は別の仕組みで行ってください')
       :'免税をやめました');};
@@ -486,7 +564,8 @@ async function doCheckout(){
     await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
       mode:'shop',register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
       tech:0,retail:cartList(),
-      retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId})),
+      retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId,
+        ...(i.tfx?{tfx:1}:{})})),   // tfx=免税にしない行（袋）
       discount:cartCut(),
       discountLabel:[PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),TAXFREE?'免税':''].filter(Boolean).join('＋'),
       taxfree:TAXFREE?1:0, taxfreeCut:taxCut(),   // 免税は記録として持つ（申請のときに集計する）
@@ -510,6 +589,9 @@ async function doCheckout(){
         date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)}).catch(()=>{});
     }
     pushDisplay(true);                       // お客様側は「ありがとうございました」に切り替わる
+    /* ★免税のときは、申請の入力が終わるまで次の会計に進ませない。
+       レジだけ先に進むと、申請を忘れたまま次のお客様に移ってしまう。 */
+    if(TAXFREE&&useFeat('taxfree')) openTfSheet(CART.slice(), id);
     CART=[]; TAXFREE=false; TFINFO={name:'',country:'',last4:''};
     said('会計しました',yen(t)+'　'+payLabel(PAY));
     toast('会計しました');
@@ -517,6 +599,78 @@ async function doCheckout(){
     render();
   }catch(err){ toast(err.message||'会計に失敗しました',true); }
   finally{ if($('go')){$('go').disabled=false;$('go').textContent='会計する';} }
+}
+
+/* ══════════ 免税の申請シート ══════════
+   会計のあと、免税アプリ（国税庁の輸出物品販売場システム）に打ち込むための一覧を出す。
+   ★これを閉じるまで次の会計に進めない。押し忘れを無くすため。
+   ★アプリの入力は「商品名 / 対象品目 / 税率 / 単価(税抜) / 点数」の順なので、その順で並べる。
+   ★免税アプリは税抜で入れる。こちらの値段は税込なので割り戻す。
+   ★一般物品と消耗品は分けて申請する決まり。ヘアケア・化粧品は消耗品、
+     ブラシ・美容家電などは一般物品。既定は消耗品にして、行ごとに変えられるようにする。
+     一度変えたらその商品は次から覚えておく。 */
+let TF_LOCK=false;                                   // 申請が終わるまで true
+const TFKIND_K='stb_tfkind';                         // {productId:'general'|'consume'}
+const tfKindMap=()=>{try{return JSON.parse(localStorage.getItem(TFKIND_K)||'{}')}catch(e){return {}}};
+function tfKindOf(it){
+  const m=tfKindMap(), k=String(it.productId||it.name||'');
+  if(m[k])return m[k];
+  /* 覚えていなければカテゴリで見当をつける。迷ったら消耗品（ヘアケアが大半のため） */
+  return /小物|家電|器具|ブラシ|コーム|店舗用品/.test(String(it.category||'')+String(it.name||''))?'general':'consume';
+}
+function tfKindSet(it,v){ const m=tfKindMap(); m[String(it.productId||it.name||'')]=v;
+  localStorage.setItem(TFKIND_K,JSON.stringify(m)); }
+const tfNet=n=>Math.round(n/(1+TAXFREE_RATE/100));   // 税込 → 税抜
+
+function openTfSheet(items,checkoutId){
+  const rows=items.filter(i=>!isBag(i));             // 袋は免税にしない＝申請に入れない
+  const bag=items.filter(isBag);
+  TF_LOCK=true;
+  const d=document.createElement('div'); d.className='dlg'; d.id='tfdlg';
+  const paint=()=>{
+    const gen=rows.filter(i=>tfKindOf(i)==='general'), con=rows.filter(i=>tfKindOf(i)==='consume');
+    const sum=a=>a.reduce((s,i)=>s+tfNet(lineNow(i))*i.qty,0);
+    const qsum=a=>a.reduce((s,i)=>s+i.qty,0);
+    d.innerHTML=`<div class="dlg-b tfsheet">
+      <h3>免税の申請</h3>
+      <p>免税アプリに、この順で入れてください　入れ終わったら下のボタンを押すと次の会計に進めます</p>
+
+      <div class="tfsum">
+        <div><span>一般物品</span><b>${yen(sum(gen))}</b><i>${qsum(gen)}点</i></div>
+        <div><span>消耗品</span><b>${yen(sum(con))}</b><i>${qsum(con)}点</i></div>
+        <div class="tot"><span>合計（税抜）</span><b>${yen(sum(rows))}</b><i>${qsum(rows)}点</i></div>
+      </div>
+
+      <div class="tfrows">
+        ${rows.map((i,ix)=>{const k=tfKindOf(i);return `<div class="tfr">
+          <div class="tfr-n">${esc(i.name)}</div>
+          <div class="tfr-g">
+            <button class="tfk ${k==='general'?'on':''}" data-x="${ix}" data-k="general">一般物品</button>
+            <button class="tfk ${k==='consume'?'on':''}" data-x="${ix}" data-k="consume">消耗品</button>
+          </div>
+          <div class="tfr-v"><span>税率</span><b>${TAXFREE_RATE}%</b></div>
+          <div class="tfr-v"><span>単価（税抜）</span><b class="cp" data-c="${tfNet(lineNow(i))}">${tfNet(lineNow(i)).toLocaleString()}</b></div>
+          <div class="tfr-v"><span>点数</span><b class="cp" data-c="${i.qty}">${i.qty}</b></div>
+        </div>`}).join('')}
+      </div>
+
+      ${bag.length?`<div class="tfbag">袋は免税にしません　${bag.map(b=>esc(b.name)+' ×'+b.qty).join('　')}</div>`:''}
+
+      <div class="dlg-a">
+        <button id="tfCopy">数字をまとめてコピー</button>
+        <button class="pri" id="tfDone">免税アプリに入れ終わりました</button>
+      </div>
+      <p class="tfwarn">押すまで次の会計はできません</p>
+    </div>`;
+    d.querySelectorAll('.tfk').forEach(b=>b.onclick=()=>{tfKindSet(rows[+b.dataset.x],b.dataset.k);paint();});
+    d.querySelectorAll('.cp').forEach(b=>b.onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(b.dataset.c);toast('コピーしました');});
+    d.querySelector('#tfCopy').onclick=()=>{
+      const txt=rows.map(i=>[i.name,tfKindOf(i)==='general'?'一般物品':'消耗品',TAXFREE_RATE+'%',tfNet(lineNow(i)),i.qty].join('\t')).join('\n');
+      navigator.clipboard&&navigator.clipboard.writeText(txt); toast('コピーしました');};
+    d.querySelector('#tfDone').onclick=()=>{TF_LOCK=false;d.remove();render();toast('免税の申請を終えました　次の会計に進めます');};
+  };
+  paint();
+  document.body.appendChild(d);
 }
 
 /* ══════════ 右側 ══════════ */
@@ -603,8 +757,11 @@ function denomTotal(o){ return DENOMS.reduce((s,d)=>s+d*(+o[d]||0),0); }
 function taxfreeOf(live){
   const only=live.filter(c=>c.taxfree);
   const byItem=new Map(); let qty=0, sales=0, cut=0;
+  const bagName=(tfBag()||{}).name||'';
   for(const c of only){
     for(const it of (c.retailItems||[])){
+      /* 袋は免税ではないので、免税の集計から外す */
+      if(it.tfx||(bagName&&it.name===bagName))continue;
       const q=Math.max(1,+it.qty||1); qty+=q;
       const k=String(it.productId||it.name||'');
       const cur=byItem.get(k)||{name:it.name||'',qty:0,amount:0};
@@ -638,19 +795,18 @@ function closeHtml(){
       <div class="stk-r"><span>件数</span><b>${live.length}</b></div>
     </div>
 
-    ${useFeat('taxfree')?`    <h3 class="cl-h">免税\${tf.people?'':'（本日はありません）'}</h3>
+    ${useFeat('taxfree')?`<h3 class="cl-h">免税${tf.people?'':'（本日はありません）'}</h3>
     <div class="stk">
-      <div class="stk-r here"><span>免税だけの売上</span><b>\${yen(tf.sales)}</b></div>
-      <div class="stk-r"><span>免税で引いた額</span><b>−\${yen(tf.cut)}</b></div>
-      <div class="stk-r"><span>お買い上げの人数</span><b>\${tf.people} 人</b></div>
-      <div class="stk-r"><span>商品の点数</span><b>\${tf.qty} 点</b></div>
-      <div class="stk-r"><span>品目</span><b>\${tf.items.length} 品目</b></div>
+      <div class="stk-r here"><span>免税だけの売上</span><b>${yen(tf.sales)}</b></div>
+      <div class="stk-r"><span>免税で引いた額</span><b>−${yen(tf.cut)}</b></div>
+      <div class="stk-r"><span>お買い上げの人数</span><b>${tf.people} 人</b></div>
+      <div class="stk-r"><span>商品の点数</span><b>${tf.qty} 点</b></div>
+      <div class="stk-r"><span>品目</span><b>${tf.items.length} 品目</b></div>
     </div>
-    \${tf.items.length?\`<div class="tfl">
-      \${tf.items.map(i=>\`<div class="tfl-r"><span>\${esc(i.name)}</span><b>\${i.qty}点</b><em>\${yen(i.amount)}</em></div>\`).join('')}
+    ${tf.items.length?`<div class="tfl">
+      ${tf.items.map(i=>`<div class="tfl-r"><span>${esc(i.name)}</span><b>${i.qty}点</b><em>${yen(i.amount)}</em></div>`).join('')}
     </div>
-    <button class="mini" id="tfCopy" style="margin-top:8px">免税申請のために書き出す</button>\`:''}
-
+    <button class="mini" id="tfCopy" style="margin-top:8px">免税申請のために書き出す</button>`:''}
     `:''}
 
     <h3 class="cl-h">現金を数える</h3>
