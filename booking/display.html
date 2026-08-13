@@ -55,6 +55,37 @@ body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
 .li-was{display:block;font-size:.8em;color:#A9A296;text-decoration:line-through;line-height:1.3}
 .li-now{font-family:'Cormorant Garamond',serif;font-size:1.5em;color:var(--ink);font-weight:600}
 .more{font-size:.9em;color:var(--body);padding:.5em 0;letter-spacing:.04em}
+/* ── いっぱいになったら畳む ──
+   いま読み込んだ1点は今までどおりの大きさのまま。
+   その前に読んだものだけを、2列 → 3列 → 4列 と細かくしていく。
+   お客様は「たったいま読まれたもの」を見たいので、そこは絶対に縮めない。 */
+.list.d1,.list.d2,.list.d3{display:grid;align-content:start;gap:0 1.2em}
+.list.d1{grid-template-columns:repeat(2,1fr)}
+.list.d2{grid-template-columns:repeat(3,1fr)}
+.list.d3{grid-template-columns:repeat(4,1fr)}
+/* 最後の1行＝いま読んだもの。全部の列にまたがって、大きさはそのまま */
+.list.d1 .li.fresh,.list.d2 .li.fresh,.list.d3 .li.fresh{grid-column:1/-1}
+/* 畳まれたほうは小さく。写真は落として、名前と金額だけにする */
+.list.d1 .li:not(.fresh){gap:.4em;padding:.4em 0}
+.list.d2 .li:not(.fresh){gap:.35em;padding:.3em 0}
+.list.d3 .li:not(.fresh){gap:.3em;padding:.22em 0}
+.list.d1 .li:not(.fresh) .li-img{display:none}
+.list.d2 .li:not(.fresh) .li-img,.list.d3 .li:not(.fresh) .li-img{display:none}
+.list.d1 .li:not(.fresh) .li-n{font-size:.86em;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.list.d2 .li:not(.fresh) .li-n{font-size:.74em;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.list.d3 .li:not(.fresh) .li-n{font-size:.64em;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.list.d1 .li:not(.fresh) .li-now{font-size:1.05em}
+.list.d2 .li:not(.fresh) .li-now{font-size:.9em}
+.list.d3 .li:not(.fresh) .li-now{font-size:.8em}
+.list.d1 .li:not(.fresh) .li-was,.list.d2 .li:not(.fresh) .li-was,.list.d3 .li:not(.fresh) .li-was{display:none}
+.list.d1 .li:not(.fresh) .li-p{min-width:4.4em}
+.list.d2 .li:not(.fresh) .li-p{min-width:3.8em}
+.list.d3 .li:not(.fresh) .li-p{min-width:3.4em}
+.list.d1 .li:not(.fresh) .li-q,.list.d2 .li:not(.fresh) .li-q,.list.d3 .li:not(.fresh) .li-q{min-width:1.6em;font-size:.8em}
+.list.d1 .more,.list.d2 .more,.list.d3 .more{grid-column:1/-1}
 
 /* ── 合計 ── */
 .ft{flex:none;border-top:1px solid var(--line);padding-top:.6em}
@@ -140,7 +171,7 @@ function bill(st){
         <div style="font-size:.62em;color:var(--clay);letter-spacing:.06em;margin-top:2px">${m.greet==='again'?'いつもありがとうございます':'ようこそ SEAM へ'}</div></span>`:''}
     </div>
     <div class="list">
-      ${show.map(i=>`<div class="li">
+      ${show.map(i=>`<div class="li${i.fresh?' fresh':''}">
         ${i.image?`<img class="li-img" src="https://seam.site/${esc(i.image)}" alt="" onerror="this.style.display='none'">`:''}
         <span class="li-n">${esc(i.name)}</span>
         <span class="li-q">${i.qty>1?'×'+i.qty:''}</span>
@@ -169,12 +200,28 @@ function fitList(){
   const list=document.querySelector('.list'), more=document.getElementById('more');
   if(!list||!more)return;
   const rows=[...list.querySelectorAll('.li')];
+  if(!rows.length)return;
+  /* いま読み込んだ1点＝ここだけは縮めない。
+     レジが fresh を送ってきていればそれを使う（同じ商品を続けて読むと行は増えないため）。
+     送ってきていなければ、いちばん最後の行を「いま読んだもの」とみなす。 */
+  if(!rows.some(r=>r.classList.contains('fresh'))) rows[rows.length-1].classList.add('fresh');
+  list.classList.remove('d1','d2','d3');
+  rows.forEach(r=>r.style.display='');
+  more.style.display='none';
+  const over=()=>list.scrollHeight>list.clientHeight+1;
+  /* 入らなくなったら、古いほうから順に細かく畳んでいく */
+  for(const d of ['d1','d2','d3']){
+    if(!over())return;
+    list.classList.remove('d1','d2','d3');
+    list.classList.add(d);
+  }
+  /* いちばん細かくしても入らないときだけ、古いものから隠して点数で言う。
+     ★隠すのは古いほう。たったいま読んだものが消えるのがいちばん困る。 */
   let hidden=0;
-  for(let i=rows.length-1;i>0&&list.scrollHeight>list.clientHeight;i--){
+  for(let i=0;i<rows.length-1&&over();i++){
     rows[i].style.display='none'; hidden++;
     more.style.display=''; more.textContent=`ほか ${hidden} 点`;
   }
-  if(!hidden)more.style.display='none';
 }
 function paint(st){
   const j=JSON.stringify(st);

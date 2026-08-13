@@ -338,7 +338,11 @@ function pushDisplay(done){
     const t=cartTotal();
     const earn=(useFeat('member')&&MEMBER&&MEMBER.name)?Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)):0;
     post('/display/push',{shopId:SHOP,register:REG,mode:PMODE,done:!!done,
-      items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||''})),
+      /* fresh=たったいま読み取った行。お客様画面はここだけ大きいまま残す。
+         同じ商品を続けて読むと個数が増えるだけで行は増えないので、
+         「最後の行」ではなく「最後に触った行」を伝えないと合わない。 */
+      items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||'',
+        ...(i.productId&&i.productId===LASTHIT?{fresh:1}:{})})),
       list:cartList(),cut:cartCut(),total:t,
       member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn,
         expiring:MEMBER.expiring,expireOn:MEMBER.expireOn,
@@ -415,10 +419,12 @@ async function onProductCode(code){
 }
 
 /* ══════════ 会計 ══════════ */
+let LASTHIT='';                 // たったいま読み取った商品。お客様画面で大きく残す1行
 function addToCart(p){
   const f=CART.find(x=>x.productId===p.id);
   if(f)f.qty++; else CART.push({productId:p.id,name:p.name,brand:p.brand||'',maker:p.maker||'',
     category:p.category||'',image:p.image||'',unit:+p.price||0,qty:1});
+  LASTHIT=p.id;
   render();
 }
 
