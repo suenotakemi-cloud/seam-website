@@ -60,6 +60,7 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .rfq b{min-width:1.6em;text-align:center;font-variant-numeric:tabular-nums}
 .rfr em{font-style:normal;font-variant-numeric:tabular-nums;min-width:5em;text-align:right}
 .rfall{display:flex;gap:8px;margin:8px 0 14px}
+.rffull{margin:8px 0 14px;font-size:12.5px;color:#8c3a22;background:#fdf6f4;border:1px solid #e0b8ae;border-radius:3px;padding:10px 12px;line-height:1.7}
 .rfall button{font:inherit;font-size:12.5px;padding:8px 14px;min-height:40px;
   border:1px solid var(--line);background:#fff;border-radius:3px;cursor:pointer}
 .rfnote{border:1px solid #e0b8ae;background:#fdf6f4;border-radius:3px;padding:14px 16px;margin:14px 0}
@@ -679,6 +680,15 @@ const RF_NOTE={
        'ご返金にあたって、お客様に手数料のご負担はありません']}
 };
 const rfKey=m=>m==='cash'?'cash':(m==='emoney'?'emoney':(m==='qr'?'qr':'card'));
+/* ★一部返金ができない決済手段がある（Square公式）。
+     iD・QUICPay … 全額のみ　／　交通系IC … 返金そのものが不可
+     楽天ペイ … 一部・商品別とも不可
+   電子マネーはどれで払われたかレジ側で分からないので、まとめて「全額のみ」にする。
+   QR決済は PayPay・d払い・au PAY・メルペイ等は一部返金できるので選べるままにし、
+   楽天ペイだったときに備えて注意だけ出す。
+   出典 https://squareup.com/help/jp/ja/article/5060-refunds-faq */
+const rfPartialOK=m=>rfKey(m)!=='emoney';
+const RF_FULLONLY='この決済手段は一部返金ができません　全額のご返金になります';
 /* 見せた文面をそのまま控えに残すので、画面と同じ文字列を作る */
 function rfNoticeText(m,amt){
   const n=RF_NOTE[rfKey(m)];
@@ -688,7 +698,9 @@ function rfNoticeText(m,amt){
 let RF={co:null,pick:{},how:'',to:''};
 function openRefund(c){
   RF={co:c,pick:{},how:'',to:(c.email||'')};
-  (c.retailItems||[]).forEach((it,ix)=>RF.pick[ix]=0);
+  const full=!rfPartialOK(c.method);
+  /* 一部返金できない決済手段は、最初から全部を選んだ状態にして触らせない */
+  (c.retailItems||[]).forEach((it,ix)=>RF.pick[ix]=full?+(it.qty||1):0);
   const d=document.createElement('div'); d.className='dlg'; d.id='rfdlg';
   const paint=()=>{
     const items=(RF.co.retailItems||[]);
@@ -704,11 +716,13 @@ function openRefund(c){
       <div class="stk">
         ${items.map((it,ix)=>`<div class="stk-r rfr">
           <span>${esc(it.name)}<i>お買い上げ ${it.qty||1} 点</i></span>
-          <div class="rfq"><button data-m="-" data-i="${ix}">−</button><b>${RF.pick[ix]||0}</b><button data-m="+" data-i="${ix}">＋</button></div>
+          <div class="rfq">${full?`<b>${RF.pick[ix]||0}</b>`
+            :`<button data-m="-" data-i="${ix}">−</button><b>${RF.pick[ix]||0}</b><button data-m="+" data-i="${ix}">＋</button>`}</div>
           <em>${yen(unit(it)*(RF.pick[ix]||0))}</em>
         </div>`).join('')}
       </div>
-      <div class="rfall"><button id="rfAll">ぜんぶ返す</button><button id="rfNone">えらび直す</button></div>
+      ${full?`<div class="rffull">${RF_FULLONLY}</div>`
+        :`<div class="rfall"><button id="rfAll">ぜんぶ返す</button><button id="rfNone">えらび直す</button></div>`}
       <div class="stk"><div class="stk-r here"><span>お返しする金額</span><b>${yen(amt)}</b></div>
         ${over?`<div class="stk-r"><span style="color:#a03a24">返せるのは ${yen(left)} までです</span><b></b></div>`:''}</div>
 
@@ -737,8 +751,8 @@ function openRefund(c){
     d.querySelectorAll('.rfq button').forEach(b=>b.onclick=()=>{
       const ix=+b.dataset.i, max=+(items[ix].qty||1);
       RF.pick[ix]=Math.max(0,Math.min(max,(RF.pick[ix]||0)+(b.dataset.m==='+'?1:-1)));paint();});
-    d.querySelector('#rfAll').onclick=()=>{items.forEach((it,ix)=>RF.pick[ix]=+(it.qty||1));paint();};
-    d.querySelector('#rfNone').onclick=()=>{items.forEach((it,ix)=>RF.pick[ix]=0);paint();};
+    if(d.querySelector('#rfAll'))d.querySelector('#rfAll').onclick=()=>{items.forEach((it,ix)=>RF.pick[ix]=+(it.qty||1));paint();};
+    if(d.querySelector('#rfNone'))d.querySelector('#rfNone').onclick=()=>{items.forEach((it,ix)=>RF.pick[ix]=0);paint();};
     d.querySelectorAll('.rfh').forEach(b=>b.onclick=()=>{RF.how=b.dataset.h;paint();});
     const t=d.querySelector('#rfTo'); if(t)t.oninput=()=>RF.to=t.value.trim();
     d.querySelector('#rfX').onclick=()=>d.remove();
@@ -752,7 +766,9 @@ function openRefund(c){
           sendHow:RF.how,sendTo:RF.how==='mail'?RF.to:'',
           staffName:(STAFF&&STAFF.name)||''});
         d.remove();
-        toast(r.card?`カードへ ${yen(r.refunded)} を返金しました`:`${yen(r.refunded)} の返金を記録しました　現金をお返しください`);
+        /* ★Squareは PENDING で返る。完了していないので「返金しました」とは書かない */
+        toast(r.card?`カードへ ${yen(r.refunded)} の返金手続きをしました　お客様への反映には数日かかります`
+                    :`${yen(r.refunded)} の返金を記録しました　現金をお返しください`);
         if(r.送った)toast('控えを '+r.送った+' に送りました');
         await loadHistory2(); render();
       }catch(err){ toast(err.message||'返金できませんでした',true); g.disabled=false; g.textContent='この内容に同意いただき、返金する'; }};
