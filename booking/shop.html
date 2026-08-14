@@ -853,7 +853,8 @@ async function doCheckout(){
          しかも失敗は全部握りつぶしていたので、誰も気づけなかった。
        ★同じidで2回来ても2回目は何もしないので、押し直しでも増えない。 */
     await post('/checkout/commit',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
-      mode:'shop',register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
+      /* mode2＝通常／メンバー／セール。サーバーが金額を計算し直すのに使う */
+      mode:'shop',mode2:PMODE,register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
       tech:0,retail:cartList(),
       retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId,
         ...(i.tfx?{tfx:1}:{})})),   // tfx=免税にしない行（袋）
