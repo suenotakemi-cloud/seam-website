@@ -2179,11 +2179,22 @@ function checkoutForResv(id){return db.checkouts.find(c=>c.resvId===id);}
 /* レジの当日一覧は今のモードのものだけ（サロンのレジにショップの売上を混ぜない）。
    レジ締めの現金もモードごとに分かれる＝それぞれのレジの現金が合う。 */
 function daysCheckouts(date){return db.checkouts.filter(c=>c.date===date&&inMode(c)).sort((a,b)=>a.at<b.at?-1:1);}
+/* ★取り消した会計を外し、返金した分を引く（2026-08-14）。
+     以前はどちらも見ていなかったので、取り消しても返品しても売上が減らず、
+     レジ締めや事務の数字と合わなかった。電子マネーの欄も無かった。 */
 function salesSummary(date){
-  const cs=daysCheckouts(date);const sum=f=>cs.reduce((s,c)=>s+(f(c)||0),0);
-  const byM=m=>cs.filter(c=>c.method===m).reduce((s,c)=>s+c.total,0);
-  return {count:cs.length,total:sum(c=>c.total),cash:byM('cash'),card:byM('card'),qr:byM('qr'),hpb:byM('hpb'),
-    tech:sum(c=>c.tech),retail:sum(c=>c.retail),discount:sum(c=>c.discount),avg:cs.length?Math.round(sum(c=>c.total)/cs.length):0};
+  const all=daysCheckouts(date);
+  const cs=all.filter(c=>!c.voided);                 // 取り消したものは売上に数えない
+  const net=c=>(+c.total||0)-(+c.refund||0);         // 返した分は引く
+  const sum=f=>cs.reduce((s,c)=>s+(f(c)||0),0);
+  const byM=m=>cs.filter(c=>c.method===m).reduce((s,c)=>s+net(c),0);
+  const total=cs.reduce((s,c)=>s+net(c),0);
+  return {count:cs.length,total,
+    cash:byM('cash'),card:byM('card')+byM('term'),emoney:byM('emoney'),qr:byM('qr'),hpb:byM('hpb'),
+    refund:all.reduce((s,c)=>s+(+c.refund||0),0),    // 返した額（取消も含めて数える）
+    voided:all.length-cs.length,
+    tech:sum(c=>c.tech),retail:sum(c=>c.retail),discount:sum(c=>c.discount),
+    avg:cs.length?Math.round(total/cs.length):0};
 }
 function settlementFor(date){return db.settlements.find(s=>s.date===date);}
 function saveSettlement(s){const i=db.settlements.findIndex(x=>x.date===s.date);if(i>=0)db.settlements[i]=s;else db.settlements.push(s);save();refreshAll();saveOrQueue('settlement',s);}
@@ -2779,7 +2790,7 @@ function renderDash(){
     const mSales=db.checkouts.filter(c=>c.date>=mFrom&&c.date<=mTo).reduce((a,c)=>a+c.total,0), tgt=stgN('monthlyTarget',0);
     ds.innerHTML=`<div class="card dash-sales"><div class="ds-head"><h3>本日の売上</h3><span class="ds-date">${t.getMonth()+1}/${t.getDate()}（${WD[t.getDay()]}）${set&&set.closedAt?'<em class="reg-closed">レジ締め済み</em>':(pend?`<em class="ds-pend">未会計 ${pend}件</em>`:'')}</span></div>
       <div class="ds-row"><div class="ds-total"><span>総売上</span><b>${money(s.total)}</b><i>${s.count}会計・客単価 ${money(s.avg)}</i></div>
-        <div class="ds-pays"><span>💴 現金 <b>${money(s.cash)}</b></span><span>💳 カード <b>${money(s.card)}</b></span><span>📱 QR <b>${money(s.qr)}</b></span>${s.hpb?`<span>🌶️ スマート <b>${money(s.hpb)}</b></span>`:''}<span>技術 <b>${money(s.tech)}</b></span><span>店販 <b>${money(s.retail)}</b></span></div></div>
+        <div class="ds-pays"><span>💴 現金 <b>${money(s.cash)}</b></span><span>💳 カード <b>${money(s.card)}</b></span>${s.emoney?`<span>🚃 電子マネー <b>${money(s.emoney)}</b></span>`:''}<span>📱 QR <b>${money(s.qr)}</b></span>${s.hpb?`<span>🌶️ スマート <b>${money(s.hpb)}</b></span>`:''}${s.refund?`<span style="color:var(--danger)">↩ 返金 <b>−${money(s.refund)}</b></span>`:''}${s.voided?`<span style="color:var(--sub)">取消 ${s.voided}件</span>`:''}<span>技術 <b>${money(s.tech)}</b></span><span>店販 <b>${money(s.retail)}</b></span></div></div>
       ${tgt>0?`<div class="ds-tgt"><span>今月 ${money(mSales)} / 目標 ${money(tgt)}</span><div class="tgt-bar"><span style="width:${Math.min(100,Math.round(mSales/tgt*100))}%" class="${mSales>=tgt?'done':''}"></span></div><span class="ds-pct">${Math.round(mSales/tgt*100)}%</span></div>`:''}</div>`;
   }
 
@@ -4195,7 +4206,9 @@ function renderRegister(){
     <div class="reg-c big"><span>総売上</span><b>${money(s.total)}</b><i>${s.count}会計・客単価 ${money(s.avg)}</i></div>
     <div class="reg-c"><span>💴 現金</span><b>${money(s.cash)}</b></div>
     <div class="reg-c"><span>💳 カード</span><b>${money(s.card)}</b></div>
+    <div class="reg-c"><span>🚃 電子マネー</span><b>${money(s.emoney)}</b></div>
     <div class="reg-c"><span>📱 QR決済</span><b>${money(s.qr)}</b></div>
+    ${s.refund?`<div class="reg-c" style="color:var(--danger)"><span>↩ 返金</span><b>−${money(s.refund)}</b></div>`:''}
     ${s.hpb?`<div class="reg-c"><span>🌶️ スマート支払い</span><b>${money(s.hpb)}</b><i>HPB入金・店頭受取なし</i></div>`:''}
     <div class="reg-c"><span>技術売上</span><b>${money(s.tech)}</b></div>
     <div class="reg-c"><span>店販売上</span><b>${money(s.retail)}</b></div></div>`;
