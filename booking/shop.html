@@ -794,6 +794,9 @@ async function doCheckout(){
     btn.textContent='送信中…';
   }
   const id='co'+Math.random().toString(36).slice(2,8);
+  /* 付けるポイント。会員のときだけ・商品は1円=1pt（お店の設定による） */
+  const ptDelta=(useFeat('member')&&MEMBER&&MEMBER.name)
+    ? Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)) : 0;
   let payId='', BRAND='', FEE=0;
   try{
     if(PAY!=='cash'){                       // 現金以外はSquareの端末で通す
@@ -825,7 +828,12 @@ async function doCheckout(){
         paidHold({payId,brand:BRAND,fee:FEE,pay:PAY,total:t});
       }
     }
-    await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
+    /* ★お会計・免税の預り・在庫・ポイントを、サーバーで一度に確定する。
+         以前はここから4本を別々に投げていて、途中で通信が切れると
+         「会計だけ入って在庫が減っていない」「ポイントだけ付いた」が起きた。
+         しかも失敗は全部握りつぶしていたので、誰も気づけなかった。
+       ★同じidで2回来ても2回目は何もしないので、押し直しでも増えない。 */
+    await post('/checkout/commit',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
       mode:'shop',register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
       tech:0,retail:cartList(),
       retailItems:CART.map(i=>({name:i.name,qty:i.qty,unit:i.unit,price:i.unit*i.qty,productId:i.productId,
@@ -842,21 +850,16 @@ async function doCheckout(){
       taxfree:TAXFREE?1:0, taxfreeCut:taxCut(),   // 免税は記録として持つ（申請のときに集計する）
       taxfreeMode:TAXFREE?(tfRefundMode()?'refund':'cut'):'', taxfreeTax:TAXFREE?taxAmt():0,
       total:t,method:payBucket(PAY),squarePaymentId:payId||'',cardBrand:BRAND,fee:FEE,
-      memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
-    /* 11月からの免税は「あとでお返しする約束」なので、待ちの記録を必ず作る。
-       ここで作らないと、返し忘れが起きる（お客様は出国後で、こちらから追えない）。 */
-    if(TAXFREE&&tfRefundMode()){
-      await post('/taxfree/records',{checkoutId:id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
-        shopId:SHOP,name:TFINFO.name,country:TFINFO.country,passportLast4:TFINFO.last4,
-        sale:t,tax:taxAmt()}).catch(()=>{});
-    }
-    // 在庫を引く。1件ずつ（どれが失敗したか分かるように）
-    for(const i of CART){ await post('/stock/adjust',{shopId:SHOP,productId:i.productId,delta:-i.qty,reason:'店販'}).catch(()=>{}); }
-    // ポイントを付ける（会員のときだけ・商品は1円=1pt）
-    if(useFeat('member')&&MEMBER&&MEMBER.name){
-      await post('/points',{id:'pt'+Math.random().toString(36).slice(2,8),name:MEMBER.name,phone:MEMBER.phone||'',
-        delta:Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)),reason:'店販',ref:id,
-        salonId:MEMBER.salonId||'',   // 会員証が繋がっていれば salon.town 側に付く（ECでも同じ数字になる）
+      memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString(),
+      /* ポイント・免税の預り・在庫は、この1回で一緒に確定される */
+      pointDelta:ptDelta, pointReason:'店販', salonId:(MEMBER&&MEMBER.salonId)||'',
+      tfName:TFINFO.name, tfCountry:TFINFO.country, tfLast4:TFINFO.last4});
+    /* ★salon.town へのポイントだけは外なので、確定のあとに追いかける。
+         ここが失敗しても、こちらの台帳のポイントはもう入っている。
+         同じ会計IDでは二度打たれない（サーバーが弾く）。 */
+    if(ptDelta&&MEMBER&&MEMBER.salonId){
+      post('/points',{id:'pt'+Math.random().toString(36).slice(2,8),name:MEMBER.name,phone:MEMBER.phone||'',
+        delta:ptDelta,reason:'店販',ref:id,salonId:MEMBER.salonId,
         date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)}).catch(()=>{});
     }
     pushDisplay(true);                       // お客様側は「ありがとうございました」に切り替わる
