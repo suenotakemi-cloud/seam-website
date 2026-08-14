@@ -2560,6 +2560,10 @@ async function setupPay(dep,commit){
           r=await fetch(API_BASE+'/pay',{method:'POST',headers:{'Content-Type':'application/json'},
             body:JSON.stringify({sourceId:tok.token,verificationToken:vt,amount:dep,currency:'JPY',
               idempotencyKey:idem,
+              /* ★どのメニューか・何語か・いくら引いたかを添える。
+                 サーバーはこれで前金を計算し直し、額が違えば決済しない。
+                 画面の金額だけを信じると、送信を書き換えて1円で予約できてしまう。 */
+              menuId:bk.menu, lang:(typeof BOOK_LANG!=='undefined'?BOOK_LANG:'ja'), smartDiscount:disc,
               note:('前金 '+(bk.day||'')+' '+(bk.name||'')).slice(0,60)})});
           }catch(ne){
             // 送れたかどうか分からない＝同じ鍵で送り直せるようにしておく
