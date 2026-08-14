@@ -294,7 +294,7 @@ function refundDone(st){
     <div class="rdone-a">${yen(r.amount||0)}</div>
     <div class="rdone-w">${esc(r.when||'')}</div>
     <ul class="rdone-l">${(r.lines||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
-    ${r.qr?`<div class="rdone-q"><img src="${esc(r.qr)}" alt=""><div>控えをお持ち帰りいただけます</div></div>`:''}
+    ${r.qr?`<div class="rdone-q">${qrSvg(r.qr,260)}<div>控えをお持ち帰りいただけます</div></div>`:''}
     <div class="rdone-n">本日はご不便をおかけしました</div>
   </div>`;
 }
@@ -303,6 +303,113 @@ function refundDone(st){
    ★交通系だけは、押されたあとにもう一枚出す。
      Squareの仕組み上、交通系ICは返金ができない＝返品をお受けできない。
      お選びになる前にお伝えしないと、あとでお断りすることになってしまう。 */
+/* ★同じ金額・同じ商品のお客様が続くと、
+     「見た内容が同じ」だけで次の方の画面を飛ばしていた。
+     お会計1回ぶんの合図（flow）を鍵に混ぜて、別のお会計なら必ず出す。 */
+const flowKey=(st,x)=>String(st&&st.flow||'')+'|'+JSON.stringify(x);
+
+/* ══════════ QRを自分で描く ══════════
+   ★以前は外の無料QRサービスに、控えの鍵（URLごと）を渡して画像にしてもらっていた。
+     鍵を知れば控えが読める作りなので、よそへ渡してはいけない。
+     ここで描けば、鍵はこのiPadから出ない。
+   （バイトモード・誤り訂正M・型1〜10。URLの長さなら足りる） */
+function qrSvg(text,px){
+  const EC={1:[10,20,7,1,0,0],2:[16,38,10,1,0,0],3:[26,55,15,1,0,0],4:[18,80,20,2,0,0],
+    5:[24,108,26,2,0,0],6:[16,136,36,4,0,0],7:[18,156,40,4,0,0],8:[22,194,48,4,0,0],
+    9:[22,232,60,5,0,0],10:[26,274,72,5,0,0]};
+  const CAP={1:14,2:26,3:42,4:62,5:84,6:106,7:122,8:152,9:180,10:213};
+  const bytes=[...new TextEncoder().encode(text)];
+  let ver=0; for(let v=1;v<=10;v++) if(bytes.length<=CAP[v]){ver=v;break;}
+  if(!ver)return '';
+  const size=17+ver*4;
+  /* ガロア体 GF(256) */
+  const EXP=new Array(512),LOG=new Array(256);
+  for(let i=0,x=1;i<255;i++){EXP[i]=x;LOG[x]=i;x<<=1;if(x&256)x^=0x11d;}
+  for(let i=255;i<512;i++)EXP[i]=EXP[i-255];
+  const mul=(a,b)=>(!a||!b)?0:EXP[LOG[a]+LOG[b]];
+  /* データ列を組む */
+  const bits=[];
+  const put=(v,n)=>{for(let i=n-1;i>=0;i--)bits.push((v>>i)&1);};
+  put(4,4); put(bytes.length, ver<10?8:16);
+  bytes.forEach(b=>put(b,8));
+  const [ecLen,total]=EC[ver];
+  const dataLen=total-ecLen*(ver<5?1:(ver<10?2:2));
+  const totalData=CAP[ver]+ (ver<10?2:3);
+  /* 型ごとの総データ語数（M） */
+  const DW={1:16,2:28,3:44,4:64,5:86,6:108,7:124,8:154,9:182,10:216};
+  const ECW={1:10,2:16,3:26,4:18,5:24,6:16,7:18,8:22,9:22,10:26};
+  const BLK={1:1,2:1,3:1,4:2,5:2,6:4,7:4,8:4,9:5,10:5};
+  const dw=DW[ver];
+  put(0,Math.min(4,dw*8-bits.length));
+  while(bits.length%8)bits.push(0);
+  const data=[]; for(let i=0;i<bits.length;i+=8){let b=0;for(let j=0;j<8;j++)b=(b<<1)|bits[i+j];data.push(b);}
+  const PAD=[0xEC,0x11]; let pi=0; while(data.length<dw)data.push(PAD[pi++%2]);
+  /* 誤り訂正 */
+  const nb=BLK[ver], ecw=ECW[ver];
+  const gen=(n)=>{let g=[1];for(let i=0;i<n;i++){const ng=new Array(g.length+1).fill(0);
+    for(let j=0;j<g.length;j++){ng[j]^=mul(g[j],1);ng[j+1]^=mul(g[j],EXP[i]);}g=ng;}return g;};
+  const G=gen(ecw);
+  const base=Math.floor(dw/nb), extra=dw%nb;
+  const blocks=[],ecs=[]; let p=0;
+  for(let i=0;i<nb;i++){
+    const len=base+(i>=nb-extra?1:0);
+    const blk=data.slice(p,p+len); p+=len; blocks.push(blk);
+    const rem=blk.concat(new Array(ecw).fill(0));
+    for(let j=0;j<blk.length;j++){const c=rem[j]; if(!c)continue;
+      for(let k=1;k<G.length;k++)rem[j+k]^=mul(G[k],c);}
+    ecs.push(rem.slice(blk.length));
+  }
+  const out=[]; const maxL=Math.max(...blocks.map(b=>b.length));
+  for(let i=0;i<maxL;i++)blocks.forEach(b=>{if(i<b.length)out.push(b[i]);});
+  for(let i=0;i<ecw;i++)ecs.forEach(e=>out.push(e[i]));
+  /* 盤面 */
+  const M=[],R=[];
+  for(let i=0;i<size;i++){M.push(new Array(size).fill(0));R.push(new Array(size).fill(0));}
+  const set=(r,c,v)=>{M[r][c]=v;R[r][c]=1;};
+  const finder=(r,c)=>{for(let i=-1;i<8;i++)for(let j=-1;j<8;j++){
+    const y=r+i,x=c+j; if(y<0||x<0||y>=size||x>=size)continue;
+    const on=(i>=0&&i<=6&&(j===0||j===6))||(j>=0&&j<=6&&(i===0||i===6))||(i>=2&&i<=4&&j>=2&&j<=4);
+    set(y,x,on?1:0);}};
+  finder(0,0);finder(0,size-7);finder(size-7,0);
+  for(let i=8;i<size-8;i++){set(6,i,i%2?0:1);set(i,6,i%2?0:1);}
+  const AL={1:[],2:[6,18],3:[6,22],4:[6,26],5:[6,30],6:[6,34],7:[6,22,38],8:[6,24,42],9:[6,26,46],10:[6,28,50]}[ver];
+  AL.forEach(r=>AL.forEach(c=>{
+    if((r<8&&c<8)||(r<8&&c>size-9)||(r>size-9&&c<8))return;
+    for(let i=-2;i<=2;i++)for(let j=-2;j<=2;j++)
+      set(r+i,c+j,(Math.abs(i)===2||Math.abs(j)===2||(i===0&&j===0))?1:0);}));
+  set(size-8,8,1);
+  for(let i=0;i<9;i++){if(!R[8][i])set(8,i,0); if(!R[i][8])set(i,8,0);}
+  for(let i=0;i<8;i++){if(!R[8][size-1-i])set(8,size-1-i,0); if(!R[size-1-i][8])set(size-1-i,8,0);}
+  /* データを流す（マスク0） */
+  let bi=0,dir=-1,row=size-1;
+  for(let col=size-1;col>0;col-=2){
+    if(col===6)col--;
+    for(;;){
+      for(let k=0;k<2;k++){const c=col-k;
+        if(!R[row][c]){
+          let v=0; if(bi<out.length*8){v=(out[bi>>3]>>(7-(bi&7)))&1;} bi++;
+          if((row+c)%2===0)v^=1;                 // マスク0
+          M[row][c]=v; R[row][c]=1;}}
+      row+=dir; if(row<0||row>=size){row-=dir;dir=-dir;break;}
+    }
+  }
+  /* 形式情報（誤り訂正M・マスク0）= 0b101010000010010。
+     ★下位ビットから順に、縦は左上の真下→左下、横は右上→左上の右へ入れる。
+       縦横を取り違えると12マトずれて、機械が読めなくなる（実際に一度やった）。 */
+  const fmt=0x5412;
+  for(let i=0;i<15;i++){const b=(fmt>>i)&1;
+    if(i<6)M[i][8]=b; else if(i<8)M[i+1][8]=b; else M[size-15+i][8]=b;
+    /* 横は6列目（タイミングの線）を飛ばす。踏むと線が切れて読めなくなる */
+    if(i<8)M[8][size-1-i]=b; else if(i===8)M[8][7]=b; else M[8][14-i]=b;}
+  M[size-8][8]=1;
+  /* SVGにする */
+  const q=4, n=size+q*2, s=px/n;
+  let d='';
+  for(let r=0;r<size;r++)for(let c=0;c<size;c++)if(M[r][c])
+    d+=`M${((c+q)*s).toFixed(2)} ${((r+q)*s).toFixed(2)}h${s.toFixed(2)}v${s.toFixed(2)}h-${s.toFixed(2)}z`;
+  return `<svg width="${px}" height="${px}" viewBox="0 0 ${px} ${px}" xmlns="http://www.w3.org/2000/svg">`
+    +`<rect width="${px}" height="${px}" fill="#fff"/><path d="${d}" fill="#16171B"/></svg>`;
+}
 let PICKED='';
 function pickScreen(st){
   const p=st.pick;
@@ -337,15 +444,19 @@ async function sendPick(st,mm){
   const s=$('scr');
   s.querySelectorAll('.pick-b,.warn-x button').forEach(b=>b.disabled=true);
   try{
-    await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:'pay:'+mm.k,
+    const r=await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:'pay:'+mm.k,flow:st.flow||'',
         /* 何をご覧になって選ばれたかを、文面ごと残す */
         text:['お支払い方法：'+mm.label,...(mm.warn?[mm.warn.title,...(mm.warn.lines||[])]:[])].join('\n')})});
-    PICKED=JSON.stringify(st.pick);
+    if(!r.ok)throw new Error('not ok');
+    PICKED=flowKey(st,st.pick);
     s.innerHTML=`<div class="ask fade"><div class="ask-t">${esc(mm.label)}でお受けいたします</div>
       <div class="ask-n">少々お待ちください　One moment, please.</div></div>`;
     lastJson='';
-  }catch(e){ s.querySelectorAll('.pick-b,.warn-x button').forEach(b=>b.disabled=false); }
+  }catch(e){
+    s.querySelectorAll('.pick-b,.warn-x button').forEach(b=>b.disabled=false);
+    const n=s.querySelector('.pick-n');
+    if(n){n.textContent='うまく送れませんでした　もう一度お選びください';n.style.color='var(--clay)';} }
 }
 function wirePick(st){
   const s=$('scr');
@@ -374,12 +485,17 @@ function askScreen(st){
 async function sendConsent(st){
   const b=document.getElementById('askB'); if(b){b.disabled=true;b.textContent='ありがとうございます';}
   try{
-    await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:st.ask.kind,
+    /* ★403や500でも「ありがとうございます」と出していた。
+         レジには届いていないので、お客様だけが押したつもりになる。 */
+    const r=await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:st.ask.kind,flow:st.flow||'',
         text:[st.ask.title,...(st.ask.lines||[])].join('\n')})});
-    ASKED=JSON.stringify(st.ask);
+    if(!r.ok)throw new Error('not ok');
+    ASKED=flowKey(st,st.ask);
     lastJson='';                   // 次の巡回で明細の画面に戻す
-  }catch(e){ if(b){b.disabled=false;b.textContent=st.ask.button||'同意します';} }
+  }catch(e){ if(b){b.disabled=false;b.textContent=st.ask.button||'同意します';}
+    const n=document.querySelector('.ask-n');
+    if(n){n.textContent='うまく送れませんでした　もう一度お試しください';n.style.color='var(--clay)';} }
 }
 function paint(st){
   const j=JSON.stringify(st);
@@ -390,11 +506,11 @@ function paint(st){
   if(st.refund){ ASKED=''; PICKED=''; s.innerHTML=refundDone(st); return; }
   if(st.done){ ASKED=''; PICKED=''; s.innerHTML=done(st); return; }
   /* お支払い方法をお選びいただく（まだお選びでなければ） */
-  if(st.pick&&JSON.stringify(st.pick)!==PICKED){
+  if(st.pick&&flowKey(st,st.pick)!==PICKED){
     s.innerHTML=pickScreen(st); wirePick(st); return;
   }
   /* お願いが来ていて、まだ押していただいていなければ、それを出す */
-  if(st.ask&&JSON.stringify(st.ask)!==ASKED){
+  if(st.ask&&flowKey(st,st.ask)!==ASKED){
     s.innerHTML=askScreen(st);
     const b=document.getElementById('askB'); if(b)b.onclick=()=>sendConsent(st);
     return;
@@ -410,9 +526,20 @@ async function tick(){
     let st=j.state||null;
     // レジが5分以上置きっぱなしなら、待機の画面に戻す（前のお客様の明細を残さない）
     if(st&&st.at&&Date.now()-st.at>5*60*1000)st=null;
+    NG=0;
     paint(st);
-  }catch(e){ /* 電波が切れても前の表示のままにする */ }
+  }catch(e){
+    /* ★電波が切れたとき、前のお客様のお名前と明細が出たまま止まっていた。
+         次の方がその画面をご覧になる。20秒つながらなければ必ず消す。 */
+    NG++;
+    if(NG>=20&&lastJson!=='__off'){
+      lastJson='__off';
+      $('scr').innerHTML=`<div class="err">つなぎ直しています<br>
+        <span style="font-size:.8em;color:var(--sub)">Reconnecting…</span></div>`;
+    }
+  }
 }
+let NG=0;
 if(!TOKEN){ $('scr').innerHTML=`<div class="err">レジの「お客様画面」からQRを読み取って開いてください</div>`; }
 else{ paint(null); tick(); setInterval(tick,1000); }
 /* 画面を消さない（iOSは電源に挿していれば自動ロックを切れる。念のため復帰時に読み直す） */

@@ -406,6 +406,31 @@ const TRANSIT_WARN={
    実際に何で払われたかは cardBrand に残る（交通系IC / iD / QUICPay / VISA …）。 */
 const payBucket=k=>({transit:'emoney',id:'emoney',quickpay:'emoney'}[k]||k);
 
+/* ══════════ このお会計1回ぶんの合図（flow） ══════════
+   ★お客様に押していただく画面が2種類ある。
+       ・お支払い方法をお選びいただく
+       ・返品交換をお受けしないことへのご同意
+     同じ置き場所を使っていたので、支払い方法を押していただいただけで
+     「返品交換不可に同意していただいた」ことにできてしまった。
+   ★flow と kind の両方が合ったときだけ、押していただいたものとして扱う。
+   ★カートが変わったら flow を作り直す。
+     前の金額を見て押していただいた同意を、変わったあとの金額に使わない。 */
+let FLOW=newFlow();
+function newFlow(){ return 'f'+Math.random().toString(36).slice(2,10); }
+function resetFlow(){
+  FLOW=newFlow(); CONSENT=null; PICKCONSENT=null; GOT=0;
+  /* 待っている最中なら、その待ちも捨てる（古い画面のまま押されないように） */
+  if(ASKWAIT)ASKWAIT=null;
+  if(PICKWAIT)PICKWAIT=null;
+}
+/* お客様に押していただいている間は、カートを触らせない */
+const asking=()=>!!(ASKWAIT||PICKWAIT);
+function lockedByAsk(){
+  if(!asking())return false;
+  toast('お客様が画面をご覧になっています　終わるまでお待ちください',true);
+  return true;
+}
+
 /* ══════════ 通ってしまった決済を落とさない ══════════
    ★Squareの端末で決済が通ったあと、会計をD1に保存する。
      その保存が失敗しても、お客様のお金はもう動いている。
@@ -572,6 +597,8 @@ async function onProductCode(code){
 /* ══════════ 会計 ══════════ */
 let LASTHIT='';                 // たったいま読み取った商品。お客様画面で大きく残す1行
 function addToCart(p){
+  if(lockedByAsk())return;          // お客様が画面を見ている間は触らせない
+  resetFlow();                      // 金額が変わる＝前の同意は使えない
   const f=CART.find(x=>x.productId===p.id);
   if(f)f.qty++; else CART.push({productId:p.id,name:p.name,brand:p.brand||'',maker:p.maker||'',
     category:p.category||'',image:p.image||'',unit:+p.price||0,qty:1});
@@ -654,8 +681,10 @@ function renderCart(){
     <div class="ci-p">${yen(now*i.qty)}</div>
     <button class="ci-x" data-x="${ix}">×</button></div>`;}).join('');
   $('cart').querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{
+    if(lockedByAsk())return; resetFlow();
     const i=CART[+b.dataset.i]; if(b.dataset.q==='+')i.qty++; else if(--i.qty<=0)CART.splice(+b.dataset.i,1); render();});
-  $('cart').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{CART.splice(+b.dataset.x,1);render();});
+  $('cart').querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>{
+    if(lockedByAsk())return; resetFlow(); CART.splice(+b.dataset.x,1);render();});
 }
 function renderSum(){
   const t=cartTotal();
@@ -877,18 +906,23 @@ function pushAsk(ask){
   const t=cartTotal();
   post('/display/push',{shopId:SHOP,register:REG,mode:PMODE,done:false,
     items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||''})),
-    list:cartList(),cut:cartCut(),total:t,ask:ask||null,
+    list:cartList(),cut:cartCut(),total:t,ask:ask||null,flow:FLOW,
     member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn:0,
       visits:MEMBER.visits||0,greet:(MEMBER.visits||0)>=1?'again':'first'}:null}).catch(()=>{});
 }
 async function waitConsent(sec){
   const until=Date.now()+sec*1000;
+  const flow=FLOW;                                  // 待ち始めたときの合図を覚えておく
   while(Date.now()<until){
-    if(!ASKWAIT)return false;                       // やめたとき
+    if(!ASKWAIT||FLOW!==flow)return false;          // やめたとき／カートが変わったとき
     await new Promise(r=>setTimeout(r,1200));
     try{
       const j=await get('/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG));
-      if(j.consent&&j.consent.at>=ASKWAIT.t){ CONSENT=j.consent; return true; }
+      const c=j.consent;
+      /* ★種類と合図の両方が合ったときだけ「押していただいた」と見なす。
+           これが無いと、お支払い方法を選んでいただいただけで
+           返品交換不可に同意していただいたことになってしまう。 */
+      if(c&&c.at>=ASKWAIT.t&&c.kind==='noreturn'&&c.flow===flow){ CONSENT=c; return true; }
     }catch(e){}
   }
   return false;
@@ -906,7 +940,7 @@ let PICKWAIT=null, PICKCONSENT=null;
 function pushPick(pick){
   post('/display/push',{shopId:SHOP,register:REG,mode:PMODE,done:false,
     items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||''})),
-    list:cartList(),cut:cartCut(),total:cartTotal(),pick:pick||null,
+    list:cartList(),cut:cartCut(),total:cartTotal(),pick:pick||null,flow:FLOW,
     member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn:0,
       visits:MEMBER.visits||0,greet:(MEMBER.visits||0)>=1?'again':'first'}:null}).catch(()=>{});
 }
@@ -933,13 +967,15 @@ async function askPayMethod(){
 }
 async function waitPick(sec){
   const until=Date.now()+sec*1000;
+  const flow=FLOW;
   while(Date.now()<until){
-    if(!PICKWAIT)return null;                    // やめたとき
+    if(!PICKWAIT||FLOW!==flow)return null;        // やめたとき／カートが変わったとき
     await new Promise(r=>setTimeout(r,1200));
     try{
       const j=await get('/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG));
       const c=j.consent;
-      if(c&&c.at>=PICKWAIT.t&&/^pay:/.test(c.kind||'')){
+      /* 種類（pay:◯◯）と合図の両方が合ったときだけ受け取る */
+      if(c&&c.at>=PICKWAIT.t&&/^pay:/.test(c.kind||'')&&c.flow===flow){
         const k=c.kind.slice(4);
         if(PAYS.some(([x])=>x===k))return {k,consent:c};
       }
@@ -1084,8 +1120,9 @@ function showRefundDone(method,amt,token){
       'ご返金に手数料はかかりません',
       'ご不明な点は、いつでもお店にお声がけください'].filter(Boolean);
   /* 控えのQR。お客様のスマホで読んで、そのままお持ち帰りいただく（日英併記のページ） */
-  const url=token?('https://seam.site/booking/refund.html?t='+encodeURIComponent(token)):'';
-  const qr=url?('https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data='+encodeURIComponent(url)):'';
+  /* ★控えのURLそのものを送る。QRはお客様画面が自分で描く。
+       以前は外のQRサービスに鍵ごと渡していた（鍵を知れば控えが読める）。 */
+  const qr=token?('https://seam.site/booking/refund.html?t='+encodeURIComponent(token)):'';
   post('/display/push',{shopId:SHOP,register:REG,mode:'normal',done:false,items:[],list:0,cut:0,total:0,
     refund:{amount:amt,when:RF_WHEN[k],lines,qr}}).catch(()=>{});
   /* 45秒たったら待機の画面に戻す（QRを読む時間をとる） */
@@ -1834,6 +1871,7 @@ async function boot(){
   regDraw(); $('regBtn').onclick=showRegisterPick;
   staffDraw(); $('staffBtn').onclick=showStaffPick;
   document.querySelectorAll('#priceModes button').forEach(b=>b.onclick=()=>{
+    if(lockedByAsk())return; resetFlow();
     PMODE=b.dataset.pm;
     document.querySelectorAll('#priceModes button').forEach(x=>x.classList.toggle('on',x.dataset.pm===PMODE));
     render(); toast({normal:'通常の値段にしました',member:'メンバー価格にしました',sale:'セール価格にしました'}[PMODE]);});
