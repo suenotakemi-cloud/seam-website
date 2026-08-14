@@ -443,7 +443,7 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 const API='https://seam-square-pay.suenotakemi.workers.dev';
 /* 一人ひとりでログインする。カルテに残る名前は、このログインから取る。
    端末を共有していても「誰が書いたか」が本物になる。
-   ★サーバーへは ?stok=<自分の札> を必ず付ける（みんなで同じ管理トークンは使わない）。 */
+   ★サーバーへは X-Staff-Token ヘッダーで自分の札を送る（みんなで同じ管理トークンは使わない）。 */
 let TOK=localStorage.getItem('stb_staff_tok')||'';
 let ME={id:localStorage.getItem('stb_staff_id')||'',name:localStorage.getItem('stb_staff_nm')||''};
 /* ★自分の札はURLに載せない。履歴・ログ・画面キャプチャに残ってしまう。
@@ -451,7 +451,7 @@ let ME={id:localStorage.getItem('stb_staff_id')||'',name:localStorage.getItem('s
 const U=(path)=>API+path;
 const H=()=>({'Content-Type':'application/json','X-Staff-Token':TOK});
 /* fetch を1か所にまとめる。ヘッダーの付け忘れを無くすため。 */
-const F=(path,opt)=>F(path,{...(opt||{}),headers:{...H(),...((opt||{}).headers||{})}});
+const F=(path,opt)=>fetch(U(path),{...(opt||{}),headers:{...H(),...((opt||{}).headers||{})}});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 const todayKey=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
@@ -568,7 +568,7 @@ function notiWire(){
  *   自分を求めて来てくださる方が何人いるか。ここが見えると、仕事が続く。 */
 let ME_NUM=null;
 async function loadMe(){
-  try{ const r=await fetch(`${API}/staff/me?token=${encodeURIComponent(TOK)}`);
+  try{ const r=await F(`/staff/me`);
     const j=await r.json(); ME_NUM=j&&j.ok?j:null; }catch(e){ ME_NUM=null; }
 }
 /* ── 練習（施設利用時間）──
