@@ -321,6 +321,7 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
     </div>
     <span class="spacer"></span>
     <button class="dispBtn" id="dispBtn">お客様画面</button>
+    <button class="dispBtn" id="kioskBtn">カウンセリング端末</button>
     <span class="lamp" id="lamp"><i></i><span id="lampT">読み取り待機中</span></span>
   </div>
 
@@ -1868,6 +1869,7 @@ async function boot(){
   $('gate').style.display='none'; $('app').style.display='block';
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;syncTabs();renderRight();});
   $('dispBtn').onclick=showDisplayUrl;
+  {const k=$('kioskBtn'); if(k)k.onclick=showKioskToken;}
   regDraw(); $('regBtn').onclick=showRegisterPick;
   staffDraw(); $('staffBtn').onclick=showStaffPick;
   document.querySelectorAll('#priceModes button').forEach(b=>b.onclick=()=>{
@@ -1922,6 +1924,38 @@ function showRegisterPick(){
   d.onclick=e=>{ if(e.target===d)d.remove(); };
 }
 function regDraw(){ const b=$('regBtn'); if(b)b.textContent=REG?`レジ ${REG}番`:'レジ 未設定'; }
+
+/* ══════════ カウンセリング端末の合言葉 ══════════
+   ★お客様が手に取るiPadに、全権の管理トークンを置いていた。
+     その札があれば返金も給与もカルテも見られる。
+     カウンセリングの保存・読み出しだけができる別の札を作って、そちらを入れてもらう。 */
+async function showKioskToken(){
+  let tk='';
+  try{ const j=await get('/kiosk/token'); tk=j.token||''; }catch(e){}
+  const d=document.createElement('div'); d.className='dlg';
+  const draw=()=>{ d.innerHTML=`<div class="dlg-b">
+    <h3>カウンセリング端末の合言葉</h3>
+    <p>お客様にお渡しするiPadの、カウンセリング画面の設定に入れてください<br>
+       この合言葉でできるのは <b>カウンセリングの保存と読み出しだけ</b>です　
+       会計・返金・給与・カルテには入れません</p>
+    ${tk?`<div class="dlg-u">${esc(tk)}</div>`:'<p style="color:var(--clay)">まだ作られていません</p>'}
+    <div class="dlg-a">
+      ${tk?'<button id="kcopy" class="pri">合言葉をコピー</button>':''}
+      <button id="knew">${tk?'作り直す（前の端末は使えなくなります）':'合言葉を作る'}</button>
+      <button id="kclose">閉じる</button></div>
+  </div>`;
+    const c=d.querySelector('#kcopy');
+    if(c)c.onclick=async()=>{ try{ await navigator.clipboard.writeText(tk); toast('コピーしました'); }
+      catch(e){ prompt('この合言葉を写してお使いください',tk); } };
+    d.querySelector('#knew').onclick=async()=>{
+      if(tk&&!confirm('作り直すと、いまのカウンセリング端末は使えなくなります。\n新しい合言葉を入れ直す必要があります。\n\nよろしいですか'))return;
+      try{ const j=await post('/kiosk/token',{}); tk=j.token||''; draw(); toast('作りました'); }
+      catch(err){ toast(err.message||'作れませんでした',true); } };
+    d.querySelector('#kclose').onclick=()=>d.remove(); };
+  draw();
+  d.onclick=e=>{ if(e.target===d)d.remove(); };
+  document.body.appendChild(d);
+}
 
 async function showDisplayUrl(){
   let tk='';

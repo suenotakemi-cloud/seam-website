@@ -446,8 +446,12 @@ const API='https://seam-square-pay.suenotakemi.workers.dev';
    ★サーバーへは ?stok=<自分の札> を必ず付ける（みんなで同じ管理トークンは使わない）。 */
 let TOK=localStorage.getItem('stb_staff_tok')||'';
 let ME={id:localStorage.getItem('stb_staff_id')||'',name:localStorage.getItem('stb_staff_nm')||''};
-const U=(path)=>API+path+(path.indexOf('?')>=0?'&':'?')+'stok='+encodeURIComponent(TOK);
-const H=()=>({'Content-Type':'application/json'});
+/* ★自分の札はURLに載せない。履歴・ログ・画面キャプチャに残ってしまう。
+     ヘッダーで送る（サーバーは両方受けるので、順に切り替えられる）。 */
+const U=(path)=>API+path;
+const H=()=>({'Content-Type':'application/json','X-Staff-Token':TOK});
+/* fetch を1か所にまとめる。ヘッダーの付け忘れを無くすため。 */
+const F=(path,opt)=>F(path,{...(opt||{}),headers:{...H(),...((opt||{}).headers||{})}});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const hm=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
 const todayKey=()=>new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
@@ -462,7 +466,7 @@ async function load(){
   if(!TOK)return askToken();
   app.innerHTML='<p class="lead" style="margin-top:24px">読み込んでいます…</p>';
   try{
-    const r=await fetch(U(`/precare/list?from=${DAY}&to=${DAY}`));
+    const r=await F(`/precare/list?from=${DAY}&to=${DAY}`);
     if(r.status===401||r.status===403){TOK='';localStorage.removeItem('stb_staff_tok');return askToken('もう一度お願いします');}
     const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
     ROWS=j.rows||[]; await Promise.all([loadNoti(),loadMe(),prLoad(),mdLoad(),snLoad(),tmdLoad(),rfLoad(),punLoad(),lvLoad()]); render();
@@ -533,7 +537,7 @@ function loadQRlib(){
   return _qrlibP;
 }
 async function loadNoti(){
-  try{ const r=await fetch(U('/notices')); const j=await r.json(); NOTI=j.rows||[]; }catch(e){ NOTI=[]; }
+  try{ const r=await F('/notices'); const j=await r.json(); NOTI=j.rows||[]; }catch(e){ NOTI=[]; }
 }
 function notiHtml(){
   const yet=NOTI.filter(x=>!x.done&&!x.自分は読んだ);
@@ -552,7 +556,7 @@ function notiWire(){
   app.querySelectorAll('[data-ok]').forEach(b=>b.onclick=async()=>{
     b.disabled=true; b.textContent='…';
     try{
-      await fetch(U('/notices/read'),{method:'POST',headers:H(),body:JSON.stringify({id:b.dataset.ok})});
+      await F('/notices/read',{method:'POST',headers:H(),body:JSON.stringify({id:b.dataset.ok})});
       const n=NOTI.find(x=>x.id===b.dataset.ok); if(n)n.自分は読んだ=true;
       render();
     }catch(e){ b.disabled=false; b.textContent='読みました'; }
@@ -573,7 +577,7 @@ async function loadMe(){
  *   こちらで勝手に丸めない（丸めると届け出に使えなくなる）。 */
 let PR=null, PRON=null;
 async function prLoad(){
-  try{ const r=await fetch(U('/practice')); const j=await r.json(); PR=j&&j.ok?j:null; }catch(e){ PR=null; }
+  try{ const r=await F('/practice'); const j=await r.json(); PR=j&&j.ok?j:null; }catch(e){ PR=null; }
   try{ PRON=JSON.parse(localStorage.getItem('stb_practice_on')||'null'); }catch(e){ PRON=null; }
 }
 function prHtml(){
@@ -601,7 +605,7 @@ function prHtml(){
  *   自分が付いている方の残りが見えないと動けない。 */
 let TMD={}, TMTIMER=null;
 async function tmdLoad(){
-  try{ const r=await fetch(U(`/timeline/day?date=${DAY}`)); const j=await r.json();
+  try{ const r=await F(`/timeline/day?date=${DAY}`); const j=await r.json();
     TMD=(j&&j.ok&&j.times)||{}; }catch(e){ TMD={}; }
 }
 const tmMin=iso=>{ if(!iso)return null; const d=new Date(Date.parse(iso)+9*3600e3);
@@ -641,7 +645,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden)tmTick();
 
 let SN=null;
 async function snLoad(){
-  try{ const r=await fetch(U('/soon')); const j=await r.json(); SN=j&&j.ok?j:null; }catch(e){ SN=null; }
+  try{ const r=await F('/soon'); const j=await r.json(); SN=j&&j.ok?j:null; }catch(e){ SN=null; }
 }
 function snRow(x){
   return `<div class="sn-a" data-sn="${esc(x.key)}">
@@ -667,7 +671,7 @@ function snWire(){
   document.querySelectorAll('[data-sn]').forEach(box=>{
     box.querySelector('.ok').onclick=async()=>{
       box.querySelector('.ok').disabled=true;
-      try{ await fetch(U('/soon/done'),{method:'POST',headers:{'Content-Type':'application/json'},
+      try{ await F('/soon/done',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({key:box.dataset.sn})}); }catch(e){}
       box.style.display='none';
     };
@@ -680,7 +684,7 @@ function snWire(){
  *   これが「紹介をいただく」練習そのものになる。 */
 let MD=null;
 async function mdLoad(){
-  try{ const r=await fetch(U('/model/apps')); const j=await r.json(); MD=j&&j.ok?j:null; }catch(e){ MD=null; }
+  try{ const r=await F('/model/apps'); const j=await r.json(); MD=j&&j.ok?j:null; }catch(e){ MD=null; }
 }
 function mdLink(){ return location.origin+location.pathname.replace(/[^/]*$/,'')+'model.html?s='+encodeURIComponent(ME.id); }
 function mdHtml(){
@@ -719,7 +723,7 @@ function mdWire(){
       const v=b.dataset.mv;
       if(v==='done'&&!confirm('この方の募集を、一覧から外します'))return;
       b.disabled=true;
-      try{ await fetch(U('/model/status'),{method:'POST',headers:{'Content-Type':'application/json'},
+      try{ await F('/model/status',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({id:box.dataset.ma,status:v,
           fixedAt:v==='fixed'?new Date().toISOString():''})}); }catch(e){}
       await mdLoad(); render();
@@ -854,7 +858,7 @@ function prFormWire(){
   /* 練習の記録でも、打つ道とカメラの道を同じ中身にする */
   const pfAdd=async(i,v)=>{
     if(!v||!f.mix[i])return;
-    const g=async u=>{try{const r=await fetch(U(u));const j=await r.json();return j.agents||[];}catch{return [];}};
+    const g=async u=>{try{const r=await F(u);const j=await r.json();return j.agents||[];}catch{return [];}};
     let hits=/^[0-9]{8,14}$/.test(v)?await g('/agents?barcode='+encodeURIComponent(v)):await g('/agents?q='+encodeURIComponent(v));
     let a=hits[0];
     if(!a&&/^[0-9]{8,14}$/.test(v)){ const hit=await kmFind(v); if(hit)a={id:'',name:hit.n,brand:hit.b||''}; }
@@ -883,7 +887,7 @@ function prFormWire(){
   if($$('pf-save'))$$('pf-save').onclick=async()=>{
     const mc=matCost({mix:f.mix});
     const b=$$('pf-save'); b.disabled=true; b.textContent='記録しています…';
-    await fetch(U('/practice'),{method:'POST',headers:H(),
+    await F('/practice',{method:'POST',headers:H(),
       body:JSON.stringify({date:f.date,minutes:f.mins,kind:f.kind,note:f.note,
         startAt:f.startAt||'',endAt:f.endAt||'',
         modelName:f.hasModel?f.modelName:'',modelFee:f.hasModel?(+f.modelFee||0):0,
@@ -907,11 +911,11 @@ function prFormWire(){
  * ★押し間違いをその場で気づけるよう、次に押せるボタンだけを濃くする。 */
 let PUN=null, LV=null;
 async function punLoad(){
-  try{ const r=await fetch(U(`/punch/day?date=${DAY}`)); const j=await r.json();
+  try{ const r=await F(`/punch/day?date=${DAY}`); const j=await r.json();
     PUN=(j&&j.ok&&j.punches&&j.punches[ME.id])||[]; }catch(e){ PUN=null; }
 }
 async function lvLoad(){
-  try{ const r=await fetch(U('/leave/me')); const j=await r.json(); LV=j&&j.ok?j:null; }catch(e){ LV=null; }
+  try{ const r=await F('/leave/me'); const j=await r.json(); LV=j&&j.ok?j:null; }catch(e){ LV=null; }
 }
 const punLast=()=>(PUN&&PUN.length)?PUN[PUN.length-1].kind:'';
 function punHtml(){
@@ -947,7 +951,7 @@ function punWire(){
   document.querySelectorAll('[data-pun]').forEach(b=>b.onclick=async()=>{
     b.disabled=true;
     try{
-      const r=await fetch(U('/punch'),{method:'POST',headers:{'Content-Type':'application/json'},
+      const r=await F('/punch',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({kind:b.dataset.pun,date:DAY})});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'打てませんでした');
     }catch(e){ alert(e.message); }
@@ -994,7 +998,7 @@ function lvWire(){
     }
     const note=prompt('ひとこと（なくても大丈夫です）','')||'';
     try{
-      const r=await fetch(U('/leave/apply'),{method:'POST',headers:{'Content-Type':'application/json'},
+      const r=await F('/leave/apply',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({date:d,span,hours,kind:'有給',note})});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'出せませんでした');
       alert('申請しました　本部の承認をお待ちください');
@@ -1005,7 +1009,7 @@ function lvWire(){
 
 let RF=null;
 async function rfLoad(){
-  try{ const r=await fetch(U('/ref/stats')); const j=await r.json(); RF=j&&j.ok?j:null; }catch(e){ RF=null; }
+  try{ const r=await F('/ref/stats'); const j=await r.json(); RF=j&&j.ok?j:null; }catch(e){ RF=null; }
 }
 function refLink(){ return RF&&RF.code?`https://seam.site/booking/?src=instagram&ref=${encodeURIComponent(RF.code)}`:''; }
 function meHtml(){
@@ -1095,7 +1099,7 @@ async function open(n){
   document.getElementById('one').classList.add('on');
   document.getElementById('opane').innerHTML='<p class="none" style="margin-top:20px">読み込んでいます…</p>';
   try{
-    const q=await fetch(U(`/precare/for-staff?resv=${encodeURIComponent(r.id)}`));
+    const q=await F(`/precare/for-staff?resv=${encodeURIComponent(r.id)}`);
     const j=await q.json(); CUR=(j.precare&&j.precare.summary)||null;
   }catch(e){ CUR=null; }
   RESV=r; NOTE={note:'',memo:''}; KT=null; KT_LAST=null; TM=null; SOAK=null;
@@ -1108,7 +1112,7 @@ async function open(n){
    if(tb){ tb.style.display=spa?'':'none';
      if(!spa&&TAB==='score')TAB='prep'; }}
   try{
-    const w=await fetch(U(`/visit/note?resv=${encodeURIComponent(r.id)}`));
+    const w=await F(`/visit/note?resv=${encodeURIComponent(r.id)}`);
     const wj=await w.json(); if(wj&&wj.note)NOTE={note:wj.note.note||'',memo:wj.note.memo||''};
   }catch(e){}
   paint();
@@ -1464,7 +1468,7 @@ const TSTEP=[
 ];
 async function tLoad(){
   TM={times:{}};
-  try{ const r=await fetch(U(`/timeline?resv=${encodeURIComponent(RESV.id)}`));
+  try{ const r=await F(`/timeline?resv=${encodeURIComponent(RESV.id)}`);
     const j=await r.json(); if(j&&j.ok)TM={times:j.times||{}}; }catch(e){}
 }
 const tMin=iso=>{ if(!iso)return null; const d=new Date(Date.parse(iso)+9*3600e3);
@@ -1518,7 +1522,7 @@ function tWire(p){
     b.disabled=true;
     const at=new Date().toISOString();
     TM.times[k]={at,by:(ME&&ME.name)||''};
-    try{ await fetch(U('/timeline'),{method:'POST',headers:H(),
+    try{ await F('/timeline',{method:'POST',headers:H(),
       body:JSON.stringify({resvId:RESV.id,kind:k,at,shopId:'ginza'})}); }catch(e){}
     paint();
   });
@@ -1526,7 +1530,7 @@ function tWire(p){
     const mn=+b.dataset.sk;
     SOAK={min:mn,left:mn*60,end:Date.now()+mn*60000};
     /* 放置に入ったことも残す（何分置いたかは、次の来店で効く） */
-    fetch(U('/timeline'),{method:'POST',headers:H(),
+    F('/timeline',{method:'POST',headers:H(),
       body:JSON.stringify({resvId:RESV.id,kind:'soak',at:new Date().toISOString(),minutes:mn})}).catch(()=>{});
     TM.times.soak={at:new Date().toISOString(),minutes:mn};
     paint();
@@ -1973,14 +1977,14 @@ let KVOICE=null;
 let _vag=null;
 async function voiceAgents(){
   if(_vag)return _vag;
-  try{ const r=await fetch(U('/agents')); const j=await r.json();
+  try{ const r=await F('/agents'); const j=await r.json();
     _vag=(j.agents||[]).map(a=>({name:a.name||'',id:a.id||''})).filter(a=>a.name); }
   catch(e){ _vag=[]; }
   return _vag;
 }
 let AGP={};   // 薬剤の1gあたり（id と 名前 の両方で引けるように）
 async function loadAgentPrice(){
-  try{ const r=await fetch(U('/agents')); const j=await r.json();
+  try{ const r=await F('/agents'); const j=await r.json();
     (j.agents||[]).forEach(a=>{ if(a.perG){AGP[a.id]=a.perG; AGP[a.name]=a.perG;} }); }catch(e){}
 }
 function matCost(body){
@@ -2029,7 +2033,7 @@ async function kLoad(){
       advice:[],shampoo:preShampoo()};
   KT_LAST=null;
   try{
-    const r=await fetch(U(`/karte?key=${encodeURIComponent(key)}`));
+    const r=await F(`/karte?key=${encodeURIComponent(key)}`);
     const j=await r.json();
     const list=(j&&j.karte)||[];
     const today=list.find(x=>x.date===DAY);
@@ -2186,7 +2190,7 @@ function kWire(p){
      別々に書くと、片方だけ直して、もう片方が動かない事故になる。 */
   const kAdd=async(i,v)=>{
     if(!v)return;
-    const g=async u=>{try{const r=await fetch(U(u));const j=await r.json();return j.agents||[];}catch{return [];}};
+    const g=async u=>{try{const r=await F(u);const j=await r.json();return j.agents||[];}catch{return [];}};
     let hits=/^[0-9]{8,14}$/.test(v)?await g('/agents?barcode='+encodeURIComponent(v)):await g('/agents?q='+encodeURIComponent(v));
     let a=hits[0];
     if(hits.length>1){ const n=+prompt('どれですか　番号を\n\n'+hits.slice(0,12).map((x,k)=>`${k+1}. ${x.name}`).join('\n'),'1'); a=hits[n-1]; }
@@ -2194,7 +2198,7 @@ function kWire(p){
       const hit=await kmFind(v);
       if(hit){
         try{
-          const r=await fetch(U('/agents'),{method:'POST',headers:H(),
+          const r=await F('/agents',{method:'POST',headers:H(),
             body:JSON.stringify({barcode:v,name:hit.n,brand:hit.b||''})});
           const j=await r.json(); a={id:j.id||'',name:hit.n,brand:hit.b||''};
         }catch{ a={id:'',name:hit.n,brand:hit.b||''}; }
@@ -2205,7 +2209,7 @@ function kWire(p){
       const nm=prompt(isBc?`はじめての薬剤です\n${v}\n\n名前を入れてください`:'薬剤の名前', isBc?'':v);
       if(nm==null||!nm.trim())return;
       try{
-        const r=await fetch(U('/agents'),{method:'POST', headers:H(),
+        const r=await F('/agents',{method:'POST', headers:H(),
           body:JSON.stringify({barcode:isBc?v:'',name:nm.trim()})});
         const j=await r.json(); if(!j.ok)throw 0; a={id:j.id,name:nm.trim()};
       }catch{ return; }
@@ -2236,7 +2240,7 @@ function kWire(p){
   if(btn)btn.onclick=async()=>{
     const msg=p.querySelector('#kmsg'); btn.disabled=true; msg.textContent='';
     try{
-      const r=await fetch(U('/karte'),{method:'POST', headers:H(),
+      const r=await F('/karte',{method:'POST', headers:H(),
         body:JSON.stringify(KT)});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
       KT.id=j.id; if(j.author)KT.author=j.author;
@@ -2279,7 +2283,7 @@ function paintAfter(p){
     /* ★合言葉は必要になった1件だけ取りに行く（その日ぶんを一覧で持ち歩かない） */
     kb.disabled=true;
     try{
-      const r=await fetch(U(`/visit/keepsake?resv=${encodeURIComponent(RESV.id)}`));
+      const r=await F(`/visit/keepsake?resv=${encodeURIComponent(RESV.id)}`);
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
       window.open(j.url,'_blank');
     }catch(e){ const m=document.getElementById('wmsg'); m.style.color='#F0A79C'; m.textContent='ひらけませんでした: '+e.message; }
@@ -2292,7 +2296,7 @@ function paintAfter(p){
   if(nb)nb.onclick=async()=>{
     nb.disabled=true; nb.textContent='つくっています…';
     try{
-      const r=await fetch(U('/nps/token'),{method:'POST',headers:H(),
+      const r=await F('/nps/token',{method:'POST',headers:H(),
         body:JSON.stringify({resvId:RESV.id,shopId:'ginza'})});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'つくれませんでした');
       await loadQRlib();
@@ -2313,7 +2317,7 @@ function paintAfter(p){
     btn.disabled=true; msg.textContent='';
     NOTE={note:t.value,memo:document.getElementById('wmemo').value};
     try{
-      const r=await fetch(U(`/visit/note`),{method:'POST', headers:H(),
+      const r=await F(`/visit/note`,{method:'POST', headers:H(),
         body:JSON.stringify({resv:RESV.id,note:NOTE.note,memo:NOTE.memo,staffId:RESV.staffId||'',staffName:STAFFNM[RESV.staffId]||''})});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
       msg.textContent=NOTE.note.trim()?'保存しました　翌朝お届けします':'保存しました';

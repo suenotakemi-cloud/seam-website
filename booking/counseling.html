@@ -104,7 +104,14 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 <script src="cs-i18n.js"></script>
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';
-const TOK=localStorage.getItem('stb_admin_tok')||'';
+/* ★お客様が手に取るiPad。全権の管理トークンは置かない（2026-08-14）。
+     ここに置く札で通るのは、カウンセリングの保存・読み出しと、設定の読み取りだけ。
+     万一この端末を持ち出されても、返金も給与もカルテも見られない。
+     古い端末のために管理トークンも当面は読むが、次の設定で置き換わる。 */
+const KTOK=localStorage.getItem('stb_kiosk_tok')||'';
+const ATOK=localStorage.getItem('stb_admin_tok')||'';
+const TOK=KTOK||ATOK;
+const AUTH=()=>KTOK?{'X-Kiosk-Token':KTOK}:(ATOK?{'Authorization':'Bearer '+ATOK}:{});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast=(m,ng)=>{const t=document.getElementById('toast');t.textContent=m;t.className='toast on'+(ng?' ng':'');setTimeout(()=>t.className='toast',2600)};
 const q=new URLSearchParams(location.search);
@@ -340,10 +347,11 @@ function wire(){
      const v=(document.getElementById('f-tok').value||'').trim();
      if(!v){toast('トークンを入力してください',true);return;}
      tg.textContent='確認中…';
-     try{ // 保存先に通るか確認してから記憶する
-       const r=await fetch(API+'/reservations?from='+new Date().toISOString().slice(0,10)+'&to='+new Date().toISOString().slice(0,10),{headers:{'Authorization':'Bearer '+v}});
-       if(r.status===200){localStorage.setItem('stb_admin_tok',v);toast('設定しました');location.reload();}
-       else{toast('トークンが正しくないようです',true);tg.textContent='保存する';}
+     try{ /* カウンセリング用の札かどうかを、実際に通して確かめる */
+       const r=await fetch(API+'/counseling?key=setup-check',{headers:{'X-Kiosk-Token':v}});
+       if(r.status===200){localStorage.setItem('stb_kiosk_tok',v);localStorage.removeItem('stb_admin_tok');
+         toast('設定しました');location.reload();}
+       else{toast('この端末用の合言葉ではありません　管理画面で発行したものを入れてください',true);tg.textContent='保存する';}
      }catch(e){toast('確認できませんでした',true);tg.textContent='保存する';}
    };}
   document.getElementById('doprint').onclick=()=>{keep();
@@ -437,7 +445,7 @@ function openFinder(){
 async function attachFinder(k){
   try{
     const r=await fetch(API+'/counseling/attach',{method:'POST',
-      headers:{'Content-Type':'application/json',...(TOK?{'Authorization':'Bearer '+TOK}:{})},
+      headers:{'Content-Type':'application/json',...(TOK?{...AUTH()}:{})},
       body:JSON.stringify({id:CSID,finder:{
         typeId:k.typeId,typeName:k.typeName||k.originName,damageTier:k.damageTier,
         originName:k.originName,mainGoalName:k.mainGoalName,radar:k.radar,savedAt:k.savedAt}})});
@@ -464,7 +472,7 @@ async function save(){
   const btn=document.getElementById('dosave');btn.disabled=true;btn.textContent=T('送信中…');
   try{
     const r=await fetch(API+'/counseling',{method:'POST',
-      headers:{'Content-Type':'application/json',...(TOK?{'Authorization':'Bearer '+TOK}:{})},
+      headers:{'Content-Type':'application/json',...(TOK?{...AUTH()}:{})},
       body:JSON.stringify({name:S.name,phone:S.phone,kind:S.kind,lang:LANG,answers:S.a,consent:S.c,sign:S.sign,date:new Date().toISOString().slice(0,10)})});
     const j=await r.json();
     if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
@@ -478,7 +486,7 @@ async function save(){
 render();
 /* 起動時：店舗設定（出す同意項目）と、このお客様の髪格診断の有無をまとめて読み込む */
 (async()=>{ if(!TOK)return;
-  try{const r=await fetch(API+'/settings',{headers:{'Authorization':'Bearer '+TOK}});
+  try{const r=await fetch(API+'/settings',{headers:AUTH()});
     if(r.ok){const j=await r.json(); const g=j.settings||j||{};
       const on=(k,def)=>g[k]==null||g[k]===''?def:(g[k]==='1'||g[k]===1||g[k]===true);
       OPT={photo:on('csPhoto',true),video:on('csVideo',false),voice:on('csVoice',false)};}
@@ -487,7 +495,7 @@ render();
   // （半年以内のものを有効とする。古すぎる診断で質問を省くのは危ないので聞き直す）
   const ph=(S.phone||'').replace(/[^0-9]/g,'');
   if(ph){
-    try{const r=await fetch(API+'/counseling?key='+encodeURIComponent(ph),{headers:{'Authorization':'Bearer '+TOK}});
+    try{const r=await fetch(API+'/counseling?key='+encodeURIComponent(ph),{headers:AUTH()});
       if(r.ok){const j=await r.json();
         for(const x of (j.sheets||[])){
           const f=x.answers&&x.answers.finder;
