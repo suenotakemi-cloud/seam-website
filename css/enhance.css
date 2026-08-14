@@ -1,37 +1,17 @@
 /* ═══════════════════════════════════════════════════════════════════════
    SEAM Enhance Layer — world-class motion & texture
    読み込み: 全ページ <head> の reveal.css 直後
-   - クロスドキュメント View Transitions（ページ遷移の映画化）
+   - 安定したネイティブページ遷移
    - フィルムグレイン（紙のような手触り・極微）
    - スクロール駆動パララックス（メインスレッド外・60fps）
    - 押下/フォーカスのマイクロ反応
    すべて prefers-reduced-motion を尊重
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ───────── 1. クロスドキュメント View Transitions ───────── */
-@view-transition { navigation: auto; }
-
-/* 既定の遷移: スライドではなく、静かなクロスフェード＋わずかな浮き */
-::view-transition-group(root) { animation-duration: 0.52s; }
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation-duration: 0.52s;
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  mix-blend-mode: normal;
-}
-::view-transition-old(root) { animation-name: seamVtOut; }
-::view-transition-new(root) { animation-name: seamVtIn; }
-
-@keyframes seamVtOut {
-  to   { opacity: 0; transform: translateY(-8px) scale(0.992); filter: blur(2px); }
-}
-@keyframes seamVtIn {
-  from { opacity: 0; transform: translateY(12px) scale(0.994); filter: blur(3px); }
-}
-
-/* （旧 seam-header / seam-bottomnav の永続グループは廃止：
-   position:sticky/fixed 要素に view-transition-name を常時付けると
-   スクロール中に二重表示のゴーストが出るため。root のみで遷移する） */
+/* ───────── 1. ページ遷移 ─────────
+   クロスドキュメント View Transitions は、連続したリンク操作やリダイレクトで
+   Chrome が AbortError ("Transition was skipped") を記録するため無効化。
+   装飾よりも、予約へ向かうナビゲーションの確実性を優先する。 */
 
 /* ───────── 2. フィルムグレイン（極微の質感） ───────── */
 .seam-grain {
@@ -88,9 +68,6 @@ input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
 
 /* ───────── reduced-motion 全停止 ───────── */
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) { animation: none !important; }
   .seam-parallax { animation: none !important; transform: none !important; }
   .seam-kinetic { animation: none !important; }
   .seam-grain { display: none; }

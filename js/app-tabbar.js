@@ -321,7 +321,7 @@
       /* モバイルはアイコン+「SHOP」を縦積み(横に伸ばすと中央のSEAMロゴに衝突するため)。アイコンだけだと"カート"に見える問題を短ラベルで解消。640px以上は横並び+フルラベル */
       '#seam-header-shop .shs-short{display:block;font-family:Inter,"Noto Sans JP",sans-serif;font-size:7.5px;letter-spacing:.1em;line-height:1;margin-top:1.5px;}',
       '#seam-header-shop .shs-full{display:none;}',
-      '@media (max-width:639px){#seam-header-shop{flex-direction:column;gap:0;padding:4px 9px;min-height:38px !important;}}',
+      '@media (max-width:639px){#seam-header-shop{flex-direction:column;gap:0;padding:4px 9px;min-height:44px !important;}}',
       /* 【2026-08-14】360px以下では出さない。実測(320px)で SEAMロゴ 107〜213px に対し
          このピルが 191〜235px に来て、ロゴの「M」に22px重なっていた。
          縦積みにしてもこの幅では逃げ場がない。オンラインショップは下部タブバーの
