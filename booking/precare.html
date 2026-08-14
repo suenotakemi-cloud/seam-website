@@ -340,6 +340,21 @@ body.isdemo .foot{bottom:58px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
   .rise{opacity:1!important;transform:none!important}
   .finale .sweep{display:none}}
+
+/* ══ 解像度 ══ 足りない印ではなく、伸びしろの印にする
+   ★「未記入」ではなく「もっと良くできます」と見せる。
+     未記入は罪悪感になるが、解像度は欲になる。埋めたくなる＝
+     結果として担当の手に入ることが増える。お客様と店の利害がここで一致する。
+   ★必須だけで60%。それで施術は成立する＝足りない気持ちにさせない。 */
+.res{border:1px solid var(--line);border-radius:16px;padding:16px 17px 17px;margin:18px 0 6px;
+  background:rgba(255,255,255,.6);text-align:left}
+.resh{display:flex;align-items:baseline;gap:10px}
+.resh span{font-size:12px;letter-spacing:.1em;color:var(--sub)}
+.resh b{margin-left:auto;font-family:'Noto Serif JP',serif;font-size:24px;color:var(--clay);font-weight:500}
+.resbar{height:7px;border-radius:99px;background:#EAE3D8;overflow:hidden;margin:9px 0 0}
+.resbar i{display:block;height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#C9A88C,#A87456);transition:width .9s cubic-bezier(.2,.7,.2,1)}
+.resn{font-size:12.5px;line-height:1.8;color:var(--sub);margin:10px 0 0}
 </style>
 </head>
 <body>
@@ -483,6 +498,27 @@ let RESV=null, A={}, SEASON='mid', LAST=null, i=0, saving=null;
 let REC=null;                      // あなたの記録（回を重ねると育つ）
 let CH=1;                          // いまどの章か（1=あなたの90分／2=もっと細かく）
 let ALLOW={parts:['head','eye','neck','dec','arm','hand','calf','sole'],skip:[],mode:'full',spotMinutes:0};   // メニューで触る範囲が違う
+/* ══════════ 業種 ══════════
+   ★メニュー名から推測しない。サーバー（業種の台帳）が決めたものを使う。
+     hair＝ヘアサロン／spa＝ヘッドスパ／eye＝アイサロン／nail＝ネイルサロン
+   ★業種ごとに聞くことが違う。ここを1か所にしておかないと、
+     ヘアの予約にスパの問診が届く事故がまた起きる。 */
+let SERVICE='hair';
+/* ══════════ 安全に関わる答えの印 ══════════
+   ★お客様には「危険」と見せない。楽しい画面のまま裏でスタッフに届ける。
+     選択肢の3つめに {risk:true} を付けると、この印が付く。
+   ★聞くだけの欄は聞いていないのと同じ。印が付いたら必ずスタッフ画面に出す。 */
+const RISK={};              // {設問id: [選んだ危険な答え, ...]}
+function markRisk(qid,label,on){
+  if(!RISK[qid])RISK[qid]=[];
+  const i=RISK[qid].indexOf(label);
+  if(on&&i<0)RISK[qid].push(label);
+  if(!on&&i>=0)RISK[qid].splice(i,1);
+  if(!RISK[qid].length)delete RISK[qid];
+}
+const riskList=()=>Object.entries(RISK).map(([k,v])=>v.join('・')).filter(Boolean);
+
+
 
 /* ══ 強さのバー ══
    10段階の数字と、その位置を表すことば。保存するのは日本語の文字列
@@ -1447,6 +1483,7 @@ function demoClosed(){
     fetch(API+'/visit/record?t='+encodeURIComponent(T)).then(x=>x.json())
       .then(x=>{ if(x&&x.ok){REC=x.record;draw();} }).catch(()=>{});
     if(j.allow&&Array.isArray(j.allow.parts))ALLOW=j.allow;
+    if(j.service)SERVICE=j.service;      // hair / spa / eye / nail
     A=(j.answers&&Object.keys(j.answers).length)?j.answers:(LAST?JSON.parse(JSON.stringify(LAST)):{});
     SC=screens();
     foot.hidden=false; draw();
