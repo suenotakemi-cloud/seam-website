@@ -48,6 +48,13 @@ BRANDS = [
   dict(slug='milbon', logo='images/logo_milbon.webp', ja='ミルボン', en='MILBON', masters=['Global Milbon','Global Milbon Premium Position','Elujuda','Milbon'], maker='ミルボン',
        blurb='グローバルミルボン・エルジューダ・ジェミールフランなど サロン専売の総合メーカー<br>オージュアも同社のブランドです(専用ページあり)',
        cross=[('aujua','オージュア')], q='ミルボン 取扱店'),
+  # 2026-08-11 追加。オーナー「エルジューダはAmazonなどで検索一位・ドンキにも置いてある」
+  # SEAMは実際に19点フル展開している（マスタの brand='Elujuda'）のに専用ページが無く、
+  # 「エルジューダ 販売店」で圏外だった。ミルボンLPの中に埋もれていた状態。
+  dict(slug='elujuda', logo='images/logo_elujuda.jpg', ja='エルジューダ', en='Elujuda',
+       masters=['Elujuda'], maker='ミルボン',
+       blurb='ミルボンのアウトバストリートメント<br>髪の硬さ・柔らかさとなりたい質感からえらぶ設計で サロン専売のアウトバスとして定番のシリーズです',
+       cross=[('milbon','ミルボン'),('aujua','オージュア')], q='エルジューダ 販売店'),
 ]
 
 AREA_JA={'ginza':'銀座','omotesando':'表参道','sapporo':'札幌','osaka':'大阪',
@@ -94,7 +101,15 @@ def load_stores():
         t=open(p,encoding='utf-8').read()
         m=re.search(r'<script type="application/ld\+json">(.*?)</script>', t, re.S)
         g=json.loads(m.group(1))
-        node=[n for n in g['@graph'] if n.get('@type') in ('HairSalon','LocalBusiness','Store')][0]
+        # 【罠】@type は "HairSalon" のこともあれば ["HairSalon","Store"] の配列のこともある。
+        # 配列だと `in ('HairSalon',...)` が偽になり IndexError で落ちる（recruit の生成器でも同じ事故）。
+        def is_salon(n):
+            t = n.get('@type')
+            t = t if isinstance(t, list) else [t]
+            return any(x in ('HairSalon', 'LocalBusiness', 'Store') for x in t)
+        cands = [n for n in g['@graph'] if is_salon(n)]
+        assert cands, f'{p}: 店舗ノードが見つからない'
+        node = cands[0]
         a=node.get('address',{})
         addr=f"{a.get('addressRegion','')}{a.get('addressLocality','')}{a.get('streetAddress','')}"
         # 営業時間(あれば) と Instagram
