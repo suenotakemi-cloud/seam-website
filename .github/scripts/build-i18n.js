@@ -55,7 +55,7 @@ const PAGES = [
   { file: 'shiseido-professional-tokyo.html', url: '/shiseido-professional-tokyo' },
   { file: 'tsururincho-tokyo.html',           url: '/tsururincho-tokyo' },
 
-// 2026-08-11 ブランド×エリア96枚を多言語化（オーナー「台湾語中国語で一番に」）
+// 2026-08-14 ブランド×エリア96枚を多言語化（オーナー「台湾語中国語で一番に」）
 { file: 'aujua.html', url: '/aujua' },
 { file: 'aujua-ginza.html', url: '/aujua-ginza' },
 { file: 'aujua-omotesando.html', url: '/aujua-omotesando' },

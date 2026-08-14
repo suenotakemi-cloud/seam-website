@@ -1,4 +1,4 @@
-# SEAM: スパLPに「使う水」を書く（2026-08-11）
+# SEAM: スパLPに「使う水」を書く（2026-08-14）
 #
 # 【なぜ】Bingで26クエリ測ったら、ヘッドスパ系はすべて圏外だった。
 #   上位は headspa-zen / tokyo-ginza-spa / headconcierge / headspatokyo といった

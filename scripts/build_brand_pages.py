@@ -48,7 +48,7 @@ BRANDS = [
   dict(slug='milbon', logo='images/logo_milbon.webp', ja='ミルボン', en='MILBON', masters=['Global Milbon','Global Milbon Premium Position','Elujuda','Milbon'], maker='ミルボン',
        blurb='グローバルミルボン・エルジューダ・ジェミールフランなど サロン専売の総合メーカー<br>オージュアも同社のブランドです(専用ページあり)',
        cross=[('aujua','オージュア')], q='ミルボン 取扱店'),
-  # 2026-08-11 追加。オーナー「エルジューダはAmazonなどで検索一位・ドンキにも置いてある」
+  # 2026-08-14 追加。オーナー「エルジューダはAmazonなどで検索一位・ドンキにも置いてある」
   # SEAMは実際に19点フル展開している（マスタの brand='Elujuda'）のに専用ページが無く、
   # 「エルジューダ 販売店」で圏外だった。ミルボンLPの中に埋もれていた状態。
   dict(slug='elujuda', logo='images/logo_elujuda.jpg', ja='エルジューダ', en='Elujuda',

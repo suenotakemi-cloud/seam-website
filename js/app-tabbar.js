@@ -322,7 +322,7 @@
       '#seam-header-shop .shs-short{display:block;font-family:Inter,"Noto Sans JP",sans-serif;font-size:7.5px;letter-spacing:.1em;line-height:1;margin-top:1.5px;}',
       '#seam-header-shop .shs-full{display:none;}',
       '@media (max-width:639px){#seam-header-shop{flex-direction:column;gap:0;padding:4px 9px;min-height:38px !important;}}',
-      /* 【2026-08-11】360px以下では出さない。実測(320px)で SEAMロゴ 107〜213px に対し
+      /* 【2026-08-14】360px以下では出さない。実測(320px)で SEAMロゴ 107〜213px に対し
          このピルが 191〜235px に来て、ロゴの「M」に22px重なっていた。
          縦積みにしてもこの幅では逃げ場がない。オンラインショップは下部タブバーの
          「オンライン」から同じ場所へ行けるので、ここを消しても入口は失われない。 */
