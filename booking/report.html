@@ -105,6 +105,13 @@ h2:first-child{margin-top:2px}
   body{background:#fff}
   .mk{break-inside:avoid;border-color:#ccc}
 }
+
+/* ★端末で「視差効果を減らす」を選んでいる方には、動きを出さない。
+   目が回る・気分が悪くなる方がいらっしゃる。iPadの設定に従う。 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
 </style>
 </head>
 <body>
@@ -154,7 +161,7 @@ h2:first-child{margin-top:2px}
     <div id="body"></div>
   </div>
 </div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';

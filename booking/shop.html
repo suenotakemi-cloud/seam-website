@@ -74,7 +74,8 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .rfr{align-items:center!important}
 .rfr span i{display:block;font-size:11.5px;color:var(--sub);font-style:normal;margin-top:2px}
 .rfq{display:flex;align-items:center;gap:8px;margin:0 12px}
-.rfq button{font:inherit;width:38px;height:38px;border:1px solid var(--line);background:#fff;
+/* ★指で押す場所は44px以上（お金が動くボタンで押し間違えない大きさ） */
+.rfq button{font:inherit;width:44px;height:44px;border:1px solid var(--line);background:#fff;
   border-radius:3px;cursor:pointer;font-size:16px;line-height:1}
 .rfq b{min-width:1.6em;text-align:center;font-variant-numeric:tabular-nums}
 .rfr em{font-style:normal;font-variant-numeric:tabular-nums;min-width:5em;text-align:right}
@@ -117,7 +118,7 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .tfr:last-child{border-bottom:none}
 .tfr-n{font-size:13.5px;line-height:1.5}
 .tfr-g{display:flex;gap:4px}
-.tfk{font:inherit;font-size:12px;padding:6px 12px;min-height:38px;border:1px solid var(--line);
+.tfk{font:inherit;font-size:12px;padding:6px 12px;min-height:44px;border:1px solid var(--line);
   background:#fff;border-radius:3px;cursor:pointer;white-space:nowrap}
 .tfk.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .tfr-v{text-align:right;white-space:nowrap}
@@ -167,7 +168,7 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 .ci-n{flex:1;min-width:0;font-size:14px;color:var(--ink);line-height:1.6}
 .ci-b{font-size:11px;color:var(--sub);margin-top:3px;letter-spacing:.04em}
 .ci-q{display:flex;align-items:center;gap:2px;flex:none}
-.ci-q button{width:38px;height:38px;border:1px solid var(--line);background:#fff;border-radius:3px;
+.ci-q button{width:44px;height:44px;border:1px solid var(--line);background:#fff;border-radius:3px;
   font-size:17px;color:var(--ink);line-height:1}
 .ci-q span{min-width:34px;text-align:center;font-size:15px}
 .ci-p{flex:none;min-width:86px;text-align:right;font-family:'Cormorant Garamond',serif;
@@ -297,6 +298,13 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 #toast.ng{background:var(--ng)}
 .hidesink{position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0}
+
+/* ★端末で「視差効果を減らす」を選んでいる方には、動きを出さない。
+   目が回る・気分が悪くなる方がいらっしゃる。iPadの設定に従う。 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
 </style>
 </head>
 <body>
@@ -347,7 +355,7 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 </div>
 
 <input class="hidesink" id="sink" autocomplete="off" aria-hidden="true">
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 /* ══════════ 土台 ══════════ */

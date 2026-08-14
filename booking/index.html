@@ -1545,7 +1545,7 @@ body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:
 </div>
 
 <div id="receiptArea"></div>
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <script>
 /* =============== data =============== */
@@ -4794,7 +4794,14 @@ function printGift(code){
     .from{font-size:12px;color:#6f6552;margin-top:7px}
     .note{width:660px;font-size:9.5px;color:#8d8371;line-height:1.8;text-align:center}
     @media print{body{background:#fff}.tk{box-shadow:none}@page{margin:10mm}}
-  </style></head><body>
+  
+/* ★端末で「視差効果を減らす」を選んでいる方には、動きを出さない。
+   目が回る・気分が悪くなる方がいらっしゃる。iPadの設定に従う。 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
+</style></head><body>
   <div class="tk"><div class="in">
     <div class="en">S E A M　G I N Z A</div>
     <h1>GIFT TICKET</h1><div class="sub">ギフトチケット</div>

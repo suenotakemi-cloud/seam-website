@@ -177,6 +177,13 @@ body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
   font-feature-settings:'lnum' 1,'tnum' 1}
 .fade{animation:fi .5s ease}
 @keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ★端末で「視差効果を減らす」を選んでいる方には、動きを出さない。
+   目が回る・気分が悪くなる方がいらっしゃる。iPadの設定に従う。 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
 </style>
 </head>
 <body>
@@ -290,7 +297,7 @@ function fitList(){
 function refundDone(st){
   const r=st.refund;
   return `<div class="rdone fade">
-    <div class="rdone-t">ご返金の手続きが完了しました</div>
+    <div class="rdone-t">ご返金のお手続きを承りました</div>
     <div class="rdone-a">${yen(r.amount||0)}</div>
     <div class="rdone-w">${esc(r.when||'')}</div>
     <ul class="rdone-l">${(r.lines||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>

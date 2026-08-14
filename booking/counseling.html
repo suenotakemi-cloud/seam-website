@@ -96,11 +96,18 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
   body:not(.filled) .chip{border-color:#999;color:#333}
   @page{margin:12mm}
 }
+
+/* ★端末で「視差効果を減らす」を選んでいる方には、動きを出さない。
+   目が回る・気分が悪くなる方がいらっしゃる。iPadの設定に従う。 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;scroll-behavior:auto !important}
+}
 </style>
 </head>
 <body>
 <div class="wrap" id="app"></div>
-<div class="toast" id="toast"></div>
+<div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script src="cs-i18n.js"></script>
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';
