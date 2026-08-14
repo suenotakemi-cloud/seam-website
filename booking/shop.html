@@ -452,6 +452,18 @@ function lockedByAsk(){
    ★localStorage に置くのは、画面を閉じても・iPadが落ちても残すため。
      レジごとに分ける（1番レジの決済を2番レジが拾わないように）。
    ★30分より古いものは使わない（別のお客様のものを拾わないように）。 */
+/* ★同じ金額でも、中身が違えば別のお会計。
+     金額だけで繋ぐと、たまたま同額の次のお客様の会計に
+     前のお客様の決済を当ててしまう（2026-08-14 指摘）。
+     商品・個数・単価・値引き・免税まで含めた指紋で見分ける。 */
+function cartHash(){
+  const src=JSON.stringify({
+    items:CART.map(i=>[i.productId||i.name,i.qty,i.unit,lineNow(i)]).sort(),
+    mode:PMODE, tf:TAXFREE?1:0, total:cartTotal()
+  });
+  let h=5381; for(let i=0;i<src.length;i++)h=((h*33)^src.charCodeAt(i))>>>0;
+  return h.toString(36)+':'+src.length;
+}
 const paidKey=()=>'stb_held_pay:'+(REG||'');
 function paidHold(o){ try{ localStorage.setItem(paidKey(),JSON.stringify({...o,at:Date.now()})); }catch(e){} }
 function paidClear(){ try{ localStorage.removeItem(paidKey()); }catch(e){} }
@@ -812,12 +824,12 @@ async function doCheckout(){
            お客様から二重にいただいてしまう。
            通った決済は必ず控えておき、同じ金額なら端末を呼ばない。 */
       const held=paidHeld();
-      if(held && held.total===t){
+      if(held && held.total===t && held.hash===cartHash() && (held.shop||SHOP)===SHOP){
         payId=held.payId; BRAND=held.brand||''; FEE=+held.fee||0; PAY=held.pay||PAY;
         toast('先ほど通った決済が残っていました　二重にいただかず、この決済で会計します');
       }else{
         if(held && !confirm(
-          `先に ${yen(held.total)} の決済が通っています。\n`
+          `先に ${yen(held.total)} の決済が通っています${held.total===t?'（お会計の中身が変わっています）':''}。\n`
           +`いまのお会計は ${yen(t)} です。\n\n`
           +`OK　　＝ その決済は使わず、あらためて ${yen(t)} を決済します\n`
           +`　　　　（${yen(held.total)} はお客様へ返金が必要です）\n`
@@ -832,7 +844,7 @@ async function doCheckout(){
            ただし大きな区分が同じなら、こちらの細かい指定（交通系/iD/QUICPay）を残す。 */
         if(r.paidBy && r.paidBy!==payBucket(PAY)) PAY=r.paidBy;
         BRAND=r.cardBrand||''; FEE=+r.fee||0;            // ブランド別の手数料を出すため
-        paidHold({payId,brand:BRAND,fee:FEE,pay:PAY,total:t});
+        paidHold({payId,brand:BRAND,fee:FEE,pay:PAY,total:t,hash:cartHash(),shop:SHOP});
       }
     }
     /* ★お会計・免税の預り・在庫・ポイントを、サーバーで一度に確定する。
