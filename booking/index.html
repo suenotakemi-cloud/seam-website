@@ -5606,18 +5606,60 @@ function hasKarte(){
 const isMember = () => !!memberUser() && hasKarte();
 
 
-// URLパラメータからLINEログイン結果を受け取る（/line/login/result → リダイレクト後）
-(function(){
+/* ══════════ LINEでログインして戻ってきたとき ══════════
+   ★以前は LINE の userId が住所にそのまま載っていた。
+     その住所を作れば誰でも他人になりすませた（他人のお名前とご予約が出る）。
+     いまは使い捨ての鍵（lt）だけが載り、中身はサーバーが返す。
+   ★出るのは、ログインされたご本人のものだけ。
+     お名前・お電話・前回のメニューと担当・登録済みカードの下4桁・会員のポイント。
+   ★お電話番号だけで引ける口は作らない（番号を知っている人に見えてしまうため）。 */
+let MEDATA=null;
+(async function(){
   const p=new URLSearchParams(location.search);
-  const uid=p.get('line_user_id'), name=p.get('line_name'), pic=p.get('line_picture');
-  if(uid&&name){
-    lineProfile={userId:uid,displayName:name,pictureUrl:pic||''};
-    // 戻ってきた下書きにLINEを結び付ける（お知らせをLINEで受け取れるようにする）
-    try{ if(typeof bk==='object'&&bk){ bk.lineUserId=uid; if(!bk.name)bk.name=name; } }catch(e){}
-    // URLパラメータをきれいにする（履歴に残さない）
-    const clean=location.pathname+(location.hash||'');
-    history.replaceState(null,'',clean);
-  }
+  const lt=p.get('lt');
+  if(!lt)return;
+  // 住所はすぐきれいにする（履歴・共有に鍵を残さない）
+  history.replaceState(null,'',location.pathname+(location.hash||''));
+  try{
+    const r=await fetch(API_BASE+'/me?lt='+encodeURIComponent(lt));
+    const j=await r.json();
+    if(!r.ok||!j.ok)throw new Error(j.error||'読み込めませんでした');
+    MEDATA=j;
+    lineProfile={userId:j.line.userId,displayName:j.line.name,pictureUrl:j.line.pic||''};
+    applyMe(j);
+  }catch(e){ toast(e.message||'前のご登録を読み込めませんでした'); }
+})();
+
+/* 前に入れていただいた内容を、そのまま置いておく（打ち直していただかない） */
+function applyMe(j){
+  try{
+    if(typeof bk!=='object'||!bk)return;
+    bk.lineUserId=j.line.userId;
+    if(!bk.name)bk.name=j.name||j.line.name||'';
+    if(!bk.kana)bk.kana=j.kana||'';
+    if(!bk.phone)bk.phone=j.phone||'';
+    if(!bk.email)bk.email=j.email||'';
+    /* 前回と同じ内容にすぐ進めるように、覚えておく（押していただいたときだけ使う） */
+    bk._me=j;
+    try{ localStorage.setItem('seam_me',JSON.stringify({name:j.name,kana:j.kana,phone:j.phone,email:j.email,at:Date.now()})); }catch(e){}
+    if(typeof renderBook==='function')renderBook();
+    if(j.visits) toast(`おかえりなさいませ　${j.name||''}様（${j.visits}回目のご予約）`);
+  }catch(e){}
+}
+
+/* ══════════ この端末が覚えていること ══════════
+   ご自分のスマホなら、ログインしなくても前回の内容が出る。
+   サーバーには聞かない（誰にも見えない）。 */
+(function(){
+  try{
+    const v=JSON.parse(localStorage.getItem('seam_me')||'null');
+    if(!v||!v.name)return;
+    if(Date.now()-(v.at||0)>365*864e5)return;      // 1年より前のものは使わない
+    if(typeof bk==='object'&&bk){
+      if(!bk.name)bk.name=v.name; if(!bk.kana)bk.kana=v.kana||'';
+      if(!bk.phone)bk.phone=v.phone||''; if(!bk.email)bk.email=v.email||'';
+    }
+  }catch(e){}
 })();
 
 function loadScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=rej;document.head.appendChild(s)})}
