@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
   <title>SEAM — QR受付</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -755,8 +755,18 @@
     SHOP:    'seam_entrance_shop',
   };
   const LOG_KEY = 'seam_entrance_log';   // 入場ログ（この端末に保存・CSV書き出し可）
-  // 受付専用端末に資格情報を保存（「自動で復帰」ON時のみ）→ token失効時に黙って再ログインし名前表示を復活
-  const CRED = { ID: 'seam_entrance_cred_id', PW: 'seam_entrance_cred_pw' };
+  // 受付専用端末の「自動で復帰」。
+  // ★以前は、メールアドレスとパスワードをこの端末にそのまま置いていた。
+  //   iPadを持ち去られたら、そのままログインできてしまう。
+  //   いまは、サーバーが出した意味のない文字列（端末の鍵）だけを置く。
+  //   この文字列から合言葉は取り出せず、いつでも1本ずつ止められる。
+  const DEV = { ID: 'seam_entrance_device' };
+  // 古い端末に残っている合言葉は、開いた瞬間に消す（置きっぱなしを残さない）
+  const CRED_OLD = { ID: 'seam_entrance_cred_id', PW: 'seam_entrance_cred_pw' };
+  try {
+    localStorage.removeItem(CRED_OLD.ID);
+    localStorage.removeItem(CRED_OLD.PW);
+  } catch (e) {}
   const COOLDOWN = 5500;                 // 同じカードの二度読み防止(ms)
 
   // ── DOM ──
@@ -960,13 +970,20 @@
       sessionStorage.setItem(SK.SHOP,  j.shop_id || '');
       setReloginNeeded(false); // 新しいtokenを取得したので再ログイン表示を消す
 
-      // 「自動で復帰」ON時のみ、この端末に資格情報を保存（token失効時の自動再ログイン用）
+      // 「自動で復帰」ON時だけ、この端末の鍵をサーバーから1本もらう。
+      // ★合言葉はこの端末に残さない。もらうのは意味のない文字列だけ。
       if ($('input-remember') && $('input-remember').checked) {
-        localStorage.setItem(CRED.ID, mail);
-        localStorage.setItem(CRED.PW, pass);
+        try {
+          const dr = await fetch('/entrance/device', {
+            method: 'POST', headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ action: 'issue', mail, pass, label: 'iPad' }),
+          });
+          const dj = await dr.json().catch(() => ({}));
+          if (dj && dj.ok && dj.deviceId) localStorage.setItem(DEV.ID, dj.deviceId);
+          else localStorage.removeItem(DEV.ID);   // 出せないときは、黙って持たない
+        } catch (e) { localStorage.removeItem(DEV.ID); }
       } else {
-        localStorage.removeItem(CRED.ID);
-        localStorage.removeItem(CRED.PW);
+        localStorage.removeItem(DEV.ID);
       }
 
       // パスワードフィールドをクリア
@@ -988,8 +1005,15 @@
     sessionStorage.removeItem(SK.UID);
     sessionStorage.removeItem(SK.NAME);
     sessionStorage.removeItem(SK.SHOP);
-    localStorage.removeItem(CRED.ID);
-    localStorage.removeItem(CRED.PW);
+    // ★この端末の鍵は、サーバー側でも止める（消し忘れを残さない）
+    const dv = localStorage.getItem(DEV.ID);
+    if (dv) {
+      fetch('/entrance/device', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'revoke', deviceId: dv }),
+      }).catch(() => {});
+    }
+    localStorage.removeItem(DEV.ID);
     setReloginNeeded(false);
     inputMail.value = '';
     inputPass.value = '';
@@ -997,19 +1021,23 @@
     showLogin();
   });
 
-  // token失効時、保存済み資格情報で黙って再ログイン（受付を止めず名前表示を自動復活）
+  // token失効時、この端末の鍵で黙って入り直す（受付を止めず名前表示を自動復活）
+  // ★端末が持っているのは意味のない文字列だけ。合言葉はサーバーから出てこない。
   let reloginInFlight = null;
   async function silentRelogin() {
-    const id = localStorage.getItem(CRED.ID), pw = localStorage.getItem(CRED.PW);
-    if (!id || !pw) return false;
+    const dv = localStorage.getItem(DEV.ID);
+    if (!dv) return false;
     if (reloginInFlight) return reloginInFlight;   // 同時多発の再ログインを1本化（1アカ1セッション対策）
     reloginInFlight = (async () => {
       try {
-        const res = await fetch('/entrance/session', {
+        const res = await fetch('/entrance/device', {
           method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ mail: id, pass: pw }),
+          body: JSON.stringify({ action: 'renew', deviceId: dv }),
         });
         const j = await res.json();
+        if (j && !j.ok && (j.reason === 'revoked' || j.reason === 'invalid_credentials')) {
+          localStorage.removeItem(DEV.ID);        // 止められた鍵は持ち続けない
+        }
         if (j && j.ok && j.token) {
           sessionStorage.setItem(SK.TOKEN, j.token);
           sessionStorage.setItem(SK.UID,   j.uid);
