@@ -50,6 +50,25 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .qrwrap img{width:220px;height:220px;image-rendering:pixelated;border:1px solid var(--line);background:#fff;padding:10px}
 .qrnote{font-size:12px;color:var(--sub);margin-top:10px;letter-spacing:.04em}
 .qrload{font-size:12.5px;color:var(--sub);padding:40px 0}
+/* ── レジ締め ── */
+.clg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}
+.clg2{display:grid;grid-template-columns:1fr;gap:8px;margin:8px 0}
+.clg label,.clg2 label{display:block;font-size:11.5px;color:var(--sub);letter-spacing:.04em}
+.clg input,.clg2 input{display:block;width:100%;font:inherit;font-size:15px;padding:10px;margin-top:4px;
+  border:1px solid var(--line);border-radius:3px;min-height:44px;text-align:right;
+  font-variant-numeric:tabular-nums}
+.clg2 input{text-align:left}
+.clnote{font-size:11.5px;color:var(--sub);line-height:1.7;margin:2px 0 10px}
+.clmemo{width:100%;font:inherit;font-size:14px;padding:11px;border:1px solid var(--line);
+  border-radius:3px;min-height:76px;resize:vertical;margin-bottom:4px}
+.cllist{border:1px solid var(--line);border-radius:3px;max-height:200px;overflow:auto}
+.cll-r{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.cll-r:last-child{border-bottom:none}
+.cll-r span{color:var(--sub);font-variant-numeric:tabular-nums;flex:none}
+.cll-r em{flex:1;min-width:0;font-style:normal;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cll-r i{font-style:normal;font-size:11.5px;color:var(--sub);flex:none}
+.cll-r b{font-variant-numeric:tabular-nums;flex:none}
+@media(max-width:600px){.clg{grid-template-columns:1fr}}
 /* ── 返品 ── */
 .rfbox{max-width:640px;max-height:92vh;overflow:auto}
 .rfr{align-items:center!important}
@@ -1085,6 +1104,8 @@ function openDetail(id){
 /* ══════════ レジ締め ══════════ */
 /* 日本のお札と硬貨。上から順に数えていく並び */
 const DENOMS=[10000,5000,2000,1000,500,100,50,10,5,1];
+/* 封筒に手書きしていた分。締めるまで手元に持っておく */
+let CIN='', COUT='', CMEMO='';
 const denomKey=()=>'stb_denom:'+(REG||'');
 function denomLoad(){ try{ return JSON.parse(localStorage.getItem(denomKey())||'{}'); }catch(e){ return {}; } }
 function denomSave(o){ try{ localStorage.setItem(denomKey(),JSON.stringify(o)); }catch(e){} }
@@ -1123,13 +1144,20 @@ function closeHtml(){
   const flo=+(localStorage.getItem('stb_float:'+REG)||0);
   const tf=taxfreeOf(live);
   const dn=denomLoad();
+  /* ギフト券とポイントは「お金として受け取っていない分」。
+     サロンボードの締め画面と同じく、内訳として別に出す。 */
+  const gift=live.reduce((s,c)=>s+(+c.giftUsed||0),0);
+  const ptYen=live.reduce((s,c)=>s+(+c.ptYen||0),0);
   return `<div class="sr" style="padding:0 2px 12px"><span>${REG?REG+'番レジ':'このレジ'} の本日分</span><span>${live.length} 件</span></div>
+    <h3 class="cl-h">会計のレジ金</h3>
     <div class="stk">
       <div class="stk-r"><span>現金</span><b>${yen(cash)}</b></div>
-      <div class="stk-r"><span>カード</span><b>${yen(card)}</b></div>
+      <div class="stk-r"><span>クレジットカード</span><b>${yen(card)}</b></div>
       <div class="stk-r"><span>電子マネー</span><b>${yen(emo)}</b></div>
       <div class="stk-r"><span>QR決済</span><b>${yen(qr)}</b></div>
-      <div class="stk-r"><span>返金</span><b>−${yen(back)}</b></div>
+      ${gift?`<div class="stk-r"><span>ギフト券</span><b>${yen(gift)}</b></div>`:''}
+      ${ptYen?`<div class="stk-r"><span>ポイント</span><b>${yen(ptYen)}</b></div>`:''}
+      ${back?`<div class="stk-r"><span>返金</span><b>−${yen(back)}</b></div>`:''}
       <div class="stk-r here"><span>売上の合計</span><b>${yen(cash+card+emo+qr)}</b></div>
       <div class="stk-r"><span>件数</span><b>${live.length}</b></div>
     </div>
@@ -1148,10 +1176,16 @@ function closeHtml(){
     <button class="mini" id="tfCopy" style="margin-top:8px">免税申請のために書き出す</button>`:''}
     `:''}
 
+    <h3 class="cl-h">会計以外のレジ金</h3>
+    <div class="clg">
+      <label>釣銭準備金<input id="floIn" type="number" inputmode="numeric" value="${flo}"></label>
+      <label>レジ入金額<input id="inIn" type="number" inputmode="numeric" placeholder="0" value="${CIN||''}"></label>
+      <label>レジ出金額<input id="outIn" type="number" inputmode="numeric" placeholder="0" value="${COUT||''}"></label>
+    </div>
+    <div class="clnote">つり銭を足したら入金　小口や両替で出したら出金　封筒に書いていた分をここに入れてください</div>
+    <div class="stk"><div class="stk-r here"><span>金庫にあるはずの現金</span><b id="wantBox">${yen(flo+cash+(+CIN||0)-(+COUT||0))}</b></div></div>
+
     <h3 class="cl-h">現金を数える</h3>
-    <div class="srch"><span style="align-self:center;font-size:13px">釣銭準備金</span>
-      <input id="floIn" type="number" inputmode="numeric" value="${flo}"></div>
-    <div class="stk"><div class="stk-r here"><span>金庫にあるはずの現金</span><b>${yen(flo+cash)}</b></div></div>
     <div class="dn">
       ${DENOMS.map(d=>`<div class="dn-r">
         <span class="dn-d">${d>=1000?'￥'+d.toLocaleString():d+'円'}</span>
@@ -1162,10 +1196,29 @@ function closeHtml(){
     </div>
     <div class="stk"><div class="stk-r here"><span>数えた現金</span><b id="cntSum">${yen(denomTotal(dn))}</b></div></div>
     <div id="diffBox"></div>
+
+    <h3 class="cl-h">締めの記録</h3>
+    <div class="clg2">
+      <label>締めた人<input id="byIn" value="${esc((STAFF&&STAFF.name)||'')}" placeholder="お名前"></label>
+    </div>
+    <textarea id="memoIn" class="clmemo" placeholder="メモ（両替した・つり銭を足した・過不足の理由など）">${esc(CMEMO||'')}</textarea>
+
+    <h3 class="cl-h">この締めに入るお会計　${live.length}件</h3>
+    <div class="cllist">${live.length?live.map(c=>`<div class="cll-r">
+      <span>${esc(String(c.at).slice(11,16))}</span>
+      <em>${esc(c.customer||'（お名前なし）')}</em>
+      <i>${payLabel(c.method)}</i>
+      <b>${yen(net(c))}</b></div>`).join(''):'<div class="empty">まだありません</div>'}</div>
+
     <button class="go" id="closeGo" style="margin-top:16px">レジを締める</button>`;
 }
 function wireClose(){
   const f=$('floIn');
+  /* 入金・出金・メモ・締めた人。打つたびに覚えて、締めるときにまとめて送る */
+  const ii=$('inIn'), oo=$('outIn'), mm=$('memoIn');
+  if(ii)ii.oninput=()=>{CIN=ii.value;calc();};
+  if(oo)oo.oninput=()=>{COUT=oo.value;calc();};
+  if(mm)mm.oninput=()=>{CMEMO=mm.value;};
   const liveNow=()=>HISTORY.filter(x=>!x.voided&&x.date===jstDay(0)&&String(x.register||'')===String(REG||''));
   const cashNow=()=>liveNow().filter(x=>x.method==='cash').reduce((s,x)=>s+((x.total||0)-(x.refund||0)),0);
   /* 金種を入れるたびに、その段の金額と合計を出し直す。
@@ -1179,7 +1232,8 @@ function wireClose(){
       if(cell)cell.textContent=yen(d*(+n||0));
     });
     denomSave(o);
-    const got=denomTotal(o), want=(+f.value||0)+cashNow();
+    const got=denomTotal(o), want=(+f.value||0)+cashNow()+(+CIN||0)-(+COUT||0);
+    const wb=$('wantBox'); if(wb)wb.textContent=yen(want);
     const sum=$('cntSum'); if(sum)sum.textContent=yen(got);
     const any=DENOMS.some(d=>o[d]!==''&&o[d]!=null);
     const d2=got-want;
@@ -1217,12 +1271,19 @@ function wireClose(){
     const r=calc();
     if(!r.any){ toast('現金の枚数を入れてください',true); return; }
     const flo=+($('floIn').value||0);
-    try{ await post('/settlements',{date:jstDay(0),register:REG,shopId:SHOP,float:flo,cashSales:cash,expectedCash:flo+cash,
-        countedCash:r.got,diff:r.got-(flo+cash),card:card+emo,qr,total:cash+card+emo+qr,count:live.length,
+    try{ await post('/settlements',{date:jstDay(0),register:REG,shopId:SHOP,float:flo,cashSales:cash,expectedCash:flo+cash+(+CIN||0)-(+COUT||0),
+        countedCash:r.got,diff:r.got-(flo+cash+(+CIN||0)-(+COUT||0)),card:card,emoney:emo,qr,
+        total:cash+card+emo+qr,count:live.length,
+        cashIn:+CIN||0,cashOut:+COUT||0,
+        gift:live.reduce((s2,x)=>s2+(+x.giftUsed||0),0),
+        pointYen:live.reduce((s2,x)=>s2+(+x.ptYen||0),0),
+        refundTotal:HISTORY.filter(x=>x.date===jstDay(0)).reduce((s2,x)=>s2+(x.refund||0),0),
+        closedBy:($('byIn')&&$('byIn').value.trim())||((STAFF&&STAFF.name)||''),
         taxfreeTotal:tf.sales,taxfreeCut:tf.cut,taxfreeCount:tf.people,taxfreeQty:tf.qty,
         cashCounts:r.counts,
-        memo:'',closedAt:new Date().toISOString()});
-      toast('レジを締めました');
+        memo:CMEMO||'',closedAt:new Date().toISOString()});
+      CIN='';COUT='';CMEMO='';
+      toast('レジを締めました　事務の画面にも届きました');
     }catch(err){ toast(err.message||'締められませんでした',true); }};
 }
 
