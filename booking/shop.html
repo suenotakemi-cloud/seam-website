@@ -599,7 +599,7 @@ async function doCheckout(){
   /* ★値引きしてお売りするときは、先にお客様画面で押していただく。
        押していただけなければ会計しない。 */
   CONSENT=null;
-  if(PMODE!=='normal'){
+  if(needAsk()){
     btn.textContent='お客様画面をご確認ください…';
     const ok=await needConsent();
     if(!ok){ btn.disabled=false; btn.textContent='会計する'; render(); return; }
@@ -663,19 +663,29 @@ async function doCheckout(){
      だから「お買い上げの前に」お客様ご自身に押していただく。
      あとから説明しても遅い。押していただくまで会計に進まない。
    ★押した事実と、そのとき見せた文面を会計に残す。 */
-const ASK_NORETURN={kind:'noreturn',title:'ご確認ください',
-  lines:['メンバー価格・セール価格でお求めの商品は、ご返品・お取り替えをお受けしておりません',
-         '不良品の場合はこの限りではありません　その場でお声がけください',
-         '数量とお色をお確かめのうえ、お進みください'],
-  button:'確認しました'};
+/* ★免税・セール価格・メンバー価格は、返品交換をお受けしない。
+     どなたにも同じ画面を出す（常連の方だから省く、をしない）。
+     海外のお客様もいらっしゃるので日英併記。 */
+const askNoReturn=()=>{
+  const why=[TAXFREE?'免税':'', PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':'')].filter(Boolean).join('・');
+  return {kind:'noreturn',title:'ご確認ください　Please confirm',
+   lines:[`${why}でお求めの商品は、ご返品・お取り替えをお受けしておりません`,
+          `Items purchased with ${TAXFREE?'tax exemption':''}${TAXFREE&&PMODE!=='normal'?' / ':''}${PMODE!=='normal'?'a member or sale price':''} cannot be returned or exchanged.`,
+          '不良品の場合はこの限りではありません　その場でお声がけください',
+          'This does not apply to defective items. Please let us know right away.',
+          '数量とお色をお確かめのうえ、お進みください　Please check the quantity and shade before continuing.'],
+   button:'確認しました　Confirm'};
+};
+/* 同意が要るのは「免税」か「値引き」のとき */
+const needAsk=()=>TAXFREE||PMODE!=='normal';
 let ASKWAIT=null;
 async function needConsent(){
-  if(PMODE==='normal')return true;                  // 定価なら要らない
+  if(!needAsk())return true;                        // 定価で免税でもないなら要らない
   ASKWAIT={t:Date.now()};
   await post('/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG),{}).catch(()=>{});
   await fetch(API+'/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG),
     {method:'DELETE',headers:H()}).catch(()=>{});   // 前のお客様の同意を消しておく
-  pushAsk(ASK_NORETURN);
+  pushAsk(askNoReturn());
   const ok=await waitConsent(120);                  // 2分待つ
   pushAsk(null);
   ASKWAIT=null;
