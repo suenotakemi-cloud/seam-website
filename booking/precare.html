@@ -722,9 +722,165 @@ function openSheet(part){
 
 /* ── 画面の定義 ──
    ★聞き方はぜんぶ「どれにします？」。悩みや症状は聞かない。 */
+
+/* ══════════ アイサロン ══════════
+   seam-karte/precare-eye.html と salontown-booking/counsel.html から。
+   ★時間が崩れる3つ（他店のオフ・ハードレンズ・かぶれ歴）を先に伺う。
+     当日になって分かると、その日の全員の予約が後ろにずれる。 */
+function screensEye(){
+  const S=[];
+  S.push({id:'hello',render:()=>`
+    <p class="eyebrow">your eyes</p>
+    <h1>きょうの目もとを<br>すこしだけ 教えてください</h1>
+    <p class="lead">当日のご案内が スムーズになります<br>お答えいただかなくても 進めます</p>
+    ${langBar()}`, next:'はじめる', noskip:true});
+
+  S.push({id:'goal',title:'鏡を見た瞬間 どんな眼差しでいたいですか', ill:'ill_goal',
+    one:'goal', opts:[
+      ['素顔になじむ 自然な眼差し','ふだんの自分のまま きれいに'],
+      ['光が入る 印象的な眼差し','目もとがぱっと開いて見えます'],
+      ['やわらかく 上品な眼差し','やさしい印象に整えます'],
+      ['毎日きれいが続く眼差し','もちのよさを大事にします'],
+      ['一緒に見つけたい','お顔を見てご提案します']]});
+
+  S.push({id:'scene',title:'この目もとで 楽しみにしているのは', ill:'ill_mirror',
+    lead:'いくつでも選べます',
+    many:'scene',
+    chips:['毎日のメイク','お仕事・学校','お食事・デート','旅行・イベント・撮影','新しい季節の気分']});
+
+  S.push({id:'eyeNow',title:'いまの まつ毛の状態', ill:'ill_care',
+    lead:'オフの時間をご用意するために 伺っています',
+    one:'eyeNow', opts:[
+      ['何もしていない',''],
+      ['当店の施術が残っている',''],
+      ['他店のエクステが残っている','オフのお時間をご用意します'],
+      ['まつ毛パーマ・リフトが残っている','状態を見てご相談します'],
+      ['わからない','当日いっしょに確かめます']]});
+
+  S.push({id:'lens',title:'コンタクトレンズについて', ill:'ill_quiet',
+    lead:'施術前に外していただきます　ケースをお持ちください',
+    one:'lens', opts:[
+      ['使っていない',''],
+      ['ソフトレンズ','ケースをお持ちください'],
+      ['ハードレンズ','ケースをお持ちください'],
+      ['当日はメガネで行く','']],
+    risk:['ハードレンズ']});
+
+  S.push({id:'eyeReact',title:'接着剤やテープで 気になったことは', ill:'ill_care',
+    lead:'先に伺えると 当日ご用意を変えられます',
+    one:'eyeReact', opts:[
+      ['とくにない',''],
+      ['赤み・腫れ・かゆみ・しみる感じが出たことがある','低刺激のものをご用意します'],
+      ['わからない・はじめて','パッチテストをご相談します']],
+    risk:['赤み・腫れ・かゆみ・しみる感じが出たことがある','わからない・はじめて']});
+
+  S.push({id:'eyeCare',title:'きょう 目もとで気をつけてほしいところ', ill:'ill_care',
+    lead:'いくつでも選べます　「とくにない」も大切なお答えです',
+    many:'eyeCare',
+    chips:['とくにない','赤み・腫れ・かゆみ・痛みがある','ものもらいなど 気になる症状がある',
+           '目もとに傷や 肌あれがある','最近 目の手術や治療を受けた'],
+    risk:['赤み・腫れ・かゆみ・痛みがある','ものもらいなど 気になる症状がある',
+          '目もとに傷や 肌あれがある','最近 目の手術や治療を受けた'],
+    noneId:'とくにない'});
+
+  S.push({id:'talk',title:'施術中の過ごしかた', ill:'ill_quiet',
+    one:'talk', opts:[
+      ['静かに休みたい','目を閉じている時間です ごゆっくり'],
+      ['必要な確認だけ',''],
+      ['会話も楽しみたい',''],
+      ['その日の様子に合わせて','']]});
+
+  S.push({id:'confirm',confirm:true});
+  S.push({id:'done',done:true});
+  return S;
+}
+
+/* ══════════ ネイルサロン ══════════
+   seam-karte/precare-nail.html から。
+   ★ネイリストが当日いちばん知りたい4つ（オフの有無・爪の状態・
+     長さと形・持たせたい期間）を先に伺う。 */
+function screensNail(){
+  const S=[];
+  S.push({id:'hello',render:()=>`
+    <p class="eyebrow">your fingertips</p>
+    <h1>きょうの指先を<br>すこしだけ 教えてください</h1>
+    <p class="lead">当日のご案内が スムーズになります<br>お答えいただかなくても 進めます</p>
+    ${langBar()}`, next:'はじめる', noskip:true});
+
+  S.push({id:'goal',title:'きょうは 指先でどんな自分を楽しみたいですか', ill:'ill_goal',
+    one:'goal', opts:[
+      ['ジュエリーのように華やかに',''],
+      ['クリーンで洗練された印象に',''],
+      ['モードで印象的に',''],
+      ['色やアートを遊びたい',''],
+      ['素の手になじむ上品さで',''],
+      ['その日の装いから 一緒に選びたい','']]});
+
+  S.push({id:'nailNow',title:'いまの爪に ついているもの', ill:'ill_care',
+    lead:'オフのお時間をご用意するために 伺っています',
+    one:'nailNow', opts:[
+      ['何もついていない',''],
+      ['当店のジェル',''],
+      ['他店のソフトジェル','オフのお時間をご用意します'],
+      ['ハードジェル・スカルプ','オフに時間がかかります'],
+      ['わからない','当日いっしょに確かめます']]});
+
+  S.push({id:'nailLen',title:'長さのご希望', ill:'ill_mirror',
+    one:'nailLen', opts:[
+      ['いまの長さを活かす',''],
+      ['短く整える',''],
+      ['長さを足したい',''],
+      ['欠けや亀裂を 補強したい',''],
+      ['当日ご相談したい','']]});
+
+  S.push({id:'nailShape',title:'形のご希望', ill:'ill_mirror',
+    one:'nailShape', opts:[
+      ['丸みのある形',''],['四角を活かす形',''],
+      ['先を細く見せる形',''],['指と爪を見て 相談したい','']]});
+
+  S.push({id:'nailReact',title:'ジェルや接着剤で 気になったことは', ill:'ill_care',
+    lead:'先に伺えると 当日ご用意を変えられます',
+    one:'nailReact', opts:[
+      ['とくにない',''],
+      ['赤み・腫れ・かゆみ・水ぶくれが出たことがある','低刺激のものをご用意します'],
+      ['わからない・はじめて','']],
+    risk:['赤み・腫れ・かゆみ・水ぶくれが出たことがある','わからない・はじめて']});
+
+  S.push({id:'nailCare',title:'きょう 指先で気をつけてほしいところ', ill:'ill_care',
+    lead:'いくつでも選べます　「とくにない」も大切なお答えです',
+    many:'nailCare',
+    chips:['とくにない','傷・出血・強い痛みがある','赤み・腫れ・肌あれがある',
+           '変色や 剥がれが気になる','手足の手術や治療のあとである','体質のことで 配慮してほしい'],
+    risk:['傷・出血・強い痛みがある','赤み・腫れ・肌あれがある','変色や 剥がれが気になる',
+          '手足の手術や治療のあとである','体質のことで 配慮してほしい'],
+    noneId:'とくにない'});
+
+  S.push({id:'nailLife',title:'爪先を よくお使いになる場面', ill:'ill_prep',
+    lead:'もちのよさを 組み立てるために伺っています　いくつでも',
+    many:'nailLife',
+    chips:['水仕事が多い','パソコン・細かい手作業が多い','運動や楽器をする',
+           '職場や学校で 色や長さの決まりがある','大切な予定に合わせたい']});
+
+  S.push({id:'talk',title:'施術中の過ごしかた', ill:'ill_quiet',
+    one:'talk', opts:[
+      ['静かに過ごしたい',''],['必要な確認だけ',''],
+      ['会話も楽しみたい',''],['その日の様子に合わせて','']]});
+
+  S.push({id:'confirm',confirm:true});
+  S.push({id:'done',done:true});
+  return S;
+}
+
 function screens(){
   const r=RESV||{}, summer=SEASON==='summer';
   const S=[];
+  /* ══════════ 業種で分かれる ══════════
+     ★アイとネイルは、聞くことがまったく違う。
+       ヘア・スパの問診をそのまま出しても、答えようがない。
+     ★安全に関わる答えには {risk:true} 相当の印を付ける（riskOpts）。
+       お客様の画面では他の選択肢と同じ見た目。裏でスタッフに届く。 */
+  if(SERVICE==='eye') return screensEye();
+  if(SERVICE==='nail') return screensNail();
 
   if(OPEN) S.push({id:'course',render:()=>`
     <p class="eyebrow">design your spa</p>
@@ -1178,6 +1334,11 @@ function wire(s){
   app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
     A[s.one]=b.dataset.v;
     app.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===b));
+    /* 1択の設問でも、安全に関わる答えなら印を立てる（他の答えの印は落とす） */
+    if(Array.isArray(s.risk)){
+      s.risk.forEach(t=>markRisk(s.one,t,false));
+      if(s.risk.includes(A[s.one]))markRisk(s.one,A[s.one],true);
+    }
     grant(s.one,b); save(); sync();
   });
   app.querySelectorAll('.chips').forEach(box=>{
@@ -1188,14 +1349,21 @@ function wire(s){
       else{ const k=g2||s.many; A[k]=A[k]||[];
         A[k]=A[k].includes(c)?A[k].filter(x=>x!==c):A[k].concat([c]);
         /* ★「特にありません」と中身は同時に立たない。
-             両方立っていると、どちらを信じればいいのか現場で迷う */
-        if(k==='allergy'){
-          if(c==='特にありません'&&A[k].includes(c))A[k]=['特にありません'];
-          else if(c!=='特にありません')A[k]=A[k].filter(x=>x!=='特にありません');
+             両方立っていると、どちらを信じればいいのか現場で迷う。
+           ★どの設問でも効くようにする（アイ・ネイルの「とくにない」も同じ）。 */
+        const NONE=(k==='allergy')?'特にありません':(s.noneId||'');
+        if(NONE){
+          if(c===NONE&&A[k].includes(c))A[k]=[NONE];
+          else if(c!==NONE)A[k]=A[k].filter(x=>x!==NONE);
           box.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',A[k].includes(x.dataset.c)));
-          grant('allergy',box);
-          SC=screens();                       // 香りの選択肢を組み直す
-        }else b.classList.toggle('on',A[k].includes(c)); }
+        }else b.classList.toggle('on',A[k].includes(c));
+        if(k==='allergy'){ grant('allergy',box); SC=screens(); }   // 香りの選択肢を組み直す
+        /* ★安全に関わる答えの印。お客様の画面は変えず、裏でスタッフに届ける。
+             ★いま選ばれているものだけを印にする。
+               「とくにない」に切り替えたのに前の印が残ると、
+               答えと印が食い違い、現場がどちらを信じるか迷う。 */
+        if(Array.isArray(s.risk))
+          s.risk.forEach(t=>markRisk(k,t,(A[k]||[]).includes(t))); }
       save(); sync();
     });
   });
