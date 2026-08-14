@@ -132,6 +132,7 @@ h2:first-child{margin-top:2px}
       <button data-t="payroll">給与</button>
       <button data-t="pay">支払い</button>
       <button data-t="cash">現金</button>
+      <button data-t="close">レジ締め</button>
       <button data-t="acc">経理</button>
       <button data-t="tf">免税</button>
       <button data-t="rev">口コミ</button>
@@ -203,6 +204,41 @@ async function drawBoardWarn(){
 }
 drawBoardWarn();
 setInterval(drawBoardWarn, 5*60*1000);
+
+/* ══════════ レジ締め ══════════
+   ★封筒に手書きしていた内容が、そのままここに届く。
+     過不足が出た日は赤で出す。そこだけ見ればよい状態にする。 */
+let CLS=null;
+function closeHtml(){
+  const rows=(CLS&&(CLS.settlements||CLS.rows))||[];
+  if(!rows.length)return '<div class="empty">この期間に締めた記録がありません</div>';
+  const ng=rows.filter(r=>(r.diff||0)!==0);
+  const money=n=>yen(n||0);
+  return `${ng.length?`<div style="border:2px solid #c0392b;background:#fdf0ee;border-radius:12px;
+      padding:14px 16px;margin-bottom:16px">
+      <div style="font-weight:700;color:#c0392b;font-size:15px;margin-bottom:6px">過不足が出た日が ${ng.length}日あります</div>
+      <div style="font-size:13.5px;color:#6b4a45">${ng.map(r=>`${r.date}　${r.register||''}番　${r.diff>0?'多い +':'足りない '}${money(r.diff)}`).join('<br>')}</div>
+    </div>`:''}
+    <div class="tablewrap"><table>
+      <tr><th>日付</th><th>レジ</th><th class="num">現金</th><th class="num">カード</th><th class="num">電子マネー</th>
+          <th class="num">QR</th><th class="num">売上計</th><th class="num">準備金</th><th class="num">入金</th><th class="num">出金</th>
+          <th class="num">あるはず</th><th class="num">数えた</th><th class="num">過不足</th><th>締めた人</th><th>メモ</th></tr>
+      ${rows.map(r=>`<tr>
+        <td class="num">${esc(r.date)}</td><td>${esc(r.register||'')}</td>
+        <td class="num">${money(r.cashSales)}</td><td class="num">${money(r.card)}</td>
+        <td class="num">${money(r.emoney)}</td><td class="num">${money(r.qr)}</td>
+        <td class="num"><b>${money(r.total)}</b></td>
+        <td class="num">${money(r.float)}</td><td class="num">${r.cashIn?money(r.cashIn):'—'}</td>
+        <td class="num">${r.cashOut?'−'+money(r.cashOut):'—'}</td>
+        <td class="num">${money(r.expectedCash)}</td><td class="num">${money(r.countedCash)}</td>
+        <td class="num ${r.diff?(r.diff>0?'up':'down'):''}">${r.diff?(r.diff>0?'+':'')+money(r.diff):'0'}</td>
+        <td>${esc(r.closedBy||'')}</td>
+        <td style="font-size:12.5px;color:var(--sub);max-width:220px">${esc(r.memo||'')}</td>
+      </tr>`).join('')}
+    </table></div>
+    <div class="note" style="margin-top:14px">封筒に書いていた内容は、これで全部ここに残ります
+      <b>過不足が出た日は、メモに理由を書いてもらってください</b>　あとから理由が分からないものだけが問題になります</div>`;
+}
 
 /* ── 期間の選び方。よく使う幅はボタン、細かいときは日付で ── */
 /* 指定されたタブに、見た目もそろえる */
@@ -1568,6 +1604,8 @@ async function load(){
       const b=$('body').querySelector('#jr-csv');
       if(b)b.onclick=()=>csvDL(`仕訳_${JR.from}_${JR.to}.csv`,[JR.列].concat(JR.行));
     }
+    else if(TAB==='close'){ CLS=await get(`/settlements?from=${FROM}&to=${TO}`).catch(()=>({settlements:[]}));
+      $('body').innerHTML=closeHtml(); }
     else if(TAB==='cash'){ CB=await get(`/cashbook?from=${FROM}&to=${TO}`);
       $('body').innerHTML=cashHtml();
       const add=$('body').querySelector('#cb-add');
