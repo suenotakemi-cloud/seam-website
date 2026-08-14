@@ -181,6 +181,12 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 .sr.big{font-size:16px;color:var(--ink);border-top:1px solid var(--line);margin-top:8px;padding-top:12px}
 .sr.big b{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600}
 .sr.cut{color:var(--clay)}
+/* ── 通った決済が残っているときの帯。見落とすと二重請求になるので赤く出す ── */
+.heldpay{border:1px solid var(--clay);border-radius:3px;padding:10px 12px;margin:12px 0 0;
+  background:#fff;font-size:12px;line-height:1.8;color:var(--clay)}
+.heldpay button{display:block;width:100%;margin-top:8px;font:inherit;font-size:12px;
+  padding:9px;border:1px solid var(--line);background:#fff;border-radius:3px;
+  color:var(--sub);cursor:pointer}
 /* ── 現金のお預かりとおつり ──
    おつりは離れた場所に小さく出さない。数える人の目の高さに、いちばん大きく出す。 */
 .cashbox{border:1px solid var(--line);border-radius:3px;padding:11px 12px;margin:10px 0 0;background:#fff}
@@ -399,6 +405,25 @@ const TRANSIT_WARN={
 /* 集計はこれまでどおり4つに寄せる（レジ締めや売上の合計を変えないため）。
    実際に何で払われたかは cardBrand に残る（交通系IC / iD / QUICPay / VISA …）。 */
 const payBucket=k=>({transit:'emoney',id:'emoney',quickpay:'emoney'}[k]||k);
+
+/* ══════════ 通ってしまった決済を落とさない ══════════
+   ★Squareの端末で決済が通ったあと、会計をD1に保存する。
+     その保存が失敗しても、お客様のお金はもう動いている。
+     控えておかないと「押し直す＝もう一度いただく」になる。
+   ★localStorage に置くのは、画面を閉じても・iPadが落ちても残すため。
+     レジごとに分ける（1番レジの決済を2番レジが拾わないように）。
+   ★30分より古いものは使わない（別のお客様のものを拾わないように）。 */
+const paidKey=()=>'stb_held_pay:'+(REG||'');
+function paidHold(o){ try{ localStorage.setItem(paidKey(),JSON.stringify({...o,at:Date.now()})); }catch(e){} }
+function paidClear(){ try{ localStorage.removeItem(paidKey()); }catch(e){} }
+function paidHeld(){
+  try{
+    const j=JSON.parse(localStorage.getItem(paidKey())||'null');
+    if(!j||!j.payId)return null;
+    if(Date.now()-(j.at||0)>30*60*1000){ paidClear(); return null; }
+    return j;
+  }catch(e){ return null; }
+}
 
 /* ══════════ 現金のお預かりとおつり ══════════
    ★レジでいちばん手が止まるのが、おつりの暗算と札の数え方。
@@ -644,6 +669,10 @@ function renderSum(){
        ? `<div class="sr"><span>免税ぶん（あとでお返しします）</span><b>${yen(taxAmt())}</b></div>`
        : `<div class="sr cut"><span>免税ぶん（申請は別）</span><b>−${yen(taxCut())}</b></div>`):''}
      <div class="sr big"><span>合計</span><b>${yen(t)}</b></div>
+     ${(()=>{const h=paidHeld(); return h?`<div class="heldpay">
+       通った決済が残っています　${yen(h.total)}　${esc(payLabel(h.pay))}<br>
+       このまま会計すると、この決済を使います（二重にはいただきません）
+       <button id="heldX">この決済を切り離す</button></div>`:'';})()}
      <div class="pay">${PAYS.map(([v,l])=>
        `<button data-p="${v}" class="${PAY===v?'on':''}">${l}</button>`).join('')}</div>
      ${PAY!=='cash'?`<div class="sr" style="color:${PAY==='transit'?'var(--clay)':'var(--sub)'};font-size:12px;padding:6px 2px 0">
@@ -676,6 +705,9 @@ function renderSum(){
      ${CART.length?`<button class="mini" id="clr">明細を消す</button>`:''}`;
   $('sum').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{PAY=b.dataset.p;GOT=0;render();});
   {const b=$('askpay'); if(b)b.onclick=askPayMethod;}
+  {const x=$('heldX'); if(x)x.onclick=()=>{
+    if(!confirm('この決済を会計から切り離します。\n\nお客様のお支払いは、Squareでは通ったままです。\n返金が必要かどうか、Squareの履歴で必ず確かめてください。'))return;
+    paidClear(); toast('切り離しました　Squareの履歴を確かめてください',true); render();};}
   /* 現金：押すだけでお預かりが入る。手入力もできる。 */
   $('sum').querySelectorAll('[data-cq]').forEach(b=>b.onclick=()=>{GOT=+b.dataset.cq;render();});
   {const ci=$('cashin');
@@ -727,14 +759,33 @@ async function doCheckout(){
   let payId='', BRAND='', FEE=0;
   try{
     if(PAY!=='cash'){                       // 現金以外はSquareの端末で通す
-      btn.textContent='端末をご案内中…';
-      const r=await payByTerminal(t,PAY);
-      if(r===null||r===undefined){ btn.disabled=false;btn.textContent='会計する'; return; }
-      payId=r.paymentId||'';
-      /* 端末で実際に選ばれた方法を優先する（お客様が別のものを出されることがある）。
-         ただし大きな区分が同じなら、こちらの細かい指定（交通系/iD/QUICPay）を残す。 */
-      if(r.paidBy && r.paidBy!==payBucket(PAY)) PAY=r.paidBy;
-      BRAND=r.cardBrand||''; FEE=+r.fee||0;              // ブランド別の手数料を出すため
+      /* ★端末で決済が通ったあと、会計の保存が失敗することがある（回線が切れた等）。
+           そのまま「会計する」を押し直すと、端末にもう一度お金が流れて
+           お客様から二重にいただいてしまう。
+           通った決済は必ず控えておき、同じ金額なら端末を呼ばない。 */
+      const held=paidHeld();
+      if(held && held.total===t){
+        payId=held.payId; BRAND=held.brand||''; FEE=+held.fee||0; PAY=held.pay||PAY;
+        toast('先ほど通った決済が残っていました　二重にいただかず、この決済で会計します');
+      }else{
+        if(held && !confirm(
+          `先に ${yen(held.total)} の決済が通っています。\n`
+          +`いまのお会計は ${yen(t)} です。\n\n`
+          +`OK　　＝ その決済は使わず、あらためて ${yen(t)} を決済します\n`
+          +`　　　　（${yen(held.total)} はお客様へ返金が必要です）\n`
+          +`キャンセル ＝ いったん止めて、履歴で確かめます`)){
+          btn.disabled=false; btn.textContent='会計する'; return; }
+        if(held)paidClear();
+        btn.textContent='端末をご案内中…';
+        const r=await payByTerminal(t,PAY);
+        if(r===null||r===undefined){ btn.disabled=false;btn.textContent='会計する'; return; }
+        payId=r.paymentId||'';
+        /* 端末で実際に選ばれた方法を優先する（お客様が別のものを出されることがある）。
+           ただし大きな区分が同じなら、こちらの細かい指定（交通系/iD/QUICPay）を残す。 */
+        if(r.paidBy && r.paidBy!==payBucket(PAY)) PAY=r.paidBy;
+        BRAND=r.cardBrand||''; FEE=+r.fee||0;            // ブランド別の手数料を出すため
+        paidHold({payId,brand:BRAND,fee:FEE,pay:PAY,total:t});
+      }
     }
     await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
       mode:'shop',register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
@@ -774,6 +825,7 @@ async function doCheckout(){
     /* ★免税のときは、申請の入力が終わるまで次の会計に進ませない。
        レジだけ先に進むと、申請を忘れたまま次のお客様に移ってしまう。 */
     if(TAXFREE&&useFeat('taxfree')) openTfSheet(CART.slice(), id);
+    paidClear();          // 会計が残ったので、決済の控えはもう要らない
     /* おつりの表示は、お渡ししたあとに消す。次のお客様に持ち越さない。 */
     const gotWas=GOT, chg=GOT>t?GOT-t:0;
     CART=[]; TAXFREE=false; TFINFO={name:'',country:'',last4:''};
@@ -1052,8 +1104,15 @@ function openRefund(c){
     const items=(RF.co.retailItems||[]);
     const chosen=items.map((it,ix)=>({...it,back:RF.pick[ix]||0})).filter(x=>x.back>0);
     const unit=it=>(+it.unit||Math.round((+it.price||0)/Math.max(1,+it.qty||1)));
-    const amt=chosen.reduce((s,x)=>s+unit(x)*x.back,0);
     const left=Math.max(0,(RF.co.total||0)-(RF.co.refund||0));
+    /* ★明細は定価で持っているが、実際にいただいたのは値引き後の total。
+         定価を足して返そうとすると必ず超過し、返品ボタンが押せなくなっていた。
+         メンバー価格・セール・免税で売った商品が1点も返品できず、
+         「不良品の場合はこの限りではありません」というお約束を守れなかった。
+       ★返品は全額だけなので、お返しする額は「まだお返ししていない額」そのものが正しい。 */
+    const listSum=items.reduce((s,it)=>s+unit(it)*Math.max(1,+it.qty||1),0);
+    const cut=Math.max(0,listSum-(RF.co.total||0));
+    const amt=full?left:chosen.reduce((s,x)=>s+unit(x)*x.back,0);
     const over=amt>left;
     const n=RF_NOTE[rfKey(RF.co.method)];
     d.innerHTML=`<div class="dlg-b rfbox">
@@ -1069,7 +1128,10 @@ function openRefund(c){
       </div>
       ${full?`<div class="rffull">${RF_FULLONLY}</div>`
         :`<div class="rfall"><button id="rfAll">ぜんぶ返す</button><button id="rfNone">えらび直す</button></div>`}
-      <div class="stk"><div class="stk-r here"><span>お返しする金額</span><b>${yen(amt)}</b></div>
+      <div class="stk">
+        ${cut>0?`<div class="stk-r"><span>定価の合計</span><b>${yen(listSum)}</b></div>
+          <div class="stk-r"><span>${esc(RF.co.discountLabel||'値引き')}</span><b>−${yen(cut)}</b></div>`:''}
+        <div class="stk-r here"><span>お返しする金額</span><b>${yen(amt)}</b></div>
         ${over?`<div class="stk-r"><span style="color:#a03a24">返せるのは ${yen(left)} までです</span><b></b></div>`:''}</div>
 
       <div class="rfsay">お客様にはこのように　「${esc(RF_SAY[rfKey(RF.co.method)])}」</div>
@@ -1479,7 +1541,11 @@ function wireClose(){
         cashIn:+CIN||0,cashOut:+COUT||0,
         gift:live.reduce((s2,x)=>s2+(+x.giftUsed||0),0),
         pointYen:live.reduce((s2,x)=>s2+(+x.ptYen||0),0),
-        refundTotal:HISTORY.filter(x=>x.date===jstDay(0)).reduce((s2,x)=>s2+(x.refund||0),0),
+        /* ★このレジの分だけ数える。店全体で数えると、3台締めた日に
+             同じ返金が3回計上される（お金は合うが、事務の数字が3倍になる）。
+             取消済み（voided）も返金は起きているので、ここでは外さない。 */
+        refundTotal:HISTORY.filter(x=>x.date===jstDay(0)&&String(x.register||'')===String(REG||''))
+          .reduce((s2,x)=>s2+(x.refund||0),0),
         closedBy:($('byIn')&&$('byIn').value.trim())||((STAFF&&STAFF.name)||''),
         taxfreeTotal:tf.sales,taxfreeCut:tf.cut,taxfreeCount:tf.people,taxfreeQty:tf.qty,
         cashCounts:r.counts,

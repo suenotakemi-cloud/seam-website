@@ -2411,7 +2411,23 @@ function addReservation(o){
         if (typeof bk !== 'undefined' && bk.step === 5) { bk.step = 2; bk.start = null; bk._committing = false; bk._deposit = 0; renderBook(); }
       } catch (e) {}
     }
-  }).catch(() => {});
+    /* ★サロンボードに入っていない＝その枠は空席のまま見える。
+         お客様には出さない（ご予約は取れているので）。スタッフにだけ、必ず出す。 */
+    if (res && res.syncNg && ADMIN_TOKEN)
+      toast('⚠️ サロンボードに入っていません　手で入れてください（この枠に別の予約が入ります）', true);
+  }).catch(() => {
+    /* ★通信が切れたとき。サーバーが受け取ったかどうか、こちらには分からない。
+         黙って完了にすると「予約したのに店に無い」が起きる。
+         台帳には残したまま、確かめる必要があることを必ず出す。 */
+    const idx = db.reservations.findIndex(r => r.id === o.id);
+    if (idx >= 0) {
+      db.reservations[idx].note = ((db.reservations[idx].note || '') + ' / ★送信できていません（要確認）').trim();
+      save(); refreshAll();
+    }
+    toast(ADMIN_TOKEN
+      ? '⚠️ 通信が切れて、ご予約を送れませんでした　サロンボードで必ず確かめてください'
+      : '通信が不安定です　ご予約が入っているか、お手数ですがお電話でお確かめください', true);
+  });
   return{ok:true,resv:o};
 }
 function removeReservation(id){
@@ -4092,8 +4108,34 @@ async function runTerminalPayment(){
   rec.method=payBucket(kind);
   const box=document.getElementById('checkoutmodal');
   box.innerHTML=`<div class="term-pay"><div class="tp-amt">¥${rec.total.toLocaleString()}</div><div class="tp-spin"></div><div class="tp-msg" id="tp-msg">端末に送信しています…</div><div class="row" style="margin-top:18px"><button class="btn ghost" style="flex:1" id="tp-cancel">キャンセル</button><button class="btn pay" id="tp-manual">端末なしで記録</button></div></div>`;
-  box.querySelector('#tp-manual').onclick=()=>{if(_termCid)API.termCancel(_termCid);if(_termPoll)clearInterval(_termPoll);_termCid=null;coFinish(rec);};
-  box.querySelector('#tp-cancel').onclick=()=>{if(_termCid)API.termCancel(_termCid);if(_termPoll)clearInterval(_termPoll);_termCid=null;renderCheckout();};
+  /* ★端末の取り消しを待たずに手で記録すると、
+       「Squareでは決済済み・SEAMでは手入力」という二重の状態になる。
+       取り消しが通ったこと（またはもう決済されていないこと）を確かめてから進む。 */
+  const stopTerm=async(who)=>{
+    if(_termPoll){clearInterval(_termPoll);_termPoll=null;}
+    if(!_termCid)return {ok:true};
+    const msg=document.getElementById('tp-msg'); if(msg)msg.textContent='端末を取り消しています…';
+    const r=await API.termCancel(_termCid);
+    /* 取り消せなかった＝すでにお支払いが通っている可能性がある */
+    if(r&&r.error){
+      const st=await API.termStatus(_termCid);
+      if(st&&st.status==='COMPLETED'){
+        rec.squarePaymentId=(st.paymentIds||[])[0]||'';
+        if(st.paidBy)rec.method=st.paidBy;
+        rec.cardBrand=st.cardBrand||''; rec.fee=+st.fee||0;
+        _termCid=null;
+        toast('端末ではお支払いが完了していました　その決済で記録します');
+        coFinish(rec); return {ok:false,done:true};
+      }
+      if(!confirm('端末の取り消しが確認できませんでした。\n\nSquareで決済が通っている可能性があります。\nそれでも '+who+' を続けますか。'))
+        return {ok:false};
+    }
+    _termCid=null; return {ok:true};
+  };
+  box.querySelector('#tp-manual').onclick=async()=>{
+    const r=await stopTerm('端末なしで記録'); if(!r.ok)return; coFinish(rec);};
+  box.querySelector('#tp-cancel').onclick=async()=>{
+    const r=await stopTerm('キャンセル'); if(!r.ok)return; renderCheckout();};
   /* ★Squareにも「何が売れたか」「誰が担当したか」を渡す。
      渡さないと、Squareの商品別売上・スタッフ別売上にこちらのぶんが出ない。
      明細の合計と請求額が1円でも違うとSquareが弾くので、
