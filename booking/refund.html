@@ -87,13 +87,13 @@ const NOTE={
              'When it appears on your statement depends on your card issuer.',
              'No fee is charged to you for this refund.']},
  /* 交通系IC … Squareでは返金できないため、現金でお返ししている */
- transit:{ja:['Suica・PASMO などの交通系ICは、Square の仕組み上、カードへお戻しできません',
-              'そのため、この場で現金にてお返ししました',
-              'カードの残高は増えません',
+ transit:{ja:['交通系ICでのお支払いは、ご返品・ご交換をお受けしておりません',
+              '商品に不具合があったため、この場で現金にてお返ししました',
+              'カードへお戻しする仕組みがないためです　カードの残高は増えません',
               'ご返金に手数料はかかりません'],
-          en:['Transit IC cards (Suica, PASMO, etc.) cannot be refunded through the system.',
-              'We refunded the full amount in cash, on the spot.',
-              'The balance on your card is not increased.',
+          en:['Purchases paid with a transit IC card are not returnable or exchangeable.',
+              'As the item was faulty, we refunded the full amount in cash, on the spot.',
+              'The card itself cannot be credited back, so its balance is unchanged.',
               'No fee is charged to you for this refund.']},
  /* iD・QUICPay … 返金できるが全額のみ */
  felica:{ja:['店頭でのお手続きは完了しています',
@@ -118,7 +118,7 @@ const NOTE={
    それでも「なぜ現金なのか」を書けるように、kind を優先して見る。 */
 const key=(m,k)=>k||(m==='cash'?'cash':(m==='emoney'?'emoney':(m==='qr'?'qr':'card')));
 const LABEL={cash:['現金','Cash'],card:['クレジットカード','Credit card'],
- emoney:['電子マネー','Electronic money'],transit:['交通系IC（現金でご返金）','Transit IC — refunded in cash'],
+ emoney:['電子マネー','Electronic money'],transit:['交通系IC（不具合のため現金でご返金）','Transit IC — refunded in cash (faulty item)'],
  felica:['iD・QUICPay','iD / QUICPay'],qr:['QRコード決済','QR code payment']};
 
 (async()=>{

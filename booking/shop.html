@@ -404,13 +404,18 @@ const PAY_NOTE={card:'Apple Pay・Google Pay のカードもこちら',
      出典 https://squareup.com/help/jp/ja/article/5060-refunds-faq */
 const TRANSIT_WARN={
   title:'交通系ICでお支払いの場合　Paying with a transit IC card',
-  /* ★短く。読み切れない量を出すと、読まずに押されてしまう。
-       「他の方法も選べます」はボタンが語るので、文では言わない。 */
-  lines:['交通系IC（Suica・PASMO など）でお支払いの場合、ご返品・ご返金をお受けできません',
-         'Purchases paid with a transit IC card cannot be returned or refunded.',
-         'カードへお戻しする仕組みがないためです　不良品の場合は、この限りではありません',
-         'This is because the card cannot be credited back. Defective items are an exception.'],
-  ok:'了解しました　Understood', back:'別の方法にする　Choose another'};
+  /* ★交通系は、ご返品・ご交換を一切お受けしない（オーナー判断 2026-08-14）。
+       ご了承いただいたうえでお支払いいただくので、ボタンは「承諾」だけにする。
+       ★不良品への対応だけは残す。法律上（契約不適合責任）、
+         あらかじめ全部を無しにすることはできないため。
+       ★短く。読み切れない量を出すと、読まずに押されてしまう。 */
+  lines:['交通系IC（Suica・PASMO など）でお支払いの場合、ご返品・ご交換を一切お受けできません',
+         'Purchases paid with a transit IC card cannot be returned or exchanged.',
+         'カードへお戻しする仕組みがないためです',
+         'This is because the card cannot be credited back.',
+         '商品に不具合があった場合のご対応は、この限りではありません',
+         'This does not apply if the item itself is faulty.'],
+  ok:'承諾してお支払いに進む　I agree'};
 /* 集計はこれまでどおり4つに寄せる（レジ締めや売上の合計を変えないため）。
    実際に何で払われたかは cardBrand に残る（交通系IC / iD / QUICPay / VISA …）。 */
 const payBucket=k=>({transit:'emoney',id:'emoney',quickpay:'emoney'}[k]||k);
@@ -742,7 +747,9 @@ function renderSum(){
      <button class="go" id="go" ${(CART.length&&!TF_LOCK)?'':'disabled'}>会計する</button>
      ${CART.length?`<button class="mini" id="clr">明細を消す</button>`:''}`;
   $('sum').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{PAY=b.dataset.p;GOT=0;render();});
-  {const b=$('askpay'); if(b)b.onclick=askPayMethod;}
+  {const b=$('askpay'); if(b)b.onclick=()=>{
+    if(b.dataset.stop){ PICKWAIT=null; toast('お客様の画面を戻しました'); return; }   // 待っている最中なら止める
+    askPayMethod(); };}
   {const x=$('heldX'); if(x)x.onclick=()=>{
     if(!confirm('この決済を会計から切り離します。\n\nお客様のお支払いは、Squareでは通ったままです。\n返金が必要かどうか、Squareの履歴で必ず確かめてください。'))return;
     paidClear(); toast('切り離しました　Squareの履歴を確かめてください',true); render();};}
@@ -959,7 +966,9 @@ function pushPick(pick){
 async function askPayMethod(){
   const t=cartTotal();
   if(t<=0){ toast('お会計がありません',true); return; }
-  const b=$('askpay'); if(b){b.disabled=true;b.textContent='お客様の画面でお選びいただいています…';}
+  /* ★お客様の画面には「戻る」を置いていない（交通系は承諾だけをいただく形）。
+       お客様が迷われたときに3分待たせないよう、レジ側から止められるようにする。 */
+  const b=$('askpay'); if(b){b.textContent='やめる（お客様の画面を戻す）'; b.dataset.stop='1';}
   PICKWAIT={t:Date.now()};
   /* 前のお客様の分を残さない */
   await fetch(API+'/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG),
@@ -969,7 +978,7 @@ async function askPayMethod(){
   const got=await waitPick(180);                 // 3分待つ
   pushPick(null);                                // 明細の画面に戻す
   PICKWAIT=null;
-  if(b){b.disabled=false;b.textContent='お客様に選んでいただく';}
+  if(b){b.disabled=false;b.textContent='お客様に選んでいただく'; delete b.dataset.stop;}
   if(!got){ toast('お選びいただけませんでした',true); return; }
   PAY=got.k; PICKCONSENT=got.consent;
   if(PAY==='cash')GOT=0;
@@ -1028,10 +1037,10 @@ const RF_NOTE={
        'ご返金にあたって、お客様に手数料のご負担はありません']},
   /* 交通系IC … Squareでは返金そのものができない。現金でお返しする一手だけ。
      カードの残高は増えないので、そこをはっきり言う（黙っていると後で問い合わせになる）。 */
-  transit:{h:'交通系ICは、現金でお返しします',
-    b:['Suica・PASMO などの交通系ICは、Square の仕組み上、カードへお戻しすることができません',
-       'そのため、この場で現金にてお返しします',
-       'カードの残高は増えませんので、ご了承ください',
+  transit:{h:'交通系ICは、ご返品・ご交換をお受けしておりません',
+    b:['お支払いの前に、その旨をご了承いただいております',
+       'Suica・PASMO などの交通系ICは、カードへお戻しする仕組みがないためです',
+       '商品に不具合があった場合は、この限りではありません　その場合は現金でお返しします',
        'ご返金にあたって、お客様に手数料のご負担はありません']},
   /* iD・QUICPay … 返金はできるが、一部返金は不可。全額のみ。 */
   felica:{h:'iD・QUICPay へのご返金になります',
@@ -1084,7 +1093,7 @@ const RF_SAY={
   cash:'ただいまお返しいたします　お確かめください',
   card:'いまこの場で手続きいたします　カード会社さまへの反映に2〜7営業日ほどいただきます',
   emoney:'いまこの場で手続きいたします　ご利用明細への反映はカード会社さまによって変わります',
-  transit:'こちらは現金でお返しいたします　交通系ICへはお戻しできない決まりになっております',
+  transit:'交通系ICでのお支払いは、ご返品をお受けしておりません　不具合の場合は現金でお返しします',
   felica:'いまこの場で手続きいたします　ご利用明細への反映はカード会社さまによって変わります',
   qr:'いまこの場で手続きいたします　24時間以内にお戻りいたします'};
 /* 決済手段ごとの「いつ戻るか」。根拠は RF_NOTE と同じ（Square公式・JCB公式） */

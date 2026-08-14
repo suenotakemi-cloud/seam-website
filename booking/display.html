@@ -440,16 +440,18 @@ function pickWarn(mm){
   return `<div class="ask fade">
     <div class="ask-t">${esc(w.title||'ご確認ください')}</div>
     <ul class="ask-l">${(w.lines||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
-    <div class="warn-x">
-      <button class="warn-back" id="wBack">${esc(w.back||'別の方法にする')}</button>
-      <button class="warn-ok" id="wOk">${esc(w.ok||'了解しました')}</button>
-    </div>
+    ${w.back?`<div class="warn-x">
+      <button class="warn-back" id="wBack">${esc(w.back)}</button>
+      <button class="warn-ok" id="wOk">${esc(w.ok||'承諾します')}</button>
+    </div>`
+    /* 承諾だけをいただく場合（交通系）。横に並べず、1本の大きなボタンにする */
+    :`<button class="ask-b" id="wOk" style="margin-top:1.4em">${esc(w.ok||'承諾します')}</button>`}
     <div class="ask-n">お手数ですが、お客様ご自身でお願いいたします</div>
   </div>`;
 }
 async function sendPick(st,mm){
   const s=$('scr');
-  s.querySelectorAll('.pick-b,.warn-x button').forEach(b=>b.disabled=true);
+  s.querySelectorAll('.pick-b,.warn-x button,.ask-b').forEach(b=>b.disabled=true);
   try{
     const r=await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:'pay:'+mm.k,flow:st.flow||'',
@@ -461,7 +463,7 @@ async function sendPick(st,mm){
       <div class="ask-n">少々お待ちください　One moment, please.</div></div>`;
     lastJson='';
   }catch(e){
-    s.querySelectorAll('.pick-b,.warn-x button').forEach(b=>b.disabled=false);
+    s.querySelectorAll('.pick-b,.warn-x button,.ask-b').forEach(b=>b.disabled=false);
     const n=s.querySelector('.pick-n');
     if(n){n.textContent='うまく送れませんでした　もう一度お選びください';n.style.color='var(--clay)';} }
 }
@@ -472,7 +474,8 @@ function wirePick(st){
     if(mm.warn){                       // 交通系 … 先にお伝えしてから
       s.innerHTML=pickWarn(mm);
       document.getElementById('wOk').onclick=()=>sendPick(st,mm);
-      document.getElementById('wBack').onclick=()=>{ s.innerHTML=pickScreen(st); wirePick(st); };
+      const bk=document.getElementById('wBack');
+      if(bk)bk.onclick=()=>{ s.innerHTML=pickScreen(st); wirePick(st); };
       return;
     }
     sendPick(st,mm);
