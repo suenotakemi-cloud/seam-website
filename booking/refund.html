@@ -79,6 +79,24 @@ const NOTE={
              'Transit IC cards (Suica, PASMO, etc.) cannot be refunded through the system, so we refund in cash.',
              'When it appears on your statement depends on your card issuer.',
              'No fee is charged to you for this refund.']},
+ /* 交通系IC … Squareでは返金できないため、現金でお返ししている */
+ transit:{ja:['Suica・PASMO などの交通系ICは、Square の仕組み上、カードへお戻しできません',
+              'そのため、この場で現金にてお返ししました',
+              'カードの残高は増えません',
+              'ご返金に手数料はかかりません'],
+          en:['Transit IC cards (Suica, PASMO, etc.) cannot be refunded through the system.',
+              'We refunded the full amount in cash, on the spot.',
+              'The balance on your card is not increased.',
+              'No fee is charged to you for this refund.']},
+ /* iD・QUICPay … 返金できるが全額のみ */
+ felica:{ja:['店頭でのお手続きは完了しています',
+             'iD・QUICPay は一部返金ができないため、全額のご返金です',
+             'ご利用明細への反映時期は、カード発行会社により異なります',
+             'ご返金に手数料はかかりません'],
+         en:['The refund was processed in store at the time of return.',
+             'iD and QUICPay do not support partial refunds, so the full amount is refunded.',
+             'When it appears on your statement depends on your card issuer.',
+             'No fee is charged to you for this refund.']},
  qr:{ja:['店頭でのお手続きは完了しています',
          '24時間以内に返金処理が行われます',
          'クレジットカードを紐づけてお支払いの場合は、カード会社の処理により時間がかかることがあります',
@@ -88,9 +106,13 @@ const NOTE={
          'If you paid with a credit card linked to the app, it may take longer depending on your card issuer.',
          'No fee is charged to you for this refund.']}
 };
-const key=m=>m==='cash'?'cash':(m==='emoney'?'emoney':(m==='qr'?'qr':'card'));
+/* kind は元の会計のブランドから決まる（交通系IC / iD・QUICPay）。
+   交通系は現金でお返ししているので method は cash になる。
+   それでも「なぜ現金なのか」を書けるように、kind を優先して見る。 */
+const key=(m,k)=>k||(m==='cash'?'cash':(m==='emoney'?'emoney':(m==='qr'?'qr':'card')));
 const LABEL={cash:['現金','Cash'],card:['クレジットカード','Credit card'],
- emoney:['電子マネー','Electronic money'],qr:['QRコード決済','QR code payment']};
+ emoney:['電子マネー','Electronic money'],transit:['交通系IC（現金でご返金）','Transit IC — refunded in cash'],
+ felica:['iD・QUICPay','iD / QUICPay'],qr:['QRコード決済','QR code payment']};
 
 (async()=>{
   const w=document.getElementById('w');
@@ -99,7 +121,7 @@ const LABEL={cash:['現金','Cash'],card:['クレジットカード','Credit car
   try{ const r=await fetch(`${API}/refund/view?t=${encodeURIComponent(T)}`); d=await r.json();
     if(!r.ok||!d.ok)throw 0; }
   catch(e){ w.innerHTML='<div class="err">この控えは見つかりませんでした<br>Receipt not found</div>'; return; }
-  const k=key(d.method), L=LABEL[k], N=NOTE[k];
+  const k=key(d.method,d.kind), L=LABEL[k], N=NOTE[k];
   const when=String(d.at||'').replace('T',' ').slice(0,16);
   w.innerHTML=`
     <div class="mk">SEAM</div>

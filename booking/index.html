@@ -1962,7 +1962,23 @@ function stgN(k,def){const v=+stg(k,def);return isNaN(v)?def:v;}
 function setStg(k,v){db.settings[k]=String(v);save();API.setSetting(k,v);refreshAll();}
 // hpb=ホットペッパーのスマート支払い(オンライン事前決済)。決済処理はHPB側＝店頭で金銭を受け取らない。
 // 売上には計上するがレジ現金には含めない(入金は後日リクルートから・手数料差引)。
-const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},emoney:{label:'電子マネー',ic:'🚃'},qr:{label:'QR決済',ic:'📱'},hpb:{label:'スマート支払い(HPB)',ic:'🌶️'}};
+/* ★Squareターミナルが持っている区分に合わせる。
+     Apple Pay は独立した区分ではない ― iPhoneをかざすと
+     カードのタッチ決済・iD・QUICPay・交通系 のどれかとして通る。
+   ★emoney は古い記録のために残す（過去の会計がこの値で入っている）。
+     これから押すのは 交通系 / iD / QUICPay の3つ。
+     交通系だけ返金の扱いが違う（Squareでは返金できない）ので、分けておく。 */
+const PAYMENTS={cash:{label:'現金',ic:'💴'},card:{label:'カード',ic:'💳'},
+  transit:{label:'交通系',ic:'🚃'},id:{label:'iD',ic:'📶'},quickpay:{label:'QUICPay',ic:'⚡'},
+  emoney:{label:'電子マネー',ic:'🚃'},qr:{label:'QR決済',ic:'📱'},hpb:{label:'スマート支払い(HPB)',ic:'🌶️'}};
+/* Squareターミナルへ送る決済区分 */
+const SQ_PAYTYPE={card:'CARD_PRESENT',transit:'FELICA_TRANSPORTATION_GROUP',
+  id:'FELICA_ID',quickpay:'FELICA_QUICPAY',emoney:'FELICA_ALL',qr:'QR_CODE'};
+/* 集計はこれまでどおり4つに寄せる（売上・レジ締めの合計を変えないため）。
+   実際に何で払われたかは cardBrand に残る（交通系IC / iD / QUICPay / VISA …）。 */
+const payBucket=k=>({transit:'emoney',id:'emoney',quickpay:'emoney'}[k]||k);
+/* 端末を出す決済手段。現金と HPB のスマート支払いは端末を通さない */
+const TERM_OK=k=>!!SQ_PAYTYPE[k];
 /* 手数料はブランドごとに違うので、何で払われたかまで残す。
    Squareの端末を通したときは自動で入る。ここは端末を使わないとき（他社の端末・締めのあとの手入力）用。 */
 const BRANDS={
@@ -3674,7 +3690,8 @@ function renderCheckout(){
         ${(+coDraft.received||0)>0&&(+coDraft.received||0)<coTotal()?`<i>あと ¥${(coTotal()-(+coDraft.received||0)).toLocaleString()}</i>`:''}</div>
     </div>`:''}
     <div class="co-sub">お支払い方法</div>
-    <div class="co-pays">${Object.entries(PAYMENTS).map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
+    <div class="co-pays">${Object.entries(PAYMENTS).filter(([k])=>k!=='emoney'||coDraft.method==='emoney')
+      .map(([k,p])=>`<button class="co-pay ${coDraft.method===k?'on':''}" data-m="${k}">${p.ic} ${p.label}</button>`).join('')}</div>
     ${BRANDS[coDraft.method]?`<div class="co-sub">どれで払われましたか<span style="font-weight:600;color:var(--sub);margin-left:6px">手数料がブランドごとに違うので、選んでおくと手取りが出ます</span></div>
       <div class="co-pays">${BRANDS[coDraft.method].map(b2=>`<button class="co-pay ${coDraft.cardBrand===b2?'on':''}" data-brand="${b2}">${b2}</button>`).join('')}</div>`:''}
     ${coDraft.method==='hpb'?'<div class="co-done" style="background:#fff3ec;border-color:#f2c9ab;color:#b04a12">🌶️ ホットペッパーで決済済み（スマート支払い）。<b>店頭での支払いはありません</b>。売上に計上されますがレジ現金には含まれません（後日リクルートから入金）。店販がある場合は現金/カード等で別会計にしてください</div>':''}
@@ -3682,7 +3699,7 @@ function renderCheckout(){
     <div class="co-pays"><button class="co-pay ${coDraft.nominated?'on':''}" data-nom="1">👤 指名</button><button class="co-pay ${!coDraft.nominated?'on':''}" data-nom="0">フリー</button></div>
     <div class="co-sub">担当</div>
     <select id="co-staff" class="co-sel">${STAFF.map(s=>`<option value="${s.id}" ${s.id===coDraft.staffId?'selected':''}>${s.name}</option>`).join('')}</select>
-    ${(coDraft.method==='card'&&stg(isShop()?'terminalDeviceIdShop':'terminalDeviceId',''))?`<button class="btn pay" id="co-term" style="width:100%;margin-top:14px">💳 Squareターミナルで決済（¥${coTotal().toLocaleString()}）</button>`:''}
+    ${(TERM_OK(coDraft.method)&&stg(isShop()?'terminalDeviceIdShop':'terminalDeviceId',''))?`<button class="btn pay" id="co-term" style="width:100%;margin-top:14px">${PAYMENTS[coDraft.method].ic} Squareターミナルで決済（¥${coTotal().toLocaleString()}）</button>`:''}
     <div class="row" style="margin-top:12px">
       <button class="btn ghost" style="flex:1" id="co-cancel">キャンセル</button>
       <button class="btn pay" id="co-save">${(coDraft.method==='card'&&stg(isShop()?'terminalDeviceIdShop':'terminalDeviceId',''))?'端末なしで記録':'この内容で会計を確定'}</button>
@@ -3834,6 +3851,10 @@ function coBuildRec(){
       qty:Math.max(1,+i.qty||1), unit:i.unit!=null?(+i.unit||0):(+i.price||0),
       price:i.unit!=null?((+i.unit||0)*Math.max(1,+i.qty||1)):(+i.price||0), productId:i.productId||undefined}))};
   rec.passCode=coDraft.passCode||'';
+  /* 交通系・iD・QUICPay は「電子マネー」として記録する。
+     売上やレジ締めの合計はこれまでどおり4つで数える。
+     実際に何で払われたかは cardBrand に残る。 */
+  rec.method=payBucket(coDraft.method||'cash');
   rec.retail=rec.retailItems.reduce((s,i)=>s+i.price,0);
   {const pv=coPtYen();
    rec.ptYen=pv.yen;              // 何円分の値引きになったか（レートが2種類あるので記録に残す）
@@ -4065,7 +4086,10 @@ let _termCid=null,_termPoll=null;
 async function runTerminalPayment(){
   const rec=coBuildRec(); if(rec.total<=0){toast('金額を入力してください',true);return;}
   const dev=stg(isShop()?'terminalDeviceIdShop':'terminalDeviceId',''); if(!dev){toast('Squareターミナルが未設定です',true);return;}
-  rec.method='card';
+  /* 選ばれた決済手段のまま端末へ送る。
+     ★以前は必ず 'card' に上書きしていたので、交通系・iD・QUICPay・QRが端末で通らなかった。 */
+  const kind=TERM_OK(coDraft.method)?coDraft.method:'card';
+  rec.method=payBucket(kind);
   const box=document.getElementById('checkoutmodal');
   box.innerHTML=`<div class="term-pay"><div class="tp-amt">¥${rec.total.toLocaleString()}</div><div class="tp-spin"></div><div class="tp-msg" id="tp-msg">端末に送信しています…</div><div class="row" style="margin-top:18px"><button class="btn ghost" style="flex:1" id="tp-cancel">キャンセル</button><button class="btn pay" id="tp-manual">端末なしで記録</button></div></div>`;
   box.querySelector('#tp-manual').onclick=()=>{if(_termCid)API.termCancel(_termCid);if(_termPoll)clearInterval(_termPoll);_termCid=null;coFinish(rec);};
@@ -4086,11 +4110,11 @@ async function runTerminalPayment(){
   })();
   const stName=(STAFF.find(x=>x.id===rec.staffId)||{}).name||'';
   const r=await API.termCheckout(rec.total,dev,rec.customer||'SEAM 銀座',
-    {items:sqItems,staffName:stName,ref:rec.id});
+    {items:sqItems,staffName:stName,ref:rec.id,paymentType:SQ_PAYTYPE[kind]});
   const msg=document.getElementById('tp-msg');
   if(!r||!r.checkoutId){if(msg)msg.innerHTML='<span style="color:var(--danger)">送信失敗: '+((r&&r.error)||'不明')+'</span>';return;}
   _termCid=r.checkoutId;
-  if(msg)msg.textContent='お客様に端末をお渡しください（カードで決済中…）';
+  if(msg)msg.textContent='お客様に端末をお渡しください（'+PAYMENTS[kind].label+'で決済中…）';
   _termPoll=setInterval(async()=>{
     const st=await API.termStatus(_termCid); if(!st||st.error)return;
     if(st.status==='COMPLETED'){clearInterval(_termPoll);_termCid=null;
@@ -4099,7 +4123,7 @@ async function runTerminalPayment(){
          ブランド（VISA/JCB…）と引かれた手数料もここで受け取る＝ブランドごとの手数料が出せる。 */
       if(st.paidBy)rec.method=st.paidBy;
       rec.cardBrand=st.cardBrand||''; rec.fee=+st.fee||0;
-      coFinish(rec);toast('カード決済が完了しました');}
+      coFinish(rec);toast(PAYMENTS[kind].label+'でのお支払いが完了しました');}
     else if(st.status==='CANCELED'){clearInterval(_termPoll);_termCid=null;const m=document.getElementById('tp-msg');if(m)m.innerHTML='<span style="color:var(--danger)">決済がキャンセルされました</span>';}
   },2500);
 }

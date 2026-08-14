@@ -181,14 +181,31 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 .sr.big{font-size:16px;color:var(--ink);border-top:1px solid var(--line);margin-top:8px;padding-top:12px}
 .sr.big b{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600}
 .sr.cut{color:var(--clay)}
+/* ── 現金のお預かりとおつり ──
+   おつりは離れた場所に小さく出さない。数える人の目の高さに、いちばん大きく出す。 */
+.cashbox{border:1px solid var(--line);border-radius:3px;padding:11px 12px;margin:10px 0 0;background:#fff}
+.cashh{font-size:11.5px;color:var(--sub);letter-spacing:.08em;margin-bottom:8px}
+.cashq{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
+.cashq button{font:inherit;font-size:13px;padding:11px 4px;border:1px solid var(--line);
+  background:#fff;border-radius:3px;cursor:pointer;color:var(--ink)}
+.cashq button:active{background:var(--ink);color:#fff}
+#cashin{width:100%;font:inherit;font-size:17px;text-align:right;padding:11px 12px;
+  border:1px solid var(--line);border-radius:3px;background:#fff;
+  font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.cashc{margin-top:9px;text-align:right;font-size:13px;color:var(--clay);min-height:1.6em}
+.cashc.ok{color:var(--sub)}
+.cashc b{font-size:26px;color:var(--ink);font-weight:600;margin-left:.4em;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.cashd{margin-top:6px;text-align:right;font-size:11.5px;color:var(--sub);letter-spacing:.04em}
 .tfbox{border:1px solid rgba(0,0,0,.12);border-radius:11px;padding:11px 12px;margin:9px 0;background:#fff}
 .tfh{font-size:12px;font-weight:800;color:#6a5a4a;margin-bottom:7px}
 .tfbox input{width:100%;padding:10px 11px;border:1px solid rgba(0,0,0,.14);border-radius:8px;
   font:inherit;font-size:15px;margin-bottom:6px}
 .tfrow{display:grid;grid-template-columns:1fr 116px;gap:6px}
 .tfn{font-size:11px;color:#8a7d70;line-height:1.5}
-.pay{display:flex;gap:8px;margin:14px 0 0}
-.pay button{flex:1;padding:12px 6px;border:1px solid var(--line);background:#fff;border-radius:3px;
+/* 決済手段は6つ。横一列だと潰れるので3列×2段にする（指で押す幅を残す） */
+.pay{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0 0}
+.pay button{padding:12px 6px;border:1px solid var(--line);background:#fff;border-radius:3px;
   font-size:13px;color:var(--body);letter-spacing:.04em}
 .pay button.on{border-color:var(--ink);background:var(--ink);color:#fff}
 .go{width:100%;margin-top:14px;padding:17px;border:0;border-radius:3px;background:var(--ink);color:#fff;
@@ -344,6 +361,67 @@ let REQUIRE_STAFF=false;
 let STAFF=null;
 try{ STAFF=JSON.parse(localStorage.getItem('stb_staff')||'null'); }catch(e){}
 let SHOPS=[], TAB='prod', CART=[], MEMBER=null, PAY='cash', STOCKVIEW=null;
+
+/* ══════════ 決済手段 ══════════
+   Squareターミナルが持っている区分をそのまま並べる。
+   ★Apple Pay は独立した区分ではない。お客様がiPhoneをかざすと
+     カードのタッチ決済・iD・QUICPay・交通系 のどれかとして通る。
+     だから「Apple Pay」ボタンは作らず、どのボタンでも通ることを添え書きで伝える。
+   ★交通系だけ返金の扱いが違う（Squareでは返金できず現金でお返しする）。
+     まとめて「電子マネー」にすると、返品のときに見分けられない。 */
+const PAYS=[['cash','現金'],['card','カード'],['transit','交通系'],
+            ['id','iD'],['quickpay','QUICPay'],['qr','QR決済']];
+const PAY_HINT={
+  card:'端末にかざす／差し込む　Apple Pay・Google Pay のカードもここ',
+  transit:'⚠ 交通系ICは返品・返金ができません　お客様に必ずお伝えしてください',
+  id:'Apple Pay の iD もここ',
+  quickpay:'Apple Pay の QUICPay もここ',
+  qr:'端末にQRが出ます　PayPay・d払いなど'};
+/* お客様画面に出す説明（英語つき）。押す前にお読みいただく。 */
+const PAY_EN={cash:'Cash',card:'Credit / Debit card',transit:'Suica, PASMO, ICOCA',
+  id:'iD',quickpay:'QUICPay',qr:'PayPay, d払い, etc.'};
+const PAY_NOTE={card:'Apple Pay・Google Pay のカードもこちら',
+  transit:'⚠ 返品・返金をお受けできません',
+  id:'Apple Pay の iD もこちら',quickpay:'Apple Pay の QUICPay もこちら'};
+/* ★交通系ICだけは、お選びになる前にお伝えする。
+     Squareの仕組み上、交通系ICへは返金ができない＝返品をお受けできない。
+     あとからお断りするのがいちばん良くないので、選ぶ前の一枚にする。
+     出典 https://squareup.com/help/jp/ja/article/5060-refunds-faq */
+const TRANSIT_WARN={
+  title:'交通系ICでお支払いの場合　Paying with a transit IC card',
+  /* ★短く。読み切れない量を出すと、読まずに押されてしまう。
+       「他の方法も選べます」はボタンが語るので、文では言わない。 */
+  lines:['交通系IC（Suica・PASMO など）でお支払いの場合、ご返品・ご返金をお受けできません',
+         'Purchases paid with a transit IC card cannot be returned or refunded.',
+         'カードへお戻しする仕組みがないためです　不良品の場合は、この限りではありません',
+         'This is because the card cannot be credited back. Defective items are an exception.'],
+  ok:'了解しました　Understood', back:'別の方法にする　Choose another'};
+/* 集計はこれまでどおり4つに寄せる（レジ締めや売上の合計を変えないため）。
+   実際に何で払われたかは cardBrand に残る（交通系IC / iD / QUICPay / VISA …）。 */
+const payBucket=k=>({transit:'emoney',id:'emoney',quickpay:'emoney'}[k]||k);
+
+/* ══════════ 現金のお預かりとおつり ══════════
+   ★レジでいちばん手が止まるのが、おつりの暗算と札の数え方。
+     押すだけで済むように、その金額でありそうな出し方だけを並べる。
+   ★ちょうど・千円単位の切り上げ・よく出る札。並びは小さい順。 */
+let GOT=0;                                       // お預かり金額
+function cashQuick(total){
+  if(total<=0)return [];
+  const v=new Set([total]);                      // ちょうど
+  const up=n=>Math.ceil(total/n)*n;
+  v.add(up(1000)); v.add(up(5000)); v.add(up(10000));   // 切り上げ
+  /* 「1万円札1枚＋小銭」のような、実際によくある出し方 */
+  [1000,5000,10000].forEach(n=>{ if(n>total)v.add(n); });
+  v.add(up(1000)+1000);                          // 千円多めに出されたとき
+  return [...v].filter(x=>x>=total).sort((a,b)=>a-b).slice(0,6);
+}
+/* おつりの内訳。数え間違いと、金庫に無い札を出す事故を防ぐ */
+const DENOM=[10000,5000,1000,500,100,50,10,5,1];
+function changeBreak(n){
+  const out=[];
+  for(const d of DENOM){ const c=Math.floor(n/d); if(c){ out.push(`${yen(d)}×${c}`); n-=d*c; } }
+  return out.join('　')||'—';
+}
 /* 管理画面の「つかう機能をえらぶ」で消したものは、レジでも出さない。
    何も決めていなければ、ぜんぶ出す。 */
 let USEFEAT={};
@@ -566,12 +644,21 @@ function renderSum(){
        ? `<div class="sr"><span>免税ぶん（あとでお返しします）</span><b>${yen(taxAmt())}</b></div>`
        : `<div class="sr cut"><span>免税ぶん（申請は別）</span><b>−${yen(taxCut())}</b></div>`):''}
      <div class="sr big"><span>合計</span><b>${yen(t)}</b></div>
-     <div class="pay">${[['cash','現金'],['card','カード'],['emoney','電子マネー'],['qr','QR決済']].map(([v,l])=>
+     <div class="pay">${PAYS.map(([v,l])=>
        `<button data-p="${v}" class="${PAY===v?'on':''}">${l}</button>`).join('')}</div>
-     ${PAY!=='cash'?`<div class="sr" style="color:var(--sub);font-size:12px;padding:6px 2px 0">
-       ${PAY==='emoney'?'端末で iD・QUICPay・交通系（Suica等）から選んでいただきます'
-        :PAY==='qr'?'端末にQRが出ます　PayPay・d払いなど'
-        :'端末にカードをかざす／差し込んでいただきます'}</div>`:''}
+     ${PAY!=='cash'?`<div class="sr" style="color:${PAY==='transit'?'var(--clay)':'var(--sub)'};font-size:12px;padding:6px 2px 0">
+       ${PAY_HINT[PAY]||''}</div>`:''}
+     ${CART.length?`<button class="mini" id="askpay" style="margin-top:8px">
+       お客様に選んでいただく</button>`:''}
+     ${PAY==='cash'&&CART.length?`<div class="cashbox">
+       <div class="cashh">お預かり</div>
+       <div class="cashq">${cashQuick(t).map(v=>`<button data-cq="${v}">${v===t?'ちょうど':yen(v)}</button>`).join('')}</div>
+       <input id="cashin" inputmode="numeric" placeholder="お預かり金額" value="${GOT||''}">
+       <div class="cashc ${GOT&&GOT>=t?'ok':''}">${!GOT?'　'
+         :GOT<t?`あと ${yen(t-GOT)} 足りません`
+         :`おつり　<b>${yen(GOT-t)}</b>`}</div>
+       ${GOT&&GOT>t?`<div class="cashd">${changeBreak(GOT-t)}</div>`:''}
+     </div>`:''}
      ${(useFeat('taxfree')&&TAXFREE&&tfRefundMode())?`<div class="tfbox">
        <div class="tfh">お返しするために、3つだけ</div>
        <input id="tf-nm" value="${esc(TFINFO.name)}" placeholder="お名前（パスポートのとおり）">
@@ -587,7 +674,15 @@ function renderSum(){
      ${TF_LOCK?`<div class="tflock">免税の申請が終わっていません　シートの「入れ終わりました」を押してください</div>`:''}
      <button class="go" id="go" ${(CART.length&&!TF_LOCK)?'':'disabled'}>会計する</button>
      ${CART.length?`<button class="mini" id="clr">明細を消す</button>`:''}`;
-  $('sum').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{PAY=b.dataset.p;render();});
+  $('sum').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{PAY=b.dataset.p;GOT=0;render();});
+  {const b=$('askpay'); if(b)b.onclick=askPayMethod;}
+  /* 現金：押すだけでお預かりが入る。手入力もできる。 */
+  $('sum').querySelectorAll('[data-cq]').forEach(b=>b.onclick=()=>{GOT=+b.dataset.cq;render();});
+  {const ci=$('cashin');
+   if(ci)ci.oninput=()=>{ GOT=Math.max(0,parseInt(String(ci.value).replace(/[^0-9]/g,''),10)||0);
+     /* 打ちながらおつりが出るように、入力欄だけ残して周りを描き直す */
+     const p=ci.selectionStart; render(); const n=$('cashin');
+     if(n){n.focus(); try{n.setSelectionRange(p,p);}catch(e){}} };}
   if($('go'))$('go').onclick=doCheckout;
   if($('clr'))$('clr').onclick=()=>{if(confirm('明細をすべて消しますか'))
     {CART=[];TAXFREE=false;render();}};
@@ -613,7 +708,11 @@ async function doCheckout(){
   }
   if(TAXFREE&&tfRefundMode()&&(!TFINFO.name.trim()||TFINFO.last4.length<4)){
     toast('お名前と旅券の下4桁を入れてください　これが無いと、あとでお返しできません',true);return;}
-  if(!confirm(`${yen(t)} で会計します${STAFF?'　担当 '+STAFF.name:''}　よろしいですか`))return;
+  /* お預かりを入れたのに足りていないときは止める。
+     入れていないとき（0）は素通しする ― 使わない人の邪魔をしない。 */
+  if(PAY==='cash'&&GOT>0&&GOT<t){ toast('お預かりが '+yen(t-GOT)+' 足りません',true); return; }
+  if(!confirm(`${yen(t)} で会計します${STAFF?'　担当 '+STAFF.name:''}${
+    PAY==='cash'&&GOT>t?'　おつり '+yen(GOT-t):''}　よろしいですか`))return;
   const btn=$('go'); btn.disabled=true; btn.textContent='送信中…';
   /* ★値引きしてお売りするときは、先にお客様画面で押していただく。
        押していただけなければ会計しない。 */
@@ -631,7 +730,10 @@ async function doCheckout(){
       btn.textContent='端末をご案内中…';
       const r=await payByTerminal(t,PAY);
       if(r===null||r===undefined){ btn.disabled=false;btn.textContent='会計する'; return; }
-      payId=r.paymentId||''; if(r.paidBy)PAY=r.paidBy;   // 実際に選ばれた方法で記録する
+      payId=r.paymentId||'';
+      /* 端末で実際に選ばれた方法を優先する（お客様が別のものを出されることがある）。
+         ただし大きな区分が同じなら、こちらの細かい指定（交通系/iD/QUICPay）を残す。 */
+      if(r.paidBy && r.paidBy!==payBucket(PAY)) PAY=r.paidBy;
       BRAND=r.cardBrand||''; FEE=+r.fee||0;              // ブランド別の手数料を出すため
     }
     await post('/checkouts',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
@@ -642,11 +744,15 @@ async function doCheckout(){
       discount:cartCut(),
       discountLabel:[PMODE==='member'?'メンバー価格':(PMODE==='sale'?'セール価格':''),TAXFREE?'免税':''].filter(Boolean).join('＋'),
       /* 返品交換をお受けしないことに、お客様が同意された記録 */
-      consent:CONSENT?1:0, consentAt:CONSENT?new Date(CONSENT.at).toISOString():'',
-      consentText:CONSENT?CONSENT.text:'',
+      /* お客様がご自身で押された記録。お支払い方法をお選びいただいた分も一緒に残す
+         （交通系は「返品・返金をお受けできません」をご覧いただいてから確定している）。 */
+      consent:(CONSENT||PICKCONSENT)?1:0,
+      consentAt:CONSENT?new Date(CONSENT.at).toISOString()
+                :(PICKCONSENT?new Date(PICKCONSENT.at).toISOString():''),
+      consentText:[PICKCONSENT&&PICKCONSENT.text,CONSENT&&CONSENT.text].filter(Boolean).join('\n───\n'),
       taxfree:TAXFREE?1:0, taxfreeCut:taxCut(),   // 免税は記録として持つ（申請のときに集計する）
       taxfreeMode:TAXFREE?(tfRefundMode()?'refund':'cut'):'', taxfreeTax:TAXFREE?taxAmt():0,
-      total:t,method:PAY,squarePaymentId:payId||'',cardBrand:BRAND,fee:FEE,
+      total:t,method:payBucket(PAY),squarePaymentId:payId||'',cardBrand:BRAND,fee:FEE,
       memberCode:(MEMBER&&MEMBER.code)||'',at:new Date().toISOString()});
     /* 11月からの免税は「あとでお返しする約束」なので、待ちの記録を必ず作る。
        ここで作らないと、返し忘れが起きる（お客様は出国後で、こちらから追えない）。 */
@@ -668,7 +774,11 @@ async function doCheckout(){
     /* ★免税のときは、申請の入力が終わるまで次の会計に進ませない。
        レジだけ先に進むと、申請を忘れたまま次のお客様に移ってしまう。 */
     if(TAXFREE&&useFeat('taxfree')) openTfSheet(CART.slice(), id);
+    /* おつりの表示は、お渡ししたあとに消す。次のお客様に持ち越さない。 */
+    const gotWas=GOT, chg=GOT>t?GOT-t:0;
     CART=[]; TAXFREE=false; TFINFO={name:'',country:'',last4:''};
+    GOT=0; PICKCONSENT=null;
+    if(PAY==='cash'&&gotWas>=t&&chg>0)toast('おつり '+yen(chg)+'　'+changeBreak(chg));
     said('会計しました',yen(t)+'　'+payLabel(PAY));
     toast('会計しました');
     if(MEMBER)await loadMember(MEMBER.salonId||MEMBER.code);   // ポイントを取り直す
@@ -733,6 +843,59 @@ async function waitConsent(sec){
 }
 let CONSENT=null;
 
+/* ══════════ お支払い方法をお客様に選んでいただく ══════════
+   ★カードをお預かりしない・お触りしないための入口。
+     お客様のiPadに並べて、ご自身に押していただく。
+     押された結果がこちらに返ってきて、レジの決済手段が切り替わる。
+   ★交通系を選ばれたときは、お客様の画面でもう一枚
+     「返品・返金をお受けできません」を出してから確定する。
+     見ていただいた文面は、そのまま会計に残す。 */
+let PICKWAIT=null, PICKCONSENT=null;
+function pushPick(pick){
+  post('/display/push',{shopId:SHOP,register:REG,mode:PMODE,done:false,
+    items:CART.map(i=>({name:i.name,qty:i.qty,was:i.unit,now:lineNow(i),image:i.image||''})),
+    list:cartList(),cut:cartCut(),total:cartTotal(),pick:pick||null,
+    member:MEMBER?{name:MEMBER.name,rank:MEMBER.rank,points:MEMBER.points,earn:0,
+      visits:MEMBER.visits||0,greet:(MEMBER.visits||0)>=1?'again':'first'}:null}).catch(()=>{});
+}
+async function askPayMethod(){
+  const t=cartTotal();
+  if(t<=0){ toast('お会計がありません',true); return; }
+  const b=$('askpay'); if(b){b.disabled=true;b.textContent='お客様の画面でお選びいただいています…';}
+  PICKWAIT={t:Date.now()};
+  /* 前のお客様の分を残さない */
+  await fetch(API+'/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG),
+    {method:'DELETE',headers:H()}).catch(()=>{});
+  pushPick({total:t,methods:PAYS.map(([k,l])=>({k,label:l,en:PAY_EN[k]||'',note:PAY_NOTE[k]||'',
+    ...(k==='transit'?{warn:TRANSIT_WARN}:{})}))});
+  const got=await waitPick(180);                 // 3分待つ
+  pushPick(null);                                // 明細の画面に戻す
+  PICKWAIT=null;
+  if(b){b.disabled=false;b.textContent='お客様に選んでいただく';}
+  if(!got){ toast('お選びいただけませんでした',true); return; }
+  PAY=got.k; PICKCONSENT=got.consent;
+  if(PAY==='cash')GOT=0;
+  render();
+  said('お支払い方法',payLabel(PAY));
+  toast('お客様が '+payLabel(PAY)+' を選ばれました');
+}
+async function waitPick(sec){
+  const until=Date.now()+sec*1000;
+  while(Date.now()<until){
+    if(!PICKWAIT)return null;                    // やめたとき
+    await new Promise(r=>setTimeout(r,1200));
+    try{
+      const j=await get('/display/consent?s='+encodeURIComponent(SHOP)+'&r='+encodeURIComponent(REG));
+      const c=j.consent;
+      if(c&&c.at>=PICKWAIT.t&&/^pay:/.test(c.kind||'')){
+        const k=c.kind.slice(4);
+        if(PAYS.some(([x])=>x===k))return {k,consent:c};
+      }
+    }catch(e){}
+  }
+  return null;
+}
+
 /* ══════════ 返品 ══════════
    ★ここに書く日数は、すべて一次情報の裏づけがあるものだけ（2026-08-13 確認）。
      Square公式  https://squareup.com/help/jp/ja/article/5060-refunds-faq
@@ -763,12 +926,37 @@ const RF_NOTE={
        '交通系IC（Suica・PASMO など）は、システム上ご返金ができません　その場合は現金でお返しします',
        'ご利用明細に反映される時期は、カード発行会社により異なります',
        'ご返金にあたって、お客様に手数料のご負担はありません']},
+  /* 交通系IC … Squareでは返金そのものができない。現金でお返しする一手だけ。
+     カードの残高は増えないので、そこをはっきり言う（黙っていると後で問い合わせになる）。 */
+  transit:{h:'交通系ICは、現金でお返しします',
+    b:['Suica・PASMO などの交通系ICは、Square の仕組み上、カードへお戻しすることができません',
+       'そのため、この場で現金にてお返しします',
+       'カードの残高は増えませんので、ご了承ください',
+       'ご返金にあたって、お客様に手数料のご負担はありません']},
+  /* iD・QUICPay … 返金はできるが、一部返金は不可。全額のみ。 */
+  felica:{h:'iD・QUICPay へのご返金になります',
+    b:['店頭での手続きは、いまこの場で完了します',
+       'iD・QUICPay は一部返金ができないため、全額のご返金となります',
+       'ご利用明細に反映される時期は、カード発行会社により異なります',
+       '反映の時期を当店から確定的にお伝えすることはできません　詳しくはご利用のカード会社へお問い合わせください',
+       'ご返金にあたって、お客様に手数料のご負担はありません']},
   qr:{h:'QRコード決済へのご返金になります',
     b:['手続き後24時間以内に返金処理が行われます',
        'クレジットカードを紐づけてお支払いの場合は、カード会社の処理により時間がかかることがあります',
        'ご返金にあたって、お客様に手数料のご負担はありません']}
 };
-const rfKey=m=>m==='cash'?'cash':(m==='emoney'?'emoney':(m==='qr'?'qr':'card'));
+/* どの案内を出すかを決める。
+   ★Squareが返した実際のブランド（RF.co.cardBrand）を最優先にする。
+     レジで押したボタンより、端末で本当に通ったものが正しい。
+     交通系だけは返金の可否そのものが違うので、絶対に取り違えない。 */
+const rfKey=m=>{
+  if(m==='cash')return 'cash';
+  if(m==='qr')return 'qr';
+  const b=String((RF&&RF.co&&RF.co.cardBrand)||'');
+  if(m==='transit'||b.indexOf('交通系')>=0)return 'transit';
+  if(m==='id'||m==='quickpay'||b==='iD'||b==='QUICPay')return 'felica';
+  return m==='emoney'?'emoney':'card';
+};
 /* ★一部返金ができない決済手段がある（Square公式）。
      iD・QUICPay … 全額のみ　／　交通系IC … 返金そのものが不可
      楽天ペイ … 一部・商品別とも不可
@@ -796,11 +984,15 @@ const RF_SAY={
   cash:'ただいまお返しいたします　お確かめください',
   card:'いまこの場で手続きいたします　カード会社さまへの反映に2〜7営業日ほどいただきます',
   emoney:'いまこの場で手続きいたします　ご利用明細への反映はカード会社さまによって変わります',
+  transit:'こちらは現金でお返しいたします　交通系ICへはお戻しできない決まりになっております',
+  felica:'いまこの場で手続きいたします　ご利用明細への反映はカード会社さまによって変わります',
   qr:'いまこの場で手続きいたします　24時間以内にお戻りいたします'};
 /* 決済手段ごとの「いつ戻るか」。根拠は RF_NOTE と同じ（Square公式・JCB公式） */
 const RF_WHEN={cash:'この場でお返しします',
   card:'ご利用明細への反映まで　通常2〜7営業日',
   emoney:'ご利用明細への反映まで　カード会社により異なります',
+  transit:'この場で現金でお返しします',
+  felica:'ご利用明細への反映まで　カード会社により異なります',
   qr:'24時間以内に返金処理が行われます'};
 /* ★返金の前に、お客様ご自身に押していただく。
      金額・決済手段・いつ戻るかを、日本語と英語で並べて出す。
@@ -808,6 +1000,8 @@ const RF_WHEN={cash:'この場でお返しします',
 const RF_ASK_EN={cash:'Refunded in cash at the time of return.',
   card:'Usually 2–7 business days to appear on your card statement. Timing depends on your card issuer.',
   emoney:'Timing depends on your card issuer. iD / QUICPay are refunded in full only.',
+  transit:'Transit IC cards cannot be refunded through the system. We refund in cash, on the spot.',
+  felica:'Refunded in full. When it appears on your statement depends on your card issuer.',
   qr:'Processed within 24 hours.'};
 async function askRefundConsent(method,amt){
   const k=rfKey(method), n=RF_NOTE[k];
@@ -864,7 +1058,7 @@ function openRefund(c){
     const n=RF_NOTE[rfKey(RF.co.method)];
     d.innerHTML=`<div class="dlg-b rfbox">
       <h3>ご返品</h3>
-      <p>${esc(String(RF.co.at).replace('T',' ').slice(0,16))}　${payLabel(RF.co.method)}　${esc(RF.co.customer||'お客様')}</p>
+      <p>${esc(String(RF.co.at).replace('T',' ').slice(0,16))}　${esc(payShow(RF.co))}　${esc(RF.co.customer||'お客様')}</p>
       <div class="stk">
         ${items.map((it,ix)=>`<div class="stk-r rfr">
           <span>${esc(it.name)}<i>お買い上げ ${it.qty||1} 点</i></span>
@@ -919,9 +1113,13 @@ function openRefund(c){
         g.textContent='お客様に確認していただく'; return; }
       g.textContent='返金しています…';
       try{
+        /* ★交通系ICはSquareで返金できない。そのまま送ると失敗して記録が残らないので、
+             現金でお返ししたこととして記録する（金庫から出た事実に合わせる）。
+             元が何だったかは会計そのものに残っている。 */
+        const isTransit=rfKey(RF.co.method)==='transit';
         const r=await post('/checkouts/refund',{id:RF.co.id,shopId:SHOP,register:REG,amount:amt,
           items:chosen.map(x=>({productId:x.productId,name:x.name,qty:x.back,price:unit(x)*x.back})),
-          method:RF.co.method,reason:'店頭でのご返品',
+          method:isTransit?'cash':RF.co.method, ...(isTransit?{cash:1}:{}), reason:'店頭でのご返品',
           notice:(RFCONSENT&&RFCONSENT.text)||rfNoticeText(RF.co.method,amt),
           agreed:1,agreedAt:RFCONSENT?new Date(RFCONSENT.at).toISOString():new Date().toISOString(),
           sendHow:RF.how,sendTo:RF.how==='mail'?RF.to:'',
@@ -1022,7 +1220,11 @@ async function loadHistory2(){
   const j=await get(`/checkouts?from=${jstDay(HDAYS-1)}&to=${jstDay(0)}`).catch(()=>({checkouts:[]}));
   HISTORY=(j.checkouts||[]).filter(c=>c.mode!=='salon').sort((a,b)=>a.at<b.at?1:-1);
 }
-const payLabel=m=>({cash:'現金',card:'カード',term:'カード',emoney:'電子マネー',qr:'QR決済'}[m]||m||'—');
+const payLabel=m=>({cash:'現金',card:'カード',term:'カード',emoney:'電子マネー',
+  transit:'交通系',id:'iD',quickpay:'QUICPay',qr:'QR決済'}[m]||m||'—');
+/* Squareが返した実際のブランドがあれば、そちらを出す。
+   「電子マネー」より「交通系IC」の方が、返品のときに迷わない。 */
+const payShow=c=>c&&c.cardBrand?c.cardBrand:payLabel(c&&c.method);
 let HSCOPE='mine';
 const inScope=c=>HSCOPE==='all'||String(c.register||'')===String(REG||'');
 /* ★返品のとき、その会計をすぐ出せることがいちばん大事。
@@ -1059,7 +1261,7 @@ function histHtml(){
     <div class="sr" style="padding:0 2px 12px"><span>${rows.length} 件</span><span>差引 ${yen(sum)}</span></div>
     <div class="stk">${rows.length?rows.map(c=>`<div class="stk-r" data-h="${esc(c.id)}" style="cursor:pointer;${c.voided?'opacity:.5':''}">
       <span style="flex:1;min-width:0">
-        <span style="font-size:13px;color:var(--sub)">${esc(String(c.at).slice(11,16))}　${payLabel(c.method)}${c.squarePaymentId?'　Square':''}${c.register?'　'+esc(c.register)+'番レジ':''}${c.staffName?'　'+esc(c.staffName):''}</span><br>
+        <span style="font-size:13px;color:var(--sub)">${esc(String(c.at).slice(11,16))}　${esc(payShow(c))}${c.squarePaymentId?'　Square':''}${c.register?'　'+esc(c.register)+'番レジ':''}${c.staffName?'　'+esc(c.staffName):''}</span><br>
         ${esc(c.customer||'（お名前なし）')}
         ${c.voided?'<span class="mem-r" style="margin-left:6px">取消</span>':''}
         ${(c.refund>0&&!c.voided)?`<span class="mem-r" style="margin-left:6px">返金 ${yen(c.refund)}</span>`:''}
@@ -1072,7 +1274,7 @@ function histDetail(c){
   const left=Math.max(0,(c.total||0)-(c.refund||0));
   return `<div class="dlg" id="hdlg"><div class="dlg-b">
     <h3>お会計の中身</h3>
-    <p>${esc(String(c.at).replace('T',' ').slice(0,16))}　${payLabel(c.method)}${c.squarePaymentId?`　Square ${esc(c.squarePaymentId.slice(0,12))}…`:''}<br>
+    <p>${esc(String(c.at).replace('T',' ').slice(0,16))}　${esc(payShow(c))}${c.squarePaymentId?`　Square ${esc(c.squarePaymentId.slice(0,12))}…`:''}<br>
        ${esc(c.customer||'（お名前なし）')}${c.memberCode?`　会員 ${esc(c.memberCode)}`:''}</p>
     <div class="stk">${items.map(i=>`<div class="stk-r"><span>${esc(i.name)}${i.qty>1?' ×'+i.qty:''}</span><b>${yen(i.price)}</b></div>`).join('')}
       ${c.discount?`<div class="stk-r"><span>値引き</span><b>−${yen(c.discount)}</b></div>`:''}
@@ -1207,7 +1409,7 @@ function closeHtml(){
     <div class="cllist">${live.length?live.map(c=>`<div class="cll-r">
       <span>${esc(String(c.at).slice(11,16))}</span>
       <em>${esc(c.customer||'（お名前なし）')}</em>
-      <i>${payLabel(c.method)}</i>
+      <i>${esc(payShow(c))}</i>
       <b>${yen(net(c))}</b></div>`).join(''):'<div class="empty">まだありません</div>'}</div>
 
     <button class="go" id="closeGo" style="margin-top:16px">レジを締める</button>`;
@@ -1297,7 +1499,10 @@ async function payByTerminal(amount,kind){
         return null; }catch(e){ toast(e.message||'端末コードを作れませんでした',true); return null; } }
     TERM.deviceId=code.trim(); localStorage.setItem('stb_term_dev:'+REG,TERM.deviceId);
   }
-  const PT={card:'CARD_PRESENT',emoney:'FELICA_ALL',qr:'QR_CODE'};
+  /* 押したボタン → Squareターミナルの決済区分。
+     emoney は古い記録との互換で残す（端末側で選ぶ画面になる）。 */
+  const PT={card:'CARD_PRESENT',transit:'FELICA_TRANSPORTATION_GROUP',
+            id:'FELICA_ID',quickpay:'FELICA_QUICPAY',emoney:'FELICA_ALL',qr:'QR_CODE'};
   /* Squareにも明細と担当を渡す（商品別売上・スタッフ別売上に出るように）。
      値引きで合計がずれるときは1行にまとめる（Squareが弾くため）。 */
   const its=CART.map(i=>({name:i.name,qty:i.qty,price:i.unit*i.qty}));

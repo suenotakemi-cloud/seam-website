@@ -115,6 +115,10 @@ body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
 
 .err{margin:auto;text-align:center;color:var(--body);font-size:1em;line-height:2}
 /* ── お客様に押していただく画面 ── */
+/* ★お伝えすることが多い日でも、押していただくボタンに必ず指が届くようにする。
+   iPadを縦にすると画面が短くなり、ボタンが画面の外に出て押せなくなっていた。 */
+.ask,.pick{max-height:100%;overflow-y:auto;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch}
 .ask{margin:auto;text-align:center;max-width:26em;padding:1em 0}
 .ask-t{font-family:'Noto Serif JP',serif;font-size:1.5em;color:var(--ink);letter-spacing:.06em;line-height:1.7}
 .ask-l{list-style:none;margin:1.4em 0 1.8em;padding:0;text-align:left;
@@ -128,6 +132,30 @@ body{color:var(--body);font-family:'Noto Sans JP',-apple-system,sans-serif;
 .ask-b:active{opacity:.8}
 .ask-b:disabled{background:var(--clay);opacity:1}
 .ask-n{font-size:.72em;color:var(--sub);margin-top:1.3em;letter-spacing:.08em}
+/* ── お支払い方法をお選びいただく画面 ──
+   カードをお預かりしないための入口。指が届く大きさを最優先にする。 */
+.pick{margin:auto;text-align:center;max-width:34em;padding:1em 0;width:100%}
+.pick-t{font-family:'Noto Serif JP',serif;font-size:1.35em;color:var(--ink);letter-spacing:.06em}
+.pick-e{font-size:.78em;color:var(--sub);letter-spacing:.1em;margin-top:.4em}
+.pick-a{font-family:'Cormorant Garamond',serif;font-size:2.6em;color:var(--ink);
+  margin:.35em 0 .1em;font-variant-numeric:lining-nums tabular-nums;line-height:1}
+.pick-g{display:grid;grid-template-columns:repeat(2,1fr);gap:.7em;margin:1.5em 0 0}
+.pick-b{font:inherit;background:#fff;border:1px solid var(--line);border-radius:4px;
+  padding:1.1em .6em;min-height:5.2em;cursor:pointer;text-align:center;
+  -webkit-tap-highlight-color:transparent;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:.18em}
+.pick-b:active{border-color:var(--ink);background:var(--cream)}
+.pick-b b{font-size:1.15em;font-weight:500;color:var(--ink);letter-spacing:.04em}
+.pick-b i{font-style:normal;font-size:.72em;color:var(--sub);letter-spacing:.06em}
+.pick-b s{text-decoration:none;font-size:.68em;color:var(--clay);line-height:1.5}
+.pick-n{font-size:.72em;color:var(--sub);margin-top:1.5em;letter-spacing:.08em;line-height:1.9}
+/* 交通系のように、選ぶ前にお伝えすることがある場合のもう一枚 */
+.warn-x{display:flex;gap:.7em;margin-top:1.6em}
+.warn-x button{flex:1;font:inherit;font-size:.95em;letter-spacing:.1em;border-radius:3px;
+  padding:1em .6em;min-height:3.6em;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.warn-back{background:#fff;border:1px solid var(--line);color:var(--body)}
+.warn-ok{background:var(--ink);border:none;color:#fff}
+.warn-x button:active{opacity:.8}
 /* ── 返金が終わった画面 ── */
 .rdone{margin:auto;text-align:center;max-width:28em;padding:1em 0}
 .rdone-t{font-family:'Noto Serif JP',serif;font-size:1.35em;color:var(--ink);letter-spacing:.06em}
@@ -270,6 +298,69 @@ function refundDone(st){
     <div class="rdone-n">本日はご不便をおかけしました</div>
   </div>`;
 }
+/* ══════════ お支払い方法をお選びいただく ══════════
+   ★お客様ご自身に押していただく。カードをお預かりしない・お触りしないため。
+   ★交通系だけは、押されたあとにもう一枚出す。
+     Squareの仕組み上、交通系ICは返金ができない＝返品をお受けできない。
+     お選びになる前にお伝えしないと、あとでお断りすることになってしまう。 */
+let PICKED='';
+function pickScreen(st){
+  const p=st.pick;
+  return `<div class="pick fade">
+    <div class="pick-t">お支払い方法をお選びください</div>
+    <div class="pick-e">Please choose how you would like to pay</div>
+    <div class="pick-a">${yen(p.total||0)}</div>
+    <div class="pick-g">${(p.methods||[]).map((mm,i)=>`
+      <button class="pick-b" data-i="${i}">
+        <b>${esc(mm.label)}</b>
+        <i>${esc(mm.en||'')}</i>
+        ${mm.note?`<s>${esc(mm.note)}</s>`:''}
+      </button>`).join('')}</div>
+    <div class="pick-n">Apple Pay・Google Pay をお使いの方は、そのカードの種類をお選びください<br>
+      For Apple Pay / Google Pay, please choose the type your phone uses.</div>
+  </div>`;
+}
+/* 交通系を選ばれたときの、もう一枚 */
+function pickWarn(mm){
+  const w=mm.warn;
+  return `<div class="ask fade">
+    <div class="ask-t">${esc(w.title||'ご確認ください')}</div>
+    <ul class="ask-l">${(w.lines||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+    <div class="warn-x">
+      <button class="warn-back" id="wBack">${esc(w.back||'別の方法にする')}</button>
+      <button class="warn-ok" id="wOk">${esc(w.ok||'了解しました')}</button>
+    </div>
+    <div class="ask-n">お手数ですが、お客様ご自身でお願いいたします</div>
+  </div>`;
+}
+async function sendPick(st,mm){
+  const s=$('scr');
+  s.querySelectorAll('.pick-b,.warn-x button').forEach(b=>b.disabled=true);
+  try{
+    await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:'pay:'+mm.k,
+        /* 何をご覧になって選ばれたかを、文面ごと残す */
+        text:['お支払い方法：'+mm.label,...(mm.warn?[mm.warn.title,...(mm.warn.lines||[])]:[])].join('\n')})});
+    PICKED=JSON.stringify(st.pick);
+    s.innerHTML=`<div class="ask fade"><div class="ask-t">${esc(mm.label)}でお受けいたします</div>
+      <div class="ask-n">少々お待ちください　One moment, please.</div></div>`;
+    lastJson='';
+  }catch(e){ s.querySelectorAll('.pick-b,.warn-x button').forEach(b=>b.disabled=false); }
+}
+function wirePick(st){
+  const s=$('scr');
+  s.querySelectorAll('.pick-b').forEach(b=>b.onclick=()=>{
+    const mm=(st.pick.methods||[])[+b.dataset.i]; if(!mm)return;
+    if(mm.warn){                       // 交通系 … 先にお伝えしてから
+      s.innerHTML=pickWarn(mm);
+      document.getElementById('wOk').onclick=()=>sendPick(st,mm);
+      document.getElementById('wBack').onclick=()=>{ s.innerHTML=pickScreen(st); wirePick(st); };
+      return;
+    }
+    sendPick(st,mm);
+  });
+}
+
 let ASKED='';
 function askScreen(st){
   const a=st.ask;
@@ -296,8 +387,12 @@ function paint(st){
   lastJson=j;
   const s=$('scr');
   if(!st){ s.innerHTML=idle(); return; }
-  if(st.refund){ ASKED=''; s.innerHTML=refundDone(st); return; }
-  if(st.done){ ASKED=''; s.innerHTML=done(st); return; }
+  if(st.refund){ ASKED=''; PICKED=''; s.innerHTML=refundDone(st); return; }
+  if(st.done){ ASKED=''; PICKED=''; s.innerHTML=done(st); return; }
+  /* お支払い方法をお選びいただく（まだお選びでなければ） */
+  if(st.pick&&JSON.stringify(st.pick)!==PICKED){
+    s.innerHTML=pickScreen(st); wirePick(st); return;
+  }
   /* お願いが来ていて、まだ押していただいていなければ、それを出す */
   if(st.ask&&JSON.stringify(st.ask)!==ASKED){
     s.innerHTML=askScreen(st);
