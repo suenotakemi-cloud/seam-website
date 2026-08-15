@@ -560,7 +560,7 @@
     <h2 id="staffModalTitle">スタッフを追加</h2>
     <div class="msub">名前・役割・給与（時給／月給＋みなし残業）・色を設定します</div>
     <div class="body">
-      <div class="field"><label>名前</label><input id="sfName" placeholder="例：田中 美咲" maxlength="20"/></div>
+      <div class="field"><label>名前</label><input id="sfName" placeholder="例：田中 美咲" maxlength="20" aria-label="例：田中 美咲"/></div>
       <div class="field row">
         <div><label>役割</label>
           <select id="sfRole"><option>店長</option><option>社員</option><option>アルバイト</option><option>パート</option><option>研修中</option></select>
@@ -586,7 +586,7 @@
       <div class="field" id="sfDeemedRow"><label>みなし残業の上限（時間／月）</label><input id="sfDeemedOt" type="number" min="0" max="80" step="1" value="0"/><div class="hint" style="margin-top:5px">固定残業に含まれる残業時間。0なら「みなし残業なし」。1日8時間を超えた分を残業として計算し、この枠を超えると別途支給の対象です。</div></div>
       <div class="field row" style="border-top:1px dashed var(--line);padding-top:12px">
         <div><label>入社日（有給の付与計算）</label><input id="sfHire" type="date"></div>
-        <div><label>週の勤務日数（パート等）</label><input id="sfWeekDays" type="number" min="1" max="7" step="1" placeholder="通常は5〜"></div>
+        <div><label>週の勤務日数（パート等）</label><input id="sfWeekDays" type="number" min="1" max="7" step="1" placeholder="通常は5〜" aria-label="通常は5〜"></div>
       </div>
       <div class="field">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:13px"><input type="checkbox" id="sfWageReview" style="width:auto"> 毎月、給与を見直す（月初に「今月も同じ？」と確認する）</label>
@@ -611,10 +611,10 @@
     <h2 id="storeModalTitle">店舗を追加</h2>
     <div class="msub">店舗ごとにスタッフ・シフト・希望・設定を分けて管理できます</div>
     <div class="body">
-      <div class="field"><label>店舗名</label><input id="stName" placeholder="例：SEAM札幌 サロン" maxlength="24"/></div>
+      <div class="field"><label>店舗名</label><input id="stName" placeholder="例：SEAM札幌 サロン" maxlength="24" aria-label="例：SEAM札幌 サロン"/></div>
       <div class="field row">
         <div><label>種別</label><select id="stKind"><option value="salon">サロン（スタイリスト/アシスタント別）</option><option value="shop">ショップ（人数のみ）</option></select></div>
-        <div><label>地域</label><input id="stRegion" placeholder="例：札幌" maxlength="12"/></div>
+        <div><label>地域</label><input id="stRegion" placeholder="例：札幌" maxlength="12" aria-label="例：札幌"/></div>
       </div>
       <div class="hint" id="stKindHint">サロンは役割別の必要人数、ショップは合計人数で管理します（あとで設定から変更可）</div>
     </div>
@@ -827,7 +827,7 @@
   <div class="modal" style="max-width:360px">
     <h2>🔒 管理画面</h2>
     <div class="msub">管理画面のパスワードを入力してください</div>
-    <div class="body"><input id="adminPassIn" type="password" autocomplete="off" placeholder="パスワード" style="width:100%;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-family:var(--font);font-size:15px"></div>
+    <div class="body"><input id="adminPassIn" type="password" autocomplete="off" placeholder="パスワード" style="width:100%;height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;font-family:var(--font);font-size:15px" aria-label="パスワード"></div>
     <div class="foot"><button class="btn primary" id="adminPassOk" style="flex:1;justify-content:center">管理画面に入る</button></div>
   </div>
 </div>
@@ -1399,7 +1399,7 @@ function renderSales(){
   const comm=S().staff.filter(s=>payCfg(s).wageType==='commission'); S().sales=S().sales||{};
   if(!comm.length){ $('salesBody').innerHTML='<div class="cloud-note" style="background:#FFF8F0;border-color:#F9DCC4">歩合制のスタッフがいません。スタッフ編集で給与形態を「歩合制」にすると、ここに表示されます。</div>'; return; }
   let h=`<button class="btn" id="salesCsvBtn" style="width:100%;justify-content:center;margin-bottom:10px;border-color:#C7D2FE;color:#1D4ED8;font-weight:700">📥 サロンボードCSVから取り込む</button><div style="font-size:12px;color:var(--ink-3);margin-bottom:8px">${monthLabel()} 分（手入力）</div>`;
-  const nInput=(lbl,attr,id,val)=>`<div><label style="font-size:11px">${lbl}</label><input type="number" min="0" step="1000" data-${attr}="${id}" value="${val||''}" placeholder="0"></div>`;
+  const nInput=(lbl,attr,id,val)=>`<div><label style="font-size:11px">${lbl}</label><input type="number" min="0" step="1000" data-${attr}="${id}" value="${val||''}" placeholder="0" aria-label="0"></div>`;
   comm.forEach(s=>{ const sl=staffSales(s.id); const cat=staffHasCatRates(s); const pc=payCfg(s); const r=pc.commRates||{};
     h+=`<div style="border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:10px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="avatar" style="width:26px;height:26px;font-size:11px;background:${s.color}">${escapeHtml(s.name.slice(0,1))}</span><b style="flex:1">${escapeHtml(s.name)}</b><span style="font-size:11px;color:var(--ink-3)">${cat?`技${r.tech||0}/店${r.shop||0}/OP${r.opt||0}%`:'歩合率 '+(pc.commRate||0)+'%'}・保証 ${yen(staffGuarantee(s))}</span></div>
@@ -1430,7 +1430,7 @@ function openCsvSales(){
   csvSalesRows=[]; csvSalesHead=[]; csvSbFmt=false; csvMap={name:0,des:-1,nom:-1,tech:-1,shop:-1,opt:-1};
   $('csvSalesBody').innerHTML=`<div class="field"><label>CSVファイルを選ぶ（サロンボードのファイルそのままでOK・文字コード自動判定）</label><input type="file" id="csvSalesFile" accept=".csv,text/csv,text/plain" style="font-size:13px"></div>`
     +`<div style="text-align:center;color:var(--ink-3);font-size:11px;margin:8px 0">— または貼り付け —</div>`
-    +`<div class="field"><textarea id="csvSalesText" style="width:100%;height:100px;font-family:monospace;font-size:12px" placeholder="名前,指名売上,指名料"></textarea></div>`;
+    +`<div class="field"><textarea id="csvSalesText" style="width:100%;height:100px;font-family:monospace;font-size:12px" placeholder="名前,指名売上,指名料" aria-label="名前,指名売上,指名料"></textarea></div>`;
   $('csvSalesFoot').innerHTML=`<button class="btn" id="csvSalesCancel" style="flex:1;justify-content:center">閉じる</button><button class="btn primary" id="csvSalesParse" style="flex:1;justify-content:center">解析する</button>`;
   $('csvSalesCancel').onclick=()=>$('csvSalesOverlay').classList.remove('show');
   $('csvSalesParse').onclick=()=>parseCsvSales($('csvSalesText').value);
@@ -1535,7 +1535,7 @@ function renderItems(){
   if(!filt.length){ h+=`<div class="cloud-note" style="background:#FFF8F0;border-color:#F9DCC4">まだありません。「＋出品する」から、いらない備品を登録してください。</div>`; }
   else { h+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">`+filt.map(i=>{ const mine=i.storeId===cur; const iWant=(i.wantedBy||[]).includes(cur);
     return `<div style="border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff">
-      ${i.img?`<img src="${i.img}" style="width:100%;height:120px;object-fit:cover;display:block">`:`<div style="height:120px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:30px">📦</div>`}
+      ${i.img?`<img src="${i.img}" style="width:100%;height:120px;object-fit:cover;display:block" alt="スタッフのお写真">`:`<div style="height:120px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:30px">📦</div>`}
       <div style="padding:9px 10px">
         <div style="font-weight:700;font-size:13px">${escapeHtml(i.name||'（無題）')}${i.status==='done'?' <span style="font-size:9px;color:var(--ok)">受渡済</span>':''}</div>
         <div style="font-size:11px;color:var(--ink-3);margin-top:2px">${i.maker?escapeHtml(i.maker):''}${i.size?' ・ '+escapeHtml(i.size):''}</div>
@@ -1553,13 +1553,13 @@ function renderItems(){
 }
 function renderItemAdd(){
   let img='';
-  $('itemsBody').innerHTML=`<div class="field"><label>備品名</label><input id="itName" placeholder="例：シャンプー台 / スチーマー"></div>
-    <div class="field row"><div><label>メーカー</label><input id="itMaker" placeholder="例：タカラベルモント"></div><div><label>サイズ／型番</label><input id="itSize" placeholder="例：W60×D50 / 型番"></div></div>
-    <div class="field"><label>メモ（状態など）</label><input id="itNote" placeholder="例：2年使用・美品・要引取"></div>
+  $('itemsBody').innerHTML=`<div class="field"><label>備品名</label><input id="itName" placeholder="例：シャンプー台 / スチーマー" aria-label="例：シャンプー台 / スチーマー"></div>
+    <div class="field row"><div><label>メーカー</label><input id="itMaker" placeholder="例：タカラベルモント" aria-label="例：タカラベルモント"></div><div><label>サイズ／型番</label><input id="itSize" placeholder="例：W60×D50 / 型番" aria-label="例：W60×D50 / 型番"></div></div>
+    <div class="field"><label>メモ（状態など）</label><input id="itNote" placeholder="例：2年使用・美品・要引取" aria-label="例：2年使用・美品・要引取"></div>
     <div class="field"><label>出品する店舗</label><select id="itStore">${state.storeOrder.map(id=>`<option value="${id}" ${id===state.currentStoreId?'selected':''}>${escapeHtml(state.stores[id].name)}</option>`).join('')}</select></div>
     <div class="field"><label>写真（任意）</label><input id="itPhoto" type="file" accept="image/*"><div id="itPrev" style="margin-top:6px"></div></div>
     <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="itBack" style="flex:1;justify-content:center">戻る</button><button class="btn primary" id="itSave" style="flex:1;justify-content:center">この内容で出品</button></div>`;
-  $('itPhoto').onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return; resizeImg(f,d=>{ img=d; $('itPrev').innerHTML=d?`<img src="${d}" style="width:100%;max-height:160px;object-fit:contain;border:1px solid var(--line);border-radius:8px">`:''; }); };
+  $('itPhoto').onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return; resizeImg(f,d=>{ img=d; $('itPrev').innerHTML=d?`<img src="${d}" style="width:100%;max-height:160px;object-fit:contain;border:1px solid var(--line);border-radius:8px" alt="お写真">`:''; }); };
   $('itBack').onclick=renderItems;
   $('itSave').onclick=()=>{ const name=$('itName').value.trim(); if(!name){$('itName').focus();return;} state.items=state.items||[]; state.items.unshift({id:uid(),storeId:$('itStore').value,name,maker:$('itMaker').value.trim(),size:$('itSize').value.trim(),note:$('itNote').value.trim(),img,status:'available',wantedBy:[],at:Date.now()}); save(); renderItems(); toast('出品しました'); };
 }
@@ -2351,7 +2351,7 @@ function startQRTick(){
 function printQR(img,storeName){
   const w=window.open('','_blank','width=440,height=620');
   if(!w){toast('印刷ウィンドウを開けませんでした（ポップアップを許可してください）');return;}
-  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>出勤QR '+escapeHtml(storeName)+'</title><style>body{font-family:system-ui,sans-serif;text-align:center;padding:36px 20px;color:#1a1a1a}h1{font-size:22px;margin:0 0 4px}p{color:#555;font-size:13px;margin:6px 0}img{width:330px;height:330px;margin:16px 0;image-rendering:pixelated}.big{font-size:15px;font-weight:700;color:#111;margin-top:10px}</style></head><body><h1>'+escapeHtml(storeName)+'</h1><p>出勤・退勤 QRコード</p><img src="'+img+'"/><p class="big">スマホのカメラで読み取り、<br>お名前を選んで「出勤／退勤」をタップ</p></body></html>');
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>出勤QR '+escapeHtml(storeName)+'</title><style>body{font-family:system-ui,sans-serif;text-align:center;padding:36px 20px;color:#1a1a1a}h1{font-size:22px;margin:0 0 4px}p{color:#555;font-size:13px;margin:6px 0}img{width:330px;height:330px;margin:16px 0;image-rendering:pixelated}.big{font-size:15px;font-weight:700;color:#111;margin-top:10px}</style></head><body><h1>'+escapeHtml(storeName)+'</h1><p>出勤・退勤 QRコード</p><img src="'+img+'" alt="スタッフのお写真"/><p class="big">スマホのカメラで読み取り、<br>お名前を選んで「出勤／退勤」をタップ</p></body></html>');
   w.document.close(); setTimeout(()=>{try{w.focus();w.print();}catch(e){}},300);
 }
 
@@ -2582,7 +2582,7 @@ function renderHelp(){
       <div style="flex:1;min-width:130px"><label style="font-size:11px;color:var(--ink-3)">日付</label><input type="date" id="helpDate" value="${todayStr()}" style="width:100%;height:36px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-family:var(--font)"></div>
       <div style="flex:1;min-width:130px"><label style="font-size:11px;color:var(--ink-3)">区分</label><select id="helpSlot" style="width:100%;height:36px;border:1px solid var(--line);border-radius:8px;padding:0 6px;font-family:var(--font)">${slotOpts}</select></div>
     </div>
-    <div style="margin-top:8px"><label style="font-size:11px;color:var(--ink-3)">メモ（任意）</label><input id="helpNote" maxlength="40" placeholder="例：急な欠勤のため／2時間だけでもOK" style="width:100%;height:36px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-family:var(--font)"></div>
+    <div style="margin-top:8px"><label style="font-size:11px;color:var(--ink-3)">メモ（任意）</label><input id="helpNote" maxlength="40" placeholder="例：急な欠勤のため／2時間だけでもOK" style="width:100%;height:36px;border:1px solid var(--line);border-radius:8px;padding:0 8px;font-family:var(--font)" aria-label="例：急な欠勤のため／2時間だけでもOK"></div>
     <button class="btn primary" id="helpSend" style="width:100%;justify-content:center;margin-top:10px"><span class="ic">📣</span>この内容でLINE一斉募集</button>
   </div>`;
   const open=(S().helpReqs||[]).filter(x=>x.status==='open'), closed=(S().helpReqs||[]).filter(x=>x.status!=='open');
@@ -2625,7 +2625,7 @@ function sendNotice(){
 }
 function deleteNotice(id){S().notices=(S().notices||[]).filter(x=>x.id!==id);render();renderNotice();}
 function renderNotice(){
-  let h=`<div style="margin-bottom:14px"><textarea id="noticeText" maxlength="200" placeholder="例：今週末は混み合うため早めの出勤にご協力ください。" style="width:100%;height:74px;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:var(--font);font-size:14px;resize:vertical;box-sizing:border-box"></textarea>
+  let h=`<div style="margin-bottom:14px"><textarea id="noticeText" maxlength="200" placeholder="例：今週末は混み合うため早めの出勤にご協力ください。" style="width:100%;height:74px;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:var(--font);font-size:14px;resize:vertical;box-sizing:border-box" aria-label="例：今週末は混み合うため早めの出勤にご協力ください。"></textarea>
     <button class="btn primary" id="noticeSend" style="width:100%;justify-content:center;margin-top:8px"><span class="ic">📢</span>全員に送信（LINE通知）</button></div>`;
   const list=S().notices||[];
   if(list.length){
@@ -2772,8 +2772,8 @@ function renderResvPreview(){
     <input type="date" data-rv="date" data-i="${i}" value="${r.date||''}" style="height:32px;border:1px solid var(--line);border-radius:7px;padding:0 6px;font-family:var(--font)">
     <input type="time" data-rv="time" data-i="${i}" value="${r.time||''}" style="height:32px;width:92px;border:1px solid var(--line);border-radius:7px;padding:0 6px;font-family:var(--font)">
     <input type="number" data-rv="durMin" data-i="${i}" value="${r.durMin||60}" min="15" step="15" style="height:32px;width:58px;border:1px solid var(--line);border-radius:7px;padding:0 5px;font-family:var(--font)" title="所要分"><span style="font-size:11px;color:var(--ink-3)">分</span>
-    <input data-rv="staffName" data-i="${i}" value="${escapeHtml(r.staffName||'')}" placeholder="指名なし" style="height:32px;width:84px;border:1px solid var(--line);border-radius:7px;padding:0 6px;font-family:var(--font)">
-    <input data-rv="menu" data-i="${i}" value="${escapeHtml(r.menu||'')}" placeholder="メニュー" style="flex:1;min-width:90px;height:32px;border:1px solid var(--line);border-radius:7px;padding:0 6px;font-family:var(--font)">
+    <input data-rv="staffName" data-i="${i}" value="${escapeHtml(r.staffName||'')}" placeholder="指名なし" style="height:32px;width:84px;border:1px solid var(--line);border-radius:7px;padding:0 6px;font-family:var(--font)" aria-label="指名なし">
+    <input data-rv="menu" data-i="${i}" value="${escapeHtml(r.menu||'')}" placeholder="メニュー" style="flex:1;min-width:90px;height:32px;border:1px solid var(--line);border-radius:7px;padding:0 6px;font-family:var(--font)" aria-label="メニュー">
     <button class="btn" data-rvdel="${i}" style="height:32px;color:var(--danger);font-size:12px">×</button>
   </div>`).join('');
   h+=`<button class="btn" id="resvAddRow" style="margin-top:4px;height:32px;font-size:12px">＋ 行を追加</button><div style="font-size:11px;color:var(--ink-3);margin-top:8px">※ お客様の氏名・電話などは取り込みません。需要の計算に使うのは日時・所要・指名だけです。</div>`;
@@ -3094,7 +3094,7 @@ async function renderSecPanel(){
   }
   // 2) ログイン済み・ボード未接続：事業者選択
   body.innerHTML=`<div class="cloud-note" style="background:#F0F3FF;border-color:#D7E0FF"><b>🔐 本番モード</b>　ログイン中：${escapeHtml(auth.user.email)}</div><div id="secTenants" style="margin-top:12px;font-size:13px;color:var(--ink-3)">事業者を読み込み中…</div>`
-    +`<div class="cloud-or">または</div><div class="field" style="margin-bottom:8px"><input id="secNewName" placeholder="新しい事業者名（例：bico）"/></div><button class="btn" id="secNewBtn" style="width:100%;justify-content:center">＋ 事業者を作成して、今のデータを暗号化ボードに</button>`
+    +`<div class="cloud-or">または</div><div class="field" style="margin-bottom:8px"><input id="secNewName" placeholder="新しい事業者名（例：bico）" aria-label="新しい事業者名（例：bico）"/></div><button class="btn" id="secNewBtn" style="width:100%;justify-content:center">＋ 事業者を作成して、今のデータを暗号化ボードに</button>`
     +`<div style="text-align:center;margin-top:12px"><a href="#" id="secToLegacy2" style="font-size:11.5px;color:var(--ink-3)">簡易共有（旧方式）を使う</a></div>`;
   foot.innerHTML=`<button class="btn del" id="secLogout" style="flex:1;justify-content:center">ログアウト</button><button class="btn" id="cloudClose3" style="flex:1;justify-content:center">閉じる</button>`;
   $('cloudClose3').onclick=()=>$('cloudOverlay').classList.remove('show');
@@ -3119,8 +3119,8 @@ async function renderSecPanel(){
 function renderSecLine(){
   const body=$('cloudBody'), foot=$('cloudFoot');
   body.innerHTML=`<div class="cloud-note" style="background:#F0FAF5;border-color:#CDEBDB"><b>📲 この事業者のLINE設定</b><br>自社のLINE公式アカウントで通知します。アクセストークンは<b>暗号化して保存</b>され、画面には二度と表示されません（サーバーの通知機能だけが使用）。</div>`
-    +`<div class="field" style="margin-top:12px"><label>LIFF ID</label><input id="secLiff" placeholder="例：2010xxxxxx-xxxxxxxx"/></div>`
-    +`<div class="field"><label>チャネルアクセストークン（保存後は非表示）</label><input id="secTok" type="password" placeholder="入力した時だけ更新（空欄なら変更なし）"/></div>`
+    +`<div class="field" style="margin-top:12px"><label>LIFF ID</label><input id="secLiff" placeholder="例：2010xxxxxx-xxxxxxxx" aria-label="例：2010xxxxxx-xxxxxxxx"/></div>`
+    +`<div class="field"><label>チャネルアクセストークン（保存後は非表示）</label><input id="secTok" type="password" placeholder="入力した時だけ更新（空欄なら変更なし）" aria-label="入力した時だけ更新（空欄なら変更なし）"/></div>`
     +`<div style="font-size:11.5px;color:var(--ink-3);line-height:1.6">LINE Developers → Messaging API で取得します。スタッフへの公開/交代/ヘルプ通知に使われます。</div>`;
   foot.innerHTML=`<button class="btn" id="secLineBack" style="flex:1;justify-content:center">戻る</button><button class="btn primary" id="secLineSave" style="flex:1;justify-content:center">保存</button>`;
   $('secLineBack').onclick=()=>{secUI='main';renderSecPanel();};
@@ -3160,7 +3160,7 @@ async function renderSecMembers(){
       return `<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line)"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(m.email||m.staff_name||'—')}${me?' <span style=\"color:var(--ink-3);font-weight:600\">(あなた)</span>':''}</div><div style="font-size:11px;color:var(--ink-3)">${RLBL[m.role]||m.role}</div></div>${canRemove?`<button class="btn" data-rm="${m.user_id}" style="height:30px;color:var(--danger);font-size:12px">削除</button>`:''}</div>`;
     }).join('')+`</div>`;
     if(inv.length){ h+=`<div style="font-weight:700;color:var(--ink-2);margin:14px 0 4px;font-size:12px">招待中（未参加）</div>`+inv.map(i=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:12px"><span style="flex:1;color:var(--ink-2)">${escapeHtml(i.email||'(リンク発行)')} ・ ${RLBL[i.role]}</span><button class="btn" data-cp="${i.token}" style="height:28px;font-size:11px">リンク</button><button class="btn" data-rv="${i.token}" style="height:28px;font-size:11px;color:var(--danger)">取消</button></div>`).join(''); }
-    h+=`<div class="cloud-or">メンバーを招待</div><div class="field" style="margin-bottom:8px"><input id="secInvEmail" type="email" placeholder="相手のメールアドレス（任意）"/></div>`
+    h+=`<div class="cloud-or">メンバーを招待</div><div class="field" style="margin-bottom:8px"><input id="secInvEmail" type="email" placeholder="相手のメールアドレス（任意）" aria-label="相手のメールアドレス（任意）"/></div>`
       +`<div style="display:flex;gap:8px"><select id="secInvRole" style="flex:1;height:40px;border:1px solid var(--line);border-radius:10px;padding:0 10px">${isOwner?'<option value="admin">管理者（全機能）</option>':''}<option value="staff">スタッフ（自分の希望・打刻）</option></select><button class="btn primary" id="secInvBtn" style="flex:1;justify-content:center">招待リンクを発行</button></div>`
       +`<div style="font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.6">発行したリンクを相手に送ってください。相手がログイン（または新規登録）して開くと、この事業者に参加します。${isOwner?'':'※ 管理者の招待はオーナーのみ可能です。'}</div>`;
     body.innerHTML=h;
@@ -3202,7 +3202,7 @@ function renderLegacyCloud(){
       +`<div class="cloud-note" style="background:#FFF8F0;border-color:#F9DCC4">この端末のいまのデータ（店舗・スタッフ・シフト）を共有ボードにアップロードして、他の端末との同期を始めます。<br><b>※これは暗号化なしの簡易共有（旧方式）です。</b></div>`
       +`<button class="btn primary" id="cloudCreate" style="width:100%;justify-content:center;margin-top:14px;height:44px">＋ 新しい共有ボードを作成して同期</button>`
       +`<div class="cloud-or">または既存ボードに参加</div>`
-      +`<div class="field" style="margin-bottom:8px"><input id="cloudJoinId" placeholder="共有ボードID（例：ab12-cd34-ef56）"/></div>`
+      +`<div class="field" style="margin-bottom:8px"><input id="cloudJoinId" placeholder="共有ボードID（例：ab12-cd34-ef56）" aria-label="共有ボードID（例：ab12-cd34-ef56）"/></div>`
       +`<button class="btn" id="cloudJoin" style="width:100%;justify-content:center">このボードに参加</button>`
       +`<details class="cloud-adv"><summary>詳細設定（接続先サーバー）</summary>`
       +`<div class="field" style="margin:8px 0"><label>Supabase URL</label><input id="cloudUrl" value="${escapeHtml(cfg.url||CLOUD_DEFAULTS.url)}"/></div>`
@@ -3263,12 +3263,12 @@ function authMsg(m,ok){const e=$('auMsg');if(e){e.style.color=ok?'var(--ok)':'va
 function renderAuthModal(){
   $('authTitle').textContent=authMode==='login'?'ログイン':'新規登録';
   let h=`<div class="seg" style="width:100%;margin-bottom:14px"><button id="amLogin" class="${authMode==='login'?'active':''}" style="flex:1">ログイン</button><button id="amSignup" class="${authMode==='signup'?'active':''}" style="flex:1">新規登録</button></div>`
-    +`<div class="field"><label>メールアドレス</label><input id="auEmail" type="email" placeholder="you@example.com" autocomplete="email"></div>`
-    +`<div class="field"><label>パスワード</label><input id="auPass" type="password" placeholder="6文字以上" autocomplete="current-password"></div>`;
+    +`<div class="field"><label>メールアドレス</label><input id="auEmail" type="email" placeholder="you@example.com" autocomplete="email" aria-label="you@example.com"></div>`
+    +`<div class="field"><label>パスワード</label><input id="auPass" type="password" placeholder="6文字以上" autocomplete="current-password" aria-label="6文字以上"></div>`;
   if(authMode==='signup'){
     h+=`<div class="field"><label>区分</label><select id="auRole"><option value="admin">管理者（全機能を操作）</option><option value="staff">スタッフ（自分の希望・打刻のみ）</option></select></div>`
-      +`<div class="field"><label>表示名</label><input id="auName" placeholder="例：田中 美咲"></div>`
-      +`<div id="auStaffWrap" style="display:none"><div class="field"><label>共有ボードID（任意・参加する店舗）</label><input id="auBoard" placeholder="ab12-cd34-ef56"></div><div class="field"><label>スタッフ名（シフト表の氏名と一致させる）</label><input id="auStaffName" placeholder="例：田中 美咲"></div></div>`;
+      +`<div class="field"><label>表示名</label><input id="auName" placeholder="例：田中 美咲" aria-label="例：田中 美咲"></div>`
+      +`<div id="auStaffWrap" style="display:none"><div class="field"><label>共有ボードID（任意・参加する店舗）</label><input id="auBoard" placeholder="ab12-cd34-ef56" aria-label="ab12-cd34-ef56"></div><div class="field"><label>スタッフ名（シフト表の氏名と一致させる）</label><input id="auStaffName" placeholder="例：田中 美咲" aria-label="例：田中 美咲"></div></div>`;
   }
   h+=`<div id="auMsg" style="font-size:12.5px;color:var(--danger);min-height:16px;margin-top:4px;line-height:1.5"></div>`;
   $('authBody').innerHTML=h;

@@ -191,8 +191,28 @@
     .mid-cta--soft { background: var(--gold-soft); color: var(--ink); border-top: 1px solid var(--gold-line); border-bottom: 1px solid var(--gold-line); }
     .mid-cta--soft .mid-cta__t small { color: var(--ink-2); }
   </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 <body>
+<a class="seam-skip" href="#seam-main">本文へ移動</a><style>.seam-skip{position:absolute;left:-9999px;top:0;z-index:2147483647;background:#1B1A17;color:#fff;padding:10px 16px;border-radius:0 0 4px 0;font:500 13px/1.6 -apple-system,"Noto Sans JP",sans-serif;text-decoration:none}.seam-skip:focus{left:0}</style>
+
 
   <!-- ヘッダー -->
   <header class="site-header">
@@ -208,6 +228,8 @@
       </nav>
     </div>
   </header>
+<main id="seam-main">
+
 
   <!-- FV 登録メリット（離脱前に「なぜ登録すべきか」を差別化3点＋CTAで強く訴求） -->
   <div class="reg-hero">
@@ -345,10 +367,10 @@
     <div class="sec__in">
       <div class="sec__head"><div class="sec__ttl">目的から探す</div></div>
       <div class="finds">
-        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/kikuchi_24_24pc_2.jpg" alt="悩みから探す" loading="lazy"></div><div class="find__b"><div class="find__t">悩みから探す</div><div class="find__s">髪の悩み・課題から検索</div></div></a>
-        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/cat_tenpan.jpg" alt="施術目的から探す" loading="lazy"></div><div class="find__b"><div class="find__t">施術目的から探す</div><div class="find__s">カラー・パーマ・ケア等</div></div></a>
-        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/cat_salon.jpg" alt="サロンタイプから探す" loading="lazy"></div><div class="find__b"><div class="find__t">サロンタイプから探す</div><div class="find__s">規模・業態で提案</div></div></a>
-        <a class="find" href="learn.html"><div class="find__media"><img src="assets/img/kikuchi/people.png" alt="学ぶ・セミナー" loading="lazy"></div><div class="find__b"><div class="find__t">学ぶ・セミナー</div><div class="find__s">技術・経営をオンラインで</div></div></a>
+        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/kikuchi_24_24pc_2.jpg" alt="悩みから探す" loading="lazy" width="1440" height="770"></div><div class="find__b"><div class="find__t">悩みから探す</div><div class="find__s">髪の悩み・課題から検索</div></div></a>
+        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/cat_tenpan.jpg" alt="施術目的から探す" loading="lazy" width="750" height="390"></div><div class="find__b"><div class="find__t">施術目的から探す</div><div class="find__s">カラー・パーマ・ケア等</div></div></a>
+        <a class="find" href="index.html"><div class="find__media"><img src="assets/img/kikuchi/cat_salon.jpg" alt="サロンタイプから探す" loading="lazy" width="750" height="390"></div><div class="find__b"><div class="find__t">サロンタイプから探す</div><div class="find__s">規模・業態で提案</div></div></a>
+        <a class="find" href="learn.html"><div class="find__media"><img src="assets/img/kikuchi/people.png" alt="学ぶ・セミナー" loading="lazy" width="1400" height="770"></div><div class="find__b"><div class="find__t">学ぶ・セミナー</div><div class="find__s">技術・経営をオンラインで</div></div></a>
       </div>
     </div>
   </section>
@@ -372,7 +394,7 @@
   <!-- 運営会社 -->
   <section class="about">
     <div class="about__in">
-      <div class="about__img"><img src="assets/img/kikuchi/hero_gen.png" alt="サロンの現場を支える" loading="lazy"></div>
+      <div class="about__img"><img src="assets/img/kikuchi/hero_gen.png" alt="サロンの現場を支える" loading="lazy" width="1376" height="768"></div>
       <div>
         <span class="about__logo"><img src="assets/img/kikuchi/logo.svg" alt="KIKUCHI PRODUCE"></span>
         <div class="about__t">運営は北海道シェア<span class="gold">No.1</span><small style="font-size:11px;font-weight:600;color:var(--ink-3)">※自社調べ</small>の総合美容ディーラー <b>株式会社菊地</b></div>
@@ -386,7 +408,9 @@
     </div>
   </section>
 
-  <footer class="foot">
+  
+</main>
+<footer class="foot">
     <div class="foot__in">
       <div><a href="guide.html">はじめての方へ</a><a href="story.html">まんがでわかる</a><a href="faq.html">よくある質問</a><a href="company.html">会社概要</a><a href="compare.html">ディーラーの方へ（連結のご案内）</a><a href="tokushoho.html">特定商取引法に基づく表記</a><a href="privacy.html">プライバシーポリシー</a><a href="terms.html">利用規約</a><a href="shipping.html">配送・送料</a><a href="login.html">ログイン</a></div>
       <div style="margin-top:8px">株式会社菊地（KIKUCHI PRODUCE）／〒062-0003 北海道札幌市豊平区美園3条8丁目4-17／TEL 011-811-0981<br>© 2026 株式会社菊地</div>

@@ -86,7 +86,7 @@ h2:first-child{margin-top:6px}
 <div id="gate" class="gate" style="display:none">
   <h1>SEAM PRICES</h1>
   <p>メンバー価格とセール価格を決める画面です</p>
-  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off">
+  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off" aria-label="管理トークン">
   <button id="gbtn">開く</button>
 </div>
 
@@ -213,14 +213,14 @@ function render(){
     return `<div class="row ${OPEN===b?'open':''}">
       <span class="r-n">${esc(b)}<span class="r-c">　${g.n}点</span></span>
       <span class="r-in"><input class="pin ${bp!==''?'set':''}" data-b="${esc(b)}" type="number" min="0" max="90" step="1"
-        inputmode="numeric" value="${bp}" placeholder="—"><span class="unit">％</span></span>
+        inputmode="numeric" value="${bp}" placeholder="—" aria-label="—"><span class="unit">％</span></span>
       <span class="r-ex">${exampleOf(g.items,MODE,bp!==''?+bp:null)}</span>
       ${sizeKeys.length>1?`<button class="r-more" data-open="${esc(b)}">${OPEN===b?'閉じる':'サイズ別'}</button>`:''}
       ${OPEN===b?`<div class="sizes">${sizeKeys.map(s=>{
         const sv=(r.size&&r.size[b+'|'+s]!=null)?r.size[b+'|'+s]:'';
         return `<div class="srow"><span class="r-n">${esc(s)}<span class="r-c">　${g.sizes[s].length}点</span></span>
           <span class="r-in"><input class="pin ${sv!==''?'set':''}" data-s="${esc(b+'|'+s)}" type="number" min="0" max="90"
-            step="1" inputmode="numeric" value="${sv}" placeholder="—"><span class="unit">％</span></span>
+            step="1" inputmode="numeric" value="${sv}" placeholder="—" aria-label="—"><span class="unit">％</span></span>
           <span class="r-ex">${exampleOf(g.sizes[s],MODE,sv!==''?+sv:null)}</span></div>`;}).join('')}</div>`:''}
     </div>`;}).join(''):'<div class="empty">商品がまだありません</div>';
 

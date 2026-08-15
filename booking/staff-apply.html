@@ -75,14 +75,14 @@ function form(){
       <h2>お名前</h2>
       <p class="h2s">給与・カルテ・レジに出る名前です</p>
       <div class="two">
-        <label>姓<span class="req">必須</span><input id="f-last" maxlength="20" placeholder="山田"></label>
-        <label>名<span class="req">必須</span><input id="f-first" maxlength="20" placeholder="花子"></label>
+        <label>姓<span class="req">必須</span><input id="f-last" maxlength="20" placeholder="山田" aria-label="山田"></label>
+        <label>名<span class="req">必須</span><input id="f-first" maxlength="20" placeholder="花子" aria-label="花子"></label>
       </div>
       <div class="two">
         <label>セイ<span class="req">必須</span>
-          <input id="f-klast" maxlength="20" placeholder="ヤマダ"></label>
+          <input id="f-klast" maxlength="20" placeholder="ヤマダ" aria-label="ヤマダ"></label>
         <label>メイ<span class="req">必須</span>
-          <input id="f-kfirst" maxlength="20" placeholder="ハナコ"></label>
+          <input id="f-kfirst" maxlength="20" placeholder="ハナコ" aria-label="ハナコ"></label>
       </div>
       <p class="why2">ふりがなはカタカナでお願いします　ひらがなで入れても、カタカナに直ります</p>
     </div>
@@ -91,12 +91,12 @@ function form(){
       <h2>ホットペッパー</h2>
       <p class="h2s">掲載に出ているとおりに書いてください　1文字でも違うと、あとで突き合わせるときに全部手で直すことになります</p>
       <div class="two">
-        <label>掲載の姓<span class="req">必須</span><input id="f-hlast" maxlength="20" placeholder="山田"></label>
-        <label>掲載の名<span class="req">必須</span><input id="f-hfirst" maxlength="20" placeholder="ハナ"></label>
+        <label>掲載の姓<span class="req">必須</span><input id="f-hlast" maxlength="20" placeholder="山田" aria-label="山田"></label>
+        <label>掲載の名<span class="req">必須</span><input id="f-hfirst" maxlength="20" placeholder="ハナ" aria-label="ハナ"></label>
       </div>
       <label>掲載の表示名<span class="req">必須</span>
         <span class="why">お客様に見えている呼び名です（例）HANA</span>
-        <input id="f-hpbname" maxlength="40" placeholder="HANA"></label>
+        <input id="f-hpbname" maxlength="40" placeholder="HANA" aria-label="HANA"></label>
     </div>
 
     <div class="card">
@@ -111,15 +111,15 @@ function form(){
       <h2>ご連絡先</h2>
       <p class="h2s">シフト・急なご連絡に使います</p>
       <label>お電話<span class="req">必須</span>
-        <input id="f-tel" type="tel" inputmode="tel" maxlength="20" placeholder="090-0000-0000"></label>
+        <input id="f-tel" type="tel" inputmode="tel" maxlength="20" placeholder="090-0000-0000" aria-label="090-0000-0000"></label>
       <label>メールアドレス
-        <input id="f-email" type="email" inputmode="email" maxlength="120" placeholder="hana@example.com"></label>
+        <input id="f-email" type="email" inputmode="email" maxlength="120" placeholder="hana@example.com" aria-label="hana@example.com"></label>
       <label>LINE ID
         <span class="why">お店のグループにお呼びするときに使います</span>
-        <input id="f-line" maxlength="60" placeholder="hana_0101"></label>
+        <input id="f-line" maxlength="60" placeholder="hana_0101" aria-label="hana_0101"></label>
       <label>Instagram のID
         <span class="why">＠のあとの文字だけで大丈夫です　あなたのリンクを貼っていただく場所です</span>
-        <input id="f-insta" maxlength="40" placeholder="hana.hair"></label>
+        <input id="f-insta" maxlength="40" placeholder="hana.hair" aria-label="hana.hair"></label>
     </div>
 
     <div class="card">
@@ -139,9 +139,9 @@ function form(){
       <label>生年月日
         <input id="f-birth" type="date"></label>
       <label>ご住所
-        <input id="f-addr" maxlength="200" placeholder="東京都中央区銀座0-0-0 ○○マンション000"></label>
+        <input id="f-addr" maxlength="200" placeholder="東京都中央区銀座0-0-0 ○○マンション000" aria-label="東京都中央区銀座0-0-0 ○○マンション000"></label>
       <label>ひとこと（なくても大丈夫です）
-        <textarea id="f-note" maxlength="300" placeholder="入社日・その他お伝えしたいこと"></textarea></label>
+        <textarea id="f-note" maxlength="300" placeholder="入社日・その他お伝えしたいこと" aria-label="入社日・その他お伝えしたいこと"></textarea></label>
     </div>
 
     <button class="btn" id="go">この内容で送る</button>
@@ -162,7 +162,7 @@ function form(){
         掲載のご自身のページのURLに出ている T から始まる番号です　分からなければ空欄で構いません</div>
       ${on.map(b=>{const v=b.dataset.sh,n=(SHOPS.find(x=>x[0]===v)||[])[1]||v;
         return `<label style="margin-top:8px">${n}
-          <input class="hpbid" data-s="${v}" maxlength="20" placeholder="T001096152"></label>`;}).join('')}
+          <input class="hpbid" data-s="${v}" maxlength="20" placeholder="T001096152" aria-label="T001096152"></label>`;}).join('')}
     </div>`:'';
   };
   /* ★<label>で<input>を包むと、押した時点でブラウザが勝手に切り替える。

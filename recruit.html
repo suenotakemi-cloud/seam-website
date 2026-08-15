@@ -110,6 +110,24 @@
 
     @media (min-width:900px){.rc-fig-p,.rc-fig-l,.rc-fig-s{width:100%;}}
   </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 
 <body class="font-sans text-charcoal antialiased pb-20 sm:pb-0">
@@ -134,7 +152,7 @@
   <section class="relative overflow-hidden" style="background:#F6ECE6;">
     <!-- 動画バンド -->
     <div class="relative w-full" style="aspect-ratio:4/3;max-height:50vh;">
-      <img class="absolute inset-0 w-full h-full object-cover" style="object-position:center 30%;" src="images/lp/hero_hawaii.jpg" alt="ハワイ研修で撮影した一枚" fetchpriority="high" decoding="async">
+      <img class="absolute inset-0 w-full h-full object-cover" style="object-position:center 30%;" src="images/lp/hero_hawaii.jpg" alt="ハワイ研修で撮影した一枚" fetchpriority="high" decoding="async" width="1920" height="1280">
       <div class="absolute inset-0" style="background:linear-gradient(180deg, rgba(246,236,230,0) 0%, rgba(246,236,230,0) 52%, rgba(246,236,230,.6) 84%, #F6ECE6 100%);"></div>
     </div>
     <!-- 文字（明るく上品なクリーム地） -->
@@ -221,7 +239,7 @@
       </div>
      </div>
      <figure class="rc-arch rc-photo rc-fig-p mx-auto" style="aspect-ratio:4/5;" data-reveal>
-       <img src="images/lp/salon/exp_treatment.jpg" alt="コームで毛束をとりハサミを入れる手元" loading="lazy" decoding="async">
+       <img src="images/lp/salon/exp_treatment.jpg" alt="コームで毛束をとりハサミを入れる手元" loading="lazy" decoding="async" width="720" height="1280">
      </figure>
     </div>
   </section>
@@ -409,7 +427,7 @@
     <div class="max-w-5xl mx-auto px-6 sm:px-8">
       <div class="rc-life-grid">
         <figure class="rc-arch rc-photo rc-fig-l mx-auto" style="aspect-ratio:4/5;" data-reveal>
-          <img src="images/lp/salon/salon_hero.jpg" alt="施術を終えた髪の後ろ姿" loading="lazy" decoding="async">
+          <img src="images/lp/salon/salon_hero.jpg" alt="施術を終えた髪の後ろ姿" loading="lazy" decoding="async" width="608" height="1080">
         </figure>
         <div>
           <p class="font-mono tracking-widest3 text-[10.5px] mb-3" style="color:#B98A7E;" data-reveal>暮らしとの両立</p>
@@ -462,14 +480,14 @@
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
         <div class="relative rounded-[18px] overflow-hidden shadow-card" data-reveal>
-          <div class="aspect-[4/3]"><img src="images/lp/generated/hero_ny.jpg" alt="ニューヨークでのコレクション撮影" loading="lazy" decoding="async" class="w-full h-full object-cover"></div>
+          <div class="aspect-[4/3]"><img src="images/lp/generated/hero_ny.jpg" alt="ニューヨークでのコレクション撮影" loading="lazy" decoding="async" class="w-full h-full object-cover" width="1431" height="1144"></div>
           <div class="absolute inset-x-0 bottom-0 p-5" style="background:linear-gradient(180deg,transparent,rgba(20,18,16,.66));">
             <p class="font-mono tracking-widest2 text-[9.5px]" style="color:#E4D6BC;">New York · 2026 SS-AW</p>
             <p class="font-serif text-ivory text-[16px] mt-0.5">コレクションの現場でつくる</p>
           </div>
         </div>
         <div class="relative rounded-[18px] overflow-hidden shadow-card" data-reveal>
-          <div class="aspect-[4/3]"><img src="images/lp/hero_hawaii.jpg" alt="ハワイでのごほうび研修" loading="lazy" decoding="async" class="w-full h-full object-cover" style="object-position:center 30%;"></div>
+          <div class="aspect-[4/3]"><img src="images/lp/hero_hawaii.jpg" alt="ハワイでのごほうび研修" loading="lazy" decoding="async" class="w-full h-full object-cover" style="object-position:center 30%;" width="1920" height="1280"></div>
           <div class="absolute inset-x-0 bottom-0 p-5" style="background:linear-gradient(180deg,transparent,rgba(20,18,16,.66));">
             <p class="font-mono tracking-widest2 text-[9.5px]" style="color:#E4D6BC;">Hawaii</p>
             <p class="font-serif text-ivory text-[16px] mt-0.5">仲間と過ごす ごほうびの時間</p>
@@ -601,7 +619,7 @@
 
       <div class="mt-8 rc-card-soft p-6 sm:p-8 rc-spa-grid" data-reveal>
         <figure class="rc-arch rc-photo rc-fig-s mx-auto" style="aspect-ratio:1/1;border-radius:999px;">
-          <img src="images/lp/hero_ginza_shelf.jpg" alt="サロン入口のビューティーショップの売場" loading="lazy" decoding="async" style="object-position:50% 45%;">
+          <img src="images/lp/hero_ginza_shelf.jpg" alt="サロン入口のビューティーショップの売場" loading="lazy" decoding="async" style="object-position:50% 45%;" width="1600" height="630">
         </figure>
         <div>
           <p class="font-mono tracking-widest2 text-[9.5px]" style="color:#B98A7E;">Spanist — 銀座・大阪・名古屋</p>
@@ -645,7 +663,7 @@
       </h2>
       
       <figure class="rc-arch rc-photo rc-fig-e mx-auto mt-8" style="aspect-ratio:1/1;border-radius:999px;border-color:rgba(228,214,188,.35);" data-reveal>
-        <img src="images/lp/salon/store_room_poster.jpg" alt="お客様を迎える前の個室" loading="lazy" decoding="async">
+        <img src="images/lp/salon/store_room_poster.jpg" alt="お客様を迎える前の個室" loading="lazy" decoding="async" width="540" height="960">
       </figure>
       <p class="mt-6 text-ivory/80 leading-[2] text-[14px]" data-reveal>
         応募も質問も 見学だけの連絡も歓迎です<br>
@@ -691,11 +709,11 @@
             <input type="text" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;">
             <label class="grid gap-1.5">
               <span class="text-ivory/70 text-[11.5px]">お名前 <span style="color:#D9B8A8;">必須</span></span>
-              <input name="name" required maxlength="60" class="rc-in" placeholder="山田 花子">
+              <input name="name" required maxlength="60" class="rc-in" placeholder="山田 花子" aria-label="山田 花子">
             </label>
             <label class="grid gap-1.5">
               <span class="text-ivory/70 text-[11.5px]">ご連絡先 <span style="color:#D9B8A8;">必須</span></span>
-              <input name="contact" required maxlength="120" class="rc-in" placeholder="メール ／ 電話 ／ LINE ID どれでも">
+              <input name="contact" required maxlength="120" class="rc-in" placeholder="メール ／ 電話 ／ LINE ID どれでも" aria-label="メール ／ 電話 ／ LINE ID どれでも">
             </label>
             <div class="grid grid-cols-2 gap-3">
               <label class="grid gap-1.5">
@@ -718,7 +736,7 @@
             </div>
             <label class="grid gap-1.5">
                 <span class="text-ivory/70 text-[11.5px]">ご連絡してよい時間帯 <span class="" style="opacity:.6">任意</span></span>
-                <input name="callable" maxlength="60" class="rc-in" placeholder="例）平日20時以降 ／ LINEだけ ／ いつでも">
+                <input name="callable" maxlength="60" class="rc-in" placeholder="例）平日20時以降 ／ LINEだけ ／ いつでも" aria-label="例）平日20時以降 ／ LINEだけ ／ いつでも">
               </label>
               <label class="grid gap-1.5">
               <span class="text-ivory/70 text-[11.5px]">ご用件</span>
@@ -730,7 +748,7 @@
             </label>
             <label class="grid gap-1.5">
               <span class="text-ivory/70 text-[11.5px]">ご自由にどうぞ</span>
-              <textarea name="message" rows="3" maxlength="2000" class="rc-in" placeholder="今の状況や 気になっていることなど"></textarea>
+              <textarea name="message" rows="3" maxlength="2000" class="rc-in" placeholder="今の状況や 気になっていることなど" aria-label="今の状況や 気になっていることなど"></textarea>
             </label>
             <button type="submit" id="rcSubmit" class="mt-2 inline-flex items-center justify-center rounded-full py-3.5 px-8 font-serif text-[14px]" style="background:#F7F7F4;color:#16171B;">送信する</button>
             <p class="text-ivory/45 text-[10.5px] leading-[1.8]">いただいた内容は採用のご連絡にのみ使用します 第三者に提供することはありません</p>

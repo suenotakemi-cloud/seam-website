@@ -356,6 +356,24 @@ body.isdemo .foot{bottom:58px}
   background:linear-gradient(90deg,#C9A88C,#A87456);transition:width .9s cubic-bezier(.2,.7,.2,1)}
 .resn{font-size:12.5px;line-height:1.8;color:var(--sub);margin:10px 0 0}
 </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 <body>
 
@@ -639,7 +657,7 @@ function mapHtml(){
   return `<span class="incl">今回のコースは ${inc} まで含まれています</span>
   <div class="mapwrap">
     <svg class="wash" viewBox="0 0 848 1264" aria-hidden="true">${lay()}</svg>
-    <img src="../images/lp/spa/bodymap_figure.webp" alt="からだの図">
+    <img src="../images/lp/spa/bodymap_figure.webp" alt="からだの図" width="760" height="1133">
     <svg class="hit" viewBox="0 0 848 1264">
       ${off?`<g class="off" aria-hidden="true">${OFF_SHAPES.join('')}</g>`:''}
       ${lay()}${pins()}</svg></div>
@@ -887,7 +905,7 @@ function screens(){
     <h1>あなたの時間を<br>組み立ててみませんか</h1>
     <p class="lead">強さも 香りも 灯りも ぜんぶ選べます<br>
       2分ほど　ご予約はまだ要りません</p>
-    <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="">
+    <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="" width="760" height="760">
     <p class="sub-h">まず 長さをお選びください</p>
     <div class="opts">${COURSES.map(c=>`
       <button class="opt${COURSE&&COURSE.id===c.id?' on':''}" data-c="${c.id}">
@@ -960,7 +978,7 @@ function screens(){
       <div class="prow"><b>Menu</b><span>${esc(r.menu||'ウェットヘッドスパ')}</span></div>
       ${r.staff?`<div class="prow"><b>With</b><span>${esc(r.staff)}</span></div>`:''}
     </div>`}
-    <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="">
+    <img class="ill" src="../images/lp/spa/ill_prep.webp" alt="" width="760" height="760">
     ${ALLOW.mode==='spot'?`<p class="hint" style="text-align:center">今回は <b style="color:#A87456">${ALLOW.spotMinutes||10}分のヘッドスパ</b> がついています<br>どこに使うか お選びいただけます</p>`:''}
     ${ALLOW.withHairMinutes?`<p class="hint" style="text-align:center">今回は <b style="color:#A87456">${ALLOW.withHairMinutes}分のヘッドスパ</b> もついています<br>髪のことも 頭のことも 一緒に伺います</p>`:''}
     ${LAST?`<p class="hint" style="text-align:center">前回のご希望が残っています<br>そのままでよければ最後まで送るだけで終わります</p>`:''}
@@ -1279,7 +1297,7 @@ function draw(){
         placeholder="${esc(s.after.otherPh||'')}" value="${esc(A[s.after.other]||'')}">`;}
     if(s.free)h+=`<input id="free" class="other" type="text"
       placeholder="${esc(s.free.ph||'')}" value="${esc(A[s.free.k]||'')}">`;
-    if(s.note)h+=`<p class="sub-h">ほかにご希望があれば</p><textarea id="note" placeholder="例：終わったあと少しだけ静かに休みたいです">${esc(A.note||'')}</textarea>`;
+    if(s.note)h+=`<p class="sub-h">ほかにご希望があれば</p><textarea id="note" placeholder="例：終わったあと少しだけ静かに休みたいです" aria-label="例：終わったあと少しだけ静かに休みたいです">${esc(A.note||'')}</textarea>`;
     h+=`<div class="grant" id="grant"></div>`;
   }
   app.innerHTML=`<div class="scr on">${h}</div>`;
@@ -1425,7 +1443,7 @@ function drawConfirm(){
       <div class="cbody">
         <div class="cfig">
           <svg class="wash" viewBox="0 0 848 1264" aria-hidden="true">${lay()}</svg>
-          <img src="../images/lp/spa/bodymap_figure.webp" alt="">
+          <img src="../images/lp/spa/bodymap_figure.webp" alt="" width="760" height="1133">
         </div>
         <div class="clist">
           ${care.map(k=>`<div class="crow"><b>${PARTS[k]}</b><span>${esc(partText(k))}</span></div>`).join('')}
@@ -1487,7 +1505,7 @@ function drawOpenDone(){
   app.innerHTML=`<div class="scr on done" style="text-align:center">
     <div class="finale">
       <span class="aura"></span>
-      <img src="../images/lp/spa/ill_finale.webp" alt="" aria-hidden="true">
+      <img src="../images/lp/spa/ill_finale.webp" alt="" aria-hidden="true" width="1000" height="614">
       <span class="sweep"></span>
     </div>
     <p class="eyebrow rise" style="--d:.15s">your ${mn} minutes</p>
@@ -1533,7 +1551,7 @@ function drawDone(){
   app.innerHTML=`<div class="scr on done" style="text-align:center">
     <div class="finale">
       <span class="aura"></span>
-      <img src="../images/lp/spa/ill_finale.webp" alt="" aria-hidden="true">
+      <img src="../images/lp/spa/ill_finale.webp" alt="" aria-hidden="true" width="1000" height="614">
       <span class="sweep"></span>
     </div>
     <p class="eyebrow rise" style="--d:.15s">see you soon</p>

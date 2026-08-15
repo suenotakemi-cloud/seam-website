@@ -80,6 +80,24 @@
     .invite-applied svg { width: 18px; height: 18px; flex: none; }
     .invite-clear { background: none; border: 0; color: var(--ink-3); font-size: var(--fs-12); text-decoration: underline; margin-left: auto; }
   </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 <body>
 
@@ -125,7 +143,7 @@
             <div class="invite-card__head"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M3 12h18"/><path d="M7 8V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/></svg>菊池の担当者から招待コードをお持ちの方</div>
             <div id="inviteEntry">
               <div class="invite-row">
-                <input class="input" id="inviteInput" placeholder="招待コード（例：KP-2025-0001）" autocomplete="off">
+                <input class="input" id="inviteInput" placeholder="招待コード（例：KP-2025-0001）" autocomplete="off" aria-label="招待コード（例：KP-2025-0001）">
                 <button type="button" class="btn btn--primary" id="inviteApply">適用</button>
               </div>
               <div class="invite-msg" id="inviteMsg"></div>
@@ -195,7 +213,7 @@
         <!-- 2'. 招待コード登録時のお届け先名義（手動・担当者承認） -->
         <div class="field" id="inviteNameField" hidden>
           <label class="field__label">お届け先の名義（サロン名／お名前）<span class="req">必須</span></label>
-          <input class="input" id="inviteName" type="text" placeholder="例：SALON LUXE 表参道店">
+          <input class="input" id="inviteName" type="text" placeholder="例：SALON LUXE 表参道店" aria-label="例：SALON LUXE 表参道店">
           <div class="field__help">招待コードによる登録は担当者承認のため、証明書は不要です。発注の宛先名義になります。</div>
         </div>
 
@@ -210,9 +228,9 @@
             <option>美容学生</option>
           </select>
         </div>
-        <div class="field"><label class="field__label">メールアドレス<span class="req">必須</span></label><input class="input" type="email" required placeholder="example@salon.jp"></div>
-        <div class="field"><label class="field__label">電話番号<span class="req">必須</span></label><input class="input" type="tel" required placeholder="09000000000"></div>
-        <div class="field"><label class="field__label">お届け先ご住所<span class="req">必須</span></label><input class="input" type="text" placeholder="都道府県市区町村 番地・建物名" required></div>
+        <div class="field"><label class="field__label">メールアドレス<span class="req">必須</span></label><input class="input" type="email" required placeholder="example@salon.jp" aria-label="example@salon.jp"></div>
+        <div class="field"><label class="field__label">電話番号<span class="req">必須</span></label><input class="input" type="tel" required placeholder="09000000000" aria-label="09000000000"></div>
+        <div class="field"><label class="field__label">お届け先ご住所<span class="req">必須</span></label><input class="input" type="text" placeholder="都道府県市区町村 番地・建物名" required aria-label="都道府県市区町村 番地・建物名"></div>
 
         <label class="checkbox-line" style="margin:var(--s-4) 0 var(--s-2)"><input type="checkbox" required> <span><b>転売・横流しをしない誓約</b>：購入品を最終消費者以外へ転売・譲渡しません。違反時はアカウント停止・取引停止となることに同意します。</span></label>
         <label class="checkbox-line" style="margin:0 0 var(--s-4)"><input type="checkbox" required> <span><a href="terms.html" target="_blank" rel="noopener">利用規約・会員規約</a>・<a href="privacy.html" target="_blank" rel="noopener">個人情報の取り扱い</a>に同意します</span></label>

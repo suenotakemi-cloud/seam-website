@@ -74,13 +74,31 @@ h2:first-child{margin-top:4px}
   #badges{display:flex;flex-wrap:wrap;gap:12px}
 }
 </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 <body>
 
 <div id="gate" class="gate" style="display:none">
   <h1>機器の接続テスト</h1>
   <p>バーコードリーダーとSquare端末を試す画面です<br>会計は1件も作りません</p>
-  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off">
+  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off" aria-label="管理トークン">
   <button id="gbtn">開く</button>
 </div>
 
@@ -110,7 +128,7 @@ h2:first-child{margin-top:4px}
       そのあと <b>¥1</b> で試し決済し、そのまま返金します　実際のお金はほぼ動きません</p>
     <div class="card">
       <div class="row">
-        <input id="devIn" placeholder="端末のデバイスID（登録済みならそのまま）" autocomplete="off">
+        <input id="devIn" placeholder="端末のデバイスID（登録済みならそのまま）" autocomplete="off" aria-label="端末のデバイスID（登録済みならそのまま）">
         <button class="btn" id="devSave">保存</button>
         <button class="btn" id="devNew">端末コードを発行</button>
       </div>
@@ -137,9 +155,9 @@ h2:first-child{margin-top:4px}
       シフトの担当者ごとに、3桁の数字を決めてください</p>
     <div class="card">
       <div class="row">
-        <input id="pinSid" placeholder="社員番号（例 s2）" autocomplete="off" style="max-width:190px">
-        <input id="pinName" placeholder="お名前" autocomplete="off" style="max-width:220px">
-        <input id="pinVal" placeholder="3桁" inputmode="numeric" maxlength="3" style="max-width:110px">
+        <input id="pinSid" placeholder="社員番号（例 s2）" autocomplete="off" style="max-width:190px" aria-label="社員番号（例 s2）">
+        <input id="pinName" placeholder="お名前" autocomplete="off" style="max-width:220px" aria-label="お名前">
+        <input id="pinVal" placeholder="3桁" inputmode="numeric" maxlength="3" style="max-width:110px" aria-label="3桁">
         <button class="btn pri" id="pinSave">決める</button>
         <button class="btn" id="pinList">一覧を見る</button>
       </div>
@@ -315,7 +333,7 @@ $('badgeLoad').onclick=async()=>{
     const b=j.badges||[];
     $('badges').innerHTML=b.length?b.map(x=>`<div style="border:1px solid var(--line);background:#fff;
         border-radius:3px;padding:16px;text-align:center;width:190px">
-        <img src="${qrImg(x.code,5)}" style="width:150px;height:150px;image-rendering:pixelated">
+        <img src="${qrImg(x.code,5)}" style="width:150px;height:150px;image-rendering:pixelated" alt="読み取り用のQRコード">
         <div style="margin-top:10px;font-size:15px;color:var(--ink)">${esc(x.name||x.staffId)}</div>
         <div style="font-size:11px;color:var(--sub);letter-spacing:.06em">${esc(x.staffId)}</div>
       </div>`).join(''):'<div class="st">まだ社員証がありません　台帳の「スタッフ」から合言葉を発行してください</div>';

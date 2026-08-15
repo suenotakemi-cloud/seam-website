@@ -98,7 +98,7 @@ input,select,textarea{width:100%;padding:13px;border:1px solid #ddd5c8;border-ra
   <div style="font-family:'Noto Serif JP',serif;letter-spacing:.3em;font-size:13px;color:#7a6f60">SEAM</div>
   <div style="font-size:18px;font-weight:700;margin:6px 0 4px">幹部・事務</div>
   <div style="font-size:12.5px;color:#8a8177;line-height:1.8">管理トークンを入れてください</div>
-  <input id="gtok" type="password" placeholder="管理トークン" style="margin-top:10px">
+  <input id="gtok" type="password" placeholder="管理トークン" style="margin-top:10px" aria-label="管理トークン">
   <button class="btn" id="ggo" style="margin-top:10px">ひらく</button>
 </div></div>
 <div id="toast"></div>
@@ -244,15 +244,15 @@ function addHtml(){
         <button data-kind="advance" class="${ADD.kind==='advance'?'on':''}">自分で立て替えた</button>
       </div>
       <label>レシートの写真</label>
-      <div class="shot" id="shot">${ADD.photo?`<img src="${ADD.photo}">`:'ここを押して撮る'}</div>
+      <div class="shot" id="shot">${ADD.photo?`<img src="${ADD.photo}" alt="レシートのお写真">`:'ここを押して撮る'}</div>
       <input type="file" id="file" accept="image/*" capture="environment" style="display:none">
       <label>金額</label>
-      <input id="amt" type="number" inputmode="numeric" value="${ADD.amount}" placeholder="1200">
+      <input id="amt" type="number" inputmode="numeric" value="${ADD.amount}" placeholder="1200" aria-label="1200">
       <label>何に使いましたか</label>
       <div class="cats">${CATS.map(c=>`<button data-cat="${c}" class="${ADD.category===c?'on':''}">${c}</button>`).join('')}</div>
       <label>ひとこと（なくても大丈夫です）</label>
-      <input id="memo" value="${esc(ADD.memo)}" placeholder="例）銀座 カラー剤の買い足し">
-      ${ADD.kind==='advance'?`<label>お名前</label><input id="who" value="${esc(ADD.who)}" placeholder="立て替えた方">`:''}
+      <input id="memo" value="${esc(ADD.memo)}" placeholder="例）銀座 カラー剤の買い足し" aria-label="例）銀座 カラー剤の買い足し">
+      ${ADD.kind==='advance'?`<label>お名前</label><input id="who" value="${esc(ADD.who)}" placeholder="立て替えた方" aria-label="立て替えた方">`:''}
       <button class="btn" id="save" style="margin-top:16px">この内容で入れる</button>
     </div>`;
 }
@@ -319,7 +319,7 @@ function draw(){
     const j=await get('/petty/photo?id='+encodeURIComponent(b.dataset.id));
     if(!j.photo){toast('写真がありません',true);return;}
     const w=window.open('','_blank');
-    w.document.write(`<body style="margin:0;background:#111"><img src="${j.photo}" style="width:100%"></body>`);
+    w.document.write(`<body style="margin:0;background:#111"><img src="${j.photo}" style="width:100%" alt="レシートのお写真"></body>`);
   });
   if(TAB==='add')addWire();
 }

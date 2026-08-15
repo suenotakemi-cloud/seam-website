@@ -1231,6 +1231,24 @@ body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:
 .ent-line b{font-size:15px}
 .ent-line span{font-size:13px;color:#3f6b50}
 </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 <body>
 
@@ -1324,7 +1342,7 @@ body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:
     <div class="card kpi"><div class="lbl">累計売上</div><div class="num" id="c-sales">¥0</div><div class="sub">来店済み・予約分</div></div>
   </div>
   <div class="card">
-    <input id="cust-search" placeholder="🔍 名前・電話で検索" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px">
+    <input id="cust-search" placeholder="🔍 名前・電話で検索" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;margin-bottom:12px" aria-label="名前・電話で検索">
     <div id="custlist"></div>
   </div>
 </section>
@@ -1472,16 +1490,16 @@ body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:
   <div class="card" style="margin-bottom:14px">
     <h3 style="font-size:14.5px;margin-bottom:10px">商品を追加</h3>
     <div class="prod-form">
-      <input id="pf-name" placeholder="商品名（例）oggi ott シャンプー">
-      <input id="pf-price" type="number" inputmode="numeric" placeholder="価格 ¥">
-      <input id="pf-barcode" placeholder="バーコード（任意・スキャン可）">
-      <input id="pf-stock" type="number" inputmode="numeric" placeholder="在庫数">
+      <input id="pf-name" placeholder="商品名（例）oggi ott シャンプー" aria-label="商品名（例）oggi ott シャンプー">
+      <input id="pf-price" type="number" inputmode="numeric" placeholder="価格 ¥" aria-label="価格 ¥">
+      <input id="pf-barcode" placeholder="バーコード（任意・スキャン可）" aria-label="バーコード（任意・スキャン可）">
+      <input id="pf-stock" type="number" inputmode="numeric" placeholder="在庫数" aria-label="在庫数">
       <button class="btn pay" id="pf-add">追加</button>
     </div>
   </div>
   <div class="card" style="margin-bottom:12px">
     <input id="prod-search" placeholder="🔎 バーコードを読む／商品名で探す" autocomplete="off"
-      style="width:100%;border:1.5px solid var(--accent2);border-radius:10px;padding:11px 13px;font-size:15px;background:#f7fbff">
+      style="width:100%;border:1.5px solid var(--accent2);border-radius:10px;padding:11px 13px;font-size:15px;background:#f7fbff" aria-label="バーコードを読む／商品名で探す">
     <div id="prod-count" style="font-size:12px;color:var(--sub);margin-top:6px"></div>
   </div>
   <div id="productsbody"></div>
@@ -1519,11 +1537,11 @@ body.customer .pnav .btn.ghost{background:#fff;border:1px solid var(--cl);color:
 <div class="modal-bg" id="modalbg">
   <div class="modal">
     <h3>予約を登録</h3>
-    <div class="field"><label>お客様名</label><input id="m-name" placeholder="例）山田花子"></div>
-    <div class="field"><label>電話番号（任意）</label><input id="m-phone" placeholder="例）09012345678"></div>
+    <div class="field"><label>お客様名</label><input id="m-name" placeholder="例）山田花子" aria-label="例）山田花子"></div>
+    <div class="field"><label>電話番号（任意）</label><input id="m-phone" placeholder="例）09012345678" aria-label="例）09012345678"></div>
     <div class="field"><label>メニュー</label><select id="m-menu"></select></div>
     <div class="field"><label>チャネル</label><select id="m-chan"></select></div>
-    <div class="field"><label>メモ（任意）</label><input id="m-note" placeholder="例）カラーはアッシュ系希望"></div>
+    <div class="field"><label>メモ（任意）</label><input id="m-note" placeholder="例）カラーはアッシュ系希望" aria-label="例）カラーはアッシュ系希望"></div>
     <div style="font-size:12.5px;color:var(--sub)" id="m-info"></div>
     <div class="row">
       <button class="btn ghost" style="flex:1" id="m-cancel">キャンセル</button>
@@ -3349,17 +3367,17 @@ function karteDraw(){
       </div>
       ${(mx.agents||[]).map((a,j)=>`<div class="ktag">
         <span class="ktag-n">${escH(a.name||'')}${a.brand?`<i>${escH(a.brand)}</i>`:''}</span>
-        <input class="ktag-g" data-i="${i}" data-j="${j}" type="number" inputmode="decimal" step="1" value="${a.g||''}" placeholder="g">
+        <input class="ktag-g" data-i="${i}" data-j="${j}" type="number" inputmode="decimal" step="1" value="${a.g||''}" placeholder="g" aria-label="g">
         <button type="button" class="ktc-x" data-delag="${i}:${j}" aria-label="消す">✕</button>
       </div>`).join('')}
       <div class="ktag ktag-add">
-        <input class="ktag-s" data-i="${i}" placeholder="バーコードを読む／薬剤名で探す" autocomplete="off" inputmode="search">
+        <input class="ktag-s" data-i="${i}" placeholder="バーコードを読む／薬剤名で探す" autocomplete="off" inputmode="search" aria-label="バーコードを読む／薬剤名で探す">
       </div>
       <div class="ktmix-l"><span>オキシ</span><span>オキシ g</span><span>置き時間 分</span></div>
       <div class="ktmix-b">
         <select class="ktm-f" data-i="${i}" data-f="oxy"><option value="" ${mx.oxy?'':'selected'}>オキシ</option>${KT_OXY.map(o=>`<option ${((mx.oxy||'')===o)?'selected':''}>${o}</option>`).join('')}</select>
-        <input class="ktm-n" data-i="${i}" data-f="oxyG" type="number" inputmode="decimal" value="${mx.oxyG||''}" placeholder="g">
-        <input class="ktm-n" data-i="${i}" data-f="min" type="number" inputmode="numeric" value="${mx.min||''}" placeholder="分">
+        <input class="ktm-n" data-i="${i}" data-f="oxyG" type="number" inputmode="decimal" value="${mx.oxyG||''}" placeholder="g" aria-label="g">
+        <input class="ktm-n" data-i="${i}" data-f="min" type="number" inputmode="numeric" value="${mx.min||''}" placeholder="分" aria-label="分">
       </div>
     </div>`;}).join('');
   const L=KT_LAST, LB=(L&&L.body)||{};
@@ -3383,7 +3401,7 @@ function karteDraw(){
       <button type="button" class="btn small ghost" id="kt-addmix">＋ 塗りを足す</button></div>`:''}
 
     ${ktHasPerm()?`<div class="ktsec"><div class="kth">巻き方・その他の時間</div>
-      <input id="kt-perm" value="${escH(b.perm||'')}" placeholder="例）ロッド12mm・中間巻き"></div>`:''}
+      <input id="kt-perm" value="${escH(b.perm||'')}" placeholder="例）ロッド12mm・中間巻き" aria-label="例）ロッド12mm・中間巻き"></div>`:''}
 
     <div class="ktsec"><div class="kth">今日お伝えしたこと<span style="font-weight:600;color:var(--sub);margin-left:6px">伝えた回数が、そのまま次の来店になります</span></div>
       <div class="ktchips">${chips(KT_ADVICE,KT.advice||[],'adv')}</div></div>
@@ -3392,14 +3410,14 @@ function karteDraw(){
       <div class="ktchips">${chips(KT_SHAMPOO,[KT.shampoo||''],'sham')}</div></div>
 
     <div class="ktsec"><div class="kth">ついたアシスタント</div>
-      <input id="kt-asst" value="${escH(KT.assistant||'')}" placeholder="例）田中（シャンプー・カラー塗布）"></div>
+      <input id="kt-asst" value="${escH(KT.assistant||'')}" placeholder="例）田中（シャンプー・カラー塗布）" aria-label="例）田中（シャンプー・カラー塗布）"></div>
 
     <div class="ktsec"><div class="kth">切り方</div>
       <div class="ktchips">${chips(KT_CUT,[b.cut||''],'cut')}</div>
-      <input id="kt-cutfree" value="${escH(b.cutFree||'')}" placeholder="例）肩上5cm・重め（なくても大丈夫）"></div>
+      <input id="kt-cutfree" value="${escH(b.cutFree||'')}" placeholder="例）肩上5cm・重め（なくても大丈夫）" aria-label="例）肩上5cm・重め（なくても大丈夫）"></div>
 
     <div class="ktsec"><div class="kth">使ったトリートメント・店販</div>
-      <input id="kt-treat" value="${escH(b.treat||'')}" placeholder="例）オージュア クエンチ"></div>
+      <input id="kt-treat" value="${escH(b.treat||'')}" placeholder="例）オージュア クエンチ" aria-label="例）オージュア クエンチ"></div>
 
     <div class="ktsec"><div class="kth">お客様の反応</div>
       <div class="ktchips">${chips(KT_REACT,b.reaction||[],'react')}</div></div>
@@ -3412,10 +3430,10 @@ function karteDraw(){
       <label class="btn small ghost" style="display:inline-block;cursor:pointer;margin-top:8px">＋ 写真を撮る<input id="kt-file" type="file" accept="image/*" capture="environment" style="display:none"></label></div>
 
     <div class="ktsec"><div class="kth">次回への申し送り</div>
-      <textarea id="kt-next" placeholder="例）次回は根元だけ・毛先は触らない">${escH(KT.nextNote||'')}</textarea></div>
+      <textarea id="kt-next" placeholder="例）次回は根元だけ・毛先は触らない" aria-label="例）次回は根元だけ・毛先は触らない">${escH(KT.nextNote||'')}</textarea></div>
 
     <div class="ktsec"><div class="kth">そのほか</div>
-      <textarea id="kt-free" placeholder="例）お話しされたこと・ご様子など">${escH(b.free||'')}</textarea></div>
+      <textarea id="kt-free" placeholder="例）お話しされたこと・ご様子など" aria-label="例）お話しされたこと・ご様子など">${escH(b.free||'')}</textarea></div>
 
     <div class="ktwho">記入 ${escH(KT.author||ktWho()||'—')}${(KT.editors&&KT.editors.length)?`　修正 ${escH(KT.editors.map(e=>e.split('@')[0]).join('・'))}`:''}
       ${KT.author?`<button type="button" class="ktlink" id="kt-hist">書き換えの跡を見る</button>`:''}
@@ -3652,10 +3670,10 @@ function renderCheckout(){
   const rows=(coDraft.retailItems||[]).map((it,i)=>{
     const isProd=it.unit!=null;   // 商品マスタから入れた行は 単価×数量 で扱う
     return `<div class="co-row">
-      <input class="co-rn" data-i="${i}" placeholder="商品名（例）oggi ott シャンプー" value="${(it.name||'').replace(/"/g,'&quot;')}" ${isProd?'readonly':''}>
+      <input class="co-rn" data-i="${i}" placeholder="商品名（例）oggi ott シャンプー" value="${(it.name||'').replace(/"/g,'&quot;')}" ${isProd?'readonly':''} aria-label="商品名（例）oggi ott シャンプー">
       ${isProd?`<input class="co-rq" data-i="${i}" type="number" inputmode="numeric" min="1" value="${it.qty||1}" aria-label="個数">
         <span class="co-ru">×¥${(it.unit||0).toLocaleString()}</span>`:''}
-      <input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${(isProd?((it.unit||0)*(it.qty||1)):(it.price||''))}" ${isProd?'readonly':''}>
+      <input class="co-rp" data-i="${i}" type="number" inputmode="numeric" placeholder="¥" value="${(isProd?((it.unit||0)*(it.qty||1)):(it.price||''))}" ${isProd?'readonly':''} aria-label="¥">
       <button class="co-rx" data-i="${i}" aria-label="削除">✕</button></div>`;}).join('');
   box.innerHTML=`<h3>お会計${coDraft.customer?`：${coDraft.customer} 様`:'（予約なし）'}
       <button id="co-reg" class="btn small ghost" style="float:right;font-size:11.5px;padding:4px 10px"
@@ -3664,7 +3682,7 @@ function renderCheckout(){
         (featOn('member')&&coDraft.memberCode)||'',coDraft.memberCode?coDraft.memberPt:null):''}
     ${isShop()?'':`<div class="co-line"><span>技術（施術）</span><span class="co-y">¥<input id="co-tech" type="number" inputmode="numeric" value="${coDraft.tech||0}"></span></div>`}
     <div class="co-sub">店販（商品）</div>
-    <div class="co-scan-row"><input id="co-scan" list="co-prod-list" placeholder="🔎 バーコード・会員証をスキャン／商品名で追加" autocomplete="off">${(db.products||[]).length?`<datalist id="co-prod-list">${(db.products||[]).filter(p=>p.active!==0).map(p=>`<option value="${(p.name||'').replace(/"/g,'&quot;')}">`).join('')}</datalist>`:''}</div>
+    <div class="co-scan-row"><input id="co-scan" list="co-prod-list" placeholder="🔎 バーコード・会員証をスキャン／商品名で追加" autocomplete="off" aria-label="バーコード・会員証をスキャン／商品名で追加">${(db.products||[]).length?`<datalist id="co-prod-list">${(db.products||[]).filter(p=>p.active!==0).map(p=>`<option value="${(p.name||'').replace(/"/g,'&quot;')}">`).join('')}</datalist>`:''}</div>
     <div id="co-rows">${rows||'<div class="co-empty">なし</div>'}</div>
     <button class="btn small ghost" id="co-add">＋ 手入力で追加</button>
     <div class="co-line"><span>割引</span><span class="co-y">−¥<input id="co-disc" type="number" inputmode="numeric" value="${coDraft.discount||0}"></span></div>
@@ -3683,9 +3701,9 @@ function renderCheckout(){
          レートの説明も、使える方にだけお見せすればいい。 */
       if(bal<=0)return noLine
         ? `<div class="co-done" style="margin:6px 0;background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">会計後のQRを読み取っていただくと会員証が発行され、次回からポイントが付きます</div>
-           <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px"></div>`
+           <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px" aria-label="例）山田 花子"></div>`
         : `<div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${escH((CO_RANK&&CO_RANK.rank&&CO_RANK.rank.name)||'スタンダード')} ${coRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>
-           <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px"></div>`;
+           <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px" aria-label="例）山田 花子"></div>`;
       return `<div class="co-sub">ポイント（残高 <b>${bal.toLocaleString()}pt</b>・施術1pt=¥${ptYenTech()}／商品1pt=¥${ptYenGoods()}）</div>
       <div class="co-line"><span>ポイント利用</span><span class="co-y">−<input id="co-pts" type="number" inputmode="numeric" min="0" max="${maxPt}" value="${coDraft.pointsUsed||0}">pt</span></div>
       ${maxPt<bal?`<div class="co-line" style="color:var(--sub);font-size:11.5px"><span>　今回お使いいただける上限</span><b style="margin-left:auto">${maxPt.toLocaleString()}pt</b></div>`:''}
@@ -3693,12 +3711,12 @@ function renderCheckout(){
       ${noLine
         ?`<div class="co-done" style="margin:6px 0;background:#fdf6ec;border-color:#ecd9b0;color:#8a611d">📵 ポイントは<b>LINE会員のみ</b>です。会計後のQRを読み取っていただくと会員証が発行され、次回から付きます</div>`
         :`<div class="co-line" style="color:var(--sub);font-size:12px"><span>今回付与予定（${escH((CO_RANK&&CO_RANK.rank&&CO_RANK.rank.name)||'スタンダード')} ${coRate()}%）</span><b id="co-award" style="margin-left:auto">+${coPointAward().toLocaleString()}pt</b></div>`}
-      <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px"></div>`;})()}
+      <div class="co-line" style="font-size:12px"><span>ご紹介者（初回来店時・双方に${stgN('referralPt',500)}pt）</span><input id="co-ref" value="${escH(coDraft.referrer||'')}" placeholder="例）山田 花子" style="flex:1;margin-left:10px;max-width:150px" aria-label="例）山田 花子"></div>`;})()}
     ${(()=>{ // ギフト券利用: コード入力→残高から充当
       const g=coDraft.giftCode?giftByCode(coDraft.giftCode):null;
       const applied=g&&coDraft.giftUsed>0?`<div class="co-line" style="color:#0c7a41;font-weight:700"><span>🎁 ${escH(g.id)}（残高¥${(g.balance||0).toLocaleString()}）</span><span style="margin-left:auto">−¥${(+coDraft.giftUsed).toLocaleString()} <button class="co-rx" id="co-gift-x" aria-label="解除">✕</button></span></div>`:'';
       return `<div class="co-sub">ギフト券</div>
-      ${applied||`<div class="co-scan-row"><input id="co-gift" placeholder="🎁 券面コード（G-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-gift-go">適用</button></div>`}`;})()}
+      ${applied||`<div class="co-scan-row"><input id="co-gift" placeholder="🎁 券面コード（G-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase" aria-label="🎁 券面コード（G-XXXX-XXXX）を入力"><button class="btn small ghost" id="co-gift-go">適用</button></div>`}`;})()}
     ${(()=>{ // 回数券・パス: コード入力→1回消化(施術分カバー)
       const x=coDraft.passCode?passByCode(coDraft.passCode):null;
       const isMs=x&&(x.kind==='membership'||(CO_MEMBERSHIP&&CO_MEMBERSHIP.id===x.id));
@@ -3707,13 +3725,13 @@ function renderCheckout(){
       if(CO_MEMBERSHIP&&CO_MEMBERSHIP.remaining>0&&!isShop())return `<div class="co-sub">月額会員</div>
       <div class="co-line" style="color:#0c7a41"><span>👑 残${CO_MEMBERSHIP.remaining}回${CO_MEMBERSHIP.status==='canceled'?'（自動更新は停止中）':''}</span><span style="margin-left:auto"><button class="btn small ghost" id="co-ms-go">1回を使う</button></span></div>
       <div class="co-sub">回数券・パス</div>
-      <div class="co-scan-row"><input id="co-pass" placeholder="🎫 パスコード（P-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase"><button class="btn small ghost" id="co-pass-go">消化</button></div>`;
+      <div class="co-scan-row"><input id="co-pass" placeholder="🎫 パスコード（P-XXXX-XXXX）を入力" autocomplete="off" style="text-transform:uppercase" aria-label="🎫 パスコード（P-XXXX-XXXX）を入力"><button class="btn small ghost" id="co-pass-go">消化</button></div>`;
       /* ★returnを書き忘れると、テンプレートに undefined という文字がそのまま出る。
          回数券も月額会員もお持ちでない、いちばん多いお会計で出ていた。 */
       return '';})()}
     <div class="co-total"><span>合計（税込）</span><b id="co-total">¥${coTotal().toLocaleString()}</b></div>
     ${coDraft.method==='cash'?`<div class="co-cash">
-      <div class="co-line"><span>お預かり</span><span class="co-y">¥<input id="co-recv" type="number" inputmode="numeric" value="${coDraft.received||''}" placeholder="0"></span></div>
+      <div class="co-line"><span>お預かり</span><span class="co-y">¥<input id="co-recv" type="number" inputmode="numeric" value="${coDraft.received||''}" placeholder="0" aria-label="0"></span></div>
       <div class="co-quick">${[1000,5000,10000].map(v=>`<button data-recv="${v}">¥${v.toLocaleString()}</button>`).join('')}
         <button data-recv="exact">ちょうど</button></div>
       <div class="co-change ${(+coDraft.received||0)>=coTotal()?'ok':'ng'}">
@@ -4012,8 +4030,8 @@ function renderNextVisit(){
     times.push(`<option value="${t}" ${t===d.start?'selected':''} ${ng?'disabled':''}>${hm(t)}${ng?'（埋）':''}</option>`);}
   box.innerHTML=`<h3>🔁 次回のご予約${d.name?`：${escH(d.name)} 様`:''}</h3>
     <div class="co-sub" style="margin-top:2px">${menu?escH(menu.name):'メニュー未指定'}の目安は<b>約${wk}週間後</b>です。この場で次回を確保しませんか？</div>
-    ${d.name?'':'<div class="co-line"><span>お名前（姓 名）</span><input id="nv-name" placeholder="例）山田 花子" style="flex:1;margin-left:10px"></div>'}
-    <div class="co-line"><span>フリガナ（セイ メイ）</span><input id="nv-kana" value="${escH(d.kana)}" placeholder="例）ヤマダ ハナコ" style="flex:1;margin-left:10px"></div>
+    ${d.name?'':'<div class="co-line"><span>お名前（姓 名）</span><input id="nv-name" placeholder="例）山田 花子" style="flex:1;margin-left:10px" aria-label="例）山田 花子"></div>'}
+    <div class="co-line"><span>フリガナ（セイ メイ）</span><input id="nv-kana" value="${escH(d.kana)}" placeholder="例）ヤマダ ハナコ" style="flex:1;margin-left:10px" aria-label="例）ヤマダ ハナコ"></div>
     <div class="co-line"><span>日付</span><input id="nv-day" type="date" value="${d.day}" min="${dkey(addDays(today(),1))}" style="margin-left:auto"></div>
     <div class="co-line"><span>時間</span><select id="nv-time" class="co-sel" style="margin-left:auto;max-width:140px">${times.join('')}</select></div>
     <div class="co-line"><span>担当</span><span style="margin-left:auto;font-weight:800">${escH(st.name||'')}（指名）</span></div>
@@ -4233,7 +4251,7 @@ function renderRegister(){
     <div class="rz"><span>釣銭準備金${carried?` <em class="rz-carry">前日(${carried.date.slice(5).replace('-','/')})から繰越</em>`:''}</span><span class="co-y">¥<input id="rz-float" type="number" inputmode="numeric" value="${float}" ${closed?'disabled':''}></span></div>
     <div class="rz"><span>現金売上</span><b>${money(s.cash)}</b></div>
     <div class="rz rz-line"><span>現金 理論残高</span><b id="rz-expected">${money(expected)}</b></div>
-    <div class="rz"><span>実際の現金（数えた額）</span><span class="co-y">¥<input id="rz-count" type="number" inputmode="numeric" value="${counted!=null?counted:''}" placeholder="0" ${closed?'disabled':''}></span></div>
+    <div class="rz"><span>実際の現金（数えた額）</span><span class="co-y">¥<input id="rz-count" type="number" inputmode="numeric" value="${counted!=null?counted:''}" placeholder="0" ${closed?'disabled':''} aria-label="0"></span></div>
     <div class="rz rz-diff" id="rz-diffrow" style="${diff==null?'display:none':''}"><span>過不足</span><b id="rz-diff" class="${diff===0?'ok':(diff<0?'short':'over')}">${diff!=null?((diff>0?'+':'')+money(diff)):''}</b></div>
     <div class="rz-ref"><span>💳 カード ${money(s.card)}</span><span>📱 QR ${money(s.qr)}</span>${s.hpb?`<span>🌶️ スマート支払い ${money(s.hpb)}（HPB入金）</span>`:''}<span>総売上 ${money(s.total)}</span></div>
     ${closed?`<div class="reg-doneline">✅ ${set.closedAt.slice(0,16).replace('T',' ')} に締めました<button class="btn small ghost" id="rz-reopen">締めを取消</button></div>`:`<button class="btn pay" id="rz-close" style="width:100%;margin-top:11px">この内容でレジを締める</button>`}</div>`;
@@ -4248,7 +4266,7 @@ function renderRegister(){
   const giftRows=activeGifts.slice(0,12).map(g=>`<div class="reg-pend"><span class="rp-t" style="font-family:monospace">${escH(g.id)}</span><span class="rp-n">${escH(g.buyer||g.label||'')}</span><span class="rp-m">残高¥${(g.balance||0).toLocaleString()}${g.expires?` / 〜${g.expires.slice(5).replace('-','/')}`:''}</span><button class="btn small ghost" data-gprint="${g.id}">🖨</button><button class="rc-x" data-gvoid="${g.id}" aria-label="無効化">✕</button></div>`).join('');
   const gfPanel=`<div class="card reg-close"><h3>🎁 ギフト券</h3>
     <div class="rz"><span>金額</span><span class="co-y">¥<input id="gf-amt" type="number" inputmode="numeric" value="5000" step="500" style="width:88px"></span></div>
-    <div class="rz"><span>贈り主（購入者名）</span><input id="gf-buyer" placeholder="例）山田 花子" style="margin-left:auto;max-width:180px"></div>
+    <div class="rz"><span>贈り主（購入者名）</span><input id="gf-buyer" placeholder="例）山田 花子" style="margin-left:auto;max-width:180px" aria-label="例）山田 花子"></div>
     <div class="rz"><span>有効期限</span><input id="gf-exp" type="date" value="${dkey(addDays(today(),180))}" style="margin-left:auto"></div>
     <button class="btn pay" id="gf-issue" style="width:100%;margin-top:9px">発行して会計へ（券面はあとから印刷）</button>
     <div class="rz-ref"><span>利用はお会計の「ギフト券」欄にコード入力</span><span>期限は既定6ヶ月＝資金決済法の届出対象外に収まります</span></div>
@@ -4260,7 +4278,7 @@ function renderRegister(){
     <div class="rz"><span>名称</span><input id="ps-label" value="ヘッドスパ4回券" style="margin-left:auto;max-width:200px"></div>
     <div class="rz"><span>回数</span><span class="co-y"><input id="ps-total" type="number" inputmode="numeric" value="4" min="1" style="width:56px">回</span></div>
     <div class="rz"><span>価格</span><span class="co-y">¥<input id="ps-price" type="number" inputmode="numeric" value="44000" step="1000" style="width:88px"></span></div>
-    <div class="rz"><span>お客様名</span><input id="ps-cust" placeholder="例）山田 花子" style="margin-left:auto;max-width:180px"></div>
+    <div class="rz"><span>お客様名</span><input id="ps-cust" placeholder="例）山田 花子" style="margin-left:auto;max-width:180px" aria-label="例）山田 花子"></div>
     <div class="rz"><span>有効期限</span><input id="ps-exp" type="date" value="${dkey(addDays(today(),180))}" style="margin-left:auto"></div>
     <button class="btn pay" id="ps-issue" style="width:100%;margin-top:9px">発行して会計へ</button>
     <div class="rz-ref"><span>会計の「回数券・パス」欄にコード入力で1回消化(施術分カバー)</span><span>前受金で売上安定・来店固定化</span></div>
@@ -4427,7 +4445,7 @@ function renderRegister(){
       <span>決めた人だけが、スマホの画面（今日のお客様・カルテ）に入れます　カルテに残る名前は、ここでのログインから取ります</span></div>
     ${STAFF.map(x=>`<div class="rz"><span>${escH(x.name)}</span><span class="co-y">
       <input class="pin-in" data-id="${x.id}" data-name="${escH(x.name)}" type="text" inputmode="numeric"
-        maxlength="3" placeholder="___" style="width:64px;text-align:center;letter-spacing:.3em;font-size:16px">
+        maxlength="3" placeholder="___" style="width:64px;text-align:center;letter-spacing:.3em;font-size:16px" aria-label="___">
       <button class="btn small ghost pin-save" data-id="${x.id}">決める</button>
       <button class="btn small ghost pin-qr" data-id="${x.id}" data-name="${escH(x.name)}">QR</button></span></div>`).join('')}
     <div class="rz-ref"><span>番号は表示されません（決め直しはいつでもできます）</span>
@@ -4439,7 +4457,7 @@ function renderRegister(){
     <div class="rz-ref" style="margin-bottom:8px"><span>給与のCSVは、この番号で人を結びます</span>
       <span>マネーフォワード クラウド給与の「従業員情報」に入っている番号と、同じものを入れてください</span></div>
     ${STAFF.map(x=>`<div class="rz"><span>${escH(x.name)}</span><span class="co-y">
-      <input class="emp-in" data-id="${x.id}" value="${escH(EN[x.id]||'')}" placeholder="例）101" style="width:96px"></span></div>`).join('')}
+      <input class="emp-in" data-id="${x.id}" value="${escH(EN[x.id]||'')}" placeholder="例）101" style="width:96px" aria-label="例）101"></span></div>`).join('')}
     <button class="btn pay" id="emp-save" style="width:100%;margin-top:9px">番号を保存する</button></div>`;
   /* 勘定科目。会計ソフトに合わせて名前を変えられるようにしておく
      （科目名が1文字違うだけで、仕訳が取り込めないため） */
@@ -4468,7 +4486,7 @@ function renderRegister(){
         placeholder="https://search.google.com/local/writereview?placeid=…" style="margin-left:auto;max-width:280px"></div>
     <div class="rz"><span>ホットペッパー（この店舗）</span>
       <input class="rl-in" data-k="${SHOP_ID}:hpb" value="${escH(RL[SHOP_ID+':hpb']||'')}"
-        placeholder="https://beauty.hotpepper.jp/…" style="margin-left:auto;max-width:280px"></div>
+        placeholder="https://beauty.hotpepper.jp/…" style="margin-left:auto;max-width:280px" aria-label="https://beauty.hotpepper.jp/…"></div>
     <button class="btn pay" id="rl-save" style="width:100%;margin-top:9px">リンクを保存する</button>
     <div class="rz-ref"><span>入れていないと、QRを読んでも行き先がありません</span>
       <span>お願いした数と開いてくださった数は、売上レポートの「口コミ」で見られます</span></div></div>`;
@@ -4666,8 +4684,8 @@ function renderRegister(){
            ${sh.hasOwnToken?'✓ この店舗のトークンあり':(j.hasDefaultToken?'既定のアカウントで送信':'⚠ トークン未設定')}</span>
        </div>
        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-         <input class="ls-liff" data-s="${escH(sh.id)}" value="${escH(sh.liffId)}" placeholder="LIFF ID（例 2010490592-nXUUaxqI）" style="flex:1;min-width:190px">
-         <input class="ls-oa" data-s="${escH(sh.id)}" value="${escH(sh.oaUrl)}" placeholder="友だち追加URL（任意）" style="flex:1;min-width:170px">
+         <input class="ls-liff" data-s="${escH(sh.id)}" value="${escH(sh.liffId)}" placeholder="LIFF ID（例 2010490592-nXUUaxqI）" style="flex:1;min-width:190px" aria-label="LIFF ID（例 2010490592-nXUUaxqI）">
+         <input class="ls-oa" data-s="${escH(sh.id)}" value="${escH(sh.oaUrl)}" placeholder="友だち追加URL（任意）" style="flex:1;min-width:170px" aria-label="友だち追加URL（任意）">
          <button class="btn small ghost ls-save" data-s="${escH(sh.id)}">保存</button>
        </div>
        ${sh.liffId?`<div style="font-size:11px;color:var(--sub);margin-top:5px">会員証: ${escH(location.origin+location.pathname.replace(/[^/]*$/,''))}line.html?s=${escH(sh.id)}</div>`:''}
@@ -4870,7 +4888,7 @@ function renderTerminal(){
       <div class="term-info">端末が届いたら「端末をペアリング」→ 表示コードをSquareターミナルに入力すると接続します。以降カード会計を端末に送れます（今は準備だけ・実際の課金は本番切替後）。</div>
       <div id="term-pairbox"></div>
       <div class="term-btns"><button class="btn small pri" id="term-pair">端末をペアリング</button>
-        <span class="co-y" style="font-weight:600">または端末ID <input id="term-manual" placeholder="device_id を直接入力" style="width:190px"></span><button class="btn small ghost" id="term-save">保存</button></div></div>`;
+        <span class="co-y" style="font-weight:600">または端末ID <input id="term-manual" placeholder="device_id を直接入力" style="width:190px" aria-label="device_id を直接入力"></span><button class="btn small ghost" id="term-save">保存</button></div></div>`;
     el.querySelector('#term-save').onclick=()=>{const v=el.querySelector('#term-manual').value.trim();if(!v){toast('device_idを入力してください',true);return;}setStg(isShop()?'terminalDeviceIdShop':'terminalDeviceId',v);toast('端末を設定しました');};
     el.querySelector('#term-pair').onclick=async()=>{
       const box=el.querySelector('#term-pairbox'); box.innerHTML='<div class="term-info">コードを発行中…</div>';
@@ -4943,7 +4961,7 @@ function renderReport(){
     const ly=db.checkouts.filter(c=>c.date>=lyF&&c.date<=lyT).reduce((a,c)=>a+c.total,0);
     yoyHtml=`<div class="tgt-yoy">前年同月（${fD.getFullYear()-1}年${fD.getMonth()+1}月）　${ly>0?`¥${ly.toLocaleString()}　前年比 <b class="${total>=ly?'txt-ok':'txt-short'}">${Math.round(total/ly*100)}%</b>（${total-ly>=0?'+':'−'}¥${Math.abs(total-ly).toLocaleString()}）`:'<span style="color:var(--sub)">データなし</span>'}</div>`;
   }
-  const tgtCard=`<div class="card tgt-card"><div class="rep-h"><h3>月間目標</h3><span class="co-y">目標 ¥<input id="tgt-input" type="number" inputmode="numeric" value="${target||''}" placeholder="0"></span></div>`+
+  const tgtCard=`<div class="card tgt-card"><div class="rep-h"><h3>月間目標</h3><span class="co-y">目標 ¥<input id="tgt-input" type="number" inputmode="numeric" value="${target||''}" placeholder="0" aria-label="0"></span></div>`+
     (target>0&&isFullMonth?`<div class="tgt-bar"><span style="width:${Math.min(100,pct)}%" class="${pct>=100?'done':''}"></span></div><div class="tgt-stats">達成率 <b class="${pct>=100?'txt-ok':''}">${pct}%</b>　実績 ¥${total.toLocaleString()} / 目標 ¥${target.toLocaleString()}　残り ¥${remain.toLocaleString()}${pace}</div>`
       :`<div class="tgt-stats" style="color:var(--sub)">「今月／先月」を選び目標額を入れると、達成率と着地見込みを表示します</div>`)+yoyHtml+`</div>`;
   // ② 歩合給（指名技術／フリー技術／店販に率を掛けて自動計算）
@@ -5017,7 +5035,7 @@ async function openStockDetail(pid){
         <button class="btn small ghost" data-pm="1" data-shop="${x.shop_id}">＋</button></div>`).join('')}
       <div class="rs-row total"><span>合計</span><b>${tot}</b><span></span><span></span></div></div>
     <div class="rz" style="margin-top:12px"><span>仕入値（1個）</span><span class="co-y">¥
-      <input id="sd-cost" type="number" inputmode="numeric" min="0" step="10" value="${p.cost||''}" placeholder="—" style="width:92px"></span></div>
+      <input id="sd-cost" type="number" inputmode="numeric" min="0" step="10" value="${p.cost||''}" placeholder="—" style="width:92px" aria-label="—"></span></div>
     <div class="rz-ref"><span id="sd-margin">${p.cost?`1個の利益 ¥${((p.price||0)-(p.cost||0)).toLocaleString()}（${p.price?Math.round(((p.price||0)-(p.cost||0))/p.price*100):0}%）`:'仕入値を入れると、利益と利益率が出ます'}</span>
       <span>入荷のときに単価を入れると、ここも自動で新しくなります</span></div>
     <div class="row" style="gap:8px;margin-top:14px;flex-wrap:wrap">
@@ -5069,7 +5087,7 @@ async function renderMove(){
     <div style="font-size:12.5px;color:var(--sub);line-height:1.8;margin-bottom:10px">
       商品をバーコードで読むか名前で探して、出す店・入れる店と個数を決めます。<br>
       <b>出す店の在庫が足りないときは止まります</b>。誰がいつ何を動かしたかは記録に残ります。</div>
-    <div class="co-scan-row"><input id="mv-scan" placeholder="🔎 バーコードを読む／商品名で探す" autocomplete="off"></div>
+    <div class="co-scan-row"><input id="mv-scan" placeholder="🔎 バーコードを読む／商品名で探す" autocomplete="off" aria-label="バーコードを読む／商品名で探す"></div>
     <div id="mv-hits" style="margin-bottom:8px"></div>
     ${MV.pid?`<div style="background:#f7fbff;border:1px solid var(--accent2);border-radius:10px;padding:11px 13px;margin-bottom:10px">
         <b style="font-size:14px">${escH(MV.name)}</b>
@@ -5167,7 +5185,7 @@ async function renderStocktake(){
   el.innerHTML=`<div class="rep-h"><h3>📦 棚卸し中</h3>
       <span style="font-size:11.5px;color:var(--sub)">${escH(shopName(ST.shop_id))}／${escH(ST.name||'')}</span></div>
     <div class="st-scanwrap">
-      <input id="st-scan" placeholder="🔎 バーコードを読む（続けて読めます）" autocomplete="off" inputmode="none">
+      <input id="st-scan" placeholder="🔎 バーコードを読む（続けて読めます）" autocomplete="off" inputmode="none" aria-label="バーコードを読む（続けて読めます）">
       <button class="btn small ghost" id="st-manual">手で足す</button>
     </div>
     <div class="st-nums"><div><span>読んだ品目</span><b id="st-items">${ST._items||0}</b></div>
@@ -5854,12 +5872,12 @@ function grabForm(){
 function mailBlock(){
   const v=bk.emailVerified;
   return `<div style="font-size:12px;font-weight:800;color:var(--navy);margin-top:2px">メールアドレス<span style="color:var(--sub);font-size:10.5px;margin-left:6px">予約完了のお知らせをお送りします</span></div>
-  <div class="co-scan-row"><input id="bmail" type="email" inputmode="email" value="${escH(bk.email||'')}" placeholder="例）name@example.com" ${v?'disabled':''} style="text-transform:none">
+  <div class="co-scan-row"><input id="bmail" type="email" inputmode="email" value="${escH(bk.email||'')}" placeholder="例）name@example.com" ${v?'disabled':''} style="text-transform:none" aria-label="例）name@example.com">
     <button class="btn small ghost" id="bmailsend" ${v?'disabled':''}>${v?'確認済み':'コードを送る'}</button></div>
   ${v?`<div class="co-done" style="margin-top:6px">✅ <b>${escH(bk.email)}</b> を確認しました。予約完了のお知らせが届きます</div>`:`
   <div id="otpbox" style="display:none;margin-top:8px">
     <div style="font-size:12.5px;color:var(--sub);font-weight:700;margin-bottom:5px">届いた6桁の数字を入れてください（10分以内）</div>
-    <div class="co-scan-row"><input id="botp" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="letter-spacing:.3em;font-size:17px;font-weight:800">
+    <div class="co-scan-row"><input id="botp" type="text" inputmode="numeric" maxlength="6" placeholder="123456" style="letter-spacing:.3em;font-size:17px;font-weight:800" aria-label="123456">
       <button class="btn small pri" id="botpgo">確認する</button></div>
     <div id="otpmsg" style="font-size:12px;font-weight:700;margin-top:5px"></div>
   </div>`}`;
@@ -5964,7 +5982,7 @@ function renderBook(){
         :`<div class="glogin"><span>LINE以外・海外の方はこちら / Sign in</span><div id="gbtn"></div></div>`):'')+
       `<div class="rlook">
         <div class="rl-t">🔁 2回目以降の方 — 電話番号で前回のご予約を呼び出せます</div>
-        <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 09012345678）" value="${bk.phone||''}"><button class="btn small pri" id="rlgo">呼び出す</button></div>
+        <div class="rl-row"><input id="rlphone" type="tel" inputmode="tel" placeholder="電話番号（例 09012345678）" value="${bk.phone||''}" aria-label="電話番号（例 09012345678）"><button class="btn small pri" id="rlgo">呼び出す</button></div>
         <div id="rlres"></div>
       </div>`+
       `<div class="sec-bar"><span class="sb-ic"></span><span class="sb-t">${bk.section==='spa'?'スパ / ヘッドスパ':'ヘアサロン'}</span><button class="sb-chg" id="secchg">入口を変更</button></div>`+
@@ -6027,8 +6045,8 @@ function renderBook(){
       <div class="waitbox" id="waitbox">
         <div class="wait-h">🔔 キャンセル待ちに登録</div>
         <p class="wait-p">この日に空きが出たら、LINE／メールでお知らせします（先着順・自動連絡）</p>
-        <div class="field"><input id="wname" placeholder="お名前" value="${bk.name||''}"></div>
-        <div class="field"><input id="wphone" type="tel" inputmode="tel" placeholder="電話番号" value="${bk.phone||''}"></div>
+        <div class="field"><input id="wname" placeholder="お名前" value="${bk.name||''}" aria-label="お名前"></div>
+        <div class="field"><input id="wphone" type="tel" inputmode="tel" placeholder="電話番号" value="${bk.phone||''}" aria-label="電話番号"></div>
         <button class="btn pri" id="wgo">この日でキャンセル待ちする</button>
       </div>`;
     // 詰めのお願い: 選んだ時間が前後の予約と30分以下の隙間を作るときだけ、その場でスタイリスト名でお願いを表示。
@@ -6109,10 +6127,10 @@ function renderBook(){
           <button type="button" class="mc-b" id="mcScan">📷 会員証を読み取る</button>
         </div>`}
       <div style="margin-top:14px;font-size:12px;font-weight:800;color:var(--navy)">お名前<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
-      <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bsei" value="${bk.sei||''}" placeholder="姓（例）山田"></div><div style="flex:1"><input id="bmei" value="${bk.mei||''}" placeholder="名（例）花子"></div></div>
+      <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bsei" value="${bk.sei||''}" placeholder="姓（例）山田" aria-label="姓（例）山田"></div><div style="flex:1"><input id="bmei" value="${bk.mei||''}" placeholder="名（例）花子" aria-label="名（例）花子"></div></div>
       <div style="font-size:12px;font-weight:800;color:var(--navy)">フリガナ（カタカナ）<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></div>
-      <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bseiK" value="${bk.seiK||''}" placeholder="セイ（例）ヤマダ"></div><div style="flex:1"><input id="bmeiK" value="${bk.meiK||''}" placeholder="メイ（例）ハナコ"></div></div>
-      <div class="field"><label>電話番号<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></label><input id="bphone" type="tel" inputmode="tel" value="${bk.phone||''}" placeholder="例）09012345678"></div>
+      <div class="field" style="display:flex;gap:8px"><div style="flex:1"><input id="bseiK" value="${bk.seiK||''}" placeholder="セイ（例）ヤマダ" aria-label="セイ（例）ヤマダ"></div><div style="flex:1"><input id="bmeiK" value="${bk.meiK||''}" placeholder="メイ（例）ハナコ" aria-label="メイ（例）ハナコ"></div></div>
+      <div class="field"><label>電話番号<span style="color:#e0362b;font-size:10px;margin-left:6px">必須</span></label><input id="bphone" type="tel" inputmode="tel" value="${bk.phone||''}" placeholder="例）09012345678" aria-label="例）09012345678"></div>
       ${(()=>{ // 予約完了のお知らせ先。LINEログイン済みならLINE、それ以外はメール（本人確認コードあり）
         if(bk.lineUserId)return `<div class="co-done" style="margin-bottom:10px">📱 予約が完了したら<b>LINEにお知らせ</b>が届きます</div>`;
         if(bk.emailProvider==='google'&&bk.email)return `<div class="co-done" style="margin-bottom:10px">📧 予約が完了したら <b>${escH(bk.email)}</b> にお知らせが届きます</div>`;
@@ -7015,7 +7033,7 @@ function openCustomer(key){
   document.getElementById('detailmodal').innerHTML=`<h3>${escH(c.name)} 様のカルテ ${cn.caution?'<span class="rep" style="background:#fdecec;border-color:#f3c1c1;color:#b4302b">⚠ 注意あり</span>':''}</h3>
     <div style="background:${cn.caution?'#fdecec':'#faf8f4'};border:1px solid ${cn.caution?'#f3c1c1':'#e8e2d6'};border-radius:10px;padding:9px 12px;margin-bottom:10px">
       <div style="font-size:11px;font-weight:800;color:${cn.caution?'#b4302b':'var(--sub)'};margin-bottom:3px">⚠ 重要メモ（アレルギー・薬剤NG・注意事項）</div>
-      <textarea id="kn-caution" placeholder="例）ジアミンアレルギーあり／お子様連れ" style="width:100%;border:none;background:transparent;font-size:13px;font-family:inherit;resize:vertical;min-height:34px">${escH(cn.caution||'')}</textarea>
+      <textarea id="kn-caution" placeholder="例）ジアミンアレルギーあり／お子様連れ" style="width:100%;border:none;background:transparent;font-size:13px;font-family:inherit;resize:vertical;min-height:34px" aria-label="例）ジアミンアレルギーあり／お子様連れ">${escH(cn.caution||'')}</textarea>
       <div style="margin-top:6px">${consentBadges(cn)}</div>
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub);margin-top:4px">🎂 誕生月 <select id="kn-bday" style="border:1px solid var(--line);border-radius:6px;padding:2px 6px"><option value="">—</option>${[...Array(12)].map((_,i)=>`<option value="${i+1}" ${String(i+1)===String(cn.birthday)?'selected':''}>${i+1}月</option>`).join('')}</select><span id="kn-saved" style="color:var(--ok);font-weight:700;display:none">✓ 保存しました</span></div>
     </div>
@@ -7026,16 +7044,16 @@ function openCustomer(key){
     <div class="refbox" id="ref-box">
       <div style="font-size:12px;font-weight:800;color:var(--sub);margin-bottom:7px">💛 ご紹介のつながり</div>
       <div class="rz"><span>紹介してくださった方</span>
-        <input id="ref-nm" list="ref-list" value="${escH(cn.referrer_name||'')}" placeholder="お名前で探す" style="margin-left:auto;max-width:200px"></div>
+        <input id="ref-nm" list="ref-list" value="${escH(cn.referrer_name||'')}" placeholder="お名前で探す" style="margin-left:auto;max-width:200px" aria-label="お名前で探す"></div>
       <datalist id="ref-list"></datalist>
       <div class="rz"><span>ご関係</span>
-        <input id="ref-rel" value="${escH(cn.relation||'')}" placeholder="例）職場のご同僚・妹さま" style="margin-left:auto;max-width:200px"></div>
+        <input id="ref-rel" value="${escH(cn.relation||'')}" placeholder="例）職場のご同僚・妹さま" style="margin-left:auto;max-width:200px" aria-label="例）職場のご同僚・妹さま"></div>
       <button class="btn small pri" id="ref-save" style="margin-top:8px">つながりを保存</button>
       <div id="ref-view" style="font-size:12.5px;color:var(--sub);margin-top:8px"></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin:8px 0 6px"><div style="font-size:12px;font-weight:700;color:var(--sub)">カウンセリングシート・同意書<span style="font-weight:600;margin-left:6px">（記録として保管します・消せません）</span></div>
       <a class="btn small ghost" id="cs-open" href="counseling.html" target="_blank" rel="noopener" style="text-decoration:none;padding:3px 9px;font-size:11.5px">iPadで記入してもらう ↗</a>
-      <button class="btn small ghost" id="cs-lang" style="display:none;padding:3px 9px;font-size:11.5px"></button></div>
+      <button class="btn small ghost" id="cs-lang" aria-label="表示する言語を切り替える" style="display:none;padding:3px 9px;font-size:11.5px"></button></div>
     <div id="cs-list" style="font-size:12.5px;color:var(--sub);margin-bottom:10px">読み込み中…</div>
     <div id="cp-box" style="margin:10px 0 12px"></div>
     <div style="font-size:12px;font-weight:700;color:var(--sub);margin:8px 0 6px">施術写真（before / after）</div>
@@ -7136,7 +7154,7 @@ function openCustomer(key){
     grid.innerHTML=photos.map(p=>`<div style="position:relative"><img src="${p.data}" data-kpv="${p.id}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:zoom-in" alt=""><button data-kpdel="${p.id}" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:11px;cursor:pointer">✕</button><div style="font-size:9px;color:var(--sub);text-align:center">${(p.date||'').slice(5).replace('-','/')}</div></div>`).join('');
     grid.querySelectorAll('[data-kpv]').forEach(img=>img.onclick=()=>{
       const ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;cursor:zoom-out';
-      ov.innerHTML=`<img src="${img.src}" style="max-width:92vw;max-height:92vh;border-radius:10px">`;ov.onclick=()=>ov.remove();document.body.appendChild(ov);});
+      ov.innerHTML=`<img src="${img.src}" style="max-width:92vw;max-height:92vh;border-radius:10px" alt="登録された商品の写真">`;ov.onclick=()=>ov.remove();document.body.appendChild(ov);});
     grid.querySelectorAll('[data-kpdel]').forEach(b=>b.onclick=async()=>{
       if(!confirm('この写真を削除しますか？'))return;
       await API.removeKartePhoto(b.dataset.kpdel);const ps=await API.listKartePhotos(c.name,c.phone||'');kpRender(ps);});
@@ -7775,7 +7793,7 @@ async function initAdmin(){
 function showAdminGate(msg){
   let g=document.getElementById('adminGate');
   if(!g){ g=document.createElement('div'); g.id='adminGate'; document.body.appendChild(g); }
-  g.innerHTML=`<div class="ag-card"><div class="ag-logo">SALON TOWN</div><h2>管理ログイン</h2><p>管理トークンを入力してください</p><input id="ag-input" type="password" placeholder="管理トークン" autocomplete="off"><div class="ag-err" id="ag-err">${escH(msg||'')}</div><button class="btn pri" id="ag-go" style="width:100%">ログイン</button></div>`;
+  g.innerHTML=`<div class="ag-card"><div class="ag-logo">SALON TOWN</div><h2>管理ログイン</h2><p>管理トークンを入力してください</p><input id="ag-input" type="password" placeholder="管理トークン" autocomplete="off" aria-label="管理トークン"><div class="ag-err" id="ag-err">${escH(msg||'')}</div><button class="btn pri" id="ag-go" style="width:100%">ログイン</button></div>`;
   g.style.display='flex';
   const go=async()=>{ const el=document.getElementById('ag-input'), tok=el.value.trim(); if(!tok)return; document.getElementById('ag-err').textContent='確認中…'; const st=await verifyAdmin(tok); if(st===200){ ADMIN_TOKEN=tok; try{localStorage.setItem(ADMIN_TOK_KEY,tok)}catch(e){} g.remove(); startAdminData(); toast('管理画面にログインしました'); } else { document.getElementById('ag-err').textContent = st===401?'トークンが正しくありません':'接続エラー（'+st+'）'; } };
   document.getElementById('ag-go').onclick=go;

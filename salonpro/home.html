@@ -191,6 +191,24 @@
     .sem-row__tag--live { background: #fde7e9; color: #d8392b; } .sem-row__tag--venue { background: #eaf1fb; color: #34507a; } .sem-row__tag--keiei { background: #eef2f7; color: #5b6473; } .sem-row__tag--maker { background: var(--gold-soft); color: var(--gold-strong); }
 
   </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 <body>
 
@@ -302,11 +320,11 @@
       <a class="sec-more" href="learn.html">すべてのコンテンツを見る ›</a>
     </div>
     <div class="vrow">
-      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/cat_kyoiku.jpg" alt=""><span class="vcard__tag vt-tech">技術セミナー</span><span class="vcard__new">NEW</span><span class="vcard__dur">45:30</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">ブリーチワークの基礎と応用</div><div class="vcard__who">講師：ALBUM OCE</div></div></a>
-      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/new_loa.jpg" alt=""><span class="vcard__tag vt-prod">商品活用動画</span><span class="vcard__dur">21:15</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">N.オイルの使い方完全ガイド</div><div class="vcard__who">講師：napla 1215</div></div></a>
-      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/people.png" alt=""><span class="vcard__tag vt-keiei">経営セミナー</span><span class="vcard__dur">32:10</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">信頼度を上げる集客術</div><div class="vcard__who">講師：OOCE</div></div></a>
-      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/cat_keiei.jpg" alt=""><span class="vcard__tag vt-case">導入事例</span><span class="vcard__dur">18:45</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">シャンプー指名の基本</div><div class="vcard__who">講師：SAK</div></div></a>
-      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/cat_ec.jpg" alt=""><span class="vcard__tag vt-stu">学生向け</span><span class="vcard__dur">12:20</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">カウンセリング基礎</div><div class="vcard__who">講師：ALBUM</div></div></a>
+      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/cat_kyoiku.jpg" alt="" width="750" height="390"><span class="vcard__tag vt-tech">技術セミナー</span><span class="vcard__new">NEW</span><span class="vcard__dur">45:30</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">ブリーチワークの基礎と応用</div><div class="vcard__who">講師：ALBUM OCE</div></div></a>
+      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/new_loa.jpg" alt="" width="750" height="500"><span class="vcard__tag vt-prod">商品活用動画</span><span class="vcard__dur">21:15</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">N.オイルの使い方完全ガイド</div><div class="vcard__who">講師：napla 1215</div></div></a>
+      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/people.png" alt="" width="1400" height="770"><span class="vcard__tag vt-keiei">経営セミナー</span><span class="vcard__dur">32:10</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">信頼度を上げる集客術</div><div class="vcard__who">講師：OOCE</div></div></a>
+      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/cat_keiei.jpg" alt="" width="750" height="390"><span class="vcard__tag vt-case">導入事例</span><span class="vcard__dur">18:45</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">シャンプー指名の基本</div><div class="vcard__who">講師：SAK</div></div></a>
+      <a class="vcard" href="learn.html"><div class="vcard__thumb"><img src="assets/img/kikuchi/cat_ec.jpg" alt="" width="750" height="390"><span class="vcard__tag vt-stu">学生向け</span><span class="vcard__dur">12:20</span><span class="vcard__play"><span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span></div><div class="vcard__b"><div class="vcard__t">カウンセリング基礎</div><div class="vcard__who">講師：ALBUM</div></div></a>
     </div>
   </section>
 
@@ -480,7 +498,7 @@
 
         // ① 新商品（SP.NEWS の「新商品」タグ → 無ければ既定）
         var news = (SP.NEWS || []).filter(function (n) { return /新商品|新色|入荷/.test((n.tag || '') + (n.t || '')); })[0];
-        out.push('<a class="promo" href="index.html?sort=new"><img class="promo__img" src="assets/img/kikuchi/new_terra.jpg" alt="">' + go +
+        out.push('<a class="promo" href="index.html?sort=new"><img class="promo__img" src="assets/img/kikuchi/new_terra.jpg" alt="" width="750" height="500">' + go +
           '<span class="promo__b"><span class="promo__tag" style="color:var(--gold-strong)">新商品</span>' +
           '<span class="promo__t">' + esc(news ? news.t : '新商品・新色が入荷') + '</span>' +
           '<span class="promo__s">' + esc(news ? '注目の新商品をチェック' : '話題の新商品・新色をまとめてチェック') + '</span></span></a>');

@@ -420,6 +420,24 @@ input[type=password]{flex:1;min-width:160px;border:1px solid var(--line);border-
 .saved{text-align:center;font-size:13.5px;color:#9ED2AE;margin-top:10px;min-height:20px}
 @media(min-width:700px){.big{font-size:30px}.pr span,.kv span{font-size:21px}}
 </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 <body>
 <header><div class="hin"><span class="brand">S E A M</span><span class="day" id="day"></span></div></header>
@@ -498,7 +516,7 @@ function pinStep(b){
     app.innerHTML=`<h1>${esc(b.dataset.n)}</h1>
       <p class="lead" id="lmsg">暗証番号（3桁）</p>
       <div class="row"><input type="password" id="pin" inputmode="numeric" maxlength="3"
-        placeholder="＿＿＿" style="text-align:center;letter-spacing:.4em;font-size:22px">
+        placeholder="＿＿＿" style="text-align:center;letter-spacing:.4em;font-size:22px" aria-label="＿＿＿">
         <button class="mini" id="pingo">入る</button></div>
       <p class="lead"><button class="mini" id="back">ひとつ戻る</button></p>`;
     const el=document.getElementById('pin'); el.focus();
@@ -741,16 +759,16 @@ function prFormHtml(){
   return `<div class="prform">
     <div class="pf-h">${f.mins}分の練習を 記録します</div>
     <label class="pf-l">何の練習でしたか</label>
-    <input class="kin" id="pf-note" value="${esc(f.note||'')}" placeholder="例）ハイライトの引き方">
+    <input class="kin" id="pf-note" value="${esc(f.note||'')}" placeholder="例）ハイライトの引き方" aria-label="例）ハイライトの引き方">
     <label class="pf-l">モデルさん</label>
     <div class="kchips">
       <button class="kchip ${f.hasModel?'on':''}" id="pf-hm">モデルを呼んだ</button>
       <button class="kchip ${!f.hasModel?'on':''}" id="pf-nm">ウィッグ・自主練</button>
     </div>
     ${f.hasModel?`
-      <input class="kin" id="pf-mn" value="${esc(f.modelName||'')}" placeholder="モデルさんのお名前">
+      <input class="kin" id="pf-mn" value="${esc(f.modelName||'')}" placeholder="モデルさんのお名前" aria-label="モデルさんのお名前">
       <label class="pf-l">いただいたモデル料金</label>
-      <input class="kin" id="pf-mf" type="number" inputmode="numeric" value="${f.modelFee||''}" placeholder="例）3000">
+      <input class="kin" id="pf-mf" type="number" inputmode="numeric" value="${f.modelFee||''}" placeholder="例）3000" aria-label="例）3000">
       ${+f.modelFee?`
       <div class="kchips">
         ${[['cash','現金'],['card','カード'],['qr','QR'],['emoney','電子マネー']].map(([k,l])=>
@@ -769,15 +787,15 @@ function prFormHtml(){
         <div class="kmh"><b>${m.where||'全体'}</b><button data-pdm="${i}">✕</button></div>
         ${kFormula(m)}
         ${(m.agents||[]).map((a,j)=>`<div class="kag"><span>${esc(a.name)}</span>
-          <input class="kg" data-pi="${i}" data-pj="${j}" type="number" value="${a.g||''}" placeholder="g">
+          <input class="kg" data-pi="${i}" data-pj="${j}" type="number" value="${a.g||''}" placeholder="g" aria-label="g">
           <button data-pda="${i}:${j}">✕</button></div>`).join('')}
         <div class="kscrow">
-          <input class="ksc pf-sc" data-i="${i}" placeholder="薬剤名で探す" inputmode="search">
+          <input class="ksc pf-sc" data-i="${i}" placeholder="薬剤名で探す" inputmode="search" aria-label="薬剤名で探す">
           <button class="kcam" data-pcam="${i}">📷 読む</button></div>
         <div class="kmb">
           <select data-pi="${i}" data-pf="oxy"><option value="">オキシ</option>${KOXY.map(o=>`<option ${m.oxy===o?'selected':''}>${o}</option>`).join('')}</select>
-          <input data-pi="${i}" data-pf="oxyG" type="number" value="${m.oxyG||''}" placeholder="オキシg">
-          <input data-pi="${i}" data-pf="min" type="number" value="${m.min||''}" placeholder="分">
+          <input data-pi="${i}" data-pf="oxyG" type="number" value="${m.oxyG||''}" placeholder="オキシg" aria-label="オキシg">
+          <input data-pi="${i}" data-pf="min" type="number" value="${m.min||''}" placeholder="分" aria-label="分">
         </div></div>`).join('')}
       <button class="kbtn" id="pf-add">＋ 塗りを足す</button>
       ${mc.g?`<div class="matbox ${mc.bleach?'hi':''}">
@@ -790,9 +808,9 @@ function prFormHtml(){
           ${!mc.unknown&&f.modelFee&&(+f.modelFee)>mc.yen?'<br>実費より多くいただいています　実費までにしてください':''}</div></div>`:''}
       <label class="pf-l">ビフォー・アフター</label>
       <div class="pfimgs">
-        <label class="pfimg">${f.photoB?`<img src="${f.photoB}">`:'<span>ビフォー</span>'}
+        <label class="pfimg">${f.photoB?`<img src="${f.photoB}" alt="施術前のお写真">`:'<span>ビフォー</span>'}
           <input type="file" accept="image/*" capture="environment" id="pf-pb" style="display:none"></label>
-        <label class="pfimg">${f.photoA?`<img src="${f.photoA}">`:'<span>アフター</span>'}
+        <label class="pfimg">${f.photoA?`<img src="${f.photoA}" alt="施術後のお写真">`:'<span>アフター</span>'}
           <input type="file" accept="image/*" capture="environment" id="pf-pa" style="display:none"></label>
       </div>
       <label class="pf-l">次回のご予約</label>
@@ -803,7 +821,7 @@ function prFormHtml(){
       <p class="hint">モデルさんこそ、次にお会いする約束が練習になります</p>
     `:''}
     <label class="pf-l">見てもらった方</label>
-    <input class="kin" id="pf-tc" value="${esc(f.teacher||'')}" placeholder="例）及川（提出済み）">
+    <input class="kin" id="pf-tc" value="${esc(f.teacher||'')}" placeholder="例）及川（提出済み）" aria-label="例）及川（提出済み）">
     <button class="save" id="pf-save">この内容で記録する</button>
     <button class="kbtn" id="pf-cancel">やめる</button>
   </div>`;
@@ -1060,7 +1078,7 @@ function meWire(){
     if(!window.qrcode){ box.textContent='QRを作れませんでした'; return; }
     const q=qrcode(0,'M'); q.addData(link); q.make();
     box.innerHTML=`<div style="text-align:center;margin:10px 0"><img src="${q.createDataURL(7,8)}"
-      style="width:200px;height:200px;background:#fff;border-radius:12px;padding:6px"></div>`;
+      style="width:200px;height:200px;background:#fff;border-radius:12px;padding:6px" alt="読み取り用のQRコード"></div>`;
   };
 }
 function render(){
@@ -2071,16 +2089,16 @@ function paintKarte(p){
         <b>${rat?'1剤 : 2剤 = '+rat.replace('1:','1 : '):''}</b><button data-dm="${i}">✕</button></div>
       ${kFormula(m)}
       ${(m.agents||[]).map((a,j)=>`<div class="kag"><span>${esc(a.name)}</span>
-        <input data-i="${i}" data-j="${j}" class="kg" type="number" inputmode="decimal" value="${a.g||''}" placeholder="g">
+        <input data-i="${i}" data-j="${j}" class="kg" type="number" inputmode="decimal" value="${a.g||''}" placeholder="g" aria-label="g">
         <button data-da="${i}:${j}">✕</button></div>`).join('')}
       <div class="kscrow">
-        <input class="ksc" data-i="${i}" placeholder="薬剤名で探す" inputmode="search">
+        <input class="ksc" data-i="${i}" placeholder="薬剤名で探す" inputmode="search" aria-label="薬剤名で探す">
         <button class="kcam" data-cam="${i}">📷 読む</button></div>
       <div class="kml"><span>オキシ</span><span>オキシ g</span><span>置き時間 分</span></div>
       <div class="kmb">
         <select data-i="${i}" data-f="oxy"><option value="">オキシ</option>${KOXY.map(o=>`<option ${m.oxy===o?'selected':''}>${o}</option>`).join('')}</select>
-        <input data-i="${i}" data-f="oxyG" type="number" inputmode="decimal" value="${m.oxyG||''}" placeholder="オキシg">
-        <input data-i="${i}" data-f="min" type="number" inputmode="numeric" value="${m.min||''}" placeholder="分">
+        <input data-i="${i}" data-f="oxyG" type="number" inputmode="decimal" value="${m.oxyG||''}" placeholder="オキシg" aria-label="オキシg">
+        <input data-i="${i}" data-f="min" type="number" inputmode="numeric" value="${m.min||''}" placeholder="分" aria-label="分">
       </div></div>`;}).join('');
   p.innerHTML=`
     ${L?`<div class="sec"><h3>前回 ${String(L.date||'').replace(/-/g,'/')}${L.staff?'　'+esc(L.staff):''}</h3>
@@ -2111,11 +2129,11 @@ function paintKarte(p){
     <div class="sec"><h3>シャンプーの強さ${(CUR&&CUR.washPower)?`<span style="color:rgba(239,233,223,.5);letter-spacing:0;margin-left:8px">来店前のご希望 ${esc(CUR.washPower)}</span>`:''}</h3>
       <div class="kchips">${KSHAM.map(x=>`<button class="kchip ${KT.shampoo===x?'on':''}" data-sham="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>
     <div class="sec"><h3>ついたアシスタント</h3>
-      <input id="kasst" class="kin" value="${esc(KT.assistant||'')}" placeholder="例）田中（シャンプー・塗布）"></div>
+      <input id="kasst" class="kin" value="${esc(KT.assistant||'')}" placeholder="例）田中（シャンプー・塗布）" aria-label="例）田中（シャンプー・塗布）"></div>
     <div class="sec"><h3>次回への申し送り</h3>
-      <textarea id="knext" class="kin" rows="3" placeholder="例）次回は根元だけ・毛先は触らない">${esc(KT.nextNote||'')}</textarea></div>
+      <textarea id="knext" class="kin" rows="3" placeholder="例）次回は根元だけ・毛先は触らない" aria-label="例）次回は根元だけ・毛先は触らない">${esc(KT.nextNote||'')}</textarea></div>
     <div class="sec"><h3>そのほか</h3>
-      <textarea id="kfree" class="kin" rows="2" placeholder="お話しされたこと・ご様子など">${esc(b.free||'')}</textarea></div>
+      <textarea id="kfree" class="kin" rows="2" placeholder="お話しされたこと・ご様子など" aria-label="お話しされたこと・ご様子など">${esc(b.free||'')}</textarea></div>
     <p class="none" style="text-align:left">記入 ${esc(KT.author||'ログインした人')}${(KT.editors&&KT.editors.length)?'　修正 '+esc(KT.editors.map(e=>e.split('@')[0]).join('・')):''}<br>
       記録は上書きされません　直した中身も残ります</p>
     <button class="save" id="ksave">${KT_BUSY?'保存しています…':'カルテを保存'}</button>
@@ -2259,12 +2277,12 @@ function paintAfter(p){
       <div class="ex">首の左側が 右よりずっと張っていました<br>次は そこから始めさせてください</div>
       <div class="wbox">
         <label>お客様に届く一行</label>
-        <textarea id="wnote" maxlength="160" placeholder="書かなければ 便りにこの欄は出ません">${esc(NOTE.note)}</textarea>
+        <textarea id="wnote" maxlength="160" placeholder="書かなければ 便りにこの欄は出ません" aria-label="書かなければ 便りにこの欄は出ません">${esc(NOTE.note)}</textarea>
         <div class="cnt" id="wcnt"></div>
       </div>
       <div class="wbox priv">
         <label>店内だけのメモ　※お客様には届きません</label>
-        <textarea id="wmemo" maxlength="600" placeholder="次回への申し送り 薬剤 苦手なことなど">${esc(NOTE.memo)}</textarea>
+        <textarea id="wmemo" maxlength="600" placeholder="次回への申し送り 薬剤 苦手なことなど" aria-label="次回への申し送り 薬剤 苦手なことなど">${esc(NOTE.memo)}</textarea>
       </div>
       <button class="save" id="wsave">保存する</button>
       <p class="saved" id="wmsg"></p>

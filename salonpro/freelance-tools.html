@@ -65,6 +65,24 @@
     .ft-hero__l { font-size: 11.5px; color: rgba(255,255,255,.65); } .ft-hero__v { font-family: var(--font-num); font-size: 30px; font-weight: 900; color: var(--gold); margin-top: 3px; } .ft-hero__s { font-size: 11px; color: rgba(255,255,255,.6); margin-top: 3px; }
     .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); }
   </style>
+<style>
+/* ★キーボードで操作している方に、いまどこにいるかを見せる。
+   どこかで outline:none を当てていても、これが後から勝つ。
+   :focus-visible なので、マウスでクリックしたときには出ない。 */
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible{
+  outline:2px solid currentColor !important;
+  outline-offset:2px !important;
+  border-radius:3px;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
 </head>
 <body>
   <div class="pa-top"><div class="pa-top__in"><span class="pa-top__logo">Salon Town <b>Pro</b></span><span class="pa-top__tag">フリーランス・ツール</span></div></div>

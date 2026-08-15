@@ -312,7 +312,7 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
 <div id="gate" class="gate" style="display:none">
   <h1>SEAM SHOP</h1>
   <p>店舗のiPadで使う画面です 合言葉を入れてください</p>
-  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off">
+  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off" aria-label="管理トークン">
   <button id="gbtn">開く</button>
 </div>
 
@@ -737,7 +737,7 @@ function renderSum(){
      ${PAY==='cash'&&CART.length?`<div class="cashbox">
        <div class="cashh">お預かり</div>
        <div class="cashq">${cashQuick(t).map(v=>`<button data-cq="${v}">${v===t?'ちょうど':yen(v)}</button>`).join('')}</div>
-       <input id="cashin" inputmode="numeric" placeholder="お預かり金額" value="${GOT||''}">
+       <input id="cashin" inputmode="numeric" placeholder="お預かり金額" value="${GOT||''}" aria-label="お預かり金額">
        <div class="cashc ${GOT&&GOT>=t?'ok':''}">${!GOT?'　'
          :GOT<t?`あと ${yen(t-GOT)} 足りません`
          :`おつり　<b>${yen(GOT-t)}</b>`}</div>
@@ -745,10 +745,10 @@ function renderSum(){
      </div>`:''}
      ${(useFeat('taxfree')&&TAXFREE&&tfRefundMode())?`<div class="tfbox">
        <div class="tfh">お返しするために、3つだけ</div>
-       <input id="tf-nm" value="${esc(TFINFO.name)}" placeholder="お名前（パスポートのとおり）">
+       <input id="tf-nm" value="${esc(TFINFO.name)}" placeholder="お名前（パスポートのとおり）" aria-label="お名前（パスポートのとおり）">
        <div class="tfrow">
-         <input id="tf-co" value="${esc(TFINFO.country)}" placeholder="国・地域">
-         <input id="tf-p4" value="${esc(TFINFO.last4)}" maxlength="4" placeholder="旅券の下4桁">
+         <input id="tf-co" value="${esc(TFINFO.country)}" placeholder="国・地域" aria-label="国・地域">
+         <input id="tf-p4" value="${esc(TFINFO.last4)}" maxlength="4" placeholder="旅券の下4桁" aria-label="旅券の下4桁">
        </div>
        <div class="tfn">旅券の番号は控えません　お返しのときは下4桁で確かめます</div>
      </div>`:''}
@@ -1218,7 +1218,7 @@ function openRefund(c){
           <button class="rfh ${RF.how==='line'?'on':''}" data-h="line">LINE・SNS</button>
           <button class="rfh ${RF.how===''?'on':''}" data-h="">いらない</button>
         </div>
-        ${RF.how==='mail'?`<input id="rfTo" value="${esc(RF.to)}" placeholder="メールアドレス" inputmode="email">`:''}
+        ${RF.how==='mail'?`<input id="rfTo" value="${esc(RF.to)}" placeholder="メールアドレス" inputmode="email" aria-label="メールアドレス">`:''}
         ${RF.how==='line'?`<div class="rfn">お会計のあとに出るQRから、お客様ご自身で受け取っていただけます　控えはお店にも残ります</div>`:''}
       </div>
 
@@ -1381,7 +1381,7 @@ function histHtml(){
     rows=[...rows.filter(mine),...rows.filter(c=>!mine(c))];}
   const sum=rows.filter(c=>!c.voided).reduce((s,c)=>s+(c.total-(c.refund||0)),0);
   return `<div class="srch">
-      <input id="hq" value="${esc(HQ)}" placeholder="お名前・電話の下4桁・金額でさがす" style="flex:1;min-width:0">
+      <input id="hq" value="${esc(HQ)}" placeholder="お名前・電話の下4桁・金額でさがす" style="flex:1;min-width:0" aria-label="お名前・電話の下4桁・金額でさがす">
       ${HQ?`<button data-hclr="1">×</button>`:''}
     </div>
     <div class="srch">
@@ -1514,8 +1514,8 @@ function closeHtml(){
     <h3 class="cl-h">会計以外のレジ金</h3>
     <div class="clg">
       <label>釣銭準備金<input id="floIn" type="number" inputmode="numeric" value="${flo}"></label>
-      <label>レジ入金額<input id="inIn" type="number" inputmode="numeric" placeholder="0" value="${CIN||''}"></label>
-      <label>レジ出金額<input id="outIn" type="number" inputmode="numeric" placeholder="0" value="${COUT||''}"></label>
+      <label>レジ入金額<input id="inIn" type="number" inputmode="numeric" placeholder="0" value="${CIN||''}" aria-label="0"></label>
+      <label>レジ出金額<input id="outIn" type="number" inputmode="numeric" placeholder="0" value="${COUT||''}" aria-label="0"></label>
     </div>
     <div class="clnote">つり銭を足したら入金　小口や両替で出したら出金　封筒に書いていた分をここに入れてください</div>
     <div class="stk"><div class="stk-r here"><span>金庫にあるはずの現金</span><b id="wantBox">${yen(flo+cash+(+CIN||0)-(+COUT||0))}</b></div></div>
@@ -1524,7 +1524,7 @@ function closeHtml(){
     <div class="dn">
       ${DENOMS.map(d=>`<div class="dn-r">
         <span class="dn-d">${d>=1000?'￥'+d.toLocaleString():d+'円'}</span>
-        <input class="dn-i" data-d="${d}" type="number" inputmode="numeric" min="0" placeholder="0" value="${dn[d]!=null&&dn[d]!==''?dn[d]:''}">
+        <input class="dn-i" data-d="${d}" type="number" inputmode="numeric" min="0" placeholder="0" value="${dn[d]!=null&&dn[d]!==''?dn[d]:''}" aria-label="0">
         <span class="dn-u">枚</span>
         <em class="dn-s" data-s="${d}">${yen(d*(+dn[d]||0))}</em>
       </div>`).join('')}
@@ -1534,9 +1534,9 @@ function closeHtml(){
 
     <h3 class="cl-h">締めの記録</h3>
     <div class="clg2">
-      <label>締めた人<input id="byIn" value="${esc((STAFF&&STAFF.name)||'')}" placeholder="お名前"></label>
+      <label>締めた人<input id="byIn" value="${esc((STAFF&&STAFF.name)||'')}" placeholder="お名前" aria-label="お名前"></label>
     </div>
-    <textarea id="memoIn" class="clmemo" placeholder="メモ（両替した・つり銭を足した・過不足の理由など）">${esc(CMEMO||'')}</textarea>
+    <textarea id="memoIn" class="clmemo" placeholder="メモ（両替した・つり銭を足した・過不足の理由など）" aria-label="メモ（両替した・つり銭を足した・過不足の理由など）">${esc(CMEMO||'')}</textarea>
 
     <h3 class="cl-h">この締めに入るお会計　${live.length}件</h3>
     <div class="cllist">${live.length?live.map(c=>`<div class="cll-r">
@@ -1665,7 +1665,7 @@ async function payByTerminal(amount,kind){
 async function renderRight(){
   const b=$('rbody');
   if(TAB==='prod'){
-    b.innerHTML=`<div class="srch"><input id="q" placeholder="商品名で探す" autocomplete="off"><button id="qb">探す</button></div><div class="plist" id="pl"></div>`;
+    b.innerHTML=`<div class="srch"><input id="q" placeholder="商品名で探す" autocomplete="off" aria-label="商品名で探す"><button id="qb">探す</button></div><div class="plist" id="pl"></div>`;
     $('qb').onclick=doSearch; $('q').onkeydown=e=>{if(e.key==='Enter'){e.stopPropagation();doSearch();}};
     doSearch('');
   }else if(TAB==='stock'){

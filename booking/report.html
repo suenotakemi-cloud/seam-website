@@ -119,7 +119,7 @@ h2:first-child{margin-top:2px}
 <div id="gate" class="gate" style="display:none">
   <h1>売上と発注</h1>
   <p>売れたものを見て、そのまま発注書にする画面です</p>
-  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off">
+  <input id="gtok" type="password" placeholder="管理トークン" autocomplete="off" aria-label="管理トークン">
   <button id="gbtn">開く</button>
 </div>
 
@@ -557,8 +557,8 @@ function cashHtml(){
     <div class="tblwrap" style="padding:14px 16px">
       <div class="act">
         <select id="cb-kind">${K.map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select>
-        <input id="cb-amt" type="number" inputmode="numeric" placeholder="金額（出は −）" style="width:150px">
-        <input id="cb-memo" placeholder="ひとこと（例）ゆうちょへ入金" style="flex:1;min-width:180px">
+        <input id="cb-amt" type="number" inputmode="numeric" placeholder="金額（出は −）" style="width:150px" aria-label="金額（出は −）">
+        <input id="cb-memo" placeholder="ひとこと（例）ゆうちょへ入金" style="flex:1;min-width:180px" aria-label="ひとこと（例）ゆうちょへ入金">
         <button id="cb-add" class="pri">記録する</button>
       </div>
     </div>
@@ -586,11 +586,11 @@ function supHtml(){
     </div>
     <div class="tblwrap" style="padding:14px 16px">
       <div class="act">
-        <input id="sp-nm" placeholder="備品の名前（例）タオル・レジロール" style="flex:1;min-width:180px">
-        <input id="sp-mk" placeholder="仕入先" style="width:140px">
-        <input id="sp-bc" placeholder="バーコード" style="width:150px">
-        <input id="sp-ct" type="number" placeholder="仕入値" style="width:110px">
-        <input id="sp-mn" type="number" placeholder="下限" style="width:90px">
+        <input id="sp-nm" placeholder="備品の名前（例）タオル・レジロール" style="flex:1;min-width:180px" aria-label="備品の名前（例）タオル・レジロール">
+        <input id="sp-mk" placeholder="仕入先" style="width:140px" aria-label="仕入先">
+        <input id="sp-bc" placeholder="バーコード" style="width:150px" aria-label="バーコード">
+        <input id="sp-ct" type="number" placeholder="仕入値" style="width:110px" aria-label="仕入値">
+        <input id="sp-mn" type="number" placeholder="下限" style="width:90px" aria-label="下限">
         <button id="sp-add" class="pri">足す</button>
       </div>
       <p class="note" style="margin:8px 0 0">下限を入れておくと、そこを割ったときに「足りないもの」に出ます　備品はレジには出ません（間違って売らないため）</p>
@@ -723,7 +723,7 @@ function stfHtml(){
             <label style="font-size:11.5px;color:var(--sub)">みなし残業(h)<br>
               <input type="number" class="wk-ot" data-id="${esc(x.id)}" value="${x.deemedOt||0}" min="0" max="80" style="width:80px;font-size:13px"></label>
             <label style="font-size:11.5px;color:var(--sub)">有給を手で決める<br>
-              <input type="number" class="wk-pm" data-id="${esc(x.id)}" value="${x.ptoManual==null?'':x.ptoManual}" min="0" max="40" step="0.5" placeholder="空＝法どおり" style="width:110px;font-size:13px"></label>
+              <input type="number" class="wk-pm" data-id="${esc(x.id)}" value="${x.ptoManual==null?'':x.ptoManual}" min="0" max="40" step="0.5" placeholder="空＝法どおり" style="width:110px;font-size:13px" aria-label="空＝法どおり"></label>
             <button class="mini pri wk-save" data-id="${esc(x.id)}">この条件で保存</button>
           </div>
           <div class="tsub" style="margin-top:5px">みなし残業は「基本給に何時間ぶん含むか」　超えた分は別途お支払いの対象として勤怠に出ます<br>
@@ -732,7 +732,7 @@ function stfHtml(){
         <div class="tsub" style="margin-top:6px">${(x.appliedAt||'').slice(0,16).replace('T',' ').replace(/-/g,'/')}</div>
       </div>
       ${x.status==='pending'?`<div style="display:flex;flex-direction:column;gap:6px">
-        <input class="stf-code" data-id="${esc(x.id)}" placeholder="リンクの文字（例 oikawa）" style="min-width:180px">
+        <input class="stf-code" data-id="${esc(x.id)}" placeholder="リンクの文字（例 oikawa）" style="min-width:180px" aria-label="リンクの文字（例 oikawa）">
         <button class="mini pri stf-ok" data-id="${esc(x.id)}">承認する</button>
         <button class="mini stf-no" data-id="${esc(x.id)}">見送り</button></div>`:''}
     </div></div>`;
@@ -938,7 +938,7 @@ function liHtml(){
     </tbody></table></div>
     <div class="tblwrap" style="padding:14px 16px;margin-top:10px">
       <div class="act">
-        <input id="li-it" placeholder="やることを足す" style="flex:1;min-width:200px">
+        <input id="li-it" placeholder="やることを足す" style="flex:1;min-width:200px" aria-label="やることを足す">
         <select id="li-cy"><option value="週">週に一度</option><option value="月" selected>月に一度</option><option value="まれ">まれに</option></select>
         <button id="li-add" class="pri">足す</button>
       </div>
@@ -967,10 +967,10 @@ function notiHtml(){
     </div></div>`;
   return `<div class="tblwrap" style="padding:15px 17px;margin-bottom:14px">
       <div class="act" style="flex-direction:column;align-items:stretch">
-        <input id="no-t" placeholder="見出し（例）8/15は10時開店です">
-        <textarea id="no-b" rows="3" placeholder="くわしく（なくても大丈夫）" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:14px"></textarea>
+        <input id="no-t" placeholder="見出し（例）8/15は10時開店です" aria-label="見出し（例）8/15は10時開店です">
+        <textarea id="no-b" rows="3" placeholder="くわしく（なくても大丈夫）" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:14px" aria-label="くわしく（なくても大丈夫）"></textarea>
         <div class="act" style="margin:0">
-          <input id="no-by" placeholder="書いた人" style="width:150px">
+          <input id="no-by" placeholder="書いた人" style="width:150px" aria-label="書いた人">
           <input id="no-due" type="date" style="width:170px">
           <label style="font-size:13px;color:var(--sub);align-self:center">
             <input type="checkbox" id="no-pin"> いちばん上に置く</label>
@@ -1030,8 +1030,8 @@ function matHtml(){
     <p class="note">1本の値段と内容量（g）を入れると、その薬剤も材料費に入ります</p>
     <div class="tblwrap"><table class="tbl"><tbody>
       ${MAT.値段のない薬剤.map(x=>`<tr><td>${esc(x.name)}<div class="tsub">${esc(x.brand||'')}</div></td>
-        <td class="num"><input class="ag-c" data-id="${esc(x.id)}" type="number" placeholder="1本の値段" style="width:110px"></td>
-        <td class="num"><input class="ag-s" data-id="${esc(x.id)}" type="number" placeholder="内容量 g" style="width:100px"></td>
+        <td class="num"><input class="ag-c" data-id="${esc(x.id)}" type="number" placeholder="1本の値段" style="width:110px" aria-label="1本の値段"></td>
+        <td class="num"><input class="ag-s" data-id="${esc(x.id)}" type="number" placeholder="内容量 g" style="width:100px" aria-label="内容量 g"></td>
         <td><button class="mini ag-save" data-id="${esc(x.id)}" data-n="${esc(x.name)}">入れる</button></td></tr>`).join('')}
     </tbody></table></div>`:''}`;
 }
@@ -1215,8 +1215,8 @@ function revHtml(){
     <div class="tblwrap" style="padding:14px 16px">
       <div class="act">
         <select id="rv-ch"><option value="google">Google</option><option value="hpb">ホットペッパー</option></select>
-        <input id="rv-cnt" type="number" inputmode="numeric" placeholder="いまの件数" style="width:130px">
-        <input id="rv-rate" type="number" step="0.1" inputmode="decimal" placeholder="星（例 4.7）" style="width:130px">
+        <input id="rv-cnt" type="number" inputmode="numeric" placeholder="いまの件数" style="width:130px" aria-label="いまの件数">
+        <input id="rv-rate" type="number" step="0.1" inputmode="decimal" placeholder="星（例 4.7）" style="width:130px" aria-label="星（例 4.7）">
         <button id="rv-add" class="pri">今日の数として入れる</button>
       </div>
       <p class="note" style="margin:8px 0 0">GoogleとホットペッパーはAPIが無いので、画面に出ている数をそのまま入れてください　入れた日からの増え方が出ます</p>
@@ -1484,7 +1484,7 @@ async function load(){
         await loadQR(); const box=$('stf-qrbox');
         box.innerHTML=`<div style="text-align:center;margin-top:10px">
           <div style="font-weight:800;margin-bottom:6px">${esc(title)}</div>
-          ${qrImg(text,8)?`<img src="${qrImg(text,8)}" style="width:220px;height:220px;border:1px solid #e7e1d9;border-radius:12px;background:#fff">`:'QRを作れませんでした'}
+          ${qrImg(text,8)?`<img src="${qrImg(text,8)}" style="width:220px;height:220px;border:1px solid #e7e1d9;border-radius:12px;background:#fff" alt="読み取り用のQRコード">`:'QRを作れませんでした'}
           <div style="font-size:11.5px;color:var(--sub);margin-top:6px;word-break:break-all">${esc(text)}</div></div>`;
         box.scrollIntoView({block:'center',behavior:'smooth'});
       };
