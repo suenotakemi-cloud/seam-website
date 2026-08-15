@@ -5654,7 +5654,18 @@ function applyMe(j){
     if(!bk.email)bk.email=j.email||'';
     /* 前回と同じ内容にすぐ進めるように、覚えておく（押していただいたときだけ使う） */
     bk._me=j;
-    try{ localStorage.setItem('seam_me',JSON.stringify({name:j.name,kana:j.kana,phone:j.phone,email:j.email,at:Date.now()})); }catch(e){}
+    /* ★お店の端末には覚えさせない。
+         この画面は、お客様のスマホと、お店のiPadの両方で開く。
+         お店のiPadで覚えると、次にご予約を取るときに
+         前のお客様のお名前と電話番号が入ったままになる。
+         合言葉を持っている端末＝お店の端末、で見分ける。 */
+    try{
+      if(!localStorage.getItem('stb_admin_tok')){
+        localStorage.setItem('seam_me',JSON.stringify({name:j.name,kana:j.kana,phone:j.phone,email:j.email,at:Date.now()}));
+      }else{
+        localStorage.removeItem('seam_me');   // 過去に覚えてしまった分も消す
+      }
+    }catch(e){}
     if(typeof renderBook==='function')renderBook();
     if(j.visits) toast(`おかえりなさいませ　${j.name||''}様（${j.visits}回目のご予約）`);
   }catch(e){}
@@ -5665,9 +5676,12 @@ function applyMe(j){
    サーバーには聞かない（誰にも見えない）。 */
 (function(){
   try{
+    /* ★お店の端末では読まない・持たない（上と同じ理由） */
+    if(localStorage.getItem('stb_admin_tok')){ localStorage.removeItem('seam_me'); return; }
     const v=JSON.parse(localStorage.getItem('seam_me')||'null');
     if(!v||!v.name)return;
-    if(Date.now()-(v.at||0)>365*864e5)return;      // 1年より前のものは使わない
+    /* 1年は長い。使わないまま置きっぱなしにしない */
+    if(Date.now()-(v.at||0)>180*864e5){ localStorage.removeItem('seam_me'); return; }
     if(typeof bk==='object'&&bk){
       if(!bk.name)bk.name=v.name; if(!bk.kana)bk.kana=v.kana||'';
       if(!bk.phone)bk.phone=v.phone||''; if(!bk.email)bk.email=v.email||'';
