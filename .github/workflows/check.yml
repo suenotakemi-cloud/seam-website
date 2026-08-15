@@ -1,0 +1,96 @@
+# 出す前の関所
+#
+# これまで、生成物を直接 main へ書き戻すワークフローはあったのに、
+# 「壊れていないか確かめる」ものが1つも無かった。
+# 壊れたものがそのまま seam.site に出ていた。
+#
+# ここでやるのは、落ちたら気づける最低限だけ。
+#   ・JavaScript が構文として成立しているか
+#   ・HTML の中の <script> が成立しているか
+#   ・お店の情報が映る画面に、うっかり noindex が外れていないか
+#   ・土台のしくみ（saas/）のテストが通るか
+#
+# ★重いことはしない。関所は「速くて必ず通る」ことが大事で、
+#   遅いと必ず外される。
+
+name: 出す前の関所
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: JavaScript が成立しているか
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            node --check "$f" || { echo "::error file=$f::構文が成立していません"; fail=1; }
+          done < <(find . -name '*.js' -not -path './node_modules/*' -not -path './vendor/*' -not -path './.git/*')
+          exit $fail
+
+      - name: HTML の中の script が成立しているか
+        run: |
+          python3 - <<'PY'
+          import re, subprocess, tempfile, os, pathlib, sys
+          # ★JavaScript として動くものだけを見る。
+          #   type="application/ld+json"（検索エンジン向けの説明書き）や
+          #   text/template は JavaScript ではないので、node --check にかけると
+          #   全部「壊れている」と出る（680件の誤検知が実際に出た）。
+          JS_TYPE = re.compile(r'type\s*=\s*["\']?\s*(module|text/javascript|application/javascript)\s*["\']?', re.I)
+          HAS_TYPE = re.compile(r'\btype\s*=', re.I)
+          bad = n = 0
+          for f in pathlib.Path('.').rglob('*.html'):
+              if any(p in str(f) for p in ('node_modules', 'vendor', '.git')): continue
+              try: s = f.read_text(encoding='utf-8')
+              except Exception: continue
+              for m in re.finditer(r'<script(?![^>]*\bsrc=)([^>]*)>(.*?)</script>', s, re.S):
+                  attrs, code = m.group(1), m.group(2)
+                  if not code.strip(): continue
+                  if HAS_TYPE.search(attrs) and not JS_TYPE.search(attrs): continue
+                  n += 1
+                  with tempfile.NamedTemporaryFile('w', suffix='.mjs', delete=False, encoding='utf-8') as t:
+                      t.write(code); p = t.name
+                  r = subprocess.run(['node', '--check', p], capture_output=True, text=True)
+                  os.unlink(p)
+                  if r.returncode:
+                      bad += 1
+                      print(f'::error file={f}::{r.stderr.strip()[:300]}')
+          print(f'JavaScript の script {n}本を確認、壊れているもの {bad}本')
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: お店の情報が映る画面が検索に出ない設定か
+        run: |
+          fail=0
+          for f in booking/*.html entrance.html admin.html; do
+            [ -f "$f" ] || continue
+            grep -qi 'name="robots"[^>]*noindex' "$f" || {
+              echo "::error file=$f::noindex が入っていません（お店の画面が検索に出ます）"; fail=1; }
+          done
+          exit $fail
+
+      - name: 合言葉らしきものが混ざっていないか
+        run: |
+          # 本物の鍵の形だけを見る。誤検知で止めない。
+          if grep -rInE '(sq0atp-|sk_live_|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----)' \
+              --include='*.html' --include='*.js' --include='*.json' \
+              --exclude-dir=node_modules --exclude-dir=vendor . ; then
+            echo "::error::合言葉らしきものが入っています"
+            exit 1
+          fi
+          echo "見つかりませんでした"
