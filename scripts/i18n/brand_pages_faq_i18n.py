@@ -43,8 +43,16 @@ ACCESS = {
    'zh': '从鹤田站步行6分钟（开车前来也很方便）', 'tw': '從鶴田站步行6分鐘（開車前來也很方便）',
    'ko': '쓰루타역에서 도보 6분(차로 오시기에도 편한 위치입니다)'},
 }
-HUB_SUFFIX = {'ja': ' 正規取扱店トップ', 'en': ' authorized retailers',
-              'zh': ' 正规代理店首页', 'tw': ' 正規代理店首頁', 'ko': ' 정규 취급점 톱'}
+# backHub から ブランド名を取り出すための接尾辞。
+# 【罠】表現を変えた履歴があるので **新旧どちらも受ける**。
+#   一致しないとブランド名が丸ごと残り、英語ページに日本語が出る
+HUB_SUFFIX = {
+ 'ja': [' 正規取扱店トップ'],
+ 'en': [' authorized retailers'],
+ 'zh': [' 正规授权零售店首页', ' 正规代理店首页'],
+ 'tw': [' 正規授權零售店首頁', ' 正規代理店首頁'],
+ 'ko': [' 정규 취급점 톱'],
+}
 
 # 型（{ac} はアクセス文・{s} は店名・{b} はブランド名）
 PAT = [
@@ -92,9 +100,21 @@ for f in sorted(glob.glob('*.html')):
     brand = {}
     for L in LANGS:
         v = re.sub(r'^[←\s]*', '', d[L].get('bp.backHub', ''))
-        if v.endswith(HUB_SUFFIX[L]):
-            v = v[:-len(HUB_SUFFIX[L])]
+        for suf in HUB_SUFFIX[L]:
+            if v.endswith(suf):
+                v = v[:-len(suf)]; break
         brand[L] = v.strip()
+
+    # 【罠・2026-08-17のP1】番号を「一致した順」で振ると、型や訳表をあとから足して
+    #   流し直したとき、**既に付いている要素は飛ばす＝数えない**ので番号が1から
+    #   振り直され、同じページで同じキーが2回使われる。辞書は後勝ちなので
+    #   一方の回答がもう一方を上書きする（bp.desc で実際に本番事故になった）。
+    #   対策は「付いていたら飛ばす」をやめ、**毎回いったん外してから振り直す**こと。
+    #   そうすれば番号は常に文書順で決まり、実行の履歴に依存しない。
+    s = re.sub(r'\s+data-i18n="bp\.faqA\d+"', '', s)
+    for L in LANGS:
+        for k in [k for k in d[L] if re.fullmatch(r'bp\.faqA\d+', k)]:
+            del d[L][k]
 
     idx = 0
     def fix(mo):
@@ -127,7 +147,7 @@ for f in sorted(glob.glob('*.html')):
         return mo.group(0)
 
     s = re.sub(r'<dd([^>]*)>([^<]{15,240})</dd>', fix, s)
-    if idx == 0:
+    if idx == 0 and s == before:
         continue
 
     dict_after = json.dumps(d, ensure_ascii=False, sort_keys=True)
@@ -140,7 +160,10 @@ for f in sorted(glob.glob('*.html')):
     i = s.find('window.SEAM_PAGE_I18N')
     if not (s.rfind('<script', 0, i) > s.rfind('</script>', 0, i)) or '</body>' not in s:
         print(f'  {f:30} ★ 構造が壊れた → 書き戻さない'); continue
-    if not set(json.loads(dict_before)['ja']) <= set(d['ja']):
+    # bp.faqA* は毎回振り直すので比較から外す。それ以外が1つでも消えたら書き戻さない
+    def other(keys):
+        return {k for k in keys if not re.fullmatch(r'bp\.faqA\d+', k)}
+    if not other(json.loads(dict_before)['ja']) <= other(d['ja']):
         print(f'  {f:30} ★ 既存キーが消えた → 書き戻さない'); continue
     open(f, 'w', encoding='utf-8').write(s)
     n_pages += 1; n_dd += idx

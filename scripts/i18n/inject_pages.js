@@ -60,9 +60,9 @@ function metaFor(file, doc) {
     out.en = { t: `Salon-Exclusive Hair Care in ${s.area.en} | ${s.name}`,
       d: `Authorized retailer of salon-exclusive hair care in ${s.area.en}. 197 brands on the shelf. Shopping-only visits are welcome, with no booking and no treatment.${tax.en}` };
     out.zh = { t: `${s.area.zh}的沙龙专售护发店 | ${s.name}`,
-      d: `${s.area.zh}的沙龙专售护发正规代理店。197个品牌在售，无需预约与护理，欢迎只为购物到店。${tax.zh}` };
+      d: `${s.area.zh}的沙龙专售护发正规授权零售店。197个品牌在售，无需预约与护理，欢迎只为购物到店。${tax.zh}` };
     out.tw = { t: `${s.area.tw}的沙龍專售護髮店 | ${s.name}`,
-      d: `${s.area.tw}的沙龍專售護髮正規代理店。197個品牌在售，無需預約與護理，歡迎只為購物到店。${tax.tw}` };
+      d: `${s.area.tw}的沙龍專售護髮正規授權零售店。197個品牌在售，無需預約與護理，歡迎只為購物到店。${tax.tw}` };
     out.ko = { t: `${s.area.ko}의 살롱 전용 헤어케어 매장 | ${s.name}`,
       d: `${s.area.ko}의 살롱 전용 헤어케어 정규 취급점. 197개 브랜드를 매장에서. 예약·시술 없이 구매만 하셔도 됩니다.${tax.ko}` };
     return out;
@@ -95,9 +95,9 @@ function metaFor(file, doc) {
     const b = BRAND[m[1]]; if (!b) return null;
     out.en = { t: `Buy ${b} in Tokyo | Authorized Retailer SEAM`,
       d: `Where to buy ${b} in Tokyo. Authorized retailer at our Ginza and Omotesando stores. In-store purchase with no booking and no treatment.` };
-    out.zh = { t: `在东京购买${b} | 正规代理店 SEAM`,
+    out.zh = { t: `在东京购买${b} | 正规授权零售店 SEAM`,
       d: `在东京哪里可以买到${b}。银座与表参道两家门店正规代理，无需预约与护理即可到店购买。` };
-    out.tw = { t: `在東京購買${b} | 正規代理店 SEAM`,
+    out.tw = { t: `在東京購買${b} | 正規授權零售店 SEAM`,
       d: `在東京哪裡可以買到${b}。銀座與表參道兩家門市正規代理，無需預約與護理即可到店購買。` };
     out.ko = { t: `도쿄에서 ${b} 구매 | 정규 취급점 SEAM`,
       d: `도쿄에서 ${b}를 살 수 있는 곳. 긴자·오모테산도 두 매장에서 정규 취급. 예약·시술 없이 매장에서 구매하실 수 있습니다.` };

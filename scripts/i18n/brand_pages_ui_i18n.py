@@ -69,7 +69,7 @@ UI = {
  'bp.ui.tokusho':   ('特定商取引法に基づく表記', {'en': 'Legal notice under the Specified Commercial Transactions Act', 'zh': '基于特定商业交易法的标示', 'tw': '基於特定商業交易法的標示', 'ko': '특정상거래법에 근거한 표기'}),
  'bp.ui.shopNote':  ('販売のみ・ネットショップでのご購入について', {'en': 'Shopping only, and buying on the online shop', 'zh': '关于仅购物与在网店购买', 'tw': '關於僅購物與在網店購買', 'ko': '구매만 하실 때와 온라인 숍 구매에 대하여'}),
  'bp.ui.hairsalon': ('ヘアサロン', {'en': 'Hair salon', 'zh': '美发沙龙', 'tw': '美髮沙龍', 'ko': '헤어살롱'}),
- 'bp.ui.official':  ('メーカー公認 正規取扱店（正規ルート品のみ）', {'en': 'Manufacturer-authorized retailer (genuine supply route only)', 'zh': '厂商公认 正规代理店（仅正规渠道商品）', 'tw': '廠商公認 正規代理店（僅正規通路商品）', 'ko': '제조사 공인 정규 취급점(정규 유통 상품만)'}),
+ 'bp.ui.official':  ('メーカー公認 正規取扱店（正規ルート品のみ）', {'en': 'Manufacturer-authorized retailer (genuine supply route only)', 'zh': '厂商公认 正规授权零售店（仅正规渠道商品）', 'tw': '廠商公認 正規授權零售店（僅正規通路商品）', 'ko': '제조사 공인 정규 취급점(정규 유통 상품만)'}),
  'bp.ui.where':     ('全国7店舗の店頭 ＋ 会員制オンラインショップ（ご登録は店頭のみ）', {'en': 'All 7 stores, plus the members-only online shop (sign-up in store only)', 'zh': '全国7家门店 ＋ 会员制网店（仅可在店内注册）', 'tw': '全國7家門市 ＋ 會員制網店（僅可在店內註冊）', 'ko': '전국 7개 매장 + 회원제 온라인 숍(가입은 매장에서만)'}),
  'bp.ui.maker':     ('メーカー', {'en': 'Manufacturer', 'zh': '厂商', 'tw': '廠商', 'ko': '제조사'}),
  'bp.ui.home':      ('ホーム', {'en': 'Home', 'zh': '首页', 'tw': '首頁', 'ko': '홈'}),
@@ -78,10 +78,18 @@ UI = {
 CITY = {'東京': {'en': 'Tokyo', 'zh': '东京', 'tw': '東京', 'ko': '도쿄'}}
 STOCKIST = {'en': 'Stockists in {c}', 'zh': '{c}的在售门店', 'tw': '{c}的在售門市', 'ko': '{c}의 취급점'}
 # 「{ブランド}取扱店」— ブランド名は backHub から取る
-HUB_SUFFIX = {'ja': ' 正規取扱店トップ', 'en': ' authorized retailers',
-              'zh': ' 正规代理店首页', 'tw': ' 正規代理店首頁', 'ko': ' 정규 취급점 톱'}
-SHOP_OF = {'en': '{b} authorized retailer', 'zh': '{b} 正规代理店',
-           'tw': '{b} 正規代理店', 'ko': '{b} 정규 취급점'}
+# backHub から ブランド名を取り出すための接尾辞。
+# 【罠】表現を変えた履歴があるので **新旧どちらも受ける**。
+#   一致しないとブランド名が丸ごと残り、英語ページに日本語が出る
+HUB_SUFFIX = {
+ 'ja': [' 正規取扱店トップ'],
+ 'en': [' authorized retailers'],
+ 'zh': [' 正规授权零售店首页', ' 正规代理店首页'],
+ 'tw': [' 正規授權零售店首頁', ' 正規代理店首頁'],
+ 'ko': [' 정규 취급점 톱'],
+}
+SHOP_OF = {'en': '{b} authorized retailer', 'zh': '{b} 正规授权零售店',
+           'tw': '{b} 正規授權零售店', 'ko': '{b} 정규 취급점'}
 
 
 # 他ブランドへのリンク（「{ブランド} 取扱店」）は backHub が使えないので名前表を持つ。
@@ -130,8 +138,8 @@ HUB_UI = {
     'ko': 'SEAM 전국 7개 매장(긴자·오모테산도·삿포로·오사카·나고야·후쿠오카·우쓰노미야)에서 취급하고 있습니다. 재고는 매장과 시기에 따라 다르므로 확실히 구매하시려면 매장으로 문의해 주세요.'}),
  'bp.ui.hubOnline': ('SEAMの会員制オンラインショップでお求めいただけます ご登録は店頭のみのご案内です フリマや非正規の出品は真贋や保管状態が分からないため 正規の取扱店をおすすめします',
    {'en': "You can buy it at SEAM's members-only online shop. Sign-up is handled in store only. On flea-market apps and unauthorized listings there is no way to tell whether an item is genuine or how it was stored, so we recommend an authorized retailer.",
-    'zh': '可在SEAM的会员制网店购买。注册仅在店内办理。二手平台与非正规卖家的商品无法确认真伪与保管状态，建议您选择正规代理店。',
-    'tw': '可在SEAM的會員制網店購買。註冊僅在店內辦理。二手平台與非正規賣家的商品無法確認真偽與保管狀態，建議您選擇正規代理店。',
+    'zh': '可在SEAM的会员制网店购买。注册仅在店内办理。二手平台与非正规卖家的商品无法确认真伪与保管状态，建议您选择正规授权零售店。',
+    'tw': '可在SEAM的會員制網店購買。註冊僅在店內辦理。二手平台與非正規賣家的商品無法確認真偽與保管狀態，建議您選擇正規授權零售店。',
     'ko': 'SEAM 회원제 온라인 숍에서 구매하실 수 있습니다. 가입은 매장에서만 안내드립니다. 중고 거래나 비정규 판매 상품은 진위와 보관 상태를 알 수 없으므로 정규 취급점을 권해 드립니다.'}),
 }
 # 「{N}点(SEAMセレクト掲載分)」— 数はページごとに違うので実数を読んで作る
@@ -185,22 +193,30 @@ for f in pages:
     # ② ブランド名（backHub から言語ごとに取り出す）
     brand = {}
     for L in LANGS:
-        v = d[L].get('bp.backHub', '')
-        v = re.sub(r'^[←\s]*', '', v)
-        if v.endswith(HUB_SUFFIX[L]):
-            v = v[:-len(HUB_SUFFIX[L])]
+        v = re.sub(r'^[←\s]*', '', d[L].get('bp.backHub', ''))
+        for suf in HUB_SUFFIX[L]:
+            if v.endswith(suf):
+                v = v[:-len(suf)]; break
         brand[L] = v.strip()
 
     # ③ HTML に data-i18n を付け、辞書へキーを足す
     add = {}
     def tag(ja_text, key, vals):
-        """<x ...>ja_text</x> に data-i18n を付ける。既に付いていれば触らない"""
+        """<x ...>ja_text</x> に data-i18n を付ける。
+
+        【罠】以前は「既に付いていれば触らない」で、`add` にも入れていなかった。
+        そのため **訳表の文言を直しても、既に付いているページへ伝わらなかった**
+        （zh/tw の「代理店」を直したときに気づいた）。
+        いま印が付いているかに関わらず、この生成器が持つキーは必ず `add` に入れ、
+        辞書の値は setdefault ではなく **上書き**する。訳表を正にするため。
+        """
         global s
         pat = re.compile(r'(<([a-z][a-z0-9]*)\b(?![^>]*data-i18n=)[^>]*?)(>)' + re.escape(ja_text) + r'(</\2>)')
-        if not pat.search(s):
-            return
-        s = pat.sub(lambda mo: mo.group(1) + f' data-i18n="{key}"' + mo.group(3) + ja_text + mo.group(4), s)
-        add[key] = {'ja': ja_text, **vals}
+        if pat.search(s):
+            s = pat.sub(lambda mo: mo.group(1) + f' data-i18n="{key}"' + mo.group(3) + ja_text + mo.group(4), s)
+            add[key] = {'ja': ja_text, **vals}
+        elif f'data-i18n="{key}"' in s:
+            add[key] = {'ja': ja_text, **vals}
 
     for key, (ja_text, vals) in list(UI.items()) + list(HUB_UI.items()) + list(LASH_UI.items()):
         tag(ja_text, key, vals)
@@ -209,6 +225,8 @@ for f in pages:
         pat = re.compile(r'(>メーカー</div>\s*<div\b(?![^>]*data-i18n=)[^>]*?)(>)' + re.escape(ja_maker) + r'(</div>)')
         if pat.search(s):
             s = pat.sub(lambda mo: mo.group(1) + ' data-i18n="bp.ui.makerName"' + mo.group(2) + ja_maker + mo.group(3), s)
+            add['bp.ui.makerName'] = {'ja': ja_maker, **mv}
+        elif 'data-i18n="bp.ui.makerName"' in s and d['ja'].get('bp.ui.makerName') == ja_maker:
             add['bp.ui.makerName'] = {'ja': ja_maker, **mv}
 
     # 掲載点数（ページごとに数が違う）
@@ -238,9 +256,10 @@ for f in pages:
             s = pat.sub(lambda mo: mo.group(1) + ' data-i18n="bp.accessLine"' + mo.group(2) + ja_ac + mo.group(3), s)
             add['bp.accessLine'] = {'ja': ja_ac, **tr}
 
+    # setdefault ではなく上書き。訳表を直したら既存ページにも伝わるようにする
     for k, v in add.items():
         for L in LANGS:
-            d[L].setdefault(k, v[L])
+            d[L][k] = v[L]
 
     dict_after = json.dumps(d, ensure_ascii=False, sort_keys=True)
     if dict_after != dict_before:

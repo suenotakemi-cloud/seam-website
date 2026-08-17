@@ -89,6 +89,17 @@ for f in sorted(glob.glob('*.html')):
         continue
     dict_before = json.dumps(d, ensure_ascii=False, sort_keys=True)
 
+    # 【罠】番号は段落の位置で決めているので今は安定しているが、訳表を足したときに
+    #   「付いていたら飛ばす」が効いて番号がずれる余地を残さないため、
+    #   faq / desc と同じく **毎回いったん外してから振り直す**（2026-08-17のP1と同種）
+    s = re.sub(r'\s+data-i18n="bp\.visitP\d+"', '', s)
+    for L in LANGS:
+        for k in [k for k in d[L] if re.fullmatch(r'bp\.visitP\d+', k)]:
+            del d[L][k]
+    m = SEC.search(s)
+    if not m:
+        continue
+
     block = m.group(2)
     out, idx, added = [], 0, 0
     for pm in re.finditer(r'(<p)([^>]*)(>)([^<]*)(</p>)', block):
@@ -102,7 +113,7 @@ for f in sorted(glob.glob('*.html')):
         for L in LANGS:
             d[L][key] = txt.strip() if L == 'ja' else vals[L]
         added += 1
-    if not added:
+    if not added and s == before:
         continue
     # 段落以外（空白）を保ったまま組み直す
     new_block = block
@@ -121,7 +132,10 @@ for f in sorted(glob.glob('*.html')):
     i = s.find('window.SEAM_PAGE_I18N')
     if not (s.rfind('<script', 0, i) > s.rfind('</script>', 0, i)) or '</body>' not in s:
         print(f'  {f:30} ★ 構造が壊れた → 書き戻さない'); continue
-    if not set(json.loads(dict_before)['ja']) <= set(d['ja']):
+    # bp.visitP* は毎回振り直すので比較から外す
+    def other(keys):
+        return {k for k in keys if not re.fullmatch(r'bp\.visitP\d+', k)}
+    if not other(json.loads(dict_before)['ja']) <= other(d['ja']):
         print(f'  {f:30} ★ 既存キーが消えた → 書き戻さない'); continue
     open(f, 'w', encoding='utf-8').write(s)
     n_pages += 1; n_tag += added

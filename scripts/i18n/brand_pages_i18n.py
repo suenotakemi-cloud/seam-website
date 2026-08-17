@@ -30,13 +30,13 @@ STORE = {'ginza': 'SEAM GINZA', 'omotesando': 'SEAM OMOTESANDO', 'sapporo': 'SEA
 META_T = {
  'title': {'ja': '{B} {C}で買える｜正規取扱店 SEAM',
            'en': 'Buy {B} in {C} | Authorized retailer | SEAM',
-           'zh': '在{C}购买{B}｜正规代理店｜SEAM',
-           'tw': '在{C}購買{B}｜正規代理店｜SEAM',
+           'zh': '在{C}购买{B}｜正规授权零售店｜SEAM',
+           'tw': '在{C}購買{B}｜正規授權零售店｜SEAM',
            'ko': '{C}에서 {B} 구매｜정규 취급점｜SEAM'},
  'desc':  {'ja': '{C}で{B}を買うだけの来店ができます　施術も予約も不要　{S}は正規取扱店です',
            'en': 'You can visit {S} in {C} just to buy {B}. No treatment, no booking. {S} is an authorized retailer.',
-           'zh': '在{C}可以只为购买{B}而到店　无需护理与预约　{S}是正规代理店。',
-           'tw': '在{C}可以只為購買{B}而到店　無需護理與預約　{S}是正規代理店。',
+           'zh': '在{C}可以只为购买{B}而到店　无需护理与预约　{S}是正规授权零售店。',
+           'tw': '在{C}可以只為購買{B}而到店　無需護理與預約　{S}是正規授權零售店。',
            'ko': '{C}에서 {B}만 구매하러 방문하실 수 있습니다. 시술도 예약도 필요 없습니다. {S}는 정규 취급점입니다.'},
 }
 
@@ -44,8 +44,8 @@ META_T = {
 HUB_META = {
  'title': {'ja': '{B} 取扱店・正規販売店｜SEAM',
            'en': '{B} authorized retailers in Japan | SEAM',
-           'zh': '{B} 销售门店・正规代理店｜SEAM',
-           'tw': '{B} 銷售門市・正規代理店｜SEAM',
+           'zh': '{B} 销售门店・正规授权零售店｜SEAM',
+           'tw': '{B} 銷售門市・正規授權零售店｜SEAM',
            'ko': '{B} 취급점·정규 판매점｜SEAM'},
  'desc':  {'ja': '{B}を正規取扱するSEAMの店舗一覧　施術も予約もなしで買うだけのご来店ができます',
            'en': 'SEAM stores that carry {B} as an authorized retailer. You can visit just to buy, with no treatment and no booking.',
