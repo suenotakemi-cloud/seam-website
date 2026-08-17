@@ -155,8 +155,8 @@ T = {
    'ja': 'ほかのエリアで探す', 'en': 'Find another area', 'zh': '在其他地区寻找',
    'tw': '在其他地區尋找', 'ko': '다른 지역에서 찾기'},
  'bp.backHub': {
-   'ja': '← {B} 正規取扱店トップ', 'en': '← {B} authorized retailers', 'zh': '← {B} 正规授权零售店首页',
-   'tw': '← {B} 正規授權零售店首頁', 'ko': '← {B} 정규 취급점 톱'},
+   'ja': '← {B} 正規取扱店トップ', 'en': '← {B} authorized retailers', 'zh': '← {B} 品牌授权零售商首页',
+   'tw': '← {B} 品牌授權零售商首頁', 'ko': '← {B} 정규 취급점 톱'},
  'bp.storeName': {'ja': '店名', 'en': 'Store', 'zh': '店名', 'tw': '店名', 'ko': '매장명'},
  'bp.address':   {'ja': '住所', 'en': 'Address', 'zh': '地址', 'tw': '地址', 'ko': '주소'},
  'bp.access':    {'ja': 'アクセス', 'en': 'Access', 'zh': '交通', 'tw': '交通', 'ko': '오시는 길'},
@@ -296,8 +296,8 @@ AREA_PARAS = {
 # ── ブランドハブ（{brand}.html）専用。エリアページとは構造が違う
 HUB = {
  'bp.hubBadge': {
-   'ja': '（{E}）正規取扱店', 'en': '({E}) Authorized retailer', 'zh': '（{E}）正规授权零售店',
-   'tw': '（{E}）正規授權零售店', 'ko': '({E}) 정규 취급점'},
+   'ja': '（{E}）正規取扱店', 'en': '({E}) Authorized retailer', 'zh': '（{E}）品牌授权零售商',
+   'tw': '（{E}）品牌授權零售商', 'ko': '({E}) 정규 취급점'},
  'bp.hubLines': {
    'ja': '主な取扱ライン', 'en': 'Main lines we carry', 'zh': '主要在售系列',
    'tw': '主要在售系列', 'ko': '주요 취급 라인'},
@@ -339,8 +339,8 @@ HUB = {
  'bp.hubA1': {
    'ja': 'SEAMはメーカー公認の正規取扱店です {B}は正規ルートの商品のみをお取り扱いしています',
    'en': 'SEAM is a maker-approved authorized retailer. We carry {B} only through official channels.',
-   'zh': 'SEAM是厂商公认的正规授权零售店。{B}仅经由正规渠道进货。',
-   'tw': 'SEAM是廠商公認的正規授權零售店。{B}僅經由正規渠道進貨。',
+   'zh': 'SEAM是厂商公认的品牌授权零售商。{B}仅经由正规渠道进货。',
+   'tw': 'SEAM是廠商公認的品牌授權零售商。{B}僅經由正規渠道進貨。',
    'ko': 'SEAM은 제조사 공인 정규 취급점입니다. {B}는 정규 유통 경로의 제품만 취급합니다.'},
  'bp.hubQ2': {
    'ja': '{B}はどの店舗で買えますか', 'en': 'Which stores sell {B}?', 'zh': '{B}在哪些门店可以买到',

@@ -69,7 +69,7 @@ UI = {
  'bp.ui.tokusho':   ('特定商取引法に基づく表記', {'en': 'Legal notice under the Specified Commercial Transactions Act', 'zh': '基于特定商业交易法的标示', 'tw': '基於特定商業交易法的標示', 'ko': '특정상거래법에 근거한 표기'}),
  'bp.ui.shopNote':  ('販売のみ・ネットショップでのご購入について', {'en': 'Shopping only, and buying on the online shop', 'zh': '关于仅购物与在网店购买', 'tw': '關於僅購物與在網店購買', 'ko': '구매만 하실 때와 온라인 숍 구매에 대하여'}),
  'bp.ui.hairsalon': ('ヘアサロン', {'en': 'Hair salon', 'zh': '美发沙龙', 'tw': '美髮沙龍', 'ko': '헤어살롱'}),
- 'bp.ui.official':  ('メーカー公認 正規取扱店（正規ルート品のみ）', {'en': 'Manufacturer-authorized retailer (genuine supply route only)', 'zh': '厂商公认 正规授权零售店（仅正规渠道商品）', 'tw': '廠商公認 正規授權零售店（僅正規通路商品）', 'ko': '제조사 공인 정규 취급점(정규 유통 상품만)'}),
+ 'bp.ui.official':  ('メーカー公認 正規取扱店（正規ルート品のみ）', {'en': 'Manufacturer-authorized retailer (genuine supply route only)', 'zh': '厂商公认 品牌授权零售商（仅正规渠道商品）', 'tw': '廠商公認 品牌授權零售商（僅正規通路商品）', 'ko': '제조사 공인 정규 취급점(정규 유통 상품만)'}),
  'bp.ui.where':     ('全国7店舗の店頭 ＋ 会員制オンラインショップ（ご登録は店頭のみ）', {'en': 'All 7 stores, plus the members-only online shop (sign-up in store only)', 'zh': '全国7家门店 ＋ 会员制网店（仅可在店内注册）', 'tw': '全國7家門市 ＋ 會員制網店（僅可在店內註冊）', 'ko': '전국 7개 매장 + 회원제 온라인 숍(가입은 매장에서만)'}),
  'bp.ui.maker':     ('メーカー', {'en': 'Manufacturer', 'zh': '厂商', 'tw': '廠商', 'ko': '제조사'}),
  'bp.ui.home':      ('ホーム', {'en': 'Home', 'zh': '首页', 'tw': '首頁', 'ko': '홈'}),
@@ -84,12 +84,12 @@ STOCKIST = {'en': 'Stockists in {c}', 'zh': '{c}的在售门店', 'tw': '{c}的�
 HUB_SUFFIX = {
  'ja': [' 正規取扱店トップ'],
  'en': [' authorized retailers'],
- 'zh': [' 正规授权零售店首页', ' 正规代理店首页'],
- 'tw': [' 正規授權零售店首頁', ' 正規代理店首頁'],
+ 'zh': [' 品牌授权零售商首页', ' 正规授权零售店首页', ' 正规代理店首页'],
+ 'tw': [' 品牌授權零售商首頁', ' 正規授權零售店首頁', ' 正規代理店首頁'],
  'ko': [' 정규 취급점 톱'],
 }
-SHOP_OF = {'en': '{b} authorized retailer', 'zh': '{b} 正规授权零售店',
-           'tw': '{b} 正規授權零售店', 'ko': '{b} 정규 취급점'}
+SHOP_OF = {'en': '{b} authorized retailer', 'zh': '{b} 品牌授权零售商',
+           'tw': '{b} 品牌授權零售商', 'ko': '{b} 정규 취급점'}
 
 
 # 他ブランドへのリンク（「{ブランド} 取扱店」）は backHub が使えないので名前表を持つ。
@@ -138,8 +138,8 @@ HUB_UI = {
     'ko': 'SEAM 전국 7개 매장(긴자·오모테산도·삿포로·오사카·나고야·후쿠오카·우쓰노미야)에서 취급하고 있습니다. 재고는 매장과 시기에 따라 다르므로 확실히 구매하시려면 매장으로 문의해 주세요.'}),
  'bp.ui.hubOnline': ('SEAMの会員制オンラインショップでお求めいただけます ご登録は店頭のみのご案内です フリマや非正規の出品は真贋や保管状態が分からないため 正規の取扱店をおすすめします',
    {'en': "You can buy it at SEAM's members-only online shop. Sign-up is handled in store only. On flea-market apps and unauthorized listings there is no way to tell whether an item is genuine or how it was stored, so we recommend an authorized retailer.",
-    'zh': '可在SEAM的会员制网店购买。注册仅在店内办理。二手平台与非正规卖家的商品无法确认真伪与保管状态，建议您选择正规授权零售店。',
-    'tw': '可在SEAM的會員制網店購買。註冊僅在店內辦理。二手平台與非正規賣家的商品無法確認真偽與保管狀態，建議您選擇正規授權零售店。',
+    'zh': '可在SEAM的会员制网店购买。注册仅在店内办理。二手平台与非正规卖家的商品无法确认真伪与保管状态，建议您选择品牌授权零售商。',
+    'tw': '可在SEAM的會員制網店購買。註冊僅在店內辦理。二手平台與非正規賣家的商品無法確認真偽與保管狀態，建議您選擇品牌授權零售商。',
     'ko': 'SEAM 회원제 온라인 숍에서 구매하실 수 있습니다. 가입은 매장에서만 안내드립니다. 중고 거래나 비정규 판매 상품은 진위와 보관 상태를 알 수 없으므로 정규 취급점을 권해 드립니다.'}),
 }
 # 「{N}点(SEAMセレクト掲載分)」— 数はページごとに違うので実数を読んで作る

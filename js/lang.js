@@ -82,6 +82,15 @@
     if (typeof window.onLangChange === 'function') {
       window.onLangChange(lang);
     }
+
+    /* 8. 共通の言い触らし。
+       onLangChange は1ページに1つしか置けないので、共通JS（seam-analytics 等）や
+       IIFEの中から拾いたいものはこのイベントを聞く。
+       lang は短いコード（ja/en/zh/tw/ko）。html lang は zh-Hans / zh-Hant なので
+       受け手が document.documentElement.lang を見るときは橋渡しが要る */
+    try {
+      window.dispatchEvent(new CustomEvent('seam:langchange', { detail: { lang: lang } }));
+    } catch (e) { /* ここでUIを壊さない */ }
   }
 
   /* ── モーダル開閉 ── */

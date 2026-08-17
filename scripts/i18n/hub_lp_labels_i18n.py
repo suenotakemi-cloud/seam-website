@@ -16,7 +16,7 @@
 #
 # 【名古屋】ヘアは受付休止中。salon 側のリンクに名古屋は無い（元から正しい）ので触らない。
 # 冪等。
-import re, sys, os
+import re, sys, os, json, subprocess, tempfile
 
 ROOT = sys.argv[1]; os.chdir(ROOT)
 LANGS = ['ja', 'en', 'zh', 'tw', 'ko']
@@ -71,9 +71,110 @@ def dict_blocks(s):
     return out if len(out) == 5 else None
 
 
-def existing_keys(s):
-    i = s.find('window.SEAM_PAGE_I18N =')
-    return set(re.findall(r"'([A-Za-z0-9_.]+)'\s*:", s[i:i + 200000])) if i >= 0 else set()
+def eval_dict(src):
+    """辞書を **言語ごとに** 実際に評価して返す。
+    【罠】以前は正規表現で 'key': を拾って全言語を混ぜた1つの集合にしていた。
+    それだと「en だけキーが落ちた」が検出できない。node で本物として評価する。
+    戻り値: {lang: {key: value}} / 評価できなければ None"""
+    m = re.search(r'window\.SEAM_PAGE_I18N\s*=\s*\{', src)
+    if not m:
+        return None
+    d = src.index('{', m.start())
+    depth, j, q = 0, d, None
+    while j < len(src):
+        c, pr = src[j], src[j - 1]
+        if q:
+            if c == q and pr != '\\':
+                q = None
+        elif c in '\'"`':
+            q = c
+        elif c == '{':
+            depth += 1
+        elif c == '}':
+            depth -= 1
+            if not depth:
+                j += 1
+                break
+        j += 1
+    lit = src[d:j]
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as t:
+        t.write('const D = (' + lit + ');\n'
+                'process.stdout.write(JSON.stringify(D));\n')
+        tmp = t.name
+    try:
+        out = subprocess.run(['node', tmp], capture_output=True, text=True, timeout=60)
+        if out.returncode != 0:
+            return None
+        return json.loads(out.stdout)
+    except Exception:
+        return None
+    finally:
+        os.unlink(tmp)
+
+
+def scripts_parse(src):
+    """全インラインscriptを node の new Function() でパースできるか"""
+    with tempfile.NamedTemporaryFile('w', suffix='.js', delete=False, encoding='utf-8') as t:
+        t.write("""
+const fs=require('fs');
+const src=fs.readFileSync(process.argv[2],'utf8');
+const re=/<script(?![^>]*\\bsrc=)([^>]*)>([\\s\\S]*?)<\\/script>/g;
+let m,bad=0;
+while((m=re.exec(src))){
+  const attrs=m[1]||'';
+  const ty=(/type="([^"]*)"/.exec(attrs)||[])[1]||'';
+  if(ty && !/javascript|module/i.test(ty)) continue;
+  try{ new Function(m[2]); }catch(e){ bad++; process.stdout.write(e.message.slice(0,60)); break; }
+}
+if(!bad) process.stdout.write('OK');
+""")
+        js = t.name
+    with tempfile.NamedTemporaryFile('w', suffix='.html', delete=False, encoding='utf-8') as t:
+        t.write(src)
+        html = t.name
+    try:
+        out = subprocess.run(['node', js, html], capture_output=True, text=True, timeout=120)
+        return out.stdout.strip() == 'OK', out.stdout.strip()[:60]
+    except Exception as e:
+        return False, str(e)[:60]
+    finally:
+        os.unlink(js); os.unlink(html)
+
+
+def write_gate(f, src, before):
+    """書き込んでよいかを判定する。ひとつでも駄目なら理由を返す"""
+    # 1. 辞書を5言語ぶん個別に評価できること
+    D = eval_dict(src)
+    if D is None:
+        return '辞書が評価できない'
+    missing = [L for L in LANGS if L not in D]
+    if missing:
+        return f'辞書に言語が無い {missing}'
+    # 2. 5言語のキー集合が一致すること
+    base = set(D['ja'])
+    for L in LANGS:
+        if set(D[L]) != base:
+            only = sorted(base ^ set(D[L]))[:3]
+            return f'{L} のキー集合がjaと違う {only}'
+    # 3. 既存キーが言語ごとに1つも消えていないこと
+    B = eval_dict(before)
+    if B:
+        for L in LANGS:
+            lost = set(B.get(L, {})) - set(D[L])
+            if lost:
+                return f'{L} で既存キーが消えた {sorted(lost)[:3]}'
+    # 4. 全インラインscriptがパースできること
+    ok, why = scripts_parse(src)
+    if not ok:
+        return f'JSがパースできない {why}'
+    # 5. 辞書が script 要素の中にあること
+    i = src.find('window.SEAM_PAGE_I18N')
+    if not (src.rfind('<script', 0, i) > src.rfind('</script>', 0, i)):
+        return '辞書が script の外に出た'
+    # 6. 末尾が残っていること
+    if '</body>' not in src:
+        return '</body> が消えた'
+    return None
 
 
 for f in FILES:
@@ -110,7 +211,8 @@ for f in FILES:
     s = re.sub(r'<a\s+href="([^"]*store-[a-z]+\.html)"((?![^>]*data-i18n=)[^>]*)>([^<]*)</a>', tag_city, s)
 
     # ③ 辞書へ（既存キーは足さない）
-    have = existing_keys(s)
+    D0 = eval_dict(s) or {}
+    have = set(D0.get('ja', {}))
     new = {k: v for k, v in K.items() if k not in have}
     if new:
         for lang in LANGS:
@@ -124,10 +226,10 @@ for f in FILES:
         if s is None:
             continue
 
-    lost = existing_keys(before) - existing_keys(s)
-    if lost:
-        print(f'  {f:14} ★ 既存キーが消えた {sorted(lost)[:3]} → 書き戻さない'); continue
     if s == before:
         print(f'  {f:14} 変更なし'); continue
+    why = write_gate(f, s, before)
+    if why:
+        print(f'  {f:14} ★ {why} → 書き戻さない'); continue
     open(f, 'w', encoding='utf-8').write(s)
     print(f'  {f:14} data-i18n {len(re.findall(chr(34)+"city."  , s))}都市 / 新規キー {len(new)}')

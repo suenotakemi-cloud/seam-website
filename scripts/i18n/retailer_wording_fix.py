@@ -15,8 +15,15 @@
 import re, json, sys, os, glob
 
 ROOT = sys.argv[1]; os.chdir(ROOT)
-REPL = [('正规代理店', '正规授权零售店'),   # 簡体
-        ('正規代理店', '正規授權零售店')]   # 繁体
+# レビューの指定どおり「品牌授权零售商／品牌授權零售商」に揃える。
+# 途中で一度「正规授权零售店」を経由した履歴があるので、そこからの移行も入れておく
+# 言語ごとに持つ。【罠】1本のリストにすると、ページ側の置換で
+# 「zh には先頭の1組だけ」しか当たらず、途中の表現が残る（実際に残した）
+REPL_BY_LANG = {
+ 'zh': [('正规代理店', '品牌授权零售商'), ('正规授权零售店', '品牌授权零售商')],
+ 'tw': [('正規代理店', '品牌授權零售商'), ('正規授權零售店', '品牌授權零售商')],
+}
+REPL = REPL_BY_LANG['zh'] + REPL_BY_LANG['tw']   # 生成元ファイルは全部まとめて当てる
 
 SRC = ['scripts/i18n/dict.json', 'scripts/i18n/brand_pages_i18n_table.py',
        'scripts/i18n/brand_pages_i18n.py', 'scripts/i18n/inject_pages.js',
@@ -62,10 +69,13 @@ for f in sorted(glob.glob('*.html')):
     if 'zh' not in d or 'tw' not in d:
         continue
     hit = 0
-    for L, (a, b) in (('zh', REPL[0]), ('tw', REPL[1])):
+    for L, pairs in REPL_BY_LANG.items():
         for k, v in list(d[L].items()):
-            if a in v:
-                d[L][k] = v.replace(a, b); hit += 1
+            nv = v
+            for a, b in pairs:
+                nv = nv.replace(a, b)
+            if nv != v:
+                d[L][k] = nv; hit += 1
     if not hit:
         continue
     s = s[:m.start()] + m.group(1) + json.dumps(d, ensure_ascii=False, sort_keys=True) + m.group(3) + s[m.end():]

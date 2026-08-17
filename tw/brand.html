@@ -3467,20 +3467,29 @@ const BRAND_CATS = {
 
 // 辞書の引き手。html lang は zh-Hans / zh-Hant だが辞書のキーは zh / tw なので橋渡しする
 // （ここが合っていないと中国語・繁体字だけ実行時の訳が全部落ちる）
-let _catI18nDone = false;
-function seamDict() {
+function seamLangKey() {
   const L = document.documentElement.lang || 'ja';
-  const K = { 'zh-Hans': 'zh', 'zh-Hant': 'tw', 'zh-CN': 'zh', 'zh-TW': 'tw' }[L] || L.split('-')[0];
-  const D = (window.SEAM_PAGE_I18N && (window.SEAM_PAGE_I18N[K] || window.SEAM_PAGE_I18N[L])) || {};
-  // カテゴリの見出しと説明は一度だけ差し替える（辞書に無ければ日本語のまま＝壊れない）
-  if (!_catI18nDone && Object.keys(D).length) {
-    _catI18nDone = true;
-    Object.keys(BRAND_CATS).forEach(k => {
-      const c = BRAND_CATS[k];
-      if (D['bc.' + k + '.label']) c.label = D['bc.' + k + '.label'];
-      if (D['bc.' + k + '.concept']) c.concept = D['bc.' + k + '.concept'];
-    });
-  }
+  return { 'zh-Hans': 'zh', 'zh-Hant': 'tw', 'zh-CN': 'zh', 'zh-TW': 'tw' }[L] || L.split('-')[0];
+}
+
+// 【罠】以前は「一度だけ差し替える」フラグで持っていた。BRAND_CATS を直に書き換えるので
+//   **日本語の原本が失われ、画面で言語を切り替えても最初の言語のまま**になっていた。
+//   原本を別に取っておき、呼ばれるたびに「いまの言語」を当て直す。
+//   辞書にキーが無ければ原本（日本語）に戻る＝壊れない。
+const BRAND_CATS_JA = {};
+Object.keys(BRAND_CATS).forEach(k => {
+  BRAND_CATS_JA[k] = { label: BRAND_CATS[k].label, concept: BRAND_CATS[k].concept };
+});
+
+function seamDict() {
+  const K = seamLangKey();
+  const D = (window.SEAM_PAGE_I18N
+    && (window.SEAM_PAGE_I18N[K] || window.SEAM_PAGE_I18N[document.documentElement.lang])) || {};
+  Object.keys(BRAND_CATS).forEach(k => {
+    const c = BRAND_CATS[k], ja = BRAND_CATS_JA[k];
+    c.label   = D['bc.' + k + '.label']   || ja.label;
+    c.concept = D['bc.' + k + '.concept'] || ja.concept;
+  });
   return D;
 }
 
@@ -4191,6 +4200,13 @@ renderBrandRoster();
       </div>
     `).join('');
   }
+  // 画面で言語を切り替えたら一覧も描き直す。
+  // render() はこのIIFEの中なので外から呼べない → イベントで拾う
+  // （window.onLangChange は1ページに1つしか置けず、カテゴリ側が使っている）
+  window.addEventListener('seam:langchange', function () {
+    try { render(); } catch (_) {}
+  });
+
 })();
 
 // ============================================================
@@ -4949,16 +4965,22 @@ window.SEAM_PAGE_I18N = {
   }
 };
 
-/* カテゴリの描画はこの辞書より前で走るため、日本語以外は辞書が揃ったここで描き直す
-   （辞書を前へ動かすより副作用が小さい。ja は元から正しいので触らない） */
-(function () {
+/* カテゴリの描画はこの辞書より前で走るため、辞書が揃ったここで当て直す。
+   画面で言語を切り替えたときも同じ道を通す（lang.js が onLangChange を呼ぶ） */
+function seamApplyCatLang() {
   try {
-    if ((document.documentElement.lang || 'ja').slice(0, 2) === 'ja') return;
-    if (typeof seamDict !== 'function' || typeof renderAllCategories !== 'function') return;
+    if (typeof seamDict !== 'function') return;
     seamDict();
-    renderAllCategories('');
-  } catch (_) {}
+    if (typeof renderAllCategories === 'function') renderAllCategories(typeof currentSearch === 'string' ? currentSearch : '');
+    if (typeof renderMateGrid === 'function') renderMateGrid();
+    if (typeof renderBrandRoster === 'function') renderBrandRoster();
+  } catch (_) { /* ここで画面を壊さない */ }
+}
+(function () {
+  // 初回。ja でも通す（原本に戻すだけなので副作用はない）
+  seamApplyCatLang();
 })();
+window.onLangChange = function () { seamApplyCatLang(); };
 </script>
 <!-- ============================================================
      FINDER MODAL — SEAMセレクト3本表示
@@ -6085,7 +6107,7 @@ window.SEAM_PAGE_I18N = {
 </script>
 
 <script src="/js/app-header.js?v=5" defer=""></script>
-<script src="/js/lang.js?v=2"></script>
+<script src="/js/lang.js?v=10"></script>
   <script src="/js/online-shop-gate.js?v=5" defer=""></script>
   <script>
     if ('serviceWorker' in navigator) {
@@ -6096,7 +6118,7 @@ window.SEAM_PAGE_I18N = {
   </script>
   <script src="/js/reveal.js"></script>
   <script src="/js/enhance.js?v=3" defer=""></script>
-  <script src="/js/seam-analytics.js?v=9" defer=""></script>
+  <script src="/js/seam-analytics.js?v=10" defer=""></script>
   <script src="/js/app-tabbar.js?v=10" defer=""></script>
   <script>
     /* 全ブランドA-Z一覧は既定で折りたたみ。リンクで展開（離脱要因の長大スクロール回避） */

@@ -49,8 +49,8 @@ ACCESS = {
 HUB_SUFFIX = {
  'ja': [' 正規取扱店トップ'],
  'en': [' authorized retailers'],
- 'zh': [' 正规授权零售店首页', ' 正规代理店首页'],
- 'tw': [' 正規授權零售店首頁', ' 正規代理店首頁'],
+ 'zh': [' 品牌授权零售商首页', ' 正规授权零售店首页', ' 正规代理店首页'],
+ 'tw': [' 品牌授權零售商首頁', ' 正規授權零售店首頁', ' 正規代理店首頁'],
  'ko': [' 정규 취급점 톱'],
 }
 
@@ -156,6 +156,19 @@ for f in sorted(glob.glob('*.html')):
     if not dm2:
         print(f'  {f:30} ★ 辞書を見失った → 書き戻さない'); continue
     s = s[:dm2.start()] + dm2.group(1) + dict_after + dm2.group(3) + s[dm2.end():]
+
+
+    # 【書込み前の検査】同じキーに違う本文が割り当てられていないか。
+    #   採番のずれはこれでしか捕まらない（「未訳0件」でも構文パースでも通ってしまう）
+    seen = {}
+    dup = []
+    for mm in re.finditer(r'data-i18n="([^"]+)"[^>]*>([^<]{1,240})<', s):
+        k, t = mm.group(1), mm.group(2).strip()
+        if k in seen and seen[k] != t:
+            dup.append((k, seen[k][:24], t[:24]))
+        seen.setdefault(k, t)
+    if dup:
+        print(f'  {f:30} ★ 同じキーに違う本文 {dup[:2]} → 書き戻さない'); continue
 
     i = s.find('window.SEAM_PAGE_I18N')
     if not (s.rfind('<script', 0, i) > s.rfind('</script>', 0, i)) or '</body>' not in s:
