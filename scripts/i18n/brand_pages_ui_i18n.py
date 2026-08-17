@@ -83,6 +83,31 @@ HUB_SUFFIX = {'ja': ' 正規取扱店トップ', 'en': ' authorized retailers',
 SHOP_OF = {'en': '{b} authorized retailer', 'zh': '{b} 正规代理店',
            'tw': '{b} 正規代理店', 'ko': '{b} 정규 취급점'}
 
+
+# 他ブランドへのリンク（「{ブランド} 取扱店」）は backHub が使えないので名前表を持つ。
+# **推測でカタカナのまま出さない**（英語ページに「資生堂プロフェッショナル authorized retailer」
+# と出ていたのがこれ）
+BRAND_LATIN = {
+ 'オージュア': 'Aujua', 'バイカルテ': 'BYKARTE', 'ケラスターゼ': 'Kérastase',
+ 'ミルボン': 'Milbon', 'エルジューダ': 'Elujuda', 'ダヴィネス': 'Davines',
+ 'オッジオット': 'Oggi otto', 'サブリミック': 'SUBLIMIC', 'シュウ ウエムラ': 'shu uemura',
+ 'トキオ インカラミ': 'TOKIO INKARAMI', 'システムプロフェッショナル': 'System Professional',
+ '資生堂プロフェッショナル': 'Shiseido Professional', 'ラッシュアディクト': 'Lashaddict',
+ 'つるりんちょ。': 'つるりんちょ。', 'グローバルミルボン': 'GLOBAL MILBON',
+}
+# ラッシュアディクトのハブに残っていた文言
+LASH_UI = {
+ 'bp.ui.lashMore': ('ラッシュアディクトについて詳しく知りたい',
+   {'en': 'I would like to know more about Lashaddict', 'zh': '想更详细了解Lashaddict',
+    'tw': '想更詳細了解Lashaddict', 'ko': 'Lashaddict에 대해 자세히 알고 싶습니다'}),
+ 'bp.ui.lashAsk': ('ラッシュアディクトのご相談は店頭で',
+   {'en': 'Ask us about Lashaddict in store', 'zh': 'Lashaddict的咨询请到店内',
+    'tw': 'Lashaddict的諮詢請到店內', 'ko': 'Lashaddict 상담은 매장에서'}),
+ 'bp.ui.findStore': ('近くの店舗を探す',
+   {'en': 'Find a store near you', 'zh': '查找附近的门店', 'tw': '尋找附近的門市', 'ko': '가까운 매장 찾기'}),
+}
+
+
 def is_brand_page(f):
     if f.startswith(('salon-', 'headspa-', 'store-', 'recruit-')):
         return False
@@ -171,13 +196,13 @@ for f in pages:
     def tag(ja_text, key, vals):
         """<x ...>ja_text</x> に data-i18n を付ける。既に付いていれば触らない"""
         global s
-        pat = re.compile(r'(<([a-z]+)\b(?![^>]*data-i18n=)[^>]*?)(>)' + re.escape(ja_text) + r'(</\2>)')
+        pat = re.compile(r'(<([a-z][a-z0-9]*)\b(?![^>]*data-i18n=)[^>]*?)(>)' + re.escape(ja_text) + r'(</\2>)')
         if not pat.search(s):
             return
         s = pat.sub(lambda mo: mo.group(1) + f' data-i18n="{key}"' + mo.group(3) + ja_text + mo.group(4), s)
         add[key] = {'ja': ja_text, **vals}
 
-    for key, (ja_text, vals) in list(UI.items()) + list(HUB_UI.items()):
+    for key, (ja_text, vals) in list(UI.items()) + list(HUB_UI.items()) + list(LASH_UI.items()):
         tag(ja_text, key, vals)
     # メーカー名（見出し「メーカー」の隣の値）
     for ja_maker, mv in MAKER.items():
@@ -195,9 +220,12 @@ for f in pages:
     for city_ja, cv in CITY.items():
         tag(city_ja + 'の取扱店', 'bp.ui.stockists',
             {L: STOCKIST[L].format(c=cv[L]) for L in ('en', 'zh', 'tw', 'ko')})
-    for other in re.findall(r'>([ぁ-んァ-ヶー一-龯]{2,12}) 取扱店</a>', s):
+    for other in set(re.findall(r'>([ぁ-んァ-ヶー一-龯。][ぁ-んァ-ヶー一-龯。 ]{1,16}?) 取扱店</a>', s)):
+        latin = BRAND_LATIN.get(other.strip())
+        if not latin:
+            continue                       # 名前が分からないものは日本語のまま残す（誤記より安全）
         tag(other + ' 取扱店', 'bp.ui.shopOf.' + re.sub(r'\W', '', other),
-            {L: SHOP_OF[L].format(b=other) for L in ('en', 'zh', 'tw', 'ko')})
+            {L: SHOP_OF[L].format(b=latin) for L in ('en', 'zh', 'tw', 'ko')})
     if brand['ja']:
         tag(brand['ja'] + '取扱店', 'bp.ui.shopOf',
             {L: SHOP_OF[L].format(b=brand[L]) for L in ('en', 'zh', 'tw', 'ko')})
