@@ -3465,6 +3465,25 @@ const BRAND_CATS = {
   },
 };
 
+// 辞書の引き手。html lang は zh-Hans / zh-Hant だが辞書のキーは zh / tw なので橋渡しする
+// （ここが合っていないと中国語・繁体字だけ実行時の訳が全部落ちる）
+let _catI18nDone = false;
+function seamDict() {
+  const L = document.documentElement.lang || 'ja';
+  const K = { 'zh-Hans': 'zh', 'zh-Hant': 'tw', 'zh-CN': 'zh', 'zh-TW': 'tw' }[L] || L.split('-')[0];
+  const D = (window.SEAM_PAGE_I18N && (window.SEAM_PAGE_I18N[K] || window.SEAM_PAGE_I18N[L])) || {};
+  // カテゴリの見出しと説明は一度だけ差し替える（辞書に無ければ日本語のまま＝壊れない）
+  if (!_catI18nDone && Object.keys(D).length) {
+    _catI18nDone = true;
+    Object.keys(BRAND_CATS).forEach(k => {
+      const c = BRAND_CATS[k];
+      if (D['bc.' + k + '.label']) c.label = D['bc.' + k + '.label'];
+      if (D['bc.' + k + '.concept']) c.concept = D['bc.' + k + '.concept'];
+    });
+  }
+  return D;
+}
+
 // ============================================================
 // RENDER — ブティック風カードレイアウト
 // ============================================================
@@ -3475,6 +3494,7 @@ let currentSearch = '';
 // 全カテゴリを縦に一覧表示（Apple/Aesopスタイルのエディトリアル）
 // ============================================================
 function renderAllCategories(searchQuery) {
+  seamDict();
   const catalog = document.getElementById('brandCatalog');
   const emptyEl = document.getElementById('brandCatalogEmpty');
   if (!catalog) return;
@@ -3687,6 +3707,7 @@ function switchCat(catKey) {
 // ブランドメイト（DOMが存在しないときは早期return）
 // ============================================================
 function renderMateGrid() {
+  seamDict();
   const grid = document.getElementById('mateGrid');
   if (!grid) return;
   grid.innerHTML = '';
@@ -3778,6 +3799,7 @@ if (searchInput) {
 // 全ブランド名一覧（カテゴリ別テキスト羅列）
 // ============================================================
 function renderBrandRoster() {
+  seamDict();
   const body = document.getElementById('rosterBody');
   if (!body) return;
   const html = Object.entries(BRAND_CATS).map(([key, cat]) => {
@@ -4075,6 +4097,8 @@ renderBrandRoster();
 
   function render() {
     if (!DATA) return;
+    // 一覧の中で使う辞書。ブロック内で宣言すると外から見えないのでここで持つ
+    const T = seamDict();
     updateStockCounts();
     const filtered = DATA.brands
       .filter(b => matchQuery(b, currentQuery))
@@ -4110,7 +4134,6 @@ renderBrandRoster();
     // 本体
     if (!groups.length) {
       // 行き止まりを作らない: ブランド名で当たらなくても商品カタログ(全1,292点)へ橋渡し
-      const T = (window.SEAM_PAGE_I18N && window.SEAM_PAGE_I18N[document.documentElement.lang]) || {};
       const bridgeLabel = T['dir.bridge'] || '商品カタログで探す';
       listEl.innerHTML = `<div class="dir-empty">
         <p>「${escapeHtml(currentQuery)}」に一致するブランドが見つかりませんでした</p>
@@ -4175,6 +4198,18 @@ renderBrandRoster();
 // ============================================================
 window.SEAM_PAGE_I18N = {
   ja: {
+        'bc.haircare.label': 'ヘアケア',
+        'bc.haircare.concept': 'サロンプロ発想のシャンプー・トリートメント・アウトバスを中心に髪の悩みに応えるブランドを厳選',
+        'bc.styling.label': 'スタイリング',
+        'bc.styling.concept': 'ヘアオイル・ワックス・スプレーなど仕上げのクオリティを左右するスタイリングブランドを揃えています',
+        'bc.skincare.label': 'スキンケア・メイクアップ',
+        'bc.skincare.concept': '美容室専売の高機能スキンケアからドクターズコスメ・メイクアップまでプロ発想の肌ケアブランドをセレクト',
+        'bc.lifestyle.label': 'ライフスタイル',
+        'bc.lifestyle.concept': '美容をもっと自由に<br>ヘアケアからウェルネス・ライフスタイルまで毎日を豊かにするブランドを揃えました',
+        'bc.device.label': '美容家電・美容機器',
+        'bc.device.concept': 'サロンと同じ仕上がりをホームで実現するためのプロ品質ヘアデバイス・美容機器を厳選',
+        'bc.inner.label': 'インナーケア・ウェルネス',
+        'bc.inner.concept': '美容と健康を内側から支えるサロン発想のインナーケア・ウェルネスブランドをご紹介します',
         'dir.st.both': '店舗・オンライン',
         'dir.st.pboth': '一部店舗 & オンライン',
         'dir.st.pstore': '一部店舗取扱',
@@ -4313,6 +4348,18 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': 'Hair Care Finder で診断する',
   },
   en: {
+        'bc.haircare.label': 'Hair Care',
+        'bc.haircare.concept': 'Shampoo, treatment and leave-in care built on salon-professional thinking, chosen for what your hair actually needs',
+        'bc.styling.label': 'Styling',
+        'bc.styling.concept': 'Hair oils, waxes and sprays — the styling brands that decide how a finish really looks',
+        'bc.skincare.label': 'Skin Care / Make Up',
+        'bc.skincare.concept': 'From salon-exclusive high-performance skincare to doctor\'s cosmetics and make-up, chosen with a professional\'s eye',
+        'bc.lifestyle.label': 'Lifestyle',
+        'bc.lifestyle.concept': 'Beauty, less boxed in<br>From hair care to wellness and lifestyle, brands that make an ordinary day richer',
+        'bc.device.label': 'Beauty Device / Equipment',
+        'bc.device.concept': 'Professional-quality hair devices and beauty equipment, so the salon finish carries on at home',
+        'bc.inner.label': 'Inner Care / Wellness',
+        'bc.inner.concept': 'Inner care and wellness brands, born from salon thinking, that support beauty and health from within',
         'dir.st.both': 'In store & online',
         'dir.st.pboth': 'Select stores & online',
         'dir.st.pstore': 'Select stores',
@@ -4451,6 +4498,18 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': 'Take the Hair Care Finder',
   },
   zh: {
+        'bc.haircare.label': '护发',
+        'bc.haircare.concept': '精选以沙龙专业理念打造的洗发水、护发素与免洗护理，回应您的头发烦恼',
+        'bc.styling.label': '造型',
+        'bc.styling.concept': '备齐发油、发蜡、定型喷雾等左右完成度的造型品牌',
+        'bc.skincare.label': '护肤・彩妆',
+        'bc.skincare.concept': '从美容院专售的高机能护肤到医师系化妆品与彩妆，精选专业发想的肌肤护理品牌',
+        'bc.lifestyle.label': '生活方式',
+        'bc.lifestyle.concept': '让美更自由<br>从护发到健康与生活方式，备齐让每一天更丰富的品牌',
+        'bc.device.label': '美容家电・美容仪器',
+        'bc.device.concept': '精选专业品质的美发仪器与美容机器，在家也能重现沙龙的完成度',
+        'bc.inner.label': '内在护理・健康',
+        'bc.inner.concept': '介绍从内在支撑美丽与健康、源自沙龙发想的内在护理与健康品牌',
         'dir.st.both': '门店与网店',
         'dir.st.pboth': '部分门店与网店',
         'dir.st.pstore': '部分门店在售',
@@ -4589,6 +4648,18 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': '前往 Hair Care Finder 诊断',
   },
   tw: {
+        'bc.haircare.label': '護髮',
+        'bc.haircare.concept': '精選以沙龍專業理念打造的洗髮精、護髮素與免沖洗護理，回應您的頭髮煩惱',
+        'bc.styling.label': '造型',
+        'bc.styling.concept': '備齊髮油、髮蠟、定型噴霧等左右完成度的造型品牌',
+        'bc.skincare.label': '護膚・彩妝',
+        'bc.skincare.concept': '從美容院專售的高機能護膚到醫師系化妝品與彩妝，精選專業發想的肌膚護理品牌',
+        'bc.lifestyle.label': '生活風格',
+        'bc.lifestyle.concept': '讓美更自由<br>從護髮到健康與生活風格，備齊讓每一天更豐富的品牌',
+        'bc.device.label': '美容家電・美容儀器',
+        'bc.device.concept': '精選專業品質的美髮儀器與美容機器，在家也能重現沙龍的完成度',
+        'bc.inner.label': '內在護理・健康',
+        'bc.inner.concept': '介紹從內在支撐美麗與健康、源自沙龍發想的內在護理與健康品牌',
         'dir.st.both': '門市與網店',
         'dir.st.pboth': '部分門市與網店',
         'dir.st.pstore': '部分門市在售',
@@ -4727,6 +4798,18 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': '前往 Hair Care Finder 診斷',
   },
   ko: {
+        'bc.haircare.label': '헤어케어',
+        'bc.haircare.concept': '살롱 프로의 발상으로 만든 샴푸·트리트먼트·아웃바스를 중심으로 모발 고민에 답하는 브랜드를 엄선했습니다',
+        'bc.styling.label': '스타일링',
+        'bc.styling.concept': '헤어 오일·왁스·스프레이 등 마무리의 완성도를 좌우하는 스타일링 브랜드를 갖추고 있습니다',
+        'bc.skincare.label': '스킨케어·메이크업',
+        'bc.skincare.concept': '미용실 전용 고기능 스킨케어부터 닥터스 코스메·메이크업까지 프로의 발상으로 고른 피부 케어 브랜드입니다',
+        'bc.lifestyle.label': '라이프스타일',
+        'bc.lifestyle.concept': '아름다움을 더 자유롭게<br>헤어케어부터 웰니스·라이프스타일까지 매일을 풍요롭게 하는 브랜드를 모았습니다',
+        'bc.device.label': '뷰티 디바이스·기기',
+        'bc.device.concept': '살롱과 같은 마무리를 집에서도 구현하기 위한 프로 품질의 헤어 디바이스·미용 기기를 엄선했습니다',
+        'bc.inner.label': '이너케어·웰니스',
+        'bc.inner.concept': '아름다움과 건강을 안에서부터 받쳐 주는, 살롱 발상의 이너케어·웰니스 브랜드를 소개합니다',
         'dir.st.both': '매장·온라인',
         'dir.st.pboth': '일부 매장·온라인',
         'dir.st.pstore': '일부 매장 취급',
@@ -4865,6 +4948,17 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': 'Hair Care Finder로 진단하기',
   }
 };
+
+/* カテゴリの描画はこの辞書より前で走るため、日本語以外は辞書が揃ったここで描き直す
+   （辞書を前へ動かすより副作用が小さい。ja は元から正しいので触らない） */
+(function () {
+  try {
+    if ((document.documentElement.lang || 'ja').slice(0, 2) === 'ja') return;
+    if (typeof seamDict !== 'function' || typeof renderAllCategories !== 'function') return;
+    seamDict();
+    renderAllCategories('');
+  } catch (_) {}
+})();
 </script>
 <!-- ============================================================
      FINDER MODAL — SEAMセレクト3本表示
