@@ -40,6 +40,18 @@ input,select{font-family:inherit;font-size:16px}   /* 16px未満だとiOSが勝�
 .modes button.on[data-pm="sale"]{background:var(--ng)}
 .dispBtn{border:1px solid var(--line);background:#fff;border-radius:3px;padding:9px 14px;
   font-size:12.5px;color:var(--sub);letter-spacing:.04em}
+.camBtn{border-color:var(--gold);color:var(--ink);font-weight:700;background:var(--cream)}
+.camBtn.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.scanCam{position:fixed;inset:0;z-index:500;background:rgba(10,11,13,.92);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;padding:calc(18px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom))}
+.scanCam-v{position:relative;width:min(720px,100%);aspect-ratio:4/3;border-radius:8px;overflow:hidden;background:#050505}
+.scanCam-v video{width:100%;height:100%;object-fit:cover;display:block}
+.scanCam-fr{position:absolute;inset:20% 10%;border:2px solid #fff;border-radius:10px;box-shadow:0 0 0 999px rgba(0,0,0,.25);pointer-events:none}
+.scanCam-msg{color:#fff;text-align:center;font-size:14px;min-height:1.8em;margin:14px 0 10px}
+.scanCam-a{display:flex;gap:10px;width:min(520px,100%)}
+.scanCam-a button{flex:1;min-height:48px;border-radius:4px;border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;font:inherit}
+.scanCam-a .pri{background:#fff;color:var(--ink);border-color:#fff}
+@media(max-width:1080px){.top{gap:8px;flex-wrap:wrap}.top .spacer{display:none}.lamp{margin-left:auto}}
 .dlg{position:fixed;inset:0;background:rgba(22,23,27,.42);display:flex;align-items:center;justify-content:center;z-index:300;padding:20px}
 .dlg-b{background:#fff;border-radius:3px;max-width:620px;width:100%;padding:30px 28px}
 .dlg-b h3{font-family:'Cormorant Garamond',serif;font-size:19px;letter-spacing:.14em;color:var(--ink);margin:0 0 6px;font-weight:600}
@@ -328,6 +340,7 @@ h2{font-size:13px;font-weight:500;letter-spacing:.14em;color:var(--clay);margin:
       <button data-pm="sale">セール</button>
     </div>
     <span class="spacer"></span>
+    <button class="dispBtn camBtn" id="camScanBtn">カメラ読取</button>
     <button class="dispBtn" id="dispBtn">お客様画面</button>
     <button class="dispBtn" id="kioskBtn">カウンセリング端末</button>
     <span class="lamp" id="lamp"><i></i><span id="lampT">読み取り待機中</span></span>
@@ -610,6 +623,113 @@ async function onScan(code){
     await onProductCode(code);
   }catch(err){ said('読み取り',esc(err.message||String(err)),true); toast(err.message||'読み取れませんでした',true); }
 }
+
+/* iPadの背面カメラで商品JAN・会員QR・担当者QRを同じ入口から読む。
+   BarcodeDetectorが無いSafariではZXingを遅延読込する。 */
+let CAMSCAN=null, CAMLIB=null;
+function loadScanLib(){
+  if(window.ZXing)return Promise.resolve(window.ZXing);
+  if(CAMLIB)return CAMLIB;
+  CAMLIB=new Promise((resolve,reject)=>{const s=document.createElement('script');
+    s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+    /* ★失敗したら覚えておかない。覚えると、回線が戻っても同じ失敗を返し続け、
+         画面を開き直すまでカメラが使えなくなる。 */
+    s.onload=()=>resolve(window.ZXing||null);
+    s.onerror=()=>{CAMLIB=null;s.remove();reject(new Error('LIB'));};
+    document.head.appendChild(s);});
+  return CAMLIB;
+}
+/* 開いたカメラを、確実に閉じる。
+   ★止め先が3つある（自分で開いたstream・ZXingのcontrols・古い版のreset）ので、
+     どれか1つでも取りこぼすと、iPadのカメラ使用表示が点いたまま残る。 */
+function killScan(c){
+  try{if(c.ctrl&&c.ctrl.stop)c.ctrl.stop();}catch(e){}
+  try{if(c.reader&&c.reader.reset)c.reader.reset();}catch(e){}
+  try{if(c.stream)c.stream.getTracks().forEach(t=>t.stop());}catch(e){}
+  c.stream=null;
+}
+function stopCameraScan(){
+  const c=CAMSCAN;if(!c)return;CAMSCAN=null;c.done=true;
+  killScan(c);
+  if(c.box&&c.box.isConnected)c.box.remove();
+  const b=$('camScanBtn');if(b){b.classList.remove('on');b.textContent='カメラ読取';}
+  $('lamp').classList.remove('off');$('lampT').textContent='読み取り待機中';
+}
+async function startCameraScan(){
+  if(CAMSCAN){stopCameraScan();return;}
+  const box=document.createElement('div');box.className='scanCam';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');
+  box.setAttribute('aria-label','バーコードとQRコードのカメラ読み取り');
+  box.innerHTML='<div class="scanCam-v"><video playsinline muted></video><div class="scanCam-fr"></div></div><div class="scanCam-msg">商品バーコード・お客様QR・担当者QRを枠に合わせてください</div><div class="scanCam-a"><button class="pri" data-manual>番号を手入力</button><button data-close>閉じる</button></div>';
+  document.body.appendChild(box);
+  const state={box,stream:null,ctrl:null,reader:null,done:false,last:'',lastAt:0};CAMSCAN=state;
+  const msg=box.querySelector('.scanCam-msg'),video=box.querySelector('video');
+  const b=$('camScanBtn');b.classList.add('on');b.textContent='カメラ終了';
+  $('lamp').classList.add('off');$('lampT').textContent='カメラ読取中';
+  box.querySelector('[data-close]').onclick=stopCameraScan;
+  box.addEventListener('click',e=>{if(e.target===box)stopCameraScan();});
+  box.querySelector('[data-manual]').onclick=()=>{const code=(prompt('商品JAN・会員番号・QRの文字列を入力してください')||'').trim();if(code)onScan(code);};
+  /* ★同じ商品を置いたままにしても、数量が増え続けないこと。
+       「◯秒に1回まで」では止まらない（置きっぱなしで1.8秒ごとに1点ずつ増えていた）。
+       いちど読んだコードは、**画から消えるまで**受け付けない。
+       消えたと分かるように、見えているあいだは毎フレーム lastAt を更新する。 */
+  const GONE_MS=700;
+  const hit=raw=>{const code=String(raw||'').trim(),now=Date.now();if(!code||state.done)return;
+    if(code===state.last){state.lastAt=now;return;}   // まだ同じものが写っている＝増やさない
+    state.last=code;state.lastAt=now;
+    msg.textContent='読み取りました。次の商品をどうぞ（同じ商品は、一度どけてから）';
+    if(navigator.vibrate)navigator.vibrate(60);onScan(code);
+  };
+  /* 見つからなかったフレーム。しばらく見えなければ、同じ商品をもう一度読める */
+  const miss=()=>{if(state.last&&Date.now()-state.lastAt>GONE_MS){state.last='';msg.textContent='商品バーコード・お客様QR・担当者QRを枠に合わせてください';}};
+  /* await のあいだに「閉じる」が押されていたら、その場で片づけて戻る。
+     ★ここが無かったので、カメラが返る前に閉じるとトラックが止まらず、
+       画面は閉じたのに iPad のカメラ使用表示が消えなかった。 */
+  const closed=()=>{if(!state.done)return false;killScan(state);return true;};
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+    state.stream=s;
+    if(closed())return;
+    video.srcObject=state.stream;await video.play();
+    if(closed())return;
+    if(window.BarcodeDetector){
+      let formats=['qr_code','ean_13','ean_8','code_128','code_39','upc_a','upc_e'];
+      if(BarcodeDetector.getSupportedFormats){const supported=await BarcodeDetector.getSupportedFormats();formats=formats.filter(x=>supported.includes(x));}
+      if(closed())return;
+      const detector=new BarcodeDetector(formats.length?{formats}:undefined);
+      const loop=async()=>{if(state.done)return;
+        try{const r=await detector.detect(video);if(r&&r[0])hit(r[0].rawValue);else miss();}catch(e){}
+        if(state.done)return;requestAnimationFrame(loop);};
+      requestAnimationFrame(loop);return;
+    }
+    const ZX=await loadScanLib(), Reader=ZX&&(ZX.BrowserMultiFormatReader||ZX.BrowserQRCodeReader);
+    if(closed())return;      /* 部品の取り寄せは秒単位かかる。その間に閉じられている */
+    if(!Reader)throw new Error('READER');
+    state.reader=new Reader();
+    /* ★返ってくる controls を必ず受け取る。捨てると、古い版に reset が無いとき
+         カメラを止める手段がまったく無くなる。 */
+    const keepCtrl=p=>{if(p&&p.then)p.then(c=>{if(c&&!state.ctrl)state.ctrl=c;if(state.done)killScan(state);}).catch(()=>{});};
+    const onDecode=(result,error,ctrl)=>{if(ctrl&&!state.ctrl)state.ctrl=ctrl;
+      if(result)hit(result.getText?result.getText():result.text);else miss();};
+    if(typeof state.reader.decodeFromStream==='function'){
+      keepCtrl(state.reader.decodeFromStream(state.stream,video,onDecode));
+    }else{
+      /* この版は自分でカメラを開くので、こちらで開けたものは先に閉じる */
+      state.stream.getTracks().forEach(t=>t.stop());state.stream=null;
+      keepCtrl(state.reader.decodeFromVideoDevice(null,video,onDecode));
+    }
+    if(closed())return;
+  }catch(err){
+    killScan(state);
+    /* ★カメラが駄目なのか、部品が取り寄せられなかったのかを分ける。
+         いっしょくたにすると、回線の問題なのに「カメラを許可してください」と
+         案内してしまい、スタッフを違う設定へ歩かせることになる。 */
+    const libFail=err&&(err.message==='LIB'||err.message==='READER');
+    msg.textContent=libFail
+      ? '読取部品を取り寄せられませんでした（通信をご確認ください）。「番号を手入力」で続けられます'
+      : 'カメラを開始できません。iPadの設定でSafariのカメラを許可してください';
+    toast(libFail?'読取部品を読み込めませんでした':'カメラを開始できませんでした',true);
+  }
+}
 function said(k,v,ng){ $('said').innerHTML=`<div class="said${ng?' err':''}"><div class="said-k">${esc(k)}</div><div class="said-v">${v}</div></div>`; }
 
 async function onProductCode(code){
@@ -617,19 +737,20 @@ async function onProductCode(code){
   const p=(j.products||[])[0];
   if(!p){ said('バーコード',esc(code)+' — 登録がありません',true); toast('この商品は登録されていません',true); return; }
   if(TAB==='stock'){ await showStock(p.id); said('在庫を確認',esc(p.name)); return; }
-  addToCart(p); said('読み取りました',esc(p.name)+'　'+yen(p.price));
+  if(addToCart(p))said('読み取りました',esc(p.name)+'　'+yen(p.price));
 }
 
 /* ══════════ 会計 ══════════ */
 let LASTHIT='';                 // たったいま読み取った商品。お客様画面で大きく残す1行
 function addToCart(p){
-  if(lockedByAsk())return;          // お客様が画面を見ている間は触らせない
+  if(lockedByAsk())return false;    // お客様が画面を見ている間は触らせない
   resetFlow();                      // 金額が変わる＝前の同意は使えない
   const f=CART.find(x=>x.productId===p.id);
   if(f)f.qty++; else CART.push({productId:p.id,name:p.name,brand:p.brand||'',maker:p.maker||'',
     category:p.category||'',image:p.image||'',unit:+p.price||0,qty:1});
   LASTHIT=p.id;
   render();
+  return true;
 }
 
 /* ── 免税の袋 ────────────────────────────────────────────
@@ -1902,6 +2023,7 @@ async function boot(){
   $('gate').style.display='none'; $('app').style.display='block';
   document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{TAB=b.dataset.t;syncTabs();renderRight();});
   $('dispBtn').onclick=showDisplayUrl;
+  $('camScanBtn').onclick=startCameraScan;
   {const k=$('kioskBtn'); if(k)k.onclick=showKioskToken;}
   regDraw(); $('regBtn').onclick=showRegisterPick;
   staffDraw(); $('staffBtn').onclick=showStaffPick;
@@ -1924,6 +2046,8 @@ async function boot(){
   document.addEventListener('click',()=>setTimeout(focusSink,60));
   setInterval(focusSink,4000); focusSink();
 }
+window.addEventListener('pagehide',stopCameraScan);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopCameraScan();});
 /* QRは台帳（index.html）と同じ作り方をする。必要になったときだけ読み込む。 */
 function loadQRLib(){
   if(window.qrcode)return Promise.resolve();
