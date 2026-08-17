@@ -28,6 +28,10 @@ BRAND = {
  'system-professional':   {'ja': 'システムプロフェッショナル', 'en': 'System Professional', 'zh': 'System Professional', 'tw': 'System Professional', 'ko': 'System Professional'},
  'milbon':                {'ja': 'ミルボン', 'en': 'Milbon', 'zh': 'Milbon', 'tw': 'Milbon', 'ko': 'Milbon'},
  'elujuda':               {'ja': 'エルジューダ', 'en': 'Elujuda', 'zh': 'Elujuda', 'tw': 'Elujuda', 'ko': 'Elujuda'},
+ # 2026-08-14 追加。ブランド名はローマ字表記が国際的に通じるので各言語とも同じ
+ 'davines':               {'ja': 'ダヴィネス', 'en': 'Davines', 'zh': 'Davines', 'tw': 'Davines', 'ko': 'Davines'},
+ 'oggi-otto':             {'ja': 'オッジオット', 'en': 'Oggi otto', 'zh': 'Oggi otto', 'tw': 'Oggi otto', 'ko': 'Oggi otto'},
+ 'seesaw':                {'ja': 'SEE/SAW', 'en': 'SEE/SAW', 'zh': 'SEE/SAW', 'tw': 'SEE/SAW', 'ko': 'SEE/SAW'},
 }
 
 # ── 地名（store-*.html の既存辞書から取った実績値）

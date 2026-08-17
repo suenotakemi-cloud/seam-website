@@ -55,6 +55,22 @@ BRANDS = [
        masters=['Elujuda'], maker='ミルボン',
        blurb='ミルボンのアウトバストリートメント<br>髪の硬さ・柔らかさとなりたい質感からえらぶ設計で サロン専売のアウトバスとして定番のシリーズです',
        cross=[('milbon','ミルボン'),('aujua','オージュア')], q='エルジューダ 販売店'),
+  # 2026-08-14 追加。エルジューダと同じ穴だった＝扱いは多いのに専用ページが無く圏外。
+  # 実測: 「ダヴィネス 銀座」は検索結果が5件しかない＝誰も答えていない。
+  #       「ダヴィネス 販売店」「オッジオット 販売店」ともSEAM圏外・1位はメーカー公式。
+  # 紹介文は商品マスタの line / officialSummary から起こし、盛らない。
+  dict(slug='davines', logo='images/logo_davines.png', ja='ダヴィネス', en='Davines',
+       masters=['Davines'], maker='コンフォートジャパン',
+       blurb='イタリア発のサロン専売ヘアケア<br>モモ・メル・ラブ・ミヌ・ヴォルといったエッセンシャルの各ラインと オイのシリーズを髪の状態でえらびます',
+       cross=[('kerastase','ケラスターゼ')], q='ダヴィネス 販売店'),
+  dict(slug='oggi-otto', logo='images/lp/store_logos/logo_oggi_otto.jpg', ja='オッジオット', en='Oggi otto',
+       masters=['Oggi otto'], maker='テクノエイト',
+       blurb='セラムCMCで知られるサロン専売ブランド<br>スキャルプ・セラム・アウトバス・インプレッシブなど 目的でラインを分けて使う設計です',
+       cross=[('aujua','オージュア')], q='オッジオット 販売店'),
+  dict(slug='seesaw', logo='images/logo_seesaw.jpg', ja='SEE/SAW', en='SEE/SAW',
+       masters=['SEE/SAW'], maker='ルベル / タカラベルモント',
+       blurb='髪と地肌をひとつづきで考えるヘア&スキャルプのシリーズ<br>B（バランス）S T の3種から 地肌の状態でえらびます',
+       cross=[('milbon','ミルボン')], q='SEE/SAW 販売店'),
 ]
 
 AREA_JA={'ginza':'銀座','omotesando':'表参道','sapporo':'札幌','osaka':'大阪',
@@ -139,7 +155,13 @@ def brand_stats(prods, masters):
     for p in items:
         ln=(p.get('line') or '').strip()
         if ln and ln not in lines: lines.append(ln)
+    # 【2026-08-14】価格が無いブランド（オッジオット30点・1DK等）は
+    # 商品が1点も出ず、画像も文章も持っているのに空の紹介になっていた。
+    # 価格ありを優先し、足りなければ画像だけのものでも出す（価格行は下の f-string 側で省く）。
     tops=[p for p in items if p.get('priceApprox') and p.get('image')][:3]
+    if len(tops) < 3:
+        extra=[p for p in items if p.get('image') and not p.get('priceApprox') and p not in tops]
+        tops = (tops + extra)[:3]
     return len(items), lines[:8], tops
 
 E=html.escape
@@ -193,7 +215,7 @@ def page_html(b, stores, count, lines, tops):
         cards=''
         for p in tops:
             nm=E(f"{p.get('brand')} {p.get('name','')}".strip())
-            pr=f'定価 ¥{p["priceApprox"]:,} 税込'
+            pr=(f'定価 ¥{p["priceApprox"]:,} 税込' if p.get("priceApprox") else '')
             img=E(p.get('image',''))
             cards+=(f'<div class="rounded-[4px] border border-line bg-white p-4 flex items-center gap-4">'
                     f'<img src="{img}" alt="{nm}" width="64" height="64" loading="lazy" style="width:64px;height:64px;object-fit:contain;flex:none;">'
@@ -410,7 +432,7 @@ def area_article_html(b, st, stores, lines, tops):
             size=E(p.get('primarySize','') or '')
             pitch=E((p.get('pitchCopy') or p.get('cardCopy') or '').strip())
             img=E(p.get('image',''))
-            meta=' ・ '.join(x for x in [size, f'定価 ¥{p["priceApprox"]:,} 税込'] if x)
+            meta=' ・ '.join(x for x in [size, (f'定価 ¥{p["priceApprox"]:,} 税込' if p.get('priceApprox') else '')] if x)
             cards+=(f'<div class="rounded-[4px] border border-line bg-white p-4">'
                     f'<div class="flex items-start gap-4">'
                     f'<img src="{img}" alt="{E(ja)} {nm}" width="72" height="72" loading="lazy" decoding="async" style="width:72px;height:72px;object-fit:contain;flex:none;">'
