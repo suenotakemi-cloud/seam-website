@@ -48,6 +48,9 @@ CITY = {
 
 # ── 共通のUI・見出し・FAQ。{B}=ブランド {C}=地名 {S}=店名
 T = {
+ # 読み上げソフト用。多言語ページで日本語のまま残っていた
+ 'bp.homeAria': {
+   'ja': 'SEAM ホーム', 'en': 'SEAM home', 'zh': 'SEAM 首页', 'tw': 'SEAM 首頁', 'ko': 'SEAM 홈'},
  'bp.storeInfo': {
    'ja': '店舗のご案内', 'en': 'Store information', 'zh': '门店信息', 'tw': '門市資訊', 'ko': '매장 안내'},
  'bp.igLink': {
