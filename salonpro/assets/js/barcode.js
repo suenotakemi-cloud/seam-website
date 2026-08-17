@@ -9,19 +9,38 @@
   const product = id => SP.DATA.products.find(x => x.id === id);
   const toast = m => (window.SP_toast ? SP_toast(m) : null);
 
-  const JAN = {
+  const DEMO_JAN = {
     '4901417727107': 'sh-001', '4988601011037': 'sh-002', '4954835011037': 'co-3',
     '4960299010101': 'tr-001', '4988603011029': 'rec-2',
   };
+  const normalize = value => String(value == null ? '' : value).trim().normalize('NFKC').toLowerCase();
+  const codeIndex = new Map();
+  const addIndex = (value, p) => {
+    const key = normalize(value); if (!key) return;
+    const list = codeIndex.get(key) || [];
+    if (!list.some(x => x.id === p.id)) list.push(p);
+    codeIndex.set(key, list);
+  };
+  SP.DATA.products.forEach(p => {
+    addIndex(p.id, p);
+    addIndex(p.jan, p);
+    addIndex(p.code, p);
+  });
+  Object.entries(DEMO_JAN).forEach(([code, id]) => { const p = product(id); if (p) addIndex(code, p); });
   let session = {};        // 今回スキャンした {id: qty}
   let scanning = false, stream = null, lastCode = '', lastTime = 0;
 
   function lookup(code) {
-    const c = (code || '').trim(); if (!c) return null;
-    if (JAN[c]) return product(JAN[c]);
-    if (product(c.toLowerCase())) return product(c.toLowerCase());
-    const q = c.toLowerCase();
-    return SP.DATA.products.find(p => p.cat !== '_rec' && (p.name + p.brand).toLowerCase().includes(q)) || null;
+    const q = normalize(code); if (!q) return [];
+    const exact = codeIndex.get(q);
+    if (exact?.length) return exact;
+    return SP.DATA.products.filter(p => p.cat !== '_rec' && normalize(`${p.name} ${p.brand}`).includes(q)).slice(0, 20);
+  }
+
+  function setStatus(message) {
+    const el = qs('#scanStatus');
+    el.textContent = message || '';
+    el.hidden = !message;
   }
 
   function renderPanel() {
@@ -50,17 +69,32 @@
       </a>`;
   }
 
-  function handleCode(code) {
-    const p = lookup(code);
-    if (!p) { toast(`「${code}」は見つかりません`); return; }
+  function addProduct(p) {
     Store.addToCart(p.id, 1);
     session[p.id] = (session[p.id] || 0) + 1;
     renderPanel();
+    setStatus(`${p.brand}「${p.name}」を追加しました。続けて読み取れます。`);
     toast(`${p.brand} をカートに追加`);
+  }
+
+  function handleCode(code) {
+    const matches = lookup(code);
+    if (!matches.length) {
+      setStatus(`「${code}」に一致する商品がありません。商品コードも確認してください。`);
+      toast(`「${code}」は見つかりません`);
+      return;
+    }
+    if (matches.length === 1) { addProduct(matches[0]); return; }
+    stopCam();
+    const host = qs('#scanResult');
+    host.innerHTML = `<div style="margin-top:22px"><b>候補が${matches.length}件あります</b><div class="scan-note">誤発注を防ぐため、商品を選んでください。</div>${matches.map(p => `<button class="scan-choice" data-pick="${p.id}"><b>${p.brand}</b><br><span>${p.name}</span><br><small>${fmtYen(p.price)}（税抜）・商品コード ${p.code || p.id}</small></button>`).join('')}</div>`;
+    setStatus(`「${code}」は複数の商品に登録されています。候補から選択してください。`);
   }
 
   // 今回分を削除（カートからも戻す）
   document.addEventListener('click', e => {
+    const pick = e.target.closest('[data-pick]');
+    if (pick) { const p = product(pick.dataset.pick); if (p) addProduct(p); return; }
     const b = e.target.closest('[data-rm]'); if (!b) return;
     const id = b.dataset.rm;
     Store.setQty(id, Math.max(0, Store.getQty(id) - (session[id] || 0)));
@@ -69,8 +103,8 @@
   });
 
   // デモコード
-  qs('#demoCodes').innerHTML = Object.keys(JAN).map(c => {
-    const p = product(JAN[c]);
+  qs('#demoCodes').innerHTML = Object.keys(DEMO_JAN).map(c => {
+    const p = product(DEMO_JAN[c]);
     return `<button class="demo-code" data-code="${c}">${c}（${p ? p.brand : ''}）</button>`;
   }).join('');
   qs('#demoCodes').addEventListener('click', e => { const b = e.target.closest('[data-code]'); if (b) handleCode(b.dataset.code); });
@@ -91,6 +125,7 @@
   qs('#startCam').addEventListener('click', async () => {
     if (scanning) { stopCam(); return; }
     if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia) {
+      setStatus('この端末のブラウザはカメラ読取に未対応です。Bluetooth/USBスキャナーまたは手入力をご利用ください。');
       toast('この環境はカメラ読取に未対応です。手入力・デモコードをご利用ください');
       return;
     }
@@ -100,6 +135,7 @@
       video.srcObject = stream; await video.play();
       qs('#scanBox').hidden = false;
       scanning = true;
+      setStatus('カメラを起動しました。JANコードを枠内に合わせてください。');
       qs('#startCam').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>読み取りを終了`;
       const detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'code_39', 'qr_code'] });
       const loop = async () => {
@@ -115,8 +151,10 @@
       };
       requestAnimationFrame(loop);
     } catch (e) {
+      setStatus('カメラを起動できませんでした。ブラウザのカメラ許可を確認するか、手入力をご利用ください。');
       toast('カメラを起動できませんでした。手入力をご利用ください');
       stopCam();
     }
   });
+  window.addEventListener('pagehide', stopCam);
 })();
