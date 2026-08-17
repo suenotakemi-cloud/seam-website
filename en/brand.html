@@ -3043,7 +3043,7 @@
         <button type="button" data-sort="category" role="tab" data-i18n="dir.sort.category">Category</button>
       </div>
       <div class="dir-search">
-        <input type="text" id="dirSearch" placeholder="Search by brand, concern or feature…" autocomplete="off" data-i18n-attr="aria-label:dir.search;placeholder:dir.searchPlaceholder" aria-label="ブランド名・悩み・特徴で検索…">
+        <input type="text" id="dirSearch" placeholder="Search by brand, concern or feature…" autocomplete="off" data-i18n-attr="aria-label:dir.searchPlaceholder;placeholder:dir.searchPlaceholder" aria-label="Search by brand, concern or feature…">
         <i class="fas fa-search"></i>
       </div>
     </div>
@@ -4139,14 +4139,7 @@ renderBrandRoster();
             if (s === 'BOTH' || s === 'PARTIAL_BOTH') dotCls = 'dot-both';
             else if (s === 'PARTIAL_STORE' || s === 'STORE_ONLY') dotCls = 'dot-partial';
             else if (s === 'SAPPORO' || s === 'GINZA' || s === 'OMOTESANDO_GINZA')  dotCls = 'dot-sapporo';
-            const statusLabel = (s === 'BOTH' ? '店舗・オンライン'
-                              : s === 'PARTIAL_BOTH' ? '一部店舗 & オンライン'
-                              : s === 'PARTIAL_STORE' ? '一部店舗取扱'
-                              : s === 'SAPPORO' ? '札幌店のみ'
-                              : s === 'GINZA' ? '銀座店のみ'
-                              : s === 'OMOTESANDO_GINZA' ? '表参道・銀座店のみ'
-                              : s === 'STORE_ONLY' ? '店舗のみ'
-                              : 'オンライン');
+            const statusLabel = (s === 'BOTH' ? (T['dir.st.both'] || '店舗・オンライン') : s === 'PARTIAL_BOTH' ? (T['dir.st.pboth'] || '一部店舗 & オンライン') : s === 'PARTIAL_STORE' ? (T['dir.st.pstore'] || '一部店舗取扱') : s === 'SAPPORO' ? (T['dir.st.sapporo'] || '札幌店のみ') : s === 'GINZA' ? (T['dir.st.ginza'] || '銀座店のみ') : s === 'OMOTESANDO_GINZA' ? (T['dir.st.omoginza'] || '表参道・銀座店のみ') : s === 'STORE_ONLY' ? (T['dir.st.storeonly'] || '店舗のみ') : (T['dir.st.online'] || 'オンライン'));
             const tag = b.site ? 'a' : 'div';
             const linkAttrs = b.site ? `href="${escapeHtml(b.site)}" target="_blank" rel="noopener"` : '';
             // カテゴリタグHTML（最大2件、それ以上は +N表記）
@@ -4160,7 +4153,7 @@ renderBrandRoster();
               </span>` : '';
 
             return `
-            <${tag} class="dir-row" ${linkAttrs} aria-label="${escapeHtml(b.name)} ${statusLabel}${b.site ? ' / 公式サイトへ' : ''}">
+            <${tag} class="dir-row" ${linkAttrs} aria-label="${escapeHtml(b.name)} ${statusLabel}${b.site ? (T['dir.st.official'] || ' / 公式サイトへ') : ''}">
               <span class="dr-status-dot ${dotCls}" title="${escapeHtml(statusLabel)}"></span>
               <span class="dr-name">
                 <span class="dr-en">${escapeHtml(b.name)}</span>
@@ -4182,6 +4175,15 @@ renderBrandRoster();
 // ============================================================
 window.SEAM_PAGE_I18N = {
   ja: {
+        'dir.st.both': '店舗・オンライン',
+        'dir.st.pboth': '一部店舗 & オンライン',
+        'dir.st.pstore': '一部店舗取扱',
+        'dir.st.sapporo': '札幌店のみ',
+        'dir.st.ginza': '銀座店のみ',
+        'dir.st.omoginza': '表参道・銀座店のみ',
+        'dir.st.storeonly': '店舗のみ',
+        'dir.st.online': 'オンライン',
+        'dir.st.official': ' / 公式サイトへ',
         'a11y.x01': 'よく使われる探し方',
         'a11y.x02': 'インデックス',
         'a11y.x03': 'カテゴリタブ',
@@ -4311,6 +4313,15 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': 'Hair Care Finder で診断する',
   },
   en: {
+        'dir.st.both': 'In store & online',
+        'dir.st.pboth': 'Select stores & online',
+        'dir.st.pstore': 'Select stores',
+        'dir.st.sapporo': 'Sapporo store only',
+        'dir.st.ginza': 'Ginza store only',
+        'dir.st.omoginza': 'Omotesando & Ginza only',
+        'dir.st.storeonly': 'In store only',
+        'dir.st.online': 'Online',
+        'dir.st.official': ' / to the official site',
         'a11y.x01': 'Common ways to browse',
         'a11y.x02': 'Index',
         'a11y.x03': 'Category tabs',
@@ -4440,6 +4451,15 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': 'Take the Hair Care Finder',
   },
   zh: {
+        'dir.st.both': '门店与网店',
+        'dir.st.pboth': '部分门店与网店',
+        'dir.st.pstore': '部分门店在售',
+        'dir.st.sapporo': '仅札幌店',
+        'dir.st.ginza': '仅银座店',
+        'dir.st.omoginza': '仅表参道・银座店',
+        'dir.st.storeonly': '仅门店',
+        'dir.st.online': '网店',
+        'dir.st.official': ' / 前往官方网站',
         'a11y.x01': '常用的浏览方式',
         'a11y.x02': '索引',
         'a11y.x03': '分类标签',
@@ -4569,6 +4589,15 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': '前往 Hair Care Finder 诊断',
   },
   tw: {
+        'dir.st.both': '門市與網店',
+        'dir.st.pboth': '部分門市與網店',
+        'dir.st.pstore': '部分門市在售',
+        'dir.st.sapporo': '僅札幌店',
+        'dir.st.ginza': '僅銀座店',
+        'dir.st.omoginza': '僅表參道・銀座店',
+        'dir.st.storeonly': '僅門市',
+        'dir.st.online': '網店',
+        'dir.st.official': ' / 前往官方網站',
         'a11y.x01': '常用的瀏覽方式',
         'a11y.x02': '索引',
         'a11y.x03': '分類標籤',
@@ -4698,6 +4727,15 @@ window.SEAM_PAGE_I18N = {
     'finder.cta': '前往 Hair Care Finder 診斷',
   },
   ko: {
+        'dir.st.both': '매장·온라인',
+        'dir.st.pboth': '일부 매장·온라인',
+        'dir.st.pstore': '일부 매장 취급',
+        'dir.st.sapporo': '삿포로점만',
+        'dir.st.ginza': '긴자점만',
+        'dir.st.omoginza': '오모테산도·긴자점만',
+        'dir.st.storeonly': '매장에서만',
+        'dir.st.online': '온라인',
+        'dir.st.official': ' / 공식 사이트로',
         'a11y.x01': '자주 쓰는 찾기 방법',
         'a11y.x02': '색인',
         'a11y.x03': '카테고리 탭',
