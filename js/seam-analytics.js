@@ -275,4 +275,27 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireSections);
   else _wireSections();
+
+  // ── 読み飛ばしリンクの言語合わせ ──────────────────────────────
+  // 「本文へ移動」はキーボードで最初に当たる要素なのに、多言語ページでも
+  // 日本語のままだった（97枚）。各ページの辞書に足すと編集面が広すぎるので
+  // ここで html lang を見て置き換える。html lang は zh-Hans / zh-Hant で来る
+  var SKIP_LABEL = {
+    en: 'Skip to main content',
+    zh: '跳到主要内容',
+    tw: '跳到主要內容',
+    ko: '본문으로 건너뛰기'
+  };
+  function _localizeSkip() {
+    try {
+      var L = document.documentElement.lang || 'ja';
+      var K = { 'zh-Hans': 'zh', 'zh-Hant': 'tw', 'zh-CN': 'zh', 'zh-TW': 'tw' }[L] || L.split('-')[0];
+      var t = SKIP_LABEL[K];
+      if (!t) return;                                   // ja はそのまま
+      var a = document.querySelector('a.seam-skip');
+      if (a) a.textContent = t;
+    } catch (e) { /* ここでUIを壊さない */ }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _localizeSkip);
+  else _localizeSkip();
 })();
