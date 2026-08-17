@@ -71,6 +71,12 @@ BRANDS = [
        masters=['SEE/SAW'], maker='ルベル / タカラベルモント',
        blurb='髪と地肌をひとつづきで考えるヘア&スキャルプのシリーズ<br>B（バランス）S T の3種から 地肌の状態でえらびます',
        cross=[('milbon','ミルボン')], q='SEE/SAW 販売店'),
+  # 2026-08-14 追加。ロゴ画像が無いので logo=None（資生堂プロフェッショナルと同じ銘板になる）
+  # 実測: 「1DK ヘアオイル 販売店」は検索結果が7件しかない
+  dict(slug='onedk', logo=None, ja='1DK', en='1DK',
+       masters=['1DK'], maker='1DK',
+       blurb='スタイリングとリペアの2つのラインを持つサロン専売ブランド<br>オイル・バーム・モイスチャライザーなど 仕上がりの質感でえらびます',
+       cross=[('milbon','ミルボン')], q='1DK 販売店'),
 ]
 
 AREA_JA={'ginza':'銀座','omotesando':'表参道','sapporo':'札幌','osaka':'大阪',

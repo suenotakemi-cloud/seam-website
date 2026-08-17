@@ -32,6 +32,7 @@ BRAND = {
  'davines':               {'ja': 'ダヴィネス', 'en': 'Davines', 'zh': 'Davines', 'tw': 'Davines', 'ko': 'Davines'},
  'oggi-otto':             {'ja': 'オッジオット', 'en': 'Oggi otto', 'zh': 'Oggi otto', 'tw': 'Oggi otto', 'ko': 'Oggi otto'},
  'seesaw':                {'ja': 'SEE/SAW', 'en': 'SEE/SAW', 'zh': 'SEE/SAW', 'tw': 'SEE/SAW', 'ko': 'SEE/SAW'},
+ 'onedk':                 {'ja': '1DK', 'en': '1DK', 'zh': '1DK', 'tw': '1DK', 'ko': '1DK'},
 }
 
 # ── 地名（store-*.html の既存辞書から取った実績値）
