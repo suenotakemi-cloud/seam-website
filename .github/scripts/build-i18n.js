@@ -328,7 +328,7 @@ function applyLang(doc, dict, shortLang, htmlLang) {
   return n;
 }
 
-function setHead(doc, shortLang, htmlLang, pageUrl) {
+function setHead(doc, shortLang, htmlLang, pageUrl, dict) {
   const head = doc.querySelector('head');
   // canonical をこの言語URLへ
   const selfUrl = BASE + '/' + shortLang + (pageUrl === '/' ? '/' : pageUrl);
@@ -345,6 +345,55 @@ function setHead(doc, shortLang, htmlLang, pageUrl) {
   let og = doc.querySelector('meta[property="og:locale"]');
   if (!og) { og = doc.createElement('meta'); og.setAttribute('property', 'og:locale'); head.appendChild(og); }
   og.setAttribute('content', ogLoc);
+  // 共有カードも各言語の正規URLと翻訳タイトルへ揃える。
+  // canonicalだけ言語別でも og:url/title が日本語版のままだと、SNS共有と検索補助信号が食い違う。
+  const localizedTitle = (dict && (dict['meta.ogTitle'] || dict['meta.title'])) || (doc.querySelector('title') || {}).textContent || '';
+  if (pageUrl === '/brand') {
+    [['meta[property="og:url"]', 'property', 'og:url', selfUrl],
+     ['meta[property="og:title"]', 'property', 'og:title', localizedTitle],
+     ['meta[name="twitter:title"]', 'name', 'twitter:title', localizedTitle]].forEach(([sel, attr, key, value]) => {
+      let el = doc.querySelector(sel);
+      if (!el) { el = doc.createElement('meta'); el.setAttribute(attr, key); head.appendChild(el); }
+      el.setAttribute('content', value);
+    });
+  }
+
+  // ブランド一覧のJSON-LDを言語URLごとの自己参照へ変更する。
+  // hreflangとcanonicalが正しくても、構造化データが /brand・inLanguage=ja のままだと
+  // 検索エンジンへ矛盾したページ情報を送るため、生成時に同じ言語へ揃える。
+  if (pageUrl === '/brand') {
+    const labels = {
+      en: { page:'Salon-Exclusive Hair Care Brands | SEAM', home:'Home', crumb:'Brands', org:'A global hair care select shop curating salon-exclusive brands and professional expertise.' },
+      zh: { page:'沙龙专售护发品牌一览 | SEAM', home:'首页', crumb:'品牌一览', org:'汇集沙龙专售护发品牌与专业知识的全球美发精选店。' },
+      tw: { page:'沙龍專售護髮品牌一覽 | SEAM', home:'首頁', crumb:'品牌一覽', org:'匯集沙龍專售護髮品牌與專業知識的全球美髮精選店。' },
+      ko: { page:'살롱 전용 헤어케어 브랜드 | SEAM', home:'홈', crumb:'브랜드', org:'살롱 전용 헤어케어 브랜드와 전문가의 지식을 큐레이션하는 글로벌 셀렉트숍입니다.' }
+    }[shortLang];
+    doc.querySelectorAll('script[type="application/ld+json"]').forEach(el => {
+      let data;
+      try { data = JSON.parse(el.textContent); } catch (_) { return; }
+      const graph = Array.isArray(data['@graph']) ? data['@graph'] : [data];
+      graph.forEach(node => {
+        const types = Array.isArray(node['@type']) ? node['@type'] : [node['@type']];
+        if (types.includes('Organization') && labels) node.description = labels.org;
+        if (types.includes('CollectionPage')) {
+          node['@id'] = selfUrl + '#webpage';
+          node.url = selfUrl;
+          node.name = labels ? labels.page : localizedTitle;
+          node.inLanguage = htmlLang;
+          if (dict && dict['meta.description']) node.description = dict['meta.description'];
+          node.primaryImageOfPage = BASE + '/images/og/seam-og.jpg';
+        }
+        if (types.includes('BreadcrumbList')) {
+          node['@id'] = selfUrl + '#breadcrumb';
+          if (Array.isArray(node.itemListElement) && labels) {
+            if (node.itemListElement[0]) Object.assign(node.itemListElement[0], { name:labels.home, item:BASE + '/' + shortLang + '/' });
+            if (node.itemListElement[1]) Object.assign(node.itemListElement[1], { name:labels.crumb, item:selfUrl });
+          }
+        }
+      });
+      el.textContent = JSON.stringify(data);
+    });
+  }
   // 初回訪問(localStorage無し)で lang.js が ja に戻すのを防ぐ: 先頭で言語を保存
   const force = doc.createElement('script');
   force.textContent = "try{localStorage.setItem('seamLang','" + shortLang + "')}catch(e){}";
@@ -367,7 +416,7 @@ function build() {
       if (!I18N || !I18N[lang]) { summary.push(`SKIP ${lang}/${pg.file} (no dict)`); continue; }
       const applied = applyLang(doc, I18N[lang], lang, htmlLang);
       rewriteUrlsToRoot(doc, lang);
-      setHead(doc, lang, htmlLang, pg.url);
+      setHead(doc, lang, htmlLang, pg.url, I18N[lang]);
       let out = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
       // DOM属性以外(JS文字列・inline style url等)の相対アセットパスも / 起点へ。
       // 例: index.html が gem画像を src="images/karte/gems/"+id+".jpg" とJSで組む箇所。
