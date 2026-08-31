@@ -2834,7 +2834,7 @@
             <span class="bc-status-badge badge-both" data-i18n="dir.filter.both">매장·온라인 모두</span>
             <span class="featured-jp" data-i18n="g1">Aujua</span>
             <span class="featured-name">Aujua</span>
-            <span class="featured-tag" data-i18n="featured.aujua">모발을 숙지한 일본 발 플래그십</span>
+            <span class="featured-tag" data-i18n="featured.aujua">한 사람 한 사람의 지금과 미래를 위한 퍼스널 케어</span>
           </div>
         </a>
       </li>
@@ -3317,7 +3317,7 @@ const BRAND_CATS = {
     label: 'ヘアケア', labelEn: 'Hair Care', icon: 'fa-solid fa-droplet',
     concept: 'サロンプロ発想のシャンプー・トリートメント・アウトバスを中心に髪の悩みに応えるブランドを厳選',
     brands: [
-      { name: 'Aujua',                    nameJp: 'オージュア',              site: 'https://www.milbon.co.jp',                   status: STATUS.BOTH,          logo: '/images/logo_aujua.jpg',             desc: '日本人の髪と頭皮の研究から生まれたミルボンのフラッグシップケアライン' },
+      { name: 'Aujua',                    nameJp: 'オージュア',              site: 'https://www.milbon.co.jp',                   status: STATUS.BOTH,          logo: '/images/logo_aujua.jpg',             desc: '一人ひとりの髪と地肌に寄り添い 今と未来の美しさを支えるパーソナルケアブランド' },
       { name: 'GLOBAL MILBON',            nameJp: 'グローバルミルボン',      site: 'https://www.milbon.co.jp',                   status: STATUS.BOTH,          logo: '/images/logo_global_milbon.jpg',     desc: '世界中の髪質データから生まれたミルボンのグローバルプレミアムライン' },
       { name: 'Elujuda',                  nameJp: 'エルジューダ',            site: 'https://www.milbon.co.jp',                   status: STATUS.BOTH,          logo: '/images/logo_elujuda.jpg',           desc: '乾かすだけでまとまるミルボンのロングセラー・アウトバスシリーズ' },
       { name: 'SUBLIMIC',                 nameJp: 'サブリミック',            site: 'https://www.shiseido-professional.com',      status: STATUS.BOTH,          logo: '/images/logo_sublimic.jpg',          desc: '髪の美しさを根本から引き出す資生堂プロフェッショナルのケアライン' },
@@ -3522,6 +3522,53 @@ function seamDict() {
   return D;
 }
 
+// ブランドカードはJSで生成するため、通常の data-i18n だけでは翻訳されない。
+// 固有コピーがないブランドも日本語を残さず、カテゴリに合う自然な説明へフォールバックする。
+const BRAND_CARD_I18N = {
+  ko: {
+    status: {
+      'badge-both': '매장 · 온라인', 'badge-online': '온라인 한정',
+      'badge-partial': '일부 매장 · 온라인', 'badge-sapporo': '일부 매장 한정'
+    },
+    desc: {
+      'Aujua': '한 사람 한 사람의 모발과 두피에 맞춰 지금과 미래의 아름다움을 가꾸는 퍼스널 케어 브랜드',
+      'GLOBAL MILBON': '전 세계 모발 연구에서 탄생한 밀본의 글로벌 프리미엄 헤어케어 라인',
+      'BYKARTE': '모발의 핵심을 케어해 본연의 아름다움을 되찾는 프로페셔널 라인',
+      'KÉRASTASE': '모발과 두피 상태에 맞춰 선택하는 파리 태생의 럭셔리 프로페셔널 케어',
+      'SYSTEM PROFESSIONAL': '모발 컨디션을 과학적으로 분석해 한 사람 한 사람에게 맞춘 케어를 제안하는 라인',
+      'TOKIO INKARAMI': '모발 안쪽부터 강인함과 유연함을 채우는 프로페셔널 케어',
+      'SUBLIMIC': '시세이도 프로페셔널의 기술로 모발과 두피를 근본부터 케어하는 라인'
+    },
+    generic: {
+      haircare: '프로페셔널 헤어케어 라인', styling: '프로페셔널 스타일링 라인',
+      skincare: '프리미엄 스킨케어 라인', lifestyle: '뷰티 라이프스타일 라인',
+      device: '프로페셔널 뷰티 디바이스', inner: '이너 뷰티 & 웰니스 라인'
+    }
+  },
+  en: { generic: { haircare:'Professional hair care', styling:'Professional styling', skincare:'Premium skin care', lifestyle:'Beauty and lifestyle', device:'Professional beauty device', inner:'Inner beauty and wellness' } },
+  zh: { generic: { haircare:'专业美发护理系列', styling:'专业造型系列', skincare:'高端护肤系列', lifestyle:'美妆生活方式系列', device:'专业美容仪器', inner:'内在美容与健康系列' } },
+  tw: { generic: { haircare:'專業美髮護理系列', styling:'專業造型系列', skincare:'高端護膚系列', lifestyle:'美妝生活風格系列', device:'專業美容儀器', inner:'內在美容與健康系列' } }
+};
+function localizedBrandSubtitle(brand) {
+  return seamLangKey() === 'ja' && brand.nameJp && brand.nameJp !== brand.name ? brand.nameJp : '\u00a0';
+}
+function localizedBrandStatus(status) {
+  if (!status || seamLangKey() === 'ja') return status ? status.label : '';
+  const labels = {
+    ko: {'店舗 & オンライン':'매장 · 온라인','オンライン限定':'온라인 한정','一部オンライン':'일부 온라인','一部店舗のみ':'일부 매장','札幌店のみ':'삿포로점 한정','銀座店のみ':'긴자점 한정','表参道・銀座店のみ':'오모테산도 · 긴자점','一部店舗 & オンライン':'일부 매장 · 온라인'},
+    en: {'店舗 & オンライン':'Store · Online','オンライン限定':'Online only','一部オンライン':'Selected items online','一部店舗のみ':'Selected stores','札幌店のみ':'Sapporo only','銀座店のみ':'Ginza only','表参道・銀座店のみ':'Omotesando · Ginza','一部店舗 & オンライン':'Selected stores · Online'},
+    zh: {'店舗 & オンライン':'门店 · 在线','オンライン限定':'仅限在线','一部オンライン':'部分商品在线','一部店舗のみ':'部分门店','札幌店のみ':'仅限札幌店','銀座店のみ':'仅限银座店','表参道・銀座店のみ':'表参道 · 银座店','一部店舗 & オンライン':'部分门店 · 在线'},
+    tw: {'店舗 & オンライン':'門市 · 線上','オンライン限定':'僅限線上','一部オンライン':'部分商品線上','一部店舗のみ':'部分門市','札幌店のみ':'僅限札幌店','銀座店のみ':'僅限銀座店','表参道・銀座店のみ':'表參道 · 銀座店','一部店舗 & オンライン':'部分門市 · 線上'}
+  };
+  return (labels[seamLangKey()] && labels[seamLangKey()][status.label]) || status.label;
+}
+function localizedBrandDesc(brand, catKey) {
+  const key = seamLangKey();
+  if (key === 'ja') return brand.desc || '';
+  const set = BRAND_CARD_I18N[key] || {};
+  return (set.desc && set.desc[brand.name]) || ((set.generic && set.generic[catKey]) ? brand.name + ' — ' + set.generic[catKey] : brand.desc || '');
+}
+
 // ============================================================
 // RENDER — ブティック風カードレイアウト
 // ============================================================
@@ -3603,7 +3650,7 @@ function renderAllCategories(searchQuery) {
     if (brand.status) {
       badge = document.createElement('span');
       badge.className = 'bc-status-badge ' + (brand.status.cls || '');
-      badge.textContent = brand.status.label;
+      badge.textContent = localizedBrandStatus(brand.status);
     }
 
     function makeLogo(b) {
@@ -3636,14 +3683,14 @@ function renderAllCategories(searchQuery) {
 
     const nameJp = document.createElement('p');
     nameJp.className = 'bc-name-jp';
-    nameJp.textContent = (brand.nameJp && brand.nameJp !== brand.name) ? brand.nameJp : '\u00a0';
+    nameJp.textContent = localizedBrandSubtitle(brand);
 
     const divider = document.createElement('div');
     divider.className = 'bc-divider';
 
     const desc = document.createElement('p');
     desc.className = 'bc-desc';
-    desc.textContent = brand.desc;
+    desc.textContent = localizedBrandDesc(brand, catKey);
 
     // カード全体をクリック可能に（商品あり→ブランド商品モーダル / なし→公式サイト）
     card.classList.add('is-linked');
@@ -4377,7 +4424,7 @@ window.SEAM_PAGE_I18N = {
     'hero.ctaStore': '店舗の取扱を見る',
     'featured.title': '注目のブランド',
     'featured.sub': 'SEAMが今おすすめする実力派ブランド',
-    'featured.aujua': '髪を熟知した日本発のフラッグシップ',
+    'featured.aujua': '一人ひとりの今と未来に寄り添うパーソナルケア',
     'featured.gm': '世界の髪質データから生まれた実力',
     'featured.tokio': '内側から強さとしなやかさを',
     'featured.bykarte': '内側から満たす 素髪のような美しさ',
@@ -4527,7 +4574,7 @@ window.SEAM_PAGE_I18N = {
     'hero.ctaStore': 'See in-store range',
     'featured.title': 'Featured Brands',
     'featured.sub': 'Brands SEAM recommends right now',
-    'featured.aujua': 'Japan-born flagship, made for your hair',
+    'featured.aujua': 'Personalized care for your beauty today and tomorrow',
     'featured.gm': 'Born from global hair-quality data',
     'featured.tokio': 'Strength and softness, from within',
     'featured.bykarte': 'Filled from within, bare-hair beauty',
@@ -4677,7 +4724,7 @@ window.SEAM_PAGE_I18N = {
     'hero.ctaStore': '查看门店品项',
     'featured.title': '注目品牌',
     'featured.sub': 'SEAM此刻推荐的实力品牌',
-    'featured.aujua': '深谙发质的日本旗舰系列',
+    'featured.aujua': '贴合每个人当下与未来之美的个性化护理',
     'featured.gm': '源自全球发质数据的实力',
     'featured.tokio': '由内而生的强韧与柔顺',
     'featured.bykarte': '由内而充盈 素肌般之美',
@@ -4827,7 +4874,7 @@ window.SEAM_PAGE_I18N = {
     'hero.ctaStore': '查看門市品項',
     'featured.title': '注目品牌',
     'featured.sub': 'SEAM此刻推薦的實力品牌',
-    'featured.aujua': '深諳髮質的日本旗艦系列',
+    'featured.aujua': '貼合每個人當下與未來之美的個人化護理',
     'featured.gm': '源自全球髮質數據的實力',
     'featured.tokio': '由內而生的強韌與柔順',
     'featured.bykarte': '由內而充盈 素肌般之美',
@@ -4977,7 +5024,7 @@ window.SEAM_PAGE_I18N = {
     'hero.ctaStore': '매장 취급 보기',
     'featured.title': '주목 브랜드',
     'featured.sub': 'SEAM이 지금 추천하는 실력파 브랜드',
-    'featured.aujua': '모발을 숙지한 일본 발 플래그십',
+    'featured.aujua': '한 사람 한 사람의 지금과 미래를 위한 퍼스널 케어',
     'featured.gm': '세계의 모질 데이터에서 태어난 실력',
     'featured.tokio': '안에서부터 강함과 부드러움을',
     'featured.bykarte': '안에서부터 채우는 본연의 아름다움',
