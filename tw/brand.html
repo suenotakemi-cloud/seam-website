@@ -2800,7 +2800,7 @@
   <div class="brand-hero-scrim"></div>
   <div class="brand-hero-content">
     <p class="brand-hero-eyebrow" data-i18n="hero.eyebrow">護髮品牌</p>
-    <h1 class="brand-hero-title" data-i18n="hero.title">取扱品牌</h1>
+    <h1 class="brand-hero-title" data-i18n="hero.title">品牌一覽</h1>
     <p class="brand-hero-desc" data-i18n="hero.desc">SEAM精選沙龍專業人士信賴的品牌。</p>
     <div class="brand-hero-cta-row">
       <a href="/tw/onlineshop.html" class="bh-cta bh-cta-primary" data-i18n="hero.ctaOnline">查看線上品項</a>
@@ -3545,9 +3545,18 @@ const BRAND_CARD_I18N = {
       device: '프로페셔널 뷰티 디바이스', inner: '이너 뷰티 & 웰니스 라인'
     }
   },
-  en: { generic: { haircare:'Professional hair care', styling:'Professional styling', skincare:'Premium skin care', lifestyle:'Beauty and lifestyle', device:'Professional beauty device', inner:'Inner beauty and wellness' } },
-  zh: { generic: { haircare:'专业美发护理系列', styling:'专业造型系列', skincare:'高端护肤系列', lifestyle:'美妆生活方式系列', device:'专业美容仪器', inner:'内在美容与健康系列' } },
-  tw: { generic: { haircare:'專業美髮護理系列', styling:'專業造型系列', skincare:'高端護膚系列', lifestyle:'美妝生活風格系列', device:'專業美容儀器', inner:'內在美容與健康系列' } }
+  en: {
+    desc: { 'Aujua':'Personalized care for each person’s hair and scalp, supporting beauty today and into the future' },
+    generic: { haircare:'Professional hair care', styling:'Professional styling', skincare:'Premium skin care', lifestyle:'Beauty and lifestyle', device:'Professional beauty device', inner:'Inner beauty and wellness' }
+  },
+  zh: {
+    desc: { 'Aujua':'贴合每个人的头发与头皮需求 守护当下与未来之美的个性化护理品牌' },
+    generic: { haircare:'专业美发护理系列', styling:'专业造型系列', skincare:'高端护肤系列', lifestyle:'美妆生活方式系列', device:'专业美容仪器', inner:'内在美容与健康系列' }
+  },
+  tw: {
+    desc: { 'Aujua':'貼合每個人的頭髮與頭皮需求 守護當下與未來之美的個人化護理品牌' },
+    generic: { haircare:'專業美髮護理系列', styling:'專業造型系列', skincare:'高端護膚系列', lifestyle:'美妝生活風格系列', device:'專業美容儀器', inner:'內在美容與健康系列' }
+  }
 };
 function localizedBrandSubtitle(brand) {
   return seamLangKey() === 'ja' && brand.nameJp && brand.nameJp !== brand.name ? brand.nameJp : '\u00a0';
@@ -3567,6 +3576,12 @@ function localizedBrandDesc(brand, catKey) {
   if (key === 'ja') return brand.desc || '';
   const set = BRAND_CARD_I18N[key] || {};
   return (set.desc && set.desc[brand.name]) || ((set.generic && set.generic[catKey]) ? brand.name + ' — ' + set.generic[catKey] : brand.desc || '');
+}
+function localizedBrandLogoAlt(brand) {
+  return brand.name + ({ja:' ロゴ',ko:' 로고',en:' logo',zh:' 标志',tw:' 標誌'}[seamLangKey()] || ' logo');
+}
+function localizedBrandActionLabel(brand) {
+  return ({ja:brand.name + ' の商品を見る',ko:brand.name + ' 제품 보기',en:'View ' + brand.name + ' products',zh:'查看 ' + brand.name + ' 产品',tw:'查看 ' + brand.name + ' 產品'}[seamLangKey()] || brand.name);
 }
 
 // ============================================================
@@ -3660,7 +3675,7 @@ function renderAllCategories(searchQuery) {
         const img = document.createElement('img');
         img.className = 'bc-logo-img bc-logo-brand-img';
         img.src = b.logo;
-        img.alt = b.name + ' ロゴ';
+        img.alt = localizedBrandLogoAlt(b);
         img.loading = 'lazy';
         wrap.appendChild(img);
         return wrap;
@@ -3696,7 +3711,7 @@ function renderAllCategories(searchQuery) {
     card.classList.add('is-linked');
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
-    card.setAttribute('aria-label', brand.name + ' の商品を見る');
+    card.setAttribute('aria-label', localizedBrandActionLabel(brand));
     card.dataset.brandName = brand.name;
     card.dataset.brandSite = brand.site || '';
     card.addEventListener('click', () => openBrandProducts(brand));
@@ -4624,7 +4639,7 @@ window.SEAM_PAGE_I18N = {
         'a11y.x11': '语言选择',
         'a11y.x12': '关闭',
     'hero.eyebrow': '护发品牌',
-    'hero.title': '取扱品牌',
+    'hero.title': '品牌一览',
     'hero.desc': 'SEAM精选沙龙专业人士信赖的品牌。',
     'intro.text': 'SEAM 是一家全球护发精选店，只精选沙龙专业人员信赖使用的品牌。从护发到护肤和设备，我们为您甄选真正适合您头发和皮肤的产品。',
     'search.placeholder': '搜索品牌...',
@@ -4774,7 +4789,7 @@ window.SEAM_PAGE_I18N = {
         'a11y.x11': '語言選擇',
         'a11y.x12': '關閉',
     'hero.eyebrow': '護髮品牌',
-    'hero.title': '取扱品牌',
+    'hero.title': '品牌一覽',
     'hero.desc': 'SEAM精選沙龍專業人士信賴的品牌。',
     'intro.text': 'SEAM 是一家全球護髮精選店，只精選沙龍專業人員信賴使用的品牌。從護髮到護膚和設備，我們為您甄選真正適合您頭髮和皮膚的產品。',
     'search.placeholder': '搜尋品牌...',
