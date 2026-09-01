@@ -71,9 +71,9 @@
   var TABS = [
     { key: 'home',   href: 'index.html',     match: /(^\/$|\/index\.html|\/$)/ },
     { key: 'finder', href: 'finder.html',    match: /\/finder\.html/ },
-    { key: 'shop',   href: 'brand.html',     match: /\/brand\.html/, submenu: 'shop' },
+    { key: 'shop',   href: 'onlineshop.html', match: /\/onlineshop\.html/ },
     { key: 'book',   href: 'hairsalon.html', match: /\/(hairsalon|headspa)\.html/, submenu: 'book' },
-    { key: 'stores', href: 'shop.html#stores', match: /\/shop\.html/ }
+    { key: 'stores', href: 'shop.html#stores', match: /\/(?:shop|store-[^/]+)\.html/ }
   ];
 
   var path = location.pathname;
