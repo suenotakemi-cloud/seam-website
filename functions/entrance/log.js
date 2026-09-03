@@ -8,6 +8,20 @@
 export async function onRequestPost(context) {
   try {
     const { request, env } = context;
+
+    // ★誰でも叩ける口だった。受付iPad(seam.site上の /entrance)以外からの書き込みは
+    //   受け取らずに 204 で返す（ダッシュボードの来店数を外から水増しされないため）。
+    //   同一オリジンの fetch は Sec-Fetch-Site: same-origin を必ず送る。
+    //   古いブラウザ向けに Origin/Referer も見る。偽装は可能なので「lazyな妨害を弾く」措置。
+    const sfs = request.headers.get('Sec-Fetch-Site');
+    let host = '';
+    try { host = new URL(request.headers.get('Origin') || request.headers.get('Referer') || '').hostname.toLowerCase(); } catch (e) { host = ''; }
+    const ownHost = host === 'seam.site' || host.endsWith('.seam.site') || host.endsWith('.pages.dev') ||
+                    host === 'localhost' || host === '127.0.0.1';
+    if (!(sfs === 'same-origin' || sfs === 'same-site' || ownHost)) {
+      return new Response(null, { status: 204 });
+    }
+
     const b = await request.json().catch(() => ({}));
 
     const code    = String(b.code || '').slice(0, 64);

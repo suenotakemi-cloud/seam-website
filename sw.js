@@ -2,7 +2,7 @@
    - HTML: network-first (常に最新、オフライン時はキャッシュ)
    - 静的アセット (vendor/css/js/json/font/画像): cache-first (2回目以降は即ロード)
    バージョンを上げるとキャッシュが刷新される */
-const VERSION = 'seam-v171';
+const VERSION = 'seam-v172';
 const CORE_CACHE = VERSION + '-core';
 const ASSET_CACHE = VERSION + '-assets';
 
@@ -15,7 +15,7 @@ const ASSET_CACHE = VERSION + '-assets';
 
    ★増やすときは「お客様以外の情報が映る画面か」で決める。
      迷ったら足す。残さないことで困るのは速度だけ。 */
-const PRIVATE_PATH = /^\/(booking|entrance|admin|write|karte|seam-karte|salontown-booking)(\/|\.|$)/i;
+const PRIVATE_PATH = /^\/(booking|entrance|entrance-admin|admin|write|karte|seam-karte|salontown|salontown-booking|salonpro|exec-brief|strategy|august-plan|seo-actions|gbp-guide|finder-spec|hpb-gap|hpb-guide|hpb-menu|ginza-2026|ginza-earn|ginza-menu|ginza-no1|ginza-salonboard)(\/|\.|$)/i;
 const PRIVATE_QUERY = /(^|&)(t|token|stok|key|lt|k|s|r|deviceId)=/i;
 
 function isPrivate(url) {
@@ -39,8 +39,6 @@ const CORE = [
   './manifest.json',
   './vendor/react.production.min.js',
   './vendor/react-dom.production.min.js',
-  './vendor/babel.min.js',
-  './vendor/tailwindcss.js',
   './vendor/html2canvas.min.js',
 ];
 

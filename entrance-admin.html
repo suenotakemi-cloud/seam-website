@@ -142,7 +142,7 @@
   const POLL_MS = 20000;   // 20秒ごとに更新
   const JST_OFFSET = 9 * 60 * 60 * 1000;
 
-  let key = localStorage.getItem(KEY_LS) || '';
+  let key = sessionStorage.getItem(KEY_LS) || '';
   let range = 'today';
   let rows = [];
   let total = 0;
@@ -170,7 +170,7 @@
   async function load(){
     if(!key) return;
     try{
-      const res = await fetch('/entrance/stats?key=' + encodeURIComponent(key) + '&limit=500', { headers:{accept:'application/json'} });
+      const res = await fetch('/entrance/stats?limit=500', { headers:{accept:'application/json', 'x-seam-key': key} });
       const j = await res.json();
       if(res.status === 401 || j.reason === 'unauthorized'){ badKey('キーが正しくありません'); return; }
       if(j.configured === false){ showNotice(j.message || '設定が未完了です'); rows=[]; total=0; render(); markLive(true); return; }
@@ -240,7 +240,7 @@
     timer = setInterval(load, POLL_MS);
   }
   function badKey(msg){
-    localStorage.removeItem(KEY_LS); key='';
+    sessionStorage.removeItem(KEY_LS); key='';
     if(timer) clearInterval(timer);
     $('app').classList.add('hidden');
     $('gate').classList.remove('hidden');
@@ -249,11 +249,11 @@
   $('keyBtn').addEventListener('click', async () => {
     const v = $('keyInput').value.trim();
     if(!v){ $('gateErr').textContent = '管理キーを入力してください'; return; }
-    key = v; localStorage.setItem(KEY_LS, v);
+    key = v; sessionStorage.setItem(KEY_LS, v);
     $('gateErr').textContent = '確認中…';
     // 一度取得してキーの正否を確認
     try{
-      const res = await fetch('/entrance/stats?key=' + encodeURIComponent(v) + '&limit=1');
+      const res = await fetch('/entrance/stats?limit=1', { headers:{'x-seam-key': v} });
       const j = await res.json();
       if(res.status === 401 || j.reason === 'unauthorized'){ badKey('キーが正しくありません'); return; }
       $('gateErr').textContent = '';

@@ -110,7 +110,7 @@
     var msg = $('msg');
 
     // パスキーは端末に記憶(adminと同じ流儀)
-    try { $('key').value = localStorage.getItem('seam_admin_key') || ''; } catch (e) {}
+    try { $('key').value = sessionStorage.getItem('seam_admin_key') || ''; } catch (e) {}
 
     function esc(s) {
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -165,7 +165,7 @@
     $('save').addEventListener('click', function () {
       var key = $('key').value.trim();
       if (!key) { note('パスキーを入れてください', false); return; }
-      try { localStorage.setItem('seam_admin_key', key); } catch (e) {}
+      try { sessionStorage.setItem('seam_admin_key', key); } catch (e) {}
       var payload = {
         slug: $('slug').value.trim().toLowerCase(),
         title: $('title').value.trim(),
