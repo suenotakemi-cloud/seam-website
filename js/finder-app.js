@@ -6437,6 +6437,7 @@ function TopBar({
   }, String(step).padStart(2, '0')), " ", /*#__PURE__*/React.createElement("span", {
     className: "text-charcoal/40"
   }, "\u2014 ", String(total).padStart(2, '0'))), /*#__PURE__*/React.createElement("button", {
+    id: "langToggleBtn",
     type: "button",
     onClick: () => setOpen(true),
     "aria-label": "\u8A00\u8A9E\u3092\u5207\u308A\u66FF\u3048\u308B",
@@ -6648,6 +6649,58 @@ function formatJpToday() {
 
 /* ---------- Live diagnosis counter (シェア前提の臨場感) ---------- */
 /* ---------- Home ---------- */
+function HairSignature({ code = 'NNC', size = 180, label = '' }) {
+  const weight = code[0] === 'F' ? 1.25 : code[0] === 'T' ? 2.15 : 1.65;
+  const count = code[1] === 'L' ? 5 : code[1] === 'H' ? 9 : 7;
+  const movement = code[2] || 'C';
+  const tones = { F: '#6e6964', N: '#20201e', T: '#321d19' };
+  const gems = { L: '#af7654', N: '#748076', H: '#753d42' };
+  const paths = Array.from({ length: count }, (_, i) => {
+    const spread = 13 + i * (48 / Math.max(count - 1, 1));
+    const mirror = i % 2 ? -1 : 1;
+    if (movement === 'S') return `M110 24 C${110 + mirror * spread * .18} 62 ${110 - mirror * spread * .18} 158 110 196 M110 58 L${110 + mirror * spread} 110 L110 162`;
+    if (movement === 'W') return `M${110 - spread} ${44 + i * 3} C${166 - spread} 58 ${56 + spread} 99 110 112 C${164 - spread} 125 ${54 + spread} 164 ${110 + spread} ${180 - i * 2}`;
+    return `M110 ${25 + i * 3} C${166 + spread * .35} ${42 + i * 2} ${177 + spread * .25} ${101 - i * 2} 124 112 C${69 - spread * .18} ${123 + i * 2} ${62 - spread * .2} ${171 - i} 110 ${196 - i * 2}`;
+  });
+  return /*#__PURE__*/React.createElement("figure", {
+    className: "hair-signature",
+    style: { width: size, height: size },
+    "aria-label": label || `${code}タイプの髪の輪郭`
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 220 220", role: "img", "aria-hidden": label ? undefined : true
+  }, paths.map((d, i) => /*#__PURE__*/React.createElement("path", {
+    key: i, d, className: "hair-signature-line", style: { stroke: tones[code[0]], strokeWidth: weight + i * .08, opacity: .42 + i / (count * 2.15) }
+  })), /*#__PURE__*/React.createElement("path", {
+    d: "M110 88 L128 110 L110 134 L92 110 Z", className: "hair-signature-gem", style: { fill: gems[code[1]] }
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M110 88 L110 134 M92 110 H128 M110 88 L92 110 L110 118 L128 110 Z", className: "hair-signature-facet"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M151 63 C151 72 155 76 164 76 C155 76 151 80 151 89 C151 80 147 76 138 76 C147 76 151 72 151 63Z", className: "hair-signature-glint"
+  }), /*#__PURE__*/React.createElement("circle", {
+    cx: "72", cy: "150", r: "2", className: "hair-signature-point"
+  })), /*#__PURE__*/React.createElement("figcaption", null, code));
+}
+function HeroSignatureShowcase() {
+  const codes = ['FLS', 'NNW', 'THC', 'NNC'];
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return undefined;
+    const timer = window.setInterval(() => setActive(v => (v + 1) % codes.length), 2800);
+    return () => window.clearInterval(timer);
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "fdx-signature-showcase",
+    "aria-hidden": true
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "fdx-signature-stack"
+  }, codes.map((code, i) => /*#__PURE__*/React.createElement("div", {
+    key: code,
+    className: `fdx-signature-layer ${i === active ? 'is-active' : ''}`
+  }, /*#__PURE__*/React.createElement(HairSignature, { code, size: 238 })))), /*#__PURE__*/React.createElement("div", {
+    className: "fdx-signature-index"
+  }, /*#__PURE__*/React.createElement("span", null, String(active + 1).padStart(2, '0')), /*#__PURE__*/React.createElement("i", null), /*#__PURE__*/React.createElement("span", null, "27")));
+}
 function Home({
   onStart,
   onStartDeep,
@@ -6661,9 +6714,37 @@ function Home({
   return /*#__PURE__*/React.createElement("div", {
     className: "min-h-[100svh] bg-finder relative"
   }, /*#__PURE__*/React.createElement(TopBar, null), /*#__PURE__*/React.createElement("main", {
-    className: "relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-24 pb-20 sm:pt-32 sm:pb-28"
+    className: "fdx-main relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-24 pb-20 sm:pt-32 sm:pb-28"
+  }, /*#__PURE__*/React.createElement("section", {
+    className: "fdx-hero anim-fade-up",
+    "aria-labelledby": "fdx-title"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "anim-fade-up"
+    className: "fdx-signature-hero",
+    "aria-hidden": true
+  }, /*#__PURE__*/React.createElement(HeroSignatureShowcase, null)), /*#__PURE__*/React.createElement("div", {
+    className: "fdx-hero-copy"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "fdx-eyebrow"
+  }, "SEAM / HAIR IDENTITY / 01"), /*#__PURE__*/React.createElement("h1", {
+    id: "fdx-title"
+  }, "私の髪を知る。", /*#__PURE__*/React.createElement("br", null), "私の毎日が変わる。"), /*#__PURE__*/React.createElement("p", {
+    className: "fdx-lead"
+  }, "髪一本一本が持つ、太さ、密度、動き。いまの状態と重ねて、あなたのためのケアを読み解きます。"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: onStartDeep || onStart,
+    className: "fdx-start"
+  }, /*#__PURE__*/React.createElement("span", null, "無料で髪格診断をはじめる"), /*#__PURE__*/React.createElement("span", {
+    "aria-hidden": true
+  }, "→")), /*#__PURE__*/React.createElement("p", {
+    className: "fdx-meta"
+  }, "約3分 · 会員登録不要"))), /*#__PURE__*/React.createElement("div", {
+    className: "fdx-proof",
+    "aria-label": "髪格診断の特徴"
+  }, /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "27"), /*#__PURE__*/React.createElement("span", null, "HAIR IDENTITIES")), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "30"), /*#__PURE__*/React.createElement("span", null, "QUESTIONS")), /*#__PURE__*/React.createElement("p", null, /*#__PURE__*/React.createElement("b", null, "1"), /*#__PURE__*/React.createElement("span", null, "PERSONAL EDIT"))), /*#__PURE__*/React.createElement("section", {
+    className: "fdx-editorial"
+  }, /*#__PURE__*/React.createElement("p", { className: "fdx-kicker" }, "NOT A LABEL. A PORTRAIT."), /*#__PURE__*/React.createElement("h2", null, "髪質を決めつけない。", /*#__PURE__*/React.createElement("br", null), "輪郭を、見つける。"), /*#__PURE__*/React.createElement("p", { className: "fdx-editorial-copy" }, "細いか、太いか。少ないか、豊かか。まっすぐか、動くか。27の輪郭は、優劣ではなく、あなたの髪を正しく見るための言葉です。"), /*#__PURE__*/React.createElement("div", { className: "fdx-specimens" }, /*#__PURE__*/React.createElement(HairSignature, { code: "FLS", size: 104 }), /*#__PURE__*/React.createElement(HairSignature, { code: "NNW", size: 104 }), /*#__PURE__*/React.createElement(HairSignature, { code: "THC", size: 104 })), /*#__PURE__*/React.createElement("button", { type: "button", onClick: onStartDeep || onStart, className: "fdx-editorial-link" }, /*#__PURE__*/React.createElement("span", null, "私の輪郭を見つける"), /*#__PURE__*/React.createElement("span", { "aria-hidden": true }, "→")))
+  , /*#__PURE__*/React.createElement("div", {
+    className: "fdx-legacy-home anim-fade-up"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3 mb-6 sm:mb-8"
   }, /*#__PURE__*/React.createElement("span", {
@@ -6672,7 +6753,7 @@ function Home({
     className: "h-px w-10 bg-gold/50"
   }), /*#__PURE__*/React.createElement("span", {
     className: "font-mono tracking-widest2 text-[10px] uppercase text-charcoal/60"
-  }, "Hair Diagnosis")), /*#__PURE__*/React.createElement("h1", {
+  }, "Hair Diagnosis")), /*#__PURE__*/React.createElement("div", {
     className: "text-ink"
   }, /*#__PURE__*/React.createElement("span", {
     className: "block font-serif text-[24px] sm:text-[34px] leading-none tracking-[0.18em]"
@@ -6787,10 +6868,9 @@ function Home({
     onClick: onStart,
     className: "karte-char-chip",
     "aria-label": `${c.name} (${c.code})`
-  }, /*#__PURE__*/React.createElement("img", {
-    src: `images/karte/gems/${c.code}.jpg?v=2`,
-    alt: "",
-    loading: "lazy"
+  }, /*#__PURE__*/React.createElement(HairSignature, {
+    code: c.code,
+    size: 74
   }), /*#__PURE__*/React.createElement("span", {
     className: "karte-char-name"
   }, c.name), /*#__PURE__*/React.createElement("span", {
@@ -11438,13 +11518,16 @@ function GemMark({
   name
 }) {
   const [gemOk, setGemOk] = useState(true);
-  const [videoOk, setVideoOk] = useState(true);
-  const gemSrc = `images/karte/gems/${code}.jpg?v=2`;
-  const videoSrc = `images/karte/gems3d/${code}.mp4?v=2`;
-  const reduceMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const showVideo = videoOk && !reduceMotion;
+  const [videoOk, setVideoOk] = useState(false);
+  const gemSrc = '';
+  const videoSrc = '';
+  const showVideo = false;
   const lore = GEM_LORE[code];
   if (gemOk) {
+    return /*#__PURE__*/React.createElement("div", { className: "signature-result-stage" }, /*#__PURE__*/React.createElement(HairSignature, { code, size: 220, label: `${name}の髪の輪郭` }));
+    /* legacy gemstone renderer retained below as unreachable fallback for old saved shares */
+  }
+  if (false) {
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
       className: "gem-stage mt-6"
     }, /*#__PURE__*/React.createElement("span", {
@@ -12489,31 +12572,7 @@ function GemThumb({
   size = 64,
   accent = false
 }) {
-  const [ok, setOk] = useState(true);
-  if (!ok) return /*#__PURE__*/React.createElement(KarteAnimalMark, {
-    size: size,
-    accent: accent,
-    code: code
-  });
-  return /*#__PURE__*/React.createElement("span", {
-    className: `inline-block relative rounded-full overflow-hidden ${accent ? 'border border-gold/50' : 'border border-gold/25'}`,
-    style: {
-      width: size,
-      height: size,
-      boxShadow: accent ? '0 10px 30px -16px rgba(154,116,56,0.5)' : 'none'
-    }
-  }, /*#__PURE__*/React.createElement("img", {
-    src: `images/karte/gems/${code}.jpg?v=2`,
-    alt: "",
-    width: size,
-    height: size,
-    loading: "lazy",
-    className: "w-full h-full object-cover",
-    onError: () => setOk(false)
-  }), /*#__PURE__*/React.createElement("span", {
-    "aria-hidden": true,
-    className: "absolute inset-0 rounded-full border border-white/30 pointer-events-none"
-  }));
+  return /*#__PURE__*/React.createElement(HairSignature, { code, size });
 }
 function KarteCollectionCard({
   animal,

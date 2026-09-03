@@ -4,13 +4,11 @@
    - 「サロン予約」タップで ヘアサロン / スパサロン の選択ポップアップを表示
    - デスクトップ(≥1024px)では非表示（上部ヘッダーが担う）
    - 5言語ラベル（localStorage seamLang 連動）
-   - finder.html では読み込まない（独自の没入フロー＋固定CTAのため）
+   - finder.html を含む全ページで同じ5タブを使用する
    ========================================================================= */
 (function () {
   if (window.__seamTabbarInit) return;
   window.__seamTabbarInit = true;
-
-  if (/\/finder\.html(?:$|[?#])/.test(location.pathname + location.search)) return;
 
   var LABELS = {
     ja: { home: 'ホーム', finder: '診断', shop: 'オンライン', stores: '店舗一覧', book: 'サロン予約' },
