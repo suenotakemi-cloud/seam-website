@@ -8455,7 +8455,7 @@ function Quiz({
   }, [safeIdx]);
   if (!q) return null;
   return /*#__PURE__*/React.createElement("div", {
-    className: "min-h-[100svh] bg-finder relative pb-32 sm:pb-36"
+    className: "fdx-quiz-shell min-h-[100svh] bg-finder relative pb-32 sm:pb-36"
   }, /*#__PURE__*/React.createElement(TopBar, {
     step: safeIdx + 1,
     total: total
@@ -8465,7 +8465,7 @@ function Quiz({
     current: safeIdx + 1,
     total: total
   })), /*#__PURE__*/React.createElement("main", {
-    className: "mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-14 relative z-10"
+    className: "fdx-quiz-main mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-14 relative z-10"
   }, /*#__PURE__*/React.createElement("div", {
     key: q.id,
     className: "anim-quiz"
@@ -8517,7 +8517,7 @@ function Quiz({
     onSet: setExtra,
     answers: answers
   }))), /*#__PURE__*/React.createElement("nav", {
-    className: "fixed bottom-0 inset-x-0 bg-gradient-to-t from-ivory via-ivory/95 to-ivory/0 pt-6 pb-5 sm:pb-7 z-20"
+    className: "fdx-quiz-actions fixed bottom-0 inset-x-0 bg-gradient-to-t from-ivory via-ivory/95 to-ivory/0 pt-6 pb-5 sm:pb-7 z-20"
   }, /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-2xl px-5 sm:px-8 flex items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("button", {
@@ -8590,7 +8590,7 @@ function QuizDeep({
   }, [safeIdx]);
   if (!q) return null;
   return /*#__PURE__*/React.createElement("div", {
-    className: "min-h-[100svh] bg-finder relative pb-32 sm:pb-36"
+    className: "fdx-quiz-shell fdx-quiz-deep min-h-[100svh] bg-finder relative pb-32 sm:pb-36"
   }, /*#__PURE__*/React.createElement(TopBar, {
     step: safeIdx + 1,
     total: total
@@ -8600,7 +8600,7 @@ function QuizDeep({
     current: safeIdx + 1,
     total: total
   })), /*#__PURE__*/React.createElement("main", {
-    className: "mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-14 relative z-10"
+    className: "fdx-quiz-main mx-auto max-w-2xl px-5 sm:px-8 pt-8 sm:pt-14 relative z-10"
   }, /*#__PURE__*/React.createElement("div", {
     key: q.id,
     className: "anim-fade-up"
@@ -8651,7 +8651,7 @@ function QuizDeep({
     onSet: setExtra,
     answers: answers
   }))), /*#__PURE__*/React.createElement("nav", {
-    className: "fixed bottom-0 inset-x-0 bg-gradient-to-t from-ivory via-ivory/95 to-ivory/0 pt-6 pb-5 sm:pb-7 z-20"
+    className: "fdx-quiz-actions fixed bottom-0 inset-x-0 bg-gradient-to-t from-ivory via-ivory/95 to-ivory/0 pt-6 pb-5 sm:pb-7 z-20"
   }, /*#__PURE__*/React.createElement("div", {
     className: "mx-auto max-w-2xl px-5 sm:px-8 flex items-center justify-between gap-4"
   }, /*#__PURE__*/React.createElement("button", {
@@ -12176,7 +12176,7 @@ function ResultHero({
       // 性格本文 (最初の文だけ)
       const personality = origin.personality || '';
       return /*#__PURE__*/React.createElement("div", {
-        className: "mt-5 mx-auto max-w-md text-left bg-white/70 border border-gold/30 rounded-[2px] p-4 sm:p-5"
+        className: "fdx-result-profile mt-5 mx-auto max-w-md text-left bg-white/70 border border-gold/30 rounded-[2px] p-4 sm:p-5"
       }, /*#__PURE__*/React.createElement("div", {
         className: "grid grid-cols-3 gap-2 pb-3 border-b border-gold/20 text-center"
       }, (() => {
@@ -12238,7 +12238,7 @@ function ResultHero({
         const cond = buildCurrentCondition(radar);
         if (!cond) return null;
         return /*#__PURE__*/React.createElement("div", {
-          className: "mt-3 pt-3 border-t border-gold/20"
+          className: "fdx-result-condition mt-3 pt-3 border-t border-gold/20"
         }, /*#__PURE__*/React.createElement("p", {
           className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold mb-1.5"
         }, "\u2014 CONDITION"), /*#__PURE__*/React.createElement("p", {
@@ -12246,7 +12246,7 @@ function ResultHero({
         }, cond));
       })());
     })(), origin.charmHint && /*#__PURE__*/React.createElement("div", {
-      className: "mt-5 pt-4 border-t border-gold/25"
+      className: "fdx-result-charm mt-5 pt-4 border-t border-gold/25"
     }, /*#__PURE__*/React.createElement("p", {
       className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold mb-2"
     }, "\u2014 Charm"), /*#__PURE__*/React.createElement("p", {
@@ -15170,6 +15170,61 @@ function InboundGinzaCard() {
   })), T.map))));
 }
 
+/* ---------- Maison Result — 旧カードUIから独立した結果体験 ---------- */
+function MaisonResult({ karte, answers, scores, products, onRestart }) {
+  const h = React.createElement;
+  const origin = karte && karte.origin || {};
+  const code = origin.code || 'NNC';
+  const typeNumber = typeof TYPE_NUMBER_MAP !== 'undefined' ? TYPE_NUMBER_MAP[code] || '—' : '—';
+  const axes = [{label:'太さ',value:{F:'細い',N:'普通',T:'太い'}[code[0]]||'—'}, {label:'量',value:{L:'少ない',N:'普通',H:'豊か'}[code[1]]||'—'}, {label:'動き',value:{S:'まっすぐ',W:'ゆるやか',C:'しっかり'}[code[2]]||'—'}];
+  const copy = buildResultCopy(answers, scores) || {};
+  const verdict = copy.verdict || copy.headline || buildVerdictLine(answers, scores) || '今の髪に必要なものを、順番に。';
+  const lead = copy.nuanceLine || origin.personality || '生まれ持った髪の輪郭と、これまでの履歴。ふたつを分けて読むことで、今のあなたに必要なケアが見えてきます。';
+  const picks = (products || []).slice(0, 4);
+  const productLink = p => p.salonTownItemId ? `https://salon.town/item/${p.salonTownItemId}` : p.productPageUrl || p.sourceUrl || 'onlineshop.html';
+  return h('div',{className:'mx-result'},
+    h('div',{className:'no-print'},h(TopBar,null)),
+    h('main',null,
+      h('section',{className:'mx-result-hero'},
+        h('div',{className:'mx-result-index'},h('span',null,'SEAM / HAIR IDENTITY'),h('span',null,`NO. ${typeNumber} / 27`)),
+        h('div',{className:'mx-result-symbol'},h(HairSignature,{code,size:258,label:`${origin.name || code}の髪の輪郭`})),
+        h('p',{className:'mx-result-kicker'},'YOUR HAIR PORTRAIT'),
+        h('h1',null,origin.name || 'あなたの髪格'),
+        h('p',{className:'mx-result-en'},`${origin.nameEn || ''} · ${code}`),
+        h('div',{className:'mx-result-axes'},axes.map(a=>h('div',{key:a.label},h('span',null,a.label),h('strong',null,a.value)))),
+        h('p',{className:'mx-result-personality'},origin.personality || lead)
+      ),
+      h('section',{className:'mx-result-statement'},
+        h('p',{className:'mx-result-kicker'},'THE READING'),
+        h('h2',null,verdict),
+        h('p',null,lead),
+        h('div',{className:'mx-result-order'},['洗う','補う','守る'].map((x,i)=>h('div',{key:x},h('i',null,String(i+1).padStart(2,'0')),h('span',null,x))))
+      ),
+      h('section',{className:'mx-result-prescription'},
+        h('p',{className:'mx-result-kicker'},'THE PRESCRIPTION'),
+        h('h2',null,'今のあなたへ、選び抜いたもの。'),
+        h('p',{className:'mx-result-intro'},'ブランドではなく、あなたの髪に必要な役割から選びました。結果は確定ではなく、プロと相談するための美しい入口です。'),
+        picks.length ? h('div',{className:'mx-product-list'},picks.map((p,i)=>h('article',{key:p.id||i,className:'mx-product'},
+          h('div',{className:'mx-product-number'},String(i+1).padStart(2,'0')),
+          h('div',{className:'mx-product-image'},h('img',{src:p.imageUrl||p.image,alt:p.name||'',loading:i?'lazy':'eager'})),
+          h('p',{className:'mx-product-brand'},p.brand||p.line||''),
+          h('h3',null,p.name||'Recommended care'),
+          h('p',{className:'mx-product-copy'},p.cardCopy||p.pitchCopy||p.recommendedFor||''),
+          h('a',{href:productLink(p),target:'_blank',rel:'noopener'},h('span',null,'商品を見る'),h('span',{'aria-hidden':true},'↗'))
+        ))) : h('div',{className:'mx-product-loading','aria-live':'polite'},'あなたのための処方を選んでいます。')
+      ),
+      h('section',{className:'mx-result-consult'},
+        h('p',{className:'mx-result-kicker'},'FROM DIAGNOSIS TO REALITY'),
+        h('h2',null,'画面の答えを、あなたの髪の答えへ。'),
+        h('p',null,'カルテを店頭で見せてください。ヘアケアを熟知したスタッフが、実際の髪を見て処方を仕上げます。'),
+        h('a',{href:'shop.html#stores'},h('span',null,'近くのSEAMを探す'),h('span',{'aria-hidden':true},'→')),
+        h('a',{href:'onlineshop.html'},h('span',null,'メンバー限定オンラインショップ'),h('span',{'aria-hidden':true},'→'))
+      ),
+      h('section',{className:'mx-result-restart no-print'},h('button',{type:'button',onClick:onRestart},'もう一度診断する'))
+    )
+  );
+}
+
 /* ---------- Result ---------- */
 function Result({
   answers,
@@ -15284,8 +15339,8 @@ function Result({
   // cache-bust付きで強制最新化
   const [seamData, setSeamData] = useState(null);
   useEffect(() => {
-    fetch('data/products/seam-master.json?v=' + Date.now(), {
-      cache: 'no-store'
+    fetch('data/products/seam-master.json?v=20260903', {
+      cache: 'default'
     }).then(r => r.ok ? r.json() : null).then(d => {
       // 商品画像がないものは提案に出さない(オーナー方針)
       if (d && Array.isArray(d.products)) d.products = d.products.filter(p => p && (p.image || p.imageUrl));
@@ -15295,8 +15350,8 @@ function Result({
   // Home Tools(美容家電) data 取得
   const [toolsData, setToolsData] = useState(null);
   useEffect(() => {
-    fetch('data/products/seam-tools.json?v=' + Date.now(), {
-      cache: 'no-store'
+    fetch('data/products/seam-tools.json?v=20260903', {
+      cache: 'default'
     }).then(r => r.ok ? r.json() : null).then(d => setToolsData(d)).catch(() => setToolsData(null));
   }, []);
   const seamPicks = useMemo(() => {
@@ -15326,12 +15381,20 @@ function Result({
       behavior: 'instant'
     });
   }, []);
+  return /*#__PURE__*/React.createElement(MaisonResult, {
+    karte: karte,
+    answers: answers,
+    scores: scores,
+    products: seamPicks,
+    onRestart: onRestart
+  });
+  /* 旧結果UIは互換用として保持。画面には表示しない。 */
   return /*#__PURE__*/React.createElement("div", {
-    className: "min-h-[100svh] bg-finder"
+    className: "fdx-result-shell min-h-[100svh] bg-finder"
   }, /*#__PURE__*/React.createElement("div", {
     className: "no-print"
   }, /*#__PURE__*/React.createElement(TopBar, null)), /*#__PURE__*/React.createElement("main", {
-    className: "relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-28 pb-10 sm:pb-28"
+    className: "fdx-result-main relative z-10 mx-auto max-w-3xl px-5 sm:px-8 pt-28 pb-10 sm:pb-28"
   }, /*#__PURE__*/React.createElement("div", {
     className: "anim-fade-up"
   }, (() => {
