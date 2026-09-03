@@ -8,7 +8,11 @@
 #   ・JavaScript が構文として成立しているか
 #   ・HTML の中の <script> が成立しているか
 #   ・お店の情報が映る画面に、うっかり noindex が外れていないか
-#   ・土台のしくみ（saas/）のテストが通るか
+#   ・HTML が参照している絵・動画・css・js の実体が木に在るか（★札より中身）
+#
+# ★「土台のしくみ（saas/）のテストが通るか」と以前ここに書いてあったが、
+#   その段は一度も存在しなかった（2026-09-03・外部チェックで発覚）。
+#   saas/ はこのリポジトリに無い。書いてあって走らない段は、無いより悪いので消した。
 #
 # ★重いことはしない。関所は「速くて必ず通る」ことが大事で、
 #   遅いと必ず外される。
@@ -83,6 +87,44 @@ jobs:
               echo "::error file=$f::noindex が入っていません（お店の画面が検索に出ます）"; fail=1; }
           done
           exit $fail
+
+      - name: 参照先の実体が木に在るか（★札より中身）
+        run: |
+          # ★2026-08-22 の整理コミットで絵の実体だけが消え、HTML の参照は残った。
+          #   試験は緑のまま、お客様の画面で 41 本が 404 になっていた（2026-09-03 に復元）。
+          #   HTML という札ではなく、参照先の実体を1本ずつ叩く。
+          python3 - <<'PY'
+          import re, pathlib, sys, html
+          ROOT = pathlib.Path('.').resolve()
+          ATTR = re.compile(r'(?:src|href|poster|content)\s*=\s*["\']([^"\'#?]+)', re.I)
+          SRCSET = re.compile(r'srcset\s*=\s*["\']([^"\']+)["\']', re.I)
+          ILL = re.compile(r"ill:\s*'(ill_[a-z0-9_]+)'")   # booking/precare.html は名前で絵を組み立てる
+          KINDS = ('images/', 'css/', 'js/', 'videos/', 'vendor/', 'data/')
+          bad, n = [], 0
+          def check(page, ref, seen):
+              global n
+              ref = html.unescape(ref)
+              if not ref or ref.startswith(('http:', 'https:', '//', 'data:', 'mailto:', 'tel:', 'javascript:')): return
+              if '{' in ref: return
+              p = (ROOT / ref.lstrip('/')) if ref.startswith('/') else (page.parent / ref)
+              try: rel = p.resolve().relative_to(ROOT).as_posix()
+              except ValueError: return
+              if not rel.startswith(KINDS) or rel in seen: return
+              seen.add(rel); n += 1
+              if not p.exists(): bad.append(f'{page.relative_to(ROOT)}: {ref}')
+          for page in ROOT.rglob('*.html'):
+              if any(x in page.parts for x in ('node_modules', 'vendor', '.git')): continue
+              s = page.read_text(encoding='utf-8', errors='replace'); seen = set()
+              for m in ATTR.finditer(s): check(page, m.group(1).strip(), seen)
+              for m in SRCSET.finditer(s):
+                  for part in m.group(1).split(','):
+                      if part.strip(): check(page, part.strip().split()[0], seen)
+              for m in ILL.finditer(s):
+                  check(page, ('../' if page.parent != ROOT else '') + f'images/lp/spa/{m.group(1)}.webp', seen)
+          for b in bad: print(f'::error::参照先の実体がありません  {b}')
+          print(f'参照 {n}本を確認、実体の無いもの {len(bad)}本')
+          sys.exit(1 if bad else 0)
+          PY
 
       - name: 合言葉らしきものが混ざっていないか
         run: |
