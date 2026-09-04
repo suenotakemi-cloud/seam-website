@@ -203,7 +203,11 @@
         <button class="btn" id="btnImgPick">画像を選ぶ</button>
         <input type="file" id="imgIn" accept="image/*,.heic,.heif" multiple hidden>
       </div>
-      <div class="row" style="margin-top:10px"><label class="muted"><input type="checkbox" id="imgOverwrite"> すでに写真がある枠も上書きする</label></div>
+      <div class="row" style="margin-top:10px">
+        <label class="muted"><input type="checkbox" id="imgOverwrite"> すでに写真がある枠も上書きする</label>
+        <label class="muted"><input type="checkbox" id="imgSquare" checked> 正方形 1200px に揃える（白で余白）</label>
+        <label class="muted">背景を白に: <select id="imgWhiten"><option value="normal">標準</option><option value="weak">弱</option><option value="strong">強</option><option value="off">しない</option></select></label>
+      </div>
       <div id="imgPlan" style="margin-top:10px"></div>
       <div class="row" style="margin-top:10px"><button class="btn solid" id="btnImgRun" disabled>登録を開始</button><span class="muted" id="imgState"></span></div>
       <div class="prog" id="imgProg" hidden><i></i></div>
@@ -705,7 +709,7 @@
         var pre = existingImgs[p.jan] ? Promise.resolve(existingImgs[p.jan]) : api('images?jan=' + p.jan).then(function (r) { existingImgs[p.jan] = (r.images || []).map(function (i) { return i.slot; }); return existingImgs[p.jan]; });
         return pre.then(function (slots) {
           if (!overwrite && slots.indexOf(p.slot) >= 0) { p.result = 'スキップ（既に写真あり）'; L('スキップ ' + p.file.name + '（' + p.slot + '枚目は登録済み）'); return; }
-          return C.uploadImage(p.jan, p.slot, p.file, { max: 1600, quality: 0.85 }).then(function (r) {
+          return C.uploadImage(p.jan, p.slot, p.file, { size: 1200, square: $('imgSquare').checked ? 'pad' : false, whiten: $('imgWhiten').value, max: 1600, quality: 0.85 }).then(function (r) {
             if (r.ok) { saved++; p.result = '保存 ' + Math.round(r.bytes / 1024) + 'KB'; L('OK   ' + p.file.name + ' → ' + p.jan + ' ' + p.slot + '枚目 (' + Math.round(r.bytes / 1024) + 'KB webp)'); if (slots.indexOf(p.slot) < 0) slots.push(p.slot); }
             else { fail++; p.result = 'NG ' + (r.message || r.reason); L('NG   ' + p.file.name + ': ' + (r.message || r.reason)); }
           });

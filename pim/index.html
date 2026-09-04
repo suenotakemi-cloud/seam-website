@@ -80,6 +80,41 @@
   .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
   .seg button{flex:1;border:0;background:#fff;padding:10px;font-size:14px}
   .seg button.on{background:var(--brown);color:#fff}
+
+  /* ── 撮影画面（ガイド付き） ── */
+  .shooter{position:fixed;inset:0;z-index:70;background:#000;display:none;flex-direction:column;color:#fff}
+  .shooter.open{display:flex}
+  .shooter .top{padding:calc(10px + env(safe-area-inset-top)) 14px 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13px}
+  .shooter .top .t{font-weight:600;font-size:15px}
+  .shooter .top .sub{font-size:11.5px;color:#cfc8bf;line-height:1.35}
+  .shooter .stage{position:relative;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .shooter .sq{position:relative;width:min(100vw,calc(100vh - 230px));aspect-ratio:1/1;overflow:hidden;background:#111}
+  .shooter video,.shooter canvas.prev{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .shooter canvas.prev{display:none;background:#fff}
+  .shooter.preview canvas.prev{display:block}
+  .shooter.preview video{display:none}
+  .shooter .guide{position:absolute;inset:0;pointer-events:none}
+  .shooter .guide svg{width:100%;height:100%;display:block}
+  .shooter.preview .guide{display:none}
+  .shooter .lvl{position:absolute;left:50%;top:8px;transform:translateX(-50%);font-size:11px;background:rgba(0,0,0,.45);padding:3px 10px;border-radius:999px;color:#ddd}
+  .shooter .lvl.ok{background:rgba(46,125,91,.8);color:#fff}
+  .shooter .lvl.ng{background:rgba(180,67,47,.8);color:#fff}
+  .shooter .msgc{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;font-size:14px;background:rgba(0,0,0,.7)}
+  .shooter .msgc.show{display:flex}
+  .shooter .bottom{padding:10px 16px calc(14px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:10px}
+  .shooter .chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .shooter .chip{font-size:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;padding:6px 11px;border-radius:999px}
+  .shooter .chip.on{background:#fff;color:#111;border-color:#fff}
+  .shooter .ctl{display:flex;align-items:center;justify-content:space-between}
+  .shooter .ctl .side{width:88px;text-align:center}
+  .shooter .ctl .side button{background:transparent;border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:999px;padding:9px 12px;font-size:13px}
+  .shooter .shutter{width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgba(255,255,255,.35);background-clip:padding-box;box-shadow:0 0 0 2px #fff}
+  .shooter .shutter:active{transform:scale(.94)}
+  .shooter .pv{display:none;gap:10px}
+  .shooter.preview .pv{display:flex}
+  .shooter.preview .ctl,.shooter.preview .chips{display:none}
+  .shooter .pv .btn{flex:1;margin:0}
+  .shooter .hint{font-size:12px;color:#cfc8bf;text-align:center;line-height:1.4}
   /* ── 下部固定 ── */
   .foot{position:fixed;left:0;right:0;bottom:0;z-index:20;background:rgba(245,241,234,.96);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
   /* ── アクションシート・トースト・ログイン ── */
@@ -196,7 +231,7 @@
           <span class="small" id="gridCount"></span>
         </div>
         <div class="grid" id="grid"></div>
-        <p class="grid-note" id="gridNote">枠をタップ → 撮影 か 写真を選ぶ → 自動で次の枠へ</p>
+        <p class="grid-note" id="gridNote">枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）</p>
       </div>
     </section>
 
@@ -235,6 +270,42 @@
 <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
 <input type="file" id="fileIn" accept="image/*,.heic,.heif" multiple hidden>
 
+
+<!-- 撮影画面（ガイド付き・全員が同じ構図で撮れるように） -->
+<div class="shooter" id="shooter">
+  <div class="top">
+    <div><div class="t" id="shTitle">1枚目: 正面</div><div class="sub" id="shSub"></div></div>
+    <button class="hbtn" id="shClose" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4)">閉じる</button>
+  </div>
+  <div class="stage">
+    <div class="sq" id="shSq">
+      <video id="shVideo" playsinline muted autoplay></video>
+      <canvas class="prev" id="shPrev"></canvas>
+      <div class="guide" id="shGuide"></div>
+      <div class="lvl" id="shLvl">水平器: 端末を立ててください</div>
+      <div class="msgc" id="shMsg"></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="chips" id="shChips">
+      <button class="chip" data-shape="bottle">ボトル</button>
+      <button class="chip" data-shape="jar">ジャー・缶</button>
+      <button class="chip" data-shape="tube">チューブ・袋</button>
+      <button class="chip" data-shape="none">枠のみ</button>
+      <button class="chip on" id="shWhite">背景を白に: 標準</button>
+    </div>
+    <div class="hint" id="shHint">点線の枠に商品を収め、底を下の線に合わせる → シャッター</div>
+    <div class="ctl">
+      <div class="side"><button id="shFlip">切替</button></div>
+      <button class="shutter" id="shShutter" aria-label="撮影"></button>
+      <div class="side"><button id="shNative">端末カメラ</button></div>
+    </div>
+    <div class="pv">
+      <button class="btn ghost" id="shRetake" style="color:#fff;border-color:rgba(255,255,255,.4)">撮り直す</button>
+      <button class="btn solid" id="shUse">この写真を使う</button>
+    </div>
+  </div>
+</div>
 <div class="sheet" id="sheet">
   <div class="box">
     <p class="ttl" id="sheetTtl"></p>
@@ -512,7 +583,7 @@
     $('gridCount').textContent = n + ' / 5 枚';
     $('pImgBadge').className = 'badge ' + (n ? 'ok' : 'warn');
     $('pImgBadge').textContent = n ? '写真 ' + n + '枚 登録済み' : '写真がありません';
-    $('gridNote').textContent = n >= 5 ? '5枚そろいました。写真をタップすると撮り直し・削除ができます' : '枠をタップ → 撮影 か 写真を選ぶ → 自動で次の枠へ';
+    $('gridNote').textContent = n >= 5 ? '5枚そろいました。写真をタップすると撮り直し・削除ができます' : '枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）';
     Array.prototype.forEach.call($('grid').querySelectorAll('.slot'), function (b) {
       b.addEventListener('click', function () { var s = parseInt(b.getAttribute('data-slot'), 10); if (state.busy[s]) return; if (byslot[s]) filledSheet(s, byslot[s]); else emptySheet(s); });
     });
@@ -533,14 +604,14 @@
   $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) closeSheet(); });
   function emptySheet(slot) {
     sheet(slot + '枚目の写真', [
-      { label: '📷 カメラで撮る', cls: 'solid', fn: function () { state.pendingSlot = slot; $('camIn').value = ''; $('camIn').click(); } },
+      { label: '📷 ガイド付きカメラで撮る', cls: 'solid', fn: function () { openShooter(slot); } },
       { label: '🖼 写真・ファイルから選ぶ', fn: function () { state.pendingSlot = slot; $('fileIn').value = ''; $('fileIn').click(); } },
     ]);
   }
   function filledSheet(slot, im) {
     sheet(slot + '枚目の写真', [
       { label: '🔍 大きく見る', fn: function () { $('viewerImg').src = im.url; $('viewer').classList.add('open'); } },
-      { label: '📷 撮り直す（カメラ）', fn: function () { state.pendingSlot = slot; $('camIn').value = ''; $('camIn').click(); } },
+      { label: '📷 撮り直す（ガイド付きカメラ）', fn: function () { openShooter(slot); } },
       { label: '🖼 差し替える（写真・ファイル）', fn: function () { state.pendingSlot = slot; $('fileIn').value = ''; $('fileIn').click(); } },
       { label: '🗑 削除する', cls: 'danger', fn: function () { removeImage(slot); } },
     ]);
@@ -576,7 +647,8 @@
     state.busy[showSlot] = { label: '変換中…', preview: preview };
     renderGrid();
     var jan = state.product.jan;
-    return C.toWebp(file, { max: 1600, quality: 0.85 }).then(function (r) {
+    // 端末カメラ・アルバムの写真も同じ形に: 正方形（白で余白）＋ 背景を白に ＋ 1200px
+    return C.toWebp(file, { size: 1200, square: 'pad', whiten: SH.whiten, quality: 0.85 }).then(function (r) {
       if (state.busy[showSlot]) state.busy[showSlot].label = '送信中…'; renderGrid();
       var fd = new FormData();
       fd.append('jan', jan); fd.append('slot', String(slot));
@@ -586,18 +658,8 @@
       fd.append('width', String(r.width)); fd.append('height', String(r.height));
       return api('images', { method: 'POST', body: fd });
     }).then(function (j) {
-      delete state.busy[showSlot];
       if (preview) URL.revokeObjectURL(preview);
-      if (!j.ok) {
-        if (j.images && state.product && state.product.jan === jan) { state.product.images = j.images; state.product.image_count = j.images.length; }
-        toast(j.message || ('保存できませんでした(' + (j.reason || j.status) + ')'), true); renderGrid(); return;
-      }
-      if (state.product && state.product.jan === jan) { state.product.images = j.images; state.product.image_count = j.images.length; if (j.product_updated_at) state.product.updated_at = j.product_updated_at; }
-      todayCount(1);
-      C.beep(true);
-      renderGrid();
-      recent(state.product);
-      if (j.images.length >= 5) toast('5枚そろいました'); else toast(j.slot + '枚目を保存しました → 次は' + nextEmpty() + '枚目');
+      afterUpload(j, jan, showSlot);
     }).catch(function (e) {
       delete state.busy[showSlot];
       if (preview) URL.revokeObjectURL(preview);
@@ -615,6 +677,152 @@
       state.product.images = j.images; state.product.image_count = j.images.length; if (j.product_updated_at) state.product.updated_at = j.product_updated_at;
       renderGrid(); recent(state.product); toast('削除しました');
     }).catch(function (e) { delete state.busy[slot]; renderGrid(); handleErr(e); });
+  }
+
+  // ── 撮影画面（ガイド付き）──────────────────────────────────
+  //   全員が同じ構図・同じ大きさ・同じ白背景で撮れるように、アプリ内でカメラを開いて枠を重ねる。
+  //   保存は 1200×1200 の正方形（枠の内側をそのまま切り抜く）→ 背景を白に均す → webp
+  var SHOT_GUIDES = {
+    1: { title: '1枚目: 正面', sub: 'ラベルを正面に・キャップは上。点線の枠いっぱいに、底を下の線に合わせる' },
+    2: { title: '2枚目: 裏面', sub: '成分表示・使い方が読めるように。正面と同じ大きさで' },
+    3: { title: '3枚目: 斜め・側面', sub: '少し斜めから。厚み・奥行きが分かるように' },
+    4: { title: '4枚目: キャップ・口元', sub: 'ポンプや開け口の形が分かるように寄る' },
+    5: { title: '5枚目: 大きさ', sub: '手に持って、大きさが伝わるように（背景は白いままで）' },
+  };
+  var SH = { slot: 1, stream: null, facing: 'environment', shape: 'bottle', whiten: 'normal', canvas: null, tilt: null, orientOk: false };
+  var WHITE_LABELS = { off: 'なし', weak: '弱', normal: '標準', strong: '強' }, WHITE_ORDER = ['normal', 'strong', 'weak', 'off'];
+  try { SH.shape = localStorage.getItem('seam_pim_shape') || 'bottle'; SH.whiten = localStorage.getItem('seam_pim_whiten') || 'normal'; } catch (e) { /* */ }
+
+  function guideSvg(shape, slot) {
+    // 100×100 の座標系。外枠＝保存範囲、点線＝商品を収める範囲（縦 78%・横 70%）、底線＝底を揃える位置
+    var s = '<svg viewBox="0 0 100 100" preserveAspectRatio="none">';
+    s += '<defs><mask id="m"><rect width="100" height="100" fill="#fff"/><rect x="0" y="0" width="100" height="100" rx="0" fill="#000"/></mask></defs>';
+    s += '<rect x="0.6" y="0.6" width="98.8" height="98.8" fill="none" stroke="rgba(255,255,255,.95)" stroke-width="0.8"/>';
+    s += '<line x1="50" y1="4" x2="50" y2="96" stroke="rgba(255,255,255,.35)" stroke-width="0.3" stroke-dasharray="1.2 1.2"/>';
+    s += '<line x1="4" y1="50" x2="96" y2="50" stroke="rgba(255,255,255,.2)" stroke-width="0.3" stroke-dasharray="1.2 1.2"/>';
+    var top = 11, bottom = 89, left = 15, right = 85;
+    if (slot === 4) { top = 18; bottom = 82; left = 18; right = 82; }
+    s += '<rect x="' + left + '" y="' + top + '" width="' + (right - left) + '" height="' + (bottom - top) + '" rx="2" fill="none" stroke="rgba(255,205,120,.95)" stroke-width="0.7" stroke-dasharray="2 1.4"/>';
+    s += '<line x1="8" y1="' + bottom + '" x2="92" y2="' + bottom + '" stroke="rgba(255,205,120,.95)" stroke-width="0.9"/>';
+    s += '<text x="50" y="' + (bottom + 4.2) + '" font-size="3.4" fill="rgba(255,205,120,.95)" text-anchor="middle" font-family="sans-serif">底をこの線に合わせる</text>';
+    s += '<text x="50" y="' + (top - 3) + '" font-size="3.2" fill="rgba(255,255,255,.85)" text-anchor="middle" font-family="sans-serif">↑ キャップ・上を上に</text>';
+    var st = 'fill="rgba(255,255,255,.10)" stroke="rgba(255,255,255,.55)" stroke-width="0.5"';
+    if (slot <= 3 && shape === 'bottle') {
+      s += '<path ' + st + ' d="M42 ' + (top + 4) + ' h16 v6 q6 3 6 10 v' + (bottom - top - 26) + ' q0 3 -3 3 h-22 q-3 0 -3 -3 v-' + (bottom - top - 26) + ' q0 -7 6 -10 z"/>';
+    } else if (slot <= 3 && shape === 'jar') {
+      s += '<rect ' + st + ' x="26" y="' + (top + 20) + '" width="48" height="' + (bottom - top - 24) + '" rx="5"/><rect ' + st + ' x="30" y="' + (top + 12) + '" width="40" height="9" rx="2"/>';
+    } else if (slot <= 3 && shape === 'tube') {
+      s += '<path ' + st + ' d="M40 ' + (top + 3) + ' h20 v7 h-3 l4 ' + (bottom - top - 16) + ' h-22 l4 -' + (bottom - top - 16) + ' h-3 z"/>';
+    } else if (slot === 4) {
+      s += '<circle ' + st + ' cx="50" cy="50" r="22"/>';
+    }
+    return s + '</svg>';
+  }
+  function renderGuide() {
+    var g = SHOT_GUIDES[SH.slot] || SHOT_GUIDES[1];
+    $('shTitle').textContent = g.title; $('shSub').textContent = g.sub;
+    $('shGuide').innerHTML = guideSvg(SH.shape, SH.slot);
+    Array.prototype.forEach.call($('shChips').querySelectorAll('[data-shape]'), function (b) { b.classList.toggle('on', b.getAttribute('data-shape') === SH.shape); });
+    $('shWhite').textContent = '背景を白に: ' + WHITE_LABELS[SH.whiten];
+    $('shWhite').classList.toggle('on', SH.whiten !== 'off');
+  }
+  function shMsg(m) { var el = $('shMsg'); el.textContent = m || ''; el.classList.toggle('show', !!m); }
+  function openShooter(slot) {
+    SH.slot = slot; SH.canvas = null;
+    $('shooter').classList.remove('preview'); $('shooter').classList.add('open');
+    renderGuide();
+    startShooterCam();
+    startTilt();
+  }
+  function closeShooter() { stopShooterCam(); stopTilt(); $('shooter').classList.remove('open', 'preview'); }
+  function startShooterCam() {
+    stopShooterCam();
+    shMsg('カメラを起動しています…');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { shMsg('このブラウザではアプリ内カメラが使えません。「端末カメラ」で撮ってください（写真は自動で正方形・白背景に整えます）'); return; }
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: SH.facing }, width: { ideal: 2048 }, height: { ideal: 2048 } }, audio: false })
+      .then(function (st) {
+        SH.stream = st; var v = $('shVideo'); v.srcObject = st;
+        var pp = v.play(); if (pp && pp.catch) pp.catch(function () { /* */ });
+        shMsg('');
+      })
+      .catch(function (err) { shMsg((err && err.name === 'NotAllowedError') ? 'カメラの使用が許可されていません。ブラウザの設定で許可するか「端末カメラ」で撮ってください' : 'カメラを起動できません。「端末カメラ」で撮ってください'); });
+  }
+  function stopShooterCam() { if (SH.stream) { try { SH.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* */ } SH.stream = null; } try { $('shVideo').srcObject = null; } catch (e) { /* */ } }
+  // 水平器（端末を立てて・傾けずに撮るための目安。使えない端末では出さない）
+  function onTilt(e) {
+    if (e.gamma == null || e.beta == null) return;
+    var roll = e.gamma, pitch = e.beta; // 立てて構えると beta≈90、左右の傾きは gamma
+    var ok = Math.abs(roll) < 4 && pitch > 70 && pitch < 110;
+    var el = $('shLvl');
+    el.className = 'lvl ' + (ok ? 'ok' : 'ng');
+    el.textContent = ok ? '水平 OK' : (Math.abs(roll) >= 4 ? (roll > 0 ? '← 左に ' : '→ 右に ') + Math.round(Math.abs(roll)) + '° 傾いています' : (pitch <= 70 ? '端末を立ててください（上を向きすぎ）' : '端末を立ててください（下を向きすぎ）'));
+  }
+  function startTilt() {
+    var el = $('shLvl'); el.className = 'lvl'; el.textContent = '水平器: 端末を立ててください';
+    var D = window.DeviceOrientationEvent;
+    if (!D) { el.style.display = 'none'; return; }
+    el.style.display = '';
+    var go = function () { window.addEventListener('deviceorientation', onTilt); };
+    if (typeof D.requestPermission === 'function') { D.requestPermission().then(function (r) { if (r === 'granted') go(); else el.style.display = 'none'; }).catch(function () { el.style.display = 'none'; }); }
+    else go();
+  }
+  function stopTilt() { window.removeEventListener('deviceorientation', onTilt); }
+  // シャッター: 映っている正方形をそのまま 1200×1200 に切り抜き → 白背景 → プレビュー
+  function shoot() {
+    var v = $('shVideo'); if (!SH.stream || v.readyState < 2 || !v.videoWidth) { toast('カメラの準備中です', true); return; }
+    var side = Math.min(v.videoWidth, v.videoHeight);
+    var canvas = C.processProductImage(v, { size: 1200, square: 'crop', cropX: (v.videoWidth - side) / 2, cropY: (v.videoHeight - side) / 2, cropSize: side, whiten: SH.whiten });
+    SH.canvas = canvas;
+    var pv = $('shPrev'); pv.width = canvas.width; pv.height = canvas.height; pv.getContext('2d').drawImage(canvas, 0, 0);
+    $('shooter').classList.add('preview');
+    C.beep(true);
+  }
+  $('shShutter').addEventListener('click', shoot);
+  $('shRetake').addEventListener('click', function () { SH.canvas = null; $('shooter').classList.remove('preview'); });
+  $('shUse').addEventListener('click', function () {
+    var canvas = SH.canvas; if (!canvas || !state.product) return;
+    var slot = SH.slot;
+    closeShooter();
+    var byslot = {}; (state.product.images || []).forEach(function (im) { byslot[im.slot] = 1; });
+    var target = byslot[slot] ? slot : 'auto', showSlot = byslot[slot] ? slot : guessSlot();
+    uploadCanvas(canvas, target, showSlot);
+  });
+  $('shClose').addEventListener('click', closeShooter);
+  $('shFlip').addEventListener('click', function () { SH.facing = SH.facing === 'environment' ? 'user' : 'environment'; startShooterCam(); });
+  $('shNative').addEventListener('click', function () { var slot = SH.slot; closeShooter(); state.pendingSlot = slot; $('camIn').value = ''; $('camIn').click(); });
+  Array.prototype.forEach.call($('shChips').querySelectorAll('[data-shape]'), function (b) { b.addEventListener('click', function () { SH.shape = b.getAttribute('data-shape'); try { localStorage.setItem('seam_pim_shape', SH.shape); } catch (e) { /* */ } renderGuide(); }); });
+  $('shWhite').addEventListener('click', function () { SH.whiten = WHITE_ORDER[(WHITE_ORDER.indexOf(SH.whiten) + 1) % WHITE_ORDER.length]; try { localStorage.setItem('seam_pim_whiten', SH.whiten); } catch (e) { /* */ } renderGuide(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden && $('shooter').classList.contains('open')) stopShooterCam(); else if (!document.hidden && $('shooter').classList.contains('open') && !$('shooter').classList.contains('preview')) startShooterCam(); });
+
+  // 加工済み canvas をアップロード（撮影画面から）
+  function uploadCanvas(canvas, slot, showSlot) {
+    var jan = state.product.jan;
+    var preview = ''; try { preview = canvas.toDataURL('image/jpeg', 0.6); } catch (e) { /* */ }
+    state.busy[showSlot] = { label: '変換中…', preview: preview };
+    renderGrid();
+    return C.canvasToWebp(canvas, 0.85).then(function (r) {
+      if (state.busy[showSlot]) state.busy[showSlot].label = '送信中…'; renderGrid();
+      var fd = new FormData();
+      fd.append('jan', jan); fd.append('slot', String(slot));
+      fd.append('file', r.blob, jan + '_' + (slot === 'auto' ? showSlot : slot) + '.webp');
+      fd.append('encoder', r.encoder || ''); fd.append('original_name', 'camera.webp'); fd.append('original_type', 'image/webp');
+      fd.append('width', String(r.width)); fd.append('height', String(r.height));
+      return api('images', { method: 'POST', body: fd });
+    }).then(function (j) { afterUpload(j, jan, showSlot); })
+      .catch(function (e) { delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
+  }
+  function afterUpload(j, jan, showSlot) {
+    delete state.busy[showSlot];
+    if (!j.ok) {
+      if (j.images && state.product && state.product.jan === jan) { state.product.images = j.images; state.product.image_count = j.images.length; }
+      toast(j.message || ('保存できませんでした(' + (j.reason || j.status) + ')'), true); renderGrid(); return;
+    }
+    if (state.product && state.product.jan === jan) { state.product.images = j.images; state.product.image_count = j.images.length; if (j.product_updated_at) state.product.updated_at = j.product_updated_at; }
+    todayCount(1);
+    C.beep(true);
+    renderGrid();
+    recent(state.product);
+    if (j.images.length >= 5) toast('5枚そろいました'); else toast(j.slot + '枚目を保存しました → 次は' + nextEmpty() + '枚目');
   }
 
   // 商品情報の編集
