@@ -51,7 +51,7 @@ export async function onRequestPost({ request, env }) {
     if (prob) return json({ ok: false, reason: 'weak', message: prob }, 400);
     const hash = await hashPassword(String(b.password));
     await env.DB.prepare('UPDATE pim_accounts SET pass_hash=?, token_version=token_version+1, pass_changed_at=?, updated_at=? WHERE id=?').bind(hash, ts, ts, id).run();
-    await env.DB.prepare('DELETE FROM pim_login_fail WHERE login_id=?').bind(a.login_id).run();
+    await env.DB.prepare('DELETE FROM pim_login_fail WHERE login_id=? OR login_id LIKE ?').bind(a.login_id, a.login_id + '@%').run();
     return json({ ok: true, message: 'パスワードを再設定しました。全端末で再ログインが必要です' });
   }
   if (action === 'logout_all') {

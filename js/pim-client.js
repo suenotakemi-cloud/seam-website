@@ -33,7 +33,7 @@
     // パスワード変更（成功すると新しいトークンに差し替わる。他の端末は再ログインが必要）
     changePassword: function (current, password) {
       return api('auth/password', { method: 'POST', body: { current: current, password: password } }).then(function (j) {
-        if (j.ok && j.token) Auth.set(j.token, Auth.account(), true);
+        if (j.ok && j.token) { var remembered = false; try { remembered = !!localStorage.getItem(TOKEN_LS); } catch (e) { /* */ } Auth.set(j.token, Auth.account(), remembered); }
         return j;
       });
     },

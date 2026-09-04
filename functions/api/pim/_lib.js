@@ -49,7 +49,7 @@ function b64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
 function unb64(s) { return Uint8Array.from(atob(s), (c) => c.charCodeAt(0)); }
 function b64url(buf) { return b64(buf).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
 function unb64url(s) { return unb64(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice(0, (4 - s.length % 4) % 4)); }
-const PBKDF2_ITER = 100000;
+const PBKDF2_ITER = 30000; // 反復回数はハッシュ文字列に入るので、後で上げても古いものはそのまま検証できる
 async function pbkdf2(password, salt, iter) {
   const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
   return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, key, 256);
@@ -83,12 +83,14 @@ export function normalizeLoginId(s) { return String(s || '').trim().toLowerCase(
 // ── トークン（HMAC-SHA256・署名付き・状態を持たない）──
 //   中身: account_id . token_version . 有効期限(unix秒)。パスワード変更で token_version が進むと全部無効
 const TOKEN_DAYS = 180;
-function secretOf(env) { return String((env && (env.PIM_SECRET || env.ADMIN_KEY)) || ''); }
+function secretOf(env) { return String((env && (env.PIM_SECRET || env.ADMIN_KEY)) || '').trim(); }
+export function secretConfigured(env) { return secretOf(env).length >= 8; }
 async function hmac(secret, data) {
   const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return crypto.subtle.sign('HMAC', key, enc.encode(data));
 }
 export async function signToken(env, accountId, tokenVersion) {
+  if (!secretConfigured(env)) throw new Error('no_secret'); // 鍵なしで署名すると誰でも偽造できるので拒む
   const exp = Math.floor(Date.now() / 1000) + TOKEN_DAYS * 86400;
   const payload = accountId + '.' + tokenVersion + '.' + exp;
   const sig = b64url(await hmac(secretOf(env), payload));
@@ -96,6 +98,7 @@ export async function signToken(env, accountId, tokenVersion) {
 }
 export async function verifyToken(env, token) {
   try {
+    if (!secretConfigured(env)) return null;
     const [p, sig] = String(token || '').split('.');
     if (!p || !sig) return null;
     const payload = new TextDecoder().decode(unb64url(p));
@@ -125,6 +128,10 @@ export async function ensureSchema(env) {
       const stamp = Date.now();
       for (const t of ['pim_products', 'pim_images', 'pim_imports', 'pim_issues']) {
         try { await env.DB.prepare('ALTER TABLE ' + t + ' RENAME TO ' + t + '_v1_' + stamp).run(); } catch (e) { /* 無ければ無いでよい */ }
+      }
+      // 旧表に付いたままの索引名を空ける（同名だと新表の CREATE INDEX IF NOT EXISTS が素通りして索引無しになる）
+      for (const ix of ['idx_pim_products_name', 'idx_pim_products_maker', 'idx_pim_products_imgs', 'idx_pim_products_upd', 'idx_pim_issues_status', 'idx_pim_issues_jan']) {
+        try { await env.DB.prepare('DROP INDEX IF EXISTS ' + ix).run(); } catch (e) { /* */ }
       }
     }
   } catch (e) { /* PRAGMA が使えない環境でも先へ */ }

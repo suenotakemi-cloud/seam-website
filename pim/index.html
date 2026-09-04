@@ -512,15 +512,20 @@
         camMsg(m);
       });
   }
+  // 読み取り部品（vendor/zxing.min.js は defer 読み込みなので、初回はまだ来ていないことがある → 最大6秒待つ）
+  function waitZxing() {
+    if (window.ZXing) return Promise.resolve(true);
+    return new Promise(function (resolve) { var n = 0; var t = setInterval(function () { if (window.ZXing || ++n > 30) { clearInterval(t); resolve(!!window.ZXing); } }, 200); });
+  }
   function pickDetector() {
     if (state.detector) return Promise.resolve('native');
     if ('BarcodeDetector' in window && window.BarcodeDetector.getSupportedFormats) {
       return window.BarcodeDetector.getSupportedFormats().then(function (fs) {
         if (fs.indexOf('ean_13') >= 0) { state.detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'].filter(function (f) { return fs.indexOf(f) >= 0; }) }); return 'native'; }
-        return window.ZXing ? 'zxing' : 'none';
-      }).catch(function () { return window.ZXing ? 'zxing' : 'none'; });
+        return waitZxing().then(function (ok) { return ok ? 'zxing' : 'none'; });
+      }).catch(function () { return waitZxing().then(function (ok) { return ok ? 'zxing' : 'none'; }); });
     }
-    return Promise.resolve(window.ZXing ? 'zxing' : 'none');
+    return waitZxing().then(function (ok) { return ok ? 'zxing' : 'none'; });
   }
   function tickNative() {
     if (!state.scanning || !state.detector) return;
