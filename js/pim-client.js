@@ -27,7 +27,20 @@
     // ID + パスワードでログイン → トークン保存
     login: function (loginId, password, remember) {
       return fetch('/api/pim/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ login_id: loginId, password: password }), cache: 'no-store' })
-        .then(function (r) { return r.json().then(function (j) { j.status = r.status; return j; }); })
+        .then(function (r) {
+          return r.json().catch(function () { return { ok: false, reason: 'not_json' }; }).then(function (j) {
+            j.status = r.status;
+            // 理由が分かるように、サーバの状態ごとに文言を変える（現場で「ログインできません」だけだと原因が追えない）
+            if (!j.ok && !j.message) {
+              if (j.reason === 'no_db') j.message = 'サーバの保存先（D1 の DB binding）が未設定です。Cloudflare の設定を確認してください（db/SETUP_PIM.md ①）';
+              else if (j.reason === 'not_json' && r.status === 404) j.message = 'この URL にはまだ商品登録の仕組みが配信されていません（404）。ブランチが main に取り込まれているか、プレビュー URL を確認してください';
+              else if (j.reason === 'not_json') j.message = 'サーバから想定外の応答です（HTTP ' + r.status + '）。Functions が配信されているか確認してください';
+              else if (r.status === 500) j.message = 'サーバ内部エラー（500）です。Cloudflare の Functions ログを確認してください';
+              else j.message = 'ログインできません（' + (j.reason || ('HTTP ' + r.status)) + '）';
+            }
+            return j;
+          });
+        })
         .then(function (j) { if (j.ok) Auth.set(j.token, j.account, remember); return j; });
     },
     // パスワード変更（成功すると新しいトークンに差し替わる。他の端末は再ログインが必要）
