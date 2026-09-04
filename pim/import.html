@@ -106,6 +106,7 @@
     <button data-tab="products">商品一覧</button>
     <button data-tab="images">画像まとめ登録</button>
     <button data-tab="export">出力</button>
+    <button data-tab="settings">設定</button>
   </div>
 
   <!-- ══════ 取り込み ══════ -->
@@ -231,18 +232,39 @@
       <p class="muted" style="margin-top:10px">画像は URL で載ります（<code>https://seam.site/pim-img/products/JAN/枚目.webp</code>）。EC 側はこの URL をそのまま読み込めます。</p>
     </div>
   </section>
-</main>
 
+  <!-- ══════ 設定 ══════ -->
+  <section class="pane" id="pane-settings">
+    <div class="card">
+      <h2>アカウント</h2>
+      <p id="setAcct" class="muted"></p>
+      <div class="opts"><div><label>担当者名（この端末）</label><input id="setUser"></div></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="btnSetSave">担当者名を保存</button><button class="btn danger" id="btnLogout2">この端末からログアウト</button></div>
+    </div>
+    <div class="card">
+      <h2>パスワードを変更する</h2>
+      <p class="muted">スタッフが辞めたときなどに。変更すると、ほかの端末（スマホ・PC）はすべてログアウトされ、新しいパスワードでの再ログインが必要になります。</p>
+      <div class="opts">
+        <div><label>今のパスワード</label><input type="password" id="pwCur" autocomplete="current-password"></div>
+        <div><label>新しいパスワード（8文字以上）</label><input type="password" id="pwNew" autocomplete="new-password"></div>
+        <div><label>新しいパスワード（確認）</label><input type="password" id="pwNew2" autocomplete="new-password"></div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn solid" id="btnPw">パスワードを変更</button><span class="err" id="setErr"></span></div>
+    </div>
+  </section>
+</main>
 <div class="toast" id="toast"></div>
 <div class="overlay" id="login" hidden>
   <div class="card">
     <h2>ログイン</h2>
-    <p class="muted">診断ダッシュボードと同じ合言葉（ADMIN_KEY）</p>
-    <input type="password" id="keyIn" placeholder="合言葉">
+    <p class="muted">ディーラーの ID とパスワード（スタッフは同じ ID を使います）</p>
+    <input type="text" id="idIn" placeholder="ID" autocomplete="username" autocapitalize="none" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:10px">
+    <input type="password" id="keyIn" placeholder="パスワード" autocomplete="current-password">
     <input type="text" id="userIn" placeholder="担当者名（例: 田中）" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:10px">
     <label class="muted" style="display:block;margin-bottom:10px"><input type="checkbox" id="remember" checked> この端末に記憶する</label>
     <button class="btn solid" id="btnLogin">ログイン</button>
     <p class="err" id="loginErr"></p>
+    <p class="muted" style="margin-top:10px">SEAM 管理者（アカウントの発行・パスワード再設定）は <a href="./admin.html">管理画面</a> へ</p>
   </div>
 </div>
 <div class="overlay" id="setup" hidden>
@@ -269,10 +291,11 @@
   var toastT;
   function toast(m, ng) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (ng ? ' ng' : ''); clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'toast'; }, ng ? 4000 : 2000); }
   function handleErr(e) {
-    if (e && e.auth) { C.Auth.clear(); $('login').hidden = false; $('loginErr').textContent = e.keyConfigured === false ? 'サーバに合言葉(ADMIN_KEY)が未設定です' : ''; return; }
+    if (e && e.auth) { C.Auth.clear(); showLogin(e.message || (e.reason === 'token_expired' ? 'ログインし直してください' : '')); return; }
     if (e && e.setup) { $('setup').hidden = false; return; }
     toast((e && e.message) || '通信に失敗しました', true); console.error(e);
   }
+  function showLogin(msg) { $('login').hidden = false; $('loginErr').textContent = msg || ''; $('userIn').value = C.Auth.user(); var a = C.Auth.account(); if (a) $('idIn').value = a.login_id || ''; }
   function fmtAmt(p) { return p.amount == null ? '' : (Math.round(p.amount * 100) / 100) + (p.unit || ''); }
 
   // ── タブ ──
@@ -287,20 +310,43 @@
 
   // ── ログイン ──
   function boot() {
-    if (!C.Auth.get() || !C.Auth.user()) { $('login').hidden = false; $('userIn').value = C.Auth.user(); return; }
+    if (!C.Auth.get() || !C.Auth.user()) { showLogin(''); return; }
     api('status').then(function (j) {
       $('login').hidden = true;
-      if (j.counts) { $('hsub').textContent = '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※画像の保存先(R2)が未設定'); setIssueN(j.counts.open_issues); }
+      if (j.counts) { $('hsub').textContent = (j.account ? j.account.name + ' ／ ' : '') + '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※画像の保存先(R2)が未設定'); setIssueN(j.counts.open_issues); }
+      if (j.account) $('setAcct').textContent = 'アカウント: ' + j.account.name + '（ID: ' + j.account.login_id + '）' + (j.account.pass_changed_at ? ' ／ パスワード最終変更 ' + j.account.pass_changed_at.slice(0, 10) : '');
+      $('setUser').value = C.Auth.user();
       loadHistory(); loadMakers();
     }).catch(handleErr);
   }
   $('btnLogin').addEventListener('click', function () {
-    var v = $('keyIn').value.trim(); if (!v) return;
+    var id = $('idIn').value.trim(), pw = $('keyIn').value;
+    if (!id || !pw) { $('loginErr').textContent = 'ID とパスワードを入れてください'; return; }
     if (!$('userIn').value.trim()) { $('loginErr').textContent = '担当者名を入れてください'; return; }
-    C.Auth.setUser($('userIn').value); C.Auth.set(v, $('remember').checked); boot();
+    $('btnLogin').disabled = true;
+    C.Auth.login(id, pw, $('remember').checked).then(function (j) {
+      $('btnLogin').disabled = false;
+      if (!j.ok) { $('loginErr').textContent = j.message || 'ログインできません'; return; }
+      C.Auth.setUser($('userIn').value); $('keyIn').value = ''; boot();
+    }).catch(function () { $('btnLogin').disabled = false; $('loginErr').textContent = '通信に失敗しました'; });
   });
   $('keyIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
+  $('userIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
   $('btnLogout').addEventListener('click', function () { C.Auth.clear(); location.reload(); });
+  $('btnLogout2').addEventListener('click', function () { C.Auth.clear(); location.reload(); });
+  $('btnSetSave').addEventListener('click', function () { var u = $('setUser').value.trim(); if (!u) { toast('担当者名を入れてください', true); return; } C.Auth.setUser(u); toast('保存しました'); });
+  $('btnPw').addEventListener('click', function () {
+    var cur = $('pwCur').value, nw = $('pwNew').value, nw2 = $('pwNew2').value;
+    if (!cur || !nw) { $('setErr').textContent = '今のパスワードと新しいパスワードを入れてください'; return; }
+    if (nw !== nw2) { $('setErr').textContent = '新しいパスワードが一致しません'; return; }
+    if (!confirm('パスワードを変更すると、ほかの端末は全部ログアウトされます。よろしいですか？')) return;
+    $('btnPw').disabled = true;
+    C.Auth.changePassword(cur, nw).then(function (j) {
+      $('btnPw').disabled = false;
+      if (!j.ok) { $('setErr').textContent = j.message || '変更できませんでした'; return; }
+      $('setErr').textContent = ''; $('pwCur').value = $('pwNew').value = $('pwNew2').value = ''; toast(j.message || 'パスワードを変えました'); boot();
+    }).catch(function (e) { $('btnPw').disabled = false; handleErr(e); });
+  });
   function setIssueN(n) { var el = $('issueN'); el.textContent = n; el.hidden = !n; }
   function loadMakers() {
     api('products?limit=1').then(function (j) {
@@ -728,7 +774,7 @@
   }
   function download(format) {
     toast('作成中…');
-    fetch(exportUrl(format), { headers: { 'x-seam-key': C.Auth.get() }, cache: 'no-store' }).then(function (r) {
+    fetch(exportUrl(format), { headers: { 'x-seam-token': C.Auth.get() }, cache: 'no-store' }).then(function (r) {
       if (r.status === 401) throw { auth: true };
       if (!r.ok) throw new Error('出力に失敗しました(' + r.status + ')');
       var cd = r.headers.get('content-disposition') || '', m = cd.match(/filename="([^"]+)"/);

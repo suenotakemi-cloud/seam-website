@@ -71,6 +71,16 @@
   @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(168,116,86,.0)}50%{box-shadow:0 0 0 6px rgba(168,116,86,.18)}}
   .slot .busy{position:absolute;inset:0;background:rgba(255,255,255,.7);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink)}
   .slot .main{position:absolute;right:6px;bottom:6px;font-size:10px;background:var(--brown);color:#fff;border-radius:999px;padding:1px 7px}
+  /* 登録済み写真の確認（大きく見る） */
+  .review{margin-top:12px}
+  .review .big{position:relative;aspect-ratio:1/1;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#fff}
+  .review .big img{width:100%;height:100%;object-fit:contain;display:block}
+  .review .big .lab{position:absolute;left:10px;top:8px;font-size:11px;background:rgba(43,41,38,.8);color:#fff;border-radius:999px;padding:2px 9px}
+  .review .thumbs{display:flex;gap:6px;margin-top:8px;overflow-x:auto}
+  .review .thumbs button{flex:0 0 56px;height:56px;border-radius:8px;border:2px solid var(--line);padding:0;overflow:hidden;background:#fff}
+  .review .thumbs button.on{border-color:var(--brown)}
+  .review .thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+  .review .cap{font-size:12px;color:var(--char);margin-top:6px;text-align:center}
   .grid-note{font-size:12px;color:var(--char);margin-top:10px;text-align:center}
   .edit{display:none;margin-top:12px}
   .edit.open{display:block}
@@ -153,12 +163,12 @@
 <div class="app">
   <header>
     <div>
-      <h1>SEAM 商品登録</h1>
+      <h1>SEAM 商品登録 <span id="hAcct" style="font-weight:400;font-size:12px;color:var(--char)"></span></h1>
       <div class="sub" id="hsub">JANを読んで写真を5枚まで</div>
     </div>
     <div style="display:flex;gap:6px">
       <a class="hbtn" href="./import.html" style="text-decoration:none">PC取込</a>
-      <button class="hbtn" id="btnLogout">ログアウト</button>
+      <button class="hbtn" id="btnSettings">設定</button>
     </div>
   </header>
 
@@ -229,6 +239,11 @@
         <div style="display:flex;justify-content:space-between;align-items:center">
           <strong style="font-size:14px">写真（最大5枚）</strong>
           <span class="small" id="gridCount"></span>
+        </div>
+        <div class="review" id="review" hidden>
+          <div class="big" id="reviewBig"></div>
+          <div class="thumbs" id="reviewThumbs"></div>
+          <div class="cap" id="reviewCap"></div>
         </div>
         <div class="grid" id="grid"></div>
         <p class="grid-note" id="gridNote">枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）</p>
@@ -319,13 +334,31 @@
 <div class="overlay" id="login" hidden>
   <div class="card">
     <h2>商品登録 ログイン</h2>
-    <p>診断ダッシュボードと同じ合言葉（ADMIN_KEY）を入れてください。</p>
-    <input type="password" id="keyIn" placeholder="合言葉" autocomplete="current-password">
+    <p>ディーラーの ID とパスワードでログインします（スタッフは同じ ID を使います）。</p>
+    <input type="text" id="idIn" placeholder="ID" autocomplete="username" autocapitalize="none" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:16px;margin-bottom:10px">
+    <input type="password" id="keyIn" placeholder="パスワード" autocomplete="current-password">
     <input type="text" id="userIn" placeholder="担当者名（例: 田中）" autocomplete="off" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:16px;margin-bottom:10px">
-    <p>複数人で同時に登録するので、誰が入れたかを残します。</p>
+    <p>複数人で同時に登録するので、誰が入れたかを担当者名で残します。</p>
     <label class="chk"><input type="checkbox" id="remember" checked> この端末に記憶する</label>
     <button class="btn solid" id="btnLogin">ログイン</button>
     <p class="err" id="loginErr"></p>
+  </div>
+</div>
+<!-- 設定（パスワード変更・ログアウト） -->
+<div class="overlay" id="settings" hidden>
+  <div class="card">
+    <h2>設定</h2>
+    <p id="setAcct"></p>
+    <div class="field"><label>担当者名（この端末）</label><input id="setUser"></div>
+    <details style="margin-bottom:12px"><summary style="font-size:13px;cursor:pointer">パスワードを変更する（スタッフが辞めたときなど）</summary>
+      <p style="margin-top:8px">変更すると、ほかの端末はすべてログアウトされ、新しいパスワードでの再ログインが必要になります。</p>
+      <div class="field"><label>今のパスワード</label><input type="password" id="pwCur" autocomplete="current-password"></div>
+      <div class="field"><label>新しいパスワード（8文字以上）</label><input type="password" id="pwNew" autocomplete="new-password"></div>
+      <div class="field"><label>新しいパスワード（確認）</label><input type="password" id="pwNew2" autocomplete="new-password"></div>
+      <button class="btn" id="btnPw">パスワードを変更</button>
+    </details>
+    <p class="err" id="setErr"></p>
+    <div class="row"><button class="btn solid" id="btnSetSave">保存して閉じる</button><button class="btn danger" id="btnLogout2">ログアウト</button></div>
   </div>
 </div>
 <div class="overlay" id="setup" hidden>
@@ -382,13 +415,14 @@
   function loadStatus() {
     return api('status').then(function (j) {
       if (j.counts) { $('stTotal').textContent = j.counts.products; $('stNoImg').textContent = j.counts.products - j.counts.with_images; }
+      if (j.account) $('hAcct').textContent = j.account.name;
       if (j.r2 === false) $('hsub').textContent = '※ 画像の保存先(R2)が未設定です';
       return j;
     });
   }
 
   // ── ログイン ──
-  function needLogin(msg) { $('login').hidden = false; $('loginErr').textContent = msg || ''; $('userIn').value = C.Auth.user(); stopScan(); setTimeout(function () { $('keyIn').focus(); }, 50); }
+  function needLogin(msg) { $('login').hidden = false; $('loginErr').textContent = msg || ''; $('userIn').value = C.Auth.user(); var a = C.Auth.account(); if (a) $('idIn').value = a.login_id || ''; stopScan(); setTimeout(function () { ($('idIn').value ? $('keyIn') : $('idIn')).focus(); }, 50); }
   function boot() {
     if (!C.Auth.get() || !C.Auth.user()) { needLogin(''); return; }
     loadStatus().then(function () {
@@ -399,20 +433,51 @@
     }).catch(handleErr);
   }
   function handleErr(e) {
-    if (e && e.auth) { C.Auth.clear(); needLogin(e.keyConfigured === false ? 'サーバに合言葉(ADMIN_KEY)が未設定です' : (C.Auth.get() ? '' : '合言葉が違います')); return; }
+    if (e && e.auth) { C.Auth.clear(); needLogin(e.message || (e.reason === 'token_expired' ? 'ログインし直してください' : '')); return; }
     if (e && e.setup) { $('setup').hidden = false; stopScan(); return; }
     toast((e && e.message) || '通信に失敗しました', true);
     console.error(e);
   }
   $('btnLogin').addEventListener('click', function () {
-    var v = $('keyIn').value.trim(); if (!v) return;
+    var id = $('idIn').value.trim(), pw = $('keyIn').value;
+    if (!id || !pw) { $('loginErr').textContent = 'ID とパスワードを入れてください'; return; }
     if (!$('userIn').value.trim()) { $('loginErr').textContent = '担当者名を入れてください'; $('userIn').focus(); return; }
-    C.Auth.setUser($('userIn').value);
-    C.Auth.set(v, $('remember').checked);
-    loadStatus().then(function () { $('login').hidden = true; todayCount(0); recent(null); show('scr-scan'); }).catch(function (e) { if (e && e.auth) { C.Auth.clear(); $('loginErr').textContent = e.keyConfigured === false ? 'サーバに合言葉(ADMIN_KEY)が未設定です' : '合言葉が違います'; } else handleErr(e); });
+    $('loginErr').textContent = ''; $('btnLogin').disabled = true;
+    C.Auth.login(id, pw, $('remember').checked).then(function (j) {
+      $('btnLogin').disabled = false;
+      if (!j.ok) { $('loginErr').textContent = j.message || 'ログインできません'; return; }
+      C.Auth.setUser($('userIn').value);
+      $('keyIn').value = '';
+      loadStatus().then(function () { $('login').hidden = true; todayCount(0); recent(null); show('scr-scan'); }).catch(handleErr);
+    }).catch(function () { $('btnLogin').disabled = false; $('loginErr').textContent = '通信に失敗しました'; });
   });
   $('keyIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
-  $('btnLogout').addEventListener('click', function () { C.Auth.clear(); location.reload(); });
+  $('userIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
+  // 設定
+  $('btnSettings').addEventListener('click', function () {
+    var a = C.Auth.account();
+    $('setAcct').textContent = a ? 'アカウント: ' + a.name + '（ID: ' + a.login_id + '）' : '';
+    $('setUser').value = C.Auth.user(); $('setErr').textContent = ''; $('pwCur').value = $('pwNew').value = $('pwNew2').value = '';
+    $('settings').hidden = false; stopScan();
+  });
+  $('btnSetSave').addEventListener('click', function () {
+    var u = $('setUser').value.trim(); if (!u) { $('setErr').textContent = '担当者名を入れてください'; return; }
+    C.Auth.setUser(u); $('settings').hidden = true; if ($('scr-scan').classList.contains('active')) startScan();
+  });
+  $('btnLogout2').addEventListener('click', function () { if (confirm('ログアウトしますか？')) { C.Auth.clear(); location.reload(); } });
+  $('btnPw').addEventListener('click', function () {
+    var cur = $('pwCur').value, nw = $('pwNew').value, nw2 = $('pwNew2').value;
+    if (!cur || !nw) { $('setErr').textContent = '今のパスワードと新しいパスワードを入れてください'; return; }
+    if (nw !== nw2) { $('setErr').textContent = '新しいパスワードが一致しません'; return; }
+    if (!confirm('パスワードを変更すると、ほかの端末は全部ログアウトされます。よろしいですか？')) return;
+    $('btnPw').disabled = true;
+    C.Auth.changePassword(cur, nw).then(function (j) {
+      $('btnPw').disabled = false;
+      if (!j.ok) { $('setErr').textContent = j.message || '変更できませんでした'; return; }
+      $('setErr').textContent = ''; $('pwCur').value = $('pwNew').value = $('pwNew2').value = '';
+      toast(j.message || 'パスワードを変えました');
+    }).catch(function (e) { $('btnPw').disabled = false; handleErr(e); });
+  });
   $('btnSetupRetry').addEventListener('click', function () { location.reload(); });
 
   // ── スキャン ──
@@ -580,6 +645,7 @@
     }
     $('grid').innerHTML = html;
     var n = imgs.length;
+    renderReview(imgs);
     $('gridCount').textContent = n + ' / 5 枚';
     $('pImgBadge').className = 'badge ' + (n ? 'ok' : 'warn');
     $('pImgBadge').textContent = n ? '写真 ' + n + '枚 登録済み' : '写真がありません';
@@ -587,6 +653,21 @@
     Array.prototype.forEach.call($('grid').querySelectorAll('.slot'), function (b) {
       b.addEventListener('click', function () { var s = parseInt(b.getAttribute('data-slot'), 10); if (state.busy[s]) return; if (byslot[s]) filledSheet(s, byslot[s]); else emptySheet(s); });
     });
+  }
+  // 登録済み写真の確認（大きく表示・サムネで切替・タップで全画面）
+  var reviewIdx = 0;
+  function renderReview(imgs) {
+    var box = $('review');
+    if (!imgs.length) { box.hidden = true; return; }
+    box.hidden = false;
+    if (reviewIdx >= imgs.length) reviewIdx = 0;
+    var cur = imgs[reviewIdx];
+    var labels = { 1: '1枚目（メイン）: 正面', 2: '2枚目: 裏面', 3: '3枚目: 斜め・側面', 4: '4枚目: 口元', 5: '5枚目: 大きさ' };
+    $('reviewBig').innerHTML = '<img src="' + esc(cur.url) + '" alt=""><span class="lab">' + esc(labels[cur.slot] || cur.slot + '枚目') + '</span>';
+    $('reviewThumbs').innerHTML = imgs.map(function (im, i) { return '<button type="button" data-i="' + i + '" class="' + (i === reviewIdx ? 'on' : '') + '"><img src="' + esc(im.url) + '" alt=""></button>'; }).join('');
+    $('reviewCap').textContent = '登録済み ' + imgs.length + ' / 5 枚' + (cur.created_by ? ' ・ この写真: ' + cur.created_by + ' さん' : '') + (cur.width ? ' ・ ' + cur.width + '×' + cur.height : '') + ' ・ タップで拡大';
+    Array.prototype.forEach.call($('reviewThumbs').querySelectorAll('button'), function (b) { b.addEventListener('click', function () { reviewIdx = parseInt(b.getAttribute('data-i'), 10); renderReview(imgs); }); });
+    $('reviewBig').onclick = function () { $('viewerImg').src = cur.url; $('viewer').classList.add('open'); };
   }
   // アクションシート
   function sheet(title, buttons) {

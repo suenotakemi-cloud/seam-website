@@ -1,4 +1,4 @@
-// 統一フォーマットの出力
+// 統一フォーマットの出力（ログイン中のアカウントの分だけ。EC 連携は ADMIN_KEY + x-seam-account でも可）
 //   GET /api/pim/export?format=csv|json&maker=&only_images=1&noimg=1
 //   列は js/pim-normalize.js の OUT_COLUMNS と同じ（ここでも同じ順で出す。変えるときは両方）
 import { json, imageUrl, loadImages } from './_lib.js';
@@ -15,18 +15,19 @@ const COLS = [
 function cell(v) { if (v == null) return ''; const s = String(v); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
 function fmtAmount(a, u) { if (a == null || a === '') return ''; return String(Math.round(Number(a) * 100) / 100) + (u || ''); }
 
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, data }) {
+  const acct = data.account.id;
   const url = new URL(request.url);
   const origin = url.origin;
   const format = url.searchParams.get('format') === 'json' ? 'json' : 'csv';
   const maker = (url.searchParams.get('maker') || '').trim();
   const onlyImages = url.searchParams.get('only_images') === '1';
   const noimg = url.searchParams.get('noimg') === '1';
-  const where = [], binds = [];
+  const where = ['account_id=?'], binds = [acct];
   if (maker) { where.push('maker=?'); binds.push(maker); }
   if (onlyImages) where.push('image_count>0');
   if (noimg) where.push('image_count=0');
-  const W = where.length ? ' WHERE ' + where.join(' AND ') : '';
+  const W = ' WHERE ' + where.join(' AND ');
 
   const rows = [];
   for (let off = 0; ; off += 1000) {
@@ -35,16 +36,18 @@ export async function onRequestGet({ request, env }) {
     rows.push(...r);
     if (r.length < 1000) break;
   }
-  const imgs = await loadImages(env, rows.filter((r) => r.image_count > 0).map((r) => r.jan));
+  const imgs = await loadImages(env, acct, rows.filter((r) => r.image_count > 0).map((r) => r.jan));
   const out = rows.map((r) => {
-    const list = (imgs[r.jan] || []).slice().sort((a, b) => a.slot - b.slot).map((im) => imageUrl(origin, r.jan, im.slot, im.created_at));
+    const list = (imgs[r.jan] || []).slice().sort((a, b) => a.slot - b.slot).map((im) => imageUrl(origin, acct, r.jan, im.slot, im.created_at));
     const o = Object.assign({}, r, { image_urls: list });
+    delete o.account_id;
     return o;
   });
   const stamp = new Date().toISOString().slice(0, 10);
+  const fname = 'seam-products-' + data.account.login_id + '-' + stamp;
   if (format === 'json') {
-    return json({ ok: true, count: out.length, exported_at: new Date().toISOString(), products: out }, 200, {
-      'content-disposition': 'attachment; filename="seam-products-' + stamp + '.json"',
+    return json({ ok: true, count: out.length, account: data.account.login_id, exported_at: new Date().toISOString(), products: out }, 200, {
+      'content-disposition': 'attachment; filename="' + fname + '.json"',
     });
   }
   const lines = [COLS.map((c) => cell(c[1])).join(',')];
@@ -57,7 +60,7 @@ export async function onRequestGet({ request, env }) {
     headers: {
       'content-type': 'text/csv; charset=utf-8',
       'cache-control': 'no-store',
-      'content-disposition': 'attachment; filename="seam-products-' + stamp + '.csv"',
+      'content-disposition': 'attachment; filename="' + fname + '.csv"',
     },
   });
 }

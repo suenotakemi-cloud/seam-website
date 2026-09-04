@@ -1,6 +1,11 @@
 // SEAM 商品マスタ統一（PIM）— API 共通部品
-//   認証: env.ADMIN_KEY と x-seam-key ヘッダ（診断ダッシュボードと同じ合言葉）
-//   保存: D1 binding "DB"（商品・画像台帳・注意）/ R2 binding "PRODUCT_IMAGES"（画像の実体・必ず webp）
+//   認証:
+//     ・ディーラー: ID + パスワードでログイン → トークン（x-seam-token）。1ディーラー1アカウント、スタッフは同じIDを共用
+//       パスワードを変えると token_version が進み、それまでのトークンは全端末で無効になる（退職者対策）
+//     ・SEAM 管理: env.ADMIN_KEY（x-seam-key）。アカウントの発行・パスワード再設定・停止。
+//       x-seam-account: <login_id> を付けると、そのディーラーとして商品 API を使える（EC 連携・代行作業）
+//   保存: D1 binding "DB"（商品・画像台帳・注意・アカウント）/ R2 binding "PRODUCT_IMAGES"（画像の実体・必ず webp）
+//   データはすべて account_id で分かれる（他のディーラーの商品は見えない・触れない）
 
 export function json(obj, status, extra) {
   return new Response(JSON.stringify(obj), {
@@ -11,8 +16,8 @@ export function json(obj, status, extra) {
 
 export function hasDb(env) { return !!(env && env.DB && typeof env.DB.prepare === 'function'); }
 export function hasR2(env) { return !!(env && env.PRODUCT_IMAGES && typeof env.PRODUCT_IMAGES.put === 'function'); }
-
 export function nowIso() { return new Date().toISOString(); }
+
 // 担当者名（x-seam-user ヘッダ・URLエンコード済み）。複数人で同時に登録するとき「誰が入れたか」を残す
 export function userOf(request) {
   try { return decodeURIComponent(request.headers.get('x-seam-user') || '').replace(/\s+/g, ' ').trim().slice(0, 40); } catch (e) { return ''; }
@@ -32,45 +37,131 @@ export function checkDigitOk(d) {
   return ((10 - (sum % 10)) % 10) === (d.charCodeAt(L - 1) - 48);
 }
 
+// ── 画像の置き場所（アカウントごとに分ける）──
 export const SLOT_MIN = 1, SLOT_MAX = 5;
-export function imageKey(jan, slot) { return 'products/' + jan + '/' + slot + '.webp'; }
-export function imageUrl(origin, jan, slot, ver) { return origin + '/pim-img/' + imageKey(jan, slot) + (ver ? '?v=' + encodeURIComponent(ver) : ''); }
+export function imageKey(acct, jan, slot) { return 'products/' + acct + '/' + jan + '/' + slot + '.webp'; }
+export function imageUrl(origin, acct, jan, slot, ver) { return origin + '/pim-img/' + imageKey(acct, jan, slot) + (ver ? '?v=' + encodeURIComponent(ver) : ''); }
+export const R2_META = { httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' } };
+
+// ── パスワード（PBKDF2-SHA256・Web Crypto）──
+const enc = new TextEncoder();
+function b64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function unb64(s) { return Uint8Array.from(atob(s), (c) => c.charCodeAt(0)); }
+function b64url(buf) { return b64(buf).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function unb64url(s) { return unb64(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice(0, (4 - s.length % 4) % 4)); }
+const PBKDF2_ITER = 100000;
+async function pbkdf2(password, salt, iter) {
+  const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  return crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iter }, key, 256);
+}
+export async function hashPassword(password) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const bits = await pbkdf2(password, salt, PBKDF2_ITER);
+  return 'pbkdf2$' + PBKDF2_ITER + '$' + b64(salt) + '$' + b64(bits);
+}
+export async function verifyPassword(password, stored) {
+  try {
+    const [alg, iter, salt, hash] = String(stored || '').split('$');
+    if (alg !== 'pbkdf2') return false;
+    const bits = new Uint8Array(await pbkdf2(password, unb64(salt), parseInt(iter, 10)));
+    const want = unb64(hash);
+    if (bits.length !== want.length) return false;
+    let diff = 0; for (let i = 0; i < bits.length; i++) diff |= bits[i] ^ want[i];
+    return diff === 0;
+  } catch (e) { return false; }
+}
+// パスワードの最低条件（8文字以上・空白のみ不可）
+export function passwordProblem(pw) {
+  const s = String(pw || '');
+  if (s.length < 8) return 'パスワードは8文字以上にしてください';
+  if (s.length > 128) return 'パスワードが長すぎます';
+  if (!/\S/.test(s)) return 'パスワードに空白以外の文字を入れてください';
+  return '';
+}
+export function normalizeLoginId(s) { return String(s || '').trim().toLowerCase().replace(/[^a-z0-9._@-]/g, '').slice(0, 64); }
+
+// ── トークン（HMAC-SHA256・署名付き・状態を持たない）──
+//   中身: account_id . token_version . 有効期限(unix秒)。パスワード変更で token_version が進むと全部無効
+const TOKEN_DAYS = 180;
+function secretOf(env) { return String((env && (env.PIM_SECRET || env.ADMIN_KEY)) || ''); }
+async function hmac(secret, data) {
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return crypto.subtle.sign('HMAC', key, enc.encode(data));
+}
+export async function signToken(env, accountId, tokenVersion) {
+  const exp = Math.floor(Date.now() / 1000) + TOKEN_DAYS * 86400;
+  const payload = accountId + '.' + tokenVersion + '.' + exp;
+  const sig = b64url(await hmac(secretOf(env), payload));
+  return b64url(enc.encode(payload)) + '.' + sig;
+}
+export async function verifyToken(env, token) {
+  try {
+    const [p, sig] = String(token || '').split('.');
+    if (!p || !sig) return null;
+    const payload = new TextDecoder().decode(unb64url(p));
+    const want = b64url(await hmac(secretOf(env), payload));
+    if (want.length !== sig.length) return null;
+    let diff = 0; for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ sig.charCodeAt(i);
+    if (diff !== 0) return null;
+    const [id, ver, exp] = payload.split('.').map((x) => parseInt(x, 10));
+    if (!id || !ver || !exp || exp < Math.floor(Date.now() / 1000)) return null;
+    return { id, ver, exp };
+  } catch (e) { return null; }
+}
+export function publicAccount(a) {
+  if (!a) return null;
+  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at };
+}
 
 // ── スキーマ（db/pim-schema.sql と同じ内容。未投入でも動くよう初回に作る）──
 let schemaReady = false;
 export async function ensureSchema(env) {
   if (schemaReady || !hasDb(env)) return;
+  // 旧版（account_id の無い表）が残っていたら退避する（本番投入前の試作データ。消さず名前だけ変える）
+  try {
+    const cols = await env.DB.prepare('PRAGMA table_info(pim_products)').all();
+    const names = (cols.results || []).map((c) => c.name);
+    if (names.length && names.indexOf('account_id') < 0) {
+      const stamp = Date.now();
+      for (const t of ['pim_products', 'pim_images', 'pim_imports', 'pim_issues']) {
+        try { await env.DB.prepare('ALTER TABLE ' + t + ' RENAME TO ' + t + '_v1_' + stamp).run(); } catch (e) { /* 無ければ無いでよい */ }
+      }
+    }
+  } catch (e) { /* PRAGMA が使えない環境でも先へ */ }
   const stmts = [
+    `CREATE TABLE IF NOT EXISTS pim_accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, login_id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, pass_hash TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'dealer', active INTEGER NOT NULL DEFAULT 1, token_version INTEGER NOT NULL DEFAULT 1,
+      note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, pass_changed_at TEXT, last_login_at TEXT)`,
+    `CREATE TABLE IF NOT EXISTS pim_login_fail (login_id TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, last_at TEXT)`,
     `CREATE TABLE IF NOT EXISTS pim_products (
-      jan TEXT PRIMARY KEY, jan_valid INTEGER NOT NULL DEFAULT 1, name TEXT NOT NULL,
+      account_id INTEGER NOT NULL, jan TEXT NOT NULL, jan_valid INTEGER NOT NULL DEFAULT 1, name TEXT NOT NULL,
       price INTEGER, tax_included INTEGER NOT NULL DEFAULT 0, tax_rate INTEGER NOT NULL DEFAULT 10,
       price_ex INTEGER, price_in INTEGER, retail_price INTEGER, cost_price INTEGER,
       amount REAL, unit TEXT, maker TEXT, brand TEXT, category TEXT, description TEXT, sku TEXT,
       source TEXT, import_id INTEGER, image_count INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT)`,
-    `CREATE INDEX IF NOT EXISTS idx_pim_products_name ON pim_products(name)`,
-    `CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(maker)`,
-    `CREATE INDEX IF NOT EXISTS idx_pim_products_imgs ON pim_products(image_count)`,
-    `CREATE INDEX IF NOT EXISTS idx_pim_products_upd ON pim_products(updated_at)`,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT,
+      PRIMARY KEY (account_id, jan))`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_products_name ON pim_products(account_id, name)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(account_id, maker)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_products_imgs ON pim_products(account_id, image_count)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_products_upd ON pim_products(account_id, updated_at)`,
     `CREATE TABLE IF NOT EXISTS pim_images (
-      jan TEXT NOT NULL, slot INTEGER NOT NULL, key TEXT NOT NULL, bytes INTEGER, width INTEGER, height INTEGER,
-      original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT, PRIMARY KEY (jan, slot))`,
+      account_id INTEGER NOT NULL, jan TEXT NOT NULL, slot INTEGER NOT NULL, key TEXT NOT NULL, bytes INTEGER, width INTEGER, height INTEGER,
+      original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT, PRIMARY KEY (account_id, jan, slot))`,
     `CREATE TABLE IF NOT EXISTS pim_imports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT,
       total INTEGER NOT NULL DEFAULT 0, inserted INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0,
       skipped INTEGER NOT NULL DEFAULT 0, invalid INTEGER NOT NULL DEFAULT 0)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_imports_acct ON pim_imports(account_id, id)`,
     `CREATE TABLE IF NOT EXISTS pim_issues (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, import_id INTEGER, kind TEXT NOT NULL, jan TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, import_id INTEGER, kind TEXT NOT NULL, jan TEXT,
       message TEXT NOT NULL, existing TEXT, incoming TEXT, status TEXT NOT NULL DEFAULT 'open',
       resolution TEXT, resolved_at TEXT, resolved_by TEXT)`,
-    `CREATE INDEX IF NOT EXISTS idx_pim_issues_status ON pim_issues(status, ts)`,
-    `CREATE INDEX IF NOT EXISTS idx_pim_issues_jan ON pim_issues(jan)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_issues_status ON pim_issues(account_id, status, ts)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_issues_jan ON pim_issues(account_id, jan)`,
   ];
   await env.DB.batch(stmts.map((s) => env.DB.prepare(s)));
-  // 旧スキーマで作られた表への列追加（あればエラーになるだけで無害）
-  for (const a of ['ALTER TABLE pim_products ADD COLUMN updated_by TEXT', 'ALTER TABLE pim_images ADD COLUMN created_by TEXT', 'ALTER TABLE pim_issues ADD COLUMN resolved_by TEXT']) {
-    try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
-  }
   schemaReady = true;
 }
 
@@ -104,31 +195,31 @@ export const PRODUCT_COLS = ['jan', 'jan_valid', 'name', 'price', 'tax_included'
 // UPSERT 文（import_id と created_at は挿入時のみ・updated_at/updated_by は毎回）
 //   mode 'upsert'      … あれば上書き（本人が「上書き」と決めたとき）
 //   mode 'insert_only' … 無いときだけ入れる（新規のつもりのもの。他の人が先に入れていたら何もしない → meta.changes が 0）
-export function upsertStmt(env, p, importId, ts, by, mode) {
-  const cols = PRODUCT_COLS.concat(['import_id', 'created_at', 'updated_at', 'updated_by']);
-  const vals = PRODUCT_COLS.map((c) => p[c] == null ? null : p[c]).concat([importId == null ? null : importId, ts, ts, by || null]);
+export function upsertStmt(env, acct, p, importId, ts, by, mode) {
+  const cols = ['account_id'].concat(PRODUCT_COLS, ['import_id', 'created_at', 'updated_at', 'updated_by']);
+  const vals = [acct].concat(PRODUCT_COLS.map((c) => p[c] == null ? null : p[c]), [importId == null ? null : importId, ts, ts, by || null]);
   const sets = PRODUCT_COLS.filter((c) => c !== 'jan').map((c) => c + '=excluded.' + c).concat(['updated_at=excluded.updated_at', 'updated_by=excluded.updated_by']).join(', ');
   return env.DB.prepare(
     'INSERT INTO pim_products(' + cols.join(',') + ') VALUES(' + cols.map(() => '?').join(',') + ') ' +
-    (mode === 'insert_only' ? 'ON CONFLICT(jan) DO NOTHING' : 'ON CONFLICT(jan) DO UPDATE SET ' + sets)
+    (mode === 'insert_only' ? 'ON CONFLICT(account_id, jan) DO NOTHING' : 'ON CONFLICT(account_id, jan) DO UPDATE SET ' + sets)
   ).bind(...vals);
 }
 
 // 商品行に画像URLを付ける
-export function withImages(origin, rows, imagesByJan) {
+export function withImages(origin, acct, rows, imagesByJan) {
   return rows.map((r) => {
     const imgs = (imagesByJan[r.jan] || []).slice().sort((a, b) => a.slot - b.slot);
     return Object.assign({}, r, {
-      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, r.jan, im.slot, im.created_at), width: im.width, height: im.height, bytes: im.bytes })),
-      image_urls: imgs.map((im) => imageUrl(origin, r.jan, im.slot, im.created_at)),
+      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, acct, r.jan, im.slot, im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at })),
+      image_urls: imgs.map((im) => imageUrl(origin, acct, r.jan, im.slot, im.created_at)),
     });
   });
 }
-export async function loadImages(env, jans) {
+export async function loadImages(env, acct, jans) {
   const out = {};
   for (let i = 0; i < jans.length; i += 90) {
     const chunk = jans.slice(i, i + 90);
-    const rs = await env.DB.prepare('SELECT jan, slot, width, height, bytes, created_at FROM pim_images WHERE jan IN (' + chunk.map(() => '?').join(',') + ')').bind(...chunk).all();
+    const rs = await env.DB.prepare('SELECT jan, slot, width, height, bytes, created_at, created_by FROM pim_images WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
     for (const im of (rs.results || [])) (out[im.jan] = out[im.jan] || []).push(im);
   }
   return out;

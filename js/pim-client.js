@@ -6,23 +6,46 @@
  */
 (function (root) {
   'use strict';
-  var KEY_LS = 'seam_pim_key', USER_LS = 'seam_pim_user';
+  var TOKEN_LS = 'seam_pim_token', ACCT_LS = 'seam_pim_account', USER_LS = 'seam_pim_user', ADMIN_LS = 'seam_pim_admin_key';
+  function lsGet(k) { try { return localStorage.getItem(k) || sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }
+  function lsSet(k, v, remember) { try { if (remember === false) sessionStorage.setItem(k, v); else localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
+  function lsDel(k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) { /* */ } }
 
+  // ── ログイン状態 ──
+  //   ディーラー: ID + パスワード → トークン（端末に記憶）。スタッフは同じ ID を共用し、端末ごとに担当者名を名乗る
+  //   SEAM 管理: ADMIN_KEY（pim/admin.html だけ）
   var Auth = {
-    get: function () { try { return localStorage.getItem(KEY_LS) || sessionStorage.getItem(KEY_LS) || ''; } catch (e) { return ''; } },
-    set: function (k, remember) {
-      try { if (remember) localStorage.setItem(KEY_LS, k); else sessionStorage.setItem(KEY_LS, k); } catch (e) { /* private mode */ }
+    get: function () { return lsGet(TOKEN_LS); },                       // トークン
+    account: function () { try { return JSON.parse(lsGet(ACCT_LS) || 'null'); } catch (e) { return null; } },
+    set: function (token, account, remember) { lsSet(TOKEN_LS, token, remember); lsSet(ACCT_LS, JSON.stringify(account || null), remember); },
+    clear: function () { lsDel(TOKEN_LS); lsDel(ACCT_LS); },
+    user: function () { return lsGet(USER_LS).slice(0, 40); },           // 担当者名
+    setUser: function (n) { lsSet(USER_LS, String(n || '').trim().slice(0, 40)); },
+    adminKey: function () { return lsGet(ADMIN_LS); },
+    setAdminKey: function (k, remember) { lsSet(ADMIN_LS, k, remember); },
+    clearAdmin: function () { lsDel(ADMIN_LS); },
+    // ID + パスワードでログイン → トークン保存
+    login: function (loginId, password, remember) {
+      return fetch('/api/pim/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ login_id: loginId, password: password }), cache: 'no-store' })
+        .then(function (r) { return r.json().then(function (j) { j.status = r.status; return j; }); })
+        .then(function (j) { if (j.ok) Auth.set(j.token, j.account, remember); return j; });
     },
-    clear: function () { try { localStorage.removeItem(KEY_LS); sessionStorage.removeItem(KEY_LS); } catch (e) { /* */ } },
-    // 担当者名（複数人で同時に登録するとき、誰が入れたかを残す）
-    user: function () { try { return (localStorage.getItem(USER_LS) || '').slice(0, 40); } catch (e) { return ''; } },
-    setUser: function (n) { try { localStorage.setItem(USER_LS, String(n || '').trim().slice(0, 40)); } catch (e) { /* */ } },
+    // パスワード変更（成功すると新しいトークンに差し替わる。他の端末は再ログインが必要）
+    changePassword: function (current, password) {
+      return api('auth/password', { method: 'POST', body: { current: current, password: password } }).then(function (j) {
+        if (j.ok && j.token) Auth.set(j.token, Auth.account(), true);
+        return j;
+      });
+    },
   };
 
-  // API 呼び出し（401 なら合言葉を消して {auth:true} を投げる）
+  // API 呼び出し（401 なら {auth:true, ...} を投げる）
+  //   opts.admin=true のときは ADMIN_KEY（pim/admin.html 用）。opts.asAccount で管理者が特定ディーラーとして操作
   function api(path, opts) {
     opts = opts || {};
-    var headers = Object.assign({ 'x-seam-key': Auth.get(), 'x-seam-user': encodeURIComponent(Auth.user()) }, opts.headers || {});
+    var headers = Object.assign({ 'x-seam-user': encodeURIComponent(Auth.user()) }, opts.headers || {});
+    if (opts.admin) { headers['x-seam-key'] = Auth.adminKey(); if (opts.asAccount) headers['x-seam-account'] = opts.asAccount; }
+    else headers['x-seam-token'] = Auth.get();
     var init = { method: opts.method || 'GET', headers: headers, cache: 'no-store' };
     if (opts.body != null) {
       if (opts.body instanceof FormData) init.body = opts.body;
@@ -30,7 +53,7 @@
     }
     return fetch('/api/pim/' + path, init).then(function (r) {
       return r.json().catch(function () { return { ok: false, reason: 'bad_response', status: r.status }; }).then(function (j) {
-        if (r.status === 401) { throw { auth: true, keyConfigured: j && j.keyConfigured !== false, info: j }; }
+        if (r.status === 401) { throw { auth: true, reason: j && j.reason, message: j && j.message, keyConfigured: j && j.keyConfigured !== false, info: j }; }
         if (r.status === 503 && j && j.reason === 'no_db') { throw { setup: true, info: j }; }
         if (!r.ok && j && j.ok !== true) { j.status = r.status; }
         return j;
