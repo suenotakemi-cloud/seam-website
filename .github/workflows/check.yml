@@ -81,7 +81,7 @@ jobs:
       - name: お店の情報が映る画面が検索に出ない設定か
         run: |
           fail=0
-          for f in booking/*.html entrance.html admin.html; do
+          for f in booking/*.html entrance.html admin.html pim/*.html; do
             [ -f "$f" ] || continue
             grep -qi 'name="robots"[^>]*noindex' "$f" || {
               echo "::error file=$f::noindex が入っていません（お店の画面が検索に出ます）"; fail=1; }
