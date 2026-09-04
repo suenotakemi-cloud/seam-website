@@ -6,7 +6,7 @@
  */
 (function (root) {
   'use strict';
-  var KEY_LS = 'seam_pim_key';
+  var KEY_LS = 'seam_pim_key', USER_LS = 'seam_pim_user';
 
   var Auth = {
     get: function () { try { return localStorage.getItem(KEY_LS) || sessionStorage.getItem(KEY_LS) || ''; } catch (e) { return ''; } },
@@ -14,12 +14,15 @@
       try { if (remember) localStorage.setItem(KEY_LS, k); else sessionStorage.setItem(KEY_LS, k); } catch (e) { /* private mode */ }
     },
     clear: function () { try { localStorage.removeItem(KEY_LS); sessionStorage.removeItem(KEY_LS); } catch (e) { /* */ } },
+    // 担当者名（複数人で同時に登録するとき、誰が入れたかを残す）
+    user: function () { try { return (localStorage.getItem(USER_LS) || '').slice(0, 40); } catch (e) { return ''; } },
+    setUser: function (n) { try { localStorage.setItem(USER_LS, String(n || '').trim().slice(0, 40)); } catch (e) { /* */ } },
   };
 
   // API 呼び出し（401 なら合言葉を消して {auth:true} を投げる）
   function api(path, opts) {
     opts = opts || {};
-    var headers = Object.assign({ 'x-seam-key': Auth.get() }, opts.headers || {});
+    var headers = Object.assign({ 'x-seam-key': Auth.get(), 'x-seam-user': encodeURIComponent(Auth.user()) }, opts.headers || {});
     var init = { method: opts.method || 'GET', headers: headers, cache: 'no-store' };
     if (opts.body != null) {
       if (opts.body instanceof FormData) init.body = opts.body;
@@ -70,16 +73,39 @@
       ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cw, ch); // 透過PNGは白地に
       ctx.drawImage(src, 0, 0, cw, ch);
       if (src.close) { try { src.close(); } catch (e) { /* */ } }
+      var meta = { width: cw, height: ch, originalType: file.type || '', originalName: file.name || '' };
       return new Promise(function (resolve, reject) {
         canvas.toBlob(function (blob) {
-          if (!blob || blob.type !== 'image/webp') {
-            // toBlob が webp を作れないブラウザ（古い Safari など）
-            reject(new Error('このブラウザは webp 変換に対応していません。iOS 16 以降 / Chrome / Edge / Firefox をお使いください'));
-            return;
-          }
-          resolve({ blob: blob, width: cw, height: ch, originalType: file.type || '', originalName: file.name || '' });
+          if (blob && blob.type === 'image/webp') { resolve(Object.assign({ blob: blob, encoder: 'canvas' }, meta)); return; }
+          // toBlob が webp を作れないブラウザ（iPhone / iPad の Safari など）は wasm のエンコーダで作る
+          var img = ctx.getImageData(0, 0, cw, ch);
+          encodeWebpWasm(img, quality).then(function (u8) {
+            resolve(Object.assign({ blob: new Blob([u8], { type: 'image/webp' }), encoder: 'wasm' }, meta));
+          }).catch(reject);
         }, 'image/webp', quality);
       });
+    });
+  }
+  // wasm 版 WebP エンコーダ（vendor/webp/ libwebp + @jsquash/webp）。初回だけ読み込む
+  var wasmEnc = null;
+  var WEBP_DEFAULTS = { quality: 75, target_size: 0, target_PSNR: 0, method: 4, sns_strength: 50, filter_strength: 60, filter_sharpness: 0, filter_type: 1, partitions: 0, segments: 4, pass: 1, show_compressed: 0, preprocessing: 0, autofilter: 0, partition_limit: 0, alpha_compression: 1, alpha_filtering: 1, alpha_quality: 100, lossless: 0, exact: 0, image_hint: 0, emulate_jpeg_size: 0, thread_level: 0, low_memory: 0, near_lossless: 100, use_delta_palette: 0, use_sharp_yuv: 0 };
+  function encoderBase() {
+    var sc = document.querySelector('script[src*="pim-client.js"]');
+    var src = sc ? sc.getAttribute('src') : '../js/pim-client.js';
+    return new URL(src.replace(/js\/pim-client\.js.*$/, 'vendor/webp/'), location.href).href;
+  }
+  function encodeWebpWasm(imageData, quality) {
+    if (typeof WebAssembly === 'undefined') return Promise.reject(new Error('このブラウザは webp 変換に対応していません（WebAssembly なし）。Chrome / Safari 15 以降をお使いください'));
+    if (!wasmEnc) {
+      var base = encoderBase();
+      wasmEnc = (new Function('u', 'return import(u)'))(base + 'webp_enc.js').then(function (mod) {
+        return mod.default({ noInitialRun: true, locateFile: function (f) { return base + f; } });
+      }).catch(function (e) { wasmEnc = null; throw new Error('webp 変換部品を読み込めませんでした: ' + ((e && e.message) || e)); });
+    }
+    return wasmEnc.then(function (m) {
+      var out = m.encode(imageData.data, imageData.width, imageData.height, Object.assign({}, WEBP_DEFAULTS, { quality: Math.round((quality == null ? 0.85 : quality) * 100) }));
+      if (!out) throw new Error('webp 変換に失敗しました');
+      return new Uint8Array(out.buffer || out);
     });
   }
   // このブラウザが webp を作れるか（起動時の案内用）
@@ -88,12 +114,14 @@
   }
 
   // 画像アップロード（webp 変換 → POST）
+  // slot は 1〜5 か 'auto'（サーバが空いている一番若い番号を確定する。複数人が同時に同じ商品へ入れても衝突しない）
   function uploadImage(jan, slot, file, opts) {
     return toWebp(file, opts).then(function (r) {
       var fd = new FormData();
       fd.append('jan', jan);
       fd.append('slot', String(slot));
       fd.append('file', r.blob, jan + '_' + slot + '.webp');
+      fd.append('encoder', r.encoder || '');
       fd.append('original_name', r.originalName);
       fd.append('original_type', r.originalType);
       fd.append('width', String(r.width));

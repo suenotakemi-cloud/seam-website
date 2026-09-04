@@ -13,6 +13,10 @@ export function hasDb(env) { return !!(env && env.DB && typeof env.DB.prepare ==
 export function hasR2(env) { return !!(env && env.PRODUCT_IMAGES && typeof env.PRODUCT_IMAGES.put === 'function'); }
 
 export function nowIso() { return new Date().toISOString(); }
+// 担当者名（x-seam-user ヘッダ・URLエンコード済み）。複数人で同時に登録するとき「誰が入れたか」を残す
+export function userOf(request) {
+  try { return decodeURIComponent(request.headers.get('x-seam-user') || '').replace(/\s+/g, ' ').trim().slice(0, 40); } catch (e) { return ''; }
+}
 
 // ── JAN（サーバ側の最終確認。整形はブラウザ側 js/pim-normalize.js が担う）──
 export function cleanJan(raw) {
@@ -43,14 +47,14 @@ export async function ensureSchema(env) {
       price_ex INTEGER, price_in INTEGER, retail_price INTEGER, cost_price INTEGER,
       amount REAL, unit TEXT, maker TEXT, brand TEXT, category TEXT, description TEXT, sku TEXT,
       source TEXT, import_id INTEGER, image_count INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_name ON pim_products(name)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(maker)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_imgs ON pim_products(image_count)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_upd ON pim_products(updated_at)`,
     `CREATE TABLE IF NOT EXISTS pim_images (
       jan TEXT NOT NULL, slot INTEGER NOT NULL, key TEXT NOT NULL, bytes INTEGER, width INTEGER, height INTEGER,
-      original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, PRIMARY KEY (jan, slot))`,
+      original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT, PRIMARY KEY (jan, slot))`,
     `CREATE TABLE IF NOT EXISTS pim_imports (
       id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT,
       total INTEGER NOT NULL DEFAULT 0, inserted INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0,
@@ -58,11 +62,15 @@ export async function ensureSchema(env) {
     `CREATE TABLE IF NOT EXISTS pim_issues (
       id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL, import_id INTEGER, kind TEXT NOT NULL, jan TEXT,
       message TEXT NOT NULL, existing TEXT, incoming TEXT, status TEXT NOT NULL DEFAULT 'open',
-      resolution TEXT, resolved_at TEXT)`,
+      resolution TEXT, resolved_at TEXT, resolved_by TEXT)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_issues_status ON pim_issues(status, ts)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_issues_jan ON pim_issues(jan)`,
   ];
   await env.DB.batch(stmts.map((s) => env.DB.prepare(s)));
+  // 旧スキーマで作られた表への列追加（あればエラーになるだけで無害）
+  for (const a of ['ALTER TABLE pim_products ADD COLUMN updated_by TEXT', 'ALTER TABLE pim_images ADD COLUMN created_by TEXT', 'ALTER TABLE pim_issues ADD COLUMN resolved_by TEXT']) {
+    try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
+  }
   schemaReady = true;
 }
 
@@ -93,14 +101,16 @@ export function sanitizeProduct(p) {
 }
 export const PRODUCT_COLS = ['jan', 'jan_valid', 'name', 'price', 'tax_included', 'tax_rate', 'price_ex', 'price_in', 'retail_price', 'cost_price', 'amount', 'unit', 'maker', 'brand', 'category', 'description', 'sku', 'source'];
 
-// UPSERT 文（import_id と created_at は挿入時のみ・updated_at は毎回）
-export function upsertStmt(env, p, importId, ts) {
-  const cols = PRODUCT_COLS.concat(['import_id', 'created_at', 'updated_at']);
-  const vals = PRODUCT_COLS.map((c) => p[c] == null ? null : p[c]).concat([importId == null ? null : importId, ts, ts]);
-  const sets = PRODUCT_COLS.filter((c) => c !== 'jan').map((c) => c + '=excluded.' + c).concat(['updated_at=excluded.updated_at']).join(', ');
+// UPSERT 文（import_id と created_at は挿入時のみ・updated_at/updated_by は毎回）
+//   mode 'upsert'      … あれば上書き（本人が「上書き」と決めたとき）
+//   mode 'insert_only' … 無いときだけ入れる（新規のつもりのもの。他の人が先に入れていたら何もしない → meta.changes が 0）
+export function upsertStmt(env, p, importId, ts, by, mode) {
+  const cols = PRODUCT_COLS.concat(['import_id', 'created_at', 'updated_at', 'updated_by']);
+  const vals = PRODUCT_COLS.map((c) => p[c] == null ? null : p[c]).concat([importId == null ? null : importId, ts, ts, by || null]);
+  const sets = PRODUCT_COLS.filter((c) => c !== 'jan').map((c) => c + '=excluded.' + c).concat(['updated_at=excluded.updated_at', 'updated_by=excluded.updated_by']).join(', ');
   return env.DB.prepare(
     'INSERT INTO pim_products(' + cols.join(',') + ') VALUES(' + cols.map(() => '?').join(',') + ') ' +
-    'ON CONFLICT(jan) DO UPDATE SET ' + sets
+    (mode === 'insert_only' ? 'ON CONFLICT(jan) DO NOTHING' : 'ON CONFLICT(jan) DO UPDATE SET ' + sets)
   ).bind(...vals);
 }
 

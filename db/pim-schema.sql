@@ -29,7 +29,8 @@ CREATE TABLE IF NOT EXISTS pim_products (
   import_id      INTEGER,                   -- どの取り込みで入ったか
   image_count    INTEGER NOT NULL DEFAULT 0,-- 登録済み画像枚数（pim_images と同期）
   created_at     TEXT NOT NULL,             -- ISO8601
-  updated_at     TEXT NOT NULL
+  updated_at     TEXT NOT NULL,             -- 楽観ロックの基準（編集時に「見ていた時刻」と違えば 409）
+  updated_by     TEXT                       -- 最後に触った担当者名（複数人同時登録の記録）
 );
 CREATE INDEX IF NOT EXISTS idx_pim_products_name  ON pim_products(name);
 CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(maker);
@@ -47,7 +48,8 @@ CREATE TABLE IF NOT EXISTS pim_images (
   original_name  TEXT,                      -- 元ファイル名（jpg/png/heic など何で来たかの記録）
   original_type  TEXT,                      -- 元MIME
   created_at     TEXT NOT NULL,
-  PRIMARY KEY (jan, slot)
+  created_by     TEXT,                      -- 登録した担当者名
+  PRIMARY KEY (jan, slot)                   -- ★この主キーが「同時登録の取り合い」を裁く（slot=auto は INSERT が通った人の番号）
 );
 
 -- ▼ 取り込み履歴（CSV 1ファイル＝1行）
@@ -76,7 +78,8 @@ CREATE TABLE IF NOT EXISTS pim_issues (
   incoming       TEXT,                      -- 届いた側（JSON。dup_file のときは配列）
   status         TEXT NOT NULL DEFAULT 'open', -- open / resolved
   resolution     TEXT,                      -- keep_existing / keep_incoming / keep_index:N / dismissed
-  resolved_at    TEXT
+  resolved_at    TEXT,
+  resolved_by    TEXT                       -- 解決した担当者名（2人が同時に押しても勝った1人だけ記録される）
 );
 CREATE INDEX IF NOT EXISTS idx_pim_issues_status ON pim_issues(status, ts);
 CREATE INDEX IF NOT EXISTS idx_pim_issues_jan    ON pim_issues(jan);

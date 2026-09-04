@@ -185,7 +185,7 @@
         <button class="btn sm" id="btnSearch">検索</button>
         <span class="muted" id="prodCount"></span>
       </div>
-      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th>写真</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th>写真</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
       <div class="row" style="margin-top:10px"><button class="btn sm" id="btnPrev">← 前</button><button class="btn sm" id="btnNext">次 →</button></div>
     </div>
   </section>
@@ -235,6 +235,7 @@
     <h2>ログイン</h2>
     <p class="muted">診断ダッシュボードと同じ合言葉（ADMIN_KEY）</p>
     <input type="password" id="keyIn" placeholder="合言葉">
+    <input type="text" id="userIn" placeholder="担当者名（例: 田中）" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:10px">
     <label class="muted" style="display:block;margin-bottom:10px"><input type="checkbox" id="remember" checked> この端末に記憶する</label>
     <button class="btn solid" id="btnLogin">ログイン</button>
     <p class="err" id="loginErr"></p>
@@ -282,14 +283,18 @@
 
   // ── ログイン ──
   function boot() {
-    if (!C.Auth.get()) { $('login').hidden = false; return; }
+    if (!C.Auth.get() || !C.Auth.user()) { $('login').hidden = false; $('userIn').value = C.Auth.user(); return; }
     api('status').then(function (j) {
       $('login').hidden = true;
       if (j.counts) { $('hsub').textContent = '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※画像の保存先(R2)が未設定'); setIssueN(j.counts.open_issues); }
       loadHistory(); loadMakers();
     }).catch(handleErr);
   }
-  $('btnLogin').addEventListener('click', function () { var v = $('keyIn').value.trim(); if (!v) return; C.Auth.set(v, $('remember').checked); boot(); });
+  $('btnLogin').addEventListener('click', function () {
+    var v = $('keyIn').value.trim(); if (!v) return;
+    if (!$('userIn').value.trim()) { $('loginErr').textContent = '担当者名を入れてください'; return; }
+    C.Auth.setUser($('userIn').value); C.Auth.set(v, $('remember').checked); boot();
+  });
   $('keyIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
   $('btnLogout').addEventListener('click', function () { C.Auth.clear(); location.reload(); });
   function setIssueN(n) { var el = $('issueN'); el.textContent = n; el.hidden = !n; }
@@ -426,13 +431,21 @@
     // DB との重複確認
     var jans = ok.map(function (i) { return i.product.jan; });
     toast('登録済みと照合中…');
-    api('import', { method: 'POST', body: { action: 'check', jans: jans } }).then(function (j) {
-      if (!j.ok) throw new Error(j.message || j.reason);
-      S.dbExisting = j.existing || {};
+    checkExisting(jans).then(function (existing) {
+      S.dbExisting = existing;
       renderDups();
       renderCommit();
     }).catch(handleErr);
   });
+  function checkExisting(jans) {
+    var out = {}, chain = Promise.resolve();
+    for (var i = 0; i < jans.length; i += 2000) {
+      (function (chunk) { chain = chain.then(function () { return api('import', { method: 'POST', body: { action: 'check', jans: chunk } }).then(function (j) { if (!j.ok) throw new Error(j.message || j.reason); Object.assign(out, j.existing || {}); }); }); })(jans.slice(i, i + 2000));
+    }
+    return chain.then(function () { return out; });
+  }
+  (function () {
+  })();
 
   // ── 4. 重複 ──
   function cmpRow(label, a, b) { var d = String(a == null ? '' : a) !== String(b == null ? '' : b); return '<dt>' + label + '</dt><dd class="' + (d ? 'diff' : '') + '">' + esc(a == null ? '—' : a) + '</dd>'; }
@@ -508,8 +521,10 @@
           issues.push({ kind: 'dup_db', jan: jan, message: '登録済み「' + S.dbExisting[jan].name + '」と届いた「' + p.name + '」が同じ JAN ' + jan + ' です。どちらを残すか決めてください', existing: S.dbExisting[jan], incoming: p });
           skipped++; return;
         }
+        toSave.push(Object.assign({}, p, { _mode: 'overwrite' })); return;
       }
-      toSave.push(p);
+      // 照合時に無かったもの。保存時にも「無いときだけ入れる」= 別の人が同時に取り込んで先に入っていたら注意に回る
+      toSave.push(Object.assign({}, p, { _mode: 'new' }));
     });
     var invalid = S.items.filter(function (i) { return i.errors.length; }).length;
     return { toSave: toSave, issues: issues, skipped: skipped, invalid: invalid };
@@ -528,7 +543,7 @@
     var log = $('commitLog'); log.hidden = false; log.textContent = '';
     var prog = $('commitProg'); prog.hidden = false;
     var L = function (m) { log.textContent += m + '\n'; log.scrollTop = log.scrollHeight; };
-    var CH = 300, total = pl.toSave.length, done = 0, importId = null, ins = 0, upd = 0;
+    var CH = 300, total = pl.toSave.length, done = 0, importId = null, ins = 0, upd = 0, conf = 0;
     readMap();
     api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, total: S.items.length } })
       .then(function (j) {
@@ -541,9 +556,9 @@
               var chunk = pl.toSave.slice(start, start + CH);
               return api('import', { method: 'POST', body: { action: 'commit', import_id: importId, products: chunk, issues: start === 0 ? pl.issues : [] } }).then(function (r) {
                 if (!r.ok) throw new Error(r.message || r.reason);
-                done += chunk.length; ins += r.inserted; upd += r.updated;
+                done += chunk.length; ins += r.inserted; upd += r.updated; conf += (r.conflicts || 0);
                 prog.firstElementChild.style.width = Math.round(done / Math.max(1, total) * 100) + '%';
-                L('  ' + done + ' / ' + total + '  （追加 ' + r.inserted + '・更新 ' + r.updated + (r.issues ? '・注意 ' + r.issues : '') + '）');
+                L('  ' + done + ' / ' + total + '  （追加 ' + r.inserted + '・更新 ' + r.updated + (r.issues ? '・注意 ' + r.issues : '') + (r.conflicts ? '・同時登録で先を越された ' + r.conflicts : '') + '）');
               });
             });
           })(i);
@@ -554,7 +569,7 @@
       .then(function () { return api('import', { method: 'POST', body: { action: 'finish', import_id: importId, invalid: pl.invalid } }); })
       .then(function (j) {
         prog.firstElementChild.style.width = '100%';
-        L('完了: 追加 ' + ins + '件 / 更新 ' + upd + '件 / 注意 ' + pl.issues.length + '件 / 登録できない行 ' + pl.invalid + '件');
+        L('完了: 追加 ' + ins + '件 / 更新 ' + upd + '件 / 注意 ' + (pl.issues.length + conf) + '件 / 登録できない行 ' + pl.invalid + '件' + (conf ? '\n※ ' + conf + '件は、取り込み中に別の人が同じ JAN を先に登録していたため上書きせず「注意」に回しました' : ''));
         toast('保存しました'); $('commitState').textContent = '保存済み';
         loadHistory(); loadMakers(); boot();
       })
@@ -576,7 +591,7 @@
       var box = $('issuesBox');
       if (!j.issues.length) { box.innerHTML = '<p class="muted">注意はありません。</p>'; return; }
       box.innerHTML = j.issues.map(function (is) {
-        var h = '<div class="issue" data-id="' + is.id + '"><div class="hd"><b>' + (is.kind === 'dup_db' ? '登録済みと重複' : is.kind === 'dup_file' ? 'ファイル内で重複' : esc(is.kind)) + ' — JAN ' + esc(is.jan) + '</b><span class="muted">' + esc(is.ts.replace('T', ' ').slice(0, 16)) + (is.status === 'resolved' ? ' ／ <span class="tag ok">解決済み: ' + esc(is.resolution) + '</span>' : '') + '</span></div><p style="margin:0 0 8px;font-size:12.5px">' + esc(is.message) + '</p>';
+        var h = '<div class="issue" data-id="' + is.id + '"><div class="hd"><b>' + (is.kind === 'dup_db' ? '登録済みと重複' : is.kind === 'dup_file' ? 'ファイル内で重複' : esc(is.kind)) + ' — JAN ' + esc(is.jan) + '</b><span class="muted">' + esc(is.ts.replace('T', ' ').slice(0, 16)) + (is.status === 'resolved' ? ' ／ <span class="tag ok">解決済み: ' + esc(is.resolution) + (is.resolved_by ? '（' + esc(is.resolved_by) + '）' : '') + '</span>' : '') + '</span></div><p style="margin:0 0 8px;font-size:12.5px">' + esc(is.message) + '</p>';
         if (is.kind === 'dup_db' && is.existing && is.incoming) {
           h += '<div class="cmp">' + sideHtml('登録済み', is.existing, is.incoming) + sideHtml('届いたデータ', is.incoming, is.existing) + '</div>';
           if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="keep_existing">登録済みを残す</button><button class="btn sm" data-res="keep_incoming">届いた方で上書き</button><button class="btn sm" data-res="dismiss">閉じる（何もしない）</button></div>';
@@ -591,7 +606,7 @@
           var id = parseInt(b.closest('.issue').getAttribute('data-id'), 10);
           b.disabled = true;
           api('issues', { method: 'POST', body: { id: id, resolution: b.getAttribute('data-res'), index: b.getAttribute('data-idx') } }).then(function (r) {
-            if (!r.ok) { toast(r.message || '処理できませんでした', true); b.disabled = false; return; }
+            if (!r.ok) { toast(r.message || '処理できませんでした', true); if (r.status === 409) loadIssues(); else b.disabled = false; return; }
             toast(r.saved ? 'JAN ' + r.saved + ' を保存しました' : '閉じました'); loadIssues();
           }).catch(handleErr);
         });
@@ -611,7 +626,7 @@
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
         return '<tr><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
-      }).join('') || '<tr><td colspan="10" class="muted">該当なし</td></tr>';
+      }).join('') || '<tr><td colspan="11" class="muted">該当なし</td></tr>';
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-del]'), function (b) {
         b.addEventListener('click', function () {
           var jan = b.getAttribute('data-del');

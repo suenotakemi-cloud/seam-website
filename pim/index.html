@@ -250,6 +250,8 @@
     <h2>商品登録 ログイン</h2>
     <p>診断ダッシュボードと同じ合言葉（ADMIN_KEY）を入れてください。</p>
     <input type="password" id="keyIn" placeholder="合言葉" autocomplete="current-password">
+    <input type="text" id="userIn" placeholder="担当者名（例: 田中）" autocomplete="off" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:16px;margin-bottom:10px">
+    <p>複数人で同時に登録するので、誰が入れたかを残します。</p>
     <label class="chk"><input type="checkbox" id="remember" checked> この端末に記憶する</label>
     <button class="btn solid" id="btnLogin">ログイン</button>
     <p class="err" id="loginErr"></p>
@@ -280,6 +282,7 @@
     $('foot').hidden = (id === 'scr-scan');
     window.scrollTo(0, 0);
     if (id === 'scr-scan') startScan(); else stopScan();
+    if (id !== 'scr-prod') stopPoll();
   }
   function todayCount(add) {
     var d = new Date().toISOString().slice(0, 10), o = {};
@@ -314,9 +317,9 @@
   }
 
   // ── ログイン ──
-  function needLogin(msg) { $('login').hidden = false; $('loginErr').textContent = msg || ''; stopScan(); setTimeout(function () { $('keyIn').focus(); }, 50); }
+  function needLogin(msg) { $('login').hidden = false; $('loginErr').textContent = msg || ''; $('userIn').value = C.Auth.user(); stopScan(); setTimeout(function () { $('keyIn').focus(); }, 50); }
   function boot() {
-    if (!C.Auth.get()) { needLogin(''); return; }
+    if (!C.Auth.get() || !C.Auth.user()) { needLogin(''); return; }
     loadStatus().then(function () {
       $('login').hidden = true; $('setup').hidden = true;
       todayCount(0); recent(null);
@@ -332,6 +335,8 @@
   }
   $('btnLogin').addEventListener('click', function () {
     var v = $('keyIn').value.trim(); if (!v) return;
+    if (!$('userIn').value.trim()) { $('loginErr').textContent = '担当者名を入れてください'; $('userIn').focus(); return; }
+    C.Auth.setUser($('userIn').value);
     C.Auth.set(v, $('remember').checked);
     loadStatus().then(function () { $('login').hidden = true; todayCount(0); recent(null); show('scr-scan'); }).catch(function (e) { if (e && e.auth) { C.Auth.clear(); $('loginErr').textContent = e.keyConfigured === false ? 'サーバに合言葉(ADMIN_KEY)が未設定です' : '合言葉が違います'; } else handleErr(e); });
   });
@@ -417,7 +422,7 @@
   }
   $('btnCamRestart').addEventListener('click', startScan);
   $('cam').addEventListener('click', function () { if (!state.stream) startScan(); });
-  document.addEventListener('visibilitychange', function () { if (document.hidden) stopScan(); else if ($('scr-scan').classList.contains('active') && $('login').hidden && $('setup').hidden) startScan(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) stopScan(); else if ($('scr-scan').classList.contains('active') && $('login').hidden && $('setup').hidden) startScan(); else if ($('scr-prod').classList.contains('active')) refreshProduct(); });
 
   // ── 呼び出し ──
   function normJan(s) { var d = String(s || '').replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[^0-9]/g, ''); if (d.length === 12) d = '0' + d; if (d.length === 14 && d[0] === '0') d = d.slice(1); return d; }
@@ -462,8 +467,32 @@
     renderGrid();
     recent(p);
     show('scr-prod');
-    $('hsub').textContent = p.name.slice(0, 24);
+    $('hsub').textContent = p.name.slice(0, 24) + (p.updated_by ? '（最終更新: ' + p.updated_by + '）' : '');
+    startPoll();
   }
+  // 複数人が同じ商品を触っているとき、他の人の写真・変更を取り込む（15秒ごと／画面に戻ったとき）
+  var pollT = null;
+  function startPoll() { stopPoll(); pollT = setInterval(refreshProduct, 15000); }
+  function stopPoll() { if (pollT) { clearInterval(pollT); pollT = null; } }
+  function refreshProduct() {
+    var p = state.product; if (!p || !$('scr-prod').classList.contains('active') || document.hidden) return;
+    if (Object.keys(state.busy).length) return; // 自分の送信中は触らない
+    api('products?jan=' + p.jan).then(function (j) {
+      if (!j.ok || !state.product || state.product.jan !== p.jan) return;
+      var before = (p.images || []).map(function (i) { return i.slot + ':' + (i.url || ''); }).join(',');
+      var after = (j.product.images || []).map(function (i) { return i.slot + ':' + (i.url || ''); }).join(',');
+      var editing = $('editBox').classList.contains('open');
+      if (before !== after || j.product.updated_at !== p.updated_at) {
+        var byOther = j.product.updated_by && j.product.updated_by !== C.Auth.user();
+        if (editing) { state.product.images = j.product.images; state.product.image_count = j.product.image_count; renderGrid(); }
+        else openProductQuiet(j.product);
+        if (byOther) toast((j.product.updated_by || '他の人') + ' さんの変更を取り込みました');
+      }
+    }).catch(function () { /* 通信断は次回 */ });
+  }
+  function openProductQuiet(p) { state.product = p; renderGrid(); $('pName').textContent = p.name; var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
+    $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' + (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '');
+    $('hsub').textContent = p.name.slice(0, 24) + (p.updated_by ? '（最終更新: ' + p.updated_by + '）' : ''); }
   function renderGrid() {
     var p = state.product, imgs = (p.images || []).slice().sort(function (a, b) { return a.slot - b.slot; });
     var byslot = {}; imgs.forEach(function (im) { byslot[im.slot] = im; });
@@ -527,42 +556,50 @@
     var list = Array.prototype.slice.call(files);
     var p = state.product;
     var byslot = {}; (p.images || []).forEach(function (im) { byslot[im.slot] = 1; });
-    // 複数選んだら、押した枠から順に空いている枠へ
-    var targets = [], s = slot;
+    // 空の枠をタップしたときは「空いている一番若い番号」をサーバに決めてもらう（複数人が同時に入れても上書きしない）。
+    // 写真のある枠をタップしたときだけ、その番号を差し替える。
+    var replace = !!byslot[slot];
+    var freeNow = 5 - Object.keys(byslot).length - Object.keys(state.busy).length;
+    var targets = [];
     list.forEach(function (f, i) {
-      if (i === 0) { targets.push(s); return; }
-      var t = s + 1; while (t <= 5 && (byslot[t] || targets.indexOf(t) >= 0 || state.busy[t])) t++;
-      if (t <= 5) { targets.push(t); s = t; }
+      if (i === 0 && replace) { targets.push(slot); return; }
+      if (targets.filter(function (t) { return t === 'auto'; }).length < freeNow) targets.push('auto');
     });
     if (targets.length < list.length) toast('空き枠が足りないため ' + (list.length - targets.length) + '枚は入れませんでした', true);
     var chain = Promise.resolve();
-    targets.forEach(function (t, i) { chain = chain.then(function () { return uploadOne(list[i], t); }); });
+    targets.forEach(function (t, i) { chain = chain.then(function () { return uploadOne(list[i], t, t === 'auto' ? guessSlot() : t); }); });
   }
-  function uploadOne(file, slot) {
+  // 画面上の仮の枠番号（表示用。確定はサーバ）
+  function guessSlot() { var by = {}; (state.product.images || []).forEach(function (im) { by[im.slot] = 1; }); for (var s = 1; s <= 5; s++) if (!by[s] && !state.busy[s]) return s; return 5; }
+  function uploadOne(file, slot, showSlot) {
     var preview = ''; try { preview = URL.createObjectURL(file); } catch (e) { /* */ }
-    state.busy[slot] = { label: '変換中…', preview: preview };
+    state.busy[showSlot] = { label: '変換中…', preview: preview };
     renderGrid();
     var jan = state.product.jan;
     return C.toWebp(file, { max: 1600, quality: 0.85 }).then(function (r) {
-      state.busy[slot].label = '送信中…'; renderGrid();
+      if (state.busy[showSlot]) state.busy[showSlot].label = '送信中…'; renderGrid();
       var fd = new FormData();
       fd.append('jan', jan); fd.append('slot', String(slot));
-      fd.append('file', r.blob, jan + '_' + slot + '.webp');
+      fd.append('file', r.blob, jan + '_' + (slot === 'auto' ? showSlot : slot) + '.webp');
+      fd.append('encoder', r.encoder || '');
       fd.append('original_name', r.originalName); fd.append('original_type', r.originalType);
       fd.append('width', String(r.width)); fd.append('height', String(r.height));
       return api('images', { method: 'POST', body: fd });
     }).then(function (j) {
-      delete state.busy[slot];
+      delete state.busy[showSlot];
       if (preview) URL.revokeObjectURL(preview);
-      if (!j.ok) { toast(j.message || ('保存できませんでした(' + (j.reason || j.status) + ')'), true); renderGrid(); return; }
-      if (state.product && state.product.jan === jan) { state.product.images = j.images; state.product.image_count = j.images.length; }
+      if (!j.ok) {
+        if (j.images && state.product && state.product.jan === jan) { state.product.images = j.images; state.product.image_count = j.images.length; }
+        toast(j.message || ('保存できませんでした(' + (j.reason || j.status) + ')'), true); renderGrid(); return;
+      }
+      if (state.product && state.product.jan === jan) { state.product.images = j.images; state.product.image_count = j.images.length; if (j.product_updated_at) state.product.updated_at = j.product_updated_at; }
       todayCount(1);
       C.beep(true);
       renderGrid();
       recent(state.product);
-      if (j.images.length >= 5) toast('5枚そろいました'); else toast(slot + '枚目を保存しました → 次は' + nextEmpty() + '枚目');
+      if (j.images.length >= 5) toast('5枚そろいました'); else toast(j.slot + '枚目を保存しました → 次は' + nextEmpty() + '枚目');
     }).catch(function (e) {
-      delete state.busy[slot];
+      delete state.busy[showSlot];
       if (preview) URL.revokeObjectURL(preview);
       renderGrid();
       if (e && (e.auth || e.setup)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true);
@@ -575,7 +612,7 @@
     api('images?jan=' + state.product.jan + '&slot=' + slot, { method: 'DELETE' }).then(function (j) {
       delete state.busy[slot];
       if (!j.ok) { toast(j.message || '削除できませんでした', true); renderGrid(); return; }
-      state.product.images = j.images; state.product.image_count = j.images.length;
+      state.product.images = j.images; state.product.image_count = j.images.length; if (j.product_updated_at) state.product.updated_at = j.product_updated_at;
       renderGrid(); recent(state.product); toast('削除しました');
     }).catch(function (e) { delete state.busy[slot]; renderGrid(); handleErr(e); });
   }
@@ -604,10 +641,14 @@
       tax_included: $('eTaxIn').classList.contains('on') ? 1 : 0, price_ex: null, price_in: null,
       amount: $('eAmount').value.trim() === '' ? null : parseFloat($('eAmount').value), unit: $('eUnit').value,
       maker: $('eMaker').value.trim(), brand: $('eBrand').value.trim(),
+      expected_updated_at: p.updated_at, // 見ていた時点より後に他の人が更新していたら 409（上書き事故の防止）
     });
     if (!body.name) { toast('商品名は必須です', true); return; }
     api('products', { method: 'PUT', body: body }).then(function (j) {
-      if (!j.ok) { toast(j.message || '保存できませんでした', true); return; }
+      if (!j.ok) {
+        if (j.status === 409 && j.product) { toast(j.message || '他の人が先に更新しました', true); openProduct(j.product); return; }
+        toast(j.message || '保存できませんでした', true); return;
+      }
       toast('保存しました'); openProduct(j.product);
     }).catch(handleErr);
   });
@@ -630,16 +671,20 @@
       tax_included: $('nTaxIn').classList.contains('on') ? 1 : 0, tax_rate: 10,
       amount: $('nAmount').value.trim() === '' ? null : parseFloat($('nAmount').value), unit: $('nUnit').value,
       maker: $('nMaker').value.trim(), source: 'スマホ登録',
+      insert_only: 1, // 同じ JAN を別の人が同時に登録していたら、上書きせずその内容を表示する
     };
     api('products', { method: 'PUT', body: body }).then(function (j) {
-      if (!j.ok) { toast(j.message || '登録できませんでした', true); return; }
+      if (!j.ok) {
+        if (j.status === 409 && j.product) { toast(j.message || '他の人が先に登録しました', true); openProduct(j.product); return; }
+        toast(j.message || '登録できませんでした', true); return;
+      }
       toast('登録しました。写真をどうぞ'); openProduct(j.product); loadStatus().catch(function () { /* */ });
     }).catch(handleErr);
   });
   $('btnNewCancel').addEventListener('click', function () { show('scr-scan'); });
   $('btnNext').addEventListener('click', function () { state.product = null; $('hsub').textContent = 'JANを読んで写真を5枚まで'; show('scr-scan'); loadStatus().catch(function () { /* */ }); });
 
-  if (!C.canMakeWebp()) { toast('このブラウザは webp 変換に非対応です。iOS 16 以降の Safari か Chrome をお使いください', true); }
+  if (!C.canMakeWebp() && typeof WebAssembly === 'undefined') { toast('このブラウザは webp 変換に対応していません。Chrome か Safari 15 以降をお使いください', true); }
   boot();
 })();
 </script>
