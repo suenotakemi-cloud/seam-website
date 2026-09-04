@@ -169,7 +169,25 @@ export async function ensureSchema(env) {
     `CREATE INDEX IF NOT EXISTS idx_pim_issues_jan ON pim_issues(account_id, jan)`,
   ];
   await env.DB.batch(stmts.map((s) => env.DB.prepare(s)));
+  await seedIfEmpty(env);
   schemaReady = true;
+}
+
+// ── 最初のアカウント（実証実験用）──
+//   アカウントが1つも無いときだけ、テスト用の口座を作る。管理画面を開かなくてもスマホですぐ試せるように。
+//   ★ 本番運用に入る前に、管理画面（pim/admin.html）で「PW再設定」か「停止」をすること。
+const SEED_ACCOUNTS = [{ login_id: 'takemi', password: 'sueno', name: 'テスト用（末野）', note: '初期テスト用アカウント。実証実験が終わったらパスワード再設定か停止を' }];
+async function seedIfEmpty(env) {
+  try {
+    const c = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_accounts').first();
+    if (c && c.n > 0) return;
+    const ts = nowIso();
+    for (const a of SEED_ACCOUNTS) {
+      const hash = await hashPassword(a.password);
+      await env.DB.prepare('INSERT OR IGNORE INTO pim_accounts(login_id, name, pass_hash, role, active, token_version, note, created_at, updated_at, pass_changed_at) VALUES(?,?,?,?,1,1,?,?,?,?)')
+        .bind(a.login_id, a.name, hash, 'dealer', a.note, ts, ts, ts).run();
+    }
+  } catch (e) { /* 作れなくても他の機能は動く（管理画面から発行できる） */ }
 }
 
 // ── 商品1件の入力を型どおりに揃える（API 境界の防波堤）──
