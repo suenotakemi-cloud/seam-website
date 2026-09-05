@@ -181,7 +181,7 @@ export async function ensureSchema(env) {
       price_ex INTEGER, price_in INTEGER, retail_price INTEGER, cost_price INTEGER,
       amount REAL, unit TEXT, maker TEXT, brand TEXT, category TEXT, description TEXT, sku TEXT,
       source TEXT, import_id INTEGER, image_count INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT, raw TEXT,
       PRIMARY KEY (account_id, jan))`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_name ON pim_products(account_id, name)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(account_id, maker)`,
@@ -191,7 +191,7 @@ export async function ensureSchema(env) {
       account_id INTEGER NOT NULL, jan TEXT NOT NULL, slot INTEGER NOT NULL, key TEXT NOT NULL, bytes INTEGER, width INTEGER, height INTEGER,
       original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT, PRIMARY KEY (account_id, jan, slot))`,
     `CREATE TABLE IF NOT EXISTS pim_imports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT, headers TEXT,
       total INTEGER NOT NULL DEFAULT 0, inserted INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0,
       skipped INTEGER NOT NULL DEFAULT 0, invalid INTEGER NOT NULL DEFAULT 0)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_imports_acct ON pim_imports(account_id, id)`,
@@ -204,6 +204,10 @@ export async function ensureSchema(env) {
     `CREATE TABLE IF NOT EXISTS pim_blobs (key TEXT PRIMARY KEY, data BLOB NOT NULL, bytes INTEGER, created_at TEXT NOT NULL)`,
   ];
   await env.DB.batch(stmts.map((s) => env.DB.prepare(s)));
+  // 既に作られた表への列追加（あればエラーになるだけで無害）
+  for (const a of ['ALTER TABLE pim_products ADD COLUMN raw TEXT', 'ALTER TABLE pim_imports ADD COLUMN headers TEXT']) {
+    try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
+  }
   await seedIfEmpty(env);
   schemaReady = true;
 }
@@ -255,10 +259,12 @@ export const PRODUCT_COLS = ['jan', 'jan_valid', 'name', 'price', 'tax_included'
 // UPSERT 文（import_id と created_at は挿入時のみ・updated_at/updated_by は毎回）
 //   mode 'upsert'      … あれば上書き（本人が「上書き」と決めたとき）
 //   mode 'insert_only' … 無いときだけ入れる（新規のつもりのもの。他の人が先に入れていたら何もしない → meta.changes が 0）
+//   p.raw（元CSVの1行を JSON 文字列で）… 取り込みのときだけ渡す。渡さなければ既存の raw は保持（スマホ編集で消えない）
 export function upsertStmt(env, acct, p, importId, ts, by, mode) {
-  const cols = ['account_id'].concat(PRODUCT_COLS, ['import_id', 'created_at', 'updated_at', 'updated_by']);
-  const vals = [acct].concat(PRODUCT_COLS.map((c) => p[c] == null ? null : p[c]), [importId == null ? null : importId, ts, ts, by || null]);
-  const sets = PRODUCT_COLS.filter((c) => c !== 'jan').map((c) => c + '=excluded.' + c).concat(['updated_at=excluded.updated_at', 'updated_by=excluded.updated_by']).join(', ');
+  const hasRaw = p.raw != null;
+  const cols = ['account_id'].concat(PRODUCT_COLS, ['import_id', 'created_at', 'updated_at', 'updated_by'], hasRaw ? ['raw'] : []);
+  const vals = [acct].concat(PRODUCT_COLS.map((c) => p[c] == null ? null : p[c]), [importId == null ? null : importId, ts, ts, by || null], hasRaw ? [String(p.raw).slice(0, 30000)] : []);
+  const sets = PRODUCT_COLS.filter((c) => c !== 'jan').map((c) => c + '=excluded.' + c).concat(['updated_at=excluded.updated_at', 'updated_by=excluded.updated_by'], hasRaw ? ['raw=excluded.raw', 'import_id=excluded.import_id'] : []).join(', ');
   return env.DB.prepare(
     'INSERT INTO pim_products(' + cols.join(',') + ') VALUES(' + cols.map(() => '?').join(',') + ') ' +
     (mode === 'insert_only' ? 'ON CONFLICT(account_id, jan) DO NOTHING' : 'ON CONFLICT(account_id, jan) DO UPDATE SET ' + sets)

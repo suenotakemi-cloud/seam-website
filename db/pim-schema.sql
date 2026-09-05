@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS pim_products (
   created_at     TEXT NOT NULL,             -- ISO8601
   updated_at     TEXT NOT NULL,             -- 楽観ロックの基準（編集時に「見ていた時刻」と違えば 409）
   updated_by     TEXT,                      -- 最後に触った担当者名（複数人同時登録の記録）
+  raw            TEXT,                      -- 取り込んだ元CSVの1行（見出し→値の JSON）。「元CSVの形＋画像」出力に使う
   PRIMARY KEY (account_id, jan)
 );
 CREATE INDEX IF NOT EXISTS idx_pim_products_name  ON pim_products(account_id, name);
@@ -84,6 +85,7 @@ CREATE TABLE IF NOT EXISTS pim_imports (
   filename       TEXT,
   source         TEXT,                      -- メーカー名など（画面で入力）
   mapping        TEXT,                      -- 列の対応（JSON）
+  headers        TEXT,                      -- 元CSVの見出し（JSON 配列）。「元CSVの形＋画像」出力の列順
   total          INTEGER NOT NULL DEFAULT 0,-- 読み込んだ行数
   inserted       INTEGER NOT NULL DEFAULT 0,
   updated        INTEGER NOT NULL DEFAULT 0,

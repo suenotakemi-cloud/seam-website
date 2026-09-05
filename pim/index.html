@@ -228,6 +228,7 @@
             <div class="field"><label>メーカー</label><input id="eMaker"></div>
             <div class="field"><label>ブランド</label><input id="eBrand"></div>
           </div>
+          <div class="field"><label>商品ID（社内コード・EC の突き合わせ用）</label><input id="eSku" autocapitalize="none"></div>
           <div class="row">
             <button class="btn solid" id="btnSave">保存</button>
             <button class="btn ghost" id="btnEditCancel">閉じる</button>
@@ -269,7 +270,10 @@
             <select id="nUnit"><option value="">—</option><option>g</option><option>ml</option><option>kg</option><option>L</option><option>枚</option><option>本</option><option>個</option><option>包</option><option>粒</option><option>袋</option></select>
           </div>
         </div>
-        <div class="field"><label>メーカー</label><input id="nMaker"></div>
+        <div class="row">
+          <div class="field"><label>メーカー</label><input id="nMaker"></div>
+          <div class="field"><label>商品ID（社内コード・任意）</label><input id="nSku" autocapitalize="none"></div>
+        </div>
         <button class="btn solid" id="btnCreate">登録して写真へ</button>
         <button class="btn ghost" id="btnNewCancel">やめる</button>
       </div>
@@ -603,7 +607,7 @@
     $('pName').textContent = p.name;
     var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' +
-      (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '');
+      (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品ID <b>' + esc(p.sku) + '</b></span>' : '');
     $('editBox').classList.remove('open');
     renderGrid();
     recent(p);
@@ -924,7 +928,7 @@
     $('eName').value = p.name || ''; $('ePrice').value = p.price == null ? '' : p.price;
     $('eTaxEx').classList.toggle('on', !p.tax_included); $('eTaxIn').classList.toggle('on', !!p.tax_included);
     $('eAmount').value = p.amount == null ? '' : p.amount; $('eUnit').value = p.unit || '';
-    $('eMaker').value = p.maker || ''; $('eBrand').value = p.brand || '';
+    $('eMaker').value = p.maker || ''; $('eBrand').value = p.brand || ''; $('eSku').value = p.sku || '';
     box.classList.add('open');
   });
   $('btnEditCancel').addEventListener('click', function () { $('editBox').classList.remove('open'); });
@@ -934,7 +938,7 @@
       name: $('eName').value.trim(), price: $('ePrice').value.trim() === '' ? null : parseInt($('ePrice').value.replace(/[^0-9]/g, ''), 10),
       tax_included: $('eTaxIn').classList.contains('on') ? 1 : 0, price_ex: null, price_in: null,
       amount: $('eAmount').value.trim() === '' ? null : parseFloat($('eAmount').value), unit: $('eUnit').value,
-      maker: $('eMaker').value.trim(), brand: $('eBrand').value.trim(),
+      maker: $('eMaker').value.trim(), brand: $('eBrand').value.trim(), sku: $('eSku').value.trim(),
       expected_updated_at: p.updated_at, // 見ていた時点より後に他の人が更新していたら 409（上書き事故の防止）
     });
     if (!body.name) { toast('商品名は必須です', true); return; }
@@ -950,7 +954,7 @@
   // 新規登録
   function openNew(jan) {
     $('nJan').textContent = 'JAN ' + jan;
-    $('nName').value = ''; $('nPrice').value = ''; $('nAmount').value = ''; $('nUnit').value = '';
+    $('nName').value = ''; $('nPrice').value = ''; $('nAmount').value = ''; $('nUnit').value = ''; $('nSku').value = '';
     $('nTaxEx').classList.add('on'); $('nTaxIn').classList.remove('on');
     state.newJan = jan;
     C.beep(false);
@@ -964,7 +968,7 @@
       price: $('nPrice').value.trim() === '' ? null : parseInt($('nPrice').value.replace(/[^0-9]/g, ''), 10),
       tax_included: $('nTaxIn').classList.contains('on') ? 1 : 0, tax_rate: 10,
       amount: $('nAmount').value.trim() === '' ? null : parseFloat($('nAmount').value), unit: $('nUnit').value,
-      maker: $('nMaker').value.trim(), source: 'スマホ登録',
+      maker: $('nMaker').value.trim(), sku: $('nSku').value.trim(), source: 'スマホ登録',
       insert_only: 1, // 同じ JAN を別の人が同時に登録していたら、上書きせずその内容を表示する
     };
     api('products', { method: 'PUT', body: body }).then(function (j) {

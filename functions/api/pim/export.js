@@ -1,6 +1,9 @@
 // 統一フォーマットの出力（ログイン中のアカウントの分だけ。EC 連携は ADMIN_KEY + x-seam-account でも可）
-//   GET /api/pim/export?format=csv|json&maker=&only_images=1&noimg=1
-//   列は js/pim-normalize.js の OUT_COLUMNS と同じ（ここでも同じ順で出す。変えるときは両方）
+//   GET /api/pim/export?format=csv|json|source|images&maker=&only_images=1&noimg=1
+//     csv / json … 統一フォーマット（列は js/pim-normalize.js の OUT_COLUMNS と同じ。変えるときは両方）
+//     source     … 取り込んだ CSV そのままの列（例: 菊池 CSV の 22 列）＋ 画像1〜5 ＋ 画像枚数。
+//                  EC 側は「商品コード（商品ID）」で突き合わせる。見出しは最後に取り込んだファイルのもの
+//     images     … 商品ID（元商品コード）・JAN・商品名・画像1〜5・画像枚数 だけ（EC 側が既に商品を持っているとき）
 import { json, imageUrl, loadImages } from './_lib.js';
 
 const COLS = [
@@ -19,7 +22,8 @@ export async function onRequestGet({ request, env, data }) {
   const acct = data.account.id;
   const url = new URL(request.url);
   const origin = url.origin;
-  const format = url.searchParams.get('format') === 'json' ? 'json' : 'csv';
+  const fmtRaw = url.searchParams.get('format') || 'csv';
+  const format = ['json', 'source', 'images'].indexOf(fmtRaw) >= 0 ? fmtRaw : 'csv';
   const maker = (url.searchParams.get('maker') || '').trim();
   const onlyImages = url.searchParams.get('only_images') === '1';
   const noimg = url.searchParams.get('noimg') === '1';
@@ -41,10 +45,49 @@ export async function onRequestGet({ request, env, data }) {
     const list = (imgs[r.jan] || []).slice().sort((a, b) => a.slot - b.slot).map((im) => imageUrl(origin, acct, r.jan, im.slot, im.created_at));
     const o = Object.assign({}, r, { image_urls: list });
     delete o.account_id;
+    if (format !== 'source') delete o.raw;
     return o;
   });
   const stamp = new Date().toISOString().slice(0, 10);
   const fname = 'seam-products-' + data.account.login_id + '-' + stamp;
+  const csvResponse = (lines, name) => new Response('\uFEFF' + lines.join('\r\n') + '\r\n', {
+    headers: { 'content-type': 'text/csv; charset=utf-8', 'cache-control': 'no-store', 'content-disposition': 'attachment; filename="' + name + '.csv"' },
+  });
+  const imgCols = (p) => { const a = []; for (let k = 1; k <= 5; k++) a.push(cell(p.image_urls[k - 1] || '')); a.push(String(p.image_urls.length)); return a; };
+
+  if (format === 'images') {
+    const lines = ['商品ID,JAN,商品名,画像1,画像2,画像3,画像4,画像5,画像枚数'];
+    for (const p of out) lines.push([cell(p.sku), cell(p.jan), cell(p.name)].concat(imgCols(p)).join(','));
+    return csvResponse(lines, fname + '-images');
+  }
+  if (format === 'source') {
+    // 見出し: 最後に取り込んだファイルのもの。無ければ raw の鍵の和集合（取り込み順）
+    let headers = null;
+    const last = await env.DB.prepare('SELECT headers FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
+    if (last && last.headers) { try { headers = JSON.parse(last.headers); } catch (e) { headers = null; } }
+    const raws = out.map((p) => { if (!p.raw) return null; try { return JSON.parse(p.raw); } catch (e) { return null; } });
+    if (!headers || !headers.length) {
+      headers = [];
+      raws.forEach((r) => { if (r) Object.keys(r).forEach((k) => { if (headers.indexOf(k) < 0) headers.push(k); }); });
+    }
+    // 取り込みの列対応（raw の無い商品＝スマホで新規登録したものは、対応が分かる列だけ埋める）
+    let mapping = {};
+    const lastMap = await env.DB.prepare('SELECT mapping FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
+    if (lastMap && lastMap.mapping) { try { mapping = JSON.parse(lastMap.mapping) || {}; } catch (e) { mapping = {}; } }
+    const colOf = (field) => (typeof mapping[field] === 'number' ? headers[mapping[field]] : null);
+    const fieldByHeader = {};
+    [['jan', 'jan'], ['name', 'name'], ['price', 'price'], ['retail', 'retail_price'], ['cost', 'cost_price'], ['maker', 'maker'], ['brand', 'brand'], ['description', 'description'], ['sku', 'sku']].forEach(([f, col]) => { const h = colOf(f); if (h) fieldByHeader[h] = col; });
+    const lines = [headers.map(cell).concat(['画像1', '画像2', '画像3', '画像4', '画像5', '画像枚数']).join(',')];
+    out.forEach((p, i) => {
+      const r = raws[i];
+      const vals = headers.map((h) => {
+        if (r && Object.prototype.hasOwnProperty.call(r, h)) return cell(r[h]);
+        const f = fieldByHeader[h]; return f ? cell(p[f]) : '';
+      });
+      lines.push(vals.concat(imgCols(p)).join(','));
+    });
+    return csvResponse(lines, fname + '-source');
+  }
   if (format === 'json') {
     return json({ ok: true, count: out.length, account: data.account.login_id, exported_at: new Date().toISOString(), products: out }, 200, {
       'content-disposition': 'attachment; filename="' + fname + '.json"',

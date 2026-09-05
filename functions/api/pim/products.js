@@ -35,7 +35,7 @@ export async function onRequestGet({ request, env, data }) {
   const W = ' WHERE ' + where.join(' AND ');
   const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_products' + W).bind(...binds).first();
   const rs = await env.DB.prepare('SELECT * FROM pim_products' + W + ' ORDER BY updated_at DESC LIMIT ? OFFSET ?').bind(...binds, limit, offset).all();
-  const rows = rs.results || [];
+  const rows = (rs.results || []).map((r) => { const o = Object.assign({}, r); delete o.raw; return o; });
   const imgs = await loadImages(env, acct, rows.map((r) => r.jan));
   const makers = await env.DB.prepare('SELECT maker, COUNT(*) AS n FROM pim_products WHERE account_id=? AND maker<>\'\' GROUP BY maker ORDER BY n DESC LIMIT 100').bind(acct).all();
   return json({ ok: true, total: total ? total.n : 0, limit, offset, products: withImages(origin, acct, rows, imgs), makers: makers.results || [] });

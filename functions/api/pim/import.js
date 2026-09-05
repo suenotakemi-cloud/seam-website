@@ -37,9 +37,10 @@ export async function onRequestPost({ request, env, data }) {
   }
 
   if (action === 'begin') {
+    const headers = Array.isArray(b.headers) ? b.headers.map((h) => String(h == null ? '' : h).slice(0, 200)).slice(0, 200) : null; // 元CSVの見出し（元の形で出力するため）
     const r = await env.DB.prepare(
-      'INSERT INTO pim_imports(account_id, ts, filename, source, mapping, total) VALUES(?,?,?,?,?,?)'
-    ).bind(acct, nowIso(), String(b.filename || '').slice(0, 200), (String(b.source || '').slice(0, 80) + (by ? '（' + by + '）' : '')).slice(0, 100), JSON.stringify(b.mapping || {}).slice(0, 4000), Math.max(0, parseInt(b.total, 10) || 0)).run();
+      'INSERT INTO pim_imports(account_id, ts, filename, source, mapping, headers, total) VALUES(?,?,?,?,?,?,?)'
+    ).bind(acct, nowIso(), String(b.filename || '').slice(0, 200), (String(b.source || '').slice(0, 80) + (by ? '（' + by + '）' : '')).slice(0, 100), JSON.stringify(b.mapping || {}).slice(0, 4000), headers ? JSON.stringify(headers).slice(0, 20000) : null, Math.max(0, parseInt(b.total, 10) || 0)).run();
     return json({ ok: true, import_id: r.meta && r.meta.last_row_id });
   }
 
@@ -47,7 +48,12 @@ export async function onRequestPost({ request, env, data }) {
     const importId = parseInt(b.import_id, 10) || null;
     const ts = nowIso();
     const raw = (Array.isArray(b.products) ? b.products : []).slice(0, 500);
-    const products = raw.map((r) => ({ p: sanitizeProduct(r), mode: r && r._mode === 'overwrite' ? 'upsert' : 'insert_only' })).filter((x) => x.p.jan && janShapeOk(x.p.jan) && x.p.name);
+    const products = raw.map((r) => {
+      const p = sanitizeProduct(r);
+      // 元CSVの1行（見出し→値）。「菊池CSVの形＋画像」で出すために、そのまま保管する
+      if (r && r._raw && typeof r._raw === 'object') { try { p.raw = JSON.stringify(r._raw); } catch (e) { /* */ } }
+      return { p, mode: r && r._mode === 'overwrite' ? 'upsert' : 'insert_only' };
+    }).filter((x) => x.p.jan && janShapeOk(x.p.jan) && x.p.name);
     // 保存（新規のつもりのものは「無いときだけ」。changes=0 なら他の人が先に入れている）
     let inserted = 0, updated = 0, conflicts = 0;
     const conflictJans = [];
@@ -102,6 +108,6 @@ export async function onRequestPost({ request, env, data }) {
 
 // GET /api/pim/import → 取り込み履歴
 export async function onRequestGet({ env, data }) {
-  const rs = await env.DB.prepare('SELECT id, ts, filename, source, total, inserted, updated, skipped, invalid FROM pim_imports WHERE account_id=? ORDER BY id DESC LIMIT 50').bind(data.account.id).all();
+  const rs = await env.DB.prepare('SELECT id, ts, filename, source, total, inserted, updated, skipped, invalid, headers IS NOT NULL AS has_headers FROM pim_imports WHERE account_id=? ORDER BY id DESC LIMIT 50').bind(data.account.id).all();
   return json({ ok: true, imports: rs.results || [] });
 }
