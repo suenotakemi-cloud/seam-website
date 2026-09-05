@@ -1,5 +1,5 @@
 // 写真の検品（PC）— 撮った写真に OK / 撮り直し を付ける。撮り直しはスマホの撮影キューに出る
-//   GET  /api/pim/review?status=pending|ok|retake|all&maker=&limit=60&offset=0 → { images:[{jan,slot,url,name,maker,created_by,created_at,review,review_note}], total }
+//   GET  /api/pim/review?status=pending|ok|retake|warn|all&maker=&limit=60&offset=0   （warn = 登録時の自動チェックで注意が付いた未検品の写真） → { images:[{jan,slot,url,name,maker,created_by,created_at,review,review_note}], total }
 //   POST /api/pim/review { jan, slot, review:'ok'|'retake'|null, note }   … 1枚に付ける
 //   POST /api/pim/review { items:[{jan,slot,review,note}] }                … まとめて（最大 200）
 //   写真を撮り直す（同じ番号に上げ直す）と review は自動で外れる（images.js）
@@ -15,11 +15,12 @@ export async function onRequestGet({ request, env, data }) {
   const where = ['i.account_id=?'], binds = [acct];
   if (status === 'pending') where.push('i.review IS NULL');
   else if (status === 'ok' || status === 'retake') { where.push('i.review=?'); binds.push(status); }
+  else if (status === 'warn') where.push('i.quality_warn IS NOT NULL AND i.review IS NULL');
   if (maker) { where.push('p.maker=?'); binds.push(maker); }
   const W = ' FROM pim_images i JOIN pim_products p ON p.account_id=i.account_id AND p.jan=i.jan WHERE ' + where.join(' AND ');
   const total = await env.DB.prepare('SELECT COUNT(*) AS n' + W).bind(...binds).first();
   const rs = await env.DB.prepare(
-    'SELECT i.jan, i.slot, i.width, i.height, i.bytes, i.created_by, i.created_at, i.review, i.review_note, i.reviewed_by, p.name, p.maker, p.brand, p.sku' + W +
+    'SELECT i.jan, i.slot, i.width, i.height, i.bytes, i.created_by, i.created_at, i.review, i.review_note, i.reviewed_by, i.quality_warn, p.name, p.maker, p.brand, p.sku' + W +
     ' ORDER BY i.created_at DESC LIMIT ? OFFSET ?'
   ).bind(...binds, limit, offset).all();
   const origin = url.origin;

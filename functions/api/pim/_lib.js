@@ -147,7 +147,7 @@ export async function verifyToken(env, token) {
 }
 export function publicAccount(a) {
   if (!a) return null;
-  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at, has_api_key: !!a.api_key };
+  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at, has_api_key: !!a.api_key, webhook_url: a.webhook_url || '', webhook_last_at: a.webhook_last_at || null, webhook_last_status: a.webhook_last_status || null };
 }
 // EC 連携用の読み取り専用キー（管理画面で発行。夜間バッチが export を取りに来るためのもの）
 export function newApiKey() {
@@ -186,8 +186,9 @@ export async function ensureSchema(env) {
       price_ex INTEGER, price_in INTEGER, retail_price INTEGER, cost_price INTEGER,
       amount REAL, unit TEXT, maker TEXT, brand TEXT, category TEXT, description TEXT, sku TEXT,
       source TEXT, import_id INTEGER, image_count INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT, raw TEXT, claimed_by TEXT, claimed_at TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT, raw TEXT, claimed_by TEXT, claimed_at TEXT, name_key TEXT,
       PRIMARY KEY (account_id, jan))`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_name ON pim_products(account_id, name)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(account_id, maker)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_imgs ON pim_products(account_id, image_count)`,
@@ -195,11 +196,21 @@ export async function ensureSchema(env) {
     `CREATE TABLE IF NOT EXISTS pim_images (
       account_id INTEGER NOT NULL, jan TEXT NOT NULL, slot INTEGER NOT NULL, key TEXT NOT NULL, bytes INTEGER, width INTEGER, height INTEGER,
       original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT,
-      review TEXT, review_note TEXT, reviewed_by TEXT, reviewed_at TEXT, PRIMARY KEY (account_id, jan, slot))`,
+      review TEXT, review_note TEXT, reviewed_by TEXT, reviewed_at TEXT, quality TEXT, quality_warn TEXT, PRIMARY KEY (account_id, jan, slot))`,
     `CREATE TABLE IF NOT EXISTS pim_imports (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT, headers TEXT, kind TEXT,
       total INTEGER NOT NULL DEFAULT 0, inserted INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0,
-      skipped INTEGER NOT NULL DEFAULT 0, invalid INTEGER NOT NULL DEFAULT 0)`,
+      skipped INTEGER NOT NULL DEFAULT 0, invalid INTEGER NOT NULL DEFAULT 0, rolled_back_at TEXT, rolled_back_by TEXT)`,
+    `CREATE TABLE IF NOT EXISTS pim_import_backup (import_id INTEGER NOT NULL, account_id INTEGER NOT NULL, jan TEXT NOT NULL, before TEXT, PRIMARY KEY (import_id, jan))`,
+    `CREATE TABLE IF NOT EXISTS pim_staff (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, name TEXT NOT NULL, pin_hash TEXT, active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, UNIQUE (account_id, name))`,
+    `CREATE TABLE IF NOT EXISTS pim_dict (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, kind TEXT NOT NULL, src TEXT NOT NULL, dst TEXT NOT NULL,
+      created_at TEXT NOT NULL, created_by TEXT, UNIQUE (account_id, kind, src))`,
+    `CREATE TABLE IF NOT EXISTS pim_changes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, jan TEXT NOT NULL, kind TEXT NOT NULL, ts TEXT NOT NULL, by TEXT)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_changes_acct ON pim_changes(account_id, id)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_imports_acct ON pim_imports(account_id, id)`,
     `CREATE TABLE IF NOT EXISTS pim_issues (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, import_id INTEGER, kind TEXT NOT NULL, jan TEXT,
@@ -214,9 +225,13 @@ export async function ensureSchema(env) {
   for (const a of ['ALTER TABLE pim_products ADD COLUMN raw TEXT', 'ALTER TABLE pim_imports ADD COLUMN headers TEXT',
     'ALTER TABLE pim_images ADD COLUMN review TEXT', 'ALTER TABLE pim_images ADD COLUMN review_note TEXT', 'ALTER TABLE pim_images ADD COLUMN reviewed_by TEXT', 'ALTER TABLE pim_images ADD COLUMN reviewed_at TEXT',
     'ALTER TABLE pim_accounts ADD COLUMN api_key TEXT', 'ALTER TABLE pim_imports ADD COLUMN kind TEXT',
-    'ALTER TABLE pim_products ADD COLUMN claimed_by TEXT', 'ALTER TABLE pim_products ADD COLUMN claimed_at TEXT']) {
+    'ALTER TABLE pim_products ADD COLUMN claimed_by TEXT', 'ALTER TABLE pim_products ADD COLUMN claimed_at TEXT',
+    'ALTER TABLE pim_products ADD COLUMN name_key TEXT', 'ALTER TABLE pim_images ADD COLUMN quality TEXT', 'ALTER TABLE pim_images ADD COLUMN quality_warn TEXT',
+    'ALTER TABLE pim_imports ADD COLUMN rolled_back_at TEXT', 'ALTER TABLE pim_imports ADD COLUMN rolled_back_by TEXT',
+    'ALTER TABLE pim_accounts ADD COLUMN webhook_url TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_secret TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_last_at TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_last_status TEXT']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
+  try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)').run(); } catch (e) { /* */ }
   await seedIfEmpty(env);
   schemaReady = true;
 }
@@ -261,9 +276,107 @@ export function sanitizeProduct(p) {
     amount: NUM(p.amount), unit: STR(p.unit, 16),
     maker: STR(p.maker, 100), brand: STR(p.brand, 100), category: STR(p.category, 200),
     description: STR(p.description, 4000), sku: STR(p.sku, 64), source: STR(p.source, 100),
+    name_key: nameKey(p.name),
   };
 }
-export const PRODUCT_COLS = ['jan', 'jan_valid', 'name', 'price', 'tax_included', 'tax_rate', 'price_ex', 'price_in', 'retail_price', 'cost_price', 'amount', 'unit', 'maker', 'brand', 'category', 'description', 'sku', 'source'];
+export const PRODUCT_COLS = ['jan', 'jan_valid', 'name', 'price', 'tax_included', 'tax_rate', 'price_ex', 'price_in', 'retail_price', 'cost_price', 'amount', 'unit', 'maker', 'brand', 'category', 'description', 'sku', 'source', 'name_key'];
+
+// ── 商品名の「似ている判定」用キー（js/pim-normalize.js の nameKey と同じ規則。変えるときは両方）──
+//   全角→半角・小文字・空白と記号を除く・半角カナ→全角・単位の表記を揃える（250mL / 250ｍｌ / 250 ml → 250ml）
+const HK = 'ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ', FK = 'ヲァィゥェォャュョッーアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン';
+export function nameKey(name) {
+  let s = String(name == null ? '' : name).replace(/[！-～]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xFEE0)).replace(/　/g, ' ');
+  s = s.replace(/[ｦ-ﾝ]/g, (c) => FK[HK.indexOf(c)] || c).replace(/[ｶ-ﾄﾊ-ﾎｳ][ﾞﾟ]/g, (m) => m); // 半角カナ→全角（濁点は次で正規化）
+  try { s = s.normalize('NFKC'); } catch (e) { /* */ }
+  s = s.toLowerCase();
+  s = s.replace(/(\d)\s*(ml|mL|cc)\b/g, '$1ml').replace(/(\d)\s*l\b/g, '$1l').replace(/(\d)\s*(kg)\b/g, '$1kg').replace(/(\d)\s*g\b/g, '$1g');
+  s = s.replace(/[\s\-_/・･.,、。()（）\[\]【】「」『』〈〉<>:：;；'"’”`~〜～!?！？#＊*&＆%％]/g, ''); // 「+」は残す（エマルジョン と エマルジョン+ は別商品）
+  return s.slice(0, 200);
+}
+
+// ── 表記の辞書（メーカー・ブランド・カテゴリの揃え）──
+//   pim_dict の (kind, src → dst) を商品に当てる。取り込み・スマホ編集の保存時と、「既存の商品に適用」で使う
+export async function loadDict(env, acct) {
+  const rs = await env.DB.prepare('SELECT kind, src, dst FROM pim_dict WHERE account_id=?').bind(acct).all();
+  const d = { maker: {}, brand: {}, category: {} };
+  for (const r of (rs.results || [])) if (d[r.kind]) d[r.kind][r.src] = r.dst;
+  d.empty = !Object.keys(d.maker).length && !Object.keys(d.brand).length && !Object.keys(d.category).length;
+  return d;
+}
+export function applyDict(dict, p) {
+  if (!dict || dict.empty) return p;
+  if (p.maker && dict.maker[p.maker] != null) p.maker = dict.maker[p.maker];
+  if (p.brand && dict.brand[p.brand] != null) p.brand = dict.brand[p.brand];
+  if (p.category) {
+    if (dict.category[p.category] != null) p.category = dict.category[p.category];
+    else p.category = p.category.split(' > ').map((c) => (dict.category[c] != null ? dict.category[c] : c)).filter(Boolean).join(' > ');
+  }
+  return p;
+}
+
+// ── 変更の記録（EC 側の差分取得・Webhook 用）──
+//   kind: product（登録・更新）/ image（写真の追加・差し替え・並べ替え・削除）/ delete（商品の削除）
+export async function logChanges(env, acct, jans, kind, by) {
+  const list = Array.from(new Set((jans || []).filter(Boolean)));
+  if (!list.length) return;
+  const ts = nowIso();
+  // 記録は 90 日で捨てる（EC 側は latest_id を覚えて追いかける前提。たまに掃除）
+  if (Math.random() < 0.02) { try { await env.DB.prepare('DELETE FROM pim_changes WHERE account_id=? AND ts<?').bind(acct, new Date(Date.now() - 90 * 86400000).toISOString()).run(); } catch (e) { /* */ } }
+  for (let i = 0; i < list.length; i += 50) {
+    await env.DB.batch(list.slice(i, i + 50).map((j) => env.DB.prepare('INSERT INTO pim_changes(account_id, jan, kind, ts, by) VALUES(?,?,?,?,?)').bind(acct, j, kind, ts, by || null)));
+  }
+}
+// Webhook（EC 側へ「この JAN が変わった」を push）。context.waitUntil で応答を待たせない。失敗しても業務は止めない
+export function notifyWebhook(context, account, kind, jans, by) {
+  try {
+    const url = account && account.webhook_url;
+    if (!url || !webhookUrlOk(url)) return;
+    const env = context.env;
+    const list = Array.from(new Set((jans || []).filter(Boolean))).slice(0, 2000);
+    if (!list.length) return;
+    const body = JSON.stringify({ event: 'changed', kind, account: account.login_id, jans: list, count: list.length, by: by || null, ts: nowIso(),
+      export_url: new URL(context.request.url).origin + '/api/pim/export?format=source&since=' + encodeURIComponent(new Date(Date.now() - 60000).toISOString()) });
+    const run = (async () => {
+      let status = 'error';
+      try {
+        const sig = account.webhook_secret ? 'sha256=' + Array.from(new Uint8Array(await hmac(account.webhook_secret, body)), (b) => b.toString(16).padStart(2, '0')).join('') : '';
+        const r = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json', 'x-seam-signature': sig, 'x-seam-event': 'changed' }, body, signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined });
+        status = String(r.status);
+      } catch (e) { status = 'error: ' + String(e && e.message || e).slice(0, 80); }
+      try { await env.DB.prepare('UPDATE pim_accounts SET webhook_last_at=?, webhook_last_status=? WHERE id=?').bind(nowIso(), status, account.id).run(); } catch (e) { /* */ }
+      return status;
+    })();
+    if (context.waitUntil) context.waitUntil(run);
+    return run;
+  } catch (e) { /* */ }
+}
+// https のみ（ローカルの動作確認用に http://127.0.0.1 / localhost だけ許す）
+export function webhookUrlOk(url) { return /^https:\/\/[^\s]+$/.test(url) || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(url); }
+export function newWebhookSecret() {
+  const a = crypto.getRandomValues(new Uint8Array(24));
+  return 'whsec_' + Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+// 担当者の PIN 確認後に渡す短い署名（x-seam-staff）。中身: s.account_id.staff_id.exp
+const STAFF_DAYS = 60;
+export async function signStaff(env, accountId, staffId) {
+  const exp = Math.floor(Date.now() / 1000) + STAFF_DAYS * 86400;
+  const payload = 's.' + accountId + '.' + staffId + '.' + exp;
+  return b64url(enc.encode(payload)) + '.' + b64url(await hmac(secretOf(env), payload));
+}
+export async function verifyStaff(env, token, accountId) {
+  try {
+    const [p, sig] = String(token || '').split('.');
+    if (!p || !sig) return null;
+    const payload = new TextDecoder().decode(unb64url(p));
+    const want = b64url(await hmac(secretOf(env), payload));
+    if (want.length !== sig.length) return null;
+    let diff = 0; for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ sig.charCodeAt(i);
+    if (diff !== 0) return null;
+    const m = payload.split('.');
+    if (m[0] !== 's' || parseInt(m[1], 10) !== accountId || parseInt(m[3], 10) < Math.floor(Date.now() / 1000)) return null;
+    return { staffId: parseInt(m[2], 10) };
+  } catch (e) { return null; }
+}
 
 // UPSERT 文（import_id と created_at は挿入時のみ・updated_at/updated_by は毎回）
 //   mode 'upsert'      … あれば上書き（本人が「上書き」と決めたとき）
@@ -285,7 +398,7 @@ export function withImages(origin, acct, rows, imagesByJan) {
   return rows.map((r) => {
     const imgs = (imagesByJan[r.jan] || []).slice().sort((a, b) => a.slot - b.slot);
     return Object.assign({}, r, {
-      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, acct, r.jan, im.slot, im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at, review: im.review || null, review_note: im.review_note || null })),
+      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, acct, r.jan, im.slot, im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at, review: im.review || null, review_note: im.review_note || null, quality_warn: im.quality_warn || null })),
       image_urls: imgs.map((im) => imageUrl(origin, acct, r.jan, im.slot, im.created_at)),
     });
   });
@@ -294,7 +407,7 @@ export async function loadImages(env, acct, jans) {
   const out = {};
   for (let i = 0; i < jans.length; i += 90) {
     const chunk = jans.slice(i, i + 90);
-    const rs = await env.DB.prepare('SELECT jan, slot, width, height, bytes, created_at, created_by, review, review_note FROM pim_images WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
+    const rs = await env.DB.prepare('SELECT jan, slot, width, height, bytes, created_at, created_by, review, review_note, quality_warn FROM pim_images WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
     for (const im of (rs.results || [])) (out[im.jan] = out[im.jan] || []).push(im);
   }
   return out;

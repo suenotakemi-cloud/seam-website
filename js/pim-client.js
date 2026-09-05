@@ -6,7 +6,7 @@
  */
 (function (root) {
   'use strict';
-  var TOKEN_LS = 'seam_pim_token', ACCT_LS = 'seam_pim_account', USER_LS = 'seam_pim_user', ADMIN_LS = 'seam_pim_admin_key';
+  var TOKEN_LS = 'seam_pim_token', ACCT_LS = 'seam_pim_account', USER_LS = 'seam_pim_user', ADMIN_LS = 'seam_pim_admin_key', STAFF_LS = 'seam_pim_staff';
   function lsGet(k) { try { return localStorage.getItem(k) || sessionStorage.getItem(k) || ''; } catch (e) { return ''; } }
   function lsSet(k, v, remember) { try { if (remember === false) sessionStorage.setItem(k, v); else localStorage.setItem(k, v); } catch (e) { /* private mode */ } }
   function lsDel(k) { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch (e) { /* */ } }
@@ -18,9 +18,11 @@
     get: function () { return lsGet(TOKEN_LS); },                       // トークン
     account: function () { try { return JSON.parse(lsGet(ACCT_LS) || 'null'); } catch (e) { return null; } },
     set: function (token, account, remember) { lsSet(TOKEN_LS, token, remember); lsSet(ACCT_LS, JSON.stringify(account || null), remember); },
-    clear: function () { lsDel(TOKEN_LS); lsDel(ACCT_LS); },
+    clear: function () { lsDel(TOKEN_LS); lsDel(ACCT_LS); lsDel(STAFF_LS); },
     user: function () { return lsGet(USER_LS).slice(0, 40); },           // 担当者名
     setUser: function (n) { lsSet(USER_LS, String(n || '').trim().slice(0, 40)); },
+    staffToken: function () { return lsGet(STAFF_LS); },                // 担当者の PIN 確認後の署名（x-seam-staff）
+    setStaff: function (name, token) { Auth.setUser(name); if (token) lsSet(STAFF_LS, token); else lsDel(STAFF_LS); },
     adminKey: function () { return lsGet(ADMIN_LS); },
     setAdminKey: function (k, remember) { lsSet(ADMIN_LS, k, remember); },
     clearAdmin: function () { lsDel(ADMIN_LS); },
@@ -58,7 +60,7 @@
     opts = opts || {};
     var headers = Object.assign({ 'x-seam-user': encodeURIComponent(Auth.user()) }, opts.headers || {});
     if (opts.admin) { headers['x-seam-key'] = Auth.adminKey(); if (opts.asAccount) headers['x-seam-account'] = opts.asAccount; }
-    else headers['x-seam-token'] = Auth.get();
+    else { headers['x-seam-token'] = Auth.get(); var st = Auth.staffToken(); if (st) headers['x-seam-staff'] = st; }
     var init = { method: opts.method || 'GET', headers: headers, cache: 'no-store' };
     if (opts.keepalive) init.keepalive = true; // 画面を閉じる瞬間でも送り切る（撮影中フラグの解除など）
     if (opts.body != null) {
@@ -68,6 +70,7 @@
     return fetch('/api/pim/' + path, init).then(function (r) {
       return r.json().catch(function () { return { ok: false, reason: 'bad_response', status: r.status }; }).then(function (j) {
         if (r.status === 401) { throw { auth: true, reason: j && j.reason, message: j && j.message, keyConfigured: j && j.keyConfigured !== false, info: j }; }
+        if (r.status === 403 && j && j.staff_required) { throw { staff: true, reason: j.reason, message: j.message, info: j }; } // 担当者を選び直す必要あり
         if (r.status === 503 && j && j.reason === 'no_db') { throw { setup: true, info: j }; }
         if (!r.ok && j && j.ok !== true) { j.status = r.status; }
         return j;
@@ -190,10 +193,12 @@
   function toWebp(file, opts) {
     opts = opts || {};
     return decodeImage(file).then(function (src) {
+      var sw = src.width || src.naturalWidth, sh = src.height || src.naturalHeight;
       var canvas = processProductImage(src, opts);
       if (src.close) { try { src.close(); } catch (e) { /* */ } }
+      var q = null; try { q = analyzeImage(canvas, { srcW: sw, srcH: sh }); } catch (e) { q = null; }
       return canvasToWebp(canvas, opts.quality).then(function (r) {
-        return Object.assign(r, { originalType: file.type || '', originalName: file.name || '' });
+        return Object.assign(r, { originalType: file.type || '', originalName: file.name || '', quality: q });
       });
     });
   }
@@ -233,12 +238,85 @@
       fd.append('slot', String(slot));
       fd.append('file', r.blob, jan + '_' + slot + '.webp');
       fd.append('encoder', r.encoder || '');
+      if (r.quality) fd.append('quality', JSON.stringify(r.quality));
       fd.append('original_name', r.originalName);
       fd.append('original_type', r.originalType);
       fd.append('width', String(r.width));
       fd.append('height', String(r.height));
       return api('images', { method: 'POST', body: fd });
     });
+  }
+
+  // ── 写真の自動チェック（暗い・ピンぼけ・小さい・白飛び）────────────────
+  //   登録の瞬間に「この写真は使えるか」を機械的に見る。検品の手戻りを減らすための目安で、止めはしない。
+  //   src: 加工済み canvas。opts.srcW/srcH: 元画像の大きさ（小さすぎる元を拡大していないか）
+  //   返り値 { luma, sharp, src_w, src_h, warn:['暗い','ピンぼけ','小さい','白飛び'] }
+  var QUALITY = { dark: 150, sharp: 12, small: 500, blown: 0.93 };
+  function analyzeImage(src, opts) {
+    opts = opts || {};
+    var N = 256, c = document.createElement('canvas'); c.width = N; c.height = N;
+    var ctx = c.getContext('2d'); ctx.drawImage(src, 0, 0, N, N);
+    var d = ctx.getImageData(0, 0, N, N).data, g = new Float32Array(N * N);
+    var sum = 0, white = 0, i;
+    for (i = 0; i < N * N; i++) { var l = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]; g[i] = l; sum += l; if (l > 250) white++; }
+    var luma = sum / (N * N);
+    // 縁（外側 6%）の明るさ = 白い紙・シートの写り。暗ければ「照明不足」（黒いボトルなど商品自体が暗いのとは区別できる）
+    var es = 0, ec = 0, E = Math.round(N * 0.06);
+    for (var ey = 0; ey < N; ey++) for (var ex = 0; ex < N; ex++) { if (ey < E || ey >= N - E || ex < E || ex >= N - E) { es += g[ey * N + ex]; ec++; } }
+    var edgeLuma = ec ? es / ec : luma;
+    // 中央 60% の領域（商品が写るところ）だけで、被写体の明るさとピントを見る（白背景に引きずられないように）
+    var a = Math.round(N * 0.2), b = Math.round(N * 0.8), n2 = 0, s2 = 0, v = 0, cnt = 0, nonWhite = 0;
+    for (var y = a; y < b; y++) for (var x = a; x < b; x++) { var k = y * N + x; if (g[k] < 245) { nonWhite++; s2 += g[k]; } n2++; }
+    var subjectLuma = nonWhite ? s2 / nonWhite : luma;
+    // ラプラシアンの分散（ピントの目安）。被写体（白でない画素）の周りだけ
+    for (var y2 = a + 1; y2 < b - 1; y2++) for (var x2 = a + 1; x2 < b - 1; x2++) {
+      var k2 = y2 * N + x2; if (g[k2] >= 245) continue;
+      var lap = 4 * g[k2] - g[k2 - 1] - g[k2 + 1] - g[k2 - N] - g[k2 + N];
+      v += lap * lap; cnt++;
+    }
+    var sharp = cnt ? Math.sqrt(v / cnt) : 0;
+    var warn = [];
+    if (edgeLuma < QUALITY.dark) warn.push('暗い');
+    if (cnt > 200 && sharp < QUALITY.sharp) warn.push('ピンぼけ');
+    if (opts.srcW && opts.srcH && Math.min(opts.srcW, opts.srcH) < QUALITY.small) warn.push('小さい');
+    if (white / (N * N) > QUALITY.blown && nonWhite < n2 * 0.05) warn.push('白飛び');
+    return { luma: Math.round(luma), edge_luma: Math.round(edgeLuma), subject_luma: Math.round(subjectLuma), sharp: Math.round(sharp * 10) / 10, src_w: opts.srcW || null, src_h: opts.srcH || null, warn: warn };
+  }
+
+  // ── zip 書き出し（圧縮なし・ブラウザ側で作る）────────────────────────
+  //   写真は webp で既に圧縮済みなので「格納のみ」で十分。サーバの CPU を使わず、何万枚でも順に流せる。
+  //   使い方: var z = zipWriter(sink); await z.add(name, uint8); ... await z.close();
+  //   sink: { write(Uint8Array) → Promise | void }（showSaveFilePicker の WritableStream でも、配列に貯めて Blob にしてもよい）
+  var CRC_T = (function () { var t = new Uint32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; } return t; })();
+  function crc32(u8) { var c = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function dosTime(d) { return ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF; }
+  function dosDate(d) { return (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF; }
+  function zipWriter(sink) {
+    var enc = new TextEncoder(), entries = [], offset = 0, now = new Date();
+    function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+    function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+    function write(u8) { offset += u8.length; return Promise.resolve(sink.write(u8)); }
+    return {
+      add: function (name, data) {
+        var nm = enc.encode(name), crc = crc32(data);
+        var hdr = new Uint8Array([].concat(u32(0x04034b50), u16(20), u16(0x0800), u16(0), u16(dosTime(now)), u16(dosDate(now)), u32(crc), u32(data.length), u32(data.length), u16(nm.length), u16(0)));
+        entries.push({ nm: nm, crc: crc, size: data.length, off: offset });
+        return write(hdr).then(function () { return write(nm); }).then(function () { return write(data); });
+      },
+      close: function () {
+        var cdStart = offset, parts = [];
+        entries.forEach(function (e) {
+          parts.push(new Uint8Array([].concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(dosTime(now)), u16(dosDate(now)), u32(e.crc), u32(e.size), u32(e.size), u16(e.nm.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off))));
+          parts.push(e.nm);
+        });
+        var cdLen = parts.reduce(function (a, p) { return a + p.length; }, 0);
+        parts.push(new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(cdLen), u32(cdStart), u16(0))));
+        var chain = Promise.resolve(); parts.forEach(function (p) { chain = chain.then(function () { return write(p); }); });
+        return chain.then(function () { return { entries: entries.length, bytes: offset }; });
+      },
+      count: function () { return entries.length; },
+      bytes: function () { return offset; },
+    };
   }
 
   // ── スキャン音・バイブ ────────────────────────────────────
@@ -258,5 +336,5 @@
   function fmtYen(v) { return v == null || v === '' ? '—' : '¥' + Number(v).toLocaleString('ja-JP'); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  root.PimClient = { Auth: Auth, api: api, toWebp: toWebp, canvasToWebp: canvasToWebp, processProductImage: processProductImage, whitenBackground: whitenBackground, canMakeWebp: canMakeWebp, uploadImage: uploadImage, beep: beep, fmtYen: fmtYen, esc: esc };
+  root.PimClient = { Auth: Auth, api: api, toWebp: toWebp, canvasToWebp: canvasToWebp, processProductImage: processProductImage, whitenBackground: whitenBackground, analyzeImage: analyzeImage, QUALITY: QUALITY, zipWriter: zipWriter, crc32: crc32, canMakeWebp: canMakeWebp, uploadImage: uploadImage, beep: beep, fmtYen: fmtYen, esc: esc };
 })(window);

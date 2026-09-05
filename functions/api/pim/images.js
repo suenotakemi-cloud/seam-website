@@ -5,8 +5,26 @@
 //          お互いを上書きしない（INSERT が (account_id,jan,slot) の主キーで衝突したら次の番号でやり直す）
 //          slot=1..5 の指定は「その番号を差し替える」意味（本人が写真をタップして撮り直したとき）
 //          ブラウザ側で webp に変換して送る。webp 以外が届いたときは Cloudflare Images binding(IMAGES)があれば変換、無ければ 415
+//          quality（JSON・任意）… ブラウザ側の自動チェック結果 {luma, sharp, src_w, src_h, warn:[...]}。warn は検品画面の絞り込みに使う
+//   POST   /api/pim/images  application/json { jan, action:'reorder', order:[3,1,2] } → 並べ替え（order は「今の番号」を新しい順に）
+//                                              { jan, action:'main', slot:3 }         → その写真を 1枚目（メイン）にして他を後ろへ
 //   DELETE /api/pim/images?jan=&slot=          → 消して、後ろの写真を前に詰める（メルカリ式）
-import { json, cleanJan, janShapeOk, imageKey, imageUrl, nowIso, hasR2, SLOT_MIN, SLOT_MAX, userOf, blobPut, blobGet, blobDelete, imageStore } from './_lib.js';
+import { json, cleanJan, janShapeOk, imageKey, imageUrl, nowIso, hasR2, SLOT_MIN, SLOT_MAX, userOf, blobPut, blobGet, blobDelete, imageStore, logChanges, notifyWebhook } from './_lib.js';
+
+const QUALITY_WARNS = ['暗い', 'ピンぼけ', '小さい', '白飛び'];
+function parseQuality(raw) {
+  if (!raw) return [null, null];
+  let q = null; try { q = JSON.parse(String(raw).slice(0, 2000)); } catch (e) { return [null, null]; }
+  if (!q || typeof q !== 'object') return [null, null];
+  const warn = Array.isArray(q.warn) ? q.warn.filter((w) => QUALITY_WARNS.indexOf(w) >= 0) : [];
+  const keep = { luma: q.luma, sharp: q.sharp, src_w: q.src_w, src_h: q.src_h, warn };
+  return [JSON.stringify(keep), warn.length ? warn.join(',') : null];
+}
+async function readBlob(env, key) {
+  const obj = await blobGet(env, key);
+  if (!obj) return null;
+  return obj.body instanceof ArrayBuffer ? new Uint8Array(obj.body) : new Uint8Array(await new Response(obj.body).arrayBuffer());
+}
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -32,8 +50,10 @@ export async function onRequestGet({ request, env, data }) {
   return json({ ok: true, jan, r2: hasR2(env), store: imageStore(env), images: await listImages(env, url.origin, acct, jan) });
 }
 
-export async function onRequestPost({ request, env, data }) {
+export async function onRequestPost(context) {
+  const { request, env, data } = context;
   const acct = data.account.id;
+  if ((request.headers.get('content-type') || '').indexOf('application/json') >= 0) return reorder(context);
   let fd;
   try { fd = await request.formData(); } catch (e) { return json({ ok: false, reason: 'bad_form' }, 400); }
   const jan = cleanJan(fd.get('jan') || '');
@@ -63,6 +83,7 @@ export async function onRequestPost({ request, env, data }) {
       return json({ ok: false, reason: 'not_webp', message: 'webp 以外の画像が届きました。ブラウザ側で変換されるはずです（対応ブラウザでお試しください）' }, 415);
     }
   }
+  const [quality, qualityWarn] = parseQuality(fd.get('quality'));
   const meta = [buf.length, parseInt(fd.get('width'), 10) || null, parseInt(fd.get('height'), 10) || null,
     String(fd.get('original_name') || '').slice(0, 200), String(fd.get('original_type') || '').slice(0, 100)];
   const put = (key) => blobPut(env, key, buf);
@@ -82,8 +103,8 @@ export async function onRequestPost({ request, env, data }) {
       ts = nowIso();
       try {
         await env.DB.prepare(
-          'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?)'
-        ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null).run();
+          'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, quality, quality_warn) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null, quality, qualityWarn).run();
         done = true;
       } catch (e) { /* 取られた。次の番号へ */ }
     }
@@ -96,15 +117,59 @@ export async function onRequestPost({ request, env, data }) {
   } else {
     await put(imageKey(acct, jan, usedSlot));
     await env.DB.prepare(
-      'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?) ' +
-      'ON CONFLICT(account_id, jan, slot) DO UPDATE SET key=excluded.key, bytes=excluded.bytes, width=excluded.width, height=excluded.height, original_name=excluded.original_name, original_type=excluded.original_type, created_at=excluded.created_at, created_by=excluded.created_by, review=NULL, review_note=NULL, reviewed_by=NULL, reviewed_at=NULL'
-    ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null).run();
+      'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, quality, quality_warn) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ' +
+      'ON CONFLICT(account_id, jan, slot) DO UPDATE SET key=excluded.key, bytes=excluded.bytes, width=excluded.width, height=excluded.height, original_name=excluded.original_name, original_type=excluded.original_type, created_at=excluded.created_at, created_by=excluded.created_by, review=NULL, review_note=NULL, reviewed_by=NULL, reviewed_at=NULL, quality=excluded.quality, quality_warn=excluded.quality_warn'
+    ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null, quality, qualityWarn).run();
   }
   const pts = await syncCount(env, acct, jan);
-  return json({ ok: true, jan, slot: usedSlot, url: imageUrl(origin, acct, jan, usedSlot, ts), bytes: buf.length, product_updated_at: pts, images: await listImages(env, origin, acct, jan) });
+  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by);
+  return json({ ok: true, jan, slot: usedSlot, url: imageUrl(origin, acct, jan, usedSlot, ts), bytes: buf.length, product_updated_at: pts, quality_warn: qualityWarn, images: await listImages(env, origin, acct, jan) });
 }
 
-export async function onRequestDelete({ request, env, data }) {
+// 並べ替え・メイン差し替え（写真の実体を新しい番号のキーへ置き直し、台帳を作り直す）
+async function reorder(context) {
+  const { request, env, data } = context;
+  const acct = data.account.id;
+  const b = await request.json().catch(() => null);
+  if (!b) return json({ ok: false, reason: 'bad_json' }, 400);
+  const jan = cleanJan(b.jan || '');
+  if (!jan || !janShapeOk(jan)) return json({ ok: false, reason: 'bad_jan' }, 400);
+  const origin = new URL(request.url).origin;
+  const rs = await env.DB.prepare('SELECT * FROM pim_images WHERE account_id=? AND jan=? ORDER BY slot').bind(acct, jan).all();
+  const imgs = rs.results || [];
+  const cur = imgs.map((i) => i.slot);
+  let order;
+  if (b.action === 'main') {
+    const s = parseInt(b.slot, 10);
+    if (cur.indexOf(s) < 0) return json({ ok: false, reason: 'not_found' }, 404);
+    order = [s].concat(cur.filter((x) => x !== s));
+  } else if (b.action === 'reorder') {
+    order = (Array.isArray(b.order) ? b.order : []).map((x) => parseInt(x, 10));
+    if (order.length !== cur.length || order.slice().sort().join() !== cur.slice().sort().join()) return json({ ok: false, reason: 'bad_order', message: '並び順が今の写真と合いません。画面を更新してからやり直してください' }, 409);
+  } else return json({ ok: false, reason: 'bad_action' }, 400);
+  const moves = order.map((oldSlot, i) => ({ from: oldSlot, to: i + 1 })).filter((m) => m.from !== m.to);
+  if (!moves.length) return json({ ok: true, jan, images: await listImages(env, origin, acct, jan) });
+  // 実体を読み込んでから書き戻す（数枚なので一括で持てる）。読めないものがあれば中止して何も変えない
+  const bufs = {};
+  for (const m of moves) { const u8 = await readBlob(env, imageKey(acct, jan, m.from)); if (!u8) return json({ ok: false, reason: 'blob_missing', message: m.from + '枚目の実体が見つかりません' }, 500); bufs[m.from] = u8; }
+  for (const m of moves) await blobPut(env, imageKey(acct, jan, m.to), bufs[m.from]);
+  const ts = nowIso();
+  const stmts = [env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=?').bind(acct, jan)];
+  const byOld = {}; imgs.forEach((im) => { byOld[im.slot] = im; });
+  order.forEach((oldSlot, i) => {
+    const im = byOld[oldSlot], to = i + 1;
+    stmts.push(env.DB.prepare('INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, review, review_note, reviewed_by, reviewed_at, quality, quality_warn) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+      .bind(acct, jan, to, imageKey(acct, jan, to), im.bytes, im.width, im.height, im.original_name, im.original_type, oldSlot === to ? im.created_at : ts, im.created_by, im.review, im.review_note, im.reviewed_by, im.reviewed_at, im.quality, im.quality_warn));
+  });
+  await env.DB.batch(stmts);
+  const by = userOf(request);
+  const pts = await syncCount(env, acct, jan);
+  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by);
+  return json({ ok: true, jan, product_updated_at: pts, images: await listImages(env, origin, acct, jan) });
+}
+
+export async function onRequestDelete(context) {
+  const { request, env, data } = context;
   const acct = data.account.id;
   const url = new URL(request.url);
   const jan = cleanJan(url.searchParams.get('jan') || '');
@@ -134,5 +199,7 @@ export async function onRequestDelete({ request, env, data }) {
     if (!moved) break; // 詰め先が埋まったら、それより後ろも動かさない（順番が入れ替わらないように）
   }
   const pts = await syncCount(env, acct, jan);
+  const by = userOf(request);
+  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by);
   return json({ ok: true, jan, product_updated_at: pts, images: await listImages(env, url.origin, acct, jan) });
 }

@@ -121,6 +121,7 @@
   3. **統一フォーマット CSV / JSON** … 下記の固定列。
 - 列（固定）: `JAN, 商品名, 価格(税抜), 価格(税込), 入力価格の税区分, 税率(%), 内容量, 単位, 内容量表記, 上代(税抜), 仕入価格, メーカー, ブランド, カテゴリ, 商品説明, 元商品コード, 画像1〜5, 画像枚数, 更新日時`
 - 画像は `https://seam.site/pim-img/products/<アカウント番号>/<JAN>/<枚目>.webp?v=…` の URL。EC 側からそのまま参照できます（CORS 許可済み）。
+- **写真を zip でまとめて落とす**（PC「出力」タブの下）… ファイル名は **JAN_枚目.webp** か **商品ID_枚目.webp** を選べます。「商品ごとにフォルダ」「1枚目だけ」も可。zip の中に `list.csv`（ファイル名・商品ID・JAN・商品名・枚目）が入ります。zip はブラウザ側で作るので枚数の上限はありません（Chrome / Edge は保存先を選んで 1 つの zip に直接書き出し。他のブラウザは約 300MB ごとに分割）。
 
 ### E. 撮影キュー（スマホ）— バーコードを読まずに順番に撮る
 - スキャン画面の「撮影キュー」に、**写真なし／1〜4枚（2周目）／撮り直し** の商品が **メーカー → ブランド → 商品名** の順で並びます。メーカーで絞れます。
@@ -146,6 +147,33 @@
 - 管理画面のアカウント一覧 → **「連携キー発行」** → ディーラーごとの読み取り専用キー（`seam_…`）が出ます。
 - EC 側は毎晩 `https://seam.site/api/pim/export?format=source&api_key=<キー>` を取りに来るだけ（`format=images` / `csv` / `json` も可）。書き込みはできません。
 - 漏れたら「再発行」で古いキーは即無効、「無効化」で止められます。
+- **差分だけ取る**: `…/export?format=source&since=2026-09-01T00:00:00Z&api_key=…`（その日時以降に変わった商品だけ。写真の追加・削除でも商品が「変わった」扱い）。`/api/pim/changes?since_id=<前回の latest_id>&api_key=…` で「変わった JAN の一覧」（`kind=delete` は EC 側でも消す）。
+- **Webhook（push）**: 管理画面のアカウント一覧 → **「Webhook」** → EC 側の URL（https）を入れると、商品や写真が変わるたびに `POST {event:'changed', kind, jans:[…], export_url}` を送ります。署名は `x-seam-signature: sha256=HMAC-SHA256(秘密, body)`（秘密は設定時に 1 度だけ表示）。EC 側は届いた JAN だけ取り直せば済み、毎晩の全件取得が要らなくなります。同じ URL のまま OK すると **テスト送信**、最終送信の結果は一覧の Webhook ボタンで確認できます。
+
+### J. 写真の自動チェック（暗い・ピンぼけ・小さい・白飛び）
+- スマホ・PC で写真を登録する瞬間に、機械的に **暗い／ピンぼけ／小さい（元が 500px 未満）／白飛び** を見ます。注意があれば「このまま登録する／撮り直す」を聞きます（止めはしません）。ガイド付きカメラでは撮った直後のプレビューに出ます。
+- 注意つきで登録した写真は、商品画面の枠に「⚠ 暗い」のように出て、PC の検品タブで **「自動チェックで注意あり」** で絞れます。撮り直す（同じ枠に上げ直す）と消えます。
+- 目安なので、黒いボトルや無地の商品で外れることがあります。検品の人が最終判断してください。
+
+### K. 商品名の表記ゆれ（似ている商品名）
+- 取り込み時に商品名の表記を揃えます: `250mL`・`250ｍｌ`・`250 ml`・`250cc` → `250ml`、全角英数字 → 半角、半角カナ → 全角、`×` の統一。揃えた行は確認画面の「注意」に「商品名の表記を揃えました(元 → 後)」と出ます。
+- **同じメーカーで商品名がほぼ同じなのに JAN が違うもの**（ファイル内どうし・登録済みと）を確認画面に出します。表記ゆれ（同じ商品の二重登録）か、本当に別の商品か（例: `エマルジョン` と `エマルジョン+` は別。`+` は区別します）を見てください。登録は止めません。保存時に「注意」にも残せます（注意タブ → 商品名が似ている）。
+
+### L. 写真の並べ替え・メイン差し替え（スマホ）
+- 商品画面で写真をタップ → **「⭐ 1枚目（メイン）にする」「← 前の写真と入れ替える」「→ 後ろの写真と入れ替える」**。削除 → 登録し直しは要りません。検品の印・自動チェックの注意も写真と一緒に動きます。
+
+### M. 担当者一覧と PIN（名前の打ち間違い防止）
+- PC「設定」タブ → **担当者一覧** に名前を登録すると、スマホ・PC は自由入力ではなく **名前をタップして選ぶ** 形になります（進捗の担当者別が「田中」「田中 」「たなか」に割れない）。SEAM 管理画面の「担当者」からも代行で登録できます。
+- **PIN（4〜6 桁）** を付けた人は、選ぶときに PIN を求めます。共用端末で他人の名前で登録できないようにするためのもの。PIN を忘れたら PC の設定か管理画面で付け直し。
+- 一覧に 1 人でも登録があると、サーバ側も「一覧にある名前」からの登録しか受け付けません（一覧に無い名前・停止した人・PIN 未確認は 403 で弾かれ、画面には「担当者を選び直してください」と出ます）。辞めた人は「停止」（過去の記録は残る）。一覧が空なら今まで通り自由入力です。
+
+### N. 表記の辞書（メーカー・ブランド・カテゴリを揃える）
+- PC「設定」タブ → **表記の辞書**（管理画面の「辞書」からも）。「届く表記 → 揃える表記」を登録すると、**取り込み・スマホ編集の保存時に自動で当たり**、「既存の商品に適用」で登録済みの分も揃います。カテゴリは「大 > 中 > 小」の各段にも当たります。
+- 「まとめて貼り付ける」で `maker,㈱アリミノ,アリミノ` の形で一気に登録できます。複数ディーラーに広げるときの「SEAM 共通カテゴリ」の対応表として使えます。
+
+### O. 取り込みの取り消し（ロールバック）
+- 「取り込み履歴」の **「取り消す」** で、その取り込みで **新しく入った商品を消し**、**上書きした商品を取り込み前の内容に戻し** ます（元CSVの行も戻る）。更新取り込みも同じ。
+- その取り込みの後に **写真が付いた商品は消しません**（撮影の成果を失わないため）。取り込み後にスマホで直した内容は、取り消すと取り込み前に戻ります（確認ダイアログに出ます）。その取り込みで積んだ未解決の注意は自動で閉じます。取り消しは 1 回だけ（2 人が同時に押しても 1 回だけ走ります）。
 
 ---
 
@@ -193,7 +221,7 @@
 | POST | `/api/pim/auth/login` `{login_id, password}` | ログイン → `{token, account}` |
 | GET | `/api/pim/auth/me` | 今のアカウント |
 | POST | `/api/pim/auth/password` `{current, password}` | パスワード変更（全端末ログアウト・新トークンを返す） |
-| GET/POST | `/api/pim/admin/accounts` | （管理キー）一覧 / `action: create, reset, disable, enable, logout_all, rename` |
+| GET/POST | `/api/pim/admin/accounts` | （管理キー）一覧 / `action: create, reset, disable, enable, logout_all, rename, api_key, api_key_revoke, webhook{url}, webhook_clear, webhook_test` |
 
 | メソッド | パス | 用途 |
 |---|---|---|
@@ -201,10 +229,16 @@
 | GET | `/api/pim/products?jan=…` / `?q=…&maker=…&noimg=1&limit=&offset=` | 商品1件 / 一覧 |
 | PUT | `/api/pim/products` | 商品1件の登録・更新（JSON）。`expected_updated_at` を付けると楽観ロック（他の人が先に更新していれば 409）。`insert_only:1` で「無いときだけ登録」 |
 | DELETE | `/api/pim/products?jan=…` | 削除（画像も） |
-| POST | `/api/pim/import` | 取り込み（`action: check / begin / commit / finish`） |
+| POST | `/api/pim/import` | 取り込み（`action: check{jans, keys} / begin / commit / finish / rollback{import_id}`）。commit のたびに取り込み前の状態を残すので rollback で戻せる |
 | GET/POST | `/api/pim/issues` | 注意の一覧 / 解決 |
-| GET/POST/DELETE | `/api/pim/images?jan=…&slot=…` | 画像の一覧 / 登録(multipart, webp。`slot=auto` で空き番号をサーバが確定) / 削除 |
-| GET | `/api/pim/export?format=csv\|json&maker=&only_images=1&noimg=1` | 統一フォーマット出力 |
+| GET/POST/DELETE | `/api/pim/images?jan=…&slot=…` | 画像の一覧 / 登録(multipart, webp。`slot=auto` で空き番号をサーバが確定。`quality` に自動チェック結果) / 削除。JSON で `{jan, action:'main', slot}` / `{jan, action:'reorder', order:[…]}` は並べ替え |
+| GET | `/api/pim/export?format=csv\|json\|source\|images&maker=&only_images=1&noimg=1&since=<ISO>` | 出力（`since` で差分） |
+| GET | `/api/pim/changes?since_id=&since=&limit=` | 変わった JAN の一覧（EC 側の差分取得。連携キー可） |
+| GET/POST | `/api/pim/staff` | 担当者一覧 / `action: add{name,pin}, pin, rename, disable, enable, delete, verify{id,pin}→staff_token`。PIN 付き担当者の書き込みは `x-seam-staff: <staff_token>` が必要 |
+| GET/POST | `/api/pim/dict` | 表記の辞書 / `action: set{kind,src,dst}, bulk{rows}, delete{id}, apply` |
+| GET/POST | `/api/pim/review?status=pending\|warn\|retake\|ok\|all` | 検品（`warn` = 自動チェックで注意あり） |
+| GET/POST | `/api/pim/queue` | 撮影キュー / `{jan, action:'claim'\|'release'}` |
+| GET | `/api/pim/stats` | 進捗 |
 
 ---
 

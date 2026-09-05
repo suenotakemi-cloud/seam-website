@@ -186,7 +186,8 @@
 
     <div class="card">
       <h2>取り込み履歴</h2>
-      <div class="tbl"><table id="histTbl"><thead><tr><th>日時</th><th>ファイル</th><th>送り元</th><th>行数</th><th>追加</th><th>更新</th><th>保留</th><th>不正</th></tr></thead><tbody></tbody></table></div>
+      <p class="muted">間違ったファイルを取り込んでしまったら「取り消す」で、その取り込みで<b>新しく入った商品を消し</b>、<b>上書きした商品を取り込み前の内容に戻し</b>ます（その後に写真が付いた商品は残します）。</p>
+      <div class="tbl"><table id="histTbl"><thead><tr><th>日時</th><th>ファイル</th><th>送り元</th><th>種類</th><th>行数</th><th>追加</th><th>更新</th><th>保留</th><th>不正</th><th></th></tr></thead><tbody></tbody></table></div>
     </div>
   </section>
 
@@ -260,6 +261,18 @@
       </div>
       <p class="muted" style="margin-top:10px">画像は URL で載ります（<code>https://seam.site/pim-img/products/JAN/枚目.webp</code>）。EC 側はこの URL をそのまま読み込めます。</p>
     </div>
+    <div class="card">
+      <h2>写真をまとめてダウンロード（zip）</h2>
+      <p class="muted">登録済みの写真（webp）をファイルにして落とします。ファイル名は <b>JAN</b> か <b>商品ID（商品コード）</b> のどちらでも作れます。カタログ・営業資料・EC への手動登録に。zip の中に <code>list.csv</code>（ファイル名・商品ID・JAN・商品名・枚目）も入ります。</p>
+      <div class="opts">
+        <div><label>ファイル名のつけ方</label><select id="zipName"><option value="jan">JAN_枚目.webp（例: 4901275230122_1.webp）</option><option value="sku">商品ID_枚目.webp（例: 01010601_1.webp）</option></select></div>
+        <div><label>まとめ方</label><select id="zipFolder"><option value="flat">1つのフォルダに全部</option><option value="dir">商品ごとにフォルダ（商品ID or JAN／1.webp）</option></select></div>
+        <div><label>写真</label><select id="zipWhich"><option value="all">すべての枚目</option><option value="1">1枚目（メイン）だけ</option></select></div>
+      </div>
+      <p class="muted" style="margin-top:8px">上の「メーカーで絞る」がそのまま効きます。Chrome / Edge は保存先を選んで 1 つの zip に直接書き出します（何万枚でも可）。それ以外のブラウザは約 300MB ごとに分けてダウンロードします。</p>
+      <div class="row" style="margin-top:10px"><button class="btn solid" id="btnZip">zip をダウンロード</button><button class="btn" id="btnZipStop" hidden>中止</button><span class="muted" id="zipState"></span></div>
+      <div class="prog" id="zipProg" hidden><i></i></div>
+    </div>
   </section>
 
   <!-- ══════ 進捗 ══════ -->
@@ -280,7 +293,7 @@
       <h2>写真の検品</h2>
       <p class="muted">撮った写真を見て OK か 撮り直し を付けます。「撮り直し」はスマホの撮影キュー（撮り直し）に出て、赤い枠で理由が表示されます。撮り直すと印は自動で消えます。</p>
       <div class="row" style="margin-bottom:10px">
-        <select id="rvStatus"><option value="pending">未検品</option><option value="retake">撮り直し</option><option value="ok">OK 済み</option><option value="all">すべて</option></select>
+        <select id="rvStatus"><option value="pending">未検品</option><option value="warn">自動チェックで注意あり（未検品）</option><option value="retake">撮り直し</option><option value="ok">OK 済み</option><option value="all">すべて</option></select>
         <select id="rvMaker"><option value="">メーカー: すべて</option></select>
         <button class="btn sm" id="rvReload">再読込</button>
         <button class="btn sm" id="rvAllOk">表示中をすべて OK</button>
@@ -297,7 +310,31 @@
       <h2>アカウント</h2>
       <p id="setAcct" class="muted"></p>
       <div class="opts"><div><label>担当者名（この端末）</label><input id="setUser"></div></div>
-      <div class="row" style="margin-top:10px"><button class="btn" id="btnSetSave">担当者名を保存</button><button class="btn danger" id="btnLogout2">この端末からログアウト</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="btnSetSave">担当者名を保存</button><button class="btn" id="btnStaffSwitch">担当者を選び直す</button><button class="btn danger" id="btnLogout2">この端末からログアウト</button></div>
+    </div>
+    <div class="card">
+      <h2>担当者一覧（名前をタップして選ぶ・PIN で本人確認）</h2>
+      <p class="muted">ここに担当者を登録すると、スマホ・PC では自由入力ではなく<b>一覧から名前を選ぶ</b>形になり、打ち間違いで進捗の担当者別が割れなくなります。PIN（4〜6 桁）を付けた人は選ぶときに PIN を求めます。登録がなければ今まで通り自由入力です。辞めた人は「停止」（過去の記録は残ります）。</p>
+      <div class="row" style="margin-bottom:8px"><input id="stName" placeholder="名前（例: 田中）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px"><input id="stPin" placeholder="PIN（任意・4〜6桁）" inputmode="numeric" maxlength="6" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:150px"><button class="btn sm solid" id="btnStAdd">追加</button></div>
+      <div class="tbl" style="max-height:300px"><table id="stTbl"><thead><tr><th>名前</th><th>PIN</th><th>状態</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>表記の辞書（メーカー・ブランド・カテゴリを揃える）</h2>
+      <p class="muted">メーカーごとに「㈱アリミノ」「アリミノ株式会社」「ARIMINO」とバラバラに届く表記を、決めた 1 つに揃えます。<b>取り込み・スマホ編集の保存時に自動で当たり</b>、「既存の商品に適用」で登録済みの分も揃えられます。複数ディーラーに広げるときの共通カテゴリの土台にもなります。</p>
+      <div class="row" style="margin-bottom:8px">
+        <select id="dcKind" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px"><option value="maker">メーカー</option><option value="brand">ブランド</option><option value="category">カテゴリ</option></select>
+        <input id="dcSrc" list="dcCand" placeholder="届く表記（例: ㈱アリミノ）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:220px"><datalist id="dcCand"></datalist>
+        <span class="muted">→</span>
+        <input id="dcDst" placeholder="揃える表記（例: アリミノ）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:220px">
+        <button class="btn sm solid" id="btnDcSet">登録</button>
+        <button class="btn sm" id="btnDcApply">既存の商品に適用</button>
+      </div>
+      <details style="margin-bottom:8px"><summary>まとめて貼り付ける（1行に「種類,届く表記,揃える表記」。種類は maker / brand / category）</summary>
+        <textarea id="dcBulk" rows="4" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12.5px;margin-top:6px" placeholder="maker,㈱アリミノ,アリミノ&#10;brand,カラーストーリー モイスト,カラーストーリーモイスト"></textarea>
+        <button class="btn sm" id="btnDcBulk" style="margin-top:6px">まとめて登録</button>
+      </details>
+      <div class="tbl" style="max-height:320px"><table id="dcTbl"><thead><tr><th>種類</th><th>届く表記</th><th>揃える表記</th><th>登録者</th><th></th></tr></thead><tbody></tbody></table></div>
+      <p class="muted" style="margin-top:8px">いま登録されているメーカー名: <span id="dcMakers"></span></p>
     </div>
     <div class="card">
       <h2>パスワードを変更する</h2>
@@ -312,6 +349,17 @@
   </section>
 </main>
 <div class="toast" id="toast"></div>
+<div class="overlay" id="staffPick" hidden>
+  <div class="card">
+    <h2>担当者を選んでください</h2>
+    <p class="muted" id="staffMsg">あなたの名前を選んでください。取り込みや検品に「誰がやったか」として残ります。</p>
+    <div id="staffList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0"></div>
+    <div id="staffPinBox" hidden><p class="muted" id="staffPinMsg"></p><input id="staffPin" inputmode="numeric" maxlength="6" placeholder="PIN" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:18px;letter-spacing:.3em;text-align:center;margin-bottom:8px"><button class="btn solid" id="staffPinOk">確認</button></div>
+    <div id="staffFree" hidden><input id="staffFreeIn" placeholder="担当者名（例: 田中）" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:8px"><button class="btn solid" id="staffFreeOk">この名前で始める</button></div>
+    <p class="err" id="staffErr"></p>
+    <button class="btn" id="staffCancel" style="margin-top:8px">キャンセル</button>
+  </div>
+</div>
 <div class="overlay" id="login" hidden>
   <div class="card">
     <h2>ログイン</h2>
@@ -345,11 +393,12 @@
     ['amount', '内容量', false], ['unit', '単位', false], ['retail', '上代（希望小売価格）', false], ['cost', '仕入価格', false],
     ['maker', 'メーカー', false], ['brand', 'ブランド', false], ['category', 'カテゴリ（複数可）', false], ['description', '商品説明', false], ['sku', '元商品コード', false],
   ];
-  var S = { file: null, sheets: null, rows: [], headerRow: 0, headers: [], mapping: {}, items: [], fileDups: {}, dbExisting: {}, decisions: {}, fileDecisions: {} };
+  var S = { file: null, sheets: null, rows: [], headerRow: 0, headers: [], mapping: {}, items: [], fileDups: {}, dbExisting: {}, decisions: {}, fileDecisions: {}, similar: [] };
   var toastT;
   function toast(m, ng) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (ng ? ' ng' : ''); clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'toast'; }, ng ? 4000 : 2000); }
   function handleErr(e) {
     if (e && e.auth) { C.Auth.clear(); showLogin(e.message || (e.reason === 'token_expired' ? 'ログインし直してください' : '')); return; }
+    if (e && e.staff) { toast(e.message || '担当者を選び直してください', true); ensureStaff(true).catch(function () { /* */ }); return; }
     if (e && e.setup) { $('setup').hidden = false; return; }
     toast((e && e.message) || '通信に失敗しました', true); console.error(e);
   }
@@ -362,15 +411,55 @@
       Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
       Array.prototype.forEach.call(document.querySelectorAll('.pane'), function (p) { p.classList.toggle('on', p.id === 'pane-' + b.getAttribute('data-tab')); });
       var t = b.getAttribute('data-tab');
-      if (t === 'issues') loadIssues(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0);
+      if (t === 'issues') loadIssues(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'settings') { loadStaff(); loadDict(); }
     });
   });
 
   // ── ログイン ──
+  // ── 担当者（一覧があれば選ぶ・PIN 付きは確認）──
+  var ST = { list: [], required: false, pending: null, resolve: null };
+  function ensureStaff(force) {
+    return api('staff').then(function (j) {
+      ST.list = (j.ok && j.staff) ? j.staff.filter(function (x) { return x.active; }) : []; ST.required = !!(j.ok && j.required);
+      var me = C.Auth.user(), mine = ST.list.filter(function (x) { return x.name === me; })[0];
+      if (!force && ST.required && mine && (C.Auth.staffToken() || !mine.has_pin)) return true;
+      if (!force && !ST.required && me) return true;
+      return new Promise(function (resolve) {
+        ST.resolve = resolve; ST.pending = null;
+        $('staffErr').textContent = (!force && ST.required && me && !mine) ? '担当者名「' + me + '」は一覧にありません。選び直してください' : '';
+        $('staffPinBox').hidden = true; $('staffFree').hidden = !!ST.required; $('staffList').hidden = !ST.required; $('staffCancel').hidden = !me;
+        $('staffFreeIn').value = me;
+        $('staffList').innerHTML = ST.list.map(function (x) { return '<button type="button" class="btn" data-id="' + x.id + '" style="padding:12px">' + esc(x.name) + (x.has_pin ? ' 🔒' : '') + '</button>'; }).join('');
+        Array.prototype.forEach.call($('staffList').querySelectorAll('button'), function (b) {
+          b.addEventListener('click', function () {
+            var st = ST.list.filter(function (x) { return String(x.id) === b.getAttribute('data-id'); })[0]; if (!st) return;
+            ST.pending = st; $('staffErr').textContent = '';
+            if (st.has_pin) { $('staffPinBox').hidden = false; $('staffPinMsg').textContent = st.name + ' さんの PIN を入れてください'; $('staffPin').value = ''; $('staffPin').focus(); }
+            else verifyStaff(st, '');
+          });
+        });
+        $('staffPick').hidden = false;
+      });
+    });
+  }
+  function verifyStaff(st, pin) {
+    api('staff', { method: 'POST', body: { action: 'verify', id: st.id, pin: pin } }).then(function (j) {
+      if (!j.ok) { $('staffErr').textContent = j.message || '確認できませんでした'; return; }
+      C.Auth.setStaff(st.name, j.staff_token); closeStaff(true); toast(st.name + ' さんとして操作します'); $('setUser').value = st.name;
+    }).catch(function (e) { if (e && e.auth) handleErr(e); else $('staffErr').textContent = (e && e.message) || '通信に失敗しました'; });
+  }
+  function closeStaff(ok) { $('staffPick').hidden = true; var r = ST.resolve; ST.resolve = null; if (r) r(ok); }
+  $('staffPinOk').addEventListener('click', function () { if (!ST.pending) return; var pin = $('staffPin').value.trim(); if (!pin) { $('staffErr').textContent = 'PIN を入れてください'; return; } verifyStaff(ST.pending, pin); });
+  $('staffPin').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('staffPinOk').click(); });
+  $('staffFreeOk').addEventListener('click', function () { var n = $('staffFreeIn').value.trim(); if (!n) { $('staffErr').textContent = '担当者名を入れてください'; return; } C.Auth.setStaff(n, ''); $('setUser').value = n; closeStaff(true); });
+  $('staffCancel').addEventListener('click', function () { if (C.Auth.user()) closeStaff(false); });
+  $('btnStaffSwitch').addEventListener('click', function () { ensureStaff(true).catch(handleErr); });
+
   function boot() {
-    if (!C.Auth.get() || !C.Auth.user()) { showLogin(''); return; }
+    if (!C.Auth.get()) { showLogin(''); return; }
     api('status').then(function (j) {
       $('login').hidden = true;
+      ensureStaff().catch(handleErr);
       if (j.counts) { $('hsub').textContent = (j.account ? j.account.name + ' ／ ' : '') + '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※写真は暫定で D1 に保存中（R2 未設定）'); setIssueN(j.counts.open_issues); }
       api('stats').then(function (st) { if (st.ok) setReviewN(st.totals.unreviewed); }).catch(function () { /* */ });
       if (j.account) $('setAcct').textContent = 'アカウント: ' + j.account.name + '（ID: ' + j.account.login_id + '）' + (j.account.pass_changed_at ? ' ／ パスワード最終変更 ' + j.account.pass_changed_at.slice(0, 10) : '');
@@ -381,19 +470,18 @@
   $('btnLogin').addEventListener('click', function () {
     var id = $('idIn').value.trim(), pw = $('keyIn').value;
     if (!id || !pw) { $('loginErr').textContent = 'ID とパスワードを入れてください'; return; }
-    if (!$('userIn').value.trim()) { $('loginErr').textContent = '担当者名を入れてください'; return; }
     $('btnLogin').disabled = true;
     C.Auth.login(id, pw, $('remember').checked).then(function (j) {
       $('btnLogin').disabled = false;
       if (!j.ok) { $('loginErr').textContent = j.message || 'ログインできません'; return; }
-      C.Auth.setUser($('userIn').value); $('keyIn').value = ''; boot();
+      C.Auth.setStaff($('userIn').value.trim(), ''); $('keyIn').value = ''; boot();
     }).catch(function () { $('btnLogin').disabled = false; $('loginErr').textContent = '通信に失敗しました'; });
   });
   $('keyIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
   $('userIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
   $('btnLogout').addEventListener('click', function () { C.Auth.clear(); location.reload(); });
   $('btnLogout2').addEventListener('click', function () { C.Auth.clear(); location.reload(); });
-  $('btnSetSave').addEventListener('click', function () { var u = $('setUser').value.trim(); if (!u) { toast('担当者名を入れてください', true); return; } C.Auth.setUser(u); toast('保存しました'); });
+  $('btnSetSave').addEventListener('click', function () { var u = $('setUser').value.trim(); if (!u) { toast('担当者名を入れてください', true); return; } if (ST.required) { toast('担当者一覧があるので「担当者を選び直す」から選んでください', true); return; } C.Auth.setStaff(u, ''); toast('保存しました'); });
   $('btnPw').addEventListener('click', function () {
     var cur = $('pwCur').value, nw = $('pwNew').value, nw2 = $('pwNew2').value;
     if (!cur || !nw) { $('setErr').textContent = '今のパスワードと新しいパスワードを入れてください'; return; }
@@ -548,21 +636,45 @@
       return '<tr><td>' + i.rowNo + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + esc(p.category) + '</td><td>' + notes + '</td></tr>';
     }).join('') + (S.items.length > 300 ? '<tr><td colspan="10" class="muted">…ほか ' + (S.items.length - 300) + '行（保存時はすべて対象）</td></tr>' : '') + '</tbody>';
     $('cardPrev').hidden = false;
-    // DB との重複確認
+    // DB との重複確認 ＋ 商品名が似ているもの（表記ゆれ）の検出
     var jans = ok.map(function (i) { return i.product.jan; });
+    var keys = ok.map(function (i) { return i.product.name_key; }).filter(Boolean);
     toast('登録済みと照合中…');
-    checkExisting(jans).then(function (existing) {
-      S.dbExisting = existing;
+    checkExisting(jans, keys).then(function (r) {
+      S.dbExisting = r.existing;
+      S.similar = [];
+      // ファイル内: 同じメーカーで商品名がほぼ同じなのに JAN が違う
+      var sim = N.findSimilarNames(ok);
+      Object.keys(sim).forEach(function (k) { var idx = sim[k]; S.similar.push({ where: 'file', items: idx.map(function (i) { return ok[i]; }) }); });
+      // 登録済みと: 商品名がほぼ同じで JAN が違う
+      ok.forEach(function (it) {
+        var hits = (r.similar[it.product.name_key] || []).filter(function (h) { return h.jan !== it.product.jan && (!h.maker || !it.product.maker || h.maker === it.product.maker); });
+        if (hits.length) S.similar.push({ where: 'db', items: [it], hits: hits });
+      });
+      renderSimilar();
       renderDups();
       renderCommit();
     }).catch(handleErr);
   });
-  function checkExisting(jans) {
-    var out = {}, chain = Promise.resolve();
-    for (var i = 0; i < jans.length; i += 2000) {
-      (function (chunk) { chain = chain.then(function () { return api('import', { method: 'POST', body: { action: 'check', jans: chunk } }).then(function (j) { if (!j.ok) throw new Error(j.message || j.reason); Object.assign(out, j.existing || {}); }); }); })(jans.slice(i, i + 2000));
+  function checkExisting(jans, keys) {
+    var out = { existing: {}, similar: {} }, chain = Promise.resolve();
+    var n = Math.max(jans.length, (keys || []).length);
+    for (var i = 0; i < n; i += 2000) {
+      (function (jc, kc) { chain = chain.then(function () { return api('import', { method: 'POST', body: { action: 'check', jans: jc, keys: kc } }).then(function (j) { if (!j.ok) throw new Error(j.message || j.reason); Object.assign(out.existing, j.existing || {}); Object.assign(out.similar, j.similar || {}); }); }); })(jans.slice(i, i + 2000), (keys || []).slice(i, i + 2000));
     }
     return chain.then(function () { return out; });
+  }
+  // 商品名が似ているもの（登録は止めない。「注意」として残すか選べる）
+  function renderSimilar() {
+    var box = $('similarBox'); if (!box) { box = document.createElement('div'); box.id = 'similarBox'; $('cardPrev').appendChild(box); }
+    if (!S.similar.length) { box.innerHTML = ''; return; }
+    box.innerHTML = '<h3 style="font-size:13px;margin:14px 0 6px">商品名がほぼ同じなのに JAN が違うもの <span class="tag warn">' + S.similar.length + '組</span> <span class="muted">— 表記ゆれ（同じ商品の二重登録）か、本当に別の商品かを確認してください。登録は止めません</span></h3>' +
+      '<label class="muted" style="display:block;margin-bottom:6px"><input type="checkbox" id="simIssue" checked> 保存時に「注意」にも残す（後で PC の注意タブで見返せる）</label>' +
+      S.similar.slice(0, 100).map(function (g) {
+        var rows = g.items.map(function (it) { return '<tr><td>' + it.rowNo + '行目</td><td>' + esc(it.product.jan) + '</td><td>' + esc(it.product.name) + '</td><td>' + esc(it.product.maker) + '</td></tr>'; });
+        if (g.hits) rows = rows.concat(g.hits.map(function (h) { return '<tr><td><span class="tag">登録済み</span></td><td>' + esc(h.jan) + '</td><td>' + esc(h.name) + '</td><td>' + esc(h.maker) + '</td></tr>'; }));
+        return '<div class="issue" style="padding:8px 12px"><table><tbody>' + rows.join('') + '</tbody></table></div>';
+      }).join('') + (S.similar.length > 100 ? '<p class="muted">…ほか ' + (S.similar.length - 100) + '組</p>' : '');
   }
   (function () {
   })();
@@ -652,6 +764,13 @@
       toSave.push(Object.assign({}, p, { _mode: 'new' }));
     });
     var invalid = S.items.filter(function (i) { return i.errors.length; }).length;
+    var simChk = $('simIssue');
+    if (S.similar.length && (!simChk || simChk.checked)) {
+      S.similar.slice(0, 300).forEach(function (g) {
+        var names = g.items.map(function (it) { return 'JAN ' + it.product.jan + '「' + it.product.name + '」'; }).concat((g.hits || []).map(function (h) { return '登録済み JAN ' + h.jan + '「' + h.name + '」'; }));
+        issues.push({ kind: 'similar_name', jan: g.items[0].product.jan, message: '商品名がほぼ同じなのに JAN が違います: ' + names.join(' / ') + '。表記ゆれ（二重登録）か別商品かを確認してください', incoming: g.items.map(function (it) { return it.product; }).concat(g.hits || []) });
+      });
+    }
     return { toSave: toSave, issues: issues, skipped: skipped, invalid: invalid };
   }
   function renderCommit() {
@@ -704,7 +823,22 @@
   function loadHistory() {
     api('import').then(function (j) {
       if (!j.ok) return;
-      $('histTbl').querySelector('tbody').innerHTML = j.imports.map(function (r) { return '<tr><td>' + esc(r.ts.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(r.filename) + '</td><td>' + esc(r.source) + '</td><td>' + r.total + '</td><td>' + r.inserted + '</td><td>' + r.updated + '</td><td>' + r.skipped + '</td><td>' + r.invalid + '</td></tr>'; }).join('') || '<tr><td colspan="8" class="muted">まだありません</td></tr>';
+      $('histTbl').querySelector('tbody').innerHTML = j.imports.map(function (r) {
+        var act = r.rolled_back_at ? '<span class="tag ng">取り消し済み' + (r.rolled_back_by ? '（' + esc(r.rolled_back_by) + '）' : '') + '</span>' : (r.backup_rows ? '<button class="btn sm danger" data-rb="' + r.id + '">取り消す</button>' : '<span class="muted">—</span>');
+        return '<tr><td>' + esc(r.ts.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(r.filename) + '</td><td>' + esc(r.source) + '</td><td>' + (r.kind === 'update' ? '更新' : '通常') + '</td><td>' + r.total + '</td><td>' + r.inserted + '</td><td>' + r.updated + '</td><td>' + r.skipped + '</td><td>' + r.invalid + '</td><td>' + act + '</td></tr>';
+      }).join('') || '<tr><td colspan="10" class="muted">まだありません</td></tr>';
+      Array.prototype.forEach.call($('histTbl').querySelectorAll('[data-rb]'), function (b) {
+        b.addEventListener('click', function () {
+          var id = parseInt(b.getAttribute('data-rb'), 10), tr = b.closest('tr');
+          if (!confirm('取り込み #' + id + '（' + tr.children[1].textContent + '）を取り消しますか？\n・この取り込みで新しく入った商品は消えます（その後に写真が付いた商品は残します）\n・上書きした商品は取り込み前の内容に戻ります（この取り込みより後の変更も戻ります）')) return;
+          b.disabled = true;
+          api('import', { method: 'POST', body: { action: 'rollback', import_id: id } }).then(function (r) {
+            if (!r.ok) { toast(r.message || '取り消せませんでした', true); b.disabled = false; return; }
+            toast('取り消しました: 削除 ' + r.deleted + '件 / 元に戻した ' + r.restored + '件' + (r.kept_with_images ? ' / 写真があるため残した ' + r.kept_with_images + '件' : ''));
+            loadHistory(); loadMakers(); boot();
+          }).catch(function (e) { b.disabled = false; handleErr(e); });
+        });
+      });
     }).catch(function () { /* */ });
   }
 
@@ -717,10 +851,13 @@
       var box = $('issuesBox');
       if (!j.issues.length) { box.innerHTML = '<p class="muted">注意はありません。</p>'; return; }
       box.innerHTML = j.issues.map(function (is) {
-        var h = '<div class="issue" data-id="' + is.id + '"><div class="hd"><b>' + (is.kind === 'dup_db' ? '登録済みと重複' : is.kind === 'dup_file' ? 'ファイル内で重複' : esc(is.kind)) + ' — JAN ' + esc(is.jan) + '</b><span class="muted">' + esc(is.ts.replace('T', ' ').slice(0, 16)) + (is.status === 'resolved' ? ' ／ <span class="tag ok">解決済み: ' + esc(is.resolution) + (is.resolved_by ? '（' + esc(is.resolved_by) + '）' : '') + '</span>' : '') + '</span></div><p style="margin:0 0 8px;font-size:12.5px">' + esc(is.message) + '</p>';
+        var h = '<div class="issue" data-id="' + is.id + '"><div class="hd"><b>' + (is.kind === 'dup_db' ? '登録済みと重複' : is.kind === 'dup_file' ? 'ファイル内で重複' : is.kind === 'similar_name' ? '商品名が似ている（表記ゆれの疑い）' : esc(is.kind)) + ' — JAN ' + esc(is.jan) + '</b><span class="muted">' + esc(is.ts.replace('T', ' ').slice(0, 16)) + (is.status === 'resolved' ? ' ／ <span class="tag ok">解決済み: ' + esc(is.resolution) + (is.resolved_by ? '（' + esc(is.resolved_by) + '）' : '') + '</span>' : '') + '</span></div><p style="margin:0 0 8px;font-size:12.5px">' + esc(is.message) + '</p>';
         if (is.kind === 'dup_db' && is.existing && is.incoming) {
           h += '<div class="cmp">' + sideHtml('登録済み', is.existing, is.incoming) + sideHtml('届いたデータ', is.incoming, is.existing) + '</div>';
           if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="keep_existing">登録済みを残す</button><button class="btn sm" data-res="keep_incoming">届いた方で上書き</button><button class="btn sm" data-res="dismiss">閉じる（何もしない）</button></div>';
+        } else if (is.kind === 'similar_name' && Array.isArray(is.incoming)) {
+          h += '<table><thead><tr><th>JAN</th><th>商品名</th><th>メーカー</th><th></th></tr></thead><tbody>' + is.incoming.map(function (p) { return '<tr><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(p.maker) + '</td><td><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">開く</a></td></tr>'; }).join('') + '</tbody></table>';
+          if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="dismiss">確認した（閉じる）</button></div>';
         } else if (Array.isArray(is.incoming)) {
           h += '<table><thead><tr><th></th><th>商品名</th><th>税抜</th><th>内容量</th><th>メーカー</th><th>元コード</th></tr></thead><tbody>' + is.incoming.map(function (p, k) { return '<tr><td>' + (is.status === 'open' ? '<button class="btn sm" data-res="keep_index" data-idx="' + k + '">この行を採用</button>' : (k + 1)) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.sku) + '</td></tr>'; }).join('') + '</tbody></table>';
           if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="dismiss">閉じる（どれも登録しない）</button></div>';
@@ -832,7 +969,7 @@
         return pre.then(function (slots) {
           if (!overwrite && slots.indexOf(p.slot) >= 0) { p.result = 'スキップ（既に写真あり）'; L('スキップ ' + p.file.name + '（' + p.slot + '枚目は登録済み）'); return; }
           return C.uploadImage(p.jan, p.slot, p.file, { size: 1200, square: $('imgSquare').checked ? 'pad' : false, whiten: $('imgWhiten').value, max: 1600, quality: 0.85 }).then(function (r) {
-            if (r.ok) { saved++; p.result = '保存 ' + Math.round(r.bytes / 1024) + 'KB'; L('OK   ' + p.file.name + ' → ' + p.jan + ' ' + p.slot + '枚目 (' + Math.round(r.bytes / 1024) + 'KB webp)'); if (slots.indexOf(p.slot) < 0) slots.push(p.slot); }
+            if (r.ok) { saved++; p.result = '保存 ' + Math.round(r.bytes / 1024) + 'KB' + (r.quality_warn ? '（注意: ' + r.quality_warn + '）' : ''); L('OK   ' + p.file.name + ' → ' + p.jan + ' ' + p.slot + '枚目 (' + Math.round(r.bytes / 1024) + 'KB webp)' + (r.quality_warn ? '  ⚠ ' + r.quality_warn : '')); if (slots.indexOf(p.slot) < 0) slots.push(p.slot); }
             else { fail++; p.result = 'NG ' + (r.message || r.reason); L('NG   ' + p.file.name + ': ' + (r.message || r.reason)); }
           });
         }).catch(function (e) { fail++; p.result = 'NG ' + ((e && e.message) || ''); L('NG   ' + p.file.name + ': ' + ((e && e.message) || e)); if (e && (e.auth || e.setup)) throw e; })
@@ -847,7 +984,7 @@
     api('stats').then(function (j) {
       if (!j.ok) return;
       var t = j.totals;
-      $('stKpis').innerHTML = [['商品', t.products], ['写真あり', t.with_images, 'ok'], ['写真なし', t.no_images, t.no_images ? 'ng' : 'ok'], ['5枚そろい', t.full5], ['写真の総数', t.images], ['未検品', t.unreviewed], ['撮り直し', t.retake, t.retake ? 'ng' : ''], ['注意', t.open_issues, t.open_issues ? 'ng' : '']]
+      $('stKpis').innerHTML = [['商品', t.products], ['写真あり', t.with_images, 'ok'], ['写真なし', t.no_images, t.no_images ? 'ng' : 'ok'], ['5枚そろい', t.full5], ['写真の総数', t.images], ['未検品', t.unreviewed], ['自動チェック注意', t.quality_warn || 0, t.quality_warn ? 'ng' : ''], ['撮り直し', t.retake, t.retake ? 'ng' : ''], ['注意', t.open_issues, t.open_issues ? 'ng' : '']]
         .map(function (k) { return '<div class="kpi ' + (k[2] || '') + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div></div>'; }).join('');
       $('stPace').textContent = '直近7日: ' + j.pace.products_7d + ' 商品に写真が付きました（稼働 ' + j.pace.active_days_7d + ' 日・1日平均 ' + j.pace.avg_per_day + ' 商品）' + (j.pace.days_left != null ? ' → このペースなら残り約 ' + j.pace.days_left + ' 稼働日' : '');
       $('stDay').querySelector('tbody').innerHTML = j.by_day.map(function (d) { return '<tr><td>' + esc(d.day) + '</td><td>' + d.images + '</td><td>' + d.products + '</td></tr>'; }).join('') || '<tr><td colspan="3" class="muted">まだありません</td></tr>';
@@ -868,7 +1005,7 @@
       RV.items = j.images;
       $('rvCount').textContent = j.total + '枚中 ' + (j.total ? RV.offset + 1 : 0) + '〜' + Math.min(j.total, RV.offset + j.images.length);
       $('rvGrid').innerHTML = j.images.map(function (im, i) {
-        return '<div class="rv ' + (im.review || '') + '" data-i="' + i + '"><img src="' + esc(im.url) + '" alt="" loading="lazy"><div class="b"><div class="nm">' + esc(im.name) + '</div><div class="muted">' + esc(im.jan) + ' ・ ' + im.slot + '枚目 ・ ' + esc(im.created_by || '') + ' ・ ' + esc((im.created_at || '').slice(5, 16).replace('T', ' ')) + '</div>' +
+        return '<div class="rv ' + (im.review || '') + '" data-i="' + i + '"><img src="' + esc(im.url) + '" alt="" loading="lazy"><div class="b"><div class="nm">' + esc(im.name) + '</div>' + (im.quality_warn ? '<div><span class="tag warn">自動チェック: ' + esc(im.quality_warn) + '</span></div>' : '') + '<div class="muted">' + esc(im.jan) + ' ・ ' + im.slot + '枚目 ・ ' + esc(im.created_by || '') + ' ・ ' + esc((im.created_at || '').slice(5, 16).replace('T', ' ')) + '</div>' +
           '<div class="row" style="margin-top:6px"><button class="btn sm" data-rv="ok">OK</button><button class="btn sm danger" data-rv="retake">撮り直し</button>' + (im.review ? '<button class="btn sm" data-rv="clear">取消</button>' : '') + '</div>' +
           '<input placeholder="撮り直しの理由（ピンぼけ・傾き・影 など）" value="' + esc(im.review_note || '') + '"></div></div>';
       }).join('') || '<p class="muted">該当する写真はありません</p>';
@@ -919,6 +1056,152 @@
   $('btnExSource').addEventListener('click', function () { download('source'); });
   $('btnExImages').addEventListener('click', function () { download('images'); });
   $('btnExJson').addEventListener('click', function () { download('json'); });
+
+  // ── 担当者一覧 ──
+  function loadStaff() {
+    api('staff').then(function (j) {
+      if (!j.ok) return;
+      $('stTbl').querySelector('tbody').innerHTML = j.staff.map(function (x) {
+        return '<tr data-id="' + x.id + '"><td>' + esc(x.name) + '</td><td>' + (x.has_pin ? '<span class="tag ok">あり</span>' : '<span class="muted">なし</span>') + '</td><td>' + (x.active ? '<span class="tag ok">有効</span>' : '<span class="tag ng">停止</span>') + '</td><td class="row">' +
+          '<button class="btn sm" data-st="pin">PIN ' + (x.has_pin ? '変更/外す' : '設定') + '</button><button class="btn sm" data-st="rename">名前</button>' + (x.active ? '<button class="btn sm danger" data-st="disable">停止</button>' : '<button class="btn sm" data-st="enable">再開</button><button class="btn sm danger" data-st="delete">削除</button>') + '</td></tr>';
+      }).join('') || '<tr><td colspan="4" class="muted">まだ登録がありません（今は自由入力）</td></tr>';
+      Array.prototype.forEach.call($('stTbl').querySelectorAll('[data-st]'), function (b) {
+        b.addEventListener('click', function () {
+          var tr = b.closest('tr'), id = parseInt(tr.getAttribute('data-id'), 10), act = b.getAttribute('data-st'), nm = tr.children[0].textContent;
+          var body = { action: act, id: id };
+          if (act === 'pin') { var pin = prompt(nm + ' さんの PIN（4〜6 桁の数字。空欄なら PIN なし）', ''); if (pin == null) return; body.pin = pin.trim(); }
+          if (act === 'rename') { var nn = prompt('名前', nm); if (nn == null || !nn.trim()) return; body.name = nn.trim(); }
+          if (act === 'disable' && !confirm(nm + ' さんを停止しますか？（選べなくなります。過去の記録は残ります）')) return;
+          if (act === 'delete' && !confirm(nm + ' さんを一覧から削除しますか？')) return;
+          api('staff', { method: 'POST', body: body }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return; } toast(r.message || '更新しました'); loadStaff(); }).catch(handleErr);
+        });
+      });
+    }).catch(handleErr);
+  }
+  $('btnStAdd').addEventListener('click', function () {
+    var name = $('stName').value.trim(), pin = $('stPin').value.trim();
+    if (!name) { toast('名前を入れてください', true); return; }
+    api('staff', { method: 'POST', body: { action: 'add', name: name, pin: pin } }).then(function (r) {
+      if (!r.ok) { toast(r.message || '追加できませんでした', true); return; }
+      $('stName').value = ''; $('stPin').value = ''; toast(name + ' さんを追加しました'); loadStaff();
+      // 自分の名前が一覧に無いと、この後の保存が通らないので知らせる
+      ensureStaff().catch(function () { /* */ });
+    }).catch(handleErr);
+  });
+
+  // ── 表記の辞書 ──
+  var KIND_JA = { maker: 'メーカー', brand: 'ブランド', category: 'カテゴリ' };
+  var DC = { cand: {} };
+  function loadDict() {
+    api('dict').then(function (j) {
+      if (!j.ok) return;
+      DC.cand = j.candidates || {};
+      fillCand();
+      $('dcMakers').textContent = (DC.cand.maker || []).map(function (c) { return c.v + '(' + c.n + ')'; }).join('、') || '—';
+      $('dcTbl').querySelector('tbody').innerHTML = j.rows.map(function (r) { return '<tr data-id="' + r.id + '"><td>' + (KIND_JA[r.kind] || r.kind) + '</td><td>' + esc(r.src) + '</td><td><b>' + esc(r.dst) + '</b></td><td class="muted">' + esc(r.created_by || '') + '</td><td><button class="btn sm danger" data-dc-del="' + r.id + '">削除</button></td></tr>'; }).join('') || '<tr><td colspan="5" class="muted">まだありません</td></tr>';
+      Array.prototype.forEach.call($('dcTbl').querySelectorAll('[data-dc-del]'), function (b) { b.addEventListener('click', function () { api('dict', { method: 'POST', body: { action: 'delete', id: parseInt(b.getAttribute('data-dc-del'), 10) } }).then(function () { loadDict(); }).catch(handleErr); }); });
+    }).catch(handleErr);
+  }
+  function fillCand() { var k = $('dcKind').value; $('dcCand').innerHTML = (DC.cand[k] || []).map(function (c) { return '<option value="' + esc(c.v) + '">' + c.n + '件</option>'; }).join(''); }
+  $('dcKind').addEventListener('change', fillCand);
+  $('btnDcSet').addEventListener('click', function () {
+    var kind = $('dcKind').value, src = $('dcSrc').value.trim(), dst = $('dcDst').value.trim();
+    if (!src || !dst) { toast('届く表記と揃える表記を入れてください', true); return; }
+    api('dict', { method: 'POST', body: { action: 'set', kind: kind, src: src, dst: dst } }).then(function (r) { if (!r.ok) { toast(r.message || '登録できませんでした', true); return; } $('dcSrc').value = ''; toast('登録しました（保存時に自動で当たります。登録済みの分は「既存の商品に適用」）'); loadDict(); }).catch(handleErr);
+  });
+  $('btnDcBulk').addEventListener('click', function () {
+    var rows = $('dcBulk').value.split(/\r?\n/).map(function (l) { var a = l.split(/[,\t]/).map(function (x) { return x.trim(); }); return { kind: a[0], src: a[1], dst: a[2] }; }).filter(function (r) { return r.kind && r.src && r.dst; });
+    if (!rows.length) { toast('「種類,届く表記,揃える表記」の形で貼り付けてください', true); return; }
+    api('dict', { method: 'POST', body: { action: 'bulk', rows: rows } }).then(function (r) { if (!r.ok) { toast(r.message || '登録できませんでした', true); return; } toast(r.saved + ' 件を登録しました'); $('dcBulk').value = ''; loadDict(); }).catch(handleErr);
+  });
+  $('btnDcApply').addEventListener('click', function () {
+    if (!confirm('辞書を登録済みの商品すべてに当てますか？（メーカー・ブランド・カテゴリの表記が置き換わります）')) return;
+    api('dict', { method: 'POST', body: { action: 'apply' } }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return; } toast(r.changed + ' 件の商品を揃えました'); loadDict(); loadMakers(); }).catch(handleErr);
+  });
+
+  // ── 写真の zip ダウンロード（ブラウザ側で作る。サーバは画像を返すだけ）──
+  var ZIP = { running: false, stop: false };
+  function safeName(s) { return String(s || '').replace(/[\\/:*?"<>|\x00-\x1f]/g, '_').trim().slice(0, 80); }
+  function fmtMB(b) { return (b / 1048576).toFixed(1) + 'MB'; }
+  $('btnZipStop').addEventListener('click', function () { ZIP.stop = true; });
+  $('btnZip').addEventListener('click', function () {
+    if (ZIP.running) return;
+    var nameBy = $('zipName').value, folder = $('zipFolder').value === 'dir', mainOnly = $('zipWhich').value === '1';
+    var st = $('zipState'), prog = $('zipProg'); prog.hidden = false; prog.firstElementChild.style.width = '0%';
+    ZIP.running = true; ZIP.stop = false; $('btnZip').disabled = true; $('btnZipStop').hidden = false;
+    st.textContent = '商品の一覧を取得中…';
+    // 1. 一覧（商品ID・JAN・画像URL）を JSON で取る
+    fetch(exportUrl('json').replace('format=json', 'format=json&only_images=1'), { headers: { 'x-seam-token': C.Auth.get() }, cache: 'no-store' }).then(function (r) { if (r.status === 401) throw { auth: true }; return r.json(); }).then(function (j) {
+      if (!j.ok) throw new Error(j.message || '一覧を取得できません');
+      var files = [];
+      j.products.forEach(function (p) {
+        var base = nameBy === 'sku' ? (p.sku ? safeName(p.sku) : 'noid_' + p.jan) : p.jan;
+        (p.image_urls || []).forEach(function (u, i) {
+          if (mainOnly && i > 0) return;
+          var name = folder ? base + '/' + (i + 1) + '.webp' : base + '_' + (i + 1) + '.webp';
+          files.push({ url: u, name: name, sku: p.sku || '', jan: p.jan, pname: p.name, slot: i + 1 });
+        });
+      });
+      if (!files.length) throw new Error('写真のある商品がありません');
+      var stamp = new Date().toISOString().slice(0, 10), fname = 'seam-photos-' + (nameBy === 'sku' ? 'id' : 'jan') + '-' + stamp;
+      return zipFiles(files, fname, st, prog);
+    }).then(function (r) { if (r) toast('zip を作りました（' + r.files + ' 枚 / ' + r.parts + ' ファイル）'); })
+      .catch(function (e) { if (e && e.name === 'AbortError') { st.textContent = '中止しました'; return; } handleErr(e); })
+      .then(function () { ZIP.running = false; $('btnZip').disabled = false; $('btnZipStop').hidden = true; });
+  });
+  // files を順に取ってきて zip に格納。Chrome/Edge は保存先を選んで直接書く。他は 300MB ごとに Blob で分割
+  function zipFiles(files, fname, st, prog) {
+    var PART = 300 * 1048576, CONC = 6, done = 0, failed = [], parts = 0;
+    var listCsv = ['ファイル名,商品ID,JAN,商品名,枚目'];
+    var writer = null, chunks = null, sinkStream = null;
+    function newSink(partNo) {
+      parts++;
+      if (window.showSaveFilePicker && partNo === 1) {
+        return window.showSaveFilePicker({ suggestedName: fname + '.zip', types: [{ description: 'zip', accept: { 'application/zip': ['.zip'] } }] }).then(function (h) { return h.createWritable(); }).then(function (ws) {
+          sinkStream = ws; return { write: function (u8) { return ws.write(u8); }, close: function () { return ws.close(); }, streaming: true };
+        });
+      }
+      chunks = [];
+      return Promise.resolve({ write: function (u8) { chunks.push(u8); }, close: function () { var b = new Blob(chunks, { type: 'application/zip' }); var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = fname + (partNo > 1 || parts > 1 ? '-part' + partNo : '') + '.zip'; document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000); chunks = null; }, streaming: false });
+    }
+    var partNo = 1, sink;
+    return newSink(1).then(function (s0) {
+      sink = s0; writer = C.zipWriter(sink);
+      var i = 0;
+      function next() {
+        if (ZIP.stop) throw { name: 'AbortError' };
+        if (i >= files.length) return Promise.resolve();
+        var f = files[i++];
+        return fetch(f.url, { cache: 'force-cache' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); }).then(function (ab) {
+          return queueWrite(function () {
+            return writer.add(f.name, new Uint8Array(ab)).then(function () { listCsv.push([f.name, f.sku, f.jan, f.pname, f.slot].map(N.csvCell).join(',')); });
+          });
+        }).catch(function (e) { if (e && e.name === 'AbortError') throw e; failed.push(f.name + ': ' + ((e && e.message) || e)); })
+          .then(function () {
+            done++; prog.firstElementChild.style.width = Math.round(done / files.length * 100) + '%';
+            st.textContent = done + ' / ' + files.length + ' 枚 ' + fmtMB(writer.bytes()) + (failed.length ? ' / 失敗 ' + failed.length : '');
+            // 分割（保存先へ直接書いているときは分けない）
+            if (!sink.streaming && writer.bytes() > PART && i < files.length) return queueWrite(function () { return rotate(); }).then(next);
+            return next();
+          });
+      }
+      // zip への書き込みは 1 本ずつ（順番を守る）
+      var q = Promise.resolve();
+      function queueWrite(fn) { var p = q.then(fn); q = p.catch(function () { /* */ }); return p; }
+      function rotate() {
+        if (writer.bytes() < PART / 2) return Promise.resolve(); // 別のレーンが先に切り替えた
+        return finishPart().then(function () { partNo++; return newSink(partNo); }).then(function (s2) { sink = s2; writer = C.zipWriter(sink); listCsv = ['ファイル名,商品ID,JAN,商品名,枚目']; });
+      }
+      function finishPart() {
+        return writer.add('list.csv', new TextEncoder().encode('\uFEFF' + listCsv.join('\r\n') + '\r\n')).then(function () { return writer.close(); }).then(function () { return sink.close(); });
+      }
+      var lanes = []; for (var k = 0; k < CONC; k++) lanes.push(next());
+      return Promise.all(lanes).then(function () { return queueWrite(finishPart); }).then(function () {
+        if (failed.length) { st.textContent += '　失敗: ' + failed.slice(0, 5).join(' / '); console.warn(failed); }
+        return { files: done - failed.length, parts: parts };
+      }).catch(function (e) { if (e && e.name === 'AbortError' && sinkStream) { try { sinkStream.abort(); } catch (x) { /* */ } } throw e; });
+    });
+  }
 
   boot();
 })();

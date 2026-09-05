@@ -1,5 +1,6 @@
 // 統一フォーマットの出力（ログイン中のアカウントの分だけ。EC 連携は ADMIN_KEY + x-seam-account でも可）
-//   GET /api/pim/export?format=csv|json|source|images&maker=&only_images=1&noimg=1
+//   GET /api/pim/export?format=csv|json|source|images&maker=&only_images=1&noimg=1&since=<ISO日時>
+//     since … その日時以降に変わった商品だけ（写真の追加・削除でも商品の updated_at が進むので、EC 側の差分取得に使える）
 //     csv / json … 統一フォーマット（列は js/pim-normalize.js の OUT_COLUMNS と同じ。変えるときは両方）
 //     source     … 取り込んだ CSV そのままの列（例: 菊池 CSV の 22 列）＋ 画像1〜5 ＋ 画像枚数。
 //                  EC 側は「商品コード（商品ID）」で突き合わせる。見出しは最後に取り込んだファイルのもの
@@ -27,7 +28,9 @@ export async function onRequestGet({ request, env, data }) {
   const maker = (url.searchParams.get('maker') || '').trim();
   const onlyImages = url.searchParams.get('only_images') === '1';
   const noimg = url.searchParams.get('noimg') === '1';
+  const since = (url.searchParams.get('since') || '').trim();
   const where = ['account_id=?'], binds = [acct];
+  if (since) { const d = new Date(since); if (isNaN(d.getTime())) return json({ ok: false, reason: 'bad_since', message: 'since は ISO 形式の日時（例: 2026-09-01T00:00:00Z）で指定してください' }, 400); where.push('updated_at>=?'); binds.push(d.toISOString()); }
   if (maker) { where.push('maker=?'); binds.push(maker); }
   if (onlyImages) where.push('image_count>0');
   if (noimg) where.push('image_count=0');

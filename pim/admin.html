@@ -73,9 +73,15 @@
     <div style="overflow:auto"><table><thead><tr><th>ID</th><th>ディーラー名</th><th>状態</th><th>商品</th><th>写真あり</th><th>注意</th><th>最終ログイン</th><th>PW変更</th><th>メモ</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
     <p class="muted" style="margin-top:10px">初期テスト用アカウント <code>takemi</code>（パスワード短め）は、実証実験が終わったら「PW再設定」か「停止」をしてください。<br>「PW再設定」「停止」「全端末ログアウト」はいずれも、そのディーラーの全端末のログインを無効にします（再ログインが必要）。データは消えません。</p>
   </div>
+  <div class="card" id="panel" hidden>
+    <div class="row" style="justify-content:space-between"><h2 id="panelTtl" style="margin:0"></h2><button class="btn sm" id="panelClose">閉じる</button></div>
+    <div id="panelBody" style="margin-top:10px"></div>
+  </div>
   <div class="card">
     <h2>EC 側から商品データを取るとき</h2>
     <p class="muted">一覧の「連携キー発行」で、ディーラーごとの<b>読み取り専用キー</b>が出ます。EC 側は毎晩 <code>/api/pim/export?format=source&amp;api_key=&lt;キー&gt;</code> を取りに来れば、取り込んだ CSV の形＋画像1〜5 が手に入ります（手動ダウンロード不要）。<code>format=images</code>（商品ID・JAN・画像だけ）、<code>format=csv</code> / <code>json</code>（統一フォーマット）も同じキーで取れます。キーが漏れたら「再発行」で古いキーは即無効。画像 URL は認証なしで読めます。<br>管理キー（ADMIN_KEY）＋ <code>x-seam-account: &lt;ID&gt;</code> でも同じものが取れます。</p>
+    <p class="muted"><b>差分だけ取る:</b> <code>/api/pim/export?format=source&amp;since=2026-09-01T00:00:00Z&amp;api_key=…</code>（その日時以降に変わった商品だけ）／ <code>/api/pim/changes?since_id=&lt;前回の latest_id&gt;&amp;api_key=…</code>（変わった JAN の一覧。kind=delete は EC 側でも消す）。<br>
+    <b>Webhook（push）:</b> 一覧の「Webhook」で URL を設定すると、商品や写真が変わるたびに EC 側へ <code>POST {event:'changed', kind, jans:[…], export_url}</code> を送ります。署名は <code>x-seam-signature: sha256=HMAC-SHA256(秘密, body)</code>。EC 側は受け取った JAN だけ取り直せば済みます。</p>
   </div>
 </main>
 <div class="toast" id="toast"></div>
@@ -109,7 +115,7 @@
       $('login').hidden = true;
       $('rows').innerHTML = j.accounts.map(function (a) {
         return '<tr data-id="' + a.id + '"><td><code>' + esc(a.login_id) + '</code></td><td>' + esc(a.name) + '</td><td>' + (a.active ? '<span class="tag ok">有効</span>' : '<span class="tag ng">停止中</span>') + '</td><td>' + a.products + '</td><td>' + a.with_images + '</td><td>' + a.open_issues + '</td><td class="muted">' + esc((a.last_login_at || '—').replace('T', ' ').slice(0, 16)) + '</td><td class="muted">' + esc((a.pass_changed_at || '—').slice(0, 10)) + '</td><td class="muted">' + esc(a.note || '') + '</td>' +
-          '<td class="row"><button class="btn sm" data-act="progress">進捗</button><button class="btn sm" data-act="api_key">' + (a.has_api_key ? '連携キー再発行' : '連携キー発行') + '</button>' + (a.has_api_key ? '<button class="btn sm" data-act="api_key_revoke">連携キー無効化</button>' : '') + '<button class="btn sm" data-act="reset">PW再設定</button><button class="btn sm" data-act="logout_all">全端末ログアウト</button>' + (a.active ? '<button class="btn sm danger" data-act="disable">停止</button>' : '<button class="btn sm" data-act="enable">再開</button>') + '<button class="btn sm" data-act="rename">名前・メモ</button></td></tr>';
+          '<td class="row"><button class="btn sm" data-act="progress">進捗</button><button class="btn sm" data-act="api_key">' + (a.has_api_key ? '連携キー再発行' : '連携キー発行') + '</button>' + (a.has_api_key ? '<button class="btn sm" data-act="api_key_revoke">連携キー無効化</button>' : '') + '<button class="btn sm" data-act="reset">PW再設定</button><button class="btn sm" data-act="logout_all">全端末ログアウト</button>' + (a.active ? '<button class="btn sm danger" data-act="disable">停止</button>' : '<button class="btn sm" data-act="enable">再開</button>') + '<button class="btn sm" data-act="rename">名前・メモ</button><button class="btn sm" data-act="webhook">Webhook' + (a.webhook_url ? ' ✓' : '') + '</button><button class="btn sm" data-act="staff">担当者</button><button class="btn sm" data-act="dict">辞書</button></td></tr>';
       }).join('') || '<tr><td colspan="10" class="muted">まだアカウントがありません</td></tr>';
       Array.prototype.forEach.call($('rows').querySelectorAll('[data-act]'), function (b) {
         b.addEventListener('click', function () {
@@ -124,6 +130,23 @@
               $('created').innerHTML = '<b>' + esc(name) + '</b> の進捗: 商品 ' + t.products + ' ／ 写真あり ' + t.with_images + ' ／ 写真なし ' + t.no_images + ' ／ 写真 ' + t.images + '枚 ／ 撮り直し ' + t.retake + ' ／ 注意 ' + t.open_issues +
                 '<br>直近7日: ' + st.pace.products_7d + ' 商品（1日平均 ' + st.pace.avg_per_day + '）' + (st.pace.days_left != null ? ' → 残り約 ' + st.pace.days_left + ' 稼働日' : '') +
                 '<br>担当者別: ' + (st.by_user.map(function (u) { return esc(u.user) + ' ' + u.total + '枚'; }).join(' ／ ') || '—');
+            }).catch(handleErr);
+            return;
+          }
+          if (act === 'staff') { openStaff(lid, name); return; }
+          if (act === 'dict') { openDict(lid, name); return; }
+          if (act === 'webhook') {
+            var acc = j.accounts.filter(function (x) { return x.id === id; })[0] || {};
+            var cur = acc.webhook_url || '';
+            var u = prompt(name + ' の Webhook URL（https://…）。空欄で解除' + (cur ? '\n現在: ' + cur + (acc.webhook_last_at ? '\n最終送信: ' + acc.webhook_last_at.slice(0, 16).replace('T', ' ') + ' → ' + acc.webhook_last_status : '') : ''), cur);
+            if (u == null) return;
+            if (!u.trim()) { if (!cur) return; body.action = 'webhook_clear'; }
+            else if (u.trim() === cur) { body.action = 'webhook_test'; }
+            else { body.action = 'webhook'; body.url = u.trim(); }
+            api('admin/accounts', { method: 'POST', body: body }).then(function (r) {
+              if (!r.ok) { toast(r.message || '失敗しました', true); return; }
+              if (r.webhook_secret) { $('created').hidden = false; $('created').innerHTML = '<b>' + esc(name) + '</b> の Webhook を設定しました: <code>' + esc(r.webhook_url) + '</code><br>署名の秘密（EC 側で HMAC-SHA256 の検証に使う。この画面を閉じると再表示できません）: <span class="pw">' + esc(r.webhook_secret) + '</span><br>もう一度「Webhook」を押して同じ URL のまま OK するとテスト送信します。'; }
+              toast(r.message || '更新しました'); load();
             }).catch(handleErr);
             return;
           }
@@ -142,6 +165,51 @@
         });
       });
     }).catch(handleErr);
+  }
+  // ── ディーラーごとの担当者一覧・辞書（管理者が代行で編集）──
+  function acctApi(lid, path, opts) { return C.api(path, Object.assign({ admin: true, asAccount: lid }, opts || {})); }
+  $('panelClose').addEventListener('click', function () { $('panel').hidden = true; });
+  function openStaff(lid, name) {
+    $('panel').hidden = false; $('panelTtl').textContent = name + ' の担当者一覧';
+    var body = $('panelBody');
+    body.innerHTML = '<p class="muted">登録するとスマホ・PC は名前を選ぶ形になります（自由入力の打ち間違い防止）。PIN（4〜6桁）を付けると選ぶときに本人確認。辞めた人は停止。</p><div class="row" style="margin-bottom:8px"><input id="psName" placeholder="名前" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px"><input id="psPin" placeholder="PIN（任意）" maxlength="6" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:130px"><button class="btn sm solid" id="psAdd">追加</button></div><table><thead><tr><th>名前</th><th>PIN</th><th>状態</th><th></th></tr></thead><tbody id="psRows"></tbody></table>';
+    function reload() {
+      acctApi(lid, 'staff').then(function (j) {
+        if (!j.ok) { toast(j.message || '取得できません', true); return; }
+        $('psRows').innerHTML = j.staff.map(function (x) { return '<tr data-id="' + x.id + '"><td>' + esc(x.name) + '</td><td>' + (x.has_pin ? 'あり' : '—') + '</td><td>' + (x.active ? '有効' : '停止') + '</td><td class="row"><button class="btn sm" data-ps="pin">PIN</button>' + (x.active ? '<button class="btn sm danger" data-ps="disable">停止</button>' : '<button class="btn sm" data-ps="enable">再開</button><button class="btn sm danger" data-ps="delete">削除</button>') + '</td></tr>'; }).join('') || '<tr><td colspan="4" class="muted">未登録（自由入力）</td></tr>';
+        Array.prototype.forEach.call($('psRows').querySelectorAll('[data-ps]'), function (b) {
+          b.addEventListener('click', function () {
+            var tr = b.closest('tr'), bd = { action: b.getAttribute('data-ps'), id: parseInt(tr.getAttribute('data-id'), 10) };
+            if (bd.action === 'pin') { var pin = prompt(tr.children[0].textContent + ' さんの PIN（4〜6桁・空欄で外す）', ''); if (pin == null) return; bd.pin = pin.trim(); }
+            acctApi(lid, 'staff', { method: 'POST', body: bd }).then(function (r) { if (!r.ok) { toast(r.message || '失敗', true); return; } toast(r.message || '更新しました'); reload(); }).catch(handleErr);
+          });
+        });
+      }).catch(handleErr);
+    }
+    $('psAdd').addEventListener('click', function () {
+      var nm = $('psName').value.trim(), pin = $('psPin').value.trim(); if (!nm) return;
+      acctApi(lid, 'staff', { method: 'POST', body: { action: 'add', name: nm, pin: pin } }).then(function (r) { if (!r.ok) { toast(r.message || '失敗', true); return; } $('psName').value = ''; $('psPin').value = ''; reload(); }).catch(handleErr);
+    });
+    reload();
+  }
+  function openDict(lid, name) {
+    $('panel').hidden = false; $('panelTtl').textContent = name + ' の表記の辞書';
+    var KJ = { maker: 'メーカー', brand: 'ブランド', category: 'カテゴリ' };
+    $('panelBody').innerHTML = '<p class="muted">メーカー・ブランド・カテゴリの表記を 1 つに揃えます（取り込み・保存時に自動で当たる）。</p><div class="row" style="margin-bottom:8px"><select id="pdKind" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px"><option value="maker">メーカー</option><option value="brand">ブランド</option><option value="category">カテゴリ</option></select><input id="pdSrc" placeholder="届く表記" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:200px"><span class="muted">→</span><input id="pdDst" placeholder="揃える表記" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:200px"><button class="btn sm solid" id="pdSet">登録</button><button class="btn sm" id="pdApply">既存の商品に適用</button></div><p class="muted" id="pdCand"></p><table><thead><tr><th>種類</th><th>届く表記</th><th>揃える表記</th><th></th></tr></thead><tbody id="pdRows"></tbody></table>';
+    function reload() {
+      acctApi(lid, 'dict').then(function (j) {
+        if (!j.ok) { toast(j.message || '取得できません', true); return; }
+        $('pdCand').textContent = 'いまのメーカー名: ' + ((j.candidates.maker || []).map(function (c) { return c.v + '(' + c.n + ')'; }).join('、') || '—');
+        $('pdRows').innerHTML = j.rows.map(function (r) { return '<tr><td>' + KJ[r.kind] + '</td><td>' + esc(r.src) + '</td><td><b>' + esc(r.dst) + '</b></td><td><button class="btn sm danger" data-pd="' + r.id + '">削除</button></td></tr>'; }).join('') || '<tr><td colspan="4" class="muted">まだありません</td></tr>';
+        Array.prototype.forEach.call($('pdRows').querySelectorAll('[data-pd]'), function (b) { b.addEventListener('click', function () { acctApi(lid, 'dict', { method: 'POST', body: { action: 'delete', id: parseInt(b.getAttribute('data-pd'), 10) } }).then(reload).catch(handleErr); }); });
+      }).catch(handleErr);
+    }
+    $('pdSet').addEventListener('click', function () {
+      var src = $('pdSrc').value.trim(), dst = $('pdDst').value.trim(); if (!src || !dst) return;
+      acctApi(lid, 'dict', { method: 'POST', body: { action: 'set', kind: $('pdKind').value, src: src, dst: dst } }).then(function (r) { if (!r.ok) { toast(r.message || '失敗', true); return; } $('pdSrc').value = ''; reload(); }).catch(handleErr);
+    });
+    $('pdApply').addEventListener('click', function () { if (!confirm('登録済みの商品すべてに辞書を当てますか？')) return; acctApi(lid, 'dict', { method: 'POST', body: { action: 'apply' } }).then(function (r) { if (!r.ok) { toast(r.message || '失敗', true); return; } toast(r.changed + ' 件を揃えました'); reload(); }).catch(handleErr); });
+    reload();
   }
   $('btnGen').addEventListener('click', function () { $('cPw').value = genPw(); });
   $('btnCreate').addEventListener('click', function () {

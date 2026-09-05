@@ -9,14 +9,19 @@
 //              _mode 'update'    … 更新取り込み: 登録済みの商品の「選んだ列だけ」を上書き（fields:[...]）。写真・他の列はそのまま。
 //                                  未登録なら新規として入れる
 //     'finish' { import_id, invalid }                → { import }
+//     'rollback' { import_id }                       → その取り込みで入った商品を消し（写真が付いたものは残す）、上書きした商品を取り込み前の内容に戻す
+//                                                      （commit のたびに pim_import_backup へ「前の状態」を残しているので戻せる）
+//   check には keys:[name_key...] も渡せる → { similar:{ key:[{jan,name,maker}] } }（登録済みと商品名が似ているものの検出）
+//   保存時に「表記の辞書」（pim_dict: メーカー・ブランド・カテゴリ）を当てる
 //
 // 重複の扱い（要件: JANが被るものは登録せず「注意」として出す）
 //   ・同じファイル内で JAN が被る … ブラウザが検知。決めなければ登録せず pim_issues(kind=dup_file) に積む
 //   ・登録済みと JAN が被る     … 'check' で知らせる。決めなければ登録せず pim_issues(kind=dup_db) に積む
 //   いずれも画面で「どちらを残す」を選ぶと、そのときだけ保存される（issues.js）
-import { json, cleanJan, janShapeOk, sanitizeProduct, upsertStmt, nowIso, userOf } from './_lib.js';
+import { json, cleanJan, janShapeOk, sanitizeProduct, upsertStmt, nowIso, userOf, loadDict, applyDict, logChanges, notifyWebhook, PRODUCT_COLS, imageKey, blobDelete, SLOT_MAX } from './_lib.js';
 
-export async function onRequestPost({ request, env, data }) {
+export async function onRequestPost(context) {
+  const { request, env, data } = context;
   const acct = data.account.id;
   const b = await request.json().catch(() => null);
   if (!b || typeof b !== 'object') return json({ ok: false, reason: 'bad_json' }, 400);
@@ -35,7 +40,14 @@ export async function onRequestPost({ request, env, data }) {
 
   if (action === 'check') {
     const jans = Array.from(new Set((Array.isArray(b.jans) ? b.jans : []).map(cleanJan).filter(janShapeOk)));
-    return json({ ok: true, existing: await loadExisting(jans) });
+    const keys = Array.from(new Set((Array.isArray(b.keys) ? b.keys : []).map((k) => String(k || '').slice(0, 200)).filter(Boolean))).slice(0, 5000);
+    const similar = {};
+    for (let i = 0; i < keys.length; i += 90) {
+      const chunk = keys.slice(i, i + 90);
+      const rs = await env.DB.prepare('SELECT jan, name, maker, name_key FROM pim_products WHERE account_id=? AND name_key IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
+      for (const r of (rs.results || [])) (similar[r.name_key] = similar[r.name_key] || []).push({ jan: r.jan, name: r.name, maker: r.maker });
+    }
+    return json({ ok: true, existing: await loadExisting(jans), similar });
   }
 
   if (action === 'begin') {
@@ -54,8 +66,9 @@ export async function onRequestPost({ request, env, data }) {
     const ALLOWED_FIELDS = ['name', 'price', 'retail_price', 'cost_price', 'amount', 'maker', 'brand', 'category', 'description', 'sku'];
     const updFields = (Array.isArray(b.fields) ? b.fields : []).filter((f) => ALLOWED_FIELDS.indexOf(f) >= 0);
     if (raw.some((r) => r && r._mode === 'update') && !updFields.length) return json({ ok: false, reason: 'no_fields', message: '更新取り込みでは、上書きする列を1つ以上選んでください' }, 400);
+    const dict = await loadDict(env, acct);
     const products = raw.map((r) => {
-      const p = sanitizeProduct(r);
+      const p = applyDict(dict, sanitizeProduct(r));
       // 元CSVの1行（見出し→値）。「菊池CSVの形＋画像」で出すために、そのまま保管する
       if (r && r._raw && typeof r._raw === 'object') { try { p.raw = JSON.stringify(r._raw); } catch (e) { /* */ } }
       const mode = r && r._mode === 'overwrite' ? 'upsert' : (r && r._mode === 'update' ? 'update' : 'insert_only');
@@ -91,6 +104,12 @@ export async function onRequestPost({ request, env, data }) {
     };
     for (let i = 0; i < products.length; i += 50) {
       const chunk = products.slice(i, i + 50);
+      // 取り消し用に「前の状態」を残す（無かった＝NULL。同じ取り込みで2回目以降は最初のものを残す）
+      if (importId) {
+        const before = await loadExisting(chunk.map((x) => x.p.jan));
+        await env.DB.batch(chunk.map((x) => env.DB.prepare('INSERT OR IGNORE INTO pim_import_backup(import_id, account_id, jan, before) VALUES(?,?,?,?)')
+          .bind(importId, acct, x.p.jan, before[x.p.jan] ? JSON.stringify(before[x.p.jan]).slice(0, 60000) : null)));
+      }
       const res = await env.DB.batch(chunk.map((x) => x.mode === 'update' ? updateStmt(x.p) : upsertStmt(env, acct, x.p, importId, ts, by, x.mode)));
       const missing = [];
       chunk.forEach((x, k) => {
@@ -116,7 +135,7 @@ export async function onRequestPost({ request, env, data }) {
       }
     }
     const stmts = issues.map((is) => {
-      const kind = ['dup_db', 'dup_file', 'invalid_jan', 'missing'].indexOf(is.kind) >= 0 ? is.kind : 'dup_file';
+      const kind = ['dup_db', 'dup_file', 'invalid_jan', 'missing', 'similar_name'].indexOf(is.kind) >= 0 ? is.kind : 'dup_file';
       return env.DB.prepare(
         'INSERT INTO pim_issues(account_id, ts, import_id, kind, jan, message, existing, incoming) VALUES(?,?,?,?,?,?,?,?)'
       ).bind(acct, ts, importId, kind, cleanJan(is.jan || '').slice(0, 14), String(is.message || '').slice(0, 1000),
@@ -128,7 +147,55 @@ export async function onRequestPost({ request, env, data }) {
       await env.DB.prepare('UPDATE pim_imports SET inserted=inserted+?, updated=updated+?, skipped=skipped+? WHERE id=? AND account_id=?')
         .bind(inserted, updated, issues.length, importId, acct).run();
     }
+    const changed = products.filter((x) => !(x.mode === 'insert_only' && conflictJans.indexOf(x.p.jan) >= 0)).map((x) => x.p.jan);
+    await logChanges(env, acct, changed, 'product', by); notifyWebhook(context, data.account, 'product', changed, by);
     return json({ ok: true, inserted, updated, conflicts, issues: issues.length });
+  }
+
+  if (action === 'rollback') {
+    const importId = parseInt(b.import_id, 10) || 0;
+    const imp = await env.DB.prepare('SELECT * FROM pim_imports WHERE id=? AND account_id=?').bind(importId, acct).first();
+    if (!imp) return json({ ok: false, reason: 'not_found' }, 404);
+    if (imp.rolled_back_at) return json({ ok: false, reason: 'already', message: 'この取り込みは既に取り消されています（' + imp.rolled_back_at.slice(0, 16).replace('T', ' ') + '）' }, 409);
+    // 先に「取り消し中」の印を付けて、2人が同時に押しても1回だけ走るようにする
+    const ts = nowIso();
+    const lock = await env.DB.prepare('UPDATE pim_imports SET rolled_back_at=?, rolled_back_by=? WHERE id=? AND account_id=? AND rolled_back_at IS NULL').bind(ts, by || null, importId, acct).run();
+    if (!(lock.meta && lock.meta.changes)) return json({ ok: false, reason: 'already', message: '他の人が先に取り消しました' }, 409);
+    let deleted = 0, restored = 0, keptWithImages = 0, missing = 0;
+    const touched = [];
+    for (let off = 0; ; off += 200) {
+      const rs = await env.DB.prepare('SELECT jan, before FROM pim_import_backup WHERE import_id=? AND account_id=? ORDER BY jan LIMIT 200 OFFSET ?').bind(importId, acct, off).all();
+      const rows = rs.results || [];
+      if (!rows.length) break;
+      const cur = await loadExisting(rows.map((r) => r.jan));
+      const stmts = [];
+      for (const r of rows) {
+        const now = cur[r.jan];
+        if (!r.before) {
+          // この取り込みで新しく入った商品 → 消す。ただし写真が付いていたら（撮影の成果を失わないよう）残す
+          if (!now) { missing++; continue; }
+          if (now.image_count > 0) { keptWithImages++; continue; }
+          for (let sl = 1; sl <= SLOT_MAX; sl++) await blobDelete(env, imageKey(acct, r.jan, sl));
+          stmts.push(env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=?').bind(acct, r.jan));
+          stmts.push(env.DB.prepare('DELETE FROM pim_products WHERE account_id=? AND jan=?').bind(acct, r.jan));
+          deleted++; touched.push(r.jan);
+        } else {
+          let prev = null; try { prev = JSON.parse(r.before); } catch (e) { prev = null; }
+          if (!prev) { missing++; continue; }
+          const cols = PRODUCT_COLS.filter((c) => c !== 'jan').concat(['raw', 'source', 'import_id']);
+          const sets = cols.map((c) => c + '=?').join(', ') + ', updated_at=?, updated_by=?';
+          const vals = cols.map((c) => (prev[c] == null ? null : prev[c])).concat([ts, by || null]);
+          stmts.push(env.DB.prepare('UPDATE pim_products SET ' + sets + ' WHERE account_id=? AND jan=?').bind(...vals, acct, r.jan));
+          restored++; touched.push(r.jan);
+        }
+      }
+      for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
+      if (rows.length < 200) break;
+    }
+    // この取り込みで積んだ未解決の注意も閉じる
+    await env.DB.prepare('UPDATE pim_issues SET status=\'resolved\', resolution=\'rolled_back\', resolved_at=?, resolved_by=? WHERE account_id=? AND import_id=? AND status=\'open\'').bind(ts, by || null, acct, importId).run();
+    await logChanges(env, acct, touched, 'product', by); notifyWebhook(context, data.account, 'product', touched, by);
+    return json({ ok: true, import_id: importId, deleted, restored, kept_with_images: keptWithImages, missing });
   }
 
   if (action === 'finish') {
@@ -146,6 +213,6 @@ export async function onRequestPost({ request, env, data }) {
 
 // GET /api/pim/import → 取り込み履歴
 export async function onRequestGet({ env, data }) {
-  const rs = await env.DB.prepare('SELECT id, ts, filename, source, total, inserted, updated, skipped, invalid, headers IS NOT NULL AS has_headers FROM pim_imports WHERE account_id=? ORDER BY id DESC LIMIT 50').bind(data.account.id).all();
+  const rs = await env.DB.prepare('SELECT i.id, i.ts, i.filename, i.source, i.kind, i.total, i.inserted, i.updated, i.skipped, i.invalid, i.headers IS NOT NULL AS has_headers, i.rolled_back_at, i.rolled_back_by, (SELECT COUNT(*) FROM pim_import_backup b WHERE b.import_id=i.id) AS backup_rows FROM pim_imports i WHERE i.account_id=? ORDER BY i.id DESC LIMIT 50').bind(data.account.id).all();
   return json({ ok: true, imports: rs.results || [] });
 }

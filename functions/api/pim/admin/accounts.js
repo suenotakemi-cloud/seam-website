@@ -7,7 +7,9 @@
 //        rename     { id, name, note }
 //        logout_all { id }                               … パスワードはそのまま、全端末を強制ログアウト
 //        api_key    { id }  / api_key_revoke { id }       … EC 連携用の読み取り専用キーを発行（再発行で古いものは無効）/ 無効化
-import { json, hashPassword, passwordProblem, normalizeLoginId, publicAccount, nowIso, newApiKey } from '../_lib.js';
+//        webhook    { id, url }                          … 変更を EC 側へ push する URL（https）。署名用の秘密を返す（再設定で秘密も変わる）
+//        webhook_clear { id } / webhook_test { id }      … 解除 / テスト送信（結果を返す）
+import { json, hashPassword, passwordProblem, normalizeLoginId, publicAccount, nowIso, newApiKey, newWebhookSecret, notifyWebhook, webhookUrlOk } from '../_lib.js';
 
 export async function onRequestGet({ env }) {
   const rs = await env.DB.prepare(
@@ -20,7 +22,8 @@ export async function onRequestGet({ env }) {
   return json({ ok: true, accounts: (rs.results || []).map((a) => Object.assign(publicAccount(a), { note: a.note, products: a.products, with_images: a.with_images, open_issues: a.open_issues })) });
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(context) {
+  const { request, env } = context;
   const b = await request.json().catch(() => null);
   if (!b || typeof b !== 'object') return json({ ok: false, reason: 'bad_json' }, 400);
   const action = String(b.action || '');
@@ -71,6 +74,22 @@ export async function onRequestPost({ request, env }) {
   if (action === 'api_key_revoke') {
     await env.DB.prepare('UPDATE pim_accounts SET api_key=NULL, updated_at=? WHERE id=?').bind(ts, id).run();
     return json({ ok: true, message: '連携キーを無効にしました' });
+  }
+  if (action === 'webhook') {
+    const url = String(b.url || '').trim().slice(0, 500);
+    if (!webhookUrlOk(url)) return json({ ok: false, reason: 'bad_url', message: 'https:// で始まる URL を入れてください' }, 400);
+    const secret = newWebhookSecret();
+    await env.DB.prepare('UPDATE pim_accounts SET webhook_url=?, webhook_secret=?, webhook_last_at=NULL, webhook_last_status=NULL, updated_at=? WHERE id=?').bind(url, secret, ts, id).run();
+    return json({ ok: true, webhook_url: url, webhook_secret: secret, message: 'Webhook を設定しました（署名の秘密はこの画面を閉じると再表示できません）' });
+  }
+  if (action === 'webhook_clear') {
+    await env.DB.prepare('UPDATE pim_accounts SET webhook_url=NULL, webhook_secret=NULL, updated_at=? WHERE id=?').bind(ts, id).run();
+    return json({ ok: true, message: 'Webhook を解除しました' });
+  }
+  if (action === 'webhook_test') {
+    if (!a.webhook_url) return json({ ok: false, reason: 'no_webhook', message: 'Webhook が未設定です' }, 400);
+    const status = await notifyWebhook(context, a, 'test', ['0000000000000'], 'admin');
+    return json({ ok: true, status, message: '送信しました → 相手の応答: ' + status });
   }
   if (action === 'rename') {
     const name = String(b.name == null ? a.name : b.name).trim().slice(0, 100) || a.name;

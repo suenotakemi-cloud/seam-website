@@ -21,6 +21,7 @@ export async function onRequestGet({ env, data }) {
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review=\'retake\') AS retake, ' +
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review=\'ok\') AS reviewed_ok, ' +
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review IS NULL) AS unreviewed, ' +
+    '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review IS NULL AND quality_warn IS NOT NULL) AS quality_warn, ' +
     '(SELECT COUNT(*) FROM pim_issues WHERE account_id=?1 AND status=\'open\') AS open_issues'
   ).bind(acct).first();
   const byDay = await env.DB.prepare(

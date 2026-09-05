@@ -23,7 +23,11 @@ CREATE TABLE IF NOT EXISTS pim_accounts (
   updated_at     TEXT NOT NULL,
   pass_changed_at TEXT,
   last_login_at  TEXT,
-  api_key        TEXT                       -- EC 連携用の読み取り専用キー（seam_…）。再発行で差し替え、NULL で無効
+  api_key        TEXT,                      -- EC 連携用の読み取り専用キー（seam_…）。再発行で差し替え、NULL で無効
+  webhook_url    TEXT,                      -- 変更があったとき EC 側へ POST する URL（https）。空なら送らない
+  webhook_secret TEXT,                      -- 署名用（x-seam-signature: sha256=HMAC(body)）
+  webhook_last_at TEXT,                     -- 最後に送った時刻と結果（管理画面で確認）
+  webhook_last_status TEXT
 );
 -- ▼ ログイン失敗の記録（10回で15分ロック）
 CREATE TABLE IF NOT EXISTS pim_login_fail (login_id TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, last_at TEXT);
@@ -57,8 +61,10 @@ CREATE TABLE IF NOT EXISTS pim_products (
   raw            TEXT,                      -- 取り込んだ元CSVの1行（見出し→値の JSON）。「元CSVの形＋画像」出力に使う
   claimed_by     TEXT,                      -- いま撮影中の担当者名（スマホで商品を開くと付き、閉じると外れる）
   claimed_at     TEXT,                      -- 撮影中フラグの時刻。10分過ぎたら無効（閉じ忘れ対策）。撮影キューは他の人の撮影中商品を飛ばす
+  name_key       TEXT,                      -- 商品名の「似ている判定」キー（全角半角・単位表記・記号を揃えたもの。取り込み時の表記ゆれ検出に使う）
   PRIMARY KEY (account_id, jan)
 );
+CREATE INDEX IF NOT EXISTS idx_pim_products_nkey  ON pim_products(account_id, name_key);
 CREATE INDEX IF NOT EXISTS idx_pim_products_name  ON pim_products(account_id, name);
 CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(account_id, maker);
 CREATE INDEX IF NOT EXISTS idx_pim_products_imgs  ON pim_products(account_id, image_count);
@@ -81,6 +87,8 @@ CREATE TABLE IF NOT EXISTS pim_images (
   review_note    TEXT,                      -- 撮り直しの理由（スマホに表示）
   reviewed_by    TEXT,
   reviewed_at    TEXT,
+  quality        TEXT,                      -- 登録時の自動チェック結果（JSON: 明るさ・ピント・元の大きさ）
+  quality_warn   TEXT,                      -- 自動チェックの注意（「暗い」「ピンぼけ」「小さい」をカンマ区切り。無ければ NULL）
   PRIMARY KEY (account_id, jan, slot)       -- ★この主キーが「同時登録の取り合い」を裁く（slot=auto は INSERT が通った人の番号）
 );
 
@@ -98,8 +106,12 @@ CREATE TABLE IF NOT EXISTS pim_imports (
   inserted       INTEGER NOT NULL DEFAULT 0,
   updated        INTEGER NOT NULL DEFAULT 0,
   skipped        INTEGER NOT NULL DEFAULT 0,-- JAN重複などで保留にした行数
-  invalid        INTEGER NOT NULL DEFAULT 0 -- JAN無し・価格無しなど登録できなかった行数
+  invalid        INTEGER NOT NULL DEFAULT 0,-- JAN無し・価格無しなど登録できなかった行数
+  rolled_back_at TEXT,                      -- 「取り込みの取り消し」をした時刻（pim_import_backup から戻す）
+  rolled_back_by TEXT
 );
+-- ▼ 取り込み前の状態（取り消し用。before が NULL = その取り込みで新しく入った商品）
+CREATE TABLE IF NOT EXISTS pim_import_backup (import_id INTEGER NOT NULL, account_id INTEGER NOT NULL, jan TEXT NOT NULL, before TEXT, PRIMARY KEY (import_id, jan));
 
 -- ▼ 注意（JAN重複など。登録せずにここへ積み、画面で「どちらを残すか」を決める）
 CREATE TABLE IF NOT EXISTS pim_issues (
@@ -120,6 +132,39 @@ CREATE TABLE IF NOT EXISTS pim_issues (
 CREATE INDEX IF NOT EXISTS idx_pim_imports_acct  ON pim_imports(account_id, id);
 CREATE INDEX IF NOT EXISTS idx_pim_issues_status ON pim_issues(account_id, status, ts);
 CREATE INDEX IF NOT EXISTS idx_pim_issues_jan    ON pim_issues(account_id, jan);
+
+-- ▼ 担当者（1アカウント内のスタッフ一覧。登録があるときはスマホ・PC で名前をタップして選ぶ。PIN を付けると本人確認あり）
+CREATE TABLE IF NOT EXISTS pim_staff (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id     INTEGER NOT NULL,
+  name           TEXT NOT NULL,
+  pin_hash       TEXT,                      -- 4〜6桁の PIN（pbkdf2）。NULL なら名前を選ぶだけ
+  active         INTEGER NOT NULL DEFAULT 1,-- 0=退職など（選べなくなる。過去の記録は残る）
+  created_at     TEXT NOT NULL,
+  updated_at     TEXT NOT NULL,
+  UNIQUE (account_id, name)
+);
+-- ▼ 表記の辞書（メーカー・ブランド・カテゴリの揃え。取り込み・保存時に src → dst に置き換える）
+CREATE TABLE IF NOT EXISTS pim_dict (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id     INTEGER NOT NULL,
+  kind           TEXT NOT NULL,             -- maker / brand / category
+  src            TEXT NOT NULL,             -- 届く表記（例: ㈱アリミノ）
+  dst            TEXT NOT NULL,             -- 揃える表記（例: アリミノ）
+  created_at     TEXT NOT NULL,
+  created_by     TEXT,
+  UNIQUE (account_id, kind, src)
+);
+-- ▼ 変更の記録（EC 側の差分取得 /api/pim/changes と Webhook 用）
+CREATE TABLE IF NOT EXISTS pim_changes (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  account_id     INTEGER NOT NULL,
+  jan            TEXT NOT NULL,
+  kind           TEXT NOT NULL,             -- product（登録・更新）/ image（写真）/ delete（商品削除）
+  ts             TEXT NOT NULL,
+  by             TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_pim_changes_acct ON pim_changes(account_id, id);
 
 -- ▼ 画像の実体（R2 "PRODUCT_IMAGES" が未設定のときだけ使う暫定置き場。読みは R2 → ここ の順）
 CREATE TABLE IF NOT EXISTS pim_blobs (key TEXT PRIMARY KEY, data BLOB NOT NULL, bytes INTEGER, created_at TEXT NOT NULL);
