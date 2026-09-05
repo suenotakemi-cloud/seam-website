@@ -143,6 +143,18 @@
 - 登録済み商品はその列だけ上書きし、**写真・ほかの列はそのまま**。未登録の JAN は新規として追加。重複の確認は出ません。
 - 「取り込んだ CSV の形＋画像」の出力は、更新取り込みの列が少なくても元の 22 列を保ちます（更新した値はその列に反映）。
 
+### H2. メーカーのデータ（空欄だけ埋める）— 全国のディーラー共通の「ベースを守る」取り込み
+- 考え方: **ディーラーの商品データ（菊池なら スマイル の CSV）がベース**。メーカーから届く商品データは形がバラバラなので、それでベースを壊さない。
+- 取り込み画面の「列を合わせる」で **メーカーのデータ（空欄だけ埋める）** を選ぶと:
+  - 登録済みの商品は **商品名・商品コード（商品ID）を絶対に変えず**、空いている項目（価格＝税抜・税込とも空のときだけ／上代／仕入価格／内容量／メーカー／ブランド／カテゴリ／商品説明）だけを埋める。元の CSV の行（`raw`）も触らない。
+  - 「画像」列（URL。複数列や 1 マスに複数 URL も可）があれば、保存のあと続けて写真を取り寄せ、**空いている枠に足す**（登録済みの写真は置き換えない。同じ URL・同じ写真は二度入れない。5 枚そろっていれば入れない）。
+  - **ベースに無い JAN は登録しない**（記録に一覧が出る）。「ベースに無い JAN も新規として追加する」に ✓ したときだけ追加（商品名の無い行は追加しない）。
+  - **JAN と画像 URL だけ**のファイルでも取り込める（商品名の列は不要）。
+- 同じ見出しのファイルを次に受信箱（メール転送）で受け取ると、この設定のまま自動で取り込まれる（写真の取り寄せだけは PC の取り込み画面で同じファイルを読み込んで行う）。
+- 取り込み履歴では「空欄埋め」と出て、**取り消す** で埋めた値は空に戻り、追加した商品は消える（触っていない商品は何も起きない）。
+- 「画像まとめ登録」（フォルダをまとめて）も既定で **空いている枠に足す**（ファイル名の番号は見ない・同じ写真は入れない）。番号どおりに差し替えたいときだけ「上書き」に ✓。
+- 画像 URL の取り寄せは `/api/pim/fetch?url=…`（ログイン済みのみ。https の画像だけ・12MB まで・社内アドレスには行かない）。縮小・webp・自動チェック・サムネはいつも通りブラウザ側。
+
 ### I. EC 連携の自動化（連携キー）
 - 管理画面のアカウント一覧 → **「連携キー発行」** → ディーラーごとの読み取り専用キー（`seam_…`）が出ます。
 - EC 側は毎晩 `https://seam.site/api/pim/export?format=source&api_key=<キー>` を取りに来るだけ（`format=images` / `csv` / `json` も可）。書き込みはできません。
@@ -261,7 +273,8 @@
 | GET | `/api/pim/products?jan=…` / `?q=…&maker=…&noimg=1&limit=&offset=` | 商品1件 / 一覧 |
 | PUT | `/api/pim/products` | 商品1件の登録・更新（JSON）。`expected_updated_at` を付けると楽観ロック（他の人が先に更新していれば 409）。`insert_only:1` で「無いときだけ登録」 |
 | DELETE | `/api/pim/products?jan=…` | 削除（画像も） |
-| POST | `/api/pim/import` | 取り込み（`action: check{jans, keys} / begin / commit / finish / rollback{import_id}`）。commit のたびに取り込み前の状態を残すので rollback で戻せる |
+| POST | `/api/pim/import` | 取り込み（`action: check{jans, keys} / begin / commit / finish / rollback{import_id}`）。commit のたびに取り込み前の状態を残すので rollback で戻せる。`_mode:'fill'`（＋`fill_new`）は空欄だけ埋める（返り値 `filled / unchanged / unknown / unknown_jans`） |
+| GET | `/api/pim/fetch?url=…` | 画像 URL の取り寄せ（CSV の「画像」列から写真を登録するとき。https の画像のみ・12MB まで・連携キー不可） |
 | GET/POST | `/api/pim/issues` | 注意の一覧 / 解決 |
 | GET/POST/DELETE | `/api/pim/images?jan=…&slot=…` | 画像の一覧 / 登録(multipart, webp。`slot=auto` で空き番号をサーバが確定。`quality` に自動チェック結果) / 削除。JSON で `{jan, action:'main', slot}` / `{jan, action:'reorder', order:[…]}` は並べ替え |
 | GET | `/api/pim/export?format=csv\|json\|source\|images&maker=&only_images=1&noimg=1&since=<ISO>` | 出力（`since` で差分） |

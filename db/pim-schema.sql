@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS pim_imports (
   source         TEXT,                      -- メーカー名など（画面で入力）
   mapping        TEXT,                      -- 列の対応（JSON）
   headers        TEXT,                      -- 元CSVの見出し（JSON 配列）。「元CSVの形＋画像」出力の列順
-  kind           TEXT,                      -- normal（通常）/ update（更新取り込み・列が少ないので出力の見出しには使わない）
+  kind           TEXT,                      -- normal（通常）/ update（更新取り込み・列が少ないので出力の見出しには使わない）/ fill（メーカーのデータ・空欄だけ埋める）
   total          INTEGER NOT NULL DEFAULT 0,-- 読み込んだ行数
   inserted       INTEGER NOT NULL DEFAULT 0,
   updated        INTEGER NOT NULL DEFAULT 0,
