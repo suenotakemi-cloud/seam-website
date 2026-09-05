@@ -1,0 +1,36 @@
+# 商品登録の日報を毎朝メールで送る（ディーラーが PC「設定」で登録した宛先へ）
+#
+# 動かすには GitHub の Settings → Secrets に次を入れる（1 回だけ・無料の Gmail アプリパスワードで可）:
+#   PIM_ADMIN_KEY … Cloudflare Pages の環境変数 ADMIN_KEY と同じ値
+#   SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / MAIL_FROM … 送信に使うメール
+# 入っていなければ何もしない（失敗にもしない）。
+name: 商品登録の日報メール
+
+on:
+  schedule:
+    - cron: '0 22 * * *'   # 毎日 07:00 JST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 日報を取得して送る
+        env:
+          PIM_ADMIN_KEY: ${{ secrets.PIM_ADMIN_KEY }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+        run: |
+          if [ -z "$PIM_ADMIN_KEY" ] || [ -z "$SMTP_HOST" ]; then echo "secrets 未設定のため何もしません"; exit 0; fi
+          npm install --no-save nodemailer@6 >/dev/null 2>&1
+          node scripts/pim-daily-report.mjs

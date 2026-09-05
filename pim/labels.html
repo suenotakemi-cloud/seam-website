@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEAM 商品ラベル（バーコード）印刷</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+<style>
+  :root{ --ink:#2B2926; --char:#5A534B; --line:#E7E0D6; --brown:#A87456; --bg:#F5F1EA; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',system-ui,-apple-system,sans-serif;font-size:14px}
+  .bar{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:10px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .btn{font-size:13px;border:1px solid var(--line);background:#fff;padding:7px 12px;border-radius:999px;cursor:pointer}
+  .btn.solid{background:var(--brown);color:#fff;border-color:var(--brown)}
+  select,input{font:inherit;border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+  .sheet{max-width:210mm;margin:12px auto;background:#fff;padding:8mm;display:grid;gap:4mm}
+  .sheet.c2{grid-template-columns:repeat(2,1fr)} .sheet.c3{grid-template-columns:repeat(3,1fr)}
+  .lab{border:1px dashed #ccc;border-radius:4px;padding:3mm;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;page-break-inside:avoid;break-inside:avoid}
+  .lab .nm{font-size:11px;line-height:1.3;max-height:2.6em;overflow:hidden;margin-bottom:2px;font-weight:600}
+  .lab .sub{font-size:10px;color:var(--char)}
+  .lab svg{width:100%;height:auto;max-width:60mm}
+  .muted{color:var(--char);font-size:12px}
+  @media print { .bar{display:none} body{background:#fff} .sheet{margin:0;padding:6mm} .lab{border-color:#eee} }
+</style>
+</head>
+<body>
+<div class="bar">
+  <strong>ラベル印刷</strong>
+  <label class="muted">列 <select id="cols"><option value="2">2</option><option value="3" selected>3</option></select></label>
+  <label class="muted"><input type="checkbox" id="showPrice" checked> 価格を入れる</label>
+  <label class="muted"><input type="checkbox" id="showMaker" checked> メーカー</label>
+  <button class="btn solid" id="btnPrint">印刷する</button>
+  <span class="muted" id="state"></span>
+  <span class="muted">JAN の無い商品に振った仮コード（20 で始まる）も EAN-13 として印刷でき、スマホでそのまま読めます。市販のラベルシール（A4・3列）に合わせて印刷してください。</span>
+</div>
+<div class="sheet c3" id="sheet"></div>
+<script src="../js/pim-client.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.PimClient, esc = C.esc, $ = function (id) { return document.getElementById(id); };
+  var jans = (new URLSearchParams(location.search).get('jans') || '').split(',').map(function (j) { return j.replace(/[^0-9]/g, ''); }).filter(Boolean).slice(0, 500);
+  var items = [];
+  function render() {
+    $('sheet').className = 'sheet c' + $('cols').value;
+    $('sheet').innerHTML = items.map(function (p) {
+      var svg = C.ean13Svg(p.jan, { module: 2, height: 56 });
+      return '<div class="lab"><div class="nm">' + esc(p.name) + '</div>' + ($('showMaker').checked && p.maker ? '<div class="sub">' + esc(p.maker) + (p.brand ? ' ・ ' + esc(p.brand) : '') + '</div>' : '') + (p.sku ? '<div class="sub">商品コード ' + esc(p.sku) + '</div>' : '') +
+        (svg || '<div class="sub">' + esc(p.jan) + '（EAN-13 にできない桁数）</div>') + ($('showPrice').checked && p.price_in != null ? '<div class="sub">税込 ' + esc(C.fmtYen(p.price_in)) + (p.amount != null ? ' ・ ' + (Math.round(p.amount * 100) / 100) + (p.unit || '') : '') + '</div>' : '') + '</div>';
+    }).join('') || '<p class="muted">商品が指定されていません。PC の商品一覧で商品を選んで「ラベルを印刷」を押してください。</p>';
+  }
+  if (!C.Auth.get()) { $('state').textContent = 'ログインしていません。PC の取り込み画面からログインしてください'; }
+  var chain = Promise.resolve();
+  jans.forEach(function (j) { chain = chain.then(function () { return C.api('products?jan=' + j).then(function (r) { if (r.ok) items.push(r.product); }); }); });
+  chain.then(function () { $('state').textContent = items.length + ' 件'; render(); }).catch(function (e) { $('state').textContent = (e && e.message) || '取得できません'; });
+  ['cols', 'showPrice', 'showMaker'].forEach(function (id) { $(id).addEventListener('change', render); });
+  $('btnPrint').addEventListener('click', function () { window.print(); });
+})();
+</script>
+</body>
+</html>

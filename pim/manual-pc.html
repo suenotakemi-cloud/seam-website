@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PC で管理する人の説明書（SEAM 商品登録）</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="./manual/manual.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar"><a href="./import.html">💻 PC 画面を開く</a><a href="./manual-phone.html">📱 スマホの説明書</a><a href="#" onclick="window.print();return false;">🖨 印刷する</a></div>
+
+  <div class="cover">
+    <h1>💻 PC で管理する人の説明書</h1>
+    <div class="sub">SEAM 商品登録 — メーカーの商品データを取り込んで、写真を集めて、ネットのお店に出す</div>
+    <div class="who">パソコンが苦手でも OK。1 日目は 2 章と 4 章だけ読めば動かせます</div>
+    <div class="strip" style="margin-top:14px">
+      <div class="koma" data-who="senpai" data-face="think" data-say="メーカーから CSV が&#10;バラバラの形で届く…" data-scene="csv" data-cap="タナカ先輩（PC 担当）"></div>
+      <div class="koma" data-who="jan" data-face="smile" data-say="このアプリに入れると&#10;全部同じ形にそろうよ" data-scene="pc" data-cap="ジャン"></div>
+      <div class="koma" data-who="mika" data-face="smile" data-say="わたしがスマホで&#10;写真をつけます！" data-scene="phone" data-cap="ミカ（写真係）"></div>
+      <div class="koma" data-who="senpai" data-face="wink" data-say="最後に「出力」して&#10;ネットのお店へ" data-scene="ok" data-cap="完成"></div>
+    </div>
+  </div>
+
+  <nav class="toc"><b>もくじ</b>
+    <ol>
+      <li><a href="#s0">PC 担当の仕事は 4 つ</a></li>
+      <li><a href="#s1">ログインと名前えらび</a></li>
+      <li><a href="#s2">メーカーの CSV を取り込む（5 ステップ）</a></li>
+      <li><a href="#s3">「注意」（JAN がかぶった）を決める</a></li>
+      <li><a href="#s4">商品一覧（さがす・なおす・まとめて変更・ラベル印刷）</a></li>
+      <li><a href="#s5">メーカーの画像フォルダをまとめて登録</a></li>
+      <li><a href="#s6">出力する（EC 向け CSV・写真 zip）</a></li>
+      <li><a href="#s7">進捗と日報</a></li>
+      <li><a href="#s8">写真の検品</a></li>
+      <li><a href="#s9">設定（担当者・辞書・アカウント・自動取り込み）</a></li>
+      <li><a href="#s10">まちがえたとき（取り消し）</a></li>
+      <li><a href="#s11">困ったとき</a></li>
+      <li><a href="#s12">運営の週間チェックリスト</a></li>
+    </ol>
+  </nav>
+
+  <section id="s0">
+    <h2><span class="no">0</span>PC 担当の仕事は 4 つ</h2>
+    <table>
+      <tr><th>いつ</th><th>やること</th><th>どこで</th></tr>
+      <tr><td>メーカーから商品データが届いたら</td><td><b>取り込む</b>（CSV / Excel をアプリに入れる）</td><td>取り込み タブ</td></tr>
+      <tr><td>毎日</td><td><b>進捗を見る</b>・スマホ係の名前を足す・写真を<b>検品</b>する</td><td>進捗 / 設定 / 検品 タブ</td></tr>
+      <tr><td>「注意」の赤い数字が出たら</td><td><b>JAN がかぶった商品を決める</b></td><td>注意 タブ</td></tr>
+      <tr><td>ネットのお店に出すとき</td><td><b>出力する</b>（CSV と写真）</td><td>出力 タブ</td></tr>
+    </table>
+    <div class="tip"><b>こわがらなくて OK</b>取り込みは「取り消す」で元に戻せます。写真は消さない限り残ります。わからないときは 11 章へ。</div>
+  </section>
+
+  <section id="s1">
+    <h2><span class="no">1</span>ログインと名前えらび</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c01-login.webp" alt="PC のログイン画面"><figcaption>https://seam.site/pim/import.html を開いて、ID とパスワードを入れる</figcaption></figure>
+    </div>
+    <ol class="steps">
+      <li>パソコンのブラウザ（Chrome か Edge がおすすめ）で <span class="kw">https://seam.site/pim/import.html</span> を開く。</li>
+      <li>お店の <b>ID とパスワード</b>を入れて <span class="btn-like solid">ログイン</span>。</li>
+      <li>名前の一覧が出たら<b>自分の名前</b>をタップ（🔒 の人は PIN）。一覧がなければ「担当者名」に自分の名前。</li>
+    </ol>
+    <div class="tip warn"><b>ID・パスワードは「1 つのお店に 1 つ」</b>スマホ係も同じ ID を使います。だれが何をしたかは「名前」で分けます。人が辞めたら 設定 → パスワードを変更（全員がログインし直しになります）。</div>
+  </section>
+
+  <section id="s2">
+    <h2><span class="no">2</span>メーカーの CSV を取り込む（5 ステップ）</h2>
+    <div class="strip">
+      <div class="koma" data-who="senpai" data-face="smile" data-say="①ファイルを選ぶ&#10;②列を合わせる&#10;③確認 ④かぶりを決める&#10;⑤保存" data-scene="csv"></div>
+      <div class="koma" data-who="jan" data-face="wink" data-say="2 回目からは&#10;②が自動になるよ" data-scene="pc"></div>
+    </div>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c02-import.webp" alt="取り込みタブ"><figcaption>① ファイルをここにドロップ（CSV / Excel どちらでも。文字コードは自動判定）</figcaption></figure>
+      <figure><img src="./manual/img/c03-map.webp" alt="列を合わせる"><figcaption>② 列を合わせる。自動で当たっています。「JAN」と「商品名」だけは必ず合っているか見る</figcaption></figure>
+      <figure><img src="./manual/img/c04-preview.webp" alt="確認"><figcaption>③ 確認。読み込んだ行数・登録できる行・注意の数</figcaption></figure>
+      <figure><img src="./manual/img/c05-dup.webp" alt="JAN の重複"><figcaption>④ JAN がかぶっているものは「どちらを残すか」を決める（決めなければ「注意」にたまる）</figcaption></figure>
+      <figure><img src="./manual/img/c06-commit.webp" alt="保存"><figcaption>⑤ 「この内容で保存」</figcaption></figure>
+    </div>
+    <ol class="steps">
+      <li><b>ファイルを選ぶ</b> … メーカーから来た CSV か Excel をドラッグ＆ドロップ。</li>
+      <li><b>列を合わせる</b> … 「JAN」と「商品名」が正しい列になっているか見る。価格の列があれば「税込か税抜か」を選ぶ。送り元（メーカー名）を入れる。<br>「前回の設定を適用」と出たら、前と同じファイルなので<b>そのままで OK</b>。</li>
+      <li><span class="btn-like solid">確認する</span> … 表を見て、JAN や名前がずれていないか確かめる。</li>
+      <li><b>JAN がかぶっているもの</b> … 「登録済みを残す」「届いた方で上書き」「保留」を選ぶ。迷ったら <b>保留</b>（あとで 注意 タブで決められます）。</li>
+      <li><span class="btn-like solid">この内容で保存</span> … 「完了: 追加 ○件」と出れば終わり。</li>
+    </ol>
+    <h3>更新取り込み（値段だけ変わった CSV など）</h3>
+    <p>「更新取り込み」を選び、<b>上書きする列</b>（価格・上代 など）に ✓ を入れて保存。写真やほかの列はそのまま残ります。</p>
+    <h3>メーカーから来たデータ（空欄だけ埋める）</h3>
+    <p>メーカーの商品データや画像リストは、<b>「メーカーのデータ（空欄だけ埋める）」</b>を選んで取り込みます。今ある商品データがベースなので、<b>商品名と商品コードは絶対に変わりません</b>。空いている項目（メーカー名・ブランド・値段が空のときだけ など）を埋め、「画像」列に写真の URL があれば<b>空いている枠に写真を足します</b>（すでにある写真はそのまま。同じ写真は二度入りません）。</p>
+    <ul class="chk">
+      <li>ベースに無い JAN は<b>登録しません</b>（記録に一覧が出ます）。どうしても入れたいときだけ「ベースに無い JAN も新規として追加する」に ✓。</li>
+      <li>JAN と画像 URL だけのファイルでも OK（商品名の列は要りません）。</li>
+      <li>一度取り込んだ形のファイルは、次からメール転送（受信箱）でも同じ設定で自動的に取り込まれます。</li>
+    </ul>
+    <div class="tip"><b>なぜ「空欄だけ」？</b>メーカーごとに商品名の書き方が違うので、そのまま上書きすると EC の商品名がバラバラになります。ベースはディーラーの商品データ、メーカーからは「足りないところ」と「写真」だけをもらう、が基本です。</div>
+    <div class="tip"><b>メーカーごとに列の名前がバラバラでも OK</b>「商品ＪＡＮコード」「JANコード」「バーコード」… どれでも自動で JAN と判断します。値段の「1,100」「¥1100」「1100円」も読めます。</div>
+    <div class="tip warn"><b>保存したあとで「まちがえた！」</b>取り込み履歴の <b>取り消す</b> で元に戻せます（10 章）。</div>
+  </section>
+
+  <section id="s3">
+    <h2><span class="no">3</span>「注意」（JAN がかぶった）を決める</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c07-issues.webp" alt="注意タブ"><figcaption>注意タブ。左が登録済み、右が届いたデータ。ちがうところが黄色</figcaption></figure>
+    </div>
+    <p class="lead">同じ JAN（バーコード）の商品が 2 つあると、ネットのお店でどちらを出すか決められません。だから登録せずに「注意」に置いてあります。</p>
+    <table>
+      <tr><th>ボタン</th><th>意味</th><th>こんなとき</th></tr>
+      <tr><td>登録済みを残す</td><td>今のままにする</td><td>届いたデータが古い・まちがっている</td></tr>
+      <tr><td>届いた方で上書き</td><td>新しいデータにする</td><td>メーカーの改定（値段変更など）</td></tr>
+      <tr><td>この行を採用</td><td>同じファイルに 2 行あるとき、どの行にするか</td><td>ふつうは最後の行（新しい方）</td></tr>
+      <tr><td>閉じる</td><td>何もしない</td><td>見たけど問題なし</td></tr>
+    </table>
+    <div class="strip">
+      <div class="koma" data-who="mika" data-face="think" data-say="同じ JAN なのに&#10;値段がちがう…" data-scene="csv"></div>
+      <div class="koma" data-who="senpai" data-face="smile" data-say="新しい方を選べば&#10;OK。写真は消えないよ" data-scene="ok"></div>
+    </div>
+    <div class="tip"><b>「商品名が似ている」の注意</b>「エマルジョン」と「エマルジョン+」のように、名前がほぼ同じで JAN がちがうものです。別の商品なら「確認した」で閉じるだけ。同じ商品を 2 回登録していたら、商品一覧で片方を削除します。</div>
+  </section>
+
+  <section id="s4">
+    <h2><span class="no">4</span>商品一覧（さがす・なおす・まとめて変更・ラベル印刷）</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c08-products.webp" alt="商品一覧"><figcaption>検索・メーカーで絞る・「写真なしだけ」</figcaption></figure>
+    </div>
+    <table>
+      <tr><th>やりたいこと</th><th>やり方</th></tr>
+      <tr><td>商品をさがす</td><td>上の欄に 商品名・JAN・ブランド を入れて Enter。</td></tr>
+      <tr><td>写真がまだの商品だけ見る</td><td>「写真なしだけ」に ✓。</td></tr>
+      <tr><td>1 つの商品をなおす／写真を見る</td><td>行の「写真」→ スマホ画面が開きます（PC でも同じ操作ができます）。</td></tr>
+      <tr><td>たくさんの商品のメーカー名などを一度に変える</td><td>左の □ に ✓ → <b>まとめて変更</b> → 項目と値を入れて「変更する」。</td></tr>
+      <tr><td>バーコードのシールを印刷する</td><td>□ に ✓ → <b>ラベル（バーコード）を印刷</b>。A4 のラベルシールに印刷して商品に貼ります。JAN が無い商品の「仮コード」もこれで貼れます。</td></tr>
+      <tr><td>JAN が無い商品を登録する</td><td><b>JAN が無い商品を登録（仮コード発行）</b> → 商品名を入れる。20 で始まる 13 けたの仮コードがつきます。</td></tr>
+      <tr><td>商品コード（商品ID）を入れる</td><td>一覧の「商品コード」列が「入れる」になっている商品はまだ番号が無い商品。押して入力。「商品コードなしだけ」に ✓ でまとめて探せます。CSV から取り込んだ商品は自動で入っています。</td></tr>
+      <tr><td>商品を消す</td><td>行の「削除」。写真も消えるので注意。</td></tr>
+    </table>
+  </section>
+
+  <section id="s5">
+    <h2><span class="no">5</span>メーカーの画像フォルダをまとめて登録</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c09-images.webp" alt="画像まとめ登録"><figcaption>ファイル名に JAN が入っていれば、そのまま放り込める（空いている枠に足すのが基本。すでにある写真は消えない）</figcaption></figure>
+    </div>
+    <ol class="steps">
+      <li>メーカーから届いた画像フォルダの中身を、まとめてドロップ。</li>
+      <li>ファイル名から JAN と何枚目かを自動で読みます。<br>例: <span class="kw">4901275230122.jpg</span>（1枚目）、<span class="kw">4901275230122_2.png</span>（2枚目）。</li>
+      <li>「登録できるもの ○件」を見て <span class="btn-like solid">登録を開始</span>。すべて正方形・白背景・webp にそろえて保存されます。</li>
+    </ol>
+    <div class="tip warn"><b>「未登録の JAN」と出たら</b>先に商品データ（CSV）を取り込んでから、画像を入れてください。</div>
+  </section>
+
+  <section id="s6">
+    <h2><span class="no">6</span>出力する（EC 向け CSV・写真 zip）</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c10-export.webp" alt="出力タブ"><figcaption>EC 向けは「取り込んだ CSV の形 ＋ 画像1〜5」</figcaption></figure>
+      <figure><img src="./manual/img/c17-zip.webp" alt="写真の zip"><figcaption>写真をまとめて zip。ファイル名は JAN か 商品ID</figcaption></figure>
+    </div>
+    <table>
+      <tr><th>ボタン</th><th>何が出る</th><th>だれに渡す</th></tr>
+      <tr><td><b>取り込んだ CSV の形 ＋ 画像1〜5</b></td><td>メーカーの CSV と同じ列に、写真の URL を 5 列足したもの</td><td>ネットのお店（EC）のエンジニア。<b>商品コード（商品ID）</b>でつなぎます</td></tr>
+      <tr><td>商品コード・JAN・画像1〜5 だけ</td><td>写真の URL だけ</td><td>EC 側がもう商品を持っているとき</td></tr>
+      <tr><td>統一フォーマット CSV / JSON</td><td>決まった列（JAN・商品名・税抜・税込・内容量…）</td><td>ほかのシステム・分析用</td></tr>
+      <tr><td>zip をダウンロード</td><td>写真そのもの（webp）。ファイル名を <b>JAN</b> か <b>商品ID</b> で選べる</td><td>カタログ・営業資料・手動でアップロードする人</td></tr>
+    </table>
+    <div class="tip"><b>毎晩自動で EC に渡すには</b>設定 → EC 連携 の「連携キーを発行」。出てきた URL を EC のエンジニアに渡すだけで、手でダウンロードしなくてよくなります（9 章）。</div>
+  </section>
+
+  <section id="s7">
+    <h2><span class="no">7</span>進捗と日報</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c11-progress.webp" alt="進捗タブ"><figcaption>商品数・写真あり/なし・担当者別・メーカー別の残り・残り日数</figcaption></figure>
+    </div>
+    <ul>
+      <li><b>写真なし</b> の数が、残りの仕事の量です。</li>
+      <li><b>残り約 ○ 稼働日</b> は、直近 7 日のペースから計算。人を増やすか決める目安に。</li>
+      <li><b>担当者別</b> で、だれが何枚撮ったかが分かります（スマホ係の名前が正しく登録されていることが前提）。</li>
+      <li><b>日報</b> … 設定 → 日報・通知メール にアドレスを入れて「毎朝送る」に ✓ すると、毎朝 7 時にメールが届きます。「昨日の日報を見る」で今すぐ確認もできます。</li>
+    </ul>
+  </section>
+
+  <section id="s8">
+    <h2><span class="no">8</span>写真の検品</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c12-review.webp" alt="検品タブ"><figcaption>OK か 撮り直し を付ける。撮り直しはスマホ係の画面に赤く出る</figcaption></figure>
+    </div>
+    <ol class="steps">
+      <li>検品タブで <b>未検品</b> の写真を見る。まず <b>「自動チェックで注意あり」</b> から見ると速い。</li>
+      <li>よければ <span class="btn-like">OK</span>。ダメなら理由（ピンぼけ・傾き・影 など）を入れて <span class="btn-like">撮り直し</span>。</li>
+      <li>撮り直しはスマホ係の画面に<b>赤い枠</b>で出て、撮り直すと自動で消えます。</li>
+      <li>問題がなければ <span class="btn-like">表示中をすべて OK</span> でまとめて。</li>
+    </ol>
+    <div class="tip"><b>「同じ写真が別の商品に」</b>検品タブの絞り込みで見られます。同じ写真が 2 つの商品に入っている＝撮り間違いの疑い。正しい方を残して、まちがった方の写真を削除してください。</div>
+  </section>
+
+  <section id="s9">
+    <h2><span class="no">9</span>設定（担当者・辞書・アカウント・自動取り込み）</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c14-staff.webp" alt="担当者一覧"><figcaption>担当者一覧: スマホ係の名前を登録。PIN は任意</figcaption></figure>
+      <figure><img src="./manual/img/c15-dict.webp" alt="表記の辞書"><figcaption>表記の辞書: 「㈱アリミノ」→「アリミノ」のように揃える</figcaption></figure>
+      <figure><img src="./manual/img/c16-account.webp" alt="アカウント設定"><figcaption>日報メール・EC 連携・自動取り込み用 URL</figcaption></figure>
+    </div>
+    <h3>担当者一覧（一番大事）</h3>
+    <ol class="steps">
+      <li>スマホ係が来る<b>前</b>に、名前を登録する（名前 → 追加）。アルバイトさんが来るたびに足します。</li>
+      <li>登録すると、スマホでは名前を<b>タップして選ぶ</b>だけになり、打ち間違いがなくなります。</li>
+      <li>PIN（4〜6 けた）を付けると、その人だけがその名前を使えます。共用のスマホで役立ちます。</li>
+      <li>辞めた人は「停止」。過去の記録は残ります。</li>
+      <li>だれかに PIN を付けたあとは、<b>担当者一覧の変更（追加・停止・PIN）は PIN 付きの人が自分の名前を選んでから</b>行います（PIN を外して他人になりすませないための決まり）。PC 担当の自分にも PIN を付けておくとスムーズです。</li>
+    </ol>
+    <div class="tip ng"><b>注意</b>1 人でも登録すると、一覧にない名前では登録できなくなります。<b>自分（PC 担当）の名前も入れてください。</b></div>
+    <h3>表記の辞書</h3>
+    <p>メーカーごとに「㈱アリミノ」「アリミノ株式会社」とバラバラに来る表記を 1 つに揃えます。登録すると、これから取り込む分には自動で当たり、「既存の商品に適用」で今ある分も揃います。</p>
+    <h3>アカウント</h3>
+    <table>
+      <tr><th>項目</th><th>説明</th></tr>
+      <tr><td>ディーラー名・ログイン ID</td><td>お店の名前と ID。ID を変えると全員が新しい ID でログインし直しです。</td></tr>
+      <tr><td>日報・通知メール</td><td>毎朝の日報の送り先。カンマ区切りで 10 件まで。</td></tr>
+      <tr><td>EC 連携（連携キー・Webhook）</td><td>EC のエンジニアに渡すもの。「連携キーを発行」→ 出た URL を渡す。変更のたびに知らせたいときは Webhook に EC 側の URL。</td></tr>
+      <tr><td>自動取り込み用 URL</td><td>メーカーの CSV をメールで転送するだけで取り込む仕組み。URL を発行して SEAM に伝えると、メールの転送先を作ってもらえます。届いた CSV は取り込みタブの <b>受信箱</b> に入り、2 回目からは自動で取り込まれます。</td></tr>
+      <tr><td>パスワードを変更</td><td>人が辞めたときなど。全員がログインし直しになるので、新しいパスワードをみんなに伝えてから。</td></tr>
+    </table>
+  </section>
+
+  <section id="s10">
+    <h2><span class="no">10</span>まちがえたとき（取り消し）</h2>
+    <div class="shot pc">
+      <figure><img src="./manual/img/c18-history.webp" alt="取り込み履歴"><figcaption>取り込み履歴の「取り消す」</figcaption></figure>
+    </div>
+    <div class="strip">
+      <div class="koma" data-who="mika" data-face="sad" data-say="ちがうファイルを&#10;取り込んじゃった！" data-scene="csv"></div>
+      <div class="koma" data-who="senpai" data-face="smile" data-say="履歴の「取り消す」で&#10;元どおり" data-scene="ok"></div>
+    </div>
+    <ul>
+      <li><b>取り込みをまるごと戻す</b> … 取り込みタブの一番下「取り込み履歴」→ その行の <span class="btn-like">取り消す</span>。新しく入った商品は消え、上書きした商品は前の内容に戻ります。<b>写真が付いた商品は消しません。</b></li>
+      <li><b>1 つの商品だけ直す</b> … 商品一覧で「写真」→ スマホ画面で「商品情報を編集」。</li>
+      <li><b>まちがえて写真を消した</b> … 戻せません。もう一度撮ってください。</li>
+    </ul>
+  </section>
+
+  <section id="s11">
+    <h2><span class="no">11</span>困ったとき</h2>
+    <table>
+      <tr><th>こまった</th><th>どうする</th></tr>
+      <tr><td>ログインできない</td><td>ID・パスワードのスペルを確認。10 回まちがえると 15 分ロック。SEAM に「パスワード再設定」を頼めます。</td></tr>
+      <tr><td>「担当者名が登録されていません」</td><td>設定 → 担当者一覧に自分の名前を足す → 「担当者を選び直す」。</td></tr>
+      <tr><td>CSV を入れたのに「JAN が読めません」が多い</td><td>「列を合わせる」で JAN の列がちがう列になっている。プルダウンで直す。</td></tr>
+      <tr><td>値段が 10 倍・1/10 になっている</td><td>税込/税抜のえらび間違いではなく、列がちがう可能性。確認画面の表で見て、取り消して入れ直す。</td></tr>
+      <tr><td>Excel を入れたら文字化け</td><td>Excel（.xlsx）はそのまま入れられます。CSV は自動判定しますが、まれに Shift_JIS/UTF-8 で化けたら Excel で開いて .xlsx で保存し直す。</td></tr>
+      <tr><td>スマホ係から「写真が入らない」</td><td>商品がまだ取り込まれていない（未登録）か、名前が担当者一覧にない。両方確認。</td></tr>
+      <tr><td>「注意」が何十件も出た</td><td>同じ CSV を 2 回入れた可能性。「すべて登録済みを残す」で一括処理できます。</td></tr>
+      <tr><td>受信箱に「未処理」がたまる</td><td>初めての見出しのファイル。「取り込む」で一度列を合わせれば、次から自動になります。</td></tr>
+      <tr><td>EC 側が「画像が表示されない」</td><td>画像 URL は誰でも見られます。URL をブラウザで開いて出るか確認。出なければ SEAM へ。</td></tr>
+    </table>
+    <div class="tip"><b>SEAM に連絡するとき</b>「お店の ID」「何をしたか」「出たメッセージ」の 3 つを伝えると早いです。</div>
+  </section>
+
+  <section id="s12">
+    <h2><span class="no">12</span>運営の週間チェックリスト</h2>
+    <ul class="chk">
+      <li>【毎朝】日報メールか 進捗タブ を見て、写真なしの数と残り日数を確認した</li>
+      <li>【毎朝】今日来るスマホ係の名前が 担当者一覧 にある</li>
+      <li>【毎日】注意タブの赤い数字を 0 にした</li>
+      <li>【毎日】検品タブで「自動チェックで注意あり」を見て、必要なら撮り直しにした</li>
+      <li>【届いたら】メーカーの CSV を取り込んだ（受信箱も確認）</li>
+      <li>【週 1】商品一覧の「写真なしだけ」で、残っているメーカーを確認し、スマホ係に分担を伝えた</li>
+      <li>【週 1】出力タブから EC 向け CSV を出して、EC のエンジニアに渡した（連携キーがあれば不要）</li>
+      <li>【人の出入り】辞めた人は 担当者一覧 で停止。パスワードを知っている人が辞めたらパスワードを変更</li>
+    </ul>
+    <div class="strip">
+      <div class="koma" data-who="senpai" data-face="smile" data-say="毎朝 5 分見るだけで&#10;止まらないよ" data-scene="pc"></div>
+      <div class="koma" data-who="jan" data-face="wink" data-say="困ったら 11 章！" data-scene="ok"></div>
+    </div>
+  </section>
+
+  <p class="foot">SEAM 商品登録 PC 用説明書 — スマホ係には「スマホの説明書」を渡してください</p>
+</div>
+<script src="./manual/comic.js"></script>
+</body>
+</html>
