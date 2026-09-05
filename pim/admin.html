@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEAM 商品マスタ 管理（ディーラーアカウント）</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+<style>
+  :root{ --ink:#2B2926; --char:#5A534B; --gold:#9A6B3A; --line:#E7E0D6; --cream:#FBF7F1; --brown:#A87456; --bg:#F5F1EA; --ok:#2E7D5B; --ng:#B4432F; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  a{color:inherit}
+  header{position:sticky;top:0;z-index:20;background:rgba(245,241,234,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .hwrap{max-width:1100px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .hwrap h1{margin:0;font-size:16px;font-weight:600}
+  .hwrap .sub{font-size:11px;color:var(--char)}
+  .btn{font-size:13px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;border-radius:999px;transition:.15s}
+  .btn:hover{border-color:var(--gold);color:var(--gold)}
+  .btn.solid{background:var(--brown);color:#fff;border-color:var(--brown)}
+  .btn.danger{color:var(--ng)}
+  .btn.sm{font-size:12px;padding:5px 10px}
+  .btn[disabled]{opacity:.45}
+  main{max-width:1100px;margin:0 auto;padding:18px 20px 80px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+  .card h2{margin:0 0 10px;font-size:14px;font-weight:600}
+  .muted{color:var(--char);font-size:12.5px}
+  .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+  .opts label{display:block;font-size:12px;color:var(--char);margin-bottom:3px}
+  .opts input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;font-size:14px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
+  th{font-weight:600;color:var(--char);font-size:12px;background:#FBF7F1}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#F1EBE2;color:var(--char)}
+  .tag.ok{background:#E3F1EA;color:var(--ok)} .tag.ng{background:#F8E3DE;color:var(--ng)}
+  .row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+  .overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;z-index:50}
+  .overlay[hidden]{display:none}
+  .overlay .card{width:100%;max-width:400px}
+  .overlay input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:10px}
+  .err{color:var(--ng);font-size:12.5px;min-height:1em}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;z-index:60;opacity:0;transition:.2s;pointer-events:none}
+  .toast.show{opacity:1} .toast.ng{background:var(--ng)}
+  code{background:#F1EBE2;padding:1px 5px;border-radius:4px;font-size:12px}
+  .pw{font-family:ui-monospace,Menlo,monospace;background:#FBF7F1;border:1px dashed var(--line);border-radius:8px;padding:8px 12px;font-size:15px;letter-spacing:.06em}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div><h1>SEAM 商品マスタ 管理</h1><div class="sub">ディーラーアカウントの発行・パスワード再設定・停止（SEAM 管理者用）</div></div>
+    <div class="row"><a class="btn" href="./import.html">取り込み画面</a><a class="btn" href="./index.html">スマホ登録画面</a><button class="btn" id="btnLogout">ログアウト</button></div>
+  </div>
+</header>
+<main>
+  <div class="card">
+    <h2>アカウントを発行する</h2>
+    <p class="muted">1ディーラーにつき1アカウント。ディーラーのスタッフ全員が同じ ID・パスワードでログインし、端末ごとに担当者名を名乗ります。商品データはアカウントごとに完全に分かれます。</p>
+    <div class="opts">
+      <div><label>ID（英数字・3文字以上）</label><input id="cId" placeholder="例: dealer-tokyo" autocapitalize="none"></div>
+      <div><label>ディーラー名</label><input id="cName" placeholder="例: 株式会社〇〇 東京支店"></div>
+      <div><label>初期パスワード（8文字以上）</label><div class="row"><input id="cPw" style="flex:1"><button class="btn sm" id="btnGen">自動生成</button></div></div>
+      <div><label>メモ（担当者・連絡先など）</label><input id="cNote"></div>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="btn solid" id="btnCreate">発行する</button><span class="err" id="cErr"></span></div>
+    <div id="created" class="muted" style="margin-top:10px" hidden></div>
+  </div>
+  <div class="card">
+    <h2>アカウント一覧</h2>
+    <div class="row" style="margin-bottom:8px"><button class="btn sm" id="btnReload">再読込</button></div>
+    <div style="overflow:auto"><table><thead><tr><th>ID</th><th>ディーラー名</th><th>状態</th><th>商品</th><th>写真あり</th><th>注意</th><th>最終ログイン</th><th>PW変更</th><th>メモ</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    <p class="muted" style="margin-top:10px">初期テスト用アカウント <code>takemi</code>（パスワード短め）は、実証実験が終わったら「PW再設定」か「停止」をしてください。<br>「PW再設定」「停止」「全端末ログアウト」はいずれも、そのディーラーの全端末のログインを無効にします（再ログインが必要）。データは消えません。</p>
+  </div>
+  <div class="card">
+    <h2>EC 側から商品データを取るとき</h2>
+    <p class="muted">管理キー（ADMIN_KEY）と <code>x-seam-account: &lt;ディーラーのID&gt;</code> を付けて <code>/api/pim/export?format=csv</code> または <code>format=json</code> を呼ぶと、そのディーラーの統一フォーマットが取れます。画像 URL は認証なしで読めます。</p>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<div class="overlay" id="login" hidden>
+  <div class="card">
+    <h2>管理者ログイン</h2>
+    <p class="muted">Cloudflare に設定した管理キー（ADMIN_KEY・診断ダッシュボードと同じ）</p>
+    <input type="password" id="keyIn" placeholder="管理キー">
+    <label class="muted" style="display:block;margin-bottom:10px"><input type="checkbox" id="remember"> この端末に記憶する</label>
+    <button class="btn solid" id="btnLogin">ログイン</button>
+    <p class="err" id="loginErr"></p>
+  </div>
+</div>
+<script src="../js/pim-client.js"></script>
+<script>
+(function () {
+  'use strict';
+  var C = window.PimClient, esc = C.esc, $ = function (id) { return document.getElementById(id); };
+  var toastT;
+  function toast(m, ng) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (ng ? ' ng' : ''); clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'toast'; }, ng ? 4000 : 2000); }
+  function api(path, opts) { return C.api(path, Object.assign({ admin: true }, opts || {})); }
+  function handleErr(e) {
+    if (e && e.auth) { C.Auth.clearAdmin(); $('login').hidden = false; $('loginErr').textContent = e.keyConfigured === false ? 'サーバに管理キー(ADMIN_KEY)が未設定です' : (e.message || '管理キーが違います'); return; }
+    if (e && e.setup) { toast('保存先(D1)が未設定です。db/SETUP_PIM.md を参照', true); return; }
+    toast((e && e.message) || '通信に失敗しました', true);
+  }
+  function genPw() { var chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; var a = new Uint32Array(12); crypto.getRandomValues(a); var s = ''; for (var i = 0; i < 12; i++) s += chars[a[i] % chars.length]; return s; }
+  function load() {
+    api('admin/accounts').then(function (j) {
+      if (!j.ok) { toast(j.message || '取得できません', true); return; }
+      $('login').hidden = true;
+      $('rows').innerHTML = j.accounts.map(function (a) {
+        return '<tr data-id="' + a.id + '"><td><code>' + esc(a.login_id) + '</code></td><td>' + esc(a.name) + '</td><td>' + (a.active ? '<span class="tag ok">有効</span>' : '<span class="tag ng">停止中</span>') + '</td><td>' + a.products + '</td><td>' + a.with_images + '</td><td>' + a.open_issues + '</td><td class="muted">' + esc((a.last_login_at || '—').replace('T', ' ').slice(0, 16)) + '</td><td class="muted">' + esc((a.pass_changed_at || '—').slice(0, 10)) + '</td><td class="muted">' + esc(a.note || '') + '</td>' +
+          '<td class="row"><button class="btn sm" data-act="reset">PW再設定</button><button class="btn sm" data-act="logout_all">全端末ログアウト</button>' + (a.active ? '<button class="btn sm danger" data-act="disable">停止</button>' : '<button class="btn sm" data-act="enable">再開</button>') + '<button class="btn sm" data-act="rename">名前・メモ</button></td></tr>';
+      }).join('') || '<tr><td colspan="10" class="muted">まだアカウントがありません</td></tr>';
+      Array.prototype.forEach.call($('rows').querySelectorAll('[data-act]'), function (b) {
+        b.addEventListener('click', function () {
+          var tr = b.closest('tr'), id = parseInt(tr.getAttribute('data-id'), 10), act = b.getAttribute('data-act');
+          var lid = tr.querySelector('code').textContent, name = tr.children[1].textContent;
+          var body = { action: act, id: id };
+          if (act === 'reset') { var pw = prompt(name + '（' + lid + '）の新しいパスワード（8文字以上）。空欄なら自動生成', genPw()); if (pw == null) return; body.password = pw.trim() || genPw(); }
+          if (act === 'disable' && !confirm(name + ' を停止しますか？（ログイン不可・全端末ログアウト。データは残ります）')) return;
+          if (act === 'logout_all' && !confirm(name + ' の全端末をログアウトしますか？（パスワードはそのまま）')) return;
+          if (act === 'rename') { var nn = prompt('ディーラー名', name); if (nn == null) return; var note = prompt('メモ', tr.children[8].textContent); if (note == null) return; body.name = nn; body.note = note; }
+          api('admin/accounts', { method: 'POST', body: body }).then(function (r) {
+            if (!r.ok) { toast(r.message || '失敗しました', true); return; }
+            if (act === 'reset') { $('created').hidden = false; $('created').innerHTML = '<b>' + esc(name) + '</b>（ID: <code>' + esc(lid) + '</code>）の新しいパスワード: <span class="pw">' + esc(body.password) + '</span><br>ディーラーに安全な方法で伝えてください。この画面を閉じると二度と表示されません。'; }
+            toast(r.message || '更新しました'); load();
+          }).catch(handleErr);
+        });
+      });
+    }).catch(handleErr);
+  }
+  $('btnGen').addEventListener('click', function () { $('cPw').value = genPw(); });
+  $('btnCreate').addEventListener('click', function () {
+    var id = $('cId').value.trim(), name = $('cName').value.trim(), pw = $('cPw').value, note = $('cNote').value.trim();
+    if (!id || !name || !pw) { $('cErr').textContent = 'ID・ディーラー名・初期パスワードを入れてください'; return; }
+    $('cErr').textContent = ''; $('btnCreate').disabled = true;
+    api('admin/accounts', { method: 'POST', body: { action: 'create', login_id: id, name: name, password: pw, note: note } }).then(function (r) {
+      $('btnCreate').disabled = false;
+      if (!r.ok) { $('cErr').textContent = r.message || '発行できませんでした'; return; }
+      $('created').hidden = false;
+      $('created').innerHTML = '発行しました: <b>' + esc(r.account.name) + '</b> ／ ID: <code>' + esc(r.account.login_id) + '</code> ／ パスワード: <span class="pw">' + esc(pw) + '</span><br>ディーラーへは <code>' + location.origin + '/pim/</code>（スマホ）と <code>' + location.origin + '/pim/import.html</code>（PC）の URL と一緒に、安全な方法で伝えてください。';
+      $('cId').value = $('cName').value = $('cPw').value = $('cNote').value = '';
+      load();
+    }).catch(function (e) { $('btnCreate').disabled = false; handleErr(e); });
+  });
+  $('btnReload').addEventListener('click', load);
+  $('btnLogin').addEventListener('click', function () { var v = $('keyIn').value.trim(); if (!v) return; C.Auth.setAdminKey(v, $('remember').checked); $('keyIn').value = ''; load(); });
+  $('keyIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
+  $('btnLogout').addEventListener('click', function () { C.Auth.clearAdmin(); location.reload(); });
+  if (C.Auth.adminKey()) load(); else $('login').hidden = false;
+})();
+</script>
+</body>
+</html>

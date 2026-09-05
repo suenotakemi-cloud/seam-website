@@ -27,6 +27,12 @@
 /entrance/*
   Permissions-Policy: camera=(self), microphone=(), geolocation=(), browsing-topics=()
 
+# 商品登録（スタッフ用・noindex）もカメラ（JAN読み取り・撮影）を許可
+/pim
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), browsing-topics=()
+/pim/*
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), browsing-topics=()
+
 # ── ここから 2026-08-15 追加 ────────────────────────────────
 # ★差し込まれたコードへの備え。
 #   いまは巨大な埋め込みスクリプトが多く、いきなり止めると画面が死ぬ。
@@ -52,3 +58,14 @@
 /karte/*
   Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow, noarchive
+/pim/*
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow, noarchive
+/api/pim/*
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow, noarchive
+
+# 商品画像（EC側が読みに来る公開URL。URLに ?v= が付くので長期キャッシュでよい）
+/pim-img/*
+  Cache-Control: public, max-age=31536000, immutable
+  Access-Control-Allow-Origin: *

@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEAM 商品マスタ 取り込み・出力</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
+<style>
+  :root{ --ink:#2B2926; --char:#5A534B; --gold:#9A6B3A; --line:#E7E0D6; --cream:#FBF7F1; --brown:#A87456; --bg:#F5F1EA; --ok:#2E7D5B; --ng:#B4432F; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.55}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  a{color:inherit}
+  header{position:sticky;top:0;z-index:20;background:rgba(245,241,234,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .hwrap{max-width:1180px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .hwrap h1{margin:0;font-size:16px;font-weight:600}
+  .hwrap .sub{font-size:11px;color:var(--char)}
+  .btn{font-size:13px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;border-radius:999px;transition:.15s}
+  .btn:hover{border-color:var(--gold);color:var(--gold)}
+  .btn.solid{background:var(--brown);color:#fff;border-color:var(--brown)}
+  .btn.solid:hover{color:#fff;opacity:.92}
+  .btn.danger{color:var(--ng)}
+  .btn[disabled]{opacity:.45;cursor:default}
+  .btn.sm{font-size:12px;padding:5px 10px}
+  main{max-width:1180px;margin:0 auto;padding:18px 20px 80px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tabs button{border:1px solid var(--line);background:#fff;padding:8px 14px;border-radius:999px;font-size:13px}
+  .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tabs button .n{display:inline-block;min-width:18px;padding:0 5px;border-radius:999px;background:var(--ng);color:#fff;font-size:11px;margin-left:5px;text-align:center}
+  .pane{display:none}
+  .pane.on{display:block}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.02);margin-bottom:14px}
+  .card h2{margin:0 0 10px;font-size:14px;font-weight:600}
+  .card h2 .step{display:inline-block;background:var(--ink);color:#fff;border-radius:999px;width:22px;height:22px;line-height:22px;text-align:center;font-size:12px;margin-right:8px}
+  .muted{color:var(--char);font-size:12.5px}
+  .drop{border:2px dashed var(--line);border-radius:14px;padding:34px 20px;text-align:center;background:#FBF7F1;transition:.15s}
+  .drop.over{border-color:var(--brown);background:#FFF8EF}
+  .drop p{margin:0 0 8px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+  th{font-weight:600;color:var(--char);font-size:12px;background:#FBF7F1;position:sticky;top:0}
+  .tbl{overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:10px}
+  .map{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+  .map label{display:block;font-size:12px;color:var(--char);margin-bottom:3px}
+  .map select,.map input,.opts input,.opts select{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;font-size:13px}
+  .map .req label::after{content:" *";color:var(--ng)}
+  .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
+  .opts label{display:block;font-size:12px;color:var(--char);margin-bottom:3px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+  .kpi .l{font-size:11px;color:var(--char)}
+  .kpi .n{font-size:24px;font-weight:600;line-height:1.1}
+  .kpi.ng .n{color:var(--ng)}
+  .kpi.ok .n{color:var(--ok)}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;background:#F1EBE2;color:var(--char)}
+  .tag.ng{background:#F8E3DE;color:var(--ng)}
+  .tag.warn{background:#FBF0D6;color:#8A6A1F}
+  .tag.ok{background:#E3F1EA;color:var(--ok)}
+  .issue{border:1px solid #F0D9C9;border-radius:12px;padding:12px 14px;margin-bottom:10px;background:#FFFDFa}
+  .issue .hd{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .issue .hd b{font-size:13.5px}
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .cmp .side{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+  .cmp .side h4{margin:0 0 6px;font-size:12px;color:var(--char);font-weight:600}
+  .cmp .side dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:12.5px}
+  .cmp .side dt{color:var(--char)}
+  .cmp .side dd{margin:0}
+  .diff{background:#FFF3CD}
+  .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .th{width:44px;height:44px;border-radius:6px;object-fit:cover;background:#EFE9E0;display:inline-block;vertical-align:middle}
+  .prog{height:8px;background:#F1EBE2;border-radius:6px;overflow:hidden;margin:8px 0}
+  .prog i{display:block;height:100%;background:linear-gradient(90deg,#C79A6E,#A87456);width:0;transition:width .2s}
+  .log{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#1f1c19;color:#eee;border-radius:10px;padding:10px 12px;max-height:220px;overflow:auto;white-space:pre-wrap}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .overlay{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;z-index:50}
+  .overlay[hidden]{display:none}
+  .overlay .card{width:100%;max-width:400px}
+  .overlay input[type=password]{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:10px}
+  .err{color:var(--ng);font-size:12.5px;min-height:1em}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;z-index:60;opacity:0;transition:.2s;pointer-events:none}
+  .toast.show{opacity:1}
+  .toast.ng{background:var(--ng)}
+  code{background:#F1EBE2;padding:1px 5px;border-radius:4px;font-size:12px}
+  details summary{cursor:pointer;font-size:12.5px;color:var(--char)}
+  .warnlist li{font-size:12.5px}
+  input[type=search]{border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-width:260px;background:#fff}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <div><h1>SEAM 商品マスタ 取り込み・出力</h1><div class="sub" id="hsub">メーカーごとにバラバラな商品データを、ひとつの形に揃える</div></div>
+    <div class="row">
+      <a class="btn" href="./index.html">📱 スマホ登録画面</a>
+      <button class="btn" id="btnLogout">ログアウト</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button data-tab="import" class="on">取り込み</button>
+    <button data-tab="issues">注意（JAN重複）<span class="n" id="issueN" hidden>0</span></button>
+    <button data-tab="products">商品一覧</button>
+    <button data-tab="images">画像まとめ登録</button>
+    <button data-tab="export">出力</button>
+    <button data-tab="settings">設定</button>
+  </div>
+
+  <!-- ══════ 取り込み ══════ -->
+  <section class="pane on" id="pane-import">
+    <div class="card">
+      <h2><span class="step">1</span>ファイルを選ぶ</h2>
+      <div class="drop" id="drop">
+        <p><strong>CSV / TSV / Excel(xlsx, xls)</strong> をここにドロップ、または</p>
+        <button class="btn" id="btnPick">ファイルを選ぶ</button>
+        <input type="file" id="fileIn" accept=".csv,.tsv,.txt,.xlsx,.xls,.xlsm" hidden>
+        <p class="muted" style="margin-top:10px">文字コード（UTF-8 / UTF-16 / Shift_JIS）と区切り（カンマ / タブ）は自動判定。列の名前がどう書かれていても次の手順で合わせます。</p>
+      </div>
+      <div id="fileInfo" class="muted" style="margin-top:8px"></div>
+    </div>
+
+    <div class="card" id="cardMap" hidden>
+      <h2><span class="step">2</span>列を合わせる <span class="muted">（自動で当てています。違っていれば直してください）</span></h2>
+      <div class="row" style="margin-bottom:10px">
+        <label class="muted">見出しの行</label><select id="headerRow"></select>
+        <label class="muted" style="margin-left:12px">シート</label><select id="sheetSel"></select>
+      </div>
+      <div class="map" id="map"></div>
+      <div class="opts">
+        <div><label>価格列の金額は（列や値に税込/税抜の記載があればそちらを優先）</label>
+          <select id="optTax"><option value="0">税抜</option><option value="1">税込</option></select></div>
+        <div><label>税率(%)</label><input id="optRate" type="number" value="10" min="0" max="20"></div>
+        <div><label>送り元（メーカー名など・列に無いときの補完）</label><input id="optSource" placeholder="例: アリミノ"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn solid" id="btnPreview">確認する</button>
+      </div>
+    </div>
+
+    <div class="card" id="cardPrev" hidden>
+      <h2><span class="step">3</span>揃えた結果を確認</h2>
+      <div class="kpis" id="prevKpis"></div>
+      <details><summary>注意の内訳を見る</summary><ul class="warnlist" id="warnList"></ul></details>
+      <div class="tbl" style="margin-top:10px"><table id="prevTbl"></table></div>
+    </div>
+
+    <div class="card" id="cardDup" hidden>
+      <h2><span class="step">4</span>JANが被っているもの <span class="muted">（決めないものは登録せず「注意」に積みます）</span></h2>
+      <div id="dupBox"></div>
+    </div>
+
+    <div class="card" id="cardCommit" hidden>
+      <h2><span class="step">5</span>保存する</h2>
+      <p class="muted" id="commitSummary"></p>
+      <div class="row"><button class="btn solid" id="btnCommit">この内容で保存</button><span class="muted" id="commitState"></span></div>
+      <div class="prog" id="commitProg" hidden><i></i></div>
+      <div class="log" id="commitLog" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>取り込み履歴</h2>
+      <div class="tbl"><table id="histTbl"><thead><tr><th>日時</th><th>ファイル</th><th>送り元</th><th>行数</th><th>追加</th><th>更新</th><th>保留</th><th>不正</th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
+  <!-- ══════ 注意 ══════ -->
+  <section class="pane" id="pane-issues">
+    <div class="card">
+      <h2>注意 — JANが被っているもの・登録できなかったもの</h2>
+      <p class="muted">同じJANが2つあると EC 側でどちらを出すか決められないため、登録せずここに置いてあります。「残す方」を選ぶとその場で保存されます。</p>
+      <div class="row" style="margin-bottom:10px"><button class="btn sm" id="btnIssuesReload">再読込</button><label class="muted"><input type="checkbox" id="showResolved"> 解決済みも見る</label></div>
+      <div id="issuesBox"></div>
+    </div>
+  </section>
+
+  <!-- ══════ 商品一覧 ══════ -->
+  <section class="pane" id="pane-products">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <input type="search" id="q" placeholder="商品名・JAN・ブランドで検索">
+        <select id="fMaker"><option value="">メーカー: すべて</option></select>
+        <label class="muted"><input type="checkbox" id="fNoimg"> 写真なしだけ</label>
+        <button class="btn sm" id="btnSearch">検索</button>
+        <span class="muted" id="prodCount"></span>
+      </div>
+      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th>写真</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="row" style="margin-top:10px"><button class="btn sm" id="btnPrev">← 前</button><button class="btn sm" id="btnNext">次 →</button></div>
+    </div>
+  </section>
+
+  <!-- ══════ 画像まとめ登録 ══════ -->
+  <section class="pane" id="pane-images">
+    <div class="card">
+      <h2>画像をまとめて登録（ファイル名にJANが入っているもの）</h2>
+      <p class="muted">メーカーから届いた画像フォルダをそのまま放り込めます。ファイル名から JAN と何枚目かを読み取ります。<br>
+        例: <code>4901275230122.jpg</code>（1枚目） / <code>4901275230122_2.png</code> / <code>4901275230122-3.jpeg</code> / <code>4901275230122 (4).heic</code>。
+        形式は何でも構いません（jpg / png / gif / bmp / webp / avif / heic※）。保存されるのはすべて webp です。<br>
+        ※ heic は Safari / iPhone から、または対応ブラウザでのみ読めます。</p>
+      <div class="drop" id="imgDrop">
+        <p>画像ファイルをここにドロップ、または</p>
+        <button class="btn" id="btnImgPick">画像を選ぶ</button>
+        <input type="file" id="imgIn" accept="image/*,.heic,.heif" multiple hidden>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="muted"><input type="checkbox" id="imgOverwrite"> すでに写真がある枠も上書きする</label>
+        <label class="muted"><input type="checkbox" id="imgSquare" checked> 正方形 1200px に揃える（白で余白）</label>
+        <label class="muted">背景を白に: <select id="imgWhiten"><option value="normal">標準</option><option value="weak">弱</option><option value="strong">強</option><option value="off">しない</option></select></label>
+      </div>
+      <div id="imgPlan" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:10px"><button class="btn solid" id="btnImgRun" disabled>登録を開始</button><span class="muted" id="imgState"></span></div>
+      <div class="prog" id="imgProg" hidden><i></i></div>
+      <div class="log" id="imgLog" hidden></div>
+    </div>
+  </section>
+
+  <!-- ══════ 出力 ══════ -->
+  <section class="pane" id="pane-export">
+    <div class="card">
+      <h2>統一フォーマットで出力</h2>
+      <p class="muted">入口が CSV でも Excel でもスマホ登録でも、出口はこの1つの形です。列: JAN・商品名・価格(税抜)・価格(税込)・税区分・税率・内容量・単位・内容量表記・上代・仕入価格・メーカー・ブランド・カテゴリ・商品説明・元商品コード・画像1〜5(URL)・画像枚数・更新日時</p>
+      <div class="opts">
+        <div><label>メーカーで絞る</label><select id="exMaker"><option value="">すべて</option></select></div>
+        <div><label>写真</label><select id="exImg"><option value="">すべて</option><option value="only">写真ありだけ</option><option value="none">写真なしだけ（撮影リスト用）</option></select></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn solid" id="btnExCsv">CSV をダウンロード（Excel で開けます）</button>
+        <button class="btn" id="btnExJson">JSON をダウンロード</button>
+      </div>
+      <p class="muted" style="margin-top:10px">画像は URL で載ります（<code>https://seam.site/pim-img/products/JAN/枚目.webp</code>）。EC 側はこの URL をそのまま読み込めます。</p>
+    </div>
+  </section>
+
+  <!-- ══════ 設定 ══════ -->
+  <section class="pane" id="pane-settings">
+    <div class="card">
+      <h2>アカウント</h2>
+      <p id="setAcct" class="muted"></p>
+      <div class="opts"><div><label>担当者名（この端末）</label><input id="setUser"></div></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="btnSetSave">担当者名を保存</button><button class="btn danger" id="btnLogout2">この端末からログアウト</button></div>
+    </div>
+    <div class="card">
+      <h2>パスワードを変更する</h2>
+      <p class="muted">スタッフが辞めたときなどに。変更すると、ほかの端末（スマホ・PC）はすべてログアウトされ、新しいパスワードでの再ログインが必要になります。</p>
+      <div class="opts">
+        <div><label>今のパスワード</label><input type="password" id="pwCur" autocomplete="current-password"></div>
+        <div><label>新しいパスワード（8文字以上）</label><input type="password" id="pwNew" autocomplete="new-password"></div>
+        <div><label>新しいパスワード（確認）</label><input type="password" id="pwNew2" autocomplete="new-password"></div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn solid" id="btnPw">パスワードを変更</button><span class="err" id="setErr"></span></div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast"></div>
+<div class="overlay" id="login" hidden>
+  <div class="card">
+    <h2>ログイン</h2>
+    <p class="muted">ディーラーの ID とパスワード（スタッフは同じ ID を使います）</p>
+    <input type="text" id="idIn" placeholder="ID" autocomplete="username" autocapitalize="none" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:10px">
+    <input type="password" id="keyIn" placeholder="パスワード" autocomplete="current-password">
+    <input type="text" id="userIn" placeholder="担当者名（例: 田中）" style="width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:10px">
+    <label class="muted" style="display:block;margin-bottom:10px"><input type="checkbox" id="remember" checked> この端末に記憶する</label>
+    <button class="btn solid" id="btnLogin">ログイン</button>
+    <p class="err" id="loginErr"></p>
+    <p class="muted" style="margin-top:10px">SEAM 管理者（アカウントの発行・パスワード再設定）は <a href="./admin.html">管理画面</a> へ</p>
+  </div>
+</div>
+<div class="overlay" id="setup" hidden>
+  <div class="card">
+    <h2>保存先の設定がまだです</h2>
+    <p class="muted">Cloudflare で D1（seam-db）と R2（PRODUCT_IMAGES）を繋ぐと使えます。手順は <code>db/SETUP_PIM.md</code>。</p>
+    <button class="btn" onclick="location.reload()">再確認</button>
+  </div>
+</div>
+
+<script src="../vendor/xlsx.full.min.js" defer></script>
+<script src="../js/pim-normalize.js"></script>
+<script src="../js/pim-client.js"></script>
+<script>
+(function () {
+  'use strict';
+  var N = window.PimNormalize, C = window.PimClient, api = C.api, esc = C.esc, $ = function (id) { return document.getElementById(id); };
+  var FIELDS = [
+    ['jan', 'JAN', true], ['name', '商品名', true], ['price', '価格', false], ['tax', '税区分（税込/税抜・課税区分）', false],
+    ['amount', '内容量', false], ['unit', '単位', false], ['retail', '上代（希望小売価格）', false], ['cost', '仕入価格', false],
+    ['maker', 'メーカー', false], ['brand', 'ブランド', false], ['category', 'カテゴリ（複数可）', false], ['description', '商品説明', false], ['sku', '元商品コード', false],
+  ];
+  var S = { file: null, sheets: null, rows: [], headerRow: 0, headers: [], mapping: {}, items: [], fileDups: {}, dbExisting: {}, decisions: {}, fileDecisions: {} };
+  var toastT;
+  function toast(m, ng) { var t = $('toast'); t.textContent = m; t.className = 'toast show' + (ng ? ' ng' : ''); clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'toast'; }, ng ? 4000 : 2000); }
+  function handleErr(e) {
+    if (e && e.auth) { C.Auth.clear(); showLogin(e.message || (e.reason === 'token_expired' ? 'ログインし直してください' : '')); return; }
+    if (e && e.setup) { $('setup').hidden = false; return; }
+    toast((e && e.message) || '通信に失敗しました', true); console.error(e);
+  }
+  function showLogin(msg) { $('login').hidden = false; $('loginErr').textContent = msg || ''; $('userIn').value = C.Auth.user(); var a = C.Auth.account(); if (a) $('idIn').value = a.login_id || ''; }
+  function fmtAmt(p) { return p.amount == null ? '' : (Math.round(p.amount * 100) / 100) + (p.unit || ''); }
+
+  // ── タブ ──
+  Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (b) {
+    b.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
+      Array.prototype.forEach.call(document.querySelectorAll('.pane'), function (p) { p.classList.toggle('on', p.id === 'pane-' + b.getAttribute('data-tab')); });
+      var t = b.getAttribute('data-tab');
+      if (t === 'issues') loadIssues(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory();
+    });
+  });
+
+  // ── ログイン ──
+  function boot() {
+    if (!C.Auth.get() || !C.Auth.user()) { showLogin(''); return; }
+    api('status').then(function (j) {
+      $('login').hidden = true;
+      if (j.counts) { $('hsub').textContent = (j.account ? j.account.name + ' ／ ' : '') + '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※写真は暫定で D1 に保存中（R2 未設定）'); setIssueN(j.counts.open_issues); }
+      if (j.account) $('setAcct').textContent = 'アカウント: ' + j.account.name + '（ID: ' + j.account.login_id + '）' + (j.account.pass_changed_at ? ' ／ パスワード最終変更 ' + j.account.pass_changed_at.slice(0, 10) : '');
+      $('setUser').value = C.Auth.user();
+      loadHistory(); loadMakers();
+    }).catch(handleErr);
+  }
+  $('btnLogin').addEventListener('click', function () {
+    var id = $('idIn').value.trim(), pw = $('keyIn').value;
+    if (!id || !pw) { $('loginErr').textContent = 'ID とパスワードを入れてください'; return; }
+    if (!$('userIn').value.trim()) { $('loginErr').textContent = '担当者名を入れてください'; return; }
+    $('btnLogin').disabled = true;
+    C.Auth.login(id, pw, $('remember').checked).then(function (j) {
+      $('btnLogin').disabled = false;
+      if (!j.ok) { $('loginErr').textContent = j.message || 'ログインできません'; return; }
+      C.Auth.setUser($('userIn').value); $('keyIn').value = ''; boot();
+    }).catch(function () { $('btnLogin').disabled = false; $('loginErr').textContent = '通信に失敗しました'; });
+  });
+  $('keyIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
+  $('userIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
+  $('btnLogout').addEventListener('click', function () { C.Auth.clear(); location.reload(); });
+  $('btnLogout2').addEventListener('click', function () { C.Auth.clear(); location.reload(); });
+  $('btnSetSave').addEventListener('click', function () { var u = $('setUser').value.trim(); if (!u) { toast('担当者名を入れてください', true); return; } C.Auth.setUser(u); toast('保存しました'); });
+  $('btnPw').addEventListener('click', function () {
+    var cur = $('pwCur').value, nw = $('pwNew').value, nw2 = $('pwNew2').value;
+    if (!cur || !nw) { $('setErr').textContent = '今のパスワードと新しいパスワードを入れてください'; return; }
+    if (nw !== nw2) { $('setErr').textContent = '新しいパスワードが一致しません'; return; }
+    if (!confirm('パスワードを変更すると、ほかの端末は全部ログアウトされます。よろしいですか？')) return;
+    $('btnPw').disabled = true;
+    C.Auth.changePassword(cur, nw).then(function (j) {
+      $('btnPw').disabled = false;
+      if (!j.ok) { $('setErr').textContent = j.message || '変更できませんでした'; return; }
+      $('setErr').textContent = ''; $('pwCur').value = $('pwNew').value = $('pwNew2').value = ''; toast(j.message || 'パスワードを変えました'); boot();
+    }).catch(function (e) { $('btnPw').disabled = false; handleErr(e); });
+  });
+  function setIssueN(n) { var el = $('issueN'); el.textContent = n; el.hidden = !n; }
+  function loadMakers() {
+    api('products?limit=1').then(function (j) {
+      if (!j.ok) return;
+      var opts = '<option value="">すべて</option>' + j.makers.map(function (m) { return '<option value="' + esc(m.maker) + '">' + esc(m.maker) + ' (' + m.n + ')</option>'; }).join('');
+      $('exMaker').innerHTML = opts; $('fMaker').innerHTML = opts.replace('すべて', 'メーカー: すべて');
+    }).catch(function () { /* */ });
+  }
+
+  // ── 1. ファイル ──
+  var drop = $('drop');
+  ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
+  $('btnPick').addEventListener('click', function () { $('fileIn').click(); });
+  $('fileIn').addEventListener('change', function () { if (this.files[0]) readFile(this.files[0]); });
+
+  function readFile(file) {
+    S.file = file; S.sheets = null; S.decisions = {}; S.fileDecisions = {}; S.dbExisting = {}; S.items = [];
+    $('optSource').value = ''; $('commitState').textContent = ''; $('commitLog').hidden = true; $('commitProg').hidden = true;
+    ['cardMap', 'cardPrev', 'cardDup', 'cardCommit'].forEach(function (id) { $(id).hidden = true; });
+    var name = file.name.toLowerCase();
+    var reader = new FileReader();
+    reader.onload = function () {
+      var buf = reader.result;
+      try {
+        if (/\.(xlsx|xlsm|xls)$/.test(name)) {
+          if (!window.XLSX) { toast('Excel 読み込み部品がまだ読み込まれていません。数秒後にもう一度', true); return; }
+          var wb = window.XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: false });
+          S.sheets = wb.SheetNames.map(function (sn) {
+            var ws = wb.Sheets[sn];
+            var rows = window.XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+            // 数値セルは文字列に（JAN の 4901275230122 が指数表記にならないよう raw で読んで自前で文字列化）
+            rows = rows.map(function (r) { return r.map(function (v) { return typeof v === 'number' ? (Number.isInteger(v) ? String(v) : String(v)) : String(v == null ? '' : v); }); });
+            rows = rows.filter(function (r) { return r.some(function (v) { return String(v).trim() !== ''; }); });
+            return { name: sn, rows: rows };
+          }).filter(function (s) { return s.rows.length; });
+          if (!S.sheets.length) { toast('データのあるシートがありません', true); return; }
+          $('fileInfo').textContent = file.name + ' — Excel / シート ' + S.sheets.length + '枚';
+          $('sheetSel').innerHTML = S.sheets.map(function (s, i) { return '<option value="' + i + '">' + esc(s.name) + ' (' + s.rows.length + '行)</option>'; }).join('');
+          $('sheetSel').parentNode.style.display = '';
+          useRows(S.sheets[0].rows);
+        } else {
+          var dec = N.decodeBytes(buf);
+          var delim = N.detectDelimiter(dec.text);
+          var rows = N.parseCsv(dec.text, delim);
+          $('fileInfo').textContent = file.name + ' — ' + dec.encoding + ' / 区切り: ' + (delim === '\t' ? 'タブ' : delim) + ' / ' + rows.length + '行';
+          $('sheetSel').innerHTML = '<option>—</option>';
+          useRows(rows);
+        }
+      } catch (e) { toast('読み込めませんでした: ' + (e && e.message), true); console.error(e); }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  $('sheetSel').addEventListener('change', function () { if (S.sheets) useRows(S.sheets[parseInt(this.value, 10)].rows); });
+  function useRows(rows) {
+    S.rows = rows;
+    if (!rows.length) { toast('行がありません', true); return; }
+    S.headerRow = N.findHeaderRow(rows);
+    $('headerRow').innerHTML = rows.slice(0, 10).map(function (r, i) { return '<option value="' + i + '"' + (i === S.headerRow ? ' selected' : '') + '>' + (i + 1) + '行目: ' + esc(r.slice(0, 5).join(' | ')).slice(0, 80) + '</option>'; }).join('');
+    buildMap();
+    $('cardMap').hidden = false;
+  }
+  $('headerRow').addEventListener('change', function () { S.headerRow = parseInt(this.value, 10); buildMap(); });
+  function buildMap() {
+    S.headers = S.rows[S.headerRow].map(function (h, i) { return String(h || '').trim() || ('(' + (i + 1) + '列目)'); });
+    S.mapping = N.guessMapping(S.rows[S.headerRow]);
+    // JAN列が当たらず、sku 列の値が13桁の数字なら JAN 候補にする
+    if (S.mapping.jan == null && S.mapping.sku != null) {
+      var sample = S.rows.slice(S.headerRow + 1, S.headerRow + 6).map(function (r) { return N.normalizeJan(r[S.mapping.sku]); });
+      if (sample.length && sample.every(function (j) { return j.valid; })) { S.mapping.jan = S.mapping.sku; delete S.mapping.sku; }
+    }
+    if (S.mapping.jan == null) {
+      // 値が13桁の数字ばかりの列を探す
+      for (var c = 0; c < S.headers.length; c++) {
+        var vals = S.rows.slice(S.headerRow + 1, S.headerRow + 11).map(function (r) { return N.normalizeJan(r[c]); });
+        if (vals.length >= 3 && vals.every(function (j) { return j.valid; })) { S.mapping.jan = c; break; }
+      }
+    }
+    var colOpts = function (sel) { return '<option value="">（使わない）</option>' + S.headers.map(function (h, i) { return '<option value="' + i + '"' + (sel === i ? ' selected' : '') + '>' + esc(h) + '</option>'; }).join(''); };
+    $('map').innerHTML = FIELDS.map(function (f) {
+      var key = f[0], multi = key === 'category';
+      var cur = S.mapping[key];
+      if (multi) {
+        var arr = Array.isArray(cur) ? cur : (cur == null ? [] : [cur]);
+        return '<div class="' + (f[2] ? 'req' : '') + '"><label>' + esc(f[1]) + '</label>' +
+          [0, 1, 2].map(function (k) { return '<select data-field="' + key + '" data-idx="' + k + '" style="margin-bottom:4px">' + colOpts(arr[k]) + '</select>'; }).join('') + '</div>';
+      }
+      return '<div class="' + (f[2] ? 'req' : '') + '"><label>' + esc(f[1]) + '</label><select data-field="' + key + '">' + colOpts(cur) + '</select></div>';
+    }).join('');
+    Array.prototype.forEach.call($('map').querySelectorAll('select'), function (sel) { sel.addEventListener('change', readMap); });
+    // 価格列の見出しに税込/税抜があれば既定を合わせる（前のファイルの設定を引きずらないよう、まず税抜に戻す）
+    $('optTax').value = '0';
+    if (S.mapping.price != null) { var ph = S.headers[S.mapping.price]; if (/税込/.test(ph)) $('optTax').value = '1'; else if (/税抜|税別|本体/.test(ph)) $('optTax').value = '0'; }
+  }
+  function readMap() {
+    var m = {};
+    Array.prototype.forEach.call($('map').querySelectorAll('select'), function (sel) {
+      var f = sel.getAttribute('data-field'), v = sel.value === '' ? null : parseInt(sel.value, 10);
+      if (v == null) return;
+      if (f === 'category') { (m[f] = m[f] || []).push(v); } else m[f] = v;
+    });
+    S.mapping = m;
+  }
+
+  // ── 3. 確認 ──
+  $('btnPreview').addEventListener('click', function () {
+    readMap();
+    if (S.mapping.jan == null || S.mapping.name == null) { toast('JAN と 商品名 の列は必須です', true); return; }
+    var opts = { taxIncluded: $('optTax').value === '1', taxRate: parseInt($('optRate').value, 10) || 10, source: $('optSource').value.trim() || S.file.name, maker: $('optSource').value.trim() };
+    S.items = S.rows.slice(S.headerRow + 1).map(function (r, i) { var it = N.normalizeRow(r, S.mapping, opts); it.rowNo = S.headerRow + i + 2; return it; });
+    var ok = S.items.filter(function (i) { return !i.errors.length; });
+    var bad = S.items.filter(function (i) { return i.errors.length; });
+    var warn = ok.filter(function (i) { return i.warnings.length; });
+    S.fileDups = N.findFileDuplicates(ok);
+    var dupRows = Object.keys(S.fileDups).reduce(function (a, k) { return a + S.fileDups[k].length; }, 0);
+    var wc = {}; S.items.forEach(function (i) { i.warnings.concat(i.errors).forEach(function (w) { var k = w.replace(/\(.*$/, ''); wc[k] = (wc[k] || 0) + 1; }); });
+    $('warnList').innerHTML = Object.keys(wc).sort(function (a, b) { return wc[b] - wc[a]; }).map(function (k) { return '<li>' + esc(k) + ' <span class="tag">' + wc[k] + '件</span></li>'; }).join('') || '<li class="muted">なし</li>';
+    $('prevKpis').innerHTML =
+      '<div class="kpi"><div class="l">読み込んだ行</div><div class="n">' + S.items.length + '</div></div>' +
+      '<div class="kpi ok"><div class="l">登録できる行</div><div class="n">' + ok.length + '</div></div>' +
+      '<div class="kpi ' + (bad.length ? 'ng' : '') + '"><div class="l">登録できない行（JAN/商品名なし）</div><div class="n">' + bad.length + '</div></div>' +
+      '<div class="kpi"><div class="l">確認したい行（注意あり）</div><div class="n">' + warn.length + '</div></div>' +
+      '<div class="kpi ' + (dupRows ? 'ng' : '') + '"><div class="l">ファイル内でJAN重複</div><div class="n">' + Object.keys(S.fileDups).length + '<span class="muted" style="font-size:12px"> 組 / ' + dupRows + '行</span></div></div>';
+    var head = '<thead><tr><th>行</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>カテゴリ</th><th>注意</th></tr></thead>';
+    var shown = S.items.slice(0, 300);
+    $('prevTbl').innerHTML = head + '<tbody>' + shown.map(function (i) {
+      var p = i.product, notes = i.errors.map(function (e) { return '<span class="tag ng">' + esc(e) + '</span>'; }).concat(i.warnings.map(function (w) { return '<span class="tag warn">' + esc(w) + '</span>'; })).join(' ');
+      return '<tr><td>' + i.rowNo + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + esc(p.category) + '</td><td>' + notes + '</td></tr>';
+    }).join('') + (S.items.length > 300 ? '<tr><td colspan="10" class="muted">…ほか ' + (S.items.length - 300) + '行（保存時はすべて対象）</td></tr>' : '') + '</tbody>';
+    $('cardPrev').hidden = false;
+    // DB との重複確認
+    var jans = ok.map(function (i) { return i.product.jan; });
+    toast('登録済みと照合中…');
+    checkExisting(jans).then(function (existing) {
+      S.dbExisting = existing;
+      renderDups();
+      renderCommit();
+    }).catch(handleErr);
+  });
+  function checkExisting(jans) {
+    var out = {}, chain = Promise.resolve();
+    for (var i = 0; i < jans.length; i += 2000) {
+      (function (chunk) { chain = chain.then(function () { return api('import', { method: 'POST', body: { action: 'check', jans: chunk } }).then(function (j) { if (!j.ok) throw new Error(j.message || j.reason); Object.assign(out, j.existing || {}); }); }); })(jans.slice(i, i + 2000));
+    }
+    return chain.then(function () { return out; });
+  }
+  (function () {
+  })();
+
+  // ── 4. 重複 ──
+  function cmpRow(label, a, b) { var d = String(a == null ? '' : a) !== String(b == null ? '' : b); return '<dt>' + label + '</dt><dd class="' + (d ? 'diff' : '') + '">' + esc(a == null ? '—' : a) + '</dd>'; }
+  function sideHtml(title, p, other) {
+    return '<div class="side"><h4>' + title + '</h4><dl>' +
+      cmpRow('商品名', p.name, other.name) + cmpRow('税抜', p.price_ex, other.price_ex) + cmpRow('税込', p.price_in, other.price_in) +
+      cmpRow('内容量', fmtAmt(p), fmtAmt(other)) + cmpRow('メーカー', p.maker, other.maker) + cmpRow('ブランド', p.brand, other.brand) +
+      cmpRow('元コード', p.sku, other.sku) + cmpRow('取り込み元', p.source, other.source) + (p.image_count != null ? cmpRow('写真', p.image_count + '枚', '') : '') + '</dl></div>';
+  }
+  function renderDups() {
+    var html = '';
+    // DB との重複
+    var dbKeys = Object.keys(S.dbExisting);
+    if (dbKeys.length) {
+      html += '<h3 style="font-size:13px;margin:0 0 8px">登録済みと同じJAN <span class="tag ng">' + dbKeys.length + '件</span></h3>';
+      html += '<div class="row" style="margin-bottom:8px"><span class="muted">まとめて:</span><button class="btn sm" data-all="keep_existing">すべて登録済みを残す</button><button class="btn sm" data-all="keep_incoming">すべて届いた方で上書き</button><button class="btn sm" data-all="defer">すべて保留（注意へ）</button></div>';
+      dbKeys.slice(0, 200).forEach(function (jan) {
+        var ex = S.dbExisting[jan];
+        var inc = (S.fileDecisions[jan] != null) ? S.items[S.fileDecisions[jan]] : S.items.filter(function (i) { return !i.errors.length && i.product.jan === jan; })[0];
+        if (!inc) return;
+        var d = S.decisions[jan] || 'defer';
+        html += '<div class="issue"><div class="hd"><b>JAN ' + esc(jan) + '</b><span class="muted">「' + esc(ex.name) + '」と「' + esc(inc.product.name) + '」</span></div>' +
+          '<div class="cmp">' + sideHtml('登録済み', ex, inc.product) + sideHtml('届いたデータ（' + inc.rowNo + '行目）', inc.product, ex) + '</div>' +
+          '<div class="acts" data-jan="' + esc(jan) + '">' + ['keep_existing:登録済みを残す（届いた方は捨てる）', 'keep_incoming:届いた方で上書き', 'defer:保留（注意へ積む）'].map(function (o) { var k = o.split(':')[0]; return '<button class="btn sm' + (d === k ? ' solid' : '') + '" data-dec="' + k + '">' + o.split(':')[1] + '</button>'; }).join('') + '</div></div>';
+      });
+      if (dbKeys.length > 200) html += '<p class="muted">…ほか ' + (dbKeys.length - 200) + '件は保留（注意）として積まれます</p>';
+    }
+    // ファイル内重複
+    var fKeys = Object.keys(S.fileDups);
+    if (fKeys.length) {
+      html += '<h3 style="font-size:13px;margin:14px 0 8px">同じファイル内で被っているJAN <span class="tag ng">' + fKeys.length + '組</span></h3>';
+      html += '<div class="row" style="margin-bottom:8px"><span class="muted">まとめて:</span><button class="btn sm" data-fall="last">すべて最後の行を採用</button><button class="btn sm" data-fall="first">すべて最初の行を採用</button><button class="btn sm" data-fall="defer">すべて保留（注意へ）</button></div>';
+      fKeys.slice(0, 200).forEach(function (jan) {
+        var idxs = S.fileDups[jan];
+        var d = S.fileDecisions[jan];
+        html += '<div class="issue"><div class="hd"><b>JAN ' + esc(jan) + '</b><span class="muted">' + idxs.length + '行が同じJAN</span></div><table><thead><tr><th></th><th>行</th><th>商品名</th><th>税抜</th><th>内容量</th><th>メーカー</th><th>元コード</th></tr></thead><tbody>' +
+          idxs.map(function (ix) { var p = S.items[ix].product; return '<tr><td><button class="btn sm' + (d === ix ? ' solid' : '') + '" data-fjan="' + esc(jan) + '" data-fidx="' + ix + '">この行を採用</button></td><td>' + S.items[ix].rowNo + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.sku) + '</td></tr>'; }).join('') +
+          '</tbody></table><div class="acts"><button class="btn sm' + (d == null ? ' solid' : '') + '" data-fjan="' + esc(jan) + '" data-fidx="-1">保留（注意へ積む）</button></div></div>';
+      });
+    }
+    if (!html) html = '<p class="muted">JANの重複はありません。</p>';
+    $('dupBox').innerHTML = html;
+    $('cardDup').hidden = false;
+    Array.prototype.forEach.call($('dupBox').querySelectorAll('[data-dec]'), function (b) { b.addEventListener('click', function () { S.decisions[b.parentNode.getAttribute('data-jan')] = b.getAttribute('data-dec'); renderDups(); renderCommit(); }); });
+    Array.prototype.forEach.call($('dupBox').querySelectorAll('[data-all]'), function (b) { b.addEventListener('click', function () { Object.keys(S.dbExisting).forEach(function (j) { S.decisions[j] = b.getAttribute('data-all'); }); renderDups(); renderCommit(); }); });
+    Array.prototype.forEach.call($('dupBox').querySelectorAll('[data-fidx]'), function (b) { b.addEventListener('click', function () { var ix = parseInt(b.getAttribute('data-fidx'), 10); var j = b.getAttribute('data-fjan'); if (ix < 0) delete S.fileDecisions[j]; else S.fileDecisions[j] = ix; renderDups(); renderCommit(); }); });
+    Array.prototype.forEach.call($('dupBox').querySelectorAll('[data-fall]'), function (b) { b.addEventListener('click', function () { var m = b.getAttribute('data-fall'); Object.keys(S.fileDups).forEach(function (j) { var a = S.fileDups[j]; if (m === 'defer') delete S.fileDecisions[j]; else S.fileDecisions[j] = m === 'first' ? a[0] : a[a.length - 1]; }); renderDups(); renderCommit(); }); });
+  }
+
+  // ── 5. 保存 ──
+  function plan() {
+    var toSave = [], issues = [], skipped = 0;
+    var fileDupIdx = {}; Object.keys(S.fileDups).forEach(function (j) { S.fileDups[j].forEach(function (ix) { fileDupIdx[ix] = j; }); });
+    var handledFileJan = {};
+    S.items.forEach(function (it, ix) {
+      if (it.errors.length) return;
+      var p = it.product, jan = p.jan;
+      if (fileDupIdx[ix]) {
+        if (handledFileJan[jan]) return;
+        handledFileJan[jan] = 1;
+        var pick = S.fileDecisions[jan];
+        if (pick == null) {
+          issues.push({ kind: 'dup_file', jan: jan, message: '同じファイル内で JAN ' + jan + ' が ' + S.fileDups[jan].length + '行にあります: ' + S.fileDups[jan].map(function (i) { return S.items[i].rowNo + '行目「' + S.items[i].product.name + '」'; }).join(' / ') + '。どれを残すか決めてください', incoming: S.fileDups[jan].map(function (i) { return S.items[i].product; }) });
+          skipped += S.fileDups[jan].length;
+          return;
+        }
+        p = S.items[pick].product;
+      }
+      if (S.dbExisting[jan]) {
+        var d = S.decisions[jan] || 'defer';
+        if (d === 'keep_existing') { skipped++; return; }
+        if (d === 'defer') {
+          issues.push({ kind: 'dup_db', jan: jan, message: '登録済み「' + S.dbExisting[jan].name + '」と届いた「' + p.name + '」が同じ JAN ' + jan + ' です。どちらを残すか決めてください', existing: S.dbExisting[jan], incoming: p });
+          skipped++; return;
+        }
+        toSave.push(Object.assign({}, p, { _mode: 'overwrite' })); return;
+      }
+      // 照合時に無かったもの。保存時にも「無いときだけ入れる」= 別の人が同時に取り込んで先に入っていたら注意に回る
+      toSave.push(Object.assign({}, p, { _mode: 'new' }));
+    });
+    var invalid = S.items.filter(function (i) { return i.errors.length; }).length;
+    return { toSave: toSave, issues: issues, skipped: skipped, invalid: invalid };
+  }
+  function renderCommit() {
+    var pl = plan();
+    var upd = pl.toSave.filter(function (p) { return S.dbExisting[p.jan]; }).length;
+    $('commitSummary').innerHTML = '追加 <b>' + (pl.toSave.length - upd) + '</b>件 ／ 上書き <b>' + upd + '</b>件 ／ 注意へ積む <b>' + pl.issues.length + '</b>件（' + pl.skipped + '行は登録しない） ／ 登録できない行 <b>' + pl.invalid + '</b>件';
+    $('cardCommit').hidden = false;
+    $('btnCommit').disabled = !(pl.toSave.length || pl.issues.length);
+  }
+  $('btnCommit').addEventListener('click', function () {
+    var pl = plan();
+    if (!pl.toSave.length && !pl.issues.length) return;
+    var btn = $('btnCommit'); btn.disabled = true;
+    var log = $('commitLog'); log.hidden = false; log.textContent = '';
+    var prog = $('commitProg'); prog.hidden = false;
+    var L = function (m) { log.textContent += m + '\n'; log.scrollTop = log.scrollHeight; };
+    var CH = 300, total = pl.toSave.length, done = 0, importId = null, ins = 0, upd = 0, conf = 0;
+    readMap();
+    api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, total: S.items.length } })
+      .then(function (j) {
+        if (!j.ok) throw new Error(j.message || j.reason);
+        importId = j.import_id; L('取り込み #' + importId + ' 開始 … ' + total + '件を保存');
+        var chain = Promise.resolve();
+        for (var i = 0; i < total; i += CH) {
+          (function (start) {
+            chain = chain.then(function () {
+              var chunk = pl.toSave.slice(start, start + CH);
+              return api('import', { method: 'POST', body: { action: 'commit', import_id: importId, products: chunk, issues: start === 0 ? pl.issues : [] } }).then(function (r) {
+                if (!r.ok) throw new Error(r.message || r.reason);
+                done += chunk.length; ins += r.inserted; upd += r.updated; conf += (r.conflicts || 0);
+                prog.firstElementChild.style.width = Math.round(done / Math.max(1, total) * 100) + '%';
+                L('  ' + done + ' / ' + total + '  （追加 ' + r.inserted + '・更新 ' + r.updated + (r.issues ? '・注意 ' + r.issues : '') + (r.conflicts ? '・同時登録で先を越された ' + r.conflicts : '') + '）');
+              });
+            });
+          })(i);
+        }
+        if (!total) chain = chain.then(function () { return api('import', { method: 'POST', body: { action: 'commit', import_id: importId, products: [], issues: pl.issues } }); });
+        return chain;
+      })
+      .then(function () { return api('import', { method: 'POST', body: { action: 'finish', import_id: importId, invalid: pl.invalid } }); })
+      .then(function (j) {
+        prog.firstElementChild.style.width = '100%';
+        L('完了: 追加 ' + ins + '件 / 更新 ' + upd + '件 / 注意 ' + (pl.issues.length + conf) + '件 / 登録できない行 ' + pl.invalid + '件' + (conf ? '\n※ ' + conf + '件は、取り込み中に別の人が同じ JAN を先に登録していたため上書きせず「注意」に回しました' : ''));
+        toast('保存しました'); $('commitState').textContent = '保存済み';
+        loadHistory(); loadMakers(); boot();
+      })
+      .catch(function (e) { L('エラー: ' + ((e && e.message) || JSON.stringify(e))); btn.disabled = false; handleErr(e); });
+  });
+  function loadHistory() {
+    api('import').then(function (j) {
+      if (!j.ok) return;
+      $('histTbl').querySelector('tbody').innerHTML = j.imports.map(function (r) { return '<tr><td>' + esc(r.ts.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(r.filename) + '</td><td>' + esc(r.source) + '</td><td>' + r.total + '</td><td>' + r.inserted + '</td><td>' + r.updated + '</td><td>' + r.skipped + '</td><td>' + r.invalid + '</td></tr>'; }).join('') || '<tr><td colspan="8" class="muted">まだありません</td></tr>';
+    }).catch(function () { /* */ });
+  }
+
+  // ── 注意 ──
+  function loadIssues() {
+    var st = $('showResolved').checked ? 'all' : 'open';
+    api('issues?status=' + st).then(function (j) {
+      if (!j.ok) return;
+      setIssueN(j.open);
+      var box = $('issuesBox');
+      if (!j.issues.length) { box.innerHTML = '<p class="muted">注意はありません。</p>'; return; }
+      box.innerHTML = j.issues.map(function (is) {
+        var h = '<div class="issue" data-id="' + is.id + '"><div class="hd"><b>' + (is.kind === 'dup_db' ? '登録済みと重複' : is.kind === 'dup_file' ? 'ファイル内で重複' : esc(is.kind)) + ' — JAN ' + esc(is.jan) + '</b><span class="muted">' + esc(is.ts.replace('T', ' ').slice(0, 16)) + (is.status === 'resolved' ? ' ／ <span class="tag ok">解決済み: ' + esc(is.resolution) + (is.resolved_by ? '（' + esc(is.resolved_by) + '）' : '') + '</span>' : '') + '</span></div><p style="margin:0 0 8px;font-size:12.5px">' + esc(is.message) + '</p>';
+        if (is.kind === 'dup_db' && is.existing && is.incoming) {
+          h += '<div class="cmp">' + sideHtml('登録済み', is.existing, is.incoming) + sideHtml('届いたデータ', is.incoming, is.existing) + '</div>';
+          if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="keep_existing">登録済みを残す</button><button class="btn sm" data-res="keep_incoming">届いた方で上書き</button><button class="btn sm" data-res="dismiss">閉じる（何もしない）</button></div>';
+        } else if (Array.isArray(is.incoming)) {
+          h += '<table><thead><tr><th></th><th>商品名</th><th>税抜</th><th>内容量</th><th>メーカー</th><th>元コード</th></tr></thead><tbody>' + is.incoming.map(function (p, k) { return '<tr><td>' + (is.status === 'open' ? '<button class="btn sm" data-res="keep_index" data-idx="' + k + '">この行を採用</button>' : (k + 1)) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.sku) + '</td></tr>'; }).join('') + '</tbody></table>';
+          if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="dismiss">閉じる（どれも登録しない）</button></div>';
+        } else if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="dismiss">閉じる</button></div>';
+        return h + '</div>';
+      }).join('');
+      Array.prototype.forEach.call(box.querySelectorAll('[data-res]'), function (b) {
+        b.addEventListener('click', function () {
+          var id = parseInt(b.closest('.issue').getAttribute('data-id'), 10);
+          b.disabled = true;
+          api('issues', { method: 'POST', body: { id: id, resolution: b.getAttribute('data-res'), index: b.getAttribute('data-idx') } }).then(function (r) {
+            if (!r.ok) { toast(r.message || '処理できませんでした', true); if (r.status === 409) loadIssues(); else b.disabled = false; return; }
+            toast(r.saved ? 'JAN ' + r.saved + ' を保存しました' : '閉じました'); loadIssues();
+          }).catch(handleErr);
+        });
+      });
+    }).catch(handleErr);
+  }
+  $('btnIssuesReload').addEventListener('click', loadIssues);
+  $('showResolved').addEventListener('change', loadIssues);
+
+  // ── 商品一覧 ──
+  var P = { offset: 0, limit: 100 };
+  function loadProducts(offset) {
+    P.offset = Math.max(0, offset || 0);
+    var qs = 'q=' + encodeURIComponent($('q').value.trim()) + '&maker=' + encodeURIComponent($('fMaker').value) + ($('fNoimg').checked ? '&noimg=1' : '') + '&limit=' + P.limit + '&offset=' + P.offset;
+    api('products?' + qs).then(function (j) {
+      if (!j.ok) return;
+      $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
+      $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
+        return '<tr><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
+      }).join('') || '<tr><td colspan="11" class="muted">該当なし</td></tr>';
+      Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-del]'), function (b) {
+        b.addEventListener('click', function () {
+          var jan = b.getAttribute('data-del');
+          if (!confirm('JAN ' + jan + ' を削除しますか？（写真も消えます）')) return;
+          api('products?jan=' + jan, { method: 'DELETE' }).then(function (r) { if (r.ok) { toast('削除しました'); loadProducts(P.offset); } else toast('削除できませんでした', true); }).catch(handleErr);
+        });
+      });
+      $('btnPrev').disabled = P.offset === 0; $('btnNext').disabled = P.offset + P.limit >= j.total;
+    }).catch(handleErr);
+  }
+  $('btnSearch').addEventListener('click', function () { loadProducts(0); });
+  $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') loadProducts(0); });
+  $('fMaker').addEventListener('change', function () { loadProducts(0); });
+  $('fNoimg').addEventListener('change', function () { loadProducts(0); });
+  $('btnPrev').addEventListener('click', function () { loadProducts(P.offset - P.limit); });
+  $('btnNext').addEventListener('click', function () { loadProducts(P.offset + P.limit); });
+
+  // ── 画像まとめ登録 ──
+  var IMG = { files: [], plan: [] };
+  var idrop = $('imgDrop');
+  ['dragenter', 'dragover'].forEach(function (ev) { idrop.addEventListener(ev, function (e) { e.preventDefault(); idrop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { idrop.addEventListener(ev, function (e) { e.preventDefault(); idrop.classList.remove('over'); }); });
+  idrop.addEventListener('drop', function (e) { planImages(Array.prototype.slice.call(e.dataTransfer.files)); });
+  $('btnImgPick').addEventListener('click', function () { $('imgIn').click(); });
+  $('imgIn').addEventListener('change', function () { planImages(Array.prototype.slice.call(this.files)); });
+  function parseImageName(name) {
+    var base = name.replace(/\.[^.]+$/, '');
+    var m = base.match(/(\d{13}|\d{12}|\d{8})/);
+    if (!m) return null;
+    var jan = N.normalizeJan(m[1]).jan;
+    var rest = base.slice(m.index + m[1].length);
+    var sm = rest.match(/^[\s_\-\.]*\(?\s*(\d{1,2})\s*\)?/);
+    var slot = sm ? parseInt(sm[1], 10) : 1;
+    if (!(slot >= 1 && slot <= 5)) return { jan: jan, slot: 0 };
+    return { jan: jan, slot: slot };
+  }
+  function planImages(files) {
+    files = files.filter(function (f) { return /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|gif|bmp|webp|avif|tiff?)$/i.test(f.name); });
+    if (!files.length) { toast('画像ファイルがありません', true); return; }
+    var plan = files.map(function (f) { var p = parseImageName(f.name); return { file: f, jan: p ? p.jan : '', slot: p ? p.slot : 0, status: p ? (p.slot ? '' : '枚目が6以上') : 'ファイル名にJANがありません' }; });
+    // 同じ JAN 内で slot 指定が無い（=1）ものが複数あれば 1,2,3… と順に振る
+    var byJan = {};
+    plan.forEach(function (p) { if (p.jan) (byJan[p.jan] = byJan[p.jan] || []).push(p); });
+    Object.keys(byJan).forEach(function (j) {
+      var arr = byJan[j].sort(function (a, b) { return a.file.name.localeCompare(b.file.name, 'ja', { numeric: true }); });
+      var used = {};
+      arr.forEach(function (p) { if (p.slot && !used[p.slot]) { used[p.slot] = 1; } else { var s = 1; while (used[s]) s++; p.slot = s <= 5 ? s : 0; if (s <= 5) used[s] = 1; else p.status = '6枚目以降'; } });
+    });
+    IMG.plan = plan;
+    var jans = Object.keys(byJan);
+    toast('登録済み商品と照合中…');
+    api('import', { method: 'POST', body: { action: 'check', jans: jans } }).then(function (j) {
+      var ex = (j && j.existing) || {};
+      plan.forEach(function (p) { if (p.jan && !p.status && !ex[p.jan]) p.status = '未登録のJAN（先に商品を取り込んでください）'; if (ex[p.jan]) p.name = ex[p.jan].name; });
+      renderImgPlan();
+    }).catch(handleErr);
+  }
+  function renderImgPlan() {
+    var ok = IMG.plan.filter(function (p) { return !p.status; });
+    $('imgPlan').innerHTML = '<p class="muted">' + IMG.plan.length + 'ファイル中、登録できるもの <b>' + ok.length + '</b>件</p><div class="tbl" style="max-height:300px"><table><thead><tr><th>ファイル</th><th>JAN</th><th>商品</th><th>枚目</th><th>状態</th></tr></thead><tbody>' +
+      IMG.plan.slice(0, 500).map(function (p) { return '<tr><td>' + esc(p.file.name) + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name || '') + '</td><td>' + (p.slot || '') + '</td><td>' + (p.status ? '<span class="tag ng">' + esc(p.status) + '</span>' : (p.result ? esc(p.result) : '<span class="tag ok">OK</span>')) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+    $('btnImgRun').disabled = !ok.length;
+  }
+  $('btnImgRun').addEventListener('click', function () {
+    var ok = IMG.plan.filter(function (p) { return !p.status; });
+    if (!ok.length) return;
+    var btn = $('btnImgRun'); btn.disabled = true;
+    var log = $('imgLog'); log.hidden = false; log.textContent = '';
+    var prog = $('imgProg'); prog.hidden = false;
+    var L = function (m) { log.textContent += m + '\n'; log.scrollTop = log.scrollHeight; };
+    var overwrite = $('imgOverwrite').checked, done = 0, saved = 0, fail = 0;
+    var existingImgs = {};
+    var chain = Promise.resolve();
+    ok.forEach(function (p) {
+      chain = chain.then(function () {
+        var pre = existingImgs[p.jan] ? Promise.resolve(existingImgs[p.jan]) : api('images?jan=' + p.jan).then(function (r) { existingImgs[p.jan] = (r.images || []).map(function (i) { return i.slot; }); return existingImgs[p.jan]; });
+        return pre.then(function (slots) {
+          if (!overwrite && slots.indexOf(p.slot) >= 0) { p.result = 'スキップ（既に写真あり）'; L('スキップ ' + p.file.name + '（' + p.slot + '枚目は登録済み）'); return; }
+          return C.uploadImage(p.jan, p.slot, p.file, { size: 1200, square: $('imgSquare').checked ? 'pad' : false, whiten: $('imgWhiten').value, max: 1600, quality: 0.85 }).then(function (r) {
+            if (r.ok) { saved++; p.result = '保存 ' + Math.round(r.bytes / 1024) + 'KB'; L('OK   ' + p.file.name + ' → ' + p.jan + ' ' + p.slot + '枚目 (' + Math.round(r.bytes / 1024) + 'KB webp)'); if (slots.indexOf(p.slot) < 0) slots.push(p.slot); }
+            else { fail++; p.result = 'NG ' + (r.message || r.reason); L('NG   ' + p.file.name + ': ' + (r.message || r.reason)); }
+          });
+        }).catch(function (e) { fail++; p.result = 'NG ' + ((e && e.message) || ''); L('NG   ' + p.file.name + ': ' + ((e && e.message) || e)); if (e && (e.auth || e.setup)) throw e; })
+          .then(function () { done++; prog.firstElementChild.style.width = Math.round(done / ok.length * 100) + '%'; });
+      });
+    });
+    chain.then(function () { L('完了: 保存 ' + saved + ' / 失敗 ' + fail + ' / 対象 ' + ok.length); toast('画像の登録が終わりました'); renderImgPlan(); btn.disabled = false; boot(); }).catch(function (e) { handleErr(e); btn.disabled = false; });
+  });
+
+  // ── 出力 ──
+  function exportUrl(format) {
+    var q = 'format=' + format + '&maker=' + encodeURIComponent($('exMaker').value);
+    if ($('exImg').value === 'only') q += '&only_images=1'; if ($('exImg').value === 'none') q += '&noimg=1';
+    return '/api/pim/export?' + q;
+  }
+  function download(format) {
+    toast('作成中…');
+    fetch(exportUrl(format), { headers: { 'x-seam-token': C.Auth.get() }, cache: 'no-store' }).then(function (r) {
+      if (r.status === 401) throw { auth: true };
+      if (!r.ok) throw new Error('出力に失敗しました(' + r.status + ')');
+      var cd = r.headers.get('content-disposition') || '', m = cd.match(/filename="([^"]+)"/);
+      return r.blob().then(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = m ? m[1] : ('seam-products.' + format); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000); toast('ダウンロードしました'); });
+    }).catch(handleErr);
+  }
+  $('btnExCsv').addEventListener('click', function () { download('csv'); });
+  $('btnExJson').addEventListener('click', function () { download('json'); });
+
+  boot();
+})();
+</script>
+</body>
+</html>

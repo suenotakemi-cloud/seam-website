@@ -17,6 +17,7 @@
 | `hairsalon.html` | ヘアサロン |
 | `headspa.html` | ヘッドスパ |
 | `share/` | 診断結果のOGシェアページ（27タイプ） |
+| `pim/` | 商品マスタ統一（スタッフ用・noindex）: `index.html` スマホでJAN読取→写真5枚登録 / `import.html` メーカーCSV・Excel取り込み・JAN重複の注意・統一CSV出力 / `admin.html` ディーラーアカウント発行（SEAM管理者）。1ディーラー1アカウントでデータ分離。設定は `db/SETUP_PIM.md` |
 
 ## 技術構成
 
