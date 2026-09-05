@@ -236,7 +236,7 @@
         </div>
         <p class="muted" style="margin:6px 0 0">選択した商品の 1 項目をまとめて置き換えます。税区分・税率を変えると税抜/税込を計算し直します。辞書があれば当たります。</p>
       </div>
-      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th></th><th>写真</th><th>JAN</th><th>商品コード</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th></th><th>写真</th><th>商品コード</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
       <div class="row" style="margin-top:10px"><button class="btn sm" id="btnPrev">← 前</button><button class="btn sm" id="btnNext">次 →</button></div>
     </div>
   </section>
@@ -706,13 +706,15 @@
       '<div class="kpi ok"><div class="l">登録できる行</div><div class="n">' + ok.length + '</div></div>' +
       '<div class="kpi ' + (bad.length ? 'ng' : '') + '"><div class="l">登録できない行（JAN/商品名なし）</div><div class="n">' + bad.length + '</div></div>' +
       '<div class="kpi"><div class="l">確認したい行（注意あり）</div><div class="n">' + warn.length + '</div></div>' +
+      '<div class="kpi ' + (noSku ? 'ng' : 'ok') + '"><div class="l">商品コードなし（列合わせを確認）</div><div class="n">' + noSku + '</div></div>' +
       '<div class="kpi ' + (dupRows ? 'ng' : '') + '"><div class="l">ファイル内でJAN重複</div><div class="n">' + Object.keys(S.fileDups).length + '<span class="muted" style="font-size:12px"> 組 / ' + dupRows + '行</span></div></div>';
-    var head = '<thead><tr><th>行</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>カテゴリ</th><th>注意</th></tr></thead>';
+    var head = '<thead><tr><th>行</th><th>商品コード</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>カテゴリ</th><th>注意</th></tr></thead>';
+    var noSku = ok.filter(function (i) { return !i.product.sku; }).length;
     var shown = S.items.slice(0, 300);
     $('prevTbl').innerHTML = head + '<tbody>' + shown.map(function (i) {
       var p = i.product, notes = i.errors.map(function (e) { return '<span class="tag ng">' + esc(e) + '</span>'; }).concat(i.warnings.map(function (w) { return '<span class="tag warn">' + esc(w) + '</span>'; })).join(' ');
-      return '<tr><td>' + i.rowNo + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + esc(p.category) + '</td><td>' + notes + '</td></tr>';
-    }).join('') + (S.items.length > 300 ? '<tr><td colspan="10" class="muted">…ほか ' + (S.items.length - 300) + '行（保存時はすべて対象）</td></tr>' : '') + '</tbody>';
+      return '<tr><td>' + i.rowNo + '</td><td>' + (p.sku ? esc(p.sku) : '<span class="tag ng">なし</span>') + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + esc(p.category) + '</td><td>' + notes + '</td></tr>';
+    }).join('') + (S.items.length > 300 ? '<tr><td colspan="11" class="muted">…ほか ' + (S.items.length - 300) + '行（保存時はすべて対象）</td></tr>' : '') + '</tbody>';
     $('cardPrev').hidden = false;
     // DB との重複確認 ＋ 商品名が似ているもの（表記ゆれ）の検出
     var jans = ok.map(function (i) { return i.product.jan; });
@@ -989,7 +991,7 @@
       if (!j.ok) return;
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
-        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
+        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
       }).join('') || '<tr><td colspan="13" class="muted">該当なし</td></tr>';
       $('selAll').checked = false; updateSel();
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-sku]'), function (b) {
