@@ -379,6 +379,13 @@
 <div class="viewer" id="viewer"><img id="viewerImg" alt=""><button id="viewerClose">閉じる</button></div>
 <div class="toast" id="toast"></div>
 
+<!-- LINE・Instagram などのアプリ内ブラウザはカメラが使えない → 外のブラウザで開き直してもらう -->
+<div id="inapp" class="card" hidden style="position:fixed;left:8px;right:8px;top:8px;z-index:60;border:2px solid var(--ng);background:#FBEDEA">
+  <b>このまま（LINE などの中のブラウザ）ではカメラが使えません</b>
+  <p style="margin:6px 0 10px;font-size:14px">バーコードを読むには <b>Safari か Chrome</b> で開いてください。下のボタンで開き直せます（開かないときは右上の「…」→「Safari で開く」「他のアプリで開く」）。</p>
+  <a class="btn solid" id="inappOpen" href="#" style="text-decoration:none">Safari / Chrome で開く</a>
+  <button class="btn ghost" id="inappCopy" style="margin-top:6px">アドレスをコピー（ブラウザに貼り付けて開く）</button>
+</div>
 <div class="overlay" id="login" hidden>
   <div class="card">
     <h2>商品登録 ログイン</h2>
@@ -640,6 +647,22 @@
 
   // ── スキャン ──
   var video = $('video');
+  // アプリ内ブラウザ（LINE / Instagram / Facebook / X など）の判定。カメラ（getUserMedia）が使えない・許可が出ないため、外のブラウザへ誘導する
+  function isInApp() { var ua = navigator.userAgent || ''; return /\bLine\//i.test(ua) || /Instagram|FBAN|FBAV|FB_IAB|Twitter|TwitterAndroid|Snapchat|Messenger/i.test(ua); }
+  (function () {
+    if (!isInApp()) return;
+    var box = $('inapp'); if (!box) return;
+    box.hidden = false;
+    // LINE は URL に openExternalBrowser=1 を付けると外のブラウザで開く。それ以外のアプリは同じ URL（「他のアプリで開く」の案内）
+    var u = new URL(location.href); u.searchParams.set('openExternalBrowser', '1');
+    $('inappOpen').href = u.toString();
+    $('inappCopy').addEventListener('click', function () {
+      var clean = new URL(location.href); clean.searchParams.delete('openExternalBrowser');
+      var done = function () { $('inappCopy').textContent = 'コピーしました。Safari / Chrome を開いてアドレス欄に貼り付けてください'; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(clean.toString()).then(done, function () { window.prompt('このアドレスを Safari / Chrome で開いてください', clean.toString()); });
+      else window.prompt('このアドレスを Safari / Chrome で開いてください', clean.toString());
+    });
+  })();
   function camMsg(m) { var el = $('camMsg'); if (!m) { el.hidden = true; return; } el.hidden = false; el.textContent = m; }
   function stopScan() {
     state.scanning = false;
@@ -652,7 +675,7 @@
     stopScan();
     state.scanning = true;
     camMsg('カメラを起動しています…');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camMsg('このブラウザではカメラが使えません。下の欄にJANを手入力してください'); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camMsg(isInApp() ? 'LINE などの中のブラウザではカメラが使えません。上の「Safari / Chrome で開く」で開き直してください' : 'このブラウザではカメラが使えません。下の欄にJANを手入力してください'); return; }
     navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
       .then(function (stream) {
         if (!state.scanning) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
@@ -666,7 +689,7 @@
         });
       })
       .catch(function (err) {
-        var m = (err && err.name === 'NotAllowedError') ? 'カメラの使用が許可されていません。ブラウザの設定で seam.site のカメラを「許可」にしてから「カメラ再起動」を押してください' : 'カメラを起動できません（' + ((err && err.name) || '') + '）。JANを手入力してください';
+        var m = isInApp() ? 'LINE などの中のブラウザではカメラが使えません。上の「Safari / Chrome で開く」で開き直してください' : (err && err.name === 'NotAllowedError') ? 'カメラの使用が許可されていません。ブラウザの設定で seam.site のカメラを「許可」にしてから「カメラ再起動」を押してください' : 'カメラを起動できません（' + ((err && err.name) || '') + '）。JANを手入力してください';
         camMsg(m);
       });
   }
@@ -677,7 +700,7 @@
   }
   function pickDetector() {
     if (state.detector) return Promise.resolve('native');
-    if ('BarcodeDetector' in window && window.BarcodeDetector.getSupportedFormats) {
+    if ('BarcodeDetector' in window && window.BarcodeDetector && typeof window.BarcodeDetector.getSupportedFormats === 'function') {
       return window.BarcodeDetector.getSupportedFormats().then(function (fs) {
         if (fs.indexOf('ean_13') >= 0) { state.detector = new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'].filter(function (f) { return fs.indexOf(f) >= 0; }) }); return 'native'; }
         return waitZxing().then(function (ok) { return ok ? 'zxing' : 'none'; });
@@ -705,9 +728,31 @@
       hints.set(Z.DecodeHintType.TRY_HARDER, true);
       var reader = new Z.BrowserMultiFormatReader(hints, 200);
       state.zx = reader;
-      var cb = function (result) { if (result && state.scanning) onCode(result.getText()); };
-      if (typeof reader.decodeFromStream === 'function') reader.decodeFromStream(stream, video, cb);
-      else reader.decodeFromVideoDevice(undefined, video, cb);
+      // ★ZXing の decodeFromStream は「playing」イベントを待つが、ここでは映像を先に再生済みなので二度と来ず、読み取りが始まらない
+      //   （iPhone の Safari は BarcodeDetector が無いので必ずこの経路 → 読めない原因）。自前の周回で 1 コマずつ渡す
+      //   さらに ZXing の video 直渡し（decode(video)）は輝度を反転して読む経路に入り、普通のバーコードを読めない。
+      //   自前の canvas に描いて、反転なしの輝度源（HTMLCanvasElementLuminanceSource）で渡す
+      var cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+      var busy = false;
+      var run = function () {
+        if (!state.scanning || state.zx !== reader) return;
+        if (video.readyState >= 2 && video.videoWidth > 0 && !busy) {
+          busy = true;
+          try {
+            // 長辺 1280 までに落として速く（EAN-13 は横 1 行で十分読める）
+            var sc = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
+            var w = Math.round(video.videoWidth * sc), h = Math.round(video.videoHeight * sc);
+            if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+            cx.drawImage(video, 0, 0, w, h);
+            var bmp = new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(cv)));
+            var res = reader.decodeBitmap(bmp);
+            if (res && state.scanning) onCode(res.getText());
+          } catch (e) { /* NotFoundException など: そのコマに無いだけ */ }
+          busy = false;
+        }
+        if (state.scanning && state.zx === reader) state.tickTimer = setTimeout(run, 150);
+      };
+      run();
     } catch (e) { camMsg('読み取り部品の起動に失敗しました。JANを手入力してください'); }
   }
   function onCode(raw) {
