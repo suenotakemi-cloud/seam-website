@@ -57,6 +57,10 @@
   .jan{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:var(--char);letter-spacing:.08em}
   .pname{font-size:17px;font-weight:600;margin:4px 0 6px;line-height:1.4}
   .meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--char)}
+  .rawtbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+  .rawtbl th{width:34%;text-align:left;color:var(--char);font-weight:600;padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+  .rawtbl td{padding:5px 6px;border-bottom:1px solid var(--line);word-break:break-all}
+  .rawtbl tr.empty th,.rawtbl tr.empty td{color:#B8AFA3}
   .meta b{color:var(--ink);font-weight:600}
   .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:#F1EBE2;color:var(--char);vertical-align:middle}
   .badge.ok{background:#E3F1EA;color:var(--ok)}
@@ -285,6 +289,15 @@
         </div>
         <div class="grid" id="grid"></div>
         <p class="grid-note" id="gridNote">枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）</p>
+        <p class="grid-note" id="kindNote" style="margin-top:4px"></p>
+      </div>
+
+      <!-- 取り込んだデータ（ディーラーの CSV の全項目）。この CSV の形が取り込みの基準なので、バーコードを読んだときに全部見える -->
+      <div class="card" id="rawCard" hidden>
+        <details id="rawDet">
+          <summary style="font-size:14px;font-weight:700;cursor:pointer">取り込んだデータ（全項目） <span class="small" id="rawCount"></span></summary>
+          <table class="rawtbl" id="rawTbl"></table>
+        </details>
       </div>
     </section>
 
@@ -334,7 +347,7 @@
 <div class="shooter" id="shooter">
   <div class="top">
     <div><div class="t" id="shTitle">1枚目: 正面</div><div class="sub" id="shSub"></div></div>
-    <button class="hbtn" id="shClose" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4)">閉じる</button>
+    <div style="display:flex;gap:6px"><a class="hbtn" id="shGuideLink" href="./photo-guide.html" target="_blank" rel="noopener" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4);text-decoration:none">📖 ガイド</a><button class="hbtn" id="shClose" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.4)">閉じる</button></div>
   </div>
   <div class="stage">
     <div class="sq" id="shSq">
@@ -349,6 +362,7 @@
   </div>
   <div class="bottom">
     <div class="chips" id="shChips">
+      <select class="chip" id="shKind" aria-label="商品の種類" style="max-width:46%"></select>
       <button class="chip" data-shape="bottle">ボトル</button>
       <button class="chip" data-shape="jar">ジャー・缶</button>
       <button class="chip" data-shape="tube">チューブ・袋</button>
@@ -451,6 +465,7 @@
 
 <script src="../vendor/zxing.min.js" defer></script>
 <script src="../js/pim-client.js"></script>
+<script src="./photo-guide.js"></script>
 <script>
 (function () {
   'use strict';
@@ -808,9 +823,11 @@
     $('pName').textContent = p.name;
     var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' +
+      (p.category ? '<span>' + esc(p.category) + '</span>' : '') +
       (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品コード <b>' + esc(p.sku) + '</b></span>' : '<span style="color:var(--ng)">商品コード 未入力（「商品情報を編集」で入れてください）</span>');
     $('editBox').classList.remove('open');
     renderGrid();
+    renderRaw(p);
     recent(p);
     show('scr-prod');
     $('hsub').textContent = p.name.slice(0, 24) + (p.updated_by ? '（最終更新: ' + p.updated_by + '）' : '');
@@ -843,7 +860,18 @@
       }
     }).catch(function () { /* 通信断は次回 */ });
   }
-  function openProductQuiet(p) { state.product = p; renderGrid(); $('pName').textContent = p.name; var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
+  // 取り込んだ CSV の行（全項目）を、CSV の列順のまま出す。ディーラーの CSV の形が「取り込みの基準」なので、読んだときに全部見える
+  function renderRaw(p) {
+    var card = $('rawCard'); var raw = null;
+    try { raw = p.raw ? (typeof p.raw === 'string' ? JSON.parse(p.raw) : p.raw) : null; } catch (e) { raw = null; }
+    var keys = raw ? Object.keys(raw) : [];
+    if (!keys.length) { card.hidden = true; $('rawTbl').innerHTML = ''; return; }
+    card.hidden = false; $('rawCount').textContent = keys.length + '項目（' + (p.source ? esc(p.source) + '・' : '') + '取り込み時のまま）';
+    $('rawTbl').innerHTML = keys.map(function (k) { var v = raw[k] == null ? '' : String(raw[k]).replace(/<b>/gi, ' '); return '<tr' + (v === '' ? ' class="empty"' : '') + '><th>' + esc(k) + '</th><td>' + (v === '' ? '—' : esc(v)) + '</td></tr>'; }).join('');
+    var ci = window.PhotoGuide ? PhotoGuide.catInfo(p) : null, kind = ci ? ci.shape : null;
+    $('kindNote').innerHTML = kind ? '撮り方: <b>' + esc(kind.icon + ' ' + kind.label) + '</b>（1枚目＝' + esc(kind.slots[0][0]) + '）。まず読ませるもの: <b>' + esc(ci.read) + '</b>' + (ci.note ? '。' + esc(ci.note) : '') + ' <a href="./photo-guide.html#k-' + kind.key + '" target="_blank" rel="noopener">📖 ガイド</a>' : '';
+  }
+  function openProductQuiet(p) { state.product = p; renderGrid(); renderRaw(p); $('pName').textContent = p.name; var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' + (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品コード <b>' + esc(p.sku) + '</b></span>' : '<span style="color:var(--ng)">商品コード 未入力</span>');
     $('hsub').textContent = p.name.slice(0, 24) + (p.updated_by ? '（最終更新: ' + p.updated_by + '）' : ''); }
   function renderGrid() {
@@ -882,6 +910,7 @@
     if (reviewIdx >= imgs.length) reviewIdx = 0;
     var cur = imgs[reviewIdx];
     var labels = { 1: '1枚目（メイン）: 正面', 2: '2枚目: 裏面', 3: '3枚目: 斜め・側面', 4: '4枚目: 口元', 5: '5枚目: 大きさ' };
+    if (window.PhotoGuide) { var kk = PhotoGuide.byKey(PhotoGuide.guessKind(state.product)); if (kk) kk.slots.forEach(function (sl, i) { labels[i + 1] = (i + 1) + '枚目' + (i === 0 ? '（メイン）' : '') + ': ' + sl[0]; }); }
     $('reviewBig').innerHTML = '<img src="' + esc(cur.url) + '" alt=""><span class="lab">' + esc(labels[cur.slot] || cur.slot + '枚目') + '</span>';
     $('reviewThumbs').innerHTML = imgs.map(function (im, i) { return '<button type="button" data-i="' + i + '" class="' + (i === reviewIdx ? 'on' : '') + '"><img src="' + esc(im.url) + '" alt=""></button>'; }).join('');
     $('reviewCap').textContent = '登録済み ' + imgs.length + ' / 5 枚' + (cur.created_by ? ' ・ この写真: ' + cur.created_by + ' さん' : '') + (cur.width ? ' ・ ' + cur.width + '×' + cur.height : '') + ' ・ タップで拡大';
@@ -889,6 +918,8 @@
     $('reviewBig').onclick = function () { $('viewerImg').src = cur.url; $('viewer').classList.add('open'); };
   }
   // アクションシート
+  // 枠の番号 → 種類別の呼び名（「1枚目の写真: 箱の正面」）
+  function slotLabel(slot) { var k = window.PhotoGuide ? PhotoGuide.byKey(PhotoGuide.guessKind(state.product)) : null; return slot + '枚目の写真' + (k && k.slots[slot - 1] ? ': ' + k.slots[slot - 1][0] : ''); }
   function sheet(title, buttons) {
     $('sheetTtl').textContent = title;
     $('sheetBtns').innerHTML = '';
@@ -904,7 +935,7 @@
   $('sheetCancel').addEventListener('click', function () { closeSheet(true); });
   $('sheet').addEventListener('click', function (e) { if (e.target === $('sheet')) closeSheet(true); });
   function emptySheet(slot) {
-    sheet(slot + '枚目の写真', [
+    sheet(slotLabel(slot), [
       { label: '📷 ガイド付きカメラで撮る', cls: 'solid', fn: function () { openShooter(slot); } },
       { label: '🖼 写真・ファイルから選ぶ', fn: function () { state.pendingSlot = slot; $('fileIn').value = ''; $('fileIn').click(); } },
     ]);
@@ -918,7 +949,7 @@
     if (pos > 0) btns.push({ label: '⭐ 1枚目（メイン）にする', fn: function () { reorderImages({ action: 'main', slot: slot }); } });
     if (pos > 0) btns.push({ label: '← 前の写真と入れ替える', fn: function () { var o = slots.slice(); o[pos] = slots[pos - 1]; o[pos - 1] = slot; reorderImages({ action: 'reorder', order: o }); } });
     if (pos >= 0 && pos < slots.length - 1) btns.push({ label: '→ 後ろの写真と入れ替える', fn: function () { var o = slots.slice(); o[pos] = slots[pos + 1]; o[pos + 1] = slot; reorderImages({ action: 'reorder', order: o }); } });
-    sheet(slot + '枚目の写真' + (im.quality_warn ? '（自動チェック: ' + im.quality_warn + '）' : ''), btns.concat([
+    sheet(slotLabel(slot) + (im.quality_warn ? '（自動チェック: ' + im.quality_warn + '）' : ''), btns.concat([
       { label: '📷 撮り直す（ガイド付きカメラ）', fn: function () { openShooter(slot); } },
       { label: '🖼 差し替える（写真・ファイル）', fn: function () { state.pendingSlot = slot; $('fileIn').value = ''; $('fileIn').click(); } },
       { label: '🗑 削除する', cls: 'danger', fn: function () { removeImage(slot); } },
@@ -1025,7 +1056,19 @@
     4: { title: '4枚目: キャップ・口元', sub: 'ポンプや開け口の形が分かるように寄る' },
     5: { title: '5枚目: 大きさ', sub: '手に持って、大きさが伝わるように（背景は白いままで）' },
   };
-  var SH = { slot: 1, stream: null, facing: 'environment', shape: 'bottle', whiten: 'normal', canvas: null, tilt: null, orientOk: false, quality: null, burst: false, voice: false, cdTimer: null, rec: null };
+  var SH = { slot: 1, stream: null, facing: 'environment', shape: 'bottle', whiten: 'normal', canvas: null, tilt: null, orientOk: false, quality: null, burst: false, voice: false, cdTimer: null, rec: null, kind: 'pump', kindJan: null, shapeManual: false };
+  // 種類（写真ガイドの分類）→ 枠の中の形。ユーザーが形を手で選んだら（同じ商品の間は）そちらを優先
+  var KIND_SHAPE = { colorbox: 'box', powder: 'none', bigjug: 'bottle', permbottle: 'bottle', pump: 'bottle', capbottle: 'bottle', jar: 'jar', tube: 'tube', pouch: 'tube', spraycan: 'bottle', mist: 'bottle', oil: 'bottle', kit: 'bottle', lipstick: 'none', compact: 'none', cosmetube: 'tube', supplement: 'jar', dryer: 'none', iron: 'none', showerhead: 'none', facedevice: 'none', brush: 'none', smallpack: 'none', bowl: 'jar', towel: 'none', gift: 'none', other: 'none' };
+  function guideFor(slot) {
+    var k = window.PhotoGuide ? PhotoGuide.byKey(SH.kind) : null;
+    if (k && k.slots[slot - 1]) return { title: slot + '枚目: ' + k.slots[slot - 1][0], sub: k.slots[slot - 1][1] };
+    return SHOT_GUIDES[slot] || SHOT_GUIDES[1];
+  }
+  (function () { // 種類の選択肢
+    var sel = $('shKind'); if (!sel || !window.PhotoGuide) return;
+    sel.innerHTML = PhotoGuide.KINDS.map(function (k) { return '<option value="' + k.key + '">' + k.icon + ' ' + k.label + '</option>'; }).join('');
+    sel.addEventListener('change', function () { SH.kind = sel.value; SH.shape = KIND_SHAPE[SH.kind] || 'none'; SH.shapeManual = false; renderGuide(); });
+  })();
   try { SH.burst = localStorage.getItem('seam_pim_burst') === '1'; } catch (e) { /* */ }
   var WHITE_LABELS = { off: 'なし', weak: '弱', normal: '標準', strong: '強' }, WHITE_ORDER = ['normal', 'strong', 'weak', 'off'];
   try { SH.shape = localStorage.getItem('seam_pim_shape') || 'bottle'; SH.whiten = localStorage.getItem('seam_pim_whiten') || 'normal'; } catch (e) { /* */ }
@@ -1050,15 +1093,19 @@
       s += '<rect ' + st + ' x="26" y="' + (top + 20) + '" width="48" height="' + (bottom - top - 24) + '" rx="5"/><rect ' + st + ' x="30" y="' + (top + 12) + '" width="40" height="9" rx="2"/>';
     } else if (slot <= 3 && shape === 'tube') {
       s += '<path ' + st + ' d="M40 ' + (top + 3) + ' h20 v7 h-3 l4 ' + (bottom - top - 16) + ' h-22 l4 -' + (bottom - top - 16) + ' h-3 z"/>';
+    } else if (slot <= 3 && shape === 'box') {
+      s += '<rect ' + st + ' x="30" y="' + (top + 3) + '" width="40" height="' + (bottom - top - 3) + '" rx="1.5"/><rect ' + st + ' x="34" y="' + (top + 7) + '" width="32" height="' + ((bottom - top) * 0.4) + '"/>';
     } else if (slot === 4) {
       s += '<circle ' + st + ' cx="50" cy="50" r="22"/>';
     }
     return s + '</svg>';
   }
   function renderGuide() {
-    var g = SHOT_GUIDES[SH.slot] || SHOT_GUIDES[1];
+    var g = guideFor(SH.slot);
     $('shTitle').textContent = g.title; $('shSub').textContent = g.sub;
     $('shGuide').innerHTML = guideSvg(SH.shape, SH.slot);
+    if ($('shKind')) $('shKind').value = SH.kind;
+    $('shGuideLink').href = './photo-guide.html#k-' + SH.kind;
     Array.prototype.forEach.call($('shChips').querySelectorAll('[data-shape]'), function (b) { b.classList.toggle('on', b.getAttribute('data-shape') === SH.shape); });
     $('shWhite').textContent = '背景を白に: ' + WHITE_LABELS[SH.whiten];
     $('shWhite').classList.toggle('on', SH.whiten !== 'off');
@@ -1069,6 +1116,9 @@
   function shMsg(m) { var el = $('shMsg'); el.textContent = m || ''; el.classList.toggle('show', !!m); }
   function openShooter(slot) {
     SH.slot = slot; SH.canvas = null;
+    // 商品が変わったら、カテゴリ・商品名から種類を当て直す（同じ商品の間は手で選んだ種類・形を保つ）
+    var pj = state.product ? state.product.jan : null;
+    if (pj !== SH.kindJan) { SH.kindJan = pj; SH.kind = window.PhotoGuide ? PhotoGuide.guessKind(state.product) : 'pump'; SH.shape = KIND_SHAPE[SH.kind] || 'none'; SH.shapeManual = false; }
     $('shooter').classList.remove('preview'); $('shooter').classList.add('open');
     renderGuide();
     startShooterCam();
@@ -1166,7 +1216,7 @@
   $('shClose').addEventListener('click', closeShooter);
   $('shFlip').addEventListener('click', function () { SH.facing = SH.facing === 'environment' ? 'user' : 'environment'; startShooterCam(); });
   $('shNative').addEventListener('click', function () { var slot = SH.slot; closeShooter(); state.pendingSlot = slot; $('camIn').value = ''; $('camIn').click(); });
-  Array.prototype.forEach.call($('shChips').querySelectorAll('[data-shape]'), function (b) { b.addEventListener('click', function () { SH.shape = b.getAttribute('data-shape'); try { localStorage.setItem('seam_pim_shape', SH.shape); } catch (e) { /* */ } renderGuide(); }); });
+  Array.prototype.forEach.call($('shChips').querySelectorAll('[data-shape]'), function (b) { b.addEventListener('click', function () { SH.shape = b.getAttribute('data-shape'); SH.shapeManual = true; try { localStorage.setItem('seam_pim_shape', SH.shape); } catch (e) { /* */ } renderGuide(); }); });
   $('shWhite').addEventListener('click', function () { SH.whiten = WHITE_ORDER[(WHITE_ORDER.indexOf(SH.whiten) + 1) % WHITE_ORDER.length]; try { localStorage.setItem('seam_pim_whiten', SH.whiten); } catch (e) { /* */ } renderGuide(); });
   document.addEventListener('visibilitychange', function () { if (document.hidden && $('shooter').classList.contains('open')) stopShooterCam(); else if (!document.hidden && $('shooter').classList.contains('open') && !$('shooter').classList.contains('preview')) startShooterCam(); });
 
