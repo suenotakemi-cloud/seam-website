@@ -868,8 +868,8 @@
     if (!keys.length) { card.hidden = true; $('rawTbl').innerHTML = ''; return; }
     card.hidden = false; $('rawCount').textContent = keys.length + '項目（' + (p.source ? esc(p.source) + '・' : '') + '取り込み時のまま）';
     $('rawTbl').innerHTML = keys.map(function (k) { var v = raw[k] == null ? '' : String(raw[k]).replace(/<b>/gi, ' '); return '<tr' + (v === '' ? ' class="empty"' : '') + '><th>' + esc(k) + '</th><td>' + (v === '' ? '—' : esc(v)) + '</td></tr>'; }).join('');
-    var kind = window.PhotoGuide ? PhotoGuide.byKey(PhotoGuide.guessKind(p)) : null;
-    $('kindNote').innerHTML = kind ? '撮り方: <b>' + esc(kind.icon + ' ' + kind.label) + '</b>（1枚目＝' + esc(kind.slots[0].title) + '） <a href="./photo-guide.html#k-' + kind.key + '" target="_blank" rel="noopener">📖 ガイドを見る</a>' : '';
+    var ci = window.PhotoGuide ? PhotoGuide.catInfo(p) : null, kind = ci ? ci.shape : null;
+    $('kindNote').innerHTML = kind ? '撮り方: <b>' + esc(kind.icon + ' ' + kind.label) + '</b>（1枚目＝' + esc(kind.slots[0][0]) + '）。まず読ませるもの: <b>' + esc(ci.read) + '</b>' + (ci.note ? '。' + esc(ci.note) : '') + ' <a href="./photo-guide.html#k-' + kind.key + '" target="_blank" rel="noopener">📖 ガイド</a>' : '';
   }
   function openProductQuiet(p) { state.product = p; renderGrid(); renderRaw(p); $('pName').textContent = p.name; var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' + (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品コード <b>' + esc(p.sku) + '</b></span>' : '<span style="color:var(--ng)">商品コード 未入力</span>');
@@ -910,7 +910,7 @@
     if (reviewIdx >= imgs.length) reviewIdx = 0;
     var cur = imgs[reviewIdx];
     var labels = { 1: '1枚目（メイン）: 正面', 2: '2枚目: 裏面', 3: '3枚目: 斜め・側面', 4: '4枚目: 口元', 5: '5枚目: 大きさ' };
-    if (window.PhotoGuide) { var kk = PhotoGuide.byKey(PhotoGuide.guessKind(state.product)); if (kk) kk.slots.forEach(function (sl, i) { labels[i + 1] = (i + 1) + '枚目' + (i === 0 ? '（メイン）' : '') + ': ' + sl.title; }); }
+    if (window.PhotoGuide) { var kk = PhotoGuide.byKey(PhotoGuide.guessKind(state.product)); if (kk) kk.slots.forEach(function (sl, i) { labels[i + 1] = (i + 1) + '枚目' + (i === 0 ? '（メイン）' : '') + ': ' + sl[0]; }); }
     $('reviewBig').innerHTML = '<img src="' + esc(cur.url) + '" alt=""><span class="lab">' + esc(labels[cur.slot] || cur.slot + '枚目') + '</span>';
     $('reviewThumbs').innerHTML = imgs.map(function (im, i) { return '<button type="button" data-i="' + i + '" class="' + (i === reviewIdx ? 'on' : '') + '"><img src="' + esc(im.url) + '" alt=""></button>'; }).join('');
     $('reviewCap').textContent = '登録済み ' + imgs.length + ' / 5 枚' + (cur.created_by ? ' ・ この写真: ' + cur.created_by + ' さん' : '') + (cur.width ? ' ・ ' + cur.width + '×' + cur.height : '') + ' ・ タップで拡大';
@@ -919,7 +919,7 @@
   }
   // アクションシート
   // 枠の番号 → 種類別の呼び名（「1枚目の写真: 箱の正面」）
-  function slotLabel(slot) { var k = window.PhotoGuide ? PhotoGuide.byKey(PhotoGuide.guessKind(state.product)) : null; return slot + '枚目の写真' + (k && k.slots[slot - 1] ? ': ' + k.slots[slot - 1].title : ''); }
+  function slotLabel(slot) { var k = window.PhotoGuide ? PhotoGuide.byKey(PhotoGuide.guessKind(state.product)) : null; return slot + '枚目の写真' + (k && k.slots[slot - 1] ? ': ' + k.slots[slot - 1][0] : ''); }
   function sheet(title, buttons) {
     $('sheetTtl').textContent = title;
     $('sheetBtns').innerHTML = '';
@@ -1056,18 +1056,18 @@
     4: { title: '4枚目: キャップ・口元', sub: 'ポンプや開け口の形が分かるように寄る' },
     5: { title: '5枚目: 大きさ', sub: '手に持って、大きさが伝わるように（背景は白いままで）' },
   };
-  var SH = { slot: 1, stream: null, facing: 'environment', shape: 'bottle', whiten: 'normal', canvas: null, tilt: null, orientOk: false, quality: null, burst: false, voice: false, cdTimer: null, rec: null, kind: 'bottle', kindJan: null, shapeManual: false };
+  var SH = { slot: 1, stream: null, facing: 'environment', shape: 'bottle', whiten: 'normal', canvas: null, tilt: null, orientOk: false, quality: null, burst: false, voice: false, cdTimer: null, rec: null, kind: 'pump', kindJan: null, shapeManual: false };
   // 種類（写真ガイドの分類）→ 枠の中の形。ユーザーが形を手で選んだら（同じ商品の間は）そちらを優先
-  var KIND_SHAPE = { colorbox: 'box', oxy: 'bottle', perm: 'bottle', bottle: 'bottle', jar: 'jar', tube: 'tube', spray: 'bottle', device: 'none', colortube: 'tube', kit: 'bottle', cosme: 'none', small: 'none' };
+  var KIND_SHAPE = { colorbox: 'box', powder: 'none', bigjug: 'bottle', permbottle: 'bottle', pump: 'bottle', capbottle: 'bottle', jar: 'jar', tube: 'tube', pouch: 'tube', spraycan: 'bottle', mist: 'bottle', oil: 'bottle', kit: 'bottle', lipstick: 'none', compact: 'none', cosmetube: 'tube', supplement: 'jar', dryer: 'none', iron: 'none', showerhead: 'none', facedevice: 'none', brush: 'none', smallpack: 'none', bowl: 'jar', towel: 'none', gift: 'none', other: 'none' };
   function guideFor(slot) {
     var k = window.PhotoGuide ? PhotoGuide.byKey(SH.kind) : null;
-    if (k && k.slots[slot - 1]) return { title: slot + '枚目: ' + k.slots[slot - 1].title, sub: k.slots[slot - 1].sub };
+    if (k && k.slots[slot - 1]) return { title: slot + '枚目: ' + k.slots[slot - 1][0], sub: k.slots[slot - 1][1] };
     return SHOT_GUIDES[slot] || SHOT_GUIDES[1];
   }
   (function () { // 種類の選択肢
     var sel = $('shKind'); if (!sel || !window.PhotoGuide) return;
     sel.innerHTML = PhotoGuide.KINDS.map(function (k) { return '<option value="' + k.key + '">' + k.icon + ' ' + k.label + '</option>'; }).join('');
-    sel.addEventListener('change', function () { SH.kind = sel.value; SH.shape = KIND_SHAPE[SH.kind] || 'bottle'; SH.shapeManual = false; renderGuide(); });
+    sel.addEventListener('change', function () { SH.kind = sel.value; SH.shape = KIND_SHAPE[SH.kind] || 'none'; SH.shapeManual = false; renderGuide(); });
   })();
   try { SH.burst = localStorage.getItem('seam_pim_burst') === '1'; } catch (e) { /* */ }
   var WHITE_LABELS = { off: 'なし', weak: '弱', normal: '標準', strong: '強' }, WHITE_ORDER = ['normal', 'strong', 'weak', 'off'];
@@ -1118,7 +1118,7 @@
     SH.slot = slot; SH.canvas = null;
     // 商品が変わったら、カテゴリ・商品名から種類を当て直す（同じ商品の間は手で選んだ種類・形を保つ）
     var pj = state.product ? state.product.jan : null;
-    if (pj !== SH.kindJan) { SH.kindJan = pj; SH.kind = window.PhotoGuide ? PhotoGuide.guessKind(state.product) : 'bottle'; SH.shape = KIND_SHAPE[SH.kind] || 'bottle'; SH.shapeManual = false; }
+    if (pj !== SH.kindJan) { SH.kindJan = pj; SH.kind = window.PhotoGuide ? PhotoGuide.guessKind(state.product) : 'pump'; SH.shape = KIND_SHAPE[SH.kind] || 'none'; SH.shapeManual = false; }
     $('shooter').classList.remove('preview'); $('shooter').classList.add('open');
     renderGuide();
     startShooterCam();
