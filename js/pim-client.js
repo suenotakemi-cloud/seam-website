@@ -197,11 +197,94 @@
       var canvas = processProductImage(src, opts);
       if (src.close) { try { src.close(); } catch (e) { /* */ } }
       var q = null; try { q = analyzeImage(canvas, { srcW: sw, srcH: sh }); } catch (e) { q = null; }
-      return canvasToWebp(canvas, opts.quality).then(function (r) {
+      return finishImage(canvas, opts.quality).then(function (r) {
         return Object.assign(r, { originalType: file.type || '', originalName: file.name || '', quality: q });
       });
     });
   }
+  // 加工済み canvas → 本体 webp ＋ 300px サムネ webp ＋ 同じ写真の検出用ハッシュ（dHash 64bit）
+  function finishImage(canvas, quality) {
+    return canvasToWebp(canvas, quality).then(function (r) {
+      var ph = null; try { ph = phash(canvas); } catch (e) { /* */ }
+      var t = document.createElement('canvas'); t.width = t.height = 300; t.getContext('2d').drawImage(canvas, 0, 0, 300, 300);
+      return canvasToWebp(t, 0.8).then(function (tr) { return Object.assign(r, { thumb: tr.blob, phash: ph }); }, function () { return Object.assign(r, { thumb: null, phash: ph }); });
+    });
+  }
+  // 写真の指紋: dHash（9×8 グレースケールの隣との明暗差・64bit）＋ 2×2 の平均色（各 4bit）→ 28 桁の hex
+  //   同じ写真を別の商品に入れてしまった検出用（完全一致で見る）。色も含めるので、形が同じで色違いの商品は別物になる
+  function phash(src) {
+    var c = document.createElement('canvas'); c.width = 9; c.height = 8; var x = c.getContext('2d'); x.drawImage(src, 0, 0, 9, 8);
+    var d = x.getImageData(0, 0, 9, 8).data, g = [], i;
+    for (i = 0; i < 72; i++) g.push(0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2]);
+    var hex = '';
+    for (var y = 0; y < 8; y++) { var b = 0; for (var xx = 0; xx < 8; xx++) b = (b << 1) | (g[y * 9 + xx] < g[y * 9 + xx + 1] ? 1 : 0); hex += (b & 0xFF).toString(16).padStart(2, '0'); }
+    var c2 = document.createElement('canvas'); c2.width = 2; c2.height = 2; var x2 = c2.getContext('2d'); x2.drawImage(src, 0, 0, 2, 2);
+    var d2 = x2.getImageData(0, 0, 2, 2).data;
+    for (i = 0; i < 12; i++) hex += (d2[Math.floor(i / 3) * 4 + (i % 3)] >> 4).toString(16);
+    return hex;
+  }
+  function appendImageExtras(fd, r) { if (r.quality) fd.append('quality', JSON.stringify(r.quality)); if (r.phash) fd.append('phash', r.phash); if (r.thumb) fd.append('thumb', r.thumb, 'thumb.webp'); }
+
+  // ── 送信待ち（電波が切れたときの一時保存。IndexedDB）──────────────────
+  //   画像の POST がネットワークで失敗したら端末に貯めて、電波が戻ったら順に送る
+  var IDB_NAME = 'seam_pim_outbox', IDB_STORE = 'items';
+  function idb() {
+    return new Promise(function (resolve, reject) {
+      if (!window.indexedDB) { reject(new Error('no idb')); return; }
+      var req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = function () { req.result.createObjectStore(IDB_STORE, { keyPath: 'id', autoIncrement: true }); };
+      req.onsuccess = function () { resolve(req.result); }; req.onerror = function () { reject(req.error); };
+    });
+  }
+  function idbTx(mode, fn) { return idb().then(function (db) { return new Promise(function (resolve, reject) { var tx = db.transaction(IDB_STORE, mode); var st = tx.objectStore(IDB_STORE); var out = fn(st); tx.oncomplete = function () { resolve(out && out.result !== undefined ? out.result : out); }; tx.onerror = function () { reject(tx.error); }; }); }); }
+  var Outbox = {
+    add: function (item) { item.ts = Date.now(); return idbTx('readwrite', function (st) { return st.add(item); }); },
+    list: function () { return idbTx('readonly', function (st) { var req = st.getAll(); return req; }).catch(function () { return []; }); },
+    remove: function (id) { return idbTx('readwrite', function (st) { st.delete(id); return null; }); },
+    count: function () { return Outbox.list().then(function (l) { return l.length; }); },
+    // 貯まっている分を順に送る。1 つでも失敗（ネットワーク）したらそこで止める。認証切れは呼び出し側へ
+    flush: function (onEach) {
+      return Outbox.list().then(function (items) {
+        items.sort(function (a, b) { return a.id - b.id; });
+        var sent = 0, chain = Promise.resolve(true);
+        items.forEach(function (it) {
+          chain = chain.then(function (go) {
+            if (!go) return false;
+            var fd = new FormData(); Object.keys(it.fields || {}).forEach(function (k) { fd.append(k, it.fields[k]); });
+            fd.append('file', it.blob, it.name || 'x.webp'); if (it.thumb) fd.append('thumb', it.thumb, 'thumb.webp');
+            return api('images', { method: 'POST', body: fd }).then(function (j) { return Outbox.remove(it.id).then(function () { sent++; if (onEach) onEach(it, j); return true; }); },
+              function (e) { if (e && (e.auth || e.staff)) throw e; return false; });
+          });
+        });
+        return chain.then(function () { return sent; });
+      });
+    },
+  };
+  function isNetworkError(e) { return e && (e.name === 'TypeError' || /fetch|network|Failed to fetch|Load failed/i.test(String(e.message || e))) && !e.auth && !e.staff; }
+
+  // ── EAN-13 バーコード（SVG）──────────────────────────────────────
+  //   JAN の無い商品に振った仮コード（20…）をラベルに印刷するため。スマホの読み取りは EAN-13 として動くのでそのまま読める
+  var EAN_L = ['0001101', '0011001', '0010011', '0111101', '0100011', '0110001', '0101111', '0111011', '0110111', '0001011'];
+  var EAN_G = ['0100111', '0110011', '0011011', '0100001', '0011101', '0111001', '0000101', '0010001', '0001001', '0010111'];
+  var EAN_R = ['1110010', '1100110', '1101100', '1000010', '1011100', '1001110', '1010000', '1000100', '1001000', '1110100'];
+  var EAN_P = ['LLLLLL', 'LLGLGG', 'LLGGLG', 'LLGGGL', 'LGLLGG', 'LGGLLG', 'LGGGLL', 'LGLGLG', 'LGLGGL', 'LGGLGL'];
+  function ean13Svg(code, opts) {
+    opts = opts || {};
+    var d = String(code || '').replace(/[^0-9]/g, ''); if (d.length !== 13) return '';
+    var pat = EAN_P[+d[0]], bits = '101';
+    for (var i = 1; i <= 6; i++) bits += (pat[i - 1] === 'L' ? EAN_L : EAN_G)[+d[i]];
+    bits += '01010';
+    for (var j = 7; j <= 12; j++) bits += EAN_R[+d[j]];
+    bits += '101';
+    var mw = opts.module || 2, h = opts.height || 60, W = bits.length * mw + 22 * mw, s = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + W + ' ' + (h + 18) + '" width="' + W + '" height="' + (h + 18) + '"><rect width="100%" height="100%" fill="#fff"/>';
+    for (var k = 0; k < bits.length; k++) { if (bits[k] === '1') { var guard = (k < 3 || (k >= 45 && k < 50) || k >= 92); s += '<rect x="' + (11 * mw + k * mw) + '" y="0" width="' + mw + '" height="' + (h + (guard ? 6 : 0)) + '" fill="#000"/>'; } }
+    var fs = 11 * (mw / 2);
+    s += '<text x="' + (5 * mw) + '" y="' + (h + 14) + '" font-family="monospace" font-size="' + fs + '">' + d[0] + '</text>';
+    s += '<text x="' + (11 * mw + 3 * mw + 21 * mw) + '" y="' + (h + 14) + '" font-family="monospace" font-size="' + fs + '" text-anchor="middle">' + d.slice(1, 7).split('').join(' ') + '</text>';
+    s += '<text x="' + (11 * mw + 50 * mw + 21 * mw) + '" y="' + (h + 14) + '" font-family="monospace" font-size="' + fs + '" text-anchor="middle">' + d.slice(7).split('').join(' ') + '</text>';
+    return s + '</svg>';
+  }
+
   // wasm 版 WebP エンコーダ（vendor/webp/ libwebp + @jsquash/webp）。初回だけ読み込む
   var wasmEnc = null;
   var WEBP_DEFAULTS = { quality: 75, target_size: 0, target_PSNR: 0, method: 4, sns_strength: 50, filter_strength: 60, filter_sharpness: 0, filter_type: 1, partitions: 0, segments: 4, pass: 1, show_compressed: 0, preprocessing: 0, autofilter: 0, partition_limit: 0, alpha_compression: 1, alpha_filtering: 1, alpha_quality: 100, lossless: 0, exact: 0, image_hint: 0, emulate_jpeg_size: 0, thread_level: 0, low_memory: 0, near_lossless: 100, use_delta_palette: 0, use_sharp_yuv: 0 };
@@ -238,7 +321,7 @@
       fd.append('slot', String(slot));
       fd.append('file', r.blob, jan + '_' + slot + '.webp');
       fd.append('encoder', r.encoder || '');
-      if (r.quality) fd.append('quality', JSON.stringify(r.quality));
+      appendImageExtras(fd, r);
       fd.append('original_name', r.originalName);
       fd.append('original_type', r.originalType);
       fd.append('width', String(r.width));
@@ -336,5 +419,5 @@
   function fmtYen(v) { return v == null || v === '' ? '—' : '¥' + Number(v).toLocaleString('ja-JP'); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
-  root.PimClient = { Auth: Auth, api: api, toWebp: toWebp, canvasToWebp: canvasToWebp, processProductImage: processProductImage, whitenBackground: whitenBackground, analyzeImage: analyzeImage, QUALITY: QUALITY, zipWriter: zipWriter, crc32: crc32, canMakeWebp: canMakeWebp, uploadImage: uploadImage, beep: beep, fmtYen: fmtYen, esc: esc };
+  root.PimClient = { Auth: Auth, api: api, toWebp: toWebp, canvasToWebp: canvasToWebp, processProductImage: processProductImage, whitenBackground: whitenBackground, analyzeImage: analyzeImage, QUALITY: QUALITY, zipWriter: zipWriter, crc32: crc32, finishImage: finishImage, phash: phash, appendImageExtras: appendImageExtras, Outbox: Outbox, isNetworkError: isNetworkError, ean13Svg: ean13Svg, canMakeWebp: canMakeWebp, uploadImage: uploadImage, beep: beep, fmtYen: fmtYen, esc: esc };
 })(window);

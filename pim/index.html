@@ -87,6 +87,12 @@
   .slot .qw{position:absolute;right:6px;top:6px;font-size:10px;background:var(--warn);color:#fff;border-radius:999px;padding:1px 6px}
   .shooter .qw{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);font-size:12px;background:rgba(184,134,11,.92);color:#fff;border-radius:999px;padding:5px 12px;display:none;white-space:nowrap}
   .shooter.preview .qw.show{display:block}
+  .shooter .cd{position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none}
+  .shooter.preview.burst .cd{display:flex}
+  .shooter .cd span{background:rgba(0,0,0,.55);color:#fff;font-size:15px;padding:10px 18px;border-radius:999px}
+  .install{background:#FFF8EF;border:1px solid #F0DCC4;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-top:12px;display:flex;gap:10px;align-items:center}
+  .install button{white-space:nowrap}
+  .obadge{font-size:11px;background:var(--warn);color:#fff;border-radius:999px;padding:2px 8px;margin-left:6px;vertical-align:middle}
   .staff{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
   .staff button{border:1px solid var(--line);background:#fff;border-radius:12px;padding:14px 8px;font-size:15px;font-weight:600}
   .staff button.on{border-color:var(--brown);background:#FFF8EF}
@@ -174,7 +180,7 @@
   <header>
     <div>
       <h1>SEAM 商品登録 <span id="hAcct" style="font-weight:400;font-size:12px;color:var(--char)"></span></h1>
-      <div class="sub" id="hsub">JANを読んで写真を5枚まで</div>
+      <div class="sub" id="hsub">JANを読んで写真を5枚まで</div><span class="obadge" id="obadge" hidden></span>
     </div>
     <div style="display:flex;gap:6px">
       <a class="hbtn" href="./import.html" style="text-decoration:none">PC取込</a>
@@ -198,7 +204,9 @@
           <button class="btn ghost" id="btnCamRestart">カメラ再起動</button>
         </div>
         <div class="list" id="searchList" style="margin-top:8px"></div>
+        <button class="btn ghost" id="btnNoJan" style="margin-top:8px;font-size:14px">JAN が無い商品を登録する（仮コードを自動発行）</button>
       </div>
+      <div class="install" id="install" hidden><div id="installMsg" style="flex:1">ホーム画面に追加すると、アプリのように全画面で開けます。</div><button class="hbtn" id="installBtn">追加する</button><button class="hbtn" id="installNo">閉じる</button></div>
       <div class="card" style="margin-top:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <strong style="font-size:14px">撮影キュー</strong>
@@ -334,6 +342,7 @@
       <div class="guide" id="shGuide"></div>
       <div class="lvl" id="shLvl">水平器: 端末を立ててください</div>
       <div class="qw" id="shQ"></div>
+      <div class="cd" id="shCd"><span id="shCdT"></span></div>
       <div class="msgc" id="shMsg"></div>
     </div>
   </div>
@@ -344,6 +353,8 @@
       <button class="chip" data-shape="tube">チューブ・袋</button>
       <button class="chip" data-shape="none">枠のみ</button>
       <button class="chip on" id="shWhite">背景を白に: 標準</button>
+      <button class="chip" id="shBurst">連写: OFF</button>
+      <button class="chip" id="shVoice" hidden>🎤 音声: OFF</button>
     </div>
     <div class="hint" id="shHint">点線の枠に商品を収め、底を下の線に合わせる → シャッター</div>
     <div class="ctl">
@@ -493,8 +504,23 @@
       todayCount(0); recent(null); loadQueue().catch(function () { /* */ });
       var q = new URLSearchParams(location.search).get('jan');
       if (q) lookup(q); else show('scr-scan');
+      updateOutbox(); flushOutbox(); showInstall();
     }).catch(handleErr);
   }
+  // ── ホーム画面に追加（PWA）──
+  var installEv = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEv = e; showInstall(); });
+  function showInstall() {
+    var dismissed = ''; try { dismissed = localStorage.getItem('seam_pim_install_no') || ''; } catch (e) { /* */ }
+    var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (dismissed || standalone) { $('install').hidden = true; return; }
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (installEv) { $('installMsg').textContent = 'ホーム画面に追加すると、アプリのように全画面で開けます（URL を打たなくてよくなります）。'; $('installBtn').hidden = false; $('install').hidden = false; }
+    else if (ios) { $('installMsg').innerHTML = 'iPhone: 下の <b>共有ボタン（□↑）</b> → <b>「ホーム画面に追加」</b> で、アプリのように全画面で開けます。'; $('installBtn').hidden = true; $('install').hidden = false; }
+    else $('install').hidden = true;
+  }
+  $('installBtn').addEventListener('click', function () { if (!installEv) return; installEv.prompt(); installEv.userChoice.then(function () { installEv = null; $('install').hidden = true; }); });
+  $('installNo').addEventListener('click', function () { try { localStorage.setItem('seam_pim_install_no', '1'); } catch (e) { /* */ } $('install').hidden = true; });
   // ── 担当者（一覧があるときは名前をタップして選ぶ。PIN 付きなら確認）──
   var ST = { list: [], required: false, pending: null, resolve: null };
   function ensureStaff(force) {
@@ -731,7 +757,8 @@
   function openProduct(p) {
     state.product = p;
     $('janIn').value = '';
-    $('pJan').textContent = 'JAN ' + p.jan + (p.jan_valid ? '' : '（チェックデジット不一致）');
+    $('pJan').textContent = (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? '仮コード ' : 'JAN ') + p.jan + (p.jan_valid ? '' : '（チェックデジット不一致）');
+    if (!state.lastJan || state.lastJan !== p.jan) state.busy = {}; state.lastJan = p.jan;
     $('pName').textContent = p.name;
     var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' +
@@ -890,7 +917,7 @@
     var preview = ''; try { preview = URL.createObjectURL(file); } catch (e) { /* */ }
     state.busy[showSlot] = { label: '変換中…', preview: preview };
     renderGrid();
-    var jan = state.product.jan;
+    var jan = state.product.jan, lastR = null;
     // 端末カメラ・アルバムの写真も同じ形に: 正方形（白で余白）＋ 背景を白に ＋ 1200px
     return C.toWebp(file, { size: 1200, square: 'pad', whiten: SH.whiten, quality: 0.85 }).then(function (r) {
       return confirmQuality(r.quality).then(function (go) { if (!go) throw { cancelled: true }; return r; });
@@ -902,13 +929,15 @@
       fd.append('encoder', r.encoder || '');
       fd.append('original_name', r.originalName); fd.append('original_type', r.originalType);
       fd.append('width', String(r.width)); fd.append('height', String(r.height));
-      if (r.quality) fd.append('quality', JSON.stringify(r.quality));
+      C.appendImageExtras(fd, r);
+      lastR = r;
       return api('images', { method: 'POST', body: fd });
     }).then(function (j) {
       if (preview) URL.revokeObjectURL(preview);
       afterUpload(j, jan, showSlot);
     }).catch(function (e) {
       if (e && e.cancelled) { delete state.busy[showSlot]; if (preview) URL.revokeObjectURL(preview); renderGrid(); toast('登録をやめました'); return; }
+      if (lastR && C.isNetworkError(e)) { return queueOffline(jan, slot, lastR, lastR.originalName, lastR.originalType, showSlot, preview); }
       delete state.busy[showSlot];
       if (preview) URL.revokeObjectURL(preview);
       renderGrid();
@@ -950,7 +979,8 @@
     4: { title: '4枚目: キャップ・口元', sub: 'ポンプや開け口の形が分かるように寄る' },
     5: { title: '5枚目: 大きさ', sub: '手に持って、大きさが伝わるように（背景は白いままで）' },
   };
-  var SH = { slot: 1, stream: null, facing: 'environment', shape: 'bottle', whiten: 'normal', canvas: null, tilt: null, orientOk: false, quality: null };
+  var SH = { slot: 1, stream: null, facing: 'environment', shape: 'bottle', whiten: 'normal', canvas: null, tilt: null, orientOk: false, quality: null, burst: false, voice: false, cdTimer: null, rec: null };
+  try { SH.burst = localStorage.getItem('seam_pim_burst') === '1'; } catch (e) { /* */ }
   var WHITE_LABELS = { off: 'なし', weak: '弱', normal: '標準', strong: '強' }, WHITE_ORDER = ['normal', 'strong', 'weak', 'off'];
   try { SH.shape = localStorage.getItem('seam_pim_shape') || 'bottle'; SH.whiten = localStorage.getItem('seam_pim_whiten') || 'normal'; } catch (e) { /* */ }
 
@@ -986,6 +1016,9 @@
     Array.prototype.forEach.call($('shChips').querySelectorAll('[data-shape]'), function (b) { b.classList.toggle('on', b.getAttribute('data-shape') === SH.shape); });
     $('shWhite').textContent = '背景を白に: ' + WHITE_LABELS[SH.whiten];
     $('shWhite').classList.toggle('on', SH.whiten !== 'off');
+    $('shBurst').textContent = '連写: ' + (SH.burst ? 'ON' : 'OFF'); $('shBurst').classList.toggle('on', SH.burst); $('shooter').classList.toggle('burst', SH.burst);
+    $('shVoice').hidden = !(window.SpeechRecognition || window.webkitSpeechRecognition);
+    $('shVoice').textContent = '🎤 音声: ' + (SH.voice ? 'ON' : 'OFF'); $('shVoice').classList.toggle('on', SH.voice);
   }
   function shMsg(m) { var el = $('shMsg'); el.textContent = m || ''; el.classList.toggle('show', !!m); }
   function openShooter(slot) {
@@ -994,8 +1027,9 @@
     renderGuide();
     startShooterCam();
     startTilt();
+    if (SH.voice) startVoice();
   }
-  function closeShooter() { stopShooterCam(); stopTilt(); $('shooter').classList.remove('open', 'preview'); }
+  function closeShooter() { clearTimeout(SH.cdTimer); SH.cdTimer = null; stopVoice(); stopShooterCam(); stopTilt(); $('shooter').classList.remove('open', 'preview'); }
   function startShooterCam() {
     stopShooterCam();
     shMsg('カメラを起動しています…');
@@ -1041,17 +1075,48 @@
     el.classList.toggle('show', !!(q && q.warn.length));
     $('shooter').classList.add('preview');
     C.beep(true);
+    // 連写: 注意が無ければ 1 秒見せて自動で「使う」。注意があれば止まって聞く
+    if (SH.burst && !(q && q.warn.length)) {
+      var n = 3; $('shCdT').textContent = '自動で登録します… 撮り直すなら「撮り直す」';
+      clearInterval(SH.cdTimer);
+      SH.cdTimer = setTimeout(function () { SH.cdTimer = null; if ($('shooter').classList.contains('preview') && SH.canvas) $('shUse').click(); }, 1000);
+    }
   }
   $('shShutter').addEventListener('click', shoot);
-  $('shRetake').addEventListener('click', function () { SH.canvas = null; $('shooter').classList.remove('preview'); });
+  $('shRetake').addEventListener('click', function () { clearTimeout(SH.cdTimer); SH.cdTimer = null; SH.canvas = null; $('shooter').classList.remove('preview'); });
   $('shUse').addEventListener('click', function () {
+    clearTimeout(SH.cdTimer); SH.cdTimer = null;
     var canvas = SH.canvas; if (!canvas || !state.product) return;
     var slot = SH.slot;
-    closeShooter();
     var byslot = {}; (state.product.images || []).forEach(function (im) { byslot[im.slot] = 1; });
     var target = byslot[slot] ? slot : 'auto', showSlot = byslot[slot] ? slot : guessSlot();
+    var filledAfter = Object.keys(byslot).length + Object.keys(state.busy).length + 1;
     uploadCanvas(canvas, target, showSlot);
+    if (SH.burst && !byslot[slot] && filledAfter < 5) { SH.canvas = null; $('shooter').classList.remove('preview'); SH.slot = guessSlot(); renderGuide(); return; } // 次の枠へそのまま続ける
+    closeShooter();
+    if (SH.burst && filledAfter >= 5 && Q.on) { toast('5枚そろい → 送信が終わったら次の商品へ'); whenIdle(function () { if (Q.on && state.product) $('btnNext').click(); }); }
   });
+  function whenIdle(fn) { var t = setInterval(function () { if (!Object.keys(state.busy).some(function (k) { return !state.busy[k].pending; })) { clearInterval(t); fn(); } }, 400); setTimeout(function () { clearInterval(t); }, 120000); }
+  $('shBurst').addEventListener('click', function () { SH.burst = !SH.burst; try { localStorage.setItem('seam_pim_burst', SH.burst ? '1' : '0'); } catch (e) { /* */ } renderGuide(); toast(SH.burst ? '連写: 撮ったら1秒で自動登録 → 次の枠へ。5枚で次の商品へ' : '連写を切りました'); });
+  // 音声（「つぎ」「はい」「シャッター」で撮る／使う、「とりなおし」「もどる」で撮り直し）。対応ブラウザ（Android Chrome など）だけ
+  $('shVoice').addEventListener('click', function () { SH.voice = !SH.voice; renderGuide(); if (SH.voice) startVoice(); else stopVoice(); });
+  function startVoice() {
+    var R = window.SpeechRecognition || window.webkitSpeechRecognition; if (!R) return;
+    stopVoice();
+    try {
+      var rec = new R(); rec.lang = 'ja-JP'; rec.continuous = true; rec.interimResults = false; rec.maxAlternatives = 1;
+      rec.onresult = function (e) {
+        var t = ''; for (var i = e.resultIndex; i < e.results.length; i++) t += e.results[i][0].transcript;
+        t = t.replace(/\s/g, '');
+        if (/とりなおし|撮り直し|もどる|戻る|やめ/.test(t)) { if ($('shooter').classList.contains('preview')) $('shRetake').click(); return; }
+        if (/つぎ|次|はい|シャッター|さつえい|撮影|オッケー|ok/i.test(t)) { if ($('shooter').classList.contains('preview')) $('shUse').click(); else shoot(); }
+      };
+      rec.onend = function () { if (SH.voice && $('shooter').classList.contains('open')) { try { rec.start(); } catch (e) { /* */ } } };
+      rec.onerror = function (e) { if (e.error === 'not-allowed') { SH.voice = false; renderGuide(); toast('マイクの使用が許可されていません', true); } };
+      rec.start(); SH.rec = rec; toast('音声: 「つぎ」で撮影／登録、「とりなおし」で撮り直し');
+    } catch (e) { SH.voice = false; renderGuide(); }
+  }
+  function stopVoice() { if (SH.rec) { try { SH.rec.onend = null; SH.rec.stop(); } catch (e) { /* */ } SH.rec = null; } }
   $('shClose').addEventListener('click', closeShooter);
   $('shFlip').addEventListener('click', function () { SH.facing = SH.facing === 'environment' ? 'user' : 'environment'; startShooterCam(); });
   $('shNative').addEventListener('click', function () { var slot = SH.slot; closeShooter(); state.pendingSlot = slot; $('camIn').value = ''; $('camIn').click(); });
@@ -1065,18 +1130,38 @@
     var preview = ''; try { preview = canvas.toDataURL('image/jpeg', 0.6); } catch (e) { /* */ }
     state.busy[showSlot] = { label: '変換中…', preview: preview };
     renderGrid();
-    return C.canvasToWebp(canvas, 0.85).then(function (r) {
+    var q = SH.quality, meta = null;
+    return C.finishImage(canvas, 0.85).then(function (r) {
       if (state.busy[showSlot]) state.busy[showSlot].label = '送信中…'; renderGrid();
+      r.quality = q; meta = r;
       var fd = new FormData();
       fd.append('jan', jan); fd.append('slot', String(slot));
       fd.append('file', r.blob, jan + '_' + (slot === 'auto' ? showSlot : slot) + '.webp');
       fd.append('encoder', r.encoder || ''); fd.append('original_name', 'camera.webp'); fd.append('original_type', 'image/webp');
       fd.append('width', String(r.width)); fd.append('height', String(r.height));
-      if (SH.quality) fd.append('quality', JSON.stringify(SH.quality));
+      C.appendImageExtras(fd, r);
       return api('images', { method: 'POST', body: fd });
     }).then(function (j) { afterUpload(j, jan, showSlot); })
-      .catch(function (e) { delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
+      .catch(function (e) { if (meta && C.isNetworkError(e)) { return queueOffline(jan, slot, meta, 'camera.webp', 'image/webp', showSlot, preview); } delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
   }
+  // ── 送信待ち（電波が切れたとき）──
+  function queueOffline(jan, slot, r, name, type, showSlot, preview) {
+    return C.Outbox.add({ fields: { jan: jan, slot: String(slot), width: String(r.width), height: String(r.height), original_name: name, original_type: type, quality: r.quality ? JSON.stringify(r.quality) : '', phash: r.phash || '' }, blob: r.blob, thumb: r.thumb || null, name: jan + '_' + showSlot + '.webp' })
+      .then(function () { if (state.busy[showSlot]) { state.busy[showSlot].label = '送信待ち（電波が戻ったら送ります）'; state.busy[showSlot].pending = true; } renderGrid(); updateOutbox(); toast('電波が無いので端末に保存しました。戻ったら自動で送ります', true); })
+      .catch(function () { delete state.busy[showSlot]; renderGrid(); toast('通信に失敗しました（端末にも保存できませんでした）', true); });
+  }
+  var flushing = false;
+  function updateOutbox() { C.Outbox.count().then(function (n) { var b = $('obadge'); b.hidden = !n; b.textContent = '送信待ち ' + n; }).catch(function () { /* */ }); }
+  function flushOutbox() {
+    if (flushing || !navigator.onLine || !C.Auth.get()) return;
+    flushing = true;
+    C.Outbox.flush(function (it, j) {
+      if (j && j.ok && state.product && state.product.jan === it.fields.jan) { state.product.images = j.images; state.product.image_count = j.images.length; Object.keys(state.busy).forEach(function (k) { if (state.busy[k].pending) delete state.busy[k]; }); renderGrid(); }
+      if (j && j.ok) todayCount(1);
+    }).then(function (n) { flushing = false; updateOutbox(); if (n) toast('送信待ちの写真 ' + n + ' 枚を送りました'); }).catch(function (e) { flushing = false; if (e && (e.auth || e.staff)) handleErr(e); });
+  }
+  window.addEventListener('online', flushOutbox);
+  setInterval(flushOutbox, 20000);
   function afterUpload(j, jan, showSlot) {
     delete state.busy[showSlot];
     if (!j.ok) {
@@ -1088,6 +1173,7 @@
     C.beep(true);
     renderGrid();
     recent(state.product);
+    if (j.dup_of && j.dup_of.length) { var d = j.dup_of[0]; setTimeout(function () { toast('⚠ 同じ写真が ' + d.jan + '「' + (d.name || '').slice(0, 14) + '」にも登録されています（撮り間違い？）', true); }, 1600); }
     if (j.images.length >= 5) toast('5枚そろいました' + (j.quality_warn ? '（' + j.quality_warn + ' の注意つき）' : '')); else toast(j.slot + '枚目を保存しました → 次は' + nextEmpty() + '枚目' + (j.quality_warn ? '（' + j.quality_warn + ' の注意つき）' : ''));
   }
 
@@ -1129,7 +1215,7 @@
 
   // 新規登録
   function openNew(jan) {
-    $('nJan').textContent = 'JAN ' + jan;
+    $('nJan').textContent = jan === 'auto' ? '仮コード（登録時に自動で振ります・EAN-13 として印刷できます）' : 'JAN ' + jan;
     $('nName').value = ''; $('nPrice').value = ''; $('nAmount').value = ''; $('nUnit').value = ''; $('nSku').value = '';
     $('nTaxEx').classList.add('on'); $('nTaxIn').classList.remove('on');
     state.newJan = jan;
@@ -1144,7 +1230,7 @@
       price: $('nPrice').value.trim() === '' ? null : parseInt($('nPrice').value.replace(/[^0-9]/g, ''), 10),
       tax_included: $('nTaxIn').classList.contains('on') ? 1 : 0, tax_rate: 10,
       amount: $('nAmount').value.trim() === '' ? null : parseFloat($('nAmount').value), unit: $('nUnit').value,
-      maker: $('nMaker').value.trim(), sku: $('nSku').value.trim(), source: 'スマホ登録',
+      maker: $('nMaker').value.trim(), sku: $('nSku').value.trim(), source: state.newJan === 'auto' ? '仮コード（スマホ）' : 'スマホ登録',
       insert_only: 1, // 同じ JAN を別の人が同時に登録していたら、上書きせずその内容を表示する
     };
     api('products', { method: 'PUT', body: body }).then(function (j) {
@@ -1152,10 +1238,11 @@
         if (j.status === 409 && j.product) { toast(j.message || '他の人が先に登録しました', true); openProduct(j.product); return; }
         toast(j.message || '登録できませんでした', true); return;
       }
-      toast('登録しました。写真をどうぞ'); openProduct(j.product); loadStatus().catch(function () { /* */ });
+      toast(state.newJan === 'auto' ? '仮コード ' + j.product.jan + ' で登録しました。ラベルは PC の商品一覧から印刷できます' : '登録しました。写真をどうぞ'); openProduct(j.product); loadStatus().catch(function () { /* */ });
     }).catch(handleErr);
   });
   $('btnNewCancel').addEventListener('click', function () { show('scr-scan'); });
+  $('btnNoJan').addEventListener('click', function () { Q.on = false; stopScan(); openNew('auto'); });
 
   // ── 撮影キュー ──
   var Q = { on: false, mode: 'noimg', maker: '', items: [], last: '' };

@@ -18,6 +18,7 @@ export async function onRequest(context) {
   const isAdmin = !!adminKey && !!givenKey && givenKey === adminKey;
 
   if (path.endsWith('/auth/login')) return next();
+  if (path.endsWith('/api/pim/inbox')) return next(); // 自動取り込み（?key=inbox_… で本人確認。inbox.js）
   if (path.indexOf('/api/pim/admin/') >= 0) {
     if (!isAdmin) return json({ ok: false, reason: 'unauthorized', keyConfigured: !!adminKey, admin: true }, 401);
     context.data.isAdmin = true;

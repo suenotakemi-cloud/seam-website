@@ -9,6 +9,7 @@ export async function onRequestGet({ request, env, data }) {
   const acct = data.account.id;
   const url = new URL(request.url);
   const status = url.searchParams.get('status') || 'pending';
+  if (status === 'dup') return dupPhotos(env, acct, url.origin); // 同じ写真が別の商品に
   const maker = (url.searchParams.get('maker') || '').trim().slice(0, 100);
   const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') || '60', 10) || 60));
   const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10) || 0);
@@ -26,6 +27,17 @@ export async function onRequestGet({ request, env, data }) {
   const origin = url.origin;
   const images = (rs.results || []).map((r) => Object.assign(r, { url: imageUrl(origin, acct, r.jan, r.slot, r.created_at) }));
   return json({ ok: true, total: total ? total.n : 0, limit, offset, images });
+}
+
+// 同じ写真（phash が同じ）が 2 つ以上の商品に登録されている組を出す（撮り間違い・貼り間違い）
+async function dupPhotos(env, acct, origin) {
+  const rs = await env.DB.prepare('SELECT phash, COUNT(DISTINCT jan) AS n FROM pim_images WHERE account_id=? AND phash IS NOT NULL GROUP BY phash HAVING n>=2 ORDER BY n DESC LIMIT 100').bind(acct).all();
+  const groups = [];
+  for (const g of (rs.results || [])) {
+    const r = await env.DB.prepare('SELECT i.jan, i.slot, i.created_by, i.created_at, p.name, p.maker, p.sku FROM pim_images i JOIN pim_products p ON p.account_id=i.account_id AND p.jan=i.jan WHERE i.account_id=? AND i.phash=? ORDER BY i.jan, i.slot').bind(acct, g.phash).all();
+    groups.push({ phash: g.phash, products: g.n, images: (r.results || []).map((x) => Object.assign(x, { url: imageUrl(origin, acct, x.jan, x.slot, x.created_at) })) });
+  }
+  return json({ ok: true, total: groups.length, groups });
 }
 
 export async function onRequestPost({ request, env, data }) {

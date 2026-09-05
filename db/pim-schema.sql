@@ -27,7 +27,10 @@ CREATE TABLE IF NOT EXISTS pim_accounts (
   webhook_url    TEXT,                      -- 変更があったとき EC 側へ POST する URL（https）。空なら送らない
   webhook_secret TEXT,                      -- 署名用（x-seam-signature: sha256=HMAC(body)）
   webhook_last_at TEXT,                     -- 最後に送った時刻と結果（管理画面で確認）
-  webhook_last_status TEXT
+  webhook_last_status TEXT,
+  report_emails  TEXT,                      -- 日報の送り先（カンマ区切り）
+  report_enabled INTEGER NOT NULL DEFAULT 0,-- 1 なら毎朝送る
+  inbox_key      TEXT                       -- 自動取り込み用 URL の鍵（inbox_…）
 );
 -- ▼ ログイン失敗の記録（10回で15分ロック）
 CREATE TABLE IF NOT EXISTS pim_login_fail (login_id TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, last_at TEXT);
@@ -65,6 +68,7 @@ CREATE TABLE IF NOT EXISTS pim_products (
   PRIMARY KEY (account_id, jan)
 );
 CREATE INDEX IF NOT EXISTS idx_pim_products_nkey  ON pim_products(account_id, name_key);
+CREATE INDEX IF NOT EXISTS idx_pim_images_phash   ON pim_images(account_id, phash);
 CREATE INDEX IF NOT EXISTS idx_pim_products_name  ON pim_products(account_id, name);
 CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(account_id, maker);
 CREATE INDEX IF NOT EXISTS idx_pim_products_imgs  ON pim_products(account_id, image_count);
@@ -89,6 +93,8 @@ CREATE TABLE IF NOT EXISTS pim_images (
   reviewed_at    TEXT,
   quality        TEXT,                      -- 登録時の自動チェック結果（JSON: 明るさ・ピント・元の大きさ）
   quality_warn   TEXT,                      -- 自動チェックの注意（「暗い」「ピンぼけ」「小さい」をカンマ区切り。無ければ NULL）
+  phash          TEXT,                      -- 写真の指紋（同じ写真が別の商品に入っていないかの検出。完全一致で見る）
+  has_thumb      INTEGER NOT NULL DEFAULT 0,-- 300px のサムネ（<slot>_s.webp）があるか
   PRIMARY KEY (account_id, jan, slot)       -- ★この主キーが「同時登録の取り合い」を裁く（slot=auto は INSERT が通った人の番号）
 );
 
@@ -108,8 +114,18 @@ CREATE TABLE IF NOT EXISTS pim_imports (
   skipped        INTEGER NOT NULL DEFAULT 0,-- JAN重複などで保留にした行数
   invalid        INTEGER NOT NULL DEFAULT 0,-- JAN無し・価格無しなど登録できなかった行数
   rolled_back_at TEXT,                      -- 「取り込みの取り消し」をした時刻（pim_import_backup から戻す）
-  rolled_back_by TEXT
+  rolled_back_by TEXT,
+  options        TEXT                       -- 税区分・税率・更新列など（JSON。同じ見出しのファイルを次に開いたとき自動で当てる）
 );
+-- ▼ 受信箱（メール転送・共有フォルダから届いた CSV。本体は pim_blobs / R2 の inbox/…）
+CREATE TABLE IF NOT EXISTS pim_inbox (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, bytes INTEGER, key TEXT NOT NULL, source TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',   -- pending（PC で列合わせが必要）/ imported / failed
+  import_id INTEGER, message TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_pim_inbox_acct ON pim_inbox(account_id, id);
+-- ▼ 連番（仮コード 20 + アカウント3桁 + 連番7桁 + チェックデジット）
+CREATE TABLE IF NOT EXISTS pim_seq (account_id INTEGER NOT NULL, name TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (account_id, name));
 -- ▼ 取り込み前の状態（取り消し用。before が NULL = その取り込みで新しく入った商品）
 CREATE TABLE IF NOT EXISTS pim_import_backup (import_id INTEGER NOT NULL, account_id INTEGER NOT NULL, jan TEXT NOT NULL, before TEXT, PRIMARY KEY (import_id, jan));
 

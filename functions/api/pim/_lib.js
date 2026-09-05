@@ -40,6 +40,8 @@ export function checkDigitOk(d) {
 // ── 画像の置き場所（アカウントごとに分ける）──
 export const SLOT_MIN = 1, SLOT_MAX = 5;
 export function imageKey(acct, jan, slot) { return 'products/' + acct + '/' + jan + '/' + slot + '.webp'; }
+export function thumbKey(acct, jan, slot) { return 'products/' + acct + '/' + jan + '/' + slot + '_s.webp'; } // 300px の小さい版（EC の一覧・サムネ用）
+export function thumbUrl(origin, acct, jan, slot, ver) { return origin + '/pim-img/' + thumbKey(acct, jan, slot) + (ver ? '?v=' + encodeURIComponent(ver) : ''); }
 export function imageUrl(origin, acct, jan, slot, ver) { return origin + '/pim-img/' + imageKey(acct, jan, slot) + (ver ? '?v=' + encodeURIComponent(ver) : ''); }
 export const R2_META = { httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' } };
 
@@ -147,7 +149,7 @@ export async function verifyToken(env, token) {
 }
 export function publicAccount(a) {
   if (!a) return null;
-  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at, has_api_key: !!a.api_key, webhook_url: a.webhook_url || '', webhook_last_at: a.webhook_last_at || null, webhook_last_status: a.webhook_last_status || null };
+  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at, has_api_key: !!a.api_key, webhook_url: a.webhook_url || '', webhook_last_at: a.webhook_last_at || null, webhook_last_status: a.webhook_last_status || null, report_emails: a.report_emails || '', report_enabled: !!a.report_enabled, has_inbox_key: !!a.inbox_key };
 }
 // EC 連携用の読み取り専用キー（管理画面で発行。夜間バッチが export を取りに来るためのもの）
 export function newApiKey() {
@@ -196,7 +198,13 @@ export async function ensureSchema(env) {
     `CREATE TABLE IF NOT EXISTS pim_images (
       account_id INTEGER NOT NULL, jan TEXT NOT NULL, slot INTEGER NOT NULL, key TEXT NOT NULL, bytes INTEGER, width INTEGER, height INTEGER,
       original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT,
-      review TEXT, review_note TEXT, reviewed_by TEXT, reviewed_at TEXT, quality TEXT, quality_warn TEXT, PRIMARY KEY (account_id, jan, slot))`,
+      review TEXT, review_note TEXT, reviewed_by TEXT, reviewed_at TEXT, quality TEXT, quality_warn TEXT, phash TEXT, has_thumb INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (account_id, jan, slot))`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_images_phash ON pim_images(account_id, phash)`,
+    `CREATE TABLE IF NOT EXISTS pim_inbox (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, bytes INTEGER, key TEXT NOT NULL, source TEXT,
+      status TEXT NOT NULL DEFAULT 'pending', import_id INTEGER, message TEXT)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_inbox_acct ON pim_inbox(account_id, id)`,
+    `CREATE TABLE IF NOT EXISTS pim_seq (account_id INTEGER NOT NULL, name TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (account_id, name))`,
     `CREATE TABLE IF NOT EXISTS pim_imports (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT, headers TEXT, kind TEXT,
       total INTEGER NOT NULL DEFAULT 0, inserted INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0,
@@ -228,10 +236,13 @@ export async function ensureSchema(env) {
     'ALTER TABLE pim_products ADD COLUMN claimed_by TEXT', 'ALTER TABLE pim_products ADD COLUMN claimed_at TEXT',
     'ALTER TABLE pim_products ADD COLUMN name_key TEXT', 'ALTER TABLE pim_images ADD COLUMN quality TEXT', 'ALTER TABLE pim_images ADD COLUMN quality_warn TEXT',
     'ALTER TABLE pim_imports ADD COLUMN rolled_back_at TEXT', 'ALTER TABLE pim_imports ADD COLUMN rolled_back_by TEXT',
-    'ALTER TABLE pim_accounts ADD COLUMN webhook_url TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_secret TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_last_at TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_last_status TEXT']) {
+    'ALTER TABLE pim_accounts ADD COLUMN webhook_url TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_secret TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_last_at TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_last_status TEXT',
+    'ALTER TABLE pim_accounts ADD COLUMN report_emails TEXT', 'ALTER TABLE pim_accounts ADD COLUMN report_enabled INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE pim_accounts ADD COLUMN inbox_key TEXT',
+    'ALTER TABLE pim_imports ADD COLUMN options TEXT', 'ALTER TABLE pim_images ADD COLUMN phash TEXT', 'ALTER TABLE pim_images ADD COLUMN has_thumb INTEGER NOT NULL DEFAULT 0']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)').run(); } catch (e) { /* */ }
+  try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_images_phash ON pim_images(account_id, phash)').run(); } catch (e) { /* */ }
   await seedIfEmpty(env);
   schemaReady = true;
 }
@@ -352,6 +363,21 @@ export function notifyWebhook(context, account, kind, jans, by) {
 }
 // https のみ（ローカルの動作確認用に http://127.0.0.1 / localhost だけ許す）
 export function webhookUrlOk(url) { return /^https:\/\/[^\s]+$/.test(url) || /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//.test(url); }
+// JAN の無い商品に振る仮コード（インストア用の 13 桁。先頭 2 = 社内コードの範囲。20 + アカウント3桁 + 連番7桁 + チェックデジット）
+//   スキャナは EAN-13 として読めるので、ラベルを印刷して棚に貼れば普通の JAN と同じように使える
+export async function allocInternalJan(env, acct) {
+  await env.DB.prepare('INSERT INTO pim_seq(account_id, name, n) VALUES(?, \'jan\', 1) ON CONFLICT(account_id, name) DO UPDATE SET n=n+1').bind(acct).run();
+  const r = await env.DB.prepare('SELECT n FROM pim_seq WHERE account_id=? AND name=\'jan\'').bind(acct).first();
+  const body = '20' + String(acct % 1000).padStart(3, '0') + String(r.n).padStart(7, '0');
+  let sum = 0; for (let i = 0; i < 12; i++) sum += (body.charCodeAt(i) - 48) * (i % 2 === 0 ? 1 : 3);
+  return body + String((10 - (sum % 10)) % 10);
+}
+export function isInternalJan(jan) { return /^20\d{11}$/.test(String(jan || '')); }
+export function newInboxKey() {
+  const a = crypto.getRandomValues(new Uint8Array(18));
+  return 'inbox_' + Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+export function parseEmails(s) { return String(s || '').split(/[\s,;、]+/).map((e) => e.trim().toLowerCase()).filter((e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)).filter((e, i, a) => a.indexOf(e) === i).slice(0, 10); }
 export function newWebhookSecret() {
   const a = crypto.getRandomValues(new Uint8Array(24));
   return 'whsec_' + Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
@@ -398,7 +424,7 @@ export function withImages(origin, acct, rows, imagesByJan) {
   return rows.map((r) => {
     const imgs = (imagesByJan[r.jan] || []).slice().sort((a, b) => a.slot - b.slot);
     return Object.assign({}, r, {
-      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, acct, r.jan, im.slot, im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at, review: im.review || null, review_note: im.review_note || null, quality_warn: im.quality_warn || null })),
+      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, acct, r.jan, im.slot, im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at, review: im.review || null, review_note: im.review_note || null, quality_warn: im.quality_warn || null, thumb_url: im.has_thumb ? thumbUrl(origin, acct, r.jan, im.slot, im.created_at) : null })),
       image_urls: imgs.map((im) => imageUrl(origin, acct, r.jan, im.slot, im.created_at)),
     });
   });
@@ -407,7 +433,7 @@ export async function loadImages(env, acct, jans) {
   const out = {};
   for (let i = 0; i < jans.length; i += 90) {
     const chunk = jans.slice(i, i + 90);
-    const rs = await env.DB.prepare('SELECT jan, slot, width, height, bytes, created_at, created_by, review, review_note, quality_warn FROM pim_images WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
+    const rs = await env.DB.prepare('SELECT jan, slot, width, height, bytes, created_at, created_by, review, review_note, quality_warn, has_thumb, phash FROM pim_images WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
     for (const im of (rs.results || [])) (out[im.jan] = out[im.jan] || []).push(im);
   }
   return out;

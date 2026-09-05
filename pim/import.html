@@ -136,6 +136,7 @@
         <label class="muted">見出しの行</label><select id="headerRow"></select>
         <label class="muted" style="margin-left:12px">シート</label><select id="sheetSel"></select>
       </div>
+      <div id="tplNote" class="muted" style="margin-bottom:8px" hidden></div>
       <div class="map" id="map"></div>
       <div class="card" style="background:#FBF7F1;margin:0 0 12px;padding:12px 14px">
         <label class="muted" style="display:block;margin-bottom:6px"><input type="radio" name="impType" value="normal" checked> <b>通常の取り込み</b>（新規を追加。登録済みと被る JAN は下で確認）</label>
@@ -184,6 +185,11 @@
       <div class="log" id="commitLog" hidden></div>
     </div>
 
+    <div class="card" id="cardInbox">
+      <h2>受信箱（メール転送・自動取り込み） <span class="n" id="inboxN" hidden style="display:inline-block;min-width:18px;padding:0 5px;border-radius:999px;background:var(--ng);color:#fff;font-size:11px;text-align:center">0</span></h2>
+      <p class="muted">「設定」タブで発行した <b>自動取り込み用 URL</b> に CSV を送る（メール転送・共有フォルダの監視）と、ここに届きます。前に同じ見出しのファイルを取り込んだことがあれば<b>自動で取り込まれ</b>、初めての見出しや Excel はここに置かれるので「取り込む」で列を合わせてください（次回からは自動）。</p>
+      <div class="tbl" style="max-height:260px"><table id="inboxTbl"><thead><tr><th>受信</th><th>ファイル</th><th>状態</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
     <div class="card">
       <h2>取り込み履歴</h2>
       <p class="muted">間違ったファイルを取り込んでしまったら「取り消す」で、その取り込みで<b>新しく入った商品を消し</b>、<b>上書きした商品を取り込み前の内容に戻し</b>ます（その後に写真が付いた商品は残します）。</p>
@@ -211,7 +217,24 @@
         <button class="btn sm" id="btnSearch">検索</button>
         <span class="muted" id="prodCount"></span>
       </div>
-      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th>写真</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="row" style="margin-bottom:8px">
+        <label class="muted"><input type="checkbox" id="selAll"> 表示中を全部選ぶ</label>
+        <span class="muted" id="selCount">0 件選択</span>
+        <button class="btn sm" id="btnBulk" disabled>選択した商品をまとめて変更</button>
+        <button class="btn sm" id="btnLabels" disabled>選択した商品のラベル（バーコード）を印刷</button>
+        <button class="btn sm" id="btnNoJanPc">JAN が無い商品を登録（仮コード発行）</button>
+      </div>
+      <div id="bulkBox" class="card" style="background:#FBF7F1;padding:12px 14px" hidden>
+        <div class="row">
+          <select id="bulkField" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px"><option value="maker">メーカー</option><option value="brand">ブランド</option><option value="category">カテゴリ</option><option value="unit">単位</option><option value="tax_included">税区分（入力価格）</option><option value="tax_rate">税率(%)</option></select>
+          <input id="bulkValue" placeholder="変更後の値" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:240px">
+          <select id="bulkTax" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px" hidden><option value="0">税抜</option><option value="1">税込</option></select>
+          <button class="btn sm solid" id="btnBulkRun">変更する</button>
+          <button class="btn sm" id="btnBulkClose">閉じる</button>
+        </div>
+        <p class="muted" style="margin:6px 0 0">選択した商品の 1 項目をまとめて置き換えます。税区分・税率を変えると税抜/税込を計算し直します。辞書があれば当たります。</p>
+      </div>
+      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th></th><th>写真</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
       <div class="row" style="margin-top:10px"><button class="btn sm" id="btnPrev">← 前</button><button class="btn sm" id="btnNext">次 →</button></div>
     </div>
   </section>
@@ -293,7 +316,7 @@
       <h2>写真の検品</h2>
       <p class="muted">撮った写真を見て OK か 撮り直し を付けます。「撮り直し」はスマホの撮影キュー（撮り直し）に出て、赤い枠で理由が表示されます。撮り直すと印は自動で消えます。</p>
       <div class="row" style="margin-bottom:10px">
-        <select id="rvStatus"><option value="pending">未検品</option><option value="warn">自動チェックで注意あり（未検品）</option><option value="retake">撮り直し</option><option value="ok">OK 済み</option><option value="all">すべて</option></select>
+        <select id="rvStatus"><option value="pending">未検品</option><option value="warn">自動チェックで注意あり（未検品）</option><option value="retake">撮り直し</option><option value="ok">OK 済み</option><option value="all">すべて</option><option value="dup">同じ写真が別の商品に（撮り間違い）</option></select>
         <select id="rvMaker"><option value="">メーカー: すべて</option></select>
         <button class="btn sm" id="rvReload">再読込</button>
         <button class="btn sm" id="rvAllOk">表示中をすべて OK</button>
@@ -311,6 +334,34 @@
       <p id="setAcct" class="muted"></p>
       <div class="opts"><div><label>担当者名（この端末）</label><input id="setUser"></div></div>
       <div class="row" style="margin-top:10px"><button class="btn" id="btnSetSave">担当者名を保存</button><button class="btn" id="btnStaffSwitch">担当者を選び直す</button><button class="btn danger" id="btnLogout2">この端末からログアウト</button></div>
+    </div>
+    <div class="card">
+      <h2>ディーラー名・ログイン ID</h2>
+      <div class="opts">
+        <div><label>ディーラー名</label><div class="row"><input id="acName" style="flex:1"><button class="btn sm" id="btnAcName">変更</button></div></div>
+        <div><label>ログイン ID（変えると全端末で再ログイン）</label><div class="row"><input id="acLid" autocapitalize="none" style="flex:1"><input id="acLidPw" type="password" placeholder="今のパスワード" style="width:150px"><button class="btn sm" id="btnAcLid">変更</button></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>日報・通知メール</h2>
+      <p class="muted">毎朝 7 時ごろ「昨日の写真枚数・担当者別・メーカー別の残り・残り日数」をメールで送ります（SEAM 側の送信設定が必要。<code>db/SETUP_PIM.md</code> 日報）。アドレスはカンマ区切りで 10 件まで。</p>
+      <div class="opts">
+        <div style="grid-column:1/-1"><label>送り先メールアドレス</label><input id="acEmails" placeholder="例: tanaka@example.com, sato@example.com"></div>
+      </div>
+      <div class="row" style="margin-top:8px"><label class="muted"><input type="checkbox" id="acReport"> 日報を毎朝送る</label><button class="btn sm solid" id="btnAcEmails">保存</button><button class="btn sm" id="btnReportView">昨日の日報を見る</button></div>
+    </div>
+    <div class="card">
+      <h2>EC 連携（連携キー・Webhook）</h2>
+      <p class="muted">EC 側のエンジニアに渡すもの。<b>連携キー</b>は読み取り専用（毎晩の取得用）、<b>Webhook</b> は変更のたびに EC 側へ push する URL。どちらも SEAM 管理画面からも設定できます。</p>
+      <div class="row" style="margin-bottom:8px"><span class="muted" id="acKeyState"></span><button class="btn sm" id="btnAcKey">連携キーを発行</button><button class="btn sm danger" id="btnAcKeyRevoke" hidden>連携キーを無効化</button></div>
+      <div class="row"><input id="acWebhook" placeholder="https://（EC 側の受け口）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:340px"><button class="btn sm" id="btnAcWebhook">設定</button><button class="btn sm" id="btnAcWebhookTest" hidden>テスト送信</button><button class="btn sm danger" id="btnAcWebhookClear" hidden>解除</button><span class="muted" id="acWebhookState"></span></div>
+      <div id="acSecret" class="muted" style="margin-top:8px" hidden></div>
+    </div>
+    <div class="card">
+      <h2>自動取り込み用 URL（メール転送・共有フォルダ）</h2>
+      <p class="muted">この URL に CSV を POST すると「受信箱」に届き、前に取り込んだことのある見出しなら自動で取り込まれます。メーカーからのメールを転送する設定は <code>db/SETUP_PIM.md</code>（Cloudflare Email Routing・無料）。共有フォルダなら <code>curl -F file=@商品.csv "<URL>"</code> を置くだけです。</p>
+      <div class="row"><code id="acInbox" style="font-size:12px;word-break:break-all">未発行</code></div>
+      <div class="row" style="margin-top:8px"><button class="btn sm" id="btnAcInbox">URL を発行（再発行で古い URL は無効）</button><button class="btn sm danger" id="btnAcInboxRevoke" hidden>無効化</button></div>
     </div>
     <div class="card">
       <h2>担当者一覧（名前をタップして選ぶ・PIN で本人確認）</h2>
@@ -411,7 +462,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
       Array.prototype.forEach.call(document.querySelectorAll('.pane'), function (p) { p.classList.toggle('on', p.id === 'pane-' + b.getAttribute('data-tab')); });
       var t = b.getAttribute('data-tab');
-      if (t === 'issues') loadIssues(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'settings') { loadStaff(); loadDict(); }
+      if (t === 'issues') loadIssues(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'settings') { loadStaff(); loadDict(); loadAccount(); } if (t === 'import') loadInbox();
     });
   });
 
@@ -464,7 +515,7 @@
       api('stats').then(function (st) { if (st.ok) setReviewN(st.totals.unreviewed); }).catch(function () { /* */ });
       if (j.account) $('setAcct').textContent = 'アカウント: ' + j.account.name + '（ID: ' + j.account.login_id + '）' + (j.account.pass_changed_at ? ' ／ パスワード最終変更 ' + j.account.pass_changed_at.slice(0, 10) : '');
       $('setUser').value = C.Auth.user();
-      loadHistory(); loadMakers();
+      loadHistory(); loadMakers(); loadInbox();
     }).catch(handleErr);
   }
   $('btnLogin').addEventListener('click', function () {
@@ -511,7 +562,8 @@
   $('btnPick').addEventListener('click', function () { $('fileIn').click(); });
   $('fileIn').addEventListener('change', function () { if (this.files[0]) readFile(this.files[0]); });
 
-  function readFile(file) {
+  function readFile(file, inboxId) {
+    S.inboxId = inboxId || null;
     S.file = file; S.sheets = null; S.decisions = {}; S.fileDecisions = {}; S.dbExisting = {}; S.items = [];
     $('optSource').value = ''; $('commitState').textContent = ''; $('commitLog').hidden = true; $('commitProg').hidden = true;
     ['cardMap', 'cardPrev', 'cardDup', 'cardCommit'].forEach(function (id) { $(id).hidden = true; });
@@ -556,6 +608,29 @@
     $('headerRow').innerHTML = rows.slice(0, 10).map(function (r, i) { return '<option value="' + i + '"' + (i === S.headerRow ? ' selected' : '') + '>' + (i + 1) + '行目: ' + esc(r.slice(0, 5).join(' | ')).slice(0, 80) + '</option>'; }).join('');
     buildMap();
     $('cardMap').hidden = false;
+    applyTemplate();
+  }
+  // 列合わせの記憶: 同じ見出しのファイルを前に取り込んでいれば、その列合わせ・税区分・送り元を自動で当てる
+  function applyTemplate() {
+    var headers = S.rows[S.headerRow].map(function (h, i) { return String(h || '').trim() || ('(' + (i + 1) + '列目)'); });
+    $('tplNote').hidden = true;
+    api('import', { method: 'POST', body: { action: 'template', headers: headers } }).then(function (j) {
+      if (!j.ok || !j.template) return;
+      var t = j.template;
+      S.mapping = t.mapping || S.mapping;
+      Array.prototype.forEach.call($('map').querySelectorAll('select'), function (sel) {
+        var f = sel.getAttribute('data-field'), v = S.mapping[f];
+        if (f === 'category') { var k = parseInt(sel.getAttribute('data-idx'), 10); var arr = Array.isArray(v) ? v : (v == null ? [] : [v]); sel.value = arr[k] == null ? '' : String(arr[k]); }
+        else sel.value = v == null ? '' : String(v);
+      });
+      var o = t.options || {};
+      if (o.taxIncluded != null) $('optTax').value = o.taxIncluded ? '1' : '0';
+      if (o.taxRate != null) $('optRate').value = o.taxRate;
+      if (t.source && !$('optSource').value) $('optSource').value = t.source;
+      var r = document.querySelector('input[name=impType][value="' + (t.kind === 'update' ? 'update' : 'normal') + '"]'); if (r) { r.checked = true; $('updFields').hidden = t.kind !== 'update'; }
+      if (Array.isArray(o.fields) && o.fields.length) Array.prototype.forEach.call($('updFields').querySelectorAll('input'), function (c) { c.checked = o.fields.indexOf(c.getAttribute('data-f')) >= 0; });
+      $('tplNote').hidden = false; $('tplNote').innerHTML = '<span class="tag ok">前回の設定を適用</span> ' + esc((t.ts || '').slice(0, 10)) + ' に取り込んだ「' + esc(t.filename || '') + '」と同じ見出しなので、列合わせ・税区分・送り元をそのまま当てました。違っていれば直してください。';
+    }).catch(function () { /* 記憶が無ければ自動判定のまま */ });
   }
   $('headerRow').addEventListener('change', function () { S.headerRow = parseInt(this.value, 10); buildMap(); });
   function impType() { var r = document.querySelector('input[name=impType]:checked'); return r ? r.value : 'normal'; }
@@ -790,7 +865,7 @@
     var L = function (m) { log.textContent += m + '\n'; log.scrollTop = log.scrollHeight; };
     var CH = 300, total = pl.toSave.length, done = 0, importId = null, ins = 0, upd = 0, conf = 0;
     readMap();
-    api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, kind: impType(), total: S.items.length } })
+    api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, kind: impType(), total: S.items.length, options: { taxIncluded: $('optTax').value === '1', taxRate: parseInt($('optRate').value, 10) || 10, fields: impType() === 'update' ? updFields() : [] } } })
       .then(function (j) {
         if (!j.ok) throw new Error(j.message || j.reason);
         importId = j.import_id; L('取り込み #' + importId + ' 開始 … ' + total + '件を保存');
@@ -816,6 +891,7 @@
         prog.firstElementChild.style.width = '100%';
         L('完了: 追加 ' + ins + '件 / 更新 ' + upd + '件 / 注意 ' + (pl.issues.length + conf) + '件 / 登録できない行 ' + pl.invalid + '件' + (conf ? '\n※ ' + conf + '件は、取り込み中に別の人が同じ JAN を先に登録していたため上書きせず「注意」に回しました' : ''));
         toast('保存しました'); $('commitState').textContent = '保存済み';
+        if (S.inboxId) { api('inbox', { method: 'POST', body: { action: 'done', id: S.inboxId, import_id: importId } }).catch(function () { /* */ }); S.inboxId = null; }
         loadHistory(); loadMakers(); boot();
       })
       .catch(function (e) { L('エラー: ' + ((e && e.message) || JSON.stringify(e))); btn.disabled = false; handleErr(e); });
@@ -837,6 +913,28 @@
             toast('取り消しました: 削除 ' + r.deleted + '件 / 元に戻した ' + r.restored + '件' + (r.kept_with_images ? ' / 写真があるため残した ' + r.kept_with_images + '件' : ''));
             loadHistory(); loadMakers(); boot();
           }).catch(function (e) { b.disabled = false; handleErr(e); });
+        });
+      });
+    }).catch(function () { /* */ });
+  }
+
+  // ── 受信箱 ──
+  function loadInbox() {
+    api('inbox').then(function (j) {
+      if (!j.ok) return;
+      var n = $('inboxN'); n.textContent = j.pending; n.hidden = !j.pending;
+      $('inboxTbl').querySelector('tbody').innerHTML = j.items.map(function (r) {
+        var st = r.status === 'imported' ? '<span class="tag ok">取り込み済み</span>' : r.status === 'failed' ? '<span class="tag ng">失敗</span>' : '<span class="tag warn">未処理</span>';
+        return '<tr data-id="' + r.id + '"><td class="muted">' + esc(r.ts.replace('T', ' ').slice(0, 16)) + '</td><td>' + esc(r.filename) + ' <span class="muted">' + Math.round((r.bytes || 0) / 1024) + 'KB' + (r.source ? ' ・ ' + esc(r.source) : '') + '</span><div class="muted">' + esc(r.message || '') + '</div></td><td>' + st + '</td><td class="row">' + (r.status === 'pending' ? '<button class="btn sm solid" data-ib="open">取り込む</button>' : '') + '<button class="btn sm danger" data-ib="delete">消す</button></td></tr>';
+      }).join('') || '<tr><td colspan="4" class="muted">まだ届いていません</td></tr>';
+      Array.prototype.forEach.call($('inboxTbl').querySelectorAll('[data-ib]'), function (b) {
+        b.addEventListener('click', function () {
+          var tr = b.closest('tr'), id = parseInt(tr.getAttribute('data-id'), 10), act = b.getAttribute('data-ib');
+          if (act === 'delete') { if (!confirm('受信箱から消しますか？')) return; api('inbox', { method: 'POST', body: { action: 'delete', id: id } }).then(loadInbox).catch(handleErr); return; }
+          var name = tr.children[1].firstChild.textContent.trim();
+          fetch('/api/pim/inbox?id=' + id, { headers: { 'x-seam-token': C.Auth.get() }, cache: 'no-store' }).then(function (r) { if (r.status === 401) throw { auth: true }; if (!r.ok) throw new Error('取得できません'); return r.blob(); }).then(function (b) {
+            readFile(new File([b], name, { type: b.type }), id); window.scrollTo(0, 0); toast('受信箱のファイルを開きました。列を合わせて保存すると、次回から自動で取り込まれます');
+          }).catch(handleErr);
         });
       });
     }).catch(function () { /* */ });
@@ -888,8 +986,10 @@
       if (!j.ok) return;
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
-        return '<tr><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
-      }).join('') || '<tr><td colspan="11" class="muted">該当なし</td></tr>';
+        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
+      }).join('') || '<tr><td colspan="12" class="muted">該当なし</td></tr>';
+      $('selAll').checked = false; updateSel();
+      Array.prototype.forEach.call($('prodTbl').querySelectorAll('.sel'), function (c) { c.addEventListener('change', updateSel); });
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-del]'), function (b) {
         b.addEventListener('click', function () {
           var jan = b.getAttribute('data-del');
@@ -900,6 +1000,26 @@
       $('btnPrev').disabled = P.offset === 0; $('btnNext').disabled = P.offset + P.limit >= j.total;
     }).catch(handleErr);
   }
+  function selected() { return Array.prototype.map.call($('prodTbl').querySelectorAll('.sel:checked'), function (c) { return c.value; }); }
+  function updateSel() { var n = selected().length; $('selCount').textContent = n + ' 件選択'; $('btnBulk').disabled = !n; $('btnLabels').disabled = !n; }
+  $('selAll').addEventListener('change', function () { var on = this.checked; Array.prototype.forEach.call($('prodTbl').querySelectorAll('.sel'), function (c) { c.checked = on; }); updateSel(); });
+  $('btnBulk').addEventListener('click', function () { $('bulkBox').hidden = false; });
+  $('btnBulkClose').addEventListener('click', function () { $('bulkBox').hidden = true; });
+  $('bulkField').addEventListener('change', function () { var tax = this.value === 'tax_included'; $('bulkTax').hidden = !tax; $('bulkValue').hidden = tax; $('bulkValue').placeholder = this.value === 'tax_rate' ? '例: 10' : '変更後の値'; });
+  $('btnBulkRun').addEventListener('click', function () {
+    var jans = selected(), f = $('bulkField').value; if (!jans.length) return;
+    var v = f === 'tax_included' ? ($('bulkTax').value === '1') : $('bulkValue').value.trim();
+    if (f !== 'tax_included' && v === '' && f !== 'brand' && f !== 'category' && f !== 'unit') { toast('変更後の値を入れてください', true); return; }
+    if (!confirm(jans.length + ' 件の「' + $('bulkField').selectedOptions[0].textContent + '」を「' + (f === 'tax_included' ? (v ? '税込' : '税抜') : v) + '」に変えますか？')) return;
+    var set = {}; set[f] = v;
+    api('products', { method: 'POST', body: { action: 'bulk', jans: jans, set: set } }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return; } toast(r.changed + ' 件を変更しました'); $('bulkBox').hidden = true; loadProducts(P.offset); loadMakers(); }).catch(handleErr);
+  });
+  $('btnLabels').addEventListener('click', function () { var jans = selected(); if (!jans.length) return; window.open('./labels.html?jans=' + jans.join(','), '_blank'); });
+  $('btnNoJanPc').addEventListener('click', function () {
+    var name = prompt('JAN が無い商品の商品名（仮コードを自動で振ります。バーコードは「ラベルを印刷」で出せます）'); if (!name || !name.trim()) return;
+    var maker = prompt('メーカー（任意）', $('fMaker').value || '') || '';
+    api('products', { method: 'PUT', body: { jan: 'auto', name: name.trim(), maker: maker.trim(), source: '仮コード' } }).then(function (r) { if (!r.ok) { toast(r.message || '登録できませんでした', true); return; } toast('仮コード ' + r.product.jan + ' で登録しました'); $('q').value = r.product.jan; loadProducts(0); }).catch(handleErr);
+  });
   $('btnSearch').addEventListener('click', function () { loadProducts(0); });
   $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') loadProducts(0); });
   $('fMaker').addEventListener('change', function () { loadProducts(0); });
@@ -1000,6 +1120,7 @@
   var RV = { offset: 0, limit: 60, items: [] };
   function loadReview(offset) {
     RV.offset = Math.max(0, offset || 0);
+    if ($('rvStatus').value === 'dup') return loadDupPhotos();
     api('review?status=' + $('rvStatus').value + '&maker=' + encodeURIComponent($('rvMaker').value) + '&limit=' + RV.limit + '&offset=' + RV.offset).then(function (j) {
       if (!j.ok) return;
       RV.items = j.images;
@@ -1023,6 +1144,17 @@
       });
       Array.prototype.forEach.call($('rvGrid').querySelectorAll('img'), function (img) { img.addEventListener('click', function () { window.open(img.src, '_blank'); }); });
       $('rvPrev').disabled = RV.offset === 0; $('rvNext').disabled = RV.offset + RV.limit >= j.total;
+    }).catch(handleErr);
+  }
+  function loadDupPhotos() {
+    api('review?status=dup').then(function (j) {
+      if (!j.ok) return;
+      $('rvCount').textContent = j.total + ' 組';
+      $('rvGrid').innerHTML = j.groups.map(function (g) {
+        return '<div class="rv retake" style="grid-column:1/-1;padding:10px"><div class="muted" style="margin-bottom:6px">同じ写真が ' + g.products + ' 商品に登録されています（撮り間違い・貼り間違いの疑い）</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">' +
+          g.images.map(function (im) { return '<div><img src="' + esc(im.url) + '" alt="" style="width:100%;aspect-ratio:1/1;object-fit:contain;border:1px solid var(--line);border-radius:8px"><div class="muted" style="font-size:12px"><b>' + esc(im.name) + '</b><br>' + esc(im.jan) + ' ・ ' + im.slot + '枚目 ・ ' + esc(im.created_by || '') + '</div><a class="btn sm" href="./index.html?jan=' + esc(im.jan) + '">開く</a></div>'; }).join('') + '</div></div>';
+      }).join('') || '<p class="muted">同じ写真が複数の商品に入っているものはありません</p>';
+      $('rvPrev').disabled = true; $('rvNext').disabled = true;
     }).catch(handleErr);
   }
   $('rvReload').addEventListener('click', function () { loadReview(RV.offset); });
@@ -1056,6 +1188,45 @@
   $('btnExSource').addEventListener('click', function () { download('source'); });
   $('btnExImages').addEventListener('click', function () { download('images'); });
   $('btnExJson').addEventListener('click', function () { download('json'); });
+
+  // ── アカウント設定（ディーラー自身で変えられるもの）──
+  function loadAccount() {
+    api('account').then(function (j) {
+      if (!j.ok) return;
+      var a = j.account;
+      $('acName').value = a.name || ''; $('acLid').value = a.login_id || ''; $('acLidPw').value = '';
+      $('acEmails').value = a.report_emails || ''; $('acReport').checked = !!a.report_enabled;
+      $('acKeyState').textContent = a.has_api_key ? '連携キー: 発行済み（キー自体は発行時にだけ表示）' : '連携キー: 未発行';
+      $('btnAcKey').textContent = a.has_api_key ? '連携キーを再発行' : '連携キーを発行'; $('btnAcKeyRevoke').hidden = !a.has_api_key;
+      $('acWebhook').value = a.webhook_url || ''; $('btnAcWebhookTest').hidden = !a.webhook_url; $('btnAcWebhookClear').hidden = !a.webhook_url;
+      $('acWebhookState').textContent = a.webhook_url ? (a.webhook_last_at ? '最終送信 ' + a.webhook_last_at.slice(0, 16).replace('T', ' ') + ' → ' + a.webhook_last_status : '設定済み（まだ送っていません）') : '';
+      $('acInbox').textContent = j.inbox_url || '未発行'; $('btnAcInboxRevoke').hidden = !j.inbox_url;
+    }).catch(handleErr);
+  }
+  function acPost(body, after) { return api('account', { method: 'POST', body: body }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return null; } toast(r.message || '保存しました'); if (after) after(r); loadAccount(); return r; }).catch(handleErr); }
+  $('btnAcName').addEventListener('click', function () { acPost({ action: 'rename', name: $('acName').value.trim() }, function () { boot(); }); });
+  $('btnAcLid').addEventListener('click', function () {
+    var lid = $('acLid').value.trim(), pw = $('acLidPw').value; if (!lid || !pw) { toast('新しい ID と今のパスワードを入れてください', true); return; }
+    if (!confirm('ログイン ID を「' + lid + '」に変えますか？ スマホ・PC すべてで新しい ID で再ログインが必要になります')) return;
+    acPost({ action: 'login_id', login_id: lid, password: pw }, function () { setTimeout(function () { C.Auth.clear(); location.reload(); }, 1500); });
+  });
+  $('btnAcEmails').addEventListener('click', function () { acPost({ action: 'emails', emails: $('acEmails').value, report_enabled: $('acReport').checked }); });
+  $('btnReportView').addEventListener('click', function () {
+    fetch('/api/pim/report?format=html', { headers: { 'x-seam-token': C.Auth.get() }, cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (h) { var w = window.open('', '_blank'); w.document.write('<!DOCTYPE html><meta charset="utf-8"><title>日報</title>' + h); w.document.close(); }).catch(handleErr);
+  });
+  $('btnAcKey').addEventListener('click', function () {
+    if ($('btnAcKey').textContent.indexOf('再') >= 0 && !confirm('連携キーを再発行しますか？（古いキーは使えなくなります）')) return;
+    acPost({ action: 'api_key' }, function (r) { $('acSecret').hidden = false; $('acSecret').innerHTML = '連携キー（この画面を閉じると再表示できません）: <code>' + esc(r.api_key) + '</code><br>EC 側の夜間バッチ: <code>' + esc(r.export_url) + '</code>'; });
+  });
+  $('btnAcKeyRevoke').addEventListener('click', function () { if (confirm('連携キーを無効にしますか？（EC 側の取得が止まります）')) acPost({ action: 'api_key_revoke' }); });
+  $('btnAcWebhook').addEventListener('click', function () {
+    var u = $('acWebhook').value.trim(); if (!u) { toast('URL を入れてください', true); return; }
+    acPost({ action: 'webhook', url: u }, function (r) { $('acSecret').hidden = false; $('acSecret').innerHTML = 'Webhook の署名の秘密（EC 側で HMAC-SHA256 の検証に使う。この画面を閉じると再表示できません）: <code>' + esc(r.webhook_secret) + '</code>'; });
+  });
+  $('btnAcWebhookTest').addEventListener('click', function () { acPost({ action: 'webhook_test' }); });
+  $('btnAcWebhookClear').addEventListener('click', function () { if (confirm('Webhook を解除しますか？')) acPost({ action: 'webhook_clear' }); });
+  $('btnAcInbox').addEventListener('click', function () { if ($('acInbox').textContent !== '未発行' && !confirm('再発行すると古い URL は使えなくなります。よろしいですか？')) return; acPost({ action: 'inbox_key' }); });
+  $('btnAcInboxRevoke').addEventListener('click', function () { if (confirm('自動取り込み用 URL を無効にしますか？')) acPost({ action: 'inbox_key_revoke' }); });
 
   // ── 担当者一覧 ──
   function loadStaff() {

@@ -11,6 +11,7 @@
 //     'finish' { import_id, invalid }                → { import }
 //     'rollback' { import_id }                       → その取り込みで入った商品を消し（写真が付いたものは残す）、上書きした商品を取り込み前の内容に戻す
 //                                                      （commit のたびに pim_import_backup へ「前の状態」を残しているので戻せる）
+//     'template' { headers:[...] }                    → 同じ見出しのファイルを前に取り込んでいれば { mapping, source, options } を返す（列合わせの記憶）
 //   check には keys:[name_key...] も渡せる → { similar:{ key:[{jan,name,maker}] } }（登録済みと商品名が似ているものの検出）
 //   保存時に「表記の辞書」（pim_dict: メーカー・ブランド・カテゴリ）を当てる
 //
@@ -20,52 +21,27 @@
 //   いずれも画面で「どちらを残す」を選ぶと、そのときだけ保存される（issues.js）
 import { json, cleanJan, janShapeOk, sanitizeProduct, upsertStmt, nowIso, userOf, loadDict, applyDict, logChanges, notifyWebhook, PRODUCT_COLS, imageKey, blobDelete, SLOT_MAX } from './_lib.js';
 
-export async function onRequestPost(context) {
-  const { request, env, data } = context;
-  const acct = data.account.id;
-  const b = await request.json().catch(() => null);
-  if (!b || typeof b !== 'object') return json({ ok: false, reason: 'bad_json' }, 400);
-  const action = String(b.action || '');
-  const by = userOf(request);
-
-  const loadExisting = async (jans) => {
-    const out = {};
-    for (let i = 0; i < jans.length; i += 90) {
-      const chunk = jans.slice(i, i + 90);
-      const rs = await env.DB.prepare('SELECT * FROM pim_products WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
-      for (const r of (rs.results || [])) out[r.jan] = r;
-    }
-    return out;
-  };
-
-  if (action === 'check') {
-    const jans = Array.from(new Set((Array.isArray(b.jans) ? b.jans : []).map(cleanJan).filter(janShapeOk)));
-    const keys = Array.from(new Set((Array.isArray(b.keys) ? b.keys : []).map((k) => String(k || '').slice(0, 200)).filter(Boolean))).slice(0, 5000);
-    const similar = {};
-    for (let i = 0; i < keys.length; i += 90) {
-      const chunk = keys.slice(i, i + 90);
-      const rs = await env.DB.prepare('SELECT jan, name, maker, name_key FROM pim_products WHERE account_id=? AND name_key IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
-      for (const r of (rs.results || [])) (similar[r.name_key] = similar[r.name_key] || []).push({ jan: r.jan, name: r.name, maker: r.maker });
-    }
-    return json({ ok: true, existing: await loadExisting(jans), similar });
+async function loadExistingOf(env, acct, jans) {
+  const out = {};
+  for (let i = 0; i < jans.length; i += 90) {
+    const chunk = jans.slice(i, i + 90);
+    const rs = await env.DB.prepare('SELECT * FROM pim_products WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
+    for (const r of (rs.results || [])) out[r.jan] = r;
   }
+  return out;
+}
 
-  if (action === 'begin') {
-    const headers = Array.isArray(b.headers) ? b.headers.map((h) => String(h == null ? '' : h).slice(0, 200)).slice(0, 200) : null; // 元CSVの見出し（元の形で出力するため）
-    const kind = b.kind === 'update' ? 'update' : 'normal'; // update = 改定CSVなど（列が少ない）。元CSVの形の出力には normal の見出しを使う
-    const r = await env.DB.prepare(
-      'INSERT INTO pim_imports(account_id, ts, filename, source, mapping, headers, kind, total) VALUES(?,?,?,?,?,?,?,?)'
-    ).bind(acct, nowIso(), String(b.filename || '').slice(0, 200), (String(b.source || '').slice(0, 80) + (by ? '（' + by + '）' : '')).slice(0, 100), JSON.stringify(b.mapping || {}).slice(0, 4000), headers ? JSON.stringify(headers).slice(0, 20000) : null, kind, Math.max(0, parseInt(b.total, 10) || 0)).run();
-    return json({ ok: true, import_id: r.meta && r.meta.last_row_id });
-  }
-
-  if (action === 'commit') {
+// 保存の本体（PC の取り込み画面と、自動取り込み inbox.js の両方から使う）
+//   b: { import_id, products:[...], issues:[...], fields:[...] } → { ok, inserted, updated, conflicts, issues } / { ok:false, status, reason, message }
+export async function commitProducts(context, account, by, b) {
+  const env = context.env, acct = account.id;
+  const loadExisting = (jans) => loadExistingOf(env, acct, jans);
     const importId = parseInt(b.import_id, 10) || null;
     const ts = nowIso();
     const raw = (Array.isArray(b.products) ? b.products : []).slice(0, 500);
     const ALLOWED_FIELDS = ['name', 'price', 'retail_price', 'cost_price', 'amount', 'maker', 'brand', 'category', 'description', 'sku'];
     const updFields = (Array.isArray(b.fields) ? b.fields : []).filter((f) => ALLOWED_FIELDS.indexOf(f) >= 0);
-    if (raw.some((r) => r && r._mode === 'update') && !updFields.length) return json({ ok: false, reason: 'no_fields', message: '更新取り込みでは、上書きする列を1つ以上選んでください' }, 400);
+    if (raw.some((r) => r && r._mode === 'update') && !updFields.length) return { ok: false, status: 400, reason: 'no_fields', message: '更新取り込みでは、上書きする列を1つ以上選んでください' };
     const dict = await loadDict(env, acct);
     const products = raw.map((r) => {
       const p = applyDict(dict, sanitizeProduct(r));
@@ -148,9 +124,51 @@ export async function onRequestPost(context) {
         .bind(inserted, updated, issues.length, importId, acct).run();
     }
     const changed = products.filter((x) => !(x.mode === 'insert_only' && conflictJans.indexOf(x.p.jan) >= 0)).map((x) => x.p.jan);
-    await logChanges(env, acct, changed, 'product', by); notifyWebhook(context, data.account, 'product', changed, by);
-    return json({ ok: true, inserted, updated, conflicts, issues: issues.length });
+    await logChanges(env, acct, changed, 'product', by); notifyWebhook(context, account, 'product', changed, by);
+    return { ok: true, inserted, updated, conflicts, issues: issues.length };
+}
+
+export async function onRequestPost(context) {
+  const { request, env, data } = context;
+  const acct = data.account.id;
+  const b = await request.json().catch(() => null);
+  if (!b || typeof b !== 'object') return json({ ok: false, reason: 'bad_json' }, 400);
+  const action = String(b.action || '');
+  const by = userOf(request);
+  const loadExisting = (jans) => loadExistingOf(env, acct, jans);
+
+  if (action === 'check') {
+    const jans = Array.from(new Set((Array.isArray(b.jans) ? b.jans : []).map(cleanJan).filter(janShapeOk)));
+    const keys = Array.from(new Set((Array.isArray(b.keys) ? b.keys : []).map((k) => String(k || '').slice(0, 200)).filter(Boolean))).slice(0, 5000);
+    const similar = {};
+    for (let i = 0; i < keys.length; i += 90) {
+      const chunk = keys.slice(i, i + 90);
+      const rs = await env.DB.prepare('SELECT jan, name, maker, name_key FROM pim_products WHERE account_id=? AND name_key IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
+      for (const r of (rs.results || [])) (similar[r.name_key] = similar[r.name_key] || []).push({ jan: r.jan, name: r.name, maker: r.maker });
+    }
+    return json({ ok: true, existing: await loadExisting(jans), similar });
   }
+
+  if (action === 'template') {
+    const headers = Array.isArray(b.headers) ? b.headers.map((h) => String(h == null ? '' : h).slice(0, 200)).slice(0, 200) : [];
+    if (!headers.length) return json({ ok: true, template: null });
+    const row = await env.DB.prepare('SELECT id, ts, filename, source, mapping, options, kind FROM pim_imports WHERE account_id=? AND headers=? AND rolled_back_at IS NULL ORDER BY id DESC LIMIT 1').bind(acct, JSON.stringify(headers)).first();
+    if (!row) return json({ ok: true, template: null });
+    let mapping = {}, options = {}; try { mapping = JSON.parse(row.mapping || '{}'); } catch (e) { /* */ } try { options = JSON.parse(row.options || '{}'); } catch (e) { /* */ }
+    return json({ ok: true, template: { import_id: row.id, ts: row.ts, filename: row.filename, source: String(row.source || '').replace(/（[^）]*）$/, ''), mapping, options, kind: row.kind || 'normal' } });
+  }
+
+  if (action === 'begin') {
+    const headers = Array.isArray(b.headers) ? b.headers.map((h) => String(h == null ? '' : h).slice(0, 200)).slice(0, 200) : null; // 元CSVの見出し（元の形で出力するため）
+    const kind = b.kind === 'update' ? 'update' : 'normal'; // update = 改定CSVなど（列が少ない）。元CSVの形の出力には normal の見出しを使う
+    const options = b.options && typeof b.options === 'object' ? JSON.stringify(b.options).slice(0, 2000) : null; // 税区分・税率・更新列など（次回の自動適用用）
+    const r = await env.DB.prepare(
+      'INSERT INTO pim_imports(account_id, ts, filename, source, mapping, headers, kind, total, options) VALUES(?,?,?,?,?,?,?,?,?)'
+    ).bind(acct, nowIso(), String(b.filename || '').slice(0, 200), (String(b.source || '').slice(0, 80) + (by ? '（' + by + '）' : '')).slice(0, 100), JSON.stringify(b.mapping || {}).slice(0, 4000), headers ? JSON.stringify(headers).slice(0, 20000) : null, kind, Math.max(0, parseInt(b.total, 10) || 0), options).run();
+    return json({ ok: true, import_id: r.meta && r.meta.last_row_id });
+  }
+
+  if (action === 'commit') { const r = await commitProducts(context, data.account, by, b); return json(r, r.status || 200); }
 
   if (action === 'rollback') {
     const importId = parseInt(b.import_id, 10) || 0;
