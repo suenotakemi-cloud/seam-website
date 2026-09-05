@@ -110,3 +110,6 @@ CREATE TABLE IF NOT EXISTS pim_issues (
 CREATE INDEX IF NOT EXISTS idx_pim_imports_acct  ON pim_imports(account_id, id);
 CREATE INDEX IF NOT EXISTS idx_pim_issues_status ON pim_issues(account_id, status, ts);
 CREATE INDEX IF NOT EXISTS idx_pim_issues_jan    ON pim_issues(account_id, jan);
+
+-- ▼ 画像の実体（R2 "PRODUCT_IMAGES" が未設定のときだけ使う暫定置き場。読みは R2 → ここ の順）
+CREATE TABLE IF NOT EXISTS pim_blobs (key TEXT PRIMARY KEY, data BLOB NOT NULL, bytes INTEGER, created_at TEXT NOT NULL);

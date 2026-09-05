@@ -313,7 +313,7 @@
     if (!C.Auth.get() || !C.Auth.user()) { showLogin(''); return; }
     api('status').then(function (j) {
       $('login').hidden = true;
-      if (j.counts) { $('hsub').textContent = (j.account ? j.account.name + ' ／ ' : '') + '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※画像の保存先(R2)が未設定'); setIssueN(j.counts.open_issues); }
+      if (j.counts) { $('hsub').textContent = (j.account ? j.account.name + ' ／ ' : '') + '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※写真は暫定で D1 に保存中（R2 未設定）'); setIssueN(j.counts.open_issues); }
       if (j.account) $('setAcct').textContent = 'アカウント: ' + j.account.name + '（ID: ' + j.account.login_id + '）' + (j.account.pass_changed_at ? ' ／ パスワード最終変更 ' + j.account.pass_changed_at.slice(0, 10) : '');
       $('setUser').value = C.Auth.user();
       loadHistory(); loadMakers();

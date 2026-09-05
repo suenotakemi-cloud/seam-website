@@ -43,6 +43,40 @@ export function imageKey(acct, jan, slot) { return 'products/' + acct + '/' + ja
 export function imageUrl(origin, acct, jan, slot, ver) { return origin + '/pim-img/' + imageKey(acct, jan, slot) + (ver ? '?v=' + encodeURIComponent(ver) : ''); }
 export const R2_META = { httpMetadata: { contentType: 'image/webp', cacheControl: 'public, max-age=31536000, immutable' } };
 
+// ── 画像の実体の置き場所 ──
+//   R2（PRODUCT_IMAGES）があれば R2。無ければ D1 の pim_blobs に入れる（実証実験で R2 の紐付けが間に合わなくても止まらない）。
+//   読むときは R2 → D1 の順に探すので、後から R2 を足しても D1 に入った分はそのまま見える。
+const D1_BLOB_MAX = 1500000; // D1 の 1行 2MB 制限に収める
+export async function blobPut(env, key, buf) {
+  if (hasR2(env)) return env.PRODUCT_IMAGES.put(key, buf, R2_META);
+  if (buf.length > D1_BLOB_MAX) throw new Error('画像が大きすぎます（R2 未設定のため ' + Math.round(D1_BLOB_MAX / 1000) + 'KB まで）');
+  const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength); // D1 の BLOB は ArrayBuffer で渡す
+  await env.DB.prepare('INSERT INTO pim_blobs(key, data, bytes, created_at) VALUES(?,?,?,?) ON CONFLICT(key) DO UPDATE SET data=excluded.data, bytes=excluded.bytes, created_at=excluded.created_at')
+    .bind(key, ab, buf.length, nowIso()).run();
+}
+export async function blobGet(env, key) {
+  if (hasR2(env)) {
+    const obj = await env.PRODUCT_IMAGES.get(key);
+    if (obj) return { body: obj.body, etag: obj.httpEtag || null, from: 'r2' };
+  }
+  if (!hasDb(env)) return null;
+  let row = null;
+  try { row = await env.DB.prepare('SELECT data, created_at FROM pim_blobs WHERE key=?').bind(key).first(); } catch (e) { return null; } // 表がまだ無い等
+  if (!row || !row.data) return null;
+  // D1 の BLOB は環境により ArrayBuffer / 数値配列 / {type:'Buffer',data:[]} で返るので、必ず ArrayBuffer に揃える
+  let body = row.data;
+  if (Array.isArray(body)) body = Uint8Array.from(body).buffer;
+  else if (body && body.type === 'Buffer' && Array.isArray(body.data)) body = Uint8Array.from(body.data).buffer;
+  else if (ArrayBuffer.isView(body)) body = body.buffer.slice(body.byteOffset, body.byteOffset + body.byteLength);
+  if (!(body instanceof ArrayBuffer)) return null;
+  return { body, etag: '"d1-' + String(row.created_at || '').replace(/[^0-9]/g, '') + '"', from: 'd1' };
+}
+export async function blobDelete(env, key) {
+  if (hasR2(env)) { try { await env.PRODUCT_IMAGES.delete(key); } catch (e) { /* */ } }
+  if (hasDb(env)) { try { await env.DB.prepare('DELETE FROM pim_blobs WHERE key=?').bind(key).run(); } catch (e) { /* */ } }
+}
+export function imageStore(env) { return hasR2(env) ? 'r2' : 'd1'; }
+
 // ── パスワード（PBKDF2-SHA256・Web Crypto）──
 const enc = new TextEncoder();
 function b64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
@@ -167,6 +201,7 @@ export async function ensureSchema(env) {
       resolution TEXT, resolved_at TEXT, resolved_by TEXT)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_issues_status ON pim_issues(account_id, status, ts)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_issues_jan ON pim_issues(account_id, jan)`,
+    `CREATE TABLE IF NOT EXISTS pim_blobs (key TEXT PRIMARY KEY, data BLOB NOT NULL, bytes INTEGER, created_at TEXT NOT NULL)`,
   ];
   await env.DB.batch(stmts.map((s) => env.DB.prepare(s)));
   await seedIfEmpty(env);

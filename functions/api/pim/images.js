@@ -6,7 +6,7 @@
 //          slot=1..5 の指定は「その番号を差し替える」意味（本人が写真をタップして撮り直したとき）
 //          ブラウザ側で webp に変換して送る。webp 以外が届いたときは Cloudflare Images binding(IMAGES)があれば変換、無ければ 415
 //   DELETE /api/pim/images?jan=&slot=          → 消して、後ろの写真を前に詰める（メルカリ式）
-import { json, cleanJan, janShapeOk, imageKey, imageUrl, nowIso, hasR2, SLOT_MIN, SLOT_MAX, userOf, R2_META } from './_lib.js';
+import { json, cleanJan, janShapeOk, imageKey, imageUrl, nowIso, hasR2, SLOT_MIN, SLOT_MAX, userOf, blobPut, blobGet, blobDelete, imageStore } from './_lib.js';
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -29,12 +29,11 @@ export async function onRequestGet({ request, env, data }) {
   const url = new URL(request.url);
   const jan = cleanJan(url.searchParams.get('jan') || '');
   if (!jan) return json({ ok: false, reason: 'no_jan' }, 400);
-  return json({ ok: true, jan, r2: hasR2(env), images: await listImages(env, url.origin, acct, jan) });
+  return json({ ok: true, jan, r2: hasR2(env), store: imageStore(env), images: await listImages(env, url.origin, acct, jan) });
 }
 
 export async function onRequestPost({ request, env, data }) {
   const acct = data.account.id;
-  if (!hasR2(env)) return json({ ok: false, reason: 'no_r2', message: '画像の保存先(R2: PRODUCT_IMAGES)が未設定です。db/SETUP_PIM.md を参照' }, 503);
   let fd;
   try { fd = await request.formData(); } catch (e) { return json({ ok: false, reason: 'bad_form' }, 400); }
   const jan = cleanJan(fd.get('jan') || '');
@@ -66,7 +65,7 @@ export async function onRequestPost({ request, env, data }) {
   }
   const meta = [buf.length, parseInt(fd.get('width'), 10) || null, parseInt(fd.get('height'), 10) || null,
     String(fd.get('original_name') || '').slice(0, 200), String(fd.get('original_type') || '').slice(0, 100)];
-  const put = (key) => env.PRODUCT_IMAGES.put(key, buf, R2_META);
+  const put = (key) => blobPut(env, key, buf);
   const origin = new URL(request.url).origin;
   let ts = nowIso(), usedSlot = slot;
 
@@ -114,7 +113,7 @@ export async function onRequestDelete({ request, env, data }) {
   const rs = await env.DB.prepare('SELECT * FROM pim_images WHERE account_id=? AND jan=? ORDER BY slot').bind(acct, jan).all();
   const imgs = rs.results || [];
   if (!imgs.some((im) => im.slot === slot)) return json({ ok: false, reason: 'not_found' }, 404);
-  if (hasR2(env)) { try { await env.PRODUCT_IMAGES.delete(imageKey(acct, jan, slot)); } catch (e) { /* 実体が無くても台帳は消す */ } }
+  await blobDelete(env, imageKey(acct, jan, slot)); // 実体が無くても台帳は消す
   await env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=? AND slot=?').bind(acct, jan, slot).run();
   // 後ろを前に詰める（3枚目を消したら 4→3, 5→4）
   const after = imgs.filter((im) => im.slot > slot).sort((a, b) => a.slot - b.slot);
@@ -124,11 +123,12 @@ export async function onRequestDelete({ request, env, data }) {
     let moved = false;
     try { const r = await env.DB.prepare('UPDATE pim_images SET slot=?, key=?, created_at=? WHERE account_id=? AND jan=? AND slot=?').bind(to, imageKey(acct, jan, to), nowIso(), acct, jan, im.slot).run(); moved = !!(r.meta && r.meta.changes); }
     catch (e) { moved = false; }
-    if (moved && hasR2(env)) {
-      const obj = await env.PRODUCT_IMAGES.get(im.key);
+    if (moved) {
+      const obj = await blobGet(env, im.key);
       if (obj) {
-        await env.PRODUCT_IMAGES.put(imageKey(acct, jan, to), await obj.arrayBuffer(), R2_META);
-        try { await env.PRODUCT_IMAGES.delete(im.key); } catch (e) { /* */ }
+        const buf = obj.body instanceof ArrayBuffer ? new Uint8Array(obj.body) : new Uint8Array(await new Response(obj.body).arrayBuffer());
+        await blobPut(env, imageKey(acct, jan, to), buf);
+        await blobDelete(env, im.key);
       }
     }
     if (!moved) break; // 詰め先が埋まったら、それより後ろも動かさない（順番が入れ替わらないように）

@@ -15,7 +15,7 @@ const ASSET_CACHE = VERSION + '-assets';
 
    ★増やすときは「お客様以外の情報が映る画面か」で決める。
      迷ったら足す。残さないことで困るのは速度だけ。 */
-const PRIVATE_PATH = /^\/(booking|entrance|admin|write|karte|seam-karte|salontown-booking|pim|api\/pim)(\/|\.|$)/i;
+const PRIVATE_PATH = /^\/(booking|entrance|admin|write|karte|seam-karte|salontown-booking|pim|api\/pim|js\/pim-)(\/|\.|$|[a-z])/i;
 const PRIVATE_QUERY = /(^|&)(t|token|stok|key|lt|k|s|r|deviceId)=/i;
 
 function isPrivate(url) {

@@ -6,7 +6,7 @@
 //        expected_updated_at … その後に他の人が更新していれば 409 で今の内容を返す（上書き事故の防止）
 //        insert_only         … 無いときだけ登録。既にあれば 409 でその内容を返す
 //   DELETE /api/pim/products?jan=                       → 1件削除（画像も消す）
-import { json, cleanJan, janShapeOk, sanitizeProduct, upsertStmt, withImages, loadImages, nowIso, hasR2, imageKey, SLOT_MAX, userOf } from './_lib.js';
+import { json, cleanJan, janShapeOk, sanitizeProduct, upsertStmt, withImages, loadImages, nowIso, imageKey, SLOT_MAX, userOf, blobDelete } from './_lib.js';
 
 export async function onRequestGet({ request, env, data }) {
   const acct = data.account.id;
@@ -84,9 +84,7 @@ export async function onRequestDelete({ request, env, data }) {
   const acct = data.account.id;
   const jan = cleanJan(new URL(request.url).searchParams.get('jan') || '');
   if (!jan) return json({ ok: false, reason: 'no_jan' }, 400);
-  if (hasR2(env)) {
-    for (let s = 1; s <= SLOT_MAX; s++) { try { await env.PRODUCT_IMAGES.delete(imageKey(acct, jan, s)); } catch (e) { /* 無ければ無いでよい */ } }
-  }
+  for (let s = 1; s <= SLOT_MAX; s++) await blobDelete(env, imageKey(acct, jan, s)); // 無ければ無いでよい
   await env.DB.batch([
     env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=?').bind(acct, jan),
     env.DB.prepare('DELETE FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan),
