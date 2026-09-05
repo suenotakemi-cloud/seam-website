@@ -190,7 +190,6 @@ export async function ensureSchema(env) {
       source TEXT, import_id INTEGER, image_count INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT, raw TEXT, claimed_by TEXT, claimed_at TEXT, name_key TEXT,
       PRIMARY KEY (account_id, jan))`,
-    `CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_name ON pim_products(account_id, name)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(account_id, maker)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_imgs ON pim_products(account_id, image_count)`,
@@ -199,7 +198,6 @@ export async function ensureSchema(env) {
       account_id INTEGER NOT NULL, jan TEXT NOT NULL, slot INTEGER NOT NULL, key TEXT NOT NULL, bytes INTEGER, width INTEGER, height INTEGER,
       original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT,
       review TEXT, review_note TEXT, reviewed_by TEXT, reviewed_at TEXT, quality TEXT, quality_warn TEXT, phash TEXT, has_thumb INTEGER NOT NULL DEFAULT 0, ver TEXT, PRIMARY KEY (account_id, jan, slot))`,
-    `CREATE INDEX IF NOT EXISTS idx_pim_images_phash ON pim_images(account_id, phash)`,
     `CREATE TABLE IF NOT EXISTS pim_inbox (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, bytes INTEGER, key TEXT NOT NULL, source TEXT,
       status TEXT NOT NULL DEFAULT 'pending', import_id INTEGER, message TEXT)`,
@@ -230,6 +228,7 @@ export async function ensureSchema(env) {
   ];
   await env.DB.batch(stmts.map((s) => env.DB.prepare(s)));
   // 既に作られた表への列追加（あればエラーになるだけで無害）
+  // ★後から足した列の索引は、この列追加のあとで作る（上の一括 CREATE に入れると、古い表がある本番で「列が無い」と落ちて全 API が止まる）
   for (const a of ['ALTER TABLE pim_products ADD COLUMN raw TEXT', 'ALTER TABLE pim_imports ADD COLUMN headers TEXT',
     'ALTER TABLE pim_images ADD COLUMN review TEXT', 'ALTER TABLE pim_images ADD COLUMN review_note TEXT', 'ALTER TABLE pim_images ADD COLUMN reviewed_by TEXT', 'ALTER TABLE pim_images ADD COLUMN reviewed_at TEXT',
     'ALTER TABLE pim_accounts ADD COLUMN api_key TEXT', 'ALTER TABLE pim_imports ADD COLUMN kind TEXT',
