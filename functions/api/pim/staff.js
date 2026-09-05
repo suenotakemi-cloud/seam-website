@@ -8,7 +8,7 @@
 //        delete  { id }                     … 完全に消す
 //        verify  { id, pin }                → { staff_token }  … スマホ・PC で名前を選んだときの本人確認。以後 x-seam-staff ヘッダで送る
 //   一覧に 1 人でも登録があると、書き込み系 API は「一覧にある名前」からしか受け付けない（_middleware.js）。PIN 付きの人は staff_token も必要
-import { json, nowIso, hashPassword, verifyPassword, signStaff, userOf } from './_lib.js';
+import { json, nowIso, hashPassword, verifyPassword, signStaff, verifyStaff, userOf } from './_lib.js';
 
 const MAX_FAIL = 8, LOCK_MIN = 10;
 function pinProblem(pin) { const s = String(pin == null ? '' : pin).trim(); if (!s) return ''; if (!/^[0-9]{4,6}$/.test(s)) return 'PIN は 4〜6 桁の数字にしてください'; return ''; }
@@ -28,6 +28,15 @@ export async function onRequestPost({ request, env, data }) {
   const action = String(b.action || '');
   const ts = nowIso();
   const name = String(b.name == null ? '' : b.name).replace(/\s+/g, ' ').trim().slice(0, 40);
+  // だれかが PIN を使っているディーラーでは、一覧の変更（追加・PIN・停止・削除…）は「PIN 確認済みの担当者」か管理者だけ（PIN を外して成りすます抜け道を塞ぐ）
+  if (action !== 'verify' && !data.isAdmin) {
+    const pinned = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_staff WHERE account_id=? AND active=1 AND pin_hash IS NOT NULL').bind(acct).first();
+    if (pinned && pinned.n > 0) {
+      const st = await verifyStaff(env, request.headers.get('x-seam-staff') || '', acct);
+      const me = st ? await env.DB.prepare('SELECT id FROM pim_staff WHERE id=? AND account_id=? AND active=1 AND pin_hash IS NOT NULL').bind(st.staffId, acct).first() : null;
+      if (!me) return json({ ok: false, reason: 'pin_required', message: '担当者一覧の変更は、PIN 付きの担当者として PIN 確認をしてから行ってください（または SEAM 管理画面から）', staff_required: true }, 403);
+    }
+  }
 
   if (action === 'add') {
     if (!name) return json({ ok: false, reason: 'no_name', message: '名前を入れてください' }, 400);

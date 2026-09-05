@@ -140,7 +140,7 @@
     if (!s) return { amount: null, unit: '' };
     var m = s.match(AMOUNT_RE);
     if (m) {
-      var num = parseFloat(m[1].replace(',', '.'));
+      var num = parseFloat(m[1].replace(/,(?=\d{3}\b)/g, '').replace(',', '.'));
       var u = m[2];
       var key = u.toLowerCase();
       var unit = UNIT_MAP[key] || UNIT_MAP[u] || u;

@@ -36,7 +36,7 @@ export async function onRequestGet({ request, env, data }) {
   const mode = ['few', 'retake'].indexOf(url.searchParams.get('mode')) >= 0 ? url.searchParams.get('mode') : 'noimg';
   const maker = (url.searchParams.get('maker') || '').trim().slice(0, 100);
   const after = cleanJan(url.searchParams.get('after') || '');
-  const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10) || 30));
+  const limit = Math.min(90, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10) || 30)); // D1 のバインド上限 100 に収める（retake の IN (...)）
 
   const where = ['p.account_id=?'], binds = [acct];
   if (maker) { where.push('p.maker=?'); binds.push(maker); }

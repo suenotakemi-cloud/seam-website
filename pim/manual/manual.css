@@ -1,0 +1,50 @@
+/* 使い方マニュアル（スマホ用・PC用）共通の見た目。大きな字・やさしい色・印刷できる */
+:root{ --ink:#2B2926; --char:#5A534B; --line:#E7E0D6; --brown:#A87456; --bg:#F5F1EA; --ok:#2E7D5B; --ng:#B4432F; --warn:#B8860B; --sky:#DCE8F2; }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans JP',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;font-size:17px;line-height:1.8}
+a{color:var(--brown)}
+.wrap{max-width:900px;margin:0 auto;padding:16px 18px 80px}
+.cover{background:#fff;border:2px solid var(--ink);border-radius:20px;padding:24px 22px;margin:10px 0 18px;text-align:center}
+.cover h1{font-size:30px;margin:0 0 6px;letter-spacing:.02em}
+.cover .sub{color:var(--char);font-size:15px}
+.cover .who{display:inline-block;margin-top:10px;background:#FFF8EF;border:1px solid #F0DCC4;border-radius:999px;padding:4px 14px;font-size:14px}
+nav.toc{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 18px;margin-bottom:22px}
+nav.toc ol{margin:6px 0 0;padding-left:22px;columns:2;column-gap:24px}
+nav.toc li{break-inside:avoid;margin:2px 0}
+nav.toc a{text-decoration:none;color:var(--ink)}
+section{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:22px;page-break-inside:avoid}
+h2{font-size:24px;margin:0 0 6px;display:flex;align-items:center;gap:10px}
+h2 .no{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;font-size:18px;flex-shrink:0}
+h3{font-size:19px;margin:18px 0 6px;border-left:6px solid var(--brown);padding-left:10px}
+.lead{color:var(--char);margin:0 0 10px;font-size:15.5px}
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0}
+.koma svg{width:100%;height:auto;display:block}
+.steps{counter-reset:s;list-style:none;padding:0;margin:10px 0}
+.steps li{position:relative;padding:10px 12px 10px 56px;margin:8px 0;background:#FBF7F1;border-radius:12px;border:1px solid var(--line)}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:12px;top:10px;width:32px;height:32px;border-radius:50%;background:var(--brown);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px}
+.steps li b{color:var(--ink)}
+.shot{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:12px 0}
+.shot figure{margin:0;text-align:center}
+.shot img{width:100%;max-width:340px;border:1px solid var(--line);border-radius:14px;background:#fff}
+.shot.pc img{max-width:100%;border-radius:8px}
+.shot figcaption{font-size:14px;color:var(--char);margin-top:4px}
+.tip{border-left:6px solid var(--ok);background:#EEF7F2;padding:10px 14px;border-radius:0 12px 12px 0;margin:10px 0;font-size:16px}
+.tip.ng{border-color:var(--ng);background:#FBEDEA}
+.tip.warn{border-color:var(--warn);background:#FBF4DF}
+.tip b{display:block;margin-bottom:2px}
+.chk{list-style:none;padding:0;margin:8px 0}
+.chk li{padding:8px 10px 8px 40px;position:relative;border-bottom:1px dashed var(--line)}
+.chk li::before{content:"";position:absolute;left:8px;top:11px;width:20px;height:20px;border:2px solid var(--ink);border-radius:5px;background:#fff}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:#FBF7F1}
+.big{font-size:22px;font-weight:700}
+.kw{background:#FFF3CD;padding:0 6px;border-radius:6px;font-weight:600}
+.btn-like{display:inline-block;border:1px solid var(--ink);border-radius:999px;padding:1px 12px;font-size:15px;background:#fff;font-weight:600}
+.btn-like.solid{background:var(--brown);color:#fff;border-color:var(--brown)}
+.ng-list li{margin:4px 0}
+.foot{color:var(--char);font-size:13px;text-align:center;margin-top:20px}
+.topbar{display:flex;gap:8px;justify-content:flex-end;margin-bottom:8px}
+.topbar a{font-size:13px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 12px;text-decoration:none;color:var(--ink)}
+ruby rt{font-size:.55em;color:var(--char)}
+@media print{ body{background:#fff;font-size:14px} .wrap{max-width:none;padding:0} section{border:0;padding:6px 0;margin:0 0 10px} .topbar{display:none} .shot img{max-width:260px} h2{font-size:20px} }

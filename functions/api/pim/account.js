@@ -11,6 +11,7 @@
 import { json, nowIso, normalizeLoginId, verifyPassword, publicAccount, newApiKey, newWebhookSecret, webhookUrlOk, notifyWebhook, newInboxKey, parseEmails } from './_lib.js';
 
 export async function onRequestGet({ request, env, data }) {
+  if (data.readonly) return json({ ok: false, reason: 'readonly', message: '連携キーではアカウント設定を見られません' }, 403); // 自動取り込み用 URL が読み取り専用キーから漏れないように
   const a = await env.DB.prepare('SELECT * FROM pim_accounts WHERE id=?').bind(data.account.id).first();
   const origin = new URL(request.url).origin;
   return json({ ok: true, account: publicAccount(a), inbox_url: a.inbox_key ? origin + '/api/pim/inbox?key=' + a.inbox_key : null, report_url: origin + '/api/pim/report' });

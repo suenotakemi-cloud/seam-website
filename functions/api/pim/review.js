@@ -21,11 +21,11 @@ export async function onRequestGet({ request, env, data }) {
   const W = ' FROM pim_images i JOIN pim_products p ON p.account_id=i.account_id AND p.jan=i.jan WHERE ' + where.join(' AND ');
   const total = await env.DB.prepare('SELECT COUNT(*) AS n' + W).bind(...binds).first();
   const rs = await env.DB.prepare(
-    'SELECT i.jan, i.slot, i.width, i.height, i.bytes, i.created_by, i.created_at, i.review, i.review_note, i.reviewed_by, i.quality_warn, p.name, p.maker, p.brand, p.sku' + W +
+    'SELECT i.jan, i.slot, i.width, i.height, i.bytes, i.created_by, i.created_at, i.ver, i.review, i.review_note, i.reviewed_by, i.quality_warn, p.name, p.maker, p.brand, p.sku' + W +
     ' ORDER BY i.created_at DESC LIMIT ? OFFSET ?'
   ).bind(...binds, limit, offset).all();
   const origin = url.origin;
-  const images = (rs.results || []).map((r) => Object.assign(r, { url: imageUrl(origin, acct, r.jan, r.slot, r.created_at) }));
+  const images = (rs.results || []).map((r) => Object.assign(r, { url: imageUrl(origin, acct, r.jan, r.slot, r.ver || r.created_at) }));
   return json({ ok: true, total: total ? total.n : 0, limit, offset, images });
 }
 
@@ -34,8 +34,8 @@ async function dupPhotos(env, acct, origin) {
   const rs = await env.DB.prepare('SELECT phash, COUNT(DISTINCT jan) AS n FROM pim_images WHERE account_id=? AND phash IS NOT NULL GROUP BY phash HAVING n>=2 ORDER BY n DESC LIMIT 100').bind(acct).all();
   const groups = [];
   for (const g of (rs.results || [])) {
-    const r = await env.DB.prepare('SELECT i.jan, i.slot, i.created_by, i.created_at, p.name, p.maker, p.sku FROM pim_images i JOIN pim_products p ON p.account_id=i.account_id AND p.jan=i.jan WHERE i.account_id=? AND i.phash=? ORDER BY i.jan, i.slot').bind(acct, g.phash).all();
-    groups.push({ phash: g.phash, products: g.n, images: (r.results || []).map((x) => Object.assign(x, { url: imageUrl(origin, acct, x.jan, x.slot, x.created_at) })) });
+    const r = await env.DB.prepare('SELECT i.jan, i.slot, i.created_by, i.created_at, i.ver, p.name, p.maker, p.sku FROM pim_images i JOIN pim_products p ON p.account_id=i.account_id AND p.jan=i.jan WHERE i.account_id=? AND i.phash=? ORDER BY i.jan, i.slot').bind(acct, g.phash).all();
+    groups.push({ phash: g.phash, products: g.n, images: (r.results || []).map((x) => Object.assign(x, { url: imageUrl(origin, acct, x.jan, x.slot, x.ver || x.created_at) })) });
   }
   return json({ ok: true, total: groups.length, groups });
 }

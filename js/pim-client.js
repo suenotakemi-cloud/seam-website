@@ -206,7 +206,9 @@
   function finishImage(canvas, quality) {
     return canvasToWebp(canvas, quality).then(function (r) {
       var ph = null; try { ph = phash(canvas); } catch (e) { /* */ }
-      var t = document.createElement('canvas'); t.width = t.height = 300; t.getContext('2d').drawImage(canvas, 0, 0, 300, 300);
+      var t = document.createElement('canvas'); t.width = t.height = 300; var tx = t.getContext('2d'); tx.fillStyle = '#fff'; tx.fillRect(0, 0, 300, 300);
+      var sc = 300 / Math.max(canvas.width, canvas.height), tw = Math.round(canvas.width * sc), th = Math.round(canvas.height * sc);
+      tx.drawImage(canvas, Math.round((300 - tw) / 2), Math.round((300 - th) / 2), tw, th); // 正方形でない元も潰さず、白で余白
       return canvasToWebp(t, 0.8).then(function (tr) { return Object.assign(r, { thumb: tr.blob, phash: ph }); }, function () { return Object.assign(r, { thumb: null, phash: ph }); });
     });
   }
@@ -252,8 +254,11 @@
             if (!go) return false;
             var fd = new FormData(); Object.keys(it.fields || {}).forEach(function (k) { fd.append(k, it.fields[k]); });
             fd.append('file', it.blob, it.name || 'x.webp'); if (it.thumb) fd.append('thumb', it.thumb, 'thumb.webp');
-            return api('images', { method: 'POST', body: fd }).then(function (j) { return Outbox.remove(it.id).then(function () { sent++; if (onEach) onEach(it, j); return true; }); },
-              function (e) { if (e && (e.auth || e.staff)) throw e; return false; });
+            return api('images', { method: 'POST', body: fd }).then(function (j) {
+              var terminal = j && (j.ok || ['full', 'no_product', 'bad_jan', 'bad_slot', 'not_webp', 'too_large'].indexOf(j.reason) >= 0); // 直らない失敗は捨てる（理由は画面に出す）
+              if (!terminal) return false; // 混雑・サーバ側の一時的な失敗 → 次回また
+              return Outbox.remove(it.id).then(function () { if (j.ok) sent++; if (onEach) onEach(it, j); return true; });
+            }, function (e) { if (e && (e.auth || e.staff)) throw e; return false; });
           });
         });
         return chain.then(function () { return sent; });

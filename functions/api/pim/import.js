@@ -71,6 +71,7 @@ export async function commitProducts(context, account, by, b) {
       updFields.forEach((f) => { sets.push(f + '=?'); vals.push(p[f] == null ? null : p[f]); });
       if (updFields.indexOf('price') >= 0) { sets.push('tax_included=?', 'tax_rate=?', 'price_ex=?', 'price_in=?'); vals.push(p.tax_included, p.tax_rate, p.price_ex, p.price_in); }
       if (updFields.indexOf('amount') >= 0) { sets.push('unit=?'); vals.push(p.unit); }
+      if (updFields.indexOf('name') >= 0) { sets.push('name_key=?'); vals.push(p.name_key); }
       // 元CSVの行は「上書き」でなく「足す」（改定CSVの2列で22列を潰さない）。更新した列は元CSVの列名で差し替える
       const patch = {};
       updFields.forEach((f) => { const h = rawHeaderOf[f]; if (h && p[f] != null) patch[h] = String(p[f]); });

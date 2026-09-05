@@ -38,14 +38,14 @@ export async function onRequestGet({ request, env, data }) {
 
   const rows = [];
   for (let off = 0; ; off += 1000) {
-    const rs = await env.DB.prepare('SELECT * FROM pim_products' + W + ' ORDER BY maker, brand, name LIMIT 1000 OFFSET ?').bind(...binds, off).all();
+    const rs = await env.DB.prepare('SELECT * FROM pim_products' + W + ' ORDER BY maker, brand, name, jan LIMIT 1000 OFFSET ?').bind(...binds, off).all();
     const r = rs.results || [];
     rows.push(...r);
     if (r.length < 1000) break;
   }
   const imgs = await loadImages(env, acct, rows.filter((r) => r.image_count > 0).map((r) => r.jan));
   const out = rows.map((r) => {
-    const list = (imgs[r.jan] || []).slice().sort((a, b) => a.slot - b.slot).map((im) => imageUrl(origin, acct, r.jan, im.slot, im.created_at));
+    const list = (imgs[r.jan] || []).slice().sort((a, b) => a.slot - b.slot).map((im) => imageUrl(origin, acct, r.jan, im.slot, im.ver || im.created_at));
     const o = Object.assign({}, r, { image_urls: list });
     delete o.account_id;
     if (format !== 'source') delete o.raw;

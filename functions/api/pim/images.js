@@ -35,7 +35,7 @@ function isWebp(u8) {
 }
 async function listImages(env, origin, acct, jan) {
   const rs = await env.DB.prepare('SELECT * FROM pim_images WHERE account_id=? AND jan=? ORDER BY slot').bind(acct, jan).all();
-  return (rs.results || []).map((im) => { const o = Object.assign({}, im, { url: imageUrl(origin, acct, jan, im.slot, im.created_at), thumb_url: im.has_thumb ? thumbUrl(origin, acct, jan, im.slot, im.created_at) : null }); delete o.key; return o; });
+  return (rs.results || []).map((im) => { const v = im.ver || im.created_at; const o = Object.assign({}, im, { url: imageUrl(origin, acct, jan, im.slot, v), thumb_url: im.has_thumb ? thumbUrl(origin, acct, jan, im.slot, v) : null }); delete o.key; return o; });
 }
 // 画像枚数を商品側へ同期し、商品の updated_at を返す（画面側が楽観ロックの基準を追従させるため）
 async function syncCount(env, acct, jan) {
@@ -110,10 +110,10 @@ export async function onRequestPost(context) {
       ts = nowIso();
       try {
         await env.DB.prepare(
-          'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, quality, quality_warn, phash, has_thumb) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
-        ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null, quality, qualityWarn, phash, thumb ? 1 : 0).run();
+          'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, quality, quality_warn, phash, has_thumb, ver) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null, quality, qualityWarn, phash, thumb ? 1 : 0, ts).run();
         done = true;
-      } catch (e) { /* 取られた。次の番号へ */ }
+      } catch (e) { if (!/UNIQUE|PRIMARY KEY|constraint/i.test(String(e && e.message || e))) throw e; /* 取られた。次の番号へ */ }
     }
     if (!done) return json({ ok: false, reason: 'busy', message: '同時に登録が集中しています。もう一度お試しください' }, 409);
     try { await put(imageKey(acct, jan, usedSlot)); await putThumb(usedSlot); }
@@ -124,9 +124,9 @@ export async function onRequestPost(context) {
   } else {
     await put(imageKey(acct, jan, usedSlot)); await putThumb(usedSlot);
     await env.DB.prepare(
-      'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, quality, quality_warn, phash, has_thumb) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ' +
-      'ON CONFLICT(account_id, jan, slot) DO UPDATE SET key=excluded.key, bytes=excluded.bytes, width=excluded.width, height=excluded.height, original_name=excluded.original_name, original_type=excluded.original_type, created_at=excluded.created_at, created_by=excluded.created_by, review=NULL, review_note=NULL, reviewed_by=NULL, reviewed_at=NULL, quality=excluded.quality, quality_warn=excluded.quality_warn, phash=excluded.phash, has_thumb=excluded.has_thumb'
-    ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null, quality, qualityWarn, phash, thumb ? 1 : 0).run();
+      'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, quality, quality_warn, phash, has_thumb, ver) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ' +
+      'ON CONFLICT(account_id, jan, slot) DO UPDATE SET key=excluded.key, bytes=excluded.bytes, width=excluded.width, height=excluded.height, original_name=excluded.original_name, original_type=excluded.original_type, created_at=excluded.created_at, created_by=excluded.created_by, review=NULL, review_note=NULL, reviewed_by=NULL, reviewed_at=NULL, quality=excluded.quality, quality_warn=excluded.quality_warn, phash=excluded.phash, has_thumb=excluded.has_thumb, ver=excluded.ver'
+    ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null, quality, qualityWarn, phash, thumb ? 1 : 0, ts).run();
   }
   const pts = await syncCount(env, acct, jan);
   // 同じ写真が別の商品にも登録されていないか（撮り間違い・貼り間違いの検出）
@@ -162,19 +162,22 @@ async function reorder(context) {
   } else return json({ ok: false, reason: 'bad_action' }, 400);
   const moves = order.map((oldSlot, i) => ({ from: oldSlot, to: i + 1 })).filter((m) => m.from !== m.to);
   if (!moves.length) return json({ ok: true, jan, images: await listImages(env, origin, acct, jan) });
-  // 実体を読み込んでから書き戻す（数枚なので一括で持てる）。読めないものがあれば中止して何も変えない
+  // 実体を先に読み込む（数枚なので一括で持てる）。読めないものがあれば中止して何も変えない
   const bufs = {}, tbufs = {};
   for (const m of moves) { const u8 = await readBlob(env, imageKey(acct, jan, m.from)); if (!u8) return json({ ok: false, reason: 'blob_missing', message: m.from + '枚目の実体が見つかりません' }, 500); bufs[m.from] = u8; tbufs[m.from] = await readBlob(env, thumbKey(acct, jan, m.from)); }
-  for (const m of moves) { await blobPut(env, imageKey(acct, jan, m.to), bufs[m.from]); if (tbufs[m.from]) await blobPut(env, thumbKey(acct, jan, m.to), tbufs[m.from]); else await blobDelete(env, thumbKey(acct, jan, m.to)); }
   const ts = nowIso();
-  const stmts = [env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=?').bind(acct, jan)];
+  // 台帳を先に（1 つのトランザクション）。見ていた番号だけ消して入れ直す。その間に誰かが写真を足していれば主キーで衝突して丸ごと失敗 → 409（何も失わない）
+  const stmts = [env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=? AND slot IN (' + cur.map(() => '?').join(',') + ')').bind(acct, jan, ...cur)];
   const byOld = {}; imgs.forEach((im) => { byOld[im.slot] = im; });
   order.forEach((oldSlot, i) => {
     const im = byOld[oldSlot], to = i + 1;
-    stmts.push(env.DB.prepare('INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, review, review_note, reviewed_by, reviewed_at, quality, quality_warn, phash, has_thumb) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-      .bind(acct, jan, to, imageKey(acct, jan, to), im.bytes, im.width, im.height, im.original_name, im.original_type, oldSlot === to ? im.created_at : ts, im.created_by, im.review, im.review_note, im.reviewed_by, im.reviewed_at, im.quality, im.quality_warn, im.phash || null, im.has_thumb || 0));
+    stmts.push(env.DB.prepare('INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by, review, review_note, reviewed_by, reviewed_at, quality, quality_warn, phash, has_thumb, ver) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+      .bind(acct, jan, to, imageKey(acct, jan, to), im.bytes, im.width, im.height, im.original_name, im.original_type, im.created_at, im.created_by, im.review, im.review_note, im.reviewed_by, im.reviewed_at, im.quality, im.quality_warn, im.phash || null, im.has_thumb || 0, oldSlot === to ? (im.ver || im.created_at) : ts));
   });
-  await env.DB.batch(stmts);
+  let res;
+  try { res = await env.DB.batch(stmts); } catch (e) { return json({ ok: false, reason: 'changed', message: '並べ替えの途中で他の人が写真を足しました。画面を更新してからやり直してください' }, 409); }
+  if (!(res[0] && res[0].meta && res[0].meta.changes === cur.length)) return json({ ok: false, reason: 'changed', message: '写真が変わっています。画面を更新してからやり直してください', images: await listImages(env, origin, acct, jan) }, 409);
+  for (const m of moves) { await blobPut(env, imageKey(acct, jan, m.to), bufs[m.from]); if (tbufs[m.from]) await blobPut(env, thumbKey(acct, jan, m.to), tbufs[m.from]); else await blobDelete(env, thumbKey(acct, jan, m.to)); }
   const by = userOf(request);
   const pts = await syncCount(env, acct, jan);
   await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by);
@@ -199,17 +202,16 @@ export async function onRequestDelete(context) {
     const to = im.slot - 1;
     // 先に台帳で番号を取る。前の番号が（同時登録で）埋まっていたら主キー衝突で失敗する＝詰めずにそのまま残す（他の人の写真を消さない）
     let moved = false;
-    try { const r = await env.DB.prepare('UPDATE pim_images SET slot=?, key=?, created_at=? WHERE account_id=? AND jan=? AND slot=?').bind(to, imageKey(acct, jan, to), nowIso(), acct, jan, im.slot).run(); moved = !!(r.meta && r.meta.changes); }
+    try { const r = await env.DB.prepare('UPDATE pim_images SET slot=?, key=?, ver=? WHERE account_id=? AND jan=? AND slot=?').bind(to, imageKey(acct, jan, to), nowIso(), acct, jan, im.slot).run(); moved = !!(r.meta && r.meta.changes); }
     catch (e) { moved = false; }
     if (moved) {
-      const obj = await blobGet(env, im.key);
-      if (obj) {
-        const buf = obj.body instanceof ArrayBuffer ? new Uint8Array(obj.body) : new Uint8Array(await new Response(obj.body).arrayBuffer());
-        await blobPut(env, imageKey(acct, jan, to), buf);
-        await blobDelete(env, im.key);
-      }
+      const buf = await readBlob(env, im.key);
+      if (buf) await blobPut(env, imageKey(acct, jan, to), buf);
       const tb = await readBlob(env, thumbKey(acct, jan, im.slot));
-      if (tb) { await blobPut(env, thumbKey(acct, jan, to), tb); await blobDelete(env, thumbKey(acct, jan, im.slot)); } else await blobDelete(env, thumbKey(acct, jan, to));
+      if (tb) await blobPut(env, thumbKey(acct, jan, to), tb); else await blobDelete(env, thumbKey(acct, jan, to));
+      // 空いた番号に（同時登録で）別の写真が入っていたら、その実体を消さない
+      const taken = await env.DB.prepare('SELECT 1 AS x FROM pim_images WHERE account_id=? AND jan=? AND slot=?').bind(acct, jan, im.slot).first();
+      if (!taken) { await blobDelete(env, im.key); await blobDelete(env, thumbKey(acct, jan, im.slot)); }
     }
     if (!moved) break; // 詰め先が埋まったら、それより後ろも動かさない（順番が入れ替わらないように）
   }

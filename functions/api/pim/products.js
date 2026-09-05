@@ -75,8 +75,11 @@ export async function onRequestPut(context) {
     const r = await upsertStmt(env, acct, p, null, ts, by, 'insert_only').run();
     if (!(r.meta && r.meta.changes)) {
       const cur = await current();
-      const imgs0 = await loadImages(env, acct, [p.jan]);
-      return json({ ok: false, reason: 'exists', message: 'この JAN は' + (cur && cur.updated_by ? cur.updated_by + ' さんが' : '他の人が') + '先に登録しました。その内容を表示します', product: withImages(origin, acct, [cur], imgs0)[0] }, 409);
+      if (cur) {
+        const imgs0 = await loadImages(env, acct, [p.jan]);
+        return json({ ok: false, reason: 'exists', message: 'この JAN は' + (cur.updated_by ? cur.updated_by + ' さんが' : '他の人が') + '先に登録しました。その内容を表示します', product: withImages(origin, acct, [cur], imgs0)[0] }, 409);
+      }
+      await upsertStmt(env, acct, p, null, ts, by, 'upsert').run(); // その一瞬で消されていた → 入れ直す
     }
   } else await upsertStmt(env, acct, p, null, ts, by, 'upsert').run();
   const row = await current();

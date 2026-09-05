@@ -183,6 +183,7 @@
       <div class="sub" id="hsub">JANを読んで写真を5枚まで</div><span class="obadge" id="obadge" hidden></span>
     </div>
     <div style="display:flex;gap:6px">
+      <a class="hbtn" href="./manual-phone.html" style="text-decoration:none">使い方</a>
       <a class="hbtn" href="./import.html" style="text-decoration:none">PC取込</a>
       <button class="hbtn" id="btnSettings">設定</button>
     </div>
@@ -791,7 +792,7 @@
       var editing = $('editBox').classList.contains('open');
       if (before !== after || j.product.updated_at !== p.updated_at) {
         var byOther = j.product.updated_by && j.product.updated_by !== C.Auth.user();
-        if (editing) { state.product.images = j.product.images; state.product.image_count = j.product.image_count; renderGrid(); }
+        if (editing) { state.product.images = j.product.images; state.product.image_count = j.product.image_count; if (!byOther || j.product.updated_by === p.updated_by) state.product.updated_at = j.product.updated_at; renderGrid(); } // 写真だけの変化なら基準時刻も追従（保存時に 409 で入力が消えない）
         else openProductQuiet(j.product);
         if (byOther) toast((j.product.updated_by || '他の人') + ' さんの変更を取り込みました');
       }
@@ -941,7 +942,7 @@
       delete state.busy[showSlot];
       if (preview) URL.revokeObjectURL(preview);
       renderGrid();
-      if (e && (e.auth || e.setup)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true);
+      if (e && (e.auth || e.setup || e.staff)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true);
     });
   }
   // 自動チェックで注意が付いた写真は、登録前に一度きく（止めはしない）
@@ -1142,7 +1143,7 @@
       C.appendImageExtras(fd, r);
       return api('images', { method: 'POST', body: fd });
     }).then(function (j) { afterUpload(j, jan, showSlot); })
-      .catch(function (e) { if (meta && C.isNetworkError(e)) { return queueOffline(jan, slot, meta, 'camera.webp', 'image/webp', showSlot, preview); } delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
+      .catch(function (e) { if (meta && C.isNetworkError(e)) { return queueOffline(jan, slot, meta, 'camera.webp', 'image/webp', showSlot, preview); } delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup || e.staff)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
   }
   // ── 送信待ち（電波が切れたとき）──
   function queueOffline(jan, slot, r, name, type, showSlot, preview) {
@@ -1157,7 +1158,7 @@
     flushing = true;
     C.Outbox.flush(function (it, j) {
       if (j && j.ok && state.product && state.product.jan === it.fields.jan) { state.product.images = j.images; state.product.image_count = j.images.length; Object.keys(state.busy).forEach(function (k) { if (state.busy[k].pending) delete state.busy[k]; }); renderGrid(); }
-      if (j && j.ok) todayCount(1);
+      if (j && j.ok) todayCount(1); else if (j) toast('送信待ちの写真（' + it.fields.jan + '）は登録できませんでした: ' + (j.message || j.reason), true);
     }).then(function (n) { flushing = false; updateOutbox(); if (n) toast('送信待ちの写真 ' + n + ' 枚を送りました'); }).catch(function (e) { flushing = false; if (e && (e.auth || e.staff)) handleErr(e); });
   }
   window.addEventListener('online', flushOutbox);

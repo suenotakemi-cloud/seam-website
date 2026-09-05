@@ -99,6 +99,7 @@
   <div class="hwrap">
     <div><h1>SEAM 商品マスタ 取り込み・出力</h1><div class="sub" id="hsub">メーカーごとにバラバラな商品データを、ひとつの形に揃える</div></div>
     <div class="row">
+      <a class="btn" href="./manual-pc.html">📖 使い方</a>
       <a class="btn" href="./index.html">📱 スマホ登録画面</a>
       <button class="btn" id="btnLogout">ログアウト</button>
     </div>
@@ -695,6 +696,7 @@
     var bad = S.items.filter(function (i) { return i.errors.length; });
     var warn = ok.filter(function (i) { return i.warnings.length; });
     S.fileDups = N.findFileDuplicates(ok);
+    Object.keys(S.fileDups).forEach(function (k) { S.fileDups[k] = S.fileDups[k].map(function (i) { return S.items.indexOf(ok[i]); }); }); // 添字は S.items 基準に揃える（エラー行があるとずれる）
     var dupRows = Object.keys(S.fileDups).reduce(function (a, k) { return a + S.fileDups[k].length; }, 0);
     var wc = {}; S.items.forEach(function (i) { i.warnings.concat(i.errors).forEach(function (w) { var k = w.replace(/\(.*$/, ''); wc[k] = (wc[k] || 0) + 1; }); });
     $('warnList').innerHTML = Object.keys(wc).sort(function (a, b) { return wc[b] - wc[a]; }).map(function (k) { return '<li>' + esc(k) + ' <span class="tag">' + wc[k] + '件</span></li>'; }).join('') || '<li class="muted">なし</li>';
