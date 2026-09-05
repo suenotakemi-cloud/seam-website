@@ -15180,8 +15180,21 @@ function MaisonResult({ karte, answers, scores, products, onRestart }) {
   const copy = buildResultCopy(answers, scores) || {};
   const verdict = copy.verdict || copy.headline || buildVerdictLine(answers, scores) || '今の髪に必要なものを、順番に。';
   const lead = copy.nuanceLine || origin.personality || '生まれ持った髪の輪郭と、これまでの履歴。ふたつを分けて読むことで、今のあなたに必要なケアが見えてきます。';
-  const picks = (products || []).slice(0, 4);
+  // pickSeamProducts はスコア情報を含む { p, s } を返す。
+  // 新UIでは商品本体を描画するため、ラッパー形式と商品直配列の両方を受け付ける。
+  const picks = (products || []).map(item => item && item.p ? item.p : item).filter(Boolean).slice(0, 4);
   const productLink = p => p.salonTownItemId ? `https://salon.town/item/${p.salonTownItemId}` : p.productPageUrl || p.sourceUrl || 'onlineshop.html';
+  const recoverProductImage = event => {
+    const img = event.currentTarget;
+    const original = img.getAttribute('src') || '';
+    if (!img.dataset.webpTried && !/\.webp(?:$|\?)/i.test(original)) {
+      img.dataset.webpTried = '1';
+      img.src = original.replace(/\.[a-z0-9]+(?:\?.*)?$/i, '.webp');
+      return;
+    }
+    img.hidden = true;
+    img.parentElement && img.parentElement.classList.add('mx-product-image--empty');
+  };
   return h('div',{className:'mx-result'},
     h('div',{className:'no-print'},h(TopBar,null)),
     h('main',null,
@@ -15206,7 +15219,7 @@ function MaisonResult({ karte, answers, scores, products, onRestart }) {
         h('p',{className:'mx-result-intro'},'ブランドではなく、あなたの髪に必要な役割から選びました。結果は確定ではなく、プロと相談するための美しい入口です。'),
         picks.length ? h('div',{className:'mx-product-list'},picks.map((p,i)=>h('article',{key:p.id||i,className:'mx-product'},
           h('div',{className:'mx-product-number'},String(i+1).padStart(2,'0')),
-          h('div',{className:'mx-product-image'},h('img',{src:p.imageUrl||p.image,alt:p.name||'',loading:i?'lazy':'eager'})),
+          h('div',{className:'mx-product-image'},h('img',{src:p.imageUrl||p.image,alt:p.name||'',loading:i?'lazy':'eager',onError:recoverProductImage})),
           h('p',{className:'mx-product-brand'},p.brand||p.line||''),
           h('h3',null,p.name||'Recommended care'),
           h('p',{className:'mx-product-copy'},p.cardCopy||p.pitchCopy||p.recommendedFor||''),
@@ -15339,7 +15352,7 @@ function Result({
   // cache-bust付きで強制最新化
   const [seamData, setSeamData] = useState(null);
   useEffect(() => {
-    fetch('data/products/seam-master.json?v=20260903', {
+    fetch('data/products/seam-master.json?v=20260905', {
       cache: 'default'
     }).then(r => r.ok ? r.json() : null).then(d => {
       // 商品画像がないものは提案に出さない(オーナー方針)
@@ -15350,7 +15363,7 @@ function Result({
   // Home Tools(美容家電) data 取得
   const [toolsData, setToolsData] = useState(null);
   useEffect(() => {
-    fetch('data/products/seam-tools.json?v=20260903', {
+    fetch('data/products/seam-tools.json?v=20260905', {
       cache: 'default'
     }).then(r => r.ok ? r.json() : null).then(d => setToolsData(d)).catch(() => setToolsData(null));
   }, []);
