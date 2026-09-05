@@ -361,6 +361,12 @@
       <div class="field"><label>新しいパスワード（確認）</label><input type="password" id="pwNew2" autocomplete="new-password"></div>
       <button class="btn" id="btnPw">パスワードを変更</button>
     </details>
+    <details style="margin-bottom:12px"><summary style="font-size:13px;cursor:pointer">データを出力する（CSV をこの端末に保存）</summary>
+      <p style="margin-top:8px">PC の取り込み画面と同じものを、スマホからも落とせます。iPhone は「ファイル」に保存、または共有から送れます。</p>
+      <button class="btn" id="btnExSource" style="margin-bottom:8px">取り込んだ CSV の形 ＋ 画像1〜5</button>
+      <button class="btn" id="btnExImages" style="margin-bottom:8px">商品ID・JAN・商品名・画像1〜5 だけ</button>
+      <button class="btn" id="btnExNoimg">写真がまだ無い商品のリスト（撮影用）</button>
+    </details>
     <p class="err" id="setErr"></p>
     <div class="row"><button class="btn solid" id="btnSetSave">保存して閉じる</button><button class="btn danger" id="btnLogout2">ログアウト</button></div>
   </div>
@@ -482,6 +488,23 @@
       toast(j.message || 'パスワードを変えました');
     }).catch(function (e) { $('btnPw').disabled = false; handleErr(e); });
   });
+  // データの出力（PC と同じ CSV をスマホからも）
+  function download(query, fallbackName) {
+    toast('作成中…');
+    fetch('/api/pim/export?' + query, { headers: { 'x-seam-token': C.Auth.get() }, cache: 'no-store' }).then(function (r) {
+      if (r.status === 401) throw { auth: true };
+      if (!r.ok) throw new Error('出力に失敗しました(' + r.status + ')');
+      var cd = r.headers.get('content-disposition') || '', m = cd.match(/filename="([^"]+)"/);
+      return r.blob().then(function (b) {
+        var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = m ? m[1] : fallbackName;
+        document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 3000);
+        toast('ダウンロードしました');
+      });
+    }).catch(handleErr);
+  }
+  $('btnExSource').addEventListener('click', function () { download('format=source', 'seam-products-source.csv'); });
+  $('btnExImages').addEventListener('click', function () { download('format=images', 'seam-products-images.csv'); });
+  $('btnExNoimg').addEventListener('click', function () { download('format=images&noimg=1', 'seam-products-noimg.csv'); });
   $('btnSetupRetry').addEventListener('click', function () { location.reload(); });
 
   // ── スキャン ──
