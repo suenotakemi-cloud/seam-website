@@ -4,7 +4,7 @@
 # 手元の PC で一度だけ実行してコミットしてください。取り込み後は index.html の img/video 参照を
 # 相対パス（img/xxx.jpg 等）に切り替える → sed の行を参照。
 set -euo pipefail
-cd "$(dirname "$0")/../salontown/img"
+mkdir -p "$(dirname "$0")/../salontown/img" && cd "$(dirname "$0")/../salontown/img"
 B="https://d8j0ntlcm91z4.cloudfront.net/user_3ECYorMiZpoHNvjrZdo8FCGk7KB/hf_20260905_060307_"
 curl -fsSL -o hero.png     "${B}ffbe4bda-1365-4cb3-ad33-8cb323c5e0ce.png"
 curl -fsSL -o reserve.png  "${B}16b5038e-4185-4362-9bd5-d3b7c87dc076.png"
