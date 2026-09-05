@@ -226,8 +226,13 @@
         <div><label>写真</label><select id="exImg"><option value="">すべて</option><option value="only">写真ありだけ</option><option value="none">写真なしだけ（撮影リスト用）</option></select></div>
       </div>
       <div class="row" style="margin-top:12px">
-        <button class="btn solid" id="btnExCsv">CSV をダウンロード（Excel で開けます）</button>
-        <button class="btn" id="btnExJson">JSON をダウンロード</button>
+        <button class="btn solid" id="btnExSource">取り込んだ CSV の形 ＋ 画像1〜5（EC 向け・商品IDで突き合わせ）</button>
+        <button class="btn" id="btnExImages">商品ID・JAN・画像1〜5 だけ</button>
+      </div>
+      <p class="muted" style="margin-top:8px">「取り込んだ CSV の形」は、最後に取り込んだファイルの列（例: 菊池 CSV の 商品コード, EC表示名, JAN … 22列）をそのまま出し、右端に 画像1〜5 と 画像枚数 を足します。EC 側は <b>商品コード（商品ID）</b> で突き合わせてください。</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="btnExCsv">統一フォーマット CSV</button>
+        <button class="btn" id="btnExJson">統一フォーマット JSON</button>
       </div>
       <p class="muted" style="margin-top:10px">画像は URL で載ります（<code>https://seam.site/pim-img/products/JAN/枚目.webp</code>）。EC 側はこの URL をそのまま読み込めます。</p>
     </div>
@@ -457,7 +462,13 @@
     readMap();
     if (S.mapping.jan == null || S.mapping.name == null) { toast('JAN と 商品名 の列は必須です', true); return; }
     var opts = { taxIncluded: $('optTax').value === '1', taxRate: parseInt($('optRate').value, 10) || 10, source: $('optSource').value.trim() || S.file.name, maker: $('optSource').value.trim() };
-    S.items = S.rows.slice(S.headerRow + 1).map(function (r, i) { var it = N.normalizeRow(r, S.mapping, opts); it.rowNo = S.headerRow + i + 2; return it; });
+    S.items = S.rows.slice(S.headerRow + 1).map(function (r, i) {
+      var it = N.normalizeRow(r, S.mapping, opts); it.rowNo = S.headerRow + i + 2;
+      // 元CSVの1行をそのまま持つ（「元CSVの形＋画像」で出すため）。見出し名 → 値
+      var raw = {}; S.headers.forEach(function (h, c) { raw[h] = r[c] == null ? '' : String(r[c]); });
+      it.product._raw = raw;
+      return it;
+    });
     var ok = S.items.filter(function (i) { return !i.errors.length; });
     var bad = S.items.filter(function (i) { return i.errors.length; });
     var warn = ok.filter(function (i) { return i.warnings.length; });
@@ -595,7 +606,7 @@
     var L = function (m) { log.textContent += m + '\n'; log.scrollTop = log.scrollHeight; };
     var CH = 300, total = pl.toSave.length, done = 0, importId = null, ins = 0, upd = 0, conf = 0;
     readMap();
-    api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, total: S.items.length } })
+    api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, total: S.items.length } })
       .then(function (j) {
         if (!j.ok) throw new Error(j.message || j.reason);
         importId = j.import_id; L('取り込み #' + importId + ' 開始 … ' + total + '件を保存');
@@ -778,10 +789,12 @@
       if (r.status === 401) throw { auth: true };
       if (!r.ok) throw new Error('出力に失敗しました(' + r.status + ')');
       var cd = r.headers.get('content-disposition') || '', m = cd.match(/filename="([^"]+)"/);
-      return r.blob().then(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = m ? m[1] : ('seam-products.' + format); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000); toast('ダウンロードしました'); });
+      return r.blob().then(function (b) { var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = m ? m[1] : ('seam-products.' + (format === 'json' ? 'json' : 'csv')); document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000); toast('ダウンロードしました'); });
     }).catch(handleErr);
   }
   $('btnExCsv').addEventListener('click', function () { download('csv'); });
+  $('btnExSource').addEventListener('click', function () { download('source'); });
+  $('btnExImages').addEventListener('click', function () { download('images'); });
   $('btnExJson').addEventListener('click', function () { download('json'); });
 
   boot();
