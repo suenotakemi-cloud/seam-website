@@ -265,7 +265,7 @@
             <div class="field"><label>メーカー</label><input id="eMaker"></div>
             <div class="field"><label>ブランド</label><input id="eBrand"></div>
           </div>
-          <div class="field"><label>商品ID（社内コード・EC の突き合わせ用）</label><input id="eSku" autocapitalize="none"></div>
+          <div class="field"><label>商品コード（商品ID・EC で突き合わせる番号）</label><input id="eSku" autocapitalize="none" placeholder="例: 01010601"></div>
           <div class="row">
             <button class="btn solid" id="btnSave">保存</button>
             <button class="btn ghost" id="btnEditCancel">閉じる</button>
@@ -309,7 +309,7 @@
         </div>
         <div class="row">
           <div class="field"><label>メーカー</label><input id="nMaker"></div>
-          <div class="field"><label>商品ID（社内コード・任意）</label><input id="nSku" autocapitalize="none"></div>
+          <div class="field"><label>商品コード（商品ID）</label><input id="nSku" autocapitalize="none" placeholder="例: 01010601"></div>
         </div>
         <button class="btn solid" id="btnCreate">登録して写真へ</button>
         <button class="btn ghost" id="btnNewCancel">やめる</button>
@@ -427,7 +427,7 @@
     <details style="margin-bottom:12px"><summary style="font-size:13px;cursor:pointer">データを出力する（CSV をこの端末に保存）</summary>
       <p style="margin-top:8px">PC の取り込み画面と同じものを、スマホからも落とせます。iPhone は「ファイル」に保存、または共有から送れます。</p>
       <button class="btn" id="btnExSource" style="margin-bottom:8px">取り込んだ CSV の形 ＋ 画像1〜5</button>
-      <button class="btn" id="btnExImages" style="margin-bottom:8px">商品ID・JAN・商品名・画像1〜5 だけ</button>
+      <button class="btn" id="btnExImages" style="margin-bottom:8px">商品コード・JAN・商品名・画像1〜5 だけ</button>
       <button class="btn" id="btnExNoimg">写真がまだ無い商品のリスト（撮影用）</button>
     </details>
     <p class="err" id="setErr"></p>
@@ -763,7 +763,7 @@
     $('pName').textContent = p.name;
     var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' +
-      (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品ID <b>' + esc(p.sku) + '</b></span>' : '');
+      (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品コード <b>' + esc(p.sku) + '</b></span>' : '<span style="color:var(--ng)">商品コード 未入力（「商品情報を編集」で入れてください）</span>');
     $('editBox').classList.remove('open');
     renderGrid();
     recent(p);
@@ -799,7 +799,7 @@
     }).catch(function () { /* 通信断は次回 */ });
   }
   function openProductQuiet(p) { state.product = p; renderGrid(); $('pName').textContent = p.name; var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
-    $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' + (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '');
+    $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' + (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品コード <b>' + esc(p.sku) + '</b></span>' : '<span style="color:var(--ng)">商品コード 未入力</span>');
     $('hsub').textContent = p.name.slice(0, 24) + (p.updated_by ? '（最終更新: ' + p.updated_by + '）' : ''); }
   function renderGrid() {
     var p = state.product, imgs = (p.images || []).slice().sort(function (a, b) { return a.slot - b.slot; });

@@ -34,6 +34,7 @@ export async function onRequestGet({ request, env, data }) {
   }
   if (maker) { where.push('maker=?'); binds.push(maker); }
   if (noimg) where.push('image_count=0');
+  if (url.searchParams.get('nosku') === '1') where.push("(sku IS NULL OR sku='')"); // 商品コード（EC の突き合わせ用）がまだ無いもの
   const W = ' WHERE ' + where.join(' AND ');
   const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_products' + W).bind(...binds).first();
   const rs = await env.DB.prepare('SELECT * FROM pim_products' + W + ' ORDER BY updated_at DESC LIMIT ? OFFSET ?').bind(...binds, limit, offset).all();

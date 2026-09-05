@@ -17,6 +17,7 @@ export async function onRequestGet({ env, data }) {
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND image_count>0) AS with_images, ' +
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND image_count=0) AS no_images, ' +
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND image_count>=5) AS full5, ' +
+    '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND (sku IS NULL OR sku=\'\')) AS no_sku, ' +
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1) AS images, ' +
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review=\'retake\') AS retake, ' +
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review=\'ok\') AS reviewed_ok, ' +
