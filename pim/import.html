@@ -152,7 +152,7 @@
           <label class="muted"><input type="checkbox" data-f="brand"> ブランド</label>
           <label class="muted"><input type="checkbox" data-f="category"> カテゴリ</label>
           <label class="muted"><input type="checkbox" data-f="description"> 商品説明</label>
-          <label class="muted"><input type="checkbox" data-f="sku"> 商品ID</label>
+          <label class="muted"><input type="checkbox" data-f="sku"> 商品コード</label>
         </div>
       </div>
       <div class="opts">
@@ -215,6 +215,7 @@
         <input type="search" id="q" placeholder="商品名・JAN・ブランドで検索">
         <select id="fMaker"><option value="">メーカー: すべて</option></select>
         <label class="muted"><input type="checkbox" id="fNoimg"> 写真なしだけ</label>
+        <label class="muted"><input type="checkbox" id="fNosku"> 商品コードなしだけ</label>
         <button class="btn sm" id="btnSearch">検索</button>
         <span class="muted" id="prodCount"></span>
       </div>
@@ -235,7 +236,7 @@
         </div>
         <p class="muted" style="margin:6px 0 0">選択した商品の 1 項目をまとめて置き換えます。税区分・税率を変えると税抜/税込を計算し直します。辞書があれば当たります。</p>
       </div>
-      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th></th><th>写真</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th></th><th>写真</th><th>JAN</th><th>商品コード</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
       <div class="row" style="margin-top:10px"><button class="btn sm" id="btnPrev">← 前</button><button class="btn sm" id="btnNext">次 →</button></div>
     </div>
   </section>
@@ -275,8 +276,8 @@
         <div><label>写真</label><select id="exImg"><option value="">すべて</option><option value="only">写真ありだけ</option><option value="none">写真なしだけ（撮影リスト用）</option></select></div>
       </div>
       <div class="row" style="margin-top:12px">
-        <button class="btn solid" id="btnExSource">取り込んだ CSV の形 ＋ 画像1〜5（EC 向け・商品IDで突き合わせ）</button>
-        <button class="btn" id="btnExImages">商品ID・JAN・画像1〜5 だけ</button>
+        <button class="btn solid" id="btnExSource">取り込んだ CSV の形 ＋ 画像1〜5（EC 向け・商品コードで突き合わせ）</button>
+        <button class="btn" id="btnExImages">商品コード・JAN・画像1〜5 だけ</button>
       </div>
       <p class="muted" style="margin-top:8px">「取り込んだ CSV の形」は、最後に取り込んだファイルの列（例: 菊池 CSV の 商品コード, EC表示名, JAN … 22列）をそのまま出し、右端に 画像1〜5 と 画像枚数 を足します。EC 側は <b>商品コード（商品ID）</b> で突き合わせてください。</p>
       <div class="row" style="margin-top:12px">
@@ -443,7 +444,7 @@
   var FIELDS = [
     ['jan', 'JAN', true], ['name', '商品名', true], ['price', '価格', false], ['tax', '税区分（税込/税抜・課税区分）', false],
     ['amount', '内容量', false], ['unit', '単位', false], ['retail', '上代（希望小売価格）', false], ['cost', '仕入価格', false],
-    ['maker', 'メーカー', false], ['brand', 'ブランド', false], ['category', 'カテゴリ（複数可）', false], ['description', '商品説明', false], ['sku', '元商品コード', false],
+    ['maker', 'メーカー', false], ['brand', 'ブランド', false], ['category', 'カテゴリ（複数可）', false], ['description', '商品説明', false], ['sku', '商品コード（商品ID・EC の突き合わせ用）', false],
   ];
   var S = { file: null, sheets: null, rows: [], headerRow: 0, headers: [], mapping: {}, items: [], fileDups: {}, dbExisting: {}, decisions: {}, fileDecisions: {}, similar: [] };
   var toastT;
@@ -636,7 +637,7 @@
   $('headerRow').addEventListener('change', function () { S.headerRow = parseInt(this.value, 10); buildMap(); });
   function impType() { var r = document.querySelector('input[name=impType]:checked'); return r ? r.value : 'normal'; }
   function updFields() { return Array.prototype.map.call($('updFields').querySelectorAll('input:checked'), function (c) { return c.getAttribute('data-f'); }); }
-  var FIELD_JA = { price: '価格', retail_price: '上代', cost_price: '仕入価格', name: '商品名', amount: '内容量', maker: 'メーカー', brand: 'ブランド', category: 'カテゴリ', description: '商品説明', sku: '商品ID' };
+  var FIELD_JA = { price: '価格', retail_price: '上代', cost_price: '仕入価格', name: '商品名', amount: '内容量', maker: 'メーカー', brand: 'ブランド', category: 'カテゴリ', description: '商品説明', sku: '商品コード' };
   function updFieldsJa() { return updFields().map(function (f) { return FIELD_JA[f] || f; }).join('・'); }
   Array.prototype.forEach.call(document.querySelectorAll('input[name=impType]'), function (r) { r.addEventListener('change', function () { $('updFields').hidden = impType() !== 'update'; if (S.items.length) { renderDups(); renderCommit(); } }); });
   function buildMap() {
@@ -983,14 +984,21 @@
   var P = { offset: 0, limit: 100 };
   function loadProducts(offset) {
     P.offset = Math.max(0, offset || 0);
-    var qs = 'q=' + encodeURIComponent($('q').value.trim()) + '&maker=' + encodeURIComponent($('fMaker').value) + ($('fNoimg').checked ? '&noimg=1' : '') + '&limit=' + P.limit + '&offset=' + P.offset;
+    var qs = 'q=' + encodeURIComponent($('q').value.trim()) + '&maker=' + encodeURIComponent($('fMaker').value) + ($('fNoimg').checked ? '&noimg=1' : '') + ($('fNosku').checked ? '&nosku=1' : '') + '&limit=' + P.limit + '&offset=' + P.offset;
     api('products?' + qs).then(function (j) {
       if (!j.ok) return;
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
-        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
-      }).join('') || '<tr><td colspan="12" class="muted">該当なし</td></tr>';
+        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
+      }).join('') || '<tr><td colspan="13" class="muted">該当なし</td></tr>';
       $('selAll').checked = false; updateSel();
+      Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-sku]'), function (b) {
+        b.addEventListener('click', function () {
+          var jan = b.getAttribute('data-sku'), pr = j.products.filter(function (x) { return x.jan === jan; })[0]; if (!pr) return;
+          var v = prompt('JAN ' + jan + '「' + pr.name + '」の商品コード（商品ID）', ''); if (v == null || !v.trim()) return;
+          api('products', { method: 'PUT', body: Object.assign({}, pr, { sku: v.trim(), price_ex: null, price_in: null, expected_updated_at: pr.updated_at }) }).then(function (r) { if (!r.ok) { toast(r.message || '保存できませんでした', true); return; } toast('商品コードを入れました'); loadProducts(P.offset); }).catch(handleErr);
+        });
+      });
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('.sel'), function (c) { c.addEventListener('change', updateSel); });
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-del]'), function (b) {
         b.addEventListener('click', function () {
@@ -1026,6 +1034,7 @@
   $('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') loadProducts(0); });
   $('fMaker').addEventListener('change', function () { loadProducts(0); });
   $('fNoimg').addEventListener('change', function () { loadProducts(0); });
+  $('fNosku').addEventListener('change', function () { loadProducts(0); });
   $('btnPrev').addEventListener('click', function () { loadProducts(P.offset - P.limit); });
   $('btnNext').addEventListener('click', function () { loadProducts(P.offset + P.limit); });
 
@@ -1106,7 +1115,7 @@
     api('stats').then(function (j) {
       if (!j.ok) return;
       var t = j.totals;
-      $('stKpis').innerHTML = [['商品', t.products], ['写真あり', t.with_images, 'ok'], ['写真なし', t.no_images, t.no_images ? 'ng' : 'ok'], ['5枚そろい', t.full5], ['写真の総数', t.images], ['未検品', t.unreviewed], ['自動チェック注意', t.quality_warn || 0, t.quality_warn ? 'ng' : ''], ['撮り直し', t.retake, t.retake ? 'ng' : ''], ['注意', t.open_issues, t.open_issues ? 'ng' : '']]
+      $('stKpis').innerHTML = [['商品', t.products], ['写真あり', t.with_images, 'ok'], ['写真なし', t.no_images, t.no_images ? 'ng' : 'ok'], ['5枚そろい', t.full5], ['商品コードなし', t.no_sku || 0, t.no_sku ? 'ng' : 'ok'], ['写真の総数', t.images], ['未検品', t.unreviewed], ['自動チェック注意', t.quality_warn || 0, t.quality_warn ? 'ng' : ''], ['撮り直し', t.retake, t.retake ? 'ng' : ''], ['注意', t.open_issues, t.open_issues ? 'ng' : '']]
         .map(function (k) { return '<div class="kpi ' + (k[2] || '') + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div></div>'; }).join('');
       $('stPace').textContent = '直近7日: ' + j.pace.products_7d + ' 商品に写真が付きました（稼働 ' + j.pace.active_days_7d + ' 日・1日平均 ' + j.pace.avg_per_day + ' 商品）' + (j.pace.days_left != null ? ' → このペースなら残り約 ' + j.pace.days_left + ' 稼働日' : '');
       $('stDay').querySelector('tbody').innerHTML = j.by_day.map(function (d) { return '<tr><td>' + esc(d.day) + '</td><td>' + d.images + '</td><td>' + d.products + '</td></tr>'; }).join('') || '<tr><td colspan="3" class="muted">まだありません</td></tr>';

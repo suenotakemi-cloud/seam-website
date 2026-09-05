@@ -46,7 +46,7 @@
     $('sheet').className = 'sheet c' + $('cols').value;
     $('sheet').innerHTML = items.map(function (p) {
       var svg = C.ean13Svg(p.jan, { module: 2, height: 56 });
-      return '<div class="lab"><div class="nm">' + esc(p.name) + '</div>' + ($('showMaker').checked && p.maker ? '<div class="sub">' + esc(p.maker) + (p.brand ? ' ・ ' + esc(p.brand) : '') + '</div>' : '') +
+      return '<div class="lab"><div class="nm">' + esc(p.name) + '</div>' + ($('showMaker').checked && p.maker ? '<div class="sub">' + esc(p.maker) + (p.brand ? ' ・ ' + esc(p.brand) : '') + '</div>' : '') + (p.sku ? '<div class="sub">商品コード ' + esc(p.sku) + '</div>' : '') +
         (svg || '<div class="sub">' + esc(p.jan) + '（EAN-13 にできない桁数）</div>') + ($('showPrice').checked && p.price_in != null ? '<div class="sub">税込 ' + esc(C.fmtYen(p.price_in)) + (p.amount != null ? ' ・ ' + (Math.round(p.amount * 100) / 100) + (p.unit || '') : '') + '</div>' : '') + '</div>';
     }).join('') || '<p class="muted">商品が指定されていません。PC の商品一覧で商品を選んで「ラベルを印刷」を押してください。</p>';
   }
