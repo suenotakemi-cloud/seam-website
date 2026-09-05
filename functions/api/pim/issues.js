@@ -6,7 +6,7 @@
 //                     keep_index    … 同一ファイル内の何番目を採用するか（dup_file・index=0..）
 //                     dismiss       … 何もせず閉じる
 //   2人が同時に同じ注意を押しても、先に「解決済み」へ切り替えた1人だけが保存に進む（後の人は 409）
-import { json, sanitizeProduct, upsertStmt, nowIso, janShapeOk, userOf } from './_lib.js';
+import { json, sanitizeProduct, upsertStmt, nowIso, janShapeOk, userOf, loadDict, applyDict, logChanges, notifyWebhook } from './_lib.js';
 
 function parse(r) {
   const o = Object.assign({}, r);
@@ -27,7 +27,8 @@ export async function onRequestGet({ request, env, data }) {
   return json({ ok: true, open: open ? open.n : 0, issues: (rs.results || []).map(parse) });
 }
 
-export async function onRequestPost({ request, env, data }) {
+export async function onRequestPost(context) {
+  const { request, env, data } = context;
   const acct = data.account.id;
   const b = await request.json().catch(() => null);
   if (!b || typeof b !== 'object') return json({ ok: false, reason: 'bad_json' }, 400);
@@ -50,13 +51,14 @@ export async function onRequestPost({ request, env, data }) {
     let cand = null;
     if (Array.isArray(is.incoming)) cand = is.incoming[resolution === 'keep_index' ? (parseInt(b.index, 10) || 0) : 0] || null;
     else cand = is.incoming;
-    const p = cand ? sanitizeProduct(cand) : null;
+    const p = cand ? applyDict(await loadDict(env, acct), sanitizeProduct(cand)) : null;
     if (!p || !p.jan || !janShapeOk(p.jan) || !p.name) {
       await env.DB.prepare('UPDATE pim_issues SET status=\'open\', resolution=NULL, resolved_at=NULL, resolved_by=NULL WHERE id=?').bind(id).run(); // ロックを戻す
       return json({ ok: false, reason: 'bad_candidate', message: 'JANか商品名が不正なため登録できません' }, 400);
     }
     await upsertStmt(env, acct, p, row.import_id, ts, by, 'upsert').run();
     saved = p.jan;
+    await logChanges(env, acct, [p.jan], 'product', by); notifyWebhook(context, data.account, 'product', [p.jan], by);
   }
   return json({ ok: true, id, resolution: res, saved });
 }

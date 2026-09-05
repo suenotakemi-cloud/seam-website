@@ -28,6 +28,29 @@
       .filter(function (l, i, a) { return l || (i > 0 && a[i - 1]); }).join('\n').trim();
   }
   function digitsOnly(s) { return toHalf(s).replace(/[^0-9]/g, ''); }
+  // 商品名の表記ゆれを揃える（「250mL」「250ｍｌ」「250 ml」「250cc」→「250ml」、「１０００ＭＬ」→「1000ml」、「×」の統一）
+  //   意味を変えない範囲だけ。ブランド名の大文字小文字などは触らない
+  function normalizeName(name) {
+    var s = clean(name);
+    try { s = s.replace(/[ｦ-ﾟ]+/g, function (m) { return m.normalize('NFKC'); }); } catch (e) { /* 半角カナ → 全角 */ }
+    s = s.replace(/(\d)\s*(ml|mL|Ml|ML|cc|CC)(?![a-zA-Z])/g, '$1ml')
+      .replace(/(\d)\s*(g|G)(?![a-zA-Z])/g, '$1g')
+      .replace(/(\d)\s*(kg|KG|Kg)(?![a-zA-Z])/g, '$1kg')
+      .replace(/(\d)\s*(l|L|ℓ)(?![a-zA-Z])/g, '$1L')
+      .replace(/(\d)\s*(mg|MG|Mg)(?![a-zA-Z])/g, '$1mg')
+      .replace(/(\d)\s*[xX×✕＊*]\s*(?=\d)/g, '$1×')
+      .replace(/\s+/g, ' ').trim();
+    return s;
+  }
+  // 「似ている判定」キー（functions/api/pim/_lib.js の nameKey と同じ規則。変えるときは両方）
+  function nameKey(name) {
+    var s = toHalf(name);
+    try { s = s.normalize('NFKC'); } catch (e) { /* */ }
+    s = s.toLowerCase();
+    s = s.replace(/(\d)\s*(ml|cc)\b/g, '$1ml').replace(/(\d)\s*l\b/g, '$1l').replace(/(\d)\s*(kg)\b/g, '$1kg').replace(/(\d)\s*g\b/g, '$1g');
+    s = s.replace(/[\s\-_/・･.,、。()（）\[\]【】「」『』〈〉<>:：;；'"’”`~〜～!?！？#＊*&＆%％]/g, ''); // 「+」は残す（エマルジョン と エマルジョン+ は別商品）
+    return s.slice(0, 200);
+  }
 
   // ── JAN ───────────────────────────────────────────────────
   // 返り値: { jan, valid, reason }
@@ -117,7 +140,7 @@
     if (!s) return { amount: null, unit: '' };
     var m = s.match(AMOUNT_RE);
     if (m) {
-      var num = parseFloat(m[1].replace(',', '.'));
+      var num = parseFloat(m[1].replace(/,(?=\d{3}\b)/g, '').replace(',', '.'));
       var u = m[2];
       var key = u.toLowerCase();
       var unit = UNIT_MAP[key] || UNIT_MAP[u] || u;
@@ -222,8 +245,10 @@
     if (!j.jan) errors.push(j.reason);
     else if (!j.valid) warnings.push(j.reason);
 
-    var name = clean(get('name'));
+    var rawName = clean(get('name'));
+    var name = normalizeName(rawName);
     if (!name) errors.push('商品名が空です');
+    else if (name !== rawName) warnings.push('商品名の表記を揃えました(' + rawName + ' → ' + name + ')');
 
     var pr = parsePrice(get('price'));
     var taxIncluded = opts.taxIncluded ? 1 : 0;
@@ -275,6 +300,7 @@
       description: cleanKeepLines(get('description')).slice(0, 4000),
       sku: clean(get('sku')).slice(0, 64),
       source: clean(opts.source || ''),
+      name_key: nameKey(name),
       images: getAll('image').map(clean).filter(Boolean).slice(0, 5),
     };
     return { product: product, warnings: warnings, errors: errors };
@@ -291,6 +317,24 @@
     });
     var out = {};
     Object.keys(by).forEach(function (k) { if (by[k].length > 1) out[k] = by[k]; });
+    return out;
+  }
+
+  // ── ファイル内で「商品名が似ている」組を見つける（JAN は違うのに名前がほぼ同じ＝表記ゆれ or 登録ミスの疑い）──
+  // 返り値: { key: [index,...] }（2件以上・JAN が 2 種類以上あるものだけ）
+  function findSimilarNames(items) {
+    var by = {};
+    items.forEach(function (it, i) {
+      var p = it.product; if (!p || !p.jan || !p.name_key) return;
+      var k = (p.maker || '') + '\u0000' + p.name_key;
+      (by[k] = by[k] || []).push(i);
+    });
+    var out = {};
+    Object.keys(by).forEach(function (k) {
+      var idx = by[k]; if (idx.length < 2) return;
+      var jans = {}; idx.forEach(function (i) { jans[items[i].product.jan] = 1; });
+      if (Object.keys(jans).length >= 2) out[k] = idx;
+    });
     return out;
   }
 
@@ -390,7 +434,7 @@
     parsePrice: parsePrice, priceBoth: priceBoth, parseTaxFlag: parseTaxFlag, parseTaxRate: parseTaxRate,
     parseAmount: parseAmount, guessAmountFromName: guessAmountFromName, guessUnit: guessUnit, formatAmount: formatAmount,
     ALIASES: ALIASES, guessMapping: guessMapping, normHeader: normHeader,
-    normalizeRow: normalizeRow, findFileDuplicates: findFileDuplicates,
+    normalizeRow: normalizeRow, findFileDuplicates: findFileDuplicates, normalizeName: normalizeName, nameKey: nameKey, findSimilarNames: findSimilarNames,
     OUT_COLUMNS: OUT_COLUMNS, toUnifiedCsv: toUnifiedCsv, csvCell: csvCell,
     detectDelimiter: detectDelimiter, parseCsv: parseCsv, findHeaderRow: findHeaderRow, decodeBytes: decodeBytes,
   };

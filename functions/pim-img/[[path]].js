@@ -6,7 +6,7 @@ import { blobGet } from '../api/pim/_lib.js';
 export async function onRequestGet({ request, env, params }) {
   const parts = Array.isArray(params.path) ? params.path : [params.path];
   const key = parts.join('/');
-  if (!/^products\/\d{1,10}\/\d{8,14}\/[1-5]\.webp$/.test(key)) return new Response('Not found', { status: 404 });
+  if (!/^products\/\d{1,10}\/\d{8,14}\/[1-5](_s)?\.webp$/.test(key)) return new Response('Not found', { status: 404 }); // _s = 300px のサムネ
   const obj = await blobGet(env, key); // R2 → 無ければ D1（R2 未設定の実証実験でも配信できる）
   if (!obj) return new Response('Not found', { status: 404 });
   const etag = obj.etag;

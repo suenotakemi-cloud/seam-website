@@ -1,5 +1,6 @@
 // 統一フォーマットの出力（ログイン中のアカウントの分だけ。EC 連携は ADMIN_KEY + x-seam-account でも可）
-//   GET /api/pim/export?format=csv|json|source|images&maker=&only_images=1&noimg=1
+//   GET /api/pim/export?format=csv|json|source|images&maker=&only_images=1&noimg=1&since=<ISO日時>
+//     since … その日時以降に変わった商品だけ（写真の追加・削除でも商品の updated_at が進むので、EC 側の差分取得に使える）
 //     csv / json … 統一フォーマット（列は js/pim-normalize.js の OUT_COLUMNS と同じ。変えるときは両方）
 //     source     … 取り込んだ CSV そのままの列（例: 菊池 CSV の 22 列）＋ 画像1〜5 ＋ 画像枚数。
 //                  EC 側は「商品コード（商品ID）」で突き合わせる。見出しは最後に取り込んだファイルのもの
@@ -27,7 +28,9 @@ export async function onRequestGet({ request, env, data }) {
   const maker = (url.searchParams.get('maker') || '').trim();
   const onlyImages = url.searchParams.get('only_images') === '1';
   const noimg = url.searchParams.get('noimg') === '1';
+  const since = (url.searchParams.get('since') || '').trim();
   const where = ['account_id=?'], binds = [acct];
+  if (since) { const d = new Date(since); if (isNaN(d.getTime())) return json({ ok: false, reason: 'bad_since', message: 'since は ISO 形式の日時（例: 2026-09-01T00:00:00Z）で指定してください' }, 400); where.push('updated_at>=?'); binds.push(d.toISOString()); }
   if (maker) { where.push('maker=?'); binds.push(maker); }
   if (onlyImages) where.push('image_count>0');
   if (noimg) where.push('image_count=0');
@@ -35,14 +38,14 @@ export async function onRequestGet({ request, env, data }) {
 
   const rows = [];
   for (let off = 0; ; off += 1000) {
-    const rs = await env.DB.prepare('SELECT * FROM pim_products' + W + ' ORDER BY maker, brand, name LIMIT 1000 OFFSET ?').bind(...binds, off).all();
+    const rs = await env.DB.prepare('SELECT * FROM pim_products' + W + ' ORDER BY maker, brand, name, jan LIMIT 1000 OFFSET ?').bind(...binds, off).all();
     const r = rs.results || [];
     rows.push(...r);
     if (r.length < 1000) break;
   }
   const imgs = await loadImages(env, acct, rows.filter((r) => r.image_count > 0).map((r) => r.jan));
   const out = rows.map((r) => {
-    const list = (imgs[r.jan] || []).slice().sort((a, b) => a.slot - b.slot).map((im) => imageUrl(origin, acct, r.jan, im.slot, im.created_at));
+    const list = (imgs[r.jan] || []).slice().sort((a, b) => a.slot - b.slot).map((im) => imageUrl(origin, acct, r.jan, im.slot, im.ver || im.created_at));
     const o = Object.assign({}, r, { image_urls: list });
     delete o.account_id;
     if (format !== 'source') delete o.raw;
@@ -63,20 +66,26 @@ export async function onRequestGet({ request, env, data }) {
   if (format === 'source') {
     // 見出し: 最後に取り込んだファイルのもの。無ければ raw の鍵の和集合（取り込み順）
     let headers = null;
-    const last = await env.DB.prepare('SELECT headers FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
+    // 見出しは「通常の取り込み」の最新のもの（改定CSVなど列の少ない更新取り込みは使わない）
+    const last = await env.DB.prepare('SELECT headers FROM pim_imports WHERE account_id=? AND headers IS NOT NULL AND (kind IS NULL OR kind=\'normal\') ORDER BY id DESC LIMIT 1').bind(acct).first()
+      || await env.DB.prepare('SELECT headers FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
     if (last && last.headers) { try { headers = JSON.parse(last.headers); } catch (e) { headers = null; } }
     const raws = out.map((p) => { if (!p.raw) return null; try { return JSON.parse(p.raw); } catch (e) { return null; } });
     if (!headers || !headers.length) {
       headers = [];
       raws.forEach((r) => { if (r) Object.keys(r).forEach((k) => { if (headers.indexOf(k) < 0) headers.push(k); }); });
     }
+    let noImportYet = false;
+    if (!headers.length) { headers = ['商品コード', 'JAN', '商品名', '価格', 'メーカー']; noImportYet = true; } // まだ CSV を取り込んでいない（スマホ登録だけ）
     // 取り込みの列対応（raw の無い商品＝スマホで新規登録したものは、対応が分かる列だけ埋める）
     let mapping = {};
-    const lastMap = await env.DB.prepare('SELECT mapping FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
+    const lastMap = await env.DB.prepare('SELECT mapping FROM pim_imports WHERE account_id=? AND headers IS NOT NULL AND (kind IS NULL OR kind=\'normal\') ORDER BY id DESC LIMIT 1').bind(acct).first()
+      || await env.DB.prepare('SELECT mapping FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
     if (lastMap && lastMap.mapping) { try { mapping = JSON.parse(lastMap.mapping) || {}; } catch (e) { mapping = {}; } }
     const colOf = (field) => (typeof mapping[field] === 'number' ? headers[mapping[field]] : null);
     const fieldByHeader = {};
     [['jan', 'jan'], ['name', 'name'], ['price', 'price'], ['retail', 'retail_price'], ['cost', 'cost_price'], ['maker', 'maker'], ['brand', 'brand'], ['description', 'description'], ['sku', 'sku']].forEach(([f, col]) => { const h = colOf(f); if (h) fieldByHeader[h] = col; });
+    if (noImportYet) Object.assign(fieldByHeader, { '商品コード': 'sku', 'JAN': 'jan', '商品名': 'name', '価格': 'price', 'メーカー': 'maker' });
     const lines = [headers.map(cell).concat(['画像1', '画像2', '画像3', '画像4', '画像5', '画像枚数']).join(',')];
     out.forEach((p, i) => {
       const r = raws[i];
