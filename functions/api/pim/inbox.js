@@ -91,16 +91,18 @@ async function receive(context, key) {
   const tpl = await env.DB.prepare('SELECT id, source, mapping, options, kind FROM pim_imports WHERE account_id=? AND headers=? AND rolled_back_at IS NULL ORDER BY id DESC LIMIT 1').bind(acct, JSON.stringify(headers)).first();
   if (!tpl) return pending('初めての見出しのファイルなので受信箱に置きました。PC の取り込み画面で列を合わせて取り込んでください（次回からは自動で取り込まれます）');
   let mapping = {}, options = {}; try { mapping = JSON.parse(tpl.mapping || '{}'); } catch (e) { /* */ } try { options = JSON.parse(tpl.options || '{}'); } catch (e) { /* */ }
-  if (mapping.jan == null || mapping.name == null) return pending('前回の列合わせに JAN か商品名が無いため、PC で取り込んでください');
+  const kind = tpl.kind === 'update' || tpl.kind === 'fill' ? tpl.kind : 'normal';
+  if (mapping.jan == null || (mapping.name == null && kind !== 'fill')) return pending('前回の列合わせに JAN か商品名が無いため、PC で取り込んでください');
   const tplSource = String(tpl.source || '').replace(/（[^）]*）$/, '');
   const opts = { taxIncluded: !!options.taxIncluded, taxRate: options.taxRate == null ? 10 : options.taxRate, source: source || tplSource || filename, maker: source || tplSource };
   const items = rows.slice(headerRow + 1).map((r) => { const it = N.normalizeRow(r, mapping, opts); const raw = {}; headers.forEach((h, c) => { raw[h] = r[c] == null ? '' : String(r[c]); }); it.product._raw = raw; return it; });
-  const ok = items.filter((i) => !i.errors.length), invalid = items.length - ok.length;
+  // 空欄埋め（メーカーのデータ）は商品名が無い行でも JAN があれば対象
+  const ok = items.filter((i) => !i.errors.length || (kind === 'fill' && i.product.jan && i.errors.every((e) => /商品名/.test(e)))), invalid = items.length - ok.length;
   const fileDups = N.findFileDuplicates(ok);
   const dupIdx = {}; Object.keys(fileDups).forEach((j) => fileDups[j].forEach((ix) => { dupIdx[ix] = j; }));
   const by = 'メール/自動取り込み';
   const imp = await env.DB.prepare('INSERT INTO pim_imports(account_id, ts, filename, source, mapping, headers, kind, total, options) VALUES(?,?,?,?,?,?,?,?,?)')
-    .bind(acct, ts, filename, (opts.source.slice(0, 80) + '（' + by + '）').slice(0, 100), JSON.stringify(mapping), JSON.stringify(headers), tpl.kind === 'update' ? 'update' : 'normal', items.length, JSON.stringify(options)).run();
+    .bind(acct, ts, filename, (opts.source.slice(0, 80) + '（' + by + '）').slice(0, 100), JSON.stringify(mapping), JSON.stringify(headers), kind, items.length, JSON.stringify(options)).run();
   const importId = imp.meta.last_row_id;
   const products = [], issues = [], seen = {};
   ok.forEach((it, ix) => {
@@ -110,18 +112,22 @@ async function receive(context, key) {
       issues.push({ kind: 'dup_file', jan: p.jan, message: '同じファイル内で JAN ' + p.jan + ' が ' + fileDups[p.jan].length + '行にあります（自動取り込み）。どれを残すか決めてください', incoming: fileDups[p.jan].map((i) => ok[i].product) });
       return;
     }
-    products.push(Object.assign({}, p, { _mode: tpl.kind === 'update' ? 'update' : 'new' })); // 登録済みと被る新規は commitProducts が dup_db の注意に回す
+    products.push(Object.assign({}, p, { _mode: kind === 'update' ? 'update' : (kind === 'fill' ? 'fill' : 'new') })); // 登録済みと被る新規は commitProducts が dup_db の注意に回す
   });
-  const fields = tpl.kind === 'update' ? (Array.isArray(options.fields) && options.fields.length ? options.fields : ['price']) : [];
-  let inserted = 0, updated = 0, conflicts = 0, nIssues = 0;
+  const fields = kind === 'update' ? (Array.isArray(options.fields) && options.fields.length ? options.fields : ['price']) : [];
+  const fillNew = kind === 'fill' && !!options.fillNew;
+  let inserted = 0, updated = 0, conflicts = 0, nIssues = 0, filled = 0, unknown = 0;
   for (let i = 0; i < products.length; i += 300) {
-    const r = await commitProducts(context, a, by, { import_id: importId, products: products.slice(i, i + 300), issues: i === 0 ? issues : [], fields });
+    const r = await commitProducts(context, a, by, { import_id: importId, products: products.slice(i, i + 300), issues: i === 0 ? issues : [], fields, fill_new: fillNew });
     if (!r.ok) return pending('取り込めませんでした: ' + (r.message || r.reason));
-    inserted += r.inserted; updated += r.updated; conflicts += r.conflicts; nIssues += r.issues;
+    inserted += r.inserted; updated += r.updated; conflicts += r.conflicts; nIssues += r.issues; filled += r.filled || 0; unknown += r.unknown || 0;
   }
   if (!products.length && issues.length) { const r = await commitProducts(context, a, by, { import_id: importId, products: [], issues, fields }); nIssues += r.issues; }
   await env.DB.prepare('UPDATE pim_imports SET invalid=? WHERE id=?').bind(invalid, importId).run();
-  const msg = '自動で取り込みました: 追加 ' + inserted + ' / 更新 ' + updated + ' / 注意 ' + nIssues + (conflicts ? '（登録済みと被った ' + conflicts + ' は上書きせず注意へ）' : '') + ' / 登録できない行 ' + invalid;
+  const withUrls = kind === 'fill' ? products.filter((p) => p.images && p.images.length).length : 0;
+  const msg = kind === 'fill'
+    ? '自動で取り込みました（空欄だけ埋める）: 空欄を埋めた ' + filled + ' / 追加 ' + inserted + ' / ベースに無い JAN ' + unknown + ' / 注意 ' + nIssues + ' / 登録できない行 ' + invalid + (withUrls ? '。画像URL付きの行が ' + withUrls + ' 件あります（写真は PC の取り込み画面で「画像URLを取り込む」）' : '')
+    : '自動で取り込みました: 追加 ' + inserted + ' / 更新 ' + updated + ' / 注意 ' + nIssues + (conflicts ? '（登録済みと被った ' + conflicts + ' は上書きせず注意へ）' : '') + ' / 登録できない行 ' + invalid;
   await env.DB.prepare('UPDATE pim_inbox SET status=\'imported\', import_id=?, message=? WHERE id=?').bind(importId, msg, inboxId).run();
   return json({ ok: true, inbox_id: inboxId, status: 'imported', import_id: importId, inserted, updated, conflicts, issues: nIssues, invalid, message: msg });
 }

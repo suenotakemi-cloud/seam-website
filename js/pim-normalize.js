@@ -301,7 +301,8 @@
       sku: clean(get('sku')).slice(0, 64),
       source: clean(opts.source || ''),
       name_key: nameKey(name),
-      images: getAll('image').map(clean).filter(Boolean).slice(0, 5),
+      // 画像 URL: 複数列でも、1マスに空白・; ・| ・改行区切りで複数入っていても可（, は次が http のときだけ区切り）
+      images: getAll('image').join('\n').split(/[\s;|]+|,(?=\s*https?:)/).map(function (u) { return clean(u); }).filter(function (u, i, a) { return /^https?:\/\//i.test(u) && a.indexOf(u) === i; }).slice(0, 5),
     };
     return { product: product, warnings: warnings, errors: errors };
   }

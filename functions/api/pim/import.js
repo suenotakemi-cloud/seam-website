@@ -8,6 +8,10 @@
 //              _mode 'overwrite' … 本人が「届いた方で上書き」と決めたもの
 //              _mode 'update'    … 更新取り込み: 登録済みの商品の「選んだ列だけ」を上書き（fields:[...]）。写真・他の列はそのまま。
 //                                  未登録なら新規として入れる
+//              _mode 'fill'      … メーカーのデータ（空欄だけ埋める）: 登録済みの商品は 商品名・商品コード を絶対に変えず、
+//                                  空いている項目（価格・上代・仕入・内容量・メーカー・ブランド・カテゴリ・説明）だけを埋める。
+//                                  元CSVの行(raw)も触らない（ディーラーの CSV がベース）。写真は画面側が空いている枠に足す。
+//                                  未登録の JAN は fill_new:true のときだけ新規として入れる（既定は入れない → unknown に数える）
 //     'finish' { import_id, invalid }                → { import }
 //     'rollback' { import_id }                       → その取り込みで入った商品を消し（写真が付いたものは残す）、上書きした商品を取り込み前の内容に戻す
 //                                                      （commit のたびに pim_import_backup へ「前の状態」を残しているので戻せる）
@@ -42,17 +46,30 @@ export async function commitProducts(context, account, by, b) {
     const ALLOWED_FIELDS = ['name', 'price', 'retail_price', 'cost_price', 'amount', 'maker', 'brand', 'category', 'description', 'sku'];
     const updFields = (Array.isArray(b.fields) ? b.fields : []).filter((f) => ALLOWED_FIELDS.indexOf(f) >= 0);
     if (raw.some((r) => r && r._mode === 'update') && !updFields.length) return { ok: false, status: 400, reason: 'no_fields', message: '更新取り込みでは、上書きする列を1つ以上選んでください' };
+    const fillNew = !!b.fill_new;
     const dict = await loadDict(env, acct);
     const products = raw.map((r) => {
       const p = applyDict(dict, sanitizeProduct(r));
       // 元CSVの1行（見出し→値）。「菊池CSVの形＋画像」で出すために、そのまま保管する
       if (r && r._raw && typeof r._raw === 'object') { try { p.raw = JSON.stringify(r._raw); } catch (e) { /* */ } }
-      const mode = r && r._mode === 'overwrite' ? 'upsert' : (r && r._mode === 'update' ? 'update' : 'insert_only');
+      const mode = r && r._mode === 'overwrite' ? 'upsert' : (r && r._mode === 'update' ? 'update' : (r && r._mode === 'fill' ? 'fill' : 'insert_only'));
       return { p, mode };
-    }).filter((x) => x.p.jan && janShapeOk(x.p.jan) && x.p.name);
+    }).filter((x) => x.p.jan && janShapeOk(x.p.jan) && (x.p.name || x.mode === 'fill')); // 空欄埋めは商品名が無い行（JAN＋写真だけ）も可
     // 保存（新規のつもりのものは「無いときだけ」。changes=0 なら他の人が先に入れている）
-    let inserted = 0, updated = 0, conflicts = 0;
-    const conflictJans = [];
+    let inserted = 0, updated = 0, conflicts = 0, filled = 0, unchanged = 0;
+    const conflictJans = [], unknownJans = [];
+    // 空欄埋め: 「今ある値が空のときだけ」入れる列。商品名・商品コードは絶対に触らない
+    const FILL_TEXT = ['retail_price', 'cost_price', 'maker', 'brand', 'category', 'description'];
+    const empty = (v) => v == null || String(v).trim() === '';
+    const fillStmt = (p, cur) => { // cur: 登録済みの行。埋める列が無ければ null
+      const sets = [], vals = [];
+      FILL_TEXT.forEach((f) => { if (empty(cur[f]) && !empty(p[f])) { sets.push(f + '=?'); vals.push(p[f]); } });
+      if (empty(cur.price_ex) && empty(cur.price_in) && p.price_ex != null) { sets.push('price=?', 'tax_included=?', 'tax_rate=?', 'price_ex=?', 'price_in=?'); vals.push(p.price, p.tax_included, p.tax_rate, p.price_ex, p.price_in); }
+      if (empty(cur.amount) && p.amount != null) { sets.push('amount=?', 'unit=?'); vals.push(p.amount, p.unit == null ? '' : p.unit); }
+      if (!sets.length) return null;
+      sets.push('updated_at=?', 'updated_by=?'); vals.push(ts, by || null);
+      return env.DB.prepare('UPDATE pim_products SET ' + sets.join(', ') + ' WHERE account_id=? AND jan=?').bind(...vals, acct, p.jan);
+    };
     // 更新取り込み: 選んだ列だけ UPDATE。無ければ INSERT（changes=0 のときに拾う）
     // 元CSVの行(raw)も、通常取り込みの列名に合わせて値を差し替える（改定CSVの「価格」→ 元CSVの「標準売上単価」列へ）
     let rawHeaderOf = {};
@@ -82,14 +99,30 @@ export async function commitProducts(context, account, by, b) {
     for (let i = 0; i < products.length; i += 50) {
       const chunk = products.slice(i, i + 50);
       // 取り消し用に「前の状態」を残す（無かった＝NULL。同じ取り込みで2回目以降は最初のものを残す）
-      if (importId) {
-        const before = await loadExisting(chunk.map((x) => x.p.jan));
-        await env.DB.batch(chunk.map((x) => env.DB.prepare('INSERT OR IGNORE INTO pim_import_backup(import_id, account_id, jan, before) VALUES(?,?,?,?)')
-          .bind(importId, acct, x.p.jan, before[x.p.jan] ? JSON.stringify(before[x.p.jan]).slice(0, 60000) : null)));
+      const backupOf = (rows, before) => rows.map((x) => env.DB.prepare('INSERT OR IGNORE INTO pim_import_backup(import_id, account_id, jan, before) VALUES(?,?,?,?)')
+        .bind(importId, acct, x.p.jan, before[x.p.jan] ? JSON.stringify(before[x.p.jan]).slice(0, 60000) : null));
+      const plain = chunk.filter((x) => x.mode !== 'fill');
+      if (importId && plain.length) await env.DB.batch(backupOf(plain, await loadExisting(plain.map((x) => x.p.jan))));
+      // 空欄埋め: 登録済みなら「空の列だけ」UPDATE（埋める列が無ければ何もしない）。未登録は fill_new のときだけ新規
+      const fillChunk = chunk.filter((x) => x.mode === 'fill');
+      if (fillChunk.length) {
+        const cur = await loadExisting(fillChunk.map((x) => x.p.jan));
+        const st = [], stIdx = [];
+        fillChunk.forEach((x) => {
+          if (cur[x.p.jan]) { const q = fillStmt(x.p, cur[x.p.jan]); if (q) { st.push(q); stIdx.push(x); } else unchanged++; }
+          else if (fillNew && x.p.name) { st.push(upsertStmt(env, acct, x.p, importId, ts, by, 'insert_only')); stIdx.push(x); x.isNew = true; }
+          else unknownJans.push(x.p.jan);
+        });
+        if (st.length) {
+          if (importId) await env.DB.batch(backupOf(stIdx, cur)); // 実際に触る行だけ「前の状態」を残す（触らない JAN を取り消しで消さないため）
+          const rs = await env.DB.batch(st);
+          stIdx.forEach((x, k) => { const ch = rs[k] && rs[k].meta ? rs[k].meta.changes : 1; if (x.isNew) { if (ch) inserted++; else unchanged++; } else if (ch) filled++; else unchanged++; });
+        }
       }
-      const res = await env.DB.batch(chunk.map((x) => x.mode === 'update' ? updateStmt(x.p) : upsertStmt(env, acct, x.p, importId, ts, by, x.mode)));
+      const rest = plain;
+      const res = rest.length ? await env.DB.batch(rest.map((x) => x.mode === 'update' ? updateStmt(x.p) : upsertStmt(env, acct, x.p, importId, ts, by, x.mode))) : [];
       const missing = [];
-      chunk.forEach((x, k) => {
+      rest.forEach((x, k) => {
         const ch = res[k] && res[k].meta ? res[k].meta.changes : 1;
         if (x.mode === 'insert_only') { if (ch) inserted++; else { conflicts++; conflictJans.push(x.p.jan); } }
         else if (x.mode === 'update') { if (ch) updated++; else missing.push(x); }
@@ -122,11 +155,11 @@ export async function commitProducts(context, account, by, b) {
     for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
     if (importId) {
       await env.DB.prepare('UPDATE pim_imports SET inserted=inserted+?, updated=updated+?, skipped=skipped+? WHERE id=? AND account_id=?')
-        .bind(inserted, updated, issues.length, importId, acct).run();
+        .bind(inserted, updated + filled, issues.length + unknownJans.length, importId, acct).run();
     }
-    const changed = products.filter((x) => !(x.mode === 'insert_only' && conflictJans.indexOf(x.p.jan) >= 0)).map((x) => x.p.jan);
-    await logChanges(env, acct, changed, 'product', by); notifyWebhook(context, account, 'product', changed, by);
-    return { ok: true, inserted, updated, conflicts, issues: issues.length };
+    const changed = products.filter((x) => !(x.mode === 'insert_only' && conflictJans.indexOf(x.p.jan) >= 0) && !(x.mode === 'fill' && unknownJans.indexOf(x.p.jan) >= 0)).map((x) => x.p.jan);
+    if (changed.length) { await logChanges(env, acct, changed, 'product', by); notifyWebhook(context, account, 'product', changed, by); }
+    return { ok: true, inserted, updated, conflicts, filled, unchanged, unknown: unknownJans.length, unknown_jans: unknownJans.slice(0, 50), issues: issues.length };
 }
 
 export async function onRequestPost(context) {
@@ -156,12 +189,12 @@ export async function onRequestPost(context) {
     const row = await env.DB.prepare('SELECT id, ts, filename, source, mapping, options, kind FROM pim_imports WHERE account_id=? AND headers=? AND rolled_back_at IS NULL ORDER BY id DESC LIMIT 1').bind(acct, JSON.stringify(headers)).first();
     if (!row) return json({ ok: true, template: null });
     let mapping = {}, options = {}; try { mapping = JSON.parse(row.mapping || '{}'); } catch (e) { /* */ } try { options = JSON.parse(row.options || '{}'); } catch (e) { /* */ }
-    return json({ ok: true, template: { import_id: row.id, ts: row.ts, filename: row.filename, source: String(row.source || '').replace(/（[^）]*）$/, ''), mapping, options, kind: row.kind || 'normal' } });
+    return json({ ok: true, template: { import_id: row.id, ts: row.ts, filename: row.filename, source: String(row.source || '').replace(/（[^）]*）$/, ''), mapping, options, kind: row.kind === 'update' || row.kind === 'fill' ? row.kind : 'normal' } });
   }
 
   if (action === 'begin') {
     const headers = Array.isArray(b.headers) ? b.headers.map((h) => String(h == null ? '' : h).slice(0, 200)).slice(0, 200) : null; // 元CSVの見出し（元の形で出力するため）
-    const kind = b.kind === 'update' ? 'update' : 'normal'; // update = 改定CSVなど（列が少ない）。元CSVの形の出力には normal の見出しを使う
+    const kind = b.kind === 'update' ? 'update' : (b.kind === 'fill' ? 'fill' : 'normal'); // update = 改定CSVなど（列が少ない）/ fill = メーカーのデータ（空欄だけ埋める）。元CSVの形の出力には normal の見出しを使う
     const options = b.options && typeof b.options === 'object' ? JSON.stringify(b.options).slice(0, 2000) : null; // 税区分・税率・更新列など（次回の自動適用用）
     const r = await env.DB.prepare(
       'INSERT INTO pim_imports(account_id, ts, filename, source, mapping, headers, kind, total, options) VALUES(?,?,?,?,?,?,?,?,?)'
