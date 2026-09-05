@@ -27,6 +27,11 @@
 /entrance/*
   Permissions-Policy: camera=(self), microphone=(), geolocation=(), browsing-topics=()
 
+# サロンタウン AI受付（音声＋文字）。このページだけマイクを許可する
+/salontown/contact.html
+  Permissions-Policy: camera=(), microphone=(self), geolocation=(), browsing-topics=()
+  X-Robots-Tag: noindex, nofollow
+
 # 商品登録（スタッフ用・noindex）もカメラ（JAN読み取り・撮影）を許可
 /pim
   Permissions-Policy: camera=(self), microphone=(), geolocation=(), browsing-topics=()
@@ -41,7 +46,7 @@
 #     ②見張るだけ  … 本当に止めたい形。違反を /csp-report に集めてから効かせる
 /*
   Content-Security-Policy: object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self' https://seam-square-pay.suenotakemi.workers.dev
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://www.google.com https://squareup.com https://*.squarecdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://seam-square-pay.suenotakemi.workers.dev https://seam.salon.town https://*.salon.town https://connect.squareup.com https://pci-connect.squareup.com; frame-src https://www.google.com https://squareup.com https://*.squarecdn.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; report-uri /csp-report
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://elevenlabs.io https://*.elevenlabs.io https://www.google.com https://squareup.com https://*.squarecdn.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://seam-square-pay.suenotakemi.workers.dev https://api.elevenlabs.io wss://api.elevenlabs.io https://*.elevenlabs.io wss://*.elevenlabs.io https://seam.salon.town https://*.salon.town https://connect.squareup.com https://pci-connect.squareup.com; frame-src https://www.google.com https://squareup.com https://*.squarecdn.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'; report-uri /csp-report
 
 # ★お客様以外の情報が映る画面は、どこにも残さない。
 #   ブラウザにも、間の通信路にも。Service Worker 側でも同じ判定をしている。
