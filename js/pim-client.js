@@ -40,6 +40,8 @@
               else if (r.status === 500) j.message = 'サーバ内部エラー（500）です。Cloudflare の Functions ログを確認してください';
               else j.message = 'ログインできません（' + (j.reason || ('HTTP ' + r.status)) + '）';
             }
+            // プレビュー環境（*.pages.dev）は本番と別のデータベースなので、本番で発行したアカウントでは入れない。分かるように添える
+            if (!j.ok && /\.pages\.dev$/.test(location.hostname)) j.message = (j.message || '') + '　※ここは動作確認用のプレビュー環境で、本番（seam.site）とは別のデータベースです。本番で発行した ID は https://seam.site/pim/ でお使いください';
             return j;
           });
         })
