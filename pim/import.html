@@ -85,6 +85,12 @@
   code{background:#F1EBE2;padding:1px 5px;border-radius:4px;font-size:12px}
   details summary{cursor:pointer;font-size:12.5px;color:var(--char)}
   .warnlist li{font-size:12.5px}
+  .rv{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .rv img{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:#fff;cursor:zoom-in}
+  .rv .b{padding:8px 10px;font-size:12px}
+  .rv .b .nm{font-weight:600;font-size:12.5px;line-height:1.3;max-height:2.6em;overflow:hidden}
+  .rv.retake{border-color:var(--ng)} .rv.ok{border-color:var(--ok)}
+  .rv input{width:100%;border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:12px;margin-top:4px}
   input[type=search]{border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-width:260px;background:#fff}
 </style>
 </head>
@@ -106,6 +112,8 @@
     <button data-tab="products">商品一覧</button>
     <button data-tab="images">画像まとめ登録</button>
     <button data-tab="export">出力</button>
+    <button data-tab="progress">進捗</button>
+    <button data-tab="review">検品<span class="n" id="reviewN" hidden>0</span></button>
     <button data-tab="settings">設定</button>
   </div>
 
@@ -129,6 +137,22 @@
         <label class="muted" style="margin-left:12px">シート</label><select id="sheetSel"></select>
       </div>
       <div class="map" id="map"></div>
+      <div class="card" style="background:#FBF7F1;margin:0 0 12px;padding:12px 14px">
+        <label class="muted" style="display:block;margin-bottom:6px"><input type="radio" name="impType" value="normal" checked> <b>通常の取り込み</b>（新規を追加。登録済みと被る JAN は下で確認）</label>
+        <label class="muted" style="display:block"><input type="radio" name="impType" value="update"> <b>更新取り込み</b>（メーカーの改定 CSV など。登録済み商品の <u>選んだ列だけ</u> を上書き。写真・ほかの列はそのまま。未登録の JAN は新規として追加）</label>
+        <div id="updFields" class="row" style="margin:8px 0 0 22px" hidden>
+          <label class="muted"><input type="checkbox" data-f="price" checked> 価格</label>
+          <label class="muted"><input type="checkbox" data-f="retail_price" checked> 上代</label>
+          <label class="muted"><input type="checkbox" data-f="cost_price"> 仕入価格</label>
+          <label class="muted"><input type="checkbox" data-f="name"> 商品名</label>
+          <label class="muted"><input type="checkbox" data-f="amount"> 内容量</label>
+          <label class="muted"><input type="checkbox" data-f="maker"> メーカー</label>
+          <label class="muted"><input type="checkbox" data-f="brand"> ブランド</label>
+          <label class="muted"><input type="checkbox" data-f="category"> カテゴリ</label>
+          <label class="muted"><input type="checkbox" data-f="description"> 商品説明</label>
+          <label class="muted"><input type="checkbox" data-f="sku"> 商品ID</label>
+        </div>
+      </div>
       <div class="opts">
         <div><label>価格列の金額は（列や値に税込/税抜の記載があればそちらを優先）</label>
           <select id="optTax"><option value="0">税抜</option><option value="1">税込</option></select></div>
@@ -238,6 +262,35 @@
     </div>
   </section>
 
+  <!-- ══════ 進捗 ══════ -->
+  <section class="pane" id="pane-progress">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">進捗</h2><button class="btn sm" id="btnStatsReload">再読込</button></div>
+      <div class="kpis" id="stKpis"></div>
+      <p class="muted" id="stPace"></p>
+    </div>
+    <div class="card"><h2>日別（直近14日）</h2><div class="tbl" style="max-height:300px"><table id="stDay"><thead><tr><th>日</th><th>写真</th><th>商品数</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card"><h2>担当者別</h2><div class="tbl" style="max-height:300px"><table id="stUser"><thead><tr><th>担当者</th><th>今日</th><th>累計（写真）</th><th>商品数</th></tr></thead><tbody></tbody></table></div></div>
+    <div class="card"><h2>メーカー別の残り</h2><div class="tbl" style="max-height:420px"><table id="stMaker"><thead><tr><th>メーカー</th><th>商品</th><th>写真あり</th><th>残り</th><th>進み</th></tr></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <!-- ══════ 検品 ══════ -->
+  <section class="pane" id="pane-review">
+    <div class="card">
+      <h2>写真の検品</h2>
+      <p class="muted">撮った写真を見て OK か 撮り直し を付けます。「撮り直し」はスマホの撮影キュー（撮り直し）に出て、赤い枠で理由が表示されます。撮り直すと印は自動で消えます。</p>
+      <div class="row" style="margin-bottom:10px">
+        <select id="rvStatus"><option value="pending">未検品</option><option value="retake">撮り直し</option><option value="ok">OK 済み</option><option value="all">すべて</option></select>
+        <select id="rvMaker"><option value="">メーカー: すべて</option></select>
+        <button class="btn sm" id="rvReload">再読込</button>
+        <button class="btn sm" id="rvAllOk">表示中をすべて OK</button>
+        <span class="muted" id="rvCount"></span>
+      </div>
+      <div id="rvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
+      <div class="row" style="margin-top:10px"><button class="btn sm" id="rvPrev">← 前</button><button class="btn sm" id="rvNext">次 →</button></div>
+    </div>
+  </section>
+
   <!-- ══════ 設定 ══════ -->
   <section class="pane" id="pane-settings">
     <div class="card">
@@ -309,7 +362,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
       Array.prototype.forEach.call(document.querySelectorAll('.pane'), function (p) { p.classList.toggle('on', p.id === 'pane-' + b.getAttribute('data-tab')); });
       var t = b.getAttribute('data-tab');
-      if (t === 'issues') loadIssues(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory();
+      if (t === 'issues') loadIssues(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0);
     });
   });
 
@@ -319,6 +372,7 @@
     api('status').then(function (j) {
       $('login').hidden = true;
       if (j.counts) { $('hsub').textContent = (j.account ? j.account.name + ' ／ ' : '') + '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※写真は暫定で D1 に保存中（R2 未設定）'); setIssueN(j.counts.open_issues); }
+      api('stats').then(function (st) { if (st.ok) setReviewN(st.totals.unreviewed); }).catch(function () { /* */ });
       if (j.account) $('setAcct').textContent = 'アカウント: ' + j.account.name + '（ID: ' + j.account.login_id + '）' + (j.account.pass_changed_at ? ' ／ パスワード最終変更 ' + j.account.pass_changed_at.slice(0, 10) : '');
       $('setUser').value = C.Auth.user();
       loadHistory(); loadMakers();
@@ -357,7 +411,7 @@
     api('products?limit=1').then(function (j) {
       if (!j.ok) return;
       var opts = '<option value="">すべて</option>' + j.makers.map(function (m) { return '<option value="' + esc(m.maker) + '">' + esc(m.maker) + ' (' + m.n + ')</option>'; }).join('');
-      $('exMaker').innerHTML = opts; $('fMaker').innerHTML = opts.replace('すべて', 'メーカー: すべて');
+      $('exMaker').innerHTML = opts; $('fMaker').innerHTML = opts.replace('すべて', 'メーカー: すべて'); $('rvMaker').innerHTML = opts.replace('すべて', 'メーカー: すべて');
     }).catch(function () { /* */ });
   }
 
@@ -416,6 +470,11 @@
     $('cardMap').hidden = false;
   }
   $('headerRow').addEventListener('change', function () { S.headerRow = parseInt(this.value, 10); buildMap(); });
+  function impType() { var r = document.querySelector('input[name=impType]:checked'); return r ? r.value : 'normal'; }
+  function updFields() { return Array.prototype.map.call($('updFields').querySelectorAll('input:checked'), function (c) { return c.getAttribute('data-f'); }); }
+  var FIELD_JA = { price: '価格', retail_price: '上代', cost_price: '仕入価格', name: '商品名', amount: '内容量', maker: 'メーカー', brand: 'ブランド', category: 'カテゴリ', description: '商品説明', sku: '商品ID' };
+  function updFieldsJa() { return updFields().map(function (f) { return FIELD_JA[f] || f; }).join('・'); }
+  Array.prototype.forEach.call(document.querySelectorAll('input[name=impType]'), function (r) { r.addEventListener('change', function () { $('updFields').hidden = impType() !== 'update'; if (S.items.length) { renderDups(); renderCommit(); } }); });
   function buildMap() {
     S.headers = S.rows[S.headerRow].map(function (h, i) { return String(h || '').trim() || ('(' + (i + 1) + '列目)'); });
     S.mapping = N.guessMapping(S.rows[S.headerRow]);
@@ -520,6 +579,10 @@
     var html = '';
     // DB との重複
     var dbKeys = Object.keys(S.dbExisting);
+    if (impType() === 'update' && dbKeys.length) {
+      html += '<p class="muted">更新取り込み: 登録済み <b>' + dbKeys.length + '</b> 件は「' + updFieldsJa() + '」だけを上書きします（写真はそのまま）。未登録は新規として追加。</p>';
+      dbKeys = [];
+    }
     if (dbKeys.length) {
       html += '<h3 style="font-size:13px;margin:0 0 8px">登録済みと同じJAN <span class="tag ng">' + dbKeys.length + '件</span></h3>';
       html += '<div class="row" style="margin-bottom:8px"><span class="muted">まとめて:</span><button class="btn sm" data-all="keep_existing">すべて登録済みを残す</button><button class="btn sm" data-all="keep_incoming">すべて届いた方で上書き</button><button class="btn sm" data-all="defer">すべて保留（注意へ）</button></div>';
@@ -575,6 +638,7 @@
         }
         p = S.items[pick].product;
       }
+      if (impType() === 'update') { toSave.push(Object.assign({}, p, { _mode: 'update' })); return; }
       if (S.dbExisting[jan]) {
         var d = S.decisions[jan] || 'defer';
         if (d === 'keep_existing') { skipped++; return; }
@@ -593,7 +657,8 @@
   function renderCommit() {
     var pl = plan();
     var upd = pl.toSave.filter(function (p) { return S.dbExisting[p.jan]; }).length;
-    $('commitSummary').innerHTML = '追加 <b>' + (pl.toSave.length - upd) + '</b>件 ／ 上書き <b>' + upd + '</b>件 ／ 注意へ積む <b>' + pl.issues.length + '</b>件（' + pl.skipped + '行は登録しない） ／ 登録できない行 <b>' + pl.invalid + '</b>件';
+    if (impType() === 'update' && !updFields().length) { $('commitSummary').innerHTML = '<span class="err">更新する列を1つ以上選んでください</span>'; $('cardCommit').hidden = false; $('btnCommit').disabled = true; return; }
+    $('commitSummary').innerHTML = (impType() === 'update' ? '<b>更新取り込み</b>（' + updFieldsJa() + '）: ' : '') + '追加 <b>' + (pl.toSave.length - upd) + '</b>件 ／ 上書き <b>' + upd + '</b>件 ／ 注意へ積む <b>' + pl.issues.length + '</b>件（' + pl.skipped + '行は登録しない） ／ 登録できない行 <b>' + pl.invalid + '</b>件';
     $('cardCommit').hidden = false;
     $('btnCommit').disabled = !(pl.toSave.length || pl.issues.length);
   }
@@ -606,7 +671,7 @@
     var L = function (m) { log.textContent += m + '\n'; log.scrollTop = log.scrollHeight; };
     var CH = 300, total = pl.toSave.length, done = 0, importId = null, ins = 0, upd = 0, conf = 0;
     readMap();
-    api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, total: S.items.length } })
+    api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, kind: impType(), total: S.items.length } })
       .then(function (j) {
         if (!j.ok) throw new Error(j.message || j.reason);
         importId = j.import_id; L('取り込み #' + importId + ' 開始 … ' + total + '件を保存');
@@ -615,7 +680,7 @@
           (function (start) {
             chain = chain.then(function () {
               var chunk = pl.toSave.slice(start, start + CH);
-              return api('import', { method: 'POST', body: { action: 'commit', import_id: importId, products: chunk, issues: start === 0 ? pl.issues : [] } }).then(function (r) {
+              return api('import', { method: 'POST', body: { action: 'commit', import_id: importId, products: chunk, fields: impType() === 'update' ? updFields() : [], issues: start === 0 ? pl.issues : [] } }).then(function (r) {
                 if (!r.ok) throw new Error(r.message || r.reason);
                 done += chunk.length; ins += r.inserted; upd += r.updated; conf += (r.conflicts || 0);
                 prog.firstElementChild.style.width = Math.round(done / Math.max(1, total) * 100) + '%';
@@ -775,6 +840,64 @@
       });
     });
     chain.then(function () { L('完了: 保存 ' + saved + ' / 失敗 ' + fail + ' / 対象 ' + ok.length); toast('画像の登録が終わりました'); renderImgPlan(); btn.disabled = false; boot(); }).catch(function (e) { handleErr(e); btn.disabled = false; });
+  });
+
+  // ── 進捗 ──
+  function loadStats() {
+    api('stats').then(function (j) {
+      if (!j.ok) return;
+      var t = j.totals;
+      $('stKpis').innerHTML = [['商品', t.products], ['写真あり', t.with_images, 'ok'], ['写真なし', t.no_images, t.no_images ? 'ng' : 'ok'], ['5枚そろい', t.full5], ['写真の総数', t.images], ['未検品', t.unreviewed], ['撮り直し', t.retake, t.retake ? 'ng' : ''], ['注意', t.open_issues, t.open_issues ? 'ng' : '']]
+        .map(function (k) { return '<div class="kpi ' + (k[2] || '') + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div></div>'; }).join('');
+      $('stPace').textContent = '直近7日: ' + j.pace.products_7d + ' 商品に写真が付きました（稼働 ' + j.pace.active_days_7d + ' 日・1日平均 ' + j.pace.avg_per_day + ' 商品）' + (j.pace.days_left != null ? ' → このペースなら残り約 ' + j.pace.days_left + ' 稼働日' : '');
+      $('stDay').querySelector('tbody').innerHTML = j.by_day.map(function (d) { return '<tr><td>' + esc(d.day) + '</td><td>' + d.images + '</td><td>' + d.products + '</td></tr>'; }).join('') || '<tr><td colspan="3" class="muted">まだありません</td></tr>';
+      $('stUser').querySelector('tbody').innerHTML = j.by_user.map(function (u) { return '<tr><td>' + esc(u.user) + '</td><td>' + u.today + '</td><td>' + u.total + '</td><td>' + u.products + '</td></tr>'; }).join('') || '<tr><td colspan="4" class="muted">まだありません</td></tr>';
+      $('stMaker').querySelector('tbody').innerHTML = j.by_maker.map(function (m) { var pct = m.products ? Math.round(m.with_images / m.products * 100) : 0; return '<tr><td>' + esc(m.maker || '（未設定）') + '</td><td>' + m.products + '</td><td>' + m.with_images + '</td><td>' + (m.products - m.with_images) + '</td><td><div class="prog" style="margin:0;width:120px"><i style="width:' + pct + '%"></i></div> ' + pct + '%</td></tr>'; }).join('');
+      setReviewN(t.unreviewed);
+    }).catch(handleErr);
+  }
+  $('btnStatsReload').addEventListener('click', loadStats);
+  function setReviewN(n) { var el = $('reviewN'); el.textContent = n; el.hidden = !n; }
+
+  // ── 検品 ──
+  var RV = { offset: 0, limit: 60, items: [] };
+  function loadReview(offset) {
+    RV.offset = Math.max(0, offset || 0);
+    api('review?status=' + $('rvStatus').value + '&maker=' + encodeURIComponent($('rvMaker').value) + '&limit=' + RV.limit + '&offset=' + RV.offset).then(function (j) {
+      if (!j.ok) return;
+      RV.items = j.images;
+      $('rvCount').textContent = j.total + '枚中 ' + (j.total ? RV.offset + 1 : 0) + '〜' + Math.min(j.total, RV.offset + j.images.length);
+      $('rvGrid').innerHTML = j.images.map(function (im, i) {
+        return '<div class="rv ' + (im.review || '') + '" data-i="' + i + '"><img src="' + esc(im.url) + '" alt="" loading="lazy"><div class="b"><div class="nm">' + esc(im.name) + '</div><div class="muted">' + esc(im.jan) + ' ・ ' + im.slot + '枚目 ・ ' + esc(im.created_by || '') + ' ・ ' + esc((im.created_at || '').slice(5, 16).replace('T', ' ')) + '</div>' +
+          '<div class="row" style="margin-top:6px"><button class="btn sm" data-rv="ok">OK</button><button class="btn sm danger" data-rv="retake">撮り直し</button>' + (im.review ? '<button class="btn sm" data-rv="clear">取消</button>' : '') + '</div>' +
+          '<input placeholder="撮り直しの理由（ピンぼけ・傾き・影 など）" value="' + esc(im.review_note || '') + '"></div></div>';
+      }).join('') || '<p class="muted">該当する写真はありません</p>';
+      Array.prototype.forEach.call($('rvGrid').querySelectorAll('[data-rv]'), function (b) {
+        b.addEventListener('click', function () {
+          var box = b.closest('.rv'), im = RV.items[parseInt(box.getAttribute('data-i'), 10)], act = b.getAttribute('data-rv');
+          var note = box.querySelector('input').value.trim();
+          if (act === 'retake' && !note) { note = prompt('撮り直しの理由（スマホに表示されます）', 'ピンぼけ') || ''; if (!note) return; box.querySelector('input').value = note; }
+          api('review', { method: 'POST', body: { jan: im.jan, slot: im.slot, review: act === 'clear' ? null : act, note: note } }).then(function (r) {
+            if (!r.ok) { toast(r.message || '失敗しました', true); return; }
+            toast(act === 'ok' ? 'OK にしました' : act === 'retake' ? '撮り直しにしました' : '取り消しました');
+            loadReview(RV.offset); // 絞り込みに合わせて一覧を引き直す（未検品から消える／ボタンが変わる）
+          }).catch(handleErr);
+        });
+      });
+      Array.prototype.forEach.call($('rvGrid').querySelectorAll('img'), function (img) { img.addEventListener('click', function () { window.open(img.src, '_blank'); }); });
+      $('rvPrev').disabled = RV.offset === 0; $('rvNext').disabled = RV.offset + RV.limit >= j.total;
+    }).catch(handleErr);
+  }
+  $('rvReload').addEventListener('click', function () { loadReview(RV.offset); });
+  $('rvStatus').addEventListener('change', function () { loadReview(0); });
+  $('rvMaker').addEventListener('change', function () { loadReview(0); });
+  $('rvPrev').addEventListener('click', function () { loadReview(RV.offset - RV.limit); });
+  $('rvNext').addEventListener('click', function () { loadReview(RV.offset + RV.limit); });
+  $('rvAllOk').addEventListener('click', function () {
+    var items = RV.items.filter(function (im) { return !im.review; });
+    if (!items.length) { toast('未検品の写真はありません'); return; }
+    if (!confirm('表示中の ' + items.length + ' 枚をすべて OK にしますか？')) return;
+    api('review', { method: 'POST', body: { items: items.map(function (im) { return { jan: im.jan, slot: im.slot, review: 'ok' }; }) } }).then(function (r) { if (r.ok) { toast(r.updated + ' 枚を OK にしました'); loadReview(RV.offset); } }).catch(handleErr);
   });
 
   // ── 出力 ──

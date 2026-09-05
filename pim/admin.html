@@ -75,7 +75,7 @@
   </div>
   <div class="card">
     <h2>EC 側から商品データを取るとき</h2>
-    <p class="muted">管理キー（ADMIN_KEY）と <code>x-seam-account: &lt;ディーラーのID&gt;</code> を付けて <code>/api/pim/export?format=csv</code> または <code>format=json</code> を呼ぶと、そのディーラーの統一フォーマットが取れます。画像 URL は認証なしで読めます。</p>
+    <p class="muted">一覧の「連携キー発行」で、ディーラーごとの<b>読み取り専用キー</b>が出ます。EC 側は毎晩 <code>/api/pim/export?format=source&amp;api_key=&lt;キー&gt;</code> を取りに来れば、取り込んだ CSV の形＋画像1〜5 が手に入ります（手動ダウンロード不要）。<code>format=images</code>（商品ID・JAN・画像だけ）、<code>format=csv</code> / <code>json</code>（統一フォーマット）も同じキーで取れます。キーが漏れたら「再発行」で古いキーは即無効。画像 URL は認証なしで読めます。<br>管理キー（ADMIN_KEY）＋ <code>x-seam-account: &lt;ID&gt;</code> でも同じものが取れます。</p>
   </div>
 </main>
 <div class="toast" id="toast"></div>
@@ -109,19 +109,33 @@
       $('login').hidden = true;
       $('rows').innerHTML = j.accounts.map(function (a) {
         return '<tr data-id="' + a.id + '"><td><code>' + esc(a.login_id) + '</code></td><td>' + esc(a.name) + '</td><td>' + (a.active ? '<span class="tag ok">有効</span>' : '<span class="tag ng">停止中</span>') + '</td><td>' + a.products + '</td><td>' + a.with_images + '</td><td>' + a.open_issues + '</td><td class="muted">' + esc((a.last_login_at || '—').replace('T', ' ').slice(0, 16)) + '</td><td class="muted">' + esc((a.pass_changed_at || '—').slice(0, 10)) + '</td><td class="muted">' + esc(a.note || '') + '</td>' +
-          '<td class="row"><button class="btn sm" data-act="reset">PW再設定</button><button class="btn sm" data-act="logout_all">全端末ログアウト</button>' + (a.active ? '<button class="btn sm danger" data-act="disable">停止</button>' : '<button class="btn sm" data-act="enable">再開</button>') + '<button class="btn sm" data-act="rename">名前・メモ</button></td></tr>';
+          '<td class="row"><button class="btn sm" data-act="progress">進捗</button><button class="btn sm" data-act="api_key">' + (a.has_api_key ? '連携キー再発行' : '連携キー発行') + '</button>' + (a.has_api_key ? '<button class="btn sm" data-act="api_key_revoke">連携キー無効化</button>' : '') + '<button class="btn sm" data-act="reset">PW再設定</button><button class="btn sm" data-act="logout_all">全端末ログアウト</button>' + (a.active ? '<button class="btn sm danger" data-act="disable">停止</button>' : '<button class="btn sm" data-act="enable">再開</button>') + '<button class="btn sm" data-act="rename">名前・メモ</button></td></tr>';
       }).join('') || '<tr><td colspan="10" class="muted">まだアカウントがありません</td></tr>';
       Array.prototype.forEach.call($('rows').querySelectorAll('[data-act]'), function (b) {
         b.addEventListener('click', function () {
           var tr = b.closest('tr'), id = parseInt(tr.getAttribute('data-id'), 10), act = b.getAttribute('data-act');
           var lid = tr.querySelector('code').textContent, name = tr.children[1].textContent;
           var body = { action: act, id: id };
+          if (act === 'progress') {
+            C.api('stats', { admin: true, asAccount: lid }).then(function (st) {
+              if (!st.ok) { toast(st.message || '取得できません', true); return; }
+              var t = st.totals;
+              $('created').hidden = false;
+              $('created').innerHTML = '<b>' + esc(name) + '</b> の進捗: 商品 ' + t.products + ' ／ 写真あり ' + t.with_images + ' ／ 写真なし ' + t.no_images + ' ／ 写真 ' + t.images + '枚 ／ 撮り直し ' + t.retake + ' ／ 注意 ' + t.open_issues +
+                '<br>直近7日: ' + st.pace.products_7d + ' 商品（1日平均 ' + st.pace.avg_per_day + '）' + (st.pace.days_left != null ? ' → 残り約 ' + st.pace.days_left + ' 稼働日' : '') +
+                '<br>担当者別: ' + (st.by_user.map(function (u) { return esc(u.user) + ' ' + u.total + '枚'; }).join(' ／ ') || '—');
+            }).catch(handleErr);
+            return;
+          }
+          if (act === 'api_key' && !confirm(name + ' の EC 連携キーを' + (tr.querySelector('[data-act=api_key]').textContent.indexOf('再') >= 0 ? '再発行しますか？（古いキーは使えなくなります）' : '発行しますか？')) ) return;
+          if (act === 'api_key_revoke' && !confirm(name + ' の連携キーを無効にしますか？')) return;
           if (act === 'reset') { var pw = prompt(name + '（' + lid + '）の新しいパスワード（8文字以上）。空欄なら自動生成', genPw()); if (pw == null) return; body.password = pw.trim() || genPw(); }
           if (act === 'disable' && !confirm(name + ' を停止しますか？（ログイン不可・全端末ログアウト。データは残ります）')) return;
           if (act === 'logout_all' && !confirm(name + ' の全端末をログアウトしますか？（パスワードはそのまま）')) return;
           if (act === 'rename') { var nn = prompt('ディーラー名', name); if (nn == null) return; var note = prompt('メモ', tr.children[8].textContent); if (note == null) return; body.name = nn; body.note = note; }
           api('admin/accounts', { method: 'POST', body: body }).then(function (r) {
             if (!r.ok) { toast(r.message || '失敗しました', true); return; }
+            if (act === 'api_key') { $('created').hidden = false; $('created').innerHTML = '<b>' + esc(name) + '</b> の EC 連携キー: <span class="pw">' + esc(r.api_key) + '</span><br>EC 側の夜間バッチはこの URL を取りに来るだけです（読み取り専用・この画面を閉じると再表示できません）:<br><code>' + location.origin + '/api/pim/export?format=source&api_key=' + esc(r.api_key) + '</code><br>画像だけなら <code>format=images</code>、統一フォーマットなら <code>format=csv</code> か <code>format=json</code>。'; }
             if (act === 'reset') { $('created').hidden = false; $('created').innerHTML = '<b>' + esc(name) + '</b>（ID: <code>' + esc(lid) + '</code>）の新しいパスワード: <span class="pw">' + esc(body.password) + '</span><br>ディーラーに安全な方法で伝えてください。この画面を閉じると二度と表示されません。'; }
             toast(r.message || '更新しました'); load();
           }).catch(handleErr);

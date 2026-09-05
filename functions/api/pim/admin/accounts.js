@@ -6,7 +6,8 @@
 //        disable    { id } / enable { id }               … 停止 / 再開（停止中はログイン不可・トークンも無効）
 //        rename     { id, name, note }
 //        logout_all { id }                               … パスワードはそのまま、全端末を強制ログアウト
-import { json, hashPassword, passwordProblem, normalizeLoginId, publicAccount, nowIso } from '../_lib.js';
+//        api_key    { id }  / api_key_revoke { id }       … EC 連携用の読み取り専用キーを発行（再発行で古いものは無効）/ 無効化
+import { json, hashPassword, passwordProblem, normalizeLoginId, publicAccount, nowIso, newApiKey } from '../_lib.js';
 
 export async function onRequestGet({ env }) {
   const rs = await env.DB.prepare(
@@ -61,6 +62,15 @@ export async function onRequestPost({ request, env }) {
   if (action === 'disable' || action === 'enable') {
     await env.DB.prepare('UPDATE pim_accounts SET active=?, token_version=token_version+1, updated_at=? WHERE id=?').bind(action === 'enable' ? 1 : 0, ts, id).run();
     return json({ ok: true, message: action === 'enable' ? '再開しました' : '停止しました（ログイン不可・全端末ログアウト）' });
+  }
+  if (action === 'api_key') {
+    const key = newApiKey();
+    await env.DB.prepare('UPDATE pim_accounts SET api_key=?, updated_at=? WHERE id=?').bind(key, ts, id).run();
+    return json({ ok: true, api_key: key, message: '連携キーを発行しました（この画面を閉じると再表示できません）' });
+  }
+  if (action === 'api_key_revoke') {
+    await env.DB.prepare('UPDATE pim_accounts SET api_key=NULL, updated_at=? WHERE id=?').bind(ts, id).run();
+    return json({ ok: true, message: '連携キーを無効にしました' });
   }
   if (action === 'rename') {
     const name = String(b.name == null ? a.name : b.name).trim().slice(0, 100) || a.name;

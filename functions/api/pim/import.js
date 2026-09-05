@@ -6,6 +6,8 @@
 //              _mode 'new'       … check の時点で未登録だったもの。保存時にも「無いときだけ入れる」。
 //                                  別の人が同時に取り込んでいて先に入っていたら、上書きせず dup_db の注意に回す（conflicts）
 //              _mode 'overwrite' … 本人が「届いた方で上書き」と決めたもの
+//              _mode 'update'    … 更新取り込み: 登録済みの商品の「選んだ列だけ」を上書き（fields:[...]）。写真・他の列はそのまま。
+//                                  未登録なら新規として入れる
 //     'finish' { import_id, invalid }                → { import }
 //
 // 重複の扱い（要件: JANが被るものは登録せず「注意」として出す）
@@ -38,9 +40,10 @@ export async function onRequestPost({ request, env, data }) {
 
   if (action === 'begin') {
     const headers = Array.isArray(b.headers) ? b.headers.map((h) => String(h == null ? '' : h).slice(0, 200)).slice(0, 200) : null; // 元CSVの見出し（元の形で出力するため）
+    const kind = b.kind === 'update' ? 'update' : 'normal'; // update = 改定CSVなど（列が少ない）。元CSVの形の出力には normal の見出しを使う
     const r = await env.DB.prepare(
-      'INSERT INTO pim_imports(account_id, ts, filename, source, mapping, headers, total) VALUES(?,?,?,?,?,?,?)'
-    ).bind(acct, nowIso(), String(b.filename || '').slice(0, 200), (String(b.source || '').slice(0, 80) + (by ? '（' + by + '）' : '')).slice(0, 100), JSON.stringify(b.mapping || {}).slice(0, 4000), headers ? JSON.stringify(headers).slice(0, 20000) : null, Math.max(0, parseInt(b.total, 10) || 0)).run();
+      'INSERT INTO pim_imports(account_id, ts, filename, source, mapping, headers, kind, total) VALUES(?,?,?,?,?,?,?,?)'
+    ).bind(acct, nowIso(), String(b.filename || '').slice(0, 200), (String(b.source || '').slice(0, 80) + (by ? '（' + by + '）' : '')).slice(0, 100), JSON.stringify(b.mapping || {}).slice(0, 4000), headers ? JSON.stringify(headers).slice(0, 20000) : null, kind, Math.max(0, parseInt(b.total, 10) || 0)).run();
     return json({ ok: true, import_id: r.meta && r.meta.last_row_id });
   }
 
@@ -48,23 +51,57 @@ export async function onRequestPost({ request, env, data }) {
     const importId = parseInt(b.import_id, 10) || null;
     const ts = nowIso();
     const raw = (Array.isArray(b.products) ? b.products : []).slice(0, 500);
+    const ALLOWED_FIELDS = ['name', 'price', 'retail_price', 'cost_price', 'amount', 'maker', 'brand', 'category', 'description', 'sku'];
+    const updFields = (Array.isArray(b.fields) ? b.fields : []).filter((f) => ALLOWED_FIELDS.indexOf(f) >= 0);
     const products = raw.map((r) => {
       const p = sanitizeProduct(r);
       // 元CSVの1行（見出し→値）。「菊池CSVの形＋画像」で出すために、そのまま保管する
       if (r && r._raw && typeof r._raw === 'object') { try { p.raw = JSON.stringify(r._raw); } catch (e) { /* */ } }
-      return { p, mode: r && r._mode === 'overwrite' ? 'upsert' : 'insert_only' };
+      const mode = r && r._mode === 'overwrite' ? 'upsert' : (r && r._mode === 'update' ? 'update' : 'insert_only');
+      return { p, mode };
     }).filter((x) => x.p.jan && janShapeOk(x.p.jan) && x.p.name);
     // 保存（新規のつもりのものは「無いときだけ」。changes=0 なら他の人が先に入れている）
     let inserted = 0, updated = 0, conflicts = 0;
     const conflictJans = [];
+    // 更新取り込み: 選んだ列だけ UPDATE。無ければ INSERT（changes=0 のときに拾う）
+    // 元CSVの行(raw)も、通常取り込みの列名に合わせて値を差し替える（改定CSVの「価格」→ 元CSVの「標準売上単価」列へ）
+    let rawHeaderOf = {};
+    if (products.some((x) => x.mode === 'update')) {
+      const base = await env.DB.prepare('SELECT mapping, headers FROM pim_imports WHERE account_id=? AND headers IS NOT NULL AND (kind IS NULL OR kind=\'normal\') ORDER BY id DESC LIMIT 1').bind(acct).first();
+      if (base) {
+        try {
+          const m = JSON.parse(base.mapping || '{}'), h = JSON.parse(base.headers || '[]');
+          const F = { price: 'price', retail_price: 'retail', cost_price: 'cost', name: 'name', maker: 'maker', brand: 'brand', description: 'description', sku: 'sku', amount: 'amount' };
+          Object.keys(F).forEach((f) => { const idx = m[F[f]]; if (typeof idx === 'number' && h[idx]) rawHeaderOf[f] = h[idx]; });
+        } catch (e) { rawHeaderOf = {}; }
+      }
+    }
+    const updateStmt = (p) => {
+      const sets = [], vals = [];
+      updFields.forEach((f) => { sets.push(f + '=?'); vals.push(p[f] == null ? null : p[f]); });
+      if (updFields.indexOf('price') >= 0) { sets.push('tax_included=?', 'tax_rate=?', 'price_ex=?', 'price_in=?'); vals.push(p.tax_included, p.tax_rate, p.price_ex, p.price_in); }
+      if (updFields.indexOf('amount') >= 0) { sets.push('unit=?'); vals.push(p.unit); }
+      // 元CSVの行は「上書き」でなく「足す」（改定CSVの2列で22列を潰さない）。更新した列は元CSVの列名で差し替える
+      const patch = {};
+      updFields.forEach((f) => { const h = rawHeaderOf[f]; if (h && p[f] != null) patch[h] = String(p[f]); });
+      if (Object.keys(patch).length) { sets.push('raw=json_patch(COALESCE(raw, \'{}\'), ?)'); vals.push(JSON.stringify(patch)); }
+      sets.push('updated_at=?', 'updated_by=?', 'import_id=?'); vals.push(ts, by || null, importId);
+      return env.DB.prepare('UPDATE pim_products SET ' + sets.join(', ') + ' WHERE account_id=? AND jan=?').bind(...vals, acct, p.jan);
+    };
     for (let i = 0; i < products.length; i += 50) {
       const chunk = products.slice(i, i + 50);
-      const res = await env.DB.batch(chunk.map((x) => upsertStmt(env, acct, x.p, importId, ts, by, x.mode)));
+      const res = await env.DB.batch(chunk.map((x) => x.mode === 'update' ? updateStmt(x.p) : upsertStmt(env, acct, x.p, importId, ts, by, x.mode)));
+      const missing = [];
       chunk.forEach((x, k) => {
         const ch = res[k] && res[k].meta ? res[k].meta.changes : 1;
         if (x.mode === 'insert_only') { if (ch) inserted++; else { conflicts++; conflictJans.push(x.p.jan); } }
+        else if (x.mode === 'update') { if (ch) updated++; else missing.push(x); }
         else updated++;
       });
+      if (missing.length) { // 更新対象が無かった＝新規。入れる
+        const r2 = await env.DB.batch(missing.map((x) => upsertStmt(env, acct, x.p, importId, ts, by, 'insert_only')));
+        missing.forEach((x, k) => { const ch = r2[k] && r2[k].meta ? r2[k].meta.changes : 1; if (ch) inserted++; else updated++; });
+      }
     }
     // 注意（未解決の重複）
     const issues = (Array.isArray(b.issues) ? b.issues : []).slice(0, 500);

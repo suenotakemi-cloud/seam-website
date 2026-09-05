@@ -81,6 +81,9 @@
   .review .thumbs button.on{border-color:var(--brown)}
   .review .thumbs img{width:100%;height:100%;object-fit:cover;display:block}
   .review .cap{font-size:12px;color:var(--char);margin-top:6px;text-align:center}
+  .slot.retake{border:2px solid var(--ng)}
+  .slot .rt{position:absolute;left:0;right:0;bottom:0;background:rgba(180,67,47,.9);color:#fff;font-size:10px;padding:2px 6px;text-align:center}
+  .slot .okm{position:absolute;right:6px;top:6px;font-size:10px;background:var(--ok);color:#fff;border-radius:999px;padding:1px 6px}
   .grid-note{font-size:12px;color:var(--char);margin-top:10px;text-align:center}
   .edit{display:none;margin-top:12px}
   .edit.open{display:block}
@@ -189,6 +192,24 @@
         </div>
         <div class="list" id="searchList" style="margin-top:8px"></div>
       </div>
+      <div class="card" style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <strong style="font-size:14px">撮影キュー</strong>
+          <span class="small" id="qCount"></span>
+        </div>
+        <p class="small" style="margin:6px 0 8px">棚の並び（メーカー → ブランド → 商品名）で「次に撮る商品」を順番に出します。バーコードを読まなくても進めます。</p>
+        <div class="row">
+          <select id="qMode" class="field" style="border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;font-size:14px">
+            <option value="noimg">写真なし</option><option value="few">1〜4枚（2周目）</option><option value="retake">撮り直し</option>
+          </select>
+          <select id="qMaker" style="border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff;font-size:14px"><option value="">メーカー: すべて</option></select>
+        </div>
+        <div class="list" id="qList" style="margin-top:8px"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn solid" id="qStart">先頭から始める</button>
+          <button class="btn ghost" id="qResume" hidden>続きから</button>
+        </div>
+      </div>
       <div class="stat">
         <div class="card"><div class="n" id="stToday">0</div><div class="l">今日の写真</div></div>
         <div class="card"><div class="n" id="stTotal">—</div><div class="l">商品数</div></div>
@@ -281,7 +302,10 @@
   </main>
 
   <div class="foot" id="foot" hidden>
-    <button class="btn solid" id="btnNext">次の商品をスキャン</button>
+    <div class="row">
+      <button class="btn ghost" id="btnBackScan" style="flex:0 0 38%">スキャンへ</button>
+      <button class="btn solid" id="btnNext">次の商品をスキャン</button>
+    </div>
   </div>
 </div>
 
@@ -437,7 +461,7 @@
     if (!C.Auth.get() || !C.Auth.user()) { needLogin(''); return; }
     loadStatus().then(function () {
       $('login').hidden = true; $('setup').hidden = true;
-      todayCount(0); recent(null);
+      todayCount(0); recent(null); loadQueue().catch(function () { /* */ });
       var q = new URLSearchParams(location.search).get('jan');
       if (q) lookup(q); else show('scr-scan');
     }).catch(handleErr);
@@ -458,7 +482,7 @@
       if (!j.ok) { $('loginErr').textContent = j.message || 'ログインできません'; return; }
       C.Auth.setUser($('userIn').value);
       $('keyIn').value = '';
-      loadStatus().then(function () { $('login').hidden = true; todayCount(0); recent(null); show('scr-scan'); }).catch(handleErr);
+      loadStatus().then(function () { $('login').hidden = true; todayCount(0); recent(null); loadQueue().catch(function () { /* */ }); show('scr-scan'); }).catch(handleErr);
     }).catch(function () { $('btnLogin').disabled = false; $('loginErr').textContent = '通信に失敗しました'; });
   });
   $('keyIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('btnLogin').click(); });
@@ -586,6 +610,7 @@
     if (code === state.lastCode && now - state.lastAt < 2500) return;
     state.lastCode = code; state.lastAt = now;
     C.beep(true);
+    Q.on = false;
     lookup(code);
   }
   $('btnCamRestart').addEventListener('click', startScan);
@@ -618,7 +643,7 @@
       Array.prototype.forEach.call(box.querySelectorAll('.it'), function (el) { el.addEventListener('click', function () { box.innerHTML = ''; lookup(el.getAttribute('data-jan')); }); });
     }).catch(handleErr);
   }
-  $('btnLookup').addEventListener('click', function () { lookup($('janIn').value); });
+  $('btnLookup').addEventListener('click', function () { Q.on = false; lookup($('janIn').value); });
   $('janIn').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lookup($('janIn').value); } });
   $('janIn').addEventListener('focus', function () { /* 手入力中はカメラを止めない（枠に合わせながら打てるように） */ });
 
@@ -636,6 +661,7 @@
     recent(p);
     show('scr-prod');
     $('hsub').textContent = p.name.slice(0, 24) + (p.updated_by ? '（最終更新: ' + p.updated_by + '）' : '');
+    $('btnNext').textContent = Q.on ? '次の商品へ →' : '次の商品をスキャン';
     startPoll();
   }
   // 複数人が同じ商品を触っているとき、他の人の写真・変更を取り込む（15秒ごと／画面に戻ったとき）
@@ -668,10 +694,11 @@
     var html = '';
     for (var k = 1; k <= 5; k++) {
       var im = byslot[k], busy = state.busy[k];
-      var cls = 'slot' + (im ? ' filled' : '') + (k === nextSlot ? ' next' : '');
+      var cls = 'slot' + (im ? ' filled' : '') + (k === nextSlot ? ' next' : '') + (im && im.review === 'retake' ? ' retake' : '');
       html += '<button type="button" class="' + cls + '" data-slot="' + k + '">';
       if (busy) html += (busy.preview ? '<img src="' + busy.preview + '" alt="">' : '') + '<div class="busy">' + esc(busy.label || '送信中…') + '</div>';
-      else if (im) html += '<img src="' + esc(im.url) + '" alt="">' + (k === 1 ? '<span class="main">メイン</span>' : '');
+      else if (im) html += '<img src="' + esc(im.url) + '" alt="">' + (k === 1 ? '<span class="main">メイン</span>' : '') +
+        (im.review === 'retake' ? '<span class="rt">撮り直し' + (im.review_note ? ': ' + esc(im.review_note) : '') + '</span>' : '') + (im.review === 'ok' ? '<span class="okm">OK</span>' : '');
       else html += '<span class="plus">＋</span><span>' + (k === nextSlot ? '次はここ' : k + '枚目') + '</span>';
       html += '<span class="no">' + k + '</span></button>';
     }
@@ -681,7 +708,8 @@
     $('gridCount').textContent = n + ' / 5 枚';
     $('pImgBadge').className = 'badge ' + (n ? 'ok' : 'warn');
     $('pImgBadge').textContent = n ? '写真 ' + n + '枚 登録済み' : '写真がありません';
-    $('gridNote').textContent = n >= 5 ? '5枚そろいました。写真をタップすると撮り直し・削除ができます' : '枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）';
+    var rt = imgs.filter(function (i) { return i.review === 'retake'; });
+    $('gridNote').textContent = rt.length ? '赤い枠の写真は検品で「撮り直し」になっています。タップして撮り直してください' : (n >= 5 ? '5枚そろいました。写真をタップすると撮り直し・削除ができます' : '枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）');
     Array.prototype.forEach.call($('grid').querySelectorAll('.slot'), function (b) {
       b.addEventListener('click', function () { var s = parseInt(b.getAttribute('data-slot'), 10); if (state.busy[s]) return; if (byslot[s]) filledSheet(s, byslot[s]); else emptySheet(s); });
     });
@@ -1003,7 +1031,45 @@
     }).catch(handleErr);
   });
   $('btnNewCancel').addEventListener('click', function () { show('scr-scan'); });
-  $('btnNext').addEventListener('click', function () { state.product = null; $('hsub').textContent = 'JANを読んで写真を5枚まで'; show('scr-scan'); loadStatus().catch(function () { /* */ }); });
+
+  // ── 撮影キュー ──
+  var Q = { on: false, mode: 'noimg', maker: '', items: [], last: '' };
+  try { Q.mode = localStorage.getItem('seam_pim_qmode') || 'noimg'; Q.maker = localStorage.getItem('seam_pim_qmaker') || ''; Q.last = localStorage.getItem('seam_pim_qlast') || ''; } catch (e) { /* */ }
+  function loadQueue(after) {
+    var q = 'mode=' + Q.mode + '&maker=' + encodeURIComponent(Q.maker) + '&limit=30' + (after ? '&after=' + after : '');
+    return api('queue?' + q).then(function (j) {
+      if (!j.ok) return j;
+      Q.items = j.items;
+      $('qCount').textContent = '残り ' + j.total + ' 点';
+      var sel = $('qMaker'); var cur = sel.value;
+      sel.innerHTML = '<option value="">メーカー: すべて（' + j.total + '）</option>' + j.makers.map(function (m) { return '<option value="' + esc(m.maker) + '">' + esc(m.maker) + '（' + m.n + '）</option>'; }).join('');
+      sel.value = Q.maker; if (sel.value !== Q.maker) { Q.maker = ''; }
+      $('qList').innerHTML = j.items.slice(0, 8).map(function (it) {
+        return '<div class="it" data-jan="' + esc(it.jan) + '"><div class="th" style="display:flex;align-items:center;justify-content:center;font-size:11px;color:#b9b0a4">' + it.image_count + '枚</div><div class="nm">' + esc(it.name) + '<small>' + esc(it.maker || '') + (it.brand ? ' ・ ' + esc(it.brand) : '') + (it.retake && it.retake.length ? ' ・ 撮り直し ' + it.retake.map(function (r) { return r.slot + '枚目'; }).join('/') : '') + '</small></div></div>';
+      }).join('') || '<div class="small">この条件の商品はありません（すべて撮影済み）</div>';
+      Array.prototype.forEach.call($('qList').querySelectorAll('.it'), function (el) { el.addEventListener('click', function () { Q.on = true; lookup(el.getAttribute('data-jan')); }); });
+      $('qResume').hidden = !(Q.last && after == null);
+      return j;
+    });
+  }
+  $('qMode').value = Q.mode;
+  $('qMode').addEventListener('change', function () { Q.mode = this.value; try { localStorage.setItem('seam_pim_qmode', Q.mode); } catch (e) { /* */ } loadQueue().catch(handleErr); });
+  $('qMaker').addEventListener('change', function () { Q.maker = this.value; try { localStorage.setItem('seam_pim_qmaker', Q.maker); } catch (e) { /* */ } loadQueue().catch(handleErr); });
+  $('qStart').addEventListener('click', function () { if (!Q.items.length) { toast('この条件の商品はありません'); return; } Q.on = true; lookup(Q.items[0].jan); });
+  $('qResume').addEventListener('click', function () { Q.on = true; queueNext(Q.last); });
+  function queueNext(afterJan) {
+    loadQueue(afterJan).then(function (j) {
+      if (!j.ok) { toast(j.message || '取得できません', true); return; }
+      if (!j.items.length) { Q.on = false; toast('この条件の商品は全部撮り終わりました'); show('scr-scan'); loadQueue().catch(function () { /* */ }); return; }
+      lookup(j.items[0].jan);
+    }).catch(handleErr);
+  }
+  function leaveProduct() { state.product = null; $('hsub').textContent = 'JANを読んで写真を5枚まで'; show('scr-scan'); loadStatus().catch(function () { /* */ }); loadQueue().catch(function () { /* */ }); }
+  $('btnBackScan').addEventListener('click', function () { Q.on = false; leaveProduct(); });
+  $('btnNext').addEventListener('click', function () {
+    if (Q.on && state.product) { var j = state.product.jan; Q.last = j; try { localStorage.setItem('seam_pim_qlast', j); } catch (e) { /* */ } stopPoll(); queueNext(j); return; }
+    leaveProduct();
+  });
 
   if (!C.canMakeWebp() && typeof WebAssembly === 'undefined') { toast('このブラウザは webp 変換に対応していません。Chrome か Safari 15 以降をお使いください', true); }
   boot();

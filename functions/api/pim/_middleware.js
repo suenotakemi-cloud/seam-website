@@ -36,6 +36,16 @@ export async function onRequest(context) {
       else return json({ ok: false, reason: 'token_expired', message: 'パスワードが変更されたか、ログインの期限が切れました。もう一度ログインしてください' }, 401);
     }
   }
+  // EC 連携用の読み取り専用キー（x-seam-api-key ヘッダ または ?api_key=）。GET だけ通す
+  if (!account) {
+    const ak = (request.headers.get('x-seam-api-key') || new URL(request.url).searchParams.get('api_key') || '').trim();
+    if (ak && /^seam_[0-9a-f]{48}$/.test(ak)) {
+      const a = await env.DB.prepare('SELECT * FROM pim_accounts WHERE api_key=?').bind(ak).first();
+      if (!a || !a.active) return json({ ok: false, reason: 'bad_api_key', message: '連携キーが無効です（再発行されたか、アカウントが停止中）' }, 401);
+      if (request.method !== 'GET') return json({ ok: false, reason: 'readonly', message: '連携キーは読み取り専用です' }, 403);
+      account = a; context.data.readonly = true;
+    }
+  }
   // 管理者が特定ディーラーとして操作（EC 連携・代行）
   if (!account && isAdmin) {
     const lid = (request.headers.get('x-seam-account') || new URL(request.url).searchParams.get('account') || '').trim().toLowerCase();

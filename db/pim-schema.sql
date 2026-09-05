@@ -22,7 +22,8 @@ CREATE TABLE IF NOT EXISTS pim_accounts (
   created_at     TEXT NOT NULL,
   updated_at     TEXT NOT NULL,
   pass_changed_at TEXT,
-  last_login_at  TEXT
+  last_login_at  TEXT,
+  api_key        TEXT                       -- EC 連携用の読み取り専用キー（seam_…）。再発行で差し替え、NULL で無効
 );
 -- ▼ ログイン失敗の記録（10回で15分ロック）
 CREATE TABLE IF NOT EXISTS pim_login_fail (login_id TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, last_at TEXT);
@@ -74,6 +75,10 @@ CREATE TABLE IF NOT EXISTS pim_images (
   original_type  TEXT,                      -- 元MIME
   created_at     TEXT NOT NULL,
   created_by     TEXT,                      -- 登録した担当者名
+  review         TEXT,                      -- 検品: ok / retake / NULL(未検品)。撮り直すと NULL に戻る
+  review_note    TEXT,                      -- 撮り直しの理由（スマホに表示）
+  reviewed_by    TEXT,
+  reviewed_at    TEXT,
   PRIMARY KEY (account_id, jan, slot)       -- ★この主キーが「同時登録の取り合い」を裁く（slot=auto は INSERT が通った人の番号）
 );
 
@@ -86,6 +91,7 @@ CREATE TABLE IF NOT EXISTS pim_imports (
   source         TEXT,                      -- メーカー名など（画面で入力）
   mapping        TEXT,                      -- 列の対応（JSON）
   headers        TEXT,                      -- 元CSVの見出し（JSON 配列）。「元CSVの形＋画像」出力の列順
+  kind           TEXT,                      -- normal（通常）/ update（更新取り込み・列が少ないので出力の見出しには使わない）
   total          INTEGER NOT NULL DEFAULT 0,-- 読み込んだ行数
   inserted       INTEGER NOT NULL DEFAULT 0,
   updated        INTEGER NOT NULL DEFAULT 0,

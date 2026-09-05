@@ -63,7 +63,9 @@ export async function onRequestGet({ request, env, data }) {
   if (format === 'source') {
     // 見出し: 最後に取り込んだファイルのもの。無ければ raw の鍵の和集合（取り込み順）
     let headers = null;
-    const last = await env.DB.prepare('SELECT headers FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
+    // 見出しは「通常の取り込み」の最新のもの（改定CSVなど列の少ない更新取り込みは使わない）
+    const last = await env.DB.prepare('SELECT headers FROM pim_imports WHERE account_id=? AND headers IS NOT NULL AND (kind IS NULL OR kind=\'normal\') ORDER BY id DESC LIMIT 1').bind(acct).first()
+      || await env.DB.prepare('SELECT headers FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
     if (last && last.headers) { try { headers = JSON.parse(last.headers); } catch (e) { headers = null; } }
     const raws = out.map((p) => { if (!p.raw) return null; try { return JSON.parse(p.raw); } catch (e) { return null; } });
     if (!headers || !headers.length) {
@@ -72,7 +74,8 @@ export async function onRequestGet({ request, env, data }) {
     }
     // 取り込みの列対応（raw の無い商品＝スマホで新規登録したものは、対応が分かる列だけ埋める）
     let mapping = {};
-    const lastMap = await env.DB.prepare('SELECT mapping FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
+    const lastMap = await env.DB.prepare('SELECT mapping FROM pim_imports WHERE account_id=? AND headers IS NOT NULL AND (kind IS NULL OR kind=\'normal\') ORDER BY id DESC LIMIT 1').bind(acct).first()
+      || await env.DB.prepare('SELECT mapping FROM pim_imports WHERE account_id=? AND headers IS NOT NULL ORDER BY id DESC LIMIT 1').bind(acct).first();
     if (lastMap && lastMap.mapping) { try { mapping = JSON.parse(lastMap.mapping) || {}; } catch (e) { mapping = {}; } }
     const colOf = (field) => (typeof mapping[field] === 'number' ? headers[mapping[field]] : null);
     const fieldByHeader = {};

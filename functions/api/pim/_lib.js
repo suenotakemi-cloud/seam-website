@@ -147,7 +147,12 @@ export async function verifyToken(env, token) {
 }
 export function publicAccount(a) {
   if (!a) return null;
-  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at };
+  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at, has_api_key: !!a.api_key };
+}
+// EC 連携用の読み取り専用キー（管理画面で発行。夜間バッチが export を取りに来るためのもの）
+export function newApiKey() {
+  const a = crypto.getRandomValues(new Uint8Array(24));
+  return 'seam_' + Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 // ── スキーマ（db/pim-schema.sql と同じ内容。未投入でも動くよう初回に作る）──
@@ -173,7 +178,7 @@ export async function ensureSchema(env) {
     `CREATE TABLE IF NOT EXISTS pim_accounts (
       id INTEGER PRIMARY KEY AUTOINCREMENT, login_id TEXT NOT NULL UNIQUE, name TEXT NOT NULL, pass_hash TEXT NOT NULL,
       role TEXT NOT NULL DEFAULT 'dealer', active INTEGER NOT NULL DEFAULT 1, token_version INTEGER NOT NULL DEFAULT 1,
-      note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, pass_changed_at TEXT, last_login_at TEXT)`,
+      note TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, pass_changed_at TEXT, last_login_at TEXT, api_key TEXT)`,
     `CREATE TABLE IF NOT EXISTS pim_login_fail (login_id TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, last_at TEXT)`,
     `CREATE TABLE IF NOT EXISTS pim_products (
       account_id INTEGER NOT NULL, jan TEXT NOT NULL, jan_valid INTEGER NOT NULL DEFAULT 1, name TEXT NOT NULL,
@@ -189,9 +194,10 @@ export async function ensureSchema(env) {
     `CREATE INDEX IF NOT EXISTS idx_pim_products_upd ON pim_products(account_id, updated_at)`,
     `CREATE TABLE IF NOT EXISTS pim_images (
       account_id INTEGER NOT NULL, jan TEXT NOT NULL, slot INTEGER NOT NULL, key TEXT NOT NULL, bytes INTEGER, width INTEGER, height INTEGER,
-      original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT, PRIMARY KEY (account_id, jan, slot))`,
+      original_name TEXT, original_type TEXT, created_at TEXT NOT NULL, created_by TEXT,
+      review TEXT, review_note TEXT, reviewed_by TEXT, reviewed_at TEXT, PRIMARY KEY (account_id, jan, slot))`,
     `CREATE TABLE IF NOT EXISTS pim_imports (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT, headers TEXT,
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, filename TEXT, source TEXT, mapping TEXT, headers TEXT, kind TEXT,
       total INTEGER NOT NULL DEFAULT 0, inserted INTEGER NOT NULL DEFAULT 0, updated INTEGER NOT NULL DEFAULT 0,
       skipped INTEGER NOT NULL DEFAULT 0, invalid INTEGER NOT NULL DEFAULT 0)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_imports_acct ON pim_imports(account_id, id)`,
@@ -205,7 +211,9 @@ export async function ensureSchema(env) {
   ];
   await env.DB.batch(stmts.map((s) => env.DB.prepare(s)));
   // 既に作られた表への列追加（あればエラーになるだけで無害）
-  for (const a of ['ALTER TABLE pim_products ADD COLUMN raw TEXT', 'ALTER TABLE pim_imports ADD COLUMN headers TEXT']) {
+  for (const a of ['ALTER TABLE pim_products ADD COLUMN raw TEXT', 'ALTER TABLE pim_imports ADD COLUMN headers TEXT',
+    'ALTER TABLE pim_images ADD COLUMN review TEXT', 'ALTER TABLE pim_images ADD COLUMN review_note TEXT', 'ALTER TABLE pim_images ADD COLUMN reviewed_by TEXT', 'ALTER TABLE pim_images ADD COLUMN reviewed_at TEXT',
+    'ALTER TABLE pim_accounts ADD COLUMN api_key TEXT', 'ALTER TABLE pim_imports ADD COLUMN kind TEXT']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
   await seedIfEmpty(env);
@@ -276,7 +284,7 @@ export function withImages(origin, acct, rows, imagesByJan) {
   return rows.map((r) => {
     const imgs = (imagesByJan[r.jan] || []).slice().sort((a, b) => a.slot - b.slot);
     return Object.assign({}, r, {
-      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, acct, r.jan, im.slot, im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at })),
+      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, acct, r.jan, im.slot, im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at, review: im.review || null, review_note: im.review_note || null })),
       image_urls: imgs.map((im) => imageUrl(origin, acct, r.jan, im.slot, im.created_at)),
     });
   });
@@ -285,7 +293,7 @@ export async function loadImages(env, acct, jans) {
   const out = {};
   for (let i = 0; i < jans.length; i += 90) {
     const chunk = jans.slice(i, i + 90);
-    const rs = await env.DB.prepare('SELECT jan, slot, width, height, bytes, created_at, created_by FROM pim_images WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
+    const rs = await env.DB.prepare('SELECT jan, slot, width, height, bytes, created_at, created_by, review, review_note FROM pim_images WHERE account_id=? AND jan IN (' + chunk.map(() => '?').join(',') + ')').bind(acct, ...chunk).all();
     for (const im of (rs.results || [])) (out[im.jan] = out[im.jan] || []).push(im);
   }
   return out;

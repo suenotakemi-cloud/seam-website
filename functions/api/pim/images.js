@@ -15,7 +15,7 @@ function isWebp(u8) {
 }
 async function listImages(env, origin, acct, jan) {
   const rs = await env.DB.prepare('SELECT * FROM pim_images WHERE account_id=? AND jan=? ORDER BY slot').bind(acct, jan).all();
-  return (rs.results || []).map((im) => Object.assign({}, im, { url: imageUrl(origin, acct, jan, im.slot, im.created_at) }));
+  return (rs.results || []).map((im) => { const o = Object.assign({}, im, { url: imageUrl(origin, acct, jan, im.slot, im.created_at) }); delete o.key; return o; });
 }
 // 画像枚数を商品側へ同期し、商品の updated_at を返す（画面側が楽観ロックの基準を追従させるため）
 async function syncCount(env, acct, jan) {
@@ -97,7 +97,7 @@ export async function onRequestPost({ request, env, data }) {
     await put(imageKey(acct, jan, usedSlot));
     await env.DB.prepare(
       'INSERT INTO pim_images(account_id, jan, slot, key, bytes, width, height, original_name, original_type, created_at, created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?) ' +
-      'ON CONFLICT(account_id, jan, slot) DO UPDATE SET key=excluded.key, bytes=excluded.bytes, width=excluded.width, height=excluded.height, original_name=excluded.original_name, original_type=excluded.original_type, created_at=excluded.created_at, created_by=excluded.created_by'
+      'ON CONFLICT(account_id, jan, slot) DO UPDATE SET key=excluded.key, bytes=excluded.bytes, width=excluded.width, height=excluded.height, original_name=excluded.original_name, original_type=excluded.original_type, created_at=excluded.created_at, created_by=excluded.created_by, review=NULL, review_note=NULL, reviewed_by=NULL, reviewed_at=NULL'
     ).bind(acct, jan, usedSlot, imageKey(acct, jan, usedSlot), ...meta, ts, by || null).run();
   }
   const pts = await syncCount(env, acct, jan);
