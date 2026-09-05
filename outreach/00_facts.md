@@ -19,7 +19,8 @@
 | 法人番号 | 8430001078398 | Gビズインフォ |
 | 代表者 | 代表取締役 田中 健誠 | salontown/index.html |
 | 所在地 | 北海道札幌市中央区南2条西2丁目8-1 NC北専ブロックビル3階 | 同上 |
-| 電話 | 011-252-9133 | 同上 |
+| 電話 / メール | 011-252-9133 / tanaka@salontown.jp（代表指示 2026-09-05） | 同上 |
+| AI受付 | https://seam.site/salontown/contact.html（サイト内ページ、音声＋文字）／ 直リンク https://elevenlabs.io/app/talk-to?agent_id=agent_1901m1r0d2p5e788cek4e72xqbas | 本セッションで作成（ElevenLabs Conversational AI、agent_1901m1r0d2p5e788cek4e72xqbas） |
 | 設立 / 資本金 | 2019年2月 / 100万円 | 同上 |
 | 事業内容 | 美容関連サイトの運営、シェアサロンの運営、サロン向けシステム開発 | 同上 |
 | 技術スタック | TypeScript / React / Next.js / Node.js / PostgreSQL / Cloudflare / PWA / LINE API / Stripe | 同上 |

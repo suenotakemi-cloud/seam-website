@@ -162,8 +162,9 @@
 URL：https://salon.town/
 
 ### 本件に関するお問い合わせ
-株式会社サロンタウン 広報担当〔要記入：氏名〕
-TEL：011-252-9133 ／ E-mail：〔要記入〕
+株式会社サロンタウン 代表取締役 田中 健誠
+TEL：011-252-9133 ／ E-mail：tanaka@salontown.jp
+AI受付（音声・文字で24時間応答）：https://seam.site/salontown/contact.html
 
 ---
 
