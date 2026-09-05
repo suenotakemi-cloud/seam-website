@@ -53,6 +53,7 @@ export async function onRequestPost({ request, env, data }) {
     const raw = (Array.isArray(b.products) ? b.products : []).slice(0, 500);
     const ALLOWED_FIELDS = ['name', 'price', 'retail_price', 'cost_price', 'amount', 'maker', 'brand', 'category', 'description', 'sku'];
     const updFields = (Array.isArray(b.fields) ? b.fields : []).filter((f) => ALLOWED_FIELDS.indexOf(f) >= 0);
+    if (raw.some((r) => r && r._mode === 'update') && !updFields.length) return json({ ok: false, reason: 'no_fields', message: '更新取り込みでは、上書きする列を1つ以上選んでください' }, 400);
     const products = raw.map((r) => {
       const p = sanitizeProduct(r);
       // 元CSVの1行（見出し→値）。「菊池CSVの形＋画像」で出すために、そのまま保管する

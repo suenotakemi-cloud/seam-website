@@ -186,7 +186,7 @@ export async function ensureSchema(env) {
       price_ex INTEGER, price_in INTEGER, retail_price INTEGER, cost_price INTEGER,
       amount REAL, unit TEXT, maker TEXT, brand TEXT, category TEXT, description TEXT, sku TEXT,
       source TEXT, import_id INTEGER, image_count INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT, raw TEXT,
+      created_at TEXT NOT NULL, updated_at TEXT NOT NULL, updated_by TEXT, raw TEXT, claimed_by TEXT, claimed_at TEXT,
       PRIMARY KEY (account_id, jan))`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_name ON pim_products(account_id, name)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_products_maker ON pim_products(account_id, maker)`,
@@ -213,7 +213,8 @@ export async function ensureSchema(env) {
   // 既に作られた表への列追加（あればエラーになるだけで無害）
   for (const a of ['ALTER TABLE pim_products ADD COLUMN raw TEXT', 'ALTER TABLE pim_imports ADD COLUMN headers TEXT',
     'ALTER TABLE pim_images ADD COLUMN review TEXT', 'ALTER TABLE pim_images ADD COLUMN review_note TEXT', 'ALTER TABLE pim_images ADD COLUMN reviewed_by TEXT', 'ALTER TABLE pim_images ADD COLUMN reviewed_at TEXT',
-    'ALTER TABLE pim_accounts ADD COLUMN api_key TEXT', 'ALTER TABLE pim_imports ADD COLUMN kind TEXT']) {
+    'ALTER TABLE pim_accounts ADD COLUMN api_key TEXT', 'ALTER TABLE pim_imports ADD COLUMN kind TEXT',
+    'ALTER TABLE pim_products ADD COLUMN claimed_by TEXT', 'ALTER TABLE pim_products ADD COLUMN claimed_at TEXT']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
   await seedIfEmpty(env);

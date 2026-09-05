@@ -72,6 +72,8 @@ export async function onRequestGet({ request, env, data }) {
       headers = [];
       raws.forEach((r) => { if (r) Object.keys(r).forEach((k) => { if (headers.indexOf(k) < 0) headers.push(k); }); });
     }
+    let noImportYet = false;
+    if (!headers.length) { headers = ['商品コード', 'JAN', '商品名', '価格', 'メーカー']; noImportYet = true; } // まだ CSV を取り込んでいない（スマホ登録だけ）
     // 取り込みの列対応（raw の無い商品＝スマホで新規登録したものは、対応が分かる列だけ埋める）
     let mapping = {};
     const lastMap = await env.DB.prepare('SELECT mapping FROM pim_imports WHERE account_id=? AND headers IS NOT NULL AND (kind IS NULL OR kind=\'normal\') ORDER BY id DESC LIMIT 1').bind(acct).first()
@@ -80,6 +82,7 @@ export async function onRequestGet({ request, env, data }) {
     const colOf = (field) => (typeof mapping[field] === 'number' ? headers[mapping[field]] : null);
     const fieldByHeader = {};
     [['jan', 'jan'], ['name', 'name'], ['price', 'price'], ['retail', 'retail_price'], ['cost', 'cost_price'], ['maker', 'maker'], ['brand', 'brand'], ['description', 'description'], ['sku', 'sku']].forEach(([f, col]) => { const h = colOf(f); if (h) fieldByHeader[h] = col; });
+    if (noImportYet) Object.assign(fieldByHeader, { '商品コード': 'sku', 'JAN': 'jan', '商品名': 'name', '価格': 'price', 'メーカー': 'maker' });
     const lines = [headers.map(cell).concat(['画像1', '画像2', '画像3', '画像4', '画像5', '画像枚数']).join(',')];
     out.forEach((p, i) => {
       const r = raws[i];

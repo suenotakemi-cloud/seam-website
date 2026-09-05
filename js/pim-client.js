@@ -60,6 +60,7 @@
     if (opts.admin) { headers['x-seam-key'] = Auth.adminKey(); if (opts.asAccount) headers['x-seam-account'] = opts.asAccount; }
     else headers['x-seam-token'] = Auth.get();
     var init = { method: opts.method || 'GET', headers: headers, cache: 'no-store' };
+    if (opts.keepalive) init.keepalive = true; // 画面を閉じる瞬間でも送り切る（撮影中フラグの解除など）
     if (opts.body != null) {
       if (opts.body instanceof FormData) init.body = opts.body;
       else { headers['content-type'] = 'application/json'; init.body = JSON.stringify(opts.body); }

@@ -55,6 +55,8 @@ CREATE TABLE IF NOT EXISTS pim_products (
   updated_at     TEXT NOT NULL,             -- 楽観ロックの基準（編集時に「見ていた時刻」と違えば 409）
   updated_by     TEXT,                      -- 最後に触った担当者名（複数人同時登録の記録）
   raw            TEXT,                      -- 取り込んだ元CSVの1行（見出し→値の JSON）。「元CSVの形＋画像」出力に使う
+  claimed_by     TEXT,                      -- いま撮影中の担当者名（スマホで商品を開くと付き、閉じると外れる）
+  claimed_at     TEXT,                      -- 撮影中フラグの時刻。10分過ぎたら無効（閉じ忘れ対策）。撮影キューは他の人の撮影中商品を飛ばす
   PRIMARY KEY (account_id, jan)
 );
 CREATE INDEX IF NOT EXISTS idx_pim_products_name  ON pim_products(account_id, name);

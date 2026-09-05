@@ -615,7 +615,7 @@
   }
   $('btnCamRestart').addEventListener('click', startScan);
   $('cam').addEventListener('click', function () { if (!state.stream) startScan(); });
-  document.addEventListener('visibilitychange', function () { if (document.hidden) stopScan(); else if ($('scr-scan').classList.contains('active') && $('login').hidden && $('setup').hidden) startScan(); else if ($('scr-prod').classList.contains('active')) refreshProduct(); });
+  document.addEventListener('visibilitychange', function () { if (document.hidden) stopScan(); else if ($('scr-scan').classList.contains('active') && $('login').hidden && $('setup').hidden) startScan(); else if ($('scr-prod').classList.contains('active')) { refreshProduct(); reclaim(); } });
 
   // ── 呼び出し ──
   function normJan(s) { var d = String(s || '').replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[^0-9]/g, ''); if (d.length === 12) d = '0' + d; if (d.length === 14 && d[0] === '0') d = d.slice(1); return d; }
@@ -663,7 +663,13 @@
     $('hsub').textContent = p.name.slice(0, 24) + (p.updated_by ? '（最終更新: ' + p.updated_by + '）' : '');
     $('btnNext').textContent = Q.on ? '次の商品へ →' : '次の商品をスキャン';
     startPoll();
+    // 「いま開いている」印を付ける（他の人のキューから 10 分外れる）。他の人も開いていたら知らせる
+    api('queue', { method: 'POST', body: { jan: p.jan, action: 'claim' } }).then(function (j) { if (j && j.ok && j.other) toast(j.other + ' さんもこの商品を開いています', true); }).catch(function () { /* */ });
   }
+  function reclaim() { var p = state.product; if (p) api('queue', { method: 'POST', body: { jan: p.jan, action: 'claim' } }).catch(function () { /* */ }); } // 戻ってきたら「撮影中」を付け直す
+  function releaseClaim() { var p = state.product; if (p) api('queue', { method: 'POST', body: { jan: p.jan, action: 'release' }, keepalive: true }).catch(function () { /* */ }); }
+  // アプリを閉じた／別タブへ行ったときも「撮影中」を解除しておく（解除し忘れても 10 分で自動的に外れる）
+  window.addEventListener('pagehide', function () { if (state.product) releaseClaim(); });
   // 複数人が同じ商品を触っているとき、他の人の写真・変更を取り込む（15秒ごと／画面に戻ったとき）
   var pollT = null;
   function startPoll() { stopPoll(); pollT = setInterval(refreshProduct, 15000); }
@@ -1064,10 +1070,10 @@
       lookup(j.items[0].jan);
     }).catch(handleErr);
   }
-  function leaveProduct() { state.product = null; $('hsub').textContent = 'JANを読んで写真を5枚まで'; show('scr-scan'); loadStatus().catch(function () { /* */ }); loadQueue().catch(function () { /* */ }); }
+  function leaveProduct() { releaseClaim(); state.product = null; $('hsub').textContent = 'JANを読んで写真を5枚まで'; show('scr-scan'); loadStatus().catch(function () { /* */ }); loadQueue().catch(function () { /* */ }); }
   $('btnBackScan').addEventListener('click', function () { Q.on = false; leaveProduct(); });
   $('btnNext').addEventListener('click', function () {
-    if (Q.on && state.product) { var j = state.product.jan; Q.last = j; try { localStorage.setItem('seam_pim_qlast', j); } catch (e) { /* */ } stopPoll(); queueNext(j); return; }
+    if (Q.on && state.product) { var j = state.product.jan; Q.last = j; try { localStorage.setItem('seam_pim_qlast', j); } catch (e) { /* */ } stopPoll(); releaseClaim(); queueNext(j); return; }
     leaveProduct();
   });
 
