@@ -8,7 +8,7 @@
 //        jan:'auto'          … JAN の無い商品。社内の仮コード（20 で始まる 13 桁・EAN-13 として印刷できる）を振って登録
 //   POST /api/pim/products { action:'bulk', jans:[…], set:{maker, brand, category, tax_included, tax_rate, unit} } → 一括変更（PC 商品一覧）
 //   DELETE /api/pim/products?jan=                       → 1件削除（画像も消す）
-import { json, cleanJan, janShapeOk, sanitizeProduct, upsertStmt, withImages, loadImages, nowIso, imageKey, SLOT_MAX, userOf, blobDelete, loadDict, applyDict, logChanges, notifyWebhook, allocInternalJan, thumbKey } from './_lib.js';
+import { READY_SQL, json, cleanJan, janShapeOk, sanitizeProduct, upsertStmt, withImages, loadImages, nowIso, imageKey, SLOT_MAX, userOf, blobDelete, loadDict, applyDict, logChanges, notifyWebhook, allocInternalJan, thumbKey } from './_lib.js';
 
 export async function onRequestGet({ request, env, data }) {
   const acct = data.account.id;
@@ -26,22 +26,29 @@ export async function onRequestGet({ request, env, data }) {
   const noimg = url.searchParams.get('noimg') === '1';
   const limit = Math.min(200, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10) || 50));
   const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10) || 0);
-  const where = ['account_id=?'], binds = [acct];
+  const where = ['p.account_id=?'], binds = [acct];
+  const brand = (url.searchParams.get('brand') || '').trim().slice(0, 100);
+  if (brand) { where.push('p.brand=?'); binds.push(brand); }
+  if (url.searchParams.get('ready') === '1') where.push(READY_SQL); // 公開できる商品だけ
+  if (url.searchParams.get('ready') === '0') where.push('NOT ' + READY_SQL); // 公開できない商品だけ
+  if (url.searchParams.get('ec') === 'pending') where.push('(p.ec_synced_at IS NULL OR p.ec_synced_at < p.updated_at)'); // EC 未反映
   if (q) {
     const qd = q.replace(/[^0-9]/g, '');
-    if (qd.length >= 6 && qd.length === q.length) { where.push('jan LIKE ?'); binds.push(qd + '%'); }
-    else { where.push('(name LIKE ? OR brand LIKE ? OR sku LIKE ? OR maker LIKE ?)'); binds.push('%' + q + '%', '%' + q + '%', '%' + q + '%', '%' + q + '%'); }
+    if (qd.length >= 6 && qd.length === q.length) { where.push('p.jan LIKE ?'); binds.push(qd + '%'); }
+    else { where.push('(p.name LIKE ? OR p.brand LIKE ? OR p.sku LIKE ? OR p.maker LIKE ?)'); binds.push('%' + q + '%', '%' + q + '%', '%' + q + '%', '%' + q + '%'); }
   }
-  if (maker) { where.push('maker=?'); binds.push(maker); }
-  if (noimg) where.push('image_count=0');
-  if (url.searchParams.get('nosku') === '1') where.push("(sku IS NULL OR sku='')"); // 商品コード（EC の突き合わせ用）がまだ無いもの
+  if (maker) { where.push('p.maker=?'); binds.push(maker); }
+  if (noimg) where.push('p.image_count=0');
+  if (url.searchParams.get('nosku') === '1') where.push("(p.sku IS NULL OR p.sku='')"); // 商品コード（EC の突き合わせ用）がまだ無いもの
   const W = ' WHERE ' + where.join(' AND ');
-  const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_products' + W).bind(...binds).first();
-  const rs = await env.DB.prepare('SELECT * FROM pim_products' + W + ' ORDER BY updated_at DESC LIMIT ? OFFSET ?').bind(...binds, limit, offset).all();
+  const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_products p' + W).bind(...binds).first();
+  const sort = url.searchParams.get('sort') === 'shelf' ? 'p.maker, p.brand, p.name, p.jan' : 'p.updated_at DESC';
+  const rs = await env.DB.prepare('SELECT p.*, ' + READY_SQL + ' AS ready FROM pim_products p' + W + ' ORDER BY ' + sort + ' LIMIT ? OFFSET ?').bind(...binds, limit, offset).all();
   const rows = (rs.results || []).map((r) => { const o = Object.assign({}, r); delete o.raw; return o; });
   const imgs = await loadImages(env, acct, rows.map((r) => r.jan));
   const makers = await env.DB.prepare('SELECT maker, COUNT(*) AS n FROM pim_products WHERE account_id=? AND maker<>\'\' GROUP BY maker ORDER BY n DESC LIMIT 100').bind(acct).all();
-  return json({ ok: true, total: total ? total.n : 0, limit, offset, products: withImages(origin, acct, rows, imgs), makers: makers.results || [] });
+  const brands = await env.DB.prepare('SELECT brand, maker, COUNT(*) AS n FROM pim_products WHERE account_id=? AND brand<>\'\' GROUP BY brand, maker ORDER BY maker, n DESC LIMIT 300').bind(acct).all();
+  return json({ ok: true, total: total ? total.n : 0, limit, offset, products: withImages(origin, acct, rows, imgs), makers: makers.results || [], brands: brands.results || [] });
 }
 
 export async function onRequestPut(context) {

@@ -12,7 +12,7 @@ import { json, nowIso, hashPassword, verifyPassword, signStaff, verifyStaff, use
 
 const MAX_FAIL = 8, LOCK_MIN = 10;
 function pinProblem(pin) { const s = String(pin == null ? '' : pin).trim(); if (!s) return ''; if (!/^[0-9]{4,6}$/.test(s)) return 'PIN は 4〜6 桁の数字にしてください'; return ''; }
-export function publicStaff(r) { return { id: r.id, name: r.name, has_pin: !!r.pin_hash, active: !!r.active, created_at: r.created_at }; }
+export function publicStaff(r) { return { id: r.id, name: r.name, has_pin: !!r.pin_hash, active: !!r.active, created_at: r.created_at, assign: r.assign || '' }; }
 
 export async function onRequestGet({ env, data }) {
   const rs = await env.DB.prepare('SELECT * FROM pim_staff WHERE account_id=? ORDER BY active DESC, name').bind(data.account.id).all();
@@ -38,6 +38,14 @@ export async function onRequestPost({ request, env, data }) {
     }
   }
 
+  if (action === 'assign') { // 担当割り: そのスタッフが受け持つブランド／メーカー（カンマ区切り）。スマホの撮影キューがこれで絞られる
+    const id = parseInt(b.id, 10) || 0;
+    const assign = String(b.assign || '').split(/[,、\n]/).map((x) => x.trim()).filter(Boolean).slice(0, 30).join(',');
+    const r = await env.DB.prepare('UPDATE pim_staff SET assign=?, updated_at=? WHERE id=? AND account_id=?').bind(assign || null, ts, id, acct).run();
+    if (!(r.meta && r.meta.changes)) return json({ ok: false, reason: 'not_found' }, 404);
+    const row = await env.DB.prepare('SELECT * FROM pim_staff WHERE id=?').bind(id).first();
+    return json({ ok: true, staff: publicStaff(row) });
+  }
   if (action === 'add') {
     if (!name) return json({ ok: false, reason: 'no_name', message: '名前を入れてください' }, 400);
     const prob = pinProblem(b.pin); if (prob) return json({ ok: false, reason: 'bad_pin', message: prob }, 400);

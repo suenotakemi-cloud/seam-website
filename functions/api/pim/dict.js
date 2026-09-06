@@ -33,6 +33,26 @@ export async function onRequestPost(context) {
   const action = String(b.action || '');
   const upsert = (kind, src, dst) => env.DB.prepare('INSERT INTO pim_dict(account_id, kind, src, dst, created_at, created_by) VALUES(?,?,?,?,?,?) ON CONFLICT(account_id, kind, src) DO UPDATE SET dst=excluded.dst, created_at=excluded.created_at, created_by=excluded.created_by').bind(acct, kind, src, dst, ts, by || null);
 
+  if (action === 'suggest') { // 表記ゆれの候補: メーカー・ブランド・カテゴリの値を「揺れを無視した同じ形」でまとめ、複数の書き方があるものを出す
+    const norm = (v) => String(v || '').normalize('NFKC').toLowerCase().replace(/株式会社|有限会社|合同会社|\(株\)|㈱|co\.?,?\s*ltd\.?|inc\.?/g, '').replace(/[\s\u3000・･\-–—_()（）\[\]【】／/.,、。'"“”]/g, '');
+    const out = [];
+    for (const kind of ['maker', 'brand', 'category']) {
+      const rs = await env.DB.prepare('SELECT ' + kind + ' AS v, COUNT(*) AS n FROM pim_products WHERE account_id=? AND ' + kind + ' IS NOT NULL AND ' + kind + '<>\'\' GROUP BY ' + kind).bind(acct).all();
+      const groups = {};
+      for (const r of (rs.results || [])) {
+        const parts = kind === 'category' ? String(r.v).split(' > ') : [String(r.v)];
+        for (const part of parts) { const k = norm(part); if (!k) continue; (groups[k] = groups[k] || {})[part] = (groups[k][part] || 0) + r.n; }
+      }
+      Object.keys(groups).forEach((k) => {
+        const vs = Object.keys(groups[k]); if (vs.length < 2) return;
+        vs.sort((a, b) => groups[k][b] - groups[k][a]);
+        const dst = vs[0];
+        vs.slice(1).forEach((src) => out.push({ kind, src, dst, n_src: groups[k][src], n_dst: groups[k][dst] }));
+      });
+    }
+    out.sort((a, b) => b.n_src - a.n_src);
+    return json({ ok: true, suggestions: out.slice(0, 300) });
+  }
   if (action === 'set' || action === 'bulk') {
     const rows = (action === 'bulk' ? (Array.isArray(b.rows) ? b.rows : []) : [b]).slice(0, 500)
       .map((r) => ({ kind: String(r.kind || ''), src: clean(r.src), dst: clean(r.dst) }))

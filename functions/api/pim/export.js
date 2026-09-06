@@ -5,7 +5,7 @@
 //     source     … 取り込んだ CSV そのままの列（例: 菊池 CSV の 22 列）＋ 画像1〜5 ＋ 画像枚数。
 //                  EC 側は「商品コード（商品ID）」で突き合わせる。見出しは最後に取り込んだファイルのもの
 //     images     … 商品ID（元商品コード）・JAN・商品名・画像1〜5・画像枚数 だけ（EC 側が既に商品を持っているとき）
-import { json, imageUrl, loadImages } from './_lib.js';
+import { READY_SQL, json, imageUrl, loadImages } from './_lib.js';
 
 const COLS = [
   ['jan', 'JAN'], ['name', '商品名'],
@@ -29,16 +29,18 @@ export async function onRequestGet({ request, env, data }) {
   const onlyImages = url.searchParams.get('only_images') === '1';
   const noimg = url.searchParams.get('noimg') === '1';
   const since = (url.searchParams.get('since') || '').trim();
-  const where = ['account_id=?'], binds = [acct];
-  if (since) { const d = new Date(since); if (isNaN(d.getTime())) return json({ ok: false, reason: 'bad_since', message: 'since は ISO 形式の日時（例: 2026-09-01T00:00:00Z）で指定してください' }, 400); where.push('updated_at>=?'); binds.push(d.toISOString()); }
-  if (maker) { where.push('maker=?'); binds.push(maker); }
-  if (onlyImages) where.push('image_count>0');
-  if (noimg) where.push('image_count=0');
+  const where = ['p.account_id=?'], binds = [acct];
+  const ready = url.searchParams.get('ready') === '1'; // 公開できる商品だけ（写真あり・商品コードあり・価格あり・撮り直し無し）
+  if (ready) where.push(READY_SQL);
+  if (since) { const d = new Date(since); if (isNaN(d.getTime())) return json({ ok: false, reason: 'bad_since', message: 'since は ISO 形式の日時（例: 2026-09-01T00:00:00Z）で指定してください' }, 400); where.push('p.updated_at>=?'); binds.push(d.toISOString()); }
+  if (maker) { where.push('p.maker=?'); binds.push(maker); }
+  if (onlyImages) where.push('p.image_count>0');
+  if (noimg) where.push('p.image_count=0');
   const W = ' WHERE ' + where.join(' AND ');
 
   const rows = [];
   for (let off = 0; ; off += 1000) {
-    const rs = await env.DB.prepare('SELECT * FROM pim_products' + W + ' ORDER BY maker, brand, name, jan LIMIT 1000 OFFSET ?').bind(...binds, off).all();
+    const rs = await env.DB.prepare('SELECT p.* FROM pim_products p' + W + ' ORDER BY p.maker, p.brand, p.name, p.jan LIMIT 1000 OFFSET ?').bind(...binds, off).all();
     const r = rs.results || [];
     rows.push(...r);
     if (r.length < 1000) break;
