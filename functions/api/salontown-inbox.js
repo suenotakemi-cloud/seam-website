@@ -1,7 +1,7 @@
 // 受信箱API：フォーム（salontown_inquiries）とAI受付（salontown_ai_calls）をまとめて返す
 // GET   /api/salontown-inbox?key=ADMIN_KEY          … 新しい順にまとめて返す
 // PATCH /api/salontown-inbox  {source, id, handled}  … 対応済みの切替（キー必須）
-// 認証は /api/recruit と同じ（ADMIN_KEY、x-seam-key or ?key=）
+// 認証は ADMIN_KEY か STAFF_KEY（x-seam-key ヘッダ or ?key=）
 
 function json(obj, status) {
   return new Response(JSON.stringify(obj), {
@@ -12,9 +12,10 @@ function json(obj, status) {
 function checkKey(request, env) {
   const url = new URL(request.url);
   const key = (request.headers.get('x-seam-key') || url.searchParams.get('key') || '').trim();
-  const want = (env.ADMIN_KEY || '').trim();
-  if (!want) return { ok: false, keyConfigured: false };
-  return { ok: key === want, keyConfigured: true };
+  const admin = (env.ADMIN_KEY || '').trim();
+  const staff = (env.STAFF_KEY || '').trim(); // 担当者用のキー（任意）。管理キーを配らずに済む
+  if (!admin && !staff) return { ok: false, keyConfigured: false };
+  return { ok: (admin && key === admin) || (staff && key === staff), keyConfigured: true };
 }
 async function tableExists(db, name) {
   const r = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").bind(name).first();
