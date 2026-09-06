@@ -316,8 +316,8 @@
 
   function add(role,text){var d=document.createElement('div');d.className='m '+role;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
   function fmt(s){s=Math.max(0,s|0);return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
-  function startTimer(){startedAt=Date.now();clearInterval(tick);tick=setInterval(function(){var r=SECS-Math.floor((Date.now()-startedAt)/1000);timer.textContent='残り '+fmt(r);if(r<=0){clearInterval(tick);finish();}},500);}
-  function finishUI(){ended=true;clearInterval(tick);timer.textContent='受付終了';input.disabled=true;document.getElementById('send').disabled=true;mic.disabled=true;endbtn.disabled=true;}
+  function startTimer(){if(window.stTrack)stTrack('ai_start');startedAt=Date.now();clearInterval(tick);tick=setInterval(function(){var r=SECS-Math.floor((Date.now()-startedAt)/1000);timer.textContent='残り '+fmt(r);if(r<=0){clearInterval(tick);finish();}},500);}
+  function finishUI(){if(window.stTrack)stTrack('ai_end',{dur:startedAt?Math.round((Date.now()-startedAt)/1000):0});ended=true;clearInterval(tick);timer.textContent='受付終了';input.disabled=true;document.getElementById('send').disabled=true;mic.disabled=true;endbtn.disabled=true;}
 
   // 読み上げ：日本語の声（女性名を優先）
   var voice=null;
@@ -364,5 +364,6 @@
   window.addEventListener('pagehide',function(){if(sid&&!ended){try{navigator.sendBeacon(API,new Blob([JSON.stringify({sid:sid,text:'',end:true})],{type:'application/json'}));}catch(e){}}});
 })();
 </script>
+<script src="st-track.js" defer></script>
 </body>
 </html>
