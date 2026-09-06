@@ -443,7 +443,7 @@
           <li><em>店販の在庫と発注、廃棄が負担で続かない</em><span>在庫と出荷はディーラー。サロンは案内するだけ <a href="#dealer">→</a></span></li>
           <li><em>お客様が帰った後、他所や並行品で買われてしまう</em><span>招待した会員だけが買えるEC。購入は担当者にひも付く <a href="#ec">→</a></span></li>
           <li><em>ホットペッパーと自社予約の二重管理。無断キャンセルで枠が空く</em><span>実予約と確定シフトから空きを表示。前金と段階式キャンセル料 <a href="#reserve">→</a></span></li>
-          <li><em>カウンセリングと薬剤の記録が紙で、担当が変わると引き継げない</em><span>iPadで記入・署名、薬剤は音声で記録。すべて一枚のカルテに <a href="#reserve">→</a></span></li>
+          <li><em>カウンセリングと薬剤の記録が紙で、担当が変わると引き継げない</em><span>iPadで記入・署名、薬剤は音声から下書き。すべて一枚のカルテに <a href="#reserve">→</a></span></li>
           <li><em>外国のお客様の予約、同意書、免税に手が回らない</em><span>予約から同意書まで5言語。保存は日本語のまま <a href="#reserve">→</a></span></li>
           <li><em>シフト作成に半日。歩合の計算ミスが怖い</em><span>数秒で自動作成、公平性は点数で説明。歩合は自動計算し支払前に点検 <a href="#shift">→</a></span></li>
           <li><em>施術中は電話に出られず、予約と問い合わせを取りこぼす</em><span>話しても打っても24時間応答するAI受付 <a href="#ai">→</a></span></li>
@@ -495,9 +495,9 @@
       <div class="flow ja" aria-label="流れ"><div><i>📅</i>予約</div><div><i>🎧</i>来店前の希望</div><div><i>📝</i>施術・カルテ</div><div><i>🧾</i>会計・店販</div><div><i>💬</i>次回予約・再来</div></div>
       <ul class="points ja">
         <li>確定シフトと実予約から空きを表示し、休みの日には予約が入らない。指名なしは自動で担当を割り当て</li>
-        <li>カード事前決済と段階式キャンセル料。無断キャンセル歴のある方は前金必須。予約が作れなければ全額を自動返金</li>
+        <li>カード事前決済と段階式キャンセル料。無断キャンセル歴のある方は前金必須。予約が確定しなかった場合は1時間以内なら全額を自動返金</li>
         <li>来店前に強さ・部位・香り・アレルギーを選ぶだけで施術の設計図ができ、担当者の画面にアレルギーが最上段で届く</li>
-        <li>iPadでカウンセリング・署名、薬剤は音声で記録。予約から同意書まで5言語、保存は日本語</li>
+        <li>iPadでカウンセリング・手書き署名、薬剤は音声から下書き（対応ブラウザ）。予約から同意書まで5言語、保存は日本語</li>
         <li>一人サロンは「つかう機能をえらぶ」だけ。不要な画面は消え、必要になったら足す</li>
       </ul>
       <div class="actions"><a class="btn btn-white" href="#contact" data-type="salon">提供開始の案内を受け取る</a><a class="link" href="contact.html">AI受付に聞く</a></div>
@@ -610,6 +610,7 @@
         <li>会社の問い合わせ窓口として、いますぐ試せます</li>
         <li>価格や時期など未確定の内容は答えず、担当からご連絡</li>
         <li>会話の記録は折り返しと品質向上のためだけに使用</li>
+        <li>サロン向けには、お電話をAIが受けて空きを見ながら予約まで伺う応対を準備中（5言語、オプション）。AIは予約を確定させず、復唱してお客様の「はい」をいただいてから台帳に入れ、取れなかった電話は伝言としてお預かり</li>
       </ul>
       <div class="actions"><a class="btn btn-blue" href="contact.html">AI受付に話してみる</a></div>
     </div>
@@ -623,12 +624,12 @@
     <div class="r">
       <span class="tag">Engineering</span>
       <h2 class="t-lg ja">個人情報の不安を、<br>設計の段階で解決する。</h2>
-      <div class="pain ja"><div class="q"><b>悩み</b>お客様の名簿とカード情報を預かるのが怖い。店頭にiPadを置いたら、誰でも管理画面を開けてしまう。</div><div class="a"><b>解決</b>お客様が触る端末には限定トークンだけ。カード番号はサーバーが受け取らない。会員番号だけでは名簿を引けない。</div></div>
+      <div class="pain ja"><div class="q"><b>悩み</b>お客様の名簿とカード情報を預かるのが怖い。店頭にiPadを置いたら、誰でも管理画面を開けてしまう。</div><div class="a"><b>解決</b>お客様が触る端末に管理者の権限は置かない。カード番号はサーバーが受け取らない。会員番号だけでは名簿を引けず、顧客情報は暗号化して保管する。</div></div>
       <p class="lead ja">サロンの現場を知るエンジニアが、設計から実装、運用まで一貫して担当します。個人情報を扱う前提で、認証、テナント分離、通信と保存の暗号化まで最初から備えました。守りが固いほど、メーカーもディーラーも安心して乗れる。だから連携が広がります。</p>
       <ul class="points ja">
-        <li>お客様が触る端末には限定トークンだけ。お客様モードでは管理画面を物理的に消す</li>
+        <li>お客様やスタッフが触る端末に管理者の権限は置かない。スタッフは暗証番号か社員証QRで入り、お客様モードでは管理画面を物理的に消す</li>
         <li>カード情報は決済事業者の画面にのみ入力。サーバーは番号を受け取らない</li>
-        <li>会員番号だけでは名簿を引けない。前金の金額はサーバーで再計算</li>
+        <li>会員番号だけでは名簿を引けない（会員証QRと電話下4桁の両方が要る）。前金の金額はサーバーで再計算し、顧客情報は暗号化して保管</li>
         <li>TypeScript / React / Next.js / Node.js / PostgreSQL / Cloudflare / PWA / LINE API / Stripe / Square</li>
       </ul>
       <div class="actions"><a class="btn btn-dark" href="#contact" data-type="other">技術の相談をする</a></div>
@@ -753,7 +754,7 @@
       <details><summary class="ja">「スマイル」など独自の在庫システムを使っています。連携できますか</summary><p class="ja">できます。在庫・受注・出荷の情報を二重入力せずに済むよう、いまお使いのシステムに合わせて当社エンジニアが接続します。基幹システムや会計、物流など他のシステムも同様です。接続方法はシステムごとに異なるため、まず現状の構成をお聞かせください。</p></details>
       <details><summary class="ja">メーカーの流通規約に反しませんか</summary><p class="ja">正規流通の枠組みの中で運用します。在庫と出荷はディーラー、購入できるのはサロンが対面で招待した会員だけです。会員登録はサロンから500m以内・招待コード発行から1分以内に限定し、誰にどこで売られたかが担当者単位で残ります。</p></details>
       <details><summary class="ja">サロンタウンリザーブはいつから使えますか</summary><p class="ja">SEAM各店で稼働中の仕組みを土台に、個人サロン・一人サロン向けに準備しています。提供時期と価格は決まり次第ご案内します。フォームから「提供開始の案内」をご希望ください。</p></details>
-      <details><summary class="ja">個人情報やカード情報はどう扱われますか</summary><p class="ja">カード情報は決済事業者の画面にのみ入力され、当社やサロンのサーバーは番号を受け取りません。お客様が触る端末には限定された権限だけを置き、会員番号だけでは名簿を引けない設計です。</p></details>
+      <details><summary class="ja">個人情報やカード情報はどう扱われますか</summary><p class="ja">カード情報は決済事業者の画面にのみ入力され、当社やサロンのサーバーは番号を受け取りません。お客様が触る端末に管理者の権限は置かず、会員番号だけでは名簿を引けない設計です。顧客情報は暗号化して保管します。</p></details>
       <details><summary class="ja">相談は有料ですか</summary><p class="ja">無料です。つくりたいシステムが固まっていなくても、現場の困りごとから一緒に整理します。</p></details>
     </div>
   </div>
@@ -920,7 +921,7 @@
   "90サロン・6万人の会員が使う招待制クローズドEC":"Invitation-only closed EC used by 90 salons and 60,000 members",
   "サロンの毎日を、<br>ひとつの基盤で動かす。":"Run a salon's whole day<br>on one platform.",
   "予約が入り、来店し、施術して、会計し、商品を案内し、また来ていただく。この一連の流れを、別々のツールではなく同じ顧客台帳の上で。二重入力と転記ミスがなくなり、数字は自然に一か所へ集まります。":"A booking comes in, the guest arrives, gets treated, pays, hears about a product, and comes back. That whole flow lives on one customer ledger instead of scattered tools. Double entry and transcription errors disappear, and the numbers gather in one place by themselves.",
-  "予約から会計・カルテ・再来までがつながる予約システム":"Booking that connects checkout, records and return visits","店舗が招待したお客様だけが買える会員制EC":"A members-only EC where only invited guests can buy","ディーラー連携 無在庫店販":"Stock-free retail with dealers","在庫と出荷はディーラー、サロンは案内するだけ":"Dealers hold stock and ship; salons only recommend","B2B卸EC・商品マスタ統一":"B2B wholesale EC & product master","掛け払い、契約単価、まとめ発注。メーカー別CSVを統一形に":"Deferred payment, contract pricing, bulk orders. One format for every maker's CSV","電話のように話しても、文字で打っても。24時間、同じAIが応答":"Speak like a phone call or type. The same AI answers 24h","守りの設計":"Security by design","限定トークン、カード情報非保持、テナント分離":"Scoped tokens, no card data stored, tenant isolation","シフト・給与":"Shifts & payroll","希望提出、打刻、歩合の自動計算":"Requests, clock-in, automatic commission","累計会員6万人、最高月商7,000万円":"60,000 members, ¥70M peak month",
+  "予約から会計・カルテ・再来までがつながる予約システム":"Booking that connects checkout, records and return visits","店舗が招待したお客様だけが買える会員制EC":"A members-only EC where only invited guests can buy","ディーラー連携 無在庫店販":"Stock-free retail with dealers","在庫と出荷はディーラー、サロンは案内するだけ":"Dealers hold stock and ship; salons only recommend","B2B卸EC・商品マスタ統一":"B2B wholesale EC & product master","掛け払い、契約単価、まとめ発注。メーカー別CSVを統一形に":"Deferred payment, contract pricing, bulk orders. One format for every maker's CSV","電話のように話しても、文字で打っても。24時間、同じAIが応答":"Speak like a phone call or type. The same AI answers 24h","守りの設計":"Security by design","権限の分離、カード情報非保持、顧客情報の暗号化、テナント分離":"Scoped tokens, no card data stored, tenant isolation","シフト・給与":"Shifts & payroll","希望提出、打刻、歩合の自動計算":"Requests, clock-in, automatic commission","累計会員6万人、最高月商7,000万円":"60,000 members, ¥70M peak month",
   "予約から再来まで、<br>一枚のカルテに。":"From booking to return visit,<br>on one record.",
   "Web・LINE・会員証QRから3ステップで予約。前金、来店前の「今日のご希望」、カウンセリング、施術カルテ、会計、次回予約の提案まで、すべてが同じ顧客台帳に残ります。SEAM各店で稼働している仕組みを土台に、個人サロン・一人サロン向けに準備中です。":"Book in three steps from web, LINE or a member QR. Deposits, pre-visit preferences, counseling, treatment records, checkout and next-visit suggestions all stay on the same customer ledger. Built on the system running daily in every SEAM store, now being prepared for independent and solo salons.",
   "予約":"Booking","来店前の希望":"Pre-visit wishes","施術・カルテ":"Treatment & record","会計・店販":"Checkout & retail","次回予約・再来":"Next visit",
@@ -945,7 +946,7 @@
   "AI受付に話してみる":"Try the AI reception",
   "開発力が、強み。<br>守りは、最初から。":"Engineering is our strength.<br>Security from day one.",
   "サロンの現場を知るエンジニアが、設計から実装、運用まで一貫して担当します。個人情報を扱う前提で、認証、テナント分離、通信と保存の暗号化、監査ログと削除の仕組みまで備えました。":"Engineers who know the salon floor handle design, implementation and operations end to end. Built to handle personal data: authentication, tenant isolation, encryption in transit and at rest, audit logs and deletion.",
-  "お客様が触る端末には限定トークンだけ。お客様モードでは管理画面を物理的に消す":"Guest-facing devices hold only scoped tokens. Guest mode physically removes the admin UI","カード情報は決済事業者の画面にのみ入力。サーバーは番号を受け取らない":"Card details go only into the payment provider's screen. Our servers never see the number","会員番号だけでは名簿を引けない。前金の金額はサーバーで再計算":"A member number alone can't pull up a record. Deposits are recalculated server-side",
+  "お客様やスタッフが触る端末に管理者の権限は置かない。スタッフは暗証番号か社員証QRで入り、お客様モードでは管理画面を物理的に消す":"No admin rights on devices guests or staff touch. Staff sign in with a PIN or staff-card QR, and guest mode physically removes the admin screens","カード情報は決済事業者の画面にのみ入力。サーバーは番号を受け取らない":"Card details go only into the payment provider's screen. Our servers never see the number","会員番号だけでは名簿を引けない（会員証QRと電話下4桁の両方が要る）。前金の金額はサーバーで再計算し、顧客情報は暗号化して保管":"A member number alone can't pull up the list (member QR plus last four phone digits required). Deposits are recalculated server-side and customer data is stored encrypted",
   "技術の相談をする":"Talk to engineering",
   "シフトも給与も、<br>これひとつで。":"Shifts and payroll,<br>all in one.",
   "スタッフはスマホで希望を出して打刻。お店は自動作成から歩合・給与のざっくり計算まで、そのまま使えます。":"Staff submit requests and clock in from their phones. The salon gets auto-built schedules through rough commission and payroll, ready to use.",
@@ -999,7 +1000,7 @@
   "ホットペッパーと自社予約の二重管理。無断キャンセルで枠が空く":"Managing Hot Pepper and your own bookings twice. No-shows leave slots empty",
   "実予約と確定シフトから空きを表示。前金と段階式キャンセル料 <a href=\"#reserve\">→</a>":"Availability from real bookings and fixed shifts. Deposits and tiered cancellation fees <a href=\"#reserve\">→</a>",
   "カウンセリングと薬剤の記録が紙で、担当が変わると引き継げない":"Counseling and chemical records on paper, lost when the stylist changes",
-  "iPadで記入・署名、薬剤は音声で記録。すべて一枚のカルテに <a href=\"#reserve\">→</a>":"Fill and sign on iPad, record chemicals by voice. All on one chart <a href=\"#reserve\">→</a>",
+  "iPadで記入・署名、薬剤は音声から下書き。すべて一枚のカルテに <a href=\"#reserve\">→</a>":"Fill and sign on iPad, draft chemical records by voice. All on one chart <a href=\"#reserve\">→</a>",
   "外国のお客様の予約、同意書、免税に手が回らない":"No time for overseas guests' bookings, consent forms and tax-free",
   "予約から同意書まで5言語。保存は日本語のまま <a href=\"#reserve\">→</a>":"Five languages from booking to consent form. Saved in Japanese <a href=\"#reserve\">→</a>",
   "シフト作成に半日。歩合の計算ミスが怖い":"Half a day on shifts. Fear of commission mistakes",
@@ -1026,9 +1027,9 @@
   "<b>解決</b>Web・LINE・会員証QRから3ステップで予約。実予約と確定シフトから空きを出し、前金と段階式キャンセル料で無断キャンセルを減らす。カウンセリング、薬剤、会計、次回予約まで同じ台帳に残る。":"<b>Solution</b>Book in three steps from web, LINE or member QR. Availability from real bookings and fixed shifts; deposits and tiered cancellation fees cut no-shows. Counseling, chemicals, checkout and the next booking stay on the same ledger.",
   "SEAM各店で毎日動いている仕組みを土台に、個人サロン・一人サロン向けに準備しています。予約が「取れる」だけでなく、来店前の希望、施術の記録、会計、次回の提案までが一本につながる。だから担当が変わっても、店が増えても、お客様との関係が途切れません。":"Built on what runs every day at SEAM salons, being prepared for independent and solo salons. Not just taking bookings: pre-visit wishes, treatment records, checkout and the next proposal are one line. So the relationship survives a change of stylist or a new store.",
   "確定シフトと実予約から空きを表示し、休みの日には予約が入らない。指名なしは自動で担当を割り当て":"Availability from fixed shifts and real bookings; no bookings on days off. Non-nominated guests auto-assigned",
-  "カード事前決済と段階式キャンセル料。無断キャンセル歴のある方は前金必須。予約が作れなければ全額を自動返金":"Card pre-payment and tiered cancellation fees. Deposit required after a no-show. Full automatic refund if the booking can't be created",
+  "カード事前決済と段階式キャンセル料。無断キャンセル歴のある方は前金必須。予約が確定しなかった場合は1時間以内なら全額を自動返金":"Card pre-payment and tiered cancellation fees. Deposit required after a no-show. Full automatic refund within an hour if the booking isn't confirmed",
   "来店前に強さ・部位・香り・アレルギーを選ぶだけで施術の設計図ができ、担当者の画面にアレルギーが最上段で届く":"Pick strength, areas, scent and allergies before the visit and a treatment plan is drawn, with allergies at the top of the stylist's screen",
-  "iPadでカウンセリング・署名、薬剤は音声で記録。予約から同意書まで5言語、保存は日本語":"Counseling and signature on iPad, chemicals recorded by voice. Five languages from booking to consent, saved in Japanese",
+  "iPadでカウンセリング・手書き署名、薬剤は音声から下書き（対応ブラウザ）。予約から同意書まで5言語、保存は日本語":"Counseling and handwritten signature on iPad, chemical records drafted by voice (supported browsers). Five languages from booking to consent, saved in Japanese",
   "一人サロンは「つかう機能をえらぶ」だけ。不要な画面は消え、必要になったら足す":"Solo salons just pick the features they use. Unneeded screens disappear and come back when needed",
   "「店販が続かない」を、<br>クローズドで解決する。":"\"Retail never sticks,\"<br>solved by going closed.",
   "<b>悩み</b>勧めた商品を、お客様は帰ってから他所や並行品で買う。誰でも買えるECを作っても、サロンの信頼が乗らず売れない。":"<b>Problem</b>Guests buy what you recommended elsewhere, or grey-market, after they leave. An open EC carries none of the salon's trust and doesn't sell.",
@@ -1051,7 +1052,7 @@
   "サロンの現場では、薬剤の記録を音声で入力し、来店前のご希望をお客様の言葉から施術の設計図に変えるところまで、AIを「使いやすい形」で置いています。ディーラー様には、変化の速いAIの「いまの常識」を記事と勉強会で届け、自社で運用できるようにします。人が出られない時間を仕組みが受け取ると、取りこぼしが売上に変わります。":"On the salon floor we place AI in usable forms: chemical records by voice, and pre-visit wishes turned from the guest's words into a treatment plan. For dealers we deliver what's current in fast-moving AI through articles and workshops, so they can run it in-house. When a system picks up the hours people can't, missed contacts turn into sales.",
   "個人情報の不安を、<br>設計の段階で解決する。":"Personal data worries,<br>solved at the design stage.",
   "<b>悩み</b>お客様の名簿とカード情報を預かるのが怖い。店頭にiPadを置いたら、誰でも管理画面を開けてしまう。":"<b>Problem</b>Holding guest lists and card data is frightening. Put an iPad at the counter and anyone could open the admin screen.",
-  "<b>解決</b>お客様が触る端末には限定トークンだけ。カード番号はサーバーが受け取らない。会員番号だけでは名簿を引けない。":"<b>Solution</b>Guest-facing devices hold only a limited token. Card numbers never reach the server. A member number alone can't pull up the list.",
+  "<b>解決</b>お客様が触る端末に管理者の権限は置かない。カード番号はサーバーが受け取らない。会員番号だけでは名簿を引けず、顧客情報は暗号化して保管する。":"<b>Solution</b>No admin rights on guest-facing devices. Card numbers never reach the server. A member number alone can't pull up the list, and customer data is stored encrypted.",
   "サロンの現場を知るエンジニアが、設計から実装、運用まで一貫して担当します。個人情報を扱う前提で、認証、テナント分離、通信と保存の暗号化まで最初から備えました。守りが固いほど、メーカーもディーラーも安心して乗れる。だから連携が広がります。":"Engineers who know the salon floor handle design, build and operation end to end. Built for personal data from day one: authentication, tenant isolation, encryption in transit and at rest. The stronger the defenses, the more comfortably makers and dealers join. That is how partnerships spread.",
   "シフトと給与の半日を、<br>数秒と自動計算に。":"Half a day of shifts and payroll,<br>in seconds and automatic.",
   "スタッフはスマホで希望を出して打刻。お店は自動作成から歩合・給与の計算まで、そのまま使えます。人数不足の日は赤で見え、公平性は点数で説明でき、歩合率の入力ミスは支払前に止まります。":"Staff submit wishes and clock in on their phones. The salon uses it as is, from auto-building to commission and payroll. Understaffed days show in red, fairness is a score you can explain, and commission-rate typos stop before payday.",
@@ -1067,6 +1068,7 @@
   "悩みを一つ解決するたび、<br>事業は速くなる。":"Every problem solved<br>makes the business faster.",
   "私たちは、サロンを自分たちで運営しながらシステムをつくっています。だから、どこで現場の手が止まるかを肌感覚で知っています。悩みや問題を解決することがシステムの務めです。解決するたびに時間が空き、数字が集まり、次の店、次の商品、次の取引先へ進む速度が上がる。最先端の技術を、派手さではなく「毎日ちゃんと使われて売上につながる形」に。すべてのサロンとディーラーへ。":"We build software while running salons ourselves, so we know from experience where the floor gets stuck. Solving problems is what a system is for. Each one solved frees time, gathers numbers, and speeds the way to the next store, product or account. Cutting-edge technology in forms that get used every day and turn into sales, not flashy features. For every salon and dealer.",
   "その悩み、仕組みで解決できるか。<br>一度、話しませんか。":"Can that problem be solved with a system?<br>Let's talk.",
+  "サロン向けには、お電話をAIが受けて空きを見ながら予約まで伺う応対を準備中（5言語、オプション）。AIは予約を確定させず、復唱してお客様の「はい」をいただいてから台帳に入れ、取れなかった電話は伝言としてお預かり":"For salons, AI phone answering that checks availability and takes the booking is in preparation (five languages, optional). The AI never confirms on its own: it reads back, waits for the guest's yes, then enters the ledger, and takes a message when it can't book.",
   "小さく始めて、現場で育てる。":"Start small, grow on the floor.","いきなり大きく作らず、動くものを早く共有し、確かめながら広げます。":"No big-bang builds. We share something working early and expand as we confirm.",
   "ヒアリング":"Discovery","業務の流れと困りごとを現場目線で整理":"Map the workflow and pain points from the floor","設計・見積り":"Design & quote","必要な機能と範囲、費用と期間を提案":"Propose scope, features, cost and timeline","開発":"Build","動くものを早めに共有し、確認しながら作る":"Share working software early and iterate","導入・研修":"Rollout & training","移行とスタッフ研修まで現場に乗せる":"Migration and staff training onto the floor","運用・改善":"Operate & improve","稼働後も伴走し、数字を見て磨く":"Stay alongside after launch and refine on the numbers",
   "よくあるご質問":"Frequently asked questions",
@@ -1074,7 +1076,7 @@
   "ディーラーとして参加する場合、何を用意すればよいですか":"What does a dealer need to prepare?","新しい倉庫も人員も不要です。対象サロンと取扱商品を決め、出荷指示の受け取り方を決めたら、いつもの出荷をしていただくだけです。まず担当サロン1店から試せます。":"No new warehouse or staff. Choose the salons and products, decide how you receive shipping instructions, then ship as usual. You can start with a single salon.",
   "メーカーの流通規約に反しませんか":"Does this violate maker distribution rules?","正規流通の枠組みの中で運用します。在庫と出荷はディーラー、購入できるのはサロンが対面で招待した会員だけです。会員登録はサロンから500m以内・招待コード発行から1分以内に限定し、誰にどこで売られたかが担当者単位で残ります。":"It runs inside official distribution. Dealers hold stock and ship; only members invited in person by a salon can buy. Sign-up is limited to 500m of the salon and one minute after the invite code, and every sale is recorded down to the stylist.",
   "サロンタウンリザーブはいつから使えますか":"When can I use Salon Town Reserve?","SEAM各店で稼働中の仕組みを土台に、個人サロン・一人サロン向けに準備しています。提供時期と価格は決まり次第ご案内します。フォームから「提供開始の案内」をご希望ください。":"It is being prepared for independent and solo salons on the system already running in every SEAM store. Launch timing and pricing will be announced once decided. Use the form to request launch news.",
-  "個人情報やカード情報はどう扱われますか":"How are personal and card data handled?","カード情報は決済事業者の画面にのみ入力され、当社やサロンのサーバーは番号を受け取りません。お客様が触る端末には限定された権限だけを置き、会員番号だけでは名簿を引けない設計です。":"Card details are entered only on the payment provider's screen; neither our servers nor the salon's receive the number. Guest-facing devices hold limited permissions, and a member number alone cannot pull up a record.",
+  "個人情報やカード情報はどう扱われますか":"How are personal and card data handled?","カード情報は決済事業者の画面にのみ入力され、当社やサロンのサーバーは番号を受け取りません。お客様が触る端末に管理者の権限は置かず、会員番号だけでは名簿を引けない設計です。顧客情報は暗号化して保管します。":"Card details are entered only on the payment provider's screen; neither our servers nor the salon's receive the number. Guest-facing devices carry no admin rights, a member number alone can't pull up the list, and customer data is stored encrypted.",
   "相談は有料ですか":"Is a consultation free?","無料です。つくりたいシステムが固まっていなくても、現場の困りごとから一緒に整理します。":"Yes, it's free. Even if you don't yet know what to build, we start by sorting out the problems on the floor together.",
   "いま動いていること":"What's moving now","美容師一人ひとりに「自分専用EC」を。ディーラー各社と無在庫で店販ができる新スキームを提供開始":"A personal EC for every stylist: stock-free retail scheme launched with dealers","ディーラー各社との連携を段階的に拡大中。本格展開へ":"Dealer partnerships expanding step by step toward full rollout","物流・在庫はディーラー、EC・会員管理は salon.town":"Dealers handle logistics and stock; salon.town handles EC and members","予約システム「サロンタウンリザーブ」を個人・一人サロン向けに準備中":"Salon Town Reserve being prepared for independent and solo salons","SEAM各店で稼働中の仕組みが土台":"Built on the system running in every SEAM store",
   "株式会社サロンタウン":"SALON TOWN Inc.","美容関連サイトとシェアサロンを運営しながら、サロンのためのシステムを開発しています。":"We develop systems for salons while running beauty media and a shared salon.",
