@@ -70,7 +70,24 @@
   .aicard .top span{font-size:.78rem;color:var(--ink-3)}
   .aicard ol{padding-left:1.25em;font-size:.9rem;color:var(--ink-2);margin:6px 0 10px}
   .aicard ol li{margin:4px 0}
-  .widget{display:flex;justify-content:center}
+  .chat{background:#0b0f17;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px;height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;font-size:.95rem;line-height:1.6}
+  .chat .m{max-width:88%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-break:break-word}
+  .chat .m.a{align-self:flex-start;background:rgba(255,255,255,.08);color:#F5F5F7;border-bottom-left-radius:6px}
+  .chat .m.u{align-self:flex-end;background:#0071E3;color:#fff;border-bottom-right-radius:6px}
+  .chat .m.s{align-self:center;color:#8E8E93;font-size:.8rem;background:none;padding:2px 0}
+  .chatbar{display:flex;gap:8px;margin-top:10px}
+  .chatbar input{flex:1;min-width:0;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:12px 16px;font:inherit;font-size:16px}
+  .chatbar input:focus{outline:none;border-color:#2997FF;box-shadow:0 0 0 4px rgba(41,151,255,.2)}
+  .chatbar .mic,.chatbar .send{flex:0 0 auto;border:0;border-radius:999px;cursor:pointer;font:inherit;font-weight:600}
+  .chatbar .mic{width:46px;height:46px;background:rgba(255,255,255,.1);color:#fff;display:flex;align-items:center;justify-content:center}
+  .chatbar .mic svg{width:20px;height:20px}
+  .chatbar .mic.on{background:#E3342F;animation:pulse 1.2s infinite}
+  .chatbar .mic[disabled]{opacity:.35;cursor:not-allowed}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(227,52,47,.5)}100%{box-shadow:0 0 0 12px rgba(227,52,47,0)}}
+  .chatbar .send{padding:0 18px;background:#fff;color:#000}
+  .chatmeta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:.82rem;color:#A1A1A6;flex-wrap:wrap}
+  .chatmeta .spk{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .chatmeta .endbtn{background:none;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:999px;padding:6px 12px;font:inherit;font-size:.8rem;cursor:pointer}
   .aicard .hint{font-size:.84rem;color:var(--ink-2);background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin:4px 0 12px}
   .aicard .note{font-size:.76rem;color:var(--ink-3);line-height:1.7;margin-top:8px}
   .aicard .note a{color:var(--accent);text-decoration:underline}
@@ -170,19 +187,20 @@
     <div class="aicard">
       <div class="top">
         <div class="orb" aria-hidden="true"></div>
-        <div><b>サロンタウン AI受付</b><span>「通話を開始」で音声、「メッセージ」で文字入力</span></div>
+        <div><b>サロンタウン AI受付</b><span>文字で打つか、マイクで話しかけてください（1回3分）</span></div>
       </div>
-      <ol>
-        <li>マイクの許可を求められたら「許可」を押してください。</li>
-        <li>会社名・お名前・ご連絡先を伝えると、折り返しの手配まで進みます。</li>
-        <li>価格や提供時期など未確定の内容は、AIは答えず担当からご連絡します。</li>
-      </ol>
-      <div class="widget">
-        <elevenlabs-convai agent-id="agent_1901m1r0d2p5e788cek4e72xqbas"></elevenlabs-convai>
+      <div class="chat" id="chat" aria-live="polite"></div>
+      <form class="chatbar" id="chatbar" autocomplete="off">
+        <button type="button" class="mic" id="mic" aria-label="マイクで話す" title="マイクで話す"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></button>
+        <input id="chatin" type="text" placeholder="メッセージを入力（例：ディーラーです。無在庫店販の相談を）" maxlength="500">
+        <button type="submit" class="send" id="send" aria-label="送信">送信</button>
+      </form>
+      <div class="chatmeta">
+        <label class="spk"><input type="checkbox" id="spk" checked> 返事を読み上げる</label>
+        <span id="timer">残り 3:00</span>
+        <button type="button" class="endbtn" id="endbtn">受付を終える</button>
       </div>
-      <p class="hint">画面右下の「通話を開始」ボタンから、そのままお話しいただけます。</p>
-      <a class="btn btn-primary" style="width:100%" href="https://elevenlabs.io/app/talk-to?agent_id=agent_1901m1r0d2p5e788cek4e72xqbas" target="_blank" rel="noopener">AI受付を別ページで開く</a>
-      <p class="note">会話は品質向上と折り返しのために記録されます。</p>
+      <p class="note">会話は折り返しのために記録され、担当の田中に届きます。当社からの連絡先の案内はせず、こちらからご連絡します。</p>
     </div>
   </div>
 </section>
@@ -289,6 +307,62 @@
   </div>
 </footer>
 
-<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+<script>
+(function(){
+  var API='/api/salontown-reception', SECS=180;
+  var chat=document.getElementById('chat'), form=document.getElementById('chatbar'), input=document.getElementById('chatin');
+  var mic=document.getElementById('mic'), spk=document.getElementById('spk'), timer=document.getElementById('timer'), endbtn=document.getElementById('endbtn');
+  var sid='', ended=false, busy=false, startedAt=0, tick=null;
+
+  function add(role,text){var d=document.createElement('div');d.className='m '+role;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
+  function fmt(s){s=Math.max(0,s|0);return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
+  function startTimer(){startedAt=Date.now();clearInterval(tick);tick=setInterval(function(){var r=SECS-Math.floor((Date.now()-startedAt)/1000);timer.textContent='残り '+fmt(r);if(r<=0){clearInterval(tick);finish();}},500);}
+  function finishUI(){ended=true;clearInterval(tick);timer.textContent='受付終了';input.disabled=true;document.getElementById('send').disabled=true;mic.disabled=true;endbtn.disabled=true;}
+
+  // 読み上げ：日本語の声（女性名を優先）
+  var voice=null;
+  function pickVoice(){try{var vs=speechSynthesis.getVoices().filter(function(v){return /^ja/i.test(v.lang)});
+    voice=vs.find(function(v){return /Kyoko|O-Ren|Google 日本語|Nanami|Ayumi|Haruka|Sayaka|Female|女性/i.test(v.name)})||vs[0]||null;}catch(e){}}
+  if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
+  function speak(text){if(!spk.checked||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';if(voice)u.voice=voice;u.rate=1.0;u.pitch=1.05;speechSynthesis.speak(u);}catch(e){}}
+
+  function send(text,end){
+    if(busy||ended)return;busy=true;
+    if(text)add('u',text);
+    var w=add('s','…');
+    fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({sid:sid,text:text||'',end:!!end,lang:'ja'})})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){j.__status=r.status;return j;});})
+      .then(function(j){
+        w.remove();
+        if(j.sid)sid=j.sid;
+        if(j.reply){add('a',j.reply);speak(j.reply);}
+        else if(j.__status>=400){add('a',j.reply||'ただいま受付を準備中です。お手数ですがフォームからご連絡ください。');}
+        if(j.ended){finishUI();}
+      })
+      .catch(function(){w.remove();add('a','通信に失敗しました。もう一度お試しください。');})
+      .finally(function(){busy=false;});
+  }
+  function finish(){if(ended)return;send('',true);}
+
+  form.addEventListener('submit',function(e){e.preventDefault();var v=input.value.trim();if(!v)return;input.value='';if(!startedAt)startTimer();send(v,false);});
+  endbtn.addEventListener('click',finish);
+
+  // マイク：Web Speech API（iPhone の Safari は非対応のため、そのときはボタンを無効にして文字入力へ）
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition, rec=null, listening=false;
+  if(!SR){mic.disabled=true;mic.title='このブラウザでは音声入力が使えません。文字でご入力ください';}
+  else{
+    rec=new SR();rec.lang='ja-JP';rec.interimResults=true;rec.continuous=false;
+    rec.onresult=function(ev){var s='';for(var i=ev.resultIndex;i<ev.results.length;i++){s+=ev.results[i][0].transcript;}input.value=s;if(ev.results[ev.results.length-1].isFinal){var v=s.trim();input.value='';if(v){if(!startedAt)startTimer();send(v,false);}}};
+    rec.onend=function(){listening=false;mic.classList.remove('on');};
+    rec.onerror=function(){listening=false;mic.classList.remove('on');};
+    mic.addEventListener('click',function(){if(ended)return;if(listening){rec.stop();return;}try{speechSynthesis.cancel();}catch(e){}try{rec.start();listening=true;mic.classList.add('on');}catch(e){}});
+  }
+
+  // 最初の挨拶（サーバーから）
+  send('',false);
+  // ページを閉じるときに、途中でも記録を締める
+  window.addEventListener('pagehide',function(){if(sid&&!ended){try{navigator.sendBeacon(API,new Blob([JSON.stringify({sid:sid,text:'',end:true})],{type:'application/json'}));}catch(e){}}});
+})();
+</script>
 </body>
 </html>
