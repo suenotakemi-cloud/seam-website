@@ -1118,6 +1118,7 @@
     $('shTitle').textContent = g.title; $('shSub').textContent = g.sub;
     $('shGuide').innerHTML = guideSvg(SH.shape, SH.slot);
     if ($('shKind')) $('shKind').value = SH.kind;
+    $('shHint').textContent = (SH.shape === 'box' && SH.slot === 1) ? 'ラベル面を横長の枠に合わせる（色名とバーコードが入る）→ シャッター' : '点線の枠に商品を収め、底を下の線に合わせる → シャッター';
     $('shGuideLink').href = './photo-guide.html#k-' + SH.kind;
     Array.prototype.forEach.call($('shChips').querySelectorAll('[data-shape]'), function (b) { b.classList.toggle('on', b.getAttribute('data-shape') === SH.shape); });
     $('shWhite').textContent = '背景を白に: ' + WHITE_LABELS[SH.whiten];
