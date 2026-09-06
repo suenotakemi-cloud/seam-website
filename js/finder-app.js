@@ -7014,7 +7014,7 @@ function Home({
     className: "text-[13px] sm:text-[13.5px] leading-[1.85] text-charcoal/85"
   }, t))))))), /*#__PURE__*/React.createElement(DiagnosisLogicSection, null)), /*#__PURE__*/React.createElement("footer", {
     className: "relative z-10 py-8 text-center font-mono text-[10px] tracking-widest2 uppercase text-charcoal/40"
-  }, "SEAM \xB7 Salon Selection Store"));
+  }, "SEAM \xB7 Salon Selection Store", /*#__PURE__*/React.createElement("nav", { className: "legal-links-finder", style: { marginTop: 10, display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", justifyContent: "center", fontSize: 12, textTransform: "none", letterSpacing: "normal" } }, /*#__PURE__*/React.createElement("a", { href: "terms.html", style: { minHeight: 44, display: "inline-flex", alignItems: "center", textDecoration: "underline" } }, "\u5229\u7528\u898F\u7D04"), /*#__PURE__*/React.createElement("a", { href: "privacy.html", style: { minHeight: 44, display: "inline-flex", alignItems: "center", textDecoration: "underline" } }, "\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u30DD\u30EA\u30B7\u30FC"), /*#__PURE__*/React.createElement("a", { href: "tokushoho.html", style: { minHeight: 44, display: "inline-flex", alignItems: "center", textDecoration: "underline" } }, "\u7279\u5B9A\u5546\u53D6\u5F15\u6CD5\u306B\u57FA\u3065\u304F\u8868\u8A18"))));
 }
 
 /* ---------- 診断のしくみ(漏斗) ----------
@@ -15841,7 +15841,7 @@ function Result({
     style: {
       paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))'
     }
-  }, "SEAM \xB7 Salon Selection Store"), /*#__PURE__*/React.createElement("nav", {
+  }, "SEAM \xB7 Salon Selection Store", /*#__PURE__*/React.createElement("nav", { className: "legal-links-finder", style: { marginTop: 10, display: "flex", flexWrap: "wrap", gap: 16, alignItems: "center", justifyContent: "center", fontSize: 12, textTransform: "none", letterSpacing: "normal" } }, /*#__PURE__*/React.createElement("a", { href: "terms.html", style: { minHeight: 44, display: "inline-flex", alignItems: "center", textDecoration: "underline" } }, "\u5229\u7528\u898F\u7D04"), /*#__PURE__*/React.createElement("a", { href: "privacy.html", style: { minHeight: 44, display: "inline-flex", alignItems: "center", textDecoration: "underline" } }, "\u30D7\u30E9\u30A4\u30D0\u30B7\u30FC\u30DD\u30EA\u30B7\u30FC"), /*#__PURE__*/React.createElement("a", { href: "tokushoho.html", style: { minHeight: 44, display: "inline-flex", alignItems: "center", textDecoration: "underline" } }, "\u7279\u5B9A\u5546\u53D6\u5F15\u6CD5\u306B\u57FA\u3065\u304F\u8868\u8A18"))), /*#__PURE__*/React.createElement("nav", {
     className: "sm:hidden no-print fixed bottom-0 inset-x-0 z-30 grid grid-cols-3",
     style: {
       background: 'rgba(255,255,255,0.97)',
