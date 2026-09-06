@@ -45,14 +45,20 @@ const SYSTEM = `# 役割
 # 会話の進め方
 1. 相手の立場（ディーラー／メーカー／サロン・美容師／メディア／その他）を確認する。
 2. 用件を聞き、事実の範囲で簡潔に答える。分からないことは「確認して担当からご連絡します」。
-3. 会社名（サロン名）、お名前、希望の連絡方法と連絡先、都合の良い時間帯を一つずつ聞き、復唱して確認する。
+3. 折り返しに必要な項目を、次の順で一つずつ聞き、必ず復唱して確認する（ここが最も大切。取りこぼさない）。
+   a. 会社名またはサロン名。b. お名前（フルネーム）。
+   c. 折り返しは「メール」と「お電話」のどちらがよいか確認する。
+   d. メール希望なら、メールアドレスをアルファベット一文字ずつ（例：「エー、ビー、シー、アットマーク、ジーメール、ドット、コム」）言ってもらい、こちらも一文字ずつ復唱して「これで合っていますか」と確認する。聞き取れない文字は「エーはアップルのエーですか」のように確かめる。数字は半角で記録する。
+   e. 電話希望なら、電話番号を数字だけで言ってもらい、こちらも一桁ずつ区切って復唱し、合っているか確認する。あわせて都合の良い時間帯を聞く。
+   f. 復唱して「はい」と確認が取れるまで、次の項目に進まない。訂正されたら訂正後の値で再度復唱する。
 4. 最後に「担当の田中より、通常1〜2営業日以内にご連絡いたします」と伝えて締める。当社の連絡先は案内しない。
 5. 取材は、媒体名・企画の概要・掲載予定時期を聞く。
 返事は本文だけを書き、見出しや箇条書き、記号、内部タグは使わない。`;
 
 const EXTRACT = `次の受付の会話記録から、折り返しに必要な項目を抜き出し、JSONだけを出力してください（前後に説明を付けない）。
 言われていない項目は空文字にします。数字は半角にします。
-{"title":"用件の短い題名（15字以内）","summary":"会話の要約（150字以内）","company":"会社名またはサロン名","name":"お名前","contact":"電話番号またはメールアドレス","prefer":"希望の連絡方法・時間帯","topic":"立場（ディーラー／メーカー／サロン／メディア／その他）と用件を20字以内で"}`;
+{"title":"用件の短い題名（15字以内）","summary":"会話の要約（150字以内）","company":"会社名またはサロン名","name":"お名前","prefer_method":"email か phone か空文字（相手が希望した折り返し方法）","email":"メールアドレス（相手が一文字ずつ言ったものを、確認が取れた最終形で。半角小文字）","phone":"電話番号（確認が取れた最終形。半角数字とハイフンだけ）","contact":"email か phone のうち希望した方（両方なければある方）","prefer":"希望の連絡方法・時間帯を日本語で（例：電話・平日午後）","topic":"立場（ディーラー／メーカー／サロン／メディア／その他）と用件を20字以内で"}
+復唱して相手が「違う」と訂正した値は使わず、最後に確認が取れた値だけを入れます。`;
 
 function json(obj, status) {
   return new Response(JSON.stringify(obj), {
@@ -70,6 +76,9 @@ async function ensureTable(db) {
     " contact TEXT DEFAULT '', prefer TEXT DEFAULT '', topic TEXT DEFAULT '', duration_secs INTEGER DEFAULT 0," +
     " started_at INTEGER DEFAULT 0, transcript TEXT DEFAULT '', status TEXT DEFAULT '', created_at INTEGER NOT NULL, handled INTEGER DEFAULT 0)"
   ).run();
+  for (const c of ["email TEXT DEFAULT ''", "phone TEXT DEFAULT ''", "prefer_method TEXT DEFAULT ''"]) {
+    try { await db.prepare('ALTER TABLE salontown_ai_calls ADD COLUMN ' + c).run(); } catch (e) { /* already exists */ }
+  }
 }
 
 async function claude(env, body) {
@@ -172,8 +181,9 @@ export async function onRequest(context) {
       if (m) ex = JSON.parse(m[0]);
     } catch (e) { ex = {}; }
     await db.prepare(
-      "UPDATE salontown_ai_calls SET transcript=?,status='done',duration_secs=?,title=?,summary=?,company=?,name=?,contact=?,prefer=?,topic=? WHERE conversation_id=?"
-    ).bind(JSON.stringify(transcript).slice(0, 60000), elapsed, clip(ex.title, 120), clip(ex.summary, 4000), clip(ex.company, 200), clip(ex.name, 200), clip(ex.contact, 200), clip(ex.prefer, 200), clip(ex.topic, 200), sid).run();
+      "UPDATE salontown_ai_calls SET transcript=?,status='done',duration_secs=?,title=?,summary=?,company=?,name=?,contact=?,prefer=?,topic=?,email=?,phone=?,prefer_method=? WHERE conversation_id=?"
+    ).bind(JSON.stringify(transcript).slice(0, 60000), elapsed, clip(ex.title, 120), clip(ex.summary, 4000), clip(ex.company, 200), clip(ex.name, 200), clip(ex.contact || ex.email || ex.phone, 200), clip(ex.prefer, 200), clip(ex.topic, 200),
+      clip(ex.email, 120).toLowerCase(), clip(ex.phone, 40).replace(/[^0-9+\-]/g, ''), clip(ex.prefer_method, 10) === 'phone' ? 'phone' : (clip(ex.prefer_method, 10) === 'email' ? 'email' : ''), sid).run();
     return json({ reply: reply || CLOSING, ended: true, remaining_secs: 0, sid });
   }
 

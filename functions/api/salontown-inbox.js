@@ -17,6 +17,12 @@ function checkKey(request, env) {
   if (!admin && !staff) return { ok: false, keyConfigured: false };
   return { ok: (admin && key === admin) || (staff && key === staff), keyConfigured: true };
 }
+async function ensureColumns(db) {
+  // 古い表に 2026-09 追加列が無い場合に足す（既にあれば無視）
+  const add = async (t, c) => { try { await db.prepare('ALTER TABLE ' + t + ' ADD COLUMN ' + c).run(); } catch (e) {} };
+  if (await tableExists(db, 'salontown_inquiries')) for (const c of ["email TEXT DEFAULT ''", "phone TEXT DEFAULT ''", "prefer_method TEXT DEFAULT ''", "dept TEXT DEFAULT ''", "kana TEXT DEFAULT ''", "pref TEXT DEFAULT ''", "pref_time TEXT DEFAULT ''", "hear TEXT DEFAULT ''", "client_id TEXT DEFAULT ''"]) await add('salontown_inquiries', c);
+  if (await tableExists(db, 'salontown_ai_calls')) for (const c of ["email TEXT DEFAULT ''", "phone TEXT DEFAULT ''", "prefer_method TEXT DEFAULT ''"]) await add('salontown_ai_calls', c);
+}
 async function tableExists(db, name) {
   const r = await db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").bind(name).first();
   return !!r;
@@ -39,19 +45,22 @@ export async function onRequest(context) {
       return json({ transcript: t });
     }
     const out = [];
+    await ensureColumns(db);
     if (await tableExists(db, 'salontown_inquiries')) {
       const r = await db.prepare(
-        "SELECT id,type,shop,name,contact,prefer,message,lang,created_at,handled FROM salontown_inquiries ORDER BY created_at DESC LIMIT 300"
+        "SELECT id,type,shop,name,contact,prefer,message,lang,created_at,handled,email,phone,prefer_method,dept,kana,pref,pref_time,hear FROM salontown_inquiries ORDER BY created_at DESC LIMIT 300"
       ).all();
       for (const x of (r.results || [])) out.push({ source: 'form', id: x.id, at: x.created_at, handled: !!x.handled,
-        type: x.type, company: x.shop, name: x.name, contact: x.contact, prefer: x.prefer, message: x.message, lang: x.lang });
+        type: x.type, company: x.shop, name: x.name, contact: x.contact, prefer: x.prefer, message: x.message, lang: x.lang,
+        email: x.email || '', phone: x.phone || '', prefer_method: x.prefer_method || '', dept: x.dept || '', kana: x.kana || '', pref: x.pref || '', pref_time: x.pref_time || '', hear: x.hear || '' });
     }
     if (await tableExists(db, 'salontown_ai_calls')) {
       const r = await db.prepare(
-        "SELECT id,conversation_id,title,summary,company,name,contact,prefer,topic,duration_secs,started_at,created_at,handled FROM salontown_ai_calls ORDER BY COALESCE(NULLIF(started_at,0)*1000,created_at) DESC LIMIT 300"
+        "SELECT id,conversation_id,title,summary,company,name,contact,prefer,topic,duration_secs,started_at,created_at,handled,email,phone,prefer_method FROM salontown_ai_calls ORDER BY COALESCE(NULLIF(started_at,0)*1000,created_at) DESC LIMIT 300"
       ).all();
       for (const x of (r.results || [])) out.push({ source: 'ai', id: x.id, at: x.started_at ? x.started_at * 1000 : x.created_at, handled: !!x.handled,
-        conversation_id: x.conversation_id, title: x.title, message: x.summary, company: x.company, name: x.name, contact: x.contact, prefer: x.prefer, topic: x.topic, duration_secs: x.duration_secs });
+        conversation_id: x.conversation_id, title: x.title, message: x.summary, company: x.company, name: x.name, contact: x.contact, prefer: x.prefer, topic: x.topic, duration_secs: x.duration_secs,
+        email: x.email || '', phone: x.phone || '', prefer_method: x.prefer_method || '' });
     }
     out.sort((a, b) => b.at - a.at);
     return json({ entries: out, webhookConfigured: !!(env.ELEVENLABS_WEBHOOK_SECRET || '').trim() });

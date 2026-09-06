@@ -284,6 +284,13 @@
   .field .req{color:#E3342F}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .cf-note{font-size:.78rem;color:var(--ink-3);margin-top:10px;line-height:1.6}
+  .form-card{display:flex;flex-direction:column}
+  .form-list{list-style:none;padding:0;margin:6px 0 0;display:grid;gap:10px}
+  .form-list li{display:flex;gap:12px;align-items:center;font-size:.95rem;color:var(--ink-2)}
+  .form-list b{width:28px;height:28px;border-radius:50%;background:var(--blue,#0071E3);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;flex-shrink:0}
+  .form-types{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .form-types a{font-size:.8rem;padding:6px 12px;border-radius:999px;border:1px solid #D2D2D7;color:var(--ink-2)}
+  .form-types a:hover{border-color:var(--ink);color:var(--ink)}
   .cf-msg{margin-top:10px;font-size:.9rem;font-weight:600}
   .cf-msg.ok{color:#1B8A4A}.cf-msg.err{color:#E3342F}
 
@@ -500,7 +507,7 @@
         <li>iPadでカウンセリング・手書き署名、薬剤は音声から下書き（対応ブラウザ）。予約から同意書まで5言語、保存は日本語</li>
         <li>一人サロンは「つかう機能をえらぶ」だけ。不要な画面は消え、必要になったら足す</li>
       </ul>
-      <div class="actions"><a class="btn btn-white" href="#contact" data-type="salon">提供開始の案内を受け取る</a><a class="link" href="contact.html">AI受付に聞く</a></div>
+      <div class="actions"><a class="btn btn-white" href="inquiry.html?type=salon" data-type="salon">提供開始の案内を受け取る</a><a class="link" href="contact.html">AI受付に聞く</a></div>
     </div>
   </div>
 </section>
@@ -519,7 +526,7 @@
         <li>施術履歴にもとづくAIレコメンドで、担当者の提案を継続的に届ける</li>
         <li>入会の9割が店頭の対面登録。髪質診断・ランキング・記事まで一つのアプリに</li>
       </ul>
-      <div class="actions"><a class="btn btn-dark" href="#contact" data-type="salon">導入を相談する</a></div>
+      <div class="actions"><a class="btn btn-dark" href="inquiry.html?type=salon" data-type="salon">導入を相談する</a></div>
     </div>
   </div>
 </section>
@@ -539,7 +546,7 @@
         <li>サロンは在庫を持たず、梱包も発送もしない。売上は担当者の評価に残る</li>
         <li>売上は会員バーコードで担当サロン・担当者にひも付き、販売手数料として分配</li>
       </ul>
-      <div class="actions"><a class="btn btn-white" href="#contact" data-type="dealer">ディーラー様のご相談</a><a class="link" href="#contact" data-type="maker">メーカー様はこちら</a></div>
+      <div class="actions"><a class="btn btn-white" href="inquiry.html?type=dealer" data-type="dealer">ディーラー様のご相談</a><a class="link" href="inquiry.html?type=maker" data-type="maker">メーカー様はこちら</a></div>
     </div>
   </div>
 </section>
@@ -558,7 +565,7 @@
         <h3 class="ja">既存の在庫システムと、つなぎます</h3>
         <p class="ja">「スマイル」など、ディーラー独自の在庫システムをお使いの場合も連携できます。在庫・受注・出荷の情報を二重に入力せず、いまの業務の流れのまま無在庫店販を始められます。</p>
         <p class="ja">基幹システム、会計、物流など、他のさまざまなシステムとの接続も当社エンジニアが対応します。まずはご相談ください。</p>
-        <a class="link ja" href="#contact" data-type="dealer">連携を相談する →</a>
+        <a class="link ja" href="inquiry.html?type=dealer" data-type="dealer">連携を相談する →</a>
       </div>
       <div>
         <span class="ic">📸</span>
@@ -592,7 +599,7 @@
         <li>掛け払いは担当者の与信承認後に出荷。1サロン複数アカウントで、閲覧担当には価格を見せない設定も</li>
         <li>JAN重複は2系統で検出。画像は1200四方のwebpに自動変換し、統一CSV／JSONで出力。1ディーラー1アカウントで完全に分離</li>
       </ul>
-      <div class="actions"><a class="btn btn-dark" href="#contact" data-type="dealer">卸ECを相談する</a></div>
+      <div class="actions"><a class="btn btn-dark" href="inquiry.html?type=dealer" data-type="dealer">卸ECを相談する</a></div>
     </div>
   </div>
 </section>
@@ -632,7 +639,7 @@
         <li>会員番号だけでは名簿を引けない（会員証QRと電話下4桁の両方が要る）。前金の金額はサーバーで再計算し、顧客情報は暗号化して保管</li>
         <li>TypeScript / React / Next.js / Node.js / PostgreSQL / Cloudflare / PWA / LINE API / Stripe / Square</li>
       </ul>
-      <div class="actions"><a class="btn btn-dark" href="#contact" data-type="other">技術の相談をする</a></div>
+      <div class="actions"><a class="btn btn-dark" href="inquiry.html?type=other" data-type="other">技術の相談をする</a></div>
     </div>
   </div>
 </section>
@@ -708,10 +715,10 @@
       <h2 class="t-xl ja" style="margin-top:14px">あなたの立場から、始められます。</h2>
     </div>
     <div class="aud r">
-      <a href="#contact" data-type="salon"><span style="font-size:26px">✂️</span><b class="ja">サロン・美容師</b><p class="ja">店販の在庫、予約の二重管理、紙のカルテ、シフト作成。毎日の悩みを一つずつ仕組みにしたい。一人サロンでも。</p><span class="link">相談する</span></a>
-      <a href="#contact" data-type="dealer"><span style="font-size:26px">📦</span><b class="ja">ディーラー</b><p class="ja">担当サロンの店販を伸ばし、取引を広げたい。いまの在庫システムとつなぎ、発注と商品データの手間を消したい。</p><span class="link">相談する</span></a>
-      <a href="#contact" data-type="maker"><span style="font-size:26px">🏭</span><b class="ja">メーカー</b><p class="ja">正規流通を守りながら、サロン経由でホームケアの継続購入をつくりたい。</p><span class="link">相談する</span></a>
-      <a href="#contact" data-type="media"><span style="font-size:26px">📰</span><b class="ja">取材・メディア</b><p class="ja">代表インタビュー、導入サロンの現場取材、画面デモ、図版の提供ができます。</p><span class="link">取材を依頼する</span></a>
+      <a href="inquiry.html?type=salon" data-type="salon"><span style="font-size:26px">✂️</span><b class="ja">サロン・美容師</b><p class="ja">店販の在庫、予約の二重管理、紙のカルテ、シフト作成。毎日の悩みを一つずつ仕組みにしたい。一人サロンでも。</p><span class="link">相談する</span></a>
+      <a href="inquiry.html?type=dealer" data-type="dealer"><span style="font-size:26px">📦</span><b class="ja">ディーラー</b><p class="ja">担当サロンの店販を伸ばし、取引を広げたい。いまの在庫システムとつなぎ、発注と商品データの手間を消したい。</p><span class="link">相談する</span></a>
+      <a href="inquiry.html?type=maker" data-type="maker"><span style="font-size:26px">🏭</span><b class="ja">メーカー</b><p class="ja">正規流通を守りながら、サロン経由でホームケアの継続購入をつくりたい。</p><span class="link">相談する</span></a>
+      <a href="inquiry.html?type=media" data-type="media"><span style="font-size:26px">📰</span><b class="ja">取材・メディア</b><p class="ja">代表インタビュー、導入サロンの現場取材、画面デモ、図版の提供ができます。</p><span class="link">取材を依頼する</span></a>
     </div>
   </div>
 </section>
@@ -806,28 +813,24 @@
           <span class="tag">24h</span>
           <h3 class="ja">いますぐ、AI受付に。</h3>
           <p class="ja">電話のように話しかけても、文字で打っても応答します。会社名とご希望の連絡先をお伝えいただければ、担当の田中から1〜2営業日以内にこちらからご連絡します。</p>
-          <div class="row"><a class="btn btn-blue" href="contact.html">AI受付を開く</a><a class="btn btn-line" href="#cform">フォームで送る</a></div>
+          <div class="row"><a class="btn btn-blue" href="contact.html">AI受付を開く</a><a class="btn btn-line" href="inquiry.html">フォームで送る</a></div>
           <div class="meta"><div><b>24h</b><span class="ja">音声・文字、いつでも</span></div><div><b>1〜2営業日</b><span class="ja">担当からご連絡</span></div></div>
         </div>
       </div>
-      <form class="r" id="cform" novalidate>
+      <div class="r form-card" id="cform">
         <h3 class="ja">フォームで相談する</h3>
-        <div class="sub ja">送信すると担当に届き、こちらからご連絡します</div>
-        <div class="field"><label for="cf-type" class="ja">ご相談の種類</label><select id="cf-type" name="type"><option value="salon">サロン（予約・EC・POS）</option><option value="dealer">ディーラー（無在庫店販・卸EC・商品マスタ）</option><option value="maker">メーカー（正規流通・連携）</option><option value="media">取材・メディア</option><option value="other">その他</option></select></div>
-        <div class="two">
-          <div class="field"><label for="cf-shop" class="ja">サロン名・会社名</label><input id="cf-shop" name="shop" type="text" autocomplete="organization"></div>
-          <div class="field"><label for="cf-name" class="ja">お名前 <span class="req">*</span></label><input id="cf-name" name="fullname" type="text" required autocomplete="name"></div>
+        <div class="sub ja">会社名・お名前・ご連絡先・ご相談内容を入力すると担当に届き、ご希望の方法（メールまたは電話）で1〜2営業日以内にご連絡します。</div>
+        <ul class="form-list">
+          <li><b class="ja">1</b><span class="ja">ご相談の種類と内容</span></li>
+          <li><b class="ja">2</b><span class="ja">会社名・お名前・ご連絡先</span></li>
+          <li><b class="ja">3</b><span class="ja">メールか電話か、ご希望の連絡方法</span></li>
+        </ul>
+        <a class="btn btn-blue ja" href="inquiry.html" style="width:100%;margin-top:18px">お問い合わせフォームへ</a>
+        <div class="form-types">
+          <a class="ja" href="inquiry.html?type=dealer">ディーラー様</a><a class="ja" href="inquiry.html?type=maker">メーカー様</a><a class="ja" href="inquiry.html?type=salon">サロン様</a><a class="ja" href="inquiry.html?type=media">取材</a>
         </div>
-        <div class="two">
-          <div class="field"><label for="cf-contact" class="ja">ご連絡先（メールまたは電話） <span class="req">*</span></label><input id="cf-contact" name="contact" type="text" required autocomplete="email" placeholder="例：you@example.com ／ 090-0000-0000"></div>
-          <div class="field"><label for="cf-prefer" class="ja">ご希望の連絡方法・時間帯（任意）</label><input id="cf-prefer" name="prefer" type="text" placeholder="例：メール希望 ／ 平日 11時ごろ電話"></div>
-        </div>
-        <div class="field"><label for="cf-msg" class="ja">ご相談内容 <span class="req">*</span></label><textarea id="cf-msg" name="msg" rows="4" required placeholder="例：店販の在庫を持たずに始めたい／予約と会計をつなげたい"></textarea></div>
-        <input type="text" name="hp" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
-        <button type="submit" class="btn btn-blue ja" style="width:100%">相談内容を送る</button>
-        <p class="cf-note ja">送信内容は担当だけが確認します。うまく送れないときは、AI受付に同じ内容をお話しください。</p>
-        <p class="cf-msg" id="cf-feedback" role="alert" aria-live="polite"></p>
-      </form>
+        <p class="cf-note ja">送信内容は担当だけが確認します。入力途中の内容は端末に一時保存されます。</p>
+      </div>
     </div>
   </div>
 </section>
@@ -843,7 +846,7 @@
       </div>
       <div><h5 class="ja">プロダクト</h5><a href="#reserve" class="ja">Salon Town Booking</a><a href="#ec" class="ja">招待制クローズドEC</a><a href="#dealer" class="ja">ディーラー連携</a><a href="#b2b" class="ja">B2B卸EC・PIM</a><a href="#shift" class="ja">シフト・給与</a></div>
       <div><h5 class="ja">会社</h5><a href="#cases" class="ja">導入実績</a><a href="#vision" class="ja">ビジョン</a><a href="#news" class="ja">ニュース</a><a href="#company" class="ja">会社概要</a><a href="contact.html" class="ja">AI受付</a></div>
-      <div><h5 class="ja">お問い合わせ</h5><a href="contact.html" class="ja">AI受付（音声・文字、24時間）</a><a href="#contact" class="ja">フォームで相談する</a><p class="ja" style="margin-top:8px">札幌市中央区南2条西2丁目8-1<br>NC北専ブロックビル3階</p></div>
+      <div><h5 class="ja">お問い合わせ</h5><a href="inquiry.html" class="ja">お問い合わせフォーム</a><a href="contact.html" class="ja">AI受付（音声・文字、24時間）</a><a href="#contact" class="ja">フォームで相談する</a><p class="ja" style="margin-top:8px">札幌市中央区南2条西2丁目8-1<br>NC北専ブロックビル3階</p></div>
     </div>
     <div class="foot-bottom"><small>© 2026 SALON TOWN Inc.</small><small class="ja">ビジュアルはAIで生成したイメージです</small></div>
   </div>
@@ -894,35 +897,14 @@
   var sticky=document.getElementById('stickyCta'),contact=document.getElementById('contact');
   if(sticky&&contact){new IntersectionObserver(function(es){sticky.classList.toggle('off',es[0].isIntersecting);},{threshold:.2}).observe(contact);}
 
-  document.querySelectorAll('a[data-type]').forEach(function(a){a.addEventListener('click',function(){var s=document.getElementById('cf-type');if(s)s.value=a.dataset.type;});});
 
-  var cform=document.getElementById('cform');
-  if(cform){cform.addEventListener('submit',function(e){
-    e.preventDefault();
-    var g=function(id){var el=document.getElementById(id);return el?el.value.trim():'';};
-    var fb=document.getElementById('cf-feedback'),sel=document.getElementById('cf-type'),btn=cform.querySelector('button[type=submit]');
-    var shop=g('cf-shop'),name=g('cf-name'),contact=g('cf-contact'),prefer=g('cf-prefer'),msg=g('cf-msg');
-    var en=document.documentElement.lang==='en';
-    var okc=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact)||/^[0-9+()\-\s]{9,20}$/.test(contact);
-    if(!name||!contact||!msg){fb.className='cf-msg err';fb.textContent=en?'Name, contact and message are required':'お名前・ご連絡先・ご相談内容は必須です';return;}
-    if(!okc){fb.className='cf-msg err';fb.textContent=en?'Please enter an email address or phone number':'メールアドレスか電話番号の形式でご入力ください';return;}
-    btn.disabled=true;fb.className='cf-msg';fb.textContent=en?'Sending…':'送信しています…';
-    var hp=cform.querySelector('input[name=hp]');
-    fetch('/api/salontown-contact',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({type:sel.value,shop:shop,name:name,contact:contact,prefer:prefer,message:msg,lang:en?'en':'ja',src:location.search.slice(1,60),hp:hp?hp.value:''})})
-      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {ok:r.ok&&j.ok,j:j};});})
-      .then(function(x){
-        if(x.ok){if(window.stTrack)stTrack('form_sent',{label:(cform.querySelector('[name=type]')||{}).value||''});fb.className='cf-msg ok';fb.textContent=en?'Received. We will contact you within 1–2 business days.':'受け付けました。担当の田中より1〜2営業日以内にご連絡します';cform.reset();}
-        else{throw new Error('ng');}
-      })
-      .catch(function(){fb.className='cf-msg err';fb.textContent=en?'Could not send. Please tell the AI reception instead.':'送信できませんでした。お手数ですがAI受付に同じ内容をお話しください';})
-      .finally(function(){btn.disabled=false;});
-  });}
 })();
 </script>
 <script>
 /* EN / JA toggle: 日本語の文をキーに英訳を引く。見つからない要素はそのまま。 */
 (function(){
   var MAP={
+  "会社名・お名前・ご連絡先・ご相談内容を入力すると担当に届き、ご希望の方法（メールまたは電話）で1〜2営業日以内にご連絡します。":"Enter your company, name, contact details and request. Our team will reply by email or phone within 1–2 business days.","ご相談の種類と内容":"Type of inquiry and details","会社名・お名前・ご連絡先":"Company, name and contact details","メールか電話か、ご希望の連絡方法":"Preferred contact: email or phone","お問い合わせフォームへ":"Open the inquiry form","ディーラー様":"Dealers","メーカー様":"Makers","サロン様":"Salons","取材":"Media","送信内容は担当だけが確認します。入力途中の内容は端末に一時保存されます。":"Only our team sees your message. Drafts are saved on your device.","お問い合わせフォーム":"Inquiry form",
   "プラットフォーム":"Platform","画面":"Screens","実際の画面":"Real screens","イメージではなく、実際の画面。":"Not mockups. Real screens.","サロンで毎日使われている画面と、いま開発している画面をそのまま載せています。お客様が触る画面、スタッフの画面、オーナーの画面まで。":"Screens used in salons every day, plus the ones we are building now, shown as they are. Guest screens, staff screens and owner screens.","招待制EC":"Closed EC","お客様のアプリ":"Guest app","オーナーの管理画面":"Owner admin","LINEから3ステップ":"3 steps from LINE","実際の画面をすべて見る":"See all real screens","Booking":"Booking","クローズドEC":"Closed EC","ディーラー連携":"Dealers","AI受付":"AI reception","実績":"Results","会社":"Company","AIに話す":"Talk to AI","相談する":"Contact","Salon Town Booking":"Salon Town Booking","招待制クローズドEC":"Invitation-only closed EC","導入実績":"Case studies","会社概要":"Company","本文へ":"Skip to content",
   "サロンを、<br>いちばん<br><span class=\"grad\">豊かに。</span>":"Making salons<br>truly<br><span class=\"grad\">prosperous.</span>",
   "最先端の技術を、サロンが使いやすい形に。予約・会計・カルテ・店販・在庫がひとつの基盤でつながり、ディーラーと結んだ無在庫店販が売上をつくる。サロンの現場から生まれたシステム会社です。":"Cutting-edge technology, shaped so salons can actually use it. Booking, checkout, records, retail and stock run on one platform, and stock-free retail with dealers creates sales. Born on the salon floor.",
