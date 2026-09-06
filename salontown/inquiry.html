@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>お問い合わせフォーム｜salon.town — 株式会社サロンタウン</title>
+<meta name="description" content="株式会社サロンタウンへのお問い合わせフォーム。ディーラー・メーカー・サロン・取材のご相談を承ります。送信後、担当よりメールまたはお電話で折り返しご連絡します。">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMUUyOTNCIi8+PHN0b3Agb2Zmc2V0PSIuNTUiIHN0b3AtY29sb3I9IiMwQjZGQjgiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwRUE1RTkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB4PSIyIiB5PSIyIiB3aWR0aD0iNDQiIGhlaWdodD0iNDQiIHJ4PSIxMyIgZmlsbD0idXJsKCNnKSIvPjxnIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIyLjMiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCI+PHBhdGggZD0iTTkuNSAyMy41IFYzNSBIMTguNSBWMjMuNSBMMTQgMTkgWiIvPjxwYXRoIGQ9Ik0yMy41IDIwLjUgVjM1IEgzNi41IFYyMC41IEwzMCAxNSBaIi8+PC9nPjxyZWN0IHg9IjI3LjYiIHk9IjI4IiB3aWR0aD0iNSIgaGVpZ2h0PSI3IiByeD0iMSIgZmlsbD0iIzBFQTVFOSIvPjwvc3ZnPg==">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1D1D1F;--ink-2:#6E6E73;--ink-3:#86868B;
+    --accent:#0071E3;--accent-bright:#2997FF;--accent-soft:#E8F1FD;
+    --bg:#F5F5F7;--surface:#FFFFFF;--muted:#EEF2F7;--border:rgba(0,0,0,.08);
+    --maxw:1160px;--radius:16px;
+    --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+    --shadow:0 12px 32px -12px rgba(15,23,42,.16);
+    --ease:cubic-bezier(.2,.7,.3,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"Inter","Noto Sans JP",-apple-system,system-ui,sans-serif;font-feature-settings:"palt";color:var(--ink);background:var(--bg);line-height:1.75;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .eyebrow{font-family:"Inter",sans-serif;font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:.72rem;color:var(--accent);display:inline-flex;align-items:center;gap:8px}
+  .eyebrow::before{content:"";width:22px;height:2px;background:var(--accent);display:inline-block}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:700;font-size:.95rem;cursor:pointer;border:1px solid transparent;padding:14px 26px;border-radius:999px;transition:all .2s var(--ease)}
+  .btn-primary{background:var(--ink);color:#fff}
+  .btn-primary:hover{background:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+  .btn-ghost{background:transparent;color:var(--ink);border-color:var(--border)}
+  .btn-ghost:hover{border-color:var(--ink);background:var(--surface)}
+  .btn svg{width:18px;height:18px}
+
+  /* header（トップと同じ。ヒーローが無いので最初から「scrolled」の見た目） */
+  header{position:sticky;top:0;z-index:50;background:rgba(0,0,0,.72);color:#F5F5F7;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:52px}
+  .brand{display:flex;align-items:center;gap:9px;font-family:"Inter",sans-serif;font-weight:700;font-size:1.05rem;letter-spacing:-.02em;color:#fff}
+  .brand-mark{width:24px;height:24px;flex:0 0 auto;display:block}
+  .brand .wm-dot{color:var(--accent-bright)}
+  .brand small{display:none}
+  .nav-links{display:flex;align-items:center;gap:30px}
+  .nav-links a{font-size:.84rem;font-weight:500;color:rgba(255,255,255,.85);transition:color .2s}
+  .nav-links a:hover{color:var(--accent-bright)}
+  header .btn{padding:7px 14px;font-size:.8rem}
+  header .btn-ghost{color:#fff;border-color:rgba(255,255,255,.4)}
+  header .btn-primary{background:var(--accent);color:#fff}
+  .nav-cta{display:flex;align-items:center;gap:14px}
+
+  /* hero */
+  .hero{background:#000;color:#fff;padding:88px 0 80px;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;inset:0;background:radial-gradient(760px 360px at 90% 0%,rgba(14,165,233,.22),transparent 60%);pointer-events:none}
+  .hero .wrap{position:relative;display:grid;grid-template-columns:1.1fr 1fr;gap:48px;align-items:center}
+  .hero .eyebrow{color:var(--accent-bright)}
+  .hero .eyebrow::before{background:var(--accent-bright)}
+  .hero h1{font-size:clamp(2.2rem,4.6vw,3.6rem);line-height:1.1;font-weight:700;margin:14px 0 18px;letter-spacing:-.03em}
+  .hero p{color:#CBD5E1;font-size:1rem;max-width:34em}
+  .hero .meta{display:flex;gap:26px;margin-top:26px;flex-wrap:wrap}
+  .hero .meta b{font-family:"Inter",sans-serif;font-size:1.35rem;font-weight:800;display:block;line-height:1.1}
+  .hero .meta span{font-size:.78rem;color:#94A3B8}
+
+  /* AI受付カード */
+  .aicard{background:var(--surface);color:var(--ink);border-radius:20px;box-shadow:var(--shadow);padding:26px 24px 20px;border:1px solid rgba(255,255,255,.35)}
+  .aicard .top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .aicard .orb{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#9CE6E6,#2792DC 70%);box-shadow:0 0 0 6px var(--accent-soft);flex:0 0 auto;animation:pulse 2.6s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 6px var(--accent-soft)}50%{box-shadow:0 0 0 10px rgba(14,165,233,.14)}}
+  .aicard .top b{font-size:1rem;display:block}
+  .aicard .top span{font-size:.78rem;color:var(--ink-3)}
+  .aicard ol{padding-left:1.25em;font-size:.9rem;color:var(--ink-2);margin:6px 0 10px}
+  .aicard ol li{margin:4px 0}
+  .chat{background:#0b0f17;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:14px;height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;font-size:.95rem;line-height:1.6}
+  .chat .m{max-width:88%;padding:10px 14px;border-radius:16px;white-space:pre-wrap;word-break:break-word}
+  .chat .m.a{align-self:flex-start;background:rgba(255,255,255,.08);color:#F5F5F7;border-bottom-left-radius:6px}
+  .chat .m.u{align-self:flex-end;background:#0071E3;color:#fff;border-bottom-right-radius:6px}
+  .chat .m.s{align-self:center;color:#8E8E93;font-size:.8rem;background:none;padding:2px 0}
+  .chatbar{display:flex;gap:8px;margin-top:10px}
+  .chatbar input{flex:1;min-width:0;border:1px solid #D2D2D7;background:#F5F5F7;color:#1D1D1F;border-radius:999px;padding:12px 16px;font:inherit;font-size:16px}
+  .chatbar input:focus{outline:none;border-color:#2997FF;box-shadow:0 0 0 4px rgba(41,151,255,.2)}
+  .chatbar .mic,.chatbar .send{flex:0 0 auto;border:0;border-radius:999px;cursor:pointer;font:inherit;font-weight:600}
+  .chatbar .mic{width:46px;height:46px;background:#1D1D1F;color:#fff;display:flex;align-items:center;justify-content:center}
+  .chatbar .mic svg{width:20px;height:20px}
+  .chatbar .mic.on{background:#E3342F;animation:pulse 1.2s infinite}
+  .chatbar .mic[disabled]{opacity:.35;cursor:not-allowed}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(227,52,47,.5)}100%{box-shadow:0 0 0 12px rgba(227,52,47,0)}}
+  .chatbar .send{padding:0 18px;background:#0071E3;color:#fff}
+  .chatmeta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;font-size:.82rem;color:#6E6E73;flex-wrap:wrap}
+  .chatmeta .spk{display:flex;align-items:center;gap:6px;cursor:pointer}
+  .chatmeta .endbtn{background:none;border:1px solid #D2D2D7;color:#1D1D1F;border-radius:999px;padding:6px 12px;font:inherit;font-size:.8rem;cursor:pointer}
+  .aicard .hint{font-size:.84rem;color:var(--ink-2);background:var(--accent-soft);border-radius:10px;padding:10px 12px;margin:4px 0 12px}
+  .aicard .note{font-size:.76rem;color:var(--ink-3);line-height:1.7;margin-top:8px}
+  .aicard .note a{color:var(--accent);text-decoration:underline}
+
+  /* sections */
+  section.block{padding:72px 0}
+  .head{margin-bottom:28px}
+  .head h2{font-size:1.5rem;font-weight:700;margin-top:10px;letter-spacing:-.01em}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow-sm)}
+  .card .ic{width:40px;height:40px;border-radius:11px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .card .ic svg{width:20px;height:20px}
+  .card h3{font-size:1rem;margin-bottom:6px}
+  .card p{font-size:.9rem;color:var(--ink-2)}
+  .direct{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .direct .card{display:flex;align-items:center;gap:16px}
+  .direct .card b{font-family:"Inter","Noto Sans JP",sans-serif;font-size:1.15rem;display:block}
+  .direct .card span{font-size:.8rem;color:var(--ink-3)}
+  .company{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .company dl{display:grid;grid-template-columns:150px 1fr;gap:12px 24px;font-size:.92rem;max-width:760px}
+  .company dt{color:var(--ink-3);font-size:.82rem;padding-top:2px}
+  .company dd{color:var(--ink-2)}
+
+  /* footer（トップと同じ） */
+  footer{background:#000;color:#fff;padding:80px 0 38px;position:relative;overflow:hidden}
+  footer::before{content:"";position:absolute;inset:0;background:radial-gradient(680px 320px at 88% -10%,rgba(14,165,233,.14),transparent 60%);pointer-events:none}
+  footer .wrap{position:relative}
+  .foot-grid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1.3fr;gap:56px;padding-bottom:48px;border-bottom:1px solid rgba(255,255,255,.1)}
+  .foot-brand .brand{color:#fff;margin-bottom:20px}
+  .foot-brand .brand small{color:#64748B}
+  .foot-brand .biz{font-size:.92rem;font-weight:700;color:#fff;margin-bottom:12px}
+  .foot-brand p{color:#94A3B8;font-size:.88rem;max-width:25em;line-height:1.9}
+  .foot-col h5{font-size:.72rem;font-weight:700;color:#64748B;letter-spacing:.12em;text-transform:uppercase;margin-bottom:20px}
+  .foot-col a{display:block;font-size:.9rem;color:#CBD5E1;padding:8px 0;transition:color .2s,transform .2s}
+  .foot-col a:hover{color:#fff;transform:translateX(3px)}
+  .foot-contact .ci{font-size:.9rem;color:#CBD5E1;padding:8px 0;display:flex;gap:11px;align-items:flex-start;line-height:1.6}
+  .foot-contact .ci svg{width:16px;height:16px;color:#64748B;flex-shrink:0;margin-top:4px}
+  .foot-contact a{color:#CBD5E1;transition:color .2s}
+  .foot-contact a:hover{color:#fff}
+  .foot-bottom{padding-top:26px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
+  .foot-bottom small{color:#64748B;font-size:.8rem}
+  .foot-bottom .legal{display:flex;gap:24px}
+  .foot-bottom .legal a{color:#64748B;font-size:.8rem;transition:color .2s}
+  .foot-bottom .legal a:hover{color:#CBD5E1}
+
+  @media (max-width:960px){
+    .nav-links{display:none}
+    .hero .wrap{grid-template-columns:1fr;gap:30px}
+    .grid3{grid-template-columns:1fr}
+    .direct{grid-template-columns:1fr}
+  }
+  @media (max-width:760px){
+    .hero{padding:48px 0 44px}
+    section.block{padding:52px 0}
+    .company dl{grid-template-columns:1fr;gap:4px 0}
+    .company dt{margin-top:10px}
+    footer{padding:54px 0 30px}
+    .foot-grid{grid-template-columns:1fr 1fr;gap:34px 24px}
+    .foot-brand,.foot-contact{grid-column:1 / -1}
+    .nav-cta .btn-ghost{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){ .aicard .orb{animation:none} *{scroll-behavior:auto!important} }
+</style>
+<style>
+  /* お問い合わせフォーム */
+  .fhero{background:#000;color:#fff;padding:64px 0 48px;position:relative;overflow:hidden}
+  .fhero::after{content:"";position:absolute;inset:0;background:radial-gradient(760px 360px at 90% 0%,rgba(14,165,233,.22),transparent 60%);pointer-events:none}
+  .fhero .wrap{position:relative}
+  .fhero .eyebrow{color:var(--accent-bright)}.fhero .eyebrow::before{background:var(--accent-bright)}
+  .fhero h1{font-size:clamp(1.9rem,4vw,2.8rem);line-height:1.15;font-weight:700;margin:12px 0 14px;letter-spacing:-.03em}
+  .fhero p{color:#CBD5E1;max-width:40em}
+  .steps{display:flex;gap:8px;margin:28px 0 0;flex-wrap:wrap}
+  .steps span{font-size:.8rem;color:#94A3B8;padding:6px 14px;border:1px solid rgba(255,255,255,.18);border-radius:999px}
+  .steps span.on{color:#fff;border-color:var(--accent-bright);background:rgba(41,151,255,.18)}
+  .fmain{padding:48px 0 80px}
+  .fgrid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:32px;align-items:start}
+  .fcard{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px;box-shadow:var(--shadow-sm)}
+  .fcard h2{font-size:1.25rem;margin-bottom:6px}
+  .fcard .sub{font-size:.9rem;color:var(--ink-2);margin-bottom:24px}
+  fieldset{border:0;padding:0;margin:0 0 8px}
+  legend{font-size:.8rem;font-weight:700;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;padding-top:10px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:.85rem;font-weight:600;color:var(--ink-2);margin-bottom:6px}
+  .field input,.field textarea,.field select{width:100%;border:1px solid #D2D2D7;border-radius:12px;padding:13px 14px;font:inherit;font-size:1rem;background:#fff;color:var(--ink);transition:border-color .2s,box-shadow .2s}
+  .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(0,113,227,.15)}
+  .field.bad input,.field.bad textarea,.field.bad select{border-color:#E3342F}
+  .field .hint{font-size:.78rem;color:var(--ink-3);margin-top:5px}
+  .field .err{font-size:.8rem;color:#E3342F;margin-top:5px;font-weight:600;display:none}
+  .field.bad .err{display:block}
+  .req{color:#E3342F;font-size:.75rem;margin-left:4px}
+  .opt{color:var(--ink-3);font-weight:500;font-size:.75rem;margin-left:4px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .seg label{position:relative;display:flex;align-items:center;gap:10px;padding:13px 14px;border:1px solid #D2D2D7;border-radius:12px;cursor:pointer;font-size:.95rem;font-weight:600;margin:0;color:var(--ink)}
+  .seg input{position:absolute;opacity:0;width:0;height:0}
+  .seg label:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:#0056B3}
+  .seg small{display:block;font-weight:400;color:var(--ink-3);font-size:.75rem}
+  .consent{display:flex;gap:10px;align-items:flex-start;font-size:.88rem;color:var(--ink-2);margin:6px 0 18px}
+  .consent input{margin-top:5px;width:18px;height:18px}
+  .submit{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .btn-wide{width:100%;padding:16px 26px;font-size:1.02rem}
+  .msg{margin-top:12px;font-size:.92rem;font-weight:600}
+  .msg.ok{color:#1B8A4A}.msg.err{color:#E3342F}
+  .note{font-size:.8rem;color:var(--ink-3);line-height:1.7;margin-top:14px}
+  /* 確認・完了 */
+  .confirm dl{display:grid;grid-template-columns:150px 1fr;gap:12px 20px;font-size:.95rem}
+  .confirm dt{color:var(--ink-3);font-size:.82rem;padding-top:3px}
+  .confirm dd{white-space:pre-wrap;word-break:break-word}
+  .confirm dd:empty::before{content:"—";color:var(--ink-3)}
+  .done{text-align:center;padding:24px 0}
+  .done .ic{width:64px;height:64px;border-radius:50%;background:#EAF7EE;color:#1B7A3D;display:flex;align-items:center;justify-content:center;margin:0 auto 18px}
+  .done .ic svg{width:30px;height:30px}
+  .done h2{font-size:1.5rem;margin-bottom:10px}
+  .done p{color:var(--ink-2);max-width:32em;margin:0 auto 10px}
+  .done .no{display:inline-block;background:var(--bg);border-radius:10px;padding:6px 14px;font-family:"Inter",monospace;margin:8px 0 22px;font-weight:700}
+  /* 右側 */
+  .side .card{margin-bottom:16px}
+  .side .card ul{padding-left:18px;font-size:.9rem;color:var(--ink-2);line-height:1.8}
+  .side .card .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+  @media (max-width:860px){.fgrid{grid-template-columns:1fr}.two,.seg{grid-template-columns:1fr}.fcard{padding:24px 20px}.confirm dl{grid-template-columns:1fr;gap:2px 0}.confirm dt{margin-top:10px}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1E293B"/><stop offset=".55" stop-color="#0B6FB8"/><stop offset="1" stop-color="#0EA5E9"/></linearGradient></defs></svg>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="./"><svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="13" fill="url(#logoGrad)"/><g fill="none" stroke="#fff" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M9.5 23.5 V35 H18.5 V23.5 L14 19 Z"/><path d="M23.5 20.5 V35 H36.5 V20.5 L30 15 Z"/></g><rect x="27.6" y="28" width="5" height="7" rx="1" fill="#0EA5E9"/></svg><span class="wm">salon<span class="wm-dot">.</span>town<br><small>System for Salons</small></span></a>
+    <nav class="nav-links">
+      <a href="./#platform">プラットフォーム</a>
+      <a href="./#reserve">Booking</a>
+      <a href="./#dealer">ディーラー連携</a>
+      <a href="./#cases">実績</a>
+      <a href="./#company">会社</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="./">トップへ</a>
+      <a class="btn btn-primary" href="contact.html">AI受付に話す</a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="fhero" id="top">
+  <div class="wrap">
+    <span class="eyebrow">Contact form</span>
+    <h1>お問い合わせフォーム</h1>
+    <p>ディーラー様、メーカー様、サロン様、取材のご相談を承ります。送信いただいた内容は担当が確認し、ご希望の方法（メールまたはお電話）で1〜2営業日以内に折り返しご連絡します。</p>
+    <div class="steps" aria-hidden="true"><span class="on" id="s1">1 入力</span><span id="s2">2 確認</span><span id="s3">3 送信完了</span></div>
+  </div>
+</section>
+<section class="fmain">
+  <div class="wrap fgrid">
+    <div>
+      <form class="fcard" id="form" novalidate>
+        <h2>ご入力ください</h2>
+        <p class="sub"><span class="req">*</span> は必須項目です。入力途中の内容はこの端末に一時保存されるので、途中で閉じても続きから入力できます。</p>
+
+        <fieldset>
+          <legend>ご相談について</legend>
+          <div class="field" data-k="type"><label for="f-type">お問い合わせの種類 <span class="req">*</span></label>
+            <select id="f-type" name="type" required>
+              <option value="">選択してください</option>
+              <option value="dealer">ディーラー様（無在庫店販・卸EC・在庫システム連携）</option>
+              <option value="maker">メーカー様（正規流通・連携）</option>
+              <option value="salon">サロン様（予約・EC・POS・シフト）</option>
+              <option value="media">取材・メディア</option>
+              <option value="partner">協業・パートナー</option>
+              <option value="other">その他</option>
+            </select><div class="err">お問い合わせの種類を選んでください</div></div>
+          <div class="field" data-k="message"><label for="f-msg">ご相談内容 <span class="req">*</span></label>
+            <textarea id="f-msg" name="message" rows="6" required placeholder="例：自社の在庫システム（スマイル）と連携して無在庫店販を始めたい。取扱メーカーは〜。導入時期の目安は〜。"></textarea>
+            <div class="hint">いまお困りのこと、つくりたい仕組み、時期の目安など。まとまっていなくて大丈夫です。</div><div class="err">ご相談内容をご入力ください</div></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>会社・お名前</legend>
+          <div class="two">
+            <div class="field" data-k="shop"><label for="f-shop">会社名・サロン名 <span class="req">*</span></label><input id="f-shop" name="shop" type="text" required autocomplete="organization" placeholder="株式会社〇〇 ／ 〇〇美容室"><div class="err">会社名・サロン名をご入力ください</div></div>
+            <div class="field" data-k="dept"><label for="f-dept">部署・役職 <span class="opt">任意</span></label><input id="f-dept" name="dept" type="text" autocomplete="organization-title" placeholder="営業部 部長 ／ オーナー"></div>
+          </div>
+          <div class="two">
+            <div class="field" data-k="name"><label for="f-name">お名前 <span class="req">*</span></label><input id="f-name" name="name" type="text" required autocomplete="name" placeholder="山田 太郎"><div class="err">お名前をご入力ください</div></div>
+            <div class="field" data-k="kana"><label for="f-kana">ふりがな <span class="opt">任意</span></label><input id="f-kana" name="kana" type="text" placeholder="やまだ たろう"></div>
+          </div>
+          <div class="field" data-k="pref"><label for="f-pref">都道府県 <span class="opt">任意</span></label><input id="f-pref" name="pref" type="text" autocomplete="address-level1" placeholder="北海道"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>ご連絡先</legend>
+          <div class="two">
+            <div class="field" data-k="email"><label for="f-email">メールアドレス <span class="req">*</span></label><input id="f-email" name="email" type="email" required inputmode="email" autocomplete="email" placeholder="you@example.com"><div class="err">メールアドレスの形式でご入力ください</div></div>
+            <div class="field" data-k="phone"><label for="f-phone">電話番号 <span class="req" id="phone-req" hidden>*</span><span class="opt" id="phone-opt">任意</span></label><input id="f-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="090-0000-0000"><div class="err">電話番号をご入力ください（お電話をご希望の場合は必須です）</div></div>
+          </div>
+          <div class="field" data-k="prefer"><label>ご希望の連絡方法 <span class="req">*</span></label>
+            <div class="seg">
+              <label><input type="radio" name="prefer" value="email" checked><span>メールで連絡してほしい<small>ご入力のメールアドレスへ返信します</small></span></label>
+              <label><input type="radio" name="prefer" value="phone"><span>電話で連絡してほしい<small>ご都合の良い時間帯にお電話します</small></span></label>
+            </div></div>
+          <div class="field" data-k="time" id="time-field"><label for="f-time">ご都合の良い時間帯 <span class="opt">任意</span></label>
+            <select id="f-time" name="time"><option value="">指定なし</option><option>平日 10〜12時</option><option>平日 12〜15時</option><option>平日 15〜18時</option><option>平日 18時以降</option><option>土日祝</option></select></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>その他</legend>
+          <div class="field" data-k="hear"><label for="f-hear">当社を知ったきっかけ <span class="opt">任意</span></label>
+            <select id="f-hear" name="hear"><option value="">選択してください</option><option>ディーラー・メーカーからの紹介</option><option>サロン・美容師からの紹介</option><option>プレスリリース・ニュース</option><option>検索</option><option>SNS</option><option>展示会・イベント</option><option>名刺・チラシ</option><option>その他</option></select></div>
+          <input type="text" name="hp" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+          <label class="consent"><input type="checkbox" id="f-consent" required><span>ご入力いただいた情報は、お問い合わせへの回答とご連絡のためだけに使用し、担当者以外には開示しません。</span></label>
+          <div class="field" data-k="consent" style="margin:-10px 0 14px"><div class="err">ご確認のうえチェックを入れてください</div></div>
+        </fieldset>
+
+        <button type="submit" class="btn btn-primary btn-wide">入力内容を確認する</button>
+        <p class="msg" id="msg" role="alert" aria-live="polite"></p>
+        <p class="note">当社の電話番号・メールアドレスはサイトに掲載していません。お問い合わせはこのフォームと<a href="contact.html" style="color:var(--accent)">AI受付</a>で承り、担当からご連絡します。</p>
+      </form>
+
+      <div class="fcard confirm" id="confirm" hidden>
+        <h2>入力内容の確認</h2>
+        <p class="sub">内容をご確認のうえ「この内容で送信する」を押してください。</p>
+        <dl id="review"></dl>
+        <div class="submit" style="margin-top:26px">
+          <button type="button" class="btn btn-ghost" id="back">修正する</button>
+          <button type="button" class="btn btn-primary" id="send" style="flex:1">この内容で送信する</button>
+        </div>
+        <p class="msg" id="cmsg" role="alert" aria-live="polite"></p>
+      </div>
+
+      <div class="fcard done" id="done" hidden>
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <h2>お問い合わせを受け付けました</h2>
+        <p>受付番号</p><div class="no" id="no"></div>
+        <p id="done-msg">担当が内容を確認し、ご希望の方法で1〜2営業日以内にご連絡します。</p>
+        <p style="font-size:.85rem;color:var(--ink-3)">受付番号を控えておくと、お問い合わせの際にスムーズです。</p>
+        <div class="submit" style="justify-content:center;margin-top:20px"><a class="btn btn-ghost" href="./">トップへ戻る</a><a class="btn btn-primary" href="screens.html">実際の画面を見る</a></div>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+        <h3>送信後の流れ</h3>
+        <ul><li>担当が内容を確認します</li><li>ご希望の方法（メール／電話）で1〜2営業日以内にご連絡します</li><li>必要に応じてオンラインで画面をお見せしながらご説明します</li></ul>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-9 9v5a2 2 0 0 0 2 2h2v-6H5a7 7 0 0 1 14 0h-2v6h2a2 2 0 0 0 2-2v-5a9 9 0 0 0-9-9z"/></svg></div>
+        <h3>急ぎのときは AI受付へ</h3>
+        <p>電話のように話しかけても、文字で打っても24時間応答します。お名前と折り返し先を伝えていただければ、同じように担当からご連絡します。</p>
+        <div class="row"><a class="btn btn-ghost" href="contact.html">AI受付に話す</a></div>
+      </div>
+      <div class="card">
+        <h3>よくあるご相談</h3>
+        <ul><li>既存の在庫システム（スマイル等）との連携</li><li>無在庫店販の開始手順とメーカー規約</li><li>Salon Town Booking の提供開始時期</li><li>商品撮影アプリと新商品の無料取り込み</li><li>取材・掲載のご依頼</li></ul>
+      </div>
+    </aside>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="./"><svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="13" fill="url(#logoGrad)"/><g fill="none" stroke="#fff" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"><path d="M9.5 23.5 V35 H18.5 V23.5 L14 19 Z"/><path d="M23.5 20.5 V35 H36.5 V20.5 L30 15 Z"/></g><rect x="27.6" y="28" width="5" height="7" rx="1" fill="#0EA5E9"/></svg><span class="wm">salon<span class="wm-dot">.</span>town<br><small>System for Salons</small></span></a>
+        <p class="biz">株式会社サロンタウン</p>
+        <p>サロン向けのシステム開発を軸に 招待制クローズドEC 予約 POS 顧客管理まで 現場が回る仕組みをつくります</p>
+      </div>
+      <div class="foot-col">
+        <h5>サービス</h5>
+        <a href="./#reserve">Salon Town Booking</a>
+        <a href="./#ec">招待制クローズドEC</a>
+        <a href="./#dealer">ディーラー連携</a>
+        <a href="./#b2b">B2B卸EC・PIM</a>
+      </div>
+      <div class="foot-col">
+        <h5>会社</h5>
+        <a href="./#security">開発力</a>
+        <a href="./#cases">導入実績</a>
+        <a href="./#company">会社概要</a>
+        <a href="contact.html">お問い合わせ</a>
+      </div>
+      <div class="foot-col foot-contact">
+                <h5>お問い合わせ</h5>
+        <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-9 9v5a2 2 0 0 0 2 2h2v-6H5a7 7 0 0 1 14 0h-2v6h2a2 2 0 0 0 2-2v-5a9 9 0 0 0-9-9z"/></svg><a href="contact.html">AI受付（音声・文字、24時間）</a></div>
+        <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg><a href="inquiry.html">お問い合わせフォーム</a></div>
+        <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>札幌市中央区南2条西2丁目8-1<br>NC北専ブロックビル3階</span></div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <small>© 2026 株式会社サロンタウン</small>
+      <div class="legal">
+        <a href="./#company">会社概要</a>
+        <a href="contact.html">お問い合わせ</a>
+        <a href="./">トップへ</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var API='/api/salontown-contact', KEY='st_inquiry_draft';
+  var form=document.getElementById('form'),confirm=document.getElementById('confirm'),done=document.getElementById('done');
+  var msg=document.getElementById('msg'),cmsg=document.getElementById('cmsg'),review=document.getElementById('review');
+  var q=new URLSearchParams(location.search);
+  var TYPE={dealer:'ディーラー様',maker:'メーカー様',salon:'サロン様',media:'取材・メディア',partner:'協業・パートナー',other:'その他'};
+  function v(n){var el=form.elements[n];if(!el)return '';if(el.length&&el[0]&&el[0].type==='radio'){for(var i=0;i<el.length;i++)if(el[i].checked)return el[i].value;return '';}return (el.value||'').trim();}
+  function data(){return {type:v('type'),message:v('message'),shop:v('shop'),dept:v('dept'),name:v('name'),kana:v('kana'),pref:v('pref'),email:v('email'),phone:v('phone'),prefer:v('prefer'),time:v('time'),hear:v('hear')};}
+  // 下書きの復元・保存（この端末だけ）
+  try{var d=JSON.parse(localStorage.getItem(KEY)||'null');if(d){for(var k in d){var el=form.elements[k];if(!el)continue;if(el.length&&el[0]&&el[0].type==='radio'){for(var i=0;i<el.length;i++)el[i].checked=el[i].value===d[k];}else el.value=d[k];}}}catch(e){}
+  if(q.get('type')&&TYPE[q.get('type')])form.elements.type.value=q.get('type');
+  form.addEventListener('input',function(){try{localStorage.setItem(KEY,JSON.stringify(data()));}catch(e){}phoneReq();});
+  form.addEventListener('change',function(){try{localStorage.setItem(KEY,JSON.stringify(data()));}catch(e){}phoneReq();});
+  function phoneReq(){var p=v('prefer')==='phone';document.getElementById('phone-req').hidden=!p;document.getElementById('phone-opt').hidden=p;}
+  phoneReq();
+  function bad(k,on){var f=form.querySelector('[data-k="'+k+'"]');if(f)f.classList.toggle('bad',!!on);return !!on;}
+  function normPhone(s){return s.replace(/[０-９]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0xFEE0);}).replace(/[‐－ー−]/g,'-').trim();}
+  function validate(){
+    var d=data(),ng=false;
+    ng=bad('type',!d.type)||ng;
+    ng=bad('message',d.message.length<5)||ng;
+    ng=bad('shop',!d.shop)||ng;
+    ng=bad('name',!d.name)||ng;
+    ng=bad('email',!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email))||ng;
+    var ph=normPhone(d.phone);form.elements.phone.value=ph;
+    ng=bad('phone',(d.prefer==='phone'&&!ph)||(ph&&!/^[0-9+()\-\s]{9,20}$/.test(ph)))||ng;
+    ng=bad('consent',!document.getElementById('f-consent').checked)||ng;
+    if(ng){msg.className='msg err';msg.textContent='赤く表示された項目をご確認ください';var first=form.querySelector('.field.bad');if(first)first.scrollIntoView({behavior:'smooth',block:'center'});return null;}
+    msg.textContent='';return data();
+  }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function step(n){[1,2,3].forEach(function(i){document.getElementById('s'+i).classList.toggle('on',i===n);});window.scrollTo({top:document.querySelector('.fmain').offsetTop-70,behavior:'smooth'});}
+  form.addEventListener('submit',function(e){
+    e.preventDefault();var d=validate();if(!d)return;
+    var rows=[['お問い合わせの種類',TYPE[d.type]||d.type],['ご相談内容',d.message],['会社名・サロン名',d.shop],['部署・役職',d.dept],['お名前',d.name+(d.kana?'（'+d.kana+'）':'')],['都道府県',d.pref],['メールアドレス',d.email],['電話番号',d.phone],['ご希望の連絡方法',d.prefer==='phone'?'電話':'メール'],['ご都合の良い時間帯',d.time],['知ったきっかけ',d.hear]];
+    review.innerHTML=rows.map(function(r){return '<dt>'+esc(r[0])+'</dt><dd>'+esc(r[1])+'</dd>';}).join('');
+    form.hidden=true;confirm.hidden=false;cmsg.textContent='';step(2);
+  });
+  document.getElementById('back').addEventListener('click',function(){confirm.hidden=true;form.hidden=false;step(1);});
+  var sending=false;
+  function post(body,attempt){
+    return fetch(API,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){if(r.ok&&j.ok)return j;throw new Error(j.error||('http '+r.status));});})
+      .catch(function(err){if(attempt<3){cmsg.className='msg';cmsg.textContent='送信を再試行しています…（'+(attempt+1)+'回目）';return new Promise(function(res){setTimeout(res,1500*attempt);}).then(function(){return post(body,attempt+1);});}throw err;});
+  }
+  document.getElementById('send').addEventListener('click',function(){
+    if(sending)return;var d=data();sending=true;
+    var btn=document.getElementById('send');btn.disabled=true;cmsg.className='msg';cmsg.textContent='送信しています…';
+    var hp=form.querySelector('input[name=hp]');
+    var body={type:d.type,shop:d.shop,dept:d.dept,name:d.name,kana:d.kana,pref:d.pref,email:d.email,phone:d.phone,prefer_method:d.prefer,prefer:(d.prefer==='phone'?'電話':'メール')+(d.time?'・'+d.time:''),time:d.time,hear:d.hear,contact:d.prefer==='phone'&&d.phone?d.phone:d.email,message:d.message,lang:'ja',src:location.search.slice(1,60),hp:hp?hp.value:'',client_id:clientId()};
+    post(body,1).then(function(j){
+      try{localStorage.removeItem(KEY);}catch(e){}
+      if(window.stTrack)stTrack('form_sent',{label:d.type});
+      document.getElementById('no').textContent=j.id?'ST-'+String(j.id).padStart(5,'0'):'受付済み';
+      document.getElementById('done-msg').textContent=d.prefer==='phone'?'担当が内容を確認し、'+(d.time?d.time+'に':'')+'お電話（'+d.phone+'）で1〜2営業日以内にご連絡します。':'担当が内容を確認し、メール（'+d.email+'）で1〜2営業日以内にご連絡します。迷惑メールフォルダもご確認ください。';
+      confirm.hidden=true;done.hidden=false;step(3);
+    }).catch(function(){
+      cmsg.className='msg err';cmsg.textContent='送信できませんでした。入力内容はこの端末に保存されています。時間をおいて再度お試しいただくか、AI受付に同じ内容をお話しください。';
+      btn.disabled=false;sending=false;
+    });
+  });
+  // 二重送信を防ぐための端末側の識別子（送信ごとに作り直す）
+  function clientId(){var k='st_inq_cid';try{var c=sessionStorage.getItem(k);if(!c){c=Math.random().toString(36).slice(2,12)+Date.now().toString(36);sessionStorage.setItem(k,c);}return c;}catch(e){return '';}}
+})();
+</script>
+<script src="st-track.js" defer></script>
+</body>
+</html>

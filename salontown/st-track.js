@@ -69,7 +69,7 @@
     if(a.id==='langBtn'||a.id==='langBtnM'){kind='lang';}
     else if(a.hasAttribute('data-track')){kind=a.getAttribute('data-track');label=a.getAttribute('data-label')||label;}
     else if(/contact\.html/.test(href)){kind='cta_ai';}
-    else if(/#contact/.test(href)||a.hasAttribute('data-type')){kind='cta_form';label=(a.getAttribute('data-type')?'['+a.getAttribute('data-type')+'] ':'')+label;}
+    else if(/inquiry\.html|#contact/.test(href)||a.hasAttribute('data-type')){kind='cta_form';label=(a.getAttribute('data-type')?'['+a.getAttribute('data-type')+'] ':'')+label;}
     else if(/screens\.html/.test(href)){kind='cta_screens';}
     else if(/^#/.test(href)&&href.length>1){kind='nav';label=href.slice(1);}
     else if(/^https?:/.test(href)&&!/salon\.town|seam\.site/.test(href)){kind='outbound';label=href.slice(0,60);}

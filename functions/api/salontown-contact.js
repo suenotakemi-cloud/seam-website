@@ -30,14 +30,17 @@ async function ensureTable(db) {
     " created_at INTEGER NOT NULL," +
     " handled INTEGER DEFAULT 0)"
   ).run();
+  // 2026-09 追加項目（既存の表にも列を足す。既にあれば無視）
+  const cols = ['email TEXT DEFAULT \'\'', 'phone TEXT DEFAULT \'\'', 'prefer_method TEXT DEFAULT \'\'', 'dept TEXT DEFAULT \'\'', 'kana TEXT DEFAULT \'\'', 'pref TEXT DEFAULT \'\'', 'pref_time TEXT DEFAULT \'\'', 'hear TEXT DEFAULT \'\'', 'client_id TEXT DEFAULT \'\''];
+  for (const c of cols) { try { await db.prepare('ALTER TABLE salontown_inquiries ADD COLUMN ' + c).run(); } catch (e) { /* already exists */ } }
 }
 
 function checkKey(request, env) {
   const url = new URL(request.url);
   const key = (request.headers.get('x-seam-key') || url.searchParams.get('key') || '').trim();
-  const want = (env.ADMIN_KEY || '').trim();
-  if (!want) return { ok: false, keyConfigured: false };
-  return { ok: key === want, keyConfigured: true };
+  const admin = (env.ADMIN_KEY || '').trim(), staff = (env.STAFF_KEY || '').trim();
+  if (!admin && !staff) return { ok: false, keyConfigured: false };
+  return { ok: (admin && key === admin) || (staff && key === staff), keyConfigured: true };
 }
 
 const clip = (v, n) => String(v == null ? '' : v).trim().slice(0, n);
@@ -52,9 +55,13 @@ export async function onRequest(context) {
     try { b = await request.json(); } catch (e) { return json({ error: 'invalid json' }, 400); }
 
     const name = clip(b.name, 60);
-    const contact = clip(b.contact, 120);
+    const email = clip(b.email, 120).toLowerCase();
+    const phone = clip(b.phone, 40).replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+    const contact = clip(b.contact, 120) || email || phone;
     const message = clip(b.message, 3000);
     if (!name || !contact || !message) return json({ error: 'name, contact, message は必須です' }, 400);
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'email の形式が正しくありません' }, 400);
+    const preferMethod = clip(b.prefer_method, 10) === 'phone' ? 'phone' : (email ? 'email' : (phone ? 'phone' : ''));
 
     // 素朴なスパム除け：URLだらけの本文とハニーポットは静かに捨てる
     const links = (message.match(/https?:\/\//g) || []).length;
@@ -62,14 +69,23 @@ export async function onRequest(context) {
     if (clip(b.hp, 10)) return json({ ok: true, skipped: true });
 
     await ensureTable(db);
-    await db.prepare(
-      "INSERT INTO salontown_inquiries (type,shop,name,contact,prefer,message,lang,src,ua,created_at)" +
-      " VALUES (?,?,?,?,?,?,?,?,?,?)"
+    // 二重送信（再試行や二度押し）は同じ受付番号を返す：同じ端末IDと本文が10分以内にあれば新規保存しない
+    const cid = clip(b.client_id, 40);
+    if (cid) {
+      const dup = await db.prepare("SELECT id FROM salontown_inquiries WHERE client_id=? AND message=? AND created_at>? ORDER BY id DESC LIMIT 1")
+        .bind(cid, message, Date.now() - 10 * 60 * 1000).first();
+      if (dup) return json({ ok: true, id: dup.id, duplicate: true });
+    }
+    const r = await db.prepare(
+      "INSERT INTO salontown_inquiries (type,shop,name,contact,prefer,message,lang,src,ua,created_at,email,phone,prefer_method,dept,kana,pref,pref_time,hear,client_id)" +
+      " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
     ).bind(
       clip(b.type, 16), clip(b.shop, 80), name, contact, clip(b.prefer, 120), message,
-      clip(b.lang, 5) || 'ja', clip(b.src, 60), clip(request.headers.get('user-agent'), 200), Date.now()
+      clip(b.lang, 5) || 'ja', clip(b.src, 60), clip(request.headers.get('user-agent'), 200), Date.now(),
+      email, phone, preferMethod, clip(b.dept, 60), clip(b.kana, 60), clip(b.pref, 20), clip(b.time, 30), clip(b.hear, 40), cid
     ).run();
-    return json({ ok: true });
+    const id = r && r.meta && r.meta.last_row_id;
+    return json({ ok: true, id: id || null });
   }
 
   if (request.method === 'GET') {
@@ -79,7 +95,7 @@ export async function onRequest(context) {
     const url = new URL(request.url);
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '100', 10) || 100, 500);
     const r = await db.prepare(
-      "SELECT id,type,shop,name,contact,prefer,message,lang,src,created_at,handled" +
+      "SELECT id,type,shop,name,contact,prefer,message,lang,src,created_at,handled,email,phone,prefer_method,dept,kana,pref,pref_time,hear" +
       " FROM salontown_inquiries ORDER BY created_at DESC LIMIT ?"
     ).bind(limit).all();
     return json({ entries: r.results || [] });

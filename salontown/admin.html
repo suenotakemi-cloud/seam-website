@@ -70,7 +70,7 @@
   .who{font-weight:700;font-size:1.05rem;margin-top:2px}.who span{font-weight:500;color:var(--ink-2);margin-left:8px}
   .contact{font-size:.95rem;margin-top:2px}.contact b{font-weight:600}
   .body{color:var(--ink-2);font-size:.95rem;margin-top:8px;white-space:pre-wrap;line-height:1.7}
-  .act{display:flex;flex-direction:column;gap:8px;align-items:flex-end}.act button{white-space:nowrap}
+  .act{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:150px}.act button,.act a{white-space:nowrap;text-align:center;text-decoration:none}
   details{grid-column:1/-1;font-size:.9rem}summary{cursor:pointer;color:var(--blue);font-weight:500}
   .tr{margin-top:8px;display:grid;gap:6px}.tr div{padding:8px 12px;border-radius:12px;background:var(--paper);max-width:80%}
   .tr div.agent{justify-self:end;background:#E8F1FF}.tr small{display:block;color:var(--ink-3);font-size:.72rem;margin-bottom:2px}
@@ -187,6 +187,18 @@
     html+=card('国・地域','訪問回数',table([['国'],['訪問',1]],c.map(function(x){return '<tr><td>'+esc(x.country||'不明')+'</td><td class="n">'+n(x.sessions)+'</td></tr>';})));
     document.getElementById('p-source').innerHTML=html;
   }
+  var TYPEJ={salon:'サロン',dealer:'ディーラー',maker:'メーカー',media:'取材',partner:'協業',other:''};
+  function mailto(x,email){
+    var no=x.source==='form'&&x.id?'ST-'+String(x.id).padStart(5,'0'):'';
+    var who=(x.company?x.company+' ':'')+(x.name?x.name+' 様':'ご担当者様');
+    var sub='【株式会社サロンタウン】お問い合わせありがとうございます'+(no?'（受付番号 '+no+'）':'');
+    var body=who+'\n\nこの度は株式会社サロンタウンへお問い合わせいただき、誠にありがとうございます。\n'+(x.source==='ai'?'AI受付にてお話しいただいた件について、':'お問い合わせフォームよりいただいた件について、')+'担当よりご連絡いたします。\n\n'
+      +'（ここに回答を書く）\n\n'
+      +'ご不明な点がございましたら、このメールにご返信ください。\n引き続きよろしくお願いいたします。\n\n'
+      +'株式会社サロンタウン\n担当：（担当者名）\nhttps://seam.site/salontown/\n\n'
+      +'----- いただいた内容 -----\n'+(x.at?'日時：'+fmt(x.at)+'\n':'')+(x.type?'種類：'+(TYPEJ[x.type]||x.type)+'\n':'')+(x.message||'');
+    return 'mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body);
+  }
   function renderInbox(){
     var list=document.getElementById('list'),im=document.getElementById('imsg');
     var rows=inbox.filter(function(x){return ifilter==='all'||(ifilter==='open'?!x.handled:x.source===ifilter);});
@@ -198,9 +210,18 @@
       var idx=inbox.indexOf(x);
       var who=esc(x.company||'')+(x.name?' <span>'+esc(x.name)+'</span>':'');if(!x.company&&!x.name)who='（名前なし）';
       var meta='<span class="src '+x.source+'">'+(x.source==='ai'?'AI受付':'フォーム')+'</span><span>'+fmt(x.at)+'</span>'+(x.type?'<span>'+esc(TYPE[x.type]||x.type)+'</span>':'')+(x.duration_secs?'<span>'+Math.round(x.duration_secs/60*10)/10+'分</span>':'')+(x.topic?'<span>'+esc(x.topic)+'</span>':'')+(x.lang==='en'?'<span>英語</span>':'');
-      var contact=(x.contact?'<div class="contact"><b>連絡先</b> '+esc(x.contact)+'</div>':'')+(x.prefer?'<div class="contact"><b>希望</b> '+esc(x.prefer)+'</div>':'');
+      var email=x.email||(/@/.test(x.contact||'')?x.contact:''),phone=x.phone||(!/@/.test(x.contact||'')?x.contact:'');
+      var pm=x.prefer_method||(x.prefer&&/電話|phone/i.test(x.prefer)?'phone':(email?'email':''));
+      var contact=(email?'<div class="contact"><b>メール</b> '+esc(email)+(pm==='email'?' <span class="tag form">希望</span>':'')+'</div>':'')
+        +(phone?'<div class="contact"><b>電話</b> '+esc(phone)+(pm==='phone'?' <span class="tag form">希望</span>':'')+'</div>':'')
+        +(x.prefer||x.pref_time?'<div class="contact"><b>希望</b> '+esc(x.prefer||'')+(x.pref_time&&(x.prefer||'').indexOf(x.pref_time)<0?' '+esc(x.pref_time):'')+'</div>':'')
+        +(x.dept||x.pref?'<div class="contact"><b>所属</b> '+esc([x.dept,x.pref].filter(Boolean).join(' / '))+'</div>':'')
+        +(x.hear?'<div class="contact"><b>きっかけ</b> '+esc(x.hear)+'</div>':'');
+      var reply='';
+      if(email)reply+='<a class="btn sm'+(pm==='phone'?' ghost':'')+'" href="'+mailto(x,email)+'">メールで返信</a>';
+      if(phone)reply+='<a class="btn sm'+(pm!=='phone'?' ghost':'')+'" href="tel:'+esc(phone.replace(/[^0-9+]/g,''))+'">電話をかける</a>';
       var tr=x.source==='ai'?'<details data-i="'+idx+'"><summary>会話の全文を見る</summary><div class="tr" id="tr'+idx+'">読み込み中…</div></details>':'';
-      return '<div class="icard'+(x.handled?' done':'')+'"><div><div class="top">'+meta+'</div><div class="who">'+who+'</div>'+contact+'<div class="body">'+esc(x.message||'')+'</div></div><div class="act"><button class="btn'+(x.handled?' ghost':'')+'" data-i="'+idx+'" type="button">'+(x.handled?'未対応に戻す':'対応済みにする')+'</button></div>'+tr+'</div>';
+      return '<div class="icard'+(x.handled?' done':'')+'"><div><div class="top">'+meta+'</div><div class="who">'+who+'</div>'+contact+'<div class="body">'+esc(x.message||'')+'</div></div><div class="act">'+reply+'<button class="btn sm'+(x.handled?' ghost':'')+'" data-i="'+idx+'" type="button">'+(x.handled?'未対応に戻す':'対応済みにする')+'</button></div>'+tr+'</div>';
     }).join('');
   }
   function api(url){return fetch(url,{headers:{'x-seam-key':key}}).then(function(r){return r.json().catch(function(){return {};}).then(function(j){return {ok:r.ok,status:r.status,j:j};});});}
