@@ -148,6 +148,12 @@
 - 分類 → 形の対応は `pim/photo-guide.js` の `CATS`（分類名は CSV のまま。無い分類は商品名から推定）。スマホのカメラ画面はその形の「n枚目: …」と「まず読ませるもの」を出し、「📖 ガイド」で該当ページが開く。手で形を変えることもできる。
 - バーコードを読んだ商品画面には **「取り込んだデータ（全項目）」** が出る（取り込んだ CSV の行を列順のまま。ディーラーの CSV の形が取り込みの基準）。
 
+### G3. 撮影の見本（お手本写真を透かして重ねる）
+- 商品が多くて分類ごとのガイドでは足りないとき用。**先に撮った 1 枚を「見本」にすると、同じ種類（形）・同じ枚目を撮るとき、カメラ画面にその写真が薄く重なって出る**ので、次の商品を同じ位置・同じ大きさ・同じ角度に合わせて撮れる。
+- 登録: スマホの商品画面で写真をタップ → **「📌 この写真を見本にする」** → 「このブランドの見本」か「この種類すべての見本」。ブランドの見本が種類の見本より優先。
+- カメラ画面の **「見本: 薄 / 濃 / OFF」** で濃さを切り替え（端末ごとに記憶）。見本は「登録済みの写真（JAN＋枚目）」を指すだけなので、ディーラー内の全員のスマホに同じ見本が出る。設定 → 「撮影の見本」で一覧・削除。
+- API: `GET /api/pim/refs` / `POST {action:'set', kind, slot, jan, src_slot, scope}` / `POST {action:'delete', id}`（表 `pim_refs`）。
+
 ### H2. メーカーのデータ（空欄だけ埋める）— 全国のディーラー共通の「ベースを守る」取り込み
 - 考え方: **ディーラーの商品データ（菊池なら スマイル の CSV）がベース**。メーカーから届く商品データは形がバラバラなので、それでベースを壊さない。
 - 取り込み画面の「列を合わせる」で **メーカーのデータ（空欄だけ埋める）** を選ぶと:
@@ -279,6 +285,7 @@
 | PUT | `/api/pim/products` | 商品1件の登録・更新（JSON）。`expected_updated_at` を付けると楽観ロック（他の人が先に更新していれば 409）。`insert_only:1` で「無いときだけ登録」 |
 | DELETE | `/api/pim/products?jan=…` | 削除（画像も） |
 | POST | `/api/pim/import` | 取り込み（`action: check{jans, keys} / begin / commit / finish / rollback{import_id}`）。commit のたびに取り込み前の状態を残すので rollback で戻せる。`_mode:'fill'`（＋`fill_new`）は空欄だけ埋める（返り値 `filled / unchanged / unknown / unknown_jans`） |
+| GET/POST | `/api/pim/refs` | 撮影の見本（`action: set{kind,slot,jan,src_slot,scope} / delete{id}`） |
 | GET | `/api/pim/fetch?url=…` | 画像 URL の取り寄せ（CSV の「画像」列から写真を登録するとき。https の画像のみ・12MB まで・連携キー不可） |
 | GET/POST | `/api/pim/issues` | 注意の一覧 / 解決 |
 | GET/POST/DELETE | `/api/pim/images?jan=…&slot=…` | 画像の一覧 / 登録(multipart, webp。`slot=auto` で空き番号をサーバが確定。`quality` に自動チェック結果) / 削除。JSON で `{jan, action:'main', slot}` / `{jan, action:'reorder', order:[…]}` は並べ替え |

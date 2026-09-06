@@ -123,6 +123,9 @@
   .shooter canvas.prev{display:none;background:#fff}
   .shooter.preview canvas.prev{display:block}
   .shooter.preview video{display:none}
+  .shooter img.ref{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45;pointer-events:none}
+  .shooter .refl{position:absolute;left:8px;bottom:8px;font-size:11px;background:rgba(0,0,0,.55);padding:3px 10px;border-radius:999px;color:#fff;max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .shooter.preview img.ref,.shooter.preview .refl{display:none}
   .shooter .guide{position:absolute;inset:0;pointer-events:none}
   .shooter .guide svg{width:100%;height:100%;display:block}
   .shooter.preview .guide{display:none}
@@ -352,8 +355,10 @@
   <div class="stage">
     <div class="sq" id="shSq">
       <video id="shVideo" playsinline muted autoplay></video>
+      <img class="ref" id="shRef" alt="" hidden>
       <canvas class="prev" id="shPrev"></canvas>
       <div class="guide" id="shGuide"></div>
+      <div class="refl" id="shRefL" hidden></div>
       <div class="lvl" id="shLvl">水平器: 端末を立ててください</div>
       <div class="qw" id="shQ"></div>
       <div class="cd" id="shCd"><span id="shCdT"></span></div>
@@ -367,6 +372,7 @@
       <button class="chip" data-shape="jar">ジャー・缶</button>
       <button class="chip" data-shape="tube">チューブ・袋</button>
       <button class="chip" data-shape="none">枠のみ</button>
+      <button class="chip" id="shRefBtn" hidden>見本: 薄</button>
       <button class="chip on" id="shWhite">背景を白に: 標準</button>
       <button class="chip" id="shBurst">連写: OFF</button>
       <button class="chip" id="shVoice" hidden>🎤 音声: OFF</button>
@@ -444,6 +450,10 @@
       <div class="field"><label>新しいパスワード（8文字以上）</label><input type="password" id="pwNew" autocomplete="new-password"></div>
       <div class="field"><label>新しいパスワード（確認）</label><input type="password" id="pwNew2" autocomplete="new-password"></div>
       <button class="btn" id="btnPw">パスワードを変更</button>
+    </details>
+    <details style="margin-bottom:12px" id="refDet"><summary style="font-size:13px;cursor:pointer">撮影の見本（お手本写真）</summary>
+      <p style="margin-top:8px">商品の写真をタップ →「📌 この写真を見本にする」で登録。同じ種類・同じ枚目を撮るとき、カメラ画面に薄く重なって出ます（全員のスマホで共通）。</p>
+      <div id="refList" class="small">まだありません</div>
     </details>
     <details style="margin-bottom:12px"><summary style="font-size:13px;cursor:pointer">データを出力する（CSV をこの端末に保存）</summary>
       <p style="margin-top:8px">PC の取り込み画面と同じものを、スマホからも落とせます。iPhone は「ファイル」に保存、または共有から送れます。</p>
@@ -527,7 +537,7 @@
       todayCount(0); recent(null); loadQueue().catch(function () { /* */ });
       var q = new URLSearchParams(location.search).get('jan');
       if (q) lookup(q); else show('scr-scan');
-      updateOutbox(); flushOutbox(); showInstall();
+      updateOutbox(); flushOutbox(); showInstall(); loadRefs(true);
     }).catch(handleErr);
   }
   // ── ホーム画面に追加（PWA）──
@@ -620,7 +630,7 @@
     var a = C.Auth.account();
     $('setAcct').textContent = a ? 'アカウント: ' + a.name + '（ID: ' + a.login_id + '）' : '';
     $('setUser').value = C.Auth.user(); $('setUser').readOnly = ST.required; $('setErr').textContent = ''; $('pwCur').value = $('pwNew').value = $('pwNew2').value = '';
-    $('settings').hidden = false; stopScan();
+    $('settings').hidden = false; stopScan(); renderRefList();
   });
   $('btnSetSave').addEventListener('click', function () {
     var u = $('setUser').value.trim(); if (!u) { $('setErr').textContent = '担当者名を入れてください'; return; }
@@ -918,6 +928,59 @@
     $('reviewBig').onclick = function () { $('viewerImg').src = cur.url; $('viewer').classList.add('open'); };
   }
   // アクションシート
+  // ── 撮影の見本（お手本写真）──────────────────────────────────────────
+  //   先に撮った 1 枚を、同じ種類（形）・同じ枚目の商品を撮るときにカメラ画面へ薄く重ねる（位置・大きさ・角度を揃える）。
+  //   見本は「登録済みの写真（JAN＋枚目）」を指すだけで、サーバに置くのでディーラー内の全員に同じ見本が出る
+  var REFS = { list: [], at: 0, opacity: 0.45 };
+  try { REFS.opacity = parseFloat(localStorage.getItem('seam_pim_ref_op') || '0.45') || 0.45; } catch (e) { /* */ }
+  function loadRefs(force) {
+    if (!force && REFS.at && Date.now() - REFS.at < 60000) return Promise.resolve(REFS.list);
+    return api('refs').then(function (j) { if (j.ok) { REFS.list = j.refs || []; REFS.at = Date.now(); } return REFS.list; }).catch(function () { return REFS.list; });
+  }
+  function refFor(kind, slot, brand) { // ブランド指定の見本 → 種類全体の見本 の順
+    var hit = null;
+    if (brand) REFS.list.some(function (r) { if (r.kind === kind && r.slot === slot && r.url && r.scope === 'brand:' + brand) { hit = r; return true; } return false; });
+    if (!hit) REFS.list.some(function (r) { if (r.kind === kind && r.slot === slot && r.url && r.scope === '') { hit = r; return true; } return false; });
+    return hit;
+  }
+  function renderRef() {
+    var img = $('shRef'), lab = $('shRefL'), btn = $('shRefBtn');
+    var p = state.product, r = refFor(SH.kind, SH.slot, p ? p.brand : '');
+    if (!r) { img.hidden = true; lab.hidden = true; btn.hidden = true; return; }
+    btn.hidden = false;
+    if (REFS.opacity <= 0.01) { img.hidden = true; lab.hidden = true; btn.textContent = '見本: OFF'; btn.classList.remove('on'); return; }
+    img.src = r.url; img.style.opacity = String(REFS.opacity); img.hidden = false;
+    lab.textContent = '見本: ' + (r.name || r.jan) + (r.created_by ? '（' + r.created_by + '）' : '') + (r.scope ? ' ・このブランド' : ''); lab.hidden = false;
+    btn.textContent = '見本: ' + (REFS.opacity >= 0.6 ? '濃' : '薄'); btn.classList.add('on');
+  }
+  $('shRefBtn').addEventListener('click', function () { // 薄 → 濃 → OFF → 薄
+    REFS.opacity = REFS.opacity <= 0.01 ? 0.45 : (REFS.opacity < 0.6 ? 0.7 : 0);
+    try { localStorage.setItem('seam_pim_ref_op', String(REFS.opacity)); } catch (e) { /* */ }
+    renderRef();
+  });
+  function setRefSheet(slot, im) {
+    var p = state.product; if (!p) return;
+    var kind = window.PhotoGuide ? PhotoGuide.guessKind(p) : 'other', k = window.PhotoGuide ? PhotoGuide.byKey(kind) : null;
+    var save = function (scope) {
+      api('refs', { method: 'POST', body: { action: 'set', kind: kind, slot: slot, jan: p.jan, src_slot: slot, scope: scope } }).then(function (j) {
+        if (!j.ok) { toast(j.message || '登録できませんでした', true); return; }
+        REFS.list = j.refs || []; REFS.at = Date.now();
+        toast('見本にしました。同じ' + (scope ? 'ブランド' : '種類') + 'の ' + slot + '枚目を撮るとき、カメラに薄く重なります');
+      }).catch(handleErr);
+    };
+    var btns = [];
+    if (p.brand) btns.push({ label: '📌 「' + p.brand + '」の ' + slot + '枚目の見本にする', cls: 'solid', fn: function () { save('brand:' + p.brand); } });
+    btns.push({ label: '📌 ' + (k ? k.icon + ' ' + k.label : 'この種類') + ' の ' + slot + '枚目すべての見本にする', cls: p.brand ? '' : 'solid', fn: function () { save(''); } });
+    sheet('この写真を見本にする（次からカメラに薄く重なります）', btns);
+  }
+  function renderRefList() {
+    var box = $('refList'); if (!box) return;
+    loadRefs(true).then(function (list) {
+      if (!list.length) { box.textContent = 'まだありません'; return; }
+      box.innerHTML = list.map(function (r) { var k = window.PhotoGuide ? PhotoGuide.byKey(r.kind) : null; return '<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)">' + (r.url ? '<img src="' + esc(r.url) + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--line)">' : '<span style="width:44px;height:44px"></span>') + '<div style="flex:1;min-width:0"><b>' + esc((k ? k.icon + ' ' + k.label : r.kind) + ' ' + r.slot + '枚目') + '</b><br>' + esc((r.scope ? r.scope.replace(/^brand:/, 'ブランド: ') + ' ／ ' : '') + (r.name || r.jan)) + '</div><button class="hbtn" data-refdel="' + r.id + '">削除</button></div>'; }).join('');
+      Array.prototype.forEach.call(box.querySelectorAll('[data-refdel]'), function (b) { b.addEventListener('click', function () { api('refs', { method: 'POST', body: { action: 'delete', id: parseInt(b.getAttribute('data-refdel'), 10) } }).then(function (j) { if (j.ok) { REFS.list = j.refs || []; renderRefList(); } }).catch(handleErr); }); });
+    });
+  }
   // 枠の番号 → 種類別の呼び名（「1枚目の写真: 箱の正面」）
   function slotLabel(slot) { var k = window.PhotoGuide ? PhotoGuide.byKey(PhotoGuide.guessKind(state.product)) : null; return slot + '枚目の写真' + (k && k.slots[slot - 1] ? ': ' + k.slots[slot - 1][0] : ''); }
   function sheet(title, buttons) {
@@ -950,6 +1013,7 @@
     if (pos > 0) btns.push({ label: '← 前の写真と入れ替える', fn: function () { var o = slots.slice(); o[pos] = slots[pos - 1]; o[pos - 1] = slot; reorderImages({ action: 'reorder', order: o }); } });
     if (pos >= 0 && pos < slots.length - 1) btns.push({ label: '→ 後ろの写真と入れ替える', fn: function () { var o = slots.slice(); o[pos] = slots[pos + 1]; o[pos + 1] = slot; reorderImages({ action: 'reorder', order: o }); } });
     sheet(slotLabel(slot) + (im.quality_warn ? '（自動チェック: ' + im.quality_warn + '）' : ''), btns.concat([
+      { label: '📌 この写真を見本にする（次から同じ位置で撮れる）', fn: function () { setRefSheet(slot, im); } },
       { label: '📷 撮り直す（ガイド付きカメラ）', fn: function () { openShooter(slot); } },
       { label: '🖼 差し替える（写真・ファイル）', fn: function () { state.pendingSlot = slot; $('fileIn').value = ''; $('fileIn').click(); } },
       { label: '🗑 削除する', cls: 'danger', fn: function () { removeImage(slot); } },
@@ -1118,6 +1182,7 @@
     $('shTitle').textContent = g.title; $('shSub').textContent = g.sub;
     $('shGuide').innerHTML = guideSvg(SH.shape, SH.slot);
     if ($('shKind')) $('shKind').value = SH.kind;
+    renderRef();
     $('shHint').textContent = (SH.shape === 'box' && SH.slot === 1) ? 'ラベル面を横長の枠に合わせる（色名とバーコードが入る）→ シャッター' : '点線の枠に商品を収め、底を下の線に合わせる → シャッター';
     $('shGuideLink').href = './photo-guide.html#k-' + SH.kind;
     Array.prototype.forEach.call($('shChips').querySelectorAll('[data-shape]'), function (b) { b.classList.toggle('on', b.getAttribute('data-shape') === SH.shape); });
@@ -1135,6 +1200,7 @@
     if (pj !== SH.kindJan) { SH.kindJan = pj; SH.kind = window.PhotoGuide ? PhotoGuide.guessKind(state.product) : 'pump'; SH.shape = KIND_SHAPE[SH.kind] || 'none'; SH.shapeManual = false; }
     $('shooter').classList.remove('preview'); $('shooter').classList.add('open');
     renderGuide();
+    loadRefs(false).then(function () { if ($('shooter').classList.contains('open')) renderRef(); });
     startShooterCam();
     startTilt();
     if (SH.voice) startVoice();

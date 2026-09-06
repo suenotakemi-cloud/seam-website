@@ -161,6 +161,11 @@ CREATE TABLE IF NOT EXISTS pim_staff (
   UNIQUE (account_id, name)
 );
 -- ▼ 表記の辞書（メーカー・ブランド・カテゴリの揃え。取り込み・保存時に src → dst に置き換える）
+-- 撮影の見本（お手本写真）: 同じ種類（形）・同じ枚目を撮るとき、この写真をカメラ画面に薄く重ねる。scope '' = 種類全体 / 'brand:<ブランド>' = そのブランドだけ
+CREATE TABLE IF NOT EXISTS pim_refs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, kind TEXT NOT NULL, slot INTEGER NOT NULL, scope TEXT NOT NULL DEFAULT '',
+  jan TEXT NOT NULL, src_slot INTEGER NOT NULL, note TEXT, created_at TEXT NOT NULL, created_by TEXT, UNIQUE (account_id, kind, slot, scope)
+);
 CREATE TABLE IF NOT EXISTS pim_dict (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id     INTEGER NOT NULL,
