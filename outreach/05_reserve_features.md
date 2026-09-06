@@ -1,9 +1,9 @@
-# 05 「サロンタウンリザーブ」機能棚卸し（付録・リポジトリ調査 2026-09-05）
+# 05 「Salon Town Booking」機能棚卸し（付録・リポジトリ調査 2026-09-05）
 
 調査対象: `/home/user/seam-website/booking/`（`square/`, `line/` 含む）、`functions/`、`salontown/`、`正本はどこか.md`、`db/SETUP_DASHBOARD.md`、`README.md`、`.gitignore`、git履歴。
 
 前提・注意（先に読むこと）
-- 本リポジトリ内に **「サロンタウンリザーブ」という製品名は登場しない**（grep 一致は商品名「カラープリザーブ」のみ）。本書は booking/ 配下＝SEAM 銀座で動いている予約〜会計〜スタッフ系システムを「リザーブ」候補として棚卸ししたもの。**製品名との対応は要確認**。
+- 本リポジトリ内に **製品名（旧称サロンタウンリザーブ、現在は Salon Town Booking）は登場しない**（grep 一致は商品名「カラープリザーブ」のみ）。本書は booking/ 配下＝SEAM 銀座で動いている予約〜会計〜スタッフ系システムを「Booking」候補として棚卸ししたもの。**製品名との対応は要確認**。
 - サーバー側（Cloudflare Worker `seam-square-pay`、`booking/square/worker.js`、料金計算の正本 `saas/checkout.js`）は **このリポジトリに含まれていない**（`.gitignore` で `booking/square/*.js` を除外、`正本はどこか.md` に「作業リポジトリ側が正本」と明記）。サーバー挙動は画面側コードとドキュメントの記述からの読み取りであり、**Worker の実装そのものは未検証**。
 - 画面は全て `noindex,nofollow`。公開サイト（hairsalon.html 等）の予約CTAは現在も HotPepper Beauty へリンクしており、`/booking/` への公開導線は本リポジトリ内では確認できず（**要確認**）。
 
