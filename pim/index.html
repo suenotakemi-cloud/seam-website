@@ -302,6 +302,10 @@
         <div class="grid" id="grid"></div>
         <p class="grid-note" id="gridNote">枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）</p>
         <p class="grid-note" id="kindNote" style="margin-top:4px"></p>
+        <div id="refAsk" hidden style="margin-top:8px;border:1px solid #E7D5C6;background:#FFF8EF;border-radius:12px;padding:10px 12px;font-size:13px">
+          <div style="font-weight:700;margin-bottom:6px">📌 この写真を「見本」にしますか？<span class="small" style="font-weight:400">（次から同じ種類を撮るとき、カメラに薄く重なって同じ位置で撮れます）</span></div>
+          <div class="row" style="gap:6px"><button class="hbtn" id="refAskBrand" style="flex:1"></button><button class="hbtn" id="refAskKind" style="flex:1"></button><button class="hbtn" id="refAskNo" style="flex:0 0 auto">今はしない</button></div>
+        </div>
       </div>
 
       <!-- 取り込んだデータ（ディーラーの CSV の全項目）。この CSV の形が取り込みの基準なので、バーコードを読んだときに全部見える -->
@@ -859,7 +863,7 @@
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' +
       (p.category ? '<span>' + esc(p.category) + '</span>' : '') +
       (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品コード <b>' + esc(p.sku) + '</b></span>' : '<span style="color:var(--ng)">商品コード 未入力（「商品情報を編集」で入れてください）</span>');
-    $('editBox').classList.remove('open');
+    $('editBox').classList.remove('open'); hideRefAsk();
     renderGrid();
     renderRaw(p);
     recent(p);
@@ -1040,19 +1044,23 @@
     sheet('この写真を見本にする（次からカメラに薄く重なります）', btns);
   }
   // 見本がまだ無い種類・枚目の写真を保存したら、1 回だけ「見本にしますか？」と聞く（本当の基準は形のガイドでなく、サロンで撮った 1 枚目）
-  var ASKED = {};
+  var ASKED = {}, refAskT = null;
+  function hideRefAsk() { $('refAsk').hidden = true; clearTimeout(refAskT); refAskT = null; }
   function maybeAskRef(jan, slot) {
     var p = state.product; if (!p || p.jan !== jan || !window.PhotoGuide) return;
-    if (SH.burst && $('shooter').classList.contains('open')) return; // 連写中は止めない
+    if (SH.burst && $('shooter').classList.contains('open')) return; // 連写中は出さない
     var kind = PhotoGuide.guessKind(p), key = kind + ':' + slot + ':' + (p.brand || '');
     if (ASKED[key] || refFor(kind, slot, p.brand)) return;
     ASKED[key] = 1;
     var k = PhotoGuide.byKey(kind), im = (p.images || []).filter(function (i) { return i.slot === slot; })[0]; if (!im) return;
-    var btns = [];
-    if (p.brand) btns.push({ label: '📌 「' + p.brand + '」の ' + slot + '枚目の見本にする', cls: 'solid', fn: function () { setRefSheet(slot, im, 'brand:' + p.brand); } });
-    btns.push({ label: '📌 ' + (k ? k.icon + ' ' + k.label : 'この種類') + ' の ' + slot + '枚目すべての見本にする', cls: p.brand ? '' : 'solid', fn: function () { setRefSheet(slot, im, ''); } });
-    btns.push({ label: '今はしない', fn: function () { /* */ } });
-    setTimeout(function () { if ($('sheet').classList.contains('open')) return; sheet('この写真を「見本」にしますか？（次から同じ種類の商品を撮るとき、カメラに薄く重なって同じ位置で撮れます）', btns); }, 600);
+    // 画面の邪魔をしない帯（シートではなく）。15 秒で自然に消える
+    var box = $('refAsk'); box.hidden = false;
+    $('refAskBrand').hidden = !p.brand; $('refAskBrand').textContent = p.brand ? '「' + p.brand + '」の ' + slot + '枚目の見本にする' : '';
+    $('refAskKind').textContent = (k ? k.icon + ' ' + k.label : 'この種類') + ' の ' + slot + '枚目すべての見本にする';
+    $('refAskBrand').onclick = function () { hideRefAsk(); setRefSheet(slot, im, 'brand:' + p.brand); };
+    $('refAskKind').onclick = function () { hideRefAsk(); setRefSheet(slot, im, ''); };
+    $('refAskNo').onclick = hideRefAsk;
+    clearTimeout(refAskT); refAskT = setTimeout(hideRefAsk, 15000);
   }
   // 見本との位置合わせ（生映像）: 白背景の前提で「商品の範囲（白でない部分の枠）」を見本と映像で比べ、ずれと大きさの差を言葉にする
   //   端末の中だけで計算（64px に縮小）。見本の範囲は見本の画像を読んで 1 回だけ計算
@@ -1061,9 +1069,9 @@
     if (!AL.cv) AL.cv = document.createElement('canvas');
     var c = AL.cv; c.width = w; c.height = h; var x = c.getContext('2d', { willReadFrequently: true });
     try { x.drawImage(src, 0, 0, w, h); } catch (e) { return null; }
-    var d = x.getImageData(0, 0, w, h).data, minx = w, miny = h, maxx = -1, maxy = -1, n = 0;
-    // 紙の白 = 縁の明るい画素の平均
-    var rs = 0, gs = 0, bs = 0, cnt = 0;
+    var d; try { d = x.getImageData(0, 0, w, h).data; } catch (e) { return null; }
+    var minx = w, miny = h, maxx = -1, maxy = -1, n = 0;
+    var rs = 0, gs = 0, bs = 0, cnt = 0; // 紙の白 = 縁の明るい画素の平均
     for (var i = 0; i < w; i++) { [i, (h - 1) * w + i, i * w, i * w + w - 1].forEach(function (k) { if (k < w * h) { var j = k * 4; if ((d[j] + d[j + 1] + d[j + 2]) / 3 > 140) { rs += d[j]; gs += d[j + 1]; bs += d[j + 2]; cnt++; } } }); }
     if (cnt < w) return null; // 縁が暗い = 白背景ではない
     var pr = rs / cnt, pg = gs / cnt, pb = bs / cnt;
@@ -1081,7 +1089,6 @@
       if (!$('shooter').classList.contains('open') || $('shooter').classList.contains('preview')) return;
       var v = $('shVideo'); if (!AL.refBox || !v.videoWidth) return;
       var side = Math.min(v.videoWidth, v.videoHeight), sx = (v.videoWidth - side) / 2, sy = (v.videoHeight - side) / 2;
-      if (!AL.cv) AL.cv = document.createElement('canvas');
       var c = document.createElement('canvas'); c.width = c.height = 64; try { c.getContext('2d').drawImage(v, sx, sy, side, side, 0, 0, 64, 64); } catch (e) { return; }
       var b = bboxOf(c, 64, 64), rb = AL.refBox; el.hidden = false;
       if (!b) { el.textContent = '見本と比べ中…（白い背景に置いてください）'; el.classList.remove('ok'); return; }
