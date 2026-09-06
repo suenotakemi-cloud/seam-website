@@ -956,9 +956,9 @@
   $('shRefBtn').addEventListener('click', function () { // 薄 → 濃 → OFF → 薄
     REFS.opacity = REFS.opacity <= 0.01 ? 0.45 : (REFS.opacity < 0.6 ? 0.7 : 0);
     try { localStorage.setItem('seam_pim_ref_op', String(REFS.opacity)); } catch (e) { /* */ }
-    renderRef();
+    renderGuide();
   });
-  function setRefSheet(slot, im) {
+  function setRefSheet(slot, im, directScope) {
     var p = state.product; if (!p) return;
     var kind = window.PhotoGuide ? PhotoGuide.guessKind(p) : 'other', k = window.PhotoGuide ? PhotoGuide.byKey(kind) : null;
     var save = function (scope) {
@@ -968,10 +968,26 @@
         toast('見本にしました。同じ' + (scope ? 'ブランド' : '種類') + 'の ' + slot + '枚目を撮るとき、カメラに薄く重なります');
       }).catch(handleErr);
     };
+    if (directScope != null) { save(directScope); return; }
     var btns = [];
     if (p.brand) btns.push({ label: '📌 「' + p.brand + '」の ' + slot + '枚目の見本にする', cls: 'solid', fn: function () { save('brand:' + p.brand); } });
     btns.push({ label: '📌 ' + (k ? k.icon + ' ' + k.label : 'この種類') + ' の ' + slot + '枚目すべての見本にする', cls: p.brand ? '' : 'solid', fn: function () { save(''); } });
     sheet('この写真を見本にする（次からカメラに薄く重なります）', btns);
+  }
+  // 見本がまだ無い種類・枚目の写真を保存したら、1 回だけ「見本にしますか？」と聞く（本当の基準は形のガイドでなく、サロンで撮った 1 枚目）
+  var ASKED = {};
+  function maybeAskRef(jan, slot) {
+    var p = state.product; if (!p || p.jan !== jan || !window.PhotoGuide) return;
+    if (SH.burst && $('shooter').classList.contains('open')) return; // 連写中は止めない
+    var kind = PhotoGuide.guessKind(p), key = kind + ':' + slot + ':' + (p.brand || '');
+    if (ASKED[key] || refFor(kind, slot, p.brand)) return;
+    ASKED[key] = 1;
+    var k = PhotoGuide.byKey(kind), im = (p.images || []).filter(function (i) { return i.slot === slot; })[0]; if (!im) return;
+    var btns = [];
+    if (p.brand) btns.push({ label: '📌 「' + p.brand + '」の ' + slot + '枚目の見本にする', cls: 'solid', fn: function () { setRefSheet(slot, im, 'brand:' + p.brand); } });
+    btns.push({ label: '📌 ' + (k ? k.icon + ' ' + k.label : 'この種類') + ' の ' + slot + '枚目すべての見本にする', cls: p.brand ? '' : 'solid', fn: function () { setRefSheet(slot, im, ''); } });
+    btns.push({ label: '今はしない', fn: function () { /* */ } });
+    setTimeout(function () { if ($('sheet').classList.contains('open')) return; sheet('この写真を「見本」にしますか？（次から同じ種類の商品を撮るとき、カメラに薄く重なって同じ位置で撮れます）', btns); }, 600);
   }
   function renderRefList() {
     var box = $('refList'); if (!box) return;
@@ -1179,8 +1195,10 @@
   }
   function renderGuide() {
     var g = guideFor(SH.slot);
-    $('shTitle').textContent = g.title; $('shSub').textContent = g.sub;
-    $('shGuide').innerHTML = guideSvg(SH.shape, SH.slot);
+    var pr = state.product, rf = refFor(SH.kind, SH.slot, pr ? pr.brand : '');
+    var refOn = !!rf && REFS.opacity > 0.01;
+    $('shTitle').textContent = refOn ? SH.slot + '枚目: 見本に合わせる' : g.title; $('shSub').textContent = refOn ? '薄く見える見本の写真に、位置・大きさ・向きを重ねてシャッター（' + g.title.replace(/^\d枚目: /, '') + '）' : g.sub;
+    $('shGuide').innerHTML = guideSvg(refOn ? 'none' : SH.shape, SH.slot);
     if ($('shKind')) $('shKind').value = SH.kind;
     renderRef();
     $('shHint').textContent = (SH.shape === 'box' && SH.slot === 1) ? 'ラベル面を横長の枠に合わせる（色名とバーコードが入る）→ シャッター' : '点線の枠に商品を収め、底を下の線に合わせる → シャッター';
@@ -1200,7 +1218,7 @@
     if (pj !== SH.kindJan) { SH.kindJan = pj; SH.kind = window.PhotoGuide ? PhotoGuide.guessKind(state.product) : 'pump'; SH.shape = KIND_SHAPE[SH.kind] || 'none'; SH.shapeManual = false; }
     $('shooter').classList.remove('preview'); $('shooter').classList.add('open');
     renderGuide();
-    loadRefs(false).then(function () { if ($('shooter').classList.contains('open')) renderRef(); });
+    loadRefs(false).then(function () { if ($('shooter').classList.contains('open')) renderGuide(); });
     startShooterCam();
     startTilt();
     if (SH.voice) startVoice();
@@ -1350,6 +1368,7 @@
     renderGrid();
     recent(state.product);
     if (j.dup_of && j.dup_of.length) { var d = j.dup_of[0]; setTimeout(function () { toast('⚠ 同じ写真が ' + d.jan + '「' + (d.name || '').slice(0, 14) + '」にも登録されています（撮り間違い？）', true); }, 1600); }
+    maybeAskRef(jan, j.slot);
     if (j.images.length >= 5) toast('5枚そろいました' + (j.quality_warn ? '（' + j.quality_warn + ' の注意つき）' : '')); else toast(j.slot + '枚目を保存しました → 次は' + nextEmpty() + '枚目' + (j.quality_warn ? '（' + j.quality_warn + ' の注意つき）' : ''));
   }
 
