@@ -166,6 +166,7 @@ CREATE TABLE IF NOT EXISTS pim_refs (
   id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, kind TEXT NOT NULL, slot INTEGER NOT NULL, scope TEXT NOT NULL DEFAULT '',
   jan TEXT NOT NULL, src_slot INTEGER NOT NULL, note TEXT, created_at TEXT NOT NULL, created_by TEXT, UNIQUE (account_id, kind, slot, scope)
 );
+-- pim_staff.assign: 担当（ブランド／メーカー、カンマ区切り）。pim_products.ec_synced_at: EC が受け取り確認した日時（updated_at より古ければ未反映）
 CREATE TABLE IF NOT EXISTS pim_dict (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id     INTEGER NOT NULL,

@@ -240,7 +240,7 @@ export async function ensureSchema(env) {
     'ALTER TABLE pim_imports ADD COLUMN rolled_back_at TEXT', 'ALTER TABLE pim_imports ADD COLUMN rolled_back_by TEXT',
     'ALTER TABLE pim_accounts ADD COLUMN webhook_url TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_secret TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_last_at TEXT', 'ALTER TABLE pim_accounts ADD COLUMN webhook_last_status TEXT',
     'ALTER TABLE pim_accounts ADD COLUMN report_emails TEXT', 'ALTER TABLE pim_accounts ADD COLUMN report_enabled INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE pim_accounts ADD COLUMN inbox_key TEXT',
-    'ALTER TABLE pim_imports ADD COLUMN options TEXT', 'ALTER TABLE pim_images ADD COLUMN phash TEXT', 'ALTER TABLE pim_images ADD COLUMN has_thumb INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE pim_images ADD COLUMN ver TEXT']) {
+    'ALTER TABLE pim_imports ADD COLUMN options TEXT', 'ALTER TABLE pim_images ADD COLUMN phash TEXT', 'ALTER TABLE pim_images ADD COLUMN has_thumb INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE pim_images ADD COLUMN ver TEXT', 'ALTER TABLE pim_staff ADD COLUMN assign TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_synced_at TEXT']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)').run(); } catch (e) { /* */ }
@@ -292,6 +292,8 @@ export function sanitizeProduct(p) {
     name_key: nameKey(p.name),
   };
 }
+// 「公開できる商品」の条件（EC に出してよいもの）: 写真 1 枚以上・商品コードあり・価格あり・撮り直しの写真が無い
+export const READY_SQL = "(p.image_count>0 AND p.sku IS NOT NULL AND p.sku<>'' AND p.price_ex IS NOT NULL AND NOT EXISTS (SELECT 1 FROM pim_images r WHERE r.account_id=p.account_id AND r.jan=p.jan AND r.review='retake'))";
 export const PRODUCT_COLS = ['jan', 'jan_valid', 'name', 'price', 'tax_included', 'tax_rate', 'price_ex', 'price_in', 'retail_price', 'cost_price', 'amount', 'unit', 'maker', 'brand', 'category', 'description', 'sku', 'source', 'name_key'];
 
 // ── 商品名の「似ている判定」用キー（js/pim-normalize.js の nameKey と同じ規則。変えるときは両方）──

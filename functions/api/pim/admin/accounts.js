@@ -91,6 +91,14 @@ export async function onRequestPost(context) {
     const status = await notifyWebhook(context, a, 'test', ['0000000000000'], 'admin');
     return json({ ok: true, status, message: '送信しました → 相手の応答: ' + status });
   }
+  if (action === 'clone_settings') { // 初期設定パック: 別のディーラー（例: 菊池）の 表記の辞書 をコピー（無いものだけ足す）
+    const from = await env.DB.prepare('SELECT id, name FROM pim_accounts WHERE login_id=?').bind(String(b.from || '').trim().toLowerCase()).first();
+    if (!from) return json({ ok: false, reason: 'no_from', message: 'コピー元のアカウントがありません' }, 404);
+    const rows = await env.DB.prepare('SELECT kind, src, dst FROM pim_dict WHERE account_id=?').bind(from.id).all();
+    let n = 0;
+    for (const r of (rows.results || [])) { const q = await env.DB.prepare('INSERT OR IGNORE INTO pim_dict(account_id, kind, src, dst, created_at, created_by) VALUES(?,?,?,?,?,?)').bind(id, r.kind, r.src, r.dst, ts, 'ひな形: ' + from.name).run(); n += (q.meta && q.meta.changes) || 0; }
+    return json({ ok: true, copied: n, message: '「' + from.name + '」の表記の辞書 ' + n + ' 件をコピーしました（写真ガイド・分類対応表は全ディーラー共通で最初から使えます）' });
+  }
   if (action === 'rename') {
     const name = String(b.name == null ? a.name : b.name).trim().slice(0, 100) || a.name;
     await env.DB.prepare('UPDATE pim_accounts SET name=?, note=?, updated_at=? WHERE id=?').bind(name, String(b.note == null ? (a.note || '') : b.note).slice(0, 500), ts, id).run();

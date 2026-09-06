@@ -40,6 +40,9 @@ export async function onRequestGet({ request, env, data }) {
 
   const where = ['p.account_id=?'], binds = [acct];
   if (maker) { where.push('p.maker=?'); binds.push(maker); }
+  // 担当割り: brands=ブランド名をカンマ区切り（設定の担当者一覧で決めた「担当」）→ そのブランドだけ
+  const brands = (url.searchParams.get('brands') || '').split(',').map((x) => x.trim()).filter(Boolean).slice(0, 30);
+  if (brands.length) { where.push('(' + brands.map(() => 'p.brand=? OR p.maker=?').join(' OR ') + ')'); brands.forEach((x) => binds.push(x, x)); }
   // 他の人が 10 分以内に開いた商品は飛ばす（自分が開いたものは残す）
   where.push('(p.claimed_at IS NULL OR p.claimed_at < ? OR p.claimed_by = ?)'); binds.push(claimCutoff(), me);
   if (mode === 'noimg') where.push('p.image_count=0');

@@ -43,7 +43,7 @@ export async function onRequest(context) {
     if (ak && /^seam_[0-9a-f]{48}$/.test(ak)) {
       const a = await env.DB.prepare('SELECT * FROM pim_accounts WHERE api_key=?').bind(ak).first();
       if (!a || !a.active) return json({ ok: false, reason: 'bad_api_key', message: '連携キーが無効です（再発行されたか、アカウントが停止中）' }, 401);
-      if (request.method !== 'GET') return json({ ok: false, reason: 'readonly', message: '連携キーは読み取り専用です' }, 403);
+      if (request.method !== 'GET' && !path.endsWith('/api/pim/ack')) return json({ ok: false, reason: 'readonly', message: '連携キーは読み取り専用です' }, 403); // ack（EC の受け取り確認）だけは連携キーでも書ける
       account = a; context.data.readonly = true;
     }
   }

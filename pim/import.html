@@ -48,6 +48,15 @@
   .map .req label::after{content:" *";color:var(--ng)}
   .opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
   .opts label{display:block;font-size:12px;color:var(--char);margin-bottom:3px}
+  .srgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .srgrid .it{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .srgrid .im{position:relative;aspect-ratio:1/1;background:#fff}
+  .srgrid .im img{width:100%;height:100%;object-fit:cover;display:block}
+  .srgrid .im svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .srgrid .im .no{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;color:#b9b0a4;font-size:12px}
+  .srgrid .nm{font-size:11.5px;padding:6px 8px;line-height:1.35;height:52px;overflow:hidden}
+  .srgrid .ac{display:flex;gap:4px;padding:0 8px 8px}
+  .srgrid .it.rt{outline:2px solid var(--ng)}
   .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:12px 0}
   .kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
   .kpi .l{font-size:11px;color:var(--char)}
@@ -115,6 +124,7 @@
     <button data-tab="export">出力</button>
     <button data-tab="progress">進捗</button>
     <button data-tab="review">検品<span class="n" id="reviewN" hidden>0</span></button>
+    <button data-tab="series">並び確認</button>
     <button data-tab="settings">設定</button>
   </div>
 
@@ -221,6 +231,8 @@
         <select id="fMaker"><option value="">メーカー: すべて</option></select>
         <label class="muted"><input type="checkbox" id="fNoimg"> 写真なしだけ</label>
         <label class="muted"><input type="checkbox" id="fNosku"> 商品コードなしだけ</label>
+        <label class="muted"><input type="checkbox" id="fNotReady"> 公開できない商品だけ</label>
+        <label class="muted"><input type="checkbox" id="fEc"> EC 未反映だけ</label>
         <button class="btn sm" id="btnSearch">検索</button>
         <span class="muted" id="prodCount"></span>
       </div>
@@ -241,7 +253,7 @@
         </div>
         <p class="muted" style="margin:6px 0 0">選択した商品の 1 項目をまとめて置き換えます。税区分・税率を変えると税抜/税込を計算し直します。辞書があれば当たります。</p>
       </div>
-      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th></th><th>写真</th><th>商品コード</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="tbl" style="max-height:640px"><table id="prodTbl"><thead><tr><th></th><th>写真</th><th>商品コード</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>公開</th><th>EC</th><th>更新</th><th>担当</th><th></th></tr></thead><tbody></tbody></table></div>
       <div class="row" style="margin-top:10px"><button class="btn sm" id="btnPrev">← 前</button><button class="btn sm" id="btnNext">次 →</button></div>
     </div>
   </section>
@@ -280,6 +292,7 @@
       <div class="opts">
         <div><label>メーカーで絞る</label><select id="exMaker"><option value="">すべて</option></select></div>
         <div><label>写真</label><select id="exImg"><option value="">すべて</option><option value="only">写真ありだけ</option><option value="none">写真なしだけ（撮影リスト用）</option></select></div>
+        <div><label>公開前チェック</label><select id="exReady"><option value="">すべての商品</option><option value="1">公開できる商品だけ（写真あり・商品コードあり・価格あり・撮り直し無し）</option></select></div>
       </div>
       <div class="row" style="margin-top:12px">
         <button class="btn solid" id="btnExSource">取り込んだ CSV の形 ＋ 画像1〜5（EC 向け・商品コードで突き合わせ）</button>
@@ -316,6 +329,21 @@
     <div class="card"><h2>日別（直近14日）</h2><div class="tbl" style="max-height:300px"><table id="stDay"><thead><tr><th>日</th><th>写真</th><th>商品数</th></tr></thead><tbody></tbody></table></div></div>
     <div class="card"><h2>担当者別</h2><div class="tbl" style="max-height:300px"><table id="stUser"><thead><tr><th>担当者</th><th>今日</th><th>累計（写真）</th><th>商品数</th></tr></thead><tbody></tbody></table></div></div>
     <div class="card"><h2>メーカー別の残り</h2><div class="tbl" style="max-height:420px"><table id="stMaker"><thead><tr><th>メーカー</th><th>商品</th><th>写真あり</th><th>残り</th><th>進み</th></tr></thead><tbody></tbody></table></div></div>
+  </section>
+
+  <!-- ══════ 並び確認（シリーズ並べ）══════ -->
+  <section class="pane" id="pane-series">
+    <div class="card">
+      <h2>シリーズ並べ — 同じブランドの 1枚目を横に並べて、位置・大きさがそろっているか見る</h2>
+      <p class="muted">ずれているものは「撮り直しへ」で検品の撮り直し（理由: 位置ずれ）にします。スマホの撮影キュー（撮り直し）に出ます。</p>
+      <div class="row" style="margin-bottom:10px">
+        <select id="srBrand"><option value="">ブランドを選ぶ</option></select>
+        <select id="srSlot"><option value="1">1枚目（メイン）</option><option value="2">2枚目</option><option value="3">3枚目</option><option value="4">4枚目</option><option value="5">5枚目</option></select>
+        <label class="muted"><input type="checkbox" id="srGrid" checked> 目安の線（枠・底線）を重ねる</label>
+        <span class="muted" id="srCount"></span>
+      </div>
+      <div class="srgrid" id="srGridBox"></div>
+    </div>
   </section>
 
   <!-- ══════ 検品 ══════ -->
@@ -375,7 +403,7 @@
       <h2>担当者一覧（名前をタップして選ぶ・PIN で本人確認）</h2>
       <p class="muted">ここに担当者を登録すると、スマホ・PC では自由入力ではなく<b>一覧から名前を選ぶ</b>形になり、打ち間違いで進捗の担当者別が割れなくなります。PIN（4〜6 桁）を付けた人は選ぶときに PIN を求めます。登録がなければ今まで通り自由入力です。辞めた人は「停止」（過去の記録は残ります）。</p>
       <div class="row" style="margin-bottom:8px"><input id="stName" placeholder="名前（例: 田中）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px"><input id="stPin" placeholder="PIN（任意・4〜6桁）" inputmode="numeric" maxlength="6" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;width:150px"><button class="btn sm solid" id="btnStAdd">追加</button></div>
-      <div class="tbl" style="max-height:300px"><table id="stTbl"><thead><tr><th>名前</th><th>PIN</th><th>状態</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="tbl" style="max-height:300px"><table id="stTbl"><thead><tr><th>名前</th><th>PIN</th><th>担当（ブランド／メーカー）</th><th>状態</th><th></th></tr></thead><tbody></tbody></table></div>
     </div>
     <div class="card">
       <h2>表記の辞書（メーカー・ブランド・カテゴリを揃える）</h2>
@@ -387,7 +415,9 @@
         <input id="dcDst" placeholder="揃える表記（例: アリミノ）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:220px">
         <button class="btn sm solid" id="btnDcSet">登録</button>
         <button class="btn sm" id="btnDcApply">既存の商品に適用</button>
+        <button class="btn sm" id="btnDcSuggest">揺れを探す（自動提案）</button>
       </div>
+      <div id="dcSug" hidden style="margin-bottom:8px"></div>
       <details style="margin-bottom:8px"><summary>まとめて貼り付ける（1行に「種類,届く表記,揃える表記」。種類は maker / brand / category）</summary>
         <textarea id="dcBulk" rows="4" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:8px;font-size:12.5px;margin-top:6px" placeholder="maker,㈱アリミノ,アリミノ&#10;brand,カラーストーリー モイスト,カラーストーリーモイスト"></textarea>
         <button class="btn sm" id="btnDcBulk" style="margin-top:6px">まとめて登録</button>
@@ -472,7 +502,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
       Array.prototype.forEach.call(document.querySelectorAll('.pane'), function (p) { p.classList.toggle('on', p.id === 'pane-' + b.getAttribute('data-tab')); });
       var t = b.getAttribute('data-tab');
-      if (t === 'issues') loadIssues(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'settings') { loadStaff(); loadDict(); loadAccount(); } if (t === 'import') loadInbox();
+      if (t === 'issues') loadIssues(); if (t === 'series') loadSeries(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'settings') { loadStaff(); loadDict(); loadAccount(); } if (t === 'import') loadInbox();
     });
   });
 
@@ -1025,13 +1055,13 @@
   var P = { offset: 0, limit: 100 };
   function loadProducts(offset) {
     P.offset = Math.max(0, offset || 0);
-    var qs = 'q=' + encodeURIComponent($('q').value.trim()) + '&maker=' + encodeURIComponent($('fMaker').value) + ($('fNoimg').checked ? '&noimg=1' : '') + ($('fNosku').checked ? '&nosku=1' : '') + '&limit=' + P.limit + '&offset=' + P.offset;
+    var qs = 'q=' + encodeURIComponent($('q').value.trim()) + '&maker=' + encodeURIComponent($('fMaker').value) + ($('fNoimg').checked ? '&noimg=1' : '') + ($('fNosku').checked ? '&nosku=1' : '') + ($('fNotReady').checked ? '&ready=0' : '') + ($('fEc').checked ? '&ec=pending' : '') + '&limit=' + P.limit + '&offset=' + P.offset;
     api('products?' + qs).then(function (j) {
       if (!j.ok) return;
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
-        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
-      }).join('') || '<tr><td colspan="13" class="muted">該当なし</td></tr>';
+        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + (p.ready ? '<span class="tag ok">可</span>' : '<span class="tag ng" title="写真あり・商品コードあり・価格あり・撮り直し無し が条件">不可</span>') + '</td><td>' + (p.ec_synced_at && p.ec_synced_at >= p.updated_at ? '<span class="tag ok">済</span>' : '<span class="tag">未</span>') + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
+      }).join('') || '<tr><td colspan="15" class="muted">該当なし</td></tr>';
       $('selAll').checked = false; updateSel();
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-sku]'), function (b) {
         b.addEventListener('click', function () {
@@ -1076,6 +1106,8 @@
   $('fMaker').addEventListener('change', function () { loadProducts(0); });
   $('fNoimg').addEventListener('change', function () { loadProducts(0); });
   $('fNosku').addEventListener('change', function () { loadProducts(0); });
+  $('fNotReady').addEventListener('change', function () { loadProducts(0); });
+  $('fEc').addEventListener('change', function () { loadProducts(0); });
   $('btnPrev').addEventListener('click', function () { loadProducts(P.offset - P.limit); });
   $('btnNext').addEventListener('click', function () { loadProducts(P.offset + P.limit); });
 
@@ -1168,13 +1200,28 @@
       var ex = (j && j.existing) || {};
       plan.forEach(function (p) { if (p.jan && !p.status && !ex[p.jan]) p.status = '未登録のJAN（先に商品を取り込んでください）'; if (ex[p.jan]) p.name = ex[p.jan].name; });
       renderImgPlan();
+      // ファイル名に JAN が無いもの: 商品名・型番・商品コードで候補を探して当てる（最大 60 ファイル）
+      var noJan = plan.filter(function (p) { return !p.jan; }).slice(0, 60), chain = Promise.resolve();
+      noJan.forEach(function (p) {
+        var base = p.file.name.replace(/\.[^.]+$/, '').replace(/[_\-()（）\[\]]+/g, ' ').replace(/\b\d{1,2}\b\s*$/, '').trim();
+        if (base.length < 2) return;
+        chain = chain.then(function () { return api('products?q=' + encodeURIComponent(base.slice(0, 40)) + '&limit=5').then(function (r) {
+          if (!r.ok || !r.products.length) return;
+          p.cands = r.products.map(function (x) { return { jan: x.jan, name: x.name }; });
+          p.jan = r.products[0].jan; p.name = r.products[0].name; p.slot = p.slot || 1; p.status = ''; p.guess = true;
+          renderImgPlan();
+        }).catch(function () { /* */ }); });
+      });
     }).catch(handleErr);
   }
   function renderImgPlan() {
     var ok = IMG.plan.filter(function (p) { return !p.status; });
     $('imgPlan').innerHTML = '<p class="muted">' + IMG.plan.length + 'ファイル中、登録できるもの <b>' + ok.length + '</b>件</p><div class="tbl" style="max-height:300px"><table><thead><tr><th>ファイル</th><th>JAN</th><th>商品</th><th>枚目</th><th>状態</th></tr></thead><tbody>' +
-      IMG.plan.slice(0, 500).map(function (p) { return '<tr><td>' + esc(p.file.name) + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name || '') + '</td><td>' + (p.slot || '') + '</td><td>' + (p.status ? '<span class="tag ng">' + esc(p.status) + '</span>' : (p.result ? esc(p.result) : '<span class="tag ok">OK</span>')) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      IMG.plan.slice(0, 500).map(function (p, i) { return '<tr><td>' + esc(p.file.name) + '</td><td>' + esc(p.jan) + '</td><td>' + (p.cands ? '<select data-cand="' + i + '"><option value="">（登録しない）</option>' + p.cands.map(function (c) { return '<option value="' + esc(c.jan) + '"' + (c.jan === p.jan ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select> <span class="tag warn">名前から推定</span>' : esc(p.name || '')) + '</td><td>' + (p.slot || '') + '</td><td>' + (p.status ? '<span class="tag ng">' + esc(p.status) + '</span>' : (p.result ? esc(p.result) : '<span class="tag ok">OK</span>')) + '</td></tr>'; }).join('') + '</tbody></table></div>';
     $('btnImgRun').disabled = !ok.length;
+    Array.prototype.forEach.call($('imgPlan').querySelectorAll('[data-cand]'), function (sel) {
+      sel.addEventListener('change', function () { var p = IMG.plan[parseInt(sel.getAttribute('data-cand'), 10)]; var c = (p.cands || []).filter(function (x) { return x.jan === sel.value; })[0]; if (c) { p.jan = c.jan; p.name = c.name; p.status = ''; } else { p.jan = ''; p.status = '登録しない'; } $('btnImgRun').disabled = !IMG.plan.some(function (x) { return !x.status; }); });
+    });
   }
   $('btnImgRun').addEventListener('click', function () {
     var ok = IMG.plan.filter(function (p) { return !p.status; });
@@ -1221,7 +1268,7 @@
     api('stats').then(function (j) {
       if (!j.ok) return;
       var t = j.totals;
-      $('stKpis').innerHTML = [['商品', t.products], ['写真あり', t.with_images, 'ok'], ['写真なし', t.no_images, t.no_images ? 'ng' : 'ok'], ['5枚そろい', t.full5], ['商品コードなし', t.no_sku || 0, t.no_sku ? 'ng' : 'ok'], ['写真の総数', t.images], ['未検品', t.unreviewed], ['自動チェック注意', t.quality_warn || 0, t.quality_warn ? 'ng' : ''], ['撮り直し', t.retake, t.retake ? 'ng' : ''], ['注意', t.open_issues, t.open_issues ? 'ng' : '']]
+      $('stKpis').innerHTML = [['商品', t.products], ['公開できる（写真・商品コード・価格・撮り直し無し）', t.ready || 0, 'ok'], ['公開できない', t.products - (t.ready || 0), (t.products - (t.ready || 0)) ? 'ng' : 'ok'], ['価格なし', t.no_price || 0, t.no_price ? 'ng' : ''], ['撮り直しあり', t.retake_products || 0, t.retake_products ? 'ng' : ''], ['EC 未反映', t.ec_pending || 0, ''], ['写真あり', t.with_images, 'ok'], ['写真なし', t.no_images, t.no_images ? 'ng' : 'ok'], ['5枚そろい', t.full5], ['商品コードなし', t.no_sku || 0, t.no_sku ? 'ng' : 'ok'], ['写真の総数', t.images], ['未検品', t.unreviewed], ['自動チェック注意', t.quality_warn || 0, t.quality_warn ? 'ng' : ''], ['撮り直し', t.retake, t.retake ? 'ng' : ''], ['注意', t.open_issues, t.open_issues ? 'ng' : '']]
         .map(function (k) { return '<div class="kpi ' + (k[2] || '') + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div></div>'; }).join('');
       $('stPace').textContent = '直近7日: ' + j.pace.products_7d + ' 商品に写真が付きました（稼働 ' + j.pace.active_days_7d + ' 日・1日平均 ' + j.pace.avg_per_day + ' 商品）' + (j.pace.days_left != null ? ' → このペースなら残り約 ' + j.pace.days_left + ' 稼働日' : '');
       $('stDay').querySelector('tbody').innerHTML = j.by_day.map(function (d) { return '<tr><td>' + esc(d.day) + '</td><td>' + d.images + '</td><td>' + d.products + '</td></tr>'; }).join('') || '<tr><td colspan="3" class="muted">まだありません</td></tr>';
@@ -1290,6 +1337,7 @@
   function exportUrl(format) {
     var q = 'format=' + format + '&maker=' + encodeURIComponent($('exMaker').value);
     if ($('exImg').value === 'only') q += '&only_images=1'; if ($('exImg').value === 'none') q += '&noimg=1';
+    if ($('exReady').value === '1') q += '&ready=1';
     return '/api/pim/export?' + q;
   }
   function download(format) {
@@ -1346,19 +1394,74 @@
   $('btnAcInboxRevoke').addEventListener('click', function () { if (confirm('自動取り込み用 URL を無効にしますか？')) acPost({ action: 'inbox_key_revoke' }); });
 
   // ── 担当者一覧 ──
+  $('btnDcSuggest').addEventListener('click', function () {
+    toast('探しています…');
+    api('dict', { method: 'POST', body: { action: 'suggest' } }).then(function (j) {
+      if (!j.ok) { toast(j.message || '取得できません', true); return; }
+      var box = $('dcSug'); box.hidden = false;
+      if (!j.suggestions.length) { box.innerHTML = '<p class="muted">表記ゆれは見つかりませんでした</p>'; return; }
+      box.innerHTML = '<p class="muted">同じ名前とみなせる書き方が複数あるものです（数の多い書き方に揃える提案）。チェックしたものを登録して、既存の商品にも当てます。</p>' +
+        '<div class="tbl" style="max-height:280px"><table><thead><tr><th><input type="checkbox" id="sugAll" checked></th><th>種類</th><th>届く表記（件数）</th><th>揃える表記（件数）</th></tr></thead><tbody>' +
+        j.suggestions.map(function (x, i) { return '<tr><td><input type="checkbox" class="sug" data-i="' + i + '" checked></td><td>' + (KIND_JA[x.kind] || x.kind) + '</td><td>' + esc(x.src) + ' <span class="muted">(' + x.n_src + ')</span></td><td><b>' + esc(x.dst) + '</b> <span class="muted">(' + x.n_dst + ')</span></td></tr>'; }).join('') + '</tbody></table></div>' +
+        '<div class="row" style="margin-top:6px"><button class="btn sm solid" id="sugSave">チェックした分を辞書に登録して適用</button><button class="btn sm" id="sugClose">閉じる</button></div>';
+      var sug = j.suggestions;
+      $('sugAll').addEventListener('change', function () { var on = this.checked; Array.prototype.forEach.call(box.querySelectorAll('.sug'), function (c) { c.checked = on; }); });
+      $('sugClose').addEventListener('click', function () { box.hidden = true; });
+      $('sugSave').addEventListener('click', function () {
+        var rows = Array.prototype.filter.call(box.querySelectorAll('.sug'), function (c) { return c.checked; }).map(function (c) { var x = sug[parseInt(c.getAttribute('data-i'), 10)]; return { kind: x.kind, src: x.src, dst: x.dst }; });
+        if (!rows.length) { toast('選ばれていません', true); return; }
+        api('dict', { method: 'POST', body: { action: 'bulk', rows: rows } }).then(function (r) { if (!r.ok) { toast(r.message || '登録できませんでした', true); return; } return api('dict', { method: 'POST', body: { action: 'apply' } }); })
+          .then(function (r) { if (r && r.ok) { toast('辞書に ' + rows.length + ' 件登録し、既存の商品に当てました'); box.hidden = true; loadDict(); loadMakers(); } }).catch(handleErr);
+      });
+    }).catch(handleErr);
+  });
+  // ── シリーズ並べ ──
+  var SR = { brands: [] };
+  function loadSeries() {
+    api('products?limit=1').then(function (j) {
+      if (!j.ok) return;
+      SR.brands = j.brands || [];
+      var sel = $('srBrand'), cur = sel.value;
+      sel.innerHTML = '<option value="">ブランドを選ぶ</option>' + SR.brands.map(function (b) { return '<option value="' + esc(b.brand) + '">' + esc(b.brand) + '（' + esc(b.maker) + '・' + b.n + '）</option>'; }).join('');
+      sel.value = cur; if (sel.value) renderSeries();
+    }).catch(handleErr);
+  }
+  function renderSeries() {
+    var brand = $('srBrand').value, slot = parseInt($('srSlot').value, 10) || 1;
+    if (!brand) { $('srGridBox').innerHTML = ''; $('srCount').textContent = ''; return; }
+    api('products?brand=' + encodeURIComponent(brand) + '&sort=shelf&limit=200').then(function (j) {
+      if (!j.ok) return;
+      var guide = '<svg viewBox="0 0 100 100" preserveAspectRatio="none"><rect x="15" y="11" width="70" height="78" rx="2" fill="none" stroke="rgba(224,164,90,.9)" stroke-width="0.6" stroke-dasharray="2 1.4"/><line x1="8" y1="89" x2="92" y2="89" stroke="rgba(224,164,90,.9)" stroke-width="0.8"/><line x1="50" y1="4" x2="50" y2="96" stroke="rgba(0,0,0,.18)" stroke-width="0.3" stroke-dasharray="1.2 1.2"/></svg>';
+      var withImg = 0;
+      $('srGridBox').innerHTML = j.products.map(function (p) {
+        var im = (p.images || []).filter(function (i) { return i.slot === slot; })[0]; if (im) withImg++;
+        return '<div class="it' + (im && im.review === 'retake' ? ' rt' : '') + '" data-jan="' + esc(p.jan) + '"><div class="im">' + (im ? '<img src="' + esc(im.url) + '" alt="">' : '<div class="no">' + slot + '枚目なし</div>') + ($('srGrid').checked ? guide : '') + '</div>' +
+          '<div class="nm">' + esc(p.name) + '</div><div class="ac">' + (im ? '<button class="btn sm" data-sr="retake"' + (im.review === 'retake' ? ' disabled' : '') + '>' + (im.review === 'retake' ? '撮り直し中' : '撮り直しへ') + '</button><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '" target="_blank">開く</a>' : '<a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '" target="_blank">撮る</a>') + '</div></div>';
+      }).join('') || '<p class="muted">このブランドの商品がありません</p>';
+      $('srCount').textContent = j.products.length + ' 商品（' + slot + '枚目あり ' + withImg + '）';
+      Array.prototype.forEach.call($('srGridBox').querySelectorAll('[data-sr="retake"]'), function (b) {
+        b.addEventListener('click', function () {
+          var jan = b.closest('.it').getAttribute('data-jan');
+          api('review', { method: 'POST', body: { jan: jan, slot: slot, review: 'retake', note: '位置ずれ（シリーズ並べ）' } }).then(function (r) { if (!r.ok) { toast(r.message || '失敗', true); return; } toast('撮り直しにしました'); renderSeries(); }).catch(handleErr);
+        });
+      });
+    }).catch(handleErr);
+  }
+  $('srBrand').addEventListener('change', renderSeries); $('srSlot').addEventListener('change', renderSeries); $('srGrid').addEventListener('change', renderSeries);
   function loadStaff() {
     api('staff').then(function (j) {
       if (!j.ok) return;
       $('stTbl').querySelector('tbody').innerHTML = j.staff.map(function (x) {
-        return '<tr data-id="' + x.id + '"><td>' + esc(x.name) + '</td><td>' + (x.has_pin ? '<span class="tag ok">あり</span>' : '<span class="muted">なし</span>') + '</td><td>' + (x.active ? '<span class="tag ok">有効</span>' : '<span class="tag ng">停止</span>') + '</td><td class="row">' +
+        return '<tr data-id="' + x.id + '"><td>' + esc(x.name) + '</td><td>' + (x.has_pin ? '<span class="tag ok">あり</span>' : '<span class="muted">なし</span>') + '</td><td>' + (x.assign ? esc(x.assign) : '<span class="muted">全部</span>') + ' <button class="btn sm" data-st="assign">変更</button></td><td>' + (x.active ? '<span class="tag ok">有効</span>' : '<span class="tag ng">停止</span>') + '</td><td class="row">' +
           '<button class="btn sm" data-st="pin">PIN ' + (x.has_pin ? '変更/外す' : '設定') + '</button><button class="btn sm" data-st="rename">名前</button>' + (x.active ? '<button class="btn sm danger" data-st="disable">停止</button>' : '<button class="btn sm" data-st="enable">再開</button><button class="btn sm danger" data-st="delete">削除</button>') + '</td></tr>';
-      }).join('') || '<tr><td colspan="4" class="muted">まだ登録がありません（今は自由入力）</td></tr>';
+      }).join('') || '<tr><td colspan="5" class="muted">まだ登録がありません（今は自由入力）</td></tr>';
       Array.prototype.forEach.call($('stTbl').querySelectorAll('[data-st]'), function (b) {
         b.addEventListener('click', function () {
           var tr = b.closest('tr'), id = parseInt(tr.getAttribute('data-id'), 10), act = b.getAttribute('data-st'), nm = tr.children[0].textContent;
           var body = { action: act, id: id };
           if (act === 'pin') { var pin = prompt(nm + ' さんの PIN（4〜6 桁の数字。空欄なら PIN なし）', ''); if (pin == null) return; body.pin = pin.trim(); }
           if (act === 'rename') { var nn = prompt('名前', nm); if (nn == null || !nn.trim()) return; body.name = nn.trim(); }
+          if (act === 'assign') { var as = prompt(nm + ' さんの担当（ブランド名かメーカー名をカンマ区切り。空欄で全部）', tr.children[2].textContent.replace(/\s*変更\s*$/, '').replace(/^全部$/, '')); if (as == null) return; body.assign = as.trim(); }
           if (act === 'disable' && !confirm(nm + ' さんを停止しますか？（選べなくなります。過去の記録は残ります）')) return;
           if (act === 'delete' && !confirm(nm + ' さんを一覧から削除しますか？')) return;
           api('staff', { method: 'POST', body: body }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return; } toast(r.message || '更新しました'); loadStaff(); }).catch(handleErr);

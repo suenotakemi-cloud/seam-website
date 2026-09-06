@@ -6,7 +6,7 @@
 //     by_maker: [{ maker, products, with_images }],  … メーカー別の残り
 //     pace: { avg_per_day_7, days_left }             … 直近 7 日の平均から残り日数
 //   }
-import { json } from './_lib.js';
+import { READY_SQL, json } from './_lib.js';
 
 export async function onRequestGet({ env, data }) {
   const acct = data.account.id;
@@ -23,7 +23,11 @@ export async function onRequestGet({ env, data }) {
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review=\'ok\') AS reviewed_ok, ' +
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review IS NULL) AS unreviewed, ' +
     '(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review IS NULL AND quality_warn IS NOT NULL) AS quality_warn, ' +
-    '(SELECT COUNT(*) FROM pim_issues WHERE account_id=?1 AND status=\'open\') AS open_issues'
+    '(SELECT COUNT(*) FROM pim_issues WHERE account_id=?1 AND status=\'open\') AS open_issues, ' +
+    '(SELECT COUNT(*) FROM pim_products p WHERE p.account_id=?1 AND ' + READY_SQL + ') AS ready, ' +
+    '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND price_ex IS NULL) AS no_price, ' +
+    '(SELECT COUNT(DISTINCT jan) FROM pim_images WHERE account_id=?1 AND review=\'retake\') AS retake_products, ' +
+    '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND (ec_synced_at IS NULL OR ec_synced_at < updated_at)) AS ec_pending'
   ).bind(acct).first();
   const byDay = await env.DB.prepare(
     'SELECT substr(created_at,1,10) AS day, COUNT(*) AS images, COUNT(DISTINCT jan) AS products FROM pim_images WHERE account_id=? AND created_at>=? GROUP BY day ORDER BY day'
