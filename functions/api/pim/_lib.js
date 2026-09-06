@@ -214,6 +214,9 @@ export async function ensureSchema(env) {
     `CREATE TABLE IF NOT EXISTS pim_dict (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, kind TEXT NOT NULL, src TEXT NOT NULL, dst TEXT NOT NULL,
       created_at TEXT NOT NULL, created_by TEXT, UNIQUE (account_id, kind, src))`,
+    `CREATE TABLE IF NOT EXISTS pim_refs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, kind TEXT NOT NULL, slot INTEGER NOT NULL, scope TEXT NOT NULL DEFAULT '',
+      jan TEXT NOT NULL, src_slot INTEGER NOT NULL, note TEXT, created_at TEXT NOT NULL, created_by TEXT, UNIQUE (account_id, kind, slot, scope))`,
     `CREATE TABLE IF NOT EXISTS pim_changes (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, jan TEXT NOT NULL, kind TEXT NOT NULL, ts TEXT NOT NULL, by TEXT)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_changes_acct ON pim_changes(account_id, id)`,
