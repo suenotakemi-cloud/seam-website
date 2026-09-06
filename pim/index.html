@@ -67,8 +67,13 @@
   .badge.warn{background:#FBF0D6;color:#8A6A1F}
   .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
   .slot{position:relative;aspect-ratio:1/1;border:2px dashed var(--line);border-radius:14px;background:#FBF7F1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--char);font-size:12px;overflow:hidden;padding:0}
-  .slot.filled{border:2px solid var(--line);background:#fff}
-  .slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .slot.filled{border:2px solid var(--line);background:#fff;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .slot.dragsrc{opacity:.35}
+  .slot.over{outline:3px solid var(--brown);outline-offset:2px;transform:scale(1.04)}
+  .dragghost{position:fixed;z-index:80;width:96px;height:96px;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.35);pointer-events:none;border:2px solid #fff;transform:translate(-50%,-60%)}
+  .dragghost img{width:100%;height:100%;object-fit:cover}
+  .slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;-webkit-user-drag:none}
+  .slot.filled *{pointer-events:none} /* 画像のネイティブドラッグで pointercancel にならないように。イベントは枠（button）で受ける */
   .slot .no{position:absolute;left:8px;top:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.85);border-radius:999px;padding:1px 7px;color:var(--ink)}
   .slot .plus{font-size:26px;line-height:1;color:var(--brown)}
   .slot.next{border-color:var(--brown);background:#FFF8EF;animation:pulse 1.4s ease-in-out infinite}
@@ -906,9 +911,50 @@
     $('pImgBadge').className = 'badge ' + (n ? 'ok' : 'warn');
     $('pImgBadge').textContent = n ? '写真 ' + n + '枚 登録済み' : '写真がありません';
     var rt = imgs.filter(function (i) { return i.review === 'retake'; });
-    $('gridNote').textContent = rt.length ? '赤い枠の写真は検品で「撮り直し」になっています。タップして撮り直してください' : (n >= 5 ? '5枚そろいました。写真をタップすると撮り直し・削除ができます' : '枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）');
+    $('gridNote').textContent = rt.length ? '赤い枠の写真は検品で「撮り直し」になっています。タップして撮り直してください' : (n >= 2 ? '写真を指でつかんで動かすと順番を変えられます（1枚目がメイン）。' : '') + (n >= 5 ? '5枚そろいました。写真をタップすると撮り直し・削除ができます' : '枠をタップ → ガイド付きカメラで撮る か 写真を選ぶ → 自動で次の枠へ（正方形・白背景に自動で整えます）');
     Array.prototype.forEach.call($('grid').querySelectorAll('.slot'), function (b) {
-      b.addEventListener('click', function () { var s = parseInt(b.getAttribute('data-slot'), 10); if (state.busy[s]) return; if (byslot[s]) filledSheet(s, byslot[s]); else emptySheet(s); });
+      b.addEventListener('click', function () { if (DND.justDragged) return; var s = parseInt(b.getAttribute('data-slot'), 10); if (state.busy[s]) return; if (byslot[s]) filledSheet(s, byslot[s]); else emptySheet(s); });
+      if (b.classList.contains('filled') && imgs.length >= 2) attachDrag(b, byslot);
+    });
+  }
+  // ── 写真の並べ替え: 指でつかんで動かす（長押し不要。少し動かすと持ち上がり、入れたい場所で離す）──
+  //   離した場所に「差し込む」（5枚目を 1枚目に持っていくと、他は 1 つずつ後ろへ）。並べ替え API（reorder）は既存のもの
+  var DND = { active: null, justDragged: false };
+  function attachDrag(el, byslot) {
+    el.addEventListener('pointerdown', function (e) {
+      if (e.button != null && e.button !== 0) return;
+      var src = parseInt(el.getAttribute('data-slot'), 10); if (state.busy[src] || !byslot[src]) return;
+      var d = { el: el, src: src, x0: e.clientX, y0: e.clientY, moving: false, ghost: null, over: null, pid: e.pointerId };
+      DND.active = d;
+      var move = function (ev) {
+        if (ev.pointerId !== d.pid) return;
+        var dx = ev.clientX - d.x0, dy = ev.clientY - d.y0;
+        if (!d.moving) { if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return; d.moving = true; try { el.setPointerCapture(d.pid); } catch (x) { /* */ }
+          d.ghost = document.createElement('div'); d.ghost.className = 'dragghost'; var im = el.querySelector('img'); if (im) { var g = document.createElement('img'); g.src = im.src; d.ghost.appendChild(g); } document.body.appendChild(d.ghost); el.classList.add('dragsrc'); }
+        ev.preventDefault();
+        d.ghost.style.left = ev.clientX + 'px'; d.ghost.style.top = ev.clientY + 'px';
+        var t = document.elementFromPoint(ev.clientX, ev.clientY); while (t && t !== document.body && !(t.classList && t.classList.contains('slot'))) t = t.parentNode;
+        var tgt = t && t.classList && t.classList.contains('slot') ? t : null;
+        if (d.over && d.over !== tgt) d.over.classList.remove('over');
+        d.over = tgt && tgt !== el ? tgt : null; if (d.over) d.over.classList.add('over');
+      };
+      var end = function (ev) {
+        if (ev.pointerId !== d.pid) return;
+        document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', end); document.removeEventListener('pointercancel', end);
+        DND.active = null;
+        if (!d.moving) return;
+        if (d.ghost) d.ghost.remove(); el.classList.remove('dragsrc'); if (d.over) d.over.classList.remove('over');
+        DND.justDragged = true; setTimeout(function () { DND.justDragged = false; }, 350);
+        if (ev.type === 'pointercancel' || !d.over) return;
+        var dst = parseInt(d.over.getAttribute('data-slot'), 10);
+        var slots = (state.product.images || []).map(function (i) { return i.slot; }).sort(function (a, b) { return a - b; });
+        var order = slots.filter(function (x) { return x !== d.src; });
+        var idx = order.indexOf(dst); if (idx < 0) idx = order.length; // 空いている枠に落としたら一番後ろへ
+        order.splice(idx, 0, d.src);
+        if (order.join() === slots.join()) return;
+        reorderImages({ action: 'reorder', order: order });
+      };
+      document.addEventListener('pointermove', move, { passive: false }); document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
     });
   }
   // 登録済み写真の確認（大きく表示・サムネで切替・タップで全画面）
