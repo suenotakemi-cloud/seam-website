@@ -187,7 +187,7 @@
     <div class="aicard">
       <div class="top">
         <div class="orb" aria-hidden="true"></div>
-        <div><b>サロンタウン AI受付</b><span>文字で打つか、マイクで話しかけてください（1回3分）</span></div>
+        <div><b>サロンタウン AI受付</b><span>マイクを1回押すと会話が続きます（1回3分）</span></div>
       </div>
       <div class="chat" id="chat" aria-live="polite"></div>
       <form class="chatbar" id="chatbar" autocomplete="off">
@@ -313,18 +313,28 @@
   var chat=document.getElementById('chat'), form=document.getElementById('chatbar'), input=document.getElementById('chatin');
   var mic=document.getElementById('mic'), spk=document.getElementById('spk'), timer=document.getElementById('timer'), endbtn=document.getElementById('endbtn');
   var sid='', ended=false, busy=false, startedAt=0, tick=null;
+  var convo=false, speaking=false; var rec=null, listening=false;
+  function startListen(){ if(!rec||!convo||ended||busy||speaking||listening) return; try{rec.start();listening=true;mic.classList.add('on');mic.title='会話中（タップで停止）';}catch(e){} }
 
   function add(role,text){var d=document.createElement('div');d.className='m '+role;d.textContent=text;chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;}
   function fmt(s){s=Math.max(0,s|0);return Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);}
   function startTimer(){if(window.stTrack)stTrack('ai_start');startedAt=Date.now();clearInterval(tick);tick=setInterval(function(){var r=SECS-Math.floor((Date.now()-startedAt)/1000);timer.textContent='残り '+fmt(r);if(r<=0){clearInterval(tick);finish();}},500);}
-  function finishUI(){if(window.stTrack)stTrack('ai_end',{dur:startedAt?Math.round((Date.now()-startedAt)/1000):0});ended=true;clearInterval(tick);timer.textContent='受付終了';input.disabled=true;document.getElementById('send').disabled=true;mic.disabled=true;endbtn.disabled=true;}
+  function finishUI(){if(window.stTrack)stTrack('ai_end',{dur:startedAt?Math.round((Date.now()-startedAt)/1000):0});ended=true;convo=false;try{if(rec)rec.stop();}catch(e){}try{speechSynthesis.cancel();}catch(e){}clearInterval(tick);timer.textContent='受付終了';input.disabled=true;document.getElementById('send').disabled=true;mic.disabled=true;endbtn.disabled=true;}
 
   // 読み上げ：日本語の声（女性名を優先）
   var voice=null;
   function pickVoice(){try{var vs=speechSynthesis.getVoices().filter(function(v){return /^ja/i.test(v.lang)});
     voice=vs.find(function(v){return /Kyoko|O-Ren|Google 日本語|Nanami|Ayumi|Haruka|Sayaka|Female|女性/i.test(v.name)})||vs[0]||null;}catch(e){}}
   if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}
-  function speak(text){if(!spk.checked||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='ja-JP';if(voice)u.voice=voice;u.rate=1.0;u.pitch=1.05;speechSynthesis.speak(u);}catch(e){}}
+  function speak(text){
+    if(!spk.checked||!('speechSynthesis' in window)){ if(convo)setTimeout(startListen,150); return; }
+    try{ speechSynthesis.cancel(); speaking=true; try{if(listening&&rec)rec.stop();}catch(e){}
+      var u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; if(voice)u.voice=voice; u.rate=1.15; u.pitch=1.0;
+      u.onend=function(){ speaking=false; if(convo)setTimeout(startListen,120); };
+      u.onerror=function(){ speaking=false; if(convo)setTimeout(startListen,120); };
+      speechSynthesis.speak(u);
+    }catch(e){ speaking=false; if(convo)setTimeout(startListen,150); }
+  }
 
   function send(text,end){
     if(busy||ended)return;busy=true;
@@ -340,7 +350,7 @@
         if(j.ended){finishUI();}
       })
       .catch(function(){w.remove();add('a','通信に失敗しました。もう一度お試しください。');})
-      .finally(function(){busy=false;});
+      .finally(function(){busy=false; if(convo&&!speaking&&!ended&&!listening){setTimeout(startListen,250);} });
   }
   function finish(){if(ended)return;send('',true);}
 
@@ -348,14 +358,14 @@
   endbtn.addEventListener('click',finish);
 
   // マイク：Web Speech API（iPhone の Safari は非対応のため、そのときはボタンを無効にして文字入力へ）
-  var SR=window.SpeechRecognition||window.webkitSpeechRecognition, rec=null, listening=false;
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){mic.disabled=true;mic.title='このブラウザでは音声入力が使えません。文字でご入力ください';}
   else{
     rec=new SR();rec.lang='ja-JP';rec.interimResults=true;rec.continuous=false;
     rec.onresult=function(ev){var s='';for(var i=ev.resultIndex;i<ev.results.length;i++){s+=ev.results[i][0].transcript;}input.value=s;if(ev.results[ev.results.length-1].isFinal){var v=s.trim();input.value='';if(v){if(!startedAt)startTimer();send(v,false);}}};
-    rec.onend=function(){listening=false;mic.classList.remove('on');};
-    rec.onerror=function(){listening=false;mic.classList.remove('on');};
-    mic.addEventListener('click',function(){if(ended)return;if(listening){rec.stop();return;}try{speechSynthesis.cancel();}catch(e){}try{rec.start();listening=true;mic.classList.add('on');}catch(e){}});
+    rec.onend=function(){ listening=false; if(convo&&!ended&&!busy&&!speaking){ setTimeout(startListen,300); } else { mic.classList.remove('on'); mic.title='マイクで話す'; } };
+    rec.onerror=function(e){ listening=false; var err=e&&e.error; if(err==='not-allowed'||err==='service-not-allowed'){ convo=false; mic.classList.remove('on'); mic.title='マイクで話す'; return; } if(convo&&!ended&&!speaking){ setTimeout(startListen,600); } else { mic.classList.remove('on'); } };
+    mic.addEventListener('click',function(){ if(ended)return; if(convo){ convo=false; listening=false; mic.classList.remove('on'); mic.title='マイクで話す'; try{rec.stop();}catch(e){} try{speechSynthesis.cancel();}catch(e){} return; } convo=true; speaking=false; try{speechSynthesis.cancel();}catch(e){} startListen(); });
   }
 
   // 最初の挨拶（サーバーから）
