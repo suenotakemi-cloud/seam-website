@@ -44,12 +44,18 @@
       ? window.SEAM_PAGE_I18N[lang]
       : null;
     if (dict) {
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (dict[key] !== undefined) {
-          el.innerHTML = dict[key];
-        }
-      });
+      /* 親を差し替えると中の子は入れ替わる。取り直して当て直す（落ち着くまで最大3周） */
+      for (let pass = 0; pass < 3; pass++) {
+        let hit = 0;
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+          const key = el.getAttribute('data-i18n');
+          if (dict[key] !== undefined && el.innerHTML !== dict[key]) {
+            el.innerHTML = dict[key];
+            hit++;
+          }
+        });
+        if (!hit) break;
+      }
       /* 属性翻訳: data-i18n-attr="placeholder:key" / "aria-label:key" など(;区切り) */
       document.querySelectorAll('[data-i18n-attr]').forEach(el => {
         el.getAttribute('data-i18n-attr').split(';').forEach(pair => {

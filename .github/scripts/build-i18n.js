@@ -284,10 +284,16 @@ function extractDictLiteral(src) {
 function applyLang(doc, dict, shortLang, htmlLang) {
   let n = 0;
   doc.documentElement.setAttribute('lang', htmlLang);
-  doc.querySelectorAll('[data-i18n]').forEach(el => {
-    const k = el.getAttribute('data-i18n');
-    if (dict[k] !== undefined) { el.innerHTML = dict[k]; n++; }
-  });
+  // 親を差し替えると中の子は入れ替わる。取り直して当て直す（落ち着くまで最大3周）
+  for (let pass = 0; pass < 3; pass++) {
+    let hit = 0;
+    doc.querySelectorAll('[data-i18n]').forEach(el => {
+      const k = el.getAttribute('data-i18n');
+      if (dict[k] !== undefined && el.innerHTML !== dict[k]) { el.innerHTML = dict[k]; hit++; }
+    });
+    n += hit;
+    if (!hit) break;
+  }
   doc.querySelectorAll('[data-i18n-attr]').forEach(el => {
     el.getAttribute('data-i18n-attr').split(';').forEach(pair => {
       const i = pair.indexOf(':'); if (i < 0) return;

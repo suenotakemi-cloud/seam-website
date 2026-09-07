@@ -14,7 +14,7 @@
  *
  * 出力: 標準出力に i18n_add.js が食べられる形。
  */
-const fs = require('fs'), path = require('path');
+const fs = require('fs'), path = require('path'), vm = require('vm');
 const ROOT = process.argv[2];
 const LANGS = ['en', 'zh', 'tw', 'ko'];
 const source = JSON.parse(fs.readFileSync(path.join(ROOT, 'i18n', 'source.json'), 'utf8'));
@@ -110,6 +110,64 @@ const TPL = {
   '{B}を{A}で買う': ['Buy {B} in {A}', '在{A}购买 {B}', '在{A}購買 {B}', '{A}에서 {B} 구매'],
 };
 
+/* 頭の一句だけ訳す型
+ *
+ * 「ほかのエリアで探す <a data-i18n="bp.area.ginza">銀座</a> …」のように
+ * 後ろの <a> が自前の data-i18n を持っているものは
+ * 中身の訳は build 側が当ててくれる。頭の日本語だけ差し替えればよい。
+ * 尻尾はバイト単位でそのまま残す（リンク先と鍵を壊さないため）。
+ */
+const PREFIX = {
+  'ほかのエリアで探す ': ['Find it in another area ', '在其他地区寻找 ', '在其他地區尋找 ', '다른 지역에서 찾기 '],
+  'ほかのエリアで探す　': ['Find it in another area ', '在其他地区寻找 ', '在其他地區尋找 ', '다른 지역에서 찾기 '],
+  '関連ページ ': ['Related pages ', '相关页面 ', '相關頁面 ', '관련 페이지 '],
+  'エリア別のご案内 ': ['By area ', '各地区的介绍 ', '各地區的介紹 ', '지역별 안내 '],
+};
+
+/* 尻尾の中のラベルも訳す
+ *
+ * 【実際にやらかした】頭の一句だけ訳して尻尾をそのまま残したら
+ *   親の innerHTML 差し替えで子が毎回 日本語に戻され 中国語ページに
+ *   「銀座で買うだけOK」が16枚残った。子を訳し直しても 次の周で親がまた上書きする。
+ *   親の訳の中に日本語を残さないのが正解。
+ *   各ページの辞書がすでに持っている bp.* の訳を集めて 尻尾の中身に当てる。
+ */
+const LABEL = (() => {
+  const map = {};                       // 日本語 → [en, zh, tw, ko]
+  const DICT = /window\.SEAM_PAGE_I18N\s*=\s*\{/;
+  for (const f of fs.readdirSync(ROOT).filter(f => /^[a-z0-9-]+\.html$/.test(f))) {
+    const html = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const m = DICT.exec(html);
+    if (!m) continue;
+    let i = html.indexOf('{', m.index), depth = 0, inStr = null, esc = false, end = -1;
+    for (let j = i; j < html.length; j++) {
+      const c = html[j];
+      if (esc) { esc = false; continue; }
+      if (c === '\\') { esc = true; continue; }
+      if (inStr) { if (c === inStr) inStr = null; continue; }
+      if (c === '"' || c === "'" || c === '`') { inStr = c; continue; }
+      if (c === '{') depth++; else if (c === '}') { depth--; if (!depth) { end = j + 1; break; } }
+    }
+    if (end < 0) continue;
+    const box = { window: {} }; vm.createContext(box);
+    try { vm.runInContext('window.SEAM_PAGE_I18N=' + html.slice(i, end), box, { timeout: 5000 }); } catch { continue; }
+    const d = box.window.SEAM_PAGE_I18N; if (!d || !d.ja) continue;
+    for (const [k, ja] of Object.entries(d.ja)) {
+      if (k.startsWith('x.') || typeof ja !== 'string' || !/[ぁ-んァ-ヴ]/.test(ja)) continue;
+      const row = LANGS.map(l => d[l] && d[l][k]);
+      if (row.some(v => v === undefined)) continue;
+      if (!map[ja]) map[ja] = row;
+    }
+  }
+  return map;
+})();
+const LABEL_KEYS = Object.keys(LABEL).sort((a, b) => b.length - a.length);
+
+function fillLabels(tail, li) {
+  for (const ja of LABEL_KEYS) if (tail.includes('>' + ja + '<')) tail = tail.split('>' + ja + '<').join('>' + LABEL[ja][li] + '<');
+  return tail;
+}
+
 /* ── 型あて ── */
 const brandKeys = Object.keys(BRAND).sort((a, b) => b.length - a.length);
 const areaKeys = Object.keys(AREA).sort((a, b) => b.length - a.length);
@@ -128,6 +186,14 @@ function abstract(s) {
 const out = Object.fromEntries(LANGS.map(l => [l, {}]));
 let n = 0;
 for (const [key, ja] of Object.entries(source)) {
+  // ① 頭の一句だけの型（尻尾はそのまま）
+  const pre = Object.keys(PREFIX).find(p => ja.startsWith(p));
+  if (pre && /^<a /.test(ja.slice(pre.length)) && ja.slice(pre.length).includes('data-i18n=')) {
+    const tail = ja.slice(pre.length);
+    LANGS.forEach((l, i) => { out[l][key] = PREFIX[pre][i] + fillLabels(tail, i); });
+    n++;
+    continue;
+  }
   const { tpl, found } = abstract(ja);
   const T = TPL[tpl];
   if (!T) continue;
