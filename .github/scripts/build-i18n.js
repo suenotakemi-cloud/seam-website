@@ -162,6 +162,7 @@ const PAGES = [
 { file: 'davines-fukuoka.html', url: '/davines-fukuoka' },
 { file: 'davines-utsunomiya.html', url: '/davines-utsunomiya' },
 { file: 'oggi-otto.html', url: '/oggi-otto' },
+{ file: 'rekera.html', url: '/rekera' },
 { file: 'oggi-otto-ginza.html', url: '/oggi-otto-ginza' },
 { file: 'oggi-otto-omotesando.html', url: '/oggi-otto-omotesando' },
 { file: 'oggi-otto-sapporo.html', url: '/oggi-otto-sapporo' },

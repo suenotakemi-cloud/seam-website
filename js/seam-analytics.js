@@ -64,11 +64,11 @@
           }
         } catch (e) { lang = 'ja'; }
         var T = {
-          ja: { m: '当サイトは、広告の効果測定のために Meta ピクセル等の Cookie を利用します。', a: '同意する', d: '拒否する', l: '詳細' },
-          en: { m: 'This site uses cookies such as the Meta Pixel to measure ad performance.', a: 'Accept', d: 'Decline', l: 'Details' },
-          zh: { m: '本网站使用 Meta 像素等 Cookie 用于广告成效衡量。', a: '同意', d: '拒绝', l: '详情' },
-          tw: { m: '本網站使用 Meta 像素等 Cookie 進行廣告成效評估。', a: '同意', d: '拒絕', l: '詳情' },
-          ko: { m: '본 사이트는 광고 성과 측정을 위해 Meta 픽셀 등의 쿠키를 사용합니다.', a: '동의', d: '거부', l: '자세히' }
+          ja: { m: '広告の効果を測るために Cookie を使います', a: '同意する', d: '拒否する', l: '詳細' },
+          en: { m: 'We use cookies to measure ad performance', a: 'Accept', d: 'Decline', l: 'Details' },
+          zh: { m: '我们使用 Cookie 衡量广告成效', a: '同意', d: '拒绝', l: '详情' },
+          tw: { m: '我們使用 Cookie 評估廣告成效', a: '同意', d: '拒絕', l: '詳情' },
+          ko: { m: '광고 성과 측정을 위해 쿠키를 사용합니다', a: '동의', d: '거부', l: '자세히' }
         };
         var t = T[lang] || T.ja;
         // 画面下の小さなシートに置く。以前は全画面スクリム＋中央モーダルだったが、

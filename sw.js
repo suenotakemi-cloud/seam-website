@@ -32,7 +32,6 @@ const CORE = [
   './recruit.html',
   './brand.html',
   './shop.html',
-  './haircareshop.html',
   './onlineshop.html',
   './hairsalon.html',
   './headspa.html',
