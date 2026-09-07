@@ -15,8 +15,10 @@
 import re, json, sys, os
 
 ROOT = sys.argv[1]; os.chdir(ROOT)
-PAGES = ['tokio.html','bykarte.html','sublimic.html','system-professional.html','milbon.html',
-         'oggi-otto.html','rekera.html','tsururincho.html','aujua.html','kerastase.html','brand.html']
+# 客先の「お店の顔」ぜんぶ。読みもの・法務・求人は長文なので触らない
+import glob as _g
+_SKIP = re.compile(r'^(admin|entrance|seo-|strategy|hpb-|ginza-earn|ginza-salonboard|august-|exec-|404|write|gbp-|press-kit|finder-spec|privacy|terms|tokushoho|recruit|guide-|journal|press)')
+PAGES = [f for f in sorted(_g.glob('*.html')) if not _SKIP.match(f)]
 KEEP = ['つるりんちょ。', 'いるかのせなか。']          # 商品名の句点は残す
 
 def clean(t):
@@ -42,6 +44,16 @@ for f in PAGES:
     s = open(f, encoding='utf-8').read(); before = s
 
     # ① タグの外にある地の文だけを直す（属性やJSは触らない）
+    #
+    # 【罠・実際にやらかした】<script>…</script> の中身も「> と < に挟まれた文字」なので
+    #   素の正規表現だと辞書 window.SEAM_PAGE_I18N ごと拾う。
+    #   中国語(zh/tw)は「。」が正しい記号なので、そこから 。を消すと中文が壊れる。
+    #   実測: zh/store-ginza の見える中文 22個→0個。先に script/style を退避しておく。
+    _blocks = []
+    def _stash(m):
+        _blocks.append(m.group(0))
+        return '\x01%d\x01' % (len(_blocks) - 1)
+    s = re.sub(r'<(script|style)\b[^>]*>.*?</\1>', _stash, s, flags=re.S | re.I)
     def fix_text(m):
         global n_html
         t = m.group(0)
@@ -51,7 +63,10 @@ for f in PAGES:
     # >…< に挟まれた部分だけ
     s = re.sub(r'(?<=>)[^<>]*[。、][^<>]*(?=<)', fix_text, s)
 
-    # ② 辞書の値も同じ形へ
+    for _i, _b in enumerate(_blocks):          # 退避したものを戻す
+        s = s.replace('\x01%d\x01' % _i, _b)
+
+    # ② 辞書の値も同じ形へ（ja だけ。他言語はその言語の作法に従う）
     m = re.search(r'(window\.SEAM_PAGE_I18N\s*=\s*)(\{.*?\})(\s*;)', s, re.S)
     if m:
         try: d = json.loads(m.group(2))
