@@ -26,7 +26,10 @@ const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const ROOT = process.argv[2];
 const DRY = process.argv.includes('--dry');   // 台帳だけ作って HTML は触らない
 const SKIP = /^(admin|entrance|august-|exec-|finder-spec|gbp-|ginza-2026|ginza-earn|ginza-menu|ginza-no1|ginza-salonboard|hpb-|treatment|seo-|strategy|write|404|finder|skinfinder)/;
-const kana = s => (s.match(/[ぁ-んァ-ヴ]/g) || []).length;
+// 【直し】最初はかなだけを見ていたが「利用規約」「髪格診断」「店舗情報」のような
+//   漢字だけの語を取りこぼし 韓国語ページに漢字のまま残っていた（52種）。
+//   かなも漢字も日本語として拾う。
+const kana = s => (s.match(/[ぁ-んァ-ヴ一-龥]/g) || []).length;
 const keyOf = s => 'x.' + crypto.createHash('sha1').update(s).digest('hex').slice(0, 8);
 
 const SRC = path.join(ROOT, 'i18n', 'source.json');
@@ -51,7 +54,11 @@ for (const f of files) {
   //   中国語ページで日本語への入口が消える。切替まわりは丸ごと外す。
   const cand = [...d.querySelectorAll('body *')].filter(e => {
     if (e.closest('script,style,noscript')) return false;
-    if (e.closest('[data-langlinks],[data-lang],.lang-switch,.legal-links')) return false;
+    if (e.closest('[data-langlinks],[data-lang],.lang-switch')) return false;
+    // 【直し】.legal-links は言語切替と法務リンクの両方に使われている。
+    //   丸ごと外すと「プライバシーポリシー」等に鍵が付かず 36枚で日本語が残った。
+    //   守るのは言語名そのものだけにする
+    if (/^(日本語|English|简体中文|繁體中文|한국어)$/.test((e.textContent || '').trim())) return false;
     const k = e.getAttribute('data-i18n');
     if (k && have[k] !== undefined) return false;          // もう訳せている
     const own = [...e.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('');

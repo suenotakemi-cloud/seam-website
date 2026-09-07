@@ -134,6 +134,9 @@ const PREFIX = {
  */
 const LABEL = (() => {
   const map = {};                       // 日本語 → [en, zh, tw, ko]
+  // 地名は先に入れておく（宇都宮のように 単独の要素として出てこないと
+  // 台帳にも辞書にも載らず 尻尾に日本語のまま残る。実測96枚）
+  for (const [ja, row] of Object.entries(AREA)) map[ja] = row;
   const DICT = /window\.SEAM_PAGE_I18N\s*=\s*\{/;
   for (const f of fs.readdirSync(ROOT).filter(f => /^[a-z0-9-]+\.html$/.test(f))) {
     const html = fs.readFileSync(path.join(ROOT, f), 'utf8');
@@ -159,6 +162,21 @@ const LABEL = (() => {
       if (!map[ja]) map[ja] = row;
     }
   }
+  // 原文台帳の訳も混ぜる。ページ辞書に bp.area.* が4言語そろっていない場合があり
+  //   それだけだと「銀座」が96枚の尻尾に残った（実測）。
+  const T0 = Object.fromEntries(LANGS.map(l => {
+    const q = path.join(ROOT, 'i18n', l + '.json');
+    return [l, fs.existsSync(q) ? JSON.parse(fs.readFileSync(q, 'utf8')) : {}];
+  }));
+  const src0 = path.join(ROOT, 'i18n', 'source.json');
+  if (fs.existsSync(src0)) {
+    for (const [k, ja] of Object.entries(JSON.parse(fs.readFileSync(src0, 'utf8')))) {
+      if (typeof ja !== 'string' || !/[ぁ-んァ-ヴ一-龥]/.test(ja) || ja.includes('<')) continue;
+      const row = LANGS.map(l => T0[l][k]);
+      if (row.some(v => v === undefined)) continue;
+      if (!map[ja]) map[ja] = row;
+    }
+  }
   return map;
 })();
 const LABEL_KEYS = Object.keys(LABEL).sort((a, b) => b.length - a.length);
@@ -167,6 +185,20 @@ function fillLabels(tail, li) {
   for (const ja of LABEL_KEYS) if (tail.includes('>' + ja + '<')) tail = tail.split('>' + ja + '<').join('>' + LABEL[ja][li] + '<');
   return tail;
 }
+
+/* 決まり文句の型（漢字だけの語まで拾うようにして出てきたぶん）
+ *   ・値段行「250ml ・ 定価 ¥3,850 税込」
+ *   ・住所や人名は日本語のまま（道案内に使うので訳さないのが正しい）
+ *   ・地名そのもの
+ */
+const PRICE = /^(?:(.+?)\s*・\s*)?定価\s*(¥[\d,]+)\s*税込$/;
+const PRICE_T = [
+  (q, v) => (q ? q + ' · ' : '') + 'List price ' + v + ' incl. tax',
+  (q, v) => (q ? q + ' ・ ' : '') + '定价 ' + v + ' 含税',
+  (q, v) => (q ? q + ' ・ ' : '') + '定價 ' + v + ' 含稅',
+  (q, v) => (q ? q + ' ・ ' : '') + '정가 ' + v + ' 세금 포함',
+];
+const JA_ONLY = /^(北海道|東京都|大阪府|愛知県|福岡県|栃木県|神奈川県)/;   // 住所は日本語のまま
 
 /* ── 型あて ── */
 const brandKeys = Object.keys(BRAND).sort((a, b) => b.length - a.length);
@@ -194,6 +226,17 @@ for (const [key, ja] of Object.entries(source)) {
     n++;
     continue;
   }
+  // ② 値段行
+  let pm;
+  if ((pm = PRICE.exec(ja))) {
+    LANGS.forEach((l, i) => { out[l][key] = PRICE_T[i](pm[1] || '', pm[2]); });
+    n++; continue;
+  }
+  // ③ 住所は日本語のまま（訳すと道案内に使えない）
+  if (JA_ONLY.test(ja)) { LANGS.forEach(l => { out[l][key] = ja; }); n++; continue; }
+  // ④ 地名そのもの
+  if (AREA[ja]) { LANGS.forEach((l, i) => { out[l][key] = AREA[ja][i]; }); n++; continue; }
+
   const { tpl, found } = abstract(ja);
   const T = TPL[tpl];
   if (!T) continue;
