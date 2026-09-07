@@ -20,7 +20,7 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 
 const ROOT = process.argv[2];
 const LANGS = ['en', 'zh', 'tw', 'ko'];
-const SKIP = /^(admin|entrance|august-|exec-|finder-spec|gbp-|ginza-2026|ginza-earn|ginza-no1|ginza-salonboard|hpb-|seo-|strategy|write|404|finder|skinfinder)/;
+const SKIP = /^(admin|entrance|august-|exec-|finder-spec|gbp-|ginza-2026|ginza-earn|ginza-menu|ginza-no1|ginza-salonboard|hpb-|treatment|seo-|strategy|write|404|finder|skinfinder)/;
 const rd = f => { const p = path.join(ROOT, 'i18n', f); return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {}; };
 
 const source = rd('source.json');

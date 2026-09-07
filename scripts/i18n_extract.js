@@ -25,7 +25,7 @@ const fs = require('fs'), path = require('path'), crypto = require('crypto');
 
 const ROOT = process.argv[2];
 const DRY = process.argv.includes('--dry');   // 台帳だけ作って HTML は触らない
-const SKIP = /^(admin|entrance|august-|exec-|finder-spec|gbp-|ginza-2026|ginza-earn|ginza-no1|ginza-salonboard|hpb-|seo-|strategy|write|404|finder|skinfinder)/;
+const SKIP = /^(admin|entrance|august-|exec-|finder-spec|gbp-|ginza-2026|ginza-earn|ginza-menu|ginza-no1|ginza-salonboard|hpb-|treatment|seo-|strategy|write|404|finder|skinfinder)/;
 const kana = s => (s.match(/[ぁ-んァ-ヴ]/g) || []).length;
 const keyOf = s => 'x.' + crypto.createHash('sha1').update(s).digest('hex').slice(0, 8);
 
@@ -78,6 +78,17 @@ for (const f of files) {
     nPage++;
   } else if (touched) { nPage++; }
 }
+
+// どのページからも指されなくなった鍵は台帳から落とす（社内送りにしたページのぶんなど）。
+// 残すと「まだ訳が無い」に永久に居座って 終わりが来なくなる
+const live = new Set();
+for (const f of files) {
+  const d2 = new JSDOM(fs.readFileSync(path.join(ROOT, f), 'utf8')).window.document;
+  d2.querySelectorAll('[data-i18n]').forEach(e => live.add(e.getAttribute('data-i18n')));
+}
+let dropped = 0;
+for (const k of Object.keys(source)) if (!live.has(k)) { delete source[k]; dropped++; }
+if (dropped) console.log(`  使われなくなった鍵を ${dropped}本 落とした`);
 
 fs.mkdirSync(path.join(ROOT, 'i18n'), { recursive: true });
 fs.writeFileSync(SRC, JSON.stringify(source, null, 1), 'utf8');
