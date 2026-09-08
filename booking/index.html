@@ -3397,6 +3397,8 @@ function ktCopyLast(){
 /* 写真は、その場で撮るのが一番早い。iPadのカメラをそのまま開く。
    大きいまま送るとD1に入らないので、長辺1100pxのJPEGに縮めてから送る（顧客カルテと同じ扱い）。 */
 function ktPhotoPick(file, onDone){
+  const target=KT?{name:KT.name,phone:KT.phone||'',date:KT.date}:null;
+  if(!target||!target.name){toast('お客様を選び直してください',true);return;}
   const img=new Image();
   img.onload=async()=>{
     const MAX=1100, sc=Math.min(1,MAX/Math.max(img.width,img.height));
@@ -3404,7 +3406,7 @@ function ktPhotoPick(file, onDone){
     cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
     let q=0.72,data=cv.toDataURL('image/jpeg',q);
     while(data.length>550000&&q>0.4){q-=0.1;data=cv.toDataURL('image/jpeg',q);}
-    const res=await API.saveKartePhoto({name:KT.name,phone:KT.phone||'',data,date:KT.date});
+    const res=await API.saveKartePhoto({...target,data});
     URL.revokeObjectURL(img.src);
     if(res&&res.ok)toast('写真を保存しました'); else toast('写真の保存に失敗しました',true);
     onDone&&onDone();
