@@ -9,7 +9,10 @@
 //        api_key    { id }  / api_key_revoke { id }       … EC 連携用の読み取り専用キーを発行（再発行で古いものは無効）/ 無効化
 //        webhook    { id, url }                          … 変更を EC 側へ push する URL（https）。署名用の秘密を返す（再設定で秘密も変わる）
 //        webhook_clear { id } / webhook_test { id }      … 解除 / テスト送信（結果を返す）
+//        ec_key     { id, key, url } / ec_clear { id } / ec_test { id }
+//                                                        … SalonPro（EC）へ写真を送るキーを代わりに設定する（ディーラーが PC を触れないとき）
 import { json, hashPassword, passwordProblem, normalizeLoginId, publicAccount, nowIso, newApiKey, newWebhookSecret, notifyWebhook, webhookUrlOk } from '../_lib.js';
+import { ecKeyOk, ecUrlOk, ecPing, EC_DEFAULT_URL } from '../_salonpro.js';
 
 export async function onRequestGet({ env }) {
   const rs = await env.DB.prepare(
@@ -90,6 +93,24 @@ export async function onRequestPost(context) {
     if (!a.webhook_url) return json({ ok: false, reason: 'no_webhook', message: 'Webhook が未設定です' }, 400);
     const status = await notifyWebhook(context, a, 'test', ['0000000000000'], 'admin');
     return json({ ok: true, status, message: '送信しました → 相手の応答: ' + status });
+  }
+  if (action === 'ec_key') {
+    const key = String(b.key || '').trim();
+    const url = (String(b.url || '').trim() || a.ec_url || EC_DEFAULT_URL).replace(/\/+$/, '');
+    if (!ecKeyOk(key)) return json({ ok: false, reason: 'bad_key', message: 'SalonPro のキー（spk_ で始まる文字列）を入れてください' }, 400);
+    if (!ecUrlOk(url)) return json({ ok: false, reason: 'bad_url', message: 'URL は https:// で始めてください' }, 400);
+    await env.DB.prepare('UPDATE pim_accounts SET ec_key=?, ec_url=?, updated_at=? WHERE id=?').bind(key, url, ts, id).run();
+    const ping = await ecPing({ ec_key: key, ec_url: url });
+    return json({ ok: true, ping, message: '保存しました。' + ping.message });
+  }
+  if (action === 'ec_clear') {
+    await env.DB.prepare('UPDATE pim_accounts SET ec_key=NULL, ec_auto=0, updated_at=? WHERE id=?').bind(ts, id).run();
+    return json({ ok: true, message: 'SalonPro への送信を解除しました' });
+  }
+  if (action === 'ec_test') {
+    if (!ecKeyOk(a.ec_key)) return json({ ok: false, reason: 'no_key', message: 'キーが未設定です' }, 400);
+    const ping = await ecPing(a);
+    return json({ ok: true, ping, message: ping.message });
   }
   if (action === 'clone_settings') { // 初期設定パック: 別のディーラー（例: 菊池）の 表記の辞書 をコピー（無いものだけ足す）
     const from = await env.DB.prepare('SELECT id, name FROM pim_accounts WHERE login_id=?').bind(String(b.from || '').trim().toLowerCase()).first();

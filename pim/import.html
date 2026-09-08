@@ -29,6 +29,7 @@
   .tabs button{border:1px solid var(--line);background:#fff;padding:8px 14px;border-radius:999px;font-size:13px}
   .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
   .tabs button .n{display:inline-block;min-width:18px;padding:0 5px;border-radius:999px;background:var(--ng);color:#fff;font-size:11px;margin-left:5px;text-align:center}
+  .tabs button .n[hidden]{display:none}
   .pane{display:none}
   .pane.on{display:block}
   .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.02);margin-bottom:14px}
@@ -125,6 +126,7 @@
     <button data-tab="progress">進捗</button>
     <button data-tab="review">検品<span class="n" id="reviewN" hidden>0</span></button>
     <button data-tab="series">並び確認</button>
+    <button data-tab="push">EC 送信<span class="n" id="pushN" hidden>0</span></button>
     <button data-tab="settings">設定</button>
   </div>
 
@@ -331,6 +333,26 @@
     <div class="card"><h2>メーカー別の残り</h2><div class="tbl" style="max-height:420px"><table id="stMaker"><thead><tr><th>メーカー</th><th>商品</th><th>写真あり</th><th>残り</th><th>進み</th></tr></thead><tbody></tbody></table></div></div>
   </section>
 
+  <!-- ══════ EC 送信（SalonPro へ写真を送る）══════ -->
+  <section class="pane" id="pane-push">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">EC（SalonPro）へ写真を送る</h2><button class="btn sm" id="btnPushReload">再読込</button></div>
+      <p class="muted" id="pushState">読み込んでいます…</p>
+      <div class="kpis" id="pushKpis"></div>
+      <div class="row" style="margin-top:8px"><button class="btn solid" id="btnPushGo">送信待ちを送る（20 件ずつ）</button><button class="btn" id="btnPushAll">最後まで送る</button><span class="muted" id="pushLog"></span></div>
+      <div class="prog" id="pushProg" hidden><i></i></div>
+    </div>
+    <div class="card">
+      <h2>送信待ち <span class="muted">（写真があって、まだ送っていない／送ったあとに変わった商品）</span></h2>
+      <div class="tbl" style="max-height:420px"><table id="pushTbl"><thead><tr><th>商品コード</th><th>JAN</th><th>商品名</th><th>写真</th><th>前回の送信</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>送れなかったもの</h2>
+      <p class="muted">いちばん多いのは <b>SalonPro に商品が未登録</b>（JAN が SalonPro 側にない）です。その場合は SalonPro 側に商品を登録してから、もう一度送ってください。</p>
+      <div class="tbl" style="max-height:360px"><table id="pushErr"><thead><tr><th>JAN</th><th>商品名</th><th>いつ</th><th>理由</th><th></th></tr></thead><tbody></tbody></table></div>
+    </div>
+  </section>
+
   <!-- ══════ 並び確認（シリーズ並べ）══════ -->
   <section class="pane" id="pane-series">
     <div class="card">
@@ -392,6 +414,13 @@
       <div class="row" style="margin-bottom:8px"><span class="muted" id="acKeyState"></span><button class="btn sm" id="btnAcKey">連携キーを発行</button><button class="btn sm danger" id="btnAcKeyRevoke" hidden>連携キーを無効化</button></div>
       <div class="row"><input id="acWebhook" placeholder="https://（EC 側の受け口）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:340px"><button class="btn sm" id="btnAcWebhook">設定</button><button class="btn sm" id="btnAcWebhookTest" hidden>テスト送信</button><button class="btn sm danger" id="btnAcWebhookClear" hidden>解除</button><span class="muted" id="acWebhookState"></span></div>
       <div id="acSecret" class="muted" style="margin-top:8px" hidden></div>
+    </div>
+    <div class="card">
+      <h2>EC（SalonPro）へ写真を送る</h2>
+      <p class="muted">SalonPro の管理画面「サイト設定 → 外部連携（APIキー）」で出した <b>spk_ で始まるキー</b>をここに入れると、撮った写真を SalonPro の商品にそのまま登録できます。キーは保存すると画面には出しません。<b>SalonPro 側に同じ JAN の商品が先に登録されている必要があります</b>（無い商品は「未登録」として送信タブに残ります）。</p>
+      <div class="row"><input id="acEcUrl" placeholder="https://pro-console.salon.town" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:260px"><input id="acEcKey" type="password" placeholder="spk_…（SalonPro のキー）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:280px"><button class="btn sm solid" id="btnAcEc">保存</button><button class="btn sm" id="btnAcEcTest" hidden>接続確認</button><button class="btn sm danger" id="btnAcEcClear" hidden>解除</button></div>
+      <div class="row" style="margin-top:8px"><span class="muted" id="acEcState"></span></div>
+      <div class="row" style="margin-top:8px"><label class="muted"><input type="checkbox" id="acEcAuto"> 写真を撮ったら自動で送る（撮影のたびに SalonPro が最新になります）</label></div>
     </div>
     <div class="card">
       <h2>自動取り込み用 URL（メール転送・共有フォルダ）</h2>
@@ -502,7 +531,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
       Array.prototype.forEach.call(document.querySelectorAll('.pane'), function (p) { p.classList.toggle('on', p.id === 'pane-' + b.getAttribute('data-tab')); });
       var t = b.getAttribute('data-tab');
-      if (t === 'issues') loadIssues(); if (t === 'series') loadSeries(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'settings') { loadStaff(); loadDict(); loadAccount(); } if (t === 'import') loadInbox();
+      if (t === 'issues') loadIssues(); if (t === 'series') loadSeries(); if (t === 'push') loadPush(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'settings') { loadStaff(); loadDict(); loadAccount(); } if (t === 'import') loadInbox();
     });
   });
 
@@ -552,7 +581,7 @@
       $('login').hidden = true;
       ensureStaff().catch(handleErr);
       if (j.counts) { $('hsub').textContent = (j.account ? j.account.name + ' ／ ' : '') + '商品 ' + j.counts.products + '件 / 写真あり ' + j.counts.with_images + '件 / 注意 ' + j.counts.open_issues + '件' + (j.r2 ? '' : ' ／ ※写真は暫定で D1 に保存中（R2 未設定）'); setIssueN(j.counts.open_issues); }
-      api('stats').then(function (st) { if (st.ok) setReviewN(st.totals.unreviewed); }).catch(function () { /* */ });
+      api('stats').then(function (st) { if (st.ok) { setReviewN(st.totals.unreviewed); setPushN(st.totals.push_pending || 0); } }).catch(function () { /* */ });
       if (j.account) $('setAcct').textContent = 'アカウント: ' + j.account.name + '（ID: ' + j.account.login_id + '）' + (j.account.pass_changed_at ? ' ／ パスワード最終変更 ' + j.account.pass_changed_at.slice(0, 10) : '');
       $('setUser').value = C.Auth.user();
       loadHistory(); loadMakers(); loadInbox();
@@ -1060,7 +1089,7 @@
       if (!j.ok) return;
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
-        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + (p.ready ? '<span class="tag ok">可</span>' : '<span class="tag ng" title="写真あり・商品コードあり・価格あり・撮り直し無し が条件">不可</span>') + '</td><td>' + (p.ec_synced_at && p.ec_synced_at >= p.updated_at ? '<span class="tag ok">済</span>' : '<span class="tag">未</span>') + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
+        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + (p.ready ? '<span class="tag ok">可</span>' : '<span class="tag ng" title="写真あり・商品コードあり・価格あり・撮り直し無し が条件">不可</span>') + '</td><td>' + (p.ec_synced_at && p.ec_synced_at >= p.updated_at ? '<span class="tag ok">済</span>' : '<span class="tag">未</span>') + (p.ec_push_status && p.ec_push_status !== 'ok' ? ' <span class="tag ng" title="' + esc(p.ec_push_msg || p.ec_push_status) + '">送信×</span>' : '') + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
       }).join('') || '<tr><td colspan="15" class="muted">該当なし</td></tr>';
       $('selAll').checked = false; updateSel();
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-sku]'), function (b) {
@@ -1354,6 +1383,58 @@
   $('btnExImages').addEventListener('click', function () { download('images'); });
   $('btnExJson').addEventListener('click', function () { download('json'); });
 
+  // ── EC 送信（SalonPro へ写真を送る）──
+  var PUSH = { items: [], busy: false };
+  function setPushN(n) { var e = $('pushN'); e.hidden = !n; e.textContent = n || 0; }
+  function loadPush() {
+    return api('push').then(function (j) {
+      if (!j.ok) return;
+      PUSH.items = j.items || [];
+      setPushN(j.pending);
+      $('pushState').innerHTML = j.ec.has_key
+        ? '送り先: <code>' + esc(j.ec.url) + '</code>' + (j.ec.auto ? '（写真を撮ったら<b>自動で送る</b>）' : '（自動送信は切っています。下のボタンで送ります）') + (j.last ? ' — 最後に送ったのは ' + esc(j.last.slice(0, 16).replace('T', ' ')) : '')
+        : '<b>SalonPro のキーがまだ設定されていません。</b>「設定」タブの「EC（SalonPro）へ写真を送る」でキーを入れてください。';
+      $('btnPushGo').disabled = !j.ec.has_key; $('btnPushAll').disabled = !j.ec.has_key;
+      $('pushKpis').innerHTML = [['送信待ち', j.pending, j.pending ? 'ng' : 'ok'], ['送信ずみ', j.sent, 'ok'], ['送れなかった', j.failed, j.failed ? 'ng' : 'ok']]
+        .map(function (k) { return '<div class="kpi ' + (k[2] || '') + '"><div class="l">' + k[0] + '</div><div class="n">' + k[1] + '</div></div>'; }).join('');
+      $('pushTbl').querySelector('tbody').innerHTML = PUSH.items.map(function (p) {
+        return '<tr><td>' + esc(p.sku || '') + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name || '') + '</td><td>' + (p.image_count || 0) + '</td><td class="muted">' + (p.ec_push_at ? esc(p.ec_push_at.slice(0, 16).replace('T', ' ')) + (p.ec_push_status === 'ok' ? '' : ' / ' + esc(p.ec_push_status || '')) : 'まだ') + '</td><td><button class="btn sm" data-push1="' + esc(p.jan) + '">この商品だけ送る</button></td></tr>';
+      }).join('') || '<tr><td colspan="6" class="muted">送信待ちはありません</td></tr>';
+      $('pushErr').querySelector('tbody').innerHTML = (j.errors || []).map(function (p) {
+        return '<tr><td>' + esc(p.jan) + '</td><td>' + esc(p.name || '') + '</td><td class="muted">' + esc((p.ec_push_at || '').slice(0, 16).replace('T', ' ')) + '</td><td>' + esc(p.ec_push_msg || p.ec_push_status || '') + '</td><td><button class="btn sm" data-push1="' + esc(p.jan) + '">もう一度送る</button></td></tr>';
+      }).join('') || '<tr><td colspan="5" class="muted">ありません</td></tr>';
+    }).catch(handleErr);
+  }
+  function pushRun(body) {
+    if (PUSH.busy) return Promise.resolve(null);
+    PUSH.busy = true; $('pushProg').hidden = false; $('pushProg').querySelector('i').style.width = '40%'; $('pushLog').textContent = '送っています…';
+    return api('push', { method: 'POST', body: body }).then(function (r) {
+      PUSH.busy = false; $('pushProg').hidden = true;
+      if (!r.ok) { toast(r.message || '送れませんでした', true); $('pushLog').textContent = r.message || ''; return null; }
+      $('pushLog').textContent = r.message || ''; toast(r.message || '送りました', !!r.failed);
+      return loadPush().then(function () { return r; });
+    }).catch(function (e) { PUSH.busy = false; $('pushProg').hidden = true; handleErr(e); });
+  }
+  $('btnPushReload').addEventListener('click', function () { loadPush(); });
+  $('btnPushGo').addEventListener('click', function () { pushRun({ all: true, limit: 20 }); });
+  $('btnPushAll').addEventListener('click', function () {
+    if (!confirm('送信待ちを最後まで送ります。件数が多いと数分かかります。よろしいですか？')) return;
+    var total = 0;
+    (function step() {
+      pushRun({ all: true, limit: 20 }).then(function (r) {
+        if (!r) return;
+        total += (r.sent || 0);
+        // 送れたものがある限り続ける（未登録などで失敗し続けるものは残すので止まる）
+        if (r.sent > 0) { $('pushLog').textContent = '送信ずみ ' + total + ' 件…'; step(); }
+        else $('pushLog').textContent = '終わりました（今回 ' + total + ' 件）';
+      });
+    })();
+  });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-push1]'); if (!b) return;
+    pushRun({ jans: [b.getAttribute('data-push1')] });
+  });
+
   // ── アカウント設定（ディーラー自身で変えられるもの）──
   function loadAccount() {
     api('account').then(function (j) {
@@ -1366,6 +1447,9 @@
       $('acWebhook').value = a.webhook_url || ''; $('btnAcWebhookTest').hidden = !a.webhook_url; $('btnAcWebhookClear').hidden = !a.webhook_url;
       $('acWebhookState').textContent = a.webhook_url ? (a.webhook_last_at ? '最終送信 ' + a.webhook_last_at.slice(0, 16).replace('T', ' ') + ' → ' + a.webhook_last_status : '設定済み（まだ送っていません）') : '';
       $('acInbox').textContent = j.inbox_url || '未発行'; $('btnAcInboxRevoke').hidden = !j.inbox_url;
+      $('acEcUrl').value = a.ec_url || ''; $('acEcKey').value = ''; $('acEcAuto').checked = !!a.ec_auto;
+      $('btnAcEcTest').hidden = !a.has_ec_key; $('btnAcEcClear').hidden = !a.has_ec_key;
+      $('acEcState').textContent = a.has_ec_key ? 'キー: 設定ずみ（' + (a.ec_url || 'https://pro-console.salon.town') + '）' : 'キー: 未設定';
     }).catch(handleErr);
   }
   function acPost(body, after) { return api('account', { method: 'POST', body: body }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return null; } toast(r.message || '保存しました'); if (after) after(r); loadAccount(); return r; }).catch(handleErr); }
@@ -1390,6 +1474,13 @@
   });
   $('btnAcWebhookTest').addEventListener('click', function () { acPost({ action: 'webhook_test' }); });
   $('btnAcWebhookClear').addEventListener('click', function () { if (confirm('Webhook を解除しますか？')) acPost({ action: 'webhook_clear' }); });
+  $('btnAcEc').addEventListener('click', function () {
+    var k = $('acEcKey').value.trim(); if (!k) { toast('SalonPro のキー（spk_…）を入れてください', true); return; }
+    acPost({ action: 'ec_key', key: k, url: $('acEcUrl').value.trim() }, function () { $('acEcKey').value = ''; loadPush(); });
+  });
+  $('btnAcEcTest').addEventListener('click', function () { acPost({ action: 'ec_test' }); });
+  $('btnAcEcClear').addEventListener('click', function () { if (confirm('SalonPro への送信を解除しますか？（キーを消します）')) acPost({ action: 'ec_clear' }); });
+  $('acEcAuto').addEventListener('change', function () { acPost({ action: 'ec_auto', on: $('acEcAuto').checked }); });
   $('btnAcInbox').addEventListener('click', function () { if ($('acInbox').textContent !== '未発行' && !confirm('再発行すると古い URL は使えなくなります。よろしいですか？')) return; acPost({ action: 'inbox_key' }); });
   $('btnAcInboxRevoke').addEventListener('click', function () { if (confirm('自動取り込み用 URL を無効にしますか？')) acPost({ action: 'inbox_key_revoke' }); });
 
