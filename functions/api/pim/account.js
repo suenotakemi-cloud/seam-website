@@ -7,8 +7,11 @@
 //        api_key / api_key_revoke                        … EC 連携キー（読み取り専用）
 //        webhook { url } / webhook_clear / webhook_test  … 変更の push 先
 //        inbox_key / inbox_key_revoke                    … 自動取り込み用 URL の鍵（メール転送・共有フォルダの監視スクリプトから POST する）
+//        ec_key { key, url? } / ec_clear / ec_test / ec_auto { on }
+//                                                        … SalonPro（EC）へ写真を送るキー。キーは保存後に画面へ出さない
 //   連携キー・管理者の代行では変更不可（本人のトークンだけ）
 import { json, nowIso, normalizeLoginId, verifyPassword, publicAccount, newApiKey, newWebhookSecret, webhookUrlOk, notifyWebhook, newInboxKey, parseEmails } from './_lib.js';
+import { ecUrlOk, ecKeyOk, ecBase, ecPing, EC_DEFAULT_URL } from './_salonpro.js';
 
 export async function onRequestGet({ request, env, data }) {
   if (data.readonly) return json({ ok: false, reason: 'readonly', message: '連携キーではアカウント設定を見られません' }, 403); // 自動取り込み用 URL が読み取り専用キーから漏れないように
@@ -73,6 +76,30 @@ export async function onRequestPost(context) {
     if (!a.webhook_url) return json({ ok: false, reason: 'no_webhook', message: 'Webhook が未設定です' }, 400);
     const status = await notifyWebhook(context, a, 'test', ['0000000000000'], data.account.name);
     return json({ ok: true, status, message: '送信しました → 相手の応答: ' + status });
+  }
+  if (action === 'ec_key') {
+    const key = String(b.key || '').trim();
+    const url = String(b.url || '').trim() || (a.ec_url || EC_DEFAULT_URL);
+    if (!ecKeyOk(key)) return json({ ok: false, reason: 'bad_key', message: 'SalonPro のキー（spk_ で始まる文字列）を入れてください' }, 400);
+    if (!ecUrlOk(url)) return json({ ok: false, reason: 'bad_url', message: 'SalonPro の URL は https:// で始めてください' }, 400);
+    await env.DB.prepare('UPDATE pim_accounts SET ec_key=?, ec_url=?, updated_at=? WHERE id=?').bind(key, url.replace(/\/+$/, ''), ts, id).run();
+    const ping = await ecPing({ ec_key: key, ec_url: url });
+    return json({ ok: true, ec_url: ecBase({ ec_url: url }), ping, message: 'SalonPro のキーを保存しました。' + ping.message });
+  }
+  if (action === 'ec_clear') {
+    await env.DB.prepare('UPDATE pim_accounts SET ec_key=NULL, ec_auto=0, updated_at=? WHERE id=?').bind(ts, id).run();
+    return json({ ok: true, message: 'SalonPro への送信を解除しました' });
+  }
+  if (action === 'ec_test') {
+    if (!ecKeyOk(a.ec_key)) return json({ ok: false, reason: 'no_key', message: 'SalonPro のキーが未設定です' }, 400);
+    const ping = await ecPing(a);
+    return json({ ok: true, ping, message: ping.message });
+  }
+  if (action === 'ec_auto') {
+    const on = b.on ? 1 : 0;
+    if (on && !ecKeyOk(a.ec_key)) return json({ ok: false, reason: 'no_key', message: '先に SalonPro のキーを保存してください' }, 400);
+    await env.DB.prepare('UPDATE pim_accounts SET ec_auto=?, updated_at=? WHERE id=?').bind(on, ts, id).run();
+    return json({ ok: true, ec_auto: !!on, message: on ? '写真を撮ったら自動で SalonPro に送ります' : '自動送信をやめました（PC の「EC 送信」から送れます）' });
   }
   if (action === 'inbox_key') {
     const key = newInboxKey();

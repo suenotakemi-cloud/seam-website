@@ -12,6 +12,7 @@
 //                                              { jan, action:'main', slot:3 }         → その写真を 1枚目（メイン）にして他を後ろへ
 //   DELETE /api/pim/images?jan=&slot=          → 消して、後ろの写真を前に詰める（メルカリ式）
 import { json, cleanJan, janShapeOk, imageKey, imageUrl, thumbKey, thumbUrl, nowIso, hasR2, SLOT_MIN, SLOT_MAX, userOf, blobPut, blobGet, blobDelete, imageStore, logChanges, notifyWebhook } from './_lib.js';
+import { autoPush } from './_salonpro.js';
 
 const QUALITY_WARNS = ['暗い', 'ピンぼけ', '小さい', '白飛び'];
 function parseQuality(raw) {
@@ -135,7 +136,7 @@ export async function onRequestPost(context) {
     const d = await env.DB.prepare('SELECT i.jan, i.slot, p.name FROM pim_images i JOIN pim_products p ON p.account_id=i.account_id AND p.jan=i.jan WHERE i.account_id=? AND i.phash=? AND i.jan<>? LIMIT 5').bind(acct, phash, jan).all();
     dupOf = (d.results || []);
   }
-  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by);
+  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by); autoPush(context, data.account, [jan]);
   return json({ ok: true, jan, slot: usedSlot, url: imageUrl(origin, acct, jan, usedSlot, ts), bytes: buf.length, product_updated_at: pts, quality_warn: qualityWarn, dup_of: dupOf, images: await listImages(env, origin, acct, jan) });
 }
 
@@ -180,7 +181,7 @@ async function reorder(context) {
   for (const m of moves) { await blobPut(env, imageKey(acct, jan, m.to), bufs[m.from]); if (tbufs[m.from]) await blobPut(env, thumbKey(acct, jan, m.to), tbufs[m.from]); else await blobDelete(env, thumbKey(acct, jan, m.to)); }
   const by = userOf(request);
   const pts = await syncCount(env, acct, jan);
-  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by);
+  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by); autoPush(context, data.account, [jan]);
   return json({ ok: true, jan, product_updated_at: pts, images: await listImages(env, origin, acct, jan) });
 }
 
@@ -217,6 +218,6 @@ export async function onRequestDelete(context) {
   }
   const pts = await syncCount(env, acct, jan);
   const by = userOf(request);
-  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by);
+  await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by); autoPush(context, data.account, [jan]);
   return json({ ok: true, jan, product_updated_at: pts, images: await listImages(env, url.origin, acct, jan) });
 }

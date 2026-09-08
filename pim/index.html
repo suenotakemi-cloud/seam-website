@@ -469,6 +469,11 @@
       <p style="margin-top:8px">商品の写真をタップ →「📌 この写真を見本にする」で登録。同じ種類・同じ枚目を撮るとき、カメラ画面に薄く重なって出ます（全員のスマホで共通）。</p>
       <div id="refList" class="small">まだありません</div>
     </details>
+    <details style="margin-bottom:12px" id="ecDet"><summary style="font-size:13px;cursor:pointer">EC（SalonPro）へ写真を送る</summary>
+      <p style="margin-top:8px" id="ecState" class="small">確認しています…</p>
+      <button class="btn" id="btnEcPush">送信待ちを送る</button>
+      <p class="small" style="margin-top:8px">キーの設定は PC の「設定」タブから。自動送信を入れていれば、撮った写真はそのまま SalonPro に届きます。</p>
+    </details>
     <details style="margin-bottom:12px"><summary style="font-size:13px;cursor:pointer">データを出力する（CSV をこの端末に保存）</summary>
       <p style="margin-top:8px">PC の取り込み画面と同じものを、スマホからも落とせます。iPhone は「ファイル」に保存、または共有から送れます。</p>
       <button class="btn" id="btnExSource" style="margin-bottom:8px">取り込んだ CSV の形 ＋ 画像1〜5</button>
@@ -658,7 +663,25 @@
     var a = C.Auth.account();
     $('setAcct').textContent = a ? 'アカウント: ' + a.name + '（ID: ' + a.login_id + '）' : '';
     $('setUser').value = C.Auth.user(); $('setUser').readOnly = ST.required; $('setErr').textContent = ''; $('pwCur').value = $('pwNew').value = $('pwNew2').value = '';
-    $('settings').hidden = false; stopScan(); renderRefList();
+    $('settings').hidden = false; stopScan(); renderRefList(); renderEcState();
+  });
+  // EC（SalonPro）へ写真を送る
+  function renderEcState() {
+    var el = $('ecState'); if (!el) return;
+    el.textContent = '確認しています…'; $('btnEcPush').disabled = true;
+    api('push?limit=1').then(function (j) {
+      if (!j.ok) { el.textContent = '確認できません'; return; }
+      if (!j.ec.has_key) { el.textContent = 'まだ設定されていません（PC の設定タブでキーを入れてください）'; return; }
+      el.textContent = '送り先 ' + j.ec.url + '／自動送信 ' + (j.ec.auto ? '入' : '切') + '／送信待ち ' + j.pending + ' 件' + (j.failed ? '・送れなかったもの ' + j.failed + ' 件' : '');
+      $('btnEcPush').disabled = !j.pending;
+    }).catch(function () { el.textContent = '確認できません'; });
+  }
+  $('btnEcPush').addEventListener('click', function () {
+    $('btnEcPush').disabled = true; $('ecState').textContent = '送っています…';
+    api('push', { method: 'POST', body: { all: true, limit: 20 } }).then(function (j) {
+      toast(j.message || (j.ok ? '送りました' : '送れませんでした'));
+      renderEcState();
+    }).catch(function () { $('btnEcPush').disabled = false; $('ecState').textContent = '送れませんでした'; });
   });
   $('btnSetSave').addEventListener('click', function () {
     var u = $('setUser').value.trim(); if (!u) { $('setErr').textContent = '担当者名を入れてください'; return; }
