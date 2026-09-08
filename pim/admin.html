@@ -115,7 +115,7 @@
       $('login').hidden = true;
       $('rows').innerHTML = j.accounts.map(function (a) {
         return '<tr data-id="' + a.id + '"><td><code>' + esc(a.login_id) + '</code></td><td>' + esc(a.name) + '</td><td>' + (a.active ? '<span class="tag ok">有効</span>' : '<span class="tag ng">停止中</span>') + '</td><td>' + a.products + '</td><td>' + a.with_images + '</td><td>' + a.open_issues + '</td><td class="muted">' + esc((a.last_login_at || '—').replace('T', ' ').slice(0, 16)) + '</td><td class="muted">' + esc((a.pass_changed_at || '—').slice(0, 10)) + '</td><td class="muted">' + esc(a.note || '') + '</td>' +
-          '<td class="row"><button class="btn sm" data-act="progress">進捗</button><button class="btn sm" data-act="report_preview">日報</button><button class="btn sm" data-act="clone_settings">設定コピー</button><button class="btn sm" data-act="api_key">' + (a.has_api_key ? '連携キー再発行' : '連携キー発行') + '</button>' + (a.has_api_key ? '<button class="btn sm" data-act="api_key_revoke">連携キー無効化</button>' : '') + '<button class="btn sm" data-act="reset">PW再設定</button><button class="btn sm" data-act="logout_all">全端末ログアウト</button>' + (a.active ? '<button class="btn sm danger" data-act="disable">停止</button>' : '<button class="btn sm" data-act="enable">再開</button>') + '<button class="btn sm" data-act="rename">名前・メモ</button><button class="btn sm" data-act="webhook">Webhook' + (a.webhook_url ? ' ✓' : '') + '</button><button class="btn sm" data-act="staff">担当者</button><button class="btn sm" data-act="dict">辞書</button></td></tr>';
+          '<td class="row"><button class="btn sm" data-act="progress">進捗</button><button class="btn sm" data-act="report_preview">日報</button><button class="btn sm" data-act="clone_settings">設定コピー</button><button class="btn sm" data-act="ec_key">SalonPro キー' + (a.has_ec_key ? ' ✓' : '') + '</button>' + (a.has_ec_key ? '<button class="btn sm" data-act="ec_test">SalonPro 接続確認</button>' : '') + '<button class="btn sm" data-act="api_key">' + (a.has_api_key ? '連携キー再発行' : '連携キー発行') + '</button>' + (a.has_api_key ? '<button class="btn sm" data-act="api_key_revoke">連携キー無効化</button>' : '') + '<button class="btn sm" data-act="reset">PW再設定</button><button class="btn sm" data-act="logout_all">全端末ログアウト</button>' + (a.active ? '<button class="btn sm danger" data-act="disable">停止</button>' : '<button class="btn sm" data-act="enable">再開</button>') + '<button class="btn sm" data-act="rename">名前・メモ</button><button class="btn sm" data-act="webhook">Webhook' + (a.webhook_url ? ' ✓' : '') + '</button><button class="btn sm" data-act="staff">担当者</button><button class="btn sm" data-act="dict">辞書</button></td></tr>';
       }).join('') || '<tr><td colspan="10" class="muted">まだアカウントがありません</td></tr>';
       Array.prototype.forEach.call($('rows').querySelectorAll('[data-act]'), function (b) {
         b.addEventListener('click', function () {
@@ -124,6 +124,17 @@
           var body = { action: act, id: id };
           if (act === 'report_preview') { // 日報の中身を確認（メール送信は GitHub Actions の設定後）
             var w = window.open('', '_blank'); C.api('report?format=json', { admin: true, asAccount: lid }).then(function (r) { if (!r.ok) { toast(r.message || '取得できません', true); if (w) w.close(); return; } if (w) { w.document.open(); w.document.write(r.html); w.document.close(); } }).catch(handleErr);
+            return;
+          }
+          if (act === 'ec_key') {
+            var ek = prompt(name + ' の SalonPro のキー（spk_ で始まる文字列）を入れてください。空で解除します。'); if (ek == null) return;
+            if (!ek.trim()) { C.api('admin/accounts', { admin: true, method: 'POST', body: { action: 'ec_clear', id: id } }).then(function (r) { toast(r.message || '解除しました', !r.ok); load(); }).catch(handleErr); return; }
+            var eu = prompt('SalonPro の URL（そのままで可）', 'https://pro-console.salon.town'); if (eu == null) return;
+            C.api('admin/accounts', { admin: true, method: 'POST', body: { action: 'ec_key', id: id, key: ek.trim(), url: eu.trim() } }).then(function (r) { toast(r.message || (r.ok ? '保存しました' : '失敗'), !r.ok); load(); }).catch(handleErr);
+            return;
+          }
+          if (act === 'ec_test') {
+            C.api('admin/accounts', { admin: true, method: 'POST', body: { action: 'ec_test', id: id } }).then(function (r) { toast(r.message || '確認しました', !(r.ok && r.ping && r.ping.ok)); }).catch(handleErr);
             return;
           }
           if (act === 'clone_settings') {

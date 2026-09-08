@@ -231,6 +231,31 @@
 - **テンポ表示**（スマホ）: 「今日の写真」の下に「1枚 ○秒 ・ 残り ○商品 → 目安 ○分」。直近の写真の間隔と、写真なしの残り商品数（× 3 枚）から計算。
 - **初期設定パック**: 管理画面のアカウント行「設定コピー」で、別ディーラー（例: 菊池）の表記の辞書をコピー。写真ガイド・分類対応表・見本の仕組みは全ディーラー共通で最初から使える。「日報」ボタンで日報の中身をブラウザで確認できる（メール送信は下の U の設定が必要）。
 
+### W. SalonPro（EC）へ写真を送る（2026-09 追加）
+
+撮った写真を、SEAM から **SalonPro の商品にそのまま登録**します。CSV の受け渡しは不要です。
+
+**準備（1 回だけ）**
+1. SalonPro の管理画面 → サイト設定 → **外部連携（APIキー）** で `spk_…` のキーを発行する（発行時にしか表示されません）。
+2. SEAM の PC 画面 → **設定** → 「EC（SalonPro）へ写真を送る」にそのキーを貼って **保存**。保存すると SEAM 側は接続確認までして「つながりました」と出ます。キーは以後、画面には出しません。
+3. 「**写真を撮ったら自動で送る**」に印を付けると、撮影のたびに SalonPro が最新になります（印を付けなくても、後述のボタンでまとめて送れます）。
+   - ディーラーが PC を触れないときは、SEAM 管理画面のアカウント行「**SalonPro キー**」から代わりに設定できます。
+
+**送る**
+- PC の「**EC 送信**」タブ。送信待ち（写真があって、まだ送っていない／送ったあとに変わった商品）が一覧に出ます。「送信待ちを送る（20 件ずつ）」か「最後まで送る」。1 商品だけ送ることもできます。
+- スマホは 設定 →「EC（SalonPro）へ写真を送る」から状態の確認と送信ができます。
+- 送り方は毎回 **まるごと置き換え**（`mode=replace`）です。SEAM の 1〜5 枚目がその順のまま SalonPro に入り、**1 枚目が主画像**（カタログ一覧・カート・注文履歴のサムネイル）になります。撮り直しても送り直すだけで直ります。
+
+**送れなかったとき**
+- いちばん多いのは「**SalonPro に商品が未登録**」（その JAN の商品が SalonPro 側に無い）。SalonPro に商品を登録してから、EC 送信タブの「もう一度送る」。理由はそのまま画面に出ます（キーが無効・つながらない、など）。
+- 「送れなかったもの」は商品一覧でも `EC` の絞り込みから追えます（API は `products?ec=failed`）。
+- 送信待ち・失敗の数は進捗（`stats`）にも出ます（`push_pending` / `push_failed` / `push_ok`）。
+
+**注意**
+- 撮り直しの指示（検品で「撮り直し」）が付いている商品は送りません。直してから送られます。
+- キーはディーラーごと。**そのディーラーの商品にしか入りません**。端末や担当を入れ替えるときは SalonPro 側で古いキーを失効させ、新しいキーを貼り直してください。
+- SalonPro 側の商品マスタ（商品名・価格など）は、これまで通り出力 CSV か連携キー（I 節）で渡します。この機能が送るのは**写真だけ**です。
+
 ### U. 日報メール・アカウント設定（PC「設定」タブ・ディーラー本人が変えられるもの）
 - **日報・通知メール** … 送り先（10 件まで）と「毎朝送る」の ON/OFF。「昨日の日報を見る」で内容を確認できます（写真枚数・担当者別・全体の進み・メーカー別の残り・残り日数）。
 - 送信は GitHub Actions（`.github/workflows/pim-daily-report.yml`・毎朝 7 時）。SEAM 側で GitHub の Secrets に `PIM_ADMIN_KEY`（Cloudflare の ADMIN_KEY と同じ）と SMTP（Gmail のアプリパスワードで可・無料）を入れると動きます: `SMTP_HOST=smtp.gmail.com SMTP_PORT=465 SMTP_USER=xxx@gmail.com SMTP_PASS=<アプリパスワード> MAIL_FROM=xxx@gmail.com`。未設定なら何もしません。
@@ -288,7 +313,7 @@
 | POST | `/api/pim/auth/login` `{login_id, password}` | ログイン → `{token, account}` |
 | GET | `/api/pim/auth/me` | 今のアカウント |
 | POST | `/api/pim/auth/password` `{current, password}` | パスワード変更（全端末ログアウト・新トークンを返す） |
-| GET/POST | `/api/pim/admin/accounts` | （管理キー）一覧 / `action: create, reset, disable, enable, logout_all, rename, api_key, api_key_revoke, webhook{url}, webhook_clear, webhook_test` |
+| GET/POST | `/api/pim/admin/accounts` | （管理キー）一覧 / `action: create, reset, disable, enable, logout_all, rename, api_key, api_key_revoke, webhook{url}, webhook_clear, webhook_test, clone_settings{from}, ec_key{key,url}, ec_clear, ec_test` |
 
 | メソッド | パス | 用途 |
 |---|---|---|
@@ -298,6 +323,7 @@
 | DELETE | `/api/pim/products?jan=…` | 削除（画像も） |
 | POST | `/api/pim/import` | 取り込み（`action: check{jans, keys} / begin / commit / finish / rollback{import_id}`）。commit のたびに取り込み前の状態を残すので rollback で戻せる。`_mode:'fill'`（＋`fill_new`）は空欄だけ埋める（返り値 `filled / unchanged / unknown / unknown_jans`） |
 | GET/POST | `/api/pim/ack` | EC の受け取り確認（`{jans:[…]}`。連携キー可）／未反映の JAN 一覧 |
+| GET/POST | `/api/pim/push` | SalonPro（EC）へ写真を送る。GET = 状態と送信待ち／POST `{jans:[…]}` か `{all:true, limit}` で送信（毎回 `mode=replace`。連携キー不可） |
 | GET/POST | `/api/pim/refs` | 撮影の見本（`action: set{kind,slot,jan,src_slot,scope} / delete{id}`） |
 | GET | `/api/pim/fetch?url=…` | 画像 URL の取り寄せ（CSV の「画像」列から写真を登録するとき。https の画像のみ・12MB まで・連携キー不可） |
 | GET/POST | `/api/pim/issues` | 注意の一覧 / 解決 |
@@ -309,7 +335,7 @@
 | GET/POST | `/api/pim/review?status=pending\|warn\|retake\|ok\|all` | 検品（`warn` = 自動チェックで注意あり） |
 | GET/POST | `/api/pim/queue` | 撮影キュー / `{jan, action:'claim'\|'release'}` |
 | GET | `/api/pim/stats` | 進捗 |
-| GET/POST | `/api/pim/account` | アカウント設定（本人のみ）/ `action: rename, login_id{login_id,password}, emails{emails,report_enabled}, api_key, api_key_revoke, webhook{url}, webhook_clear, webhook_test, inbox_key, inbox_key_revoke` |
+| GET/POST | `/api/pim/account` | アカウント設定（本人のみ）/ `action: rename, login_id{login_id,password}, emails{emails,report_enabled}, api_key, api_key_revoke, webhook{url}, webhook_clear, webhook_test, inbox_key, inbox_key_revoke, ec_key{key,url}, ec_clear, ec_test, ec_auto{on}` |
 | POST | `/api/pim/products` `{action:'bulk', jans, set}` | 一括変更。PUT で `jan:'auto'` は仮コード発行 |
 | POST | `/api/pim/inbox?key=inbox_…` | 自動取り込み（multipart `file`）。ログインで GET（一覧・`?id=` で本体）/ POST `{action:'done'\|'delete', id}` |
 | GET | `/api/pim/report?day=&format=json\|html\|text` | 日報。`/api/pim/admin/report`（管理キー）は日報 ON の全ディーラー分 |

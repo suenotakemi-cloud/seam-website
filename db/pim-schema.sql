@@ -30,7 +30,10 @@ CREATE TABLE IF NOT EXISTS pim_accounts (
   webhook_last_status TEXT,
   report_emails  TEXT,                      -- 日報の送り先（カンマ区切り）
   report_enabled INTEGER NOT NULL DEFAULT 0,-- 1 なら毎朝送る
-  inbox_key      TEXT                       -- 自動取り込み用 URL の鍵（inbox_…）
+  inbox_key      TEXT,                      -- 自動取り込み用 URL の鍵（inbox_…）
+  ec_url         TEXT,                      -- SalonPro（EC）の URL。既定 https://pro-console.salon.town
+  ec_key         TEXT,                      -- SalonPro の API キー（spk_…）。写真の送信に使う。画面には出さない
+  ec_auto        INTEGER NOT NULL DEFAULT 0 -- 1 なら写真を撮るたびに自動で SalonPro へ送る
 );
 -- ▼ ログイン失敗の記録（10回で15分ロック）
 CREATE TABLE IF NOT EXISTS pim_login_fail (login_id TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0, last_at TEXT);
@@ -167,6 +170,7 @@ CREATE TABLE IF NOT EXISTS pim_refs (
   jan TEXT NOT NULL, src_slot INTEGER NOT NULL, note TEXT, created_at TEXT NOT NULL, created_by TEXT, UNIQUE (account_id, kind, slot, scope)
 );
 -- pim_staff.assign: 担当（ブランド／メーカー、カンマ区切り）。pim_products.ec_synced_at: EC が受け取り確認した日時（updated_at より古ければ未反映）
+-- pim_products.ec_push_at / ec_push_status / ec_push_msg: SalonPro へ写真を送った日時・結果（'ok' か相手の error.code）・理由。ec_push_at < updated_at なら送り直し待ち
 CREATE TABLE IF NOT EXISTS pim_dict (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
   account_id     INTEGER NOT NULL,
