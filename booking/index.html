@@ -1913,7 +1913,7 @@ const API = {
   async removeProduct(id){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/products?id='+encodeURIComponent(id),{method:'DELETE',headers:authHeaders()});return r.ok;}catch{return null;} },
   async listIntakes(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/intakes',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.intakes:null;}catch{return null;} },
   async listPoints(){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points',{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.points:null;}catch{return null;} },
-  async savePoint(p){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/points',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});return r.ok?await r.json():null;}catch{return null;} },
+  async savePoint(p){ if(!API_BASE){pointSaveNotice(null);return null;} try{const r=await fetch(API_BASE+'/points',{method:'POST',headers:{...authHeaders(),'Content-Type':'application/json'},body:JSON.stringify(p)});const result=r.ok?await r.json():null;pointSaveNotice(result);return result;}catch{pointSaveNotice(null);return null;} },
   /* ── カルテ（施術の記録）── */
   async karteList(key){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte?key='+encodeURIComponent(key),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.karte:null;}catch{return null;} },
   async karteLast(key,before){ if(!API_BASE)return null; try{const r=await fetch(API_BASE+'/karte/last?key='+encodeURIComponent(key)+(before?'&before='+before:''),{headers:authHeaders()});if(!r.ok)return null;const j=await r.json();return j.ok?j.karte:null;}catch{return null;} },
@@ -2110,7 +2110,7 @@ async function flushOutbox(){
     }
     const rest=outboxAll().filter(item=>!accepted.has(item.queueId));
     localStorage.setItem(OUTBOX_KEY,JSON.stringify(rest));
-    if(accepted.size&&!rest.length)toast('たまっていた保存をすべて送り直しました');
+    if(accepted.size&&!rest.length)toast(q.some(item=>item.kind==='point')?'送信処理が終了しました。ポイントの注意表示も確認してください。':'たまっていた保存をすべて送り直しました');
     else if(rest.length)toast('未送信の記録が残っています。画面を閉じず確認してください',true);
   }catch(e){toast('未送信データの保存を確認できません。画面を閉じず確認してください',true);
   }finally{_outboxBusy=false;}
@@ -2261,6 +2261,33 @@ function pointDetail(name,phone){
   return{balance,expiring,expireOn};
 }
 function pointBalance(name,phone){ return pointDetail(name,phone).balance; }
+function pointSaveNotice(result){
+  try{
+    if(result?.ok===true&&!result.error&&result.synced===true)return;
+    const saved=result?.ok===true&&!result.error;
+    const kind=saved?'external':'storage';
+    const message=saved
+      ?(result.synced===false?'ポイントの記録は保存済みですが、連携先への反映は未完了です。':'ポイントの記録は保存済みですが、連携先への反映を確認できません。')
+      :'ポイントの保存を確認できません。';
+    const id='point-notice-'+kind;
+    let box=document.getElementById(id);
+    if(!box){
+      let region=document.getElementById('point-notice-region');
+      if(!region){
+        region=document.createElement('section');region.id='point-notice-region';
+        region.setAttribute('aria-label','ポイント保存の注意');
+        region.style.cssText='position:fixed;bottom:12px;right:12px;z-index:100100;width:min(440px,calc(100vw - 24px));max-height:45vh;overflow:auto;';
+        document.body.appendChild(region);
+      }
+      box=document.createElement('div');box.id=id;box.setAttribute('role','status');
+      box.style.cssText='padding:12px;margin-top:8px;background:#fff4d6;color:#382b12;border:1px solid #ac7d25;border-radius:8px;font-size:14px;line-height:1.5;box-shadow:0 2px 12px #0002;';
+      const label=document.createElement('p');label.style.cssText='margin:0 0 6px';box.appendChild(label);
+      const close=document.createElement('button');close.type='button';close.textContent='通知を閉じる';
+      close.onclick=()=>box.remove();box.appendChild(close);region.appendChild(box);
+    }
+    box.firstChild.textContent=message+' 記録は消さず、重複登録を避けるため追加・再送せずに管理者へ確認してください。';
+  }catch{ /* Notification failure must not alter the existing save/retry result. */ }
+}
 function addPointRow(row){
   row.id='pt'+Math.random().toString(36).slice(2,8);row.at=new Date().toISOString();row.date=row.date||dkey(today());
   db.points.push(row);save();saveOrQueue('point',row);return row;
