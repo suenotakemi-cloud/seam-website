@@ -50,6 +50,7 @@ function ask(){
     <p class="sub">このお店を、ご友人におすすめしたいと思われますか</p>
     <div class="row">${[...Array(11).keys()].map(n=>`<button class="btn" data-n="${n}">${n}</button>`).join('')}</div>
     <div class="ends"><span>まったく思わない</span><span>とてもそう思う</span></div>
+    <p id="send-status" role="status" aria-live="polite"></p>
     <button class="skip" id="skip">答えずに閉じる</button>
   </div>`;
   document.getElementById('skip').onclick=()=>{
@@ -57,12 +58,23 @@ function ask(){
       <p class="sub">またお会いできるのを楽しみにしております</p></div>`;
   };
   app.querySelectorAll('.btn').forEach(b=>b.onclick=async()=>{
+    if(b.disabled)return;
     app.querySelectorAll('.btn').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');
+    app.querySelectorAll('.btn').forEach(x=>x.disabled=true);
+    document.getElementById('skip').disabled=true;
+    document.getElementById('send-status').textContent='送信しています…';
     try{
-      await fetch(API+'/nps',{method:'POST',headers:{'Content-Type':'application/json'},
+      const r=await fetch(API+'/nps',{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({token:T,score:+b.dataset.n})});
-    }catch(e){}
+      const j=await r.json();
+      if(!r.ok||!j||j.ok!==true)throw new Error('save-failed');
+    }catch(e){
+      document.getElementById('send-status').textContent='送信を確認できませんでした。選んだ点数はそのままです。通信を確認して再度お試しいただくか、答えずに閉じられます。';
+      app.querySelectorAll('.btn').forEach(x=>x.disabled=false);
+      document.getElementById('skip').disabled=false;
+      return;
+    }
     /* ★どの数字でも、返す言葉は同じ。
        低い点のときだけお詫びを出すと、次から正直に答えられなくなる。 */
     app.innerHTML=`<div class="card done"><h1>ありがとうございます</h1>

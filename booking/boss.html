@@ -113,9 +113,9 @@ let TOK=localStorage.getItem('stb_admin_tok')||'';
 let TAB='today';
 const H=(...a)=>({'Authorization':'Bearer '+TOK,...Object.assign({},...a)});
 async function get(p){const r=await fetch(API+p,{headers:H()});
-  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+  const j=await r.json();if(!r.ok||!j||j.ok!==true)throw new Error('データを取得できませんでした（'+r.status+'）');return j;}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:H({'Content-Type':'application/json'}),body:JSON.stringify(b)});
-  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+  const j=await r.json();if(!r.ok||!j||j.ok!==true)throw new Error('保存を確認できませんでした。内容を確認してから操作してください');return j;}
 let tt;function toast(m,ng){const t=$('toast');t.textContent=m;t.className='on'+(ng?' ng':'');
   clearTimeout(tt);tt=setTimeout(()=>t.className='',ng?3200:1900);}
 $('day').textContent=DAY.replace(/-/g,'/');
@@ -124,6 +124,10 @@ $('day').textContent=DAY.replace(/-/g,'/');
  * ★開いた瞬間に見たいのは「今日、合っているか」だけ。
  *   合っていれば緑で一行。合っていなければ赤で、いくら違うかを出す。 */
 let REC=null, PET=null, KIN=null;
+function unavailable(title){return `<h1>${esc(title)}</h1><div class="card ng" role="alert"><div class="ttl">データを確認できません</div><div class="sub">通信または認証を確認してください。未取得の情報を0件・0円として表示していません。</div><button class="btn line" data-reload>再読み込み</button></div>`;}
+const recReady=()=>REC&&REC.まとめ&&Array.isArray(REC.差);
+const pettyReady=()=>PET&&PET.まとめ&&Array.isArray(PET.rows)&&Array.isArray(PET.使いみち);
+const leaveReady=()=>KIN&&Array.isArray(KIN.申請)&&Array.isArray(KIN.スタッフ);
 async function loadToday(){
   const y=jst(1);
   [REC,PET,KIN]=await Promise.all([
@@ -133,6 +137,7 @@ async function loadToday(){
   ]);
 }
 function todayHtml(){
+  if(!recReady()||!pettyReady()||!leaveReady())return unavailable('今日のお店');
   const sm=(REC&&REC.まとめ)||{}, diff=(REC&&REC.差)||[];
   const ap=(KIN&&KIN.申請)||[];
   const st=(KIN&&KIN.スタッフ)||[];
@@ -169,6 +174,7 @@ function todayHtml(){
 
 /* ── お金 ── */
 function moneyHtml(){
+  if(!recReady()||!pettyReady())return unavailable('お金');
   const diff=(REC&&REC.差)||[];
   const m=(PET&&PET.まとめ)||{}, rows=(PET&&PET.rows)||[];
   const use=(PET&&PET.使いみち)||[];
@@ -208,6 +214,7 @@ function moneyHtml(){
 /* ── 休みの承認 ── */
 const SPAN={day:'1日',half:'半日',hour:'時間'};
 function leaveHtml(){
+  if(!leaveReady())return unavailable('休みの承認');
   const ap=(KIN&&KIN.申請)||[], st=(KIN&&KIN.スタッフ)||[];
   return `<h1>休みの承認</h1>
     <p class="lead">2時間ずつの申請もここで承認します</p>
@@ -296,6 +303,23 @@ function addWire(){
   };
 }
 
+let managerActionPending=false;
+async function managerAction(button, save, refresh, success){
+  if(managerActionPending)return;
+  managerActionPending=true;
+  button.disabled=true;
+  let saved=false;
+  try{
+    await save();saved=true;
+    await refresh();
+    draw();toast(success);
+  }catch(e){
+    toast(saved?'保存は完了しましたが、最新表示を取得できませんでした。再読込して確認してください。':'保存結果を確認できませんでした。再読込して状態を確認してから操作してください。',true);
+  }finally{
+    button.disabled=false;
+    managerActionPending=false;
+  }
+}
 function draw(){
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===TAB));
   const a=$('app');
@@ -303,18 +327,15 @@ function draw(){
   else if(TAB==='money')a.innerHTML=moneyHtml();
   else if(TAB==='leave')a.innerHTML=leaveHtml();
   else a.innerHTML=addHtml();
+  a.querySelectorAll('[data-reload]').forEach(b=>b.onclick=()=>boot());
   a.querySelectorAll('[data-go]').forEach(x=>x.onclick=()=>{TAB=x.dataset.go;draw();});
   a.querySelectorAll('.lv-ok').forEach(b=>b.onclick=async()=>{
-    await post('/leave/decide',{id:b.dataset.id,status:'ok'});
-    toast('承認しました'); KIN=await get('/leave/all'); draw();});
+    await managerAction(b,()=>post('/leave/decide',{id:b.dataset.id,status:'ok'}),async()=>{KIN=await get('/leave/all');},'承認しました');});
   a.querySelectorAll('.lv-no').forEach(b=>b.onclick=async()=>{
     if(!confirm('この申請を見送りにします'))return;
-    await post('/leave/decide',{id:b.dataset.id,status:'no'});
-    KIN=await get('/leave/all'); draw();});
+    await managerAction(b,()=>post('/leave/decide',{id:b.dataset.id,status:'no'}),async()=>{KIN=await get('/leave/all');},'見送りを保存しました');});
   a.querySelectorAll('.pay').forEach(b=>b.onclick=async()=>{
-    await post('/petty/paid',{id:b.dataset.id});
-    toast('お返ししたことにしました');
-    PET=await get(`/petty?from=${DAY.slice(0,8)}01&to=${DAY}`); draw();});
+    await managerAction(b,()=>post('/petty/paid',{id:b.dataset.id}),async()=>{PET=await get(`/petty?from=${DAY.slice(0,8)}01&to=${DAY}`);},'精算済みにしました');});
   a.querySelectorAll('.shotb').forEach(b=>b.onclick=async()=>{
     const j=await get('/petty/photo?id='+encodeURIComponent(b.dataset.id));
     if(!j.photo){toast('写真がありません',true);return;}

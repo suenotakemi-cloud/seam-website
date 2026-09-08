@@ -123,7 +123,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
 <script src="cs-i18n.js?v=5"></script>
 <script>
 const API='https://seam-square-pay.suenotakemi.workers.dev';
-const TOK=localStorage.getItem('stb_admin_tok')||'';
+const KTOK=localStorage.getItem('stb_kiosk_tok')||'';
+const ATOK=localStorage.getItem('stb_admin_tok')||'';
+const TOK=KTOK||ATOK;
+const AUTH=()=>KTOK?{'X-Kiosk-Token':KTOK}:(ATOK?{'Authorization':'Bearer '+ATOK}:{});
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const toast=(m,ng)=>{const t=document.getElementById('toast');t.textContent=m;t.className='toast on'+(ng?' ng':'');setTimeout(()=>t.className='toast',2600)};
 const q=new URLSearchParams(location.search);
@@ -150,6 +153,7 @@ const chips=(key,items,multi)=>{
 };
 
 function render(){
+  if(SAVING||SAVED)return;
   let _n=0; const N=()=>++_n;
   document.getElementById('app').innerHTML=`
   <header>
@@ -328,7 +332,9 @@ function doneScreen(){
   </div>`;
 }
 
+let SAVING=false,SAVED=false;
 async function save(){
+  if(SAVING||SAVED)return;
   keep();
   if(!S.name){toast(T('お名前をご記入ください'),true);document.getElementById('f-name').focus();return;}
   if(telDigits(S.phone).length<8){toast(T('電話番号をご記入ください'),true);
@@ -338,25 +344,27 @@ async function save(){
     const el=document.querySelector('[data-photo]');if(el)el.scrollIntoView({block:'center'});return;}
   if(!S.c.agreed){toast(T('同意のチェックをお願いします'),true);document.getElementById('c-agree').scrollIntoView({block:'center'});return;}
   if(!S.sign){toast(T('ご署名をお願いします'),true);document.getElementById('sign').scrollIntoView({block:'center'});return;}
-  const btn=document.getElementById('dosave');btn.disabled=true;btn.textContent=T('送信中…');
+  const btn=document.getElementById('dosave');SAVING=true;btn.disabled=true;btn.textContent=T('送信中…');
   try{
     // 保存先はサロン用と同じ（kind:'spa' で見分ける）＝カルテが1本にまとまる
     const r=await fetch(API+'/counseling',{method:'POST',
-      headers:{'Content-Type':'application/json',...(TOK?{'Authorization':'Bearer '+TOK}:{})},
-      body:JSON.stringify({name:S.name,phone:S.phone,kind:'spa',lang:LANG,answers:S.a,consent:S.c,sign:S.sign,date:new Date().toISOString().slice(0,10)})});
+      headers:{'Content-Type':'application/json',...AUTH()},
+      body:JSON.stringify({name:S.name,phone:S.phone,kind:'spa',lang:LANG,answers:S.a,consent:S.c,sign:S.sign,date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Tokyo'})})});
     const j=await r.json();
-    if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+    if(!r.ok||j?.ok!==true||typeof j.id!=='string'||!j.id.trim())throw new Error(r.status===401?'auth':'unconfirmed');
     try{localStorage.setItem('stb_cs_last',j.id)}catch(e){}
-    doneScreen();
+    SAVED=true;doneScreen();
   }catch(e){
     btn.disabled=false;btn.textContent=T('この内容で提出する');
-    toast(String(e.message).includes('401')?'管理ログインが必要です（スタッフにお伝えください）':'送信できませんでした: '+e.message,true);
+    toast(e.message==='auth'?'管理ログインが必要です（スタッフにお伝えください）':'保存結果を確認できません。入力は保持しています。スタッフに保存状況をご確認ください。',true);
+  }finally{
+    SAVING=false;
   }
 }
 render();
 /* 店舗設定（写真の同意項目を出すか） */
 (async()=>{ if(!TOK)return;
-  try{const r=await fetch(API+'/settings',{headers:{'Authorization':'Bearer '+TOK}});
+  try{const r=await fetch(API+'/settings',{headers:AUTH()});
     if(r.ok){const j=await r.json(); const g=j.settings||j||{};
       const on=(k,def)=>g[k]==null||g[k]===''?def:(g[k]==='1'||g[k]===1||g[k]===true);
       OPT={photo:on('csPhoto',true)}; render();}

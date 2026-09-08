@@ -385,7 +385,7 @@ let REG=localStorage.getItem(REGK)||'';
    誰が打ったか分からない会計を作らないため、会計の前に必ず要る。 */
 /* 担当者を必ず選ばせるか。設定 require_staff が '1' のときだけ会計を止める。
    本番前のテスト中は止めない（既定）。設定は接続テスト画面から切り替える。 */
-let REQUIRE_STAFF=false;
+let REQUIRE_STAFF=null; // null: settings not yet confirmed
 let STAFF=null;
 try{ STAFF=JSON.parse(localStorage.getItem('stb_staff')||'null'); }catch(e){}
 let SHOPS=[], TAB='prod', CART=[], MEMBER=null, PAY='cash', STOCKVIEW=null;
@@ -464,7 +464,7 @@ function lockedByAsk(){
      控えておかないと「押し直す＝もう一度いただく」になる。
    ★localStorage に置くのは、画面を閉じても・iPadが落ちても残すため。
      レジごとに分ける（1番レジの決済を2番レジが拾わないように）。
-   ★30分より古いものは使わない（別のお客様のものを拾わないように）。 */
+   ★保存未確認の決済は時間で消さない。内容と店舗を照合し、不要なら履歴を確認して切り離す。 */
 /* ★同じ金額でも、中身が違えば別のお会計。
      金額だけで繋ぐと、たまたま同額の次のお客様の会計に
      前のお客様の決済を当ててしまう（2026-08-14 指摘）。
@@ -484,7 +484,7 @@ function paidHeld(){
   try{
     const j=JSON.parse(localStorage.getItem(paidKey())||'null');
     if(!j||!j.payId)return null;
-    if(Date.now()-(j.at||0)>30*60*1000){ paidClear(); return null; }
+    // Unconfirmed payment never expires automatically; reconcile before clearing.
     return j;
   }catch(e){ return null; }
 }
@@ -907,11 +907,35 @@ function renderSum(){
       ?(tfRefundMode()?'免税にしました　税込でいただき、出国の確認がとれてからお返しします':'免税ぶんを値引きました　申請は別の仕組みで行ってください')
       :'免税をやめました');};
 }
+async function checkoutOperation(input){
+  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(input)));
+  const key='stb_checkout_operation_v1:'+Array.from(new Uint8Array(bytes),n=>n.toString(16).padStart(2,'0')).join('');
+  const raw=localStorage.getItem(key);
+  if(raw){const row=JSON.parse(raw);if(!/^co_[a-f0-9-]{36}$/.test(row.id)||!/^\d{4}-\d{2}-\d{2}$/.test(row.date))throw Error('保存待ち会計の記録を確認できません');return {...row,key};}
+  const row={id:'co_'+crypto.randomUUID(),date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10)};
+  localStorage.setItem(key,JSON.stringify(row));
+  if(localStorage.getItem(key)!==JSON.stringify(row))throw Error('会計の再送用記録を保存できません');
+  return {...row,key};
+}
 async function doCheckout(){
+  if(!navigator.locks){toast('このブラウザでは会計の同時操作を防げません。対応ブラウザで開いてください',true);return;}
+  return navigator.locks.request('stb_checkout:'+SHOP+':'+REG,{ifAvailable:true},async lock=>{
+    if(!lock){toast('別の画面でこのレジを会計中です。完了後に再確認してください',true);return;}
+    return doCheckoutLocked();
+  });
+}
+async function doCheckoutLocked(){
+  const priorPaid=paidHeld();
+  if(priorPaid&&(!priorPaid.operation||PAY==='cash'||priorPaid.total!==cartTotal()||priorPaid.hash!==cartHash()||(priorPaid.shop||SHOP)!==SHOP)){
+    toast('保存未確認の決済があります。支払方法や明細を変えずに再確認してください。旧決済はSquareと会計履歴の照合が必要です',true);return;
+  }
   const t=cartTotal();
   if(!CART.length)return;
   /* 本番モードのときだけ、レジ番号と担当をそろえてから会計させる。
      テスト中は何も聞かない（毎回 出勤→担当 を通すのは検証の邪魔になる）。 */
+  if(REQUIRE_STAFF===null){
+    toast('担当者の必須設定を確認できません。画面を再読み込みしてください',true); return;
+  }
   if(REQUIRE_STAFF){
     if(!REG){ toast('先に「レジ ◯番」を決めてください',true); showRegisterPick(); return; }
     if(!STAFF){ toast('先に担当を選んでください',true); showStaffPick(); return; }
@@ -933,7 +957,10 @@ async function doCheckout(){
     if(!ok){ btn.disabled=false; btn.textContent='会計する'; render(); return; }
     btn.textContent='送信中…';
   }
-  const id='co'+Math.random().toString(36).slice(2,8);
+  let operation;
+  try { operation=await checkoutOperation({shop:SHOP,register:REG,staff:STAFF?.id||'',member:MEMBER?{code:MEMBER.code,name:MEMBER.name,phone:MEMBER.phone,salonId:MEMBER.salonId}:null,cart:CART,mode:PMODE,taxfree:TAXFREE,tf:TFINFO,total:t,pay:PAY}); }
+  catch {toast('再送用の会計記録を保存できません。支払いは開始していません',true);btn.disabled=false;btn.textContent='会計する';return;}
+  let id=operation.id;
   /* 付けるポイント。会員のときだけ・商品は1円=1pt（お店の設定による） */
   const ptDelta=(useFeat('member')&&MEMBER&&MEMBER.name)
     ? Math.floor(t*((MEMBER.rate!=null?MEMBER.rate:1)/100||0.01)) : 0;
@@ -947,6 +974,7 @@ async function doCheckout(){
       const held=paidHeld();
       if(held && held.total===t && held.hash===cartHash() && (held.shop||SHOP)===SHOP){
         payId=held.payId; BRAND=held.brand||''; FEE=+held.fee||0; PAY=held.pay||PAY;
+        if(held.operation){operation=held.operation;id=operation.id;}
         toast('先ほど通った決済が残っていました　二重にいただかず、この決済で会計します');
       }else{
         if(held && !confirm(
@@ -965,7 +993,7 @@ async function doCheckout(){
            ただし大きな区分が同じなら、こちらの細かい指定（交通系/iD/QUICPay）を残す。 */
         if(r.paidBy && r.paidBy!==payBucket(PAY)) PAY=r.paidBy;
         BRAND=r.cardBrand||''; FEE=+r.fee||0;            // ブランド別の手数料を出すため
-        paidHold({payId,brand:BRAND,fee:FEE,pay:PAY,total:t,hash:cartHash(),shop:SHOP});
+        paidHold({payId,brand:BRAND,fee:FEE,pay:PAY,total:t,hash:cartHash(),shop:SHOP,operation});
       }
     }
     /* ★お会計・免税の預り・在庫・ポイントを、サーバーで一度に確定する。
@@ -973,7 +1001,7 @@ async function doCheckout(){
          「会計だけ入って在庫が減っていない」「ポイントだけ付いた」が起きた。
          しかも失敗は全部握りつぶしていたので、誰も気づけなかった。
        ★同じidで2回来ても2回目は何もしないので、押し直しでも増えない。 */
-    await post('/checkout/commit',{id,date:new Date(Date.now()+9*3600e3).toISOString().slice(0,10),
+    const committed=await post('/checkout/commit',{id,date:operation.date,
       /* mode2＝通常／メンバー／セール。サーバーが金額を計算し直すのに使う */
       mode:'shop',mode2:PMODE,register:REG,shopId:SHOP,staffId:(STAFF&&STAFF.id)||'',staffName:(STAFF&&STAFF.name)||'',customer:(MEMBER&&MEMBER.name)||'',phone:(MEMBER&&MEMBER.phone)||'',
       tech:0,retail:cartList(),
@@ -995,6 +1023,7 @@ async function doCheckout(){
       /* ポイント・免税の預り・在庫は、この1回で一緒に確定される */
       pointDelta:ptDelta, pointReason:'店販', salonId:(MEMBER&&MEMBER.salonId)||'',
       tfName:TFINFO.name, tfCountry:TFINFO.country, tfLast4:TFINFO.last4});
+    if(committed?.ok!==true||committed.id!==id)throw Error('会計の保存結果を確認できません。同じ内容で再確認してください');
     /* ★salon.town へのポイントだけは外なので、確定のあとに追いかける。
          ここが失敗しても、こちらの台帳のポイントはもう入っている。
          同じ会計IDでは二度打たれない（サーバーが弾く）。 */
@@ -1007,6 +1036,8 @@ async function doCheckout(){
     /* ★免税のときは、申請の入力が終わるまで次の会計に進ませない。
        レジだけ先に進むと、申請を忘れたまま次のお客様に移ってしまう。 */
     if(TAXFREE&&useFeat('taxfree')) openTfSheet(CART.slice(), id);
+    localStorage.removeItem(operation.key);
+    if(localStorage.getItem(operation.key)!==null)throw Error('会計は保存済みですが再送用記録の解除を確認できません');
     paidClear();          // 会計が残ったので、決済の控えはもう要らない
     /* おつりの表示は、お渡ししたあとに消す。次のお客様に持ち越さない。 */
     const gotWas=GOT, chg=GOT>t?GOT-t:0;
@@ -2004,7 +2035,25 @@ function render(){ renderCart(); renderSum(); renderRight(); pushDisplay(false);
   const mo=$('memoff'); if(mo)mo.onclick=()=>{MEMBER=null;HIST=[];render();}; }
 
 /* ══════════ 起動 ══════════ */
+async function loadCheckoutSettings(){
+  REQUIRE_STAFF=null;
+  try{
+    const sj=await get('/settings');
+    if(sj?.ok!==true||!sj.settings||typeof sj.settings!=='object'||Array.isArray(sj.settings))throw Error('invalid settings');
+    const st=sj.settings;
+    const raw=String(st.require_staff??'');
+    if(!['','0','1'].includes(raw))throw Error('invalid require_staff');
+    REQUIRE_STAFF=raw==='1';
+    // Price parsing must never skip or invalidate the staff policy above.
+    try{const v=st.price_rules;if(v){const r=JSON.parse(v);RULES.member=r.member||{};RULES.sale=r.sale||{};}}catch(e){}
+    try{USEFEAT=JSON.parse(st['useFeat:'+SHOP]||st.useFeat||'{}')||{};}catch(e){USEFEAT={};}
+  }catch(e){
+    REQUIRE_STAFF=null;
+    toast('担当者の必須設定を確認できません。画面を再読み込みしてください',true);
+  }
+}
 async function boot(){
+  REQUIRE_STAFF=null;
   try{
     const j=await get('/shops');
     SHOPS=j.shops||[];
@@ -2032,13 +2081,7 @@ async function boot(){
     PMODE=b.dataset.pm;
     document.querySelectorAll('#priceModes button').forEach(x=>x.classList.toggle('on',x.dataset.pm===PMODE));
     render(); toast({normal:'通常の値段にしました',member:'メンバー価格にしました',sale:'セール価格にしました'}[PMODE]);});
-  try{ const sj=await get('/settings'); const st=sj.settings||{};
-       const v=st.price_rules;
-       if(v){const r=JSON.parse(v);RULES.member=r.member||{};RULES.sale=r.sale||{};}
-       REQUIRE_STAFF=String(st.require_staff||'')==='1';
-       // 管理画面で消した機能は、このレジでも出さない
-       // お店ごとの設定を先に見る。無ければ昔の全店共通ぶん
-       try{ USEFEAT=JSON.parse(st['useFeat:'+SHOP]||st.useFeat||'{}')||{}; }catch(e){ USEFEAT={}; } }catch(e){}
+  await loadCheckoutSettings();
   render();
   // 画面のどこを触っても、読み取りが効くように隠し欄へ戻す
   const focusSink=()=>{const el=document.activeElement;

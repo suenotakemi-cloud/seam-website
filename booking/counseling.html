@@ -171,6 +171,7 @@ const chips=(key,items,multi)=>{
 };
 
 function render(){
+  if(SAVING||SAVED)return;
   const spa=S.kind==='spa';
   /* 髪格診断の結果がある場合は、診断で聞いている項目を省く（同じことを二度聞かない）
      省かないもの＝お体のこと（診断は医療系を聞いていない）・ヘナ（診断に項目がない）・同意・署名 */
@@ -482,7 +483,9 @@ async function attachFinder(k){
   }catch(e){ toast('結果を送れませんでした（スタッフにお伝えください）',true); doneScreen(); }
 }
 
+let SAVING=false,SAVED=false;
 async function save(){
+  if(SAVING||SAVED)return;
   keep();
   if(!S.name){toast(T('お名前をご記入ください'),true);document.getElementById('f-name').focus();return;}
   // 電話番号は必須。これがカルテのキー＝同じお名前の方との取り違えを防ぐ唯一の手段
@@ -494,18 +497,20 @@ async function save(){
     const el=document.querySelector('[data-photo]');if(el)el.scrollIntoView({block:'center'});return;}
   if(!S.c.agreed){toast(T('同意のチェックをお願いします'),true);document.getElementById('c-agree').scrollIntoView({block:'center'});return;}
   if(!S.sign){toast(T('ご署名をお願いします'),true);document.getElementById('sign').scrollIntoView({block:'center'});return;}
-  const btn=document.getElementById('dosave');btn.disabled=true;btn.textContent=T('送信中…');
+  const btn=document.getElementById('dosave');SAVING=true;btn.disabled=true;btn.textContent=T('送信中…');
   try{
     const r=await fetch(API+'/counseling',{method:'POST',
       headers:{'Content-Type':'application/json',...(TOK?{...AUTH()}:{})},
-      body:JSON.stringify({name:S.name,phone:S.phone,kind:S.kind,lang:LANG,answers:S.a,consent:S.c,sign:S.sign,date:new Date().toISOString().slice(0,10)})});
+      body:JSON.stringify({name:S.name,phone:S.phone,kind:S.kind,lang:LANG,answers:S.a,consent:S.c,sign:S.sign,date:new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Tokyo'})})});
     const j=await r.json();
-    if(!r.ok||!j.ok)throw new Error(j.error||('HTTP '+r.status));
+    if(!r.ok||j?.ok!==true||typeof j.id!=='string'||!j.id.trim())throw new Error(r.status===401?'auth':'unconfirmed');
     CSID=j.id; try{localStorage.setItem('stb_cs_last',j.id)}catch(e){}
-    doneScreen();
+    SAVED=true;doneScreen();
   }catch(e){
     btn.disabled=false;btn.textContent=T('この内容で提出する');
-    toast(String(e.message).includes('401')?'管理ログインが必要です（スタッフにお伝えください）':'送信できませんでした: '+e.message,true);
+    toast(e.message==='auth'?'管理ログインが必要です（スタッフにお伝えください）':'保存結果を確認できません。入力は保持しています。スタッフに保存状況をご確認ください。',true);
+  }finally{
+    SAVING=false;
   }
 }
 render();

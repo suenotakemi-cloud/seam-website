@@ -115,28 +115,30 @@ const STAFF=[
   {id:'s3',name:'CHIKA'},
 ];
 
-async function jget(u){const r=await fetch(u);const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||('通信に失敗しました('+r.status+')')),{status:r.status});return j;}
+async function jget(u,options={}){const r=await fetch(u,options);const j=await r.json().catch(()=>({}));if(!r.ok||j?.ok!==true)throw Object.assign(new Error('読み込みを確認できませんでした（HTTP '+r.status+'）'),{status:r.status});return j;}
 async function jpost(u,b){const r=await fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});
-  const j=await r.json().catch(()=>({}));if(!r.ok)throw Object.assign(new Error(j.error||('通信に失敗しました('+r.status+')')),{status:r.status});return j;}
+  const j=await r.json().catch(()=>({}));if(!r.ok||j?.ok!==true)throw Object.assign(new Error('送信を確認できませんでした（HTTP '+r.status+'）'),{status:r.status});return j;}
 
 function login(msg){
   app.innerHTML=`<div class="lg">
     <h1>SEAM スタッフ</h1>
     <p>自分の売上と予約を見られます</p>
     <select id="sid">${STAFF.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select>
-    <input id="pw" type="tel" inputmode="numeric" maxlength="6" placeholder="合言葉（6桁）" autocomplete="off" aria-label="合言葉（6桁）">
+    <input id="pw" type="password" inputmode="numeric" maxlength="6" placeholder="暗証番号（3桁または6桁）" autocomplete="current-password" aria-label="暗証番号（3桁または6桁）">
     <button class="go" id="in">ログイン</button>
     <div class="err" id="er">${esc(msg||'')}</div>
-    <p style="margin-top:16px;font-size:12px">合言葉は店長に発行してもらってください</p>
+    <p style="margin-top:16px;font-size:12px">店長から発行された暗証番号を入力してください</p>
   </div>`;
   const go=async()=>{
+    if(document.getElementById('in').disabled)return;
     const sid=document.getElementById('sid').value;
     const pw=document.getElementById('pw').value.replace(/\D/g,'');
     const er=document.getElementById('er');
-    if(pw.length!==6){er.textContent='合言葉は6桁です';return;}
+    if(![3,6].includes(pw.length)){er.textContent='暗証番号は3桁または6桁です';return;}
     const b=document.getElementById('in');b.disabled=true;b.textContent='確認中…';
     try{
       const j=await jpost(API+'/staff/login',{staffId:sid,pass:pw});
+      if(typeof j.token!=='string'||!j.token.trim()||j.staffId!==sid)throw new Error('ログイン結果を確認できませんでした');
       setTok(j.token); home();
     }catch(e){ er.textContent=e.message; b.disabled=false; b.textContent='ログイン'; }
   };
@@ -190,7 +192,8 @@ function repeatCard(rp){
 
 function home(){
   app.innerHTML='<div class="load">読み込んでいます…</div>';
-  jget(API+'/staff/me?token='+encodeURIComponent(tok())).then(j=>{
+  jget(API+'/staff/me',{headers:{'X-Staff-Token':tok()}}).then(j=>{
+    if(!j.today||!j.month||!j.commission||!Array.isArray(j.reservations))throw new Error('売上情報を確認できませんでした');
     const m=j.month||{}, t=j.today||{}, c=j.commission||{};
     const techTotal=(m.techNom||0)+(m.techFree||0);
     const nomRate=m.count?Math.round((m.nomCount||0)/m.count*100):0;

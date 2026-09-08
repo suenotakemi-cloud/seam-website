@@ -194,11 +194,12 @@ const TOKK='stb_admin_tok', DEVK='stb_term_dev';
 let TOK=localStorage.getItem(TOKK)||'';
 let DEV=localStorage.getItem(DEVK)||'';
 let LOG=[], CHECKOUT='', PAYID='';
+let WIRED=false,BOOTING=false,RSBUSY=false,RSREADABLE=false;
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const H=(...a)=>({'Authorization':'Bearer '+TOK,...Object.assign({},...a)});
-async function get(p){const r=await fetch(API+p,{headers:H()});if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
+async function get(p){const r=await fetch(API+p,{headers:H()});if(!r.ok){const e=new Error('読み込みを確認できません（HTTP '+r.status+'）');e.status=r.status;throw e;}return r.json();}
 async function post(p,b){const r=await fetch(API+p,{method:'POST',headers:H({'Content-Type':'application/json'}),body:JSON.stringify(b||{})});
   if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||('HTTP '+r.status));return r.json();}
 let tt;function toast(m,ng){const t=$('toast');t.textContent=m;t.className='on'+(ng?' ng':'');clearTimeout(tt);tt=setTimeout(()=>t.className='',ng?3200:1900);}
@@ -342,12 +343,17 @@ $('badgeLoad').onclick=async()=>{
 $('badgePrint').onclick=()=>{ if(!$('badges').innerHTML.trim()){toast('先に読み込んでください',true);return;} window.print(); };
 
 $('pinSave').onclick=async()=>{
+  if($('pinSave').disabled)return;
   const sid=$('pinSid').value.trim(), nm=$('pinName').value.trim(), pin=$('pinVal').value.replace(/\D/g,'');
   if(!sid){toast('社員番号を入れてください',true);return;}
   if(pin.length!==3){toast('暗証番号は3桁です',true);return;}
-  try{ await post('/staff/pin',{staffId:sid,name:nm,pin});
+  $('pinSave').disabled=true;
+  ['pinSid','pinName','pinVal'].forEach(id=>$(id).disabled=true);
+  try{ const j=await post('/staff/pin',{staffId:sid,name:nm,pin});
+    if(j?.ok!==true||j.staffId!==sid)throw new Error('暗証番号の保存結果を確認できません。入力は保持しています。');
     $('pinVal').value=''; toast(`${nm||sid} さんの暗証番号を決めました`); $('pinList').click();
-  }catch(err){ toast(err.message||'決められませんでした',true); }
+  }catch(err){ toast('暗証番号の保存結果を確認できません。入力は保持しています。',true); }
+  finally{$('pinSave').disabled=false;['pinSid','pinName','pinVal'].forEach(id=>$(id).disabled=false);}
 };
 $('pinList').onclick=async()=>{
   try{ const j=await get('/attendance/list');
@@ -358,33 +364,48 @@ $('pinList').onclick=async()=>{
 };
 
 async function rsDraw(){
-  try{ const j=await get('/settings'); const on=String((j.settings||{}).require_staff||'')==='1';
+  RSREADABLE=false;$('rsOn').disabled=true;$('rsOff').disabled=true;
+  try{ const j=await get('/settings');
+    if(j?.ok!==true||!j.settings||typeof j.settings!=='object'||Array.isArray(j.settings))throw new Error('invalid settings');
+    const raw=String(j.settings.require_staff??'');
+    if(!['','0','1'].includes(raw))throw new Error('invalid require_staff');
+    const on=raw==='1';RSREADABLE=true;
     $('rsSt').innerHTML=on?'<span class="ok">いま：本番（担当が必要）</span>'
                           :'いま：テスト中（担当なしでも会計できます）';
     $('rsOn').className='btn'+(on?' pri':''); $('rsOff').className='btn'+(on?'':' pri');
-  }catch(e){ $('rsSt').textContent='読み込めませんでした'; }
+    $('rsOn').disabled=RSBUSY;$('rsOff').disabled=RSBUSY;return on;
+  }catch(e){ $('rsSt').textContent='設定を確認できません。再読み込みしてください。';return null; }
 }
 async function rsSet(v){
-  try{ await post('/settings',{key:'require_staff',value:v?'1':''});
+  if(RSBUSY)return;RSBUSY=true;$('rsOn').disabled=true;$('rsOff').disabled=true;
+  try{ const j=await post('/settings',{key:'require_staff',value:v?'1':''});
+    if(j?.ok!==true)throw new Error('unconfirmed');
+    if(await rsDraw()!==v)throw new Error('readback mismatch');
     toast(v?'本番にしました　担当を選ばないと会計できません':'テスト中にしました');
-    rsDraw();
-  }catch(err){ toast(err.message||'変えられませんでした',true); }
+  }catch(err){ toast('設定の保存結果を確認できません。現在の設定を再確認してください。',true); }
+  finally{RSBUSY=false;$('rsOn').disabled=!RSREADABLE;$('rsOff').disabled=!RSREADABLE;}
 }
 $('rsOn').onclick=()=>rsSet(true);
 $('rsOff').onclick=()=>rsSet(false);
 
 async function boot(){
-  try{ await get('/shops'); }
-  catch(err){ localStorage.removeItem(TOKK);TOK='';showGate();toast('合言葉が違うようです',true);return; }
+  if(BOOTING)return;BOOTING=true;
+  try{ const j=await get('/shops');if(j?.ok!==true||!Array.isArray(j.shops))throw new Error('invalid shops'); }
+  catch(err){
+    if(err.status===401){localStorage.removeItem(TOKK);TOK='';}
+    showGate();$('gbtn').textContent=TOK?'再読み込み':'開く';
+    toast(err.status===401?'管理ログインが必要です':err.status===403?'この設定画面を開く権限がありません':'接続を確認できません。ログイン情報は保持しています。再読み込みしてください。',true);return;
+  }finally{BOOTING=false;}
   $('gate').style.display='none'; $('app').style.display='block';
   devDraw(); drawLog(); rsDraw();
+  if(WIRED)return;WIRED=true;
   const focusSink=()=>{const el=document.activeElement;
     if(!el||el.tagName!=='INPUT')$('sink').focus({preventScroll:true});};
   document.addEventListener('click',()=>setTimeout(focusSink,60));
   setInterval(focusSink,4000); focusSink();
 }
 function showGate(){$('gate').style.display='block';$('app').style.display='none';}
-$('gbtn').onclick=()=>{const v=$('gtok').value.trim();if(!v)return;TOK=v;localStorage.setItem(TOKK,v);boot();};
+$('gbtn').onclick=()=>{const v=$('gtok').value.trim()||TOK;if(!v)return;TOK=v;localStorage.setItem(TOKK,v);boot();};
 $('gtok').onkeydown=e=>{if(e.key==='Enter'){e.stopPropagation();$('gbtn').click();}};
 if(TOK)boot(); else showGate();
 </script>

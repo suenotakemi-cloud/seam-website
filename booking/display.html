@@ -195,7 +195,7 @@ const SHOP=Q.get('s')||'ginza', TOKEN=Q.get('t')||'', REG=Q.get('r')||'';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const yen=n=>'¥'+Math.round(+n||0).toLocaleString();
-let lastJson='';
+let lastJson='',ACTIVE=null,POSTING=false,TICKING=false;
 
 /* お待ちいただいている間の画面 */
 function idle(){
@@ -240,7 +240,7 @@ function bill(st){
         <span class="li-n">${esc(i.name)}</span>
         <span class="li-q">${i.qty>1?'×'+i.qty:''}</span>
         <span class="li-p">${i.was&&i.was!==i.now?`<span class="li-was">${yen(i.was*i.qty)}</span>`:''}
-          <span class="li-now">${yen((i.now||i.was)*i.qty)}</span></span>
+          <span class="li-now">${yen((i.now??i.was)*i.qty)}</span></span>
       </div>`).join('')}
       <div class="more" id="more" style="display:none"></div>
     </div>
@@ -450,22 +450,28 @@ function pickWarn(mm){
   </div>`;
 }
 async function sendPick(st,mm){
+  if(POSTING)return;
+  POSTING=true;
+  const key=flowKey(st,st.pick),controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
   const s=$('scr');
   s.querySelectorAll('.pick-b,.warn-x button,.ask-b').forEach(b=>b.disabled=true);
   try{
-    const r=await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch(`${API}/display/consent`,{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},
       body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:'pay:'+mm.k,flow:st.flow||'',
         /* 何をご覧になって選ばれたかを、文面ごと残す */
         text:['お支払い方法：'+mm.label,...(mm.warn?[mm.warn.title,...(mm.warn.lines||[])]:[])].join('\n')})});
-    if(!r.ok)throw new Error('not ok');
+    const ack=await r.json();if(!r.ok||ack?.ok!==true)throw new Error('unconfirmed');
+    if(key!==flowKey(ACTIVE,ACTIVE?.pick))return;
     PICKED=flowKey(st,st.pick);
     s.innerHTML=`<div class="ask fade"><div class="ask-t">${esc(mm.label)}でお受けいたします</div>
       <div class="ask-n">少々お待ちください　One moment, please.</div></div>`;
     lastJson='';
   }catch(e){
+    if(key!==flowKey(ACTIVE,ACTIVE?.pick))return;
     s.querySelectorAll('.pick-b,.warn-x button,.ask-b').forEach(b=>b.disabled=false);
     const n=s.querySelector('.pick-n');
-    if(n){n.textContent='うまく送れませんでした　もう一度お選びください';n.style.color='var(--clay)';} }
+    if(n){n.textContent='送信を確認できませんでした。スタッフにご確認ください';n.style.color='var(--clay)';}
+  }finally{clearTimeout(timeout);POSTING=false;}
 }
 function wirePick(st){
   const s=$('scr');
@@ -493,21 +499,30 @@ function askScreen(st){
   </div>`;
 }
 async function sendConsent(st){
-  const b=document.getElementById('askB'); if(b){b.disabled=true;b.textContent='ありがとうございます';}
+  if(POSTING)return;
+  POSTING=true;
+  const key=flowKey(st,st.ask),controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
+  const b=document.getElementById('askB'); if(b){b.disabled=true;b.textContent='送信中…';}
   try{
     /* ★403や500でも「ありがとうございます」と出していた。
          レジには届いていないので、お客様だけが押したつもりになる。 */
-    const r=await fetch(`${API}/display/consent`,{method:'POST',headers:{'Content-Type':'application/json'},
+    const r=await fetch(`${API}/display/consent`,{method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},
       body:JSON.stringify({t:TOKEN,shopId:SHOP,register:REG,kind:st.ask.kind,flow:st.flow||'',
         text:[st.ask.title,...(st.ask.lines||[])].join('\n')})});
-    if(!r.ok)throw new Error('not ok');
+    const ack=await r.json();if(!r.ok||ack?.ok!==true)throw new Error('unconfirmed');
+    if(key!==flowKey(ACTIVE,ACTIVE?.ask))return;
+    if(b)b.textContent='ありがとうございます';
     ASKED=flowKey(st,st.ask);
     lastJson='';                   // 次の巡回で明細の画面に戻す
-  }catch(e){ if(b){b.disabled=false;b.textContent=st.ask.button||'同意します';}
+  }catch(e){
+    if(key!==flowKey(ACTIVE,ACTIVE?.ask))return;
+    if(b){b.disabled=false;b.textContent=st.ask.button||'同意します';}
     const n=document.querySelector('.ask-n');
-    if(n){n.textContent='うまく送れませんでした　もう一度お試しください';n.style.color='var(--clay)';} }
+    if(n){n.textContent='送信を確認できませんでした。スタッフにご確認ください';n.style.color='var(--clay)';}
+  }finally{clearTimeout(timeout);POSTING=false;}
 }
 function paint(st){
+  ACTIVE=st;
   const j=JSON.stringify(st);
   if(j===lastJson)return;            // 変わっていないなら描き直さない（ちらつき防止）
   lastJson=j;
@@ -529,25 +544,29 @@ function paint(st){
   s.innerHTML=bill(st); fitList();
 }
 async function tick(){
+  if(TICKING||!TOKEN)return;
+  TICKING=true;
+  const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),8000);
   try{
-    const r=await fetch(`${API}/display/state?s=${encodeURIComponent(SHOP)}&r=${encodeURIComponent(REG)}&t=${encodeURIComponent(TOKEN)}`,{cache:'no-store'});
-    if(r.status===403){ $('scr').innerHTML=`<div class="err">この画面の合言葉が違います<br>レジの「お客様画面」からQRを読み直してください</div>`; return; }
+    const r=await fetch(`${API}/display/state?s=${encodeURIComponent(SHOP)}&r=${encodeURIComponent(REG)}&t=${encodeURIComponent(TOKEN)}`,{cache:'no-store',signal:controller.signal});
+    if(r.status===401||r.status===403){ ACTIVE=null;lastJson='__auth';$('scr').innerHTML=`<div class="err">この画面の認証を確認できません<br>レジの「お客様画面」からQRを読み直してください</div>`; return; }
     const j=await r.json();
-    let st=j.state||null;
+    if(!r.ok||j?.ok!==true||!Object.prototype.hasOwnProperty.call(j,'state')||(j.state!==null&&(typeof j.state!=='object'||Array.isArray(j.state))))throw new Error('invalid state');
+    let st=j.state;
     // レジが5分以上置きっぱなしなら、待機の画面に戻す（前のお客様の明細を残さない）
-    if(st&&st.at&&Date.now()-st.at>5*60*1000)st=null;
+    if(st&&(!Number.isFinite(st.at)||Date.now()-st.at>5*60*1000))st=null;
     NG=0;
     paint(st);
   }catch(e){
-    /* ★電波が切れたとき、前のお客様のお名前と明細が出たまま止まっていた。
-         次の方がその画面をご覧になる。20秒つながらなければ必ず消す。 */
+    // 取得失敗時は前のお客様の表示を残さない。次回の正常応答で再表示する。
     NG++;
-    if(NG>=20&&lastJson!=='__off'){
+    ACTIVE=null;
+    if(lastJson!=='__off'){
       lastJson='__off';
       $('scr').innerHTML=`<div class="err">つなぎ直しています<br>
         <span style="font-size:.8em;color:var(--sub)">Reconnecting…</span></div>`;
     }
-  }
+  }finally{clearTimeout(timeout);TICKING=false;}
 }
 let NG=0;
 if(!TOKEN){ $('scr').innerHTML=`<div class="err">レジの「お客様画面」からQRを読み取って開いてください</div>`; }

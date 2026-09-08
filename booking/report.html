@@ -1611,7 +1611,9 @@ async function load(){
       const b=$('body').querySelector('#jr-csv');
       if(b)b.onclick=()=>csvDL(`仕訳_${JR.from}_${JR.to}.csv`,[JR.列].concat(JR.行));
     }
-    else if(TAB==='close'){ CLS=await get(`/settlements?from=${FROM}&to=${TO}`).catch(()=>({settlements:[]}));
+    else if(TAB==='close'){ const result=await get(`/settlements?from=${FROM}&to=${TO}`);
+      if(!result||result.ok!==true||!Array.isArray(result.settlements))throw new Error('締め履歴を確認できません。再読み込みしてください。');
+      CLS=result;
       $('body').innerHTML=closeHtml(); }
     else if(TAB==='cash'){ CB=await get(`/cashbook?from=${FROM}&to=${TO}`);
       $('body').innerHTML=cashHtml();

@@ -78,7 +78,7 @@ const DAY=jst();
 const Q=new URLSearchParams(location.search);
 let TOK=localStorage.getItem('stb_staff_tok')||'';
 let ME={id:localStorage.getItem('stb_staff_id')||'',name:localStorage.getItem('stb_staff_nm')||''};
-const U=p=>API+p+(p.includes('?')?'&':'?')+'stok='+encodeURIComponent(TOK);
+const U=p=>API+p;
 const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
 const tmMin=iso=>{const d=new Date(Date.parse(iso)+9*3600e3);return d.getUTCHours()*60+d.getUTCMinutes();};
 
@@ -87,17 +87,25 @@ async function load(){
   if(!TOK)return login();
   $('app').innerHTML='<p class="note" style="margin-top:30px">読み込んでいます…</p>';
   try{
-    const [a,b]=await Promise.all([
-      fetch(U(`/punch/day?date=${DAY}`)).then(r=>r.json()),
-      fetch(U('/pay/me')).then(r=>r.json()),
+    const responses=await Promise.all([
+      fetch(U(`/punch/day?date=${DAY}`),{headers:{'X-Staff-Token':TOK}}),
+      fetch(U('/pay/me'),{headers:{'X-Staff-Token':TOK}}),
     ]);
-    if(a&&a.error==='ログインが必要です'){TOK='';localStorage.removeItem('stb_staff_tok');return login();}
-    PUN=(a&&a.ok&&a.punches&&a.punches[ME.id])||[];
-    PAY=(b&&b.ok)?b:null;
+    if(responses.some(r=>r.status===401)){TOK='';localStorage.removeItem('stb_staff_tok');return login();}
+    if(responses.some(r=>!r.ok))throw new Error('read_failed');
+    const [a,b]=await Promise.all(responses.map(r=>r.json()));
+    if(!a||a.ok!==true||!a.punches||typeof a.punches!=='object'||Array.isArray(a.punches)||!b||b.ok!==true)throw new Error('invalid_response');
+    const punches=Object.prototype.hasOwnProperty.call(a.punches,ME.id)?a.punches[ME.id]:[];
+    if(!Array.isArray(punches)||!punches.every(p=>p&&['in','out','bin','bout'].includes(p.kind)&&Number.isFinite(Date.parse(p.at))))throw new Error('invalid_punches');
+    if(!Number.isFinite(b.今日)||!Number.isFinite(b.今月)||!Array.isArray(b.日ごと))throw new Error('invalid_pay');
+    PUN=punches;PAY=b;
     if(PAY&&PAY.名前)$('nm').textContent=PAY.名前+' さん';
     draw();
-  }catch(e){ $('app').innerHTML=`<div class="card"><div class="warn">読み込めませんでした</div>
-    <div class="note">${esc(e.message)}</div></div>`; }
+  }catch(e){ $('app').innerHTML=`<div class="card"><div class="warn" role="alert">打刻・給与情報を読み込めませんでした</div>
+    <div class="note">未取得の情報を0円・未打刻として表示していません。通信状態を確認して再読み込みしてください。</div>
+    <button id="retryLoad" class="b" style="min-height:44px">再読み込み</button></div>`;
+    $('retryLoad').onclick=load;
+  }
 }
 async function login(msg){
   $('app').innerHTML='<div class="gate"><p class="note">読み込んでいます…</p></div>';
@@ -204,7 +212,7 @@ function draw(){
   document.querySelectorAll('[data-k]').forEach(b=>b.onclick=async()=>{
     b.disabled=true;
     try{
-      const r=await fetch(U('/punch'),{method:'POST',headers:{'Content-Type':'application/json'},
+      const r=await fetch(U('/punch'),{method:'POST',headers:{'Content-Type':'application/json','X-Staff-Token':TOK},
         body:JSON.stringify({kind:b.dataset.k,date:DAY})});
       const j=await r.json(); if(!r.ok||!j.ok)throw new Error(j.error||'打てませんでした');
     }catch(e){ alert(e.message); }

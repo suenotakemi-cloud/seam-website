@@ -688,9 +688,12 @@ function snHtml(){
 function snWire(){
   document.querySelectorAll('[data-sn]').forEach(box=>{
     box.querySelector('.ok').onclick=async()=>{
+      if(box.querySelector('.ok').disabled)return;
       box.querySelector('.ok').disabled=true;
-      try{ await F('/soon/done',{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({key:box.dataset.sn})}); }catch(e){}
+      try{ const r=await F('/soon/done',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({key:box.dataset.sn})});
+        const j=await r.json();if(!r.ok||!j||j.ok!==true)throw new Error('save-failed');
+      }catch(e){box.querySelector('.ok').disabled=false;alert('記録を保存できませんでした。対象のお客様は一覧に残しています。');return;}
       box.style.display='none';
     };
   });
@@ -852,6 +855,8 @@ function prWire(){
 function prFormWire(){
   if(!PRF)return;
   const f=PRF, $$=id=>document.getElementById(id);
+  const lockForm=locked=>document.querySelectorAll('.prform input,.prform select,.prform textarea,.prform button').forEach(el=>el.disabled=locked);
+  if(f._saving){lockForm(true);if($$('pf-save'))$$('pf-save').textContent='記録しています…';return;}
   const bind=(id,k)=>{const el=$$(id); if(el)el.oninput=()=>{f[k]=el.value;};};
   bind('pf-note','note'); bind('pf-mn','modelName'); bind('pf-tc','teacher');
   /* 金額は、入れ終わったところで描き直す（打っている途中で消えないように） */
@@ -904,16 +909,28 @@ function prFormWire(){
   if($$('pf-cancel'))$$('pf-cancel').onclick=()=>{PRF=null;render();};
   if($$('pf-save'))$$('pf-save').onclick=async()=>{
     const mc=matCost({mix:f.mix});
-    const b=$$('pf-save'); b.disabled=true; b.textContent='記録しています…';
-    await F('/practice',{method:'POST',headers:H(),
+    const b=$$('pf-save'); if(b.disabled||f._saving)return;
+    const ongoing=PRON;f._saving=true;lockForm(true);b.disabled=true; b.textContent='記録しています…';
+    try{
+    const r=await F('/practice',{method:'POST',headers:H(),
       body:JSON.stringify({date:f.date,minutes:f.mins,kind:f.kind,note:f.note,
         startAt:f.startAt||'',endAt:f.endAt||'',
         modelName:f.hasModel?f.modelName:'',modelFee:f.hasModel?(+f.modelFee||0):0,
         feeMethod:f.feeMethod||'cash',feeInReg:!!f.feeInReg,
         agents:f.hasModel?f.mix:[],matCost:f.hasModel?mc.yen:0,
         teacher:f.teacher,checked:!!f.teacher,nextBooked:!!f.nextBooked,
-        photoB:f.photoB,photoA:f.photoA})}).catch(()=>{});
-    PRF=null; PRON=null; localStorage.removeItem('stb_practice_on');
+        photoB:f.photoB,photoA:f.photoA})});
+    const j=await r.json();
+    if(!r.ok||!j||j.ok!==true)throw new Error('save-failed');
+    }catch(e){
+      alert('保存を確認できませんでした。写真と入力内容は残しています。通信を確認し、記録の有無を確認してから再操作してください。');
+      f._saving=false;
+      if(PRF===f){lockForm(false);prFormWire();}
+      b.disabled=false;b.textContent='記録する';return;
+    }
+    f._saving=false;
+    if(PRF===f)PRF=null;
+    if(PRON===ongoing){PRON=null; localStorage.removeItem('stb_practice_on');}
     await prLoad(); render();};
 }
 /* ── あなたのリンク ──
@@ -1524,6 +1541,7 @@ function paintTime(p){
       ${SOAK?`<div class="soak ${SOAK.left<=0?'ng':''}">
           <div class="sk-n">${mmss(SOAK.left)}</div>
           <div class="sk-s">${SOAK.left>0?`${SOAK.min}分で鳴らします`:'時間です'}</div>
+          ${SOAK.saving?'<div role="status">記録を保存中です</div>':SOAK.saved===false?'<div role="alert">タイマーは動作中ですが、記録は保存されていません</div>':''}
           <button class="wbtn" id="skStop">とめる</button>
         </div>`
         :`<div class="tgrid3">${[5,10,15,20,25,30].map(mn=>`<button class="tbtn" data-sk="${mn}"><b>${mn}分</b></button>`).join('')}</div>`}
@@ -1535,23 +1553,33 @@ function paintTime(p){
 }
 function tWire(p){
   p.querySelectorAll('[data-tk]').forEach(b=>b.onclick=async()=>{
+    if(b.disabled)return;
     const k=b.dataset.tk;
     if(TM.times[k]&&!confirm('もう押してあります。いまの時刻に直しますか'))return;
     b.disabled=true;
     const at=new Date().toISOString();
-    TM.times[k]={at,by:(ME&&ME.name)||''};
-    try{ await F('/timeline',{method:'POST',headers:H(),
-      body:JSON.stringify({resvId:RESV.id,kind:k,at,shopId:'ginza'})}); }catch(e){}
+    const currentTimes=TM.times;
+    try{ const r=await F('/timeline',{method:'POST',headers:H(),
+      body:JSON.stringify({resvId:RESV.id,kind:k,at,shopId:'ginza'})});
+      const j=await r.json();if(!r.ok||!j||j.ok!==true)throw new Error('save-failed');
+    }catch(e){b.disabled=false;alert('時刻の保存を確認できませんでした。表示は変更していません。記録を確認してから再操作してください。');return;}
+    currentTimes[k]={at,by:(ME&&ME.name)||''};
     paint();
   });
-  p.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{
+  p.querySelectorAll('[data-sk]').forEach(b=>b.onclick=async()=>{
+    if(SOAK&&SOAK.saving)return;
     const mn=+b.dataset.sk;
-    SOAK={min:mn,left:mn*60,end:Date.now()+mn*60000};
-    /* 放置に入ったことも残す（何分置いたかは、次の来店で効く） */
-    F('/timeline',{method:'POST',headers:H(),
-      body:JSON.stringify({resvId:RESV.id,kind:'soak',at:new Date().toISOString(),minutes:mn})}).catch(()=>{});
-    TM.times.soak={at:new Date().toISOString(),minutes:mn};
+    const timer={min:mn,left:mn*60,end:Date.now()+mn*60000,saving:true,saved:false};
+    SOAK=timer;
+    const at=new Date().toISOString(),resvId=RESV.id,currentTimes=TM.times;
     paint();
+    /* 放置に入ったことも残す（何分置いたかは、次の来店で効く） */
+    try{
+      const r=await F('/timeline',{method:'POST',headers:H(),body:JSON.stringify({resvId,kind:'soak',at,minutes:mn,shopId:'ginza'})});
+      const j=await r.json();if(!r.ok||!j||j.ok!==true)throw new Error('save-failed');
+      currentTimes.soak={at,minutes:mn};timer.saved=true;
+    }catch(e){alert('放置タイマーの記録を保存できませんでした。タイマーは端末内で動作しています。記録を確認してください。');}
+    finally{timer.saving=false;if(SOAK===timer)paint();}
   });
   const st=p.querySelector('#skStop'); if(st)st.onclick=()=>{SOAK=null;paint();};
 }
