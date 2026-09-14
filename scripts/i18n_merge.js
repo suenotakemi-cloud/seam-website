@@ -78,6 +78,8 @@ for (const f of fs.readdirSync(ROOT).filter(f => /^[a-z0-9-]+\.html$/.test(f) &&
       if (dict[l][k] !== v) { dict[l][k] = v; added++; }
     }
   }
+  // 使われなくなった x. の鍵は落とす（文を書き直して鍵が変わったあと 旧文が辞書に残り 死んだ文がHTMLに残るため）
+  for (const l of ['ja', ...LANGS]) for (const k of Object.keys(dict[l])) if (k.startsWith('x.') && !keys.has(k)) { delete dict[l][k]; added++; }
   if (!added) continue;
 
   const body = JSON.stringify(dict, null, 0);
