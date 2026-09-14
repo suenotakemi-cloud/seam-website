@@ -5731,7 +5731,10 @@ function perkMinOf(m,perkId){
   const o=opts.find(x=>x.id===perkId)||opts[0];
   return (o.min!=null)?(+o.min||0):PERK_MIN;
 }
-const menuMinWithPerk=(m,perkId)=>((m&&m.min)||60)+PREP_MIN+perkMinOf(m,perkId);
+/* ★所有者決定 2026-09-14：準備 15 分（と特典）は担当を塞ぐ。長さはサロンボードの刻み（ヘア 30 分・スパ 15 分）へ切り上げ。
+   サーバ（worker.js の 枠の分）と同じ式にして、画面の空きと予約の成否がずれないようにする。 */
+const 枠の刻み=(m)=>(m&&m.cat==='ヘッドスパ')?15:30;
+const menuMinWithPerk=(m,perkId)=>{const raw=((m&&m.min)||60)+PREP_MIN+perkMinOf(m,perkId);const s=枠の刻み(m);return Math.ceil(raw/s)*s;};
 
 const DEPOSIT_DEFAULT={ja:{type:'fixed',value:3300},en:{type:'rate',value:50},zh:{type:'rate',value:50},tw:{type:'rate',value:50},ko:{type:'rate',value:50}};
 function depositRule(lang){
