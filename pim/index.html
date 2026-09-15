@@ -256,6 +256,7 @@
     <!-- ── 画面2: 商品 ＋ 写真グリッド ── -->
     <section class="screen" id="scr-prod">
       <div class="card">
+        <a class="hbtn" id="btnBackList" href="./import.html#products" hidden style="text-decoration:none;margin-bottom:8px">← 商品一覧に戻る</a>
         <div class="jan" id="pJan"></div>
         <div class="pname" id="pName"></div>
         <div class="meta" id="pMeta"></div>
@@ -568,7 +569,8 @@
       return ensureStaff();
     }).then(function () {
       todayCount(0); recent(null); loadMyAssign().then(function () { return loadQueue(); }).catch(function () { /* */ });
-      var q = new URLSearchParams(location.search).get('jan');
+      var sp = new URLSearchParams(location.search), q = sp.get('jan');
+      if (sp.get('back') === 'list') { $('btnBackList').hidden = false; $('btnBackList').style.display = 'inline-block'; } // PC の商品一覧から来た → 戻るボタンを出す（a 要素は inline なので display を明示）
       if (q) lookup(q); else show('scr-scan');
       updateOutbox(); flushOutbox(); showInstall(); loadRefs(true);
     }).catch(handleErr);

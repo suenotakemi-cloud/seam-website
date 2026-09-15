@@ -585,6 +585,7 @@
       if (j.account) $('setAcct').textContent = 'アカウント: ' + j.account.name + '（ID: ' + j.account.login_id + '）' + (j.account.pass_changed_at ? ' ／ パスワード最終変更 ' + j.account.pass_changed_at.slice(0, 10) : '');
       $('setUser').value = C.Auth.user();
       loadHistory(); loadMakers(); loadInbox();
+      if (location.hash === '#products') { history.replaceState(null, '', location.pathname); restoreListState() || document.querySelector('.tabs button[data-tab="products"]').click(); } // スマホの写真画面から「一覧へ戻る」で戻ってきた
     }).catch(handleErr);
   }
   $('btnLogin').addEventListener('click', function () {
@@ -1085,11 +1086,11 @@
   function loadProducts(offset) {
     P.offset = Math.max(0, offset || 0);
     var qs = 'q=' + encodeURIComponent($('q').value.trim()) + '&maker=' + encodeURIComponent($('fMaker').value) + ($('fNoimg').checked ? '&noimg=1' : '') + ($('fNosku').checked ? '&nosku=1' : '') + ($('fNotReady').checked ? '&ready=0' : '') + ($('fEc').checked ? '&ec=pending' : '') + '&limit=' + P.limit + '&offset=' + P.offset;
-    api('products?' + qs).then(function (j) {
+    return api('products?' + qs).then(function (j) {
       if (!j.ok) return;
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
-        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + (p.ready ? '<span class="tag ok">可</span>' : '<span class="tag ng" title="写真あり・商品コードあり・価格あり・撮り直し無し が条件">不可</span>') + '</td><td>' + (p.ec_synced_at && p.ec_synced_at >= p.updated_at ? '<span class="tag ok">済</span>' : '<span class="tag">未</span>') + (p.ec_push_status && p.ec_push_status !== 'ok' ? ' <span class="tag ng" title="' + esc(p.ec_push_msg || p.ec_push_status) + '">送信×</span>' : '') + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
+        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + (p.ready ? '<span class="tag ok">可</span>' : '<span class="tag ng" title="写真あり・商品コードあり・価格あり・撮り直し無し が条件">不可</span>') + '</td><td>' + (p.ec_synced_at && p.ec_synced_at >= p.updated_at ? '<span class="tag ok">済</span>' : '<span class="tag">未</span>') + (p.ec_push_status && p.ec_push_status !== 'ok' ? ' <span class="tag ng" title="' + esc(p.ec_push_msg || p.ec_push_status) + '">送信×</span>' : '') + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '&back=list" data-photo="1">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
       }).join('') || '<tr><td colspan="15" class="muted">該当なし</td></tr>';
       $('selAll').checked = false; updateSel();
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-sku]'), function (b) {
@@ -1137,6 +1138,23 @@
   $('fNosku').addEventListener('change', function () { loadProducts(0); });
   $('fNotReady').addEventListener('change', function () { loadProducts(0); });
   $('fEc').addEventListener('change', function () { loadProducts(0); });
+  // 「写真」で編集画面へ行く前に、今の絞り込み・ページ・スクロール位置を覚えておく（戻ってきたら同じ一覧に戻す）
+  var LIST_KEY = 'seam_pim_list_state';
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[data-photo]'); if (!a) return;
+    try { sessionStorage.setItem(LIST_KEY, JSON.stringify({ q: $('q').value, maker: $('fMaker').value, noimg: $('fNoimg').checked, nosku: $('fNosku').checked, notready: $('fNotReady').checked, ec: $('fEc').checked, offset: P.offset, y: window.scrollY, ts: Date.now() })); } catch (err) { /* */ }
+  });
+  function restoreListState() {
+    var s = null; try { s = JSON.parse(sessionStorage.getItem(LIST_KEY) || 'null'); sessionStorage.removeItem(LIST_KEY); } catch (e) { /* */ }
+    if (!s) return false;
+    $('q').value = s.q || ''; $('fNoimg').checked = !!s.noimg; $('fNosku').checked = !!s.nosku; $('fNotReady').checked = !!s.notready; $('fEc').checked = !!s.ec;
+    // メーカーの選択肢は非同期で入るので、無ければ一時的に足しておく
+    if (s.maker && !$('fMaker').querySelector('option[value="' + s.maker.replace(/"/g, '&quot;') + '"]')) { var o = document.createElement('option'); o.value = s.maker; o.textContent = s.maker; $('fMaker').appendChild(o); }
+    $('fMaker').value = s.maker || '';
+    document.querySelector('.tabs button[data-tab="products"]').click();
+    loadProducts(s.offset || 0).then(function () { window.scrollTo(0, s.y || 0); });
+    return true;
+  }
   $('btnPrev').addEventListener('click', function () { loadProducts(P.offset - P.limit); });
   $('btnNext').addEventListener('click', function () { loadProducts(P.offset + P.limit); });
 
@@ -1320,13 +1338,21 @@
       $('rvCount').textContent = j.total + '枚中 ' + (j.total ? RV.offset + 1 : 0) + '〜' + Math.min(j.total, RV.offset + j.images.length);
       $('rvGrid').innerHTML = j.images.map(function (im, i) {
         return '<div class="rv ' + (im.review || '') + '" data-i="' + i + '"><img src="' + esc(im.url) + '" alt="" loading="lazy"><div class="b"><div class="nm">' + esc(im.name) + '</div>' + (im.quality_warn ? '<div><span class="tag warn">自動チェック: ' + esc(im.quality_warn) + '</span></div>' : '') + '<div class="muted">' + esc(im.jan) + ' ・ ' + im.slot + '枚目 ・ ' + esc(im.created_by || '') + ' ・ ' + esc((im.created_at || '').slice(5, 16).replace('T', ' ')) + '</div>' +
-          '<div class="row" style="margin-top:6px"><button class="btn sm" data-rv="ok">OK</button><button class="btn sm danger" data-rv="retake">撮り直し</button>' + (im.review ? '<button class="btn sm" data-rv="clear">取消</button>' : '') + '</div>' +
+          '<div class="row" style="margin-top:6px"><button class="btn sm" data-rv="ok">OK</button><button class="btn sm danger" data-rv="retake">撮り直し</button>' + (im.review ? '<button class="btn sm" data-rv="clear">取消</button>' : '') + '<button class="btn sm" data-rv="delete" title="この写真を消す（後ろの写真が前に詰まります）" style="margin-left:auto">削除</button></div>' +
           '<input placeholder="撮り直しの理由（ピンぼけ・傾き・影 など）" value="' + esc(im.review_note || '') + '"></div></div>';
       }).join('') || '<p class="muted">該当する写真はありません</p>';
       Array.prototype.forEach.call($('rvGrid').querySelectorAll('[data-rv]'), function (b) {
         b.addEventListener('click', function () {
           var box = b.closest('.rv'), im = RV.items[parseInt(box.getAttribute('data-i'), 10)], act = b.getAttribute('data-rv');
           var note = box.querySelector('input').value.trim();
+          if (act === 'delete') { // 画像まとめ登録で入った不要な写真を、検品しながらその場で消す
+            if (!confirm(im.name + '\n' + im.jan + ' の ' + im.slot + '枚目を削除しますか？（元に戻せません。後ろの写真が前に詰まります）')) return;
+            api('images?jan=' + encodeURIComponent(im.jan) + '&slot=' + im.slot, { method: 'DELETE' }).then(function (r) {
+              if (!r.ok) { toast(r.message || '削除できませんでした', true); return; }
+              toast('削除しました'); loadReview(RV.offset);
+            }).catch(handleErr);
+            return;
+          }
           if (act === 'retake' && !note) { note = prompt('撮り直しの理由（スマホに表示されます）', 'ピンぼけ') || ''; if (!note) return; box.querySelector('input').value = note; }
           api('review', { method: 'POST', body: { jan: im.jan, slot: im.slot, review: act === 'clear' ? null : act, note: note } }).then(function (r) {
             if (!r.ok) { toast(r.message || '失敗しました', true); return; }
