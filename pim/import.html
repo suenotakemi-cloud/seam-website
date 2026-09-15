@@ -620,7 +620,12 @@
     api('products?limit=1').then(function (j) {
       if (!j.ok) return;
       var opts = '<option value="">すべて</option>' + j.makers.map(function (m) { return '<option value="' + esc(m.maker) + '">' + esc(m.maker) + ' (' + m.n + ')</option>'; }).join('');
-      $('exMaker').innerHTML = opts; $('fMaker').innerHTML = opts.replace('すべて', 'メーカー: すべて'); $('rvMaker').innerHTML = opts.replace('すべて', 'メーカー: すべて');
+      // 選んでいたメーカーは保つ（「写真」から一覧へ戻った直後など、選択肢より先に絞り込みが決まっていることがある）
+      [['exMaker', opts], ['fMaker', opts.replace('すべて', 'メーカー: すべて')], ['rvMaker', opts.replace('すべて', 'メーカー: すべて')]].forEach(function (x) {
+        var sel = $(x[0]), was = sel.value; sel.innerHTML = x[1];
+        if (was && !sel.querySelector('option[value="' + was.replace(/"/g, '&quot;') + '"]')) { var o = document.createElement('option'); o.value = was; o.textContent = was; sel.appendChild(o); }
+        sel.value = was;
+      });
     }).catch(function () { /* */ });
   }
 

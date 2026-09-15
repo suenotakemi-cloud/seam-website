@@ -141,7 +141,7 @@ jobs:
           mark() { grep -q -- "$2" "$1" 2>/dev/null || { echo "::error file=$1::PIM の目印「$2」が消えています（古い main への巻き戻し？）"; fail=1; }; }
           for f in functions/api/pim/_lib.js functions/api/pim/_middleware.js functions/api/pim/_salonpro.js functions/api/pim/push.js functions/api/pim/ack.js functions/api/pim/refs.js functions/api/pim/fetch.js functions/api/pim/import.js functions/api/pim/images.js functions/api/pim/products.js functions/api/pim/review.js functions/api/pim/queue.js functions/api/pim/staff.js functions/api/pim/dict.js functions/api/pim/inbox.js functions/api/pim/report.js functions/api/pim/admin/accounts.js \
                    pim/index.html pim/import.html pim/admin.html pim/photo-guide.html pim/photo-guide.js pim/manual-phone.html pim/manual-pc.html pim/labels.html \
-                   js/pim-client.js js/pim-normalize.js db/pim-schema.sql db/SETUP_PIM.md; do need "$f"; done
+                   "functions/pim-img/[[path]].js" js/pim-client.js js/pim-normalize.js db/pim-schema.sql db/SETUP_PIM.md; do need "$f"; done
           mark functions/api/pim/_lib.js "ec_push_at"
           mark functions/api/pim/_lib.js "pim_refs"
           mark functions/api/pim/account.js "ec_key"
