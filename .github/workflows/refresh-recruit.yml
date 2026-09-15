@@ -18,11 +18,26 @@ jobs:
       - name: 求人ページを再生成
         run: python3 scripts/build_recruit_pages.py
 
+      # 【2026-09-15 の事故】生成器は素の HTML を書くので、走るたびに 15枚の data-i18n・5言語の辞書・
+      # meta の訳・hreflang が消え、/en /zh /tw /ko の求人が日本語に戻っていた（9/15 03:35 の自動コミット）。
+      # 生成のあとに多言語の配管を通す：鍵を振る → 台帳の訳を差す → meta の訳と hreflang → JSON-LD を title にそろえる
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: 多言語の配管を通す
+        run: |
+          npm init -y >/dev/null && npm i --no-save jsdom@^24
+          node scripts/i18n_extract.js .
+          node scripts/i18n_merge.js .
+          node scripts/i18n_add_meta.js .
+          node scripts/seo_sync_jsonld.js .
+          node scripts/i18n_todo.js . 20   # 訳の無い新しい文があればここに出る（次の手訳の材料）
+
       - name: 生成物をコミット
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add recruit-*.html
+          git add recruit-*.html recruit.html i18n/source.json .github/scripts/build-i18n.js
           git diff --staged --quiet && { echo "変化なし"; exit 0; }
           # [skip ci]は付けない: CF Pagesが[skip ci]入りコミットの配信をスキップし
           # 生成物が本番に出ない（build-finder.yml と同じ理由）
