@@ -126,6 +126,31 @@ jobs:
           sys.exit(1 if bad else 0)
           PY
 
+      - name: PIM（商品マスタ）の中身が消えていないか
+        run: |
+          # ★2026-09-14 の booking 撤去コミットが、古い main を元にしていたため
+          #   マージ済みの PR #25（SalonPro へ写真を送る・15 ファイル）を丸ごと打ち消して main に入った。
+          #   本番から機能が消えたまま翌日まで気づかなかった。
+          #   PIM は別の線で育てているので、「あるべきファイルと目印」が無くなっていたらここで止める。
+          #   増やすときは CLAUDE.md の約束どおり、PIM の線のセッションで足す。
+          fail=0
+          need() { [ -f "$1" ] || { echo "::error file=$1::PIM のファイルが消えています（古い main への巻き戻し？ CLAUDE.md を読んでください）"; fail=1; }; }
+          mark() { grep -q -- "$2" "$1" 2>/dev/null || { echo "::error file=$1::PIM の目印「$2」が消えています（古い main への巻き戻し？）"; fail=1; }; }
+          for f in functions/api/pim/_lib.js functions/api/pim/_middleware.js functions/api/pim/_salonpro.js functions/api/pim/push.js functions/api/pim/ack.js functions/api/pim/refs.js functions/api/pim/fetch.js functions/api/pim/import.js functions/api/pim/images.js functions/api/pim/products.js functions/api/pim/review.js functions/api/pim/queue.js functions/api/pim/staff.js functions/api/pim/dict.js functions/api/pim/inbox.js functions/api/pim/report.js functions/api/pim/admin/accounts.js \
+                   pim/index.html pim/import.html pim/admin.html pim/photo-guide.html pim/photo-guide.js pim/manual-phone.html pim/manual-pc.html pim/labels.html \
+                   js/pim-client.js js/pim-normalize.js db/pim-schema.sql db/SETUP_PIM.md; do need "$f"; done
+          mark functions/api/pim/_lib.js "ec_push_at"
+          mark functions/api/pim/_lib.js "pim_refs"
+          mark functions/api/pim/account.js "ec_key"
+          mark functions/api/pim/import.js "'fill'"
+          mark pim/import.html 'data-tab="push"'
+          mark pim/import.html 'data-rv="delete"'
+          mark pim/import.html 'data-tab="series"'
+          mark pim/index.html "btnBackList"
+          mark pim/index.html "shRef"
+          mark pim/index.html "HTMLCanvasElementLuminanceSource"
+          exit $fail
+
       - name: 合言葉らしきものが混ざっていないか
         run: |
           # 本物の鍵の形だけを見る。誤検知で止めない。
