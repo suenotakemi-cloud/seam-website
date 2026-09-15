@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>SEAM 銀座 — スタッフ別売上（Square POS 連携）</title>
+<style>
+:root{--navy:#0e2a47;--accent:#006aff;--bg:#f4f7fa;--line:#e3eaf2;--ink:#1c2b3a;--sub:#68798c;--ok:#1f9d61;--danger:#dc2626}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.6;padding:24px 16px}
+.wrap{max-width:560px;margin:0 auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 2px 12px rgba(14,42,71,.08);overflow:hidden}
+.head{background:var(--navy);color:#fff;padding:18px 20px}
+.head .s{font-size:11px;opacity:.75;letter-spacing:.12em}
+.head .n{font-size:17px;font-weight:800;margin-top:2px}
+.body{padding:20px}
+.bar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px}
+.fld{flex:1;min-width:120px}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--sub);margin-bottom:4px}
+.fld input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px}
+.btn{border:none;border-radius:10px;padding:10px 16px;font-weight:800;font-size:14px;background:var(--accent);color:#fff}
+.btn:disabled{background:#b9cede}
+.total{display:flex;justify-content:space-between;align-items:center;background:#f0f7ff;border:1px solid #cfe4fb;border-radius:12px;padding:12px 16px;margin-bottom:14px}
+.total span{font-size:12.5px;color:var(--sub);font-weight:700}
+.total b{font-size:22px;color:var(--navy)}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #eef3f8;font-size:13.5px}
+th{font-size:11.5px;color:var(--sub);font-weight:700}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.name{font-weight:700}
+.bar-cell{position:relative}
+.bar-fill{position:absolute;left:8px;bottom:2px;height:4px;background:var(--accent);border-radius:2px;opacity:.5}
+.msg{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:13px;font-weight:600;display:none}
+.msg.err{display:block;background:#fdeaea;color:var(--danger);border:1px solid #f3c2c2;white-space:pre-wrap}
+.msg.info{display:block;background:#eef4ff;color:var(--accent);border:1px solid #cfe0fb}
+.setup{background:#fffbeb;border:1px solid #fde9b8;border-radius:12px;padding:16px;font-size:13px}
+.setup code{background:#fff;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.note{font-size:11.5px;color:var(--sub);margin-top:12px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="head"><div class="s">SQUARE POS → SHIFT</div><div class="n">SEAM 銀座 — スタッフ別売上</div></div>
+    <div class="body" id="body">
+      <div class="bar">
+        <div class="fld"><label>開始日</label><input type="date" id="from"></div>
+        <div class="fld"><label>終了日</label><input type="date" id="to"></div>
+        <button class="btn" id="load">集計する</button>
+      </div>
+      <div class="total"><span>期間合計売上</span><b id="totalLabel">—</b></div>
+      <table><thead><tr><th>スタッフ</th><th class="num">会計数</th><th class="num">売上</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="3" style="color:var(--sub)">「集計する」を押してください</td></tr></tbody></table>
+      <div class="msg" id="msg"></div>
+      <div class="note">Square POS で「担当者を選んで会計」した売上を、スタッフ別に集計します。シフト表（誰が入っているか）と並べれば人時売上・指名売上が見えます。<br>※デモ環境(sandbox)は、Square側でテスト会計を作ると数字が入ります。</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== 設定：デプロイした Worker の /sales URL ===== */
+const CONFIG = {
+  SALES_ENDPOINT: 'https://seam-square-pay.suenotakemi.workers.dev/sales',
+};
+/* ================================================= */
+
+const $ = s => document.querySelector(s);
+const yen = n => '¥' + Number(n || 0).toLocaleString();
+const todayStr = () => new Date().toISOString().slice(0, 10);
+$('#from').value = todayStr();
+$('#to').value = todayStr();
+
+const showMsg = (cls, text) => { const m = $('#msg'); m.className = 'msg ' + cls; m.textContent = text; };
+
+if (!CONFIG.SALES_ENDPOINT || CONFIG.SALES_ENDPOINT.includes('xxxx')) {
+  $('#body').innerHTML = `<div class="setup">⚙️ <code>CONFIG.SALES_ENDPOINT</code> に、デプロイした Worker の <code>/sales</code> URL を設定してください。<br>例) <code>https://seam-square-pay.xxxx.workers.dev/sales</code></div>`;
+} else {
+  $('#load').onclick = load;
+}
+
+async function load() {
+  const btn = $('#load'); btn.disabled = true; btn.textContent = '集計中…'; showMsg('info', '');
+  try {
+    const from = $('#from').value, to = $('#to').value;
+    const res = await fetch(`${CONFIG.SALES_ENDPOINT}?from=${from}&to=${to}`);
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || ('エラー: ' + res.status));
+
+    $('#totalLabel').textContent = yen(data.total);
+    const rows = $('#rows');
+    if (!data.staff || !data.staff.length) {
+      rows.innerHTML = '<tr><td colspan="3" style="color:var(--sub)">この期間の売上データはまだありません（Squareでテスト会計を作ると表示されます）</td></tr>';
+      return;
+    }
+    const max = Math.max(...data.staff.map(s => s.totalSales), 1);
+    rows.innerHTML = data.staff.map(s => `<tr>
+      <td class="name">${escapeHtml(s.name)}</td>
+      <td class="num">${s.count}</td>
+      <td class="num bar-cell">${yen(s.totalSales)}<span class="bar-fill" style="width:${Math.round(s.totalSales / max * 120)}px"></span></td>
+    </tr>`).join('');
+    showMsg('info', `${data.from} 〜 ${data.to} の集計を表示しました`);
+  } catch (e) {
+    showMsg('err', '取得に失敗しました。\n' + (e.message || e));
+  } finally {
+    btn.disabled = false; btn.textContent = '集計する';
+  }
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+</script>
+</body>
+</html>
