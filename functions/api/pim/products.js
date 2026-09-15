@@ -32,6 +32,7 @@ export async function onRequestGet({ request, env, data }) {
   if (url.searchParams.get('ready') === '1') where.push(READY_SQL); // 公開できる商品だけ
   if (url.searchParams.get('ready') === '0') where.push('NOT ' + READY_SQL); // 公開できない商品だけ
   if (url.searchParams.get('ec') === 'pending') where.push('(p.ec_synced_at IS NULL OR p.ec_synced_at < p.updated_at)'); // EC 未反映
+  if (url.searchParams.get('ec') === 'failed') where.push("(p.ec_push_status IS NOT NULL AND p.ec_push_status<>'ok')"); // SalonPro へ送れなかったもの
   if (q) {
     const qd = q.replace(/[^0-9]/g, '');
     if (qd.length >= 6 && qd.length === q.length) { where.push('p.jan LIKE ?'); binds.push(qd + '%'); }
