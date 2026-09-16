@@ -9,6 +9,7 @@
    ════════════════════════════════════════════════════════════ */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const vm = require('vm');
 const { JSDOM } = require('jsdom');
 
@@ -582,17 +583,41 @@ function build() {
     if (!m) return u;
     return m[2] === '/' ? '/' : m[2];
   }
+  // ── <lastmod>（2026-09-16）──
+  // 【なぜ】更新した頁を検索エンジンが早く拾い直すための日付。git の日付は CI が浅いクローン(fetch-depth 50)なので使えない。
+  // 【どうする】ja の元 HTML の中身のハッシュを data/lastmod.json に控え、変わっていたら今日(JST)、同じなら控えの日付。
+  //   初回の控えは 2026-09-16 に git の履歴（完全な木）から作った。言語版は元の ja と同じ日付（同じ元から作るため）。
+  const lastmodPath = path.join(ROOT, 'data', 'lastmod.json');
+  let lastmod = {};
+  try { lastmod = JSON.parse(fs.readFileSync(lastmodPath, 'utf-8')); } catch (_) { lastmod = {}; }
+  const todayJst = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+  let lastmodChanged = false;
+  function lastmodOf(jaUrl) {
+    const file = jaUrl === '/' ? 'index.html' : jaUrl.slice(1) + '.html';
+    const p = path.join(ROOT, file);
+    if (!fs.existsSync(p)) return null;
+    const h = crypto.createHash('sha1').update(fs.readFileSync(p)).digest('hex').slice(0, 12);
+    const cur = lastmod[file];
+    if (!cur || cur.h !== h) { lastmod[file] = { h, d: todayJst }; lastmodChanged = true; }
+    return lastmod[file].d;
+  }
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n' +
     '        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
     urls.map(u => {
+      const d = lastmodOf(jaPathOf(u));
+      const lm = d ? '<lastmod>' + d + '</lastmod>' : '';
       const set = altsFor(jaPathOf(u));
-      if (!set) return '  <url><loc>' + BASE + u + '</loc></url>';
+      if (!set) return '  <url><loc>' + BASE + u + '</loc>' + lm + '</url>';
       const links = set.map(([h, href]) =>
         '\n    <xhtml:link rel="alternate" hreflang="' + h + '" href="' + href + '"/>').join('');
-      return '  <url><loc>' + BASE + u + '</loc>' + links + '\n  </url>';
+      return '  <url><loc>' + BASE + u + '</loc>' + lm + links + '\n  </url>';
     }).join('\n') +
     '\n</urlset>\n';
+  if (lastmodChanged) {
+    const sorted = Object.fromEntries(Object.keys(lastmod).sort().map(k => [k, lastmod[k]]));
+    fs.writeFileSync(lastmodPath, JSON.stringify(sorted, null, 1) + '\n', 'utf-8');
+  }
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), xml, 'utf-8');
   const withAlts = urls.filter(u => altsFor(jaPathOf(u))).length;
   summary.push(`sitemap.xml urls=${urls.length} (言語版の組つき ${withAlts})`);

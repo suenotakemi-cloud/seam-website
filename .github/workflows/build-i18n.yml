@@ -25,6 +25,7 @@ on:
       - '.github/scripts/build-i18n.js'
       - '.github/workflows/build-i18n.yml'
   workflow_dispatch:
+# 生成物: en/ zh/ tw/ ko/ sitemap.xml と data/lastmod.json（sitemap の <lastmod> 用に ja の元 HTML のハッシュと日付を控える。2026-09-16）
 
 permissions:
   contents: write
@@ -78,7 +79,7 @@ jobs:
             git fetch origin main            || { last="fetch失敗(attempt $i)"; sleep 5; continue; }
             git reset --hard FETCH_HEAD      || { last="reset失敗(attempt $i)"; sleep 5; continue; }
             node .github/scripts/build-i18n.js || { last="生成失敗(attempt $i)"; break; }
-            git add en zh tw ko sitemap.xml  || { last="add失敗(attempt $i)"; break; }
+            git add en zh tw ko sitemap.xml data/lastmod.json || { last="add失敗(attempt $i)"; break; }
             if git diff --staged --quiet; then
               echo "no change (attempt $i)"; pushed=1; break
             fi
