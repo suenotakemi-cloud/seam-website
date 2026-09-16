@@ -79,7 +79,9 @@ jobs:
             git fetch origin main            || { last="fetch失敗(attempt $i)"; sleep 5; continue; }
             git reset --hard FETCH_HEAD      || { last="reset失敗(attempt $i)"; sleep 5; continue; }
             node .github/scripts/build-i18n.js || { last="生成失敗(attempt $i)"; break; }
-            git add en zh tw ko sitemap.xml data/lastmod.json || { last="add失敗(attempt $i)"; break; }
+            # data/lastmod.json は 2026-09-16 以降の main にしか無い。無い木（reset 先が古い main）でも add で止まらないように別に足す
+            git add en zh tw ko sitemap.xml || { last="add失敗(attempt $i)"; break; }
+            [ -f data/lastmod.json ] && git add data/lastmod.json
             if git diff --staged --quiet; then
               echo "no change (attempt $i)"; pushed=1; break
             fi
