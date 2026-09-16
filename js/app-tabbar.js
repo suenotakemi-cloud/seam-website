@@ -66,12 +66,15 @@
     spa: '<path d="M12 4C8.5 8 6.5 12 12 20c5.5-8 3.5-12 0-16z"/><path d="M12 9v9"/>'
   };
 
+  // href: finder だけ / 起点(言語別ページが無いので /en/ から相対だと 404)。ほかは相対で同じ言語の版へ。
+  // match: 本番(Cloudflare Pages)は /finder のように .html 無しで配信されるので、
+  //        「.html があってもなくても」当たる形にする(以前は .html 必須で どのページでも今いるタブが光らなかった)。
   var TABS = [
-    { key: 'home',   href: 'index.html',     match: /(^\/$|\/index\.html|\/$)/ },
-    { key: 'finder', href: 'finder.html',    match: /\/finder\.html/ },
-    { key: 'shop',   href: 'onlineshop.html', match: /\/onlineshop\.html/ },
-    { key: 'book',   href: 'hairsalon.html', match: /\/(hairsalon|headspa)\.html/, submenu: 'book' },
-    { key: 'stores', href: 'shop.html#stores', match: /\/(?:shop|store-[^/]+)\.html/ }
+    { key: 'home',   href: 'index.html',     match: /(^\/$|\/index(\.html)?$|\/$)/ },
+    { key: 'finder', href: '/finder.html',   match: /\/finder(\.html)?$/ },
+    { key: 'shop',   href: 'onlineshop.html', match: /\/onlineshop(\.html)?$/ },
+    { key: 'book',   href: 'hairsalon.html', match: /\/(hairsalon|headspa)(\.html)?$/, submenu: 'book' },
+    { key: 'stores', href: 'shop.html#stores', match: /\/(?:shop|store-[^/]+)(\.html)?$/ }
   ];
 
   var path = location.pathname;

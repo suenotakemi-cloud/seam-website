@@ -254,15 +254,18 @@ function rewriteUrlsToRoot(doc, shortLang) {
       el.setAttribute(a, '/' + v);
     });
   });
-  doc.querySelectorAll('[srcset]').forEach(el => {
-    const v = el.getAttribute('srcset');
-    if (!v) return;
-    const out = v.split(',').map(part => {
-      const seg = part.trim().split(/\s+/);
-      if (seg[0] && isRel(seg[0])) seg[0] = '/' + seg[0];
-      return seg.join(' ');
-    }).join(', ');
-    el.setAttribute('srcset', out);
+  // srcset と、<link rel=preload> の imagesrcset(2026-09-16: 2枚目以降が相対のまま /en/images/… で 404 していた)
+  doc.querySelectorAll('[srcset],[imagesrcset]').forEach(el => {
+    ['srcset', 'imagesrcset'].forEach(a => {
+      const v = el.getAttribute(a);
+      if (!v) return;
+      const out = v.split(',').map(part => {
+        const seg = part.trim().split(/\s+/);
+        if (seg[0] && isRel(seg[0])) seg[0] = '/' + seg[0];
+        return seg.join(' ');
+      }).join(', ');
+      el.setAttribute(a, out);
+    });
   });
 }
 
@@ -463,7 +466,13 @@ function build() {
       // DOM属性以外(JS文字列・inline style url等)の相対アセットパスも / 起点へ。
       // 例: index.html が gem画像を src="images/karte/gems/"+id+".jpg" とJSで組む箇所。
       // 絶対URL("/images/ や "https://.../images/")はクォート直後が images でないため不一致＝安全。
-      out = out.replace(/(["'`])(images|js|css|fonts|vendor|videos)\//g, '$1/$2/');
+      // data/ も対象(2026-09-16: brand.html の fetch('data/products/…') が /en/data/… で 404 し、
+      // 言語版の取扱ブランド＝商品モードが空だった)。
+      out = out.replace(/(["'`])(images|js|css|fonts|vendor|videos|data)\//g, '$1/$2/');
+      // 言語版を持たないページ(finder / skinfinder)への JS 文字列・辞書(SEAM_PAGE_I18N)内リンクも / 起点へ。
+      // 辞書の HTML は lang.js が実行時に innerHTML で差し込むため、DOM の書き換えでは届かず
+      // /en/finder.html(404)へ飛んでいた。href=\"finder.html\" (JSON内) と 'skinfinder.html' の両形。
+      out = out.replace(/(href=\\?["']|["'`])((?:skin)?finder\.html)/g, '$1/$2');
       fs.writeFileSync(path.join(outDir, pg.file), out, 'utf-8');
       const title = (doc.querySelector('title') || {}).textContent || '';
       summary.push(`OK   ${lang}/${pg.file}  i18n=${applied}  bytes=${out.length}  title="${title.slice(0, 40)}"`);
