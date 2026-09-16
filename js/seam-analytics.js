@@ -35,7 +35,13 @@
     sale_shop_join:   ['track', 'CompleteRegistration'],
     sale_shop_online: ['trackCustom', 'ShopOnlineClick'],
     sale_banner:      ['trackCustom', 'SaleBannerClick'],
-    sale_banner_shop: ['trackCustom', 'SaleBannerClick']
+    sale_banner_shop: ['trackCustom', 'SaleBannerClick'],
+    // 求人（2026-09-16）: 広告の最適化先が無かった＝Meta に応募の合図が一度も届いていなかった。
+    // SubmitApplication は求人向けの標準イベント。LINE/DM のタップは Contact（連絡）。
+    recruit_form_sent:   ['track', 'SubmitApplication'],
+    recruit_apply_line:  ['track', 'Contact'],
+    recruit_apply_ig:    ['track', 'Contact'],
+    recruit_sticky_form: ['trackCustom', 'RecruitFormJump']
   };
   function fbqFire(name, props) {
     try {
