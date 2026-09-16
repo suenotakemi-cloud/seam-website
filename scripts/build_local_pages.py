@@ -241,8 +241,8 @@ def header_nav(links):
     return f'''
   <header class="sticky top-0 z-40 bg-white/92 backdrop-blur-md border-b border-line">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
-      <a href="index.html" class="wm text-[19px] text-ink" aria-label="SEAM ホーム">SEAM</a>
-      <nav class="flex items-center gap-5 text-[12px] text-charcoal/80">{nav}</nav>
+      <a href="index.html" class="wm text-[19px] text-ink shrink-0" aria-label="SEAM ホーム">SEAM</a>
+      <nav class="flex items-center gap-5 text-[12px] text-charcoal/80 min-w-0 ml-3 overflow-x-auto whitespace-nowrap">{nav}</nav>
     </div>
   </header>'''
 
