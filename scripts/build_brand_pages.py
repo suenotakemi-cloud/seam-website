@@ -303,8 +303,8 @@ def page_html(b, stores, count, lines, tops):
 <body>
   <header class="sticky top-0 z-40 bg-white/92 backdrop-blur-md border-b border-line">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
-      <a href="index.html" class="wm text-[19px] text-ink" aria-label="SEAM ホーム">SEAM</a>
-      <nav class="flex items-center gap-5 text-[12px] text-charcoal/80">
+      <a href="index.html" class="wm text-[19px] text-ink shrink-0" aria-label="SEAM ホーム">SEAM</a>
+      <nav class="flex items-center gap-5 text-[12px] text-charcoal/80 min-w-0 ml-3 overflow-x-auto whitespace-nowrap">
         <a href="brand.html" class="hover:text-ink">取扱ブランド</a>
         <a href="shop.html" class="hover:text-ink">店舗</a>
         <a href="finder.html" class="hover:text-ink">髪格診断</a>
@@ -507,8 +507,8 @@ def area_article_html(b, st, stores, lines, tops):
 <body>
   <header class="sticky top-0 z-40 bg-white/92 backdrop-blur-md border-b border-line">
     <div class="max-w-3xl mx-auto px-5 sm:px-8 h-14 flex items-center justify-between">
-      <a href="index.html" class="wm text-[19px] text-ink" aria-label="SEAM ホーム">SEAM</a>
-      <nav class="flex items-center gap-5 text-[12px] text-charcoal/80">
+      <a href="index.html" class="wm text-[19px] text-ink shrink-0" aria-label="SEAM ホーム">SEAM</a>
+      <nav class="flex items-center gap-5 text-[12px] text-charcoal/80 min-w-0 ml-3 overflow-x-auto whitespace-nowrap">
         <a href="{slug}.html" class="hover:text-ink">{E(ja)}取扱店</a>
         <a href="store-{st['slug']}.html" class="hover:text-ink">店舗情報</a>
       </nav>

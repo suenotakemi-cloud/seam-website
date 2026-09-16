@@ -1,0 +1,70 @@
+name: IndexNow（更新した頁を Bing / DuckDuckGo / Yandex に知らせる）
+
+# main に HTML の変更が入ったら、その頁の URL だけ IndexNow へ送る（Google は対象外＝sitemap の <lastmod> で拾わせる）。
+# 鍵は公開前提の仕様なので、リポジトリ直下の <鍵>.txt がそのまま鍵（scripts/indexnow.py と同じ）。
+# 送信に失敗しても main の配信には影響しないので、このワークフローは赤くしない（::warning:: で残す）。
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.html'
+      - 'sitemap.xml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: indexnow
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 50
+
+      - name: 変わった頁の URL を集めて送る
+        env:
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          # Cloudflare Pages の配信（約 1 分）を待ってから知らせる。配信前に来られると古い頁を読まれる
+          sleep 120
+          python3 - <<'PY'
+          import json, os, re, subprocess, urllib.request, pathlib
+          HOST = 'seam.site'
+          keys = [p.stem for p in pathlib.Path('.').glob('*.txt') if re.fullmatch(r'[0-9a-f]{32}', p.stem) and p.read_text().strip() == p.stem]
+          if not keys:
+              print('::warning title=IndexNow::鍵ファイルが見つからないので送りません'); raise SystemExit(0)
+          KEY = keys[0]
+          before, after = os.environ.get('BEFORE', ''), os.environ.get('AFTER', 'HEAD')
+          rng = f'{before}..{after}' if before and not before.startswith('0000000') else f'{after}~1..{after}'
+          try:
+              changed = subprocess.run(['git', 'diff', '--name-only', rng], capture_output=True, text=True, check=True).stdout.split()
+          except subprocess.CalledProcessError:
+              changed = subprocess.run(['git', 'diff', '--name-only', f'{after}~1', after], capture_output=True, text=True).stdout.split()
+          NOINDEX = re.compile(r'name="robots"[^>]*noindex', re.I)
+          urls = set()
+          for f in changed:
+              m = re.fullmatch(r'((?:en|zh|tw|ko)/)?([a-z0-9-]+)\.html', f)
+              if not m or not os.path.exists(f): continue
+              if NOINDEX.search(open(f, encoding='utf-8', errors='replace').read()): continue
+              lang, name = m.group(1) or '', m.group(2)
+              path = '/' + lang + ('' if name == 'index' else name)
+              urls.add(f'https://{HOST}{path}')
+          urls = sorted(urls)
+          print(f'{rng}: 変わった頁 {len(urls)} 本')
+          if not urls: raise SystemExit(0)
+          for i in range(0, len(urls), 1000):
+              chunk = urls[i:i+1000]
+              body = json.dumps({'host': HOST, 'key': KEY, 'keyLocation': f'https://{HOST}/{KEY}.txt', 'urlList': chunk}).encode()
+              req = urllib.request.Request('https://api.indexnow.org/indexnow', data=body, headers={'Content-Type': 'application/json; charset=utf-8', 'User-Agent': 'Mozilla/5.0 (SEAM IndexNow)'})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      print(f'  {len(chunk)} 本 → HTTP {r.status}')
+              except Exception as e:  # 送れなくても配信には無関係。赤くしない
+                  print(f'::warning title=IndexNow::送信に失敗 {e}')
+          PY

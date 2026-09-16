@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SEAM 受信箱（フランチャイズ・採用）</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="images/favicon.svg" type="image/svg+xml">
+<style>
+  /* 診断ダッシュボード(admin.html)と同じパスキー(seam_admin_key)で入る。トップのフランチャイズ相談と 採用ページの応募を新しい順に */
+  :root{--ink:#16171b;--brown:#3a322a;--line:#e4dcd5;--cream:#f7f3ef;--gold:#a96844;--red:#a8553f}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:14px;line-height:1.7}
+  header{background:#fff;border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  header h1{margin:0;font-size:15px;letter-spacing:.04em}
+  header nav a{font-size:12px;color:var(--brown);margin-left:14px}
+  main{max-width:960px;margin:0 auto;padding:18px}
+  .tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+  .tabs button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:8px 14px;font:inherit;font-size:12.5px;cursor:pointer}
+  .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+  .card.done{opacity:.55}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;font-size:11.5px;color:var(--brown);margin-bottom:6px}
+  .meta .src{padding:1px 8px;border-radius:99px;background:var(--cream);border:1px solid var(--line)}
+  .who{font-size:15px;font-weight:600}
+  .row{font-size:13px;color:var(--brown)}
+  .row b{color:var(--ink);font-weight:500;margin-right:6px}
+  .msg{white-space:pre-wrap;margin-top:8px;padding:10px 12px;background:var(--cream);border-radius:8px;font-size:13px}
+  .act{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+  .act a,.act button{font:inherit;font-size:12px;border:1px solid var(--line);background:#fff;border-radius:99px;padding:7px 12px;color:var(--ink);text-decoration:none;cursor:pointer}
+  .empty,.err{padding:24px;text-align:center;color:var(--brown)}
+  .err{color:var(--red)}
+  #login{max-width:420px;margin:60px auto;background:#fff;border:1px solid var(--line);border-radius:12px;padding:24px}
+  #login input{width:100%;font:inherit;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:8px;margin:10px 0}
+  #login button{width:100%;font:inherit;font-size:14px;padding:12px;border:0;border-radius:8px;background:var(--ink);color:#fff;cursor:pointer}
+  #login p{margin:0;font-size:12.5px;color:var(--brown)}
+  .n{font-size:12px;color:var(--brown);margin:0 0 10px}
+</style>
+</head>
+<body>
+<header><h1>SEAM 受信箱 <span style="font-weight:400;color:#7a6e68;font-size:12px">フランチャイズ相談・採用の応募</span></h1><nav><a href="admin.html">診断ダッシュボード</a><a href="#" id="logout">ログアウト</a></nav></header>
+<main>
+  <div id="login" hidden><p>診断ダッシュボードと同じパスキーを入れてください</p><input id="key" type="password" autocomplete="current-password" placeholder="パスキー"><button id="enter">開く</button><p id="lerr" style="color:var(--red)"></p></div>
+  <div id="app" hidden>
+    <div class="tabs"><button data-f="all" class="on">すべて</button><button data-f="open">未対応</button><button data-f="franchise">フランチャイズ</button><button data-f="recruit">採用</button></div>
+    <p class="n" id="count"></p>
+    <div id="list"></div>
+  </div>
+</main>
+<script>
+(function(){
+  var KEY_LS='seam_admin_key';
+  var $=function(id){return document.getElementById(id);};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});};
+  var fmt=function(t){var d=new Date(t);return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);};
+  var items=[],filter='all';
+  function key(){return sessionStorage.getItem(KEY_LS)||'';}
+  function api(url,opt){opt=opt||{};opt.headers=Object.assign({'x-seam-key':key()},opt.headers||{});return fetch(url,opt).then(function(r){return r.json().catch(function(){return {};}).then(function(j){if(r.status===401)throw {auth:true,info:j};return j;});});}
+  function load(){
+    if(!key()){$('login').hidden=false;$('app').hidden=true;return;}
+    Promise.all([api('/api/franchise?limit=300'),api('/api/recruit?limit=300')]).then(function(res){
+      items=[];
+      (res[0].entries||[]).forEach(function(x){items.push({src:'franchise',id:x.id,at:x.created_at,handled:!!x.handled,who:(x.company?x.company+'　':'')+x.name,contact:x.contact,rows:[['エリア',x.area],['業態・店舗数',x.business],['言語',x.lang],['流入',x.src]],message:x.message});});
+      (res[1].entries||[]).forEach(function(x){items.push({src:'recruit',id:x.id,at:x.created_at,handled:!!x.handled,who:x.name,contact:x.contact,rows:[['種類',{apply:'応募',visit:'見学',ask:'質問'}[x.kind]||x.kind],['職種',x.role],['店舗',x.store],['経験',x.experience],['連絡してよい時間',x.callable],['流入',x.src]],message:x.message});});
+      items.sort(function(a,b){return b.at-a.at;});
+      $('login').hidden=true;$('app').hidden=false;render();
+    }).catch(function(e){
+      if(e&&e.auth){sessionStorage.removeItem(KEY_LS);$('login').hidden=false;$('app').hidden=true;$('lerr').textContent=(e.info&&e.info.keyConfigured===false)?'サーバにパスキーが未設定です（ADMIN_KEY）':'パスキーが違います';}
+      else{$('app').hidden=false;$('list').innerHTML='<div class="err">読み込めませんでした（D1 か Functions が動いていない可能性）</div>';}
+    });
+  }
+  function render(){
+    var rows=items.filter(function(x){return filter==='all'||(filter==='open'?!x.handled:x.src===filter);});
+    var open=items.filter(function(x){return !x.handled;}).length;
+    $('count').textContent='全 '+items.length+' 件 ／ 未対応 '+open+' 件（表示 '+rows.length+' 件）';
+    if(!rows.length){$('list').innerHTML='<div class="empty">まだありません</div>';return;}
+    $('list').innerHTML=rows.map(function(x,i){
+      var c=x.contact||'';var href=/@/.test(c)?'mailto:'+c:(/^[0-9+\-() ]+$/.test(c)?'tel:'+c.replace(/[^0-9+]/g,''):'');
+      return '<div class="card'+(x.handled?' done':'')+'" data-i="'+i+'">'
+        +'<div class="meta"><span class="src">'+(x.src==='franchise'?'フランチャイズ':'採用')+'</span><span>'+fmt(x.at)+'</span><span>No.'+x.id+'</span></div>'
+        +'<div class="who">'+esc(x.who)+'</div>'
+        +'<div class="row"><b>連絡先</b>'+(href?'<a href="'+esc(href)+'">'+esc(c)+'</a>':esc(c))+'</div>'
+        +x.rows.filter(function(r){return r[1];}).map(function(r){return '<div class="row"><b>'+r[0]+'</b>'+esc(r[1])+'</div>';}).join('')
+        +(x.message?'<div class="msg">'+esc(x.message)+'</div>':'')
+        +'<div class="act"><button data-toggle="'+i+'">'+(x.handled?'未対応に戻す':'対応済みにする')+'</button>'+(href?'<a href="'+esc(href)+'">'+(/^mailto/.test(href)?'メールする':'電話する')+'</a>':'')+'</div>'
+        +'</div>';
+    }).join('');
+    rows.forEach(function(x,i){$('list').querySelector('[data-toggle="'+i+'"]').addEventListener('click',function(){
+      api(x.src==='franchise'?'/api/franchise':'/api/recruit',{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({id:x.id,handled:!x.handled})}).then(function(){x.handled=!x.handled;render();});
+    });});
+  }
+  document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){filter=b.getAttribute('data-f');document.querySelectorAll('.tabs button').forEach(function(o){o.classList.toggle('on',o===b);});render();});});
+  $('enter').addEventListener('click',function(){var v=$('key').value.trim();if(!v){$('lerr').textContent='入力してください';return;}sessionStorage.setItem(KEY_LS,v);$('lerr').textContent='';load();});
+  $('key').addEventListener('keydown',function(e){if(e.key==='Enter')$('enter').click();});
+  $('logout').addEventListener('click',function(e){e.preventDefault();sessionStorage.removeItem(KEY_LS);location.reload();});
+  load();
+})();
+</script>
+</body>
+</html>

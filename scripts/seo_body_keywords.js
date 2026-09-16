@@ -90,10 +90,10 @@ log.push('  辞書 shop.html authorized.title ' + setDict('shop.html', {
 
 // ── 英語版の title（海外からの検索語を入れる。「Simple English OK」は据え置き＝言えることだけ言う）──
 log.push('  辞書 en.meta.title ' + (
-  setDict('headspa.html',       { en: { 'meta.title': 'Japanese Head Spa in Tokyo (Ginza), Nagoya and Osaka | Private Room, Simple English OK | SEAM' } }) +
-  setDict('headspa-ginza.html', { en: { 'meta.title': 'Japanese Head Spa in Ginza, Tokyo | Private Room, Simple English OK | SEAM GINZA' } }) +
-  setDict('salon-ginza.html',   { en: { 'meta.title': 'Hair Salon in Ginza, Tokyo (Simple English OK) | Straightening, Hair-Improving Treatment and Colour in a Private Room | SEAM GINZA' } }) +
-  setDict('shop.html',          { en: { 'meta.title': 'Japanese Salon-Exclusive Hair Care Shops in Tokyo and 5 More Cities | Tax-Free at All 7 Stores | SEAM' } })
+  setDict('headspa.html',       { en: { 'meta.title': 'Japanese Head Spa in Tokyo, Nagoya & Osaka | Simple English OK | SEAM' } }) +
+  setDict('headspa-ginza.html', { en: { 'meta.title': 'Japanese Head Spa in Ginza | Private Room, Simple English OK | SEAM' } }) +
+  setDict('salon-ginza.html',   { en: { 'meta.title': 'Hair Salon in Ginza, Tokyo | Simple English OK, Private Room | SEAM' } }) +
+  setDict('shop.html',          { en: { 'meta.title': 'Salon-Exclusive Japanese Hair Care Shops in Tokyo | Tax-Free | SEAM' } })
 ) + '本');
 
 // ── finder.html（自前辞書）──

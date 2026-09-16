@@ -9,6 +9,7 @@
    ════════════════════════════════════════════════════════════ */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const vm = require('vm');
 const { JSDOM } = require('jsdom');
 
@@ -231,6 +232,31 @@ function isRel(v) {
   return !!v && !/^(https?:|\/\/|#|mailto:|tel:|data:|javascript:|\/)/i.test(v);
 }
 
+// zh / tw / ko は日本語の Noto ウェブフォント(Noto Serif JP / Noto Sans JP)を読まない(2026-09-16 所有者決定)。
+// 【なぜ】中国語の本文を日本語フォントの Google Fonts 分割で表示すると 43〜68 ファイル・1.5〜3MB 落ちてきていた
+//   (/zh/ 1.5MB・/tw/ 1.9MB・/zh/brand 3.1MB。ja は 0.7MB・en は 0.2MB)。中国語用の Noto SC/TC に替えても 2.2MB で軽くならない。
+//   字形も日本語の字体(骨・直 など)のままだった。
+// 【どうする】Google Fonts の <link> から JP の 2 家族だけ外す。欧文(Cormorant / Instrument Serif / Inter / Montserrat)は残す。
+//   font-family の並びは共通 CSS のまま "Noto Serif JP", "Instrument Serif", …, serif なので、JP が無ければ
+//   欧文は今までどおりウェブフォント・漢字/ハングルは <html lang> に合った OS の標準フォント
+//   (iOS: PingFang SC/TC・Songti SC/TC・Apple SD Gothic Neo, Android: Noto Sans/Serif CJK, Windows: Microsoft YaHei/JhengHei・SimSun/PMingLiU・Malgun Gothic)で描かれる。
+//   通信量 0・字形は現地のもの。@font-face の local() で別名づけはしない(Chrome は family 名では一致せず OS ごとの full name が要り壊れやすい)。
+const NO_JP_WEBFONT = new Set(['zh', 'tw', 'ko']);
+function dropJapaneseWebfonts(doc, shortLang) {
+  if (!NO_JP_WEBFONT.has(shortLang)) return 0;
+  let n = 0;
+  doc.querySelectorAll('link[href*="fonts.googleapis.com/css"]').forEach(el => {
+    const href = el.getAttribute('href');
+    const q = href.split('?')[1] || '';
+    const parts = q.split('&').filter(p => !/^family=Noto\+(Serif|Sans)\+JP(:|$)/.test(p));
+    if (parts.join('&') === q) return;
+    n++;
+    if (!parts.some(p => p.startsWith('family='))) { el.remove(); return; }  // 欧文が無ければ <link> ごと外す
+    el.setAttribute('href', href.split('?')[0] + '?' + parts.join('&'));
+  });
+  return n;
+}
+
 // 言語版が存在するページのファイル名。ここに載っているリンクは同じ言語へ送る。
 const TRANSLATED = new Set(PAGES.map(p => p.file));
 
@@ -254,15 +280,18 @@ function rewriteUrlsToRoot(doc, shortLang) {
       el.setAttribute(a, '/' + v);
     });
   });
-  doc.querySelectorAll('[srcset]').forEach(el => {
-    const v = el.getAttribute('srcset');
-    if (!v) return;
-    const out = v.split(',').map(part => {
-      const seg = part.trim().split(/\s+/);
-      if (seg[0] && isRel(seg[0])) seg[0] = '/' + seg[0];
-      return seg.join(' ');
-    }).join(', ');
-    el.setAttribute('srcset', out);
+  // srcset と、<link rel=preload> の imagesrcset(2026-09-16: 2枚目以降が相対のまま /en/images/… で 404 していた)
+  doc.querySelectorAll('[srcset],[imagesrcset]').forEach(el => {
+    ['srcset', 'imagesrcset'].forEach(a => {
+      const v = el.getAttribute(a);
+      if (!v) return;
+      const out = v.split(',').map(part => {
+        const seg = part.trim().split(/\s+/);
+        if (seg[0] && isRel(seg[0])) seg[0] = '/' + seg[0];
+        return seg.join(' ');
+      }).join(', ');
+      el.setAttribute(a, out);
+    });
   });
 }
 
@@ -458,12 +487,19 @@ function build() {
       if (!I18N || !I18N[lang]) { summary.push(`SKIP ${lang}/${pg.file} (no dict)`); continue; }
       const applied = applyLang(doc, I18N[lang], lang, htmlLang);
       rewriteUrlsToRoot(doc, lang);
+      dropJapaneseWebfonts(doc, lang);
       setHead(doc, lang, htmlLang, pg.url, I18N[lang]);
       let out = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
       // DOM属性以外(JS文字列・inline style url等)の相対アセットパスも / 起点へ。
       // 例: index.html が gem画像を src="images/karte/gems/"+id+".jpg" とJSで組む箇所。
       // 絶対URL("/images/ や "https://.../images/")はクォート直後が images でないため不一致＝安全。
-      out = out.replace(/(["'`])(images|js|css|fonts|vendor|videos)\//g, '$1/$2/');
+      // data/ も対象(2026-09-16: brand.html の fetch('data/products/…') が /en/data/… で 404 し、
+      // 言語版の取扱ブランド＝商品モードが空だった)。
+      out = out.replace(/(["'`])(images|js|css|fonts|vendor|videos|data)\//g, '$1/$2/');
+      // 言語版を持たないページ(finder / skinfinder)への JS 文字列・辞書(SEAM_PAGE_I18N)内リンクも / 起点へ。
+      // 辞書の HTML は lang.js が実行時に innerHTML で差し込むため、DOM の書き換えでは届かず
+      // /en/finder.html(404)へ飛んでいた。href=\"finder.html\" (JSON内) と 'skinfinder.html' の両形。
+      out = out.replace(/(href=\\?["']|["'`])((?:skin)?finder\.html)/g, '$1/$2');
       fs.writeFileSync(path.join(outDir, pg.file), out, 'utf-8');
       const title = (doc.querySelector('title') || {}).textContent || '';
       summary.push(`OK   ${lang}/${pg.file}  i18n=${applied}  bytes=${out.length}  title="${title.slice(0, 40)}"`);
@@ -507,6 +543,10 @@ function build() {
     '/recruit-parttime-ginza',
     '/recruit-parttime-omotesando'];
   // ja側も実在チェック(言語版と同じ扱い)。存在しないページをsitemapに載せない=404申告の防止
+  // 多言語対象(PAGES)の ja 版は手書きの一覧に頼らず必ず載せる。
+  // 手書きだと足し忘れる: 2026-09-16 時点で davines / oggi-otto / onedk / seesaw の 32 枚と privacy / terms / tokushoho の
+  // ja 版が抜けていた(言語版だけ載り、hreflang の指す ja URL が sitemap に無い片手落ち)。
+  for (const pg of PAGES) { const u = pg.url === '/' ? '/' : pg.url; if (!jaUrls.includes(u)) jaUrls.push(u); }
   const missingJa = jaUrls.filter(u => !fs.existsSync(path.join(ROOT, u === '/' ? 'index.html' : u.slice(1) + '.html')));
   if (missingJa.length) summary.push(`WARN sitemap: 実体なしのjaページを除外 ${missingJa.join(', ')}`);
   const urls = jaUrls.filter(u => !missingJa.includes(u));
@@ -543,17 +583,41 @@ function build() {
     if (!m) return u;
     return m[2] === '/' ? '/' : m[2];
   }
+  // ── <lastmod>（2026-09-16）──
+  // 【なぜ】更新した頁を検索エンジンが早く拾い直すための日付。git の日付は CI が浅いクローン(fetch-depth 50)なので使えない。
+  // 【どうする】ja の元 HTML の中身のハッシュを data/lastmod.json に控え、変わっていたら今日(JST)、同じなら控えの日付。
+  //   初回の控えは 2026-09-16 に git の履歴（完全な木）から作った。言語版は元の ja と同じ日付（同じ元から作るため）。
+  const lastmodPath = path.join(ROOT, 'data', 'lastmod.json');
+  let lastmod = {};
+  try { lastmod = JSON.parse(fs.readFileSync(lastmodPath, 'utf-8')); } catch (_) { lastmod = {}; }
+  const todayJst = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
+  let lastmodChanged = false;
+  function lastmodOf(jaUrl) {
+    const file = jaUrl === '/' ? 'index.html' : jaUrl.slice(1) + '.html';
+    const p = path.join(ROOT, file);
+    if (!fs.existsSync(p)) return null;
+    const h = crypto.createHash('sha1').update(fs.readFileSync(p)).digest('hex').slice(0, 12);
+    const cur = lastmod[file];
+    if (!cur || cur.h !== h) { lastmod[file] = { h, d: todayJst }; lastmodChanged = true; }
+    return lastmod[file].d;
+  }
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n' +
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"\n' +
     '        xmlns:xhtml="http://www.w3.org/1999/xhtml">\n' +
     urls.map(u => {
+      const d = lastmodOf(jaPathOf(u));
+      const lm = d ? '<lastmod>' + d + '</lastmod>' : '';
       const set = altsFor(jaPathOf(u));
-      if (!set) return '  <url><loc>' + BASE + u + '</loc></url>';
+      if (!set) return '  <url><loc>' + BASE + u + '</loc>' + lm + '</url>';
       const links = set.map(([h, href]) =>
         '\n    <xhtml:link rel="alternate" hreflang="' + h + '" href="' + href + '"/>').join('');
-      return '  <url><loc>' + BASE + u + '</loc>' + links + '\n  </url>';
+      return '  <url><loc>' + BASE + u + '</loc>' + lm + links + '\n  </url>';
     }).join('\n') +
     '\n</urlset>\n';
+  if (lastmodChanged) {
+    const sorted = Object.fromEntries(Object.keys(lastmod).sort().map(k => [k, lastmod[k]]));
+    fs.writeFileSync(lastmodPath, JSON.stringify(sorted, null, 1) + '\n', 'utf-8');
+  }
   fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), xml, 'utf-8');
   const withAlts = urls.filter(u => altsFor(jaPathOf(u))).length;
   summary.push(`sitemap.xml urls=${urls.length} (言語版の組つき ${withAlts})`);

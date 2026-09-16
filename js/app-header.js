@@ -15,9 +15,12 @@
   window.__seamHeaderInit = true;
 
   // Standard SEAM navigation (same on every page → feels like one app)
+  // finder だけ / 起点: 髪格診断は言語別ページ(/en/ 等)を持たないので、/en/hairsalon から
+  // 相対の finder.html を辿ると /en/finder.html = 404 になる(2026-09-16 に本番で確認)。
+  // ほかの行は相対のまま = /en/ 配下では /en/shop.html のように同じ言語の版へ着く。
   var NAV = [
     { href: 'index.html',     key: 'nav.home',    label: 'ホーム' },
-    { href: 'finder.html',     key: 'nav.finder',  label: '髪格診断' },
+    { href: '/finder.html',    key: 'nav.finder',  label: '髪格診断' },
     { href: 'shop.html',       key: 'nav.shop',    label: 'ヘアケアショップ' },
     { href: 'brand.html',      key: 'nav.brand',   label: '取扱ブランド' },
     { href: 'hairsalon.html',  key: 'nav.salon',   label: 'ヘアサロン' },
@@ -56,7 +59,7 @@
       '@media(max-width:400px){#seam-appheader .sah-logo{font-size:22px;letter-spacing:.22em;padding-left:.22em;}}',
       '@media(max-width:350px){#seam-appheader .sah-logo{font-size:19px;letter-spacing:.16em;padding-left:.16em;}}',
       /* language toggle (right) */
-      '#seam-appheader .sah-lang{position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:0 4px;background:none;border:0;cursor:pointer;color:#16171B;font-size:11.5px;line-height:1;-webkit-tap-highlight-color:transparent;transition:opacity .2s;}',
+      '#seam-appheader .sah-lang{position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 4px;background:none;border:0;cursor:pointer;color:#16171B;font-size:11.5px;line-height:1;-webkit-tap-highlight-color:transparent;transition:opacity .2s;}',
       '#seam-appheader .sah-lang:hover{opacity:.7;}',
       '#seam-appheader .sah-lang #langCurrentLabel{letter-spacing:.1em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}',
       /* slide-out menu */
@@ -118,7 +121,7 @@
         + '</div>'
         + '<ul class="font-serif">' + links + '</ul>'
         + '<div class="smn-cta font-serif">'
-        +   '<a class="is-fill" href="finder.html" data-i18n="cta.finder">髪格診断をはじめる</a>'
+        +   '<a class="is-fill" href="/finder.html" data-i18n="cta.finder">髪格診断をはじめる</a>'
         +   '<a class="is-out" href="hairsalon.html" data-i18n="cta.salon">サロンを予約する</a>'
         + '</div>';
       document.body.appendChild(nav);
