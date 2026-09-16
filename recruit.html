@@ -925,6 +925,45 @@
   <script src="js/seam-analytics.js?v=10" defer=""></script>
   <script src="js/app-header.js?v=13" defer=""></script>
   <script src="js/app-tabbar.js?v=14" defer=""></script>
+
+<!-- ⚜ 追従の応募CTA（2026-09-16）— このページは 22,000px あり 応募の入口（LINE/フォーム）が 86% の位置にしか無かった。
+     広告から来た人が最初の 2〜3 画面で離れると 応募手段を一度も見ない。ヒーロー通過後に出し 応募節（data-track-view="recruit_entry"）到達で消える。
+     hairsalon の #stickyBook と同じ型。下のタブバー(56px)の上に置く -->
+<div id="stickyApply" aria-hidden="true">
+  <a href="https://lin.ee/OoWKoie" target="_blank" rel="noopener" data-track-click="recruit_apply_line" class="sa-line"><span class="sa-t1">LINEで応募・見学予約</span></a>
+  <a href="#rcForm" data-track-click="recruit_sticky_form" class="sa-form"><span class="sa-t2">フォーム</span></a>
+</div>
+<style>
+#stickyApply{position:fixed;left:50%;transform:translateX(-50%) translateY(8px);bottom:calc(58px + env(safe-area-inset-bottom,0px) + 12px);z-index:60;display:flex;align-items:stretch;gap:6px;opacity:0;visibility:hidden;transition:opacity .25s ease,transform .25s ease,visibility .25s;white-space:nowrap}
+#stickyApply.sb-show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0)}
+#stickyApply a{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:0 20px;border-radius:999px;font-size:13.5px;letter-spacing:.02em;text-decoration:none;box-shadow:0 10px 30px rgba(26,24,21,.28)}
+#stickyApply .sa-line{background:#06C755;color:#fff}
+#stickyApply .sa-form{background:#2A2D34;color:#F5F1EA;padding:0 16px}
+@media (min-width:1024px){#stickyApply{left:auto;right:28px;bottom:28px;transform:translateY(8px)}#stickyApply.sb-show{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){#stickyApply{transition:none}}
+</style>
+<script>
+(function () {
+  var el = document.getElementById('stickyApply');
+  var hero = document.querySelector('.rcm-hero');
+  var entry = document.querySelector('[data-track-view="recruit_entry"]');
+  if (!el || !hero || !entry || !('IntersectionObserver' in window)) return;
+  // 文言は言語別（辞書に鍵を足すより小さい）。lang.js の切替イベントにも追従
+  var T = { ja: ['LINEで応募・見学予約', 'フォーム'], en: ['Apply / visit via LINE', 'Form'], zh: ['LINE 应聘・预约参观', '表单'], tw: ['LINE 應徵・預約參觀', '表單'], ko: ['LINE로 지원·견학 예약', '폼'] };
+  function label(lang) { var t = T[lang] || T.ja; el.querySelector('.sa-t1').textContent = t[0]; el.querySelector('.sa-t2').textContent = t[1]; }
+  try { label(localStorage.getItem('seamLang') || 'ja'); } catch (e) {}
+  window.addEventListener('seam:langchange', function (e) { label(e.detail && e.detail.lang); });
+  var heroOut = false, entryIn = false;
+  function upd() {
+    var show = heroOut && !entryIn;
+    el.classList.toggle('sb-show', show);
+    el.setAttribute('aria-hidden', show ? 'false' : 'true');
+    if (show && !el.__seenOnce) { el.__seenOnce = 1; try { window.seamTrack && window.seamTrack('sec_view', { label: 'recruit_sticky' }); } catch (e) {} }
+  }
+  new IntersectionObserver(function (es) { es.forEach(function (e) { heroOut = !e.isIntersecting; }); upd(); }).observe(hero);
+  new IntersectionObserver(function (es) { es.forEach(function (e) { entryIn = e.isIntersecting; }); upd(); }, { threshold: 0.12 }).observe(entry);
+})();
+</script>
   <script src="js/lang.js?v=10"></script>
   <script src="js/reveal.js"></script>
 
