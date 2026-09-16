@@ -154,8 +154,10 @@
         </select>
         <button class="btn solid" id="reportBtn">メーカー向けレポート</button>
         <button class="btn" id="csvBtn">CSV書出</button>
+        <a class="btn" href="admin-inbox.html" id="inboxLink" title="フランチャイズ相談・採用の応募・求人ファネル">受信箱</a>
         <button class="btn" id="reloadBtn">更新</button>
         <button class="btn" id="logoutBtn">ログアウト</button>
+        <button class="btn" id="backBtn" title="前の画面へ">← 戻る</button>
       </div>
     </div>
   </header>
@@ -197,6 +199,13 @@
 (function(){
   'use strict';
   var KEY_LS = 'seam_admin_key';
+  // パスキーは 同じタブ(sessionStorage) と この端末に 30 日(localStorage) の両方に持つ。
+  // 以前は sessionStorage だけで、受信箱(admin-inbox)から来直したり ホーム画面から開き直すたびに入力になっていた（2026-09-16 所有者）。
+  // 受信箱と同じ鍵名・同じ決まり。「ログアウト」で両方消える。
+  var KEY_TTL = 30 * 24 * 3600 * 1000;
+  function keyGet(){ try { var s = sessionStorage.getItem(KEY_LS); if (s) return s; var raw = localStorage.getItem(KEY_LS + '_v2'); if (raw) { var o = JSON.parse(raw); if (o && o.k && o.exp > Date.now()) { sessionStorage.setItem(KEY_LS, o.k); return o.k; } localStorage.removeItem(KEY_LS + '_v2'); } } catch (e) {} return ''; }
+  function keySet(v){ try { sessionStorage.setItem(KEY_LS, v); localStorage.setItem(KEY_LS + '_v2', JSON.stringify({ k: v, exp: Date.now() + KEY_TTL })); } catch (e) {} }
+  function keyClear(){ try { sessionStorage.removeItem(KEY_LS); localStorage.removeItem(KEY_LS + '_v2'); } catch (e) {} }
   var qs = new URLSearchParams(location.search);
   var DEMO = qs.get('demo') === '1';
   // 表示ビュー: 髪格診断(hair) / 肌ストーリー(skin) — ?view=skin でブックマーク可
@@ -1295,14 +1304,14 @@
 
   function load(){
     if(DEMO){ showApp(); render(demoData((el('rangeSel')&&el('rangeSel').value)||'90')); return; }
-    var key = sessionStorage.getItem(KEY_LS);
+    var key = keyGet();
     if(!key){ showLogin(''); return; }
     var days = (el('rangeSel')&&el('rangeSel').value) || '90';
     el('notice').innerHTML='';
     var sage = (el('segAge')&&el('segAge').value)||'';
     var scs  = (el('segCs')&&el('segCs').value)||'';
     fetch('/api/admin/stats?days='+days+(sage?'&sage='+encodeURIComponent(sage):'')+(scs?'&scs='+encodeURIComponent(scs):''), { headers:{ 'x-seam-key': key } })
-      .then(function(r){ if(r.status===401){ sessionStorage.removeItem(KEY_LS); return r.json().catch(function(){return {};}).then(function(j){ throw {auth:true, info:j}; }); } return r.json(); })
+      .then(function(r){ if(r.status===401){ keyClear(); return r.json().catch(function(){return {};}).then(function(j){ throw {auth:true, info:j}; }); } return r.json(); })
       .then(function(d){
         if(d.configured===false){
           showApp();
@@ -1331,10 +1340,11 @@
   // events
   el('loginBtn').addEventListener('click', function(){
     var v=el('keyInput').value.trim(); if(!v){el('loginErr').textContent='入力してください';return;}
-    sessionStorage.setItem(KEY_LS, v); el('loginErr').textContent=''; load();
+    keySet(v); el('loginErr').textContent=''; load();
   });
   el('keyInput').addEventListener('keydown', function(e){ if(e.key==='Enter') el('loginBtn').click(); });
-  el('logoutBtn').addEventListener('click', function(){ sessionStorage.removeItem(KEY_LS); location.href='admin.html'; });
+  el('logoutBtn').addEventListener('click', function(){ keyClear(); location.href='admin.html'; });
+  el('backBtn').addEventListener('click', function(){ if (history.length > 1) history.back(); else location.href='admin-inbox.html'; });
   el('reloadBtn').addEventListener('click', load);
   el('rangeSel').addEventListener('change', load);
   // 髪格診断 ⇄ 肌ストーリー のビュー切替(取得済みデータから即再描画・URLも更新)
