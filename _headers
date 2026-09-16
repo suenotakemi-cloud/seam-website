@@ -63,7 +63,15 @@
   Cache-Control: no-store
 /entrance/*
   Cache-Control: no-store
+# Cloudflare Pages は /admin.html を /admin へ 308 で送るので、実際に配る /admin にも同じ見出しが要る
+# （.html だけに書いていた間は /admin が no-store も X-Robots-Tag も無しで配られていた。2026-09-16 本番で確認）
+/admin
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow, noarchive
 /admin.html
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow, noarchive
+/admin-inbox
   Cache-Control: no-store
   X-Robots-Tag: noindex, nofollow, noarchive
 /admin-inbox.html
