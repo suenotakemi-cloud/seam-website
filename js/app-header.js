@@ -59,7 +59,7 @@
       '@media(max-width:400px){#seam-appheader .sah-logo{font-size:22px;letter-spacing:.22em;padding-left:.22em;}}',
       '@media(max-width:350px){#seam-appheader .sah-logo{font-size:19px;letter-spacing:.16em;padding-left:.16em;}}',
       /* language toggle (right) */
-      '#seam-appheader .sah-lang{position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;padding:0 4px;background:none;border:0;cursor:pointer;color:#16171B;font-size:11.5px;line-height:1;-webkit-tap-highlight-color:transparent;transition:opacity .2s;}',
+      '#seam-appheader .sah-lang{position:relative;z-index:2;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 4px;background:none;border:0;cursor:pointer;color:#16171B;font-size:11.5px;line-height:1;-webkit-tap-highlight-color:transparent;transition:opacity .2s;}',
       '#seam-appheader .sah-lang:hover{opacity:.7;}',
       '#seam-appheader .sah-lang #langCurrentLabel{letter-spacing:.1em;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}',
       /* slide-out menu */
