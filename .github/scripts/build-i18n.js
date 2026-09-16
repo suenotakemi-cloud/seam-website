@@ -516,6 +516,10 @@ function build() {
     '/recruit-parttime-ginza',
     '/recruit-parttime-omotesando'];
   // ja側も実在チェック(言語版と同じ扱い)。存在しないページをsitemapに載せない=404申告の防止
+  // 多言語対象(PAGES)の ja 版は手書きの一覧に頼らず必ず載せる。
+  // 手書きだと足し忘れる: 2026-09-16 時点で davines / oggi-otto / onedk / seesaw の 32 枚と privacy / terms / tokushoho の
+  // ja 版が抜けていた(言語版だけ載り、hreflang の指す ja URL が sitemap に無い片手落ち)。
+  for (const pg of PAGES) { const u = pg.url === '/' ? '/' : pg.url; if (!jaUrls.includes(u)) jaUrls.push(u); }
   const missingJa = jaUrls.filter(u => !fs.existsSync(path.join(ROOT, u === '/' ? 'index.html' : u.slice(1) + '.html')));
   if (missingJa.length) summary.push(`WARN sitemap: 実体なしのjaページを除外 ${missingJa.join(', ')}`);
   const urls = jaUrls.filter(u => !missingJa.includes(u));
