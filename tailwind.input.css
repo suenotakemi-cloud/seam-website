@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* 日本語の行頭禁則（ー・小書き仮名・句読点を行頭に置かない）。
+   Chrome の既定 line-break:auto は「サロン専売シャンプ｜ー197…」のように ー を行頭へ送ることがある（2026-09-16 実描画で 9 か所）。
+   中国語・韓国語の句読点にも効き、欧文には影響しない。 */
+@layer base {
+  html { line-break: strict; }
+  /* 見出しの行の長さをそろえる（最後の行に 1 文字だけ残る「す」のような孤立を防ぐ）。対応ブラウザだけで効く */
+  h1, h2, h3 { text-wrap: balance; }
+}
