@@ -231,6 +231,31 @@ function isRel(v) {
   return !!v && !/^(https?:|\/\/|#|mailto:|tel:|data:|javascript:|\/)/i.test(v);
 }
 
+// zh / tw / ko は日本語の Noto ウェブフォント(Noto Serif JP / Noto Sans JP)を読まない(2026-09-16 所有者決定)。
+// 【なぜ】中国語の本文を日本語フォントの Google Fonts 分割で表示すると 43〜68 ファイル・1.5〜3MB 落ちてきていた
+//   (/zh/ 1.5MB・/tw/ 1.9MB・/zh/brand 3.1MB。ja は 0.7MB・en は 0.2MB)。中国語用の Noto SC/TC に替えても 2.2MB で軽くならない。
+//   字形も日本語の字体(骨・直 など)のままだった。
+// 【どうする】Google Fonts の <link> から JP の 2 家族だけ外す。欧文(Cormorant / Instrument Serif / Inter / Montserrat)は残す。
+//   font-family の並びは共通 CSS のまま "Noto Serif JP", "Instrument Serif", …, serif なので、JP が無ければ
+//   欧文は今までどおりウェブフォント・漢字/ハングルは <html lang> に合った OS の標準フォント
+//   (iOS: PingFang SC/TC・Songti SC/TC・Apple SD Gothic Neo, Android: Noto Sans/Serif CJK, Windows: Microsoft YaHei/JhengHei・SimSun/PMingLiU・Malgun Gothic)で描かれる。
+//   通信量 0・字形は現地のもの。@font-face の local() で別名づけはしない(Chrome は family 名では一致せず OS ごとの full name が要り壊れやすい)。
+const NO_JP_WEBFONT = new Set(['zh', 'tw', 'ko']);
+function dropJapaneseWebfonts(doc, shortLang) {
+  if (!NO_JP_WEBFONT.has(shortLang)) return 0;
+  let n = 0;
+  doc.querySelectorAll('link[href*="fonts.googleapis.com/css"]').forEach(el => {
+    const href = el.getAttribute('href');
+    const q = href.split('?')[1] || '';
+    const parts = q.split('&').filter(p => !/^family=Noto\+(Serif|Sans)\+JP(:|$)/.test(p));
+    if (parts.join('&') === q) return;
+    n++;
+    if (!parts.some(p => p.startsWith('family='))) { el.remove(); return; }  // 欧文が無ければ <link> ごと外す
+    el.setAttribute('href', href.split('?')[0] + '?' + parts.join('&'));
+  });
+  return n;
+}
+
 // 言語版が存在するページのファイル名。ここに載っているリンクは同じ言語へ送る。
 const TRANSLATED = new Set(PAGES.map(p => p.file));
 
@@ -461,6 +486,7 @@ function build() {
       if (!I18N || !I18N[lang]) { summary.push(`SKIP ${lang}/${pg.file} (no dict)`); continue; }
       const applied = applyLang(doc, I18N[lang], lang, htmlLang);
       rewriteUrlsToRoot(doc, lang);
+      dropJapaneseWebfonts(doc, lang);
       setHead(doc, lang, htmlLang, pg.url, I18N[lang]);
       let out = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
       // DOM属性以外(JS文字列・inline style url等)の相対アセットパスも / 起点へ。
