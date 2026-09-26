@@ -7,7 +7,7 @@ body.store-maison :where(p,a,button,input,summary,span,div,h1,h2,h3,h4,li,small)
 body.store-maison :where(.font-sans,.font-mono,.font-serif){font-family:var(--md-hermes)!important}
 body.store-maison #seam-appheader{font-family:var(--md-serif)!important}
 
-body.store-maison main{max-width:none!important;margin:0!important;padding:0 0 88px!important;overflow:hidden}
+body.store-maison main{max-width:none!important;margin:0!important;padding:0 0 40px!important;overflow:hidden}
 body.store-maison main>nav{position:static;margin:0!important;padding:14px 24px 12px;color:var(--md-muted)!important;font-family:var(--md-latin)!important;font-size:12px!important;letter-spacing:.2em!important}
 /* 2026-09-26 写真を低く：1画面目の約7割が写真で 住所・営業時間・予約が 2画面目より下だった（検索クリックの54%が店舗頁） */
 body.store-maison main>div:nth-of-type(1){height:34svh;min-height:230px;max-height:320px;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#241d18!important;overflow:hidden!important}
@@ -24,9 +24,9 @@ body.store-maison main>div:nth-of-type(2){margin:0 24px!important;padding:0!impo
 body.store-maison main>div:nth-of-type(2)>div{padding:11px 0!important;gap:12px!important}
 body.store-maison main>div:nth-of-type(2) span{width:4.5em!important;font-family:var(--md-hermes)!important;color:var(--md-accent)!important;letter-spacing:.1em!important}
 body.store-maison main>div:nth-of-type(2) p{font-family:var(--md-hermes)!important;font-size:13.5px!important;line-height:1.7!important;font-weight:400!important}
-body.store-maison main>div:nth-of-type(3){margin:18px 24px 0!important;display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr)!important;gap:0!important;border:1px solid var(--md-ink)}
+body.store-maison main>div:nth-of-type(3){margin:18px 24px 0!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:0!important;border:1px solid var(--md-ink)}
 body.store-maison main>div:nth-of-type(3)>a{min-height:50px!important;padding:0 6px!important;border:0!important;border-right:1px solid var(--md-ink)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--md-ink)!important;font-family:var(--md-hermes)!important;font-size:12.5px!important;line-height:1.4!important;letter-spacing:.04em!important;justify-content:center!important;text-align:center!important}
-body.store-maison main>div:nth-of-type(3)>a:first-child{background:var(--md-ink)!important;color:#fff!important}
+body.store-maison main>div:nth-of-type(3)>a:first-child{grid-column:1/-1;border-right:0!important;border-bottom:1px solid var(--md-ink)!important;background:var(--md-ink)!important;color:#fff!important;font-size:14px!important;letter-spacing:.08em!important}
 body.store-maison main>div:nth-of-type(3)>a:first-child span{color:#fff!important}
 body.store-maison main>div:nth-of-type(3)>a:last-child{border-right:0!important}
 
@@ -75,3 +75,20 @@ body.store-maison main>section.st-serv h2{margin:0 0 12px!important;font-size:17
 .st-serv-card small{font-size:12px;line-height:1.5;color:var(--md-muted);letter-spacing:.02em}
 .st-serv-card--text{border-top:1px solid var(--md-ink);padding:12px 0 2px}
 @media(min-width:760px){body.store-maison main>section.st-serv{max-width:760px;margin-left:auto!important;margin-right:auto!important;padding-left:0!important;padding-right:0!important}.st-serv-card img{aspect-ratio:4/3}}
+/* 2026-09-26 バランスの直し（所有者の指摘）：端に付いた列・消えていたボタン・点の残骸・下の余白と文字の薄さ */
+body.store-maison main>div:nth-of-type(3)>a:last-child{border-right:0!important}
+body.store-maison main .shrink-0.w-2.h-2{display:none!important}
+body.store-maison main>h2+p+div{margin:18px 24px 0!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0 14px!important}
+body.store-maison main>h2+p+div>*{display:block!important;margin:0!important;padding:11px 0!important;text-align:left!important;font-size:12.5px!important;white-space:nowrap}
+body.store-maison main>div[class*="bg-cream"]{margin:56px 24px 0!important;padding:28px 22px!important;text-align:left!important;border:0!important;border-radius:0!important;background:var(--md-white)!important;box-shadow:none!important}
+body.store-maison main>div[class*="bg-cream"] h3{margin-top:4px;font-family:var(--md-min)!important;font-weight:600!important;font-size:19px!important;line-height:1.55!important}
+body.store-maison main>div[class*="bg-cream"] p{max-width:none!important;margin-left:0!important;margin-right:0!important}
+body.store-maison main>div[class*="bg-cream"]>a{display:flex!important;width:100%;justify-content:space-between!important;align-items:center;margin-top:18px!important;padding:14px 18px!important;border:0!important;border-radius:0!important;background:var(--md-ink)!important;color:#fff!important;box-shadow:none!important;font-family:var(--md-hermes)!important;font-size:13.5px!important;letter-spacing:.06em!important}
+body.store-maison main>div[class*="bg-cream"]>a span{color:#fff!important;background:transparent!important;width:auto!important;height:auto!important;border:0!important;padding:0!important}
+body.store-maison main>div[class*="justify-between"]{margin:40px 24px 0!important;padding-top:16px;border-top:1px solid var(--md-line);font-family:var(--md-latin)!important;font-size:14px!important;letter-spacing:.08em}
+body.store-maison>section{padding-top:36px!important;padding-bottom:36px!important}
+body.store-maison>section h2{font-size:19px!important}
+body.store-maison footer{margin-top:0!important}
+body.store-maison footer,body.store-maison footer a,body.store-maison footer nav,body.store-maison footer p{color:rgba(245,239,232,.78)!important}
+body.store-maison footer .wm{color:#fff!important}
+body.store-maison main>div:nth-of-type(2)+p,body.store-maison main>div:nth-of-type(3)+p{margin:14px 24px 0!important;border-radius:0!important;font-size:12.5px!important;line-height:1.75!important;color:var(--md-muted)!important}
