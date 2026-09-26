@@ -77,6 +77,7 @@
           ko: { m: '광고 성과 측정을 위해 쿠키를 사용합니다', a: '동의', d: '거부', l: '자세히' }
         };
         var t = T[lang] || T.ja;
+        // 【2026-09-26】1行（文言＋2ボタン横並び）に詰めた。実測で 2段のカードが 1画面目の 13〜14%（112〜118px）を覆っていた
         // 画面下の小さなシートに置く。以前は全画面スクリム＋中央モーダルだったが、
         // 初回訪問の全員のファーストビュー(トップの平均滞在は13秒しかない)を
         // 最初の数秒ふさいでいた。同意は求めるが、閲覧は止めない。
@@ -108,10 +109,10 @@
 
         // 下部の白カード(操作できるのはカードだけ)
         var card = document.createElement('div');
-        card.style.cssText = 'pointer-events:auto;position:relative;background:#FFFFFF;border:1px solid #E7E1D6;border-radius:12px;max-width:520px;width:100%;padding:14px 16px;box-shadow:0 10px 34px rgba(26,24,21,0.18);color:#4A443C;transform:translateY(8px);opacity:0;transition:transform .35s ease,opacity .35s ease';
+        card.style.cssText = 'pointer-events:auto;position:relative;background:#FFFFFF;border:1px solid #E7E1D6;border-radius:12px;max-width:520px;width:100%;padding:8px 10px 8px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 34px rgba(26,24,21,0.18);color:#4A443C;transform:translateY(8px);opacity:0;transition:transform .35s ease,opacity .35s ease';
 
         var msg = document.createElement('p');
-        msg.style.cssText = "margin:0 0 10px;font-family:'Noto Serif JP',serif;font-size:12px;line-height:1.8;color:#4A443C";
+        msg.style.cssText = "margin:0;flex:1;min-width:0;font-family:'Noto Serif JP',serif;font-size:11.5px;line-height:1.6;color:#4A443C";
         msg.textContent = t.m + ' ';
         var link = document.createElement('a');
         link.href = '/privacy.html'; link.textContent = t.l;
@@ -120,11 +121,11 @@
         msg.appendChild(link);
 
         var btns = document.createElement('div');
-        btns.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+        btns.style.cssText = 'display:flex;gap:6px;flex-shrink:0';
         function mkBtn(label, primary) {
           var b = document.createElement('button');
           b.type = 'button'; b.textContent = label;
-          b.style.cssText = 'cursor:pointer;border-radius:999px;padding:9px 18px;font-size:12.5px;font-weight:600;font-family:inherit;' + (primary ? 'background:#b58a56;color:#fff;border:0' : 'background:#fff;color:#6B6358;border:1px solid #D8D1C4');
+          b.style.cssText = 'cursor:pointer;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:600;white-space:nowrap;font-family:inherit;' + (primary ? 'background:#b58a56;color:#fff;border:0' : 'background:#fff;color:#6B6358;border:1px solid #D8D1C4');
           return b;
         }
         var accept = mkBtn(t.a, true), decline = mkBtn(t.d, false);
