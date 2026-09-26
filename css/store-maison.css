@@ -1,73 +1,77 @@
 /* SEAM Store Detail — maison editorial system */
-:root{--md-paper:#f6f1eb;--md-white:#fff;--md-ink:#171512;--md-muted:#625b55;--md-line:#d8d0c7;--md-accent:#966235;--md-hermes:メイリオ,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans","ＭＳ Ｐゴシック",Manrope,sans-serif;--md-serif:var(--md-hermes);--md-sans:var(--md-hermes);--md-display:var(--md-hermes)}
+/* 2026-09-26 改訂 第1回：色5・書体3（見出し Shippori Mincho／店名 Cormorant Garamond／本文 Noto Sans JP）・斜体と幕と写真の拡大をやめる */
+:root{--md-paper:#fff;--md-white:#F4F0EA;--md-ink:#16171B;--md-muted:#5E5A54;--md-line:#DDD5CA;--md-accent:#9C7A45;--md-hermes:"Noto Sans JP","Hiragino Sans","Hiragino Kaku Gothic ProN",sans-serif;--md-min:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;--md-latin:"Cormorant Garamond","Times New Roman",serif;--md-serif:var(--md-min);--md-sans:var(--md-hermes);--md-display:var(--md-latin)}
 html{scroll-behavior:smooth}
 body.store-maison{margin:0;background:var(--md-paper)!important;color:var(--md-ink)!important;font-family:var(--md-hermes)!important;font-weight:400;letter-spacing:0;padding-bottom:calc(58px + env(safe-area-inset-bottom))!important}
 body.store-maison :where(p,a,button,input,summary,span,div,h1,h2,h3,h4,li,small){font-family:inherit}
 body.store-maison :where(.font-sans,.font-mono,.font-serif){font-family:var(--md-hermes)!important}
-body.store-maison :where(h1,h2){font-style:oblique 4deg}
-body.store-maison:before{content:"";position:fixed;z-index:9999;inset:0;background:var(--md-paper);pointer-events:none;animation:maison-curtain 1.25s cubic-bezier(.65,0,.2,1) both}
 body.store-maison #seam-appheader{font-family:var(--md-serif)!important}
 
 body.store-maison main{max-width:none!important;margin:0!important;padding:0 0 88px!important;overflow:hidden}
-body.store-maison main>nav{position:absolute;z-index:4;top:82px;left:22px;margin:0!important;color:#fff!important;font-family:var(--md-display)!important;font-size:11.5px!important;letter-spacing:.2em!important;text-shadow:0 2px 12px rgba(0,0,0,.5)}
+body.store-maison main>nav{position:static;margin:0!important;padding:14px 24px 12px;color:var(--md-muted)!important;font-family:var(--md-latin)!important;font-size:12px!important;letter-spacing:.2em!important}
 /* 2026-09-26 写真を低く：1画面目の約7割が写真で 住所・営業時間・予約が 2画面目より下だった（検索クリックの54%が店舗頁） */
 body.store-maison main>div:nth-of-type(1){height:34svh;min-height:230px;max-height:320px;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#241d18!important;overflow:hidden!important}
 body.store-maison main>div:nth-of-type(1) picture{display:block;width:100%;height:100%}
-body.store-maison main>div:nth-of-type(1) img{width:100%!important;height:100%!important;aspect-ratio:auto!important;object-fit:cover!important;animation:maison-image 16s cubic-bezier(.3,.05,.25,1) alternate infinite;filter:saturate(.9) contrast(1.02)}
-body.store-maison main>div:nth-of-type(1)>div:last-child{left:24px!important;bottom:31px!important}
-body.store-maison main>div:nth-of-type(1)>div:last-child p{font-family:var(--md-display)!important;font-size:30px!important;letter-spacing:.2em!important;font-weight:400!important}
-body.store-maison main>h1{margin:0!important;padding:34px 24px 0!important;background:var(--md-paper);font-family:var(--md-hermes)!important;font-size:34px!important;line-height:1.5!important;font-style:oblique 4deg!important;font-weight:400!important;letter-spacing:-.015em!important}
-body.store-maison main>h1>span:last-child{display:block!important;margin:17px 0 0!important;font-family:var(--md-hermes)!important;font-size:12px!important;line-height:2!important;font-style:normal!important;font-weight:400!important;color:var(--md-muted)!important;letter-spacing:0!important}
-body.store-maison main>h1 .rounded-full{border-radius:0!important;font-family:var(--md-display)!important;font-size:11.5px!important;font-weight:400!important;letter-spacing:.14em!important;background:transparent!important;color:var(--md-accent)!important;border-bottom:1px solid var(--md-accent);padding:2px 0!important}
-body.store-maison main>h1+p{margin:0!important;padding:16px 24px 26px!important;font-family:var(--md-serif)!important;font-size:14px!important;line-height:2.2!important;color:var(--md-ink)!important}
+body.store-maison main>div:nth-of-type(1) img{width:100%!important;height:100%!important;aspect-ratio:auto!important;object-fit:cover!important;}
+/* 写真の上に文字と暗い覆いを載せない */
+body.store-maison main>div:nth-of-type(1)>div{display:none!important}
+body.store-maison main>h1{margin:0!important;padding:26px 24px 0!important;background:var(--md-paper);font-family:var(--md-latin)!important;font-size:30px!important;line-height:1.3!important;font-style:normal!important;font-weight:500!important;letter-spacing:.14em!important}
+body.store-maison main>h1>span:last-child{display:block!important;margin:10px 0 0!important;font-family:var(--md-min)!important;font-size:15px!important;line-height:1.6!important;font-style:normal!important;font-weight:600!important;color:var(--md-ink)!important;letter-spacing:.02em!important}
+body.store-maison main>h1 .rounded-full{border-radius:0!important;font-family:var(--md-latin)!important;font-size:12px!important;font-weight:500!important;letter-spacing:.16em!important;background:transparent!important;color:var(--md-accent)!important;border-bottom:1px solid var(--md-accent);padding:1px 0!important;vertical-align:6px!important}
+body.store-maison main>h1+p{margin:0!important;padding:10px 24px 18px!important;font-family:var(--md-hermes)!important;font-size:13.5px!important;line-height:1.8!important;color:var(--md-muted)!important}
 
-body.store-maison main>div:nth-of-type(2){margin:0 24px!important;padding:10px 0!important;border:0!important;border-top:1px solid var(--md-line)!important;border-bottom:1px solid var(--md-line)!important;border-radius:0!important}
-body.store-maison main>div:nth-of-type(2)>div{padding:21px 0!important}
-body.store-maison main>div:nth-of-type(2) span{font-family:var(--md-display)!important;color:var(--md-accent)!important;letter-spacing:.15em!important}
-body.store-maison main>div:nth-of-type(2) p{font-family:var(--md-serif)!important;font-size:13px!important;line-height:1.95!important;font-weight:300!important}
-body.store-maison main>div:nth-of-type(3){margin:34px 24px 0!important;display:grid!important;grid-template-columns:auto auto auto!important;gap:0!important;border-top:1px solid var(--md-line);border-bottom:1px solid var(--md-line)}
-body.store-maison main>div:nth-of-type(3)>a{min-height:66px!important;padding:0 7px!important;border:0!important;border-right:1px solid var(--md-line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--md-ink)!important;font-family:var(--md-serif)!important;font-size:11.5px!important;line-height:1.5!important;justify-content:center!important;text-align:center!important}
+body.store-maison main>div:nth-of-type(2){margin:0 24px!important;padding:0!important;border:0!important;border-top:1px solid var(--md-line)!important;border-bottom:1px solid var(--md-line)!important;border-radius:0!important}
+body.store-maison main>div:nth-of-type(2)>div{padding:11px 0!important;gap:12px!important}
+body.store-maison main>div:nth-of-type(2) span{width:4.5em!important;font-family:var(--md-hermes)!important;color:var(--md-accent)!important;letter-spacing:.1em!important}
+body.store-maison main>div:nth-of-type(2) p{font-family:var(--md-hermes)!important;font-size:13.5px!important;line-height:1.7!important;font-weight:400!important}
+body.store-maison main>div:nth-of-type(3){margin:18px 24px 0!important;display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr)!important;gap:0!important;border:1px solid var(--md-ink)}
+body.store-maison main>div:nth-of-type(3)>a{min-height:50px!important;padding:0 6px!important;border:0!important;border-right:1px solid var(--md-ink)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;color:var(--md-ink)!important;font-family:var(--md-hermes)!important;font-size:12.5px!important;line-height:1.4!important;letter-spacing:.04em!important;justify-content:center!important;text-align:center!important}
+body.store-maison main>div:nth-of-type(3)>a:first-child{background:var(--md-ink)!important;color:#fff!important}
+body.store-maison main>div:nth-of-type(3)>a:first-child span{color:#fff!important}
 body.store-maison main>div:nth-of-type(3)>a:last-child{border-right:0!important}
 
-body.store-maison main>h2,body.store-maison main>section h2,body.store-maison>section h2{font-family:var(--md-serif)!important;font-size:27px!important;line-height:1.7!important;font-style:oblique 4deg!important;font-weight:400!important;letter-spacing:.03em!important;color:var(--md-ink)!important}
+body.store-maison main>h2,body.store-maison main>section h2,body.store-maison>section h2{font-family:var(--md-serif)!important;font-size:22px!important;line-height:1.55!important;font-style:normal!important;font-weight:600!important;letter-spacing:.02em!important;color:var(--md-ink)!important}
 body.store-maison main>h2,body.store-maison main>h2+p,body.store-maison main>h2+p+p,body.store-maison main>h2+div{margin-left:24px!important;margin-right:24px!important}
 body.store-maison main{counter-reset:maison-section}
-body.store-maison main>h2{margin-top:104px!important;counter-increment:maison-section}
-body.store-maison main>h2:before{content:"0" counter(maison-section);display:block;margin-bottom:17px;font-size:11.5px;line-height:1;font-style:normal;letter-spacing:.2em;color:var(--md-accent)}
-body.store-maison main p,body.store-maison>section p{font-family:var(--md-serif)!important;font-weight:300;line-height:2}
+body.store-maison main>h2{margin-top:64px!important;padding-top:20px;border-top:1px solid var(--md-ink)}
+body.store-maison main p,body.store-maison>section p{font-family:var(--md-hermes)!important;font-weight:400;line-height:1.8}
 body.store-maison main .rounded-full,body.store-maison>section a[style*="border-radius:999px"]{border-radius:0!important;background:transparent!important;box-shadow:none!important;border:0!important;border-bottom:1px solid var(--md-line)!important;padding:8px 2px!important}
 body.store-maison main .rounded-\[4px\],body.store-maison main .rounded-\[6px\]{border-radius:0!important;box-shadow:none!important;background:transparent!important;border:0!important;border-top:1px solid var(--md-line)!important;border-bottom:1px solid var(--md-line)!important}
 body.store-maison details{border-color:var(--md-line)!important}
-body.store-maison details summary{min-height:56px;align-items:center;font-family:var(--md-serif)!important}
+body.store-maison details summary{min-height:52px;align-items:center;font-family:var(--md-hermes)!important;font-weight:500}
 body.store-maison details[open] summary{color:var(--md-accent)!important}
 body.store-maison main>section,body.store-maison>section{max-width:none!important;padding-left:24px!important;padding-right:24px!important}
-body.store-maison>section{padding-top:72px!important;padding-bottom:72px!important;border-top:1px solid var(--md-line)}
-body.store-maison main>section:nth-of-type(even),body.store-maison>section:nth-of-type(odd){background:var(--md-white)!important}
+body.store-maison>section{padding-top:48px!important;padding-bottom:48px!important;border-top:1px solid var(--md-line)}
+body.store-maison>section:nth-of-type(odd){background:var(--md-white)!important}
 body.store-maison details{border-radius:0!important;background:transparent!important;box-shadow:none!important}
 body.store-maison a{transition:opacity .24s ease,color .24s ease,border-color .24s ease}
 body.store-maison a:hover{opacity:.68}
 @media(max-width:759px){
   body.store-maison{font-size:14px!important;line-height:1.9}
-  body.store-maison main>h1{font-size:34px!important;line-height:1.5!important}
-  body.store-maison main>h1>span:last-child{font-size:14px!important;line-height:1.9!important}
-  body.store-maison main>h1+p{font-size:14px!important;line-height:2.1!important}
+  body.store-maison main>h1{font-size:28px!important}
+  body.store-maison main>h1+p{font-size:13.5px!important;line-height:1.8!important}
   body.store-maison main>div:nth-of-type(2) span{font-size:11.5px!important}
-  body.store-maison main>div:nth-of-type(2) p{font-size:14px!important;line-height:1.9!important}
-  body.store-maison main>div:nth-of-type(3)>a{font-size:11.5px!important}
-  body.store-maison main>h2,body.store-maison main>section h2,body.store-maison>section h2{font-size:28px!important;line-height:1.65!important}
-  body.store-maison main p,body.store-maison>section p{font-size:14px!important;line-height:1.95!important}
+  body.store-maison main>div:nth-of-type(2) p{font-size:13.5px!important;line-height:1.7!important}
+  body.store-maison main>h2,body.store-maison main>section h2,body.store-maison>section h2{font-size:21px!important;line-height:1.55!important}
+  body.store-maison main p,body.store-maison>section p{font-size:14px!important;line-height:1.8!important}
   body.store-maison details summary{font-size:14px!important;line-height:1.75!important}
-  body.store-maison details>div{font-size:13px!important;line-height:1.9!important}
+  body.store-maison details>div{font-size:13.5px!important;line-height:1.8!important}
   body.store-maison footer,body.store-maison footer a{font-size:12px!important}
 }
 body.store-maison footer{background:#171310!important;color:#f5efe8!important}
 
-.maison-reveal{opacity:0;transform:translateY(28px);transition:opacity .9s cubic-bezier(.2,.65,.2,1),transform .9s cubic-bezier(.2,.65,.2,1)}
-.maison-reveal.maison-visible{opacity:1;transform:none}
-.maison-progress{position:fixed;z-index:80;left:0;top:63px;width:100%;height:1px;transform:scaleX(0);transform-origin:left;background:var(--md-accent);pointer-events:none;will-change:transform}
-
-@keyframes maison-curtain{0%{transform:translateY(0)}55%{transform:translateY(0)}100%{transform:translateY(-102%)}}
-@keyframes maison-image{from{transform:scale(1.015)}to{transform:scale(1.075)}}
-@media(min-width:760px){body.store-maison main>div:nth-of-type(1){height:52vh;max-height:520px}body.store-maison main>h1,body.store-maison main>h1+p,body.store-maison main>div:nth-of-type(2),body.store-maison main>div:nth-of-type(3),body.store-maison main>h2,body.store-maison main>h2+p,body.store-maison main>h2+div{max-width:760px;margin-left:auto!important;margin-right:auto!important}body.store-maison main>h1{padding-top:70px!important}body.store-maison main>h1+p{padding-left:0!important;padding-right:0!important}body.store-maison main>h2,body.store-maison main>section h2,body.store-maison>section h2{font-size:29px!important}}
+@media(min-width:760px){body.store-maison main>div:nth-of-type(1){height:52vh;max-height:520px}body.store-maison main>h1,body.store-maison main>h1+p,body.store-maison main>div:nth-of-type(2),body.store-maison main>div:nth-of-type(3),body.store-maison main>h2,body.store-maison main>h2+p,body.store-maison main>h2+div{max-width:760px;margin-left:auto!important;margin-right:auto!important}body.store-maison main>h1{padding-top:36px!important}body.store-maison main>h1+p{padding-left:0!important;padding-right:0!important}body.store-maison main>h2,body.store-maison main>section h2,body.store-maison>section h2{font-size:24px!important}}
 @media(min-width:1024px){body.store-maison{padding-bottom:0!important}}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}body.store-maison:before{display:none}.maison-reveal{opacity:1;transform:none;transition:none}body.store-maison main>div:nth-of-type(1) img{animation:none}.maison-progress{display:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* 来店→施術の橋：同じ店で受けられる施術を 行動ボタンのすぐ下に写真で（写真はその店のものだけ・無い店は文字だけ） */
+body.store-maison main>section.st-serv{margin:26px 0 0!important;padding-top:0!important;padding-bottom:0!important;background:transparent!important}
+body.store-maison main>section.st-serv h2{margin:0 0 12px!important;font-size:17px!important;line-height:1.5!important}
+.st-serv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.st-serv-grid>.st-serv-card:only-child{grid-column:1/-1}
+.st-serv-card{display:flex;flex-direction:column;gap:2px;color:var(--md-ink)!important;text-decoration:none}
+.st-serv-card picture{display:block;margin-bottom:8px;background:var(--md-white)}
+.st-serv-card img{display:block;width:100%;height:auto;aspect-ratio:4/5;object-fit:cover}
+.st-serv-card b{font-family:var(--md-min);font-weight:600;font-size:15px;line-height:1.5}
+.st-serv-card small{font-size:12px;line-height:1.5;color:var(--md-muted);letter-spacing:.02em}
+.st-serv-card--text{border-top:1px solid var(--md-ink);padding:12px 0 2px}
+@media(min-width:760px){body.store-maison main>section.st-serv{max-width:760px;margin-left:auto!important;margin-right:auto!important;padding-left:0!important;padding-right:0!important}.st-serv-card img{aspect-ratio:4/3}}
