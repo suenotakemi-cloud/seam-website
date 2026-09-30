@@ -25,7 +25,7 @@ const fs = require('fs'), path = require('path'), crypto = require('crypto');
 
 const ROOT = process.argv[2];
 const DRY = process.argv.includes('--dry');   // 台帳だけ作って HTML は触らない
-const SKIP = /^(admin|entrance|august-|exec-|finder-spec|gbp-|ginza-2026|ginza-earn|ginza-menu|ginza-no1|ginza-salonboard|hpb-|treatment|seo-|strategy|write|404|finder|skinfinder)/;
+const SKIP = /^(admin|entrance|august-|exec-|finder-spec|gbp-|ginza-2026|ginza-earn|ginza-menu|ginza-no1|ginza-salonboard|hpb-|treatment|seo-|strategy|write|404|finder|skinfinder|kamikaku-types)/;
 // 【直し】最初はかなだけを見ていたが「利用規約」「髪格診断」「店舗情報」のような
 //   漢字だけの語を取りこぼし 韓国語ページに漢字のまま残っていた（52種）。
 //   かなも漢字も日本語として拾う。
