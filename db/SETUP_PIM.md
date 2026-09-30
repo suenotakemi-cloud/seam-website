@@ -252,6 +252,7 @@
 **送れなかったとき**
 - 「**つながっていません: SalonPro がキーを受け付けませんでした**」… キーが ID だけ・失効ずみ・別の環境のキー、のどれか。SalonPro で失効→再発行し、表示された全体を貼り直す。
 - いちばん多いのは「**SalonPro に商品が未登録**」（その JAN の商品が SalonPro 側に無い）。SalonPro に商品を登録してから、EC 送信タブの「もう一度送る」。理由はそのまま画面に出ます（キーが無効・つながらない、など）。
+- **SalonPro では写真が見えているのに「送れなかったもの」に残っている**とき … EC 送信タブの **「SalonPro で確かめて直す」**（タブを開いたときにも自動で走ります）。SalonPro に実際に入っている写真の枚数を見て、こちらの枚数以上あれば「送信ずみ」に直します（API は `push {action:'verify'}`）。送信の時点でも、失敗に見える応答（201・本文が JSON でない・一時的な 5xx・タイムアウト）のときは、失敗と決める前に SalonPro 側を確かめるようにしました（2026-09-30）。
 - 「送れなかったもの」は商品一覧でも `EC` の絞り込みから追えます（API は `products?ec=failed`）。
 - 送信待ち・失敗の数は進捗（`stats`）にも出ます（`push_pending` / `push_failed` / `push_ok`）。
 
@@ -327,7 +328,7 @@
 | DELETE | `/api/pim/products?jan=…` | 削除（画像も） |
 | POST | `/api/pim/import` | 取り込み（`action: check{jans, keys} / begin / commit / finish / rollback{import_id}`）。commit のたびに取り込み前の状態を残すので rollback で戻せる。`_mode:'fill'`（＋`fill_new`）は空欄だけ埋める（返り値 `filled / unchanged / unknown / unknown_jans`） |
 | GET/POST | `/api/pim/ack` | EC の受け取り確認（`{jans:[…]}`。連携キー可）／未反映の JAN 一覧 |
-| GET/POST | `/api/pim/push` | SalonPro（EC）へ写真を送る。GET = 状態と送信待ち／POST `{jans:[…]}` か `{all:true, limit}` で送信（毎回 `mode=replace`。連携キー不可） |
+| GET/POST | `/api/pim/push` | SalonPro（EC）へ写真を送る。GET = 状態と送信待ち／POST `{jans:[…]}` か `{all:true, limit}` で送信（毎回 `mode=replace`。連携キー不可）／`{action:'verify', jans?}` で「送れなかったもの」を SalonPro 側で確かめ直す |
 | GET/POST | `/api/pim/refs` | 撮影の見本（`action: set{kind,slot,jan,src_slot,scope} / delete{id}`） |
 | GET | `/api/pim/fetch?url=…` | 画像 URL の取り寄せ（CSV の「画像」列から写真を登録するとき。https の画像のみ・12MB まで・連携キー不可） |
 | GET/POST | `/api/pim/issues` | 注意の一覧 / 解決 |
