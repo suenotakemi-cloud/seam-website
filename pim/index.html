@@ -1501,7 +1501,7 @@
   }
   // ── 送信待ち（電波が切れたとき）──
   function queueOffline(jan, slot, r, name, type, showSlot, preview) {
-    return C.Outbox.add({ fields: { jan: jan, slot: String(slot), width: String(r.width), height: String(r.height), original_name: name, original_type: type, quality: r.quality ? JSON.stringify(r.quality) : '', phash: r.phash || '' }, blob: r.blob, thumb: r.thumb || null, name: jan + '_' + showSlot + '.webp' })
+    return C.Outbox.add({ fields: { jan: jan, slot: String(slot), width: String(r.width), height: String(r.height), original_name: name, original_type: type, quality: r.quality ? JSON.stringify(r.quality) : '', phash: r.phash || '', replay: '1' }, blob: r.blob, thumb: r.thumb || null, name: jan + '_' + showSlot + '.webp' })
       .then(function () { if (state.busy[showSlot]) { state.busy[showSlot].label = '送信待ち（電波が戻ったら送ります）'; state.busy[showSlot].pending = true; } renderGrid(); updateOutbox(); toast('電波が無いので端末に保存しました。戻ったら自動で送ります', true); })
       .catch(function () { delete state.busy[showSlot]; renderGrid(); toast('通信に失敗しました（端末にも保存できませんでした）', true); });
   }
