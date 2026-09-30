@@ -1453,7 +1453,7 @@
   function verifyPush(quiet) {
     if (PUSH.busy) return Promise.resolve(null);
     PUSH.busy = true; $('pushVerifyLog').textContent = 'SalonPro で確かめています…'; $('btnPushVerify').disabled = true;
-    return api('push', { method: 'POST', body: { action: 'verify' } }).then(function (r) {
+    return api('push', { method: 'POST', body: { action: 'verify', auto: !!quiet } }).then(function (r) {
       PUSH.busy = false; $('btnPushVerify').disabled = false;
       $('pushVerifyLog').textContent = (r && r.message) || '';
       if (!quiet || (r && r.fixed)) toast((r && r.message) || '確かめました', !(r && r.ok));
@@ -1471,7 +1471,7 @@
         if (!r) return;
         total += (r.sent || 0);
         // 送れたものがある限り続ける（未登録などで失敗し続けるものは残すので止まる）
-        if (r.sent > 0) { $('pushLog').textContent = '送信ずみ ' + total + ' 件…'; step(); }
+        if (r.sent > 0 || (r.more && !r.stopped)) { $('pushLog').textContent = '送信ずみ ' + total + ' 件…'; step(); }
         else $('pushLog').textContent = '終わりました（今回 ' + total + ' 件）';
       });
     })();

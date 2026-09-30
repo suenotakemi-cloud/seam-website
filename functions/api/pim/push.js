@@ -41,13 +41,15 @@ export async function onRequestPost({ request, env, data }) {
   if (b.action === 'verify') {
     let vj = Array.isArray(b.jans) && b.jans.length ? b.jans.map((j) => cleanJan(j)).filter(Boolean).slice(0, 50) : null;
     if (!vj) {
-      const rs = await env.DB.prepare("SELECT jan FROM pim_products p WHERE p.account_id=? AND p.ec_push_status IS NOT NULL AND p.ec_push_status<>'ok' ORDER BY p.ec_push_at DESC LIMIT 50").bind(acct).all();
+      // 画面を開いたときの自動確認（auto）では「SalonPro に未登録」は見に行かない（毎回 50 件問い合わせないように。ボタンでは全部見る）
+      const rs = await env.DB.prepare("SELECT jan FROM pim_products p WHERE p.account_id=? AND p.ec_push_status IS NOT NULL AND p.ec_push_status<>'ok'" + (b.auto ? " AND p.ec_push_status<>'product_not_found'" : '') + ' ORDER BY p.ec_push_at DESC LIMIT ?').bind(acct, b.auto ? 20 : 50).all();
       vj = (rs.results || []).map((r) => r.jan);
     }
     if (!vj.length) return json({ ok: true, checked: 0, fixed: 0, still: 0, message: '確かめるものはありません' });
-    const r = await reconcile(env, a, vj);
+    const r = await reconcile(env, a, vj, { budgetMs: 45000 });
     let message = r.checked + ' 件を SalonPro で確かめました：' + r.fixed + ' 件は届いていたので「送信ずみ」に直しました';
-    if (r.still) message += '／' + r.still + ' 件はまだ届いていません' + (r.not_found ? '（うち ' + r.not_found + ' 件は SalonPro に商品が未登録）' : '');
+    if (r.still) message += '／' + r.still + ' 件はまだ届いていません' + (r.not_found ? '（うち ' + r.not_found + ' 件は SalonPro に商品が未登録）' : '') + (r.stale ? '（うち ' + r.stale + ' 件は SalonPro に古い写真が残ったまま → もう一度送ってください）' : '');
+    if (r.more) message += '／時間がかかったので残りは次に確かめます';
     if (r.stopped) message += '／キーか接続の問題で途中で止めました（設定タブで確認してください）';
     return json(Object.assign({ ok: true, message }, r));
   }
@@ -62,15 +64,17 @@ export async function onRequestPost({ request, env, data }) {
   } else return json({ ok: false, reason: 'no_jans', message: '{ jans:[…] } か { all:true } を送ってください' }, 400);
   if (!jans.length) return json({ ok: true, results: [], sent: 0, failed: 0, message: '送るものはありません' });
 
-  const results = await pushJans(env, a, jans, by);
+  const results = await pushJans(env, a, jans, by, 45000); // Cloudflare は約 100 秒で応答を打ち切るので、その手前で区切る（残りは送信待ちのまま）
   const okN = results.filter((r) => r.ok).length;
   const skipped = results.filter((r) => r.skipped).length;
   const stopped = results.some((r) => r.code === 'stopped');
-  const ng = results.filter((r) => !r.ok && !r.skipped && r.code !== 'stopped');
+  const budget = results.some((r) => r.code === 'budget');
+  const ng = results.filter((r) => !r.ok && !r.skipped && r.code !== 'stopped' && r.code !== 'budget');
   const notFound = ng.filter((r) => r.code === 'product_not_found').length;
   let message = okN + ' 件を SalonPro に送りました';
   if (ng.length) message += '／' + ng.length + ' 件は送れませんでした' + (notFound ? '（' + notFound + ' 件は SalonPro に商品が未登録）' : '');
   if (skipped) message += '／' + skipped + ' 件は写真がまだありません';
   if (stopped) message += '／キーか接続の問題なので途中で止めました（設定タブで確認してください）';
-  return json({ ok: true, sent: okN, failed: ng.length, skipped, stopped, not_found: notFound, results, message });
+  if (budget) message += '／時間がかかっているので残りは次の送信に回しました';
+  return json({ ok: true, sent: okN, failed: ng.length, skipped, stopped, more: budget, not_found: notFound, results, message });
 }
