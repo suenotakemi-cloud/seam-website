@@ -674,6 +674,7 @@
     api('push?limit=1').then(function (j) {
       if (!j.ok) { el.textContent = '確認できません'; return; }
       if (!j.ec.has_key) { el.textContent = 'まだ設定されていません（PC の設定タブでキーを入れてください）'; return; }
+      if (j.ec.connected === false) { el.textContent = 'SalonPro につながっていません: ' + String(j.ec.status || '').replace(/^ng:\s*/, '') + '（PC の設定タブでキーを貼り直してください）'; return; }
       el.textContent = '送り先 ' + j.ec.url + '／自動送信 ' + (j.ec.auto ? '入' : '切') + '／送信待ち ' + j.pending + ' 件' + (j.failed ? '・送れなかったもの ' + j.failed + ' 件' : '');
       $('btnEcPush').disabled = !j.pending;
     }).catch(function () { el.textContent = '確認できません'; });
