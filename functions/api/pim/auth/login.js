@@ -26,7 +26,7 @@ export async function onRequestPost({ request, env }) {
     await env.DB.prepare('INSERT INTO pim_login_fail(login_id, count, last_at) VALUES(?, 1, ?) ON CONFLICT(login_id) DO UPDATE SET count=count+1, last_at=excluded.last_at').bind(lockKey, nowIso()).run();
     return json({ ok: false, reason: 'bad_credentials', message: 'ID かパスワードが違います' }, 401);
   }
-  if (!a.active) return json({ ok: false, reason: 'account_disabled', message: 'このアカウントは停止されています。SEAM にお問い合わせください' }, 403);
+  if (!a.active) return json({ ok: false, reason: 'account_disabled', message: 'このアカウントは停止されています。システム管理者にお問い合わせください' }, 403);
   await env.DB.batch([
     env.DB.prepare('DELETE FROM pim_login_fail WHERE login_id=? OR login_id LIKE ?').bind(lockKey, lid + '@%'),
     env.DB.prepare('UPDATE pim_accounts SET last_login_at=? WHERE id=?').bind(nowIso(), a.id),

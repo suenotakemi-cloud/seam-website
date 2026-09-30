@@ -1,4 +1,4 @@
-/* SEAM 商品マスタ統一（PIM）— ブラウザ共通部品
+/* 商品登録システム（PIM）— ブラウザ共通部品
  *   ・合言葉（ADMIN_KEY）の保持と API 呼び出し
  *   ・画像 → webp 変換（どんな形式で来ても、保存されるのは webp だけ）
  *   ・スキャン音・バイブ
@@ -13,7 +13,7 @@
 
   // ── ログイン状態 ──
   //   ディーラー: ID + パスワード → トークン（端末に記憶）。スタッフは同じ ID を共用し、端末ごとに担当者名を名乗る
-  //   SEAM 管理: ADMIN_KEY（pim/admin.html だけ）
+  //   システム管理: ADMIN_KEY（pim/admin.html だけ）
   var Auth = {
     get: function () { return lsGet(TOKEN_LS); },                       // トークン
     account: function () { try { return JSON.parse(lsGet(ACCT_LS) || 'null'); } catch (e) { return null; } },

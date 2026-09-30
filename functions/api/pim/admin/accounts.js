@@ -1,4 +1,4 @@
-// SEAM 管理（ADMIN_KEY）— ディーラーアカウントの発行・管理
+// システム管理（ADMIN_KEY）— ディーラーアカウントの発行・管理
 //   GET  /api/pim/admin/accounts                  → 一覧（商品数・写真あり数つき）
 //   POST /api/pim/admin/accounts { action, ... }
 //        create     { login_id, name, password, note }   … 発行

@@ -1,8 +1,8 @@
-// SEAM 商品マスタ統一（PIM）— API 共通部品
+// 商品登録システム（PIM）— API 共通部品
 //   認証:
 //     ・ディーラー: ID + パスワードでログイン → トークン（x-seam-token）。1ディーラー1アカウント、スタッフは同じIDを共用
 //       パスワードを変えると token_version が進み、それまでのトークンは全端末で無効になる（退職者対策）
-//     ・SEAM 管理: env.ADMIN_KEY（x-seam-key）。アカウントの発行・パスワード再設定・停止。
+//     ・システム管理: env.ADMIN_KEY（x-seam-key）。アカウントの発行・パスワード再設定・停止。
 //       x-seam-account: <login_id> を付けると、そのディーラーとして商品 API を使える（EC 連携・代行作業）
 //   保存: D1 binding "DB"（商品・画像台帳・注意・アカウント）/ R2 binding "PRODUCT_IMAGES"（画像の実体・必ず webp）
 //   データはすべて account_id で分かれる（他のディーラーの商品は見えない・触れない）

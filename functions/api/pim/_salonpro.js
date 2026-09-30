@@ -2,7 +2,7 @@
 //   相手の API: POST /api/v1/product-images  Authorization: Bearer spk_…（x-api-key ヘッダでも可）
 //   ・JAN で商品を指すので、SalonPro 側に同じ JAN の商品が先に登録されている必要がある（無ければ 404 product_not_found）
 //   ・こちらの写真は「1枚目＝主画像」なので、毎回 mode=replace で 1..5 枚目をまとめて送り、並び順ごと合わせる
-//   ・キーはディーラーごと（pim_accounts.ec_key）。SEAM 側では中身を画面に出さない
+//   ・キーはディーラーごと（pim_accounts.ec_key）。商品登録システム側では中身を画面に出さない
 //   ・キーの形は spk_<ID 12 文字>_<秘密の部分>。発行後の一覧に見えるのは ID だけで、全体は発行のときに一度しか出ない
 //     （2026-09-30: ディーラーが ID の 12 文字だけを貼って「つながらない」になった。keyProblem がその形を見分けて案内する）
 import { imageKey, blobGet, nowIso } from './_lib.js';
