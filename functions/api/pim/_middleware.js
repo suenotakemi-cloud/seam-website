@@ -1,6 +1,6 @@
 // /api/pim/* 共通の関所
 //   /api/pim/auth/login          … 誰でも（ID + パスワード）
-//   /api/pim/admin/*             … SEAM 管理（ADMIN_KEY）
+//   /api/pim/admin/*             … システム管理（ADMIN_KEY）
 //   それ以外                     … ディーラーのトークン（x-seam-token）
 //                                  または ADMIN_KEY + x-seam-account: <login_id>（そのディーラーとして操作）
 //   通ったら context.data.account に { id, login_id, name, role, token_version } を入れる
@@ -33,7 +33,7 @@ export async function onRequest(context) {
     if (t) {
       const a = await env.DB.prepare('SELECT * FROM pim_accounts WHERE id=?').bind(t.id).first();
       if (a && a.active && a.token_version === t.ver) account = a;
-      else if (a && !a.active) return json({ ok: false, reason: 'account_disabled', message: 'このアカウントは停止されています。SEAM にお問い合わせください' }, 401);
+      else if (a && !a.active) return json({ ok: false, reason: 'account_disabled', message: 'このアカウントは停止されています。システム管理者にお問い合わせください' }, 401);
       else return json({ ok: false, reason: 'token_expired', message: 'パスワードが変更されたか、ログインの期限が切れました。もう一度ログインしてください' }, 401);
     }
   }

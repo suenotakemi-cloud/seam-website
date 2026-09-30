@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SEAM 商品マスタ 取り込み・出力</title>
+<title>商品登録システム 取り込み・出力</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
 <style>
@@ -107,7 +107,7 @@
 <body>
 <header>
   <div class="hwrap">
-    <div><h1>SEAM 商品マスタ 取り込み・出力</h1><div class="sub" id="hsub">メーカーごとにバラバラな商品データを、ひとつの形に揃える</div></div>
+    <div><h1>商品登録システム 取り込み・出力</h1><div class="sub" id="hsub">メーカーごとにバラバラな商品データを、ひとつの形に揃える</div></div>
     <div class="row">
       <a class="btn" href="./manual-pc.html">📖 使い方</a>
       <a class="btn" href="./index.html">📱 スマホ登録画面</a>
@@ -402,7 +402,7 @@
     </div>
     <div class="card">
       <h2>日報・通知メール</h2>
-      <p class="muted">毎朝 7 時ごろ「昨日の写真枚数・担当者別・メーカー別の残り・残り日数」をメールで送ります（SEAM 側の送信設定が必要。<code>db/SETUP_PIM.md</code> 日報）。アドレスはカンマ区切りで 10 件まで。</p>
+      <p class="muted">毎朝 7 時ごろ「昨日の写真枚数・担当者別・メーカー別の残り・残り日数」をメールで送ります（商品登録システム側の送信設定が必要。<code>db/SETUP_PIM.md</code> 日報）。アドレスはカンマ区切りで 10 件まで。</p>
       <div class="opts">
         <div style="grid-column:1/-1"><label>送り先メールアドレス</label><input id="acEmails" placeholder="例: tanaka@example.com, sato@example.com"></div>
       </div>
@@ -410,15 +410,15 @@
     </div>
     <div class="card">
       <h2>EC 連携（連携キー・Webhook）</h2>
-      <p class="muted">EC 側のエンジニアに渡すもの。<b>連携キー</b>は読み取り専用（毎晩の取得用）、<b>Webhook</b> は変更のたびに EC 側へ push する URL。どちらも SEAM 管理画面からも設定できます。</p>
+      <p class="muted">EC 側のエンジニアに渡すもの。<b>連携キー</b>は読み取り専用（毎晩の取得用）、<b>Webhook</b> は変更のたびに EC 側へ push する URL。どちらも システム管理画面からも設定できます。</p>
       <div class="row" style="margin-bottom:8px"><span class="muted" id="acKeyState"></span><button class="btn sm" id="btnAcKey">連携キーを発行</button><button class="btn sm danger" id="btnAcKeyRevoke" hidden>連携キーを無効化</button></div>
       <div class="row"><input id="acWebhook" placeholder="https://（EC 側の受け口）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:340px"><button class="btn sm" id="btnAcWebhook">設定</button><button class="btn sm" id="btnAcWebhookTest" hidden>テスト送信</button><button class="btn sm danger" id="btnAcWebhookClear" hidden>解除</button><span class="muted" id="acWebhookState"></span></div>
       <div id="acSecret" class="muted" style="margin-top:8px" hidden></div>
     </div>
     <div class="card">
       <h2>EC（SalonPro）へ写真を送る</h2>
-      <p class="muted">SalonPro の管理画面「サイト設定 → 外部連携（APIキー）」で出した <b>spk_ で始まるキー</b>をここに入れると、撮った写真を SalonPro の商品にそのまま登録できます。キーは保存すると画面には出しません。<b>SalonPro 側に同じ JAN の商品が先に登録されている必要があります</b>（無い商品は「未登録」として送信タブに残ります）。</p>
-      <div class="row"><input id="acEcUrl" placeholder="https://pro-console.salon.town" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:260px"><input id="acEcKey" type="password" placeholder="spk_…（SalonPro のキー）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:280px"><button class="btn sm solid" id="btnAcEc">保存</button><button class="btn sm" id="btnAcEcTest" hidden>接続確認</button><button class="btn sm danger" id="btnAcEcClear" hidden>解除</button></div>
+      <p class="muted">SalonPro の管理画面「サイト設定 → 外部連携（APIキー）」でキーを発行すると、<b>そのときだけ</b> <code>spk_XXXXXXXXXXXX_……</code> という長い文字列が表示されます。<b>その全体</b>をここに貼ってください（発行後の一覧に見える 12 文字は ID だけで、それでは接続できません。閉じてしまったら SalonPro で失効→再発行）。キーは保存すると画面には出しません。<b>SalonPro 側に同じ JAN の商品が先に登録されている必要があります</b>（無い商品は「未登録」として送信タブに残ります）。</p>
+      <div class="row"><input id="acEcUrl" placeholder="https://pro-console.salon.town" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:260px"><input id="acEcKey" type="password" autocomplete="off" spellcheck="false" placeholder="spk_XXXXXXXXXXXX_…（発行時に表示された全体）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:280px"><button class="btn sm solid" id="btnAcEc">保存</button><button class="btn sm" id="btnAcEcTest" hidden>接続確認</button><button class="btn sm danger" id="btnAcEcClear" hidden>解除</button></div>
       <div class="row" style="margin-top:8px"><span class="muted" id="acEcState"></span></div>
       <div class="row" style="margin-top:8px"><label class="muted"><input type="checkbox" id="acEcAuto"> 写真を撮ったら自動で送る（撮影のたびに SalonPro が最新になります）</label></div>
     </div>
@@ -488,7 +488,7 @@
     <label class="muted" style="display:block;margin-bottom:10px"><input type="checkbox" id="remember" checked> この端末に記憶する</label>
     <button class="btn solid" id="btnLogin">ログイン</button>
     <p class="err" id="loginErr"></p>
-    <p class="muted" style="margin-top:10px">SEAM 管理者（アカウントの発行・パスワード再設定）は <a href="./admin.html">管理画面</a> へ</p>
+    <p class="muted" style="margin-top:10px">システム管理者（アカウントの発行・パスワード再設定）は <a href="./admin.html">管理画面</a> へ</p>
   </div>
 </div>
 <div class="overlay" id="setup" hidden>
@@ -1423,7 +1423,8 @@
       PUSH.items = j.items || [];
       setPushN(j.pending);
       $('pushState').innerHTML = j.ec.has_key
-        ? '送り先: <code>' + esc(j.ec.url) + '</code>' + (j.ec.auto ? '（写真を撮ったら<b>自動で送る</b>）' : '（自動送信は切っています。下のボタンで送ります）') + (j.last ? ' — 最後に送ったのは ' + esc(j.last.slice(0, 16).replace('T', ' ')) : '')
+        ? (j.ec.connected === false ? '<b>SalonPro につながっていません:</b> ' + esc(String(j.ec.status || '').replace(/^ng:\s*/, '')) + '<br>「設定」タブの「EC（SalonPro）へ写真を送る」で、発行時に表示された spk_…_… の全体を貼り直してください。<br>' : '')
+          + '送り先: <code>' + esc(j.ec.url) + '</code>' + (j.ec.auto ? '（写真を撮ったら<b>自動で送る</b>）' : '（自動送信は切っています。下のボタンで送ります）') + (j.last ? ' — 最後に送ったのは ' + esc(j.last.slice(0, 16).replace('T', ' ')) : '')
         : '<b>SalonPro のキーがまだ設定されていません。</b>「設定」タブの「EC（SalonPro）へ写真を送る」でキーを入れてください。';
       $('btnPushGo').disabled = !j.ec.has_key; $('btnPushAll').disabled = !j.ec.has_key;
       $('pushKpis').innerHTML = [['送信待ち', j.pending, j.pending ? 'ng' : 'ok'], ['送信ずみ', j.sent, 'ok'], ['送れなかった', j.failed, j.failed ? 'ng' : 'ok']]
@@ -1466,6 +1467,14 @@
     pushRun({ jans: [b.getAttribute('data-push1')] });
   });
 
+  // SalonPro の接続状態（設定タブ・EC 送信タブ共通）
+  function ecStateHtml(hasKey, url, status, at) {
+    if (!hasKey) return 'キー: 未設定';
+    var when = at ? '（' + esc(at.slice(0, 16).replace('T', ' ')) + '）' : '';
+    if (!status) return 'キー: 設定ずみ・接続はまだ確認していません（' + esc(url || 'https://pro-console.salon.town') + '）';
+    if (/^ok/.test(status)) return '<span class="tag ok">つながっています</span> ' + esc(url || 'https://pro-console.salon.town') + ' ' + when;
+    return '<span class="tag ng">つながっていません</span> ' + esc(status.replace(/^ng:\s*/, '')) + ' ' + when;
+  }
   // ── アカウント設定（ディーラー自身で変えられるもの）──
   function loadAccount() {
     api('account').then(function (j) {
@@ -1480,7 +1489,7 @@
       $('acInbox').textContent = j.inbox_url || '未発行'; $('btnAcInboxRevoke').hidden = !j.inbox_url;
       $('acEcUrl').value = a.ec_url || ''; $('acEcKey').value = ''; $('acEcAuto').checked = !!a.ec_auto;
       $('btnAcEcTest').hidden = !a.has_ec_key; $('btnAcEcClear').hidden = !a.has_ec_key;
-      $('acEcState').textContent = a.has_ec_key ? 'キー: 設定ずみ（' + (a.ec_url || 'https://pro-console.salon.town') + '）' : 'キー: 未設定';
+      $('acEcState').innerHTML = ecStateHtml(a.has_ec_key, a.ec_url, a.ec_status, a.ec_status_at);
     }).catch(handleErr);
   }
   function acPost(body, after) { return api('account', { method: 'POST', body: body }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return null; } toast(r.message || '保存しました'); if (after) after(r); loadAccount(); return r; }).catch(handleErr); }
@@ -1506,8 +1515,11 @@
   $('btnAcWebhookTest').addEventListener('click', function () { acPost({ action: 'webhook_test' }); });
   $('btnAcWebhookClear').addEventListener('click', function () { if (confirm('Webhook を解除しますか？')) acPost({ action: 'webhook_clear' }); });
   $('btnAcEc').addEventListener('click', function () {
-    var k = $('acEcKey').value.trim(); if (!k) { toast('SalonPro のキー（spk_…）を入れてください', true); return; }
-    acPost({ action: 'ec_key', key: k, url: $('acEcUrl').value.trim() }, function () { $('acEcKey').value = ''; loadPush(); });
+    var k = $('acEcKey').value.trim(); if (!k) { toast('SalonPro のキー（spk_…_… の全体）を入れてください', true); return; }
+    api('account', { method: 'POST', body: { action: 'ec_key', key: k, url: $('acEcUrl').value.trim() } }).then(function (r) {
+      if (!r.ok) { toast(r.message || '保存できませんでした', true); $('acEcState').innerHTML = '<span class="tag ng">保存できません</span> ' + esc(r.message || ''); return; }
+      toast(r.message || '保存しました', !(r.ping && r.ping.ok)); $('acEcKey').value = ''; loadAccount(); loadPush();
+    }).catch(handleErr);
   });
   $('btnAcEcTest').addEventListener('click', function () { acPost({ action: 'ec_test' }); });
   $('btnAcEcClear').addEventListener('click', function () { if (confirm('SalonPro への送信を解除しますか？（キーを消します）')) acPost({ action: 'ec_clear' }); });

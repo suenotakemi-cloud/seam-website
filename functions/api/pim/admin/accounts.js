@@ -1,4 +1,4 @@
-// SEAM 管理（ADMIN_KEY）— ディーラーアカウントの発行・管理
+// システム管理（ADMIN_KEY）— ディーラーアカウントの発行・管理
 //   GET  /api/pim/admin/accounts                  → 一覧（商品数・写真あり数つき）
 //   POST /api/pim/admin/accounts { action, ... }
 //        create     { login_id, name, password, note }   … 発行
@@ -12,7 +12,7 @@
 //        ec_key     { id, key, url } / ec_clear { id } / ec_test { id }
 //                                                        … SalonPro（EC）へ写真を送るキーを代わりに設定する（ディーラーが PC を触れないとき）
 import { json, hashPassword, passwordProblem, normalizeLoginId, publicAccount, nowIso, newApiKey, newWebhookSecret, notifyWebhook, webhookUrlOk } from '../_lib.js';
-import { ecKeyOk, ecUrlOk, ecPing, EC_DEFAULT_URL } from '../_salonpro.js';
+import { ecKeyOk, ecUrlOk, ecPing, ecNormalizeKey, ecNormalizeUrl, keyProblem, recordStatus } from '../_salonpro.js';
 
 export async function onRequestGet({ env }) {
   const rs = await env.DB.prepare(
@@ -95,21 +95,24 @@ export async function onRequestPost(context) {
     return json({ ok: true, status, message: '送信しました → 相手の応答: ' + status });
   }
   if (action === 'ec_key') {
-    const key = String(b.key || '').trim();
-    const url = (String(b.url || '').trim() || a.ec_url || EC_DEFAULT_URL).replace(/\/+$/, '');
-    if (!ecKeyOk(key)) return json({ ok: false, reason: 'bad_key', message: 'SalonPro のキー（spk_ で始まる文字列）を入れてください' }, 400);
+    const key = ecNormalizeKey(b.key);
+    const prob = keyProblem(key);
+    if (prob) return json({ ok: false, reason: 'bad_key', message: prob }, 400);
+    const url = ecNormalizeUrl(String(b.url || '').trim() || a.ec_url);
     if (!ecUrlOk(url)) return json({ ok: false, reason: 'bad_url', message: 'URL は https:// で始めてください' }, 400);
-    await env.DB.prepare('UPDATE pim_accounts SET ec_key=?, ec_url=?, updated_at=? WHERE id=?').bind(key, url, ts, id).run();
     const ping = await ecPing({ ec_key: key, ec_url: url });
-    return json({ ok: true, ping, message: '保存しました。' + ping.message });
+    await env.DB.prepare('UPDATE pim_accounts SET ec_key=?, ec_url=?, updated_at=? WHERE id=?').bind(key, url, ts, id).run();
+    await recordStatus(env, a, ping.ok, ping.ok ? '' : ping.message);
+    return json({ ok: true, ping, message: (ping.ok ? '保存しました。' : 'キーは保存しましたが、つながっていません: ') + ping.message });
   }
   if (action === 'ec_clear') {
-    await env.DB.prepare('UPDATE pim_accounts SET ec_key=NULL, ec_auto=0, updated_at=? WHERE id=?').bind(ts, id).run();
+    await env.DB.prepare('UPDATE pim_accounts SET ec_key=NULL, ec_auto=0, ec_status=NULL, ec_status_at=NULL, updated_at=? WHERE id=?').bind(ts, id).run();
     return json({ ok: true, message: 'SalonPro への送信を解除しました' });
   }
   if (action === 'ec_test') {
     if (!ecKeyOk(a.ec_key)) return json({ ok: false, reason: 'no_key', message: 'キーが未設定です' }, 400);
     const ping = await ecPing(a);
+    await recordStatus(env, a, ping.ok, ping.ok ? '' : ping.message);
     return json({ ok: true, ping, message: ping.message });
   }
   if (action === 'clone_settings') { // 初期設定パック: 別のディーラー（例: 菊池）の 表記の辞書 をコピー（無いものだけ足す）

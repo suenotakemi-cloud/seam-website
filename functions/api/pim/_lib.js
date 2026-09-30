@@ -1,8 +1,8 @@
-// SEAM 商品マスタ統一（PIM）— API 共通部品
+// 商品登録システム（PIM）— API 共通部品
 //   認証:
 //     ・ディーラー: ID + パスワードでログイン → トークン（x-seam-token）。1ディーラー1アカウント、スタッフは同じIDを共用
 //       パスワードを変えると token_version が進み、それまでのトークンは全端末で無効になる（退職者対策）
-//     ・SEAM 管理: env.ADMIN_KEY（x-seam-key）。アカウントの発行・パスワード再設定・停止。
+//     ・システム管理: env.ADMIN_KEY（x-seam-key）。アカウントの発行・パスワード再設定・停止。
 //       x-seam-account: <login_id> を付けると、そのディーラーとして商品 API を使える（EC 連携・代行作業）
 //   保存: D1 binding "DB"（商品・画像台帳・注意・アカウント）/ R2 binding "PRODUCT_IMAGES"（画像の実体・必ず webp）
 //   データはすべて account_id で分かれる（他のディーラーの商品は見えない・触れない）
@@ -149,7 +149,7 @@ export async function verifyToken(env, token) {
 }
 export function publicAccount(a) {
   if (!a) return null;
-  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at, has_api_key: !!a.api_key, webhook_url: a.webhook_url || '', webhook_last_at: a.webhook_last_at || null, webhook_last_status: a.webhook_last_status || null, report_emails: a.report_emails || '', report_enabled: !!a.report_enabled, has_inbox_key: !!a.inbox_key, ec_url: a.ec_url || '', has_ec_key: !!a.ec_key, ec_auto: !!a.ec_auto };
+  return { id: a.id, login_id: a.login_id, name: a.name, role: a.role, active: !!a.active, created_at: a.created_at, pass_changed_at: a.pass_changed_at, last_login_at: a.last_login_at, has_api_key: !!a.api_key, webhook_url: a.webhook_url || '', webhook_last_at: a.webhook_last_at || null, webhook_last_status: a.webhook_last_status || null, report_emails: a.report_emails || '', report_enabled: !!a.report_enabled, has_inbox_key: !!a.inbox_key, ec_url: a.ec_url || '', has_ec_key: !!a.ec_key, ec_auto: !!a.ec_auto, ec_status: a.ec_status || null, ec_status_at: a.ec_status_at || null };
 }
 // EC 連携用の読み取り専用キー（管理画面で発行。夜間バッチが export を取りに来るためのもの）
 export function newApiKey() {
@@ -242,7 +242,8 @@ export async function ensureSchema(env) {
     'ALTER TABLE pim_accounts ADD COLUMN report_emails TEXT', 'ALTER TABLE pim_accounts ADD COLUMN report_enabled INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE pim_accounts ADD COLUMN inbox_key TEXT',
     'ALTER TABLE pim_imports ADD COLUMN options TEXT', 'ALTER TABLE pim_images ADD COLUMN phash TEXT', 'ALTER TABLE pim_images ADD COLUMN has_thumb INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE pim_images ADD COLUMN ver TEXT', 'ALTER TABLE pim_staff ADD COLUMN assign TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_synced_at TEXT',
     'ALTER TABLE pim_accounts ADD COLUMN ec_url TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_key TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_auto INTEGER NOT NULL DEFAULT 0',
-    'ALTER TABLE pim_products ADD COLUMN ec_push_at TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_status TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_msg TEXT']) {
+    'ALTER TABLE pim_products ADD COLUMN ec_push_at TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_status TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_msg TEXT',
+    'ALTER TABLE pim_accounts ADD COLUMN ec_status TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_status_at TEXT']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)').run(); } catch (e) { /* */ }

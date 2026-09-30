@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<title>SEAM 商品登録（スキャン＆写真）</title>
+<title>商品登録システム（スキャン＆写真）</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#1a1714">
 <link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
@@ -194,7 +194,7 @@
 <div class="app">
   <header>
     <div>
-      <h1>SEAM 商品登録 <span id="hAcct" style="font-weight:400;font-size:12px;color:var(--char)"></span></h1>
+      <h1>商品登録システム <span id="hAcct" style="font-weight:400;font-size:12px;color:var(--char)"></span></h1>
       <div class="sub" id="hsub">JANを読んで写真を5枚まで</div><span class="obadge" id="obadge" hidden></span>
     </div>
     <div style="display:flex;gap:6px">
@@ -674,6 +674,7 @@
     api('push?limit=1').then(function (j) {
       if (!j.ok) { el.textContent = '確認できません'; return; }
       if (!j.ec.has_key) { el.textContent = 'まだ設定されていません（PC の設定タブでキーを入れてください）'; return; }
+      if (j.ec.connected === false) { el.textContent = 'SalonPro につながっていません: ' + String(j.ec.status || '').replace(/^ng:\s*/, '') + '（PC の設定タブでキーを貼り直してください）'; return; }
       el.textContent = '送り先 ' + j.ec.url + '／自動送信 ' + (j.ec.auto ? '入' : '切') + '／送信待ち ' + j.pending + ' 件' + (j.failed ? '・送れなかったもの ' + j.failed + ' 件' : '');
       $('btnEcPush').disabled = !j.pending;
     }).catch(function () { el.textContent = '確認できません'; });

@@ -19,7 +19,7 @@ export async function buildReport(env, account, day, origin) {
   const perDay = pace && pace.days ? pace.products / pace.days : 0;
   const daysLeft = perDay > 0 ? Math.ceil((totals.no_images || 0) / perDay) : null;
   const pct = totals.products ? Math.round(totals.with_images / totals.products * 100) : 0;
-  const subject = '[SEAM 商品登録] ' + account.name + ' 日報 ' + day + '：写真 ' + dayStat.images + ' 枚 / ' + dayStat.products + ' 商品（残り ' + totals.no_images + '）';
+  const subject = '[商品登録システム] ' + account.name + ' 日報 ' + day + '：写真 ' + dayStat.images + ' 枚 / ' + dayStat.products + ' 商品（残り ' + totals.no_images + '）';
   const lines = [
     account.name + ' — ' + day + ' の日報',
     '',

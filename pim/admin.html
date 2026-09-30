@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SEAM 商品マスタ 管理（ディーラーアカウント）</title>
+<title>商品登録システム 管理（ディーラーアカウント）</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="../images/favicon.svg" type="image/svg+xml">
 <style>
@@ -50,7 +50,7 @@
 <body>
 <header>
   <div class="hwrap">
-    <div><h1>SEAM 商品マスタ 管理</h1><div class="sub">ディーラーアカウントの発行・パスワード再設定・停止（SEAM 管理者用）</div></div>
+    <div><h1>商品登録システム 管理</h1><div class="sub">ディーラーアカウントの発行・パスワード再設定・停止（システム管理者用）</div></div>
     <div class="row"><a class="btn" href="./import.html">取り込み画面</a><a class="btn" href="./index.html">スマホ登録画面</a><button class="btn" id="btnLogout">ログアウト</button></div>
   </div>
 </header>
@@ -127,7 +127,7 @@
             return;
           }
           if (act === 'ec_key') {
-            var ek = prompt(name + ' の SalonPro のキー（spk_ で始まる文字列）を入れてください。空で解除します。'); if (ek == null) return;
+            var ek = prompt(name + ' の SalonPro のキー（発行時に一度だけ表示された spk_XXXXXXXXXXXX_… の全体）を入れてください。空で解除します。'); if (ek == null) return;
             if (!ek.trim()) { C.api('admin/accounts', { admin: true, method: 'POST', body: { action: 'ec_clear', id: id } }).then(function (r) { toast(r.message || '解除しました', !r.ok); load(); }).catch(handleErr); return; }
             var eu = prompt('SalonPro の URL（そのままで可）', 'https://pro-console.salon.town'); if (eu == null) return;
             C.api('admin/accounts', { admin: true, method: 'POST', body: { action: 'ec_key', id: id, key: ek.trim(), url: eu.trim() } }).then(function (r) { toast(r.message || (r.ok ? '保存しました' : '失敗'), !r.ok); load(); }).catch(handleErr);
