@@ -34,6 +34,17 @@ const MAX_BYTES = 8 * 1024 * 1024;
 function isWebp(u8) {
   return u8.length > 12 && u8[0] === 0x52 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x46 && u8[8] === 0x57 && u8[9] === 0x45 && u8[10] === 0x42 && u8[11] === 0x50;
 }
+// 見本（pim_refs）は「商品の何枚目か」で写真を指している。写真を消したり並べ替えたりしたら、見本の番号も付け替える
+//   付け替えないと、カメラに重なる見本が別の写真（箱の裏など）にすり替わる（2026-09-30 のディープチェックで発見）
+//   map: { 旧番号: 新番号 }。1 文の CASE で一度に付け替える（順に UPDATE すると 1→2, 2→1 のような入れ替えで二重に動く）
+async function moveRefs(env, acct, jan, map) {
+  const olds = Object.keys(map).map((k) => parseInt(k, 10)).filter((o) => map[o] !== o);
+  if (!olds.length) return;
+  try {
+    await env.DB.prepare('UPDATE pim_refs SET src_slot = CASE src_slot ' + olds.map(() => 'WHEN ? THEN ?').join(' ') + ' ELSE src_slot END WHERE account_id=? AND jan=? AND src_slot IN (' + olds.map(() => '?').join(',') + ')')
+      .bind(...olds.flatMap((o) => [o, map[o]]), acct, jan, ...olds).run();
+  } catch (e) { /* 見本の表が無い古い DB でも写真の操作は止めない */ }
+}
 async function listImages(env, origin, acct, jan) {
   const rs = await env.DB.prepare('SELECT * FROM pim_images WHERE account_id=? AND jan=? ORDER BY slot').bind(acct, jan).all();
   return (rs.results || []).map((im) => { const v = im.ver || im.created_at; const o = Object.assign({}, im, { url: imageUrl(origin, acct, jan, im.slot, v), thumb_url: im.has_thumb ? thumbUrl(origin, acct, jan, im.slot, v) : null }); delete o.key; return o; });
@@ -179,6 +190,7 @@ async function reorder(context) {
   try { res = await env.DB.batch(stmts); } catch (e) { return json({ ok: false, reason: 'changed', message: '並べ替えの途中で他の人が写真を足しました。画面を更新してからやり直してください' }, 409); }
   if (!(res[0] && res[0].meta && res[0].meta.changes === cur.length)) return json({ ok: false, reason: 'changed', message: '写真が変わっています。画面を更新してからやり直してください', images: await listImages(env, origin, acct, jan) }, 409);
   for (const m of moves) { await blobPut(env, imageKey(acct, jan, m.to), bufs[m.from]); if (tbufs[m.from]) await blobPut(env, thumbKey(acct, jan, m.to), tbufs[m.from]); else await blobDelete(env, thumbKey(acct, jan, m.to)); }
+  const refMap = {}; moves.forEach((m) => { refMap[m.from] = m.to; }); await moveRefs(env, acct, jan, refMap); // 見本も一緒に並べ替える
   const by = userOf(request);
   const pts = await syncCount(env, acct, jan);
   await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by); autoPush(context, data.account, [jan]);
@@ -197,8 +209,11 @@ export async function onRequestDelete(context) {
   if (!imgs.some((im) => im.slot === slot)) return json({ ok: false, reason: 'not_found' }, 404);
   await blobDelete(env, imageKey(acct, jan, slot)); await blobDelete(env, thumbKey(acct, jan, slot)); // 実体が無くても台帳は消す
   await env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=? AND slot=?').bind(acct, jan, slot).run();
+  // 消した写真を見本にしていたら、その見本も外す（別の写真を見本として出さない。次に撮るとき、見本にするか聞き直す）
+  try { await env.DB.prepare('DELETE FROM pim_refs WHERE account_id=? AND jan=? AND src_slot=?').bind(acct, jan, slot).run(); } catch (e) { /* 表が無い古い DB */ }
   // 後ろを前に詰める（3枚目を消したら 4→3, 5→4）
   const after = imgs.filter((im) => im.slot > slot).sort((a, b) => a.slot - b.slot);
+  const refMap = {};
   for (const im of after) {
     const to = im.slot - 1;
     // 先に台帳で番号を取る。前の番号が（同時登録で）埋まっていたら主キー衝突で失敗する＝詰めずにそのまま残す（他の人の写真を消さない）
@@ -206,6 +221,7 @@ export async function onRequestDelete(context) {
     try { const r = await env.DB.prepare('UPDATE pim_images SET slot=?, key=?, ver=? WHERE account_id=? AND jan=? AND slot=?').bind(to, imageKey(acct, jan, to), nowIso(), acct, jan, im.slot).run(); moved = !!(r.meta && r.meta.changes); }
     catch (e) { moved = false; }
     if (moved) {
+      refMap[im.slot] = to;
       const buf = await readBlob(env, im.key);
       if (buf) await blobPut(env, imageKey(acct, jan, to), buf);
       const tb = await readBlob(env, thumbKey(acct, jan, im.slot));
@@ -216,6 +232,7 @@ export async function onRequestDelete(context) {
     }
     if (!moved) break; // 詰め先が埋まったら、それより後ろも動かさない（順番が入れ替わらないように）
   }
+  await moveRefs(env, acct, jan, refMap); // 詰めた写真を見本にしていたら、見本の番号も詰める
   const pts = await syncCount(env, acct, jan);
   const by = userOf(request);
   await logChanges(env, acct, [jan], 'image', by); notifyWebhook(context, data.account, 'image', [jan], by); autoPush(context, data.account, [jan]);
