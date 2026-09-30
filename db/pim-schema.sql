@@ -1,4 +1,4 @@
--- SEAM 商品マスタ統一（PIM）用 D1 スキーマ
+-- 商品登録システム（PIM）用 D1 スキーマ
 -- 投入: Cloudflare ダッシュボード D1 コンソールに貼付 OR
 --       npx wrangler d1 execute seam-db --remote --file=db/pim-schema.sql
 --

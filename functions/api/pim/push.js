@@ -5,7 +5,7 @@
 //        POST /api/pim/push { all:true, limit:20 } → 送信待ちの古い順に送る
 //   「送信待ち」= 写真が 1 枚以上あり、撮り直しの指示が付いていない商品のうち、
 //                 まだ送っていない（ec_push_at が無い）か、送ったあとに写真・内容が変わったもの
-//   送信は毎回 mode=replace。SalonPro 側の写真は SEAM の 1〜5 枚目でそっくり置き換わる（並び順の先頭が主画像）
+//   送信は毎回 mode=replace。SalonPro 側の写真は 商品登録システムの 1〜5 枚目でそっくり置き換わる（並び順の先頭が主画像）
 import { json, cleanJan, userOf } from './_lib.js';
 import { pushJans, ecKeyOk, ecBase } from './_salonpro.js';
 
@@ -34,7 +34,7 @@ export async function onRequestPost({ request, env, data }) {
   if (!ecKeyOk(a.ec_key)) return json({ ok: false, reason: 'no_key', message: 'SalonPro のキーが未設定です。PC の設定タブで「EC（SalonPro）へ写真を送る」のキーを入れてください' }, 400);
   const b = await request.json().catch(() => null);
   if (!b || typeof b !== 'object') return json({ ok: false, reason: 'bad_json' }, 400);
-  const by = userOf(request) || (data.isAdmin ? 'SEAM' : '');
+  const by = userOf(request) || (data.isAdmin ? '運営' : '');
 
   let jans = [];
   if (Array.isArray(b.jans) && b.jans.length) {

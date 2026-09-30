@@ -34,7 +34,7 @@ export async function onRequestPost({ request, env, data }) {
     if (pinned && pinned.n > 0) {
       const st = await verifyStaff(env, request.headers.get('x-seam-staff') || '', acct);
       const me = st ? await env.DB.prepare('SELECT id FROM pim_staff WHERE id=? AND account_id=? AND active=1 AND pin_hash IS NOT NULL').bind(st.staffId, acct).first() : null;
-      if (!me) return json({ ok: false, reason: 'pin_required', message: '担当者一覧の変更は、PIN 付きの担当者として PIN 確認をしてから行ってください（または SEAM 管理画面から）', staff_required: true }, 403);
+      if (!me) return json({ ok: false, reason: 'pin_required', message: '担当者一覧の変更は、PIN 付きの担当者として PIN 確認をしてから行ってください（または システム管理画面から）', staff_required: true }, 403);
     }
   }
 
