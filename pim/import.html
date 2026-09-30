@@ -617,6 +617,8 @@
     }).catch(function (e) { $('btnPw').disabled = false; handleErr(e); });
   });
   function setIssueN(n) { var el = $('issueN'); el.textContent = n; el.hidden = !n; }
+  // セレクタに入れる値のエスケープ（メーカー名に " や \ が入っていても壊れないように）
+  function cssEsc(v) { return (window.CSS && CSS.escape) ? CSS.escape(String(v)) : String(v).replace(/["\\]/g, '\\$&'); }
   function loadMakers() {
     api('products?limit=1').then(function (j) {
       if (!j.ok) return;
@@ -624,7 +626,7 @@
       // 選んでいたメーカーは保つ（「写真」から一覧へ戻った直後など、選択肢より先に絞り込みが決まっていることがある）
       [['exMaker', opts], ['fMaker', opts.replace('すべて', 'メーカー: すべて')], ['rvMaker', opts.replace('すべて', 'メーカー: すべて')]].forEach(function (x) {
         var sel = $(x[0]), was = sel.value; sel.innerHTML = x[1];
-        if (was && !sel.querySelector('option[value="' + was.replace(/"/g, '&quot;') + '"]')) { var o = document.createElement('option'); o.value = was; o.textContent = was; sel.appendChild(o); }
+        if (was && !sel.querySelector('option[value="' + cssEsc(was) + '"]')) { var o = document.createElement('option'); o.value = was; o.textContent = was; sel.appendChild(o); }
         sel.value = was;
       });
     }).catch(function () { /* */ });
@@ -1091,9 +1093,10 @@
   var P = { offset: 0, limit: 100 };
   function loadProducts(offset) {
     P.offset = Math.max(0, offset || 0);
+    var seq = P.seq = (P.seq || 0) + 1; // 後から出した読み込みだけを画面に出す（一覧へ戻ったときの 1 ページ目と N ページ目の取り違え防止）
     var qs = 'q=' + encodeURIComponent($('q').value.trim()) + '&maker=' + encodeURIComponent($('fMaker').value) + ($('fNoimg').checked ? '&noimg=1' : '') + ($('fNosku').checked ? '&nosku=1' : '') + ($('fNotReady').checked ? '&ready=0' : '') + ($('fEc').checked ? '&ec=pending' : '') + '&limit=' + P.limit + '&offset=' + P.offset;
     return api('products?' + qs).then(function (j) {
-      if (!j.ok) return;
+      if (!j.ok || seq !== P.seq) return;
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
         return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + (p.ready ? '<span class="tag ok">可</span>' : '<span class="tag ng" title="写真あり・商品コードあり・価格あり・撮り直し無し が条件">不可</span>') + '</td><td>' + (p.ec_synced_at && p.ec_synced_at >= p.updated_at ? '<span class="tag ok">済</span>' : '<span class="tag">未</span>') + (p.ec_push_status && p.ec_push_status !== 'ok' ? ' <span class="tag ng" title="' + esc(p.ec_push_msg || p.ec_push_status) + '">送信×</span>' : '') + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '&back=list" data-photo="1">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
@@ -1155,7 +1158,7 @@
     if (!s) return false;
     $('q').value = s.q || ''; $('fNoimg').checked = !!s.noimg; $('fNosku').checked = !!s.nosku; $('fNotReady').checked = !!s.notready; $('fEc').checked = !!s.ec;
     // メーカーの選択肢は非同期で入るので、無ければ一時的に足しておく
-    if (s.maker && !$('fMaker').querySelector('option[value="' + s.maker.replace(/"/g, '&quot;') + '"]')) { var o = document.createElement('option'); o.value = s.maker; o.textContent = s.maker; $('fMaker').appendChild(o); }
+    if (s.maker && !$('fMaker').querySelector('option[value="' + cssEsc(s.maker) + '"]')) { var o = document.createElement('option'); o.value = s.maker; o.textContent = s.maker; $('fMaker').appendChild(o); }
     $('fMaker').value = s.maker || '';
     document.querySelector('.tabs button[data-tab="products"]').click();
     loadProducts(s.offset || 0).then(function () { window.scrollTo(0, s.y || 0); });
@@ -1440,7 +1443,7 @@
     }).catch(handleErr);
   }
   function pushRun(body) {
-    if (PUSH.busy) return Promise.resolve(null);
+    if (PUSH.busy) { toast('いま SalonPro と確認中です。終わったらもう一度押してください', true); return Promise.resolve(null); }
     PUSH.busy = true; $('pushProg').hidden = false; $('pushProg').querySelector('i').style.width = '40%'; $('pushLog').textContent = '送っています…';
     return api('push', { method: 'POST', body: body }).then(function (r) {
       PUSH.busy = false; $('pushProg').hidden = true;
@@ -1451,7 +1454,7 @@
   }
   // 「送れなかったもの」を SalonPro 側で確かめ直す（届いていれば送信ずみに直す）
   function verifyPush(quiet) {
-    if (PUSH.busy) return Promise.resolve(null);
+    if (PUSH.busy) { if (!quiet) toast('いま SalonPro と通信中です。終わったらもう一度押してください', true); return Promise.resolve(null); }
     PUSH.busy = true; $('pushVerifyLog').textContent = 'SalonPro で確かめています…'; $('btnPushVerify').disabled = true;
     return api('push', { method: 'POST', body: { action: 'verify', auto: !!quiet } }).then(function (r) {
       PUSH.busy = false; $('btnPushVerify').disabled = false;

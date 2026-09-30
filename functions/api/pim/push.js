@@ -64,7 +64,7 @@ export async function onRequestPost({ request, env, data }) {
   } else return json({ ok: false, reason: 'no_jans', message: '{ jans:[…] } か { all:true } を送ってください' }, 400);
   if (!jans.length) return json({ ok: true, results: [], sent: 0, failed: 0, message: '送るものはありません' });
 
-  const results = await pushJans(env, a, jans, by, 45000); // Cloudflare は約 100 秒で応答を打ち切るので、その手前で区切る（残りは送信待ちのまま）
+  const results = await pushJans(env, a, jans, by, 15000); // Cloudflare は約 100 秒で応答を打ち切る。1 件が最悪 80 秒（送信 60 + 確認 20）かかるので、新しい商品に手を付けるのは 15 秒まで（残りは送信待ちのまま次へ）
   const okN = results.filter((r) => r.ok).length;
   const skipped = results.filter((r) => r.skipped).length;
   const stopped = results.some((r) => r.code === 'stopped');

@@ -81,7 +81,7 @@ export async function onRequestPost(context) {
     const key = ecNormalizeKey(b.key);
     const prob = keyProblem(key);
     if (prob) return json({ ok: false, reason: 'bad_key', message: prob }, 400);
-    const url = ecNormalizeUrl(String(b.url || '').trim() || a.ec_url);
+    const url = ecNormalizeUrl(b.url != null ? String(b.url).trim() : a.ec_url); // 欄を空にして保存したら既定の URL に戻す
     if (!ecUrlOk(url)) return json({ ok: false, reason: 'bad_url', message: 'SalonPro の URL は https:// で始めてください（https://pro-console.salon.town）' }, 400);
     // 先に接続を確かめ、通らなくても保存はする（貼り直しやすいように）。結果は ec_status に残して画面に出す
     const sample = await env.DB.prepare('SELECT jan FROM pim_products WHERE account_id=? AND image_count>0 ORDER BY updated_at DESC LIMIT 1').bind(id).first();
