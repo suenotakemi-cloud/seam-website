@@ -20,7 +20,11 @@
       !function (f, b, e, v, n, t, s) {
         if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
         if (!f._fbq) f._fbq = n; n.push = n; n.loaded = !0; n.version = '2.0'; n.queue = [];
-        t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s);
+        // 2026-09-30 表示の速さ：本体（約200KB）はページの読み込みが終わってから入れる。
+        // fbq は先に作ってあるので PageView などの呼び出しは queue に溜まり 本体が来てから送られる（計測の中身は変わらない）
+        var inject = function () { t = b.createElement(e); t.async = !0; t.src = v; s = b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t, s); };
+        var later = function () { (f.requestIdleCallback || function (cb) { setTimeout(cb, 1500); })(inject, { timeout: 4000 }); };
+        if (b.readyState === 'complete') later(); else f.addEventListener('load', later, { once: true });
       }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
       fbq('init', '852519546926672');
       fbq('track', 'PageView');
