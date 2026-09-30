@@ -3,7 +3,7 @@
 //   POST /api/pim/review { jan, slot, review:'ok'|'retake'|null, note }   … 1枚に付ける
 //   POST /api/pim/review { items:[{jan,slot,review,note}] }                … まとめて（最大 200）
 //   写真を撮り直す（同じ番号に上げ直す）と review は自動で外れる（images.js）
-import { json, cleanJan, imageUrl, nowIso, userOf } from './_lib.js';
+import { json, cleanJan, imageUrl, nowIso, userOf, logChanges } from './_lib.js';
 
 export async function onRequestGet({ request, env, data }) {
   const acct = data.account.id;
@@ -48,15 +48,26 @@ export async function onRequestPost({ request, env, data }) {
   const ts = nowIso();
   const items = Array.isArray(b.items) ? b.items.slice(0, 200) : [b];
   const stmts = [];
+  // 「撮り直し」を付けた・外した商品は、公開できるかどうかが変わる → 商品の updated_at を進めて、EC 側の差分取得（since・ack・変更履歴）に載せる
+  //   OK を付けただけの商品は進めない（まとめて OK したときに、同じ写真を EC に送り直させないため）
+  const prevRs = await env.DB.prepare("SELECT jan, slot, review FROM pim_images WHERE account_id=? AND review='retake'").bind(acct).all();
+  const wasRetake = {}; (prevRs.results || []).forEach((r) => { wasRetake[r.jan + ':' + r.slot] = true; });
+  const flip = new Set();
   for (const it of items) {
     const jan = cleanJan(it.jan || ''); const slot = parseInt(it.slot, 10);
     if (!jan || !(slot >= 1 && slot <= 5)) continue;
     const review = it.review === 'ok' || it.review === 'retake' ? it.review : null;
+    if (!!wasRetake[jan + ':' + slot] !== (review === 'retake')) flip.add(jan);
     const note = String(it.note || '').slice(0, 300);
     stmts.push(env.DB.prepare('UPDATE pim_images SET review=?, review_note=?, reviewed_by=?, reviewed_at=? WHERE account_id=? AND jan=? AND slot=?')
       .bind(review, review ? note : null, review ? (by || null) : null, review ? ts : null, acct, jan, slot));
   }
   if (!stmts.length) return json({ ok: false, reason: 'no_items' }, 400);
   for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
+  const flipped = Array.from(flip);
+  if (flipped.length) {
+    for (let i = 0; i < flipped.length; i += 90) { const part = flipped.slice(i, i + 90); await env.DB.prepare('UPDATE pim_products SET updated_at=? WHERE account_id=? AND jan IN (' + part.map(() => '?').join(',') + ')').bind(ts, acct, ...part).run(); }
+    await logChanges(env, acct, flipped, 'image', by);
+  }
   return json({ ok: true, updated: stmts.length });
 }

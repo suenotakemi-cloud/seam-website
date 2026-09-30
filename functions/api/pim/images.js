@@ -109,6 +109,11 @@ export async function onRequestPost(context) {
   const origin = new URL(request.url).origin;
   let ts = nowIso(), usedSlot = slot;
 
+  if (auto && phash) {
+    // 同じ写真（phash が同じ）が同じ商品に既にある → 追加せず、それを返す（返事が届かず送り直したとき・送信待ちの二重送信で写真が重ならないように）
+    const same = await env.DB.prepare('SELECT slot FROM pim_images WHERE account_id=? AND jan=? AND phash=? LIMIT 1').bind(acct, jan, phash).first();
+    if (same) return json({ ok: true, jan, slot: same.slot, duplicate: true, url: imageUrl(origin, acct, jan, same.slot), bytes: buf.length, dup_of: [], images: await listImages(env, origin, acct, jan) });
+  }
   if (auto) {
     // 空いている一番若い番号へ。台帳(pim_images)の主キーで取り合いを裁く: INSERT が通った人がその番号の持ち主
     let done = false;

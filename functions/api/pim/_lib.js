@@ -389,14 +389,21 @@ export function newWebhookSecret() {
   const a = crypto.getRandomValues(new Uint8Array(24));
   return 'whsec_' + Array.from(a, (b) => b.toString(16).padStart(2, '0')).join('');
 }
-// 担当者の PIN 確認後に渡す短い署名（x-seam-staff）。中身: s.account_id.staff_id.exp
+// 担当者の PIN 確認後に渡す短い署名（x-seam-staff）。中身: s.account_id.staff_id.exp.pin指紋
+//   pin指紋 = その時点の PIN（ハッシュ）から作る短い印。PIN を変える・付ける・外すと指紋が変わり、それまでに渡した署名は使えなくなる
+//   （漏れた PIN を変えても、前に確認を通した端末が書き込めてしまっていた。2026-09-30 のディープチェックで発見）
 const STAFF_DAYS = 60;
-export async function signStaff(env, accountId, staffId) {
+export async function pinFingerprint(pinHash) {
+  const d = await crypto.subtle.digest('SHA-256', enc.encode('pin:' + String(pinHash || 'none')));
+  return b64url(d).slice(0, 12);
+}
+export async function signStaff(env, accountId, staffId, pinHash) {
   const exp = Math.floor(Date.now() / 1000) + STAFF_DAYS * 86400;
-  const payload = 's.' + accountId + '.' + staffId + '.' + exp;
+  const payload = 's.' + accountId + '.' + staffId + '.' + exp + '.' + (await pinFingerprint(pinHash));
   return b64url(enc.encode(payload)) + '.' + b64url(await hmac(secretOf(env), payload));
 }
-export async function verifyStaff(env, token, accountId) {
+// pinHash を渡すと、署名の指紋が今の PIN と合うかも確かめる（合わなければ null = PIN の確認し直し）
+export async function verifyStaff(env, token, accountId, pinHash) {
   try {
     const [p, sig] = String(token || '').split('.');
     if (!p || !sig) return null;
@@ -407,6 +414,7 @@ export async function verifyStaff(env, token, accountId) {
     if (diff !== 0) return null;
     const m = payload.split('.');
     if (m[0] !== 's' || parseInt(m[1], 10) !== accountId || parseInt(m[3], 10) < Math.floor(Date.now() / 1000)) return null;
+    if (pinHash !== undefined && m[4] !== (await pinFingerprint(pinHash))) return null; // 古い形（指紋なし）の署名もここで無効
     return { staffId: parseInt(m[2], 10) };
   } catch (e) { return null; }
 }

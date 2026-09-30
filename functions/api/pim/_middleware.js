@@ -68,7 +68,7 @@ export async function onRequest(context) {
       const me = list.find((s) => s.name === name);
       if (!me) return json({ ok: false, reason: 'unknown_staff', message: '担当者名「' + (name || '（空）') + '」は登録されていません。設定で担当者を選び直してください', staff_required: true }, 403);
       if (me.pin_hash) {
-        const st = await verifyStaff(env, request.headers.get('x-seam-staff') || '', account.id);
+        const st = await verifyStaff(env, request.headers.get('x-seam-staff') || '', account.id, me.pin_hash); // PIN を変えたら、前の確認は無効
         if (!st || st.staffId !== me.id) return json({ ok: false, reason: 'pin_required', message: '担当者「' + name + '」の PIN 確認が必要です。設定から担当者を選び直してください', staff_required: true }, 403);
       }
       context.data.staff = me;

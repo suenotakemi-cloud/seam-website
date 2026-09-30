@@ -753,11 +753,12 @@
   function startScan() {
     stopScan();
     state.scanning = true;
+    var gen = state.scanGen = (state.scanGen || 0) + 1; // 続けて呼ばれたとき、古い呼び出しのカメラは止める（開きっぱなしにしない）
     camMsg('カメラを起動しています…');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camMsg(isInApp() ? 'LINE などの中のブラウザではカメラが使えません。上の「Safari / Chrome で開く」で開き直してください' : 'このブラウザではカメラが使えません。下の欄にJANを手入力してください'); return; }
     navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
       .then(function (stream) {
-        if (!state.scanning) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
+        if (!state.scanning || gen !== state.scanGen) { stream.getTracks().forEach(function (t) { t.stop(); }); return; }
         state.stream = stream;
         video.srcObject = stream;
         var pp = video.play(); if (pp && pp.catch) pp.catch(function () { /* iOS の自動再生拒否は無視 */ });
@@ -793,7 +794,7 @@
       if (!state.scanning) return;
       if (video.readyState >= 2) {
         state.detector.detect(video).then(function (codes) {
-          if (codes && codes.length) onCode(codes[0].rawValue);
+          if (codes && codes.length) onCode(codes[0].rawValue, codes[0].format === 'upc_e');
         }).catch(function () { /* フレーム落ちは無視 */ }).then(function () { if (state.scanning) state.tickTimer = setTimeout(run, 120); });
       } else state.tickTimer = setTimeout(run, 120);
     };
@@ -825,7 +826,7 @@
             cx.drawImage(video, 0, 0, w, h);
             var bmp = new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(cv)));
             var res = reader.decodeBitmap(bmp);
-            if (res && state.scanning) onCode(res.getText());
+            if (res && state.scanning) onCode(res.getText(), res.getBarcodeFormat && res.getBarcodeFormat() === Z.BarcodeFormat.UPC_E);
           } catch (e) { /* NotFoundException など: そのコマに無いだけ */ }
           busy = false;
         }
@@ -834,9 +835,20 @@
       run();
     } catch (e) { camMsg('読み取り部品の起動に失敗しました。JANを手入力してください'); }
   }
-  function onCode(raw) {
+  // UPC-E（8 桁の短縮形）は、元の 12 桁（UPC-A）に戻してから探す。そのまま 8 桁で探すと EAN-8 と取り違えて見つからない
+  function upcEtoA(e) {
+    if (!/^\d{8}$/.test(e)) return e;
+    var ns = e[0], m = e.slice(1, 7), ck = e[7], x = m[5], mf, pr;
+    if (x <= '2') { mf = m[0] + m[1] + x + '00'; pr = '00' + m[2] + m[3] + m[4]; }
+    else if (x === '3') { mf = m[0] + m[1] + m[2] + '00'; pr = '000' + m[3] + m[4]; }
+    else if (x === '4') { mf = m[0] + m[1] + m[2] + m[3] + '0'; pr = '0000' + m[4]; }
+    else { mf = m.slice(0, 5); pr = '0000' + x; }
+    return ns + mf + pr + ck;
+  }
+  function onCode(raw, isUpcE) {
     var code = String(raw || '').replace(/[^0-9]/g, '');
     if (!code) return;
+    if (isUpcE) code = upcEtoA(code);
     var now = Date.now();
     if (code === state.lastCode && now - state.lastAt < 2500) return;
     state.lastCode = code; state.lastAt = now;
@@ -918,7 +930,12 @@
       var editing = $('editBox').classList.contains('open');
       if (before !== after || j.product.updated_at !== p.updated_at) {
         var byOther = j.product.updated_by && j.product.updated_by !== C.Auth.user();
-        if (editing) { state.product.images = j.product.images; state.product.image_count = j.product.image_count; if (!byOther || j.product.updated_by === p.updated_by) state.product.updated_at = j.product.updated_at; renderGrid(); } // 写真だけの変化なら基準時刻も追従（保存時に 409 で入力が消えない）
+        // 編集中: 写真だけが変わったのなら基準時刻も進める（保存時に 409 で入力が消えないように）。
+        //   商品の中身（名前・価格など）が変わっていたら進めない → 保存すると 409 になり、相手の変更を上書きしない
+        //   （以前は「誰が変えたか」で判断していたため、同じ名前の人や一括変更（担当者名なし）の変更を上書きしていた）
+        var FIELDS = ['name', 'price', 'price_ex', 'price_in', 'tax_included', 'tax_rate', 'retail_price', 'cost_price', 'amount', 'unit', 'maker', 'brand', 'category', 'description', 'sku'];
+        var sameBody = FIELDS.every(function (f) { return String(p[f] == null ? '' : p[f]) === String(j.product[f] == null ? '' : j.product[f]); });
+        if (editing) { state.product.images = j.product.images; state.product.image_count = j.product.image_count; if (sameBody) state.product.updated_at = j.product.updated_at; renderGrid(); }
         else openProductQuiet(j.product);
         if (byOther) toast((j.product.updated_by || '他の人') + ' さんの変更を取り込みました');
       }
@@ -939,6 +956,7 @@
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' + (p.maker ? '<span>' + esc(p.maker) + '</span>' : '') + (p.brand ? '<span>' + esc(p.brand) + '</span>' : '') + (p.sku ? '<span>商品コード <b>' + esc(p.sku) + '</b></span>' : '<span style="color:var(--ng)">商品コード 未入力</span>');
     $('hsub').textContent = p.name.slice(0, 24) + (p.updated_by ? '（最終更新: ' + p.updated_by + '）' : ''); }
   function renderGrid() {
+    if (!state.product) return; // 送信中に商品画面を離れた（スキャンへ・次の商品へ）
     var p = state.product, imgs = (p.images || []).slice().sort(function (a, b) { return a.slot - b.slot; });
     var byslot = {}; imgs.forEach(function (im) { byslot[im.slot] = im; });
     var nextSlot = 0; for (var s = 1; s <= 5; s++) if (!byslot[s] && !state.busy[s]) { nextSlot = s; break; }
@@ -1211,7 +1229,7 @@
     var preview = ''; try { preview = URL.createObjectURL(file); } catch (e) { /* */ }
     state.busy[showSlot] = { label: '変換中…', preview: preview };
     renderGrid();
-    var jan = state.product.jan, lastR = null;
+    var jan = state.product.jan, lastR = null, answered = false;
     // 端末カメラ・アルバムの写真も同じ形に: 正方形（白で余白）＋ 背景を白に ＋ 1200px
     return C.toWebp(file, { size: 1200, square: 'pad', whiten: SH.whiten, quality: 0.85 }).then(function (r) {
       return confirmQuality(r.quality).then(function (go) { if (!go) throw { cancelled: true }; return r; });
@@ -1227,10 +1245,12 @@
       lastR = r;
       return api('images', { method: 'POST', body: fd });
     }).then(function (j) {
+      answered = true; // サーバーから返事が来た＝写真は届いている。ここから先のエラーを「電波切れ」と取り違えて送信待ちに入れない（二重登録になる）
       if (preview) URL.revokeObjectURL(preview);
       afterUpload(j, jan, showSlot);
     }).catch(function (e) {
       if (e && e.cancelled) { delete state.busy[showSlot]; if (preview) URL.revokeObjectURL(preview); renderGrid(); toast('登録をやめました'); return; }
+      if (answered) { console.error(e); return; }
       if (lastR && C.isNetworkError(e)) { return queueOffline(jan, slot, lastR, lastR.originalName, lastR.originalType, showSlot, preview); }
       delete state.busy[showSlot];
       if (preview) URL.revokeObjectURL(preview);
@@ -1366,15 +1386,18 @@
     stopShooterCam();
     shMsg('カメラを起動しています…');
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { shMsg('このブラウザではアプリ内カメラが使えません。「端末カメラ」で撮ってください（写真は自動で正方形・白背景に整えます）'); return; }
+    var gen = SH.camGen = (SH.camGen || 0) + 1;
     navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: SH.facing }, width: { ideal: 2048 }, height: { ideal: 2048 } }, audio: false })
       .then(function (st) {
+        // カメラが開く前に撮影画面を閉じた・切り替えた → このカメラはすぐ止める（開きっぱなしだと次にカメラを開けなくなる端末がある）
+        if (gen !== SH.camGen || !$('shooter').classList.contains('open')) { st.getTracks().forEach(function (t) { t.stop(); }); return; }
         SH.stream = st; var v = $('shVideo'); v.srcObject = st;
         var pp = v.play(); if (pp && pp.catch) pp.catch(function () { /* */ });
         shMsg('');
       })
       .catch(function (err) { shMsg((err && err.name === 'NotAllowedError') ? 'カメラの使用が許可されていません。ブラウザの設定で許可するか「端末カメラ」で撮ってください' : 'カメラを起動できません。「端末カメラ」で撮ってください'); });
   }
-  function stopShooterCam() { if (SH.stream) { try { SH.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* */ } SH.stream = null; } try { $('shVideo').srcObject = null; } catch (e) { /* */ } }
+  function stopShooterCam() { SH.camGen = (SH.camGen || 0) + 1; if (SH.stream) { try { SH.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { /* */ } SH.stream = null; } try { $('shVideo').srcObject = null; } catch (e) { /* */ } }
   // 水平器（端末を立てて・傾けずに撮るための目安。使えない端末では出さない）
   function onTilt(e) {
     if (e.gamma == null || e.beta == null) return;
@@ -1462,7 +1485,7 @@
     var preview = ''; try { preview = canvas.toDataURL('image/jpeg', 0.6); } catch (e) { /* */ }
     state.busy[showSlot] = { label: '変換中…', preview: preview };
     renderGrid();
-    var q = SH.quality, meta = null;
+    var q = SH.quality, meta = null, answered = false;
     return C.finishImage(canvas, 0.85).then(function (r) {
       if (state.busy[showSlot]) state.busy[showSlot].label = '送信中…'; renderGrid();
       r.quality = q; meta = r;
@@ -1473,8 +1496,8 @@
       fd.append('width', String(r.width)); fd.append('height', String(r.height));
       C.appendImageExtras(fd, r);
       return api('images', { method: 'POST', body: fd });
-    }).then(function (j) { afterUpload(j, jan, showSlot); })
-      .catch(function (e) { if (meta && C.isNetworkError(e)) { return queueOffline(jan, slot, meta, 'camera.webp', 'image/webp', showSlot, preview); } delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup || e.staff)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
+    }).then(function (j) { answered = true; afterUpload(j, jan, showSlot); })
+      .catch(function (e) { if (answered) { console.error(e); return; } if (meta && C.isNetworkError(e)) { return queueOffline(jan, slot, meta, 'camera.webp', 'image/webp', showSlot, preview); } delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup || e.staff)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
   }
   // ── 送信待ち（電波が切れたとき）──
   function queueOffline(jan, slot, r, name, type, showSlot, preview) {
@@ -1488,7 +1511,12 @@
     if (flushing || !navigator.onLine || !C.Auth.get()) return;
     flushing = true;
     C.Outbox.flush(function (it, j) {
-      if (j && j.ok && state.product && state.product.jan === it.fields.jan) { state.product.images = j.images; state.product.image_count = j.images.length; Object.keys(state.busy).forEach(function (k) { if (state.busy[k].pending) delete state.busy[k]; }); renderGrid(); }
+      if (j && j.ok && state.product && state.product.jan === it.fields.jan) {
+        state.product.images = j.images; state.product.image_count = j.images.length;
+        // 送れた 1 枚ぶんの「送信待ち」だけ外す（まだ送っていない写真の印は残す）
+        var ks = Object.keys(state.busy).filter(function (k) { return state.busy[k].pending; }).sort(); if (ks.length) delete state.busy[ks[0]];
+        renderGrid();
+      }
       if (j && j.ok) todayCount(1); else if (j) toast('送信待ちの写真（' + it.fields.jan + '）は登録できませんでした: ' + (j.message || j.reason), true);
     }).then(function (n) { flushing = false; updateOutbox(); if (n) toast('送信待ちの写真 ' + n + ' 枚を送りました'); }).catch(function (e) { flushing = false; if (e && (e.auth || e.staff)) handleErr(e); });
   }
@@ -1496,6 +1524,10 @@
   setInterval(flushOutbox, 20000);
   function afterUpload(j, jan, showSlot) {
     delete state.busy[showSlot];
+    if (!state.product || state.product.jan !== jan) { // 送っている間に別の商品へ移った
+      if (j.ok) { todayCount(1); toast(jan + ' の ' + j.slot + '枚目を保存しました'); } else toast(jan + ': ' + (j.message || '保存できませんでした'), true);
+      return;
+    }
     if (!j.ok) {
       if (j.images && state.product && state.product.jan === jan) { state.product.images = j.images; state.product.image_count = j.images.length; }
       toast(j.message || ('保存できませんでした(' + (j.reason || j.status) + ')'), true); renderGrid(); return;

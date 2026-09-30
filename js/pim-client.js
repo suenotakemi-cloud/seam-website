@@ -381,10 +381,13 @@
   function crc32(u8) { var c = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
   function dosTime(d) { return ((d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1)) & 0xFFFF; }
   function dosDate(d) { return (((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate()) & 0xFFFF; }
+  //   写真が 65,535 枚・合計 4GB を超えても壊れないよう、必要なときだけ ZIP64 の記録を足す（Windows・Mac の標準の解凍でも開ける）
   function zipWriter(sink) {
     var enc = new TextEncoder(), entries = [], offset = 0, now = new Date();
+    var MAX32 = 0xFFFFFFFF, MAX16 = 0xFFFF;
     function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
     function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+    function u64(v) { var lo = v % 0x100000000, hi = Math.floor(v / 0x100000000); return u32(lo >>> 0).concat(u32(hi >>> 0)); }
     function write(u8) { offset += u8.length; return Promise.resolve(sink.write(u8)); }
     return {
       add: function (name, data) {
@@ -396,11 +399,20 @@
       close: function () {
         var cdStart = offset, parts = [];
         entries.forEach(function (e) {
-          parts.push(new Uint8Array([].concat(u32(0x02014b50), u16(20), u16(20), u16(0x0800), u16(0), u16(dosTime(now)), u16(dosDate(now)), u32(e.crc), u32(e.size), u32(e.size), u16(e.nm.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(e.off))));
+          // 位置が 4GB を超えた写真は、位置を ZIP64 の追加欄に書く（本体の欄は 0xFFFFFFFF）
+          var big = e.off >= MAX32, extra = big ? [].concat(u16(0x0001), u16(8), u64(e.off)) : [];
+          parts.push(new Uint8Array([].concat(u32(0x02014b50), u16(big ? 45 : 20), u16(big ? 45 : 20), u16(0x0800), u16(0), u16(dosTime(now)), u16(dosDate(now)), u32(e.crc), u32(e.size), u32(e.size), u16(e.nm.length), u16(extra.length), u16(0), u16(0), u16(0), u32(0), u32(big ? MAX32 : e.off))));
           parts.push(e.nm);
+          if (extra.length) parts.push(new Uint8Array(extra));
         });
         var cdLen = parts.reduce(function (a, p) { return a + p.length; }, 0);
-        parts.push(new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(entries.length), u16(entries.length), u32(cdLen), u32(cdStart), u16(0))));
+        var n = entries.length, need64 = n >= MAX16 || cdStart >= MAX32 || cdLen >= MAX32;
+        if (need64) {
+          var z64At = cdStart + cdLen;
+          parts.push(new Uint8Array([].concat(u32(0x06064b50), u64(44), u16(45), u16(45), u32(0), u32(0), u64(n), u64(n), u64(cdLen), u64(cdStart)))); // ZIP64 の終わりの記録
+          parts.push(new Uint8Array([].concat(u32(0x07064b50), u32(0), u64(z64At), u32(1)))); // その場所
+        }
+        parts.push(new Uint8Array([].concat(u32(0x06054b50), u16(0), u16(0), u16(need64 ? MAX16 : n), u16(need64 ? MAX16 : n), u32(need64 ? MAX32 : cdLen), u32(need64 ? MAX32 : cdStart), u16(0))));
         var chain = Promise.resolve(); parts.forEach(function (p) { chain = chain.then(function () { return write(p); }); });
         return chain.then(function () { return { entries: entries.length, bytes: offset }; });
       },
