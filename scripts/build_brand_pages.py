@@ -363,7 +363,7 @@ def page_html(b, stores, count, lines, tops):
   <p class="legal-links" style="margin:8px auto 0;text-align:center;font-size:10.5px;line-height:1.8;color:rgba(58,50,42,.62);max-width:720px;padding:0 20px;"><a href="terms.html" style="text-decoration:underline;">利用規約</a>　<a href="privacy.html" style="text-decoration:underline;">プライバシーポリシー</a>　<a href="tokushoho.html" style="text-decoration:underline;">特定商取引法に基づく表記</a></p>
 </footer>
 
-  <script src="js/seam-analytics.js?v=5" defer></script>
+  <script src="js/seam-analytics.js?v=11" defer></script>
   <script>window.addEventListener('load',function(){{try{{window.seamTrack&&seamTrack('guide_view',{{p:location.pathname}})}}catch(e){{}}}});</script>
 </body>
 </html>
@@ -577,7 +577,7 @@ def area_article_html(b, st, stores, lines, tops):
   <p class="legal-links" style="margin:8px auto 0;text-align:center;font-size:10.5px;line-height:1.8;color:rgba(58,50,42,.62);max-width:720px;padding:0 20px;"><a href="terms.html" style="text-decoration:underline;">利用規約</a>　<a href="privacy.html" style="text-decoration:underline;">プライバシーポリシー</a>　<a href="tokushoho.html" style="text-decoration:underline;">特定商取引法に基づく表記</a></p>
 </footer>
 
-  <script src="js/seam-analytics.js?v=5" defer></script>
+  <script src="js/seam-analytics.js?v=11" defer></script>
   <script>window.addEventListener('load',function(){{try{{window.seamTrack&&seamTrack('guide_view',{{p:location.pathname}})}}catch(e){{}}}});</script>
 </body>
 </html>

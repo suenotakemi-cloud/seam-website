@@ -113,6 +113,6 @@ ld = {"@context": "https://schema.org", "@graph": [
     {"@type": "ItemList", "name": "髪格27タイプ", "numberOfItems": 27, "itemListElement": [
         {"@type": "ListItem", "position": int(T['num'][c]), "name": f"{TH[c[0]]}×{AM[c[1]]}×{WV[c[2]]}", "url": f"{URL}#type-{c.lower()}"} for c in codes]}]}
 head = head.replace('@@LD@@', '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>')
-out = head + header + main + foot + '\n  <script src="js/seam-analytics.js?v=10" defer=""></script>\n</body></html>\n'
+out = head + header + main + foot + '\n  <script src="js/seam-analytics.js?v=11" defer=""></script>\n</body></html>\n'
 open('kamikaku-types.html', 'w').write(out)
 print('kamikaku-types.html', len(out), out.count('<section id="type-'))

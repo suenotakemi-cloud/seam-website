@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded',function(){
   var oldLower=document.querySelector('.seam-hybrid-people');
   if(oldTop)oldTop.remove();
   if(oldLower&&oldLower.parentElement)oldLower.parentElement.remove();
-  var staff=[['ginza-anzu.jpg','ANZU / GINZA'],['sapporo-karaushi.jpg','KARAUSHI / SAPPORO'],['fukuoka-nagamoto.jpg','NAGAMOTO / FUKUOKA'],['ginza-oikawa.jpg','OIKAWA / GINZA'],['sapporo-hikari.jpg','HIKARI / SAPPORO'],['sapporo-tateoka.jpg','TATEOKA / SAPPORO'],['osaka-aoi.jpg','AOI / OSAKA']];
+  var staff=[['ginza-anzu.webp','ANZU / GINZA'],['sapporo-karaushi.webp','KARAUSHI / SAPPORO'],['fukuoka-nagamoto.webp','NAGAMOTO / FUKUOKA'],['ginza-oikawa.webp','OIKAWA / GINZA'],['sapporo-hikari.webp','HIKARI / SAPPORO'],['sapporo-tateoka.webp','TATEOKA / SAPPORO'],['osaka-aoi.webp','AOI / OSAKA']];
   var stores=[['store_ginza.avif','GINZA','東京都中央区銀座'],['store_omotesando.webp','OMOTESANDO','東京都渋谷区神宮前'],['store_sapporo.avif','SAPPORO','北海道札幌市'],['store_osaka.webp','OSAKA','大阪府大阪市南堀江'],['store_nagoya.webp','NAGOYA','愛知県名古屋市栄'],['store_fukuoka.webp','FUKUOKA','福岡県福岡市天神'],['store_gigi.webp','UTSUNOMIYA','栃木県宇都宮市']];
   var products=[['/images/lp/popular/p03_bykarte.webp','BYKARTE','エッセンスミルク'],['/images/lp/popular/p01_aujua.webp','AUJUA','クエンチ'],['/images/lp/popular/p02_kerastase.webp','KÉRASTASE','クロノロジスト']];
   var top=document.createElement('main');top.id='seam-main';top.className='sf-page';top.innerHTML=`
