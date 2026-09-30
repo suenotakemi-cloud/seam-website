@@ -77,6 +77,7 @@ export async function pushOne(env, account, jan, images) {
     payload.push({ data: 'data:image/webp;base64,' + b64(buf) });
   }
   let res;
+  const startedAt = Date.now();
   try {
     res = await ecFetch(account, '/api/v1/product-images', {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -84,7 +85,7 @@ export async function pushOne(env, account, jan, images) {
     }, 60000); // 5 枚まとめて送るので長めに待つ（途中で切ると、SalonPro 側では入ったのにこちらは失敗、になる）
   } catch (e) {
     // タイムアウト・通信切れでも、SalonPro 側では登録が終わっていることがある → 実際に入っているかを見に行く
-    const v = await verifyOne(account, jan, payload.length);
+    const v = await verifyOne(account, jan, payload.length, startedAt);
     if (v.ok) return { jan, ok: true, status: 200, code: 'ok', message: '', sent: payload.length, added: v.count, verified: true };
     return { jan, ok: false, code: 'network', message: 'SalonPro につながりませんでした: ' + String((e && e.message) || e).slice(0, 120) };
   }
@@ -92,7 +93,7 @@ export async function pushOne(env, account, jan, images) {
   // 失敗に見える応答でも、キーの問題（401）や未登録（404）でなければ、実際に入っていないか確かめてから失敗とする
   const code = codeOf(res.status, res.body);
   if (res.status !== 401 && code !== 'product_not_found' && code !== 'product_ambiguous' && code !== 'dealer_mismatch') {
-    const v = await verifyOne(account, jan, payload.length);
+    const v = await verifyOne(account, jan, payload.length, startedAt);
     if (v.ok) return { jan, ok: true, status: res.status, code: 'ok', message: '', sent: payload.length, added: v.count, verified: true };
   }
   return { jan, ok: false, status: res.status, code, message: messageOf(res.status, res.body), sent: payload.length, added: 0, product: (res.body && res.body.product) || null };
@@ -104,11 +105,23 @@ function isSuccess(res) {
   const b = res.body;
   if (!b) return false; // JSON でない 2xx は中身が分からないので、呼び出し側で確かめる
   if (b.ok === false || b.error) return false;
-  return b.ok === true || Array.isArray(b.images) || b.added != null;
+  // 2xx でも写真が 1 枚も入っていない返事（images:[] / added:0）は成功にしない（呼び出し側で確かめる）
+  return b.ok === true || (Array.isArray(b.images) && b.images.length > 0) || (typeof b.added === 'number' && b.added > 0);
 }
 
-// SalonPro に、その JAN の写真が want 枚以上入っているか（入っていれば「送れた」とみなす）
-export async function verifyOne(account, jan, want) {
+// SalonPro の写真が since 以降に作られたものか（mode=replace は毎回作り直すので、今回の送信で入ったなら全部新しい）
+//   createdAt が返ってこないときは判定できないので true（枚数だけで見る）
+const CLOCK_SKEW_MS = 5 * 60 * 1000; // 相手の時計とのずれ・送信にかかった時間の余裕
+function freshEnough(imgs, sinceMs) {
+  if (!sinceMs) return true;
+  const ts = imgs.map((im) => Date.parse(im && (im.createdAt || im.created_at) || '')).filter((t) => !isNaN(t));
+  if (!ts.length) return true;
+  return ts.length === imgs.length && ts.every((t) => t >= sinceMs - CLOCK_SKEW_MS);
+}
+
+// SalonPro に、その JAN の写真が want 枚以上、since 以降に入っているか（入っていれば「送れた」とみなす）
+//   since を渡さないと枚数だけで見る。前回送った古い写真が同じ枚数残っていて誤判定しないよう、送信直後の確認では必ず渡す
+export async function verifyOne(account, jan, want, sinceMs) {
   let res;
   try { res = await ecFetch(account, '/api/v1/product-images?jan=' + encodeURIComponent(jan), { method: 'GET' }, 20000); } catch (e) { return { ok: false, reason: 'network' }; }
   const code = res.body && res.body.error && res.body.error.code;
@@ -116,13 +129,17 @@ export async function verifyOne(account, jan, want) {
   if (res.status === 401) return { ok: false, reason: 'unauthorized', message: messageOf(res.status, res.body) };
   const imgs = res.body && Array.isArray(res.body.images) ? res.body.images : null;
   if (!(res.status >= 200 && res.status < 300) || !imgs) return { ok: false, reason: 'http_' + res.status };
-  return { ok: imgs.length > 0 && imgs.length >= (want || 1), count: imgs.length };
+  const enough = imgs.length > 0 && imgs.length >= (want || 1);
+  const fresh = freshEnough(imgs, sinceMs);
+  return { ok: enough && fresh, count: imgs.length, stale: enough && !fresh };
 }
 
 // 複数の JAN を送って、結果を商品行に書き戻す
-export async function pushJans(env, account, jans, by) {
-  const acct = account.id, out = [];
+export async function pushJans(env, account, jans, by, budgetMs) {
+  const acct = account.id, out = [], t0 = Date.now();
   for (const jan of jans) {
+    // 時間の上限を超えたら新しい商品には手を付けない（残りは送信待ちのまま。次の送信で続きから）
+    if (budgetMs && Date.now() - t0 > budgetMs) { out.push({ jan: null, ok: false, code: 'budget', message: '時間がかかっているので、残りは次の送信に回しました' }); break; }
     // 送る直前の updated_at を控えておく。送っている間に誰かが写真を足したら「送信ずみ」にしない（次の送信で最新が届く）
     const snap = await env.DB.prepare('SELECT updated_at FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
     const was = snap ? snap.updated_at : null;
@@ -161,7 +178,7 @@ export function autoPush(context, account, jans) {
     if (!account || !account.ec_auto || !ecKeyOk(account.ec_key)) return;
     const list = Array.from(new Set((jans || []).filter(Boolean))).slice(0, 20);
     if (!list.length) return;
-    const run = pushJans(context.env, account, list, 'auto').catch(() => []);
+    const run = pushJans(context.env, account, list, 'auto', 20000).catch(() => []); // 応答後の処理は 30 秒ほどで打ち切られるので、その手前で止める
     if (context.waitUntil) context.waitUntil(run);
     return run;
   } catch (e) { /* 自動送信で業務は止めない */ }
@@ -181,21 +198,28 @@ export async function ecPing(account, jan) {
 
 // 「送れなかったもの」を SalonPro 側で確かめ直す。写真が入っていれば「送信ずみ」に直す（2026-09-30: 届いているのに失敗表示が残った件）
 //   写真の枚数がこちらと同じか多ければ届いているとみなす。未登録（404）はそのまま残す
-export async function reconcile(env, account, jans) {
-  const acct = account.id, out = { checked: 0, fixed: 0, still: 0, not_found: 0, stopped: false, items: [] };
+export async function reconcile(env, account, jans, opts) {
+  const o = opts || {}, acct = account.id, t0 = Date.now();
+  const out = { checked: 0, fixed: 0, still: 0, not_found: 0, stale: 0, stopped: false, more: false, items: [] };
   for (const jan of jans) {
-    const cnt = await env.DB.prepare('SELECT image_count, updated_at FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
+    if (o.budgetMs && Date.now() - t0 > o.budgetMs) { out.more = true; break; }
+    const cnt = await env.DB.prepare('SELECT image_count, updated_at, ec_push_at FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
     if (!cnt) continue;
-    const v = await verifyOne(account, jan, cnt.image_count || 1);
+    // 最後に送ろうとした時刻より後に作られた写真だけを「今回届いたもの」とみなす（それより古いのは前回の残り）
+    const since = cnt.ec_push_at ? Date.parse(cnt.ec_push_at) - 90 * 1000 : 0;
+    const v = await verifyOne(account, jan, cnt.image_count || 1, since);
     out.checked++;
     if (v.reason === 'unauthorized' || v.reason === 'network') { out.stopped = true; await recordStatus(env, account, false, v.message || 'SalonPro につながりませんでした'); break; }
     const ts = nowIso();
     if (v.ok) {
-      await env.DB.prepare("UPDATE pim_products SET ec_push_at=?, ec_push_status='ok', ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?").bind(ts, ts, acct, jan, cnt.updated_at).run();
+      const u = await env.DB.prepare("UPDATE pim_products SET ec_push_at=?, ec_push_status='ok', ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?").bind(ts, ts, acct, jan, cnt.updated_at).run();
+      // 確かめている間に写真が変わっていたら、失敗の印だけ消して送信待ちに残す
+      if (!(u.meta && u.meta.changes)) await env.DB.prepare("UPDATE pim_products SET ec_push_status='ok', ec_push_msg=NULL WHERE account_id=? AND jan=?").bind(acct, jan).run();
       out.fixed++; out.items.push({ jan, ok: true, count: v.count });
     } else {
       if (v.reason === 'product_not_found') { out.not_found++; await env.DB.prepare("UPDATE pim_products SET ec_push_status='product_not_found', ec_push_msg=? WHERE account_id=? AND jan=?").bind(v.message || 'SalonPro に商品が未登録です', acct, jan).run(); }
-      out.still++; out.items.push({ jan, ok: false, reason: v.reason, count: v.count || 0 });
+      if (v.stale) out.stale++;
+      out.still++; out.items.push({ jan, ok: false, reason: v.reason || (v.stale ? 'stale' : 'fewer'), count: v.count || 0 });
     }
   }
   if (out.fixed && !out.stopped) await recordStatus(env, account, true, '');
