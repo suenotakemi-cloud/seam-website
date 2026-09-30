@@ -783,6 +783,7 @@
     var dupRows = Object.keys(S.fileDups).reduce(function (a, k) { return a + S.fileDups[k].length; }, 0);
     var wc = {}; S.items.forEach(function (i) { i.warnings.concat(i.errors).forEach(function (w) { var k = w.replace(/\(.*$/, ''); wc[k] = (wc[k] || 0) + 1; }); });
     $('warnList').innerHTML = Object.keys(wc).sort(function (a, b) { return wc[b] - wc[a]; }).map(function (k) { return '<li>' + esc(k) + ' <span class="tag">' + wc[k] + '件</span></li>'; }).join('') || '<li class="muted">なし</li>';
+    var noSku = ok.filter(function (i) { return !i.product.sku; }).length; // ↓で使う前に数える（以前は後ろで数えていて「undefined」の緑表示になり、商品コード列の合わせ間違いを見逃していた）
     $('prevKpis').innerHTML =
       '<div class="kpi"><div class="l">読み込んだ行</div><div class="n">' + S.items.length + '</div></div>' +
       '<div class="kpi ok"><div class="l">登録できる行</div><div class="n">' + ok.length + '</div></div>' +
@@ -792,7 +793,6 @@
       '<div class="kpi ' + (dupRows ? 'ng' : '') + '"><div class="l">ファイル内でJAN重複</div><div class="n">' + Object.keys(S.fileDups).length + '<span class="muted" style="font-size:12px"> 組 / ' + dupRows + '行</span></div></div>' +
       (S.mapping.image != null ? '<div class="kpi"><div class="l">画像 URL のある行</div><div class="n">' + ok.filter(function (i) { return i.product.images.length; }).length + '</div></div>' : '');
     var head = '<thead><tr><th>行</th><th>商品コード</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>カテゴリ</th><th>画像</th><th>注意</th></tr></thead>';
-    var noSku = ok.filter(function (i) { return !i.product.sku; }).length;
     var shown = S.items.slice(0, 300);
     $('prevTbl').innerHTML = head + '<tbody>' + shown.map(function (i) {
       var okRow = rowOk(i);
@@ -967,12 +967,17 @@
     var CH = 300, total = pl.toSave.length, done = 0, importId = null, ins = 0, upd = 0, conf = 0, filled = 0, unch = 0, unk = 0, unkJans = [];
     var isFill = impType() === 'fill';
     readMap();
-    api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, kind: impType(), total: S.items.length, options: { taxIncluded: $('optTax').value === '1', taxRate: parseInt($('optRate').value, 10) || 10, fields: impType() === 'update' ? updFields() : [], fillNew: isFill && $('fillNew').checked } } })
+    // 途中で失敗したあとにもう一度押したときは、同じ取り込みの続きから保存する（最初からやり直すと、保存済みの行が「先を越された」注意になり、注意も二重に積まれていた）
+    var sig = impType() + ':' + total + ':' + (pl.toSave[0] ? pl.toSave[0].jan : '') + ':' + (total ? pl.toSave[total - 1].jan : '');
+    var R = S.saveState && S.saveState.sig === sig ? S.saveState : null;
+    if (R) { importId = R.importId; done = R.done; ins = R.ins; upd = R.upd; conf = R.conf; filled = R.filled; unch = R.unch; unk = R.unk; unkJans = R.unkJans; L('取り込み #' + importId + ' の続き（' + (done + 1) + '件目から）を保存します'); }
+    var saveFail = function (e) { if (importId) { S.saveState = { sig: sig, importId: importId, done: done, ins: ins, upd: upd, conf: conf, filled: filled, unch: unch, unk: unk, unkJans: unkJans }; L('※ もう一度「保存」を押すと、' + (done + 1) + '件目から続きを保存します'); } throw e; };
+    (R ? Promise.resolve({ ok: true, import_id: R.importId, resumed: true }) : api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, kind: impType(), total: S.items.length, options: { taxIncluded: $('optTax').value === '1', taxRate: parseInt($('optRate').value, 10) || 10, fields: impType() === 'update' ? updFields() : [], fillNew: isFill && $('fillNew').checked } } }))
       .then(function (j) {
         if (!j.ok) throw new Error(j.message || j.reason);
-        importId = j.import_id; L('取り込み #' + importId + ' 開始 … ' + total + '件を保存');
+        importId = j.import_id; if (!j.resumed) L('取り込み #' + importId + ' 開始 … ' + total + '件を保存');
         var chain = Promise.resolve();
-        for (var i = 0; i < total; i += CH) {
+        for (var i = done; i < total; i += CH) {
           (function (start) {
             chain = chain.then(function () {
               var chunk = pl.toSave.slice(start, start + CH);
@@ -986,7 +991,7 @@
           })(i);
         }
         if (!total) chain = chain.then(function () { return api('import', { method: 'POST', body: { action: 'commit', import_id: importId, products: [], issues: pl.issues } }); });
-        return chain;
+        return chain.catch(saveFail);
       })
       .then(function () { return api('import', { method: 'POST', body: { action: 'finish', import_id: importId, invalid: pl.invalid } }); })
       .then(function (j) {
@@ -999,6 +1004,7 @@
         } else {
           L('完了: 追加 ' + ins + '件 / 更新 ' + upd + '件 / 注意 ' + (pl.issues.length + conf) + '件 / 登録できない行 ' + pl.invalid + '件' + (conf ? '\n※ ' + conf + '件は、取り込み中に別の人が同じ JAN を先に登録していたため上書きせず「注意」に回しました' : ''));
         }
+        S.saveState = null;
         toast('保存しました'); $('commitState').textContent = '保存済み';
         if (S.inboxId) { api('inbox', { method: 'POST', body: { action: 'done', id: S.inboxId, import_id: importId } }).catch(function () { /* */ }); S.inboxId = null; }
         loadHistory(); loadMakers(); boot();
@@ -1615,7 +1621,7 @@
           if (act === 'assign') { var as = prompt(nm + ' さんの担当（ブランド名かメーカー名をカンマ区切り。空欄で全部）', tr.children[2].textContent.replace(/\s*変更\s*$/, '').replace(/^全部$/, '')); if (as == null) return; body.assign = as.trim(); }
           if (act === 'disable' && !confirm(nm + ' さんを停止しますか？（選べなくなります。過去の記録は残ります）')) return;
           if (act === 'delete' && !confirm(nm + ' さんを一覧から削除しますか？')) return;
-          api('staff', { method: 'POST', body: body }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return; } toast(r.message || '更新しました'); loadStaff(); }).catch(handleErr);
+          api('staff', { method: 'POST', body: body }).then(function (r) { if (!r.ok) { toast(r.message || '失敗しました', true); return; } if (r.staff_token) C.Auth.setStaff(C.Auth.user(), r.staff_token); toast(r.message || '更新しました'); loadStaff(); }).catch(handleErr);
         });
       });
     }).catch(handleErr);

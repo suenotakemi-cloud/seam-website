@@ -32,8 +32,9 @@ export async function onRequestPost({ request, env, data }) {
   if (action !== 'verify' && !data.isAdmin) {
     const pinned = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_staff WHERE account_id=? AND active=1 AND pin_hash IS NOT NULL').bind(acct).first();
     if (pinned && pinned.n > 0) {
-      const st = await verifyStaff(env, request.headers.get('x-seam-staff') || '', acct);
-      const me = st ? await env.DB.prepare('SELECT id FROM pim_staff WHERE id=? AND account_id=? AND active=1 AND pin_hash IS NOT NULL').bind(st.staffId, acct).first() : null;
+      const st0 = await verifyStaff(env, request.headers.get('x-seam-staff') || '', acct);
+      const row0 = st0 ? await env.DB.prepare('SELECT id, pin_hash FROM pim_staff WHERE id=? AND account_id=? AND active=1 AND pin_hash IS NOT NULL').bind(st0.staffId, acct).first() : null;
+      const me = row0 && (await verifyStaff(env, request.headers.get('x-seam-staff') || '', acct, row0.pin_hash)) ? row0 : null; // 今の PIN で確認した署名だけ
       if (!me) return json({ ok: false, reason: 'pin_required', message: '担当者一覧の変更は、PIN 付きの担当者として PIN 確認をしてから行ってください（または システム管理画面から）', staff_required: true }, 403);
     }
   }
@@ -63,7 +64,7 @@ export async function onRequestPost({ request, env, data }) {
 
   if (action === 'verify') {
     if (!row.active) return json({ ok: false, reason: 'disabled', message: 'この担当者は停止中です' }, 403);
-    if (!row.pin_hash) return json({ ok: true, staff_token: await signStaff(env, acct, row.id), staff: publicStaff(row) }); // PIN なし → 選ぶだけ
+    if (!row.pin_hash) return json({ ok: true, staff_token: await signStaff(env, acct, row.id, null), staff: publicStaff(row) }); // PIN なし → 選ぶだけ
     const ip = (request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || '').split(',')[0].trim().slice(0, 64);
     const key = ('pin:' + acct + ':' + row.id + '@' + ip).slice(0, 120);
     const f = await env.DB.prepare('SELECT count, last_at FROM pim_login_fail WHERE login_id=?').bind(key).first();
@@ -74,13 +75,15 @@ export async function onRequestPost({ request, env, data }) {
       return json({ ok: false, reason: 'bad_pin', message: 'PIN が違います' }, 403); // 401 にするとブラウザ側が「ログイン切れ」と解釈するので 403
     }
     await env.DB.prepare('DELETE FROM pim_login_fail WHERE login_id=?').bind(key).run();
-    return json({ ok: true, staff_token: await signStaff(env, acct, row.id), staff: publicStaff(row) });
+    return json({ ok: true, staff_token: await signStaff(env, acct, row.id, row.pin_hash), staff: publicStaff(row) });
   }
   if (action === 'pin') {
     const prob = pinProblem(b.pin); if (prob) return json({ ok: false, reason: 'bad_pin', message: prob }, 400);
     const hash = String(b.pin || '').trim() ? await hashPassword(String(b.pin).trim()) : null;
     await env.DB.prepare('UPDATE pim_staff SET pin_hash=?, updated_at=? WHERE id=?').bind(hash, ts, id).run();
-    return json({ ok: true, message: hash ? 'PIN を設定しました' : 'PIN を外しました' });
+    // PIN を変えると、その人の前の確認は無効になる。自分の PIN を変えた本人には、新しい確認を返してそのまま続けられるようにする
+    const self = userOf(request) === row.name;
+    return json({ ok: true, message: (hash ? 'PIN を設定しました' : 'PIN を外しました') + (self ? '' : '（' + row.name + ' さんの端末は、次に書き込むとき PIN を聞かれます）'), staff_token: self ? await signStaff(env, acct, row.id, hash) : undefined });
   }
   if (action === 'rename') {
     if (!name) return json({ ok: false, reason: 'no_name' }, 400);

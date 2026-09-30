@@ -202,6 +202,15 @@
   function normHeader(h) { return clean(h).toLowerCase().replace(/[\s_\-()（）【】\[\]:：]/g, ''); }
   function guessMapping(headers) {
     var map = {};      // field -> index | index[]
+    // 部分一致のとき、その項目に取らない言葉（ほかの項目の列を取り違えないため）
+    var PARTIAL_EXCLUDE = {
+      sku: ['メーカー', 'jan', 'バーコード', 'ブランド', 'カテゴリ', '分類'],
+      price: ['上代', '定価', '希望小売', 'list', 'retail', 'msrp', '原価', '仕入', 'cost'],
+      retail: ['原価', '仕入', 'cost', '卸'],
+      cost: ['上代', '定価', '希望小売', 'list', 'retail', 'msrp'],
+      name: ['メーカー', 'ブランド', 'カテゴリ', '分類', 'かな', 'カナ', 'kana'],
+      jan: ['メーカー'],
+    };
     var used = {};
     var hn = headers.map(normHeader);
     Object.keys(ALIASES).forEach(function (field) {
@@ -214,12 +223,15 @@
         });
       });
       if (!hits.length) {
-        // 完全一致がなければ部分一致（ただし短い別名は誤爆するので4文字以上）
+        // 完全一致がなければ部分一致（ただし短い別名は誤爆するので 3 文字以上）
+        //   部分一致は取り違えやすいので、別の項目の言葉を含む列は取らない（「メーカーコード」を商品コードに、「上代(税込価格)」を価格に、など）
+        var notFor = PARTIAL_EXCLUDE[field] || [];
         ALIASES[field].forEach(function (alias) {
           var a = normHeader(alias);
           if (a.length < 3) return;
           hn.forEach(function (h, i) {
             if (used[i] || !h) return;
+            if (notFor.some(function (w) { return h.indexOf(normHeader(w)) >= 0; })) return;
             if (h.indexOf(a) >= 0 && hits.indexOf(i) < 0) hits.push(i);
           });
         });

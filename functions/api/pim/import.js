@@ -41,6 +41,12 @@ export async function commitProducts(context, account, by, b) {
   const env = context.env, acct = account.id;
   const loadExisting = (jans) => loadExistingOf(env, acct, jans);
     const importId = parseInt(b.import_id, 10) || null;
+    if (importId) {
+      // 取り込み番号はこのディーラーのもので、取り消されていないこと（他のディーラーの番号・取り消し後の別タブからの続きで、取り消し用の控えを壊さない）
+      const imp = await env.DB.prepare('SELECT id, rolled_back_at FROM pim_imports WHERE id=? AND account_id=?').bind(importId, acct).first();
+      if (!imp) return { ok: false, status: 404, reason: 'import_not_found', message: '取り込みの記録が見つかりません。画面を読み直して、取り込みをやり直してください' };
+      if (imp.rolled_back_at) return { ok: false, status: 409, reason: 'rolled_back', message: 'この取り込みは取り消されています。やり直す場合は、もう一度ファイルを選んでください' };
+    }
     const ts = nowIso();
     const raw = (Array.isArray(b.products) ? b.products : []).slice(0, 500);
     const ALLOWED_FIELDS = ['name', 'price', 'retail_price', 'cost_price', 'amount', 'maker', 'brand', 'category', 'description', 'sku'];
@@ -63,9 +69,18 @@ export async function commitProducts(context, account, by, b) {
     const empty = (v) => v == null || String(v).trim() === '';
     const fillStmt = (p, cur) => { // cur: 登録済みの行。埋める列が無ければ null
       const sets = [], vals = [];
-      FILL_TEXT.forEach((f) => { if (empty(cur[f]) && !empty(p[f])) { sets.push(f + '=?'); vals.push(p[f]); } });
-      if (empty(cur.price_ex) && empty(cur.price_in) && p.price_ex != null) { sets.push('price=?', 'tax_included=?', 'tax_rate=?', 'price_ex=?', 'price_in=?'); vals.push(p.price, p.tax_included, p.tax_rate, p.price_ex, p.price_in); }
-      if (empty(cur.amount) && p.amount != null) { sets.push('amount=?', 'unit=?'); vals.push(p.amount, p.unit == null ? '' : p.unit); }
+      // 書く瞬間にも空かどうかを確かめる（読み込んでから書くまでの間に、誰かが入れた値を上書きしない）
+      const ifEmpty = (col) => col + "=CASE WHEN " + col + " IS NULL OR " + col + "='' THEN ? ELSE " + col + ' END';
+      FILL_TEXT.forEach((f) => { if (empty(cur[f]) && !empty(p[f])) { sets.push(ifEmpty(f)); vals.push(p[f]); } });
+      if (empty(cur.price_ex) && empty(cur.price_in) && p.price_ex != null) {
+        const pe = '(price_ex IS NULL AND price_in IS NULL)';
+        ['price', 'tax_included', 'tax_rate', 'price_ex', 'price_in'].forEach((c) => { sets.push(c + '=CASE WHEN ' + pe + ' THEN ? ELSE ' + c + ' END'); });
+        vals.push(p.price, p.tax_included, p.tax_rate, p.price_ex, p.price_in);
+      }
+      if (empty(cur.amount) && p.amount != null) {
+        sets.push('amount=CASE WHEN amount IS NULL THEN ? ELSE amount END'); vals.push(p.amount);
+        if (empty(cur.unit) && !empty(p.unit)) { sets.push(ifEmpty('unit')); vals.push(p.unit); } // 単位が入っていれば消さない
+      }
       if (!sets.length) return null;
       sets.push('updated_at=?', 'updated_by=?'); vals.push(ts, by || null);
       return env.DB.prepare('UPDATE pim_products SET ' + sets.join(', ') + ' WHERE account_id=? AND jan=?').bind(...vals, acct, p.jan);
@@ -121,16 +136,23 @@ export async function commitProducts(context, account, by, b) {
       }
       const rest = plain;
       const res = rest.length ? await env.DB.batch(rest.map((x) => x.mode === 'update' ? updateStmt(x.p) : upsertStmt(env, acct, x.p, importId, ts, by, x.mode))) : [];
-      const missing = [];
+      const missing = [], untouched = [];
       rest.forEach((x, k) => {
         const ch = res[k] && res[k].meta ? res[k].meta.changes : 1;
-        if (x.mode === 'insert_only') { if (ch) inserted++; else { conflicts++; conflictJans.push(x.p.jan); } }
+        if (x.mode === 'insert_only') { if (ch) inserted++; else { conflicts++; conflictJans.push(x.p.jan); untouched.push(x.p.jan); } }
         else if (x.mode === 'update') { if (ch) updated++; else missing.push(x); }
         else updated++;
       });
       if (missing.length) { // 更新対象が無かった＝新規。入れる
         const r2 = await env.DB.batch(missing.map((x) => upsertStmt(env, acct, x.p, importId, ts, by, 'insert_only')));
-        missing.forEach((x, k) => { const ch = r2[k] && r2[k].meta ? r2[k].meta.changes : 1; if (ch) inserted++; else updated++; });
+        missing.forEach((x, k) => { const ch = r2[k] && r2[k].meta ? r2[k].meta.changes : 1; if (ch) inserted++; else { updated++; untouched.push(x.p.jan); } });
+      }
+      // 書かなかった行（新規のつもりが既にあった）の控えは消す。残すと、取り消したときに、この取り込みと関係ない商品を古い内容に戻してしまう
+      if (importId && untouched.length) {
+        for (let u = 0; u < untouched.length; u += 90) {
+          const part = untouched.slice(u, u + 90);
+          await env.DB.prepare('DELETE FROM pim_import_backup WHERE import_id=? AND account_id=? AND jan IN (' + part.map(() => '?').join(',') + ')').bind(importId, acct, ...part).run();
+        }
       }
     }
     // 注意（未解決の重複）
@@ -213,8 +235,9 @@ export async function onRequestPost(context) {
     const ts = nowIso();
     const lock = await env.DB.prepare('UPDATE pim_imports SET rolled_back_at=?, rolled_back_by=? WHERE id=? AND account_id=? AND rolled_back_at IS NULL').bind(ts, by || null, importId, acct).run();
     if (!(lock.meta && lock.meta.changes)) return json({ ok: false, reason: 'already', message: '他の人が先に取り消しました' }, 409);
-    let deleted = 0, restored = 0, keptWithImages = 0, missing = 0;
+    let deleted = 0, restored = 0, keptWithImages = 0, missing = 0, keptLater = 0;
     const touched = [];
+    try {
     for (let off = 0; ; off += 200) {
       const rs = await env.DB.prepare('SELECT jan, before FROM pim_import_backup WHERE import_id=? AND account_id=? ORDER BY jan LIMIT 200 OFFSET ?').bind(importId, acct, off).all();
       const rows = rs.results || [];
@@ -223,11 +246,13 @@ export async function onRequestPost(context) {
       const stmts = [];
       for (const r of rows) {
         const now = cur[r.jan];
+        // この取り込みより後の取り込みで書き換えられた商品は戻さない（後の取り込みの内容を消さない）
+        if (now && now.import_id && now.import_id > importId) { keptLater++; continue; }
         if (!r.before) {
           // この取り込みで新しく入った商品 → 消す。ただし写真が付いていたら（撮影の成果を失わないよう）残す
           if (!now) { missing++; continue; }
           if (now.image_count > 0) { keptWithImages++; continue; }
-          for (let sl = 1; sl <= SLOT_MAX; sl++) await blobDelete(env, imageKey(acct, r.jan, sl));
+          // 写真が 0 枚なので実体の削除は要らない（1 商品 5 回ずつ消しに行くと、大きな取り込みで D1 の回数上限に当たって途中で止まっていた）
           stmts.push(env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=?').bind(acct, r.jan));
           stmts.push(env.DB.prepare('DELETE FROM pim_products WHERE account_id=? AND jan=?').bind(acct, r.jan));
           deleted++; touched.push(r.jan);
@@ -244,10 +269,15 @@ export async function onRequestPost(context) {
       for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
       if (rows.length < 200) break;
     }
+    } catch (e) {
+      // 途中で止まったら「取り消し済み」の印を外して、もう一度押せるようにする（戻した分をもう一度戻しても結果は同じ）
+      await env.DB.prepare('UPDATE pim_imports SET rolled_back_at=NULL, rolled_back_by=NULL WHERE id=? AND account_id=?').bind(importId, acct).run();
+      return json({ ok: false, reason: 'rollback_failed', message: '取り消しの途中で止まりました。もう一度「取り消す」を押してください（' + String((e && e.message) || e).slice(0, 80) + '）', deleted, restored }, 500);
+    }
     // この取り込みで積んだ未解決の注意も閉じる
     await env.DB.prepare('UPDATE pim_issues SET status=\'resolved\', resolution=\'rolled_back\', resolved_at=?, resolved_by=? WHERE account_id=? AND import_id=? AND status=\'open\'').bind(ts, by || null, acct, importId).run();
     await logChanges(env, acct, touched, 'product', by); notifyWebhook(context, data.account, 'product', touched, by);
-    return json({ ok: true, import_id: importId, deleted, restored, kept_with_images: keptWithImages, missing });
+    return json({ ok: true, import_id: importId, deleted, restored, kept_with_images: keptWithImages, kept_later: keptLater, missing });
   }
 
   if (action === 'finish') {
