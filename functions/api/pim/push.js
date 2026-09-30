@@ -2,12 +2,13 @@
 //   GET  /api/pim/push                      → { ok, ec:{url,has_key,auto}, pending, failed, items:[…], last }
 //        ?limit=  送信待ちの一覧の件数（既定 50）
 //   POST /api/pim/push { jans:[…] }         → その JAN だけ送る（50 件まで）
+//        POST /api/pim/push { action:'verify', jans? } → 「送れなかったもの」を SalonPro で確かめ、届いていれば送信ずみに直す
 //        POST /api/pim/push { all:true, limit:20 } → 送信待ちの古い順に送る
 //   「送信待ち」= 写真が 1 枚以上あり、撮り直しの指示が付いていない商品のうち、
 //                 まだ送っていない（ec_push_at が無い）か、送ったあとに写真・内容が変わったもの
 //   送信は毎回 mode=replace。SalonPro 側の写真は 商品登録システムの 1〜5 枚目でそっくり置き換わる（並び順の先頭が主画像）
 import { json, cleanJan, userOf } from './_lib.js';
-import { pushJans, ecKeyOk, ecBase } from './_salonpro.js';
+import { pushJans, ecKeyOk, ecBase, reconcile } from './_salonpro.js';
 
 const PENDING_SQL = "(p.image_count>0 AND NOT EXISTS (SELECT 1 FROM pim_images r WHERE r.account_id=p.account_id AND r.jan=p.jan AND r.review='retake') AND (p.ec_push_at IS NULL OR p.ec_push_at < p.updated_at))";
 
@@ -35,6 +36,21 @@ export async function onRequestPost({ request, env, data }) {
   const b = await request.json().catch(() => null);
   if (!b || typeof b !== 'object') return json({ ok: false, reason: 'bad_json' }, 400);
   const by = userOf(request) || (data.isAdmin ? '運営' : '');
+
+  // 「送れなかったもの」を SalonPro 側で確かめ直す（届いていれば送信ずみに直す）
+  if (b.action === 'verify') {
+    let vj = Array.isArray(b.jans) && b.jans.length ? b.jans.map((j) => cleanJan(j)).filter(Boolean).slice(0, 50) : null;
+    if (!vj) {
+      const rs = await env.DB.prepare("SELECT jan FROM pim_products p WHERE p.account_id=? AND p.ec_push_status IS NOT NULL AND p.ec_push_status<>'ok' ORDER BY p.ec_push_at DESC LIMIT 50").bind(acct).all();
+      vj = (rs.results || []).map((r) => r.jan);
+    }
+    if (!vj.length) return json({ ok: true, checked: 0, fixed: 0, still: 0, message: '確かめるものはありません' });
+    const r = await reconcile(env, a, vj);
+    let message = r.checked + ' 件を SalonPro で確かめました：' + r.fixed + ' 件は届いていたので「送信ずみ」に直しました';
+    if (r.still) message += '／' + r.still + ' 件はまだ届いていません' + (r.not_found ? '（うち ' + r.not_found + ' 件は SalonPro に商品が未登録）' : '');
+    if (r.stopped) message += '／キーか接続の問題で途中で止めました（設定タブで確認してください）';
+    return json(Object.assign({ ok: true, message }, r));
+  }
 
   let jans = [];
   if (Array.isArray(b.jans) && b.jans.length) {

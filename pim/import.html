@@ -348,7 +348,8 @@
     </div>
     <div class="card">
       <h2>送れなかったもの</h2>
-      <p class="muted">いちばん多いのは <b>SalonPro に商品が未登録</b>（JAN が SalonPro 側にない）です。その場合は SalonPro 側に商品を登録してから、もう一度送ってください。</p>
+      <p class="muted">いちばん多いのは <b>SalonPro に商品が未登録</b>（JAN が SalonPro 側にない）です。その場合は SalonPro 側に商品を登録してから、もう一度送ってください。<br>SalonPro では写真が見えているのにここに残っているものは、<b>「SalonPro で確かめて直す」</b>を押すと、実際に届いているものを「送信ずみ」に直します（この画面を開いたときにも自動で確かめます）。</p>
+      <div class="row" style="margin-bottom:8px"><button class="btn sm" id="btnPushVerify">SalonPro で確かめて直す</button><span class="muted" id="pushVerifyLog"></span></div>
       <div class="tbl" style="max-height:360px"><table id="pushErr"><thead><tr><th>JAN</th><th>商品名</th><th>いつ</th><th>理由</th><th></th></tr></thead><tbody></tbody></table></div>
     </div>
   </section>
@@ -1415,11 +1416,12 @@
   $('btnExJson').addEventListener('click', function () { download('json'); });
 
   // ── EC 送信（SalonPro へ写真を送る）──
-  var PUSH = { items: [], busy: false };
+  var PUSH = { items: [], busy: false, autoVerified: false };
   function setPushN(n) { var e = $('pushN'); e.hidden = !n; e.textContent = n || 0; }
-  function loadPush() {
+  function loadPush(skipAuto) {
     return api('push').then(function (j) {
       if (!j.ok) return;
+      if (!skipAuto && !PUSH.autoVerified && j.failed > 0 && j.ec.has_key && j.ec.connected !== false) { PUSH.autoVerified = true; setTimeout(function () { verifyPush(true); }, 0); }
       PUSH.items = j.items || [];
       setPushN(j.pending);
       $('pushState').innerHTML = j.ec.has_key
@@ -1447,6 +1449,18 @@
       return loadPush().then(function () { return r; });
     }).catch(function (e) { PUSH.busy = false; $('pushProg').hidden = true; handleErr(e); });
   }
+  // 「送れなかったもの」を SalonPro 側で確かめ直す（届いていれば送信ずみに直す）
+  function verifyPush(quiet) {
+    if (PUSH.busy) return Promise.resolve(null);
+    PUSH.busy = true; $('pushVerifyLog').textContent = 'SalonPro で確かめています…'; $('btnPushVerify').disabled = true;
+    return api('push', { method: 'POST', body: { action: 'verify' } }).then(function (r) {
+      PUSH.busy = false; $('btnPushVerify').disabled = false;
+      $('pushVerifyLog').textContent = (r && r.message) || '';
+      if (!quiet || (r && r.fixed)) toast((r && r.message) || '確かめました', !(r && r.ok));
+      return loadPush(true);
+    }).catch(function (e) { PUSH.busy = false; $('btnPushVerify').disabled = false; $('pushVerifyLog').textContent = ''; handleErr(e); });
+  }
+  $('btnPushVerify').addEventListener('click', function () { verifyPush(false); });
   $('btnPushReload').addEventListener('click', function () { loadPush(); });
   $('btnPushGo').addEventListener('click', function () { pushRun({ all: true, limit: 20 }); });
   $('btnPushAll').addEventListener('click', function () {

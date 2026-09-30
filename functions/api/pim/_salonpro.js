@@ -42,10 +42,10 @@ async function readBlob(env, key) {
   if (!obj) return null;
   return obj.body instanceof ArrayBuffer ? new Uint8Array(obj.body) : new Uint8Array(await new Response(obj.body).arrayBuffer());
 }
-async function ecFetch(account, path, init) {
+async function ecFetch(account, path, init, timeoutMs) {
   const headers = Object.assign({ authorization: 'Bearer ' + account.ec_key, 'x-api-key': account.ec_key, accept: 'application/json' }, (init && init.headers) || {});
   const opt = Object.assign({}, init, { headers });
-  if (AbortSignal.timeout) opt.signal = AbortSignal.timeout(20000);
+  if (AbortSignal.timeout) opt.signal = AbortSignal.timeout(timeoutMs || 20000);
   const r = await fetch(ecBase(account) + path, opt);
   let body = null;
   try { body = JSON.parse(await r.text()); } catch (e) { /* JSON でない応答（502 の HTML など） */ }
@@ -81,10 +81,42 @@ export async function pushOne(env, account, jan, images) {
     res = await ecFetch(account, '/api/v1/product-images', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ jan, mode: 'replace', images: payload }),
-    });
-  } catch (e) { return { jan, ok: false, code: 'network', message: 'SalonPro につながりませんでした: ' + String((e && e.message) || e).slice(0, 120) }; }
-  const ok = res.status === 200 && res.body && res.body.ok;
-  return { jan, ok: !!ok, status: res.status, code: codeOf(res.status, res.body), message: ok ? '' : messageOf(res.status, res.body), sent: payload.length, added: (res.body && res.body.added) || 0, product: (res.body && res.body.product) || null };
+    }, 60000); // 5 枚まとめて送るので長めに待つ（途中で切ると、SalonPro 側では入ったのにこちらは失敗、になる）
+  } catch (e) {
+    // タイムアウト・通信切れでも、SalonPro 側では登録が終わっていることがある → 実際に入っているかを見に行く
+    const v = await verifyOne(account, jan, payload.length);
+    if (v.ok) return { jan, ok: true, status: 200, code: 'ok', message: '', sent: payload.length, added: v.count, verified: true };
+    return { jan, ok: false, code: 'network', message: 'SalonPro につながりませんでした: ' + String((e && e.message) || e).slice(0, 120) };
+  }
+  if (isSuccess(res)) return { jan, ok: true, status: res.status, code: 'ok', message: '', sent: payload.length, added: (res.body && res.body.added) || payload.length, product: (res.body && res.body.product) || null };
+  // 失敗に見える応答でも、キーの問題（401）や未登録（404）でなければ、実際に入っていないか確かめてから失敗とする
+  const code = codeOf(res.status, res.body);
+  if (res.status !== 401 && code !== 'product_not_found' && code !== 'product_ambiguous' && code !== 'dealer_mismatch') {
+    const v = await verifyOne(account, jan, payload.length);
+    if (v.ok) return { jan, ok: true, status: res.status, code: 'ok', message: '', sent: payload.length, added: v.count, verified: true };
+  }
+  return { jan, ok: false, status: res.status, code, message: messageOf(res.status, res.body), sent: payload.length, added: 0, product: (res.body && res.body.product) || null };
+}
+
+// 「送れた」の判定。SalonPro は 200 + {ok:true} を返すが、201 や ok の無い本文（images だけ）でも入っている
+function isSuccess(res) {
+  if (!(res.status >= 200 && res.status < 300)) return false;
+  const b = res.body;
+  if (!b) return false; // JSON でない 2xx は中身が分からないので、呼び出し側で確かめる
+  if (b.ok === false || b.error) return false;
+  return b.ok === true || Array.isArray(b.images) || b.added != null;
+}
+
+// SalonPro に、その JAN の写真が want 枚以上入っているか（入っていれば「送れた」とみなす）
+export async function verifyOne(account, jan, want) {
+  let res;
+  try { res = await ecFetch(account, '/api/v1/product-images?jan=' + encodeURIComponent(jan), { method: 'GET' }, 20000); } catch (e) { return { ok: false, reason: 'network' }; }
+  const code = res.body && res.body.error && res.body.error.code;
+  if (res.status === 404 && code === 'product_not_found') return { ok: false, reason: 'product_not_found', message: messageOf(res.status, res.body) };
+  if (res.status === 401) return { ok: false, reason: 'unauthorized', message: messageOf(res.status, res.body) };
+  const imgs = res.body && Array.isArray(res.body.images) ? res.body.images : null;
+  if (!(res.status >= 200 && res.status < 300) || !imgs) return { ok: false, reason: 'http_' + res.status };
+  return { ok: imgs.length > 0 && imgs.length >= (want || 1), count: imgs.length };
 }
 
 // 複数の JAN を送って、結果を商品行に書き戻す
@@ -103,7 +135,12 @@ export async function pushJans(env, account, jans, by) {
     // キーが通らない・つながらないときは、残りの商品も同じ結果になるので 1 件で止める（商品ごとに失敗を刻まない）
     const fatal = r.code === 'unauthorized' || r.code === 'network' || r.status === 401;
     try {
-      if (r.ok) await env.DB.prepare('UPDATE pim_products SET ec_push_at=?, ec_push_status=?, ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?').bind(ts, 'ok', ts, acct, jan, was).run();
+      if (r.ok) {
+        // 送っている間に写真が変わっていなければ「送信ずみ」。変わっていたら送信待ちのまま（次の送信で最新が届く）
+        const u = await env.DB.prepare('UPDATE pim_products SET ec_push_at=?, ec_push_status=?, ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?').bind(ts, 'ok', ts, acct, jan, was).run();
+        // どちらでも、前の失敗の印は消す（SalonPro には届いているのに「送れなかったもの」に残り続けないように）
+        if (!(u.meta && u.meta.changes)) await env.DB.prepare("UPDATE pim_products SET ec_push_status='ok', ec_push_msg=NULL WHERE account_id=? AND jan=?").bind(acct, jan).run();
+      }
       else if (!fatal) await env.DB.prepare('UPDATE pim_products SET ec_push_at=?, ec_push_status=?, ec_push_msg=? WHERE account_id=? AND jan=?').bind(ts, r.code, r.message || null, acct, jan).run(); // キー・接続の問題は商品のせいではないので、商品には刻まず「送信待ち」のまま残す
     } catch (e) { /* 送信そのものは終わっているので、記録に失敗しても結果は返す */ }
     out.push(Object.assign({ by: by || null }, r));
@@ -140,4 +177,27 @@ export async function ecPing(account, jan) {
   if (res.status === 200 || (res.status === 404 && code === 'product_not_found')) return { ok: true, status: res.status, message: 'SalonPro につながりました（キーは有効です）' };
   if (res.status === 404 && !res.body) return { ok: false, status: 404, message: 'その URL に SalonPro の API がありません（' + ecBase(account) + '）。URL は https://pro-console.salon.town のままにしてください' };
   return { ok: false, status: res.status, code: code || null, message: messageOf(res.status, res.body) + (code ? '（SalonPro: ' + code + '）' : '') };
+}
+
+// 「送れなかったもの」を SalonPro 側で確かめ直す。写真が入っていれば「送信ずみ」に直す（2026-09-30: 届いているのに失敗表示が残った件）
+//   写真の枚数がこちらと同じか多ければ届いているとみなす。未登録（404）はそのまま残す
+export async function reconcile(env, account, jans) {
+  const acct = account.id, out = { checked: 0, fixed: 0, still: 0, not_found: 0, stopped: false, items: [] };
+  for (const jan of jans) {
+    const cnt = await env.DB.prepare('SELECT image_count, updated_at FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
+    if (!cnt) continue;
+    const v = await verifyOne(account, jan, cnt.image_count || 1);
+    out.checked++;
+    if (v.reason === 'unauthorized' || v.reason === 'network') { out.stopped = true; await recordStatus(env, account, false, v.message || 'SalonPro につながりませんでした'); break; }
+    const ts = nowIso();
+    if (v.ok) {
+      await env.DB.prepare("UPDATE pim_products SET ec_push_at=?, ec_push_status='ok', ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?").bind(ts, ts, acct, jan, cnt.updated_at).run();
+      out.fixed++; out.items.push({ jan, ok: true, count: v.count });
+    } else {
+      if (v.reason === 'product_not_found') { out.not_found++; await env.DB.prepare("UPDATE pim_products SET ec_push_status='product_not_found', ec_push_msg=? WHERE account_id=? AND jan=?").bind(v.message || 'SalonPro に商品が未登録です', acct, jan).run(); }
+      out.still++; out.items.push({ jan, ok: false, reason: v.reason, count: v.count || 0 });
+    }
+  }
+  if (out.fixed && !out.stopped) await recordStatus(env, account, true, '');
+  return out;
 }
