@@ -98,7 +98,7 @@ export async function onRequestPost(context) {
     const key = ecNormalizeKey(b.key);
     const prob = keyProblem(key);
     if (prob) return json({ ok: false, reason: 'bad_key', message: prob }, 400);
-    const url = ecNormalizeUrl(String(b.url || '').trim() || a.ec_url);
+    const url = ecNormalizeUrl(b.url != null ? String(b.url).trim() : a.ec_url); // 欄を空にして保存したら既定の URL に戻す
     if (!ecUrlOk(url)) return json({ ok: false, reason: 'bad_url', message: 'URL は https:// で始めてください' }, 400);
     const ping = await ecPing({ ec_key: key, ec_url: url });
     await env.DB.prepare('UPDATE pim_accounts SET ec_key=?, ec_url=?, updated_at=? WHERE id=?').bind(key, url, ts, id).run();

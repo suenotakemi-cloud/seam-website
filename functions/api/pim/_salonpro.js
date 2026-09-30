@@ -96,7 +96,10 @@ export async function pushOne(env, account, jan, images) {
     const v = await verifyOne(account, jan, payload.length, startedAt);
     if (v.ok) return { jan, ok: true, status: res.status, code: 'ok', message: '', sent: payload.length, added: v.count, verified: true };
   }
-  return { jan, ok: false, status: res.status, code, message: messageOf(res.status, res.body), sent: payload.length, added: 0, product: (res.body && res.body.product) || null };
+  // 200 でも中身が読めない・写真 0 枚の返事は失敗。印に 'ok' を書くと「送信ずみ」に見えてしまうので別の名前にする
+  const fcode = code === 'ok' ? 'bad_response' : code;
+  const fmsg = code === 'ok' ? 'SalonPro の返事を読み取れませんでした（写真が入ったか確認できません。URL が正しいか、もう一度送ってください）' : messageOf(res.status, res.body);
+  return { jan, ok: false, status: res.status, code: fcode, message: fmsg, sent: payload.length, added: 0, product: (res.body && res.body.product) || null };
 }
 
 // 「送れた」の判定。SalonPro は 200 + {ok:true} を返すが、201 や ok の無い本文（images だけ）でも入っている
@@ -111,7 +114,7 @@ function isSuccess(res) {
 
 // SalonPro の写真が since 以降に作られたものか（mode=replace は毎回作り直すので、今回の送信で入ったなら全部新しい）
 //   createdAt が返ってこないときは判定できないので true（枚数だけで見る）
-const CLOCK_SKEW_MS = 5 * 60 * 1000; // 相手の時計とのずれ・送信にかかった時間の余裕
+const CLOCK_SKEW_MS = 2 * 60 * 1000; // 相手の時計とのずれの余裕（広すぎると、直前に送った古い写真を今回の分と取り違える）
 function freshEnough(imgs, sinceMs) {
   if (!sinceMs) return true;
   const ts = imgs.map((im) => Date.parse(im && (im.createdAt || im.created_at) || '')).filter((t) => !isNaN(t));
@@ -129,7 +132,8 @@ export async function verifyOne(account, jan, want, sinceMs) {
   if (res.status === 401) return { ok: false, reason: 'unauthorized', message: messageOf(res.status, res.body) };
   const imgs = res.body && Array.isArray(res.body.images) ? res.body.images : null;
   if (!(res.status >= 200 && res.status < 300) || !imgs) return { ok: false, reason: 'http_' + res.status };
-  const enough = imgs.length > 0 && imgs.length >= (want || 1);
+  // mode=replace は送った枚数ちょうどになる。多くても少なくても「今回の分」ではない（前回の写真が残っている・途中で切れた）
+  const enough = imgs.length > 0 && imgs.length === (want || 1);
   const fresh = freshEnough(imgs, sinceMs);
   return { ok: enough && fresh, count: imgs.length, stale: enough && !fresh };
 }
@@ -173,12 +177,23 @@ export async function recordStatus(env, account, ok, message) {
 }
 
 // 写真が変わったら自動で送る（設定で「自動送信」を入れているディーラーだけ）。応答は待たせない
+export const AUTO_SETTLE_MS = 3000;
 export function autoPush(context, account, jans) {
   try {
     if (!account || !account.ec_auto || !ecKeyOk(account.ec_key)) return;
     const list = Array.from(new Set((jans || []).filter(Boolean))).slice(0, 20);
     if (!list.length) return;
-    const run = pushJans(context.env, account, list, 'auto', 20000).catch(() => []); // 応答後の処理は 30 秒ほどで打ち切られるので、その手前で止める
+    // 連写・送信待ちの一斉送信で、同じ商品の送信が重なると古い枚数が後から届いて上書きすることがある。
+    //   少し待って、その間にまた写真が変わっていたら送らない（後の変更の自動送信が最新をまとめて送る）
+    const env = context.env;
+    const run = (async () => {
+      const snap = {};
+      for (const j of list) { const r = await env.DB.prepare('SELECT updated_at FROM pim_products WHERE account_id=? AND jan=?').bind(account.id, j).first(); snap[j] = r && r.updated_at; }
+      await new Promise((r) => setTimeout(r, AUTO_SETTLE_MS));
+      const still = [];
+      for (const j of list) { const r = await env.DB.prepare('SELECT updated_at FROM pim_products WHERE account_id=? AND jan=?').bind(account.id, j).first(); if (r && r.updated_at === snap[j]) still.push(j); }
+      return still.length ? pushJans(env, account, still, 'auto', 15000) : []; // 応答後の処理は 30 秒ほどで打ち切られるので、その手前で止める
+    })().catch(() => []);
     if (context.waitUntil) context.waitUntil(run);
     return run;
   } catch (e) { /* 自動送信で業務は止めない */ }
@@ -191,7 +206,9 @@ export async function ecPing(account, jan) {
   const j = String(jan || '').replace(/[^0-9]/g, '') || '0000000000000';
   try { res = await ecFetch(account, '/api/v1/product-images?jan=' + j, { method: 'GET' }); } catch (e) { return { ok: false, status: 0, message: 'SalonPro につながりませんでした（' + ecBase(account) + '）: ' + String((e && e.message) || e).slice(0, 120) }; }
   const code = res.body && res.body.error && res.body.error.code;
-  if (res.status === 200 || (res.status === 404 && code === 'product_not_found')) return { ok: true, status: res.status, message: 'SalonPro につながりました（キーは有効です）' };
+  const looksApi = res.body && (res.body.ok === true || Array.isArray(res.body.images) || res.body.product);
+  if ((res.status === 200 && looksApi) || (res.status === 404 && code === 'product_not_found')) return { ok: true, status: res.status, message: 'SalonPro につながりました（キーは有効です）' };
+  if (res.status === 200 && !looksApi) return { ok: false, status: 200, message: 'その URL は SalonPro の API ではないようです（' + ecBase(account) + '）。URL は https://pro-console.salon.town のままにしてください' };
   if (res.status === 404 && !res.body) return { ok: false, status: 404, message: 'その URL に SalonPro の API がありません（' + ecBase(account) + '）。URL は https://pro-console.salon.town のままにしてください' };
   return { ok: false, status: res.status, code: code || null, message: messageOf(res.status, res.body) + (code ? '（SalonPro: ' + code + '）' : '') };
 }
@@ -212,7 +229,9 @@ export async function reconcile(env, account, jans, opts) {
     if (v.reason === 'unauthorized' || v.reason === 'network') { out.stopped = true; await recordStatus(env, account, false, v.message || 'SalonPro につながりませんでした'); break; }
     const ts = nowIso();
     if (v.ok) {
-      const u = await env.DB.prepare("UPDATE pim_products SET ec_push_at=?, ec_push_status='ok', ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?").bind(ts, ts, acct, jan, cnt.updated_at).run();
+      // 最後に送ろうとした後で写真が変わっていたら、SalonPro にあるのは前の写真。失敗の印だけ消して送信待ちに残す（次の送信で最新が届く）
+      const changedSince = cnt.ec_push_at && cnt.updated_at > cnt.ec_push_at;
+      const u = changedSince ? { meta: { changes: 0 } } : await env.DB.prepare("UPDATE pim_products SET ec_push_at=?, ec_push_status='ok', ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?").bind(ts, ts, acct, jan, cnt.updated_at).run();
       // 確かめている間に写真が変わっていたら、失敗の印だけ消して送信待ちに残す
       if (!(u.meta && u.meta.changes)) await env.DB.prepare("UPDATE pim_products SET ec_push_status='ok', ec_push_msg=NULL WHERE account_id=? AND jan=?").bind(acct, jan).run();
       out.fixed++; out.items.push({ jan, ok: true, count: v.count });
