@@ -11,7 +11,7 @@
 //                                                        … SalonPro（EC）へ写真を送るキー。キーは保存後に画面へ出さない
 //   連携キー・管理者の代行では変更不可（本人のトークンだけ）
 import { json, nowIso, normalizeLoginId, verifyPassword, publicAccount, newApiKey, newWebhookSecret, webhookUrlOk, notifyWebhook, newInboxKey, parseEmails } from './_lib.js';
-import { ecUrlOk, ecKeyOk, ecBase, ecPing, EC_DEFAULT_URL } from './_salonpro.js';
+import { ecUrlOk, ecKeyOk, ecBase, ecPing, ecNormalizeKey, ecNormalizeUrl, keyProblem, recordStatus } from './_salonpro.js';
 
 export async function onRequestGet({ request, env, data }) {
   if (data.readonly) return json({ ok: false, reason: 'readonly', message: '連携キーではアカウント設定を見られません' }, 403); // 自動取り込み用 URL が読み取り専用キーから漏れないように
@@ -78,21 +78,27 @@ export async function onRequestPost(context) {
     return json({ ok: true, status, message: '送信しました → 相手の応答: ' + status });
   }
   if (action === 'ec_key') {
-    const key = String(b.key || '').trim();
-    const url = String(b.url || '').trim() || (a.ec_url || EC_DEFAULT_URL);
-    if (!ecKeyOk(key)) return json({ ok: false, reason: 'bad_key', message: 'SalonPro のキー（spk_ で始まる文字列）を入れてください' }, 400);
-    if (!ecUrlOk(url)) return json({ ok: false, reason: 'bad_url', message: 'SalonPro の URL は https:// で始めてください' }, 400);
-    await env.DB.prepare('UPDATE pim_accounts SET ec_key=?, ec_url=?, updated_at=? WHERE id=?').bind(key, url.replace(/\/+$/, ''), ts, id).run();
-    const ping = await ecPing({ ec_key: key, ec_url: url });
-    return json({ ok: true, ec_url: ecBase({ ec_url: url }), ping, message: 'SalonPro のキーを保存しました。' + ping.message });
+    const key = ecNormalizeKey(b.key);
+    const prob = keyProblem(key);
+    if (prob) return json({ ok: false, reason: 'bad_key', message: prob }, 400);
+    const url = ecNormalizeUrl(String(b.url || '').trim() || a.ec_url);
+    if (!ecUrlOk(url)) return json({ ok: false, reason: 'bad_url', message: 'SalonPro の URL は https:// で始めてください（https://pro-console.salon.town）' }, 400);
+    // 先に接続を確かめ、通らなくても保存はする（貼り直しやすいように）。結果は ec_status に残して画面に出す
+    const sample = await env.DB.prepare('SELECT jan FROM pim_products WHERE account_id=? AND image_count>0 ORDER BY updated_at DESC LIMIT 1').bind(id).first();
+    const ping = await ecPing({ ec_key: key, ec_url: url }, sample && sample.jan);
+    await env.DB.prepare('UPDATE pim_accounts SET ec_key=?, ec_url=?, updated_at=? WHERE id=?').bind(key, url, ts, id).run();
+    await recordStatus(env, a, ping.ok, ping.ok ? '' : ping.message);
+    return json({ ok: true, ec_url: url, ping, message: ping.ok ? 'SalonPro のキーを保存しました。' + ping.message : 'キーは保存しましたが、SalonPro につながっていません: ' + ping.message });
   }
   if (action === 'ec_clear') {
-    await env.DB.prepare('UPDATE pim_accounts SET ec_key=NULL, ec_auto=0, updated_at=? WHERE id=?').bind(ts, id).run();
+    await env.DB.prepare('UPDATE pim_accounts SET ec_key=NULL, ec_auto=0, ec_status=NULL, ec_status_at=NULL, updated_at=? WHERE id=?').bind(ts, id).run();
     return json({ ok: true, message: 'SalonPro への送信を解除しました' });
   }
   if (action === 'ec_test') {
     if (!ecKeyOk(a.ec_key)) return json({ ok: false, reason: 'no_key', message: 'SalonPro のキーが未設定です' }, 400);
-    const ping = await ecPing(a);
+    const sample = await env.DB.prepare('SELECT jan FROM pim_products WHERE account_id=? AND image_count>0 ORDER BY updated_at DESC LIMIT 1').bind(id).first();
+    const ping = await ecPing(a, sample && sample.jan);
+    await recordStatus(env, a, ping.ok, ping.ok ? '' : ping.message);
     return json({ ok: true, ping, message: ping.message });
   }
   if (action === 'ec_auto') {

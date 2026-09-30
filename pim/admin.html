@@ -127,7 +127,7 @@
             return;
           }
           if (act === 'ec_key') {
-            var ek = prompt(name + ' の SalonPro のキー（spk_ で始まる文字列）を入れてください。空で解除します。'); if (ek == null) return;
+            var ek = prompt(name + ' の SalonPro のキー（発行時に一度だけ表示された spk_XXXXXXXXXXXX_… の全体）を入れてください。空で解除します。'); if (ek == null) return;
             if (!ek.trim()) { C.api('admin/accounts', { admin: true, method: 'POST', body: { action: 'ec_clear', id: id } }).then(function (r) { toast(r.message || '解除しました', !r.ok); load(); }).catch(handleErr); return; }
             var eu = prompt('SalonPro の URL（そのままで可）', 'https://pro-console.salon.town'); if (eu == null) return;
             C.api('admin/accounts', { admin: true, method: 'POST', body: { action: 'ec_key', id: id, key: ek.trim(), url: eu.trim() } }).then(function (r) { toast(r.message || (r.ok ? '保存しました' : '失敗'), !r.ok); load(); }).catch(handleErr);

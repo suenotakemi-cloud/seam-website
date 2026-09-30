@@ -22,7 +22,7 @@ export async function onRequestGet({ request, env, data }) {
   const last = await env.DB.prepare('SELECT MAX(ec_push_at) AS at FROM pim_products WHERE account_id=?').bind(acct).first();
   return json({
     ok: true,
-    ec: { url: ecBase(a), has_key: ecKeyOk(a.ec_key), auto: !!a.ec_auto },
+    ec: { url: ecBase(a), has_key: ecKeyOk(a.ec_key), auto: !!a.ec_auto, status: a.ec_status || null, status_at: a.ec_status_at || null, connected: a.ec_status ? /^ok/.test(a.ec_status) : null },
     pending: pending ? pending.n : 0, failed: failed ? failed.n : 0, sent: sent ? sent.n : 0,
     last: last ? last.at : null, items: items.results || [], errors: errs.results || [],
   });
@@ -49,10 +49,12 @@ export async function onRequestPost({ request, env, data }) {
   const results = await pushJans(env, a, jans, by);
   const okN = results.filter((r) => r.ok).length;
   const skipped = results.filter((r) => r.skipped).length;
-  const ng = results.filter((r) => !r.ok && !r.skipped);
+  const stopped = results.some((r) => r.code === 'stopped');
+  const ng = results.filter((r) => !r.ok && !r.skipped && r.code !== 'stopped');
   const notFound = ng.filter((r) => r.code === 'product_not_found').length;
   let message = okN + ' 件を SalonPro に送りました';
   if (ng.length) message += '／' + ng.length + ' 件は送れませんでした' + (notFound ? '（' + notFound + ' 件は SalonPro に商品が未登録）' : '');
   if (skipped) message += '／' + skipped + ' 件は写真がまだありません';
-  return json({ ok: true, sent: okN, failed: ng.length, skipped, not_found: notFound, results, message });
+  if (stopped) message += '／キーか接続の問題なので途中で止めました（設定タブで確認してください）';
+  return json({ ok: true, sent: okN, failed: ng.length, skipped, stopped, not_found: notFound, results, message });
 }
