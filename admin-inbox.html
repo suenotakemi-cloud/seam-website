@@ -48,6 +48,7 @@
   .read{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.8;margin-bottom:12px}
   .read b{color:var(--red)}
 </style>
+<script src="/js/admin-nav.js?v=1"></script>
 </head>
 <body>
 <header><h1>SEAM 受信箱 <span style="font-weight:400;color:#7a6e68;font-size:12px">フランチャイズ相談・採用の応募</span></h1><nav><a href="#" id="back">← 戻る</a><a href="admin.html">診断ダッシュボード</a><a href="#" id="logout">ログアウト</a></nav></header>
@@ -138,6 +139,10 @@
   function loadFunnel(){funnelData=null;renderFunnel();api('/api/admin/recruit-funnel?days='+$('fdays').value).then(function(j){funnelData=j;renderFunnel();}).catch(function(){$('fbody').innerHTML='<div class="err">読み込めませんでした</div>';});}
   $('fdays').addEventListener('change',loadFunnel);
   document.querySelectorAll('.tabs button').forEach(function(b){b.addEventListener('click',function(){filter=b.getAttribute('data-f');document.querySelectorAll('.tabs button').forEach(function(o){o.classList.toggle('on',o===b);});var fn=filter==='funnel';$('funnel').hidden=!fn;$('list').hidden=fn;$('count').hidden=fn;if(fn)loadFunnel();else render();});});
+  // 上の共通タブ（/admin-inbox#recruit・#funnel・#franchise）から開いたときは その表示にする
+  function fromHash(){var h=(location.hash||'').slice(1);var b=document.querySelector('.tabs button[data-f="'+h+'"]');if(b&&!b.classList.contains('on'))b.click();}
+  window.addEventListener('hashchange',fromHash);
+  setTimeout(fromHash,0);
   $('enter').addEventListener('click',function(){var v=$('key').value.trim();if(!v){$('lerr').textContent='入力してください';return;}keySet(v);$('lerr').textContent='';load();});
   $('key').addEventListener('keydown',function(e){if(e.key==='Enter')$('enter').click();});
   $('logout').addEventListener('click',function(e){e.preventDefault();keyClear();location.reload();});
