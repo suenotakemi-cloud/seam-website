@@ -12025,6 +12025,48 @@ function ConclusionCard({
     className: "mt-5 font-serif text-[14px] sm:text-[15.5px] text-ink leading-[1.8] border-l-2 border-gold pl-3.5"
   }, afterword)));
 }
+// 計測: 結果表示時に1回だけ（type/履歴Tier/advice + プロファイルmeta の実分布を集計。個人情報なし・投げっぱなし）
+// 旧 ResultHero と 2026-09-03 からの MaisonResult の両方から呼ぶ（MaisonResult に無かったため 9/3 以降 finder_complete が 0 件になった）
+function trackResultShown(karte, answers) {
+  if (!karte) return;
+  const { origin, gender, damageTier, damageHeavy } = karte;
+    try {
+    window.__seamLastType = origin && origin.code || '';
+    const pm = buildProfileMeta(answers);
+    try {
+      pm.svc = computeServiceReco(answers, damageTier, damageHeavy).code;
+    } catch (e) {}
+    // 再診断シグナル: rd=1(前回カルテあり) rdd=前回から何日(0-365) — 経時データの土台
+    const pk = window.__seamPrevKarte;
+    if (pk && pk.savedAt) {
+      pm.rd = 1;
+      pm.rdd = Math.min(365, Math.max(0, Math.round((Date.now() - new Date(pk.savedAt).getTime()) / 86400000)));
+    }
+    // 【重要】カルテ復元(前回のカルテを見る)でも このeffectは走る。
+    // finder_complete を送ると「診断を完走した人数」が水増しされ 完答率(公開指標)が実態より高く出る。
+    // 復元は karte_view として別に記録する(2026-07-30 修正・メディア公表前提の精度確保)。
+    // 復元・共有リンク・サンプル表示は いずれも「その人が答えきった」ではない
+    var _restored = false;
+    try {
+      _restored = !!window.__seamRestored || !!(answers && (answers._isShared || answers._sharedOriginId));
+    } catch (e) {}
+    if (_restored) {
+      window.seamTrack && window.seamTrack('karte_view', {
+        type: origin && origin.code,
+        tier: damageTier,
+        gender: gender
+      });
+    } else {
+      window.seamTrack && window.seamTrack('finder_complete', {
+        type: origin && origin.code,
+        tier: damageTier,
+        advice: karte.adviceKey,
+        gender: gender,
+        meta: pm
+      });
+    }
+  } catch (e) {}
+}
 function ResultHero({
   karte,
   answers,
@@ -12042,45 +12084,7 @@ function ResultHero({
     damageHeavy
   } = karte;
   const heroImgPath = getCharImgPath(origin?.code, gender); // null なら画像非表示
-  // 計測: 結果表示時に1回だけ（type/履歴Tier/advice + プロファイルmeta の実分布を集計。個人情報なし・投げっぱなし）
-  useEffect(() => {
-    try {
-      window.__seamLastType = origin && origin.code || '';
-      const pm = buildProfileMeta(answers);
-      try {
-        pm.svc = computeServiceReco(answers, damageTier, damageHeavy).code;
-      } catch (e) {}
-      // 再診断シグナル: rd=1(前回カルテあり) rdd=前回から何日(0-365) — 経時データの土台
-      const pk = window.__seamPrevKarte;
-      if (pk && pk.savedAt) {
-        pm.rd = 1;
-        pm.rdd = Math.min(365, Math.max(0, Math.round((Date.now() - new Date(pk.savedAt).getTime()) / 86400000)));
-      }
-      // 【重要】カルテ復元(前回のカルテを見る)でも このeffectは走る。
-      // finder_complete を送ると「診断を完走した人数」が水増しされ 完答率(公開指標)が実態より高く出る。
-      // 復元は karte_view として別に記録する(2026-07-30 修正・メディア公表前提の精度確保)。
-      // 復元・共有リンク・サンプル表示は いずれも「その人が答えきった」ではない
-      var _restored = false;
-      try {
-        _restored = !!window.__seamRestored || !!(answers && (answers._isShared || answers._sharedOriginId));
-      } catch (e) {}
-      if (_restored) {
-        window.seamTrack && window.seamTrack('karte_view', {
-          type: origin && origin.code,
-          tier: damageTier,
-          gender: gender
-        });
-      } else {
-        window.seamTrack && window.seamTrack('finder_complete', {
-          type: origin && origin.code,
-          tier: damageTier,
-          advice: karte.adviceKey,
-          gender: gender,
-          meta: pm
-        });
-      }
-    } catch (e) {}
-  }, []);
+  useEffect(() => { trackResultShown(karte, answers); }, []);
   // セクション間をジャンプするヘルパー
   const jump = id => {
     const el = document.getElementById(id);
@@ -15195,6 +15199,7 @@ function MaisonResult({ karte, answers, scores, products, onRestart }) {
     img.hidden = true;
     img.parentElement && img.parentElement.classList.add('mx-product-image--empty');
   };
+  useEffect(() => { trackResultShown(karte, answers); }, []);
   return h('div',{className:'mx-result'},
     h('div',{className:'no-print'},h(TopBar,null)),
     h('main',null,
@@ -15223,15 +15228,15 @@ function MaisonResult({ karte, answers, scores, products, onRestart }) {
           h('p',{className:'mx-product-brand'},p.brand||p.line||''),
           h('h3',null,p.name||'Recommended care'),
           h('p',{className:'mx-product-copy'},p.cardCopy||p.pitchCopy||p.recommendedFor||''),
-          h('a',{href:productLink(p),target:'_blank',rel:'noopener'},h('span',null,'商品を見る'),h('span',{'aria-hidden':true},'↗'))
+          h('a',{href:productLink(p),target:'_blank',rel:'noopener',onClick:()=>trackCta('product',p.id||p.name)},h('span',null,'商品を見る'),h('span',{'aria-hidden':true},'↗'))
         ))) : h('div',{className:'mx-product-loading','aria-live':'polite'},'あなたのための処方を選んでいます。')
       ),
       h('section',{className:'mx-result-consult'},
         h('p',{className:'mx-result-kicker'},'FROM DIAGNOSIS TO REALITY'),
         h('h2',null,'画面の答えを、あなたの髪の答えへ。'),
         h('p',null,'カルテを店頭で見せてください。ヘアケアを熟知したスタッフが、実際の髪を見て処方を仕上げます。'),
-        h('a',{href:'shop.html#stores'},h('span',null,'近くのSEAMを探す'),h('span',{'aria-hidden':true},'→')),
-        h('a',{href:'onlineshop.html'},h('span',null,'メンバー限定オンラインショップ'),h('span',{'aria-hidden':true},'→'))
+        h('a',{href:'shop.html#stores',onClick:()=>trackCta('store','near')},h('span',null,'近くのSEAMを探す'),h('span',{'aria-hidden':true},'→')),
+        h('a',{href:'onlineshop.html',onClick:()=>trackCta('online','member')},h('span',null,'メンバー限定オンラインショップ'),h('span',{'aria-hidden':true},'→'))
       ),
       h('section',{className:'mx-result-restart no-print'},h('button',{type:'button',onClick:onRestart},'もう一度診断する'))
     )
