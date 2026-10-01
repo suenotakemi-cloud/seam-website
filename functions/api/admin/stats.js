@@ -495,8 +495,9 @@ async function buildStats(context) {
 }
 
 // ログインのたびに全期間の集計を取り直すと遅い（2026-10-02 所有者）。
-// パスキーを確かめたあと、同じ条件の結果を 10 分だけ Cloudflare のキャッシュに置く。
-// 「更新」ボタンは fresh=1 を付けて必ず取り直す。キャッシュの鍵にパスキーは入れない
+// パスキーを確かめたあと、前回の結果をすぐ返す。10 分より古ければ 裏で取り直して次に備える（古くても待たせない）。
+// 初めての条件・「更新」ボタン（fresh=1）だけは その場で集計して待つ。キャッシュの鍵にパスキーは入れない
+const STATS_FRESH_MS = 10 * 60 * 1000;
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -505,16 +506,21 @@ export async function onRequestGet(context) {
   if (!stored || key !== stored) return buildStats(context); // 認証の返事は今までどおり中で作る
   let cache = null;
   try { cache = caches.default; } catch (e) {}
-  const ck = new Request('https://seam.site/__admin_stats_cache?v=1&days=' + (url.searchParams.get('days') || '') +
+  const ck = new Request('https://seam.site/__admin_stats_cache?v=2&days=' + (url.searchParams.get('days') || '') +
     '&sage=' + encodeURIComponent(url.searchParams.get('sage') || '') + '&scs=' + encodeURIComponent(url.searchParams.get('scs') || ''));
+  const save = async res => {
+    const body = await res.clone().text();
+    await cache.put(ck, new Response(body, { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=604800', 'x-built-at': String(Date.now()) } }));
+  };
   if (cache && url.searchParams.get('fresh') !== '1') {
     const hit = await cache.match(ck).catch(() => null);
-    if (hit) return new Response(hit.body, { headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-seam-cache': 'hit' } });
+    if (hit) {
+      const age = Date.now() - (Number(hit.headers.get('x-built-at')) || 0);
+      if (age > STATS_FRESH_MS) context.waitUntil(buildStats(context).then(r => r.status === 200 ? save(r) : null).catch(() => {}));
+      return new Response(hit.body, { headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-seam-cache': age > STATS_FRESH_MS ? 'stale' : 'hit' } });
+    }
   }
   const res = await buildStats(context);
-  if (cache && res.status === 200) {
-    const body = await res.clone().text();
-    context.waitUntil(cache.put(ck, new Response(body, { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=600' } })).catch(() => {}));
-  }
+  if (cache && res.status === 200) context.waitUntil(save(res).catch(() => {}));
   return res;
 }

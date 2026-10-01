@@ -1318,7 +1318,7 @@
     var tm = setTimeout(function(){ if (ctl) ctl.abort(); }, 60000);
     var done = function(){ clearTimeout(tm); if (lb) { lb.disabled = false; lb.textContent = '表示する'; } };
     fetch('/api/admin/stats?days='+days+(sage?'&sage='+encodeURIComponent(sage):'')+(scs?'&scs='+encodeURIComponent(scs):'')+fresh, { headers:{ 'x-seam-key': key }, cache:'no-store', signal: ctl ? ctl.signal : undefined })
-      .then(function(r){ if(r.status===401){ keyClear(); return r.json().catch(function(){return {};}).then(function(j){ throw {auth:true, info:j}; }); } return r.json(); })
+      .then(function(r){ load._stale = r.headers.get('x-seam-cache') === 'stale'; if(r.status===401){ keyClear(); return r.json().catch(function(){return {};}).then(function(j){ throw {auth:true, info:j}; }); } return r.json(); })
       .then(function(d){
         done();
         if(d.configured===false){
@@ -1336,6 +1336,8 @@
         }
         if(d.error){ el('notice').innerHTML='<div class="card"><span style="color:#b4453a">エラー: '+esc(d.error)+'</span></div>'; }
         showApp();
+        // 古い結果を先に出したときは 裏で取り直した新しい結果を 25 秒後に静かに読み直す
+        if (load._stale && !load._retried) { load._retried = true; setTimeout(load, 25000); } else if (!load._stale) { load._retried = false; }
         try { render(d); } catch (re) { el('notice').innerHTML='<div class="card"><span style="color:#b4453a">表示でエラーが出ました（'+esc(String(re && re.message || re))+'）「更新」を押してください</span></div>'; }
       })
       .catch(function(e){
