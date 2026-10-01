@@ -240,6 +240,16 @@ function aggregateSkin(rows) {
   return P;
 }
 
+// ── 2026-09-03〜10-02 の完了の穴埋め ──
+// 9/3 14:31 に結果画面を作り直したとき 完了の計測(finder_complete)を移し忘れ 10/2 00:07 まで 1 件も記録されなかった。
+// 最後の設問 headSpaInterest への到達は記録が続いていた。8/10〜9/2 の照合で 完了 2,043 対 到達 2,030（差 0.6%）。
+// この期間だけ「最後の設問に届いた」を完了として数える。行は足さず 集計で足すだけ（本物の行と混ざらない）
+// 10/1 22:07〜22:16 の /finder 直アクセスは動作確認の試験なので除く
+const GAP_START = 1788413089971;                          // 9/3 14:24:49 JST 最後に記録された完了
+const GAP_END = Date.parse('2026-10-02T00:07:22+09:00');   // 直した版で最初に記録された完了
+const GAP_WHERE = "name='finder_step' AND label='headSpaInterest' AND ts>" + GAP_START + " AND ts<" + GAP_END +
+  " AND NOT (ts BETWEEN " + Date.parse('2026-10-01T22:07:00+09:00') + " AND " + Date.parse('2026-10-01T22:16:30+09:00') + " AND ref='direct' AND landing='/finder')";
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -408,12 +418,32 @@ export async function onRequestGet(context) {
     const tmap = {};
     (totals.results || []).forEach(r => { tmap[r.name] = r.c; });
 
+    // 9/3〜10/2 の完了の穴埋め（上の GAP_WHERE の説明を参照）
+    const gapRaw = await q("SELECT ts, ref, date(ts/1000,'unixepoch','localtime') d FROM events WHERE " + GAP_WHERE + " AND " + NT);
+    const gapRows = gapRaw.results || [];
+    if (gapRows.length) {
+      tmap['finder_complete'] = (tmap['finder_complete'] || 0) + gapRows.length;
+      const inSince = gapRows.filter(r => r.ts >= since);
+      finderFunnel.completed += inSince.length;
+      const byDay = {};
+      inSince.forEach(r => { byDay[r.d] = (byDay[r.d] || 0) + 1; });
+      const dl = daily.results || (daily.results = []);
+      Object.keys(byDay).forEach(d => { const o = dl.find(x => x.d === d); if (o) o.c += byDay[d]; else dl.push({ d, c: byDay[d] }); });
+      dl.sort((a, b) => a.d < b.d ? -1 : 1);
+      (dailyFullRaw.results || []).forEach(o => { if (byDay[o.d]) o.fc = (o.fc || 0) + byDay[o.d]; });
+      gapRows.forEach(r => {
+        if (r.ts >= since) kpiWin.cur['finder_complete'] = (kpiWin.cur['finder_complete'] || 0) + 1;
+        else if (r.ts >= since2) kpiWin.prev['finder_complete'] = (kpiWin.prev['finder_complete'] || 0) + 1;
+      });
+      gapRows.forEach(r => { if (r.ref) (sourceFunnel.results || (sourceFunnel.results = [])).push({ ref: r.ref, name: 'finder_complete', c: 1 }); });
+    }
+
     // チャネル別ファネルを ref ごとに集約 [{ref, starts, completes, ctas}]
     const sf = {};
     (sourceFunnel.results || []).forEach(r => {
       const o = sf[r.ref] || (sf[r.ref] = { ref: r.ref, starts: 0, completes: 0, ctas: 0 });
       if (r.name === 'finder_start') o.starts = r.c;
-      else if (r.name === 'finder_complete') o.completes = r.c;
+      else if (r.name === 'finder_complete') o.completes += r.c;
       else if (r.name === 'finder_cta') o.ctas = r.c;
     });
     const sourceFunnelArr = Object.keys(sf).map(k => sf[k])
@@ -422,6 +452,7 @@ export async function onRequestGet(context) {
     return json({
       configured: true,
       generatedAt: Date.now(),
+      completeGap: { from: GAP_START, to: GAP_END, note: '9/3〜10/2 の完了は最後の設問への到達で数えています（計測の抜け）' },
       windowDays: days,
       summary: {
         starts: tmap['finder_start'] || 0,
