@@ -250,7 +250,7 @@ const GAP_END = Date.parse('2026-10-02T00:07:22+09:00');   // 直した版で最
 const GAP_WHERE = "name='finder_step' AND label='headSpaInterest' AND ts>" + GAP_START + " AND ts<" + GAP_END +
   " AND NOT (ts BETWEEN " + Date.parse('2026-10-01T22:07:00+09:00') + " AND " + Date.parse('2026-10-01T22:16:30+09:00') + " AND ref='direct' AND landing='/finder')";
 
-export async function onRequestGet(context) {
+async function buildStats(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const key = (request.headers.get('x-seam-key') || url.searchParams.get('key') || '').trim();
@@ -492,4 +492,29 @@ export async function onRequestGet(context) {
   } catch (e) {
     return json({ configured: true, error: String((e && e.message) || e) }, 500);
   }
+}
+
+// ログインのたびに全期間の集計を取り直すと遅い（2026-10-02 所有者）。
+// パスキーを確かめたあと、同じ条件の結果を 10 分だけ Cloudflare のキャッシュに置く。
+// 「更新」ボタンは fresh=1 を付けて必ず取り直す。キャッシュの鍵にパスキーは入れない
+export async function onRequestGet(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
+  const key = (request.headers.get('x-seam-key') || url.searchParams.get('key') || '').trim();
+  const stored = ((env && env.ADMIN_KEY) || '').trim();
+  if (!stored || key !== stored) return buildStats(context); // 認証の返事は今までどおり中で作る
+  let cache = null;
+  try { cache = caches.default; } catch (e) {}
+  const ck = new Request('https://seam.site/__admin_stats_cache?v=1&days=' + (url.searchParams.get('days') || '') +
+    '&sage=' + encodeURIComponent(url.searchParams.get('sage') || '') + '&scs=' + encodeURIComponent(url.searchParams.get('scs') || ''));
+  if (cache && url.searchParams.get('fresh') !== '1') {
+    const hit = await cache.match(ck).catch(() => null);
+    if (hit) return new Response(hit.body, { headers: { 'content-type': 'application/json', 'cache-control': 'no-store', 'x-seam-cache': 'hit' } });
+  }
+  const res = await buildStats(context);
+  if (cache && res.status === 200) {
+    const body = await res.clone().text();
+    context.waitUntil(cache.put(ck, new Response(body, { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=600' } })).catch(() => {}));
+  }
+  return res;
 }

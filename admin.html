@@ -1310,9 +1310,17 @@
     el('notice').innerHTML='';
     var sage = (el('segAge')&&el('segAge').value)||'';
     var scs  = (el('segCs')&&el('segCs').value)||'';
-    fetch('/api/admin/stats?days='+days+(sage?'&sage='+encodeURIComponent(sage):'')+(scs?'&scs='+encodeURIComponent(scs):''), { headers:{ 'x-seam-key': key } })
+    // 読み込み中を見せる（何も出ないと止まったように見え ハードリロードされていた 2026-10-02）
+    var fresh = load._fresh ? '&fresh=1' : ''; load._fresh = false;
+    var lb = el('loginBtn'); if (lb) { lb.disabled = true; lb.textContent = '読み込み中…'; }
+    if (!el('app').hidden) el('genAt').textContent = '読み込み中…';
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var tm = setTimeout(function(){ if (ctl) ctl.abort(); }, 60000);
+    var done = function(){ clearTimeout(tm); if (lb) { lb.disabled = false; lb.textContent = '表示する'; } };
+    fetch('/api/admin/stats?days='+days+(sage?'&sage='+encodeURIComponent(sage):'')+(scs?'&scs='+encodeURIComponent(scs):'')+fresh, { headers:{ 'x-seam-key': key }, cache:'no-store', signal: ctl ? ctl.signal : undefined })
       .then(function(r){ if(r.status===401){ keyClear(); return r.json().catch(function(){return {};}).then(function(j){ throw {auth:true, info:j}; }); } return r.json(); })
       .then(function(d){
+        done();
         if(d.configured===false){
           showApp();
           el('genAt').textContent='保存先(D1)が未接続です';
@@ -1327,13 +1335,16 @@
           return;
         }
         if(d.error){ el('notice').innerHTML='<div class="card"><span style="color:#b4453a">エラー: '+esc(d.error)+'</span></div>'; }
-        showApp(); render(d);
+        showApp();
+        try { render(d); } catch (re) { el('notice').innerHTML='<div class="card"><span style="color:#b4453a">表示でエラーが出ました（'+esc(String(re && re.message || re))+'）「更新」を押してください</span></div>'; }
       })
       .catch(function(e){
+        done();
         if(e&&e.auth){
           var i=(e&&e.info)||{};
           showLogin(i.keyConfigured===false ? 'サーバにパスキーが未設定です（Cloudflareで ADMIN_KEY を設定してください）' : 'パスキーが違います');
-        } else { showLogin('読み込みに失敗しました'); }
+        } else if (keyGet()) { showLogin(e && e.name==='AbortError' ? '時間がかかりすぎました もう一度「表示する」を押してください' : '読み込みに失敗しました もう一度「表示する」を押してください'); }
+        else { showLogin('読み込みに失敗しました'); }
       });
   }
 
@@ -1345,7 +1356,7 @@
   el('keyInput').addEventListener('keydown', function(e){ if(e.key==='Enter') el('loginBtn').click(); });
   el('logoutBtn').addEventListener('click', function(){ keyClear(); location.href='admin.html'; });
   el('backBtn').addEventListener('click', function(){ if (history.length > 1) history.back(); else location.href='admin-inbox.html'; });
-  el('reloadBtn').addEventListener('click', load);
+  el('reloadBtn').addEventListener('click', function(){ load._fresh = true; load(); });
   el('rangeSel').addEventListener('change', load);
   // 髪格診断 ⇄ 肌ストーリー のビュー切替(取得済みデータから即再描画・URLも更新)
   Array.prototype.forEach.call(document.querySelectorAll('#viewTabs .vtab'), function(b){
