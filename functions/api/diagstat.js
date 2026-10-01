@@ -21,12 +21,18 @@ export async function onRequestGet(context) {
         "(SELECT COUNT(*) FROM events WHERE name='finder_start')    AS started, " +
         "(SELECT COUNT(*) FROM events WHERE name='finder_complete') AS completed, " +
         "(SELECT COUNT(*) FROM events WHERE name='finder_start'    AND ts >= ?) AS started2, " +
-        "(SELECT COUNT(*) FROM events WHERE name='finder_complete' AND ts >= ?) AS completed2"
+        "(SELECT COUNT(*) FROM events WHERE name='finder_complete' AND ts >= ?) AS completed2, " +
+        // 9/3 14:24〜10/2 00:07 は完了の計測が抜けていた（結果画面の作り直しで移し忘れ）。
+        // 最後の設問 headSpaInterest への到達で数える（admin/stats.js の GAP_WHERE と同じ条件・所有者 10/2「正しいものに」）
+        "(SELECT COUNT(*) FROM events WHERE name='finder_step' AND label='headSpaInterest' AND ts > 1788413089971 AND ts < " + Date.parse('2026-10-02T00:07:22+09:00') +
+        " AND NOT (ts BETWEEN " + Date.parse('2026-10-01T22:07:00+09:00') + " AND " + Date.parse('2026-10-01T22:16:30+09:00') + " AND ref='direct' AND landing='/finder')" +
+        " AND (utm_campaign IS NULL OR utm_campaign<>'__test__')) AS gap"
       ).bind(CUTOVER, CUTOVER).first();
+      const gap = Math.max(0, Number(row && row.gap) || 0);
       const started   = Math.max(0, Number(row && row.started)   || 0);
-      const completed = Math.max(0, Number(row && row.completed) || 0);
+      const completed = Math.max(0, Number(row && row.completed) || 0) + gap;
       const started2   = Math.max(0, Number(row && row.started2)   || 0);
-      const completed2 = Math.max(0, Number(row && row.completed2) || 0);
+      const completed2 = Math.max(0, Number(row && row.completed2) || 0) + gap;
       // 完了率は開始が十分ある時だけ（0除算・過小サンプルの誤誘導を避ける）
       const rate = started >= 20 ? Math.round((completed / started) * 100) : null;
       // クリーン値も同じ下限を守る(サンプルが溜まるまでは null=出さない)
