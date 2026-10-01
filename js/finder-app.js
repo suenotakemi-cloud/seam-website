@@ -15175,7 +15175,7 @@ function InboundGinzaCard() {
 }
 
 /* ---------- Maison Result — 旧カードUIから独立した結果体験 ---------- */
-function MaisonResult({ karte, answers, scores, products, onRestart }) {
+function MaisonResult({ karte, answers, scores, products, onRestart, onSaveImage, onShare }) {
   const h = React.createElement;
   const origin = karte && karte.origin || {};
   const code = origin.code || 'NNC';
@@ -15210,7 +15210,12 @@ function MaisonResult({ karte, answers, scores, products, onRestart }) {
         h('h1',null,origin.name || 'あなたの髪格'),
         h('p',{className:'mx-result-en'},`${origin.nameEn || ''} · ${code}`),
         h('div',{className:'mx-result-axes'},axes.map(a=>h('div',{key:a.label},h('span',null,a.label),h('strong',null,a.value)))),
-        h('p',{className:'mx-result-personality'},origin.personality || lead)
+        h('p',{className:'mx-result-personality'},origin.personality || lead),
+        // 9/3 の作り直しで消えていた「画像で保存」「シェア」を戻す（2026-10-02）
+        h('div',{className:'mx-result-actions no-print'},
+          h('button',{type:'button',onClick:()=>{trackCta('save','square');onSaveImage&&onSaveImage('square');}},'画像で保存'),
+          h('button',{type:'button',onClick:()=>{trackCta('share',code);onShare&&onShare();}},'結果をシェア')
+        )
       ),
       h('section',{className:'mx-result-statement'},
         h('p',{className:'mx-result-kicker'},'THE READING'),
@@ -15404,7 +15409,9 @@ function Result({
     answers: answers,
     scores: scores,
     products: seamPicks,
-    onRestart: onRestart
+    onRestart: onRestart,
+    onSaveImage: mode => saveKarteCardAsImage(`SEAM-${karte?.origin?.code || 'karte'}-${mode}.png`, mode),
+    onShare: () => shareKarteLink(karte?.origin)
   });
   /* 旧結果UIは互換用として保持。画面には表示しない。 */
   return /*#__PURE__*/React.createElement("div", {

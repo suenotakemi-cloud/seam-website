@@ -1,0 +1,22 @@
+name: 髪格診断の毎日の通し確認
+
+# 毎朝 本番の髪格診断を最後まで自動で答え、結果が出て「完了」が送られるかを見る。
+# 失敗すると GitHub から通知メールが届く（2026-10-02 所有者「全て直して改善して」）
+on:
+  schedule:
+    - cron: '30 23 * * *'   # 毎朝 8:30（日本時間）
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: ブラウザを用意
+        run: npm init -y >/dev/null && npm i --no-save playwright@1 && npx playwright install --with-deps chromium
+      - name: 本番の髪格診断を最後まで通す
+        run: node .github/scripts/finder-smoke.mjs
