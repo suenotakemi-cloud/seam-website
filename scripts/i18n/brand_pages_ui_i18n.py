@@ -155,7 +155,7 @@ MAKER = {
  'ミルボン':            {'en': 'Milbon', 'zh': 'Milbon', 'tw': 'Milbon', 'ko': 'Milbon'},
  'ロレアル グループ':      {'en': "L'Oréal Group", 'zh': "L'Oréal 集团", 'tw': "L'Oréal 集團", 'ko': "L'Oréal 그룹"},
  'コンフォートジャパン':     {'en': 'Comfort Japan', 'zh': 'Comfort Japan', 'tw': 'Comfort Japan', 'ko': 'Comfort Japan'},
- 'ドクタージュニア':       {'en': 'Doctor Junior', 'zh': 'Doctor Junior', 'tw': 'Doctor Junior', 'ko': 'Doctor Junior'},
+ 'イフイング':       {'en': 'IFING', 'zh': 'IFING', 'tw': 'IFING', 'ko': 'IFING'},
  'ホーユー':            {'en': 'Hoyu', 'zh': 'Hoyu', 'tw': 'Hoyu', 'ko': 'Hoyu'},
  '資生堂プロフェッショナル':   {'en': 'Shiseido Professional', 'zh': '资生堂 Professional', 'tw': '資生堂 Professional', 'ko': 'Shiseido Professional'},
  '資生堂':             {'en': 'Shiseido', 'zh': '资生堂', 'tw': '資生堂', 'ko': 'Shiseido'},

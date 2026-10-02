@@ -226,6 +226,7 @@ const PAGES = [
   { file: 'tokushoho.html', url: '/tokushoho' },
 
   // 2026-09-07 追加: 読みもの・求人・法務・ガイドも多言語化する
+  { file: 'japan-salon-brands.html', url: '/japan-salon-brands' },
   { file: 'aujua-story.html', url: '/aujua-story' },
   { file: 'bykarte-story.html', url: '/bykarte-story' },
   { file: 'tokio-story.html', url: '/tokio-story' },

@@ -8562,10 +8562,19 @@ function QuizDeep({
     const firstOfStep = sequence.find(e => e.step === entry.step);
     return firstOfStep && firstOfStep.id === entry.id;
   }, [entry, sequence]);
-  const setValue = v => setAnswers(prev => ({
-    ...prev,
-    [q.id]: v
-  }));
+  // 1 つだけ選ぶ設問は 選んだら次へ進む（2026-10-02）。9/3 の作り直しのあと 1 問目でやめる人が 4.9%→8.4% に増えた。
+  // 選ぶ→「次へ」の 2 回押しを 21 問で 1 回にする。最後の設問は「次へ」で送る（勝手に結果へ行かない）
+  const setValue = v => {
+    setAnswers(prev => ({
+      ...prev,
+      [q.id]: v
+    }));
+    if (q.type === 'card-single' && v != null && safeIdx < total - 1) {
+      const at = safeIdx;
+      clearTimeout(window.__seamAdv);
+      window.__seamAdv = setTimeout(() => setIdx(i => i === at ? i + 1 : i), 350);
+    }
+  };
   // straighten-flow等が併記する補助キー(undefinedで削除)
   const setExtra = (k, v) => setAnswers(prev => {
     const next = {

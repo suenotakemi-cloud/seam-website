@@ -21,7 +21,7 @@ BRANDS = [
   dict(slug='kerastase', logo='images/logo_kerastase.jpg', ja='ケラスターゼ', en='KÉRASTASE', masters=['Kérastase'], maker='ロレアル グループ',
        blurb='パリ発のラグジュアリーヘアケア<br>ダメージケアからスカルプまで ラインの幅広さと世界観で愛され続けるブランドです',
        cross=[('shu-uemura','シュウ ウエムラ')], q='ケラスターゼ 取扱店'),
-  dict(slug='tokio', logo='images/logo_tokio_inkarami.jpg', ja='トキオ インカラミ', en='TOKIO INKARAMI', masters=['TOKIO INKARAMI'], maker='ドクタージュニア',
+  dict(slug='tokio', logo='images/logo_tokio_inkarami.jpg', ja='トキオ インカラミ', en='TOKIO INKARAMI', masters=['TOKIO INKARAMI'], maker='イフイング',
        blurb='特許技術インカラミによる集中補修で知られるサロン専売ブランド<br>ハイダメージ・ブリーチ毛のホームケアの定番です',
        cross=[('bykarte','バイカルテ')], q='TOKIO トリートメント 取扱店'),
   dict(slug='bykarte', logo='images/logo_bykarte.jpg', ja='バイカルテ', en='BYKARTE', masters=['BYKARTE'], maker='ホーユー',
