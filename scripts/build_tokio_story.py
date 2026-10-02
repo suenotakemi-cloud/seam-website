@@ -17,7 +17,7 @@ for prop in ['name="description"', 'property="og:description"']:
     head = re.sub(rf'<meta {prop} content="[^"]*">', f'<meta {prop} content="{DESC}">', head)
 head = re.sub(r'<meta property="og:title" content="[^"]*">', f'<meta property="og:title" content="{TITLE}">', head)
 head = head.replace('seam.site/guide-salon-senyo', 'seam.site/tokio-story')
-head = head.replace('</head>', '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap">\n<link rel="stylesheet" href="css/tokio-story.css?v=1">\n</head>')
+head = head.replace('</head>', '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap">\n<link rel="stylesheet" href="css/tokio-story.css?v=3">\n</head>')
 body_head = re.sub(r' data-i18n="[^"]*"', '', g[g.index('<body>'):g.index('<main')])
 tail = re.sub(r' data-i18n="[^"]*"', '', g[g.index('</main>') + 7:])
 tail = re.sub(r'window\.SEAM_PAGE_I18N\s*=\s*\{.*?\};', 'window.SEAM_PAGE_I18N = @@DICT@@;', tail, flags=re.S)
@@ -61,7 +61,6 @@ main = f'''<main id="seam-main" class="ts">
   </section>
 
   <section class="ts-tech" data-track-view="ts_tech">
-    <div class="ts-tech-img"><picture><source srcset="{IMG}story/keratin.webp" type="image/webp"><img src="{IMG}story/keratin.jpg" alt="絡み合う細い繊維のイメージ" loading="lazy" width="1200" height="1600"></picture></div>
     <div class="ts-tech-copy">
       <p class="ts-eyebrow">THE TECHNOLOGY</p>
       <h2>IN ＋ KARAMI</h2>
@@ -73,6 +72,17 @@ main = f'''<main id="seam-main" class="ts">
       </svg>
       <p class="ts-note">3 種類のケラチンを使用（メーカーの説明）　インカラミはメーカーが特許技術としている技術です</p>
     </div>
+  </section>
+
+  <section class="ts-effects" data-track-view="ts_effects">
+    <p class="ts-eyebrow">WHAT HAPPENS IN YOUR HAIR</p>
+    <h2>髪に起きる 3 つのこと</h2>
+    <div class="ts-eff-grid">
+      <figure><div class="ts-eff-img"><picture><source srcset="{IMG}story/inside.webp" type="image/webp"><img src="{IMG}story/inside.jpg" alt="髪の内側に成分が入るイメージ" loading="lazy" width="1200" height="1600"></picture></div><figcaption><b>01　内側へ</b>失われたケラチンを 髪の内側に補う</figcaption></figure>
+      <figure><div class="ts-eff-img"><picture><source srcset="{IMG}story/cuticle.webp" type="image/webp"><img src="{IMG}story/cuticle.jpg" alt="髪の表面のキューティクルが整うイメージ" loading="lazy" width="1920" height="1080"></picture></div><figcaption><b>02　表面を整える</b>開いたキューティクルを整え 手触りをなめらかに</figcaption></figure>
+      <figure><div class="ts-eff-img"><picture><source srcset="{IMG}story/hero.webp" type="image/webp"><img src="{IMG}story/hero.jpg" alt="ツヤのある黒髪" loading="lazy" width="1920" height="1080"></picture></div><figcaption><b>03　ツヤ</b>光をまっすぐ返す 毛先までのツヤへ</figcaption></figure>
+    </div>
+    <p class="ts-note">画像はイメージです</p>
   </section>
 
   <section class="ts-salon" data-track-view="ts_salon">
@@ -91,7 +101,7 @@ main = f'''<main id="seam-main" class="ts">
   </section>
 
   <section class="ts-ritual" data-track-view="ts_ritual">
-    <div class="ts-ritual-img"><picture><source srcset="{IMG}story/ritual.webp" type="image/webp"><img src="{IMG}story/ritual.jpg" alt="濡れた髪の毛先をなでる手" loading="lazy" width="1200" height="1600"></picture></div>
+    <div class="ts-ritual-img"><picture><source srcset="{IMG}story/ritual2.webp" type="image/webp"><img src="{IMG}story/ritual2.jpg" alt="窓辺で髪に指を通す女性" loading="lazy" width="1200" height="1600"></picture></div>
     <div>
       <p class="ts-eyebrow">THE RITUAL</p>
       <h2>毎日の 3 つの手順</h2>
@@ -104,7 +114,7 @@ main = f'''<main id="seam-main" class="ts">
   </section>
 
   <section class="ts-story" data-track-view="ts_story">
-    <picture><source srcset="{IMG}story/ginza.webp" type="image/webp"><img src="{IMG}story/ginza.jpg" alt="夕暮れの東京の通り" loading="lazy" width="1920" height="1080"></picture>
+    <picture><source srcset="{IMG}story/ginza2.webp" type="image/webp"><img src="{IMG}story/ginza2.jpg" alt="夕暮れの銀座四丁目の交差点" loading="lazy" width="1920" height="1080"></picture>
     <div class="ts-story-copy">
       <p class="ts-eyebrow">BORN IN GINZA</p>
       <h2>銀座から 世界へ</h2>

@@ -2,7 +2,7 @@
    黒・プラチナ・銅。欧文は Cormorant Garamond、和文の見出しは Shippori Mincho、本文はサイト共通 */
 .ts{--ink:#0d0d0f;--ink2:#17171a;--plat:#d6d8dc;--plat2:#9a9ea6;--copper:#b97d58;--ivory:#f4f2ee;background:var(--ink);color:var(--plat)}
 .ts h1,.ts h2,.ts h3{margin:0;font-weight:400}
-.ts h2{font-family:"Shippori Mincho",serif;font-size:clamp(24px,6vw,40px);line-height:1.45;color:#fff;letter-spacing:.04em;text-wrap:balance}
+.ts h2{word-break:keep-all;overflow-wrap:anywhere;font-family:"Shippori Mincho",serif;font-size:clamp(24px,6vw,40px);line-height:1.45;color:#fff;letter-spacing:.04em;text-wrap:balance}
 .ts p{font-size:14px;line-height:2.05;color:var(--plat)}
 .ts-eyebrow{font-family:"Cormorant Garamond",serif;font-size:12px!important;letter-spacing:.32em!important;color:var(--copper)!important;margin:0 0 18px;text-transform:uppercase}
 .ts-note{font-size:11.5px!important;color:var(--plat2)!important;line-height:1.9!important}
@@ -36,6 +36,16 @@
 .ts-anim .ts-link{stroke:var(--copper);stroke-dasharray:240;stroke-dashoffset:240;animation:tsLink 4.8s ease-in-out infinite}
 @keyframes tsIn{0%,10%{transform:translateY(0);opacity:.9}45%,100%{transform:translateY(40px);opacity:1}}
 @keyframes tsLink{0%,45%{stroke-dashoffset:240}75%,100%{stroke-dashoffset:0}}
+
+/* effects */
+.ts-effects{max-width:1100px;margin:0 auto}
+.ts-eff-grid{display:grid;gap:28px;margin-top:40px}
+.ts-eff-grid figure{margin:0}
+.ts-eff-img{aspect-ratio:4/3;overflow:hidden;background:#000}
+.ts-eff-img img{width:100%;height:100%;object-fit:cover}
+.ts-eff-grid figcaption{margin-top:14px;font-size:13px;line-height:1.9;color:var(--plat)}
+.ts-eff-grid figcaption b{display:block;font-family:"Shippori Mincho",serif;font-weight:500;font-size:16px;color:#fff;margin-bottom:4px}
+@media (min-width:860px){.ts-eff-grid{grid-template-columns:repeat(3,1fr)}}
 
 /* salon steps */
 .ts-salon{max-width:960px;margin:0 auto}
@@ -90,7 +100,7 @@
   .ts section{padding:130px 64px}
   .ts-hero-copy{padding:0 64px 96px}
   .ts-intro{grid-template-columns:auto 1fr;gap:64px}
-  .ts-tech{grid-template-columns:1fr 1fr;align-items:center;gap:72px}
+  .ts-tech-copy{max-width:760px;margin:0 auto}
   .ts-line-grid{grid-template-columns:repeat(4,1fr)}
   .ts-ritual{grid-template-columns:1fr 1fr;gap:80px}
   .ts-steps span{font-size:12.5px}
