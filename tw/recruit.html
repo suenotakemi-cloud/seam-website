@@ -710,7 +710,7 @@
         <div class="mt-10 pt-9" style="border-top:1px solid rgba(228,214,188,.22);" data-reveal="">
           <p class="font-serif text-ivory text-[15.5px] leading-snug" data-i18n="x.630c616e">也可以透過表單聯絡</p>
           <p class="mt-2.5 text-ivory/70 text-[12.5px] leading-[1.9]" data-i18n="x.7ca7692f">只要姓名與聯絡方式就可以<br>不需要履歷</p>
-          <form id="rcForm" class="mt-6 text-left max-w-md mx-auto grid gap-3">
+          <form id="rcForm" class="mt-6 text-left max-w-md mx-auto grid gap-3" data-track-view="recruit_form">
             <input type="text" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;">
             <label class="grid gap-1.5">
               <span class="text-ivory/70 text-[11.5px]" data-i18n="x.bb00545c">姓名 <span style="color:#D9B8A8;">必填</span></span>
@@ -801,6 +801,12 @@
       /* ── 応募フォーム ── */
       (function(){
         var f = document.getElementById('rcForm'); if (!f) return;
+        // どの欄まで書いたか（欄ごとに 1 回・中身は送らない。2026-10-02）
+        var touched = {};
+        f.addEventListener('focusin', function(e){
+          var n = e.target && e.target.name; if (!n || n === 'hp' || touched[n]) return; touched[n] = 1;
+          if (window.seamTrack) window.seamTrack('recruit_field', { label: n, src: window.__rcSrc || '' });
+        });
         f.addEventListener('submit', function(e){
           e.preventDefault();
           var btn = document.getElementById('rcSubmit');

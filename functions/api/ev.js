@@ -28,6 +28,9 @@ export async function onRequestPost(context) {
     const metaObj = {};
     if (ev.utm_medium) metaObj.utm_medium = String(ev.utm_medium).slice(0, 24);
     if (ev.lang)       metaObj.lang = String(ev.lang).slice(0, 8);
+    // 最初に来た経路（この訪問の入口のチャネルと広告キャンペーン）。ref は直前のページなので別に持つ（2026-10-02）
+    if (ev.ft) metaObj.ft = String(ev.ft).slice(0, 24);
+    if (ev.fu) metaObj.fu = String(ev.fu).slice(0, 48);
     if (ev.meta && typeof ev.meta === 'object') Object.assign(metaObj, ev.meta);
     const meta = Object.keys(metaObj).length ? JSON.stringify(metaObj).slice(0, 2048) : null; // v2詳細プロファイル対応で上限拡大(途中切断=壊れJSONを防ぐ余裕)
 

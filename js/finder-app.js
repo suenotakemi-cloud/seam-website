@@ -15217,13 +15217,13 @@ function MaisonResult({ karte, answers, scores, products, onRestart, onSaveImage
           h('button',{type:'button',onClick:()=>{trackCta('share',code);onShare&&onShare();}},'結果をシェア')
         )
       ),
-      h('section',{className:'mx-result-statement'},
+      h('section',{className:'mx-result-statement','data-track-view':'result_reading'},
         h('p',{className:'mx-result-kicker'},'THE READING'),
         h('h2',null,verdict),
         h('p',null,lead),
         h('div',{className:'mx-result-order'},['洗う','補う','守る'].map((x,i)=>h('div',{key:x},h('i',null,String(i+1).padStart(2,'0')),h('span',null,x))))
       ),
-      h('section',{className:'mx-result-prescription'},
+      h('section',{className:'mx-result-prescription','data-track-view':'result_products'},
         h('p',{className:'mx-result-kicker'},'THE PRESCRIPTION'),
         h('h2',null,'今のあなたへ、選び抜いたもの。'),
         h('p',{className:'mx-result-intro'},'ブランドではなく、あなたの髪に必要な役割から選びました。結果は確定ではなく、プロと相談するための美しい入口です。'),
@@ -15236,7 +15236,7 @@ function MaisonResult({ karte, answers, scores, products, onRestart, onSaveImage
           h('a',{href:productLink(p),target:'_blank',rel:'noopener',onClick:()=>trackCta('product',p.id||p.name)},h('span',null,'商品を見る'),h('span',{'aria-hidden':true},'↗'))
         ))) : h('div',{className:'mx-product-loading','aria-live':'polite'},'あなたのための処方を選んでいます。')
       ),
-      h('section',{className:'mx-result-consult'},
+      h('section',{className:'mx-result-consult','data-track-view':'result_consult'},
         h('p',{className:'mx-result-kicker'},'FROM DIAGNOSIS TO REALITY'),
         h('h2',null,'画面の答えを、あなたの髪の答えへ。'),
         h('p',null,'カルテを店頭で見せてください。ヘアケアを熟知したスタッフが、実際の髪を見て処方を仕上げます。'),

@@ -103,8 +103,8 @@ def block(ja, rows):
     return f'''{MARK_S}
     <h2 id="line-guide" class="mt-10 font-serif text-[19px] sm:text-[22px] text-ink">悩みから選ぶ {ja}のライン早見表</h2>
     <p class="mt-4 text-[13.5px] sm:text-[14px] text-charcoal/80">{ja}はラインごとに向く髪が決まっています いちばん気になることから選ぶと迷いません</p>
-    <div class="mt-4 overflow-x-auto"><table class="w-full text-[13.5px] text-charcoal/80 border-collapse"><thead><tr><th {TH}>気になること</th><th {TH}>ライン</th>{th3}</tr></thead><tbody>{tr}</tbody></table></div>
-    <p class="mt-3 text-[12.5px] text-charcoal/65">{note}　<a href="finder.html" class="text-gold hover:underline underline-offset-4">髪のタイプから選ぶなら 髪格診断（3分・無料）→</a></p>
+    <div class="mt-4 overflow-x-auto" data-track-view="line_guide"><table class="w-full text-[13.5px] text-charcoal/80 border-collapse"><thead><tr><th {TH}>気になること</th><th {TH}>ライン</th>{th3}</tr></thead><tbody>{tr}</tbody></table></div>
+    <p class="mt-3 text-[12.5px] text-charcoal/65">{note}　<a href="finder.html" class="text-gold hover:underline underline-offset-4" data-track-click="line_guide_finder">髪のタイプから選ぶなら 髪格診断（3分・無料）→</a></p>
     {MARK_E}
     '''
 

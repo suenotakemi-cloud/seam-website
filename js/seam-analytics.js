@@ -188,7 +188,17 @@
       var coarse = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
       device = (coarse || (window.screen && screen.width && screen.width < 768)) ? 'mobile' : 'desktop';
     } catch (e) {}
+    // 最初に来た経路（Instagram・広告など）を この訪問のあいだ持ち続ける（2026-10-02）
+    // ref は「直前のページ」なので サイト内を移ると internal になり 広告から来た人が見えなくなっていた
+    var ft = '', fu = '';
+    try {
+      ft = sessionStorage.getItem('seam_ft') || '';
+      fu = sessionStorage.getItem('seam_fu') || '';
+      if (!ft) { ft = channelOf(document.referrer); fu = (q.utm_campaign || '').slice(0, 48); sessionStorage.setItem('seam_ft', ft); sessionStorage.setItem('seam_fu', fu); }
+    } catch (e) {}
     _attr = {
+      ft: ft,
+      fu: fu,
       ref: channelOf(document.referrer),
       utm_source: (q.utm_source || '').slice(0, 32),
       utm_medium: (q.utm_medium || '').slice(0, 24),
@@ -227,6 +237,22 @@
   // sec_click   = data-track-click="ラベル" のタップ（露出→反応率が取れる）
   track('page_view');
 
+  // 画面のエラーを数える（1 ページ 3 件まで・中身は文の頭だけ。2026-10-02）
+  // 9/3 は診断が 1 問目で止まる不具合が 2 時間出ていたが 数字に何も出なかった
+  var _errN = 0;
+  function _err(msg, where) {
+    if (_errN >= 3) return; _errN++;
+    track('js_error', { label: String(msg || '').slice(0, 24), target: String(where || '').slice(0, 20) });
+  }
+  window.addEventListener('error', function (e) {
+    if (!e || !e.message) return; // 画像などの読み込み失敗は数えない
+    var f = String(e.filename || '').split('/').pop().split('?')[0];
+    _err(e.message, f + ':' + (e.lineno || ''));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e && e.reason; _err('promise: ' + (r && r.message || r || ''), location.pathname);
+  });
+
   var _engSent = false, _activeSec = 0, _lastTick = Date.now(), _maxDepth = 0;
   var _wasVisible = document.visibilityState !== 'hidden';
   function _accumulate() {
@@ -263,8 +289,7 @@
   function _wireSections() {
     try {
       _tickDepth();
-      var els = document.querySelectorAll('[data-track-view]');
-      if (els.length && 'IntersectionObserver' in window) {
+      if ('IntersectionObserver' in window) {
         var seen = {};
         var io = new IntersectionObserver(function (ents) {
           ents.forEach(function (en) {
@@ -276,7 +301,18 @@
             track('sec_view', { label: l });
           });
         }, { threshold: 0.4 });
-        els.forEach(function (el) { io.observe(el); });
+        var scan = function () {
+          document.querySelectorAll('[data-track-view]').forEach(function (el) {
+            if (el.__seamObs) return; el.__seamObs = 1; io.observe(el);
+          });
+        };
+        scan();
+        // あとから描かれる画面（髪格診断の結果など）の [data-track-view] も拾う（2026-10-02）
+        if ('MutationObserver' in window) {
+          var mt = 0;
+          new MutationObserver(function () { if (mt) return; mt = setTimeout(function () { mt = 0; scan(); }, 500); })
+            .observe(document.body, { childList: true, subtree: true });
+        }
       }
       document.addEventListener('click', function (e) {
         var t = e.target && e.target.closest && e.target.closest('[data-track-click]');
