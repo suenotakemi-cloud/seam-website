@@ -106,3 +106,25 @@
   .ts-steps span{font-size:12.5px}
 }
 @media (prefers-reduced-motion:reduce){.ts-anim .ts-dots circle,.ts-anim .ts-link{animation:none}.ts-anim .ts-dots circle{transform:translateY(40px)}.ts-anim .ts-link{stroke-dashoffset:0}.ts-line-img img{transition:none}}
+
+/* こだわり・詳しく見る・施術の説明（2026-10-02 追加） */
+.ts-kod{max-width:1100px;margin:0 auto}
+.ts-kod-list{list-style:none;counter-reset:k;padding:0;margin:36px 0 0;display:grid}
+.ts-kod-list li{counter-increment:k;display:grid;grid-template-columns:52px 1fr;gap:4px 0;padding:20px 0;border-top:1px solid rgba(214,216,220,.18)}
+.ts-kod-list li::before{content:counter(k,decimal-leading-zero);grid-row:span 2;font-family:"Cormorant Garamond",serif;font-size:22px;color:var(--copper);line-height:1.2}
+.ts-kod-list b{font-family:"Shippori Mincho",serif;font-weight:500;font-size:16px;color:#fff}
+.ts-kod-list span{font-size:13px;line-height:1.95;color:var(--plat)}
+.ts-det{margin-top:12px;border-top:1px solid rgba(214,216,220,.18)}
+.ts-det summary{cursor:pointer;list-style:none;min-height:44px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;letter-spacing:.06em;color:var(--copper)}
+.ts-det summary::-webkit-details-marker{display:none}
+.ts-det summary::after{content:"+";font-size:16px}
+.ts-det[open] summary::after{content:"−"}
+.ts-det dl{margin:0 0 6px}
+.ts-det dl div{display:grid;grid-template-columns:6.5em 1fr;gap:8px;padding:6px 0;font-size:12px;line-height:1.8}
+.ts-det dt{color:#fff}
+.ts-det dd{margin:0;color:var(--plat)}
+.ts-steps small{display:block;margin-top:8px;font-size:11px;line-height:1.7;color:var(--plat2)}
+@media (min-width:860px){.ts-kod-list{grid-template-columns:1fr 1fr;column-gap:56px}}
+@media (max-width:640px){.ts-steps{grid-template-columns:1fr}.ts-steps li{border-right:0;border-bottom:1px solid rgba(214,216,220,.12);padding:14px 0;display:grid;grid-template-columns:44px 1fr;column-gap:8px}.ts-steps b{grid-row:span 2}.ts-steps span{margin-top:0}}
+
+@media (max-width:640px){.ts-det dl div{grid-template-columns:1fr;gap:0}}

@@ -72,3 +72,31 @@
   .bs-line-grid{grid-template-columns:repeat(4,1fr)}
 }
 @media (prefers-reduced-motion:reduce){.bs-line-img img{transition:none}}
+
+/* こだわり・詳しく見る・使い方・サロン（2026-10-02 追加） */
+.bs-kod{max-width:1100px;margin:0 auto}
+.bs-kod-list{list-style:none;counter-reset:k;padding:0;margin:36px 0 0;display:grid;gap:0}
+.bs-kod-list li{counter-increment:k;display:grid;grid-template-columns:52px 1fr;gap:4px 0;padding:20px 0;border-top:1px solid var(--line)}
+.bs-kod-list li::before{content:counter(k,decimal-leading-zero);grid-row:span 2;font-family:"Cormorant Garamond",serif;font-size:22px;color:var(--accent);line-height:1.2}
+.bs-kod-list b{font-family:"Shippori Mincho",serif;font-weight:500;font-size:16px;color:var(--ink)}
+.bs-kod-list span{font-size:13px;line-height:1.95;color:var(--sub)}
+.bs-det{margin-top:12px;border-top:1px solid var(--line)}
+.bs-det summary{cursor:pointer;list-style:none;padding:12px 0;font-size:12.5px;letter-spacing:.06em;color:var(--accent);display:flex;justify-content:space-between;align-items:center;min-height:44px}
+.bs-det summary::-webkit-details-marker{display:none}
+.bs-det summary::after{content:"+";font-size:16px}
+.bs-det[open] summary::after{content:"−"}
+.bs-det dl{margin:0 0 6px}
+.bs-det dl div{display:grid;grid-template-columns:5.5em 1fr;gap:8px;padding:6px 0;font-size:12px;line-height:1.8}
+.bs-det dt{color:var(--ink);font-weight:500}
+.bs-det dd{margin:0;color:var(--sub)}
+.bs-how{max-width:960px;margin:0 auto}
+.bs-how-list{list-style:none;padding:0;margin:32px 0 0}
+.bs-how-list li{display:grid;grid-template-columns:9em 1fr;gap:12px;padding:18px 0;border-top:1px solid var(--line);font-size:13.5px;line-height:1.95}
+.bs-how-list b{font-family:"Shippori Mincho",serif;font-weight:500;color:var(--ink)}
+.bs-how-list span{color:var(--sub)}
+.bs-salon{background:var(--bg2);text-align:center}
+.bs-salon p{max-width:680px;margin-left:auto;margin-right:auto}
+@media (min-width:860px){.bs-kod-list{grid-template-columns:1fr 1fr;column-gap:56px}}
+@media (max-width:520px){.bs-how-list li{grid-template-columns:1fr;gap:2px}}
+
+@media (max-width:640px){.bs-det dl div{grid-template-columns:1fr;gap:0}}

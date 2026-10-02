@@ -17,29 +17,41 @@ for prop in ['name="description"', 'property="og:description"']:
     head = re.sub(rf'<meta {prop} content="[^"]*">', f'<meta {prop} content="{DESC}">', head)
 head = re.sub(r'<meta property="og:title" content="[^"]*">', f'<meta property="og:title" content="{TITLE}">', head)
 head = head.replace('seam.site/guide-salon-senyo', 'seam.site/tokio-story')
-head = head.replace('</head>', '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap">\n<link rel="stylesheet" href="css/tokio-story.css?v=3">\n</head>')
+head = head.replace('</head>', '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Shippori+Mincho:wght@400;500&display=swap">\n<link rel="stylesheet" href="css/tokio-story.css?v=5">\n</head>')
 body_head = re.sub(r' data-i18n="[^"]*"', '', g[g.index('<body>'):g.index('<main')])
 tail = re.sub(r' data-i18n="[^"]*"', '', g[g.index('</main>') + 7:])
 tail = re.sub(r'window\.SEAM_PAGE_I18N\s*=\s*\{.*?\};', 'window.SEAM_PAGE_I18N = @@DICT@@;', tail, flags=re.S)
 
 LINES = [
-    ('PLATINUM', 'プラチナム', 'story/platinum-cut.webp', '軽く さらりと', '傷んでツヤが減った髪を 重くせずに補いたい方へ<br>ドライヤーの熱で補修が進む処方です', 'シャンプー・トリートメント 各 ¥5,500'),
-    ('PREMIUM', 'プレミアム', 'story/premium-cut.webp', 'しっとり まとまる', '乾燥して絡みやすい髪に 指通りとまとまりを', 'シャンプー・トリートメント 各 ¥6,270'),
-    ('LIMITED', 'リミテッド', 'story/limited-cut.webp', 'いちばん傷んだ毛先に', '毛先のダメージが強い髪へ 内側の補修と手触りを高い水準で', 'シャンプー・トリートメント 各 ¥6,490'),
-    ('OUTKARAMI', 'アウトカラミ', 'story/outkarami-cut.webp', '乾かす前のひと手間', '洗い流さないトリートメント<br>ドライヤーの前に毛先へなじませます', 'オイル・ミスト ¥4,290〜'),
+    ('PLATINUM', 'プラチナム', 'story/platinum-cut.webp', '軽く さらりと', 'カラーやパーマで傷んだ髪 細く絡まりやすい髪に<br>軽くしなやかな仕上がり', 'シャンプー・トリートメント 400 各 ¥5,500',
+     [('主な成分', '水鳥由来のケラチン ジェミニ型アミノ酸 フラーレン（保湿成分）　洗浄はタウリン系のアミノ酸'), ('香り', 'レモングラス'), ('容量と価格', '200 各 ¥3,300／400 各 ¥5,500／詰め替え 700 各 ¥8,250')]),
+    ('PREMIUM', 'プレミアム', 'story/premium-cut.webp', 'しっとり まとまる', 'カラーやアイロンを重ねた 強いダメージの髪に<br>重みのある しっとりした仕上がり', 'シャンプー・トリートメント 400 各 ¥6,270',
+     [('主な成分', 'シルクとコラーゲン由来の洗浄成分　分子の大きさが違う 4 種のケラチン 18-MEA セラミド スクワラン'), ('香り', 'シャンプーはラベンダー　トリートメントはスウィートフローラル'), ('容量と価格', '400 各 ¥6,270／詰め替え 700 各 ¥9,350')]),
+    ('LIMITED', 'リミテッド', 'story/limited-cut.webp', 'もう一段 上の手触り', 'プラチナム リミテッドは ゴワつきや硬さが気になる髪を柔らかく<br>プレミアム リミテッドは ハリが落ちた髪や毛先のパサつきに', 'シャンプー・トリートメント 400 各 ¥6,490',
+     [('香り', 'プラチナム リミテッドはレモングラス　プレミアム リミテッドのトリートメントはスウィートフローラル'), ('容量と価格', '400 各 ¥6,490／詰め替え 700 各 ¥9,460')]),
+    ('OUTKARAMI', 'アウトカラミ', 'story/outkarami-cut.webp', '乾かす前のひと手間', '洗い流さないトリートメント 4 種<br>ドライヤーの熱で キューティクルを補修する処方', 'オイル・ミスト ¥4,290〜',
+     [('プラチナム オイル', '軽くサラッと ツヤ　レモングラス　100ml ¥4,290'), ('プレミアム エアー', 'ミスト　細くペタッとしやすい髪に　100ml ¥4,290'), ('プラチナム リミテッド クリームオイル', 'ゴワつく髪を柔らかく　100g ¥4,620'), ('プレミアム リミテッド オイル', '毛先の広がりを抑える　100ml ¥4,620')]),
 ]
-STEPS = [('0', '浸透を助ける'), ('1', 'ケラチンの土台'), ('2', '芯をつくる'), ('3', '補強する'), ('4', '表面を整える')]
+STEPS = [('0', '浸透を助ける', '尿素で 硬くなったケラチンを柔らかくし 入りやすくする'), ('1', 'ケラチンの土台', '水鳥由来の小さなケラチンを 傷んだ部分へ'), ('2', '中で結びつける', '髪の中でケラチンをつなぎ 大きくする'), ('3', '補強する', '羊毛由来のケラチンと植物の成分で 内側を補強'), ('4', '表面を整える', '18-MEA やセラミドで 手触りとツヤを仕上げる')]
+KODAWARI = [('ケラチンに着目して', '髪の約 7 割はケラチン　ダメージで壊れたケラチンは自然には戻らないため 補修の考え方から見直しました'),
+            ('内側で 結びつく', '表面を覆うだけでなく 小さなケラチンが髪の中に入り 中で結びつく　それがインカラミ（メーカーが特許技術としている反応）'),
+            ('洗う段階から補修', 'シャンプーは汚れを落とすだけでなく 穏やかな洗浄成分で洗いながら補修する設計'),
+            ('家のケアに サロンの成分', 'シャンプーにはサロンの 1 番 トリートメントには 2〜4 番の成分が入っています'),
+            ('熱を 補修に使う', 'アウトカラミは ドライヤーの熱を使ってキューティクルを補修する処方'),
+            ('東京から 世界へ', '名前は東京（TOKIO）から　日本の美容技術を世界へ届けたいという思いで 2015 年にパリから海外へ')]
 HISTORY = [('2003', '銀座でイフイングが始まる'), ('2011', 'TOKIO インカラミが生まれる'), ('2015', 'パリから海外へ'), ('2017', '本社を GINZA SIX へ'), ('2022', 'ブランドを新しくする')]
 
+det = lambda rows: '<details class="ts-det"><summary>詳しく見る</summary><dl>' + ''.join(f'<div><dt>{k}</dt><dd>{v}</dd></div>' for k, v in rows) + '</dl></details>'
 lines = ''.join(f'''
       <article class="ts-line" data-track-view="ts_line_{en.lower()}">
         <div class="ts-line-img"><img src="{IMG}{img}" alt="TOKIO INKARAMI {en}" loading="lazy" width="467" height="700"></div>
         <p class="ts-eyebrow">{en}</p>
         <h3>{ja}<span>{feel}</span></h3>
         <p>{body}</p>
-        <p class="ts-price">{price}</p>
-      </article>''' for en, ja, img, feel, body, price in LINES)
-steps = ''.join(f'<li><b>{n}</b><span>{t}</span></li>' for n, t in STEPS)
+        <p class="ts-price">{price}</p>{det(rows)}
+      </article>''' for en, ja, img, feel, body, price, rows in LINES)
+steps = ''.join(f'<li><b>{n}</b><span>{t}</span><small>{d}</small></li>' for n, t, d in STEPS)
+kod = ''.join(f'<li><b>{k}</b><span>{v}</span></li>' for k, v in KODAWARI)
 hist = ''.join(f'<li><b>{y}</b><span>{t}</span></li>' for y, t in HISTORY)
 
 main = f'''<main id="seam-main" class="ts">
@@ -74,6 +86,12 @@ main = f'''<main id="seam-main" class="ts">
     </div>
   </section>
 
+  <section class="ts-kod" data-track-view="ts_kodawari">
+    <p class="ts-eyebrow">OUR COMMITMENT</p>
+    <h2>TOKIO インカラミの こだわり</h2>
+    <ol class="ts-kod-list">{kod}</ol>
+  </section>
+
   <section class="ts-effects" data-track-view="ts_effects">
     <p class="ts-eyebrow">WHAT HAPPENS IN YOUR HAIR</p>
     <h2>髪に起きる 3 つのこと</h2>
@@ -97,7 +115,7 @@ main = f'''<main id="seam-main" class="ts">
     <h2>髪に合わせて 4 つから</h2>
     <div class="ts-line-grid">{lines}
     </div>
-    <p class="ts-note">価格は定価（税込）　容量やセットは店頭でご案内します</p>
+    <p class="ts-note">価格はメーカー公式の定価（税込・2026 年 10 月確認）　シャンプーとトリートメントは同じシリーズで使うのがメーカーのおすすめです　店頭の在庫は店舗でご確認ください</p>
   </section>
 
   <section class="ts-ritual" data-track-view="ts_ritual">
@@ -106,9 +124,9 @@ main = f'''<main id="seam-main" class="ts">
       <p class="ts-eyebrow">THE RITUAL</p>
       <h2>毎日の 3 つの手順</h2>
       <ol class="ts-ritual-list">
-        <li><b>洗う</b>シャンプーで地肌と髪をやさしく</li>
-        <li><b>補う</b>トリートメントを毛先から 少し置いて流す</li>
-        <li><b>守る</b>乾かす前に アウトカラミを毛先へ</li>
+        <li><b>洗う</b>予洗いのあと 指の腹で洗い 泡を目の粗いコームで全体に通してすすぐ</li>
+        <li><b>補う</b>トリートメントを揉み込み 粗いコームでなじませて 5 分　浴室の湿気と温かさで入りやすくなります</li>
+        <li><b>守る</b>タオルで拭いた髪にアウトカラミ　ドライヤーの熱で仕上げる</li>
       </ol>
     </div>
   </section>
