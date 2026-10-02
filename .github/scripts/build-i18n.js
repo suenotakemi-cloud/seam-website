@@ -227,6 +227,9 @@ const PAGES = [
 
   // 2026-09-07 追加: 読みもの・求人・法務・ガイドも多言語化する
   { file: 'japan-salon-brands.html', url: '/japan-salon-brands' },
+  { file: 'aujua-story.html', url: '/aujua-story' },
+  { file: 'bykarte-story.html', url: '/bykarte-story' },
+  { file: 'tokio-story.html', url: '/tokio-story' },
 ];
 // ja=ルート(既存)。生成するのは以下4言語。値は <html lang> 用。
 const LANGS = { en: 'en', zh: 'zh-Hans', tw: 'zh-Hant', ko: 'ko' };

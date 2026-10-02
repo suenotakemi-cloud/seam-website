@@ -44,6 +44,8 @@ tail = re.sub(r'window\.SEAM_PAGE_I18N\s*=\s*\{.*?\};', 'window.SEAM_PAGE_I18N =
 
 TH = 'class="text-left font-medium text-ink border-b border-line py-2 pr-3"'
 TD = 'class="border-b border-line/60 py-2 pr-3 align-top"'
+STORY = {s: f'\n      <p class="mt-2 text-[13px]"><a href="{s}-story.html" class="underline underline-offset-4" data-track-click="jb_story_{s}">{n} のブランドストーリーを読む →</a></p>'
+         for s, n in [('tokio', 'TOKIO INKARAMI'), ('aujua', 'Aujua'), ('bykarte', 'BYKARTE')]}
 brands = ''.join(f'''
     <section class="mt-10 pt-6 border-t border-line" data-track-view="jb_{s}">
       <p class="text-[12px] text-gold tracking-wide">{m}</p>
@@ -51,7 +53,7 @@ brands = ''.join(f'''
       <p class="mt-3 text-[13.5px] sm:text-[14px] text-charcoal/80">{d}</p>
       <div class="mt-3 catrow"><span class="k">選び方</span><span class="v">{how}</span></div>
       <div class="mt-2 catrow"><span class="k">定価（税込）</span><span class="v">{price}</span></div>
-      <p class="mt-3 text-[13px]"><a href="{s}.html" class="underline underline-offset-4" data-track-click="jb_brand_{s}">{n} のラインを詳しく見る →</a></p>
+      <p class="mt-3 text-[13px]"><a href="{s}.html" class="underline underline-offset-4" data-track-click="jb_brand_{s}">{n} のラインを詳しく見る →</a></p>{STORY.get(s, '')}
     </section>''' for s, n, m, d, how, price in BRANDS)
 rows = ''.join(f'<tr><td {TD}>{a}</td><td {TD}>{b}</td><td {TD}>{c}</td></tr>' for a, b, c in COMPARE)
 main = f'''<main id="seam-main">
