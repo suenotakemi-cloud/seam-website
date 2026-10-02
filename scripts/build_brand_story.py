@@ -7,7 +7,7 @@ import re, json, sys
 
 BR = {
  'aujua': dict(
-  theme='th-aujua', title='Aujua｜日本の髪のために ミルボンが生んだヘアケア｜SEAM',
+  theme='th-aujua', title='Aujua｜アジアの髪のために ミルボンが生んだヘアケア｜SEAM',
   desc='アジアの髪と日本の気候を研究して生まれたオージュア 2010年にミルボンが送り出したサロン専売ヘアケアのこだわり 8つのラインの成分 香り 価格 使い方 SEAM全店で免税対応',
   crumb='オージュア', brandpage='aujua.html',
   eyebrow='SALON HAIR CARE BY MILBON, JAPAN', word='Aujua', h1ja='あなたの髪のためだけに',
@@ -91,6 +91,14 @@ BR = {
              hist=[('2021', '発売（ホーユー・名古屋）'), ('2024', 'UH+ と HS+ が加わり 組み合わせは 18 通りに'), ('2025', 'セラムマスクとコンセントレイトエッセンス')]),
  ),
 }
+
+def page_meta(slug, b):
+    m = {"ja": {"meta.title": b['title'], "meta.description": b['desc']}}
+    try:
+        m.update(json.load(open(f'scripts/{slug}_story_meta.json', encoding='utf-8')))
+    except FileNotFoundError:
+        pass
+    return m
 
 def build(slug):
     b = BR[slug]; IMG = f'images/brands/{slug}/'; URL = f'https://seam.site/{slug}-story'
@@ -179,7 +187,7 @@ def build(slug):
             {"@type": "ListItem", "position": 1, "name": "ホーム", "item": "https://seam.site/"},
             {"@type": "ListItem", "position": 2, "name": b['crumb'], "item": f"https://seam.site/{slug}"},
             {"@type": "ListItem", "position": 3, "name": "ブランドストーリー", "item": URL}]}]}
-    out = head.replace('@@LD@@', '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>') + body_head + main + tail.replace('@@DICT@@', json.dumps({"ja": {"meta.title": b['title'], "meta.description": b['desc']}}, ensure_ascii=False))
+    out = head.replace('@@LD@@', '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>') + body_head + main + tail.replace('@@DICT@@', json.dumps(page_meta(slug, b), ensure_ascii=False))
     open(f'{slug}-story.html', 'w', encoding='utf-8').write(out)
     print(f'{slug}-story.html written')
 
