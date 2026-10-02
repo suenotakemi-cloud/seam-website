@@ -2,7 +2,7 @@
    - HTML: network-first (常に最新、オフライン時はキャッシュ)
    - 静的アセット (vendor/css/js/json/font/画像): cache-first (2回目以降は即ロード)
    バージョンを上げるとキャッシュが刷新される */
-const VERSION = 'seam-v171';
+const VERSION = 'seam-v172';
 const CORE_CACHE = VERSION + '-core';
 const ASSET_CACHE = VERSION + '-assets';
 
@@ -15,7 +15,10 @@ const ASSET_CACHE = VERSION + '-assets';
 
    ★増やすときは「お客様以外の情報が映る画面か」で決める。
      迷ったら足す。残さないことで困るのは速度だけ。 */
-const PRIVATE_PATH = /^\/(booking|entrance|admin|write|karte|seam-karte|salontown-booking|pim|api\/pim|js\/pim-)(\/|\.|$|[a-z])/i;
+/* ★/api/ は全部ここ（2026-10-02）。集計（/api/admin/stats）や応募者の一覧（/api/recruit）まで
+     資産と同じく端末に保存し 先に古い保存分を返していた。ログインしても古い応答が出て
+     ハードリロード（SW を素通り）しないと見られず、応募者の名前と連絡先も端末に残っていた */
+const PRIVATE_PATH = /^\/(booking|entrance|admin|write|karte|seam-karte|salontown-booking|pim|api|js\/pim-)(\/|\.|$|[a-z])/i;
 const PRIVATE_QUERY = /(^|&)(t|token|stok|key|lt|k|s|r|deviceId)=/i;
 
 function isPrivate(url) {
