@@ -2,7 +2,7 @@
 # 文と訳の鍵は動かさない 包むだけ。冪等（2 回流しても同じ）
 # 使い方: python3 scripts/salon_store_c.py && node .github/scripts/build-i18n.js
 import re
-HERO = {'ginza': 'salon_ginza_room', 'osaka': 'store_osaka', 'sapporo': 'store_sapporo', 'fukuoka': 'store_fukuoka'}
+HERO = {'ginza': 'headspa_ginza_room', 'osaka': 'store_osaka', 'sapporo': 'store_sapporo', 'fukuoka': 'store_fukuoka'}
 HEAD = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500&amp;family=Cormorant+Garamond:ital,wght@0,400;1,400&amp;display=swap">'
         '<link rel="stylesheet" href="css/salon-store-c.css?v=1">')
 for city, img in HERO.items():
