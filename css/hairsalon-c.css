@@ -177,3 +177,65 @@ html:not([lang="ja"]) .hc-en{display:none}
   .hc [data-reveal="img"] img{transform:none!important}
   .hc-progress{display:none!important}
 }
+
+/* ── ホテルの格（2026-10-04）──
+   画面いっぱいの扉 中央の文字 広い余白 映画の幕間 下に予約バー */
+.hc{--light:#F4F3F0}
+.hc-hero{min-height:100svh;align-items:center;justify-content:center;text-align:center}
+.hc-hero::after{background:radial-gradient(ellipse 70% 60% at 50% 55%,rgba(14,16,19,.62) 0%,rgba(14,16,19,.35) 60%,rgba(14,16,19,.55) 100%)}
+.hc-hero-copy{max-width:1000px;margin:0 auto;padding:120px 24px 96px;display:flex;flex-direction:column;align-items:center}
+.hc-hero .hc-tag{font-style:normal;font-size:12px;letter-spacing:.42em;text-transform:uppercase;color:#E8CDB0}
+.hc-hero h1{font-size:clamp(40px,6.2vw,88px);letter-spacing:.06em;line-height:1.45}
+.hc-hero .hc-lead{max-width:36em;font-size:15px;line-height:2.3}
+.hc-hero .hc-cta{justify-content:center}
+.hc-btn{letter-spacing:.18em;font-size:13px;min-height:54px;padding:0 34px}
+.hc-btn.is-cu{background:transparent;border:1px solid #D2A57A;color:#fff}
+.hc-btn.is-cu:hover{background:#D2A57A;color:#0E1013}
+.hc-close .hc-btn.is-cu{background:#D2A57A;color:#0E1013}
+
+/* 広い余白と大きな見出し */
+.hc-sec{padding:clamp(110px,13vw,200px) clamp(24px,6vw,96px)}
+.hc h2{font-size:clamp(30px,4.2vw,54px);letter-spacing:.06em;line-height:1.6}
+.hc-lead{font-size:15.5px;line-height:2.3}
+.hc-eye{font-size:12px!important;letter-spacing:.42em}
+/* 一列の章は中央に（ホテルの章扉） */
+.hc-sec>.hc-wrap>.hc-eye,.hc-sec>.hc-wrap>h2,.hc-sec>.hc-wrap>.hc-lead,.hc-faq>.hc-eye,.hc-faq>h2{text-align:center;margin-left:auto;margin-right:auto}
+.hc-sec>.hc-wrap>.hc-lead{max-width:40em}
+.hc-sec>.hc-wrap>.hc-cta{justify-content:center}
+.hc-two{gap:clamp(48px,7vw,120px)}
+.hc-ritual{gap:clamp(20px,3vw,40px)}
+.hc-voice p{font-size:18px;line-height:2}
+
+/* 映画の幕間 */
+.hc-interlude{position:relative;min-height:82svh;display:flex;align-items:center;justify-content:center;overflow:hidden;text-align:center}
+.hc-il-pic,.hc-il-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hc-interlude::after{content:"";position:absolute;inset:0;background:rgba(14,16,19,.45)}
+.hc-il-copy{position:relative;z-index:1;padding:0 24px}
+.hc-il-eye{font-family:"Cormorant Garamond",serif;font-size:12px;letter-spacing:.42em;color:#E8CDB0;margin-bottom:22px!important}
+.hc-il-line{font-family:"Shippori Mincho","Noto Serif JP",serif;font-size:clamp(28px,4.4vw,56px);letter-spacing:.14em;color:#fff;word-break:keep-all}
+@supports (animation-timeline: view()){
+  .hc-il-pic img{animation:hcIl linear both;animation-timeline:view();animation-range:cover}
+  @keyframes hcIl{from{transform:scale(1.18) translateY(-4%)}to{transform:scale(1.04) translateY(4%)}}
+}
+
+/* 予約バー（パソコン幅） */
+.hc-resv{display:none}
+@media (min-width:1024px){
+  #stickyBook{display:none!important}
+  .hc-resv{display:flex;align-items:center;gap:0;position:fixed;left:50%;bottom:28px;z-index:65;transform:translate(-50%,24px);opacity:0;pointer-events:none;
+    background:rgba(14,16,19,.9);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#E9E6E1;border:1px solid rgba(210,165,122,.35);transition:opacity .6s ease,transform .6s cubic-bezier(.16,1,.3,1)}
+  .hc-resv.is-on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+  .hc-resv-brand{padding:0 28px;font-family:"Cormorant Garamond",serif;font-size:13px;letter-spacing:.32em;border-right:1px solid rgba(233,230,225,.18);line-height:60px}
+  .hc-resv-lab{padding:0 12px 0 24px;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:#C9C4BC}
+  .hc-resv select{appearance:none;-webkit-appearance:none;background:transparent;border:0;color:#fff;font-family:"Cormorant Garamond",serif;font-size:18px;letter-spacing:.08em;padding:0 34px 0 4px;height:60px;cursor:pointer;
+    background-image:linear-gradient(45deg,transparent 50%,#D2A57A 50%),linear-gradient(135deg,#D2A57A 50%,transparent 50%);background-position:calc(100% - 16px) 28px,calc(100% - 11px) 28px;background-size:5px 5px;background-repeat:no-repeat}
+  .hc-resv select option{color:#0E1013}
+  .hc-resv button{height:60px;padding:0 34px;border:0;background:#D2A57A;color:#0E1013;font-size:13px;letter-spacing:.24em;cursor:pointer;transition:background .3s}
+  .hc-resv button:hover{background:#E0B78F}
+  .hc-resv :focus-visible{outline:2px solid #D2A57A;outline-offset:-2px}
+}
+@media (prefers-reduced-motion:reduce){.hc-resv{transition:none}.hc-il-pic img{animation:none!important}}
+/* 画面の幅いっぱいに（サイト共通の 1280px の枠はこのページだけ外す） */
+body.salon-world{max-width:none!important;margin-left:0!important;margin-right:0!important;background:#0E1013}
+/* スマホの追従ボタンも角のない銅の線に */
+#stickyBook{border-radius:0!important;background:rgba(14,16,19,.92)!important;border:1px solid #D2A57A;color:#fff!important;letter-spacing:.18em;font-size:13px!important;box-shadow:none!important;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
