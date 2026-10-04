@@ -20,7 +20,9 @@
 
   /* ── 現在の言語取得 ── */
   function getSavedLang() {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    /* プライベートブラウズなどで保存場所が使えないと例外になる（10/3 の計測で lang.js:23 SecurityError） */
+    let saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
     return (saved && LANGS[saved]) ? saved : 'ja';
   }
 
@@ -82,7 +84,7 @@
     });
 
     /* 6. 保存 */
-    localStorage.setItem(STORAGE_KEY, lang);
+    try { localStorage.setItem(STORAGE_KEY, lang); } catch (e) {}
 
     /* 7. ページ固有コールバック */
     if (typeof window.onLangChange === 'function') {
