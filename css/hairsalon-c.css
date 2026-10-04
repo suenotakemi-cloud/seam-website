@@ -100,3 +100,80 @@ html:not([lang="ja"]) .hc-en{display:none}
 .hc-close .hc-cta{justify-content:center}
 .hc-close .legal-links a{color:var(--mute-dark)!important}
 .hc-close .legal-links{color:var(--mute-dark)!important}
+
+/* ── スクロールの物語（2026-10-04）──
+   開く：写真がゆっくり引き 文字が順に現れる
+   章：見出しに 01 02 … の番号 見出しと本文が順に浮かぶ
+   写真：下から幕が上がり 内側の写真がわずかに流れる
+   並び：一枚ずつ遅れて現れる 罫線は左から引かれる
+   上端：銅の細い線で 読み進めた量を示す
+   動きを減らす設定では すべて止めて最初から見せる */
+.hc [data-reveal]{transition-delay:var(--d,0ms)}
+
+/* 開く */
+@keyframes hcSettle{from{transform:scale(1.12)}to{transform:scale(1)}}
+@keyframes hcRise{from{opacity:0;transform:translateY(24px);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes hcTrack{from{letter-spacing:.16em;opacity:0}to{letter-spacing:.02em;opacity:1}}
+.hc-hero picture img{animation:hcSettle 9s cubic-bezier(.16,1,.3,1) both}
+.hc-hero-copy>*{animation:hcRise 1.2s cubic-bezier(.16,1,.3,1) both}
+.hc-hero-copy>.hc-tag{animation-delay:.2s}
+.hc-hero-copy>h1{animation:hcTrack 1.6s cubic-bezier(.16,1,.3,1) .35s both}
+.hc-hero-copy>.hc-lead{animation-delay:.8s}
+.hc-hero-copy>.hc-en{animation-delay:1s}
+.hc-hero-copy>.hc-cta{animation-delay:1.2s}
+.hc-hero::before{content:"";position:absolute;left:50%;bottom:18px;z-index:2;width:1px;height:44px;background:linear-gradient(#D2A57A,transparent);transform-origin:top;animation:hcCue 2.4s ease-in-out 2s infinite}
+@keyframes hcCue{0%{transform:scaleY(0);opacity:0}30%{opacity:1}100%{transform:scaleY(1);opacity:0}}
+
+/* 章の番号 */
+.hc{counter-reset:hcchap}
+.hc-chap{counter-increment:hcchap}
+.hc-chap::before{content:counter(hcchap,decimal-leading-zero);display:inline-block;margin-right:14px;padding-right:14px;border-right:1px solid currentColor;font-style:italic}
+
+/* 写真の幕 */
+.hc [data-reveal="img"]{opacity:1;filter:none;transform:none;clip-path:inset(100% 0 0 0);transition:clip-path 1.4s cubic-bezier(.77,0,.18,1) var(--d,0ms)}
+.hc [data-reveal="img"].is-revealed{clip-path:inset(0 0 0 0)}
+.hc [data-reveal="img"] img{transform:scale(1.14);transition:transform 2.2s cubic-bezier(.16,1,.3,1) var(--d,0ms)}
+.hc [data-reveal="img"].is-revealed img{transform:scale(1)}
+.hc-ritual figure,.hc-styles a{overflow:hidden}
+.hc-ritual figure picture,.hc-ritual figure>img,.hc-styles picture{display:block;overflow:hidden}
+
+/* 罫線を引く */
+.hc-brands li,.hc-rooms li,.hc-faq details{position:relative}
+.hc-brands li[data-reveal]::after,.hc-rooms li[data-reveal]::after{content:"";position:absolute;left:0;top:-1px;width:100%;height:1px;background:#8E5F36;transform:scaleX(0);transform-origin:left;transition:transform 1.2s cubic-bezier(.16,1,.3,1) calc(var(--d,0ms) + 200ms)}
+.hc-brands li.is-revealed::after,.hc-rooms li.is-revealed::after{transform:scaleX(1)}
+
+/* 197 */
+.hc-count{display:flex;align-items:baseline;gap:14px;margin-top:28px!important}
+.hc-count-n{font-family:"Cormorant Garamond",serif;font-weight:300;font-size:clamp(64px,9vw,104px);line-height:1;color:var(--cu-deep);font-variant-numeric:tabular-nums}
+.hc-count-c{font-size:13px;color:var(--sub-light);letter-spacing:.06em}
+
+/* 予約の店：銅が下から満ちる */
+.hc-stores a{position:relative;overflow:hidden}
+.hc-stores a>*{position:relative;z-index:1}
+.hc-stores a::before{content:"";position:absolute;inset:0;background:#D2A57A;transform:scaleY(0);transform-origin:bottom;transition:transform .6s cubic-bezier(.16,1,.3,1)}
+.hc-stores a:hover::before,.hc-stores a:focus-visible::before{transform:scaleY(1)}
+.hc-stores a:hover .c,.hc-stores a:hover .r,.hc-stores a:hover .g,.hc-stores a:focus-visible .g{color:#0E1013}
+.hc-brands a span:last-child{transition:transform .4s ease}
+.hc-brands a:hover span:last-child{transform:translateX(6px)}
+.hc-btn{transition:background .3s ease,color .3s ease,transform .3s ease}
+.hc-btn:active{transform:translateY(1px)}
+
+/* 読み進めた量 */
+.hc-progress{display:none}
+@supports (animation-timeline: scroll()){
+  .hc-progress{display:block;position:fixed;left:0;top:0;z-index:70;width:100%;height:2px;background:#D2A57A;transform-origin:left;transform:scaleX(0);animation:hcProg linear both;animation-timeline:scroll(root)}
+  @keyframes hcProg{to{transform:scaleX(1)}}
+  /* 写真がわずかに流れる */
+  .hc-par img{animation:hcDrift linear both;animation-timeline:view();animation-range:cover}
+  @keyframes hcDrift{from{translate:0 -5%}to{translate:0 5%}}
+  .hc-par{overflow:hidden}
+  .hc-hero picture{animation:hcHeroOut linear both;animation-timeline:scroll(root);animation-range:0 100vh}
+  @keyframes hcHeroOut{to{opacity:.35;translate:0 18%}}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .hc *,.hc *::before,.hc *::after{animation:none!important;transition:none!important}
+  .hc [data-reveal],.hc [data-reveal="img"]{opacity:1!important;filter:none!important;transform:none!important;clip-path:none!important}
+  .hc [data-reveal="img"] img{transform:none!important}
+  .hc-progress{display:none!important}
+}
