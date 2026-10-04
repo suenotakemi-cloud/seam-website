@@ -240,17 +240,23 @@
   // 画面のエラーを数える（1 ページ 3 件まで・中身は文の頭だけ。2026-10-02）
   // 9/3 は診断が 1 問目で止まる不具合が 2 時間出ていたが 数字に何も出なかった
   var _errN = 0;
-  function _err(msg, where) {
+  // 外から入った物のエラーは js_error_ext に分ける（10/3 の計測で大半がこれだった）
+  //   Script error.＝別のドメインの読み込み物／1 行目・ファイル名なし＝アプリ内ブラウザや翻訳が差し込んだもの／理由の無い promise
+  function _err(msg, where, ext) {
     if (_errN >= 3) return; _errN++;
-    track('js_error', { label: String(msg || '').slice(0, 24), target: String(where || '').slice(0, 20) });
+    track(ext ? 'js_error_ext' : 'js_error', { label: String(msg || '').slice(0, 24), target: String(where || '').slice(0, 20) });
   }
   window.addEventListener('error', function (e) {
     if (!e || !e.message) return; // 画像などの読み込み失敗は数えない
     var f = String(e.filename || '').split('/').pop().split('?')[0];
-    _err(e.message, f + ':' + (e.lineno || ''));
+    var own = /\.js$/.test(f) && (!e.filename || e.filename.indexOf(location.origin) === 0);
+    var page = f && !/\./.test(f) || /\.html$/.test(f);
+    var ext = e.message === 'Script error.' || !e.filename || (page && (e.lineno || 0) <= 1) || (!own && !page);
+    _err(e.message, f + ':' + (e.lineno || ''), ext);
   });
   window.addEventListener('unhandledrejection', function (e) {
-    var r = e && e.reason; _err('promise: ' + (r && r.message || r || ''), location.pathname);
+    var r = e && e.reason; var m = r && r.message || r || '';
+    _err('promise: ' + m, location.pathname, !m);
   });
 
   var _engSent = false, _activeSec = 0, _lastTick = Date.now(), _maxDepth = 0;

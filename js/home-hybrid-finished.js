@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded',function(){
   top.querySelector('#sfLangButton').addEventListener('click',function(){var overlay=document.getElementById('langOverlay');if(overlay)overlay.classList.toggle('open');});
   document.querySelectorAll('#langOverlay .lang-option[data-l]').forEach(function(btn){btn.addEventListener('click',function(){applySfLanguage(btn.dataset.l);var overlay=document.getElementById('langOverlay');if(overlay)overlay.classList.remove('open');});});
   window.addEventListener('seam:langchange',function(e){applySfLanguage(e.detail.lang);});
-  applySfLanguage((localStorage.getItem('seamLang')||'ja'));
+  var sfSaved='ja';try{sfSaved=localStorage.getItem('seamLang')||'ja';}catch(e){}applySfLanguage(sfSaved);
   // 旧デザインの節と footer を消す前に、法務リンク(利用規約・プライバシー・特商法)と言語リンクだけ新しい footer へ移す。
   // 以前はここで丸ごと消していたため、トップだけ法務リンクが無いページになっていた(静的 HTML には在るので検査は通る＝2026-09-16 に実機で発見)。
   var sfFooter=top.querySelector('.sf-footer');
