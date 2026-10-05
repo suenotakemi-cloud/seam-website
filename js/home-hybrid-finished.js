@@ -82,3 +82,44 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){
 window.addEventListener('load',function(){[].forEach.call(document.querySelectorAll('.sf-slide[data-src]'),function(i){i.src=i.getAttribute('data-src');});});
 document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){var h=document.querySelector('.sf-head');if(!h)return;
   function f(){h.classList.toggle('is-solid',scrollY>innerHeight*0.6);}addEventListener('scroll',f,{passive:true});f();},0);});
+
+/* ── ホテルの演出（2026-10-05 所有者「スクロールしてもわくわくがない」）──
+   幕が上がる写真・ゆっくり動く写真・行ごとに上がる見出し・章番号・金の線・数え上がる数字・夜の窓辺の帯・終わりを静かに
+   動きは transform と clip-path だけ（重くしない）・動きを減らす設定の人には出さない */
+document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){
+  var page=document.querySelector('.sf-page');if(!page)return;
+  var calm=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  page.classList.add('sf-motion');
+  /* 1 見出しを行ごとに包む（<br> で区切る）*/
+  [].forEach.call(page.querySelectorAll('.sf-pillar h2,.sf-section>h2,.sf-identity>h2,.sf-st-body,.sf-online h2'),function(h){
+    if(h.querySelector('.sf-ln'))return;
+    var parts=h.innerHTML.split(/<br\s*\/?>/i);
+    h.innerHTML=parts.map(function(p,i){return '<span class="sf-ln"><span style="--i:'+i+'">'+p+'</span></span>';}).join('');
+  });
+  /* 2 章番号 */
+  [].forEach.call(page.querySelectorAll('.sf-pillar'),function(a,i,all){var s=a.querySelector('.sf-p-txt>small');if(s&&!s.querySelector('.sf-no'))s.insertAdjacentHTML('afterbegin','<span class="sf-no">0'+(i+1)+' / 0'+all.length+'</span>');});
+  /* 3 夜の窓辺の帯（柱の後ろ）*/
+  var pillars=page.querySelector('.sf-pillars');
+  if(pillars&&!page.querySelector('.sf-interlude')){
+    pillars.insertAdjacentHTML('afterend','<section class="sf-interlude" aria-label="SEAM GINZA"><div class="sf-il-img" style="background-image:url(/images/stores/headspa_ginza_room.webp)"></div><p><small>SEAM GINZA</small><span>ONE GINZA 3F<br>窓辺の特等席</span></p></section>');
+  }
+  /* 言語に合わせる（帯の一行・畳んだ見出し）*/
+  var IL={ja:'ONE GINZA 3F<br>窓辺の特等席',en:'ONE GINZA 3F<br>A seat by the window',zh:'ONE GINZA 3F<br>窗边的特等席',tw:'ONE GINZA 3F<br>窗邊的特等席',ko:'ONE GINZA 3F<br>창가의 특등석'};
+  function relang(){var L=document.documentElement.lang||'ja';L={'zh-Hans':'zh','zh-Hant':'tw'}[L]||L.split('-')[0];var sp=page.querySelector('.sf-interlude span');if(sp)sp.innerHTML=IL[L]||IL.ja;[].forEach.call(page.querySelectorAll('.sf-fold'),function(d){var h=d.querySelector('section>h2');if(h)d.querySelector('summary').textContent=h.textContent;});}
+  window.addEventListener('seam:langchange',function(){setTimeout(relang,0);});
+  /* 4 終わりを静かに：会社概要と加盟のご相談は畳む（中身はそのまま・検索にも残る）*/
+  ['.sf-corp','.sf-fc'].forEach(function(q){var sec=page.querySelector(q);if(!sec||sec.parentNode.tagName==='DETAILS')return;var h=sec.querySelector('h2');var d=document.createElement('details');d.className='sf-fold';var sm=document.createElement('summary');sm.textContent=h?h.textContent:'';d.appendChild(sm);sec.parentNode.insertBefore(d,sec);d.appendChild(sec);});
+  relang();
+  if(calm)return;
+  /* 5 画面に入ったら .is-in（写真の幕・行の立ち上がり・金の線）*/
+  var targets=page.querySelectorAll('.sf-pillar,.sf-section,.sf-identity,.sf-statement,.sf-online,.sf-interlude,.sf-award,.sf-proof,.sf-concerns,.sf-seo');
+  var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){x.target.classList.add('is-in');io.unobserve(x.target);if(x.target.classList.contains('sf-proof'))countUp(x.target);}});},{rootMargin:'0px 0px -12% 0px'});
+  [].forEach.call(targets,function(t){io.observe(t);});
+  setTimeout(function(){[].forEach.call(targets,function(t){if(t.getBoundingClientRect().top<innerHeight*.9)t.classList.add('is-in');});},60);
+  /* 6 数え上がる数字 */
+  function countUp(box){[].forEach.call(box.querySelectorAll('strong'),function(el){var raw=el.textContent;var m=raw.match(/[\d,]+/);if(!m)return;var end=+m[0].replace(/,/g,''),t0=null,dur=1400;function f(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/dur),v=Math.round(end*(1-Math.pow(1-p,3)));el.textContent=raw.replace(m[0],v.toLocaleString('en-US'));if(p<1)requestAnimationFrame(f);else el.textContent=raw;}requestAnimationFrame(f);});}
+  /* 7 写真をゆっくり動かす（見えている間だけ）*/
+  var par=[].slice.call(page.querySelectorAll('.sf-pillar .sf-p-img img,.sf-il-img'));var ticking=false;
+  function move(){ticking=false;var vh=innerHeight;par.forEach(function(el){var r=el.parentNode.getBoundingClientRect();if(r.bottom<0||r.top>vh)return;var p=(r.top+r.height/2-vh/2)/vh;el.style.transform='translate3d(0,'+(p*-38).toFixed(1)+'px,0) scale(1.12)';});}
+  addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(move);}},{passive:true});move();
+},30);});
