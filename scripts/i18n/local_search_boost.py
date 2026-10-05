@@ -317,11 +317,11 @@ def add_nagi(s, d):
 #   → ラベル＋見出し＋本文の3段にして、何が休みで何が開いているかを一目で分ける。
 #   赤い警告にはしない。金とクリームのままで十分伝わる。
 PAUSED_LEAD = {
-    'ja': '矢場町駅からすぐ 栄・大須・上前津からも歩ける栄エリアです<br>ヘッドスパと 197のサロン専売ブランドのショップをご用意しています',
-    'en': 'Right by Yabacho Station, within walking distance of Sakae, Osu and Kamimaezu.<br>Here you will find our head spa and a shop carrying 197 salon-exclusive brands.',
-    'zh': '矢场町站近在咫尺，从荣、大须、上前津步行可达。<br>这里为您准备了头部水疗与汇集197个沙龙专售品牌的商店。',
-    'tw': '矢場町站近在咫尺，從榮、大須、上前津步行可達。<br>這裡為您準備了頭部水療與匯集197個沙龍專售品牌的商店。',
-    'ko': '야바초역 바로 앞, 사카에·오스·가미마에즈에서도 걸어오실 수 있습니다.<br>헤드스파와 197개 살롱 전용 브랜드의 숍을 준비하고 있습니다.',
+    'ja': '矢場町駅からすぐ 栄・大須・上前津からも歩ける栄エリアです<br>ヘッドスパと 196のサロン専売ブランドのショップをご用意しています',
+    'en': 'Right by Yabacho Station, within walking distance of Sakae, Osu and Kamimaezu.<br>Here you will find our head spa and a shop carrying 196 salon-exclusive brands.',
+    'zh': '矢场町站近在咫尺，从荣、大须、上前津步行可达。<br>这里为您准备了头部水疗与汇集196个沙龙专售品牌的商店。',
+    'tw': '矢場町站近在咫尺，從榮、大須、上前津步行可達。<br>這裡為您準備了頭部水療與匯集196個沙龍專售品牌的商店。',
+    'ko': '야바초역 바로 앞, 사카에·오스·가미마에즈에서도 걸어오실 수 있습니다.<br>헤드스파와 196개 살롱 전용 브랜드의 숍을 준비하고 있습니다.',
 }
 PAUSED = {
     'ja': ('ヘアサロン', '受付休止中', 'ヘッドスパとサロン専売品のショップは 通常どおり営業しています'),
@@ -344,11 +344,11 @@ PAUSE_BLOCK = PAUSE_MARK + '''<div class="mt-6 rounded-[10px] px-4 py-4" style="
 # 休止中なのに「お受けしています」と言い切っていた2箇所（本文とFAQの回答）。
 # ページ全体を書き替えるのではなく、**受けられないと言い切っている嘘だけ**を正す。
 PAUSED_OFFER = {
-    'ja': 'ヘアサロンは現在受付を休止しています　ヘッドスパと197のサロン専売ブランドのショップは通常どおり営業しています　最新の情報はホットペッパービューティーでご確認ください',
-    'en': 'Hair salon bookings are currently paused. Our head spa and the shop carrying 197 salon-exclusive brands are open as usual. Please see Hot Pepper Beauty for the latest.',
-    'zh': '美发沙龙目前暂停接受预约。头部水疗与汇集197个沙龙专售品牌的商店照常营业。最新信息请见Hot Pepper Beauty。',
-    'tw': '美髮沙龍目前暫停接受預約。頭部水療與匯集197個沙龍專售品牌的商店照常營業。最新資訊請見Hot Pepper Beauty。',
-    'ko': '헤어살롱은 현재 예약 접수를 중지하고 있습니다. 헤드스파와 197개 살롱 전용 브랜드의 숍은 평소대로 영업합니다. 최신 정보는 핫페퍼뷰티에서 확인해 주세요.',
+    'ja': 'ヘアサロンは現在受付を休止しています　ヘッドスパと196のサロン専売ブランドのショップは通常どおり営業しています　最新の情報はホットペッパービューティーでご確認ください',
+    'en': 'Hair salon bookings are currently paused. Our head spa and the shop carrying 196 salon-exclusive brands are open as usual. Please see Hot Pepper Beauty for the latest.',
+    'zh': '美发沙龙目前暂停接受预约。头部水疗与汇集196个沙龙专售品牌的商店照常营业。最新信息请见Hot Pepper Beauty。',
+    'tw': '美髮沙龍目前暫停接受預約。頭部水療與匯集196個沙龍專售品牌的商店照常營業。最新資訊請見Hot Pepper Beauty。',
+    'ko': '헤어살롱은 현재 예약 접수를 중지하고 있습니다. 헤드스파와 196개 살롱 전용 브랜드의 숍은 평소대로 영업합니다. 최신 정보는 핫페퍼뷰티에서 확인해 주세요.',
 }
 PAUSED_FAQ_Q = {
     'ja': 'いまヘアサロンの予約はできますか',
@@ -476,7 +476,7 @@ for slug, st in SALON.items():
         # 本文が支えられる語だけを書く。room は STORES の実態から引く（勝手に完全個室と書かない）
         title = f"{c['ja']}の縮毛矯正・髪質改善・カラー｜{st['room']}の美容室 {st['name']}"
         desc = (f"{c['ja']}で縮毛矯正・髪質改善・カラーができる{st['room']}の美容室｜"
-                f"{st['area']}エリアの{st['name']}｜197のサロン専売ブランドを知るプロが担当します｜{st['station']}")
+                f"{st['area']}エリアの{st['name']}｜196のサロン専売ブランドを知るプロが担当します｜{st['station']}")
     else:
         # ヘアが受付休止中の店。施術名を名乗らない。
         # headspa-{slug}（ヘッドスパ）と store-{slug}（サロン専売）とも食い合わない語を選ぶ。
@@ -486,7 +486,7 @@ for slug, st in SALON.items():
         nmsg = '凪を外した（ヘア休止中）' if dropped else '凪なし（ヘア休止中）'
         title = f"{st['name']} {c['ja']} 栄・矢場町｜ヘッドスパとヘアケアの店"
         desc = (f"{c['ja']} 栄・矢場町の{st['name']}｜ヘアサロンは現在受付を休止しています　"
-                f"ヘッドスパと197のサロン専売ブランドのショップは通常どおり営業しています｜{st['station']}｜営業時間 11:00–19:00")
+                f"ヘッドスパと196のサロン専売ブランドのショップは通常どおり営業しています｜{st['station']}｜営業時間 11:00–19:00")
 
     s = set_meta(s, d, title, desc)
 

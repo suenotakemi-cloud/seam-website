@@ -26,8 +26,8 @@ os.chdir(ROOT)
 
 PLAN = {
  'shop.html': {
-   'old_title': 'サロン専売ヘアケアの正規取扱店｜197ブランド｜SEAM',
-   'new_title': 'サロン専売・美容室専売品の販売店｜197ブランド｜SEAM',
+   'old_title': 'サロン専売ヘアケアの正規取扱店｜196ブランド｜SEAM',
+   'new_title': 'サロン専売・美容室専売品の販売店｜196ブランド｜SEAM',
    'desc_add': '美容室専売品の販売店です　',
  },
  'guide-salon-senyo.html': {

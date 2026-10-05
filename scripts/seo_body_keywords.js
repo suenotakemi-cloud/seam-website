@@ -7,7 +7,7 @@
  * 【やること】
  *   headspa.html   : 導入の h2/p に 眼精疲労・肩こり・眠り・水素×炭酸・ジャパニーズヘッドスパ・専門
  *                    FAQ に「眼精疲労や肩こり」「睡眠」の2問
- *   shop.html      : h2「メーカー公認の正規販売店」に「197ブランドのヘアケア セレクトショップ」
+ *   shop.html      : h2「メーカー公認の正規販売店」に「196ブランドのヘアケア セレクトショップ」
  *   finder.html    : h2「わかること」→「髪質診断でわかること くせ毛の傾向とシャンプーの選び方」
  *                    （finder は自前辞書 js/finder-i18n.js。原文一致の鍵なので 4言語ぶん足し ?v を上げる）
  *   英語版の title : headspa / headspa-ginza / salon-ginza / shop に japanese head spa・hair salon ginza english・
@@ -78,14 +78,14 @@ rep('headspa.html',
 // ── shop.html（ページ固有の鍵 authorized.title は5言語ここで）──
 rep('shop.html',
   'data-i18n="authorized.title">メーカー公認の正規販売店</h2>',
-  'data-i18n="authorized.title">メーカー公認の正規販売店｜197ブランドのヘアケア セレクトショップ</h2>',
+  'data-i18n="authorized.title">メーカー公認の正規販売店｜196ブランドのヘアケア セレクトショップ</h2>',
   'h2 に ヘアケア セレクトショップ');
 log.push('  辞書 shop.html authorized.title ' + setDict('shop.html', {
-  ja: { 'authorized.title': 'メーカー公認の正規販売店｜197ブランドのヘアケア セレクトショップ' },
-  en: { 'authorized.title': 'An authorized official retailer | A hair care select shop of 197 brands' },
-  zh: { 'authorized.title': '厂商公认的正规销售店｜197个品牌的护发精选店' },
-  tw: { 'authorized.title': '原廠公認的正規販售店｜197個品牌的護髮精選店' },
-  ko: { 'authorized.title': '제조사 공인 정규 판매점｜197개 브랜드의 헤어케어 셀렉트숍' },
+  ja: { 'authorized.title': 'メーカー公認の正規販売店｜196ブランドのヘアケア セレクトショップ' },
+  en: { 'authorized.title': 'An authorized official retailer | A hair care select shop of 196 brands' },
+  zh: { 'authorized.title': '厂商公认的正规销售店｜196个品牌的护发精选店' },
+  tw: { 'authorized.title': '原廠公認的正規販售店｜196個品牌的護髮精選店' },
+  ko: { 'authorized.title': '제조사 공인 정규 판매점｜196개 브랜드의 헤어케어 셀렉트숍' },
 }) + '本');
 
 // ── 英語版の title（海外からの検索語を入れる。「Simple English OK」は据え置き＝言えることだけ言う）──

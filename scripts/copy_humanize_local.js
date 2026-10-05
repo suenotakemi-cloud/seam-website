@@ -7,11 +7,11 @@ function span(s) { const m = /window\.SEAM_PAGE_I18N\s*=\s*\{/.exec(s); let d = 
   for (; i < s.length; i++) { const c = s[i]; if (esc) { esc = false; continue; } if (mode) { if (c === '\\') esc = true; else if (c === mode) mode = null; continue; } if (c === "'" || c === '"' || c === '`') { mode = c; continue; } if (c === '{') d++; else if (c === '}') { d--; if (d === 0) return [st, i + 1]; } } }
 const T = {
   'shop.html': {
-    'concept.lead': { ja: '棚から選んで買うだけでも歓迎です<br>店頭ではヘアケアのプロが髪質と履歴をうかがい<br class="hidden sm:block">197ブランドから候補を一緒に絞り込むこともできます',
-      en: 'You are welcome to simply pick from the shelf.<br>In store, hair care professionals can also listen to your hair type and history<br class="hidden sm:block">and narrow down the candidates with you, from all 197 brands.',
-      zh: '只从货架上挑选购买也欢迎<br>在店内 护发专家也可以了解您的发质与履历<br class="hidden sm:block">从197个品牌中一起缩小候选范围',
-      tw: '只從貨架上挑選購買也歡迎<br>在店內 護髮專家也可以了解您的髮質與履歷<br class="hidden sm:block">從197個品牌中一起縮小候選範圍',
-      ko: '진열대에서 골라 사기만 해도 환영합니다<br>매장에서는 헤어케어 전문가가 모발 타입과 이력을 듣고<br class="hidden sm:block">197개 브랜드에서 후보를 함께 좁혀 드릴 수도 있습니다' },
+    'concept.lead': { ja: '棚から選んで買うだけでも歓迎です<br>店頭ではヘアケアのプロが髪質と履歴をうかがい<br class="hidden sm:block">196ブランドから候補を一緒に絞り込むこともできます',
+      en: 'You are welcome to simply pick from the shelf.<br>In store, hair care professionals can also listen to your hair type and history<br class="hidden sm:block">and narrow down the candidates with you, from all 196 brands.',
+      zh: '只从货架上挑选购买也欢迎<br>在店内 护发专家也可以了解您的发质与履历<br class="hidden sm:block">从196个品牌中一起缩小候选范围',
+      tw: '只從貨架上挑選購買也歡迎<br>在店內 護髮專家也可以了解您的髮質與履歷<br class="hidden sm:block">從196個品牌中一起縮小候選範圍',
+      ko: '진열대에서 골라 사기만 해도 환영합니다<br>매장에서는 헤어케어 전문가가 모발 타입과 이력을 듣고<br class="hidden sm:block">196개 브랜드에서 후보를 함께 좁혀 드릴 수도 있습니다' },
     'authorized.body': { ja: '取り扱うのは 各メーカーと正規に契約した正規品だけです 並行輸入品や転売品は扱いません',
       en: 'Everything we carry is genuine, under direct contracts with each maker. We do not handle parallel imports or resold goods',
       zh: '我们只经营与各厂商正规签约的正品 不经营平行进口品或转卖品', tw: '我們只經營與各原廠正規簽約的正品 不經營平行輸入品或轉賣品', ko: '취급하는 것은 각 제조사와 정규 계약한 정품뿐입니다 병행 수입품이나 되팔이 상품은 취급하지 않습니다' },
@@ -30,7 +30,7 @@ const T = {
     'rank.desc': { ja: '今月よく選ばれている SEAMのセレクション', en: "This month's most chosen, from SEAM's selection", zh: '本月最常被选择的 SEAM精选', tw: '本月最常被選擇的 SEAM精選', ko: '이달 많이 선택된 SEAM 셀렉션' },
   },
   'brand.html': {
-    'hero.eyebrow': { ja: 'Curated Brands · 197 Worldwide', en: 'Curated Brands · 197 Worldwide', zh: 'Curated Brands · 197 Worldwide', tw: 'Curated Brands · 197 Worldwide', ko: 'Curated Brands · 197 Worldwide' },
+    'hero.eyebrow': { ja: 'Curated Brands · 196 Worldwide', en: 'Curated Brands · 196 Worldwide', zh: 'Curated Brands · 196 Worldwide', tw: 'Curated Brands · 196 Worldwide', ko: 'Curated Brands · 196 Worldwide' },
     'pm.banner.eyebrow': { ja: 'Not Sure Which?', en: 'Not Sure Which?', zh: 'Not Sure Which?', tw: 'Not Sure Which?', ko: 'Not Sure Which?' },
     'concept.sub': { ja: 'SEAMがこのブランドを選ぶ基準と プロが信頼する理由', en: 'How SEAM chooses these brands, and why professionals trust them', zh: 'SEAM挑选这些品牌的标准 以及专业人士信赖的理由', tw: 'SEAM挑選這些品牌的標準 以及專業人士信賴的理由', ko: 'SEAM이 이 브랜드를 고르는 기준과 전문가가 신뢰하는 이유' },
     'concept.c3.title': { ja: '世界から選んだグローバルブランド', en: 'Global brands chosen from around the world', zh: '从世界各地挑选的全球品牌', tw: '從世界各地挑選的全球品牌', ko: '세계에서 고른 글로벌 브랜드' },
