@@ -2,67 +2,69 @@
 <html lang="ja"><head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>SEAM｜予約・ショップ</title>
-  <meta name="description" content="SEAM のサロン予約・ヘッドスパ予約・オンラインショップ・店舗">
+  <title>SEAM｜ショップ・サロン予約</title>
+  <meta name="description" content="SEAM のショップ・オンラインショップ・ヘアサロン・ヘッドスパ・髪格診断">
   <meta name="robots" content="noindex,follow">
   <link rel="canonical" href="https://seam.site/links">
   <meta name="theme-color" content="#0E1013">
   <meta name="color-scheme" content="dark">
   <meta property="og:title" content="SEAM">
-  <meta property="og:image" content="https://seam.site/images/stores/salon_ginza_room.jpg">
+  <meta property="og:image" content="https://seam.site/images/stores/store_ginza.jpg">
   <link rel="icon" href="/favicon.ico">
-  <link rel="preload" as="image" href="images/stores/salon_ginza_room.webp">
+  <link rel="preload" as="image" href="images/stores/store_ginza.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&amp;family=Shippori+Mincho:wght@400;500&amp;family=Noto+Sans+JP:wght@400;500&amp;display=swap" rel="stylesheet">
   <style>
-    :root{--ink:#0E1013;--ink2:#15181C;--line:rgba(233,230,225,.14);--on:#E9E6E1;--sub:#A9A39B;--cu:#D2A57A}
+    :root{--ink:#0E1013;--line:rgba(233,230,225,.14);--on:#E9E6E1;--sub:#B9B3AA;--cu:#D2A57A}
     *{box-sizing:border-box}
     html,body{margin:0;background:var(--ink);color:var(--on);font-family:"Noto Sans JP","Hiragino Sans",sans-serif;-webkit-font-smoothing:antialiased}
     a{color:inherit;text-decoration:none}
-    .lk{min-height:100dvh;max-width:520px;margin:0 auto;display:flex;flex-direction:column}
-    .lk-hero{position:relative;height:clamp(180px,30dvh,280px);overflow:hidden}
-    .lk-hero img{width:100%;height:100%;object-fit:cover;display:block;animation:lkZoom 14s ease-out both}
-    .lk-hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,16,19,.15) 0%,rgba(14,16,19,.35) 55%,var(--ink) 100%)}
-    .lk-brand{position:absolute;left:0;right:0;bottom:18px;z-index:1;text-align:center}
-    .lk-brand b{display:block;font-family:"Cormorant Garamond",serif;font-weight:500;font-size:34px;letter-spacing:.42em;padding-left:.42em;color:#fff}
-    .lk-brand span{display:block;margin-top:4px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:15px;color:var(--cu)}
-    .lk-list{list-style:none;margin:8px 0 0;padding:0 20px}
-    .lk-list>li{border-top:1px solid var(--line)}
-    .lk-list>li:last-child{border-bottom:1px solid var(--line)}
-    .lk-row,.lk-list summary{display:flex;align-items:center;gap:14px;min-height:64px;padding:10px 2px;cursor:pointer;list-style:none;touch-action:manipulation}
+    .lk{max-width:560px;margin:0 auto;padding:0 12px calc(16px + env(safe-area-inset-bottom,0px))}
+    .lk-head{text-align:center;padding:18px 0 14px}
+    .lk-head b{display:block;font-family:"Cormorant Garamond",serif;font-weight:500;font-size:30px;letter-spacing:.42em;padding-left:.42em;color:#fff;line-height:1}
+    .lk-head span{display:block;margin-top:6px;font-family:"Cormorant Garamond",serif;font-style:italic;font-size:14px;color:var(--cu)}
+    .lk-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+    .lk-tile,.lk-list summary{position:relative;display:block;height:clamp(128px,18dvh,190px);overflow:hidden;cursor:pointer;list-style:none;touch-action:manipulation;background:#1b1d21}
+    .lk-list>li:first-child .lk-tile{height:clamp(160px,25dvh,250px)}
     .lk-list summary::-webkit-details-marker{display:none}
-    .lk-t{flex:1;min-width:0}
-    .lk-t b{display:block;font-family:"Shippori Mincho","Noto Serif JP",serif;font-weight:500;font-size:18px;letter-spacing:.04em;color:#fff}
-    .lk-t small{display:block;margin-top:2px;font-family:"Cormorant Garamond",serif;font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--sub)}
-    .lk-ar{width:9px;height:9px;border-right:1px solid var(--cu);border-top:1px solid var(--cu);transform:rotate(45deg);margin-right:6px;transition:transform .3s ease}
+    .lk-tile img,.lk-list summary img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1.2s cubic-bezier(.2,.7,.2,1)}
+    .lk-tile:after,.lk-list summary:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,11,13,.82) 0%,rgba(10,11,13,.45) 55%,rgba(10,11,13,.06) 100%)}
+    .lk-tile:hover img,.lk-list summary:hover img{transform:scale(1.04)}
+    .lk-t{position:absolute;z-index:1;left:20px;right:48px;bottom:16px}
+    .lk-t small{display:block;font-family:"Cormorant Garamond",serif;font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--cu)}
+    .lk-t b{display:block;margin-top:4px;font-family:"Shippori Mincho","Noto Serif JP",serif;font-weight:500;font-size:22px;letter-spacing:.06em;color:#fff}
+    .lk-t em{display:block;margin-top:5px;font-style:normal;font-size:12.5px;letter-spacing:.04em;color:var(--on);opacity:.88}
+    .lk-ar{position:absolute;z-index:1;right:20px;bottom:24px;width:9px;height:9px;border-right:1px solid var(--cu);border-top:1px solid var(--cu);transform:rotate(45deg);transition:transform .3s ease}
     details[open] .lk-ar{transform:rotate(135deg)}
-    .lk-stores{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:8px;padding:2px 0 16px}
+    .lk-stores{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:6px;padding:8px 0 4px}
     .lk-stores a{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;border:1px solid rgba(210,165,122,.45);font-size:14px;letter-spacing:.08em;transition:background .2s ease,color .2s ease}
     .lk-stores a small{font-size:10.5px;color:var(--sub);letter-spacing:.04em;margin-top:2px}
     .lk-stores a:active,.lk-stores a:hover{background:var(--cu);color:var(--ink)}
     .lk-stores a:active small,.lk-stores a:hover small{color:var(--ink)}
-    .lk-row:active .lk-t b,.lk-list summary:active .lk-t b{color:var(--cu)}
-    .lk-foot{margin-top:auto;padding:22px 20px calc(18px + env(safe-area-inset-bottom,0px));text-align:center;font-size:11.5px;letter-spacing:.06em;color:var(--sub)}
+    .lk-foot{padding:18px 0 4px;text-align:center;font-size:11.5px;letter-spacing:.06em;color:var(--sub)}
     .lk-foot a{border-bottom:1px solid var(--line);padding-bottom:1px}
     a:focus-visible,summary:focus-visible{outline:2px solid var(--cu);outline-offset:3px}
-    @keyframes lkZoom{from{transform:scale(1.08)}to{transform:scale(1)}}
-    .lk-list>li{animation:lkIn .6s ease both}
-    .lk-list>li:nth-child(2){animation-delay:.06s}.lk-list>li:nth-child(3){animation-delay:.12s}.lk-list>li:nth-child(4){animation-delay:.18s}.lk-list>li:nth-child(5){animation-delay:.24s}
-    @keyframes lkIn{from{opacity:.001;transform:translateY(8px)}to{opacity:1;transform:none}}
-    @media (prefers-reduced-motion:reduce){.lk-hero img,.lk-list>li{animation:none}.lk-ar{transition:none}}
+    .lk-list>li{animation:lkIn .7s ease both}
+    .lk-list>li:nth-child(2){animation-delay:.07s}.lk-list>li:nth-child(3){animation-delay:.14s}.lk-list>li:nth-child(4){animation-delay:.21s}.lk-list>li:nth-child(5){animation-delay:.28s}
+    @keyframes lkIn{from{opacity:.001;transform:translateY(10px)}to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion:reduce){.lk-list>li{animation:none}.lk-ar,.lk-tile img,.lk-list summary img{transition:none}}
   </style>
 </head>
 <body>
 <main class="lk">
-  <div class="lk-hero">
-    <img src="images/stores/salon_ginza_room.webp" alt="SEAM 銀座の個室" width="1280" height="714" fetchpriority="high">
-    <div class="lk-brand"><b>SEAM</b><span>Hair care · Salon · Head spa</span></div>
-  </div>
-
+  <header class="lk-head"><b>SEAM</b><span>Hair care · Salon · Head spa</span></header>
   <ul class="lk-list">
+    <li><a class="lk-tile" href="shop.html#stores" data-track-click="links_shop">
+      <picture><source srcset="images/stores/store_ginza.avif" type="image/avif"><img src="images/stores/store_ginza.webp" alt="SEAM 銀座店の売り場" fetchpriority="high" decoding="async"></picture>
+      <span class="lk-t"><small>Shop</small><b>ショップ</b><em>プロが使う197ブランドを 手に取れる</em></span><i class="lk-ar" aria-hidden="true"></i></a></li>
+    <li><a class="lk-tile" href="onlineshop.html" data-track-click="links_online">
+      <picture><source srcset="images/onlineshop/hero_dresser.avif" type="image/avif"><img src="images/onlineshop/hero_dresser.webp" alt="ヘアケアの並ぶドレッサー" loading="lazy" decoding="async"></picture>
+      <span class="lk-t"><small>Online shop</small><b>オンラインショップ</b><em>ご来店の方だけの 会員制ショップ</em></span><i class="lk-ar" aria-hidden="true"></i></a></li>
     <li><details name="lk">
-      <summary data-track-click="links_salon"><span class="lk-t"><b>サロンを予約</b><small>Hair salon</small></span><i class="lk-ar" aria-hidden="true"></i></summary>
+      <summary data-track-click="links_salon">
+        <picture><source srcset="images/stores/headspa_ginza_room.avif" type="image/avif"><img src="images/stores/headspa_ginza_room.webp" alt="銀座店の個室 窓の外に夜の銀座" loading="lazy" decoding="async"></picture>
+        <span class="lk-t"><small>Hair salon</small><b>ヘアサロン</b><em>美しくなる時間も 空間も わたしだけのもの</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
       <div class="lk-stores" style="--n:4">
         <a href="https://beauty.hotpepper.jp/slnH000802192/" data-track-click="links_salon_ginza">銀座<small>完全個室</small></a>
         <a href="https://beauty.hotpepper.jp/slnH000791476/" data-track-click="links_salon_osaka">大阪<small>完全個室</small></a>
@@ -71,18 +73,19 @@
       </div>
     </details></li>
     <li><details name="lk">
-      <summary data-track-click="links_spa"><span class="lk-t"><b>ヘッドスパを予約</b><small>Head spa</small></span><i class="lk-ar" aria-hidden="true"></i></summary>
+      <summary data-track-click="links_spa">
+        <picture><source srcset="images/stores/salon_ginza_room.avif" type="image/avif"><img src="images/stores/salon_ginza_room.webp" alt="銀座店のヘッドスパの個室" loading="lazy" decoding="async"></picture>
+        <span class="lk-t"><small>Head spa</small><b>ヘッドスパ</b><em>気づいたら 眠っていた</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
       <div class="lk-stores">
         <a href="https://beauty.hotpepper.jp/kr/slnH000802373/" data-track-click="links_spa_ginza">銀座</a>
         <a href="https://beauty.hotpepper.jp/kr/slnH000791418/" data-track-click="links_spa_osaka">大阪</a>
         <a href="https://beauty.hotpepper.jp/kr/slnH000800971/" data-track-click="links_spa_nagoya">名古屋<small>矢場町</small></a>
       </div>
     </details></li>
-    <li><a class="lk-row" href="onlineshop.html" data-track-click="links_online"><span class="lk-t"><b>オンラインショップ</b><small>Online shop</small></span><i class="lk-ar" aria-hidden="true"></i></a></li>
-    <li><a class="lk-row" href="shop.html#stores" data-track-click="links_stores"><span class="lk-t"><b>店舗で選ぶ</b><small>197 brands · 7 stores</small></span><i class="lk-ar" aria-hidden="true"></i></a></li>
-    <li><a class="lk-row" href="finder" data-track-click="links_finder"><span class="lk-t"><b>3分で髪格診断</b><small>Hair finder</small></span><i class="lk-ar" aria-hidden="true"></i></a></li>
+    <li><a class="lk-tile" href="finder" data-track-click="links_finder">
+      <picture><source srcset="images/finder/chapter03-concern.avif" type="image/avif"><img src="images/finder/chapter03-concern.webp" alt="髪にふれる女性" loading="lazy" decoding="async"></picture>
+      <span class="lk-t"><small>Hair finder</small><b>髪格診断</b><em>3分で 自分の髪に合う一本へ</em></span><i class="lk-ar" aria-hidden="true"></i></a></li>
   </ul>
-
   <p class="lk-foot"><a href="/">seam.site</a></p>
 </main>
 <script src="js/seam-analytics.js?v=12" defer></script>
