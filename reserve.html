@@ -43,23 +43,28 @@
     .rv-sec{animation:rvIn .7s ease backwards}.rv-sec+.rv-sec{animation-delay:.1s}
     @keyframes rvIn{from{opacity:.001;transform:translateY(10px)}to{opacity:1;transform:none}}
     @media (prefers-reduced-motion:reduce){.rv-sec{animation:none}}
+
+    .lg{display:flex;justify-content:center;gap:4px;margin-top:8px}
+    .lg button{min-width:30px;min-height:30px;padding:0 5px;border:1px solid transparent;background:none;color:var(--sub);font:500 11px/1 "Noto Sans JP",sans-serif;letter-spacing:.04em;cursor:pointer;border-radius:0}
+    .lg button[aria-pressed="true"]{color:#fff;border-color:rgba(210,165,122,.7)}
+    .lg button:focus-visible{outline:2px solid var(--cu);outline-offset:1px}
   </style>
 </head>
 <body>
 <main class="rv">
-  <header class="rv-head"><b>SEAM</b><span>ご予約</span></header>
+  <header class="rv-head"><b>SEAM</b><span data-i18n="r.title">ご予約</span><nav class="lg" aria-label="Language"><button type="button" data-l="ja">JP</button><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简</button><button type="button" data-l="tw">繁</button><button type="button" data-l="ko">KR</button></nav></header>
 
   <section class="rv-sec" aria-labelledby="rv-salon">
     <img src="images/stores/headspa_ginza_room.webp" alt="" fetchpriority="high" decoding="async">
     <div class="rv-in">
       <small>Hair salon</small>
-      <h2 id="rv-salon">ヘアサロン</h2>
-      <p>美しくなる時間も 空間も わたしだけのもの</p>
+      <h2 id="rv-salon" data-i18n="l.salon">ヘアサロン</h2>
+      <p data-i18n="l.salon.p">美しくなる時間も 空間も わたしだけのもの</p>
       <div class="rv-st" style="--n:4">
-        <a href="https://beauty.hotpepper.jp/slnH000802192/" data-track-click="reserve_salon_ginza">銀座<small>完全個室</small></a>
-        <a href="https://beauty.hotpepper.jp/slnH000791476/" data-track-click="reserve_salon_osaka">大阪<small>完全個室</small></a>
-        <a href="https://beauty.hotpepper.jp/slnH000417753/" data-track-click="reserve_salon_sapporo">札幌<small>半個室</small></a>
-        <a href="https://beauty.hotpepper.jp/slnH000734442/" data-track-click="reserve_salon_fukuoka">福岡<small>半個室</small></a>
+        <a href="https://beauty.hotpepper.jp/slnH000802192/" data-track-click="reserve_salon_ginza"><span data-i18n="l.ginza">銀座</span><small data-i18n="l.private">完全個室</small></a>
+        <a href="https://beauty.hotpepper.jp/slnH000791476/" data-track-click="reserve_salon_osaka"><span data-i18n="l.osaka">大阪</span><small data-i18n="l.private">完全個室</small></a>
+        <a href="https://beauty.hotpepper.jp/slnH000417753/" data-track-click="reserve_salon_sapporo"><span data-i18n="l.sapporo">札幌</span><small data-i18n="l.semi">半個室</small></a>
+        <a href="https://beauty.hotpepper.jp/slnH000734442/" data-track-click="reserve_salon_fukuoka"><span data-i18n="l.fukuoka">福岡</span><small data-i18n="l.semi">半個室</small></a>
       </div>
     </div>
   </section>
@@ -68,17 +73,30 @@
     <img src="images/stores/salon_ginza_room.webp" alt="" decoding="async">
     <div class="rv-in">
       <small>Head spa</small>
-      <h2 id="rv-spa">ヘッドスパ</h2>
-      <p>頭の疲れは 顔に出る ほぐしに来ませんか？</p>
+      <h2 id="rv-spa" data-i18n="l.spa">ヘッドスパ</h2>
+      <p data-i18n="l.spa.p">頭の疲れは 顔に出る ほぐしに来ませんか？</p>
       <div class="rv-st" style="--n:3">
-        <a href="https://beauty.hotpepper.jp/kr/slnH000802373/" data-track-click="reserve_spa_ginza">銀座<small>完全個室</small></a>
-        <a href="https://beauty.hotpepper.jp/kr/slnH000791418/" data-track-click="reserve_spa_osaka">大阪<small>完全個室</small></a>
-        <a href="https://beauty.hotpepper.jp/kr/slnH000800971/" data-track-click="reserve_spa_nagoya">名古屋<small>矢場町</small></a>
+        <a href="https://beauty.hotpepper.jp/kr/slnH000802373/" data-track-click="reserve_spa_ginza"><span data-i18n="l.ginza">銀座</span><small data-i18n="l.private">完全個室</small></a>
+        <a href="https://beauty.hotpepper.jp/kr/slnH000791418/" data-track-click="reserve_spa_osaka"><span data-i18n="l.osaka">大阪</span><small data-i18n="l.private">完全個室</small></a>
+        <a href="https://beauty.hotpepper.jp/kr/slnH000800971/" data-track-click="reserve_spa_nagoya"><span data-i18n="l.nagoya">名古屋</span><small data-i18n="l.yaba">矢場町</small></a>
       </div>
     </div>
   </section>
 
-  <p class="rv-note">店舗を選ぶと 予約の画面に進みます ／ <a href="links.html">ショップ・その他</a></p>
+  <p class="rv-note" data-i18n="r.note">店舗を選ぶと 予約の画面に進みます ／ <a href="links.html">ショップ・その他</a></p>
 </main>
+<script>window.SEAM_PAGE_I18N={"ja": {"r.title": "ご予約", "l.salon": "ヘアサロン", "l.salon.p": "美しくなる時間も 空間も わたしだけのもの", "l.ginza": "銀座", "l.osaka": "大阪", "l.sapporo": "札幌", "l.fukuoka": "福岡", "l.spa": "ヘッドスパ", "l.spa.p": "頭の疲れは 顔に出る ほぐしに来ませんか？", "l.nagoya": "名古屋", "r.note": "店舗を選ぶと 予約の画面に進みます ／", "l.private": "完全個室", "l.semi": "半個室", "l.yaba": "矢場町"}, "en": {"r.title": "Book", "l.salon": "Hair salon", "l.salon.p": "The time and the space to be beautiful, all mine", "l.ginza": "Ginza", "l.osaka": "Osaka", "l.sapporo": "Sapporo", "l.fukuoka": "Fukuoka", "l.spa": "Head spa", "l.spa.p": "Tired heads show on the face. Come and unwind", "l.nagoya": "Nagoya", "r.note": "Choose a store to go to booking /", "l.private": "Private room", "l.semi": "Semi-private", "l.yaba": "Yabacho"}, "zh": {"r.title": "预约", "l.salon": "美发沙龙", "l.salon.p": "变美的时间与空间 都只属于我", "l.ginza": "银座", "l.osaka": "大阪", "l.sapporo": "札幌", "l.fukuoka": "福冈", "l.spa": "头疗", "l.spa.p": "头部的疲劳会写在脸上 来放松一下吧？", "l.nagoya": "名古屋", "r.note": "选择门店即可进入预约页面 ／", "l.private": "完全包间", "l.semi": "半包间", "l.yaba": "矢场町"}, "tw": {"r.title": "預約", "l.salon": "美髮沙龍", "l.salon.p": "變美的時間與空間 都只屬於我", "l.ginza": "銀座", "l.osaka": "大阪", "l.sapporo": "札幌", "l.fukuoka": "福岡", "l.spa": "頭療", "l.spa.p": "頭部的疲勞會寫在臉上 來放鬆一下吧？", "l.nagoya": "名古屋", "r.note": "選擇門市即可進入預約頁面 ／", "l.private": "完全包廂", "l.semi": "半包廂", "l.yaba": "矢場町"}, "ko": {"r.title": "예약", "l.salon": "헤어 살롱", "l.salon.p": "아름다워지는 시간도 공간도 오직 나만의 것", "l.ginza": "긴자", "l.osaka": "오사카", "l.sapporo": "삿포로", "l.fukuoka": "후쿠오카", "l.spa": "헤드스파", "l.spa.p": "머리의 피로는 얼굴에 드러난다 풀러 오지 않을래요?", "l.nagoya": "나고야", "r.note": "매장을 고르면 예약 화면으로 이동합니다 ／", "l.private": "완전 개인실", "l.semi": "반개인실", "l.yaba": "야바초"}};</script>
+<script>
+/* 言語：選んだ言語は seamLang に保存し サイトのどのページでもその言語のまま（lang.js と同じ仕組み）
+   初めての人で 端末の言語が日本語以外なら その言語で開く */
+(function(){var K='seamLang',S=['ja','en','zh','tw','ko'];
+ function saved(){try{return localStorage.getItem(K);}catch(e){return null;}}
+ if(!saved()){var n=(navigator.language||'ja').toLowerCase(),g=n.indexOf('ja')===0?'ja':n.indexOf('ko')===0?'ko':/zh-(tw|hk|hant)/.test(n)?'tw':n.indexOf('zh')===0?'zh':'en';try{localStorage.setItem(K,g);}catch(e){}}
+ function mark(l){document.querySelectorAll('.lg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.l===l?'true':'false');});}
+ document.addEventListener('DOMContentLoaded',function(){mark(saved()||'ja');
+  document.querySelectorAll('.lg button').forEach(function(b){b.addEventListener('click',function(){if(window.SEAM_LANG)window.SEAM_LANG.apply(b.dataset.l);else{try{localStorage.setItem(K,b.dataset.l);}catch(e){}}mark(b.dataset.l);if(window.seamTrack)window.seamTrack('sec_click',{label:'links_lang_'+b.dataset.l});});});});
+})();
+</script>
+<script src="js/lang.js?v=10"></script>
 <script src="js/seam-analytics.js?v=12" defer></script>
 </body></html>
