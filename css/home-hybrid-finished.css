@@ -265,3 +265,34 @@ html body.seam-finished-live .sf-page{width:100%!important;max-width:none!import
 .sf-page .sf-hero-copy{left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;width:100%;box-sizing:border-box}
 .sf-page .sf-hero-copy small{padding-left:.42em}
 .sf-page .sf-hero-copy h1,.sf-page .sf-hero-copy p{word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance}
+/* ── ホテルの演出（2026-10-05）── */
+.sf-motion .sf-ln{display:block;overflow:hidden;padding-bottom:.08em}
+.sf-motion .sf-ln>span{display:inline-block;transform:translateY(105%);transition:transform 1.1s cubic-bezier(.16,1,.3,1);transition-delay:calc(var(--i)*.12s + .1s)}
+.sf-motion .is-in .sf-ln>span{transform:none}
+.sf-motion .sf-pillar .sf-p-img{overflow:hidden;clip-path:inset(100% 0 0 0);transition:clip-path 1.4s cubic-bezier(.77,0,.18,1)}
+.sf-motion .sf-pillar.is-in .sf-p-img{clip-path:inset(0 0 0 0)}
+.sf-motion .sf-pillar .sf-p-img img{transform:scale(1.12);will-change:transform}
+.sf-no{display:block;margin-bottom:10px;font:400 13px/1 "Cormorant Garamond",serif;letter-spacing:.3em;color:#8E5F36}
+.sf-motion .sf-pillar .sf-p-txt>small,.sf-motion .sf-section>small,.sf-motion .sf-identity>small,.sf-motion .sf-statement>small{position:relative}
+.sf-motion .sf-section>small:after,.sf-motion .sf-identity>small:after,.sf-motion .sf-statement>small:after{content:"";display:block;width:0;height:1px;margin:14px auto 0;background:#D2A57A;transition:width 1.2s cubic-bezier(.16,1,.3,1) .2s}
+.sf-motion .is-in>small:after{width:48px}
+.sf-interlude{position:relative;height:78svh;min-height:420px;overflow:hidden;display:flex;align-items:flex-end;background:#0E1013;color:#fff}
+.sf-il-img{position:absolute;inset:-60px 0;background-size:cover;background-position:center;transform:scale(1.12);will-change:transform}
+.sf-interlude:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,16,19,.1),rgba(14,16,19,.65))}
+.sf-interlude p{position:relative;z-index:1;margin:0;padding:0 24px 56px;width:100%;text-align:center}
+.sf-interlude small{display:block;font:500 11px/1.4 "Cormorant Garamond",serif;letter-spacing:.42em;color:#E8CDB0}
+.sf-interlude span{display:block;margin-top:14px;font:400 clamp(26px,6.4vw,48px)/1.6 "Shippori Mincho","Noto Serif JP",serif;letter-spacing:.08em;opacity:0;transform:translateY(18px);transition:opacity 1.2s ease .2s,transform 1.4s cubic-bezier(.16,1,.3,1) .2s}
+.sf-interlude.is-in span{opacity:1;transform:none}
+.sf-fold{max-width:880px;margin:0 auto;border-top:1px solid #E3DDD4;padding:0 20px}
+.sf-fold:last-of-type{border-bottom:1px solid #E3DDD4;margin-bottom:56px}
+.sf-fold>summary{display:flex;justify-content:space-between;align-items:center;padding:22px 0;cursor:pointer;list-style:none;font:400 16px "Shippori Mincho","Noto Serif JP",serif;letter-spacing:.06em;color:#1C1E21}
+.sf-fold>summary::-webkit-details-marker{display:none}
+.sf-fold>summary:after{content:"+";color:#8E5F36;font-size:20px}
+.sf-fold[open]>summary:after{content:"−"}
+.sf-fold>section{padding-top:0!important}
+.sf-fold>section>h2{display:none}
+.sf-page .sf-textlink{background-image:linear-gradient(currentColor,currentColor);background-size:0 1px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .5s ease}
+.sf-page .sf-textlink:hover{background-size:100% 1px}
+.sf-hero:before{content:"SCROLL";position:absolute;left:50%;bottom:22px;z-index:3;transform:translateX(-50%);font:500 10px/1 "Cormorant Garamond",serif;letter-spacing:.4em;color:rgba(255,255,255,.75);padding-bottom:44px;background:linear-gradient(rgba(232,205,176,.9),rgba(232,205,176,.9)) center bottom/1px 36px no-repeat;animation:sfScroll 2.4s ease-in-out infinite}
+@keyframes sfScroll{0%{background-size:1px 0;background-position:center 100%}50%{background-size:1px 36px}100%{background-size:1px 0;background-position:center 140%}}
+@media (prefers-reduced-motion:reduce){.sf-motion .sf-ln>span{transform:none!important;transition:none}.sf-motion .sf-pillar .sf-p-img{clip-path:none!important}.sf-interlude span{opacity:1;transform:none}.sf-hero:before{animation:none}.sf-il-img{inset:0}}
