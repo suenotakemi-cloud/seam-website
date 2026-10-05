@@ -123,3 +123,20 @@ document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){
   function move(){ticking=false;var vh=innerHeight;par.forEach(function(el){var r=el.parentNode.getBoundingClientRect();if(r.bottom<0||r.top>vh)return;var p=(r.top+r.height/2-vh/2)/vh;el.style.transform='translate3d(0,'+(p*-38).toFixed(1)+'px,0) scale(1.12)';});}
   addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(move);}},{passive:true});move();
 },30);});
+
+/* 海外のお客様へ（10/6 計測：台湾 2,604・米国 2,110・香港 566・シンガポール 379・韓国 372 PV/月）
+   日本語以外で見ている人にだけ 最初の画面のすぐ下に 免税と Japanese Head Spa の予約を出す */
+document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){
+  var page=document.querySelector('.sf-page'),hero=page&&page.querySelector('.sf-hero');if(!hero)return;
+  var T={en:['TAX-FREE at all stores','¥5,000+ with your passport','Book a Japanese Head Spa'],
+         zh:['全店免税','满5,000日元 出示护照即可','预约日式头疗'],
+         tw:['全店免稅','滿5,000日圓 出示護照即可','預約日式頭療'],
+         ko:['전 매장 면세','5,000엔 이상 여권 제시','재패니즈 헤드스파 예약']};
+  var bar=document.createElement('section');bar.className='sf-intl';bar.hidden=true;
+  hero.insertAdjacentElement('afterend',bar);
+  function L(){var l=document.documentElement.lang||'ja';return {'zh-Hans':'zh','zh-Hant':'tw'}[l]||l.split('-')[0];}
+  function draw(){var t=T[L()];if(!t){bar.hidden=true;return;}bar.hidden=false;
+    bar.innerHTML='<p><b>'+t[0]+'</b><span>'+t[1]+'</span></p><a href="/reserve" data-track-click="intl_spa_book">'+t[2]+' →</a>';}
+  draw();window.addEventListener('seam:langchange',function(){setTimeout(draw,0);});
+  var st=document.createElement('style');st.textContent='.sf-intl{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 20px;background:#16171B;color:#fff}.sf-intl[hidden]{display:none}.sf-intl p{margin:0;display:flex;flex-direction:column;gap:2px}.sf-intl b{font:500 13px/1.4 "Noto Sans JP",sans-serif;letter-spacing:.08em;color:#E8C9A4}.sf-intl span{font-size:11.5px;color:rgba(255,255,255,.8)}.sf-intl a{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border:1px solid #D2A57A;color:#fff!important;font-size:12.5px;letter-spacing:.06em;text-decoration:none}@media(min-width:760px){.sf-intl{justify-content:center;gap:40px}}';document.head.appendChild(st);
+},40);});
