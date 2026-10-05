@@ -377,6 +377,7 @@ def area_article_html(b, st, stores, lines, tops):
     ainfo=AREA_INFO.get(st['slug'],{})
     access=ainfo.get('access','')
     title=f'{ja} {area}で買える｜正規取扱店 SEAM'  # 32字以内(検索結果の切れ防止)
+    if ja.startswith('つるりんちょ'): title=f'{ja}はどこに売ってる？{area}の販売店｜SEAM'  # 10/5 検索語「どこに売ってる」に合わせる
     desc=f'{area}で{ja}({en})を"買うだけ"で来店OK 施術・予約なしで店頭購入できます {st["name"]}({access or st["addr"]}) メーカー公認の正規取扱店 在庫は店舗にご確認ください'
     hours_line=f'　営業時間 {st["hours"]}' if st.get('hours') else ''
     access_line=f' {access}' if access else ''

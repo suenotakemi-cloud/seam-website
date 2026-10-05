@@ -721,6 +721,7 @@ def build_brand_city(slug, ja, en, city):
     bf = BRAND_FACTS.get(slug, {})
     lines, n, maker, blurb = bf.get('lines', []), bf.get('n', 0), bf.get('maker', ''), bf.get('blurb', '')
     title = f'{ja} {cj}で買える｜正規取扱店 SEAM'
+    if ja.startswith('つるりんちょ'): title = f'{ja}はどこに売ってる？{cj}の販売店｜SEAM'  # 10/5 検索語に合わせる
     if len(title) > 32: title = f'{ja} {cj}の正規取扱店｜SEAM'
     areas = '・'.join(s['area'] for s in sts)
     linehint = f'{"・".join(lines[:3])}など{n}点を掲載｜' if lines else ''
