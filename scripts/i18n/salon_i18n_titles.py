@@ -66,10 +66,10 @@ T_HAIR = {
  'ko': '{C}의 헤어살롱｜{S2}｜{R}｜{ST}',
 }
 D_HAIR = {
- 'en': 'A {R} hair salon in {C} for {S2}. Our staff know 197 salon-exclusive brands. {ST}.',
- 'zh': '在{C}提供{S2}的{R}美发沙龙。熟悉197个沙龙专售品牌的专业人员为您服务。{ST}。',
- 'tw': '在{C}提供{S2}的{R}美髮沙龍。熟悉197個沙龍專售品牌的專業人員為您服務。{ST}。',
- 'ko': '{C}에서 {S2}를 받으실 수 있는 {R} 헤어살롱입니다. 197개 살롱 전용 브랜드를 아는 스태프가 담당합니다. {ST}.',
+ 'en': 'A {R} hair salon in {C} for {S2}. Our staff know 196 salon-exclusive brands. {ST}.',
+ 'zh': '在{C}提供{S2}的{R}美发沙龙。熟悉196个沙龙专售品牌的专业人员为您服务。{ST}。',
+ 'tw': '在{C}提供{S2}的{R}美髮沙龍。熟悉196個沙龍專售品牌的專業人員為您服務。{ST}。',
+ 'ko': '{C}에서 {S2}를 받으실 수 있는 {R} 헤어살롱입니다. 196개 살롱 전용 브랜드를 아는 스태프가 담당합니다. {ST}.',
 }
 # 名古屋（ヘア休止中）は施術を名乗らない
 T_PAUSED = {
@@ -79,10 +79,10 @@ T_PAUSED = {
  'ko': '{ST} {C}｜헤드스파와 살롱 전용 헤어케어',
 }
 D_PAUSED = {
- 'en': 'Hair salon bookings are currently paused at {ST}. Our head spa and the shop with 197 salon-exclusive brands are open as usual.',
- 'zh': '{ST}的美发沙龙目前暂停接受预约。头皮SPA与汇集197个沙龙专售品牌的商店照常营业。',
- 'tw': '{ST}的美髮沙龍目前暫停接受預約。頭皮SPA與匯集197個沙龍專售品牌的商店照常營業。',
- 'ko': '{ST}의 헤어살롱은 현재 예약 접수를 중지하고 있습니다. 헤드스파와 197개 살롱 전용 브랜드의 숍은 평소대로 영업합니다.',
+ 'en': 'Hair salon bookings are currently paused at {ST}. Our head spa and the shop with 196 salon-exclusive brands are open as usual.',
+ 'zh': '{ST}的美发沙龙目前暂停接受预约。头皮SPA与汇集196个沙龙专售品牌的商店照常营业。',
+ 'tw': '{ST}的美髮沙龍目前暫停接受預約。頭皮SPA與匯集196個沙龍專售品牌的商店照常營業。',
+ 'ko': '{ST}의 헤어살롱은 현재 예약 접수를 중지하고 있습니다. 헤드스파와 196개 살롱 전용 브랜드의 숍은 평소대로 영업합니다.',
 }
 
 n = 0

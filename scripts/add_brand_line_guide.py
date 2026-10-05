@@ -1,5 +1,5 @@
 # 主要 10 ブランドのページに「悩みから選ぶ ライン早見表」を足す（2026-10-01）
-# なぜ：197 ブランドのページが同じ文と作りで「〇〇 取扱店」の上位に出ない。そのページにしか無い中身を足す
+# なぜ：196 ブランドのページが同じ文と作りで「〇〇 取扱店」の上位に出ない。そのページにしか無い中身を足す
 # 中身：data/products/seam-master.json の line / targetHair / priceApprox から起こし 盛らない
 # 冪等：印のあいだを差し替える。build_brand_pages.py で作り直したら これも流す
 # 使い方: python3 scripts/add_brand_line_guide.py && node scripts/i18n_extract.js .

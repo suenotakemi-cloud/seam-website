@@ -5967,7 +5967,7 @@ function DeepFullBreakdown({
 }) {
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "mt-5 text-[12px] sm:text-[12.5px] text-charcoal/70 leading-[1.9] max-w-xl"
-  }, "197\u30D6\u30E9\u30F3\u30C9\u304B\u3089\u9298\u67C4\u3092\u554F\u308F\u305A\u6A2A\u65AD\u3057\u3066\u9078\u5B9A\u3057\u3066\u3044\u307E\u3059", /*#__PURE__*/React.createElement("br", null), "\u540C\u3058\u30B1\u30A2\u65B9\u91DD\u306E\u307E\u307E\u4E0A\u8CEA\u306A\u5019\u88DC\u3084\u624B\u9803\u306A\u5019\u88DC\u3068\u3082\u6BD4\u8F03\u3067\u304D\u307E\u3059"), hardRules.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "196\u30D6\u30E9\u30F3\u30C9\u304B\u3089\u9298\u67C4\u3092\u554F\u308F\u305A\u6A2A\u65AD\u3057\u3066\u9078\u5B9A\u3057\u3066\u3044\u307E\u3059", /*#__PURE__*/React.createElement("br", null), "\u540C\u3058\u30B1\u30A2\u65B9\u91DD\u306E\u307E\u307E\u4E0A\u8CEA\u306A\u5019\u88DC\u3084\u624B\u9803\u306A\u5019\u88DC\u3068\u3082\u6BD4\u8F03\u3067\u304D\u307E\u3059"), hardRules.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-5 border-l-2 border-gold pl-4 sm:pl-5 py-1"
   }, /*#__PURE__*/React.createElement("p", {
     className: "font-mono tracking-widest2 text-[10.5px] uppercase text-gold"
@@ -7020,7 +7020,7 @@ function Home({
 /* ---------- 診断のしくみ(漏斗) ----------
    ・バーの幅は各段の「絞られ方」を表す(4,000万通り→27型→3〜5本)
    ・初めて画面に入ったときだけ数字を数え上げる(prefers-reduced-motionでは即表示)
-   ・数字はすべて実装の実数(11問=主要単一回答/27型/1,000検証/197ブランド) */
+   ・数字はすべて実装の実数(11問=主要単一回答/27型/1,000検証/196ブランド) */
 function useInViewOnce() {
   const ref = useRef(null);
   const [shown, setShown] = useState(false);
@@ -7112,7 +7112,7 @@ const LOGIC_STEPS = [{
   format: () => '3〜5',
   unit: '本',
   label: 'あなたが今日から使う一式',
-  note: '197ブランドから 銘柄を問わず選び抜きます',
+  note: '196ブランドから 銘柄を問わず選び抜きます',
   w: 14
 }];
 function DiagnosisLogicSection() {
@@ -7173,7 +7173,7 @@ function DiagnosisLogicSection() {
     }
   }))))), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 grid grid-cols-3 divide-x divide-line/60 border-y border-line/60 py-4"
-  }, [['1,000', 'パターンで検証'], ['197', 'ブランド横断'], ['4', 'つの時間軸']].map(([n, t]) => /*#__PURE__*/React.createElement("div", {
+  }, [['1,000', 'パターンで検証'], ['196', 'ブランド横断'], ['4', 'つの時間軸']].map(([n, t]) => /*#__PURE__*/React.createElement("div", {
     key: t,
     className: "px-2 text-center"
   }, /*#__PURE__*/React.createElement("p", {

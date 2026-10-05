@@ -58,13 +58,13 @@ function metaFor(file, doc) {
       ko: s.taxfree ? ' 5,000엔 이상 면세, 여권을 제시해 주세요.' : '',
     };
     out.en = { t: `Salon-Exclusive Hair Care in ${s.area.en} | ${s.name}`,
-      d: `Authorized retailer of salon-exclusive hair care in ${s.area.en}. 197 brands on the shelf. Shopping-only visits are welcome, with no booking and no treatment.${tax.en}` };
+      d: `Authorized retailer of salon-exclusive hair care in ${s.area.en}. 196 brands on the shelf. Shopping-only visits are welcome, with no booking and no treatment.${tax.en}` };
     out.zh = { t: `${s.area.zh}的沙龙专售护发店 | ${s.name}`,
-      d: `${s.area.zh}的沙龙专售护发品牌授权零售商。197个品牌在售，无需预约与护理，欢迎只为购物到店。${tax.zh}` };
+      d: `${s.area.zh}的沙龙专售护发品牌授权零售商。196个品牌在售，无需预约与护理，欢迎只为购物到店。${tax.zh}` };
     out.tw = { t: `${s.area.tw}的沙龍專售護髮店 | ${s.name}`,
-      d: `${s.area.tw}的沙龍專售護髮品牌授權零售商。197個品牌在售，無需預約與護理，歡迎只為購物到店。${tax.tw}` };
+      d: `${s.area.tw}的沙龍專售護髮品牌授權零售商。196個品牌在售，無需預約與護理，歡迎只為購物到店。${tax.tw}` };
     out.ko = { t: `${s.area.ko}의 살롱 전용 헤어케어 매장 | ${s.name}`,
-      d: `${s.area.ko}의 살롱 전용 헤어케어 정규 취급점. 197개 브랜드를 매장에서. 예약·시술 없이 구매만 하셔도 됩니다.${tax.ko}` };
+      d: `${s.area.ko}의 살롱 전용 헤어케어 정규 취급점. 196개 브랜드를 매장에서. 예약·시술 없이 구매만 하셔도 됩니다.${tax.ko}` };
     return out;
   }
   if ((m = file.match(/^headspa-([a-z]+)\.html$/))) {
@@ -82,13 +82,13 @@ function metaFor(file, doc) {
   if ((m = file.match(/^salon-([a-z]+)\.html$/))) {
     const s = STORE[m[1]]; if (!s) return null;
     out.en = { t: `Hair Salon in ${s.area.en} | ${s.name}`,
-      d: `Cut, colour, perm, straightening and treatments in ${s.area.en}, from people who know 197 salon-exclusive brands. Private rooms.` };
+      d: `Cut, colour, perm, straightening and treatments in ${s.area.en}, from people who know 196 salon-exclusive brands. Private rooms.` };
     out.zh = { t: `${s.area.zh}的美发沙龙 | ${s.name}`,
-      d: `在${s.area.zh}提供剪发、染发、烫发、缩毛矫正与护发。由熟知197个沙龙专售品牌的专业人员担当，设有包间。` };
+      d: `在${s.area.zh}提供剪发、染发、烫发、缩毛矫正与护发。由熟知196个沙龙专售品牌的专业人员担当，设有包间。` };
     out.tw = { t: `${s.area.tw}的美髮沙龍 | ${s.name}`,
-      d: `在${s.area.tw}提供剪髮、染髮、燙髮、縮毛矯正與護髮。由熟知197個沙龍專售品牌的專業人員擔當，設有包廂。` };
+      d: `在${s.area.tw}提供剪髮、染髮、燙髮、縮毛矯正與護髮。由熟知196個沙龍專售品牌的專業人員擔當，設有包廂。` };
     out.ko = { t: `${s.area.ko}의 헤어살롱 | ${s.name}`,
-      d: `${s.area.ko}에서 커트·컬러·펌·매직·트리트먼트를. 197개 살롱 전용 브랜드를 아는 전문가가 개인실에서 담당합니다.` };
+      d: `${s.area.ko}에서 커트·컬러·펌·매직·트리트먼트를. 196개 살롱 전용 브랜드를 아는 전문가가 개인실에서 담당합니다.` };
     return out;
   }
   if ((m = file.match(/^(.+)-tokyo\.html$/))) {
