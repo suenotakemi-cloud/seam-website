@@ -152,3 +152,50 @@ body.seam-finished-live{margin:0;background:#fff!important}
 .sf-page .sf-hero-copy p{color:#5E5A54;font-size:13.5px!important;line-height:1.8!important}
 .sf-page .sf-hero-copy a{margin-top:14px;display:inline-flex;min-height:46px;padding:0 22px;align-items:center;background:#16171B;color:#fff!important;text-decoration:none!important;font-size:13px!important;letter-spacing:.06em}
 @media(min-width:760px){.sf-hero-photo img{aspect-ratio:16/7;max-height:560px}.sf-page .sf-hero-copy{padding:40px max(7vw,72px) 48px!important;max-width:980px!important}.sf-page .sf-hero-copy h1{font-size:40px!important}.sf-page .sf-hero-copy p{font-size:15px!important}}
+
+/* ── ホテルの格（2026-10-05・サロンのページと同じ考え方）──
+   画面いっぱいの扉 中央の文字 広い余白 明朝の見出し 角のない線 */
+body.seam-finished-live{max-width:none!important;margin:0!important}
+.sf-page{--sf-min:"Shippori Mincho","Noto Serif JP","Hiragino Mincho ProN",serif;--sf-cu:#D2A57A;--sf-cu-deep:#8E5F36}
+/* 扉 */
+.sf-page .sf-hero{position:relative!important;min-height:100svh!important;display:flex!important;flex-direction:column;overflow:hidden!important;background:#1C1A18!important}
+.sf-page .sf-head{position:absolute!important;top:0;left:0;right:0;z-index:3;background:linear-gradient(rgba(14,16,19,.45),rgba(14,16,19,0))!important;border:0!important;color:#fff}
+.sf-page .sf-head .sf-logo,.sf-page .sf-head button,.sf-page .sf-head span{color:#fff!important}
+.sf-page .sf-head i{background:#fff!important}
+.sf-page .sf-head svg{stroke:#fff!important}
+.sf-page .sf-hero-photo{position:absolute!important;inset:0}
+.sf-page .sf-hero-photo img{width:100%!important;height:100%!important;max-height:none!important;aspect-ratio:auto!important;object-fit:cover;animation:sfSettle 5s cubic-bezier(.16,1,.3,1) both}
+.sf-page .sf-hero::after{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 75% 60% at 50% 58%,rgba(14,16,19,.62),rgba(14,16,19,.3) 65%,rgba(14,16,19,.5))}
+.sf-page .sf-hero-copy{position:relative!important;z-index:2;margin:auto!important;padding:120px 24px 96px!important;max-width:1000px!important;text-align:center;color:#fff!important;display:flex;flex-direction:column;align-items:center}
+.sf-page .sf-hero-copy small{color:#E8CDB0!important;font-size:11px!important;letter-spacing:.42em!important;animation:sfRise .8s cubic-bezier(.16,1,.3,1) both}
+.sf-page .sf-hero-copy h1{font-family:var(--sf-min)!important;font-style:normal!important;font-size:clamp(38px,6.2vw,86px)!important;line-height:1.45!important;letter-spacing:.06em!important;color:#fff!important;margin:22px 0 18px!important;animation:sfTrack 1s cubic-bezier(.16,1,.3,1) .1s both;word-break:keep-all}
+.sf-page .sf-hero-copy p{color:#E9E6E1!important;font-size:14px!important;line-height:2.2!important;max-width:36em;animation:sfRise .8s cubic-bezier(.16,1,.3,1) .3s both}
+.sf-hero-cta{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:30px;animation:sfRise .8s cubic-bezier(.16,1,.3,1) .45s both}
+.sf-page .sf-hero-cta a{display:inline-flex!important;align-items:center;min-height:54px;padding:0 32px!important;border:1px solid var(--sf-cu)!important;background:transparent!important;color:#fff!important;font-size:13px!important;letter-spacing:.18em!important;text-decoration:none!important;transition:background .3s,color .3s}
+.sf-page .sf-hero-cta a:hover{background:var(--sf-cu)!important;color:#0E1013!important}
+@keyframes sfSettle{from{transform:scale(1.1)}to{transform:none}}
+@keyframes sfRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes sfTrack{from{opacity:0;letter-spacing:.16em}to{opacity:1;letter-spacing:.06em}}
+/* 章扉：見出しは中央・明朝・大きく */
+.sf-page section>small{display:block;text-align:center;font-size:11px!important;letter-spacing:.42em!important;color:var(--sf-cu-deep)}
+.sf-page .sf-identity h2,.sf-page .sf-explore>h2,.sf-page .sf-section>h2,.sf-page .sf-concerns h2,.sf-page .sf-seo h2,.sf-page .sf-corp h2,.sf-page .sf-fc h2{font-family:var(--sf-min)!important;font-style:normal!important;font-weight:400!important;text-align:center;font-size:clamp(28px,3.8vw,48px)!important;line-height:1.6!important;letter-spacing:.06em!important;word-break:keep-all}
+.sf-page .sf-lead,.sf-page .sf-identity>p{text-align:center;margin-left:auto!important;margin-right:auto!important;max-width:36em;font-size:14px!important;line-height:2.2!important}
+.sf-page .sf-section,.sf-page .sf-explore,.sf-page .sf-concerns,.sf-page .sf-identity{padding-top:clamp(80px,10vw,150px)!important;padding-bottom:clamp(80px,10vw,150px)!important}
+.sf-page .sf-concerns>div{justify-content:center}
+.sf-page .sf-textlink{display:table!important;margin:28px auto 0!important;letter-spacing:.14em}
+/* 角のない線・角を落とさない */
+.sf-page .sf-concerns a,.sf-page .sf-seo-links a,.sf-page .sf-fc-form button,.sf-page .sf-footer a{border-radius:0!important}
+.sf-page .sf-online h2,.sf-page .sf-logo{font-style:normal!important}
+.sf-page .sf-award{background:#15181C!important;color:#E9E6E1}
+.sf-page .sf-award>div{border-color:rgba(210,165,122,.5)!important;color:#E9E6E1}
+.sf-page .sf-award strong,.sf-page .sf-award h2{color:#fff!important;font-family:var(--sf-min)!important}
+.sf-page .sf-award small,.sf-page .sf-award p{color:#C9C4BC!important}
+/* 浮かび上がり（速さ優先） */
+.sf-page [data-reveal]{filter:none!important;transform:translateY(14px);transition:opacity .6s ease,transform .7s cubic-bezier(.16,1,.3,1)!important;transition-delay:calc(var(--d,0ms) * .5)!important}
+.sf-page [data-reveal].is-revealed{transform:none}
+@media (prefers-reduced-motion:reduce){.sf-page *{animation:none!important}.sf-page [data-reveal]{opacity:1!important;transform:none!important}}
+/* 明るい店内の写真でも文字が読めるように（10/5） */
+.sf-page .sf-hero::after{background:linear-gradient(rgba(14,16,19,.55),rgba(14,16,19,.62) 50%,rgba(14,16,19,.72))!important}
+.sf-page .sf-hero-copy h1,.sf-page .sf-hero-copy p,.sf-page .sf-hero-copy small{text-shadow:0 2px 18px rgba(0,0,0,.35)!important}
+@media (max-width:480px){.sf-page .sf-hero-copy h1{font-size:34px!important;letter-spacing:.04em!important}.sf-page .sf-hero-copy p{font-size:13px!important}}
+.sf-page .sf-hero::after{display:block!important}
