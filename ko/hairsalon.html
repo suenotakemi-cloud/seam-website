@@ -102,7 +102,7 @@
   <link rel="stylesheet" href="/css/lang.css?v=2">
   <link rel="stylesheet" href="/css/reveal.css?v=5">
   <link rel="stylesheet" href="/css/enhance.css?v=2">
-  <link rel="stylesheet" href="/css/hairsalon-c.css?v=4">
+  <link rel="stylesheet" href="/css/hairsalon-c.css?v=5">
   <style>
     /* キーボード操作時のフォーカスリング (a11y) */
     a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
@@ -149,7 +149,7 @@
   <main class="hc" id="main-content">
     <div class="hc-progress" aria-hidden="true"></div>
     <section class="hc-hero hs-hero" aria-labelledby="hs-title">
-      <picture><source srcset="/images/stores/salon_ginza_room.avif" type="image/avif"><source srcset="/images/stores/salon_ginza_room.webp" type="image/webp"><img src="/images/stores/salon_ginza_room.jpg" alt="銀座店の完全個室" width="1280" height="714" fetchpriority="high"></picture>
+      <picture><source srcset="/images/stores/salon_ginza_room.webp" type="image/webp"><img src="/images/stores/salon_ginza_room.jpg" alt="銀座店の完全個室" width="1280" height="714" fetchpriority="high" decoding="async"></picture>
       <div class="hc-hero-copy">
         <p class="hc-tag">Private hair salon · Ginza Osaka Sapporo Fukuoka</p>
         <h1 id="hs-title" data-i18n="x.5a2ec30e">컨디션 좋은 날은<br>머리카락에서 시작됩니다</h1>
@@ -179,8 +179,8 @@
         <p class="hc-lead" data-reveal="" style="--d:220ms" data-i18n="x.6296656d">지금까지의 시술 매일의 손질 모질을 알고 오늘의 마무리와 내일부터의 손질을 하나로 잇습니다</p>
         <div class="hc-three hc-ritual" style="margin-top:44px">
           <figure data-reveal="img" style="--d:0ms"><picture><source srcset="/images/lp/salon/exp_treatment.webp" type="image/webp"><img src="/images/lp/salon/exp_treatment.jpg" alt="髪の状態を確かめるスタイリストの手" width="720" height="1280" loading="lazy"></picture><figcaption><b data-i18n="x.e263700e">만지다</b><span data-i18n="x.5dc7944d">손끝으로 모발의 목소리를 듣다</span></figcaption></figure>
-          <figure data-reveal="img" style="--d:160ms"><img src="/images/hotpepper-current/ginza-work-3.jpg" alt="艶のある黒髪のロング" width="860" height="1280" loading="lazy"><figcaption><b data-i18n="x.aaf36549">짓다</b><span data-i18n="x.8774e1ef">윤기와 움직임을 입히다</span></figcaption></figure>
-          <figure data-reveal="img" style="--d:320ms"><img src="/images/hotpepper-current/ginza-work-2.jpg" alt="ヘアケア製品が並ぶ併設ショップ" width="729" height="1280" loading="lazy"><figcaption><b data-i18n="x.d4ed0b52">건네다</b><span data-i18n="x.d8d13409">내일부터 쓸 한 병을 건네다</span></figcaption></figure>
+          <figure data-reveal="img" style="--d:160ms"><picture><source srcset="/images/hotpepper-current/ginza-work-3.webp" type="image/webp"><img src="/images/hotpepper-current/ginza-work-3.jpg" alt="艶のある黒髪のロング" width="860" height="1280" loading="lazy" decoding="async"></picture><figcaption><b data-i18n="x.aaf36549">짓다</b><span data-i18n="x.8774e1ef">윤기와 움직임을 입히다</span></figcaption></figure>
+          <figure data-reveal="img" style="--d:320ms"><picture><source srcset="/images/hotpepper-current/ginza-work-2.webp" type="image/webp"><img src="/images/hotpepper-current/ginza-work-2.jpg" alt="ヘアケア製品が並ぶ併設ショップ" width="729" height="1280" loading="lazy" decoding="async"></picture><figcaption><b data-i18n="x.d4ed0b52">건네다</b><span data-i18n="x.d8d13409">내일부터 쓸 한 병을 건네다</span></figcaption></figure>
         </div>
         <p class="hc-cta" data-reveal="" style="--d:320ms"><a class="hc-btn is-line" href="/finder.html" data-track-click="hc_finder_ritual" data-i18n="x.d9502231">내 모발 알기(모발 진단)</a></p>
       </div>
@@ -403,5 +403,14 @@ var io=new IntersectionObserver(function(es){if(!es[0].isIntersecting)return;io.
 io.observe(el);})();</script>
 
 
+<script>/* 隠れたままを残さない（10/5）：画面に入る少し前に出す／速いスクロールで飛ばした物も 止まった所で全部出す */
+(function(){var els=[].slice.call(document.querySelectorAll('.hc [data-reveal]'));if(!els.length)return;
+function show(e){e.classList.add('is-revealed');}
+if(!('IntersectionObserver' in window)){els.forEach(show);return;}
+var io=new IntersectionObserver(function(es){es.forEach(function(x){if(x.isIntersecting){show(x.target);io.unobserve(x.target);}});},{rootMargin:'0px 0px 20% 0px',threshold:0});
+els.forEach(function(e){io.observe(e);});
+var t;function sweep(){var h=innerHeight*1.2;els.forEach(function(e){if(!e.classList.contains('is-revealed')&&e.getBoundingClientRect().top<h)show(e);});}
+addEventListener('scroll',function(){clearTimeout(t);t=setTimeout(sweep,120);},{passive:true});
+setTimeout(sweep,1500);})();</script>
 
 </body></html>
