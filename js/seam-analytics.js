@@ -329,6 +329,39 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', _wireSections);
   else _wireSections();
 
+  // ── 予約の行き先（2026-10-05 所有者決定）──────────────────────
+  // 予約は SalonTown の自社予約へ移す（完成次第）。それまでは空＝HPB のまま。
+  // 切替の日は下の URL を埋めるだけ（35 ページ・約 170 本の HPB リンクを書き換えなくてよい）。
+  // 口コミ・スタッフ・スタイル（/review/ /staff/ /style/）は予約ではないので対象外
+  var BOOK_TO = {
+    'slnH000802192': '',    // 銀座 ヘア
+    'slnH000791476': '',    // 大阪 ヘア
+    'slnH000417753': '',    // 札幌 ヘア
+    'slnH000734442': '',    // 福岡 ヘア
+    'slnH000800028': '',    // 名古屋（ヘア休止中）
+    'slnH000802373': '',    // 銀座 スパ（kr/）
+    'slnH000791418': '',    // 大阪 スパ（kr/）
+    'slnH000800971': ''     // 名古屋 矢場町 スパ（kr/）
+  };
+  function _bookUrl(href) {
+    var m = /beauty\.hotpepper\.jp\/(?:kr\/)?(slnH\d+)\/?(\S*)$/.exec(href || '');
+    if (!m || /^(review|staff|style)/.test(m[2])) return '';
+    var to = BOOK_TO[m[1]];
+    if (!to) return '';
+    var L = (document.documentElement.lang || 'ja').toLowerCase();
+    L = { 'zh-hans': 'zh', 'zh-cn': 'zh', 'zh-hant': 'tw', 'zh-tw': 'tw' }[L] || L.split('-')[0];
+    return to + (to.indexOf('?') < 0 ? '?' : '&') + 'lang=' + L;
+  }
+  // 押した瞬間に差し替える（あとから描かれる予約ボタンも拾える）
+  document.addEventListener('click', function (e) {
+    try {
+      var a = e.target && e.target.closest && e.target.closest('a[href*="beauty.hotpepper.jp"]');
+      var u = a && _bookUrl(a.href);
+      if (u) a.href = u;
+    } catch (err) { /* 予約導線を壊さない */ }
+  }, true);
+  window.seamBookUrl = _bookUrl; // 確認用
+
   // ── 読み飛ばしリンクの言語合わせ ──────────────────────────────
   // 「本文へ移動」はキーボードで最初に当たる要素なのに、多言語ページでも
   // 日本語のままだった（97枚）。各ページの辞書に足すと編集面が広すぎるので
