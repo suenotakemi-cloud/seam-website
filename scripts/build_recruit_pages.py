@@ -34,7 +34,7 @@ STORES = {
 }
 STYLIST_STORES = ["ginza", "sapporo", "osaka", "nagoya", "fukuoka"]
 SPANIST_STORES = ["ginza", "osaka", "nagoya"]
-ASSISTANT_STORES = ["fukuoka"]
+ASSISTANT_STORES = ["sapporo", "fukuoka"]
 SHOPMGR_STORES = ["ginza", "omotesando", "sapporo"]
 PARTTIME_STORES = ["ginza", "omotesando"]
 # 職種ごとの給与形態。JobPosting の baseSalary と employmentType に効く
