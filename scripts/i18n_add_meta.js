@@ -296,6 +296,7 @@ const META = {
          'SEAM은 리케라(리케라 에멀전·리케라 미스트·리케라 오일)의 정규 취급점입니다. 전국 7개 매장에서 구매만 하셔도 환영합니다. 매장에서 등록하시면 회원제 온라인숍에서도 구매하실 수 있습니다.'],
   },
   'recruit-assistant-fukuoka':      recruit('assistant',   'fukuoka'),
+  'recruit-assistant-sapporo':      recruit('assistant',   'sapporo'),
   'recruit-parttime-ginza':         recruit('parttime',    'ginza'),
   'recruit-parttime-omotesando':    recruit('parttime',    'omotesando'),
   'recruit-shopmanager-ginza':      recruit('shopmanager', 'ginza'),
