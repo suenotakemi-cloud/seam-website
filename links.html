@@ -68,7 +68,7 @@
     @media (prefers-reduced-motion:reduce){.lk-list>li{animation:none}.lk-ar,.lk-tile img,.lk-list>li>details>summary img{transition:none}}
 
     /* ── 1画面に収める（10/5 所有者「スマホ画面に収まるか」）── */
-    .lk{height:100dvh;min-height:560px;max-height:960px;display:flex;flex-direction:column;padding:0 10px max(10px,env(safe-area-inset-bottom,0px))}
+    .lk{height:100dvh;min-height:560px;max-height:960px;display:flex;flex-direction:column;padding:0 10px max(14px,env(safe-area-inset-bottom,0px))}
     .lk-head{padding:12px 0 8px}
     .lk-head b{font-size:22px}
     .lk-head span{font-size:12px;margin-top:4px}
@@ -93,75 +93,80 @@
     .lk-x{display:block;margin:0 0 12px auto;background:none;border:0;color:var(--sub);font-size:12px;letter-spacing:.1em;cursor:pointer;padding:6px 0}
     .lk-sheet .lk-stores{padding:0}
     @keyframes lkSheet{from{transform:translateY(100%)}to{transform:none}}
-    .lk-rc{margin-top:6px;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:10px}
-    .lk-rc div{padding:10px 14px}
+    .lk-rc{margin-top:12px;min-height:0;flex:none;display:block}
+    .lk-rc div{padding:14px 16px}
     .lk-rc small{font-size:10.5px}
     .lk-rc b{font-size:15px;margin-top:2px}
-    .lk-rc ul{margin-top:5px;gap:4px}
-    .lk-rc li{font-size:10px;padding:2px 6px}
-    .lk-rc-go{position:relative;z-index:1;flex:none;margin-right:14px;font-size:12px;color:#fff;border-bottom:1px solid var(--cu);padding-bottom:2px;white-space:nowrap}
+    .lk-rc ul{margin-top:8px;gap:6px}
+    .lk-rc li{font-size:10.5px;padding:3px 7px}
+    .lk-rc-go{position:absolute;z-index:1;right:16px;bottom:16px;font-size:12px;color:#fff;border-bottom:1px solid var(--cu);padding-bottom:2px;white-space:nowrap}
     .lk-foot{display:none}
     .lk-list>li:not(:first-child) .lk-t b{font-size:clamp(14px,4.3vw,18px);letter-spacing:.02em;white-space:nowrap}
     .lk-t em{word-break:keep-all;overflow-wrap:anywhere}
-    .lk-rc ul{flex-wrap:nowrap}.lk-rc li{white-space:nowrap}
+    .lk-rc ul{flex-wrap:wrap;padding-right:84px}.lk-rc li{white-space:nowrap}
     @media (prefers-reduced-motion:reduce){details[open]>.lk-sheet{animation:none}}
+
+    .lg{display:flex;justify-content:center;gap:4px;margin-top:8px}
+    .lg button{min-width:30px;min-height:30px;padding:0 5px;border:1px solid transparent;background:none;color:var(--sub);font:500 11px/1 "Noto Sans JP",sans-serif;letter-spacing:.04em;cursor:pointer;border-radius:0}
+    .lg button[aria-pressed="true"]{color:#fff;border-color:rgba(210,165,122,.7)}
+    .lg button:focus-visible{outline:2px solid var(--cu);outline-offset:1px}
   </style>
 </head>
 <body>
 <main class="lk">
-  <header class="lk-head"><b>SEAM</b><span>Hair care · Salon · Head spa</span></header>
+  <header class="lk-head"><b>SEAM</b><span>Hair care · Salon · Head spa</span><nav class="lg" aria-label="Language"><button type="button" data-l="ja">JP</button><button type="button" data-l="en">EN</button><button type="button" data-l="zh">简</button><button type="button" data-l="tw">繁</button><button type="button" data-l="ko">KR</button></nav></header>
   <ul class="lk-list">
     <li><a class="lk-tile" href="shop.html#stores" data-track-click="links_shop">
-      <picture><source srcset="images/stores/store_ginza.avif" type="image/avif"><img src="images/stores/store_ginza.webp" alt="SEAM 銀座店の売り場" fetchpriority="high" decoding="async"></picture>
-      <span class="lk-t"><small>Shop</small><b>ショップ</b><em>プロが使う197ブランドを 手に取れる</em></span><i class="lk-ar" aria-hidden="true"></i></a></li>
+      <picture><source srcset="images/stores/store_ginza.avif" type="image/avif"><img src="images/stores/store_ginza.webp" alt="SEAM 銀座店の売り場" data-i18n-attr="alt:l.alt1" fetchpriority="high" decoding="async"></picture>
+      <span class="lk-t"><small>Shop</small><b data-i18n="l.shop">ショップ</b><em data-i18n="l.shop.p">プロが使う197ブランドを 手に取れる</em></span><i class="lk-ar" aria-hidden="true"></i></a></li>
     <li><details name="lk">
       <summary data-track-click="links_online">
-        <picture><source srcset="images/onlineshop/online_giftbox.avif" type="image/avif"><img src="images/onlineshop/online_giftbox.webp" alt="黒い箱に収まったヘアケア" loading="lazy" decoding="async"></picture>
-        <span class="lk-t"><small>Online shop</small><b>オンラインショップ</b><em>ご来店の方だけの 会員制ショップ</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
-      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる">閉じる</button>
+        <picture><source srcset="images/onlineshop/online_giftbox.avif" type="image/avif"><img src="images/onlineshop/online_giftbox.webp" alt="黒い箱に収まったヘアケア" data-i18n-attr="alt:l.alt2" loading="lazy" decoding="async"></picture>
+        <span class="lk-t"><small>Online shop</small><b data-i18n="l.online">オンラインショップ</b><em data-i18n="l.online.p">ご来店の方だけの 会員制ショップ</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
+      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる" data-i18n-attr="aria-label:l.close" data-i18n="l.close">閉じる</button>
       <div class="lk-stores" style="--n:2">
-        <a href="onlineshop.html" data-track-click="links_online_web">ブラウザで開く</a>
+        <a href="onlineshop.html" data-track-click="links_online_web" data-i18n="l.web">ブラウザで開く</a>
         <details class="lk-app">
           <summary data-track-click="links_online_app">アプリで開く</summary>
         </details>
       </div>
       <div class="lk-appnote" hidden>
-        <p>SEAMのアプリは 店頭で会員登録をした方のためのアプリです</p>
+        <p data-i18n="l.app.note">SEAMのアプリは 店頭で会員登録をした方のためのアプリです</p>
         <a class="lk-badge" href="https://apps.apple.com/jp/app/seam-salontown/id6781202190" target="_blank" rel="noopener" data-track-click="links_online_appstore"><img src="images/badge-appstore-ja.svg" alt="App Store からダウンロード" width="136" height="50"></a>
       </div></div>
     </details></li>
     <li><details name="lk">
       <summary data-track-click="links_salon">
-        <picture><source srcset="images/stores/headspa_ginza_room.avif" type="image/avif"><img src="images/stores/headspa_ginza_room.webp" alt="銀座店の個室 窓の外に夜の銀座" loading="lazy" decoding="async"></picture>
-        <span class="lk-t"><small>Hair salon</small><b>ヘアサロン</b><em>美しくなる時間も 空間も わたしだけのもの</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
-      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる">閉じる</button>
+        <picture><source srcset="images/stores/headspa_ginza_room.avif" type="image/avif"><img src="images/stores/headspa_ginza_room.webp" alt="銀座店の個室 窓の外に夜の銀座" data-i18n-attr="alt:l.alt3" loading="lazy" decoding="async"></picture>
+        <span class="lk-t"><small>Hair salon</small><b data-i18n="l.salon">ヘアサロン</b><em data-i18n="l.salon.p">美しくなる時間も 空間も わたしだけのもの</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
+      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる" data-i18n-attr="aria-label:l.close" data-i18n="l.close">閉じる</button>
       <div class="lk-stores" style="--n:4">
-        <a href="https://beauty.hotpepper.jp/slnH000802192/" data-track-click="links_salon_ginza">銀座<small>完全個室</small></a>
-        <a href="https://beauty.hotpepper.jp/slnH000791476/" data-track-click="links_salon_osaka">大阪<small>完全個室</small></a>
-        <a href="https://beauty.hotpepper.jp/slnH000417753/" data-track-click="links_salon_sapporo">札幌<small>半個室</small></a>
-        <a href="https://beauty.hotpepper.jp/slnH000734442/" data-track-click="links_salon_fukuoka">福岡<small>半個室</small></a>
+        <a href="https://beauty.hotpepper.jp/slnH000802192/" data-track-click="links_salon_ginza"><span data-i18n="l.ginza">銀座</span><small data-i18n="l.private">完全個室</small></a>
+        <a href="https://beauty.hotpepper.jp/slnH000791476/" data-track-click="links_salon_osaka"><span data-i18n="l.osaka">大阪</span><small data-i18n="l.private">完全個室</small></a>
+        <a href="https://beauty.hotpepper.jp/slnH000417753/" data-track-click="links_salon_sapporo"><span data-i18n="l.sapporo">札幌</span><small data-i18n="l.semi">半個室</small></a>
+        <a href="https://beauty.hotpepper.jp/slnH000734442/" data-track-click="links_salon_fukuoka"><span data-i18n="l.fukuoka">福岡</span><small data-i18n="l.semi">半個室</small></a>
       </div></div>
     </details></li>
     <li><details name="lk">
       <summary data-track-click="links_spa">
-        <picture><source srcset="images/stores/salon_ginza_room.avif" type="image/avif"><img src="images/stores/salon_ginza_room.webp" alt="銀座店のヘッドスパの個室" loading="lazy" decoding="async"></picture>
-        <span class="lk-t"><small>Head spa</small><b>ヘッドスパ</b><em>頭の疲れは 顔に出る ほぐしに来ませんか？</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
-      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる">閉じる</button>
+        <picture><source srcset="images/stores/salon_ginza_room.avif" type="image/avif"><img src="images/stores/salon_ginza_room.webp" alt="銀座店のヘッドスパの個室" data-i18n-attr="alt:l.alt4" loading="lazy" decoding="async"></picture>
+        <span class="lk-t"><small>Head spa</small><b data-i18n="l.spa">ヘッドスパ</b><em data-i18n="l.spa.p">頭の疲れは 顔に出る ほぐしに来ませんか？</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
+      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる" data-i18n-attr="aria-label:l.close" data-i18n="l.close">閉じる</button>
       <div class="lk-stores">
-        <a href="https://beauty.hotpepper.jp/kr/slnH000802373/" data-track-click="links_spa_ginza">銀座</a>
-        <a href="https://beauty.hotpepper.jp/kr/slnH000791418/" data-track-click="links_spa_osaka">大阪</a>
-        <a href="https://beauty.hotpepper.jp/kr/slnH000800971/" data-track-click="links_spa_nagoya">名古屋<small>矢場町</small></a>
+        <a href="https://beauty.hotpepper.jp/kr/slnH000802373/" data-track-click="links_spa_ginza" data-i18n="l.ginza">銀座</a>
+        <a href="https://beauty.hotpepper.jp/kr/slnH000791418/" data-track-click="links_spa_osaka" data-i18n="l.osaka">大阪</a>
+        <a href="https://beauty.hotpepper.jp/kr/slnH000800971/" data-track-click="links_spa_nagoya"><span data-i18n="l.nagoya">名古屋</span><small data-i18n="l.yaba">矢場町</small></a>
       </div></div>
     </details></li>
     <li><a class="lk-tile is-bright" href="finder" data-track-click="links_finder">
-      <picture><source srcset="images/finder/links_gloss.avif" type="image/avif"><img src="images/finder/links_gloss.webp" alt="光を受けてツヤの出た髪" loading="lazy" decoding="async"></picture>
-      <span class="lk-t"><small>Hair finder</small><b>髪格診断</b><em>3分でわかる 自分に合う一本</em></span><i class="lk-ar" aria-hidden="true"></i></a></li>
+      <picture><source srcset="images/finder/links_gloss.avif" type="image/avif"><img src="images/finder/links_gloss.webp" alt="光を受けてツヤの出た髪" data-i18n-attr="alt:l.alt5" loading="lazy" decoding="async"></picture>
+      <span class="lk-t"><small>Hair finder</small><b data-i18n="l.finder">髪格診断</b><em data-i18n="l.finder.p">3分でわかる 自分に合う一本</em></span><i class="lk-ar" aria-hidden="true"></i></a></li>
   </ul>
   <a class="lk-rc" href="recruit.html" data-track-click="links_recruit">
     <img src="images/lp/salon/exp_treatment.webp" alt="" loading="lazy" decoding="async">
-    <div><small>Recruit</small><b>好きな仕事を 一生の仕事に</b>
-      <ul><li>月給30万円〜</li><li>歩合50%</li><li>美容学生バイト歓迎</li></ul>
-      </div><span class="lk-rc-go">採用情報 →</span>
+    <div><small>Recruit</small><b data-i18n="l.rc">好きな仕事を 一生の仕事に</b>
+      <ul><li data-i18n="l.rc1">月給30万円〜</li><li data-i18n="l.rc2">歩合50%</li><li data-i18n="l.rc3">美容学生バイト歓迎</li></ul>
+      </div><span class="lk-rc-go" data-i18n="l.rc.go">採用情報 →</span>
   </a>
   <p class="lk-foot"><a href="/">seam.site</a></p>
 </main>
@@ -173,5 +178,18 @@ document.querySelectorAll('.lk-x').forEach(function(b){b.addEventListener('click
 document.querySelectorAll('details[name=lk]').forEach(function(d){d.addEventListener('click',function(e){if(e.target===d)d.open=false;});});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('details[name=lk][open]').forEach(function(d){d.open=false;});});
 </script>
+<script>window.SEAM_PAGE_I18N={"ja": {"l.shop": "ショップ", "l.shop.p": "プロが使う197ブランドを 手に取れる", "l.online": "オンラインショップ", "l.online.p": "ご来店の方だけの 会員制ショップ", "l.close": "閉じる", "l.web": "ブラウザで開く", "l.app.note": "SEAMのアプリは 店頭で会員登録をした方のためのアプリです", "l.salon": "ヘアサロン", "l.salon.p": "美しくなる時間も 空間も わたしだけのもの", "l.ginza": "銀座", "l.osaka": "大阪", "l.sapporo": "札幌", "l.fukuoka": "福岡", "l.spa": "ヘッドスパ", "l.spa.p": "頭の疲れは 顔に出る ほぐしに来ませんか？", "l.nagoya": "名古屋", "l.finder": "髪格診断", "l.finder.p": "3分でわかる 自分に合う一本", "l.rc": "好きな仕事を 一生の仕事に", "l.rc1": "月給30万円〜", "l.rc2": "歩合50%", "l.rc3": "美容学生バイト歓迎", "l.rc.go": "採用情報 →", "l.alt1": "SEAM 銀座店の売り場", "l.alt2": "黒い箱に収まったヘアケア", "l.alt3": "銀座店の個室 窓の外に夜の銀座", "l.alt4": "銀座店のヘッドスパの個室", "l.alt5": "光を受けてツヤの出た髪", "l.private": "完全個室", "l.semi": "半個室", "l.yaba": "矢場町"}, "en": {"l.shop": "Shop", "l.shop.p": "197 pro brands, ready to try", "l.online": "Online shop", "l.online.p": "Members-only, for guests who have visited", "l.close": "Close", "l.web": "Open in browser", "l.app.note": "The SEAM app is for guests who registered as members in store", "l.salon": "Hair salon", "l.salon.p": "The time and the space to be beautiful, all mine", "l.ginza": "Ginza", "l.osaka": "Osaka", "l.sapporo": "Sapporo", "l.fukuoka": "Fukuoka", "l.spa": "Head spa", "l.spa.p": "Tired heads show on the face. Come and unwind", "l.nagoya": "Nagoya", "l.finder": "Hair finder", "l.finder.p": "Find your bottle in 3 minutes", "l.rc": "Make the work you love your life’s work", "l.rc1": "From ¥300,000/mo", "l.rc2": "50% commission", "l.rc3": "Beauty students welcome", "l.rc.go": "Careers →", "l.alt1": "SEAM Ginza shop floor", "l.alt2": "Hair care in a black box", "l.alt3": "Private room in Ginza, the city at night outside", "l.alt4": "Head spa room in Ginza", "l.alt5": "Glossy hair in the light", "l.private": "Private room", "l.semi": "Semi-private", "l.yaba": "Yabacho"}, "zh": {"l.shop": "门店", "l.shop.p": "可亲手试用专业人士使用的197个品牌", "l.online": "网上商店", "l.online.p": "仅限到店顾客的会员制商店", "l.close": "关闭", "l.web": "用浏览器打开", "l.app.note": "SEAM的App是给在门店注册会员的顾客使用的", "l.salon": "美发沙龙", "l.salon.p": "变美的时间与空间 都只属于我", "l.ginza": "银座", "l.osaka": "大阪", "l.sapporo": "札幌", "l.fukuoka": "福冈", "l.spa": "头疗", "l.spa.p": "头部的疲劳会写在脸上 来放松一下吧？", "l.nagoya": "名古屋", "l.finder": "发格诊断", "l.finder.p": "3分钟找到适合自己的一瓶", "l.rc": "把喜欢的工作 变成一生的事业", "l.rc1": "月薪30万日元起", "l.rc2": "提成50%", "l.rc3": "欢迎美容学生兼职", "l.rc.go": "招聘信息 →", "l.alt1": "SEAM银座店卖场", "l.alt2": "装在黑盒里的护发品", "l.alt3": "银座店包间 窗外是夜晚的银座", "l.alt4": "银座店头疗包间", "l.alt5": "在光线下闪耀光泽的头发", "l.private": "完全包间", "l.semi": "半包间", "l.yaba": "矢场町"}, "tw": {"l.shop": "門市", "l.shop.p": "可親手試用專業人士使用的197個品牌", "l.online": "線上商店", "l.online.p": "僅限到店顧客的會員制商店", "l.close": "關閉", "l.web": "用瀏覽器開啟", "l.app.note": "SEAM的App是給在門市註冊會員的顧客使用的", "l.salon": "美髮沙龍", "l.salon.p": "變美的時間與空間 都只屬於我", "l.ginza": "銀座", "l.osaka": "大阪", "l.sapporo": "札幌", "l.fukuoka": "福岡", "l.spa": "頭療", "l.spa.p": "頭部的疲勞會寫在臉上 來放鬆一下吧？", "l.nagoya": "名古屋", "l.finder": "髮格診斷", "l.finder.p": "3分鐘找到適合自己的一瓶", "l.rc": "把喜歡的工作 變成一生的事業", "l.rc1": "月薪30萬日圓起", "l.rc2": "抽成50%", "l.rc3": "歡迎美容學生兼職", "l.rc.go": "招募資訊 →", "l.alt1": "SEAM銀座店賣場", "l.alt2": "裝在黑盒裡的護髮品", "l.alt3": "銀座店包廂 窗外是夜晚的銀座", "l.alt4": "銀座店頭療包廂", "l.alt5": "在光線下閃耀光澤的頭髮", "l.private": "完全包廂", "l.semi": "半包廂", "l.yaba": "矢場町"}, "ko": {"l.shop": "숍", "l.shop.p": "프로가 쓰는 197개 브랜드를 직접", "l.online": "온라인 숍", "l.online.p": "방문 고객 전용 회원제 숍", "l.close": "닫기", "l.web": "브라우저로 열기", "l.app.note": "SEAM 앱은 매장에서 회원 등록한 분을 위한 앱입니다", "l.salon": "헤어 살롱", "l.salon.p": "아름다워지는 시간도 공간도 오직 나만의 것", "l.ginza": "긴자", "l.osaka": "오사카", "l.sapporo": "삿포로", "l.fukuoka": "후쿠오카", "l.spa": "헤드스파", "l.spa.p": "머리의 피로는 얼굴에 드러난다 풀러 오지 않을래요?", "l.nagoya": "나고야", "l.finder": "헤어 진단", "l.finder.p": "3분이면 나에게 맞는 한 병을", "l.rc": "좋아하는 일을 평생의 일로", "l.rc1": "월급 30만 엔~", "l.rc2": "커미션 50%", "l.rc3": "미용 학생 알바 환영", "l.rc.go": "채용 정보 →", "l.alt1": "SEAM 긴자점 매장", "l.alt2": "검은 상자에 담긴 헤어케어", "l.alt3": "긴자점 개인실 창밖은 밤의 긴자", "l.alt4": "긴자점 헤드스파 개인실", "l.alt5": "빛을 받아 윤기 나는 머리", "l.private": "완전 개인실", "l.semi": "반개인실", "l.yaba": "야바초"}};</script>
+<script>
+/* 言語：選んだ言語は seamLang に保存し サイトのどのページでもその言語のまま（lang.js と同じ仕組み）
+   初めての人で 端末の言語が日本語以外なら その言語で開く */
+(function(){var K='seamLang',S=['ja','en','zh','tw','ko'];
+ function saved(){try{return localStorage.getItem(K);}catch(e){return null;}}
+ if(!saved()){var n=(navigator.language||'ja').toLowerCase(),g=n.indexOf('ja')===0?'ja':n.indexOf('ko')===0?'ko':/zh-(tw|hk|hant)/.test(n)?'tw':n.indexOf('zh')===0?'zh':'en';try{localStorage.setItem(K,g);}catch(e){}}
+ function mark(l){document.querySelectorAll('.lg button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.l===l?'true':'false');});}
+ document.addEventListener('DOMContentLoaded',function(){mark(saved()||'ja');
+  document.querySelectorAll('.lg button').forEach(function(b){b.addEventListener('click',function(){if(window.SEAM_LANG)window.SEAM_LANG.apply(b.dataset.l);else{try{localStorage.setItem(K,b.dataset.l);}catch(e){}}mark(b.dataset.l);if(window.seamTrack)window.seamTrack('sec_click',{label:'links_lang_'+b.dataset.l});});});});
+})();
+</script>
+<script src="js/lang.js?v=10"></script>
 <script src="js/seam-analytics.js?v=12" defer></script>
 </body></html>
