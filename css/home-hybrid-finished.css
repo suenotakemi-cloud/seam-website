@@ -152,3 +152,112 @@ body.seam-finished-live{margin:0;background:#fff!important}
 .sf-page .sf-hero-copy p{color:#5E5A54;font-size:13.5px!important;line-height:1.8!important}
 .sf-page .sf-hero-copy a{margin-top:14px;display:inline-flex;min-height:46px;padding:0 22px;align-items:center;background:#16171B;color:#fff!important;text-decoration:none!important;font-size:13px!important;letter-spacing:.06em}
 @media(min-width:760px){.sf-hero-photo img{aspect-ratio:16/7;max-height:560px}.sf-page .sf-hero-copy{padding:40px max(7vw,72px) 48px!important;max-width:980px!important}.sf-page .sf-hero-copy h1{font-size:40px!important}.sf-page .sf-hero-copy p{font-size:15px!important}}
+
+/* ── ホテルの格（2026-10-05・サロンのページと同じ考え方）──
+   画面いっぱいの扉 中央の文字 広い余白 明朝の見出し 角のない線 */
+body.seam-finished-live{max-width:none!important;margin:0!important}
+.sf-page{--sf-min:"Shippori Mincho","Noto Serif JP","Hiragino Mincho ProN",serif;--sf-cu:#D2A57A;--sf-cu-deep:#8E5F36}
+/* 扉 */
+.sf-page .sf-hero{position:relative!important;min-height:100svh!important;display:flex!important;flex-direction:column;overflow:hidden!important;background:#1C1A18!important}
+.sf-page .sf-head{position:absolute!important;top:0;left:0;right:0;z-index:3;background:linear-gradient(rgba(14,16,19,.45),rgba(14,16,19,0))!important;border:0!important;color:#fff}
+.sf-page .sf-head .sf-logo,.sf-page .sf-head button,.sf-page .sf-head span{color:#fff!important}
+.sf-page .sf-head i{background:#fff!important}
+.sf-page .sf-head svg{stroke:#fff!important}
+.sf-page .sf-hero-photo{position:absolute!important;inset:0}
+.sf-page .sf-hero-photo img{width:100%!important;height:100%!important;max-height:none!important;aspect-ratio:auto!important;object-fit:cover;animation:sfSettle 5s cubic-bezier(.16,1,.3,1) both}
+.sf-page .sf-hero::after{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(ellipse 75% 60% at 50% 58%,rgba(14,16,19,.62),rgba(14,16,19,.3) 65%,rgba(14,16,19,.5))}
+.sf-page .sf-hero-copy{position:relative!important;z-index:2;margin:auto!important;padding:120px 24px 96px!important;max-width:1000px!important;text-align:center;color:#fff!important;display:flex;flex-direction:column;align-items:center}
+.sf-page .sf-hero-copy small{color:#E8CDB0!important;font-size:11px!important;letter-spacing:.42em!important;animation:sfRise .8s cubic-bezier(.16,1,.3,1) both}
+.sf-page .sf-hero-copy h1{font-family:var(--sf-min)!important;font-style:normal!important;font-size:clamp(38px,6.2vw,86px)!important;line-height:1.45!important;letter-spacing:.06em!important;color:#fff!important;margin:22px 0 18px!important;animation:sfTrack 1s cubic-bezier(.16,1,.3,1) .1s both;word-break:keep-all}
+.sf-page .sf-hero-copy p{color:#E9E6E1!important;font-size:14px!important;line-height:2.2!important;max-width:36em;animation:sfRise .8s cubic-bezier(.16,1,.3,1) .3s both}
+.sf-hero-cta{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:30px;animation:sfRise .8s cubic-bezier(.16,1,.3,1) .45s both}
+.sf-page .sf-hero-cta a{display:inline-flex!important;align-items:center;min-height:54px;padding:0 32px!important;border:1px solid var(--sf-cu)!important;background:transparent!important;color:#fff!important;font-size:13px!important;letter-spacing:.18em!important;text-decoration:none!important;transition:background .3s,color .3s}
+.sf-page .sf-hero-cta a:hover{background:var(--sf-cu)!important;color:#0E1013!important}
+@keyframes sfSettle{from{transform:scale(1.1)}to{transform:none}}
+@keyframes sfRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes sfTrack{from{opacity:0;letter-spacing:.16em}to{opacity:1;letter-spacing:.06em}}
+/* 章扉：見出しは中央・明朝・大きく */
+.sf-page section>small{display:block;text-align:center;font-size:11px!important;letter-spacing:.42em!important;color:var(--sf-cu-deep)}
+.sf-page .sf-identity h2,.sf-page .sf-explore>h2,.sf-page .sf-section>h2,.sf-page .sf-concerns h2,.sf-page .sf-seo h2,.sf-page .sf-corp h2,.sf-page .sf-fc h2{font-family:var(--sf-min)!important;font-style:normal!important;font-weight:400!important;text-align:center;font-size:clamp(28px,3.8vw,48px)!important;line-height:1.6!important;letter-spacing:.06em!important;word-break:keep-all}
+.sf-page .sf-lead,.sf-page .sf-identity>p{text-align:center;margin-left:auto!important;margin-right:auto!important;max-width:36em;font-size:14px!important;line-height:2.2!important}
+.sf-page .sf-section,.sf-page .sf-explore,.sf-page .sf-concerns,.sf-page .sf-identity{padding-top:clamp(80px,10vw,150px)!important;padding-bottom:clamp(80px,10vw,150px)!important}
+.sf-page .sf-concerns>div{justify-content:center}
+.sf-page .sf-textlink{display:table!important;margin:28px auto 0!important;letter-spacing:.14em}
+/* 角のない線・角を落とさない */
+.sf-page .sf-concerns a,.sf-page .sf-seo-links a,.sf-page .sf-fc-form button,.sf-page .sf-footer a{border-radius:0!important}
+.sf-page .sf-online h2,.sf-page .sf-logo{font-style:normal!important}
+.sf-page .sf-award{background:#15181C!important;color:#E9E6E1}
+.sf-page .sf-award>div{border-color:rgba(210,165,122,.5)!important;color:#E9E6E1}
+.sf-page .sf-award strong,.sf-page .sf-award h2{color:#fff!important;font-family:var(--sf-min)!important}
+.sf-page .sf-award small,.sf-page .sf-award p{color:#C9C4BC!important}
+/* 浮かび上がり（速さ優先） */
+.sf-page [data-reveal]{filter:none!important;transform:translateY(14px);transition:opacity .6s ease,transform .7s cubic-bezier(.16,1,.3,1)!important;transition-delay:calc(var(--d,0ms) * .5)!important}
+.sf-page [data-reveal].is-revealed{transform:none}
+@media (prefers-reduced-motion:reduce){.sf-page *{animation:none!important}.sf-page [data-reveal]{opacity:1!important;transform:none!important}}
+/* 明るい店内の写真でも文字が読めるように（10/5） */
+.sf-page .sf-hero::after{background:linear-gradient(rgba(14,16,19,.55),rgba(14,16,19,.62) 50%,rgba(14,16,19,.72))!important}
+.sf-page .sf-hero-copy h1,.sf-page .sf-hero-copy p,.sf-page .sf-hero-copy small{text-shadow:0 2px 18px rgba(0,0,0,.35)!important}
+@media (max-width:480px){.sf-page .sf-hero-copy h1{font-size:34px!important;letter-spacing:.04em!important}.sf-page .sf-hero-copy p{font-size:13px!important}}
+.sf-page .sf-hero::after{display:block!important}
+/* 画面外に文字がはみ出す件（10/5）：
+   ① 431〜1000px 前後でページが 430px の柱になっていた → どの幅でも画面いっぱい
+   ② 見出しの大きさを画面幅ではなく ページの幅で決める（cqi）・英字の小見出しは折り返す */
+html body.seam-finished-live .sf-page{width:100%!important;max-width:none!important;margin:0!important;box-shadow:none!important;container-type:inline-size}
+.sf-page .sf-hero-copy h1{font-size:clamp(30px,8.4cqi,86px)!important;max-width:100%}
+.sf-page .sf-hero-copy p{font-size:clamp(13px,1.6cqi,15px)!important}
+.sf-page .sf-hero-copy small{display:block;max-width:100%;white-space:normal!important;letter-spacing:clamp(.18em,.6cqi,.42em)!important}
+.sf-page .sf-hero-copy{width:100%;box-sizing:border-box}
+@media (max-width:480px){.sf-page .sf-hero-copy h1{font-size:clamp(28px,9cqi,36px)!important}}
+
+/* ── ホテルの格 その二（10/5）── 入れ替わる扉・透ける帯・挨拶・三つの扉・目的地としての店 */
+/* 上部の帯：写真の上は透明 スクロールで象牙の面に */
+.sf-page .sf-head{position:fixed!important;transition:background .5s ease,box-shadow .5s ease}
+.sf-page .sf-head.is-solid{background:rgba(244,243,240,.94)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:0 1px 0 rgba(28,30,33,.08)}
+.sf-page .sf-head.is-solid .sf-logo,.sf-page .sf-head.is-solid button,.sf-page .sf-head.is-solid span{color:#1C1E21!important}
+.sf-page .sf-head.is-solid i{background:#1C1E21!important}
+.sf-page .sf-head.is-solid svg{stroke:#1C1E21!important}
+.sf-page .sf-logo{letter-spacing:.42em!important;font-family:"Cormorant Garamond",var(--sf-min)!important;font-weight:400!important}
+/* 入れ替わる写真（24 秒で一巡・一枚 6 秒） */
+.sf-page .sf-slides{position:absolute!important;inset:0}
+.sf-page .sf-slides .sf-slide,.sf-page .sf-slides picture.sf-slide img{position:absolute;inset:0;width:100%!important;height:100%!important;object-fit:cover}
+.sf-page .sf-slides .sf-slide{opacity:0;animation:sfFade 24s linear infinite}
+.sf-page .sf-slides .is-1{opacity:1;animation-delay:-1s}
+.sf-page .sf-slides .is-2{animation-delay:5s}
+.sf-page .sf-slides .is-3{animation-delay:11s}
+.sf-page .sf-slides .is-4{animation-delay:17s}
+@keyframes sfFade{0%{opacity:0;transform:scale(1.08)}4%{opacity:1}25%{opacity:1}29%{opacity:0;transform:scale(1)}100%{opacity:0;transform:scale(1)}}
+.sf-page .sf-slides img:not([src]){visibility:hidden}
+/* 挨拶 */
+.sf-statement{background:#F4F3F0;text-align:center;padding:clamp(110px,14vw,200px) 24px}
+.sf-statement small{display:block;font-family:"Cormorant Garamond",serif;font-size:12px;letter-spacing:.42em;color:var(--sf-cu-deep);margin-bottom:28px}
+.sf-st-body{max-width:26em;margin:0 auto;font-family:var(--sf-min);font-size:clamp(20px,2.6cqi,32px);line-height:2.1;letter-spacing:.08em;color:#1C1E21;word-break:keep-all}
+/* 三つの扉（写真と文が左右に入れ替わる） */
+.sf-pillars{background:#fff;padding:clamp(40px,6cqi,80px) 0}
+.sf-pillar{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));align-items:center;gap:0;max-width:1400px;margin:0 auto clamp(40px,6cqi,96px)}
+.sf-p-img{display:block;overflow:hidden;aspect-ratio:4/3}
+.sf-p-img img{width:100%;height:100%;object-fit:cover;transition:transform 1.6s cubic-bezier(.16,1,.3,1)}
+.sf-pillar:hover .sf-p-img img{transform:scale(1.04)}
+.sf-p-txt{padding:clamp(40px,6cqi,96px) clamp(24px,6cqi,96px)}
+.sf-p-txt small{display:block;font-family:"Cormorant Garamond",serif;font-size:12px;letter-spacing:.42em;color:var(--sf-cu-deep);margin-bottom:20px}
+.sf-p-txt h2{font-family:var(--sf-min)!important;font-weight:400;font-size:clamp(26px,3.4cqi,44px);line-height:1.6;letter-spacing:.06em;color:#1C1E21;margin:0 0 20px;word-break:keep-all}
+.sf-p-txt p{font-size:14px;line-height:2.2;color:#4A4D52;margin:0 0 30px;max-width:30em}
+.sf-p-link{display:inline-flex;align-items:center;gap:14px;min-height:48px;font-size:12px;letter-spacing:.24em;color:#1C1E21;text-decoration:none;border-bottom:1px solid #1C1E21}
+.sf-p-link::after{content:"→";transition:transform .4s}
+.sf-p-link:hover::after{transform:translateX(6px)}
+@media (min-width:860px){.sf-p2 .sf-p-img{order:2}}
+/* できること（重なるので隠す） */
+.sf-page .sf-explore{display:none!important}
+/* 数字：象牙の面に 明朝の細い数字 */
+.sf-page .sf-proof{background:#F4F3F0!important;border-top:1px solid #D9D4CC;border-bottom:1px solid #D9D4CC}
+.sf-page .sf-proof>div{border-color:#D9D4CC!important}
+.sf-page .sf-proof strong{font-family:"Cormorant Garamond",var(--sf-min)!important;font-weight:300!important;color:var(--sf-cu-deep)!important;font-size:clamp(34px,4cqi,56px)!important}
+.sf-page .sf-proof small{color:#6E6A64!important;letter-spacing:.3em!important}
+/* 店：目的地のように 縦長の写真と明朝の名前 */
+.sf-page .sf-store img{aspect-ratio:3/4!important;height:auto!important;object-fit:cover;transition:transform 1.4s cubic-bezier(.16,1,.3,1)}
+.sf-page .sf-store:hover img{transform:scale(1.04)}
+.sf-page .sf-store{overflow:hidden;border-radius:0!important;background:transparent!important}
+.sf-page .sf-store b{font-family:"Cormorant Garamond",serif!important;font-size:22px!important;letter-spacing:.24em!important;font-weight:400!important}
+.sf-page .sf-person,.sf-page .sf-product>div{border-radius:0!important}
+/* オンラインショップの帯 */
+.sf-page .sf-online h2{font-family:var(--sf-min)!important;letter-spacing:.08em!important}
+@media (prefers-reduced-motion:reduce){.sf-page .sf-slides .sf-slide{animation:none!important;opacity:0}.sf-page .sf-slides .is-1{opacity:1}}
