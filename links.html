@@ -62,10 +62,49 @@
     .lk-foot{padding:18px 0 4px;text-align:center;font-size:11.5px;letter-spacing:.06em;color:var(--sub)}
     .lk-foot a{border-bottom:1px solid var(--line);padding-bottom:1px}
     a:focus-visible,summary:focus-visible{outline:2px solid var(--cu);outline-offset:3px}
-    .lk-list>li{animation:lkIn .7s ease both}
+    .lk-list>li{animation:lkIn .7s ease backwards}
     .lk-list>li:nth-child(2){animation-delay:.07s}.lk-list>li:nth-child(3){animation-delay:.14s}.lk-list>li:nth-child(4){animation-delay:.21s}.lk-list>li:nth-child(5){animation-delay:.28s}
     @keyframes lkIn{from{opacity:.001;transform:translateY(10px)}to{opacity:1;transform:none}}
     @media (prefers-reduced-motion:reduce){.lk-list>li{animation:none}.lk-ar,.lk-tile img,.lk-list>li>details>summary img{transition:none}}
+
+    /* ── 1画面に収める（10/5 所有者「スマホ画面に収まるか」）── */
+    .lk{height:100dvh;min-height:560px;max-height:960px;display:flex;flex-direction:column;padding:0 10px max(10px,env(safe-area-inset-bottom,0px))}
+    .lk-head{padding:12px 0 8px}
+    .lk-head b{font-size:22px}
+    .lk-head span{font-size:12px;margin-top:4px}
+    .lk-list{flex:1;min-height:0;grid-template-columns:1fr 1fr;grid-template-rows:1.25fr 1fr 1fr;gap:6px}
+    .lk-list>li{min-height:0}
+    .lk-list>li:first-child{grid-column:1/-1}
+    .lk-list>li>a.lk-tile,.lk-list>li>details,.lk-list>li>details>summary{height:100%!important}
+    .lk-list>li:first-child .lk-tile{height:100%!important}
+    .lk-t{left:14px;right:28px;bottom:12px}
+    .lk-t small{font-size:10.5px;letter-spacing:.2em}
+    .lk-t b{font-size:18px;margin-top:2px}
+    .lk-t em{font-size:11px;line-height:1.5;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    .lk-list>li:first-child .lk-t b{font-size:22px}
+    .lk-list>li:first-child .lk-t{left:18px;bottom:16px}
+    .lk-ar{right:12px;bottom:18px;width:8px;height:8px}
+    .lk-tile:after,.lk-list>li>details>summary:after{background:linear-gradient(0deg,rgba(10,11,13,.85) 0%,rgba(10,11,13,.35) 55%,rgba(10,11,13,.05) 100%)}
+    .lk-tile.is-bright:after{background:linear-gradient(0deg,rgba(10,11,13,.8) 0%,rgba(10,11,13,.25) 55%,rgba(10,11,13,0) 100%)}
+    /* 店舗とアプリは 下からせり上がる */
+    .lk-sheet{display:none}
+    details[open]>.lk-sheet{display:block;position:fixed;left:0;right:0;bottom:0;z-index:50;max-width:560px;margin:0 auto;padding:18px 16px max(18px,env(safe-area-inset-bottom,0px));background:#16181c;border-top:1px solid rgba(210,165,122,.5);box-shadow:0 -20px 60px rgba(0,0,0,.6);animation:lkSheet .35s cubic-bezier(.16,1,.3,1)}
+    details[open]::before{content:"";position:fixed;inset:0;z-index:49;background:rgba(0,0,0,.45)}
+    .lk-x{display:block;margin:0 0 12px auto;background:none;border:0;color:var(--sub);font-size:12px;letter-spacing:.1em;cursor:pointer;padding:6px 0}
+    .lk-sheet .lk-stores{padding:0}
+    @keyframes lkSheet{from{transform:translateY(100%)}to{transform:none}}
+    .lk-rc{margin-top:6px;min-height:0;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .lk-rc div{padding:10px 14px}
+    .lk-rc small{font-size:10.5px}
+    .lk-rc b{font-size:15px;margin-top:2px}
+    .lk-rc ul{margin-top:5px;gap:4px}
+    .lk-rc li{font-size:10px;padding:2px 6px}
+    .lk-rc-go{position:relative;z-index:1;flex:none;margin-right:14px;font-size:12px;color:#fff;border-bottom:1px solid var(--cu);padding-bottom:2px;white-space:nowrap}
+    .lk-foot{display:none}
+    .lk-list>li:not(:first-child) .lk-t b{font-size:clamp(14px,4.3vw,18px);letter-spacing:.02em;white-space:nowrap}
+    .lk-t em{word-break:keep-all;overflow-wrap:anywhere}
+    .lk-rc ul{flex-wrap:nowrap}.lk-rc li{white-space:nowrap}
+    @media (prefers-reduced-motion:reduce){details[open]>.lk-sheet{animation:none}}
   </style>
 </head>
 <body>
@@ -79,6 +118,7 @@
       <summary data-track-click="links_online">
         <picture><source srcset="images/onlineshop/online_giftbox.avif" type="image/avif"><img src="images/onlineshop/online_giftbox.webp" alt="黒い箱に収まったヘアケア" loading="lazy" decoding="async"></picture>
         <span class="lk-t"><small>Online shop</small><b>オンラインショップ</b><em>ご来店の方だけの 会員制ショップ</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
+      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる">閉じる</button>
       <div class="lk-stores" style="--n:2">
         <a href="onlineshop.html" data-track-click="links_online_web">ブラウザで開く</a>
         <details class="lk-app">
@@ -88,28 +128,30 @@
       <div class="lk-appnote" hidden>
         <p>SEAMのアプリは 店頭で会員登録をした方のためのアプリです</p>
         <a class="lk-badge" href="https://apps.apple.com/jp/app/seam-salontown/id6781202190" target="_blank" rel="noopener" data-track-click="links_online_appstore"><img src="images/badge-appstore-ja.svg" alt="App Store からダウンロード" width="136" height="50"></a>
-      </div>
+      </div></div>
     </details></li>
     <li><details name="lk">
       <summary data-track-click="links_salon">
         <picture><source srcset="images/stores/headspa_ginza_room.avif" type="image/avif"><img src="images/stores/headspa_ginza_room.webp" alt="銀座店の個室 窓の外に夜の銀座" loading="lazy" decoding="async"></picture>
         <span class="lk-t"><small>Hair salon</small><b>ヘアサロン</b><em>美しくなる時間も 空間も わたしだけのもの</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
+      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる">閉じる</button>
       <div class="lk-stores" style="--n:4">
         <a href="https://beauty.hotpepper.jp/slnH000802192/" data-track-click="links_salon_ginza">銀座<small>完全個室</small></a>
         <a href="https://beauty.hotpepper.jp/slnH000791476/" data-track-click="links_salon_osaka">大阪<small>完全個室</small></a>
         <a href="https://beauty.hotpepper.jp/slnH000417753/" data-track-click="links_salon_sapporo">札幌<small>半個室</small></a>
         <a href="https://beauty.hotpepper.jp/slnH000734442/" data-track-click="links_salon_fukuoka">福岡<small>半個室</small></a>
-      </div>
+      </div></div>
     </details></li>
     <li><details name="lk">
       <summary data-track-click="links_spa">
         <picture><source srcset="images/stores/salon_ginza_room.avif" type="image/avif"><img src="images/stores/salon_ginza_room.webp" alt="銀座店のヘッドスパの個室" loading="lazy" decoding="async"></picture>
         <span class="lk-t"><small>Head spa</small><b>ヘッドスパ</b><em>頭の疲れは 顔に出る ほぐしに来ませんか？</em></span><i class="lk-ar" aria-hidden="true"></i></summary>
+      <div class="lk-sheet" role="group"><button type="button" class="lk-x" aria-label="閉じる">閉じる</button>
       <div class="lk-stores">
         <a href="https://beauty.hotpepper.jp/kr/slnH000802373/" data-track-click="links_spa_ginza">銀座</a>
         <a href="https://beauty.hotpepper.jp/kr/slnH000791418/" data-track-click="links_spa_osaka">大阪</a>
         <a href="https://beauty.hotpepper.jp/kr/slnH000800971/" data-track-click="links_spa_nagoya">名古屋<small>矢場町</small></a>
-      </div>
+      </div></div>
     </details></li>
     <li><a class="lk-tile is-bright" href="finder" data-track-click="links_finder">
       <picture><source srcset="images/finder/links_gloss.avif" type="image/avif"><img src="images/finder/links_gloss.webp" alt="光を受けてツヤの出た髪" loading="lazy" decoding="async"></picture>
@@ -118,13 +160,18 @@
   <a class="lk-rc" href="recruit.html" data-track-click="links_recruit">
     <img src="images/lp/salon/exp_treatment.webp" alt="" loading="lazy" decoding="async">
     <div><small>Recruit</small><b>好きな仕事を 一生の仕事に</b>
-      <ul><li>月給30万円〜</li><li>歩合50%</li><li>完全週休2日</li><li>美容学生バイト歓迎</li></ul>
-      <span>採用情報を見る →</span></div>
+      <ul><li>月給30万円〜</li><li>歩合50%</li><li>美容学生バイト歓迎</li></ul>
+      </div><span class="lk-rc-go">採用情報 →</span>
   </a>
   <p class="lk-foot"><a href="/">seam.site</a></p>
 </main>
 <script>
 document.querySelectorAll('.lk-app').forEach(function(d){d.addEventListener('toggle',function(){var n=d.closest('li').querySelector('.lk-appnote');if(n)n.hidden=!d.open;});});
+</script>
+<script>
+document.querySelectorAll('.lk-x').forEach(function(b){b.addEventListener('click',function(){var d=b.closest('details');if(d)d.open=false;});});
+document.querySelectorAll('details[name=lk]').forEach(function(d){d.addEventListener('click',function(e){if(e.target===d)d.open=false;});});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')document.querySelectorAll('details[name=lk][open]').forEach(function(d){d.open=false;});});
 </script>
 <script src="js/seam-analytics.js?v=12" defer></script>
 </body></html>
