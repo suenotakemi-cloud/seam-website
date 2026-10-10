@@ -66,9 +66,11 @@ function start(page){
     }), {rootMargin:'-25% 0px'});
     function catchSkipped(){headings.forEach(h=>{if(h.classList.contains('motion-pending')&&h.getClientRects().length&&h.getBoundingClientRect().top<innerHeight*.75)reveal(h);});}
     addEventListener('scroll',catchSkipped,{passive:true});
+    // 検索エンジンの描画のような縦長の画面（スクロールしない）では何も隠さない
+    const tall = innerHeight > 1400;
     headings.forEach(h => {
       // Initial-screen headings and headings already passed are never hidden.
-      if (seen.has(h) || h.getBoundingClientRect().top < innerHeight*.75) {seen.add(h); return;}
+      if (tall || seen.has(h) || h.getBoundingClientRect().top < innerHeight*.75) {seen.add(h); return;}
       h.classList.add('motion-pending'); observer.observe(h);
     });
     const depths = [.25,1,.5,.8,.5,1];
@@ -99,7 +101,7 @@ function start(page){
 
     }
     let drawObserver;
-    if (drawing && !seen.has(drawing)) {
+    if (drawing && !seen.has(drawing) && !tall) {
       gsap.set(drawing,{opacity:0}); paths.forEach(p => gsap.set(p,{strokeDashoffset:p.getTotalLength()}));
       drawObserver = new IntersectionObserver(entries => entries.forEach(entry => {
         if (!entry.isIntersecting) return;
