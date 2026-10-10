@@ -1,0 +1,46 @@
+/* BAL REPORT3: whole heading, no line splitting or clipping */
+.motion-heading{perspective:700px;overflow:visible}
+.motion-heading-inner{display:block;transform-origin:center center;backface-visibility:hidden}
+.motion-heading.motion-pending .motion-heading-inner{opacity:0;transform:translateY(70%) rotateX(-90deg)}
+.motion-heading.motion-play .motion-heading-inner{animation:motion-unfold 700ms linear both}
+@keyframes motion-unfold{
+0%{transform:translateY(70%) rotateX(-90deg);opacity:0}
+25%{transform:translateY(56%) rotateX(-81.5deg);opacity:1}
+50%{transform:translateY(35%) rotateX(-67.5deg);opacity:1}
+75%{transform:translateY(10.5%) rotateX(-13.5deg);opacity:1}
+100%{transform:translateY(0) rotateX(0);opacity:1}}
+.motion-card{transform:translate3d(0,var(--motion-y,0px),0)}
+.motion-frame{position:relative;overflow:hidden}
+.motion-photo{position:absolute;inset:-25%;width:150%;height:150%}
+.motion-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.motion-drawing{display:block;width:min(100%,680px);height:auto;margin:0 auto 48px;color:#A87456}
+.motion-stage-photo{width:min(38vw,540px);height:min(60vh,600px);background:url('../images/stores/real/ginza_shop3.webp') center/cover;border-radius:48% 48% 0 0;transform-origin:center;pointer-events:none}
+@media(max-width:767px){.motion-stage-photo{width:44vw;height:49vw;max-height:50vh}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation:none!important;transition:none!important}.motion-heading-inner{opacity:1!important;transform:none!important}.motion-photo{transform:none!important;filter:none!important}.motion-stage-photo{transform:none!important;opacity:1!important}.motion-drawing{opacity:1!important}.motion-drawing path{stroke-dashoffset:0!important}}
+/* BAL 型の動き（所有者 10/10 案A）: 旧来の演出は止め、レイアウトは保つ */
+.sf-page [data-reveal],.sf-page .sf-ln>span{opacity:1!important;transform:none!important;filter:none!important;transition:none!important}
+.sf-page .sf-ln{overflow:visible!important}
+.sf-page .sf-pillar .sf-p-img{clip-path:none!important;transition:none!important}
+.sf-page .sf-p-img img,.sf-page .sf-store img,.sf-page .sf-il-img{transform:none!important;transition:none!important}
+.sf-page .sf-hero-copy *,.sf-page .sf-hero-cta,.sf-page .sf-hero:before{animation:none!important;opacity:1!important}
+.sf-page .sf-hero-photo img{animation:none!important}
+.sf-page .sf-slides .sf-slide{animation:none!important;opacity:0!important;transform:none!important}
+.sf-page .sf-slides .is-1{opacity:1!important}
+.sf-page .sf-head{transform:none!important;opacity:1!important;transition:none!important}
+.sf-page .sf-interlude span{opacity:1!important;transform:none!important;transition:none!important}
+.sf-page .sf-section>small:after,.sf-page .sf-identity>small:after,.sf-page .sf-statement>small:after{transition:none!important;width:48px!important}
+.sf-page .sf-store.motion-card{overflow:visible}
+.sf-page .sf-store .motion-frame{aspect-ratio:3/4}
+.sf-page .sf-store .motion-photo img{aspect-ratio:auto!important;height:100%!important}
+.sf-page .sf-interlude .sf-il-img{background:none!important;inset:0!important;display:grid;place-items:center}
+.sf-page .sf-interlude{overflow:hidden}
+.sf-page .sf-interlude p{pointer-events:none}
+.sf-page .sf-footer{position:relative}
+/* Inner movement belongs to a wrapper, so the old scroll listener cannot overwrite it. */
+.sf-page .sf-p-img .motion-photo img{width:100%;height:100%}
+.sf-page .motion-heading-inner{animation:none}
+.sf-page .motion-heading.motion-play .motion-heading-inner{animation:motion-unfold 700ms linear both}
+@media(prefers-reduced-motion:reduce){.sf-page *{transition:none!important}.sf-page .motion-card{transform:none!important}.sf-page .motion-stage-photo{opacity:1!important;transform:none!important}}
+
+.sf-page .motion-card{transform:translate3d(0,var(--motion-y,0px),0)!important;transition:none!important}
+@media(prefers-reduced-motion:reduce){.sf-page .motion-card{transform:none!important}}
