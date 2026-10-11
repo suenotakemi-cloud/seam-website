@@ -26,7 +26,14 @@ function init(){
  const stage=page.querySelector('.sf-interlude');
  if(stage){stage.setAttribute('data-motion-stage','');const photo=document.createElement('div');photo.className='motion-stage-photo';stage.querySelector('.sf-il-img').appendChild(photo);}
  page.querySelector('.sf-footer').insertAdjacentHTML('afterbegin',"<svg class=\"motion-drawing\" viewBox=\"0 0 680 190\" fill=\"none\" aria-hidden=\"true\" focusable=\"false\"><g stroke=\"currentColor\" stroke-width=\"1.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M135 46 C108 15 61 16 61 48 C61 73 139 70 139 111 C139 151 77 159 48 125\"/><path d=\"M197 27 H282 M197 27 V147 H282 M197 84 H267\"/><path d=\"M325 147 L373 27 L421 147 M341 108 H405\"/><path d=\"M468 147 V27 L526 117 L584 27 V147\"/><path d=\"M28 177 H652\"/></g></svg>");
- start(page);
+ // GSAP は最初の表示を待たせないよう あとから読む（所有者 10/11・トップを軽く）
+ loadGsap().then(()=>start(page)).catch(()=>{});
+}
+function loadGsap(){
+  if (window.gsap && window.ScrollTrigger) return Promise.resolve();
+  const one = src => new Promise((ok, ng) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ng; document.head.appendChild(s); });
+  const idle = () => new Promise(r => ('requestIdleCallback' in window) ? requestIdleCallback(r, {timeout: 1500}) : setTimeout(r, 300));
+  return idle().then(() => one('/js/vendor/gsap.min.js?v=3.13.0')).then(() => one('/js/vendor/ScrollTrigger.min.js?v=3.13.0'));
 }
 function start(page){
 

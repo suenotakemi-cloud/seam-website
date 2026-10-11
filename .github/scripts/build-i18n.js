@@ -278,7 +278,9 @@ function rewriteUrlsToRoot(doc, shortLang) {
       if (!isRel(v)) return;
       if (a === 'href' && shortLang) {
         // "shop.html#stores" / "brand.html?mode=product" からファイル名だけ取り出す
-        const file = v.split(/[?#]/)[0];
+        let file = v.split(/[?#]/)[0];
+        // 2026-10-11 から ja 側のリンクは .html を付けない（/store-ginza）。言語版の判定は .html 付きの名前で行う
+        if (file && !file.endsWith('.html') && !file.includes('.') && TRANSLATED.has(file + '.html')) file = file + '.html';
         if (TRANSLATED.has(file)) {
           el.setAttribute(a, '/' + shortLang + '/' + v);
           return;
@@ -506,7 +508,9 @@ function build() {
       // 言語版を持たないページ(finder / skinfinder)への JS 文字列・辞書(SEAM_PAGE_I18N)内リンクも / 起点へ。
       // 辞書の HTML は lang.js が実行時に innerHTML で差し込むため、DOM の書き換えでは届かず
       // /en/finder.html(404)へ飛んでいた。href=\"finder.html\" (JSON内) と 'skinfinder.html' の両形。
-      out = out.replace(/(href=\\?["']|["'`])((?:skin)?finder\.html)/g, '$1/$2');
+      out = out.replace(/(["'`])((?:skin)?finder\.html)/g, '$1/$2');
+      // 2026-10-11 から ja のリンクは .html なし（href="finder"）。href 属性のときだけ拡張子なしも / 起点へ
+      out = out.replace(/(href=\\?["'])((?:skin)?finder)(?=[#?"'\\])/g, '$1/$2');
       fs.writeFileSync(path.join(outDir, pg.file), out, 'utf-8');
       const title = (doc.querySelector('title') || {}).textContent || '';
       summary.push(`OK   ${lang}/${pg.file}  i18n=${applied}  bytes=${out.length}  title="${title.slice(0, 40)}"`);
