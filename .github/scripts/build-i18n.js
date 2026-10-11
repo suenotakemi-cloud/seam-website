@@ -515,7 +515,7 @@ function build() {
 
   // sitemap.xml 再生成: ja(7+ジャーナル) + 各言語×6
   // ジャーナル/ガイドはJA専用コンテンツ(多言語prerender対象外)＝ja URLのみ収録
-  const jaUrls = ['/', '/finder', '/skinfinder', '/brand', '/shop', '/onlineshop', '/hairsalon', '/headspa',
+  const jaUrls = ['/', '/finder', '/skinfinder', '/brand', '/shop', '/tokyo', '/onlineshop', '/hairsalon', '/headspa',
     '/journal', '/guide-uneri', '/guide-damage', '/guide-kansou',
     '/guide-shiraga', '/guide-scalp', '/guide-mens',
     '/guide-bleach', '/guide-straightening', '/guide-colorfade', '/guide-perm', '/guide-salon-senyo',
