@@ -1,0 +1,13 @@
+/* トップの写真の出方：金のアーチ（所有者 10/11 案1）
+   その日最初の1回だけ html[data-hi="1"]（head の小さなスクリプトが付ける）。見出しと予約・診断のボタンは最初から見せる（表示の速さの評価＝最初の大きな要素を遅らせない） */
+html[data-hi="1"] .sf-page .sf-hero{background:#17110d!important}
+html[data-hi="1"] .sf-page .sf-hero-photo{opacity:0;clip-path:inset(var(--hi-t,10%) var(--hi-r,20%) var(--hi-b,8%) var(--hi-l,20%) round var(--hi-a,30vw) var(--hi-a,30vw) 0 0);transition:opacity .7s ease,clip-path 1.1s cubic-bezier(.65,0,.35,1)}
+html.hi-photo .sf-page .sf-hero-photo{opacity:1}
+html.hi-open .sf-page .sf-hero-photo{clip-path:inset(0 0 0 0 round 0 0 0 0)}
+/* 引き→アップ：アーチに現れたときは引きの画、広がりながらゆっくり寄る */
+html[data-hi="1"] .sf-page .sf-hero-photo img{transform:scale(1);transform-origin:50% 55%;transition:transform 3.4s cubic-bezier(.22,1,.36,1)!important}
+html.hi-photo .sf-page .sf-hero-photo img{transform:scale(1.12)}
+.hi-arch{position:absolute;inset:0;z-index:2;pointer-events:none;width:100%;transition:opacity .7s ease}
+.hi-arch path{fill:none;stroke:#C9A86A;stroke-width:1;vector-effect:non-scaling-stroke}
+html.hi-open .hi-arch{opacity:0}
+@media (prefers-reduced-motion:reduce){html[data-hi] .sf-page .sf-hero-photo img,html[data-hi] .sf-page .sf-hero-photo,html[data-hi] .sf-page .sf-hero-copy>*{opacity:1!important;transform:none!important;clip-path:none!important;transition:none!important}.hi-arch{display:none}}
