@@ -43,7 +43,7 @@ export async function onRequestPost({ request, env, data }) {
     let vj = Array.isArray(b.jans) && b.jans.length ? b.jans.map((j) => cleanJan(j)).filter(Boolean).slice(0, 50) : null;
     if (!vj) {
       // 画面を開いたときの自動確認（auto）では「SalonPro に未登録」は見に行かない（毎回 50 件問い合わせないように。ボタンでは全部見る）
-      const rs = await env.DB.prepare("SELECT jan FROM pim_products p WHERE p.account_id=? AND p.ec_push_status IS NOT NULL AND p.ec_push_status<>'ok'" + (b.auto ? " AND (p.ec_push_status<>'product_not_found' OR (p.jan LIKE '0%' AND p.ec_jan IS NULL AND IFNULL(p.ec_push_msg,'') NOT LIKE '%どちらでも%'))" : '') + ' ORDER BY p.ec_push_at DESC LIMIT ?').bind(acct, b.auto ? 20 : 50).all();
+      const rs = await env.DB.prepare("SELECT jan FROM pim_products p WHERE p.account_id=? AND p.ec_push_status IS NOT NULL AND p.ec_push_status<>'ok'" + (b.auto ? " AND (p.ec_push_status<>'product_not_found' OR (length(p.jan)=13 AND p.jan LIKE '0%' AND p.ec_jan IS NULL AND IFNULL(p.ec_push_msg,'') NOT LIKE '%どちらでも%'))" : '') + ' ORDER BY p.ec_push_at DESC LIMIT ?').bind(acct, b.auto ? 20 : 50).all();
       vj = (rs.results || []).map((r) => r.jan);
     }
     if (!vj.length) return json({ ok: true, checked: 0, fixed: 0, still: 0, message: '確かめるものはありません' });

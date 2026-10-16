@@ -741,6 +741,7 @@
   function readFile(file, inboxId) {
     S.inboxId = inboxId || null;
     S.file = file; S.sheets = null; S.decisions = {}; S.fileDecisions = {}; S.dbExisting = {}; S.items = [];
+    S.checkSeq = (S.checkSeq || 0) + 1; S.checking = false; S.checkedJans = null; S.fileDups = {}; S.similar = []; // 前のファイルの照合の返事は捨てる
     $('optSource').value = ''; $('commitState').textContent = ''; $('commitLog').hidden = true; $('commitProg').hidden = true;
     ['cardMap', 'cardPrev', 'cardDup', 'cardCommit'].forEach(function (id) { $(id).hidden = true; });
     var name = file.name.toLowerCase();
@@ -818,7 +819,7 @@
   // 行が登録できるか。空欄埋めは「商品名が無い」だけなら OK（JAN と画像だけのファイル）
   function rowOk(it) { return !it.errors.length || (impType() === 'fill' && !!it.product.jan && it.errors.every(function (e) { return /商品名/.test(e); })); }
   Array.prototype.forEach.call(document.querySelectorAll('input[name=impType]'), function (r) { r.addEventListener('change', function () { syncTypeUi(); if (S.items.length) { $('btnPreview').click(); } }); });
-  $('fillNew').addEventListener('change', function () { if (S.items.length) { renderDups(); renderCommit(); } });
+  $('fillNew').addEventListener('change', function () { if (S.items.length && !S.checking && S.checkedJans) { renderDups(); renderCommit(); } });
   function buildMap() {
     S.headers = S.rows[S.headerRow].map(function (h, i) { return String(h || '').trim() || ('(' + (i + 1) + '列目)'); });
     S.mapping = N.guessMapping(S.rows[S.headerRow]);
@@ -896,7 +897,12 @@
     var jans = ok.map(function (i) { return i.product.jan; });
     var keys = ok.map(function (i) { return i.product.name_key; }).filter(Boolean);
     toast('登録済みと照合中…');
+    // 照合が終わるまでは前回の結果を使わない（「確認する」を押し直したときに、前のファイルの照合結果で保存しないように）
+    var seq = S.checkSeq = (S.checkSeq || 0) + 1;
+    S.checking = true; S.dbExisting = {}; S.similar = []; $('cardDup').hidden = true; $('cardCommit').hidden = true;
     checkExisting(jans, keys).then(function (r) {
+      if (seq !== S.checkSeq) return; // 後から押した「確認する」の照合を優先
+      S.checking = false;
       S.dbExisting = r.existing;
       S.similar = [];
       // ファイル内: 同じメーカーで商品名がほぼ同じなのに JAN が違う
@@ -907,10 +913,10 @@
         var hits = (r.similar[it.product.name_key] || []).filter(function (h) { return h.jan !== it.product.jan && (!h.maker || !it.product.maker || h.maker === it.product.maker); });
         if (hits.length) S.similar.push({ where: 'db', items: [it], hits: hits });
       });
+      S.checkedJans = {}; jans.forEach(function (j) { S.checkedJans[j] = 1; });
       renderSimilar();
-      renderDups();
-      renderCommit();
-    }).catch(handleErr);
+      ensureChecked(); // 照合の間に「直す」で登録できるようになった行があれば、それも照合してから 4・5 の段を出す
+    }).catch(function (e) { if (seq === S.checkSeq) S.checking = false; if (e && (e.auth || e.staff || e.setup)) handleErr(e); else toast('登録済みとの照合ができませんでした。もう一度「確認する」を押してください（' + ((e && e.message) || e) + '）', true); });
   });
   // ── 3 の表（揃えた結果）。注意のある行だけ・検索・ページ送り。行ごとに「直す」 ──
   var PV = { page: 0, size: 100, rows: [] };
@@ -942,8 +948,38 @@
   $('prevTbl').addEventListener('click', function (e) {
     var b = e.target.closest('[data-pfix]'); if (!b) return;
     var it = S.items[parseInt(b.getAttribute('data-pfix'), 10)]; if (!it) return;
-    openEdit(it.product, { local: true, rowNo: it.rowNo, done: function (fields) { applyLocalEdit(it, fields); renderPrev(); renderDups(); renderCommit(); } });
+    openEdit(it.product, { local: true, rowNo: it.rowNo, done: function (fields) {
+      if (S.items.indexOf(it) < 0) return; // その間に「確認する」を押し直した（別の表になった）
+      var wasOk = rowOk(it);
+      applyLocalEdit(it, fields); renderPrev();
+      if (S.checking || !S.checkedJans) return; // 照合中は待つ（照合が終わったところで ensureChecked が直した行も拾う）
+      ensureChecked();
+    } });
   });
+  // 登録できる行がすべて照合ずみになるまで照合を足してから、4（重複）・5（保存）の段を出す
+  //   「直す」で登録できなかった行が登録できるようになったとき、ファイル内の JAN 重複・登録済みとの重複・似た名前を、その行にもやり直す
+  function ensureChecked() {
+    if (!S.checkedJans) return;
+    var ok = S.items.filter(rowOk);
+    S.fileDups = N.findFileDuplicates(ok);
+    Object.keys(S.fileDups).forEach(function (k) { S.fileDups[k] = S.fileDups[k].map(function (i) { return S.items.indexOf(ok[i]); }); });
+    var todo = ok.filter(function (i) { return !S.checkedJans[i.product.jan]; });
+    if (!todo.length) { renderDups(); renderCommit(); return; }
+    var seq = S.checkSeq = (S.checkSeq || 0) + 1; S.checking = true;
+    var jans = todo.map(function (i) { return i.product.jan; }), keys = todo.map(function (i) { return i.product.name_key; }).filter(Boolean);
+    checkExisting(jans, keys).then(function (r) {
+      if (seq !== S.checkSeq) return;
+      S.checking = false;
+      Object.assign(S.dbExisting, r.existing || {});
+      todo.forEach(function (it) {
+        S.checkedJans[it.product.jan] = 1;
+        var hits = (r.similar[it.product.name_key] || []).filter(function (h) { return h.jan !== it.product.jan && (!h.maker || !it.product.maker || h.maker === it.product.maker); });
+        if (hits.length) S.similar.push({ where: 'db', items: [it], hits: hits });
+      });
+      renderSimilar();
+      ensureChecked(); // その間にまた直された行があれば続けて
+    }).catch(function (e) { if (seq === S.checkSeq) S.checking = false; handleErr(e); });
+  }
   // 保存前の行に、直した内容を当てる（注意のうち、直した項目に関係するものは消す）
   function applyLocalEdit(it, f) {
     var p = it.product, before = { name: p.name, amount: p.amount, unit: p.unit, price: p.price };
@@ -977,12 +1013,15 @@
     $('edNote').innerHTML = (ED.opts.local ? 'まだ保存前の行です。「保存」でこの表の内容が変わり、最後の「この内容で保存」で登録されます。<br>' : '') +
       'ここで直した内容は、この商品登録システムの商品マスタと「出力」の CSV に入ります。<b>SalonPro へ送るのは写真だけ</b>なので、SalonPro 側の商品名・価格は変わりません（SalonPro の管理画面で直してください）。';
     $('edErr').textContent = ''; $('edSave').disabled = false;
+    ED.priceSig = priceSig(); // 価格の欄を触ったかどうかを、保存のときに見分ける
     $('edPhoto').hidden = !!ED.opts.local; $('edPhoto').href = './index.html?jan=' + encodeURIComponent(p.jan) + '&back=list';
     $('edDlg').hidden = false; setTimeout(function () { $('edName').focus(); }, 0);
   }
+  function priceSig() { return [$('edPrice').value.trim(), $('edTax').value, $('edRate').value.trim()].join('|'); }
   function closeEdit() { $('edDlg').hidden = true; ED.opts = null; ED.product = null; }
   function readEdit() {
-    var f = { name: N.clean ? N.clean($('edName').value) : $('edName').value.trim(), sku: $('edSku').value.trim(), maker: $('edMaker').value.trim(), brand: $('edBrand').value.trim(), category: $('edCat').value.trim(), description: $('edDesc').value.trim(), unit: $('edUnit').value.trim(), tax_included: $('edTax').value === '1' ? 1 : 0 };
+    // 商品名は打ったとおりに残す（取り込み用の整形をかけると、価格だけ直しても（ ）が ( ) に変わる）
+    var f = { name: $('edName').value.replace(/\s+/g, ' ').trim(), sku: $('edSku').value.trim(), maker: $('edMaker').value.trim(), brand: $('edBrand').value.trim(), category: $('edCat').value.trim(), description: $('edDesc').value.trim(), unit: $('edUnit').value.trim(), tax_included: $('edTax').value === '1' ? 1 : 0 };
     f.price = numOrNull($('edPrice').value); f.tax_rate = numOrNull($('edRate').value); f.amount = numOrNull($('edAmount').value); f.retail_price = numOrNull($('edRetail').value); f.cost_price = numOrNull($('edCost').value);
     if (!f.name) return { err: '商品名を入れてください' };
     if (Number.isNaN(f.price) || (f.price != null && f.price < 0)) return { err: '価格は数字で入れてください' };
@@ -1003,15 +1042,19 @@
     if (o.local) { var done = o.done; closeEdit(); if (done) done(f); toast('直しました（保存前）'); return; }
     $('edSave').disabled = true; $('edErr').textContent = '';
     var body = Object.assign({}, p, f, { jan: p.jan, price_ex: null, price_in: null, expected_updated_at: p.updated_at });
+    // 価格の欄を触っていなければ、登録済みの 価格・税抜・税込 をそのまま送る（計算し直して端数が変わったり、税込だけの商品の値が消えたりしないように）
+    if (priceSig() === ED.priceSig) { body.price = p.price; body.tax_included = p.tax_included; body.tax_rate = p.tax_rate; body.price_ex = p.price_ex; body.price_in = p.price_in; }
     delete body.images;
+    var mine = o;
     api('products', { method: 'PUT', body: body }).then(function (r) {
+      if (ED.opts !== mine) { if (r.ok) { toast('保存しました'); if (mine.done) mine.done(r.product); } else toast(r.message || '保存できませんでした', true); return; } // 返事が来る前に閉じた・別の商品を開いた（画面は触らず、一覧だけ新しくする）
       $('edSave').disabled = false;
       if (!r.ok) {
         if (r.reason === 'conflict' && r.product) { openEdit(r.product, o); $('edErr').textContent = r.message + '（あなたの入力は反映していません。もう一度直して保存してください）'; return; }
         $('edErr').textContent = r.message || '保存できませんでした'; return;
       }
       var done = o.done; closeEdit(); toast('保存しました'); if (done) done(r.product);
-    }).catch(function (e) { $('edSave').disabled = false; handleErr(e); });
+    }).catch(function (e) { if (ED.opts === mine) $('edSave').disabled = false; handleErr(e); });
   });
   // 一覧などから JAN で開く（最新の内容を読んでから）
   function editByJan(jan, done) {
@@ -1460,6 +1503,7 @@
   function planImages(files) {
     files = files.filter(function (f) { return /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|gif|bmp|webp|avif|tiff?)$/i.test(f.name); });
     if (!files.length) { toast('画像ファイルがありません', true); return; }
+    if (IMG.running) { toast('いま登録中です。終わってから次の画像を入れてください', true); return; }
     (IMG.plan || []).forEach(function (q) { if (q.thumbUrl) { try { URL.revokeObjectURL(q.thumbUrl); } catch (e) { /* */ } } });
     var plan = files.map(function (f) { var p = parseImageName(f.name); return { file: f, jan: p ? p.jan : '', slot: p ? p.slot : 0, status: p ? (p.slot ? '' : '枚目が6以上') : 'ファイル名にJANがありません' }; });
     // 同じ JAN 内で slot 指定が無い（=1）ものが複数あれば 1,2,3… と順に振る
@@ -1498,7 +1542,7 @@
     $('imgCvHint').hidden = !IMG.plan.length;
     $('btnImgRun').disabled = !ok.length || !!IMG.running;
     Array.prototype.forEach.call($('imgPlan').querySelectorAll('[data-cand]'), function (sel) {
-      sel.addEventListener('change', function () { var p = IMG.plan[parseInt(sel.getAttribute('data-cand'), 10)]; var c = (p.cands || []).filter(function (x) { return x.jan === sel.value; })[0]; if (c) { p.jan = c.jan; p.name = c.name; p.status = ''; } else { p.jan = ''; p.status = '登録しない'; } $('btnImgRun').disabled = !IMG.plan.some(function (x) { return !x.status; }); });
+      sel.addEventListener('change', function () { var p = IMG.plan[parseInt(sel.getAttribute('data-cand'), 10)]; var c = (p.cands || []).filter(function (x) { return x.jan === sel.value; })[0]; if (c) { p.jan = c.jan; p.name = c.name; p.status = ''; } else { p.jan = ''; p.status = '登録しない'; } $('btnImgRun').disabled = !!IMG.running || !IMG.plan.some(function (x) { return !x.status; }); });
     });
   }
   function imgOpts() { return { size: 1200, square: $('imgSquare').checked ? 'pad' : false, whiten: $('imgWhiten').value, max: 1600, quality: 0.85 }; }
@@ -1628,12 +1672,12 @@
       $('rvGrid').innerHTML = j.images.map(function (im, i) {
         return '<div class="rv ' + (im.review || '') + '" data-i="' + i + '"><input type="checkbox" class="pick" title="選ぶ（まとめて削除・OK）"><img src="' + esc(im.url) + '" alt="" loading="lazy"><div class="b"><div class="nm">' + esc(im.name) + '</div>' + (im.quality_warn ? '<div><span class="tag warn">自動チェック: ' + esc(im.quality_warn) + '</span></div>' : '') + '<div class="muted">' + esc(im.jan) + ' ・ ' + im.slot + '枚目 ・ ' + esc(im.created_by || '') + ' ・ ' + esc((im.created_at || '').slice(5, 16).replace('T', ' ')) + '</div>' +
           '<div class="row" style="margin-top:6px"><button class="btn sm" data-rv="ok">OK</button><button class="btn sm danger" data-rv="retake">撮り直し</button>' + (im.review ? '<button class="btn sm" data-rv="clear">取消</button>' : '') + '<button class="btn sm" data-rv="edit" title="回転・切り抜き・明るさなどを直して差し替える" style="margin-left:auto">加工</button><button class="btn sm" data-rv="delete" title="この写真を消す（後ろの写真が前に詰まります）">削除</button></div>' +
-          '<input placeholder="撮り直しの理由（ピンぼけ・傾き・影 など）" value="' + esc(im.review_note || '') + '"></div></div>';
+          '<input class="note" placeholder="撮り直しの理由（ピンぼけ・傾き・影 など）" value="' + esc(im.review_note || '') + '"></div></div>';
       }).join('') || '<p class="muted">該当する写真はありません</p>';
       Array.prototype.forEach.call($('rvGrid').querySelectorAll('[data-rv]'), function (b) {
         b.addEventListener('click', function () {
           var box = b.closest('.rv'), im = RV.items[parseInt(box.getAttribute('data-i'), 10)], act = b.getAttribute('data-rv');
-          var note = box.querySelector('input').value.trim();
+          var note = box.querySelector('input.note').value.trim(); // 左上の選択チェックも input なので、理由の欄を名指しで読む
           if (act === 'edit') { openImgEdit(im); return; }
           if (act === 'delete') { // 画像まとめ登録で入った不要な写真を、検品しながらその場で消す
             if (!confirm(im.name + '\n' + im.jan + ' の ' + im.slot + '枚目を削除しますか？（元に戻せません。後ろの写真が前に詰まります）')) return;
@@ -1643,7 +1687,7 @@
             }).catch(handleErr);
             return;
           }
-          if (act === 'retake' && !note) { note = prompt('撮り直しの理由（スマホに表示されます）', 'ピンぼけ') || ''; if (!note) return; box.querySelector('input').value = note; }
+          if (act === 'retake' && !note) { note = prompt('撮り直しの理由（スマホに表示されます）', 'ピンぼけ') || ''; if (!note) return; box.querySelector('input.note').value = note; }
           api('review', { method: 'POST', body: { jan: im.jan, slot: im.slot, review: act === 'clear' ? null : act, note: note } }).then(function (r) {
             if (!r.ok) { toast(r.message || '失敗しました', true); return; }
             toast(act === 'ok' ? 'OK にしました' : act === 'retake' ? '撮り直しにしました' : '取り消しました');
@@ -1702,7 +1746,7 @@
     chain.then(function () {
       toast(ok + ' 枚を削除しました' + (ng.length ? '／' + ng.length + ' 枚は削除できませんでした: ' + ng.slice(0, 3).join('、') : ''), !!ng.length);
       loadReview(RV.offset);
-    }).catch(function (e) { handleErr(e); loadReview(RV.offset); });
+    }).catch(function (e) { handleErr(e); updatePick(); loadReview(RV.offset); });
   });
   $('rvOkSel').addEventListener('click', function () {
     var list = picked(); if (!list.length) return;
@@ -1724,8 +1768,8 @@
     var mine = IE;
     fetch(im.url, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('写真を読み込めませんでした（' + r.status + '）'); return r.blob(); })
       .then(function (b) { return createImageBitmap(b); })
-      .then(function (bmp) { if (IE !== mine) return; IE.src = bmp; $('ieSave').disabled = false; ieRender(); })
-      .catch(function (e) { $('ieErr').textContent = (e && e.message) || '写真を読み込めませんでした'; });
+      .then(function (bmp) { if (IE !== mine) { if (bmp.close) bmp.close(); return; } IE.src = bmp; $('ieSave').disabled = false; ieRender(); })
+      .catch(function (e) { if (IE === mine) $('ieErr').textContent = (e && e.message) || '写真を読み込めませんでした'; });
   }
   function ieSyncUi() {
     var st = IE.st;
@@ -1777,7 +1821,12 @@
   $('ieWhite').addEventListener('change', function () { if (!IE) return; IE.st.white = this.value; ieRender(); });
   $('ieRotL').addEventListener('click', function () { if (!IE) return; IE.st.rot = (IE.st.rot + 270) % 360; IE.st.crop = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 }; ieRender(); });
   $('ieRotR').addEventListener('click', function () { if (!IE) return; IE.st.rot = (IE.st.rot + 90) % 360; IE.st.crop = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 }; ieRender(); });
-  $('ieFlip').addEventListener('click', function () { if (!IE) return; IE.st.flip = !IE.st.flip; ieRender(); });
+  // 左右反転は「いま画面に見えている絵」の左右を入れ替える。回転・傾き・切り抜き枠も鏡に合わせる（回したあとでも上下が入れ替わらず、回転ボタンの向きもそのまま）
+  $('ieFlip').addEventListener('click', function () {
+    if (!IE) return; var st = IE.st;
+    st.flip = !st.flip; st.rot = (360 - st.rot) % 360; st.tilt = -st.tilt; st.crop = { x: 1 - st.crop.x - st.crop.w, y: st.crop.y, w: st.crop.w, h: st.crop.h };
+    ieSyncUi(); ieRender();
+  });
   $('ieCropOn').addEventListener('change', function () { if (!IE) return; IE.st.cropOn = this.checked; ieCropBox(); });
   $('ieReset').addEventListener('click', function () { if (!IE) return; IE.st = ieDefaults(); ieSyncUi(); ieRender(); });
   // 余白を自動で詰める: 白でない部分を囲む四角＋6% の余白を、正方形に近い形で切り抜く
@@ -1836,10 +1885,10 @@
       fd.append('original_name', String(im.original_name || (im.jan + '_' + im.slot)).replace(/（加工）$/, '') + '（加工）'); fd.append('original_type', 'image/webp'); fd.append('width', String(w.width)); fd.append('height', String(w.height));
       return api('images', { method: 'POST', body: fd });
     }).then(function (r) {
-      if (IE !== mine) return;
+      if (IE !== mine) { if (r && r.ok) { toast(im.slot + '枚目を加工した写真に差し替えました'); loadReview(RV.offset); } return; } // 保存中に閉じても、一覧は新しい写真にする
       if (!r.ok) { $('ieSave').disabled = false; $('ieErr').textContent = r.message || '保存できませんでした'; return; }
       closeImgEdit(); toast(im.slot + '枚目を加工した写真に差し替えました' + (r.quality_warn ? '（自動チェック: ' + r.quality_warn + '）' : '')); loadReview(RV.offset);
-    }).catch(function (e) { $('ieSave').disabled = false; if (e && (e.auth || e.staff)) { closeImgEdit(); handleErr(e); return; } $('ieErr').textContent = (e && e.message) || '保存できませんでした'; });
+    }).catch(function (e) { if (e && (e.auth || e.staff)) { if (IE === mine) closeImgEdit(); handleErr(e); return; } if (IE !== mine) { toast('加工した写真を保存できませんでした: ' + ((e && e.message) || e), true); return; } $('ieSave').disabled = false; $('ieErr').textContent = (e && e.message) || '保存できませんでした'; });
   });
   $('rvReload').addEventListener('click', function () { loadReview(RV.offset); });
   $('rvStatus').addEventListener('change', function () { loadReview(0); });
