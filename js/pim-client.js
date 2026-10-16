@@ -135,7 +135,8 @@
       ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, ch);
       ctx.drawImage(src, 0, 0, cw, ch);
     }
-    if (WHITEN_TOL[whiten]) whitenBackground(ctx, cw, ch, WHITEN_TOL[whiten]);
+    canvas._whitened = WHITEN_TOL[whiten] ? whitenBackground(ctx, cw, ch, WHITEN_TOL[whiten]) : null; // 白にした割合（変換結果の説明用）。0 = 背景が白っぽくないので触らなかった
+    canvas._mode = mode;
     return canvas;
   }
   // 縁から flood fill で「背景」を決めて白にする。返り値: 白にした割合（0〜1）／背景が白っぽくないときは 0（何もしない）
@@ -200,7 +201,7 @@
       if (src.close) { try { src.close(); } catch (e) { /* */ } }
       var q = null; try { q = analyzeImage(canvas, { srcW: sw, srcH: sh }); } catch (e) { q = null; }
       return finishImage(canvas, opts.quality).then(function (r) {
-        return Object.assign(r, { originalType: file.type || '', originalName: file.name || '', quality: q });
+        return Object.assign(r, { originalType: file.type || '', originalName: file.name || '', quality: q, srcWidth: sw, srcHeight: sh, srcBytes: file.size || 0, whitened: canvas._whitened, mode: canvas._mode });
       });
     });
   }

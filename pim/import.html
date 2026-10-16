@@ -88,6 +88,32 @@
   .overlay[hidden]{display:none}
   .overlay .card{width:100%;max-width:400px}
   .overlay input[type=password]{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px;font-size:15px;margin-bottom:10px}
+  .overlay.modal{background:rgba(43,41,38,.45);align-items:flex-start;overflow:auto}
+  .overlay.modal .card{max-width:680px;margin:24px auto}
+  .overlay.modal.wide .card{max-width:1040px}
+  .opts textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:7px 9px;background:#fff;font-size:13px}
+  .edited{background:#FFF8E1}
+  .nmEdit{text-decoration:none;border-bottom:1px dashed #C9BBA8}
+  .nmEdit:hover{color:var(--gold)}
+  .rv .pick{position:absolute;left:8px;top:8px;width:20px;height:20px;accent-color:var(--brown)}
+  .rv{position:relative}
+  .rv.picked{outline:2px solid var(--brown)}
+  .ie-wrap{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px}
+  .ie-view{text-align:center;background:#EFE9E0;border-radius:10px;padding:8px}
+  .ie-stage{position:relative;display:inline-block;max-width:100%;vertical-align:top;overflow:hidden;touch-action:none;user-select:none}
+  .ie-stage canvas{display:block;max-width:100%;max-height:66vh;width:auto;height:auto}
+  .ie-crop{position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.45);cursor:move}
+  .ie-crop i{position:absolute;width:14px;height:14px;background:#fff;border:1px solid var(--ink);border-radius:3px}
+  .ie-crop i[data-h=nw]{left:-8px;top:-8px;cursor:nwse-resize}.ie-crop i[data-h=ne]{right:-8px;top:-8px;cursor:nesw-resize}
+  .ie-crop i[data-h=sw]{left:-8px;bottom:-8px;cursor:nesw-resize}.ie-crop i[data-h=se]{right:-8px;bottom:-8px;cursor:nwse-resize}
+  .ie-side label{display:block;font-size:12px;color:var(--char);margin:10px 0 2px}
+  .ie-side input[type=range]{width:100%}
+  .cv-pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .cv-pair figure{margin:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .cv-pair img{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:repeating-conic-gradient(#f3f0ea 0 25%,#fff 0 50%) 0 0/16px 16px}
+  .cv-pair figcaption{font-size:12px;padding:8px 10px;border-top:1px solid var(--line);line-height:1.6}
+  .cvth{width:40px;height:40px;object-fit:contain;border:1px solid var(--line);border-radius:4px;background:#fff;vertical-align:middle}
+  @media (max-width:760px){.ie-wrap,.cv-pair{grid-template-columns:1fr}}
   .err{color:var(--ng);font-size:12.5px;min-height:1em}
   .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;z-index:60;opacity:0;transition:.2s;pointer-events:none}
   .toast.show{opacity:1}
@@ -187,7 +213,14 @@
       <h2><span class="step">3</span>揃えた結果を確認</h2>
       <div class="kpis" id="prevKpis"></div>
       <details><summary>注意の内訳を見る</summary><ul class="warnlist" id="warnList"></ul></details>
-      <div class="tbl" style="margin-top:10px"><table id="prevTbl"></table></div>
+      <div class="row" style="margin-top:10px">
+        <label class="muted"><input type="checkbox" id="prevWarnOnly"> 注意のある行だけ表示</label>
+        <input type="search" id="prevQ" placeholder="この表の中を探す（商品名・JAN・商品コード）" style="border:1px solid var(--line);border-radius:8px;padding:6px 9px;min-width:260px">
+        <span class="muted" id="prevPage"></span>
+        <button class="btn sm" id="prevPrev">← 前</button><button class="btn sm" id="prevNext">次 →</button>
+      </div>
+      <p class="muted" style="margin:6px 0 0">各行の「直す」で商品名・内容量・価格などをその場で直せます（保存前なので、直した内容で登録されます）。直した行は黄色になります。</p>
+      <div class="tbl" style="margin-top:8px"><table id="prevTbl"></table></div>
     </div>
 
     <div class="card" id="cardDup" hidden>
@@ -280,6 +313,7 @@
         <label class="muted">背景を白に: <select id="imgWhiten"><option value="normal">標準</option><option value="weak">弱</option><option value="strong">強</option><option value="off">しない</option></select></label>
       </div>
       <div id="imgPlan" style="margin-top:10px"></div>
+      <p class="muted" id="imgCvHint" hidden style="margin:6px 0 0">各行の「変換を見る」で、元の画像と、上の設定で変換した結果（保存されるもの）を並べて確かめられます。登録した後は、変換後の小さな絵が表に出ます。</p>
       <div class="row" style="margin-top:10px"><button class="btn solid" id="btnImgRun" disabled>登録を開始</button><span class="muted" id="imgState"></span></div>
       <div class="prog" id="imgProg" hidden><i></i></div>
       <div class="log" id="imgLog" hidden></div>
@@ -381,6 +415,13 @@
         <button class="btn sm" id="rvAllOk">表示中をすべて OK</button>
         <span class="muted" id="rvCount"></span>
       </div>
+      <div class="row" style="margin-bottom:10px">
+        <label class="muted"><input type="checkbox" id="rvPickAll"> 表示中を全部選ぶ</label>
+        <span class="muted" id="rvPickN">0 枚選択</span>
+        <button class="btn sm danger" id="rvDelSel" disabled>選んだ写真を削除</button>
+        <button class="btn sm" id="rvOkSel" disabled>選んだ写真を OK</button>
+        <span class="muted">写真の左上のチェックで選びます（Shift を押しながらで範囲選択）。「加工」で回転・切り抜き・明るさを直せます。</span>
+      </div>
       <div id="rvGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px"></div>
       <div class="row" style="margin-top:10px"><button class="btn sm" id="rvPrev">← 前</button><button class="btn sm" id="rvNext">次 →</button></div>
     </div>
@@ -468,6 +509,63 @@
   </section>
 </main>
 <div class="toast" id="toast"></div>
+<div class="overlay modal" id="edDlg" hidden>
+  <div class="card">
+    <h2 id="edTitle">商品を直す</h2>
+    <p class="muted" id="edSub"></p>
+    <div class="opts">
+      <div style="grid-column:1/-1"><label>商品名（必須）</label><input id="edName"></div>
+      <div><label>JAN</label><input id="edJan" readonly style="background:#F5F1EA"></div>
+      <div><label>商品コード（商品ID）</label><input id="edSku"></div>
+      <div><label>価格</label><input id="edPrice" inputmode="numeric" placeholder="例: 1500"></div>
+      <div><label>価格の税区分</label><select id="edTax"><option value="0">税抜</option><option value="1">税込</option></select></div>
+      <div><label>税率（%）</label><input id="edRate" inputmode="numeric"></div>
+      <div><label>内容量</label><input id="edAmount" inputmode="decimal" placeholder="例: 250"></div>
+      <div><label>単位</label><input id="edUnit" list="edUnits" placeholder="ml・g・枚 など"><datalist id="edUnits"><option value="ml"><option value="g"><option value="L"><option value="kg"><option value="枚"><option value="個"><option value="本"><option value="包"><option value="回分"></datalist></div>
+      <div><label>メーカー</label><input id="edMaker"></div>
+      <div><label>ブランド</label><input id="edBrand"></div>
+      <div style="grid-column:1/-1"><label>カテゴリ（「 &gt; 」で区切る）</label><input id="edCat"></div>
+      <div><label>上代（希望小売価格）</label><input id="edRetail" inputmode="numeric"></div>
+      <div><label>仕入価格</label><input id="edCost" inputmode="numeric"></div>
+      <div style="grid-column:1/-1"><label>商品説明</label><textarea id="edDesc" rows="3"></textarea></div>
+    </div>
+    <p class="muted" id="edNote" style="margin-top:10px"></p>
+    <p class="err" id="edErr"></p>
+    <div class="row"><button class="btn solid" id="edSave">保存</button><button class="btn" id="edCancel">閉じる</button><a class="btn" id="edPhoto" href="#" data-photo="1">写真を開く</a></div>
+  </div>
+</div>
+<div class="overlay modal wide" id="ieDlg" hidden>
+  <div class="card">
+    <h2 id="ieTitle">写真を加工</h2>
+    <p class="muted" id="ieSub"></p>
+    <div class="ie-wrap">
+      <div><div class="ie-view"><div class="ie-stage" id="ieStage"><canvas id="ieCanvas"></canvas><div class="ie-crop" id="ieCrop" hidden><i data-h="nw"></i><i data-h="ne"></i><i data-h="sw"></i><i data-h="se"></i></div></div></div>
+        <p class="muted" style="margin:6px 0 0">切り抜きは、白い枠をドラッグで動かす・四隅で大きさを変えます。保存すると正方形 1200px の webp になり、同じ枠（何枚目）に差し替わります。</p></div>
+      <div class="ie-side">
+        <label>回転</label>
+        <div class="row"><button class="btn sm" id="ieRotL">⟲ 左へ 90°</button><button class="btn sm" id="ieRotR">⟳ 右へ 90°</button><button class="btn sm" id="ieFlip">左右反転</button></div>
+        <label>傾きを直す <span id="ieTiltV">0°</span></label><input type="range" id="ieTilt" min="-15" max="15" step="0.5" value="0">
+        <label>明るさ <span id="ieBriV">0</span></label><input type="range" id="ieBri" min="-60" max="60" step="1" value="0">
+        <label>コントラスト <span id="ieConV">0</span></label><input type="range" id="ieCon" min="-50" max="50" step="1" value="0">
+        <label>色の鮮やかさ <span id="ieSatV">0</span></label><input type="range" id="ieSat" min="-50" max="50" step="1" value="0">
+        <label>背景を白に</label><select id="ieWhite" style="width:100%;border:1px solid var(--line);border-radius:8px;padding:6px"><option value="off">しない</option><option value="weak">弱</option><option value="normal">標準</option><option value="strong">強</option></select>
+        <label><input type="checkbox" id="ieCropOn"> 切り抜く</label>
+        <div class="row" style="margin-top:4px"><button class="btn sm" id="ieAuto" title="余白を詰めて、商品が真ん中に大きく写るようにします">余白を自動で詰める</button></div>
+        <div class="row" style="margin-top:14px"><button class="btn sm" id="ieReset">元に戻す</button></div>
+        <p class="err" id="ieErr"></p>
+        <div class="row" style="margin-top:8px"><button class="btn solid" id="ieSave">この写真で差し替え</button><button class="btn" id="ieCancel">閉じる</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="overlay modal wide" id="cvDlg" hidden>
+  <div class="card">
+    <h2 id="cvTitle">変換前と変換後</h2>
+    <div class="cv-pair"><figure><img id="cvSrc" alt=""><figcaption id="cvSrcCap"></figcaption></figure><figure><img id="cvOut" alt=""><figcaption id="cvOutCap"></figcaption></figure></div>
+    <p class="muted" id="cvNote" style="margin-top:8px"></p>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="cvPrev">← 前のファイル</button><button class="btn sm" id="cvNext">次のファイル →</button><button class="btn" id="cvClose" style="margin-left:auto">閉じる</button></div>
+  </div>
+</div>
 <div class="overlay" id="staffPick" hidden>
   <div class="card">
     <h2>担当者を選んでください</h2>
@@ -643,6 +741,7 @@
   function readFile(file, inboxId) {
     S.inboxId = inboxId || null;
     S.file = file; S.sheets = null; S.decisions = {}; S.fileDecisions = {}; S.dbExisting = {}; S.items = [];
+    S.checkSeq = (S.checkSeq || 0) + 1; S.checking = false; S.checkedJans = null; S.fileDups = {}; S.similar = []; // 前のファイルの照合の返事は捨てる
     $('optSource').value = ''; $('commitState').textContent = ''; $('commitLog').hidden = true; $('commitProg').hidden = true;
     ['cardMap', 'cardPrev', 'cardDup', 'cardCommit'].forEach(function (id) { $(id).hidden = true; });
     var name = file.name.toLowerCase();
@@ -720,7 +819,7 @@
   // 行が登録できるか。空欄埋めは「商品名が無い」だけなら OK（JAN と画像だけのファイル）
   function rowOk(it) { return !it.errors.length || (impType() === 'fill' && !!it.product.jan && it.errors.every(function (e) { return /商品名/.test(e); })); }
   Array.prototype.forEach.call(document.querySelectorAll('input[name=impType]'), function (r) { r.addEventListener('change', function () { syncTypeUi(); if (S.items.length) { $('btnPreview').click(); } }); });
-  $('fillNew').addEventListener('change', function () { if (S.items.length) { renderDups(); renderCommit(); } });
+  $('fillNew').addEventListener('change', function () { if (S.items.length && !S.checking && S.checkedJans) { renderDups(); renderCommit(); } });
   function buildMap() {
     S.headers = S.rows[S.headerRow].map(function (h, i) { return String(h || '').trim() || ('(' + (i + 1) + '列目)'); });
     S.mapping = N.guessMapping(S.rows[S.headerRow]);
@@ -792,19 +891,18 @@
       '<div class="kpi ' + (noSku ? 'ng' : 'ok') + '"><div class="l">商品コードなし（列合わせを確認）</div><div class="n">' + noSku + '</div></div>' +
       '<div class="kpi ' + (dupRows ? 'ng' : '') + '"><div class="l">ファイル内でJAN重複</div><div class="n">' + Object.keys(S.fileDups).length + '<span class="muted" style="font-size:12px"> 組 / ' + dupRows + '行</span></div></div>' +
       (S.mapping.image != null ? '<div class="kpi"><div class="l">画像 URL のある行</div><div class="n">' + ok.filter(function (i) { return i.product.images.length; }).length + '</div></div>' : '');
-    var head = '<thead><tr><th>行</th><th>商品コード</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>カテゴリ</th><th>画像</th><th>注意</th></tr></thead>';
-    var shown = S.items.slice(0, 300);
-    $('prevTbl').innerHTML = head + '<tbody>' + shown.map(function (i) {
-      var okRow = rowOk(i);
-      var p = i.product, notes = i.errors.map(function (e) { return '<span class="tag ' + (okRow ? 'warn' : 'ng') + '">' + esc(e) + '</span>'; }).concat(i.warnings.map(function (w) { return '<span class="tag warn">' + esc(w) + '</span>'; })).join(' ');
-      return '<tr><td>' + i.rowNo + '</td><td>' + (p.sku ? esc(p.sku) : '<span class="tag ng">なし</span>') + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + esc(p.category) + '</td><td>' + (p.images.length ? p.images.length + '件' : '') + '</td><td>' + notes + '</td></tr>';
-    }).join('') + (S.items.length > 300 ? '<tr><td colspan="12" class="muted">…ほか ' + (S.items.length - 300) + '行（保存時はすべて対象）</td></tr>' : '') + '</tbody>';
+    PV.page = 0; renderPrev();
     $('cardPrev').hidden = false;
     // DB との重複確認 ＋ 商品名が似ているもの（表記ゆれ）の検出
     var jans = ok.map(function (i) { return i.product.jan; });
     var keys = ok.map(function (i) { return i.product.name_key; }).filter(Boolean);
     toast('登録済みと照合中…');
+    // 照合が終わるまでは前回の結果を使わない（「確認する」を押し直したときに、前のファイルの照合結果で保存しないように）
+    var seq = S.checkSeq = (S.checkSeq || 0) + 1;
+    S.checking = true; S.dbExisting = {}; S.similar = []; $('cardDup').hidden = true; $('cardCommit').hidden = true;
     checkExisting(jans, keys).then(function (r) {
+      if (seq !== S.checkSeq) return; // 後から押した「確認する」の照合を優先
+      S.checking = false;
       S.dbExisting = r.existing;
       S.similar = [];
       // ファイル内: 同じメーカーで商品名がほぼ同じなのに JAN が違う
@@ -815,11 +913,157 @@
         var hits = (r.similar[it.product.name_key] || []).filter(function (h) { return h.jan !== it.product.jan && (!h.maker || !it.product.maker || h.maker === it.product.maker); });
         if (hits.length) S.similar.push({ where: 'db', items: [it], hits: hits });
       });
+      S.checkedJans = {}; jans.forEach(function (j) { S.checkedJans[j] = 1; });
       renderSimilar();
-      renderDups();
-      renderCommit();
-    }).catch(handleErr);
+      ensureChecked(); // 照合の間に「直す」で登録できるようになった行があれば、それも照合してから 4・5 の段を出す
+    }).catch(function (e) { if (seq === S.checkSeq) S.checking = false; if (e && (e.auth || e.staff || e.setup)) handleErr(e); else toast('登録済みとの照合ができませんでした。もう一度「確認する」を押してください（' + ((e && e.message) || e) + '）', true); });
   });
+  // ── 3 の表（揃えた結果）。注意のある行だけ・検索・ページ送り。行ごとに「直す」 ──
+  var PV = { page: 0, size: 100, rows: [] };
+  function prevMatches() {
+    var only = $('prevWarnOnly').checked, q = $('prevQ').value.trim().toLowerCase();
+    return S.items.filter(function (i) {
+      if (only && !i.warnings.length && !i.errors.length) return false;
+      if (!q) return true;
+      var p = i.product; return (String(p.name || '') + ' ' + p.jan + ' ' + (p.sku || '')).toLowerCase().indexOf(q) >= 0;
+    });
+  }
+  function renderPrev() {
+    var rows = PV.rows = prevMatches(), pages = Math.max(1, Math.ceil(rows.length / PV.size));
+    if (PV.page >= pages) PV.page = pages - 1;
+    var shown = rows.slice(PV.page * PV.size, (PV.page + 1) * PV.size);
+    var head = '<thead><tr><th>行</th><th>商品コード</th><th>JAN</th><th>商品名</th><th>税抜</th><th>税込</th><th>内容量</th><th>メーカー</th><th>ブランド</th><th>カテゴリ</th><th>画像</th><th>注意</th><th></th></tr></thead>';
+    $('prevTbl').innerHTML = head + '<tbody>' + shown.map(function (i) {
+      var okRow = rowOk(i), ix = S.items.indexOf(i);
+      var p = i.product, notes = i.errors.map(function (e) { return '<span class="tag ' + (okRow ? 'warn' : 'ng') + '">' + esc(e) + '</span>'; }).concat(i.warnings.map(function (w) { return '<span class="tag warn">' + esc(w) + '</span>'; })).concat(i.edited ? ['<span class="tag ok">手で直しました</span>'] : []).join(' ');
+      return '<tr' + (i.edited ? ' class="edited"' : '') + '><td>' + i.rowNo + '</td><td>' + (p.sku ? esc(p.sku) : '<span class="tag ng">なし</span>') + '</td><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + esc(p.category) + '</td><td>' + (p.images && p.images.length ? p.images.length + '件' : '') + '</td><td>' + notes + '</td><td>' + (p.jan ? '<button class="btn sm" data-pfix="' + ix + '">直す</button>' : '') + '</td></tr>';
+    }).join('') + (rows.length ? '' : '<tr><td colspan="13" class="muted">該当する行はありません</td></tr>') + '</tbody>';
+    $('prevPage').textContent = rows.length + '行中 ' + (rows.length ? PV.page * PV.size + 1 : 0) + '〜' + Math.min(rows.length, (PV.page + 1) * PV.size) + (rows.length !== S.items.length ? '（全 ' + S.items.length + '行）' : '');
+    $('prevPrev').disabled = PV.page === 0; $('prevNext').disabled = PV.page >= pages - 1;
+  }
+  $('prevWarnOnly').addEventListener('change', function () { PV.page = 0; renderPrev(); });
+  $('prevQ').addEventListener('input', function () { PV.page = 0; renderPrev(); });
+  $('prevPrev').addEventListener('click', function () { PV.page--; renderPrev(); $('prevTbl').parentNode.scrollTop = 0; });
+  $('prevNext').addEventListener('click', function () { PV.page++; renderPrev(); $('prevTbl').parentNode.scrollTop = 0; });
+  $('prevTbl').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pfix]'); if (!b) return;
+    var it = S.items[parseInt(b.getAttribute('data-pfix'), 10)]; if (!it) return;
+    openEdit(it.product, { local: true, rowNo: it.rowNo, done: function (fields) {
+      if (S.items.indexOf(it) < 0) return; // その間に「確認する」を押し直した（別の表になった）
+      var wasOk = rowOk(it);
+      applyLocalEdit(it, fields); renderPrev();
+      if (S.checking || !S.checkedJans) return; // 照合中は待つ（照合が終わったところで ensureChecked が直した行も拾う）
+      ensureChecked();
+    } });
+  });
+  // 登録できる行がすべて照合ずみになるまで照合を足してから、4（重複）・5（保存）の段を出す
+  //   「直す」で登録できなかった行が登録できるようになったとき、ファイル内の JAN 重複・登録済みとの重複・似た名前を、その行にもやり直す
+  function ensureChecked() {
+    if (!S.checkedJans) return;
+    var ok = S.items.filter(rowOk);
+    S.fileDups = N.findFileDuplicates(ok);
+    Object.keys(S.fileDups).forEach(function (k) { S.fileDups[k] = S.fileDups[k].map(function (i) { return S.items.indexOf(ok[i]); }); });
+    var todo = ok.filter(function (i) { return !S.checkedJans[i.product.jan]; });
+    if (!todo.length) { renderDups(); renderCommit(); return; }
+    var seq = S.checkSeq = (S.checkSeq || 0) + 1; S.checking = true;
+    var jans = todo.map(function (i) { return i.product.jan; }), keys = todo.map(function (i) { return i.product.name_key; }).filter(Boolean);
+    checkExisting(jans, keys).then(function (r) {
+      if (seq !== S.checkSeq) return;
+      S.checking = false;
+      Object.assign(S.dbExisting, r.existing || {});
+      todo.forEach(function (it) {
+        S.checkedJans[it.product.jan] = 1;
+        var hits = (r.similar[it.product.name_key] || []).filter(function (h) { return h.jan !== it.product.jan && (!h.maker || !it.product.maker || h.maker === it.product.maker); });
+        if (hits.length) S.similar.push({ where: 'db', items: [it], hits: hits });
+      });
+      renderSimilar();
+      ensureChecked(); // その間にまた直された行があれば続けて
+    }).catch(function (e) { if (seq === S.checkSeq) S.checking = false; handleErr(e); });
+  }
+  // 保存前の行に、直した内容を当てる（注意のうち、直した項目に関係するものは消す）
+  function applyLocalEdit(it, f) {
+    var p = it.product, before = { name: p.name, amount: p.amount, unit: p.unit, price: p.price };
+    p.name = f.name; p.name_key = N.nameKey(f.name); p.sku = f.sku; p.maker = f.maker; p.brand = f.brand; p.category = f.category; p.description = f.description;
+    p.price = f.price; p.tax_included = f.tax_included; p.tax_rate = f.tax_rate;
+    var both = N.priceBoth(f.price, !!f.tax_included, f.tax_rate); p.price_ex = both.ex; p.price_in = both.inc;
+    p.amount = f.amount; p.unit = f.unit; p.amount_from = 'manual'; p.retail_price = f.retail_price; p.cost_price = f.cost_price;
+    var drop = [];
+    if (before.name !== p.name) drop.push(/^商品名/);
+    if (before.amount !== p.amount || before.unit !== p.unit) drop.push(/^内容量/);
+    if (before.price !== p.price) drop.push(/^価格/);
+    it.warnings = it.warnings.filter(function (w) { return !drop.some(function (re) { return re.test(w); }); });
+    if (p.name) it.errors = it.errors.filter(function (e) { return e !== '商品名が空です'; });
+    it.edited = true;
+  }
+
+  // ── 商品を直す（共通の画面）──
+  //   opts.local … 保存前の取り込み行（サーバに送らず、done(fields) で返す）。それ以外は PUT で保存して done(product)
+  var ED = { opts: null, product: null };
+  var numOrNull = function (v) { v = String(v == null ? '' : v).replace(/[０-９．]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/[,，¥￥円\s]/g, ''); if (v === '') return null; var n = Number(v); return isFinite(n) ? n : NaN; };
+  function openEdit(p, opts) {
+    ED.opts = opts || {}; ED.product = p;
+    var price = p.price != null ? p.price : (p.price_ex != null ? p.price_ex : null), tax = p.price != null ? (p.tax_included ? 1 : 0) : 0;
+    $('edTitle').textContent = ED.opts.local ? '取り込む行を直す（' + ED.opts.rowNo + '行目）' : '商品を直す';
+    $('edSub').textContent = 'JAN ' + p.jan + (p.updated_by ? ' ・ 最後に更新: ' + p.updated_by : '') + (p.updated_at ? ' ' + String(p.updated_at).slice(0, 16).replace('T', ' ') : '');
+    $('edName').value = p.name || ''; $('edJan').value = p.jan || ''; $('edSku').value = p.sku || '';
+    $('edPrice').value = price == null ? '' : price; $('edTax').value = String(tax); $('edRate').value = p.tax_rate == null ? 10 : p.tax_rate;
+    $('edAmount').value = p.amount == null ? '' : p.amount; $('edUnit').value = p.unit || '';
+    $('edMaker').value = p.maker || ''; $('edBrand').value = p.brand || ''; $('edCat').value = p.category || ''; $('edDesc').value = p.description || '';
+    $('edRetail').value = p.retail_price == null ? '' : p.retail_price; $('edCost').value = p.cost_price == null ? '' : p.cost_price;
+    $('edNote').innerHTML = (ED.opts.local ? 'まだ保存前の行です。「保存」でこの表の内容が変わり、最後の「この内容で保存」で登録されます。<br>' : '') +
+      'ここで直した内容は、この商品登録システムの商品マスタと「出力」の CSV に入ります。<b>SalonPro へ送るのは写真だけ</b>なので、SalonPro 側の商品名・価格は変わりません（SalonPro の管理画面で直してください）。';
+    $('edErr').textContent = ''; $('edSave').disabled = false;
+    ED.priceSig = priceSig(); // 価格の欄を触ったかどうかを、保存のときに見分ける
+    $('edPhoto').hidden = !!ED.opts.local; $('edPhoto').href = './index.html?jan=' + encodeURIComponent(p.jan) + '&back=list';
+    $('edDlg').hidden = false; setTimeout(function () { $('edName').focus(); }, 0);
+  }
+  function priceSig() { return [$('edPrice').value.trim(), $('edTax').value, $('edRate').value.trim()].join('|'); }
+  function closeEdit() { $('edDlg').hidden = true; ED.opts = null; ED.product = null; }
+  function readEdit() {
+    // 商品名は打ったとおりに残す（取り込み用の整形をかけると、価格だけ直しても（ ）が ( ) に変わる）
+    var f = { name: $('edName').value.replace(/\s+/g, ' ').trim(), sku: $('edSku').value.trim(), maker: $('edMaker').value.trim(), brand: $('edBrand').value.trim(), category: $('edCat').value.trim(), description: $('edDesc').value.trim(), unit: $('edUnit').value.trim(), tax_included: $('edTax').value === '1' ? 1 : 0 };
+    f.price = numOrNull($('edPrice').value); f.tax_rate = numOrNull($('edRate').value); f.amount = numOrNull($('edAmount').value); f.retail_price = numOrNull($('edRetail').value); f.cost_price = numOrNull($('edCost').value);
+    if (!f.name) return { err: '商品名を入れてください' };
+    if (Number.isNaN(f.price) || (f.price != null && f.price < 0)) return { err: '価格は数字で入れてください' };
+    if (f.tax_rate == null) f.tax_rate = 10;
+    if (Number.isNaN(f.tax_rate) || f.tax_rate < 0 || f.tax_rate > 30) return { err: '税率は 0〜30 の数字で入れてください' };
+    if (Number.isNaN(f.amount)) return { err: '内容量は数字で入れてください（単位は右の欄へ）' };
+    if (Number.isNaN(f.retail_price) || Number.isNaN(f.cost_price)) return { err: '上代・仕入価格は数字で入れてください' };
+    if (f.price != null) f.price = Math.round(f.price);
+    f.tax_rate = Math.round(f.tax_rate);
+    return f;
+  }
+  $('edCancel').addEventListener('click', closeEdit);
+  $('edDlg').addEventListener('click', function (e) { if (e.target === $('edDlg')) closeEdit(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('edDlg').hidden) closeEdit(); });
+  $('edSave').addEventListener('click', function () {
+    var f = readEdit(); if (f.err) { $('edErr').textContent = f.err; return; }
+    var o = ED.opts, p = ED.product;
+    if (o.local) { var done = o.done; closeEdit(); if (done) done(f); toast('直しました（保存前）'); return; }
+    $('edSave').disabled = true; $('edErr').textContent = '';
+    var body = Object.assign({}, p, f, { jan: p.jan, price_ex: null, price_in: null, expected_updated_at: p.updated_at });
+    // 価格の欄を触っていなければ、登録済みの 価格・税抜・税込 をそのまま送る（計算し直して端数が変わったり、税込だけの商品の値が消えたりしないように）
+    if (priceSig() === ED.priceSig) { body.price = p.price; body.tax_included = p.tax_included; body.tax_rate = p.tax_rate; body.price_ex = p.price_ex; body.price_in = p.price_in; }
+    delete body.images;
+    var mine = o;
+    api('products', { method: 'PUT', body: body }).then(function (r) {
+      if (ED.opts !== mine) { if (r.ok) { toast('保存しました'); if (mine.done) mine.done(r.product); } else toast(r.message || '保存できませんでした', true); return; } // 返事が来る前に閉じた・別の商品を開いた（画面は触らず、一覧だけ新しくする）
+      $('edSave').disabled = false;
+      if (!r.ok) {
+        if (r.reason === 'conflict' && r.product) { openEdit(r.product, o); $('edErr').textContent = r.message + '（あなたの入力は反映していません。もう一度直して保存してください）'; return; }
+        $('edErr').textContent = r.message || '保存できませんでした'; return;
+      }
+      var done = o.done; closeEdit(); toast('保存しました'); if (done) done(r.product);
+    }).catch(function (e) { if (ED.opts === mine) $('edSave').disabled = false; handleErr(e); });
+  });
+  // 一覧などから JAN で開く（最新の内容を読んでから）
+  function editByJan(jan, done) {
+    return api('products?jan=' + encodeURIComponent(jan)).then(function (r) {
+      if (!r.ok) { toast('この JAN の商品は登録されていません（' + jan + '）', true); return; }
+      openEdit(r.product, { done: done });
+    }).catch(handleErr);
+  }
+
   function checkExisting(jans, keys) {
     var out = { existing: {}, similar: {} }, chain = Promise.resolve();
     var n = Math.max(jans.length, (keys || []).length);
@@ -1072,7 +1316,7 @@
           h += '<div class="cmp">' + sideHtml('登録済み', is.existing, is.incoming) + sideHtml('届いたデータ', is.incoming, is.existing) + '</div>';
           if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="keep_existing">登録済みを残す</button><button class="btn sm" data-res="keep_incoming">届いた方で上書き</button><button class="btn sm" data-res="dismiss">閉じる（何もしない）</button></div>';
         } else if (is.kind === 'similar_name' && Array.isArray(is.incoming)) {
-          h += '<table><thead><tr><th>JAN</th><th>商品名</th><th>メーカー</th><th></th></tr></thead><tbody>' + is.incoming.map(function (p) { return '<tr><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(p.maker) + '</td><td><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">開く</a></td></tr>'; }).join('') + '</tbody></table>';
+          h += '<table><thead><tr><th>JAN</th><th>商品名</th><th>メーカー</th><th></th></tr></thead><tbody>' + is.incoming.map(function (p) { return '<tr><td>' + esc(p.jan) + '</td><td>' + esc(p.name) + '</td><td>' + esc(p.maker) + '</td><td class="row"><button class="btn sm" data-ifix="' + esc(p.jan) + '">商品名などを直す</button><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '">写真を開く</a></td></tr>'; }).join('') + '</tbody></table>';
           if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="dismiss">確認した（閉じる）</button></div>';
         } else if (Array.isArray(is.incoming)) {
           h += '<table><thead><tr><th></th><th>商品名</th><th>税抜</th><th>内容量</th><th>メーカー</th><th>元コード</th></tr></thead><tbody>' + is.incoming.map(function (p, k) { return '<tr><td>' + (is.status === 'open' ? '<button class="btn sm" data-res="keep_index" data-idx="' + k + '">この行を採用</button>' : (k + 1)) + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.sku) + '</td></tr>'; }).join('') + '</tbody></table>';
@@ -1080,6 +1324,12 @@
         } else if (is.status === 'open') h += '<div class="acts"><button class="btn sm" data-res="dismiss">閉じる</button></div>';
         return h + '</div>';
       }).join('');
+      Array.prototype.forEach.call(box.querySelectorAll('[data-ifix]'), function (b) {
+        b.addEventListener('click', function () {
+          var tr = b.closest('tr');
+          editByJan(b.getAttribute('data-ifix'), function (np) { if (tr && np) { tr.children[1].textContent = np.name; tr.children[2].textContent = np.maker || ''; tr.classList.add('edited'); } });
+        });
+      });
       Array.prototype.forEach.call(box.querySelectorAll('[data-res]'), function (b) {
         b.addEventListener('click', function () {
           var id = parseInt(b.closest('.issue').getAttribute('data-id'), 10);
@@ -1105,7 +1355,7 @@
       if (!j.ok || seq !== P.seq) return;
       $('prodCount').textContent = j.total + '件中 ' + (j.total ? P.offset + 1 : 0) + '〜' + Math.min(j.total, P.offset + j.products.length);
       $('prodTbl').querySelector('tbody').innerHTML = j.products.map(function (p) {
-        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + '</td><td>' + esc(p.name) + '</td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + (p.ready ? '<span class="tag ok">可</span>' : '<span class="tag ng" title="写真あり・商品コードあり・価格あり・撮り直し無し が条件">不可</span>') + '</td><td>' + (p.ec_synced_at && p.ec_synced_at >= p.updated_at ? '<span class="tag ok">済</span>' : '<span class="tag">未</span>') + (p.ec_push_status && p.ec_push_status !== 'ok' ? ' <span class="tag ng" title="' + esc(p.ec_push_msg || p.ec_push_status) + '">送信×</span>' : '') + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="row"><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '&back=list" data-photo="1">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
+        return '<tr><td><input type="checkbox" class="sel" value="' + esc(p.jan) + '"></td><td>' + (p.images[0] ? '<img class="th" src="' + esc(p.images[0].thumb_url || p.images[0].url) + '" alt="">' : '<span class="th"></span>') + ' <span class="muted">' + p.image_count + '</span></td><td>' + (p.sku ? esc(p.sku) : '<button class="btn sm" data-sku="' + esc(p.jan) + '">入れる</button>') + '</td><td>' + esc(p.jan) + (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? ' <span class="tag">仮</span>' : '') + (p.ec_jan ? ' <span class="tag" title="SalonPro には頭の 0 を外した ' + esc(p.ec_jan) + ' で登録されています（写真はその JAN で送ります）">SalonPro: ' + esc(p.ec_jan) + '</span>' : '') + '</td><td><a href="#" class="nmEdit" data-edit="' + esc(p.jan) + '" title="クリックで直す">' + esc(p.name) + '</a></td><td>' + esc(C.fmtYen(p.price_ex)) + '</td><td>' + esc(C.fmtYen(p.price_in)) + '</td><td>' + esc(fmtAmt(p)) + '</td><td>' + esc(p.maker) + '</td><td>' + esc(p.brand) + '</td><td>' + (p.ready ? '<span class="tag ok">可</span>' : '<span class="tag ng" title="写真あり・商品コードあり・価格あり・撮り直し無し が条件">不可</span>') + '</td><td>' + (p.ec_synced_at && p.ec_synced_at >= p.updated_at ? '<span class="tag ok">済</span>' : '<span class="tag">未</span>') + (p.ec_push_status && p.ec_push_status !== 'ok' ? ' <span class="tag ng" title="' + esc(p.ec_push_msg || p.ec_push_status) + '">送信×</span>' : '') + '</td><td class="muted">' + esc(p.updated_at.slice(0, 10)) + '</td><td class="muted">' + esc(p.updated_by || '') + '</td><td class="row"><button class="btn sm" data-edit="' + esc(p.jan) + '">編集</button><a class="btn sm" href="./index.html?jan=' + esc(p.jan) + '&back=list" data-photo="1">写真</a><button class="btn sm danger" data-del="' + esc(p.jan) + '">削除</button></td></tr>';
       }).join('') || '<tr><td colspan="15" class="muted">該当なし</td></tr>';
       $('selAll').checked = false; updateSel();
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-sku]'), function (b) {
@@ -1116,6 +1366,13 @@
         });
       });
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('.sel'), function (c) { c.addEventListener('change', updateSel); });
+      Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-edit]'), function (b) {
+        b.addEventListener('click', function (e) {
+          e.preventDefault();
+          var jan = b.getAttribute('data-edit'), pr = j.products.filter(function (x) { return x.jan === jan; })[0]; if (!pr) return;
+          openEdit(pr, { done: function () { loadProducts(P.offset); loadMakers(); } });
+        });
+      });
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('[data-del]'), function (b) {
         b.addEventListener('click', function () {
           var jan = b.getAttribute('data-del');
@@ -1246,6 +1503,8 @@
   function planImages(files) {
     files = files.filter(function (f) { return /^image\//.test(f.type) || /\.(heic|heif|jpe?g|png|gif|bmp|webp|avif|tiff?)$/i.test(f.name); });
     if (!files.length) { toast('画像ファイルがありません', true); return; }
+    if (IMG.running) { toast('いま登録中です。終わってから次の画像を入れてください', true); return; }
+    (IMG.plan || []).forEach(function (q) { if (q.thumbUrl) { try { URL.revokeObjectURL(q.thumbUrl); } catch (e) { /* */ } } });
     var plan = files.map(function (f) { var p = parseImageName(f.name); return { file: f, jan: p ? p.jan : '', slot: p ? p.slot : 0, status: p ? (p.slot ? '' : '枚目が6以上') : 'ファイル名にJANがありません' }; });
     // 同じ JAN 内で slot 指定が無い（=1）ものが複数あれば 1,2,3… と順に振る
     var byJan = {};
@@ -1278,24 +1537,85 @@
   }
   function renderImgPlan() {
     var ok = IMG.plan.filter(function (p) { return !p.status; });
-    $('imgPlan').innerHTML = '<p class="muted">' + IMG.plan.length + 'ファイル中、登録できるもの <b>' + ok.length + '</b>件</p><div class="tbl" style="max-height:300px"><table><thead><tr><th>ファイル</th><th>JAN</th><th>商品</th><th>枚目</th><th>状態</th></tr></thead><tbody>' +
-      IMG.plan.slice(0, 500).map(function (p, i) { return '<tr><td>' + esc(p.file.name) + '</td><td>' + esc(p.jan) + '</td><td>' + (p.cands ? '<select data-cand="' + i + '"><option value="">（登録しない）</option>' + p.cands.map(function (c) { return '<option value="' + esc(c.jan) + '"' + (c.jan === p.jan ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select> <span class="tag warn">名前から推定</span>' : esc(p.name || '')) + '</td><td>' + (p.slot || '') + '</td><td>' + (p.status ? '<span class="tag ng">' + esc(p.status) + '</span>' : (p.result ? esc(p.result) : '<span class="tag ok">OK</span>')) + '</td></tr>'; }).join('') + '</tbody></table></div>';
-    $('btnImgRun').disabled = !ok.length;
+    $('imgPlan').innerHTML = '<p class="muted">' + IMG.plan.length + 'ファイル中、登録できるもの <b>' + ok.length + '</b>件</p><div class="tbl" style="max-height:300px"><table><thead><tr><th>ファイル</th><th>JAN</th><th>商品</th><th>枚目</th><th>状態</th><th>変換</th></tr></thead><tbody>' +
+      IMG.plan.slice(0, 500).map(function (p, i) { return '<tr><td>' + esc(p.file.name) + '</td><td>' + esc(p.jan) + '</td><td>' + (p.cands ? '<select data-cand="' + i + '"><option value="">（登録しない）</option>' + p.cands.map(function (c) { return '<option value="' + esc(c.jan) + '"' + (c.jan === p.jan ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select> <span class="tag warn">名前から推定</span>' : esc(p.name || '')) + '</td><td>' + (p.slot || '') + '</td><td>' + (p.status ? '<span class="tag ng">' + esc(p.status) + '</span>' : (p.result ? esc(p.result) : '<span class="tag ok">OK</span>')) + '</td><td style="white-space:nowrap">' + (p.thumbUrl ? '<img class="cvth" src="' + esc(p.thumbUrl) + '" alt="" title="保存された写真（変換後）"> ' : '') + '<button class="btn sm" data-cv="' + i + '">変換を見る</button></td></tr>'; }).join('') + '</tbody></table></div>';
+    $('imgCvHint').hidden = !IMG.plan.length;
+    $('btnImgRun').disabled = !ok.length || !!IMG.running;
     Array.prototype.forEach.call($('imgPlan').querySelectorAll('[data-cand]'), function (sel) {
-      sel.addEventListener('change', function () { var p = IMG.plan[parseInt(sel.getAttribute('data-cand'), 10)]; var c = (p.cands || []).filter(function (x) { return x.jan === sel.value; })[0]; if (c) { p.jan = c.jan; p.name = c.name; p.status = ''; } else { p.jan = ''; p.status = '登録しない'; } $('btnImgRun').disabled = !IMG.plan.some(function (x) { return !x.status; }); });
+      sel.addEventListener('change', function () { var p = IMG.plan[parseInt(sel.getAttribute('data-cand'), 10)]; var c = (p.cands || []).filter(function (x) { return x.jan === sel.value; })[0]; if (c) { p.jan = c.jan; p.name = c.name; p.status = ''; } else { p.jan = ''; p.status = '登録しない'; } $('btnImgRun').disabled = !!IMG.running || !IMG.plan.some(function (x) { return !x.status; }); });
     });
+  }
+  function imgOpts() { return { size: 1200, square: $('imgSquare').checked ? 'pad' : false, whiten: $('imgWhiten').value, max: 1600, quality: 0.85 }; }
+  var KB = function (n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB'; };
+  var TYPE_JA = function (t, name) { var m = String(t || '').replace(/^image\//, '').toUpperCase() || String(name || '').replace(/^.*\./, '').toUpperCase(); return m === 'JPEG' ? 'JPEG' : m; };
+  // 変換で何をしたかを 1 行で（ログ・確認画面で使う）
+  function convSummary(w, file) {
+    var parts = [(w.srcWidth || '?') + '×' + (w.srcHeight || '?') + ' ' + TYPE_JA(w.originalType || file.type, file.name) + ' ' + KB(w.srcBytes || file.size || 0) + ' → ' + w.width + '×' + w.height + ' webp ' + KB(w.blob.size)];
+    if (w.mode === 'pad') parts.push('正方形に（白で余白）'); else if (w.mode === 'crop') parts.push('正方形に切り抜き'); else parts.push('縦横比はそのまま');
+    if (w.whitened == null) parts.push('背景の白化: しない');
+    else if (w.whitened === 0) parts.push('背景の白化: 背景が白っぽくないので触っていません');
+    else parts.push('背景の白化: 画面の ' + Math.round(w.whitened * 100) + '% を白に');
+    if (w.quality && w.quality.warn && w.quality.warn.length) parts.push('自動チェック: ' + w.quality.warn.join('・'));
+    return parts;
+  }
+  // 「変換を見る」: 元の画像と、変換後（保存済みなら保存された写真、まだなら今の設定で変換したもの）を並べる
+  var CV = { i: -1, urls: [] };
+  function cvFree() { CV.urls.forEach(function (u) { try { URL.revokeObjectURL(u); } catch (e) { /* */ } }); CV.urls = []; }
+  function openConv(i) {
+    var p = IMG.plan[i]; if (!p) return;
+    CV.i = i; cvFree();
+    var srcUrl = URL.createObjectURL(p.file); CV.urls.push(srcUrl);
+    $('cvTitle').textContent = '変換前と変換後 — ' + p.file.name + '（' + (i + 1) + ' / ' + IMG.plan.length + '）';
+    $('cvSrc').src = srcUrl; $('cvSrcCap').innerHTML = '<b>元の画像</b><br>' + esc(p.file.name) + '<br>' + esc(TYPE_JA(p.file.type, p.file.name)) + ' ・ ' + esc(KB(p.file.size)) + '<span id="cvSrcWh"></span>';
+    $('cvOut').removeAttribute('src'); $('cvOutCap').textContent = '変換しています…'; $('cvNote').textContent = '';
+    $('cvPrev').disabled = i <= 0; $('cvNext').disabled = i >= IMG.plan.length - 1;
+    $('cvDlg').hidden = false;
+    var mine = CV.i;
+    C.toWebp(p.file, imgOpts()).then(function (w) {
+      if (CV.i !== mine || $('cvDlg').hidden) return;
+      $('cvSrcWh').textContent = ' ・ ' + w.srcWidth + '×' + w.srcHeight;
+      var lines = convSummary(w, p.file);
+      if (p.savedUrl) {
+        $('cvOut').src = p.savedUrl;
+        $('cvOutCap').innerHTML = '<b>保存された写真</b>（' + esc(p.jan) + ' ' + esc(p.slot) + '枚目）<br>' + esc(p.convText || lines.join(' ／ '));
+        $('cvNote').textContent = 'これがサーバに保存された写真です。違っていれば、検品タブの「加工」で直すか、設定を変えて「すでに写真がある枠も上書きする」で入れ直してください。';
+      } else {
+        var u = URL.createObjectURL(w.blob); CV.urls.push(u);
+        $('cvOut').src = u;
+        $('cvOutCap').innerHTML = '<b>変換後（保存されるもの）</b><br>' + lines.map(esc).join('<br>');
+        $('cvNote').textContent = 'まだ保存していません。上の「正方形 1200px に揃える」「背景を白に」を変えると、変換後も変わります（もう一度「変換を見る」で確かめられます）。';
+      }
+    }).catch(function (e) { if (CV.i === mine) $('cvOutCap').textContent = '変換できませんでした: ' + ((e && e.message) || e); });
+  }
+  function closeConv() { $('cvDlg').hidden = true; CV.i = -1; cvFree(); $('cvSrc').removeAttribute('src'); $('cvOut').removeAttribute('src'); }
+  $('imgPlan').addEventListener('click', function (e) { var b = e.target.closest('[data-cv]'); if (b) openConv(parseInt(b.getAttribute('data-cv'), 10)); });
+  $('cvClose').addEventListener('click', closeConv);
+  $('cvDlg').addEventListener('click', function (e) { if (e.target === $('cvDlg')) closeConv(); });
+  $('cvPrev').addEventListener('click', function () { openConv(CV.i - 1); });
+  $('cvNext').addEventListener('click', function () { openConv(CV.i + 1); });
+  document.addEventListener('keydown', function (e) { if ($('cvDlg').hidden) return; if (e.key === 'Escape') closeConv(); if (e.key === 'ArrowRight' && CV.i < IMG.plan.length - 1) openConv(CV.i + 1); if (e.key === 'ArrowLeft' && CV.i > 0) openConv(CV.i - 1); });
+  // 保存できた行に、変換の結果（小さな絵・説明）を残す
+  function keepConv(p, w, r) {
+    if (p.thumbUrl) { try { URL.revokeObjectURL(p.thumbUrl); } catch (e) { /* */ } }
+    p.thumbUrl = w.thumb ? URL.createObjectURL(w.thumb) : null;
+    p.savedUrl = r.url || null; p.convText = convSummary(w, p.file).join(' ／ ');
+  }
+  function postConverted(p, slot, w) {
+    var fd = new FormData(); fd.append('jan', p.jan); fd.append('slot', String(slot)); fd.append('file', w.blob, p.jan + '_' + slot + '.webp'); fd.append('encoder', w.encoder || ''); C.appendImageExtras(fd, w);
+    fd.append('original_name', w.originalName || p.file.name); fd.append('original_type', w.originalType || ''); fd.append('width', String(w.width)); fd.append('height', String(w.height));
+    return api('images', { method: 'POST', body: fd });
   }
   $('btnImgRun').addEventListener('click', function () {
     var ok = IMG.plan.filter(function (p) { return !p.status; });
     if (!ok.length) return;
-    var btn = $('btnImgRun'); btn.disabled = true;
+    var btn = $('btnImgRun'); btn.disabled = true; IMG.running = true;
     var log = $('imgLog'); log.hidden = false; log.textContent = '';
     var prog = $('imgProg'); prog.hidden = false;
     var L = function (m) { log.textContent += m + '\n'; log.scrollTop = log.scrollHeight; };
     var overwrite = $('imgOverwrite').checked, append = $('imgAppend').checked && !overwrite, done = 0, saved = 0, fail = 0;
     var existingImgs = {};
     var chain = Promise.resolve();
-    var upOpts = { size: 1200, square: $('imgSquare').checked ? 'pad' : false, whiten: $('imgWhiten').value, max: 1600, quality: 0.85 };
+    var upOpts = imgOpts();
     ok.forEach(function (p) {
       chain = chain.then(function () {
         var pre = existingImgs[p.jan] ? Promise.resolve(existingImgs[p.jan]) : api('images?jan=' + p.jan).then(function (r) { existingImgs[p.jan] = (r.images || []).map(function (i) { return { slot: i.slot, phash: i.phash }; }); return existingImgs[p.jan]; });
@@ -1305,24 +1625,22 @@
             if (imgs.length >= 5) { p.result = 'スキップ（5枚そろい）'; L('スキップ ' + p.file.name + '（' + p.jan + ' は5枚そろっています）'); return; }
             return C.toWebp(p.file, upOpts).then(function (w) {
               if (w.phash && imgs.some(function (i) { return i.phash === w.phash; })) { p.result = 'スキップ（同じ写真あり）'; L('スキップ ' + p.file.name + '（同じ写真が既にあります）'); return; }
-              var fd = new FormData(); fd.append('jan', p.jan); fd.append('slot', 'auto'); fd.append('file', w.blob, p.jan + '_auto.webp'); fd.append('encoder', w.encoder || ''); C.appendImageExtras(fd, w);
-              fd.append('original_name', w.originalName || p.file.name); fd.append('original_type', w.originalType || ''); fd.append('width', String(w.width)); fd.append('height', String(w.height));
-              return api('images', { method: 'POST', body: fd }).then(function (r) {
-                if (r.ok) { saved++; p.slot = r.slot; p.result = '保存 ' + Math.round(r.bytes / 1024) + 'KB' + (r.quality_warn ? '（注意: ' + r.quality_warn + '）' : ''); L('OK   ' + p.file.name + ' → ' + p.jan + ' ' + r.slot + '枚目 (' + Math.round(r.bytes / 1024) + 'KB webp)' + (r.quality_warn ? '  ⚠ ' + r.quality_warn : '')); imgs.push({ slot: r.slot, phash: w.phash }); }
+              return postConverted(p, 'auto', w).then(function (r) {
+                if (r.ok) { saved++; p.slot = r.slot; keepConv(p, w, r); p.result = '保存 ' + Math.round(r.bytes / 1024) + 'KB' + (r.quality_warn ? '（注意: ' + r.quality_warn + '）' : ''); L('OK   ' + p.file.name + ' → ' + p.jan + ' ' + r.slot + '枚目  ' + p.convText); imgs.push({ slot: r.slot, phash: w.phash }); }
                 else { fail++; p.result = 'NG ' + (r.message || r.reason); L('NG   ' + p.file.name + ': ' + (r.message || r.reason)); }
               });
             });
           }
           if (!overwrite && slots.indexOf(p.slot) >= 0) { p.result = 'スキップ（既に写真あり）'; L('スキップ ' + p.file.name + '（' + p.slot + '枚目は登録済み）'); return; }
-          return C.uploadImage(p.jan, p.slot, p.file, upOpts).then(function (r) {
-            if (r.ok) { saved++; p.result = '保存 ' + Math.round(r.bytes / 1024) + 'KB' + (r.quality_warn ? '（注意: ' + r.quality_warn + '）' : ''); L('OK   ' + p.file.name + ' → ' + p.jan + ' ' + p.slot + '枚目 (' + Math.round(r.bytes / 1024) + 'KB webp)' + (r.quality_warn ? '  ⚠ ' + r.quality_warn : '')); if (slots.indexOf(p.slot) < 0) imgs.push({ slot: p.slot, phash: null }); }
+          return C.toWebp(p.file, upOpts).then(function (w) { return postConverted(p, p.slot, w).then(function (r) {
+            if (r.ok) { saved++; keepConv(p, w, r); p.result = '保存 ' + Math.round(r.bytes / 1024) + 'KB' + (r.quality_warn ? '（注意: ' + r.quality_warn + '）' : ''); L('OK   ' + p.file.name + ' → ' + p.jan + ' ' + p.slot + '枚目  ' + p.convText); if (slots.indexOf(p.slot) < 0) imgs.push({ slot: p.slot, phash: w.phash }); }
             else { fail++; p.result = 'NG ' + (r.message || r.reason); L('NG   ' + p.file.name + ': ' + (r.message || r.reason)); }
-          });
+          }); });
         }).catch(function (e) { fail++; p.result = 'NG ' + ((e && e.message) || ''); L('NG   ' + p.file.name + ': ' + ((e && e.message) || e)); if (e && (e.auth || e.setup)) throw e; })
-          .then(function () { done++; prog.firstElementChild.style.width = Math.round(done / ok.length * 100) + '%'; });
+          .then(function () { done++; prog.firstElementChild.style.width = Math.round(done / ok.length * 100) + '%'; if (done % 10 === 0) renderImgPlan(); });
       });
     });
-    chain.then(function () { L('完了: 保存 ' + saved + ' / 失敗 ' + fail + ' / 対象 ' + ok.length); toast('画像の登録が終わりました'); renderImgPlan(); btn.disabled = false; boot(); }).catch(function (e) { handleErr(e); btn.disabled = false; });
+    chain.then(function () { IMG.running = false; L('完了: 保存 ' + saved + ' / 失敗 ' + fail + ' / 対象 ' + ok.length + '（表の「変換を見る」で、元の画像と保存された写真を見比べられます）'); toast('画像の登録が終わりました'); renderImgPlan(); btn.disabled = false; boot(); }).catch(function (e) { IMG.running = false; handleErr(e); renderImgPlan(); btn.disabled = false; });
   });
 
   // ── 進捗 ──
@@ -1352,14 +1670,15 @@
       RV.items = j.images;
       $('rvCount').textContent = j.total + '枚中 ' + (j.total ? RV.offset + 1 : 0) + '〜' + Math.min(j.total, RV.offset + j.images.length);
       $('rvGrid').innerHTML = j.images.map(function (im, i) {
-        return '<div class="rv ' + (im.review || '') + '" data-i="' + i + '"><img src="' + esc(im.url) + '" alt="" loading="lazy"><div class="b"><div class="nm">' + esc(im.name) + '</div>' + (im.quality_warn ? '<div><span class="tag warn">自動チェック: ' + esc(im.quality_warn) + '</span></div>' : '') + '<div class="muted">' + esc(im.jan) + ' ・ ' + im.slot + '枚目 ・ ' + esc(im.created_by || '') + ' ・ ' + esc((im.created_at || '').slice(5, 16).replace('T', ' ')) + '</div>' +
-          '<div class="row" style="margin-top:6px"><button class="btn sm" data-rv="ok">OK</button><button class="btn sm danger" data-rv="retake">撮り直し</button>' + (im.review ? '<button class="btn sm" data-rv="clear">取消</button>' : '') + '<button class="btn sm" data-rv="delete" title="この写真を消す（後ろの写真が前に詰まります）" style="margin-left:auto">削除</button></div>' +
-          '<input placeholder="撮り直しの理由（ピンぼけ・傾き・影 など）" value="' + esc(im.review_note || '') + '"></div></div>';
+        return '<div class="rv ' + (im.review || '') + '" data-i="' + i + '"><input type="checkbox" class="pick" title="選ぶ（まとめて削除・OK）"><img src="' + esc(im.url) + '" alt="" loading="lazy"><div class="b"><div class="nm">' + esc(im.name) + '</div>' + (im.quality_warn ? '<div><span class="tag warn">自動チェック: ' + esc(im.quality_warn) + '</span></div>' : '') + '<div class="muted">' + esc(im.jan) + ' ・ ' + im.slot + '枚目 ・ ' + esc(im.created_by || '') + ' ・ ' + esc((im.created_at || '').slice(5, 16).replace('T', ' ')) + '</div>' +
+          '<div class="row" style="margin-top:6px"><button class="btn sm" data-rv="ok">OK</button><button class="btn sm danger" data-rv="retake">撮り直し</button>' + (im.review ? '<button class="btn sm" data-rv="clear">取消</button>' : '') + '<button class="btn sm" data-rv="edit" title="回転・切り抜き・明るさなどを直して差し替える" style="margin-left:auto">加工</button><button class="btn sm" data-rv="delete" title="この写真を消す（後ろの写真が前に詰まります）">削除</button></div>' +
+          '<input class="note" placeholder="撮り直しの理由（ピンぼけ・傾き・影 など）" value="' + esc(im.review_note || '') + '"></div></div>';
       }).join('') || '<p class="muted">該当する写真はありません</p>';
       Array.prototype.forEach.call($('rvGrid').querySelectorAll('[data-rv]'), function (b) {
         b.addEventListener('click', function () {
           var box = b.closest('.rv'), im = RV.items[parseInt(box.getAttribute('data-i'), 10)], act = b.getAttribute('data-rv');
-          var note = box.querySelector('input').value.trim();
+          var note = box.querySelector('input.note').value.trim(); // 左上の選択チェックも input なので、理由の欄を名指しで読む
+          if (act === 'edit') { openImgEdit(im); return; }
           if (act === 'delete') { // 画像まとめ登録で入った不要な写真を、検品しながらその場で消す
             if (!confirm(im.name + '\n' + im.jan + ' の ' + im.slot + '枚目を削除しますか？（元に戻せません。後ろの写真が前に詰まります）')) return;
             api('images?jan=' + encodeURIComponent(im.jan) + '&slot=' + im.slot, { method: 'DELETE' }).then(function (r) {
@@ -1368,7 +1687,7 @@
             }).catch(handleErr);
             return;
           }
-          if (act === 'retake' && !note) { note = prompt('撮り直しの理由（スマホに表示されます）', 'ピンぼけ') || ''; if (!note) return; box.querySelector('input').value = note; }
+          if (act === 'retake' && !note) { note = prompt('撮り直しの理由（スマホに表示されます）', 'ピンぼけ') || ''; if (!note) return; box.querySelector('input.note').value = note; }
           api('review', { method: 'POST', body: { jan: im.jan, slot: im.slot, review: act === 'clear' ? null : act, note: note } }).then(function (r) {
             if (!r.ok) { toast(r.message || '失敗しました', true); return; }
             toast(act === 'ok' ? 'OK にしました' : act === 'retake' ? '撮り直しにしました' : '取り消しました');
@@ -1377,12 +1696,14 @@
         });
       });
       Array.prototype.forEach.call($('rvGrid').querySelectorAll('img'), function (img) { img.addEventListener('click', function () { window.open(img.src, '_blank'); }); });
+      RV.lastPick = null; $('rvPickAll').checked = false; updatePick();
       $('rvPrev').disabled = RV.offset === 0; $('rvNext').disabled = RV.offset + RV.limit >= j.total;
     }).catch(handleErr);
   }
   function loadDupPhotos() {
     api('review?status=dup').then(function (j) {
       if (!j.ok) return;
+      RV.items = []; updatePick();
       $('rvCount').textContent = j.total + ' 組';
       $('rvGrid').innerHTML = j.groups.map(function (g) {
         return '<div class="rv retake" style="grid-column:1/-1;padding:10px"><div class="muted" style="margin-bottom:6px">同じ写真が ' + g.products + ' 商品に登録されています（撮り間違い・貼り間違いの疑い）</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">' +
@@ -1391,6 +1712,184 @@
       $('rvPrev').disabled = true; $('rvNext').disabled = true;
     }).catch(handleErr);
   }
+  // ── 検品: 複数選んで まとめて削除／OK ──
+  function picked() { return Array.prototype.filter.call($('rvGrid').querySelectorAll('.rv[data-i] .pick'), function (c) { return c.checked; }).map(function (c) { return RV.items[parseInt(c.closest('.rv').getAttribute('data-i'), 10)]; }).filter(Boolean); }
+  function updatePick() {
+    var n = picked().length;
+    Array.prototype.forEach.call($('rvGrid').querySelectorAll('.rv[data-i]'), function (box) { box.classList.toggle('picked', box.querySelector('.pick').checked); });
+    $('rvPickN').textContent = n + ' 枚選択'; $('rvDelSel').disabled = !n; $('rvOkSel').disabled = !n;
+  }
+  $('rvGrid').addEventListener('click', function (e) {
+    var c = e.target.closest('.pick'); if (!c) return;
+    var boxes = Array.prototype.slice.call($('rvGrid').querySelectorAll('.rv[data-i] .pick')), at = boxes.indexOf(c);
+    if (e.shiftKey && RV.lastPick != null && RV.lastPick !== at) { // Shift で範囲選択
+      var a = Math.min(at, RV.lastPick), b = Math.max(at, RV.lastPick);
+      for (var k = a; k <= b; k++) boxes[k].checked = c.checked;
+    }
+    RV.lastPick = at; updatePick();
+  });
+  $('rvPickAll').addEventListener('change', function () { var on = this.checked; Array.prototype.forEach.call($('rvGrid').querySelectorAll('.rv[data-i] .pick'), function (c) { c.checked = on; }); updatePick(); });
+  $('rvDelSel').addEventListener('click', function () {
+    var list = picked(); if (!list.length) return;
+    var prods = {}; list.forEach(function (im) { prods[im.jan] = 1; });
+    if (!confirm('選んだ ' + list.length + ' 枚（' + Object.keys(prods).length + ' 商品）の写真を削除しますか？\n元に戻せません。残った写真は前に詰まります。')) return;
+    // 同じ商品の写真は後ろの番号から消す（前から消すと、詰まって番号がずれる）
+    list = list.slice().sort(function (a, b) { return a.jan < b.jan ? -1 : a.jan > b.jan ? 1 : b.slot - a.slot; });
+    var btn = $('rvDelSel'); btn.disabled = true;
+    var ok = 0, ng = [], chain = Promise.resolve();
+    list.forEach(function (im, k) {
+      chain = chain.then(function () {
+        $('rvPickN').textContent = '削除しています… ' + (k + 1) + ' / ' + list.length;
+        return api('images?jan=' + encodeURIComponent(im.jan) + '&slot=' + im.slot, { method: 'DELETE' }).then(function (r) { if (r.ok) ok++; else ng.push(im.jan + ' ' + im.slot + '枚目' + (r.reason === 'not_found' ? '（もうありません）' : '')); });
+      });
+    });
+    chain.then(function () {
+      toast(ok + ' 枚を削除しました' + (ng.length ? '／' + ng.length + ' 枚は削除できませんでした: ' + ng.slice(0, 3).join('、') : ''), !!ng.length);
+      loadReview(RV.offset);
+    }).catch(function (e) { handleErr(e); updatePick(); loadReview(RV.offset); });
+  });
+  $('rvOkSel').addEventListener('click', function () {
+    var list = picked(); if (!list.length) return;
+    api('review', { method: 'POST', body: { items: list.map(function (im) { return { jan: im.jan, slot: im.slot, review: 'ok' }; }) } }).then(function (r) { if (r.ok) { toast(r.updated + ' 枚を OK にしました'); loadReview(RV.offset); } else toast(r.message || '失敗しました', true); }).catch(handleErr);
+  });
+
+  // ── 検品: 写真の加工（回転・傾き・明るさ・コントラスト・鮮やかさ・白背景・切り抜き）→ 同じ枠に差し替え ──
+  var IE = null;
+  var IE_PREVIEW = 900;
+  function ieDefaults() { return { rot: 0, flip: false, tilt: 0, bri: 0, con: 0, sat: 0, white: 'off', cropOn: false, crop: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 } }; }
+  function openImgEdit(im) {
+    $('ieTitle').textContent = '写真を加工 — ' + (im.name || im.jan);
+    $('ieSub').textContent = 'JAN ' + im.jan + ' ・ ' + im.slot + '枚目。直したら「この写真で差し替え」で同じ ' + im.slot + '枚目に保存します（検品の印は外れます）。';
+    $('ieErr').textContent = ''; $('ieSave').disabled = true;
+    $('ieDlg').hidden = false;
+    IE = { im: im, st: ieDefaults(), src: null };
+    ieSyncUi();
+    var ctx = $('ieCanvas').getContext('2d'); $('ieCanvas').width = 10; $('ieCanvas').height = 10; ctx.clearRect(0, 0, 10, 10);
+    var mine = IE;
+    fetch(im.url, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('写真を読み込めませんでした（' + r.status + '）'); return r.blob(); })
+      .then(function (b) { return createImageBitmap(b); })
+      .then(function (bmp) { if (IE !== mine) { if (bmp.close) bmp.close(); return; } IE.src = bmp; $('ieSave').disabled = false; ieRender(); })
+      .catch(function (e) { if (IE === mine) $('ieErr').textContent = (e && e.message) || '写真を読み込めませんでした'; });
+  }
+  function ieSyncUi() {
+    var st = IE.st;
+    $('ieTilt').value = st.tilt; $('ieTiltV').textContent = st.tilt + '°';
+    $('ieBri').value = st.bri; $('ieBriV').textContent = st.bri;
+    $('ieCon').value = st.con; $('ieConV').textContent = st.con;
+    $('ieSat').value = st.sat; $('ieSatV').textContent = st.sat;
+    $('ieWhite').value = st.white; $('ieCropOn').checked = st.cropOn;
+  }
+  // 回転・反転・傾き・色の調整までをした絵（maxSide に縮めて）
+  function ieTransform(maxSide) {
+    var st = IE.st, src = IE.src, sw = src.width, sh = src.height, sc = Math.min(1, maxSide / Math.max(sw, sh));
+    var swap = st.rot === 90 || st.rot === 270, w = Math.max(1, Math.round((swap ? sh : sw) * sc)), h = Math.max(1, Math.round((swap ? sw : sh) * sc));
+    var c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h);
+    var t = st.tilt * Math.PI / 180, k = 1;
+    if (t) { var ct = Math.abs(Math.cos(t)), s2 = Math.abs(Math.sin(t)); k = Math.max((w * ct + h * s2) / w, (w * s2 + h * ct) / h); } // 傾けても角に白い三角が出ないよう少し拡大
+    x.translate(w / 2, h / 2); x.rotate(st.rot * Math.PI / 180 + t); if (st.flip) x.scale(-1, 1); x.scale(k, k);
+    x.drawImage(src, -sw * sc / 2, -sh * sc / 2, sw * sc, sh * sc);
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    if (st.bri || st.con || st.sat) {
+      var img = x.getImageData(0, 0, w, h), d = img.data, add = st.bri * 1.5, cc = st.con * 2.55, f = (259 * (cc + 255)) / (255 * (259 - cc)), sa = 1 + st.sat / 50;
+      for (var i = 0; i < d.length; i += 4) {
+        var r = d[i], g = d[i + 1], b = d[i + 2];
+        if (sa !== 1) { var gy = 0.299 * r + 0.587 * g + 0.114 * b; r = gy + (r - gy) * sa; g = gy + (g - gy) * sa; b = gy + (b - gy) * sa; }
+        r = f * (r + add - 128) + 128; g = f * (g + add - 128) + 128; b = f * (b + add - 128) + 128;
+        d[i] = r < 0 ? 0 : r > 255 ? 255 : r; d[i + 1] = g < 0 ? 0 : g > 255 ? 255 : g; d[i + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
+      }
+      x.putImageData(img, 0, 0);
+    }
+    if (st.white !== 'off' && C.whitenBackground) C.whitenBackground(x, w, h, { weak: 26, normal: 40, strong: 58 }[st.white]);
+    return c;
+  }
+  function ieRender() {
+    if (!IE || !IE.src) return;
+    var c = ieTransform(IE_PREVIEW), cv = $('ieCanvas');
+    cv.width = c.width; cv.height = c.height; cv.getContext('2d').drawImage(c, 0, 0);
+    ieCropBox();
+  }
+  function ieCropBox() {
+    var box = $('ieCrop'), cr = IE.st.crop; box.hidden = !IE.st.cropOn;
+    box.style.left = (cr.x * 100) + '%'; box.style.top = (cr.y * 100) + '%'; box.style.width = (cr.w * 100) + '%'; box.style.height = (cr.h * 100) + '%';
+  }
+  var ieT = null;
+  function ieLater() { clearTimeout(ieT); ieT = setTimeout(ieRender, 60); }
+  [['ieTilt', 'tilt', 'ieTiltV', '°'], ['ieBri', 'bri', 'ieBriV', ''], ['ieCon', 'con', 'ieConV', ''], ['ieSat', 'sat', 'ieSatV', '']].forEach(function (a) {
+    $(a[0]).addEventListener('input', function () { if (!IE) return; IE.st[a[1]] = parseFloat(this.value) || 0; $(a[2]).textContent = this.value + a[3]; ieLater(); });
+  });
+  $('ieWhite').addEventListener('change', function () { if (!IE) return; IE.st.white = this.value; ieRender(); });
+  $('ieRotL').addEventListener('click', function () { if (!IE) return; IE.st.rot = (IE.st.rot + 270) % 360; IE.st.crop = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 }; ieRender(); });
+  $('ieRotR').addEventListener('click', function () { if (!IE) return; IE.st.rot = (IE.st.rot + 90) % 360; IE.st.crop = { x: 0.1, y: 0.1, w: 0.8, h: 0.8 }; ieRender(); });
+  // 左右反転は「いま画面に見えている絵」の左右を入れ替える。回転・傾き・切り抜き枠も鏡に合わせる（回したあとでも上下が入れ替わらず、回転ボタンの向きもそのまま）
+  $('ieFlip').addEventListener('click', function () {
+    if (!IE) return; var st = IE.st;
+    st.flip = !st.flip; st.rot = (360 - st.rot) % 360; st.tilt = -st.tilt; st.crop = { x: 1 - st.crop.x - st.crop.w, y: st.crop.y, w: st.crop.w, h: st.crop.h };
+    ieSyncUi(); ieRender();
+  });
+  $('ieCropOn').addEventListener('change', function () { if (!IE) return; IE.st.cropOn = this.checked; ieCropBox(); });
+  $('ieReset').addEventListener('click', function () { if (!IE) return; IE.st = ieDefaults(); ieSyncUi(); ieRender(); });
+  // 余白を自動で詰める: 白でない部分を囲む四角＋6% の余白を、正方形に近い形で切り抜く
+  $('ieAuto').addEventListener('click', function () {
+    if (!IE || !IE.src) return;
+    var c = ieTransform(400), w = c.width, h = c.height, d = c.getContext('2d').getImageData(0, 0, w, h).data;
+    var x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) { var i = (y * w + x) * 4; if (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2] < 236) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+    if (x1 < 0) { toast('商品が見つかりませんでした（背景と見分けがつきません）', true); return; }
+    var bw = x1 - x0 + 1, bh = y1 - y0 + 1, side = Math.max(bw, bh) * 1.12, cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    var sx = Math.max(0, cx - side / 2), sy = Math.max(0, cy - side / 2), ex = Math.min(w, cx + side / 2), ey = Math.min(h, cy + side / 2);
+    IE.st.crop = { x: sx / w, y: sy / h, w: (ex - sx) / w, h: (ey - sy) / h }; IE.st.cropOn = true; $('ieCropOn').checked = true; ieCropBox();
+  });
+  // 切り抜き枠のドラッグ（動かす・四隅で大きさ）
+  (function () {
+    var drag = null, MIN = 0.08;
+    $('ieCrop').addEventListener('pointerdown', function (e) {
+      if (!IE) return; e.preventDefault();
+      var r = $('ieCanvas').getBoundingClientRect();
+      drag = { h: e.target.getAttribute('data-h') || 'move', sx: e.clientX, sy: e.clientY, W: r.width, H: r.height, c0: Object.assign({}, IE.st.crop) };
+      this.setPointerCapture(e.pointerId);
+    });
+    $('ieCrop').addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var dx = (e.clientX - drag.sx) / drag.W, dy = (e.clientY - drag.sy) / drag.H, c = Object.assign({}, drag.c0), cl = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+      if (drag.h === 'move') { c.x = cl(c.x + dx, 0, 1 - c.w); c.y = cl(c.y + dy, 0, 1 - c.h); }
+      else {
+        var L = c.x, T = c.y, R = c.x + c.w, B = c.y + c.h;
+        if (/w/.test(drag.h)) L = cl(L + dx, 0, R - MIN); if (/e/.test(drag.h)) R = cl(R + dx, L + MIN, 1);
+        if (/n/.test(drag.h)) T = cl(T + dy, 0, B - MIN); if (/s/.test(drag.h)) B = cl(B + dy, T + MIN, 1);
+        c = { x: L, y: T, w: R - L, h: B - T };
+      }
+      IE.st.crop = c; ieCropBox();
+    });
+    var end = function () { drag = null; };
+    $('ieCrop').addEventListener('pointerup', end); $('ieCrop').addEventListener('pointercancel', end);
+  })();
+  function closeImgEdit() { $('ieDlg').hidden = true; if (IE && IE.src && IE.src.close) { try { IE.src.close(); } catch (e) { /* */ } } IE = null; }
+  $('ieCancel').addEventListener('click', closeImgEdit);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !$('ieDlg').hidden) closeImgEdit(); });
+  $('ieSave').addEventListener('click', function () {
+    if (!IE || !IE.src) return;
+    var im = IE.im, st = IE.st, mine = IE;
+    $('ieSave').disabled = true; $('ieErr').textContent = '';
+    var full = ieTransform(2400), out = full;
+    if (st.cropOn) {
+      var cr = st.crop, cx = Math.round(cr.x * full.width), cy = Math.round(cr.y * full.height), cw = Math.max(1, Math.round(cr.w * full.width)), ch = Math.max(1, Math.round(cr.h * full.height));
+      out = document.createElement('canvas'); out.width = cw; out.height = ch; out.getContext('2d').drawImage(full, cx, cy, cw, ch, 0, 0, cw, ch);
+    }
+    // 正方形 1200px に。もともと正方形なら余白を足さない（加工のたびに商品が小さくならないように）。白背景は上で済ませている
+    var sq = C.processProductImage(out, { size: 1200, square: out.width === out.height ? 'crop' : 'pad', whiten: 'off' });
+    var q = null; try { q = C.analyzeImage(sq, { srcW: out.width, srcH: out.height }); } catch (e) { q = null; }
+    C.finishImage(sq, 0.85).then(function (w) {
+      w.quality = q;
+      var fd = new FormData(); fd.append('jan', im.jan); fd.append('slot', String(im.slot)); fd.append('file', w.blob, im.jan + '_' + im.slot + '.webp'); fd.append('encoder', w.encoder || ''); C.appendImageExtras(fd, w);
+      fd.append('original_name', String(im.original_name || (im.jan + '_' + im.slot)).replace(/（加工）$/, '') + '（加工）'); fd.append('original_type', 'image/webp'); fd.append('width', String(w.width)); fd.append('height', String(w.height));
+      return api('images', { method: 'POST', body: fd });
+    }).then(function (r) {
+      if (IE !== mine) { if (r && r.ok) { toast(im.slot + '枚目を加工した写真に差し替えました'); loadReview(RV.offset); } return; } // 保存中に閉じても、一覧は新しい写真にする
+      if (!r.ok) { $('ieSave').disabled = false; $('ieErr').textContent = r.message || '保存できませんでした'; return; }
+      closeImgEdit(); toast(im.slot + '枚目を加工した写真に差し替えました' + (r.quality_warn ? '（自動チェック: ' + r.quality_warn + '）' : '')); loadReview(RV.offset);
+    }).catch(function (e) { if (e && (e.auth || e.staff)) { if (IE === mine) closeImgEdit(); handleErr(e); return; } if (IE !== mine) { toast('加工した写真を保存できませんでした: ' + ((e && e.message) || e), true); return; } $('ieSave').disabled = false; $('ieErr').textContent = (e && e.message) || '保存できませんでした'; });
+  });
   $('rvReload').addEventListener('click', function () { loadReview(RV.offset); });
   $('rvStatus').addEventListener('change', function () { loadReview(0); });
   $('rvMaker').addEventListener('change', function () { loadReview(0); });
@@ -1465,7 +1964,7 @@
     return api('push', { method: 'POST', body: { action: 'verify', auto: !!quiet } }).then(function (r) {
       PUSH.busy = false; $('btnPushVerify').disabled = false;
       $('pushVerifyLog').textContent = (r && r.message) || '';
-      if (!quiet || (r && r.fixed)) toast((r && r.message) || '確かめました', !(r && r.ok));
+      if (!quiet || (r && (r.fixed || r.requeued))) toast((r && r.message) || '確かめました', !(r && r.ok));
       return loadPush(true);
     }).catch(function (e) { PUSH.busy = false; $('btnPushVerify').disabled = false; $('pushVerifyLog').textContent = ''; handleErr(e); });
   }

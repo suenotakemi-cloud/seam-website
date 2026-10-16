@@ -21,7 +21,7 @@ export async function onRequestGet({ request, env, data }) {
   const W = ' FROM pim_images i JOIN pim_products p ON p.account_id=i.account_id AND p.jan=i.jan WHERE ' + where.join(' AND ');
   const total = await env.DB.prepare('SELECT COUNT(*) AS n' + W).bind(...binds).first();
   const rs = await env.DB.prepare(
-    'SELECT i.jan, i.slot, i.width, i.height, i.bytes, i.created_by, i.created_at, i.ver, i.review, i.review_note, i.reviewed_by, i.quality_warn, p.name, p.maker, p.brand, p.sku' + W +
+    'SELECT i.jan, i.slot, i.width, i.height, i.bytes, i.created_by, i.created_at, i.ver, i.review, i.review_note, i.reviewed_by, i.quality_warn, i.original_name, p.name, p.maker, p.brand, p.sku' + W +
     ' ORDER BY i.created_at DESC LIMIT ? OFFSET ?'
   ).bind(...binds, limit, offset).all();
   const origin = url.origin;
