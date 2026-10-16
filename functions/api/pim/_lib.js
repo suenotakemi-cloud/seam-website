@@ -243,7 +243,8 @@ export async function ensureSchema(env) {
     'ALTER TABLE pim_imports ADD COLUMN options TEXT', 'ALTER TABLE pim_images ADD COLUMN phash TEXT', 'ALTER TABLE pim_images ADD COLUMN has_thumb INTEGER NOT NULL DEFAULT 0', 'ALTER TABLE pim_images ADD COLUMN ver TEXT', 'ALTER TABLE pim_staff ADD COLUMN assign TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_synced_at TEXT',
     'ALTER TABLE pim_accounts ADD COLUMN ec_url TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_key TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_auto INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE pim_products ADD COLUMN ec_push_at TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_status TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_msg TEXT',
-    'ALTER TABLE pim_accounts ADD COLUMN ec_status TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_status_at TEXT']) {
+    'ALTER TABLE pim_accounts ADD COLUMN ec_status TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_status_at TEXT',
+    'ALTER TABLE pim_products ADD COLUMN ec_jan TEXT']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)').run(); } catch (e) { /* */ }

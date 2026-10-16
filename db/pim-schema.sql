@@ -170,6 +170,7 @@ CREATE TABLE IF NOT EXISTS pim_refs (
   jan TEXT NOT NULL, src_slot INTEGER NOT NULL, note TEXT, created_at TEXT NOT NULL, created_by TEXT, UNIQUE (account_id, kind, slot, scope)
 );
 -- pim_staff.assign: 担当（ブランド／メーカー、カンマ区切り）。pim_products.ec_synced_at: EC が受け取り確認した日時（updated_at より古ければ未反映）
+-- pim_products.ec_jan: SalonPro 側で見つかった JAN の形（頭の 0 を外した 12 桁で登録されている商品。NULL ならこちらの JAN のまま）
 -- pim_products.ec_push_at / ec_push_status / ec_push_msg: SalonPro へ写真を送った日時・結果（'ok' か相手の error.code）・理由。ec_push_at < updated_at なら送り直し待ち
 CREATE TABLE IF NOT EXISTS pim_dict (
   id             INTEGER PRIMARY KEY AUTOINCREMENT,
