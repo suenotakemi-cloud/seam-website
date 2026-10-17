@@ -24,3 +24,29 @@ html.lk-go .lk-list>li img{transform:none}
 html.lk-done .lk-list>li{clip-path:none}
 html.lk-done .lk-list>li img{transition:transform 1.2s cubic-bezier(.2,.7,.2,1);transition-delay:0s}
 @media (prefers-reduced-motion:reduce){html.lk-intro *{opacity:1!important;filter:none!important;clip-path:none!important;transform:none!important;transition:none!important}}
+
+/* 店頭会員向けの入口を常時表示し、ボタンに必要な高さを確保 */
+.lk{height:auto;min-height:100dvh;max-height:none}
+.lk-list{flex:none;grid-template-rows:auto;gap:8px}
+.lk-list>li>a.lk-tile,.lk-list>li>details,.lk-list>li>details>summary{height:168px!important}
+.lk-list>li:first-child .lk-tile{height:210px!important}
+.lk-online-item,.lk-list>li:last-child{grid-column:1/-1}
+.lk-online{border:1px solid rgba(212,181,122,.6)}
+.lk-online-cover{height:150px;cursor:default}
+.lk-online-cover .lk-t{left:18px;right:18px;bottom:16px}
+.lk-online-cover .lk-t em{display:block;overflow:visible}
+.lk-online-body{padding:16px;background:#141317;color:#F3EFE9}
+.lk-online-body .lk-members{margin:0 0 12px;text-align:left;color:rgba(243,239,233,.78);font-size:13px;letter-spacing:.04em}
+.lk-online-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lk-online-button{display:flex;align-items:center;justify-content:center;min-height:48px;padding:10px 8px;border:1px solid rgba(212,181,122,.7);background:transparent;color:#F3EFE9;font-size:13px;line-height:1.5;letter-spacing:.02em;text-align:center;touch-action:manipulation;transition:background .2s ease}
+.lk-online-button:hover,.lk-online-button:active{background:rgba(212,181,122,.14);border-color:#d4b57a}
+.lk-online-body a:focus-visible{outline:2px solid #d4b57a;outline-offset:3px}
+.lk-online-download{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px}
+.lk-online-download p{margin:0;font-size:12px;line-height:1.7;color:rgba(243,239,233,.65);overflow-wrap:anywhere}
+.lk-online-download .lk-badge{flex:none;min-height:50px}
+.lk-online-download .lk-badge img{max-width:100%}
+.lk-rc b{font-size:17px;line-height:1.65}
+.lk-rc-roles,.lk-rc-students{margin:10px 0 0;font-size:12px;line-height:1.8;letter-spacing:.04em;color:#F3EFE9}
+.lk-rc-students{margin-top:4px}
+.lk-rc .lk-rc-go{position:static;display:block;width:fit-content;margin:0 16px 16px auto}
+@media (max-width:400px){.lk-online-download{align-items:flex-start;flex-direction:column;gap:10px}.lk-rc b{font-size:16px}}
