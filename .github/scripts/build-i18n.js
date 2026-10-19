@@ -561,11 +561,14 @@ function build() {
   for (const pg of PAGES) { const u = pg.url === '/' ? '/' : pg.url; if (!jaUrls.includes(u)) jaUrls.push(u); }
   const missingJa = jaUrls.filter(u => !fs.existsSync(path.join(ROOT, u === '/' ? 'index.html' : u.slice(1) + '.html')));
   if (missingJa.length) summary.push(`WARN sitemap: 実体なしのjaページを除外 ${missingJa.join(', ')}`);
-  const urls = jaUrls.filter(u => !missingJa.includes(u));
+  // noindex のページ(privacy/terms/tokushoho)は sitemap に載せない＝SC「noindex タグによって除外」の申告を出さない
+  const isNoindex = f => { try { return /<meta name="robots" content="[^"]*noindex/i.test(fs.readFileSync(f, 'utf8').slice(0, 4000)); } catch { return false; } };
+  const urls = jaUrls.filter(u => !missingJa.includes(u) && !isNoindex(path.join(ROOT, u === '/' ? 'index.html' : u.slice(1) + '.html')));
   for (const lang of Object.keys(LANGS)) {
     for (const pg of PAGES) {
       // 生成に失敗したページをsitemapに載せない(404防止)。実在ファイルのみ収録
       if (!fs.existsSync(path.join(ROOT, lang, pg.file))) continue;
+      if (isNoindex(path.join(ROOT, lang, pg.file))) continue;
       urls.push('/' + lang + (pg.url === '/' ? '/' : pg.url));
     }
   }

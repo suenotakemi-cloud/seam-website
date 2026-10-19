@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """読みもの（guide-*.html）を1枚つくる（所有者 10/11「seam.site で公開するのはまかせます」）
 使い方: python3 scripts/make_guide_page.py spec.json
-spec: {slug,title,desc,crumb,h1,sub,date,sections:[{h,ps:[...],ul:[...],chips:[[href,label]],links:[[href,label]]}],faq:[[q,a]]}
+spec: {slug,title,desc,crumb,h1,sub,date,image(任意・images/… の画像),sections:[{h,ps:[...],ul:[...],chips:[[href,label]],links:[[href,label]]}],faq:[[q,a]]}
 雛形は tokyo.html（ヘッダー・フッター・書体・色）。作ったら build-i18n.js の jaUrls と llms.txt と journal.html の案内に足す。
 """
 import json, re, sys
@@ -13,13 +13,14 @@ footer = src[src.index('<footer'):src.index('</footer>') + 9]
 S = spec['slug']; T = spec['title']; D = spec['desc']
 ld = {"@context": "https://schema.org", "@graph": [
   {"@type": "Article", "@id": f"https://seam.site/{S}#article", "headline": spec['h1'], "inLanguage": "ja", "mainEntityOfPage": f"https://seam.site/{S}",
-   "author": {"@id": "https://seam.site/#organization"}, "publisher": {"@id": "https://seam.site/#organization"}, "dateModified": spec['date']},
+   "author": {"@id": "https://seam.site/#organization"}, "publisher": {"@id": "https://seam.site/#organization"}, "datePublished": spec['date'], "dateModified": spec['date'], **({"image": "https://seam.site/" + spec['image']} if spec.get('image') else {})},
   {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "SEAM", "item": "https://seam.site/"},
     {"@type": "ListItem", "position": 2, "name": "読みもの", "item": "https://seam.site/journal"}, {"@type": "ListItem", "position": 3, "name": spec['crumb'], "item": f"https://seam.site/{S}"}]},
   {"@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in spec['faq']]}]}
 h = re.sub(r'<title>[^<]*</title>', f'<title>{T}</title>', head)
 for k in ['name="description"', 'property="og:description"']: h = re.sub(r'(<meta ' + k + r' content=")[^"]*', lambda m: m.group(1) + D, h)
 h = re.sub(r'(<meta property="og:title" content=")[^"]*', lambda m: m.group(1) + T, h)
+if spec.get('image'): h = re.sub(r'(<meta property="og:image" content=")[^"]*', lambda m: m.group(1) + 'https://seam.site/' + spec['image'], h)
 h = h.replace('https://seam.site/tokyo', f'https://seam.site/{S}')
 h = re.sub(r'<script type="application/ld\+json">.*?</script>', lambda m: '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>', h, flags=re.S)
 P = lambda t: f'    <p class="mt-4 text-[13.5px] sm:text-[14px] text-charcoal/80">{t}</p>'
