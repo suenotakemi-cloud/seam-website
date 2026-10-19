@@ -480,6 +480,44 @@ function setHead(doc, shortLang, htmlLang, pageUrl, dict) {
   head.insertBefore(force, head.firstChild);
 }
 
+// FAQPage の構造化データは日本語のまま言語版に写っていた（2026-10-19 調査：en/tw/ko の店舗頁・en/shop）。
+// 画面の Q&A と同じ文を辞書から引いて差し替える：ja 辞書で「タグを外した文」が一致する鍵を探し、その言語の文に置き換える。
+// 一致しない文は変えない（作文しない）。
+function translateFaqLd(doc, ja, tr) {
+  const plain = v => String(v || '').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  const norm = v => plain(v).replace(/[？?。．.！!\s]+$/u, '');
+  const byJa = new Map();
+  for (const k of Object.keys(ja)) { if (typeof ja[k] === 'string' && typeof tr[k] === 'string') byJa.set(norm(ja[k]), plain(tr[k])); }
+  const tx = v => (typeof v === 'string' && byJa.has(norm(v))) ? byJa.get(norm(v)) : null;
+  doc.querySelectorAll('script[type="application/ld+json"]').forEach(el => {
+    if (el.textContent.indexOf('FAQPage') < 0) return;
+    let data; try { data = JSON.parse(el.textContent); } catch (_) { return; }
+    let changed = false;
+    const walk = o => {
+      if (Array.isArray(o)) return o.forEach(walk);
+      if (!o || typeof o !== 'object') return;
+      const t = [].concat(o['@type'] || []);
+      if (t.includes('FAQPage') && Array.isArray(o.mainEntity)) {
+        // 訳のある問いだけ残す。訳の無い問いは言語版から外す（日本語のまま残すと画面の本文と食い違う）
+        const kept = [];
+        for (const q of o.mainEntity) {
+          const n = tx(q && q.name), x = tx(q && q.acceptedAnswer && q.acceptedAnswer.text);
+          if (n && x) { q.name = n; q.acceptedAnswer.text = x; kept.push(q); }
+        }
+        if (kept.length !== o.mainEntity.length || kept.length) changed = true;
+        o.mainEntity = kept;
+        return;
+      }
+      Object.values(o).forEach(walk);
+    };
+    walk(data);
+    if (!changed) return;
+    if (Array.isArray(data['@graph'])) data['@graph'] = data['@graph'].filter(n => !([].concat(n['@type'] || []).includes('FAQPage') && !(n.mainEntity || []).length));
+    if ([].concat(data['@type'] || []).includes('FAQPage') && !(data.mainEntity || []).length) { el.remove(); return; }
+    el.textContent = JSON.stringify(data);
+  });
+}
+
 function build() {
   const summary = [];
   for (const lang of Object.keys(LANGS)) {
@@ -498,6 +536,7 @@ function build() {
       rewriteUrlsToRoot(doc, lang);
       dropJapaneseWebfonts(doc, lang);
       setHead(doc, lang, htmlLang, pg.url, I18N[lang]);
+      translateFaqLd(doc, I18N.ja || {}, I18N[lang]);
       let out = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
       // DOM属性以外(JS文字列・inline style url等)の相対アセットパスも / 起点へ。
       // 例: index.html が gem画像を src="images/karte/gems/"+id+".jpg" とJSで組む箇所。
@@ -523,7 +562,7 @@ function build() {
     '/journal', '/guide-uneri', '/guide-damage', '/guide-kansou',
     '/guide-shiraga', '/guide-scalp', '/guide-mens',
     '/guide-bleach', '/guide-straightening', '/guide-colorfade', '/guide-perm', '/guide-salon-senyo',
-    '/guide-mirai-soap', '/guide-loa', '/guide-buy-only', '/guide-kerastase-erabikata', '/guide-kamishitsu-shindan', '/kamikaku-types',
+    '/guide-mirai-soap', '/guide-loa', '/guide-buy-only', '/en/guide-buy-only', '/guide-kerastase-erabikata', '/guide-kamishitsu-shindan', '/kamikaku-types',
     '/store-ginza', '/store-omotesando', '/store-osaka', '/store-nagoya',
     '/store-fukuoka', '/store-sapporo', '/store-utsunomiya',
     '/aujua', '/kerastase', '/tokio', '/bykarte', '/shu-uemura', '/lashaddict', '/sublimic', '/shiseido-professional', '/tsururincho', '/system-professional', '/milbon', '/aujua-ginza', '/aujua-omotesando', '/aujua-sapporo', '/aujua-osaka', '/aujua-nagoya', '/aujua-fukuoka', '/aujua-utsunomiya', '/kerastase-ginza', '/kerastase-omotesando', '/kerastase-sapporo', '/kerastase-osaka', '/kerastase-nagoya', '/kerastase-fukuoka', '/kerastase-utsunomiya', '/tokio-ginza', '/tokio-omotesando', '/tokio-sapporo', '/tokio-osaka', '/tokio-nagoya', '/tokio-fukuoka', '/tokio-utsunomiya', '/bykarte-ginza', '/bykarte-omotesando', '/bykarte-sapporo', '/bykarte-osaka', '/bykarte-nagoya', '/bykarte-fukuoka', '/bykarte-utsunomiya', '/shu-uemura-ginza', '/shu-uemura-omotesando', '/shu-uemura-sapporo', '/shu-uemura-osaka', '/shu-uemura-nagoya', '/shu-uemura-fukuoka', '/shu-uemura-utsunomiya', '/lashaddict-ginza', '/lashaddict-omotesando', '/lashaddict-sapporo', '/lashaddict-osaka', '/lashaddict-nagoya', '/lashaddict-fukuoka', '/lashaddict-utsunomiya', '/sublimic-ginza', '/sublimic-omotesando', '/sublimic-sapporo', '/sublimic-osaka', '/sublimic-nagoya', '/sublimic-fukuoka', '/sublimic-utsunomiya', '/shiseido-professional-ginza', '/shiseido-professional-omotesando', '/shiseido-professional-sapporo', '/shiseido-professional-osaka', '/shiseido-professional-nagoya', '/shiseido-professional-fukuoka', '/shiseido-professional-utsunomiya', '/tsururincho-ginza', '/tsururincho-omotesando', '/tsururincho-sapporo', '/tsururincho-osaka', '/tsururincho-nagoya', '/tsururincho-fukuoka', '/tsururincho-utsunomiya', '/system-professional-ginza', '/system-professional-omotesando', '/system-professional-sapporo', '/system-professional-osaka', '/system-professional-nagoya', '/system-professional-fukuoka', '/system-professional-utsunomiya', '/milbon-ginza', '/milbon-omotesando', '/milbon-sapporo', '/milbon-osaka', '/milbon-nagoya', '/milbon-fukuoka', '/milbon-utsunomiya',
