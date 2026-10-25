@@ -80,6 +80,19 @@ export async function onRequest(context) {
       clip(request.headers.get('user-agent'), 200), Date.now()
     ).run();
 
+    // recruit@hanico.jp へ知らせる（2026-10-06）。アドレスはサイトに出さず 別 Worker から送る
+    // 失敗しても応募は D1 に残っているので 受付は成功のまま返す
+    if (env.RECRUIT_NOTIFY_URL && env.RECRUIT_NOTIFY_KEY) {
+      context.waitUntil(fetch(env.RECRUIT_NOTIFY_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-notify-key': env.RECRUIT_NOTIFY_KEY },
+        body: JSON.stringify({
+          name, contact, role: clip(b.role, 40), store: clip(b.store, 40), kind: clip(b.kind, 12) || 'apply',
+          callable: clip(b.callable, 60), src: clip(b.src, 60), message
+        })
+      }).catch(() => {}));
+    }
+
     return json({ ok: true });
   }
 
