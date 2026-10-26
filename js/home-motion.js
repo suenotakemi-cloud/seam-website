@@ -1,132 +1,156 @@
-/* トップの動き（BAL 型・案A・所有者 10/10）。home-hybrid-finished.js の組み立て（0/30/40ms）のあとに動く */
+/* SEAM の動き「縫い目と光」（10/26・BAL 型から作り替え・GSAP は使わない）
+   home-hybrid-finished.js の組み立て（0/30/40ms）のあとに動く
+   最初の画面にあるもの・縦長の画面（検索の描画）・動きを減らす設定では、何も隠さない */
 (() => {
 'use strict';
-const isA = true;
-document.addEventListener('DOMContentLoaded',()=>setTimeout(init,80),{once:true});
-function init(){
- const page=document.querySelector('.sf-page');if(!page)return;
- // Keep the existing facts stable instead of the legacy 1.4s count-up.
- const facts=[...page.querySelectorAll('.sf-proof strong')].map(el=>[el,el.textContent]);
- const factObserver=new MutationObserver(()=>facts.forEach(([el,text])=>{if(el.textContent!==text)el.textContent=text;}));
- facts.forEach(([el])=>factObserver.observe(el,{childList:true,characterData:true,subtree:true}));
- page.querySelectorAll('.sf-pillar').forEach((card,i)=>{
-   card.classList.add('motion-card');card.dataset.depth=[.25,1,.5][i];
-   const frame=card.querySelector('.sf-p-img');frame.classList.add('motion-frame');
-   const img=frame.querySelector('img'),photo=document.createElement('div');photo.className='motion-photo';
-   img.before(photo);photo.appendChild(img);
-   if(i<2)photo.setAttribute('data-store-color','');
- });
- page.querySelector('.sf-pillars').setAttribute('data-motion-group','');
- page.querySelectorAll('.sf-store').forEach((card,i)=>{
-   card.classList.add('motion-card');card.dataset.depth=[.25,1,.5,.8,.5,1][i%6];
-   const img=card.querySelector('img'),frame=document.createElement('div'),photo=document.createElement('div');
-   frame.className='motion-frame';photo.className='motion-photo';photo.setAttribute('data-store-color','');
-   img.before(frame);frame.appendChild(photo);photo.appendChild(img);
- });
- const stage=page.querySelector('.sf-interlude');
- if(stage){stage.setAttribute('data-motion-stage','');const photo=document.createElement('div');photo.className='motion-stage-photo';stage.querySelector('.sf-il-img').appendChild(photo);}
- page.querySelector('.sf-footer').insertAdjacentHTML('afterbegin',"<svg class=\"motion-drawing\" viewBox=\"0 0 680 190\" fill=\"none\" aria-hidden=\"true\" focusable=\"false\"><g stroke=\"currentColor\" stroke-width=\"1.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M135 46 C108 15 61 16 61 48 C61 73 139 70 139 111 C139 151 77 159 48 125\"/><path d=\"M197 27 H282 M197 27 V147 H282 M197 84 H267\"/><path d=\"M325 147 L373 27 L421 147 M341 108 H405\"/><path d=\"M468 147 V27 L526 117 L584 27 V147\"/><path d=\"M28 177 H652\"/></g></svg>");
- // GSAP は最初の表示を待たせないよう あとから読む（所有者 10/11・トップを軽く）
- loadGsap().then(()=>start(page)).catch(()=>{});
-}
-function loadGsap(){
-  if (window.gsap && window.ScrollTrigger) return Promise.resolve();
-  const one = src => new Promise((ok, ng) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ng; document.head.appendChild(s); });
-  const idle = () => new Promise(r => ('requestIdleCallback' in window) ? requestIdleCallback(r, {timeout: 1500}) : setTimeout(r, 300));
-  return idle().then(() => one('/js/vendor/gsap.min.js?v=3.13.0')).then(() => one('/js/vendor/ScrollTrigger.min.js?v=3.13.0'));
-}
-function start(page){
+document.addEventListener('DOMContentLoaded', () => setTimeout(init, 80), {once: true});
 
-  // Whole translated heading: its outer box remains stable for the observer.
-  const seen = new WeakSet();
-  const headingSelector = isA ? '.sf-pillar h2,.sf-section>h2,.sf-identity>h2,.sf-online h2,.sf-concerns h2,.sf-seo h2,.sf-corp h2,.sf-fc h2' : '[data-unfold]';
-  function prepareHeadings() {
-    page.querySelectorAll(headingSelector).forEach(h => {
-      h.classList.add('motion-heading');
-      if (!h.querySelector(':scope > .motion-heading-inner')) {
-        const inner = document.createElement('span'); inner.className = 'motion-heading-inner';
-        while (h.firstChild) inner.appendChild(h.firstChild);
-        h.appendChild(inner);
-      }
+function init() {
+  const page = document.querySelector('.sf-page'); if (!page) return;
+  // 数え上がりはやめ、事実の数字をそのまま見せる
+  const facts = [...page.querySelectorAll('.sf-proof strong')].map(el => [el, el.textContent]);
+  const keep = new MutationObserver(() => facts.forEach(([el, t]) => { if (el.textContent !== t) el.textContent = t; }));
+  facts.forEach(([el]) => keep.observe(el, {childList: true, characterData: true, subtree: true}));
+
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tall = innerHeight > 1400;
+  const below = el => el.getBoundingClientRect().top > innerHeight * .85;
+
+  // 写真の器（3 本柱）：中央の金の糸と、ゆっくり動く内側
+  const pillars = [...page.querySelectorAll('.sf-pillar .sf-p-img')];
+  const kinds = ['shelf', 'seam', 'ripple']; // ショップの棚・個室サロン・ヘッドスパ
+  pillars.forEach((box, i) => {
+    const img = box.querySelector('img'); if (!img || box.querySelector('.sm-ph')) return;
+    const ph = document.createElement('span'), inner = document.createElement('span');
+    ph.className = 'sm-ph'; inner.className = 'sm-inner';
+    img.before(ph); ph.appendChild(inner); inner.appendChild(img);
+    box.dataset.smKind = kinds[i % 3];
+    if (box.dataset.smKind === 'seam') box.insertAdjacentHTML('beforeend', '<i class="sm-thread" aria-hidden="true"></i>');
+    if (box.dataset.smKind === 'ripple') box.insertAdjacentHTML('beforeend', '<i class="sm-ring" aria-hidden="true"></i><i class="sm-ring" aria-hidden="true"></i>');
+  });
+  // 店舗のカード：写真を幕の器に
+  const stores = [...page.querySelectorAll('.sf-store')];
+  stores.forEach((card, i) => {
+    const img = card.querySelector('img'); if (!img || img.parentNode.classList.contains('sm-curtain')) return;
+    const c = document.createElement('span'); c.className = 'sm-curtain'; c.style.setProperty('--sm-d', (i % 6) * .09 + 's');
+    img.before(c); c.appendChild(img);
+  });
+  // 窓辺の特等席：扉
+  const stage = page.querySelector('.sf-interlude');
+  if (stage && !stage.querySelector('.sm-door')) stage.insertAdjacentHTML('afterbegin', '<i class="sm-door l" aria-hidden="true"></i><i class="sm-door r" aria-hidden="true"></i>');
+  // 足元：オートクチュールの織りネーム（SEAM をネームで包み、縁を縫う）
+  const foot = page.querySelector('.sf-footer'), mark = foot && foot.querySelector('b');
+  let label = foot && foot.querySelector('.sm-label');
+  if (mark && !label) {
+    label = document.createElement('span'); label.className = 'sm-label';
+    mark.before(label); label.appendChild(mark);
+    label.insertAdjacentHTML('beforeend', '<span class="sm-label-sub" aria-hidden="true">SALON HAIR CARE · HAIR SALON · HEAD SPA</span>');
+  }
+
+  if (calm) return; // 動かさない。すべて見えたまま
+
+  // ヒーロー：その日最初の来訪は hero-intro（紡ぐ）が受け持つ。2 回目からは写真がゆっくり息をし、金の線が縫われる
+  if (document.documentElement.dataset.hi !== '1') {
+    const heroPhoto = page.querySelector('.sf-hero-photo'); if (heroPhoto) heroPhoto.classList.add('sm-breathe');
+    const rule = page.querySelector('.hc-rule'); if (rule) rule.classList.add('sm-sew');
+  }
+
+  // 上端の金の縫い目
+  const bar = document.createElement('i'); bar.className = 'sm-progress'; bar.setAttribute('aria-hidden', 'true'); document.body.appendChild(bar);
+
+  // 見出しの光（中身を包んで、包んだほうを動かす）
+  const headSel = '.sf-pillar h2,.sf-section>h2,.sf-identity>h2,.sf-online h2,.sf-concerns h2,.sf-seo h2,.sf-statement .sf-st-body';
+  function wrapHeads() {
+    page.querySelectorAll(headSel).forEach(h => {
+      if (h.querySelector(':scope > .sm-h')) return;
+      const s = document.createElement('span'); s.className = 'sm-h';
+      while (h.firstChild) s.appendChild(h.firstChild);
+      h.appendChild(s);
     });
   }
-  prepareHeadings();
-  page.querySelectorAll('video').forEach(v=>v.addEventListener('play',()=>{if(matchMedia('(prefers-reduced-motion:reduce)').matches)v.pause();}));
-  const drawing = page.querySelector('.motion-drawing');
-  const paths = drawing ? [...drawing.querySelectorAll('path')] : [];
-  paths.forEach(p => { const length = p.getTotalLength(); p.style.strokeDasharray = length; });
-  if (!window.gsap || !window.ScrollTrigger) return; // Static, readable fallback
-  gsap.registerPlugin(ScrollTrigger);
-  const mm = gsap.matchMedia();
-  mm.add({ active:'(prefers-reduced-motion: no-preference)', calm:'(prefers-reduced-motion: reduce)', desktop:'(min-width:768px)' }, ctx => {
-    const {active, desktop} = ctx.conditions;
-    const headings = [...page.querySelectorAll(headingSelector)];
-    if (!active) {
-      headings.forEach(h => h.classList.remove('motion-pending','motion-play'));
-      paths.forEach(p => p.style.strokeDashoffset = '0');
-      page.querySelectorAll('video').forEach(v => v.pause());
-      return;
-    }
-    function reveal(h){h.classList.remove('motion-pending');h.classList.add('motion-play');seen.add(h);observer.unobserve(h);}
-    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
-      if (entry.isIntersecting) reveal(entry.target);
-    }), {rootMargin:'-25% 0px'});
-    function catchSkipped(){headings.forEach(h=>{if(h.classList.contains('motion-pending')&&h.getClientRects().length&&h.getBoundingClientRect().top<innerHeight*.75)reveal(h);});}
-    addEventListener('scroll',catchSkipped,{passive:true});
-    // 検索エンジンの描画のような縦長の画面（スクロールしない）では何も隠さない
-    const tall = innerHeight > 1400;
-    headings.forEach(h => {
-      // Initial-screen headings and headings already passed are never hidden.
-      if (tall || seen.has(h) || h.getBoundingClientRect().top < innerHeight*.75) {seen.add(h); return;}
-      h.classList.add('motion-pending'); observer.observe(h);
-    });
-    const depths = [.25,1,.5,.8,.5,1];
-    const cards = [...page.querySelectorAll('.motion-card')];
-    cards.forEach((card,i) => {
-      const group = card.closest('[data-motion-group]') || card.parentElement;
-      const depth = Number(card.dataset.depth || depths[i%depths.length]);
-      if (desktop) gsap.fromTo(card,{'--motion-y':'0px'},{'--motion-y':()=>-card.offsetHeight*depth+'px',ease:'none',scrollTrigger:{trigger:group,start:'top bottom',end:'bottom top',scrub:3,invalidateOnRefresh:true}});
-      const photo = card.querySelector('.motion-photo');
-      const photoDepth = [.25,-.5,.8,-1,.5,-.25][i%6];
-      if (photo) gsap.fromTo(photo,{yPercent:(desktop ? 8 : 2)*photoDepth},{yPercent:(desktop ? -8 : -2)*photoDepth,ease:'none',scrollTrigger:{trigger:group,start:'top bottom',end:'bottom top',scrub:3,invalidateOnRefresh:true}});
-    });
-    // Explicit opt-in; products, finished hair, treatments and skin never enter this list.
-    page.querySelectorAll('[data-store-color]').forEach(photo => {
-      const frame = photo.closest('.motion-frame') || photo;
-      gsap.fromTo(photo,{filter:'grayscale(1)'},{filter:'grayscale(0)',ease:'power1.out',scrollTrigger:{trigger:frame,start:'top 75%',end:'15% 50%',scrub:true,invalidateOnRefresh:true}});
-    });
-    const stage = page.querySelector('[data-motion-stage]');
-    const stagePhoto = stage && stage.querySelector('.motion-stage-photo');
-    let exitTween;
-    if (stagePhoto) {
-      function settle(expand, immediate=false) {
-        if (exitTween) exitTween.kill();
-        exitTween = gsap.to(stagePhoto,{scale:expand ? innerWidth/stagePhoto.clientWidth : 1,opacity:expand ? 0 : 1,duration:immediate ? 0 : .6,ease:'power1.out',overwrite:true});
-      }
-      const pin = ScrollTrigger.create({trigger:stage,start:'center center',end:()=>'+='+innerHeight*.5,pin:true,pinSpacing:true,anticipatePin:1,invalidateOnRefresh:true,
-        onLeave:()=>settle(true),onEnterBack:()=>settle(false),onLeaveBack:()=>settle(false),onRefresh:self=>settle(self.progress===1,true)});
+  wrapHeads();
 
-    }
-    let drawObserver;
-    if (drawing && !seen.has(drawing) && !tall) {
-      gsap.set(drawing,{opacity:0}); paths.forEach(p => gsap.set(p,{strokeDashoffset:p.getTotalLength()}));
-      drawObserver = new IntersectionObserver(entries => entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        seen.add(drawing); drawObserver.disconnect();
-        // Observer fires later: register tweens in the media context for cleanup.
-        ctx.add(()=>{gsap.to(drawing,{opacity:1,duration:1.3,ease:'power1.out'});gsap.to(paths,{strokeDashoffset:0,duration:2.5,delay:.1,ease:'power1.inOut'});});
-      }),{rootMargin:'-25% 0px'});
-      drawObserver.observe(drawing);
-    }
-    return () => {if(exitTween)exitTween.kill();if(stagePhoto)gsap.set(stagePhoto,{clearProps:'transform,opacity'});observer.disconnect();removeEventListener('scroll',catchSkipped);if(drawObserver)drawObserver.disconnect();headings.forEach(h=>h.classList.remove('motion-pending','motion-play'));};
+  // 待たせるもの（最初の画面より下だけ）
+  const waits = [];
+  const hold = (el, kind) => { if (!el || tall || !below(el)) return; if (kind === 'seam') el.classList.add('sm-k', 'sm-k-' + el.dataset.smKind); else el.classList.add('sm-wait'); waits.push([el, kind]); };
+  page.querySelectorAll('.sm-h').forEach(el => {
+    el.classList.add(el.closest('.sf-pillar') ? 'sm-rise' : el.closest('.sf-statement') ? 'sm-trace' : 'sm-weave');
+    hold(el, 'h');
   });
-  // Image and font readiness, details toggles and five-language changes remeasure.
-  let refreshFrame;
-  const refresh = () => {cancelAnimationFrame(refreshFrame);refreshFrame=requestAnimationFrame(()=>ScrollTrigger.refresh());};
-  page.querySelectorAll('img').forEach(img=>{if(!img.complete)img.addEventListener('load',refresh,{once:true});});
-  if(document.fonts)document.fonts.ready.then(refresh);
-  page.querySelectorAll('details').forEach(d=>d.addEventListener('toggle',refresh));
-  addEventListener('seam:langchange',()=>setTimeout(()=>{prepareHeadings();refresh();},50));
-  addEventListener('load',refresh,{once:true});
+  pillars.forEach(el => hold(el, 'seam'));
+  page.querySelectorAll('.sm-curtain').forEach(el => hold(el, 'c'));
+  if (label) { hold(label, 'label'); if (label.classList.contains('sm-wait')) mark.classList.add('sm-wait'); }
+
+  function play(el, kind) {
+    if (kind === 'seam') { el.classList.add('sm-open'); return; }
+    if (kind === 'label') sew(el);
+    el.classList.remove('sm-wait'); el.classList.add('sm-go');
+    if (kind === 'h') setTimeout(() => el.classList.add('sm-done'), 1700);
+  }
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return; io.unobserve(e.target);
+    const w = waits.find(x => x[0] === e.target); if (w) play(w[0], w[1]);
+  }), {rootMargin: '0px 0px -12% 0px'});
+  waits.forEach(([el]) => io.observe(el));
+  // 速く飛ばしたときの取りこぼし
+  function catchUp() { waits.forEach(([el, k]) => { if (!el.classList.contains('sm-go') && !el.classList.contains('sm-open') && el.getBoundingClientRect().top < innerHeight * .9) { io.unobserve(el); play(el, k); } }); }
+
+  // 織りネームを縫う：糸が曲線で降りる → 針が縁を二重に縫い付ける
+  function sew(lab) {
+    const w = lab.offsetWidth, h = lab.offsetHeight, ns = 'http://www.w3.org/2000/svg';
+    if (!w || !h) return;
+    const r = 3, rect = (o) => `M${o} ${o + r} Q${o} ${o} ${o + r} ${o} H${w - o - r} Q${w - o} ${o} ${w - o} ${o + r} V${h - o - r} Q${w - o} ${h - o} ${w - o - r} ${h - o} H${o + r} Q${o} ${h - o} ${o} ${h - o - r} Z`;
+    const tail = `M${w * .5} ${-70} C${w * .5} ${-30} ${w * .1} ${-36} ${2} ${r + 2}`;
+    lab.insertAdjacentHTML('afterbegin', `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false"><defs><mask id="smm1" maskUnits="userSpaceOnUse"><path d="${rect(2)}" stroke="#fff" stroke-width="6" fill="none"/></mask><mask id="smm2" maskUnits="userSpaceOnUse"><path d="${rect(7)}" stroke="#fff" stroke-width="6" fill="none"/></mask></defs><path class="tail" d="${tail}"/><path class="st" d="${rect(2)}" mask="url(#smm1)"/><path class="st st2" d="${rect(7)}" mask="url(#smm2)"/><path class="needle" d="M-7 -1.1 L7 0 L-7 1.1 Z"/></svg>`);
+    const svg = lab.querySelector('svg'), tailP = svg.querySelector('.tail'), m1 = svg.querySelector('#smm1 path'), m2 = svg.querySelector('#smm2 path'), needle = svg.querySelector('.needle');
+    const prep = p => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; return L; };
+    const LT = prep(tailP), L1 = prep(m1), L2 = prep(m2);
+    const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const T0 = performance.now(), dT = 900, d1 = 2400, d2 = 2400, lag = 500;
+    function step(now) {
+      const t = now - T0;
+      const a = Math.min(1, t / dT), b = Math.min(1, Math.max(0, (t - dT) / d1)), c = Math.min(1, Math.max(0, (t - dT - lag) / d2));
+      tailP.style.strokeDashoffset = LT * (1 - ease(a));
+      m1.style.strokeDashoffset = L1 * (1 - ease(b));
+      m2.style.strokeDashoffset = L2 * (1 - ease(c));
+      // 針：糸の先 → 外の縁の先
+      const onTail = b === 0, p = onTail ? tailP.getPointAtLength(LT * ease(a)) : m1.getPointAtLength(L1 * ease(b));
+      const p2 = onTail ? tailP.getPointAtLength(Math.min(LT, LT * ease(a) + 1)) : m1.getPointAtLength(Math.min(L1, L1 * ease(b) + 1));
+      const ang = Math.atan2(p2.y - p.y, p2.x - p.x) * 180 / Math.PI;
+      needle.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${ang})`);
+      needle.style.opacity = b >= 1 ? Math.max(0, 1 - (t - dT - d1) / 500) : 1;
+      if (c < 1 || t < dT + d1 + 500) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+    lab.classList.remove('sm-wait'); lab.classList.add('sm-go');
+    if (mark) setTimeout(() => { mark.classList.remove('sm-wait'); mark.classList.add('sm-go'); }, dT + 900);
+  }
+
+  // スクロールに合わせる：上端の線・写真の内側・扉
+  const inners = [...page.querySelectorAll('.sm-ph .sm-inner')];
+  let tick = false;
+  function frame() {
+    tick = false;
+    const vh = innerHeight, max = document.documentElement.scrollHeight - vh;
+    bar.style.setProperty('--sm-p', max > 0 ? Math.min(1, scrollY / max).toFixed(4) : 0);
+    inners.forEach(el => {
+      const r = el.parentNode.getBoundingClientRect(); if (r.bottom < 0 || r.top > vh) return;
+      const p = (r.top + r.height / 2 - vh / 2) / vh; // -1〜1
+      el.style.setProperty('--sm-y', (p * -r.height * .05).toFixed(1) + 'px');
+    });
+    if (stage) {
+      const r = stage.getBoundingClientRect();
+      // 画面の下 85% に入ってから、真ん中に来るまでで開ききる
+      const o = Math.max(0, Math.min(1, (vh * .85 - r.top) / (vh * .85 - (vh - r.height) / 2)));
+      stage.style.setProperty('--sm-o', tall ? 1 : (o * o * (3 - 2 * o)).toFixed(3));
+    }
+  }
+  const onScroll = () => { if (!tick) { tick = true; requestAnimationFrame(frame); } catchUp(); };
+  addEventListener('scroll', onScroll, {passive: true});
+  addEventListener('resize', onScroll, {passive: true});
+  frame();
+
+  // 言語を切り替えたら、見出しを包み直す（新しい文字は待たせない）
+  addEventListener('seam:langchange', () => setTimeout(() => { wrapHeads(); page.querySelectorAll('.sm-h').forEach(el => { if (!el.classList.contains('sm-wait')) el.classList.add('sm-done'); }); }, 50));
 }
 })();
