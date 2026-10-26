@@ -54,15 +54,10 @@
 .sf-page .sf-pillar .sf-p-img.sm-k-shelf .sm-inner img{filter:brightness(.45) saturate(.8)}
 .sf-page .sf-pillar .sf-p-img.sm-k-shelf.sm-open{clip-path:inset(0 0 0 0)!important;transition:clip-path 1.7s var(--sm-silk)!important}
 .sf-page .sf-pillar .sf-p-img.sm-k-shelf.sm-open .sm-inner img{filter:none;transition:filter 2.6s ease .5s}
-.sf-page .sf-pillar .sf-p-img.sm-k-seam .sm-ph{opacity:0}
-.sf-page .sf-pillar .sf-p-img.sm-k-seam.sm-open .sm-ph{opacity:1;transition:opacity .4s ease 1.9s}
-.sm-jh{position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none;transition:transform 1.5s var(--sm-silk),opacity 1s ease}
-.sm-jh img{width:100%;height:100%;object-fit:cover;display:block}
-.sm-jh.l{clip-path:inset(0 50% 0 0)}.sm-jh.r{clip-path:inset(0 0 0 50%)}
-.sm-k-seam .sm-jh.l{transform:translateX(-18%);opacity:0}.sm-k-seam .sm-jh.r{transform:translateX(18%);opacity:0}
-.sm-k-seam.sm-open .sm-jh{transform:none;opacity:1}
-.sm-k-seam.sm-open .sm-jh{animation:sm-jh-out .5s ease 2.1s forwards}
-@keyframes sm-jh-out{to{opacity:0}}
+.sf-page .sf-pillar .sf-p-img.sm-k-seam{clip-path:inset(0 50% 0 50%)!important}
+.sf-page .sf-pillar .sf-p-img.sm-k-seam .sm-inner img{transform:scale(1.12)!important}
+.sf-page .sf-pillar .sf-p-img.sm-k-seam.sm-open{clip-path:inset(0 0 0 0)!important;transition:clip-path 1.8s var(--sm-silk) .35s!important}
+.sf-page .sf-pillar .sf-p-img.sm-k-seam.sm-open .sm-inner img{transform:scale(1)!important;transition:transform 2.6s var(--sm-ease) .35s!important}
 .sf-page .sf-pillar .sf-p-img.sm-k-ripple{clip-path:circle(0% at 50% 55%)!important}
 .sf-page .sf-pillar .sf-p-img.sm-k-ripple .sm-inner img{transform:scale(1.08)!important;filter:blur(6px)}
 .sf-page .sf-pillar .sf-p-img.sm-k-ripple.sm-open{clip-path:circle(75% at 50% 55%)!important;transition:clip-path 2.6s cubic-bezier(.33,1,.68,1)!important}
@@ -72,8 +67,8 @@
 .sm-k-ripple.sm-open .sm-ring+.sm-ring{animation-delay:.75s}
 @keyframes sm-ring{0%{transform:translate(-50%,-50%) scale(.2);opacity:.9}100%{transform:translate(-50%,-50%) scale(4.2);opacity:0}}
 .sm-thread{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--sm-gold);transform:scaleY(0);transform-origin:50% 0;z-index:2;pointer-events:none}
-.sm-k-seam.sm-open .sm-thread{transform:scaleY(1);transition:transform .9s var(--sm-silk) 1.2s}
-.sm-k-seam.sm-open .sm-thread{animation:sm-jh-out .6s ease 2.3s forwards}
+.sm-k-seam .sm-thread{transform:scaleY(1);transition:transform .8s var(--sm-silk)}
+.sm-k-seam.sm-open .sm-thread{opacity:0;transition:opacity .7s ease 1.4s}
 .sm-ph:after{content:"";position:absolute;top:0;bottom:0;left:-35%;width:22%;z-index:1;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,250,240,.3) 50%,transparent);transform:skewX(-12deg);opacity:0}
 .sm-k-shelf.sm-open .sm-ph:after{animation:sm-pass 2.2s var(--sm-silk) .9s both}
 @keyframes sm-pass{0%{opacity:1;left:-35%}100%{opacity:1;left:125%}}
@@ -87,41 +82,44 @@
 .sf-store .sm-curtain img{transition:transform 1.2s var(--sm-ease)!important}
 .sf-store:hover .sm-curtain img{transform:scale(1.04)!important}
 
-/* 6 窓辺の特等席：左右の景色がスクロールに合わせて寄り、金の縫い目で一枚に繋がる */
-.sm-half{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;pointer-events:none;will-change:transform}
-.sm-half.l{clip-path:inset(0 50% 0 0);transform:translate3d(calc((1 - var(--sm-o,0)) * -24%),0,0)}
-.sm-half.r{clip-path:inset(0 0 0 50%);transform:translate3d(calc((1 - var(--sm-o,0)) * 24%),0,0)}
-.sf-interlude.sm-joining .sf-il-img{opacity:0}
-.sm-seam-v{position:absolute;top:0;bottom:0;left:50%;width:1px;z-index:1;background:var(--sm-gold);transform-origin:50% 0;transform:scaleY(var(--sm-o,0));opacity:calc(1 - max(0, var(--sm-o,0) - .85) * 6.6);pointer-events:none}
-.sf-page .sf-interlude:after{z-index:1}
+/* 6 窓辺の特等席：金の縫い目から扉が左右に開く（スクロールに合わせて） */
+.sm-door{position:absolute;top:0;bottom:0;width:50.5%;z-index:1;background:var(--sm-ink);pointer-events:none;will-change:transform}
+.sm-door.l{left:0;transform:translate3d(calc(var(--sm-o,0)*-100%),0,0)}
+.sm-door.r{right:0;transform:translate3d(calc(var(--sm-o,0)*100%),0,0)}
+.sm-door.l:after,.sm-door.r:after{content:"";position:absolute;top:0;bottom:0;width:1px;background:var(--sm-gold);opacity:calc(1 - var(--sm-o,0)*.6)}
+.sm-door.l:after{right:0}.sm-door.r:after{left:0}
 .sf-page .sf-interlude p{z-index:2}
 
 /* 7 リンクの下線は金で左から縫う */
 .sf-page .sf-p-link{background:linear-gradient(var(--sm-gold),var(--sm-gold)) 0 100%/0 1px no-repeat;transition:background-size .7s var(--sm-ease)}
 .sf-page .sf-p-link:hover,.sf-page .sf-p-link:focus-visible{background-size:100% 1px}
 
-/* 8 足元：オートクチュールのネーム。黒いサテンにアイボリーの SEAM。両端だけを手縫いの × で留める
-   金の糸が曲線で降り → 針が左端を 3 目・右端を 3 目縫う → 文字が織り上がり → サテンの艶が一度だけ通る */
-.sm-label{position:relative;display:inline-block;margin:10px auto 26px;padding:17px 54px 15px;background:linear-gradient(180deg,#1d1a17 0%,#121010 55%,#191613 100%);box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 22px 34px -26px rgba(40,24,10,.7);overflow:visible}
-.sm-label:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,rgba(255,255,255,.022) 0 1px,transparent 1px 2px)}
-.sm-label:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 30%,rgba(255,248,232,.13) 48%,rgba(255,248,232,.04) 56%,transparent 70%);background-size:300% 100%;background-position:120% 0;opacity:0}
-.sm-label.sm-shine:after{animation:sm-satin 2.8s var(--sm-silk) both}
-@keyframes sm-satin{0%{opacity:1;background-position:120% 0}100%{opacity:1;background-position:-20% 0}}
-.sf-footer .sm-label b{display:block;position:relative;margin:0;padding-left:.46em;font:500 25px/1 "Cormorant Garamond",Georgia,"Times New Roman",serif!important;letter-spacing:.46em;color:#EFE6D6}
+/* 8 足元：オートクチュールの織りネーム。金の糸が曲線を描いて降り、針がネームの縁を二重に縫い付け、SEAM が締まる */
+.sm-label{position:relative;display:inline-block;padding:26px 52px 20px;margin:6px auto 22px;background:#FBF7F1;box-shadow:0 1px 0 rgba(90,62,30,.06),0 18px 30px -24px rgba(90,62,30,.45)}
+.sm-label:before{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(150,120,80,.035) 0 1px,transparent 1px 3px)}
 .sm-label svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
-.sm-label .tail{fill:none;stroke:#B8935A;stroke-width:.8;vector-effect:non-scaling-stroke}
-.sm-label .x{fill:none;stroke:#D8C29A;stroke-width:1.1;stroke-linecap:round;vector-effect:non-scaling-stroke;opacity:0;transition:opacity .25s ease}
-.sm-label .x.on{opacity:1}
-.sm-label .needle{fill:#C9A46A}
-.sf-footer .sm-label b.sm-wait{clip-path:inset(0 0 100% 0);opacity:.0}
-.sf-footer .sm-label b.sm-go{clip-path:inset(-20% 0 -20% 0);opacity:1;transition:clip-path 1.6s var(--sm-silk),opacity .8s ease}
+.sm-label .st{fill:none;stroke:#A8834A;stroke-width:1;stroke-dasharray:5 4;stroke-linecap:round;vector-effect:non-scaling-stroke}
+.sm-label .st2{stroke-width:.6;stroke-dasharray:2 5;opacity:.7}
+.sm-label .tail{fill:none;stroke:#A8834A;stroke-width:.8;vector-effect:non-scaling-stroke}
+.sm-label .needle{fill:#8C6B3A}
+.sm-label.sm-wait .needle{opacity:0}
+.sm-label b{position:relative;display:block}
+/* ロゴそのもの：細いセリフの大文字に、金箔のような微かな濃淡。上下に髪の毛ほどの金の線 */
+.sf-footer .sm-label b{font:400 30px/1 "Cormorant Garamond","Didot","Bodoni 72",Georgia,serif!important;letter-spacing:.5em;padding-left:.5em;background:linear-gradient(100deg,#6E5228 0%,#A8844A 30%,#D9BE86 48%,#A8844A 64%,#5E4522 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.sf-footer .sm-label b:before,.sf-footer .sm-label b:after{content:"";position:absolute;left:50%;width:46px;height:1px;margin-left:-23px;background:linear-gradient(90deg,transparent,#B8935A,transparent)}
+.sf-footer .sm-label b:before{top:-9px}.sf-footer .sm-label b:after{bottom:-9px}
+.sf-footer .sm-label b.sm-wait{letter-spacing:.9em;opacity:0}
+.sf-footer .sm-label b.sm-go{letter-spacing:.5em;opacity:1;transition:letter-spacing 2.6s var(--sm-ease),opacity 1.8s ease}
+.sm-label-sub{display:block;margin-top:21px;font:500 9px/1.4 "Cormorant Garamond",Georgia,serif;letter-spacing:.38em;padding-left:.38em;color:#8f7344}
+.sm-label.sm-wait .sm-label-sub{opacity:0}
+.sm-label.sm-go .sm-label-sub{opacity:1;transition:opacity 1.4s ease 2.6s}
 
 @media(prefers-reduced-motion:reduce){
- .sm-progress,.sm-sheen,.sm-thread,.sm-ring,.sm-half,.sm-seam-v,.sm-jh{display:none!important}.sf-interlude.sm-joining .sf-il-img{opacity:1!important}.sf-page .sf-pillar .sf-p-img.sm-k-seam .sm-ph{opacity:1!important}
+ .sm-progress,.sm-sheen,.sm-thread,.sm-door,.sm-ring{display:none!important}
  .sf-page .sf-hero-photo.sm-breathe,.sf-page .hc-rule.sm-sew{animation:none!important;transform:none!important}
  .sm-h,.sm-h.sm-wait{clip-path:none!important;transform:none!important;filter:none!important;opacity:1!important;letter-spacing:inherit!important}
  .sf-page .sf-pillar .sf-p-img.sm-k{clip-path:none!important}
  .sm-ph .sm-inner,.sm-ph .sm-inner img{transform:none!important;filter:none!important}
  .sf-store .sm-curtain.sm-wait{clip-path:none}
- .sf-footer .sm-label b.sm-wait{clip-path:none;opacity:1}.sm-label .needle{display:none}.sm-label .x{opacity:1}
+ .sf-footer b.sm-wait{letter-spacing:.22em;opacity:1}.sm-label .needle{display:none}
 }

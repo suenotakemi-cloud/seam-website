@@ -25,10 +25,7 @@ function init() {
     ph.className = 'sm-ph'; inner.className = 'sm-inner';
     img.before(ph); ph.appendChild(inner); inner.appendChild(img);
     box.dataset.smKind = kinds[i % 3];
-    if (box.dataset.smKind === 'seam') {
-      ['l', 'r'].forEach(k => { const h = document.createElement('span'), im = document.createElement('img'); h.className = 'sm-jh ' + k; h.setAttribute('aria-hidden', 'true'); im.alt = ''; im.src = img.currentSrc || img.src; h.appendChild(im); box.appendChild(h); });
-      box.insertAdjacentHTML('beforeend', '<i class="sm-thread" aria-hidden="true"></i>');
-    }
+    if (box.dataset.smKind === 'seam') box.insertAdjacentHTML('beforeend', '<i class="sm-thread" aria-hidden="true"></i>');
     if (box.dataset.smKind === 'ripple') box.insertAdjacentHTML('beforeend', '<i class="sm-ring" aria-hidden="true"></i><i class="sm-ring" aria-hidden="true"></i>');
   });
   // 店舗のカード：写真を幕の器に
@@ -38,23 +35,19 @@ function init() {
     const c = document.createElement('span'); c.className = 'sm-curtain'; c.style.setProperty('--sm-d', (i % 6) * .09 + 's');
     img.before(c); c.appendChild(img);
   });
-  // 窓辺の特等席：左右の景色が寄って繋がる
-  const stage = page.querySelector('.sf-interlude'), stageImg = stage && stage.querySelector('.sf-il-img');
-  if (stage && stageImg && !stage.querySelector('.sm-half')) {
-    const bg = getComputedStyle(stageImg).backgroundImage;
-    ['l', 'r'].forEach(k => { const h = document.createElement('i'); h.className = 'sm-half ' + k; h.setAttribute('aria-hidden', 'true'); h.style.backgroundImage = bg; stage.prepend(h); });
-    stage.insertAdjacentHTML('afterbegin', '<i class="sm-seam-v" aria-hidden="true"></i>');
-  }
+  // 窓辺の特等席：扉
+  const stage = page.querySelector('.sf-interlude');
+  if (stage && !stage.querySelector('.sm-door')) stage.insertAdjacentHTML('afterbegin', '<i class="sm-door l" aria-hidden="true"></i><i class="sm-door r" aria-hidden="true"></i>');
   // 足元：オートクチュールの織りネーム（SEAM をネームで包み、縁を縫う）
   const foot = page.querySelector('.sf-footer'), mark = foot && foot.querySelector('b');
   let label = foot && foot.querySelector('.sm-label');
   if (mark && !label) {
     label = document.createElement('span'); label.className = 'sm-label';
     mark.before(label); label.appendChild(mark);
+    label.insertAdjacentHTML('beforeend', '<span class="sm-label-sub" aria-hidden="true">SALON HAIR CARE · HAIR SALON · HEAD SPA</span>');
   }
 
-  if (calm) { if (stage) stage.style.setProperty('--sm-o', 1); return; } // 動かさない。すべて見えたまま
-  if (stage) stage.classList.add('sm-joining');
+  if (calm) return; // 動かさない。すべて見えたまま
 
   // ヒーロー：その日最初の来訪は hero-intro（紡ぐ）が受け持つ。2 回目からは写真がゆっくり息をし、金の線が縫われる
   if (document.documentElement.dataset.hi !== '1') {
@@ -102,41 +95,35 @@ function init() {
   // 速く飛ばしたときの取りこぼし
   function catchUp() { waits.forEach(([el, k]) => { if (!el.classList.contains('sm-go') && !el.classList.contains('sm-open') && el.getBoundingClientRect().top < innerHeight * .9) { io.unobserve(el); play(el, k); } }); }
 
-  // ネームを縫う：糸が曲線で降りる → 針が両端を手縫いの × で 3 目ずつ留める → 文字が織り上がる → 艶が通る
+  // 織りネームを縫う：糸が曲線で降りる → 針が縁を二重に縫い付ける
   function sew(lab) {
-    const w = lab.offsetWidth, h = lab.offsetHeight;
+    const w = lab.offsetWidth, h = lab.offsetHeight, ns = 'http://www.w3.org/2000/svg';
     if (!w || !h) return;
-    const xs = [], m = 16, s = 4.2, rows = [h * .28, h * .5, h * .72];
-    [m, w - m].forEach(cx => rows.forEach(cy => xs.push([cx, cy])));
-    const tail = `M${w * .5} -64 C${w * .48} -24 ${w * .12} -34 ${m} ${rows[0]}`;
-    lab.insertAdjacentHTML('afterbegin', `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false"><path class="tail" d="${tail}"/>${xs.map(([x, y]) => `<path class="x" d="M${x - s} ${y - s} L${x + s} ${y + s} M${x + s} ${y - s} L${x - s} ${y + s}"/>`).join('')}<path class="needle" d="M-8 -1 L8 0 L-8 1 Z"/></svg>`);
-    const svg = lab.querySelector('svg'), tailP = svg.querySelector('.tail'), crosses = [...svg.querySelectorAll('.x')], needle = svg.querySelector('.needle');
-    const LT = tailP.getTotalLength(); tailP.style.strokeDasharray = LT; tailP.style.strokeDashoffset = LT;
+    const r = 3, rect = (o) => `M${o} ${o + r} Q${o} ${o} ${o + r} ${o} H${w - o - r} Q${w - o} ${o} ${w - o} ${o + r} V${h - o - r} Q${w - o} ${h - o} ${w - o - r} ${h - o} H${o + r} Q${o} ${h - o} ${o} ${h - o - r} Z`;
+    const tail = `M${w * .5} ${-70} C${w * .5} ${-30} ${w * .1} ${-36} ${2} ${r + 2}`;
+    lab.insertAdjacentHTML('afterbegin', `<svg viewBox="0 0 ${w} ${h}" aria-hidden="true" focusable="false"><defs><mask id="smm1" maskUnits="userSpaceOnUse"><path d="${rect(2)}" stroke="#fff" stroke-width="6" fill="none"/></mask><mask id="smm2" maskUnits="userSpaceOnUse"><path d="${rect(7)}" stroke="#fff" stroke-width="6" fill="none"/></mask></defs><path class="tail" d="${tail}"/><path class="st" d="${rect(2)}" mask="url(#smm1)"/><path class="st st2" d="${rect(7)}" mask="url(#smm2)"/><path class="needle" d="M-7 -1.1 L7 0 L-7 1.1 Z"/></svg>`);
+    const svg = lab.querySelector('svg'), tailP = svg.querySelector('.tail'), m1 = svg.querySelector('#smm1 path'), m2 = svg.querySelector('#smm2 path'), needle = svg.querySelector('.needle');
+    const prep = p => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; return L; };
+    const LT = prep(tailP), L1 = prep(m1), L2 = prep(m2);
     const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    const T0 = performance.now(), dT = 1000, per = 260; // 1 目 0.26 秒
-    const pts = xs; let done = -1;
+    const T0 = performance.now(), dT = 900, d1 = 2400, d2 = 2400, lag = 500;
     function step(now) {
       const t = now - T0;
-      if (t < dT) {
-        const a = ease(t / dT), p = tailP.getPointAtLength(LT * a), q = tailP.getPointAtLength(Math.min(LT, LT * a + 1));
-        tailP.style.strokeDashoffset = LT * (1 - a);
-        needle.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI})`);
-      } else {
-        tailP.style.strokeDashoffset = 0;
-        const k = Math.min(pts.length - 1, Math.floor((t - dT) / per)), f = ((t - dT) % per) / per;
-        while (done < k) { done++; crosses[done].classList.add('on'); }
-        const [x, y] = pts[k], nx = k < pts.length - 1 ? pts[k + 1] : pts[k];
-        const dip = Math.sin(f * Math.PI) * 7; // 針が布をくぐる
-        needle.setAttribute('transform', `translate(${x + (nx[0] - x) * ease(f)} ${y + (nx[1] - y) * ease(f) - dip}) rotate(${k === 2 ? 0 : 90})`);
-        needle.style.opacity = t > dT + per * pts.length ? Math.max(0, 1 - (t - dT - per * pts.length) / 400) : 1;
-      }
-      if (t < dT + per * pts.length + 450) requestAnimationFrame(step);
-      else crosses.forEach(c => c.classList.add('on'));
+      const a = Math.min(1, t / dT), b = Math.min(1, Math.max(0, (t - dT) / d1)), c = Math.min(1, Math.max(0, (t - dT - lag) / d2));
+      tailP.style.strokeDashoffset = LT * (1 - ease(a));
+      m1.style.strokeDashoffset = L1 * (1 - ease(b));
+      m2.style.strokeDashoffset = L2 * (1 - ease(c));
+      // 針：糸の先 → 外の縁の先
+      const onTail = b === 0, p = onTail ? tailP.getPointAtLength(LT * ease(a)) : m1.getPointAtLength(L1 * ease(b));
+      const p2 = onTail ? tailP.getPointAtLength(Math.min(LT, LT * ease(a) + 1)) : m1.getPointAtLength(Math.min(L1, L1 * ease(b) + 1));
+      const ang = Math.atan2(p2.y - p.y, p2.x - p.x) * 180 / Math.PI;
+      needle.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${ang})`);
+      needle.style.opacity = b >= 1 ? Math.max(0, 1 - (t - dT - d1) / 500) : 1;
+      if (c < 1 || t < dT + d1 + 500) requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
     lab.classList.remove('sm-wait'); lab.classList.add('sm-go');
-    setTimeout(() => { if (mark) { mark.classList.remove('sm-wait'); mark.classList.add('sm-go'); } }, dT + per * 3);
-    setTimeout(() => lab.classList.add('sm-shine'), dT + per * pts.length + 600);
+    if (mark) setTimeout(() => { mark.classList.remove('sm-wait'); mark.classList.add('sm-go'); }, dT + 900);
   }
 
   // スクロールに合わせる：上端の線・写真の内側・扉
