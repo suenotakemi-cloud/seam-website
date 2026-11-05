@@ -42,6 +42,19 @@ PAY = {"stylist": (300000, "MONTH", "FULL_TIME"), "spanist": (300000, "MONTH", "
        "assistant": (250000, "MONTH", "FULL_TIME"), "shopmanager": (250000, "MONTH", "FULL_TIME"),
        "parttime": (1500, "HOUR", "PART_TIME")}
 
+
+def hours_ja(h):
+    """openingHours の配列（["Mo-Fr 10:00-20:00", ...]）を 月〜金 10:00〜20:00 ／ ... に"""
+    if isinstance(h, str):
+        return h
+    k = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+    out = []
+    for item in h:
+        days, t = item.split(" ", 1)
+        d = "毎日" if days == "Mo-Su" else "・".join("〜".join("月火水木金土日"[k.index(x)] for x in part.split("-")) for part in days.split(","))
+        out.append(f"{d} {t.replace('-', '〜')}")
+    return " ／ ".join(out)
+
 def nap(slug):
     t = open(f"store-{slug}.html", encoding="utf-8").read()
     g = json.loads(re.search(r'<script type="application/ld\+json">(.*?)</script>', t, re.S).group(1))
@@ -195,7 +208,7 @@ def page_html(role, slug):
                if role != "parttime" else
                "交通費支給（月1万5千円まで）／ ヘアケア・美容用品のスタッフ割引あり")
     lic = QUAL[role]
-    hours = f'<div class="rc-spec-row"><div class="rc-spec-key">営業時間</div><div class="rc-spec-val">{N["hours"]}</div></div>' if N["hours"] else ""
+    hours = f'<div class="rc-spec-row"><div class="rc-spec-key">営業時間</div><div class="rc-spec-val">{hours_ja(N["hours"])}</div></div>' if N["hours"] else ""
 
     return f"""<!DOCTYPE html>
 <html lang="ja">
