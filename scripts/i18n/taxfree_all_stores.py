@@ -21,37 +21,37 @@ SLUGS = ['ginza', 'omotesando', 'osaka', 'nagoya', 'fukuoka', 'sapporo', 'utsuno
 TF = {
  'ja': {
    'tfName': '免税対応 <span class="text-[11px] text-charcoal/55">Tax-Free</span>',
-   'tfDesc': '海外からお越しのお客様は 5,000円以上のお買い上げでパスポートをご提示いただくと免税になります',
+   'tfDesc': '海外からお越しのお客様は 1日5,000円（税抜）以上のお買い上げで免税の対象です お会計は税込で パスポートをお持ちください 出国時に空港・港の税関で確認を受けたあと 消費税分が返金されます',
    'tfQ': '<span class="shrink-0 text-gold">Q</span><span>免税で購入できますか？</span>',
-   'tfA': 'はい。SEAMは全店舗が免税対応店です。5,000円以上お買い上げの海外からのお客様は、パスポートをご提示いただくと免税になります。手続きはレジにて承ります。<br><span class="text-charcoal/60">Tax-free shopping is available at all SEAM stores for purchases of ¥5,000 or more. Please show your passport at the register.</span>',
+   'tfA': 'はい。SEAMは全店舗が免税対応店です。2026年11月1日から 国の免税は返金（リファンド）方式に変わりました お会計は税込で パスポートをご提示ください 同じ店舗で1日5,000円（税抜）以上お買い上げの海外からのお客様は 購入日から90日以内に出国し 空港・港の税関で確認を受けたあと 消費税分が返金されます 日本で使ったお品物は返金の対象外です<br><span class="text-charcoal/60">Tax refund for visitors at all SEAM stores on purchases of ¥5,000 or more (before tax). Pay the tax-inclusive price and bring your passport; the tax is refunded after customs checks at departure.</span>',
    'metaSuffix': '／5,000円以上で免税',
  },
  'en': {
    'tfName': 'Tax-Free Shopping',
-   'tfDesc': 'Visitors from overseas can shop tax-free on purchases of ¥5,000 or more, with a passport',
+   'tfDesc': 'Visitors from overseas qualify for a tax refund on purchases of ¥5,000 or more (before tax) in a day. Pay the tax-inclusive price and bring your passport; the consumption tax is refunded after customs checks at departure.',
    'tfQ': '<span class="shrink-0 text-gold">Q</span><span>Can I shop tax-free?</span>',
-   'tfA': 'Yes. Every SEAM store is a tax-free shop. Visitors from overseas spending ¥5,000 or more can shop tax-free by showing a passport. We handle the paperwork at the register.',
+   'tfA': 'Yes. Every SEAM store is a tax-free shop. From November 1, 2026, Japan uses a refund system: you pay the price including tax and show your passport, and the consumption tax is refunded after customs at the airport or port confirms you are taking the goods out of Japan. Purchases must total ¥5,000 or more (before tax) at one store in one day, and you must leave Japan within 90 days. Items used in Japan are not eligible.',
    'metaSuffix': ' Tax-free from ¥5,000.',
  },
  'zh': {
    'tfName': '支持免税 <span class="text-[11px] text-charcoal/55">Tax-Free</span>',
-   'tfDesc': '海外顾客单次消费满5,000日元 出示护照即可免税',
+   'tfDesc': '海外顾客同一门店当日消费满5,000日元（不含税）可享退税 结账时按含税价支付并出示护照 出境时经海关确认后退还消费税',
    'tfQ': '<span class="shrink-0 text-gold">Q</span><span>可以免税购买吗？</span>',
-   'tfA': '是的。SEAM全部门店均为免税店。海外顾客单次消费满5,000日元，出示护照即可免税。手续在收银台办理。<br><span class="text-charcoal/60">Tax-free shopping is available at all SEAM stores for purchases of ¥5,000 or more. Please show your passport at the register.</span>',
+   'tfA': '是的。SEAM全部门店均为免税店。自2026年11月1日起，日本免税改为退税方式：结账时按含税价支付并出示护照，出境时在机场或港口经海关确认后退还消费税。需同一门店当日消费满5,000日元（不含税），并在购买日起90天内出境。在日本使用过的商品不能退税。<br><span class="text-charcoal/60">Tax refund for visitors at all SEAM stores on purchases of ¥5,000 or more (before tax). Pay the tax-inclusive price and bring your passport; the tax is refunded after customs checks at departure.</span>',
    'metaSuffix': '｜满5,000日元免税',
  },
  'tw': {
    'tfName': '支援免稅 <span class="text-[11px] text-charcoal/55">Tax-Free</span>',
-   'tfDesc': '海外顧客單次消費滿5,000日圓 出示護照即可免稅',
+   'tfDesc': '海外顧客同一門市當日消費滿5,000日圓（未稅）可享退稅 結帳時以含稅價支付並出示護照 出境時經海關確認後退還消費稅',
    'tfQ': '<span class="shrink-0 text-gold">Q</span><span>可以免稅購買嗎？</span>',
-   'tfA': '是的。SEAM全部門市皆為免稅店。海外顧客單次消費滿5,000日圓，出示護照即可免稅。手續於收銀台辦理。<br><span class="text-charcoal/60">Tax-free shopping is available at all SEAM stores for purchases of ¥5,000 or more. Please show your passport at the register.</span>',
+   'tfA': '是的。SEAM全部門市皆為免稅店。自2026年11月1日起，日本免稅改為退稅方式：結帳時以含稅價支付並出示護照，出境時在機場或港口經海關確認後退還消費稅。需同一門市當日消費滿5,000日圓（未稅），並於購買日起90天內出境。在日本使用過的商品無法退稅。<br><span class="text-charcoal/60">Tax refund for visitors at all SEAM stores on purchases of ¥5,000 or more (before tax). Pay the tax-inclusive price and bring your passport; the tax is refunded after customs checks at departure.</span>',
    'metaSuffix': '｜滿5,000日圓免稅',
  },
  'ko': {
    'tfName': '면세 가능 <span class="text-[11px] text-charcoal/55">Tax-Free</span>',
-   'tfDesc': '해외에서 오신 고객은 5,000엔 이상 구매 시 여권을 제시하면 면세가 됩니다',
+   'tfDesc': '해외에서 오신 고객은 같은 매장에서 하루 5,000엔(세전) 이상 구매 시 환급 대상입니다 세금 포함 가격으로 결제하고 여권을 제시하시면 출국 시 세관 확인 후 소비세가 환급됩니다',
    'tfQ': '<span class="shrink-0 text-gold">Q</span><span>면세로 구매할 수 있나요?</span>',
-   'tfA': '네. SEAM은 전 매장이 면세점입니다. 5,000엔 이상 구매하시는 해외 고객은 여권을 제시하시면 면세가 됩니다. 수속은 계산대에서 도와드립니다.<br><span class="text-charcoal/60">Tax-free shopping is available at all SEAM stores for purchases of ¥5,000 or more. Please show your passport at the register.</span>',
+   'tfA': '네. SEAM은 전 매장이 면세점입니다. 2026년 11월 1일부터 일본의 면세는 환급 방식으로 바뀌었습니다. 세금 포함 가격으로 결제하고 여권을 제시하시면, 출국 시 공항·항만 세관 확인 후 소비세가 환급됩니다. 같은 매장에서 하루 5,000엔(세전) 이상 구매, 구매일로부터 90일 이내 출국이 조건입니다. 일본에서 사용한 상품은 환급 대상이 아닙니다.<br><span class="text-charcoal/60">Tax refund for visitors at all SEAM stores on purchases of ¥5,000 or more (before tax). Pay the tax-inclusive price and bring your passport; the tax is refunded after customs checks at departure.</span>',
    'metaSuffix': '｜5,000엔 이상 면세',
  },
 }
@@ -66,7 +66,7 @@ FAQ = ('<details class="py-3.5 group"><summary class="flex items-start gap-3 cur
 
 JSONLD_Q = {"@type": "Question", "name": "免税で購入できますか",
             "acceptedAnswer": {"@type": "Answer",
-             "text": "はい SEAMは全店舗が免税対応店です 5,000円以上お買い上げの海外からのお客様はパスポートをご提示いただくと免税になります 手続きはレジにて承ります"}}
+             "text": "はい SEAMは全店舗が免税対応店です 2026年11月1日から 国の免税は返金（リファンド）方式に変わりました お会計は税込で パスポートをご提示ください 同じ店舗で1日5,000円（税抜）以上お買い上げの海外からのお客様は 購入日から90日以内に出国し 空港・港の税関で確認を受けたあと 消費税分が返金されます 日本で使ったお品物は返金の対象外です"}}
 
 def patch(slug):
     f = f'store-{slug}.html'

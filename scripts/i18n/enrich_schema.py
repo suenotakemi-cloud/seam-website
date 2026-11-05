@@ -19,7 +19,7 @@ TAXFREE = {
     "@type": "LocationFeatureSpecification",
     "name": "Tax-free shopping",
     "value": True,
-    "description": "Tax-free from 5,000 yen for visitors from overseas. Please show your passport."
+    "description": "Tax refund from ¥5,000 (before tax) for visitors from overseas. Bring your passport; the tax is refunded after customs checks at departure."
 }
 # オーナー確認済み(2026-08-01)「クレジットカード・交通系・QR どれも使えます」。
 # 現金は言われていないので書かない。paymentAccepted は「使える手段の列挙」であって
