@@ -18,6 +18,8 @@ const INT = (v) => { const n = parseInt(String(v == null ? '' : v).replace(/[,�
 // 出力日を YYYY/MM/DD に揃える（「2026/9/1」と「2026/11/10」を文字で比べても新しい方が分かるように）
 const DAY = (v) => { const m = String(v == null ? '' : v).trim().match(/^(\d{4})[\/\-.年](\d{1,2})[\/\-.月](\d{1,2})/); return m ? m[1] + '/' + m[2].padStart(2, '0') + '/' + m[3].padStart(2, '0') : (STR(v, 20) || null); };
 const STR = (v, max) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, max);
+// ロケーションは全角英数（Ａ１－０１）を半角に揃え、英字は大文字に（並び順の A>B>C>S と、同じ棚の合算がずれないように）
+const LOC = (v) => { let s = STR(v, 60); try { s = s.normalize('NFKC'); } catch (e) { /* */ } return s.replace(/[‐－―−]/g, '-').toUpperCase(); };
 
 // 表示の並び: 在庫数と引当数がともに 0 の行は出さない → 在庫数のある行が先 → ロケーション先頭の文字 A > B > C > S（その他は後ろ）→ ロケーション昇順
 //   同じロケーションが複数行（ロット・賞味期限違い）のときは、数を足して 1 行にする
@@ -25,7 +27,7 @@ const LOC_RANK = { A: 0, B: 1, C: 2, S: 3 };
 export function stockView(rows) {
   const by = new Map();
   for (const r of rows) {
-    const k = r.location || '';
+    const k = LOC(r.location);
     const cur = by.get(k) || { location: k, qty: 0, allocated: 0 };
     cur.qty += r.qty || 0; cur.allocated += r.allocated || 0;
     by.set(k, cur);
@@ -62,7 +64,7 @@ export async function onRequestGet({ request, env, data }) {
 export async function onRequestPost(context) {
   const { request, env, data } = context;
   const acct = data.account.id;
-  if (data.readonly) return json({ ok: false, reason: 'readonly' }, 403);
+  if (data.readonly) return json({ ok: false, reason: 'readonly', message: '読み取り専用のキーでは在庫を取り込めません' }, 403);
   const b = await request.json().catch(() => null);
   if (!b || typeof b !== 'object') return json({ ok: false, reason: 'bad_json' }, 400);
 
@@ -79,12 +81,14 @@ export async function onRequestPost(context) {
   if (!BATCH_RE.test(batch) || Date.parse(batch.slice(0, 24)) > Date.now() + 10 * 60 * 1000) return json({ ok: false, reason: 'bad_batch', message: '取り込みの番号が正しくありません。もう一度ファイルを選び直してください' }, 400); // 先の日時の番号は受けない（それより後の取り込みが全部はじかれるため）
 
   if (b.action === 'rows') {
+    const curR = await meta(env, acct);
+    if (curR && curR.batch && batch <= curR.batch) return json({ ok: false, reason: 'closed_batch', message: 'この取り込みはもう終わっています。もう一度ファイルを選び直してください' }, 409); // 表示中・それより前の取り込みに行を足さない（数が倍になる）
     const rows = Array.isArray(b.rows) ? b.rows.slice(0, 2000).filter((r) => r && typeof r === 'object') : [];
     // 商品コード → JAN（12 桁は頭 0 で 13 桁・14 桁の頭 0 は外す）。JAN の形（13 桁か 8 桁）でないものは照合しない
     const items = rows.map((r) => {
       const code = STR(r.code, 40);
       const digits = /^[0-9０-９\s-]+$/.test(code) ? cleanJan(code) : '';
-      return { jan: digits.length === 13 || digits.length === 8 ? digits : '', location: STR(r.location, 60), qty: INT(r.qty), allocated: INT(r.allocated), exported_on: DAY(r.exported_on), row_no: INT(r.row_no) || null };
+      return { jan: digits.length === 13 || digits.length === 8 ? digits : '', location: LOC(r.location), qty: INT(r.qty), allocated: INT(r.allocated), exported_on: DAY(r.exported_on), row_no: INT(r.row_no) || null };
     });
     const jans = Array.from(new Set(items.map((i) => i.jan).filter(Boolean)));
     const known = new Set();
@@ -102,6 +106,7 @@ export async function onRequestPost(context) {
 
   if (b.action === 'finish') {
     const cur = await meta(env, acct);
+    if (cur && cur.batch === batch) return json({ ok: true, info: publicInfo(cur), again: true }); // 同じ取り込みの「切り替え」が 2 回届いた（返事が届かず送り直した など）→ 何もしない（表示中の在庫を消さない）
     if (cur && cur.batch && cur.batch > batch) { // この取り込みより後に始めた取り込みが先に終わっている
       await env.DB.prepare('DELETE FROM pim_stock WHERE account_id=? AND batch=?').bind(acct, batch).run();
       return json({ ok: false, reason: 'superseded', message: 'この取り込みの途中で、別の人がもっと新しい在庫 CSV を取り込みました。そちらを表示しています', info: publicInfo(cur) }, 409);

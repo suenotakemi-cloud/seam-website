@@ -255,6 +255,7 @@ export async function onRequestPost(context) {
           // 写真が 0 枚なので実体の削除は要らない（1 商品 5 回ずつ消しに行くと、大きな取り込みで D1 の回数上限に当たって途中で止まっていた）
           stmts.push(env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=?').bind(acct, r.jan));
           stmts.push(env.DB.prepare('DELETE FROM pim_products WHERE account_id=? AND jan=?').bind(acct, r.jan));
+          stmts.push(env.DB.prepare('DELETE FROM pim_stock WHERE account_id=? AND jan=?').bind(acct, r.jan)); // 在庫の行も（消した商品の在庫が数に残らないように）
           deleted++; touched.push(r.jan);
         } else {
           let prev = null; try { prev = JSON.parse(r.before); } catch (e) { prev = null; }
