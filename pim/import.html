@@ -1056,7 +1056,8 @@
   }
   // 見出しの名前で列を探す（並びが変わっても読めるように）。見出しが無ければ決まった位置（3・4・6・7・8 列目）
   function stockColumns(head) {
-    var h = head.map(function (x) { return N.toHalf(String(x || '')).replace(/\s/g, ''); });
+    // 半角カナ（ﾛｹｰｼｮﾝ・商品ｺｰﾄﾞ）・全角英数の見出しも同じ名前として読む
+    var h = head.map(function (x) { var t = String(x || ''); try { t = t.normalize('NFKC'); } catch (e) { /* */ } return N.toHalf(t).replace(/\s/g, ''); });
     var find = function (re, not) { for (var i = 0; i < h.length; i++) if (re.test(h[i]) && !(not && not.test(h[i]))) return i; return -1; };
     return { code: find(/商品コード|JAN/i), location: find(/ロケーション/, /在庫/), qty: find(/在庫数/), allocated: find(/引当/), exported: find(/出力日/) };
   }
