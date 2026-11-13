@@ -228,6 +228,14 @@ export async function ensureSchema(env) {
     `CREATE INDEX IF NOT EXISTS idx_pim_issues_status ON pim_issues(account_id, status, ts)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_issues_jan ON pim_issues(account_id, jan)`,
     `CREATE TABLE IF NOT EXISTS pim_blobs (key TEXT PRIMARY KEY, data BLOB NOT NULL, bytes INTEGER, created_at TEXT NOT NULL)`,
+    // 倉庫の在庫実績（CSV を取り込むたびに、そのディーラーの分をまるごと置き換える。batch = どの取り込みの行か）
+    `CREATE TABLE IF NOT EXISTS pim_stock (
+      account_id INTEGER NOT NULL, batch TEXT NOT NULL, jan TEXT NOT NULL, location TEXT NOT NULL DEFAULT '',
+      qty INTEGER NOT NULL DEFAULT 0, allocated INTEGER NOT NULL DEFAULT 0, exported_on TEXT, row_no INTEGER)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_stock_jan ON pim_stock(account_id, batch, jan)`,
+    `CREATE TABLE IF NOT EXISTS pim_stock_meta (
+      account_id INTEGER PRIMARY KEY, batch TEXT, imported_at TEXT, imported_by TEXT, exported_on TEXT, filename TEXT, encoding TEXT,
+      total INTEGER, matched INTEGER, unmatched INTEGER, not_jan INTEGER, unregistered INTEGER, products INTEGER)`,
   ];
   await env.DB.batch(stmts.map((s) => env.DB.prepare(s)));
   // 既に作られた表への列追加（あればエラーになるだけで無害）

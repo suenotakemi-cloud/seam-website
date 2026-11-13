@@ -114,6 +114,13 @@
   .cv-pair figcaption{font-size:12px;padding:8px 10px;border-top:1px solid var(--line);line-height:1.6}
   .cvth{width:40px;height:40px;object-fit:contain;border:1px solid var(--line);border-radius:4px;background:#fff;vertical-align:middle}
   @media (max-width:760px){.ie-wrap,.cv-pair{grid-template-columns:1fr}}
+  .stockbox{border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:#FBF7F1;margin:6px 0 4px}
+  .stockbox h4{margin:0 0 4px;font-size:12.5px;font-weight:600;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+  .stockbox h4 small{font-weight:400;color:var(--char);font-size:11px}
+  .stockbox table{font-size:13px}
+  .stockbox td{padding:3px 6px;border-bottom:1px dashed var(--line)}
+  .stockbox td.q{text-align:right;font-weight:600;white-space:nowrap}
+  .stockbox .none{color:var(--char);font-size:12.5px}
   .err{color:var(--ng);font-size:12.5px;min-height:1em}
   .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;z-index:60;opacity:0;transition:.2s;pointer-events:none}
   .toast.show{opacity:1}
@@ -147,6 +154,7 @@
     <button data-tab="import" class="on">取り込み</button>
     <button data-tab="issues">注意（JAN重複）<span class="n" id="issueN" hidden>0</span></button>
     <button data-tab="products">商品一覧</button>
+    <button data-tab="stock">在庫</button>
     <button data-tab="images">画像まとめ登録</button>
     <button data-tab="export">出力</button>
     <button data-tab="progress">進捗</button>
@@ -317,6 +325,30 @@
       <div class="row" style="margin-top:10px"><button class="btn solid" id="btnImgRun" disabled>登録を開始</button><span class="muted" id="imgState"></span></div>
       <div class="prog" id="imgProg" hidden><i></i></div>
       <div class="log" id="imgLog" hidden></div>
+    </div>
+  </section>
+
+  <!-- ══════ 在庫（倉庫の在庫実績 CSV）══════ -->
+  <section class="pane" id="pane-stock">
+    <div class="card">
+      <h2>倉庫の在庫実績 CSV を取り込む</h2>
+      <p class="muted">倉庫から出した「在庫実績」の CSV（商品規格１・商品名・ロケーション・商品コード・賞味期限・ロット・賞味期限別ロケ別在庫数・引当数・出力日）をそのまま入れてください。
+        <b>取り込むたびに前回分と入れ替わります</b>（いちばん新しい CSV だけが出ます）。商品コードが JAN の行を、登録済みの商品と突き合わせます。文字コードは UTF-8 でも Shift-JIS でも読めます。</p>
+      <div class="drop" id="stockDrop">
+        <p>在庫実績 CSV をここにドロップ、または</p>
+        <button class="btn" id="btnStockPick">CSV を選ぶ</button>
+        <input type="file" id="stockIn" accept=".csv,text/csv,.txt" hidden>
+      </div>
+      <div class="prog" id="stockProg" hidden><i></i></div>
+      <p class="muted" id="stockState" style="margin-top:8px"></p>
+      <div class="kpis" id="stockKpis"></div>
+      <p class="muted" id="stockNote"></p>
+    </div>
+    <div class="card">
+      <h2>JAN で在庫を見る</h2>
+      <div class="row"><input id="stockQ" inputmode="numeric" placeholder="JAN（13 桁）" style="border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:220px"><button class="btn sm" id="btnStockQ">見る</button></div>
+      <div id="stockQBox" style="margin-top:8px"></div>
+      <p class="muted" style="margin-top:8px">同じ在庫は、スマホで JAN を読んだときの商品画面と、PC の商品一覧の「編集」にも出ます。在庫数・引当数がともに 0 の行は出さず、在庫のある行が先、ロケーションの先頭が A → B → C → S の順です（同じロケーションの行は数を足して 1 行）。</p>
     </div>
   </section>
 
@@ -513,6 +545,7 @@
   <div class="card">
     <h2 id="edTitle">商品を直す</h2>
     <p class="muted" id="edSub"></p>
+    <div id="edStock"></div>
     <div class="opts">
       <div style="grid-column:1/-1"><label>商品名（必須）</label><input id="edName"></div>
       <div><label>JAN</label><input id="edJan" readonly style="background:#F5F1EA"></div>
@@ -630,7 +663,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function (x) { x.classList.toggle('on', x === b); });
       Array.prototype.forEach.call(document.querySelectorAll('.pane'), function (p) { p.classList.toggle('on', p.id === 'pane-' + b.getAttribute('data-tab')); });
       var t = b.getAttribute('data-tab');
-      if (t === 'issues') loadIssues(); if (t === 'series') loadSeries(); if (t === 'push') loadPush(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'settings') { loadStaff(); loadDict(); loadAccount(); } if (t === 'import') loadInbox();
+      if (t === 'issues') loadIssues(); if (t === 'series') loadSeries(); if (t === 'push') loadPush(); if (t === 'products') loadProducts(0); if (t === 'import') loadHistory(); if (t === 'progress') loadStats(); if (t === 'review') loadReview(0); if (t === 'stock') loadStockInfo(); if (t === 'settings') { loadStaff(); loadDict(); loadAccount(); } if (t === 'import') loadInbox();
     });
   });
 
@@ -996,6 +1029,113 @@
     it.edited = true;
   }
 
+  // ── 在庫（倉庫の在庫実績 CSV）──
+  //   読み取りはここ（文字コード判定・列の判定）、JAN の照合と保存はサーバ（/api/pim/stock）
+  function fmtStockInfo(info) {
+    if (!info) return '';
+    return (info.exported_on ? esc(info.exported_on) + ' 出力の在庫' : '在庫') + '（' + esc(String(info.imported_at || '').slice(0, 16).replace('T', ' ')) + ' 取り込み' + (info.imported_by ? '・' + esc(info.imported_by) : '') + '）';
+  }
+  function stockHtml(r) {
+    if (!r || !r.ok) return '';
+    var head = '<h4>在庫（ロケーション・在庫数）<small>' + (r.info ? fmtStockInfo(r.info) : '在庫 CSV はまだ取り込まれていません') + '</small></h4>';
+    if (!r.rows || !r.rows.length) return '<div class="stockbox">' + head + '<div class="none">在庫情報なし</div></div>';
+    return '<div class="stockbox">' + head + '<table>' + r.rows.map(function (x) { return '<tr><td>' + esc(x.location || '（ロケーションなし）') + '</td><td class="q">' + esc(String(x.qty)) + '</td></tr>'; }).join('') + '</table></div>';
+  }
+  // still() … 返事が来たときに、まだその商品を見ているか（別の商品を開いていたら出さない）
+  function loadStockInto(el, jan, still) {
+    api('stock?jan=' + encodeURIComponent(jan)).then(function (r) { if (!still || still()) el.innerHTML = stockHtml(r); }).catch(function () { /* 在庫が出なくても他の操作は止めない */ });
+  }
+  function loadStockInfo() {
+    api('stock').then(function (r) { if (r.ok) showStockInfo(r.info, null); }).catch(handleErr);
+  }
+  function showStockInfo(info, extra) {
+    if (!info) { $('stockKpis').innerHTML = ''; $('stockNote').textContent = 'まだ在庫 CSV を取り込んでいません。'; return; }
+    $('stockKpis').innerHTML = [['読んだ行', info.total, ''], ['合致（登録済みの商品）', info.matched, 'ok'], ['不一致', info.unmatched, info.unmatched ? 'ng' : ''], ['在庫が出る商品', info.products, 'ok']]
+      .map(function (k) { return '<div class="kpi ' + k[2] + '"><div class="l">' + k[0] + '</div><div class="n">' + (k[1] == null ? 0 : k[1]) + '</div></div>'; }).join('');
+    $('stockNote').innerHTML = '合致 ' + (info.matched || 0) + ' 件／不一致 ' + (info.unmatched || 0) + ' 件（うち 商品コードが JAN の形でない ' + (info.not_jan || 0) + ' 件・JAN だが商品登録システムに未登録 ' + (info.unregistered || 0) + ' 件。不一致の行は取り込んでいません）<br>いま表示している在庫: ' + fmtStockInfo(info) + (info.filename ? '・' + esc(info.filename) : '') + (info.encoding ? '（' + esc(info.encoding) + '）' : '') + (extra ? '<br>' + extra : '');
+  }
+  // 見出しの名前で列を探す（並びが変わっても読めるように）。見出しが無ければ決まった位置（3・4・6・7・8 列目）
+  function stockColumns(head) {
+    var h = head.map(function (x) { return N.toHalf(String(x || '')).replace(/\s/g, ''); });
+    var find = function (re, not) { for (var i = 0; i < h.length; i++) if (re.test(h[i]) && !(not && not.test(h[i]))) return i; return -1; };
+    return { code: find(/商品コード|JAN/i), location: find(/ロケーション/, /在庫/), qty: find(/在庫数/), allocated: find(/引当/), exported: find(/出力日/) };
+  }
+  function readStockFile(file) {
+    if (!file) return;
+    if (STOCK.busy) { toast('いま取り込み中です。終わってから入れてください', true); return; }
+    $('stockState').textContent = '読み込んでいます…'; $('stockKpis').innerHTML = ''; $('stockNote').textContent = '';
+    var reader = new FileReader();
+    reader.onerror = function () { $('stockState').textContent = 'ファイルを読めませんでした'; };
+    reader.onload = function () {
+      var dec = N.decodeBytes(reader.result), rows = N.parseCsv(dec.text, ',').filter(function (r) { return r.some(function (v) { return String(v).trim() !== ''; }); });
+      if (!rows.length) { $('stockState').textContent = '中身が空です'; return; }
+      var hi = -1; for (var i = 0; i < Math.min(5, rows.length); i++) { var c = stockColumns(rows[i]); if (c.code >= 0 && (c.qty >= 0 || c.location >= 0)) { hi = i; break; } }
+      // ちがう CSV（商品マスタなど）で在庫を消さないよう、見出しがあれば「商品コード・ロケーション・在庫数」が名前で全部見つかるときだけ読む。
+      //   見出しが無いときは 8 列の形のときだけ、決まった位置（3・4・6・7・8 列目）で読む（確認あり）
+      var NOT_STOCK = '<span class="err">在庫実績 CSV の形ではないようです（「商品コード」「ロケーション」「在庫数」の列が見つかりません）。倉庫から出した在庫実績の CSV をそのまま入れてください。前回の在庫のままです</span>';
+      var col;
+      if (hi >= 0) {
+        col = stockColumns(rows[hi]);
+        if (col.code < 0 || col.location < 0 || col.qty < 0) { $('stockState').innerHTML = NOT_STOCK; return; }
+      } else {
+        if (rows[0].length !== 8) { $('stockState').innerHTML = NOT_STOCK; return; }
+        if (!confirm('見出しの行がありません。在庫実績 CSV の並び（3 列目=ロケーション・4 列目=商品コード・6 列目=在庫数・7 列目=引当数・8 列目=出力日）として読みます。よろしいですか？')) { $('stockState').textContent = 'やめました（前回の在庫のままです）'; return; }
+        col = { code: 3, location: 2, qty: 5, allocated: 6, exported: 7 };
+      }
+      var body = rows.slice(hi + 1);
+      if (!body.length) { $('stockState').textContent = '見出しの行だけで、在庫の行がありません'; return; }
+      var items = body.map(function (r, k) { var g = function (ix) { return ix >= 0 && r[ix] != null ? String(r[ix]).trim() : ''; }; return { row_no: hi + 2 + k, code: g(col.code), location: g(col.location), qty: g(col.qty), allocated: g(col.allocated), exported_on: g(col.exported) }; });
+      uploadStock(file, dec.encoding, items);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+  var STOCK = { busy: false };
+  function uploadStock(file, encoding, items) {
+    STOCK.busy = true; $('btnStockPick').disabled = true;
+    var prog = $('stockProg'); prog.hidden = false; prog.firstElementChild.style.width = '5%';
+    $('stockState').textContent = items.length + ' 行を取り込んでいます…（' + encoding + '）';
+    var acc = { matched: 0, not_jan: 0, unregistered: 0 }, batch = null, chain;
+    chain = api('stock', { method: 'POST', body: { action: 'begin' } }).then(function (r) {
+      if (!r.ok) throw new Error(r.message || r.reason);
+      batch = r.batch;
+      var c = Promise.resolve();
+      for (var i = 0; i < items.length; i += 2000) {
+        (function (part, upto) { c = c.then(function () { return api('stock', { method: 'POST', body: { action: 'rows', batch: batch, rows: part } }).then(function (j) {
+          if (!j.ok) throw new Error(j.message || j.reason);
+          acc.matched += j.matched; acc.not_jan += j.not_jan; acc.unregistered += j.unregistered;
+          prog.firstElementChild.style.width = Math.round(upto / items.length * 90 + 5) + '%';
+        }); }); })(items.slice(i, i + 2000), Math.min(items.length, i + 2000));
+      }
+      return c;
+    }).then(function () {
+      var allowEmpty = false;
+      if (!acc.matched) {
+        // 1 件も合わない: ちがう CSV か、商品をまだ取り込んでいない。そのまま置き換えると全商品が「在庫情報なし」になる
+        if (!confirm('登録済みの商品と合う行が 1 件もありませんでした（読んだ ' + items.length + ' 行）。\n在庫実績の CSV で合っていますか？\n「OK」で前回の在庫を消して入れ替えます。「キャンセル」で前回の在庫のままにします。')) return { ok: false, message: 'やめました（合う行が 0 件。前回の在庫のままです）' };
+        allowEmpty = true;
+      }
+      return api('stock', { method: 'POST', body: { action: 'finish', batch: batch, total: items.length, not_jan: acc.not_jan, unregistered: acc.unregistered, filename: file.name, encoding: encoding, allow_empty: allowEmpty } });
+    }).then(function (r) {
+      if (!r.ok) { $('stockState').innerHTML = '<span class="err">' + esc(r.message || '取り込めませんでした') + '</span>'; if (r.info) showStockInfo(r.info, null); return; }
+      prog.firstElementChild.style.width = '100%';
+      $('stockState').textContent = '取り込みました。合致 ' + r.info.matched + ' 件／不一致 ' + r.info.unmatched + ' 件（前回の在庫と入れ替えました）';
+      showStockInfo(r.info, null); toast('在庫を取り込みました（合致 ' + r.info.matched + ' 件）');
+    });
+    chain.catch(function (e) { $('stockState').innerHTML = '<span class="err">取り込めませんでした（前回の在庫のままです）: ' + esc((e && e.message) || String(e)) + '</span>'; if (e && (e.auth || e.staff)) handleErr(e); })
+      .then(function () { STOCK.busy = false; $('btnStockPick').disabled = false; setTimeout(function () { prog.hidden = true; }, 600); });
+  }
+  (function () {
+    var d = $('stockDrop');
+    ['dragenter', 'dragover'].forEach(function (ev) { d.addEventListener(ev, function (e) { e.preventDefault(); d.classList.add('over'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { d.addEventListener(ev, function (e) { e.preventDefault(); d.classList.remove('over'); }); });
+    d.addEventListener('drop', function (e) { if (e.dataTransfer.files[0]) readStockFile(e.dataTransfer.files[0]); });
+    $('btnStockPick').addEventListener('click', function () { $('stockIn').click(); });
+    $('stockIn').addEventListener('change', function () { var f = this.files[0]; this.value = ''; readStockFile(f); });
+    var look = function () { var j = $('stockQ').value.trim(); if (!/\d/.test(j)) { $('stockQBox').innerHTML = '<p class="err">JAN（数字）を入れてください</p>'; return; } var want = j; loadStockInto($('stockQBox'), j, function () { return $('stockQ').value.trim() === want; }); };
+    $('btnStockQ').addEventListener('click', look);
+    $('stockQ').addEventListener('keydown', function (e) { if (e.key === 'Enter') look(); });
+  })();
+
   // ── 商品を直す（共通の画面）──
   //   opts.local … 保存前の取り込み行（サーバに送らず、done(fields) で返す）。それ以外は PUT で保存して done(product)
   var ED = { opts: null, product: null };
@@ -1015,6 +1155,8 @@
     $('edErr').textContent = ''; $('edSave').disabled = false;
     ED.priceSig = priceSig(); // 価格の欄を触ったかどうかを、保存のときに見分ける
     $('edPhoto').hidden = !!ED.opts.local; $('edPhoto').href = './index.html?jan=' + encodeURIComponent(p.jan) + '&back=list';
+    $('edStock').innerHTML = '';
+    if (!ED.opts.local) loadStockInto($('edStock'), p.jan, function () { return ED.product && ED.product.jan === p.jan && !$('edDlg').hidden; });
     $('edDlg').hidden = false; setTimeout(function () { $('edName').focus(); }, 0);
   }
   function priceSig() { return [$('edPrice').value.trim(), $('edTax').value, $('edRate').value.trim()].join('|'); }
