@@ -195,3 +195,18 @@ CREATE INDEX IF NOT EXISTS idx_pim_changes_acct ON pim_changes(account_id, id);
 
 -- ▼ 画像の実体（R2 "PRODUCT_IMAGES" が未設定のときだけ使う暫定置き場。読みは R2 → ここ の順）
 CREATE TABLE IF NOT EXISTS pim_blobs (key TEXT PRIMARY KEY, data BLOB NOT NULL, bytes INTEGER, created_at TEXT NOT NULL);
+
+-- 倉庫の在庫実績（2026-11 追加。PC「在庫」タブで CSV を取り込む）
+--   取り込むたびに、そのディーラーの分をまるごと置き換える。行は batch（どの取り込みか）付きで入れ、最後に pim_stock_meta.batch を切り替えてから古い batch を消す
+--   （途中で失敗しても、画面には前回の在庫が出たまま）。商品登録システムに登録済みの JAN の行だけを残す
+CREATE TABLE IF NOT EXISTS pim_stock (
+  account_id INTEGER NOT NULL, batch TEXT NOT NULL, jan TEXT NOT NULL, location TEXT NOT NULL DEFAULT '',
+  qty INTEGER NOT NULL DEFAULT 0,          -- ロット・賞味期限別ロケ別在庫数
+  allocated INTEGER NOT NULL DEFAULT 0,    -- 引当数
+  exported_on TEXT,                        -- CSV の出力日（例 2026/11/10）
+  row_no INTEGER);                         -- CSV の何行目か
+CREATE INDEX IF NOT EXISTS idx_pim_stock_jan ON pim_stock(account_id, batch, jan);
+-- いま表示している取り込み（batch）と、その結果（読んだ行・合致・不一致の内訳）
+CREATE TABLE IF NOT EXISTS pim_stock_meta (
+  account_id INTEGER PRIMARY KEY, batch TEXT, imported_at TEXT, imported_by TEXT, exported_on TEXT, filename TEXT, encoding TEXT,
+  total INTEGER, matched INTEGER, unmatched INTEGER, not_jan INTEGER, unregistered INTEGER, products INTEGER);
