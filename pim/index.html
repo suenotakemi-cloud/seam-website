@@ -952,7 +952,9 @@
   }
   // 倉庫の在庫（PC「在庫」タブで取り込んだ在庫実績 CSV）: ロケーションと在庫数。在庫のある行が先・ロケーションの先頭 A→B→C→S（並べるのはサーバ）
   function renderStock(jan) {
-    var box = $('pStock'); box.hidden = true; box.innerHTML = '';
+    var box = $('pStock');
+    if (box.getAttribute('data-jan') !== jan) { box.hidden = true; box.innerHTML = ''; } // 同じ商品の開き直し（保存のあと など）は、新しい在庫が来るまで今のまま出しておく（画面がガタつかないように）
+    box.setAttribute('data-jan', jan);
     api('stock?jan=' + encodeURIComponent(jan)).then(function (r) {
       if (!r || !r.ok || !state.product || state.product.jan !== jan) return; // その間に別の商品を開いた
       var info = r.info, when = info ? (info.exported_on ? esc(info.exported_on) + ' 出力' : '') + '（' + esc(String(info.imported_at || '').slice(5, 16).replace('T', ' ')) + ' 取り込み）' : '在庫 CSV 未取り込み';

@@ -144,6 +144,7 @@ export async function onRequestDelete(context) {
   await env.DB.batch([
     env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=?').bind(acct, jan),
     env.DB.prepare('DELETE FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan),
+    env.DB.prepare('DELETE FROM pim_stock WHERE account_id=? AND jan=?').bind(acct, jan), // 倉庫の在庫の行も（次の在庫 CSV までの間に、消した商品の在庫が残らないように）
   ]);
   // その商品の写真を見本にしていたら外す（消えた写真を指したまま残さない）
   try { await env.DB.prepare('DELETE FROM pim_refs WHERE account_id=? AND jan=?').bind(acct, jan).run(); } catch (e) { /* 表が無い古い DB */ }
