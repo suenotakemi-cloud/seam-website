@@ -402,7 +402,7 @@
     //   ・欄の頭の " だけを「囲み」の始まりとみなす（欄の途中の " は文字のまま）
     //   ・囲みの中の " は、次が区切り・改行・終わりのときだけ囲みの終わり。"" は " 1 文字。それ以外（"3rd のように文字が続く）は文字の "
     //   （2026-11-16: 在庫実績 CSV の「5 Star ｺｰﾄﾞﾚｽｼﾆｱ "3rd Edition」の行から後ろが 1 つの欄に飲み込まれ、16,045 行中 28 行しか読めなかった）
-    var rows = [], row = [], cur = '', inQ = false, atStart = true, i = 0, L = text.length;
+    var rows = [], row = [], cur = '', inQ = false, atStart = true, i = 0, L = text.length, line = 1, rowLine = 1;
     // 囲みの中の " が、ここで囲みを閉じるものか
     //   ・後ろが（空白を挟んで）区切り・改行・終わり → 閉じる（"abc" ,"def" のような空白入りも従来どおり）
     //   ・後ろに文字が続く（"3rd Edition / "ab"cd）→ 同じ行の中に、ちゃんと閉じる " があるなら文字の "（商品名の中の " ）。
@@ -412,6 +412,7 @@
       if (isEnd(q + 1)) return true;
       for (var j = q + 1; j < L && text[j] !== '\n'; j++) {
         if (text[j] !== '"') continue;
+        if (text[j - 1] === d) return true; // 次の欄の始まりの " に着いた → この欄には閉じる " が無い（1,"Special" Shampoo,"3" の Special"）
         if (text[j + 1] === '"') { j++; continue; }
         if (isEnd(j + 1)) return false; // この行の後ろに正しく閉じる " がある → いまのは文字の "
       }
@@ -425,15 +426,16 @@
           if (closesHere(i)) { inQ = false; i++; continue; }
           cur += '"'; i++; continue; // 閉じていない " は文字として残す
         }
+        if (c === '\n') line++;
         cur += c; i++; continue;
       }
-      if (c === '"' && atStart) { inQ = true; atStart = false; i++; continue; }
+      if (c === '"' && atStart) { inQ = true; atStart = false; cur = ''; i++; continue; } // 「, "b,c"」のように前に空白があっても囲みとして読む
       if (c === d) { row.push(cur); cur = ''; atStart = true; i++; continue; }
       if (c === '\r') { i++; continue; }
-      if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; atStart = true; i++; continue; }
-      cur += c; atStart = false; i++;
+      if (c === '\n') { row.push(cur); row.line = rowLine; rows.push(row); row = []; cur = ''; atStart = true; line++; rowLine = line; i++; continue; }
+      cur += c; if (!(atStart && (c === ' ' || c === '\t'))) atStart = false; i++;
     }
-    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    if (cur !== '' || row.length) { row.push(cur); row.line = rowLine; rows.push(row); } // row.line … その行がファイルの何行目から始まるか（画面で「○行目」と言うため）
     // 空行を落とす
     rows = rows.filter(function (r) { return r.some(function (v) { return String(v).trim() !== ''; }); });
     return rows;
