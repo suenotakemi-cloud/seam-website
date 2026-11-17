@@ -1098,17 +1098,19 @@
         var body = rows.slice(hi + 1);
         if (!body.length) { stop('見出しの行だけで、在庫の行がありません'); return; }
         // 読み取りが崩れていないか（引用符の対応が取れず、後ろの行が 1 つの欄に飲み込まれた など）。崩れていたら取り込まずに、どの行かを出す
-        var lineOf = function (ix) { var n = 1; for (var q = 0; q < ix; q++) n += 1 + rows[q].reduce(function (a, v) { return a + (String(v).match(/\n/g) || []).length; }, 0); return n; };
+        //   崩れた行の見分け方: 1 つの欄に 3 行以上入っている（後ろの行を飲み込んだ）、または 商品コード・在庫数の列まで届かない短い行（最後の 3 行＝合計行などは除く）
+        var lineOf = function (ix) { return rows[ix].line || (ix + 1); };
+        var needCols = Math.max(col.code, col.location, col.qty) + 1;
         var brokeAt = -1;
         for (var bi = 0; bi < body.length && brokeAt < 0; bi++) {
           var br = body[bi];
-          if (br.some(function (v) { v = String(v); return v.length > 400 || (v.match(/\n/g) || []).length > 2; })) brokeAt = hi + 1 + bi; // 1 つの欄に何行も入っている＝後ろの行を飲み込んだ
+          if (br.some(function (v) { return (String(v).match(/\n/g) || []).length > 2; }) || (br.length < needCols && bi < body.length - 3)) brokeAt = hi + 1 + bi;
         }
         if (brokeAt >= 0) {
           var ln = lineOf(brokeAt), first = rows[brokeAt].join(',').replace(/\s+/g, ' ').slice(0, 90);
           stop('<span class="err">ファイルの ' + ln + ' 行目付近で読み取りが崩れました（引用符 " の対応が取れていない行などがあります）。取り込んでいません（前回の在庫のままです）。<br>その行: ' + esc(first) + '…</span>'); return;
         }
-        var items = body.map(function (r, k) { var g = function (ix) { return ix >= 0 && r[ix] != null ? String(r[ix]).trim() : ''; }; return { row_no: hi + 2 + k, code: g(col.code), location: g(col.location), qty: g(col.qty), allocated: g(col.allocated), exported_on: g(col.exported) }; });
+        var items = body.map(function (r, k) { var g = function (ix) { return ix >= 0 && r[ix] != null ? String(r[ix]).trim() : ''; }; return { row_no: r.line || (hi + 2 + k), code: g(col.code), location: g(col.location), qty: g(col.qty), allocated: g(col.allocated), exported_on: g(col.exported) }; });
         // Excel で開いて保存し直すと JAN が「4.90127E+12」になり、下の桁が失われる（直せない）。取り込む前に止めて元の CSV を頼む
         var expo = items.filter(function (it) { return /^\d(\.\d+)?E\+?\d+$/i.test(it.code); }).length;
         if (expo) { stop('<span class="err">商品コードが「' + esc(items.filter(function (it) { return /E\+?\d+$/i.test(it.code); })[0].code) + '」のような指数の形になっている行が ' + expo + ' 行あります。Excel で開いて保存し直すとこうなり、JAN の下の桁が失われます。倉庫から出した元の CSV を、Excel で開かずにそのまま入れてください（前回の在庫のままです）</span>'); return; }

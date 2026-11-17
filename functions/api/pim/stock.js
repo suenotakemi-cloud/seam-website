@@ -103,9 +103,9 @@ export async function onRequestPost(context) {
     for (let i = 0; i < keep.length; i += 100) {
       await env.DB.batch(keep.slice(i, i + 100).map((r) => env.DB.prepare('INSERT INTO pim_stock(account_id, batch, jan, location, qty, allocated, exported_on, row_no) VALUES(?,?,?,?,?,?,?,?)').bind(acct, batch, r.jan, r.location, r.qty, r.allocated, r.exported_on, r.row_no)));
     }
-    // 合わなかった行の例（画面で「どの行が合わなかったか」を見せる。1 回に 50 件まで）
+    // 合わなかった行の例（画面で「どの行が合わなかったか」を見せる。画面は先頭 100 件を残すので、1 回に 100 件まで返す）
     const samples = [];
-    for (let k = 0; k < items.length && samples.length < 50; k++) {
+    for (let k = 0; k < items.length && samples.length < 100; k++) {
       const it = items[k];
       if (!it.jan) samples.push({ row_no: it.row_no, code: STR(rows[k].code, 40), reason: 'not_jan' });
       else if (!known.has(it.jan)) samples.push({ row_no: it.row_no, code: STR(rows[k].code, 40), reason: 'unregistered' });
