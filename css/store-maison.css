@@ -90,10 +90,13 @@ body.store-maison .st-logos{margin-top:16px!important;display:grid;grid-template
 body.store-maison .st-logos>a{display:flex;align-items:center;justify-content:center;height:62px;padding:0 8px;border-right:1px solid var(--st-line);border-bottom:1px solid var(--st-line);background:#fff}
 body.store-maison .st-logos img{display:block;width:auto;height:15px;max-width:82%;object-fit:contain}
 /* 目で見た大きさをそろえる：横長の字は低く・2 段組は高く */
-body.store-maison .st-logos>a:nth-child(2) img{height:13px}body.store-maison .st-logos>a:nth-child(5) img{height:16px}
-body.store-maison .st-logos>a:nth-child(3) img,body.store-maison .st-logos>a:nth-child(4) img{height:24px}
-body.store-maison .st-logos>a:nth-child(6) img{height:30px}
-body.store-maison .st-logos>a:nth-child(7) img{height:19px}
+/*   店ごとに並ぶロゴが違う（ケラスターゼは銀座・大阪・名古屋に無い）ので、順番ではなくロゴで決める */
+body.store-maison .st-logos img[src*="/milbon"]{height:13px}body.store-maison .st-logos img[src*="/sublimic"]{height:16px}
+body.store-maison .st-logos img[src*="/kerastase"],body.store-maison .st-logos img[src*="/tokio_inkarami"]{height:24px}
+body.store-maison .st-logos img[src*="/system_professional"]{height:30px}
+body.store-maison .st-logos img[src*="/davines"]{height:19px}
+/*   ロゴが 7 つの店：スマホ（4 列）は空いた 1 マスを白い枠で埋め、広い画面は 7 列にする */
+body.store-maison .st-logos:has(>a:nth-child(7):last-child)::after{content:"";border-right:1px solid var(--st-line);border-bottom:1px solid var(--st-line);background:#fff}
 body.store-maison .st-brandtext{margin-top:14px!important;font-size:12.5px!important;line-height:1.85!important;color:var(--st-muted)!important}
 body.store-maison .st-brandtext b{font-weight:500;color:var(--st-ink)}
 body.store-maison .st-fine{margin-top:8px!important;font-size:12px!important;line-height:1.75!important;color:var(--st-muted)!important}
@@ -138,6 +141,8 @@ body.store-maison footer .wm{color:#fff!important}
   body.store-maison .st-name{padding-top:40px;font-size:36px!important}
   body.store-maison .st-h{font-size:24px!important}
   body.store-maison .st-logos{grid-template-columns:repeat(8,minmax(0,1fr))}
+  body.store-maison .st-logos:has(>a:nth-child(7):last-child){grid-template-columns:repeat(7,minmax(0,1fr))}
+  body.store-maison .st-logos:has(>a:nth-child(7):last-child)::after{display:none}
   .st-serv-card img{aspect-ratio:4/3}
   body.store-maison>section.st-links{padding-left:max(var(--st-gut),calc(50% - 360px))!important;padding-right:max(var(--st-gut),calc(50% - 360px))!important}
 }
