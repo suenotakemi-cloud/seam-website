@@ -398,18 +398,27 @@
   function parseCsv(text, delimiter) {
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
     var d = delimiter || detectDelimiter(text);
-    var rows = [], row = [], cur = '', inQ = false, i = 0, L = text.length;
+    // 引用符の扱いは寛容に（倉庫・メーカーのシステムが出す CSV には、商品名の中の " をエスケープしていないものがある）
+    //   ・欄の頭の " だけを「囲み」の始まりとみなす（欄の途中の " は文字のまま）
+    //   ・囲みの中の " は、次が区切り・改行・終わりのときだけ囲みの終わり。"" は " 1 文字。それ以外（"3rd のように文字が続く）は文字の "
+    //   （2026-11-16: 在庫実績 CSV の「5 Star ｺｰﾄﾞﾚｽｼﾆｱ "3rd Edition」の行から後ろが 1 つの欄に飲み込まれ、16,045 行中 28 行しか読めなかった）
+    var rows = [], row = [], cur = '', inQ = false, atStart = true, i = 0, L = text.length;
     while (i < L) {
       var c = text[i];
       if (inQ) {
-        if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i += 2; continue; } inQ = false; i++; continue; }
+        if (c === '"') {
+          var nx = text[i + 1];
+          if (nx === '"') { cur += '"'; i += 2; continue; }
+          if (nx === undefined || nx === d || nx === '\r' || nx === '\n') { inQ = false; i++; continue; }
+          cur += '"'; i++; continue; // 閉じていない " は文字として残す
+        }
         cur += c; i++; continue;
       }
-      if (c === '"') { inQ = true; i++; continue; }
-      if (c === d) { row.push(cur); cur = ''; i++; continue; }
+      if (c === '"' && atStart) { inQ = true; atStart = false; i++; continue; }
+      if (c === d) { row.push(cur); cur = ''; atStart = true; i++; continue; }
       if (c === '\r') { i++; continue; }
-      if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; i++; continue; }
-      cur += c; i++;
+      if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; atStart = true; i++; continue; }
+      cur += c; atStart = false; i++;
     }
     if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
     // 空行を落とす
