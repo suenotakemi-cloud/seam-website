@@ -209,4 +209,5 @@ CREATE INDEX IF NOT EXISTS idx_pim_stock_jan ON pim_stock(account_id, batch, jan
 -- いま表示している取り込み（batch）と、その結果（読んだ行・合致・不一致の内訳）
 CREATE TABLE IF NOT EXISTS pim_stock_meta (
   account_id INTEGER PRIMARY KEY, batch TEXT, imported_at TEXT, imported_by TEXT, exported_on TEXT, filename TEXT, encoding TEXT,
-  total INTEGER, matched INTEGER, unmatched INTEGER, not_jan INTEGER, unregistered INTEGER, products INTEGER);
+  total INTEGER, matched INTEGER, unmatched INTEGER, not_jan INTEGER, unregistered INTEGER, products INTEGER,
+  samples TEXT);                           -- 合わなかった行の例（先頭 100 件・JSON [{row_no, code, reason}]）。在庫タブで「どの行が合わなかったか」を見せる

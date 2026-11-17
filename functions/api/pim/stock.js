@@ -40,11 +40,13 @@ export function stockView(rows) {
 }
 
 async function meta(env, acct) {
-  return env.DB.prepare('SELECT batch, imported_at, imported_by, exported_on, filename, encoding, total, matched, unmatched, not_jan, unregistered, products FROM pim_stock_meta WHERE account_id=?').bind(acct).first();
+  return env.DB.prepare('SELECT * FROM pim_stock_meta WHERE account_id=?').bind(acct).first();
 }
 function publicInfo(m) {
   if (!m || !m.batch) return null;
-  const o = Object.assign({}, m); delete o.batch; return o;
+  const o = Object.assign({}, m); delete o.batch; delete o.account_id;
+  try { o.samples = o.samples ? JSON.parse(o.samples) : []; } catch (e) { o.samples = []; }
+  return o;
 }
 
 export async function onRequestGet({ request, env, data }) {
@@ -101,7 +103,14 @@ export async function onRequestPost(context) {
     for (let i = 0; i < keep.length; i += 100) {
       await env.DB.batch(keep.slice(i, i + 100).map((r) => env.DB.prepare('INSERT INTO pim_stock(account_id, batch, jan, location, qty, allocated, exported_on, row_no) VALUES(?,?,?,?,?,?,?,?)').bind(acct, batch, r.jan, r.location, r.qty, r.allocated, r.exported_on, r.row_no)));
     }
-    return json({ ok: true, matched: keep.length, not_jan: items.filter((i) => !i.jan).length, unregistered: items.filter((i) => i.jan && !known.has(i.jan)).length });
+    // 合わなかった行の例（画面で「どの行が合わなかったか」を見せる。1 回に 50 件まで）
+    const samples = [];
+    for (let k = 0; k < items.length && samples.length < 50; k++) {
+      const it = items[k];
+      if (!it.jan) samples.push({ row_no: it.row_no, code: STR(rows[k].code, 40), reason: 'not_jan' });
+      else if (!known.has(it.jan)) samples.push({ row_no: it.row_no, code: STR(rows[k].code, 40), reason: 'unregistered' });
+    }
+    return json({ ok: true, matched: keep.length, not_jan: items.filter((i) => !i.jan).length, unregistered: items.filter((i) => i.jan && !known.has(i.jan)).length, samples });
   }
 
   if (b.action === 'finish') {
@@ -116,11 +125,12 @@ export async function onRequestPost(context) {
     // 1 件も合わないのに置き換えると、全商品が「在庫情報なし」になる（ちがう CSV を入れたとき）。画面で確かめてからだけ通す
     if (!matched && !b.allow_empty) return json({ ok: false, reason: 'no_match', message: '登録済みの商品と合う行が 1 件もありませんでした。在庫実績の CSV か確かめてください（前回の在庫のままです）' }, 409);
     const ts = nowIso(), by = userOf(request) || (data.isAdmin ? '運営' : '');
+    const samples = JSON.stringify((Array.isArray(b.samples) ? b.samples : []).filter((x) => x && typeof x === 'object').slice(0, 100).map((x) => ({ row_no: INT(x.row_no) || null, code: STR(x.code, 40), reason: x.reason === 'not_jan' ? 'not_jan' : 'unregistered' })));
     // 2 人が同時に取り込んだら、後から始めた方を残す（先に始めた方が後から終わっても、新しい在庫を古いもので上書きしない）
     const up = await env.DB.batch([
-      env.DB.prepare('INSERT INTO pim_stock_meta(account_id, batch, imported_at, imported_by, exported_on, filename, encoding, total, matched, unmatched, not_jan, unregistered, products) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) ' +
-        'ON CONFLICT(account_id) DO UPDATE SET batch=excluded.batch, imported_at=excluded.imported_at, imported_by=excluded.imported_by, exported_on=excluded.exported_on, filename=excluded.filename, encoding=excluded.encoding, total=excluded.total, matched=excluded.matched, unmatched=excluded.unmatched, not_jan=excluded.not_jan, unregistered=excluded.unregistered, products=excluded.products WHERE pim_stock_meta.batch IS NULL OR excluded.batch > pim_stock_meta.batch')
-        .bind(acct, batch, ts, by || null, (c && c.ex) || DAY(b.exported_on), STR(b.filename, 200) || null, STR(b.encoding, 40) || null, total, matched, total - matched, INT(b.not_jan), INT(b.unregistered), (c && c.p) || 0),
+      env.DB.prepare('INSERT INTO pim_stock_meta(account_id, batch, imported_at, imported_by, exported_on, filename, encoding, total, matched, unmatched, not_jan, unregistered, products, samples) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ' +
+        'ON CONFLICT(account_id) DO UPDATE SET batch=excluded.batch, imported_at=excluded.imported_at, imported_by=excluded.imported_by, exported_on=excluded.exported_on, filename=excluded.filename, encoding=excluded.encoding, total=excluded.total, matched=excluded.matched, unmatched=excluded.unmatched, not_jan=excluded.not_jan, unregistered=excluded.unregistered, products=excluded.products, samples=excluded.samples WHERE pim_stock_meta.batch IS NULL OR excluded.batch > pim_stock_meta.batch')
+        .bind(acct, batch, ts, by || null, (c && c.ex) || DAY(b.exported_on), STR(b.filename, 200) || null, STR(b.encoding, 40) || null, total, matched, total - matched, INT(b.not_jan), INT(b.unregistered), (c && c.p) || 0, samples),
     ]);
     if (!(up[0].meta && up[0].meta.changes)) {
       await env.DB.prepare('DELETE FROM pim_stock WHERE account_id=? AND batch=?').bind(acct, batch).run();

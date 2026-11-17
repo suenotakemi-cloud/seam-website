@@ -252,7 +252,7 @@ export async function ensureSchema(env) {
     'ALTER TABLE pim_accounts ADD COLUMN ec_url TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_key TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_auto INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE pim_products ADD COLUMN ec_push_at TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_status TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_msg TEXT',
     'ALTER TABLE pim_accounts ADD COLUMN ec_status TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_status_at TEXT',
-    'ALTER TABLE pim_products ADD COLUMN ec_jan TEXT']) {
+    'ALTER TABLE pim_products ADD COLUMN ec_jan TEXT', 'ALTER TABLE pim_stock_meta ADD COLUMN samples TEXT']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)').run(); } catch (e) { /* */ }

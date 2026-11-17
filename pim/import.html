@@ -1057,7 +1057,9 @@
     if (!info) { $('stockKpis').innerHTML = ''; $('stockNote').textContent = 'まだ在庫 CSV を取り込んでいません。'; return; }
     $('stockKpis').innerHTML = [['読んだ行', info.total, ''], ['合致（登録済みの商品）', info.matched, 'ok'], ['不一致', info.unmatched, info.unmatched ? 'ng' : ''], ['在庫が出る商品', info.products, 'ok']]
       .map(function (k) { return '<div class="kpi ' + k[2] + '"><div class="l">' + k[0] + '</div><div class="n">' + (k[1] == null ? 0 : k[1]) + '</div></div>'; }).join('');
-    $('stockNote').innerHTML = '合致 ' + (info.matched || 0) + ' 件／不一致 ' + (info.unmatched || 0) + ' 件（うち 商品コードが JAN の形でない ' + (info.not_jan || 0) + ' 件・JAN だが商品登録システムに未登録 ' + (info.unregistered || 0) + ' 件。不一致の行は取り込んでいません）<br>いま表示している在庫: ' + fmtStockInfo(info) + (info.filename ? '・' + esc(info.filename) : '') + (info.encoding ? '（' + esc(info.encoding) + '）' : '') + (extra ? '<br>' + extra : '');
+    $('stockNote').innerHTML = '合致 ' + (info.matched || 0) + ' 件／不一致 ' + (info.unmatched || 0) + ' 件（うち 商品コードが JAN の形でない ' + (info.not_jan || 0) + ' 件・JAN だが商品登録システムに未登録 ' + (info.unregistered || 0) + ' 件。不一致の行は取り込んでいません）<br>いま表示している在庫: ' + fmtStockInfo(info) + (info.filename ? '・' + esc(info.filename) : '') + (info.encoding ? '（' + esc(info.encoding) + '）' : '') + (extra ? '<br>' + extra : '')
+      + (info.samples && info.samples.length ? '<details style="margin-top:6px"><summary>合わなかった行を見る（' + (info.unmatched > info.samples.length ? '先頭 ' + info.samples.length + ' 件／全 ' + info.unmatched + ' 件' : info.samples.length + ' 件') + '）</summary><div class="tbl" style="max-height:260px;margin-top:6px"><table><thead><tr><th>CSV の行</th><th>商品コード</th><th>理由</th></tr></thead><tbody>'
+        + info.samples.map(function (x) { return '<tr><td>' + esc(String(x.row_no || '')) + '</td><td>' + esc(x.code || '（空）') + '</td><td>' + (x.reason === 'not_jan' ? 'JAN の形でない（社内コード・英字入り・桁数違い）' : 'JAN だが商品登録システムに未登録') + '</td></tr>'; }).join('') + '</tbody></table></div></details>' : '');
   }
   // 見出しの名前で列を探す（並びが変わっても読めるように）。見出しが無ければ決まった位置（3・4・6・7・8 列目）
   function stockColumns(head) {
@@ -1095,6 +1097,17 @@
         }
         var body = rows.slice(hi + 1);
         if (!body.length) { stop('見出しの行だけで、在庫の行がありません'); return; }
+        // 読み取りが崩れていないか（引用符の対応が取れず、後ろの行が 1 つの欄に飲み込まれた など）。崩れていたら取り込まずに、どの行かを出す
+        var lineOf = function (ix) { var n = 1; for (var q = 0; q < ix; q++) n += 1 + rows[q].reduce(function (a, v) { return a + (String(v).match(/\n/g) || []).length; }, 0); return n; };
+        var brokeAt = -1;
+        for (var bi = 0; bi < body.length && brokeAt < 0; bi++) {
+          var br = body[bi];
+          if (br.some(function (v) { v = String(v); return v.length > 400 || (v.match(/\n/g) || []).length > 2; })) brokeAt = hi + 1 + bi; // 1 つの欄に何行も入っている＝後ろの行を飲み込んだ
+        }
+        if (brokeAt >= 0) {
+          var ln = lineOf(brokeAt), first = rows[brokeAt].join(',').replace(/\s+/g, ' ').slice(0, 90);
+          stop('<span class="err">ファイルの ' + ln + ' 行目付近で読み取りが崩れました（引用符 " の対応が取れていない行などがあります）。取り込んでいません（前回の在庫のままです）。<br>その行: ' + esc(first) + '…</span>'); return;
+        }
         var items = body.map(function (r, k) { var g = function (ix) { return ix >= 0 && r[ix] != null ? String(r[ix]).trim() : ''; }; return { row_no: hi + 2 + k, code: g(col.code), location: g(col.location), qty: g(col.qty), allocated: g(col.allocated), exported_on: g(col.exported) }; });
         // Excel で開いて保存し直すと JAN が「4.90127E+12」になり、下の桁が失われる（直せない）。取り込む前に止めて元の CSV を頼む
         var expo = items.filter(function (it) { return /^\d(\.\d+)?E\+?\d+$/i.test(it.code); }).length;
@@ -1110,7 +1123,7 @@
     clearTimeout(STOCK.hideT);
     var prog = $('stockProg'); prog.hidden = false; prog.firstElementChild.style.width = '5%';
     $('stockState').textContent = items.length + ' 行を取り込んでいます…（' + encoding + '）';
-    var acc = { matched: 0, not_jan: 0, unregistered: 0 }, batch = null, chain;
+    var acc = { matched: 0, not_jan: 0, unregistered: 0, samples: [] }, batch = null, chain;
     chain = api('stock', { method: 'POST', body: { action: 'begin' } }).then(function (r) {
       if (!r.ok) throw new Error(r.message || r.reason);
       batch = r.batch;
@@ -1119,6 +1132,7 @@
         (function (part, upto) { c = c.then(function () { return api('stock', { method: 'POST', body: { action: 'rows', batch: batch, rows: part } }).then(function (j) {
           if (!j.ok) throw new Error(j.message || j.reason);
           acc.matched += j.matched; acc.not_jan += j.not_jan; acc.unregistered += j.unregistered;
+          (j.samples || []).forEach(function (x) { if (acc.samples.length < 100) acc.samples.push(x); });
           prog.firstElementChild.style.width = Math.round(upto / items.length * 90 + 5) + '%';
         }); }); })(items.slice(i, i + 2000), Math.min(items.length, i + 2000));
       }
@@ -1130,7 +1144,7 @@
         if (!confirm('登録済みの商品と合う行が 1 件もありませんでした（読んだ ' + items.length + ' 行）。\n在庫実績の CSV で合っていますか？\n「OK」で前回の在庫を消して入れ替えます。「キャンセル」で前回の在庫のままにします。')) return { ok: false, message: 'やめました（合う行が 0 件。前回の在庫のままです）' };
         allowEmpty = true;
       }
-      return api('stock', { method: 'POST', body: { action: 'finish', batch: batch, total: items.length, not_jan: acc.not_jan, unregistered: acc.unregistered, filename: file.name, encoding: encoding, allow_empty: allowEmpty } });
+      return api('stock', { method: 'POST', body: { action: 'finish', batch: batch, total: items.length, not_jan: acc.not_jan, unregistered: acc.unregistered, filename: file.name, encoding: encoding, allow_empty: allowEmpty, samples: acc.samples } });
     }).then(function (r) {
       if (!r.ok) { $('stockState').innerHTML = '<span class="err">' + esc(r.message || '取り込めませんでした') + '</span>'; if (r.info) showStockInfo(r.info, null); return; }
       prog.firstElementChild.style.width = '100%';
