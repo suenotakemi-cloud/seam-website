@@ -403,13 +403,26 @@
     //   ・囲みの中の " は、次が区切り・改行・終わりのときだけ囲みの終わり。"" は " 1 文字。それ以外（"3rd のように文字が続く）は文字の "
     //   （2026-11-16: 在庫実績 CSV の「5 Star ｺｰﾄﾞﾚｽｼﾆｱ "3rd Edition」の行から後ろが 1 つの欄に飲み込まれ、16,045 行中 28 行しか読めなかった）
     var rows = [], row = [], cur = '', inQ = false, atStart = true, i = 0, L = text.length;
+    // 囲みの中の " が、ここで囲みを閉じるものか
+    //   ・後ろが（空白を挟んで）区切り・改行・終わり → 閉じる（"abc" ,"def" のような空白入りも従来どおり）
+    //   ・後ろに文字が続く（"3rd Edition / "ab"cd）→ 同じ行の中に、ちゃんと閉じる " があるなら文字の "（商品名の中の " ）。
+    //     無ければここで閉じる（"ab"cd のような書き方は従来どおり abcd。後ろの行を飲み込まない）
+    var isEnd = function (j) { while (j < L && (text[j] === ' ' || text[j] === '\t') && text[j] !== d) j++; return j >= L || text[j] === d || text[j] === '\r' || text[j] === '\n'; };
+    var closesHere = function (q) {
+      if (isEnd(q + 1)) return true;
+      for (var j = q + 1; j < L && text[j] !== '\n'; j++) {
+        if (text[j] !== '"') continue;
+        if (text[j + 1] === '"') { j++; continue; }
+        if (isEnd(j + 1)) return false; // この行の後ろに正しく閉じる " がある → いまのは文字の "
+      }
+      return true;
+    };
     while (i < L) {
       var c = text[i];
       if (inQ) {
         if (c === '"') {
-          var nx = text[i + 1];
-          if (nx === '"') { cur += '"'; i += 2; continue; }
-          if (nx === undefined || nx === d || nx === '\r' || nx === '\n') { inQ = false; i++; continue; }
+          if (text[i + 1] === '"') { cur += '"'; i += 2; continue; }
+          if (closesHere(i)) { inQ = false; i++; continue; }
           cur += '"'; i++; continue; // 閉じていない " は文字として残す
         }
         cur += c; i++; continue;
