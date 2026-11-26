@@ -169,9 +169,9 @@ export async function pushJans(env, account, jans, by, budgetMs) {
   for (const jan of jans) {
     // 時間の上限を超えたら新しい商品には手を付けない（残りは送信待ちのまま。次の送信で続きから）
     if (budgetMs && Date.now() - t0 > budgetMs) { out.push({ jan: null, ok: false, code: 'budget', message: '時間がかかっているので、残りは次の送信に回しました' }); break; }
-    // 送る直前の updated_at を控えておく。送っている間に誰かが写真を足したら「送信ずみ」にしない（次の送信で最新が届く）
-    const snap = await env.DB.prepare('SELECT updated_at, ec_jan FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
-    const was = snap ? snap.updated_at : null;
+    // 送る直前の「写真が変わった日時」を控えておく。送っている間に誰かが写真を足したら「送信ずみ」にしない（次の送信で最新が届く）
+    const snap = await env.DB.prepare('SELECT COALESCE(images_at, updated_at) AS img_at, ec_jan FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
+    const was = snap ? snap.img_at : null;
     const rs = await env.DB.prepare('SELECT slot, key FROM pim_images WHERE account_id=? AND jan=? ORDER BY slot').bind(acct, jan).all();
     const r = await pushOne(env, account, jan, rs.results || [], snap && snap.ec_jan);
     const ts = nowIso();
@@ -184,7 +184,7 @@ export async function pushJans(env, account, jans, by, budgetMs) {
       if (r.ok) {
         await saveEcJan(env, acct, jan, r.ec_jan, snap && snap.ec_jan);
         // 送っている間に写真が変わっていなければ「送信ずみ」。変わっていたら送信待ちのまま（次の送信で最新が届く）
-        const u = await env.DB.prepare('UPDATE pim_products SET ec_push_at=?, ec_push_status=?, ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?').bind(ts, 'ok', ts, acct, jan, was).run();
+        const u = await env.DB.prepare('UPDATE pim_products SET ec_push_at=?, ec_push_status=?, ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND COALESCE(images_at, updated_at)=?').bind(ts, 'ok', ts, acct, jan, was).run();
         // どちらでも、前の失敗の印は消す（SalonPro には届いているのに「送れなかったもの」に残り続けないように）
         if (!(u.meta && u.meta.changes)) await env.DB.prepare("UPDATE pim_products SET ec_push_status='ok', ec_push_msg=NULL WHERE account_id=? AND jan=?").bind(acct, jan).run();
       }
@@ -222,10 +222,10 @@ export function autoPush(context, account, jans) {
     const env = context.env;
     const run = (async () => {
       const snap = {};
-      for (const j of list) { const r = await env.DB.prepare('SELECT updated_at FROM pim_products WHERE account_id=? AND jan=?').bind(account.id, j).first(); snap[j] = r && r.updated_at; }
+      for (const j of list) { const r = await env.DB.prepare('SELECT COALESCE(images_at, updated_at) AS img_at FROM pim_products WHERE account_id=? AND jan=?').bind(account.id, j).first(); snap[j] = r && r.img_at; }
       await new Promise((r) => setTimeout(r, AUTO_SETTLE_MS));
       const still = [];
-      for (const j of list) { const r = await env.DB.prepare('SELECT updated_at FROM pim_products WHERE account_id=? AND jan=?').bind(account.id, j).first(); if (r && r.updated_at === snap[j]) still.push(j); }
+      for (const j of list) { const r = await env.DB.prepare('SELECT COALESCE(images_at, updated_at) AS img_at FROM pim_products WHERE account_id=? AND jan=?').bind(account.id, j).first(); if (r && r.img_at === snap[j]) still.push(j); }
       return still.length ? pushJans(env, account, still, 'auto', 15000) : []; // 応答後の処理は 30 秒ほどで打ち切られるので、その手前で止める
     })().catch(() => []);
     if (context.waitUntil) context.waitUntil(run);
@@ -254,7 +254,7 @@ export async function reconcile(env, account, jans, opts) {
   const out = { checked: 0, fixed: 0, still: 0, not_found: 0, stale: 0, requeued: 0, stopped: false, more: false, items: [] };
   for (const jan of jans) {
     if (o.budgetMs && Date.now() - t0 > o.budgetMs) { out.more = true; break; }
-    const cnt = await env.DB.prepare('SELECT image_count, updated_at, ec_push_at, ec_push_status, ec_jan FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
+    const cnt = await env.DB.prepare('SELECT image_count, COALESCE(images_at, updated_at) AS img_at, ec_push_at, ec_push_status, ec_jan FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
     if (!cnt) continue;
     // 最後に送ろうとした時刻より後に作られた写真だけを「今回届いたもの」とみなす（それより古いのは前回の残り）
     const since = cnt.ec_push_at ? Date.parse(cnt.ec_push_at) - 90 * 1000 : 0;
@@ -265,8 +265,8 @@ export async function reconcile(env, account, jans, opts) {
     const ts = nowIso();
     if (v.ok) {
       // 最後に送ろうとした後で写真が変わっていたら、SalonPro にあるのは前の写真。失敗の印だけ消して送信待ちに残す（次の送信で最新が届く）
-      const changedSince = cnt.ec_push_at && cnt.updated_at > cnt.ec_push_at;
-      const u = changedSince ? { meta: { changes: 0 } } : await env.DB.prepare("UPDATE pim_products SET ec_push_at=?, ec_push_status='ok', ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND updated_at=?").bind(ts, ts, acct, jan, cnt.updated_at).run();
+      const changedSince = cnt.ec_push_at && cnt.img_at > cnt.ec_push_at;
+      const u = changedSince ? { meta: { changes: 0 } } : await env.DB.prepare("UPDATE pim_products SET ec_push_at=?, ec_push_status='ok', ec_push_msg=NULL, ec_synced_at=? WHERE account_id=? AND jan=? AND COALESCE(images_at, updated_at)=?").bind(ts, ts, acct, jan, cnt.img_at).run();
       // 確かめている間に写真が変わっていたら、失敗の印だけ消して送信待ちに残す
       if (!(u.meta && u.meta.changes)) await env.DB.prepare("UPDATE pim_products SET ec_push_status='ok', ec_push_msg=NULL WHERE account_id=? AND jan=?").bind(acct, jan).run();
       out.fixed++; out.items.push({ jan, ok: true, count: v.count });
