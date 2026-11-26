@@ -252,11 +252,24 @@ export async function ensureSchema(env) {
     'ALTER TABLE pim_accounts ADD COLUMN ec_url TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_key TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_auto INTEGER NOT NULL DEFAULT 0',
     'ALTER TABLE pim_products ADD COLUMN ec_push_at TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_status TEXT', 'ALTER TABLE pim_products ADD COLUMN ec_push_msg TEXT',
     'ALTER TABLE pim_accounts ADD COLUMN ec_status TEXT', 'ALTER TABLE pim_accounts ADD COLUMN ec_status_at TEXT',
-    'ALTER TABLE pim_products ADD COLUMN ec_jan TEXT', 'ALTER TABLE pim_stock_meta ADD COLUMN samples TEXT']) {
+    'ALTER TABLE pim_products ADD COLUMN ec_jan TEXT', 'ALTER TABLE pim_stock_meta ADD COLUMN samples TEXT',
+    'ALTER TABLE pim_products ADD COLUMN images_at TEXT']) {
     try { await env.DB.prepare(a).run(); } catch (e) { /* 既にある */ }
   }
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_products_nkey ON pim_products(account_id, name_key)').run(); } catch (e) { /* */ }
   try { await env.DB.prepare('CREATE INDEX IF NOT EXISTS idx_pim_images_phash ON pim_images(account_id, phash)').run(); } catch (e) { /* */ }
+  // images_at（写真が最後に変わった日時）が入っていない商品に、写真の記録から割り出して入れる（列を足したときの 1 回だけ。済んでいれば何もしない）
+  //   SalonPro へ送るのは写真だけなので、「送信待ち」は images_at で数える（取り込み・取り消し・商品名の修正だけでは送信待ちにしない）
+  try {
+    const need = await env.DB.prepare('SELECT 1 AS x FROM pim_products WHERE image_count>0 AND images_at IS NULL LIMIT 1').first();
+    if (need) {
+      await env.DB.prepare(
+        'UPDATE pim_products SET images_at = x.t FROM (SELECT account_id, jan, MAX(t) AS t FROM (' +
+        "SELECT account_id, jan, COALESCE(ver, created_at) AS t FROM pim_images UNION ALL SELECT account_id, jan, ts AS t FROM pim_changes WHERE kind='image'" +
+        ') GROUP BY account_id, jan) x WHERE pim_products.account_id=x.account_id AND pim_products.jan=x.jan AND pim_products.images_at IS NULL').run();
+      await env.DB.prepare('UPDATE pim_products SET images_at=updated_at WHERE image_count>0 AND images_at IS NULL').run(); // 記録が見つからなかった分は、今までどおり updated_at
+    }
+  } catch (e) { /* 失敗しても COALESCE(images_at, updated_at) で今までどおり動く */ }
   await seedIfEmpty(env);
   schemaReady = true;
 }
@@ -305,6 +318,10 @@ export function sanitizeProduct(p) {
   };
 }
 // 「公開できる商品」の条件（EC に出してよいもの）: 写真 1 枚以上・商品コードあり・価格あり・撮り直しの写真が無い
+// SalonPro へ送る「送信待ち」: 写真があり、撮り直しの指示が無く、まだ送っていないか、送ったあとに写真が変わったもの
+//   SalonPro へ送るのは写真だけなので、写真の変更（images_at）で見る。商品名・価格の修正、取り込み・取り消しでは送信待ちにならない
+export const PUSH_IMG_AT = 'COALESCE(p.images_at, p.updated_at)';
+export const PUSH_PENDING_SQL = "(p.image_count>0 AND NOT EXISTS (SELECT 1 FROM pim_images r WHERE r.account_id=p.account_id AND r.jan=p.jan AND r.review='retake') AND (p.ec_push_at IS NULL OR p.ec_push_at < " + PUSH_IMG_AT + '))';
 export const READY_SQL = "(p.image_count>0 AND p.sku IS NOT NULL AND p.sku<>'' AND p.price_ex IS NOT NULL AND NOT EXISTS (SELECT 1 FROM pim_images r WHERE r.account_id=p.account_id AND r.jan=p.jan AND r.review='retake'))";
 export const PRODUCT_COLS = ['jan', 'jan_valid', 'name', 'price', 'tax_included', 'tax_rate', 'price_ex', 'price_in', 'retail_price', 'cost_price', 'amount', 'unit', 'maker', 'brand', 'category', 'description', 'sku', 'source', 'name_key'];
 

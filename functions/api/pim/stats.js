@@ -6,7 +6,7 @@
 //     by_maker: [{ maker, products, with_images }],  … メーカー別の残り
 //     pace: { avg_per_day_7, days_left }             … 直近 7 日の平均から残り日数
 //   }
-import { READY_SQL, json } from './_lib.js';
+import { READY_SQL, json, PUSH_PENDING_SQL } from './_lib.js';
 
 export async function onRequestGet({ env, data }) {
   const acct = data.account.id;
@@ -28,7 +28,7 @@ export async function onRequestGet({ env, data }) {
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND price_ex IS NULL) AS no_price, ' +
     '(SELECT COUNT(DISTINCT jan) FROM pim_images WHERE account_id=?1 AND review=\'retake\') AS retake_products, ' +
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND (ec_synced_at IS NULL OR ec_synced_at < updated_at)) AS ec_pending, ' +
-    '(SELECT COUNT(*) FROM pim_products p WHERE p.account_id=?1 AND p.image_count>0 AND (p.ec_push_at IS NULL OR p.ec_push_at < p.updated_at) AND NOT EXISTS (SELECT 1 FROM pim_images r WHERE r.account_id=p.account_id AND r.jan=p.jan AND r.review=\'retake\')) AS push_pending, ' +
+    '(SELECT COUNT(*) FROM pim_products p WHERE p.account_id=?1 AND ' + PUSH_PENDING_SQL + ') AS push_pending, ' +
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND ec_push_status IS NOT NULL AND ec_push_status<>\'ok\') AS push_failed, ' +
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND ec_push_status=\'ok\') AS push_ok'
   ).bind(acct).first();

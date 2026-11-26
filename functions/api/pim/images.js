@@ -52,7 +52,7 @@ async function listImages(env, origin, acct, jan) {
 // 画像枚数を商品側へ同期し、商品の updated_at を返す（画面側が楽観ロックの基準を追従させるため）
 async function syncCount(env, acct, jan) {
   const ts = nowIso();
-  await env.DB.prepare('UPDATE pim_products SET image_count=(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND jan=?2), updated_at=?3 WHERE account_id=?1 AND jan=?2').bind(acct, jan, ts).run();
+  await env.DB.prepare('UPDATE pim_products SET image_count=(SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND jan=?2), updated_at=?3, images_at=?3 WHERE account_id=?1 AND jan=?2').bind(acct, jan, ts).run(); // images_at … 写真が変わった日時（SalonPro の送信待ちはこれで数える）
   return ts;
 }
 

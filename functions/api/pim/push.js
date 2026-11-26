@@ -6,12 +6,12 @@
 //             「未登録」だったものが見つかれば（頭の 0 を外した 12 桁の JAN で登録されている など）送信待ちに戻す
 //        POST /api/pim/push { all:true, limit:20 } → 送信待ちの古い順に送る
 //   「送信待ち」= 写真が 1 枚以上あり、撮り直しの指示が付いていない商品のうち、
-//                 まだ送っていない（ec_push_at が無い）か、送ったあとに写真・内容が変わったもの
+//                 まだ送っていない（ec_push_at が無い）か、送ったあとに写真が変わったもの（images_at。商品名・価格の修正や取り込みでは送信待ちにしない）
 //   送信は毎回 mode=replace。SalonPro 側の写真は 商品登録システムの 1〜5 枚目でそっくり置き換わる（並び順の先頭が主画像）
-import { json, cleanJan, userOf } from './_lib.js';
+import { json, cleanJan, userOf, PUSH_PENDING_SQL } from './_lib.js';
 import { pushJans, ecKeyOk, ecBase, reconcile } from './_salonpro.js';
 
-const PENDING_SQL = "(p.image_count>0 AND NOT EXISTS (SELECT 1 FROM pim_images r WHERE r.account_id=p.account_id AND r.jan=p.jan AND r.review='retake') AND (p.ec_push_at IS NULL OR p.ec_push_at < p.updated_at))";
+const PENDING_SQL = PUSH_PENDING_SQL; // 写真が変わったものだけ（_lib.js）
 
 export async function onRequestGet({ request, env, data }) {
   const acct = data.account.id, a = data.account;
