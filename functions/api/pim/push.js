@@ -8,7 +8,7 @@
 //   「送信待ち」= 写真が 1 枚以上あり、撮り直しの指示が付いていない商品のうち、
 //                 まだ送っていない（ec_push_at が無い）か、送ったあとに写真が変わったもの（images_at。商品名・価格の修正や取り込みでは送信待ちにしない）
 //   送信は毎回 mode=replace。SalonPro 側の写真は 商品登録システムの 1〜5 枚目でそっくり置き換わる（並び順の先頭が主画像）
-import { json, cleanJan, userOf, PUSH_PENDING_SQL } from './_lib.js';
+import { json, cleanJan, userOf, PUSH_PENDING_SQL, PUSH_IMG_AT } from './_lib.js';
 import { pushJans, ecKeyOk, ecBase, reconcile } from './_salonpro.js';
 
 const PENDING_SQL = PUSH_PENDING_SQL; // 写真が変わったものだけ（_lib.js）
@@ -19,7 +19,7 @@ export async function onRequestGet({ request, env, data }) {
   const pending = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_products p WHERE p.account_id=? AND ' + PENDING_SQL).bind(acct).first();
   const failed = await env.DB.prepare("SELECT COUNT(*) AS n FROM pim_products p WHERE p.account_id=? AND p.ec_push_status IS NOT NULL AND p.ec_push_status<>'ok'").bind(acct).first();
   const sent = await env.DB.prepare("SELECT COUNT(*) AS n FROM pim_products p WHERE p.account_id=? AND p.ec_push_status='ok'").bind(acct).first();
-  const items = await env.DB.prepare('SELECT jan, name, sku, brand, image_count, updated_at, ec_push_at, ec_push_status, ec_push_msg FROM pim_products p WHERE p.account_id=? AND ' + PENDING_SQL + ' ORDER BY p.updated_at LIMIT ?').bind(acct, limit).all();
+  const items = await env.DB.prepare('SELECT jan, name, sku, brand, image_count, updated_at, ' + PUSH_IMG_AT + ' AS images_at, ec_push_at, ec_push_status, ec_push_msg FROM pim_products p WHERE p.account_id=? AND ' + PENDING_SQL + ' ORDER BY ' + PUSH_IMG_AT + ' LIMIT ?').bind(acct, limit).all();
   const errs = await env.DB.prepare("SELECT jan, name, ec_push_at, ec_push_status, ec_push_msg FROM pim_products p WHERE p.account_id=? AND p.ec_push_status IS NOT NULL AND p.ec_push_status<>'ok' ORDER BY p.ec_push_at DESC LIMIT 100").bind(acct).all();
   const last = await env.DB.prepare('SELECT MAX(ec_push_at) AS at FROM pim_products WHERE account_id=?').bind(acct).first();
   return json({
@@ -61,7 +61,7 @@ export async function onRequestPost({ request, env, data }) {
     jans = b.jans.map((j) => cleanJan(j)).filter(Boolean).slice(0, 50);
   } else if (b.all) {
     const limit = Math.min(50, Math.max(1, parseInt(b.limit, 10) || 20));
-    const rs = await env.DB.prepare('SELECT jan FROM pim_products p WHERE p.account_id=? AND ' + PENDING_SQL + ' ORDER BY p.updated_at LIMIT ?').bind(acct, limit).all();
+    const rs = await env.DB.prepare('SELECT jan FROM pim_products p WHERE p.account_id=? AND ' + PENDING_SQL + ' ORDER BY ' + PUSH_IMG_AT + ' LIMIT ?').bind(acct, limit).all();
     jans = (rs.results || []).map((r) => r.jan);
   } else return json({ ok: false, reason: 'no_jans', message: '{ jans:[…] } か { all:true } を送ってください' }, 400);
   if (!jans.length) return json({ ok: true, results: [], sent: 0, failed: 0, message: '送るものはありません' });
