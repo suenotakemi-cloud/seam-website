@@ -246,7 +246,7 @@
     add: function (item) { item.ts = Date.now(); return idbTx('readwrite', function (st) { return st.add(item); }); },
     list: function () { return idbTx('readonly', function (st) { var req = st.getAll(); return req; }).catch(function () { return []; }); },
     remove: function (id) { return idbTx('readwrite', function (st) { st.delete(id); return null; }); },
-    count: function () { return Outbox.list().then(function (l) { return l.length; }); },
+    count: function () { var me = Auth.account(); return Outbox.list().then(function (l) { return l.filter(function (it) { return it.acct == null || (me && me.id === it.acct); }).length; }); }, // 今のアカウントの分だけ数える
     // 貯まっている分を順に送る。1 つでも失敗（ネットワーク）したらそこで止める。認証切れは呼び出し側へ
     flush: function (onEach) {
       return Outbox.list().then(function (items) {
@@ -255,6 +255,9 @@
         items.forEach(function (it) {
           chain = chain.then(function (go) {
             if (!go) return false;
+            // 別のアカウント（別のディーラー）で撮って貯めた写真は、今のアカウントへ送らない（同じ JAN の別の商品に入ってしまう）
+            var me = Auth.account();
+            if (it.acct != null && (!me || me.id !== it.acct)) return true;
             var fd = new FormData(); Object.keys(it.fields || {}).forEach(function (k) { fd.append(k, it.fields[k]); });
             fd.append('file', it.blob, it.name || 'x.webp'); if (it.thumb) fd.append('thumb', it.thumb, 'thumb.webp');
             return api('images', { method: 'POST', body: fd }).then(function (j) {

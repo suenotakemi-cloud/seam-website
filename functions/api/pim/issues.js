@@ -56,6 +56,14 @@ export async function onRequestPost(context) {
       await env.DB.prepare('UPDATE pim_issues SET status=\'open\', resolution=NULL, resolved_at=NULL, resolved_by=NULL WHERE id=?').bind(id).run(); // ロックを戻す
       return json({ ok: false, reason: 'bad_candidate', message: 'JANか商品名が不正なため登録できません' }, 400);
     }
+    // 注意を作ったあとに、登録済みの商品が直されていたら（スマホ・PC の編集、別の取り込み）、古い比較のまま上書きしない。
+    //   今の内容で注意を作り直して開き直し、もう一度選んでもらう
+    const nowRow = await env.DB.prepare('SELECT * FROM pim_products WHERE account_id=? AND jan=?').bind(acct, p.jan).first();
+    const seenAt = is.existing && is.existing.updated_at ? is.existing.updated_at : null;
+    if ((nowRow ? nowRow.updated_at : null) !== seenAt) {
+      await env.DB.prepare('UPDATE pim_issues SET status=\'open\', resolution=NULL, resolved_at=NULL, resolved_by=NULL, existing=? WHERE id=?').bind(nowRow ? JSON.stringify(nowRow).slice(0, 20000) : null, id).run();
+      return json({ ok: false, reason: 'changed', message: '登録済みの商品が' + (nowRow && nowRow.updated_by ? nowRow.updated_by + ' さんによって' : '') + 'この注意のあとに' + (nowRow ? '直されています' : '消されています') + '。今の内容に入れ替えたので、見比べてからもう一度選んでください', issue: parse(Object.assign({}, row, { existing: nowRow ? JSON.stringify(nowRow) : null })) }, 409);
+    }
     await upsertStmt(env, acct, p, row.import_id, ts, by, 'upsert').run();
     saved = p.jan;
     await logChanges(env, acct, [p.jan], 'product', by); notifyWebhook(context, data.account, 'product', [p.jan], by);
