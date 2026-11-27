@@ -18,16 +18,16 @@
   '.xs{position:relative;overflow:hidden;isolation:isolate;color:#F6EEDC;padding:52px 22px 46px;text-align:left}'+
   '.xs canvas{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}'+
   '.xs-in{position:relative;max-width:980px;margin:0 auto;display:grid;gap:14px}'+
-  '.xs-k{font:500 11px/1 "Cormorant Garamond",Georgia,serif;letter-spacing:.42em;color:#D9B46A}'+
+  '.xs-k{font:italic 500 22px/1 "Cormorant Garamond",Georgia,serif;letter-spacing:.02em;color:#E6C985}'+
   '.xs-h{font-family:"Cormorant Garamond","Yu Mincho","Hiragino Mincho ProN","Noto Serif JP",serif;font-weight:500;font-size:clamp(25px,6.6vw,44px);line-height:1.42;margin:0;text-wrap:balance}'+
-  '.xs-s{font-size:14px;line-height:1.8;margin:0;opacity:.92}.xs-s b{font-weight:600;color:#F3D893}'+
-  '.xs-d{display:inline-block;margin-left:8px;padding:2px 10px;border:1px solid #D9B46A88;border-radius:999px;font-size:11.5px;letter-spacing:.08em;color:#F3D893;vertical-align:1px;font-variant-numeric:tabular-nums}'+
+  '.xs-s{font-size:14px;line-height:1.8;margin:0;opacity:.92}.xs-s b{font-weight:500;color:#F6EEDC;letter-spacing:.04em}'+
+  '.xs-d{display:inline-block;margin-left:10px;padding-left:10px;border-left:1px solid #E6C98599;font-size:12px;letter-spacing:.1em;color:#E6C985;font-variant-numeric:tabular-nums}'+
   '.xs-cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}'+
   '.xs-cta a{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 22px;border-radius:999px;font-size:14px;letter-spacing:.06em;text-decoration:none;transition:transform .2s ease,background-color .2s ease}'+
   '.xs-cta a:active{transform:scale(.98)}.xs-cta a:focus-visible{outline:2px solid #F3D893;outline-offset:3px}'+
   '.xs .xs-p{background:#F6EEDC!important;color:#1A1A1A!important}.xs .xs-g{border:1px solid #F6EEDC99;color:#F6EEDC!important}'+
   /* 最初の画面（ヒーロー）にも：下に金の帯・A は星 C は雪 B は赤い帯 */
-  '.xs-hc{position:absolute;inset:0;z-index:3;pointer-events:none}.xs-hr{position:relative;z-index:6;margin:0 auto 18px;display:flex;flex-direction:column;align-items:center;gap:6px;width:max-content!important;max-width:calc(100vw - 32px)!important;box-sizing:border-box!important;padding:16px 22px 14px!important;height:auto!important;min-height:0!important;border-radius:16px;background:#1a1411b8;border:1px solid #E6C98599;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#F6EEDC!important;text-decoration:none;text-align:center;box-shadow:0 10px 30px #0007}.xs-hr b{font:600 10.5px/1 "Cormorant Garamond",Georgia,serif;letter-spacing:.38em;padding-left:.38em;color:#E6C985}.xs-hr strong{white-space:nowrap;font-family:"Yu Mincho","Hiragino Mincho ProN","Noto Serif JP",serif;font-weight:600;font-size:clamp(28px,8.4vw,38px);line-height:1.15;letter-spacing:.08em;color:#fff}.xs-hr span{font-size:12.5px;letter-spacing:.06em;color:#F3D893}@media(prefers-reduced-transparency:reduce){.xs-hr{background:#1a1411f0;backdrop-filter:none}}.xs-kick-off{display:none!important}@media(max-height:720px){.xs-hr{padding:10px 18px 9px!important;gap:4px;margin-bottom:10px}.xs-hr b{display:none}.xs-hr strong{white-space:nowrap;font-size:27px}}'+
+  '.xs-hc{position:absolute;inset:0;z-index:3;pointer-events:none}.sf-hero .xs-hr{position:relative;z-index:6;margin:0 auto 22px;display:flex;flex-direction:column;align-items:center;text-decoration:none;text-align:center;color:#fff!important;text-shadow:0 1px 14px #0009;background:none!important;border:0!important;border-radius:0;box-shadow:none;padding:0!important;width:auto!important;height:auto!important;letter-spacing:0!important;font-size:inherit!important}.xs-hr .xs-o{display:flex;align-items:center;gap:12px;color:#E6C985;font-size:9px}.xs-hr .xs-o i{display:block;width:44px;height:1px;background:linear-gradient(90deg,transparent,#E6C985)}.xs-hr .xs-o i+i{background:linear-gradient(90deg,#E6C985,transparent)}.sf-hero .xs-hr strong{display:block;margin-top:10px;font-family:"Cormorant Garamond",Georgia,serif;font-style:italic;font-weight:500;font-size:clamp(42px,12vw,60px);line-height:1;letter-spacing:.005em;white-space:nowrap;color:#fff}.sf-hero .xs-hr em{display:block;margin-top:12px;font-style:normal;font-family:"Shippori Mincho","Yu Mincho","Hiragino Mincho ProN",serif;font-weight:600;font-size:17px;letter-spacing:.38em;padding-left:.38em;white-space:nowrap;color:#fff}.sf-hero .xs-hr span:last-child{display:block;margin-top:9px;font-size:11.5px;letter-spacing:.1em!important;padding-left:.1em;color:#E6C985}@media(hover:hover){.xs-hr:hover strong{color:#F6EEDC!important}}.xs-hr:focus-visible{outline:1px solid #E6C985;outline-offset:8px}.xs-kick-off{display:none!important}@media(max-height:720px){.sf-hero .xs-hr{margin-bottom:12px}.xs-hr .xs-o{display:none!important}.sf-hero .xs-hr strong{margin-top:0;font-size:40px}.sf-hero .xs-hr em{margin-top:8px;font-size:14px}.sf-hero .xs-hr span:last-child{margin-top:6px}}'+
   '@media(hover:hover){.xs-p:hover{background:#fff}.xs-g:hover{background:#ffffff1a}}'+
   /* A 森の夜：深い緑に金の星と飾り */
   '.xs-a{background:radial-gradient(120% 90% at 85% 0%,#1F4636 0%,#10241C 55%,#0A1712 100%)}'+
@@ -59,7 +59,7 @@
   function draw(sec){
     var t=T[L()]||T.ja,n=daysLeft(),dd=n<=1?t.last:t.d(n);
     var gifts=V==='b'?'<div class="xs-gifts" aria-hidden="true"><img src="/images/lp/popular/p03_bykarte.webp" alt=""><img src="/images/lp/popular/p01_aujua.webp" alt=""><img src="/images/lp/popular/p02_kerastase.webp" alt=""></div>':'';
-    sec.innerHTML=(V==='a'?orn():'')+'<canvas aria-hidden="true"></canvas><div class="xs-in"><div><p class="xs-k">CHRISTMAS SALE</p><h2 class="xs-h">'+t.h+'</h2>'+
+    sec.innerHTML=(V==='a'?orn():'')+'<canvas aria-hidden="true"></canvas><div class="xs-in"><div><p class="xs-k" lang="en">Christmas Sale</p><h2 class="xs-h">'+t.h+'</h2>'+
       '<p class="xs-s"><b>'+t.s+'</b><span class="xs-d">'+dd+'</span><br>'+t.sc+'</p>'+
       '<div class="xs-cta"><a class="xs-p" href="shop.html#stores" data-track-click="xmas_store">'+t.c1+'</a><a class="xs-g" href="onlineshop.html" data-track-click="xmas_online">'+t.c2+'</a></div></div>'+gifts+'</div>';
     snow(sec.querySelector('canvas'),sec);
@@ -80,6 +80,7 @@
   }
   function mount(){
     var page=document.querySelector('.sf-page'),hero=page&&page.querySelector('.sf-hero');if(!hero)return false;
+    var fl=document.createElement('link');fl.rel='stylesheet';fl.href='https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&display=swap';document.head.appendChild(fl);
     var st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
     var sec=document.createElement('section');sec.className='xs xs-'+V;sec.setAttribute('aria-label','Christmas Sale');sec.setAttribute('data-track-view','xmas_'+V);
     var after=page.querySelector('.sf-intl')||hero;after.insertAdjacentElement('afterend',sec);
@@ -88,7 +89,7 @@
     hr.addEventListener('click',function(e){e.preventDefault();sec.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});
     var kick=hero.querySelector('small');if(kick){kick.classList.add('xs-kick-off');kick.parentNode.insertBefore(hr,kick);}else hero.appendChild(hr);
     if(V!=='b'){var hc=document.createElement('canvas');hc.className='xs-hc';hc.setAttribute('aria-hidden','true');hero.appendChild(hc);snow(hc,hero);}
-    function hrText(){var t=T[L()]||T.ja;hr.innerHTML='<b>CHRISTMAS SALE</b><strong>'+t.big+'</strong><span>'+t.r+'　'+t.w+'</span>';}
+    function hrText(){var t=T[L()]||T.ja;hr.innerHTML='<span class="xs-o" aria-hidden="true"><i></i>✦<i></i></span><strong lang="en">Christmas Sale</strong>'+(L()==='en'?'':'<em>'+t.big+'</em>')+'<span>'+t.r+' ・ '+t.w+'</span>';}
     function all(){draw(sec);hrText();}
     all();addEventListener('seam:langchange',function(){setTimeout(all,0);});
     return true;
