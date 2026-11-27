@@ -1442,11 +1442,11 @@
       Array.prototype.forEach.call($('histTbl').querySelectorAll('[data-rb]'), function (b) {
         b.addEventListener('click', function () {
           var id = parseInt(b.getAttribute('data-rb'), 10), tr = b.closest('tr');
-          if (!confirm('取り込み #' + id + '（' + tr.children[1].textContent + '）を取り消しますか？\n・この取り込みで新しく入った商品は消えます（その後に写真が付いた商品は残します）\n・上書きした商品は取り込み前の内容に戻ります（この取り込みより後の変更も戻ります）')) return;
+          if (!confirm('取り込み #' + id + '（' + tr.children[1].textContent + '）を取り消しますか？\n・この取り込みで新しく入った商品は消えます（その後に写真が付いた商品は残します）\n・上書きした商品は取り込み前の内容に戻ります\n・この取り込みのあとに直した商品（スマホ・PC での修正、後の取り込み）は、直した内容のまま残します')) return;
           b.disabled = true;
           api('import', { method: 'POST', body: { action: 'rollback', import_id: id } }).then(function (r) {
             if (!r.ok) { toast(r.message || '取り消せませんでした', true); b.disabled = false; return; }
-            toast('取り消しました: 削除 ' + r.deleted + '件 / 元に戻した ' + r.restored + '件' + (r.kept_with_images ? ' / 写真があるため残した ' + r.kept_with_images + '件' : ''));
+            toast('取り消しました: 削除 ' + r.deleted + '件 / 元に戻した ' + r.restored + '件' + (r.kept_with_images ? ' / 写真があるため残した ' + r.kept_with_images + '件' : '') + (r.kept_later ? ' / あとで直されていたため残した ' + r.kept_later + '件' : ''));
             loadHistory(); loadMakers(); boot();
           }).catch(function (e) { b.disabled = false; handleErr(e); });
         });

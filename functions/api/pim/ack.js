@@ -17,7 +17,8 @@ export async function onRequestPost({ request, env, data }) {
   if (!b || !Array.isArray(b.jans)) return json({ ok: false, reason: 'bad_json', message: '{ jans:[...] } を送ってください' }, 400);
   const jans = b.jans.map((j) => cleanJan(j)).filter(Boolean).slice(0, 500);
   let at = nowIso();
-  if (b.at) { const d = new Date(b.at); if (!isNaN(d.getTime())) at = d.toISOString(); }
+  // 受け取った時刻（EC 側の時計）。未来の時刻は今に揃える（先の時刻だと、そのあとの変更まで「反映済み」に見えてしまう）
+  if (b.at) { const d = new Date(b.at); if (!isNaN(d.getTime()) && d.getTime() < Date.now()) at = d.toISOString(); }
   let acked = 0;
   for (let i = 0; i < jans.length; i += 90) {
     const chunk = jans.slice(i, i + 90);

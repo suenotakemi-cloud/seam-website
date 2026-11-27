@@ -699,7 +699,12 @@
     if (!ST.required && u !== C.Auth.user()) C.Auth.setStaff(u, '');
     $('settings').hidden = true; if ($('scr-scan').classList.contains('active')) startScan();
   });
-  $('btnLogout2').addEventListener('click', function () { if (confirm('ログアウトしますか？')) { C.Auth.clear(); location.reload(); } });
+  $('btnLogout2').addEventListener('click', function () {
+    C.Outbox.count().catch(function () { return 0; }).then(function (n) {
+      // 送信待ちの写真は、このアカウントで次にログインしたときに送る（別のアカウントで入っても、そちらへは送らない）
+      if (confirm(n ? 'まだ送れていない写真が ' + n + ' 枚あります。ログアウトすると、このアカウントで次にログインするまで送られません。ログアウトしますか？' : 'ログアウトしますか？')) { C.Auth.clear(); location.reload(); }
+    });
+  });
   $('btnPw').addEventListener('click', function () {
     var cur = $('pwCur').value, nw = $('pwNew').value, nw2 = $('pwNew2').value;
     if (!cur || !nw) { $('setErr').textContent = '今のパスワードと新しいパスワードを入れてください'; return; }
@@ -854,6 +859,7 @@
     return ns + mf + pr + ck;
   }
   function onCode(raw, isUpcE) {
+    if (!state.scanning) return; // カメラを止めたあとに届いた読み取り（2 つの商品が続けて開かないように）
     var code = String(raw || '').replace(/[^0-9]/g, '');
     if (!code) return;
     if (isUpcE) code = upcEtoA(code);
@@ -875,11 +881,13 @@
     if (!(jan.length === 13 || jan.length === 8)) { return search(String(input || '').trim()); }
     stopScan();
     toast('呼び出し中…');
+    var my = state.lookupSeq = (state.lookupSeq || 0) + 1;
     api('products?jan=' + jan).then(function (j) {
+      if (my !== state.lookupSeq) return; // あとから別の商品を呼び出した（遅れて届いた前の返事で上書きしない）
       if (j.ok) { openProduct(j.product); return; }
       if (j.reason === 'not_found') { openNew(jan); return; }
       throw new Error(j.message || j.reason || '取得できません');
-    }).catch(function (e) { handleErr(e); if (!(e && (e.auth || e.setup))) startScan(); });
+    }).catch(function (e) { if (my !== state.lookupSeq) return; handleErr(e); if (!(e && (e.auth || e.setup))) startScan(); });
   }
   function search(q) {
     if (!q) return;
@@ -903,7 +911,7 @@
     state.product = p;
     $('janIn').value = '';
     $('pJan').textContent = (/^20\d{11}$/.test(p.jan) && /仮コード/.test(p.source || '') ? '仮コード ' : 'JAN ') + p.jan + (p.jan_valid ? '' : '（チェックデジット不一致）');
-    if (!state.lastJan || state.lastJan !== p.jan) state.busy = {}; state.lastJan = p.jan;
+    if (!state.lastJan || state.lastJan !== p.jan) { Object.keys(state.busy || {}).forEach(function (k) { var pv = state.busy[k].preview; if (pv && /^blob:/.test(pv)) { try { URL.revokeObjectURL(pv); } catch (e) { /* */ } } }); state.busy = {}; } state.lastJan = p.jan; bumpLocal();
     $('pName').textContent = p.name;
     var amt = p.amount != null ? (Math.round(p.amount * 100) / 100) + (p.unit || '') : '—';
     $('pMeta').innerHTML = '<span>税抜 <b>' + esc(C.fmtYen(p.price_ex)) + '</b></span><span>税込 <b>' + esc(C.fmtYen(p.price_in)) + '</b></span><span>内容量 <b>' + esc(amt) + '</b></span>' +
@@ -932,8 +940,11 @@
   function refreshProduct() {
     var p = state.product; if (!p || !$('scr-prod').classList.contains('active') || document.hidden) return;
     if (Object.keys(state.busy).length) return; // 自分の送信中は触らない
+    var seq = state.localSeq || 0;
     api('products?jan=' + p.jan).then(function (j) {
       if (!j.ok || !state.product || state.product.jan !== p.jan) return;
+      if ((state.localSeq || 0) !== seq || Object.keys(state.busy).length) return; // 取りに行っている間に自分で変えた → この返事は古い（消した写真が戻る・409 の元になる）
+      p = state.product;
       var before = (p.images || []).map(function (i) { return i.slot + ':' + (i.url || ''); }).join(',');
       var after = (j.product.images || []).map(function (i) { return i.slot + ':' + (i.url || ''); }).join(',');
       var editing = $('editBox').classList.contains('open');
@@ -1197,6 +1208,12 @@
       { label: '🖼 写真・ファイルから選ぶ', fn: function () { state.pendingSlot = slot; $('fileIn').value = ''; $('fileIn').click(); } },
     ]);
   }
+  // 写真の版（サーバの ver）。差し替え・削除・並べ替えで送り、番号がずれていたら別の写真を触らないようにする
+  function verOf(im) { return im ? String(im.ver || im.created_at || '') : ''; }
+  function seenOf(p) { return (p.images || []).map(function (i) { return i.slot + ':' + verOf(i); }); }
+  function verAt(slot) { var im = (state.product && state.product.images || []).filter(function (i) { return i.slot === slot; })[0]; return verOf(im); }
+  // 自分の変更（写真・商品情報）の通し番号。これより前に出した「最新を取りに行く」の返事は、古いので捨てる
+  function bumpLocal() { state.localSeq = (state.localSeq || 0) + 1; }
   function filledSheet(slot, im) {
     var slots = (state.product.images || []).map(function (i) { return i.slot; }).sort();
     var pos = slots.indexOf(slot);
@@ -1215,9 +1232,12 @@
   }
   function reorderImages(body) {
     var p = state.product; if (!p) return;
-    toast('並べ替え中…');
-    api('images', { method: 'POST', body: Object.assign({ jan: p.jan }, body) }).then(function (j) {
-      if (!j.ok) { toast(j.message || '並べ替えできませんでした', true); refreshProduct(); return; }
+    var jan = p.jan;
+    toast('並べ替え中…'); bumpLocal();
+    api('images', { method: 'POST', body: Object.assign({ jan: jan, seen: seenOf(p) }, body) }).then(function (j) {
+      bumpLocal();
+      if (!state.product || state.product.jan !== jan) return; // 返事が来る前に別の商品へ移った
+      if (!j.ok) { toast(j.message || '並べ替えできませんでした', true); if (j.images) { state.product.images = j.images; state.product.image_count = j.images.length; renderGrid(); } else refreshProduct(); return; }
       state.product.images = j.images; state.product.image_count = j.images.length; if (j.product_updated_at) state.product.updated_at = j.product_updated_at;
       reviewIdx = 0; renderGrid(); recent(state.product); toast('並べ替えました');
     }).catch(handleErr);
@@ -1252,7 +1272,7 @@
     var preview = ''; try { preview = URL.createObjectURL(file); } catch (e) { /* */ }
     state.busy[showSlot] = { label: '変換中…', preview: preview };
     renderGrid();
-    var jan = state.product.jan, lastR = null, answered = false;
+    var jan = state.product.jan, lastR = null, answered = false, seenVer = slot === 'auto' ? '' : verAt(slot);
     // 端末カメラ・アルバムの写真も同じ形に: 正方形（白で余白）＋ 背景を白に ＋ 1200px
     return C.toWebp(file, { size: 1200, square: 'pad', whiten: SH.whiten, quality: 0.85 }).then(function (r) {
       return confirmQuality(r.quality).then(function (go) { if (!go) throw { cancelled: true }; return r; });
@@ -1261,6 +1281,7 @@
       var fd = new FormData();
       fd.append('jan', jan); fd.append('slot', String(slot));
       fd.append('file', r.blob, jan + '_' + (slot === 'auto' ? showSlot : slot) + '.webp');
+      if (seenVer) fd.append('ver', seenVer);
       fd.append('encoder', r.encoder || '');
       fd.append('original_name', r.originalName); fd.append('original_type', r.originalType);
       fd.append('width', String(r.width)); fd.append('height', String(r.height));
@@ -1274,7 +1295,7 @@
     }).catch(function (e) {
       if (e && e.cancelled) { delete state.busy[showSlot]; if (preview) URL.revokeObjectURL(preview); renderGrid(); toast('登録をやめました'); return; }
       if (answered) { console.error(e); return; }
-      if (lastR && C.isNetworkError(e)) { return queueOffline(jan, slot, lastR, lastR.originalName, lastR.originalType, showSlot, preview); }
+      if (lastR && C.isNetworkError(e)) { return queueOffline(jan, slot, lastR, lastR.originalName, lastR.originalType, showSlot, preview, seenVer); }
       delete state.busy[showSlot];
       if (preview) URL.revokeObjectURL(preview);
       renderGrid();
@@ -1297,13 +1318,16 @@
   function nextEmpty() { var by = {}; (state.product.images || []).forEach(function (im) { by[im.slot] = 1; }); for (var s = 1; s <= 5; s++) if (!by[s]) return s; return 5; }
   function removeImage(slot) {
     if (!confirm(slot + '枚目の写真を削除しますか？（後ろの写真が前に詰まります）')) return;
-    state.busy[slot] = { label: '削除中…' }; renderGrid();
-    api('images?jan=' + state.product.jan + '&slot=' + slot, { method: 'DELETE' }).then(function (j) {
+    var jan = state.product.jan;
+    state.busy[slot] = { label: '削除中…' }; renderGrid(); bumpLocal();
+    api('images?jan=' + jan + '&slot=' + slot + '&ver=' + encodeURIComponent(verAt(slot)), { method: 'DELETE' }).then(function (j) {
+      bumpLocal();
+      if (!state.product || state.product.jan !== jan) return; // 返事が来る前に別の商品へ移った（その商品の画面に前の商品の写真を出さない）
       delete state.busy[slot];
-      if (!j.ok) { toast(j.message || '削除できませんでした', true); renderGrid(); return; }
+      if (!j.ok) { if (j.images) { state.product.images = j.images; state.product.image_count = j.images.length; } toast(j.message || '削除できませんでした', true); renderGrid(); return; }
       state.product.images = j.images; state.product.image_count = j.images.length; if (j.product_updated_at) state.product.updated_at = j.product_updated_at;
       renderGrid(); recent(state.product); toast('削除しました');
-    }).catch(function (e) { delete state.busy[slot]; renderGrid(); handleErr(e); });
+    }).catch(function (e) { if (state.product && state.product.jan === jan) { delete state.busy[slot]; renderGrid(); } handleErr(e); });
   }
 
   // ── 撮影画面（ガイド付き）──────────────────────────────────
@@ -1508,23 +1532,25 @@
     var preview = ''; try { preview = canvas.toDataURL('image/jpeg', 0.6); } catch (e) { /* */ }
     state.busy[showSlot] = { label: '変換中…', preview: preview };
     renderGrid();
-    var q = SH.quality, meta = null, answered = false;
+    var q = SH.quality, meta = null, answered = false, seenVer = slot === 'auto' ? '' : verAt(slot);
     return C.finishImage(canvas, 0.85).then(function (r) {
       if (state.busy[showSlot]) state.busy[showSlot].label = '送信中…'; renderGrid();
       r.quality = q; meta = r;
       var fd = new FormData();
       fd.append('jan', jan); fd.append('slot', String(slot));
       fd.append('file', r.blob, jan + '_' + (slot === 'auto' ? showSlot : slot) + '.webp');
+      if (seenVer) fd.append('ver', seenVer);
       fd.append('encoder', r.encoder || ''); fd.append('original_name', 'camera.webp'); fd.append('original_type', 'image/webp');
       fd.append('width', String(r.width)); fd.append('height', String(r.height));
       C.appendImageExtras(fd, r);
       return api('images', { method: 'POST', body: fd });
     }).then(function (j) { answered = true; afterUpload(j, jan, showSlot); })
-      .catch(function (e) { if (answered) { console.error(e); return; } if (meta && C.isNetworkError(e)) { return queueOffline(jan, slot, meta, 'camera.webp', 'image/webp', showSlot, preview); } delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup || e.staff)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
+      .catch(function (e) { if (answered) { console.error(e); return; } if (meta && C.isNetworkError(e)) { return queueOffline(jan, slot, meta, 'camera.webp', 'image/webp', showSlot, preview, seenVer); } delete state.busy[showSlot]; renderGrid(); if (e && (e.auth || e.setup || e.staff)) handleErr(e); else toast((e && e.message) || '画像の処理に失敗しました', true); });
   }
   // ── 送信待ち（電波が切れたとき）──
-  function queueOffline(jan, slot, r, name, type, showSlot, preview) {
-    return C.Outbox.add({ fields: { jan: jan, slot: String(slot), width: String(r.width), height: String(r.height), original_name: name, original_type: type, quality: r.quality ? JSON.stringify(r.quality) : '', phash: r.phash || '', replay: '1' }, blob: r.blob, thumb: r.thumb || null, name: jan + '_' + showSlot + '.webp' })
+  function queueOffline(jan, slot, r, name, type, showSlot, preview, seenVer) {
+    var acct = C.Auth.account();
+    return C.Outbox.add({ acct: acct && acct.id != null ? acct.id : null, fields: { jan: jan, slot: String(slot), ver: seenVer || '', width: String(r.width), height: String(r.height), original_name: name, original_type: type, quality: r.quality ? JSON.stringify(r.quality) : '', phash: r.phash || '', replay: '1' }, blob: r.blob, thumb: r.thumb || null, name: jan + '_' + showSlot + '.webp' })
       .then(function () { if (state.busy[showSlot]) { state.busy[showSlot].label = '送信待ち（電波が戻ったら送ります）'; state.busy[showSlot].pending = true; } renderGrid(); updateOutbox(); toast('電波が無いので端末に保存しました。戻ったら自動で送ります', true); })
       .catch(function () { delete state.busy[showSlot]; renderGrid(); toast('通信に失敗しました（端末にも保存できませんでした）', true); });
   }
@@ -1534,19 +1560,22 @@
     if (flushing || !navigator.onLine || !C.Auth.get()) return;
     flushing = true;
     C.Outbox.flush(function (it, j) {
-      if (j && j.ok && state.product && state.product.jan === it.fields.jan) {
-        state.product.images = j.images; state.product.image_count = j.images.length;
-        // 送れた 1 枚ぶんの「送信待ち」だけ外す（まだ送っていない写真の印は残す）
-        var ks = Object.keys(state.busy).filter(function (k) { return state.busy[k].pending; }).sort(); if (ks.length) delete state.busy[ks[0]];
-        renderGrid();
+      if (j && state.product && state.product.jan === it.fields.jan) {
+        if (j.images) { state.product.images = j.images; state.product.image_count = j.images.length; }
+        // 送り終えた（登録できた・登録できないと決まった）1 枚ぶんの「送信待ち」だけ外す（まだ送っていない写真の印は残す。残ると最新を取りに行かなくなる）
+        var ks = Object.keys(state.busy).filter(function (k) { return state.busy[k].pending; }).sort();
+        if (ks.length) { var bz = state.busy[ks[0]]; if (bz.preview && /^blob:/.test(bz.preview)) { try { URL.revokeObjectURL(bz.preview); } catch (e) { /* */ } } delete state.busy[ks[0]]; }
+        bumpLocal(); renderGrid();
       }
+      if (j && j.ok && j.stale_replace) toast('送信待ちの写真（' + it.fields.jan + '）は、差し替える写真が変わっていたので追加として登録しました', true);
       if (j && j.ok) todayCount(1); else if (j) toast('送信待ちの写真（' + it.fields.jan + '）は登録できませんでした: ' + (j.message || j.reason), true);
     }).then(function (n) { flushing = false; updateOutbox(); if (n) toast('送信待ちの写真 ' + n + ' 枚を送りました'); }).catch(function (e) { flushing = false; if (e && (e.auth || e.staff)) handleErr(e); });
   }
   window.addEventListener('online', flushOutbox);
   setInterval(flushOutbox, 20000);
   function afterUpload(j, jan, showSlot) {
-    delete state.busy[showSlot];
+    delete state.busy[showSlot]; bumpLocal();
+    if (j && j.ok && j.stale_replace) toast('差し替えるつもりの写真が他の人に変えられていたので、上書きせず追加として登録しました（要らなければ消してください）', true);
     if (!state.product || state.product.jan !== jan) { // 送っている間に別の商品へ移った
       if (j.ok) { todayCount(1); toast(jan + ' の ' + j.slot + '枚目を保存しました'); } else toast(jan + ': ' + (j.message || '保存できませんでした'), true);
       return;
@@ -1592,7 +1621,7 @@
       expected_updated_at: p.updated_at, // 見ていた時点より後に他の人が更新していたら 409（上書き事故の防止）
     });
     if (!body.name) { toast('商品名は必須です', true); return; }
-    api('products', { method: 'PUT', body: body }).then(function (j) {
+    bumpLocal(); api('products', { method: 'PUT', body: body }).then(function (j) { bumpLocal();
       if (!j.ok) {
         if (j.status === 409 && j.product) { toast(j.message || '他の人が先に更新しました', true); openProduct(j.product); return; }
         toast(j.message || '保存できませんでした', true); return;
