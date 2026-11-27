@@ -6,6 +6,7 @@
 //                     keep_index    … 同一ファイル内の何番目を採用するか（dup_file・index=0..）
 //                     dismiss       … 何もせず閉じる
 //   2人が同時に同じ注意を押しても、先に「解決済み」へ切り替えた1人だけが保存に進む（後の人は 409）
+import { snapJson } from './import.js';
 import { json, sanitizeProduct, upsertStmt, nowIso, janShapeOk, userOf, loadDict, applyDict, logChanges, notifyWebhook } from './_lib.js';
 
 function parse(r) {
@@ -59,9 +60,10 @@ export async function onRequestPost(context) {
     // 注意を作ったあとに、登録済みの商品が直されていたら（スマホ・PC の編集、別の取り込み）、古い比較のまま上書きしない。
     //   今の内容で注意を作り直して開き直し、もう一度選んでもらう
     const nowRow = await env.DB.prepare('SELECT * FROM pim_products WHERE account_id=? AND jan=?').bind(acct, p.jan).first();
-    const seenAt = is.existing && is.existing.updated_at ? is.existing.updated_at : null;
+    let seenAt = is.existing && is.existing.updated_at ? is.existing.updated_at : null;
+    if (!seenAt && row.existing) { const m = /"updated_at":"([^"]+)"/.exec(row.existing); if (m) seenAt = m[1]; } // 前の版で途中まで切れて残った写し
     if ((nowRow ? nowRow.updated_at : null) !== seenAt) {
-      await env.DB.prepare('UPDATE pim_issues SET status=\'open\', resolution=NULL, resolved_at=NULL, resolved_by=NULL, existing=? WHERE id=?').bind(nowRow ? JSON.stringify(nowRow).slice(0, 20000) : null, id).run();
+      await env.DB.prepare('UPDATE pim_issues SET status=\'open\', resolution=NULL, resolved_at=NULL, resolved_by=NULL, existing=? WHERE id=?').bind(nowRow ? snapJson(nowRow) : null, id).run();
       return json({ ok: false, reason: 'changed', message: '登録済みの商品が' + (nowRow && nowRow.updated_by ? nowRow.updated_by + ' さんによって' : '') + 'この注意のあとに' + (nowRow ? '直されています' : '消されています') + '。今の内容に入れ替えたので、見比べてからもう一度選んでください', issue: parse(Object.assign({}, row, { existing: nowRow ? JSON.stringify(nowRow) : null })) }, 409);
     }
     await upsertStmt(env, acct, p, row.import_id, ts, by, 'upsert').run();

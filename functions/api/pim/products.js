@@ -43,7 +43,7 @@ export async function onRequestGet({ request, env, data }) {
   if (url.searchParams.get('nosku') === '1') where.push("(p.sku IS NULL OR p.sku='')"); // 商品コード（EC の突き合わせ用）がまだ無いもの
   const W = ' WHERE ' + where.join(' AND ');
   const total = await env.DB.prepare('SELECT COUNT(*) AS n FROM pim_products p' + W).bind(...binds).first();
-  const sort = url.searchParams.get('sort') === 'shelf' ? 'p.maker, p.brand, p.name, p.jan' : 'p.updated_at DESC';
+  const sort = url.searchParams.get('sort') === 'shelf' ? 'p.maker, p.brand, p.name, p.jan' : 'p.updated_at DESC, p.jan'; // 同じ時刻の商品（一括変更・取り込み）が、ページをめくったときに重複・抜けしないように
   const rs = await env.DB.prepare('SELECT p.*, ' + READY_SQL + ' AS ready FROM pim_products p' + W + ' ORDER BY ' + sort + ' LIMIT ? OFFSET ?').bind(...binds, limit, offset).all();
   const rows = (rs.results || []).map((r) => { const o = Object.assign({}, r); delete o.raw; return o; });
   const imgs = await loadImages(env, acct, rows.map((r) => r.jan));
@@ -120,18 +120,19 @@ export async function onRequestPost(context) {
   // 税区分・税率を変えたら税抜/税込を計算し直す（price は「入力された価格」のまま）
   const recompute = ('tax_included' in set) || ('tax_rate' in set);
   const ts = nowIso(), by = userOf(request);
-  let changed = 0;
+  let changed = 0; const hit = [];
   for (let i = 0; i < jans.length; i += 50) {
     const chunk = jans.slice(i, i + 50);
     const res = await env.DB.batch(chunk.map((j) => env.DB.prepare('UPDATE pim_products SET ' + sets.join(', ') + ', updated_at=?, updated_by=? WHERE account_id=? AND jan=?').bind(...vals, ts, by || null, acct, j)));
-    res.forEach((r) => { changed += (r.meta && r.meta.changes) || 0; });
+    res.forEach((r, k) => { const c = (r.meta && r.meta.changes) || 0; changed += c; if (c) hit.push(chunk[k]); });
     if (recompute) {
       await env.DB.batch(chunk.map((j) => env.DB.prepare(
         'UPDATE pim_products SET price_ex = CASE WHEN price IS NULL THEN price_ex WHEN tax_included=1 THEN CAST(ROUND(price * 100.0 / (100 + tax_rate)) AS INTEGER) ELSE price END, ' +
         'price_in = CASE WHEN price IS NULL THEN price_in WHEN tax_included=1 THEN price ELSE CAST(price * (100 + tax_rate) / 100 AS INTEGER) END WHERE account_id=? AND jan=?').bind(acct, j)));
     }
   }
-  await logChanges(env, acct, jans, 'product', by); notifyWebhook(context, data.account, 'product', jans, by);
+  // 実際にあった商品だけを記録・通知（無い JAN を「変わった」と EC へ知らせない）
+  await logChanges(env, acct, hit, 'product', by); notifyWebhook(context, data.account, 'product', hit, by);
   return json({ ok: true, changed });
 }
 
@@ -140,6 +141,8 @@ export async function onRequestDelete(context) {
   const acct = data.account.id;
   const jan = cleanJan(new URL(request.url).searchParams.get('jan') || '');
   if (!jan) return json({ ok: false, reason: 'no_jan' }, 400);
+  const exists = await env.DB.prepare('SELECT 1 AS x FROM pim_products WHERE account_id=? AND jan=?').bind(acct, jan).first();
+  if (!exists) return json({ ok: false, reason: 'not_found', message: 'この商品はもうありません（他の人が消しました）' }, 404); // 無い商品の「消した」を EC へ知らせない
   for (let s = 1; s <= SLOT_MAX; s++) { await blobDelete(env, imageKey(acct, jan, s)); await blobDelete(env, thumbKey(acct, jan, s)); } // 無ければ無いでよい
   await env.DB.batch([
     env.DB.prepare('DELETE FROM pim_images WHERE account_id=? AND jan=?').bind(acct, jan),

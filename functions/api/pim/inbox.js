@@ -12,7 +12,8 @@ import { json, nowIso, blobPut, blobGet, blobDelete, hasDb, ensureSchema } from 
 import { commitProducts } from './import.js';
 
 const N = (PN && PN.decodeBytes) ? PN : ((typeof self !== 'undefined' && self.PimNormalize) || globalThis.PimNormalize);
-const MAX = 1400000; // D1 の 1 行に収める（R2 があればもっと大きくてもよいが、CSV は普通 1MB 以下）
+const MAX = 1400000;
+const AUTO_MAX = 3000; // 自動で取り込む行数の上限（300 行ずつ 10 回。超えたら受信箱に置いて PC で） // D1 の 1 行に収める（R2 があればもっと大きくてもよいが、CSV は普通 1MB 以下）
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -41,6 +42,9 @@ export async function onRequest(context) {
     return json({ ok: true, items: rs.results || [], pending: (rs.results || []).filter((r) => r.status === 'pending').length });
   }
   if (request.method === 'POST') {
+    const { staffGate } = await import('./_lib.js');
+    const g = await staffGate(env, request, acct); // 担当者一覧・PIN の決まりは、ほかの書き込みと同じ（_middleware を通らないのでここで）
+    if (g.error) return g.error;
     const b = await request.json().catch(() => null);
     const id = b && parseInt(b.id, 10);
     if (!id) return json({ ok: false, reason: 'no_id' }, 400);
@@ -114,12 +118,20 @@ async function receive(context, key) {
     }
     products.push(Object.assign({}, p, { _mode: kind === 'update' ? 'update' : (kind === 'fill' ? 'fill' : 'new') })); // 登録済みと被る新規は commitProducts が dup_db の注意に回す
   });
+  // 大きすぎるファイルは自動では入れない（1 回の呼び出しで D1 の回数上限に当たり、途中まで入った取り込みが残るため）
+  if (products.length > AUTO_MAX) {
+    await env.DB.prepare('DELETE FROM pim_imports WHERE id=? AND account_id=?').bind(importId, acct).run();
+    return pending(products.length + ' 行あり、自動取り込みの上限（' + AUTO_MAX + ' 行）を超えたので受信箱に置きました。PC の取り込み画面で取り込んでください');
+  }
   const fields = kind === 'update' ? (Array.isArray(options.fields) && options.fields.length ? options.fields : ['price']) : [];
   const fillNew = kind === 'fill' && !!options.fillNew;
   let inserted = 0, updated = 0, conflicts = 0, nIssues = 0, filled = 0, unknown = 0;
+  const partly = (why) => pending((inserted + updated + filled ? '途中まで取り込みました（取り込み #' + importId + '・' + (inserted + updated + filled) + ' 件）。PC の取り込み履歴で取り消してから、PC で取り込み直してください。' : '取り込めませんでした。PC の取り込み画面で取り込んでください。') + '（' + why + '）');
   for (let i = 0; i < products.length; i += 300) {
-    const r = await commitProducts(context, a, by, { import_id: importId, products: products.slice(i, i + 300), issues: i === 0 ? issues : [], fields, fill_new: fillNew });
-    if (!r.ok) return pending('取り込めませんでした: ' + (r.message || r.reason));
+    let r;
+    try { r = await commitProducts(context, a, by, { import_id: importId, products: products.slice(i, i + 300), issues: i === 0 ? issues : [], fields, fill_new: fillNew }); }
+    catch (e) { return partly(String(e && e.message || e).slice(0, 120)); }
+    if (!r.ok) return partly(r.message || r.reason);
     inserted += r.inserted; updated += r.updated; conflicts += r.conflicts; nIssues += r.issues; filled += r.filled || 0; unknown += r.unknown || 0;
   }
   if (!products.length && issues.length) { const r = await commitProducts(context, a, by, { import_id: importId, products: [], issues, fields }); nIssues += r.issues; }

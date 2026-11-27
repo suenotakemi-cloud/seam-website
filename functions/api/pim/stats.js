@@ -10,8 +10,12 @@ import { READY_SQL, json, PUSH_PENDING_SQL } from './_lib.js';
 
 export async function onRequestGet({ env, data }) {
   const acct = data.account.id;
-  const today = new Date().toISOString().slice(0, 10);
-  const since = new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10);
+  // 日付は日本時間（UTC の日付だと、朝 9 時までは「今日」に昨日の数が出て、1 日の作業が 2 日に分かれて数えられていた）
+  const JST = 9 * 3600000, jstDay = (ms) => new Date(ms + JST).toISOString().slice(0, 10);
+  const today = jstDay(Date.now());
+  const sinceDay = jstDay(Date.now() - 13 * 86400000);
+  const since = new Date(Date.parse(sinceDay + 'T00:00:00Z') - JST).toISOString(); // その日の日本時間 0 時（UTC で表した時刻）
+  const DAY = "date(substr(created_at,1,19),'+9 hours')";
   const totals = await env.DB.prepare(
     'SELECT (SELECT COUNT(*) FROM pim_products WHERE account_id=?1) AS products, ' +
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND image_count>0) AS with_images, ' +
@@ -33,18 +37,18 @@ export async function onRequestGet({ env, data }) {
     '(SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND ec_push_status=\'ok\') AS push_ok'
   ).bind(acct).first();
   const byDay = await env.DB.prepare(
-    'SELECT substr(created_at,1,10) AS day, COUNT(*) AS images, COUNT(DISTINCT jan) AS products FROM pim_images WHERE account_id=? AND created_at>=? GROUP BY day ORDER BY day'
+    'SELECT ' + DAY + ' AS day, COUNT(*) AS images, COUNT(DISTINCT jan) AS products FROM pim_images WHERE account_id=? AND created_at>=? GROUP BY day ORDER BY day'
   ).bind(acct, since).all();
   const byUser = await env.DB.prepare(
-    'SELECT COALESCE(created_by,\'(名前なし)\') AS user, SUM(CASE WHEN substr(created_at,1,10)=? THEN 1 ELSE 0 END) AS today, COUNT(*) AS total, COUNT(DISTINCT jan) AS products FROM pim_images WHERE account_id=? GROUP BY user ORDER BY total DESC LIMIT 50'
+    'SELECT COALESCE(created_by,\'(名前なし)\') AS user, SUM(CASE WHEN ' + DAY + '=? THEN 1 ELSE 0 END) AS today, COUNT(*) AS total, COUNT(DISTINCT jan) AS products FROM pim_images WHERE account_id=? GROUP BY user ORDER BY total DESC LIMIT 50'
   ).bind(today, acct).all();
   const byMaker = await env.DB.prepare(
     'SELECT COALESCE(maker,\'\') AS maker, COUNT(*) AS products, SUM(CASE WHEN image_count>0 THEN 1 ELSE 0 END) AS with_images FROM pim_products WHERE account_id=? GROUP BY maker ORDER BY products DESC LIMIT 100'
   ).bind(acct).all();
   // ペース: 直近 7 日で「写真が付いた商品」の数 ÷ 稼働日数
-  const week = new Date(Date.now() - 6 * 86400000).toISOString().slice(0, 10);
+  const week = new Date(Date.parse(jstDay(Date.now() - 6 * 86400000) + 'T00:00:00Z') - JST).toISOString();
   const pace = await env.DB.prepare(
-    'SELECT COUNT(DISTINCT jan) AS products, COUNT(DISTINCT substr(created_at,1,10)) AS days FROM pim_images WHERE account_id=? AND created_at>=?'
+    'SELECT COUNT(DISTINCT jan) AS products, COUNT(DISTINCT ' + DAY + ') AS days FROM pim_images WHERE account_id=? AND created_at>=?'
   ).bind(acct, week).first();
   const perDay = pace && pace.days ? pace.products / pace.days : 0;
   const daysLeft = perDay > 0 ? Math.ceil((totals.no_images || 0) / perDay) : null;

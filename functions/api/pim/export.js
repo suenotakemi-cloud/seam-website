@@ -16,7 +16,10 @@ const COLS = [
   ['image1', '画像1'], ['image2', '画像2'], ['image3', '画像3'], ['image4', '画像4'], ['image5', '画像5'],
   ['image_count', '画像枚数'], ['updated_at', '更新日時'],
 ];
-function cell(v) { if (v == null) return ''; const s = String(v); return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+// Excel で開いたときに式として動く書き方（=HYPERLINK(…)・+cmd|…・@SUM(…) など）は、先頭に ' を付けて文字として出す
+//   （メーカーの CSV や受信箱から入った商品名・説明に混ざっていても、出力を開いた人の Excel で実行されないように）。普通の数値（-5 など）はそのまま
+const FORMULA = /^(?:[=@\t\r]|[+-](?![\d.,]*$)[A-Za-z("'])/;
+function cell(v) { if (v == null) return ''; let s = String(v); if (typeof v === 'string' && FORMULA.test(s)) s = "'" + s; return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
 function fmtAmount(a, u) { if (a == null || a === '') return ''; return String(Math.round(Number(a) * 100) / 100) + (u || ''); }
 
 export async function onRequestGet({ request, env, data }) {

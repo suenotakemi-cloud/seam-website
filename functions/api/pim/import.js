@@ -25,6 +25,13 @@
 //   いずれも画面で「どちらを残す」を選ぶと、そのときだけ保存される（issues.js）
 import { json, cleanJan, janShapeOk, sanitizeProduct, upsertStmt, nowIso, userOf, loadDict, applyDict, logChanges, notifyWebhook, PRODUCT_COLS, imageKey, blobDelete, SLOT_MAX } from './_lib.js';
 
+// 注意に残す「登録済み」の写し。元 CSV の行（raw）が長くて 20000 字に収まらないときは raw を外す（途中で切ると読めなくなり、
+//   「届いた方で上書き」の確認（updated_at の比較）がいつまでも通らなくなる）
+export function snapJson(o) {
+  let t = JSON.stringify(o);
+  if (t.length > 20000) { const c = Object.assign({}, o); delete c.raw; t = JSON.stringify(c); }
+  return t.slice(0, 20000);
+}
 async function loadExistingOf(env, acct, jans) {
   const out = {};
   for (let i = 0; i < jans.length; i += 90) {
@@ -64,6 +71,7 @@ export async function commitProducts(context, account, by, b) {
     // 保存（新規のつもりのものは「無いときだけ」。changes=0 なら他の人が先に入れている）
     let inserted = 0, updated = 0, conflicts = 0, filled = 0, unchanged = 0;
     const conflictJans = [], unknownJans = [];
+    const noLog = new Set(); let mineAgain = 0; // 何も変えなかった行（変更の記録に残さない。残すと、前の取り込みの取り消しで「あとで直された」と取り違える）
     // 空欄埋め: 「今ある値が空のときだけ」入れる列。商品名・商品コードは絶対に触らない
     const FILL_TEXT = ['retail_price', 'cost_price', 'maker', 'brand', 'category', 'description'];
     const empty = (v) => v == null || String(v).trim() === '';
@@ -98,10 +106,11 @@ export async function commitProducts(context, account, by, b) {
         } catch (e) { rawHeaderOf = {}; }
       }
     }
+    // 空のセルは「変えない」（改定 CSV で一部の行だけ価格が空、などのときに、登録済みの値を消さない）
+    const updFs = (p) => updFields.filter((f) => !empty(f === 'price' ? p.price_ex : p[f]));
     const updateStmt = (p) => {
       const sets = [], vals = [];
-      // 空のセルは「変えない」（改定 CSV で一部の行だけ価格が空、などのときに、登録済みの値を消さない）
-      const fs = updFields.filter((f) => !empty(f === 'price' ? p.price_ex : p[f]));
+      const fs = updFs(p);
       if (!fs.length) return env.DB.prepare('UPDATE pim_products SET import_id=import_id WHERE account_id=? AND jan=?').bind(acct, p.jan); // 選んだ列がこの行は全部空 → 何も変えない（登録済みかどうかだけ確かめる）
       fs.forEach((f) => { sets.push(f + '=?'); vals.push(p[f]); });
       if (fs.indexOf('price') >= 0) { sets.push('tax_included=?', 'tax_rate=?', 'price_ex=?', 'price_in=?'); vals.push(p.tax_included, p.tax_rate, p.price_ex, p.price_in); }
@@ -127,14 +136,14 @@ export async function commitProducts(context, account, by, b) {
         const cur = await loadExisting(fillChunk.map((x) => x.p.jan));
         const st = [], stIdx = [];
         fillChunk.forEach((x) => {
-          if (cur[x.p.jan]) { const q = fillStmt(x.p, cur[x.p.jan]); if (q) { st.push(q); stIdx.push(x); } else unchanged++; }
+          if (cur[x.p.jan]) { const q = fillStmt(x.p, cur[x.p.jan]); if (q) { st.push(q); stIdx.push(x); } else { unchanged++; noLog.add(x.p.jan); } }
           else if (fillNew && x.p.name) { st.push(upsertStmt(env, acct, x.p, importId, ts, by, 'insert_only')); stIdx.push(x); x.isNew = true; }
           else unknownJans.push(x.p.jan);
         });
         if (st.length) {
           if (importId) await env.DB.batch(backupOf(stIdx, cur)); // 実際に触る行だけ「前の状態」を残す（触らない JAN を取り消しで消さないため）
           const rs = await env.DB.batch(st);
-          stIdx.forEach((x, k) => { const ch = rs[k] && rs[k].meta ? rs[k].meta.changes : 1; if (x.isNew) { if (ch) inserted++; else unchanged++; } else if (ch) filled++; else unchanged++; });
+          stIdx.forEach((x, k) => { const ch = rs[k] && rs[k].meta ? rs[k].meta.changes : 1; if (x.isNew) { if (ch) inserted++; else { unchanged++; noLog.add(x.p.jan); } } else if (ch) filled++; else { unchanged++; noLog.add(x.p.jan); } });
         }
       }
       const rest = plain;
@@ -143,7 +152,11 @@ export async function commitProducts(context, account, by, b) {
       rest.forEach((x, k) => {
         const ch = res[k] && res[k].meta ? res[k].meta.changes : 1;
         if (x.mode === 'insert_only') { if (ch) inserted++; else { conflicts++; conflictJans.push(x.p.jan); untouched.push(x.p.jan); } }
-        else if (x.mode === 'update') { if (ch) updated++; else missing.push(x); }
+        else if (x.mode === 'update') {
+          if (!ch) missing.push(x);
+          else if (!updFs(x.p).length) { unchanged++; noLog.add(x.p.jan); untouched.push(x.p.jan); } // 選んだ列が全部空の行: 登録済みと分かっただけ（控えも消す）
+          else updated++;
+        }
         else updated++;
       });
       // 「新規のつもりが既にあった」うち、この取り込み自身が入れたもの（返事が届かず、同じ 300 件を送り直したとき）は、自分と被っただけ。
@@ -152,7 +165,7 @@ export async function commitProducts(context, account, by, b) {
         const mine = await loadExisting(conflictJans.slice());
         for (let q = conflictJans.length - 1; q >= 0; q--) {
           const j = conflictJans[q], ex = mine[j];
-          if (ex && ex.import_id === importId) { conflictJans.splice(q, 1); const u = untouched.indexOf(j); if (u >= 0) untouched.splice(u, 1); conflicts--; inserted++; }
+          if (ex && ex.import_id === importId) { conflictJans.splice(q, 1); const u = untouched.indexOf(j); if (u >= 0) untouched.splice(u, 1); conflicts--; inserted++; mineAgain++; noLog.add(j); } // 記録・控えの番号はそのまま（最初の保存のもの。その後のスマホの修正を「取り込みより前」にしない）
         }
       }
       if (missing.length) { // 更新対象が無かった＝新規。入れる
@@ -180,26 +193,30 @@ export async function commitProducts(context, account, by, b) {
     }
     const stmts = issues.map((is) => {
       const kind = ['dup_db', 'dup_file', 'invalid_jan', 'missing', 'similar_name'].indexOf(is.kind) >= 0 ? is.kind : 'dup_file';
+      const jn = cleanJan(is.jan || '').slice(0, 14), msg = String(is.message || '').slice(0, 1000);
+      // 同じ取り込みで同じ注意がもうあれば積まない（返事が届かずに同じ分を送り直したとき、注意が二重にならないように）
       return env.DB.prepare(
-        'INSERT INTO pim_issues(account_id, ts, import_id, kind, jan, message, existing, incoming) VALUES(?,?,?,?,?,?,?,?)'
-      ).bind(acct, ts, importId, kind, cleanJan(is.jan || '').slice(0, 14), String(is.message || '').slice(0, 1000),
-        is.existing ? JSON.stringify(is.existing).slice(0, 20000) : null,
-        is.incoming ? JSON.stringify(is.incoming).slice(0, 60000) : null);
+        'INSERT INTO pim_issues(account_id, ts, import_id, kind, jan, message, existing, incoming) SELECT ?,?,?,?,?,?,?,? WHERE ? IS NULL OR NOT EXISTS (SELECT 1 FROM pim_issues WHERE account_id=? AND import_id=? AND kind=? AND jan=? AND message=?)'
+      ).bind(acct, ts, importId, kind, jn, msg,
+        is.existing ? snapJson(is.existing) : null,
+        is.incoming ? JSON.stringify(is.incoming).slice(0, 60000) : null,
+        importId, acct, importId, kind, jn, msg);
     });
     for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
     if (importId) {
       await env.DB.prepare('UPDATE pim_imports SET inserted=inserted+?, updated=updated+?, skipped=skipped+? WHERE id=? AND account_id=?')
-        .bind(inserted, updated + filled, issues.length + unknownJans.length, importId, acct).run();
+        .bind(inserted - mineAgain, updated + filled, issues.length + unknownJans.length, importId, acct).run(); // 送り直しで「自分の分」と分かった行は、最初の保存で数え済み
     }
-    const changed = products.filter((x) => !(x.mode === 'insert_only' && conflictJans.indexOf(x.p.jan) >= 0) && !(x.mode === 'fill' && unknownJans.indexOf(x.p.jan) >= 0)).map((x) => x.p.jan);
+    const changed = products.filter((x) => !(x.mode === 'insert_only' && conflictJans.indexOf(x.p.jan) >= 0) && !(x.mode === 'fill' && unknownJans.indexOf(x.p.jan) >= 0) && !noLog.has(x.p.jan)).map((x) => x.p.jan);
     if (changed.length) {
-      await logChanges(env, acct, changed, 'product', by); notifyWebhook(context, account, 'product', changed, by);
+      const logTs = await logChanges(env, acct, changed, 'product', by); notifyWebhook(context, account, 'product', changed, by);
       // 控えに「この取り込みの変更記録の番号」を付ける。取り消すとき、これより後に誰かが直した商品（スマホ・PC の編集など）は戻さない
       if (importId) {
         const uniq = Array.from(new Set(changed));
         for (let u = 0; u < uniq.length; u += 90) {
           const part = uniq.slice(u, u + 90);
-          await env.DB.prepare("UPDATE pim_import_backup SET chg_id=(SELECT MAX(c.id) FROM pim_changes c WHERE c.account_id=pim_import_backup.account_id AND c.jan=pim_import_backup.jan AND c.kind='product') WHERE import_id=? AND account_id=? AND jan IN (" + part.map(() => '?').join(',') + ')').bind(importId, acct, ...part).run();
+          // この取り込みが今書いた記録（ts が同じもの）の番号。最後の記録の番号にすると、保存の途中に入ったスマホの修正まで「取り込みより前」になる
+          await env.DB.prepare("UPDATE pim_import_backup SET chg_id=COALESCE((SELECT MAX(c.id) FROM pim_changes c WHERE c.account_id=pim_import_backup.account_id AND c.jan=pim_import_backup.jan AND c.kind='product' AND c.ts=?), chg_id) WHERE import_id=? AND account_id=? AND jan IN (" + part.map(() => '?').join(',') + ')').bind(logTs || '', importId, acct, ...part).run();
         }
       }
     }
@@ -259,18 +276,18 @@ export async function onRequestPost(context) {
     if (!(lock.meta && lock.meta.changes)) return json({ ok: false, reason: 'already', message: '他の人が先に取り消しました' }, 409);
     let deleted = 0, restored = 0, keptWithImages = 0, missing = 0, keptLater = 0;
     const delJans = [], resJans = [];
-    const logDone = async (dels, ress) => { // 戻した分の変更記録（途中で止まっても、そこまでの分は残す）
+    const logDone = async (dels, ress) => { // 戻す分の変更記録。書き換える前に残す（途中で止まっても、戻した商品の記録が抜けないように。記録だけ残って戻っていない商品は、EC が取り直すだけで害が無い）
       if (dels.length) await logChanges(env, acct, dels, 'delete', by);
-      if (ress.length) await logChanges(env, acct, ress, 'product', by);
+      return ress.length ? logChanges(env, acct, ress, 'product', by) : null;
     };
     try {
     // 済んだ行の控えは消しながら進む（途中で止まってもう一度押したとき、続きから。戻した行を「後から直された」と取り違えない）
     for (let guard = 0; guard < 2000; guard++) {
-      const rs = await env.DB.prepare("SELECT b.jan, b.before, EXISTS(SELECT 1 FROM pim_changes c WHERE c.account_id=b.account_id AND c.jan=b.jan AND c.kind IN ('product','delete') AND c.id>b.chg_id) AS later FROM pim_import_backup b WHERE b.import_id=? AND b.account_id=? ORDER BY b.jan LIMIT 90").bind(importId, acct).all();
+      const rs = await env.DB.prepare("SELECT b.jan, b.before, b.chg_id, EXISTS(SELECT 1 FROM pim_changes c WHERE c.account_id=b.account_id AND c.jan=b.jan AND c.kind IN ('product','delete') AND c.id>b.chg_id) AS later FROM pim_import_backup b WHERE b.import_id=? AND b.account_id=? ORDER BY b.jan LIMIT 90").bind(importId, acct).all();
       const rows = rs.results || [];
       if (!rows.length) break;
       const cur = await loadExisting(rows.map((r) => r.jan));
-      const stmts = [], pageDel = [], pageRes = [];
+      const stmts = [], pageDel = [], pageRes = [], bumps = [];
       const done = (jan) => stmts.push(env.DB.prepare('DELETE FROM pim_import_backup WHERE import_id=? AND account_id=? AND jan=?').bind(importId, acct, jan));
       for (const r of rows) {
         const now = cur[r.jan];
@@ -293,11 +310,19 @@ export async function onRequestPost(context) {
           const vals = cols.map((c) => (prev[c] == null ? null : prev[c])).concat([ts, by || null]);
           stmts.push(env.DB.prepare('UPDATE pim_products SET ' + sets + ' WHERE account_id=? AND jan=?').bind(...vals, acct, r.jan));
           restored++; pageRes.push(r.jan);
+          // 戻した内容が前の取り込み P の書いたものなら、P の控えの番号をこの取り消しの記録まで進める（新しい順に取り消したとき、
+          //   P の取り消しが、この取り消しを「あとで直された」と取り違えて戻さない、を防ぐ）。P の記録とこの取り込みの記録の間に
+          //   別の変更（スマホの修正など）があれば、戻したのはその修正なので進めない（P の取り消しはその修正を守る）
+          if (r.chg_id) bumps.push({ jan: r.jan, mine: r.chg_id });
         }
         done(r.jan);
       }
+      const logTs = await logDone(pageDel, pageRes);
       for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
-      await logDone(pageDel, pageRes); delJans.push(...pageDel); resJans.push(...pageRes);
+      delJans.push(...pageDel); resJans.push(...pageRes);
+      const bst = bumps.map((x) => env.DB.prepare("UPDATE pim_import_backup SET chg_id=(SELECT MAX(c.id) FROM pim_changes c WHERE c.account_id=?1 AND c.jan=?2 AND c.kind='product' AND c.ts=?3) WHERE import_id<>?4 AND account_id=?1 AND jan=?2 AND chg_id IS NOT NULL AND chg_id<?5 AND NOT EXISTS (SELECT 1 FROM pim_changes c2 WHERE c2.account_id=?1 AND c2.jan=?2 AND c2.kind IN ('product','delete') AND c2.id>pim_import_backup.chg_id AND c2.id<?5)")
+        .bind(acct, x.jan, logTs || '', importId, x.mine));
+      for (let i = 0; i < bst.length; i += 50) await env.DB.batch(bst.slice(i, i + 50));
     }
     } catch (e) {
       // 途中で止まったら「取り消し済み」の印を外して、もう一度押せるようにする（済んだ行の控えは消してあるので、続きから戻す）

@@ -42,7 +42,8 @@ export async function onRequestPost(context) {
     if (lid === a.login_id) return json({ ok: true, message: '同じ ID です' });
     const dup = await env.DB.prepare('SELECT id FROM pim_accounts WHERE login_id=?').bind(lid).first();
     if (dup) return json({ ok: false, reason: 'exists', message: 'この ID は既に使われています' }, 409);
-    await env.DB.prepare('UPDATE pim_accounts SET login_id=?, token_version=token_version+1, updated_at=? WHERE id=?').bind(lid, ts, id).run();
+    try { await env.DB.prepare('UPDATE pim_accounts SET login_id=?, token_version=token_version+1, updated_at=? WHERE id=?').bind(lid, ts, id).run(); }
+    catch (e) { if (/UNIQUE|constraint/i.test(String(e && e.message || e))) return json({ ok: false, reason: 'exists', message: 'この ID は既に使われています' }, 409); throw e; } // 同時に同じ ID へ変えたとき
     return json({ ok: true, login_id: lid, message: 'ログイン ID を「' + lid + '」に変えました。全端末で新しい ID で再ログインしてください' });
   }
   if (action === 'emails') {
