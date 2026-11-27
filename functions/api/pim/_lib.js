@@ -465,7 +465,7 @@ export function withImages(origin, acct, rows, imagesByJan) {
   return rows.map((r) => {
     const imgs = (imagesByJan[r.jan] || []).slice().sort((a, b) => a.slot - b.slot);
     return Object.assign({}, r, {
-      images: imgs.map((im) => ({ slot: im.slot, url: imageUrl(origin, acct, r.jan, im.slot, im.ver || im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at, review: im.review || null, review_note: im.review_note || null, quality_warn: im.quality_warn || null, thumb_url: im.has_thumb ? thumbUrl(origin, acct, r.jan, im.slot, im.ver || im.created_at) : null })),
+      images: imgs.map((im) => ({ slot: im.slot, ver: im.ver || im.created_at, url: imageUrl(origin, acct, r.jan, im.slot, im.ver || im.created_at), width: im.width, height: im.height, bytes: im.bytes, created_by: im.created_by, created_at: im.created_at, review: im.review || null, review_note: im.review_note || null, quality_warn: im.quality_warn || null, thumb_url: im.has_thumb ? thumbUrl(origin, acct, r.jan, im.slot, im.ver || im.created_at) : null })),
       image_urls: imgs.map((im) => imageUrl(origin, acct, r.jan, im.slot, im.ver || im.created_at)),
     });
   });
