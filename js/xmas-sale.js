@@ -8,11 +8,11 @@
   if(Date.now()>=END&&!q)return;
   var V=q||VARIANT;
   var T={
-    ja:{r:'12.25 まで',h:'贈る人も 受け取る人も<br>髪からうれしい冬に',s:'12月25日まで クリスマスセール開催中',sc:'全店舗とオンラインショップで',c1:'近くの店舗へ',c2:'オンラインショップへ',d:function(n){return 'あと '+n+' 日';},last:'本日まで'},
-    en:{r:'Until Dec 25',h:'A winter that begins<br>with beautiful hair',s:'Christmas Sale through December 25',sc:'At every store and our online shop',c1:'Find a store',c2:'Online shop',d:function(n){return n+(n>1?' days':' day')+' left';},last:'Ends today'},
-    zh:{r:'至12月25日',h:'送礼的人 收礼的人<br>都从秀发开始欢喜',s:'圣诞特卖 截至12月25日',sc:'全店及线上商店同步举行',c1:'查找门店',c2:'线上商店',d:function(n){return '还剩 '+n+' 天';},last:'今天截止'},
-    tw:{r:'至12月25日',h:'送禮的人 收禮的人<br>都從秀髮開始歡喜',s:'聖誕特賣 至12月25日',sc:'全店及線上商店同步舉行',c1:'查詢門市',c2:'線上商店',d:function(n){return '還剩 '+n+' 天';},last:'今天截止'},
-    ko:{r:'12월 25일까지',h:'선물하는 사람도 받는 사람도<br>머릿결부터 기쁜 겨울',s:'크리스마스 세일 12월 25일까지',sc:'전 매장과 온라인숍에서',c1:'매장 찾기',c2:'온라인숍',d:function(n){return n+'일 남음';},last:'오늘 마감'}
+    ja:{big:'クリスマスセール',w:'全店舗とオンラインで開催中',r:'12.25 まで',h:'贈る人も 受け取る人も<br>髪からうれしい冬に',s:'12月25日まで クリスマスセール開催中',sc:'全店舗とオンラインショップで',c1:'近くの店舗へ',c2:'オンラインショップへ',d:function(n){return 'あと '+n+' 日';},last:'本日まで'},
+    en:{big:'Christmas Sale',w:'At all stores and online',r:'Until Dec 25',h:'A winter that begins<br>with beautiful hair',s:'Christmas Sale through December 25',sc:'At every store and our online shop',c1:'Find a store',c2:'Online shop',d:function(n){return n+(n>1?' days':' day')+' left';},last:'Ends today'},
+    zh:{big:'圣诞特卖',w:'全店及线上同步举行',r:'至12月25日',h:'送礼的人 收礼的人<br>都从秀发开始欢喜',s:'圣诞特卖 截至12月25日',sc:'全店及线上商店同步举行',c1:'查找门店',c2:'线上商店',d:function(n){return '还剩 '+n+' 天';},last:'今天截止'},
+    tw:{big:'聖誕特賣',w:'全店及線上同步舉行',r:'至12月25日',h:'送禮的人 收禮的人<br>都從秀髮開始歡喜',s:'聖誕特賣 至12月25日',sc:'全店及線上商店同步舉行',c1:'查詢門市',c2:'線上商店',d:function(n){return '還剩 '+n+' 天';},last:'今天截止'},
+    ko:{big:'크리스마스 세일',w:'전 매장·온라인 진행 중',r:'12월 25일까지',h:'선물하는 사람도 받는 사람도<br>머릿결부터 기쁜 겨울',s:'크리스마스 세일 12월 25일까지',sc:'전 매장과 온라인숍에서',c1:'매장 찾기',c2:'온라인숍',d:function(n){return n+'일 남음';},last:'오늘 마감'}
   };
   var css=
   '.xs{position:relative;overflow:hidden;isolation:isolate;color:#F6EEDC;padding:52px 22px 46px;text-align:left}'+
@@ -27,7 +27,7 @@
   '.xs-cta a:active{transform:scale(.98)}.xs-cta a:focus-visible{outline:2px solid #F3D893;outline-offset:3px}'+
   '.xs .xs-p{background:#F6EEDC!important;color:#1A1A1A!important}.xs .xs-g{border:1px solid #F6EEDC99;color:#F6EEDC!important}'+
   /* 最初の画面（ヒーロー）にも：下に金の帯・A は星 C は雪 B は赤い帯 */
-  '.xs-hc{position:absolute;inset:0;z-index:3;pointer-events:none}.xs-hr{position:absolute;left:50%;top:max(84px,13vh);transform:translateX(-50%);z-index:6;display:inline-flex;align-items:center;gap:10px;white-space:nowrap;padding:10px 18px;border-radius:999px;background:#10241Ce6;border:1px solid #D9B46A;color:#F6EEDC!important;font-size:12.5px;letter-spacing:.12em;text-decoration:none;box-shadow:0 8px 24px #0006}.xs-hr b{font:600 11px/1 "Cormorant Garamond",Georgia,serif;letter-spacing:.32em;color:#E6C985}.xs-hr.xs-hr-b{background:#5A1420e6}.xs-hr.xs-hr-c{background:#ffffff26;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-color:#ffffff88}@media(prefers-reduced-motion:no-preference){.xs-hr{animation:xsGlow 3.2s ease-in-out infinite}}@keyframes xsGlow{50%{box-shadow:0 8px 30px #D9B46A55}}'+
+  '.xs-hc{position:absolute;inset:0;z-index:3;pointer-events:none}.xs-hr{position:relative;z-index:6;margin:0 auto 18px;display:flex;flex-direction:column;align-items:center;gap:6px;width:max-content!important;max-width:calc(100vw - 32px)!important;box-sizing:border-box!important;padding:16px 22px 14px!important;height:auto!important;min-height:0!important;border-radius:16px;background:#1a1411b8;border:1px solid #E6C98599;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#F6EEDC!important;text-decoration:none;text-align:center;box-shadow:0 10px 30px #0007}.xs-hr b{font:600 10.5px/1 "Cormorant Garamond",Georgia,serif;letter-spacing:.38em;padding-left:.38em;color:#E6C985}.xs-hr strong{white-space:nowrap;font-family:"Yu Mincho","Hiragino Mincho ProN","Noto Serif JP",serif;font-weight:600;font-size:clamp(28px,8.4vw,38px);line-height:1.15;letter-spacing:.08em;color:#fff}.xs-hr span{font-size:12.5px;letter-spacing:.06em;color:#F3D893}@media(prefers-reduced-transparency:reduce){.xs-hr{background:#1a1411f0;backdrop-filter:none}}.xs-kick-off{display:none!important}@media(max-height:720px){.xs-hr{padding:10px 18px 9px!important;gap:4px;margin-bottom:10px}.xs-hr b{display:none}.xs-hr strong{white-space:nowrap;font-size:27px}}'+
   '@media(hover:hover){.xs-p:hover{background:#fff}.xs-g:hover{background:#ffffff1a}}'+
   /* A 森の夜：深い緑に金の星と飾り */
   '.xs-a{background:radial-gradient(120% 90% at 85% 0%,#1F4636 0%,#10241C 55%,#0A1712 100%)}'+
@@ -86,9 +86,9 @@
     if(getComputedStyle(hero).position==='static')hero.style.position='relative';
     var hr=document.createElement('a');hr.className='xs-hr xs-hr-'+V;hr.href='#xmas';hr.setAttribute('data-track-click','xmas_hero');sec.id='xmas';
     hr.addEventListener('click',function(e){e.preventDefault();sec.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});});
-    hero.appendChild(hr);
+    var kick=hero.querySelector('small');if(kick){kick.classList.add('xs-kick-off');kick.parentNode.insertBefore(hr,kick);}else hero.appendChild(hr);
     if(V!=='b'){var hc=document.createElement('canvas');hc.className='xs-hc';hc.setAttribute('aria-hidden','true');hero.appendChild(hc);snow(hc,hero);}
-    function hrText(){var t=T[L()]||T.ja;hr.innerHTML='<b>CHRISTMAS SALE</b><span>'+t.r+'</span>';}
+    function hrText(){var t=T[L()]||T.ja;hr.innerHTML='<b>CHRISTMAS SALE</b><strong>'+t.big+'</strong><span>'+t.r+'　'+t.w+'</span>';}
     function all(){draw(sec);hrText();}
     all();addEventListener('seam:langchange',function(){setTimeout(all,0);});
     return true;
