@@ -130,7 +130,7 @@ CREATE INDEX IF NOT EXISTS idx_pim_inbox_acct ON pim_inbox(account_id, id);
 -- ▼ 連番（仮コード 20 + アカウント3桁 + 連番7桁 + チェックデジット）
 CREATE TABLE IF NOT EXISTS pim_seq (account_id INTEGER NOT NULL, name TEXT NOT NULL, n INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (account_id, name));
 -- ▼ 取り込み前の状態（取り消し用。before が NULL = その取り込みで新しく入った商品）
-CREATE TABLE IF NOT EXISTS pim_import_backup (import_id INTEGER NOT NULL, account_id INTEGER NOT NULL, jan TEXT NOT NULL, before TEXT, PRIMARY KEY (import_id, jan));
+CREATE TABLE IF NOT EXISTS pim_import_backup (import_id INTEGER NOT NULL, account_id INTEGER NOT NULL, jan TEXT NOT NULL, before TEXT, chg_id INTEGER, PRIMARY KEY (import_id, jan)); -- chg_id … 取り込みが残した変更記録の番号（これより後に直された商品は、取り消しで戻さない）
 
 -- ▼ 注意（JAN重複など。登録せずにここへ積み、画面で「どちらを残すか」を決める）
 CREATE TABLE IF NOT EXISTS pim_issues (
@@ -193,6 +193,7 @@ CREATE TABLE IF NOT EXISTS pim_changes (
   by             TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_pim_changes_acct ON pim_changes(account_id, id);
+CREATE INDEX IF NOT EXISTS idx_pim_changes_jan ON pim_changes(account_id, jan, id); -- 取り込みの取り消しで「その商品のあとの記録」を引く
 
 -- ▼ 画像の実体（R2 "PRODUCT_IMAGES" が未設定のときだけ使う暫定置き場。読みは R2 → ここ の順）
 CREATE TABLE IF NOT EXISTS pim_blobs (key TEXT PRIMARY KEY, data BLOB NOT NULL, bytes INTEGER, created_at TEXT NOT NULL);

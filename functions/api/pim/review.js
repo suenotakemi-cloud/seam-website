@@ -59,15 +59,19 @@ export async function onRequestPost({ request, env, data }) {
     const review = it.review === 'ok' || it.review === 'retake' ? it.review : null;
     if (!!wasRetake[jan + ':' + slot] !== (review === 'retake')) flip.add(jan);
     const note = String(it.note || '').slice(0, 300);
-    stmts.push(env.DB.prepare('UPDATE pim_images SET review=?, review_note=?, reviewed_by=?, reviewed_at=? WHERE account_id=? AND jan=? AND slot=?')
-      .bind(review, review ? note : null, review ? (by || null) : null, review ? ts : null, acct, jan, slot));
+    // ver（任意）… 画面が見ていた写真の版。その間に消された・並べ替えられた・差し替えられた写真には印を付けない（番号のずれた別の写真に付けない）
+    const ver = it.ver ? String(it.ver) : '';
+    stmts.push(env.DB.prepare('UPDATE pim_images SET review=?, review_note=?, reviewed_by=?, reviewed_at=? WHERE account_id=? AND jan=? AND slot=?' + (ver ? ' AND COALESCE(ver, created_at)=?' : ''))
+      .bind(review, review ? note : null, review ? (by || null) : null, review ? ts : null, acct, jan, slot, ...(ver ? [ver] : [])));
   }
   if (!stmts.length) return json({ ok: false, reason: 'no_items' }, 400);
-  for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
+  let updated = 0;
+  for (let i = 0; i < stmts.length; i += 50) { const rs = await env.DB.batch(stmts.slice(i, i + 50)); rs.forEach((r) => { updated += (r.meta && r.meta.changes) || 0; }); }
   const flipped = Array.from(flip);
   if (flipped.length) {
     for (let i = 0; i < flipped.length; i += 90) { const part = flipped.slice(i, i + 90); await env.DB.prepare('UPDATE pim_products SET updated_at=? WHERE account_id=? AND jan IN (' + part.map(() => '?').join(',') + ')').bind(ts, acct, ...part).run(); }
     await logChanges(env, acct, flipped, 'image', by);
   }
-  return json({ ok: true, updated: stmts.length });
+  const stale = stmts.length - updated;
+  return json({ ok: true, updated, stale, message: stale ? stale + ' 枚は写真が変わっていた（他の人が消した・並べ替えた・差し替えた）ため、印を付けませんでした。一覧を読み直しました' : undefined });
 }

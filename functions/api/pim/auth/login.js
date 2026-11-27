@@ -28,7 +28,7 @@ export async function onRequestPost({ request, env }) {
   }
   if (!a.active) return json({ ok: false, reason: 'account_disabled', message: 'このアカウントは停止されています。システム管理者にお問い合わせください' }, 403);
   await env.DB.batch([
-    env.DB.prepare('DELETE FROM pim_login_fail WHERE login_id=? OR login_id LIKE ?').bind(lockKey, lid + '@%'),
+    env.DB.prepare('DELETE FROM pim_login_fail WHERE login_id=? OR substr(login_id, 1, ?)=?').bind(lockKey, lid.length + 1, lid + '@'), // LIKE だと ID の _ が「どれか 1 文字」になり、別の ID の記録まで消す
     env.DB.prepare('UPDATE pim_accounts SET last_login_at=? WHERE id=?').bind(nowIso(), a.id),
   ]);
   const token = await signToken(env, a.id, a.token_version);

@@ -255,6 +255,7 @@
 
     var j = normalizeJan(get('jan'));
     if (!j.jan) errors.push(j.reason);
+    else if (!j.valid && /指数表記/.test(j.reason)) errors.push(j.reason); // 下位桁が 0 に化けた JAN（4901280000000 など）で登録しない
     else if (!j.valid) warnings.push(j.reason);
 
     var rawName = clean(get('name'));

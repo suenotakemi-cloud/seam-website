@@ -220,6 +220,7 @@ export async function ensureSchema(env) {
     `CREATE TABLE IF NOT EXISTS pim_changes (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, jan TEXT NOT NULL, kind TEXT NOT NULL, ts TEXT NOT NULL, by TEXT)`,
     `CREATE INDEX IF NOT EXISTS idx_pim_changes_acct ON pim_changes(account_id, id)`,
+    `CREATE INDEX IF NOT EXISTS idx_pim_changes_jan ON pim_changes(account_id, jan, id)`, // 取り込みの取り消しで「その商品のあとの記録」を引く
     `CREATE INDEX IF NOT EXISTS idx_pim_imports_acct ON pim_imports(account_id, id)`,
     `CREATE TABLE IF NOT EXISTS pim_issues (
       id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, ts TEXT NOT NULL, import_id INTEGER, kind TEXT NOT NULL, jan TEXT,
@@ -297,6 +298,8 @@ const numText = (v) => String(v).replace(/[０-９．]/g, (c) => String.fromChar
 const INT = (v) => { if (v == null || v === '') return null; const n = Math.round(Number(typeof v === 'number' ? v : numText(v))); return isFinite(n) ? n : null; };
 const NUM = (v) => { if (v == null || v === '') return null; const n = Number(typeof v === 'number' ? v : numText(v)); return isFinite(n) ? n : null; };
 const STR = (v, max) => { const s = String(v == null ? '' : v).replace(/\s+/g, ' ').trim(); return max ? s.slice(0, max) : s; };
+// 商品説明は改行を残す（行の中の空白だけ詰める。画面・取り込みの cleanKeepLines と同じ考え方）。3 行以上の空行は 1 行に
+const TEXT = (v, max) => { const s = String(v == null ? '' : v).replace(/\r\n?/g, '\n').split('\n').map((l) => l.replace(/[^\S\n]+/g, ' ').trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim(); return max ? s.slice(0, max) : s; };
 export function sanitizeProduct(p) {
   const jan = cleanJan(p.jan);
   const taxIncluded = p.tax_included ? 1 : 0;
@@ -313,7 +316,7 @@ export function sanitizeProduct(p) {
     retail_price: INT(p.retail_price), cost_price: INT(p.cost_price),
     amount: NUM(p.amount), unit: STR(p.unit, 16),
     maker: STR(p.maker, 100), brand: STR(p.brand, 100), category: STR(p.category, 200),
-    description: STR(p.description, 4000), sku: STR(p.sku, 64), source: STR(p.source, 100),
+    description: TEXT(p.description, 4000), sku: STR(p.sku, 64), source: STR(p.source, 100),
     name_key: nameKey(p.name),
   };
 }
@@ -369,17 +372,37 @@ export async function logChanges(env, acct, jans, kind, by) {
   for (let i = 0; i < list.length; i += 50) {
     await env.DB.batch(list.slice(i, i + 50).map((j) => env.DB.prepare('INSERT INTO pim_changes(account_id, jan, kind, ts, by) VALUES(?,?,?,?,?)').bind(acct, j, kind, ts, by || null)));
   }
+  return ts; // 記録した時刻（取り込みの控えが「自分の記録」を見分けるのに使う）
 }
 // Webhook（EC 側へ「この JAN が変わった」を push）。context.waitUntil で応答を待たせない。失敗しても業務は止めない
+// 担当者一覧が登録されているディーラーでは、書き込みは「一覧にある名前」からだけ受ける（名前の打ち間違い・なりすまし防止）
+//   PIN 付きの担当者は、PIN 確認で得た x-seam-staff も必要。_middleware と、_middleware を通らない受信箱（inbox.js）の操作で使う
+//   → { staff } か { error: Response }（一覧が空なら {}）
+export async function staffGate(env, request, accountId) {
+  const rs = await env.DB.prepare('SELECT id, name, pin_hash FROM pim_staff WHERE account_id=? AND active=1').bind(accountId).all();
+  const list = rs.results || [];
+  if (!list.length) return {};
+  const name = userOf(request);
+  const me = list.find((s) => s.name === name);
+  if (!me) return { error: json({ ok: false, reason: 'unknown_staff', message: '担当者名「' + (name || '（空）') + '」は登録されていません。設定で担当者を選び直してください', staff_required: true }, 403) };
+  if (me.pin_hash) {
+    const st = await verifyStaff(env, request.headers.get('x-seam-staff') || '', accountId, me.pin_hash); // PIN を変えたら、前の確認は無効
+    if (!st || st.staffId !== me.id) return { error: json({ ok: false, reason: 'pin_required', message: '担当者「' + name + '」の PIN 確認が必要です。設定から担当者を選び直してください', staff_required: true }, 403) };
+  }
+  return { staff: me };
+}
 export function notifyWebhook(context, account, kind, jans, by) {
   try {
     const url = account && account.webhook_url;
     if (!url || !webhookUrlOk(url)) return;
     const env = context.env;
-    const list = Array.from(new Set((jans || []).filter(Boolean))).slice(0, 2000);
+    const all = Array.from(new Set((jans || []).filter(Boolean)));
+    const list = all.slice(0, 2000);
     if (!list.length) return;
-    const body = JSON.stringify({ event: 'changed', kind, account: account.login_id, jans: list, count: list.length, by: by || null, ts: nowIso(),
-      export_url: new URL(context.request.url).origin + '/api/pim/export?format=source&since=' + encodeURIComponent(new Date(Date.now() - 60000).toISOString()) });
+    // count は本当の件数（2000 件を超えたら jans は先頭 2000 件だけ・truncated:true。残りは export_url か /api/pim/changes で取る）。
+    //   export_url の since は 10 分前から（辞書の当て直しなど時間のかかる操作で、最初の方に変えた商品が since より前にならないように）
+    const body = JSON.stringify({ event: 'changed', kind, account: account.login_id, jans: list, count: all.length, truncated: all.length > list.length || undefined, by: by || null, ts: nowIso(),
+      export_url: new URL(context.request.url).origin + '/api/pim/export?format=source&since=' + encodeURIComponent(new Date(Date.now() - 600000).toISOString()) });
     const run = (async () => {
       let status = 'error';
       try {

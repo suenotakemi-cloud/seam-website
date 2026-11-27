@@ -70,24 +70,19 @@ export async function onRequestPost(context) {
     const dict = await loadDict(env, acct);
     if (dict.empty) return json({ ok: true, changed: 0 });
     let changed = 0; const touched = [];
-    // メーカー・ブランドは値ごとに UPDATE。カテゴリは「大 > 中 > 小」の各段にも当てるので、値を列挙して 1 つずつ
+    // 実際に商品にある値だけを当てる（辞書が大きくても問い合わせの回数が増えないように）。UPDATE … RETURNING で変えた JAN を拾い、50 文ずつまとめて送る
+    const work = [];
     for (const k of ['maker', 'brand']) {
-      for (const src of Object.keys(dict[k])) {
-        const r = await env.DB.prepare('SELECT jan FROM pim_products WHERE account_id=? AND ' + k + '=?').bind(acct, src).all();
-        const jans = (r.results || []).map((x) => x.jan); if (!jans.length) continue;
-        const u = await env.DB.prepare('UPDATE pim_products SET ' + k + '=?, updated_at=?, updated_by=? WHERE account_id=? AND ' + k + '=?').bind(dict[k][src], ts, by || null, acct, src).run();
-        changed += (u.meta && u.meta.changes) || 0; touched.push(...jans);
-      }
+      const vals = await env.DB.prepare('SELECT DISTINCT ' + k + ' AS v FROM pim_products WHERE account_id=? AND ' + k + '<>\'\'').bind(acct).all();
+      for (const row of (vals.results || [])) { const to = Object.prototype.hasOwnProperty.call(dict[k], row.v) ? dict[k][row.v] : null; if (typeof to === 'string' && to !== row.v) work.push([k, row.v, to]); }
     }
     if (Object.keys(dict.category).length) {
-      const cats = await env.DB.prepare('SELECT DISTINCT category FROM pim_products WHERE account_id=? AND category<>\'\'').bind(acct).all();
-      for (const row of (cats.results || [])) {
-        const to = applyDict(dict, { category: row.category }).category;
-        if (to === row.category) continue;
-        const r = await env.DB.prepare('SELECT jan FROM pim_products WHERE account_id=? AND category=?').bind(acct, row.category).all();
-        const u = await env.DB.prepare('UPDATE pim_products SET category=?, updated_at=?, updated_by=? WHERE account_id=? AND category=?').bind(to, ts, by || null, acct, row.category).run();
-        changed += (u.meta && u.meta.changes) || 0; touched.push(...(r.results || []).map((x) => x.jan));
-      }
+      const cats = await env.DB.prepare('SELECT DISTINCT category AS v FROM pim_products WHERE account_id=? AND category<>\'\'').bind(acct).all();
+      for (const row of (cats.results || [])) { const to = applyDict(dict, { category: row.v }).category; if (to !== row.v) work.push(['category', row.v, to]); }
+    }
+    for (let i = 0; i < work.length; i += 50) {
+      const rs = await env.DB.batch(work.slice(i, i + 50).map(([k, src, to]) => env.DB.prepare('UPDATE pim_products SET ' + k + '=?, updated_at=?, updated_by=? WHERE account_id=? AND ' + k + '=? RETURNING jan').bind(to, ts, by || null, acct, src)));
+      rs.forEach((r) => { const js = (r.results || []).map((x) => x.jan); changed += js.length; touched.push(...js); });
     }
     await logChanges(env, acct, touched, 'product', by); notifyWebhook(context, data.account, 'product', touched, by);
     return json({ ok: true, changed });

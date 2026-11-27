@@ -42,8 +42,11 @@ export async function onRequestPost(context) {
     const dup = await env.DB.prepare('SELECT id FROM pim_accounts WHERE login_id=?').bind(lid).first();
     if (dup) return json({ ok: false, reason: 'exists', message: 'この ID は既に使われています' }, 409);
     const hash = await hashPassword(String(b.password));
-    const r = await env.DB.prepare('INSERT INTO pim_accounts(login_id, name, pass_hash, role, active, token_version, note, created_at, updated_at, pass_changed_at) VALUES(?,?,?,?,1,1,?,?,?,?)')
-      .bind(lid, name, hash, 'dealer', String(b.note || '').slice(0, 500), ts, ts, ts).run();
+    let r;
+    try {
+      r = await env.DB.prepare('INSERT INTO pim_accounts(login_id, name, pass_hash, role, active, token_version, note, created_at, updated_at, pass_changed_at) VALUES(?,?,?,?,1,1,?,?,?,?)')
+        .bind(lid, name, hash, 'dealer', String(b.note || '').slice(0, 500), ts, ts, ts).run();
+    } catch (e) { if (/UNIQUE|constraint/i.test(String(e && e.message || e))) return json({ ok: false, reason: 'exists', message: 'この ID は既に使われています' }, 409); throw e; } // 同時に同じ ID で発行したとき
     const a = await env.DB.prepare('SELECT * FROM pim_accounts WHERE id=?').bind(r.meta.last_row_id).first();
     return json({ ok: true, account: publicAccount(a) });
   }
@@ -58,7 +61,8 @@ export async function onRequestPost(context) {
     if (prob) return json({ ok: false, reason: 'weak', message: prob }, 400);
     const hash = await hashPassword(String(b.password));
     await env.DB.prepare('UPDATE pim_accounts SET pass_hash=?, token_version=token_version+1, pass_changed_at=?, updated_at=? WHERE id=?').bind(hash, ts, ts, id).run();
-    await env.DB.prepare('DELETE FROM pim_login_fail WHERE login_id=? OR login_id LIKE ?').bind(a.login_id, a.login_id + '@%').run();
+    // 「ID@端末」の形の記録も消す。LIKE だと ID の _ が「どれか 1 文字」になり、別のアカウントの記録まで消すので、先頭の一致で見る
+    await env.DB.prepare('DELETE FROM pim_login_fail WHERE login_id=? OR substr(login_id, 1, ?)=?').bind(a.login_id, a.login_id.length + 1, a.login_id + '@').run();
     return json({ ok: true, message: 'パスワードを再設定しました。全端末で再ログインが必要です' });
   }
   if (action === 'logout_all') {
@@ -119,8 +123,11 @@ export async function onRequestPost(context) {
     const from = await env.DB.prepare('SELECT id, name FROM pim_accounts WHERE login_id=?').bind(String(b.from || '').trim().toLowerCase()).first();
     if (!from) return json({ ok: false, reason: 'no_from', message: 'コピー元のアカウントがありません' }, 404);
     const rows = await env.DB.prepare('SELECT kind, src, dst FROM pim_dict WHERE account_id=?').bind(from.id).all();
-    let n = 0;
-    for (const r of (rows.results || [])) { const q = await env.DB.prepare('INSERT OR IGNORE INTO pim_dict(account_id, kind, src, dst, created_at, created_by) VALUES(?,?,?,?,?,?)').bind(id, r.kind, r.src, r.dst, ts, 'ひな形: ' + from.name).run(); n += (q.meta && q.meta.changes) || 0; }
+    let n = 0; const list = rows.results || [];
+    for (let i = 0; i < list.length; i += 50) { // 50 件ずつまとめて（大きな辞書でも問い合わせの回数上限に当たらない）
+      const rs = await env.DB.batch(list.slice(i, i + 50).map((r) => env.DB.prepare('INSERT OR IGNORE INTO pim_dict(account_id, kind, src, dst, created_at, created_by) VALUES(?,?,?,?,?,?)').bind(id, r.kind, r.src, r.dst, ts, 'ひな形: ' + from.name)));
+      rs.forEach((q) => { n += (q.meta && q.meta.changes) || 0; });
+    }
     return json({ ok: true, copied: n, message: '「' + from.name + '」の表記の辞書 ' + n + ' 件をコピーしました（写真ガイド・分類対応表は全ディーラー共通で最初から使えます）' });
   }
   if (action === 'rename') {

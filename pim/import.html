@@ -769,11 +769,11 @@
   ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
   drop.addEventListener('drop', function (e) { if (e.dataTransfer.files[0]) readFile(e.dataTransfer.files[0]); });
   $('btnPick').addEventListener('click', function () { $('fileIn').click(); });
-  $('fileIn').addEventListener('change', function () { if (this.files[0]) readFile(this.files[0]); });
+  $('fileIn').addEventListener('change', function () { var f = this.files[0]; this.value = ''; if (f) readFile(f); }); // 同じ（直した）ファイルを選び直しても読み込む
 
   function readFile(file, inboxId) {
     S.inboxId = inboxId || null;
-    S.file = file; S.sheets = null; S.decisions = {}; S.fileDecisions = {}; S.dbExisting = {}; S.items = [];
+    S.file = file; S.sheets = null; S.decisions = {}; S.fileDecisions = {}; S.dbExisting = {}; S.items = []; S.committed = false; S.lastHeaderRow = null; S.lastMapping = null;
     S.checkSeq = (S.checkSeq || 0) + 1; S.checking = false; S.checkedJans = null; S.fileDups = {}; S.similar = []; // 前のファイルの照合の返事は捨てる
     $('optSource').value = ''; $('commitState').textContent = ''; $('commitLog').hidden = true; $('commitProg').hidden = true;
     ['cardMap', 'cardPrev', 'cardDup', 'cardCommit'].forEach(function (id) { $(id).hidden = true; });
@@ -824,8 +824,11 @@
   function applyTemplate() {
     var headers = S.rows[S.headerRow].map(function (h, i) { return String(h || '').trim() || ('(' + (i + 1) + '列目)'); });
     $('tplNote').hidden = true;
+    readMap(); var rowsAt = S.rows, hrAt = S.headerRow, mapAt = JSON.stringify(S.mapping);
     api('import', { method: 'POST', body: { action: 'template', headers: headers } }).then(function (j) {
       if (!j.ok || !j.template) return;
+      if (S.rows !== rowsAt || S.headerRow !== hrAt) return; // 返事が来る前に別のファイルを選んだ・見出しの行を変えた（前のファイルの列合わせを当てない）
+      readMap(); if (JSON.stringify(S.mapping) !== mapAt) return; // その間に列合わせを手で変えた（手で選んだものを上書きしない）
       var t = j.template;
       S.mapping = t.mapping || S.mapping;
       Array.prototype.forEach.call($('map').querySelectorAll('select'), function (sel) {
@@ -895,13 +898,22 @@
     S.mapping = m;
   }
 
+  // 税率（0% も入れられるように。空・数字でないときだけ 10%）
+  function rateVal() { var n = parseInt($('optRate').value, 10); return isNaN(n) ? 10 : n; }
   // ── 3. 確認 ──
   $('btnPreview').addEventListener('click', function () {
+    // 「直す」で手直しした行があるときは、表を作り直す前に確かめる（取り込み方・税区分を変えると、手直しが消えて元の値で保存されていた）
+    var nEdited = S.items.filter(function (i) { return i.edited; }).length;
+    if (nEdited && !confirm('「直す」で手直しした ' + nEdited + ' 行は、確認し直すと元のファイルの値に戻ります。続けますか？\n（手直しを残したいときは「キャンセル」を押して、そのまま保存してください）')) { var keep = document.querySelector('input[name=impType][value="' + (S.lastType || 'normal') + '"]'); if (keep) { keep.checked = true; syncTypeUi(); } return; }
     readMap();
+    // 同じファイル内の重複で選んだ行は、見出しの行・列合わせが変わると別の行を指すので選び直してもらう
+    if (S.lastHeaderRow !== S.headerRow || JSON.stringify(S.lastMapping || null) !== JSON.stringify(S.mapping || null)) S.fileDecisions = {};
+    S.committed = false;
     if (S.mapping.jan == null || (S.mapping.name == null && impType() !== 'fill')) { toast('JAN と 商品名 の列は必須です（「空欄だけ埋める」なら JAN だけでも可）', true); return; }
-    var opts = { taxIncluded: $('optTax').value === '1', taxRate: parseInt($('optRate').value, 10) || 10, source: $('optSource').value.trim() || S.file.name, maker: $('optSource').value.trim() };
+    var opts = { taxIncluded: $('optTax').value === '1', taxRate: rateVal(), source: $('optSource').value.trim() || S.file.name, maker: $('optSource').value.trim() };
+    S.lastHeaderRow = S.headerRow; S.lastMapping = JSON.parse(JSON.stringify(S.mapping)); S.lastType = impType();
     S.items = S.rows.slice(S.headerRow + 1).map(function (r, i) {
-      var it = N.normalizeRow(r, S.mapping, opts); it.rowNo = S.headerRow + i + 2;
+      var it = N.normalizeRow(r, S.mapping, opts); it.rowNo = r.line || (S.headerRow + i + 2); // CSV は元のファイルの行番号（空行・改行入りのセルがあってもずれない）
       // 元CSVの1行をそのまま持つ（「元CSVの形＋画像」で出すため）。見出し名 → 値
       var raw = {}; S.headers.forEach(function (h, c) { raw[h] = r[c] == null ? '' : String(r[c]); });
       it.product._raw = raw;
@@ -1330,6 +1342,7 @@
         if (handledFileJan[jan]) return;
         handledFileJan[jan] = 1;
         var pick = S.fileDecisions[jan];
+        if (pick != null && S.fileDups[jan].indexOf(pick) < 0) { delete S.fileDecisions[jan]; pick = null; } // 作り直した表では、その行はこの組に入っていない
         if (pick == null) {
           issues.push({ kind: 'dup_file', jan: jan, message: '同じファイル内で JAN ' + jan + ' が ' + S.fileDups[jan].length + '行にあります: ' + S.fileDups[jan].map(function (i) { return S.items[i].rowNo + '行目「' + S.items[i].product.name + '」'; }).join(' / ') + '。どれを残すか決めてください', incoming: S.fileDups[jan].map(function (i) { return S.items[i].product; }) });
           skipped += S.fileDups[jan].length;
@@ -1373,11 +1386,13 @@
       $('commitSummary').innerHTML = (impType() === 'update' ? '<b>更新取り込み</b>（' + updFieldsJa() + '）: ' : '') + '追加 <b>' + (pl.toSave.length - upd) + '</b>件 ／ 上書き <b>' + upd + '</b>件 ／ 注意へ積む <b>' + pl.issues.length + '</b>件（' + pl.skipped + '行は登録しない） ／ 登録できない行 <b>' + pl.invalid + '</b>件' + imgNote;
     }
     $('cardCommit').hidden = false;
-    $('btnCommit').disabled = !(pl.toSave.length || pl.issues.length);
+    $('btnCommit').disabled = !!(S.committing || S.committed) || !(pl.toSave.length || pl.issues.length); // 保存中・保存済みは押せない（もう一度押すと、同じ行が「先に登録された」注意になって二重に積まれていた）
   }
   $('btnCommit').addEventListener('click', function () {
     var pl = plan();
     if (!pl.toSave.length && !pl.issues.length) return;
+    if (S.committing || S.committed) return;
+    S.committing = true;
     var btn = $('btnCommit'); btn.disabled = true;
     var log = $('commitLog'); log.hidden = false; log.textContent = '';
     var prog = $('commitProg'); prog.hidden = false;
@@ -1386,11 +1401,11 @@
     var isFill = impType() === 'fill';
     readMap();
     // 途中で失敗したあとにもう一度押したときは、同じ取り込みの続きから保存する（最初からやり直すと、保存済みの行が「先を越された」注意になり、注意も二重に積まれていた）
-    var sig = impType() + ':' + total + ':' + (pl.toSave[0] ? pl.toSave[0].jan : '') + ':' + (total ? pl.toSave[total - 1].jan : '');
+    var sig = impType() + ':' + (S.file ? S.file.name + ':' + S.file.size + ':' + (S.file.lastModified || '') : '') + ':' + total + ':' + (pl.toSave[0] ? pl.toSave[0].jan : '') + ':' + (total ? pl.toSave[total - 1].jan : '');
     var R = S.saveState && S.saveState.sig === sig ? S.saveState : null;
     if (R) { importId = R.importId; done = R.done; ins = R.ins; upd = R.upd; conf = R.conf; filled = R.filled; unch = R.unch; unk = R.unk; unkJans = R.unkJans; L('取り込み #' + importId + ' の続き（' + (done + 1) + '件目から）を保存します'); }
     var saveFail = function (e) { if (importId) { S.saveState = { sig: sig, importId: importId, done: done, ins: ins, upd: upd, conf: conf, filled: filled, unch: unch, unk: unk, unkJans: unkJans }; L('※ もう一度「保存」を押すと、' + (done + 1) + '件目から続きを保存します'); } throw e; };
-    (R ? Promise.resolve({ ok: true, import_id: R.importId, resumed: true }) : api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, kind: impType(), total: S.items.length, options: { taxIncluded: $('optTax').value === '1', taxRate: parseInt($('optRate').value, 10) || 10, fields: impType() === 'update' ? updFields() : [], fillNew: isFill && $('fillNew').checked } } }))
+    (R ? Promise.resolve({ ok: true, import_id: R.importId, resumed: true }) : api('import', { method: 'POST', body: { action: 'begin', filename: S.file.name, source: $('optSource').value.trim(), mapping: S.mapping, headers: S.headers, kind: impType(), total: S.items.length, options: { taxIncluded: $('optTax').value === '1', taxRate: rateVal(), fields: impType() === 'update' ? updFields() : [], fillNew: isFill && $('fillNew').checked } } }))
       .then(function (j) {
         if (!j.ok) throw new Error(j.message || j.reason);
         importId = j.import_id; if (!j.resumed) L('取り込み #' + importId + ' 開始 … ' + total + '件を保存');
@@ -1408,7 +1423,7 @@
             });
           })(i);
         }
-        if (!total) chain = chain.then(function () { return api('import', { method: 'POST', body: { action: 'commit', import_id: importId, products: [], issues: pl.issues } }); });
+        if (!total) chain = chain.then(function () { return api('import', { method: 'POST', body: { action: 'commit', import_id: importId, products: [], issues: pl.issues } }).then(function (r) { if (!r.ok) throw new Error(r.message || r.reason); }); });
         return chain.catch(saveFail);
       })
       .then(function () { return api('import', { method: 'POST', body: { action: 'finish', import_id: importId, invalid: pl.invalid } }); })
@@ -1422,15 +1437,16 @@
         } else {
           L('完了: 追加 ' + ins + '件 / 更新 ' + upd + '件 / 注意 ' + (pl.issues.length + conf) + '件 / 登録できない行 ' + pl.invalid + '件' + (conf ? '\n※ ' + conf + '件は、取り込み中に別の人が同じ JAN を先に登録していたため上書きせず「注意」に回しました' : ''));
         }
-        S.saveState = null;
+        S.saveState = null; S.committing = false; S.committed = true;
         toast('保存しました'); $('commitState').textContent = '保存済み';
         if (S.inboxId) { api('inbox', { method: 'POST', body: { action: 'done', id: S.inboxId, import_id: importId } }).catch(function () { /* */ }); S.inboxId = null; }
         loadHistory(); loadMakers(); boot();
         // 画像 URL の列があれば、続けて写真を取り寄せて「空いている枠」に足す（同じ URL は二度入れない）
         var withUrls = pl.toSave.filter(function (p) { return p.images && p.images.length && (S.dbExisting[p.jan] || isFill || p._mode === 'new' || p._mode === 'overwrite' || p._mode === 'update'); });
-        if (withUrls.length) return importImageUrls(withUrls, L, prog);
+        // 写真の取り寄せで失敗しても、商品の保存は済んでいる（保存ボタンは押せるように戻さない）
+        if (withUrls.length) return importImageUrls(withUrls, L, prog).catch(function (e) { L('写真の取り寄せでエラー: ' + ((e && e.message) || e) + '（商品は保存済みです）'); handleErr(e); });
       })
-      .catch(function (e) { L('エラー: ' + ((e && e.message) || JSON.stringify(e))); btn.disabled = false; handleErr(e); });
+      .catch(function (e) { L('エラー: ' + ((e && e.message) || JSON.stringify(e))); S.committing = false; btn.disabled = false; handleErr(e); });
   });
   function loadHistory() {
     api('import').then(function (j) {
@@ -1536,7 +1552,7 @@
         b.addEventListener('click', function () {
           var jan = b.getAttribute('data-sku'), pr = j.products.filter(function (x) { return x.jan === jan; })[0]; if (!pr) return;
           var v = prompt('JAN ' + jan + '「' + pr.name + '」の商品コード（商品ID）', ''); if (v == null || !v.trim()) return;
-          api('products', { method: 'PUT', body: Object.assign({}, pr, { sku: v.trim(), price_ex: null, price_in: null, expected_updated_at: pr.updated_at }) }).then(function (r) { if (!r.ok) { toast(r.message || '保存できませんでした', true); return; } toast('商品コードを入れました'); loadProducts(P.offset); }).catch(handleErr);
+          api('products', { method: 'PUT', body: Object.assign({}, pr, { sku: v.trim(), expected_updated_at: pr.updated_at }) /* 税抜・税込はそのまま送る（入力価格が空の商品で、価格が消えていた） */ }).then(function (r) { if (!r.ok) { toast(r.message || '保存できませんでした', true); return; } toast('商品コードを入れました'); loadProducts(P.offset); }).catch(handleErr);
         });
       });
       Array.prototype.forEach.call($('prodTbl').querySelectorAll('.sel'), function (c) { c.addEventListener('change', updateSel); });
@@ -1551,7 +1567,7 @@
         b.addEventListener('click', function () {
           var jan = b.getAttribute('data-del');
           if (!confirm('JAN ' + jan + ' を削除しますか？（写真も消えます）')) return;
-          api('products?jan=' + jan, { method: 'DELETE' }).then(function (r) { if (r.ok) { toast('削除しました'); loadProducts(P.offset); } else toast('削除できませんでした', true); }).catch(handleErr);
+          api('products?jan=' + jan, { method: 'DELETE' }).then(function (r) { if (r.ok) { toast('削除しました'); loadProducts(P.offset); } else if (r.reason === 'not_found') { toast(r.message, true); loadProducts(P.offset); } else toast('削除できませんでした', true); }).catch(handleErr);
         });
       });
       $('btnPrev').disabled = P.offset === 0; $('btnNext').disabled = P.offset + P.limit >= j.total;
@@ -1662,10 +1678,12 @@
   ['dragleave', 'drop'].forEach(function (ev) { idrop.addEventListener(ev, function (e) { e.preventDefault(); idrop.classList.remove('over'); }); });
   idrop.addEventListener('drop', function (e) { planImages(Array.prototype.slice.call(e.dataTransfer.files)); });
   $('btnImgPick').addEventListener('click', function () { $('imgIn').click(); });
-  $('imgIn').addEventListener('change', function () { planImages(Array.prototype.slice.call(this.files)); });
+  $('imgIn').addEventListener('change', function () { var fs = Array.prototype.slice.call(this.files); this.value = ''; planImages(fs); });
   function parseImageName(name) {
     var base = name.replace(/\.[^.]+$/, '');
-    var m = base.match(/(\d{13}|\d{12}|\d{8})/);
+    // 13 桁 → 12 桁 → 8 桁の順に、前後が数字でないものを探す（「20241105_4901275230122.jpg」の日付を JAN と取り違えない）
+    var m = null;
+    [/(?:^|\D)(\d{13})(?!\d)/, /(?:^|\D)(\d{12})(?!\d)/, /(?:^|\D)(\d{8})(?!\d)/].some(function (re) { var x = re.exec(base); if (x) { m = { 1: x[1], index: x.index + x[0].length - x[1].length }; return true; } return false; });
     if (!m) return null;
     var jan = N.normalizeJan(m[1]).jan;
     var rest = base.slice(m.index + m[1].length);
@@ -1691,19 +1709,25 @@
     IMG.plan = plan;
     var jans = Object.keys(byJan);
     toast('登録済み商品と照合中…');
+    var my = IMG.seq = (IMG.seq || 0) + 1;
     api('import', { method: 'POST', body: { action: 'check', jans: jans } }).then(function (j) {
+      if (my !== IMG.seq) return; // 前に入れた画像の照合の返事（今の一覧を前の結果で描き直さない）
       var ex = (j && j.existing) || {};
       plan.forEach(function (p) { if (p.jan && !p.status && !ex[p.jan]) p.status = '未登録のJAN（先に商品を取り込んでください）'; if (ex[p.jan]) p.name = ex[p.jan].name; });
       renderImgPlan();
       // ファイル名に JAN が無いもの: 商品名・型番・商品コードで候補を探して当てる（最大 60 ファイル）
+      if (my !== IMG.seq) return; // その間に別の画像を入れ直した
       var noJan = plan.filter(function (p) { return !p.jan; }).slice(0, 60), chain = Promise.resolve();
       noJan.forEach(function (p) {
         var base = p.file.name.replace(/\.[^.]+$/, '').replace(/[_\-()（）\[\]]+/g, ' ').replace(/\b\d{1,2}\b\s*$/, '').trim();
         if (base.length < 2) return;
-        chain = chain.then(function () { return api('products?q=' + encodeURIComponent(base.slice(0, 40)) + '&limit=5').then(function (r) {
-          if (!r.ok || !r.products.length) return;
+        chain = chain.then(function () { if (my !== IMG.seq) return; return api('products?q=' + encodeURIComponent(base.slice(0, 40)) + '&limit=5').then(function (r) {
+          if (my !== IMG.seq || !r.ok || !r.products.length) return;
           p.cands = r.products.map(function (x) { return { jan: x.jan, name: x.name }; });
-          p.jan = r.products[0].jan; p.name = r.products[0].name; p.slot = p.slot || 1; p.status = ''; p.guess = true;
+          p.slot = p.slot || 1; p.guess = true;
+          // 候補が 1 つだけのときだけ当てる。複数あるときは選んでもらう（検索は「最近直した順」なので、先頭が正しいとは限らない）
+          if (r.products.length === 1) { p.jan = r.products[0].jan; p.name = r.products[0].name; p.status = ''; }
+          else { p.jan = ''; p.status = '名前から候補が ' + r.products.length + ' 件あります。選んでください'; }
           renderImgPlan();
         }).catch(function () { /* */ }); });
       });
@@ -1839,7 +1863,9 @@
   function loadReview(offset) {
     RV.offset = Math.max(0, offset || 0);
     if ($('rvStatus').value === 'dup') return loadDupPhotos();
+    var my = RV.seq = (RV.seq || 0) + 1;
     api('review?status=' + $('rvStatus').value + '&maker=' + encodeURIComponent($('rvMaker').value) + '&limit=' + RV.limit + '&offset=' + RV.offset).then(function (j) {
+      if (my !== RV.seq || $('rvStatus').value === 'dup') return; // 絞り込みを続けて変えたとき、遅れて届いた前の一覧で上書きしない
       if (!j.ok) return;
       RV.items = j.images;
       $('rvCount').textContent = j.total + '枚中 ' + (j.total ? RV.offset + 1 : 0) + '〜' + Math.min(j.total, RV.offset + j.images.length);
@@ -1855,15 +1881,16 @@
           if (act === 'edit') { openImgEdit(im); return; }
           if (act === 'delete') { // 画像まとめ登録で入った不要な写真を、検品しながらその場で消す
             if (!confirm(im.name + '\n' + im.jan + ' の ' + im.slot + '枚目を削除しますか？（元に戻せません。後ろの写真が前に詰まります）')) return;
-            api('images?jan=' + encodeURIComponent(im.jan) + '&slot=' + im.slot, { method: 'DELETE' }).then(function (r) {
-              if (!r.ok) { toast(r.message || '削除できませんでした', true); return; }
+            api('images?jan=' + encodeURIComponent(im.jan) + '&slot=' + im.slot + '&ver=' + encodeURIComponent(rvVer(im)), { method: 'DELETE' }).then(function (r) {
+              if (!r.ok) { toast(r.message || '削除できませんでした', true); if (r.reason === 'changed' || r.reason === 'not_found') loadReview(RV.offset); return; }
               toast('削除しました'); loadReview(RV.offset);
             }).catch(handleErr);
             return;
           }
           if (act === 'retake' && !note) { note = prompt('撮り直しの理由（スマホに表示されます）', 'ピンぼけ') || ''; if (!note) return; box.querySelector('input.note').value = note; }
-          api('review', { method: 'POST', body: { jan: im.jan, slot: im.slot, review: act === 'clear' ? null : act, note: note } }).then(function (r) {
+          api('review', { method: 'POST', body: { jan: im.jan, slot: im.slot, ver: rvVer(im), review: act === 'clear' ? null : act, note: note } }).then(function (r) {
             if (!r.ok) { toast(r.message || '失敗しました', true); return; }
+            if (r.stale) { toast(r.message, true); loadReview(RV.offset); return; }
             toast(act === 'ok' ? 'OK にしました' : act === 'retake' ? '撮り直しにしました' : '取り消しました');
             loadReview(RV.offset); // 絞り込みに合わせて一覧を引き直す（未検品から消える／ボタンが変わる）
           }).catch(handleErr);
@@ -1875,7 +1902,9 @@
     }).catch(handleErr);
   }
   function loadDupPhotos() {
+    var my = RV.seq = (RV.seq || 0) + 1;
     api('review?status=dup').then(function (j) {
+      if (my !== RV.seq || $('rvStatus').value !== 'dup') return;
       if (!j.ok) return;
       RV.items = []; updatePick();
       $('rvCount').textContent = j.total + ' 組';
@@ -1902,6 +1931,8 @@
     }
     RV.lastPick = at; updatePick();
   });
+  // 写真の版（番号がずれていたら、別の写真を消したり印を付けたりしない。サーバが 409・印なしで返す）
+  function rvVer(im) { return String(im.ver || im.created_at || ''); }
   $('rvPickAll').addEventListener('change', function () { var on = this.checked; Array.prototype.forEach.call($('rvGrid').querySelectorAll('.rv[data-i] .pick'), function (c) { c.checked = on; }); updatePick(); });
   $('rvDelSel').addEventListener('click', function () {
     var list = picked(); if (!list.length) return;
@@ -1914,7 +1945,7 @@
     list.forEach(function (im, k) {
       chain = chain.then(function () {
         $('rvPickN').textContent = '削除しています… ' + (k + 1) + ' / ' + list.length;
-        return api('images?jan=' + encodeURIComponent(im.jan) + '&slot=' + im.slot, { method: 'DELETE' }).then(function (r) { if (r.ok) ok++; else ng.push(im.jan + ' ' + im.slot + '枚目' + (r.reason === 'not_found' ? '（もうありません）' : '')); });
+        return api('images?jan=' + encodeURIComponent(im.jan) + '&slot=' + im.slot + '&ver=' + encodeURIComponent(rvVer(im)), { method: 'DELETE' }).then(function (r) { if (r.ok) ok++; else ng.push(im.jan + ' ' + im.slot + '枚目' + (r.reason === 'not_found' ? '（もうありません）' : r.reason === 'changed' ? '（写真が変わっていたので消していません）' : '')); });
       });
     });
     chain.then(function () {
@@ -1924,7 +1955,7 @@
   });
   $('rvOkSel').addEventListener('click', function () {
     var list = picked(); if (!list.length) return;
-    api('review', { method: 'POST', body: { items: list.map(function (im) { return { jan: im.jan, slot: im.slot, review: 'ok' }; }) } }).then(function (r) { if (r.ok) { toast(r.updated + ' 枚を OK にしました'); loadReview(RV.offset); } else toast(r.message || '失敗しました', true); }).catch(handleErr);
+    api('review', { method: 'POST', body: { items: list.map(function (im) { return { jan: im.jan, slot: im.slot, ver: rvVer(im), review: 'ok' }; }) } }).then(function (r) { if (r.ok) { toast(r.updated + ' 枚を OK にしました' + (r.stale ? '（' + r.message + '）' : ''), !!r.stale); loadReview(RV.offset); } else toast(r.message || '失敗しました', true); }).catch(handleErr);
   });
 
   // ── 検品: 写真の加工（回転・傾き・明るさ・コントラスト・鮮やかさ・白背景・切り抜き）→ 同じ枠に差し替え ──
@@ -2055,13 +2086,16 @@
     var q = null; try { q = C.analyzeImage(sq, { srcW: out.width, srcH: out.height }); } catch (e) { q = null; }
     C.finishImage(sq, 0.85).then(function (w) {
       w.quality = q;
-      var fd = new FormData(); fd.append('jan', im.jan); fd.append('slot', String(im.slot)); fd.append('file', w.blob, im.jan + '_' + im.slot + '.webp'); fd.append('encoder', w.encoder || ''); C.appendImageExtras(fd, w);
+      var fd = new FormData(); fd.append('jan', im.jan); fd.append('slot', String(im.slot)); fd.append('ver', rvVer(im)); fd.append('file', w.blob, im.jan + '_' + im.slot + '.webp'); fd.append('encoder', w.encoder || ''); C.appendImageExtras(fd, w);
       fd.append('original_name', String(im.original_name || (im.jan + '_' + im.slot)).replace(/（加工）$/, '') + '（加工）'); fd.append('original_type', 'image/webp'); fd.append('width', String(w.width)); fd.append('height', String(w.height));
       return api('images', { method: 'POST', body: fd });
     }).then(function (r) {
       if (IE !== mine) { if (r && r.ok) { toast(im.slot + '枚目を加工した写真に差し替えました'); loadReview(RV.offset); } return; } // 保存中に閉じても、一覧は新しい写真にする
       if (!r.ok) { $('ieSave').disabled = false; $('ieErr').textContent = r.message || '保存できませんでした'; return; }
-      closeImgEdit(); toast(im.slot + '枚目を加工した写真に差し替えました' + (r.quality_warn ? '（自動チェック: ' + r.quality_warn + '）' : '')); loadReview(RV.offset);
+      closeImgEdit();
+      if (r.stale_replace) toast('元の写真が他の人に変えられていたので、差し替えずに ' + r.slot + '枚目へ追加しました（要らない方を消してください）', true);
+      else toast(im.slot + '枚目を加工した写真に差し替えました' + (r.quality_warn ? '（自動チェック: ' + r.quality_warn + '）' : ''));
+      loadReview(RV.offset);
     }).catch(function (e) { if (e && (e.auth || e.staff)) { if (IE === mine) closeImgEdit(); handleErr(e); return; } if (IE !== mine) { toast('加工した写真を保存できませんでした: ' + ((e && e.message) || e), true); return; } $('ieSave').disabled = false; $('ieErr').textContent = (e && e.message) || '保存できませんでした'; });
   });
   $('rvReload').addEventListener('click', function () { loadReview(RV.offset); });
@@ -2073,7 +2107,7 @@
     var items = RV.items.filter(function (im) { return !im.review; });
     if (!items.length) { toast('未検品の写真はありません'); return; }
     if (!confirm('表示中の ' + items.length + ' 枚をすべて OK にしますか？')) return;
-    api('review', { method: 'POST', body: { items: items.map(function (im) { return { jan: im.jan, slot: im.slot, review: 'ok' }; }) } }).then(function (r) { if (r.ok) { toast(r.updated + ' 枚を OK にしました'); loadReview(RV.offset); } }).catch(handleErr);
+    api('review', { method: 'POST', body: { items: items.map(function (im) { return { jan: im.jan, slot: im.slot, ver: rvVer(im), review: 'ok' }; }) } }).then(function (r) { if (r.ok) { toast(r.updated + ' 枚を OK にしました' + (r.stale ? '（' + r.message + '）' : ''), !!r.stale); loadReview(RV.offset); } else toast(r.message || '失敗しました', true); }).catch(handleErr);
   });
 
   // ── 出力 ──

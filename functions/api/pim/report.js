@@ -7,7 +7,7 @@ const JST = 9 * 3600000;
 function jstDay(d) { return new Date(d.getTime() + JST).toISOString().slice(0, 10); }
 export async function buildReport(env, account, day, origin) {
   const acct = account.id;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day || '')) day = jstDay(new Date(Date.now() - 86400000));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day || '') || isNaN(Date.parse(day + 'T00:00:00Z'))) day = jstDay(new Date(Date.now() - 86400000)); // 2026-13-01 のような日付で落ちない
   const from = new Date(Date.parse(day + 'T00:00:00Z') - JST).toISOString(), to = new Date(Date.parse(day + 'T00:00:00Z') - JST + 86400000).toISOString();
   const q = (sql, ...b) => env.DB.prepare(sql).bind(...b);
   const dayStat = await q('SELECT COUNT(*) AS images, COUNT(DISTINCT jan) AS products FROM pim_images WHERE account_id=? AND created_at>=? AND created_at<?', acct, from, to).first();
@@ -15,7 +15,7 @@ export async function buildReport(env, account, day, origin) {
   const totals = await q('SELECT (SELECT COUNT(*) FROM pim_products WHERE account_id=?1) AS products, (SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND image_count>0) AS with_images, (SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND image_count=0) AS no_images, (SELECT COUNT(*) FROM pim_products WHERE account_id=?1 AND image_count>=5) AS full5, (SELECT COUNT(*) FROM pim_images WHERE account_id=?1) AS images, (SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review=\'retake\') AS retake, (SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review IS NULL) AS unreviewed, (SELECT COUNT(*) FROM pim_images WHERE account_id=?1 AND review IS NULL AND quality_warn IS NOT NULL) AS quality_warn, (SELECT COUNT(*) FROM pim_issues WHERE account_id=?1 AND status=\'open\') AS open_issues, (SELECT COUNT(*) FROM pim_inbox WHERE account_id=?1 AND status=\'pending\') AS inbox_pending', acct).first();
   const byMaker = (await q('SELECT COALESCE(maker,\'\') AS maker, COUNT(*) AS products, SUM(CASE WHEN image_count>0 THEN 1 ELSE 0 END) AS with_images FROM pim_products WHERE account_id=? GROUP BY maker HAVING products-with_images>0 ORDER BY products-with_images DESC LIMIT 15', acct).all()).results || [];
   const week = new Date(Date.parse(from) - 6 * 86400000).toISOString();
-  const pace = await q('SELECT COUNT(DISTINCT jan) AS products, COUNT(DISTINCT substr(created_at,1,10)) AS days FROM pim_images WHERE account_id=? AND created_at>=? AND created_at<?', acct, week, to).first();
+  const pace = await q('SELECT COUNT(DISTINCT jan) AS products, COUNT(DISTINCT date(substr(created_at,1,19),\'+9 hours\')) AS days FROM pim_images WHERE account_id=? AND created_at>=? AND created_at<?', acct, week, to).first();
   const perDay = pace && pace.days ? pace.products / pace.days : 0;
   const daysLeft = perDay > 0 ? Math.ceil((totals.no_images || 0) / perDay) : null;
   const pct = totals.products ? Math.round(totals.with_images / totals.products * 100) : 0;
